@@ -37,7 +37,6 @@
 #include "oops/oop.inline.hpp"
 #include "os_bsd.inline.hpp"
 #include "os_posix.inline.hpp"
-#include "os_share_bsd.hpp"
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm_misc.hpp"
 #include "runtime/arguments.hpp"
@@ -2156,9 +2155,6 @@ void os::os_exception_wrapper(java_call_t f, JavaValue* value,
                               const methodHandle& method, JavaCallArguments* args,
                               JavaThread* thread) {
   f(value, method, args, thread);
-}
-
-void os::print_statistics() {
 }
 
 static inline struct timespec get_mtime(const char* filename) {

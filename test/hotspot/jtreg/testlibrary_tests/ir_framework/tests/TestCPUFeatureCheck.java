@@ -21,7 +21,7 @@
  * questions.
  */
 
-package compiler.vectorapi;
+package ir_framework.tests;
 
 import compiler.lib.ir_framework.*;
 import compiler.lib.ir_framework.driver.irmatching.IRViolationException;
@@ -32,16 +32,17 @@ import compiler.lib.ir_framework.driver.irmatching.IRViolationException;
  * @requires vm.cpu.features ~= ".*avx512f.*"
  * @requires os.arch=="amd64" | os.arch=="x86_64"
  * @library /test/lib /
- * @run driver compiler.vectorapi.TestCPUFeatureCheck
+ * @run driver ir_framework.tests.TestCPUFeatureCheck
  */
 
 public class TestCPUFeatureCheck {
-    private static int a[] = new int[1000];
-    private static int b[] = new int[1000];
-    private static int res[] = new int[1000];
+    private static final int SIZE = 1000;
+    private static int a[] = new int[SIZE];
+    private static int b[] = new int[SIZE];
+    private static int res[] = new int[SIZE];
 
     public static void setup() {
-        for (int i = 0; i < 1000; i++) {
+        for (int i = 0; i < SIZE; i++) {
             a[i] = i;
             b[i] = i;
         }
@@ -49,16 +50,13 @@ public class TestCPUFeatureCheck {
 
     public static void main(String args[]) {
         setup();
-        TestFramework.runWithFlags("-XX:-TieredCompilation",
-                                   "-XX:UseAVX=3",
-                                   "-XX:+UseKNLSetting",
-                                   "-XX:CompileThresholdScaling=0.3");
+        TestFramework.runWithFlags("-XX:+UseKNLSetting");
     }
 
     @Test
     @IR(counts = {IRNode.ADD_VI, "> 0"}, applyIfCPUFeature = {"avx512bw", "false"})
     public static void test1() {
-        for (int i = 0; i < 1000; i++) {
+        for (int i = 0; i < SIZE; i++) {
             res[i] = a[i] + b[i];
         }
     }
@@ -67,7 +65,7 @@ public class TestCPUFeatureCheck {
     @Test
     @IR(counts = {IRNode.ADD_VI, "> 0"}, applyIfCPUFeatureAnd = {"avx512bw", "false", "avx512f", "true"})
     public static void test2() {
-        for (int i = 0; i < 1000; i++) {
+        for (int i = 0; i < SIZE; i++) {
             res[i] = a[i] + b[i];
         }
     }
@@ -76,7 +74,7 @@ public class TestCPUFeatureCheck {
     @Test
     @IR(counts = {IRNode.ADD_VI,  "> 0"}, applyIfCPUFeatureOr = {"avx512bw", "true", "avx512f", "true"})
     public static void test3() {
-        for (int i = 0; i < 1000; i++) {
+        for (int i = 0; i < SIZE; i++) {
             res[i] = a[i] + b[i];
         }
     }

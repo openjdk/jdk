@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,18 +19,30 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef OS_LINUX_OS_SHARE_LINUX_HPP
-#define OS_LINUX_OS_SHARE_LINUX_HPP
+var msi;
+if (WScript.Arguments.Count() > 0) {
+  msi = WScript.Arguments(0)
+} else {
+  var shell = new ActiveXObject('WScript.Shell')
+  msi = shell.ExpandEnvironmentStrings('%JpMsiFile%')
+}
 
-// misc
-void handle_unexpected_exception(Thread* thread, int sig, siginfo_t* info, address pc, address adjusted_pc);
-#ifndef PRODUCT
-void continue_with_dump(void);
-#endif
+var query = "SELECT `UpgradeCode`, `VersionMin`,`VersionMax`,`Language`,`Attributes`,`Remove`,`ActionProperty` FROM Upgrade WHERE `VersionMax` = NULL"
 
-#define PROCFILE_LENGTH 128
+var installer = new ActiveXObject('WindowsInstaller.Installer');
+var database = installer.OpenDatabase(msi, 1)
+var view = database.OpenView(query);
+view.Execute();
 
-#endif // OS_LINUX_OS_SHARE_LINUX_HPP
+try {
+  var record = view.Fetch();
+  record.StringData(2) = '2.0.0.3'
+  record.IntegerData(5) = 257
+  view.Modify(6, record)
+  view.Modify(3, record)
+  database.Commit();
+} finally {
+   view.Close();
+}

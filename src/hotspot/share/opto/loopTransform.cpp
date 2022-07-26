@@ -1390,6 +1390,7 @@ static bool skeleton_follow_inputs(Node* n, int op) {
           op == Op_OrL ||
           op == Op_RShiftL ||
           op == Op_LShiftL ||
+          op == Op_LShiftI ||
           op == Op_AddL ||
           op == Op_AddI ||
           op == Op_MulL ||
@@ -1404,6 +1405,8 @@ bool PhaseIdealLoop::skeleton_predicate_has_opaque(IfNode* iff) {
   ResourceMark rm;
   Unique_Node_List wq;
   wq.push(iff->in(1)->in(1));
+  uint init = 0;
+  uint stride = 0;
   for (uint i = 0; i < wq.size(); i++) {
     Node* n = wq.at(i);
     int op = n->Opcode();
@@ -1416,11 +1419,39 @@ bool PhaseIdealLoop::skeleton_predicate_has_opaque(IfNode* iff) {
       }
       continue;
     }
-    if (n->is_Opaque1()) {
-      return true;
+    if (n->Opcode() == Op_OpaqueLoopInit) {
+      init++;
+    } else if (n->Opcode() == Op_OpaqueLoopStride) {
+      stride++;
     }
   }
-  return false;
+#ifdef ASSERT
+  wq.clear();
+  wq.push(iff->in(1)->in(1));
+  uint verif_init = 0;
+  uint verif_stride = 0;
+  for (uint i = 0; i < wq.size(); i++) {
+    Node* n = wq.at(i);
+    int op = n->Opcode();
+    if (!n->is_CFG()) {
+      if (n->Opcode() == Op_OpaqueLoopInit) {
+        verif_init++;
+      } else if (n->Opcode() == Op_OpaqueLoopStride) {
+        verif_stride++;
+      } else {
+        for (uint j = 1; j < n->req(); j++) {
+          Node* m = n->in(j);
+          if (m != NULL) {
+            wq.push(m);
+          }
+        }
+      }
+    }
+  }
+  assert(init == verif_init && stride == verif_stride, "missed opaque node");
+#endif
+  assert(stride == 0 || init != 0, "init should be there every time stride is");
+  return init != 0;
 }
 
 // Clone the skeleton predicate bool for a main or unswitched loop:

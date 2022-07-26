@@ -171,6 +171,7 @@ int VectorNode::opcode(int sopc, BasicType bt) {
   case Op_ReverseBytesS:
   case Op_ReverseBytesI:
   case Op_ReverseBytesL:
+  case Op_ReverseBytesUS:
     return (is_integral_type(bt) ? Op_ReverseBytesV : 0);
   case Op_CompressBits:
     // Not implemented. Returning 0 temporarily
@@ -1349,6 +1350,7 @@ int VectorCastNode::opcode(BasicType bt, bool is_signed) {
 
 bool VectorCastNode::implemented(int opc, uint vlen, BasicType src_type, BasicType dst_type) {
   if (is_java_primitive(dst_type) &&
+      is_java_primitive(src_type) &&
       (vlen > 1) && is_power_of_2(vlen) &&
       VectorNode::vector_size_supported(dst_type, vlen)) {
     int vopc = VectorCastNode::opcode(src_type);
@@ -1850,15 +1852,20 @@ Node* NegVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 }
 
 Node* ReverseBytesVNode::Identity(PhaseGVN* phase) {
+  // "(ReverseBytesV X) => X" if the element type is T_BYTE.
+  if (vect_type()->element_basic_type() == T_BYTE) {
+    return in(1);
+  }
+
   if (is_predicated_using_blend()) {
     return this;
   }
-  // ReverseBytesV (ReverseBytesV X , MASK) , MASK =>  X
+  // (ReverseBytesV (ReverseBytesV X MASK) MASK) => X
   if (in(1)->Opcode() == Op_ReverseBytesV) {
     if (is_predicated_vector() && in(1)->is_predicated_vector() && in(2) == in(1)->in(2)) {
       return in(1)->in(1);
     } else {
-      // ReverseBytesV (ReverseBytesV X) =>  X
+      // ReverseBytesV (ReverseBytesV X) => X
       return in(1)->in(1);
     }
   }
@@ -1968,6 +1975,14 @@ Node* XorVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
                                      bottom_type()->isa_vectmask() != NULL);
   }
   return NULL;
+}
+
+Node* VectorBlendNode::Identity(PhaseGVN* phase) {
+  // (VectorBlend X X MASK) => X
+  if (in(1) == in(2)) {
+    return in(1);
+  }
+  return this;
 }
 
 #ifndef PRODUCT

@@ -468,7 +468,7 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
                                             Settings.get().get(Settings.NODE_SHORT_TEXT, Settings.NODE_SHORT_TEXT_DEFAULT),
                                             Settings.get().get(Settings.NODE_TINY_TEXT, Settings.NODE_TINY_TEXT_DEFAULT));
             getFilterChain().apply(diagram, getSequenceFilterChain());
-            if (getFirstPosition() != getSecondPosition()) {
+            if (graph.isDiffGraph()) {
                 ColorFilter f = new ColorFilter("");
                 f.addRule(stateColorRule("same",    Color.white));
                 f.addRule(stateColorRule("changed", Color.orange));

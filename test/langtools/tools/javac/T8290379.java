@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,25 +20,33 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-#include <jni.h>
-#include <stdlib.h>
-#include <time.h>
+/*
+ * @test
+ * @bug 8290379
+ * @summary Parse error with parenthesized pattern and guard using an array
+ * @compile --enable-preview -source ${jdk.version} T8290379.java
+ * @run main/othervm --enable-preview T8290379
+ */
+public class T8290379 {
+    public static void main(String... args) {
+        assertEquals(0, test("test"));
+        assertEquals(1, test(Integer.valueOf(42)));
+    }
 
-extern "C" {
+    public static int test(Object o)
+    {
+        int[] arr = {0, 1};
 
-JNIEXPORT void JNICALL Java_gc_gctests_mallocWithGC2_mallocWithGC2_getMallocLock02
-(JNIEnv *env, jobject obj) {
-        char *c_ptr;
-        time_t current_time, old_time;
+        return switch (o) {
+            case (String s) when (arr[0] == 0) -> 0;
+            case (Integer i) when arr[1] == 1 -> 1;
+            default -> 2;
+        };
+    }
 
-        old_time = time(NULL);
-        current_time = 0;
-
-        while (current_time - old_time < 180) {
-                c_ptr = (char *) malloc(1);
-                free(c_ptr);
-                current_time = time(NULL);
+    static void assertEquals(int expected, int actual) {
+        if (expected != actual) {
+            throw new AssertionError("Expected: " + expected + ", actual: " + actual);
         }
-}
-
+    }
 }

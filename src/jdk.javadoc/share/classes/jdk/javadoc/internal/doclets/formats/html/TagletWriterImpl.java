@@ -431,24 +431,13 @@ public class TagletWriterImpl extends TagletWriter {
                     return;
                 } else if (linkEncountered) {
                     assert e != null;
-                    String line = sequence.toString();
-                    String strippedLine = line.strip();
-                    int idx = line.indexOf(strippedLine);
-                    assert idx >= 0; // because the stripped line is a substring of the line being stripped
-                    Text whitespace = Text.of(utils.normalizeNewlines(line.substring(0, idx)));
                     //disable preview tagging inside the snippets:
                     PreviewFlagProvider prevPreviewProvider = utils.setPreviewFlagProvider(el -> false);
                     try {
-                        // If the leading whitespace is not excluded from the link,
-                        // browsers might exhibit unwanted behavior. For example, a
-                        // browser might display hand-click cursor while user hovers
-                        // over that whitespace portion of the line; or use
-                        // underline decoration.
-                        c = new ContentBuilder(whitespace, htmlWriter.linkToContent(element, e, t, strippedLine));
+                        c = new ContentBuilder(htmlWriter.linkToContent(element, e, t, sequence.toString()));
                     } finally {
                         utils.setPreviewFlagProvider(prevPreviewProvider);
                     }
-                    // We don't care about trailing whitespace.
                 } else {
                     c = HtmlTree.SPAN(Text.of(text));
                     classes.forEach(((HtmlTree) c)::addStyle);

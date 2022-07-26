@@ -165,7 +165,7 @@ public class Basic {
                 new ExType("gz", List.of("application/gzip", "application/x-gzip")),
                 new ExType("jar", List.of("application/java-archive", "application/x-java-archive", "application/jar")),
                 new ExType("jpg", List.of("image/jpeg")),
-                new ExType("js", List.of("text/javascript", "application/javascript")),
+                new ExType("js", List.of("text/plain", "text/javascript", "application/javascript")),
                 new ExType("json", List.of("application/json")),
                 new ExType("markdown", List.of("text/markdown")),
                 new ExType("md", List.of("text/markdown", "application/x-genesis-rom")),
