@@ -321,7 +321,7 @@ public:
 #ifdef ASSERT
   // This object marks a critical period when writing the CDS archive. During this
   // period, the JVM must not load any new classes, so as to avoid adding new
-  // items in the SystemDictionaryShared::_dumptime_table. 
+  // items in the SystemDictionaryShared::_dumptime_table.
   class NoClassLoadingMark: public StackObj {
   public:
     NoClassLoadingMark() {
