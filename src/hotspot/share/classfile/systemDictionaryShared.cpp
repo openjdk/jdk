@@ -81,7 +81,8 @@ DumpTimeSharedClassTable* SystemDictionaryShared::_cloned_dumptime_table = NULL;
 DumpTimeLambdaProxyClassDictionary* SystemDictionaryShared::_dumptime_lambda_proxy_class_dictionary = NULL;
 DumpTimeLambdaProxyClassDictionary* SystemDictionaryShared::_cloned_dumptime_lambda_proxy_class_dictionary = NULL;
 
-DEBUG_ONLY(bool SystemDictionaryShared::_no_class_loading_should_happen = false;)
+// Used by NoClassLoadingMark
+DEBUG_ONLY(bool SystemDictionaryShared::_class_loading_may_happen = true;)
 
 InstanceKlass* SystemDictionaryShared::load_shared_class_for_builtin_loader(
                  Symbol* class_name, Handle class_loader, TRAPS) {
@@ -181,11 +182,13 @@ InstanceKlass* SystemDictionaryShared::acquire_class_for_current_thread(
 // k must not be a shared class.
 DumpTimeClassInfo* SystemDictionaryShared::get_info(InstanceKlass* k) {
   MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
+  assert(!k->is_shared(), "sanity");
   return get_info_locked(k);
 }
 
 DumpTimeClassInfo* SystemDictionaryShared::get_info_locked(InstanceKlass* k) {
   assert_lock_strong(DumpTimeTable_lock);
+  assert(!k->is_shared(), "sanity");
   DumpTimeClassInfo* info = _dumptime_table->get_info(k);
   assert(info != NULL, "must be");
   return info;
@@ -506,8 +509,7 @@ void SystemDictionaryShared::initialize() {
 
 void SystemDictionaryShared::init_dumptime_info(InstanceKlass* k) {
   MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
-  assert(!SystemDictionaryShared::no_class_loading_should_happen(),
-         "no new classes can be loaded while dumping archive");
+  assert(SystemDictionaryShared::class_loading_may_happen(), "sanity");
   _dumptime_table->allocate_info(k);
 }
 
@@ -590,7 +592,7 @@ void SystemDictionaryShared::validate_before_archiving(InstanceKlass* k) {
   ResourceMark rm;
   const char* name = k->name()->as_C_string();
   DumpTimeClassInfo* info = _dumptime_table->get(k);
-  assert(_no_class_loading_should_happen, "class loading must be disabled");
+  assert(!class_loading_may_happen(), "class loading must be disabled");
   guarantee(info != NULL, "Class %s must be entered into _dumptime_table", name);
   guarantee(!info->is_excluded(), "Should not attempt to archive excluded class %s", name);
   if (is_builtin(k)) {
@@ -648,7 +650,7 @@ public:
 };
 
 void SystemDictionaryShared::check_excluded_classes() {
-  assert(no_class_loading_should_happen(), "sanity");
+  assert(!class_loading_may_happen(), "class loading must be disabled");
   assert_lock_strong(DumpTimeTable_lock);
 
   if (DynamicDumpSharedSpaces) {
@@ -670,7 +672,7 @@ void SystemDictionaryShared::check_excluded_classes() {
 }
 
 bool SystemDictionaryShared::is_excluded_class(InstanceKlass* k) {
-  assert(_no_class_loading_should_happen, "sanity");
+  assert(!class_loading_may_happen(), "class loading must be disabled");
   assert_lock_strong(DumpTimeTable_lock);
   Arguments::assert_is_dumping_archive();
   DumpTimeClassInfo* p = get_info_locked(k);

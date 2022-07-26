@@ -199,7 +199,7 @@ private:
   static void remove_dumptime_info(InstanceKlass* k) NOT_CDS_RETURN;
   static bool has_been_redefined(InstanceKlass* k);
 
-  DEBUG_ONLY(static bool _no_class_loading_should_happen;)
+  DEBUG_ONLY(static bool _class_loading_may_happen;)
 
 public:
   static bool is_hidden_lambda_proxy(InstanceKlass* ik);
@@ -316,17 +316,20 @@ public:
   static void print_table_statistics(outputStream* st) NOT_CDS_RETURN;
   static bool is_dumptime_table_empty() NOT_CDS_RETURN_(true);
   static bool is_supported_invokedynamic(BootstrapInfo* bsi) NOT_CDS_RETURN_(false);
-  DEBUG_ONLY(static bool no_class_loading_should_happen() {return _no_class_loading_should_happen;})
+  DEBUG_ONLY(static bool class_loading_may_happen() {return _class_loading_may_happen;})
 
 #ifdef ASSERT
+  // This object marks a critical period when writing the CDS archive. During this
+  // period, the JVM must not load any new classes, so as to avoid adding new
+  // items in the SystemDictionaryShared::_dumptime_table. 
   class NoClassLoadingMark: public StackObj {
   public:
     NoClassLoadingMark() {
-      assert(!_no_class_loading_should_happen, "must not be nested");
-      _no_class_loading_should_happen = true;
+      assert(_class_loading_may_happen, "must not be nested");
+      _class_loading_may_happen = false;
     }
     ~NoClassLoadingMark() {
-      _no_class_loading_should_happen = false;
+      _class_loading_may_happen = true;
     }
   };
 #endif
