@@ -404,7 +404,8 @@ void G1PLABAllocator::flush_and_retire_stats(uint num_workers) {
     stats->add_direct_allocated(_direct_allocated[state]);
     stats->add_num_direct_allocated(_num_direct_allocations[state]);
   }
-  log_debug(gc, plab)("PLAB boost: Young %zu -> %zu refills %zu Old %zu -> %zu refills %zu",
+
+  log_trace(gc, plab)("PLAB boost: Young %zu -> %zu refills %zu Old %zu -> %zu refills %zu",
                       _g1h->alloc_buffer_stats(G1HeapRegionAttr::Young)->desired_plab_sz(num_workers), _cur_desired_plab_size[G1HeapRegionAttr::Young], _num_plab_fills[G1HeapRegionAttr::Young],
                       _g1h->alloc_buffer_stats(G1HeapRegionAttr::Old)->desired_plab_sz(num_workers), _cur_desired_plab_size[G1HeapRegionAttr::Old], _num_plab_fills[G1HeapRegionAttr::Old]);
 }
