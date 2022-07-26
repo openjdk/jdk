@@ -56,23 +56,23 @@ public class TestAutoHeaderId extends JavadocTester {
         tb.writeJavaFiles(src,
                 """
                         package p;
-                        /** 
+                        /**
                          * First sentence.
                          *
                          * <h2>First Header</h2>
-                         *     
+                         *
                          * <h3 id="fixed-id-1">Header with ID</h3>
                          *
                          * <h4><a id="fixed-id-2">Embedded A-Tag with ID</a></h4>
                          *
                          * <h5>{@code Embedded Code Tag}</h5>
-                         *     
+                         *
                          * <h6>{@linkplain C Embedded Link Tag}</h6>
-                         *     
+                         *
                          * <h3>Duplicate Text</h3>
-                         *     
+                         *
                          * <h4>Duplicate Text</h4>
-                         * 
+                         *
                          * <h2>Extra (#*!. chars</h2>
                          *
                          * <h3 style="color: red;" class="some-class">Other attributes</h3>
@@ -96,19 +96,19 @@ public class TestAutoHeaderId extends JavadocTester {
                 """
                     <h3 id="fixed-id-1">Header with ID</h3>
                     """,
-                """          
+                """
                     <h4><a id="fixed-id-2">Embedded A-Tag with ID</a></h4>
                     """,
-                """          
+                """
                     <h5 id="embedded-code-tag-hdr"><code>Embedded Code Tag</code></h5>
                     """,
-                """          
+                """
                     <h6 id="embedded-link-tag-hdr"><a href="C.html" title="class in p">Embedded Link Tag</a></h6>
                     """,
-                """          
+                """
                     <h3 id="duplicate-text-hdr">Duplicate Text</h3>
                     """,
-                """          
+                """
                     <h4 id="duplicate-text-hdr1">Duplicate Text</h4>
                     """,
                 """
