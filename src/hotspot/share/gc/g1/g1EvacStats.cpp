@@ -91,6 +91,10 @@ size_t G1EvacStats::compute_desired_plab_sz() {
 
   size_t const total_waste_allowed = used_for_waste_calculation * TargetPLABWastePct;
   size_t const cur_plab_sz = (size_t)((double)total_waste_allowed / G1LastPLABAverageOccupancy);
+
+  size_t const target_refills = (used() + cur_plab_sz - 1) / cur_plab_sz;
+  log_debug(gc,plab)("Compute PLAB: used %zu waste allowed %zu computed plab %zu refills %zu",
+                     used_for_waste_calculation, total_waste_allowed / 100, cur_plab_sz, target_refills);
   return cur_plab_sz;
 }
 

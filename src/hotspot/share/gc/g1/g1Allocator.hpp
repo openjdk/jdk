@@ -165,7 +165,9 @@ private:
   size_t _num_plab_fills[G1HeapRegionAttr::Num];
   size_t _num_direct_allocations[G1HeapRegionAttr::Num];
 
-  void flush_and_retire_stats();
+  size_t _cur_desired_plab_size[G1HeapRegionAttr::Num];
+
+  void flush_and_retire_stats(uint num_workers);
   inline PLAB* alloc_buffer(G1HeapRegionAttr dest, uint node_index) const;
   inline PLAB* alloc_buffer(region_type_t dest, uint node_index) const;
 
@@ -181,6 +183,7 @@ public:
 
   size_t waste() const;
   size_t undo_waste() const;
+  size_t lab_size(G1HeapRegionAttr which) const;
 
   // Allocate word_sz words in dest, either directly into the regions or by
   // allocating a new PLAB. Returns the address of the allocated memory, NULL if
