@@ -68,7 +68,7 @@ class XPathTestBase {
 
     static final String RAW_XML
             = "<Customers>"
-            + "    <Customer id=\"1\">"
+            + "    <Customer id=\"x1\">"
             + "        <Name>name1</Name>"
             + "        <Phone>1111111111</Phone>"
             + "        <Email id=\"x\">123@xyz.com</Email>"
@@ -78,7 +78,7 @@ class XPathTestBase {
             + "            <State>The State</State>"
             + "        </Address>"
             + "    </Customer>"
-            + "    <Customer id=\"2\">"
+            + "    <Customer id=\"x2\">"
             + "        <Name>name1</Name>"
             + "        <Phone>2222222222</Phone>"
             + "        <Email id=\"y\">123@xyz.com</Email>"
@@ -88,7 +88,7 @@ class XPathTestBase {
             + "            <State>The State</State>"
             + "        </Address>"
             + "    </Customer>"
-            + "    <Customer id=\"3\">"
+            + "    <Customer id=\"x3\">"
             + "        <Name>name1</Name>"
             + "        <Phone>3333333333</Phone>"
             + "        <Email id=\"z\">123@xyz.com</Email>"
@@ -99,6 +99,10 @@ class XPathTestBase {
             + "        </Address>"
             + "    </Customer>"
             + "</Customers>";
+
+    final int CUSTOMERS = 3;
+    final int EMAILS = CUSTOMERS;
+    final int CUSTOMER_ATTRIBUTES = 7;
 
     public static Document getDtdDocument() throws RuntimeException {
         return documentOf(DECLARATION + DTD + RAW_XML);
@@ -111,7 +115,7 @@ class XPathTestBase {
     public static Document documentOf(String xml) throws RuntimeException {
         try {
             var dBF = DocumentBuilderFactory.newInstance();
-            dBF.setValidating(true);
+            dBF.setValidating(false);
             dBF.setNamespaceAware(true);
             return dBF.newDocumentBuilder().parse(
                     new ByteArrayInputStream(xml.getBytes("UTF-8")));

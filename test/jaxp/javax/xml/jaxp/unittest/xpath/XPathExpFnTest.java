@@ -44,11 +44,11 @@ public class XPathExpFnTest extends XPathTestBase {
     @DataProvider(name = "idExpTestCases")
     public Object[][] getIdExp() {
         return new Object[][]{
-                {"id('3')", "Customer_3"},
-                {"id('1 2 3')[3]", "Customer_3"},
-                {"id('1 | 2 | 3')[3]", "Customer_3"},
+                {"id('x3')", "Customer_x3"},
+                {"id('x1 x2 x3')[3]", "Customer_x3"},
+                {"id('x1 | x2 | x3')[3]", "Customer_x3"},
                 {"id('x')", "Email_x"},
-                {"id(//Customer[3]/@id)", "Customer_3"},
+                {"id(//Customer[3]/@id)", "Customer_x3"},
                 {"id(//*[.='123@xyz.com']/@id)", "Email_x"},
         };
     }
@@ -56,34 +56,39 @@ public class XPathExpFnTest extends XPathTestBase {
     @DataProvider(name = "countExpTestCases")
     public Object[][] getCountExp() {
         return new Object[][]{
-                {"count(//Customer)", 3},
-                {"count(//@id)", 6},
-                {"count(//Customer/@id)", 3},
-                {"count(//@*)", 6},
-                {"count(//*)", 25},
-                {"count(//*[@id])", 6},
+                {"count(//Customer)", CUSTOMERS},
+                {"count(//@id)", CUSTOMERS + EMAILS},
+                {"count(//Customer/@id)", CUSTOMERS},
+                {"count(//@*)", CUSTOMERS + EMAILS},
+                {"count(//*)",
+                        1 + CUSTOMERS + CUSTOMERS * CUSTOMER_ATTRIBUTES},
+                {"count(//*[@id])", CUSTOMERS + EMAILS},
                 {"count(./*)", 1},
-                {"count(//Customer[1]/following::*)", 16},
-                {"count(//Customer[1]/following-sibling::*)", 2},
-                {"count(//Customer[3]/preceding::*)", 16},
-                {"count(//Customer[3]/preceding-sibling::*)", 2},
+                {"count(//Customer[1]/following::*)",
+                        CUSTOMERS - 1 + (CUSTOMERS - 1) * CUSTOMER_ATTRIBUTES},
+                {"count(//Customer[1]/following-sibling::*)", CUSTOMERS - 1},
+                {"count(//Customer[3]/preceding::*)",
+                        CUSTOMERS - 1 + (CUSTOMERS - 1) * CUSTOMER_ATTRIBUTES},
+                {"count(//Customer[3]/preceding-sibling::*)", CUSTOMERS - 1},
                 {"count(//Customer[1]/ancestor::*)", 1},
                 {"count(//Customer[1]/ancestor-or-self::*)", 2},
-                {"count(//Customer[1]/descendant::*)", 7},
-                {"count(//Customer[1]/descendant-or-self::*)", 8},
-                {"count(//Customer/node())", 27},
+                {"count(//Customer[1]/descendant::*)", CUSTOMER_ATTRIBUTES},
+                {"count(//Customer[1]/descendant-or-self::*)",
+                        CUSTOMER_ATTRIBUTES + 1},
+                {"count(//Customer/node())",
+                        CUSTOMERS + EMAILS + CUSTOMERS * CUSTOMER_ATTRIBUTES},
         };
     }
 
     @DataProvider(name = "positionExpTestCases")
     public Object[][] getPositionExp() {
         return new Object[][]{
-                {"//Customer[position()=1]", "Customer_1"},
-                {"//Customer[position()=last()]", "Customer_3"},
+                {"//Customer[position()=1]", "Customer_x1"},
+                {"//Customer[position()=last()]", "Customer_x3"},
                 {"//Customer[position()>1 and position()<last()]",
-                        "Customer_2"},
-                {"//Customer[position() mod 2 =0]", "Customer_2"},
-                {"//Customer[last()]", "Customer_3"},
+                        "Customer_x2"},
+                {"//Customer[position() mod 2 =0]", "Customer_x2"},
+                {"//Customer[last()]", "Customer_x3"},
         };
     }
 
