@@ -25,7 +25,6 @@
 
 package sun.security.ssl;
 
-import java.io.*;
 import java.security.*;
 import java.security.cert.*;
 import java.util.*;
