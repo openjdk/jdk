@@ -443,9 +443,9 @@ public class thread001 extends JDIBase {
                 } else {
                     log3("ERROR: else clause in detecting type of event1");
                     testExitCode = FAILED;
-                    throw new JDITestRuntimeException("** unexpected event **");
+                    throw new JDITestRuntimeException("** unexpected event ** " + event1);
                 }
-                log2("--------> got: " + event1.getClass().getName() + " index: " + index);
+                log2("--------> got: " + event1 + " index: " + index);
 
                 ThreadReference threadRef = ((LocatableEvent) event1).thread();
 
@@ -464,7 +464,8 @@ public class thread001 extends JDIBase {
 
                 int flag = 1 << index;
                 if ((flagsCopy & flag) == 0) {
-                    log3("ERROR: event duplication. flafsCopy = " + Integer.toBinaryString(flagsCopy)
+                    log3("ERROR: event duplication. event " + event1
+                            + " flagsCopy = " + Integer.toBinaryString(flagsCopy)
                             + " flag = " + Integer.toBinaryString(flag));
                     testExitCode = FAILED;
                 } else {
