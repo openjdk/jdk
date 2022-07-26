@@ -4223,9 +4223,7 @@ instruct ReplI_mem(vec dst, memory mem) %{
   format %{ "replicateI $dst,$mem" %}
   ins_encode %{
     int vlen_enc = vector_length_encoding(this);
-    if (VM_Version::supports_avx2()) {
-      __ vpbroadcastd($dst$$XMMRegister, $mem$$Address, vlen_enc);
-    } else if (VM_Version::supports_avx()) {
+    if (VM_Version::supports_avx()) {
       __ vbroadcastss($dst$$XMMRegister, $mem$$Address, vlen_enc);
     } else {
       __ movdl($dst$$XMMRegister, $mem$$Address);
