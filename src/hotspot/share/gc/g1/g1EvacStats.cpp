@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,11 +32,11 @@
 
 void G1EvacStats::log_plab_allocation() {
   log_debug(gc, plab)("%s PLAB allocation: "
-                      "allocated: " SIZE_FORMAT "B, "
-                      "wasted: " SIZE_FORMAT "B, "
-                      "unused: " SIZE_FORMAT "B, "
-                      "used: " SIZE_FORMAT "B, "
-                      "undo waste: " SIZE_FORMAT "B, ",
+                      "allocated: %zuB, "
+                      "wasted: %zuB, "
+                      "unused: %zuB, "
+                      "used: %zuB, "
+                      "undo waste: %zuB, ",
                       _description,
                       _allocated * HeapWordSize,
                       _wasted * HeapWordSize,
@@ -44,11 +44,11 @@ void G1EvacStats::log_plab_allocation() {
                       used() * HeapWordSize,
                       _undo_wasted * HeapWordSize);
   log_debug(gc, plab)("%s other allocation: "
-                      "region end waste: " SIZE_FORMAT "B, "
+                      "region end waste: %zuB, "
                       "regions filled: %u, "
-                      "direct allocated: " SIZE_FORMAT "B, "
-                      "failure used: " SIZE_FORMAT "B, "
-                      "failure wasted: " SIZE_FORMAT "B",
+                      "direct allocated: %zuB, "
+                      "failure used: %zuB, "
+                      "failure wasted: %zuB",
                       _description,
                       _region_end_waste * HeapWordSize,
                       _regions_filled,
@@ -59,14 +59,14 @@ void G1EvacStats::log_plab_allocation() {
 
 void G1EvacStats::log_sizing(size_t calculated_words, size_t net_desired_words) {
   log_debug(gc, plab)("%s sizing: "
-                      "calculated: " SIZE_FORMAT "B, "
-                      "actual: " SIZE_FORMAT "B",
+                      "calculated: %zuB, "
+                      "actual: %zuB",
                       _description,
                       calculated_words * HeapWordSize,
                       net_desired_words * HeapWordSize);
 }
 
-size_t G1EvacStats::compute_desired_plab_sz() {
+size_t G1EvacStats::compute_desired_plab_size() const {
   // The size of the PLAB caps the amount of space that can be wasted at the
   // end of the collection. In the worst case the last PLAB could be completely
   // empty.
@@ -106,15 +106,14 @@ size_t G1EvacStats::compute_desired_plab_sz() {
   size_t const used_for_waste_calculation = used() > _region_end_waste ? used() - _region_end_waste : 0;
 
   size_t const total_waste_allowed = used_for_waste_calculation * TargetPLABWastePct;
-  size_t const cur_plab_sz = (size_t)((double)total_waste_allowed / G1LastPLABAverageOccupancy);
-  return cur_plab_sz;
+  return (size_t)((double)total_waste_allowed / G1LastPLABAverageOccupancy);
 }
 
 G1EvacStats::G1EvacStats(const char* description, size_t default_per_thread_plab_size, unsigned wt) :
   PLABStats(description),
-  _default_plab_sz(default_per_thread_plab_size),
-  _desired_net_plab_sz(default_per_thread_plab_size * ParallelGCThreads),
-  _filter(wt),
+  _default_plab_size(default_per_thread_plab_size),
+  _desired_net_plab_size(default_per_thread_plab_size * ParallelGCThreads),
+  _net_plab_size_filter(wt),
   _region_end_waste(0),
   _regions_filled(0),
   _direct_allocated(0),
@@ -123,42 +122,35 @@ G1EvacStats::G1EvacStats(const char* description, size_t default_per_thread_plab
 }
 
 // Calculates plab size for current number of gc worker threads.
-size_t G1EvacStats::desired_plab_sz(uint no_of_gc_workers) {
+size_t G1EvacStats::desired_plab_size(uint no_of_gc_workers) const {
   if (!ResizePLAB) {
-      return _default_plab_sz;
+      return _default_plab_size;
   }
-  return align_object_size(clamp(_desired_net_plab_sz / no_of_gc_workers, min_size(), max_size()));
+  return align_object_size(clamp(_desired_net_plab_size / no_of_gc_workers, min_size(), max_size()));
 }
 
-// Compute desired plab size for one gc worker thread and latch result for later
-// use. This should be called once at the end of parallel
-// scavenge; it clears the sensor accumulators.
-void G1EvacStats::adjust_desired_plab_sz() {
+void G1EvacStats::adjust_desired_plab_size() {
   log_plab_allocation();
 
-  if (!ResizePLAB) {
-    // Clear accumulators for next round.
-    reset();
-    return;
+  if (ResizePLAB) {
+    assert(is_object_aligned(max_size()) && min_size() <= max_size(),
+           "PLAB clipping computation may be incorrect");
+
+    assert(_allocated != 0 || _unused == 0,
+           "Inconsistency in PLAB stats: "
+           "_allocated: %zu, "
+           "_wasted: %zu, "
+           "_unused: %zu, "
+           "_undo_wasted: %zu",
+           _allocated, _wasted, _unused, _undo_wasted);
+
+    size_t plab_size = compute_desired_plab_size();
+    // Take historical weighted average
+    _net_plab_size_filter.sample(plab_size);
+    _desired_net_plab_size = MAX2(min_size(), (size_t)_net_plab_size_filter.average());
+
+    log_sizing(plab_size, _desired_net_plab_size);
   }
-
-  assert(is_object_aligned(max_size()) && min_size() <= max_size(),
-         "PLAB clipping computation may be incorrect");
-
-  assert(_allocated != 0 || _unused == 0,
-         "Inconsistency in PLAB stats: "
-         "_allocated: " SIZE_FORMAT ", "
-         "_wasted: " SIZE_FORMAT ", "
-         "_unused: " SIZE_FORMAT ", "
-         "_undo_wasted: " SIZE_FORMAT,
-         _allocated, _wasted, _unused, _undo_wasted);
-
-  size_t plab_sz = compute_desired_plab_sz();
-  // Take historical weighted average
-  _filter.sample(plab_sz);
-  _desired_net_plab_sz = MAX2(min_size(), (size_t)_filter.average());
-
-  log_sizing(plab_sz, _desired_net_plab_sz);
   // Clear accumulators for next round
   reset();
 }

@@ -26,7 +26,6 @@
 #define SHARE_GC_SHARED_PLAB_HPP
 
 #include "gc/shared/collectedHeap.hpp"
-#include "gc/shared/gcUtil.hpp"
 #include "memory/allocation.hpp"
 #include "utilities/globalDefinitions.hpp"
 
