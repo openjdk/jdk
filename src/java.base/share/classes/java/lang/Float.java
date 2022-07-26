@@ -1117,62 +1117,47 @@ public final class Float extends Number
             return sign_bit; // Positive or negative zero
         }
 
-        // Dealing with finite values in exponent range of
-        // binary16 (when rounding is done, could still round up)
+        // Dealing with finite values in exponent range of binary16
+        // (when rounding is done, could still round up)
         int exp = Math.getExponent(f);
         assert -25 <= exp && exp <= 15;
-        short signif_bits;
 
-        if (exp <= -15) { // scale down to float subnormal range to do rounding
-            // Use a float multiply to compute the correct trailing
-            // significand bits for a binary16 subnormal.
-            //
-            // The exponent range of normalized binary16 subnormal
-            // values is [-24, -15]. The exponent range of float
-            // subnormals is [-149, -140]. Multiply abs_f down by
-            // 2^(-125) -- since (-125 = -149 - (-24)) -- so that the
-            // trailing bits of a subnormal float represent the
-            // correct trailing bits of a binary16 subnormal.
-            exp = -15; // Subnormal encoding using -E_max.
-            float f_adjust = abs_f * 0x1.0p-125f;
+        // For binary16 subnormals, beside forcing exp to -15, retain
+        // the difference expdelta = E_min - exp.  This is the excess
+        // shift value, in addition to 13, to be used in the
+        // computations below.  Further the (hidden) msb with value 1
+        // in f must be involved as well.
+        int expdelta = 0;
+        int msb = 0x0000_0000;
+        if (exp < -14) {
+            expdelta = -14 - exp;
+            exp = -15;
+            msb = 0x0080_0000;
+        }
+        int f_signif_bits = doppel & 0x007f_ffff | msb;
 
-            // In case the significand rounds up and has a carry
-            // propagate all the way up, take the bottom 11 bits
-            // rather than bottom 10 bits. Adding this value, rather
-            // than OR'ing this value, will cause the right exponent
-            // adjustment.
-            signif_bits = (short)(Float.floatToRawIntBits(f_adjust) & 0x07ff);
-        } else {
-            // All remaining values of f are in the normalized range
-            // of binary16 (which is also in the normalized range of
-            // float).
+        // Significand bits as if using rounding to zero (truncation).
+        short signif_bits = (short)(f_signif_bits >> (13 + expdelta));
 
-            // Significand bits as if using rounding to zero (truncation).
-            signif_bits = (short)((doppel & 0x007f_e000) >>
-                                  (FloatConsts.SIGNIFICAND_WIDTH - 11));
+        // For round to nearest even, determining whether or not to
+        // round up (in magnitude) is a function of the least
+        // significant bit (LSB), the next bit position (the round
+        // position), and the sticky bit (whether there are any
+        // nonzero bits in the exact result to the right of the round
+        // digit). An increment occurs in three cases:
+        //
+        // LSB  Round Sticky
+        // 0    1     1
+        // 1    1     0
+        // 1    1     1
+        // See "Computer Arithmetic Algorithms," Koren, Table 4.9
 
-            // For round to nearest even, determining whether or not
-            // to round up (in magnitude) is a function of the least
-            // significant bit (LSB), the next bit position (the round
-            // position), and the sticky bit (whether there are any
-            // nonzero bits in the exact result to the right of the
-            // round digit). An increment occurs in three cases:
-            //
-            // LSB  Round Sticky
-            // 0    1     1
-            // 1    1     0
-            // 1    1     1
-            // See "Computer Arithmetic Algorithms," Koren, Table 4.9
+        int lsb    = f_signif_bits & (1 << 13 + expdelta);
+        int round  = f_signif_bits & (1 << 12 + expdelta);
+        int sticky = f_signif_bits & ((1 << 12 + expdelta) - 1);
 
-            // Bits of binary16 significand in a float: 0x0007f_e000;
-            // therefore, the other quantities of interest are:
-            int lsb   =  doppel & 0x0000_2000;
-            int round =  doppel & 0x0000_1000;
-            int sticky = doppel & 0x0000_0fff;
-
-            if (round != 0 && ((lsb | sticky) != 0 )) {
-                signif_bits++;
-            }
+        if (round != 0 && ((lsb | sticky) != 0 )) {
+            signif_bits++;
         }
 
         // No bits set in significand beyond the *first* exponent bit,
