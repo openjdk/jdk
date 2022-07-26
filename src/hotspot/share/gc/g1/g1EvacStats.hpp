@@ -68,8 +68,8 @@ public:
   // Calculates plab size for current number of gc worker threads.
   size_t desired_plab_size(uint no_of_gc_workers) const;
 
-  // Updates the current desired PLAB size. Computes the new desired PLAB size with
-  // one gc worker thread, updates _desired_plab_sz and clears sensor accumulators.
+  // Computes the new desired PLAB size assuming one gc worker thread, updating
+  // _desired_plab_sz, and clearing statistics for the next GC.
   // Should be called at the end of a GC pause.
   void adjust_desired_plab_size();
 
