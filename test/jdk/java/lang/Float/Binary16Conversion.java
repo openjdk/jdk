@@ -415,11 +415,8 @@ public class Binary16Conversion {
         }
 
         public static boolean equivalent(short bin16_1, short bin16_2) {
-            if (bin16_1 == bin16_2) {
-                return true;
-            } else {
-                return isNaN(bin16_1) ? isNaN(bin16_2) : false;
-            }
+            return (bin16_1 == bin16_2) ||
+                isNaN(bin16_1) && isNaN(bin16_2);
         }
     }
 }
