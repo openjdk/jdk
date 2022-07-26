@@ -29,7 +29,11 @@
 
 // Records various memory allocation statistics gathered during evacuation.
 class G1EvacStats : public PLABStats {
- private:
+  size_t _default_plab_sz;
+  size_t _desired_net_plab_sz;// Output of filter (below), suitably trimmed and quantized
+  AdaptiveWeightedAverage
+         _filter;             // Integrator with decay
+
   size_t _region_end_waste; // Number of words wasted due to skipping to the next region.
   uint   _regions_filled;   // Number of regions filled completely.
   size_t _direct_allocated; // Number of words allocated directly into the regions.
@@ -51,14 +55,20 @@ class G1EvacStats : public PLABStats {
     _failure_waste = 0;
   }
 
-  virtual void log_plab_allocation();
+  void log_plab_allocation();
+  void log_sizing(size_t calculated_words, size_t net_desired_words);
 
-  virtual size_t compute_desired_plab_sz();
+  size_t compute_desired_plab_sz();
 
- public:
+public:
   G1EvacStats(const char* description, size_t default_per_thread_plab_size, unsigned wt);
 
-  ~G1EvacStats();
+  // Calculates plab size for current number of gc worker threads.
+  size_t desired_plab_sz(uint no_of_gc_workers);
+
+  // Updates the current desired PLAB size. Computes the new desired PLAB size with one gc worker thread,
+  // updates _desired_plab_sz and clears sensor accumulators.
+  void adjust_desired_plab_sz();
 
   uint regions_filled() const { return _regions_filled; }
   size_t region_end_waste() const { return _region_end_waste; }
