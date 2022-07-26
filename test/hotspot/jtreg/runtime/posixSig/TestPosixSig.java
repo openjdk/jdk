@@ -59,7 +59,7 @@ public class TestPosixSig {
             // Start the process and check the output
             OutputAnalyzer output = new OutputAnalyzer(pb.start());
             String outputString = output.getOutput();
-            if (!occursOnce(outputString, "SIGPIPE: sig_handler in ") ||
+            if (!occursOnce(outputString, "SIGFPE: sig_handler in ") ||
                 !occursOnce(outputString, "SIGILL: sig_handler in ")) {
                 System.out.println("output: " + outputString);
                 throw new RuntimeException("Test failed, bad output.");
@@ -68,8 +68,8 @@ public class TestPosixSig {
 
 	} else {
             System.loadLibrary("TestPsig");
-            TestPosixSig.changeSigActionFor(13); // SIGPIPE
-            TestPosixSig.changeSigActionFor(4);  // SIGILL
+            TestPosixSig.changeSigActionFor(8); // SIGFPE
+            TestPosixSig.changeSigActionFor(4); // SIGILL
             Thread.sleep(600);
         }
     }
