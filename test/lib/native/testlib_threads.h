@@ -75,6 +75,8 @@ void run_in_new_thread(PROCEDURE proc, void* context) {
         fatal("failed to create thread", GetLastError());
     }
     if (WaitForSingleObject(thread, INFINITE) != WAIT_OBJECT_0) {
+        // Should be WAIT_FAILED, since this is not a mutex, and
+        // we set no timeout.
         fatal("failed to join thread", GetLastError());
     }
 #else
