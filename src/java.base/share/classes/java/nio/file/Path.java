@@ -32,7 +32,6 @@ import java.nio.file.spi.FileSystemProvider;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Objects;
-import java.util.Optional;
 
 /**
  * An object that may be used to locate a file in a file system. It will
@@ -258,53 +257,57 @@ public interface Path
     Path getFileName();
 
     /**
-     * Returns the file name extension of this path as an
-     * {@code Optional<String>}. The extension is defined to be the portion
-     * of the {@code String} representation of the file name after the last
-     * dot ('.'). All leading dots are ignored. If the extension is missing,
-     * then an {@link Optional#empty empty} {@code Optional} is returned. This
-     * will occur if the path has zero elements ({@link #getFileName()} returns
-     * {@code null}), the file name string does not contain a dot, or only the
-     * first character is a dot. If the last character is a dot, the extension
-     * is the empty string.
+     * Returns the file name extension of this path as a {@code String}. The
+     * extension is defined to be the portion of the {@code String}
+     * representation of the file name after the last dot ('.'). All leading
+     * dots are ignored. If the extension is missing, then an
+     * {@link String#isEmpty() empty} {@code String} ({@code ""}) is returned.
+     * This will occur if the path has zero elements ({@link #getFileName()}
+     * returns {@code null}), the file name string does not contain a dot, or
+     * only the first character is a dot. If the last character is a dot, the
+     * extension is the empty string.
      *
      * @implSpec
      * The default implementation is equivalent for this path to:
      * <pre>{@code
+     * int lastDot = fileName.lastIndexOf('.');
      * if (lastDot <= 0)
-     *     return Optional.empty();
-     * return lastDot == name.length() - 1 ?
-     *     Optional.of("") :
-     *     Optional.of(name.substring(lastDot + 1));
+     *     return null;
+     * return lastDot == fileName.length() - 1 ?
+     *     "" :
+     *     fileName.substring(lastDot + 1);
      * }</pre>
      *
-     * @return  an {@code Optional} which either contains the file name
-     *          extension of this path, which might be the empty string,
-     *          or equals {@link Optional#empty} if no extension is found
+     * @return  the file name extension of this path, which might be the
+     *          empty string, or {@code null} if no extension is found
      *
      * @since 20
      */
-    default Optional<String> getExtension() {
+    default String getExtension() {
         Path fileName = getFileName();
-        if (fileName == null) {
-            return Optional.empty();
-        }
+        if (fileName == null)
+            return "";
 
         String fileNameString = fileName.toString();
         int length = fileNameString.length();
 
-        // Indeterminate if fileNameString is too short
+        // A file name string of length unity has a null extension
         if (length > 2) {
             int lastDotIndex = fileNameString.lastIndexOf('.');
             // Indeterminate if no dot or only at first index
             if (lastDotIndex > 0) {
                 return lastDotIndex == length - 1 ?
-                    Optional.of("") : // empty string if last dot at last index
-                    Optional.of(fileNameString.substring(lastDotIndex + 1));
+                    "" : // empty string if last dot at last index
+                    fileNameString.substring(lastDotIndex + 1);
             }
+        } else if (length == 2 &&
+                   !(fileNameString.charAt(0) == '.' ||
+                     fileNameString.charAt(1) != '.')) {
+            // fileNameString is of the form "x." where 'x' != '.'
+            return "";
         }
 
-        return Optional.empty();
+        return null;
     }
 
     /**

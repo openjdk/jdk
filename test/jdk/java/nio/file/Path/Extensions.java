@@ -23,7 +23,6 @@
 
 import java.nio.file.Path;
 import java.util.Arrays;
-import java.util.Optional;
 
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
@@ -36,13 +35,6 @@ import org.testng.annotations.Test;
  * @run testng Extensions
  */
 public class Extensions {
-    private static final Optional EMPTY = Optional.empty();
-    private static final Optional EMPTY_STRING = of("");
-
-    private static Optional<String> of(String s) {
-        return Optional.of(s);
-    }
-
     /**
      * Returns path name string and expected extension pairs.
      *
@@ -51,41 +43,44 @@ public class Extensions {
     @DataProvider
     static Object[][] getProvider() {
         Object[][] pairs = {
-            {".",              EMPTY},
-            {"..",             EMPTY},
-            {".a.b",           of("b")},
-            {"......",         EMPTY_STRING},
-            {".....a",         of("a")},
-            {"...a.b",         of("b")},
-            {"..foo",          of("foo")},
-            {"test.rb",        of("rb")},
-            {"a/b/d/test.rb" , of("rb")},
-            {".a/b/d/test.rb", of("rb")},
-            {"foo.",           EMPTY_STRING},
-            {"test",           EMPTY},
-            {".profile",       EMPTY},
-            {".profile.sh",    of("sh")},
-            {"..foo",          of("foo")},
-            {".....foo",       of("foo")},
-            {".vimrc",         EMPTY},
-            {"test.",          EMPTY_STRING},
-            {"test..",         EMPTY_STRING},
-            {"test...",        EMPTY_STRING},
-            {"foo.tar.gz",     of("gz")},
-            {"foo.bar.",       EMPTY_STRING},
-            {"image.jpg",      of("jpg")},
-            {"music.mp3",      of("mp3")},
-            {"video.mp4",      of("mp4")},
-            {"document.txt",   of("txt")},
-            {"x.zip",          of("zip")},
-            {"y.gzip",         of("gzip")},
-            {"z.jar",          of("jar")},
+            {".",              null},
+            {"..",             null},
+            {".a",             null},
+            {"a.",             ""},
+            {"aa",             null},
+            {".a.b",           "b"},
+            {"......",         ""},
+            {".....a",         "a"},
+            {"...a.b",         "b"},
+            {"..foo",          "foo"},
+            {"test.rb",        "rb"},
+            {"a/b/d/test.rb" , "rb"},
+            {".a/b/d/test.rb", "rb"},
+            {"foo.",           ""},
+            {"test",           null},
+            {".profile",       null},
+            {".profile.sh",    "sh"},
+            {"..foo",          "foo"},
+            {".....foo",       "foo"},
+            {".vimrc",         null},
+            {"test.",          ""},
+            {"test..",         ""},
+            {"test...",        ""},
+            {"foo.tar.gz",     "gz"},
+            {"foo.bar.",       ""},
+            {"image.jpg",      "jpg"},
+            {"music.mp3",      "mp3"},
+            {"video.mp4",      "mp4"},
+            {"document.txt",   "txt"},
+            {"x.zip",          "zip"},
+            {"y.gzip",         "gzip"},
+            {"z.jar",          "jar"},
         };
         return pairs;
     }
 
     @Test(dataProvider = "getProvider")
-    public static void get(String pathname, Optional<String> extension) {
+    public static void get(String pathname, String extension) {
         Assert.assertEquals(Path.of(pathname).getExtension(), extension);
     }
 }
