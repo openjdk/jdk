@@ -38,7 +38,7 @@ import java.util.stream.Collectors;
 public final class TransformedContentExtension extends Extension {
 
     public static final char SINGLETON = 't';
-    private static final Pattern FIELD = Pattern.compile("[-_]?(?<fsep>[a-zA-Z]\\d)[-_](?<fval>([-_]?\\w{3,8})+)");
+    private static final Pattern FIELD = Pattern.compile("-?(?<fsep>[a-zA-Z]\\d)-(?<fval>(-?\\w{3,8})+)");
     private final String sourceLang;
     private final SortedSet<Field> fields;
 
@@ -74,11 +74,11 @@ public final class TransformedContentExtension extends Extension {
         }
 
         // set the canonical ID as the value
-        var sourceLangStr = (sourceLang != null) ? sourceLang : "";
+        var sourceLangStr = sourceLang != null ? sourceLang : "";
         var fieldsStr = fields.stream()
             .map(f -> f.fsep() + "-" + f.fval())
             .collect(Collectors.joining("-"));
-        var delim = (!sourceLangStr.isEmpty() && !fieldsStr.isEmpty()) ? "-" : "";
+        var delim = sourceLangStr.isEmpty() || fieldsStr.isEmpty() ? "" : "-";
         setValue(sourceLangStr + delim + fieldsStr);
     }
 

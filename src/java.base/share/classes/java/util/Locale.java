@@ -233,7 +233,7 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * implementations in a Java Runtime Environment might not support any
  * particular Unicode locale attributes or key/type pairs.
  *
- * <h2><a id="t_extension">Transformed Content extension</a></h2>
+ * <h2><a id="t_extension">Transformed Content - T extension</a></h2>
  * <a href="https://datatracker.ietf.org/doc/html/rfc6497">RFC 6497</a>
  * specifies an extension to BCP 47 that provides subtags for specifying
  * the source language or script of transformed content. Transformed content
@@ -262,8 +262,8 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * or one {@code field} must be included. See the example above. Each {@code field} consists of a
  * field separator (one alpha + one digit), followed by one or more subtags of the length 3 to 8,
  * each delimited by a hyphen.
- * <p>The transformed content information {@code source} language tag and {@code fields} are returned
- * from a {@code Locale}, either via {@link #getExtension(char)} with
+ * <p>The transformed content information; namely {@code source} language tag and {@code fields}
+ * are returned from a {@code Locale}, either via {@link #getExtension(char)} with
  * {@link #TRANSFORMED_CONTENT_EXTENSION} which returns the string
  * representation of the transformed content, or via the methods {@link #getTransformedContentSource()}
  * and {@link #getTransformedContentFields()}.
@@ -273,8 +273,8 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * {@link #TRANSFORMED_CONTENT_EXTENSION}. Although the Unicode Consortium maintains the valid field
  * separators and their valid subtags in <a href="http://www.unicode.org/reports/tr35/#BCP47_T_Extension">
  *     3.7 Unicode BCP 47 T Extension</a>, these methods do not check the validity,
- * only the well-formed check is done on creating a locale object with T extension.
- * <p>For more detail about the Transformed Content extension, refer to
+ * only the well-formed check is done on creating a locale object with the transformed content extension.
+ * <p>For more detail about the transformed content extension, refer to
  * <a href="https://datatracker.ietf.org/doc/html/rfc6497">
  *     BCP 47 Extension T - Transformed Content</a>
  *
@@ -1506,11 +1506,10 @@ public final class Locale implements Cloneable, Serializable {
     }
 
     /**
-     * Returns the locale representing the source language tag of
+     * {@return the locale representing the source language tag of
      * the transformed content extension in this locale, or
-     * {@code null} if it does not contain it.
+     * {@code null} if it does not contain it}
      *
-     * @return The locale representing the source language tag
      * @since 20
      */
     public Locale getTransformedContentSource() {
@@ -1523,13 +1522,12 @@ public final class Locale implements Cloneable, Serializable {
     }
 
     /**
-     * Returns the map of fields in the T extension of this
-     * locale, or an empty map if it has no T extension fields.
+     * {@return the map of fields in the transformed content extension of this
+     * locale, or an empty map if it has no transformed content extension fields}
      * The returned map contains entries for each field separator
      * and its subtags. If there are multiple subtags in the map value,
      * subtags are delimited by a hyphen. The returned map is unmodifiable.
      *
-     * @return The map of fields in the T extension
      * @since 20
      */
     public Map<String, String> getTransformedContentFields() {
@@ -2926,7 +2924,7 @@ public final class Locale implements Cloneable, Serializable {
          * or one {@code field} must be included. Each {@code field} consists of a
          * field separator (one alpha + one digit), followed by one or more subtags of
          * the length 3 to 8, each delimited by a hyphen. For the detailed
-         * specification for the well-formed T extension, refer to
+         * specification for the well-formed transformed content extension, refer to
          * <a href="https://datatracker.ietf.org/doc/html/rfc6497">RFC 6497: BCP 47 Extension
          * T - Transformed Content</a>.
          *
