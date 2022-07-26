@@ -62,7 +62,6 @@ import sun.util.locale.LocaleObjectCache;
 import sun.util.locale.LocaleSyntaxException;
 import sun.util.locale.LocaleUtils;
 import sun.util.locale.ParseStatus;
-import sun.util.locale.TransformedContentExtension;
 import sun.util.locale.provider.LocaleProviderAdapter;
 import sun.util.locale.provider.LocaleResources;
 import sun.util.locale.provider.LocaleServiceProviderPool;
@@ -262,11 +261,9 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * or one {@code field} must be included. See the example above. Each {@code field} consists of a
  * field separator (one alpha + one digit), followed by one or more subtags of the length 3 to 8,
  * each delimited by a hyphen.
- * <p>The transformed content information; namely {@code source} language tag and {@code fields}
- * are returned from a {@code Locale}, either via {@link #getExtension(char)} with
- * {@link #TRANSFORMED_CONTENT_EXTENSION} which returns the string
- * representation of the transformed content, or via the methods {@link #getTransformedContentSource()}
- * and {@link #getTransformedContentFields()}.
+ * <p>The transformed content information, namely {@code source} language tag and {@code fields}
+ * are returned from a {@code Locale} via {@link #getExtension(char)} with
+ * {@link #TRANSFORMED_CONTENT_EXTENSION}.
  * <p>To create a locale object that contains the transformed content extension, either use
  * the factory method {@link #forLanguageTag(String)} or use
  * {@link Locale.Builder#setExtension(char, String)} with
@@ -1503,41 +1500,6 @@ public final class Locale implements Cloneable, Serializable {
             return Collections.emptySet();
         }
         return localeExtensions.getUnicodeLocaleKeys();
-    }
-
-    /**
-     * {@return the locale representing the source language tag of
-     * the transformed content extension in this locale, or
-     * {@code null} if it does not contain it}
-     *
-     * @since 20
-     */
-    public Locale getTransformedContentSource() {
-        if (hasExtensions()) {
-            return localeExtensions.getTransformedContentSource()
-                    .map(Locale::forLanguageTag)
-                    .orElse(null);
-        }
-        return null;
-    }
-
-    /**
-     * {@return the map of fields in the transformed content extension of this
-     * locale, or an empty map if it has no transformed content extension fields}
-     * The returned map contains entries for each field separator
-     * and its subtags. If there are multiple subtags in the map value,
-     * subtags are delimited by a hyphen. The returned map is unmodifiable.
-     *
-     * @since 20
-     */
-    public Map<String, String> getTransformedContentFields() {
-        if (hasExtensions()) {
-            return localeExtensions.getTransformedContentFields().stream()
-                    .collect(Collectors.toUnmodifiableMap(
-                        TransformedContentExtension.Field::fsep,
-                        TransformedContentExtension.Field::fval));
-        }
-        return Collections.emptyMap();
     }
 
     /**

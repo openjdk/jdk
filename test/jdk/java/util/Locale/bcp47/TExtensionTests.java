@@ -99,17 +99,6 @@ public class TExtensionTests {
         };
     }
 
-    @DataProvider
-    Object[][] data_Fields() {
-        return new Object[][]{
-                {L1, Map.of("m0", "ungegn-2007")},
-                {L2, Map.of("t0", "und")},
-                {L3, Map.of("h0", "hybrid")},
-                {L4, Map.of("s0", "ascii", "d0", "fwidth")},
-                {L5, Map.of("s0", "ascii-hex", "d0", "fwidth")},
-        };
-    }
-
     @Test(dataProvider="data_TExtension")
     public void test_GetExtension(Locale locale, String expected) {
         assertEquals(locale.getExtension(Locale.TRANSFORMED_CONTENT_EXTENSION), expected);
@@ -181,16 +170,5 @@ public class TExtensionTests {
             // success
             System.out.println("IllformedLocaleException thrown correctly: " + ile.getMessage());
         }
-    }
-
-    @Test(dataProvider="data_TExtension")
-    public void test_getTransformedContentSource(Locale locale, String ext) {
-        var expected = ext.replaceFirst("-?[a-zA-Z]\\d-.*", "");
-        assertEquals(locale.getTransformedContentSource(), expected.isEmpty() ? null : Locale.forLanguageTag(expected));
-    }
-
-    @Test(dataProvider="data_Fields")
-    public void test_getTransformedContentFields(Locale locale, Map<String, String> fields) {
-        assertEquals(locale.getTransformedContentFields(), fields);
     }
 }
