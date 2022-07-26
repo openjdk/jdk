@@ -665,9 +665,9 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_REPRODUCIBLE_BUILD],
       with_source_date_present=true
       AC_MSG_RESULT([$SOURCE_DATE, from SOURCE_DATE_EPOCH])
     else
-      # Tell the makefiles to update at each build
-      SOURCE_DATE=updated
-      AC_MSG_RESULT([determined at build time (default)])
+      # Tell makefiles to take the time from configure
+      SOURCE_DATE=$($DATE +"%s")
+      AC_MSG_RESULT([$SOURCE_DATE, from 'current' (default)])
     fi
   elif test "x$with_source_date" = xupdated; then
     SOURCE_DATE=updated
