@@ -1113,7 +1113,7 @@ public final class Float extends Number
 
         // Smallest magnitude nonzero representable binary16 value
         // is equal to 0x1.0p-24; half-way and smaller rounds to zero.
-        if (abs_f <= 0x1.0p-25f) { // Covers float zeros and subnormals.
+        if (abs_f <= 0x1.0p-24f * 0.5f) { // Covers float zeros and subnormals.
             return sign_bit; // Positive or negative zero
         }
 
