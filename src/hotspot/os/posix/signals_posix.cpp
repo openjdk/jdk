@@ -803,8 +803,8 @@ static void SR_handler(int sig, siginfo_t* siginfo, ucontext_t* context);
 
 // Semantically compare two sigaction structures. Return true if they are referring to
 // the same handler, using the same flags.
-static bool are_handlers_equal(const struct sigaction* sa,
-                               const struct sigaction* expected_sa) {
+static bool are_actions_equal(const struct sigaction* sa,
+                              const struct sigaction* expected_sa) {
   address this_handler = get_signal_handler(sa);
   address expected_handler = get_signal_handler(expected_sa);
   const int this_flags = get_sanitized_sa_flags(sa);
@@ -840,7 +840,7 @@ static bool check_signal_handler(int sig) {
 
   // Compare both sigaction structures (intelligently; only the members we care about).
   // Ignore if the handler is our own crash handler.
-  if (!are_handlers_equal(&act, expected_act) &&
+  if (!are_actions_equal(&act, expected_act) &&
       !(HANDLER_IS(get_signal_handler(&act), VMError::crash_handler_address))) {
     tty->print_cr("Warning: %s handler modified!", os::exception_name(sig, buf, sizeof(buf)));
     // If we had a mismatch:
@@ -1422,7 +1422,7 @@ void PosixSignals::print_signal_handler(outputStream* st, int sig,
   if (expected_act != NULL) {
     const address current_handler = get_signal_handler(&current_act);
     if (!(HANDLER_IS(current_handler, VMError::crash_handler_address))) {
-      if (!are_handlers_equal(&current_act, expected_act)) {
+      if (!are_actions_equal(&current_act, expected_act)) {
         st->print_cr("  *** Handler was modified!");
         st->print   ("  *** Expected: ");
         print_single_signal_handler(st, expected_act, buf, buflen);

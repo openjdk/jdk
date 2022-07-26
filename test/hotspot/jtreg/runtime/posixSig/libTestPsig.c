@@ -37,7 +37,7 @@ void sig_handler(int sig, siginfo_t *info, ucontext_t *context) {
     printf( " HANDLER (1) " );
 }
 
-JNIEXPORT void JNICALL Java_TestPsig_doSomething(JNIEnv *env, jclass klass, jint val) {
+JNIEXPORT void JNICALL Java_TestPosixSig_changeSigActionFor(JNIEnv *env, jclass klass, jint val) {
     struct sigaction act;
     act.sa_handler = (void (*)())sig_handler;
     sigemptyset(&act.sa_mask);
