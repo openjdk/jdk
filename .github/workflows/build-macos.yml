@@ -49,7 +49,7 @@ on:
 jobs:
   build-macos:
     name: build
-    runs-on: macos-10.15
+    runs-on: macos-11
 
     strategy:
       fail-fast: false
