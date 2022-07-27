@@ -741,12 +741,12 @@ extern "C" void pf(uintptr_t sp, uintptr_t fp, uintptr_t pc,
     reg_map = NEW_C_HEAP_OBJ(RegisterMap, mtInternal);
     ::new (reg_map) RegisterMap((JavaThread*)thread,
                                 RegisterMap::UpdateMap::skip,
-                                RegisterMap::ProcessFrames::yes,
+                                RegisterMap::ProcessFrames::include,
                                 RegisterMap::WalkContinuation::skip);
   } else {
     *reg_map = RegisterMap((JavaThread*)thread,
                            RegisterMap::UpdateMap::skip,
-                           RegisterMap::ProcessFrames::yes,
+                           RegisterMap::ProcessFrames::include,
                            RegisterMap::WalkContinuation::skip);
   }
 

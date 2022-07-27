@@ -65,7 +65,7 @@ static bool caller_is_deopted() {
   JavaThread* thread = JavaThread::current();
   RegisterMap reg_map(thread,
                       RegisterMap::UpdateMap::skip,
-                      RegisterMap::ProcessFrames::yes,
+                      RegisterMap::ProcessFrames::include,
                       RegisterMap::WalkContinuation::skip);
   frame runtime_frame = thread->last_frame();
   frame caller_frame = runtime_frame.sender(&reg_map);
@@ -79,7 +79,7 @@ static void deopt_caller() {
     JavaThread* thread = JavaThread::current();
     RegisterMap reg_map(thread,
                         RegisterMap::UpdateMap::skip,
-                        RegisterMap::ProcessFrames::yes,
+                        RegisterMap::ProcessFrames::include,
                         RegisterMap::WalkContinuation::skip);
     frame runtime_frame = thread->last_frame();
     frame caller_frame = runtime_frame.sender(&reg_map);
@@ -263,7 +263,7 @@ JRT_ENTRY_NO_ASYNC(static address, exception_handler_for_pc_helper(JavaThread* c
   if (cm->is_deopt_pc(pc)) {
     RegisterMap map(current,
                     RegisterMap::UpdateMap::skip,
-                    RegisterMap::ProcessFrames::yes,
+                    RegisterMap::ProcessFrames::include,
                     RegisterMap::WalkContinuation::skip);
     frame exception_frame = current->last_frame().sender(&map);
     // if the frame isn't deopted then pc must not correspond to the caller of last_frame
@@ -305,8 +305,8 @@ JRT_ENTRY_NO_ASYNC(static address, exception_handler_for_pc_helper(JavaThread* c
     // these same catches and throws as it unwound the frame.
 
     RegisterMap reg_map(current,
-                        RegisterMap::UpdateMap::yes,
-                        RegisterMap::ProcessFrames::yes,
+                        RegisterMap::UpdateMap::include,
+                        RegisterMap::ProcessFrames::include,
                         RegisterMap::WalkContinuation::skip);
     frame stub_frame = current->last_frame();
     frame caller_frame = stub_frame.sender(&reg_map);

@@ -453,8 +453,8 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
     tty->print_cr("[%d. Interpreted Frame]", ++unpack_counter);
     iframe()->print_on(tty);
     RegisterMap map(thread,
-                    RegisterMap::UpdateMap::yes,
-                    RegisterMap::ProcessFrames::yes,
+                    RegisterMap::UpdateMap::include,
+                    RegisterMap::ProcessFrames::include,
                     RegisterMap::WalkContinuation::skip);
     vframe* f = vframe::new_vframe(iframe(), &map, thread);
     f->print();
@@ -572,7 +572,7 @@ void vframeArray::unpack_to_stack(frame &unpack_frame, int exec_mode, int caller
 
   RegisterMap map(current,
                   RegisterMap::UpdateMap::skip,
-                  RegisterMap::ProcessFrames::yes,
+                  RegisterMap::ProcessFrames::include,
                   RegisterMap::WalkContinuation::skip);
   // Get the youngest frame we will unpack (last to be unpacked)
   frame me = unpack_frame.sender(&map);

@@ -530,8 +530,8 @@ extern "C" JNIEXPORT void ps() { // print stack
   } else {
     frame f = os::current_frame();
     RegisterMap reg_map(p,
-                        RegisterMap::UpdateMap::yes,
-                        RegisterMap::ProcessFrames::yes,
+                        RegisterMap::UpdateMap::include,
+                        RegisterMap::ProcessFrames::include,
                         RegisterMap::WalkContinuation::skip);
     f = f.sender(&reg_map);
     tty->print("(guessing starting frame id=" PTR_FORMAT " based on current fp)\n", p2i(f.id()));

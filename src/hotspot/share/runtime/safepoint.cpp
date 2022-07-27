@@ -916,7 +916,7 @@ void ThreadSafepointState::handle_polling_page_exception() {
   CodeBlob* stub_cb = stub_fr.cb();
   assert(stub_cb->is_safepoint_stub(), "must be a safepoint stub");
   RegisterMap map(self,
-                  RegisterMap::UpdateMap::yes,
+                  RegisterMap::UpdateMap::include,
                   RegisterMap::ProcessFrames::skip,
                   RegisterMap::WalkContinuation::skip);
   frame caller_fr = stub_fr.sender(&map);
@@ -984,7 +984,7 @@ void ThreadSafepointState::handle_polling_page_exception() {
     // If an exception has been installed we must verify that the top frame wasn't deoptimized.
     if (self->has_pending_exception() ) {
       RegisterMap map(self,
-                      RegisterMap::UpdateMap::yes,
+                      RegisterMap::UpdateMap::include,
                       RegisterMap::ProcessFrames::skip,
                       RegisterMap::WalkContinuation::skip);
       frame caller_fr = stub_fr.sender(&map);

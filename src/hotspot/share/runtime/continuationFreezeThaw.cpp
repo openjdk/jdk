@@ -1145,7 +1145,7 @@ NOINLINE freeze_result FreezeBase::recurse_freeze_stub_frame(frame& f, frame& ca
   _freeze_size += fsize;
 
   RegisterMap map(_cont.thread(),
-                  RegisterMap::UpdateMap::yes,
+                  RegisterMap::UpdateMap::include,
                   RegisterMap::ProcessFrames::skip,
                   RegisterMap::WalkContinuation::skip);
   map.set_include_argument_oops(false);
@@ -1342,7 +1342,7 @@ static void jvmti_yield_cleanup(JavaThread* thread, ContinuationWrapper& cont) {
 static bool monitors_on_stack(JavaThread* thread) {
   ContinuationEntry* ce = thread->last_continuation();
   RegisterMap map(thread,
-                  RegisterMap::UpdateMap::yes,
+                  RegisterMap::UpdateMap::include,
                   RegisterMap::ProcessFrames::skip,
                   RegisterMap::WalkContinuation::skip);
   map.set_include_argument_oops(false);
@@ -1470,7 +1470,7 @@ static freeze_result is_pinned0(JavaThread* thread, oop cont_scope, bool safepoi
   }
 
   RegisterMap map(thread,
-                  RegisterMap::UpdateMap::yes,
+                  RegisterMap::UpdateMap::include,
                   RegisterMap::ProcessFrames::skip,
                   RegisterMap::WalkContinuation::skip);
   map.set_include_argument_oops(false);
@@ -2139,7 +2139,7 @@ void ThawBase::recurse_thaw_stub_frame(const frame& hf, frame& caller, int num_f
 
   {
     RegisterMap map(nullptr,
-                    RegisterMap::UpdateMap::yes,
+                    RegisterMap::UpdateMap::include,
                     RegisterMap::ProcessFrames::skip,
                     RegisterMap::WalkContinuation::skip);
     map.set_include_argument_oops(false);
@@ -2170,7 +2170,7 @@ void ThawBase::recurse_thaw_stub_frame(const frame& hf, frame& caller, int num_f
 
   { // can only fix caller once this frame is thawed (due to callee saved regs)
     RegisterMap map(nullptr,
-                    RegisterMap::UpdateMap::yes,
+                    RegisterMap::UpdateMap::include,
                     RegisterMap::ProcessFrames::skip,
                     RegisterMap::WalkContinuation::skip); // map.clear();
     map.set_include_argument_oops(false);
@@ -2402,8 +2402,8 @@ static void log_frames(JavaThread* thread) {
   }
 
   RegisterMap map(thread,
-                  RegisterMap::UpdateMap::yes,
-                  RegisterMap::ProcessFrames::yes,
+                  RegisterMap::UpdateMap::include,
+                  RegisterMap::ProcessFrames::include,
                   RegisterMap::WalkContinuation::skip);
   map.set_include_argument_oops(false);
 
@@ -2444,7 +2444,7 @@ static void print_frame_layout(const frame& f, bool callee_complete, outputStrea
   RegisterMap map(f.is_heap_frame() ?
                     (JavaThread*)nullptr :
                     JavaThread::current(),
-                  RegisterMap::UpdateMap::yes,
+                  RegisterMap::UpdateMap::include,
                   RegisterMap::ProcessFrames::skip,
                   RegisterMap::WalkContinuation::skip);
   map.set_include_argument_oops(false);

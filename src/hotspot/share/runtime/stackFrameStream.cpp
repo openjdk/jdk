@@ -28,8 +28,8 @@
 
 StackFrameStream::StackFrameStream(JavaThread *thread, bool update, bool process_frames, bool allow_missing_reg)
   : _reg_map(thread,
-             update ? RegisterMap::UpdateMap::yes : RegisterMap::UpdateMap::skip,
-             process_frames ? RegisterMap::ProcessFrames::yes : RegisterMap::ProcessFrames::skip,
+             update ? RegisterMap::UpdateMap::include : RegisterMap::UpdateMap::skip,
+             process_frames ? RegisterMap::ProcessFrames::include : RegisterMap::ProcessFrames::skip,
              RegisterMap::WalkContinuation::skip) {
   assert(thread->has_last_Java_frame(), "sanity check");
   _fr = thread->last_frame();

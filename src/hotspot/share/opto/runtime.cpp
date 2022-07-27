@@ -118,7 +118,7 @@ static bool check_compiled_frame(JavaThread* thread) {
   assert(thread->last_frame().is_runtime_frame(), "cannot call runtime directly from compiled code");
   RegisterMap map(thread,
                   RegisterMap::UpdateMap::skip,
-                  RegisterMap::ProcessFrames::yes,
+                  RegisterMap::ProcessFrames::include,
                   RegisterMap::WalkContinuation::skip);
   frame caller = thread->last_frame().sender(&map);
   assert(caller.is_compiled_frame(), "not being called from compiled like code");
@@ -1404,7 +1404,7 @@ JRT_ENTRY_NO_ASYNC(address, OptoRuntime::handle_exception_C_helper(JavaThread* c
       deopting = true;
       RegisterMap map(current,
                       RegisterMap::UpdateMap::skip,
-                      RegisterMap::ProcessFrames::yes,
+                      RegisterMap::ProcessFrames::include,
                       RegisterMap::WalkContinuation::skip);
       frame deoptee = current->last_frame().sender(&map);
       assert(deoptee.is_deoptimized_frame(), "must be deopted");
@@ -1577,8 +1577,8 @@ void OptoRuntime::deoptimize_caller_frame(JavaThread *thread, bool doit) {
 void OptoRuntime::deoptimize_caller_frame(JavaThread *thread) {
   // Called from within the owner thread, so no need for safepoint
   RegisterMap reg_map(thread,
-                      RegisterMap::UpdateMap::yes,
-                      RegisterMap::ProcessFrames::yes,
+                      RegisterMap::UpdateMap::include,
+                      RegisterMap::ProcessFrames::include,
                       RegisterMap::WalkContinuation::skip);
   frame stub_frame = thread->last_frame();
   assert(stub_frame.is_runtime_frame() || exception_blob()->contains(stub_frame.pc()), "sanity check");
@@ -1592,8 +1592,8 @@ void OptoRuntime::deoptimize_caller_frame(JavaThread *thread) {
 bool OptoRuntime::is_deoptimized_caller_frame(JavaThread *thread) {
   // Called from within the owner thread, so no need for safepoint
   RegisterMap reg_map(thread,
-                      RegisterMap::UpdateMap::yes,
-                      RegisterMap::ProcessFrames::yes,
+                      RegisterMap::UpdateMap::include,
+                      RegisterMap::ProcessFrames::include,
                       RegisterMap::WalkContinuation::skip);
   frame stub_frame = thread->last_frame();
   assert(stub_frame.is_runtime_frame() || exception_blob()->contains(stub_frame.pc()), "sanity check");

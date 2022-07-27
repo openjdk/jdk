@@ -320,7 +320,7 @@ class GetCurrentLocationClosure : public HandshakeClosure {
     ResourceMark rmark; // jt != Thread::current()
     RegisterMap rm(jt,
                    RegisterMap::UpdateMap::skip,
-                   RegisterMap::ProcessFrames::yes,
+                   RegisterMap::ProcessFrames::include,
                    RegisterMap::WalkContinuation::skip);
     // There can be a race condition between a handshake
     // and the target thread exiting from Java execution.

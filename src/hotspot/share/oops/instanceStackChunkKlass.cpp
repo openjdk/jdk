@@ -169,9 +169,9 @@ public:
   DescribeStackChunkClosure(stackChunkOop chunk)
     : _chunk(chunk),
       _map((JavaThread*)nullptr,
-           RegisterMap::UpdateMap::yes,
+           RegisterMap::UpdateMap::include,
            RegisterMap::ProcessFrames::skip,
-           RegisterMap::WalkContinuation::yes),
+           RegisterMap::WalkContinuation::include),
       _frame_no(0) {
     _map.set_include_argument_oops(false);
   }

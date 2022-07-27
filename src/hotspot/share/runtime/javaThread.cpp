@@ -1056,7 +1056,7 @@ void JavaThread::handle_async_exception(oop java_throwable) {
       // handler table may not be valid.
       RegisterMap reg_map(this,
                           RegisterMap::UpdateMap::skip,
-                          RegisterMap::ProcessFrames::yes,
+                          RegisterMap::ProcessFrames::include,
                           RegisterMap::WalkContinuation::skip);
       frame compiled_frame = f.sender(&reg_map);
       if (!StressCompiledExceptionHandlers && compiled_frame.can_be_deoptimized()) {
@@ -1708,8 +1708,8 @@ void JavaThread::print_stack_on(outputStream* st) {
   HandleMark hm(current_thread);
 
   RegisterMap reg_map(this,
-                      RegisterMap::UpdateMap::yes,
-                      RegisterMap::ProcessFrames::yes,
+                      RegisterMap::UpdateMap::include,
+                      RegisterMap::ProcessFrames::include,
                       RegisterMap::WalkContinuation::skip);
   vframe* start_vf = platform_thread_last_java_vframe(&reg_map);
   int count = 0;
@@ -1856,8 +1856,8 @@ void JavaThread::trace_stack() {
   ResourceMark rm(current_thread);
   HandleMark hm(current_thread);
   RegisterMap reg_map(this,
-                      RegisterMap::UpdateMap::yes,
-                      RegisterMap::ProcessFrames::yes,
+                      RegisterMap::UpdateMap::include,
+                      RegisterMap::ProcessFrames::include,
                       RegisterMap::WalkContinuation::skip);
   trace_stack_from(last_java_vframe(&reg_map));
 }

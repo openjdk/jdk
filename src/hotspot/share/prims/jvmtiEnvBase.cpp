@@ -567,9 +567,9 @@ JvmtiEnvBase::jvf_for_thread_and_depth(JavaThread* java_thread, jint depth) {
     return NULL;
   }
   RegisterMap reg_map(java_thread,
-                      RegisterMap::UpdateMap::yes,
+                      RegisterMap::UpdateMap::include,
                       RegisterMap::ProcessFrames::skip,
-                      RegisterMap::WalkContinuation::yes);
+                      RegisterMap::WalkContinuation::include);
   javaVFrame *jvf = java_thread->last_java_vframe(&reg_map);
 
   jvf = JvmtiEnvBase::check_and_skip_hidden_frames(java_thread, jvf);
@@ -849,8 +849,8 @@ JvmtiEnvBase::count_locked_objects(JavaThread *java_thread, Handle hobj) {
   ResourceMark rm(current_thread);
   HandleMark   hm(current_thread);
   RegisterMap  reg_map(java_thread,
-                       RegisterMap::UpdateMap::yes,
-                       RegisterMap::ProcessFrames::yes,
+                       RegisterMap::UpdateMap::include,
+                       RegisterMap::ProcessFrames::include,
                        RegisterMap::WalkContinuation::skip);
 
   for (javaVFrame *jvf = java_thread->last_java_vframe(&reg_map); jvf != NULL;
@@ -935,8 +935,8 @@ JvmtiEnvBase::get_owned_monitors(JavaThread *calling_thread, JavaThread* java_th
     ResourceMark rm(current_thread);
     HandleMark   hm(current_thread);
     RegisterMap  reg_map(java_thread,
-                         RegisterMap::UpdateMap::yes,
-                         RegisterMap::ProcessFrames::yes,
+                         RegisterMap::UpdateMap::include,
+                         RegisterMap::ProcessFrames::include,
                          RegisterMap::WalkContinuation::skip);
 
     int depth = 0;
@@ -1154,7 +1154,7 @@ JvmtiEnvBase::get_stack_trace(JavaThread *java_thread,
 
   if (java_thread->has_last_Java_frame()) {
     RegisterMap reg_map(java_thread,
-                        RegisterMap::UpdateMap::yes,
+                        RegisterMap::UpdateMap::include,
                         RegisterMap::ProcessFrames::skip,
                         RegisterMap::WalkContinuation::skip);
     ResourceMark rm(current_thread);
@@ -1195,8 +1195,8 @@ JvmtiEnvBase::get_frame_count(JavaThread* jt, jint *count_ptr) {
   } else {
     ResourceMark rm(current_thread);
     RegisterMap reg_map(jt,
-                        RegisterMap::UpdateMap::yes,
-                        RegisterMap::ProcessFrames::yes,
+                        RegisterMap::UpdateMap::include,
+                        RegisterMap::ProcessFrames::include,
                         RegisterMap::WalkContinuation::skip);
     javaVFrame *jvf = get_cthread_last_java_vframe(jt, &reg_map);
 
@@ -1253,9 +1253,9 @@ JvmtiEnvBase::get_frame_location(JavaThread *java_thread, jint depth,
   ResourceMark rm(current);
   HandleMark hm(current);
   RegisterMap reg_map(java_thread,
-                      RegisterMap::UpdateMap::yes,
+                      RegisterMap::UpdateMap::include,
                       RegisterMap::ProcessFrames::skip,
-                      RegisterMap::WalkContinuation::yes);
+                      RegisterMap::WalkContinuation::include);
   javaVFrame* jvf = JvmtiEnvBase::get_cthread_last_java_vframe(java_thread, &reg_map);
 
   return get_frame_location(jvf, depth, method_ptr, location_ptr);
@@ -2204,9 +2204,9 @@ SetFramePopClosure::doit(Thread *target, bool self) {
     return;
   }
   RegisterMap reg_map(java_thread,
-                      RegisterMap::UpdateMap::yes,
+                      RegisterMap::UpdateMap::include,
                       RegisterMap::ProcessFrames::skip,
-                      RegisterMap::WalkContinuation::yes);
+                      RegisterMap::WalkContinuation::include);
   javaVFrame* jvf = JvmtiEnvBase::get_cthread_last_java_vframe(java_thread, &reg_map);
   _result = ((JvmtiEnvBase*)_env)->set_frame_pop(_state, jvf, _depth);
 }
@@ -2276,8 +2276,8 @@ PrintStackTraceClosure::do_thread_impl(Thread *target) {
 
   if (java_thread->has_last_Java_frame()) {
     RegisterMap reg_map(java_thread,
-                        RegisterMap::UpdateMap::yes,
-                        RegisterMap::ProcessFrames::yes,
+                        RegisterMap::UpdateMap::include,
+                        RegisterMap::ProcessFrames::include,
                         RegisterMap::WalkContinuation::skip);
     ResourceMark rm(current_thread);
     HandleMark hm(current_thread);

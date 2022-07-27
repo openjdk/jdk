@@ -152,7 +152,7 @@ JfrVframeStream::JfrVframeStream(JavaThread* jt, const frame& fr, bool stop_at_j
   vframeStreamCommon(RegisterMap(jt,
                                  RegisterMap::UpdateMap::skip,
                                  RegisterMap::ProcessFrames::skip,
-                                 RegisterMap::WalkContinuation::yes)),
+                                 RegisterMap::WalkContinuation::include)),
     _cont_entry(JfrThreadLocal::is_vthread(jt) ? jt->last_continuation() : nullptr),
     _async_mode(async_mode), _vthread(JfrThreadLocal::is_vthread(jt)) {
   assert(!_vthread || _cont_entry != nullptr, "invariant");

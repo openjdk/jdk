@@ -1152,8 +1152,8 @@ Handle SharedRuntime::find_callee_info_helper(vframeStream& vfst, Bytecodes::Cod
     // This register map must be update since we need to find the receiver for
     // compiled frames. The receiver might be in a register.
     RegisterMap reg_map2(current,
-                         RegisterMap::UpdateMap::yes,
-                         RegisterMap::ProcessFrames::yes,
+                         RegisterMap::UpdateMap::include,
+                         RegisterMap::ProcessFrames::include,
                          RegisterMap::WalkContinuation::skip);
     frame stubFrame   = current->last_frame();
     // Caller-frame is a compiled frame
@@ -1229,7 +1229,7 @@ methodHandle SharedRuntime::find_callee_method(TRAPS) {
     // find the target method from the stub frame.
     RegisterMap reg_map(current,
                         RegisterMap::UpdateMap::skip,
-                        RegisterMap::ProcessFrames::yes,
+                        RegisterMap::ProcessFrames::include,
                         RegisterMap::WalkContinuation::skip);
     frame fr = current->last_frame();
     assert(fr.is_runtime_frame(), "must be a runtimeStub");
@@ -1366,7 +1366,7 @@ methodHandle SharedRuntime::resolve_sub_helper(bool is_virtual, bool is_optimize
   ResourceMark rm(current);
   RegisterMap cbl_map(current,
                       RegisterMap::UpdateMap::skip,
-                      RegisterMap::ProcessFrames::yes,
+                      RegisterMap::ProcessFrames::include,
                       RegisterMap::WalkContinuation::skip);
   frame caller_frame = current->last_frame().sender(&cbl_map);
 
@@ -1467,7 +1467,7 @@ JRT_BLOCK_ENTRY(address, SharedRuntime::handle_wrong_method_ic_miss(JavaThread* 
 #ifdef ASSERT
   RegisterMap reg_map(current,
                       RegisterMap::UpdateMap::skip,
-                      RegisterMap::ProcessFrames::yes,
+                      RegisterMap::ProcessFrames::include,
                       RegisterMap::WalkContinuation::skip);
   frame stub_frame = current->last_frame();
   assert(stub_frame.is_runtime_frame(), "sanity check");
@@ -1500,7 +1500,7 @@ JRT_BLOCK_ENTRY(address, SharedRuntime::handle_wrong_method(JavaThread* current)
   // safepoint is possible and have trouble gc'ing the compiled args.
   RegisterMap reg_map(current,
                       RegisterMap::UpdateMap::skip,
-                      RegisterMap::ProcessFrames::yes,
+                      RegisterMap::ProcessFrames::include,
                       RegisterMap::WalkContinuation::skip);
   frame stub_frame = current->last_frame();
   assert(stub_frame.is_runtime_frame(), "sanity check");
@@ -1552,8 +1552,8 @@ JRT_BLOCK_ENTRY(address, SharedRuntime::handle_wrong_method_abstract(JavaThread*
 
   // Find the compiled caller frame.
   RegisterMap reg_map(current,
-                      RegisterMap::UpdateMap::yes,
-                      RegisterMap::ProcessFrames::yes,
+                      RegisterMap::UpdateMap::include,
+                      RegisterMap::ProcessFrames::include,
                       RegisterMap::WalkContinuation::skip);
   frame stubFrame = current->last_frame();
   assert(stubFrame.is_runtime_frame(), "must be");
@@ -1586,7 +1586,7 @@ JRT_BLOCK_ENTRY(address, SharedRuntime::resolve_static_call_C(JavaThread* curren
     if (current->is_interp_only_mode()) {
       RegisterMap reg_map(current,
                           RegisterMap::UpdateMap::skip,
-                          RegisterMap::ProcessFrames::yes,
+                          RegisterMap::ProcessFrames::include,
                           RegisterMap::WalkContinuation::skip);
       frame stub_frame = current->last_frame();
       assert(stub_frame.is_runtime_frame(), "must be a runtimeStub");
@@ -1743,7 +1743,7 @@ methodHandle SharedRuntime::handle_ic_miss_helper(TRAPS) {
     if (TraceCallFixup) {
       RegisterMap reg_map(current,
                           RegisterMap::UpdateMap::skip,
-                          RegisterMap::ProcessFrames::yes,
+                          RegisterMap::ProcessFrames::include,
                           RegisterMap::WalkContinuation::skip);
       frame caller_frame = current->last_frame().sender(&reg_map);
       ResourceMark rm(current);
@@ -1772,7 +1772,7 @@ methodHandle SharedRuntime::handle_ic_miss_helper(TRAPS) {
     MutexLocker m(VMStatistic_lock);
     RegisterMap reg_map(current,
                         RegisterMap::UpdateMap::skip,
-                        RegisterMap::ProcessFrames::yes,
+                        RegisterMap::ProcessFrames::include,
                         RegisterMap::WalkContinuation::skip);
     frame f = current->last_frame().real_sender(&reg_map);// skip runtime stub
     // produce statistics under the lock
@@ -1793,7 +1793,7 @@ methodHandle SharedRuntime::handle_ic_miss_helper(TRAPS) {
   // that refills them.
   RegisterMap reg_map(current,
                       RegisterMap::UpdateMap::skip,
-                      RegisterMap::ProcessFrames::yes,
+                      RegisterMap::ProcessFrames::include,
                       RegisterMap::WalkContinuation::skip);
   frame caller_frame = current->last_frame().sender(&reg_map);
   CodeBlob* cb = caller_frame.cb();
@@ -1840,7 +1840,7 @@ methodHandle SharedRuntime::reresolve_call_site(TRAPS) {
   ResourceMark rm(current);
   RegisterMap reg_map(current,
                       RegisterMap::UpdateMap::skip,
-                      RegisterMap::ProcessFrames::yes,
+                      RegisterMap::ProcessFrames::include,
                       RegisterMap::WalkContinuation::skip);
   frame stub_frame = current->last_frame();
   assert(stub_frame.is_runtime_frame(), "must be a runtimeStub");
@@ -3336,7 +3336,7 @@ JRT_LEAF(intptr_t*, SharedRuntime::OSR_migration_begin( JavaThread *current) )
 
   RegisterMap map(current,
                   RegisterMap::UpdateMap::skip,
-                  RegisterMap::ProcessFrames::yes,
+                  RegisterMap::ProcessFrames::include,
                   RegisterMap::WalkContinuation::skip);
   frame sender = fr.sender(&map);
   if (sender.is_interpreted_frame()) {

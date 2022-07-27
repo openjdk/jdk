@@ -771,9 +771,9 @@ vframe *VM_GetOrSetLocal::get_vframe() {
     return NULL;
   }
   RegisterMap reg_map(_thread,
-                      RegisterMap::UpdateMap::yes,
-                      RegisterMap::ProcessFrames::yes,
-                      RegisterMap::WalkContinuation::yes);
+                      RegisterMap::UpdateMap::include,
+                      RegisterMap::ProcessFrames::include,
+                      RegisterMap::WalkContinuation::include);
   vframe *vf = JvmtiEnvBase::get_cthread_last_java_vframe(_thread, &reg_map);
   int d = 0;
   while ((vf != NULL) && (d < _depth)) {

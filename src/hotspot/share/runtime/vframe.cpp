@@ -63,8 +63,8 @@ vframe::vframe(const frame* fr, const RegisterMap* reg_map, JavaThread* thread)
 
 vframe::vframe(const frame* fr, JavaThread* thread)
 : _reg_map(thread,
-           RegisterMap::UpdateMap::yes,
-           RegisterMap::ProcessFrames::yes,
+           RegisterMap::UpdateMap::include,
+           RegisterMap::ProcessFrames::include,
            RegisterMap::WalkContinuation::skip),
   _thread(thread), _chunk() {
   assert(fr != NULL, "must have frame");
@@ -534,9 +534,9 @@ void vframeStreamCommon::found_bad_method_frame() const {
 vframeStream::vframeStream(JavaThread* thread, frame top_frame,
                           bool stop_at_java_call_stub) :
     vframeStreamCommon(RegisterMap(thread,
-                                   RegisterMap::UpdateMap::yes,
-                                   RegisterMap::ProcessFrames::yes,
-                                   RegisterMap::WalkContinuation::yes)) {
+                                   RegisterMap::UpdateMap::include,
+                                   RegisterMap::ProcessFrames::include,
+                                   RegisterMap::WalkContinuation::include)) {
   _stop_at_java_call_stub = stop_at_java_call_stub;
 
   // skip top frame, as it may not be at safepoint
@@ -548,9 +548,9 @@ vframeStream::vframeStream(JavaThread* thread, frame top_frame,
 
 vframeStream::vframeStream(JavaThread* thread, Handle continuation_scope, bool stop_at_java_call_stub)
  : vframeStreamCommon(RegisterMap(thread,
-                                  RegisterMap::UpdateMap::yes,
-                                  RegisterMap::ProcessFrames::yes,
-                                  RegisterMap::WalkContinuation::yes)) {
+                                  RegisterMap::UpdateMap::include,
+                                  RegisterMap::ProcessFrames::include,
+                                  RegisterMap::WalkContinuation::include)) {
 
   _stop_at_java_call_stub = stop_at_java_call_stub;
   _continuation_scope = continuation_scope;
@@ -568,7 +568,7 @@ vframeStream::vframeStream(JavaThread* thread, Handle continuation_scope, bool s
 }
 
 vframeStream::vframeStream(oop continuation, Handle continuation_scope)
- : vframeStreamCommon(RegisterMap(continuation, RegisterMap::UpdateMap::yes)) {
+ : vframeStreamCommon(RegisterMap(continuation, RegisterMap::UpdateMap::include)) {
 
   _stop_at_java_call_stub = false;
   _continuation_scope = continuation_scope;

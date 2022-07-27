@@ -89,8 +89,8 @@ public:
 
     frame last_frame = jt->last_frame();
     RegisterMap register_map(jt,
-                             RegisterMap::UpdateMap::yes,
-                             RegisterMap::ProcessFrames::yes,
+                             RegisterMap::UpdateMap::include,
+                             RegisterMap::ProcessFrames::include,
                              RegisterMap::WalkContinuation::skip);
 
     if (last_frame.is_safepoint_blob_frame()) {

@@ -688,8 +688,8 @@ void ThreadStackTrace::dump_stack_at_safepoint(int maxDepth, ObjectMonitorsHasht
 
   if (_thread->has_last_Java_frame()) {
     RegisterMap reg_map(_thread,
-                        RegisterMap::UpdateMap::yes,
-                        RegisterMap::ProcessFrames::yes,
+                        RegisterMap::UpdateMap::include,
+                        RegisterMap::ProcessFrames::include,
                         RegisterMap::WalkContinuation::skip);
 
     // If full, we want to print both vthread and carrier frames

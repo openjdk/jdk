@@ -375,12 +375,12 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
 
   frame stub_frame = current->last_frame(); // Makes stack walkable as side effect
   RegisterMap map(current,
-                  RegisterMap::UpdateMap::yes,
-                  RegisterMap::ProcessFrames::yes,
+                  RegisterMap::UpdateMap::include,
+                  RegisterMap::ProcessFrames::include,
                   RegisterMap::WalkContinuation::skip);
   RegisterMap dummy_map(current,
                         RegisterMap::UpdateMap::skip,
-                        RegisterMap::ProcessFrames::yes,
+                        RegisterMap::ProcessFrames::include,
                         RegisterMap::WalkContinuation::skip);
   // Now get the deoptee with a valid map
   frame deoptee = stub_frame.sender(&map);
@@ -800,7 +800,7 @@ JRT_LEAF(BasicType, Deoptimization::unpack_frames(JavaThread* thread, int exec_m
     vframeArray* cur_array = thread->vframe_array_last();
     RegisterMap rm(thread,
                    RegisterMap::UpdateMap::skip,
-                   RegisterMap::ProcessFrames::yes,
+                   RegisterMap::ProcessFrames::include,
                    RegisterMap::WalkContinuation::skip);
     rm.set_include_argument_oops(false);
     bool is_top_frame = true;
@@ -1669,7 +1669,7 @@ address Deoptimization::deoptimize_for_missing_exception_handler(CompiledMethod*
   JavaThread* thread = JavaThread::current();
   RegisterMap reg_map(thread,
                       RegisterMap::UpdateMap::skip,
-                      RegisterMap::ProcessFrames::yes,
+                      RegisterMap::ProcessFrames::include,
                       RegisterMap::WalkContinuation::skip);
   frame runtime_frame = thread->last_frame();
   frame caller_frame = runtime_frame.sender(&reg_map);
@@ -1705,7 +1705,7 @@ void Deoptimization::deoptimize_frame_internal(JavaThread* thread, intptr_t* id,
   // Compute frame and register map based on thread and sp.
   RegisterMap reg_map(thread,
                       RegisterMap::UpdateMap::skip,
-                      RegisterMap::ProcessFrames::yes,
+                      RegisterMap::ProcessFrames::include,
                       RegisterMap::WalkContinuation::skip);
   frame fr = thread->last_frame();
   while (fr.id() != id) {
@@ -1884,13 +1884,13 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* current, jint tr
 #if INCLUDE_JVMCI
   // JVMCI might need to get an exception from the stack, which in turn requires the register map to be valid
   RegisterMap reg_map(current,
-                      RegisterMap::UpdateMap::yes,
-                      RegisterMap::ProcessFrames::yes,
+                      RegisterMap::UpdateMap::include,
+                      RegisterMap::ProcessFrames::include,
                       RegisterMap::WalkContinuation::skip);
 #else
   RegisterMap reg_map(current,
                       RegisterMap::UpdateMap::skip,
-                      RegisterMap::ProcessFrames::yes,
+                      RegisterMap::ProcessFrames::include,
                       RegisterMap::WalkContinuation::skip);
 #endif
   frame stub_frame = current->last_frame();

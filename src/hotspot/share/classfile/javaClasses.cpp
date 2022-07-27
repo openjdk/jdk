@@ -2749,7 +2749,7 @@ void java_lang_Throwable::fill_in_stack_trace(Handle throwable, const methodHand
   RegisterMap map(thread,
                   RegisterMap::UpdateMap::skip,
                   RegisterMap::ProcessFrames::skip,
-                  RegisterMap::WalkContinuation::yes);
+                  RegisterMap::WalkContinuation::include);
   int decode_offset = 0;
   CompiledMethod* nm = NULL;
   bool skip_fillInStackTrace_check = false;

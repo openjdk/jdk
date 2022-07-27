@@ -113,7 +113,7 @@ void BarrierSetNMethod::deoptimize(nmethod* nm, address* return_address_ptr) {
   JavaThread *thread = JavaThread::current();
   RegisterMap reg_map(thread,
                       RegisterMap::UpdateMap::skip,
-                      RegisterMap::ProcessFrames::yes,
+                      RegisterMap::ProcessFrames::include,
                       RegisterMap::WalkContinuation::skip);
   frame frame = thread->last_frame();
 

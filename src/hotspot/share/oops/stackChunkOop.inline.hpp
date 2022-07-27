@@ -199,9 +199,9 @@ inline void stackChunkOopDesc::iterate_stack(StackChunkFrameClosureType* closure
 
   if (f.is_stub()) {
     RegisterMap full_map((JavaThread*)nullptr,
-                         RegisterMap::UpdateMap::yes,
+                         RegisterMap::UpdateMap::include,
                          RegisterMap::ProcessFrames::skip,
-                         RegisterMap::WalkContinuation::yes);
+                         RegisterMap::WalkContinuation::include);
     full_map.set_include_argument_oops(false);
 
     f.next(&full_map);

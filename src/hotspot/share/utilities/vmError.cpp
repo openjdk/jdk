@@ -334,7 +334,7 @@ static frame next_frame(frame fr, Thread* t) {
     if (fr.is_java_frame() || fr.is_native_frame() || fr.is_runtime_frame()) {
       RegisterMap map(JavaThread::cast(t),
                       RegisterMap::UpdateMap::skip,
-                      RegisterMap::ProcessFrames::yes,
+                      RegisterMap::ProcessFrames::include,
                       RegisterMap::WalkContinuation::skip); // No update
       return fr.sender(&map);
     } else {

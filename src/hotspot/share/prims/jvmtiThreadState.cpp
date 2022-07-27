@@ -578,7 +578,7 @@ int JvmtiThreadState::count_frames() {
     RegisterMap reg_map(thread,
                         RegisterMap::UpdateMap::skip,
                         RegisterMap::ProcessFrames::skip,
-                        RegisterMap::WalkContinuation::yes);
+                        RegisterMap::WalkContinuation::include);
     jvf = thread->last_java_vframe(&reg_map);
     jvf = JvmtiEnvBase::check_and_skip_hidden_frames(thread, jvf);
   }

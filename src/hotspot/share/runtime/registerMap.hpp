@@ -70,9 +70,9 @@ class RegisterMap : public StackObj {
     location_valid_type_size = sizeof(LocationValidType)*8,
     location_valid_size = (reg_count+location_valid_type_size-1)/location_valid_type_size
   };
-  enum class UpdateMap { skip, yes };
-  enum class ProcessFrames { skip, yes };
-  enum class WalkContinuation   { skip, yes };
+  enum class UpdateMap { skip, include };
+  enum class ProcessFrames { skip, include };
+  enum class WalkContinuation { skip, include };
  private:
   intptr_t*         _location[reg_count];     // Location of registers (intptr_t* looks better than address in the debugger)
   LocationValidType _location_valid[location_valid_size];

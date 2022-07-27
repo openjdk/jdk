@@ -760,7 +760,7 @@ void CompilationPolicy::compile(const methodHandle& mh, int bci, CompLevel level
       JavaThread* jt = THREAD;
       RegisterMap map(jt,
                       RegisterMap::UpdateMap::skip,
-                      RegisterMap::ProcessFrames::yes,
+                      RegisterMap::ProcessFrames::include,
                       RegisterMap::WalkContinuation::skip);
       frame fr = jt->last_frame().sender(&map);
       Deoptimization::deoptimize_frame(jt, fr.id());
