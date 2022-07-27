@@ -118,14 +118,18 @@ public:
 class C2EntryBarrierStub: public ResourceObj {
   Label _slow_path;
   Label _continuation;
+  Label _guard; // Used on AArch64
 
 public:
   C2EntryBarrierStub() :
     _slow_path(),
-    _continuation() {}
+    _continuation(),
+    _guard() {}
 
   Label& slow_path() { return _slow_path; }
   Label& continuation() { return _continuation; }
+  Label& guard() { return _guard; }
+
 };
 
 class C2EntryBarrierStubTable {

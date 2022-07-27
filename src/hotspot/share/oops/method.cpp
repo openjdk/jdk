@@ -574,9 +574,9 @@ void Method::print_invocation_count() {
 #endif
 }
 
-// Build a MethodData* object to hold information about this method
-// collected in the interpreter.
-void Method::build_interpreter_method_data(const methodHandle& method, TRAPS) {
+// Build a MethodData* object to hold profiling information collected on this
+// method when requested.
+void Method::build_profiling_method_data(const methodHandle& method, TRAPS) {
   // Do not profile the method if metaspace has hit an OOM previously
   // allocating profiling data. Callers clear pending exception so don't
   // add one here.
@@ -599,7 +599,7 @@ void Method::build_interpreter_method_data(const methodHandle& method, TRAPS) {
     method->set_method_data(method_data);
     if (PrintMethodData && (Verbose || WizardMode)) {
       ResourceMark rm(THREAD);
-      tty->print("build_interpreter_method_data for ");
+      tty->print("build_profiling_method_data for ");
       method->print_name(tty);
       tty->cr();
       // At the end of the run, the MDO, full of data, will be dumped.
