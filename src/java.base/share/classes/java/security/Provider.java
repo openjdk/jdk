@@ -1296,7 +1296,7 @@ public abstract class Provider extends Properties {
             legacyMap.remove(key, s);
         } else {
             if (e.shouldCommit()) {
-                e.success = true;
+                e.success = (s != null);
                 e.commit();
             }
             return s;
