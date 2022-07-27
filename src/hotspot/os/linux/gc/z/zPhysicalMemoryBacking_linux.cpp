@@ -196,7 +196,7 @@ ZPhysicalMemoryBacking::ZPhysicalMemoryBacking(size_t max_capacity) :
 }
 
 int ZPhysicalMemoryBacking::create_mem_fd(const char* name) const {
-  assert(ZGranuleSize == 2  * M, "Granule size must match MFD_HUGE_2MB");
+  assert(ZGranuleSize == 2 * M, "Granule size must match MFD_HUGE_2MB");
 
   // Create file name
   char filename[PATH_MAX];
