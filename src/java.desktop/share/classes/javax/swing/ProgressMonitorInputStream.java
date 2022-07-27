@@ -87,8 +87,6 @@ public class ProgressMonitorInputStream extends FilterInputStream
         catch(IOException ioe) {
             size = 0;
         }
-        parentComponent = parentComponent;
-        message = message;
         monitor = new ProgressMonitor(parentComponent, message, null, 0, size);
     }
 
