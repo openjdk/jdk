@@ -1914,7 +1914,7 @@ const Type* ReverseINode::Value(PhaseGVN* phase) const {
   }
   const TypeInt* t1int = t1->isa_int();
   if (t1int && t1int->is_con()) {
-    jint res  = reverse_bits(t1int->get_con());
+    jint res = reverse_bits(t1int->get_con());
     return TypeInt::make(res);
   }
   return t1int;
@@ -1926,8 +1926,8 @@ const Type* ReverseLNode::Value(PhaseGVN* phase) const {
     return Type::TOP;
   }
   const TypeLong* t1long = t1->isa_long();
-  if (t1long->is_con()) {
-    jint res  = reverse_bits(t1long->get_con());
+  if (t1long && t1long->is_con()) {
+    jint res = reverse_bits(t1long->get_con());
     return TypeLong::make(res);
   }
   return t1long;
