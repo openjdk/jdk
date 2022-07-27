@@ -628,5 +628,5 @@ public abstract class Configuration {
      *
      * @since 1.6
      */
-    public static interface Parameters { }
+    public interface Parameters { }
 }

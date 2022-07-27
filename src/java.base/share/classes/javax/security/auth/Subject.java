@@ -1333,7 +1333,7 @@ public final class Subject implements java.io.Serializable {
                     // For private credentials:
                     // If the caller does not have read permission
                     // for o.getClass(), we throw a SecurityException.
-                    // Otherwise we check the private cred set to see whether
+                    // Otherwise, we check the private cred set to see whether
                     // it contains the Object
 
                     SecurityManager sm = System.getSecurityManager();
