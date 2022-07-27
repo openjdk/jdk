@@ -4128,7 +4128,6 @@ instruct vReplB_reg(vec dst, rRegI src) %{
 instruct ReplB_reg(vec dst, rRegI src) %{
   predicate(UseAVX < 2);
   match(Set dst (ReplicateB src));
-  effect(TEMP dst);
   format %{ "replicateB $dst,$src" %}
   ins_encode %{
     uint vlen = Matcher::vector_length(this);
