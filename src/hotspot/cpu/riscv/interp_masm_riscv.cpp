@@ -466,7 +466,7 @@ void InterpreterMacroAssembler::load_double(Address src) {
 
 void InterpreterMacroAssembler::prepare_to_jump_from_interpreted() {
   // set sender sp
-  mv(x30, sp);
+  mv(x19_sender_sp, sp);
   // record last_sp
   sd(esp, Address(fp, frame::interpreter_frame_last_sp_offset * wordSize));
 }

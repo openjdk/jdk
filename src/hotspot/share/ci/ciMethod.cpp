@@ -985,7 +985,7 @@ bool ciMethod::ensure_method_data(const methodHandle& h_m) {
     return true;
   }
   if (h_m()->method_data() == NULL) {
-    Method::build_interpreter_method_data(h_m, THREAD);
+    Method::build_profiling_method_data(h_m, THREAD);
     if (HAS_PENDING_EXCEPTION) {
       CLEAR_PENDING_EXCEPTION;
     }

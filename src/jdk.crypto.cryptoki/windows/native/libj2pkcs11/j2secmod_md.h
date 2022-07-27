@@ -31,8 +31,8 @@
 //      const char *certPrefix, const char *keyPrefix,
 //      const char *secmodName, PRUint32 flags);
 
-typedef int __declspec(dllimport) (*FPTR_VersionCheck)(const char *importedVersion);
-typedef int __declspec(dllimport) (*FPTR_Initialize)(const char *configdir,
+typedef int (*FPTR_VersionCheck)(const char *importedVersion);
+typedef int (*FPTR_Initialize)(const char *configdir,
         const char *certPrefix, const char *keyPrefix,
         const char *secmodName, unsigned int flags);
 
@@ -42,6 +42,6 @@ typedef int __declspec(dllimport) (*FPTR_Initialize)(const char *configdir,
 //char **SECMOD_GetModuleSpecList(SECMODModule *module);
 //extern SECMODModuleList *SECMOD_GetDBModuleList(void);
 
-typedef void __declspec(dllimport) *(*FPTR_LoadModule)(char *moduleSpec, void *parent, int recurse);
-typedef char __declspec(dllimport) **(*FPTR_GetModuleSpecList)(void *module);
-typedef void __declspec(dllimport) *(*FPTR_GetDBModuleList)(void);
+typedef void *(*FPTR_LoadModule)(char *moduleSpec, void *parent, int recurse);
+typedef char **(*FPTR_GetModuleSpecList)(void *module);
+typedef void *(*FPTR_GetDBModuleList)(void);

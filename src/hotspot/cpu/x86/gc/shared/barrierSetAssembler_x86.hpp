@@ -59,16 +59,10 @@ public:
                              int con_size_in_bytes,
                              Register t1, Register t2,
                              Label& slow_case);
-  virtual void eden_allocate(MacroAssembler* masm,
-                             Register thread, Register obj,
-                             Register var_size_in_bytes,
-                             int con_size_in_bytes,
-                             Register t1,
-                             Label& slow_case);
 
   virtual void barrier_stubs_init() {}
 
-  virtual void nmethod_entry_barrier(MacroAssembler* masm);
+  virtual void nmethod_entry_barrier(MacroAssembler* masm, Label* slow_path, Label* continuation);
   virtual void c2i_entry_barrier(MacroAssembler* masm);
 };
 

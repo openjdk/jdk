@@ -69,7 +69,6 @@ compiler/c2/Test8004741.java 8235801 generic-all
 
 compiler/codecache/jmx/PoolsIndependenceTest.java 8264632 macosx-all
 
-
 #############################################################################
 
 # :hotspot_gc
@@ -135,7 +134,6 @@ serviceability/sa/TestJmapCoreMetaspace.java 8269982,8267433 macosx-aarch64,maco
 
 #############################################################################
 
-vmTestbase/nsk/jdi/HiddenClass/events/events001.java                 8257705 generic-all
 vmTestbase/nsk/jdi/ThreadReference/stop/stop001/TestDescription.java 7034630 generic-all
 
 vmTestbase/metaspace/gc/firstGC_10m/TestDescription.java 8208250 generic-all
