@@ -76,7 +76,6 @@ public class TestSecurityProviderServiceEvent {
             bif.apply(alg, brokenProv);
             recording.stop();
             List<RecordedEvent> events = Events.fromRecording(recording);
-            System.out.println(events);
             Asserts.assertEquals(events.size(), expected, "Incorrect number of events");
             assertEvent(events, algType, alg, p.getName(), brokenProv, other);
         }

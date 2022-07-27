@@ -1275,12 +1275,6 @@ public abstract class Provider extends Properties {
      */
     public Service getService(String type, String algorithm) {
         checkInitialized();
-        SecurityProviderServiceEvent e = new SecurityProviderServiceEvent();
-        if (e.shouldCommit()) {
-            e.provider = getName();
-            e.type = type;
-            e.algorithm = algorithm;
-        }
         // avoid allocating a new ServiceKey object if possible
         ServiceKey key = previousKey;
         if (!key.matches(type, algorithm)) {
@@ -1289,30 +1283,23 @@ public abstract class Provider extends Properties {
         }
 
         Service s = serviceMap.get(key);
-        if (s != null) {
-            if (e.shouldCommit()) {
-                e.success = true;
-                e.commit();
+        if (s == null) {
+            s = legacyMap.get(key);
+            if (s != null && !s.isValid()) {
+                legacyMap.remove(key, s);
             }
-            return s;
         }
 
-        s = legacyMap.get(key);
-        if (s != null && !s.isValid()) {
-            legacyMap.remove(key, s);
-        } else {
-            if (e.shouldCommit()) {
-                e.success = (s != null);
-                e.commit();
-            }
-            return s;
-        }
-
-        if (e.shouldCommit()) {
-            e.success = false;
+        if (SecurityProviderServiceEvent.isTurnedOn()) {
+            var e  = new SecurityProviderServiceEvent();
+            e.provider = getName();
+            e.type = type;
+            e.algorithm = algorithm;
+            e.success = (s != null);
             e.commit();
         }
-        return null;
+
+        return s;
     }
 
     // ServiceKey from previous getService() call

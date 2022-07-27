@@ -30,6 +30,15 @@ package jdk.internal.event;
  */
 
 public final class SecurityProviderServiceEvent extends Event {
+    private final static SecurityProviderServiceEvent EVENT = new SecurityProviderServiceEvent();
+
+    /**
+     * Returns {@code true} if event is enabled, {@code false} otherwise.
+     */
+    public static boolean isTurnedOn() {
+        return EVENT.isEnabled();
+    }
+
     public String type;
     public String algorithm;
     public String provider;
