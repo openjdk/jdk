@@ -176,8 +176,8 @@ source %{
       case Op_MulReductionVF:
       case Op_MulReductionVI:
       case Op_MulReductionVL:
-        // No multiply reduction instructions, and we emit scalar
-        // instructions for 64/128-bit vectors.
+        // No vector multiply reduction instructions, but we do
+        // emit scalar instructions for 64/128-bit vectors.
         return vlen >= 2 && (length_in_bytes == 8 || length_in_bytes == 16);
       case Op_VectorMaskCmp:
         if (length_in_bytes < 8) {
@@ -4599,7 +4599,7 @@ instruct extractD(vRegD dst, vReg src, immI idx) %{
   ins_pipe(pipe_slow);
 %}
 
-// ------------------------------ Vector mask loat/store -----------------------
+// ------------------------------ Vector mask load/store -----------------------
 
 // vector load mask
 

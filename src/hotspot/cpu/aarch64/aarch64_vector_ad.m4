@@ -166,8 +166,8 @@ source %{
       case Op_MulReductionVF:
       case Op_MulReductionVI:
       case Op_MulReductionVL:
-        // No multiply reduction instructions, and we emit scalar
-        // instructions for 64/128-bit vectors.
+        // No vector multiply reduction instructions, but we do
+        // emit scalar instructions for 64/128-bit vectors.
         return vlen >= 2 && (length_in_bytes == 8 || length_in_bytes == 16);
       case Op_VectorMaskCmp:
         if (length_in_bytes < 8) {
@@ -1884,7 +1884,7 @@ instruct reduce_mulD(vRegD dst, vRegD dsrc, vReg vsrc, vReg tmp) %{
 dnl
 dnl REDUCE_BITWISE_OP_NEON($1,        $2       $3    $4     )
 dnl REDUCE_BITWISE_OP_NEON(insn_name, is_long, type, op_name)
-define(`REDUCE_BITWIESE_OP_NEON', `
+define(`REDUCE_BITWISE_OP_NEON', `
 instruct reduce_$1$2_neon(iReg$2NoSp dst, $3 isrc, vReg vsrc) %{
   predicate(UseSVE == 0 && Matcher::vector_element_basic_type(n->in(2)) ifelse($2, L, ==, !=) T_LONG);
   match(Set dst ($4 isrc vsrc));
@@ -1901,7 +1901,7 @@ instruct reduce_$1$2_neon(iReg$2NoSp dst, $3 isrc, vReg vsrc) %{
 dnl
 dnl REDUCE_BITWISE_OP_SVE($1,        $2       $3    $4     )
 dnl REDUCE_BITWISE_OP_SVE(insn_name, is_long, type, op_name)
-define(`REDUCE_BITWIESE_OP_SVE', `
+define(`REDUCE_BITWISE_OP_SVE', `
 instruct reduce_$1$2_sve(iReg$2NoSp dst, $3 isrc, vReg vsrc, vRegD tmp) %{
   predicate(UseSVE > 0 && Matcher::vector_element_basic_type(n->in(2)) ifelse($2, L, ==, !=) T_LONG);
   match(Set dst ($4 isrc vsrc));
@@ -1920,7 +1920,7 @@ instruct reduce_$1$2_sve(iReg$2NoSp dst, $3 isrc, vReg vsrc, vRegD tmp) %{
 dnl
 dnl REDUCE_BITWISE_OP_PREDICATE($1,        $2       $3    $4     )
 dnl REDUCE_BITWISE_OP_PREDICATE(insn_name, is_long, type, op_name)
-define(`REDUCE_BITWIESE_OP_PREDICATE', `
+define(`REDUCE_BITWISE_OP_PREDICATE', `
 instruct reduce_$1$2_masked(iReg$2NoSp dst, $3 isrc, vReg vsrc, pRegGov pg, vRegD tmp) %{
   predicate(UseSVE > 0 && Matcher::vector_element_basic_type(n->in(1)->in(2)) ifelse($2, L, ==, !=) T_LONG);
   match(Set dst ($4 (Binary isrc vsrc) pg));
@@ -1938,44 +1938,44 @@ dnl
 // ------------------------------ Vector reduction and -------------------------
 
 // reduction andI
-REDUCE_BITWIESE_OP_NEON(and, I, iRegIorL2I, AndReductionV)
-REDUCE_BITWIESE_OP_SVE(and, I, iRegIorL2I, AndReductionV)
+REDUCE_BITWISE_OP_NEON(and, I, iRegIorL2I, AndReductionV)
+REDUCE_BITWISE_OP_SVE(and, I, iRegIorL2I, AndReductionV)
 
 // reduction andL
-REDUCE_BITWIESE_OP_NEON(and, L, iRegL, AndReductionV)
-REDUCE_BITWIESE_OP_SVE(and, L, iRegL, AndReductionV)
+REDUCE_BITWISE_OP_NEON(and, L, iRegL, AndReductionV)
+REDUCE_BITWISE_OP_SVE(and, L, iRegL, AndReductionV)
 
 // reduction and - predicated
-REDUCE_BITWIESE_OP_PREDICATE(and, I, iRegIorL2I, AndReductionV)
-REDUCE_BITWIESE_OP_PREDICATE(and, L, iRegL,      AndReductionV)
+REDUCE_BITWISE_OP_PREDICATE(and, I, iRegIorL2I, AndReductionV)
+REDUCE_BITWISE_OP_PREDICATE(and, L, iRegL,      AndReductionV)
 
 // ------------------------------ Vector reduction or --------------------------
 
 // reduction orI
-REDUCE_BITWIESE_OP_NEON(or, I, iRegIorL2I, OrReductionV)
-REDUCE_BITWIESE_OP_SVE(or, I, iRegIorL2I, OrReductionV)
+REDUCE_BITWISE_OP_NEON(or, I, iRegIorL2I, OrReductionV)
+REDUCE_BITWISE_OP_SVE(or, I, iRegIorL2I, OrReductionV)
 
 // reduction orL
-REDUCE_BITWIESE_OP_NEON(or, L, iRegL, OrReductionV)
-REDUCE_BITWIESE_OP_SVE(or, L, iRegL, OrReductionV)
+REDUCE_BITWISE_OP_NEON(or, L, iRegL, OrReductionV)
+REDUCE_BITWISE_OP_SVE(or, L, iRegL, OrReductionV)
 
 // reduction or - predicated
-REDUCE_BITWIESE_OP_PREDICATE(or, I, iRegIorL2I, OrReductionV)
-REDUCE_BITWIESE_OP_PREDICATE(or, L, iRegL,      OrReductionV)
+REDUCE_BITWISE_OP_PREDICATE(or, I, iRegIorL2I, OrReductionV)
+REDUCE_BITWISE_OP_PREDICATE(or, L, iRegL,      OrReductionV)
 
 // ------------------------------ Vector reduction xor -------------------------
 
 // reduction xorI
-REDUCE_BITWIESE_OP_NEON(xor, I, iRegIorL2I, XorReductionV)
-REDUCE_BITWIESE_OP_SVE(xor, I, iRegIorL2I, XorReductionV)
+REDUCE_BITWISE_OP_NEON(xor, I, iRegIorL2I, XorReductionV)
+REDUCE_BITWISE_OP_SVE(xor, I, iRegIorL2I, XorReductionV)
 
 // reduction xorL
-REDUCE_BITWIESE_OP_NEON(xor, L, iRegL, XorReductionV)
-REDUCE_BITWIESE_OP_SVE(xor, L, iRegL, XorReductionV)
+REDUCE_BITWISE_OP_NEON(xor, L, iRegL, XorReductionV)
+REDUCE_BITWISE_OP_SVE(xor, L, iRegL, XorReductionV)
 
 // reduction xor - predicated
-REDUCE_BITWIESE_OP_PREDICATE(xor, I, iRegIorL2I, XorReductionV)
-REDUCE_BITWIESE_OP_PREDICATE(xor, L, iRegL,      XorReductionV)
+REDUCE_BITWISE_OP_PREDICATE(xor, I, iRegIorL2I, XorReductionV)
+REDUCE_BITWISE_OP_PREDICATE(xor, L, iRegL,      XorReductionV)
 
 dnl
 dnl REDUCE_MAXMIN_I_NEON($1,   $2     )
@@ -3023,7 +3023,7 @@ EXTRACT_FP(F, fmovs, 4, S, 2)
 // DOUBLE
 EXTRACT_FP(D, fmovd, 2, D, 3)
 
-// ------------------------------ Vector mask loat/store -----------------------
+// ------------------------------ Vector mask load/store -----------------------
 
 // vector load mask
 
