@@ -24,7 +24,7 @@
 #ifndef CPU_AARCH64_GC_Z_ZGLOBALS_AARCH64_HPP
 #define CPU_AARCH64_GC_Z_ZGLOBALS_AARCH64_HPP
 
-const size_t ZPlatformGranuleSizeShift = 24; // 16MB
+const size_t ZPlatformGranuleSizeShift = 24;  // 16MB
 const size_t ZPlatformHeapViews        = 3;
 const size_t ZPlatformCacheLineSize    = 64;
 
