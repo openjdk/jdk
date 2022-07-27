@@ -758,7 +758,10 @@ void CompilationPolicy::compile(const methodHandle& mh, int bci, CompLevel level
       }
       // Deoptimize immediately (we don't have to wait for a compile).
       JavaThread* jt = THREAD;
-      RegisterMap map(jt, false);
+      RegisterMap map(jt,
+                      RegisterMap::UpdateMap::skip,
+                      RegisterMap::ProcessFrames::include,
+                      RegisterMap::WalkContinuation::skip);
       frame fr = jt->last_frame().sender(&map);
       Deoptimization::deoptimize_frame(jt, fr.id());
     }

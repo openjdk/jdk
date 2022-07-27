@@ -60,17 +60,17 @@
 #include "utilities/decoder.hpp"
 #include "utilities/formatBuffer.hpp"
 
-RegisterMap::RegisterMap(JavaThread *thread, bool update_map, bool process_frames, bool walk_cont) {
+RegisterMap::RegisterMap(JavaThread *thread, UpdateMap update_map, ProcessFrames process_frames, WalkContinuation walk_cont) {
   _thread         = thread;
-  _update_map     = update_map;
-  _process_frames = process_frames;
-  _walk_cont      = walk_cont;
+  _update_map     = update_map == UpdateMap::include;
+  _process_frames = process_frames == ProcessFrames::include;
+  _walk_cont      = walk_cont == WalkContinuation::include;
   clear();
   DEBUG_ONLY (_update_for_id = NULL;)
   NOT_PRODUCT(_skip_missing = false;)
   NOT_PRODUCT(_async = false;)
 
-  if (walk_cont && thread != NULL && thread->last_continuation() != NULL) {
+  if (walk_cont == WalkContinuation::include && thread != NULL && thread->last_continuation() != NULL) {
     _chunk = stackChunkHandle(Thread::current()->handle_area()->allocate_null_handle(), true /* dummy */);
   }
   _chunk_index = -1;
@@ -80,9 +80,9 @@ RegisterMap::RegisterMap(JavaThread *thread, bool update_map, bool process_frame
 #endif /* PRODUCT */
 }
 
-RegisterMap::RegisterMap(oop continuation, bool update_map) {
+RegisterMap::RegisterMap(oop continuation, UpdateMap update_map) {
   _thread         = NULL;
-  _update_map     = update_map;
+  _update_map     = update_map == UpdateMap::include;
   _process_frames = false;
   _walk_cont      = true;
   clear();
@@ -274,7 +274,10 @@ bool frame::is_safepoint_blob_frame() const {
 // testers
 
 bool frame::is_first_java_frame() const {
-  RegisterMap map(JavaThread::current(), false); // No update
+  RegisterMap map(JavaThread::current(),
+                  RegisterMap::UpdateMap::skip,
+                  RegisterMap::ProcessFrames::include,
+                  RegisterMap::WalkContinuation::skip); // No update
   frame s;
   for (s = sender(&map); !(s.is_java_frame() || s.is_first_frame()); s = s.sender(&map));
   return s.is_first_frame();
@@ -366,7 +369,10 @@ void frame::deoptimize(JavaThread* thread) {
   if (thread != NULL) {
     frame check = thread->last_frame();
     if (is_older(check.id())) {
-      RegisterMap map(thread, false);
+      RegisterMap map(thread,
+                      RegisterMap::UpdateMap::skip,
+                      RegisterMap::ProcessFrames::include,
+                      RegisterMap::WalkContinuation::skip);
       while (id() != check.id()) {
         check = check.sender(&map);
       }
@@ -377,7 +383,10 @@ void frame::deoptimize(JavaThread* thread) {
 }
 
 frame frame::java_sender() const {
-  RegisterMap map(JavaThread::current(), false);
+  RegisterMap map(JavaThread::current(),
+                  RegisterMap::UpdateMap::skip,
+                  RegisterMap::ProcessFrames::include,
+                  RegisterMap::WalkContinuation::skip);
   frame s;
   for (s = sender(&map); !(s.is_java_frame() || s.is_first_frame()); s = s.sender(&map)) ;
   guarantee(s.is_java_frame(), "tried to get caller of first java frame");
