@@ -24,6 +24,7 @@
 package jdk.jfr.event.compiler;
 
 import java.util.List;
+import java.util.Comparator;
 
 import jdk.jfr.Recording;
 import jdk.jfr.consumer.RecordedEvent;
@@ -75,25 +76,31 @@ public class TestJitRestart {
         r.stop();
 
         List<RecordedEvent> events = Events.fromRecording(r);
+        System.out.println("---------------------------------------------");
         System.out.println("# events:" + events.size());
         Events.hasEvents(events);
+        events.sort(Comparator.comparing(RecordedEvent::getStartTime));
 
         boolean compilationCanHappen = true;
         for (RecordedEvent evt: events) {
             System.out.println(evt);
             if (evt.getEventType().getName().equals("jdk.CodeCacheFull")) {
+                System.out.println("--> jdk.CodeCacheFull found");
                 compilationCanHappen = false;
             }
             if (evt.getEventType().getName().equals("jdk.Compilation") && !compilationCanHappen) {
                 return false;
             }
             if (evt.getEventType().getName().equals("jdk.JitRestart")) {
+                System.out.println("--> jdk.JitRestart found");
                 Events.assertField(evt, "codeCacheMaxCapacity").notEqual(0L);
                 Events.assertField(evt, "freedMemory").notEqual(0L);
                 System.out.println("JIT restart event found for BlobType " + btype);
                 return true;
             }
         }
+        System.out.println("---------------------------------------------");
+
         // in some seldom cases we do not see the JitRestart event; but then
         // do not fail (as long as no compilation happened before)
         return true;
