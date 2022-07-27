@@ -165,7 +165,11 @@ private:
   size_t _num_plab_fills[G1HeapRegionAttr::Num];
   size_t _num_direct_allocations[G1HeapRegionAttr::Num];
 
+  size_t _plab_fill_counter[G1HeapRegionAttr::Num];
+
   size_t _cur_desired_plab_size[G1HeapRegionAttr::Num];
+
+  size_t _tolerated_refills;
 
   void flush_and_retire_stats(uint num_workers);
   inline PLAB* alloc_buffer(G1HeapRegionAttr dest, uint node_index) const;

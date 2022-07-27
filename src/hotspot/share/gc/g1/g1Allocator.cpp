@@ -305,9 +305,11 @@ G1PLABAllocator::G1PLABAllocator(G1Allocator* allocator) :
       _alloc_buffers[state][node_index] = new PLAB(word_sz);
     }
     _num_plab_fills[state] = 0;
+    _plab_fill_counter[state] = 0;
     _num_direct_allocations[state] = 0;
     _cur_desired_plab_size[state] = _g1h->desired_plab_sz(state);
   }
+  _tolerated_refills = MAX2((size_t)((G1LastPLABAverageOccupancy / TargetPLABWastePct) * 1.5), size_t(1));
 }
 
 G1PLABAllocator::~G1PLABAllocator() {
@@ -332,8 +334,7 @@ HeapWord* G1PLABAllocator::allocate_direct_or_new_plab(G1HeapRegionAttr dest,
 
   size_t new_plab_word_size = plab_word_size;
   if (UseNewCode) {
-    size_t tolerated_refills = (G1LastPLABAverageOccupancy / TargetPLABWastePct) * 1.5;
-    if ((_num_plab_fills[dest.type()] > 0) && (_num_plab_fills[dest.type()] % tolerated_refills == 0)) {
+    if (_plab_fill_counter[dest.type()] == _tolerated_refills) {
       new_plab_word_size *= 2;
     }
   }
@@ -352,6 +353,11 @@ HeapWord* G1PLABAllocator::allocate_direct_or_new_plab(G1HeapRegionAttr dest,
     _num_plab_fills[dest.type()]++;
     alloc_buf->retire();
 
+    if (plab_word_size == new_plab_word_size) {
+      _plab_fill_counter[dest.type()]++;
+    } else {
+      _plab_fill_counter[dest.type()] = 0;
+    }
     plab_word_size = new_plab_word_size;
     _cur_desired_plab_size[dest.type()] = plab_word_size;
 
