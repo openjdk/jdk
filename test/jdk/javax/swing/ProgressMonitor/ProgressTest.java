@@ -66,9 +66,9 @@ public class ProgressTest {
         };
 
         ProgressMonitorInputStream pmis = 
-		new ProgressMonitorInputStream(null, "Reading File", fileIn);
+            new ProgressMonitorInputStream(null, "Reading File", fileIn);
 
-	Thread thread = new Thread() {
+        Thread thread = new Thread() {
             public void run() {
                 byte[] buffer = new byte[512];
                 int nb = 0;
@@ -83,7 +83,7 @@ public class ProgressTest {
                     pmis.getProgressMonitor().setNote(total/(1024*1024)+" MB Read");
                 }
             }
-	};
+        };
         thread.start();
         pfjFrame.awaitAndCheck();
     }
