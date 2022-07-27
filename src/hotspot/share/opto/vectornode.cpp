@@ -1856,7 +1856,7 @@ static Node* reverse_operations_identity(Node* n, Node* in1) {
     return n;
   }
   if (n->Opcode() == in1->Opcode()) {
-    // OperationV (OperationV X , MASK) , MASK =>  X
+    // OperationV (OperationV X MASK) MASK =>  X
     if (n->is_predicated_vector() && in1->is_predicated_vector() && n->in(2) == in1->in(2)) {
       return in1->in(1);
     // OperationV (OperationV X) =>  X
