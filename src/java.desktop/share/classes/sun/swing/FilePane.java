@@ -1192,7 +1192,7 @@ public class FilePane extends JPanel implements PropertyChangeListener {
 
             } else if (value instanceof Long len) {
                 if (listViewWindowsStyle) {
-                    if(len == 0) {
+                    if (len == 0) {
                         text = MessageFormat.format(kiloByteString, len);
                     } else {
                         len /= 1000L;
