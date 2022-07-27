@@ -37,7 +37,7 @@ import jdk.test.lib.Utils;
 /*
  * @test
  * @bug 8287794
- * @summary Test various reverse bytes ideal transforms.
+ * @summary Test various reverse bytes ideal transforms on X86(AVX2, AVX512) and AARCH64(NEON)
  * @requires vm.compiler2.enabled
  * @modules jdk.incubator.vector
  * @library /test/lib /
@@ -77,12 +77,12 @@ public class TestReverseByteTransforms {
     }
 
     @Test
-    @IR(applyIfCPUFeature={"sve", "true"}, failOn = {IRNode.REVERSE_BYTES_V})
+    @IR(applyIfCPUFeatureOr = {"simd", "true", "avx2", "true"}, counts = {IRNode.REVERSE_BYTES_V , " > 0 "})
     public void test_reversebytes_long_transform1(long[] lout, long[] linp) {
         VectorMask<Long> mask = VectorMask.fromLong(LSPECIES, 3);
         for (int i = 0; i < LSPECIES.loopBound(linp.length); i+=LSPECIES.length()) {
             LongVector.fromArray(LSPECIES, linp, i)
-                     .lanewise(VectorOperators.REVERSE_BYTES, mask)
+                     .lanewise(VectorOperators.REVERSE_BYTES)
                      .lanewise(VectorOperators.REVERSE_BYTES, mask)
                      .intoArray(lout, i);
         }
@@ -96,13 +96,14 @@ public class TestReverseByteTransforms {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr={"simd", "true", "avx2", "true"}, counts = {IRNode.REVERSE_BYTES_V , " > 0 "})
+    @IR(applyIfCPUFeatureOr = {"simd", "true", "avx2", "true"}, counts = {IRNode.REVERSE_BYTES_V , " > 0 "})
     public void test_reversebytes_long_transform2(long[] lout, long[] linp) {
-        VectorMask<Long> mask = VectorMask.fromLong(LSPECIES, 3);
+        VectorMask<Long> mask1 = VectorMask.fromLong(LSPECIES, 3);
+        VectorMask<Long> mask2 = VectorMask.fromLong(LSPECIES, 3);
         for (int i = 0; i < LSPECIES.loopBound(linp.length); i+=LSPECIES.length()) {
             LongVector.fromArray(LSPECIES, linp, i)
-                     .lanewise(VectorOperators.REVERSE_BYTES)
-                     .lanewise(VectorOperators.REVERSE_BYTES, mask)
+                     .lanewise(VectorOperators.REVERSE_BYTES, mask1)
+                     .lanewise(VectorOperators.REVERSE_BYTES, mask2)
                      .intoArray(lout, i);
         }
     }
@@ -115,14 +116,12 @@ public class TestReverseByteTransforms {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr={"simd", "true", "avx2", "true"}, counts = {IRNode.REVERSE_BYTES_V , " > 0 "})
+    @IR(applyIfCPUFeatureOr = {"simd", "true", "avx2", "true"}, failOn = {IRNode.REVERSE_BYTES_V})
     public void test_reversebytes_long_transform3(long[] lout, long[] linp) {
-        VectorMask<Long> mask1 = VectorMask.fromLong(LSPECIES, 3);
-        VectorMask<Long> mask2 = VectorMask.fromLong(LSPECIES, 3);
         for (int i = 0; i < LSPECIES.loopBound(linp.length); i+=LSPECIES.length()) {
             LongVector.fromArray(LSPECIES, linp, i)
-                     .lanewise(VectorOperators.REVERSE_BYTES, mask1)
-                     .lanewise(VectorOperators.REVERSE_BYTES, mask2)
+                     .lanewise(VectorOperators.REVERSE_BYTES)
+                     .lanewise(VectorOperators.REVERSE_BYTES)
                      .intoArray(lout, i);
         }
     }
@@ -135,30 +134,12 @@ public class TestReverseByteTransforms {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr={"simd", "true", "avx2", "true"}, failOn = {IRNode.REVERSE_BYTES_V})
-    public void test_reversebytes_long_transform4(long[] lout, long[] linp) {
-        for (int i = 0; i < LSPECIES.loopBound(linp.length); i+=LSPECIES.length()) {
-            LongVector.fromArray(LSPECIES, linp, i)
-                     .lanewise(VectorOperators.REVERSE_BYTES)
-                     .lanewise(VectorOperators.REVERSE_BYTES)
-                     .intoArray(lout, i);
-        }
-    }
-
-    @Run(test = {"test_reversebytes_long_transform4"}, mode = RunMode.STANDALONE)
-    public void kernel_test_reversebytes_long_transform4() {
-        for (int i = 0; i < ITERS; i++) {
-            test_reversebytes_long_transform4(lout, linp);
-        }
-    }
-
-    @Test
-    @IR(applyIfCPUFeature={"sve", "true"}, failOn = {IRNode.REVERSE_BYTES_V})
+    @IR(applyIfCPUFeatureOr = {"simd", "true", "avx2", "true"}, counts = {IRNode.REVERSE_BYTES_V , " > 0 "})
     public void test_reversebytes_int_transform1(int[] iout, int[] iinp) {
         VectorMask<Integer> mask = VectorMask.fromLong(ISPECIES, 3);
         for (int i = 0; i < ISPECIES.loopBound(iinp.length); i+=ISPECIES.length()) {
             IntVector.fromArray(ISPECIES, iinp, i)
-                     .lanewise(VectorOperators.REVERSE_BYTES, mask)
+                     .lanewise(VectorOperators.REVERSE_BYTES)
                      .lanewise(VectorOperators.REVERSE_BYTES, mask)
                      .intoArray(iout, i);
         }
@@ -172,13 +153,14 @@ public class TestReverseByteTransforms {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr={"simd", "true", "avx2", "true"}, counts = {IRNode.REVERSE_BYTES_V , " > 0 "})
+    @IR(applyIfCPUFeatureOr = {"simd", "true", "avx2", "true"}, counts = {IRNode.REVERSE_BYTES_V , " > 0 "})
     public void test_reversebytes_int_transform2(int[] iout, int[] iinp) {
-        VectorMask<Integer> mask = VectorMask.fromLong(ISPECIES, 3);
+        VectorMask<Integer> mask1 = VectorMask.fromLong(ISPECIES, 3);
+        VectorMask<Integer> mask2 = VectorMask.fromLong(ISPECIES, 3);
         for (int i = 0; i < ISPECIES.loopBound(iinp.length); i+=ISPECIES.length()) {
             IntVector.fromArray(ISPECIES, iinp, i)
-                     .lanewise(VectorOperators.REVERSE_BYTES)
-                     .lanewise(VectorOperators.REVERSE_BYTES, mask)
+                     .lanewise(VectorOperators.REVERSE_BYTES, mask1)
+                     .lanewise(VectorOperators.REVERSE_BYTES, mask2)
                      .intoArray(iout, i);
         }
     }
@@ -191,14 +173,12 @@ public class TestReverseByteTransforms {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr={"simd", "true", "avx2", "true"}, counts = {IRNode.REVERSE_BYTES_V , " > 0 "})
+    @IR(applyIfCPUFeatureOr = {"simd", "true", "avx2", "true"}, failOn = {IRNode.REVERSE_BYTES_V})
     public void test_reversebytes_int_transform3(int[] iout, int[] iinp) {
-        VectorMask<Integer> mask1 = VectorMask.fromLong(ISPECIES, 3);
-        VectorMask<Integer> mask2 = VectorMask.fromLong(ISPECIES, 3);
         for (int i = 0; i < ISPECIES.loopBound(iinp.length); i+=ISPECIES.length()) {
             IntVector.fromArray(ISPECIES, iinp, i)
-                     .lanewise(VectorOperators.REVERSE_BYTES, mask1)
-                     .lanewise(VectorOperators.REVERSE_BYTES, mask2)
+                     .lanewise(VectorOperators.REVERSE_BYTES)
+                     .lanewise(VectorOperators.REVERSE_BYTES)
                      .intoArray(iout, i);
         }
     }
@@ -211,30 +191,12 @@ public class TestReverseByteTransforms {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr={"simd", "true", "avx2", "true"}, failOn = {IRNode.REVERSE_BYTES_V})
-    public void test_reversebytes_int_transform4(int[] iout, int[] iinp) {
-        for (int i = 0; i < ISPECIES.loopBound(iinp.length); i+=ISPECIES.length()) {
-            IntVector.fromArray(ISPECIES, iinp, i)
-                     .lanewise(VectorOperators.REVERSE_BYTES)
-                     .lanewise(VectorOperators.REVERSE_BYTES)
-                     .intoArray(iout, i);
-        }
-    }
-
-    @Run(test = {"test_reversebytes_int_transform4"}, mode = RunMode.STANDALONE)
-    public void kernel_test_reversebytes_int_transform4() {
-        for (int i = 0; i < ITERS; i++) {
-            test_reversebytes_int_transform4(iout, iinp);
-        }
-    }
-
-    @Test
-    @IR(applyIfCPUFeature={"sve", "true"}, failOn = {IRNode.REVERSE_BYTES_V})
+    @IR(applyIfCPUFeatureOr = {"simd", "true", "avx2", "true"}, counts = {IRNode.REVERSE_BYTES_V , " > 0 "})
     public void test_reversebytes_short_transform1(short[] sout, short[] sinp) {
         VectorMask<Short> mask = VectorMask.fromLong(SSPECIES, 3);
         for (int i = 0; i < SSPECIES.loopBound(sinp.length); i+=SSPECIES.length()) {
             ShortVector.fromArray(SSPECIES, sinp, i)
-                     .lanewise(VectorOperators.REVERSE_BYTES, mask)
+                     .lanewise(VectorOperators.REVERSE_BYTES)
                      .lanewise(VectorOperators.REVERSE_BYTES, mask)
                      .intoArray(sout, i);
         }
@@ -248,13 +210,14 @@ public class TestReverseByteTransforms {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr={"simd", "true", "avx2", "true"}, counts = {IRNode.REVERSE_BYTES_V , " > 0 "})
+    @IR(applyIfCPUFeatureOr = {"simd", "true", "avx2", "true"}, counts = {IRNode.REVERSE_BYTES_V , " > 0 "})
     public void test_reversebytes_short_transform2(short[] sout, short[] sinp) {
-        VectorMask<Short> mask = VectorMask.fromLong(SSPECIES, 3);
+        VectorMask<Short> mask1 = VectorMask.fromLong(SSPECIES, 3);
+        VectorMask<Short> mask2 = VectorMask.fromLong(SSPECIES, 3);
         for (int i = 0; i < SSPECIES.loopBound(sinp.length); i+=SSPECIES.length()) {
             ShortVector.fromArray(SSPECIES, sinp, i)
-                     .lanewise(VectorOperators.REVERSE_BYTES)
-                     .lanewise(VectorOperators.REVERSE_BYTES, mask)
+                     .lanewise(VectorOperators.REVERSE_BYTES, mask1)
+                     .lanewise(VectorOperators.REVERSE_BYTES, mask2)
                      .intoArray(sout, i);
         }
     }
@@ -267,14 +230,12 @@ public class TestReverseByteTransforms {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr={"simd", "true", "avx2", "true"}, counts = {IRNode.REVERSE_BYTES_V , " > 0 "})
+    @IR(applyIfCPUFeatureOr = {"simd", "true", "avx2", "true"}, failOn = {IRNode.REVERSE_BYTES_V})
     public void test_reversebytes_short_transform3(short[] sout, short[] sinp) {
-        VectorMask<Short> mask1 = VectorMask.fromLong(SSPECIES, 3);
-        VectorMask<Short> mask2 = VectorMask.fromLong(SSPECIES, 3);
         for (int i = 0; i < SSPECIES.loopBound(sinp.length); i+=SSPECIES.length()) {
             ShortVector.fromArray(SSPECIES, sinp, i)
-                     .lanewise(VectorOperators.REVERSE_BYTES, mask1)
-                     .lanewise(VectorOperators.REVERSE_BYTES, mask2)
+                     .lanewise(VectorOperators.REVERSE_BYTES)
+                     .lanewise(VectorOperators.REVERSE_BYTES)
                      .intoArray(sout, i);
         }
     }
@@ -283,24 +244,6 @@ public class TestReverseByteTransforms {
     public void kernel_test_reversebytes_short_transform3() {
         for (int i = 0; i < ITERS; i++) {
             test_reversebytes_short_transform3(sout, sinp);
-        }
-    }
-
-    @Test
-    @IR(applyIfCPUFeatureOr={"simd", "true", "avx2", "true"}, failOn = {IRNode.REVERSE_BYTES_V})
-    public void test_reversebytes_short_transform4(short[] sout, short[] sinp) {
-        for (int i = 0; i < SSPECIES.loopBound(sinp.length); i+=SSPECIES.length()) {
-            ShortVector.fromArray(SSPECIES, sinp, i)
-                     .lanewise(VectorOperators.REVERSE_BYTES)
-                     .lanewise(VectorOperators.REVERSE_BYTES)
-                     .intoArray(sout, i);
-        }
-    }
-
-    @Run(test = {"test_reversebytes_short_transform4"}, mode = RunMode.STANDALONE)
-    public void kernel_test_reversebytes_short_transform4() {
-        for (int i = 0; i < ITERS; i++) {
-            test_reversebytes_short_transform4(sout, sinp);
         }
     }
 }
