@@ -37,8 +37,8 @@ import javax.swing.SwingUtilities;
 
 public class ProgressTest {
 
-    private static final String instructionsText =  
-            "A ProgressMonitor will be shown." + 
+    private static final String instructionsText =
+            "A ProgressMonitor will be shown." +
             " If it shows blank progressbar after 2048MB bytes read,"+
             " press Fail else press Pass";
 
@@ -46,10 +46,10 @@ public class ProgressTest {
 
     public static void main(String[] args) throws Exception {
 
-	PassFailJFrame pfjFrame = new PassFailJFrame("JScrollPane "
+        PassFailJFrame pfjFrame = new PassFailJFrame("JScrollPane "
                 + "Test Instructions", instructionsText, 5);
 
-	final long SIZE = (long) (Integer.MAX_VALUE * 1.5);
+        final long SIZE = (long) (Integer.MAX_VALUE * 1.5);
 
         InputStream fileIn = new InputStream() {
             long read = 0;
@@ -65,7 +65,7 @@ public class ProgressTest {
             }
         };
 
-        ProgressMonitorInputStream pmis = 
+        ProgressMonitorInputStream pmis =
             new ProgressMonitorInputStream(null, "Reading File", fileIn);
 
         Thread thread = new Thread() {
