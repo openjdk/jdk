@@ -840,6 +840,13 @@ public abstract class URLConnection {
      * returned input stream if the read timeout expires before data
      * is available for read.
      *
+     * @apiNote The {@code InputStream} returned by this method can wrap
+     * an {@link java.util.zip.InflaterInputStream InflaterInputStream}
+     * which leaves the contents of the output buffer beyond the
+     * last inflated byte undefined after a read operation (see {@link
+     * java.util.zip.InflaterInputStream#read(byte[], int, int)
+     * InflaterInputStream.read(byte[], int, int)}).
+     *
      * @return     an input stream that reads from this open connection.
      * @throws     IOException              if an I/O error occurs while
      *               creating the input stream.

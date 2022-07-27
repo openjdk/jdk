@@ -180,7 +180,7 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
      * @param b the buffer into which the data is read
      * @param off the start offset in the destination array {@code b}
      * @param len the maximum number of bytes read
-     * @return the actual number of inflated bytes, or -1 if the end of the
+     * @return the actual number of bytes read, or -1 if the end of the
      *         entry is reached
      * @throws     NullPointerException if {@code b} is {@code null}.
      * @throws     IndexOutOfBoundsException if {@code off} is negative,
