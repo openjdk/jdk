@@ -418,9 +418,7 @@ public class JSplitPane extends JComponent implements Accessible
 
     /**
      * Sets the size of the divider.
-     * @implNote Divider sizes < 1 are ignored.
-     *           {@code SplitPane.dividerSize} L&amp;F specific value
-     *           will instead be used.
+     * @implNote Divider sizes {@code newSize < 1} are ignored.
      *
      * @param newSize an integer giving the size of the divider in pixels
      */
