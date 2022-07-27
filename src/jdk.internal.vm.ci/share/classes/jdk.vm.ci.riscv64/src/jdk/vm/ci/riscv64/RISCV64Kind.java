@@ -108,7 +108,7 @@ public enum RISCV64Kind implements PlatformKind {
     }
 
     public boolean isFP() {
-        switch(this) {
+        switch (this) {
             case SINGLE:
             case DOUBLE:
                 return true;
