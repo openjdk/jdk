@@ -309,7 +309,11 @@ G1PLABAllocator::G1PLABAllocator(G1Allocator* allocator) :
     _num_direct_allocations[state] = 0;
     _cur_desired_plab_size[state] = _g1h->desired_plab_sz(state);
   }
-  _tolerated_refills = MAX2((size_t)((G1LastPLABAverageOccupancy / TargetPLABWastePct) * 1.5), size_t(1));
+  if (UseNewCode) {
+    _tolerated_refills = size_t(~0);
+  } else {
+    _tolerated_refills = MAX2((size_t)((G1LastPLABAverageOccupancy / TargetPLABWastePct) * 1.5), size_t(1));
+  }
 }
 
 G1PLABAllocator::~G1PLABAllocator() {
@@ -333,10 +337,8 @@ HeapWord* G1PLABAllocator::allocate_direct_or_new_plab(G1HeapRegionAttr dest,
   size_t plab_word_size = _cur_desired_plab_size[dest.type()];
 
   size_t new_plab_word_size = plab_word_size;
-  if (UseNewCode) {
-    if (_plab_fill_counter[dest.type()] == _tolerated_refills) {
-      new_plab_word_size *= 2;
-    }
+  if (_plab_fill_counter[dest.type()] == _tolerated_refills) {
+    new_plab_word_size *= 2;
   }
 
   size_t required_in_plab = PLAB::size_required_for_allocation(word_sz);
