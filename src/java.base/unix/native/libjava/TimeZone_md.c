@@ -566,9 +566,29 @@ getGMTOffsetID()
         return strdup("GMT");
     }
 
-    strftime(offset, 6, "%z", &localtm);
-    char gmt_offset[] = {offset[0], offset[1], offset[2], ':', offset[3], offset[4], '\0'};
+#if defined(MACOSX)
+    time_t gmt_offset;
+    gmt_offset = (time_t)localtm.tm_gmtoff;
+    if (gmt_offset == 0) {
+        return strdup("GMT");
+    }
+#else
+    struct tm gmt;
+    if (gmtime_r(&clock, &gmt) == NULL) {
+        return strdup("GMT");
+    }
 
-    sprintf(buf, (const char *)"GMT%s", gmt_offset);
+    if(localtm.tm_hour == gmt.tm_hour && localtm.tm_min == gmt.tm_min) {
+        return strdup("GMT");
+    }
+#endif
+
+    strftime(offset, 6, "%z", &localtm);
+    if (strlen(offset) != 5) {
+        return strdup("GMT");
+    }
+
+    sprintf(buf, (const char *)"GMT%c%c%c:%c%c", offset[0], offset[1], offset[2],
+        offset[3], offset[4]);
     return strdup(buf);
 }
