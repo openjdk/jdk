@@ -32,7 +32,7 @@ void proc_v(void* v_cb) {
 
 template<typename CB>
 void launch_v(CB cb) {
-    run_in_new_thread(&proc_v<CB>, (void*) cb);
+    run_in_new_thread_and_join(&proc_v<CB>, (void*) cb);
 }
 
 template<typename O, typename CB>
@@ -52,7 +52,7 @@ O launch(CB cb) {
     Context<O, CB> ctxt;
     ctxt.cb = cb;
 
-    run_in_new_thread(&proc<O, CB>, &ctxt);
+    run_in_new_thread_and_join(&proc<O, CB>, &ctxt);
 
     return ctxt.o;
 }

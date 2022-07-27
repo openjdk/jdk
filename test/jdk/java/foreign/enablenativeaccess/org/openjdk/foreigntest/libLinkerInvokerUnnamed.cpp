@@ -40,6 +40,6 @@ extern "C" {
     Java_org_openjdk_foreigntest_PanamaMainUnnamedModule_nativeLinker0(JNIEnv *env, jclass cls) {
         JavaVM* jvm;
         env->GetJavaVM(&jvm);
-        run_in_new_thread(call, jvm);
+        run_in_new_thread_and_join(call, jvm);
     }
 }

@@ -65,7 +65,7 @@ void* procedure(void* ctxt) {
 
 // Run 'proc' in a newly started thread, passing 'context' to it
 // as an argument, and then join that thread.
-void run_in_new_thread(PROCEDURE proc, void* context) {
+void run_in_new_thread_and_join(PROCEDURE proc, void* context) {
     struct Helper helper;
     helper.proc = proc;
     helper.context = context;

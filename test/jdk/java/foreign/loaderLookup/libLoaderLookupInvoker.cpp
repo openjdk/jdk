@@ -47,7 +47,7 @@ extern "C" {
         env->GetJavaVM(&jvm);
         Context context;
         context.jvm = jvm;
-        run_in_new_thread(call, &context);
+        run_in_new_thread_and_join(call, &context);
         return context.res;
     }
 }
