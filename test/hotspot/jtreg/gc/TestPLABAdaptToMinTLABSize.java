@@ -27,6 +27,7 @@ package gc;
  * @test TestPLABAdaptToMinTLABSize
  * @bug 8289137
  * @summary Make sure that Young/OldPLABSize adapt to MinTLABSize setting.
+ * @requires vm.gc.Parallel | vm.gc.G1
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
