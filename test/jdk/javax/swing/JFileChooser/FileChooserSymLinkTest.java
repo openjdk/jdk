@@ -28,7 +28,7 @@
    @build PassFailJFrame
    @summary Test to check if the absolute path of Symbolic Link folder
             is valid on ValueChanged property listener.
-   @run main FileChooserSymLinkTest
+   @run main/manual FileChooserSymLinkTest
 */
 
 import java.awt.Dimension;
