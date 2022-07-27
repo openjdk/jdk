@@ -287,7 +287,7 @@ void VM_ThreadDump::doit() {
     // when there are a lot of inflated monitors. So we deflate idle monitors and
     // gather information about owned monitors at the same time.
     tablep = &table;
-    while (ObjectSynchronizer::deflate_idle_monitors(tablep) >= (size_t)MonitorDeflationMax) {
+    while (ObjectSynchronizer::deflate_idle_monitors(tablep) > 0) {
       ; /* empty */
     }
   }
