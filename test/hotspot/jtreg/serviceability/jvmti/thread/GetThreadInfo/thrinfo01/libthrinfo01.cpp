@@ -43,7 +43,8 @@ static info expected_info_array[] = {
     {"vthread", JNI_FALSE,JVMTI_THREAD_NORM_PRIORITY, JNI_TRUE}
 };
 
-jint Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
+JNIEXPORT jint JNICALL
+Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
   jint res;
   jvmtiCapabilities caps;
 

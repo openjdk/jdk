@@ -65,6 +65,7 @@
   template(java_lang_Thread_FieldHolder,              "java/lang/Thread$FieldHolder")             \
   template(java_lang_Thread_Constants,                "java/lang/Thread$Constants")               \
   template(java_lang_ThreadGroup,                     "java/lang/ThreadGroup")                    \
+  template(java_lang_BaseVirtualThread,               "java/lang/BaseVirtualThread")              \
   template(java_lang_VirtualThread,                   "java/lang/VirtualThread")                  \
   template(java_lang_Cloneable,                       "java/lang/Cloneable")                      \
   template(java_lang_Throwable,                       "java/lang/Throwable")                      \
@@ -363,9 +364,14 @@
   template(DEFAULT_CONTEXT_name,                      "DEFAULT_CONTEXT")                          \
   NOT_LP64(  do_alias(intptr_signature,               int_signature)  )                           \
   LP64_ONLY( do_alias(intptr_signature,               long_signature) )                           \
-  /* Foreign API Support */                                                                                          \
-  template(jdk_internal_invoke_NativeEntryPoint,                 "jdk/internal/invoke/NativeEntryPoint")           \
-  template(jdk_internal_invoke_NativeEntryPoint_signature,       "Ljdk/internal/invoke/NativeEntryPoint;")         \
+  /* Foreign API Support */                                                                       \
+  template(jdk_internal_foreign_abi_NativeEntryPoint,                "jdk/internal/foreign/abi/NativeEntryPoint") \
+  template(jdk_internal_foreign_abi_ABIDescriptor,                   "jdk/internal/foreign/abi/ABIDescriptor") \
+  template(jdk_internal_foreign_abi_VMStorage,                       "jdk/internal/foreign/abi/VMStorage") \
+  template(jdk_internal_foreign_abi_VMStorage_signature,             "Ljdk/internal/foreign/abi/VMStorage;") \
+  template(jdk_internal_foreign_abi_VMStorage_array_signature,       "[Ljdk/internal/foreign/abi/VMStorage;") \
+  template(jdk_internal_foreign_abi_VMStorage_array_array_signature, "[[Ljdk/internal/foreign/abi/VMStorage;") \
+  template(jdk_internal_foreign_abi_CallConv,                        "jdk/internal/foreign/abi/UpcallLinker$CallRegs") \
                                                                                                   \
   /* Support for JVMCI */                                                                         \
   JVMCI_VM_SYMBOLS_DO(template, do_alias)                                                         \
@@ -549,6 +555,8 @@
   template(char_char_signature,                       "(C)C")                                     \
   template(short_short_signature,                     "(S)S")                                     \
   template(int_bool_signature,                        "(I)Z")                                     \
+  template(float_bool_signature,                      "(F)Z")                                     \
+  template(double_bool_signature,                     "(D)Z")                                     \
   template(float_int_signature,                       "(F)I")                                     \
   template(double_long_signature,                     "(D)J")                                     \
   template(double_double_signature,                   "(D)D")                                     \

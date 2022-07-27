@@ -215,10 +215,11 @@ class MacroAssembler: public Assembler {
 #ifdef _LP64
   // Support for argument shuffling
 
-  void move32_64(VMRegPair src, VMRegPair dst);
-  void long_move(VMRegPair src, VMRegPair dst);
-  void float_move(VMRegPair src, VMRegPair dst);
-  void double_move(VMRegPair src, VMRegPair dst);
+  // bias in bytes
+  void move32_64(VMRegPair src, VMRegPair dst, Register tmp = rax, int in_stk_bias = 0, int out_stk_bias = 0);
+  void long_move(VMRegPair src, VMRegPair dst, Register tmp = rax, int in_stk_bias = 0, int out_stk_bias = 0);
+  void float_move(VMRegPair src, VMRegPair dst, Register tmp = rax, int in_stk_bias = 0, int out_stk_bias = 0);
+  void double_move(VMRegPair src, VMRegPair dst, Register tmp = rax, int in_stk_bias = 0, int out_stk_bias = 0);
   void move_ptr(VMRegPair src, VMRegPair dst);
   void object_move(OopMap* map,
                    int oop_handle_offset,
@@ -523,11 +524,12 @@ class MacroAssembler: public Assembler {
   void push_CPU_state();
   void pop_CPU_state();
 
-  void push_cont_fastpath(Register java_thread);
-  void pop_cont_fastpath(Register java_thread);
-  void inc_held_monitor_count(Register java_thread);
-  void dec_held_monitor_count(Register java_thread);
-  void reset_held_monitor_count(Register java_thread);
+  void push_cont_fastpath();
+  void pop_cont_fastpath();
+
+  void inc_held_monitor_count();
+  void dec_held_monitor_count();
+
   DEBUG_ONLY(void stop_if_in_cont(Register cont_reg, const char* name);)
 
   // Round up to a power of two
@@ -563,14 +565,6 @@ public:
   }
 
   // allocation
-  void eden_allocate(
-    Register thread,                   // Current thread
-    Register obj,                      // result: pointer to object after successful allocation
-    Register var_size_in_bytes,        // object size in bytes if unknown at compile time; invalid otherwise
-    int      con_size_in_bytes,        // object size in bytes if   known at compile time
-    Register t1,                       // temp register
-    Label&   slow_case                 // continuation point if fast allocation fails
-  );
   void tlab_allocate(
     Register thread,                   // Current thread
     Register obj,                      // result: pointer to object after successful allocation
@@ -674,10 +668,6 @@ public:
   // prints msg and continues
   void warn(const char* msg);
 
-  void _assert_asm(Condition cc, const char* msg);
-#define assert_asm0(cc, msg) _assert_asm(cc, FILE_AND_LINE ": " msg)
-#define assert_asm(masm, command, cc, msg) DEBUG_ONLY((masm)->command; (masm)->_assert_asm(cc, FILE_AND_LINE ": " #command " " #cc ": " msg))
-
   // dumps registers and other state
   void print_state();
 
@@ -714,7 +704,7 @@ public:
 
   void verify_tlab();
 
-  Condition negate_condition(Condition cond);
+  static Condition negate_condition(Condition cond);
 
   // Instructions that use AddressLiteral operands. These instruction can handle 32bit/64bit
   // operands. In general the names are modified to avoid hiding the instruction in Assembler
@@ -867,6 +857,8 @@ public:
 
   // Emit the CompiledIC call idiom
   void ic_call(address entry, jint method_index = 0);
+
+  void emit_static_call_stub();
 
   // Jumps
 
@@ -1350,6 +1342,11 @@ public:
 
   using Assembler::vbroadcastsd;
   void vbroadcastsd(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch = rscratch1);
+  void vpbroadcastq(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch = rscratch1);
+  void vpbroadcastq(XMMRegister dst, XMMRegister src, int vector_len) { Assembler::vpbroadcastq(dst, src, vector_len); }
+  void vpbroadcastq(XMMRegister dst, Address src, int vector_len) { Assembler::vpbroadcastq(dst, src, vector_len); }
+
+
 
   void vpcmpeqb(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
 
@@ -1877,9 +1874,6 @@ public:
 
 
  public:
-  // C2 compiled method's prolog code.
-  void verified_entry(int framesize, int stack_bang_size, bool fp_mode_24b, bool is_stub);
-
   // clear memory of size 'cnt' qwords, starting at 'base';
   // if 'is_large' is set, do not try to produce short loop
   void clear_mem(Register base, Register cnt, Register rtmp, XMMRegister xtmp, bool is_large, KRegister mask=knoreg);

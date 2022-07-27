@@ -89,7 +89,7 @@ public class TfClearParamTest {
     }
 
     /**
-     * Obtains transformer's parameter with the a name that wasn't set before.
+     * Obtains transformer's parameter with a name that wasn't set before.
      * Null is expected.
      * @throws TransformerConfigurationException If for some reason the
      *         TransformerHandler can not be created.
@@ -134,7 +134,7 @@ public class TfClearParamTest {
 
     /**
      * Obtains transformer's parameter whose initiated with a stream source with
-     * the a name that set before. Value should be same as set one.
+     * the name that set before. Value should be same as set one.
      * @throws TransformerConfigurationException If for some reason the
      *         TransformerHandler can not be created.
      */
@@ -149,7 +149,7 @@ public class TfClearParamTest {
 
     /**
      * Obtains transformer's parameter whose initiated with a stream source with
-     * the a name that wasn't set before. Null is expected.
+     * a name that wasn't set before. Null is expected.
      * @throws TransformerConfigurationException If for some reason the
      *         TransformerHandler can not be created.
      */
@@ -164,7 +164,7 @@ public class TfClearParamTest {
 
     /**
      * Obtains transformer's parameter whose initiated with a sax source with
-     * the a name that set before. Value should be same as set one.
+     * the name that set before. Value should be same as set one.
      * @throws Exception If any errors occur.
      */
     @Test
@@ -181,7 +181,7 @@ public class TfClearParamTest {
 
     /**
      * Obtains transformer's parameter whose initiated with a sax source with
-     * the a name that wasn't set before. Null is expected.
+     * a name that wasn't set before. Null is expected.
      * @throws Exception If any errors occur.
      */
     @Test
@@ -199,7 +199,7 @@ public class TfClearParamTest {
 
     /**
      * Obtains transformer's parameter whose initiated with a dom source with
-     * the a name that set before. Value should be same as set one.
+     * the name that set before. Value should be same as set one.
      * @throws Exception If any errors occur.
      */
     @Test
@@ -220,7 +220,7 @@ public class TfClearParamTest {
 
     /**
      * Obtains transformer's parameter whose initiated with a dom source with
-     * the a name that wasn't set before. Null is expected.
+     * a name that wasn't set before. Null is expected.
      * @throws Exception If any errors occur.
      */
     @Test

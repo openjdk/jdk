@@ -516,6 +516,9 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_doubleToLongBits:
   case vmIntrinsics::_longBitsToDouble:         return inline_fp_conversions(intrinsic_id());
 
+  case vmIntrinsics::_floatIsInfinite:
+  case vmIntrinsics::_doubleIsInfinite:         return inline_fp_range_check(intrinsic_id());
+
   case vmIntrinsics::_numberOfLeadingZeros_i:
   case vmIntrinsics::_numberOfLeadingZeros_l:
   case vmIntrinsics::_numberOfTrailingZeros_i:
@@ -526,6 +529,14 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_reverseBytes_l:
   case vmIntrinsics::_reverseBytes_s:
   case vmIntrinsics::_reverseBytes_c:           return inline_number_methods(intrinsic_id());
+
+  case vmIntrinsics::_compress_i:
+  case vmIntrinsics::_compress_l:
+  case vmIntrinsics::_expand_i:
+  case vmIntrinsics::_expand_l:                 return inline_bitshuffle_methods(intrinsic_id());
+
+  case vmIntrinsics::_compareUnsigned_i:
+  case vmIntrinsics::_compareUnsigned_l:        return inline_compare_unsigned(intrinsic_id());
 
   case vmIntrinsics::_divideUnsigned_i:
   case vmIntrinsics::_divideUnsigned_l:
@@ -700,6 +711,8 @@ bool LibraryCallKit::try_to_inline(int predicate) {
     return inline_vector_insert();
   case vmIntrinsics::_VectorExtract:
     return inline_vector_extract();
+  case vmIntrinsics::_VectorCompressExpand:
+    return inline_vector_compress_expand();
 
   case vmIntrinsics::_getObjectSize:
     return inline_getObjectSize();
@@ -1093,7 +1106,7 @@ bool LibraryCallKit::inline_preconditions_checkIndex(BasicType bt) {
 
   // length is now known positive, add a cast node to make this explicit
   jlong upper_bound = _gvn.type(length)->is_integer(bt)->hi_as_long();
-  Node* casted_length = ConstraintCastNode::make(control(), length, TypeInteger::make(0, upper_bound, Type::WidenMax, bt), bt);
+  Node* casted_length = ConstraintCastNode::make(control(), length, TypeInteger::make(0, upper_bound, Type::WidenMax, bt), ConstraintCastNode::RegularDependency, bt);
   casted_length = _gvn.transform(casted_length);
   replace_in_map(length, casted_length);
   length = casted_length;
@@ -1121,7 +1134,7 @@ bool LibraryCallKit::inline_preconditions_checkIndex(BasicType bt) {
   }
 
   // index is now known to be >= 0 and < length, cast it
-  Node* result = ConstraintCastNode::make(control(), index, TypeInteger::make(0, upper_bound, Type::WidenMax, bt), bt);
+  Node* result = ConstraintCastNode::make(control(), index, TypeInteger::make(0, upper_bound, Type::WidenMax, bt), ConstraintCastNode::RegularDependency, bt);
   result = _gvn.transform(result);
   set_result(result);
   replace_in_map(index, result);
@@ -1341,8 +1354,8 @@ bool LibraryCallKit::inline_string_copy(bool compress) {
   // Figure out the size and type of the elements we will be copying.
   const Type* src_type = src->Value(&_gvn);
   const Type* dst_type = dst->Value(&_gvn);
-  BasicType src_elem = src_type->isa_aryptr()->klass()->as_array_klass()->element_type()->basic_type();
-  BasicType dst_elem = dst_type->isa_aryptr()->klass()->as_array_klass()->element_type()->basic_type();
+  BasicType src_elem = src_type->isa_aryptr()->elem()->array_element_basic_type();
+  BasicType dst_elem = dst_type->isa_aryptr()->elem()->array_element_basic_type();
   assert((compress && dst_elem == T_BYTE && (src_elem == T_BYTE || src_elem == T_CHAR)) ||
          (!compress && src_elem == T_BYTE && (dst_elem == T_BYTE || dst_elem == T_CHAR)),
          "Unsupported array types for inline_string_copy");
@@ -1824,14 +1837,6 @@ bool LibraryCallKit::inline_math_native(vmIntrinsics::ID id) {
   }
 }
 
-static bool is_simple_name(Node* n) {
-  return (n->req() == 1         // constant
-          || (n->is_Type() && n->as_Type()->type()->singleton())
-          || n->is_Proj()       // parameter or return value
-          || n->is_Phi()        // local of some sort
-          );
-}
-
 //----------------------------inline_notify-----------------------------------*
 bool LibraryCallKit::inline_notify(vmIntrinsics::ID id) {
   const TypeFunc* ftype = OptoRuntime::monitor_notify_Type();
@@ -1930,179 +1935,21 @@ bool LibraryCallKit::inline_math_unsignedMultiplyHigh() {
 
 Node*
 LibraryCallKit::generate_min_max(vmIntrinsics::ID id, Node* x0, Node* y0) {
-  // These are the candidate return value:
-  Node* xvalue = x0;
-  Node* yvalue = y0;
-
-  if (xvalue == yvalue) {
-    return xvalue;
-  }
-
-  bool want_max = (id == vmIntrinsics::_max || id == vmIntrinsics::_max_strict);
-
-  const TypeInt* txvalue = _gvn.type(xvalue)->isa_int();
-  const TypeInt* tyvalue = _gvn.type(yvalue)->isa_int();
-  if (txvalue == NULL || tyvalue == NULL)  return top();
-  // This is not really necessary, but it is consistent with a
-  // hypothetical MaxINode::Value method:
-  int widen = MAX2(txvalue->_widen, tyvalue->_widen);
-
-  // %%% This folding logic should (ideally) be in a different place.
-  // Some should be inside IfNode, and there to be a more reliable
-  // transformation of ?: style patterns into cmoves.  We also want
-  // more powerful optimizations around cmove and min/max.
-
-  // Try to find a dominating comparison of these guys.
-  // It can simplify the index computation for Arrays.copyOf
-  // and similar uses of System.arraycopy.
-  // First, compute the normalized version of CmpI(x, y).
-  int   cmp_op = Op_CmpI;
-  Node* xkey = xvalue;
-  Node* ykey = yvalue;
-  Node* ideal_cmpxy = _gvn.transform(new CmpINode(xkey, ykey));
-  if (ideal_cmpxy->is_Cmp()) {
-    // E.g., if we have CmpI(length - offset, count),
-    // it might idealize to CmpI(length, count + offset)
-    cmp_op = ideal_cmpxy->Opcode();
-    xkey = ideal_cmpxy->in(1);
-    ykey = ideal_cmpxy->in(2);
-  }
-
-  // Start by locating any relevant comparisons.
-  Node* start_from = (xkey->outcnt() < ykey->outcnt()) ? xkey : ykey;
-  Node* cmpxy = NULL;
-  Node* cmpyx = NULL;
-  for (DUIterator_Fast kmax, k = start_from->fast_outs(kmax); k < kmax; k++) {
-    Node* cmp = start_from->fast_out(k);
-    if (cmp->outcnt() > 0 &&            // must have prior uses
-        cmp->in(0) == NULL &&           // must be context-independent
-        cmp->Opcode() == cmp_op) {      // right kind of compare
-      if (cmp->in(1) == xkey && cmp->in(2) == ykey)  cmpxy = cmp;
-      if (cmp->in(1) == ykey && cmp->in(2) == xkey)  cmpyx = cmp;
-    }
-  }
-
-  const int NCMPS = 2;
-  Node* cmps[NCMPS] = { cmpxy, cmpyx };
-  int cmpn;
-  for (cmpn = 0; cmpn < NCMPS; cmpn++) {
-    if (cmps[cmpn] != NULL)  break;     // find a result
-  }
-  if (cmpn < NCMPS) {
-    // Look for a dominating test that tells us the min and max.
-    int depth = 0;                // Limit search depth for speed
-    Node* dom = control();
-    for (; dom != NULL; dom = IfNode::up_one_dom(dom, true)) {
-      if (++depth >= 100)  break;
-      Node* ifproj = dom;
-      if (!ifproj->is_Proj())  continue;
-      Node* iff = ifproj->in(0);
-      if (!iff->is_If())  continue;
-      Node* bol = iff->in(1);
-      if (!bol->is_Bool())  continue;
-      Node* cmp = bol->in(1);
-      if (cmp == NULL)  continue;
-      for (cmpn = 0; cmpn < NCMPS; cmpn++)
-        if (cmps[cmpn] == cmp)  break;
-      if (cmpn == NCMPS)  continue;
-      BoolTest::mask btest = bol->as_Bool()->_test._test;
-      if (ifproj->is_IfFalse())  btest = BoolTest(btest).negate();
-      if (cmp->in(1) == ykey)    btest = BoolTest(btest).commute();
-      // At this point, we know that 'x btest y' is true.
-      switch (btest) {
-      case BoolTest::eq:
-        // They are proven equal, so we can collapse the min/max.
-        // Either value is the answer.  Choose the simpler.
-        if (is_simple_name(yvalue) && !is_simple_name(xvalue))
-          return yvalue;
-        return xvalue;
-      case BoolTest::lt:          // x < y
-      case BoolTest::le:          // x <= y
-        return (want_max ? yvalue : xvalue);
-      case BoolTest::gt:          // x > y
-      case BoolTest::ge:          // x >= y
-        return (want_max ? xvalue : yvalue);
-      default:
-        break;
-      }
-    }
-  }
-
-  // We failed to find a dominating test.
-  // Let's pick a test that might GVN with prior tests.
-  Node*          best_bol   = NULL;
-  BoolTest::mask best_btest = BoolTest::illegal;
-  for (cmpn = 0; cmpn < NCMPS; cmpn++) {
-    Node* cmp = cmps[cmpn];
-    if (cmp == NULL)  continue;
-    for (DUIterator_Fast jmax, j = cmp->fast_outs(jmax); j < jmax; j++) {
-      Node* bol = cmp->fast_out(j);
-      if (!bol->is_Bool())  continue;
-      BoolTest::mask btest = bol->as_Bool()->_test._test;
-      if (btest == BoolTest::eq || btest == BoolTest::ne)  continue;
-      if (cmp->in(1) == ykey)   btest = BoolTest(btest).commute();
-      if (bol->outcnt() > (best_bol == NULL ? 0 : best_bol->outcnt())) {
-        best_bol   = bol->as_Bool();
-        best_btest = btest;
-      }
-    }
-  }
-
-  Node* answer_if_true  = NULL;
-  Node* answer_if_false = NULL;
-  switch (best_btest) {
-  default:
-    if (cmpxy == NULL)
-      cmpxy = ideal_cmpxy;
-    best_bol = _gvn.transform(new BoolNode(cmpxy, BoolTest::lt));
-    // and fall through:
-  case BoolTest::lt:          // x < y
-  case BoolTest::le:          // x <= y
-    answer_if_true  = (want_max ? yvalue : xvalue);
-    answer_if_false = (want_max ? xvalue : yvalue);
-    break;
-  case BoolTest::gt:          // x > y
-  case BoolTest::ge:          // x >= y
-    answer_if_true  = (want_max ? xvalue : yvalue);
-    answer_if_false = (want_max ? yvalue : xvalue);
-    break;
-  }
-
-  jint hi, lo;
-  if (want_max) {
-    // We can sharpen the minimum.
-    hi = MAX2(txvalue->_hi, tyvalue->_hi);
-    lo = MAX2(txvalue->_lo, tyvalue->_lo);
-  } else {
-    // We can sharpen the maximum.
-    hi = MIN2(txvalue->_hi, tyvalue->_hi);
-    lo = MIN2(txvalue->_lo, tyvalue->_lo);
-  }
-
-  // Use a flow-free graph structure, to avoid creating excess control edges
-  // which could hinder other optimizations.
-  // Since Math.min/max is often used with arraycopy, we want
-  // tightly_coupled_allocation to be able to see beyond min/max expressions.
-  Node* cmov = CMoveNode::make(NULL, best_bol,
-                               answer_if_false, answer_if_true,
-                               TypeInt::make(lo, hi, widen));
-
-  return _gvn.transform(cmov);
-
-  /*
-  // This is not as desirable as it may seem, since Min and Max
-  // nodes do not have a full set of optimizations.
-  // And they would interfere, anyway, with 'if' optimizations
-  // and with CMoveI canonical forms.
+  Node* result_val = NULL;
   switch (id) {
   case vmIntrinsics::_min:
-    result_val = _gvn.transform(new (C, 3) MinINode(x,y)); break;
+  case vmIntrinsics::_min_strict:
+    result_val = _gvn.transform(new MinINode(x0, y0));
+    break;
   case vmIntrinsics::_max:
-    result_val = _gvn.transform(new (C, 3) MaxINode(x,y)); break;
+  case vmIntrinsics::_max_strict:
+    result_val = _gvn.transform(new MaxINode(x0, y0));
+    break;
   default:
-    ShouldNotReachHere();
+    fatal_unexpected_iid(id);
+    break;
   }
-  */
+  return result_val;
 }
 
 inline int
@@ -2219,6 +2066,40 @@ bool LibraryCallKit::inline_number_methods(vmIntrinsics::ID id) {
   return true;
 }
 
+//--------------------------inline_bitshuffle_methods-----------------------------
+// inline int Integer.compress(int, int)
+// inline int Integer.expand(int, int)
+// inline long Long.compress(long, long)
+// inline long Long.expand(long, long)
+bool LibraryCallKit::inline_bitshuffle_methods(vmIntrinsics::ID id) {
+  Node* n = NULL;
+  switch (id) {
+    case vmIntrinsics::_compress_i:  n = new CompressBitsNode(argument(0), argument(1), TypeInt::INT); break;
+    case vmIntrinsics::_expand_i:    n = new ExpandBitsNode(argument(0),  argument(1), TypeInt::INT); break;
+    case vmIntrinsics::_compress_l:  n = new CompressBitsNode(argument(0), argument(2), TypeLong::LONG); break;
+    case vmIntrinsics::_expand_l:    n = new ExpandBitsNode(argument(0), argument(2), TypeLong::LONG); break;
+    default:  fatal_unexpected_iid(id);  break;
+  }
+  set_result(_gvn.transform(n));
+  return true;
+}
+
+//--------------------------inline_number_methods-----------------------------
+// inline int Integer.compareUnsigned(int, int)
+// inline int    Long.compareUnsigned(long, long)
+bool LibraryCallKit::inline_compare_unsigned(vmIntrinsics::ID id) {
+  Node* arg1 = argument(0);
+  Node* arg2 = (id == vmIntrinsics::_compareUnsigned_l) ? argument(2) : argument(1);
+  Node* n = NULL;
+  switch (id) {
+    case vmIntrinsics::_compareUnsigned_i:   n = new CmpU3Node(arg1, arg2);  break;
+    case vmIntrinsics::_compareUnsigned_l:   n = new CmpUL3Node(arg1, arg2); break;
+    default:  fatal_unexpected_iid(id);  break;
+  }
+  set_result(_gvn.transform(n));
+  return true;
+}
+
 //--------------------------inline_unsigned_divmod_methods-----------------------------
 // inline int Integer.divideUnsigned(int, int)
 // inline int Integer.remainderUnsigned(int, int)
@@ -2282,31 +2163,33 @@ const TypeOopPtr* LibraryCallKit::sharpen_unsafe_type(Compile::AliasType* alias_
     }
   }
 
+  const TypeOopPtr* result = NULL;
   // See if it is a narrow oop array.
   if (adr_type->isa_aryptr()) {
     if (adr_type->offset() >= objArrayOopDesc::base_offset_in_bytes()) {
       const TypeOopPtr* elem_type = adr_type->is_aryptr()->elem()->make_oopptr();
-      if (elem_type != NULL) {
-        sharpened_klass = elem_type->klass();
+      if (elem_type != NULL && elem_type->is_loaded()) {
+        // Sharpen the value type.
+        result = elem_type;
       }
     }
   }
 
   // The sharpened class might be unloaded if there is no class loader
-  // constraint in place.
-  if (sharpened_klass != NULL && sharpened_klass->is_loaded()) {
-    const TypeOopPtr* tjp = TypeOopPtr::make_from_klass(sharpened_klass);
-
+  // contraint in place.
+  if (result == NULL && sharpened_klass != NULL && sharpened_klass->is_loaded()) {
+    // Sharpen the value type.
+    result = TypeOopPtr::make_from_klass(sharpened_klass);
+  }
+  if (result != NULL) {
 #ifndef PRODUCT
     if (C->print_intrinsics() || C->print_inlining()) {
       tty->print("  from base type:  ");  adr_type->dump(); tty->cr();
-      tty->print("  sharpened value: ");  tjp->dump();      tty->cr();
+      tty->print("  sharpened value: ");  result->dump();    tty->cr();
     }
 #endif
-    // Sharpen the value type.
-    return tjp;
   }
-  return NULL;
+  return result;
 }
 
 DecoratorSet LibraryCallKit::mo_decorator_for_access_kind(AccessKind kind) {
@@ -2441,7 +2324,7 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
       // Use address type to get the element type.
       bt = adr_type->is_aryptr()->elem()->array_element_basic_type();
     }
-    if (bt == T_ARRAY || bt == T_NARROWOOP) {
+    if (is_reference_type(bt, true)) {
       // accessing an array field with getReference is not a mismatch
       bt = T_OBJECT;
     }
@@ -2821,11 +2704,11 @@ bool LibraryCallKit::klass_needs_init_guard(Node* kls) {
   if (!kls->is_Con()) {
     return true;
   }
-  const TypeKlassPtr* klsptr = kls->bottom_type()->isa_klassptr();
+  const TypeInstKlassPtr* klsptr = kls->bottom_type()->isa_instklassptr();
   if (klsptr == NULL) {
     return true;
   }
-  ciInstanceKlass* ik = klsptr->klass()->as_instance_klass();
+  ciInstanceKlass* ik = klsptr->instance_klass();
   // don't need a guard for a klass that is already initialized
   return !ik->is_initialized();
 }
@@ -3220,7 +3103,7 @@ bool LibraryCallKit::inline_native_getEventWriter() {
   set_i_o(_gvn.transform(vthread_compare_io));
 
   // Load the event writer oop by dereferencing the jobject handle.
-  ciKlass* klass_EventWriter = env()->find_system_klass(ciSymbol::make("jdk/jfr/internal/EventWriter"));
+  ciKlass* klass_EventWriter = env()->find_system_klass(ciSymbol::make("jdk/jfr/internal/event/EventWriter"));
   assert(klass_EventWriter->is_loaded(), "invariant");
   ciInstanceKlass* const instklass_EventWriter = klass_EventWriter->as_instance_klass();
   const TypeKlassPtr* const aklass = TypeKlassPtr::make(instklass_EventWriter);
@@ -3762,12 +3645,12 @@ bool LibraryCallKit::inline_Class_cast() {
   // java_mirror_type() returns non-null for compile-time Class constants.
   ciType* tm = mirror_con->java_mirror_type();
   if (tm != NULL && tm->is_klass() &&
-      tp != NULL && tp->klass() != NULL) {
-    if (!tp->klass()->is_loaded()) {
+      tp != NULL) {
+    if (!tp->is_loaded()) {
       // Don't use intrinsic when class is not loaded.
       return false;
     } else {
-      int static_res = C->static_subtype_check(tm->as_klass(), tp->klass());
+      int static_res = C->static_subtype_check(TypeKlassPtr::make(tm->as_klass()), tp->as_klass_type());
       if (static_res == Compile::SSC_always_true) {
         // isInstance() is true - fold the code.
         set_result(obj);
@@ -4176,8 +4059,8 @@ bool LibraryCallKit::inline_array_copyOf(bool is_copyOfRange) {
       // check can be optimized if we know something on the type of
       // the input array from type speculation.
       if (_gvn.type(klass_node)->singleton()) {
-        ciKlass* subk   = _gvn.type(load_object_klass(original))->is_klassptr()->klass();
-        ciKlass* superk = _gvn.type(klass_node)->is_klassptr()->klass();
+        const TypeKlassPtr* subk = _gvn.type(load_object_klass(original))->is_klassptr();
+        const TypeKlassPtr* superk = _gvn.type(klass_node)->is_klassptr();
 
         int test = C->static_subtype_check(superk, subk);
         if (test != Compile::SSC_always_true && test != Compile::SSC_always_false) {
@@ -4638,6 +4521,25 @@ bool LibraryCallKit::inline_fp_conversions(vmIntrinsics::ID id) {
   return true;
 }
 
+bool LibraryCallKit::inline_fp_range_check(vmIntrinsics::ID id) {
+  Node* arg = argument(0);
+  Node* result = NULL;
+
+  switch (id) {
+  case vmIntrinsics::_floatIsInfinite:
+    result = new IsInfiniteFNode(arg);
+    break;
+  case vmIntrinsics::_doubleIsInfinite:
+    result = new IsInfiniteDNode(arg);
+    break;
+  default:
+    fatal_unexpected_iid(id);
+    break;
+  }
+  set_result(_gvn.transform(result));
+  return true;
+}
+
 //----------------------inline_unsafe_copyMemory-------------------------
 // public native void Unsafe.copyMemory0(Object srcBase, long srcOffset, Object destBase, long destOffset, long bytes);
 
@@ -4798,10 +4700,8 @@ bool LibraryCallKit::inline_native_clone(bool is_virtual) {
       ciInstanceKlass* spec_ik = obj_type->speculative_type()->as_instance_klass();
       if (spec_ik->nof_nonstatic_fields() <= ArrayCopyLoadStoreMaxElem &&
           !spec_ik->has_injected_fields()) {
-        ciKlass* k = obj_type->klass();
-        if (!k->is_instance_klass() ||
-            k->as_instance_klass()->is_interface() ||
-            k->as_instance_klass()->has_subklass()) {
+        if (!obj_type->isa_instptr() ||
+            obj_type->is_instptr()->instance_klass()->has_subklass()) {
           obj = maybe_cast_profiled_obj(obj, obj_type->speculative_type(), false);
         }
       }
@@ -5176,9 +5076,9 @@ bool LibraryCallKit::inline_arraycopy() {
   const TypeAryPtr* top_dest = dest_type->isa_aryptr();
 
   // Do we have the type of src?
-  bool has_src = (top_src != NULL && top_src->klass() != NULL);
+  bool has_src = (top_src != NULL && top_src->elem() != Type::BOTTOM);
   // Do we have the type of dest?
-  bool has_dest = (top_dest != NULL && top_dest->klass() != NULL);
+  bool has_dest = (top_dest != NULL && top_dest->elem() != Type::BOTTOM);
   // Is the type for src from speculation?
   bool src_spec = false;
   // Is the type for dest from speculation?
@@ -5216,24 +5116,24 @@ bool LibraryCallKit::inline_arraycopy() {
         src = maybe_cast_profiled_obj(src, src_k, true);
         src_type  = _gvn.type(src);
         top_src  = src_type->isa_aryptr();
-        has_src = (top_src != NULL && top_src->klass() != NULL);
+        has_src = (top_src != NULL && top_src->elem() != Type::BOTTOM);
         src_spec = true;
       }
       if (!has_dest) {
         dest = maybe_cast_profiled_obj(dest, dest_k, true);
         dest_type  = _gvn.type(dest);
         top_dest  = dest_type->isa_aryptr();
-        has_dest = (top_dest != NULL && top_dest->klass() != NULL);
+        has_dest = (top_dest != NULL && top_dest->elem() != Type::BOTTOM);
         dest_spec = true;
       }
     }
   }
 
   if (has_src && has_dest && can_emit_guards) {
-    BasicType src_elem  = top_src->klass()->as_array_klass()->element_type()->basic_type();
-    BasicType dest_elem = top_dest->klass()->as_array_klass()->element_type()->basic_type();
-    if (is_reference_type(src_elem))   src_elem  = T_OBJECT;
-    if (is_reference_type(dest_elem))  dest_elem = T_OBJECT;
+    BasicType src_elem = top_src->isa_aryptr()->elem()->array_element_basic_type();
+    BasicType dest_elem = top_dest->isa_aryptr()->elem()->array_element_basic_type();
+    if (is_reference_type(src_elem, true)) src_elem = T_OBJECT;
+    if (is_reference_type(dest_elem, true)) dest_elem = T_OBJECT;
 
     if (src_elem == dest_elem && src_elem == T_OBJECT) {
       // If both arrays are object arrays then having the exact types
@@ -5244,8 +5144,8 @@ bool LibraryCallKit::inline_arraycopy() {
       bool could_have_src = src_spec;
       // Do we have the exact type of dest?
       bool could_have_dest = dest_spec;
-      ciKlass* src_k = top_src->klass();
-      ciKlass* dest_k = top_dest->klass();
+      ciKlass* src_k = NULL;
+      ciKlass* dest_k = NULL;
       if (!src_spec) {
         src_k = src_type->speculative_type_not_null();
         if (src_k != NULL && src_k->is_array_klass()) {
@@ -5342,7 +5242,7 @@ bool LibraryCallKit::inline_arraycopy() {
     }
 
     const TypeKlassPtr* dest_klass_t = _gvn.type(dest_klass)->is_klassptr();
-    const Type *toop = TypeOopPtr::make_from_klass(dest_klass_t->klass());
+    const Type *toop = dest_klass_t->cast_to_exactness(false)->as_instance_type();
     src = _gvn.transform(new CheckCastPPNode(control(), src, toop));
   }
 
@@ -5462,15 +5362,15 @@ bool LibraryCallKit::inline_encodeISOArray(bool ascii) {
   const Type* dst_type = dst->Value(&_gvn);
   const TypeAryPtr* top_src = src_type->isa_aryptr();
   const TypeAryPtr* top_dest = dst_type->isa_aryptr();
-  if (top_src  == NULL || top_src->klass()  == NULL ||
-      top_dest == NULL || top_dest->klass() == NULL) {
+  if (top_src  == NULL || top_src->elem()  == Type::BOTTOM ||
+      top_dest == NULL || top_dest->elem() == Type::BOTTOM) {
     // failed array check
     return false;
   }
 
   // Figure out the size and type of the elements we will be copying.
-  BasicType src_elem = src_type->isa_aryptr()->klass()->as_array_klass()->element_type()->basic_type();
-  BasicType dst_elem = dst_type->isa_aryptr()->klass()->as_array_klass()->element_type()->basic_type();
+  BasicType src_elem = src_type->isa_aryptr()->elem()->array_element_basic_type();
+  BasicType dst_elem = dst_type->isa_aryptr()->elem()->array_element_basic_type();
   if (!((src_elem == T_CHAR) || (src_elem== T_BYTE)) || dst_elem != T_BYTE) {
     return false;
   }
@@ -5517,14 +5417,14 @@ bool LibraryCallKit::inline_multiplyToLen() {
   const Type* y_type = y->Value(&_gvn);
   const TypeAryPtr* top_x = x_type->isa_aryptr();
   const TypeAryPtr* top_y = y_type->isa_aryptr();
-  if (top_x  == NULL || top_x->klass()  == NULL ||
-      top_y == NULL || top_y->klass() == NULL) {
+  if (top_x  == NULL || top_x->elem()  == Type::BOTTOM ||
+      top_y == NULL || top_y->elem() == Type::BOTTOM) {
     // failed array check
     return false;
   }
 
-  BasicType x_elem = x_type->isa_aryptr()->klass()->as_array_klass()->element_type()->basic_type();
-  BasicType y_elem = y_type->isa_aryptr()->klass()->as_array_klass()->element_type()->basic_type();
+  BasicType x_elem = x_type->isa_aryptr()->elem()->array_element_basic_type();
+  BasicType y_elem = y_type->isa_aryptr()->elem()->array_element_basic_type();
   if (x_elem != T_INT || y_elem != T_INT) {
     return false;
   }
@@ -5625,14 +5525,14 @@ bool LibraryCallKit::inline_squareToLen() {
   const Type* z_type = z->Value(&_gvn);
   const TypeAryPtr* top_x = x_type->isa_aryptr();
   const TypeAryPtr* top_z = z_type->isa_aryptr();
-  if (top_x  == NULL || top_x->klass()  == NULL ||
-      top_z  == NULL || top_z->klass()  == NULL) {
+  if (top_x  == NULL || top_x->elem()  == Type::BOTTOM ||
+      top_z  == NULL || top_z->elem()  == Type::BOTTOM) {
     // failed array check
     return false;
   }
 
-  BasicType x_elem = x_type->isa_aryptr()->klass()->as_array_klass()->element_type()->basic_type();
-  BasicType z_elem = z_type->isa_aryptr()->klass()->as_array_klass()->element_type()->basic_type();
+  BasicType x_elem = x_type->isa_aryptr()->elem()->array_element_basic_type();
+  BasicType z_elem = z_type->isa_aryptr()->elem()->array_element_basic_type();
   if (x_elem != T_INT || z_elem != T_INT) {
     return false;
   }
@@ -5674,14 +5574,14 @@ bool LibraryCallKit::inline_mulAdd() {
   const Type* in_type = in->Value(&_gvn);
   const TypeAryPtr* top_out = out_type->isa_aryptr();
   const TypeAryPtr* top_in = in_type->isa_aryptr();
-  if (top_out  == NULL || top_out->klass()  == NULL ||
-      top_in == NULL || top_in->klass() == NULL) {
+  if (top_out  == NULL || top_out->elem()  == Type::BOTTOM ||
+      top_in == NULL || top_in->elem() == Type::BOTTOM) {
     // failed array check
     return false;
   }
 
-  BasicType out_elem = out_type->isa_aryptr()->klass()->as_array_klass()->element_type()->basic_type();
-  BasicType in_elem = in_type->isa_aryptr()->klass()->as_array_klass()->element_type()->basic_type();
+  BasicType out_elem = out_type->isa_aryptr()->elem()->array_element_basic_type();
+  BasicType in_elem = in_type->isa_aryptr()->elem()->array_element_basic_type();
   if (out_elem != T_INT || in_elem != T_INT) {
     return false;
   }
@@ -5727,18 +5627,18 @@ bool LibraryCallKit::inline_montgomeryMultiply() {
   const TypeAryPtr* top_n = n_type->isa_aryptr();
   const Type* m_type = a->Value(&_gvn);
   const TypeAryPtr* top_m = m_type->isa_aryptr();
-  if (top_a  == NULL || top_a->klass()  == NULL ||
-      top_b == NULL || top_b->klass()  == NULL ||
-      top_n == NULL || top_n->klass()  == NULL ||
-      top_m == NULL || top_m->klass()  == NULL) {
+  if (top_a  == NULL || top_a->elem()  == Type::BOTTOM ||
+      top_b == NULL || top_b->elem()  == Type::BOTTOM ||
+      top_n == NULL || top_n->elem()  == Type::BOTTOM ||
+      top_m == NULL || top_m->elem()  == Type::BOTTOM) {
     // failed array check
     return false;
   }
 
-  BasicType a_elem = a_type->isa_aryptr()->klass()->as_array_klass()->element_type()->basic_type();
-  BasicType b_elem = b_type->isa_aryptr()->klass()->as_array_klass()->element_type()->basic_type();
-  BasicType n_elem = n_type->isa_aryptr()->klass()->as_array_klass()->element_type()->basic_type();
-  BasicType m_elem = m_type->isa_aryptr()->klass()->as_array_klass()->element_type()->basic_type();
+  BasicType a_elem = a_type->isa_aryptr()->elem()->array_element_basic_type();
+  BasicType b_elem = b_type->isa_aryptr()->elem()->array_element_basic_type();
+  BasicType n_elem = n_type->isa_aryptr()->elem()->array_element_basic_type();
+  BasicType m_elem = m_type->isa_aryptr()->elem()->array_element_basic_type();
   if (a_elem != T_INT || b_elem != T_INT || n_elem != T_INT || m_elem != T_INT) {
     return false;
   }
@@ -5784,16 +5684,16 @@ bool LibraryCallKit::inline_montgomerySquare() {
   const TypeAryPtr* top_n = n_type->isa_aryptr();
   const Type* m_type = a->Value(&_gvn);
   const TypeAryPtr* top_m = m_type->isa_aryptr();
-  if (top_a  == NULL || top_a->klass()  == NULL ||
-      top_n == NULL || top_n->klass()  == NULL ||
-      top_m == NULL || top_m->klass()  == NULL) {
+  if (top_a  == NULL || top_a->elem()  == Type::BOTTOM ||
+      top_n == NULL || top_n->elem()  == Type::BOTTOM ||
+      top_m == NULL || top_m->elem()  == Type::BOTTOM) {
     // failed array check
     return false;
   }
 
-  BasicType a_elem = a_type->isa_aryptr()->klass()->as_array_klass()->element_type()->basic_type();
-  BasicType n_elem = n_type->isa_aryptr()->klass()->as_array_klass()->element_type()->basic_type();
-  BasicType m_elem = m_type->isa_aryptr()->klass()->as_array_klass()->element_type()->basic_type();
+  BasicType a_elem = a_type->isa_aryptr()->elem()->array_element_basic_type();
+  BasicType n_elem = n_type->isa_aryptr()->elem()->array_element_basic_type();
+  BasicType m_elem = m_type->isa_aryptr()->elem()->array_element_basic_type();
   if (a_elem != T_INT || n_elem != T_INT || m_elem != T_INT) {
     return false;
   }
@@ -5838,13 +5738,13 @@ bool LibraryCallKit::inline_bigIntegerShift(bool isRightShift) {
   const TypeAryPtr* top_newArr = newArr_type->isa_aryptr();
   const Type* oldArr_type = oldArr->Value(&_gvn);
   const TypeAryPtr* top_oldArr = oldArr_type->isa_aryptr();
-  if (top_newArr == NULL || top_newArr->klass() == NULL || top_oldArr == NULL
-      || top_oldArr->klass() == NULL) {
+  if (top_newArr == NULL || top_newArr->elem() == Type::BOTTOM || top_oldArr == NULL
+      || top_oldArr->elem() == Type::BOTTOM) {
     return false;
   }
 
-  BasicType newArr_elem = newArr_type->isa_aryptr()->klass()->as_array_klass()->element_type()->basic_type();
-  BasicType oldArr_elem = oldArr_type->isa_aryptr()->klass()->as_array_klass()->element_type()->basic_type();
+  BasicType newArr_elem = newArr_type->isa_aryptr()->elem()->array_element_basic_type();
+  BasicType oldArr_elem = oldArr_type->isa_aryptr()->elem()->array_element_basic_type();
   if (newArr_elem != T_INT || oldArr_elem != T_INT) {
     return false;
   }
@@ -5883,8 +5783,8 @@ bool LibraryCallKit::inline_vectorizedMismatch() {
 
   const TypeAryPtr* obja_t = _gvn.type(obja)->isa_aryptr();
   const TypeAryPtr* objb_t = _gvn.type(objb)->isa_aryptr();
-  if (obja_t == NULL || obja_t->klass() == NULL ||
-      objb_t == NULL || objb_t->klass() == NULL ||
+  if (obja_t == NULL || obja_t->elem() == Type::BOTTOM ||
+      objb_t == NULL || objb_t->elem() == Type::BOTTOM ||
       scale == top()) {
     return false; // failed input validation
   }
@@ -6051,13 +5951,13 @@ bool LibraryCallKit::inline_updateBytesCRC32() {
 
   const Type* src_type = src->Value(&_gvn);
   const TypeAryPtr* top_src = src_type->isa_aryptr();
-  if (top_src  == NULL || top_src->klass()  == NULL) {
+  if (top_src  == NULL || top_src->elem()  == Type::BOTTOM) {
     // failed array check
     return false;
   }
 
   // Figure out the size and type of the elements we will be copying.
-  BasicType src_elem = src_type->isa_aryptr()->klass()->as_array_klass()->element_type()->basic_type();
+  BasicType src_elem = src_type->isa_aryptr()->elem()->array_element_basic_type();
   if (src_elem != T_BYTE) {
     return false;
   }
@@ -6140,13 +6040,13 @@ bool LibraryCallKit::inline_updateBytesCRC32C() {
 
   const Type* src_type = src->Value(&_gvn);
   const TypeAryPtr* top_src = src_type->isa_aryptr();
-  if (top_src  == NULL || top_src->klass()  == NULL) {
+  if (top_src  == NULL || top_src->elem()  == Type::BOTTOM) {
     // failed array check
     return false;
   }
 
   // Figure out the size and type of the elements we will be copying.
-  BasicType src_elem = src_type->isa_aryptr()->klass()->as_array_klass()->element_type()->basic_type();
+  BasicType src_elem = src_type->isa_aryptr()->elem()->array_element_basic_type();
   if (src_elem != T_BYTE) {
     return false;
   }
@@ -6233,13 +6133,13 @@ bool LibraryCallKit::inline_updateBytesAdler32() {
 
   const Type* src_type = src->Value(&_gvn);
   const TypeAryPtr* top_src = src_type->isa_aryptr();
-  if (top_src  == NULL || top_src->klass()  == NULL) {
+  if (top_src  == NULL || top_src->elem()  == Type::BOTTOM) {
     // failed array check
     return false;
   }
 
   // Figure out the size and type of the elements we will be copying.
-  BasicType src_elem = src_type->isa_aryptr()->klass()->as_array_klass()->element_type()->basic_type();
+  BasicType src_elem = src_type->isa_aryptr()->elem()->array_element_basic_type();
   if (src_elem != T_BYTE) {
     return false;
   }
@@ -6366,8 +6266,8 @@ Node* LibraryCallKit::load_field_from_object(Node* fromObj, const char* fieldNam
   if (fromKls == NULL) {
     const TypeInstPtr* tinst = _gvn.type(fromObj)->isa_instptr();
     assert(tinst != NULL, "obj is null");
-    assert(tinst->klass()->is_loaded(), "obj is not loaded");
-    fromKls = tinst->klass()->as_instance_klass();
+    assert(tinst->is_loaded(), "obj is not loaded");
+    fromKls = tinst->instance_klass();
   } else {
     assert(is_static, "only for static field access");
   }
@@ -6415,9 +6315,9 @@ Node * LibraryCallKit::field_address_from_object(Node * fromObj, const char * fi
   if (fromKls == NULL) {
     const TypeInstPtr* tinst = _gvn.type(fromObj)->isa_instptr();
     assert(tinst != NULL, "obj is null");
-    assert(tinst->klass()->is_loaded(), "obj is not loaded");
+    assert(tinst->is_loaded(), "obj is not loaded");
     assert(!is_exact || tinst->klass_is_exact(), "klass not exact");
-    fromKls = tinst->klass()->as_instance_klass();
+    fromKls = tinst->instance_klass();
   }
   else {
     assert(is_static, "only for static field access");
@@ -6477,7 +6377,7 @@ bool LibraryCallKit::inline_aescrypt_Block(vmIntrinsics::ID id) {
   const Type* dest_type = dest->Value(&_gvn);
   const TypeAryPtr* top_src = src_type->isa_aryptr();
   const TypeAryPtr* top_dest = dest_type->isa_aryptr();
-  assert (top_src  != NULL && top_src->klass()  != NULL &&  top_dest != NULL && top_dest->klass() != NULL, "args are strange");
+  assert (top_src  != NULL && top_src->elem()  != Type::BOTTOM &&  top_dest != NULL && top_dest->elem() != Type::BOTTOM, "args are strange");
 
   // for the quick and dirty code we will skip all the checks.
   // we are just trying to get the call to be generated.
@@ -6538,8 +6438,8 @@ bool LibraryCallKit::inline_cipherBlockChaining_AESCrypt(vmIntrinsics::ID id) {
   const Type* dest_type = dest->Value(&_gvn);
   const TypeAryPtr* top_src = src_type->isa_aryptr();
   const TypeAryPtr* top_dest = dest_type->isa_aryptr();
-  assert (top_src  != NULL && top_src->klass()  != NULL
-          &&  top_dest != NULL && top_dest->klass() != NULL, "args are strange");
+  assert (top_src  != NULL && top_src->elem()  != Type::BOTTOM
+          &&  top_dest != NULL && top_dest->elem() != Type::BOTTOM, "args are strange");
 
   // checks are the responsibility of the caller
   Node* src_start  = src;
@@ -6561,8 +6461,8 @@ bool LibraryCallKit::inline_cipherBlockChaining_AESCrypt(vmIntrinsics::ID id) {
   // cast it to what we know it will be at runtime
   const TypeInstPtr* tinst = _gvn.type(cipherBlockChaining_object)->isa_instptr();
   assert(tinst != NULL, "CBC obj is null");
-  assert(tinst->klass()->is_loaded(), "CBC obj is not loaded");
-  ciKlass* klass_AESCrypt = tinst->klass()->as_instance_klass()->find_klass(ciSymbol::make("com/sun/crypto/provider/AESCrypt"));
+  assert(tinst->is_loaded(), "CBC obj is not loaded");
+  ciKlass* klass_AESCrypt = tinst->instance_klass()->find_klass(ciSymbol::make("com/sun/crypto/provider/AESCrypt"));
   assert(klass_AESCrypt->is_loaded(), "predicate checks that this class is loaded");
 
   ciInstanceKlass* instklass_AESCrypt = klass_AESCrypt->as_instance_klass();
@@ -6626,8 +6526,8 @@ bool LibraryCallKit::inline_electronicCodeBook_AESCrypt(vmIntrinsics::ID id) {
   const Type* dest_type = dest->Value(&_gvn);
   const TypeAryPtr* top_src = src_type->isa_aryptr();
   const TypeAryPtr* top_dest = dest_type->isa_aryptr();
-  assert(top_src != NULL && top_src->klass() != NULL
-         &&  top_dest != NULL && top_dest->klass() != NULL, "args are strange");
+  assert(top_src != NULL && top_src->elem() != Type::BOTTOM
+         &&  top_dest != NULL && top_dest->elem() != Type::BOTTOM, "args are strange");
 
   // checks are the responsibility of the caller
   Node* src_start = src;
@@ -6649,8 +6549,8 @@ bool LibraryCallKit::inline_electronicCodeBook_AESCrypt(vmIntrinsics::ID id) {
   // cast it to what we know it will be at runtime
   const TypeInstPtr* tinst = _gvn.type(electronicCodeBook_object)->isa_instptr();
   assert(tinst != NULL, "ECB obj is null");
-  assert(tinst->klass()->is_loaded(), "ECB obj is not loaded");
-  ciKlass* klass_AESCrypt = tinst->klass()->as_instance_klass()->find_klass(ciSymbol::make("com/sun/crypto/provider/AESCrypt"));
+  assert(tinst->is_loaded(), "ECB obj is not loaded");
+  ciKlass* klass_AESCrypt = tinst->instance_klass()->find_klass(ciSymbol::make("com/sun/crypto/provider/AESCrypt"));
   assert(klass_AESCrypt->is_loaded(), "predicate checks that this class is loaded");
 
   ciInstanceKlass* instklass_AESCrypt = klass_AESCrypt->as_instance_klass();
@@ -6700,8 +6600,8 @@ bool LibraryCallKit::inline_counterMode_AESCrypt(vmIntrinsics::ID id) {
   const Type* dest_type = dest->Value(&_gvn);
   const TypeAryPtr* top_src = src_type->isa_aryptr();
   const TypeAryPtr* top_dest = dest_type->isa_aryptr();
-  assert(top_src != NULL && top_src->klass() != NULL &&
-         top_dest != NULL && top_dest->klass() != NULL, "args are strange");
+  assert(top_src != NULL && top_src->elem() != Type::BOTTOM &&
+         top_dest != NULL && top_dest->elem() != Type::BOTTOM, "args are strange");
 
   // checks are the responsibility of the caller
   Node* src_start = src;
@@ -6721,8 +6621,8 @@ bool LibraryCallKit::inline_counterMode_AESCrypt(vmIntrinsics::ID id) {
   // cast it to what we know it will be at runtime
   const TypeInstPtr* tinst = _gvn.type(counterMode_object)->isa_instptr();
   assert(tinst != NULL, "CTR obj is null");
-  assert(tinst->klass()->is_loaded(), "CTR obj is not loaded");
-  ciKlass* klass_AESCrypt = tinst->klass()->as_instance_klass()->find_klass(ciSymbol::make("com/sun/crypto/provider/AESCrypt"));
+  assert(tinst->is_loaded(), "CTR obj is not loaded");
+  ciKlass* klass_AESCrypt = tinst->instance_klass()->find_klass(ciSymbol::make("com/sun/crypto/provider/AESCrypt"));
   assert(klass_AESCrypt->is_loaded(), "predicate checks that this class is loaded");
   ciInstanceKlass* instklass_AESCrypt = klass_AESCrypt->as_instance_klass();
   const TypeKlassPtr* aklass = TypeKlassPtr::make(instklass_AESCrypt);
@@ -6802,10 +6702,10 @@ Node* LibraryCallKit::inline_cipherBlockChaining_AESCrypt_predicate(bool decrypt
   // will have same classloader as CipherBlockChaining object
   const TypeInstPtr* tinst = _gvn.type(objCBC)->isa_instptr();
   assert(tinst != NULL, "CBCobj is null");
-  assert(tinst->klass()->is_loaded(), "CBCobj is not loaded");
+  assert(tinst->is_loaded(), "CBCobj is not loaded");
 
   // we want to do an instanceof comparison against the AESCrypt class
-  ciKlass* klass_AESCrypt = tinst->klass()->as_instance_klass()->find_klass(ciSymbol::make("com/sun/crypto/provider/AESCrypt"));
+  ciKlass* klass_AESCrypt = tinst->instance_klass()->find_klass(ciSymbol::make("com/sun/crypto/provider/AESCrypt"));
   if (!klass_AESCrypt->is_loaded()) {
     // if AESCrypt is not even loaded, we never take the intrinsic fast path
     Node* ctrl = control();
@@ -6865,10 +6765,10 @@ Node* LibraryCallKit::inline_electronicCodeBook_AESCrypt_predicate(bool decrypti
   // will have same classloader as ElectronicCodeBook object
   const TypeInstPtr* tinst = _gvn.type(objECB)->isa_instptr();
   assert(tinst != NULL, "ECBobj is null");
-  assert(tinst->klass()->is_loaded(), "ECBobj is not loaded");
+  assert(tinst->is_loaded(), "ECBobj is not loaded");
 
   // we want to do an instanceof comparison against the AESCrypt class
-  ciKlass* klass_AESCrypt = tinst->klass()->as_instance_klass()->find_klass(ciSymbol::make("com/sun/crypto/provider/AESCrypt"));
+  ciKlass* klass_AESCrypt = tinst->instance_klass()->find_klass(ciSymbol::make("com/sun/crypto/provider/AESCrypt"));
   if (!klass_AESCrypt->is_loaded()) {
     // if AESCrypt is not even loaded, we never take the intrinsic fast path
     Node* ctrl = control();
@@ -6925,10 +6825,10 @@ Node* LibraryCallKit::inline_counterMode_AESCrypt_predicate() {
   // will have same classloader as CipherBlockChaining object
   const TypeInstPtr* tinst = _gvn.type(objCTR)->isa_instptr();
   assert(tinst != NULL, "CTRobj is null");
-  assert(tinst->klass()->is_loaded(), "CTRobj is not loaded");
+  assert(tinst->is_loaded(), "CTRobj is not loaded");
 
   // we want to do an instanceof comparison against the AESCrypt class
-  ciKlass* klass_AESCrypt = tinst->klass()->as_instance_klass()->find_klass(ciSymbol::make("com/sun/crypto/provider/AESCrypt"));
+  ciKlass* klass_AESCrypt = tinst->instance_klass()->find_klass(ciSymbol::make("com/sun/crypto/provider/AESCrypt"));
   if (!klass_AESCrypt->is_loaded()) {
     // if AESCrypt is not even loaded, we never take the intrinsic fast path
     Node* ctrl = control();
@@ -7071,12 +6971,12 @@ bool LibraryCallKit::inline_digestBase_implCompress(vmIntrinsics::ID id) {
 
   const Type* src_type = src->Value(&_gvn);
   const TypeAryPtr* top_src = src_type->isa_aryptr();
-  if (top_src  == NULL || top_src->klass()  == NULL) {
+  if (top_src  == NULL || top_src->elem()  == Type::BOTTOM) {
     // failed array check
     return false;
   }
   // Figure out the size and type of the elements we will be copying.
-  BasicType src_elem = src_type->isa_aryptr()->klass()->as_array_klass()->element_type()->basic_type();
+  BasicType src_elem = src_type->isa_aryptr()->elem()->array_element_basic_type();
   if (src_elem != T_BYTE) {
     return false;
   }
@@ -7163,12 +7063,12 @@ bool LibraryCallKit::inline_digestBase_implCompressMB(int predicate) {
 
   const Type* src_type = src->Value(&_gvn);
   const TypeAryPtr* top_src = src_type->isa_aryptr();
-  if (top_src  == NULL || top_src->klass()  == NULL) {
+  if (top_src  == NULL || top_src->elem()  == Type::BOTTOM) {
     // failed array check
     return false;
   }
   // Figure out the size and type of the elements we will be copying.
-  BasicType src_elem = src_type->isa_aryptr()->klass()->as_array_klass()->element_type()->basic_type();
+  BasicType src_elem = src_type->isa_aryptr()->elem()->array_element_basic_type();
   if (src_elem != T_BYTE) {
     return false;
   }
@@ -7229,9 +7129,9 @@ bool LibraryCallKit::inline_digestBase_implCompressMB(int predicate) {
     // get DigestBase klass to lookup for SHA klass
     const TypeInstPtr* tinst = _gvn.type(digestBase_obj)->isa_instptr();
     assert(tinst != NULL, "digestBase_obj is not instance???");
-    assert(tinst->klass()->is_loaded(), "DigestBase is not loaded");
+    assert(tinst->is_loaded(), "DigestBase is not loaded");
 
-    ciKlass* klass_digestBase = tinst->klass()->as_instance_klass()->find_klass(ciSymbol::make(klass_digestBase_name));
+    ciKlass* klass_digestBase = tinst->instance_klass()->find_klass(ciSymbol::make(klass_digestBase_name));
     assert(klass_digestBase->is_loaded(), "predicate checks that this class is loaded");
     ciInstanceKlass* instklass_digestBase = klass_digestBase->as_instance_klass();
     return inline_digestBase_implCompressMB(digestBase_obj, instklass_digestBase, elem_type, stub_addr, stub_name, src_start, ofs, limit);
@@ -7305,9 +7205,9 @@ bool LibraryCallKit::inline_galoisCounterMode_AESCrypt() {
   const TypeAryPtr* top_in = in_type->isa_aryptr();
   const TypeAryPtr* top_ct = ct_type->isa_aryptr();
   const TypeAryPtr* top_out = out_type->isa_aryptr();
-  assert(top_in != NULL && top_in->klass() != NULL &&
-         top_ct != NULL && top_ct->klass() != NULL &&
-         top_out != NULL && top_out->klass() != NULL, "args are strange");
+  assert(top_in != NULL && top_in->elem() != Type::BOTTOM &&
+         top_ct != NULL && top_ct->elem() != Type::BOTTOM &&
+         top_out != NULL && top_out->elem() != Type::BOTTOM, "args are strange");
 
   // checks are the responsibility of the caller
   Node* in_start = in;
@@ -7335,8 +7235,8 @@ bool LibraryCallKit::inline_galoisCounterMode_AESCrypt() {
   // cast it to what we know it will be at runtime
   const TypeInstPtr* tinst = _gvn.type(gctr_object)->isa_instptr();
   assert(tinst != NULL, "GCTR obj is null");
-  assert(tinst->klass()->is_loaded(), "GCTR obj is not loaded");
-  ciKlass* klass_AESCrypt = tinst->klass()->as_instance_klass()->find_klass(ciSymbol::make("com/sun/crypto/provider/AESCrypt"));
+  assert(tinst->is_loaded(), "GCTR obj is not loaded");
+  ciKlass* klass_AESCrypt = tinst->instance_klass()->find_klass(ciSymbol::make("com/sun/crypto/provider/AESCrypt"));
   assert(klass_AESCrypt->is_loaded(), "predicate checks that this class is loaded");
   ciInstanceKlass* instklass_AESCrypt = klass_AESCrypt->as_instance_klass();
   const TypeKlassPtr* aklass = TypeKlassPtr::make(instklass_AESCrypt);
@@ -7387,10 +7287,10 @@ Node* LibraryCallKit::inline_galoisCounterMode_AESCrypt_predicate() {
   // will have same classloader as CipherBlockChaining object
   const TypeInstPtr* tinst = _gvn.type(objGCTR)->isa_instptr();
   assert(tinst != NULL, "GCTR obj is null");
-  assert(tinst->klass()->is_loaded(), "GCTR obj is not loaded");
+  assert(tinst->is_loaded(), "GCTR obj is not loaded");
 
   // we want to do an instanceof comparison against the AESCrypt class
-  ciKlass* klass_AESCrypt = tinst->klass()->as_instance_klass()->find_klass(ciSymbol::make("com/sun/crypto/provider/AESCrypt"));
+  ciKlass* klass_AESCrypt = tinst->instance_klass()->find_klass(ciSymbol::make("com/sun/crypto/provider/AESCrypt"));
   if (!klass_AESCrypt->is_loaded()) {
     // if AESCrypt is not even loaded, we never take the intrinsic fast path
     Node* ctrl = control();
@@ -7448,7 +7348,7 @@ Node* LibraryCallKit::inline_digestBase_implCompressMB_predicate(int predicate) 
   // get DigestBase klass for instanceOf check
   const TypeInstPtr* tinst = _gvn.type(digestBaseObj)->isa_instptr();
   assert(tinst != NULL, "digestBaseObj is null");
-  assert(tinst->klass()->is_loaded(), "DigestBase is not loaded");
+  assert(tinst->is_loaded(), "DigestBase is not loaded");
 
   const char* klass_name = NULL;
   switch (predicate) {
@@ -7488,7 +7388,7 @@ Node* LibraryCallKit::inline_digestBase_implCompressMB_predicate(int predicate) 
 
   ciKlass* klass = NULL;
   if (klass_name != NULL) {
-    klass = tinst->klass()->as_instance_klass()->find_klass(ciSymbol::make(klass_name));
+    klass = tinst->instance_klass()->find_klass(ciSymbol::make(klass_name));
   }
   if ((klass == NULL) || !klass->is_loaded()) {
     // if none of MD5/SHA/SHA2/SHA5 is loaded, we never take the intrinsic fast path

@@ -785,7 +785,7 @@ char* SystemProcessInterface::SystemProcesses::ProcessIterator::get_exe_path() {
 
   jio_snprintf(buffer, PATH_MAX, "/proc/%s/exe", _entry->d_name);
   buffer[PATH_MAX - 1] = '\0';
-  return realpath(buffer, _exePath);
+  return os::Posix::realpath(buffer, _exePath, PATH_MAX);
 }
 
 char* SystemProcessInterface::SystemProcesses::ProcessIterator::allocate_string(const char* str) const {

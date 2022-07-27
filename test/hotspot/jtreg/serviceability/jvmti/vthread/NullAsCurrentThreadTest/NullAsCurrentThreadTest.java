@@ -24,6 +24,7 @@
 /**
  * @test
  * @summary Verifies specific JVMTI functions work with current virtual thread passed as NULL.
+ * @requires vm.continuations
  * @compile --enable-preview -source ${jdk.version} NullAsCurrentThreadTest.java
  * @run main/othervm/native --enable-preview -agentlib:NullAsCurrentThreadTest=EnableVirtualThreadSupport NullAsCurrentThreadTest
  */

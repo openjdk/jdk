@@ -39,11 +39,11 @@
 #include "oops/method.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/handshake.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/os.hpp"
 #include "runtime/sweeper.hpp"
-#include "runtime/thread.inline.hpp"
 #include "runtime/vmOperations.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/events.hpp"
@@ -411,11 +411,6 @@ void NMethodSweeper::sweep_code_cache() {
     _peak_sweep_time = MAX2(_peak_sweep_time, _total_time_this_sweep);
   }
 
-  EventSweepCodeCache event(UNTIMED);
-  if (event.should_commit()) {
-    post_sweep_event(&event, sweep_start_counter, sweep_end_counter, (s4)_traversals, swept_count, flushed_count, zombified_count);
-  }
-
 #ifdef ASSERT
   if(PrintMethodFlushing) {
     tty->print_cr("### sweeper:      sweep time(" JLONG_FORMAT "): ", sweep_time.value());
@@ -442,6 +437,15 @@ void NMethodSweeper::sweep_code_cache() {
     CompileBroker::set_should_compile_new_jobs(CompileBroker::run_compilation);
     log.debug("restart compiler");
     log_sweep("restart_compiler");
+    EventJitRestart event;
+    event.set_freedMemory(freed_memory);
+    event.set_codeCacheMaxCapacity(CodeCache::max_capacity());
+    event.commit();
+  }
+
+  EventSweepCodeCache event(UNTIMED);
+  if (event.should_commit()) {
+    post_sweep_event(&event, sweep_start_counter, sweep_end_counter, (s4)_traversals, swept_count, flushed_count, zombified_count);
   }
 }
 
@@ -598,7 +602,7 @@ void NMethodSweeper::possibly_flush(nmethod* nm) {
           } else if (MethodCounters::is_nmethod_age_unset(age)) {
             // No counters were used before. Set the counters to the detection
             // limit value. If the method is going to be used again it will be compiled
-            // with counters that we're going to use for analysis the the next time.
+            // with counters that we're going to use for analysis the next time.
             mc->reset_nmethod_age();
           } else {
             // Method was totally idle for 10 sweeps

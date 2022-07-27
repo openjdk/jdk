@@ -50,7 +50,7 @@ Generation::Generation(ReservedSpace rs, size_t initial_size) :
     vm_exit_during_initialization("Could not reserve enough space for "
                     "object heap");
   }
-  // Mangle all of the the initial generation.
+  // Mangle all of the initial generation.
   if (ZapUnusedHeapArea) {
     MemRegion mangle_region((HeapWord*)_virtual_space.low(),
       (HeapWord*)_virtual_space.high());

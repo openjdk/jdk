@@ -58,10 +58,18 @@ Java_SelfSuspendDisablerTest_resumeAllVirtualThreads(JNIEnv* jni, jclass cls) {
   check_jvmti_status(jni, jvmti->ResumeAllVirtualThreads(0, NULL), "Error in ResumeAllVirtualThreads");
 }
 
+JNIEXPORT jint JNICALL
+Java_SelfSuspendDisablerTest_getThreadState(JNIEnv* jni, jclass cls, jthread thread) {
+  jint state;
+  check_jvmti_status(jni, jvmti->GetThreadState(thread, &state), "Error in GetThreadState");
+  return state;
 }
 
+} // extern "C"
 
-jint Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
+
+JNIEXPORT jint JNICALL
+Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
   jvmtiError err;
 
   LOG("Agent init started\n");

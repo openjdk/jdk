@@ -134,7 +134,8 @@ callbackThreadEnd(jvmtiEnv* jvmti, JNIEnv* jni, jthread thread) {
 /* ============================================================================= */
 
 /** Agent library initialization. */
-jint Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
+JNIEXPORT jint JNICALL
+Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
   jvmtiEnv* jvmti = NULL;
 
   timeout =  60 * 1000;

@@ -81,7 +81,8 @@ ExceptionCatch(jvmtiEnv *jvmti_env, JNIEnv *env, jthread thr,
   }
 }
 
-jint Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
+JNIEXPORT jint JNICALL
+Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
   jvmtiCapabilities caps;
   jvmtiEventCallbacks callbacks;
   jvmtiError err;

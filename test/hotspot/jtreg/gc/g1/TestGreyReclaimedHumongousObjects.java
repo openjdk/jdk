@@ -30,9 +30,6 @@ package gc.g1;
  * @summary Test handling of marked but unscanned reclaimed humongous objects.
  * @modules jdk.management
  * @run main/othervm -XX:+UseG1GC -Xss32m -Xmx128m -XX:G1HeapRegionSize=1m
- *      -XX:+UnlockExperimentalVMOptions
- *          -XX:+G1EagerReclaimHumongousObjects
- *          -XX:+G1EagerReclaimHumongousObjectsWithStaleRefs
  *      gc.g1.TestGreyReclaimedHumongousObjects 1048576 90
  */
 

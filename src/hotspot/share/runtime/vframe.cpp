@@ -42,6 +42,7 @@
 #include "runtime/frame.inline.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/javaThread.inline.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/objectMonitor.inline.hpp"
 #include "runtime/osThread.hpp"
@@ -49,7 +50,6 @@
 #include "runtime/stackFrameStream.inline.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/synchronizer.hpp"
-#include "runtime/thread.inline.hpp"
 #include "runtime/vframe.inline.hpp"
 #include "runtime/vframeArray.hpp"
 #include "runtime/vframe_hp.hpp"
@@ -226,9 +226,8 @@ void javaVFrame::print_lock_info_on(outputStream* st, int frame_count) {
       Klass* k = obj->klass();
       st->print_cr("\t- %s <" INTPTR_FORMAT "> (a %s)", "parking to wait for ", p2i(obj), k->external_name());
     }
-    else if (thread()->osthread()->get_state() == OBJECT_WAIT) {
-      // We are waiting on an Object monitor but Object.wait() isn't the
-      // top-frame, so we should be waiting on a Class initialization monitor.
+    else if (thread()->osthread()->get_state() == CONDVAR_WAIT) {
+      // We are waiting on the native class initialization monitor.
       InstanceKlass* k = thread()->class_to_be_initialized();
       if (k != NULL) {
         st->print_cr("\t- waiting on the Class initialization monitor for %s", k->external_name());

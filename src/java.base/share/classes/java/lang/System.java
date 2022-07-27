@@ -2591,18 +2591,28 @@ public final class System {
             }
 
             public void parkVirtualThread() {
-                VirtualThread.park();
+                Thread thread = Thread.currentThread();
+                if (thread instanceof BaseVirtualThread vthread) {
+                    vthread.park();
+                } else {
+                    throw new WrongThreadException();
+                }
             }
 
             public void parkVirtualThread(long nanos) {
-                VirtualThread.parkNanos(nanos);
+                Thread thread = Thread.currentThread();
+                if (thread instanceof BaseVirtualThread vthread) {
+                    vthread.parkNanos(nanos);
+                } else {
+                    throw new WrongThreadException();
+                }
             }
 
             public void unparkVirtualThread(Thread thread) {
-                if (thread instanceof VirtualThread vthread) {
+                if (thread instanceof BaseVirtualThread vthread) {
                     vthread.unpark();
                 } else {
-                    throw new IllegalArgumentException("Not a virtual thread");
+                    throw new WrongThreadException();
                 }
             }
 

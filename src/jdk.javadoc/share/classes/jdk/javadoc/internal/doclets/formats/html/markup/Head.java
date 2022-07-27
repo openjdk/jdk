@@ -68,7 +68,7 @@ public class Head extends Content {
     /**
      * Creates a {@code Head} object, for a given file and HTML version.
      * The file is used to help determine the relative paths to stylesheet and script files.
-     * The HTML version is used to determine the the appropriate form of a META element
+     * The HTML version is used to determine the appropriate form of a META element
      * recording the time the file was created.
      * The doclet version should also be provided for recording in the file.
      * @param path the path for the file that will include this HEAD element

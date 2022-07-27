@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8145239 8129559 8080354 8189248 8010319 8246353 8247456
+ * @bug 8145239 8129559 8080354 8189248 8010319 8246353 8247456 8282160
  * @summary Tests for EvaluationState.classes
  * @build KullaTesting TestingInputStream ExpectedDiagnostic
  * @run testng ClassesTest
@@ -340,6 +340,24 @@ public class ClassesTest extends KullaTesting {
                    added(VALID),
                    ste(aClass, Status.RECOVERABLE_DEFINED, Status.VALID, false, null));
         assertEval("new A()");
+    }
+
+    public void testCircular8282160() {
+        TypeDeclSnippet classKey = classKey(assertEval("""
+                                                       class B {
+                                                           C c;
+                                                           public void run() {}
+                                                       }
+                                                       """,
+                                                       added(RECOVERABLE_NOT_DEFINED)));
+        assertEval("""
+                   class C extends B {
+                       @Override
+                       public void run() {}
+                   }
+                   """,
+                   added(VALID),
+                   ste(classKey, Status.RECOVERABLE_NOT_DEFINED, Status.VALID, true, null));
     }
 
 }

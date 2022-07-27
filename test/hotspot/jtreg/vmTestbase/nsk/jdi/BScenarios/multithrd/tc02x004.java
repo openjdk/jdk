@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ import java.io.*;
  *
  * When the test is starting debugee, debugger creates <code>MethodEntryRequest</code>.
  * After <code>MethodEntryEvent</code> arrived, debugger checks line number of one's
- * location. It should be 73th line, that is constructor of <code>tc02x004aClass1</code>
+ * location. It should be 79th line, that is constructor of <code>tc02x004aClass1</code>
  * class. Every thread must generate <code>MethodEntryEvent</code>.
  *
  * In case, when at least one event doesn't arrive during waittime
@@ -123,7 +123,6 @@ public class tc02x004 {
 
         display("\nTEST BEGINS");
         display("===========");
-        debugee.resume();
 
         EventSet eventSet = null;
         EventIterator eventIterator = null;

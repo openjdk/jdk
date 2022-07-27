@@ -2299,7 +2299,7 @@ ciTypeFlow::Block* ciTypeFlow::clone_loop_head(Loop* lp, StateVector* temp_vecto
   }
   // Have the most frequent ones branch to the clone instead
   int count = 0;
-  int nb = 0;
+  int loops_with_shared_head = 0;
   Block* latest_tail = tail;
   bool done = false;
   for (Loop* lp1 = lp; lp1 != NULL && !done; lp1 = lp1->parent()) {
@@ -2309,7 +2309,7 @@ ciTypeFlow::Block* ciTypeFlow::clone_loop_head(Loop* lp, StateVector* temp_vecto
         if (lp2->tail()->post_order() < latest_tail->post_order()) {
           latest_tail = lp2->tail();
         }
-        nb++;
+        loops_with_shared_head++;
         for (SuccIter iter(lp2->tail()); !iter.done(); iter.next()) {
           if (iter.succ() == head) {
             iter.set_succ(clone);
@@ -2319,29 +2319,28 @@ ciTypeFlow::Block* ciTypeFlow::clone_loop_head(Loop* lp, StateVector* temp_vecto
           }
         }
         flow_block(lp2->tail(), temp_vector, temp_set);
+        if (lp2->head() == lp2->tail()) {
+          // For self-loops, clone->head becomes clone->clone
+          flow_block(clone, temp_vector, temp_set);
+          for (SuccIter iter(clone); !iter.done(); iter.next()) {
+            if (iter.succ() == lp2->head()) {
+              iter.set_succ(clone);
+              // Update predecessor information
+              lp2->head()->predecessors()->remove(clone);
+              clone->predecessors()->append(clone);
+              break;
+            }
+          }
+        }
         if (total_count == 0 || count > (total_count * .9)) {
           done = true;
         }
       }
     }
   }
-  assert(nb >= 1, "at least one new");
+  assert(loops_with_shared_head >= 1, "at least one new");
   clone->set_rpo_next(latest_tail->rpo_next());
   latest_tail->set_rpo_next(clone);
-  if (head == tail) {
-    assert(nb == 1, "only when the head is not shared");
-    // For self-loops, clone->head becomes clone->clone
-    flow_block(clone, temp_vector, temp_set);
-    for (SuccIter iter(clone); !iter.done(); iter.next()) {
-      if (iter.succ() == head) {
-        iter.set_succ(clone);
-        // Update predecessor information
-        head->predecessors()->remove(clone);
-        clone->predecessors()->append(clone);
-        break;
-      }
-    }
-  }
   flow_block(clone, temp_vector, temp_set);
 
   return clone;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,7 +113,7 @@ void CodeHeap::mark_segmap_as_used(size_t beg, size_t end, bool is_FreeBlock_joi
     //      are appended to the right.
     //  3 - Take full advantage of the segmap being almost correct with
     //      the two blocks combined. Lets assume the left block consists
-    //      of m segments. The the segmap looks like
+    //      of m segments. The segmap looks like
     //        ... (m-2) (m-1) (m) 0  1  2  3 ...
     //      By substituting the '0' by '1', we create a valid, but
     //      suboptimal, segmap range covering the two blocks combined.
@@ -375,7 +375,7 @@ void CodeHeap::deallocate(void* p) {
 }
 
 /**
- * The segment map is used to quickly find the the start (header) of a
+ * The segment map is used to quickly find the start (header) of a
  * code block (e.g. nmethod) when only a pointer to a location inside the
  * code block is known. This works as follows:
  *  - The storage reserved for the code heap is divided into 'segments'.

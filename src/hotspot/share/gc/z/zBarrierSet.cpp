@@ -29,7 +29,7 @@
 #include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zStackWatermark.hpp"
 #include "gc/z/zThreadLocalData.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/javaThread.hpp"
 #include "utilities/macros.hpp"
 #ifdef COMPILER1
 #include "gc/z/c1/zBarrierSetC1.hpp"

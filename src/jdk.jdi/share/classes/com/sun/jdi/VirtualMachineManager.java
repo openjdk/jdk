@@ -255,7 +255,7 @@ import com.sun.jdi.event.VMStartEvent;
  * For example, if the transport service {@link
  * TransportService#name() name()} method
  * returns {@code telepathic} then the AttachingConnector will
- * be named {@code telepathicAttach}. Similiarly the ListeningConnector
+ * be named {@code telepathicAttach}. Similarly the ListeningConnector
  * will be named with the string {@code Listen} tagged onto the
  * name of the transport service. The {@link
  * Connector#description() description()} method
@@ -377,7 +377,7 @@ public interface VirtualMachineManager {
       * mirror to represent the composite state of the target VM.
       *
       * <p> The {@code process} argument specifies the
-      * {@link java.lang.Process} object for the taget VM. It may be
+      * {@link java.lang.Process} object for the target VM. It may be
       * specified as {@code null}. If the target VM is launched
       * by a {@link LaunchingConnector
       * LaunchingConnector} the {@code process} argument should be

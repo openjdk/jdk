@@ -33,17 +33,17 @@
  * @compile ../test-classes/ChildOldSuper.java ../test-classes/GChild.java
  * @compile ../test-classes/OldInf.jasm ../test-classes/ChildOldInf.java
  * @compile ../test-classes/GChild2.java
- * @build sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar oldclassapp.jar OldClassApp
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar loadees.jar OldSuper ChildOldSuper GChild
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar loadees2.jar OldInf ChildOldInf GChild2
- * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar WhiteBox.jar sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar WhiteBox.jar jdk.test.whitebox.WhiteBox
  * @run driver OldClassAndInf
  */
 
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.helpers.ClassFileInstaller;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 public class OldClassAndInf {
     static String wbJar = ClassFileInstaller.getJarPath("WhiteBox.jar");

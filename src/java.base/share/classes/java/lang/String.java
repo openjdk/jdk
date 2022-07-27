@@ -484,7 +484,7 @@ public final class String
      */
     public String(byte[] bytes, int offset, int length, String charsetName)
             throws UnsupportedEncodingException {
-        this(bytes, offset, length, lookupCharset(charsetName));
+        this(lookupCharset(charsetName), bytes, checkBoundsOffCount(offset, length, bytes.length), length);
     }
 
     /**
@@ -517,10 +517,18 @@ public final class String
      *
      * @since  1.6
      */
-    @SuppressWarnings("removal")
     public String(byte[] bytes, int offset, int length, Charset charset) {
-        Objects.requireNonNull(charset);
-        checkBoundsOffCount(offset, length, bytes.length);
+        this(Objects.requireNonNull(charset), bytes, checkBoundsOffCount(offset, length, bytes.length), length);
+    }
+
+    /**
+     * This method does not do any precondition checks on its arguments.
+     * <p>
+     * Important: parameter order of this method is deliberately changed in order to
+     * disambiguate it against other similar methods of this class.
+     */
+    @SuppressWarnings("removal")
+    private String(Charset charset, byte[] bytes, int offset, int length) {
         if (length == 0) {
             this.value = "".value;
             this.coder = "".coder;
@@ -667,7 +675,13 @@ public final class String
                 offset = 0;
             }
 
-            int caLen = decodeWithDecoder(cd, ca, bytes, offset, length);
+            int caLen;
+            try {
+                caLen = decodeWithDecoder(cd, ca, bytes, offset, length);
+            } catch (CharacterCodingException x) {
+                // Substitution is enabled, so this shouldn't happen
+                throw new Error(x);
+            }
             if (COMPACT_STRINGS) {
                 byte[] bs = StringUTF16.compress(ca, 0, caLen);
                 if (bs != null) {
@@ -793,7 +807,13 @@ public final class String
                 System.getSecurityManager() != null) {
             src = Arrays.copyOf(src, len);
         }
-        int caLen = decodeWithDecoder(cd, ca, src, 0, src.length);
+        int caLen;
+        try {
+            caLen = decodeWithDecoder(cd, ca, src, 0, src.length);
+        } catch (CharacterCodingException x) {
+            // throw via IAE
+            throw new IllegalArgumentException(x);
+        }
         if (COMPACT_STRINGS) {
             byte[] bs = StringUTF16.compress(ca, 0, caLen);
             if (bs != null) {
@@ -847,7 +867,8 @@ public final class String
         CharsetEncoder ce = cs.newEncoder();
         int len = val.length >> coder;  // assume LATIN1=0/UTF16=1;
         int en = scale(len, ce.maxBytesPerChar());
-        if (ce instanceof ArrayEncoder ae) {
+        // fastpath with ArrayEncoder implies `doReplace`.
+        if (doReplace && ce instanceof ArrayEncoder ae) {
             // fastpath for ascii compatible
             if (coder == LATIN1 &&
                     ae.isASCIICompatible() &&
@@ -857,10 +878,6 @@ public final class String
             byte[] ba = new byte[en];
             if (len == 0) {
                 return ba;
-            }
-            if (doReplace) {
-                ce.onMalformedInput(CodingErrorAction.REPLACE)
-                        .onUnmappableCharacter(CodingErrorAction.REPLACE);
             }
 
             int blen = (coder == LATIN1) ? ae.encodeFromLatin1(val, 0, len, ba)
@@ -1204,21 +1221,16 @@ public final class String
         return dp;
     }
 
-    private static int decodeWithDecoder(CharsetDecoder cd, char[] dst, byte[] src, int offset, int length) {
+    private static int decodeWithDecoder(CharsetDecoder cd, char[] dst, byte[] src, int offset, int length)
+                                            throws CharacterCodingException {
         ByteBuffer bb = ByteBuffer.wrap(src, offset, length);
         CharBuffer cb = CharBuffer.wrap(dst, 0, dst.length);
-        try {
-            CoderResult cr = cd.decode(bb, cb, true);
-            if (!cr.isUnderflow())
-                cr.throwException();
-            cr = cd.flush(cb);
-            if (!cr.isUnderflow())
-                cr.throwException();
-        } catch (CharacterCodingException x) {
-            // Substitution is always enabled,
-            // so this shouldn't happen
-            throw new Error(x);
-        }
+        CoderResult cr = cd.decode(bb, cb, true);
+        if (!cr.isUnderflow())
+            cr.throwException();
+        cr = cd.flush(cb);
+        if (!cr.isUnderflow())
+            cr.throwException();
         return cb.position();
     }
 
@@ -1366,7 +1378,7 @@ public final class String
      */
     public String(byte[] bytes, String charsetName)
             throws UnsupportedEncodingException {
-        this(bytes, 0, bytes.length, charsetName);
+        this(lookupCharset(charsetName), bytes, 0, bytes.length);
     }
 
     /**
@@ -1390,7 +1402,7 @@ public final class String
      * @since  1.6
      */
     public String(byte[] bytes, Charset charset) {
-        this(bytes, 0, bytes.length, charset);
+        this(Objects.requireNonNull(charset), bytes, 0, bytes.length);
     }
 
     /**
@@ -1420,7 +1432,7 @@ public final class String
      * @since  1.1
      */
     public String(byte[] bytes, int offset, int length) {
-        this(bytes, offset, length, Charset.defaultCharset());
+        this(Charset.defaultCharset(), bytes, checkBoundsOffCount(offset, length, bytes.length), length);
     }
 
     /**
@@ -1440,7 +1452,7 @@ public final class String
      * @since  1.1
      */
     public String(byte[] bytes) {
-        this(bytes, 0, bytes.length);
+        this(Charset.defaultCharset(), bytes, 0, bytes.length);
     }
 
     /**
@@ -4578,12 +4590,13 @@ public final class String
      * Check {@code offset}, {@code count} against {@code 0} and {@code length}
      * bounds.
      *
+     * @return  {@code offset} if the sub-range within bounds of the range
      * @throws  StringIndexOutOfBoundsException
      *          If {@code offset} is negative, {@code count} is negative,
      *          or {@code offset} is greater than {@code length - count}
      */
-    static void checkBoundsOffCount(int offset, int count, int length) {
-        Preconditions.checkFromIndexSize(offset, count, length, Preconditions.SIOOBE_FORMATTER);
+    static int checkBoundsOffCount(int offset, int count, int length) {
+        return Preconditions.checkFromIndexSize(offset, count, length, Preconditions.SIOOBE_FORMATTER);
     }
 
     /*

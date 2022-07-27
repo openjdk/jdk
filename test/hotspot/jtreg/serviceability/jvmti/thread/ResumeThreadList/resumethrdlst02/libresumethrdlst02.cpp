@@ -197,7 +197,7 @@ static int find_threads_by_name(jvmtiEnv* jvmti, JNIEnv* jni,
                   "#   expected: %d\n",
                   name, found, foundCount);
     set_agent_fail_status();
-    return NSK_FALSE;
+    return JNI_FALSE;
   }
 
   LOG("Make global references for threads: %d threads\n", foundCount);
@@ -205,12 +205,12 @@ static int find_threads_by_name(jvmtiEnv* jvmti, JNIEnv* jni,
     foundThreads[i] = (jthread) jni->NewGlobalRef(foundThreads[i]);
     if ( foundThreads[i] == NULL) {
       set_agent_fail_status();
-      return NSK_FALSE;
+      return JNI_FALSE;
     }
       LOG("  ... thread #%d: %p\n", i, foundThreads[i]);
   }
 
-  return NSK_TRUE;
+  return JNI_TRUE;
 }
 
 /** THREAD_END callback. */
@@ -232,7 +232,8 @@ callbackThreadEnd(jvmtiEnv* jvmti, JNIEnv* jni, jthread thread) {
   LOG("  ... received THREAD_END event for unknown thread: %p\n", (void*)thread);
 }
 
-jint Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
+JNIEXPORT jint JNICALL
+Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
   jvmtiEnv* jvmti = NULL;
 
   timeout =  60 * 1000;

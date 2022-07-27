@@ -25,10 +25,10 @@
 #include "precompiled.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "memory/universe.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.inline.hpp"
 #include "runtime/safepoint.hpp"
-#include "runtime/thread.inline.hpp"
 #include "runtime/vmThread.hpp"
 
 // Mutexes used in the VM (see comment in mutexLocker.hpp):
@@ -245,7 +245,6 @@ void mutex_init() {
   }
   def(StringDedup_lock             , PaddedMonitor, nosafepoint);
   def(StringDedupIntern_lock       , PaddedMutex  , nosafepoint);
-  def(ParGCRareEvent_lock          , PaddedMutex  , safepoint, true);
   def(RawMonitor_lock              , PaddedMutex  , nosafepoint-1);
 
   def(Metaspace_lock               , PaddedMutex  , nosafepoint-3);
@@ -366,7 +365,9 @@ void mutex_init() {
 
   if (UseG1GC) {
     defl(G1OldGCCount_lock         , PaddedMonitor, Threads_lock, true);
+    defl(ParGCRareEvent_lock       , PaddedMutex  , Threads_lock, true);
   }
+
   defl(CompileTaskAlloc_lock       , PaddedMutex ,  MethodCompileQueue_lock);
 #ifdef INCLUDE_PARALLELGC
   if (UseParallelGC) {

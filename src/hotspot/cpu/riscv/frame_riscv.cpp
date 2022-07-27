@@ -259,22 +259,25 @@ bool frame::safe_for_sender(JavaThread *thread) {
 void frame::patch_pc(Thread* thread, address pc) {
   assert(_cb == CodeCache::find_blob(pc), "unexpected pc");
   address* pc_addr = &(((address*) sp())[-1]);
+
   if (TracePcPatching) {
     tty->print_cr("patch_pc at address " INTPTR_FORMAT " [" INTPTR_FORMAT " -> " INTPTR_FORMAT "]",
                   p2i(pc_addr), p2i(*pc_addr), p2i(pc));
   }
+
   // Either the return address is the original one or we are going to
   // patch in the same address that's already there.
-  assert(_pc == *pc_addr || pc == *pc_addr, "must be");
+  assert(_pc == *pc_addr || pc == *pc_addr || *pc_addr == 0, "must be");
+  DEBUG_ONLY(address old_pc = _pc;)
   *pc_addr = pc;
+  _pc = pc; // must be set before call to get_deopt_original_pc
   address original_pc = CompiledMethod::get_deopt_original_pc(this);
   if (original_pc != NULL) {
-    assert(original_pc == _pc, "expected original PC to be stored before patching");
+    assert(original_pc == old_pc, "expected original PC to be stored before patching");
     _deopt_state = is_deoptimized;
-    // leave _pc as is
+    _pc = original_pc;
   } else {
     _deopt_state = not_deoptimized;
-    _pc = pc;
   }
 }
 
@@ -324,6 +327,10 @@ void frame::interpreter_frame_set_last_sp(intptr_t* last_sp) {
   *((intptr_t**)addr_at(interpreter_frame_last_sp_offset)) = last_sp;
 }
 
+void frame::interpreter_frame_set_extended_sp(intptr_t* sp) {
+  *((intptr_t**)addr_at(interpreter_frame_extended_sp_offset)) = sp;
+}
+
 frame frame::sender_for_entry_frame(RegisterMap* map) const {
   assert(map != NULL, "map must be set");
   // Java frame called from C; skip all C frames and return top C
@@ -340,17 +347,17 @@ frame frame::sender_for_entry_frame(RegisterMap* map) const {
   return fr;
 }
 
-OptimizedEntryBlob::FrameData* OptimizedEntryBlob::frame_data_for_frame(const frame& frame) const {
+UpcallStub::FrameData* UpcallStub::frame_data_for_frame(const frame& frame) const {
   ShouldNotCallThis();
   return nullptr;
 }
 
-bool frame::optimized_entry_frame_is_first() const {
+bool frame::upcall_stub_frame_is_first() const {
   ShouldNotCallThis();
   return false;
 }
 
-frame frame::sender_for_optimized_entry_frame(RegisterMap* map) const {
+frame frame::sender_for_upcall_stub_frame(RegisterMap* map) const {
   ShouldNotCallThis();
   return {};
 }
@@ -372,12 +379,13 @@ void frame::verify_deopt_original_pc(CompiledMethod* nm, intptr_t* unextended_sp
   assert_cond(nm != NULL);
   address original_pc = nm->get_original_pc(&fr);
   assert(nm->insts_contains_inclusive(original_pc),
-         "original PC must be in the main code section of the the compiled method (or must be immediately following it)");
+         "original PC must be in the main code section of the compiled method (or must be immediately following it)");
 }
 #endif
 
 //------------------------------------------------------------------------------
 // frame::adjust_unextended_sp
+#ifdef ASSERT
 void frame::adjust_unextended_sp() {
   // On riscv, sites calling method handle intrinsics and lambda forms are treated
   // as any other call site. Therefore, no special action is needed when we are
@@ -394,6 +402,8 @@ void frame::adjust_unextended_sp() {
     }
   }
 }
+#endif
+
 
 //------------------------------------------------------------------------------
 // frame::sender_for_interpreter_frame
@@ -538,6 +548,7 @@ void frame::describe_pd(FrameValues& values, int frame_no) {
     DESCRIBE_FP_OFFSET(interpreter_frame_last_sp);
     DESCRIBE_FP_OFFSET(interpreter_frame_method);
     DESCRIBE_FP_OFFSET(interpreter_frame_mdp);
+    DESCRIBE_FP_OFFSET(interpreter_frame_extended_sp);
     DESCRIBE_FP_OFFSET(interpreter_frame_mirror);
     DESCRIBE_FP_OFFSET(interpreter_frame_cache);
     DESCRIBE_FP_OFFSET(interpreter_frame_locals);

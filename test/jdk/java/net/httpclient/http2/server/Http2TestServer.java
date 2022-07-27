@@ -357,6 +357,7 @@ public class Http2TestServer implements AutoCloseable {
                         // and if so then the client might wait
                         // forever.
                         System.err.println(name + ": start exception: " + e);
+                        e.printStackTrace();
                     }
                     System.err.println(name + ": stopping is: " + stopping);
                 }

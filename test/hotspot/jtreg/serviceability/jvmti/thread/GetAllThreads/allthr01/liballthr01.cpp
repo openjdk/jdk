@@ -70,7 +70,8 @@ sys_thread(jvmtiEnv *jvmti, JNIEnv *jni, void *p) {
   rml2.wait();
 }
 
-jint Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
+JNIEXPORT jint JNICALL
+Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
   jvmtiCapabilities caps;
   jvmtiError err;
   jint res;

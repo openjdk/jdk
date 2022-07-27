@@ -314,7 +314,7 @@ static bool check_compare_clipping( bool less_than, IfNode *iff, ConNode *limit,
 }
 
 //------------------------------is_unreachable_region--------------------------
-// Find if the Region node is reachable from the root.
+// Check if the RegionNode is part of an unsafe loop and unreachable from root.
 bool RegionNode::is_unreachable_region(const PhaseGVN* phase) {
   Node* top = phase->C->top();
   assert(req() == 2 || (req() == 3 && in(1) != NULL && in(2) == top), "sanity check arguments");
@@ -373,7 +373,7 @@ bool RegionNode::is_unreachable_from_root(const PhaseGVN* phase) const {
   VectorSet visited;
 
   // Mark all control nodes reachable from root outputs
-  Node *n = (Node*)phase->C->root();
+  Node* n = (Node*)phase->C->root();
   nstack.push(n);
   visited.set(n->_idx);
   while (nstack.size() != 0) {
@@ -475,7 +475,7 @@ Node *RegionNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   // Remove TOP or NULL input paths. If only 1 input path remains, this Region
   // degrades to a copy.
-  bool add_to_worklist = false;
+  bool add_to_worklist = true;
   bool modified = false;
   int cnt = 0;                  // Count of values merging
   DEBUG_ONLY( int cnt_orig = req(); ) // Save original inputs count
@@ -501,7 +501,7 @@ Node *RegionNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         }
       }
       if( phase->type(n) == Type::TOP ) {
-        set_req(i, NULL);       // Ignore TOP inputs
+        set_req_X(i, NULL, phase); // Ignore TOP inputs
         modified = true;
         i--;
         continue;
@@ -532,7 +532,8 @@ Node *RegionNode::Ideal(PhaseGVN *phase, bool can_reshape) {
           }
         }
       }
-      add_to_worklist = true;
+      add_to_worklist = false;
+      phase->is_IterGVN()->add_users_to_worklist(this);
       i--;
     }
   }
@@ -547,44 +548,50 @@ Node *RegionNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     if ((this->is_Loop() && (del_it == LoopNode::EntryControl ||
                              (del_it == 0 && is_unreachable_region(phase)))) ||
         (!this->is_Loop() && has_phis && is_unreachable_region(phase))) {
-      // Yes,  the region will be removed during the next step below.
-      // Cut the backedge input and remove phis since no data paths left.
-      // We don't cut outputs to other nodes here since we need to put them
-      // on the worklist.
-      PhaseIterGVN *igvn = phase->is_IterGVN();
-      if (in(1)->outcnt() == 1) {
-        igvn->_worklist.push(in(1));
-      }
-      del_req(1);
-      cnt = 0;
-      assert( req() == 1, "no more inputs expected" );
-      uint max = outcnt();
-      bool progress = true;
-      Node *top = phase->C->top();
-      DUIterator j;
-      while(progress) {
-        progress = false;
-        for (j = outs(); has_out(j); j++) {
-          Node *n = out(j);
-          if( n->is_Phi() ) {
-            assert(n->in(0) == this, "");
-            assert( n->req() == 2 &&  n->in(1) != NULL, "Only one data input expected" );
-            // Break dead loop data path.
-            // Eagerly replace phis with top to avoid regionless phis.
-            igvn->replace_node(n, top);
-            if( max != outcnt() ) {
-              progress = true;
-              j = refresh_out_pos(j);
-              max = outcnt();
+      // This region and therefore all nodes on the input control path(s) are unreachable
+      // from root. To avoid incomplete removal of unreachable subgraphs, walk up the CFG
+      // and aggressively replace all nodes by top.
+      PhaseIterGVN* igvn = phase->is_IterGVN();
+      Node* top = phase->C->top();
+      ResourceMark rm;
+      Node_List nstack;
+      VectorSet visited;
+      nstack.push(this);
+      visited.set(_idx);
+      while (nstack.size() != 0) {
+        Node* n = nstack.pop();
+        for (uint i = 0; i < n->req(); ++i) {
+          Node* m = n->in(i);
+          assert(m != (Node*)phase->C->root(), "Should be unreachable from root");
+          if (m != NULL && m->is_CFG() && !visited.test_set(m->_idx)) {
+            nstack.push(m);
+          }
+        }
+        if (n->is_Region()) {
+          // Eagerly replace phis with top to avoid regionless phis.
+          n->set_req(0, NULL);
+          bool progress = true;
+          uint max = n->outcnt();
+          DUIterator j;
+          while (progress) {
+            progress = false;
+            for (j = n->outs(); n->has_out(j); j++) {
+              Node* u = n->out(j);
+              if (u->is_Phi()) {
+                igvn->replace_node(u, top);
+                if (max != n->outcnt()) {
+                  progress = true;
+                  j = n->refresh_out_pos(j);
+                  max = n->outcnt();
+                }
+              }
             }
           }
         }
+        igvn->replace_node(n, top);
       }
-      add_to_worklist = true;
+      return NULL;
     }
-  }
-  if (add_to_worklist) {
-    phase->is_IterGVN()->add_users_to_worklist(this); // Revisit collapsed Phis
   }
 
   if( cnt <= 1 ) {              // Only 1 path in?
@@ -629,8 +636,9 @@ Node *RegionNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         assert(parent_ctrl != NULL, "Region is a copy of some non-null control");
         assert(parent_ctrl != this, "Close dead loop");
       }
-      if (!add_to_worklist)
+      if (add_to_worklist) {
         igvn->add_users_to_worklist(this); // Check for further allowed opts
+      }
       for (DUIterator_Last imin, i = last_outs(imin); i >= imin; --i) {
         Node* n = last_out(i);
         igvn->hash_delete(n); // Remove from worklist before modifying edges
@@ -1177,16 +1185,14 @@ const Type* PhiNode::Value(PhaseGVN* phase) const {
   // convert the one to the other.
   const TypePtr* ttp = _type->make_ptr();
   const TypeInstPtr* ttip = (ttp != NULL) ? ttp->isa_instptr() : NULL;
-  const TypeKlassPtr* ttkp = (ttp != NULL) ? ttp->isa_instklassptr() : NULL;
+  const TypeInstKlassPtr* ttkp = (ttp != NULL) ? ttp->isa_instklassptr() : NULL;
   bool is_intf = false;
   if (ttip != NULL) {
-    ciKlass* k = ttip->klass();
-    if (k->is_loaded() && k->is_interface())
+    if (ttip->is_interface())
       is_intf = true;
   }
   if (ttkp != NULL) {
-    ciKlass* k = ttkp->klass();
-    if (k->is_loaded() && k->is_interface())
+    if (ttkp->is_interface())
       is_intf = true;
   }
 
@@ -1205,8 +1211,7 @@ const Type* PhiNode::Value(PhaseGVN* phase) const {
       const TypeInstPtr* tiip = (tip != NULL) ? tip->isa_instptr() : NULL;
       if (tiip) {
         bool ti_is_intf = false;
-        ciKlass* k = tiip->klass();
-        if (k->is_loaded() && k->is_interface())
+        if (tiip->is_interface())
           ti_is_intf = true;
         if (is_intf != ti_is_intf)
           { t = _type; break; }
@@ -1244,14 +1249,14 @@ const Type* PhiNode::Value(PhaseGVN* phase) const {
     // be 'I' or 'j/l/O'.  Thus we'll pick 'j/l/O'.  If this then flows
     // into a Phi which "knows" it's an Interface type we'll have to
     // uplift the type.
-    if (!t->empty() && ttip && ttip->is_loaded() && ttip->klass()->is_interface()) {
+    if (!t->empty() && ttip && ttip->is_interface()) {
       assert(ft == _type, ""); // Uplift to interface
-    } else if (!t->empty() && ttkp && ttkp->is_loaded() && ttkp->klass()->is_interface()) {
+    } else if (!t->empty() && ttkp && ttkp->is_interface()) {
       assert(ft == _type, ""); // Uplift to interface
     } else {
       // We also have to handle 'evil cases' of interface- vs. class-arrays
       Type::get_arrays_base_elements(jt, _type, NULL, &ttip);
-      if (!t->empty() && ttip != NULL && ttip->is_loaded() && ttip->klass()->is_interface()) {
+      if (!t->empty() && ttip != NULL && ttip->is_interface()) {
           assert(ft == _type, "");   // Uplift to array of interface
       } else {
         // Otherwise it's something stupid like non-overlapping int ranges
@@ -1270,19 +1275,19 @@ const Type* PhiNode::Value(PhaseGVN* phase) const {
     // because the type system doesn't interact well with interfaces.
     const TypePtr *jtp = jt->make_ptr();
     const TypeInstPtr *jtip = (jtp != NULL) ? jtp->isa_instptr() : NULL;
-    const TypeKlassPtr *jtkp = (jtp != NULL) ? jtp->isa_instklassptr() : NULL;
-    if( jtip && ttip ) {
-      if( jtip->is_loaded() &&  jtip->klass()->is_interface() &&
-          ttip->is_loaded() && !ttip->klass()->is_interface() ) {
+    const TypeInstKlassPtr *jtkp = (jtp != NULL) ? jtp->isa_instklassptr() : NULL;
+    if (jtip && ttip) {
+      if (jtip->is_interface() &&
+          !ttip->is_interface()) {
         assert(ft == ttip->cast_to_ptr_type(jtip->ptr()) ||
                ft->isa_narrowoop() && ft->make_ptr() == ttip->cast_to_ptr_type(jtip->ptr()), "");
         jt = ft;
       }
     }
-    if( jtkp && ttkp ) {
-      if( jtkp->is_loaded() &&  jtkp->klass()->is_interface() &&
+    if (jtkp && ttkp) {
+      if (jtkp->is_interface() &&
           !jtkp->klass_is_exact() && // Keep exact interface klass (6894807)
-          ttkp->is_loaded() && !ttkp->klass()->is_interface() ) {
+          ttkp->is_loaded() && !ttkp->is_interface()) {
         assert(ft == ttkp->cast_to_ptr_type(jtkp->ptr()) ||
                ft->isa_narrowklass() && ft->make_ptr() == ttkp->cast_to_ptr_type(jtkp->ptr()), "");
         jt = ft;
@@ -2168,7 +2173,7 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
           doit = false;
           break;
         }
-        if (in(i)->in(AddPNode::Offset) != base) {
+        if (in(i)->in(AddPNode::Base) != base) {
           base = NULL;
         }
         if (in(i)->in(AddPNode::Offset) != offset) {

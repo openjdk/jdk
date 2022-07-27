@@ -181,12 +181,6 @@ public:
 
   HeapWord* mem_allocate(size_t size, bool*  gc_overhead_limit_was_exceeded);
 
-  // We may support a shared contiguous allocation area, if the youngest
-  // generation does.
-  bool supports_inline_contig_alloc() const;
-  HeapWord* volatile* top_addr() const;
-  HeapWord** end_addr() const;
-
   // Perform a full collection of the heap; intended for use in implementing
   // "System.gc". This implies as full a collection as the CollectedHeap
   // supports. Caller does not hold the Heap_lock on entry.
@@ -204,7 +198,7 @@ public:
 
   // Returns true if the reference is to an object in the reserved space
   // for the young generation.
-  // Assumes the the young gen address range is less than that of the old gen.
+  // Assumes the young gen address range is less than that of the old gen.
   bool is_in_young(oop p) const;
 
   virtual bool requires_barriers(stackChunkOop obj) const;

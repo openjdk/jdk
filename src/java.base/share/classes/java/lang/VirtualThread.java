@@ -62,7 +62,7 @@ import static java.util.concurrent.TimeUnit.*;
  * A thread that is scheduled by the Java virtual machine rather than the operating
  * system.
  */
-final class VirtualThread extends Thread {
+final class VirtualThread extends BaseVirtualThread {
     private static final Unsafe U = Unsafe.getUnsafe();
     private static final ContinuationScope VTHREAD_SCOPE = new ContinuationScope("VirtualThreads");
     private static final ForkJoinPool DEFAULT_SCHEDULER = createDefaultScheduler();
@@ -148,7 +148,7 @@ final class VirtualThread extends Thread {
      * @param task the task to execute
      */
     VirtualThread(Executor scheduler, String name, int characteristics, Runnable task) {
-        super(name, characteristics);
+        super(name, characteristics, /*bound*/ false);
         Objects.requireNonNull(task);
 
         // choose scheduler if not specified
@@ -481,22 +481,14 @@ final class VirtualThread extends Thread {
     }
 
     /**
-     * Parks the current virtual thread until unparked or interrupted.
-     */
-    static void park() {
-        if (currentThread() instanceof VirtualThread vthread) {
-            vthread.doPark();
-        } else {
-            throw new WrongThreadException();
-        }
-    }
-
-    /**
      * Parks until unparked or interrupted. If already unparked then the parking
      * permit is consumed and this method completes immediately (meaning it doesn't
      * yield). It also completes immediately if the interrupt status is set.
      */
-    private void doPark() {
+    @Override
+    void park() {
+        assert Thread.currentThread() == this;
+
         // complete immediately if parking permit available or interrupted
         if (getAndSetParkPermit(false) || interrupted)
             return;
@@ -514,20 +506,6 @@ final class VirtualThread extends Thread {
     }
 
     /**
-     * Parks the current virtual thread up to the given waiting time or until
-     * unparked or interrupted.
-     *
-     * @param nanos the maximum number of nanoseconds to wait
-     */
-    static void parkNanos(long nanos) {
-        if (currentThread() instanceof VirtualThread vthread) {
-            vthread.doParkNanos(nanos);
-        } else {
-            throw new WrongThreadException();
-        }
-    }
-
-    /**
      * Parks up to the given waiting time or until unparked or interrupted.
      * If already unparked then the parking permit is consumed and this method
      * completes immediately (meaning it doesn't yield). It also completes immediately
@@ -535,7 +513,8 @@ final class VirtualThread extends Thread {
      *
      * @param nanos the maximum number of nanoseconds to wait.
      */
-    private void doParkNanos(long nanos) {
+    @Override
+    void parkNanos(long nanos) {
         assert Thread.currentThread() == this;
 
         // complete immediately if parking permit available or interrupted
@@ -638,6 +617,7 @@ final class VirtualThread extends Thread {
      * not to block.
      * @throws RejectedExecutionException if the scheduler cannot accept a task
      */
+    @Override
     @ChangesCurrentThread
     void unpark() {
         Thread currentThread = Thread.currentThread();

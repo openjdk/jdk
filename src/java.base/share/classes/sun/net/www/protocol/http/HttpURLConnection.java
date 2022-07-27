@@ -278,7 +278,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
         allowRestrictedHeaders = Boolean.parseBoolean(
                 props.getProperty("sun.net.http.allowRestrictedHeaders"));
         if (!allowRestrictedHeaders) {
-            restrictedHeaderSet = new HashSet<>(restrictedHeaders.length);
+            restrictedHeaderSet = HashSet.newHashSet(restrictedHeaders.length);
             for (int i=0; i < restrictedHeaders.length; i++) {
                 restrictedHeaderSet.add(restrictedHeaders[i].toLowerCase());
             }
@@ -626,10 +626,13 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
              * to last and last, respectively, in the case of a POST
              * request.
              */
-            if (!failedOnce) {
+            final String requestLine = method + " " + getRequestURI()+ " " + httpVersion;
+            final int requestLineIndex = requests.getKey(requestLine);
+            if (requestLineIndex != 0) {
+                // we expect the request line to be at index 0. we set it here
+                // if we don't find the request line at that index.
                 checkURLFile();
-                requests.prepend(method + " " + getRequestURI()+" "  +
-                                 httpVersion, null);
+                requests.prepend(requestLine, null);
             }
             if (!getUseCaches()) {
                 requests.setIfNotSet ("Cache-Control", "no-cache");
@@ -656,8 +659,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
              * or if keep alive is disabled via a system property
              */
 
-            // Try keep-alive only on first attempt
-            if (!failedOnce && http.getHttpKeepAliveSet()) {
+            if (http.getHttpKeepAliveSet()) {
                 if (http.usingProxy && tunnelState() != TunnelState.TUNNELING) {
                     requests.setIfNotSet("Proxy-Connection", "keep-alive");
                 } else {

@@ -31,6 +31,7 @@
 #include "gc/shared/oopStorage.inline.hpp"
 #include "jvmci/jniAccessMark.inline.hpp"
 #include "jvmci/jvmciCompilerToVM.hpp"
+#include "jvmci/jvmciCodeInstaller.hpp"
 #include "jvmci/jvmciRuntime.hpp"
 #include "jvmci/metadataHandles.hpp"
 #include "logging/log.hpp"
@@ -1414,6 +1415,8 @@ void JVMCIRuntime::initialize(JVMCIEnv* JVMCIENV) {
     create_jvmci_primitive_type(T_DOUBLE, JVMCI_CHECK_EXIT_((void)0));
     create_jvmci_primitive_type(T_VOID, JVMCI_CHECK_EXIT_((void)0));
 
+    DEBUG_ONLY(CodeInstaller::verify_bci_constants(JVMCIENV);)
+
     if (!JVMCIENV->is_hotspot()) {
       JVMCIENV->copy_saved_properties();
     }
@@ -2119,7 +2122,7 @@ JVMCI::CodeInstallResult JVMCIRuntime::register_method(JVMCIEnv* JVMCIENV,
                                  debug_info, dependencies, code_buffer,
                                  frame_words, oop_map_set,
                                  handler_table, implicit_exception_table,
-                                 compiler, comp_level, GrowableArrayView<RuntimeStub*>::EMPTY,
+                                 compiler, comp_level,
                                  speculations, speculations_len,
                                  nmethod_mirror_index, nmethod_mirror_name, failed_speculations);
 

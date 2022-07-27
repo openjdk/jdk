@@ -29,7 +29,7 @@
 
 #include "memory/allocation.hpp"
 #include "memory/resourceArea.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/javaThread.hpp"
 
 class Dict;
 

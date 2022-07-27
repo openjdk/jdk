@@ -232,7 +232,7 @@ test_GetLocal(jvmtiEnv *jvmti, JNIEnv *jni, jthread cthread, jthread vthread,
 
 static bool
 test_SetLocal(jvmtiEnv *jvmti, JNIEnv *jni, jthread cthread, jthread vthread,
-              int depth, int frame_count, Values *values) {
+              int depth, int frame_count, Values *values, bool at_event) {
   jvmtiError err;
 
   LOG("test_SetLocal: mounted: %d depth: %d fcount: %d\n", cthread != NULL, depth, frame_count);
@@ -288,7 +288,7 @@ test_SetLocal(jvmtiEnv *jvmti, JNIEnv *jni, jthread cthread, jthread vthread,
       fatal(jni, "JVMTI SetLocalObject for unmounted vthread pr depth > 0failed to return JVMTI_ERROR_OPAQUE_FRAME");
     }
     return false; // skip testing other types for unmounted vthread
-  } else if (err == JVMTI_ERROR_OPAQUE_FRAME) {
+  } else if (!at_event && err == JVMTI_ERROR_OPAQUE_FRAME) {
     LOG("JVMTI SetLocalObject for mounted vthread at depth=0 returned JVMTI_ERROR_OPAQUE_FRAME: %d\n", err);
     return false; // skip testing other types for compiled frame that can't be deoptimized
   }
@@ -309,7 +309,7 @@ test_SetLocal(jvmtiEnv *jvmti, JNIEnv *jni, jthread cthread, jthread vthread,
 }
 
 static void
-test_GetSetLocal(jvmtiEnv *jvmti, JNIEnv* jni, jthread vthread, int depth, int frame_count) {
+test_GetSetLocal(jvmtiEnv *jvmti, JNIEnv* jni, jthread vthread, int depth, int frame_count, bool at_event) {
   Values values0 = { NULL, NULL, 1, 2L, (jfloat)3.2F, (jdouble)4.500000047683716 };
   Values values1 = { NULL, NULL, 2, 3L, (jfloat)4.2F, (jdouble)5.500000047683716 };
   jthread cthread = get_carrier_thread(jvmti, jni, vthread);
@@ -319,8 +319,8 @@ test_GetSetLocal(jvmtiEnv *jvmti, JNIEnv* jni, jthread vthread, int depth, int f
 
   LOG("test_GetSetLocal: test_GetLocal with values0\n");
   test_GetLocal(jvmti, jni, cthread, vthread, depth, frame_count, &values0);
-  LOG("test_GetSetLocal: test_SetLocal with values1\n");
-  bool success = test_SetLocal(jvmti, jni, cthread, vthread, depth, frame_count, &values1);
+  LOG("test_GetSetLocal: test_SetLocal at_event: %d with values1\n", at_event);
+  bool success = test_SetLocal(jvmti, jni, cthread, vthread, depth, frame_count, &values1, at_event);
 
   if (!success) {
     goto End; // skip testing for compiled frame that can't be deoptimized
@@ -334,8 +334,8 @@ test_GetSetLocal(jvmtiEnv *jvmti, JNIEnv* jni, jthread vthread, int depth, int f
   } else {
     LOG("test_GetSetLocal: test_GetLocal with values1\n");
     test_GetLocal(jvmti, jni, cthread, vthread, depth, frame_count, &values1);
-    LOG("test_GetSetLocal: test_SetLocal with values0 to restore original local values\n");
-    test_SetLocal(jvmti, jni, cthread, vthread, depth, frame_count, &values0);
+    LOG("test_GetSetLocal: test_SetLocal at_event: %d with values0 to restore original local values\n", at_event);
+    test_SetLocal(jvmti, jni, cthread, vthread, depth, frame_count, &values0, at_event);
   }
  End:
   LOG("test_GetSetLocal: finished\n\n");
@@ -360,7 +360,7 @@ Breakpoint(jvmtiEnv *jvmti, JNIEnv* jni, jthread vthread,
 
   {
     int frame_count = get_frame_count(jvmti, jni, vthread);
-    test_GetSetLocal(jvmti, jni, vthread, depth, frame_count);
+    test_GetSetLocal(jvmti, jni, vthread, depth, frame_count, true /* at_event */);
   }
   deallocate(jvmti, jni, (void*)mname);
   deallocate(jvmti, jni, (void*)tname);
@@ -470,7 +470,7 @@ Java_GetSetLocalTest_testSuspendedVirtualThreads(JNIEnv *jni, jclass klass, jthr
 #if 0
       print_stack_trace(jvmti, jni, vthread);
 #endif
-      test_GetSetLocal(jvmti, jni, vthread, depth, frame_count);
+      test_GetSetLocal(jvmti, jni, vthread, depth, frame_count, false /* !at_event */);
     }
 
     err = jvmti->ResumeThread(vthread);
@@ -487,7 +487,11 @@ Java_GetSetLocalTest_testSuspendedVirtualThreads(JNIEnv *jni, jclass klass, jthr
 
 JNIEXPORT jboolean JNICALL
 Java_GetSetLocalTest_completed(JNIEnv *jni, jclass klass) {
-  return completed;
+  if (completed) {
+    completed = JNI_FALSE;
+    return JNI_TRUE;
+  }
+  return JNI_FALSE;
 }
 
 } // extern "C"

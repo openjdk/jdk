@@ -450,7 +450,7 @@ var getJibProfilesProfiles = function (input, common, data) {
             target_os: "macosx",
             target_cpu: "aarch64",
             dependencies: ["devkit", "gtest", "pandoc"],
-            configure_args: concat(common.configure_args_64bit, "--with-zlib=system",
+            configure_args: concat(common.configure_args_64bit,
                 "--with-macosx-version-max=11.00.00"),
         },
 
@@ -837,7 +837,7 @@ var getJibProfilesProfiles = function (input, common, data) {
         [ "", common.open_suffix ].forEach(function (suffix) {
             var cmpBaselineName = name + suffix + "-cmp-baseline";
             profiles[cmpBaselineName] = clone(profiles[name + suffix]);
-            // Only compare the images target. This should pressumably be expanded
+            // Only compare the images target. This should presumably be expanded
             // to include more build targets when possible.
             profiles[cmpBaselineName].default_make_targets = [ "images", "test-image" ];
             if (name == "linux-x64") {

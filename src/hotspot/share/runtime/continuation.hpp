@@ -25,13 +25,16 @@
 #ifndef SHARE_VM_RUNTIME_CONTINUATION_HPP
 #define SHARE_VM_RUNTIME_CONTINUATION_HPP
 
+#include "memory/allStatic.hpp"
 #include "oops/oopsHierarchy.hpp"
-#include "memory/iterator.hpp"
-#include "runtime/frame.hpp"
-#include "runtime/globals.hpp"
 #include "jni.h"
 
 class ContinuationEntry;
+class frame;
+class FrameValues;
+class Handle;
+class outputStream;
+class RegisterMap;
 
 class Continuations : public AllStatic {
 private:
@@ -62,8 +65,18 @@ public:
   enum thaw_kind {
     thaw_top = 0,
     thaw_return_barrier = 1,
-    thaw_exception = 2,
+    thaw_return_barrier_exception = 2,
   };
+
+  static bool is_thaw_return_barrier(thaw_kind kind) {
+    return kind != thaw_top;
+  }
+
+  static bool is_thaw_return_barrier_exception(thaw_kind kind) {
+    bool r = (kind == thaw_return_barrier_exception);
+    assert(!r || is_thaw_return_barrier(kind), "must be");
+    return r;
+  }
 
   static void init();
 
@@ -74,13 +87,7 @@ public:
   static const ContinuationEntry* last_continuation(const JavaThread* thread, oop cont_scope);
   static ContinuationEntry* get_continuation_entry_for_continuation(JavaThread* thread, oop continuation);
   static ContinuationEntry* get_continuation_entry_for_sp(JavaThread* thread, intptr_t* const sp);
-
-  static ContinuationEntry* get_continuation_entry_for_entry_frame(JavaThread* thread, const frame& f) {
-    assert(is_continuation_enterSpecial(f), "");
-    ContinuationEntry* entry = (ContinuationEntry*)f.unextended_sp();
-    assert(entry == get_continuation_entry_for_sp(thread, f.sp()-2), "mismatched entry");
-    return entry;
-  }
+  static ContinuationEntry* get_continuation_entry_for_entry_frame(JavaThread* thread, const frame& f);
 
   static bool is_continuation_mounted(JavaThread* thread, oop continuation);
   static bool is_continuation_scope_mounted(JavaThread* thread, oop cont_scope);

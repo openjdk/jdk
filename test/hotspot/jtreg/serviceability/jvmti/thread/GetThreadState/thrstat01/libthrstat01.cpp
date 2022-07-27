@@ -64,7 +64,8 @@ ThreadStart(jvmtiEnv *jvmti_env, JNIEnv *jni, jthread thread) {
   }
 }
 
-jint Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
+JNIEXPORT jint JNICALL
+Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
   jint res;
   jvmtiError err;
 

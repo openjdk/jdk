@@ -29,7 +29,7 @@
 #include "logging/logConfiguration.hpp"
 #include "memory/resourceArea.hpp"
 #include "prims/jvmtiTrace.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/javaThread.hpp"
 
 //
 // class JvmtiTrace

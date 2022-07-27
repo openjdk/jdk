@@ -100,11 +100,11 @@ public class Navigation {
     }
 
     /**
-     * An interface to provide links for the sub-navigation area.
+     * An interface to provide links for the subnavigation area.
      */
     public interface SubNavLinks {
         /**
-         * {@return a list of links to display in the sub-navigation area}
+         * {@return a list of links to display in the subnavigation area}
          * Links should be wrapped in {@code HtmlTree.LI} elements as they are
          * displayed within an unordered list.
          */
@@ -350,9 +350,9 @@ public class Navigation {
     }
 
     /**
-     * Adds the summary links to the sub-navigation.
+     * Adds the summary links to the subnavigation.
      *
-     * @param target the content to which the sub-navigation will be added
+     * @param target the content to which the subnavigation will be added
      * @param nested whether to create a flat or nested list
      */
     private void addSummaryLinks(Content target, boolean nested) {
@@ -381,7 +381,7 @@ public class Navigation {
     }
 
     /**
-     * Adds the detail links to sub-navigation.
+     * Adds the detail links to subnavigation.
      *
      * @param target the content to which the links will be added
      * @param nested whether to create a flat or nested list
@@ -614,15 +614,17 @@ public class Navigation {
         Content skipNavLinks = contents.getContent("doclet.Skip_navigation_links");
         String toggleNavLinks = configuration.getDocResources().getText("doclet.Toggle_navigation_links");
         navigationBar.add(MarkerComments.START_OF_TOP_NAVBAR);
+        // The mobile menu button uses three empty spans to produce its animated icon
+        HtmlTree iconSpan = HtmlTree.SPAN(HtmlStyle.navBarToggleIcon).add(Entity.NO_BREAK_SPACE);
         navDiv.setStyle(HtmlStyle.topNav)
                 .setId(HtmlIds.NAVBAR_TOP)
                 .add(new HtmlTree(TagName.BUTTON).setId(HtmlIds.NAVBAR_TOGGLE_BUTTON)
                         .put(HtmlAttr.ARIA_CONTROLS, HtmlIds.NAVBAR_TOP.name())
                         .put(HtmlAttr.ARIA_EXPANDED, String.valueOf(false))
                         .put(HtmlAttr.ARIA_LABEL, toggleNavLinks)
-                        .add(HtmlTree.SPAN(HtmlStyle.navBarToggleIcon, HtmlTree.EMPTY))
-                        .add(HtmlTree.SPAN(HtmlStyle.navBarToggleIcon, HtmlTree.EMPTY))
-                        .add(HtmlTree.SPAN(HtmlStyle.navBarToggleIcon, HtmlTree.EMPTY)))
+                        .add(iconSpan)
+                        .add(iconSpan)
+                        .add(iconSpan))
                 .add(HtmlTree.DIV(HtmlStyle.skipNav,
                         links.createLink(HtmlIds.SKIP_NAVBAR_TOP, skipNavLinks,
                                 skipNavLinks.toString())));
@@ -662,7 +664,8 @@ public class Navigation {
         navigationBar.add(subDiv);
 
         navigationBar.add(MarkerComments.END_OF_TOP_NAVBAR);
-        navigationBar.add(HtmlTree.SPAN(HtmlStyle.skipNav, HtmlTree.EMPTY)
+        navigationBar.add(HtmlTree.SPAN(HtmlStyle.skipNav)
+                .addUnchecked(Text.EMPTY)
                 .setId(HtmlIds.SKIP_NAVBAR_TOP));
 
         return navigationBar;

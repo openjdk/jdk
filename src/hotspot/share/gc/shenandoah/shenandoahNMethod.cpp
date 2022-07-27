@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2019, 2022, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,9 @@
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahNMethod.inline.hpp"
+#include "gc/shenandoah/shenandoahOopClosures.inline.hpp"
 #include "memory/resourceArea.hpp"
+#include "runtime/continuation.hpp"
 
 ShenandoahNMethod::ShenandoahNMethod(nmethod* nm, GrowableArray<oop*>& oops, bool non_immediate_oops) :
   _nm(nm), _oops(NULL), _oops_count(0), _unregistered(false) {
@@ -159,14 +161,14 @@ void ShenandoahNMethod::heal_nmethod(nmethod* nm) {
     ShenandoahKeepAliveClosure cl;
     data->oops_do(&cl);
   } else if (heap->is_concurrent_weak_root_in_progress() ||
-             heap->is_concurrent_strong_root_in_progress()) {
+             heap->is_concurrent_strong_root_in_progress() ) {
     ShenandoahEvacOOMScope evac_scope;
     heal_nmethod_metadata(data);
   } else {
     // There is possibility that GC is cancelled when it arrives final mark.
     // In this case, concurrent root phase is skipped and degenerated GC should be
     // followed, where nmethods are disarmed.
-    assert(heap->cancelled_gc(), "What else?");
+    assert(heap->cancelled_gc() || Continuations::enabled(), "What else?");
   }
 }
 

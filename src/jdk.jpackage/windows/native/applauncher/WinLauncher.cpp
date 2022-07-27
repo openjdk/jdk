@@ -35,6 +35,7 @@
 #include "WinApp.h"
 #include "Toolbox.h"
 #include "FileUtils.h"
+#include "PackageFile.h"
 #include "UniqueHandle.h"
 #include "ErrorHandling.h"
 #include "WinSysInfo.h"
@@ -133,6 +134,22 @@ tstring getJvmLibPath(const Jvm& jvm) {
 }
 
 
+void addCfgFileLookupDirForEnvVariable(
+        const PackageFile& pkgFile, AppLauncher& appLauncher,
+        const tstring& envVarName) {
+
+    tstring path;
+    JP_TRY;
+    path = SysInfo::getEnvVariable(envVarName);
+    JP_CATCH_ALL;
+
+    if (!path.empty()) {
+        appLauncher.addCfgFileLookupDir(FileUtils::mkpath() << path
+                << pkgFile.getPackageName());
+    }
+}
+
+
 void launchApp() {
     // [RT-31061] otherwise UI can be left in back of other windows.
     ::AllowSetForegroundWindow(ASFW_ANY);
@@ -141,12 +158,19 @@ void launchApp() {
     const tstring appImageRoot = FileUtils::dirname(launcherPath);
     const tstring appDirPath = FileUtils::mkpath() << appImageRoot << _T("app");
 
-    const AppLauncher appLauncher = AppLauncher().setImageRoot(appImageRoot)
+    const PackageFile pkgFile = PackageFile::loadFromAppDir(appDirPath);
+
+    AppLauncher appLauncher = AppLauncher().setImageRoot(appImageRoot)
         .addJvmLibName(_T("bin\\jli.dll"))
         .setAppDir(appDirPath)
         .setLibEnvVariableName(_T("PATH"))
         .setDefaultRuntimePath(FileUtils::mkpath() << appImageRoot
             << _T("runtime"));
+
+    if (!pkgFile.getPackageName().empty()) {
+        addCfgFileLookupDirForEnvVariable(pkgFile, appLauncher, _T("LOCALAPPDATA"));
+        addCfgFileLookupDirForEnvVariable(pkgFile, appLauncher, _T("APPDATA"));
+    }
 
     const bool restart = !appLauncher.libEnvVariableContainsAppDir();
 

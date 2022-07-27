@@ -24,7 +24,7 @@
  * @test
  * @summary checking localised language/country names in finnish
  * @modules jdk.localedata
- * @bug 4429024 4964035 6558856 8008577
+ * @bug 4429024 4964035 6558856 8008577 8287868
  * @run main/othervm -Djava.locale.providers=JRE,SPI Bug4429024
  */
 
@@ -38,10 +38,10 @@ public class Bug4429024 {
 
         String [][] fiLocales = {
                     { "ar", "arabia" },
-                    { "ba", "baski" },
+                    { "ba", "ba\u0161kiiri" },
                     { "bg", "bulgaria" },
                     { "ca", "katalaani" },
-                    { "cs", "tsekki" },
+                    { "cs", "t\u0161ekki" },
                     { "da", "tanska" },
                     { "de", "saksa" },
                     { "el", "kreikka" },
@@ -72,7 +72,7 @@ public class Bug4429024 {
                     { "CA", "Kanada" },
                     { "CH", "Sveitsi" },
                     { "CN", "Kiina" },
-                    { "CZ", "Tsekin tasavalta" },
+                    { "CZ", "T\u0161ekki" },
                     { "DE", "Saksa" },
                     { "DK", "Tanska" },
                     { "ES", "Espanja" },
@@ -83,7 +83,7 @@ public class Bug4429024 {
                     { "IE", "Irlanti" },
                     { "IT", "Italia" },
                     { "JP", "Japani" },
-                    { "KR", "Korea" },
+                    { "KR", "Etel\u00e4-Korea" },
                     { "NL", "Alankomaat" },
                     { "NO", "Norja" },
                     { "PL", "Puola" },

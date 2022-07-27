@@ -47,7 +47,7 @@ public final class RemoveAction extends NodeAction {
     }
 
     public RemoveAction() {
-        putValue(Action.SHORT_DESCRIPTION, "Remove selected graphs and groups");
+        putValue(Action.SHORT_DESCRIPTION, getName());
     }
 
     @Override

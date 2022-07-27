@@ -29,7 +29,7 @@ import java.lang.ref.Cleaner;
 import javax.security.auth.kerberos.ServicePermission;
 
 /**
- * This class is an utility class for Kerberos related stuff.
+ * This class is a utility class for Kerberos related stuff.
  * @author Valerie Peng
  * @since 1.6
  */
@@ -44,9 +44,7 @@ class Krb5Util {
         String krbPrinc = name.getKrbName();
         int atIndex = krbPrinc.indexOf('@');
         String realm = krbPrinc.substring(atIndex + 1);
-        StringBuilder sb = new StringBuilder("krbtgt/");
-        sb.append(realm).append('@').append(realm);
-        return sb.toString();
+        return "krbtgt/" + realm + '@' + realm;
     }
 
     // Perform the Service Permission check using the specified

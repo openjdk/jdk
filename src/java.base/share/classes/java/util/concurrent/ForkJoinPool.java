@@ -3530,6 +3530,54 @@ public class ForkJoinPool extends AbstractExecutorService {
     }
 
     /**
+     * Unless this is the {@link #commonPool()}, initiates an orderly
+     * shutdown in which previously submitted tasks are executed, but
+     * no new tasks will be accepted, and waits until all tasks have
+     * completed execution and the executor has terminated.
+     *
+     * <p> If already terminated, or this is the {@link
+     * #commonPool()}, this method has no effect on execution, and
+     * does not wait. Otherwise, if interrupted while waiting, this
+     * method stops all executing tasks as if by invoking {@link
+     * #shutdownNow()}. It then continues to wait until all actively
+     * executing tasks have completed. Tasks that were awaiting
+     * execution are not executed. The interrupt status will be
+     * re-asserted before this method returns.
+     *
+     * @throws SecurityException if a security manager exists and
+     *         shutting down this ExecutorService may manipulate
+     *         threads that the caller is not permitted to modify
+     *         because it does not hold {@link
+     *         java.lang.RuntimePermission}{@code ("modifyThread")},
+     *         or the security manager's {@code checkAccess} method
+     *         denies access.
+     * @since 19
+     */
+    @Override
+    public void close() {
+        if ((config & ISCOMMON) == 0) {
+            boolean terminated = tryTerminate(false, false);
+            if (!terminated) {
+                shutdown();
+                boolean interrupted = false;
+                while (!terminated) {
+                    try {
+                        terminated = awaitTermination(1L, TimeUnit.DAYS);
+                    } catch (InterruptedException e) {
+                        if (!interrupted) {
+                            shutdownNow();
+                            interrupted = true;
+                        }
+                    }
+                }
+                if (interrupted) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+        }
+    }
+
+    /**
      * Interface for extending managed parallelism for tasks running
      * in {@link ForkJoinPool}s.
      *

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,9 @@
 #include "precompiled.hpp"
 #include "memory/allocation.inline.hpp"
 #include "oops/instanceKlass.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/osThread.hpp"
-#include "runtime/thread.inline.hpp"
 #include "runtime/threadCritical.hpp"
 #include "runtime/timer.hpp"
 #include "utilities/events.hpp"
@@ -41,6 +41,7 @@ StringEventLog* Events::_redefinitions = NULL;
 UnloadingEventLog* Events::_class_unloading = NULL;
 StringEventLog* Events::_class_loading = NULL;
 StringEventLog* Events::_deopt_messages = NULL;
+StringEventLog* Events::_dll_messages = NULL;
 
 EventLog::EventLog() {
   // This normally done during bootstrap when we're only single
@@ -99,6 +100,7 @@ void Events::init() {
     _class_unloading = new UnloadingEventLog("Classes unloaded", "unload");
     _class_loading = new StringEventLog("Classes loaded", "load");
     _deopt_messages = new StringEventLog("Deoptimization events", "deopt");
+    _dll_messages = new StringEventLog("Dll operation events", "dll");
   }
 }
 

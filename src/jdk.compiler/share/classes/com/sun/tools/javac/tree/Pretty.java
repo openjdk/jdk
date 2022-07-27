@@ -877,6 +877,28 @@ public class Pretty extends JCTree.Visitor {
         }
     }
 
+    @Override
+    public void visitConstantCaseLabel(JCConstantCaseLabel tree) {
+        try {
+            print(tree.expr);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    @Override
+    public void visitPatternCaseLabel(JCPatternCaseLabel tree) {
+        try {
+            print(tree.pat);
+            if (tree.guard != null) {
+                print(" when ");
+                print(tree.guard);
+            }
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
     public void visitSwitchExpression(JCSwitchExpression tree) {
         try {
             print("switch ");
@@ -917,11 +939,16 @@ public class Pretty extends JCTree.Visitor {
     }
 
     @Override
-    public void visitGuardPattern(JCGuardPattern patt) {
+    public void visitRecordPattern(JCRecordPattern tree) {
         try {
-            printExpr(patt.patt);
-            print(" && ");
-            printExpr(patt.expr);
+            printExpr(tree.deconstructor);
+            print("(");
+            printExprs(tree.nested);
+            print(")");
+            if (tree.var != null) {
+                print(" ");
+                print(tree.var.name);
+            }
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

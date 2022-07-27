@@ -33,11 +33,11 @@ import javax.lang.model.type.TypeMirror;
 
 import com.sun.source.doctree.DocTree;
 
+import com.sun.source.doctree.SerialFieldTree;
 import com.sun.source.doctree.SerialTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.RawHtml;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.SerializedFormWriter;
@@ -72,7 +72,7 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
     @Override
     public Content getSerializableFields(String heading, Content source) {
         var section = HtmlTree.SECTION(HtmlStyle.detail);
-        if (source.isValid()) {
+        if (!source.isEmpty()) {
             Content headingContent = Text.of(heading);
             var serialHeading = HtmlTree.HEADING(Headings.SerializedForm.CLASS_SUBHEADING, headingContent);
             section.add(serialHeading);
@@ -130,11 +130,12 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
      * @param content the content to which the deprecated info will be added
      */
     @Override
-    public void addMemberDescription(VariableElement field, DocTree serialFieldTag, Content content) {
-        CommentHelper ch = utils.getCommentHelper(field);
-        List<? extends DocTree> description = ch.getDescription(serialFieldTag);
+    public void addMemberDescription(VariableElement field, SerialFieldTree serialFieldTag, Content content) {
+        List<? extends DocTree> description = serialFieldTag.getDescription();
         if (!description.isEmpty()) {
-            Content serialFieldContent = new RawHtml(ch.getText(description));
+            Content serialFieldContent = writer.commentTagsToContent(field,
+                    description,
+                    new TagletWriterImpl.Context(false, false));
             var div = HtmlTree.DIV(HtmlStyle.block, serialFieldContent);
             content.add(div);
         }

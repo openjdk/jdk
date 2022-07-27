@@ -26,6 +26,7 @@
 #include "opto/loopnode.hpp"
 #include "opto/addnode.hpp"
 #include "opto/callnode.hpp"
+#include "opto/castnode.hpp"
 #include "opto/connode.hpp"
 #include "opto/convertnode.hpp"
 #include "opto/loopnode.hpp"
@@ -491,24 +492,25 @@ Node* PhaseIdealLoop::skip_loop_predicates(Node* entry) {
 }
 
 Node* PhaseIdealLoop::skip_all_loop_predicates(Node* entry) {
-  Node* predicate = NULL;
-  predicate = find_predicate_insertion_point(entry, Deoptimization::Reason_loop_limit_check);
-  if (predicate != NULL) {
-    entry = skip_loop_predicates(entry);
-  }
-  if (UseProfiledLoopPredicate) {
-    predicate = find_predicate_insertion_point(entry, Deoptimization::Reason_profile_predicate);
-    if (predicate != NULL) { // right pattern that can be used by loop predication
-      entry = skip_loop_predicates(entry);
+  Predicates predicates(entry);
+  return predicates.skip_all();
+}
+
+//--------------------------next_predicate---------------------------------
+// Find next related predicate, useful for iterating over all related predicates
+ProjNode* PhaseIdealLoop::next_predicate(ProjNode* predicate) {
+  IfNode* iff = predicate->in(0)->as_If();
+  ProjNode* uncommon_proj = iff->proj_out(1 - predicate->_con);
+  Node* rgn = uncommon_proj->unique_ctrl_out();
+  assert(rgn->is_Region() || rgn->is_Call(), "must be a region or call uct");
+  Node* next = iff->in(0);
+  if (next != nullptr && next->is_Proj() && next->in(0)->is_If()) {
+    uncommon_proj = next->in(0)->as_If()->proj_out(1 - next->as_Proj()->_con);
+    if (uncommon_proj->unique_ctrl_out() == rgn) { // lead into same region
+      return next->as_Proj();
     }
   }
-  if (UseLoopPredicate) {
-    predicate = find_predicate_insertion_point(entry, Deoptimization::Reason_predicate);
-    if (predicate != NULL) { // right pattern that can be used by loop predication
-      entry = skip_loop_predicates(entry);
-    }
-  }
-  return entry;
+  return nullptr;
 }
 
 //--------------------------find_predicate_insertion_point-------------------
@@ -520,6 +522,28 @@ ProjNode* PhaseIdealLoop::find_predicate_insertion_point(Node* start_c, Deoptimi
     return start_c->as_Proj();
   }
   return NULL;
+}
+
+//--------------------------Predicates::Predicates--------------------------
+// given loop entry, find all predicates above loop
+PhaseIdealLoop::Predicates::Predicates(Node* entry) {
+  _loop_limit_check = find_predicate_insertion_point(entry, Deoptimization::Reason_loop_limit_check);
+  if (_loop_limit_check != nullptr) {
+    entry = skip_loop_predicates(entry);
+  }
+  if (UseProfiledLoopPredicate) {
+    _profile_predicate = find_predicate_insertion_point(entry, Deoptimization::Reason_profile_predicate);
+    if (_profile_predicate != nullptr) {
+      entry = skip_loop_predicates(entry);
+    }
+  }
+  if (UseLoopPredicate) {
+    _predicate = find_predicate_insertion_point(entry, Deoptimization::Reason_predicate);
+    if (_predicate != nullptr) {
+      entry = skip_loop_predicates(entry);
+    }
+  }
+  _entry_to_all_predicates = entry;
 }
 
 //--------------------------find_predicate------------------------------------
@@ -1378,6 +1402,10 @@ ProjNode* PhaseIdealLoop::insert_initial_skeleton_predicate(IfNode* iff, IdealLo
   register_new_node(max_value, new_proj);
   max_value = new AddINode(opaque_init, max_value);
   register_new_node(max_value, new_proj);
+  // init + (current stride - initial stride) is within the loop so narrow its type by leveraging the type of the iv Phi
+  max_value = new CastIINode(max_value, loop->_head->as_CountedLoop()->phi()->bottom_type());
+  register_new_node(max_value, predicate_proj);
+
   bol = rc_predicate(loop, new_proj, scale, offset, max_value, limit, stride, rng, (stride > 0) != (scale > 0), overflow, negate);
   opaque_bol = new Opaque4Node(C, bol, _igvn.intcon(1));
   C->add_skeleton_predicate_opaq(opaque_bol);
@@ -1385,6 +1413,7 @@ ProjNode* PhaseIdealLoop::insert_initial_skeleton_predicate(IfNode* iff, IdealLo
   new_proj = create_new_if_for_predicate(predicate_proj, NULL, reason, overflow ? Op_If : iff->Opcode());
   _igvn.replace_input_of(new_proj->in(0), 1, opaque_bol);
   assert(max_value->outcnt() > 0, "should be used");
+  assert(skeleton_predicate_has_opaque(new_proj->in(0)->as_If()), "unexpected");
 
   return new_proj;
 }

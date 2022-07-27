@@ -2648,7 +2648,7 @@ JDWP "Java(tm) Debug Wire Protocol"
         "signature without access to the local variable table information.) "
         "<p>"
         "If the thread is a virtual thread then this command can be used to set "
-        "the value of local variables in the the top-most frame when the thread is "
+        "the value of local variables in the top-most frame when the thread is "
         "suspended at a breakpoint or single step event. The target VM may support "
         "setting local variables in other cases."
         (Out

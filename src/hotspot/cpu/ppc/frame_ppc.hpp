@@ -374,21 +374,17 @@
 
  private:
 
-  // Find codeblob and set deopt_state.
-  inline void find_codeblob_and_set_pc_and_deopt_state(address pc);
+  // Initialize frame members (_pc and _sp must be given)
+  inline void setup();
 
  public:
 
   const ImmutableOopMap* get_oop_map() const;
 
   // Constructors
-  inline frame(intptr_t* sp, address pc);
-  inline frame(intptr_t* sp, address pc, intptr_t* unextended_sp);
+  inline frame(intptr_t* sp, address pc, intptr_t* unextended_sp = nullptr, intptr_t* fp = nullptr, CodeBlob* cb = nullptr);
 
  private:
-
-  intptr_t* compiled_sender_sp(CodeBlob* cb) const;
-  address*  compiled_sender_pc_addr(CodeBlob* cb) const;
   address*  sender_pc_addr(void) const;
 
  public:

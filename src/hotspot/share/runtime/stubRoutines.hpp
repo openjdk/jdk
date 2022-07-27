@@ -259,8 +259,6 @@ class StubRoutines: AllStatic {
 
   JFR_ONLY(static RuntimeStub* _jfr_write_checkpoint_stub;)
   JFR_ONLY(static address _jfr_write_checkpoint;)
-  JFR_ONLY(static RuntimeStub* _jfr_get_event_writer_stub;)
-  JFR_ONLY(static address _jfr_get_event_writer;)
 
   // Vector Math Routines
   static address _vector_f_math[VectorSupport::NUM_VEC_SIZES][VectorSupport::NUM_SVML_OP];
@@ -439,7 +437,6 @@ class StubRoutines: AllStatic {
   static address cont_returnBarrierExc(){return _cont_returnBarrierExc; }
 
   JFR_ONLY(static address jfr_write_checkpoint() { return _jfr_write_checkpoint; })
-  JFR_ONLY(static address jfr_get_event_writer() { return _jfr_get_event_writer; })
 
   static address select_fill_function(BasicType t, bool aligned, const char* &name);
 

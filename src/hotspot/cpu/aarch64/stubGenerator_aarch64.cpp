@@ -46,10 +46,10 @@
 #include "runtime/continuationEntry.inline.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubCodeGenerator.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "runtime/thread.inline.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/powerOfTwo.hpp"
@@ -298,9 +298,9 @@ class StubGenerator: public StubCodeGenerator {
 
     // call Java entry -- passing methdoOop, and current sp
     //      rmethod: Method*
-    //      r13: sender sp
+    //      r19_sender_sp: sender sp
     BLOCK_COMMENT("call Java function");
-    __ mov(r13, sp);
+    __ mov(r19_sender_sp, sp);
     __ blr(c_rarg4);
 
     // we do this here because the notify will already have been done
@@ -5145,7 +5145,7 @@ class StubGenerator: public StubCodeGenerator {
     return entry;
   }
 
-    address generate_method_entry_barrier() {
+  address generate_method_entry_barrier() {
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", "nmethod_entry_barrier");
 
@@ -5155,10 +5155,10 @@ class StubGenerator: public StubCodeGenerator {
 
     BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
 
-    if (bs_asm->nmethod_code_patching()) {
+    if (bs_asm->nmethod_patching_type() == NMethodPatchingType::conc_instruction_and_data_patch) {
       BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
       // We can get here despite the nmethod being good, if we have not
-      // yet applied our cross modification fence.
+      // yet applied our cross modification fence (or data fence).
       Address thread_epoch_addr(rthread, in_bytes(bs_nm->thread_disarmed_offset()) + 4);
       __ lea(rscratch2, ExternalAddress(bs_asm->patching_epoch_addr()));
       __ ldrw(rscratch2, rscratch2);
@@ -5324,7 +5324,120 @@ class StubGenerator: public StubCodeGenerator {
     return entry;
   }
 
+  enum string_compare_mode {
+    LL,
+    LU,
+    UL,
+    UU,
+  };
+
+  // The following registers are declared in aarch64.ad
+  // r0  = result
+  // r1  = str1
+  // r2  = cnt1
+  // r3  = str2
+  // r4  = cnt2
+  // r10 = tmp1
+  // r11 = tmp2
+  // z0  = ztmp1
+  // z1  = ztmp2
+  // p0  = pgtmp1
+  // p1  = pgtmp2
+  address generate_compare_long_string_sve(string_compare_mode mode) {
+    __ align(CodeEntryAlignment);
+    address entry = __ pc();
+    Register result = r0, str1 = r1, cnt1 = r2, str2 = r3, cnt2 = r4,
+             tmp1 = r10, tmp2 = r11;
+
+    Label LOOP, DONE, MISMATCH;
+    Register vec_len = tmp1;
+    Register idx = tmp2;
+    // The minimum of the string lengths has been stored in cnt2.
+    Register cnt = cnt2;
+    FloatRegister ztmp1 = z0, ztmp2 = z1;
+    PRegister pgtmp1 = p0, pgtmp2 = p1;
+
+#define LOAD_PAIR(ztmp1, ztmp2, pgtmp1, src1, src2, idx)                       \
+    switch (mode) {                                                            \
+      case LL:                                                                 \
+        __ sve_ld1b(ztmp1, __ B, pgtmp1, Address(str1, idx));                  \
+        __ sve_ld1b(ztmp2, __ B, pgtmp1, Address(str2, idx));                  \
+        break;                                                                 \
+      case LU:                                                                 \
+        __ sve_ld1b(ztmp1, __ H, pgtmp1, Address(str1, idx));                  \
+        __ sve_ld1h(ztmp2, __ H, pgtmp1, Address(str2, idx, Address::lsl(1))); \
+        break;                                                                 \
+      case UL:                                                                 \
+        __ sve_ld1h(ztmp1, __ H, pgtmp1, Address(str1, idx, Address::lsl(1))); \
+        __ sve_ld1b(ztmp2, __ H, pgtmp1, Address(str2, idx));                  \
+        break;                                                                 \
+      case UU:                                                                 \
+        __ sve_ld1h(ztmp1, __ H, pgtmp1, Address(str1, idx, Address::lsl(1))); \
+        __ sve_ld1h(ztmp2, __ H, pgtmp1, Address(str2, idx, Address::lsl(1))); \
+        break;                                                                 \
+      default:                                                                 \
+        ShouldNotReachHere();                                                  \
+    }
+
+    const char* stubname;
+    switch (mode) {
+      case LL: stubname = "compare_long_string_same_encoding LL";      break;
+      case LU: stubname = "compare_long_string_different_encoding LU"; break;
+      case UL: stubname = "compare_long_string_different_encoding UL"; break;
+      case UU: stubname = "compare_long_string_same_encoding UU";      break;
+      default: ShouldNotReachHere();
+    }
+
+    StubCodeMark mark(this, "StubRoutines", stubname);
+
+    __ mov(idx, 0);
+    __ sve_whilelt(pgtmp1, mode == LL ? __ B : __ H, idx, cnt);
+
+    if (mode == LL) {
+      __ sve_cntb(vec_len);
+    } else {
+      __ sve_cnth(vec_len);
+    }
+
+    __ sub(rscratch1, cnt, vec_len);
+
+    __ bind(LOOP);
+
+      // main loop
+      LOAD_PAIR(ztmp1, ztmp2, pgtmp1, src1, src2, idx);
+      __ add(idx, idx, vec_len);
+      // Compare strings.
+      __ sve_cmp(Assembler::NE, pgtmp2, mode == LL ? __ B : __ H, pgtmp1, ztmp1, ztmp2);
+      __ br(__ NE, MISMATCH);
+      __ cmp(idx, rscratch1);
+      __ br(__ LT, LOOP);
+
+    // post loop, last iteration
+    __ sve_whilelt(pgtmp1, mode == LL ? __ B : __ H, idx, cnt);
+
+    LOAD_PAIR(ztmp1, ztmp2, pgtmp1, src1, src2, idx);
+    __ sve_cmp(Assembler::NE, pgtmp2, mode == LL ? __ B : __ H, pgtmp1, ztmp1, ztmp2);
+    __ br(__ EQ, DONE);
+
+    __ bind(MISMATCH);
+
+    // Crop the vector to find its location.
+    __ sve_brkb(pgtmp2, pgtmp1, pgtmp2, false /* isMerge */);
+    // Extract the first different characters of each string.
+    __ sve_lasta(rscratch1, mode == LL ? __ B : __ H, pgtmp2, ztmp1);
+    __ sve_lasta(rscratch2, mode == LL ? __ B : __ H, pgtmp2, ztmp2);
+
+    // Compute the difference of the first different characters.
+    __ sub(result, rscratch1, rscratch2);
+
+    __ bind(DONE);
+    __ ret(lr);
+#undef LOAD_PAIR
+    return entry;
+  }
+
   void generate_compare_long_strings() {
+    if (UseSVE == 0) {
       StubRoutines::aarch64::_compare_long_string_LL
           = generate_compare_long_string_same_encoding(true);
       StubRoutines::aarch64::_compare_long_string_UU
@@ -5333,6 +5446,16 @@ class StubGenerator: public StubCodeGenerator {
           = generate_compare_long_string_different_encoding(true);
       StubRoutines::aarch64::_compare_long_string_UL
           = generate_compare_long_string_different_encoding(false);
+    } else {
+      StubRoutines::aarch64::_compare_long_string_LL
+          = generate_compare_long_string_sve(LL);
+      StubRoutines::aarch64::_compare_long_string_UU
+          = generate_compare_long_string_sve(UU);
+      StubRoutines::aarch64::_compare_long_string_LU
+          = generate_compare_long_string_sve(LU);
+      StubRoutines::aarch64::_compare_long_string_UL
+          = generate_compare_long_string_sve(UL);
+    }
   }
 
   // R0 = result
@@ -6291,7 +6414,7 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-#ifdef LINUX
+#if defined (LINUX) && !defined (__ARM_FEATURE_ATOMICS)
 
   // ARMv8.1 LSE versions of the atomic stubs used by Atomic::PlatformXX.
   //
@@ -6552,8 +6675,9 @@ class StubGenerator: public StubCodeGenerator {
     return stub;
   }
 
-  address generate_cont_thaw(bool return_barrier, bool exception) {
-    assert(return_barrier || !exception, "must be");
+  address generate_cont_thaw(Continuation::thaw_kind kind) {
+    bool return_barrier = Continuation::is_thaw_return_barrier(kind);
+    bool return_barrier_exception = Continuation::is_thaw_return_barrier_exception(kind);
 
     address start = __ pc();
 
@@ -6569,7 +6693,7 @@ class StubGenerator: public StubCodeGenerator {
       __ stp(rscratch1, r0, Address(__ pre(sp, -2 * wordSize)));
     }
 
-    __ movw(c_rarg1, (return_barrier ? 1 : 0) + (exception ? 1 : 0));
+    __ movw(c_rarg1, (return_barrier ? 1 : 0));
     __ call_VM_leaf(CAST_FROM_FN_PTR(address, Continuation::prepare_thaw), rthread, c_rarg1);
     __ mov(rscratch2, r0); // r0 contains the size of the frames to thaw, 0 if overflow or no more frames
 
@@ -6600,9 +6724,7 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     // If we want, we can templatize thaw by kind, and have three different entries
-    if (exception)           __ movw(c_rarg1, (uint32_t)Continuation::thaw_exception);
-    else if (return_barrier) __ movw(c_rarg1, (uint32_t)Continuation::thaw_return_barrier);
-    else                     __ movw(c_rarg1, (uint32_t)Continuation::thaw_top);
+    __ movw(c_rarg1, (uint32_t)kind);
 
     __ call_VM_leaf(Continuation::thaw_entry(), rthread, c_rarg1);
     __ mov(rscratch2, r0); // r0 is the sp of the yielding frame
@@ -6619,7 +6741,7 @@ class StubGenerator: public StubCodeGenerator {
     __ sub(sp, rscratch2, 2*wordSize); // now pointing to rfp spill
     __ mov(rfp, sp);
 
-    if (exception) {
+    if (return_barrier_exception) {
       __ ldr(c_rarg1, Address(rfp, wordSize)); // return address
       __ verify_oop(r0);
       __ mov(r19, r0); // save return value contaning the exception oop in callee-saved R19
@@ -6638,11 +6760,11 @@ class StubGenerator: public StubCodeGenerator {
       __ leave();
       __ mov(r3, lr);
       __ br(r1); // the exception handler
+    } else {
+      // We're "returning" into the topmost thawed frame; see Thaw::push_return_frame
+      __ leave();
+      __ ret(lr);
     }
-
-    // We're "returning" into the topmost thawed frame; see Thaw::push_return_frame
-    __ leave();
-    __ ret(lr);
 
     return start;
   }
@@ -6652,7 +6774,7 @@ class StubGenerator: public StubCodeGenerator {
 
     StubCodeMark mark(this, "StubRoutines", "Cont thaw");
     address start = __ pc();
-    generate_cont_thaw(false, false);
+    generate_cont_thaw(Continuation::thaw_top);
     return start;
   }
 
@@ -6663,7 +6785,7 @@ class StubGenerator: public StubCodeGenerator {
     StubCodeMark mark(this, "StubRoutines", "cont return barrier");
     address start = __ pc();
 
-    generate_cont_thaw(true, false);
+    generate_cont_thaw(Continuation::thaw_return_barrier);
 
     return start;
   }
@@ -6674,7 +6796,7 @@ class StubGenerator: public StubCodeGenerator {
     StubCodeMark mark(this, "StubRoutines", "cont return barrier exception handler");
     address start = __ pc();
 
-    generate_cont_thaw(true, true);
+    generate_cont_thaw(Continuation::thaw_return_barrier_exception);
 
     return start;
   }
@@ -6697,8 +6819,10 @@ class StubGenerator: public StubCodeGenerator {
     __ bind(null_jobject);
   }
 
-  static RuntimeStub* generate_jfr_stub(const char* name, address entrypoint) {
-
+  // For c2: c_rarg0 is junk, call to runtime to write a checkpoint.
+  // It returns a jobject handle to the event writer.
+  // The handle is dereferenced and the return value is the event writer oop.
+  static RuntimeStub* generate_jfr_write_checkpoint() {
     enum layout {
       rbp_off,
       rbpH_off,
@@ -6709,7 +6833,7 @@ class StubGenerator: public StubCodeGenerator {
 
     int insts_size = 512;
     int locs_size = 64;
-    CodeBuffer code(name, insts_size, locs_size);
+    CodeBuffer code("jfr_write_checkpoint", insts_size, locs_size);
     OopMapSet* oop_maps = new OopMapSet();
     MacroAssembler* masm = new MacroAssembler(&code);
     MacroAssembler* _masm = masm;
@@ -6719,7 +6843,7 @@ class StubGenerator: public StubCodeGenerator {
     int frame_complete = __ pc() - start;
     address the_pc = __ pc();
     jfr_prologue(the_pc, _masm, rthread);
-    __ call_VM_leaf(entrypoint, 1);
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, JfrIntrinsicSupport::write_checkpoint), 1);
     jfr_epilogue(_masm, rthread);
     __ leave();
     __ ret(lr);
@@ -6728,25 +6852,10 @@ class StubGenerator: public StubCodeGenerator {
     oop_maps->add_gc_map(the_pc - start, map);
 
     RuntimeStub* stub = // codeBlob framesize is in words (not VMRegImpl::slot_size)
-      RuntimeStub::new_runtime_stub(name, &code, frame_complete,
+      RuntimeStub::new_runtime_stub("jfr_write_checkpoint", &code, frame_complete,
                                     (framesize >> (LogBytesPerWord - LogBytesPerInt)),
                                     oop_maps, false);
     return stub;
-  }
-
-  // For c2: c_rarg0 is junk, call to runtime to write a checkpoint.
-  // It returns a jobject handle to the event writer.
-  // The handle is dereferenced and the return value is the event writer oop.
-  RuntimeStub* generate_jfr_write_checkpoint() {
-    return generate_jfr_stub("jfr_write_checkpoint",
-                              CAST_FROM_FN_PTR(address, JfrIntrinsicSupport::write_checkpoint));
-  }
-
-  // For c1: call the corresponding runtime routine, it returns a jobject handle to the event writer.
-  // The handle is dereferenced and the return value is the event writer oop.
-  RuntimeStub* generate_jfr_get_event_writer() {
-    return generate_jfr_stub("jfr_get_event_writer",
-                              CAST_FROM_FN_PTR(address, JfrIntrinsicSupport::event_writer));
   }
 
 #endif // INCLUDE_JFR
@@ -6806,7 +6915,7 @@ class StubGenerator: public StubCodeGenerator {
     assert(is_even(framesize/2), "sp not 16-byte aligned");
 
     // lr and fp are already in place
-    __ sub(sp, rfp, ((unsigned)framesize-4) << LogBytesPerInt); // prolog
+    __ sub(sp, rfp, ((uint64_t)framesize-4) << LogBytesPerInt); // prolog
 
     int frame_complete = __ pc() - start;
 
@@ -6849,7 +6958,6 @@ class StubGenerator: public StubCodeGenerator {
     __ bind(L);
 #endif // ASSERT
     __ far_jump(RuntimeAddress(StubRoutines::forward_exception_entry()));
-
 
     // codeBlob framesize is in words (not VMRegImpl::slot_size)
     RuntimeStub* stub =
@@ -7746,8 +7854,6 @@ class StubGenerator: public StubCodeGenerator {
 
     JFR_ONLY(StubRoutines::_jfr_write_checkpoint_stub = generate_jfr_write_checkpoint();)
     JFR_ONLY(StubRoutines::_jfr_write_checkpoint = StubRoutines::_jfr_write_checkpoint_stub->entry_point();)
-    JFR_ONLY(StubRoutines::_jfr_get_event_writer_stub = generate_jfr_get_event_writer();)
-    JFR_ONLY(StubRoutines::_jfr_get_event_writer = StubRoutines::_jfr_get_event_writer_stub->entry_point();)
   }
 
   void generate_all() {
@@ -7882,7 +7988,7 @@ class StubGenerator: public StubCodeGenerator {
 
     StubRoutines::aarch64::_spin_wait = generate_spin_wait();
 
-#ifdef LINUX
+#if defined (LINUX) && !defined (__ARM_FEATURE_ATOMICS)
 
     generate_atomic_entry_points();
 
@@ -7912,7 +8018,7 @@ void StubGenerator_generate(CodeBuffer* code, int phase) {
 }
 
 
-#ifdef LINUX
+#if defined (LINUX)
 
 // Define pointers to atomic stubs and initialize them to point to the
 // code in atomic_aarch64.S.
@@ -7973,7 +8079,7 @@ OopMap* continuation_enter_setup(MacroAssembler* masm, int& stack_slots) {
 //          c_rarg3 -- isVirtualThread
 void fill_continuation_entry(MacroAssembler* masm) {
 #ifdef ASSERT
-  __ movw(rscratch1, 0x1234);
+  __ movw(rscratch1, ContinuationEntry::cookie_value());
   __ strw(rscratch1, Address(sp, ContinuationEntry::cookie_offset()));
 #endif
 
@@ -7985,11 +8091,11 @@ void fill_continuation_entry(MacroAssembler* masm) {
 
   __ ldr(rscratch1, Address(rthread, JavaThread::cont_fastpath_offset()));
   __ str(rscratch1, Address(sp, ContinuationEntry::parent_cont_fastpath_offset()));
-  __ ldrw(rscratch1, Address(rthread, JavaThread::held_monitor_count_offset()));
-  __ strw(rscratch1, Address(sp, ContinuationEntry::parent_held_monitor_count_offset()));
+  __ ldr(rscratch1, Address(rthread, JavaThread::held_monitor_count_offset()));
+  __ str(rscratch1, Address(sp, ContinuationEntry::parent_held_monitor_count_offset()));
 
   __ str(zr, Address(rthread, JavaThread::cont_fastpath_offset()));
-  __ reset_held_monitor_count(rthread);
+  __ str(zr, Address(rthread, JavaThread::held_monitor_count_offset()));
 }
 
 // on entry, sp points to the ContinuationEntry
@@ -8006,8 +8112,8 @@ void continuation_enter_cleanup(MacroAssembler* masm) {
 
   __ ldr(rscratch1, Address(sp, ContinuationEntry::parent_cont_fastpath_offset()));
   __ str(rscratch1, Address(rthread, JavaThread::cont_fastpath_offset()));
-  __ ldrw(rscratch1, Address(sp, ContinuationEntry::parent_held_monitor_count_offset()));
-  __ strw(rscratch1, Address(rthread, JavaThread::held_monitor_count_offset()));
+  __ ldr(rscratch1, Address(sp, ContinuationEntry::parent_held_monitor_count_offset()));
+  __ str(rscratch1, Address(rthread, JavaThread::held_monitor_count_offset()));
 
   __ ldr(rscratch2, Address(sp, ContinuationEntry::parent_offset()));
   __ str(rscratch2, Address(rthread, JavaThread::cont_entry_offset()));

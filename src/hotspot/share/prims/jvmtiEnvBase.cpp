@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
-#include "classfile/javaClasses.hpp"
+#include "classfile/javaClasses.inline.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "jvmtifiles/jvmtiEnv.hpp"
 #include "memory/iterator.hpp"
@@ -46,12 +46,13 @@
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/javaThread.inline.hpp"
 #include "runtime/jfieldIDWorkaround.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/objectMonitor.inline.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/signature.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/threads.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/vframe.inline.hpp"
 #include "runtime/vframe_hp.hpp"
@@ -1320,12 +1321,12 @@ JvmtiEnvBase::get_threadOop_and_JavaThread(ThreadsList* t_list, jthread thread,
       java_thread = get_JavaThread_or_null(thread_oop);
     }
   }
+  *jt_pp = java_thread;
+  *thread_oop_p = thread_oop;
   if (java_lang_VirtualThread::is_instance(thread_oop) &&
       !JvmtiEnvBase::is_vthread_alive(thread_oop)) {
     return JVMTI_ERROR_THREAD_NOT_ALIVE;
   }
-  *jt_pp = java_thread;
-  *thread_oop_p = thread_oop;
   return JVMTI_ERROR_NONE;
 }
 
