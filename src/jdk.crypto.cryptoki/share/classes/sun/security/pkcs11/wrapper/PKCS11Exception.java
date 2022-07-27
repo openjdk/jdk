@@ -203,10 +203,9 @@ public class PKCS11Exception extends Exception {
         // for vendor-defined values, check the enum for vendors and include
         // potential matches
         if ((errorCode & 0x80000000L) != 0) {
-            // for unknown PKCS11 return values, just use hex as its string
             for (RV_VENDOR r : RV_VENDOR.values()) {
                 if (r.value == errorCode) {
-                    res += ("(" + r.name() + ")");
+                    res += "(" + r.name() + ")";
                     break;
                 }
             }
