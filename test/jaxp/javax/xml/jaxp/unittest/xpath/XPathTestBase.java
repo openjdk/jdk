@@ -67,7 +67,7 @@ class XPathTestBase {
             """;
 
     static final String RAW_XML
-            = "<Customers>"
+            = "<Customers xmlns:foo=\"foo\">"
             + "    <Customer id=\"x1\">"
             + "        <Name>name1</Name>"
             + "        <Phone>1111111111</Phone>"
@@ -79,7 +79,7 @@ class XPathTestBase {
             + "        </Address>"
             + "    </Customer>"
             + "    <Customer id=\"x2\">"
-            + "        <Name>name1</Name>"
+            + "        <Name>name2</Name>"
             + "        <Phone>2222222222</Phone>"
             + "        <Email id=\"y\">123@xyz.com</Email>"
             + "        <Address>"
@@ -89,7 +89,7 @@ class XPathTestBase {
             + "        </Address>"
             + "    </Customer>"
             + "    <Customer id=\"x3\">"
-            + "        <Name>name1</Name>"
+            + "        <Name>name3</Name>"
             + "        <Phone>3333333333</Phone>"
             + "        <Email id=\"z\">123@xyz.com</Email>"
             + "        <Address>"
@@ -98,20 +98,58 @@ class XPathTestBase {
             + "            <State>The State</State>"
             + "        </Address>"
             + "    </Customer>"
+            + "    <foo:Customer foo:id=\"x1\">"
+            + "        <foo:Name>name1</foo:Name>"
+            + "        <foo:Phone>1111111111</foo:Phone>"
+            + "        <foo:Email foo:id=\"x\">123@xyz.com</foo:Email>"
+            + "        <foo:Address>"
+            + "            <foo:Street>1111 111st ave</foo:Street>"
+            + "            <foo:City>The City</foo:City>"
+            + "            <foo:State>The State</foo:State>"
+            + "        </foo:Address>"
+            + "    </foo:Customer>"
             + "</Customers>";
 
+    // Number of root element.
+    final int ROOT = 1;
+    // Number of Customer elements.
     final int CUSTOMERS = 3;
-    final int EMAILS = CUSTOMERS;
-    final int CUSTOMER_ATTRIBUTES = 7;
+    // Number of id attributes.
+    final int ID_ATTRIBUTES = 6;
+    // Number of child elements of Customer.
+    final int CUSTOMER_ELEMENTS = 7;
+    // Number of Customer in the foo namespace.
+    final int FOO_CUSTOMERS = 1;
+    // Number of id attributes in the foo namespace.
+    final int FOO_ID_ATTRIBUTES = 2;
 
+    /**
+     * Returns a {@link org.w3c.dom.Document} for XML with DTD.
+     * @return a DOM Document
+     * @throws RuntimeException if any error occurred during document
+     *  initialization.
+     */
     public static Document getDtdDocument() throws RuntimeException {
         return documentOf(DECLARATION + DTD + RAW_XML);
     }
 
+    /**
+     * Returns a {@link org.w3c.dom.Document} for raw XML.
+     * @return a DOM Document
+     * @throws RuntimeException if any error occurred during document
+     *  initialization.
+     */
     public static Document getDocument() throws RuntimeException {
         return documentOf(DECLARATION + RAW_XML);
     }
 
+    /**
+     * Returns a {@link org.w3c.dom.Document} for input XML string.
+     * @param xml the input xml string.
+     * @return a DOM Document.
+     * @throws RuntimeException if any error occurred during document
+     *  initialization.
+     */
     public static Document documentOf(String xml) throws RuntimeException {
         try {
             var dBF = DocumentBuilderFactory.newInstance();

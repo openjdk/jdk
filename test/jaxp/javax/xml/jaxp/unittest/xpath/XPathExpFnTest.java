@@ -41,6 +41,11 @@ public class XPathExpFnTest extends XPathTestBase {
 
     private static final Document doc = getDtdDocument();
 
+    /*
+     * DataProvider for XPath expressions for id function.
+     * Data columns:
+     *  see parameters of the test "testIdFn"
+     */
     @DataProvider(name = "idExpTestCases")
     public Object[][] getIdExp() {
         return new Object[][]{
@@ -53,33 +58,48 @@ public class XPathExpFnTest extends XPathTestBase {
         };
     }
 
+    /*
+     * DataProvider for XPath expressions for count function.
+     * Data columns:
+     *  see parameters of the test "testCountFn"
+     */
     @DataProvider(name = "countExpTestCases")
     public Object[][] getCountExp() {
         return new Object[][]{
                 {"count(//Customer)", CUSTOMERS},
-                {"count(//@id)", CUSTOMERS + EMAILS},
+                {"count(//@id)", ID_ATTRIBUTES},
                 {"count(//Customer/@id)", CUSTOMERS},
-                {"count(//@*)", CUSTOMERS + EMAILS},
+                {"count(//@*)", ID_ATTRIBUTES + FOO_ID_ATTRIBUTES},
                 {"count(//*)",
-                        1 + CUSTOMERS + CUSTOMERS * CUSTOMER_ATTRIBUTES},
-                {"count(//*[@id])", CUSTOMERS + EMAILS},
-                {"count(./*)", 1},
+                        ROOT + CUSTOMERS + FOO_CUSTOMERS +
+                                (CUSTOMERS + FOO_CUSTOMERS) *
+                                        CUSTOMER_ELEMENTS},
+                {"count(//*[@id])", ID_ATTRIBUTES},
+                {"count(./*)", ROOT},
                 {"count(//Customer[1]/following::*)",
-                        CUSTOMERS - 1 + (CUSTOMERS - 1) * CUSTOMER_ATTRIBUTES},
-                {"count(//Customer[1]/following-sibling::*)", CUSTOMERS - 1},
+                        CUSTOMERS - 1 + FOO_CUSTOMERS +
+                                (CUSTOMERS - 1 + FOO_CUSTOMERS) *
+                                        CUSTOMER_ELEMENTS},
+                {"count(//Customer[1]/following-sibling::*)",
+                        CUSTOMERS - 1 + FOO_CUSTOMERS},
                 {"count(//Customer[3]/preceding::*)",
-                        CUSTOMERS - 1 + (CUSTOMERS - 1) * CUSTOMER_ATTRIBUTES},
+                        CUSTOMERS - 1 + (CUSTOMERS - 1) * CUSTOMER_ELEMENTS},
                 {"count(//Customer[3]/preceding-sibling::*)", CUSTOMERS - 1},
-                {"count(//Customer[1]/ancestor::*)", 1},
-                {"count(//Customer[1]/ancestor-or-self::*)", 2},
-                {"count(//Customer[1]/descendant::*)", CUSTOMER_ATTRIBUTES},
+                {"count(//Customer[1]/ancestor::*)", ROOT},
+                {"count(//Customer[1]/ancestor-or-self::*)", ROOT + 1},
+                {"count(//Customer[1]/descendant::*)", CUSTOMER_ELEMENTS},
                 {"count(//Customer[1]/descendant-or-self::*)",
-                        CUSTOMER_ATTRIBUTES + 1},
+                        CUSTOMER_ELEMENTS + 1},
                 {"count(//Customer/node())",
-                        CUSTOMERS + EMAILS + CUSTOMERS * CUSTOMER_ATTRIBUTES},
+                        ID_ATTRIBUTES + CUSTOMERS * CUSTOMER_ELEMENTS},
         };
     }
 
+    /*
+     * DataProvider for XPath expression for position function.
+     * Data columns:
+     *  see parameters of the test "testPositionFn"
+     */
     @DataProvider(name = "positionExpTestCases")
     public Object[][] getPositionExp() {
         return new Object[][]{
@@ -92,19 +112,42 @@ public class XPathExpFnTest extends XPathTestBase {
         };
     }
 
+    /*
+     * DataProvider for XPath expression for name and local name function.
+     * Data columns:
+     *  see parameters of the test "testNameFn"
+     */
     @DataProvider(name = "nameExpTestCases")
     public Object[][] getNameExp() {
         return new Object[][]{
                 {"local-name(//Customer)", "Customer"},
+                {"local-name(//foo:Customer)", "Customer"},
                 {"local-name(//Customer/@id)", "id"},
+                {"local-name(//foo:Customer/@foo:id)", "id"},
                 {"local-name(//*[local-name()='Customer'])", "Customer"},
+                {"namespace-uri(.)", ""},
+                {"namespace-uri(//Customers)", ""},
                 {"namespace-uri(//Customer)", ""},
+                {"namespace-uri(//foo:Customer)", "foo"},
+                {"namespace-uri(//@id)", ""},
+                {"namespace-uri(//@foo:id)", "foo"},
+                {"name(//*[namespace-uri()=\"foo\"])", "foo:Customer"},
                 {"name(//Customer)", "Customer"},
+                {"name(//foo:Customer)", "foo:Customer"},
                 {"name(//Customer/@id)", "id"},
-                {"name(//*[name()='Customer'])", "Customer"},
+                {"name(//foo:Customer/@foo:id)", "foo:id"},
+                {"name(//*[name()='foo:Customer'])", "foo:Customer"},
         };
     }
 
+    /**
+     * This test evaluates XPath expressions of id function and checks against
+     * the expected result.
+     *
+     * @param exp      XPath expression
+     * @param expected expected result
+     * @throws Exception
+     */
     @Test(dataProvider = "idExpTestCases")
     void testIdFn(String exp, String expected) throws Exception {
         XPath xPath = XPathFactory.newInstance().newXPath();
@@ -118,6 +161,14 @@ public class XPathExpFnTest extends XPathTestBase {
         Assert.assertEquals(node2, node);
     }
 
+    /**
+     * This test evaluates XPath expressions of count function and checks
+     * against the expected result.
+     *
+     * @param exp      XPath expression
+     * @param expected expected result
+     * @throws Exception
+     */
     @Test(dataProvider = "countExpTestCases")
     void testCountFn(String exp, int expected) throws Exception {
         XPath xPath = XPathFactory.newInstance().newXPath();
@@ -129,6 +180,14 @@ public class XPathExpFnTest extends XPathTestBase {
         Assert.assertEquals(num2, num);
     }
 
+    /**
+     * This test evaluates XPath expressions of position function and checks
+     * against the expected result.
+     *
+     * @param exp      XPath expression
+     * @param expected expected result
+     * @throws Exception
+     */
     @Test(dataProvider = "positionExpTestCases")
     void testPositionFn(String exp, String expected) throws Exception {
         XPath xPath = XPathFactory.newInstance().newXPath();
@@ -142,6 +201,14 @@ public class XPathExpFnTest extends XPathTestBase {
         Assert.assertEquals(node2, node);
     }
 
+    /**
+     * This test evaluates XPath expressions of name and local-name functions
+     * and checks against the expected result.
+     *
+     * @param exp      XPath expression
+     * @param expected expected result
+     * @throws Exception
+     */
     @Test(dataProvider = "nameExpTestCases")
     void testNameFn(String exp, String expected) throws Exception {
         XPath xPath = XPathFactory.newInstance().newXPath();
