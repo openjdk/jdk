@@ -173,7 +173,7 @@ public class PBEKeySpec implements KeySpec {
      * Clears the internal copy of the password.
      *
      */
-    public final void clearPassword() {
+    public final synchronized void clearPassword() {
         if (password != null) {
             Arrays.fill(password, ' ');
             password = null;
@@ -191,7 +191,7 @@ public class PBEKeySpec implements KeySpec {
      * calling <code>clearPassword</code> method.
      * @return the password.
      */
-    public final char[] getPassword() {
+    public final synchronized char[] getPassword() {
         if (password == null) {
             throw new IllegalStateException("password has been cleared");
         }
