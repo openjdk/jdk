@@ -30,7 +30,7 @@ import jdk.internal.misc.VM;
 import jdk.internal.module.ModuleHashes;
 import jdk.internal.module.ModuleReferenceImpl;
 
-import java.lang.module.ModuleDescriptor.Version;
+import java.io.IOException;
 import java.lang.module.ModuleReference;
 import java.lang.module.ResolvedModule;
 import java.util.HashSet;
@@ -355,27 +355,58 @@ public final class StackTraceElement implements java.io.Serializable {
      * @revised 9
      * @see    Throwable#printStackTrace()
      */
+    @Override
     public String toString() {
-        String s = "";
-        if (!dropClassLoaderName() && classLoaderName != null &&
-                !classLoaderName.isEmpty()) {
-            s += classLoaderName + "/";
+        StringBuilder sb = new StringBuilder();
+        try {
+            appendTo(sb);
+        } catch (IOException shouldNotHappen) {
+            throw new RuntimeException("Error building StackTraceElement string", shouldNotHappen);
+        }
+        return sb.toString();
+    }
+
+    /**
+     * Appends the {@link #toString()} representation of this stack trace element to the provided appendable.
+     * @param dest The destination appendable
+     * @throws IOException If an I/O error occurs
+     */
+    private void appendTo(Appendable dest) throws IOException {
+        boolean hasPrefix = false;
+        if (!dropClassLoaderName() && classLoaderName != null && !classLoaderName.isEmpty()) {
+            hasPrefix = true;
+            dest.append(classLoaderName).append('/');
         }
         if (moduleName != null && !moduleName.isEmpty()) {
-            s += moduleName;
-
-            if (!dropModuleVersion() && moduleVersion != null &&
-                    !moduleVersion.isEmpty()) {
-                s += "@" + moduleVersion;
+            hasPrefix = true;
+            dest.append(moduleName);
+            if (!dropModuleVersion() && moduleVersion != null && !moduleVersion.isEmpty()) {
+                dest.append('@').append(moduleVersion);
             }
         }
-        s = s.isEmpty() ? declaringClass : s + "/" + declaringClass;
+        if (hasPrefix) {
+            dest.append(declaringClass);
+        } else {
+            dest.append('/').append(declaringClass);
+        }
 
-        return s + "." + methodName + "(" +
-             (isNativeMethod() ? "Native Method)" :
-              (fileName != null && lineNumber >= 0 ?
-               fileName + ":" + lineNumber + ")" :
-                (fileName != null ?  ""+fileName+")" : "Unknown Source)")));
+        dest.append('.').append(methodName).append('(');
+        if (isNativeMethod()) {
+            dest.append("Native Method)");
+        } else {
+            if (fileName != null && lineNumber >= 0) {
+                dest.append(fileName)
+                        .append(':')
+                        .append(Integer.toString(lineNumber))
+                        .append(')');
+            } else {
+                if (fileName != null) {
+                    dest.append(fileName).append(')');
+                } else {
+                    dest.append("Unknown Source)");
+                }
+            }
+        }
     }
 
     /**
