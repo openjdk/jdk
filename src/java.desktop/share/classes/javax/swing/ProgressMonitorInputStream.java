@@ -67,8 +67,6 @@ public class ProgressMonitorInputStream extends FilterInputStream
     private ProgressMonitor monitor;
     private int             nread = 0;
     private int             size = 0;
-    Component parentComponent;
-    Object message;
 
     /**
      * Constructs an object to monitor the progress of an input stream.
@@ -127,12 +125,10 @@ public class ProgressMonitorInputStream extends FilterInputStream
             if (nread + nr > nread) {
                 monitor.setProgress(nread += nr);
             } else {
-                System.out.println(in.available());
                 size = in.available();
                 nread = 0;
                 monitor.close();
                 monitor = new ProgressMonitor(parentComponent, message, null, 0, size);
-                //monitor.setProgress(monitor.getMaximum() - 1);
             }
         }
         if (monitor.isCanceled()) {
