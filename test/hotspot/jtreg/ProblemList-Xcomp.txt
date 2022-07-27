@@ -36,4 +36,3 @@ vmTestbase/vm/mlvm/mixed/stress/regression/b6969574/INDIFY_Test.java 8265295 lin
 serviceability/sa/TestJhsdbJstackMixed.java 8248675 linux-aarch64
 
 serviceability/jvmti/VMObjectAlloc/VMObjectAllocTest.java 8288430 generic-all
-serviceability/jvmti/GetLocalVariable/GetLocalWithoutSuspendTest.java 8290013 windows-x64

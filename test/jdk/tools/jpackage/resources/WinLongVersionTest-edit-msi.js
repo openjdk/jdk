@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,26 +20,29 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-#include <jni.h>
-#include <stdlib.h>
-#include <time.h>
 
-extern "C" {
-
-JNIEXPORT void JNICALL
-Java_gc_gctests_mallocWithGC3_mallocWithGC3_getMallocLock03
-(JNIEnv *env, jobject obj) {
-        char *c_ptr;
-        time_t current_time, old_time;
-
-        old_time = time(NULL);
-        current_time = 0;
-
-        while (current_time - old_time < 180) {
-                c_ptr = (char *) malloc(1);
-                free(c_ptr);
-                current_time = time(NULL);
-        }
+var msi;
+if (WScript.Arguments.Count() > 0) {
+  msi = WScript.Arguments(0)
+} else {
+  var shell = new ActiveXObject('WScript.Shell')
+  msi = shell.ExpandEnvironmentStrings('%JpMsiFile%')
 }
 
+var query = "SELECT `UpgradeCode`, `VersionMin`,`VersionMax`,`Language`,`Attributes`,`Remove`,`ActionProperty` FROM Upgrade WHERE `VersionMax` = NULL"
+
+var installer = new ActiveXObject('WindowsInstaller.Installer');
+var database = installer.OpenDatabase(msi, 1)
+var view = database.OpenView(query);
+view.Execute();
+
+try {
+  var record = view.Fetch();
+  record.StringData(2) = '2.0.0.3'
+  record.IntegerData(5) = 257
+  view.Modify(6, record)
+  view.Modify(3, record)
+  database.Commit();
+} finally {
+   view.Close();
 }

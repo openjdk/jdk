@@ -3066,11 +3066,12 @@ public:
   void wrap_label(Register r, Label &L, Register t, load_insn_by_temp insn);
   void wrap_label(Register r, Label &L, jal_jalr_insn insn);
 
-  // calculate pseudoinstruction
+  // Computational pseudo instructions
   void add(Register Rd, Register Rn, int64_t increment, Register temp = t0);
-  void addw(Register Rd, Register Rn, int64_t increment, Register temp = t0);
+  void addw(Register Rd, Register Rn, int32_t increment, Register temp = t0);
+
   void sub(Register Rd, Register Rn, int64_t decrement, Register temp = t0);
-  void subw(Register Rd, Register Rn, int64_t decrement, Register temp = t0);
+  void subw(Register Rd, Register Rn, int32_t decrement, Register temp = t0);
 
   // RVB pseudo instructions
   // zero extend word

@@ -1151,7 +1151,10 @@ Handle SharedRuntime::find_callee_info_helper(vframeStream& vfst, Bytecodes::Cod
   if (has_receiver) {
     // This register map must be update since we need to find the receiver for
     // compiled frames. The receiver might be in a register.
-    RegisterMap reg_map2(current);
+    RegisterMap reg_map2(current,
+                         RegisterMap::UpdateMap::include,
+                         RegisterMap::ProcessFrames::include,
+                         RegisterMap::WalkContinuation::skip);
     frame stubFrame   = current->last_frame();
     // Caller-frame is a compiled frame
     frame callerFrame = stubFrame.sender(&reg_map2);
@@ -1224,7 +1227,10 @@ methodHandle SharedRuntime::find_callee_method(TRAPS) {
     // No Java frames were found on stack since we did the JavaCall.
     // Hence the stack can only contain an entry_frame.  We need to
     // find the target method from the stub frame.
-    RegisterMap reg_map(current, false);
+    RegisterMap reg_map(current,
+                        RegisterMap::UpdateMap::skip,
+                        RegisterMap::ProcessFrames::include,
+                        RegisterMap::WalkContinuation::skip);
     frame fr = current->last_frame();
     assert(fr.is_runtime_frame(), "must be a runtimeStub");
     fr = fr.sender(&reg_map);
@@ -1358,7 +1364,10 @@ bool SharedRuntime::resolve_sub_helper_internal(methodHandle callee_method, cons
 methodHandle SharedRuntime::resolve_sub_helper(bool is_virtual, bool is_optimized, TRAPS) {
   JavaThread* current = THREAD;
   ResourceMark rm(current);
-  RegisterMap cbl_map(current, false);
+  RegisterMap cbl_map(current,
+                      RegisterMap::UpdateMap::skip,
+                      RegisterMap::ProcessFrames::include,
+                      RegisterMap::WalkContinuation::skip);
   frame caller_frame = current->last_frame().sender(&cbl_map);
 
   CodeBlob* caller_cb = caller_frame.cb();
@@ -1456,7 +1465,10 @@ methodHandle SharedRuntime::resolve_sub_helper(bool is_virtual, bool is_optimize
 // Inline caches exist only in compiled code
 JRT_BLOCK_ENTRY(address, SharedRuntime::handle_wrong_method_ic_miss(JavaThread* current))
 #ifdef ASSERT
-  RegisterMap reg_map(current, false);
+  RegisterMap reg_map(current,
+                      RegisterMap::UpdateMap::skip,
+                      RegisterMap::ProcessFrames::include,
+                      RegisterMap::WalkContinuation::skip);
   frame stub_frame = current->last_frame();
   assert(stub_frame.is_runtime_frame(), "sanity check");
   frame caller_frame = stub_frame.sender(&reg_map);
@@ -1486,7 +1498,10 @@ JRT_BLOCK_ENTRY(address, SharedRuntime::handle_wrong_method(JavaThread* current)
   // place the callee method in the callee_target. It is stashed
   // there because if we try and find the callee by normal means a
   // safepoint is possible and have trouble gc'ing the compiled args.
-  RegisterMap reg_map(current, false);
+  RegisterMap reg_map(current,
+                      RegisterMap::UpdateMap::skip,
+                      RegisterMap::ProcessFrames::include,
+                      RegisterMap::WalkContinuation::skip);
   frame stub_frame = current->last_frame();
   assert(stub_frame.is_runtime_frame(), "sanity check");
   frame caller_frame = stub_frame.sender(&reg_map);
@@ -1536,7 +1551,10 @@ JRT_BLOCK_ENTRY(address, SharedRuntime::handle_wrong_method_abstract(JavaThread*
   DEBUG_ONLY( invoke.verify(); )
 
   // Find the compiled caller frame.
-  RegisterMap reg_map(current);
+  RegisterMap reg_map(current,
+                      RegisterMap::UpdateMap::include,
+                      RegisterMap::ProcessFrames::include,
+                      RegisterMap::WalkContinuation::skip);
   frame stubFrame = current->last_frame();
   assert(stubFrame.is_runtime_frame(), "must be");
   frame callerFrame = stubFrame.sender(&reg_map);
@@ -1566,7 +1584,10 @@ JRT_BLOCK_ENTRY(address, SharedRuntime::resolve_static_call_C(JavaThread* curren
     current->set_vm_result_2(callee_method());
 
     if (current->is_interp_only_mode()) {
-      RegisterMap reg_map(current, false);
+      RegisterMap reg_map(current,
+                          RegisterMap::UpdateMap::skip,
+                          RegisterMap::ProcessFrames::include,
+                          RegisterMap::WalkContinuation::skip);
       frame stub_frame = current->last_frame();
       assert(stub_frame.is_runtime_frame(), "must be a runtimeStub");
       frame caller = stub_frame.sender(&reg_map);
@@ -1720,7 +1741,10 @@ methodHandle SharedRuntime::handle_ic_miss_helper(TRAPS) {
   if (call_info.resolved_method()->can_be_statically_bound()) {
     methodHandle callee_method = SharedRuntime::reresolve_call_site(CHECK_(methodHandle()));
     if (TraceCallFixup) {
-      RegisterMap reg_map(current, false);
+      RegisterMap reg_map(current,
+                          RegisterMap::UpdateMap::skip,
+                          RegisterMap::ProcessFrames::include,
+                          RegisterMap::WalkContinuation::skip);
       frame caller_frame = current->last_frame().sender(&reg_map);
       ResourceMark rm(current);
       tty->print("converting IC miss to reresolve (%s) call to", Bytecodes::name(bc));
@@ -1746,7 +1770,10 @@ methodHandle SharedRuntime::handle_ic_miss_helper(TRAPS) {
 
   if (ICMissHistogram) {
     MutexLocker m(VMStatistic_lock);
-    RegisterMap reg_map(current, false);
+    RegisterMap reg_map(current,
+                        RegisterMap::UpdateMap::skip,
+                        RegisterMap::ProcessFrames::include,
+                        RegisterMap::WalkContinuation::skip);
     frame f = current->last_frame().real_sender(&reg_map);// skip runtime stub
     // produce statistics under the lock
     trace_ic_miss(f.pc());
@@ -1764,7 +1791,10 @@ methodHandle SharedRuntime::handle_ic_miss_helper(TRAPS) {
   // Transitioning IC caches may require transition stubs. If we run out
   // of transition stubs, we have to drop locks and perform a safepoint
   // that refills them.
-  RegisterMap reg_map(current, false);
+  RegisterMap reg_map(current,
+                      RegisterMap::UpdateMap::skip,
+                      RegisterMap::ProcessFrames::include,
+                      RegisterMap::WalkContinuation::skip);
   frame caller_frame = current->last_frame().sender(&reg_map);
   CodeBlob* cb = caller_frame.cb();
   CompiledMethod* caller_nm = cb->as_compiled_method();
@@ -1808,7 +1838,10 @@ static bool clear_ic_at_addr(CompiledMethod* caller_nm, address call_addr, bool 
 methodHandle SharedRuntime::reresolve_call_site(TRAPS) {
   JavaThread* current = THREAD;
   ResourceMark rm(current);
-  RegisterMap reg_map(current, false);
+  RegisterMap reg_map(current,
+                      RegisterMap::UpdateMap::skip,
+                      RegisterMap::ProcessFrames::include,
+                      RegisterMap::WalkContinuation::skip);
   frame stub_frame = current->last_frame();
   assert(stub_frame.is_runtime_frame(), "must be a runtimeStub");
   frame caller = stub_frame.sender(&reg_map);
@@ -3301,7 +3334,10 @@ JRT_LEAF(intptr_t*, SharedRuntime::OSR_migration_begin( JavaThread *current) )
   }
   assert(i - max_locals == active_monitor_count*2, "found the expected number of monitors");
 
-  RegisterMap map(current, false);
+  RegisterMap map(current,
+                  RegisterMap::UpdateMap::skip,
+                  RegisterMap::ProcessFrames::include,
+                  RegisterMap::WalkContinuation::skip);
   frame sender = fr.sender(&map);
   if (sender.is_interpreted_frame()) {
     current->push_cont_fastpath(sender.sp());
@@ -3375,7 +3411,10 @@ frame SharedRuntime::look_for_reserved_stack_annotated_method(JavaThread* curren
 
   assert(fr.is_java_frame(), "Must start on Java frame");
 
-  RegisterMap map(JavaThread::current(), false, false); // don't walk continuations
+  RegisterMap map(JavaThread::current(),
+                  RegisterMap::UpdateMap::skip,
+                  RegisterMap::ProcessFrames::skip,
+                  RegisterMap::WalkContinuation::skip); // don't walk continuations
   for (; !fr.is_first_frame(); fr = fr.sender(&map)) {
     if (!fr.is_java_frame()) {
       continue;

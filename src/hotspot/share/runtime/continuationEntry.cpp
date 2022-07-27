@@ -122,7 +122,10 @@ bool ContinuationEntry::assert_entry_frame_laid_out(JavaThread* thread) {
   } else {
     sp = unextended_sp;
     bool interpreted_bottom = false;
-    RegisterMap map(thread, false, false, false);
+    RegisterMap map(thread,
+                    RegisterMap::UpdateMap::skip,
+                    RegisterMap::ProcessFrames::skip,
+                    RegisterMap::WalkContinuation::skip);
     frame f;
     for (f = thread->last_frame();
          !f.is_first_frame() && f.sp() <= unextended_sp && !Continuation::is_continuation_enterSpecial(f);
