@@ -2186,28 +2186,6 @@ int os::open(const char *path, int oflag, int mode) {
     errno = ENAMETOOLONG;
     return -1;
   }
-  int fd;
-
-  fd = ::open(path, oflag, mode);
-  if (fd == -1) return -1;
-
-  // If the open succeeded, the file might still be a directory
-  {
-    struct stat buf;
-    int ret = ::fstat(fd, &buf);
-    int st_mode = buf.st_mode;
-
-    if (ret != -1) {
-      if ((st_mode & S_IFMT) == S_IFDIR) {
-        errno = EISDIR;
-        ::close(fd);
-        return -1;
-      }
-    } else {
-      ::close(fd);
-      return -1;
-    }
-  }
 
   // All file descriptors that are opened in the JVM and not
   // specifically destined for a subprocess should have the
@@ -2230,31 +2208,53 @@ int os::open(const char *path, int oflag, int mode) {
   // 4843136: (process) pipe file descriptor from Runtime.exec not being closed
   // 6339493: (process) Runtime.exec does not close all file descriptors on Solaris 9
   //
-#ifdef FD_CLOEXEC
+  // Modern Linux kernels (after 2.6.23 2007) support O_CLOEXEC with open().
+  // O_CLOEXEC is preferable to using FD_CLOEXEC on an open file descriptor
+  // because it saves a system call and removes a small window where the flag
+  // is unset.  On ancient Linux kernels the O_CLOEXEC flag will be ignored
+  // and we fall back to using FD_CLOEXEC (see below).
+#ifdef O_CLOEXEC
+  oflag |= O_CLOEXEC;
+#endif
+
+  int fd = ::open(path, oflag, mode);
+  if (fd == -1) return -1;
+
+  // If the open succeeded, the file might still be a directory
   {
+    struct stat buf;
+    int ret = ::fstat(fd, &buf);
+    int st_mode = buf.st_mode;
+
+    if (ret != -1) {
+      if ((st_mode & S_IFMT) == S_IFDIR) {
+        errno = EISDIR;
+        ::close(fd);
+        return -1;
+      }
+    } else {
+      ::close(fd);
+      return -1;
+    }
+  }
+
+#ifdef FD_CLOEXEC
+  // Validate that the use of the O_CLOEXEC flag on open above worked.
+  // With recent kernels, we will perform this check exactly once.
+  static sig_atomic_t O_CLOEXEC_is_known_to_work = 0;
+  if (!O_CLOEXEC_is_known_to_work) {
     int flags = ::fcntl(fd, F_GETFD);
     if (flags != -1) {
-      ::fcntl(fd, F_SETFD, flags | FD_CLOEXEC);
+      if ((flags & FD_CLOEXEC) != 0)
+        O_CLOEXEC_is_known_to_work = 1;
+      else
+        ::fcntl(fd, F_SETFD, flags | FD_CLOEXEC);
     }
   }
 #endif
 
   return fd;
 }
-
-
-// create binary file, rewriting existing file if required
-int os::create_binary_file(const char* path, bool rewrite_existing) {
-  int oflags = O_WRONLY | O_CREAT;
-  oflags |= rewrite_existing ? O_TRUNC : O_EXCL;
-  return ::open(path, oflags, S_IREAD | S_IWRITE);
-}
-
-// return current position of file pointer
-jlong os::current_file_offset(int fd) {
-  return (jlong)::lseek(fd, (off_t)0, SEEK_CUR);
-}
-
 // move file pointer to the specified offset
 jlong os::seek_to_file_offset(int fd, jlong offset) {
   return (jlong)::lseek(fd, (off_t)offset, SEEK_SET);
