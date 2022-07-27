@@ -42,11 +42,7 @@ const char*       ZGlobalPhaseToString();
 extern uint32_t   ZGlobalSeqNum;
 
 // Granule shift/size
-#ifdef AARCH64
-const size_t      ZGranuleSizeShift             = ZPlatformGranuleSizeShift;
-#else
 const size_t      ZGranuleSizeShift             = 21; // 2MB
-#endif
 const size_t      ZGranuleSize                  = (size_t)1 << ZGranuleSizeShift;
 
 // Number of heap views

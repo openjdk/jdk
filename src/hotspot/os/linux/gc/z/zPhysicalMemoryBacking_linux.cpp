@@ -46,9 +46,6 @@
 #include <sys/statfs.h>
 #include <sys/types.h>
 #include <unistd.h>
-#ifdef AARCH64
-#include <linux/memfd.h>
-#endif
 
 //
 // Support for building on older Linux systems
@@ -199,22 +196,14 @@ ZPhysicalMemoryBacking::ZPhysicalMemoryBacking(size_t max_capacity) :
 }
 
 int ZPhysicalMemoryBacking::create_mem_fd(const char* name) const {
-#ifdef AARCH64
-  assert(ZGranuleSize == 16 * M, "Granule size must match MFD_HUGE_16MB");
-#else
   assert(ZGranuleSize == 2  * M, "Granule size must match MFD_HUGE_2MB");
-#endif
 
   // Create file name
   char filename[PATH_MAX];
   snprintf(filename, sizeof(filename), "%s%s", name, ZLargePages::is_explicit() ? ".hugetlb" : "");
 
   // Create file
-#ifdef AARCH64
-  const int extra_flags = ZLargePages::is_explicit() ? (MFD_HUGETLB | MFD_HUGE_16MB) : 0;
-#else
   const int extra_flags = ZLargePages::is_explicit() ? (MFD_HUGETLB | MFD_HUGE_2MB) : 0;
-#endif
   const int fd = ZSyscall::memfd_create(filename, MFD_CLOEXEC | extra_flags);
   if (fd == -1) {
     ZErrno err;
