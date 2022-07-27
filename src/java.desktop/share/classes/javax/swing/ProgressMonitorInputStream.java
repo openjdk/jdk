@@ -67,6 +67,8 @@ public class ProgressMonitorInputStream extends FilterInputStream
     private ProgressMonitor monitor;
     private int             nread = 0;
     private int             size = 0;
+    Component parentComponent;
+    Object message;
 
     /**
      * Constructs an object to monitor the progress of an input stream.
@@ -87,6 +89,8 @@ public class ProgressMonitorInputStream extends FilterInputStream
         catch(IOException ioe) {
             size = 0;
         }
+        parentComponent = parentComponent;
+        message = message;
         monitor = new ProgressMonitor(parentComponent, message, null, 0, size);
     }
 
