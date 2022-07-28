@@ -93,7 +93,6 @@ class compiledVFrame: public javaVFrame {
   int _vframe_id;
 
   //StackValue resolve(ScopeValue* sv) const;
-  BasicLock* resolve_monitor_lock(Location location) const;
   StackValue *create_stack_value(ScopeValue *sv) const;
 
  private:

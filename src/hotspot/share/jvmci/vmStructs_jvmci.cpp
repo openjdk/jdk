@@ -87,7 +87,6 @@
   static_field(CompilerToVM::Data,             sizeof_ConstantPool,                    int)                                          \
   static_field(CompilerToVM::Data,             sizeof_narrowKlass,                     int)                                          \
   static_field(CompilerToVM::Data,             sizeof_arrayOopDesc,                    int)                                          \
-  static_field(CompilerToVM::Data,             sizeof_BasicLock,                       int)                                          \
                                                                                                                                      \
   static_field(CompilerToVM::Data,             dsin,                                   address)                                      \
   static_field(CompilerToVM::Data,             dcos,                                   address)                                      \
@@ -109,8 +108,6 @@
   unchecked_nonstatic_field(Array<u2>,         _data,                                  sizeof(u2))                                   \
   nonstatic_field(Array<Klass*>,               _length,                                int)                                          \
   nonstatic_field(Array<Klass*>,               _data[0],                               Klass*)                                       \
-                                                                                                                                     \
-  volatile_nonstatic_field(BasicLock,          _displaced_header,                      markWord)                                     \
                                                                                                                                      \
   static_field(CodeCache,                      _low_bound,                             address)                                      \
   static_field(CodeCache,                      _high_bound,                            address)                                      \
@@ -367,7 +364,6 @@
   declare_integer_type(intx)                                              \
   declare_unsigned_integer_type(uintx)                                    \
                                                                           \
-  declare_toplevel_type(BasicLock)                                        \
   declare_toplevel_type(CompilerToVM)                                     \
   declare_toplevel_type(ExceptionTableElement)                            \
   declare_toplevel_type(JVMFlag)                                          \

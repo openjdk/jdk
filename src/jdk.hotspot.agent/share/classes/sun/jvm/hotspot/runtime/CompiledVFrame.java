@@ -145,9 +145,9 @@ public class CompiledVFrame extends JavaVFrame {
         ScopeValue kv = ((ObjectValue)ov).getKlass();
         Assert.that(kv.isConstantOop(), "klass should be oop constant for scalar replaced object");
         OopHandle k = ((ConstantOopReadValue)kv).getValue();
-        result.add(new MonitorInfo(k, resolveMonitorLock(mv.basicLock()), mv.eliminated(), true));
+        result.add(new MonitorInfo(k, mv.eliminated(), true));
       } else {
-        result.add(new MonitorInfo(ownerSV.getObject(), resolveMonitorLock(mv.basicLock()), mv.eliminated(), false));
+        result.add(new MonitorInfo(ownerSV.getObject(), mv.eliminated(), false));
       }
     }
     return result;
@@ -309,21 +309,5 @@ public class CompiledVFrame extends JavaVFrame {
     // Unknown ScopeValue type
     Assert.that(false, "Should not reach here");
     return new StackValue(0);   // dummy
-  }
-
-  private BasicLock resolveMonitorLock(Location location) {
-    if (Assert.ASSERTS_ENABLED) {
-      Assert.that(location.isStack(), "for now we only look at the stack");
-    }
-    int byteOffset = location.getStackOffset();
-    // (stack picture)
-    // high: [     ]  byte_offset + wordSize
-    // low   [     ]  byte_offset
-    //
-    // sp->  [     ]  0
-    // the byte_offset is the distance from the stack pointer to the lowest address
-    // The frame's original stack pointer, before any extension by its callee
-    // (due to Compiler1 linkage on SPARC), must be used.
-    return new BasicLock(getFrame().getUnextendedSP().addOffsetTo(byteOffset));
   }
 }

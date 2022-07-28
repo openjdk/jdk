@@ -223,7 +223,7 @@ void Parse::load_interpreter_state(Node* osr_buf) {
   // Commute monitors from interpreter frame to compiler frame.
   assert(jvms()->monitor_depth() == 0, "should be no active locks at beginning of osr");
   int mcnt = osr_block->flow()->monitor_count();
-  Node *monitors_addr = basic_plus_adr(osr_buf, osr_buf, (max_locals+mcnt*2-1)*wordSize);
+  Node *monitors_addr = basic_plus_adr(osr_buf, osr_buf, (max_locals+mcnt-1)*wordSize);
   for (index = 0; index < mcnt; index++) {
     // Make a BoxLockNode for the monitor.
     Node *box = _gvn.transform(new BoxLockNode(next_monitor()));
@@ -232,12 +232,7 @@ void Parse::load_interpreter_state(Node* osr_buf) {
     // Displaced headers and locked objects are interleaved in the
     // temp OSR buffer.  We only copy the locked objects out here.
     // Fetch the locked object from the OSR temp buffer and copy to our fastlock node.
-    Node *lock_object = fetch_interpreter_state(index*2, T_OBJECT, monitors_addr, osr_buf);
-    // Try and copy the displaced header to the BoxNode
-    Node *displaced_hdr = fetch_interpreter_state((index*2) + 1, T_ADDRESS, monitors_addr, osr_buf);
-
-
-    store_to_memory(control(), box, displaced_hdr, T_ADDRESS, Compile::AliasIdxRaw, MemNode::unordered);
+    Node *lock_object = fetch_interpreter_state(index, T_OBJECT, monitors_addr, osr_buf);
 
     // Build a bogus FastLockNode (no code will be generated) and push the
     // monitor into our debug info.

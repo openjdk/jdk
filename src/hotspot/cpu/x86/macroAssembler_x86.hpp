@@ -850,6 +850,7 @@ public:
 
   void xorptr(Register dst, Register src) { LP64_ONLY(xorq(dst, src)) NOT_LP64(xorl(dst, src)); }
   void xorptr(Register dst, Address src) { LP64_ONLY(xorq(dst, src)) NOT_LP64(xorl(dst, src)); }
+  void xorptr(Register dst, int32_t src) { LP64_ONLY(xorq(dst, src)) NOT_LP64(xorl(dst, src)); }
 
   // Calls
 
@@ -2071,6 +2072,9 @@ public:
 #endif // _LP64
 
   void vallones(XMMRegister dst, int vector_len);
+
+  void fast_lock_impl(Register obj, Register hdr, Register thread, Register tmp1, Register tmp2, Label& slow);
+  void fast_unlock_impl(Register obj, Register hdr, Register tmp, Label& slow);
 };
 
 /**

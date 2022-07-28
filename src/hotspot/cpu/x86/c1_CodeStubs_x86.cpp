@@ -257,8 +257,8 @@ void NewObjectArrayStub::emit_code(LIR_Assembler* ce) {
 
 // Implementation of MonitorAccessStubs
 
-MonitorEnterStub::MonitorEnterStub(LIR_Opr obj_reg, LIR_Opr lock_reg, CodeEmitInfo* info)
-: MonitorAccessStub(obj_reg, lock_reg)
+MonitorEnterStub::MonitorEnterStub(LIR_Opr obj_reg, CodeEmitInfo* info)
+: MonitorAccessStub(obj_reg)
 {
   _info = new CodeEmitInfo(info);
 }
@@ -267,8 +267,7 @@ MonitorEnterStub::MonitorEnterStub(LIR_Opr obj_reg, LIR_Opr lock_reg, CodeEmitIn
 void MonitorEnterStub::emit_code(LIR_Assembler* ce) {
   assert(__ rsp_offset() == 0, "frame size should be fixed");
   __ bind(_entry);
-  ce->store_parameter(_obj_reg->as_register(),  1);
-  ce->store_parameter(_lock_reg->as_register(), 0);
+  ce->store_parameter(_obj_reg->as_register(),  0);
   Runtime1::StubID enter_id;
   if (ce->compilation()->has_fpu_code()) {
     enter_id = Runtime1::monitorenter_id;
@@ -284,11 +283,7 @@ void MonitorEnterStub::emit_code(LIR_Assembler* ce) {
 
 void MonitorExitStub::emit_code(LIR_Assembler* ce) {
   __ bind(_entry);
-  if (_compute_lock) {
-    // lock_reg was destroyed by fast unlocking attempt => recompute it
-    ce->monitor_address(_monitor_ix, _lock_reg);
-  }
-  ce->store_parameter(_lock_reg->as_register(), 0);
+  ce->store_parameter(_obj_reg->as_register(), 0);
   // note: non-blocking leaf routine => no call info needed
   Runtime1::StubID exit_id;
   if (ce->compilation()->has_fpu_code()) {

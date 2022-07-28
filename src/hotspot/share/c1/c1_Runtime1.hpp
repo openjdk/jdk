@@ -152,8 +152,8 @@ class Runtime1: public AllStatic {
   static void throw_incompatible_class_change_error(JavaThread* current);
   static void throw_array_store_exception(JavaThread* current, oopDesc* object);
 
-  static void monitorenter(JavaThread* current, oopDesc* obj, BasicObjectLock* lock);
-  static void monitorexit (JavaThread* current, BasicObjectLock* lock);
+  static void monitorenter(JavaThread* current, oopDesc* obj);
+  static void monitorexit (JavaThread* current, oopDesc* obj);
 
   static void deoptimize(JavaThread* current, jint trap_request);
 

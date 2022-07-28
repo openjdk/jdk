@@ -271,7 +271,7 @@ class nmethod : public CompiledMethod {
   volatile uint8_t _is_unloading_state;
 
   // These are used for compiled synchronized native methods to
-  // locate the owner and stack slot for the BasicLock. They are
+  // locate the owner for the lock. They are
   // needed because there is no debug information for compiled native
   // wrappers and the oop maps are insufficient to allow
   // frame::retrieve_receiver() to work. Currently they are expected
@@ -279,7 +279,6 @@ class nmethod : public CompiledMethod {
   // sharing between platforms. JVMTI's GetLocalInstance() uses these
   // offsets to find the receiver for non-static native wrapper frames.
   ByteSize _native_receiver_sp_offset;
-  ByteSize _native_basic_lock_sp_offset;
 
   friend class nmethodLocker;
 
@@ -292,7 +291,6 @@ class nmethod : public CompiledMethod {
           CodeBuffer *code_buffer,
           int frame_size,
           ByteSize basic_lock_owner_sp_offset, /* synchronized natives only */
-          ByteSize basic_lock_sp_offset,       /* synchronized natives only */
           OopMapSet* oop_maps);
 
   // Creation support
@@ -373,8 +371,7 @@ class nmethod : public CompiledMethod {
   nmethod()
     : CompiledMethod(),
       _is_unloading_state(0),
-      _native_receiver_sp_offset(in_ByteSize(-1)),
-      _native_basic_lock_sp_offset(in_ByteSize(-1)) {}
+      _native_receiver_sp_offset(in_ByteSize(-1)) {}
 
 
   static nmethod* new_native_nmethod(const methodHandle& method,
@@ -384,7 +381,6 @@ class nmethod : public CompiledMethod {
                                      int frame_complete,
                                      int frame_size,
                                      ByteSize receiver_sp_offset,
-                                     ByteSize basic_lock_sp_offset,
                                      OopMapSet* oop_maps,
                                      int exception_handler = -1);
 
@@ -734,9 +730,6 @@ public:
   // JVMTI's GetLocalInstance() support
   ByteSize native_receiver_sp_offset() {
     return _native_receiver_sp_offset;
-  }
-  ByteSize native_basic_lock_sp_offset() {
-    return _native_basic_lock_sp_offset;
   }
 
   // support for code generation

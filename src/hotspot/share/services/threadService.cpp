@@ -436,7 +436,12 @@ DeadlockCycle* ThreadService::find_deadlocks_at_safepoint(ThreadsList * t_list, 
           currentThread = JavaThread::cast(owner);
         }
       } else if (waitingToLockMonitor != NULL) {
-        address currentOwner = (address)waitingToLockMonitor->owner();
+        address currentOwner;
+        if (waitingToLockMonitor->is_owner_anonymous()) {
+          currentOwner = cast_from_oop<address>(waitingToLockMonitor->object());
+        } else {
+          currentOwner = (address)waitingToLockMonitor->owner();
+        }
         if (currentOwner != NULL) {
           currentThread = Threads::owning_thread_from_monitor_owner(t_list,
                                                                     currentOwner);

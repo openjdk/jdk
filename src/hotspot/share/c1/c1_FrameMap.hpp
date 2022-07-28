@@ -141,7 +141,6 @@ class FrameMap : public CompilationResourceObj {
   ByteSize sp_offset_for_slot(const int idx) const;
   ByteSize sp_offset_for_double_slot(const int idx) const;
   ByteSize sp_offset_for_spill(const int idx) const;
-  ByteSize sp_offset_for_monitor_lock(int monitor_index) const;
   ByteSize sp_offset_for_monitor_object(int monitor_index) const;
 
   VMReg sp_offset2vmreg(ByteSize offset) const;
@@ -206,9 +205,6 @@ class FrameMap : public CompilationResourceObj {
   Address address_for_double_slot(int index, int sp_adjust = 0) const {
     return make_new_address(sp_offset_for_double_slot(index) + in_ByteSize(sp_adjust));
   }
-  Address address_for_monitor_lock(int monitor_index) const {
-    return make_new_address(sp_offset_for_monitor_lock(monitor_index));
-  }
   Address address_for_monitor_object(int monitor_index) const {
     return make_new_address(sp_offset_for_monitor_object(monitor_index));
   }
@@ -220,9 +216,6 @@ class FrameMap : public CompilationResourceObj {
   bool location_for_sp_offset(ByteSize byte_offset_from_sp,
                               Location::Type loc_type, Location* loc) const;
 
-  bool location_for_monitor_lock  (int monitor_index, Location* loc) const {
-    return location_for_sp_offset(sp_offset_for_monitor_lock(monitor_index), Location::normal, loc);
-  }
   bool location_for_monitor_object(int monitor_index, Location* loc) const {
     return location_for_sp_offset(sp_offset_for_monitor_object(monitor_index), Location::oop, loc);
   }

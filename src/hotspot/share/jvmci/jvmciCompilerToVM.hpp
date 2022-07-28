@@ -78,7 +78,6 @@ class CompilerToVM {
     static int sizeof_ConstantPool;
     static int sizeof_narrowKlass;
     static int sizeof_arrayOopDesc;
-    static int sizeof_BasicLock;
 
     static address dsin;
     static address dcos;

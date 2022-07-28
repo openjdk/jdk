@@ -148,12 +148,6 @@ public class Mark extends VMObject {
   public boolean hasLocker() {
     return ((value() & lockMaskInPlace) == lockedValue);
   }
-  public BasicLock locker() {
-    if (Assert.ASSERTS_ENABLED) {
-      Assert.that(hasLocker(), "check");
-    }
-    return new BasicLock(valueAsAddress());
-  }
   public boolean hasMonitor() {
     return ((value() & monitorValue) != 0);
   }

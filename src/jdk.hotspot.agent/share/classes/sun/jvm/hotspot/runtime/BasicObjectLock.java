@@ -42,12 +42,10 @@ public class BasicObjectLock extends VMObject {
 
   private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
     Type type  = db.lookupType("BasicObjectLock");
-    lockField  = type.getField("_lock");
     objField   = type.getOopField("_obj");
     size       = (int) type.getSize();
   }
 
-  private static sun.jvm.hotspot.types.Field    lockField;
   private static sun.jvm.hotspot.types.OopField objField;
   private static int        size;
 
@@ -56,7 +54,6 @@ public class BasicObjectLock extends VMObject {
   }
 
   public OopHandle obj()  { return objField.getValue(addr); }
-  public BasicLock lock() { return new BasicLock(addr.addOffsetTo(lockField.getOffset())); }
 
   /** Note: Use frame::interpreter_frame_monitor_size() for the size
       of BasicObjectLocks in interpreter activation frames since it
