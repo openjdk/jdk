@@ -643,17 +643,19 @@ public class DefaultEditorKit extends EditorKit {
     public static final String endLineAction = "caret-end-line";
 
     /**
-     * Name of the <code>Action</code> for moving the caret
-     * to the begin of a line it not at the begin already or
-     * upward one line otherwise.
+     * Name of the {@code Action} for moving the caret
+     * to the beginning of the current line or up to the
+     * beginning of the previous line if the caret is
+     * already at the beginning of the line.
      * @see #getActions
      */
     public static final String beginLineUpAction = "caret-begin-line-and-up";
 
     /**
-     * Name of the <code>Action</code> for moving the caret
-     * to the end of a line if not at the end already
-     * or downward one line otherwise.
+     * Name of the {@code Action} for moving the caret
+     * to the end of the current line or down to the
+     * end of the next line if the caret is already
+     * at the end of the line.
      * @see #getActions
      */
     public static final String endLineDownAction = "caret-end-line-and-down";
@@ -2086,7 +2088,6 @@ public class DefaultEditorKit extends EditorKit {
         /** The operation to perform when this action is triggered. */
         @SuppressWarnings("deprecation")
         public void actionPerformed(ActionEvent e) {
-            System.out.println("EndLineDownAction");
             JTextComponent target = getTextComponent(e);
             if (target != null) {
                 try {
@@ -2106,7 +2107,9 @@ public class DefaultEditorKit extends EditorKit {
                         Position.Bias[] bias = new Position.Bias[1];
                         Point magicPosition = caret.getMagicCaretPosition();
 
-                        if (magicPosition == null && (direction == SwingConstants.NORTH || direction == SwingConstants.SOUTH)) {
+                        if (magicPosition == null &&
+                                (direction == SwingConstants.NORTH ||
+                                 direction == SwingConstants.SOUTH)) {
                             Rectangle r = (bidiCaret != null) ?
                                     target.getUI().modelToView(target, dot,
                                             bidiCaret.getDotBias()) :
