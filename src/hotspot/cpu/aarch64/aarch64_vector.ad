@@ -150,6 +150,8 @@ source %{
       return false;
     }
 
+    // Check whether specific Op is supported.
+    // Fail fast, otherwise fall through to common vector_size_supported() check.
     switch (opcode) {
       case Op_MulVL:
       case Op_AndVMask:
@@ -171,14 +173,20 @@ source %{
         }
         break;
       case Op_MulAddVS2VI:
-        return length_in_bytes == 16;
+        if (length_in_bytes != 16) {
+          return false;
+        }
+        break;
       case Op_MulReductionVD:
       case Op_MulReductionVF:
       case Op_MulReductionVI:
       case Op_MulReductionVL:
         // No vector multiply reduction instructions, but we do
         // emit scalar instructions for 64/128-bit vectors.
-        return vlen >= 2 && (length_in_bytes == 8 || length_in_bytes == 16);
+        if (length_in_bytes != 8 && length_in_bytes != 16) {
+          return false;
+        }
+        break;
       case Op_VectorMaskCmp:
         if (length_in_bytes < 8) {
           return false;
