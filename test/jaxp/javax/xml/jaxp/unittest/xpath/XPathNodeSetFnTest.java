@@ -34,15 +34,15 @@ import javax.xml.xpath.*;
  * @test
  * @bug 8289948
  * @library /javax/xml/jaxp/unittest
- * @run testng xpath.XPathExpFnTest
- * @summary Test for XPath functions
+ * @run testng xpath.XPathNodeSetFnTest
+ * @summary Tests the XPath Node Set Functions
  */
-public class XPathExpFnTest extends XPathTestBase {
+public class XPathNodeSetFnTest extends XPathTestBase {
 
     private static final Document doc = getDtdDocument();
 
     /*
-     * DataProvider for XPath expressions for id function.
+     * DataProvider for testing the id function.
      * Data columns:
      *  see parameters of the test "testIdFn"
      */
@@ -59,7 +59,7 @@ public class XPathExpFnTest extends XPathTestBase {
     }
 
     /*
-     * DataProvider for XPath expressions for count function.
+     * DataProvider for testing the count function.
      * Data columns:
      *  see parameters of the test "testCountFn"
      */
@@ -96,7 +96,7 @@ public class XPathExpFnTest extends XPathTestBase {
     }
 
     /*
-     * DataProvider for XPath expression for position function.
+     * DataProvider for testing the position function.
      * Data columns:
      *  see parameters of the test "testPositionFn"
      */
@@ -113,7 +113,7 @@ public class XPathExpFnTest extends XPathTestBase {
     }
 
     /*
-     * DataProvider for XPath expression for name and local name function.
+     * DataProvider for testing the name and local-name functions.
      * Data columns:
      *  see parameters of the test "testNameFn"
      */
@@ -141,12 +141,12 @@ public class XPathExpFnTest extends XPathTestBase {
     }
 
     /**
-     * This test evaluates XPath expressions of id function and checks against
-     * the expected result.
+     * Verifies that the result of evaluating the id function matches the
+     * expected result.
      *
      * @param exp      XPath expression
      * @param expected expected result
-     * @throws Exception
+     * @throws Exception if test fails
      */
     @Test(dataProvider = "idExpTestCases")
     void testIdFn(String exp, String expected) throws Exception {
@@ -162,12 +162,12 @@ public class XPathExpFnTest extends XPathTestBase {
     }
 
     /**
-     * This test evaluates XPath expressions of count function and checks
-     * against the expected result.
+     * Verifies that the result of evaluating the count function matches the
+     * expected result.
      *
      * @param exp      XPath expression
      * @param expected expected result
-     * @throws Exception
+     * @throws Exception if test fails
      */
     @Test(dataProvider = "countExpTestCases")
     void testCountFn(String exp, int expected) throws Exception {
@@ -181,12 +181,12 @@ public class XPathExpFnTest extends XPathTestBase {
     }
 
     /**
-     * This test evaluates XPath expressions of position function and checks
-     * against the expected result.
+     * Verifies that the result of evaluating the position function matches the
+     * expected result.
      *
      * @param exp      XPath expression
      * @param expected expected result
-     * @throws Exception
+     * @throws Exception if test fails
      */
     @Test(dataProvider = "positionExpTestCases")
     void testPositionFn(String exp, String expected) throws Exception {
@@ -202,12 +202,12 @@ public class XPathExpFnTest extends XPathTestBase {
     }
 
     /**
-     * This test evaluates XPath expressions of name and local-name functions
-     * and checks against the expected result.
+     * Verifies that the result of evaluating the name and local-name functions
+     * matches the expected result.
      *
      * @param exp      XPath expression
      * @param expected expected result
-     * @throws Exception
+     * @throws Exception if test fails
      */
     @Test(dataProvider = "nameExpTestCases")
     void testNameFn(String exp, String expected) throws Exception {
