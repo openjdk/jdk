@@ -5430,63 +5430,6 @@ instruct addL_reg_immRot(iRegL dst, iRegL src1, immLlowRot con, flagsReg ccr) %{
   ins_pipe(ialu_reg_imm);
 %}
 
-//----------Conditional_store--------------------------------------------------
-// Conditional-store of the updated heap-top.
-// Used during allocation of the shared heap.
-// Sets flags (EQ) on success.
-
-// LoadP-locked.
-instruct loadPLocked(iRegP dst, memoryex mem) %{
-  match(Set dst (LoadPLocked mem));
-  size(4);
-  format %{ "LDREX  $dst,$mem" %}
-  ins_encode %{
-    __ ldrex($dst$$Register,$mem$$Address);
-  %}
-  ins_pipe(iload_mem);
-%}
-
-instruct storePConditional( memoryex heap_top_ptr, iRegP oldval, iRegP newval, iRegI tmp, flagsRegP pcc ) %{
-  predicate(_kids[1]->_kids[0]->_leaf->Opcode() == Op_LoadPLocked); // only works in conjunction with a LoadPLocked node
-  match(Set pcc (StorePConditional heap_top_ptr (Binary oldval newval)));
-  effect( TEMP tmp );
-  size(8);
-  format %{ "STREX  $tmp,$newval,$heap_top_ptr\n\t"
-            "CMP    $tmp, 0" %}
-  ins_encode %{
-    __ strex($tmp$$Register, $newval$$Register, $heap_top_ptr$$Address);
-    __ cmp($tmp$$Register, 0);
-  %}
-  ins_pipe( long_memory_op );
-%}
-
-// Conditional-store of an intx value.
-instruct storeXConditional( memoryex mem, iRegX oldval, iRegX newval, iRegX tmp, flagsReg icc ) %{
-  match(Set icc (StoreIConditional mem (Binary oldval newval)));
-  effect( TEMP tmp );
-  size(28);
-  format %{ "loop: \n\t"
-            "LDREX    $tmp, $mem\t! If $oldval==[$mem] Then store $newval into [$mem], DOESN'T set $newval=[$mem] in any case\n\t"
-            "XORS     $tmp,$tmp, $oldval\n\t"
-            "STREX.eq $tmp, $newval, $mem\n\t"
-            "CMP.eq   $tmp, 1 \n\t"
-            "B.eq     loop \n\t"
-            "TEQ      $tmp, 0\n\t"
-            "membar   LoadStore|LoadLoad" %}
-  ins_encode %{
-    Label loop;
-    __ bind(loop);
-    __ ldrex($tmp$$Register, $mem$$Address);
-    __ eors($tmp$$Register, $tmp$$Register, $oldval$$Register);
-    __ strex($tmp$$Register, $newval$$Register, $mem$$Address, eq);
-    __ cmp($tmp$$Register, 1, eq);
-    __ b(loop, eq);
-    __ teq($tmp$$Register, 0);
-    __ membar(MacroAssembler::Membar_mask_bits(MacroAssembler::LoadStore | MacroAssembler::LoadLoad), noreg);
-  %}
-  ins_pipe( long_memory_op );
-%}
-
 // No flag versions for CompareAndSwap{P,I,L} because matcher can't match them
 
 instruct compareAndSwapL_bool(memoryex mem, iRegL oldval, iRegLd newval, iRegI res, iRegLd tmp, flagsReg ccr ) %{
