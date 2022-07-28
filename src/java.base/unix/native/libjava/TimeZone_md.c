@@ -583,8 +583,7 @@ getGMTOffsetID()
     }
 #endif
 
-    strftime(offset, 6, "%z", &localtm);
-    if (strlen(offset) != 5) {
+    if (strftime(offset, 6, "%z", &localtm) != 5) {
         return strdup("GMT");
     }
 
