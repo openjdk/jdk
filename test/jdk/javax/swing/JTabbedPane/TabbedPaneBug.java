@@ -34,8 +34,8 @@ import javax.swing.SwingUtilities;
  * @test
  * @bug 8265586
  * @key headful
- * @summary Tests whether the
- * @run main/othervm TabbedPaneBug
+ * @summary Tests whether the selected tab's component is on the top and visible.
+ * @run main TabbedPaneBug
  */
 public class TabbedPaneBug {
 
@@ -45,8 +45,6 @@ public class TabbedPaneBug {
     private static JTabbedPane tabs;
     private static final JPanel firstTab = new JPanel();
     private static final JPanel secondTab = new JPanel();
-//    private static JLabel firstTab = new JLabel("First Contents");
-//    private static JLabel secondTab = new JLabel("Second Contents");
 
     public static void main(String[] args) throws AWTException,
             InterruptedException, InvocationTargetException {
