@@ -1851,41 +1851,32 @@ Node* NegVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   return NULL;
 }
 
+static Node* reverse_operations_identity(Node* n, Node* in1) {
+  if (n->is_predicated_using_blend()) {
+    return n;
+  }
+  if (n->Opcode() == in1->Opcode()) {
+    // OperationV (OperationV X MASK) MASK =>  X
+    if (n->is_predicated_vector() && in1->is_predicated_vector() && n->in(2) == in1->in(2)) {
+      return in1->in(1);
+    // OperationV (OperationV X) =>  X
+    } else if (!n->is_predicated_vector() && !in1->is_predicated_vector())  {
+      return in1->in(1);
+    }
+  }
+  return n;
+}
+
 Node* ReverseBytesVNode::Identity(PhaseGVN* phase) {
   // "(ReverseBytesV X) => X" if the element type is T_BYTE.
   if (vect_type()->element_basic_type() == T_BYTE) {
     return in(1);
   }
-
-  if (is_predicated_using_blend()) {
-    return this;
-  }
-  // (ReverseBytesV (ReverseBytesV X MASK) MASK) => X
-  if (in(1)->Opcode() == Op_ReverseBytesV) {
-    if (is_predicated_vector() && in(1)->is_predicated_vector() && in(2) == in(1)->in(2)) {
-      return in(1)->in(1);
-    } else {
-      // ReverseBytesV (ReverseBytesV X) => X
-      return in(1)->in(1);
-    }
-  }
-  return this;
+  return reverse_operations_identity(this, in(1));
 }
 
 Node* ReverseVNode::Identity(PhaseGVN* phase) {
-  if (is_predicated_using_blend()) {
-    return this;
-  }
-  // ReverseV (ReverseV X , MASK) , MASK =>  X
-  if (in(1)->Opcode() == Op_ReverseV) {
-    if (is_predicated_vector() && in(1)->is_predicated_vector() && in(2) == in(1)->in(2)) {
-      return in(1)->in(1);
-    } else {
-      // ReverseV (ReverseV X) =>  X
-      return in(1)->in(1);
-    }
-  }
-  return this;
+  return reverse_operations_identity(this, in(1));
 }
 
 Node* AndVNode::Identity(PhaseGVN* phase) {
