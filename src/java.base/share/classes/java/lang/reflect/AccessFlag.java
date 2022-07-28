@@ -156,12 +156,19 @@ public enum AccessFlag {
      */
     FINAL(Modifier.FINAL, true,
           Set.of(Location.CLASS, Location.FIELD, Location.METHOD,
-                 Location.INNER_CLASS, Location.METHOD_PARAMETER)) {
+                 Location.INNER_CLASS,     /* added in 1.1 */
+                 Location.METHOD_PARAMETER /* added in 8 */ )) {
         @Override
         public Set<Location> locations(ClassFileFormatVersion cffv) {
-            return (cffv == ClassFileFormatVersion.RELEASE_0) ?
-                Location.SET_FIELD_METHOD:  // FIXME
-                locations();
+            if (cffv.compareTo(ClassFileFormatVersion.RELEASE_8) >= 0) {
+                return locations();
+            } else {
+                if (cffv == ClassFileFormatVersion.RELEASE_0) {
+                    return Location.SET_CLASS_FIELD_METHOD;
+                } else {
+                    return Location.SET_CLASS_FIELD_METHOD_INNER_CLASS;
+                }
+            }
         }
     },
 
@@ -330,10 +337,27 @@ public enum AccessFlag {
      * @see java.lang.module.ModuleDescriptor.Modifier#SYNTHETIC
      */
     SYNTHETIC(Modifier.SYNTHETIC, false,
+              // Added as an access flag in 7
               Set.of(Location.CLASS, Location.FIELD, Location.METHOD,
-                     Location.INNER_CLASS, Location.METHOD_PARAMETER,
+                     Location.INNER_CLASS,
+                     Location.METHOD_PARAMETER, // Added in 8
+                     // Module-related items added in 9
                      Location.MODULE, Location.MODULE_REQUIRES,
-                     Location.MODULE_EXPORTS, Location.MODULE_OPENS)), // fixme
+                     Location.MODULE_EXPORTS, Location.MODULE_OPENS)) {
+        @Override
+        public Set<Location> locations(ClassFileFormatVersion cffv) {
+            if (cffv.compareTo(ClassFileFormatVersion.RELEASE_9) >= 0 )
+                return locations();
+            else {
+                return
+                    switch(cffv) {
+                    case RELEASE_7 -> Location.SET_SYNTHETIC_7;
+                    case RELEASE_8 -> Location.SET_SYNTHETIC_8;
+                    default        -> Location.EMPTY_SET;
+                    };
+            }
+        }
+    },
 
     /**
      * The access flag {@code ACC_ANNOTATION} with a mask value of
@@ -369,9 +393,21 @@ public enum AccessFlag {
      * <code>{@value "0x%04x" Modifier#MANDATED}</code>.
      */
     MANDATED(Modifier.MANDATED, false,
-             Set.of(Location.METHOD_PARAMETER,
+             Set.of(Location.METHOD_PARAMETER, // From 8
+                    // Starting in 9
                     Location.MODULE, Location.MODULE_REQUIRES,
-                    Location.MODULE_EXPORTS, Location.MODULE_OPENS)), // fixme
+                    Location.MODULE_EXPORTS, Location.MODULE_OPENS)) {
+        @Override
+        public Set<Location> locations(ClassFileFormatVersion cffv) {
+            if (cffv.compareTo(ClassFileFormatVersion.RELEASE_9) >= 0 ) {
+                return locations();
+            } else if (cffv == ClassFileFormatVersion.RELEASE_8) {
+                return Location.SET_METHOD_PARAM;
+            } else { // Less than or equal to RELEASE_7
+                return Location.EMPTY_SET;
+            }
+        }
+    },
 
     /**
      * The access flag {@code ACC_MODULE} with a mask value of {@code
@@ -529,6 +565,8 @@ public enum AccessFlag {
         private static final Set<Location> EMPTY_SET = Set.of();
         private static final Set<Location> SET_CLASS_FIELD_METHOD =
             Set.of(Location.CLASS, Location.FIELD, Location.METHOD);
+        private static final Set<Location> SET_CLASS_FIELD_METHOD_INNER_CLASS =
+            Set.of(Location.CLASS, Location.FIELD, Location.METHOD, Location.INNER_CLASS);
         private static final Set<Location> SET_CLASS_METHOD =
             Set.of(Location.CLASS, Location.METHOD);
         private static final Set<Location> SET_FIELD_METHOD =
@@ -536,12 +574,19 @@ public enum AccessFlag {
         private static final Set<Location> SET_FIELD_METHOD_INNER_CLASS =
             Set.of(FIELD, METHOD, INNER_CLASS);
         private static final Set<Location> SET_METHOD = Set.of(METHOD);
+        private static final Set<Location> SET_METHOD_PARAM = Set.of(METHOD_PARAMETER);
         private static final Set<Location> SET_FIELD = Set.of(FIELD);
         private static final Set<Location> SET_CLASS = Set.of(CLASS);
         private static final Set<Location> SET_CLASS_INNER_CLASS =
             Set.of(CLASS, INNER_CLASS);
         private static final Set<Location> SET_MODULE_REQUIRES =
             Set.of(MODULE_REQUIRES);
+        private static final Set<Location> SET_SYNTHETIC_7 =
+              Set.of(Location.CLASS, Location.FIELD, Location.METHOD,
+                     Location.INNER_CLASS);
+        private static final Set<Location> SET_SYNTHETIC_8 =
+              Set.of(Location.CLASS, Location.FIELD, Location.METHOD,
+                     Location.INNER_CLASS, Location.METHOD_PARAMETER);
     }
 
     private static class LocationToFlags {
