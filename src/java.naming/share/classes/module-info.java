@@ -103,6 +103,21 @@
  *          <br>The default value allows any object factory class specified by the reference
  *          instance to recreate the referenced object.
  *     </li>
+ *     <li>{@systemProperty jdk.jndi.ldap.object.factoriesFilter}:
+ *          <br>The value of this system property defines a filter used by
+ *          the JDK LDAP provider implementation to control the set of object factory classes which will
+ *          be allowed to instantiate objects from object references returned by LDAP systems.
+ *          The factory class named by the reference instance first will be matched against this specific filter
+ *          and then against the global filter. The factory class is rejected if any of these two filters reject it.
+ *          The filter property supports pattern-based filter syntax with the same format as
+ *          {@link java.io.ObjectInputFilter.Config#createFilter(String) jdk.serialFilter}.
+ *          <br>The default value allows any object factory class provided by the JDK LDAP provider
+ *          implementation.
+ *         <br>This system property will be used to filter LDAP specific object factories only if
+ *         global {@link javax.naming.spi.ObjectFactoryBuilder} is {@linkplain
+ *         javax.naming.spi.NamingManager#setObjectFactoryBuilder(javax.naming.spi.ObjectFactoryBuilder)
+ *         not set}.
+ *     </li>
  * </ul>
  * <p>Other providers may define additional properties in their module description:
  * <ul>
@@ -133,6 +148,8 @@ module java.naming {
     exports com.sun.jndi.toolkit.url to
         jdk.naming.dns,
         jdk.naming.rmi;
+    exports com.sun.naming.internal to
+         jdk.naming.rmi;
 
     uses javax.naming.ldap.StartTlsResponse;
     uses javax.naming.spi.InitialContextFactory;

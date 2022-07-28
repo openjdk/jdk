@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,17 @@
  *          LDAP Naming Service Provider</a>.
  *          <br>The default value allows any object factory class specified by the reference
  *          instance to recreate the referenced object.
+ *     </li>
+ *     <li>{@systemProperty jdk.jndi.rmi.object.factoriesFilter}:
+ *          <br>The value of this system property defines a filter used by
+ *          the JDK RMI provider implementation to control the set of object factory classes which will
+ *          be allowed to instantiate objects from object references returned by RMI systems.
+ *          The factory class named by the reference instance first will be matched against this specific filter
+ *          and then against the global filter. The factory class is rejected if any of these two filters reject it.
+ *          The filter property supports pattern-based filter syntax with the same format as
+ *          {@link java.io.ObjectInputFilter.Config#createFilter(String) jdk.serialFilter}.
+ *          <br>The default value allows any object factory class provided by the JDK RMI provider
+ *          implementation.
  *     </li>
  * </ul>
  * @provides javax.naming.spi.InitialContextFactory

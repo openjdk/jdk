@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,19 +50,56 @@ public final class ObjectFactoriesFilter {
     /**
      * Checks if serial filter configured with {@code "jdk.jndi.object.factoriesFilter"}
      * system property value allows instantiation of the specified objects factory class.
-     * If the filter result is not {@linkplain Status#REJECTED REJECTED}, the filter will
+     * If the filter result is {@linkplain Status#ALLOWED ALLOWED}, the filter will
      * allow the instantiation of objects factory class.
      *
-     * @param factoryClass objects factory class
+     * @param clz objects factory class
      * @return true - if the factory is allowed to be instantiated; false - otherwise
      */
-    public static boolean canInstantiateObjectsFactory(Class<?> factoryClass) {
-        return checkInput(() -> factoryClass);
+    public static boolean checkGlobalFilter(Class<?> clz) {
+        return checkInput("global", () -> clz);
     }
 
-    private static boolean checkInput(FactoryInfo factoryInfo) {
-        Status result = GLOBAL.checkInput(factoryInfo);
-        return result != Status.REJECTED;
+    /**
+     * Checks if serial filter configured with {@code "jdk.jndi.object.ldap.factoriesFilter"}
+     * system property value allows instantiation of the specified objects factory class.
+     * If the filter result is {@linkplain Status#ALLOWED ALLOWED}, the filter will
+     * allow the instantiation of objects factory class.
+     *
+     * @param clz objects factory class
+     * @return true - if the factory is allowed to be instantiated; false - otherwise
+     */
+    public static boolean checkLdapFilter(Class<?> clz) {
+        return checkInput("ldap", () -> clz);
+    }
+
+    /**
+     * Checks if serial filter configured with {@code "jdk.jndi.object.rmi.factoriesFilter"}
+     * system property value allows instantiation of the specified objects factory class.
+     * If the filter result is {@linkplain Status#ALLOWED ALLOWED}, the filter will
+     * allow the instantiation of objects factory class.
+     *
+     * @param clz objects factory class
+     * @return true - if the factory is allowed to be instantiated; false - otherwise
+     */
+    public static boolean checkRmiFilter(Class<?> clz) {
+        return checkInput("rmi", () -> clz);
+    }
+
+    private static boolean checkInput(String scheme, FactoryInfo factoryInfo) {
+        Status result = switch(scheme) {
+            case "ldap" -> LDAP_FILTER.checkInput(factoryInfo);
+            case "rmi" -> RMI_FILTER.checkInput(factoryInfo);
+            default -> Status.UNDECIDED;
+        };
+        return switch(result) {
+            // Only allowed if not rejected by global filter
+            case ALLOWED -> GLOBAL_FILTER.checkInput(factoryInfo) != Status.REJECTED;
+            // Rejected
+            case REJECTED -> false;
+            // Only allowed if allowed by global filter
+            case UNDECIDED -> GLOBAL_FILTER.checkInput(factoryInfo) == Status.ALLOWED;
+        };
     }
 
     // FilterInfo to check if objects factory class is allowed by the system-wide
@@ -99,16 +136,36 @@ public final class ObjectFactoriesFilter {
     // System property name that contains the patterns to filter object factory names
     private static final String FACTORIES_FILTER_PROPNAME = "jdk.jndi.object.factoriesFilter";
 
+    // System property name that contains the patterns to filter LDAP object factory names
+    private static final String LDAP_FACTORIES_FILTER_PROPNAME = "jdk.jndi.ldap.object.factoriesFilter";
+
+    // System property name that contains the patterns to filter RMI object factory names
+    private static final String RMI_FACTORIES_FILTER_PROPNAME = "jdk.jndi.rmi.object.factoriesFilter";
+
     // Default system property value that allows the load of any object factory classes
-    private static final String DEFAULT_SP_VALUE = "*";
+    private static final String DEFAULT_GLOBAL_SP_VALUE = "*";
+
+    // Default system property value that allows the load of any LDAP object factory classes
+    private static final String DEFAULT_LDAP_SP_VALUE = "java.naming/com.sun.jndi.ldap.**;!*";
+
+    // Default system property value that allows the load of any RMI object factory classes
+    private static final String DEFAULT_RMI_SP_VALUE = "jdk.naming.rmi/com.sun.jndi.rmi.**;!*";
 
     // System wide object factories filter constructed from the system property
-    private static final ObjectInputFilter GLOBAL =
-            ObjectInputFilter.Config.createFilter(getFilterPropertyValue());
+    private static final ObjectInputFilter GLOBAL_FILTER =
+            ObjectInputFilter.Config.createFilter(getFilterPropertyValue(FACTORIES_FILTER_PROPNAME, DEFAULT_GLOBAL_SP_VALUE));
+
+    // System wide object factories filter constructed from the system property
+    private static final ObjectInputFilter LDAP_FILTER =
+            ObjectInputFilter.Config.createFilter(getFilterPropertyValue(LDAP_FACTORIES_FILTER_PROPNAME, DEFAULT_LDAP_SP_VALUE));
+
+    // System wide object factories filter constructed from the system property
+    private static final ObjectInputFilter RMI_FILTER =
+            ObjectInputFilter.Config.createFilter(getFilterPropertyValue(RMI_FACTORIES_FILTER_PROPNAME, DEFAULT_RMI_SP_VALUE));
 
     // Get security or system property value
-    private static String getFilterPropertyValue() {
-        String propVal = SecurityProperties.privilegedGetOverridable(FACTORIES_FILTER_PROPNAME);
-        return propVal != null ? propVal : DEFAULT_SP_VALUE;
+    private static String getFilterPropertyValue(String propertyName, String defaultValue) {
+        String propVal = SecurityProperties.privilegedGetOverridable(propertyName);
+        return propVal != null ? propVal : defaultValue;
     }
 }
