@@ -3435,10 +3435,7 @@ void IdealLoopTree::adjust_loop_exit_prob(PhaseIdealLoop *phase) {
       if (iff->outcnt() == 2) {         // Ignore dead tests
         Node *bol = iff->in(1);
         if (bol && bol->req() > 1 && bol->in(1) &&
-            ((bol->in(1)->Opcode() == Op_StorePConditional) ||
-             (bol->in(1)->Opcode() == Op_StoreIConditional) ||
-             (bol->in(1)->Opcode() == Op_StoreLConditional) ||
-             (bol->in(1)->Opcode() == Op_CompareAndExchangeB) ||
+            ((bol->in(1)->Opcode() == Op_CompareAndExchangeB) ||
              (bol->in(1)->Opcode() == Op_CompareAndExchangeS) ||
              (bol->in(1)->Opcode() == Op_CompareAndExchangeI) ||
              (bol->in(1)->Opcode() == Op_CompareAndExchangeL) ||
