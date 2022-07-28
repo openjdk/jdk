@@ -43,15 +43,6 @@ frame JavaThread::pd_last_frame() {
 void JavaThread::cache_global_variables() {
   BarrierSet* bs = BarrierSet::barrier_set();
 
-  const bool allow_shared_alloc =
-    Universe::heap()->supports_inline_contig_alloc();
-
-  if (allow_shared_alloc) {
-    _heap_top_addr = (address) Universe::heap()->top_addr();
-  } else {
-    _heap_top_addr = NULL;
-  }
-
   if (bs->is_a(BarrierSet::CardTableBarrierSet)) {
     _card_table_base = (address) (barrier_set_cast<CardTableBarrierSet>(bs)->card_table()->byte_map_base());
   } else {

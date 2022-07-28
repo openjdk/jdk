@@ -196,7 +196,8 @@ public:
     _builtin_count = 0;
     _unregistered_count = 0;
   }
-  DumpTimeClassInfo* find_or_allocate_info_for(InstanceKlass* k, bool dump_in_progress);
+  DumpTimeClassInfo* allocate_info(InstanceKlass* k);
+  DumpTimeClassInfo* get_info(InstanceKlass* k);
   void inc_builtin_count()      { _builtin_count++; }
   void inc_unregistered_count() { _unregistered_count++; }
   void update_counts();
