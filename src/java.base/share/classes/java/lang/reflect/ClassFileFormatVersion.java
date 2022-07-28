@@ -37,6 +37,7 @@ package java.lang.reflect;
  * Specification.
  *
  * @since 20
+ * @see System#getProperties System property {@code java.class.version}
  * @see java.compiler/javax.lang.model.SourceVersion
  */
 @SuppressWarnings("doclint:reference") // cross-module links

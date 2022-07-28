@@ -98,28 +98,56 @@ public enum AccessFlag {
      */
     PUBLIC(Modifier.PUBLIC, true,
            Set.of(Location.CLASS, Location.FIELD, Location.METHOD,
-                  Location.INNER_CLASS)),
+                  Location.INNER_CLASS)) {
+        @Override
+        public Set<Location> locations(ClassFileFormatVersion cffv) {
+            return (cffv == ClassFileFormatVersion.RELEASE_0) ?
+                Location.SET_CLASS_FIELD_METHOD:
+                locations();
+        }
+    },
 
     /**
      * The access flag {@code ACC_PRIVATE}, corresponding to the
      * source modifier {@link Modifier#PRIVATE private} with a mask
      * value of <code>{@value "0x%04x" Modifier#PRIVATE}</code>.
      */
-    PRIVATE(Modifier.PRIVATE, true, Location.SET_FIELD_METHOD_INNER_CLASS),
+    PRIVATE(Modifier.PRIVATE, true, Location.SET_FIELD_METHOD_INNER_CLASS) {
+        @Override
+        public Set<Location> locations(ClassFileFormatVersion cffv) {
+            return (cffv == ClassFileFormatVersion.RELEASE_0) ?
+                Location.SET_FIELD_METHOD:
+                locations();
+       }
+    },
 
     /**
      * The access flag {@code ACC_PROTECTED}, corresponding to the
      * source modifier {@link Modifier#PROTECTED protected} with a mask
      * value of <code>{@value "0x%04x" Modifier#PROTECTED}</code>.
      */
-    PROTECTED(Modifier.PROTECTED, true, Location.SET_FIELD_METHOD_INNER_CLASS),
+    PROTECTED(Modifier.PROTECTED, true, Location.SET_FIELD_METHOD_INNER_CLASS) {
+        @Override
+        public Set<Location> locations(ClassFileFormatVersion cffv) {
+            return (cffv == ClassFileFormatVersion.RELEASE_0) ?
+                Location.SET_FIELD_METHOD:
+                locations();
+        }
+    },
 
     /**
      * The access flag {@code ACC_STATIC}, corresponding to the source
      * modifier {@link Modifier#STATIC static} with a mask value of
      * <code>{@value "0x%04x" Modifier#STATIC}</code>.
      */
-    STATIC(Modifier.STATIC, true, Location.SET_FIELD_METHOD_INNER_CLASS),
+    STATIC(Modifier.STATIC, true, Location.SET_FIELD_METHOD_INNER_CLASS) {
+        @Override
+        public Set<Location> locations(ClassFileFormatVersion cffv) {
+            return (cffv == ClassFileFormatVersion.RELEASE_0) ?
+                Location.SET_FIELD_METHOD:
+                locations();
+        }
+    },
 
     /**
      * The access flag {@code ACC_FINAL}, corresponding to the source
@@ -128,7 +156,14 @@ public enum AccessFlag {
      */
     FINAL(Modifier.FINAL, true,
           Set.of(Location.CLASS, Location.FIELD, Location.METHOD,
-                 Location.INNER_CLASS, Location.METHOD_PARAMETER)),
+                 Location.INNER_CLASS, Location.METHOD_PARAMETER)) {
+        @Override
+        public Set<Location> locations(ClassFileFormatVersion cffv) {
+            return (cffv == ClassFileFormatVersion.RELEASE_0) ?
+                Location.SET_FIELD_METHOD:  // FIXME
+                locations();
+        }
+    },
 
     /**
      * The access flag {@code ACC_SUPER} with a mask value of {@code
@@ -145,14 +180,28 @@ public enum AccessFlag {
      * 0x0020}.
      * @see java.lang.module.ModuleDescriptor#isOpen
      */
-    OPEN(0x0000_0020, false, Set.of(Location.MODULE)),
+    OPEN(0x0000_0020, false, Set.of(Location.MODULE)) {
+        @Override
+        public Set<Location> locations(ClassFileFormatVersion cffv) {
+            return (cffv.compareTo(ClassFileFormatVersion.RELEASE_9) >= 0 ) ?
+                locations():
+                Location.EMPTY_SET;
+        }
+    },
 
     /**
      * The module requires flag {@code ACC_TRANSITIVE} with a mask
      * value of {@code 0x0020}.
      * @see java.lang.module.ModuleDescriptor.Requires.Modifier#TRANSITIVE
      */
-    TRANSITIVE(0x0000_0020, false, Location.SET_MODULE_REQUIRES),
+    TRANSITIVE(0x0000_0020, false, Location.SET_MODULE_REQUIRES) {
+        @Override
+        public Set<Location> locations(ClassFileFormatVersion cffv) {
+            return (cffv.compareTo(ClassFileFormatVersion.RELEASE_9) >= 0 ) ?
+                locations():
+                Location.EMPTY_SET;
+        }
+    },
 
     /**
      * The access flag {@code ACC_SYNCHRONIZED}, corresponding to the
@@ -166,13 +215,20 @@ public enum AccessFlag {
      * value of {@code 0x0040}.
      * @see java.lang.module.ModuleDescriptor.Requires.Modifier#STATIC
      */
-    STATIC_PHASE(0x0000_0040, false, Location.SET_MODULE_REQUIRES),
+    STATIC_PHASE(0x0000_0040, false, Location.SET_MODULE_REQUIRES) {
+        @Override
+        public Set<Location> locations(ClassFileFormatVersion cffv) {
+            return (cffv.compareTo(ClassFileFormatVersion.RELEASE_9) >= 0 ) ?
+                locations():
+                Location.EMPTY_SET;
+        }
+    },
 
-     /**
-      * The access flag {@code ACC_VOLATILE}, corresponding to the
-      * source modifier {@link Modifier#VOLATILE volatile} with a mask
-      * value of <code>{@value "0x%04x" Modifier#VOLATILE}</code>.
-      */
+   /**
+     * The access flag {@code ACC_VOLATILE}, corresponding to the
+     * source modifier {@link Modifier#VOLATILE volatile} with a mask
+     * value of <code>{@value "0x%04x" Modifier#VOLATILE}</code>.
+     */
     VOLATILE(Modifier.VOLATILE, true, Location.SET_FIELD),
 
     /**
@@ -180,7 +236,14 @@ public enum AccessFlag {
      * <code>{@value "0x%04x" Modifier#BRIDGE}</code>
      * @see Method#isBridge()
      */
-    BRIDGE(Modifier.BRIDGE, false, Location.SET_METHOD),
+    BRIDGE(Modifier.BRIDGE, false, Location.SET_METHOD) {
+        @Override
+        public Set<Location> locations(ClassFileFormatVersion cffv) {
+            return (cffv.compareTo(ClassFileFormatVersion.RELEASE_5) >= 0 ) ?
+                locations():
+                Location.EMPTY_SET;
+        }
+    },
 
     /**
      * The access flag {@code ACC_TRANSIENT}, corresponding to the
@@ -194,7 +257,14 @@ public enum AccessFlag {
      <code>{@value "0x%04x" Modifier#VARARGS}</code>.
      * @see Executable#isVarArgs()
      */
-    VARARGS(Modifier.VARARGS, false, Location.SET_METHOD),
+    VARARGS(Modifier.VARARGS, false, Location.SET_METHOD) {
+        @Override
+        public Set<Location> locations(ClassFileFormatVersion cffv) {
+            return (cffv.compareTo(ClassFileFormatVersion.RELEASE_5) >= 0 ) ?
+                locations():
+                Location.EMPTY_SET;
+        }
+    },
 
     /**
      * The access flag {@code ACC_NATIVE}, corresponding to the source
@@ -208,7 +278,14 @@ public enum AccessFlag {
      * {@code 0x0200}.
      * @see Class#isInterface()
      */
-    INTERFACE(Modifier.INTERFACE, false, Location.SET_CLASS_INNER_CLASS),
+    INTERFACE(Modifier.INTERFACE, false, Location.SET_CLASS_INNER_CLASS) {
+        @Override
+        public Set<Location> locations(ClassFileFormatVersion cffv) {
+            return (cffv.compareTo(ClassFileFormatVersion.RELEASE_0) == 0 ) ?
+                Location.SET_CLASS:
+                locations();
+        }
+    },
 
     /**
      * The access flag {@code ACC_ABSTRACT}, corresponding to the
@@ -216,7 +293,14 @@ public enum AccessFlag {
      * value of <code>{@value "0x%04x" Modifier#ABSTRACT}</code>.
      */
     ABSTRACT(Modifier.ABSTRACT, true,
-             Set.of(Location.CLASS, Location.METHOD, Location.INNER_CLASS)),
+             Set.of(Location.CLASS, Location.METHOD, Location.INNER_CLASS)) {
+        @Override
+        public Set<Location> locations(ClassFileFormatVersion cffv) {
+            return (cffv.compareTo(ClassFileFormatVersion.RELEASE_0) == 0 ) ?
+                Location.SET_CLASS_METHOD:
+                locations();
+        }
+    },
 
     /**
      * The access flag {@code ACC_STRICT}, corresponding to the source
@@ -228,7 +312,15 @@ public enum AccessFlag {
      * major versions 46 through 60, inclusive (JVMS {@jvms 4.6}),
      * corresponding to Java SE 1.2 through 16.
      */
-    STRICT(Modifier.STRICT, true, Location.SET_METHOD),
+    STRICT(Modifier.STRICT, true, Location.SET_METHOD) {
+        @Override
+        public Set<Location> locations(ClassFileFormatVersion cffv) {
+            return (cffv.compareTo(ClassFileFormatVersion.RELEASE_2)  >= 0 &&
+                    cffv.compareTo(ClassFileFormatVersion.RELEASE_16) <= 0) ?
+                locations():
+                Location.EMPTY_SET;
+        }
+    },
 
     /**
      * The access flag {@code ACC_SYNTHETIC} with a mask value of
@@ -241,14 +333,21 @@ public enum AccessFlag {
               Set.of(Location.CLASS, Location.FIELD, Location.METHOD,
                      Location.INNER_CLASS, Location.METHOD_PARAMETER,
                      Location.MODULE, Location.MODULE_REQUIRES,
-                     Location.MODULE_EXPORTS, Location.MODULE_OPENS)),
+                     Location.MODULE_EXPORTS, Location.MODULE_OPENS)), // fixme
 
     /**
      * The access flag {@code ACC_ANNOTATION} with a mask value of
      * <code>{@value "0x%04x" Modifier#ANNOTATION}</code>.
      * @see Class#isAnnotation()
      */
-    ANNOTATION(Modifier.ANNOTATION, false, Location.SET_CLASS_INNER_CLASS),
+    ANNOTATION(Modifier.ANNOTATION, false, Location.SET_CLASS_INNER_CLASS) {
+        @Override
+        public Set<Location> locations(ClassFileFormatVersion cffv) {
+            return (cffv.compareTo(ClassFileFormatVersion.RELEASE_5) >= 0 ) ?
+                locations():
+                Location.EMPTY_SET;
+        }
+    },
 
     /**
      * The access flag {@code ACC_ENUM} with a mask value of
@@ -256,7 +355,14 @@ public enum AccessFlag {
      * @see Class#isEnum()
      */
     ENUM(Modifier.ENUM, false,
-         Set.of(Location.CLASS, Location.FIELD, Location.INNER_CLASS)),
+         Set.of(Location.CLASS, Location.FIELD, Location.INNER_CLASS)) {
+        @Override
+        public Set<Location> locations(ClassFileFormatVersion cffv) {
+            return (cffv.compareTo(ClassFileFormatVersion.RELEASE_5) >= 0 ) ?
+                locations():
+                Location.EMPTY_SET;
+        }
+    },
 
     /**
      * The access flag {@code ACC_MANDATED} with a mask value of
@@ -265,13 +371,20 @@ public enum AccessFlag {
     MANDATED(Modifier.MANDATED, false,
              Set.of(Location.METHOD_PARAMETER,
                     Location.MODULE, Location.MODULE_REQUIRES,
-                    Location.MODULE_EXPORTS, Location.MODULE_OPENS)),
+                    Location.MODULE_EXPORTS, Location.MODULE_OPENS)), // fixme
 
     /**
      * The access flag {@code ACC_MODULE} with a mask value of {@code
      * 0x8000}.
      */
-    MODULE(0x0000_8000, false, Location.SET_CLASS)
+    MODULE(0x0000_8000, false, Location.SET_CLASS) {
+        @Override
+        public Set<Location> locations(ClassFileFormatVersion cffv) {
+            return (cffv.compareTo(ClassFileFormatVersion.RELEASE_9) >= 0 ) ?
+                locations():
+                Location.EMPTY_SET;
+        }
+    }
     ;
 
     // May want to override toString for a different enum constant ->
@@ -317,13 +430,10 @@ public enum AccessFlag {
      * {@return kinds of constructs the flag can be applied to in the
      * given class file format version}
      * @param cffv the class file format version to use
+     * @throws NullPointerException if the parameter is {@code null}
      */
     public Set<Location> locations(ClassFileFormatVersion cffv) {
-        if (cffv == ClassFileFormatVersion.latest()) {
-            return locations();
-        } else {
-            throw new UnsupportedOperationException(); // TOOD
-        }
+        return locations; // Default to supported unchanging locations
     }
 
     /**
@@ -416,6 +526,13 @@ public enum AccessFlag {
         MODULE_OPENS;
 
         // Repeated sets of locations used by AccessFlag constants
+        private static final Set<Location> EMPTY_SET = Set.of();
+        private static final Set<Location> SET_CLASS_FIELD_METHOD =
+            Set.of(Location.CLASS, Location.FIELD, Location.METHOD);
+        private static final Set<Location> SET_CLASS_METHOD =
+            Set.of(Location.CLASS, Location.METHOD);
+        private static final Set<Location> SET_FIELD_METHOD =
+            Set.of(Location.FIELD, Location.METHOD);
         private static final Set<Location> SET_FIELD_METHOD_INNER_CLASS =
             Set.of(FIELD, METHOD, INNER_CLASS);
         private static final Set<Location> SET_METHOD = Set.of(METHOD);
