@@ -219,7 +219,7 @@ public class BasicSplitPaneDivider extends Container
      * Sets the size of the divider to {@code newSize}. That is
      * the width if the splitpane is {@code HORIZONTAL_SPLIT}, or
      * the height of {@code VERTICAL_SPLIT}.
-     * @implNote Divider sizes {@code newSize < 1} are ignored.
+     * Divider sizes {@code newSize < 1} are ignored.
      *
      * @param newSize a new size
      */
