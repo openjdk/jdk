@@ -77,14 +77,6 @@
  * <p>The following implementation specific system properties are supported by the
  * default LDAP Naming Service Provider implementation in the JDK:
  * <ul>
- *     <li>{@systemProperty com.sun.jndi.ldap.object.trustSerialData}:
- *          <br>The value of this system property is the string representation of a boolean value
- *          which allows to control the deserialization of java objects from the 'javaSerializedData'
- *          LDAP attribute. To prevent the deserialization of java objects from the 'javaSerializedData'
- *          attribute, the system property value can be set to 'false'.
- *          <br>If the property is not specified then the deserialization of java objects
- *          from the 'javaSerializedData' attribute is allowed.
- *     </li>
  *     <li>{@systemProperty jdk.jndi.object.factoriesFilter}:
  *          <br>The value of this system property defines a filter used by
  *          the JNDI runtime implementation to control the set of object factory classes which will
@@ -97,6 +89,15 @@
  *          RMI Provider</a>.
  *          <br>The default value allows any object factory class specified by the reference
  *          instance to recreate the referenced object.
+ *     </li>
+ *     <li>{@systemProperty com.sun.jndi.ldap.object.trustSerialData}:
+ *          <br>The value of this system property is the string representation of a boolean value
+ *          which allows to control the deserialization of java objects from the {@code javaSerializedData} LDAP
+ *          attribute, and reconstruction of RMI references from {@code javaRemoteLocation} LDAP attribute.
+ *          To allow the deserialization or reconstruction of java objects from {@code javaSerializedData} or
+ *          {@code javaRemoteLocation} attributes, the system property value can be set to {@code true}.
+ *          <br>If the property is not specified then the deserialization of java objects
+ *          from the {@code javaSerializedData} or the {@code javaRemoteLocation} attributes is not allowed.
  *     </li>
  * </ul>
  * <p>Other providers may define additional properties in their module description:
