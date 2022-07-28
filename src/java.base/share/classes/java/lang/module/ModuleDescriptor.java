@@ -1467,13 +1467,14 @@ public class ModuleDescriptor
      * <cite>The Java Language Specification</cite>. </p>
      *
      * <p> Example usage: </p>
-     * <pre>{@code    ModuleDescriptor descriptor = ModuleDescriptor.newModule("stats.core")
+     * {@snippet :
+     *     ModuleDescriptor descriptor = ModuleDescriptor.newModule("stats.core")
      *         .requires("java.base")
      *         .exports("org.acme.stats.core.clustering")
      *         .exports("org.acme.stats.core.regression")
      *         .packages(Set.of("org.acme.stats.core.internal"))
      *         .build();
-     * }</pre>
+     * }
      *
      * @apiNote A {@code Builder} checks the components and invariants as
      * components are added to the builder. The rationale for this is to detect
