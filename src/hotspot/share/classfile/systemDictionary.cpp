@@ -1649,6 +1649,10 @@ void SystemDictionary::initialize(TRAPS) {
   _invoke_method_table = new SymbolPropertyTable(_invoke_method_size);
   _pd_cache_table = new ProtectionDomainCacheTable(defaultProtectionDomainCacheSize);
 
+#if INCLUDE_CDS
+  SystemDictionaryShared::initialize();
+#endif
+
   // Resolve basic classes
   vmClasses::resolve_all(CHECK);
   // Resolve classes used by archived heap objects

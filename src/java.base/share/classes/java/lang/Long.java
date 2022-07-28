@@ -1901,6 +1901,7 @@ public final class Long extends Number
      *     specified {@code long} value.
      * @since 1.5
      */
+    @IntrinsicCandidate
     public static long reverse(long i) {
         // HD, Figure 7-1
         i = (i & 0x5555555555555555L) << 1 | (i >>> 1) & 0x5555555555555555L;

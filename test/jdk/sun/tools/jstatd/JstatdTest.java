@@ -128,7 +128,6 @@ public final class JstatdTest {
      */
     private OutputAnalyzer runJps() throws Exception {
         JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("jps");
-        launcher.addVMArgs(Utils.getFilteredTestJavaOpts("-XX:+UsePerfData"));
         launcher.addVMArg("-XX:+UsePerfData");
         launcher.addToolArg(getDestination());
 
@@ -252,6 +251,7 @@ public final class JstatdTest {
      */
     private String[] getJstatdCmd() throws Exception {
         JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("jstatd");
+        launcher.addVMArgs(Utils.getTestJavaOpts());
         launcher.addVMArg("-XX:+UsePerfData");
         String testSrc = System.getProperty("test.src");
         if (port != null) {
