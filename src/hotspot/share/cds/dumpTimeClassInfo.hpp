@@ -40,7 +40,6 @@ class DumpTimeClassInfo: public CHeapObj<mtClass> {
   bool                         _excluded;
   bool                         _is_early_klass;
   bool                         _has_checked_exclusion;
-public:
   struct DTLoaderConstraint {
     Symbol* _name;
     char _loader_type1;
@@ -49,6 +48,24 @@ public:
       _name->increment_refcount();
     }
     DTLoaderConstraint() : _name(NULL), _loader_type1('0'), _loader_type2('0') {}
+    DTLoaderConstraint(const DTLoaderConstraint& src) {
+      operator=(src);
+    }
+    void operator=(const DTLoaderConstraint& src) {
+      _name = src._name;
+      if (_name != NULL) {
+        _name->increment_refcount();
+      }
+
+      _loader_type1 = src._loader_type1;
+      _loader_type2 = src._loader_type2;
+    }
+    ~DTLoaderConstraint() {
+      if (_name != NULL) {
+        _name->decrement_refcount();
+      }
+    }
+
     bool equals(const DTLoaderConstraint& t) {
       return t._name == _name &&
              ((t._loader_type1 == _loader_type1 && t._loader_type2 == _loader_type2) ||
@@ -64,8 +81,31 @@ public:
       _name->increment_refcount();
       _from_name->increment_refcount();
     }
+    DTVerifierConstraint(const DTVerifierConstraint& src) {
+      operator=(src);
+    }
+    void operator=(const DTVerifierConstraint& src) {
+      _name = src._name;
+      _from_name = src._from_name;
+      if (_name != NULL) {
+        _name->increment_refcount();
+      }
+      if (_from_name != NULL) {
+        _from_name->increment_refcount();
+      }
+    }
+
+    ~DTVerifierConstraint() {
+      if (_name != NULL) {
+        _name->decrement_refcount();
+      }
+      if (_from_name != NULL) {
+        _from_name->decrement_refcount();
+      }
+    }
   };
 
+public:
   InstanceKlass*               _klass;
   InstanceKlass*               _nest_host;
   bool                         _failed_verification;
@@ -94,6 +134,8 @@ public:
     _loader_constraints = NULL;
     _enum_klass_static_fields = NULL;
   }
+  DumpTimeClassInfo(const DumpTimeClassInfo& src);
+  ~DumpTimeClassInfo();
 
   void add_verification_constraint(InstanceKlass* k, Symbol* name,
          Symbol* from_name, bool from_field_is_protected, bool from_is_array, bool from_is_object);
@@ -162,7 +204,6 @@ public:
   InstanceKlass* nest_host() const                  { return _nest_host; }
   void set_nest_host(InstanceKlass* nest_host)      { _nest_host = nest_host; }
 
-  DumpTimeClassInfo clone();
   size_t runtime_info_bytesize() const;
 };
 

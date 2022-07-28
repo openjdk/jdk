@@ -515,35 +515,6 @@ void SystemDictionaryShared::init_dumptime_info(InstanceKlass* k) {
 
 void SystemDictionaryShared::remove_dumptime_info(InstanceKlass* k) {
   MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
-  DumpTimeClassInfo* p = _dumptime_table->get(k);
-  if (p == NULL) {
-    return;
-  }
-  if (p->_verifier_constraints != NULL) {
-    for (int i = 0; i < p->_verifier_constraints->length(); i++) {
-      DumpTimeClassInfo::DTVerifierConstraint constraint = p->_verifier_constraints->at(i);
-      if (constraint._name != NULL ) {
-        constraint._name->decrement_refcount();
-      }
-      if (constraint._from_name != NULL ) {
-        constraint._from_name->decrement_refcount();
-      }
-    }
-    FREE_C_HEAP_ARRAY(DumpTimeClassInfo::DTVerifierConstraint, p->_verifier_constraints);
-    p->_verifier_constraints = NULL;
-    FREE_C_HEAP_ARRAY(char, p->_verifier_constraint_flags);
-    p->_verifier_constraint_flags = NULL;
-  }
-  if (p->_loader_constraints != NULL) {
-    for (int i = 0; i < p->_loader_constraints->length(); i++) {
-      DumpTimeClassInfo::DTLoaderConstraint ld =  p->_loader_constraints->at(i);
-      if (ld._name != NULL) {
-        ld._name->decrement_refcount();
-      }
-    }
-    FREE_C_HEAP_ARRAY(DumpTimeClassInfo::DTLoaderConstraint, p->_loader_constraints);
-    p->_loader_constraints = NULL;
-  }
   _dumptime_table->remove(k);
 }
 
@@ -759,16 +730,11 @@ void SystemDictionaryShared::add_to_dump_time_lambda_proxy_class_dictionary(Lamb
                                                            InstanceKlass* proxy_klass) {
   assert_lock_strong(DumpTimeTable_lock);
 
-  DumpTimeLambdaProxyClassInfo* lambda_info = _dumptime_lambda_proxy_class_dictionary->get(key);
-  if (lambda_info == NULL) {
-    DumpTimeLambdaProxyClassInfo info;
-    info.add_proxy_klass(proxy_klass);
-    _dumptime_lambda_proxy_class_dictionary->put(key, info);
-    //lambda_info = _dumptime_lambda_proxy_class_dictionary->get(key);
-    //assert(lambda_info->_proxy_klass == proxy_klass, "must be"); // debug only -- remove
+  bool created;
+  DumpTimeLambdaProxyClassInfo* info = _dumptime_lambda_proxy_class_dictionary->put_if_absent(key, &created);
+  info->add_proxy_klass(proxy_klass);
+  if (created) {
     ++_dumptime_lambda_proxy_class_dictionary->_count;
-  } else {
-    lambda_info->add_proxy_klass(proxy_klass);
   }
 }
 
@@ -1484,7 +1450,7 @@ class CloneDumpTimeClassTable: public StackObj {
   void do_entry(InstanceKlass* k, DumpTimeClassInfo& info) {
     if (!info.is_excluded()) {
       bool created;
-      _cloned_table->put_if_absent(k, info.clone(), &created);
+      _cloned_table->put_if_absent(k, info, &created);
     }
   }
 };
@@ -1505,7 +1471,7 @@ class CloneDumpTimeLambdaProxyClassTable: StackObj {
     bool created;
     // make copies then store in _clone_table
     LambdaProxyClassKey keyCopy = key;
-    _cloned_table->put_if_absent(keyCopy, info.clone(), &created);
+    _cloned_table->put_if_absent(keyCopy, info, &created);
     ++ _cloned_table->_count;
     return true; // keep on iterating
   }
