@@ -90,7 +90,8 @@ public final class HmacMD5KeyGenerator extends KeyGeneratorSpi {
     protected void engineInit(int keysize, SecureRandom random) {
 
         if (keysize <= 0) {
-            throw new IllegalArgumentException("keysize must not be <= 0 for SunJCE");
+            throw new IllegalArgumentException("keysize must not be <= 0 for " +
+                    "SunJCE");
         }
 
         this.keysize = (keysize+7) / 8;
