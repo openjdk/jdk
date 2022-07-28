@@ -30,6 +30,7 @@
  * @library /vmTestbase
  *          /test/lib
  * @build nsk.jvmti.RedefineClasses.StressRedefine
+ * @requires vm.jvmti & vm.continuations
  * @run main/othervm/native ExecDriver --java
  *      --enable-preview
  *      -agentlib:stressRedefine

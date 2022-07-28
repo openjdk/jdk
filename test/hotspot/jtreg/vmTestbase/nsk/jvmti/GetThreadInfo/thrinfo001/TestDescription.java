@@ -44,6 +44,7 @@
  * @library /vmTestbase
  *          /test/lib
  * @build nsk.jvmti.GetThreadInfo.thrinfo001
+ * @requires vm.jvmti & vm.continuations
  * @run main/othervm/native ExecDriver --java
  *      --enable-preview
  *      -agentlib:thrinfo001
