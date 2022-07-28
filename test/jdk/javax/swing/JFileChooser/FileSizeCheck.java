@@ -40,6 +40,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.Path;
 import javax.swing.JFileChooser;
+import java.io.RandomAccessFile;
 
 public class FileSizeCheck {
 
@@ -51,23 +52,43 @@ public class FileSizeCheck {
                     "Test 3: If the size of 999-KB-File shows 999 KB\n" +
                     "Test 4: If the size of 1000-KB-File shows 1 MB\n" +
                     "Test 5: If the size of 2047-Byte-File shows 2 KB\n" +
-                    "Test 6: If the size of TEST-EMPTY-FILE shows 0 KB\n\n" +
+                    "Test 6: If the size of Empty-File shows 0 KB\n\n" +
                            " press PASS.\n\n";
 
     public static void test() {
         JFileChooser fc = new JFileChooser();
+        Path dir = Paths.get(System.getProperty("test.src"));
+        String [] tempFilesName = {"2.5-KB-File","2.8-MB-File","999-KB-File","1000-KB-File","2047-Byte-File","Empty-File"};
+        int [] tempFilesSize = {2500, 2800000,999000,1000000,2047,0};
+        Path [] tempFilePaths = new Path[tempFilesName.length];
+        for (int i = 0 ; i < tempFilesName.length ; i++) {
+            tempFilePaths[i] = dir.resolve(tempFilesName[i]);
+        }
+
+        // create temp files
         try {
-            Path dir = Paths.get(System.getProperty("test.src"));
-            // create empty file
-            Path emptyFile = dir.resolve("TEST-EMPTY-FILE.txt");
-            if (!Files.exists(emptyFile)) {
-                Files.createFile(emptyFile);
+            for (int i = 0 ; i < tempFilePaths.length ; i++) {
+                if (!Files.exists(tempFilePaths[i])){
+                    RandomAccessFile f = new RandomAccessFile(tempFilePaths[i].toString(), "rw");
+                    f.setLength(tempFilesSize[i]);
+                    f.close();
+                }
             }
             fc.setCurrentDirectory(dir.toFile());
         } catch (IOException ex) {
             throw new RuntimeException(ex);
         }
+
         fc.showOpenDialog(null);
+
+        // delete temp files
+        try {
+            for (int i = 0 ; i < tempFilePaths.length ; ++i) {
+                Files.deleteIfExists(Paths.get(tempFilePaths[i].toString()));
+            }
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
+        }
     }
 
     public static void main(String args[]) throws Exception {
