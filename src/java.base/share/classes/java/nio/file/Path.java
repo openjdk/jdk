@@ -258,14 +258,14 @@ public interface Path
 
     /**
      * Returns the file name extension of this path as a {@code String}. The
-     * extension is defined to be the portion of the {@code String}
-     * representation of the file name after the last dot ('.'). All leading
-     * dots are ignored. If the extension is missing, then an
-     * {@link String#isEmpty() empty} {@code String} ({@code ""}) is returned.
-     * This will occur if the path has zero elements ({@link #getFileName()}
-     * returns {@code null}), the file name string does not contain a dot, or
-     * only the first character is a dot. If the last character is a dot, the
-     * extension is the empty string.
+     * extension is defined to be the portion of the
+     * {@link #getFileName file name} string after the last dot ('.'). All
+     * leading dots in the string are ignored. If the extension is missing,
+     * then {@code null} is returned. This will occur if the path has zero
+     * elements ({@link #getFileName()} returns {@code null}), the file name
+     * string does not contain a dot, or only the first character is a dot.
+     * If the last character is a dot but some other character is not, then
+     * the extension is the {@link String#isEmpty() empty} string.
      *
      * @implSpec
      * The default implementation is equivalent for this path to:
@@ -286,19 +286,24 @@ public interface Path
     default String getExtension() {
         Path fileName = getFileName();
         if (fileName == null)
-            return "";
+            return null;
 
         String fileNameString = fileName.toString();
         int length = fileNameString.length();
 
-        // A file name string of length unity has a null extension
+        // An empty or unity length file name string has a null extension
         if (length > 1) {
             int lastDotIndex = fileNameString.lastIndexOf('.');
-            // Indeterminate if no dot or only at first index
+
+            // Indeterminate if no dot or only the first character is a dot
             if (lastDotIndex > 0) {
-                return lastDotIndex == length - 1 ?
-                    "" : // empty string if last dot at last index
-                    fileNameString.substring(lastDotIndex + 1);
+                if (lastDotIndex == length - 1) {
+                    // null if all dots, otherwise empty
+                    return fileNameString.matches("\\.{" + length + "}") ?
+                        null : "";
+                } else {
+                    return fileNameString.substring(lastDotIndex + 1);
+                }
             }
         }
 

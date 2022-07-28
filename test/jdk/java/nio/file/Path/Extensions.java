@@ -43,11 +43,12 @@ public class Extensions {
     @DataProvider
     static Object[][] getProvider() {
         Object[][] pairs = {
+            {"",               null},
             {".",              null},
-            {"..",             ""},
-            {"...",            ""},
-            {"....",           ""},
-            {".....",          ""},
+            {"..",             null},
+            {"...",            null},
+            {"....",           null},
+            {".....",          null},
             {"aa",             null},
             {"a.",             ""},
             {".a",             null},
@@ -56,6 +57,7 @@ public class Extensions {
             {"....a",          "a"},
             {".a.b",           "b"},
             {"...a.b",         "b"},
+            {"...a.b.",        ""},
             {"..foo",          "foo"},
             {"foo.",           ""},
             {"test.",          ""},
