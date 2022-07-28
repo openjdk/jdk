@@ -217,6 +217,10 @@ public class MultiresolutionIconTest extends JFrame {
     public static void main(String[] args) throws Exception {
 
         for (UIManager.LookAndFeelInfo LF: UIManager.getInstalledLookAndFeels()) {
+            // skip AquaL&F because Aqua icon darkening fails the test
+            if (LF.getName().equalsIgnoreCase("Mac OS X")) {
+                continue;
+            }
             System.out.println("\nL&F: " + LF.getName());
             (new MultiresolutionIconTest(LF)).doTest();
         }

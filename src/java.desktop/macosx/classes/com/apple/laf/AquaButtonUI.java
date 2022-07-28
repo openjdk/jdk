@@ -408,6 +408,11 @@ public class AquaButtonUI extends BasicButtonUI implements Sizeable {
             }
         } else if (model.isPressed() && model.isArmed()) {
             tmpIcon = b.getPressedIcon();
+            if (tmpIcon == null) {
+                if (icon instanceof ImageIcon) {
+                    tmpIcon = new ImageIcon(AquaUtils.generateSelectedDarkImage(((ImageIcon) icon).getImage()));
+                }
+            }
         } else if (b.isRolloverEnabled() && model.isRollover()) {
             if (model.isSelected()) {
                 tmpIcon = b.getRolloverSelectedIcon();
