@@ -7,11 +7,11 @@ import com.sun.management.MemoryMXBean;
 
 /*
  * @test
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseConcLivenessEstimate -XX:ConcLivenessEstimateSeconds=7 -XX:+UseG1GC -XX:InitiatingHeapOccupancyPercent=0 -XX:+ExplicitGCInvokesConcurrent TestConcurrentLivenessWhenGCAlwaysRuns
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseConcLivenessEstimate -XX:ConcLivenessEstimateSeconds=7 -XX:+UseShenandoahGC -XX:+ExplicitGCInvokesConcurrent TestConcurrentLivenessWhenGCAlwaysRuns
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseConcLivenessEstimate -XX:ConcLivenessEstimateSeconds=7 -XX:+UseZGC -XX:+ExplicitGCInvokesConcurrent TestConcurrentLivenessWhenGCAlwaysRuns
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseConcLivenessEstimate -XX:ConcLivenessEstimateSeconds=7 -XX:+UseG1GC -XX:InitiatingHeapOccupancyPercent=0 -XX:+ExplicitGCInvokesConcurrent -XX:ConcLivenessThreads=5 TestConcurrentLivenessWhenGCAlwaysRunsMultipleWorkers
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseConcLivenessEstimate -XX:ConcLivenessEstimateSeconds=7 -XX:+UseShenandoahGC -XX:+ExplicitGCInvokesConcurrent -XX:ConcLivenessThreads=5 TestConcurrentLivenessWhenGCAlwaysRunsMultipleWorkers
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseConcLivenessEstimate -XX:ConcLivenessEstimateSeconds=7 -XX:+UseZGC -XX:+ExplicitGCInvokesConcurrent -XX:ConcLivenessThreads=5 TestConcurrentLivenessWhenGCAlwaysRunsMultipleWorkers
  */
-public class TestConcurrentLivenessWhenGCAlwaysRuns {
+public class TestConcurrentLivenessWhenGCAlwaysRunsMultipleWorkers {
 
     public static void main(String[] args) throws Exception {
 

@@ -9,8 +9,11 @@ import java.lang.Math;
 /*
  * @test
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseConcLivenessEstimate -XX:ConcLivenessEstimateSeconds=3 -XX:+UseG1GC -XX:InitiatingHeapOccupancyPercent=100 TestConcurrentLivenessWhenMemoryUsageChanges
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseConcLivenessEstimate -XX:ConcLivenessEstimateSeconds=3 -XX:+UseG1GC -XX:InitiatingHeapOccupancyPercent=100 -XX:ConcLivenessThreads=5 TestConcurrentLivenessWhenMemoryUsageChanges
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseConcLivenessEstimate -XX:ConcLivenessEstimateSeconds=3 -XX:+UseShenandoahGC -XX:ShenandoahGuaranteedGCInterval=100000 TestConcurrentLivenessWhenMemoryUsageChanges
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseConcLivenessEstimate -XX:ConcLivenessEstimateSeconds=3 -XX:+UseShenandoahGC -XX:ShenandoahGuaranteedGCInterval=100000 -XX:ConcLivenessThreads=5 TestConcurrentLivenessWhenMemoryUsageChanges
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseConcLivenessEstimate -XX:ConcLivenessEstimateSeconds=3 -XX:+UseZGC -XX:ZCollectionInterval=100 TestConcurrentLivenessWhenMemoryUsageChanges
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseConcLivenessEstimate -XX:ConcLivenessEstimateSeconds=3 -XX:+UseZGC -XX:ZCollectionInterval=100 -XX:ConcLivenessThreads=5 TestConcurrentLivenessWhenMemoryUsageChanges
  */
 public class TestConcurrentLivenessWhenMemoryUsageChanges {
     
@@ -56,7 +59,7 @@ public class TestConcurrentLivenessWhenMemoryUsageChanges {
         if (getError(decHeap.getUsed(), incHeap.getUsed() - allocationSize) > epsilon) {
             throw new RuntimeException(
                 "Expected ConcLivenessEstimate to decrease but error of " + 
-                getError(incHeap.getUsed(), initHeap.getUsed() + allocationSize) +
+                getError(decHeap.getUsed(), incHeap.getUsed() - allocationSize) +
                 " is not within allowed error of " + epsilon
             );
         }

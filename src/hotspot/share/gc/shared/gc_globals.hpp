@@ -701,6 +701,9 @@
           "The number of seconds between the end of producing a liveness"   \
           " estimate and beginning the next.")                              \
                                                                             \
+  product(intx, ConcLivenessThreads, 1, EXPERIMENTAL,                       \
+          "The number of parallel marking threads.")                        \
+                                                                            \
   product(bool, ConcLivenessVerify, false, EXPERIMENTAL,                    \
           "Compare concurrent liveness estimation with liveness computed"   \
           " on a safepoint. Concurrent estimation does NOT use barriers,"   \
