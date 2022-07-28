@@ -101,8 +101,7 @@ void DumpTimeClassInfo::add_verification_constraint(InstanceKlass* k, Symbol* na
   }
   GrowableArray<DTVerifierConstraint>* vc_array = _verifier_constraints;
   for (int i = 0; i < vc_array->length(); i++) {
-    DTVerifierConstraint* p = vc_array->adr_at(i);
-    if (name == p->_name && from_name == p->_from_name) {
+    if (vc_array->at(i).equals(name, from_name)) {
       return;
     }
   }
@@ -146,7 +145,7 @@ void DumpTimeClassInfo::record_linking_constraint(Symbol* name, Handle loader1, 
   char lt2 = get_loader_type_by(loader2());
   DTLoaderConstraint lc(name, lt1, lt2);
   for (int i = 0; i < _loader_constraints->length(); i++) {
-    DTLoaderConstraint dt = _loader_constraints->at(i);
+    DTLoaderConstraint& dt = _loader_constraints->at(i);
     if (lc.equals(dt)) {
       if (log.is_enabled()) {
         ResourceMark rm;
