@@ -366,6 +366,7 @@
   declare_unsigned_integer_type(size_t)                                   \
   declare_integer_type(intx)                                              \
   declare_unsigned_integer_type(uintx)                                    \
+  declare_integer_type(CompLevel)                                         \
                                                                           \
   declare_toplevel_type(BasicLock)                                        \
   declare_toplevel_type(CompilerToVM)                                     \
