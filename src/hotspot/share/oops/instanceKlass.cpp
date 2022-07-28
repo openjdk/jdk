@@ -2334,8 +2334,8 @@ inline DependencyContext InstanceKlass::dependencies() {
   return dep_context;
 }
 
-int InstanceKlass::mark_dependent_nmethods(KlassDepChange& changes, Deoptimization::MarkFn mark_fn) {
-  return dependencies().mark_dependent_nmethods(changes, mark_fn);
+void InstanceKlass::mark_dependent_nmethods(KlassDepChange& changes, DeoptimizationContext* deopt) {
+  dependencies().mark_dependent_nmethods(changes, deopt);
 }
 
 void InstanceKlass::add_dependent_nmethod(nmethod* nm) {
@@ -3319,20 +3319,17 @@ bool InstanceKlass::remove_osr_nmethod(nmethod* n) {
   return found;
 }
 
-int InstanceKlass::mark_osr_nmethods(const Method* m, Deoptimization::MarkFn mark_fn) {
+void InstanceKlass::mark_osr_nmethods(const Method* m, DeoptimizationContext* deopt) {
   MutexLocker ml(CompiledMethod_lock->owned_by_self() ? NULL : CompiledMethod_lock,
                  Mutex::_no_safepoint_check_flag);
   nmethod* osr = osr_nmethods_head();
-  int found = 0;
   while (osr != NULL) {
     assert(osr->is_osr_method(), "wrong kind of nmethod found in chain");
     if (osr->method() == m) {
-      mark_fn((CompiledMethod*)osr);
-      found++;
+      deopt->mark(osr, true /* inc_recompile_count */);
     }
     osr = osr->osr_link();
   }
-  return found;
 }
 
 nmethod* InstanceKlass::lookup_osr_nmethod(const Method* m, int bci, int comp_level, bool match_level) const {

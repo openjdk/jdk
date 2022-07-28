@@ -141,7 +141,7 @@ public:
 class CompiledMethod : public CodeBlob {
   friend class VMStructs;
   friend class NMethodSweeper;
-  friend class Deoptimization;
+  friend class DeoptimizationContext;
 
   void init_defaults();
 protected:

@@ -784,29 +784,18 @@ WB_END
 
 WB_ENTRY(jint, WB_DeoptimizeMethod(JNIEnv* env, jobject o, jobject method, jboolean is_osr))
   jmethodID jmid = reflected_method_to_jmid(thread, env, method);
-  int result = 0;
-  CHECK_JNI_EXCEPTION_(env, result);
+  CHECK_JNI_EXCEPTION_(env, 0);
   MutexLocker mu(Compile_lock);
+  DeoptimizationContext deopt;
   methodHandle mh(THREAD, Method::checked_resolve_jmethod_id(jmid));
-  struct DeoptimizeMethodClosure : DeoptimizationMarkerClosure {
-    jboolean _is_osr;
-    methodHandle& _mh;
-    int& _result;
-    DeoptimizeMethodClosure(jboolean is_osr, methodHandle& mh, int& result)
-      : _is_osr(is_osr), _mh(mh), _result(result) {}
-    void marker_do(Deoptimization::MarkFn mark_fn) override {
-      if (_is_osr) {
-        _result = _mh->mark_osr_nmethods(mark_fn);
-      } else if (_mh->code() != NULL) {
-        mark_fn(_mh->code());
-        ++_result;
-      }
-      _result += Deoptimization::mark_dependents(_mh(), mark_fn);
-    }
-  };
-  DeoptimizeMethodClosure closure(is_osr, mh, result);
-  Deoptimization::mark_and_deoptimize(closure);
-  return result;
+  if (is_osr) {
+    mh->mark_osr_nmethods(&deopt);
+  } else if (mh->code() != NULL) {
+    deopt.mark(mh->code(), true /* inc_recompile_count */);
+  }
+  Deoptimization::mark_dependents(mh(), &deopt);
+  deopt.deoptimize();
+  return (jint)deopt.marked();
 WB_END
 
 WB_ENTRY(jboolean, WB_IsMethodCompiled(JNIEnv* env, jobject o, jobject method, jboolean is_osr))

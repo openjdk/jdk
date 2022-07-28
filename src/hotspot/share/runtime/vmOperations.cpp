@@ -117,7 +117,6 @@ void VM_DeoptimizeFrame::doit() {
 #ifndef PRODUCT
 
 void VM_DeoptimizeAll::doit() {
-  DeoptimizationMarker dm;
   JavaThreadIteratorWithHandle jtiwh;
   // deoptimize all java threads in the system
   if (DeoptimizeALot) {

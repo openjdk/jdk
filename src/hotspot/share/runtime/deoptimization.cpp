@@ -98,8 +98,6 @@
 #include "jfr/metadata/jfrSerializer.hpp"
 #endif
 
-bool DeoptimizationMarker::_is_active = false;
-
 Deoptimization::UnrollBlock::UnrollBlock(int  size_of_deoptimized_frame,
                                          int  caller_adjustment,
                                          int  caller_actual_parameters,
@@ -921,48 +919,20 @@ class DeoptimizeMarkedClosure : public HandshakeClosure {
   }
 };
 
-bool Deoptimization::deoptimize_all_marked() {
-  assert_locked_or_safepoint(Compile_lock);
-  CompiledMethod* nm = CompiledMethod::take_root();
-  bool anything_deoptimized = false;
-  if (nm != nullptr) {
-    SweeperBlocker sw;
-    anything_deoptimized = true;
-    do {
-      assert(nm->is_marked_for_deoptimization(), "All methods in list must be marked");
-      if (!nm->has_been_deoptimized() && nm->can_be_deoptimized()) {
-        nm->make_not_entrant();
-        make_nmethod_deoptimized(nm);
-      }
-      nm = nm->next_marked();
-    } while(nm != nullptr);
-  }
-  return anything_deoptimized;
-}
-
-void Deoptimization::make_nmethod_deoptimized(CompiledMethod* nm) {
-  assert_locked_or_safepoint(Compile_lock);
-  if (nm->is_marked_for_deoptimization() && nm->can_be_deoptimized()) {
-    nm->make_deoptimized();
-  }
-}
-
 void Deoptimization::mark_and_deoptimize_all() {
   assert_locked_or_safepoint(Compile_lock);
-  struct MarkAndDeoptimizeAllClosure : DeoptimizationMarkerClosure {
-    void marker_do(Deoptimization::MarkFn mark_fn) override {
-      MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-      CompiledMethodIterator iter(CompiledMethodIterator::only_alive_and_not_unloading);
-      while(iter.next()) {
-        CompiledMethod* nm = iter.method();
-        if (!nm->is_native_method()) {
-          mark_fn(nm);
-        }
+  DeoptimizationContext deopt;
+  {
+    MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+    CompiledMethodIterator iter(CompiledMethodIterator::only_alive_and_not_unloading);
+    while(iter.next()) {
+      CompiledMethod* nm = iter.method();
+      if (!nm->is_native_method()) {
+        deopt.mark(nm, true /* inc_recompile_count */);
       }
     }
-  };
-  MarkAndDeoptimizeAllClosure closure;
-  mark_and_deoptimize(closure);
+  }
+  deopt.deoptimize();
 }
 
 // Keeps track of time spent for checking dependencies
@@ -974,32 +944,28 @@ NOT_PRODUCT(static elapsedTimer dependentCheckTime;)
 #endif
 
 void Deoptimization::mark_and_deoptimize(KlassDepChange& changes) {
-  struct MarkAndDeoptimizeClosure: DeoptimizationMarkerClosure {
-    KlassDepChange& _changes;
-    MarkAndDeoptimizeClosure(KlassDepChange& changes) : _changes(changes) {}
-    void marker_do(Deoptimization::MarkFn mark_fn) override {
-      MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-      // nmethod::check_all_dependencies works only correctly, if no safepoint
-      // can happen
-      NoSafepointVerifier nsv;
-      for (DepChange::ContextStream str(_changes, nsv); str.next(); ) {
-        Klass* d = str.klass();
-        InstanceKlass::cast(d)->mark_dependent_nmethods(_changes, mark_fn);
-      }
+  DeoptimizationContext deopt;
+  {
+    MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+    // nmethod::check_all_dependencies works only correctly, if no safepoint
+    // can happen
+    NoSafepointVerifier nsv;
+    for (DepChange::ContextStream str(changes, nsv); str.next(); ) {
+      Klass* d = str.klass();
+      InstanceKlass::cast(d)->mark_dependent_nmethods(changes, &deopt);
+    }
 
 #ifndef PRODUCT
-      if (VerifyDependencies) {
-        // Object pointers are used as unique identifiers for dependency arguments. This
-        // is only possible if no safepoint, i.e., GC occurs during the verification code.
-        dependentCheckTime.start();
-        nmethod::check_all_dependencies(_changes);
-        dependentCheckTime.stop();
-      }
-#endif
+    if (VerifyDependencies) {
+      // Object pointers are used as unique identifiers for dependency arguments. This
+      // is only possible if no safepoint, i.e., GC occurs during the verification code.
+      dependentCheckTime.start();
+      nmethod::check_all_dependencies(changes);
+      dependentCheckTime.stop();
     }
-  };
-  MarkAndDeoptimizeClosure closure(changes);
-  Deoptimization::mark_and_deoptimize(closure);
+#endif
+  }
+  deopt.deoptimize();
 }
 
 
@@ -1020,22 +986,56 @@ void Deoptimization::mark_and_deoptimize_dependents_on(InstanceKlass* dependee) 
   }
 }
 
-void Deoptimization::MarkFn::operator()(CompiledMethod* cm, bool inc_recompile_counts) {
-  cm->mark_for_deoptimization(inc_recompile_counts);
+DeoptimizationContext::DeoptimizationContext()
+  : _nsv(),
+    _marked(0),
+    _deoptimized(false) {
+  assert_locked_or_safepoint(Compile_lock);
 }
 
-void Deoptimization::mark_and_deoptimize(DeoptimizationMarkerClosure& marker_closure) {
-  DeoptimizationMarker dm;
-  bool anything_deoptimized = false;
-  {
-    NoSafepointVerifier nsv;
-    assert_locked_or_safepoint(Compile_lock);
-    marker_closure.marker_do(MarkFn());
-    anything_deoptimized = deoptimize_all_marked();
+DeoptimizationContext::~DeoptimizationContext() {
+  assert(_marked == 0 || _deoptimized, "If something got marked, you have to call deoptimize");
+}
+
+void DeoptimizationContext::mark(CompiledMethod* cm, bool inc_recompile_count) {
+  assert(!_deoptimized, "Calling mark after deoptimize is invalid");
+  ++_marked;
+  cm->mark_for_deoptimization(inc_recompile_count);
+}
+
+void DeoptimizationContext::deopt_compiled_methods() {
+  SweeperBlocker sw;
+  CompiledMethod* nm = CompiledMethod::take_root();
+  while (nm != nullptr) {
+    _deoptimized = true;
+    assert(nm->is_marked_for_deoptimization(), "All methods in list must be marked");
+    if (!nm->has_been_deoptimized() && nm->can_be_deoptimized()) {
+      nm->make_not_entrant();
+      nm->make_deoptimized();
+    }
+    nm = nm->next_marked();
   }
-  if (anything_deoptimized) {
-    run_deoptimize_closure();
+}
+
+void DeoptimizationContext::deopt_frames() {
+  if (!_marked) {
+    return; // Nothing to do
   }
+
+  // DeoptimizationContext sets up a NSV to detect bugs in the client of this API.
+  // But we must allow safepoints when performing thread-local handshakes
+  PauseNoSafepointVerifier pnsv(&_nsv);
+  DeoptimizeMarkedClosure deopt;
+  if (SafepointSynchronize::is_at_safepoint()) {
+    Threads::java_threads_do(&deopt);
+  } else {
+    Handshake::execute(&deopt);
+  }
+}
+
+void DeoptimizationContext::deoptimize() {
+  deopt_compiled_methods();
+  deopt_frames();
 }
 
 void Deoptimization::mark_and_deoptimize_dependents(const methodHandle& m_h) {
@@ -1043,55 +1043,28 @@ void Deoptimization::mark_and_deoptimize_dependents(const methodHandle& m_h) {
   Deoptimization::mark_and_deoptimize_dependents(m_h());
 }
 
-int Deoptimization::mark_dependents(Method* dependee, Deoptimization::MarkFn mark_fn) {
+void Deoptimization::mark_dependents(Method* dependee, DeoptimizationContext* deopt) {
   MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-  int number_marked = 0;
   CompiledMethodIterator iter(CompiledMethodIterator::only_alive_and_not_unloading);
   while(iter.next()) {
     CompiledMethod* nm = iter.method();
     if (nm->is_dependent_on_method(dependee)) {
-      mark_fn(nm);
-      ++number_marked;
+      deopt->mark(nm, true /* inc_recompile_count */);
     }
   }
-  return number_marked;
 }
 
 void Deoptimization::mark_and_deoptimize_dependents(Method* dependee) {
   assert_locked_or_safepoint(Compile_lock);
-  struct MarkAandDeoptimizeDependentsClosure : DeoptimizationMarkerClosure {
-    Method* _dependee;
-    MarkAandDeoptimizeDependentsClosure(Method* dependee) : _dependee(dependee) {}
-    void marker_do(Deoptimization::MarkFn mark_fn) override {
-      mark_dependents(_dependee, mark_fn);
-    }
-  };
-  MarkAandDeoptimizeDependentsClosure closure(dependee);
-  mark_and_deoptimize(closure);
+  DeoptimizationContext deopt;
+  mark_dependents(dependee, &deopt);
+  deopt.deoptimize();
 }
 
 void Deoptimization::mark_and_deoptimize_nmethod(nmethod* nmethod) {
-  ResourceMark rm;
-  DeoptimizationMarker dm;
-  {
-    assert_locked_or_safepoint(Compile_lock);
-    assert(nmethod != nullptr, "nmethod connot be null");
-
-    nmethod->mark_for_deoptimization();
-    nmethod->make_not_entrant();
-    Deoptimization::make_nmethod_deoptimized(nmethod);
-  }
-
-  run_deoptimize_closure();
-}
-
-void Deoptimization::run_deoptimize_closure() {
-  DeoptimizeMarkedClosure deopt;
-  if (SafepointSynchronize::is_at_safepoint()) {
-    Threads::java_threads_do(&deopt);
-  } else {
-    Handshake::execute(&deopt);
-  }
+  DeoptimizationContext deopt;
+  deopt.mark(nmethod, true /* inc_recompile_count */);
+  deopt.deoptimize();
 }
 
 Deoptimization::DeoptAction Deoptimization::_unloaded_action
@@ -1797,7 +1770,6 @@ void Deoptimization::deoptimize(JavaThread* thread, frame fr, DeoptReason reason
     return;
   }
   ResourceMark rm;
-  DeoptimizationMarker dm;
   deoptimize_single_frame(thread, fr, reason);
 }
 

@@ -938,7 +938,7 @@ public:
 
   // maintenance of deoptimization dependencies
   inline DependencyContext dependencies();
-  int  mark_dependent_nmethods(KlassDepChange& changes, Deoptimization::MarkFn mark_fn);
+  void mark_dependent_nmethods(KlassDepChange& changes, DeoptimizationContext* deopt);
   void add_dependent_nmethod(nmethod* nm);
   void remove_dependent_nmethod(nmethod* nm);
   void clean_dependency_context();
@@ -948,7 +948,7 @@ public:
   void set_osr_nmethods_head(nmethod* h)     { _osr_nmethods_head = h; };
   void add_osr_nmethod(nmethod* n);
   bool remove_osr_nmethod(nmethod* n);
-  int mark_osr_nmethods(const Method* m, Deoptimization::MarkFn mark_fn);
+  void mark_osr_nmethods(const Method* m, DeoptimizationContext* deopt);
   nmethod* lookup_osr_nmethod(const Method* m, int bci, int level, bool match_level) const;
 
 #if INCLUDE_JVMTI

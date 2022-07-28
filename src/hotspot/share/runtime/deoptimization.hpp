@@ -28,7 +28,9 @@
 #include "interpreter/bytecodes.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/frame.hpp"
+#include "runtime/safepointVerifiers.hpp"
 
+class DeoptimizationContext;
 class ProfileData;
 class vframeArray;
 class MonitorInfo;
@@ -37,7 +39,6 @@ class ObjectValue;
 class AutoBoxObjectValue;
 class ScopeValue;
 class compiledVFrame;
-class DeoptimizationMarkerClosure;
 class KlassDepChange;
 
 template<class E> class GrowableArray;
@@ -152,24 +153,14 @@ class Deoptimization : AllStatic {
 
 private:
   static void mark_and_deoptimize(KlassDepChange& changes);
-  static bool deoptimize_all_marked();
-  static void make_nmethod_deoptimized(CompiledMethod* nm);
-  static void run_deoptimize_closure();
 
 public:
-  static void mark_and_deoptimize(DeoptimizationMarkerClosure& marker_closure);
   static void mark_and_deoptimize_nmethod(nmethod* nmethod);
   static void mark_and_deoptimize_all();
   static void mark_and_deoptimize_dependents(const methodHandle& dependee);
   static void mark_and_deoptimize_dependents(Method* dependee);
   static void mark_and_deoptimize_dependents_on(InstanceKlass* dependee);
-  class MarkFn : StackObj {
-    friend void Deoptimization::mark_and_deoptimize(DeoptimizationMarkerClosure&);
-    MarkFn() {};
-  public:
-    void operator()(CompiledMethod* cm, bool inc_recompile_counts = true);
-  };
-  static int mark_dependents(Method* dependee, Deoptimization::MarkFn mark_fn);
+  static void mark_dependents(Method* dependee, DeoptimizationContext* deopt);
 
 #ifndef PRODUCT
   static void print_dependency_checking_time(outputStream* stream);
@@ -494,18 +485,22 @@ public:
   static void update_method_data_from_interpreter(MethodData* trap_mdo, int trap_bci, int reason);
 };
 
+class DeoptimizationContext : StackObj {
+  NoSafepointVerifier _nsv;
+  uint _marked;
+  bool _deoptimized;
 
-class DeoptimizationMarker : StackObj {  // for profiling
-  static bool _is_active;
-public:
-  DeoptimizationMarker()  { _is_active = true; }
-  ~DeoptimizationMarker() { _is_active = false; }
-  static bool is_active() { return _is_active; }
-};
+  void deopt_compiled_methods();
+  void deopt_frames();
 
-class DeoptimizationMarkerClosure : StackObj {
 public:
-  virtual void marker_do(Deoptimization::MarkFn mark_fn) = 0;
+  DeoptimizationContext();
+  ~DeoptimizationContext();
+
+  void mark(CompiledMethod* cm, bool inc_recompile_count);
+  void deoptimize();
+
+  uint marked() { return _marked; }
 };
 
 #endif // SHARE_RUNTIME_DEOPTIMIZATION_HPP
