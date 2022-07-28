@@ -53,8 +53,8 @@ import java.io.InputStream;
  *
  * @implNote This implementation updates and only updates the message digest
  *      with data actually read from the input stream when it is turned on.
- *      This includes various {@code read} methods, {@code transferTo},
- *      {@code readAllBytes}, and {@code readNBytes}. Specifically, data
+ *      This includes the various {@code read} methods, {@code transferTo},
+ *      {@code readAllBytes}, and {@code readNBytes}. Especially, data
  *      bypassed by the {@code skip} method are ignored. On the other hand,
  *      if the underlying stream supports the {@code mark} and
  *      {@code reset} methods, and the same data is read again after
