@@ -48,7 +48,7 @@
 
 #undef LSA_SUCCESS
 #define LSA_SUCCESS(Status) ((Status) >= 0)
-#define EXIT_FAILURE -1 // mdu
+// #define EXIT_FAILURE -1 // mdu
 
 /*
  * Library-wide static references
