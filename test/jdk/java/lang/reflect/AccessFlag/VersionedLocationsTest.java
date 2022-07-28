@@ -44,7 +44,7 @@ import java.util.Set;
  * being allowed at more locations or even having locations removed if
  * the access flag is retired.
  *
- * List of access flags and how they are tested: 
+ * List of access flags and how they are tested:
  *
  * PUBLIC       step
  * PRIVATE      step
