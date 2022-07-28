@@ -1653,11 +1653,8 @@
   declare_c2_type(StoreNNode, StoreNode)                                  \
   declare_c2_type(StoreNKlassNode, StoreNode)                             \
   declare_c2_type(StoreCMNode, StoreNode)                                 \
-  declare_c2_type(LoadPLockedNode, LoadPNode)                             \
   declare_c2_type(SCMemProjNode, ProjNode)                                \
   declare_c2_type(LoadStoreNode, Node)                                    \
-  declare_c2_type(StorePConditionalNode, LoadStoreNode)                   \
-  declare_c2_type(StoreLConditionalNode, LoadStoreNode)                   \
   declare_c2_type(CompareAndSwapNode, LoadStoreConditionalNode)           \
   declare_c2_type(CompareAndSwapBNode, CompareAndSwapNode)                \
   declare_c2_type(CompareAndSwapSNode, CompareAndSwapNode)                \

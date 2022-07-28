@@ -97,6 +97,7 @@ inline HeapWord* G1CollectedHeap::bottom_addr_for_region(uint index) const {
   return _hrm.reserved().start() + index * HeapRegion::GrainWords;
 }
 
+
 inline HeapRegion* G1CollectedHeap::heap_region_containing(const void* addr) const {
   uint const region_idx = addr_to_region(addr);
   return region_at(region_idx);

@@ -1254,7 +1254,11 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
         private byte [] createAddressByteArray(String addrStr) {
             byte[] addrArray;
             // check if IPV4 address - most likely
-            addrArray = IPAddressUtil.textToNumericFormatV4(addrStr);
+            try {
+                addrArray = IPAddressUtil.validateNumericFormatV4(addrStr);
+            } catch (IllegalArgumentException iae) {
+                return null;
+            }
             if (addrArray == null) {
                 addrArray = IPAddressUtil.textToNumericFormatV6(addrStr);
             }
@@ -1470,13 +1474,19 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
         }
 
         // if host is an IP address, we won't do further lookup
-        if (Character.digit(host.charAt(0), 16) != -1
+        if (IPAddressUtil.digit(host.charAt(0), 16) != -1
             || (host.charAt(0) == ':')) {
-            byte[] addr = null;
+            byte[] addr;
             int numericZone = -1;
             String ifname = null;
             // see if it is IPv4 address
-            addr = IPAddressUtil.textToNumericFormatV4(host);
+            try {
+                addr = IPAddressUtil.validateNumericFormatV4(host);
+            } catch (IllegalArgumentException iae) {
+                var uhe = new UnknownHostException(host);
+                uhe.initCause(iae);
+                throw uhe;
+            }
             if (addr == null) {
                 // This is supposed to be an IPv6 literal
                 // Check if a numeric or string zone id is present

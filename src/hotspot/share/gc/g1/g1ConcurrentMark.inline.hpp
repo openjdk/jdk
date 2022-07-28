@@ -77,12 +77,6 @@ inline bool G1CMSubjectToDiscoveryClosure::do_object_b(oop obj) {
 
 inline bool G1ConcurrentMark::mark_in_bitmap(uint const worker_id, oop const obj) {
   HeapRegion* const hr = _g1h->heap_region_containing(obj);
-  return mark_in_bitmap(worker_id, hr, obj);
-}
-
-inline bool G1ConcurrentMark::mark_in_bitmap(uint const worker_id, HeapRegion* const hr, oop const obj) {
-  assert(hr != NULL, "just checking");
-  assert(hr->is_in_reserved(obj), "Attempting to mark object at " PTR_FORMAT " that is not contained in the given region %u", p2i(obj), hr->hrm_index());
 
   if (hr->obj_allocated_since_marking_start(obj)) {
     return false;

@@ -419,7 +419,7 @@ class Method : public Metadata {
   bool was_executed_more_than(int n);
   bool was_never_executed()                     { return !was_executed_more_than(0);  }
 
-  static void build_interpreter_method_data(const methodHandle& method, TRAPS);
+  static void build_profiling_method_data(const methodHandle& method, TRAPS);
 
   static MethodCounters* build_method_counters(Thread* current, Method* m);
 

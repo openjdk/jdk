@@ -1022,6 +1022,21 @@ bool StringConcat::validate_control_flow() {
       fail = true;
       break;
     } else if (ptr->is_Proj() && ptr->in(0)->is_Initialize()) {
+      // Check for side effect between Initialize and the constructor
+      for (SimpleDUIterator iter(ptr); iter.has_next(); iter.next()) {
+        Node* use = iter.get();
+        if (!use->is_CFG() && !use->is_CheckCastPP() && !use->is_Load()) {
+#ifndef PRODUCT
+          if (PrintOptimizeStringConcat) {
+            tty->print_cr("unexpected control use of Initialize");
+            ptr->in(0)->dump(); // Initialize node
+            use->dump(1);
+          }
+#endif
+          fail = true;
+          break;
+        }
+      }
       ptr = ptr->in(0)->in(0);
     } else if (ptr->is_Region()) {
       Node* copy = ptr->as_Region()->is_copy();

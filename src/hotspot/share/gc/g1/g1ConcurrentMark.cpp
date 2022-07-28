@@ -2138,8 +2138,8 @@ void G1CMTask::update_region_limit() {
     // at bottom). We then do some allocation in the region (TAMS
     // stays at bottom), followed by the region being used as a GC
     // alloc region (TAMS will move to top() and the objects
-    // originally below it will be grayed). All objects now marked in
-    // the region are explicitly grayed, if below the global finger,
+    // originally below it will be greyed). All objects now marked in
+    // the region are explicitly greyed, if below the global finger,
     // and we do not need in fact to scan anything else. So, we simply
     // set _finger to be limit to ensure that the bitmap iteration
     // doesn't do anything.
@@ -2469,14 +2469,14 @@ bool G1ConcurrentMark::try_stealing(uint worker_id, G1TaskQueueEntry& task_entry
     The data structures that it uses to do marking work are the
     following:
 
-      (1) Marking Bitmap. If there are gray objects that appear only
+      (1) Marking Bitmap. If there are grey objects that appear only
       on the bitmap (this happens either when dealing with an overflow
       or when the concurrent start pause has simply marked the roots
       and didn't push them on the stack), then tasks claim heap
-      regions whose bitmap they then scan to find gray objects. A
+      regions whose bitmap they then scan to find grey objects. A
       global finger indicates where the end of the last claimed region
       is. A local finger indicates how far into the region a task has
-      scanned. The two fingers are used to determine how to gray an
+      scanned. The two fingers are used to determine how to grey an
       object (i.e. whether simply marking it is OK, as it will be
       visited by a task in the future, or whether it needs to be also
       pushed on a stack).
@@ -2494,7 +2494,7 @@ bool G1ConcurrentMark::try_stealing(uint worker_id, G1TaskQueueEntry& task_entry
       queues, as access to it requires a mutex and more fine-grain
       interaction with it which might cause contention. If it
       overflows, then the marking phase should restart and iterate
-      over the bitmap to identify gray objects. Throughout the marking
+      over the bitmap to identify grey objects. Throughout the marking
       phase, tasks attempt to keep the global mark stack at a small
       length but not totally empty, so that entries are available for
       popping by other tasks. Only when there is no more work, tasks
