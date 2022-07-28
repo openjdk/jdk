@@ -48,18 +48,23 @@ public class PBEKeySpecRacing {
         Arrays.fill(password, 'A');
     }
 
+    // flag for failed test case.
+
+    private static volatile char[] failed = null;
+
     public static void main(String[] args) {
         System.out.println("Testing: ");
         for (int i = 0; i < NUMTESTS; i++) {
             keySpec = new PBEKeySpec(password);
             Thread reader = new Thread(() -> {
                 try {
-                    // Repeat until
+                    // Repeat until state changes or failure seen
                     while (true) {
                         char[] pbePass = keySpec.getPassword();
-                        if (!Arrays.equals(password, pbePass))
-                            throw new RuntimeException(
-                                    "Inconsistent Password: ");
+                        if (!Arrays.equals(password, pbePass)) {
+                            failed = pbePass;
+                            return;
+                        }
                     }
                 } catch (IllegalStateException e) {
                     System.out.print(".");
@@ -74,6 +79,12 @@ public class PBEKeySpecRacing {
             } catch (InterruptedException e) {
                 // Swallow
             }
+
+            if (failed != null) {
+                throw new RuntimeException(
+                        "Inconsistent Password: " + Arrays.toString(failed));
+            }
+
             // avoid long output lines.
             if ((i % 80) == 79) {
                 System.out.println();
