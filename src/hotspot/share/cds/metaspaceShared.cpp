@@ -164,7 +164,7 @@ class DumpClassListCLDClosure : public CLDClosure {
     if (!created) {
       return;
     }
-    if (_dumped_classes.maybe_grow(MAX_TABLE_SIZE)) {
+    if (_dumped_classes.maybe_grow()) {
       log_info(cds, hashtables)("Expanded _dumped_classes table to %d", _dumped_classes.table_size());
     }
     if (ik->java_super()) {
@@ -180,7 +180,7 @@ class DumpClassListCLDClosure : public CLDClosure {
 
 public:
   DumpClassListCLDClosure(fileStream* f)
-  : CLDClosure(), _dumped_classes(INITIAL_TABLE_SIZE) {
+  : CLDClosure(), _dumped_classes(INITIAL_TABLE_SIZE, MAX_TABLE_SIZE) {
     _stream = f;
   }
 
@@ -582,7 +582,7 @@ void VM_PopulateDumpSharedSpace::doit() {
   // There may be pending VM operations. We have changed some global states
   // (such as vmClasses::_klasses) that may cause these VM operations
   // to fail. For safety, forget these operations and exit the VM directly.
-  vm_direct_exit(0);
+  os::_exit(0);
 }
 
 class CollectCLDClosure : public CLDClosure {

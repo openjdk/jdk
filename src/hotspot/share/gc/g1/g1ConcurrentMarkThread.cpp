@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -233,10 +233,10 @@ bool G1ConcurrentMarkThread::subphase_remark() {
   return _cm->has_aborted();
 }
 
-bool G1ConcurrentMarkThread::phase_rebuild_remembered_sets() {
+bool G1ConcurrentMarkThread::phase_rebuild_and_scrub() {
   ConcurrentGCBreakpoints::at("AFTER REBUILD STARTED");
-  G1ConcPhaseTimer p(_cm, "Concurrent Rebuild Remembered Sets");
-  _cm->rebuild_rem_set_concurrently();
+  G1ConcPhaseTimer p(_cm, "Concurrent Rebuild Remembered Sets and Scrub Regions");
+  _cm->rebuild_and_scrub();
   return _cm->has_aborted();
 }
 
@@ -293,8 +293,8 @@ void G1ConcurrentMarkThread::concurrent_mark_cycle_do() {
   // Phase 3: Actual mark loop.
   if (phase_mark_loop()) return;
 
-  // Phase 4: Rebuild remembered sets.
-  if (phase_rebuild_remembered_sets()) return;
+  // Phase 4: Rebuild remembered sets and scrub dead objects.
+  if (phase_rebuild_and_scrub()) return;
 
   // Phase 5: Wait for Cleanup.
   if (phase_delay_to_keep_mmu_before_cleanup()) return;

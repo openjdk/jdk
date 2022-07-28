@@ -84,8 +84,6 @@ public class SelfSuspendDisablerTest {
 
             resume(t1);
 
-            testJvmtiThreadState(t1, RUNNABLE);
-
             suspendAllVirtualThreads();
         });
 

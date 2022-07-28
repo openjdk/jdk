@@ -80,7 +80,7 @@ public abstract class TagletWriter {
      *
      * @return the output
      */
-    protected abstract Content codeTagOutput(Element element, DocTree tag);
+    protected abstract Content codeTagOutput(Element element, LiteralTree tag);
 
     /**
      * Returns the output for a {@code {@index...}} tag.
@@ -286,8 +286,8 @@ public abstract class TagletWriter {
 
         Content output = getOutputInstance();
         Utils utils = configuration().utils;
-        tagletManager.checkTags(element, utils.getBlockTags(element), false);
-        tagletManager.checkTags(element, utils.getFullBody(element), true);
+        tagletManager.checkTags(element, utils.getBlockTags(element));
+        tagletManager.checkTags(element, utils.getFullBody(element));
         for (Taglet taglet : taglets) {
             if (utils.isTypeElement(element) && taglet instanceof ParamTaglet) {
                 // The type parameters and state components are documented in a special

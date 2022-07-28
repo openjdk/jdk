@@ -197,7 +197,7 @@ void G1ParScanThreadState::do_oop_evac(T* p) {
   // as they are not added to the collection set due to above precondition.
   assert(!region_attr.is_humongous(),
          "Obj " PTR_FORMAT " should not refer to humongous region %u from " PTR_FORMAT,
-         p2i(obj), _g1h->addr_to_region(cast_from_oop<HeapWord*>(obj)), p2i(p));
+         p2i(obj), _g1h->addr_to_region(obj), p2i(p));
 
   if (!region_attr.is_in_cset()) {
     // In this case somebody else already did all the work.
@@ -624,8 +624,8 @@ oop G1ParScanThreadState::handle_evacuation_failure_par(oop old, markWord m, siz
     HeapRegion* r = _g1h->heap_region_containing(old);
 
     // Objects failing evacuation will turn into old objects since the regions
-    // are relabeled as such. We mark the failing objects in the prev bitmap and
-    // later use it to handle all failed objects.
+    // are relabeled as such. We mark the failing objects in the marking bitmap
+    // and later use it to handle all failed objects.
     _g1h->mark_evac_failure_object(old);
 
     if (_evac_failure_regions->record(r->hrm_index())) {

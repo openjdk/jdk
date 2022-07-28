@@ -41,6 +41,16 @@ public class Entity extends Content {
 
     public final String text;
 
+    /**
+     * Creates an entity with a given name or numeric value.
+     *
+     * @param name the name, or numeric value
+     * @return the entity
+     */
+    public static Entity of(CharSequence name) {
+        return new Entity("&" + name + ";");
+    }
+
     private Entity(String text) {
         this.text = text;
     }

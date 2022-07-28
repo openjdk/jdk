@@ -29,6 +29,7 @@
 
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1CollectorState.hpp"
+#include "gc/g1/g1ConcurrentMark.inline.hpp"
 #include "gc/g1/g1EvacFailureRegions.hpp"
 #include "gc/g1/g1Policy.hpp"
 #include "gc/g1/g1RemSet.hpp"
@@ -85,7 +86,7 @@ inline HeapRegion* G1CollectedHeap::next_region_in_humongous(HeapRegion* hr) con
   return _hrm.next_region_in_humongous(hr);
 }
 
-inline uint G1CollectedHeap::addr_to_region(HeapWord* addr) const {
+inline uint G1CollectedHeap::addr_to_region(const void* addr) const {
   assert(is_in_reserved(addr),
          "Cannot calculate region index for address " PTR_FORMAT " that is outside of the heap [" PTR_FORMAT ", " PTR_FORMAT ")",
          p2i(addr), p2i(reserved().start()), p2i(reserved().end()));
@@ -96,21 +97,15 @@ inline HeapWord* G1CollectedHeap::bottom_addr_for_region(uint index) const {
   return _hrm.reserved().start() + index * HeapRegion::GrainWords;
 }
 
-template <class T>
-inline HeapRegion* G1CollectedHeap::heap_region_containing(const T addr) const {
-  assert(addr != NULL, "invariant");
-  assert(is_in_reserved((const void*) addr),
+inline HeapRegion* G1CollectedHeap::heap_region_containing(const void* addr) const {
+  assert(addr != nullptr, "invariant");
+  assert(is_in_reserved(addr),
          "Address " PTR_FORMAT " is outside of the heap ranging from [" PTR_FORMAT " to " PTR_FORMAT ")",
          p2i((void*)addr), p2i(reserved().start()), p2i(reserved().end()));
-  return _hrm.addr_to_region((HeapWord*)(void*) addr);
+  return _hrm.addr_to_region((HeapWord*)addr);
 }
 
-template <class T>
-inline HeapRegion* G1CollectedHeap::heap_region_containing_or_null(const T addr) const {
-  assert(addr != NULL, "invariant");
-  assert(is_in_reserved((const void*) addr),
-         "Address " PTR_FORMAT " is outside of the heap ranging from [" PTR_FORMAT " to " PTR_FORMAT ")",
-         p2i((void*)addr), p2i(reserved().start()), p2i(reserved().end()));
+inline HeapRegion* G1CollectedHeap::heap_region_containing_or_null(const void* addr) const {
   uint const region_idx = addr_to_region(addr);
   return region_at_or_null(region_idx);
 }
@@ -159,8 +154,8 @@ inline G1ScannerTasksQueue* G1CollectedHeap::task_queue(uint i) const {
   return _task_queues->queue(i);
 }
 
-inline bool G1CollectedHeap::is_marked_next(oop obj) const {
-  return _cm->next_mark_bitmap()->is_marked(obj);
+inline bool G1CollectedHeap::is_marked(oop obj) const {
+  return _cm->mark_bitmap()->is_marked(obj);
 }
 
 inline bool G1CollectedHeap::is_in_cset(oop obj) const {
@@ -221,7 +216,7 @@ inline bool G1CollectedHeap::requires_barriers(stackChunkOop obj) const {
 }
 
 inline bool G1CollectedHeap::is_obj_dead(const oop obj, const HeapRegion* hr) const {
-  return hr->is_obj_dead(obj, _cm->prev_mark_bitmap());
+  return hr->is_obj_dead(obj, hr->parsable_bottom());
 }
 
 inline bool G1CollectedHeap::is_obj_dead(const oop obj) const {
@@ -232,7 +227,7 @@ inline bool G1CollectedHeap::is_obj_dead(const oop obj) const {
 }
 
 inline bool G1CollectedHeap::is_obj_dead_full(const oop obj, const HeapRegion* hr) const {
-   return !is_marked_next(obj) && !hr->is_closed_archive();
+   return !is_marked(obj) && !hr->is_closed_archive();
 }
 
 inline bool G1CollectedHeap::is_obj_dead_full(const oop obj) const {
@@ -245,7 +240,7 @@ inline bool G1CollectedHeap::is_humongous_reclaim_candidate(uint region) {
 }
 
 inline void G1CollectedHeap::set_humongous_is_live(oop obj) {
-  uint region = addr_to_region(cast_from_oop<HeapWord*>(obj));
+  uint region = addr_to_region(obj);
   // Reset the entry in the region attribute table so that subsequent
   // references to the same humongous object do not go into the slow path
   // again. This is racy, as multiple threads may at the same time enter here,
