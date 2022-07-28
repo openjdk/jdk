@@ -61,9 +61,9 @@ public class ThreadedMallocTestType {
     allocThread.start();
     allocThread.join();
 
-		System.out.println("memAlloc1:"+memAlloc1);
-		System.out.println("memAlloc2:"+memAlloc2);
-		System.out.println("memAlloc3:"+memAlloc3);
+    System.out.println("memAlloc1:"+memAlloc1);
+    System.out.println("memAlloc2:"+memAlloc2);
+    System.out.println("memAlloc3:"+memAlloc3);
 
     // Run 'jcmd <pid> VM.native_memory summary'
     pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.native_memory", "summary"});
