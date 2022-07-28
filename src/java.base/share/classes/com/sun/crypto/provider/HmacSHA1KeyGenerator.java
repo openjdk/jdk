@@ -88,6 +88,11 @@ public final class HmacSHA1KeyGenerator extends KeyGeneratorSpi {
      * @param random the source of randomness for this key generator
      */
     protected void engineInit(int keysize, SecureRandom random) {
+
+        if(keysize <= 0) {
+            throw new IllegalArgumentException("keysize must not be <= 0 for SunJCE");
+        }
+
         this.keysize = (keysize+7) / 8;
         this.engineInit(random);
     }
