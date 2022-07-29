@@ -32,7 +32,7 @@
 #include OS_CPU_HEADER_INLINE(os)
 
 // Below are inline functions that are rarely implemented by the platforms.
-// Provide default emptyy implementation.
+// Provide default empty implementation.
 
 #ifndef PLATFORM_PRINT_NATIVE_STACK
 inline bool os::platform_print_native_stack(outputStream* st, const void* context,
