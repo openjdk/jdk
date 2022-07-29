@@ -258,14 +258,15 @@ public interface Path
 
     /**
      * Returns the file name extension of this path as a {@code String}. The
-     * extension is defined to be the portion of the
-     * {@link #getFileName file name} string after the last dot ('.'). All
-     * leading dots in the string are ignored. If the extension is missing,
+     * extension is the portion of the {@linkplain #getFileName file name}
+     * string after the last period character ('.', U+002E FULL STOP). Leading
+     * period characters in the string are ignored. If there is no  extension,
      * then {@code null} is returned. This will occur if the path has zero
      * elements ({@link #getFileName()} returns {@code null}), the file name
-     * string does not contain a dot, or only the first character is a dot.
-     * If the last character is a dot but some other character is not, then
-     * the extension is the {@link String#isEmpty() empty} string.
+     * string does not contain a period character, or only the first character
+     * is a period character. If the last character is a period character but
+     * some other character is not, then the extension is the
+     * {@linkplain String#isEmpty() empty} string.
      *
      * @implSpec
      * The default implementation is equivalent for this path to:
@@ -295,10 +296,11 @@ public interface Path
         if (length > 1) {
             int lastDotIndex = fileNameString.lastIndexOf('.');
 
-            // Indeterminate if no dot or only the first character is a dot
+            // Indeterminate if there is no period character or
+            // only the first character is a period character
             if (lastDotIndex > 0) {
                 if (lastDotIndex == length - 1) {
-                    // null if all dots, otherwise empty
+                    // null if all period characters, otherwise empty
                     return fileNameString.matches("\\.{" + length + "}") ?
                         null : "";
                 } else {
