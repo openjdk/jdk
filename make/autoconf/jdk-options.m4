@@ -648,7 +648,7 @@ AC_DEFUN([JDKOPT_ALLOW_ABSOLUTE_PATHS_IN_OUTPUT],
 AC_DEFUN_ONCE([JDKOPT_SETUP_REPRODUCIBLE_BUILD],
 [
   AC_ARG_WITH([source-date], [AS_HELP_STRING([--with-source-date],
-      [how to set SOURCE_DATE_EPOCH ('updated', 'current', 'version' a timestamp or an ISO-8601 date) @<:@updated/value of SOURCE_DATE_EPOCH@:>@])],
+      [how to set SOURCE_DATE_EPOCH ('updated', 'current', 'version' a timestamp or an ISO-8601 date) @<:@current/value of SOURCE_DATE_EPOCH@:>@])],
       [with_source_date_present=true], [with_source_date_present=false])
 
   if test "x$SOURCE_DATE_EPOCH" != x && test "x$with_source_date" != x; then
