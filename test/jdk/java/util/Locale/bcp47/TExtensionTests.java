@@ -54,6 +54,7 @@ public class TExtensionTests {
     private static final String DUPLICATE_FIELD = "s0-dup";
     private static final String DUPLICATE = T4 + "-" + DUPLICATE_FIELD;
     private static final String INVALID_SOURCE = "aa-bb-cc";
+    private static final String INVALID_FIELDS = "t0-xxx-x0";
     private static final Locale L1 = Locale.forLanguageTag("und-Cyrl-t-" + T1);
     private static final Locale L2 = Locale.forLanguageTag("ja-Kana-t-" + T2);
     private static final Locale L3 = Locale.forLanguageTag("hi-Latn-t-" + T3); // Hinglish
@@ -166,6 +167,24 @@ public class TExtensionTests {
         try {
             LB.clear().setLocale(Locale.ENGLISH).setExtension('t', INVALID_SOURCE).build();
             throw new RuntimeException("Invalid source language tag should throw an exception");
+        } catch (IllformedLocaleException ile) {
+            // success
+            System.out.println("IllformedLocaleException thrown correctly: " + ile.getMessage());
+        }
+    }
+
+    @Test
+    public void test_InvalidFieldsForLanguageTag() {
+        // Locale.forLanguageTag() should ignore the t extension
+        assertEquals(Locale.forLanguageTag("en-t-" + INVALID_FIELDS), Locale.ENGLISH);
+    }
+
+    @Test
+    public void test_InvalidFieldsSetExtension() {
+        // Locale.Builder.setExtension() should throw IllformedLocaleException
+        try {
+            LB.clear().setLocale(Locale.ENGLISH).setExtension('t', INVALID_FIELDS).build();
+            throw new RuntimeException("Invalid fields should throw an exception");
         } catch (IllformedLocaleException ile) {
             // success
             System.out.println("IllformedLocaleException thrown correctly: " + ile.getMessage());

@@ -119,9 +119,8 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
             // copy string
             {
                 String key = convertOldKeyName(attributes.getValue("key"));
-                pushStringEntry(qName, attributes,
-                CLDRConverter.LOCALE_TYPE_PREFIX + key + "." +
-                attributes.getValue("type"));
+                pushStringEntry(qName, attributes, CLDRConverter.LOCALE_TYPE_PREFIX + key +
+                        "." + attributes.getValue("type"));
             }
             break;
 

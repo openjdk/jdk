@@ -48,6 +48,7 @@ public final class TransformedContentExtension extends Extension {
         Matcher m = FIELD.matcher(value);
         if (m.find()) {
             var sourceEnd = m.start();
+            int parsed;
             sourceLang = sourceEnd != 0 ? value.substring(0, sourceEnd) : null;
             fields = new TreeSet<>();
             do {
@@ -57,7 +58,13 @@ public final class TransformedContentExtension extends Extension {
                             f.fsep() + "' within the Transformed Content extension",
                             m.start() + 1); // +1 for the leading '-' of the duplicated field
                 }
+                parsed = m.end();
             } while (m.find());
+
+            // check whether the entire value was parsed
+            if (parsed != value.length()) {
+                throw new LocaleSyntaxException("Unrecognized field '" + value.substring(parsed) + "'", parsed);
+            }
         } else {
             sourceLang = value;
             fields = Collections.emptySortedSet();
