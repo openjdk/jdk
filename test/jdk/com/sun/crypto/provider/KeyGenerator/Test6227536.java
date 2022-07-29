@@ -25,7 +25,8 @@
  * @test
  * @library /test/lib
  * @bug 6227536
- * @summary Verify HmacSHA1 and HmacMD5 KeyGenerators throw an Exception when a keysize of zero is requested
+ * @summary Verify HmacSHA1 and HmacMD5 KeyGenerators throw an Exception when
+ *  a keysize of zero is requested
  * @author Kevin Driver
  */
 
@@ -35,26 +36,26 @@ import javax.crypto.KeyGenerator;
 
 public class Test6227536 {
 
+    String[] keyGensToTest = new String[]{"HmacSHA1", "HmacMD5"};
+
     public boolean execute(String algo) throws Exception {
         KeyGenerator kg = KeyGenerator.getInstance(algo, "SunJCE");
 
-        Utils.runAndCheckException(() -> kg.init(0), IllegalArgumentException.class);
+        Utils.runAndCheckException(() -> kg.init(0),
+                IllegalArgumentException.class);
 
         return true;
     }
 
-    public static void main (String[] args) throws Exception {
+    public static void main(String[] args) throws Exception {
         Test6227536 test = new Test6227536();
         String testName = test.getClass().getName();
-        if (test.execute("HmacSHA1")) {
-            System.out.println(testName + ": HmacSHA1 Passed!");
-        } else {
-            System.out.println(testName + ": HmacSHA1 Failed!");
+
+        for (String keyGenToTest : test.keyGensToTest) {
+
+            System.out.println(testName + ": " + keyGenToTest + ((test.execute(keyGenToTest)) ? " Passed!" : " Failed!"));
+
         }
-        if (test.execute("HmacMD5")) {
-            System.out.println(testName + ": HmacMD5 Passed!");
-        } else {
-            System.out.println(testName + ": HmacMD5 Failed!");
-        }
+
     }
 }
