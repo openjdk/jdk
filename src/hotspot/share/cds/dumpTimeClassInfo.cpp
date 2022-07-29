@@ -145,8 +145,7 @@ void DumpTimeClassInfo::record_linking_constraint(Symbol* name, Handle loader1, 
   char lt2 = get_loader_type_by(loader2());
   DTLoaderConstraint lc(name, lt1, lt2);
   for (int i = 0; i < _loader_constraints->length(); i++) {
-    DTLoaderConstraint& dt = _loader_constraints->at(i);
-    if (lc.equals(dt)) {
+    if (lc.equals(_loader_constraints->at(i))) {
       if (log.is_enabled()) {
         ResourceMark rm;
         // Use loader[0]/loader[1] to be consistent with the logs in loaderConstraints.cpp
