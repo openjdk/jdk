@@ -1720,41 +1720,40 @@ Node* VectorMaskToLongNode::Identity(PhaseGVN* phase) {
   return this;
 }
 
-Node* VectorMaskCastNode::makeCastNode(PhaseGVN* phase, Node* src, const TypeVect* dst_type) {
+Node* VectorMaskCastNode::make(PhaseGVN* phase, Node* src, const TypeVect* dst_type) {
   const TypeVect* src_type = src->bottom_type()->is_vect();
   assert(src_type->length() == dst_type->length(), "");
 
-  int num_elem = src_type->length();
   BasicType elem_bt_from = src_type->element_basic_type();
   BasicType elem_bt_to = dst_type->element_basic_type();
-
   if (dst_type->isa_vectmask() == NULL && src_type->isa_vectmask() == NULL &&
       type2aelembytes(elem_bt_from) != type2aelembytes(elem_bt_to)) {
-
+    int num_elem = src_type->length();
     Node* op = src;
     BasicType new_elem_bt_from = elem_bt_from;
     BasicType new_elem_bt_to = elem_bt_to;
     if (is_floating_point_type(elem_bt_from)) {
-      new_elem_bt_from =  elem_bt_from == T_FLOAT ? T_INT : T_LONG;
+      new_elem_bt_from = elem_bt_from == T_FLOAT ? T_INT : T_LONG;
     }
     if (is_floating_point_type(elem_bt_to)) {
       new_elem_bt_to = elem_bt_to == T_FLOAT ? T_INT : T_LONG;
     }
 
-    // Special handling for casting operation involving floating point types.
+    // Special handling for casting operation involving floating point types,
+    // floating point type F and integral type X:
     // Case A) F -> X :=  F -> VectorMaskCast (F->I/L [NOP]) -> VectorCast[I/L]2X
     // Case B) X -> F :=  X -> VectorCastX2[I/L] -> VectorMaskCast ([I/L]->F [NOP])
-    // Case C) F -> F :=  VectorMaskCast (F->I/L [NOP]) -> VectorCast[I/L]2[L/I] -> VectotMaskCast (L/I->F [NOP])
+    // Case C) F -> F :=  VectorMaskCast (F->I/L [NOP]) -> VectorCast[I/L]2[L/I] -> VectorMaskCast (L/I->F [NOP])
 
     if (new_elem_bt_from != elem_bt_from) {
       const TypeVect* new_src_type = TypeVect::makemask(new_elem_bt_from, num_elem);
       op = phase->transform(new VectorMaskCastNode(op, new_src_type));
     }
 
-    op = phase->transform(VectorCastNode::make(VectorCastNode::opcode(new_elem_bt_from), op, new_elem_bt_to, num_elem));
+    op = VectorCastNode::make(VectorCastNode::opcode(new_elem_bt_from), op, new_elem_bt_to, num_elem);
 
     if (new_elem_bt_to != elem_bt_to) {
-      op = phase->transform(new VectorMaskCastNode(op, dst_type));
+      op = new VectorMaskCastNode(phase->transform(op), dst_type);
     }
     return op;
   } else {
@@ -1782,7 +1781,7 @@ Node* VectorLongToMaskNode::Ideal(PhaseGVN* phase, bool can_reshape) {
      if (src_type->length() == dst_type->length() &&
          ((src_type->isa_vectmask() == NULL && dst_type->isa_vectmask() == NULL) ||
           (src_type->isa_vectmask() && dst_type->isa_vectmask()))) {
-       return VectorMaskCastNode::makeCastNode(phase, src, dst_type);
+       return VectorMaskCastNode::make(phase, src, dst_type);
      }
   }
   return NULL;
