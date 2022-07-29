@@ -934,14 +934,29 @@ void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mar
     scan_logged_cards_time_goal_ms -= merge_hcc_time_ms;
   }
 
-  double const logged_cards_time = logged_cards_processing_time();
+  double const logged_cards_time_ms = logged_cards_processing_time();
+  size_t logged_cards =
+    phase_times()->sum_thread_work_items(G1GCPhaseTimes::MergeLB,
+                                         G1GCPhaseTimes::MergeLBDirtyCards);
+  size_t hcc_cards =
+    phase_times()->sum_thread_work_items(G1GCPhaseTimes::MergeHCC,
+                                         G1GCPhaseTimes::MergeHCCDirtyCards);
+  bool exceeded_goal = scan_logged_cards_time_goal_ms < logged_cards_time_ms;
+  G1ConcurrentRefine* cr = _g1h->concurrent_refine();
 
-  log_debug(gc, ergo, refine)("Concurrent refinement times: Logged Cards Scan time goal: %1.2fms Logged Cards Scan time: %1.2fms HCC time: %1.2fms",
-                              scan_logged_cards_time_goal_ms, logged_cards_time, merge_hcc_time_ms);
+  log_debug(gc, ergo, refine)
+           ("GC refinement: goal: %zu / %1.2fms, actual: %zu / %1.2fms, HCC: %zu / %1.2fms%s",
+            cr->green_zone(),
+            scan_logged_cards_time_goal_ms,
+            logged_cards,
+            logged_cards_time_ms,
+            hcc_cards,
+            merge_hcc_time_ms,
+            (exceeded_goal ? " (exceeded goal)" : ""));
 
-  _g1h->concurrent_refine()->adjust(logged_cards_time,
-                                    phase_times()->sum_thread_work_items(G1GCPhaseTimes::MergeLB, G1GCPhaseTimes::MergeLBDirtyCards),
-                                    scan_logged_cards_time_goal_ms);
+  cr->adjust(logged_cards_time_ms,
+             logged_cards,
+             scan_logged_cards_time_goal_ms);
 }
 
 G1IHOPControl* G1Policy::create_ihop_control(const G1OldGenAllocationTracker* old_gen_alloc_tracker,
