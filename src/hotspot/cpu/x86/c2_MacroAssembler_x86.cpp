@@ -30,6 +30,7 @@
 #include "oops/methodData.hpp"
 #include "opto/c2_MacroAssembler.hpp"
 #include "opto/intrinsicnode.hpp"
+#include "opto/output.hpp"
 #include "opto/opcodes.hpp"
 #include "opto/subnode.hpp"
 #include "runtime/objectMonitor.hpp"
@@ -128,8 +129,36 @@ void C2_MacroAssembler::verified_entry(int framesize, int stack_bang_size, bool 
 
   if (!is_stub) {
     BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-    bs->nmethod_entry_barrier(this);
+ #ifdef _LP64
+    if (BarrierSet::barrier_set()->barrier_set_nmethod() != NULL) {
+      // We put the non-hot code of the nmethod entry barrier out-of-line in a stub.
+      Label dummy_slow_path;
+      Label dummy_continuation;
+      Label* slow_path = &dummy_slow_path;
+      Label* continuation = &dummy_continuation;
+      if (!Compile::current()->output()->in_scratch_emit_size()) {
+        // Use real labels from actual stub when not emitting code for the purpose of measuring its size
+        C2EntryBarrierStub* stub = Compile::current()->output()->entry_barrier_table()->add_entry_barrier();
+        slow_path = &stub->slow_path();
+        continuation = &stub->continuation();
+      }
+      bs->nmethod_entry_barrier(this, slow_path, continuation);
+    }
+#else
+    // Don't bother with out-of-line nmethod entry barrier stub for x86_32.
+    bs->nmethod_entry_barrier(this, NULL /* slow_path */, NULL /* continuation */);
+#endif
   }
+}
+
+void C2_MacroAssembler::emit_entry_barrier_stub(C2EntryBarrierStub* stub) {
+  bind(stub->slow_path());
+  call(RuntimeAddress(StubRoutines::x86::method_entry_barrier()));
+  jmp(stub->continuation(), false /* maybe_short */);
+}
+
+int C2_MacroAssembler::entry_barrier_stub_size() {
+  return 10;
 }
 
 inline Assembler::AvxVectorLen C2_MacroAssembler::vector_length_encoding(int vlen_in_bytes) {
@@ -5455,6 +5484,90 @@ void C2_MacroAssembler::udivmodI(Register rax, Register divisor, Register rdx, R
 }
 
 #ifdef _LP64
+void C2_MacroAssembler::reverseI(Register dst, Register src, XMMRegister xtmp1,
+                                 XMMRegister xtmp2, Register rtmp) {
+  if(VM_Version::supports_gfni()) {
+    // Galois field instruction based bit reversal based on following algorithm.
+    // http://0x80.pl/articles/avx512-galois-field-for-bit-shuffling.html
+    mov64(rtmp, 0x8040201008040201L);
+    movq(xtmp1, src);
+    movq(xtmp2, rtmp);
+    gf2p8affineqb(xtmp1, xtmp2, 0);
+    movq(dst, xtmp1);
+  } else {
+    // Swap even and odd numbered bits.
+    movl(rtmp, src);
+    andl(rtmp, 0x55555555);
+    shll(rtmp, 1);
+    movl(dst, src);
+    andl(dst, 0xAAAAAAAA);
+    shrl(dst, 1);
+    orl(dst, rtmp);
+
+    // Swap LSB and MSB 2 bits of each nibble.
+    movl(rtmp, dst);
+    andl(rtmp, 0x33333333);
+    shll(rtmp, 2);
+    andl(dst, 0xCCCCCCCC);
+    shrl(dst, 2);
+    orl(dst, rtmp);
+
+    // Swap LSB and MSB 4 bits of each byte.
+    movl(rtmp, dst);
+    andl(rtmp, 0x0F0F0F0F);
+    shll(rtmp, 4);
+    andl(dst, 0xF0F0F0F0);
+    shrl(dst, 4);
+    orl(dst, rtmp);
+  }
+  bswapl(dst);
+}
+
+void C2_MacroAssembler::reverseL(Register dst, Register src, XMMRegister xtmp1,
+                                 XMMRegister xtmp2, Register rtmp1, Register rtmp2) {
+  if(VM_Version::supports_gfni()) {
+    // Galois field instruction based bit reversal based on following algorithm.
+    // http://0x80.pl/articles/avx512-galois-field-for-bit-shuffling.html
+    mov64(rtmp1, 0x8040201008040201L);
+    movq(xtmp1, src);
+    movq(xtmp2, rtmp1);
+    gf2p8affineqb(xtmp1, xtmp2, 0);
+    movq(dst, xtmp1);
+  } else {
+    // Swap even and odd numbered bits.
+    movq(rtmp1, src);
+    mov64(rtmp2, 0x5555555555555555L);
+    andq(rtmp1, rtmp2);
+    shlq(rtmp1, 1);
+    movq(dst, src);
+    notq(rtmp2);
+    andq(dst, rtmp2);
+    shrq(dst, 1);
+    orq(dst, rtmp1);
+
+    // Swap LSB and MSB 2 bits of each nibble.
+    movq(rtmp1, dst);
+    mov64(rtmp2, 0x3333333333333333L);
+    andq(rtmp1, rtmp2);
+    shlq(rtmp1, 2);
+    notq(rtmp2);
+    andq(dst, rtmp2);
+    shrq(dst, 2);
+    orq(dst, rtmp1);
+
+    // Swap LSB and MSB 4 bits of each byte.
+    movq(rtmp1, dst);
+    mov64(rtmp2, 0x0F0F0F0F0F0F0F0FL);
+    andq(rtmp1, rtmp2);
+    shlq(rtmp1, 4);
+    notq(rtmp2);
+    andq(dst, rtmp2);
+    shrq(dst, 4);
+    orq(dst, rtmp1);
+  }
+  bswapq(dst);
+}
+
 void C2_MacroAssembler::udivL(Register rax, Register divisor, Register rdx) {
   Label done;
   Label neg_divisor_fastpath;

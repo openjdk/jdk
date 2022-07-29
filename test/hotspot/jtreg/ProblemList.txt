@@ -47,6 +47,7 @@ compiler/ciReplay/TestSAServer.java 8029528 generic-all
 compiler/compilercontrol/jcmd/ClearDirectivesFileStackTest.java 8225370 generic-all
 compiler/jvmci/compilerToVM/GetFlagValueTest.java 8204459 generic-all
 compiler/jvmci/jdk.vm.ci.code.test/src/jdk/vm/ci/code/test/NativeCallTest.java 8262901 macosx-aarch64
+compiler/rangechecks/TestRangeCheckHoistingScaledIV.java 8291474 generic-ppc64le
 compiler/tiered/LevelTransitionTest.java 8067651 generic-all
 
 compiler/cpuflags/TestAESIntrinsicsOnSupportedConfig.java 8190680 generic-all
@@ -68,8 +69,6 @@ compiler/rtm/print/TestPrintPreciseRTMLockingStatistics.java 8183263 generic-x64
 compiler/c2/Test8004741.java 8235801 generic-all
 
 compiler/codecache/jmx/PoolsIndependenceTest.java 8264632 macosx-all
-
-compiler/vectorization/TestAutoVecIntMinMax.java 8290730 generic-x64
 
 #############################################################################
 
@@ -136,7 +135,6 @@ serviceability/sa/TestJmapCoreMetaspace.java 8269982,8267433 macosx-aarch64,maco
 
 #############################################################################
 
-vmTestbase/nsk/jdi/HiddenClass/events/events001.java                 8257705 generic-all
 vmTestbase/nsk/jdi/ThreadReference/stop/stop001/TestDescription.java 7034630 generic-all
 
 vmTestbase/metaspace/gc/firstGC_10m/TestDescription.java 8208250 generic-all

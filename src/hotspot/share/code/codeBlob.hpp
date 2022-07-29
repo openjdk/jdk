@@ -90,16 +90,7 @@ class CodeBlob {
 
 protected:
 
-  const CompilerType _type;                      // CompilerType
-  int        _size;                              // total size of CodeBlob in bytes
-  int        _header_size;                       // size of header (depends on subclass)
-  int        _frame_complete_offset;             // instruction offsets in [0.._frame_complete_offset) have
-                                                 // not finished setting up their frame. Beware of pc's in
-                                                 // that range. There is a similar range(s) on returns
-                                                 // which we don't detect.
-  int        _data_offset;                       // offset to where data region begins
-  int        _frame_size;                        // size of stack frame
-
+  // order fields from large to small to minimize padding between fields
   address    _code_begin;
   address    _code_end;
   address    _content_begin;                     // address to where content region begins (this includes consts, insts, stubs)
@@ -109,12 +100,23 @@ protected:
   address    _relocation_end;
 
   ImmutableOopMapSet* _oop_maps;                 // OopMap for this CodeBlob
-  bool                _caller_must_gc_arguments;
-
-  bool                _is_compiled;
 
   const char*         _name;
   S390_ONLY(int       _ctable_offset;)
+
+  int        _size;                              // total size of CodeBlob in bytes
+  int        _header_size;                       // size of header (depends on subclass)
+  int        _frame_complete_offset;             // instruction offsets in [0.._frame_complete_offset) have
+                                                 // not finished setting up their frame. Beware of pc's in
+                                                 // that range. There is a similar range(s) on returns
+                                                 // which we don't detect.
+  int        _data_offset;                       // offset to where data region begins
+  int        _frame_size;                        // size of stack frame
+
+  bool                _caller_must_gc_arguments;
+
+  bool                _is_compiled;
+  const CompilerType  _type;                     // CompilerType
 
 #ifndef PRODUCT
   AsmRemarks _asm_remarks;
