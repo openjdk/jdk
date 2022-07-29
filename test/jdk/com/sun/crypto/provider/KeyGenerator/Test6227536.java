@@ -23,10 +23,13 @@
 
 /*
  * @test
+ * @library /test/lib
  * @bug 6227536
  * @summary Verify HmacSHA1 and HmacMD5 KeyGenerators throw an Exception when a keysize of zero is requested
  * @author Kevin Driver
  */
+
+import jdk.test.lib.Utils;
 
 import javax.crypto.KeyGenerator;
 
@@ -35,17 +38,9 @@ public class Test6227536 {
     public boolean execute(String algo) throws Exception {
         KeyGenerator kg = KeyGenerator.getInstance(algo, "SunJCE");
 
-        try {
+        Utils.runAndCheckException(() -> kg.init(0), IllegalArgumentException.class);
 
-            kg.init(0);
-
-        } catch (IllegalArgumentException iae) {
-            // exception was thrown
-            return true;
-        }
-
-        // exception was not thrown
-        throw new Exception("expected exception not thrown by " + algo + "KeyGenerator");
+        return true;
     }
 
     public static void main (String[] args) throws Exception {
