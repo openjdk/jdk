@@ -89,8 +89,8 @@ public class ProgressMonitorInputStream extends FilterInputStream
         catch(IOException ioe) {
             size = 0;
         }
-        parentComponent = parentComponent;
-        message = message;
+        this.parentComponent = parentComponent;
+        this.message = message;
         monitor = new ProgressMonitor(parentComponent, message, null, 0, size);
     }
 
@@ -130,7 +130,8 @@ public class ProgressMonitorInputStream extends FilterInputStream
                 size = in.available();
                 nread = 0;
                 monitor.close();
-                monitor = new ProgressMonitor(parentComponent, message, null, 0, size);
+                monitor = new ProgressMonitor(this.parentComponent,
+                                              this.message, null, 0, size);
             }
         }
         if (monitor.isCanceled()) {
