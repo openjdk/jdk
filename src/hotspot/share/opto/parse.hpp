@@ -462,8 +462,7 @@ class Parse : public GraphKit {
   void merge_memory_edges(MergeMemNode* n, int pnum, bool nophi);
 
   // Parse this bytecode, and alter the Parsers JVM->Node mapping
-  void do_one_bytecode_common();
-  bool do_one_bytecode_targeted();
+  void do_one_bytecode();
 
   // helper function to generate array store check
   void array_store_check();
@@ -535,10 +534,6 @@ class Parse : public GraphKit {
   void do_jsr();
   void do_ret();
 
-  // implementation of div/rem bytecodes for handling of special case
-  // min_jint / -1
-  void do_divmod_fixup();
-
   float   dynamic_branch_prediction(float &cnt, BoolTest::mask btest, Node* test);
   float   branch_prediction(float &cnt, BoolTest::mask btest, int target_bci, Node* test);
   bool    seems_never_taken(float prob) const;
@@ -606,6 +601,43 @@ class Parse : public GraphKit {
   void dump();
   void dump_bci(int bci);
 #endif
+};
+
+// Specialized uncommon_trap of unstable_if. C2 uses next_bci of path to update the live locals of it.
+class UnstableIfTrap {
+  CallStaticJavaNode* const _unc;
+  bool _modified;            // modified locals based on next_bci()
+  int _next_bci;
+
+public:
+  UnstableIfTrap(CallStaticJavaNode* call, Parse::Block* path): _unc(call), _modified(false) {
+    assert(_unc != NULL && Deoptimization::trap_request_reason(_unc->uncommon_trap_request()) == Deoptimization::Reason_unstable_if,
+          "invalid uncommon_trap call!");
+    _next_bci = path != nullptr ? path->start() : -1;
+  }
+
+  // The starting point of the pruned block, where control goes when
+  // deoptimization does happen.
+  int next_bci() const {
+    return _next_bci;
+  }
+
+  bool modified() const {
+    return _modified;
+  }
+
+  void set_modified() {
+    _modified = true;
+  }
+
+  CallStaticJavaNode* uncommon_trap() const {
+    return _unc;
+  }
+
+  inline void* operator new(size_t x) throw() {
+    Compile* C = Compile::current();
+    return C->comp_arena()->AmallocWords(x);
+  }
 };
 
 #endif // SHARE_OPTO_PARSE_HPP

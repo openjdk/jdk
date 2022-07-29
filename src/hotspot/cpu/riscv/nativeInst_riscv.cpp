@@ -89,7 +89,7 @@ bool NativeInstruction::is_movptr_at(address instr) {
          is_addi_at(instr + instruction_size) && // Addi
          is_slli_shift_at(instr + instruction_size * 2, 11) && // Slli Rd, Rs, 11
          is_addi_at(instr + instruction_size * 3) && // Addi
-         is_slli_shift_at(instr + instruction_size * 4, 5) && // Slli Rd, Rs, 5
+         is_slli_shift_at(instr + instruction_size * 4, 6) && // Slli Rd, Rs, 6
          (is_addi_at(instr + instruction_size * 5) ||
           is_jalr_at(instr + instruction_size * 5) ||
           is_load_at(instr + instruction_size * 5)) && // Addi/Jalr/Load

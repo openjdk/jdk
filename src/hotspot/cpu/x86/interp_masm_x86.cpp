@@ -36,9 +36,9 @@
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/basicLock.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
-#include "runtime/thread.inline.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 // Implementation of InterpreterMacroAssembler
@@ -1064,9 +1064,6 @@ void InterpreterMacroAssembler::remove_activation(
 
   bind(unlock);
   unlock_object(robj);
-  NOT_LP64(get_thread(rthread);)
-  dec_held_monitor_count(rthread);
-
   pop(state);
 
   // Check that for block-structured locking (i.e., that all locked
@@ -1111,8 +1108,6 @@ void InterpreterMacroAssembler::remove_activation(
       push(state);
       mov(robj, rmon);   // nop if robj and rmon are the same
       unlock_object(robj);
-      NOT_LP64(get_thread(rthread);)
-      dec_held_monitor_count(rthread);
       pop(state);
 
       if (install_monitor_exception) {
@@ -1173,7 +1168,7 @@ void InterpreterMacroAssembler::remove_activation(
   leave();                           // remove frame anchor
   pop(ret_addr);                     // get return address
   mov(rsp, rbx);                     // set sp to sender sp
-  pop_cont_fastpath(rthread);
+  pop_cont_fastpath();
 }
 
 void InterpreterMacroAssembler::get_method_counters(Register method,
@@ -1211,13 +1206,11 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg) {
             CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter),
             obj_reg);
   } else {
-    Label done;
+    Label done, slow_case;
 
     const Register swap_reg = rax; // Must use rax for cmpxchg instruction
     const Register tmp_reg = rbx;
     const Register rklass_decode_tmp = LP64_ONLY(rscratch1) NOT_LP64(noreg);
-
-    Label slow_case;
 
     if (DiagnoseSyncOnValueBasedClasses != 0) {
       load_klass(tmp_reg, obj_reg, rklass_decode_tmp);
@@ -1237,6 +1230,7 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg) {
     // Load object header, prepare for CAS from unlocked to locked.
     movptr(swap_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
     fast_lock_impl(obj_reg, swap_reg, thread, tmp_reg, tmp2, slow_case);
+    inc_held_monitor_count();
     jmp(done);
 
     bind(slow_case);
@@ -1288,8 +1282,10 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg) {
     movptr(swap_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
     andptr(swap_reg, ~(int32_t)markWord::lock_mask_in_place);
     fast_unlock_impl(obj_reg, swap_reg, header_reg, slow_case);
+    dec_held_monitor_count();
     jmp(done);
 
+    bind(slow_case);
     // Call the runtime routine for slow case.
     bind(slow_case);
     call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorexit), obj_reg);

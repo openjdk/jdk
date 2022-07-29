@@ -85,7 +85,7 @@ public final class MetadataRepository {
                 // annotations, such as Period and Threshold.
                 if (pEventType.hasPeriod()) {
                     pEventType.setEventHook(true);
-                    if (!(Type.EVENT_NAME_PREFIX + "ExecutionSample").equals(type.getName())) {
+                    if (!pEventType.isMethodSampling()) {
                         requestHooks.add(new RequestHook(pEventType));
                     }
                 }
@@ -218,7 +218,8 @@ public final class MetadataRepository {
         EventConfiguration configuration = newEventConfiguration(eventType, ec, settings);
         PlatformEventType pe = configuration.getPlatformEventType();
         pe.setRegistered(true);
-        if (jvm.isInstrumented(eventClass)) {
+        // If class is instrumented or should not be instrumented, mark as instrumented.
+        if (jvm.isInstrumented(eventClass) || !Utils.shouldInstrument(pe.isJDK(), pe.getName())) {
             pe.setInstrumented();
         }
         Utils.setConfiguration(eventClass, configuration);

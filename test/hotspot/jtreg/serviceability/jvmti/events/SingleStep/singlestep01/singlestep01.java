@@ -44,6 +44,7 @@ import java.io.*;
  *     must be received.
  * COMMENTS
  *
+ * @requires vm.continuations
  * @library /test/lib
  * @compile --enable-preview -source ${jdk.version} singlestep01.java
  * @run main/othervm/native --enable-preview -agentlib:singlestep01 singlestep01
@@ -51,14 +52,7 @@ import java.io.*;
 
 public class singlestep01 {
     static {
-        try {
-            System.loadLibrary("singlestep01");
-        } catch (UnsatisfiedLinkError ule) {
-            System.err.println("Could not load \"singlestep01\" library");
-            System.err.println("java.library.path:"
-                + System.getProperty("java.library.path"));
-            throw ule;
-        }
+        System.loadLibrary("singlestep01");
     }
 
     static volatile int result;

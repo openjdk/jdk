@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2358,7 +2358,7 @@ public class OldFloatingDecimalForTest{
                      * half-way case for a rounding to float.  If the
                      * double value is a half-way case, the double
                      * significand may have to be modified to round
-                     * the the right float value (see the stickyRound
+                     * the right float value (see the stickyRound
                      * method).  If the rounding to double has lost
                      * what would be float sticky bit information, the
                      * double significand must be incremented.  If the

@@ -51,7 +51,7 @@ import jdk.internal.javac.PreviewFeature;
  * As a result, resources associated with the global session are never released. Examples of resources associated with
  * the global memory session are {@linkplain MemorySegment#ofArray(int[]) heap segments}.
  *
- * <h2><a id = "thread-confinement">Thread confinement</a></h2>
+ * <h2 id = "thread-confinement">Thread confinement</h2>
  *
  * Memory sessions can be divided into two categories: <em>thread-confined</em> memory sessions, and <em>shared</em>
  * memory sessions.
@@ -60,13 +60,13 @@ import jdk.internal.javac.PreviewFeature;
  * they are assigned an {@linkplain #ownerThread() owner thread}, typically the thread which initiated the creation operation.
  * After creating a confined memory session, only the owner thread will be allowed to directly manipulate the resources
  * associated with this memory session. Any attempt to perform resource access from a thread other than the
- * owner thread will fail with {@link IllegalStateException}.
+ * owner thread will fail with {@link WrongThreadException}.
  * <p>
  * Shared memory sessions, on the other hand, have no owner thread; as such, resources associated with shared memory sessions
  * can be accessed by multiple threads. This might be useful when multiple threads need to access the same resource concurrently
  * (e.g. in the case of parallel processing).
  *
- * <h2>Closeable memory sessions</h2>
+ * <h2 id="closeable">Closeable memory sessions</h2>
  *
  * When a session is associated with off-heap resources, it is often desirable for said resources to be released in a timely fashion,
  * rather than waiting for the session to be deemed <a href="../../../java/lang/ref/package.html#reachability">unreachable</a>
@@ -96,7 +96,7 @@ import jdk.internal.javac.PreviewFeature;
  * the session becomes unreachable; that is, {@linkplain #addCloseAction(Runnable) close actions} associated with a
  * memory session, whether managed or not, are called <em>exactly once</em>.
  *
- * <h2>Non-closeable views</h2>
+ * <h2 id="non-closeable">Non-closeable views</h2>
  *
  * There are situations in which it might not be desirable for a memory session to be reachable from one or
  * more resources associated with it. For instance, an API might create a private memory session, and allocate
@@ -157,8 +157,9 @@ public sealed interface MemorySession extends AutoCloseable, SegmentAllocator pe
      * @apiNote The provided action should not keep a strong reference to this memory session, so that implicitly
      * closed sessions can be handled correctly by a {@link Cleaner} instance.
      * @param runnable the custom cleanup action to be associated with this memory session.
-     * @throws IllegalStateException if this memory session is not {@linkplain #isAlive() alive}, or if access occurs from
-     * a thread other than the thread {@linkplain #ownerThread() owning} this memory session.
+     * @throws IllegalStateException if this memory session is not {@linkplain #isAlive() alive}.
+     * @throws WrongThreadException if this method is called from a thread other than the thread
+     * {@linkplain #ownerThread() owning} this memory session.
      */
     void addCloseAction(Runnable runnable);
 
@@ -174,9 +175,10 @@ public sealed interface MemorySession extends AutoCloseable, SegmentAllocator pe
      *
      * @see MemorySession#isAlive()
      *
-     * @throws IllegalStateException if this memory session is not {@linkplain #isAlive() alive}, or if access occurs from
-     * a thread other than the thread {@linkplain #ownerThread() owning} this memory session.
+     * @throws IllegalStateException if this memory session is not {@linkplain #isAlive() alive}.
      * @throws IllegalStateException if this session is {@linkplain #whileAlive(Runnable) kept alive} by another client.
+     * @throws WrongThreadException if this method is called from a thread other than the thread
+     * {@linkplain #ownerThread() owning} this memory session.
      * @throws UnsupportedOperationException if this memory session is not {@linkplain #isCloseable() closeable}.
      */
     void close();
@@ -215,8 +217,9 @@ public sealed interface MemorySession extends AutoCloseable, SegmentAllocator pe
      * MemorySegment.allocateNative(size, align, this);
      * }
      *
-     * @throws IllegalStateException if this memory session is not {@linkplain #isAlive() alive}, or if access occurs from
-     * a thread other than the thread {@linkplain #ownerThread() owning} this memory session.
+     * @throws IllegalStateException if this memory session is not {@linkplain #isAlive() alive}.
+     * @throws WrongThreadException if this method is called from a thread other than the thread
+     * {@linkplain #ownerThread() owning} this memory session.
      * @return a new native segment, associated with this session.
      */
     @Override

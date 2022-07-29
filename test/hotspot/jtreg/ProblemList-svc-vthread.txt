@@ -68,6 +68,8 @@ vmTestbase/nsk/jvmti/GetObjectMonitorUsage/objmonusage006/TestDescription.java
 ####
 ## NSK JDWP Tests failing with wrapper
 
+vmTestbase/nsk/jdwp/ThreadReference/ForceEarlyReturn/forceEarlyReturn002/forceEarlyReturn002.java 8286789 generic-all
+
 
 ##########
 ## NSK JDB Tests failing with wrapper
@@ -95,6 +97,8 @@ vmTestbase/nsk/jdb/repeat/repeat001/repeat001.java
 
 ####
 ## NSK JDI tests failing with wrapper
+
+vmTestbase/nsk/jdi/ClassType/invokeMethod/invokemethod011/TestDescription.java 8282379 generic-all
 
 ####
 ## The test expects an NPE to be uncaught, but nsk.share.MainWrapper

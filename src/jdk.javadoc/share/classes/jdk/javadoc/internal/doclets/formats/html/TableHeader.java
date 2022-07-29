@@ -29,9 +29,9 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.toolkit.Content;
@@ -54,6 +54,8 @@ public class TableHeader extends Content {
      * If not set, default style names will be used.
      */
     private List<HtmlStyle> styles;
+
+    private boolean[] sortable;
 
     /**
      * Creates a header row, with localized content for each cell.
@@ -94,6 +96,20 @@ public class TableHeader extends Content {
             throw new IllegalStateException();
         }
         this.styles = Arrays.asList(styles);
+        return this;
+    }
+
+    /**
+     * Makes the table sortable by the content of columns for which the
+     * argument boolean array contains {@code true}.
+     * @param sortable boolean array specifying sortable columns
+     * @return this object
+     */
+    public TableHeader sortable(boolean... sortable) {
+        if (sortable.length != cellContents.size()) {
+            throw new IllegalStateException();
+        }
+        this.sortable = sortable;
         return this;
     }
 
@@ -143,6 +159,13 @@ public class TableHeader extends Content {
             var cell = HtmlTree.DIV(HtmlStyle.tableHeader, cellContent);
             if (style != null) {
                 cell.addStyle(style);
+            }
+            if (sortable != null && sortable[i]) {
+                cell.put(HtmlAttr.ONCLICK, "sortTable(this, " + i + ", " + sortable.length +")");
+                // Current tables happen to be sorted by first column by default, this may not hold true for future uses.
+                if (i == 0) {
+                    cell.addStyle("sort-asc");
+                }
             }
             header.add(cell);
             i++;

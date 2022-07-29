@@ -59,7 +59,6 @@
  * @run main/othervm/native -agentlib:thrstat02 thrstat02 5
  */
 
-import java.io.PrintStream;
 import java.util.concurrent.CountDownLatch;
 
 public class thrstat02 {

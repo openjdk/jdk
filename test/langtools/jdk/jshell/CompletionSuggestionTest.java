@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8131025 8141092 8153761 8145263 8131019 8175886 8176184 8176241 8176110 8177466 8197439 8221759 8234896 8240658 8278039
+ * @bug 8131025 8141092 8153761 8145263 8131019 8175886 8176184 8176241 8176110 8177466 8197439 8221759 8234896 8240658 8278039 8286206
  * @summary Test Completion and Documentation
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -150,6 +150,7 @@ public class CompletionSuggestionTest extends KullaTesting {
         assertCompletion("class A implements doubl|");
         assertCompletion("interface A extends doubl|");
         assertCompletion("enum A implements doubl|");
+        assertCompletion("record R() implements doubl|");
         assertCompletion("class A<T extends doubl|");
     }
 
@@ -330,11 +331,12 @@ public class CompletionSuggestionTest extends KullaTesting {
         //JDK-8221759:
         Compiler compiler = new Compiler();
         Path testOutDir = Paths.get("WithPrivateField");
-        String input = "package field; public class FieldTest { private static String field; private static String field2; }";
+        String input = "package field; public class FieldTest { private static String field; private static String field2; public record R<E>(String s, E e) {} }";
         compiler.compile(testOutDir, input);
         addToClasspath(compiler.getPath(testOutDir));
         assertSignature("field.FieldTest.field|");
         assertSignature("field.FieldTest.field2|");
+        assertSignature("field.FieldTest.R|", "field.FieldTest.R<E>(java.lang.String s, E e)");
     }
 
     public void testMethodsWithNoArguments() throws Exception {
@@ -784,5 +786,9 @@ public class CompletionSuggestionTest extends KullaTesting {
         assertCompletion("for (var v = s.conta|", (Boolean) null, "contains(");
         assertCompletion("for (;;s.conta|", (Boolean) null, "contains(");
         assertCompletion("for (var v : s.conta|", (Boolean) null, "contains(");
+    }
+
+    public void testRecord() {
+        assertCompletion("record R() implements Ru|", true, "Runnable");
     }
 }

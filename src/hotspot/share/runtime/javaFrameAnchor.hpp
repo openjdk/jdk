@@ -34,7 +34,7 @@
 //
 class JavaThread;
 class MacroAssembler;
-class ProgrammableUpcallHandler;
+class UpcallLinker;
 class ZeroFrame;
 
 class JavaFrameAnchor {
@@ -53,7 +53,7 @@ friend class VMStructs;
 friend class JVMCIVMStructs;
 friend class BytecodeInterpreter;
 friend class JavaCallWrapper;
-friend class ProgrammableUpcallHandler;
+friend class UpcallLinker;
 
  private:
   //

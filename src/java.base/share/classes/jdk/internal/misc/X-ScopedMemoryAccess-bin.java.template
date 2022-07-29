@@ -3,7 +3,7 @@
         try {
             return get$Type$Internal(session, base, offset);
         } catch (ScopedAccessError ex) {
-            throw new IllegalStateException("This segment is already closed");
+            throw ex.newRuntimeException();
         }
     }
 
@@ -11,7 +11,7 @@
     private $type$ get$Type$Internal(MemorySessionImpl session, Object base, long offset) {
         try {
             if (session != null) {
-                session.checkValidState();
+                session.checkValidStateRaw();
             }
             return UNSAFE.get$Type$(base, offset);
         } finally {
@@ -24,7 +24,7 @@
         try {
             put$Type$Internal(session, base, offset, value);
         } catch (ScopedAccessError ex) {
-            throw new IllegalStateException("This segment is already closed");
+            throw ex.newRuntimeException();
         }
     }
 
@@ -32,7 +32,7 @@
     private void put$Type$Internal(MemorySessionImpl session, Object base, long offset, $type$ value) {
         try {
             if (session != null) {
-                session.checkValidState();
+                session.checkValidStateRaw();
             }
             UNSAFE.put$Type$(base, offset, value);
         } finally {
@@ -46,7 +46,7 @@
         try {
             return get$Type$UnalignedInternal(session, base, offset, be);
         } catch (ScopedAccessError ex) {
-            throw new IllegalStateException("This segment is already closed");
+            throw ex.newRuntimeException();
         }
     }
 
@@ -54,7 +54,7 @@
     private $type$ get$Type$UnalignedInternal(MemorySessionImpl session, Object base, long offset, boolean be) {
         try {
             if (session != null) {
-                session.checkValidState();
+                session.checkValidStateRaw();
             }
             return UNSAFE.get$Type$Unaligned(base, offset, be);
         } finally {
@@ -67,7 +67,7 @@
         try {
             put$Type$UnalignedInternal(session, base, offset, value, be);
         } catch (ScopedAccessError ex) {
-            throw new IllegalStateException("This segment is already closed");
+            throw ex.newRuntimeException();
         }
     }
 
@@ -75,7 +75,7 @@
     private void put$Type$UnalignedInternal(MemorySessionImpl session, Object base, long offset, $type$ value, boolean be) {
         try {
             if (session != null) {
-                session.checkValidState();
+                session.checkValidStateRaw();
             }
             UNSAFE.put$Type$Unaligned(base, offset, value, be);
         } finally {
@@ -89,7 +89,7 @@
         try {
             return get$Type$VolatileInternal(session, base, offset);
         } catch (ScopedAccessError ex) {
-            throw new IllegalStateException("This segment is already closed");
+            throw ex.newRuntimeException();
         }
     }
 
@@ -97,7 +97,7 @@
     private $type$ get$Type$VolatileInternal(MemorySessionImpl session, Object base, long offset) {
         try {
             if (session != null) {
-                session.checkValidState();
+                session.checkValidStateRaw();
             }
             return UNSAFE.get$Type$Volatile(base, offset);
         } finally {
@@ -110,7 +110,7 @@
         try {
             put$Type$VolatileInternal(session, base, offset, value);
         } catch (ScopedAccessError ex) {
-            throw new IllegalStateException("This segment is already closed");
+            throw ex.newRuntimeException();
         }
     }
 
@@ -118,7 +118,7 @@
     private void put$Type$VolatileInternal(MemorySessionImpl session, Object base, long offset, $type$ value) {
         try {
             if (session != null) {
-                session.checkValidState();
+                session.checkValidStateRaw();
             }
             UNSAFE.put$Type$Volatile(base, offset, value);
         } finally {
@@ -131,7 +131,7 @@
         try {
             return get$Type$AcquireInternal(session, base, offset);
         } catch (ScopedAccessError ex) {
-            throw new IllegalStateException("This segment is already closed");
+            throw ex.newRuntimeException();
         }
     }
 
@@ -139,7 +139,7 @@
     private $type$ get$Type$AcquireInternal(MemorySessionImpl session, Object base, long offset) {
         try {
             if (session != null) {
-                session.checkValidState();
+                session.checkValidStateRaw();
             }
             return UNSAFE.get$Type$Acquire(base, offset);
         } finally {
@@ -152,7 +152,7 @@
         try {
             put$Type$ReleaseInternal(session, base, offset, value);
         } catch (ScopedAccessError ex) {
-            throw new IllegalStateException("This segment is already closed");
+            throw ex.newRuntimeException();
         }
     }
 
@@ -160,7 +160,7 @@
     private void put$Type$ReleaseInternal(MemorySessionImpl session, Object base, long offset, $type$ value) {
         try {
             if (session != null) {
-                session.checkValidState();
+                session.checkValidStateRaw();
             }
             UNSAFE.put$Type$Release(base, offset, value);
         } finally {
@@ -173,7 +173,7 @@
         try {
             return get$Type$OpaqueInternal(session, base, offset);
         } catch (ScopedAccessError ex) {
-            throw new IllegalStateException("This segment is already closed");
+            throw ex.newRuntimeException();
         }
     }
 
@@ -181,7 +181,7 @@
     private $type$ get$Type$OpaqueInternal(MemorySessionImpl session, Object base, long offset) {
         try {
             if (session != null) {
-                session.checkValidState();
+                session.checkValidStateRaw();
             }
             return UNSAFE.get$Type$Opaque(base, offset);
         } finally {
@@ -193,7 +193,7 @@
         try {
             put$Type$OpaqueInternal(session, base, offset, value);
         } catch (ScopedAccessError ex) {
-            throw new IllegalStateException("This segment is already closed");
+            throw ex.newRuntimeException();
         }
     }
 
@@ -201,7 +201,7 @@
     private void put$Type$OpaqueInternal(MemorySessionImpl session, Object base, long offset, $type$ value) {
         try {
             if (session != null) {
-                session.checkValidState();
+                session.checkValidStateRaw();
             }
             UNSAFE.put$Type$Opaque(base, offset, value);
         } finally {
@@ -214,7 +214,7 @@
         try {
             return compareAndSet$Type$Internal(session, base, offset, expected, value);
         } catch (ScopedAccessError ex) {
-            throw new IllegalStateException("This segment is already closed");
+            throw ex.newRuntimeException();
         }
     }
 
@@ -222,7 +222,7 @@
     private boolean compareAndSet$Type$Internal(MemorySessionImpl session, Object base, long offset, $type$ expected, $type$ value) {
         try {
             if (session != null) {
-                session.checkValidState();
+                session.checkValidStateRaw();
             }
             return UNSAFE.compareAndSet$Type$(base, offset, expected, value);
         } finally {
@@ -235,7 +235,7 @@
         try {
             return compareAndExchange$Type$Internal(session, base, offset, expected, value);
         } catch (ScopedAccessError ex) {
-            throw new IllegalStateException("This segment is already closed");
+            throw ex.newRuntimeException();
         }
     }
 
@@ -243,7 +243,7 @@
     private $type$ compareAndExchange$Type$Internal(MemorySessionImpl session, Object base, long offset, $type$ expected, $type$ value) {
         try {
             if (session != null) {
-                session.checkValidState();
+                session.checkValidStateRaw();
             }
             return UNSAFE.compareAndExchange$Type$(base, offset, expected, value);
         } finally {
@@ -256,7 +256,7 @@
         try {
             return compareAndExchange$Type$AcquireInternal(session, base, offset, expected, value);
         } catch (ScopedAccessError ex) {
-            throw new IllegalStateException("This segment is already closed");
+            throw ex.newRuntimeException();
         }
     }
 
@@ -264,7 +264,7 @@
     private $type$ compareAndExchange$Type$AcquireInternal(MemorySessionImpl session, Object base, long offset, $type$ expected, $type$ value) {
         try {
             if (session != null) {
-                session.checkValidState();
+                session.checkValidStateRaw();
             }
             return UNSAFE.compareAndExchange$Type$Acquire(base, offset, expected, value);
         } finally {
@@ -277,7 +277,7 @@
         try {
             return compareAndExchange$Type$ReleaseInternal(session, base, offset, expected, value);
         } catch (ScopedAccessError ex) {
-            throw new IllegalStateException("This segment is already closed");
+            throw ex.newRuntimeException();
         }
     }
 
@@ -285,7 +285,7 @@
     private $type$ compareAndExchange$Type$ReleaseInternal(MemorySessionImpl session, Object base, long offset, $type$ expected, $type$ value) {
         try {
             if (session != null) {
-                session.checkValidState();
+                session.checkValidStateRaw();
             }
             return UNSAFE.compareAndExchange$Type$Release(base, offset, expected, value);
         } finally {
@@ -298,7 +298,7 @@
         try {
             return weakCompareAndSet$Type$PlainInternal(session, base, offset, expected, value);
         } catch (ScopedAccessError ex) {
-            throw new IllegalStateException("This segment is already closed");
+            throw ex.newRuntimeException();
         }
     }
 
@@ -306,7 +306,7 @@
     private boolean weakCompareAndSet$Type$PlainInternal(MemorySessionImpl session, Object base, long offset, $type$ expected, $type$ value) {
         try {
             if (session != null) {
-                session.checkValidState();
+                session.checkValidStateRaw();
             }
             return UNSAFE.weakCompareAndSet$Type$Plain(base, offset, expected, value);
         } finally {
@@ -319,7 +319,7 @@
         try {
             return weakCompareAndSet$Type$Internal(session, base, offset, expected, value);
         } catch (ScopedAccessError ex) {
-            throw new IllegalStateException("This segment is already closed");
+            throw ex.newRuntimeException();
         }
     }
 
@@ -327,7 +327,7 @@
     private boolean weakCompareAndSet$Type$Internal(MemorySessionImpl session, Object base, long offset, $type$ expected, $type$ value) {
         try {
             if (session != null) {
-                session.checkValidState();
+                session.checkValidStateRaw();
             }
             return UNSAFE.weakCompareAndSet$Type$(base, offset, expected, value);
         } finally {
@@ -340,7 +340,7 @@
         try {
             return weakCompareAndSet$Type$AcquireInternal(session, base, offset, expected, value);
         } catch (ScopedAccessError ex) {
-            throw new IllegalStateException("This segment is already closed");
+            throw ex.newRuntimeException();
         }
     }
 
@@ -348,7 +348,7 @@
     private boolean weakCompareAndSet$Type$AcquireInternal(MemorySessionImpl session, Object base, long offset, $type$ expected, $type$ value) {
         try {
             if (session != null) {
-                session.checkValidState();
+                session.checkValidStateRaw();
             }
             return UNSAFE.weakCompareAndSet$Type$Acquire(base, offset, expected, value);
         } finally {
@@ -361,7 +361,7 @@
         try {
             return weakCompareAndSet$Type$ReleaseInternal(session, base, offset, expected, value);
         } catch (ScopedAccessError ex) {
-            throw new IllegalStateException("This segment is already closed");
+            throw ex.newRuntimeException();
         }
     }
 
@@ -369,7 +369,7 @@
     private boolean weakCompareAndSet$Type$ReleaseInternal(MemorySessionImpl session, Object base, long offset, $type$ expected, $type$ value) {
         try {
             if (session != null) {
-                session.checkValidState();
+                session.checkValidStateRaw();
             }
             return UNSAFE.weakCompareAndSet$Type$Release(base, offset, expected, value);
         } finally {
@@ -382,7 +382,7 @@
         try {
             return getAndSet$Type$Internal(session, base, offset, value);
         } catch (ScopedAccessError ex) {
-            throw new IllegalStateException("This segment is already closed");
+            throw ex.newRuntimeException();
         }
     }
 
@@ -390,7 +390,7 @@
     private $type$ getAndSet$Type$Internal(MemorySessionImpl session, Object base, long offset, $type$ value) {
         try {
             if (session != null) {
-                session.checkValidState();
+                session.checkValidStateRaw();
             }
             return UNSAFE.getAndSet$Type$(base, offset, value);
         } finally {
@@ -403,7 +403,7 @@
         try {
             return getAndSet$Type$AcquireInternal(session, base, offset, value);
         } catch (ScopedAccessError ex) {
-            throw new IllegalStateException("This segment is already closed");
+            throw ex.newRuntimeException();
         }
     }
 
@@ -411,7 +411,7 @@
     private $type$ getAndSet$Type$AcquireInternal(MemorySessionImpl session, Object base, long offset, $type$ value) {
         try {
             if (session != null) {
-                session.checkValidState();
+                session.checkValidStateRaw();
             }
             return UNSAFE.getAndSet$Type$Acquire(base, offset, value);
         } finally {
@@ -424,7 +424,7 @@
         try {
             return getAndSet$Type$ReleaseInternal(session, base, offset, value);
         } catch (ScopedAccessError ex) {
-            throw new IllegalStateException("This segment is already closed");
+            throw ex.newRuntimeException();
         }
     }
 
@@ -432,7 +432,7 @@
     private $type$ getAndSet$Type$ReleaseInternal(MemorySessionImpl session, Object base, long offset, $type$ value) {
         try {
             if (session != null) {
-                session.checkValidState();
+                session.checkValidStateRaw();
             }
             return UNSAFE.getAndSet$Type$Release(base, offset, value);
         } finally {
@@ -447,7 +447,7 @@
         try {
             return getAndAdd$Type$Internal(session, base, offset, delta);
         } catch (ScopedAccessError ex) {
-            throw new IllegalStateException("This segment is already closed");
+            throw ex.newRuntimeException();
         }
     }
 
@@ -455,7 +455,7 @@
     private $type$ getAndAdd$Type$Internal(MemorySessionImpl session, Object base, long offset, $type$ delta) {
         try {
             if (session != null) {
-                session.checkValidState();
+                session.checkValidStateRaw();
             }
             return UNSAFE.getAndAdd$Type$(base, offset, delta);
         } finally {
@@ -468,7 +468,7 @@
         try {
             return getAndAdd$Type$AcquireInternal(session, base, offset, delta);
         } catch (ScopedAccessError ex) {
-            throw new IllegalStateException("This segment is already closed");
+            throw ex.newRuntimeException();
         }
     }
 
@@ -476,7 +476,7 @@
     private $type$ getAndAdd$Type$AcquireInternal(MemorySessionImpl session, Object base, long offset, $type$ delta) {
         try {
             if (session != null) {
-                session.checkValidState();
+                session.checkValidStateRaw();
             }
             return UNSAFE.getAndAdd$Type$Acquire(base, offset, delta);
         } finally {
@@ -489,7 +489,7 @@
         try {
             return getAndAdd$Type$ReleaseInternal(session, base, offset, delta);
         } catch (ScopedAccessError ex) {
-            throw new IllegalStateException("This segment is already closed");
+            throw ex.newRuntimeException();
         }
     }
 
@@ -497,7 +497,7 @@
     private $type$ getAndAdd$Type$ReleaseInternal(MemorySessionImpl session, Object base, long offset, $type$ delta) {
         try {
             if (session != null) {
-                session.checkValidState();
+                session.checkValidStateRaw();
             }
             return UNSAFE.getAndAdd$Type$Release(base, offset, delta);
         } finally {
@@ -512,7 +512,7 @@
         try {
             return getAndBitwiseOr$Type$Internal(session, base, offset, value);
         } catch (ScopedAccessError ex) {
-            throw new IllegalStateException("This segment is already closed");
+            throw ex.newRuntimeException();
         }
     }
 
@@ -520,7 +520,7 @@
     private $type$ getAndBitwiseOr$Type$Internal(MemorySessionImpl session, Object base, long offset, $type$ value) {
         try {
             if (session != null) {
-                session.checkValidState();
+                session.checkValidStateRaw();
             }
             return UNSAFE.getAndBitwiseOr$Type$(base, offset, value);
         } finally {
@@ -533,7 +533,7 @@
         try {
             return getAndBitwiseOr$Type$AcquireInternal(session, base, offset, value);
         } catch (ScopedAccessError ex) {
-            throw new IllegalStateException("This segment is already closed");
+            throw ex.newRuntimeException();
         }
     }
 
@@ -541,7 +541,7 @@
     private $type$ getAndBitwiseOr$Type$AcquireInternal(MemorySessionImpl session, Object base, long offset, $type$ value) {
         try {
             if (session != null) {
-                session.checkValidState();
+                session.checkValidStateRaw();
             }
             return UNSAFE.getAndBitwiseOr$Type$Acquire(base, offset, value);
         } finally {
@@ -554,7 +554,7 @@
         try {
             return getAndBitwiseOr$Type$ReleaseInternal(session, base, offset, value);
         } catch (ScopedAccessError ex) {
-            throw new IllegalStateException("This segment is already closed");
+            throw ex.newRuntimeException();
         }
     }
 
@@ -562,7 +562,7 @@
     private $type$ getAndBitwiseOr$Type$ReleaseInternal(MemorySessionImpl session, Object base, long offset, $type$ value) {
         try {
             if (session != null) {
-                session.checkValidState();
+                session.checkValidStateRaw();
             }
             return UNSAFE.getAndBitwiseOr$Type$Release(base, offset, value);
         } finally {
@@ -575,7 +575,7 @@
         try {
             return getAndBitwiseAnd$Type$Internal(session, base, offset, value);
         } catch (ScopedAccessError ex) {
-            throw new IllegalStateException("This segment is already closed");
+            throw ex.newRuntimeException();
         }
     }
 
@@ -583,7 +583,7 @@
     private $type$ getAndBitwiseAnd$Type$Internal(MemorySessionImpl session, Object base, long offset, $type$ value) {
         try {
             if (session != null) {
-                session.checkValidState();
+                session.checkValidStateRaw();
             }
             return UNSAFE.getAndBitwiseAnd$Type$(base, offset, value);
         } finally {
@@ -596,7 +596,7 @@
         try {
             return getAndBitwiseAnd$Type$AcquireInternal(session, base, offset, value);
         } catch (ScopedAccessError ex) {
-            throw new IllegalStateException("This segment is already closed");
+            throw ex.newRuntimeException();
         }
     }
 
@@ -604,7 +604,7 @@
     private $type$ getAndBitwiseAnd$Type$AcquireInternal(MemorySessionImpl session, Object base, long offset, $type$ value) {
         try {
             if (session != null) {
-                session.checkValidState();
+                session.checkValidStateRaw();
             }
             return UNSAFE.getAndBitwiseAnd$Type$Acquire(base, offset, value);
         } finally {
@@ -617,7 +617,7 @@
         try {
             return getAndBitwiseAnd$Type$ReleaseInternal(session, base, offset, value);
         } catch (ScopedAccessError ex) {
-            throw new IllegalStateException("This segment is already closed");
+            throw ex.newRuntimeException();
         }
     }
 
@@ -625,7 +625,7 @@
     private $type$ getAndBitwiseAnd$Type$ReleaseInternal(MemorySessionImpl session, Object base, long offset, $type$ value) {
         try {
             if (session != null) {
-                session.checkValidState();
+                session.checkValidStateRaw();
             }
             return UNSAFE.getAndBitwiseAnd$Type$Release(base, offset, value);
         } finally {
@@ -638,7 +638,7 @@
         try {
             return getAndBitwiseXor$Type$Internal(session, base, offset, value);
         } catch (ScopedAccessError ex) {
-            throw new IllegalStateException("This segment is already closed");
+            throw ex.newRuntimeException();
         }
     }
 
@@ -646,7 +646,7 @@
     private $type$ getAndBitwiseXor$Type$Internal(MemorySessionImpl session, Object base, long offset, $type$ value) {
         try {
             if (session != null) {
-                session.checkValidState();
+                session.checkValidStateRaw();
             }
             return UNSAFE.getAndBitwiseXor$Type$(base, offset, value);
         } finally {
@@ -659,7 +659,7 @@
         try {
             return getAndBitwiseXor$Type$AcquireInternal(session, base, offset, value);
         } catch (ScopedAccessError ex) {
-            throw new IllegalStateException("This segment is already closed");
+            throw ex.newRuntimeException();
         }
     }
 
@@ -667,7 +667,7 @@
     private $type$ getAndBitwiseXor$Type$AcquireInternal(MemorySessionImpl session, Object base, long offset, $type$ value) {
         try {
             if (session != null) {
-                session.checkValidState();
+                session.checkValidStateRaw();
             }
             return UNSAFE.getAndBitwiseXor$Type$Acquire(base, offset, value);
         } finally {
@@ -680,7 +680,7 @@
         try {
             return getAndBitwiseXor$Type$ReleaseInternal(session, base, offset, value);
         } catch (ScopedAccessError ex) {
-            throw new IllegalStateException("This segment is already closed");
+            throw ex.newRuntimeException();
         }
     }
 
@@ -688,7 +688,7 @@
     private $type$ getAndBitwiseXor$Type$ReleaseInternal(MemorySessionImpl session, Object base, long offset, $type$ value) {
         try {
             if (session != null) {
-                session.checkValidState();
+                session.checkValidStateRaw();
             }
             return UNSAFE.getAndBitwiseXor$Type$Release(base, offset, value);
         } finally {

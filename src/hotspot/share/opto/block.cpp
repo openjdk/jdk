@@ -1755,7 +1755,7 @@ bool Trace::backedge(CFGEdge *e) {
 
     // Backbranch to the top of a trace
     // Scroll forward through the trace from the targ_block. If we find
-    // a loop head before another loop top, use the the loop head alignment.
+    // a loop head before another loop top, use the loop head alignment.
     for (Block *b = targ_block; b != NULL; b = next(b)) {
       if (b->has_loop_alignment()) {
         break;

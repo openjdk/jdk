@@ -345,7 +345,7 @@ public interface ClassType extends ReferenceType {
                                           InvocationException;
 
     /**
-     * Returns a the single non-abstract {@link Method} visible from
+     * Returns a single non-abstract {@link Method} visible from
      * this class that has the given name and signature.
      * See {@link ReferenceType#methodsByName(java.lang.String, java.lang.String)}
      * for information on signature format.

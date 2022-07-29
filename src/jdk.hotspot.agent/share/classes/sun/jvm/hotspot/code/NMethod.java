@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -387,7 +387,7 @@ public class NMethod extends CompiledMethod {
   // pc_desc_near returns the first PCDesc at or after the givne pc.
   PCDesc pc_desc_near(long pc) { return find_pc_desc(pc, true); }
 
-  // Return a the last scope in (begin..end]
+  // Return the last scope in (begin..end]
   public ScopeDesc scope_desc_in(long begin, long end) {
     PCDesc p = pc_desc_near(begin+1);
     if (p != null && VM.getAddressValue(p.getRealPC(this)) <= end) {

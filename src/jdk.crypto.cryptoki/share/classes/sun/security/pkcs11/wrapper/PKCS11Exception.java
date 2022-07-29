@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -180,14 +180,37 @@ public class PKCS11Exception extends Exception {
         }
     };
 
+    public static enum RV_VENDOR {
+        // NSS
+        CKR_NSS_CERTDB_FAILED(0xCE534351L),
+        CKR_NSS_KEYDB_FAILED(0xCE534352L);
+
+        private final long value;
+
+        RV_VENDOR(long value) {
+            this.value = value;
+        }
+    };
+
     private static String lookup(long errorCode) {
         for (RV r : RV.values()) {
             if (r.value == errorCode) {
                 return r.name();
             }
         }
-        // for unknown PKCS11 return values, just use hex as its string
-        return "0x" + Functions.toFullHexString((int)errorCode);
+        // for unknown PKCS11 return values, use hex as its string
+        String res = "0x" + Functions.toFullHexString((int)errorCode);
+        // for vendor-defined values, check the enum for vendors and include
+        // potential matches
+        if ((errorCode & 0x80000000L) != 0) {
+            for (RV_VENDOR r : RV_VENDOR.values()) {
+                if (r.value == errorCode) {
+                    res += "(" + r.name() + ")";
+                    break;
+                }
+            }
+        }
+        return res;
     }
 
     /**
@@ -228,8 +251,8 @@ public class PKCS11Exception extends Exception {
     }
 
     /**
-     * Returns true if the error code matches the the specified enum value.
-     * @return true if the error code matches the the specified enum value.
+     * Returns true if the error code matches the specified enum value.
+     * @return true if the error code matches the specified enum value.
      * @preconditions
      * @postconditions
      */

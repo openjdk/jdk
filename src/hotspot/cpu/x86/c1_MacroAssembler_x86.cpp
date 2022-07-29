@@ -65,6 +65,7 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
 #endif
   movptr(hdr, Address(obj, hdr_offset));
   fast_lock_impl(obj, hdr, thread, tmp, tmp2, slow_case);
+  inc_held_monitor_count();
   return null_check_offset;
 }
 
@@ -79,6 +80,7 @@ void C1_MacroAssembler::unlock_object(Register disp_hdr, Register obj, Register 
   movptr(disp_hdr, Address(obj, hdr_offset));
   andptr(disp_hdr, ~(int32_t)markWord::lock_mask_in_place);
   fast_unlock_impl(obj, disp_hdr, hdr, slow_case);
+  dec_held_monitor_count();
 }
 
 
@@ -87,7 +89,7 @@ void C1_MacroAssembler::try_allocate(Register obj, Register var_size_in_bytes, i
   if (UseTLAB) {
     tlab_allocate(noreg, obj, var_size_in_bytes, con_size_in_bytes, t1, t2, slow_case);
   } else {
-    eden_allocate(noreg, obj, var_size_in_bytes, con_size_in_bytes, t1, slow_case);
+    jmp(slow_case);
   }
 }
 
@@ -274,7 +276,8 @@ void C1_MacroAssembler::build_frame(int frame_size_in_bytes, int bang_size_in_by
   decrement(rsp, frame_size_in_bytes); // does not emit code for frame_size == 0
 
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  bs->nmethod_entry_barrier(this);
+  // C1 code is not hot enough to micro optimize the nmethod entry barrier with an out-of-line stub
+  bs->nmethod_entry_barrier(this, NULL /* slow_path */, NULL /* continuation */);
 }
 
 

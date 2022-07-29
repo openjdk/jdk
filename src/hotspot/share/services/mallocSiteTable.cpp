@@ -29,7 +29,7 @@
 #include "services/mallocSiteTable.hpp"
 
 // Malloc site hashtable buckets
-MallocSiteHashtableEntry*  MallocSiteTable::_table[MallocSiteTable::table_size];
+MallocSiteHashtableEntry**  MallocSiteTable::_table = NULL;
 const NativeCallStack* MallocSiteTable::_hash_entry_allocation_stack = NULL;
 const MallocSiteHashtableEntry* MallocSiteTable::_hash_entry_allocation_site = NULL;
 
@@ -42,6 +42,12 @@ const MallocSiteHashtableEntry* MallocSiteTable::_hash_entry_allocation_site = N
  * time, it is in single-threaded mode from JVM perspective.
  */
 bool MallocSiteTable::initialize() {
+
+  ALLOW_C_FUNCTION(::calloc,
+                   _table = (MallocSiteHashtableEntry**)::calloc(table_size, sizeof(MallocSiteHashtableEntry*));)
+  if (_table == nullptr) {
+    return false;
+  }
 
   // Fake the call stack for hashtable entry allocation
   assert(NMT_TrackingStackDepth > 1, "At least one tracking stack");
@@ -176,28 +182,6 @@ MallocSiteHashtableEntry* MallocSiteTable::new_entry(const NativeCallStack& key,
   void* p = AllocateHeap(sizeof(MallocSiteHashtableEntry), mtNMT,
     *hash_entry_allocation_stack(), AllocFailStrategy::RETURN_NULL);
   return ::new (p) MallocSiteHashtableEntry(key, flags);
-}
-
-void MallocSiteTable::reset() {
-  for (int index = 0; index < table_size; index ++) {
-    MallocSiteHashtableEntry* head = _table[index];
-    _table[index] = NULL;
-    delete_linked_list(head);
-  }
-
-  _hash_entry_allocation_stack = NULL;
-  _hash_entry_allocation_site = NULL;
-}
-
-void MallocSiteTable::delete_linked_list(MallocSiteHashtableEntry* head) {
-  MallocSiteHashtableEntry* p;
-  while (head != NULL) {
-    p = head;
-    head = (MallocSiteHashtableEntry*)head->next();
-    if (p != hash_entry_allocation_site()) {
-      delete p;
-    }
-  }
 }
 
 bool MallocSiteTable::walk_malloc_site(MallocSiteWalker* walker) {

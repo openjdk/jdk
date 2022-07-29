@@ -118,7 +118,7 @@ bool frame::safe_for_sender(JavaThread *thread) {
     if (is_entry_frame()) {
       // an entry frame must have a valid fp.
       return fp_safe && is_entry_frame_valid(thread);
-    } else if (is_optimized_entry_frame()) {
+    } else if (is_upcall_stub_frame()) {
       return fp_safe;
     }
 
@@ -222,7 +222,7 @@ bool frame::safe_for_sender(JavaThread *thread) {
       address jcw = (address)sender.entry_frame_call_wrapper();
 
       return thread->is_in_stack_range_excl(jcw, (address)sender.fp());
-    } else if (sender_blob->is_optimized_entry_blob()) {
+    } else if (sender_blob->is_upcall_stub()) {
       return false;
     }
 
@@ -354,6 +354,11 @@ void frame::interpreter_frame_set_last_sp(intptr_t* sp) {
     *((intptr_t**)addr_at(interpreter_frame_last_sp_offset)) = sp;
 }
 
+// Used by template based interpreter deoptimization
+void frame::interpreter_frame_set_extended_sp(intptr_t* sp) {
+  *((intptr_t**)addr_at(interpreter_frame_extended_sp_offset)) = sp;
+}
+
 frame frame::sender_for_entry_frame(RegisterMap* map) const {
   assert(map != NULL, "map must be set");
   // Java frame called from C; skip all C frames and return top C
@@ -372,27 +377,27 @@ frame frame::sender_for_entry_frame(RegisterMap* map) const {
   return fr;
 }
 
-OptimizedEntryBlob::FrameData* OptimizedEntryBlob::frame_data_for_frame(const frame& frame) const {
-  assert(frame.is_optimized_entry_frame(), "wrong frame");
+UpcallStub::FrameData* UpcallStub::frame_data_for_frame(const frame& frame) const {
+  assert(frame.is_upcall_stub_frame(), "wrong frame");
   // need unextended_sp here, since normal sp is wrong for interpreter callees
-  return reinterpret_cast<OptimizedEntryBlob::FrameData*>(
+  return reinterpret_cast<UpcallStub::FrameData*>(
     reinterpret_cast<address>(frame.unextended_sp()) + in_bytes(_frame_data_offset));
 }
 
-bool frame::optimized_entry_frame_is_first() const {
-  assert(is_optimized_entry_frame(), "must be optimzed entry frame");
-  OptimizedEntryBlob* blob = _cb->as_optimized_entry_blob();
+bool frame::upcall_stub_frame_is_first() const {
+  assert(is_upcall_stub_frame(), "must be optimzed entry frame");
+  UpcallStub* blob = _cb->as_upcall_stub();
   JavaFrameAnchor* jfa = blob->jfa_for_frame(*this);
   return jfa->last_Java_sp() == NULL;
 }
 
-frame frame::sender_for_optimized_entry_frame(RegisterMap* map) const {
+frame frame::sender_for_upcall_stub_frame(RegisterMap* map) const {
   assert(map != NULL, "map must be set");
-  OptimizedEntryBlob* blob = _cb->as_optimized_entry_blob();
+  UpcallStub* blob = _cb->as_upcall_stub();
   // Java frame called from C; skip all C frames and return top C
   // frame of that chunk as the sender
   JavaFrameAnchor* jfa = blob->jfa_for_frame(*this);
-  assert(!optimized_entry_frame_is_first(), "must have a frame anchor to go back to");
+  assert(!upcall_stub_frame_is_first(), "must have a frame anchor to go back to");
   assert(jfa->last_Java_sp() > sp(), "must be above this frame on stack");
   // Since we are walking the stack now this nested anchor is obviously walkable
   // even if it wasn't when it was stacked.
@@ -420,7 +425,7 @@ void frame::verify_deopt_original_pc(CompiledMethod* nm, intptr_t* unextended_sp
 
   address original_pc = nm->get_original_pc(&fr);
   assert(nm->insts_contains_inclusive(original_pc),
-         "original PC must be in the main code section of the the compiled method (or must be immediately following it)");
+         "original PC must be in the main code section of the compiled method (or must be immediately following it)");
 }
 #endif
 
@@ -599,6 +604,7 @@ void frame::describe_pd(FrameValues& values, int frame_no) {
     DESCRIBE_FP_OFFSET(interpreter_frame_last_sp);
     DESCRIBE_FP_OFFSET(interpreter_frame_method);
     DESCRIBE_FP_OFFSET(interpreter_frame_mdp);
+    DESCRIBE_FP_OFFSET(interpreter_frame_extended_sp);
     DESCRIBE_FP_OFFSET(interpreter_frame_mirror);
     DESCRIBE_FP_OFFSET(interpreter_frame_cache);
     DESCRIBE_FP_OFFSET(interpreter_frame_locals);
@@ -606,13 +612,21 @@ void frame::describe_pd(FrameValues& values, int frame_no) {
     DESCRIBE_FP_OFFSET(interpreter_frame_initial_sp);
   }
 
-  intptr_t* ret_pc_loc = sp() - return_addr_offset;
-  address ret_pc = *(address*)ret_pc_loc;
-  if (Continuation::is_return_barrier_entry(ret_pc))
-    values.describe(frame_no, ret_pc_loc, "return address (return barrier)");
-  else
-    values.describe(frame_no, ret_pc_loc, err_msg("return address for #%d", frame_no));
-  values.describe(frame_no, sp() - sender_sp_offset, err_msg("saved fp for #%d", frame_no), 0);
+  if (is_java_frame() || Continuation::is_continuation_enterSpecial(*this)) {
+    intptr_t* ret_pc_loc;
+    intptr_t* fp_loc;
+    if (is_interpreted_frame()) {
+      ret_pc_loc = fp() + return_addr_offset;
+      fp_loc = fp();
+    } else {
+      ret_pc_loc = real_fp() - return_addr_offset;
+      fp_loc = real_fp() - sender_sp_offset;
+    }
+    address ret_pc = *(address*)ret_pc_loc;
+    values.describe(frame_no, ret_pc_loc,
+      Continuation::is_return_barrier_entry(ret_pc) ? "return address (return barrier)" : "return address");
+    values.describe(-1, fp_loc, "saved fp", 0); // "unowned" as value belongs to sender
+  }
 }
 #endif
 
@@ -662,6 +676,8 @@ void internal_pf(uintptr_t sp, uintptr_t fp, uintptr_t pc, uintptr_t bcx) {
   DESCRIBE_FP_OFFSET(interpreter_frame_last_sp);
   DESCRIBE_FP_OFFSET(interpreter_frame_method);
   DESCRIBE_FP_OFFSET(interpreter_frame_mdp);
+  DESCRIBE_FP_OFFSET(interpreter_frame_extended_sp);
+  DESCRIBE_FP_OFFSET(interpreter_frame_mirror);
   DESCRIBE_FP_OFFSET(interpreter_frame_cache);
   DESCRIBE_FP_OFFSET(interpreter_frame_locals);
   DESCRIBE_FP_OFFSET(interpreter_frame_bcp);
@@ -723,9 +739,15 @@ extern "C" void pf(uintptr_t sp, uintptr_t fp, uintptr_t pc,
                    uintptr_t bcx, uintptr_t thread) {
   if (!reg_map) {
     reg_map = NEW_C_HEAP_OBJ(RegisterMap, mtInternal);
-    ::new (reg_map) RegisterMap((JavaThread*)thread, false);
+    ::new (reg_map) RegisterMap((JavaThread*)thread,
+                                RegisterMap::UpdateMap::skip,
+                                RegisterMap::ProcessFrames::include,
+                                RegisterMap::WalkContinuation::skip);
   } else {
-    *reg_map = RegisterMap((JavaThread*)thread, false);
+    *reg_map = RegisterMap((JavaThread*)thread,
+                           RegisterMap::UpdateMap::skip,
+                           RegisterMap::ProcessFrames::include,
+                           RegisterMap::WalkContinuation::skip);
   }
 
   {
@@ -764,4 +786,3 @@ void JavaFrameAnchor::make_walkable() {
   _last_Java_pc = (address)_last_Java_sp[-1];
   vmassert(walkable(), "something went wrong");
 }
-

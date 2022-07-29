@@ -22,7 +22,6 @@
  */
 
 import java.nio.file.Path;
-import java.util.List;
 
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.Annotations.Test;
@@ -39,7 +38,7 @@ import jdk.jpackage.test.AdditionalLauncher;
  * in the jpackagerTest keychain (or alternately the keychain specified with
  * the system property "jpackage.mac.signing.keychain".
  * If this certificate is self-signed, it must have be set to
- * always allowe access to this keychain" for user which runs test.
+ * always allowed access to this keychain" for user which runs test.
  * (If cert is real (not self signed), the do not set trust to allow.)
  */
 

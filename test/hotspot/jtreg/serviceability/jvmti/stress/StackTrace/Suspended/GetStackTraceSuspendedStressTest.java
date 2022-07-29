@@ -24,6 +24,7 @@
 /**
  * @test
  * @summary Verifies JVMTI GetStackTrace functions called after vthread is suspended.
+ * @requires vm.continuations
  * @library /test/lib
  * @compile --enable-preview -source ${jdk.version} GetStackTraceSuspendedStressTest.java
  * @run main/othervm/native --enable-preview -agentlib:GetStackTraceSuspendedStress GetStackTraceSuspendedStressTest

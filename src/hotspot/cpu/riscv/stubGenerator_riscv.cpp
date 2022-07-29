@@ -40,10 +40,10 @@
 #include "prims/methodHandles.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubCodeGenerator.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "runtime/thread.inline.hpp"
 #include "utilities/align.hpp"
 #include "utilities/powerOfTwo.hpp"
 #ifdef COMPILER2
@@ -288,9 +288,9 @@ class StubGenerator: public StubCodeGenerator {
 
     // call Java entry -- passing methdoOop, and current sp
     //      xmethod: Method*
-    //      x30: sender sp
+    //      x19_sender_sp: sender sp
     BLOCK_COMMENT("call Java function");
-    __ mv(x30, sp);
+    __ mv(x19_sender_sp, sp);
     __ jalr(c_rarg4);
 
     // save current address for use by exception handling code

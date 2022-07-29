@@ -50,7 +50,7 @@ Generation::Generation(ReservedSpace rs, size_t initial_size) :
     vm_exit_during_initialization("Could not reserve enough space for "
                     "object heap");
   }
-  // Mangle all of the the initial generation.
+  // Mangle all of the initial generation.
   if (ZapUnusedHeapArea) {
     MemRegion mangle_region((HeapWord*)_virtual_space.low(),
       (HeapWord*)_virtual_space.high());
@@ -182,13 +182,6 @@ oop Generation::promote(oop obj, size_t obj_size) {
   ContinuationGCSupport::transform_stack_chunk(new_obj);
 
   return new_obj;
-}
-
-oop Generation::par_promote(int thread_num,
-                            oop obj, markWord m, size_t word_sz) {
-  // Could do a bad general impl here that gets a lock.  But no.
-  ShouldNotCallThis();
-  return NULL;
 }
 
 Space* Generation::space_containing(const void* p) const {

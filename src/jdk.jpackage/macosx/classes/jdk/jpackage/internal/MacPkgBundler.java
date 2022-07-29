@@ -51,7 +51,7 @@ import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
 import static jdk.jpackage.internal.StandardBundlerParam.SIGN_BUNDLE;
 import static jdk.jpackage.internal.MacBaseInstallerBundler.SIGNING_KEYCHAIN;
 import static jdk.jpackage.internal.MacBaseInstallerBundler.SIGNING_KEY_USER;
-import static jdk.jpackage.internal.MacAppImageBuilder.APP_STORE;
+import static jdk.jpackage.internal.StandardBundlerParam.APP_STORE;
 import static jdk.jpackage.internal.MacAppImageBuilder.MAC_CF_BUNDLE_IDENTIFIER;
 import static jdk.jpackage.internal.OverridableResource.createResource;
 import static jdk.jpackage.internal.StandardBundlerParam.RESOURCE_DIR;

@@ -120,6 +120,7 @@ public class Names {
     // package names
     public final Name java;
     public final Name java_lang;
+    public final Name jdk_internal_javac;
 
     // module names
     public final Name java_base;
@@ -301,6 +302,7 @@ public class Names {
         // package names
         java = fromString("java");
         java_lang = fromString("java.lang");
+        jdk_internal_javac = fromString("jdk.internal.javac");
 
         // module names
         java_base = fromString("java.base");

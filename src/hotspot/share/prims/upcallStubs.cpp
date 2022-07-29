@@ -32,7 +32,7 @@ JVM_ENTRY(static jboolean, UH_FreeUpcallStub0(JNIEnv *env, jobject _unused, jlon
   if (cb == nullptr) {
     return false;
   }
-  OptimizedEntryBlob::free(cb->as_optimized_entry_blob());
+  UpcallStub::free(cb->as_upcall_stub());
   return true;
 JVM_END
 

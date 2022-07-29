@@ -848,8 +848,12 @@ bool CmpUNode::is_index_range_check() const {
 Node *CmpINode::Ideal( PhaseGVN *phase, bool can_reshape ) {
   if (phase->type(in(2))->higher_equal(TypeInt::ZERO)) {
     switch (in(1)->Opcode()) {
+    case Op_CmpU3:              // Collapse a CmpU3/CmpI into a CmpU
+      return new CmpUNode(in(1)->in(1),in(1)->in(2));
     case Op_CmpL3:              // Collapse a CmpL3/CmpI into a CmpL
       return new CmpLNode(in(1)->in(1),in(1)->in(2));
+    case Op_CmpUL3:             // Collapse a CmpUL3/CmpI into a CmpUL
+      return new CmpULNode(in(1)->in(1),in(1)->in(2));
     case Op_CmpF3:              // Collapse a CmpF3/CmpI into a CmpF
       return new CmpFNode(in(1)->in(1),in(1)->in(2));
     case Op_CmpD3:              // Collapse a CmpD3/CmpI into a CmpD
@@ -1894,4 +1898,51 @@ const Type* SqrtFNode::Value(PhaseGVN* phase) const {
   float f = t1->getf();
   if( f < 0.0f ) return Type::FLOAT;
   return TypeF::make( (float)sqrt( (double)f ) );
+}
+
+static jlong reverse_bits(jlong val) {
+  jlong res = ((val & 0xF0F0F0F0F0F0F0F0L) >> 4) | ((val & 0x0F0F0F0F0F0F0F0F) << 4);
+  res = ((res & 0xCCCCCCCCCCCCCCCCL) >> 2) | ((res & 0x3333333333333333L) << 2);
+  res = ((res & 0xAAAAAAAAAAAAAAAAL) >> 1) | ((res & 0x5555555555555555L) << 1);
+  return res;
+}
+
+const Type* ReverseINode::Value(PhaseGVN* phase) const {
+  const Type *t1 = phase->type( in(1) );
+  if (t1 == Type::TOP) {
+    return Type::TOP;
+  }
+  const TypeInt* t1int = t1->isa_int();
+  if (t1int && t1int->is_con()) {
+    jint res = reverse_bits(t1int->get_con());
+    return TypeInt::make(res);
+  }
+  return t1int;
+}
+
+const Type* ReverseLNode::Value(PhaseGVN* phase) const {
+  const Type *t1 = phase->type( in(1) );
+  if (t1 == Type::TOP) {
+    return Type::TOP;
+  }
+  const TypeLong* t1long = t1->isa_long();
+  if (t1long && t1long->is_con()) {
+    jint res = reverse_bits(t1long->get_con());
+    return TypeLong::make(res);
+  }
+  return t1long;
+}
+
+Node* ReverseINode::Identity(PhaseGVN* phase) {
+  if (in(1)->Opcode() == Op_ReverseI) {
+    return in(1)->in(1);
+  }
+  return this;
+}
+
+Node* ReverseLNode::Identity(PhaseGVN* phase) {
+  if (in(1)->Opcode() == Op_ReverseL) {
+    return in(1)->in(1);
+  }
+  return this;
 }

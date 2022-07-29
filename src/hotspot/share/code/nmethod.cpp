@@ -469,9 +469,9 @@ nmethod* nmethod::new_native_nmethod(const methodHandle& method,
   code_buffer->finalize_oop_references(method);
   // create nmethod
   nmethod* nm = NULL;
+  int native_nmethod_size = CodeBlob::allocation_size(code_buffer, sizeof(nmethod));
   {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    int native_nmethod_size = CodeBlob::allocation_size(code_buffer, sizeof(nmethod));
 
     CodeOffsets offsets;
     offsets.set_value(CodeOffsets::Verified_Entry, vep_offset);
@@ -509,7 +509,7 @@ nmethod* nmethod::new_nmethod(const methodHandle& method,
   ExceptionHandlerTable* handler_table,
   ImplicitExceptionTable* nul_chk_table,
   AbstractCompiler* compiler,
-  int comp_level
+  CompLevel comp_level
 #if INCLUDE_JVMCI
   , char* speculations,
   int speculations_len,
@@ -523,21 +523,22 @@ nmethod* nmethod::new_nmethod(const methodHandle& method,
   code_buffer->finalize_oop_references(method);
   // create nmethod
   nmethod* nm = NULL;
-  { MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
 #if INCLUDE_JVMCI
-    int jvmci_data_size = !compiler->is_jvmci() ? 0 : JVMCINMethodData::compute_size(nmethod_mirror_name);
+  int jvmci_data_size = !compiler->is_jvmci() ? 0 : JVMCINMethodData::compute_size(nmethod_mirror_name);
 #endif
-    int nmethod_size =
-      CodeBlob::allocation_size(code_buffer, sizeof(nmethod))
-      + adjust_pcs_size(debug_info->pcs_size())
-      + align_up((int)dependencies->size_in_bytes(), oopSize)
-      + align_up(handler_table->size_in_bytes()    , oopSize)
-      + align_up(nul_chk_table->size_in_bytes()    , oopSize)
+  int nmethod_size =
+    CodeBlob::allocation_size(code_buffer, sizeof(nmethod))
+    + adjust_pcs_size(debug_info->pcs_size())
+    + align_up((int)dependencies->size_in_bytes(), oopSize)
+    + align_up(handler_table->size_in_bytes()    , oopSize)
+    + align_up(nul_chk_table->size_in_bytes()    , oopSize)
 #if INCLUDE_JVMCI
-      + align_up(speculations_len                  , oopSize)
-      + align_up(jvmci_data_size                   , oopSize)
+    + align_up(speculations_len                  , oopSize)
+    + align_up(jvmci_data_size                   , oopSize)
 #endif
-      + align_up(debug_info->data_size()           , oopSize);
+    + align_up(debug_info->data_size()           , oopSize);
+  {
+    MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
 
     nm = new (nmethod_size, comp_level)
     nmethod(method(), compiler->type(), nmethod_size, compile_id, entry_bci, offsets,
@@ -607,8 +608,8 @@ nmethod::nmethod(
   ByteSize basic_lock_owner_sp_offset,
   OopMapSet* oop_maps )
   : CompiledMethod(method, "native nmethod", type, nmethod_size, sizeof(nmethod), code_buffer, offsets->value(CodeOffsets::Frame_Complete), frame_size, oop_maps, false, true),
-  _is_unloading_state(0),
-  _native_receiver_sp_offset(basic_lock_owner_sp_offset)
+  _native_receiver_sp_offset(basic_lock_owner_sp_offset),
+  _is_unloading_state(0)
 {
   {
     int scopes_data_offset   = 0;
@@ -619,6 +620,7 @@ nmethod::nmethod(
     assert_locked_or_safepoint(CodeCache_lock);
 
     init_defaults();
+    _comp_level              = CompLevel_none;
     _entry_bci               = InvocationEntryBci;
     // We have no exception handler or deopt handler make the
     // values something that will never match a pc like the nmethod vtable entry
@@ -643,7 +645,6 @@ nmethod::nmethod(
     _nmethod_end_offset      = _nul_chk_table_offset;
 #endif
     _compile_id              = compile_id;
-    _comp_level              = CompLevel_none;
     _entry_point             = code_begin()          + offsets->value(CodeOffsets::Entry);
     _verified_entry_point    = code_begin()          + offsets->value(CodeOffsets::Verified_Entry);
     _osr_entry_point         = NULL;
@@ -733,7 +734,7 @@ nmethod::nmethod(
   ExceptionHandlerTable* handler_table,
   ImplicitExceptionTable* nul_chk_table,
   AbstractCompiler* compiler,
-  int comp_level
+  CompLevel comp_level
 #if INCLUDE_JVMCI
   , char* speculations,
   int speculations_len,
@@ -741,8 +742,8 @@ nmethod::nmethod(
 #endif
   )
   : CompiledMethod(method, "nmethod", type, nmethod_size, sizeof(nmethod), code_buffer, offsets->value(CodeOffsets::Frame_Complete), frame_size, oop_maps, false, true),
-  _is_unloading_state(0),
-  _native_receiver_sp_offset(in_ByteSize(-1))
+  _native_receiver_sp_offset(in_ByteSize(-1)),
+  _is_unloading_state(0)
 {
   assert(debug_info->oop_recorder() == code_buffer->oop_recorder(), "shared OR");
   {
@@ -3225,7 +3226,7 @@ const char* nmethod::reloc_string_for(u_char* begin, u_char* end) {
   return have_one ? "other" : NULL;
 }
 
-// Return a the last scope in (begin..end]
+// Return the last scope in (begin..end]
 ScopeDesc* nmethod::scope_desc_in(address begin, address end) {
   PcDesc* p = pc_desc_near(begin+1);
   if (p != NULL && p->real_pc(this) <= end) {

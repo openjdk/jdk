@@ -25,7 +25,7 @@
 #ifndef SHARE_RUNTIME_NOTIFICATIONTHREAD_HPP
 #define SHARE_RUNTIME_NOTIFICATIONTHREAD_HPP
 
-#include "runtime/thread.hpp"
+#include "runtime/javaThread.hpp"
 
 // A JavaThread for low memory detection support, GC and
 // diagnostic framework notifications. This thread is not hidden

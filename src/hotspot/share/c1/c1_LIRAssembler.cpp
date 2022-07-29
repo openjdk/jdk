@@ -449,15 +449,20 @@ void LIR_Assembler::emit_rtcall(LIR_OpRTCall* op) {
   rt_call(op->result_opr(), op->addr(), op->arguments(), op->tmp(), op->info());
 }
 
-
 void LIR_Assembler::emit_call(LIR_OpJavaCall* op) {
   verify_oop_map(op->info());
 
   // must align calls sites, otherwise they can't be updated atomically
   align_call(op->code());
 
-  // emit the static call stub stuff out of line
-  emit_static_call_stub();
+  if (CodeBuffer::supports_shared_stubs() && op->method()->can_be_statically_bound()) {
+    // Calls of the same statically bound method can share
+    // a stub to the interpreter.
+    CodeBuffer::csize_t call_offset = pc() - _masm->code()->insts_begin();
+    _masm->code()->shared_stub_to_interp_for(op->method(), call_offset);
+  } else {
+    emit_static_call_stub();
+  }
   CHECK_BAILOUT();
 
   switch (op->code()) {

@@ -36,7 +36,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.stream.Stream;
 
@@ -151,8 +150,6 @@ public class DeployParams {
                 Arguments.CLIOptions.MODULE.getId()) != null);
         boolean hasAppImage = (bundlerArguments.get(
                 Arguments.CLIOptions.PREDEFINED_APP_IMAGE.getId()) != null);
-        boolean hasClass = (bundlerArguments.get(
-                Arguments.CLIOptions.APPCLASS.getId()) != null);
         boolean hasMain = (bundlerArguments.get(
                 Arguments.CLIOptions.MAIN_JAR.getId()) != null);
         boolean hasRuntimeImage = (bundlerArguments.get(
@@ -169,12 +166,12 @@ public class DeployParams {
         if (isTargetAppImage()) {
             // Module application requires --runtime-image or --module-path
             if (hasModule) {
-                if (!hasModulePath && !hasRuntimeImage) {
+                if (!hasModulePath && !hasRuntimeImage && !hasAppImage) {
                     throw new PackagerException("ERR_MissingArgument",
                             "--runtime-image or --module-path");
                 }
             } else {
-                if (!hasInput) {
+                if (!hasInput && !hasAppImage) {
                     throw new PackagerException(
                            "ERR_MissingArgument", "--input");
                 }
@@ -372,9 +369,6 @@ public class DeployParams {
 
     BundleParams getBundleParams() {
         BundleParams bundleParams = new BundleParams();
-
-        Map<String, String> unescapedHtmlParams = new TreeMap<>();
-        Map<String, String> escapedHtmlParams = new TreeMap<>();
 
         // check for collisions
         TreeSet<String> keys = new TreeSet<>(bundlerArguments.keySet());

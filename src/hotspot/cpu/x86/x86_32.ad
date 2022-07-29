@@ -213,6 +213,7 @@ reg_class_dynamic long_reg(long_reg_no_ebp, long_reg_with_ebp, %{ PreserveFrameP
 // Class of integer register pairs that aligns with calling convention
 reg_class eadx_reg( EAX,EDX );
 reg_class ebcx_reg( ECX,EBX );
+reg_class ebpd_reg( EBP,EDI );
 
 // Not AX or DX, used in divides
 reg_class nadx_reg_with_ebp(EBX, ECX, ESI, EDI, EBP);
@@ -607,7 +608,7 @@ void MachPrologNode::format(PhaseRegAlloc* ra_, outputStream* st) const {
 
 void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   Compile* C = ra_->C;
-  MacroAssembler _masm(&cbuf);
+  C2_MacroAssembler _masm(&cbuf);
 
   int framesize = C->output()->frame_size_in_bytes();
   int bangsize = C->output()->bang_size_in_bytes();
@@ -1551,6 +1552,47 @@ encode %{
     emit_d32   ( cbuf, 0x0  );             //                         imm32==0x0
   %}
 
+  enc_class cdq_enc %{
+    // Full implementation of Java idiv and irem; checks for
+    // special case as described in JVM spec., p.243 & p.271.
+    //
+    //         normal case                           special case
+    //
+    // input : rax,: dividend                         min_int
+    //         reg: divisor                          -1
+    //
+    // output: rax,: quotient  (= rax, idiv reg)       min_int
+    //         rdx: remainder (= rax, irem reg)       0
+    //
+    //  Code sequnce:
+    //
+    //  81 F8 00 00 00 80    cmp         rax,80000000h
+    //  0F 85 0B 00 00 00    jne         normal_case
+    //  33 D2                xor         rdx,edx
+    //  83 F9 FF             cmp         rcx,0FFh
+    //  0F 84 03 00 00 00    je          done
+    //                  normal_case:
+    //  99                   cdq
+    //  F7 F9                idiv        rax,ecx
+    //                  done:
+    //
+    emit_opcode(cbuf,0x81); emit_d8(cbuf,0xF8);
+    emit_opcode(cbuf,0x00); emit_d8(cbuf,0x00);
+    emit_opcode(cbuf,0x00); emit_d8(cbuf,0x80);                     // cmp rax,80000000h
+    emit_opcode(cbuf,0x0F); emit_d8(cbuf,0x85);
+    emit_opcode(cbuf,0x0B); emit_d8(cbuf,0x00);
+    emit_opcode(cbuf,0x00); emit_d8(cbuf,0x00);                     // jne normal_case
+    emit_opcode(cbuf,0x33); emit_d8(cbuf,0xD2);                     // xor rdx,edx
+    emit_opcode(cbuf,0x83); emit_d8(cbuf,0xF9); emit_d8(cbuf,0xFF); // cmp rcx,0FFh
+    emit_opcode(cbuf,0x0F); emit_d8(cbuf,0x84);
+    emit_opcode(cbuf,0x03); emit_d8(cbuf,0x00);
+    emit_opcode(cbuf,0x00); emit_d8(cbuf,0x00);                     // je done
+    // normal_case:
+    emit_opcode(cbuf,0x99);                                         // cdq
+    // idiv (note: must be emitted by the user of this rule)
+    // normal:
+  %}
+
   // Dense encoding for older common ops
   enc_class Opc_plus(immI opcode, rRegI reg) %{
     emit_opcode(cbuf, $opcode$$constant + $reg$$reg);
@@ -1772,11 +1814,18 @@ encode %{
       emit_d32_reloc(cbuf, ($meth$$method - (int)(cbuf.insts_end()) - 4),
                      rspec, RELOC_DISP32);
       __ post_call_nop();
-      // Emit stubs for static call.
-      address stub = CompiledStaticCall::emit_to_interp_stub(cbuf);
-      if (stub == NULL) {
-        ciEnv::current()->record_failure("CodeCache is full");
-        return;
+      address mark = cbuf.insts_mark();
+      if (CodeBuffer::supports_shared_stubs() && _method->can_be_statically_bound()) {
+        // Calls of the same statically bound method can share
+        // a stub to the interpreter.
+        cbuf.shared_stub_to_interp_for(_method, cbuf.insts()->mark_off());
+      } else {
+        // Emit stubs for static call.
+        address stub = CompiledStaticCall::emit_to_interp_stub(cbuf, mark);
+        if (stub == NULL) {
+          ciEnv::current()->record_failure("CodeCache is full");
+          return;
+        }
       }
     }
   %}
@@ -3887,6 +3936,13 @@ operand eBCXRegL( eRegL reg ) %{
   interface(REG_INTER);
 %}
 
+operand eBDPRegL( eRegL reg ) %{
+  constraint(ALLOC_IN_RC(ebpd_reg));
+  match(reg);
+
+  format %{ "EBP:EDI" %}
+  interface(REG_INTER);
+%}
 // Special case for integer high multiply
 operand eADXRegL_low_only() %{
   constraint(ALLOC_IN_RC(eadx_reg));
@@ -7201,61 +7257,6 @@ instruct castDD_PR( regDPR dst ) %{
   ins_pipe( empty );
 %}
 
-// Load-locked - same as a regular pointer load when used with compare-swap
-instruct loadPLocked(eRegP dst, memory mem) %{
-  match(Set dst (LoadPLocked mem));
-
-  ins_cost(125);
-  format %{ "MOV    $dst,$mem\t# Load ptr. locked" %}
-  opcode(0x8B);
-  ins_encode( OpcP, RegMem(dst,mem));
-  ins_pipe( ialu_reg_mem );
-%}
-
-// Conditional-store of the updated heap-top.
-// Used during allocation of the shared heap.
-// Sets flags (EQ) on success.  Implemented with a CMPXCHG on Intel.
-instruct storePConditional( memory heap_top_ptr, eAXRegP oldval, eRegP newval, eFlagsReg cr ) %{
-  match(Set cr (StorePConditional heap_top_ptr (Binary oldval newval)));
-  // EAX is killed if there is contention, but then it's also unused.
-  // In the common case of no contention, EAX holds the new oop address.
-  format %{ "CMPXCHG $heap_top_ptr,$newval\t# If EAX==$heap_top_ptr Then store $newval into $heap_top_ptr" %}
-  ins_encode( lock_prefix, Opcode(0x0F), Opcode(0xB1), RegMem(newval,heap_top_ptr) );
-  ins_pipe( pipe_cmpxchg );
-%}
-
-// Conditional-store of an int value.
-// ZF flag is set on success, reset otherwise.  Implemented with a CMPXCHG on Intel.
-instruct storeIConditional( memory mem, eAXRegI oldval, rRegI newval, eFlagsReg cr ) %{
-  match(Set cr (StoreIConditional mem (Binary oldval newval)));
-  effect(KILL oldval);
-  format %{ "CMPXCHG $mem,$newval\t# If EAX==$mem Then store $newval into $mem" %}
-  ins_encode( lock_prefix, Opcode(0x0F), Opcode(0xB1), RegMem(newval, mem) );
-  ins_pipe( pipe_cmpxchg );
-%}
-
-// Conditional-store of a long value.
-// ZF flag is set on success, reset otherwise.  Implemented with a CMPXCHG8 on Intel.
-instruct storeLConditional( memory mem, eADXRegL oldval, eBCXRegL newval, eFlagsReg cr ) %{
-  match(Set cr (StoreLConditional mem (Binary oldval newval)));
-  effect(KILL oldval);
-  format %{ "XCHG   EBX,ECX\t# correct order for CMPXCHG8 instruction\n\t"
-            "CMPXCHG8 $mem,ECX:EBX\t# If EDX:EAX==$mem Then store ECX:EBX into $mem\n\t"
-            "XCHG   EBX,ECX"
-  %}
-  ins_encode %{
-    // Note: we need to swap rbx, and rcx before and after the
-    //       cmpxchg8 instruction because the instruction uses
-    //       rcx as the high order word of the new value to store but
-    //       our register encoding uses rbx.
-    __ xchgl(as_Register(EBX_enc), as_Register(ECX_enc));
-    __ lock();
-    __ cmpxchg8($mem$$Address);
-    __ xchgl(as_Register(EBX_enc), as_Register(ECX_enc));
-  %}
-  ins_pipe( pipe_cmpxchg );
-%}
-
 // No flag versions for CompareAndSwap{P,I,L} because matcher can't match them
 
 instruct compareAndSwapL( rRegI res, eSIRegP mem_ptr, eADXRegL oldval, eBCXRegL newval, eFlagsReg cr ) %{
@@ -7768,17 +7769,21 @@ instruct mulL_eReg_con(eADXRegL dst, immL_127 src, rRegI tmp, eFlagsReg cr) %{
 
 // Integer DIV with Register
 instruct divI_eReg(eAXRegI rax, eDXRegI rdx, eCXRegI div, eFlagsReg cr) %{
-  match(Set rax (NoOvfDivI rax div));
+  match(Set rax (DivI rax div));
   effect(KILL rdx, KILL cr);
-  size(3);
-  ins_cost(500);
-  format %{ "CDQ\n\t"
-            "IDIV   $div" %}
-  ins_encode %{
-    __ cdql();
-    __ idivl($div$$Register);
-  %}
-  ins_pipe( pipe_slow );
+  size(26);
+  ins_cost(30*100+10*100);
+  format %{ "CMP    EAX,0x80000000\n\t"
+            "JNE,s  normal\n\t"
+            "XOR    EDX,EDX\n\t"
+            "CMP    ECX,-1\n\t"
+            "JE,s   done\n"
+    "normal: CDQ\n\t"
+            "IDIV   $div\n\t"
+    "done:"        %}
+  opcode(0xF7, 0x7);  /* Opcode F7 /7 */
+  ins_encode( cdq_enc, OpcP, RegOpc(div) );
+  ins_pipe( ialu_reg_reg_alu0 );
 %}
 
 // Divide Register Long
@@ -7798,33 +7803,35 @@ instruct divL_eReg(eADXRegL dst, eRegL src1, eRegL src2) %{
 
 // Integer DIVMOD with Register, both quotient and mod results
 instruct divModI_eReg_divmod(eAXRegI rax, eDXRegI rdx, eCXRegI div, eFlagsReg cr) %{
-  match(NoOvfDivModI rax div);
+  match(DivModI rax div);
   effect(KILL cr);
-  size(3);
-  ins_cost(500);
-  format %{ "CDQ\n\t"
-            "IDIV   $div" %}
-  ins_encode %{
-    __ cdql();
-    __ idivl($div$$Register);
-  %}
+  size(26);
+  ins_cost(30*100+10*100);
+  format %{ "CMP    EAX,0x80000000\n\t"
+            "JNE,s  normal\n\t"
+            "XOR    EDX,EDX\n\t"
+            "CMP    ECX,-1\n\t"
+            "JE,s   done\n"
+    "normal: CDQ\n\t"
+            "IDIV   $div\n\t"
+    "done:"        %}
+  opcode(0xF7, 0x7);  /* Opcode F7 /7 */
+  ins_encode( cdq_enc, OpcP, RegOpc(div) );
   ins_pipe( pipe_slow );
 %}
 
 // Integer MOD with Register
 instruct modI_eReg(eDXRegI rdx, eAXRegI rax, eCXRegI div, eFlagsReg cr) %{
-  match(Set rdx (NoOvfModI rax div));
+  match(Set rdx (ModI rax div));
   effect(KILL rax, KILL cr);
 
-  size(3);
-  ins_cost(500);
+  size(26);
+  ins_cost(300);
   format %{ "CDQ\n\t"
             "IDIV   $div" %}
-  ins_encode %{
-    __ cdql();
-    __ idivl($div$$Register);
-  %}
-  ins_pipe( pipe_slow );
+  opcode(0xF7, 0x7);  /* Opcode F7 /7 */
+  ins_encode( cdq_enc, OpcP, RegOpc(div) );
+  ins_pipe( ialu_reg_reg_alu0 );
 %}
 
 // Remainder Register Long
@@ -11460,6 +11467,95 @@ instruct MoveL2D_reg_reg_sse(regD dst, eRegL src, regD tmp) %{
   ins_pipe( pipe_slow );
 %}
 
+//----------------------------- CompressBits/ExpandBits ------------------------
+
+instruct compressBitsL_reg(eADXRegL dst, eBCXRegL src, eBDPRegL mask, eSIRegI rtmp, regF xtmp, eFlagsReg cr) %{
+  predicate(n->bottom_type()->isa_long());
+  match(Set dst (CompressBits src mask));
+  effect(TEMP rtmp, TEMP xtmp, KILL cr);
+  format %{ "compress_bits $dst, $src, $mask\t! using $rtmp and $xtmp as TEMP" %}
+  ins_encode %{
+    Label exit, partail_result;
+    // Parallely extract both upper and lower 32 bits of source into destination register pair.
+    // Merge the results of upper and lower destination registers such that upper destination
+    // results are contiguously laid out after the lower destination result.
+    __ pextl($dst$$Register, $src$$Register, $mask$$Register);
+    __ pextl(HIGH_FROM_LOW($dst$$Register), HIGH_FROM_LOW($src$$Register), HIGH_FROM_LOW($mask$$Register));
+    __ popcntl($rtmp$$Register, $mask$$Register);
+    // Skip merging if bit count of lower mask register is equal to 32 (register size).
+    __ cmpl($rtmp$$Register, 32);
+    __ jccb(Assembler::equal, exit);
+    // Due to constraint on number of GPRs on 32 bit target, using XMM register as potential spill slot.
+    __ movdl($xtmp$$XMMRegister, $rtmp$$Register);
+    // Shift left the contents of upper destination register by true bit count of lower mask register
+    // and merge with lower destination register.
+    __ shlxl($rtmp$$Register, HIGH_FROM_LOW($dst$$Register), $rtmp$$Register);
+    __ orl($dst$$Register, $rtmp$$Register);
+    __ movdl($rtmp$$Register, $xtmp$$XMMRegister);
+    // Zero out upper destination register if true bit count of lower 32 bit mask is zero
+    // since contents of upper destination have already been copied to lower destination
+    // register.
+    __ cmpl($rtmp$$Register, 0);
+    __ jccb(Assembler::greater, partail_result);
+    __ movl(HIGH_FROM_LOW($dst$$Register), 0);
+    __ jmp(exit);
+    __ bind(partail_result);
+    // Perform right shift over upper destination register to move out bits already copied
+    // to lower destination register.
+    __ subl($rtmp$$Register, 32);
+    __ negl($rtmp$$Register);
+    __ shrxl(HIGH_FROM_LOW($dst$$Register), HIGH_FROM_LOW($dst$$Register), $rtmp$$Register);
+    __ bind(exit);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct expandBitsL_reg(eADXRegL dst, eBCXRegL src, eBDPRegL mask, eSIRegI rtmp, regF xtmp, eFlagsReg cr) %{
+  predicate(n->bottom_type()->isa_long());
+  match(Set dst (ExpandBits src mask));
+  effect(TEMP rtmp, TEMP xtmp, KILL cr);
+  format %{ "expand_bits $dst, $src, $mask\t! using $rtmp and $xtmp as TEMP" %}
+  ins_encode %{
+    // Extraction operation sequentially reads the bits from source register starting from LSB
+    // and lays them out into destination register at bit locations corresponding to true bits
+    // in mask register. Thus number of source bits read are equal to combined true bit count
+    // of mask register pair.
+    Label exit, mask_clipping;
+    __ pdepl($dst$$Register, $src$$Register, $mask$$Register);
+    __ pdepl(HIGH_FROM_LOW($dst$$Register), HIGH_FROM_LOW($src$$Register), HIGH_FROM_LOW($mask$$Register));
+    __ popcntl($rtmp$$Register, $mask$$Register);
+    // If true bit count of lower mask register is 32 then none of bit of lower source register
+    // will feed to upper destination register.
+    __ cmpl($rtmp$$Register, 32);
+    __ jccb(Assembler::equal, exit);
+    // Due to constraint on number of GPRs on 32 bit target, using XMM register as potential spill slot.
+    __ movdl($xtmp$$XMMRegister, $rtmp$$Register);
+    // Shift right the contents of lower source register to remove already consumed bits.
+    __ shrxl($rtmp$$Register, $src$$Register, $rtmp$$Register);
+    // Extract the bits from lower source register starting from LSB under the influence
+    // of upper mask register.
+    __ pdepl(HIGH_FROM_LOW($dst$$Register), $rtmp$$Register, HIGH_FROM_LOW($mask$$Register));
+    __ movdl($rtmp$$Register, $xtmp$$XMMRegister);
+    __ subl($rtmp$$Register, 32);
+    __ negl($rtmp$$Register);
+    __ movdl($xtmp$$XMMRegister, $mask$$Register);
+    __ movl($mask$$Register, HIGH_FROM_LOW($mask$$Register));
+    // Clear the set bits in upper mask register which have been used to extract the contents
+    // from lower source register.
+    __ bind(mask_clipping);
+    __ blsrl($mask$$Register, $mask$$Register);
+    __ decrementl($rtmp$$Register, 1);
+    __ jccb(Assembler::greater, mask_clipping);
+    // Starting from LSB extract the bits from upper source register under the influence of
+    // remaining set bits in upper mask register.
+    __ pdepl($rtmp$$Register, HIGH_FROM_LOW($src$$Register), $mask$$Register);
+    // Merge the partial results extracted from lower and upper source register bits.
+    __ orl(HIGH_FROM_LOW($dst$$Register), $rtmp$$Register);
+    __ movdl($mask$$Register, $xtmp$$XMMRegister);
+    __ bind(exit);
+  %}
+  ins_pipe( pipe_slow );
+%}
 
 // =======================================================================
 // fast clearing of an array

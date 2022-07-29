@@ -317,7 +317,7 @@ void InterpreterRuntime::note_trap_inner(JavaThread* current, int reason,
     if (trap_mdo == NULL) {
       ExceptionMark em(current);
       JavaThread* THREAD = current; // For exception macros.
-      Method::build_interpreter_method_data(trap_method, THREAD);
+      Method::build_profiling_method_data(trap_method, THREAD);
       if (HAS_PENDING_EXCEPTION) {
         // Only metaspace OOM is expected. No Java code executed.
         assert((PENDING_EXCEPTION->is_a(vmClasses::OutOfMemoryError_klass())),

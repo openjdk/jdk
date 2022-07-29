@@ -24,6 +24,7 @@
 /**
  * @test
  * @summary Nested continuations test
+ * @requires vm.continuations
  * @modules java.base/jdk.internal.vm
  * @build java.base/java.lang.StackWalkerHelper
  *

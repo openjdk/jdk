@@ -23,16 +23,26 @@
 
 /**
  * @test
+ * @bug 8284161
  * @summary Test java.lang.management.ThreadMXBean with virtual threads
- * @modules java.base/java.lang:+open
- * @compile --enable-preview -source ${jdk.version} VirtualThreads.java
- * @run testng/othervm --enable-preview VirtualThreads
+ * @enablePreview
+ * @modules java.base/java.lang:+open java.management
+ * @run testng/othervm VirtualThreads
+ */
+
+/**
+ * @test
+ * @requires vm.continuations
+ * @enablePreview
+ * @modules java.base/java.lang:+open java.management
+ * @run testng/othervm -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations VirtualThreads
  */
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadInfo;
 import java.lang.management.ThreadMXBean;
-import java.lang.reflect.Field;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.channels.Selector;
 import java.util.Arrays;
 import java.util.concurrent.Executor;
@@ -41,6 +51,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.LockSupport;
 
+import org.testng.SkipException;
 import org.testng.annotations.Test;
 import static org.testng.Assert.*;
 
@@ -78,6 +89,8 @@ public class VirtualThreads {
      */
     @Test
     public void testGetThreadInfo2() throws Exception {
+        if (!supportsCustomScheduler())
+            throw new SkipException("No support for custom schedulers");
         try (ExecutorService pool = Executors.newFixedThreadPool(1)) {
             var carrierRef = new AtomicReference<Thread>();
             Executor scheduler = (task) -> {
@@ -203,18 +216,39 @@ public class VirtualThreads {
                 .anyMatch(className::equals);
     }
 
+    /**
+     * Returns a builder to create virtual threads that use the given scheduler.
+     * @throws UnsupportedOperationException if there is no support for custom schedulers
+     */
     private static Thread.Builder.OfVirtual virtualThreadBuilder(Executor scheduler) {
         Thread.Builder.OfVirtual builder = Thread.ofVirtual();
         try {
             Class<?> clazz = Class.forName("java.lang.ThreadBuilders$VirtualThreadBuilder");
-            Field field = clazz.getDeclaredField("scheduler");
-            field.setAccessible(true);
-            field.set(builder, scheduler);
-        } catch (RuntimeException | Error e) {
-            throw e;
+            Constructor<?> ctor = clazz.getDeclaredConstructor(Executor.class);
+            ctor.setAccessible(true);
+            return (Thread.Builder.OfVirtual) ctor.newInstance(scheduler);
+        } catch (InvocationTargetException e) {
+            Throwable cause = e.getCause();
+            if (cause instanceof RuntimeException re) {
+                throw re;
+            }
+            throw new RuntimeException(e);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        return builder;
+    }
+
+    /**
+     * Return true if custom schedulers are supported.
+     */
+    private static boolean supportsCustomScheduler() {
+        try (var pool = Executors.newCachedThreadPool()) {
+            try {
+                virtualThreadBuilder(pool);
+                return true;
+            } catch (UnsupportedOperationException e) {
+                return false;
+            }
+        }
     }
 }

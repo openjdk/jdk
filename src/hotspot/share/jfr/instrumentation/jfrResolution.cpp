@@ -30,7 +30,7 @@
 #include "jfr/instrumentation/jfrResolution.hpp"
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceIdMacros.hpp"
 #include "oops/method.inline.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/vframe.inline.hpp"
 
 #ifdef COMPILER1

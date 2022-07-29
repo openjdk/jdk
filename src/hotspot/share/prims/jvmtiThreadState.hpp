@@ -30,7 +30,9 @@
 #include "oops/oopHandle.hpp"
 #include "prims/jvmtiEventController.hpp"
 #include "prims/jvmtiExport.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/javaThread.hpp"
+#include "runtime/mutexLocker.hpp"
+#include "runtime/threads.hpp"
 #include "utilities/growableArray.hpp"
 
 //

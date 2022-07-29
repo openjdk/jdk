@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@ public class CheckCompileCommandOption {
     // Type (1) is used to enable a boolean option for a method.
     //
     // Type (2) is used to support options with a value. Values can
-    // have the the following types: intx, uintx, bool, ccstr,
+    // have the following types: intx, uintx, bool, ccstr,
     // ccstrlist, and double.
 
     private static final String[][] FILE_ARGUMENTS = {

@@ -24,13 +24,14 @@
 /**
  * @test
  * @summary Stress test virtual threads with a variation of the Skynet 1M benchmark
+ * @requires vm.continuations
  * @compile --enable-preview -source ${jdk.version} Skynet.java
  * @run main/othervm/timeout=300 --enable-preview Skynet
  */
 
 /**
  * @test
- * @requires vm.debug == true
+ * @requires vm.debug == true & vm.continuations
  * @requires vm.gc.Z
  * @compile --enable-preview -source ${jdk.version} Skynet.java
  * @run main/othervm/timeout=300 --enable-preview -XX:+UnlockDiagnosticVMOptions

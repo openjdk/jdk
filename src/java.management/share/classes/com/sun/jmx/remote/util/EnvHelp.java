@@ -48,8 +48,6 @@ import javax.management.remote.JMXConnectorFactory;
 import javax.management.remote.JMXConnectorServerFactory;
 import com.sun.jmx.mbeanserver.GetPropertyAction;
 import com.sun.jmx.remote.security.NotificationAccessController;
-import javax.management.remote.JMXConnector;
-import javax.management.remote.JMXConnectorServer;
 
 public class EnvHelp {
 
@@ -733,11 +731,11 @@ public class EnvHelp {
      * it removes all the 'null' values from the map.
      */
     public static <K, V> Hashtable<K, V> mapToHashtable(Map<K, V> map) {
-        HashMap<K, V> m = new HashMap<K, V>(map);
-        if (m.containsKey(null)) m.remove(null);
+        HashMap<K, V> m = new HashMap<>(map);
+        m.remove(null);
         for (Iterator<?> i = m.values().iterator(); i.hasNext(); )
             if (i.next() == null) i.remove();
-        return new Hashtable<K, V>(m);
+        return new Hashtable<>(m);
     }
 
     /**

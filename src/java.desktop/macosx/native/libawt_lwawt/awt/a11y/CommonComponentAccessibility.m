@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -126,7 +126,7 @@ static jobject sAccessibilityClass = NULL;
     /*
      * Here we should keep all the mapping between the accessibility roles and implementing classes
      */
-    rolesMap = [[NSMutableDictionary alloc] initWithCapacity:50];
+    rolesMap = [[NSMutableDictionary alloc] initWithCapacity:51];
 
     [rolesMap setObject:@"ButtonAccessibility" forKey:@"pushbutton"];
     [rolesMap setObject:@"ImageAccessibility" forKey:@"icon"];
@@ -159,6 +159,7 @@ static jobject sAccessibilityClass = NULL;
     [rolesMap setObject:@"MenuBarAccessibility" forKey:@"menubar"];
     [rolesMap setObject:@"MenuAccessibility" forKey:@"menu"];
     [rolesMap setObject:@"MenuAccessibility" forKey:@"popupmenu"];
+    [rolesMap setObject:@"MenuItemAccessibility" forKey:@"menuitem"];
     [rolesMap setObject:@"ProgressIndicatorAccessibility" forKey:@"progressbar"];
 
     /*
@@ -614,8 +615,11 @@ static jobject sAccessibilityClass = NULL;
                 [fActions setObject:action forKey:NSAccessibilityPickAction];
                 [fActionSelectors addObject:[sActionSelectors objectForKey:NSAccessibilityPickAction]];
             } else {
-                [fActions setObject:action forKey:[sActions objectForKey:[action getDescription]]];
-                [fActionSelectors addObject:[sActionSelectors objectForKey:[sActions objectForKey:[action getDescription]]]];
+                NSString *nsActionName = [sActions objectForKey:[action getDescription]];
+                if (nsActionName != nil) {
+                    [fActions setObject:action forKey:nsActionName];
+                    [fActionSelectors addObject:[sActionSelectors objectForKey:nsActionName]];
+                }
             }
             [action release];
         }

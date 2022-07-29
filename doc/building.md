@@ -1296,8 +1296,10 @@ run `configure` using `--enable-icecc`.
 
 ### Using sjavac
 
-To speed up Java compilation, especially incremental compilations, you can try
-the experimental sjavac compiler by using `--enable-sjavac`.
+To speed up compilation of Java code, especially during incremental compilations,
+the sjavac server is automatically enabled in the configuration step by default.
+To explicitly enable or disable sjavac, use either `--enable-javac-server`
+or `--disable-javac-server`.
 
 ### Building the Right Target
 

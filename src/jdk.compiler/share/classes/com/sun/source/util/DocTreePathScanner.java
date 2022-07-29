@@ -35,6 +35,12 @@ import com.sun.source.doctree.DocTree;
  * Inside your method, call super.visitXYZ to visit descendant
  * nodes.
  *
+ * @param <R> the return type of this visitor's methods.  Use {@link
+ *            Void} for visitors that do not need to return results.
+ * @param <P> the type of the additional parameter to this visitor's
+ *            methods.  Use {@code Void} for visitors that do not need an
+ *            additional parameter.
+ *
  * @since 1.8
  */
 public class DocTreePathScanner<R, P> extends DocTreeScanner<R, P> {
