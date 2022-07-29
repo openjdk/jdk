@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,10 +37,6 @@
  */
 
 package java.text;
-
-import java.text.Normalizer;
-import java.util.Vector;
-import java.util.Locale;
 
 /**
  * The {@code RuleBasedCollator} class is a concrete subclass of
@@ -377,7 +373,7 @@ public class RuleBasedCollator extends Collator{
         // strengthResult, it overrides the last difference (if any) that
         // was found.
 
-        int result = Collator.EQUAL;
+        int result = 0;
 
         if (sourceCursor == null) {
             sourceCursor = getCollationElementIterator(source);
@@ -449,7 +445,7 @@ public class RuleBasedCollator extends Collator{
                     // The source's primary is ignorable, but the target's isn't.  We treat ignorables
                     // as a secondary difference, so remember that we found one.
                     if (checkSecTer) {
-                        result = Collator.GREATER;  // (strength is SECONDARY)
+                        result = 1;  // (strength is SECONDARY)
                         checkSecTer = false;
                     }
                     // Skip to the next source element, but don't fetch another target element.
@@ -459,7 +455,7 @@ public class RuleBasedCollator extends Collator{
                 {
                     // record differences - see the comment above.
                     if (checkSecTer) {
-                        result = Collator.LESS;  // (strength is SECONDARY)
+                        result = -1;  // (strength is SECONDARY)
                         checkSecTer = false;
                     }
                     // Skip to the next source element, but don't fetch another target element.
@@ -469,9 +465,9 @@ public class RuleBasedCollator extends Collator{
                     // orders are different because of the (pSOrder != pTOrder) test above.
                     // Record the difference and stop the comparison.
                     if (pSOrder < pTOrder) {
-                        return Collator.LESS;  // (strength is PRIMARY)
+                        return -1;  // (strength is PRIMARY)
                     } else {
-                        return Collator.GREATER;  // (strength is PRIMARY)
+                        return 1;  // (strength is PRIMARY)
                     }
                 }
             } else { // else of if ( pSOrder != pTOrder )
@@ -485,7 +481,7 @@ public class RuleBasedCollator extends Collator{
                     short secTOrder = CollationElementIterator.secondaryOrder(tOrder);
                     if (secSOrder != secTOrder) {
                         // there is a secondary difference
-                        result = (secSOrder < secTOrder) ? Collator.LESS : Collator.GREATER;
+                        result = (secSOrder < secTOrder) ? -1 : 1;
                                                 // (strength is SECONDARY)
                         checkSecTer = false;
                         // (even in french, only the first secondary difference within
@@ -497,7 +493,7 @@ public class RuleBasedCollator extends Collator{
                             short terTOrder = CollationElementIterator.tertiaryOrder(tOrder);
                             if (terSOrder != terTOrder) {
                                 // there is a tertiary difference
-                                result = (terSOrder < terTOrder) ? Collator.LESS : Collator.GREATER;
+                                result = (terSOrder < terTOrder) ? -1 : 1;
                                                 // (strength is TERTIARY)
                                 checkTertiary = false;
                             }
@@ -516,12 +512,12 @@ public class RuleBasedCollator extends Collator{
                 if (CollationElementIterator.primaryOrder(sOrder) != 0) {
                     // We found an additional non-ignorable base character in the source string.
                     // This is a primary difference, so the source is greater
-                    return Collator.GREATER; // (strength is PRIMARY)
+                    return 1; // (strength is PRIMARY)
                 }
                 else if (CollationElementIterator.secondaryOrder(sOrder) != 0) {
                     // Additional secondary elements mean the source string is greater
                     if (checkSecTer) {
-                        result = Collator.GREATER;  // (strength is SECONDARY)
+                        result = 1;  // (strength is SECONDARY)
                         checkSecTer = false;
                     }
                 }
@@ -533,11 +529,11 @@ public class RuleBasedCollator extends Collator{
                 if (CollationElementIterator.primaryOrder(tOrder) != 0)
                     // We found an additional non-ignorable base character in the target string.
                     // This is a primary difference, so the source is less
-                    return Collator.LESS; // (strength is PRIMARY)
+                    return -1; // (strength is PRIMARY)
                 else if (CollationElementIterator.secondaryOrder(tOrder) != 0) {
                     // Additional secondary elements in the target mean the source string is less
                     if (checkSecTer) {
-                        result = Collator.LESS;  // (strength is SECONDARY)
+                        result = -1;  // (strength is SECONDARY)
                         checkSecTer = false;
                     }
                 }

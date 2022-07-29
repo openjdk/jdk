@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,14 +54,13 @@ final class RuleBasedCollationKey extends CollationKey {
      * zero if this is greater than target.
      * @see java.text.Collator#compare
      */
-    public int compareTo(CollationKey target)
-    {
+    public int compareTo(CollationKey target) {
         int result = key.compareTo(((RuleBasedCollationKey)(target)).key);
-        if (result <= Collator.LESS)
-            return Collator.LESS;
-        else if (result >= Collator.GREATER)
-            return Collator.GREATER;
-        return Collator.EQUAL;
+        if (result < 0)
+            return -1;
+        else if (result > 0)
+            return 1;
+        return 0;
     }
 
     /**

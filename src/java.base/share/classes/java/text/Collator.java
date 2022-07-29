@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,6 @@ package java.text;
 import java.lang.ref.SoftReference;
 import java.text.spi.CollatorProvider;
 import java.util.Locale;
-import java.util.ResourceBundle;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import sun.util.locale.provider.LocaleProviderAdapter;
@@ -327,9 +326,8 @@ public abstract class Collator
      * rules.  false, otherwise.
      * @see java.text.Collator#compare
      */
-    public boolean equals(String source, String target)
-    {
-        return (compare(source, target) == Collator.EQUAL);
+    public boolean equals(String source, String target) {
+        return compare(source, target) == 0;
     }
 
     /**
@@ -492,26 +490,4 @@ public abstract class Collator
     private int decmp = 0;
     private static final ConcurrentMap<Locale, SoftReference<Collator>> cache
             = new ConcurrentHashMap<>();
-
-    //
-    // FIXME: These three constants should be removed.
-    //
-    /**
-     * LESS is returned if source string is compared to be less than target
-     * string in the compare() method.
-     * @see java.text.Collator#compare
-     */
-    static final int LESS = -1;
-    /**
-     * EQUAL is returned if source string is compared to be equal to target
-     * string in the compare() method.
-     * @see java.text.Collator#compare
-     */
-    static final int EQUAL = 0;
-    /**
-     * GREATER is returned if source string is compared to be greater than
-     * target string in the compare() method.
-     * @see java.text.Collator#compare
-     */
-    static final int GREATER = 1;
- }
+}
