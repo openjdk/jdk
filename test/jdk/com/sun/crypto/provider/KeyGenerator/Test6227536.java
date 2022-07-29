@@ -1,0 +1,65 @@
+/*
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+/*
+ * @test
+ * @bug 6227536
+ * @summary Verify HmacSHA1 and HmacMD5 KeyGenerators throw an Exception when a keysize of zero is requested
+ * @author Kevin Driver
+ */
+
+import javax.crypto.KeyGenerator;
+
+public class Test6227536 {
+
+    public boolean execute(String algo) throws Exception {
+        KeyGenerator kg = KeyGenerator.getInstance(algo, "SunJCE");
+
+        try {
+
+            kg.init(0);
+
+        } catch (IllegalArgumentException iae) {
+            // exception was thrown
+            return true;
+        }
+
+        // exception was not thrown
+        throw new Exception("expected exception not thrown by " + algo + "KeyGenerator");
+    }
+
+    public static void main (String[] args) throws Exception {
+        Test6227536 test = new Test6227536();
+        String testName = test.getClass().getName();
+        if (test.execute("HmacSHA1")) {
+            System.out.println(testName + ": HmacSHA1 Passed!");
+        } else {
+            System.out.println(testName + ": HmacSHA1 Failed!");
+        }
+        if (test.execute("HmacMD5")) {
+            System.out.println(testName + ": HmacMD5 Passed!");
+        } else {
+            System.out.println(testName + ": HmacMD5 Failed!");
+        }
+    }
+}
