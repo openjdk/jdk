@@ -27,7 +27,6 @@
  * @bug 6227536
  * @summary Verify HmacSHA1 and HmacMD5 KeyGenerators throw an Exception when
  *  a keysize of zero is requested
- * @author Kevin Driver
  */
 
 import jdk.test.lib.Utils;
