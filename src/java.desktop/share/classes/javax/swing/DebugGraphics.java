@@ -72,11 +72,22 @@ public class DebugGraphics extends Graphics {
     /**
      * Constructs a new debug graphics context that supports slowed
      * down drawing.
+     * NOTE: This constructor should not be called by
+     * Apllications, it is for Internal use only. When called directly
+     * it will create an un-usable instance.
      */
     public DebugGraphics() {
         super();
         buffer = null;
         xOffset = yOffset = 0;
+
+        //  Creates a Graphics context when Application calls the constructor
+        //  directly.
+        StackWalker walker = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE);
+        if ((graphics == null) && (walker.getCallerClass() != this.getClass())) {
+            BufferedImage bi = new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB);
+            graphics = bi.createGraphics();
+        }
     }
 
     /**
@@ -106,9 +117,6 @@ public class DebugGraphics extends Graphics {
      * Overrides <code>Graphics.create</code> to return a DebugGraphics object.
      */
     public Graphics create() {
-        if (graphics == null) {
-            return null;
-        }
         DebugGraphics debugGraphics;
 
         debugGraphics = new DebugGraphics();
@@ -123,9 +131,6 @@ public class DebugGraphics extends Graphics {
      * Overrides <code>Graphics.create</code> to return a DebugGraphics object.
      */
     public Graphics create(int x, int y, int width, int height) {
-        if (graphics == null) {
-            return null;
-        }
         DebugGraphics debugGraphics;
 
         debugGraphics = new DebugGraphics();
@@ -225,18 +230,13 @@ public class DebugGraphics extends Graphics {
         if (debugLog()) {
             info().log(toShortString() + " Setting font: " + aFont);
         }
-        if (graphics != null) {
-            graphics.setFont(aFont);
-        }
+        graphics.setFont(aFont);
     }
 
     /** Returns the Font used for text drawing operations.
       * @see #setFont
       */
     public Font getFont() {
-        if (graphics == null) {
-            return null;
-        }
         return graphics.getFont();
     }
 
@@ -246,18 +246,13 @@ public class DebugGraphics extends Graphics {
         if (debugLog()) {
             info().log(toShortString() + " Setting color: " + aColor);
         }
-        if (graphics != null) {
-            graphics.setColor(aColor);
-        }
+        graphics.setColor(aColor);
     }
 
     /** Returns the Color used for text drawing operations.
       * @see #setColor
       */
     public Color getColor() {
-        if (graphics == null) {
-            return null;
-        }
         return graphics.getColor();
     }
 
@@ -270,9 +265,6 @@ public class DebugGraphics extends Graphics {
      * Overrides <code>Graphics.getFontMetrics</code>.
      */
     public FontMetrics getFontMetrics() {
-        if (graphics == null) {
-            return null;
-        }
         return graphics.getFontMetrics();
     }
 
@@ -280,9 +272,6 @@ public class DebugGraphics extends Graphics {
      * Overrides <code>Graphics.getFontMetrics</code>.
      */
     public FontMetrics getFontMetrics(Font f) {
-        if (graphics == null) {
-            return null;
-        }
         return graphics.getFontMetrics(f);
     }
 
@@ -296,9 +285,7 @@ public class DebugGraphics extends Graphics {
         }
         xOffset += x;
         yOffset += y;
-        if (graphics != null) {
-            graphics.translate(x, y);
-        }
+        graphics.translate(x, y);
     }
 
     /**
@@ -308,9 +295,7 @@ public class DebugGraphics extends Graphics {
         if (debugLog()) {
             info().log(toShortString() + " Setting paint mode");
         }
-        if (graphics != null) {
-            graphics.setPaintMode();
-        }
+        graphics.setPaintMode();
     }
 
     /**
@@ -320,18 +305,13 @@ public class DebugGraphics extends Graphics {
         if (debugLog()) {
             info().log(toShortString() + " Setting XOR mode: " + aColor);
         }
-        if (graphics != null) {
-            graphics.setXORMode(aColor);
-        }
+        graphics.setXORMode(aColor);
     }
 
     /**
      * Overrides <code>Graphics.getClipBounds</code>.
      */
     public Rectangle getClipBounds() {
-        if (graphics == null) {
-            return null;
-        }
         return graphics.getClipBounds();
     }
 
@@ -339,9 +319,6 @@ public class DebugGraphics extends Graphics {
      * Overrides <code>Graphics.clipRect</code>.
      */
     public void clipRect(int x, int y, int width, int height) {
-        if (graphics == null) {
-            return;
-        }
         graphics.clipRect(x, y, width, height);
         if (debugLog()) {
             info().log(toShortString() +
@@ -354,9 +331,6 @@ public class DebugGraphics extends Graphics {
      * Overrides <code>Graphics.setClip</code>.
      */
     public void setClip(int x, int y, int width, int height) {
-        if (graphics == null) {
-            return;
-        }
         graphics.setClip(x, y, width, height);
         if (debugLog()) {
             info().log(toShortString() +
@@ -368,9 +342,6 @@ public class DebugGraphics extends Graphics {
      * Overrides <code>Graphics.getClip</code>.
      */
     public Shape getClip() {
-        if (graphics == null) {
-            return null;
-        }
         return graphics.getClip();
     }
 
@@ -378,9 +349,6 @@ public class DebugGraphics extends Graphics {
      * Overrides <code>Graphics.setClip</code>.
      */
     public void setClip(Shape clip) {
-        if (graphics == null) {
-            return;
-        }
         graphics.setClip(clip);
         if (debugLog()) {
             info().log(toShortString() +
@@ -392,9 +360,6 @@ public class DebugGraphics extends Graphics {
      * Overrides <code>Graphics.drawRect</code>.
      */
     public void drawRect(int x, int y, int width, int height) {
-        if (graphics == null) {
-            return;
-        }
         DebugGraphicsInfo info = info();
 
         if (debugLog()) {
@@ -429,9 +394,6 @@ public class DebugGraphics extends Graphics {
      * Overrides <code>Graphics.fillRect</code>.
      */
     public void fillRect(int x, int y, int width, int height) {
-        if (graphics == null) {
-            return;
-        }
         DebugGraphicsInfo info = info();
 
         if (debugLog()) {
@@ -466,9 +428,6 @@ public class DebugGraphics extends Graphics {
      * Overrides <code>Graphics.clearRect</code>.
      */
     public void clearRect(int x, int y, int width, int height) {
-        if (graphics == null) {
-            return;
-        }
         DebugGraphicsInfo info = info();
 
         if (debugLog()) {
@@ -504,9 +463,6 @@ public class DebugGraphics extends Graphics {
      */
     public void drawRoundRect(int x, int y, int width, int height,
                               int arcWidth, int arcHeight) {
-        if (graphics == null) {
-            return;
-        }
         DebugGraphicsInfo info = info();
 
         if (debugLog()) {
@@ -545,9 +501,6 @@ public class DebugGraphics extends Graphics {
      */
     public void fillRoundRect(int x, int y, int width, int height,
                               int arcWidth, int arcHeight) {
-        if (graphics == null) {
-            return;
-        }
         DebugGraphicsInfo info = info();
 
         if (debugLog()) {
@@ -585,9 +538,6 @@ public class DebugGraphics extends Graphics {
      * Overrides <code>Graphics.drawLine</code>.
      */
     public void drawLine(int x1, int y1, int x2, int y2) {
-        if (graphics == null) {
-            return;
-        }
         DebugGraphicsInfo info = info();
 
         if (debugLog()) {
@@ -623,9 +573,6 @@ public class DebugGraphics extends Graphics {
      */
     public void draw3DRect(int x, int y, int width, int height,
                            boolean raised) {
-        if (graphics == null) {
-            return;
-        }
         DebugGraphicsInfo info = info();
 
         if (debugLog()) {
@@ -661,9 +608,6 @@ public class DebugGraphics extends Graphics {
      */
     public void fill3DRect(int x, int y, int width, int height,
                            boolean raised) {
-        if (graphics == null) {
-            return;
-        }
         DebugGraphicsInfo info = info();
 
         if (debugLog()) {
@@ -698,9 +642,6 @@ public class DebugGraphics extends Graphics {
      * Overrides <code>Graphics.drawOval</code>.
      */
     public void drawOval(int x, int y, int width, int height) {
-        if (graphics == null) {
-            return;
-        }
         DebugGraphicsInfo info = info();
 
         if (debugLog()) {
@@ -734,9 +675,6 @@ public class DebugGraphics extends Graphics {
      * Overrides <code>Graphics.fillOval</code>.
      */
     public void fillOval(int x, int y, int width, int height) {
-        if (graphics == null) {
-            return;
-        }
         DebugGraphicsInfo info = info();
 
         if (debugLog()) {
@@ -771,9 +709,6 @@ public class DebugGraphics extends Graphics {
      */
     public void drawArc(int x, int y, int width, int height,
                         int startAngle, int arcAngle) {
-        if (graphics == null) {
-            return;
-        }
         DebugGraphicsInfo info = info();
 
         if (debugLog()) {
@@ -811,9 +746,6 @@ public class DebugGraphics extends Graphics {
      */
     public void fillArc(int x, int y, int width, int height,
                         int startAngle, int arcAngle) {
-        if (graphics == null) {
-            return;
-        }
         DebugGraphicsInfo info = info();
 
         if (debugLog()) {
@@ -850,9 +782,6 @@ public class DebugGraphics extends Graphics {
      * Overrides <code>Graphics.drawPolyline</code>.
      */
     public void drawPolyline(int[] xPoints, int[] yPoints, int nPoints) {
-        if (graphics == null) {
-            return;
-        }
         DebugGraphicsInfo info = info();
 
         if (debugLog()) {
@@ -888,9 +817,6 @@ public class DebugGraphics extends Graphics {
      * Overrides <code>Graphics.drawPolygon</code>.
      */
     public void drawPolygon(int[] xPoints, int[] yPoints, int nPoints) {
-        if (graphics == null) {
-            return;
-        }
         DebugGraphicsInfo info = info();
 
         if (debugLog()) {
@@ -926,9 +852,6 @@ public class DebugGraphics extends Graphics {
      * Overrides <code>Graphics.fillPolygon</code>.
      */
     public void fillPolygon(int[] xPoints, int[] yPoints, int nPoints) {
-        if (graphics == null) {
-            return;
-        }
         DebugGraphicsInfo info = info();
 
         if (debugLog()) {
@@ -964,9 +887,6 @@ public class DebugGraphics extends Graphics {
      * Overrides <code>Graphics.drawString</code>.
      */
     public void drawString(String aString, int x, int y) {
-        if (graphics == null) {
-            return;
-        }
         DebugGraphicsInfo info = info();
 
         if (debugLog()) {
@@ -1002,9 +922,6 @@ public class DebugGraphics extends Graphics {
      * Overrides <code>Graphics.drawString</code>.
      */
     public void drawString(AttributedCharacterIterator iterator, int x, int y) {
-        if (graphics == null) {
-            return;
-        }
         DebugGraphicsInfo info = info();
 
         if (debugLog()) {
@@ -1040,9 +957,6 @@ public class DebugGraphics extends Graphics {
      * Overrides <code>Graphics.drawBytes</code>.
      */
     public void drawBytes(byte[] data, int offset, int length, int x, int y) {
-        if (graphics == null) {
-            return;
-        }
         DebugGraphicsInfo info = info();
 
         Font font = graphics.getFont();
@@ -1079,9 +993,6 @@ public class DebugGraphics extends Graphics {
      * Overrides <code>Graphics.drawChars</code>.
      */
     public void drawChars(char[] data, int offset, int length, int x, int y) {
-        if (graphics == null) {
-            return;
-        }
         DebugGraphicsInfo info = info();
 
         Font font = graphics.getFont();
@@ -1119,9 +1030,6 @@ public class DebugGraphics extends Graphics {
      */
     public boolean drawImage(Image img, int x, int y,
                              ImageObserver observer) {
-        if (graphics == null) {
-            return false;
-        }
         DebugGraphicsInfo info = info();
 
         if (debugLog()) {
@@ -1166,9 +1074,6 @@ public class DebugGraphics extends Graphics {
      */
     public boolean drawImage(Image img, int x, int y, int width, int height,
                              ImageObserver observer) {
-        if (graphics == null) {
-            return false;
-        }
         DebugGraphicsInfo info = info();
 
         if (debugLog()) {
@@ -1214,9 +1119,6 @@ public class DebugGraphics extends Graphics {
     public boolean drawImage(Image img, int x, int y,
                              Color bgcolor,
                              ImageObserver observer) {
-        if (graphics == null) {
-            return false;
-        }
         DebugGraphicsInfo info = info();
 
         if (debugLog()) {
@@ -1263,9 +1165,6 @@ public class DebugGraphics extends Graphics {
     public boolean drawImage(Image img, int x, int y,int width, int height,
                              Color bgcolor,
                              ImageObserver observer) {
-        if (graphics == null) {
-            return false;
-        }
         DebugGraphicsInfo info = info();
 
         if (debugLog()) {
@@ -1314,9 +1213,6 @@ public class DebugGraphics extends Graphics {
                              int dx1, int dy1, int dx2, int dy2,
                              int sx1, int sy1, int sx2, int sy2,
                              ImageObserver observer) {
-        if (graphics == null) {
-            return false;
-        }
         DebugGraphicsInfo info = info();
 
         if (debugLog()) {
@@ -1368,9 +1264,6 @@ public class DebugGraphics extends Graphics {
                              int sx1, int sy1, int sx2, int sy2,
                              Color bgcolor,
                              ImageObserver observer) {
-        if (graphics == null) {
-            return false;
-        }
         DebugGraphicsInfo info = info();
 
         if (debugLog()) {
@@ -1425,9 +1318,6 @@ public class DebugGraphics extends Graphics {
      */
     public void copyArea(int x, int y, int width, int height,
                          int destX, int destY) {
-        if (graphics == null) {
-            return;
-        }
         if (debugLog()) {
             info().log(toShortString() +
                       " Copying area from: " +
