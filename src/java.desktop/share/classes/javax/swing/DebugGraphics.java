@@ -72,6 +72,7 @@ public class DebugGraphics extends Graphics {
     /**
      * Constructs a new debug graphics context that supports slowed
      * down drawing.
+     * <p>
      * NOTE: This constructor should not be called by
      * Apllications, it is for Internal use only. When called directly
      * it will create an un-usable instance.
