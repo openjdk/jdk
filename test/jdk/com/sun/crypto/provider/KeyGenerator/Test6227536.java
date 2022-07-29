@@ -52,7 +52,11 @@ public class Test6227536 {
 
         for (String keyGenToTest : test.keyGensToTest) {
 
-            System.out.println(testName + ": " + keyGenToTest + ((test.execute(keyGenToTest)) ? " Passed!" : " Failed!"));
+            if (test.execute(keyGenToTest)) {
+
+                System.out.println(testName + ": " + keyGenToTest + " Passed!");
+
+            }
 
         }
 
