@@ -725,7 +725,7 @@ public class JTabbedPane extends JComponent
      *       {@code (index >= 0 && index <= getTabCount())}
      *
      * @throws IndexOutOfBoundsException if the index is out of range
-     *         {@code (index < 0 || index > tab count)}
+     *         {@code (index < 0 || index > getTabCount())}
      *
      * @see #addTab
      * @see #removeTabAt
