@@ -383,9 +383,6 @@ WB_ENTRY(jboolean, WB_isObjectInOldGen(JNIEnv* env, jobject o, jobject obj))
   if (UseG1GC) {
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
     const HeapRegion* hr = g1h->heap_region_containing(p);
-    if (hr == NULL) {
-      return false;
-    }
     return !(hr->is_young());
   }
 #endif
