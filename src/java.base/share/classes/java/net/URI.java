@@ -227,10 +227,10 @@ import sun.nio.cs.UTF_8;
  * <blockquote>
  *   <i>u</i>{@code .relativize(}<i>u</i>{@code .resolve(}<i>v</i>{@code )).equals(}<i>v</i>{@code )}
  * </blockquote>
- * 
+ *
  * Let <i>u</i> be any normalized absolute URI ending with a slash character ({@code '/'})
  * and <i>v</i> be any normalized absolute URI. Then, the following statement is true.
- * 
+ *
  * <blockquote>
  *   <i>u</i>{@code .resolve(}<i>u</i>{@code .relativize(}<i>v</i>{@code )).equals(}<i>v</i>{@code )}
  * </blockquote>
