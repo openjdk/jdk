@@ -1522,7 +1522,6 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
         public RecordComponent createRecordComponent(RecordComponent existing, JCVariableDecl var, List<JCAnnotation> annotations) {
             RecordComponent rc = null;
             if (existing != null) {
-                // Found a record component with an erroneous type: remove it and create a new one
                 recordComponents = List.filter(recordComponents, existing);
                 recordComponents = recordComponents.append(rc = new RecordComponent(var.sym, existing.originalAnnos, existing.isVarargs));
             } else {
