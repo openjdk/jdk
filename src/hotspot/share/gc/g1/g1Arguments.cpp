@@ -177,7 +177,13 @@ void G1Arguments::initialize() {
     FLAG_SET_ERGO(ParallelGCThreads, 1);
   }
 
-  if (FLAG_IS_DEFAULT(G1ConcRefinementThreads)) {
+  if (!G1UseConcRefinement) {
+    if (!FLAG_IS_DEFAULT(G1ConcRefinementThreads)) {
+      log_warning(gc, ergo)("Ignoring -XX:G1ConcRefinementThreads "
+                            "because of -XX:-G1UseConcRefinement");
+    }
+    FLAG_SET_DEFAULT(G1ConcRefinementThreads, 0);
+  } else if (FLAG_IS_DEFAULT(G1ConcRefinementThreads)) {
     FLAG_SET_ERGO(G1ConcRefinementThreads, ParallelGCThreads);
   }
 

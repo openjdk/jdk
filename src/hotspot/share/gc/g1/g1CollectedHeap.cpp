@@ -1523,7 +1523,7 @@ G1RegionToSpaceMapper* G1CollectedHeap::create_aux_memory_mapper(const char* des
 
 jint G1CollectedHeap::initialize_concurrent_refinement() {
   jint ecode = JNI_OK;
-  _cr = G1ConcurrentRefine::create(&ecode);
+  _cr = G1ConcurrentRefine::create(policy(), &ecode);
   return ecode;
 }
 
