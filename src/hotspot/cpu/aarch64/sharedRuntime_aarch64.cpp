@@ -1235,7 +1235,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
                                               frame_complete,
                                               stack_slots,
                                               in_ByteSize(-1),
-                                              in_ByteSize(-1),
                                               oop_maps,
                                               exception_offset);
     ContinuationEntry::set_enter_code(nm, interpreted_entry_offset);
