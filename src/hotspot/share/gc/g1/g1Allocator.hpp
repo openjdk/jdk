@@ -166,9 +166,11 @@ private:
   size_t _num_direct_allocations[G1HeapRegionAttr::Num];
 
   size_t _plab_fill_counter[G1HeapRegionAttr::Num];
-
+  // Current desired PLAB size incorporating eventual boosting.
   size_t _cur_desired_plab_size[G1HeapRegionAttr::Num];
 
+  // The amount of PLAB refills tolerated until boosting PLAB size. This value
+  // is the same for all generations because they all use the same resizing logic.
   size_t _tolerated_refills;
 
   void flush_and_retire_stats(uint num_workers);
