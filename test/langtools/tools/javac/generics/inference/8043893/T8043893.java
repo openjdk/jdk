@@ -4,7 +4,7 @@
  * @summary Inference doesn't report error on incompatible upper bounds
  *
  * @compile --release 7 T8043893.java
- * @compile/fail/ref=T8043893.out -Xlint:-options -XDrawDiagnostics T8043893.java
+ * @compile/fail/ref=T8043893.out -XDrawDiagnostics T8043893.java
  */
 
 class T8043893<X> {

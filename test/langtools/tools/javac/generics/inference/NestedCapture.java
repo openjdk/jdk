@@ -26,7 +26,7 @@
  * @bug 8039214
  * @summary Capture variable passed through multiple levels of nested inference
  * @compile NestedCapture.java
- * @compile -Xlint:-options NestedCapture.java
+ * @compile NestedCapture.java
  */
 
 abstract class NestedCapture {
