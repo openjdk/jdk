@@ -999,8 +999,9 @@ DeoptimizationContext::~DeoptimizationContext() {
 
 void DeoptimizationContext::mark(CompiledMethod* cm, bool inc_recompile_count) {
   assert(!_deoptimized, "Calling mark after deoptimize is invalid");
-  ++_marked;
-  cm->mark_for_deoptimization(inc_recompile_count);
+  if (cm->mark_for_deoptimization(inc_recompile_count)) {
+    ++_marked;
+  }
 }
 
 void DeoptimizationContext::deopt_compiled_methods() {

@@ -262,7 +262,7 @@ public:
   bool  has_been_deoptimized() const { return extract_mark(_mark_link) == deoptimize_done; }
 
 private:
-  void  mark_for_deoptimization(bool inc_recompile_counts = true);
+  bool  mark_for_deoptimization(bool inc_recompile_counts = true);
   CompiledMethod* next_marked() const;
   static CompiledMethod* take_root();
 protected:

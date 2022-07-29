@@ -119,7 +119,7 @@ const char* CompiledMethod::state() const {
 }
 
 //-----------------------------------------------------------------------------
-void CompiledMethod::mark_for_deoptimization(bool inc_recompile_counts) {
+bool CompiledMethod::mark_for_deoptimization(bool inc_recompile_counts) {
   assert_locked_or_safepoint(Compile_lock);
   MarkForDeoptimizationStatus old_mark = extract_mark(_mark_link);
   if (old_mark != deoptimize_done) { // can't go backwards
@@ -128,10 +128,12 @@ void CompiledMethod::mark_for_deoptimization(bool inc_recompile_counts) {
       assert(extract_compiled_method(_mark_link) == nullptr, "Compiled Method should not already be linked");
       _mark_link = mark_link(_root_mark_link, new_mark);
       _root_mark_link = this;
+      return true;
     } else {
-      _mark_link = mark_link(nullptr, new_mark);
+      _mark_link = mark_link(extract_compiled_method(_mark_link), new_mark);
     }
   }
+  return false;
 }
 
 CompiledMethod* CompiledMethod::next_marked() const {
