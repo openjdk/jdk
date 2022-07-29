@@ -118,7 +118,6 @@ import static com.sun.source.doctree.DocTree.Kind.LINK;
 import static com.sun.source.doctree.DocTree.Kind.LINK_PLAIN;
 import static com.sun.source.doctree.DocTree.Kind.SEE;
 import static com.sun.source.doctree.DocTree.Kind.TEXT;
-import static jdk.javadoc.internal.doclets.toolkit.util.CommentHelper.SPACER;
 
 
 /**
@@ -977,7 +976,6 @@ public class HtmlDocletWriter {
         CommentHelper ch = utils.getCommentHelper(element);
         String tagName = ch.getTagName(see);
 
-        String seeText = utils.normalizeNewlines(ch.getText(see)).toString();
         String refText;
         List<? extends DocTree> label;
         switch (kind) {
@@ -997,26 +995,25 @@ public class HtmlDocletWriter {
             case SEE -> {
                 List<? extends DocTree> ref = ((SeeTree) see).getReference();
                 assert !ref.isEmpty();
-                switch (ref.get(0).getKind()) {
-                    case TEXT -> {
+                DocTree ref0 = ref.get(0);
+                switch (ref0.getKind()) {
+                    case TEXT, START_ELEMENT -> {
                         // @see "Reference"
-                        return Text.of(seeText);
-                    }
-                    case START_ELEMENT -> {
                         // @see <a href="...">...</a>
-                        return RawHtml.of(replaceDocRootDir(removeTrailingSlash(seeText)));
+                        return commentTagsToContent(element, ref, false, false);
                     }
                     case REFERENCE -> {
                         // @see reference label...
-                        refText = ref.get(0).toString();
+                        refText = ref0.toString();
                         label = ref.subList(1, ref.size());
                     }
                     case ERRONEOUS -> {
-                        return invalidTagOutput(resources.getText("doclet.tag.invalid_input", seeText),
+                        return invalidTagOutput(resources.getText("doclet.tag.invalid_input",
+                                        ref0.toString()),
                                 Optional.empty());
                     }
                     default ->
-                        throw new IllegalStateException(ref.get(0).getKind().toString());
+                        throw new IllegalStateException(ref0.getKind().toString());
                 }
             }
 
@@ -1107,7 +1104,7 @@ public class HtmlDocletWriter {
                 if (overriddenMethod != null)
                     containing = utils.getEnclosingTypeElement(overriddenMethod);
             }
-            if (ch.getText(see).trim().startsWith("#") &&
+            if (refText.trim().startsWith("#") &&
                 ! (utils.isPublic(containing) || utils.isLinkable(containing))) {
                 // Since the link is relative and the holder is not even being
                 // documented, this must be an inherited link.  Redirect it.
@@ -1484,7 +1481,7 @@ public class HtmlDocletWriter {
             }
         };
         CommentHelper ch = utils.getCommentHelper(element);
-        configuration.tagletManager.checkTags(element, trees, true);
+        configuration.tagletManager.checkTags(element, trees);
         commentRemoved = false;
 
         for (ListIterator<? extends DocTree> iterator = trees.listIterator(); iterator.hasNext();) {
@@ -1500,7 +1497,7 @@ public class HtmlDocletWriter {
                 // Ignore any trailing whitespace OR whitespace after removed html comment
                 if ((isLastNode || commentRemoved)
                         && tag.getKind() == TEXT
-                        && ch.getText(tag).isBlank())
+                        && ((tag instanceof TextTree tt) && tt.getBody().isBlank()))
                     continue;
 
                 // Ignore any leading html comments
@@ -2462,5 +2459,4 @@ public class HtmlDocletWriter {
                                    HtmlTree.CODE(Text.of(className)),
                                    links);
     }
-
 }

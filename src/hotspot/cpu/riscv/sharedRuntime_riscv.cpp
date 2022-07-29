@@ -386,7 +386,7 @@ static void gen_c2i_adapter(MacroAssembler *masm,
 
   int extraspace = total_args_passed * Interpreter::stackElementSize;
 
-  __ mv(x30, sp);
+  __ mv(x19_sender_sp, sp);
 
   // stack is aligned, keep it that way
   extraspace = align_up(extraspace, 2 * wordSize);
@@ -498,6 +498,11 @@ void SharedRuntime::gen_i2c_adapter(MacroAssembler *masm,
                                     int comp_args_on_stack,
                                     const BasicType *sig_bt,
                                     const VMRegPair *regs) {
+  // Note: x19_sender_sp contains the senderSP on entry. We must
+  // preserve it since we may do a i2c -> c2i transition if we lose a
+  // race where compiled code goes non-entrant while we get args
+  // ready.
+
   // Cut-out for having no stack args.
   int comp_words_on_stack = align_up(comp_args_on_stack * VMRegImpl::stack_slot_size, wordSize) >> LogBytesPerWord;
   if (comp_args_on_stack != 0) {

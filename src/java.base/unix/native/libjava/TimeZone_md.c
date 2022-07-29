@@ -151,7 +151,6 @@ findZoneinfoFile(char *buf, size_t size, const char *dir)
     struct dirent *dp = NULL;
     char *pathname = NULL;
     char *tz = NULL;
-    int res;
 
     if (strcmp(dir, ZONEINFO_DIR) == 0) {
         /* fast path for 1st iteration */

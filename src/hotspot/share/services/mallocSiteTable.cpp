@@ -29,7 +29,7 @@
 #include "services/mallocSiteTable.hpp"
 
 // Malloc site hashtable buckets
-MallocSiteHashtableEntry*  MallocSiteTable::_table[MallocSiteTable::table_size];
+MallocSiteHashtableEntry**  MallocSiteTable::_table = NULL;
 const NativeCallStack* MallocSiteTable::_hash_entry_allocation_stack = NULL;
 const MallocSiteHashtableEntry* MallocSiteTable::_hash_entry_allocation_site = NULL;
 
@@ -42,6 +42,12 @@ const MallocSiteHashtableEntry* MallocSiteTable::_hash_entry_allocation_site = N
  * time, it is in single-threaded mode from JVM perspective.
  */
 bool MallocSiteTable::initialize() {
+
+  ALLOW_C_FUNCTION(::calloc,
+                   _table = (MallocSiteHashtableEntry**)::calloc(table_size, sizeof(MallocSiteHashtableEntry*));)
+  if (_table == nullptr) {
+    return false;
+  }
 
   // Fake the call stack for hashtable entry allocation
   assert(NMT_TrackingStackDepth > 1, "At least one tracking stack");

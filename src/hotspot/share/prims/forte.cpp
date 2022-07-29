@@ -91,7 +91,10 @@ static bool is_decipherable_interpreted_frame(JavaThread* thread,
 vframeStreamForte::vframeStreamForte(JavaThread *jt,
                                      frame fr,
                                      bool stop_at_java_call_stub)
-    : vframeStreamCommon(RegisterMap(jt, false, false, false)) {
+    : vframeStreamCommon(RegisterMap(jt,
+                                     RegisterMap::UpdateMap::skip,
+                                     RegisterMap::ProcessFrames::skip,
+                                     RegisterMap::WalkContinuation::skip)) {
   _reg_map.set_async(true);
   _stop_at_java_call_stub = stop_at_java_call_stub;
   _frame = fr;
@@ -318,7 +321,10 @@ static bool find_initial_Java_frame(JavaThread* thread,
   // Instead, try to do Zero-specific search for Java frame.
 
   {
-    RegisterMap map(thread, false, false);
+    RegisterMap map(thread,
+                    RegisterMap::UpdateMap::skip,
+                    RegisterMap::ProcessFrames::skip,
+                    RegisterMap::WalkContinuation::skip);
 
     while (true) {
       // Cannot walk this frame? Cannot do anything anymore.
@@ -362,7 +368,10 @@ static bool find_initial_Java_frame(JavaThread* thread,
     // See if we can find a useful frame
     int loop_count;
     int loop_max = MaxJavaStackTraceDepth * 2;
-    RegisterMap map(thread, false, false);
+    RegisterMap map(thread,
+                    RegisterMap::UpdateMap::skip,
+                    RegisterMap::ProcessFrames::skip,
+                    RegisterMap::WalkContinuation::skip);
 
     for (loop_count = 0; loop_max == 0 || loop_count < loop_max; loop_count++) {
       if (!candidate.safe_for_sender(thread)) return false;
@@ -376,7 +385,10 @@ static bool find_initial_Java_frame(JavaThread* thread,
   // We will hopefully be able to figure out something to do with it.
   int loop_count;
   int loop_max = MaxJavaStackTraceDepth * 2;
-  RegisterMap map(thread, false, false);
+  RegisterMap map(thread,
+                  RegisterMap::UpdateMap::skip,
+                  RegisterMap::ProcessFrames::skip,
+                  RegisterMap::WalkContinuation::skip);
 
   for (loop_count = 0; loop_max == 0 || loop_count < loop_max; loop_count++) {
 
@@ -667,7 +679,7 @@ void AsyncGetCallTrace(ASGCT_CallTrace *trace, jint depth, void* ucontext) {
 // Method to let libcollector know about a dynamically loaded function.
 // Because it is weakly bound, the calls become NOP's when the library
 // isn't present.
-#ifdef __APPLE__
+#if defined(__APPLE__) || defined(_AIX)
 // XXXDARWIN: Link errors occur even when __attribute__((weak_import))
 // is added
 #define collector_func_load(x0,x1,x2,x3,x4,x5,x6) ((void) 0)
@@ -684,7 +696,7 @@ void    collector_func_load(char* name,
 #define collector_func_load(x0,x1,x2,x3,x4,x5,x6) \
         ( collector_func_load ? collector_func_load(x0,x1,x2,x3,x4,x5,x6),(void)0 : (void)0 )
 #define collector_func_load_enabled() (collector_func_load ? true : false)
-#endif // __APPLE__
+#endif // __APPLE__ || _AIX
 #endif // !_WINDOWS
 
 } // end extern "C"

@@ -196,16 +196,16 @@ public class TagletWriterImpl extends TagletWriter {
     }
 
     @Override
-    protected Content codeTagOutput(Element element, DocTree tag) {
-        CommentHelper ch = utils.getCommentHelper(element);
-        return HtmlTree.CODE(Text.of(utils.normalizeNewlines(ch.getText(tag))));
+    protected Content codeTagOutput(Element element, LiteralTree tag) {
+        return HtmlTree.CODE(Text.of(utils.normalizeNewlines(tag.getBody().getBody())));
     }
 
     @Override
     protected Content indexTagOutput(Element element, IndexTree tag) {
         CommentHelper ch = utils.getCommentHelper(element);
 
-        String tagText = ch.getText(tag.getSearchTerm());
+        DocTree searchTerm = tag.getSearchTerm();
+        String tagText = (searchTerm instanceof TextTree tt) ? tt.getBody() : "";
         if (tagText.charAt(0) == '"' && tagText.charAt(tagText.length() - 1) == '"') {
             tagText = tagText.substring(1, tagText.length() - 1)
                              .replaceAll("\\s+", " ");
@@ -272,9 +272,7 @@ public class TagletWriterImpl extends TagletWriter {
 
     @Override
     protected Content literalTagOutput(Element element, LiteralTree tag) {
-        CommentHelper ch = utils.getCommentHelper(element);
-        Content result = Text.of(utils.normalizeNewlines(ch.getText(tag)));
-        return result;
+        return Text.of(utils.normalizeNewlines(tag.getBody().getBody()));
     }
 
     @Override
@@ -346,8 +344,7 @@ public class TagletWriterImpl extends TagletWriter {
             return Text.EMPTY;
         }
         // Use a different style if any link label is longer than 30 chars or contains commas.
-        boolean hasLongLabels = links.stream()
-                .anyMatch(c -> c.charCount() > SEE_TAG_MAX_INLINE_LENGTH || c.toString().contains(","));
+        boolean hasLongLabels = links.stream().anyMatch(this::isLongOrHasComma);
         var seeList = HtmlTree.UL(hasLongLabels ? HtmlStyle.seeListLong : HtmlStyle.seeList);
         links.stream().filter(Predicate.not(Content::isEmpty)).forEach(item -> {
             seeList.add(HtmlTree.LI(item));
@@ -356,6 +353,14 @@ public class TagletWriterImpl extends TagletWriter {
         return new ContentBuilder(
                 HtmlTree.DT(contents.seeAlso),
                 HtmlTree.DD(seeList));
+    }
+
+    private boolean isLongOrHasComma(Content c) {
+        String s = c.toString()
+                .replaceAll("<.*?>", "")              // ignore HTML
+                .replaceAll("&#?[A-Za-z0-9]+;", " ")  // entities count as a single character
+                .replaceAll("\\R", "\n");             // normalize newlines
+        return s.length() > SEE_TAG_MAX_INLINE_LENGTH || s.contains(",");
     }
 
     @Override
@@ -426,24 +431,13 @@ public class TagletWriterImpl extends TagletWriter {
                     return;
                 } else if (linkEncountered) {
                     assert e != null;
-                    String line = sequence.toString();
-                    String strippedLine = line.strip();
-                    int idx = line.indexOf(strippedLine);
-                    assert idx >= 0; // because the stripped line is a substring of the line being stripped
-                    Text whitespace = Text.of(utils.normalizeNewlines(line.substring(0, idx)));
                     //disable preview tagging inside the snippets:
                     PreviewFlagProvider prevPreviewProvider = utils.setPreviewFlagProvider(el -> false);
                     try {
-                        // If the leading whitespace is not excluded from the link,
-                        // browsers might exhibit unwanted behavior. For example, a
-                        // browser might display hand-click cursor while user hovers
-                        // over that whitespace portion of the line; or use
-                        // underline decoration.
-                        c = new ContentBuilder(whitespace, htmlWriter.linkToContent(element, e, t, strippedLine));
+                        c = new ContentBuilder(htmlWriter.linkToContent(element, e, t, sequence.toString()));
                     } finally {
                         utils.setPreviewFlagProvider(prevPreviewProvider);
                     }
-                    // We don't care about trailing whitespace.
                 } else {
                     c = HtmlTree.SPAN(Text.of(text));
                     classes.forEach(((HtmlTree) c)::addStyle);

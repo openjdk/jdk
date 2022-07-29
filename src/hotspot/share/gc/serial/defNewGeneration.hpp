@@ -223,10 +223,6 @@ protected:
   size_t max_eden_size() const              { return _max_eden_size; }
   size_t max_survivor_size() const          { return _max_survivor_size; }
 
-  bool supports_inline_contig_alloc() const { return true; }
-  HeapWord* volatile* top_addr() const;
-  HeapWord** end_addr() const;
-
   // Thread-local allocation buffers
   bool supports_tlab_allocation() const { return true; }
   size_t tlab_capacity() const;

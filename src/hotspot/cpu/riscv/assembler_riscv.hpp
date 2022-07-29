@@ -141,8 +141,10 @@ REGISTER_DECLARATION(Register, xthread,   x23);
 REGISTER_DECLARATION(Register, xbcp,      x22);
 // Dispatch table base
 REGISTER_DECLARATION(Register, xdispatch, x21);
-// Java stack pointer
+// Java expression stack pointer
 REGISTER_DECLARATION(Register, esp,       x20);
+// Sender's SP while in interpreter
+REGISTER_DECLARATION(Register, x19_sender_sp, x19);
 
 // temporary register(caller-save registers)
 REGISTER_DECLARATION(Register, t0, x5);
@@ -3064,11 +3066,12 @@ public:
   void wrap_label(Register r, Label &L, Register t, load_insn_by_temp insn);
   void wrap_label(Register r, Label &L, jal_jalr_insn insn);
 
-  // calculate pseudoinstruction
+  // Computational pseudo instructions
   void add(Register Rd, Register Rn, int64_t increment, Register temp = t0);
-  void addw(Register Rd, Register Rn, int64_t increment, Register temp = t0);
+  void addw(Register Rd, Register Rn, int32_t increment, Register temp = t0);
+
   void sub(Register Rd, Register Rn, int64_t decrement, Register temp = t0);
-  void subw(Register Rd, Register Rn, int64_t decrement, Register temp = t0);
+  void subw(Register Rd, Register Rn, int32_t decrement, Register temp = t0);
 
   // RVB pseudo instructions
   // zero extend word
