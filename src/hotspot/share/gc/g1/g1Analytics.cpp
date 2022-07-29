@@ -81,6 +81,7 @@ G1Analytics::G1Analytics(const G1Predictions* predictor) :
     _rs_length_diff_seq(new TruncatedSeq(TruncatedSeqLength)),
     _concurrent_refine_rate_ms_seq(new TruncatedSeq(TruncatedSeqLength)),
     _dirtied_cards_rate_ms_seq(new TruncatedSeq(TruncatedSeqLength)),
+    _dirtied_cards_in_thread_buffers_seq(new TruncatedSeq(TruncatedSeqLength)),
     _young_card_merge_to_scan_ratio_seq(new TruncatedSeq(TruncatedSeqLength)),
     _mixed_card_merge_to_scan_ratio_seq(new TruncatedSeq(TruncatedSeqLength)),
     _young_cost_per_card_scan_ms_seq(new TruncatedSeq(TruncatedSeqLength)),
@@ -169,6 +170,10 @@ void G1Analytics::report_dirtied_cards_rate_ms(double cards_per_ms) {
   _dirtied_cards_rate_ms_seq->add(cards_per_ms);
 }
 
+void G1Analytics::report_dirtied_cards_in_thread_buffers(size_t cards) {
+  _dirtied_cards_in_thread_buffers_seq->add(double(cards));
+}
+
 void G1Analytics::report_cost_per_card_scan_ms(double cost_per_card_ms, bool for_young_gc) {
   if (for_young_gc) {
     _young_cost_per_card_scan_ms_seq->add(cost_per_card_ms);
@@ -239,6 +244,10 @@ double G1Analytics::predict_concurrent_refine_rate_ms() const {
 
 double G1Analytics::predict_dirtied_cards_rate_ms() const {
   return predict_zero_bounded(_dirtied_cards_rate_ms_seq);
+}
+
+double G1Analytics::predict_dirtied_cards_in_thread_buffers() const {
+  return predict_zero_bounded(_dirtied_cards_in_thread_buffers_seq);
 }
 
 double G1Analytics::predict_young_card_merge_to_scan_ratio() const {

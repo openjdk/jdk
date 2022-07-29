@@ -36,6 +36,7 @@
 #include "gc/g1/g1YoungGenSizer.hpp"
 #include "gc/shared/gcCause.hpp"
 #include "utilities/pair.hpp"
+#include "utilities/ticks.hpp"
 
 // A G1Policy makes policy decisions that determine the
 // characteristics of the collector.  Examples include:
@@ -299,6 +300,8 @@ public:
 
   // This should be called after the heap is resized.
   void record_new_heap_size(uint new_number_of_regions);
+
+  void record_concatenate_dirty_card_logs(Tickspan concat_time, size_t num_cards);
 
   void init(G1CollectedHeap* g1h, G1CollectionSet* collection_set);
 

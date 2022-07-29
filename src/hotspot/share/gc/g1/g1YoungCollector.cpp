@@ -467,6 +467,16 @@ void G1YoungCollector::set_young_collection_default_active_worker_threads(){
   log_info(gc,task)("Using %u workers of %u for evacuation", active_workers, workers()->max_workers());
 }
 
+void G1YoungCollector::flush_dirty_card_queues() {
+  Ticks start = Ticks::now();
+  G1DirtyCardQueueSet& qset = G1BarrierSet::dirty_card_queue_set();
+  size_t old_cards = qset.num_cards();
+  qset.concatenate_logs();
+  size_t added_cards = qset.num_cards() - old_cards;
+  Tickspan concat_time = Ticks::now() - start;
+  policy()->record_concatenate_dirty_card_logs(concat_time, added_cards);
+}
+
 void G1YoungCollector::pre_evacuate_collection_set(G1EvacInfo* evacuation_info, G1ParScanThreadStateSet* per_thread_states) {
   // Please see comment in g1CollectedHeap.hpp and
   // G1CollectedHeap::ref_processing_init() to see how
@@ -483,14 +493,9 @@ void G1YoungCollector::pre_evacuate_collection_set(G1EvacInfo* evacuation_info, 
     phase_times()->record_prepare_tlab_time_ms((Ticks::now() - start).seconds() * 1000.0);
   }
 
-  {
-    // Flush dirty card queues to qset, so later phases don't need to account
-    // for partially filled per-thread queues and such.
-    Ticks start = Ticks::now();
-    G1BarrierSet::dirty_card_queue_set().concatenate_logs();
-    Tickspan dt = Ticks::now() - start;
-    phase_times()->record_concatenate_dirty_card_logs_time_ms(dt.seconds() * MILLIUNITS);
-  }
+  // Flush dirty card queues to qset, so later phases don't need to account
+  // for partially filled per-thread queues and such.
+  flush_dirty_card_queues();
 
   hot_card_cache()->reset_hot_cache_claimed_index();
 

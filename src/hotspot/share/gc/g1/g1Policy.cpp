@@ -629,6 +629,11 @@ void G1Policy::record_concurrent_refinement_stats() {
   }
 }
 
+void G1Policy::record_concatenate_dirty_card_logs(Tickspan concat_time, size_t num_cards) {
+  _analytics->report_dirtied_cards_in_thread_buffers(num_cards);
+  phase_times()->record_concatenate_dirty_card_logs_time_ms(concat_time.seconds() * MILLIUNITS);
+}
+
 void G1Policy::record_young_collection_start() {
   Ticks now = Ticks::now();
   // We only need to do this here as the policy will only be applied
