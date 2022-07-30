@@ -31,10 +31,10 @@
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotSame;
+import static org.testng.Assert.assertThrows;
 
 import java.util.IllformedLocaleException;
 import java.util.Locale;
-import java.util.Map;
 
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -164,13 +164,8 @@ public class TExtensionTests {
     @Test
     public void test_InvalidSourceLangSetExtension() {
         // Locale.Builder.setExtension() should throw IllformedLocaleException
-        try {
-            LB.clear().setLocale(Locale.ENGLISH).setExtension('t', INVALID_SOURCE).build();
-            throw new RuntimeException("Invalid source language tag should throw an exception");
-        } catch (IllformedLocaleException ile) {
-            // success
-            System.out.println("IllformedLocaleException thrown correctly: " + ile.getMessage());
-        }
+        assertThrows(IllformedLocaleException.class, () ->
+            LB.clear().setLocale(Locale.ENGLISH).setExtension('t', INVALID_SOURCE).build());
     }
 
     @Test
@@ -182,12 +177,7 @@ public class TExtensionTests {
     @Test
     public void test_InvalidFieldsSetExtension() {
         // Locale.Builder.setExtension() should throw IllformedLocaleException
-        try {
-            LB.clear().setLocale(Locale.ENGLISH).setExtension('t', INVALID_FIELDS).build();
-            throw new RuntimeException("Invalid fields should throw an exception");
-        } catch (IllformedLocaleException ile) {
-            // success
-            System.out.println("IllformedLocaleException thrown correctly: " + ile.getMessage());
-        }
+        assertThrows(IllformedLocaleException.class, () ->
+            LB.clear().setLocale(Locale.ENGLISH).setExtension('t', INVALID_FIELDS).build());
     }
 }
