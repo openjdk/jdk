@@ -20,48 +20,32 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package org.openjdk.bench.vm.compiler;
 
-package compiler.c2.irTests;
+import org.openjdk.jmh.annotations.*;
+import org.openjdk.jmh.infra.Blackhole;
 
-import compiler.lib.ir_framework.*;
-import java.util.Random;
-import jdk.test.lib.Utils;
+import java.util.concurrent.TimeUnit;
 
-/*
- * @test
- * @summary Test that transformation of multiply-by-2 is appropriately turned into additions.
- * @library /test/lib /
- * @requires vm.compiler2.enabled
- * @run driver compiler.c2.irTests.TestMulBy2
- */
-public class TestMulBy2 {
-    private static final Random RANDOM = Utils.getRandomInstance();
+@BenchmarkMode(Mode.AverageTime)
+@OutputTimeUnit(TimeUnit.NANOSECONDS)
+@Measurement(iterations = 5, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
+@Warmup(iterations = 5, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
+@Fork(3)
+public class MulNodeIdealize {
+    private static final int SIZE = 50;
 
-    public static void main(String[] args) {
-        TestFramework.run();
+    @Benchmark
+    public void testMul2Float(Blackhole blackhole) {
+        for (float i = 0; i < SIZE; i++) {
+            blackhole.consume(i * 2);
+        }
     }
 
-    @Test
-    @IR(failOn = {IRNode.MUL})
-    // Checks x * 2 -> x + x
-    public float testFloat(float x) {
-        return x * 2;
-    }
-
-    @Test
-    @IR(failOn = {IRNode.MUL})
-    // Checks x * 2 -> x + x
-    public double testDouble(double x) {
-        return x * 2;
-    }
-
-    @Run(test = "testFloat")
-    public void runTestFloat() {
-        testFloat(RANDOM.nextFloat());
-    }
-
-    @Run(test = "testDouble")
-    public void runTestDouble() {
-        testDouble(RANDOM.nextDouble());
+    @Benchmark
+    public void testMul2Double(Blackhole blackhole) {
+        for (double i = 0; i < SIZE; i++) {
+            blackhole.consume(i * 2);
+        }
     }
 }

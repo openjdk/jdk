@@ -436,18 +436,9 @@ const Type *MulFNode::mul_ring(const Type *t0, const Type *t1) const {
 //------------------------------Ideal---------------------------------------
 // Check to see if we are multiplying by a constant 2 and convert to add, then try the regular MulNode::Ideal
 Node *MulFNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  const TypeF *t1 = in(1)->bottom_type()->isa_float_constant();
-  const TypeF *t2 = in(2)->bottom_type()->isa_float_constant();
+  const TypeF *t2 = phase->type(in(2))->isa_float_constant();
 
   // x * 2 -> x + x
-  if (t1 != NULL) {
-    if (t1->getf() == 2) {
-      Node* base = in(2);
-      return new AddFNode(base, base);
-    }
-  }
-
-  // Try other operand
   if (t2 != NULL) {
     if (t2->getf() == 2) {
       Node* base = in(1);
@@ -470,18 +461,9 @@ const Type *MulDNode::mul_ring(const Type *t0, const Type *t1) const {
 //------------------------------Ideal---------------------------------------
 // Check to see if we are multiplying by a constant 2 and convert to add, then try the regular MulNode::Ideal
 Node *MulDNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  const TypeD *t1 = in(1)->bottom_type()->isa_double_constant();
-  const TypeD *t2 = in(2)->bottom_type()->isa_double_constant();
+  const TypeD *t2 = phase->type(in(2))->isa_double_constant();
 
   // x * 2 -> x + x
-  if (t1 != NULL) {
-    if (t1->getd() == 2) {
-      Node* base = in(2);
-      return new AddDNode(base, base);
-    }
-  }
-
-  // Try other operand
   if (t2 != NULL) {
     if (t2->getd() == 2) {
       Node* base = in(1);

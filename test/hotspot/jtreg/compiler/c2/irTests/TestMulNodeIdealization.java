@@ -20,42 +20,48 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package org.openjdk.bench.vm.compiler;
 
-import org.openjdk.jmh.annotations.*;
-import org.openjdk.jmh.infra.Blackhole;
+package compiler.c2.irTests;
 
-import java.util.concurrent.TimeUnit;
+import compiler.lib.ir_framework.*;
+import java.util.Random;
+import jdk.test.lib.Utils;
 
-@BenchmarkMode(Mode.AverageTime)
-@OutputTimeUnit(TimeUnit.NANOSECONDS)
-@Measurement(iterations = 5, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
-@Warmup(iterations = 5, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
-@Fork(3)
-public class MulBy2 {
-    @Benchmark
-    public void testMul2Float(Blackhole blackhole, BenchState state) {
-        blackhole.consume(state.f * 2);
+/*
+ * @test
+ * @summary Test that transformation of multiply-by-2 is appropriately turned into additions.
+ * @library /test/lib /
+ * @requires vm.compiler2.enabled
+ * @run driver compiler.c2.irTests.TestMulNodeIdealization
+ */
+public class TestMulNodeIdealization {
+    private static final Random RANDOM = Utils.getRandomInstance();
+
+    public static void main(String[] args) {
+        TestFramework.run();
     }
 
-    @Benchmark
-    public void testMul2Double(Blackhole blackhole, BenchState state) {
-        blackhole.consume(state.d * 2);
+    @Test
+    @IR(failOn = {IRNode.MUL})
+    // Checks x * 2 -> x + x
+    public float testFloat(float x) {
+        return x * 2;
     }
 
+    @Test
+    @IR(failOn = {IRNode.MUL})
+    // Checks x * 2 -> x + x
+    public double testDouble(double x) {
+        return x * 2;
+    }
 
-    @State(Scope.Benchmark)
-    public static class BenchState {
-        private float f;
-        private double d;
+    @Run(test = "testFloat")
+    public void runTestFloat() {
+        testFloat(RANDOM.nextFloat());
+    }
 
-        public BenchState() {
-        }
-
-        @Setup
-        public void setup() {
-            f = (float) Math.random();
-            d = Math.random();
-        }
+    @Run(test = "testDouble")
+    public void runTestDouble() {
+        testDouble(RANDOM.nextDouble());
     }
 }
