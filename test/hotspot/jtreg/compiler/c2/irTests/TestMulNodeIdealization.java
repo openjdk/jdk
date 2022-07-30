@@ -29,6 +29,7 @@ import jdk.test.lib.Utils;
 
 /*
  * @test
+ * @bug 8291336
  * @summary Test that transformation of multiply-by-2 is appropriately turned into additions.
  * @library /test/lib /
  * @requires vm.compiler2.enabled
