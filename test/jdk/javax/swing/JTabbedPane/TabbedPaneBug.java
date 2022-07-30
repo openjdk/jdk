@@ -32,7 +32,7 @@ import javax.swing.SwingUtilities;
 
 /*
  * @test
- * @bug 8265586
+ * @bug 8259687
  * @key headful
  * @summary Tests whether the selected tab's component is on the top and visible.
  * @run main TabbedPaneBug

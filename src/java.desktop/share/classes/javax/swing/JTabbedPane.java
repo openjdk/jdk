@@ -1598,8 +1598,8 @@ public class JTabbedPane extends JComponent
             boolean selectedPage = (getSelectedIndex() == index);
 
             if (selectedPage) {
-                if (this.visComp != null &&
-                        !this.visComp.equals(component)) {
+                if (this.visComp != null && this.visComp.isVisible()
+                        && !this.visComp.equals(component)) {
                     // previous component visibility is set to false
                     this.visComp.setVisible(false);
                 }
