@@ -217,6 +217,8 @@ public class IRNode {
     public static final String FAST_LOCK   = START + "FastLock" + MID + END;
     public static final String FAST_UNLOCK = START + "FastUnlock" + MID + END;
 
+    public static final String POPULATE_INDEX = START + "PopulateIndex" + MID + END;
+
     /**
      * Called by {@link IRMatcher} to merge special composite nodes together with additional user-defined input.
      */

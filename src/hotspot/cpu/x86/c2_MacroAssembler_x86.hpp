@@ -368,6 +368,10 @@ public:
   void udivmodI(Register rax, Register divisor, Register rdx, Register tmp);
 
 #ifdef _LP64
+  void reverseI(Register dst, Register src, XMMRegister xtmp1,
+                XMMRegister xtmp2, Register rtmp);
+  void reverseL(Register dst, Register src, XMMRegister xtmp1,
+                XMMRegister xtmp2, Register rtmp1, Register rtmp2);
   void udivL(Register rax, Register divisor, Register rdx);
   void umodL(Register rax, Register divisor, Register rdx);
   void udivmodL(Register rax, Register divisor, Register rdx, Register tmp);
