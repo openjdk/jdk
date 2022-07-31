@@ -2340,6 +2340,36 @@ static bool clone_shift(Node* shift, Matcher* matcher, Matcher::MStack& mstack, 
   return false;
 }
 
+static bool is_base_pattern(Node* n, Node* m) {
+  // The test patterns Cmp (And x c) 0 -> test(x, c)
+  if (n->Opcode() == Op_CmpI && m->Opcode() == Op_AndI &&
+      m->in(2)->Opcode() == Op_ConI && n->in(2)->find_int_con(-1) == 0) {
+    return true;
+  }
+  if (n->Opcode() == Op_CmpL && m->Opcode() == Op_AndL &&
+      m->in(2)->Opcode() == Op_ConL && n->in(2)->find_long_con(-1) == 0L) {
+    return true;
+  }
+  // The lea patterns
+  /*if (n->Opcode() == Op_AddI) {
+    if (m->Opcode() == Op_AddI && n->in(2)->Opcode() == Op_ConI) {
+      return true;
+    }
+    if (m->Opcode() == Op_LShiftI && m->in(2)->find_int_con(7) <= 3) {
+      return true;
+    }
+  }
+  if (n->Opcode() == Op_AddL) {
+    if (m->Opcode() == Op_AddL && n->in(2)->Opcode() == Op_ConL) {
+      return true;
+    }
+    if (m->Opcode() == Op_LShiftL && m->in(2)->find_int_con(7) <= 3) {
+      return true;
+    }
+  }*/
+  return false;
+}
+
 // This function identifies sub-graphs in which a 'load' node is
 // input to two different nodes, and such that it can be matched
 // with BMI instructions like blsi, blsr, etc.
@@ -2421,26 +2451,53 @@ class FusedPatternMatcher {
   }
 };
 
+// This function tries to check the bmi instruction patterns and clone the inputs
+// to preserve the matchability
 static bool is_bmi_pattern(Node* n, Node* m) {
   assert(UseBMI1Instructions, "sanity");
-  if (n != NULL && m != NULL) {
-    if (m->Opcode() == Op_LoadI) {
-      FusedPatternMatcher<TypeInt> bmii(n, m, Op_ConI);
-      return bmii.match(Op_AndI, -1, Op_SubI,  1,  0)  ||
-             bmii.match(Op_AndI, -1, Op_AddI, -1, -1)  ||
-             bmii.match(Op_XorI, -1, Op_AddI, -1, -1);
-    } else if (m->Opcode() == Op_LoadL) {
-      FusedPatternMatcher<TypeLong> bmil(n, m, Op_ConL);
-      return bmil.match(Op_AndL, -1, Op_SubL,  1,  0) ||
-             bmil.match(Op_AndL, -1, Op_AddL, -1, -1) ||
-             bmil.match(Op_XorL, -1, Op_AddL, -1, -1);
+  if (n == nullptr || m == nullptr) {
+    return false;
+  }
+  if (n->Opcode() == Op_AndI || n->Opcode() == Op_XorI) {
+    // andnl, x & ~y
+    if (n->Opcode() == Op_AndI && m->Opcode() == Op_XorI &&
+        m->in(2)->Opcode() == Op_ConI && m->in(2)->get_int() == -1) {
+      return true;
     }
+    if (m->Opcode() != Op_LoadI) {
+      Node* other = n->in((n->in(1) == m) ? 2 : 1);
+      m = other;
+    }
+    FusedPatternMatcher<TypeInt> bmii(n, m, Op_ConI);
+    return bmii.match(Op_AndI, -1, Op_SubI,  1,  0)  ||
+           bmii.match(Op_AndI, -1, Op_AddI, -1, -1)  ||
+           bmii.match(Op_XorI, -1, Op_AddI, -1, -1);
+  } else if (n->Opcode() == Op_AndL || n->Opcode() == Op_XorL) {
+    // andnq, x & ~y
+    if (n->Opcode() == Op_AndL && m->Opcode() == Op_XorL &&
+        m->in(2)->Opcode() == Op_ConL && m->in(2)->get_long() == -1L) {
+      return true;
+    }
+    if (m->Opcode() != Op_LoadL) {
+      Node* other = n->in((n->in(1) == m) ? 2 : 1);
+      m = other;
+    }
+    FusedPatternMatcher<TypeLong> bmil(n, m, Op_ConL);
+    return bmil.match(Op_AndL, -1, Op_SubL,  1,  0) ||
+           bmil.match(Op_AndL, -1, Op_AddL, -1, -1) ||
+           bmil.match(Op_XorL, -1, Op_AddL, -1, -1);
   }
   return false;
 }
 
 // Should the matcher clone input 'm' of node 'n'?
 bool Matcher::pd_clone_node(Node* n, Node* m, Matcher::MStack& mstack) {
+  // If 'n' and 'm' are part of a graph for a base instruction, clone the input 'm'.
+  if (is_base_pattern(n, m)) {
+    mstack.push(m, Visit);
+    return true;
+  }
+
   // If 'n' and 'm' are part of a graph for BMI instruction, clone the input 'm'.
   if (UseBMI1Instructions && is_bmi_pattern(n, m)) {
     mstack.push(m, Visit);
