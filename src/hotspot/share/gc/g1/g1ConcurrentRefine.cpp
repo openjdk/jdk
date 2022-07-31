@@ -40,14 +40,18 @@
 #include <math.h>
 
 G1ConcurrentRefineThread* G1ConcurrentRefineThreadControl::create_refinement_thread(uint worker_id, bool initializing) {
-  G1ConcurrentRefineThread* result = NULL;
+  G1ConcurrentRefineThread* result = nullptr;
   if (initializing || !InjectGCWorkerCreationFailure) {
     result = G1ConcurrentRefineThread::create(_cr, worker_id);
   }
-  if (result == NULL || result->osthread() == NULL) {
+  if (result == nullptr || result->osthread() == nullptr) {
     log_warning(gc)("Failed to create refinement thread %u, no more %s",
                     worker_id,
-                    result == NULL ? "memory" : "OS threads");
+                    result == nullptr ? "memory" : "OS threads");
+    if (result != nullptr) {
+      delete result;
+      result = nullptr;
+    }
   }
   return result;
 }
@@ -61,13 +65,21 @@ G1ConcurrentRefineThreadControl::G1ConcurrentRefineThreadControl() :
 }
 
 G1ConcurrentRefineThreadControl::~G1ConcurrentRefineThreadControl() {
-  for (uint i = 0; i < _num_max_threads; i++) {
-    G1ConcurrentRefineThread* t = _threads[i];
-    if (t != NULL) {
-      delete t;
+  if (_threads != nullptr) {
+    for (uint i = 0; i < _num_max_threads; i++) {
+      G1ConcurrentRefineThread* t = _threads[i];
+      if (t == nullptr) {
+#ifdef ASSERT
+        for (uint j = i + 1; j < _num_max_threads; ++j) {
+          assert(_threads[j] == nullptr, "invariant");
+        }
+#endif // ASSERT
+      } else {
+        delete t;
+      }
     }
+    FREE_C_HEAP_ARRAY(G1ConcurrentRefineThread*, _threads);
   }
-  FREE_C_HEAP_ARRAY(G1ConcurrentRefineThread*, _threads);
 }
 
 jint G1ConcurrentRefineThreadControl::initialize(G1ConcurrentRefine* cr, uint num_max_threads) {
@@ -75,9 +87,9 @@ jint G1ConcurrentRefineThreadControl::initialize(G1ConcurrentRefine* cr, uint nu
   _cr = cr;
   _num_max_threads = num_max_threads;
 
-  _threads = NEW_C_HEAP_ARRAY(G1ConcurrentRefineThread*, num_max_threads, mtGC);
-
   if (num_max_threads > 0) {
+    _threads = NEW_C_HEAP_ARRAY(G1ConcurrentRefineThread*, num_max_threads, mtGC);
+
     auto primary = G1PrimaryConcurrentRefineThread::create(cr);
     if (primary == nullptr) {
       vm_shutdown_during_initialization("Could not allocate primary refinement thread");
@@ -85,10 +97,12 @@ jint G1ConcurrentRefineThreadControl::initialize(G1ConcurrentRefine* cr, uint nu
     }
     _threads[0] = _primary_thread = primary;
 
-    for (uint i = 1; i < num_max_threads; ++i) {
-      if (UseDynamicNumberOfGCThreads) {
+    if (UseDynamicNumberOfGCThreads) {
+      for (uint i = 1; i < num_max_threads; ++i) {
         _threads[i] = nullptr;
-      } else {
+      }
+    } else {
+      for (uint i = 1; i < num_max_threads; ++i) {
         _threads[i] = create_refinement_thread(i, true);
         if (_threads[i] == nullptr) {
           vm_shutdown_during_initialization("Could not allocate refinement threads.");
