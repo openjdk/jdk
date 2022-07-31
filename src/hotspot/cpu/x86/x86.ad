@@ -2351,22 +2351,26 @@ static bool is_base_pattern(Node* n, Node* m) {
     return true;
   }
   // The lea patterns
-  /*if (n->Opcode() == Op_AddI) {
-    if (m->Opcode() == Op_AddI && n->in(2)->Opcode() == Op_ConI) {
+  if (n->Opcode() == Op_AddI) {
+    if (VM_Version::supports_fast_3op_lea() &&
+        m->Opcode() == Op_AddI && n->in(2)->Opcode() == Op_ConI) {
       return true;
     }
-    if (m->Opcode() == Op_LShiftI && m->in(2)->find_int_con(7) <= 3) {
+    if (VM_Version::supports_fast_2op_lea() &&
+        m->Opcode() == Op_LShiftI && m->in(2)->find_int_con(7) <= 3) {
       return true;
     }
   }
   if (n->Opcode() == Op_AddL) {
-    if (m->Opcode() == Op_AddL && n->in(2)->Opcode() == Op_ConL) {
+    if (VM_Version::supports_fast_3op_lea() &&
+        m->Opcode() == Op_AddL && n->in(2)->Opcode() == Op_ConL) {
       return true;
     }
-    if (m->Opcode() == Op_LShiftL && m->in(2)->find_int_con(7) <= 3) {
+    if (VM_Version::supports_fast_2op_lea() &&
+        m->Opcode() == Op_LShiftL && m->in(2)->find_int_con(7) <= 3) {
       return true;
     }
-  }*/
+  }
   return false;
 }
 
