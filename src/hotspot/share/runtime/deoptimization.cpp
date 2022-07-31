@@ -986,11 +986,15 @@ void Deoptimization::mark_and_deoptimize_dependents_on(InstanceKlass* dependee) 
   }
 }
 
+bool DeoptimizationContext::_context_active = false;
+
 DeoptimizationContext::DeoptimizationContext()
   : _nsv(),
     _marked(0),
     _deoptimized(false) {
   assert_locked_or_safepoint(Compile_lock);
+  assert(!_context_active, "Cannot create a DeoptimizationContext while another one is active");
+  _context_active = true;
 }
 
 DeoptimizationContext::~DeoptimizationContext() {
@@ -1007,18 +1011,27 @@ void DeoptimizationContext::mark(CompiledMethod* cm, bool inc_recompile_count) {
 void DeoptimizationContext::deopt_compiled_methods() {
   SweeperBlocker sw;
   CompiledMethod* nm = CompiledMethod::take_root();
+  uint links_found = 0;
   while (nm != nullptr) {
     _deoptimized = true;
-    assert(nm->is_marked_for_deoptimization(), "All methods in list must be marked");
+    ++links_found;
+    assert(nm->is_marked_for_deoptimization(), "All nmethods in list must be marked");
     if (!nm->has_been_deoptimized() && nm->can_be_deoptimized()) {
       nm->make_not_entrant();
       nm->make_deoptimized();
     }
     nm = nm->next_marked();
   }
+  assert(links_found ==_marked, "All marked nmethods must have been linked");
 }
 
 void DeoptimizationContext::deopt_frames() {
+  // DeoptimizationContext is considered active from its creation until
+  // deopt_compiled_methods() finishes processing marked nmethods.
+  // deopt_compiled_methods() occurs as the first step of deoptimize()
+  assert(_context_active, "deoptimize() must be called on an active context");
+  _context_active = false;
+
   if (!_marked) {
     return; // Nothing to do
   }

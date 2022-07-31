@@ -489,6 +489,7 @@ class DeoptimizationContext : StackObj {
   NoSafepointVerifier _nsv;
   uint _marked;
   bool _deoptimized;
+  static bool _context_active;
 
   void deopt_compiled_methods();
   void deopt_frames();
