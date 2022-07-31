@@ -3678,6 +3678,13 @@ void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
         !incr2->in(2)->is_Con())
       continue;
 
+    if (incr2->in(1)->is_ConstraintCast()) {
+      if (!incr2->in(1)->in(0)->is_RangeCheck()) {
+        // The form of Phi->CastXX->AddX appears when using Preconditions.checkIndex, and it would
+        // be recognized as additional IV when 1) Phi != phi2, 2) CastXX is controlled by RangeCheck
+        continue;
+      }
+    }
     // Check for parallel induction variable (parallel to trip counter)
     // via an affine function.  In particular, count-down loops with
     // count-up array indices are common. We only RCE references off
