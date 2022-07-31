@@ -30,7 +30,6 @@ import jdk.internal.misc.VM;
 import jdk.internal.module.ModuleHashes;
 import jdk.internal.module.ModuleReferenceImpl;
 
-import java.io.IOException;
 import java.lang.module.ModuleReference;
 import java.lang.module.ResolvedModule;
 import java.util.HashSet;
@@ -357,56 +356,68 @@ public final class StackTraceElement implements java.io.Serializable {
      */
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        try {
-            appendTo(sb);
-        } catch (IOException shouldNotHappen) {
-            throw new RuntimeException("Error building StackTraceElement string", shouldNotHappen);
-        }
-        return sb.toString();
-    }
+        int length = 0;
+        boolean prefixClassLoader = false;
+        boolean prefixModule = false;
+        boolean prefixModuleVersion = false;
 
-    /**
-     * Appends the {@link #toString()} representation of this stack trace element to the provided appendable.
-     * @param dest The destination appendable
-     * @throws IOException If an I/O error occurs
-     */
-    private void appendTo(Appendable dest) throws IOException {
-        boolean hasPrefix = false;
         if (!dropClassLoaderName() && classLoaderName != null && !classLoaderName.isEmpty()) {
-            hasPrefix = true;
-            dest.append(classLoaderName).append('/');
-        }
-        if (moduleName != null && !moduleName.isEmpty()) {
-            hasPrefix = true;
-            dest.append(moduleName);
-            if (!dropModuleVersion() && moduleVersion != null && !moduleVersion.isEmpty()) {
-                dest.append('@').append(moduleVersion);
-            }
-        }
-        if (hasPrefix) {
-            dest.append(declaringClass);
-        } else {
-            dest.append('/').append(declaringClass);
+            prefixClassLoader = true;
+            length += classLoaderName.length() + 1 /* '/' */;
         }
 
-        dest.append('.').append(methodName).append('(');
-        if (isNativeMethod()) {
-            dest.append("Native Method)");
-        } else {
-            if (fileName != null && lineNumber >= 0) {
-                dest.append(fileName)
-                        .append(':')
-                        .append(Integer.toString(lineNumber))
-                        .append(')');
-            } else {
-                if (fileName != null) {
-                    dest.append(fileName).append(')');
-                } else {
-                    dest.append("Unknown Source)");
-                }
+        if (moduleName != null && !moduleName.isEmpty()) {
+            prefixModule = true;
+            length += moduleName.length();
+            if (!dropModuleVersion() && moduleVersion != null && !moduleVersion.isEmpty()) {
+                prefixModuleVersion = true;
+                length += 1 /* '@' */ + moduleVersion.length();
             }
         }
+
+        length += declaringClass.length() + methodName.length() + 2; // class.methodName(
+        if (isNativeMethod()) {
+            length += "Native Method".length();
+        } else if (fileName == null) {
+            length += "Unknown Source".length();
+        } else {
+            length += fileName.length() + 1;
+            if (lineNumber >= 0) {
+                length += Integer.stringSize(lineNumber);
+            }
+        }
+        length++; // ')'
+
+        StringBuilder sb = new StringBuilder(length);
+        if (prefixClassLoader) {
+            sb.append(classLoaderName).append('/');
+        }
+        if (prefixModule) {
+            sb.append(moduleName);
+            if (prefixModuleVersion) {
+                sb.append('@').append(moduleVersion);
+            }
+        }
+        if (prefixClassLoader || prefixModule) {
+            sb.append('/').append(declaringClass);
+        } else {
+            sb.append(declaringClass);
+        }
+
+        sb.append('.').append(methodName).append('(');
+        if (isNativeMethod()) {
+            sb.append("Native Method");
+        } else if (fileName != null) {
+            sb.append(fileName);
+            if (lineNumber >= 0) {
+                sb.append(':').append(lineNumber);
+            }
+        } else {
+            sb.append("Unknown Source");
+        }
+        sb.append(')');
+
+        return sb.toString();
     }
 
     /**
