@@ -537,7 +537,7 @@ static jstring
 newStringCp1252(JNIEnv *env, const char *str)
 {
     int len = (int) strlen(str);
-    jchar buf[512];
+    jchar buf[512] = {0};
     jchar *str1;
     jstring result;
     int i;
