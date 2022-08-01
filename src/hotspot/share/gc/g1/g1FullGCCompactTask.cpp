@@ -25,7 +25,6 @@
 #include "precompiled.hpp"
 #include "gc/g1/g1CollectedHeap.hpp"
 #include "gc/g1/g1ConcurrentMarkBitMap.inline.hpp"
-#include "gc/g1/g1FullCollector.hpp"
 #include "gc/g1/g1FullCollector.inline.hpp"
 #include "gc/g1/g1FullGCCompactionPoint.hpp"
 #include "gc/g1/g1FullGCCompactTask.hpp"
@@ -63,6 +62,10 @@ public:
              "should be quite full");
     }
 #endif
+    assert(_collector->compaction_top(r) == nullptr,
+           "region %u compaction_top " PTR_FORMAT " must not be different from bottom " PTR_FORMAT,
+           r->hrm_index(), p2i(_collector->compaction_top(r)), p2i(r->bottom()));
+
     r->reset_skip_compacting_after_full_gc();
     return false;
   }
@@ -110,7 +113,7 @@ void G1FullGCCompactTask::compact_region(HeapRegion* hr) {
     hr->apply_to_marked_objects(collector()->mark_bitmap(), &compact);
   }
 
-  hr->reset_compacted_after_full_gc();
+  hr->reset_compacted_after_full_gc(_collector->compaction_top(hr));
 }
 
 void G1FullGCCompactTask::work(uint worker_id) {

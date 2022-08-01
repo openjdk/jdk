@@ -1889,16 +1889,16 @@ HeapRegion* G1ConcurrentMark::claim_region(uint worker_id) {
   while (finger < _heap.end()) {
     assert(_g1h->is_in_reserved(finger), "invariant");
 
-    HeapRegion* curr_region = _g1h->heap_region_containing(finger);
+    HeapRegion* curr_region = _g1h->heap_region_containing_or_null(finger);
     // Make sure that the reads below do not float before loading curr_region.
     OrderAccess::loadload();
     // Above heap_region_containing may return NULL as we always scan claim
     // until the end of the heap. In this case, just jump to the next region.
-    HeapWord* end = curr_region != NULL ? curr_region->end() : finger + HeapRegion::GrainWords;
+    HeapWord* end = curr_region != nullptr ? curr_region->end() : finger + HeapRegion::GrainWords;
 
     // Is the gap between reading the finger and doing the CAS too long?
     HeapWord* res = Atomic::cmpxchg(&_finger, finger, end);
-    if (res == finger && curr_region != NULL) {
+    if (res == finger && curr_region != nullptr) {
       // we succeeded
       HeapWord* bottom = curr_region->bottom();
       HeapWord* limit = curr_region->top_at_mark_start();
@@ -1915,7 +1915,7 @@ HeapRegion* G1ConcurrentMark::claim_region(uint worker_id) {
                "the region limit should be at bottom");
         // we return NULL and the caller should try calling
         // claim_region() again.
-        return NULL;
+        return nullptr;
       }
     } else {
       assert(_finger > finger, "the finger should have moved forward");
@@ -1924,7 +1924,7 @@ HeapRegion* G1ConcurrentMark::claim_region(uint worker_id) {
     }
   }
 
-  return NULL;
+  return nullptr;
 }
 
 #ifndef PRODUCT
@@ -1972,11 +1972,11 @@ void G1ConcurrentMark::verify_no_collection_set_oops() {
 
   // Verify the global finger
   HeapWord* global_finger = finger();
-  if (global_finger != NULL && global_finger < _heap.end()) {
-    // Since we always iterate over all regions, we might get a NULL HeapRegion
+  if (global_finger != nullptr && global_finger < _heap.end()) {
+    // Since we always iterate over all regions, we might get a nullptr HeapRegion
     // here.
-    HeapRegion* global_hr = _g1h->heap_region_containing(global_finger);
-    guarantee(global_hr == NULL || global_finger == global_hr->bottom(),
+    HeapRegion* global_hr = _g1h->heap_region_containing_or_null(global_finger);
+    guarantee(global_hr == nullptr || global_finger == global_hr->bottom(),
               "global finger: " PTR_FORMAT " region: " HR_FORMAT,
               p2i(global_finger), HR_FORMAT_PARAMS(global_hr));
   }
@@ -1986,10 +1986,10 @@ void G1ConcurrentMark::verify_no_collection_set_oops() {
   for (uint i = 0; i < _num_concurrent_workers; ++i) {
     G1CMTask* task = _tasks[i];
     HeapWord* task_finger = task->finger();
-    if (task_finger != NULL && task_finger < _heap.end()) {
+    if (task_finger != nullptr && task_finger < _heap.end()) {
       // See above note on the global finger verification.
-      HeapRegion* r = _g1h->heap_region_containing(task_finger);
-      guarantee(r == NULL || task_finger == r->bottom() ||
+      HeapRegion* r = _g1h->heap_region_containing_or_null(task_finger);
+      guarantee(r == nullptr || task_finger == r->bottom() ||
                 !r->in_collection_set() || !r->has_index_in_opt_cset(),
                 "task finger: " PTR_FORMAT " region: " HR_FORMAT,
                 p2i(task_finger), HR_FORMAT_PARAMS(r));
@@ -2138,8 +2138,8 @@ void G1CMTask::update_region_limit() {
     // at bottom). We then do some allocation in the region (TAMS
     // stays at bottom), followed by the region being used as a GC
     // alloc region (TAMS will move to top() and the objects
-    // originally below it will be grayed). All objects now marked in
-    // the region are explicitly grayed, if below the global finger,
+    // originally below it will be greyed). All objects now marked in
+    // the region are explicitly greyed, if below the global finger,
     // and we do not need in fact to scan anything else. So, we simply
     // set _finger to be limit to ensure that the bitmap iteration
     // doesn't do anything.
@@ -2469,14 +2469,14 @@ bool G1ConcurrentMark::try_stealing(uint worker_id, G1TaskQueueEntry& task_entry
     The data structures that it uses to do marking work are the
     following:
 
-      (1) Marking Bitmap. If there are gray objects that appear only
+      (1) Marking Bitmap. If there are grey objects that appear only
       on the bitmap (this happens either when dealing with an overflow
       or when the concurrent start pause has simply marked the roots
       and didn't push them on the stack), then tasks claim heap
-      regions whose bitmap they then scan to find gray objects. A
+      regions whose bitmap they then scan to find grey objects. A
       global finger indicates where the end of the last claimed region
       is. A local finger indicates how far into the region a task has
-      scanned. The two fingers are used to determine how to gray an
+      scanned. The two fingers are used to determine how to grey an
       object (i.e. whether simply marking it is OK, as it will be
       visited by a task in the future, or whether it needs to be also
       pushed on a stack).
@@ -2494,7 +2494,7 @@ bool G1ConcurrentMark::try_stealing(uint worker_id, G1TaskQueueEntry& task_entry
       queues, as access to it requires a mutex and more fine-grain
       interaction with it which might cause contention. If it
       overflows, then the marking phase should restart and iterate
-      over the bitmap to identify gray objects. Throughout the marking
+      over the bitmap to identify grey objects. Throughout the marking
       phase, tasks attempt to keep the global mark stack at a small
       length but not totally empty, so that entries are available for
       popping by other tasks. Only when there is no more work, tasks

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,25 +20,35 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-#include <jni.h>
-#include <stdlib.h>
-#include <time.h>
 
-extern "C" {
+package org.openjdk.bench.vm.compiler;
 
-JNIEXPORT void JNICALL Java_gc_gctests_mallocWithGC2_mallocWithGC2_getMallocLock02
-(JNIEnv *env, jobject obj) {
-        char *c_ptr;
-        time_t current_time, old_time;
+import org.openjdk.jmh.annotations.Benchmark;
+import org.openjdk.jmh.annotations.Param;
+import org.openjdk.jmh.annotations.Scope;
+import org.openjdk.jmh.annotations.State;
 
-        old_time = time(NULL);
-        current_time = 0;
+@State(Scope.Benchmark)
+public class RangeCheckHoisting {
 
-        while (current_time - old_time < 180) {
-                c_ptr = (char *) malloc(1);
-                free(c_ptr);
-                current_time = time(NULL);
+    private static final int SIZE = 65536;
+
+    @Param("6789") private int count;
+
+    private static int[] a = new int[SIZE];
+    private static int[] b = new int[SIZE];
+
+    @Benchmark
+    public void ivScaled3() {
+        for (int i = 0; i < count; i++) {
+            b[3 * i] = a[3 * i];
         }
-}
+    }
 
+    @Benchmark
+    public void ivScaled7() {
+        for (int i = 0; i < count; i++) {
+            b[7 * i] = a[7 * i];
+        }
+    }
 }

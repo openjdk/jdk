@@ -416,7 +416,9 @@ void SuperWord::unrolling_analysis(int &local_loop_unroll_factor) {
       cl->mark_passed_slp();
     }
     cl->mark_was_slp();
-    cl->set_slp_max_unroll(local_loop_unroll_factor);
+    if (cl->is_main_loop() || cl->is_rce_post_loop()) {
+      cl->set_slp_max_unroll(local_loop_unroll_factor);
+    }
   }
 }
 
@@ -2643,6 +2645,7 @@ bool SuperWord::output() {
                  opc == Op_PopCountI || opc == Op_PopCountL ||
                  opc == Op_ReverseBytesI || opc == Op_ReverseBytesL ||
                  opc == Op_ReverseBytesUS || opc == Op_ReverseBytesS ||
+                 opc == Op_ReverseI || opc == Op_ReverseL ||
                  opc == Op_CountLeadingZerosI || opc == Op_CountLeadingZerosL ||
                  opc == Op_CountTrailingZerosI || opc == Op_CountTrailingZerosL) {
         assert(n->req() == 2, "only one input expected");
