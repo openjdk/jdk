@@ -2271,7 +2271,7 @@ Handle SystemDictionary::find_method_handle_type(Symbol* signature,
     bool created = false;
     assert(method_type != NULL, "unexpected null");
     OopHandle* h = _invoke_method_type_table.get(signature);
-    if(h == nullptr){
+    if (h == nullptr) {
       signature->make_permanent(); // The signature is never unloaded.
       OopHandle elem = OopHandle(Universe::vm_global(), method_type());
       bool created = _invoke_method_type_table.put(signature, elem);

@@ -354,7 +354,7 @@ void mutex_init() {
 
   defl(Threads_lock                , PaddedMonitor, CompileThread_lock, true);
   defl(Heap_lock                   , PaddedMonitor, MultiArray_lock);
-  defl(Compile_lock                , PaddedMutex  ,  MethodCompileQueue_lock);
+  defl(Compile_lock                , PaddedMutex  , MethodCompileQueue_lock);
   defl(AdapterHandlerLibrary_lock  , PaddedMutex  , InvokeMethodTable_lock);
 
   defl(PerfDataMemAlloc_lock       , PaddedMutex  , Heap_lock);
