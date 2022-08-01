@@ -554,14 +554,6 @@ inline NativeMembar *NativeMembar_at(address addr) {
   return (NativeMembar*)addr;
 }
 
-class NativeFenceI : public NativeInstruction {
-public:
-  static inline int instruction_size() {
-    // 2 for fence.i + fence
-    return (UseConservativeFence ? 2 : 1) * NativeInstruction::instruction_size;
-  }
-};
-
 class NativePostCallNop: public NativeInstruction {
 public:
   bool check() const { return is_nop(); }
