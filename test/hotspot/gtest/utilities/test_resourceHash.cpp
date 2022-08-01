@@ -348,9 +348,50 @@ class ResourceHashtableDeleteTest : public ::testing::Test {
         }
     };
 
+    // Simple ResourceHashtable whose value is an int
+    ResourceHashtable<Symbol*, int, 107, ResourceObj::C_HEAP, mtTest> _simple_test_table;
+
+    class SimpleDeleter : public StackObj {
+      public:
+        bool do_entry(Symbol*& key, int value) {
+          // We need to decrement the refcount for the key in the delete function.
+          // Since we incremented the key, in this case, we should decrement it.
+          key->decrement_refcount();
+          return true;
+        }
+    };
 };
 
-TEST_VM_F(ResourceHashtableDeleteTest, check_delete) {
+TEST_VM_F(ResourceHashtableDeleteTest, simple_remove) {
+  TempNewSymbol s = SymbolTable::new_symbol("abcdefg_simple");
+  int s_orig_count = s->refcount();
+  // Need to increment a Symbol* when you keep it in a table.
+  s->increment_refcount();
+  _simple_test_table.put(s, 55);
+  ASSERT_EQ(s->refcount(), s_orig_count + 1) << "refcount should be incremented in table";
+
+  // Deleting this value from a hashtable
+  _simple_test_table.remove(s);
+  // Now decrement the refcount for s since it's no longer in the table.
+  s->decrement_refcount();
+  ASSERT_EQ(s->refcount(), s_orig_count) << "refcount should be same as start";
+}
+
+TEST_VM_F(ResourceHashtableDeleteTest, simple_delete) {
+  TempNewSymbol s = SymbolTable::new_symbol("abcdefg_simple");
+  int s_orig_count = s->refcount();
+  // Need to increment a Symbol* when you keep it in a table.
+  s->increment_refcount();
+  _simple_test_table.put(s, 55);
+  ASSERT_EQ(s->refcount(), s_orig_count + 1) << "refcount should be incremented in table";
+
+  // Use unlink to remove the matching (or all) values from the table.
+  SimpleDeleter deleter;
+  _simple_test_table.unlink(&deleter);
+  ASSERT_EQ(s->refcount(), s_orig_count) << "refcount should be same as start";
+}
+
+TEST_VM_F(ResourceHashtableDeleteTest, value_remove) {
   TempNewSymbol s = SymbolTable::new_symbol("abcdefg");
   int s_orig_count = s->refcount();
   {
@@ -369,7 +410,9 @@ TEST_VM_F(ResourceHashtableDeleteTest, check_delete) {
   s->decrement_refcount();
   // Removal should make the refcount be the original refcount.
   ASSERT_EQ(s->refcount(), s_orig_count) << "refcount now decremented";
+}
 
+TEST_VM_F(ResourceHashtableDeleteTest, value_delete) {
   TempNewSymbol d = SymbolTable::new_symbol("defghijklmnop");
   int d_orig_count = d->refcount();
   {
