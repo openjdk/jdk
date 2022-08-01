@@ -28,6 +28,7 @@ package jdk.net;
 import java.io.FileDescriptor;
 import java.net.SocketException;
 import java.net.SocketOption;
+import java.net.StandardProtocolFamily;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Collections;
@@ -209,6 +210,9 @@ public final class ExtendedSocketOptions {
      * sizes to the {@link java.net.NetworkInterface#getMTU() local MTU}. Depending
      * on the implementation and the network interface, packets larger than the MTU
      * may be sent or dropped silently or dropped with an exception thrown.
+     * For {@link StandardProtocolFamily#INET6 IPv6} sockets it is
+     * system dependent whether the option also applies to datagrams
+     * sent to IPv4 addresses.
      *
      * @apiNote
      * For IPv4 this option sets the DF (Do not Fragment) flag in the IP packet
