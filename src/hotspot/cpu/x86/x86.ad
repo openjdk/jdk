@@ -2434,14 +2434,15 @@ static bool check_all_uses(Node* n, int use_op) {
 static bool is_base_pattern(Node* n, Node* m) {
 
 #ifdef _LP64
-  // The lea patterns, we don't check the (a + b) + c ones because it may extend
-  // the live range of too many locals
-  if (n->Opcode() == Op_AddI && m->Opcode() == Op_LShiftI &&
-      m->in(2)->find_int_con(7) <= 3 && check_all_uses(m, Op_AddI)) {
+  // The lea patterns
+  if (n->Opcode() == Op_AddI && check_all_uses(m, Op_AddI) &&
+      ((m->Opcode() == Op_LShiftI && m->in(2)->find_int_con(7) <= 3) ||
+       (m->Opcode() == Op_AddI && n->in(2)->Opcode() == Op_ConI))) {
     return true;
   }
-  if (n->Opcode() == Op_AddL && m->Opcode() == Op_LShiftL &&
-      m->in(2)->find_int_con(7) <= 3 && check_all_uses(m, Op_AddL)) {
+  if (n->Opcode() == Op_AddL && check_all_uses(m, Op_AddL) &&
+      ((m->Opcode() == Op_LShiftL && m->in(2)->find_int_con(7) <= 3) ||
+       (m->Opcode() == Op_AddL && n->in(2)->Opcode() == Op_ConL))) {
     return true;
   }
 #endif
