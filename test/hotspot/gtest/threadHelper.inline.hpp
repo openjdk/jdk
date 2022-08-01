@@ -186,6 +186,60 @@ public:
   }
 };
 
+// Calls a single-argument function of type F with state of type S as its input
+// in a new thread when doit() is run.
+template<typename F, typename S>
+class BasicTestThread : public JavaTestThread {
+private:
+  F _fun;
+  S _state;
+
+public:
+  BasicTestThread(F fun, S state, Semaphore* sem)
+    : JavaTestThread(sem),
+      _fun(fun),
+      _state(state) {
+  }
+
+  virtual ~BasicTestThread(){};
+
+  void main_run() override {
+    _fun(_state);
+  }
+};
+
+// A TestThreadGroup tracks multiple threads running the same function.
+template<typename F, typename S, int N>
+class TestThreadGroup {
+private:
+  BasicTestThread<F, S>* _threads[N];
+  Semaphore _sem;
+
+public:
+  NONCOPYABLE(TestThreadGroup);
+
+  // Use state_fun to generate varying state of type S for each function F.
+  template<typename StateGenerator>
+  TestThreadGroup(F fun, StateGenerator state_fun)
+    : _sem() {
+    for (int i = 0; i < N; i++) {
+      _threads[i] = new BasicTestThread<F, S>(fun, state_fun(), &_sem);
+    }
+  }
+  ~TestThreadGroup() {}
+
+  void doit() {
+    for (int i = 0; i < N; i++) {
+      _threads[i]->doit();
+    }
+  }
+  void join() {
+    for (int i = 0; i < N; i++) {
+      _sem.wait();
+    }
+  }
+};
+
 template <typename FUNC>
 class SingleTestThread : public JavaTestThread {
   FUNC& _f;

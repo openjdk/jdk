@@ -1,0 +1,114 @@
+/*
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+#include "precompiled.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/mrswMutex.hpp"
+#include "runtime/thread.hpp"
+#include "threadHelper.inline.hpp"
+#include "unittest.hpp"
+
+class MRSWMutexTest : public ::testing::Test {};
+
+TEST_VM_F(MRSWMutexTest, WriterLockPreventsReadersFromEnteringCriticalRegion) {
+  const int max_iter = 1000;
+  int iter = 0;
+  MRSWMutex* mut = new MRSWMutex();
+
+  volatile bool reader_started = false;
+  volatile bool reader_in_critical_region = false;
+  volatile bool reader_exited_critical_region = false;
+
+  auto reader = [&](int _ignored) {
+    Atomic::release_store(&reader_started, true);
+    mut->read_lock();
+    Atomic::release_store(&reader_in_critical_region, true);
+    mut->read_unlock();
+    Atomic::release_store(&reader_exited_critical_region, true);
+  };
+
+  Semaphore rp{};
+  BasicTestThread<decltype(reader), int>* rt =
+      new BasicTestThread<decltype(reader), int>(reader, 0, &rp);
+
+  // 1. Hold write lock
+  mut->write_lock();
+
+  // 2. Start reader
+  rt->doit();
+
+  // 3. Wait for reader to attempt to lock
+  iter = 0;
+  while (!Atomic::load_acquire(&reader_started) && iter < max_iter) {
+    // Spin, waiting for reader to start up
+    iter++;
+  }
+
+  // 4. Reader should block, waiting for its turn to enter critical region
+  // Check repeatedly to (hopefully) avoid timing issue.
+  for (int i = 0; i < max_iter; i++) {
+    EXPECT_FALSE(Atomic::load_acquire(&reader_in_critical_region));
+  }
+
+  // 5. Let reader enter its critical region
+  mut->write_unlock();
+  iter = 0;
+  while (!Atomic::load_acquire(&reader_in_critical_region) && iter < max_iter) {
+    iter++;
+  }
+  ASSERT_TRUE(Atomic::load_acquire(&reader_in_critical_region));
+
+  // 6. Reader succesfully exits its critical region
+  iter = 0;
+  while (!Atomic::load_acquire(&reader_exited_critical_region) && iter < max_iter) {
+    iter++;
+  }
+  ASSERT_TRUE(Atomic::load_acquire(&reader_exited_critical_region));
+}
+
+TEST_VM_F(MRSWMutexTest, MultipleReadersAtSameTime) {
+  MRSWMutex* mut = new MRSWMutex();
+  constexpr const int num_readers = 5;
+  volatile int concurrent_readers = 0;
+
+  auto r = [&](int _ignored) {
+    mut->read_lock();
+    // Increment counter
+    Atomic::add(&concurrent_readers, 1);
+    // Don't let go of the lock, exit thread
+  };
+  TestThreadGroup<decltype(r), int, num_readers> ttg(r, []() {
+    return 0;
+  });
+  ttg.doit();
+  ttg.join();
+  EXPECT_EQ(Atomic::load(&concurrent_readers), num_readers);
+}
+
+TEST_VM_F(MRSWMutexTest, InstantiateTBIVMTransition) {
+  MRSWMutex* mut = new MRSWMutex();
+  mut->read_lock<ThreadBlockInVM>();
+  mut->read_unlock();
+  mut->write_lock<ThreadBlockInVM>();
+  mut->write_unlock();
+}
