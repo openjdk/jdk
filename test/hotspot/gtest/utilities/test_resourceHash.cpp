@@ -299,12 +299,17 @@ class ResourceHashtableDeleteTest : public ::testing::Test {
         // NONCOPYABLE(TestValue)
         TestValue(Symbol* name) : _s(name) { _s->increment_refcount(); }
         TestValue(const TestValue& tv) { _s = tv.s(); _s->increment_refcount(); }
-        TestValue& operator=(const TestValue& tv) {
-          if (&tv != this) {
-            _s = tv.s();
-            _s->increment_refcount();
-          }
-          return *this; }
+
+        // Refcounting with assignment operators is tricky.  See TempNewSymbol for more information.
+        // (1) A copy (from) of the argument is created to be passed by value to operator=.  This increments
+        // the refcount of the symbol.
+        // (2) Exchange the values this->_s and from._s as a trivial pointer exchange.  No reference count
+        // manipulation occurs.  this->_s is the desired new value, with its refcount incremented appropriately
+        // (by the copy that created from).
+        // (3) The operation completes and from goes out of scope, calling its destructor.  This decrements the
+        // refcount for from._s, which is the _old_ value of this->_s.
+        TestValue& operator=(TestValue tv) { swap(_s, tv._s); return *this; }
+
         ~TestValue() { _s->decrement_refcount(); }
         Symbol* s() const { return _s; }
     };
