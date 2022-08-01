@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -130,9 +130,8 @@ abstract class Task<T> implements Runnable {
                 .map(s -> s.substring(s.indexOf("java")))
                 .collect(Collectors.toList());
 
-        ClassLoader scl = ClassLoader.getSystemClassLoader();
         for (String name : fileNames) {
-            classes.add(Class.forName(name, false, scl));
+            classes.add(Class.forName(name));
             if (count == classes.size()) {
                 break;
             }
