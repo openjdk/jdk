@@ -57,12 +57,18 @@ public class TestRecordPredicates extends JavacTestingAbstractProcessor {
                      ElementFilter.typesIn(roundEnv.getElementsAnnotatedWith(ExpectedPredicates.class))) {
                 ExpectedPredicates ep = typeElt.getAnnotation(ExpectedPredicates.class);
                 for (ExecutableElement ctor : ElementFilter.constructorsIn(typeElt.getEnclosedElements())) {
-                    if (elements.isCompactConstructor(ctor) != ep.isCompact()) {
+                    boolean isCompact = elements.isCompactConstructor(ctor);
+                    if (isCompact != ep.isCompact()) {
                         messager.printError("Unexpected isCompact value on ", ctor);
                     }
 
-                    if (elements.isCanonicalConstructor(ctor) != ep.isCanonical()) {
+                    boolean isCanonical = elements.isCanonicalConstructor(ctor);
+                    if (isCanonical != ep.isCanonical()) {
                         messager.printError("Unexpected isCanonical value on ", ctor);
+                    }
+
+                    if (isCompact && !isCanonical) {
+                        messager.printError("Compact constructors not reported as canonical ", ctor);
                     }
                 }
             }
