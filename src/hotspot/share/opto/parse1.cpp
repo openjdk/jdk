@@ -656,13 +656,7 @@ void Parse::do_all_blocks() {
         auto unstable_if_traps = block->unstable_if_traps();
         while (unstable_if_traps.length() > 0) {
           UnstableIfTrap* trap = unstable_if_traps.pop();
-
           trap->suppress(this, block);
-          CallStaticJavaNode* unc = trap->uncommon_trap();
-          unc->set_req(0, top());
-          record_for_igvn(unc);
-          //tty->print("mark dead: ");
-          //unc->dump();
         }
       }
       // Prepare to parse this block.
@@ -1840,6 +1834,55 @@ void Parse::merge_common(Parse::Block* target, int pnum) {
   assert(stopped(), "");
 }
 
+// determine if parser should merge the block of newin, which is optional.
+bool Parse::unstable_if_merge(Parse::Block* target, SafePointNode* newin) {
+  if (TraceOptoParse) {
+    tty->print("UnstableIf Merging state at block #%d bci:%d", target->rpo(), target->start());
+  }
+
+  assert(target->is_merged(), "No prior mapping at this bci");
+  bool result = true;
+  Block* save_block = block(); // Hang on to incoming block;
+  load_state_from(target);    // Get prior mapping
+
+  assert(newin->jvms()->locoff() == jvms()->locoff(), "JVMS layouts agree");
+  assert(newin->jvms()->stkoff() == jvms()->stkoff(), "JVMS layouts agree");
+  assert(newin->jvms()->monoff() == jvms()->monoff(), "JVMS layouts agree");
+  assert(newin->jvms()->endoff() == jvms()->endoff(), "JVMS layouts agree");
+
+  assert(control()->is_Region(), "must be merging to a region");
+  RegionNode* r = control()->as_Region();
+  assert(TypeFunc::Parms == newin->jvms()->locoff(), "parser map should contain only youngest jvms");
+
+  for (uint j = 1; result && j < map()->req(); j++) {
+    Node* m = map()->in(j);   // Current state of target.
+    Node* n = newin->in(j);   // Incoming change to target state.
+    PhiNode* phi = nullptr;
+
+    if (m->is_Phi() && m->as_Phi()->region() == r)
+      phi = m->as_Phi();
+
+    if (m != n) {             // Different; must merge
+      switch (j) {
+      // Frame pointer and Return Address never changes
+      case TypeFunc::FramePtr:// Drop m, use the original value
+      case TypeFunc::ReturnAdr:
+      case TypeFunc::Memory:  // Merge inputs to the MergeMem node
+        break;
+      default:                // All normal stuff
+        // Parser needs to create a phi node and merge a constant m with n.
+        // This clobbers constant folding, so drop out!
+        if (phi == nullptr && m->is_Con() && m != top()) {
+          result = false;
+        }
+        break;
+      }
+    }
+  } // End of for all values to be merged
+
+  set_block(save_block);
+  return result;
+}
 
 //--------------------------merge_memory_edges---------------------------------
 void Parse::merge_memory_edges(MergeMemNode* n, int pnum, bool nophi) {

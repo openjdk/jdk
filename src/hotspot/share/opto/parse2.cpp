@@ -1581,6 +1581,11 @@ void Parse::adjust_map_after_if(BoolTest::mask btest, Node* c, float prob, Block
 
   bool is_fallthrough = (path == successor_for_bci(iter().next_bci()));
 
+  // Refrain from generating uncommon_trap if path has been merged. It is a live block.
+  // We don't know if path is live or dead yet if is_merge() returns false. We still generate
+  // an uncommon_trap but take a record. We postpone decision to the parse-time of path.
+  // If path is dead, it proves that this uncommon_trap does prune code. C2 will skip parsing
+  // path and leave the uncommon_trap.
   if (path_is_suitable_for_uncommon_trap(prob) && (!OptimizeUnstableIf || !path->is_merged())) {
     sync_jvms();
     SafePointNode* sfpt = clone_map();
@@ -2770,12 +2775,17 @@ void Parse::do_one_bytecode() {
 }
 
 void UnstableIfTrap::suppress(Parse* parser, Parse::Block* path) {
-  parser->set_block(_block);
-  parser->set_map(_sfpt);
-  parser->set_sp(_sfpt->jvms()->sp());
-  parser->adjust_map_after_if(_btest, _cmp, PROB_MAX, path);
+  if (parser->unstable_if_merge(path, _sfpt)) {
+    int pnum = path->next_path_num();
 
-  int pnum = path->next_path_num();
-  parser->merge_common(path, pnum);
-  _next_bci = -1;
+    parser->set_block(_block);
+    parser->set_map(_sfpt);
+    parser->set_sp(_sfpt->jvms()->sp());
+    parser->adjust_map_after_if(_btest, _cmp, PROB_MAX, path);
+    parser->merge_common(path, pnum);
+    _next_bci = -1;
+
+    _unc->set_req(0, parser->top());
+    parser->record_for_igvn(_unc);
+  }
 }

@@ -78,6 +78,22 @@ public class TestOptimizeUnstableIf {
         return x._value + y._value + z._value + i;
     }
 
+    @Test
+    @Arguments({Argument.RANDOM_EACH, Argument.TRUE})
+    @IR(failOn = {IRNode.MUL})
+    @IR(counts = {IRNode.UNSTABLE_IF_TRAP, "1"})
+    public static int superfical_if_constant(int x, boolean cond) {
+        int i = x;
+        if (cond) { // likely
+            i = 0;
+        }
+        // really complex iterations I made up
+        int y  = 42;
+        y = (int)(Math.sqrt(y) + (x * 0.1191837));
+        // if constant folding works, y will be dead and return 0;
+        return  i * y;
+    }
+
     @Check(test = "boxing_object")
     public void checkWithTestInfo(int result, TestInfo info) {
         if (info.isWarmUp()) {

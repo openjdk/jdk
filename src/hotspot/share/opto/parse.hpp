@@ -461,6 +461,7 @@ class Parse : public GraphKit {
   void merge_exception(int target_bci);
   // Helper: Merge the current mapping into the given basic block
   void merge_common(Block* target, int pnum);
+  bool unstable_if_merge(Block* target, SafePointNode* newin);
   // Helper functions for merging individual cells.
   PhiNode *ensure_phi(       int idx, bool nocreate = false);
   PhiNode *ensure_memory_phi(int idx, bool nocreate = false);
