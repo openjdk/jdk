@@ -189,12 +189,22 @@ private:
   // end of regions.
   size_t _failure_waste;
 public:
-  G1EvacSummary(size_t allocated, size_t wasted, size_t undo_wasted, size_t unused,
-    size_t used, size_t region_end_waste, uint regions_filled, size_t num_plab_filled,
-    size_t direct_allocated, size_t num_direct_allocated, size_t failure_used, size_t failure_waste) :
+  G1EvacSummary(size_t allocated,
+                size_t wasted,
+                size_t undo_wasted,
+                size_t unused,
+                size_t used,
+                size_t region_end_waste,
+                uint regions_filled,
+                size_t num_plab_filled,
+                size_t direct_allocated,
+                size_t num_direct_allocated,
+                size_t failure_used,
+                size_t failure_waste) :
     _allocated(allocated), _wasted(wasted), _undo_wasted(undo_wasted), _unused(unused),
-    _used(used),  _region_end_waste(region_end_waste), _regions_filled(regions_filled),
-    _num_plab_filled(num_plab_filled), _direct_allocated(direct_allocated), _num_direct_allocated(num_direct_allocated),
+    _used(used),  _region_end_waste(region_end_waste),
+    _regions_filled(regions_filled), _num_plab_filled(num_plab_filled),
+    _direct_allocated(direct_allocated),_num_direct_allocated(num_direct_allocated),
     _failure_used(failure_used), _failure_waste(failure_waste)
   { }
 
