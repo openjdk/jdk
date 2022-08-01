@@ -351,7 +351,7 @@ class ResourceHashtableDeleteTest : public ::testing::Test {
 };
 
 TEST_VM_F(ResourceHashtableDeleteTest, check_delete) {
-  TempNewSymbol s = SymbolTable::new_symbol("abc");
+  TempNewSymbol s = SymbolTable::new_symbol("abcdefg");
   int s_orig_count = s->refcount();
   {
     TestValue tv(s);
