@@ -443,10 +443,10 @@ class SlowSignatureHandler
     _from -= Interpreter::stackElementSize;
 
     if (_num_int_args < Argument::n_int_register_parameters_c-1) {
-      *_int_args++ = (*from_addr == 0) ? NULL : (intptr_t)from_addr;
+      *_int_args++ = (*from_addr == 0) ? NULL_WORD : (intptr_t)from_addr;
       _num_int_args++;
     } else {
-      *_to++ = (*from_addr == 0) ? NULL : (intptr_t) from_addr;
+      *_to++ = (*from_addr == 0) ? NULL_WORD : (intptr_t) from_addr;
     }
   }
 
