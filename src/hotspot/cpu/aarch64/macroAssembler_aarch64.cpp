@@ -849,9 +849,10 @@ void MacroAssembler::call_VM_helper(Register oop_result, address entry_point, in
   call_VM_base(oop_result, noreg, noreg, entry_point, number_of_arguments, check_exceptions);
 }
 
-// Maybe emit a call via a trampoline.  If the code cache is small
+// Maybe emit a call via a trampoline. If the code cache is small
 // trampolines won't be emitted.
-address MacroAssembler::trampoline_call1(Address entry, CodeBuffer* cbuf, bool check_emit_size) {
+address MacroAssembler::trampoline_call(Address entry, CodeBuffer* cbuf,
+                                        bool check_emit_size) {
   assert(entry.rspec().type() == relocInfo::runtime_call_type
          || entry.rspec().type() == relocInfo::opt_virtual_call_type
          || entry.rspec().type() == relocInfo::static_call_type
@@ -877,6 +878,9 @@ address MacroAssembler::trampoline_call1(Address entry, CodeBuffer* cbuf, bool c
     bool in_scratch_emit_size = false;
 #ifdef COMPILER2
     if (check_emit_size) {
+      assert(StubRoutines::aarch64::complete() &&
+             Thread::current()->is_Compiler_thread() &&
+             Compile::current()->output() != NULL, "not in output phase of C2 compilation");
       // We don't want to emit a trampoline if C2 is generating dummy
       // code during its branch shortening phase.
       CompileTask* task = ciEnv::current()->task();
@@ -905,7 +909,6 @@ address MacroAssembler::trampoline_call1(Address entry, CodeBuffer* cbuf, bool c
   postcond(pc() != badAddress);
   return pc();
 }
-
 
 // Emit a trampoline stub for a call to a target which is too far away.
 //
