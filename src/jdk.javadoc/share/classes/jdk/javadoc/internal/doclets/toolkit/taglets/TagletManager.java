@@ -319,7 +319,7 @@ public class TagletManager {
                 checkTagName(tagName);
             }
         } else {
-            //Move to back
+            // Move existing tag to the back
             allTaglets.put(tagName, tag);
         }
     }
