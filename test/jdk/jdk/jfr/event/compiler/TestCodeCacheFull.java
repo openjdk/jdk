@@ -31,7 +31,7 @@ import jdk.test.lib.Asserts;
 import jdk.test.lib.jfr.EventNames;
 import jdk.test.lib.jfr.Events;
 import jdk.test.whitebox.WhiteBox;
-import sun.hotspot.code.BlobType;
+import jdk.test.whitebox.code.BlobType;
 
 /**
  * @test TestCodeCacheFull
@@ -79,6 +79,7 @@ public class TestCodeCacheFull {
         Events.assertField(event, "startAddress").notEqual(0L);
         Events.assertField(event, "commitedTopAddress").notEqual(0L);
         Events.assertField(event, "reservedTopAddress").notEqual(0L);
+        Events.assertField(event, "codeCacheMaxCapacity").notEqual(0L);
     }
 
     private static BlobType blobTypeFromName(String codeBlobTypeName) throws Exception {

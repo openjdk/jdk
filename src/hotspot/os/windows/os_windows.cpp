@@ -39,7 +39,6 @@
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "os_share_windows.hpp"
 #include "os_windows.inline.hpp"
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm_misc.hpp"
@@ -3450,9 +3449,6 @@ char* os::pd_reserve_memory_special(size_t bytes, size_t alignment, size_t page_
 bool os::pd_release_memory_special(char* base, size_t bytes) {
   assert(base != NULL, "Sanity check");
   return pd_release_memory(base, bytes);
-}
-
-void os::print_statistics() {
 }
 
 static void warn_fail_commit_memory(char* addr, size_t bytes, bool exec) {

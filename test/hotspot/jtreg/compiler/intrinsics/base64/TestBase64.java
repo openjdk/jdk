@@ -51,7 +51,7 @@ import java.util.Random;
 import java.util.Arrays;
 
 import compiler.whitebox.CompilerWhiteBoxTest;
-import sun.hotspot.code.Compiler;
+import jdk.test.whitebox.code.Compiler;
 import jtreg.SkippedException;
 import jdk.test.lib.Utils;
 

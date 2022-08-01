@@ -10115,6 +10115,14 @@ void Assembler::evpternlogq(XMMRegister dst, int imm8, KRegister mask, XMMRegist
   emit_int8(imm8);
 }
 
+void Assembler::gf2p8affineqb(XMMRegister dst, XMMRegister src, int imm8) {
+  assert(VM_Version::supports_gfni(), "");
+  assert(VM_Version::supports_sse(), "");
+  InstructionAttr attributes(AVX_128bit, /* rex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
+  int encode = simd_prefix_and_encode(dst, dst, src, VEX_SIMD_66, VEX_OPCODE_0F_3A, &attributes);
+  emit_int24((unsigned char)0xCE, (unsigned char)(0xC0 | encode), imm8);
+}
+
 void Assembler::vgf2p8affineqb(XMMRegister dst, XMMRegister src2, XMMRegister src3, int imm8, int vector_len) {
   assert(VM_Version::supports_gfni(), "requires GFNI support");
   assert(VM_Version::supports_sse(), "");

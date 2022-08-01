@@ -53,7 +53,7 @@ import jdk.test.lib.Asserts;
 import jdk.test.lib.Utils;
 import jdk.vm.ci.hotspot.CompilerToVMHelper;
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
-import sun.hotspot.code.NMethod;
+import jdk.test.whitebox.code.NMethod;
 
 import java.lang.reflect.Executable;
 import java.util.ArrayList;

@@ -25,7 +25,7 @@ package compiler.whitebox;
 
 import jdk.test.lib.Platform;
 import jdk.test.whitebox.WhiteBox;
-import sun.hotspot.code.NMethod;
+import jdk.test.whitebox.code.NMethod;
 
 import java.lang.reflect.Executable;
 import java.util.Objects;
