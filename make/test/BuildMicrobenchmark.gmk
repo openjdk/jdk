@@ -96,9 +96,11 @@ $(eval $(call SetupJavaCompilation, BUILD_JDK_MICROBENCHMARK, \
     BIN := $(MICROBENCHMARK_CLASSES), \
     JAVAC_FLAGS := --add-exports java.base/sun.security.util=ALL-UNNAMED \
         --add-exports java.base/sun.invoke.util=ALL-UNNAMED \
+        --add-exports java.base/jdk.internal.util=ALL-UNNAMED \
         --add-exports java.base/jdk.internal.vm=ALL-UNNAMED \
         --enable-preview, \
     JAVA_FLAGS := --add-modules jdk.unsupported --limit-modules java.management \
+        --add-exports java.base/jdk.internal.util=ALL-UNNAMED \
         --add-exports java.base/jdk.internal.vm=ALL-UNNAMED \
         --enable-preview, \
 ))
