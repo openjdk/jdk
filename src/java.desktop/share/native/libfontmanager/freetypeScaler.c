@@ -1356,9 +1356,9 @@ static jlong
             glyphInfo->advanceY = FT26Dot6ToIntRound(
                     -FT_MulFix(ftglyph->advance.y, manualScale));
         } else {
-            glyphInfo->advanceX = FT26Dot6ToIntRound(
+            glyphInfo->advanceX = FT26Dot6ToFloat(
                     FT_MulFix(ftglyph->advance.x, manualScale));
-            glyphInfo->advanceY = FT26Dot6ToIntRound(
+            glyphInfo->advanceY = FT26Dot6ToFloat(
                     -FT_MulFix(ftglyph->advance.y, manualScale));
         }
     }
