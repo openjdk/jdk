@@ -27,6 +27,8 @@
 #include "asm/assembler.inline.hpp"
 #include "opto/c2_MacroAssembler.hpp"
 #include "opto/intrinsicnode.hpp"
+#include "opto/matcher.hpp"
+#include "opto/output.hpp"
 #include "opto/subnode.hpp"
 #include "runtime/stubRoutines.hpp"
 
@@ -41,6 +43,21 @@
 #define BIND(label) bind(label); BLOCK_COMMENT(#label ":")
 
 typedef void (MacroAssembler::* chr_insn)(Register Rt, const Address &adr);
+
+void C2_MacroAssembler::emit_entry_barrier_stub(C2EntryBarrierStub* stub) {
+  bind(stub->slow_path());
+  movptr(rscratch1, (uintptr_t) StubRoutines::aarch64::method_entry_barrier());
+  blr(rscratch1);
+  b(stub->continuation());
+
+  bind(stub->guard());
+  relocate(entry_guard_Relocation::spec());
+  emit_int32(0);   // nmethod guard value
+}
+
+int C2_MacroAssembler::entry_barrier_stub_size() {
+  return 4 * 6;
+}
 
 // Search for str1 in str2 and return index or -1
 void C2_MacroAssembler::string_indexof(Register str2, Register str1,
@@ -1338,39 +1355,70 @@ void C2_MacroAssembler::sve_reduce_integral(int opc, Register dst, BasicType bt,
   }
 }
 
-// Set elements of the dst predicate to true if the element number is
-// in the range of [0, lane_cnt), or to false otherwise.
-void C2_MacroAssembler::sve_ptrue_lanecnt(PRegister dst, SIMD_RegVariant size, int lane_cnt) {
+// Set elements of the dst predicate to true for lanes in the range of [0, lane_cnt), or
+// to false otherwise. The input "lane_cnt" should be smaller than or equal to the supported
+// max vector length of the basic type. Clobbers: rscratch1 and the rFlagsReg.
+void C2_MacroAssembler::sve_gen_mask_imm(PRegister dst, BasicType bt, uint32_t lane_cnt) {
+  uint32_t max_vector_length = Matcher::max_vector_size(bt);
+  assert(lane_cnt <= max_vector_length, "unsupported input lane_cnt");
+
+  // Set all elements to false if the input "lane_cnt" is zero.
+  if (lane_cnt == 0) {
+    sve_pfalse(dst);
+    return;
+  }
+
+  SIMD_RegVariant size = elemType_to_regVariant(bt);
   assert(size != Q, "invalid size");
+
+  // Set all true if "lane_cnt" equals to the max lane count.
+  if (lane_cnt == max_vector_length) {
+    sve_ptrue(dst, size, /* ALL */ 0b11111);
+    return;
+  }
+
+  // Fixed numbers for "ptrue".
   switch(lane_cnt) {
-    case 1: /* VL1 */
-    case 2: /* VL2 */
-    case 3: /* VL3 */
-    case 4: /* VL4 */
-    case 5: /* VL5 */
-    case 6: /* VL6 */
-    case 7: /* VL7 */
-    case 8: /* VL8 */
-      sve_ptrue(dst, size, lane_cnt);
-      break;
-    case 16:
-      sve_ptrue(dst, size, /* VL16 */ 0b01001);
-      break;
-    case 32:
-      sve_ptrue(dst, size, /* VL32 */ 0b01010);
-      break;
-    case 64:
-      sve_ptrue(dst, size, /* VL64 */ 0b01011);
-      break;
-    case 128:
-      sve_ptrue(dst, size, /* VL128 */ 0b01100);
-      break;
-    case 256:
-      sve_ptrue(dst, size, /* VL256 */ 0b01101);
-      break;
-    default:
-      assert(false, "unsupported");
-      ShouldNotReachHere();
+  case 1: /* VL1 */
+  case 2: /* VL2 */
+  case 3: /* VL3 */
+  case 4: /* VL4 */
+  case 5: /* VL5 */
+  case 6: /* VL6 */
+  case 7: /* VL7 */
+  case 8: /* VL8 */
+    sve_ptrue(dst, size, lane_cnt);
+    return;
+  case 16:
+    sve_ptrue(dst, size, /* VL16 */ 0b01001);
+    return;
+  case 32:
+    sve_ptrue(dst, size, /* VL32 */ 0b01010);
+    return;
+  case 64:
+    sve_ptrue(dst, size, /* VL64 */ 0b01011);
+    return;
+  case 128:
+    sve_ptrue(dst, size, /* VL128 */ 0b01100);
+    return;
+  case 256:
+    sve_ptrue(dst, size, /* VL256 */ 0b01101);
+    return;
+  default:
+    break;
+  }
+
+  // Special patterns for "ptrue".
+  if (lane_cnt == round_down_power_of_2(max_vector_length)) {
+    sve_ptrue(dst, size, /* POW2 */ 0b00000);
+  } else if (lane_cnt == max_vector_length - (max_vector_length % 4)) {
+    sve_ptrue(dst, size, /* MUL4 */ 0b11101);
+  } else if (lane_cnt == max_vector_length - (max_vector_length % 3)) {
+    sve_ptrue(dst, size, /* MUL3 */ 0b11110);
+  } else {
+    // Encode to "whilelow" for the remaining cases.
+    mov(rscratch1, lane_cnt);
+    sve_whilelow(dst, size, zr, rscratch1);
   }
 }
 

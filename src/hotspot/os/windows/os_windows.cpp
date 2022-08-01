@@ -39,7 +39,6 @@
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "os_share_windows.hpp"
 #include "os_windows.inline.hpp"
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm_misc.hpp"
@@ -3452,9 +3451,6 @@ bool os::pd_release_memory_special(char* base, size_t bytes) {
   return pd_release_memory(base, bytes);
 }
 
-void os::print_statistics() {
-}
-
 static void warn_fail_commit_memory(char* addr, size_t bytes, bool exec) {
   int err = os::get_last_error();
   char buf[256];
@@ -5539,7 +5535,7 @@ void get_thread_handle_for_extended_context(HANDLE* h,
 
 // Thread sampling implementation
 //
-void os::SuspendedThreadTask::internal_do_task() {
+void SuspendedThreadTask::internal_do_task() {
   CONTEXT    ctxt;
   HANDLE     h = NULL;
 

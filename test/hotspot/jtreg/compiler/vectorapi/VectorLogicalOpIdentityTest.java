@@ -429,12 +429,12 @@ public class VectorLogicalOpIdentityTest {
     @Warmup(10000)
     @IR(failOn = {IRNode.AND_V, IRNode.AND_V_MASK}, counts = {IRNode.STORE_VECTOR, ">=1"})
     public static void testMaskAndZero() {
-        VectorMask<Long> ma = VectorMask.fromArray(L_SPECIES, m, 0);
-        VectorMask<Long> mb = L_SPECIES.maskAll(false);
+        VectorMask<Short> ma = VectorMask.fromArray(S_SPECIES, m, 0);
+        VectorMask<Short> mb = S_SPECIES.maskAll(false);
         ma.and(mb).intoArray(mr, 0);
 
         // Verify results
-        for (int i = 0; i < L_SPECIES.length(); i++) {
+        for (int i = 0; i < S_SPECIES.length(); i++) {
             Asserts.assertEquals(false, mr[i]);
         }
     }

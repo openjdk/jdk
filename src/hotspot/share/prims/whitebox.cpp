@@ -383,9 +383,6 @@ WB_ENTRY(jboolean, WB_isObjectInOldGen(JNIEnv* env, jobject o, jobject obj))
   if (UseG1GC) {
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
     const HeapRegion* hr = g1h->heap_region_containing(p);
-    if (hr == NULL) {
-      return false;
-    }
     return !(hr->is_young());
   }
 #endif
@@ -767,7 +764,10 @@ WB_END
 WB_ENTRY(jboolean, WB_IsFrameDeoptimized(JNIEnv* env, jobject o, jint depth))
   bool result = false;
   if (thread->has_last_Java_frame()) {
-    RegisterMap reg_map(thread);
+    RegisterMap reg_map(thread,
+                        RegisterMap::UpdateMap::include,
+                        RegisterMap::ProcessFrames::include,
+                        RegisterMap::WalkContinuation::skip);
     javaVFrame *jvf = thread->last_java_vframe(&reg_map);
     for (jint d = 0; d < depth && jvf != NULL; d++) {
       jvf = jvf->java_sender();
@@ -1170,7 +1170,7 @@ WB_ENTRY(void, WB_MarkMethodProfiled(JNIEnv* env, jobject o, jobject method))
 
   MethodData* mdo = mh->method_data();
   if (mdo == NULL) {
-    Method::build_interpreter_method_data(mh, CHECK_AND_CLEAR);
+    Method::build_profiling_method_data(mh, CHECK_AND_CLEAR);
     mdo = mh->method_data();
   }
   mdo->init();
@@ -2103,7 +2103,10 @@ WB_ENTRY(jboolean, WB_HandshakeReadMonitors(JNIEnv* env, jobject wb, jobject thr
       if (!jt->has_last_Java_frame()) {
         return;
       }
-      RegisterMap rmap(jt);
+      RegisterMap rmap(jt,
+                       RegisterMap::UpdateMap::include,
+                       RegisterMap::ProcessFrames::include,
+                       RegisterMap::WalkContinuation::skip);
       for (javaVFrame* vf = jt->last_java_vframe(&rmap); vf != NULL; vf = vf->java_sender()) {
         GrowableArray<MonitorInfo*> *monitors = vf->monitors();
         if (monitors != NULL) {

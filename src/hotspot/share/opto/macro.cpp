@@ -1117,23 +1117,6 @@ bool PhaseMacroExpand::eliminate_boxing_node(CallStaticJavaNode *boxing) {
   return true;
 }
 
-//---------------------------set_eden_pointers-------------------------
-void PhaseMacroExpand::set_eden_pointers(Node* &eden_top_adr, Node* &eden_end_adr) {
-  if (UseTLAB) {                // Private allocation: load from TLS
-    Node* thread = transform_later(new ThreadLocalNode());
-    int tlab_top_offset = in_bytes(JavaThread::tlab_top_offset());
-    int tlab_end_offset = in_bytes(JavaThread::tlab_end_offset());
-    eden_top_adr = basic_plus_adr(top()/*not oop*/, thread, tlab_top_offset);
-    eden_end_adr = basic_plus_adr(top()/*not oop*/, thread, tlab_end_offset);
-  } else {                      // Shared allocation: load from globals
-    CollectedHeap* ch = Universe::heap();
-    address top_adr = (address)ch->top_addr();
-    address end_adr = (address)ch->end_addr();
-    eden_top_adr = makecon(TypeRawPtr::make(top_adr));
-    eden_end_adr = basic_plus_adr(eden_top_adr, end_adr - top_adr);
-  }
-}
-
 
 Node* PhaseMacroExpand::make_load(Node* ctl, Node* mem, Node* base, int offset, const Type* value_type, BasicType bt) {
   Node* adr = basic_plus_adr(base, offset);
@@ -1244,7 +1227,7 @@ void PhaseMacroExpand::expand_allocate_common(
     initial_slow_test = BoolNode::make_predicate(initial_slow_test, &_igvn);
   }
 
-  if (!UseTLAB && !Universe::heap()->supports_inline_contig_alloc()) {
+  if (!UseTLAB) {
     // Force slow-path allocation
     expand_fast_path = false;
     initial_slow_test = NULL;
@@ -2214,29 +2197,11 @@ void PhaseMacroExpand::expand_lock_node(LockNode *lock) {
 
   Node *memproj = transform_later(new ProjNode(call, TypeFunc::Memory));
 
-  Node* thread = transform_later(new ThreadLocalNode());
-  if (Continuations::enabled()) {
-    // held_monitor_count increased in slowpath (complete_monitor_locking_C_inc_held_monitor_count), need compensate a decreament here
-    // this minimizes control flow changes here and add redundant count updates only in slowpath
-    Node* dec_count = make_load(slow_ctrl, memproj, thread, in_bytes(JavaThread::held_monitor_count_offset()), TypeInt::INT, TypeInt::INT->basic_type());
-    Node* new_dec_count = transform_later(new SubINode(dec_count, intcon(1)));
-    Node *compensate_dec = make_store(slow_ctrl, memproj, thread, in_bytes(JavaThread::held_monitor_count_offset()), new_dec_count, T_INT);
-    mem_phi->init_req(1, compensate_dec);
-  } else {
-    mem_phi->init_req(1, memproj);
-  }
+  mem_phi->init_req(1, memproj);
+
   transform_later(mem_phi);
 
-  if (Continuations::enabled()) {
-    // held_monitor_count increases in all path's post-dominate
-    Node* inc_count = make_load(region, mem_phi, thread, in_bytes(JavaThread::held_monitor_count_offset()), TypeInt::INT, TypeInt::INT->basic_type());
-    Node* new_inc_count = transform_later(new AddINode(inc_count, intcon(1)));
-    Node *store = make_store(region, mem_phi, thread, in_bytes(JavaThread::held_monitor_count_offset()), new_inc_count, T_INT);
-
-    _igvn.replace_node(_callprojs.fallthrough_memproj, store);
-  } else {
-    _igvn.replace_node(_callprojs.fallthrough_memproj, mem_phi);
-  }
+  _igvn.replace_node(_callprojs.fallthrough_memproj, mem_phi);
 }
 
 //------------------------------expand_unlock_node----------------------
@@ -2291,15 +2256,7 @@ void PhaseMacroExpand::expand_unlock_node(UnlockNode *unlock) {
   mem_phi->init_req(2, mem);
   transform_later(mem_phi);
 
-  if (Continuations::enabled()) {
-    Node* count = make_load(region, mem_phi, thread, in_bytes(JavaThread::held_monitor_count_offset()), TypeInt::INT, TypeInt::INT->basic_type());
-    Node* newcount = transform_later(new SubINode(count, intcon(1)));
-    Node *store = make_store(region, mem_phi, thread, in_bytes(JavaThread::held_monitor_count_offset()), newcount, T_INT);
-
-    _igvn.replace_node(_callprojs.fallthrough_memproj, store);
-  } else {
-    _igvn.replace_node(_callprojs.fallthrough_memproj, mem_phi);
-  }
+  _igvn.replace_node(_callprojs.fallthrough_memproj, mem_phi);
 }
 
 void PhaseMacroExpand::expand_subtypecheck_node(SubTypeCheckNode *check) {
