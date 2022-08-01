@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,21 +23,42 @@
 
 /*
  * @test
- * @bug 8075520
- * @summary Varargs access check mishandles capture variables
- * @compile             VarargsAndWildcardParameterizedTypeTest4.java
- * @compile --release 8 VarargsAndWildcardParameterizedTypeTest4.java
- * @compile --release 7 VarargsAndWildcardParameterizedTypeTest4.java
+ * @library /test/lib
+ * @bug 6227536
+ * @summary Verify HmacSHA1 and HmacMD5 KeyGenerators throw an Exception when
+ *  a keysize of zero is requested
  */
 
-class VarargsAndWildcardParameterizedTypeTest2 {
-    interface I {
-        <T> void m(Box<T> iter, T... t);
+import jdk.test.lib.Utils;
+
+import javax.crypto.KeyGenerator;
+
+public class Test6227536 {
+
+    String[] keyGensToTest = new String[]{"HmacSHA1", "HmacMD5"};
+
+    public boolean execute(String algo) throws Exception {
+        KeyGenerator kg = KeyGenerator.getInstance(algo, "SunJCE");
+
+        Utils.runAndCheckException(() -> kg.init(0),
+                IllegalArgumentException.class);
+
+        return true;
     }
 
-    interface Box<T> {}
+    public static void main(String[] args) throws Exception {
+        Test6227536 test = new Test6227536();
+        String testName = test.getClass().getName();
 
-    void m(I i, Box<? extends Number> b) {
-        i.m(b);
+        for (String keyGenToTest : test.keyGensToTest) {
+
+            if (test.execute(keyGenToTest)) {
+
+                System.out.println(testName + ": " + keyGenToTest + " Passed!");
+
+            }
+
+        }
+
     }
 }

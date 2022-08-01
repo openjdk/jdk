@@ -1072,8 +1072,6 @@ Handle SharedRuntime::find_callee_info(Bytecodes::Code& bc, CallInfo& callinfo, 
 Method* SharedRuntime::extract_attached_method(vframeStream& vfst) {
   CompiledMethod* caller = vfst.nm();
 
-  nmethodLocker caller_lock(caller);
-
   address pc = vfst.frame_pc();
   { // Get call instruction under lock because another thread may be busy patching it.
     CompiledICLocker ic_locker(caller);
@@ -1373,11 +1371,6 @@ methodHandle SharedRuntime::resolve_sub_helper(bool is_virtual, bool is_optimize
   CodeBlob* caller_cb = caller_frame.cb();
   guarantee(caller_cb != NULL && caller_cb->is_compiled(), "must be called from compiled method");
   CompiledMethod* caller_nm = caller_cb->as_compiled_method_or_null();
-
-  // make sure caller is not getting deoptimized
-  // and removed before we are done with it.
-  // CLEANUP - with lazy deopt shouldn't need this lock
-  nmethodLocker caller_lock(caller_nm);
 
   // determine call info & receiver
   // note: a) receiver is NULL for static calls
@@ -1884,10 +1877,6 @@ methodHandle SharedRuntime::reresolve_call_site(TRAPS) {
       // Location of call instruction
       call_addr = caller_nm->call_instruction_address(pc);
     }
-    // Make sure nmethod doesn't get deoptimized and removed until
-    // this is done with it.
-    // CLEANUP - with lazy deopt shouldn't need this lock
-    nmethodLocker nmlock(caller_nm);
 
     // Check relocations for the matching call to 1) avoid false positives,
     // and 2) determine the type.

@@ -190,15 +190,10 @@ inline size_t HeapRegion::block_size(const HeapWord* p, HeapWord* const pb) cons
   return cast_to_oop(p)->size();
 }
 
-inline void HeapRegion::reset_compaction_top_after_compaction() {
-  set_top(compaction_top());
-  _compaction_top = bottom();
-}
-
-inline void HeapRegion::reset_compacted_after_full_gc() {
+inline void HeapRegion::reset_compacted_after_full_gc(HeapWord* new_top) {
   assert(!is_pinned(), "must be");
 
-  reset_compaction_top_after_compaction();
+  set_top(new_top);
   // After a compaction the mark bitmap in a non-pinned regions is invalid.
   // But all objects are live, we get this by setting TAMS to bottom.
   init_top_at_mark_start();
@@ -208,10 +203,6 @@ inline void HeapRegion::reset_compacted_after_full_gc() {
 
 inline void HeapRegion::reset_skip_compacting_after_full_gc() {
   assert(!is_free(), "must be");
-
-  assert(compaction_top() == bottom(),
-         "region %u compaction_top " PTR_FORMAT " must not be different from bottom " PTR_FORMAT,
-         hrm_index(), p2i(compaction_top()), p2i(bottom()));
 
   _marked_bytes = used();
   _garbage_bytes = 0;
