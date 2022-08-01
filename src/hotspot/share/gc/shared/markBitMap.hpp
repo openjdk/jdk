@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,10 +53,11 @@ protected:
   // Clear bitmap range
   void do_clear(MemRegion mr, bool large);
 
-public:
-  static size_t compute_size(size_t heap_size);
   // Returns the amount of bytes on the heap between two marks in the bitmap.
   static size_t mark_distance();
+
+public:
+  static size_t compute_size(size_t heap_size);
   // Returns how many bytes (or bits) of the heap a single byte (or bit) of the
   // mark bitmap corresponds to. This is the same as the mark distance above.
   static size_t heap_map_factor() {
@@ -81,7 +82,7 @@ public:
   // "addr", and before "limit", if "limit" is non-NULL.  If there is no
   // such bit, returns "limit" if that is non-NULL, or else "endWord()".
   inline HeapWord* get_next_marked_addr(const HeapWord* addr,
-                                        const HeapWord* limit) const;
+                                        HeapWord* limit) const;
 
   void print_on_error(outputStream* st, const char* prefix) const;
 

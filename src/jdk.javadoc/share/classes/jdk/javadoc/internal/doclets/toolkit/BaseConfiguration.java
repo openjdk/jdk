@@ -28,7 +28,6 @@ package jdk.javadoc.internal.doclets.toolkit;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -60,7 +59,6 @@ import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 
 import com.sun.source.tree.CompilationUnitTree;
-import com.sun.source.util.DocTreePath;
 import com.sun.source.util.TreePath;
 import com.sun.tools.javac.util.DefinedBy;
 import com.sun.tools.javac.util.DefinedBy.Api;
@@ -74,7 +72,6 @@ import jdk.javadoc.internal.doclets.toolkit.taglets.TagletManager;
 import jdk.javadoc.internal.doclets.toolkit.util.Comparators;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFile;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileFactory;
-import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.Extern;
 import jdk.javadoc.internal.doclets.toolkit.util.Group;
 import jdk.javadoc.internal.doclets.toolkit.util.MetaKeywords;
@@ -85,9 +82,10 @@ import jdk.javadoc.internal.doclets.toolkit.util.Utils.Pair;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberCache;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
 import jdk.javadoc.internal.doclint.DocLint;
+import jdk.javadoc.internal.doclint.Env;
 
 /**
- * Configure the output based on the options. Doclets should sub-class
+ * Configure the output based on the options. Doclets should subclass
  * BaseConfiguration, to configure and add their own options. This class contains
  * all user options which are supported by the standard doclet.
  */
@@ -640,10 +638,6 @@ public abstract class BaseConfiguration {
      */
     public abstract JavaFileManager getFileManager();
 
-    public abstract boolean showMessage(DocTreePath path, String key);
-
-    public abstract boolean showMessage(Element e, String key);
-
     /*
      * Splits the elements in a collection to its individual
      * collection.
@@ -803,8 +797,20 @@ public abstract class BaseConfiguration {
                 doclintOpts.toArray(new String[0]));
     }
 
-    public boolean haveDocLint() {
-        return (doclint != null);
+    public boolean isDocLintReferenceGroupEnabled() {
+        return isDocLintGroupEnabled(jdk.javadoc.internal.doclint.Messages.Group.REFERENCE);
+    }
+
+    public boolean isDocLintSyntaxGroupEnabled() {
+        return isDocLintGroupEnabled(jdk.javadoc.internal.doclint.Messages.Group.SYNTAX);
+    }
+
+    private boolean isDocLintGroupEnabled(jdk.javadoc.internal.doclint.Messages.Group group) {
+        // Use AccessKind.PUBLIC as a stand-in, since it is not common to
+        // set DocLint options per access kind (as is common with javac.)
+        // A more sophisticated solution might be to derive the access kind from the
+        // element owning the comment, and its enclosing elements.
+        return doclint != null && doclint.isGroupEnabled(group, Env.AccessKind.PUBLIC);
     }
     //</editor-fold>
 }

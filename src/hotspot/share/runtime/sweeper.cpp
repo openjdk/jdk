@@ -39,11 +39,11 @@
 #include "oops/method.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/handshake.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/os.hpp"
 #include "runtime/sweeper.hpp"
-#include "runtime/thread.inline.hpp"
 #include "runtime/vmOperations.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/events.hpp"
@@ -130,8 +130,7 @@ Tickspan NMethodSweeper::_peak_sweep_fraction_time;            // Peak time swee
 class MarkActivationClosure: public CodeBlobClosure {
 public:
   virtual void do_code_blob(CodeBlob* cb) {
-    assert(cb->is_nmethod(), "CodeBlob should be nmethod");
-    nmethod* nm = (nmethod*)cb;
+    nmethod* nm = cb->as_nmethod();
     nm->set_hotness_counter(NMethodSweeper::hotness_counter_reset_val());
     // If we see an activation belonging to a non_entrant nmethod, we mark it.
     if (nm->is_not_entrant()) {
@@ -198,6 +197,10 @@ CodeBlobClosure* NMethodSweeper::prepare_mark_active_nmethods() {
   */
 void NMethodSweeper::do_stack_scanning() {
   assert(!CodeCache_lock->owned_by_self(), "just checking");
+  if (Continuations::enabled()) {
+    // There are continuation stacks in the heap that need to be scanned.
+    Universe::heap()->collect(GCCause::_codecache_GC_threshold);
+  }
   if (wait_for_stack_scanning()) {
     CodeBlobClosure* code_cl;
     {
@@ -342,6 +345,7 @@ void NMethodSweeper::sweep_code_cache() {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
 
     while (!_current.end()) {
+      CodeCache::Sweep::begin();
       swept_count++;
       // Since we will give up the CodeCache_lock, always skip ahead
       // to the next nmethod.  Other blobs can be deleted by other
@@ -387,6 +391,7 @@ void NMethodSweeper::sweep_code_cache() {
       }
 
       _seen++;
+      CodeCache::Sweep::end();
       handle_safepoint_request();
     }
   }
@@ -404,11 +409,6 @@ void NMethodSweeper::sweep_code_cache() {
     _total_nof_methods_reclaimed += flushed_count;
     _total_nof_c2_methods_reclaimed += flushed_c2_count;
     _peak_sweep_time = MAX2(_peak_sweep_time, _total_time_this_sweep);
-  }
-
-  EventSweepCodeCache event(UNTIMED);
-  if (event.should_commit()) {
-    post_sweep_event(&event, sweep_start_counter, sweep_end_counter, (s4)_traversals, swept_count, flushed_count, zombified_count);
   }
 
 #ifdef ASSERT
@@ -437,6 +437,15 @@ void NMethodSweeper::sweep_code_cache() {
     CompileBroker::set_should_compile_new_jobs(CompileBroker::run_compilation);
     log.debug("restart compiler");
     log_sweep("restart_compiler");
+    EventJitRestart event;
+    event.set_freedMemory(freed_memory);
+    event.set_codeCacheMaxCapacity(CodeCache::max_capacity());
+    event.commit();
+  }
+
+  EventSweepCodeCache event(UNTIMED);
+  if (event.should_commit()) {
+    post_sweep_event(&event, sweep_start_counter, sweep_end_counter, (s4)_traversals, swept_count, flushed_count, zombified_count);
   }
 }
 
@@ -593,7 +602,7 @@ void NMethodSweeper::possibly_flush(nmethod* nm) {
           } else if (MethodCounters::is_nmethod_age_unset(age)) {
             // No counters were used before. Set the counters to the detection
             // limit value. If the method is going to be used again it will be compiled
-            // with counters that we're going to use for analysis the the next time.
+            // with counters that we're going to use for analysis the next time.
             mc->reset_nmethod_age();
           } else {
             // Method was totally idle for 10 sweeps

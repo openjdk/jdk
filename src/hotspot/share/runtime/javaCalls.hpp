@@ -29,7 +29,7 @@
 #include "oops/method.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/javaFrameAnchor.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/macros.hpp"
 

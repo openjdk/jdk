@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1116,7 +1116,7 @@ class PSParallelCompact : AllStatic {
                                                  idx_t bit);
 
   // Summary phase utility routine to fill dead space (if any) at the dense
-  // prefix boundary.  Should only be called if the the dense prefix is
+  // prefix boundary.  Should only be called if the dense prefix is
   // non-empty.
   static void fill_dense_prefix_end(SpaceId id);
 

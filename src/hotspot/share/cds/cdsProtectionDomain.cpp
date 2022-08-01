@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,66 +47,61 @@ OopHandle CDSProtectionDomain::_shared_jar_manifests;
 // the given InstanceKlass.
 // Returns the ProtectionDomain for the InstanceKlass.
 Handle CDSProtectionDomain::init_security_info(Handle class_loader, InstanceKlass* ik, PackageEntry* pkg_entry, TRAPS) {
-  Handle pd;
+  int index = ik->shared_classpath_index();
+  assert(index >= 0, "Sanity");
+  SharedClassPathEntry* ent = FileMapInfo::shared_path(index);
+  Symbol* class_name = ik->name();
 
-  if (ik != NULL) {
-    int index = ik->shared_classpath_index();
-    assert(index >= 0, "Sanity");
-    SharedClassPathEntry* ent = FileMapInfo::shared_path(index);
-    Symbol* class_name = ik->name();
-
-    if (ent->is_modules_image()) {
-      // For shared app/platform classes originated from the run-time image:
-      //   The ProtectionDomains are cached in the corresponding ModuleEntries
-      //   for fast access by the VM.
-      // all packages from module image are already created during VM bootstrap in
-      // Modules::define_module().
-      assert(pkg_entry != NULL, "archived class in module image cannot be from unnamed package");
-      ModuleEntry* mod_entry = pkg_entry->module();
-      pd = get_shared_protection_domain(class_loader, mod_entry, CHECK_(pd));
-    } else {
-      // For shared app/platform classes originated from JAR files on the class path:
-      //   Each of the 3 SystemDictionaryShared::_shared_xxx arrays has the same length
-      //   as the shared classpath table in the shared archive (see
-      //   FileMap::_shared_path_table in filemap.hpp for details).
-      //
-      //   If a shared InstanceKlass k is loaded from the class path, let
-      //
-      //     index = k->shared_classpath_index():
-      //
-      //   FileMap::_shared_path_table[index] identifies the JAR file that contains k.
-      //
-      //   k's protection domain is:
-      //
-      //     ProtectionDomain pd = _shared_protection_domains[index];
-      //
-      //   and k's Package is initialized using
-      //
-      //     manifest = _shared_jar_manifests[index];
-      //     url = _shared_jar_urls[index];
-      //     define_shared_package(class_name, class_loader, manifest, url, CHECK_(pd));
-      //
-      //   Note that if an element of these 3 _shared_xxx arrays is NULL, it will be initialized by
-      //   the corresponding SystemDictionaryShared::get_shared_xxx() function.
-      Handle manifest = get_shared_jar_manifest(index, CHECK_(pd));
-      Handle url = get_shared_jar_url(index, CHECK_(pd));
-      int index_offset = index - ClassLoaderExt::app_class_paths_start_index();
-      if (index_offset < PackageEntry::max_index_for_defined_in_class_path()) {
-        if (pkg_entry == NULL || !pkg_entry->is_defined_by_cds_in_class_path(index_offset)) {
-          // define_shared_package only needs to be called once for each package in a jar specified
-          // in the shared class path.
-          define_shared_package(class_name, class_loader, manifest, url, CHECK_(pd));
-          if (pkg_entry != NULL) {
-            pkg_entry->set_defined_by_cds_in_class_path(index_offset);
-          }
+  if (ent->is_modules_image()) {
+    // For shared app/platform classes originated from the run-time image:
+    //   The ProtectionDomains are cached in the corresponding ModuleEntries
+    //   for fast access by the VM.
+    // all packages from module image are already created during VM bootstrap in
+    // Modules::define_module().
+    assert(pkg_entry != NULL, "archived class in module image cannot be from unnamed package");
+    ModuleEntry* mod_entry = pkg_entry->module();
+    return get_shared_protection_domain(class_loader, mod_entry, THREAD);
+  } else {
+    // For shared app/platform classes originated from JAR files on the class path:
+    //   Each of the 3 SystemDictionaryShared::_shared_xxx arrays has the same length
+    //   as the shared classpath table in the shared archive (see
+    //   FileMap::_shared_path_table in filemap.hpp for details).
+    //
+    //   If a shared InstanceKlass k is loaded from the class path, let
+    //
+    //     index = k->shared_classpath_index():
+    //
+    //   FileMap::_shared_path_table[index] identifies the JAR file that contains k.
+    //
+    //   k's protection domain is:
+    //
+    //     ProtectionDomain pd = _shared_protection_domains[index];
+    //
+    //   and k's Package is initialized using
+    //
+    //     manifest = _shared_jar_manifests[index];
+    //     url = _shared_jar_urls[index];
+    //     define_shared_package(class_name, class_loader, manifest, url, CHECK_NH);
+    //
+    //   Note that if an element of these 3 _shared_xxx arrays is NULL, it will be initialized by
+    //   the corresponding SystemDictionaryShared::get_shared_xxx() function.
+    Handle manifest = get_shared_jar_manifest(index, CHECK_NH);
+    Handle url = get_shared_jar_url(index, CHECK_NH);
+    int index_offset = index - ClassLoaderExt::app_class_paths_start_index();
+    if (index_offset < PackageEntry::max_index_for_defined_in_class_path()) {
+      if (pkg_entry == NULL || !pkg_entry->is_defined_by_cds_in_class_path(index_offset)) {
+        // define_shared_package only needs to be called once for each package in a jar specified
+        // in the shared class path.
+        define_shared_package(class_name, class_loader, manifest, url, CHECK_NH);
+        if (pkg_entry != NULL) {
+          pkg_entry->set_defined_by_cds_in_class_path(index_offset);
         }
-      } else {
-        define_shared_package(class_name, class_loader, manifest, url, CHECK_(pd));
       }
-      pd = get_shared_protection_domain(class_loader, index, url, CHECK_(pd));
+    } else {
+      define_shared_package(class_name, class_loader, manifest, url, CHECK_NH);
     }
+    return get_shared_protection_domain(class_loader, index, url, THREAD);
   }
-  return pd;
 }
 
 Handle CDSProtectionDomain::get_package_name(Symbol* class_name, TRAPS) {

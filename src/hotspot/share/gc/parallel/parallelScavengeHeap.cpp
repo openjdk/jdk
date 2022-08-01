@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -229,6 +229,10 @@ bool ParallelScavengeHeap::is_in(const void* p) const {
 
 bool ParallelScavengeHeap::is_in_reserved(const void* p) const {
   return young_gen()->is_in_reserved(p) || old_gen()->is_in_reserved(p);
+}
+
+bool ParallelScavengeHeap::requires_barriers(stackChunkOop p) const {
+  return !is_in_young(p);
 }
 
 // There are two levels of allocation policy here.

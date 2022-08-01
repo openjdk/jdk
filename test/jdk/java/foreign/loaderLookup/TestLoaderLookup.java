@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,14 +23,15 @@
 
 /*
  * @test
+ * @enablePreview
  * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64"
- * @compile --add-modules jdk.incubator.foreign lookup/Lookup.java
- * @compile --add-modules jdk.incubator.foreign invoker/Invoker.java
+ * @compile lookup/Lookup.java
+ * @compile invoker/Invoker.java
  * @run main/othervm --enable-native-access=ALL-UNNAMED TestLoaderLookup
  */
 
+import java.lang.foreign.*;
 import java.lang.reflect.*;
-import jdk.incubator.foreign.*;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -41,11 +42,11 @@ public class TestLoaderLookup {
         ClassLoader loader1 = newClassLoader("lookup");
         Class<?> lookup = loader1.loadClass("lookup.Lookup");
         Method fooSymbol = lookup.getDeclaredMethod("fooSymbol");
-        NativeSymbol foo = (NativeSymbol)fooSymbol.invoke(null);
+        Addressable foo = (Addressable)fooSymbol.invoke(null);
 
         ClassLoader loader2 = newClassLoader("invoker");
         Class<?> invoker = loader2.loadClass("invoker.Invoker");
-        Method invoke = invoker.getDeclaredMethod("invoke", NativeSymbol.class);
+        Method invoke = invoker.getDeclaredMethod("invoke", Addressable.class);
         invoke.invoke(null, foo);
 
         loader1 = null;

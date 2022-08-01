@@ -147,13 +147,6 @@ class MacroAssembler: public Assembler {
   // thread in the default location (xthread)
   void reset_last_Java_frame(bool clear_fp);
 
-  void call_native(address entry_point,
-                   Register arg_0);
-  void call_native_base(
-    address entry_point,                // the entry point
-    Label*  retaddr = NULL
-  );
-
   virtual void call_VM_leaf_base(
     address entry_point,                // the entry point
     int     number_of_arguments,        // the number of arguments to pop after the call
@@ -279,15 +272,6 @@ class MacroAssembler: public Assembler {
     bool is_far = false
   );
 
-  void eden_allocate(
-    Register obj,                   // result: pointer to object after successful allocation
-    Register var_size_in_bytes,     // object size in bytes if unknown at compile time; invalid otherwise
-    int      con_size_in_bytes,     // object size in bytes if   known at compile time
-    Register tmp,                   // temp register
-    Label&   slow_case,             // continuation point if fast allocation fails
-    bool is_far = false
-  );
-
   // Test sub_klass against super_klass, with fast and slow paths.
 
   // The fast path produces a tri-state answer: yes / no / maybe-slow.
@@ -321,12 +305,26 @@ class MacroAssembler: public Assembler {
   Address argument_address(RegisterOrConstant arg_slot, int extra_slot_offset = 0);
 
   // only if +VerifyOops
-  void verify_oop(Register reg, const char* s = "broken oop");
-  void verify_oop_addr(Address addr, const char* s = "broken oop addr");
+  void _verify_oop(Register reg, const char* s, const char* file, int line);
+  void _verify_oop_addr(Address addr, const char* s, const char* file, int line);
+
+  void _verify_oop_checked(Register reg, const char* s, const char* file, int line) {
+    if (VerifyOops) {
+      _verify_oop(reg, s, file, line);
+    }
+  }
+  void _verify_oop_addr_checked(Address reg, const char* s, const char* file, int line) {
+    if (VerifyOops) {
+      _verify_oop_addr(reg, s, file, line);
+    }
+  }
 
   void _verify_method_ptr(Register reg, const char* msg, const char* file, int line) {}
   void _verify_klass_ptr(Register reg, const char* msg, const char* file, int line) {}
 
+#define verify_oop(reg) _verify_oop_checked(reg, "broken oop " #reg, __FILE__, __LINE__)
+#define verify_oop_msg(reg, msg) _verify_oop_checked(reg, "broken oop " #reg ", " #msg, __FILE__, __LINE__)
+#define verify_oop_addr(addr) _verify_oop_addr_checked(addr, "broken oop addr " #addr, __FILE__, __LINE__)
 #define verify_method_ptr(reg) _verify_method_ptr(reg, "broken method " #reg, __FILE__, __LINE__)
 #define verify_klass_ptr(reg) _verify_method_ptr(reg, "broken klass " #reg, __FILE__, __LINE__)
 
@@ -505,8 +503,6 @@ class MacroAssembler: public Assembler {
     pop_call_clobbered_registers_except(RegSet());
   }
 
-  void pusha();
-  void popa();
   void push_CPU_state(bool save_vectors = false, int vector_size_in_bytes = 0);
   void pop_CPU_state(bool restore_vectors = false, int vector_size_in_bytes = 0);
 
@@ -637,8 +633,19 @@ class MacroAssembler: public Assembler {
   address trampoline_call(Address entry, CodeBuffer* cbuf = NULL);
   address ic_call(address entry, jint method_index = 0);
 
-  void add_memory_int64(const Address dst, int64_t imm);
-  void add_memory_int32(const Address dst, int32_t imm);
+  // Support for memory inc/dec
+  // n.b. increment/decrement calls with an Address destination will
+  // need to use a scratch register to load the value to be
+  // incremented. increment/decrement calls which add or subtract a
+  // constant value other than sign-extended 12-bit immediate will need
+  // to use a 2nd scratch register to hold the constant. so, an address
+  // increment/decrement may trash both t0 and t1.
+
+  void increment(const Address dst, int64_t value = 1);
+  void incrementw(const Address dst, int32_t value = 1);
+
+  void decrement(const Address dst, int64_t value = 1);
+  void decrementw(const Address dst, int32_t value = 1);
 
   void cmpptr(Register src1, Address src2, Label& equal);
 
@@ -810,7 +817,8 @@ private:
 
   // Return true if an address is within the 48-bit RISCV64 address space.
   bool is_valid_riscv64_address(address addr) {
-    return ((uintptr_t)addr >> 48) == 0;
+    // sv48: must have bits 63–48 all equal to bit 47
+    return ((uintptr_t)addr >> 47) == 0;
   }
 
   void ld_constant(Register dest, const Address &const_addr) {

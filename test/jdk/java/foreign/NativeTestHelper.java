@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -22,15 +22,13 @@
  *
  */
 
-import jdk.incubator.foreign.Addressable;
-import jdk.incubator.foreign.CLinker;
-import jdk.incubator.foreign.FunctionDescriptor;
-import jdk.incubator.foreign.MemoryAddress;
-import jdk.incubator.foreign.MemoryLayout;
-import jdk.incubator.foreign.MemorySegment;
-import jdk.incubator.foreign.ResourceScope;
-import jdk.incubator.foreign.SegmentAllocator;
-import jdk.incubator.foreign.ValueLayout;
+import java.lang.foreign.Addressable;
+import java.lang.foreign.FunctionDescriptor;
+import java.lang.foreign.Linker;
+import java.lang.foreign.MemoryAddress;
+import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.SymbolLookup;
+import java.lang.foreign.ValueLayout;
 
 import java.lang.invoke.MethodHandle;
 
@@ -85,13 +83,13 @@ public class NativeTestHelper {
      */
     public static final ValueLayout.OfAddress C_POINTER = ValueLayout.ADDRESS.withBitAlignment(64);
 
-    private static CLinker LINKER = CLinker.systemCLinker();
+    private static Linker LINKER = Linker.nativeLinker();
 
     private static final MethodHandle FREE = LINKER.downcallHandle(
-            LINKER.lookup("free").get(), FunctionDescriptor.ofVoid(ValueLayout.ADDRESS));
+            LINKER.defaultLookup().lookup("free").get(), FunctionDescriptor.ofVoid(ValueLayout.ADDRESS));
 
     private static final MethodHandle MALLOC = LINKER.downcallHandle(
-            LINKER.lookup("malloc").get(), FunctionDescriptor.of(ValueLayout.ADDRESS, ValueLayout.JAVA_LONG));
+            LINKER.defaultLookup().lookup("malloc").get(), FunctionDescriptor.of(ValueLayout.ADDRESS, ValueLayout.JAVA_LONG));
 
     public static void freeMemory(Addressable address) {
         try {
@@ -107,5 +105,9 @@ public class NativeTestHelper {
         } catch (Throwable ex) {
             throw new IllegalStateException(ex);
         }
+    }
+
+    public static Addressable findNativeOrThrow(String name) {
+        return SymbolLookup.loaderLookup().lookup(name).orElseThrow();
     }
 }

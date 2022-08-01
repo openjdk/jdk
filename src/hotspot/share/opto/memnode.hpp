@@ -226,10 +226,10 @@ public:
   }
 
   // Polymorphic factory method:
-  static Node* make(PhaseGVN& gvn, Node *c, Node *mem, Node *adr,
-                    const TypePtr* at, const Type *rt, BasicType bt,
+  static Node* make(PhaseGVN& gvn, Node* c, Node* mem, Node* adr,
+                    const TypePtr* at, const Type* rt, BasicType bt,
                     MemOrd mo, ControlDependency control_dependency = DependsOnlyOnTest,
-                    bool unaligned = false, bool mismatched = false, bool unsafe = false,
+                    bool require_atomic_access = false, bool unaligned = false, bool mismatched = false, bool unsafe = false,
                     uint8_t barrier_data = 0);
 
   virtual uint hash()   const;  // Check the type
@@ -284,6 +284,8 @@ public:
 
   bool  has_reinterpret_variant(const Type* rt);
   Node* convert_to_reinterpret_load(PhaseGVN& gvn, const Type* rt);
+
+  ControlDependency control_dependency() {return _control_dependency; }
 
   bool has_unknown_control_dependency() const { return _control_dependency == UnknownControl; }
 
@@ -414,9 +416,7 @@ public:
   virtual int store_Opcode() const { return Op_StoreL; }
   virtual BasicType memory_type() const { return T_LONG; }
   bool require_atomic_access() const { return _require_atomic_access; }
-  static LoadLNode* make_atomic(Node* ctl, Node* mem, Node* adr, const TypePtr* adr_type,
-                                const Type* rt, MemOrd mo, ControlDependency control_dependency = DependsOnlyOnTest,
-                                bool unaligned = false, bool mismatched = false, bool unsafe = false, uint8_t barrier_data = 0);
+
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const {
     LoadNode::dump_spec(st);
@@ -466,9 +466,7 @@ public:
   virtual int store_Opcode() const { return Op_StoreD; }
   virtual BasicType memory_type() const { return T_DOUBLE; }
   bool require_atomic_access() const { return _require_atomic_access; }
-  static LoadDNode* make_atomic(Node* ctl, Node* mem, Node* adr, const TypePtr* adr_type,
-                                const Type* rt, MemOrd mo, ControlDependency control_dependency = DependsOnlyOnTest,
-                                bool unaligned = false, bool mismatched = false, bool unsafe = false, uint8_t barrier_data = 0);
+
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const {
     LoadNode::dump_spec(st);
@@ -609,8 +607,9 @@ public:
   // procedure must indicate that the store requires `release'
   // semantics, if the stored value is an object reference that might
   // point to a new object and may become externally visible.
-  static StoreNode* make(PhaseGVN& gvn, Node *c, Node *mem, Node *adr,
-                         const TypePtr* at, Node *val, BasicType bt, MemOrd mo);
+  static StoreNode* make(PhaseGVN& gvn, Node* c, Node* mem, Node* adr,
+                         const TypePtr* at, Node* val, BasicType bt,
+                         MemOrd mo, bool require_atomic_access = false);
 
   virtual uint hash() const;    // Check the type
 
@@ -691,7 +690,7 @@ public:
   virtual int Opcode() const;
   virtual BasicType memory_type() const { return T_LONG; }
   bool require_atomic_access() const { return _require_atomic_access; }
-  static StoreLNode* make_atomic(Node* ctl, Node* mem, Node* adr, const TypePtr* adr_type, Node* val, MemOrd mo);
+
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const {
     StoreNode::dump_spec(st);
@@ -727,7 +726,7 @@ public:
   virtual int Opcode() const;
   virtual BasicType memory_type() const { return T_DOUBLE; }
   bool require_atomic_access() const { return _require_atomic_access; }
-  static StoreDNode* make_atomic(Node* ctl, Node* mem, Node* adr, const TypePtr* adr_type, Node* val, MemOrd mo);
+
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const {
     StoreNode::dump_spec(st);
@@ -797,19 +796,6 @@ public:
   int oop_alias_idx() const { return _oop_alias_idx; }
 };
 
-//------------------------------LoadPLockedNode---------------------------------
-// Load-locked a pointer from memory (either object or array).
-// On Sparc & Intel this is implemented as a normal pointer load.
-// On PowerPC and friends it's a real load-locked.
-class LoadPLockedNode : public LoadPNode {
-public:
-  LoadPLockedNode(Node *c, Node *mem, Node *adr, MemOrd mo)
-    : LoadPNode(c, mem, adr, TypeRawPtr::BOTTOM, TypeRawPtr::BOTTOM, mo) {}
-  virtual int Opcode() const;
-  virtual int store_Opcode() const { return Op_StorePConditional; }
-  virtual bool depends_only_on_test() const { return true; }
-};
-
 //------------------------------SCMemProjNode---------------------------------------
 // This class defines a projection of the memory  state of a store conditional node.
 // These nodes return a value, but also update memory.
@@ -864,39 +850,6 @@ public:
   };
   LoadStoreConditionalNode(Node *c, Node *mem, Node *adr, Node *val, Node *ex);
   virtual const Type* Value(PhaseGVN* phase) const;
-};
-
-//------------------------------StorePConditionalNode---------------------------
-// Conditionally store pointer to memory, if no change since prior
-// load-locked.  Sets flags for success or failure of the store.
-class StorePConditionalNode : public LoadStoreConditionalNode {
-public:
-  StorePConditionalNode( Node *c, Node *mem, Node *adr, Node *val, Node *ll ) : LoadStoreConditionalNode(c, mem, adr, val, ll) { }
-  virtual int Opcode() const;
-  // Produces flags
-  virtual uint ideal_reg() const { return Op_RegFlags; }
-};
-
-//------------------------------StoreIConditionalNode---------------------------
-// Conditionally store int to memory, if no change since prior
-// load-locked.  Sets flags for success or failure of the store.
-class StoreIConditionalNode : public LoadStoreConditionalNode {
-public:
-  StoreIConditionalNode( Node *c, Node *mem, Node *adr, Node *val, Node *ii ) : LoadStoreConditionalNode(c, mem, adr, val, ii) { }
-  virtual int Opcode() const;
-  // Produces flags
-  virtual uint ideal_reg() const { return Op_RegFlags; }
-};
-
-//------------------------------StoreLConditionalNode---------------------------
-// Conditionally store long to memory, if no change since prior
-// load-locked.  Sets flags for success or failure of the store.
-class StoreLConditionalNode : public LoadStoreConditionalNode {
-public:
-  StoreLConditionalNode( Node *c, Node *mem, Node *adr, Node *val, Node *ll ) : LoadStoreConditionalNode(c, mem, adr, val, ll) { }
-  virtual int Opcode() const;
-  // Produces flags
-  virtual uint ideal_reg() const { return Op_RegFlags; }
 };
 
 class CompareAndSwapNode : public LoadStoreConditionalNode {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -144,10 +144,11 @@ class CompiledMethod : public CodeBlob {
 
   void init_defaults();
 protected:
-  enum MarkForDeoptimizationStatus {
+  enum MarkForDeoptimizationStatus : u1 {
     not_marked,
     deoptimize,
-    deoptimize_noupdate
+    deoptimize_noupdate,
+    deoptimize_done
   };
 
   MarkForDeoptimizationStatus _mark_for_deoptimization_status; // Used for stack deoptimization
@@ -156,6 +157,7 @@ protected:
   unsigned int _has_unsafe_access:1;         // May fault due to unsafe access.
   unsigned int _has_method_handle_invokes:1; // Has this method MethodHandle invokes?
   unsigned int _has_wide_vectors:1;          // Preserve wide vectors at safepoints
+  unsigned int _has_monitors:1;              // Fastpath monitor detection for continuations
 
   Method*   _method;
   address _scopes_data_begin;
@@ -172,15 +174,14 @@ protected:
   void* _gc_data;
 
   virtual void flush() = 0;
+
 protected:
-  CompiledMethod(Method* method, const char* name, CompilerType type, const CodeBlobLayout& layout, int frame_complete_offset, int frame_size, ImmutableOopMapSet* oop_maps, bool caller_must_gc_arguments);
-  CompiledMethod(Method* method, const char* name, CompilerType type, int size, int header_size, CodeBuffer* cb, int frame_complete_offset, int frame_size, OopMapSet* oop_maps, bool caller_must_gc_arguments);
+  CompiledMethod(Method* method, const char* name, CompilerType type, const CodeBlobLayout& layout, int frame_complete_offset, int frame_size, ImmutableOopMapSet* oop_maps, bool caller_must_gc_arguments, bool compiled);
+  CompiledMethod(Method* method, const char* name, CompilerType type, int size, int header_size, CodeBuffer* cb, int frame_complete_offset, int frame_size, OopMapSet* oop_maps, bool caller_must_gc_arguments, bool compiled);
 
 public:
   // Only used by unit test.
   CompiledMethod() {}
-
-  virtual bool is_compiled() const                { return true; }
 
   template<typename T>
   T* gc_data() const                              { return reinterpret_cast<T*>(_gc_data); }
@@ -189,6 +190,9 @@ public:
 
   bool  has_unsafe_access() const                 { return _has_unsafe_access; }
   void  set_has_unsafe_access(bool z)             { _has_unsafe_access = z; }
+
+  bool  has_monitors() const                      { return _has_monitors; }
+  void  set_has_monitors(bool z)                  { _has_monitors = z; }
 
   bool  has_method_handle_invokes() const         { return _has_method_handle_invokes; }
   void  set_has_method_handle_invokes(bool z)     { _has_method_handle_invokes = z; }
@@ -241,11 +245,17 @@ public:
   bool  is_marked_for_deoptimization() const { return _mark_for_deoptimization_status != not_marked; }
   void  mark_for_deoptimization(bool inc_recompile_counts = true);
 
+  bool  has_been_deoptimized() const { return _mark_for_deoptimization_status == deoptimize_done; }
+  void  mark_deoptimized() { _mark_for_deoptimization_status = deoptimize_done; }
+
+  virtual void  make_deoptimized() { assert(false, "not supported"); };
+
   bool update_recompile_counts() const {
     // Update recompile counts when either the update is explicitly requested (deoptimize)
     // or the nmethod is not marked for deoptimization at all (not_marked).
     // The latter happens during uncommon traps when deoptimized nmethod is made not entrant.
-    return _mark_for_deoptimization_status != deoptimize_noupdate;
+    return _mark_for_deoptimization_status != deoptimize_noupdate &&
+           _mark_for_deoptimization_status != deoptimize_done;
   }
 
   // tells whether frames described by this nmethod can be deoptimized
@@ -296,7 +306,6 @@ public:
 
   virtual oop* oop_addr_at(int index) const = 0;
   virtual Metadata** metadata_addr_at(int index) const = 0;
-  virtual void    set_original_pc(const frame* fr, address pc) = 0;
 
 protected:
   // Exception cache support
@@ -318,13 +327,23 @@ public:
   address deopt_mh_handler_begin() const  { return _deopt_mh_handler_begin; }
 
   address deopt_handler_begin() const { return _deopt_handler_begin; }
-  virtual address get_original_pc(const frame* fr) = 0;
+  address* deopt_handler_begin_addr() { return &_deopt_handler_begin; }
   // Deopt
   // Return true is the PC is one would expect if the frame is being deopted.
   inline bool is_deopt_pc(address pc);
   inline bool is_deopt_mh_entry(address pc);
   inline bool is_deopt_entry(address pc);
 
+  // Accessor/mutator for the original pc of a frame before a frame was deopted.
+  address get_original_pc(const frame* fr) { return *orig_pc_addr(fr); }
+  void    set_original_pc(const frame* fr, address pc) { *orig_pc_addr(fr) = pc; }
+
+  virtual int orig_pc_offset() = 0;
+
+private:
+  address* orig_pc_addr(const frame* fr);
+
+public:
   virtual bool can_convert_to_zombie() = 0;
   virtual const char* compile_kind() const = 0;
   virtual int get_state() const = 0;

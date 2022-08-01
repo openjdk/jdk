@@ -39,7 +39,6 @@ class JVMState;
 class MachCallDynamicJavaNode;
 class MachCallJavaNode;
 class MachCallLeafNode;
-class MachCallNativeNode;
 class MachCallNode;
 class MachCallRuntimeNode;
 class MachCallStaticJavaNode;
@@ -1014,25 +1013,6 @@ public:
   MachCallLeafNode() : MachCallRuntimeNode() {
     init_class_id(Class_MachCallLeaf);
   }
-};
-
-class MachCallNativeNode: public MachCallNode {
-  virtual bool cmp( const Node &n ) const;
-  virtual uint size_of() const;
-  void print_regs(const GrowableArray<VMReg>& regs, outputStream* st) const;
-public:
-  const char *_name;
-  GrowableArray<VMReg> _arg_regs;
-  GrowableArray<VMReg> _ret_regs;
-
-  MachCallNativeNode() : MachCallNode() {
-    init_class_id(Class_MachCallNative);
-  }
-
-  virtual int ret_addr_offset();
-#ifndef PRODUCT
-  virtual void dump_spec(outputStream *st) const;
-#endif
 };
 
 //------------------------------MachHaltNode-----------------------------------

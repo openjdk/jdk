@@ -728,6 +728,12 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
 // [ parameter 1        ] <--- Rlocals
 //
 
+address TemplateInterpreterGenerator::generate_Continuation_doYield_entry(void) {
+  if (!Continuations::enabled()) return nullptr;
+  Unimplemented();
+  return NULL;
+}
+
 address TemplateInterpreterGenerator::generate_Reference_get_entry(void) {
   // Code: _aload_0, _getfield, _areturn
   // parameter size = 1
@@ -887,7 +893,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     __ ldr(Rtemp, Address(FP, frame::interpreter_frame_monitor_block_top_offset * wordSize));
     __ cmp(Rtemp, Rstack_top);
     __ b(L, eq);
-    __ stop("broken stack frame setup in interpreter");
+    __ stop("broken stack frame setup in interpreter 3");
     __ bind(L);
   }
 #endif
@@ -1241,7 +1247,7 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
     __ ldr(Rtemp, Address(FP, frame::interpreter_frame_monitor_block_top_offset * wordSize));
     __ cmp(Rtemp, Rstack_top);
     __ b(L, eq);
-    __ stop("broken stack frame setup in interpreter");
+    __ stop("broken stack frame setup in interpreter 4");
     __ bind(L);
   }
 #endif

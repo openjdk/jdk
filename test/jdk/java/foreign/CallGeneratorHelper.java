@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -22,17 +22,16 @@
  *
  */
 
-import jdk.incubator.foreign.Addressable;
-import jdk.incubator.foreign.CLinker;
-import jdk.incubator.foreign.FunctionDescriptor;
-import jdk.incubator.foreign.GroupLayout;
-import jdk.incubator.foreign.MemoryAddress;
-import jdk.incubator.foreign.MemoryLayout;
-import jdk.incubator.foreign.MemorySegment;
-import jdk.incubator.foreign.NativeSymbol;
-import jdk.incubator.foreign.ResourceScope;
-import jdk.incubator.foreign.SegmentAllocator;
-import jdk.incubator.foreign.ValueLayout;
+import java.lang.foreign.Addressable;
+import java.lang.foreign.Linker;
+import java.lang.foreign.FunctionDescriptor;
+import java.lang.foreign.GroupLayout;
+import java.lang.foreign.MemoryAddress;
+import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.MemorySession;
+import java.lang.foreign.SegmentAllocator;
+import java.lang.foreign.ValueLayout;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.VarHandle;
@@ -42,12 +41,18 @@ import java.util.Stack;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import org.testng.annotations.*;
 
 import static org.testng.Assert.*;
 
 public class CallGeneratorHelper extends NativeTestHelper {
+
+    static final List<MemoryLayout> STACK_PREFIX_LAYOUTS = Stream.concat(
+            Stream.generate(() -> (MemoryLayout) C_LONG_LONG).limit(8),
+            Stream.generate(() -> (MemoryLayout)  C_DOUBLE).limit(8)
+        ).toList();
 
     static SegmentAllocator THROWING_ALLOCATOR = (size, align) -> {
         throw new UnsupportedOperationException();
@@ -145,15 +150,21 @@ public class CallGeneratorHelper extends NativeTestHelper {
             if (this == STRUCT) {
                 long offset = 0L;
                 List<MemoryLayout> layouts = new ArrayList<>();
+                long align = 0;
                 for (StructFieldType field : fields) {
                     MemoryLayout l = field.layout();
-                    long padding = offset % l.bitSize();
+                    long padding = offset % l.bitAlignment();
                     if (padding != 0) {
                         layouts.add(MemoryLayout.paddingLayout(padding));
                         offset += padding;
                     }
                     layouts.add(l.withName("field" + offset));
+                    align = Math.max(align, l.bitAlignment());
                     offset += l.bitSize();
+                }
+                long padding = offset % align;
+                if (padding != 0) {
+                    layouts.add(MemoryLayout.paddingLayout(padding));
                 }
                 return MemoryLayout.structLayout(layouts.toArray(new MemoryLayout[0]));
             } else {
@@ -376,11 +387,11 @@ public class CallGeneratorHelper extends NativeTestHelper {
     @SuppressWarnings("unchecked")
     static Object makeArg(MemoryLayout layout, List<Consumer<Object>> checks, boolean check) throws ReflectiveOperationException {
         if (layout instanceof GroupLayout) {
-            MemorySegment segment = MemorySegment.allocateNative(layout, ResourceScope.newImplicitScope());
+            MemorySegment segment = MemorySegment.allocateNative(layout, MemorySession.openImplicit());
             initStruct(segment, (GroupLayout)layout, checks, check);
             return segment;
         } else if (isPointer(layout)) {
-            MemorySegment segment = MemorySegment.allocateNative(1, ResourceScope.newImplicitScope());
+            MemorySegment segment = MemorySegment.allocateNative(1, MemorySession.openImplicit());
             if (check) {
                 checks.add(o -> {
                     try {
@@ -448,7 +459,7 @@ public class CallGeneratorHelper extends NativeTestHelper {
         }
     }
 
-    MethodHandle downcallHandle(CLinker abi, NativeSymbol symbol, SegmentAllocator allocator, FunctionDescriptor descriptor) {
+    MethodHandle downcallHandle(Linker abi, Addressable symbol, SegmentAllocator allocator, FunctionDescriptor descriptor) {
         MethodHandle mh = abi.downcallHandle(symbol, descriptor);
         if (descriptor.returnLayout().isPresent() && descriptor.returnLayout().get() instanceof GroupLayout) {
             mh = mh.bindTo(allocator);

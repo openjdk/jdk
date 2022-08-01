@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -198,13 +198,11 @@ public abstract class JavaVFrame extends VFrame {
   }
 
   public boolean equals(Object o) {
-      if (o == null || !(o instanceof JavaVFrame)) {
+      if (!(o instanceof JavaVFrame other)) {
           return false;
       }
 
-      JavaVFrame other = (JavaVFrame) o;
-
-      // Check static part
+    // Check static part
       if (!getMethod().equals(other.getMethod())) {
           return false;
       }

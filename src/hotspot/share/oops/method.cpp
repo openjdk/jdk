@@ -61,6 +61,7 @@
 #include "prims/methodHandles.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/continuationEntry.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
@@ -104,6 +105,7 @@ Method::Method(ConstMethod* xconst, AccessFlags access_flags, Symbol* name) {
   set_force_inline(false);
   set_hidden(false);
   set_dont_inline(false);
+  set_changes_current_thread(false);
   set_has_injected_profile(false);
   set_method_data(NULL);
   clear_method_counters();
@@ -572,9 +574,9 @@ void Method::print_invocation_count() {
 #endif
 }
 
-// Build a MethodData* object to hold information about this method
-// collected in the interpreter.
-void Method::build_interpreter_method_data(const methodHandle& method, TRAPS) {
+// Build a MethodData* object to hold profiling information collected on this
+// method when requested.
+void Method::build_profiling_method_data(const methodHandle& method, TRAPS) {
   // Do not profile the method if metaspace has hit an OOM previously
   // allocating profiling data. Callers clear pending exception so don't
   // add one here.
@@ -597,7 +599,7 @@ void Method::build_interpreter_method_data(const methodHandle& method, TRAPS) {
     method->set_method_data(method_data);
     if (PrintMethodData && (Verbose || WizardMode)) {
       ResourceMark rm(THREAD);
-      tty->print("build_interpreter_method_data for ");
+      tty->print("build_profiling_method_data for ");
       method->print_name(tty);
       tty->cr();
       // At the end of the run, the MDO, full of data, will be dumped.
@@ -662,6 +664,7 @@ void Method::compute_from_signature(Symbol* sig) {
   // we might as well compute the whole fingerprint.
   Fingerprinter fp(sig, is_static());
   set_size_of_parameters(fp.size_of_parameters());
+  set_num_stack_arg_slots(fp.num_stack_arg_slots());
   constMethod()->set_result_type(fp.return_type());
   constMethod()->set_fingerprint(fp.fingerprint());
 }
@@ -802,9 +805,9 @@ bool Method::is_default_method() const {
 bool Method::can_be_statically_bound(AccessFlags class_access_flags) const {
   if (is_final_method(class_access_flags))  return true;
 #ifdef ASSERT
-  ResourceMark rm;
   bool is_nonv = (vtable_index() == nonvirtual_vtable_index);
   if (class_access_flags.is_interface()) {
+      ResourceMark rm;
       assert(is_nonv == is_static() || is_nonv == is_private(),
              "nonvirtual unexpected for non-static, non-private: %s",
              name_and_sig_as_C_string());
@@ -987,7 +990,7 @@ bool Method::is_klass_loaded(int refinfo_index, bool must_be_resolved) const {
 
 void Method::set_native_function(address function, bool post_event_flag) {
   assert(function != NULL, "use clear_native_function to unregister natives");
-  assert(!is_method_handle_intrinsic() || function == SharedRuntime::native_method_throw_unsatisfied_link_error_entry(), "");
+  assert(!is_special_native_intrinsic() || function == SharedRuntime::native_method_throw_unsatisfied_link_error_entry(), "");
   address* native_function = native_function_addr();
 
   // We can see racers trying to place the same native function into place. Once
@@ -1017,7 +1020,7 @@ void Method::set_native_function(address function, bool post_event_flag) {
 
 
 bool Method::has_native_function() const {
-  if (is_method_handle_intrinsic())
+  if (is_special_native_intrinsic())
     return false;  // special-cased in SharedRuntime::generate_native_wrapper
   address func = native_function();
   return (func != NULL && func != SharedRuntime::native_method_throw_unsatisfied_link_error_entry());
@@ -1074,7 +1077,7 @@ void Method::print_made_not_compilable(int comp_level, bool is_osr, bool report,
 
 bool Method::is_always_compilable() const {
   // Generated adapters must be compiled
-  if (is_method_handle_intrinsic() && is_synthetic()) {
+  if (is_special_native_intrinsic() && is_synthetic()) {
     assert(!is_not_c1_compilable(), "sanity check");
     assert(!is_not_c2_compilable(), "sanity check");
     return true;
@@ -1234,6 +1237,12 @@ void Method::link_method(const methodHandle& h_method, TRAPS) {
   (void) make_adapters(h_method, CHECK);
 
   // ONLY USE the h_method now as make_adapter may have blocked
+
+  if (h_method->is_continuation_enter_intrinsic()) {
+    // the entry points to this method will be set in set_code, called when first resolving this method
+    _from_interpreted_entry = NULL;
+    _from_compiled_entry = NULL;
+  }
 }
 
 address Method::make_adapters(const methodHandle& mh, TRAPS) {
@@ -1315,9 +1324,18 @@ void Method::set_code(const methodHandle& mh, CompiledMethod *code) {
   OrderAccess::storestore();
   mh->_from_compiled_entry = code->verified_entry_point();
   OrderAccess::storestore();
-  // Instantly compiled code can execute.
-  if (!mh->is_method_handle_intrinsic())
+
+  if (mh->is_continuation_enter_intrinsic()) {
+    assert(mh->_from_interpreted_entry == NULL, "initialized incorrectly"); // see link_method
+
+    // This is the entry used when we're in interpreter-only mode; see InterpreterMacroAssembler::jump_from_interpreted
+    mh->_i2i_entry = ContinuationEntry::interpreted_entry();
+    // This must come last, as it is what's tested in LinkResolver::resolve_static_call
+    Atomic::release_store(&mh->_from_interpreted_entry , mh->get_i2c_entry());
+  } else if (!mh->is_method_handle_intrinsic()) {
+    // Instantly compiled code can execute.
     mh->_from_interpreted_entry = mh->get_i2c_entry();
+  }
 }
 
 
@@ -1477,8 +1495,8 @@ methodHandle Method::make_method_handle_intrinsic(vmIntrinsics::ID iid,
   if (iid == vmIntrinsics::_linkToNative) {
     m->set_interpreter_entry(m->adapter()->get_i2c_entry());
   }
-  if (log_is_enabled(Info, methodhandles) && (Verbose || WizardMode)) {
-    LogTarget(Info, methodhandles) lt;
+  if (log_is_enabled(Debug, methodhandles)) {
+    LogTarget(Debug, methodhandles) lt;
     LogStream ls(lt);
     m->print_on(&ls);
   }
@@ -1725,7 +1743,7 @@ bool Method::has_unloaded_classes_in_signature(const methodHandle& m, TRAPS) {
 }
 
 // Exposed so field engineers can debug VM
-void Method::print_short_name(outputStream* st) {
+void Method::print_short_name(outputStream* st) const {
   ResourceMark rm;
 #ifdef PRODUCT
   st->print(" %s::", method_holder()->external_name());
@@ -1793,7 +1811,7 @@ class SignatureTypePrinter : public SignatureTypeNames {
 };
 
 
-void Method::print_name(outputStream* st) {
+void Method::print_name(outputStream* st) const {
   Thread *thread = Thread::current();
   ResourceMark rm(thread);
   st->print("%s ", is_static() ? "static" : "virtual");
@@ -2276,6 +2294,13 @@ void Method::set_on_stack(const bool value) {
   if (value && !already_set) {
     MetadataOnStackMark::record(this);
   }
+}
+
+void Method::record_gc_epoch() {
+  // If any method is on the stack in continuations, none of them can be reclaimed,
+  // so save the marking cycle to check for the whole class in the cpCache.
+  // The cpCache is writeable.
+  constants()->cache()->record_gc_epoch();
 }
 
 // Called when the class loader is unloaded to make all methods weak.

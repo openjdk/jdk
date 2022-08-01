@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -23,26 +23,27 @@
 
 /*
  * @test
+ * @enablePreview
  * @run testng TestMemoryDereference
  */
 
-import jdk.incubator.foreign.MemoryAddress;
-import jdk.incubator.foreign.MemorySegment;
+import java.lang.foreign.MemoryAddress;
+import java.lang.foreign.MemorySegment;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
-import jdk.incubator.foreign.ValueLayout;
+import java.lang.foreign.ValueLayout;
 import org.testng.annotations.*;
 
-import static jdk.incubator.foreign.ValueLayout.ADDRESS;
-import static jdk.incubator.foreign.ValueLayout.JAVA_BOOLEAN;
-import static jdk.incubator.foreign.ValueLayout.JAVA_BYTE;
-import static jdk.incubator.foreign.ValueLayout.JAVA_CHAR;
-import static jdk.incubator.foreign.ValueLayout.JAVA_DOUBLE;
-import static jdk.incubator.foreign.ValueLayout.JAVA_FLOAT;
-import static jdk.incubator.foreign.ValueLayout.JAVA_INT;
-import static jdk.incubator.foreign.ValueLayout.JAVA_SHORT;
+import static java.lang.foreign.ValueLayout.ADDRESS;
+import static java.lang.foreign.ValueLayout.JAVA_BOOLEAN;
+import static java.lang.foreign.ValueLayout.JAVA_BYTE;
+import static java.lang.foreign.ValueLayout.JAVA_CHAR;
+import static java.lang.foreign.ValueLayout.JAVA_DOUBLE;
+import static java.lang.foreign.ValueLayout.JAVA_FLOAT;
+import static java.lang.foreign.ValueLayout.JAVA_INT;
+import static java.lang.foreign.ValueLayout.JAVA_SHORT;
 import static org.testng.Assert.*;
 
 public class TestMemoryDereference {
@@ -97,6 +98,14 @@ public class TestMemoryDereference {
         }
     }
 
+    // unaligned constants
+    public final static ValueLayout.OfShort JAVA_SHORT_UNALIGNED = JAVA_SHORT.withBitAlignment(8);
+    public final static ValueLayout.OfChar JAVA_CHAR_UNALIGNED = JAVA_CHAR.withBitAlignment(8);
+    public final static ValueLayout.OfInt JAVA_INT_UNALIGNED = JAVA_INT.withBitAlignment(8);
+    public final static ValueLayout.OfFloat JAVA_FLOAT_UNALIGNED = JAVA_FLOAT.withBitAlignment(8);
+    public final static ValueLayout.OfDouble JAVA_DOUBLE_UNALIGNED = JAVA_DOUBLE.withBitAlignment(8);
+    public final static ValueLayout.OfAddress ADDRESS_UNALIGNED = ADDRESS.withBitAlignment(8);
+
     @Test(dataProvider = "accessors")
     public void testMemoryAccess(String testName, Accessor<?> accessor) {
         accessor.test();
@@ -122,90 +131,90 @@ public class TestMemoryDereference {
                 },
                 // char, offset
                 {"char/offset", new Accessor<>((char) 42,
-                        s -> s.get(JAVA_CHAR, 8), (s, x) -> s.set(JAVA_CHAR, 8, x),
+                        s -> s.get(JAVA_CHAR_UNALIGNED, 8), (s, x) -> s.set(JAVA_CHAR_UNALIGNED, 8, x),
                         (bb) -> bb.order(NE).getChar(8), (bb, v) -> bb.order(NE).putChar(8, v))
                 },
                 {"char/offset/LE", new Accessor<>((char) 42,
-                        s -> s.get(JAVA_CHAR.withOrder(ByteOrder.LITTLE_ENDIAN), 8),
-                        (s, x) -> s.set(JAVA_CHAR.withOrder(ByteOrder.LITTLE_ENDIAN), 8, x),
+                        s -> s.get(JAVA_CHAR_UNALIGNED.withOrder(ByteOrder.LITTLE_ENDIAN), 8),
+                        (s, x) -> s.set(JAVA_CHAR_UNALIGNED.withOrder(ByteOrder.LITTLE_ENDIAN), 8, x),
                         (bb) -> bb.order(LE).getChar(8), (bb, v) -> bb.order(LE).putChar(8, v))
                 },
                 {"char/offset/BE", new Accessor<>((char) 42,
-                        s -> s.get(JAVA_CHAR.withOrder(ByteOrder.BIG_ENDIAN), 8),
-                        (s, x) -> s.set(JAVA_CHAR.withOrder(ByteOrder.BIG_ENDIAN), 8, x),
+                        s -> s.get(JAVA_CHAR_UNALIGNED.withOrder(ByteOrder.BIG_ENDIAN), 8),
+                        (s, x) -> s.set(JAVA_CHAR_UNALIGNED.withOrder(ByteOrder.BIG_ENDIAN), 8, x),
                         (bb) -> bb.order(BE).getChar(8), (bb, v) -> bb.order(BE).putChar(8, v))
                 },
                 // short, offset
                 {"short/offset", new Accessor<>((short) 42,
-                        s -> s.get(JAVA_SHORT, 8), (s, x) -> s.set(JAVA_SHORT, 8, x),
+                        s -> s.get(JAVA_SHORT_UNALIGNED, 8), (s, x) -> s.set(JAVA_SHORT_UNALIGNED, 8, x),
                         (bb) -> bb.order(NE).getShort(8), (bb, v) -> bb.order(NE).putShort(8, v))
                 },
                 {"short/offset/LE", new Accessor<>((short) 42,
-                        s -> s.get(JAVA_SHORT.withOrder(ByteOrder.LITTLE_ENDIAN), 8),
-                        (s, x) -> s.set(JAVA_SHORT.withOrder(ByteOrder.LITTLE_ENDIAN), 8, x),
+                        s -> s.get(JAVA_SHORT_UNALIGNED.withOrder(ByteOrder.LITTLE_ENDIAN), 8),
+                        (s, x) -> s.set(JAVA_SHORT_UNALIGNED.withOrder(ByteOrder.LITTLE_ENDIAN), 8, x),
                         (bb) -> bb.order(LE).getShort(8), (bb, v) -> bb.order(LE).putShort(8, v))
                 },
                 {"short/offset/BE", new Accessor<>((short) 42,
-                        s -> s.get(JAVA_SHORT.withOrder(ByteOrder.BIG_ENDIAN), 8),
-                        (s, x) -> s.set(JAVA_SHORT.withOrder(ByteOrder.BIG_ENDIAN), 8, x),
+                        s -> s.get(JAVA_SHORT_UNALIGNED.withOrder(ByteOrder.BIG_ENDIAN), 8),
+                        (s, x) -> s.set(JAVA_SHORT_UNALIGNED.withOrder(ByteOrder.BIG_ENDIAN), 8, x),
                         (bb) -> bb.order(BE).getShort(8), (bb, v) -> bb.order(BE).putShort(8, v))
                 },
                 // int, offset
                 {"int/offset", new Accessor<>(42,
-                        s -> s.get(JAVA_INT, 8), (s, x) -> s.set(JAVA_INT, 8, x),
+                        s -> s.get(JAVA_INT_UNALIGNED, 8), (s, x) -> s.set(JAVA_INT_UNALIGNED, 8, x),
                         (bb) -> bb.order(NE).getInt(8), (bb, v) -> bb.order(NE).putInt(8, v))
                 },
                 {"int/offset/LE", new Accessor<>(42,
-                        s -> s.get(JAVA_INT.withOrder(ByteOrder.LITTLE_ENDIAN), 8),
-                        (s, x) -> s.set(JAVA_INT.withOrder(ByteOrder.LITTLE_ENDIAN), 8, x),
+                        s -> s.get(JAVA_INT_UNALIGNED.withOrder(ByteOrder.LITTLE_ENDIAN), 8),
+                        (s, x) -> s.set(JAVA_INT_UNALIGNED.withOrder(ByteOrder.LITTLE_ENDIAN), 8, x),
                         (bb) -> bb.order(LE).getInt(8), (bb, v) -> bb.order(LE).putInt(8, v))
                 },
                 {"int/offset/BE", new Accessor<>(42,
-                        s -> s.get(JAVA_INT.withOrder(ByteOrder.BIG_ENDIAN), 8),
-                        (s, x) -> s.set(JAVA_INT.withOrder(ByteOrder.BIG_ENDIAN), 8, x),
+                        s -> s.get(JAVA_INT_UNALIGNED.withOrder(ByteOrder.BIG_ENDIAN), 8),
+                        (s, x) -> s.set(JAVA_INT_UNALIGNED.withOrder(ByteOrder.BIG_ENDIAN), 8, x),
                         (bb) -> bb.order(BE).getInt(8), (bb, v) -> bb.order(BE).putInt(8, v))
                 },
                 // float, offset
                 {"float/offset", new Accessor<>(42f,
-                        s -> s.get(JAVA_FLOAT, 8), (s, x) -> s.set(JAVA_FLOAT, 8, x),
+                        s -> s.get(JAVA_FLOAT_UNALIGNED, 8), (s, x) -> s.set(JAVA_FLOAT_UNALIGNED, 8, x),
                         (bb) -> bb.order(NE).getFloat(8), (bb, v) -> bb.order(NE).putFloat(8, v))
                 },
                 {"float/offset/LE", new Accessor<>(42f,
-                        s -> s.get(ValueLayout.JAVA_FLOAT.withOrder(ByteOrder.LITTLE_ENDIAN), 8),
-                        (s, x) -> s.set(ValueLayout.JAVA_FLOAT.withOrder(ByteOrder.LITTLE_ENDIAN), 8, x),
+                        s -> s.get(JAVA_FLOAT_UNALIGNED.withOrder(ByteOrder.LITTLE_ENDIAN), 8),
+                        (s, x) -> s.set(JAVA_FLOAT_UNALIGNED.withOrder(ByteOrder.LITTLE_ENDIAN), 8, x),
                         (bb) -> bb.order(LE).getFloat(8), (bb, v) -> bb.order(LE).putFloat(8, v))
                 },
                 {"float/offset/BE", new Accessor<>(42f,
-                        s -> s.get(ValueLayout.JAVA_FLOAT.withOrder(ByteOrder.BIG_ENDIAN), 8),
-                        (s, x) -> s.set(ValueLayout.JAVA_FLOAT.withOrder(ByteOrder.BIG_ENDIAN), 8, x),
+                        s -> s.get(JAVA_FLOAT_UNALIGNED.withOrder(ByteOrder.BIG_ENDIAN), 8),
+                        (s, x) -> s.set(JAVA_FLOAT_UNALIGNED.withOrder(ByteOrder.BIG_ENDIAN), 8, x),
                         (bb) -> bb.order(BE).getFloat(8), (bb, v) -> bb.order(BE).putFloat(8, v))
                 },
                 // double, offset
                 {"double/offset", new Accessor<>(42d,
-                        s -> s.get(JAVA_DOUBLE, 8), (s, x) -> s.set(JAVA_DOUBLE, 8, x),
+                        s -> s.get(JAVA_DOUBLE_UNALIGNED, 8), (s, x) -> s.set(JAVA_DOUBLE_UNALIGNED, 8, x),
                         (bb) -> bb.order(NE).getDouble(8), (bb, v) -> bb.order(NE).putDouble(8, v))
                 },
                 {"double/offset/LE", new Accessor<>(42d,
-                        s -> s.get(ValueLayout.JAVA_DOUBLE.withOrder(ByteOrder.LITTLE_ENDIAN), 8),
-                        (s, x) -> s.set(ValueLayout.JAVA_DOUBLE.withOrder(ByteOrder.LITTLE_ENDIAN), 8, x),
+                        s -> s.get(JAVA_DOUBLE_UNALIGNED.withOrder(ByteOrder.LITTLE_ENDIAN), 8),
+                        (s, x) -> s.set(JAVA_DOUBLE_UNALIGNED.withOrder(ByteOrder.LITTLE_ENDIAN), 8, x),
                         (bb) -> bb.order(LE).getDouble(8), (bb, v) -> bb.order(LE).putDouble(8, v))
                 },
                 {"double/offset/BE", new Accessor<>(42d,
-                        s -> s.get(ValueLayout.JAVA_DOUBLE.withOrder(ByteOrder.BIG_ENDIAN), 8),
-                        (s, x) -> s.set(ValueLayout.JAVA_DOUBLE.withOrder(ByteOrder.BIG_ENDIAN), 8, x),
+                        s -> s.get(JAVA_DOUBLE_UNALIGNED.withOrder(ByteOrder.BIG_ENDIAN), 8),
+                        (s, x) -> s.set(JAVA_DOUBLE_UNALIGNED.withOrder(ByteOrder.BIG_ENDIAN), 8, x),
                         (bb) -> bb.order(BE).getDouble(8), (bb, v) -> bb.order(BE).putDouble(8, v))
                 },
                 { "address/offset", new Accessor<>(MemoryAddress.ofLong(42),
-                        s -> s.get(ADDRESS, 8), (s, x) -> s.set(ADDRESS, 8, x),
+                        s -> s.get(ADDRESS_UNALIGNED, 8), (s, x) -> s.set(ADDRESS_UNALIGNED, 8, x),
                         (bb) -> {
                             ByteBuffer nb = bb.order(NE);
-                            long addr = ValueLayout.ADDRESS.byteSize() == 8 ?
+                            long addr = ADDRESS_UNALIGNED.byteSize() == 8 ?
                                     nb.getLong(8) : nb.getInt(8);
                             return MemoryAddress.ofLong(addr);
                         },
                         (bb, v) -> {
                             ByteBuffer nb = bb.order(NE);
-                            if (ValueLayout.ADDRESS.byteSize() == 8) {
+                            if (ADDRESS_UNALIGNED.byteSize() == 8) {
                                 nb.putLong(8, v.toRawLongValue());
                             } else {
                                 nb.putInt(8, (int)v.toRawLongValue());

@@ -86,9 +86,23 @@ public class VectorShiftRight {
     }
 
     @Benchmark
+    public void urShiftImmByte() {
+        for (int i = 0; i < SIZE; i++) {
+            bytesB[i] = (byte) (bytesA[i] >>> 3);
+        }
+    }
+
+    @Benchmark
     public void rShiftShort() {
         for (int i = 0; i < SIZE; i++) {
             shortsB[i] = (short) (shortsA[i] >> shiftCount);
+        }
+    }
+
+    @Benchmark
+    public void urShiftImmShort() {
+        for (int i = 0; i < SIZE; i++) {
+            shortsB[i] = (short) (shortsA[i] >>> 3);
         }
     }
 

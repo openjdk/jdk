@@ -30,9 +30,9 @@
  *          The lambda proxy class of the app class should be in the dynamic archive.
  * @requires vm.cds
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds /test/hotspot/jtreg/runtime/cds/appcds/test-classes
- * @build LambdaContainsOldInfApp sun.hotspot.WhiteBox OldProvider
+ * @build LambdaContainsOldInfApp jdk.test.whitebox.WhiteBox OldProvider
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar old-inf-base-archive.jar LambdaContainsOldInfApp OldProvider
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. LambdaForOldInfInBaseArchive
  */
 

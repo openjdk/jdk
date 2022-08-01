@@ -386,7 +386,7 @@ static void gen_c2i_adapter(MacroAssembler *masm,
 
   int extraspace = total_args_passed * Interpreter::stackElementSize;
 
-  __ mv(x30, sp);
+  __ mv(x19_sender_sp, sp);
 
   // stack is aligned, keep it that way
   extraspace = align_up(extraspace, 2 * wordSize);
@@ -498,6 +498,11 @@ void SharedRuntime::gen_i2c_adapter(MacroAssembler *masm,
                                     int comp_args_on_stack,
                                     const BasicType *sig_bt,
                                     const VMRegPair *regs) {
+  // Note: x19_sender_sp contains the senderSP on entry. We must
+  // preserve it since we may do a i2c -> c2i transition if we lose a
+  // race where compiled code goes non-entrant while we get args
+  // ready.
+
   // Cut-out for having no stack args.
   int comp_words_on_stack = align_up(comp_args_on_stack * VMRegImpl::stack_slot_size, wordSize) >> LogBytesPerWord;
   if (comp_args_on_stack != 0) {
@@ -822,7 +827,7 @@ static void object_move(MacroAssembler* masm,
     __ bind(notZero1);
   } else {
 
-    // Oop is in an a register we must store it to the space we reserve
+    // Oop is in a register we must store it to the space we reserve
     // on the stack for oop_handles and pass a handle if oop is non-NULL
 
     const Register rOop = src.first()->as_Register();
@@ -1067,8 +1072,11 @@ static void gen_special_dispatch(MacroAssembler* masm,
     member_arg_pos = method->size_of_parameters() - 1;  // trailing MemberName argument
     member_reg = x9;  // known to be free at this point
     has_receiver = MethodHandles::ref_kind_has_receiver(ref_kind);
-  } else if (iid == vmIntrinsics::_invokeBasic || iid == vmIntrinsics::_linkToNative) {
+  } else if (iid == vmIntrinsics::_invokeBasic) {
     has_receiver = true;
+  } else if (iid == vmIntrinsics::_linkToNative) {
+    member_arg_pos = method->size_of_parameters() - 1;  // trailing NativeEntryPoint argument
+    member_reg = x9;  // known to be free at this point
   } else {
     fatal("unexpected intrinsic id %d", vmIntrinsics::as_int(iid));
   }
@@ -1895,7 +1903,7 @@ void SharedRuntime::generate_deopt_blob() {
 
   // -------------
   // This code enters when returning to a de-optimized nmethod.  A return
-  // address has been pushed on the the stack, and return values are in
+  // address has been pushed on the stack, and return values are in
   // registers.
   // If we are doing a normal deopt then we were called from the patched
   // nmethod from the point we returned to the nmethod. So the return
@@ -2588,7 +2596,7 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(address destination, const cha
   __ sd(x10, Address(sp, reg_saver.reg_offset_in_bytes(t0)));
   reg_saver.restore_live_registers(masm);
 
-  // We are back the the original state on entry and ready to go.
+  // We are back to the original state on entry and ready to go.
 
   __ jr(t0);
 
@@ -2614,14 +2622,6 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(address destination, const cha
 }
 
 #ifdef COMPILER2
-RuntimeStub* SharedRuntime::make_native_invoker(address call_target,
-                                                int shadow_space_bytes,
-                                                const GrowableArray<VMReg>& input_registers,
-                                                const GrowableArray<VMReg>& output_registers) {
-  Unimplemented();
-  return nullptr;
-}
-
 //------------------------------generate_exception_blob---------------------------
 // creates exception blob at the end
 // Using exception blob, this code is jumped from a compiled method.

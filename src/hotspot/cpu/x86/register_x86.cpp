@@ -26,6 +26,11 @@
 
 #include "register_x86.hpp"
 
+REGISTER_IMPL_DEFINITION(Register, RegisterImpl, RegisterImpl::number_of_registers);
+REGISTER_IMPL_DEFINITION(FloatRegister, FloatRegisterImpl, FloatRegisterImpl::number_of_registers);
+REGISTER_IMPL_DEFINITION(XMMRegister, XMMRegisterImpl, XMMRegisterImpl::number_of_registers);
+REGISTER_IMPL_DEFINITION(KRegister, KRegisterImpl, KRegisterImpl::number_of_registers);
+
 #ifndef AMD64
 const int ConcreteRegisterImpl::max_gpr = RegisterImpl::number_of_registers;
 #else
@@ -40,7 +45,7 @@ const int ConcreteRegisterImpl::max_kpr = ConcreteRegisterImpl::max_xmm +
     KRegisterImpl::max_slots_per_register * KRegisterImpl::number_of_registers;
 
 const char* RegisterImpl::name() const {
-  const char* names[number_of_registers] = {
+  static const char *const names[number_of_registers] = {
 #ifndef AMD64
     "eax", "ecx", "edx", "ebx", "esp", "ebp", "esi", "edi"
 #else
@@ -52,14 +57,14 @@ const char* RegisterImpl::name() const {
 }
 
 const char* FloatRegisterImpl::name() const {
-  const char* names[number_of_registers] = {
+  static const char *const names[number_of_registers] = {
     "st0", "st1", "st2", "st3", "st4", "st5", "st6", "st7"
   };
   return is_valid() ? names[encoding()] : "noreg";
 }
 
 const char* XMMRegisterImpl::name() const {
-  const char* names[number_of_registers] = {
+  static const char *const names[number_of_registers] = {
     "xmm0","xmm1","xmm2","xmm3","xmm4","xmm5","xmm6","xmm7"
 #ifdef AMD64
     ,"xmm8",   "xmm9",  "xmm10", "xmm11", "xmm12", "xmm13", "xmm14", "xmm15"

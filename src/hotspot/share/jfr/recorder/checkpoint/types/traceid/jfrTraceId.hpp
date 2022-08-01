@@ -34,7 +34,6 @@ class Klass;
 class Method;
 class ModuleEntry;
 class PackageEntry;
-class Thread;
 
 /*
  * JfrTraceId is a means of tagging, e.g. marking, specific instances as being actively in-use.
@@ -84,7 +83,6 @@ class JfrTraceId : public AllStatic {
   static void assign(const PackageEntry* package);
   static void assign(const ClassLoaderData* cld);
   static traceid assign_primitive_klass_id();
-  static traceid assign_thread_id();
 
   // through load barrier
   static traceid load(const Klass* klass);
@@ -99,7 +97,6 @@ class JfrTraceId : public AllStatic {
   // load barrier elision
   static traceid load_raw(const Klass* klass);
   static traceid load_raw(jclass jc);
-  static traceid load_raw(const Thread* thread);
   static traceid load_raw(const Method* method);
   static traceid load_raw(const ModuleEntry* module);
   static traceid load_raw(const PackageEntry* package);
@@ -123,6 +120,7 @@ class JfrTraceId : public AllStatic {
   static bool is_jdk_jfr_event_sub(const jclass jc);
   static void tag_as_jdk_jfr_event_sub(const Klass* k);
   static void tag_as_jdk_jfr_event_sub(const jclass jc);
+  static void untag_jdk_jfr_event_sub(const Klass* k);
 
   static bool in_jdk_jfr_event_hierarchy(const Klass* k);
   static bool in_jdk_jfr_event_hierarchy(const jclass jc);

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -23,20 +23,20 @@
 
 /*
  * @test
+ * @enablePreview
  * @run testng/othervm --enable-native-access=ALL-UNNAMED TestMemoryAccessInstance
  */
 
-import jdk.incubator.foreign.MemoryAddress;
-import jdk.incubator.foreign.MemorySegment;
-
+import java.lang.foreign.MemoryAddress;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.MemorySession;
+import java.lang.foreign.ValueLayout;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.function.Function;
 
-import jdk.incubator.foreign.ResourceScope;
-import jdk.incubator.foreign.ValueLayout;
-import org.testng.SkipException;
 import org.testng.annotations.*;
+import org.testng.SkipException;
 import static org.testng.Assert.*;
 
 public class TestMemoryAccessInstance {
@@ -80,21 +80,21 @@ public class TestMemoryAccessInstance {
         }
 
         void test() {
-            try (ResourceScope scope = ResourceScope.newConfinedScope()) {
-                MemorySegment segment = MemorySegment.allocateNative(64, scope);
+            try (MemorySession session = MemorySession.openConfined()) {
+                MemorySegment segment = MemorySegment.allocateNative(128, session);
                 ByteBuffer buffer = segment.asByteBuffer();
                 T t = transform.apply(segment);
-                segmentSetter.set(t, layout, 4, value);
-                assertEquals(bufferGetter.get(buffer, 4), value);
-                bufferSetter.set(buffer, 4, value);
-                assertEquals(value, segmentGetter.get(t, layout, 4));
+                segmentSetter.set(t, layout, 8, value);
+                assertEquals(bufferGetter.get(buffer, 8), value);
+                bufferSetter.set(buffer, 8, value);
+                assertEquals(value, segmentGetter.get(t, layout, 8));
             }
         }
 
         @SuppressWarnings("unchecked")
         void testHyperAligned() {
-            try (ResourceScope scope = ResourceScope.newConfinedScope()) {
-                MemorySegment segment = MemorySegment.allocateNative(64, scope);
+            try (MemorySession session = MemorySession.openConfined()) {
+                MemorySegment segment = MemorySegment.allocateNative(64, session);
                 T t = transform.apply(segment);
                 L alignedLayout = (L)layout.withBitAlignment(layout.byteSize() * 8 * 2);
                 try {

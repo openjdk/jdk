@@ -50,7 +50,7 @@ void Assembler::add(Register Rd, Register Rn, int64_t increment, Register temp) 
   }
 }
 
-void Assembler::addw(Register Rd, Register Rn, int64_t increment, Register temp) {
+void Assembler::addw(Register Rd, Register Rn, int32_t increment, Register temp) {
   if (is_imm_in_range(increment, 12, 0)) {
     addiw(Rd, Rn, increment);
   } else {
@@ -70,7 +70,7 @@ void Assembler::sub(Register Rd, Register Rn, int64_t decrement, Register temp) 
   }
 }
 
-void Assembler::subw(Register Rd, Register Rn, int64_t decrement, Register temp) {
+void Assembler::subw(Register Rd, Register Rn, int32_t decrement, Register temp) {
   if (is_imm_in_range(-decrement, 12, 0)) {
     addiw(Rd, Rn, -decrement);
   } else {
@@ -117,30 +117,30 @@ void Assembler::_li(Register Rd, int64_t imm) {
 }
 
 void Assembler::li64(Register Rd, int64_t imm) {
-   // Load upper 32 bits. upper = imm[63:32], but if imm[31] == 1 or
-   // (imm[31:28] == 0x7ff && imm[19] == 1), upper = imm[63:32] + 1.
-   int64_t lower = imm & 0xffffffff;
-   lower -= ((lower << 44) >> 44);
-   int64_t tmp_imm = ((uint64_t)(imm & 0xffffffff00000000)) + (uint64_t)lower;
-   int32_t upper = (tmp_imm - (int32_t)lower) >> 32;
+  // Load upper 32 bits. upper = imm[63:32], but if imm[31] == 1 or
+  // (imm[31:20] == 0x7ff && imm[19] == 1), upper = imm[63:32] + 1.
+  int64_t lower = imm & 0xffffffff;
+  lower -= ((lower << 44) >> 44);
+  int64_t tmp_imm = ((uint64_t)(imm & 0xffffffff00000000)) + (uint64_t)lower;
+  int32_t upper = (tmp_imm - (int32_t)lower) >> 32;
 
-   // Load upper 32 bits
-   int64_t up = upper, lo = upper;
-   lo = (lo << 52) >> 52;
-   up -= lo;
-   up = (int32_t)up;
-   lui(Rd, up);
-   addi(Rd, Rd, lo);
+  // Load upper 32 bits
+  int64_t up = upper, lo = upper;
+  lo = (lo << 52) >> 52;
+  up -= lo;
+  up = (int32_t)up;
+  lui(Rd, up);
+  addi(Rd, Rd, lo);
 
-   // Load the rest 32 bits.
-   slli(Rd, Rd, 12);
-   addi(Rd, Rd, (int32_t)lower >> 20);
-   slli(Rd, Rd, 12);
-   lower = ((int32_t)imm << 12) >> 20;
-   addi(Rd, Rd, lower);
-   slli(Rd, Rd, 8);
-   lower = imm & 0xff;
-   addi(Rd, Rd, lower);
+  // Load the rest 32 bits.
+  slli(Rd, Rd, 12);
+  addi(Rd, Rd, (int32_t)lower >> 20);
+  slli(Rd, Rd, 12);
+  lower = ((int32_t)imm << 12) >> 20;
+  addi(Rd, Rd, lower);
+  slli(Rd, Rd, 8);
+  lower = imm & 0xff;
+  addi(Rd, Rd, lower);
 }
 
 void Assembler::li32(Register Rd, int32_t imm) {
@@ -273,7 +273,7 @@ void Assembler::wrap_label(Register Rt, Label &L, jal_jalr_insn insn) {
 }
 
 void Assembler::movptr_with_offset(Register Rd, address addr, int32_t &offset) {
-  uintptr_t imm64 = (uintptr_t)addr;
+  int64_t imm64 = (int64_t)addr;
 #ifndef PRODUCT
   {
     char buffer[64];
@@ -281,10 +281,10 @@ void Assembler::movptr_with_offset(Register Rd, address addr, int32_t &offset) {
     block_comment(buffer);
   }
 #endif
-  assert(is_unsigned_imm_in_range(imm64, 47, 0) || (imm64 == (uintptr_t)-1),
-         "48-bit overflow in address constant");
-  // Load upper 32 bits
-  int32_t imm = imm64 >> 16;
+  assert(is_unsigned_imm_in_range(imm64, 47, 0) || (imm64 == (int64_t)-1),
+         "bit 47 overflows in address constant");
+  // Load upper 31 bits
+  int64_t imm = imm64 >> 17;
   int64_t upper = imm, lower = imm;
   lower = (lower << 52) >> 52;
   upper -= lower;
@@ -292,13 +292,13 @@ void Assembler::movptr_with_offset(Register Rd, address addr, int32_t &offset) {
   lui(Rd, upper);
   addi(Rd, Rd, lower);
 
-  // Load the rest 16 bits.
+  // Load the rest 17 bits.
   slli(Rd, Rd, 11);
-  addi(Rd, Rd, (imm64 >> 5) & 0x7ff);
-  slli(Rd, Rd, 5);
+  addi(Rd, Rd, (imm64 >> 6) & 0x7ff);
+  slli(Rd, Rd, 6);
 
   // This offset will be used by following jalr/ld.
-  offset = imm64 & 0x1f;
+  offset = imm64 & 0x3f;
 }
 
 void Assembler::movptr(Register Rd, uintptr_t imm64) {

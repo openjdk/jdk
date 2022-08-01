@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -208,6 +208,11 @@ inline void WriterHost<BE, IE, WriterPolicyImpl>::write(char* value) {
 }
 
 template <typename BE, typename IE, typename WriterPolicyImpl>
+inline void WriterHost<BE, IE, WriterPolicyImpl>::write_empty_string() {
+  write<u1>(EMPTY_STRING);
+}
+
+template <typename BE, typename IE, typename WriterPolicyImpl>
 inline void WriterHost<BE, IE, WriterPolicyImpl>::write(jstring string) {
   if (string == NULL) {
     write<u1>(NULL_STRING);
@@ -217,7 +222,7 @@ inline void WriterHost<BE, IE, WriterPolicyImpl>::write(jstring string) {
   assert(string_oop != NULL, "invariant");
   const size_t length = (size_t)java_lang_String::length(string_oop);
   if (0 == length) {
-    write<u1>(EMPTY_STRING);
+    write_empty_string();
     return;
   }
   const bool is_latin1_encoded = java_lang_String::is_latin1(string_oop);

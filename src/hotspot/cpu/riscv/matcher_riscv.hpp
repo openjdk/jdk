@@ -163,7 +163,23 @@
 
   // Returns pre-selection estimated size of a vector operation.
   static int vector_op_pre_select_sz_estimate(int vopc, BasicType ety, int vlen) {
-    return 0;
+    switch(vopc) {
+      default: return 0;
+      case Op_RoundVF: // fall through
+      case Op_RoundVD: {
+        return 30;
+      }
+    }
+  }
+  // Returns pre-selection estimated size of a scalar operation.
+  static int scalar_op_pre_select_sz_estimate(int vopc, BasicType ety) {
+    switch(vopc) {
+      default: return 0;
+      case Op_RoundF: // fall through
+      case Op_RoundD: {
+        return 30;
+      }
+    }
   }
 
 #endif // CPU_RISCV_MATCHER_RISCV_HPP

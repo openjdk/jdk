@@ -82,7 +82,6 @@ ciMethod::ciMethod(const methodHandle& h_m, ciInstanceKlass* holder) :
   _max_stack          = h_m->max_stack();
   _max_locals         = h_m->max_locals();
   _code_size          = h_m->code_size();
-  _intrinsic_id       = h_m->intrinsic_id();
   _handler_count      = h_m->exception_table_length();
   _size_of_parameters = h_m->size_of_parameters();
   _uses_monitors      = h_m->access_flags().has_monitor_bytecodes();
@@ -101,6 +100,10 @@ ciMethod::ciMethod(const methodHandle& h_m, ciInstanceKlass* holder) :
   _flow               = NULL;
   _bcea               = NULL;
 #endif // COMPILER2
+
+  // Check for blackhole intrinsic and then populate the intrinsic ID.
+  CompilerOracle::tag_blackhole_if_possible(h_m);
+  _intrinsic_id       = h_m->intrinsic_id();
 
   ciEnv *env = CURRENT_ENV;
   if (env->jvmti_can_hotswap_or_post_breakpoint()) {
@@ -157,8 +160,6 @@ ciMethod::ciMethod(const methodHandle& h_m, ciInstanceKlass* holder) :
     ciReplay::initialize(this);
   }
 #endif
-
-  CompilerOracle::tag_blackhole_if_possible(h_m);
 }
 
 
@@ -984,7 +985,7 @@ bool ciMethod::ensure_method_data(const methodHandle& h_m) {
     return true;
   }
   if (h_m()->method_data() == NULL) {
-    Method::build_interpreter_method_data(h_m, THREAD);
+    Method::build_profiling_method_data(h_m, THREAD);
     if (HAS_PENDING_EXCEPTION) {
       CLEAR_PENDING_EXCEPTION;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,11 +27,15 @@
 #include "jni_util.h"
 #include "jlong.h"
 
+#include "nio.h"
+
+#include <stdlib.h>
 #include <unistd.h>
 #include <errno.h>
 
 #if defined(__linux__)
 #include <sys/sendfile.h>
+#include <fcntl.h>
 #elif defined(_ALLBSD_SOURCE)
 #include <copyfile.h>
 #endif
@@ -68,14 +72,28 @@ int fcopyfile_callback(int what, int stage, copyfile_state_t state,
 }
 #endif
 
-// Transfer via user-space buffers
-void transfer(JNIEnv* env, jint dst, jint src, volatile jint* cancel)
+// Copy via an intermediate temporary direct buffer
+JNIEXPORT void JNICALL
+Java_sun_nio_fs_UnixCopyFile_bufferedCopy0
+    (JNIEnv* env, jclass this, jint dst, jint src, jlong address,
+    jint transferSize, jlong cancelAddress)
 {
-    char buf[8192];
+    volatile jint* cancel = (jint*)jlong_to_ptr(cancelAddress);
+
+    char* buf = (char*)jlong_to_ptr(address);
+
+#if defined(__linux__)
+    int advice = POSIX_FADV_SEQUENTIAL | // sequential data access
+                 POSIX_FADV_NOREUSE    | // will access only once
+                 POSIX_FADV_WILLNEED;    // will access in near future
+
+    // ignore the return value hence any failure
+    posix_fadvise(src, 0, 0, advice);
+#endif
 
     for (;;) {
         ssize_t n, pos, len;
-        RESTARTABLE(read((int)src, &buf, sizeof(buf)), n);
+        RESTARTABLE(read((int)src, buf, transferSize), n);
         if (n <= 0) {
             if (n < 0)
                 throwUnixException(env, errno);
@@ -101,12 +119,18 @@ void transfer(JNIEnv* env, jint dst, jint src, volatile jint* cancel)
     }
 }
 
-/**
- * Transfer all bytes from src to dst within the kernel if possible (Linux),
- * otherwise via user-space buffers
- */
-JNIEXPORT void JNICALL
-Java_sun_nio_fs_UnixCopyFile_transfer
+// Copy all bytes from src to dst, within the kernel if possible (Linux),
+// and return zero, otherwise return the appropriate status code.
+//
+// Return value
+//   0 on success
+//   IOS_UNAVAILABLE if the platform function would block
+//   IOS_UNSUPPORTED_CASE if the call does not work with the given parameters
+//   IOS_UNSUPPORTED if direct copying is not supported on this platform
+//   IOS_THROWN if a Java exception is thrown
+//
+JNIEXPORT jint JNICALL
+Java_sun_nio_fs_UnixCopyFile_directCopy0
     (JNIEnv* env, jclass this, jint dst, jint src, jlong cancelAddress)
 {
     volatile jint* cancel = (jint*)jlong_to_ptr(cancelAddress);
@@ -119,20 +143,21 @@ Java_sun_nio_fs_UnixCopyFile_transfer
     ssize_t bytes_sent;
     do {
         RESTARTABLE(sendfile64(dst, src, NULL, count), bytes_sent);
-        if (bytes_sent == -1) {
-            if (errno == EINVAL || errno == ENOSYS) {
-                // Fall back to copying via user-space buffers
-                transfer(env, dst, src, cancel);
-            } else {
-                throwUnixException(env, errno);
-            }
-            return;
+        if (bytes_sent < 0) {
+            if (errno == EAGAIN)
+                return IOS_UNAVAILABLE;
+            if (errno == EINVAL || errno == ENOSYS)
+                return IOS_UNSUPPORTED_CASE;
+            throwUnixException(env, errno);
+            return IOS_THROWN;
         }
         if (cancel != NULL && *cancel != 0) {
             throwUnixException(env, ECANCELED);
-            return;
+            return IOS_THROWN;
         }
     } while (bytes_sent > 0);
+
+    return 0;
 #elif defined(_ALLBSD_SOURCE)
     copyfile_state_t state;
     if (cancel != NULL) {
@@ -147,11 +172,13 @@ Java_sun_nio_fs_UnixCopyFile_transfer
         if (state != NULL)
             copyfile_state_free(state);
         throwUnixException(env, errno_fcopyfile);
-        return;
+        return IOS_THROWN;
     }
     if (state != NULL)
         copyfile_state_free(state);
+
+    return 0;
 #else
-    transfer(env, dst, src, cancel);
+    return IOS_UNSUPPORTED;
 #endif
 }

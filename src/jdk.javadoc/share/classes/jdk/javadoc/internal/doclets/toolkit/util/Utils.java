@@ -124,7 +124,6 @@ import static javax.lang.model.element.ElementKind.*;
 import static javax.lang.model.type.TypeKind.*;
 
 import static com.sun.source.doctree.DocTree.Kind.*;
-import static jdk.javadoc.internal.doclets.toolkit.builders.ConstantsSummaryBuilder.MAX_CONSTANT_VALUE_INDEX_LENGTH;
 
 /**
  * Utilities Class for Doclets.
@@ -777,13 +776,13 @@ public class Utils {
     }
 
     /**
-     * Returns all the implemented super-interfaces of a given type,
-     * in the case of classes, include all the super-interfaces of
-     * the supertype. The super-interfaces are collected before the
-     * super-interfaces of the supertype.
+     * Returns all the implemented superinterfaces of a given type,
+     * in the case of classes, include all the superinterfaces of
+     * the supertype. The superinterfaces are collected before the
+     * superinterfaces of the supertype.
      *
-     * @param  te the type element to get the super-interfaces for.
-     * @return the list of super-interfaces.
+     * @param  te the type element to get the superinterfaces for.
+     * @return the list of superinterfaces.
      */
     public Set<TypeMirror> getAllInterfaces(TypeElement te) {
         Set<TypeMirror> results = new LinkedHashSet<>();
@@ -903,22 +902,6 @@ public class Utils {
                     : configuration.workArounds.searchClass(encl, className);
         }
         return searchResult;
-    }
-
-    /**
-     * Parse the package name.  We only want to display package name up to
-     * 2 levels.
-     */
-    public String parsePackageName(PackageElement p) {
-        String pkgname = p.isUnnamed() ? "" : getPackageName(p);
-        int index = -1;
-        for (int j = 0; j < MAX_CONSTANT_VALUE_INDEX_LENGTH; j++) {
-            index = pkgname.indexOf(".", index + 1);
-        }
-        if (index != -1) {
-            pkgname = pkgname.substring(0, index);
-        }
-        return pkgname;
     }
 
     /**
@@ -1102,9 +1085,9 @@ public class Utils {
     }
 
     /**
-     * Given a class, return the closest visible super class.
+     * Given a class, return the closest visible superclass.
      * @param type the TypeMirror to be interrogated
-     * @return  the closest visible super class.  Return null if it cannot
+     * @return  the closest visible superclass.  Return null if it cannot
      *          be found.
      */
     public TypeMirror getFirstVisibleSuperClass(TypeMirror type) {
@@ -1113,10 +1096,10 @@ public class Utils {
 
 
     /**
-     * Given a class, return the closest visible super class.
+     * Given a class, return the closest visible superclass.
      *
      * @param te the TypeElement to be interrogated
-     * @return the closest visible super class.  Return null if it cannot
+     * @return the closest visible superclass.  Return null if it cannot
      *         be found.
      */
     public TypeMirror getFirstVisibleSuperClass(TypeElement te) {
@@ -1235,18 +1218,17 @@ public class Utils {
         for (int i = 0; i < textLength; i++) {
             char ch = text.charAt(i);
             switch (ch) {
-                case '\n': case '\r':
-                    lineLength = 0;
-                    break;
-                case '\t':
+                case '\n', '\r' -> lineLength = 0;
+
+                case '\t' -> {
                     result.append(text, pos, i);
                     int spaceCount = tabLength - lineLength % tabLength;
                     result.append(whitespace, 0, spaceCount);
                     lineLength += spaceCount;
                     pos = i + 1;
-                    break;
-                default:
-                    lineLength++;
+                }
+
+                default -> lineLength++;
             }
         }
         result.append(text, pos, textLength);
@@ -1261,18 +1243,18 @@ public class Utils {
         for (int i = 0; i < textLength; i++) {
             char ch = text.charAt(i);
             switch (ch) {
-                case '\n':
+                case '\n' -> {
                     sb.append(text, pos, i);
                     sb.append(NL);
                     pos = i + 1;
-                    break;
-                case '\r':
+                }
+                case '\r' -> {
                     sb.append(text, pos, i);
                     sb.append(NL);
                     if (i + 1 < textLength && text.charAt(i + 1) == '\n')
                         i++;
                     pos = i + 1;
-                    break;
+                }
             }
         }
         sb.append(text, pos, textLength);
@@ -1438,26 +1420,6 @@ public class Utils {
     }
 
     /**
-     * Compares two elements.
-     * @param e1 first Element
-     * @param e2 second Element
-     * @return a true if they are the same, false otherwise.
-     */
-    public boolean elementsEqual(Element e1, Element e2) {
-        if (e1.getKind() != e2.getKind()) {
-            return false;
-        }
-        String s1 = getSimpleName(e1);
-        String s2 = getSimpleName(e2);
-        if (compareStrings(s1, s2) == 0) {
-            String f1 = getFullyQualifiedName(e1, true);
-            String f2 = getFullyQualifiedName(e2, true);
-            return compareStrings(f1, f2) == 0;
-        }
-        return false;
-    }
-
-    /**
      * A general purpose case insensitive String comparator, which compares
      * two Strings using a Collator strength of "TERTIARY".
      *
@@ -1493,28 +1455,26 @@ public class Utils {
         loop:
         for (DocTree dt : preamble) {
             switch (dt.getKind()) {
-                case START_ELEMENT:
-                    StartElementTree nodeStart = (StartElementTree)dt;
+                case START_ELEMENT -> {
+                    StartElementTree nodeStart = (StartElementTree) dt;
                     if (Utils.toLowerCase(nodeStart.getName().toString()).equals("title")) {
                         titleFound = true;
                     }
-                    break;
-
-                case END_ELEMENT:
-                    EndElementTree nodeEnd = (EndElementTree)dt;
+                }
+                case END_ELEMENT -> {
+                    EndElementTree nodeEnd = (EndElementTree) dt;
                     if (Utils.toLowerCase(nodeEnd.getName().toString()).equals("title")) {
                         break loop;
                     }
-                    break;
-
-                case TEXT:
-                    TextTree nodeText = (TextTree)dt;
+                }
+                case TEXT -> {
+                    TextTree nodeText = (TextTree) dt;
                     if (titleFound)
                         sb.append(nodeText.getBody());
-                    break;
-
-                default:
-                    // do nothing
+                }
+                default -> {
+                }
+                // do nothing
             }
         }
         return sb.toString().trim();
@@ -1528,8 +1488,9 @@ public class Utils {
             instance = createCollator(locale);
             instance.setStrength(strength);
 
-            keys = new LinkedHashMap<String, CollationKey>(MAX_SIZE + 1, 0.75f, true) {
+            keys = new LinkedHashMap<>(MAX_SIZE + 1, 0.75f, true) {
                 private static final long serialVersionUID = 1L;
+
                 @Override
                 protected boolean removeEldestEntry(Entry<String, CollationKey> eldest) {
                     return size() > MAX_SIZE;
@@ -1916,7 +1877,7 @@ public class Utils {
 
     public boolean shouldDocument(Element e) {
         if (shouldDocumentVisitor == null) {
-            shouldDocumentVisitor = new SimpleElementVisitor14<Boolean, Void>() {
+            shouldDocumentVisitor = new SimpleElementVisitor14<>() {
                 private boolean hasSource(TypeElement e) {
                     return configuration.docEnv.getFileKind(e) ==
                             javax.tools.JavaFileObject.Kind.SOURCE;
@@ -1925,7 +1886,7 @@ public class Utils {
                 // handle types
                 @Override
                 public Boolean visitType(TypeElement e, Void p) {
-                    // treat inner classes etc as members
+                    // treat inner classes etc. as members
                     if (e.getNestingKind().isNested()) {
                         return defaultAction(e, p);
                     }
@@ -2195,18 +2156,6 @@ public class Utils {
         return mdle.getQualifiedName().toString();
     }
 
-    public boolean isStartElement(DocTree doctree) {
-        return isKind(doctree, START_ELEMENT);
-    }
-
-    public boolean isText(DocTree doctree) {
-        return isKind(doctree, TEXT);
-    }
-
-    private boolean isKind(DocTree doctree, DocTree.Kind match) {
-        return  doctree.getKind() == match;
-    }
-
     private final CommentHelperCache commentHelperCache = new CommentHelperCache(this);
 
     public CommentHelper getCommentHelper(Element element) {
@@ -2232,7 +2181,7 @@ public class Utils {
                 .toList();
     }
 
-    public <T extends DocTree> List<? extends T> getBlockTags(Element element, Predicate<DocTree> filter, Class<T> tClass) {
+    public <T extends DocTree> List<T> getBlockTags(Element element, Predicate<DocTree> filter, Class<T> tClass) {
         return getBlockTags(element).stream()
                 .filter(t -> t.getKind() != ERRONEOUS)
                 .filter(filter)
@@ -2479,21 +2428,21 @@ public class Utils {
         return getBlockTags(field, DocTree.Kind.SERIAL_FIELD, SerialFieldTree.class);
     }
 
-    public List<? extends ThrowsTree> getThrowsTrees(Element element) {
+    public List<ThrowsTree> getThrowsTrees(Element element) {
         return getBlockTags(element,
                 t -> switch (t.getKind()) { case EXCEPTION, THROWS -> true; default -> false; },
                 ThrowsTree.class);
     }
 
-    public List<? extends ParamTree> getTypeParamTrees(Element element) {
+    public List<ParamTree> getTypeParamTrees(Element element) {
         return getParamTrees(element, true);
     }
 
-    public List<? extends ParamTree> getParamTrees(Element element) {
+    public List<ParamTree> getParamTrees(Element element) {
         return getParamTrees(element, false);
     }
 
-    private  List<? extends ParamTree> getParamTrees(Element element, boolean isTypeParameters) {
+    private  List<ParamTree> getParamTrees(Element element, boolean isTypeParameters) {
         return getBlockTags(element,
                 t -> t.getKind() == PARAM && ((ParamTree) t).isTypeParameter() == isTypeParameters,
                 ParamTree.class);
@@ -2547,7 +2496,7 @@ public class Utils {
             return prev == null ? null : prev.get();
         }
 
-        public CommentHelper get(Object key) {
+        public CommentHelper get(Element key) {
             SoftReference<CommentHelper> value = map.get(key);
             return value == null ? null : value.get();
         }
@@ -2812,7 +2761,7 @@ public class Utils {
     }
 
     /**
-     * An element can have flags that place it into some sub-categories, like
+     * An element can have flags that place it into some subcategories, like
      * being a preview or a deprecated element.
      */
     public enum ElementFlag {
@@ -2855,7 +2804,7 @@ public class Utils {
     }
 
     public interface PreviewFlagProvider {
-        public boolean isPreview(Element el);
+        boolean isPreview(Element el);
     }
 
 }

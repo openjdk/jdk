@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -816,23 +816,6 @@ bool MachCallRuntimeNode::cmp( const Node &n ) const {
 #ifndef PRODUCT
 void MachCallRuntimeNode::dump_spec(outputStream *st) const {
   st->print("%s ",_name);
-  MachCallNode::dump_spec(st);
-}
-#endif
-//=============================================================================
-uint MachCallNativeNode::size_of() const { return sizeof(*this); }
-bool MachCallNativeNode::cmp( const Node &n ) const {
-  MachCallNativeNode &call = (MachCallNativeNode&)n;
-  return MachCallNode::cmp(call) && !strcmp(_name,call._name)
-    && _arg_regs == call._arg_regs && _ret_regs == call._ret_regs;
-}
-#ifndef PRODUCT
-void MachCallNativeNode::dump_spec(outputStream *st) const {
-  st->print("%s ",_name);
-  st->print("_arg_regs: ");
-  CallNativeNode::print_regs(_arg_regs, st);
-  st->print("_ret_regs: ");
-  CallNativeNode::print_regs(_ret_regs, st);
   MachCallNode::dump_spec(st);
 }
 #endif

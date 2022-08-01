@@ -44,6 +44,7 @@
 #include "gc/shared/weakProcessor.inline.hpp"
 #include "gc/shared/workerPolicy.hpp"
 #include "logging/log.hpp"
+#include "runtime/continuation.hpp"
 #include "runtime/handles.inline.hpp"
 #include "utilities/debug.hpp"
 
@@ -66,7 +67,7 @@ static void update_derived_pointers() {
 }
 
 G1CMBitMap* G1FullCollector::mark_bitmap() {
-  return _heap->concurrent_mark()->next_mark_bitmap();
+  return _heap->concurrent_mark()->mark_bitmap();
 }
 
 ReferenceProcessor* G1FullCollector::reference_processor() {
@@ -118,8 +119,8 @@ G1FullCollector::G1FullCollector(G1CollectedHeap* heap,
     _oop_queue_set(_num_workers),
     _array_queue_set(_num_workers),
     _preserved_marks_set(true),
-    _serial_compaction_point(),
-    _is_alive(this, heap->concurrent_mark()->next_mark_bitmap()),
+    _serial_compaction_point(this),
+    _is_alive(this, heap->concurrent_mark()->mark_bitmap()),
     _is_alive_mutator(heap->ref_processor_stw(), &_is_alive),
     _always_subject_to_discovery(),
     _is_subject_mutator(heap->ref_processor_stw(), &_always_subject_to_discovery),
@@ -131,13 +132,15 @@ G1FullCollector::G1FullCollector(G1CollectedHeap* heap,
   _compaction_points = NEW_C_HEAP_ARRAY(G1FullGCCompactionPoint*, _num_workers, mtGC);
 
   _live_stats = NEW_C_HEAP_ARRAY(G1RegionMarkStats, _heap->max_regions(), mtGC);
+  _compaction_tops = NEW_C_HEAP_ARRAY(HeapWord*, _heap->max_regions(), mtGC);
   for (uint j = 0; j < heap->max_regions(); j++) {
     _live_stats[j].clear();
+    _compaction_tops[j] = nullptr;
   }
 
   for (uint i = 0; i < _num_workers; i++) {
     _markers[i] = new G1FullGCMarker(this, i, _preserved_marks_set.get(i), _live_stats);
-    _compaction_points[i] = new G1FullGCCompactionPoint();
+    _compaction_points[i] = new G1FullGCCompactionPoint(this);
     _oop_queue_set.register_queue(i, marker(i)->oop_stack());
     _array_queue_set.register_queue(i, marker(i)->objarray_stack());
   }
@@ -151,6 +154,7 @@ G1FullCollector::~G1FullCollector() {
   }
   FREE_C_HEAP_ARRAY(G1FullGCMarker*, _markers);
   FREE_C_HEAP_ARRAY(G1FullGCCompactionPoint*, _compaction_points);
+  FREE_C_HEAP_ARRAY(HeapWord*, _compaction_tops);
   FREE_C_HEAP_ARRAY(G1RegionMarkStats, _live_stats);
 }
 
@@ -170,8 +174,13 @@ public:
 void G1FullCollector::prepare_collection() {
   _heap->policy()->record_full_collection_start();
 
-  _heap->abort_concurrent_cycle();
+  // Verification needs the bitmap, so we should clear the bitmap only later.
+  bool in_concurrent_cycle = _heap->abort_concurrent_cycle();
   _heap->verify_before_full_collection(scope()->is_explicit_gc());
+  if (in_concurrent_cycle) {
+    GCTraceTime(Debug, gc) debug("Clear Bitmap");
+    _heap->concurrent_mark()->clear_bitmap(_heap->workers());
+  }
 
   _heap->gc_prologue(true);
   _heap->retire_tlabs();
@@ -187,6 +196,8 @@ void G1FullCollector::prepare_collection() {
 }
 
 void G1FullCollector::collect() {
+  G1CollectedHeap::start_codecache_marking_cycle_if_inactive();
+
   phase1_mark_live_objects();
   verify_after_marking();
 
@@ -198,6 +209,9 @@ void G1FullCollector::collect() {
   phase3_adjust_pointers();
 
   phase4_do_compaction();
+
+  Continuations::on_gc_marking_cycle_finish();
+  Continuations::arm_all_nmethods();
 }
 
 void G1FullCollector::complete_collection() {
@@ -208,9 +222,8 @@ void G1FullCollector::complete_collection() {
   // update the derived pointer table.
   update_derived_pointers();
 
-  _heap->concurrent_mark()->swap_mark_bitmaps();
   // Prepare the bitmap for the next (potentially concurrent) marking.
-  _heap->concurrent_mark()->clear_next_bitmap(_heap->workers());
+  _heap->concurrent_mark()->clear_bitmap(_heap->workers());
 
   _heap->prepare_heap_for_mutators();
 
@@ -357,7 +370,7 @@ void G1FullCollector::phase2c_prepare_serial_compaction() {
     } else {
       assert(!current->is_humongous(), "Should be no humongous regions in compaction queue");
       G1SerialRePrepareClosure re_prepare(cp, current);
-      current->set_compaction_top(current->bottom());
+      set_compaction_top(current, current->bottom());
       current->apply_to_marked_objects(mark_bitmap(), &re_prepare);
     }
   }
@@ -414,5 +427,5 @@ void G1FullCollector::verify_after_marking() {
   // (including hash values) are restored to the appropriate
   // objects.
   GCTraceTime(Info, gc, verify) tm("Verifying During GC (full)");
-  _heap->verify(VerifyOption_G1UseFullMarking);
+  _heap->verify(VerifyOption::G1UseFullMarking);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,6 +54,7 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
+import jdk.jpackage.internal.AppImageFile.LauncherInfo;
 
 import static jdk.jpackage.internal.OverridableResource.createResource;
 import static jdk.jpackage.internal.StandardBundlerParam.ABOUT_URL;
@@ -156,6 +157,14 @@ public class WinMsiBundler  extends AbstractBundler {
             Path.class,
             null,
             (s, p) -> null);
+
+    static final StandardBundlerParam<InstallableFile> SERVICE_INSTALLER
+            = new StandardBundlerParam<>(
+                    "win.msi.serviceInstaller",
+                    InstallableFile.class,
+                    null,
+                    null
+            );
 
     public static final StandardBundlerParam<Boolean> MSI_SYSTEM_WIDE  =
             new StandardBundlerParam<>(
@@ -323,6 +332,15 @@ public class WinMsiBundler  extends AbstractBundler {
 
             FileAssociation.verify(FileAssociation.fetchFrom(params));
 
+            var serviceInstallerResource = initServiceInstallerResource(params);
+            if (serviceInstallerResource != null) {
+                if (!Files.exists(serviceInstallerResource.getExternalPath())) {
+                    throw new ConfigException(I18N.getString(
+                            "error.missing-service-installer"), I18N.getString(
+                                    "error.missing-service-installer.advice"));
+                }
+            }
+
             return true;
         } catch (RuntimeException re) {
             if (re.getCause() instanceof ConfigException) {
@@ -364,10 +382,12 @@ public class WinMsiBundler  extends AbstractBundler {
                     .runtimeDirectory()
                     .resolve(Path.of("bin", "java.exe"));
         } else {
-            installerIcon = ApplicationLayout.windowsAppImage()
-                    .resolveAt(appDir)
-                    .launchersDirectory()
+            var appLayout = ApplicationLayout.windowsAppImage().resolveAt(appDir);
+
+            installerIcon = appLayout.launchersDirectory()
                     .resolve(appName + ".exe");
+
+            new PackageFile(appName).save(appLayout);
         }
         installerIcon = installerIcon.toAbsolutePath();
 
@@ -384,6 +404,13 @@ public class WinMsiBundler  extends AbstractBundler {
             IOUtils.copyFile(lfile, destFile);
             destFile.toFile().setWritable(true);
             ensureByMutationFileIsRTF(destFile);
+        }
+
+        var serviceInstallerResource = initServiceInstallerResource(params);
+        if (serviceInstallerResource != null) {
+            var serviceInstallerPath = serviceInstallerResource.getExternalPath();
+            params.put(SERVICE_INSTALLER.getID(), new InstallableFile(
+                    serviceInstallerPath, serviceInstallerPath.getFileName()));
         }
     }
 
@@ -676,9 +703,35 @@ public class WinMsiBundler  extends AbstractBundler {
 
     }
 
+    private static OverridableResource initServiceInstallerResource(
+            Map<String, ? super Object> params) {
+        if (StandardBundlerParam.isRuntimeInstaller(params)) {
+            // Runtime installer doesn't install launchers,
+            // service installer not needed
+            return null;
+        }
+
+        if (!AppImageFile.getLaunchers(
+                StandardBundlerParam.getPredefinedAppImage(params), params).stream().anyMatch(
+                LauncherInfo::isService)) {
+            // Not a single launcher is requested to be installed as a service,
+            // service installer not needed
+            return null;
+        }
+
+        var result = createResource(null, params)
+                .setPublicName("service-installer.exe")
+                .setSourceOrder(OverridableResource.Source.External);
+        if (result.getResourceDir() == null) {
+            return null;
+        }
+
+        return result.setExternal(result.getResourceDir().resolve(
+                result.getPublicName()));
+    }
+
     private Path installerIcon;
     private Map<WixTool, WixTool.ToolInfo> wixToolset;
     private AppImageBundler appImageBundler;
-    private List<WixFragmentBuilder> wixFragments;
-
+    private final List<WixFragmentBuilder> wixFragments;
 }

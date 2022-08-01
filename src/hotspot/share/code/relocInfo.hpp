@@ -268,7 +268,9 @@ class relocInfo {
     trampoline_stub_type    = 13, // stub-entry for trampoline
     runtime_call_w_cp_type  = 14, // Runtime call which may load its target from the constant pool
     data_prefix_tag         = 15, // tag for a prefix (carries data arguments)
-    type_mask               = 15  // A mask which selects only the above values
+    post_call_nop_type      = 16, // A tag for post call nop relocations
+    entry_guard_type        = 17, // A tag for an nmethod entry barrier guard value
+    type_mask               = 31  // A mask which selects only the above values
   };
 
  private:
@@ -307,12 +309,14 @@ class relocInfo {
     visitor(poll_return) \
     visitor(section_word) \
     visitor(trampoline_stub) \
+    visitor(post_call_nop) \
+    visitor(entry_guard) \
 
 
  public:
   enum {
     value_width             = sizeof(unsigned short) * BitsPerByte,
-    type_width              = 4,   // == log2(type_mask+1)
+    type_width              = 5,   // == log2(type_mask+1)
     nontype_width           = value_width - type_width,
     datalen_width           = nontype_width-1,
     datalen_tag             = 1 << datalen_width,  // or-ed into _value
@@ -866,6 +870,32 @@ class DataRelocation : public Relocation {
   // set-hi instructions are ignored, and must not affect the high-half
   // immediate constant.  The "o" arguments for the set-lo instructions are
   // added into the low-half immediate constant, and must not overflow it.
+};
+
+class post_call_nop_Relocation : public Relocation {
+  friend class RelocIterator;
+
+public:
+  post_call_nop_Relocation() : Relocation(relocInfo::post_call_nop_type) { }
+
+  static RelocationHolder spec() {
+    RelocationHolder rh = newHolder();
+    new(rh) post_call_nop_Relocation();
+    return rh;
+  }
+};
+
+class entry_guard_Relocation : public Relocation {
+  friend class RelocIterator;
+
+public:
+  entry_guard_Relocation() : Relocation(relocInfo::entry_guard_type) { }
+
+  static RelocationHolder spec() {
+    RelocationHolder rh = newHolder();
+    new(rh) entry_guard_Relocation();
+    return rh;
+  }
 };
 
 // A CallRelocation always points at a call instruction.

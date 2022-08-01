@@ -55,6 +55,7 @@
 class JfrTraceIdEpoch : AllStatic {
   friend class JfrCheckpointManager;
  private:
+  static u2 _generation;
   static JfrSignal _tag_state;
   static bool _epoch_state;
   static bool _synchronizing;
@@ -71,8 +72,20 @@ class JfrTraceIdEpoch : AllStatic {
     return (address)&_epoch_state;
   }
 
+  static address epoch_generation_address() {
+    return (address)&_generation;
+  }
+
   static u1 current() {
     return _epoch_state ? (u1)1 : (u1)0;
+  }
+
+  static u2 epoch_generation() {
+    return _generation;
+  }
+
+  static bool is_current_epoch_generation(u2 generation) {
+    return _generation == generation;
   }
 
   static u1 previous() {

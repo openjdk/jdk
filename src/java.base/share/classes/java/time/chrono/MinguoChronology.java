@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,6 +69,7 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.ResolverStyle;
 import java.time.temporal.ChronoField;
+import java.time.temporal.IsoFields;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalField;
 import java.time.temporal.ValueRange;
@@ -333,6 +334,20 @@ public final class MinguoChronology extends AbstractChronology implements Serial
     @Override  // override for return type
     public MinguoDate resolveDate(Map<TemporalField, Long> fieldValues, ResolverStyle resolverStyle) {
         return (MinguoDate) super.resolveDate(fieldValues, resolverStyle);
+    }
+
+    //-----------------------------------------------------------------------
+    /**
+     * {@code MinguoChronology} is an ISO based chronology, which supports fields
+     * in {@link IsoFields}, such as {@link IsoFields#DAY_OF_QUARTER DAY_OF_QUARTER}
+     * and {@link IsoFields#QUARTER_OF_YEAR QUARTER_OF_YEAR}.
+     * @see IsoFields
+     * @return {@code true}
+     * @since 19
+     */
+    @Override
+    public boolean isIsoBased() {
+        return true;
     }
 
     //-----------------------------------------------------------------------

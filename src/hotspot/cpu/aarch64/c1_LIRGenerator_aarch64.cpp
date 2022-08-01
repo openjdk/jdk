@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -207,7 +207,7 @@ LIR_Address* LIRGenerator::emit_array_address(LIR_Opr array_opr, LIR_Opr index_o
   return generate_address(array_opr, index_opr, shift, offset_in_bytes, type);
 }
 
-LIR_Opr LIRGenerator::load_immediate(int x, BasicType type) {
+LIR_Opr LIRGenerator::load_immediate(jlong x, BasicType type) {
   LIR_Opr r;
   if (type == T_LONG) {
     r = LIR_OprFact::longConst(x);
@@ -217,7 +217,7 @@ LIR_Opr LIRGenerator::load_immediate(int x, BasicType type) {
       return tmp;
     }
   } else if (type == T_INT) {
-    r = LIR_OprFact::intConst(x);
+    r = LIR_OprFact::intConst(checked_cast<jint>(x));
     if (!Assembler::operand_valid_for_logical_immediate(true, x)) {
       // This is all rather nasty.  We don't know whether our constant
       // is required for a logical or an arithmetic operation, wo we
@@ -338,6 +338,17 @@ void LIRGenerator::do_MonitorExit(MonitorExit* x) {
   monitor_exit(obj_temp, lock, syncTempOpr(), LIR_OprFact::illegalOpr, x->monitor_no());
 }
 
+void LIRGenerator::do_continuation_doYield(Intrinsic* x) {
+  BasicTypeList signature(0);
+  CallingConvention* cc = frame_map()->java_calling_convention(&signature, true);
+
+  const LIR_Opr result_reg = result_register_for(x->type());
+  address entry = StubRoutines::cont_doYield();
+  LIR_Opr result = rlock_result(x);
+  CodeEmitInfo* info = state_for(x, x->state());
+  __ call_runtime(entry, LIR_OprFact::illegalOpr, result_reg, cc->args(), info);
+  __ move(result_reg, result);
+}
 
 void LIRGenerator::do_NegateOp(NegateOp* x) {
 
@@ -906,7 +917,6 @@ void LIRGenerator::do_update_CRC32(Intrinsic* x) {
   assert(UseCRC32Intrinsics, "why are we here?");
   // Make all state_for calls early since they can emit code
   LIR_Opr result = rlock_result(x);
-  int flags = 0;
   switch (x->id()) {
     case vmIntrinsics::_updateCRC32: {
       LIRItem crc(x->argument_at(0), this);
@@ -931,9 +941,9 @@ void LIRGenerator::do_update_CRC32(Intrinsic* x) {
 
       LIR_Opr index = off.result();
       int offset = is_updateBytes ? arrayOopDesc::base_offset_in_bytes(T_BYTE) : 0;
-      if(off.result()->is_constant()) {
+      if (off.result()->is_constant()) {
         index = LIR_OprFact::illegalOpr;
-       offset += off.result()->as_jint();
+        offset += off.result()->as_jint();
       }
       LIR_Opr base_op = buf.result();
 
@@ -983,7 +993,6 @@ void LIRGenerator::do_update_CRC32C(Intrinsic* x) {
   assert(UseCRC32CIntrinsics, "why are we here?");
   // Make all state_for calls early since they can emit code
   LIR_Opr result = rlock_result(x);
-  int flags = 0;
   switch (x->id()) {
     case vmIntrinsics::_updateBytesCRC32C:
     case vmIntrinsics::_updateDirectByteBufferCRC32C: {

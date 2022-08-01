@@ -45,10 +45,11 @@
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/javaThread.inline.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/os.hpp"
 #include "runtime/reflectionUtils.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/threads.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/vframe.hpp"
 #include "runtime/vmOperations.hpp"
@@ -1126,14 +1127,6 @@ u4 DumperSupport::get_static_fields_size(InstanceKlass* ik, u2& field_count) {
     }
   }
 
-  // Also provide a pointer to the init_lock if present, so there aren't unreferenced int[0]
-  // arrays.
-  oop init_lock = ik->init_lock();
-  if (init_lock != NULL) {
-    field_count++;
-    size += sizeof(address);
-  }
-
   // We write the value itself plus a name and a one byte type tag per field.
   return size + field_count * (sizeof(address) + 1);
 }
@@ -1170,14 +1163,6 @@ void DumperSupport::dump_static_fields(AbstractDumpWriter* writer, Klass* k) {
       writer->write_objectID(prev->constants()->resolved_references());
       prev = prev->previous_versions();
     }
-  }
-
-  // Add init lock to the end if the class is not yet initialized
-  oop init_lock = ik->init_lock();
-  if (init_lock != NULL) {
-    writer->write_symbolID(vmSymbols::init_lock_name());         // name
-    writer->write_u1(sig2tag(vmSymbols::int_array_signature())); // type
-    writer->write_objectID(init_lock);
   }
 }
 
@@ -2040,7 +2025,10 @@ int VM_HeapDumper::do_thread(JavaThread* java_thread, u4 thread_serial_num) {
     ResourceMark rm(current_thread);
     HandleMark hm(current_thread);
 
-    RegisterMap reg_map(java_thread);
+    RegisterMap reg_map(java_thread,
+                        RegisterMap::UpdateMap::include,
+                        RegisterMap::ProcessFrames::include,
+                        RegisterMap::WalkContinuation::skip);
     frame f = java_thread->last_frame();
     vframe* vf = vframe::new_vframe(&f, &reg_map, java_thread);
     frame* last_entry_frame = NULL;
@@ -2334,7 +2322,7 @@ void VM_HeapDumper::dump_stack_traces() {
       HandleMark hm(current_thread);
 
       ThreadStackTrace* stack_trace = new ThreadStackTrace(thread, false);
-      stack_trace->dump_stack_at_safepoint(-1, /* ObjectMonitorsHashtable is not needed here */ nullptr);
+      stack_trace->dump_stack_at_safepoint(-1, /* ObjectMonitorsHashtable is not needed here */ nullptr, true);
       _stack_traces[_num_threads++] = stack_trace;
 
       // write HPROF_FRAME records for this thread's stack trace

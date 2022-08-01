@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -23,17 +23,17 @@
 
 /*
  * @test
+ * @enablePreview
  * @run testng TestMemoryAlignment
  */
 
-import jdk.incubator.foreign.MemoryLayout;
-
-import jdk.incubator.foreign.GroupLayout;
-import jdk.incubator.foreign.MemoryLayout.PathElement;
-import jdk.incubator.foreign.MemorySegment;
-import jdk.incubator.foreign.ResourceScope;
-import jdk.incubator.foreign.SequenceLayout;
-import jdk.incubator.foreign.ValueLayout;
+import java.lang.foreign.GroupLayout;
+import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.MemoryLayout.PathElement;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.MemorySession;
+import java.lang.foreign.SequenceLayout;
+import java.lang.foreign.ValueLayout;
 import java.lang.invoke.VarHandle;
 import java.nio.ByteOrder;
 import java.util.stream.LongStream;
@@ -52,8 +52,8 @@ public class TestMemoryAlignment {
         ValueLayout aligned = layout.withBitAlignment(align);
         assertEquals(aligned.bitAlignment(), align); //unreasonable alignment here, to make sure access throws
         VarHandle vh = aligned.varHandle();
-        try (ResourceScope scope = ResourceScope.newConfinedScope()) {
-            MemorySegment segment = MemorySegment.allocateNative(aligned, scope);
+        try (MemorySession session = MemorySession.openConfined()) {
+            MemorySegment segment = MemorySegment.allocateNative(aligned, session);
             vh.set(segment, -42);
             int val = (int)vh.get(segment);
             assertEquals(val, -42);
@@ -70,8 +70,8 @@ public class TestMemoryAlignment {
         MemoryLayout alignedGroup = MemoryLayout.structLayout(MemoryLayout.paddingLayout(8), aligned);
         assertEquals(alignedGroup.bitAlignment(), align);
         VarHandle vh = aligned.varHandle();
-        try (ResourceScope scope = ResourceScope.newConfinedScope()) {
-            MemorySegment segment = MemorySegment.allocateNative(alignedGroup, scope);
+        try (MemorySession session = MemorySession.openConfined()) {
+            MemorySegment segment = MemorySegment.allocateNative(alignedGroup, session);
             vh.set(segment.asSlice(1L), -42);
             assertEquals(align, 8); //this is the only case where access is aligned
         } catch (IllegalArgumentException ex) {
@@ -97,8 +97,8 @@ public class TestMemoryAlignment {
         SequenceLayout layout = MemoryLayout.sequenceLayout(5, ValueLayout.JAVA_INT.withOrder(ByteOrder.BIG_ENDIAN).withBitAlignment(align));
         try {
             VarHandle vh = layout.varHandle(PathElement.sequenceElement());
-            try (ResourceScope scope = ResourceScope.newConfinedScope()) {
-                MemorySegment segment = MemorySegment.allocateNative(layout, scope);
+            try (MemorySession session = MemorySession.openConfined()) {
+                MemorySegment segment = MemorySegment.allocateNative(layout, session);
                 for (long i = 0 ; i < 5 ; i++) {
                     vh.set(segment, i, -42);
                 }
@@ -121,8 +121,8 @@ public class TestMemoryAlignment {
         VarHandle vh_c = g.varHandle(PathElement.groupElement("a"));
         VarHandle vh_s = g.varHandle(PathElement.groupElement("b"));
         VarHandle vh_i = g.varHandle(PathElement.groupElement("c"));
-        try (ResourceScope scope = ResourceScope.newConfinedScope()) {
-            MemorySegment segment = MemorySegment.allocateNative(g, scope);
+        try (MemorySession session = MemorySession.openConfined()) {
+            MemorySegment segment = MemorySegment.allocateNative(g, session);
             vh_c.set(segment, Byte.MIN_VALUE);
             assertEquals(vh_c.get(segment), Byte.MIN_VALUE);
             vh_s.set(segment, Short.MIN_VALUE);

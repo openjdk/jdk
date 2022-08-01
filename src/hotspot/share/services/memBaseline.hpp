@@ -88,7 +88,7 @@ class MemBaseline {
     _baseline_type(Not_baselined) {
   }
 
-  bool baseline(bool summaryOnly = true);
+  void baseline(bool summaryOnly = true);
 
   BaselineType baseline_type() const { return _baseline_type; }
 
@@ -188,7 +188,7 @@ class MemBaseline {
 
  private:
   // Baseline summary information
-  bool baseline_summary();
+  void baseline_summary();
 
   // Baseline allocation sites (detail tracking only)
   bool baseline_allocation_sites();

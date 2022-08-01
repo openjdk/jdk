@@ -259,7 +259,7 @@ constantTag ciBytecodeStream::get_constant_pool_tag(int index) const {
 // ------------------------------------------------------------------
 // ciBytecodeStream::get_raw_pool_tag
 //
-constantTag ciBytecodeStream::get_raw_pool_tag(int index) const {
+constantTag ciBytecodeStream::get_raw_pool_tag_at(int index) const {
   VM_ENTRY_MARK;
   return _method->get_Method()->constants()->tag_at(index);
 }

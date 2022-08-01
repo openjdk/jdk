@@ -147,7 +147,6 @@ Java_sun_nio_fs_BsdNativeDispatcher_fsstatEntry(JNIEnv* env, jclass this,
     char* dir;
     char* fstype;
     char* options;
-    dev_t dev;
 
     if (iter == NULL || iter->pos >= iter->nentries)
        return -1;

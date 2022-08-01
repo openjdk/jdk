@@ -31,7 +31,7 @@
 #include "logging/logMessage.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/objArrayOop.inline.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/javaThread.hpp"
 
 #define JFR_LOG_TAGS_CONCATED(T0, T1, T2, T3, T4, T5, ...)  \
   T0 ## _ ## T1 ## _ ## T2 ## _ ## T3 ## _ ## T4 ## _ ## T5

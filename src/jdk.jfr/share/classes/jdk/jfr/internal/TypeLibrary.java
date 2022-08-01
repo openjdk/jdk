@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -401,8 +401,8 @@ public final class TypeLibrary {
                     Class<?> ct = returnType.getComponentType();
                     if (Annotation.class.isAssignableFrom(ct) && ct.getAnnotation(Repeatable.class) != null) {
                         Object res = m.invoke(a, new Object[0]);
-                        if (res != null && Annotation[].class.isAssignableFrom(res.getClass())) {
-                            for (Annotation rep : (Annotation[]) m.invoke(a, new Object[0])) {
+                        if (res instanceof Annotation[] anns) {
+                            for (Annotation rep : anns) {
                                 annos.add(rep);
                             }
                             repeated = true;

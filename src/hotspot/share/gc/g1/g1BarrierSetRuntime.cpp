@@ -50,7 +50,7 @@ JRT_LEAF(void, G1BarrierSetRuntime::write_ref_field_pre_entry(oopDesc* orig, Jav
   assert(oopDesc::is_oop(orig, true /* ignore mark word */), "Error");
   // store the original value that was in the field reference
   SATBMarkQueue& queue = G1ThreadLocalData::satb_mark_queue(thread);
-  G1BarrierSet::satb_mark_queue_set().enqueue(queue, orig);
+  G1BarrierSet::satb_mark_queue_set().enqueue_known_active(queue, orig);
 JRT_END
 
 // G1 post write barrier slowpath

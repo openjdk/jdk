@@ -43,11 +43,13 @@
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/os.hpp"
+#include "runtime/safefetch.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubCodeGenerator.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/threads.hpp"
 #include "runtime/vframe.hpp"
 #include "runtime/vm_version.hpp"
 #include "services/heapDumper.hpp"
@@ -527,7 +529,10 @@ extern "C" JNIEXPORT void ps() { // print stack
     if (Verbose) p->trace_stack();
   } else {
     frame f = os::current_frame();
-    RegisterMap reg_map(p);
+    RegisterMap reg_map(p,
+                        RegisterMap::UpdateMap::include,
+                        RegisterMap::ProcessFrames::include,
+                        RegisterMap::WalkContinuation::skip);
     f = f.sender(&reg_map);
     tty->print("(guessing starting frame id=" PTR_FORMAT " based on current fp)\n", p2i(f.id()));
     p->trace_stack_from(vframe::new_vframe(&f, &reg_map, p));
@@ -708,6 +713,15 @@ extern "C" JNIEXPORT void pns2() { // print native stack
 }
 #endif
 
+
+// Returns true iff the address p is readable and *(intptr_t*)p != errvalue
+extern "C" bool dbg_is_safe(const void* p, intptr_t errvalue) {
+  return p != NULL && SafeFetchN((intptr_t*)const_cast<void*>(p), errvalue) != errvalue;
+}
+
+extern "C" bool dbg_is_good_oop(oopDesc* o) {
+  return dbg_is_safe(o, -1) && dbg_is_safe(o->klass(), -1) && oopDesc::is_oop(o) && o->klass()->is_klass();
+}
 
 //////////////////////////////////////////////////////////////////////////////
 // Test multiple STATIC_ASSERT forms in various scopes.
