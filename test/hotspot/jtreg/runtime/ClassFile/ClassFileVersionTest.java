@@ -41,8 +41,12 @@ public class ClassFileVersionTest {
         Class<?> testClass = Class.forName(className);
         int ver = (int)m.invoke(testClass);
         if (ver != expectedResult) {
+            int exp_minor = (expectedResult >> 16) & 0x0000FFFF;
+            int exp_major = expectedResult & 0x0000FFFF;
+            int got_minor = (ver >> 16) & 0x0000FFFF;
+            int got_major = ver & 0x0000FFFF;
             throw new RuntimeException(
-                "expected " + expectedResult + ", got " + ver + " for class " + className);
+                "Expected " + exp_major + ":" + exp_minor + " but got " + got_major + ":" + got_minor);
         }
     }
 
@@ -54,18 +58,33 @@ public class ClassFileVersionTest {
         testIt("Version64", 64);
         testIt("Version59", 59);
         // test minor version of 65535.
-        testIt("Version64_65535", -65472);  // -65472 = 0xFFFF0040
+        testIt("Version64_65535", 0xFFFF0040);  // 0xFFFF0040 = 64.65535
 
         // test primitive array.  should return latest version.
         int ver = (int)m.invoke((new int[3]).getClass());
         if (ver != 64) {
-            throw new RuntimeException("expected 64, got " + ver + " for primitive array");
+            int got_minor = (ver >> 16) & 0x0000FFFF;
+            int got_major = ver & 0x0000FFFF;
+            throw new RuntimeException(
+                "Expected 64:0, but got " + got_major + ":" + got_minor + " for primitive array");
         }
 
         // test object array.  should return class file version of component.
         ver = (int)m.invoke((new Version59[2]).getClass());
         if (ver != 59) {
-            throw new RuntimeException("expected 59, got " + ver + " for object array");
+            int got_minor = (ver >> 16) & 0x0000FFFF;
+            int got_major = ver & 0x0000FFFF;
+            throw new RuntimeException(
+                "Expected 59:0, but got " + got_major + ":" + got_minor + " for object array");
+        }
+
+        // test multi-dimensional object array.  should return class file version of component.
+        ver = (int)m.invoke((new Version59[3][2]).getClass());
+        if (ver != 59) {
+            int got_minor = (ver >> 16) & 0x0000FFFF;
+            int got_major = ver & 0x0000FFFF;
+            throw new RuntimeException(
+                "Expected 59:0, but got " + got_major + ":" + got_minor + " for object array");
         }
     }
 }

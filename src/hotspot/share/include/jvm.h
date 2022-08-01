@@ -1160,7 +1160,7 @@ JNIEXPORT void JNICALL
 JVM_VirtualThreadUnmountEnd(JNIEnv* env, jobject vthread, jboolean last_unmount);
 
 /*
- * Value types support.
+ * Core reflection support.
  */
 JNIEXPORT jint JNICALL
 JVM_GetClassFileVersion(JNIEnv *env, jclass current);

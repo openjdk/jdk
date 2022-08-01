@@ -4674,17 +4674,12 @@ public final class Class<T> implements java.io.Serializable,
      * The high order 16 bits contain the class's minor version.  The low order
      * 16 bits contain the class's major version.
      *
-     * If the class is an array type then the class file version of its component
+     * If the class is an array type then the class file version of its element
      * type is returned.  If the class is a primitive type then the latest class
      * file major version is returned and zero is returned for the minor version.
      */
     private int getClassFileVersion() {
-        Class<?> component = this;
-        if (isArray()) {
-            do {
-                component = component.getComponentType();
-            } while (component.isArray());
-        }
+        Class<?> component = isArray() ? elementType() : this;
         return component.getClassFileVersion0();
     }
 
@@ -4694,16 +4689,11 @@ public final class Class<T> implements java.io.Serializable,
      * Return the access flags as they were in the class's bytecode, including
      * the original setting of ACC_SUPER.
      *
-     * If the class is an array type then the access flags of the component type is
+     * If the class is an array type then the access flags of the element type is
      * returned.  If the class is a primitive then ACC_ABSTRACT | ACC_FINAL | ACC_PUBLIC.
      */
     private int getClassAccessFlagsRaw() {
-        Class<?> component = this;
-        if (isArray()) {
-            do {
-                component = component.getComponentType();
-            } while (component.isArray());
-        }
+        Class<?> component = isArray() ? elementType() : this;
         return component.getClassAccessFlagsRaw0();
     }
 

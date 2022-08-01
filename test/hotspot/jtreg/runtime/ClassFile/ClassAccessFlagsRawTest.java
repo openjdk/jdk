@@ -42,7 +42,7 @@ public class ClassAccessFlagsRawTest {
         int flags = (int)m.invoke(testClass);
         if (flags != expectedResult) {
             throw new RuntimeException(
-                "expected " + expectedResult + ", got " + flags + " for class " + className);
+                "expected 0x" + Integer.toHexString(expectedResult) + ", got 0x" + Integer.toHexString(flags) + " for class " + className);
         }
     }
 
@@ -51,20 +51,28 @@ public class ClassAccessFlagsRawTest {
         m = cl.getDeclaredMethod("getClassAccessFlagsRaw", new Class[0]);
         m.setAccessible(true);
 
-        testIt("SUPERset", 33);    // ACC_SUPER 0x20 + ACC_PUBLIC 0x1
-        testIt("SUPERnotset", 1);  // ACC_PUBLIC 01
+        testIt("SUPERset", 0x21);  // ACC_SUPER 0x20 + ACC_PUBLIC 0x1
+        testIt("SUPERnotset", Modifier.PUBLIC);
 
         // test primitive array.  should return ACC_ABSTRACT | ACC_FINAL | ACC_PUBLIC.
         int flags = (int)m.invoke((new int[3]).getClass());
-        if (flags != 1041) {
-            throw new RuntimeException("expected 1041, got " + flags + " for primitive array");
+        if (flags != (Modifier.ABSTRACT | Modifier.FINAL | Modifier.PUBLIC)) {
+            throw new RuntimeException(
+                "expected 0x411, got 0x" + Integer.toHexString(flags) + " for primitive array");
         }
 
         // test object array.  should return flags of component.
         flags = (int)m.invoke((new SUPERnotset[2]).getClass());
-        if (flags != 1) {
-            throw new RuntimeException("expected 1, got " + flags + " for object array");
+        if (flags != Modifier.PUBLIC) {
+            throw new RuntimeException(
+                "expected 0x1, got 0x" + Integer.toHexString(flags) + " for object array");
         }
 
+        // test multi-dimensional object array.  should return flags of component.
+        flags = (int)m.invoke((new SUPERnotset[4][2]).getClass());
+        if (flags != Modifier.PUBLIC) {
+            throw new RuntimeException(
+                "expected 0x1, got 0x" + Integer.toHexString(flags) + " for object array");
+        }
     }
 }

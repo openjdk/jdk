@@ -4047,8 +4047,8 @@ JVM_END
 
 /*
  * Return the current class's class file version.  The low order 16 bits of the
- * the returned jint contains the class's major version.  The high order 16 bits
- * contains the class's minor version.
+ * returned jint contain the class's major version.  The high order 16 bits
+ * contain the class's minor version.
  */
 JVM_ENTRY(jint, JVM_GetClassFileVersion(JNIEnv* env, jclass current))
   oop mirror = JNIHandles::resolve_non_null(current);
