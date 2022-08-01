@@ -717,9 +717,10 @@ public class BasicFileChooserUI extends FileChooserUI {
                             for (Object object : objects) {
                                 File f = (File) object;
                                 boolean isDir = f.isDirectory();
+                                Path path = Paths.get(f.getPath());
                                 if ((chooser.isFileSelectionEnabled() && !isDir)
                                     || (chooser.isDirectorySelectionEnabled()
-                                        && fsv.isFileSystem(f)
+                                        && (fsv.isFileSystem(f) || Files.isSymbolicLink(path))
                                         && isDir)) {
                                     fList.add(f);
                                 }
