@@ -224,12 +224,11 @@ public class Preconditions {
             return "Range check failed: " + checkKind;
         }
 
-        int argSize;
-        switch (checkKind) {
-            case "checkIndex" -> argSize = 2;
-            case "checkFromToIndex", "checkFromIndexSize" -> argSize = 3;
-            default -> argSize = 0;
-        }
+        int argSize = switch (checkKind) {
+            case "checkIndex" -> 2;
+            case "checkFromToIndex", "checkFromIndexSize" -> 3;
+            default -> 0;
+        };
 
         // Switch to default if fewer or more arguments than required are supplied
         return switch ((args.size() != argSize) ? "" : checkKind) {
