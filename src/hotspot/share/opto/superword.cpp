@@ -2365,18 +2365,25 @@ Node* SuperWord::pick_mem_state(Node_List* pk) {
   Node* first_mem = find_first_mem_state(pk);
   Node* last_mem  = find_last_mem_state(pk, first_mem);
 
+  bool is_dependent = dependent_on_last_mem(last_mem, pk);
+
   for (uint i = 0; i < pk->size(); i++) {
     Node* ld = pk->at(i);
     for (Node* current = last_mem; current != ld->in(MemNode::Memory); current = current->in(MemNode::Memory)) {
       assert(current->is_Mem() && in_bb(current), "unexpected memory");
       assert(current != first_mem, "corrupted memory graph");
       if (!independent(current, ld)) {
-        // A later store depends on this load, pick the memory state of the first load. This can happen, for example,
-        // if a load pack has interleaving stores that are part of a store pack which, however, is removed at the pack
-        // filtering stage. This leaves us with only a load pack for which we cannot take the memory state of the
-        // last load as the remaining unvectorized stores could interfere since they have a dependency to the loads.
+        // A later unvectorized store depends on this load, pick the memory state of the first load. This can happen,
+        // for example, if a load pack has interleaving stores that are part of a store pack which, however, is removed
+        // at the pack filtering stage. This leaves us with only a load pack for which we cannot take the memory state
+        // of the last load as the remaining unvectorized stores could interfere since they have a dependency to the loads.
         // Some stores could be executed before the load vector resulting in a wrong result. We need to take the
         // memory state of the first load to prevent this.
+        if(my_pack(current) != NULL && is_dependent) {
+          // For vectorized store pack, when the load pack depends on
+          // last_mem, we still take the memory state of the last load.
+          continue;
+        }
         return first_mem;
       }
     }
@@ -2420,6 +2427,22 @@ Node* SuperWord::find_last_mem_state(Node_List* pk, Node* first_mem) {
     }
   }
   return last_mem;
+}
+
+// Determine if the load pack is dependent on the last_mem.
+bool SuperWord::dependent_on_last_mem(Node* last_mem, Node_List* pk) {
+  if (!last_mem->is_Mem() || !in_bb(last_mem)) {
+    return false;
+  }
+
+  for (uint i = 0; i < pk->size(); i++) {
+    Node* ld = pk->at(i);
+    if (ld->in(MemNode::Memory) == last_mem && !independent(last_mem, ld)) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 #ifndef PRODUCT

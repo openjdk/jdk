@@ -549,6 +549,8 @@ class SuperWord : public ResourceObj {
   Node* pick_mem_state(Node_List* pk);
   Node* find_first_mem_state(Node_List* pk);
   Node* find_last_mem_state(Node_List* pk, Node* first_mem);
+  // Determine if the load pack is dependent on the last_mem.
+  bool dependent_on_last_mem(Node* last_mem, Node_List* pk);
 
   // Convert packs into vector node operations
   bool output();
