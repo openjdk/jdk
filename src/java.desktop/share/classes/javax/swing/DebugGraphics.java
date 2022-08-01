@@ -74,7 +74,7 @@ public class DebugGraphics extends Graphics {
      * down drawing.
      * <p>
      * NOTE: This constructor should not be called by
-     * Apllications, it is for Internal use only. When called directly
+     * application, it is for Internal use only. When called directly
      * it will create an un-usable instance.
      */
     public DebugGraphics() {
@@ -82,10 +82,8 @@ public class DebugGraphics extends Graphics {
         buffer = null;
         xOffset = yOffset = 0;
 
-        //  Creates a Graphics context when Application calls the constructor
-        //  directly.
-        StackWalker walker = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE);
-        if ((graphics == null) && (walker.getCallerClass() != this.getClass())) {
+        //  Creates a Graphics context when the constructor is called.
+        if (graphics == null) {
             BufferedImage bi = new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB);
             graphics = bi.createGraphics();
         }

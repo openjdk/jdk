@@ -22,10 +22,8 @@
  */
 
 import java.awt.Font;
-import java.awt.Robot;
 import javax.swing.DebugGraphics;
 import javax.swing.SwingUtilities;
-import java.util.concurrent.atomic.AtomicReference;
 
 /* @test
  * @bug 6521141
@@ -37,40 +35,18 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 
 public class DebugGraphicsNPETest {
-    private static final AtomicReference<Throwable> exception =
-            new AtomicReference<>();
-
     public static void main(String[] args) throws Exception {
-        Robot robot = new Robot();
         SwingUtilities.invokeAndWait(new Runnable() {
             public void run() {
-                Thread.currentThread().setUncaughtExceptionHandler(
-                        new DebugGraphicsNPETest.ExceptionCheck());
                 runTest();
             }
         });
-
-        robot.delay(2000);
-        robot.waitForIdle();
-
-        if (exception.get() != null) {
-            throw new RuntimeException("Test Case Failed. NPE raised!",
-                    exception.get());
-        }
         System.out.println("Test Pass!");
     }
 
     static void runTest() {
         DebugGraphics dg = new DebugGraphics();
-        Font font = new Font("Currier", Font.PLAIN, 10);
+        Font font = new Font(Font.SERIF, Font.PLAIN, 10);
         dg.setFont(font);
-    }
-
-    static class ExceptionCheck implements Thread.UncaughtExceptionHandler {
-        public void uncaughtException(Thread t, Throwable e)
-        {
-            exception.set(e);
-            System.err.println("Uncaught Exception Handled : " + e);
-        }
     }
 }
