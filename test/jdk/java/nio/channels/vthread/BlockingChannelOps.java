@@ -31,8 +31,7 @@
  */
 
 /**
- * @test id=useDirectRegister
- * @bug 8284161
+ * @test id=indirect-register
  * @summary Basic tests of virtual threads doing blocking I/O with NIO channels
  * @enablePreview
  * @library /test/lib
@@ -40,7 +39,7 @@
  */
 
 /**
- * @test id=no-continuations
+ * @test id=no-vmcontinuations
  * @requires vm.continuations
  * @enablePreview
  * @library /test/lib
