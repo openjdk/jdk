@@ -140,7 +140,7 @@ void PLABStats::log_sizing(size_t calculated_words, size_t net_desired_words) {
 }
 
 // Calculates plab size for current number of gc worker threads.
-size_t PLABStats::desired_plab_sz(uint no_of_gc_workers) {
+size_t PLABStats::desired_plab_sz(uint no_of_gc_workers) const {
   if (!ResizePLAB) {
       return _default_plab_sz;
   }

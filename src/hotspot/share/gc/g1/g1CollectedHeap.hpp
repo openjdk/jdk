@@ -560,6 +560,12 @@ public:
 
   // Determines PLAB size for a given destination.
   inline size_t desired_plab_sz(G1HeapRegionAttr dest);
+  // Clamp the given PLAB word size to allowed values. Prevents humongous PLAB sizes
+  // for two reasons:
+  // * PLABs are allocated using a similar paths as oops, but should
+  //   never be in a humongous region
+  // * Allowing humongous PLABs needlessly churns the region free lists
+  inline size_t clamp_plab_size(size_t value) const;
 
   // Do anything common to GC's.
   void gc_prologue(bool full);

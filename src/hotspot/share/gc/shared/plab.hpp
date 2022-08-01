@@ -197,7 +197,7 @@ class PLABStats : public CHeapObj<mtGC> {
   }
 
   // Calculates plab size for current number of gc worker threads.
-  size_t desired_plab_sz(uint no_of_gc_workers);
+  size_t desired_plab_sz(uint no_of_gc_workers) const;
 
   // Updates the current desired PLAB size. Computes the new desired PLAB size with one gc worker thread,
   // updates _desired_plab_sz and clears sensor accumulators.
