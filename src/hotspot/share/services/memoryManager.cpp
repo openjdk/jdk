@@ -100,6 +100,11 @@ instanceOop MemoryManager::get_memory_manager_instance(TRAPS) {
       signature = vmSymbols::createMemoryManager_signature();
     }
 
+    if (k == nullptr) {
+      THROW_MSG_(vmSymbols::java_lang_IllegalArgumentException(),
+                 "This GCMemoryManager doesn't have a GarbageCollectorMXBean", NULL);
+    }
+
     InstanceKlass* ik = InstanceKlass::cast(k);
 
     JavaCalls::call_static(&result,
