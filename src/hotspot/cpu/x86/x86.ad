@@ -2421,10 +2421,10 @@ class FusedPatternMatcher {
   }
 };
 
-static bool check_all_uses(Node* n, int use_op) {
+static bool check_all_uses(Node* n, bool (*predicate)(Node*)) {
   for (DUIterator i = n->outs(); n->has_out(i); i++) {
     Node* use = n->out(i);
-    if (use->Opcode() != use_op) {
+    if (!predicate(n)) {
       return false;
     }
   }
@@ -2435,15 +2435,33 @@ static bool is_base_pattern(Node* n, Node* m) {
 
 #ifdef _LP64
   // The lea patterns
-  if (n->Opcode() == Op_AddI && check_all_uses(m, Op_AddI) &&
-      ((m->Opcode() == Op_LShiftI && m->in(2)->find_int_con(7) <= 3) ||
-       (m->Opcode() == Op_AddI && n->in(2)->Opcode() == Op_ConI))) {
-    return true;
+  if (n->Opcode() == Op_AddI) {
+    if (VM_Version::supports_fast_2op_lea() &&
+        m->Opcode() == Op_LShiftI && m->in(2)->find_int_con(7) <= 3 &&
+        check_all_uses(m, [](Node* n){ return n->Opcode() == Op_AddI; })) {
+      return true;
+    }
+    if (VM_Version::supports_fast_3op_lea() && m->Opcode() == Op_AddI &&
+        check_all_uses(m, [](Node* n){ return n->in(2)->Opcode() == Op_ConI; })) {
+      return true;
+    }
   }
-  if (n->Opcode() == Op_AddL && check_all_uses(m, Op_AddL) &&
-      ((m->Opcode() == Op_LShiftL && m->in(2)->find_int_con(7) <= 3) ||
-       (m->Opcode() == Op_AddL && n->in(2)->Opcode() == Op_ConL))) {
-    return true;
+  if (n->Opcode() == Op_AddL) {
+    if (VM_Version::supports_fast_2op_lea() &&
+        m->Opcode() == Op_LShiftL && m->in(2)->find_int_con(7) <= 3 &&
+        check_all_uses(m, [](Node* n){ return n->Opcode() == Op_AddL; })) {
+      return true;
+    }
+    if (VM_Version::supports_fast_3op_lea() && m->Opcode() == Op_AddL &&
+        check_all_uses(m, [](Node* n){
+          if (n->in(2)->Opcode() != Op_ConL) {
+            return false;
+          }
+          long con = n->in(2)->get_long();
+          return con <= max_jint && con >= min_jint; 
+        })) {
+      return true;
+    }
   }
 #endif
 
@@ -2460,7 +2478,8 @@ static bool is_bmi_pattern(Node* n, Node* m) {
   if (n->Opcode() == Op_AndI || n->Opcode() == Op_XorI) {
     // If all uses of a not are and's, then clone the not node
     if (n->Opcode() == Op_AndI && m->Opcode() == Op_XorI &&
-        m->in(2)->find_int_con(0) == -1 && check_all_uses(m, Op_AndI)) {
+        m->in(2)->find_int_con(0) == -1 &&
+        check_all_uses(m, [](Node* n){ return n->Opcode() == Op_AndI; })) {
       return true;
     }
     // Normally we want to clone the long arm, but if the short
@@ -2476,7 +2495,8 @@ static bool is_bmi_pattern(Node* n, Node* m) {
   } else if (n->Opcode() == Op_AndL || n->Opcode() == Op_XorL) {
     // See above
     if (n->Opcode() == Op_AndL && m->Opcode() == Op_XorL &&
-        m->in(2)->find_long_con(0) == -1 && check_all_uses(m, Op_AndL)) {
+        m->in(2)->find_long_con(0) == -1 &&
+        check_all_uses(m, [](Node* n){ return n->Opcode() == Op_AndL; })) {
       return true;
     }
     if (m->Opcode() != Op_LoadL) {
