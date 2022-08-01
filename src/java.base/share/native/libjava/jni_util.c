@@ -461,11 +461,14 @@ getString8859_1Chars(JNIEnv *env, jstring jstr)
 static jstring
 newString646_US(JNIEnv *env, const char *str)
 {
-    size_t len = (int)strlen(str);
+    int len = (int)strlen(str);
     jchar buf[512] = {0};
     jchar *str1;
     jstring result;
-    size_t i;
+    int i;
+
+    if ((*env)->EnsureLocalCapacity(env, 1) < 0)
+        return NULL;
 
     if (len > 512) {
         str1 = (jchar *)malloc(len * sizeof(jchar));
