@@ -363,7 +363,7 @@ public final class StackTraceElement implements java.io.Serializable {
 
         if (!dropClassLoaderName() && classLoaderName != null && !classLoaderName.isEmpty()) {
             prefixClassLoader = true;
-            length += classLoaderName.length() + 1 /* '/' */;
+            length += classLoaderName.length() + 1;
         }
 
         if (moduleName != null && !moduleName.isEmpty()) {
@@ -371,11 +371,11 @@ public final class StackTraceElement implements java.io.Serializable {
             length += moduleName.length();
             if (!dropModuleVersion() && moduleVersion != null && !moduleVersion.isEmpty()) {
                 prefixModuleVersion = true;
-                length += 1 /* '@' */ + moduleVersion.length();
+                length += 1 + moduleVersion.length();
             }
         }
 
-        length += declaringClass.length() + methodName.length() + 2; // class.methodName(
+        length += declaringClass.length() + methodName.length() + 2;
         if (isNativeMethod()) {
             length += "Native Method".length();
         } else if (fileName == null) {
@@ -386,7 +386,7 @@ public final class StackTraceElement implements java.io.Serializable {
                 length += Integer.stringSize(lineNumber);
             }
         }
-        length++; // ')'
+        length++;
 
         StringBuilder sb = new StringBuilder(length);
         if (prefixClassLoader) {
@@ -397,23 +397,19 @@ public final class StackTraceElement implements java.io.Serializable {
             if (prefixModuleVersion) {
                 sb.append('@').append(moduleVersion);
             }
-        }
-        if (prefixClassLoader || prefixModule) {
-            sb.append('/').append(declaringClass);
-        } else {
-            sb.append(declaringClass);
+            sb.append('/');
         }
 
-        sb.append('.').append(methodName).append('(');
+        sb.append(declaringClass).append('.').append(methodName).append('(');
         if (isNativeMethod()) {
             sb.append("Native Method");
-        } else if (fileName != null) {
+        } else if (fileName == null) {
+            sb.append("Unknown Source");
+        } else {
             sb.append(fileName);
             if (lineNumber >= 0) {
                 sb.append(':').append(lineNumber);
             }
-        } else {
-            sb.append("Unknown Source");
         }
         sb.append(')');
 
