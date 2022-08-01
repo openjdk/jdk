@@ -94,13 +94,6 @@ import java.util.Objects;
  * <p> Implementations of this interface are immutable and safe for use by
  * multiple concurrent threads.
  *
- * @apiNote
- * On some file systems a {@code Path} may have an internal representation
- * which cannot be converted to a {@code String} without losing information.
- * Otherwise stated, the internal representation might not be recoverable
- * from the derived path string. This applies to the {@code Path} as a whole
- * as well as to its components.
- *
  * @since 1.7
  */
 
@@ -271,12 +264,12 @@ public interface Path
      * @implSpec
      * The default implementation is equivalent for this path to:
      * <pre>{@code
-     * int lastDot = fileName.lastIndexOf('.');
-     * if (lastDot <= 0)
+     * int lastPeriod = fileName.lastIndexOf('.');
+     * if (lastPeriod <= 0)
      *     return null;
-     * return lastDot == fileName.length() - 1 ?
+     * return lastPeriod == fileName.length() - 1 ?
      *     "" :
-     *     fileName.substring(lastDot + 1);
+     *     fileName.substring(lastPeriod + 1);
      * }</pre>
      *
      * @return  the file name extension of this path, which might be the
@@ -294,17 +287,17 @@ public interface Path
 
         // An empty or unity length file name string has a null extension
         if (length > 1) {
-            int lastDotIndex = fileNameString.lastIndexOf('.');
+            int lastPeriodIndex = fileNameString.lastIndexOf('.');
 
             // Indeterminate if there is no period character or
             // only the first character is a period character
-            if (lastDotIndex > 0) {
-                if (lastDotIndex == length - 1) {
+            if (lastPeriodIndex > 0) {
+                if (lastPeriodIndex == length - 1) {
                     // null if all period characters, otherwise empty
                     return fileNameString.matches("\\.{" + length + "}") ?
                         null : "";
                 } else {
-                    return fileNameString.substring(lastDotIndex + 1);
+                    return fileNameString.substring(lastPeriodIndex + 1);
                 }
             }
         }
