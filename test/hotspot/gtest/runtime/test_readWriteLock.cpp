@@ -23,17 +23,17 @@
 
 #include "precompiled.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
-#include "runtime/mrswMutex.hpp"
 #include "runtime/thread.hpp"
 #include "threadHelper.inline.hpp"
 #include "unittest.hpp"
+#include "utilities/readWriteLock.hpp"
 
-class MRSWMutexTest : public ::testing::Test {};
+class ReadWriteLockTest : public ::testing::Test {};
 
-TEST_VM_F(MRSWMutexTest, WriterLockPreventsReadersFromEnteringCriticalRegion) {
+TEST_VM_F(ReadWriteLockTest, WriterLockPreventsReadersFromEnteringCriticalRegion) {
   const int max_iter = 1000;
   int iter = 0;
-  MRSWMutex* mut = new MRSWMutex();
+  ReadWriteLock* mut = new ReadWriteLock();
 
   volatile bool reader_started = false;
   volatile bool reader_in_critical_region = false;
@@ -41,7 +41,7 @@ TEST_VM_F(MRSWMutexTest, WriterLockPreventsReadersFromEnteringCriticalRegion) {
 
   auto reader = [&](int _ignored) {
     Atomic::release_store(&reader_started, true);
-    mut->read_lock();
+    mut->read_lock(Thread::current());
     Atomic::release_store(&reader_in_critical_region, true);
     mut->read_unlock();
     Atomic::release_store(&reader_exited_critical_region, true);
@@ -52,7 +52,7 @@ TEST_VM_F(MRSWMutexTest, WriterLockPreventsReadersFromEnteringCriticalRegion) {
       new BasicTestThread<decltype(reader), int>(reader, 0, &rp);
 
   // 1. Hold write lock
-  mut->write_lock();
+  mut->write_lock(Thread::current());
 
   // 2. Start reader
   rt->doit();
@@ -86,13 +86,13 @@ TEST_VM_F(MRSWMutexTest, WriterLockPreventsReadersFromEnteringCriticalRegion) {
   ASSERT_TRUE(Atomic::load_acquire(&reader_exited_critical_region));
 }
 
-TEST_VM_F(MRSWMutexTest, MultipleReadersAtSameTime) {
-  MRSWMutex* mut = new MRSWMutex();
+TEST_VM_F(ReadWriteLockTest, MultipleReadersAtSameTime) {
+  ReadWriteLock* mut = new ReadWriteLock();
   constexpr const int num_readers = 5;
   volatile int concurrent_readers = 0;
 
   auto r = [&](int _ignored) {
-    mut->read_lock();
+    mut->read_lock(Thread::current());
     // Increment counter
     Atomic::add(&concurrent_readers, 1);
     // Don't let go of the lock, exit thread
@@ -103,12 +103,10 @@ TEST_VM_F(MRSWMutexTest, MultipleReadersAtSameTime) {
   ttg.doit();
   ttg.join();
   EXPECT_EQ(Atomic::load(&concurrent_readers), num_readers);
-}
-
-TEST_VM_F(MRSWMutexTest, InstantiateTBIVMTransition) {
-  MRSWMutex* mut = new MRSWMutex();
-  mut->read_lock<ThreadBlockInVM>();
-  mut->read_unlock();
-  mut->write_lock<ThreadBlockInVM>();
-  mut->write_unlock();
+  // Unlock for all the threads.
+  // Not strictly necessary, but locking looks weird
+  // without the corresponding unlock
+  for (int i = 0; i < num_readers; i++) {
+    mut->read_unlock();
+  }
 }
