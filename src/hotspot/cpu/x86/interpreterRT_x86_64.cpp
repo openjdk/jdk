@@ -348,10 +348,10 @@ class SlowSignatureHandler
     intptr_t *from_addr = (intptr_t*)(_from + Interpreter::local_offset_in_bytes(0));
     _from -= Interpreter::stackElementSize;
     if (_num_args < Argument::n_int_register_parameters_c-1) {
-      *_reg_args++ = (*from_addr == 0) ? NULL : (intptr_t) from_addr;
+      *_reg_args++ = (*from_addr == 0) ? NULL_WORD : (intptr_t) from_addr;
       _num_args++;
     } else {
-      *_to++ = (*from_addr == 0) ? NULL : (intptr_t) from_addr;
+      *_to++ = (*from_addr == 0) ? NULL_WORD : (intptr_t) from_addr;
     }
   }
 
