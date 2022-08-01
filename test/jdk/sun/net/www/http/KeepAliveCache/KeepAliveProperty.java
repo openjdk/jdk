@@ -171,6 +171,7 @@ public class KeepAliveProperty {
             if (!expectClose)
                 throw e;
         }
+        s.join();
 
         if (!pass)
             throw new RuntimeException("Failed in server");
