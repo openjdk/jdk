@@ -97,24 +97,6 @@ typedef AllocFailStrategy::AllocFailEnum AllocFailType;
 // char* ReallocateHeap(char *old, size_t size, MEMFLAGS flag, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
 // void FreeHeap(void* p);
 //
-// In non product mode we introduce a super class for all allocation classes
-// that supports printing.
-// We avoid the superclass in product mode to save space.
-
-#ifdef PRODUCT
-#define ALLOCATION_SUPER_CLASS_SPEC
-#else
-#define ALLOCATION_SUPER_CLASS_SPEC : public AllocatedObj
-class AllocatedObj {
- public:
-  // Printing support
-  void print() const;
-  void print_value() const;
-
-  virtual void print_on(outputStream* st) const;
-  virtual void print_value_on(outputStream* st) const;
-};
-#endif
 
 #define MEMORY_TYPES_DO(f)                                                           \
   /* Memory type by sub systems. It occupies lower byte. */                          \
@@ -192,7 +174,7 @@ char* ReallocateHeap(char *old,
 // handles NULL pointers
 void FreeHeap(void* p);
 
-template <MEMFLAGS F> class CHeapObj ALLOCATION_SUPER_CLASS_SPEC {
+template <MEMFLAGS F> class CHeapObj {
  public:
   ALWAYSINLINE void* operator new(size_t size) throw() {
     return (void*)AllocateHeap(size, F);
@@ -237,7 +219,7 @@ template <MEMFLAGS F> class CHeapObj ALLOCATION_SUPER_CLASS_SPEC {
 // Base class for objects allocated on the stack only.
 // Calling new or delete will result in fatal error.
 
-class StackObj ALLOCATION_SUPER_CLASS_SPEC {
+class StackObj {
  private:
   void* operator new(size_t size) throw();
   void* operator new [](size_t size) throw();
@@ -386,7 +368,7 @@ extern void resource_free_bytes( char *old, size_t size );
 // ResourceObj's can be allocated within other objects, but don't use
 // new or delete (allocation_type is unknown).  If new is used to allocate,
 // use delete to deallocate.
-class ResourceObj ALLOCATION_SUPER_CLASS_SPEC {
+class ResourceObj {
  public:
   enum allocation_type { STACK_OR_EMBEDDED = 0, RESOURCE_AREA, C_HEAP, ARENA, allocation_mask = 0x3 };
   static void set_allocation_type(address res, allocation_type type) NOT_DEBUG_RETURN;
@@ -438,6 +420,12 @@ protected:
   void* operator new [](size_t size, const std::nothrow_t& nothrow_constant) throw() = delete;
   void  operator delete(void* p);
   void  operator delete [](void* p) = delete;
+
+#ifndef PRODUCT
+  // Printing support
+  void print() const;
+  virtual void print_on(outputStream* st) const;
+#endif // PRODUCT
 };
 
 // One of the following macros must be used when allocating an array
