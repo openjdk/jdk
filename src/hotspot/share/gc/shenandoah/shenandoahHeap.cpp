@@ -2470,12 +2470,15 @@ class ShenandoahUpdateHeapRefsTask : public WorkerTask {
 private:
   ShenandoahHeap* _heap;
   ShenandoahRegionIterator* _regions;
+  ShenandoahRegionChunkIterator* _work_chunks;
 
 public:
-  explicit ShenandoahUpdateHeapRefsTask(ShenandoahRegionIterator* regions) :
+  explicit ShenandoahUpdateHeapRefsTask(ShenandoahRegionIterator* regions,
+                                        ShenandoahRegionChunkIterator* work_chunks) :
     WorkerTask("Shenandoah Update References"),
     _heap(ShenandoahHeap::heap()),
-    _regions(regions)
+    _regions(regions),
+    _work_chunks(work_chunks)
   {
   }
 
@@ -2504,60 +2507,24 @@ private:
       assert (update_watermark >= r->bottom(), "sanity");
 
       log_debug(gc)("ShenandoahUpdateHeapRefsTask::do_work(%u) looking at region " SIZE_FORMAT, worker_id, r->index());
+      bool region_progress = false;
       if (r->is_active() && !r->is_cset()) {
         if (!_heap->mode()->is_generational() || (r->affiliation() == ShenandoahRegionAffiliation::YOUNG_GENERATION)) {
           _heap->marked_object_oop_iterate(r, &cl, update_watermark);
+          region_progress = true;
         } else if (r->affiliation() == ShenandoahRegionAffiliation::OLD_GENERATION) {
           if (_heap->active_generation()->generation_mode() == GLOBAL) {
-            _heap->marked_object_oop_iterate(r, &cl, update_watermark);
-          } else {
-            // Old region in a young cycle or mixed cycle.
-            if (!is_mixed) {
-              // This is a young evac..
-              _heap->card_scan()->process_region(r, &cl, true);
-            } else {
-              // This is a _mixed_evac.
-              //
-              // TODO: For _mixed_evac, consider building an old-gen remembered set that allows restricted updating
-              // within old-gen HeapRegions.  This remembered set can be constructed by old-gen concurrent marking
-              // and augmented by card marking.  For example, old-gen concurrent marking can remember for each old-gen
-              // card which other old-gen regions it refers to: none, one-other specifically, multiple-other non-specific.
-              // Update-references when _mixed_evac processess each old-gen memory range that has a traditional DIRTY
-              // card or if the "old-gen remembered set" indicates that this card holds pointers specifically to an
-              // old-gen region in the most recent collection set, or if this card holds pointers to other non-specific
-              // old-gen heap regions.
-              if (r->is_humongous()) {
-                // Need to examine both dirty and clean cards during mixed evac.
-                r->oop_iterate_humongous(&cl);
-              } else {
-                // This is a mixed evacuation.  Old regions that are candidates for collection have not been coalesced
-                // and filled.  Use mark bits to find objects that need to be updated.
-                //
-                // Future TODO: establish a second remembered set to identify which old-gen regions point to other old-gen
-                // regions which are in the collection set for a particular mixed evacuation.
-                HeapWord *p = r->bottom();
-                ShenandoahObjectToOopBoundedClosure<T> objs(&cl, p, update_watermark);
+            // Note that GLOBAL collection is not as effectively balanced as young and mixed cycles.  This is because
+            // concurrent GC threads are parceled out entire heap regions of work at a time and there
+            // is no "catchup phase" consisting of remembered set scanning, during which parcels of work are smaller
+            // and more easily distributed more fairly across threads.
 
-                // Anything beyond update_watermark was allocated during evacuation.  Thus, it is known to not hold
-                // references to collection set objects.
-                while (p < update_watermark) {
-                  oop obj = cast_to_oop(p);
-                  if (ctx->is_marked(obj)) {
-                    objs.do_object(obj);
-                    p += obj->size();
-                  } else {
-                    // This object is not marked so we don't scan it.
-                    HeapWord* tams = ctx->top_at_mark_start(r);
-                    if (p >= tams) {
-                      p += obj->size();
-                    } else {
-                      p = ctx->get_next_marked_addr(p, tams);
-                    }
-                  }
-                }
-              }
-            }
+            // TODO: Consider an improvement to load balance GLOBAL GC.
+            _heap->marked_object_oop_iterate(r, &cl, update_watermark);
+            region_progress = true;
           }
+          // Otherwise, this is an old region in a young or mixed cycle.  Process it during a second phase, below.
+          // Don't bother to report pacing progress in this case.
         } else {
           // Because updating of references runs concurrently, it is possible that a FREE inactive region transitions
           // to a non-free active region while this loop is executing.  Whenever this happens, the changing of a region's
@@ -2574,7 +2541,7 @@ private:
                  affiliation_name(r->affiliation()), r->index());
         }
       }
-      if (ShenandoahPacing) {
+      if (region_progress && ShenandoahPacing) {
         _heap->pacer()->report_updaterefs(pointer_delta(update_watermark, r->bottom()));
       }
       if (_heap->check_cancelled_gc_and_yield(CONCURRENT)) {
@@ -2582,21 +2549,140 @@ private:
       }
       r = _regions->next();
     }
+    if (_heap->mode()->is_generational() && (_heap->active_generation()->generation_mode() != GLOBAL)) {
+      // Since this is generational and not GLOBAL, we have to process the remembered set.  There's no remembered
+      // set processing if not in generational mode or if GLOBAL mode.
+
+      // After this thread has exhausted its traditional update-refs work, it continues with updating refs within remembered set.
+      // The remembered set workload is better balanced between threads, so threads that are "behind" can catch up with other
+      // threads during this phase, allowing all threads to work more effectively in parallel.
+      struct ShenandoahRegionChunk assignment;
+      bool have_work = _work_chunks->next(&assignment);
+      RememberedScanner* scanner = _heap->card_scan();
+      while (have_work) {
+        ShenandoahHeapRegion* r = assignment._r;
+        if (r->is_active() && !r->is_cset() && (r->affiliation() == ShenandoahRegionAffiliation::OLD_GENERATION)) {
+          HeapWord* start_of_range = r->bottom() + assignment._chunk_offset;
+          HeapWord* end_of_range = r->get_update_watermark();
+          if (end_of_range > start_of_range + assignment._chunk_size) {
+            end_of_range = start_of_range + assignment._chunk_size;
+          }
+
+          // Old region in a young cycle or mixed cycle.
+          if (is_mixed) {
+            // TODO: For mixed evac, consider building an old-gen remembered set that allows restricted updating
+            // within old-gen HeapRegions.  This remembered set can be constructed by old-gen concurrent marking
+            // and augmented by card marking.  For example, old-gen concurrent marking can remember for each old-gen
+            // card which other old-gen regions it refers to: none, one-other specifically, multiple-other non-specific.
+            // Update-references when _mixed_evac processess each old-gen memory range that has a traditional DIRTY
+            // card or if the "old-gen remembered set" indicates that this card holds pointers specifically to an
+            // old-gen region in the most recent collection set, or if this card holds pointers to other non-specific
+            // old-gen heap regions.
+
+            if (r->is_humongous()) {
+              if (start_of_range < end_of_range) {
+                // Need to examine both dirty and clean cards during mixed evac.
+                r->oop_iterate_humongous_slice(&cl, false, start_of_range, assignment._chunk_size, true, CONCURRENT);
+              }
+            } else {
+              // Since this is mixed evacuation, old regions that are candidates for collection have not been coalesced
+              // and filled.  Use mark bits to find objects that need to be updated.
+              //
+              // Future TODO: establish a second remembered set to identify which old-gen regions point to other old-gen
+              // regions which are in the collection set for a particular mixed evacuation.
+              if (start_of_range < end_of_range) {
+                HeapWord* p = nullptr;
+                size_t card_index = scanner->card_index_for_addr(start_of_range);
+                // In case last object in my range spans boundary of my chunk, I may need to scan all the way to top()
+                ShenandoahObjectToOopBoundedClosure<T> objs(&cl, start_of_range, r->top());
+
+                // Any object that begins in a previous range is part of a different scanning assignment.  Any object that
+                // starts after end_of_range is also not my responsibility.  (Either allocated during evacuation, so does
+                // not hold pointers to from-space, or is beyond the range of my assigned work chunk.)
+
+                // Find the first object that begins in my range, if there is one.
+                p = start_of_range;
+                oop obj = cast_to_oop(p);
+                HeapWord* tams = ctx->top_at_mark_start(r);
+                if (p >= tams) {
+                  // We cannot use ctx->is_marked(obj) to test whether an object begins at this address.  Instead,
+                  // we need to use the remembered set crossing map to advance p to the first object that starts
+                  // within the enclosing card.
+
+                  while (true) {
+                    HeapWord* first_object = scanner->first_object_in_card(card_index);
+                    if (first_object != nullptr) {
+                      p = first_object;
+                      break;
+                    } else if (scanner->addr_for_card_index(card_index + 1) < end_of_range) {
+                      card_index++;
+                    } else {
+                      // Force the loop that follows to immediately terminate.
+                      p = end_of_range;
+                      break;
+                    }
+                  }
+                  obj = cast_to_oop(p);
+                  // Note: p may be >= end_of_range
+                } else if (!ctx->is_marked(obj)) {
+                  p = ctx->get_next_marked_addr(p, tams);
+                  obj = cast_to_oop(p);
+                  // If there are no more marked objects before tams, this returns tams.
+                  // Note that tams is either >= end_of_range, or tams is the start of an object that is marked.
+                }
+                while (p < end_of_range) {
+                  // p is known to point to the beginning of marked object obj
+                  objs.do_object(obj);
+                  HeapWord* prev_p = p;
+                  p += obj->size();
+                  if (p < tams) {
+                    p = ctx->get_next_marked_addr(p, tams);
+                    // If there are no more marked objects before tams, this returns tams.  Note that tams is
+                    // either >= end_of_range, or tams is the start of an object that is marked.
+                  }
+                  assert(p != prev_p, "Lack of forward progress");
+                  obj = cast_to_oop(p);
+                }
+              }
+            }
+          } else {
+            // This is a young evac..
+            if (start_of_range < end_of_range) {
+              size_t cluster_size =
+                CardTable::card_size_in_words() * ShenandoahCardCluster<ShenandoahDirectCardMarkRememberedSet>::CardsPerCluster;
+              size_t clusters = assignment._chunk_size / cluster_size;
+              assert(clusters * cluster_size == assignment._chunk_size, "Chunk assignment must align on cluster boundaries");
+              scanner->process_region_slice(r, assignment._chunk_offset, clusters, end_of_range, &cl, true, CONCURRENT);
+            }
+          }
+          if (ShenandoahPacing && (start_of_range < end_of_range)) {
+            _heap->pacer()->report_updaterefs(pointer_delta(end_of_range, start_of_range));
+          }
+        }
+        // Otherwise, this work chunk had nothing for me to do, so do not report pacer progress.
+
+        // Before we take responsibility for another chunk of work, see if cancellation is requested.
+        if (_heap->check_cancelled_gc_and_yield(CONCURRENT)) {
+          return;
+        }
+        have_work = _work_chunks->next(&assignment);
+      }
+    }
   }
 };
 
 void ShenandoahHeap::update_heap_references(bool concurrent) {
   assert(!is_full_gc_in_progress(), "Only for concurrent and degenerated GC");
+  ShenandoahRegionChunkIterator work_list(workers()->active_workers());
 
   if (concurrent) {
-    ShenandoahUpdateHeapRefsTask<true> task(&_update_refs_iterator);
+    ShenandoahUpdateHeapRefsTask<true> task(&_update_refs_iterator, &work_list);
     workers()->run_task(&task);
   } else {
-    ShenandoahUpdateHeapRefsTask<false> task(&_update_refs_iterator);
+    ShenandoahUpdateHeapRefsTask<false> task(&_update_refs_iterator, &work_list);
     workers()->run_task(&task);
   }
 }
-
 
 class ShenandoahFinalUpdateRefsUpdateRegionStateClosure : public ShenandoahHeapRegionClosure {
 private:

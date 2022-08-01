@@ -449,9 +449,12 @@ ShenandoahScanRemembered<RememberedSet>::verify_registration(HeapWord* address, 
         last_obj = obj;
       } else {
         offset = ctx->get_next_marked_addr(base_addr + offset, tams) - base_addr;
-        // offset will be zero if no objects are marked in this card.
+        // If there are no marked objects remaining in this region, offset equals tams - base_addr.  If this offset is
+        // greater than max_offset, we will immediately exit this loop.  Otherwise, the next iteration of the loop will
+        // treat the object at offset as marked and live (because address >= tams) and we will continue iterating object
+        // by consulting the size() fields of each.
       }
-    } while (offset > 0 && offset < max_offset);
+    } while (offset < max_offset);
     if (last_obj != nullptr && prev_offset + last_obj->size() >= max_offset) {
       // last marked object extends beyond end of card
       if (_scc->get_last_start(index) != prev_offset) {
@@ -481,18 +484,21 @@ template<typename RememberedSet>
 template <typename ClosureType>
 inline void
 ShenandoahScanRemembered<RememberedSet>::process_clusters(size_t first_cluster, size_t count, HeapWord *end_of_range,
-                                                          ClosureType *cl) {
-  process_clusters(first_cluster, count, end_of_range, cl, false);
+                                                          ClosureType *cl, bool is_concurrent) {
+  process_clusters(first_cluster, count, end_of_range, cl, false, is_concurrent);
 }
 
 // Process all objects starting within count clusters beginning with first_cluster for which the start address is
-// less than end_of_range.  For any such object, process the complete object, even if its end reaches beyond
-// end_of_range.
+// less than end_of_range.  For any such object, process the complete object, even if its end reaches beyond end_of_range.
+
+// Do not CANCEL within process_clusters.  It is assumed that if a worker thread accepts responsbility for processing
+// a chunk of work, it will finish the work it starts.  Otherwise, the chunk of work will be lost in the transition to
+// degenerated execution.
 template<typename RememberedSet>
 template <typename ClosureType>
 inline void
 ShenandoahScanRemembered<RememberedSet>::process_clusters(size_t first_cluster, size_t count, HeapWord *end_of_range,
-                                                          ClosureType *cl, bool write_table) {
+                                                          ClosureType *cl, bool write_table, bool is_concurrent) {
 
   // Unlike traditional Shenandoah marking, the old-gen resident objects that are examined as part of the remembered set are not
   // themselves marked.  Each such object will be scanned only once.  Any young-gen objects referenced from the remembered set will
@@ -514,14 +520,24 @@ ShenandoahScanRemembered<RememberedSet>::process_clusters(size_t first_cluster, 
     ctx = nullptr;
   }
 
-  HeapWord* end_of_clusters = _rs->addr_for_card_index(first_cluster)
-    + count * ShenandoahCardCluster<RememberedSet>::CardsPerCluster * CardTable::card_size_in_words();
+  size_t card_index = first_cluster * ShenandoahCardCluster<RememberedSet>::CardsPerCluster;
+  HeapWord *start_of_range = _rs->addr_for_card_index(card_index);
+  ShenandoahHeapRegion* r = heap->heap_region_containing(start_of_range);
+  assert(end_of_range <= r->top(), "process_clusters() examines one region at a time");
+
   while (count-- > 0) {
-    size_t card_index = first_cluster * ShenandoahCardCluster<RememberedSet>::CardsPerCluster;
+    // TODO: do we want to check cancellation in inner loop, on every card processed?  That would be more responsive,
+    // but require more overhead for checking.
+    card_index = first_cluster * ShenandoahCardCluster<RememberedSet>::CardsPerCluster;
     size_t end_card_index = card_index + ShenandoahCardCluster<RememberedSet>::CardsPerCluster;
     first_cluster++;
     size_t next_card_index = 0;
     while (card_index < end_card_index) {
+      if (_rs->addr_for_card_index(card_index) > end_of_range) {
+        count = 0;
+        card_index = end_card_index;
+        break;
+      }
       bool is_dirty = (write_table)? is_write_card_dirty(card_index): is_card_dirty(card_index);
       bool has_object = _scc->has_object(card_index);
       if (is_dirty) {
@@ -532,6 +548,8 @@ ShenandoahScanRemembered<RememberedSet>::process_clusters(size_t first_cluster, 
           HeapWord *p = _rs->addr_for_card_index(card_index);
           HeapWord *card_start = p;
           HeapWord *endp = p + CardTable::card_size_in_words();
+          assert(!r->is_humongous(), "Process humongous regions elsewhere");
+
           if (endp > end_of_range) {
             endp = end_of_range;
             next_card_index = end_card_index;
@@ -569,8 +587,7 @@ ShenandoahScanRemembered<RememberedSet>::process_clusters(size_t first_cluster, 
               }
               p += obj->size();
             } else {
-              // This object is not marked so we don't scan it.
-              ShenandoahHeapRegion* r = heap->heap_region_containing(p);
+              // This object is not marked so we don't scan it.  Containing region r is initialized above.
               HeapWord* tams = ctx->top_at_mark_start(r);
               if (p >= tams) {
                 p += obj->size();
@@ -618,6 +635,11 @@ ShenandoahScanRemembered<RememberedSet>::process_clusters(size_t first_cluster, 
               }
           }
 
+          // TODO: only iterate over this object if it spans dirty within this cluster or within following clusters.
+          // Code as written is known not to examine a zombie object because either the object is marked, or we are
+          // not using the mark-context to differentiate objects, so the object is known to have been coalesced and
+          // filled if it is not "live".
+
           if (reaches_next_cluster || spans_dirty_within_this_cluster) {
             if (obj->is_objArray()) {
               objArrayOop array = objArrayOop(obj);
@@ -635,8 +657,7 @@ ShenandoahScanRemembered<RememberedSet>::process_clusters(size_t first_cluster, 
           }
         } else {
           // The object that spans end of this clean card is not marked, so no need to scan it or its
-          // unmarked neighbors.
-          ShenandoahHeapRegion* r = heap->heap_region_containing(p);
+          // unmarked neighbors.  Containing region r is initialized above.
           HeapWord* tams = ctx->top_at_mark_start(r);
           HeapWord* nextp;
           if (p >= tams) {
@@ -656,19 +677,58 @@ ShenandoahScanRemembered<RememberedSet>::process_clusters(size_t first_cluster, 
   }
 }
 
+// Given that this range of clusters is known to span a humongous object spanned by region r, scan the
+// portion of the humongous object that corresponds to the specified range.
 template<typename RememberedSet>
 template <typename ClosureType>
 inline void
-ShenandoahScanRemembered<RememberedSet>::process_region(ShenandoahHeapRegion *region, ClosureType *cl) {
-  process_region(region, cl, false);
+ShenandoahScanRemembered<RememberedSet>::process_humongous_clusters(ShenandoahHeapRegion* r, size_t first_cluster, size_t count,
+                                                                    HeapWord *end_of_range, ClosureType *cl, bool write_table,
+                                                                    bool is_concurrent) {
+  ShenandoahHeapRegion* start_region = r->humongous_start_region();
+  HeapWord* p = start_region->bottom();
+  oop obj = cast_to_oop(p);
+  assert(r->is_humongous(), "Only process humongous regions here");
+  assert(start_region->is_humongous_start(), "Should be start of humongous region");
+  assert(p + obj->size() >= end_of_range, "Humongous object ends before range ends");
+
+  size_t first_card_index = first_cluster * ShenandoahCardCluster<RememberedSet>::CardsPerCluster;
+  HeapWord* first_cluster_addr = _rs->addr_for_card_index(first_card_index);
+  size_t spanned_words = count * ShenandoahCardCluster<RememberedSet>::CardsPerCluster * CardTable::card_size_in_words();
+
+  start_region->oop_iterate_humongous_slice(cl, true, first_cluster_addr, spanned_words, write_table, is_concurrent);
 }
 
 template<typename RememberedSet>
 template <typename ClosureType>
 inline void
-ShenandoahScanRemembered<RememberedSet>::process_region(ShenandoahHeapRegion *region, ClosureType *cl, bool use_write_table) {
-  HeapWord *start_of_range = region->bottom();
+ShenandoahScanRemembered<RememberedSet>::process_region(ShenandoahHeapRegion *region, ClosureType *cl, bool is_concurrent) {
+  process_region(region, cl, false, is_concurrent);
+}
+
+template<typename RememberedSet>
+template <typename ClosureType>
+inline void
+ShenandoahScanRemembered<RememberedSet>::process_region(ShenandoahHeapRegion *region, ClosureType *cl,
+                                                        bool use_write_table, bool is_concurrent) {
+  size_t cluster_size =
+    CardTable::card_size_in_words() * ShenandoahCardCluster<ShenandoahDirectCardMarkRememberedSet>::CardsPerCluster;
+  size_t clusters = ShenandoahHeapRegion::region_size_words() / cluster_size;
+  process_region_slice(region, 0, clusters, region->end(), cl, use_write_table, is_concurrent);
+}
+
+template<typename RememberedSet>
+template <typename ClosureType>
+inline void
+ShenandoahScanRemembered<RememberedSet>::process_region_slice(ShenandoahHeapRegion *region, size_t start_offset, size_t clusters,
+                                                              HeapWord *end_of_range, ClosureType *cl, bool use_write_table,
+                                                              bool is_concurrent) {
+  HeapWord *start_of_range = region->bottom() + start_offset;
+  size_t cluster_size =
+    CardTable::card_size_in_words() * ShenandoahCardCluster<ShenandoahDirectCardMarkRememberedSet>::CardsPerCluster;
+  size_t words = clusters * cluster_size;
   size_t start_cluster_no = cluster_for_addr(start_of_range);
+  assert(addr_for_cluster(start_cluster_no) == start_of_range, "process_region_slice range must align on cluster boundary");
 
   // region->end() represents the end of memory spanned by this region, but not all of this
   //   memory is eligible to be scanned because some of this memory has not yet been allocated.
@@ -676,34 +736,43 @@ ShenandoahScanRemembered<RememberedSet>::process_region(ShenandoahHeapRegion *re
   // region->top() represents the end of allocated memory within this region.  Any addresses
   //   beyond region->top() should not be scanned as that memory does not hold valid objects.
 
-  HeapWord *end_of_range;
   if (use_write_table) {
     // This is update-refs servicing.
-    end_of_range = region->get_update_watermark();
+    if (end_of_range > region->get_update_watermark()) {
+      end_of_range = region->get_update_watermark();
+    }
   } else {
     // This is concurrent mark servicing.  Note that TAMS for this region is TAMS at start of old-gen
     // collection.  Here, we need to scan up to TAMS for most recently initiated young-gen collection.
     // Since all LABs are retired at init mark, and since replacement LABs are allocated lazily, and since no
     // promotions occur until evacuation phase, TAMS for most recent young-gen is same as top().
-    end_of_range = region->top();
+    if (end_of_range > region->top()) {
+      end_of_range = region->top();
+    }
   }
 
   log_debug(gc)("Remembered set scan processing Region " SIZE_FORMAT ", from " PTR_FORMAT " to " PTR_FORMAT ", using %s table",
-                region->index(), p2i(region->bottom()), p2i(end_of_range),
+                region->index(), p2i(start_of_range), p2i(end_of_range),
                 use_write_table? "read/write (updating)": "read (marking)");
-  // end_of_range may point to the middle of a cluster because region->top() may be different than region->end().
+
+  // Note that end_of_range may point to the middle of a cluster because region->top() or region->get_update_watermark() may
+  // be less than start_of_range + words.
+
   // We want to assure that our process_clusters() request spans all relevant clusters.  Note that each cluster
   // processed will avoid processing beyond end_of_range.
 
   // Note that any object that starts between start_of_range and end_of_range, including humongous objects, will
   // be fully processed by process_clusters, even though the object may reach beyond end_of_range.
-  size_t num_heapwords = end_of_range - start_of_range;
-  unsigned int cluster_size = CardTable::card_size_in_words() * ShenandoahCardCluster<ShenandoahDirectCardMarkRememberedSet>::CardsPerCluster;
-  size_t num_clusters = (size_t) ((num_heapwords - 1 + cluster_size) / cluster_size);
 
-  if (!region->is_humongous_continuation()) {
-    // Remembered set scanner
-    process_clusters(start_cluster_no, num_clusters, end_of_range, cl, use_write_table);
+  // If I am assigned to process a range that starts beyond end_of_range (top or update-watermark), we have no work to do.
+
+  if (start_of_range < end_of_range) {
+    if (region->is_humongous()) {
+      ShenandoahHeapRegion* start_region = region->humongous_start_region();
+      process_humongous_clusters(start_region, start_cluster_no, clusters, end_of_range, cl, use_write_table, is_concurrent);
+    } else {
+      process_clusters(start_cluster_no, clusters, end_of_range, cl, use_write_table, is_concurrent);
+    }
   }
 }
 
@@ -713,6 +782,13 @@ ShenandoahScanRemembered<RememberedSet>::cluster_for_addr(HeapWordImpl **addr) {
   size_t card_index = _rs->card_index_for_addr(addr);
   size_t result = card_index / ShenandoahCardCluster<RememberedSet>::CardsPerCluster;
   return result;
+}
+
+template<typename RememberedSet>
+inline HeapWord*
+ShenandoahScanRemembered<RememberedSet>::addr_for_cluster(size_t cluster_no) {
+  size_t card_index = cluster_no * ShenandoahCardCluster<RememberedSet>::CardsPerCluster;
+  return addr_for_card_index(card_index);
 }
 
 // This is used only for debug verification so don't worry about making the scan parallel.
@@ -731,9 +807,53 @@ inline void ShenandoahScanRemembered<RememberedSet>::roots_do(OopIterateClosure*
       size_t num_clusters = (size_t) ((num_heapwords - 1 + cluster_size) / cluster_size);
 
       // Remembered set scanner
-      process_clusters(start_cluster_no, num_clusters, end_of_range, cl);
+      if (region->is_humongous()) {
+        process_humongous_clusters(region->humongous_start_region(), start_cluster_no, num_clusters, end_of_range, cl,
+                                   false /* is_write_table */, false /* is_concurrent */);
+      } else {
+        process_clusters(start_cluster_no, num_clusters, end_of_range, cl, false /* is_concurrent */);
+      }
     }
   }
+}
+
+inline bool ShenandoahRegionChunkIterator::has_next() const {
+  return _index < _total_chunks;
+}
+
+inline bool ShenandoahRegionChunkIterator::next(struct ShenandoahRegionChunk *assignment) {
+  if (_index > _total_chunks) {
+    return false;
+  }
+  size_t new_index = Atomic::add(&_index, (size_t) 1, memory_order_relaxed);
+  if (new_index > _total_chunks) {
+    return false;
+  }
+  // convert to zero-based indexing
+  new_index--;
+
+  size_t group_no = new_index / _group_size;
+  if (group_no + 1 > _num_groups) {
+    group_no = _num_groups - 1;
+  }
+
+  // All size computations measured in HeapWord
+  size_t region_size_words = ShenandoahHeapRegion::region_size_words();
+  size_t group_region_index = _region_index[group_no];
+  size_t group_region_offset = _group_offset[group_no];
+
+  size_t index_within_group = new_index - (group_no * _group_size);
+  size_t group_chunk_size = _first_group_chunk_size >> group_no;
+  size_t offset_of_this_chunk = group_region_offset + index_within_group * group_chunk_size;
+  size_t regions_spanned_by_chunk_offset = offset_of_this_chunk / region_size_words;
+  size_t region_index = group_region_index + regions_spanned_by_chunk_offset;
+  size_t offset_within_region = offset_of_this_chunk % region_size_words;
+
+  assignment->_r = _heap->get_region(region_index);
+  assignment->_chunk_offset = offset_within_region;
+  assignment->_chunk_size = group_chunk_size;
+
+  return true;
 }
 
 #endif   // SHARE_GC_SHENANDOAH_SHENANDOAHSCANREMEMBEREDINLINE_HPP

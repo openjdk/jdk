@@ -209,6 +209,7 @@
 #include "memory/iterator.hpp"
 #include "gc/shared/workerThread.hpp"
 #include "gc/shenandoah/shenandoahCardTable.hpp"
+#include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.hpp"
 
@@ -923,11 +924,20 @@ public:
   void clear_old_remset() { _rs->clear_old_remset(); }
 
   size_t cluster_for_addr(HeapWord *addr);
+  HeapWord* addr_for_cluster(size_t cluster_no);
 
   void reset_object_range(HeapWord *from, HeapWord *to);
   void register_object(HeapWord *addr);
   void register_object_wo_lock(HeapWord *addr);
   void coalesce_objects(HeapWord *addr, size_t length_in_words);
+
+  HeapWord* first_object_in_card(size_t card_index) {
+    if (_scc->has_object(card_index)) {
+      return addr_for_card_index(card_index) + _scc->get_first_start(card_index);
+    } else {
+      return nullptr;
+    }
+  }
 
   // Return true iff this object is "properly" registered.
   bool verify_registration(HeapWord* address, ShenandoahMarkingContext* ctx);
@@ -967,16 +977,26 @@ public:
   // the template expansions were making it difficult for the link/loader to resolve references to the template-
   // parameterized implementations of this service.
   template <typename ClosureType>
-  inline void process_clusters(size_t first_cluster, size_t count, HeapWord *end_of_range, ClosureType *oops);
+  inline void process_clusters(size_t first_cluster, size_t count, HeapWord *end_of_range, ClosureType *oops, bool is_concurrent);
 
   template <typename ClosureType>
-  inline void process_clusters(size_t first_cluster, size_t count, HeapWord *end_of_range, ClosureType *oops, bool use_write_table);
+  inline void process_clusters(size_t first_cluster, size_t count, HeapWord *end_of_range, ClosureType *oops,
+                               bool use_write_table, bool is_concurrent);
 
   template <typename ClosureType>
-  inline void process_region(ShenandoahHeapRegion* region, ClosureType *cl);
+  inline void process_humongous_clusters(ShenandoahHeapRegion* r, size_t first_cluster, size_t count,
+                                         HeapWord *end_of_range, ClosureType *oops, bool use_write_table, bool is_concurrent);
+
 
   template <typename ClosureType>
-  inline void process_region(ShenandoahHeapRegion* region, ClosureType *cl, bool use_write_table);
+  inline void process_region(ShenandoahHeapRegion* region, ClosureType *cl, bool is_concurrent);
+
+  template <typename ClosureType>
+  inline void process_region(ShenandoahHeapRegion* region, ClosureType *cl, bool use_write_table, bool is_concurrent);
+
+  template <typename ClosureType>
+  inline void process_region_slice(ShenandoahHeapRegion* region, size_t offset, size_t clusters, HeapWord* end_of_range,
+                                   ClosureType *cl, bool use_write_table, bool is_concurrent);
 
   // To Do:
   //  Create subclasses of ShenandoahInitMarkRootsClosure and
@@ -1002,6 +1022,80 @@ public:
   void roots_do(OopIterateClosure* cl);
 };
 
+struct ShenandoahRegionChunk {
+  ShenandoahHeapRegion *_r;
+  size_t _chunk_offset;          // HeapWordSize offset
+  size_t _chunk_size;            // HeapWordSize qty
+};
+
+class ShenandoahRegionChunkIterator : public StackObj {
+private:
+  // smallest_chunk_size is 64 words per card *
+  // ShenandoahCardCluster<ShenandoahDirectCardMarkRememberedSet>::CardsPerCluster.
+  // This is computed from CardTable::card_size_in_words() *
+  //      ShenandoahCardCluster<ShenandoahDirectCardMarkRememberedSet>::CardsPerCluster;
+  // We can't perform this computation here, because of encapsulation and initialization constraints.  We paste
+  // the magic number here, and assert that this number matches the intended computation in constructor.
+  static const size_t _smallest_chunk_size = 64 * ShenandoahCardCluster<ShenandoahDirectCardMarkRememberedSet>::CardsPerCluster;
+
+  // The total remembered set scanning effort is divided into chunks of work that are assigned to individual worker tasks.
+  // The chunks of assigned work are divided into groups, where the size of each group (_group_size) is 4 * the number of
+  // worker tasks.  All of the assignments within a group represent the same amount of memory to be scanned.  Each of the
+  // assignments within the first group are of size _first_group_chunk_size (typically the ShenandoahHeapRegion size, but
+  // possibly smaller.  Each of the assignments within each subsequent group are half the size of the assignments in the
+  // preceding group.  The last group may be larger than the others.  Because no group is allowed to have smaller assignments
+  // than _smallest_chunk_size, which is 32 KB.
+
+  // Under normal circumstances, no configuration needs more than _maximum_groups (default value of 16).
+
+  static const size_t _maximum_groups = 16;
+
+  const ShenandoahHeap* _heap;
+
+  const size_t _group_size;                        // Number of chunks in each group, equals worker_threads * 8
+  const size_t _first_group_chunk_size;
+  const size_t _num_groups;                        // Number of groups in this configuration
+  const size_t _total_chunks;
+
+  shenandoah_padding(0);
+  volatile size_t _index;
+  shenandoah_padding(1);
+
+  size_t _region_index[_maximum_groups];
+  size_t _group_offset[_maximum_groups];
+
+
+  // No implicit copying: iterators should be passed by reference to capture the state
+  NONCOPYABLE(ShenandoahRegionChunkIterator);
+
+  // Makes use of _heap.
+  size_t calc_group_size();
+
+  // Makes use of _group_size, which must be initialized before call.
+  size_t calc_first_group_chunk_size();
+
+  // Makes use of _group_size and _first_group_chunk_size, both of which must be initialized before call.
+  size_t calc_num_groups();
+
+  // Makes use of _group_size, _first_group_chunk_size, which must be initialized before call.
+  size_t calc_total_chunks();
+
+public:
+  ShenandoahRegionChunkIterator(size_t worker_count);
+  ShenandoahRegionChunkIterator(ShenandoahHeap* heap, size_t worker_count);
+
+  // Reset iterator to default state
+  void reset();
+
+  // Fills in assignment with next chunk of work and returns true iff there is more work.
+  // Otherwise, returns false.  This is multi-thread-safe.
+  inline bool next(struct ShenandoahRegionChunk *assignment);
+
+  // This is *not* MT safe. However, in the absence of multithreaded access, it
+  // can be used to determine if there is more work to do.
+  inline bool has_next() const;
+};
+
 typedef ShenandoahScanRemembered<ShenandoahDirectCardMarkRememberedSet> RememberedScanner;
 
 class ShenandoahScanRememberedTask : public WorkerTask {
@@ -1009,13 +1103,16 @@ class ShenandoahScanRememberedTask : public WorkerTask {
   ShenandoahObjToScanQueueSet* _queue_set;
   ShenandoahObjToScanQueueSet* _old_queue_set;
   ShenandoahReferenceProcessor* _rp;
-  ShenandoahRegionIterator* _regions;
+  ShenandoahRegionChunkIterator* _work_list;
+  bool _is_concurrent;
  public:
   ShenandoahScanRememberedTask(ShenandoahObjToScanQueueSet* queue_set,
                                ShenandoahObjToScanQueueSet* old_queue_set,
                                ShenandoahReferenceProcessor* rp,
-                               ShenandoahRegionIterator* regions);
+                               ShenandoahRegionChunkIterator* work_list,
+                               bool is_concurrent);
 
   void work(uint worker_id);
+  void do_work(uint worker_id);
 };
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHSCANREMEMBERED_HPP

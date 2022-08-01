@@ -160,7 +160,7 @@ private:
   virtual ShenandoahObjToScanQueueSet* old_gen_task_queues() const;
 
   // Scan remembered set at start of concurrent young-gen marking. */
-  void scan_remembered_set();
+  void scan_remembered_set(bool is_concurrent);
 
   void increment_affiliated_region_count();
   void decrement_affiliated_region_count();
