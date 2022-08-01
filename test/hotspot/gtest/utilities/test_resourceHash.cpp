@@ -299,7 +299,12 @@ class ResourceHashtableDeleteTest : public ::testing::Test {
         // NONCOPYABLE(TestValue)
         TestValue(Symbol* name) : _s(name) { _s->increment_refcount(); }
         TestValue(const TestValue& tv) { _s = tv.s(); _s->increment_refcount(); }
-        TestValue& operator=(const TestValue& tv) { _s = tv.s(); _s->increment_refcount(); return *this; }
+        TestValue& operator=(const TestValue& tv) {
+          if (&tv != this) {
+            _s = tv.s();
+            _s->increment_refcount();
+          }
+          return *this; }
         ~TestValue() { _s->decrement_refcount(); }
         Symbol* s() const { return _s; }
     };
