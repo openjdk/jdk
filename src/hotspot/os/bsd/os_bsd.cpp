@@ -1474,14 +1474,6 @@ void os::jvm_path(char *buf, jint buflen) {
   saved_jvm_path[MAXPATHLEN - 1] = '\0';
 }
 
-void os::print_jni_name_prefix_on(outputStream* st, int args_size) {
-  // no prefix required, not even "_"
-}
-
-void os::print_jni_name_suffix_on(outputStream* st, int args_size) {
-  // no suffix required
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 // Virtual Memory
 
