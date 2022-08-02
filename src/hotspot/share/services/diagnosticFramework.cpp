@@ -463,7 +463,6 @@ void DCmdFactory::send_notification_internal(TRAPS) {
 
     Klass* k = Management::com_sun_management_internal_DiagnosticCommandImpl_klass(CHECK);
     if (k == nullptr) {
-      // No management support in this VM.
       THROW_MSG(vmSymbols::java_lang_IllegalStateException(),
                 "DiagnosticCommandImpl is not available");
     }
