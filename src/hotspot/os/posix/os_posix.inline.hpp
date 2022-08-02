@@ -25,9 +25,10 @@
 #ifndef OS_POSIX_OS_POSIX_INLINE_HPP
 #define OS_POSIX_OS_POSIX_INLINE_HPP
 
+#include "os_posix.hpp"
+
 #include "runtime/mutex.hpp"
 #include "runtime/os.hpp"
-#include "os_posix.hpp"
 
 #include <unistd.h>
 #include <sys/socket.h>

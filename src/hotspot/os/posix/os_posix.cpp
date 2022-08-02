@@ -49,7 +49,6 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/vmError.hpp"
-
 #ifdef LINUX
 #include "os_linux.hpp"
 #endif

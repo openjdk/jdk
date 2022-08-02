@@ -24,8 +24,8 @@
 
 #include "precompiled.hpp"
 #ifndef __APPLE__
-#include "runtime/os.hpp"
 #include "os_posix.hpp"
+#include "runtime/os.hpp"
 // POSIX unnamed semaphores are not supported on OS X.
 #include "semaphore_posix.hpp"
 #include <semaphore.h>

@@ -27,10 +27,10 @@
 
 // os_windows.hpp included by os.hpp
 
+#include "os_windows.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/os.hpp"
-#include "os_windows.hpp"
 
 inline bool os::zero_page_read_protected() {
   return true;

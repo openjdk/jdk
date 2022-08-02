@@ -26,6 +26,7 @@
 #define OS_POSIX_OS_POSIX_HPP
 
 #include "runtime/os.hpp"
+
 #include <errno.h>
 
 // Note: the Posix API aims to capture functionality available on all Posix

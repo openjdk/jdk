@@ -27,7 +27,6 @@
 
 #include "runtime/os.hpp"
 
-#include OS_HEADER(os)
 #include OS_HEADER_INLINE(os)
 #include OS_CPU_HEADER_INLINE(os)
 

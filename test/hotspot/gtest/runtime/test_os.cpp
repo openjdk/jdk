@@ -34,7 +34,6 @@
 #include "unittest.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/threads.hpp"
-
 #ifdef _WIN32
 #include "os_windows.hpp"
 #endif
