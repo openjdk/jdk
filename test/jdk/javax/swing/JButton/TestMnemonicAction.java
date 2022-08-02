@@ -23,6 +23,13 @@
  * questions.
  */
 
+/* @test
+ * @key headful
+ * @bug 4850101
+ * @summary Verifies if Setting mnemonic to VK_F4 underlines the letter S.
+ * @run main TestMnemonicAction
+ */
+
 import java.io.File;
 import java.awt.Dimension;
 import java.awt.Point;
