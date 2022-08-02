@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,8 @@
  * @bug 8049075
  * @summary javac, wildcards and generic vararg method invocation not accepted
  * @compile VarargsAndWildcardParameterizedTypeTest.java
- * @compile -source 8 VarargsAndWildcardParameterizedTypeTest.java
- * @compile -source 7 VarargsAndWildcardParameterizedTypeTest.java
+ * @compile --release 8 VarargsAndWildcardParameterizedTypeTest.java
+ * @compile --release 7 VarargsAndWildcardParameterizedTypeTest.java
  */
 
 class VarargsAndWildcardParameterizedTypeTest {

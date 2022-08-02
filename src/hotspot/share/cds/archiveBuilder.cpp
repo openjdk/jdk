@@ -727,6 +727,7 @@ void ArchiveBuilder::make_klasses_shareable() {
     const char* type;
     const char* unlinked = "";
     const char* hidden = "";
+    const char* generated = "";
     Klass* k = klasses()->at(i);
     k->remove_java_mirror();
     if (k->is_objArray_klass()) {
@@ -771,13 +772,18 @@ void ArchiveBuilder::make_klasses_shareable() {
         hidden = " ** hidden";
       }
 
+      if (ik->is_generated_shared_class()) {
+        generated = " ** generated";
+      }
       MetaspaceShared::rewrite_nofast_bytecodes_and_calculate_fingerprints(Thread::current(), ik);
       ik->remove_unshareable_info();
     }
 
     if (log_is_enabled(Debug, cds, class)) {
       ResourceMark rm;
-      log_debug(cds, class)("klasses[%5d] = " PTR_FORMAT " %-5s %s%s%s", i, p2i(to_requested(k)), type, k->external_name(), hidden, unlinked);
+      log_debug(cds, class)("klasses[%5d] = " PTR_FORMAT " %-5s %s%s%s%s", i,
+                            p2i(to_requested(k)), type, k->external_name(),
+                            hidden, unlinked, generated);
     }
   }
 

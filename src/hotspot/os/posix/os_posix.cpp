@@ -603,6 +603,14 @@ void os::print_active_locale(outputStream* st) {
   }
 }
 
+void os::print_jni_name_prefix_on(outputStream* st, int args_size) {
+  // no prefix required
+}
+
+void os::print_jni_name_suffix_on(outputStream* st, int args_size) {
+  // no suffix required
+}
+
 bool os::get_host_name(char* buf, size_t buflen) {
   struct utsname name;
   uname(&name);

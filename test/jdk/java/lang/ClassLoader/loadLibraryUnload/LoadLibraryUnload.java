@@ -26,7 +26,8 @@
  * LoadLibraryUnload class calls ClassLoader.loadedLibrary from multiple threads
  */
 /*
- * @test
+ * The driver for this test is LoadLibraryUnloadTest.java.
+ *
  * @bug 8266310
  * @summary Loads a native library from multiple class loaders and multiple
  *          threads. This creates a race for loading the library. The winner
@@ -35,14 +36,12 @@
  *          loaded in a different class loader that won the race. The test
  *          checks that the loaded class is GC'ed, that means the class loader
  *          is GC'ed and the native library is unloaded.
- * @library /test/lib
- * @build LoadLibraryUnload p.Class1
- * @run main/othervm/native -Xcheck:jni LoadLibraryUnload
  */
 import jdk.test.lib.Asserts;
 import jdk.test.lib.Utils;
 
 import java.lang.*;
+import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 import java.lang.reflect.*;
 import java.lang.ref.WeakReference;
@@ -161,7 +160,6 @@ public class LoadLibraryUnload {
         threads = null;
         canary = null;
         exceptions.clear();
-
         // Wait for the canary for each of the libraries to be GC'd
         // before exiting the test.
         for (int i = 0; i < LOADER_COUNT; i++) {
@@ -172,5 +170,7 @@ public class LoadLibraryUnload {
                 Asserts.fail("Too few cleared WeakReferences");
             }
         }
+        // Ensure the WeakReferences are strongly referenced until they can be dequeued
+        Reference.reachabilityFence(wCanary);
     }
 }

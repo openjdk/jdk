@@ -529,7 +529,10 @@ extern "C" JNIEXPORT void ps() { // print stack
     if (Verbose) p->trace_stack();
   } else {
     frame f = os::current_frame();
-    RegisterMap reg_map(p);
+    RegisterMap reg_map(p,
+                        RegisterMap::UpdateMap::include,
+                        RegisterMap::ProcessFrames::include,
+                        RegisterMap::WalkContinuation::skip);
     f = f.sender(&reg_map);
     tty->print("(guessing starting frame id=" PTR_FORMAT " based on current fp)\n", p2i(f.id()));
     p->trace_stack_from(vframe::new_vframe(&f, &reg_map, p));

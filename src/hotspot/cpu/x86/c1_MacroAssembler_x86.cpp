@@ -138,7 +138,7 @@ void C1_MacroAssembler::try_allocate(Register obj, Register var_size_in_bytes, i
   if (UseTLAB) {
     tlab_allocate(noreg, obj, var_size_in_bytes, con_size_in_bytes, t1, t2, slow_case);
   } else {
-    eden_allocate(noreg, obj, var_size_in_bytes, con_size_in_bytes, t1, slow_case);
+    jmp(slow_case);
   }
 }
 
@@ -325,7 +325,8 @@ void C1_MacroAssembler::build_frame(int frame_size_in_bytes, int bang_size_in_by
   decrement(rsp, frame_size_in_bytes); // does not emit code for frame_size == 0
 
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  bs->nmethod_entry_barrier(this);
+  // C1 code is not hot enough to micro optimize the nmethod entry barrier with an out-of-line stub
+  bs->nmethod_entry_barrier(this, NULL /* slow_path */, NULL /* continuation */);
 }
 
 
