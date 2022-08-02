@@ -211,7 +211,7 @@ bool os::win32::register_code_area(char *low, char *high) {
   return true;
 }
 
-#ifdef PLATFORM_PRINT_NATIVE_STACK
+#ifdef HAVE_PLATFORM_PRINT_NATIVE_STACK
 /*
  * Windows/x64 does not use stack frames the way expected by Java:
  * [1] in most cases, there is no frame pointer. All locals are addressed via RSP
@@ -295,7 +295,7 @@ bool os::win32::platform_print_native_stack(outputStream* st, const void* contex
 
   return true;
 }
-#endif // PLATFORM_PRINT_NATIVE_STACK
+#endif // HAVE_PLATFORM_PRINT_NATIVE_STACK
 
 address os::fetch_frame_from_context(const void* ucVoid,
                     intptr_t** ret_sp, intptr_t** ret_fp) {

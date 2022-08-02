@@ -29,7 +29,7 @@
 #include "os_windows.hpp"
 
 #ifdef AMD64
-#define PLATFORM_PRINT_NATIVE_STACK 1
+#define HAVE_PLATFORM_PRINT_NATIVE_STACK 1
 inline bool os::platform_print_native_stack(outputStream* st, const void* context,
                                      char *buf, int buf_size) {
   return os::win32::platform_print_native_stack(st, context, buf, buf_size);

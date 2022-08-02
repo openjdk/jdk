@@ -28,7 +28,7 @@
 
 #include "os_aix.hpp"
 
-#define PLATFORM_PRINT_NATIVE_STACK 1
+#define HAVE_PLATFORM_PRINT_NATIVE_STACK 1
 inline bool os::platform_print_native_stack(outputStream* st, const void* context,
                                             char *buf, int buf_size) {
   return os::Aix::platform_print_native_stack(st, context, buf, buf_size);

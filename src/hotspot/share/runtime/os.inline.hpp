@@ -34,7 +34,7 @@
 // Below are inline functions that are rarely implemented by the platforms.
 // Provide default empty implementation.
 
-#ifndef PLATFORM_PRINT_NATIVE_STACK
+#ifndef HAVE_PLATFORM_PRINT_NATIVE_STACK
 inline bool os::platform_print_native_stack(outputStream* st, const void* context,
                                      char *buf, int buf_size) {
   return false;
