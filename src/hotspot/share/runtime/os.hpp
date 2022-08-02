@@ -88,9 +88,9 @@ class frame;
 // - src/hotspot/os_cpu/<os>_<cpu>/os_<os>_<cpu>.cpp
 //
 //   The Porting APIs declared as "inline" in os.hpp must be
-//   implemented in one of the two .inline.hpp files, depending on whether
-//   the feature is generic to the OS, or specific to a particular CPU
-//   architecture. These two files are automatically included by
+//   implemented in one of the two .inline.hpp files, depending on
+//   whether the feature is specific to a particular CPU architecture
+//   for this OS. These two files are automatically included by
 //   os.inline.hpp. Platform-independent source files must not include
 //   these two files directly.
 //
