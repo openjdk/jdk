@@ -335,6 +335,21 @@ public:
     uintptr_t dest = (uintptr_t)target;
     int offset_lo = dest & 0xfff;
     Instruction_aarch64::patch(insn_addr + sizeof (uint32_t), 21, 10, offset_lo);
+
+    unsigned insn3 = insn_at(insn_addr, 2);
+    address insn3_addr = insn_addr + sizeof(uint32_t) * 2;
+    if (insn_addr < target + Assembler::branch_range && target < insn_addr + Assembler::branch_range
+      && (Instruction_aarch64::extract(insn3, 31, 10) == 0b1101011000011111000000
+        || Instruction_aarch64::extract(insn3, 31, 26) == 0b000101)) {
+      Instruction_aarch64::patch(insn3_addr, 31, 26, 0b000101);                   // b
+      Instruction_aarch64::spatch(insn3_addr, 25, 0, (target - insn3_addr) >> 2); // unconditionalBranch
+      return 3;
+    } else if (Instruction_aarch64::extract(insn3, 31, 26) == 0b000101) {
+      Instruction_aarch64::patch(insn3_addr, 31, 10, 0b1101011000011111000000);   // br
+      Instruction_aarch64::patch(insn3_addr, 9, 5, Instruction_aarch64::extract(insn_at(insn_addr, 0), 4, 0));
+      Instruction_aarch64::patch(insn3_addr, 4, 0, 0);
+      return 3;
+    }
     return 2;
   }
   static int adrpMovk_impl(address insn_addr, address &target) {
@@ -448,11 +463,18 @@ public:
     return 2;
   }
   static int adrpAdd_impl(address insn_addr, address &target) {
-    uint32_t insn2 = insn_at(insn_addr, 1);
-    // add (immediate)
-    ptrdiff_t byte_offset = Instruction_aarch64::extract(insn2, 21, 10);
-    target += byte_offset;
-    return 2;
+    uint32_t insn3 = insn_at(insn_addr, 2);
+    if (Instruction_aarch64::extract(insn3, 31, 26) == 0b000101) {
+      intptr_t offset = Instruction_aarch64::sextract(insn3, 25, 0);
+      target = insn_addr + sizeof(uint32_t) * 2 + (offset << 2);
+      return 3;
+    } else {
+      uint32_t insn2 = insn_at(insn_addr, 1);
+      // add (immediate)
+      ptrdiff_t byte_offset = Instruction_aarch64::extract(insn2, 21, 10);
+      target += byte_offset;
+      return 2;
+    }
   }
   static int adrpMovk_impl(address insn_addr, address &target) {
     uint32_t insn2 = insn_at(insn_addr, 1);
