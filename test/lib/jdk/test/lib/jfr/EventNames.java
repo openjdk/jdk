@@ -82,9 +82,6 @@ public class EventNames {
     public final static String OldObjectSample = PREFIX + "OldObjectSample";
     public final static String SymbolTableStatistics = PREFIX + "SymbolTableStatistics";
     public final static String StringTableStatistics = PREFIX + "StringTableStatistics";
-    public final static String PlaceholderTableStatistics = PREFIX + "PlaceholderTableStatistics";
-    public final static String LoaderConstraintsTableStatistics = PREFIX + "LoaderConstraintsTableStatistics";
-    public final static String ProtectionDomainCacheTableStatistics = PREFIX + "ProtectionDomainCacheTableStatistics";
     public static final String RedefineClasses = PREFIX + "RedefineClasses";
     public static final String RetransformClasses = PREFIX + "RetransformClasses";
     public static final String ClassRedefinition = PREFIX + "ClassRedefinition";

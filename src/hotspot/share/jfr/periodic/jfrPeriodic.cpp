@@ -552,21 +552,6 @@ TRACE_REQUEST_FUNC(StringTableStatistics) {
   emit_table_statistics<EventStringTableStatistics>(statistics);
 }
 
-TRACE_REQUEST_FUNC(PlaceholderTableStatistics) {
-  TableStatistics statistics = SystemDictionary::placeholders_statistics();
-  emit_table_statistics<EventPlaceholderTableStatistics>(statistics);
-}
-
-TRACE_REQUEST_FUNC(LoaderConstraintsTableStatistics) {
-  TableStatistics statistics = SystemDictionary::loader_constraints_statistics();
-  emit_table_statistics<EventLoaderConstraintsTableStatistics>(statistics);
-}
-
-TRACE_REQUEST_FUNC(ProtectionDomainCacheTableStatistics) {
-  TableStatistics statistics = SystemDictionary::protection_domain_cache_statistics();
-  emit_table_statistics<EventProtectionDomainCacheTableStatistics>(statistics);
-}
-
 TRACE_REQUEST_FUNC(CompilerStatistics) {
   EventCompilerStatistics event;
   event.set_compileCount(CompileBroker::get_total_compile_count());
