@@ -50,7 +50,7 @@ import java.security.AccessController;
 
 public class GetBooleanAction
         implements java.security.PrivilegedAction<Boolean> {
-    private String theProp;
+    private final String theProp;
 
     /**
      * Constructor that takes the name of the system property whose boolean

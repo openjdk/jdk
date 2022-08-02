@@ -28,6 +28,8 @@ package sun.security.ssl;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.List;
+import java.util.Objects;
+
 import sun.security.ssl.SSLExtension.ExtensionConsumer;
 import sun.security.ssl.SSLHandshake.HandshakeMessage;
 import sun.security.ssl.SignatureAlgorithmsExtension.SignatureSchemesSpec;
@@ -85,7 +87,7 @@ final class CertSignAlgsExtension {
             ClientHandshakeContext chc = (ClientHandshakeContext)context;
 
             // Is it a supported and enabled extension?
-            if (!chc.sslConfig.isAvailable(
+            if (!Objects.requireNonNull(chc.sslConfig).isAvailable(
                     SSLExtension.CH_SIGNATURE_ALGORITHMS_CERT)) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
@@ -140,7 +142,7 @@ final class CertSignAlgsExtension {
             ServerHandshakeContext shc = (ServerHandshakeContext)context;
 
             // Is it a supported and enabled extension?
-            if (!shc.sslConfig.isAvailable(
+            if (!Objects.requireNonNull(shc.sslConfig).isAvailable(
                     SSLExtension.CH_SIGNATURE_ALGORITHMS_CERT)) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
@@ -196,13 +198,13 @@ final class CertSignAlgsExtension {
             shc.handshakeSession.setPeerSupportedSignatureAlgorithms(schemes);
 
             if (!shc.isResumption && shc.negotiatedProtocol.useTLS13PlusSpec()) {
-                if (shc.sslConfig.clientAuthType !=
+                if (Objects.requireNonNull(shc.sslConfig).clientAuthType !=
                         ClientAuthType.CLIENT_AUTH_NONE) {
-                    shc.handshakeProducers.putIfAbsent(
+                    Objects.requireNonNull(shc.handshakeProducers).putIfAbsent(
                             SSLHandshake.CERTIFICATE_REQUEST.id,
                             SSLHandshake.CERTIFICATE_REQUEST);
                 }
-                shc.handshakeProducers.put(SSLHandshake.CERTIFICATE.id,
+                Objects.requireNonNull(shc.handshakeProducers).put(SSLHandshake.CERTIFICATE.id,
                         SSLHandshake.CERTIFICATE);
                 shc.handshakeProducers.putIfAbsent(
                         SSLHandshake.CERTIFICATE_VERIFY.id,
@@ -229,7 +231,7 @@ final class CertSignAlgsExtension {
             ServerHandshakeContext shc = (ServerHandshakeContext)context;
 
             // Is it a supported and enabled extension?
-            if (!shc.sslConfig.isAvailable(
+            if (!Objects.requireNonNull(shc.sslConfig).isAvailable(
                     SSLExtension.CH_SIGNATURE_ALGORITHMS_CERT)) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
@@ -280,7 +282,7 @@ final class CertSignAlgsExtension {
             ClientHandshakeContext chc = (ClientHandshakeContext)context;
 
             // Is it a supported and enabled extension?
-            if (!chc.sslConfig.isAvailable(
+            if (!Objects.requireNonNull(chc.sslConfig).isAvailable(
                     SSLExtension.CH_SIGNATURE_ALGORITHMS_CERT)) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(

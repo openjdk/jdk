@@ -78,14 +78,14 @@ public class PKCS8Key implements PrivateKey {
     private static final int V2 = 1;
 
     /**
-     * Default constructor. Constructors in sub-classes that create a new key
+     * Default constructor. Constructors in subclasses that create a new key
      * from its components require this. These constructors must initialize
      * {@link #algid} and {@link #key}.
      */
     protected PKCS8Key() { }
 
     /**
-     * Another constructor. Constructors in sub-classes that create a new key
+     * Another constructor. Constructors in subclasses that create a new key
      * from an encoded byte array require this. We do not assign this
      * encoding to {@link #encodedKey} directly.
      *

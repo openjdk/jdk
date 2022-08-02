@@ -43,6 +43,7 @@ import java.text.MessageFormat;
 import java.util.EnumSet;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import javax.crypto.interfaces.DHPublicKey;
 import javax.crypto.spec.DHParameterSpec;
 import javax.crypto.spec.DHPublicKeySpec;
@@ -132,7 +133,7 @@ final class DHServerKeyExchange {
                                     x509Possession,
                                     shc.negotiatedProtocol);
                     if (schemeAndSigner == null) {
-                        // Unlikely, the credentials generator should have
+                        // Unlikely, the credential's generator should have
                         // selected the preferable signature algorithm properly.
                         throw shc.conContext.fatal(Alert.INTERNAL_ERROR,
                                 "No supported signature algorithm for " +
@@ -260,7 +261,7 @@ final class DHServerKeyExchange {
             }
 
             try {
-                updateSignature(signer,
+                updateSignature(Objects.requireNonNull(signer),
                         chc.clientHelloRandom.randomBytes,
                         chc.serverHelloRandom.randomBytes);
 
@@ -312,19 +313,20 @@ final class DHServerKeyExchange {
         public String toString() {
             if (paramsSignature == null) {    // anonymous
                 MessageFormat messageFormat = new MessageFormat(
-                    "\"DH ServerKeyExchange\": '{'\n" +
-                    "  \"parameters\": '{'\n" +
-                    "    \"dh_p\": '{'\n" +
-                    "{0}\n" +
-                    "    '}',\n" +
-                    "    \"dh_g\": '{'\n" +
-                    "{1}\n" +
-                    "    '}',\n" +
-                    "    \"dh_Ys\": '{'\n" +
-                    "{2}\n" +
-                    "    '}',\n" +
-                    "  '}'\n" +
-                    "'}'",
+                        """
+                                "DH ServerKeyExchange": '{'
+                                  "parameters": '{'
+                                    "dh_p": '{'
+                                {0}
+                                    '}',
+                                    "dh_g": '{'
+                                {1}
+                                    '}',
+                                    "dh_Ys": '{'
+                                {2}
+                                    '}',
+                                  '}'
+                                '}'""",
                     Locale.ENGLISH);
 
                 HexDumpEncoder hexEncoder = new HexDumpEncoder();
@@ -340,77 +342,79 @@ final class DHServerKeyExchange {
                 return messageFormat.format(messageFields);
             }
 
+            MessageFormat messageFormat;
+            HexDumpEncoder hexEncoder = new HexDumpEncoder();
+            Object[] messageFields;
             if (useExplicitSigAlgorithm) {
-                MessageFormat messageFormat = new MessageFormat(
-                    "\"DH ServerKeyExchange\": '{'\n" +
-                    "  \"parameters\": '{'\n" +
-                    "    \"dh_p\": '{'\n" +
-                    "{0}\n" +
-                    "    '}',\n" +
-                    "    \"dh_g\": '{'\n" +
-                    "{1}\n" +
-                    "    '}',\n" +
-                    "    \"dh_Ys\": '{'\n" +
-                    "{2}\n" +
-                    "    '}',\n" +
-                    "  '}',\n" +
-                    "  \"digital signature\":  '{'\n" +
-                    "    \"signature algorithm\": \"{3}\"\n" +
-                    "    \"signature\": '{'\n" +
-                    "{4}\n" +
-                    "    '}',\n" +
-                    "  '}'\n" +
-                    "'}'",
-                    Locale.ENGLISH);
+                messageFormat = new MessageFormat(
+                        """
+                                "DH ServerKeyExchange": '{'
+                                  "parameters": '{'
+                                    "dh_p": '{'
+                                {0}
+                                    '}',
+                                    "dh_g": '{'
+                                {1}
+                                    '}',
+                                    "dh_Ys": '{'
+                                {2}
+                                    '}',
+                                  '}',
+                                  "digital signature":  '{'
+                                    "signature algorithm": "{3}"
+                                    "signature": '{'
+                                {4}
+                                    '}',
+                                  '}'
+                                '}'""",
+                        Locale.ENGLISH);
 
-                HexDumpEncoder hexEncoder = new HexDumpEncoder();
-                Object[] messageFields = {
-                    Utilities.indent(
-                            hexEncoder.encodeBuffer(p), "      "),
-                    Utilities.indent(
-                            hexEncoder.encodeBuffer(g), "      "),
-                    Utilities.indent(
-                            hexEncoder.encodeBuffer(y), "      "),
-                    signatureScheme.name,
-                    Utilities.indent(
-                            hexEncoder.encodeBuffer(paramsSignature), "      ")
+                messageFields = new Object[]{
+                        Utilities.indent(
+                                hexEncoder.encodeBuffer(p), "      "),
+                        Utilities.indent(
+                                hexEncoder.encodeBuffer(g), "      "),
+                        Utilities.indent(
+                                hexEncoder.encodeBuffer(y), "      "),
+                        signatureScheme.name,
+                        Utilities.indent(
+                                hexEncoder.encodeBuffer(paramsSignature), "      ")
                 };
 
-                return messageFormat.format(messageFields);
             } else {
-                MessageFormat messageFormat = new MessageFormat(
-                    "\"DH ServerKeyExchange\": '{'\n" +
-                    "  \"parameters\": '{'\n" +
-                    "    \"dh_p\": '{'\n" +
-                    "{0}\n" +
-                    "    '}',\n" +
-                    "    \"dh_g\": '{'\n" +
-                    "{1}\n" +
-                    "    '}',\n" +
-                    "    \"dh_Ys\": '{'\n" +
-                    "{2}\n" +
-                    "    '}',\n" +
-                    "  '}',\n" +
-                    "  \"signature\": '{'\n" +
-                    "{3}\n" +
-                    "  '}'\n" +
-                    "'}'",
-                    Locale.ENGLISH);
+                messageFormat = new MessageFormat(
+                        """
+                                "DH ServerKeyExchange": '{'
+                                  "parameters": '{'
+                                    "dh_p": '{'
+                                {0}
+                                    '}',
+                                    "dh_g": '{'
+                                {1}
+                                    '}',
+                                    "dh_Ys": '{'
+                                {2}
+                                    '}',
+                                  '}',
+                                  "signature": '{'
+                                {3}
+                                  '}'
+                                '}'""",
+                        Locale.ENGLISH);
 
-                HexDumpEncoder hexEncoder = new HexDumpEncoder();
-                Object[] messageFields = {
-                    Utilities.indent(
-                            hexEncoder.encodeBuffer(p), "      "),
-                    Utilities.indent(
-                            hexEncoder.encodeBuffer(g), "      "),
-                    Utilities.indent(
-                            hexEncoder.encodeBuffer(y), "      "),
-                    Utilities.indent(
-                            hexEncoder.encodeBuffer(paramsSignature), "    ")
+                messageFields = new Object[]{
+                        Utilities.indent(
+                                hexEncoder.encodeBuffer(p), "      "),
+                        Utilities.indent(
+                                hexEncoder.encodeBuffer(g), "      "),
+                        Utilities.indent(
+                                hexEncoder.encodeBuffer(y), "      "),
+                        Utilities.indent(
+                                hexEncoder.encodeBuffer(paramsSignature), "    ")
                 };
 
-                return messageFormat.format(messageFields);
             }
+            return messageFormat.format(messageFields);
         }
 
         private static Signature getSignature(String keyAlgorithm,
@@ -428,12 +432,10 @@ final class DHServerKeyExchange {
                         "neither an RSA or a DSA key : " + keyAlgorithm);
             }
 
-            if (signer != null) {
-                if (key instanceof PublicKey) {
-                    signer.initVerify((PublicKey)(key));
-                } else {
-                    signer.initSign((PrivateKey)key);
-                }
+            if (key instanceof PublicKey) {
+                signer.initVerify((PublicKey)(key));
+            } else {
+                signer.initSign((PrivateKey)key);
             }
 
             return signer;
@@ -532,7 +534,7 @@ final class DHServerKeyExchange {
                     "Could not generate DHPublicKey", gse);
             }
 
-            if (!chc.algorithmConstraints.permits(
+            if (!Objects.requireNonNull(chc.algorithmConstraints).permits(
                     EnumSet.of(CryptoPrimitive.KEY_AGREEMENT), publicKey)) {
                 throw chc.conContext.fatal(Alert.INSUFFICIENT_SECURITY,
                         "DH ServerKeyExchange does not comply to " +
@@ -543,7 +545,7 @@ final class DHServerKeyExchange {
             // update
             //
             NamedGroup namedGroup = NamedGroup.valueOf(publicKey.getParams());
-            chc.handshakeCredentials.add(
+            Objects.requireNonNull(chc.handshakeCredentials).add(
                     new DHECredentials(publicKey, namedGroup));
 
             //

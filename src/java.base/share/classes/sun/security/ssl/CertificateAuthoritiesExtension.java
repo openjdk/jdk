@@ -104,7 +104,7 @@ final class CertificateAuthoritiesExtension {
                 byte[] encodedPrincipal = x500Principal.getEncoded();
                 sizeAccount += encodedPrincipal.length;
                 if (sizeAccount > 0xFFFF) {  // the size limit of this extension
-                    // If there too many trusts CAs such that they exceed the
+                    // If there are too many trusts CAs such that they exceed the
                     // size limit of the extension, enabling this extension
                     // does not really make sense as there is no way to
                     // indicate the peer certificate selection accurately.

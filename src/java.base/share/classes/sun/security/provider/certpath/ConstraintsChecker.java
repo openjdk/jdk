@@ -195,10 +195,10 @@ class ConstraintsChecker extends PKIXCertPathChecker {
                 debug.println("mergedNC = " + newConstraints);
             }
             if (newConstraints == null) {
-                return newConstraints;
+                return null;
             } else {
                 // Make sure we do a clone here, because we're probably
-                // going to modify this object later and we don't want to
+                // going to modify this object later, and we don't want to
                 // be sharing it with a Certificate object!
                 return (NameConstraintsExtension)newConstraints.clone();
             }

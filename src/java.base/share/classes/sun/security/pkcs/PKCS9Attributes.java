@@ -28,6 +28,8 @@ package sun.security.pkcs;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Hashtable;
+import java.util.Objects;
+
 import sun.security.util.DerEncoder;
 import sun.security.util.DerValue;
 import sun.security.util.DerInputStream;
@@ -44,7 +46,7 @@ public class PKCS9Attributes {
      * Attributes in this set indexed by OID.
      */
     private final Hashtable<ObjectIdentifier, PKCS9Attribute> attributes =
-        new Hashtable<ObjectIdentifier, PKCS9Attribute>(3);
+            new Hashtable<>(3);
 
     /**
      * The keys of this hashtable are the OIDs of permitted attributes.
@@ -123,7 +125,7 @@ public class PKCS9Attributes {
      *
      * @param in the contents of the DER encoding of the attribute set.
      * @param ignoreUnsupportedAttributes If true then any attributes
-     * not supported by the PKCS9Attribute class are ignored. Otherwise
+     * not supported by the PKCS9Attribute class are ignored. Otherwise,
      * unsupported attributes cause an exception to be thrown.
      * @exception IOException
      * on i/o error, encoding syntax error, or unsupported or
@@ -266,7 +268,7 @@ public class PKCS9Attributes {
      * Get an attribute from this set.
      */
     public PKCS9Attribute getAttribute(String name) {
-        return attributes.get(PKCS9Attribute.getOID(name));
+        return attributes.get(Objects.requireNonNull(PKCS9Attribute.getOID(name)));
     }
 
 
@@ -296,8 +298,7 @@ public class PKCS9Attributes {
     public Object getAttributeValue(ObjectIdentifier oid)
     throws IOException {
         try {
-            Object value = getAttribute(oid).getValue();
-            return value;
+            return getAttribute(oid).getValue();
         } catch (NullPointerException ex) {
             throw new IOException("No value found for attribute " + oid);
         }

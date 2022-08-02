@@ -107,5 +107,5 @@ public final class SunRsaSignEntries {
         return services.iterator();
     }
 
-    private LinkedHashSet<Provider.Service> services;
+    private final LinkedHashSet<Provider.Service> services;
 }

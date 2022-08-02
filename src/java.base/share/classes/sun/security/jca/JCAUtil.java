@@ -25,8 +25,7 @@
 
 package sun.security.jca;
 
-import java.lang.ref.*;
-import java.security.*;
+import java.security.SecureRandom;
 
 /**
  * Collection of static utility methods used by the security framework.

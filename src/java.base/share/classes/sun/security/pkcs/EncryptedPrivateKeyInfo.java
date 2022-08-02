@@ -47,10 +47,10 @@ import sun.security.util.DerOutputStream;
 public class EncryptedPrivateKeyInfo {
 
     // the "encryptionAlgorithm" field
-    private AlgorithmId algid;
+    private final AlgorithmId algid;
 
     // the "encryptedData" field
-    private byte[] encryptedData;
+    private final byte[] encryptedData;
 
     // the ASN.1 encoded contents of this class
     private byte[] encoded;

@@ -58,7 +58,7 @@ public final class DSAPrivateKey extends PKCS8Key
     private static final long serialVersionUID = -3244453684193605938L;
 
     /* the private key */
-    private BigInteger x;
+    private final BigInteger x;
 
     /**
      * Make a DSA private key out of a private key and three parameters.

@@ -25,21 +25,16 @@
 
 package sun.security.provider;
 
-import java.io.IOException;
-import java.security.Key;
-import java.security.KeyStoreException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
-import java.security.UnrecoverableKeyException;
-import java.util.*;
-
-import sun.security.pkcs.PKCS8Key;
 import sun.security.pkcs.EncryptedPrivateKeyInfo;
-import sun.security.x509.AlgorithmId;
-import sun.security.util.ObjectIdentifier;
+import sun.security.pkcs.PKCS8Key;
 import sun.security.util.KnownOIDs;
-import sun.security.util.DerValue;
+import sun.security.util.ObjectIdentifier;
+import sun.security.x509.AlgorithmId;
+
+import java.io.IOException;
+import java.security.SecureRandom;
+import java.security.*;
+import java.util.Arrays;
 
 /**
  * This is an implementation of a Sun proprietary, exportable algorithm
@@ -110,7 +105,7 @@ final class KeyProtector {
     // key protector. We store it as a byte array, so that we can digest it.
     private byte[] passwdBytes;
 
-    private MessageDigest md;
+    private final MessageDigest md;
 
 
     /**
@@ -231,7 +226,7 @@ final class KeyProtector {
         byte[] digest;
         int numRounds;
         int xorOffset; // offset in xorKey where next digest will be stored
-        int encrKeyLen; // the length of the encrpyted key
+        int encrKeyLen; // the length of the encrypted key
 
         // do we support the algorithm?
         AlgorithmId encrAlg = encrInfo.getAlgorithm();

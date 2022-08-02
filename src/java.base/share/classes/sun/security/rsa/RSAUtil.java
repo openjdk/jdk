@@ -36,7 +36,7 @@ import sun.security.x509.AlgorithmId;
 
 /**
  * Utility class for SunRsaSign provider.
- * Currently used by RSAKeyPairGenerator and RSAKeyFactory.
+ * Currently, used by RSAKeyPairGenerator and RSAKeyFactory.
  *
  * @since   11
  */
@@ -81,7 +81,7 @@ public class RSAUtil {
     public static AlgorithmParameterSpec checkParamsAgainstType(KeyType type,
             AlgorithmParameterSpec paramSpec) throws ProviderException {
 
-        // currently no check for null parameter spec
+        // currently, no check for null parameter spec
         // assumption is parameter spec is optional and can be null
         if (paramSpec == null) return null;
 
@@ -193,7 +193,7 @@ public class RSAUtil {
             throw new IOException("SEQUENCE length error");
         }
         AlgorithmId algId = AlgorithmId.parse(values[0]);
-        if (algId.getOID().equals(oid) == false) {
+        if (!algId.getOID().equals(oid)) {
             throw new IOException("ObjectIdentifier mismatch: "
                 + algId.getOID());
         }
@@ -203,7 +203,6 @@ public class RSAUtil {
         if (values[1].isConstructed()) {
             throw new IOException("Unexpected constructed digest value");
         }
-        byte[] digest = values[1].getOctetString();
-        return digest;
+        return values[1].getOctetString();
     }
 }

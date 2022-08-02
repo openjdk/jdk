@@ -28,6 +28,7 @@ package sun.security.ssl;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.Objects;
 import javax.net.ssl.SSLProtocolException;
 import static sun.security.ssl.SSLExtension.CH_EXTENDED_MASTER_SECRET;
 import sun.security.ssl.SSLExtension.ExtensionConsumer;
@@ -60,7 +61,7 @@ final class ExtendedMasterSecretExtension {
      * The "extended_master_secret" extension.
      */
     static final class ExtendedMasterSecretSpec implements SSLExtensionSpec {
-        // A nominal object that does not holding any real renegotiation info.
+        // A nominal object that does not hold any real renegotiation info.
         static final ExtendedMasterSecretSpec NOMINAL =
                 new ExtendedMasterSecretSpec();
 
@@ -99,7 +100,7 @@ final class ExtendedMasterSecretExtension {
     }
 
     /**
-     * Network data producer of a "extended_master_secret" extension in
+     * Network data producer of an "extended_master_secret" extension in
      * the ClientHello handshake message.
      */
     private static final
@@ -116,7 +117,7 @@ final class ExtendedMasterSecretExtension {
             ClientHandshakeContext chc = (ClientHandshakeContext)context;
 
             // Is it a supported and enabled extension?
-            if (!chc.sslConfig.isAvailable(CH_EXTENDED_MASTER_SECRET) ||
+            if (!Objects.requireNonNull(chc.sslConfig).isAvailable(CH_EXTENDED_MASTER_SECRET) ||
                     !SSLConfiguration.useExtendedMasterSecret ||
                     !chc.conContext.protocolVersion.useTLS10PlusSpec()) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
@@ -141,7 +142,7 @@ final class ExtendedMasterSecretExtension {
     }
 
     /**
-     * Network data producer of a "extended_master_secret" extension in
+     * Network data producer of an "extended_master_secret" extension in
      * the ServerHello handshake message.
      */
     private static final
@@ -159,7 +160,7 @@ final class ExtendedMasterSecretExtension {
             ServerHandshakeContext shc = (ServerHandshakeContext)context;
 
             // Is it a supported and enabled extension?
-            if (!shc.sslConfig.isAvailable(CH_EXTENDED_MASTER_SECRET) ||
+            if (!Objects.requireNonNull(shc.sslConfig).isAvailable(CH_EXTENDED_MASTER_SECRET) ||
                     !SSLConfiguration.useExtendedMasterSecret ||
                     !shc.negotiatedProtocol.useTLS10PlusSpec()) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
@@ -199,7 +200,7 @@ final class ExtendedMasterSecretExtension {
     }
 
     /**
-     * The absence processing if a "extended_master_secret" extension is
+     * The absence processing if an "extended_master_secret" extension is
      * not present in the ClientHello handshake message.
      */
     private static final
@@ -211,7 +212,7 @@ final class ExtendedMasterSecretExtension {
             ServerHandshakeContext shc = (ServerHandshakeContext)context;
 
             // Is it a supported and enabled extension?
-            if (!shc.sslConfig.isAvailable(CH_EXTENDED_MASTER_SECRET) ||
+            if (!Objects.requireNonNull(shc.sslConfig).isAvailable(CH_EXTENDED_MASTER_SECRET) ||
                     !SSLConfiguration.useExtendedMasterSecret) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine("Ignore unavailable extension: " +
@@ -264,7 +265,7 @@ final class ExtendedMasterSecretExtension {
     }
 
     /**
-     * Network data producer of a "extended_master_secret" extension in
+     * Network data producer of an "extended_master_secret" extension in
      * the ServerHello handshake message.
      */
     private static final
@@ -293,7 +294,7 @@ final class ExtendedMasterSecretExtension {
     }
 
     /**
-     * Network data consumer of a "extended_master_secret" extension in
+     * Network data consumer of an "extended_master_secret" extension in
      * the ServerHello handshake message.
      */
     private static final
@@ -338,7 +339,7 @@ final class ExtendedMasterSecretExtension {
     }
 
     /**
-     * The absence processing if a "extended_master_secret" extension is
+     * The absence processing if an "extended_master_secret" extension is
      * not present in the ServerHello handshake message.
      */
     private static final

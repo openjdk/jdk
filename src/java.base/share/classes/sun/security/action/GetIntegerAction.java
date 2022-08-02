@@ -67,7 +67,7 @@ import java.security.AccessController;
 
 public class GetIntegerAction
         implements java.security.PrivilegedAction<Integer> {
-    private String theProp;
+    private final String theProp;
     private int defaultVal;
     private boolean defaultSet;
 

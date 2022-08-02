@@ -52,7 +52,7 @@ import sun.security.jca.JCAUtil;
  *   0x00 | BT | PS...PS | 0x00 | data...data
  *
  * where BT is the blocktype (1 or 2). The length of the entire string
- * must be the same as the size of the modulus (i.e. 128 byte for a 1024 bit
+ * must be the same as the size of the modulus (i.e. 128 byte for a 1024-bit
  * key). Per spec, the padding string must be at least 8 bytes long. That
  * leaves up to (length of key in bytes) - 11 bytes for the data.
  *
@@ -68,7 +68,7 @@ import sun.security.jca.JCAUtil;
  * The algorithms (representations) are forwards-compatible: that is,
  * the algorithm described in previous releases are in later releases.
  * However, additional comments/checks/clarifications were added to the
- * later versions based on real-world experience (e.g. stricter v1.5
+ * latter versions based on real-world experience (e.g. stricter v1.5
  * format checking.)
  *
  * Note: RSA keys should be at least 512 bits long
@@ -202,7 +202,7 @@ public final class RSAPadding {
 
     // cache of hashes of zero length data
     private static final Map<String,byte[]> emptyHashes =
-        Collections.synchronizedMap(new HashMap<String,byte[]>());
+        Collections.synchronizedMap(new HashMap<>());
 
     /**
      * Return the value of the digest using the specified message digest
@@ -290,7 +290,7 @@ public final class RSAPadding {
     /**
      * PKCS#1 v1.5 padding (blocktype 1 and 2).
      */
-    private byte[] padV15(byte[] data, int ofs, int len) throws BadPaddingException {
+    private byte[] padV15(byte[] data, int ofs, int len) {
         byte[] padded = new byte[paddedSize];
         System.arraycopy(data, ofs, padded, paddedSize - len, len);
         int psSize = paddedSize - 3 - len;
@@ -332,11 +332,8 @@ public final class RSAPadding {
      */
     private byte[] unpadV15(byte[] padded) throws BadPaddingException {
         int k = 0;
-        boolean bp = false;
+        boolean bp = padded[k++] != 0;
 
-        if (padded[k++] != 0) {
-            bp = true;
-        }
         if (padded[k++] != type) {
             bp = true;
         }
@@ -379,7 +376,7 @@ public final class RSAPadding {
      * PKCS#1 v2.0 OAEP padding (MGF1).
      * Paragraph references refer to PKCS#1 v2.1 (June 14, 2002)
      */
-    private byte[] padOAEP(byte[] M, int ofs, int len) throws BadPaddingException {
+    private byte[] padOAEP(byte[] M, int ofs, int len) {
         if (random == null) {
             random = JCAUtil.getSecureRandom();
         }
@@ -395,10 +392,9 @@ public final class RSAPadding {
 
         // start and length of seed (as index into EM)
         int seedStart = 1;
-        int seedLen = hLen;
 
         // copy seed into EM
-        System.arraycopy(seed, 0, EM, seedStart, seedLen);
+        System.arraycopy(seed, 0, EM, seedStart, hLen);
 
         // start and length of data block DB in EM
         // we place it inside of EM to reduce copying
@@ -418,10 +414,10 @@ public final class RSAPadding {
         System.arraycopy(M, ofs, EM, mStart, len);
 
         // produce maskedDB
-        mgf.generateAndXor(EM, seedStart, seedLen, dbLen, EM, dbStart);
+        mgf.generateAndXor(EM, seedStart, hLen, dbLen, EM, dbStart);
 
         // produce maskSeed
-        mgf.generateAndXor(EM, dbStart, dbLen, seedLen, EM, seedStart);
+        mgf.generateAndXor(EM, dbStart, dbLen, hLen, EM, seedStart);
 
         return EM;
     }
@@ -439,13 +435,12 @@ public final class RSAPadding {
         }
 
         int seedStart = 1;
-        int seedLen = hLen;
 
         int dbStart = hLen + 1;
         int dbLen = EM.length - dbStart;
 
-        mgf.generateAndXor(EM, dbStart, dbLen, seedLen, EM, seedStart);
-        mgf.generateAndXor(EM, seedStart, seedLen, dbLen, EM, dbStart);
+        mgf.generateAndXor(EM, dbStart, dbLen, hLen, EM, seedStart);
+        mgf.generateAndXor(EM, seedStart, hLen, dbLen, EM, dbStart);
 
         // verify lHash == lHash'
         for (int i = 0; i < hLen; i++) {

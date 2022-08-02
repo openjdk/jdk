@@ -66,8 +66,7 @@ public abstract class AbstractHashDrbg extends AbstractDrbg {
                 }
                 this.securityStrength = tryStrength;
             } else {
-                this.securityStrength = DEFAULT_STRENGTH > supportedStrength ?
-                        supportedStrength : DEFAULT_STRENGTH;
+                this.securityStrength = Math.min(DEFAULT_STRENGTH, supportedStrength);
             }
         } else {
             int tryStrength = (requestedInstantiationSecurityStrength < 0) ?

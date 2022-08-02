@@ -115,7 +115,7 @@ abstract class Authenticator {
      *
      * Sequence numbers are of type uint64 and may not exceed 2^64-1.
      * Sequence numbers do not wrap.  If a TLS
-     * implementation would need to wrap a sequence number, it must
+     * implementation needed to wrap a sequence number, it must
      * renegotiate instead.
      *
      * @return true if the sequence number is huge enough to renew

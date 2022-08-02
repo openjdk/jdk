@@ -66,7 +66,7 @@ public class TlsRsaPremasterSecretParameterSpec
      * @param clientVersion the version of the TLS protocol by which the
      *        client wishes to communicate during this session
      * @param serverVersion the negotiated version of the TLS protocol which
-     *        contains the lower of that suggested by the client in the client
+     *        contains the lowest of that suggested by the client in the client
      *        hello and the highest supported by the server.
      *
      * @throws IllegalArgumentException if clientVersion or serverVersion are
@@ -86,7 +86,7 @@ public class TlsRsaPremasterSecretParameterSpec
      * @param clientVersion the version of the TLS protocol by which the
      *        client wishes to communicate during this session
      * @param serverVersion the negotiated version of the TLS protocol which
-     *        contains the lower of that suggested by the client in the client
+     *        contains the lowest of that suggested by the client in the client
      *        hello and the highest supported by the server.
      * @param encodedSecret the encoded secret key
      *
@@ -118,7 +118,7 @@ public class TlsRsaPremasterSecretParameterSpec
 
     /**
      * Returns the negotiated version of the TLS protocol which contains the
-     * lower of that suggested by the client in the client hello and the
+     * lowest of that suggested by the client in the client hello and the
      * highest supported by the server.
      *
      * @return the negotiated version of the TLS protocol in ServerHello message

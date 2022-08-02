@@ -85,7 +85,7 @@ class PKIX {
         private Set<String> policies;
         private boolean gotConstraints;
         private CertSelector constraints;
-        private Set<TrustAnchor> anchors;
+        private final Set<TrustAnchor> anchors;
         private List<X509Certificate> certs;
         private Timestamp timestamp;
         private Date timestampDate;

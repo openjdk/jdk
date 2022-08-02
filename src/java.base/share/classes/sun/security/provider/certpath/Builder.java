@@ -59,7 +59,7 @@ abstract class Builder {
 
     /**
      * Flag indicating whether support for the caIssuers field of the
-     * Authority Information Access extension shall be enabled. Currently
+     * Authority Information Access extension shall be enabled. Currently,
      * disabled by default for compatibility reasons.
      */
     static final boolean USE_AIA = GetBooleanAction
@@ -157,10 +157,9 @@ abstract class Builder {
         case GeneralNameInterface.NAME_MATCH:
             return 0;
         case GeneralNameInterface.NAME_WIDENS:
-            break;
-        case GeneralNameInterface.NAME_NARROWS:
-            break;
-        default: // should never occur
+            case GeneralNameInterface.NAME_NARROWS:
+                break;
+            default: // should never occur
             return incomparable;
         }
 
@@ -202,12 +201,11 @@ abstract class Builder {
             /* base matches test */
             return 0;
         case GeneralNameInterface.NAME_WIDENS:
-            /* base is ancestor of test */
+            case GeneralNameInterface.NAME_NARROWS:
+                /* base is descendant of test */
+                /* base is ancestor of test */
             return (test.subtreeDepth()-base.subtreeDepth());
-        case GeneralNameInterface.NAME_NARROWS:
-            /* base is descendant of test */
-            return (test.subtreeDepth()-base.subtreeDepth());
-        default: // should never occur
+            default: // should never occur
             return incomparable;
         }
 
@@ -329,7 +327,7 @@ abstract class Builder {
             constraints.merge(ncExt);
         } else {
             // Make sure we do a clone here, because we're probably
-            // going to modify this object later and we don't want to
+            // going to modify this object later, and we don't want to
             // be sharing it with a Certificate object!
             constraints = (NameConstraintsExtension) ncExt.clone();
         }
@@ -403,7 +401,7 @@ abstract class Builder {
             } else {
                 // we just return an empty set to make sure that there is
                 // at least a certificate policies extension in the cert
-                matchingPolicies = Collections.<String>emptySet();
+                matchingPolicies = Collections.emptySet();
             }
         }
         return matchingPolicies;

@@ -64,7 +64,7 @@ package sun.security.action;
  */
 
 public class GetLongAction implements java.security.PrivilegedAction<Long> {
-    private String theProp;
+    private final String theProp;
     private long defaultVal;
     private boolean defaultSet = false;
 

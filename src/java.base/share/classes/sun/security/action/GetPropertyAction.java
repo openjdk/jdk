@@ -51,7 +51,7 @@ import java.util.Properties;
  */
 
 public class GetPropertyAction implements PrivilegedAction<String> {
-    private String theProp;
+    private final String theProp;
     private String defaultVal;
 
     /**

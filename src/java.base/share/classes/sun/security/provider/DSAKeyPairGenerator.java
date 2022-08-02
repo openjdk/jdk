@@ -25,16 +25,15 @@
 
 package sun.security.provider;
 
-import java.math.BigInteger;
+import sun.security.jca.JCAUtil;
 
-import java.security.*;
+import java.math.BigInteger;
 import java.security.SecureRandom;
+import java.security.*;
 import java.security.interfaces.DSAParams;
 import java.security.spec.AlgorithmParameterSpec;
-import java.security.spec.InvalidParameterSpecException;
 import java.security.spec.DSAParameterSpec;
 
-import sun.security.jca.JCAUtil;
 import static sun.security.util.SecurityProviderConstants.DEF_DSA_KEY_SIZE;
 import static sun.security.util.SecurityProviderConstants.getDefDSASubprimeSize;
 
@@ -169,8 +168,7 @@ class DSAKeyPairGenerator extends KeyPairGenerator {
             pub = new DSAPublicKeyImpl(y, p, q, g);
             DSAPrivateKey priv = new DSAPrivateKey(x, p, q, g);
 
-            KeyPair pair = new KeyPair(pub, priv);
-            return pair;
+            return new KeyPair(pub, priv);
         } catch (InvalidKeyException e) {
             throw new ProviderException(e);
         }
@@ -183,7 +181,7 @@ class DSAKeyPairGenerator extends KeyPairGenerator {
      * generateX method.
      */
     private BigInteger generateX(SecureRandom random, BigInteger q) {
-        BigInteger x = null;
+        BigInteger x;
         byte[] temp = new byte[qlen];
         while (true) {
             random.nextBytes(temp);
@@ -202,8 +200,7 @@ class DSAKeyPairGenerator extends KeyPairGenerator {
      * @param p the base parameter.
      */
     BigInteger generateY(BigInteger x, BigInteger p, BigInteger g) {
-        BigInteger y = g.modPow(x, p);
-        return y;
+        return g.modPow(x, p);
     }
 
     public static final class Current extends DSAKeyPairGenerator {

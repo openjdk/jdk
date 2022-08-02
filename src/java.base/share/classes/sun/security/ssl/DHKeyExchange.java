@@ -37,6 +37,7 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.spec.InvalidKeySpecException;
+import java.util.Objects;
 import javax.crypto.interfaces.DHPublicKey;
 import javax.crypto.spec.DHParameterSpec;
 import javax.crypto.spec.DHPublicKeySpec;
@@ -198,8 +199,7 @@ final class DHKeyExchange {
         }
 
         private static DHPublicKeySpec getDHPublicKeySpec(PublicKey key) {
-            if (key instanceof DHPublicKey) {
-                DHPublicKey dhKey = (DHPublicKey)key;
+            if (key instanceof DHPublicKey dhKey) {
                 DHParameterSpec params = dhKey.getParams();
                 return new DHPublicKeySpec(dhKey.getY(),
                                         params.getP(), params.getG());
@@ -339,7 +339,7 @@ final class DHKeyExchange {
              * cipher suites in default mode (system property
              * "jdk.tls.ephemeralDHKeySize" is not defined).
              *
-             * However, if applications want more stronger strength, setting
+             * However, if applications want stronger strength, setting
              * system property "jdk.tls.ephemeralDHKeySize" to "matched"
              * is a workaround to use ephemeral DH key which size matches the
              * corresponding authentication key. For example, if the public key
@@ -416,17 +416,15 @@ final class DHKeyExchange {
                 HandshakeContext context) throws IOException {
             DHEPossession dhePossession = null;
             DHECredentials dheCredentials = null;
-            for (SSLPossession poss : context.handshakePossessions) {
-                if (!(poss instanceof DHEPossession)) {
+            for (SSLPossession poss : Objects.requireNonNull(context.handshakePossessions)) {
+                if (!(poss instanceof DHEPossession dhep)) {
                     continue;
                 }
 
-                DHEPossession dhep = (DHEPossession)poss;
-                for (SSLCredentials cred : context.handshakeCredentials) {
-                    if (!(cred instanceof DHECredentials)) {
+                for (SSLCredentials cred : Objects.requireNonNull(context.handshakeCredentials)) {
+                    if (!(cred instanceof DHECredentials dhec)) {
                         continue;
                     }
-                    DHECredentials dhec = (DHECredentials)cred;
                     if (dhep.namedGroup != null && dhec.namedGroup != null) {
                         if (dhep.namedGroup.equals(dhec.namedGroup)) {
                             dheCredentials = (DHECredentials)cred;
@@ -449,7 +447,7 @@ final class DHKeyExchange {
                 }
             }
 
-            if (dhePossession == null || dheCredentials == null) {
+            if (dhePossession == null) {
                 throw context.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                     "No sufficient DHE key agreement parameters negotiated");
             }

@@ -34,6 +34,7 @@ import java.security.KeyFactory;
 import java.text.MessageFormat;
 import java.util.EnumSet;
 import java.util.Locale;
+import java.util.Objects;
 import javax.crypto.SecretKey;
 import javax.crypto.interfaces.DHPublicKey;
 import javax.crypto.spec.DHParameterSpec;
@@ -133,13 +134,14 @@ final class DHClientKeyExchange {
         @Override
         public String toString() {
             MessageFormat messageFormat = new MessageFormat(
-                "\"DH ClientKeyExchange\": '{'\n" +
-                "  \"parameters\": '{'\n" +
-                "    \"dh_Yc\": '{'\n" +
-                "{0}\n" +
-                "    '}',\n" +
-                "  '}'\n" +
-                "'}'",
+                    """
+                            "DH ClientKeyExchange": '{'
+                              "parameters": '{'
+                                "dh_Yc": '{'
+                            {0}
+                                '}',
+                              '}'
+                            '}'""",
                 Locale.ENGLISH);
 
             HexDumpEncoder hexEncoder = new HexDumpEncoder();
@@ -168,7 +170,7 @@ final class DHClientKeyExchange {
             ClientHandshakeContext chc = (ClientHandshakeContext)context;
 
             DHECredentials dheCredentials = null;
-            for (SSLCredentials cd : chc.handshakeCredentials) {
+            for (SSLCredentials cd : Objects.requireNonNull(chc.handshakeCredentials)) {
                 if (cd instanceof DHECredentials) {
                     dheCredentials = (DHECredentials)cd;
                     break;
@@ -183,7 +185,7 @@ final class DHClientKeyExchange {
 
             DHEPossession dhePossession = new DHEPossession(
                     dheCredentials, chc.sslContext.getSecureRandom());
-            chc.handshakePossessions.add(dhePossession);
+            Objects.requireNonNull(chc.handshakePossessions).add(dhePossession);
             DHClientKeyExchangeMessage ckem =
                     new DHClientKeyExchangeMessage(chc);
             if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
@@ -244,7 +246,7 @@ final class DHClientKeyExchange {
             ServerHandshakeContext shc = (ServerHandshakeContext)context;
 
             DHEPossession dhePossession = null;
-            for (SSLPossession possession : shc.handshakePossessions) {
+            for (SSLPossession possession : Objects.requireNonNull(shc.handshakePossessions)) {
                 if (possession instanceof DHEPossession) {
                     dhePossession = (DHEPossession)possession;
                     break;
@@ -284,7 +286,7 @@ final class DHClientKeyExchange {
                         (DHPublicKey)kf.generatePublic(spec);
 
                 // check constraints of peer DHPublicKey
-                if (!shc.algorithmConstraints.permits(
+                if (!Objects.requireNonNull(shc.algorithmConstraints).permits(
                         EnumSet.of(CryptoPrimitive.KEY_AGREEMENT),
                         peerPublicKey)) {
                     throw new SSLHandshakeException(
@@ -292,7 +294,7 @@ final class DHClientKeyExchange {
                 }
 
                 NamedGroup namedGroup = NamedGroup.valueOf(params);
-                shc.handshakeCredentials.add(
+                Objects.requireNonNull(shc.handshakeCredentials).add(
                         new DHECredentials(peerPublicKey, namedGroup));
             } catch (GeneralSecurityException | java.io.IOException e) {
                 throw new SSLHandshakeException(

@@ -29,6 +29,8 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.text.MessageFormat;
 import java.util.Locale;
+import java.util.Objects;
+
 import sun.security.ssl.SSLHandshake.HandshakeMessage;
 
 /**
@@ -47,7 +49,7 @@ final class EncryptedExtensions {
         private final SSLExtensions extensions;
 
         EncryptedExtensionsMessage(
-                HandshakeContext handshakeContext) throws IOException {
+                HandshakeContext handshakeContext) {
             super(handshakeContext);
             this.extensions = new SSLExtensions(this);
         }
@@ -98,9 +100,10 @@ final class EncryptedExtensions {
         @Override
         public String toString() {
             MessageFormat messageFormat = new MessageFormat(
-                    "\"EncryptedExtensions\": [\n" +
-                    "{0}\n" +
-                    "]",
+                    """
+                            "EncryptedExtensions": [
+                            {0}
+                            ]""",
                     Locale.ENGLISH);
             Object[] messageFields = {
                 Utilities.indent(extensions.toString())
@@ -129,7 +132,7 @@ final class EncryptedExtensions {
             EncryptedExtensionsMessage eem =
                     new EncryptedExtensionsMessage(shc);
             SSLExtension[] extTypes =
-                    shc.sslConfig.getEnabledExtensions(
+                    Objects.requireNonNull(shc.sslConfig).getEnabledExtensions(
                             SSLHandshake.ENCRYPTED_EXTENSIONS,
                             shc.negotiatedProtocol);
             eem.extensions.produce(shc, extTypes);
@@ -175,7 +178,7 @@ final class EncryptedExtensions {
             //
             // validate
             //
-            SSLExtension[] extTypes = chc.sslConfig.getEnabledExtensions(
+            SSLExtension[] extTypes = Objects.requireNonNull(chc.sslConfig).getEnabledExtensions(
                     SSLHandshake.ENCRYPTED_EXTENSIONS);
             eem.extensions.consumeOnLoad(chc, extTypes);
 

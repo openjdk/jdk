@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.text.MessageFormat;
 import java.util.Locale;
+import java.util.Objects;
 import javax.net.ssl.SSLProtocolException;
 
 import sun.security.ssl.ClientHello.ClientHelloMessage;
@@ -78,9 +79,10 @@ public class CookieExtension {
         @Override
         public String toString() {
             MessageFormat messageFormat = new MessageFormat(
-                    "\"cookie\": '{'\n" +
-                    "{0}\n" +
-                    "'}',", Locale.ENGLISH);
+                    """
+                            "cookie": '{'
+                            {0}
+                            '}',""", Locale.ENGLISH);
             HexDumpEncoder hexEncoder = new HexDumpEncoder();
             Object[] messageFields = {
                 Utilities.indent(hexEncoder.encode(cookie))
@@ -115,7 +117,7 @@ public class CookieExtension {
             ClientHandshakeContext chc = (ClientHandshakeContext) context;
 
             // Is it a supported and enabled extension?
-            if (!chc.sslConfig.isAvailable(SSLExtension.CH_COOKIE)) {
+            if (!Objects.requireNonNull(chc.sslConfig).isAvailable(SSLExtension.CH_COOKIE)) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
                             "Ignore unavailable cookie extension");
@@ -127,8 +129,7 @@ public class CookieExtension {
             CookieSpec spec = (CookieSpec)chc.handshakeExtensions.get(
                     SSLExtension.HRR_COOKIE);
 
-            if (spec != null &&
-                    spec.cookie != null && spec.cookie.length != 0) {
+            if (spec != null && spec.cookie.length != 0) {
                 byte[] extData = new byte[spec.cookie.length + 2];
                 ByteBuffer m = ByteBuffer.wrap(extData);
                 Record.putBytes16(m, spec.cookie);
@@ -153,7 +154,7 @@ public class CookieExtension {
             ServerHandshakeContext shc = (ServerHandshakeContext)context;
 
             // Is it a supported and enabled extension?
-            if (!shc.sslConfig.isAvailable(SSLExtension.CH_COOKIE)) {
+            if (!Objects.requireNonNull(shc.sslConfig).isAvailable(SSLExtension.CH_COOKIE)) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
                             "Ignore unavailable cookie extension");
@@ -217,7 +218,7 @@ public class CookieExtension {
             ServerHelloMessage hrrm = (ServerHelloMessage)message;
 
             // Is it a supported and enabled extension?
-            if (!shc.sslConfig.isAvailable(SSLExtension.HRR_COOKIE)) {
+            if (!Objects.requireNonNull(shc.sslConfig).isAvailable(SSLExtension.HRR_COOKIE)) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
                             "Ignore unavailable cookie extension");
@@ -252,7 +253,7 @@ public class CookieExtension {
             ClientHandshakeContext chc = (ClientHandshakeContext)context;
 
             // Is it a supported and enabled extension?
-            if (!chc.sslConfig.isAvailable(SSLExtension.HRR_COOKIE)) {
+            if (!Objects.requireNonNull(chc.sslConfig).isAvailable(SSLExtension.HRR_COOKIE)) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
                             "Ignore unavailable cookie extension");
@@ -279,7 +280,7 @@ public class CookieExtension {
             ServerHandshakeContext shc = (ServerHandshakeContext) context;
 
             // Is it a supported and enabled extension?
-            if (!shc.sslConfig.isAvailable(SSLExtension.HRR_COOKIE)) {
+            if (!Objects.requireNonNull(shc.sslConfig).isAvailable(SSLExtension.HRR_COOKIE)) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
                             "Ignore unavailable cookie extension");
@@ -291,8 +292,7 @@ public class CookieExtension {
             CookieSpec spec = (CookieSpec)shc.handshakeExtensions.get(
                     SSLExtension.CH_COOKIE);
 
-            if (spec != null &&
-                    spec.cookie != null && spec.cookie.length != 0) {
+            if (spec != null && spec.cookie.length != 0) {
                 byte[] extData = new byte[spec.cookie.length + 2];
                 ByteBuffer m = ByteBuffer.wrap(extData);
                 Record.putBytes16(m, spec.cookie);

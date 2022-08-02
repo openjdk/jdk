@@ -30,6 +30,7 @@ import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.util.Objects;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.net.ssl.SSLException;
@@ -65,10 +66,9 @@ final class ChangeCipherSpec {
             HandshakeContext hc = (HandshakeContext)context;
             SSLKeyDerivation kd = hc.handshakeKeyDerivation;
 
-            if (!(kd instanceof LegacyTrafficKeyDerivation)) {
+            if (!(kd instanceof LegacyTrafficKeyDerivation tkd)) {
                 throw new UnsupportedOperationException("Not supported.");
             }
-            LegacyTrafficKeyDerivation tkd = (LegacyTrafficKeyDerivation)kd;
             CipherSuite ncs = hc.negotiatedCipherSuite;
             Authenticator writeAuthenticator;
             if (ncs.bulkCipher.cipherType == CipherType.AEAD_CIPHER) {
@@ -78,7 +78,7 @@ final class ChangeCipherSpec {
                 try {
                     writeAuthenticator = Authenticator.valueOf(
                             hc.negotiatedProtocol, ncs.macAlg,
-                            tkd.getTrafficKey(hc.sslConfig.isClientMode ?
+                            tkd.getTrafficKey(Objects.requireNonNull(hc.sslConfig).isClientMode ?
                                     "clientMacKey" : "serverMacKey"));
                 } catch (NoSuchAlgorithmException | InvalidKeyException e) {
                     // unlikely
@@ -87,7 +87,7 @@ final class ChangeCipherSpec {
             }
 
             SecretKey writeKey =
-                    tkd.getTrafficKey(hc.sslConfig.isClientMode ?
+                    tkd.getTrafficKey(Objects.requireNonNull(hc.sslConfig).isClientMode ?
                                     "clientWriteKey" : "serverWriteKey");
             SecretKey writeIv =
                     tkd.getTrafficKey(hc.sslConfig.isClientMode ?
@@ -164,8 +164,7 @@ final class ChangeCipherSpec {
             }
 
             SSLKeyDerivation kd = hc.handshakeKeyDerivation;
-            if (kd instanceof LegacyTrafficKeyDerivation) {
-                LegacyTrafficKeyDerivation tkd = (LegacyTrafficKeyDerivation)kd;
+            if (kd instanceof LegacyTrafficKeyDerivation tkd) {
                 CipherSuite ncs = hc.negotiatedCipherSuite;
                 Authenticator readAuthenticator;
                 if (ncs.bulkCipher.cipherType == CipherType.AEAD_CIPHER) {
@@ -175,7 +174,7 @@ final class ChangeCipherSpec {
                     try {
                         readAuthenticator = Authenticator.valueOf(
                                 hc.negotiatedProtocol, ncs.macAlg,
-                                tkd.getTrafficKey(hc.sslConfig.isClientMode ?
+                                tkd.getTrafficKey(Objects.requireNonNull(hc.sslConfig).isClientMode ?
                                         "serverMacKey" : "clientMacKey"));
                     } catch (NoSuchAlgorithmException | InvalidKeyException e) {
                         // unlikely
@@ -184,7 +183,7 @@ final class ChangeCipherSpec {
                 }
 
                 SecretKey readKey =
-                        tkd.getTrafficKey(hc.sslConfig.isClientMode ?
+                        tkd.getTrafficKey(Objects.requireNonNull(hc.sslConfig).isClientMode ?
                                         "serverWriteKey" : "clientWriteKey");
                 SecretKey readIv =
                         tkd.getTrafficKey(hc.sslConfig.isClientMode ?

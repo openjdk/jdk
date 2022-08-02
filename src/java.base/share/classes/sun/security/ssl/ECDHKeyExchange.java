@@ -40,6 +40,7 @@ import java.security.spec.ECParameterSpec;
 import java.security.spec.ECPoint;
 import java.security.spec.ECPublicKeySpec;
 import java.util.EnumSet;
+import java.util.Objects;
 import javax.crypto.KeyAgreement;
 import javax.crypto.SecretKey;
 import javax.net.ssl.SSLHandshakeException;
@@ -286,7 +287,7 @@ final class ECDHKeyExchange {
                 ServerHandshakeContext shc) throws IOException {
             X509Possession x509Possession = null;
             ECDHECredentials ecdheCredentials = null;
-            for (SSLPossession poss : shc.handshakePossessions) {
+            for (SSLPossession poss : Objects.requireNonNull(shc.handshakePossessions)) {
                 if (!(poss instanceof X509Possession)) {
                     continue;
                 }
@@ -305,7 +306,7 @@ final class ECDHKeyExchange {
                         "Unsupported EC server cert for ECDH key exchange");
                 }
 
-                for (SSLCredentials cred : shc.handshakeCredentials) {
+                for (SSLCredentials cred : Objects.requireNonNull(shc.handshakeCredentials)) {
                     if (!(cred instanceof ECDHECredentials)) {
                         continue;
                     }
@@ -321,7 +322,7 @@ final class ECDHKeyExchange {
                 }
             }
 
-            if (x509Possession == null || ecdheCredentials == null) {
+            if (x509Possession == null) {
                 throw shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                     "No sufficient ECDHE key agreement parameters negotiated");
             }
@@ -334,13 +335,13 @@ final class ECDHKeyExchange {
                 ClientHandshakeContext chc) throws IOException {
             ECDHEPossession ecdhePossession = null;
             X509Credentials x509Credentials = null;
-            for (SSLPossession poss : chc.handshakePossessions) {
+            for (SSLPossession poss : Objects.requireNonNull(chc.handshakePossessions)) {
                 if (!(poss instanceof ECDHEPossession)) {
                     continue;
                 }
 
                 NamedGroup ng = ((ECDHEPossession)poss).namedGroup;
-                for (SSLCredentials cred : chc.handshakeCredentials) {
+                for (SSLCredentials cred : Objects.requireNonNull(chc.handshakeCredentials)) {
                     if (!(cred instanceof X509Credentials)) {
                         continue;
                     }
@@ -370,7 +371,7 @@ final class ECDHKeyExchange {
                 }
             }
 
-            if (ecdhePossession == null || x509Credentials == null) {
+            if (ecdhePossession == null) {
                 throw chc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                     "No sufficient ECDH key agreement parameters negotiated");
             }
@@ -392,13 +393,13 @@ final class ECDHKeyExchange {
                 HandshakeContext context) throws IOException {
             ECDHEPossession ecdhePossession = null;
             ECDHECredentials ecdheCredentials = null;
-            for (SSLPossession poss : context.handshakePossessions) {
+            for (SSLPossession poss : Objects.requireNonNull(context.handshakePossessions)) {
                 if (!(poss instanceof ECDHEPossession)) {
                     continue;
                 }
 
                 NamedGroup ng = ((ECDHEPossession)poss).namedGroup;
-                for (SSLCredentials cred : context.handshakeCredentials) {
+                for (SSLCredentials cred : Objects.requireNonNull(context.handshakeCredentials)) {
                     if (!(cred instanceof ECDHECredentials)) {
                         continue;
                     }
@@ -414,7 +415,7 @@ final class ECDHKeyExchange {
                 }
             }
 
-            if (ecdhePossession == null || ecdheCredentials == null) {
+            if (ecdhePossession == null) {
                 throw context.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                     "No sufficient ECDHE key agreement parameters negotiated");
             }
@@ -445,8 +446,8 @@ final class ECDHKeyExchange {
 
             // Find a possession/credential combo using the same named group
             search:
-            for (SSLPossession poss : context.handshakePossessions) {
-                for (SSLCredentials cred : context.handshakeCredentials) {
+            for (SSLPossession poss : Objects.requireNonNull(context.handshakePossessions)) {
+                for (SSLCredentials cred : Objects.requireNonNull(context.handshakeCredentials)) {
                     if (((poss instanceof ECDHEPossession) &&
                             (cred instanceof ECDHECredentials)) ||
                             (((poss instanceof XDHEPossession) &&
@@ -465,7 +466,7 @@ final class ECDHKeyExchange {
                 }
             }
 
-            if (namedGroupPossession == null || namedGroupCredentials == null) {
+            if (namedGroupPossession == null) {
                 throw context.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                     "No sufficient ECDHE/XDH key agreement " +
                             "parameters negotiated");

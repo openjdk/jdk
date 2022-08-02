@@ -38,14 +38,7 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
 import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Locale;
+import java.util.*;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLProtocolException;
@@ -194,7 +187,7 @@ final class CertificateMessage {
                 for (byte[] encodedCert : encodedCertChain) {
                     Object obj;
                     try {
-                        obj = (X509Certificate)cf.generateCertificate(
+                        obj = cf.generateCertificate(
                                     new ByteArrayInputStream(encodedCert));
                     } catch (CertificateException ce) {
                         obj = encodedCert;
@@ -210,9 +203,10 @@ final class CertificateMessage {
             }
 
             MessageFormat messageFormat = new MessageFormat(
-                    "\"Certificates\": [\n" +
-                    "{0}\n" +
-                    "]",
+                    """
+                            "Certificates": [
+                            {0}
+                            ]""",
                     Locale.ENGLISH);
             Object[] messageFields = {
                 SSLLogger.toString(x509Certs)
@@ -238,7 +232,7 @@ final class CertificateMessage {
                 HandshakeMessage message) throws IOException {
             // The producing happens in handshake context only.
             HandshakeContext hc = (HandshakeContext)context;
-            if (hc.sslConfig.isClientMode) {
+            if (Objects.requireNonNull(hc.sslConfig).isClientMode) {
                 return onProduceCertificate(
                         (ClientHandshakeContext)context, message);
             } else {
@@ -250,7 +244,7 @@ final class CertificateMessage {
         private byte[] onProduceCertificate(ServerHandshakeContext shc,
                 SSLHandshake.HandshakeMessage message) throws IOException {
             X509Possession x509Possession = null;
-            for (SSLPossession possession : shc.handshakePossessions) {
+            for (SSLPossession possession : Objects.requireNonNull(shc.handshakePossessions)) {
                 if (possession instanceof X509Possession) {
                     x509Possession = (X509Possession)possession;
                     break;
@@ -283,7 +277,7 @@ final class CertificateMessage {
         private byte[] onProduceCertificate(ClientHandshakeContext chc,
                 SSLHandshake.HandshakeMessage message) throws IOException {
             X509Possession x509Possession = null;
-            for (SSLPossession possession : chc.handshakePossessions) {
+            for (SSLPossession possession : Objects.requireNonNull(chc.handshakePossessions)) {
                 if (possession instanceof X509Possession) {
                     x509Possession = (X509Possession)possession;
                     break;
@@ -325,7 +319,7 @@ final class CertificateMessage {
                 chc.handshakeSession.setLocalCertificates(null);
             }
             T12CertificateMessage cm =
-                    new T12CertificateMessage(chc, x509Possession.popCerts);
+                    new T12CertificateMessage(chc, Objects.requireNonNull(x509Possession.popCerts));
             if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine(
                     "Produced client Certificate handshake message", cm);
@@ -361,7 +355,7 @@ final class CertificateMessage {
             hc.handshakeConsumers.remove(SSLHandshake.CERTIFICATE.id);
 
             T12CertificateMessage cm = new T12CertificateMessage(hc, message);
-            if (hc.sslConfig.isClientMode) {
+            if (Objects.requireNonNull(hc.sslConfig).isClientMode) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
                         "Consuming server Certificate handshake message", cm);
@@ -384,7 +378,7 @@ final class CertificateMessage {
                 // a CertificateVerify message to follow
                 shc.handshakeConsumers.remove(
                         SSLHandshake.CERTIFICATE_VERIFY.id);
-                if (shc.sslConfig.clientAuthType !=
+                if (Objects.requireNonNull(shc.sslConfig).clientAuthType !=
                         ClientAuthType.CLIENT_AUTH_REQUESTED) {
                     // unexpected or require client authentication
                     throw shc.conContext.fatal(Alert.BAD_CERTIFICATE,
@@ -413,7 +407,7 @@ final class CertificateMessage {
             //
             // update
             //
-            shc.handshakeCredentials.add(
+            Objects.requireNonNull(shc.handshakeCredentials).add(
                 new X509Credentials(x509Certs[0].getPublicKey(), x509Certs));
             shc.handshakeSession.setPeerCertificates(x509Certs);
         }
@@ -451,7 +445,7 @@ final class CertificateMessage {
                     !chc.handshakeSession.useExtendedMasterSecret) {
                 // It is not necessary to check the certificate update if
                 // endpoint identification is enabled.
-                String identityAlg = chc.sslConfig.identificationProtocol;
+                String identityAlg = Objects.requireNonNull(chc.sslConfig).identificationProtocol;
                 if ((identityAlg == null || identityAlg.isEmpty()) &&
                         !isIdentityEquivalent(x509Certs[0],
                                 chc.reservedServerCerts[0])) {
@@ -476,7 +470,7 @@ final class CertificateMessage {
             //
             // update
             //
-            chc.handshakeCredentials.add(
+            Objects.requireNonNull(chc.handshakeCredentials).add(
                 new X509Credentials(x509Certs[0].getPublicKey(), x509Certs));
             chc.handshakeSession.setPeerCertificates(x509Certs);
         }
@@ -587,7 +581,7 @@ final class CertificateMessage {
                 Collection<String> prevSubAltNames) {
             for (String thisSubAltName : thisSubAltNames) {
                 for (String prevSubAltName : prevSubAltNames) {
-                    // Only allow the exactly match.  No wildcard character
+                    // Only allow the exact match.  No wildcard character
                     // checking.
                     if (thisSubAltName.equalsIgnoreCase(prevSubAltName)) {
                         return true;
@@ -613,8 +607,8 @@ final class CertificateMessage {
 
             X509TrustManager tm = chc.sslContext.getX509TrustManager();
 
-            // find out the key exchange algorithm used
-            // use "RSA" for non-ephemeral "RSA_EXPORT"
+            // Find the key exchange algorithm used.
+            // Use "RSA" for non-ephemeral "RSA_EXPORT".
             String keyExchangeString;
             if (chc.negotiatedCipherSuite.keyExchange ==
                     CipherSuite.KeyExchange.K_RSA_EXPORT ||
@@ -627,8 +621,7 @@ final class CertificateMessage {
 
             try {
                 if (tm instanceof X509ExtendedTrustManager) {
-                    if (chc.conContext.transport instanceof SSLEngine) {
-                        SSLEngine engine = (SSLEngine)chc.conContext.transport;
+                    if (chc.conContext.transport instanceof SSLEngine engine) {
                         ((X509ExtendedTrustManager)tm).checkServerTrusted(
                             certs.clone(),
                             keyExchangeString,
@@ -677,8 +670,7 @@ final class CertificateMessage {
 
             try {
                 if (tm instanceof X509ExtendedTrustManager) {
-                    if (shc.conContext.transport instanceof SSLEngine) {
-                        SSLEngine engine = (SSLEngine)shc.conContext.transport;
+                    if (shc.conContext.transport instanceof SSLEngine engine) {
                         ((X509ExtendedTrustManager)tm).checkClientTrusted(
                             certs.clone(),
                             authType,
@@ -717,9 +709,7 @@ final class CertificateMessage {
             Alert alert = Alert.CERTIFICATE_UNKNOWN;
 
             Throwable baseCause = cexc.getCause();
-            if (baseCause instanceof CertPathValidatorException) {
-                CertPathValidatorException cpve =
-                        (CertPathValidatorException)baseCause;
+            if (baseCause instanceof CertPathValidatorException cpve) {
                 Reason reason = cpve.getReason();
                 if (reason == BasicReason.REVOKED) {
                     alert = chc.staplingActive ?
@@ -767,13 +757,16 @@ final class CertificateMessage {
 
         @Override
         public String toString() {
+            // X.509 certificate
             MessageFormat messageFormat = new MessageFormat(
-                "\n'{'\n" +
-                "{0}\n" +                       // X.509 certificate
-                "  \"extensions\": '{'\n" +
-                "{1}\n" +
-                "  '}'\n" +
-                "'}',", Locale.ENGLISH);
+                    """
+
+                            '{'
+                            {0}
+                              "extensions": '{'
+                            {1}
+                              '}'
+                            '}',""", Locale.ENGLISH);
 
             Object x509Certs;
             try {
@@ -919,10 +912,12 @@ final class CertificateMessage {
         @Override
         public String toString() {
             MessageFormat messageFormat = new MessageFormat(
-                "\"Certificate\": '{'\n" +
-                "  \"certificate_request_context\": \"{0}\",\n" +
-                "  \"certificate_list\": [{1}\n]\n" +
-                "'}'",
+                    """
+                            "Certificate": '{'
+                              "certificate_request_context": "{0}",
+                              "certificate_list": [{1}
+                            ]
+                            '}'""",
                 Locale.ENGLISH);
 
             StringBuilder builder = new StringBuilder(512);
@@ -954,7 +949,7 @@ final class CertificateMessage {
                 HandshakeMessage message) throws IOException {
             // The producing happens in handshake context only.
             HandshakeContext hc = (HandshakeContext)context;
-            if (hc.sslConfig.isClientMode) {
+            if (Objects.requireNonNull(hc.sslConfig).isClientMode) {
                 return onProduceCertificate(
                         (ClientHandshakeContext)context, message);
             } else {
@@ -973,12 +968,11 @@ final class CertificateMessage {
                         "No available authentication scheme");
             }
 
-            if (!(pos instanceof X509Possession)) {
+            if (!(pos instanceof X509Possession x509Possession)) {
                 throw shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                         "No X.509 certificate for server authentication");
             }
 
-            X509Possession x509Possession = (X509Possession)pos;
             X509Certificate[] localCerts = x509Possession.popCerts;
             if (localCerts == null || localCerts.length == 0) {
                 throw shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
@@ -986,7 +980,7 @@ final class CertificateMessage {
             }
 
             // update the context
-            shc.handshakePossessions.add(x509Possession);
+            Objects.requireNonNull(shc.handshakePossessions).add(x509Possession);
             shc.handshakeSession.setLocalPrivateKey(
                     x509Possession.popPrivateKey);
             shc.handshakeSession.setLocalCertificates(localCerts);
@@ -999,8 +993,8 @@ final class CertificateMessage {
             }
 
             // Check the OCSP stapling extensions and attempt
-            // to get responses.  If the resulting stapleParams is non
-            // null, it implies that stapling is enabled on the server side.
+            // to get responses.  If the resulting stapleParams is non-null,
+            // it implies that stapling is enabled on the server side.
             shc.stapleParams = StatusResponseManager.processStapling(shc);
             shc.staplingActive = (shc.stapleParams != null);
 
@@ -1010,7 +1004,7 @@ final class CertificateMessage {
             // into the ServerHandshakeContext so individual extension
             // producers know which X509Certificate it is processing in
             // each call.
-            SSLExtension[] enabledCTExts = shc.sslConfig.getEnabledExtensions(
+            SSLExtension[] enabledCTExts = Objects.requireNonNull(shc.sslConfig).getEnabledExtensions(
                     SSLHandshake.CERTIFICATE,
                     Arrays.asList(ProtocolVersion.PROTOCOLS_OF_13));
             for (CertificateEntry certEnt : cm.certEntries) {
@@ -1032,7 +1026,7 @@ final class CertificateMessage {
 
         private static SSLPossession choosePossession(
                 HandshakeContext hc,
-                ClientHelloMessage clientHello) throws IOException {
+                ClientHelloMessage clientHello) {
             if (hc.peerRequestedCertSignSchemes == null ||
                     hc.peerRequestedCertSignSchemes.isEmpty()) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
@@ -1077,15 +1071,14 @@ final class CertificateMessage {
                 }
                 localCerts = new X509Certificate[0];
             } else {
-                chc.handshakePossessions.add(pos);
-                if (!(pos instanceof X509Possession)) {
+                Objects.requireNonNull(chc.handshakePossessions).add(pos);
+                if (!(pos instanceof X509Possession x509Possession)) {
                     if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                         SSLLogger.fine(
                             "No X.509 certificate for client authentication");
                     }
                     localCerts = new X509Certificate[0];
                 } else {
-                    X509Possession x509Possession = (X509Possession)pos;
                     localCerts = x509Possession.popCerts;
                     chc.handshakeSession.setLocalPrivateKey(
                             x509Possession.popPrivateKey);
@@ -1101,7 +1094,7 @@ final class CertificateMessage {
             T13CertificateMessage cm;
             try {
                 cm = new T13CertificateMessage(
-                        chc, chc.certRequestContext, localCerts);
+                        chc, chc.certRequestContext, Objects.requireNonNull(localCerts));
             } catch (SSLException | CertificateException ce) {
                 throw chc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                         "Failed to produce client Certificate message", ce);
@@ -1137,7 +1130,7 @@ final class CertificateMessage {
             // clean up this consumer
             hc.handshakeConsumers.remove(SSLHandshake.CERTIFICATE.id);
             T13CertificateMessage cm = new T13CertificateMessage(hc, message);
-            if (hc.sslConfig.isClientMode) {
+            if (Objects.requireNonNull(hc.sslConfig).isClientMode) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
                         "Consuming server Certificate handshake message", cm);
@@ -1160,7 +1153,7 @@ final class CertificateMessage {
                 // a CertificateVerify message to follow
                 shc.handshakeConsumers.remove(
                         SSLHandshake.CERTIFICATE_VERIFY.id);
-                if (shc.sslConfig.clientAuthType == CLIENT_AUTH_REQUIRED) {
+                if (Objects.requireNonNull(shc.sslConfig).clientAuthType == CLIENT_AUTH_REQUIRED) {
                     throw shc.conContext.fatal(Alert.BAD_CERTIFICATE,
                         "Empty client certificate chain");
                 } else {
@@ -1176,7 +1169,7 @@ final class CertificateMessage {
             //
             // update
             //
-            shc.handshakeCredentials.add(
+            Objects.requireNonNull(shc.handshakeCredentials).add(
                 new X509Credentials(cliCerts[0].getPublicKey(), cliCerts));
             shc.handshakeSession.setPeerCertificates(cliCerts);
         }
@@ -1192,7 +1185,7 @@ final class CertificateMessage {
             // Each CertificateEntry will have its own set of extensions
             // which must be consumed.
             SSLExtension[] enabledExtensions =
-                chc.sslConfig.getEnabledExtensions(SSLHandshake.CERTIFICATE);
+                Objects.requireNonNull(chc.sslConfig).getEnabledExtensions(SSLHandshake.CERTIFICATE);
             for (CertificateEntry certEnt : certificateMessage.certEntries) {
                 certEnt.extensions.consumeOnLoad(chc, enabledExtensions);
             }
@@ -1204,7 +1197,7 @@ final class CertificateMessage {
             //
             // update
             //
-            chc.handshakeCredentials.add(
+            Objects.requireNonNull(chc.handshakeCredentials).add(
                 new X509Credentials(srvCerts[0].getPublicKey(), srvCerts));
             chc.handshakeSession.setPeerCertificates(srvCerts);
         }
@@ -1244,8 +1237,7 @@ final class CertificateMessage {
             try {
                 X509TrustManager tm = shc.sslContext.getX509TrustManager();
                 if (tm instanceof X509ExtendedTrustManager) {
-                    if (shc.conContext.transport instanceof SSLEngine) {
-                        SSLEngine engine = (SSLEngine)shc.conContext.transport;
+                    if (shc.conContext.transport instanceof SSLEngine engine) {
                         ((X509ExtendedTrustManager)tm).checkClientTrusted(
                             certs.clone(),
                             authType,
@@ -1300,8 +1292,7 @@ final class CertificateMessage {
             try {
                 X509TrustManager tm = chc.sslContext.getX509TrustManager();
                 if (tm instanceof X509ExtendedTrustManager) {
-                    if (chc.conContext.transport instanceof SSLEngine) {
-                        SSLEngine engine = (SSLEngine)chc.conContext.transport;
+                    if (chc.conContext.transport instanceof SSLEngine engine) {
                         ((X509ExtendedTrustManager)tm).checkServerTrusted(
                             certs.clone(),
                             authType,
@@ -1346,9 +1337,7 @@ final class CertificateMessage {
             Alert alert = Alert.CERTIFICATE_UNKNOWN;
 
             Throwable baseCause = cexc.getCause();
-            if (baseCause instanceof CertPathValidatorException) {
-                CertPathValidatorException cpve =
-                        (CertPathValidatorException)baseCause;
+            if (baseCause instanceof CertPathValidatorException cpve) {
                 Reason reason = cpve.getReason();
                 if (reason == BasicReason.REVOKED) {
                     alert = chc.staplingActive ?

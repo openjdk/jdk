@@ -72,6 +72,6 @@ public abstract class CertPathHelper {
     }
 
     public static boolean isJdkCA(TrustAnchor anchor) {
-        return (anchor == null) ? false : instance.implIsJdkCA(anchor);
+        return anchor != null && instance.implIsJdkCA(anchor);
     }
 }

@@ -41,6 +41,8 @@ import java.text.MessageFormat;
 import java.util.EnumSet;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
+
 import sun.security.ssl.SSLHandshake.HandshakeMessage;
 import sun.security.ssl.SupportedGroupsExtension.SupportedGroups;
 import sun.security.ssl.X509Authentication.X509Credentials;
@@ -303,7 +305,7 @@ final class ECDHServerKeyExchange {
             }
 
             try {
-                updateSignature(signer,
+                updateSignature(Objects.requireNonNull(signer),
                         chc.clientHelloRandom.randomBytes,
                         chc.serverHelloRandom.randomBytes,
                         namedGroup.id, publicPoint);
@@ -354,20 +356,21 @@ final class ECDHServerKeyExchange {
         public String toString() {
             if (useExplicitSigAlgorithm) {
                 MessageFormat messageFormat = new MessageFormat(
-                    "\"ECDH ServerKeyExchange\": '{'\n" +
-                    "  \"parameters\": '{'\n" +
-                    "    \"named group\": \"{0}\"\n" +
-                    "    \"ecdh public\": '{'\n" +
-                    "{1}\n" +
-                    "    '}',\n" +
-                    "  '}',\n" +
-                    "  \"digital signature\":  '{'\n" +
-                    "    \"signature algorithm\": \"{2}\"\n" +
-                    "    \"signature\": '{'\n" +
-                    "{3}\n" +
-                    "    '}',\n" +
-                    "  '}'\n" +
-                    "'}'",
+                        """
+                                "ECDH ServerKeyExchange": '{'
+                                  "parameters": '{'
+                                    "named group": "{0}"
+                                    "ecdh public": '{'
+                                {1}
+                                    '}',
+                                  '}',
+                                  "digital signature":  '{'
+                                    "signature algorithm": "{2}"
+                                    "signature": '{'
+                                {3}
+                                    '}',
+                                  '}'
+                                '}'""",
                     Locale.ENGLISH);
 
                 HexDumpEncoder hexEncoder = new HexDumpEncoder();
@@ -382,17 +385,18 @@ final class ECDHServerKeyExchange {
                 return messageFormat.format(messageFields);
             } else if (paramsSignature != null) {
                 MessageFormat messageFormat = new MessageFormat(
-                    "\"ECDH ServerKeyExchange\": '{'\n" +
-                    "  \"parameters\":  '{'\n" +
-                    "    \"named group\": \"{0}\"\n" +
-                    "    \"ecdh public\": '{'\n" +
-                    "{1}\n" +
-                    "    '}',\n" +
-                    "  '}',\n" +
-                    "  \"signature\": '{'\n" +
-                    "{2}\n" +
-                    "  '}'\n" +
-                    "'}'",
+                        """
+                                "ECDH ServerKeyExchange": '{'
+                                  "parameters":  '{'
+                                    "named group": "{0}"
+                                    "ecdh public": '{'
+                                {1}
+                                    '}',
+                                  '}',
+                                  "signature": '{'
+                                {2}
+                                  '}'
+                                '}'""",
                     Locale.ENGLISH);
 
                 HexDumpEncoder hexEncoder = new HexDumpEncoder();
@@ -407,14 +411,15 @@ final class ECDHServerKeyExchange {
                 return messageFormat.format(messageFields);
             } else {    // anonymous
                 MessageFormat messageFormat = new MessageFormat(
-                    "\"ECDH ServerKeyExchange\": '{'\n" +
-                    "  \"parameters\":  '{'\n" +
-                    "    \"named group\": \"{0}\"\n" +
-                    "    \"ecdh public\": '{'\n" +
-                    "{1}\n" +
-                    "    '}',\n" +
-                    "  '}'\n" +
-                    "'}'",
+                        """
+                                "ECDH ServerKeyExchange": '{'
+                                  "parameters":  '{'
+                                    "named group": "{0}"
+                                    "ecdh public": '{'
+                                {1}
+                                    '}',
+                                  '}'
+                                '}'""",
                     Locale.ENGLISH);
 
                 HexDumpEncoder hexEncoder = new HexDumpEncoder();
@@ -446,12 +451,10 @@ final class ECDHServerKeyExchange {
                         "neither an RSA or a EC key : " + keyAlgorithm);
             }
 
-            if (signer != null) {
-                if (key instanceof PublicKey) {
-                    signer.initVerify((PublicKey)(key));
-                } else {
-                    signer.initSign((PrivateKey)key);
-                }
+            if (key instanceof PublicKey) {
+                signer.initVerify((PublicKey)(key));
+            } else {
+                signer.initSign((PrivateKey)key);
             }
 
             return signer;
@@ -529,7 +532,7 @@ final class ECDHServerKeyExchange {
             //
             // update
             //
-            chc.handshakeCredentials.add(skem.sslCredentials);
+            Objects.requireNonNull(chc.handshakeCredentials).add(skem.sslCredentials);
 
             //
             // produce

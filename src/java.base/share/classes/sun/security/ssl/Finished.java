@@ -35,6 +35,7 @@ import java.security.ProviderException;
 import java.security.spec.AlgorithmParameterSpec;
 import java.text.MessageFormat;
 import java.util.Locale;
+import java.util.Objects;
 import javax.crypto.KeyGenerator;
 import javax.crypto.Mac;
 import javax.crypto.SecretKey;
@@ -81,7 +82,7 @@ final class Finished {
 
             byte[] vd;
             try {
-                vd = vds.createVerifyData(context, false);
+                vd = Objects.requireNonNull(vds).createVerifyData(context, false);
             } catch (IOException ioe) {
                 throw context.conContext.fatal(Alert.ILLEGAL_PARAMETER,
                         "Failed to generate verify_data", ioe);
@@ -114,7 +115,7 @@ final class Finished {
                     VerifyDataScheme.valueOf(context.negotiatedProtocol);
             byte[] myVerifyData;
             try {
-                myVerifyData = vd.createVerifyData(context, true);
+                myVerifyData = Objects.requireNonNull(vd).createVerifyData(context, true);
             } catch (IOException ioe) {
                 throw context.conContext.fatal(Alert.ILLEGAL_PARAMETER,
                         "Failed to generate verify_data", ioe);
@@ -143,11 +144,12 @@ final class Finished {
         @Override
         public String toString() {
             MessageFormat messageFormat = new MessageFormat(
-                    "\"Finished\": '{'\n" +
-                    "  \"verify data\": '{'\n" +
-                    "{0}\n" +
-                    "  '}'\n" +
-                    "'}'",
+                    """
+                            "Finished": '{'
+                              "verify data": '{'
+                            {0}
+                              '}'
+                            '}'""",
                     Locale.ENGLISH);
 
             HexDumpEncoder hexEncoder = new HexDumpEncoder();
@@ -216,9 +218,9 @@ final class Finished {
                     context.handshakeSession.getMasterSecret();
 
             boolean useClientLabel =
-                    (context.sslConfig.isClientMode && !isValidation) ||
+                    (Objects.requireNonNull(context.sslConfig).isClientMode && !isValidation) ||
                     (!context.sslConfig.isClientMode && isValidation);
-            return handshakeHash.digest(useClientLabel, masterSecretKey);
+            return Objects.requireNonNull(handshakeHash).digest(useClientLabel, masterSecretKey);
         }
     }
 
@@ -233,7 +235,7 @@ final class Finished {
                     context.handshakeSession.getMasterSecret();
 
             boolean useClientLabel =
-                    (context.sslConfig.isClientMode && !isValidation) ||
+                    (Objects.requireNonNull(context.sslConfig).isClientMode && !isValidation) ||
                     (!context.sslConfig.isClientMode && isValidation);
             String tlsLabel;
             if (useClientLabel) {
@@ -243,7 +245,7 @@ final class Finished {
             }
 
             try {
-                byte[] seed = handshakeHash.digest();
+                byte[] seed = Objects.requireNonNull(handshakeHash).digest();
                 String prfAlg = "SunTlsPrf";
                 HashAlg hashAlg = H_NONE;
 
@@ -284,7 +286,7 @@ final class Finished {
                     context.handshakeSession.getMasterSecret();
 
             boolean useClientLabel =
-                    (context.sslConfig.isClientMode && !isValidation) ||
+                    (Objects.requireNonNull(context.sslConfig).isClientMode && !isValidation) ||
                     (!context.sslConfig.isClientMode && isValidation);
             String tlsLabel;
             if (useClientLabel) {
@@ -294,7 +296,7 @@ final class Finished {
             }
 
             try {
-                byte[] seed = handshakeHash.digest();
+                byte[] seed = Objects.requireNonNull(handshakeHash).digest();
                 String prfAlg = "SunTls12Prf";
                 HashAlg hashAlg = cipherSuite.hashAlg;
 
@@ -350,7 +352,7 @@ final class Finished {
             try {
                 Mac hmac = Mac.getInstance(hmacAlg);
                 hmac.init(finishedSecret);
-                return hmac.doFinal(context.handshakeHash.digest());
+                return hmac.doFinal(Objects.requireNonNull(context.handshakeHash).digest());
             } catch (NoSuchAlgorithmException |InvalidKeyException ex) {
                 throw new ProviderException(
                         "Failed to generate verify_data", ex);
@@ -373,7 +375,7 @@ final class Finished {
                 HandshakeMessage message) throws IOException {
             // The consuming happens in handshake context only.
             HandshakeContext hc = (HandshakeContext)context;
-            if (hc.sslConfig.isClientMode) {
+            if (Objects.requireNonNull(hc.sslConfig).isClientMode) {
                 return onProduceFinished(
                         (ClientHandshakeContext)context, message);
             } else {
@@ -385,7 +387,7 @@ final class Finished {
         private byte[] onProduceFinished(ClientHandshakeContext chc,
                 HandshakeMessage message) throws IOException {
             // Refresh handshake hash
-            chc.handshakeHash.update();
+            Objects.requireNonNull(chc.handshakeHash).update();
 
             FinishedMessage fm = new FinishedMessage(chc);
 
@@ -448,7 +450,7 @@ final class Finished {
             }
 
             // Refresh handshake hash
-            shc.handshakeHash.update();
+            Objects.requireNonNull(shc.handshakeHash).update();
 
             FinishedMessage fm = new FinishedMessage(shc);
 
@@ -534,7 +536,7 @@ final class Finished {
                         "Missing ChangeCipherSpec message");
             }
 
-            if (hc.sslConfig.isClientMode) {
+            if (Objects.requireNonNull(hc.sslConfig).isClientMode) {
                 onConsumeFinished((ClientHandshakeContext)context, message);
             } else {
                 onConsumeFinished((ServerHandshakeContext)context, message);
@@ -571,7 +573,7 @@ final class Finished {
                     chc.conContext.finishHandshake();
                 }
             } else {
-                chc.handshakeProducers.put(SSLHandshake.FINISHED.id,
+                Objects.requireNonNull(chc.handshakeProducers).put(SSLHandshake.FINISHED.id,
                         SSLHandshake.FINISHED);
             }
 
@@ -584,7 +586,7 @@ final class Finished {
 
             for (SSLHandshake hs : probableHandshakeMessages) {
                 HandshakeProducer handshakeProducer =
-                        chc.handshakeProducers.remove(hs.id);
+                        Objects.requireNonNull(chc.handshakeProducers).remove(hs.id);
                 if (handshakeProducer != null) {
                     handshakeProducer.produce(chc, fm);
                 }
@@ -632,7 +634,7 @@ final class Finished {
                     shc.conContext.finishHandshake();
                 }
             } else {
-                shc.handshakeProducers.put(SSLHandshake.FINISHED.id,
+                Objects.requireNonNull(shc.handshakeProducers).put(SSLHandshake.FINISHED.id,
                         SSLHandshake.FINISHED);
             }
 
@@ -645,7 +647,7 @@ final class Finished {
 
             for (SSLHandshake hs : probableHandshakeMessages) {
                 HandshakeProducer handshakeProducer =
-                        shc.handshakeProducers.remove(hs.id);
+                        Objects.requireNonNull(shc.handshakeProducers).remove(hs.id);
                 if (handshakeProducer != null) {
                     handshakeProducer.produce(shc, fm);
                 }
@@ -668,7 +670,7 @@ final class Finished {
                 HandshakeMessage message) throws IOException {
             // The consuming happens in handshake context only.
             HandshakeContext hc = (HandshakeContext)context;
-            if (hc.sslConfig.isClientMode) {
+            if (Objects.requireNonNull(hc.sslConfig).isClientMode) {
                 return onProduceFinished(
                         (ClientHandshakeContext)context, message);
             } else {
@@ -680,7 +682,7 @@ final class Finished {
         private byte[] onProduceFinished(ClientHandshakeContext chc,
                 HandshakeMessage message) throws IOException {
             // Refresh handshake hash
-            chc.handshakeHash.update();
+            Objects.requireNonNull(chc.handshakeHash).update();
 
             FinishedMessage fm = new FinishedMessage(chc);
             if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
@@ -774,7 +776,7 @@ final class Finished {
         private byte[] onProduceFinished(ServerHandshakeContext shc,
                 HandshakeMessage message) throws IOException {
             // Refresh handshake hash
-            shc.handshakeHash.update();
+            Objects.requireNonNull(shc.handshakeHash).update();
 
             FinishedMessage fm = new FinishedMessage(shc);
             if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
@@ -889,7 +891,7 @@ final class Finished {
                 ByteBuffer message) throws IOException {
             // The consuming happens in handshake context only.
             HandshakeContext hc = (HandshakeContext)context;
-            if (hc.sslConfig.isClientMode) {
+            if (Objects.requireNonNull(hc.sslConfig).isClientMode) {
                 onConsumeFinished(
                         (ClientHandshakeContext)context, message);
             } else {
@@ -937,7 +939,7 @@ final class Finished {
 
             // Change client/server application traffic secrets.
             // Refresh handshake hash
-            chc.handshakeHash.update();
+            Objects.requireNonNull(chc.handshakeHash).update();
             SSLKeyDerivation kd = chc.handshakeKeyDerivation;
             if (kd == null) {
                 // unlikely
@@ -1014,7 +1016,7 @@ final class Finished {
             //
             // produce
             //
-            chc.handshakeProducers.put(SSLHandshake.FINISHED.id,
+            Objects.requireNonNull(chc.handshakeProducers).put(SSLHandshake.FINISHED.id,
                         SSLHandshake.FINISHED);
             SSLHandshake[] probableHandshakeMessages = new SSLHandshake[] {
                 // full handshake messages
@@ -1112,7 +1114,7 @@ final class Finished {
 
                 // The resumption master secret is stored in the session so
                 // it can be used after the handshake is completed.
-                shc.handshakeHash.update();
+                Objects.requireNonNull(shc.handshakeHash).update();
                 SSLSecretDerivation sd =
                         ((SSLSecretDerivation)kd).forContext(shc);
                 SecretKey resumptionMasterSecret = sd.deriveKey(

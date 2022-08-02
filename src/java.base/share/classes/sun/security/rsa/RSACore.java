@@ -150,7 +150,7 @@ public final class RSACore {
             throws BadPaddingException {
 
         BigInteger c = parseMsg(msg, n);
-        BlindingRandomPair brp = null;
+        BlindingRandomPair brp;
         BigInteger m;
         if (ENABLE_BLINDING) {
             brp = getBlindingRandomPair(null, exp, n);
@@ -468,7 +468,7 @@ public final class RSACore {
             }
         }
 
-        // If this parameters are still usable, put them back into the queue.
+        // If parameters are still usable, put them back into the queue.
         if (bps.isReusable()) {
             queue.add(bps);
         }

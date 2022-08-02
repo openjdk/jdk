@@ -99,18 +99,18 @@ public class TlsPrfParameterSpec implements AlgorithmParameterSpec {
     }
 
     /**
-     * Returns the label to use in the PRF calcuation.
+     * Returns the label to use in the PRF calculation.
      *
-     * @return the label to use in the PRF calcuation.
+     * @return the label to use in the PRF calculation.
      */
     public String getLabel() {
         return label;
     }
 
     /**
-     * Returns a copy of the seed to use in the PRF calcuation.
+     * Returns a copy of the seed to use in the PRF calculation.
      *
-     * @return a copy of the seed to use in the PRF calcuation.
+     * @return a copy of the seed to use in the PRF calculation.
      */
     public byte[] getSeed() {
         return seed.clone();

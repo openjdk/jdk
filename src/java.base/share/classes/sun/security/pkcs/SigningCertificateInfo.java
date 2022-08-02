@@ -25,14 +25,12 @@
 
 package sun.security.pkcs;
 
-import java.io.IOException;
-import java.util.ArrayList;
-
-import sun.security.util.HexDumpEncoder;
-import sun.security.util.DerInputStream;
 import sun.security.util.DerValue;
+import sun.security.util.HexDumpEncoder;
 import sun.security.x509.GeneralNames;
 import sun.security.x509.SerialNumber;
+
+import java.io.IOException;
 
 /**
  * This class represents a signing certificate attribute.
@@ -83,8 +81,6 @@ import sun.security.x509.SerialNumber;
  */
 public class SigningCertificateInfo {
 
-    private byte[] ber = null;
-
     private ESSCertId[] certId = null;
 
     public SigningCertificateInfo(byte[] ber) throws IOException {
@@ -132,7 +128,7 @@ class ESSCertId {
 
     private static volatile HexDumpEncoder hexDumper;
 
-    private byte[] certHash;
+    private final byte[] certHash;
     private GeneralNames issuer;
     private SerialNumber serialNumber;
 

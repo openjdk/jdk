@@ -63,8 +63,7 @@ public class DSAKeyFactory extends KeyFactorySpi {
     protected PublicKey engineGeneratePublic(KeySpec keySpec)
     throws InvalidKeySpecException {
         try {
-            if (keySpec instanceof DSAPublicKeySpec) {
-                DSAPublicKeySpec dsaPubKeySpec = (DSAPublicKeySpec)keySpec;
+            if (keySpec instanceof DSAPublicKeySpec dsaPubKeySpec) {
                 return new DSAPublicKeyImpl(dsaPubKeySpec.getY(),
                                     dsaPubKeySpec.getP(),
                                     dsaPubKeySpec.getQ(),
@@ -96,8 +95,7 @@ public class DSAKeyFactory extends KeyFactorySpi {
     protected PrivateKey engineGeneratePrivate(KeySpec keySpec)
             throws InvalidKeySpecException {
         try {
-            if (keySpec instanceof DSAPrivateKeySpec) {
-                DSAPrivateKeySpec dsaPrivKeySpec = (DSAPrivateKeySpec)keySpec;
+            if (keySpec instanceof DSAPrivateKeySpec dsaPrivKeySpec) {
                 return new DSAPrivateKey(dsaPrivKeySpec.getX(),
                                          dsaPrivKeySpec.getP(),
                                          dsaPrivKeySpec.getQ(),

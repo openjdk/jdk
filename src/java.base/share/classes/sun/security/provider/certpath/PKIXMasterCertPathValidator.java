@@ -98,7 +98,7 @@ class PKIXMasterCertPathValidator {
 
             Set<String> unresCritExts = currCert.getCriticalExtensionOIDs();
             if (unresCritExts == null) {
-                unresCritExts = Collections.<String>emptySet();
+                unresCritExts = Collections.emptySet();
             }
 
             if (debug != null && !unresCritExts.isEmpty()) {

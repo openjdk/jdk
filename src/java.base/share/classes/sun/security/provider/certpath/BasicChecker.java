@@ -102,7 +102,7 @@ class BasicChecker extends PKIXCertPathChecker {
         if (!forward) {
             prevPubKey = trustedPubKey;
             if (PKIX.isDSAPublicKeyWithoutParams(prevPubKey)) {
-                // If TrustAnchor is a DSA public key and it has no params, it
+                // If TrustAnchor is a DSA public key, and it has no params, it
                 // cannot be used to verify the signature of the first cert,
                 // so throw exception
                 throw new CertPathValidatorException("Key parameters missing");

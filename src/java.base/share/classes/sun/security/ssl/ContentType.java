@@ -44,8 +44,8 @@ enum ContentType {
     final String name;
     final ProtocolVersion[] supportedProtocols;
 
-    private ContentType(byte id, String name,
-            ProtocolVersion[] supportedProtocols) {
+    ContentType(byte id, String name,
+                ProtocolVersion[] supportedProtocols) {
         this.id = id;
         this.name = name;
         this.supportedProtocols = supportedProtocols;

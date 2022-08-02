@@ -177,7 +177,7 @@ public class HmacDrbg extends AbstractHashDrbg {
             v = mac.doFinal(v);
             // Step 4.2 temp = temp || V.
             System.arraycopy(v, 0, result, pos,
-                    len > outLen ? outLen : len);
+                    Math.min(len, outLen));
 
             len -= outLen;
             if (len <= 0) {

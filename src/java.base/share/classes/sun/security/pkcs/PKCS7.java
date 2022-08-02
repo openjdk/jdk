@@ -83,14 +83,14 @@ public class PKCS7 {
     }
 
     /**
-     * Unmarshals a PKCS7 block from its encoded form, parsing the
+     * Unmarshal a PKCS7 block from its encoded form, parsing the
      * encoded bytes from the InputStream.
      *
      * @param in an input stream holding at least one PKCS7 block.
      * @exception ParsingException on parsing errors.
      * @exception IOException on other errors.
      */
-    public PKCS7(InputStream in) throws ParsingException, IOException {
+    public PKCS7(InputStream in) throws IOException {
         DataInputStream dis = new DataInputStream(in);
         byte[] data = new byte[dis.available()];
         dis.readFully(data);
@@ -99,7 +99,7 @@ public class PKCS7 {
     }
 
     /**
-     * Unmarshals a PKCS7 block from its encoded form, parsing the
+     * Unmarshal a PKCS7 block from its encoded form, parsing the
      * encoded bytes from the DerInputStream.
      *
      * @param derin a DerInputStream holding at least one PKCS7 block.
@@ -110,7 +110,7 @@ public class PKCS7 {
     }
 
     /**
-     * Unmarshals a PKCS7 block from its encoded form, parsing the
+     * Unmarshal a PKCS7 block from its encoded form, parsing the
      * encoded bytes.
      *
      * @param bytes the encoded bytes.
@@ -158,7 +158,7 @@ public class PKCS7 {
      * Parses a PKCS#7 block.
      *
      * @param derin the ASN.1 encoding of the PKCS#7 block.
-     * @param oldStyle flag indicating whether or not the given PKCS#7 block
+     * @param oldStyle flag indicating whether the given PKCS#7 block
      * is encoded according to JDK1.1.x.
      */
     private void parse(DerInputStream derin, boolean oldStyle)
@@ -213,7 +213,7 @@ public class PKCS7 {
     }
 
     private void parseNetscapeCertChain(DerValue val)
-    throws ParsingException, IOException {
+    throws IOException {
         DerInputStream dis = new DerInputStream(val.toByteArray());
         DerValue[] contents = dis.getSequence(2);
         certificates = new X509Certificate[contents.length];
@@ -260,7 +260,7 @@ public class PKCS7 {
     //       [1] IMPLICIT CertificateRevocationLists OPTIONAL,
     //     signerInfos SignerInfos }
     private void parseSignedData(DerValue val)
-        throws ParsingException, IOException {
+        throws IOException {
 
         DerInputStream dis = val.toDerInputStream();
 
@@ -386,7 +386,7 @@ public class PKCS7 {
      * compatibility with JDK1.1.x).
      */
     private void parseOldSignedData(DerValue val)
-        throws ParsingException, IOException
+        throws IOException
     {
         DerInputStream dis = val.toDerInputStream();
 
@@ -531,7 +531,7 @@ public class PKCS7 {
             // Add the CRL set (tagged with [1] IMPLICIT)
             // to the signed data
             signedData.putOrderedSetOf((byte)0xA1,
-                    implCRLs.toArray(new X509CRLImpl[implCRLs.size()]));
+                    implCRLs.toArray(new X509CRLImpl[0]));
         }
 
         // signerInfos
@@ -765,8 +765,8 @@ public class PKCS7 {
      * @param privateKey signer's private ky
      * @param signerChain signer's certificate chain
      * @param content the content to sign
-     * @param internalsf whether the content should be include in output
-     * @param directsign if the content is signed directly or thru authattrs
+     * @param internalsf whether the content should be included in output
+     * @param directsign if the content is signed directly or through authattrs
      * @param ts (optional) timestamper
      * @return the pkcs7 output in an array
      * @throws SignatureException if signing failed
@@ -1000,7 +1000,7 @@ public class PKCS7 {
      * @return the encoded timestamp token
      * @throws IOException The exception is thrown if an error occurs while
      *                     communicating with the TSA, or a non-null
-     *                     TSAPolicyID is specified in the request but it
+     *                     TSAPolicyID is specified in the request, but it
      *                     does not match the one in the reply
      * @throws CertificateException The exception is thrown if the TSA's
      *                     certificate is not permitted for timestamping.
@@ -1012,8 +1012,8 @@ public class PKCS7 {
         throws IOException, CertificateException
     {
         // Generate a timestamp
-        MessageDigest messageDigest = null;
-        TSRequest tsQuery = null;
+        MessageDigest messageDigest;
+        TSRequest tsQuery;
         try {
             messageDigest = MessageDigest.getInstance(tSADigestAlg);
             tsQuery = new TSRequest(tSAPolicyID, toBeTimestamped, messageDigest);

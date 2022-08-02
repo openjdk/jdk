@@ -36,6 +36,7 @@ import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import javax.net.ssl.SSLProtocolException;
 import sun.security.provider.certpath.OCSPResponse;
 import sun.security.provider.certpath.ResponderId;
@@ -239,14 +240,14 @@ final class CertStatusExtension {
         }
     }
 
-    static enum CertStatusRequestType {
+    enum CertStatusRequestType {
         OCSP        ((byte)0x01,    "ocsp"),        // RFC 6066/6961
         OCSP_MULTI  ((byte)0x02,    "ocsp_multi");  // RFC 6961
 
         final byte id;
         final String name;
 
-        private CertStatusRequestType(byte id, String name) {
+        CertStatusRequestType(byte id, String name) {
             this.id = id;
             this.name = name;
         }
@@ -287,10 +288,11 @@ final class CertStatusExtension {
         @Override
         public String toString() {
             MessageFormat messageFormat = new MessageFormat(
-                "\"certificate status type\": {0}\n" +
-                "\"encoded certificate status\": '{'\n" +
-                "{1}\n" +
-                "'}'",
+                    """
+                            "certificate status type": {0}
+                            "encoded certificate status": '{'
+                            {1}
+                            '}'""",
                 Locale.ENGLISH);
 
             HexDumpEncoder hexEncoder = new HexDumpEncoder();
@@ -404,17 +406,19 @@ final class CertStatusExtension {
         @Override
         public String toString() {
             MessageFormat messageFormat = new MessageFormat(
-                "\"certificate status type\": {0}\n" +
-                "\"OCSP status request\": '{'\n" +
-                "{1}\n" +
-                "'}'",
+                    """
+                            "certificate status type": {0}
+                            "OCSP status request": '{'
+                            {1}
+                            '}'""",
                 Locale.ENGLISH);
 
             MessageFormat requestFormat = new MessageFormat(
-                "\"responder_id\": {0}\n" +
-                "\"request extensions\": '{'\n" +
-                "{1}\n" +
-                "'}'",
+                    """
+                            "responder_id": {0}
+                            "request extensions": '{'
+                            {1}
+                            '}'""",
                 Locale.ENGLISH);
 
             String ridStr = "<empty>";
@@ -477,10 +481,11 @@ final class CertStatusExtension {
         @Override
         public String toString() {
             MessageFormat messageFormat = new MessageFormat(
-                "\"certificate status response type\": {0}\n" +
-                "\"encoded certificate status\": '{'\n" +
-                "{1}\n" +
-                "'}'",
+                    """
+                            "certificate status response type": {0}
+                            "encoded certificate status": '{'
+                            {1}
+                            '}'""",
                 Locale.ENGLISH);
 
             HexDumpEncoder hexEncoder = new HexDumpEncoder();
@@ -515,10 +520,11 @@ final class CertStatusExtension {
         @Override
         public String toString() {
             MessageFormat messageFormat = new MessageFormat(
-                "\"certificate status response type\": {0}\n" +
-                "\"OCSP status response\": '{'\n" +
-                "{1}\n" +
-                "'}'",
+                    """
+                            "certificate status response type": {0}
+                            "OCSP status response": '{'
+                            {1}
+                            '}'""",
                 Locale.ENGLISH);
 
             Object[] messageFields = {
@@ -551,7 +557,7 @@ final class CertStatusExtension {
                 return null;
             }
 
-            if (!chc.sslConfig.isAvailable(SSLExtension.CH_STATUS_REQUEST)) {
+            if (!Objects.requireNonNull(chc.sslConfig).isAvailable(SSLExtension.CH_STATUS_REQUEST)) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
                         "Ignore unavailable extension: " +
@@ -592,7 +598,7 @@ final class CertStatusExtension {
             // The consuming happens in server side only.
             ServerHandshakeContext shc = (ServerHandshakeContext)context;
 
-            if (!shc.sslConfig.isAvailable(SSLExtension.CH_STATUS_REQUEST)) {
+            if (!Objects.requireNonNull(shc.sslConfig).isAvailable(SSLExtension.CH_STATUS_REQUEST)) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine("Ignore unavailable extension: " +
                         SSLExtension.CH_STATUS_REQUEST.name);
@@ -607,7 +613,7 @@ final class CertStatusExtension {
             shc.handshakeExtensions.put(SSLExtension.CH_STATUS_REQUEST, spec);
             if (!shc.isResumption &&
                     !shc.negotiatedProtocol.useTLS13PlusSpec()) {
-                shc.handshakeProducers.put(SSLHandshake.CERTIFICATE_STATUS.id,
+                Objects.requireNonNull(shc.handshakeProducers).put(SSLHandshake.CERTIFICATE_STATUS.id,
                     SSLHandshake.CERTIFICATE_STATUS);
             }   // Otherwise, the certificate status presents in server cert.
 
@@ -909,7 +915,7 @@ final class CertStatusExtension {
                 return null;
             }
 
-            if (!chc.sslConfig.isAvailable(SSLExtension.CH_STATUS_REQUEST_V2)) {
+            if (!Objects.requireNonNull(chc.sslConfig).isAvailable(SSLExtension.CH_STATUS_REQUEST_V2)) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.finest(
                         "Ignore unavailable status_request_v2 extension");
@@ -951,7 +957,7 @@ final class CertStatusExtension {
             // The consuming happens in server side only.
             ServerHandshakeContext shc = (ServerHandshakeContext)context;
 
-            if (!shc.sslConfig.isAvailable(SSLExtension.CH_STATUS_REQUEST_V2)) {
+            if (!Objects.requireNonNull(shc.sslConfig).isAvailable(SSLExtension.CH_STATUS_REQUEST_V2)) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.finest(
                         "Ignore unavailable status_request_v2 extension");
@@ -967,7 +973,7 @@ final class CertStatusExtension {
             shc.handshakeExtensions.put(SSLExtension.CH_STATUS_REQUEST_V2,
                     spec);
             if (!shc.isResumption) {
-                shc.handshakeProducers.putIfAbsent(
+                Objects.requireNonNull(shc.handshakeProducers).putIfAbsent(
                         SSLHandshake.CERTIFICATE_STATUS.id,
                         SSLHandshake.CERTIFICATE_STATUS);
             }

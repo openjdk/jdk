@@ -447,7 +447,7 @@ final class AlpnExtension {
 
             // Clean or register the extension
             //
-            // No further use of the request and respond extension any more.
+            // No further use of the request and respond extension anymore.
             shc.handshakeExtensions.remove(SSLExtension.CH_ALPN);
 
             return extData;
@@ -473,9 +473,7 @@ final class AlpnExtension {
             // In response to ALPN request only
             AlpnSpec requestedAlps =
                     (AlpnSpec)chc.handshakeExtensions.get(SSLExtension.CH_ALPN);
-            if (requestedAlps == null ||
-                    requestedAlps.applicationProtocols == null ||
-                    requestedAlps.applicationProtocols.isEmpty()) {
+            if (requestedAlps == null || requestedAlps.applicationProtocols.isEmpty()) {
                 throw chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
                     "Unexpected " + SSLExtension.CH_ALPN.name + " extension");
             }
@@ -506,7 +504,7 @@ final class AlpnExtension {
 
             // Clean or register the extension
             //
-            // No further use of the request and respond extension any more.
+            // No further use of the request and respond extension anymore.
             chc.handshakeExtensions.remove(SSLExtension.CH_ALPN);
         }
     }

@@ -48,7 +48,7 @@ public final class OCSPNonceExtension extends Extension {
      * Attribute name.
      */
     private static final String EXTENSION_NAME = "OCSPNonce";
-    private byte[] nonceData = null;
+    private final byte[] nonceData;
 
     /**
      * Create an {@code OCSPNonceExtension} by providing the nonce length.
@@ -166,11 +166,9 @@ public final class OCSPNonceExtension extends Extension {
      */
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(super.toString()).append(EXTENSION_NAME).append(": ");
-        sb.append((nonceData == null) ? "" : Debug.toString(nonceData));
-        sb.append("\n");
-        return sb.toString();
+        return super.toString() + EXTENSION_NAME + ": " +
+                ((nonceData == null) ? "" : Debug.toString(nonceData)) +
+                "\n";
     }
 
     /**

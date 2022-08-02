@@ -62,7 +62,7 @@ public class Providers {
     // After the switch to modules, JDK providers are all in modules and JDK
     // no longer needs to load signed jars during start up.
     //
-    // However, for earlier releases, it need special handling to resolve
+    // However, for earlier releases, it needs special handling to resolve
     // circularities when loading signed JAR files during startup. The code
     // below is part of that.
     //
@@ -101,7 +101,7 @@ public class Providers {
     /**
      * Start JAR verification. This sets a special provider list for
      * the current thread. You MUST save the return value from this
-     * method and you MUST call stopJarVerification() with that object
+     * method, and you MUST call stopJarVerification() with that object
      * once you are done.
      */
     public static Object startJarVerification() {
@@ -131,7 +131,7 @@ public class Providers {
 
     /**
      * Return the current ProviderList. If the thread-local list is set,
-     * it is returned. Otherwise, the system wide list is returned.
+     * it is returned. Otherwise, the system-wide list is returned.
      */
     public static ProviderList getProviderList() {
         ProviderList list = getThreadProviderList();
@@ -143,7 +143,7 @@ public class Providers {
 
     /**
      * Set the current ProviderList. Affects the thread-local list if set,
-     * otherwise the system wide list.
+     * otherwise the system-wide list.
      */
     public static void setProviderList(ProviderList newList) {
         if (getThreadProviderList() == null) {
@@ -209,7 +209,7 @@ public class Providers {
     }
 
     // Change the thread local provider list. Use only if the current thread
-    // is already using a thread local list and you want to change it in place.
+    // is already using a thread local list, and you want to change it in place.
     // In other cases, use the begin/endThreadProviderList() methods.
     private static void changeThreadProviderList(ProviderList list) {
         threadLists.set(list);

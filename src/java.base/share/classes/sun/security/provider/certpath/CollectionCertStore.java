@@ -26,18 +26,10 @@
 package sun.security.provider.certpath;
 
 import java.security.InvalidAlgorithmParameterException;
-import java.security.cert.Certificate;
-import java.security.cert.CRL;
+import java.security.cert.*;
 import java.util.Collection;
 import java.util.ConcurrentModificationException;
 import java.util.HashSet;
-import java.security.cert.CertSelector;
-import java.security.cert.CertStore;
-import java.security.cert.CertStoreException;
-import java.security.cert.CertStoreParameters;
-import java.security.cert.CollectionCertStoreParameters;
-import java.security.cert.CRLSelector;
-import java.security.cert.CertStoreSpi;
 
 /**
  * A <code>CertStore</code> that retrieves <code>Certificates</code> and
@@ -78,7 +70,7 @@ import java.security.cert.CertStoreSpi;
  */
 public class CollectionCertStore extends CertStoreSpi {
 
-    private Collection<?> coll;
+    private final Collection<?> coll;
 
     /**
      * Creates a <code>CertStore</code> with the specified parameters.

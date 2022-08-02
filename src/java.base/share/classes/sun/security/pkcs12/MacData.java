@@ -43,11 +43,10 @@ import sun.security.pkcs.ParsingException;
 
 class MacData {
 
-    private String digestAlgorithmName;
-    private AlgorithmParameters digestAlgorithmParams;
-    private byte[] digest;
-    private byte[] macSalt;
-    private int iterations;
+    private final String digestAlgorithmName;
+    private final byte[] digest;
+    private final byte[] macSalt;
+    private final int iterations;
 
     // the ASN.1 encoded contents of this class
     private byte[] encoded = null;
@@ -56,8 +55,7 @@ class MacData {
      * Parses a PKCS#12 MAC data.
      */
     MacData(DerInputStream derin)
-        throws IOException, ParsingException
-    {
+        throws IOException {
         DerValue[] macData = derin.getSequence(2);
         if (macData.length < 2 || macData.length > 3) {
             throw new ParsingException("Invalid length for MacData");
@@ -73,7 +71,6 @@ class MacData {
         // Parse the DigestAlgorithmIdentifier.
         AlgorithmId digestAlgorithmId = AlgorithmId.parse(digestInfo[0]);
         this.digestAlgorithmName = digestAlgorithmId.getName();
-        this.digestAlgorithmParams = digestAlgorithmId.getParameters();
         // Get the digest.
         this.digest = digestInfo[1].getOctetString();
 
@@ -97,7 +94,6 @@ class MacData {
 
         AlgorithmId algid = AlgorithmId.get(algName);
         this.digestAlgorithmName = algid.getName();
-        this.digestAlgorithmParams = algid.getParameters();
 
         if (digest == null) {
             throw new NullPointerException("the digest " +
@@ -127,7 +123,6 @@ class MacData {
 
         AlgorithmId algid = AlgorithmId.get(algParams);
         this.digestAlgorithmName = algid.getName();
-        this.digestAlgorithmParams = algid.getParameters();
 
         if (digest == null) {
             throw new NullPointerException("the digest " +

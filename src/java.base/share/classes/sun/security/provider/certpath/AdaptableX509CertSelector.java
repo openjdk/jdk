@@ -196,11 +196,7 @@ class AdaptableX509CertSelector extends X509CertSelector {
         }
 
 
-        if (!super.match(cert)) {
-            return false;
-        }
-
-        return true;
+        return super.match(cert);
     }
 
     /*

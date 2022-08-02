@@ -31,7 +31,7 @@ import javax.crypto.SecretKey;
 
 /**
  * Parameters for SSL/TLS master secret generation.
- * This class encapsulates the information necessary to calculate a SSL/TLS
+ * This class encapsulates the information necessary to calculate an SSL/TLS
  * master secret from the premaster secret and other parameters.
  * It is used to initialize KeyGenerators of the type "TlsMasterSecret".
  *
