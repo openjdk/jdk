@@ -780,11 +780,11 @@ public class Basic {
     private Object[][] badSyntaxAndPattern() {
         return new Object[][] {
             { ":glob"},
-            { "glob:"},
         };
     }
 
-    @Test(dataProvider = "badSyntaxAndPattern", expectedExceptions = IllegalArgumentException.class)
+    @Test(dataProvider = "badSyntaxAndPattern",
+          expectedExceptions = IllegalArgumentException.class)
     public void badSyntaxAndPatternTest(String syntaxAndPattern) {
         FileSystem fs = FileSystems.getFileSystem(URI.create("jrt:/"));
         PathMatcher pm = fs.getPathMatcher(syntaxAndPattern);

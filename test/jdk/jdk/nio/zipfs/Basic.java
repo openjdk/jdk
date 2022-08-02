@@ -121,8 +121,9 @@ public class Basic {
         }
         try {
             PathMatcher pm = fs.getPathMatcher("glob:");
-            throw new RuntimeException("IllegalArgumentException not thrown");
         } catch (IllegalArgumentException iae) {
+            iae.printStackTrace();
+            throw new RuntimeException("Unexpected IllegalArgumentException");
         }
 
         // Test: ClosedFileSystemException
