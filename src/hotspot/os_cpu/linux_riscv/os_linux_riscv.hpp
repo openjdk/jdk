@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2021, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -31,11 +31,6 @@
   // Used to register dynamic code cache area with the OS
   // Note: Currently only used in 64 bit Windows implementations
   static bool register_code_area(char *low, char *high) { return true; }
-
-  // Atomically copy 64 bits of data
-  static void atomic_copy64(const volatile void *src, volatile void *dst) {
-    *(jlong *) dst = *(const jlong *) src;
-  }
 
   // SYSCALL_RISCV_FLUSH_ICACHE is used to flush instruction cache. The "fence.i" instruction
   // only work on the current hart, so kernel provides the icache flush syscall to flush icache

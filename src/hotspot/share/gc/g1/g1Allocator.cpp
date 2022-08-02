@@ -304,6 +304,8 @@ G1PLABAllocator::G1PLABAllocator(G1Allocator* allocator) :
     for (uint node_index = 0; node_index < length; node_index++) {
       _alloc_buffers[state][node_index] = new PLAB(word_sz);
     }
+    _num_plab_fills[state] = 0;
+    _num_direct_allocations[state] = 0;
   }
 }
 
@@ -336,6 +338,8 @@ HeapWord* G1PLABAllocator::allocate_direct_or_new_plab(G1HeapRegionAttr dest,
     PLAB* alloc_buf = alloc_buffer(dest, node_index);
     alloc_buf->retire();
 
+    _num_plab_fills[dest.type()]++;
+
     size_t actual_plab_size = 0;
     HeapWord* buf = _allocator->par_allocate_during_gc(dest,
                                                        required_in_plab,
@@ -344,7 +348,7 @@ HeapWord* G1PLABAllocator::allocate_direct_or_new_plab(G1HeapRegionAttr dest,
                                                        node_index);
 
     assert(buf == NULL || ((actual_plab_size >= required_in_plab) && (actual_plab_size <= plab_word_size)),
-           "Requested at minimum " SIZE_FORMAT ", desired " SIZE_FORMAT " words, but got " SIZE_FORMAT " at " PTR_FORMAT,
+           "Requested at minimum %zu, desired %zu words, but got %zu at " PTR_FORMAT,
            required_in_plab, plab_word_size, actual_plab_size, p2i(buf));
 
     if (buf != NULL) {
@@ -352,7 +356,7 @@ HeapWord* G1PLABAllocator::allocate_direct_or_new_plab(G1HeapRegionAttr dest,
 
       HeapWord* const obj = alloc_buf->allocate(word_sz);
       assert(obj != NULL, "PLAB should have been big enough, tried to allocate "
-                          SIZE_FORMAT " requiring " SIZE_FORMAT " PLAB size " SIZE_FORMAT,
+                          "%zu requiring %zu PLAB size %zu",
                           word_sz, required_in_plab, plab_word_size);
       return obj;
     }
@@ -363,6 +367,7 @@ HeapWord* G1PLABAllocator::allocate_direct_or_new_plab(G1HeapRegionAttr dest,
   HeapWord* result = _allocator->par_allocate_during_gc(dest, word_sz, node_index);
   if (result != NULL) {
     _direct_allocated[dest.type()] += word_sz;
+    _num_direct_allocations[dest.type()]++;
   }
   return result;
 }
@@ -380,8 +385,9 @@ void G1PLABAllocator::flush_and_retire_stats() {
         buf->flush_and_retire_stats(stats);
       }
     }
+    stats->add_num_plab_filled(_num_plab_fills[state]);
     stats->add_direct_allocated(_direct_allocated[state]);
-    _direct_allocated[state] = 0;
+    stats->add_num_direct_allocated(_num_direct_allocations[state]);
   }
 }
 

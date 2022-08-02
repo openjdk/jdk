@@ -938,8 +938,6 @@ void VM_Version::get_processor_features() {
     _features &= ~CPU_HT;
   }
 
-  // Note: Any modifications to following suppressed feature list for KNL target
-  // should also be applied to test/hotspot/jtreg/compiler/lib/ir_framework/test/IREncodingPrinter.java
   if (is_intel()) { // Intel cpus specific settings
     if (is_knights_family()) {
       _features &= ~CPU_VZEROUPPER;

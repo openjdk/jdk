@@ -200,11 +200,7 @@ void C1_MacroAssembler::try_allocate(
   if (UseTLAB) {
     tlab_allocate(obj, var_size_in_bytes, con_size_in_bytes, t1, slow_case);
   } else {
-    eden_allocate(obj, var_size_in_bytes, con_size_in_bytes, t1, t2, slow_case);
-    RegisterOrConstant size_in_bytes = var_size_in_bytes->is_valid()
-                                       ? RegisterOrConstant(var_size_in_bytes)
-                                       : RegisterOrConstant(con_size_in_bytes);
-    incr_allocated_bytes(size_in_bytes, t1, t2);
+    b(slow_case);
   }
 }
 
@@ -357,11 +353,7 @@ void C1_MacroAssembler::allocate_array(
   clrrdi(arr_size, arr_size, LogMinObjAlignmentInBytes);                              // Align array size.
 
   // Allocate space & initialize header.
-  if (UseTLAB) {
-    tlab_allocate(obj, arr_size, 0, t2, slow_case);
-  } else {
-    eden_allocate(obj, arr_size, 0, t2, t3, slow_case);
-  }
+  try_allocate(obj, arr_size, 0, t2, t3, slow_case);
   initialize_header(obj, klass, len, t2, t3);
 
   // Initialize body.
