@@ -608,7 +608,6 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      */
     Stream<T> sorted(Comparator<? super T> comparator);
 
-    <R>Stream<T> sorted(Function<T,R> function);
     /**
      * Returns a stream consisting of the elements of this stream, additionally
      * performing the provided action on each element as elements are consumed
