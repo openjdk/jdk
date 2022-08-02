@@ -29,6 +29,7 @@ import java.lang.reflect.InvocationTargetException;
 
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
+import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 import javax.swing.WindowConstants;
 
@@ -93,6 +94,9 @@ public class FileChooserSymLinkTest {
             public void propertyChange(PropertyChangeEvent evt) {
                 if (JFileChooser.SELECTED_FILE_CHANGED_PROPERTY.equals(evt.getPropertyName())) {
                     System.out.println(String.format("Absolute Path : %s",evt.getNewValue()));
+                    JOptionPane.showMessageDialog(null, evt.getNewValue(),
+                            "Absolute path",
+                            JOptionPane.INFORMATION_MESSAGE);
                 }
             }
         });
