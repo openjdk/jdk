@@ -27,6 +27,8 @@ package javax.swing;
 
 import java.awt.*;
 import java.awt.image.*;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.text.AttributedCharacterIterator;
 
 /**
@@ -77,6 +79,7 @@ public class DebugGraphics extends Graphics {
      * application, it is for Internal use only. When called directly
      * it will create an un-usable instance.
      */
+    @SuppressWarnings("removal")
     public DebugGraphics() {
         super();
         buffer = null;
@@ -84,8 +87,18 @@ public class DebugGraphics extends Graphics {
 
         //  Creates a Graphics context when the constructor is called.
         if (graphics == null) {
-            BufferedImage bi = new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB);
-            graphics = bi.createGraphics();
+            StackWalker walker = AccessController.doPrivileged(new PrivilegedAction<StackWalker>() {
+                @Override
+                public StackWalker run() {
+                    StackWalker stackwalker = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE);
+                    return stackwalker;
+                }
+            });
+
+            if(walker.getCallerClass() != this.getClass()) {
+                BufferedImage bi = new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB);
+                graphics = bi.createGraphics();
+            }
         }
     }
 
