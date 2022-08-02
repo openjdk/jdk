@@ -24,25 +24,7 @@
  */
 package java.util.stream;
 
-import java.util.AbstractMap;
-import java.util.AbstractSet;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.DoubleSummaryStatistics;
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.IntSummaryStatistics;
-import java.util.Iterator;
-import java.util.List;
-import java.util.LongSummaryStatistics;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.StringJoiner;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.BiConsumer;
@@ -996,6 +978,101 @@ public final class Collectors {
     public static <T, K> Collector<T, ?, Map<K, List<T>>>
     groupingBy(Function<? super T, ? extends K> classifier) {
         return groupingBy(classifier, toList());
+    }
+
+    /**
+     * @implSpec
+     * <pre>{@code
+     * DateTimeFormatter df = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+     * List<User> userList = Arrays.asList(
+     *                 User.builder().id(123456).name("Zhang, San").city("ShangHai").sex("man").birthDay(LocalDateTime.parse("2022-07-01 12:00:00", df)).build(),
+     *                 User.builder().id(777777).name("Zhang, San").city("ShangHai").sex("woman").birthDay(LocalDateTime.parse("2022-07-01 12:00:00", df)).build(),
+     *                 User.builder().id(888888).name("Li, Si").city("ShangHai").sex("man").birthDay(LocalDateTime.parse("2022-07-01 12:00:00", df)).build(),
+     *                 User.builder().id(999999).name("Zhan, San").city("HangZhou").sex("woman").birthDay(LocalDateTime.parse("2022-07-01 12:00:00", df)).build(),
+     *                 User.builder().id(555555).name("Li, Si").city("NaJin").sex("man").birthDay(LocalDateTime.parse("2022-07-01 12:00:00", df)).build()
+     *         );
+     * Demo:
+     *     // 1. we can use the default vertical separator. the key is name|city, value is List<User>
+     *     Map<String, List<User>> defaultSpilt = userList.stream().collect(Collectors.groupingBy(User::getName, User::getCity));
+     *
+     *     // 2.Use custom delimiters, we can set our custom string to combine key, value is List<User>
+     *     userList.stream().collect(Collectors.groupingBy("-", User::getName, User::getCity, User::getId));
+     *     Map<? extends Serializable, List<User>> collect = userList.stream().collect(Collectors.groupingBy("--", User::getName, User::getCity, User::getId));
+     *
+     * }</pre>
+     * "|" is default to split
+     * @param classifier combined key by ”|“
+     * @param <T> the type of the input elements
+     * @param <K> the type of the keys, Usually it's a string type.
+     * @return a {@code Collector} implementing the cascaded group-by operation
+     */
+    public static <T, K> Collector<T, ?, HashMap<K, List<T>>>
+    groupingBy(Function<? super T, ? extends K>... classifier) {
+        return groupingBy("|", classifier);
+    }
+
+    /**
+     *
+     * @param split set the key separator
+     * @param classifier multiple classifier function
+     * @param <T> the type of the input elements
+     * @param <K> the type of the keys, Usually it's a string type.
+     * @return a {@code Collector} implementing the cascaded group-by operation
+     */
+    public static <T, K> Collector<T, ?, HashMap<K, List<T>>>
+    groupingBy(String split, Function<? super T, ? extends K>... classifier) {
+        return groupingBy(split, classifier, HashMap::new, toList());
+    }
+    /**
+     * Returns a {@code Collector} implementing a combined "group by" operation
+     * on input elements of type {@code T}, grouping elements according to multiple
+     * classification function, and then performing a reduction operation on
+     * the values associated with a given key using the specified downstream
+     * {@code Collector}.  The {@code Map} produced by the Collector is created
+     * with the supplied factory function.
+     *
+     * @param <T> the type of the input elements
+     * @param <K> the type of the keys, Usually it's a string type.
+     * @param <A> the intermediate accumulation type of the downstream collector
+     * @param <D> the result type of the downstream reduction
+     * @param <M> the type of the resulting {@code Map}
+     * @param split the key separator
+     * @param classifierArr a set of classifier functions that map input elements to keys
+     * @param downstream a {@code Collector} implementing the downstream reduction
+     * @param mapFactory a supplier providing a new empty {@code Map}
+     *                   into which the results will be inserted
+     * @return a {@code Collector} implementing the cascaded group-by operation
+     */
+    public static <T, K, D, A, M extends Map<? super K, D>>
+    Collector<T, ?, M> groupingBy(String split,
+                                  Function<? super T, ? extends K>[] classifierArr,
+                                  Supplier<M> mapFactory,
+                                  Collector<? super T, A, D> downstream) {
+        Supplier<A> downstreamSupplier = downstream.supplier();
+        BiConsumer<A, ? super T> downstreamAccumulator = downstream.accumulator();
+        BiConsumer<Map<K, A>, T> accumulator = (m, t) -> {
+            Arrays.stream(classifierArr).map(classifier -> Objects.requireNonNull(classifier.apply(t))).map(String::valueOf).reduce((s1, s2) -> s1 + split + s2).ifPresent(key->{
+                A container = m.computeIfAbsent((K) key, k -> downstreamSupplier.get());
+                downstreamAccumulator.accept(container, t);
+            });
+        };
+        BinaryOperator<Map<K, A>> merger = Collectors.mapMerger(downstream.combiner());
+        @SuppressWarnings("unchecked")
+        Supplier<Map<K, A>> mangledFactory = (Supplier<Map<K, A>>) mapFactory;
+
+        if (downstream.characteristics().contains(Collector.Characteristics.IDENTITY_FINISH)) {
+            return new CollectorImpl<>(mangledFactory, accumulator, merger, CH_ID);
+        } else {
+            @SuppressWarnings("unchecked")
+            Function<A, A> downstreamFinisher = (Function<A, A>) downstream.finisher();
+            Function<Map<K, A>, M> finisher = intermediate -> {
+                intermediate.replaceAll((k, v) -> downstreamFinisher.apply(v));
+                @SuppressWarnings("unchecked")
+                M castResult = (M) intermediate;
+                return castResult;
+            };
+            return new CollectorImpl<>(mangledFactory, accumulator, merger, finisher, CH_NOID);
+        }
     }
 
     /**
