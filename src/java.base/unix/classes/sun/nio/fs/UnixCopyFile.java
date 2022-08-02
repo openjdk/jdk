@@ -278,9 +278,7 @@ class UnixCopyFile {
     {
         boolean copied = false;
         if (addressToPollForCancel == 0 && !cloneFileNotSupported) {
-            UnixFileSystemProvider provider =
-               (UnixFileSystemProvider)source.getFileSystem().provider();
-            int res = provider.clone(source, target, flags.followLinks);
+            int res = CloneFile.clone(source, target, flags.followLinks);
             if (res == 0) {
                 copied = true;
             }
@@ -729,10 +727,10 @@ class UnixCopyFile {
      * @param addressToPollForCancel address to check for cancellation
      *        (a non-zero value written to this address indicates cancel)
      *
-     * @return 0 on success, UNAVAILABLE if the platform function would block,
-     *         UNSUPPORTED_CASE if the call does not work with the given
-     *         parameters, or UNSUPPORTED if direct copying is not supported
-     *         on this platform
+     * @return 0 on success, IOStatus.UNAVAILABLE if the platform function
+     *         would block, IOStatus.UNSUPPORTED_CASE if the call does not
+     *         work with the given parameters, or IOStatus.UNSUPPORTED if
+     *         direct copying is not supported on this platform
      */
     private static native int directCopy0(int dst, int src,
                                           long addressToPollForCancel)

@@ -36,7 +36,6 @@ import java.io.FilePermission;
 import java.util.*;
 
 import jdk.internal.util.StaticProperty;
-import sun.nio.ch.IOStatus;
 import sun.nio.ch.ThreadPool;
 import sun.security.util.SecurityConstants;
 import static sun.nio.fs.UnixNativeDispatcher.*;
@@ -287,24 +286,6 @@ public abstract class UnixFileSystemProvider
         UnixCopyFile.move(UnixPath.toUnixPath(source),
                           UnixPath.toUnixPath(target),
                           options);
-    }
-
-    /**
-     * Clones the file whose path name is {@code src} to that whose path
-     * name is {@code dst} using a platform-specific system call. The
-     * implementation in this class always returns IOStatus.UNSUPPORTED.
-     *
-     * @param src the path of the source file
-     * @param dst the path of the desintation file (clone)
-     * @param followLinks whether to follow links
-     *
-     * @return 0 on success, IOStatus.UNSUPPORTED if the call does not work with
-     *         the given parameters, or IOStatus.UNSUPPORTED if cloning is not
-     *         supported on this platform
-     */
-    public int clone(Path source, Path target, boolean followLinks)
-        throws IOException {
-        return IOStatus.UNSUPPORTED;
     }
 
     @Override

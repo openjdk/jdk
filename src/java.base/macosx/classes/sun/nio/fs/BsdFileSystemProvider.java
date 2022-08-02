@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,6 @@ package sun.nio.fs;
 import java.nio.file.*;
 import java.nio.file.attribute.*;
 import java.io.IOException;
-import sun.nio.ch.IOStatus;
-import static sun.nio.fs.UnixConstants.*;
 
 /**
  * Bsd implementation of FileSystemProvider
@@ -73,27 +71,5 @@ class BsdFileSystemProvider extends UnixFileSystemProvider {
                     Util.followLinks(options));
         }
         return super.getFileAttributeView(obj, name, options);
-    }
-
-    @Override
-    public int clone(Path source, Path target, boolean followLinks)
-        throws IOException {
-        UnixPath src = UnixPath.toUnixPath(source);
-        UnixPath dst = UnixPath.toUnixPath(target);
-        int flags = followLinks ? 0 : CLONE_NOFOLLOW;
-        try {
-            return BsdNativeDispatcher.clonefile(src, dst, flags);
-        } catch (UnixException x) {
-            switch (x.errno()) {
-                case ENOTSUP: // cloning not supported by filesystem
-                    return IOStatus.UNSUPPORTED;
-                case EXDEV:   // src and dst on different filesystems
-                case ENOTDIR: // problematic path parameter(s)
-                    return IOStatus.UNSUPPORTED_CASE;
-                default:
-                    x.rethrowAsIOException(src, dst);
-                    return IOStatus.THROWN;
-            }
-        }
     }
 }
