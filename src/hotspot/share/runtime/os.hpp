@@ -697,8 +697,13 @@ class os: AllStatic {
                                               bool demangle = true,
                                               bool strip_arguments = false);
 
-  // Used only on PPC.
-  inline static void* resolve_function_descriptor(void* p);
+  // Used only on PPC for AIX, or LINUX (ppc but not ppcle). 
+  static void* resolve_function_descriptor(void* p)
+#if defined(PPC) && (defined(AIX) || (defined(LINUX) && !defined(ABI_ELFv2)))
+    ;
+#else
+  { return NULL; }
+#endif
 
   // Find out whether the pc is in the static code for jvm.dll/libjvm.so.
   static bool address_is_in_vm(address addr);

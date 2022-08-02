@@ -26,14 +26,4 @@
 #ifndef OS_CPU_LINUX_PPC_OS_LINUX_PPC_INLINE_HPP
 #define OS_CPU_LINUX_PPC_OS_LINUX_PPC_INLINE_HPP
 
-#include "os_linux.hpp"
-
-#if !defined(ABI_ELFv2)
-  // ppc (not ppcle) has function descriptors
-#define HAVE_FUNCTION_DESCRIPTORS 1
-inline void* os::resolve_function_descriptor(void* p) {
-  return os::Linux::resolve_function_descriptor(p);
-}
-#endif
-
 #endif // OS_CPU_LINUX_PPC_OS_LINUX_PPC_INLINE_HPP
