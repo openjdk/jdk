@@ -4473,7 +4473,7 @@ void os::Linux::numa_init() {
  * Affects IA32: RHEL 5 & 6, Ubuntu 10.04 (LTS), 10.10, 11.04, 11.10, 12.04.
  * @see JDK-8023956
  */
-void workaround_expand_exec_shield_cs_limit() {
+static void workaround_expand_exec_shield_cs_limit() {
   assert(os::Linux::initial_thread_stack_bottom() != NULL, "sanity");
   size_t page_size = os::vm_page_size();
 
