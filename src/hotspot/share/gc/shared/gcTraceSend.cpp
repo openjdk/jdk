@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,10 @@
 
 typedef uintptr_t TraceAddress;
 
+bool GCTracer::should_send_cpu_time() const {
+  return EventGCCpuTime::is_enabled();
+}
+
 void GCTracer::send_garbage_collection_event() const {
   EventGarbageCollection event(UNTIMED);
   if (event.should_commit()) {
@@ -47,6 +51,17 @@ void GCTracer::send_garbage_collection_event() const {
     event.set_starttime(_shared_gc_info.start_timestamp());
     event.set_endtime(_shared_gc_info.end_timestamp());
     event.commit();
+  }
+}
+
+void GCTracer::send_cpu_time(double user_time, double system_time, double real_time) const {
+  EventGCCpuTime e;
+  if (e.should_commit()) {
+      e.set_gcId(GCId::current());
+      e.set_userTime(user_time);
+      e.set_systemTime(system_time);
+      e.set_realTime(real_time);
+      e.commit();
   }
 }
 

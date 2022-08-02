@@ -65,12 +65,14 @@ class G1FullGCMark : StackObj {
   GCIdMark       _gc_id;
   GCTraceCPUTime _cpu_time;
 public:
-  G1FullGCMark() : _gc_id(), _cpu_time() { }
+  G1FullGCMark(G1FullGCTracer* tracer) : _gc_id(), _cpu_time(tracer) { }
 };
 
 // The G1FullCollector holds data associated with the current Full GC.
 class G1FullCollector : StackObj {
   G1CollectedHeap*          _heap;
+  G1FullGCTracer            _tracer;
+  G1FullGCMark              _mark;
   G1FullGCScope             _scope;
   uint                      _num_workers;
   G1FullGCMarker**          _markers;

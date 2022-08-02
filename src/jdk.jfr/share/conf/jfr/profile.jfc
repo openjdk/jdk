@@ -441,6 +441,10 @@
       <setting name="enabled" control="gc-enabled-normal">true</setting>
     </event>
 
+    <event name="jdk.GCCpuTime">
+      <setting name="enabled" control="gc-enabled-normal">true</setting>
+    </event>
+
     <event name="jdk.PromotionFailed">
       <setting name="enabled" control="gc-enabled-normal">true</setting>
     </event>
