@@ -20,16 +20,6 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-/* @test
-   @bug 8281966
-   @key headful
-   @requires (os.family == "windows")
-   @library /java/awt/regtesthelpers
-   @build PassFailJFrame
-   @summary Test to check if the absolute path of Symbolic Link folder
-            is valid on ValueChanged property listener.
-   @run main/manual FileChooserSymLinkTest
-*/
 
 import java.awt.Dimension;
 import java.awt.Robot;
@@ -42,7 +32,17 @@ import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 import javax.swing.WindowConstants;
 
-public class FileChooserSymLinkTest{
+/** @test
+  * @bug 8281966
+  * @key headful
+  * @library /java/awt/regtesthelpers
+  * @build PassFailJFrame
+  * @summary Test to check if the absolute path of Symbolic Link folder
+  *          is valid on ValueChanged property listener.
+  * @run main/manual FileChooserSymLinkTest
+*/
+
+public class FileChooserSymLinkTest {
     static JFrame frame = null;
     static PassFailJFrame passFailJFrame = null;
 
@@ -70,13 +70,13 @@ public class FileChooserSymLinkTest{
         final String INSTRUCTIONS = """
                 Instructions to Test:
                 1. Create a regular directory in any specific path.
-                    ex: mkdir c:\\target
+                    ex: mkdir C:\\target
                 2. Create a Symbolic link targeting the created test directory.
-                    ex : mklink /D c:\\link c:\\target
+                    ex : mklink /D C:\\link C:\\target
                 3. In JFileChooser, navigate to "link" created directed.
                 4. On click of the "link" directory, if the Absolute path of
                     Symbolic Link is valid then Click PASS, else if it is
-                    null then Click FAIL.
+                    null then Click FAIL.(Including MultiSelection Mode SET)
                 """;
         frame = new JFrame("JFileChooser Symbolic Link test");
         passFailJFrame = new PassFailJFrame(INSTRUCTIONS);
