@@ -1660,13 +1660,21 @@ bool SystemDictionary::do_unloading(GCTimer* gc_timer) {
 
 void SystemDictionary::methods_do(void f(Method*)) {
   // Walk methods in loaded classes
-  MutexLocker ml(ClassLoaderDataGraph_lock);
-  ClassLoaderDataGraph::methods_do(f);
+
+  {
+    MutexLocker ml(ClassLoaderDataGraph_lock);
+    ClassLoaderDataGraph::methods_do(f);
+  }
 
   auto doit = [&] (InvokeMethodKey key, Method* method) {
     f(method);
   };
-  _invoke_method_intrinsic_table.iterate_all(doit);
+
+  {
+    MutexLocker ml(InvokeMethodTable_lock);
+    _invoke_method_intrinsic_table.iterate_all(doit);
+  }
+
 }
 
 // ----------------------------------------------------------------------------
@@ -2020,7 +2028,6 @@ Method* SystemDictionary::find_method_handle_intrinsic(vmIntrinsicID iid,
                                                        Symbol* signature,
                                                        TRAPS) {
 
-  MutexLocker ml(THREAD, InvokeMethodTable_lock);
   methodHandle empty;
   const int iid_as_int = vmIntrinsics::as_int(iid);
   assert(MethodHandles::is_signature_polymorphic(iid) &&
@@ -2030,10 +2037,12 @@ Method* SystemDictionary::find_method_handle_intrinsic(vmIntrinsicID iid,
 
   Method** met;
   InvokeMethodKey key(signature, iid_as_int);
-  met = _invoke_method_intrinsic_table.get(key);
-
-  if (met != nullptr) {
+  {
+    MutexLocker ml(THREAD, InvokeMethodTable_lock);
+    met = _invoke_method_intrinsic_table.get(key);
+    if (met != nullptr) {
       return *met;
+    }
   }
 
   methodHandle m = Method::make_method_handle_intrinsic(iid, signature, CHECK_NULL);
@@ -2049,13 +2058,17 @@ Method* SystemDictionary::find_method_handle_intrinsic(vmIntrinsicID iid,
   }
   // Now grab the lock.  We might have to throw away the new method,
   // if a racing thread has managed to install one at the same time.
-  signature->make_permanent(); // The signature is never unloaded.
-  _invoke_method_intrinsic_table.put(key, m());
-  assert(m() != NULL, "");
-  assert(Arguments::is_interpreter_only() || (m->has_compiled_code() &&
-         m->code()->entry_point() == m->from_compiled_entry()),
+  {
+    MutexLocker ml(THREAD, InvokeMethodTable_lock);
+    signature->make_permanent(); // The signature is never unloaded.
+    bool created;
+    met = _invoke_method_intrinsic_table.put_if_absent(key, m(), &created);
+    Method* saved_method = *met;
+    assert(Arguments::is_interpreter_only() || (saved_method->has_compiled_code() &&
+         saved_method->code()->entry_point() == saved_method->from_compiled_entry()),
          "MH intrinsic invariant");
-  return m();
+    return saved_method;
+  }
 }
 
 // Helper for unpacking the return value from linkMethod and linkCallSite.
