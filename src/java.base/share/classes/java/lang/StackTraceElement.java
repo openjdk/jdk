@@ -356,47 +356,27 @@ public final class StackTraceElement implements java.io.Serializable {
      */
     @Override
     public String toString() {
-        int length = 0;
-        boolean prefixClassLoader = false;
-        boolean prefixModule = false;
-        boolean prefixModuleVersion = false;
+        int estimatedLength = Objects.requireNonNullElse(classLoaderName, "").length() + 1
+                + Objects.requireNonNullElse(moduleName, "").length() + 1
+                + Objects.requireNonNullElse(moduleVersion, "").length() + 1
+                + declaringClass.length() + 1
+                + methodName.length() + 1
+                + Math.max("Unknown Source".length(), Objects.requireNonNullElse(fileName, "").length()) + 1
+                + Integer.stringSize(lineNumber) + 1;
 
+        StringBuilder sb = new StringBuilder(estimatedLength);
         if (!dropClassLoaderName() && classLoaderName != null && !classLoaderName.isEmpty()) {
-            prefixClassLoader = true;
-            length += classLoaderName.length() + 1;
+            sb.append(classLoaderName).append('/');
         }
 
         if (moduleName != null && !moduleName.isEmpty()) {
-            prefixModule = true;
-            length += moduleName.length();
-            if (!dropModuleVersion() && moduleVersion != null && !moduleVersion.isEmpty()) {
-                prefixModuleVersion = true;
-                length += 1 + moduleVersion.length();
-            }
-        }
-
-        length += declaringClass.length() + methodName.length() + 2;
-        if (isNativeMethod()) {
-            length += "Native Method".length();
-        } else if (fileName == null) {
-            length += "Unknown Source".length();
-        } else {
-            length += fileName.length() + 1;
-            if (lineNumber >= 0) {
-                length += Integer.stringSize(lineNumber);
-            }
-        }
-        length++;
-
-        StringBuilder sb = new StringBuilder(length);
-        if (prefixClassLoader) {
-            sb.append(classLoaderName).append('/');
-        }
-        if (prefixModule) {
             sb.append(moduleName);
-            if (prefixModuleVersion) {
+            if (!dropModuleVersion() && moduleVersion != null && !moduleVersion.isEmpty()) {
                 sb.append('@').append(moduleVersion);
             }
+        }
+
+        if (sb.length() > 0) {
             sb.append('/');
         }
 
