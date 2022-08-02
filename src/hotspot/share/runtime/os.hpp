@@ -87,7 +87,7 @@ class frame;
 // - src/hotspot/os/<os>/os_<os>.cpp
 // - src/hotspot/os_cpu/<os>_<cpu>/os_<os>_<cpu>.cpp
 //
-//   The Porting APIs declared as "inline" in os.hpp must be
+//   The Porting APIs declared as "inline" in os.hpp MUST be
 //   implemented in one of the two .inline.hpp files, depending on
 //   whether the feature is specific to a particular CPU architecture
 //   for this OS. These two files are automatically included by
@@ -98,9 +98,9 @@ class frame;
 //   header file, the actual implementation can be deferred to another
 //   method defined in the .cpp files.
 //
-//   The two .cpp files implement the Porting APIs that are *not* declared as
-//   "inline" in os.hpp. They also implement OS-specific APIs such as os::Linux,
-//   os::Posix, etc.
+//   The Porting APIs that are *not* declared as "inline" in os.hpp MUST
+//   be implemented in one of the two .cpp files above. These files
+//   also implement OS-specific APIs such as os::Linux, os::Posix, etc.
 //
 // (Note: on the POSIX-like platforms, some of the Porting APIs are implemented
 // in os_posix.cpp instead).
