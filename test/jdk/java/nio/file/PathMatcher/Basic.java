@@ -68,18 +68,6 @@ public class Basic {
         }
     }
 
-    static void assertBadSyntaxAndPattern(String syntaxAndPattern) {
-        try {
-            FileSystems.getDefault().getPathMatcher(syntaxAndPattern);
-            System.out.printf("\"%s\" ==> no IllegalArgumentException%n",
-                              syntaxAndPattern);
-            failures++;
-        } catch (IllegalArgumentException iae) {
-            System.out.printf("IllegalArgumentException for \"%s\" ==> OKAY%n",
-                              syntaxAndPattern);
-        }
-    }
-
     static void assertRegExMatch(String path, String pattern) {
         System.out.format("Test regex pattern: %s", pattern);
         Path file = Paths.get(path);
@@ -96,6 +84,7 @@ public class Basic {
 
     public static void main(String[] args) {
         // basic
+        assertMatch("", "");
         assertMatch("foo.html", "foo.html");
         assertNotMatch("foo.html", "foo.htm");
         assertNotMatch("foo.html", "bar.html");
@@ -149,8 +138,13 @@ public class Basic {
         assertBadPattern("foo.html", "*{class,java");       // missing }
         assertBadPattern("foo.html", "*.{class,{.java}}");  // nested group
         assertBadPattern("foo.html", "*.html\\");           // nothing to escape
-        assertBadSyntaxAndPattern(":glob");                 // colon at head
-        assertBadSyntaxAndPattern("glob:");                 // colon at tail
+        try {
+            FileSystems.getDefault().getPathMatcher(":glob");
+            System.err.println("No IllegalArgumentException for \":glob\"");
+            failures++;
+        } catch (IllegalArgumentException iae) {
+            System.out.println("IllegalArgumentException for \":glob\" OKAY");
+        }
 
         // platform specific
         if (System.getProperty("os.name").startsWith("Windows")) {
