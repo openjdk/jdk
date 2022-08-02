@@ -3468,3 +3468,34 @@ BITWISE_UNARY_PREDICATE(vreverse, ReverseV, sve_rbit)
 BITWISE_UNARY(vreverseBytes, ReverseBytesV, sve_revb)
 BITWISE_UNARY_PREDICATE(vreverseBytes, ReverseBytesV, sve_revb)
 
+dnl
+dnl VECTOR_SIGNUM($1,       $2         )
+dnl VECTOR_SIGNUM(datatype, reg_variant)
+define(`VECTOR_SIGNUM', `
+instruct vsignum$1(vReg dst, vReg src, vReg zero, vReg one, vReg vtmp, pRegGov pgtmp) %{
+  predicate(UseSVE > 0 &&
+            !n->as_Vector()->is_predicated_vector() &&
+            n->bottom_type()->is_vect()->element_basic_type() == T_`'TYPE2DATATYPE($1));
+  match(Set dst (SignumV$1 src (Binary zero one)));
+  effect(TEMP_DEF dst, USE src, USE zero, USE one, TEMP vtmp, TEMP pgtmp);
+  ins_cost(SVE_COST);
+  format %{ "sve_signumV$1 $dst, $src\t# signum vector sve ($1)" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    int vlen = Matcher::vector_length_in_bytes(this);
+    if (vlen > 16) {
+      __ vector_signum_sve(as_FloatRegister($dst$$reg), as_FloatRegister($src$$reg),
+                           as_FloatRegister($zero$$reg), as_FloatRegister($one$$reg),
+                           as_FloatRegister($vtmp$$reg), as_PRegister($pgtmp$$reg), __ $2);
+    } else {
+      __ vector_signum_neon(as_FloatRegister($dst$$reg), as_FloatRegister($src$$reg),
+                            as_FloatRegister($zero$$reg), as_FloatRegister($one$$reg),
+                            __ esize2arrangement(type2aelembytes(bt), /*isQ*/ vlen == 16));
+    }
+  %}
+  ins_pipe(pipe_slow);
+%}')dnl
+dnl
+//---------------------------- Vector Signum --------------------------------
+VECTOR_SIGNUM(F, S)
+VECTOR_SIGNUM(D, D)

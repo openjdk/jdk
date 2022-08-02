@@ -2566,6 +2566,7 @@ public:
   INSN(fcmeq, 0, 0, 0b111001);
   INSN(fcmgt, 1, 1, 0b111001);
   INSN(fcmge, 1, 0, 0b111001);
+  INSN(facgt, 1, 1, 0b111011);
 
 #undef INSN
 
@@ -3191,6 +3192,18 @@ public:
   INSN(sve_fnmsb, 0b01100101, 1, 0b111); // floating-point negated fused multiply-subtract, writing multiplicand: Zda = -Zm + Zda * Zn
   INSN(sve_mla,   0b00000100, 0, 0b010); // multiply-add, writing addend: Zda = Zda + Zn*Zm
   INSN(sve_mls,   0b00000100, 0, 0b011); // multiply-subtract, writing addend: Zda = Zda + -Zn*Zm
+#undef INSN
+
+// SVE floating-point compare abs (predicated)
+#define INSN(NAME, op1, op2)                                                         \
+  void NAME(PRegister Pd, SIMD_RegVariant T, PRegister Pg,                           \
+            FloatRegister Zn, FloatRegister Zm) {                                    \
+    starti;                                                                          \
+    assert(T != B && T != Q, "invalid size");                                        \
+    f(op1, 31, 24), f(T, 23, 22), f(0, 21), rf(Zm, 16), f(0b11, 15, 14), f(op2, 13); \
+    pgrf(Pg, 10), rf(Zn, 5), f(1, 4), prf(Pd, 0);                                    \
+  }
+  INSN(sve_facgt, 0b01100101, 1);
 #undef INSN
 
 // SVE bitwise logical - unpredicated

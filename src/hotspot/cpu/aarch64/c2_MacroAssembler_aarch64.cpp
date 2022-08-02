@@ -1654,3 +1654,38 @@ void C2_MacroAssembler::vector_round_sve(FloatRegister dst, FloatRegister src, F
   sve_fcvtzs(dst, T, ptrue, dst, T);
   // result in dst
 }
+
+void C2_MacroAssembler::vector_signum_neon(FloatRegister dst, FloatRegister src, FloatRegister zero,
+                                           FloatRegister one, SIMD_Arrangement T) {
+  assert_different_registers(dst, src, zero, one);
+  assert(T == T2S || T == T4S || T == T2D, "invalid arrangement");
+
+  facgt(dst, T, src, zero);
+  ushr(dst, T, dst, 1); // dst=0 for +-0.0 and NaN. 0x7FF..F otherwise
+  if (T == T2S) bsl(dst, T8B, one, src);
+  else bsl(dst, T16B, one, src); // Result in dst
+}
+
+void C2_MacroAssembler::vector_signum_sve(FloatRegister dst, FloatRegister src, FloatRegister zero,
+                                          FloatRegister one, FloatRegister vtmp, PRegister pgtmp, SIMD_RegVariant T) {
+    assert_different_registers(dst, src, zero, one, vtmp);
+    assert(pgtmp->is_governing(), "This register has to be a governing predicate register");
+
+    sve_orr(vtmp, src, src);
+    sve_facgt(pgtmp, T, ptrue, src, zero); // pmtp=0 for +-0.0 and NaN. 0x1 otherwise
+    switch (T) {
+    case S:
+      sve_and(vtmp, T, 0x80000000); // Extract the sign bit of float value in every lane of src
+      sve_orr(vtmp, T, 0x3f800000); // OR it with +1 to make the final result +1 or -1 depending
+                                    // on the sign of the float value
+      break;
+    case D:
+      sve_and(vtmp, T, 0x8000000000000000);
+      sve_orr(vtmp, T, 0x3ff0000000000000);
+      break;
+    default:
+      assert(T == S || T == D, "invalid register variant");
+    }
+    sve_sel(dst, T, pgtmp, vtmp, src); // Select either from src or vtmp based on the predicate register pgtmp
+                                      // Result in dst
+}

@@ -5920,3 +5920,52 @@ instruct vreverseBytes_masked(vReg dst_src, pRegGov pg) %{
   ins_pipe(pipe_slow);
 %}
 
+//---------------------------- Vector Signum --------------------------------
+
+instruct vsignumF(vReg dst, vReg src, vReg zero, vReg one, vReg vtmp, pRegGov pgtmp) %{
+  predicate(UseSVE > 0 &&
+            !n->as_Vector()->is_predicated_vector() &&
+            n->bottom_type()->is_vect()->element_basic_type() == T_FLOAT);
+  match(Set dst (SignumVF src (Binary zero one)));
+  effect(TEMP_DEF dst, USE src, USE zero, USE one, TEMP vtmp, TEMP pgtmp);
+  ins_cost(SVE_COST);
+  format %{ "sve_signumVF $dst, $src\t# signum vector sve (F)" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    int vlen = Matcher::vector_length_in_bytes(this);
+    if (vlen > 16) {
+      __ vector_signum_sve(as_FloatRegister($dst$$reg), as_FloatRegister($src$$reg),
+                           as_FloatRegister($zero$$reg), as_FloatRegister($one$$reg),
+                           as_FloatRegister($vtmp$$reg), as_PRegister($pgtmp$$reg), __ S);
+    } else {
+      __ vector_signum_neon(as_FloatRegister($dst$$reg), as_FloatRegister($src$$reg),
+                            as_FloatRegister($zero$$reg), as_FloatRegister($one$$reg),
+                            __ esize2arrangement(type2aelembytes(bt), /*isQ*/ vlen == 16));
+    }
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vsignumD(vReg dst, vReg src, vReg zero, vReg one, vReg vtmp, pRegGov pgtmp) %{
+  predicate(UseSVE > 0 &&
+            !n->as_Vector()->is_predicated_vector() &&
+            n->bottom_type()->is_vect()->element_basic_type() == T_DOUBLE);
+  match(Set dst (SignumVD src (Binary zero one)));
+  effect(TEMP_DEF dst, USE src, USE zero, USE one, TEMP vtmp, TEMP pgtmp);
+  ins_cost(SVE_COST);
+  format %{ "sve_signumVD $dst, $src\t# signum vector sve (D)" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    int vlen = Matcher::vector_length_in_bytes(this);
+    if (vlen > 16) {
+      __ vector_signum_sve(as_FloatRegister($dst$$reg), as_FloatRegister($src$$reg),
+                           as_FloatRegister($zero$$reg), as_FloatRegister($one$$reg),
+                           as_FloatRegister($vtmp$$reg), as_PRegister($pgtmp$$reg), __ D);
+    } else {
+      __ vector_signum_neon(as_FloatRegister($dst$$reg), as_FloatRegister($src$$reg),
+                            as_FloatRegister($zero$$reg), as_FloatRegister($one$$reg),
+                            __ esize2arrangement(type2aelembytes(bt), /*isQ*/ vlen == 16));
+    }
+  %}
+  ins_pipe(pipe_slow);
+%}

@@ -2747,3 +2747,26 @@ REVERSE(vreverseX, ReverseV, X, neon_reverse_bits)
 //---------------------------- ReverseBytesV --------------------------------
 REVERSE(vreverseBytesD, ReverseBytesV, D, neon_reverse_bytes)
 REVERSE(vreverseBytesX, ReverseBytesV, X, neon_reverse_bytes)
+
+dnl
+dnl VECTOR_SIGNUM($1,       $2,               $3,          $4      )
+dnl VECTOR_SIGNUM(datatype, SIMD_arrangement, reg_variant, reg_type)
+define(`VECTOR_SIGNUM', `
+instruct signumV$2$1(vec$4 dst, vec$4 src, vec$4 zero, vec$4 one) %{
+  predicate(UseSVE == 0 && n->as_Vector()->length() == $2 &&
+            n->bottom_type()->is_vect()->element_basic_type() == T_`'TYPE2DATATYPE($1));
+  match(Set dst (SignumV$1 src (Binary zero one)));
+  effect(TEMP_DEF dst, USE src, USE zero, USE one);
+  ins_cost(INSN_COST);
+  format %{ "signumV$1 $dst, T$2$3, $src\t# signum vector ($2$1)" %}
+  ins_encode %{
+    __ vector_signum_neon(as_FloatRegister($dst$$reg), as_FloatRegister($src$$reg),
+                          as_FloatRegister($zero$$reg), as_FloatRegister($one$$reg), __ T$2$3);
+  %}
+  ins_pipe(pipe_slow);
+%}')dnl
+dnl
+//---------------------------- Vector Signum --------------------------------
+VECTOR_SIGNUM(F, 2, S, D)
+VECTOR_SIGNUM(F, 4, S, X)
+VECTOR_SIGNUM(D, 2, D, X)
