@@ -22,31 +22,39 @@
 */
 
 /*
- * @test
+ * @test id=default
  * @key randomness
  * @summary Fuzz tests for jdk.internal.vm.Continuation
  * @requires vm.continuations
- * @modules java.base/jdk.internal.vm
- *
  * @requires vm.flavor == "server" & (vm.opt.TieredStopAtLevel == null | vm.opt.TieredStopAtLevel == 4)
  * @requires vm.opt.TieredCompilation == null | vm.opt.TieredCompilation == true
- * @modules java.base java.base/jdk.internal.vm.annotation
+ * @modules java.base java.base/jdk.internal.vm.annotation java.base/jdk.internal.vm
  * @library /test/lib
  * @build java.base/java.lang.StackWalkerHelper
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *
- * @run main/othervm/timeout=300 --enable-preview -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. Fuzz
- * @run main/othervm/timeout=300 --enable-preview -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PreserveFramePointer Fuzz
- *
+ * @run main/othervm/timeout=300 --enable-preview -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
+ *                               Fuzz
  */
 
-// * @run main/othervm/timeout=3000 -XX:StartFlightRecording=filename=test.jfr,settings=profile -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. Fuzz
-
-// Anything excluded or not compileonly is not compiled; see CompilerOracle::should_exclude
-
-// @run driver jdk.test.lib.FileInstaller compilerDirectives.json compilerDirectives.json
-// -XX:CompilerDirectivesFile=compilerDirectives.json
+/*
+ * @test id=preserve-fp
+ * @key randomness
+ * @summary Fuzz tests for jdk.internal.vm.Continuation
+ * @requires vm.continuations
+ * @requires vm.flavor == "server" & (vm.opt.TieredStopAtLevel == null | vm.opt.TieredStopAtLevel == 4)
+ * @requires vm.opt.TieredCompilation == null | vm.opt.TieredCompilation == true
+ * @modules java.base java.base/jdk.internal.vm.annotation java.base/jdk.internal.vm
+ * @library /test/lib
+ * @build java.base/java.lang.StackWalkerHelper
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ *
+ * @run main/othervm/timeout=300 --enable-preview -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
+ *                               -XX:+PreserveFramePointer
+ *                               Fuzz
+ */
 
 import jdk.internal.vm.Continuation;
 import jdk.internal.vm.ContinuationScope;
