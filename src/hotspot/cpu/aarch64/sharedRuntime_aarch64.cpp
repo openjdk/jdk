@@ -1053,7 +1053,7 @@ static void gen_continuation_enter(MacroAssembler* masm,
     __ br(Assembler::NE, call_thaw);
 
     address mark = __ pc();
-    __ trampoline_call1(resolve, NULL, false);
+    __ trampoline_call(resolve, /*cbuf=*/ NULL, /*check_emit_size=*/ false);
 
     oop_maps->add_gc_map(__ pc() - start, map);
     __ post_call_nop();
@@ -1079,7 +1079,7 @@ static void gen_continuation_enter(MacroAssembler* masm,
   __ br(Assembler::NE, call_thaw);
 
   address mark = __ pc();
-  __ trampoline_call1(resolve, NULL, false);
+  __ trampoline_call(resolve, /*cbuf=*/ NULL, /*check_emit_size=*/ false);
 
   oop_maps->add_gc_map(__ pc() - start, map);
   __ post_call_nop();
@@ -1424,7 +1424,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   __ sub(sp, sp, stack_size - 2*wordSize);
 
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  bs->nmethod_entry_barrier(masm);
+  bs->nmethod_entry_barrier(masm, NULL /* slow_path */, NULL /* continuation */, NULL /* guard */);
 
   // Frame is now completed as far as size and linkage.
   int frame_complete = ((intptr_t)__ pc()) - start;

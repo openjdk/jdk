@@ -139,7 +139,7 @@ address TemplateInterpreterGenerator::generate_slow_signature_handler() {
 // Various method entries
 address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::MethodKind kind) {
   // xmethod: Method*
-  // x30: sender sp
+  // x19_sender_sp: sender sp
   // esp: args
 
   if (!InlineIntrinsics) {
@@ -170,18 +170,18 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
       entry_point = __ pc();
       __ fld(f10, Address(esp));
       __ fabs_d(f10, f10);
-      __ mv(sp, x30); // Restore caller's SP
+      __ mv(sp, x19_sender_sp); // Restore caller's SP
       break;
     case Interpreter::java_lang_math_sqrt:
       entry_point = __ pc();
       __ fld(f10, Address(esp));
       __ fsqrt_d(f10, f10);
-      __ mv(sp, x30);
+      __ mv(sp, x19_sender_sp);
       break;
     case Interpreter::java_lang_math_sin :
       entry_point = __ pc();
       __ fld(f10, Address(esp));
-      __ mv(sp, x30);
+      __ mv(sp, x19_sender_sp);
       __ mv(x9, ra);
       continuation = x9;  // The first callee-saved register
       if (StubRoutines::dsin() == NULL) {
@@ -195,7 +195,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
     case Interpreter::java_lang_math_cos :
       entry_point = __ pc();
       __ fld(f10, Address(esp));
-      __ mv(sp, x30);
+      __ mv(sp, x19_sender_sp);
       __ mv(x9, ra);
       continuation = x9;  // The first callee-saved register
       if (StubRoutines::dcos() == NULL) {
@@ -209,7 +209,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
     case Interpreter::java_lang_math_tan :
       entry_point = __ pc();
       __ fld(f10, Address(esp));
-      __ mv(sp, x30);
+      __ mv(sp, x19_sender_sp);
       __ mv(x9, ra);
       continuation = x9;  // The first callee-saved register
       if (StubRoutines::dtan() == NULL) {
@@ -223,7 +223,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
     case Interpreter::java_lang_math_log :
       entry_point = __ pc();
       __ fld(f10, Address(esp));
-      __ mv(sp, x30);
+      __ mv(sp, x19_sender_sp);
       __ mv(x9, ra);
       continuation = x9;  // The first callee-saved register
       if (StubRoutines::dlog() == NULL) {
@@ -237,7 +237,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
     case Interpreter::java_lang_math_log10 :
       entry_point = __ pc();
       __ fld(f10, Address(esp));
-      __ mv(sp, x30);
+      __ mv(sp, x19_sender_sp);
       __ mv(x9, ra);
       continuation = x9;  // The first callee-saved register
       if (StubRoutines::dlog10() == NULL) {
@@ -251,7 +251,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
     case Interpreter::java_lang_math_exp :
       entry_point = __ pc();
       __ fld(f10, Address(esp));
-      __ mv(sp, x30);
+      __ mv(sp, x19_sender_sp);
       __ mv(x9, ra);
       continuation = x9;  // The first callee-saved register
       if (StubRoutines::dexp() == NULL) {
@@ -268,7 +268,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
       continuation = x9;
       __ fld(f10, Address(esp, 2 * Interpreter::stackElementSize));
       __ fld(f11, Address(esp));
-      __ mv(sp, x30);
+      __ mv(sp, x19_sender_sp);
       if (StubRoutines::dpow() == NULL) {
         fn = CAST_FROM_FN_PTR(address, SharedRuntime::dpow);
       } else {
@@ -284,7 +284,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
         __ fld(f11, Address(esp, 2 * Interpreter::stackElementSize));
         __ fld(f12, Address(esp));
         __ fmadd_d(f10, f10, f11, f12);
-        __ mv(sp, x30); // Restore caller's SP
+        __ mv(sp, x19_sender_sp); // Restore caller's SP
       }
       break;
     case Interpreter::java_lang_math_fmaF :
@@ -294,7 +294,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
         __ flw(f11, Address(esp, Interpreter::stackElementSize));
         __ flw(f12, Address(esp));
         __ fmadd_s(f10, f10, f11, f12);
-        __ mv(sp, x30); // Restore caller's SP
+        __ mv(sp, x19_sender_sp); // Restore caller's SP
       }
       break;
     default:
@@ -311,7 +311,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
 // Attempt to execute abstract method. Throw exception
 address TemplateInterpreterGenerator::generate_abstract_entry(void) {
   // xmethod: Method*
-  // x30: sender SP
+  // x19_sender_sp: sender SP
 
   address entry_point = __ pc();
 
@@ -339,10 +339,9 @@ address TemplateInterpreterGenerator::generate_StackOverflowError_handler() {
   {
     Label L;
     __ ld(t0, Address(fp, frame::interpreter_frame_monitor_block_top_offset * wordSize));
-    __ mv(t1, sp);
     // maximal sp for current fp (stack grows negative)
     // check if frame is complete
-    __ bge(t0, t1, L);
+    __ bge(t0, sp, L);
     __ stop ("interpreter frame not set up");
     __ bind(L);
   }
@@ -459,14 +458,7 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
   __ shadd(esp, x11, esp, t0, 3);
 
   // Restore machine SP
-  __ ld(t0, Address(xmethod, Method::const_offset()));
-  __ lhu(t0, Address(t0, ConstMethod::max_stack_offset()));
-  __ addi(t0, t0, frame::interpreter_frame_monitor_size() + 2);
-  __ ld(t1,
-        Address(fp, frame::interpreter_frame_initial_sp_offset * wordSize));
-  __ slli(t0, t0, 3);
-  __ sub(t0, t1, t0);
-  __ andi(sp, t0, -16);
+  __ restore_sp_after_call();
 
  __ check_and_handle_popframe(xthread);
  __ check_and_handle_earlyret(xthread);
@@ -487,14 +479,7 @@ address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state,
   __ get_method(xmethod);
   __ get_dispatch();
 
-  // Calculate stack limit
-  __ ld(t0, Address(xmethod, Method::const_offset()));
-  __ lhu(t0, Address(t0, ConstMethod::max_stack_offset()));
-  __ addi(t0, t0, frame::interpreter_frame_monitor_size() + 2);
-  __ ld(t1, Address(fp, frame::interpreter_frame_initial_sp_offset * wordSize));
-  __ slli(t0, t0, 3);
-  __ sub(t0, t1, t0);
-  __ andi(sp, t0, -16);
+  __ restore_sp_after_call();  // Restore SP to extended SP
 
   // Restore expression stack pointer
   __ ld(esp, Address(fp, frame::interpreter_frame_last_sp_offset * wordSize));
@@ -659,9 +644,9 @@ void TemplateInterpreterGenerator::generate_stack_overflow_check(void) {
   // was in the caller.  This is not strictly necessary, but unless we
   // do so the stack frame may have a garbage FP; this ensures a
   // correct call stack that we can always unwind.  The ANDI should be
-  // unnecessary because the sender SP in x30 is always aligned, but
+  // unnecessary because the sender SP in x19 is always aligned, but
   // it doesn't hurt.
-  __ andi(sp, x30, -16);
+  __ andi(sp, x19_sender_sp, -16);
 
   // Note: the restored frame is not necessarily interpreted.
   // Use the shared runtime version of the StackOverflowError.
@@ -716,10 +701,11 @@ void TemplateInterpreterGenerator::lock_method() {
   }
 
   // add space for monitor & lock
+  __ check_extended_sp();
   __ add(sp, sp, - entry_size); // add space for a monitor entry
   __ add(esp, esp, - entry_size);
-  __ mv(t0, esp);
-  __ sd(t0, monitor_block_top);  // set new monitor block top
+  __ sd(sp, Address(fp, frame::interpreter_frame_extended_sp_offset * wordSize));
+  __ sd(esp, monitor_block_top);  // set new monitor block top
   // store object
   __ sd(x10, Address(esp, BasicObjectLock::obj_offset_in_bytes()));
   __ mv(c_rarg1, esp); // object address
@@ -764,11 +750,6 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   __ sd(xmethod, Address(sp, 7 * wordSize));
   __ sd(ProfileInterpreter ? t0 : zr, Address(sp, 6 * wordSize));
 
-  // Get mirror and store it in the frame as GC root for this Method*
-  __ load_mirror(t2, xmethod);
-  __ sd(zr, Address(sp, 5 * wordSize));
-  __ sd(t2, Address(sp, 4 * wordSize));
-
   __ ld(xcpool, Address(xmethod, Method::const_offset()));
   __ ld(xcpool, Address(xcpool, ConstMethod::constants_offset()));
   __ ld(xcpool, Address(xcpool, ConstantPool::cache_offset_in_bytes()));
@@ -781,17 +762,26 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
 
   // set sender sp
   // leave last_sp as null
-  __ sd(x30, Address(sp, 9 * wordSize));
+  __ sd(x19_sender_sp, Address(sp, 9 * wordSize));
   __ sd(zr, Address(sp, 8 * wordSize));
 
-  // Move SP out of the way
+  // Get mirror
+  __ load_mirror(t2, xmethod);
   if (!native_call) {
     __ ld(t0, Address(xmethod, Method::const_offset()));
     __ lhu(t0, Address(t0, ConstMethod::max_stack_offset()));
-    __ add(t0, t0, frame::interpreter_frame_monitor_size() + 2);
+    __ add(t0, t0, MAX2(3, Method::extra_stack_entries()));
     __ slli(t0, t0, 3);
     __ sub(t0, sp, t0);
-    __ andi(sp, t0, -16);
+    __ andi(t0, t0, -16);
+    // Store extended SP and mirror
+    __ sd(t0, Address(sp, 5 * wordSize));
+    __ sd(t2, Address(sp, 4 * wordSize));
+    // Move SP out of the way
+    __ mv(sp, t0);
+  } else {
+    __ sd(sp, Address(sp, 5 * wordSize));
+    __ sd(zr, Address(sp, 4 * wordSize));
   }
 }
 
@@ -836,7 +826,7 @@ address TemplateInterpreterGenerator::generate_Reference_get_entry(void) {
   // This code is based on generate_accessor_entry.
   //
   // xmethod: Method*
-  // x30: senderSP must preserve for slow path, set SP to it on fast path
+  // x19_sender_sp: senderSP must preserve for slow path, set SP to it on fast path
 
   // ra is live.  It must be saved around calls.
 
@@ -852,15 +842,13 @@ address TemplateInterpreterGenerator::generate_Reference_get_entry(void) {
   __ ld(local_0, Address(esp, 0));
   __ beqz(local_0, slow_path);
 
-  __ mv(x9, x30);   // Move senderSP to a callee-saved register
-
   // Load the value of the referent field.
   const Address field_address(local_0, referent_offset);
   BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
   bs->load_at(_masm, IN_HEAP | ON_WEAK_OOP_REF, T_OBJECT, local_0, field_address, /*tmp1*/ t1, /*tmp2*/ t0);
 
   // areturn
-  __ andi(sp, x9, -16);  // done with stack
+  __ andi(sp, x19_sender_sp, -16);  // done with stack
   __ ret();
 
   // generate a vanilla interpreter entry as the slow path
@@ -1506,14 +1494,8 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
                           InterpreterRuntime::exception_handler_for_exception),
              c_rarg1);
 
-  // Calculate stack limit
-  __ ld(t0, Address(xmethod, Method::const_offset()));
-  __ lhu(t0, Address(t0, ConstMethod::max_stack_offset()));
-  __ add(t0, t0, frame::interpreter_frame_monitor_size() + 4);
-  __ ld(t1, Address(fp, frame::interpreter_frame_initial_sp_offset * wordSize));
-  __ slli(t0, t0, 3);
-  __ sub(t0, t1, t0);
-  __ andi(sp, t0, -16);
+  // Restore machine SP
+  __ restore_sp_after_call();
 
   // x10: exception handler entry point
   // x13: preserved exception oop
@@ -1639,13 +1621,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
 #endif // INCLUDE_JVMTI
 
   // Restore machine SP
-  __ ld(t0, Address(xmethod, Method::const_offset()));
-  __ lhu(t0, Address(t0, ConstMethod::max_stack_offset()));
-  __ add(t0, t0, frame::interpreter_frame_monitor_size() + 4);
-  __ ld(t1, Address(fp, frame::interpreter_frame_initial_sp_offset * wordSize));
-  __ slliw(t0, t0, 3);
-  __ sub(t0, t1, t0);
-  __ andi(sp, t0, -16);
+  __ restore_sp_after_call();
 
   __ dispatch_next(vtos);
   // end of PopFrame support

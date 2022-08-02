@@ -601,6 +601,14 @@ void os::Posix::print_active_locale(outputStream* st) {
   }
 }
 
+void os::print_jni_name_prefix_on(outputStream* st, int args_size) {
+  // no prefix required
+}
+
+void os::print_jni_name_suffix_on(outputStream* st, int args_size) {
+  // no suffix required
+}
+
 bool os::get_host_name(char* buf, size_t buflen) {
   struct utsname name;
   uname(&name);
@@ -1109,8 +1117,8 @@ bool os::Posix::handle_stack_overflow(JavaThread* thread, address addr, address 
       return true; // just continue
     }
   } else if (overflow_state->in_stack_red_zone(addr)) {
-    // Fatal red zone violation.  Disable the guard pages and fall through
-    // to handle_unexpected_exception way down below.
+    // Fatal red zone violation. Disable the guard pages and keep
+    // on handling the signal.
     overflow_state->disable_stack_red_zone();
     tty->print_raw_cr("An irrecoverable stack overflow has occurred.");
 
