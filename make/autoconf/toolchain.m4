@@ -720,8 +720,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_EXTRA],
       test_metal=`$METAL --version 2>&1`
       if test $? -ne 0; then
         AC_MSG_RESULT([no])
-        #AC_MSG_ERROR([XCode tool 'metal' neither found in path nor with xcrun])
-        AC_MSG_RESULT([no, will not be using '$METALLIB'])
+        AC_MSG_ERROR([XCode tool 'metal' neither found in path nor with xcrun])
       else
         AC_MSG_RESULT([yes, will be using '$METAL'])
       fi
@@ -734,10 +733,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_EXTRA],
       test_metallib=`$METALLIB --version 2>&1`
       if test $? -ne 0; then
         AC_MSG_RESULT([no])
-# asdf
-# ([XCode tool 'metallib' neither found in path nor with xcrun])
-#
-        AC_MSG_RESULT([no, will not be using '$METALLIB'])
+        AC_MSG_ERROR([XCode tool 'metallib' neither found in path nor with xcrun])
       else
         AC_MSG_RESULT([yes, will be using '$METALLIB'])
       fi

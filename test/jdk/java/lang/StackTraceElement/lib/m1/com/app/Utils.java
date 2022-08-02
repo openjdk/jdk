@@ -125,7 +125,7 @@ public class Utils {
         assertEquals(ste.getClassName(), c.getName(), "class name");
         assertEquals(ste.getMethodName(), frame.getMethodName(), "method name");
         assertEquals(ste.getFileName(), frame.getFileName(), "file name");
-        assertEquals(ste.toString(), frame.toStackTraceElement().toString(), "toString");
+
     }
     private static void assertEquals(String actual, String expected, String msg) {
         if (!Objects.equals(actual, expected))
