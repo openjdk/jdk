@@ -244,7 +244,6 @@ void print_statistics() {
 #ifndef COMPILER1
     SharedRuntime::print_statistics();
 #endif //COMPILER1
-    os::print_statistics();
   }
 
   if (PrintLockStatistics || PrintPreciseRTMLockingStatistics) {

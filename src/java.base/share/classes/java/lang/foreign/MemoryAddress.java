@@ -101,8 +101,8 @@ public sealed interface MemoryAddress extends Addressable permits MemoryAddressI
      * restricted methods, and use safe and supported functionalities, where possible.
      *
      * @param offset offset in bytes (relative to this address). Might be negative.
-     *               The final address of this read operation can be expressed as {@code toRowLongValue() + offset}.
-     * @return a Java string constructed from the bytes read from the given starting address ({@code toRowLongValue() + offset})
+     *               The final address of this read operation can be expressed as {@code toRawLongValue() + offset}.
+     * @return a Java string constructed from the bytes read from the given starting address ({@code toRawLongValue() + offset})
      * up to (but not including) the first {@code '\0'} terminator character (assuming one is found).
      * @throws IllegalArgumentException if the size of the UTF-8 string is greater than the largest string supported by the platform.
      * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
@@ -125,7 +125,7 @@ public sealed interface MemoryAddress extends Addressable permits MemoryAddressI
      * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
      * restricted methods, and use safe and supported functionalities, where possible.
      * @param offset offset in bytes (relative to this address). Might be negative.
-     *               The final address of this read operation can be expressed as {@code toRowLongValue() + offset}.
+     *               The final address of this read operation can be expressed as {@code toRawLongValue() + offset}.
      * @param str the Java string to be written at this address.
      * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
      * {@code --enable-native-access} is specified, but does not mention the module name {@code M}, or
@@ -176,7 +176,7 @@ public sealed interface MemoryAddress extends Addressable permits MemoryAddressI
      *
      * @param layout the layout of the memory region to be read.
      * @param offset offset in bytes (relative to this address). Might be negative.
-     *               The final address of this read operation can be expressed as {@code toRowLongValue() + offset}.
+     *               The final address of this read operation can be expressed as {@code toRawLongValue() + offset}.
      * @return a byte value read from this address.
      * @throws IllegalArgumentException if the dereference operation is
      * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout.
@@ -197,7 +197,7 @@ public sealed interface MemoryAddress extends Addressable permits MemoryAddressI
      *
      * @param layout the layout of the memory region to be written.
      * @param offset offset in bytes (relative to this address). Might be negative.
-     *               The final address of this write operation can be expressed as {@code toRowLongValue() + offset}.
+     *               The final address of this write operation can be expressed as {@code toRawLongValue() + offset}.
      * @param value the byte value to be written.
      * @throws IllegalArgumentException if the dereference operation is
      * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout.
@@ -218,7 +218,7 @@ public sealed interface MemoryAddress extends Addressable permits MemoryAddressI
      *
      * @param layout the layout of the memory region to be read.
      * @param offset offset in bytes (relative to this address). Might be negative.
-     *               The final address of this read operation can be expressed as {@code toRowLongValue() + offset}.
+     *               The final address of this read operation can be expressed as {@code toRawLongValue() + offset}.
      * @return a boolean value read from this address.
      * @throws IllegalArgumentException if the dereference operation is
      * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout.
@@ -239,7 +239,7 @@ public sealed interface MemoryAddress extends Addressable permits MemoryAddressI
      *
      * @param layout the layout of the memory region to be written.
      * @param offset offset in bytes (relative to this address). Might be negative.
-     *               The final address of this write operation can be expressed as {@code toRowLongValue() + offset}.
+     *               The final address of this write operation can be expressed as {@code toRawLongValue() + offset}.
      * @param value the boolean value to be written.
      * @throws IllegalArgumentException if the dereference operation is
      * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout.
@@ -260,7 +260,7 @@ public sealed interface MemoryAddress extends Addressable permits MemoryAddressI
      *
      * @param layout the layout of the memory region to be read.
      * @param offset offset in bytes (relative to this address). Might be negative.
-     *               The final address of this read operation can be expressed as {@code toRowLongValue() + offset}.
+     *               The final address of this read operation can be expressed as {@code toRawLongValue() + offset}.
      * @return a char value read from this address.
      * @throws IllegalArgumentException if the dereference operation is
      * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout.
@@ -281,7 +281,7 @@ public sealed interface MemoryAddress extends Addressable permits MemoryAddressI
      *
      * @param layout the layout of the memory region to be written.
      * @param offset offset in bytes (relative to this address). Might be negative.
-     *               The final address of this write operation can be expressed as {@code toRowLongValue() + offset}.
+     *               The final address of this write operation can be expressed as {@code toRawLongValue() + offset}.
      * @param value the char value to be written.
      * @throws IllegalArgumentException if the dereference operation is
      * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout.
@@ -302,7 +302,7 @@ public sealed interface MemoryAddress extends Addressable permits MemoryAddressI
      *
      * @param layout the layout of the memory region to be read.
      * @param offset offset in bytes (relative to this address). Might be negative.
-     *               The final address of this read operation can be expressed as {@code toRowLongValue() + offset}.
+     *               The final address of this read operation can be expressed as {@code toRawLongValue() + offset}.
      * @return a short value read from this address.
      * @throws IllegalArgumentException if the dereference operation is
      * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout.
@@ -323,7 +323,7 @@ public sealed interface MemoryAddress extends Addressable permits MemoryAddressI
      *
      * @param layout the layout of the memory region to be written.
      * @param offset offset in bytes (relative to this address). Might be negative.
-     *               The final address of this write operation can be expressed as {@code toRowLongValue() + offset}.
+     *               The final address of this write operation can be expressed as {@code toRawLongValue() + offset}.
      * @param value the short value to be written.
      * @throws IllegalArgumentException if the dereference operation is
      * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout.
@@ -344,7 +344,7 @@ public sealed interface MemoryAddress extends Addressable permits MemoryAddressI
      *
      * @param layout the layout of the memory region to be read.
      * @param offset offset in bytes (relative to this address). Might be negative.
-     *               The final address of this read operation can be expressed as {@code toRowLongValue() + offset}.
+     *               The final address of this read operation can be expressed as {@code toRawLongValue() + offset}.
      * @return an int value read from this address.
      * @throws IllegalArgumentException if the dereference operation is
      * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout.
@@ -365,7 +365,7 @@ public sealed interface MemoryAddress extends Addressable permits MemoryAddressI
      *
      * @param layout the layout of the memory region to be written.
      * @param offset offset in bytes (relative to this address). Might be negative.
-     *               The final address of this write operation can be expressed as {@code toRowLongValue() + offset}.
+     *               The final address of this write operation can be expressed as {@code toRawLongValue() + offset}.
      * @param value the int value to be written.
      * @throws IllegalArgumentException if the dereference operation is
      * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout.
@@ -386,7 +386,7 @@ public sealed interface MemoryAddress extends Addressable permits MemoryAddressI
      *
      * @param layout the layout of the memory region to be read.
      * @param offset offset in bytes (relative to this address). Might be negative.
-     *               The final address of this read operation can be expressed as {@code toRowLongValue() + offset}.
+     *               The final address of this read operation can be expressed as {@code toRawLongValue() + offset}.
      * @return a float value read from this address.
      * @throws IllegalArgumentException if the dereference operation is
      * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout.
@@ -407,7 +407,7 @@ public sealed interface MemoryAddress extends Addressable permits MemoryAddressI
      *
      * @param layout the layout of the memory region to be written.
      * @param offset offset in bytes (relative to this address). Might be negative.
-     *               The final address of this write operation can be expressed as {@code toRowLongValue() + offset}.
+     *               The final address of this write operation can be expressed as {@code toRawLongValue() + offset}.
      * @param value the float value to be written.
      * @throws IllegalArgumentException if the dereference operation is
      * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout.
@@ -428,7 +428,7 @@ public sealed interface MemoryAddress extends Addressable permits MemoryAddressI
      *
      * @param layout the layout of the memory region to be read.
      * @param offset offset in bytes (relative to this address). Might be negative.
-     *               The final address of this read operation can be expressed as {@code toRowLongValue() + offset}.
+     *               The final address of this read operation can be expressed as {@code toRawLongValue() + offset}.
      * @return a long value read from this address.
      * @throws IllegalArgumentException if the dereference operation is
      * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout.
@@ -449,7 +449,7 @@ public sealed interface MemoryAddress extends Addressable permits MemoryAddressI
      *
      * @param layout the layout of the memory region to be written.
      * @param offset offset in bytes (relative to this address). Might be negative.
-     *               The final address of this write operation can be expressed as {@code toRowLongValue() + offset}.
+     *               The final address of this write operation can be expressed as {@code toRawLongValue() + offset}.
      * @param value the long value to be written.
      * @throws IllegalArgumentException if the dereference operation is
      * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout.
@@ -470,7 +470,7 @@ public sealed interface MemoryAddress extends Addressable permits MemoryAddressI
      *
      * @param layout the layout of the memory region to be read.
      * @param offset offset in bytes (relative to this address). Might be negative.
-     *               The final address of this read operation can be expressed as {@code toRowLongValue() + offset}.
+     *               The final address of this read operation can be expressed as {@code toRawLongValue() + offset}.
      * @return a double value read from this address.
      * @throws IllegalArgumentException if the dereference operation is
      * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout.
@@ -491,7 +491,7 @@ public sealed interface MemoryAddress extends Addressable permits MemoryAddressI
      *
      * @param layout the layout of the memory region to be written.
      * @param offset offset in bytes (relative to this address). Might be negative.
-     *               The final address of this write operation can be expressed as {@code toRowLongValue() + offset}.
+     *               The final address of this write operation can be expressed as {@code toRawLongValue() + offset}.
      * @param value the double value to be written.
      * @throws IllegalArgumentException if the dereference operation is
      * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout.
@@ -512,7 +512,7 @@ public sealed interface MemoryAddress extends Addressable permits MemoryAddressI
      *
      * @param layout the layout of the memory region to be read.
      * @param offset offset in bytes (relative to this address). Might be negative.
-     *               The final address of this read operation can be expressed as {@code toRowLongValue() + offset}.
+     *               The final address of this read operation can be expressed as {@code toRawLongValue() + offset}.
      * @return an address value read from this address.
      * @throws IllegalArgumentException if the dereference operation is
      * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout.
@@ -533,7 +533,7 @@ public sealed interface MemoryAddress extends Addressable permits MemoryAddressI
      *
      * @param layout the layout of the memory region to be written.
      * @param offset offset in bytes (relative to this address). Might be negative.
-     *               The final address of this write operation can be expressed as {@code toRowLongValue() + offset}.
+     *               The final address of this write operation can be expressed as {@code toRawLongValue() + offset}.
      * @param value the address value to be written.
      * @throws IllegalArgumentException if the dereference operation is
      * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout.
@@ -554,7 +554,7 @@ public sealed interface MemoryAddress extends Addressable permits MemoryAddressI
      *
      * @param layout the layout of the memory region to be read.
      * @param index index in bytes (relative to this address). Might be negative.
-     *              The final address of this read operation can be expressed as {@code toRowLongValue() + (index * layout.byteSize())}.
+     *              The final address of this read operation can be expressed as {@code toRawLongValue() + (index * layout.byteSize())}.
      * @return a char value read from this address.
      * @throws IllegalArgumentException if the dereference operation is
      * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout,
@@ -576,7 +576,7 @@ public sealed interface MemoryAddress extends Addressable permits MemoryAddressI
      *
      * @param layout the layout of the memory region to be written.
      * @param index index in bytes (relative to this address). Might be negative.
-     *              The final address of this write operation can be expressed as {@code toRowLongValue() + (index * layout.byteSize())}.
+     *              The final address of this write operation can be expressed as {@code toRawLongValue() + (index * layout.byteSize())}.
      * @param value the char value to be written.
      * @throws IllegalArgumentException if the dereference operation is
      * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout,
@@ -598,7 +598,7 @@ public sealed interface MemoryAddress extends Addressable permits MemoryAddressI
      *
      * @param layout the layout of the memory region to be read.
      * @param index index in bytes (relative to this address). Might be negative.
-     *              The final address of this read operation can be expressed as {@code toRowLongValue() + (index * layout.byteSize())}.
+     *              The final address of this read operation can be expressed as {@code toRawLongValue() + (index * layout.byteSize())}.
      * @return a short value read from this address.
      * @throws IllegalArgumentException if the dereference operation is
      * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout,
@@ -620,7 +620,7 @@ public sealed interface MemoryAddress extends Addressable permits MemoryAddressI
      *
      * @param layout the layout of the memory region to be written.
      * @param index index in bytes (relative to this address). Might be negative.
-     *              The final address of this write operation can be expressed as {@code toRowLongValue() + (index * layout.byteSize())}.
+     *              The final address of this write operation can be expressed as {@code toRawLongValue() + (index * layout.byteSize())}.
      * @param value the short value to be written.
      * @throws IllegalArgumentException if the dereference operation is
      * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout,
@@ -642,7 +642,7 @@ public sealed interface MemoryAddress extends Addressable permits MemoryAddressI
      *
      * @param layout the layout of the memory region to be read.
      * @param index index in bytes (relative to this address). Might be negative.
-     *              The final address of this read operation can be expressed as {@code toRowLongValue() + (index * layout.byteSize())}.
+     *              The final address of this read operation can be expressed as {@code toRawLongValue() + (index * layout.byteSize())}.
      * @return an int value read from this address.
      * @throws IllegalArgumentException if the dereference operation is
      * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout,
@@ -664,7 +664,7 @@ public sealed interface MemoryAddress extends Addressable permits MemoryAddressI
      *
      * @param layout the layout of the memory region to be written.
      * @param index index in bytes (relative to this address). Might be negative.
-     *              The final address of this write operation can be expressed as {@code toRowLongValue() + (index * layout.byteSize())}.
+     *              The final address of this write operation can be expressed as {@code toRawLongValue() + (index * layout.byteSize())}.
      * @param value the int value to be written.
      * @throws IllegalArgumentException if the dereference operation is
      * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout,
@@ -686,7 +686,7 @@ public sealed interface MemoryAddress extends Addressable permits MemoryAddressI
      *
      * @param layout the layout of the memory region to be read.
      * @param index index in bytes (relative to this address). Might be negative.
-     *              The final address of this read operation can be expressed as {@code toRowLongValue() + (index * layout.byteSize())}.
+     *              The final address of this read operation can be expressed as {@code toRawLongValue() + (index * layout.byteSize())}.
      * @return a float value read from this address.
      * @throws IllegalArgumentException if the dereference operation is
      * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout,
@@ -708,7 +708,7 @@ public sealed interface MemoryAddress extends Addressable permits MemoryAddressI
      *
      * @param layout the layout of the memory region to be written.
      * @param index index in bytes (relative to this address). Might be negative.
-     *              The final address of this write operation can be expressed as {@code toRowLongValue() + (index * layout.byteSize())}.
+     *              The final address of this write operation can be expressed as {@code toRawLongValue() + (index * layout.byteSize())}.
      * @param value the float value to be written.
      * @throws IllegalArgumentException if the dereference operation is
      * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout,
@@ -730,7 +730,7 @@ public sealed interface MemoryAddress extends Addressable permits MemoryAddressI
      *
      * @param layout the layout of the memory region to be read.
      * @param index index in bytes (relative to this address). Might be negative.
-     *              The final address of this read operation can be expressed as {@code toRowLongValue() + (index * layout.byteSize())}.
+     *              The final address of this read operation can be expressed as {@code toRawLongValue() + (index * layout.byteSize())}.
      * @return a long value read from this address.
      * @throws IllegalArgumentException if the dereference operation is
      * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout,
@@ -752,7 +752,7 @@ public sealed interface MemoryAddress extends Addressable permits MemoryAddressI
      *
      * @param layout the layout of the memory region to be written.
      * @param index index in bytes (relative to this address). Might be negative.
-     *              The final address of this write operation can be expressed as {@code toRowLongValue() + (index * layout.byteSize())}.
+     *              The final address of this write operation can be expressed as {@code toRawLongValue() + (index * layout.byteSize())}.
      * @param value the long value to be written.
      * @throws IllegalArgumentException if the dereference operation is
      * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout,
@@ -774,7 +774,7 @@ public sealed interface MemoryAddress extends Addressable permits MemoryAddressI
      *
      * @param layout the layout of the memory region to be read.
      * @param index index in bytes (relative to this address). Might be negative.
-     *              The final address of this read operation can be expressed as {@code toRowLongValue() + (index * layout.byteSize())}.
+     *              The final address of this read operation can be expressed as {@code toRawLongValue() + (index * layout.byteSize())}.
      * @return a double value read from this address.
      * @throws IllegalArgumentException if the dereference operation is
      * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout,
@@ -796,7 +796,7 @@ public sealed interface MemoryAddress extends Addressable permits MemoryAddressI
      *
      * @param layout the layout of the memory region to be written.
      * @param index index in bytes (relative to this address). Might be negative.
-     *              The final address of this write operation can be expressed as {@code toRowLongValue() + (index * layout.byteSize())}.
+     *              The final address of this write operation can be expressed as {@code toRawLongValue() + (index * layout.byteSize())}.
      * @param value the double value to be written.
      * @throws IllegalArgumentException if the dereference operation is
      * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout,
@@ -818,7 +818,7 @@ public sealed interface MemoryAddress extends Addressable permits MemoryAddressI
      *
      * @param layout the layout of the memory region to be read.
      * @param index index in bytes (relative to this address). Might be negative.
-     *              The final address of this read operation can be expressed as {@code toRowLongValue() + (index * layout.byteSize())}.
+     *              The final address of this read operation can be expressed as {@code toRawLongValue() + (index * layout.byteSize())}.
      * @return an address value read from this address.
      * @throws IllegalArgumentException if the dereference operation is
      * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout,
@@ -840,7 +840,7 @@ public sealed interface MemoryAddress extends Addressable permits MemoryAddressI
      *
      * @param layout the layout of the memory region to be written.
      * @param index index in bytes (relative to this address). Might be negative.
-     *              The final address of this write operation can be expressed as {@code toRowLongValue() + (index * layout.byteSize())}.
+     *              The final address of this write operation can be expressed as {@code toRawLongValue() + (index * layout.byteSize())}.
      * @param value the address value to be written.
      * @throws IllegalArgumentException if the dereference operation is
      * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout,

@@ -834,7 +834,7 @@ class CompileReplay : public StackObj {
     // method to be rewritten (number of arguments at a call for
     // instance)
     method->method_holder()->link_class(CHECK);
-    // Method::build_interpreter_method_data(method, CHECK);
+    // Method::build_profiling_method_data(method, CHECK);
     {
       // Grab a lock here to prevent multiple
       // MethodData*s from being created.

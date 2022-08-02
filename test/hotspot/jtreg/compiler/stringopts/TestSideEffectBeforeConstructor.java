@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,18 +19,31 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef OS_AIX_OS_SHARE_AIX_HPP
-#define OS_AIX_OS_SHARE_AIX_HPP
+/*
+ * @test
+ * @bug 8290705
+ * @summary Test correctness of the string concatenation optimization with
+ *          a store between StringBuffer allocation and constructor invocation.
+ * @compile SideEffectBeforeConstructor.jasm
+ * @run main/othervm -Xbatch compiler.stringopts.TestSideEffectBeforeConstructor
+ */
 
-// misc
-void handle_unexpected_exception(Thread* thread, int sig, siginfo_t* info, address pc, address adjusted_pc);
-#ifndef PRODUCT
-void continue_with_dump(void);
-#endif
+package compiler.stringopts;
 
-#define PROCFILE_LENGTH 128
+public class TestSideEffectBeforeConstructor {
 
-#endif // OS_AIX_OS_SHARE_AIX_HPP
+    public static void main(String[] args) {
+        for (int i = 0; i < 100_000; ++i) {
+            try {
+                SideEffectBeforeConstructor.test(null);
+            } catch (NullPointerException npe) {
+                // Expected
+            }
+        }
+        if (SideEffectBeforeConstructor.result != 100_000) {
+            throw new RuntimeException("Unexpected result: " + SideEffectBeforeConstructor.result);
+        }
+    }
+}

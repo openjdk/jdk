@@ -2,7 +2,7 @@
  * @test /nodynamiccopyright/
  * @bug 8206986
  * @summary Verify cases with multiple labels work properly.
- * @compile/fail/ref=MultipleLabelsExpression-old.out -source 9 -Xlint:-options -XDrawDiagnostics MultipleLabelsExpression.java
+ * @compile/fail/ref=MultipleLabelsExpression-old.out --release 9 -XDrawDiagnostics MultipleLabelsExpression.java
  * @compile MultipleLabelsExpression.java
  * @run main MultipleLabelsExpression
  */
