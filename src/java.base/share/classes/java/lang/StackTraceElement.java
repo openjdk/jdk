@@ -362,7 +362,7 @@ public final class StackTraceElement implements java.io.Serializable {
                 + declaringClass.length() + 1
                 + methodName.length() + 1
                 + Math.max("Unknown Source".length(), Objects.requireNonNullElse(fileName, "").length()) + 1
-                + Integer.stringSize(lineNumber) + 1;
+                + 12;
 
         StringBuilder sb = new StringBuilder(estimatedLength);
         if (!dropClassLoaderName() && classLoaderName != null && !classLoaderName.isEmpty()) {
