@@ -4679,8 +4679,8 @@ public final class Class<T> implements java.io.Serializable,
      * file major version is returned and zero is returned for the minor version.
      */
     private int getClassFileVersion() {
-        Class<?> component = isArray() ? elementType() : this;
-        return component.getClassFileVersion0();
+        Class<?> c = isArray() ? elementType() : this;
+        return c.getClassFileVersion0();
     }
 
     private native int getClassFileVersion0();
@@ -4693,8 +4693,8 @@ public final class Class<T> implements java.io.Serializable,
      * returned.  If the class is a primitive then ACC_ABSTRACT | ACC_FINAL | ACC_PUBLIC.
      */
     private int getClassAccessFlagsRaw() {
-        Class<?> component = isArray() ? elementType() : this;
-        return component.getClassAccessFlagsRaw0();
+        Class<?> c = isArray() ? elementType() : this;
+        return c.getClassAccessFlagsRaw0();
     }
 
     private native int getClassAccessFlagsRaw0();

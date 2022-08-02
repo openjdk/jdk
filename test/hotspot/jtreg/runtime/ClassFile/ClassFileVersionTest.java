@@ -57,6 +57,7 @@ public class ClassFileVersionTest {
 
         testIt("Version64", 64);
         testIt("Version59", 59);
+        testIt("Version45_3", 0x3002D);  // 45.3
         // test minor version of 65535.
         testIt("Version64_65535", 0xFFFF0040);  // 0xFFFF0040 = 64.65535
 
