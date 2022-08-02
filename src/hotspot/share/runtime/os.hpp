@@ -697,7 +697,7 @@ class os: AllStatic {
                                               bool demangle = true,
                                               bool strip_arguments = false);
 
-  // Used only on PPC for AIX, or LINUX (ppc but not ppcle). 
+  // Used only on PPC for AIX, or LINUX (ppc but not ppcle).
   static void* resolve_function_descriptor(void* p)
 #if defined(PPC) && (defined(AIX) || (defined(LINUX) && !defined(ABI_ELFv2)))
     ;
