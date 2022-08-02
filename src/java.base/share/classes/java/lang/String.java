@@ -44,6 +44,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Spliterator;
 import java.util.function.Function;
+import java.util.regex.MatchResult;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
@@ -4660,4 +4661,38 @@ public final class String
         return this;
     }
 
+    /**
+     * {@return {@code Stream} of graphemes}
+     */
+    public Stream<String> graphemes() {
+        return Pattern.compile("\\b{g}").splitAsStream(this);
+    }
+
+    /**
+     * {@return the grapheme at the specified index}
+     *
+     * @param index The index to query
+     */
+    public String graphemeAt(int index) {
+        Objects.checkIndex(index, length());
+        return Pattern.compile("\\X").matcher(this).results()
+                .filter(r -> r.start() <= index && r.end() > index)
+                .findFirst()
+                .map(MatchResult::group)
+                .orElseThrow();
+    }
+
+    /**
+     * {@return {@code true} if the specified index is a start of a grapheme cluster}
+     *
+     * @param index The index to query
+     */
+    public boolean isGraphemeBoundary(int index) {
+        Objects.checkIndex(index, length());
+        return Pattern.compile("\\X").matcher(this).results()
+                .filter(r -> r.start() <= index && r.end() > index)
+                .findFirst()
+                .map(mr -> mr.start() == index)
+                .orElseThrow();
+    }
 }
