@@ -32,10 +32,12 @@ void CodeBuffer::share_trampoline_for(address dest, int caller_offset) {
     constexpr unsigned max_size  = 256;
     _shared_trampoline_requests = new SharedTrampolineRequests(init_size, max_size);
   }
-  _shared_trampoline_requests->maybe_grow();
 
-  bool p_created;
-  Offsets* offsets = _shared_trampoline_requests->put_if_absent(dest, &p_created);
+  bool created;
+  Offsets* offsets = _shared_trampoline_requests->put_if_absent(dest, &created);
+  if (created) {
+    _shared_trampoline_requests->maybe_grow();
+  }
   offsets->add(caller_offset);
   _finalize_stubs = true;
 }
