@@ -251,9 +251,6 @@ private:
 
   // Amount of dead data in the region.
   size_t _garbage_bytes;
-  // We use concurrent marking to determine the amount of live data
-  // in each heap region.
-  size_t _marked_bytes;    // Bytes known to be live via last completed marking.
 
   void init_top_at_mark_start() {
     set_top_at_mark_start(bottom());
