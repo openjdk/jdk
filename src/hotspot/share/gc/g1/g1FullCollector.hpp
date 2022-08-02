@@ -63,9 +63,11 @@ public:
 // to have the same structure as the Young GC logging.
 class G1FullGCMark : StackObj {
   GCIdMark       _gc_id;
+  G1FullGCTracer _tracer;
   GCTraceCPUTime _cpu_time;
 public:
-  G1FullGCMark() : _gc_id(), _cpu_time() { }
+  G1FullGCMark() : _gc_id(), _tracer(), _cpu_time(&_tracer) { }
+//  G1FullGCTracer* tracer() const { return &_tracer; }
 };
 
 // The G1FullCollector holds data associated with the current Full GC.

@@ -32,14 +32,19 @@
 #include "memory/allocation.hpp"
 #include "utilities/ticks.hpp"
 
+class GCTracer;
+
 class GCTraceCPUTime : public StackObj {
   bool _active;                 // true if times will be measured and printed
   double _starting_user_time;   // user time at start of measurement
   double _starting_system_time; // system time at start of measurement
   double _starting_real_time;   // real time at start of measurement
- public:
+  GCTracer* _gc_tracer;
+public:
   GCTraceCPUTime();
+  GCTraceCPUTime(GCTracer* gc_tracer);
   ~GCTraceCPUTime();
+  void set_tracer(GCTracer* gc_tracer);
 };
 
 class GCTimer;

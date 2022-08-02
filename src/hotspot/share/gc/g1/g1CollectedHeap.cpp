@@ -1113,6 +1113,8 @@ bool G1CollectedHeap::do_full_collection(bool explicit_gc,
   collector.collect();
   collector.complete_collection();
 
+  //gc_mark.set_tracer(collector.scope()->tracer());
+
   // Full collection was successfully completed.
   return true;
 }
@@ -2860,7 +2862,7 @@ void G1CollectedHeap::do_collection_pause_at_safepoint_helper(double target_paus
   GCIdMark gc_id_mark;
   SvcGCMarker sgcm(SvcGCMarker::MINOR);
 
-  GCTraceCPUTime tcpu;
+  GCTraceCPUTime tcpu(_gc_tracer_stw);
 
   _bytes_used_during_gc = 0;
 

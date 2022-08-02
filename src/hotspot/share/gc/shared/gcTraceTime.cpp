@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
+#include "gc/shared/gcTrace.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/universe.hpp"
@@ -70,22 +71,26 @@ void GCTraceTimeLoggerImpl::log_end(Ticks end) {
   out.print_cr(" %.3fms", duration_in_ms);
 }
 
-GCTraceCPUTime::GCTraceCPUTime() :
-  _active(log_is_enabled(Info, gc, cpu)),
+GCTraceCPUTime::GCTraceCPUTime(GCTracer* gc_tracer) :
+  _active(log_is_enabled(Info, gc, cpu) ||
+          (gc_tracer != nullptr && gc_tracer->should_report_cpu_time())),
   _starting_user_time(0.0),
   _starting_system_time(0.0),
-  _starting_real_time(0.0)
+  _starting_real_time(0.0),
+  _gc_tracer(gc_tracer)
 {
   if (_active) {
     bool valid = os::getTimesSecs(&_starting_real_time,
-                               &_starting_user_time,
-                               &_starting_system_time);
+                                  &_starting_user_time,
+                                  &_starting_system_time);
     if (!valid) {
       log_warning(gc, cpu)("TraceCPUTime: os::getTimesSecs() returned invalid result");
       _active = false;
     }
   }
 }
+
+GCTraceCPUTime::GCTraceCPUTime() { GCTraceCPUTime(nullptr); }
 
 GCTraceCPUTime::~GCTraceCPUTime() {
   if (_active) {
@@ -96,8 +101,18 @@ GCTraceCPUTime::~GCTraceCPUTime() {
                         user_time - _starting_user_time,
                         system_time - _starting_system_time,
                         real_time - _starting_real_time);
+      if (_gc_tracer != NULL) {
+        _gc_tracer->report_cpu_time(user_time - _starting_user_time,
+                                    system_time - _starting_system_time,
+                                    real_time - _starting_real_time);
+      }
     } else {
       log_warning(gc, cpu)("TraceCPUTime: os::getTimesSecs() returned invalid result");
     }
   }
+}
+
+void GCTraceCPUTime::set_tracer(GCTracer* gc_tracer) {
+  assert(_gc_tracer == nullptr, "Wrong attempt to set again.");
+  _gc_tracer = gc_tracer;
 }
