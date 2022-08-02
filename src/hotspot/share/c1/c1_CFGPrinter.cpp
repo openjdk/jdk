@@ -244,13 +244,11 @@ void CFGPrinterOutput::print_block(BlockBegin* block) {
   output()->cr();
 
   output()->indent();
+  output()->print("successors ");
   if (block->end() != NULL) {
-    output()->print("successors ");
     for (i = 0; i < block->number_of_sux(); i++) {
       output()->print("\"B%d\" ", block->sux_at(i)->block_id());
     }
-  } else {
-    output()->print("(block has no end, cannot print successors)");
   }
   output()->cr();
 

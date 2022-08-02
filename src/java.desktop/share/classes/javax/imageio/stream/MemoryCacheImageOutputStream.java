@@ -51,7 +51,7 @@ public class MemoryCacheImageOutputStream extends ImageOutputStreamImpl {
      *
      * @param stream an {@code OutputStream} to write to.
      *
-     * @exception IllegalArgumentException if {@code stream} is
+     * @throws IllegalArgumentException if {@code stream} is
      * {@code null}.
      */
     public MemoryCacheImageOutputStream(OutputStream stream) {

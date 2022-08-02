@@ -40,6 +40,7 @@ class Arena;
 class Bundle;
 class Block;
 class Block_Array;
+class C2_MacroAssembler;
 class ciMethod;
 class Compile;
 class MachNode;
@@ -113,6 +114,34 @@ public:
   void emit(CodeBuffer& cb);
 };
 
+// We move non-hot code of the nmethod entry barrier to an out-of-line stub
+class C2EntryBarrierStub: public ResourceObj {
+  Label _slow_path;
+  Label _continuation;
+  Label _guard; // Used on AArch64
+
+public:
+  C2EntryBarrierStub() :
+    _slow_path(),
+    _continuation(),
+    _guard() {}
+
+  Label& slow_path() { return _slow_path; }
+  Label& continuation() { return _continuation; }
+  Label& guard() { return _guard; }
+
+};
+
+class C2EntryBarrierStubTable {
+  C2EntryBarrierStub* _stub;
+
+public:
+  C2EntryBarrierStubTable() : _stub(NULL) {}
+  C2EntryBarrierStub* add_entry_barrier();
+  int estimate_stub_size() const;
+  void emit(CodeBuffer& cb);
+};
+
 class PhaseOutput : public Phase {
 private:
   // Instruction bits passed off to the VM
@@ -122,6 +151,7 @@ private:
   ExceptionHandlerTable  _handler_table;         // Table of native-code exception handlers
   ImplicitExceptionTable _inc_table;             // Table of implicit null checks in native code
   C2SafepointPollStubTable _safepoint_poll_table;// Table for safepoint polls
+  C2EntryBarrierStubTable _entry_barrier_table;  // Table for entry barrier stubs
   OopMapSet*             _oop_map_set;           // Table of oop maps (one for each safepoint location)
   BufferBlob*            _scratch_buffer_blob;   // For temporary code buffers.
   relocInfo*             _scratch_locs_memory;   // For temporary code buffers.
@@ -171,6 +201,9 @@ public:
 
   // Safepoint poll table
   C2SafepointPollStubTable* safepoint_poll_table() { return &_safepoint_poll_table; }
+
+  // Entry barrier table
+  C2EntryBarrierStubTable* entry_barrier_table() { return &_entry_barrier_table; }
 
   // Code emission iterator
   Block* block()   { return _block; }
@@ -240,8 +273,6 @@ public:
 
   int               bang_size_in_bytes() const;
 
-  uint              node_bundling_limit();
-  Bundle*           node_bundling_base();
   void          set_node_bundling_limit(uint n) { _node_bundling_limit = n; }
   void          set_node_bundling_base(Bundle* b) { _node_bundling_base = b; }
 
@@ -253,16 +284,15 @@ public:
   // Dump formatted assembly
 #if defined(SUPPORT_OPTO_ASSEMBLY)
   void dump_asm_on(outputStream* ost, int* pcs, uint pc_limit);
-  void dump_asm(int* pcs = NULL, uint pc_limit = 0) { dump_asm_on(tty, pcs, pc_limit); }
 #else
   void dump_asm_on(outputStream* ost, int* pcs, uint pc_limit) { return; }
-  void dump_asm(int* pcs = NULL, uint pc_limit = 0) { return; }
 #endif
 
   // Build OopMaps for each GC point
   void BuildOopMaps();
 
 #ifndef PRODUCT
+  void print_scheduling();
   static void print_statistics();
 #endif
 };

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -151,6 +151,9 @@ JNIEXPORT jboolean JNICALL
 JVM_IsUseContainerSupport(void);
 
 JNIEXPORT void * JNICALL
+JVM_LoadZipLibrary();
+
+JNIEXPORT void * JNICALL
 JVM_LoadLibrary(const char *name, jboolean throwException);
 
 JNIEXPORT void JNICALL
@@ -164,6 +167,12 @@ JVM_IsSupportedJNIVersion(jint version);
 
 JNIEXPORT jobjectArray JNICALL
 JVM_GetVmArguments(JNIEnv *env);
+
+JNIEXPORT jboolean JNICALL
+JVM_IsPreviewEnabled(void);
+
+JNIEXPORT jboolean JNICALL
+JVM_IsContinuationsSupported(void);
 
 JNIEXPORT void JNICALL
 JVM_InitializeFromArchive(JNIEnv* env, jclass cls);
@@ -216,7 +225,7 @@ JVM_FillInStackTrace(JNIEnv *env, jobject throwable);
  * java.lang.StackTraceElement
  */
 JNIEXPORT void JNICALL
-JVM_InitStackTraceElementArray(JNIEnv *env, jobjectArray elements, jobject throwable);
+JVM_InitStackTraceElementArray(JNIEnv *env, jobjectArray elements, jobject backtrace, jint depth);
 
 JNIEXPORT void JNICALL
 JVM_InitStackTraceElement(JNIEnv* env, jobject element, jobject stackFrameInfo);
@@ -240,13 +249,16 @@ enum {
 
 JNIEXPORT jobject JNICALL
 JVM_CallStackWalk(JNIEnv *env, jobject stackStream, jlong mode,
-                  jint skip_frames, jint frame_count, jint start_index,
-                  jobjectArray frames);
+                  jint skip_frames, jobject contScope, jobject cont,
+                  jint frame_count, jint start_index, jobjectArray frames);
 
 JNIEXPORT jint JNICALL
 JVM_MoreStackWalk(JNIEnv *env, jobject stackStream, jlong mode, jlong anchor,
                   jint frame_count, jint start_index,
                   jobjectArray frames);
+
+JNIEXPORT void JNICALL
+JVM_SetStackWalkContinuation(JNIEnv *env, jobject stackStream, jlong anchor, jobjectArray frames, jobject cont);
 
 /*
  * java.lang.Thread
@@ -276,13 +288,22 @@ JNIEXPORT void JNICALL
 JVM_Sleep(JNIEnv *env, jclass threadClass, jlong millis);
 
 JNIEXPORT jobject JNICALL
+JVM_CurrentCarrierThread(JNIEnv *env, jclass threadClass);
+
+JNIEXPORT jobject JNICALL
 JVM_CurrentThread(JNIEnv *env, jclass threadClass);
+
+JNIEXPORT void JNICALL
+JVM_SetCurrentThread(JNIEnv *env, jobject thisThread, jobject theThread);
 
 JNIEXPORT void JNICALL
 JVM_Interrupt(JNIEnv *env, jobject thread);
 
 JNIEXPORT jboolean JNICALL
 JVM_HoldsLock(JNIEnv *env, jclass threadClass, jobject obj);
+
+JNIEXPORT jobject JNICALL
+JVM_GetStackTrace(JNIEnv *env, jobject thread);
 
 JNIEXPORT void JNICALL
 JVM_DumpAllStacks(JNIEnv *env, jclass unused);
@@ -296,6 +317,21 @@ JVM_SetNativeThreadName(JNIEnv *env, jobject jthread, jstring name);
 /* getStackTrace() and getAllStackTraces() method */
 JNIEXPORT jobjectArray JNICALL
 JVM_DumpThreads(JNIEnv *env, jclass threadClass, jobjectArray threads);
+
+JNIEXPORT jobject JNICALL
+JVM_ExtentLocalCache(JNIEnv *env, jclass threadClass);
+
+JNIEXPORT void JNICALL
+JVM_SetExtentLocalCache(JNIEnv *env, jclass threadClass, jobject theCache);
+
+JNIEXPORT jlong JNICALL
+JVM_GetNextThreadIdOffset(JNIEnv *env, jclass threadClass);
+
+/*
+ * jdk.internal.vm.Continuation
+ */
+JNIEXPORT void JNICALL
+JVM_RegisterContinuationMethods(JNIEnv *env, jclass cls);
 
 /*
  * java.lang.SecurityManager
@@ -446,7 +482,7 @@ JVM_LookupDefineClass(JNIEnv *env, jclass lookup, const char *name, const jbyte 
                       jsize len, jobject pd, jboolean init, int flags, jobject classData);
 
 /*
- * Module support funcions
+ * Module support functions
  */
 
 /*
@@ -1107,6 +1143,21 @@ JVM_GetTemporaryDirectory(JNIEnv *env);
  */
 JNIEXPORT jobjectArray JNICALL
 JVM_GetEnclosingMethodInfo(JNIEnv* env, jclass ofClass);
+
+/*
+ * Virtual thread support.
+ */
+JNIEXPORT void JNICALL
+JVM_VirtualThreadMountBegin(JNIEnv* env, jobject vthread, jboolean first_mount);
+
+JNIEXPORT void JNICALL
+JVM_VirtualThreadMountEnd(JNIEnv* env, jobject vthread, jboolean first_mount);
+
+JNIEXPORT void JNICALL
+JVM_VirtualThreadUnmountBegin(JNIEnv* env, jobject vthread, jboolean last_unmount);
+
+JNIEXPORT void JNICALL
+JVM_VirtualThreadUnmountEnd(JNIEnv* env, jobject vthread, jboolean last_unmount);
 
 /*
  * This structure is used by the launcher to get the default thread

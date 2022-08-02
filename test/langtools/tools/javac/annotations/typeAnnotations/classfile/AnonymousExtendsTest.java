@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8146167
+ * @bug 8146167 8281674
  * @summary Anonymous type declarations drop supertype type parameter annotations
  * @run main AnonymousExtendsTest
  */
@@ -52,10 +52,10 @@ public class AnonymousExtendsTest {
 
     public void testIt() {
         checkAnnotations(TestClass.class.getAnnotatedSuperclass(),
-              "[@AnonymousExtendsTest$TA(1)],[@AnonymousExtendsTest$TA(2)]");
+              "[@AnonymousExtendsTest.TA(1)],[@AnonymousExtendsTest.TA(2)]");
         checkAnnotations(new @TA(3) ArrayList<@TA(4) List<Number>>() {
                          }.getClass().getAnnotatedSuperclass(),
-              "[@AnonymousExtendsTest$TA(3)],[@AnonymousExtendsTest$TA(4)]");
+              "[@AnonymousExtendsTest.TA(3)],[@AnonymousExtendsTest.TA(4)]");
     }
 
     public void checkAnnotations(AnnotatedType type, String expected) {

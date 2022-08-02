@@ -59,7 +59,7 @@
 			<dayPeriodRule type="evening1" from="18:00" before="24:00"/>	<!-- aften -->
 			<dayPeriodRule type="night1" from="00:00" before="05:00"/>	<!-- nat -->
 		</dayPeriodRules>
-		<dayPeriodRules locales="nb no">
+		<dayPeriodRules locales="nb nn no">
 			<dayPeriodRule type="midnight" at="00:00"/>	<!-- midnatt -->
 			<dayPeriodRule type="morning1" from="06:00" before="10:00"/>	<!-- morgen -->
 			<dayPeriodRule type="morning2" from="10:00" before="12:00"/>	<!-- formiddag -->
@@ -655,6 +655,22 @@
 			<dayPeriodRule type="afternoon1" from="12:00" before="18:00"/> <!-- afternoon -->
 			<dayPeriodRule type="evening1" from="18:00" before="24:00"/> <!-- evening -->
 		</dayPeriodRules>
+		<dayPeriodRules locales="kgp">
+			<dayPeriodRule type="midnight" at="00:00"/>	<!-- kuty-si -->
+			<dayPeriodRule type="noon" at="12:00"/>	<!-- kurã-kuju -->
+			<dayPeriodRule type="morning1" from="06:00" before="12:00"/>	<!-- kusãg ki -->
+			<dayPeriodRule type="afternoon1" from="12:00" before="19:00"/>	<!-- rãkãnh kỹ -->
+			<dayPeriodRule type="evening1" from="19:00" before="24:00"/>	<!-- kuty kỹ -->
+			<dayPeriodRule type="night1" from="00:00" before="06:00"/>	<!-- kurã ge -->
+		</dayPeriodRules>
+		<dayPeriodRules locales="yrl">
+			<dayPeriodRule type="midnight" at="00:00"/>	<!-- pituna pyterupé -->
+			<dayPeriodRule type="noon" at="12:00"/>	<!-- iandé-ara-pyturepé -->
+			<dayPeriodRule type="morning1" from="06:00" before="12:00"/>	<!-- kuêma ramẽ -->
+			<dayPeriodRule type="afternoon1" from="12:00" before="19:00"/>	<!-- karuka ramẽ -->
+			<dayPeriodRule type="evening1" from="19:00" before="24:00"/>	<!-- pituna ramẽ -->
+			<dayPeriodRule type="night1" from="00:00" before="06:00"/>	<!-- pitunaeté ramẽ -->
+		</dayPeriodRules>
 	</dayPeriodRuleSet>
 	<dayPeriodRuleSet type="selection">
 		<dayPeriodRules locales="root">
@@ -702,7 +718,7 @@
 			<dayPeriodRule type="evening1" from="18:00" before="24:00"/>	<!-- aften -->
 			<dayPeriodRule type="night1" from="00:00" before="05:00"/>	<!-- nat -->
 		</dayPeriodRules>
-		<dayPeriodRules locales="nb no">
+		<dayPeriodRules locales="nb nn no">
 			<dayPeriodRule type="morning1" from="06:00" before="10:00"/>	<!-- morgen -->
 			<dayPeriodRule type="morning2" from="10:00" before="12:00"/>	<!-- formiddag -->
 			<dayPeriodRule type="afternoon1" from="12:00" before="18:00"/>	<!-- ettermiddag -->
@@ -1185,6 +1201,18 @@
 			<dayPeriodRule type="morning1" from="00:00" before="12:00"/> <!-- morning -->
 			<dayPeriodRule type="afternoon1" from="12:00" before="18:00"/> <!-- afternoon -->
 			<dayPeriodRule type="evening1" from="18:00" before="24:00"/> <!-- evening -->
+		</dayPeriodRules>
+		<dayPeriodRules locales="kgp">
+			<dayPeriodRule type="morning1" from="06:00" before="12:00"/>	<!-- kusãg ki -->
+			<dayPeriodRule type="afternoon1" from="12:00" before="19:00"/>	<!-- rãkãnh kỹ -->
+			<dayPeriodRule type="evening1" from="19:00" before="24:00"/>	<!-- kuty kỹ -->
+			<dayPeriodRule type="night1" from="00:00" before="06:00"/>	<!-- kurã ge -->
+		</dayPeriodRules>
+		<dayPeriodRules locales="yrl">
+			<dayPeriodRule type="morning1" from="06:00" before="12:00"/>	<!-- kuêma ramẽ -->
+			<dayPeriodRule type="afternoon1" from="12:00" before="19:00"/>	<!-- karuka ramẽ -->
+			<dayPeriodRule type="evening1" from="19:00" before="24:00"/>	<!-- pituna ramẽ -->
+			<dayPeriodRule type="night1" from="00:00" before="06:00"/>	<!-- pitunaeté ramẽ -->
 		</dayPeriodRules>
 	</dayPeriodRuleSet>
 </supplementalData>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -302,13 +302,7 @@ class SummaryTab extends Tab {
                        4);
                 append(endTable);
             }
-        } catch (IOException e) {
-            if (JConsole.isDebug()) {
-                e.printStackTrace();
-            }
-            proxyClient.markAsDead();
-            return null;
-        } catch (UndeclaredThrowableException e) {
+        } catch (IOException | UndeclaredThrowableException e) {
             if (JConsole.isDebug()) {
                 e.printStackTrace();
             }

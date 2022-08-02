@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2019, 2022, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,16 +35,11 @@ class ShenandoahBarrierSetNMethod : public BarrierSetNMethod {
 private:
   ShenandoahHeap* _heap;
 
-protected:
-  virtual int disarmed_value() const;
-  virtual bool nmethod_entry_barrier(nmethod* nm);
-
 public:
   ShenandoahBarrierSetNMethod(ShenandoahHeap* heap) : _heap(heap) {
   }
 
-  virtual ByteSize thread_disarmed_offset() const;
-  virtual int* disarmed_value_address() const;
+  virtual bool nmethod_entry_barrier(nmethod* nm);
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHBARRIERSETNMETHOD_HPP

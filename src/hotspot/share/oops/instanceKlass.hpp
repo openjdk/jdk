@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,22 +133,23 @@ class InstanceKlass: public Klass {
   friend class CompileReplay;
 
  public:
-  static const KlassID ID = InstanceKlassID;
+  static const KlassKind Kind = InstanceKlassKind;
 
  protected:
-  InstanceKlass(const ClassFileParser& parser, unsigned kind, KlassID id = ID);
+  InstanceKlass(const ClassFileParser& parser, KlassKind kind = Kind, ReferenceType reference_type = REF_NONE);
 
  public:
   InstanceKlass() { assert(DumpSharedSpaces || UseSharedSpaces, "only for CDS"); }
 
   // See "The Java Virtual Machine Specification" section 2.16.2-5 for a detailed description
   // of the class loading & initialization procedure, and the use of the states.
-  enum ClassState {
+  enum ClassState : u1 {
     allocated,                          // allocated (but not yet linked)
     loaded,                             // loaded and inserted in class hierarchy (but not linked yet)
+    being_linked,                       // currently running verifier and rewriter
     linked,                             // successfully linked/verified (but not initialized yet)
     being_initialized,                  // currently running class initializer
-    fully_initialized,                  // initialized (successfull final state)
+    fully_initialized,                  // initialized (successful final state)
     initialization_error                // error happened during initialization
   };
 
@@ -224,20 +225,9 @@ class InstanceKlass: public Klass {
   // _misc_flags.
   bool            _is_marked_dependent;     // used for marking during flushing and deoptimization
 
-  // Class states are defined as ClassState (see above).
-  // Place the _init_state here to utilize the unused 2-byte after
-  // _idnum_allocated_count.
-  u1              _init_state;              // state of class
+  ClassState      _init_state;              // state of class
 
-  // This can be used to quickly discriminate among the four kinds of
-  // InstanceKlass. This should be an enum (?)
-  static const unsigned _kind_other        = 0; // concrete InstanceKlass
-  static const unsigned _kind_reference    = 1; // InstanceRefKlass
-  static const unsigned _kind_class_loader = 2; // InstanceClassLoaderKlass
-  static const unsigned _kind_mirror       = 3; // InstanceMirrorKlass
-
-  u1              _reference_type;                // reference type
-  u1              _kind;                          // kind of InstanceKlass
+  u1              _reference_type;          // reference type
 
   enum {
     _misc_rewritten                           = 1 << 0,  // methods rewritten.
@@ -260,7 +250,9 @@ class InstanceKlass: public Klass {
   }
   u2              _misc_flags;           // There is more space in access_flags for more flags.
 
+  Monitor*        _init_monitor;         // mutual exclusion to _init_state and _init_thread.
   Thread*         _init_thread;          // Pointer to current thread doing initialization (to handle recursive initialization)
+
   OopMapCache*    volatile _oop_map_cache;   // OopMapCache for all methods in the klass (allocated lazily)
   JNIid*          _jni_ids;              // First JNI identifier for static fields in this class
   jmethodID*      volatile _methods_jmethod_ids;  // jmethodIDs corresponding to method_idnum, or NULL if none
@@ -482,6 +474,11 @@ private:
   bool has_nest_member(JavaThread* current, InstanceKlass* k) const;
 
 public:
+  // Call this only if you know that the nest host has been initialized.
+  InstanceKlass* nest_host_not_null() {
+    assert(_nest_host != NULL, "must be");
+    return _nest_host;
+  }
   // Used to construct informative IllegalAccessError messages at a higher level,
   // if there was an issue resolving or validating the nest host.
   // Returns NULL if there was no error.
@@ -539,15 +536,32 @@ public:
                                        TRAPS);
  public:
   // initialization state
-  bool is_loaded() const                   { return _init_state >= loaded; }
-  bool is_linked() const                   { return _init_state >= linked; }
-  bool is_initialized() const              { return _init_state == fully_initialized; }
-  bool is_not_initialized() const          { return _init_state <  being_initialized; }
-  bool is_being_initialized() const        { return _init_state == being_initialized; }
-  bool is_in_error_state() const           { return _init_state == initialization_error; }
-  bool is_reentrant_initialization(Thread *thread)  { return thread == _init_thread; }
-  ClassState  init_state()                 { return (ClassState)_init_state; }
+  bool is_loaded() const                   { return init_state() >= loaded; }
+  bool is_linked() const                   { return init_state() >= linked; }
+  bool is_being_linked() const             { return init_state() == being_linked; }
+  bool is_initialized() const              { return init_state() == fully_initialized; }
+  bool is_not_initialized() const          { return init_state() <  being_initialized; }
+  bool is_being_initialized() const        { return init_state() == being_initialized; }
+  bool is_in_error_state() const           { return init_state() == initialization_error; }
+  bool is_init_thread(Thread *thread)      { return thread == _init_thread; }
+  ClassState  init_state() const           { return Atomic::load(&_init_state); }
+  const char* init_state_name() const;
   bool is_rewritten() const                { return (_misc_flags & _misc_rewritten) != 0; }
+
+  class LockLinkState : public StackObj {
+    InstanceKlass* _ik;
+    JavaThread*    _current;
+   public:
+    LockLinkState(InstanceKlass* ik, JavaThread* current) : _ik(ik), _current(current) {
+      ik->check_link_state_and_wait(current);
+    }
+    ~LockLinkState() {
+      if (!_ik->is_linked()) {
+        // Reset to loaded if linking failed.
+        _ik->set_initialization_state_and_notify(loaded, _current);
+      }
+    }
+  };
 
   // is this a sealed class
   bool is_sealed() const;
@@ -576,15 +590,8 @@ public:
   void link_methods(TRAPS);
   Method* class_initializer() const;
 
-  // set the class to initialized if no static initializer is present
-  void eager_initialize(Thread *thread);
-
   // reference type
   ReferenceType reference_type() const     { return (ReferenceType)_reference_type; }
-  void set_reference_type(ReferenceType t) {
-    assert(t == (u1)t, "overflow");
-    _reference_type = (u1)t;
-  }
 
   // this class cp index
   u2 this_class_index() const             { return _this_class_index; }
@@ -786,24 +793,8 @@ public:
   void set_has_resolved_methods() {
     _access_flags.set_has_resolved_methods();
   }
-private:
-
-  void set_kind(unsigned kind) {
-    _kind = (u1)kind;
-  }
-
-  bool is_kind(unsigned desired) const {
-    return _kind == (u1)desired;
-  }
 
 public:
-
-  // Other is anything that is not one of the more specialized kinds of InstanceKlass.
-  bool is_other_instance_klass() const        { return is_kind(_kind_other); }
-  bool is_reference_instance_klass() const    { return is_kind(_kind_reference); }
-  bool is_mirror_instance_klass() const       { return is_kind(_kind_mirror); }
-  bool is_class_loader_instance_klass() const { return is_kind(_kind_class_loader); }
-
 #if INCLUDE_JVMTI
 
   void init_previous_versions() {
@@ -932,7 +923,7 @@ public:
 
   // initialization
   void call_class_initializer(TRAPS);
-  void set_initialization_state_and_notify(ClassState state, TRAPS);
+  void set_initialization_state_and_notify(ClassState state, JavaThread* current);
 
   // OopMapCache support
   OopMapCache* oop_map_cache()               { return _oop_map_cache; }
@@ -1159,11 +1150,14 @@ public:
  public:
   u2 idnum_allocated_count() const      { return _idnum_allocated_count; }
 
-private:
+ private:
   // initialization state
   void set_init_state(ClassState state);
   void set_rewritten()                  { _misc_flags |= _misc_rewritten; }
-  void set_init_thread(Thread *thread)  { _init_thread = thread; }
+  void set_init_thread(Thread *thread)  {
+    assert(thread == nullptr || _init_thread == nullptr, "Only one thread is allowed to own initialization");
+    _init_thread = thread;
+  }
 
   // The RedefineClasses() API can cause new method idnums to be needed
   // which will cause the caches to grow. Safety requires different
@@ -1175,12 +1169,6 @@ private:
 
   // Lock during initialization
 public:
-  // Lock for (1) initialization; (2) access to the ConstantPool of this class.
-  // Must be one per class and it has to be a VM internal object so java code
-  // cannot lock it (like the mirror).
-  // It has to be an object not a Mutex because it's held through java calls.
-  oop init_lock() const;
-
   // Returns the array class for the n'th dimension
   virtual Klass* array_klass(int n, TRAPS);
   virtual Klass* array_klass_or_null(int n);
@@ -1190,14 +1178,14 @@ public:
   virtual Klass* array_klass_or_null();
 
   static void clean_initialization_error_table();
-private:
-  void fence_and_clear_init_lock();
 
+  Monitor* init_monitor() const { return _init_monitor; }
+private:
+  void check_link_state_and_wait(JavaThread* current);
   bool link_class_impl                           (TRAPS);
   bool verify_code                               (TRAPS);
   void initialize_impl                           (TRAPS);
   void initialize_super_interfaces               (TRAPS);
-  void eager_initialize_impl                     ();
 
   void add_initialization_error(JavaThread* current, Handle exception);
   oop get_initialization_error(JavaThread* current);
@@ -1277,6 +1265,15 @@ inline u2 InstanceKlass::next_method_idnum() {
   }
 }
 
+class PrintClassClosure : public KlassClosure {
+private:
+  outputStream* _st;
+  bool _verbose;
+public:
+  PrintClassClosure(outputStream* st, bool verbose);
+
+  void do_klass(Klass* k);
+};
 
 /* JNIid class for jfieldIDs only */
 class JNIid: public CHeapObj<mtClass> {

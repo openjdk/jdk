@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,11 +33,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
 
 /**
  * A builder for HTML script elements.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
  */
 public class Script  {
     private final StringBuilder sb;
@@ -102,11 +97,11 @@ public class Script  {
      * Returns a "live" view of the script as a {@code Content} object.
      * Any later modifications to the script will be reflected in the
      * object that is returned.
-     * @return the script, as a {@code Content} object.
+     * @return the script
      */
     public Content asContent() {
         ScriptContent scriptContent = new ScriptContent(sb);
-        HtmlTree tree = new HtmlTree(TagName.SCRIPT) {
+        var script = new HtmlTree(TagName.SCRIPT) {
             @Override
             public HtmlTree add(Content c) {
                 if (c != scriptContent) {
@@ -115,9 +110,9 @@ public class Script  {
                 return super.add(scriptContent);
             }
         };
-        tree.put(HtmlAttr.TYPE, "text/javascript");
-        tree.add(scriptContent);
-        return tree;
+        script.put(HtmlAttr.TYPE, "text/javascript");
+        script.add(scriptContent);
+        return script;
     }
 
     /**

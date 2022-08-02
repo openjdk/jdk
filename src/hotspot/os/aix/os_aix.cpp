@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -45,7 +45,6 @@
 #include "misc_aix.hpp"
 #include "oops/oop.inline.hpp"
 #include "os_aix.inline.hpp"
-#include "os_share_aix.hpp"
 #include "porting_aix.hpp"
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm_misc.hpp"
@@ -56,16 +55,17 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/os.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/perfMemory.hpp"
-#include "runtime/safefetch.inline.hpp"
+#include "runtime/safefetch.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/statSampler.hpp"
-#include "runtime/thread.inline.hpp"
 #include "runtime/threadCritical.hpp"
+#include "runtime/threads.hpp"
 #include "runtime/timer.hpp"
 #include "runtime/vm_version.hpp"
 #include "services/attachListener.hpp"
@@ -1097,7 +1097,7 @@ void *os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   // RTLD_LAZY is currently not implemented. The dl is loaded immediately with all its dependants.
   void * result= ::dlopen(filename, RTLD_LAZY);
   if (result != NULL) {
-    Events::log(NULL, "Loaded shared library %s", filename);
+    Events::log_dll_message(NULL, "Loaded shared library %s", filename);
     // Reload dll cache. Don't do this in signal handling.
     LoadedLibraries::reload();
     log_info(os)("shared library load of %s was successful", filename);
@@ -1112,7 +1112,7 @@ void *os::dll_load(const char *filename, char *ebuf, int ebuflen) {
       snprintf(ebuf, ebuflen - 1, "%s, LIBPATH=%s, LD_LIBRARY_PATH=%s : %s",
                filename, ::getenv("LIBPATH"), ::getenv("LD_LIBRARY_PATH"), error_report);
     }
-    Events::log(NULL, "Loading shared library %s failed, %s", filename, error_report);
+    Events::log_dll_message(NULL, "Loading shared library %s failed, %s", filename, error_report);
     log_info(os)("shared library load of %s failed, %s", filename, error_report);
   }
   return NULL;
@@ -1131,7 +1131,11 @@ void os::get_summary_os_info(char* buf, size_t buflen) {
 }
 
 int os::get_loaded_modules_info(os::LoadedModulesCallbackFunc callback, void *param) {
-  // Not yet implemented.
+
+  if (!LoadedLibraries::for_each(callback, param)) {
+    return -1;
+  }
+
   return 0;
 }
 
@@ -1978,7 +1982,7 @@ static bool checked_mprotect(char* addr, size_t size, int prot) {
   // Little problem here: if SPEC1170 behaviour is off, mprotect() on AIX will
   // not tell me if protection failed when trying to protect an un-protectable range.
   //
-  // This means if the memory was allocated using shmget/shmat, protection wont work
+  // This means if the memory was allocated using shmget/shmat, protection won't work
   // but mprotect will still return 0:
   //
   // See http://publib.boulder.ibm.com/infocenter/pseries/v5r3/index.jsp?topic=/com.ibm.aix.basetechref/doc/basetrf1/mprotect.htm
@@ -2001,36 +2005,33 @@ static bool checked_mprotect(char* addr, size_t size, int prot) {
   //
   if (!os::Aix::xpg_sus_mode()) {
 
-    if (CanUseSafeFetch32()) {
+    const bool read_protected =
+      (SafeFetch32((int*)addr, 0x12345678) == 0x12345678 &&
+       SafeFetch32((int*)addr, 0x76543210) == 0x76543210) ? true : false;
 
-      const bool read_protected =
-        (SafeFetch32((int*)addr, 0x12345678) == 0x12345678 &&
-         SafeFetch32((int*)addr, 0x76543210) == 0x76543210) ? true : false;
+    if (prot & PROT_READ) {
+      rc = !read_protected;
+    } else {
+      rc = read_protected;
+    }
 
-      if (prot & PROT_READ) {
-        rc = !read_protected;
-      } else {
-        rc = read_protected;
-      }
+    if (!rc) {
+      if (os::Aix::on_pase()) {
+        // There is an issue on older PASE systems where mprotect() will return success but the
+        // memory will not be protected.
+        // This has nothing to do with the problem of using mproect() on SPEC1170 incompatible
+        // machines; we only see it rarely, when using mprotect() to protect the guard page of
+        // a stack. It is an OS error.
+        //
+        // A valid strategy is just to try again. This usually works. :-/
 
-      if (!rc) {
-        if (os::Aix::on_pase()) {
-          // There is an issue on older PASE systems where mprotect() will return success but the
-          // memory will not be protected.
-          // This has nothing to do with the problem of using mproect() on SPEC1170 incompatible
-          // machines; we only see it rarely, when using mprotect() to protect the guard page of
-          // a stack. It is an OS error.
-          //
-          // A valid strategy is just to try again. This usually works. :-/
-
-          ::usleep(1000);
-          Events::log(NULL, "Protecting memory [" INTPTR_FORMAT "," INTPTR_FORMAT "] with protection modes %x", p2i(addr), p2i(addr+size), prot);
-          if (::mprotect(addr, size, prot) == 0) {
-            const bool read_protected_2 =
-              (SafeFetch32((int*)addr, 0x12345678) == 0x12345678 &&
-              SafeFetch32((int*)addr, 0x76543210) == 0x76543210) ? true : false;
-            rc = true;
-          }
+        ::usleep(1000);
+        Events::log(NULL, "Protecting memory [" INTPTR_FORMAT "," INTPTR_FORMAT "] with protection modes %x", p2i(addr), p2i(addr+size), prot);
+        if (::mprotect(addr, size, prot) == 0) {
+          const bool read_protected_2 =
+            (SafeFetch32((int*)addr, 0x12345678) == 0x12345678 &&
+            SafeFetch32((int*)addr, 0x76543210) == 0x76543210) ? true : false;
+          rc = true;
         }
       }
     }
@@ -2134,13 +2135,6 @@ char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes, bool 
   }
 
   return addr;
-}
-
-// Sleep forever; naked call to OS-specific sleep; use with CAUTION
-void os::infinite_sleep() {
-  while (true) {    // sleep forever ...
-    ::sleep(100);   // ... 100 seconds at a time
-  }
 }
 
 // Used to convert frequent JVM_Yield() to nops
@@ -2337,7 +2331,7 @@ void os::init(void) {
     libperfstat::perfstat_reset();
   }
 
-  // Now initialze basic system properties. Note that for some of the values we
+  // Now initialize basic system properties. Note that for some of the values we
   // need libperfstat etc.
   os::Aix::initialize_system_info();
 
@@ -2377,7 +2371,7 @@ jint os::init_2(void) {
   }
 
   // Check and sets minimum stack sizes against command line options
-  if (Posix::set_minimum_stack_sizes() == JNI_ERR) {
+  if (set_minimum_stack_sizes() == JNI_ERR) {
     return JNI_ERR;
   }
 
@@ -2467,47 +2461,6 @@ void
 os::os_exception_wrapper(java_call_t f, JavaValue* value, const methodHandle& method,
                          JavaCallArguments* args, JavaThread* thread) {
   f(value, method, args, thread);
-}
-
-void os::print_statistics() {
-}
-
-bool os::message_box(const char* title, const char* message) {
-  int i;
-  fdStream err(defaultStream::error_fd());
-  for (i = 0; i < 78; i++) err.print_raw("=");
-  err.cr();
-  err.print_raw_cr(title);
-  for (i = 0; i < 78; i++) err.print_raw("-");
-  err.cr();
-  err.print_raw_cr(message);
-  for (i = 0; i < 78; i++) err.print_raw("=");
-  err.cr();
-
-  char buf[16];
-  // Prevent process from exiting upon "read error" without consuming all CPU
-  while (::read(0, buf, sizeof(buf)) <= 0) { ::sleep(100); }
-
-  return buf[0] == 'y' || buf[0] == 'Y';
-}
-
-// Is a (classpath) directory empty?
-bool os::dir_is_empty(const char* path) {
-  DIR *dir = NULL;
-  struct dirent *ptr;
-
-  dir = opendir(path);
-  if (dir == NULL) return true;
-
-  /* Scan the directory */
-  bool result = true;
-  while (result && (ptr = readdir(dir)) != NULL) {
-    if (strcmp(ptr->d_name, ".") != 0 && strcmp(ptr->d_name, "..") != 0) {
-      result = false;
-    }
-  }
-  closedir(dir);
-  return result;
 }
 
 // This code originates from JDK's sysOpen and open64_w
@@ -2600,35 +2553,6 @@ jlong os::current_file_offset(int fd) {
 // move file pointer to the specified offset
 jlong os::seek_to_file_offset(int fd, jlong offset) {
   return (jlong)::lseek64(fd, (off64_t)offset, SEEK_SET);
-}
-
-// This code originates from JDK's sysAvailable
-// from src/solaris/hpi/src/native_threads/src/sys_api_td.c
-
-int os::available(int fd, jlong *bytes) {
-  jlong cur, end;
-  int mode;
-  struct stat64 buf64;
-
-  if (::fstat64(fd, &buf64) >= 0) {
-    mode = buf64.st_mode;
-    if (S_ISCHR(mode) || S_ISFIFO(mode) || S_ISSOCK(mode)) {
-      int n;
-      if (::ioctl(fd, FIONREAD, &n) >= 0) {
-        *bytes = n;
-        return 1;
-      }
-    }
-  }
-  if ((cur = ::lseek64(fd, 0L, SEEK_CUR)) == -1) {
-    return 0;
-  } else if ((end = ::lseek64(fd, 0L, SEEK_END)) == -1) {
-    return 0;
-  } else if (::lseek64(fd, cur, SEEK_SET) == -1) {
-    return 0;
-  }
-  *bytes = end - cur;
-  return 1;
 }
 
 // Map a block of memory.
@@ -2833,26 +2757,6 @@ int os::loadavg(double values[], int nelem) {
   }
 }
 
-void os::pause() {
-  char filename[MAX_PATH];
-  if (PauseAtStartupFile && PauseAtStartupFile[0]) {
-    jio_snprintf(filename, MAX_PATH, "%s", PauseAtStartupFile);
-  } else {
-    jio_snprintf(filename, MAX_PATH, "./vm.paused.%d", current_process_id());
-  }
-
-  int fd = ::open(filename, O_WRONLY | O_CREAT | O_TRUNC, 0666);
-  if (fd != -1) {
-    struct stat buf;
-    ::close(fd);
-    while (::stat(filename, &buf) == 0) {
-      (void)::poll(NULL, 0, 100);
-    }
-  } else {
-    trcVerbose("Could not open pause file '%s', continuing immediately.", filename);
-  }
-}
-
 bool os::is_primordial_thread(void) {
   if (pthread_self() == (pthread_t)1) {
     return true;
@@ -2923,7 +2827,7 @@ void os::Aix::scan_environment() {
   char* p;
   int rc;
 
-  // Warn explicity if EXTSHM=ON is used. That switch changes how
+  // Warn explicitly if EXTSHM=ON is used. That switch changes how
   // System V shared memory behaves. One effect is that page size of
   // shared memory cannot be change dynamically, effectivly preventing
   // large pages from working.

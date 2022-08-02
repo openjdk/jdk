@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,32 +31,36 @@
 #include "logging/log.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/globals_extension.hpp"
 
 size_t PLAB::min_size() {
   // Make sure that we return something that is larger than AlignmentReserve
-  return align_object_size(MAX2(MinTLABSize / HeapWordSize, (size_t)oopDesc::header_size())) + AlignmentReserve;
+  return align_object_size(MAX2(MinTLABSize / HeapWordSize, (size_t)oopDesc::header_size())) + CollectedHeap::lab_alignment_reserve();
 }
 
 size_t PLAB::max_size() {
   return ThreadLocalAllocBuffer::max_size();
 }
 
+void PLAB::startup_initialization() {
+  if (!FLAG_IS_DEFAULT(MinTLABSize)) {
+    if (FLAG_IS_DEFAULT(YoungPLABSize)) {
+      FLAG_SET_ERGO(YoungPLABSize, MAX2(ThreadLocalAllocBuffer::min_size(), YoungPLABSize));
+    }
+    if (FLAG_IS_DEFAULT(OldPLABSize)) {
+      FLAG_SET_ERGO(OldPLABSize, MAX2(ThreadLocalAllocBuffer::min_size(), OldPLABSize));
+    }
+  }
+}
+
 PLAB::PLAB(size_t desired_plab_sz_) :
   _word_sz(desired_plab_sz_), _bottom(NULL), _top(NULL),
   _end(NULL), _hard_end(NULL), _allocated(0), _wasted(0), _undo_wasted(0)
 {
-  AlignmentReserve = Universe::heap()->tlab_alloc_reserve();
-  assert(min_size() > AlignmentReserve,
+  assert(min_size() > CollectedHeap::lab_alignment_reserve(),
          "Minimum PLAB size " SIZE_FORMAT " must be larger than alignment reserve " SIZE_FORMAT " "
-         "to be able to contain objects", min_size(), AlignmentReserve);
+         "to be able to contain objects", min_size(), CollectedHeap::lab_alignment_reserve());
 }
-
-// If the minimum object size is greater than MinObjAlignment, we can
-// end up with a shard at the end of the buffer that's smaller than
-// the smallest object.  We can't allow that because the buffer must
-// look like it's full of objects when we retire it, so we make
-// sure we have enough space for a filler int array object.
-size_t PLAB::AlignmentReserve;
 
 void PLAB::flush_and_retire_stats(PLABStats* stats) {
   // Retire the last allocation buffer.
@@ -70,7 +74,7 @@ void PLAB::flush_and_retire_stats(PLABStats* stats) {
 
   // Since we have flushed the stats we need to clear  the _allocated and _wasted
   // fields in case somebody retains an instance of this over GCs. Not doing so
-  // will artifically inflate the values in the statistics.
+  // will artificially inflate the values in the statistics.
   _allocated   = 0;
   _wasted      = 0;
   _undo_wasted = 0;

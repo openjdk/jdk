@@ -34,6 +34,7 @@ import javax.swing.KeyStroke;
 import javax.swing.filechooser.FileFilter;
 import org.openide.util.*;
 import org.openide.util.actions.CallableSystemAction;
+import org.openide.util.Utilities;
 
 /**
  *
@@ -46,7 +47,8 @@ public final class ExportAction extends CallableSystemAction implements LookupLi
 
     public ExportAction() {
         putValue(Action.SHORT_DESCRIPTION, "Export current graph as image file");
-        putValue(Action.ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_E, InputEvent.CTRL_MASK));
+        // D is the Control key on most platforms, the Command (meta) key on Macintosh
+        putValue(Action.ACCELERATOR_KEY, Utilities.stringToKey("D-E"));
         lookup = Utilities.actionsGlobalContext();
         result = lookup.lookup(new Lookup.Template<>(ExportCookie.class));
         result.addLookupListener(this);

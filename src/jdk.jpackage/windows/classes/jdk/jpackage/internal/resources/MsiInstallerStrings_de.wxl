@@ -1,0 +1,15 @@
+<?xml version = '1.0' encoding = 'utf-8'?>
+<WixLocalization Culture="de" xmlns="http://schemas.microsoft.com/wix/2006/localization" Codepage="1252">
+  <String Id="message.install.dir.exist">Der Ordner [INSTALLDIR] ist bereits vorhanden. Möchten Sie diesen Ordner trotzdem installieren?</String>
+  <String Id="MainFeatureTitle">Hauptfeature</String>
+  <String Id="DowngradeErrorMessage">Eine höhere Version von [ProductName] ist bereits installiert. Downgrades sind deaktiviert. Setup wird jetzt beendet.</String>
+  <String Id="DisallowUpgradeErrorMessage">Eine niedrigere Version von [ProductName] ist bereits installiert. Upgrades sind deaktiviert. Setup wird jetzt beendet.</String>
+
+  <String Id="ShortcutPromptDlg_Title">[ProductName]-Setup</String>
+  <String Id="ShortcutPromptDlgTitle">{\WixUI_Font_Title}-Verknüpfungen</String>
+  <String Id="ShortcutPromptDlgBannerBitmap">WixUI_Bmp_Banner</String>
+  <String Id="ShortcutPromptDlgDescription">Wählen Sie die zu erstellenden Verknüpfungen aus.</String>
+  <String Id="ShortcutPromptDlgDesktopShortcutControlLabel">Desktopverknüpfung(en) erstellen</String>
+  <String Id="ShortcutPromptDlgStartMenuShortcutControlLabel">Startmenüverknüpfung(en) erstellen</String>
+  <String Id="InstallDirNotEmptyDlg_Title">[ProductName]-Setup</String>
+</WixLocalization>

@@ -33,6 +33,8 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
@@ -44,7 +46,6 @@ import jdk.jfr.consumer.RecordedEvent;
 import jdk.jfr.internal.LogLevel;
 import jdk.jfr.internal.LogTag;
 import jdk.jfr.internal.Logger;
-import jdk.jfr.internal.PlatformRecording;
 import jdk.jfr.internal.SecuritySupport;
 
 /*
@@ -54,24 +55,19 @@ import jdk.jfr.internal.SecuritySupport;
 public abstract class AbstractEventStream implements EventStream {
     private static final AtomicLong counter = new AtomicLong();
 
-    private final Object terminated = new Object();
+    private final CountDownLatch terminated = new CountDownLatch(1);
     private final Runnable flushOperation = () -> dispatcher().runFlushActions();
     @SuppressWarnings("removal")
     private final AccessControlContext accessControllerContext;
     private final StreamConfiguration streamConfiguration = new StreamConfiguration();
-    protected final PlatformRecording recording;
     private final List<Configuration> configurations;
-
+    private final ParserState parserState = new ParserState();
     private volatile Thread thread;
     private Dispatcher dispatcher;
-
-    protected final ParserState parserState = new ParserState();
-
     private boolean daemon = false;
 
-    AbstractEventStream(@SuppressWarnings("removal") AccessControlContext acc, PlatformRecording recording, List<Configuration> configurations) throws IOException {
+    AbstractEventStream(@SuppressWarnings("removal") AccessControlContext acc, List<Configuration> configurations) throws IOException {
         this.accessControllerContext = Objects.requireNonNull(acc);
-        this.recording = recording;
         this.configurations = configurations;
     }
 
@@ -89,6 +85,9 @@ public abstract class AbstractEventStream implements EventStream {
             synchronized (streamConfiguration) {
                 dispatcher = new Dispatcher(streamConfiguration);
                 streamConfiguration.setChanged(false);
+                if (Logger.shouldLog(LogTag.JFR_SYSTEM_STREAMING, LogLevel.DEBUG)) {
+                    Logger.log(LogTag.JFR_SYSTEM_STREAMING, LogLevel.DEBUG, dispatcher.toString());
+                }
             }
         }
         return dispatcher;
@@ -111,7 +110,7 @@ public abstract class AbstractEventStream implements EventStream {
 
     @Override
     public final void setStartTime(Instant startTime) {
-        Objects.requireNonNull(startTime);
+        Objects.requireNonNull(startTime, "startTime");
         synchronized (streamConfiguration) {
             if (streamConfiguration.started) {
                 throw new IllegalStateException("Stream is already started");
@@ -125,7 +124,7 @@ public abstract class AbstractEventStream implements EventStream {
 
     @Override
     public final void setEndTime(Instant endTime) {
-        Objects.requireNonNull(endTime);
+        Objects.requireNonNull(endTime, "endTime");
         synchronized (streamConfiguration) {
             if (streamConfiguration.started) {
                 throw new IllegalStateException("Stream is already started");
@@ -136,38 +135,38 @@ public abstract class AbstractEventStream implements EventStream {
 
     @Override
     public final void onEvent(Consumer<RecordedEvent> action) {
-        Objects.requireNonNull(action);
+        Objects.requireNonNull(action, "action");
         streamConfiguration.addEventAction(action);
     }
 
     @Override
     public final void onEvent(String eventName, Consumer<RecordedEvent> action) {
-        Objects.requireNonNull(eventName);
-        Objects.requireNonNull(action);
+        Objects.requireNonNull(eventName, "eventName");
+        Objects.requireNonNull(action, "action");
         streamConfiguration.addEventAction(eventName, action);
     }
 
     @Override
     public final void onFlush(Runnable action) {
-        Objects.requireNonNull(action);
+        Objects.requireNonNull(action, "action");
         streamConfiguration.addFlushAction(action);
     }
 
     @Override
     public final void onClose(Runnable action) {
-        Objects.requireNonNull(action);
+        Objects.requireNonNull(action, "action");
         streamConfiguration.addCloseAction(action);
     }
 
     @Override
     public final void onError(Consumer<Throwable> action) {
-        Objects.requireNonNull(action);
+        Objects.requireNonNull(action, "action");
         streamConfiguration.addErrorAction(action);
     }
 
     @Override
     public final boolean remove(Object action) {
-        Objects.requireNonNull(action);
+        Objects.requireNonNull(action, "action");
         return streamConfiguration.remove(action);
     }
 
@@ -178,42 +177,27 @@ public abstract class AbstractEventStream implements EventStream {
 
     @Override
     public final void awaitTermination(Duration timeout) throws InterruptedException {
-        Objects.requireNonNull(timeout);
+        Objects.requireNonNull(timeout, "timeout");
         if (timeout.isNegative()) {
             throw new IllegalArgumentException("timeout value is negative");
         }
 
-        long base = System.currentTimeMillis();
-        long now = 0;
-
-        long millis;
+        long nanos;
         try {
-            millis = Math.multiplyExact(timeout.getSeconds(), 1000);
+            nanos = timeout.toNanos();
         } catch (ArithmeticException a) {
-            millis = Long.MAX_VALUE;
+            nanos = Long.MAX_VALUE;
         }
-        int nanos = timeout.toNanosPart();
-        if (nanos == 0 && millis == 0) {
-            synchronized (terminated) {
-                while (!isClosed()) {
-                    terminated.wait(0);
-                }
-            }
+        if (nanos == 0) {
+            terminated.await();
         } else {
-            while (!isClosed()) {
-                long delay = millis - now;
-                if (delay <= 0) {
-                    break;
-                }
-                synchronized (terminated) {
-                    terminated.wait(delay, nanos);
-                }
-                now = System.currentTimeMillis() - base;
-            }
+            terminated.await(nanos, TimeUnit.NANOSECONDS);
         }
     }
 
     protected abstract void process() throws IOException;
+
+    protected abstract boolean isRecording();
 
     protected final void closeParser() {
         parserState.close();
@@ -221,6 +205,10 @@ public abstract class AbstractEventStream implements EventStream {
 
     protected final boolean isClosed() {
         return parserState.isClosed();
+    }
+
+    protected final ParserState parserState() {
+        return parserState;
     }
 
     public final void startAsync(long startNanos) {
@@ -254,7 +242,7 @@ public abstract class AbstractEventStream implements EventStream {
             if (streamConfiguration.started) {
                 throw new IllegalStateException("Event stream can only be started once");
             }
-            if (recording != null && streamConfiguration.startTime == null) {
+            if (isRecording() && streamConfiguration.startTime == null) {
                 streamConfiguration.setStartNanos(startNanos);
             }
             streamConfiguration.setStarted(true);
@@ -274,9 +262,7 @@ public abstract class AbstractEventStream implements EventStream {
             try {
                 close();
             } finally {
-                synchronized (terminated) {
-                    terminated.notifyAll();
-                }
+                terminated.countDown();
             }
         }
     }
@@ -298,7 +284,7 @@ public abstract class AbstractEventStream implements EventStream {
 
     @Override
     public void onMetadata(Consumer<MetadataEvent> action) {
-        Objects.requireNonNull(action);
+        Objects.requireNonNull(action, "action");
         synchronized (streamConfiguration) {
             if (streamConfiguration.started) {
                 throw new IllegalStateException("Stream is already started");

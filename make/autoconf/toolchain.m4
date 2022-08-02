@@ -39,7 +39,7 @@ VALID_TOOLCHAINS_all="gcc clang xlc microsoft"
 
 # These toolchains are valid on different platforms
 VALID_TOOLCHAINS_linux="gcc clang"
-VALID_TOOLCHAINS_macosx="gcc clang"
+VALID_TOOLCHAINS_macosx="clang"
 VALID_TOOLCHAINS_aix="xlc"
 VALID_TOOLCHAINS_windows="microsoft"
 
@@ -231,34 +231,8 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETERMINE_TOOLCHAIN_TYPE],
   toolchain_var_name=VALID_TOOLCHAINS_$OPENJDK_BUILD_OS
   VALID_TOOLCHAINS=${!toolchain_var_name}
 
-  if test "x$OPENJDK_TARGET_OS" = xmacosx; then
-    if test -n "$XCODEBUILD"; then
-      # On Mac OS X, default toolchain to clang after Xcode 5
-      XCODE_VERSION_OUTPUT=`"$XCODEBUILD" -version | $HEAD -n 1`
-      $ECHO "$XCODE_VERSION_OUTPUT" | $GREP "Xcode " > /dev/null
-      if test $? -ne 0; then
-        AC_MSG_NOTICE([xcodebuild output: $XCODE_VERSION_OUTPUT])
-        AC_MSG_ERROR([Failed to determine Xcode version.])
-      fi
-      XCODE_MAJOR_VERSION=`$ECHO $XCODE_VERSION_OUTPUT | \
-          $SED -e 's/^Xcode \(@<:@1-9@:>@@<:@0-9.@:>@*\)/\1/' | \
-          $CUT -f 1 -d .`
-      AC_MSG_NOTICE([Xcode major version: $XCODE_MAJOR_VERSION])
-      if test $XCODE_MAJOR_VERSION -ge 5; then
-          DEFAULT_TOOLCHAIN="clang"
-      else
-          DEFAULT_TOOLCHAIN="gcc"
-      fi
-    else
-      # If Xcode is not installed, but the command line tools are
-      # then we can't run xcodebuild. On these systems we should
-      # default to clang
-      DEFAULT_TOOLCHAIN="clang"
-    fi
-  else
-    # First toolchain type in the list is the default
-    DEFAULT_TOOLCHAIN=${VALID_TOOLCHAINS%% *}
-  fi
+  # First toolchain type in the list is the default
+  DEFAULT_TOOLCHAIN=${VALID_TOOLCHAINS%% *}
 
   if test "x$with_toolchain_type" = xlist; then
     # List all toolchains
@@ -341,10 +315,19 @@ AC_DEFUN_ONCE([TOOLCHAIN_PRE_DETECTION],
   # autoconf magic only relies on PATH, so update it if tools dir is specified
   OLD_PATH="$PATH"
 
-  if test "x$XCODE_VERSION_OUTPUT" != x; then
-    # For Xcode, we set the Xcode version as TOOLCHAIN_VERSION
-    TOOLCHAIN_VERSION=`$ECHO $XCODE_VERSION_OUTPUT | $CUT -f 2 -d ' '`
-    TOOLCHAIN_DESCRIPTION="$TOOLCHAIN_DESCRIPTION from Xcode $TOOLCHAIN_VERSION"
+  if test "x$OPENJDK_BUILD_OS" = "xmacosx"; then
+    if test "x$XCODEBUILD" != x; then
+      XCODE_VERSION_OUTPUT=`"$XCODEBUILD" -version 2> /dev/null | $HEAD -n 1`
+      $ECHO "$XCODE_VERSION_OUTPUT" | $GREP "^Xcode " > /dev/null
+      if test $? -ne 0; then
+        AC_MSG_NOTICE([xcodebuild -version output: $XCODE_VERSION_OUTPUT])
+        AC_MSG_ERROR([Failed to determine Xcode version])
+      fi
+
+      # For Xcode, we set the Xcode version as TOOLCHAIN_VERSION
+      TOOLCHAIN_VERSION=`$ECHO $XCODE_VERSION_OUTPUT | $CUT -f 2 -d ' '`
+      TOOLCHAIN_DESCRIPTION="$TOOLCHAIN_DESCRIPTION from Xcode $TOOLCHAIN_VERSION"
+    fi
   fi
   AC_SUBST(TOOLCHAIN_VERSION)
 
@@ -698,10 +681,10 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_CORE],
     AS="$CC -c"
   else
     if test "x$OPENJDK_TARGET_CPU_BITS" = "x64"; then
-      # On 64 bit windows, the assember is "ml64.exe"
+      # On 64 bit windows, the assembler is "ml64.exe"
       UTIL_LOOKUP_TOOLCHAIN_PROGS(AS, ml64)
     else
-      # otherwise, the assember is "ml.exe"
+      # otherwise, the assembler is "ml.exe"
       UTIL_LOOKUP_TOOLCHAIN_PROGS(AS, ml)
     fi
   fi
@@ -772,8 +755,6 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_EXTRA],
     else
       UTIL_LOOKUP_TOOLCHAIN_PROGS(NM, nm)
     fi
-    GNM="$NM"
-    AC_SUBST(GNM)
   fi
 
   # objcopy is used for moving debug symbols to separate files when
@@ -883,13 +864,13 @@ AC_DEFUN_ONCE([TOOLCHAIN_SETUP_BUILD_COMPILERS],
       UTIL_REQUIRE_PROGS(BUILD_CC, cl, [$VS_PATH])
       UTIL_REQUIRE_PROGS(BUILD_CXX, cl, [$VS_PATH])
 
-      # On windows, the assember is "ml.exe". We currently don't need this so
+      # On windows, the assembler is "ml.exe". We currently don't need this so
       # do not require.
       if test "x$OPENJDK_BUILD_CPU_BITS" = "x64"; then
-        # On 64 bit windows, the assember is "ml64.exe"
+        # On 64 bit windows, the assembler is "ml64.exe"
         UTIL_LOOKUP_PROGS(BUILD_AS, ml64, [$VS_PATH])
       else
-        # otherwise the assember is "ml.exe"
+        # otherwise the assembler is "ml.exe"
         UTIL_LOOKUP_PROGS(BUILD_AS, ml, [$VS_PATH])
       fi
 
@@ -903,8 +884,8 @@ AC_DEFUN_ONCE([TOOLCHAIN_SETUP_BUILD_COMPILERS],
       BUILD_LDCXX="$BUILD_LD"
     else
       if test "x$OPENJDK_BUILD_OS" = xmacosx; then
-        UTIL_REQUIRE_PROGS(BUILD_CC, clang cc gcc)
-        UTIL_REQUIRE_PROGS(BUILD_CXX, clang++ CC g++)
+        UTIL_REQUIRE_PROGS(BUILD_CC, clang)
+        UTIL_REQUIRE_PROGS(BUILD_CXX, clang++)
       else
         UTIL_REQUIRE_PROGS(BUILD_CC, cc gcc)
         UTIL_REQUIRE_PROGS(BUILD_CXX, CC g++)

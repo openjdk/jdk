@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,8 @@
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  * @modules java.compiler
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. MemberNameLeak
  */
 
@@ -42,9 +42,9 @@ import java.util.*;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.Utils;
-import sun.hotspot.WhiteBox;
-import sun.hotspot.code.Compiler;
-import sun.hotspot.gc.GC;
+import jdk.test.whitebox.WhiteBox;
+import jdk.test.whitebox.code.Compiler;
+import jdk.test.whitebox.gc.GC;
 import jdk.test.lib.classloader.ClassWithManyMethodsClassLoader;
 
 public class MemberNameLeak {

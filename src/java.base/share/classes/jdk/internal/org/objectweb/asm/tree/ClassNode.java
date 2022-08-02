@@ -56,6 +56,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 package jdk.internal.org.objectweb.asm.tree;
 
 import java.util.ArrayList;
@@ -158,14 +159,8 @@ public class ClassNode extends ClassVisitor {
     /** The internal names of the nest members of this class. May be {@literal null}. */
     public List<String> nestMembers;
 
-    /**
-      * <b>Experimental, use at your own risk. This method will be renamed when it becomes stable, this
-      * will break existing code using it</b>. The internal names of the permitted subclasses of this
-      * class. May be {@literal null}.
-      *
-      * @deprecated this API is experimental.
-      */
-    @Deprecated public List<String> permittedSubclassesExperimental;
+    /** The internal names of the permitted subclasses of this class. May be {@literal null}. */
+    public List<String> permittedSubclasses;
 
     /** The record components of this class. May be {@literal null}. */
     public List<RecordComponentNode> recordComponents;
@@ -183,7 +178,7 @@ public class ClassNode extends ClassVisitor {
       * @throws IllegalStateException If a subclass calls this constructor.
       */
     public ClassNode() {
-        this(Opcodes.ASM8);
+        this(Opcodes.ASM9);
         if (getClass() != ClassNode.class) {
             throw new IllegalStateException();
         }
@@ -192,9 +187,8 @@ public class ClassNode extends ClassVisitor {
     /**
       * Constructs a new {@link ClassNode}.
       *
-      * @param api the ASM API version implemented by this visitor. Must be one of {@link
-      *     Opcodes#ASM4}, {@link Opcodes#ASM5}, {@link Opcodes#ASM6}, {@link Opcodes#ASM7} or {@link
-      *     Opcodes#ASM8}.
+      * @param api the ASM API version implemented by this visitor. Must be one of the {@code
+      *     ASM}<i>x</i> values in {@link Opcodes}.
       */
     public ClassNode(final int api) {
         super(api);
@@ -281,16 +275,9 @@ public class ClassNode extends ClassVisitor {
         nestMembers = Util.add(nestMembers, nestMember);
     }
 
-    /**
-      * <b>Experimental, use at your own risk.</b>.
-      *
-      * @param permittedSubclass the internal name of a permitted subclass.
-      * @deprecated this API is experimental.
-      */
     @Override
-    @Deprecated
-    public void visitPermittedSubclassExperimental(final String permittedSubclass) {
-        permittedSubclassesExperimental = Util.add(permittedSubclassesExperimental, permittedSubclass);
+    public void visitPermittedSubclass(final String permittedSubclass) {
+        permittedSubclasses = Util.add(permittedSubclasses, permittedSubclass);
     }
 
     @Override
@@ -346,12 +333,11 @@ public class ClassNode extends ClassVisitor {
       * that this node, and all its children recursively, do not contain elements that were introduced
       * in more recent versions of the ASM API than the given version.
       *
-      * @param api an ASM API version. Must be one of {@link Opcodes#ASM4}, {@link Opcodes#ASM5},
-      *     {@link Opcodes#ASM6}, {@link Opcodes#ASM7}. or {@link Opcodes#ASM8}.
+      * @param api an ASM API version. Must be one of the {@code ASM}<i>x</i> values in {@link
+      *     Opcodes}.
       */
-    @SuppressWarnings("deprecation")
     public void check(final int api) {
-        if (api != Opcodes.ASM9_EXPERIMENTAL && permittedSubclassesExperimental != null) {
+        if (api < Opcodes.ASM9 && permittedSubclasses != null) {
             throw new UnsupportedClassVersionException();
         }
         if (api < Opcodes.ASM8 && ((access & Opcodes.ACC_RECORD) != 0 || recordComponents != null)) {
@@ -410,7 +396,6 @@ public class ClassNode extends ClassVisitor {
       *
       * @param classVisitor a class visitor.
       */
-    @SuppressWarnings("deprecation")
     public void accept(final ClassVisitor classVisitor) {
         // Visit the header.
         String[] interfacesArray = new String[this.interfaces.size()];
@@ -473,10 +458,10 @@ public class ClassNode extends ClassVisitor {
                 classVisitor.visitNestMember(nestMembers.get(i));
             }
         }
-        // Visit the permitted subclass.
-        if (permittedSubclassesExperimental != null) {
-            for (int i = 0, n = permittedSubclassesExperimental.size(); i < n; ++i) {
-                classVisitor.visitPermittedSubclassExperimental(permittedSubclassesExperimental.get(i));
+        // Visit the permitted subclasses.
+        if (permittedSubclasses != null) {
+            for (int i = 0, n = permittedSubclasses.size(); i < n; ++i) {
+                classVisitor.visitPermittedSubclass(permittedSubclasses.get(i));
             }
         }
         // Visit the inner classes.
@@ -500,3 +485,4 @@ public class ClassNode extends ClassVisitor {
         classVisitor.visitEnd();
     }
 }
+

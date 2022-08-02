@@ -148,22 +148,7 @@ static void pd_disjoint_words(const HeapWord* from, HeapWord* to, size_t count) 
 
 static void pd_disjoint_words_atomic(const HeapWord* from, HeapWord* to, size_t count) {
 #ifdef AMD64
-  switch (count) {
-  case 8:  to[7] = from[7];
-  case 7:  to[6] = from[6];
-  case 6:  to[5] = from[5];
-  case 5:  to[4] = from[4];
-  case 4:  to[3] = from[3];
-  case 3:  to[2] = from[2];
-  case 2:  to[1] = from[1];
-  case 1:  to[0] = from[0];
-  case 0:  break;
-  default:
-    while (count-- > 0) {
-      *to++ = *from++;
-    }
-    break;
-  }
+  shared_disjoint_words_atomic(from, to, count);
 #else
   // pd_disjoint_words is word-atomic in this implementation.
   pd_disjoint_words(from, to, count);

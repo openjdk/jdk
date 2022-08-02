@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
  */
 package jdk.incubator.vector;
 
-import java.nio.ByteBuffer;
+import java.lang.foreign.MemorySegment;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.IntUnaryOperator;
@@ -370,6 +370,12 @@ final class Short128Vector extends ShortVector {
         return super.testTemplate(Short128Mask.class, op);  // specialize
     }
 
+    @Override
+    @ForceInline
+    public final Short128Mask test(Test op, VectorMask<Short> m) {
+        return super.testTemplate(Short128Mask.class, op, (Short128Mask) m);  // specialize
+    }
+
     // Specialized comparisons
 
     @Override
@@ -466,6 +472,22 @@ final class Short128Vector extends ShortVector {
             super.rearrangeTemplate(Short128Shuffle.class,
                                     (Short128Shuffle) s,
                                     (Short128Vector) v);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public Short128Vector compress(VectorMask<Short> m) {
+        return (Short128Vector)
+            super.compressTemplate(Short128Mask.class,
+                                   (Short128Mask) m);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public Short128Vector expand(VectorMask<Short> m) {
+        return (Short128Vector)
+            super.expandTemplate(Short128Mask.class,
+                                   (Short128Mask) m);  // specialize
     }
 
     @Override
@@ -655,6 +677,15 @@ final class Short128Vector extends ShortVector {
             return xor(maskAll(true));
         }
 
+        @Override
+        @ForceInline
+        public Short128Mask compress() {
+            return (Short128Mask)VectorSupport.compressExpandOp(VectorSupport.VECTOR_OP_MASK_COMPRESS,
+                Short128Vector.class, Short128Mask.class, ETYPE, VLENGTH, null, this,
+                (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT, m1.trueCount()));
+        }
+
+
         // Binary operations
 
         @Override
@@ -831,8 +862,8 @@ final class Short128Vector extends ShortVector {
     @ForceInline
     @Override
     final
-    ShortVector fromArray0(short[] a, int offset, VectorMask<Short> m) {
-        return super.fromArray0Template(Short128Mask.class, a, offset, (Short128Mask) m);  // specialize
+    ShortVector fromArray0(short[] a, int offset, VectorMask<Short> m, int offsetInRange) {
+        return super.fromArray0Template(Short128Mask.class, a, offset, (Short128Mask) m, offsetInRange);  // specialize
     }
 
 
@@ -846,37 +877,23 @@ final class Short128Vector extends ShortVector {
     @ForceInline
     @Override
     final
-    ShortVector fromCharArray0(char[] a, int offset, VectorMask<Short> m) {
-        return super.fromCharArray0Template(Short128Mask.class, a, offset, (Short128Mask) m);  // specialize
+    ShortVector fromCharArray0(char[] a, int offset, VectorMask<Short> m, int offsetInRange) {
+        return super.fromCharArray0Template(Short128Mask.class, a, offset, (Short128Mask) m, offsetInRange);  // specialize
     }
 
 
     @ForceInline
     @Override
     final
-    ShortVector fromByteArray0(byte[] a, int offset) {
-        return super.fromByteArray0Template(a, offset);  // specialize
+    ShortVector fromMemorySegment0(MemorySegment ms, long offset) {
+        return super.fromMemorySegment0Template(ms, offset);  // specialize
     }
 
     @ForceInline
     @Override
     final
-    ShortVector fromByteArray0(byte[] a, int offset, VectorMask<Short> m) {
-        return super.fromByteArray0Template(Short128Mask.class, a, offset, (Short128Mask) m);  // specialize
-    }
-
-    @ForceInline
-    @Override
-    final
-    ShortVector fromByteBuffer0(ByteBuffer bb, int offset) {
-        return super.fromByteBuffer0Template(bb, offset);  // specialize
-    }
-
-    @ForceInline
-    @Override
-    final
-    ShortVector fromByteBuffer0(ByteBuffer bb, int offset, VectorMask<Short> m) {
-        return super.fromByteBuffer0Template(Short128Mask.class, bb, offset, (Short128Mask) m);  // specialize
+    ShortVector fromMemorySegment0(MemorySegment ms, long offset, VectorMask<Short> m, int offsetInRange) {
+        return super.fromMemorySegment0Template(Short128Mask.class, ms, offset, (Short128Mask) m, offsetInRange);  // specialize
     }
 
     @ForceInline
@@ -898,22 +915,8 @@ final class Short128Vector extends ShortVector {
     @ForceInline
     @Override
     final
-    void intoByteArray0(byte[] a, int offset) {
-        super.intoByteArray0Template(a, offset);  // specialize
-    }
-
-    @ForceInline
-    @Override
-    final
-    void intoByteArray0(byte[] a, int offset, VectorMask<Short> m) {
-        super.intoByteArray0Template(Short128Mask.class, a, offset, (Short128Mask) m);  // specialize
-    }
-
-    @ForceInline
-    @Override
-    final
-    void intoByteBuffer0(ByteBuffer bb, int offset, VectorMask<Short> m) {
-        super.intoByteBuffer0Template(Short128Mask.class, bb, offset, (Short128Mask) m);
+    void intoMemorySegment0(MemorySegment ms, long offset, VectorMask<Short> m) {
+        super.intoMemorySegment0Template(Short128Mask.class, ms, offset, (Short128Mask) m);
     }
 
     @ForceInline
@@ -928,3 +931,4 @@ final class Short128Vector extends ShortVector {
     // ================================================
 
 }
+

@@ -78,12 +78,12 @@
 #include "runtime/handshake.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/javaThread.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/os.hpp"
 #include "runtime/stackFrameStream.inline.hpp"
 #include "runtime/sweeper.hpp"
 #include "runtime/synchronizer.hpp"
-#include "runtime/thread.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/vframe.hpp"
 #include "runtime/vm_version.hpp"
@@ -652,7 +652,7 @@ WB_ENTRY(jlong, WB_NMTMalloc(JNIEnv* env, jobject o, jlong size))
   return addr;
 WB_END
 
-// Alloc memory with pseudo call stack. The test can create psudo malloc
+// Alloc memory with pseudo call stack. The test can create pseudo malloc
 // allocation site to stress the malloc tracking.
 WB_ENTRY(jlong, WB_NMTMallocWithPseudoStack(JNIEnv* env, jobject o, jlong size, jint pseudo_stack))
   address pc = (address)(size_t)pseudo_stack;
@@ -767,7 +767,10 @@ WB_END
 WB_ENTRY(jboolean, WB_IsFrameDeoptimized(JNIEnv* env, jobject o, jint depth))
   bool result = false;
   if (thread->has_last_Java_frame()) {
-    RegisterMap reg_map(thread);
+    RegisterMap reg_map(thread,
+                        RegisterMap::UpdateMap::include,
+                        RegisterMap::ProcessFrames::include,
+                        RegisterMap::WalkContinuation::skip);
     javaVFrame *jvf = thread->last_java_vframe(&reg_map);
     for (jint d = 0; d < depth && jvf != NULL; d++) {
       jvf = jvf->java_sender();
@@ -1170,7 +1173,7 @@ WB_ENTRY(void, WB_MarkMethodProfiled(JNIEnv* env, jobject o, jobject method))
 
   MethodData* mdo = mh->method_data();
   if (mdo == NULL) {
-    Method::build_interpreter_method_data(mh, CHECK_AND_CLEAR);
+    Method::build_profiling_method_data(mh, CHECK_AND_CLEAR);
     mdo = mh->method_data();
   }
   mdo->init();
@@ -2064,6 +2067,14 @@ WB_ENTRY(jboolean, WB_IsJFRIncluded(JNIEnv* env))
 #endif // INCLUDE_JFR
 WB_END
 
+WB_ENTRY(jboolean, WB_IsDTraceIncluded(JNIEnv* env))
+#if defined(DTRACE_ENABLED)
+  return true;
+#else
+  return false;
+#endif // DTRACE_ENABLED
+WB_END
+
 #if INCLUDE_CDS
 
 WB_ENTRY(jint, WB_GetCDSOffsetForName(JNIEnv* env, jobject o, jstring name))
@@ -2095,7 +2106,10 @@ WB_ENTRY(jboolean, WB_HandshakeReadMonitors(JNIEnv* env, jobject wb, jobject thr
       if (!jt->has_last_Java_frame()) {
         return;
       }
-      RegisterMap rmap(jt);
+      RegisterMap rmap(jt,
+                       RegisterMap::UpdateMap::include,
+                       RegisterMap::ProcessFrames::include,
+                       RegisterMap::WalkContinuation::skip);
       for (javaVFrame* vf = jt->last_java_vframe(&rmap); vf != NULL; vf = vf->java_sender()) {
         GrowableArray<MonitorInfo*> *monitors = vf->monitors();
         if (monitors != NULL) {
@@ -2709,6 +2723,7 @@ static JNINativeMethod methods[] = {
   {CC"areOpenArchiveHeapObjectsMapped",   CC"()Z",    (void*)&WB_AreOpenArchiveHeapObjectsMapped},
   {CC"isCDSIncluded",                     CC"()Z",    (void*)&WB_IsCDSIncluded },
   {CC"isJFRIncluded",                     CC"()Z",    (void*)&WB_IsJFRIncluded },
+  {CC"isDTraceIncluded",                  CC"()Z",    (void*)&WB_IsDTraceIncluded },
   {CC"isC2OrJVMCIIncluded",               CC"()Z",    (void*)&WB_isC2OrJVMCIIncluded },
   {CC"isJVMCISupportedByGC",              CC"()Z",    (void*)&WB_IsJVMCISupportedByGC},
   {CC"canWriteJavaHeapArchive",           CC"()Z",    (void*)&WB_CanWriteJavaHeapArchive },

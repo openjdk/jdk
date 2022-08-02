@@ -117,7 +117,7 @@ public class ZipFSOutputStreamTest {
                     while ((numRead = is.read(buf)) != -1) {
                         totalRead += numRead;
                         // verify the content
-                        Assert.assertEquals(Arrays.mismatch(buf, chunk), -1,
+                        Assert.assertEquals(Arrays.mismatch(buf, 0, numRead, chunk, 0, numRead), -1,
                                 "Unexpected content in " + entryPath);
                     }
                     System.out.println("Read entry " + entryPath + " of bytes " + totalRead

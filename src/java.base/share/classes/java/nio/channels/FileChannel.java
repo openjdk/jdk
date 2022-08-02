@@ -26,6 +26,8 @@
 package java.nio.channels;
 
 import java.io.IOException;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.MemorySession;
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.spi.AbstractInterruptibleChannel;
@@ -38,6 +40,7 @@ import java.nio.file.spi.FileSystemProvider;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.Collections;
+import jdk.internal.javac.PreviewFeature;
 
 /**
  * A channel for reading, writing, mapping, and manipulating a file.
@@ -939,17 +942,17 @@ public abstract class FileChannel
      *         The size of the region to be mapped; must be non-negative and
      *         no greater than {@link java.lang.Integer#MAX_VALUE}
      *
-     * @return  The mapped byte buffer
+     * @return The mapped byte buffer
      *
      * @throws NonReadableChannelException
      *         If the {@code mode} is {@link MapMode#READ_ONLY READ_ONLY} or
-     *         an implementation specific map mode requiring read access
+     *         an implementation specific map mode requiring read access,
      *         but this channel was not opened for reading
      *
      * @throws NonWritableChannelException
-     *         If the {@code mode} is {@link MapMode#READ_WRITE READ_WRITE}.
+     *         If the {@code mode} is {@link MapMode#READ_WRITE READ_WRITE},
      *         {@link MapMode#PRIVATE PRIVATE} or an implementation specific
-     *         map mode requiring write access but this channel was not
+     *         map mode requiring write access, but this channel was not
      *         opened for both reading and writing
      *
      * @throws IllegalArgumentException
@@ -967,6 +970,93 @@ public abstract class FileChannel
     public abstract MappedByteBuffer map(MapMode mode, long position, long size)
         throws IOException;
 
+    /**
+     * Maps a region of this channel's file into a new mapped memory segment,
+     * with the given offset, size and memory session.
+     *
+     * <p> If the specified mapping mode is
+     * {@linkplain FileChannel.MapMode#READ_ONLY READ_ONLY}, the resulting
+     * segment will be read-only (see {@link MemorySegment#isReadOnly()}).
+     *
+     * <p> The content of a mapped memory segment can change at any time, for
+     * example if the content of the corresponding region of the mapped file is
+     * changed by this (or another) program.  Whether such changes occur, and
+     * when they occur, is operating-system dependent and therefore unspecified.
+     *
+     * <p> All or part of a mapped memory segment may become inaccessible at any
+     * time, for example if the backing mapped file is truncated. An attempt to
+     * access an inaccessible region of a mapped memory segment will not change
+     * the segment's content and will cause an unspecified exception to be
+     * thrown either at the time of the access or at some later time. It is
+     * therefore strongly recommended that appropriate precautions be taken to
+     * avoid the manipulation of a mapped file by this (or another) program,
+     * except to read or write the file's content.
+     *
+     * @implNote When obtaining a mapped segment from a newly created file
+     *           channel, the initialization state of the contents of the block
+     *           of mapped memory associated with the returned mapped memory
+     *           segment is unspecified and should not be relied upon.
+     *
+     * @implSpec The default implementation of this method throws
+     *           {@code UnsupportedOperationException}.
+     *
+     * @param   mode
+     *          The file mapping mode, see
+     *          {@link FileChannel#map(FileChannel.MapMode, long, long)};
+     *          the mapping mode might affect the behavior of the returned
+     *          memory mapped segment (see {@link MemorySegment#force()}).
+     *
+     * @param   offset
+     *          The offset (expressed in bytes) within the file at which the
+     *          mapped segment is to start.
+     *
+     * @param   size
+     *          The size (in bytes) of the mapped memory backing the memory
+     *          segment.
+     *
+     * @param   session
+     *          The segment memory session.
+     *
+     * @return  A new mapped memory segment.
+     *
+     * @throws  IllegalArgumentException
+     *          If {@code offset < 0}, {@code size < 0} or
+     *          {@code offset + size} overflows the range of {@code long}.
+     *
+     * @throws  IllegalStateException
+     *          If the {@code session} is not
+     *          {@linkplain MemorySession#isAlive() alive}.
+     *
+     * @throws  WrongThreadException
+     *          If this method is called from a thread other than the thread
+     *          {@linkplain MemorySession#ownerThread() owning} the
+     *          {@code session}.
+     *
+     * @throws  NonReadableChannelException
+     *          If the {@code mode} is {@link MapMode#READ_ONLY READ_ONLY} or
+     *          an implementation specific map mode requiring read access,
+     *          but this channel was not opened for reading.
+     *
+     * @throws  NonWritableChannelException
+     *          If the {@code mode} is {@link MapMode#READ_WRITE READ_WRITE},
+     *          {@link MapMode#PRIVATE PRIVATE} or an implementation specific
+     *          map mode requiring write access, but this channel was not
+     *          opened for both reading and writing.
+     *
+     * @throws  IOException
+     *          If some other I/O error occurs.
+     *
+     * @throws  UnsupportedOperationException
+     *          If an unsupported map mode is specified.
+     *
+     * @since   19
+     */
+    @PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
+    public MemorySegment map(MapMode mode, long offset, long size, MemorySession session)
+        throws IOException
+    {
+        throw new UnsupportedOperationException();
+    }
 
     // -- Locks --
 
@@ -996,7 +1086,9 @@ public abstract class FileChannel
      * required then a region starting at zero, and no smaller than the
      * expected maximum size of the file, should be locked.  The zero-argument
      * {@link #lock()} method simply locks a region of size {@link
-     * Long#MAX_VALUE}.
+     * Long#MAX_VALUE}.  If the {@code position} is non-negative and the
+     * {@code size} is zero, then a lock of size
+     * {@code Long.MAX_VALUE - position} is returned.
      *
      * <p> Some operating systems do not support shared locks, in which case a
      * request for a shared lock is automatically converted into a request for
@@ -1014,7 +1106,10 @@ public abstract class FileChannel
      *
      * @param  size
      *         The size of the locked region; must be non-negative, and the sum
-     *         {@code position}&nbsp;+&nbsp;{@code size} must be non-negative
+     *         {@code position}&nbsp;+&nbsp;{@code size} must be non-negative.
+     *         A value of zero means to lock all bytes from the specified
+     *         starting position to the end of the file, regardless of whether
+     *         the file is subsequently extended or truncated
      *
      * @param  shared
      *         {@code true} to request a shared lock, in which case this
@@ -1123,7 +1218,9 @@ public abstract class FileChannel
      * required then a region starting at zero, and no smaller than the
      * expected maximum size of the file, should be locked.  The zero-argument
      * {@link #tryLock()} method simply locks a region of size {@link
-     * Long#MAX_VALUE}.
+     * Long#MAX_VALUE}.  If the {@code position} is non-negative and the
+     * {@code size} is zero, then a lock of size
+     * {@code Long.MAX_VALUE - position} is returned.
      *
      * <p> Some operating systems do not support shared locks, in which case a
      * request for a shared lock is automatically converted into a request for
@@ -1141,7 +1238,10 @@ public abstract class FileChannel
      *
      * @param  size
      *         The size of the locked region; must be non-negative, and the sum
-     *         {@code position}&nbsp;+&nbsp;{@code size} must be non-negative
+     *         {@code position}&nbsp;+&nbsp;{@code size} must be non-negative.
+     *         A value of zero means to lock all bytes from the specified
+     *         starting position to the end of the file, regardless of whether
+     *         the file is subsequently extended or truncated
      *
      * @param  shared
      *         {@code true} to request a shared lock,

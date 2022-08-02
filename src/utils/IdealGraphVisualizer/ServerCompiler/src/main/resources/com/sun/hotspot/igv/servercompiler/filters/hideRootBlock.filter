@@ -1,0 +1,13 @@
+// Remove root block and all nodes in it (hopefully just the Root node).
+
+var f = new RemoveBlockFilter("Hide root block");
+f.addRule(
+  new RemoveBlockFilter.RemoveBlockRule(
+    new AnySelector(
+      new MatcherSelector(
+        new Properties.RegexpPropertyMatcher("name", "Root")
+      )
+    )
+  )
+);
+f.apply(graph);

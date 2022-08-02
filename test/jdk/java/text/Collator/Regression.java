@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -346,7 +346,7 @@ public class Regression extends CollatorTest {
     //
     public void Test4087241() {
         RuleBasedCollator c = (RuleBasedCollator) Collator.getInstance(
-                                                        new Locale("da", "DK"));
+                                                        Locale.of("da", "DK"));
         c.setStrength(Collator.SECONDARY);
 
         String[] tests = {
@@ -375,7 +375,7 @@ public class Regression extends CollatorTest {
     // Micro symbol and greek lowercase letter Mu should sort identically
     //
     public void Test4092260() {
-        Collator c = Collator.getInstance(new Locale("el", ""));
+        Collator c = Collator.getInstance(Locale.of("el"));
 
         // will only be equal when FULL_DECOMPOSITION is used
         c.setDecomposition(Collator.FULL_DECOMPOSITION);
@@ -388,7 +388,7 @@ public class Regression extends CollatorTest {
     }
 
     void Test4095316() {
-        Collator c = Collator.getInstance(new Locale("el", "GR"));
+        Collator c = Collator.getInstance(Locale.of("el", "GR"));
         c.setStrength(Collator.TERTIARY);
         // javadocs for RuleBasedCollator clearly specify that characters containing compatability
         // chars MUST use FULL_DECOMPOSITION to get accurate comparisons.
@@ -544,7 +544,7 @@ public class Regression extends CollatorTest {
         // Code pasted straight from the bug report
         //
         // create spanish locale and collator
-        Locale l = new Locale("es", "es");
+        Locale l = Locale.of("es", "es");
         Collator col = Collator.getInstance(l);
 
         // this spanish phrase kills it!

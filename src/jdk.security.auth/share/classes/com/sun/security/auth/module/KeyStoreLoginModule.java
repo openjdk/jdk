@@ -607,12 +607,7 @@ public class KeyStoreLoginModule implements LoginModule {
                                 ("Incorrect keyStoreURL option");
             le.initCause(e);
             throw le;
-        } catch (GeneralSecurityException e) {
-            LoginException le = new LoginException
-                                ("Error initializing keystore");
-            le.initCause(e);
-            throw le;
-        } catch (IOException e) {
+        } catch (GeneralSecurityException | IOException e) {
             LoginException le = new LoginException
                                 ("Error initializing keystore");
             le.initCause(e);
@@ -667,21 +662,15 @@ public class KeyStoreLoginModule implements LoginModule {
             principal = certificate.getSubjectX500Principal();
 
             // if token, privateKeyPassword will be null
-            Key privateKey = keyStore.getKey(keyStoreAlias, privateKeyPassword);
-            if (privateKey == null
-                || !(privateKey instanceof PrivateKey))
-            {
+            Key key = keyStore.getKey(keyStoreAlias, privateKeyPassword);
+            if (!(key instanceof PrivateKey privateKey)) {
                 throw new FailedLoginException(
                     "Unable to recover key from keystore");
             }
 
             privateCredential = new X500PrivateCredential(
-                certificate, (PrivateKey) privateKey, keyStoreAlias);
-        } catch (KeyStoreException e) {
-            LoginException le = new LoginException("Error using keystore");
-            le.initCause(e);
-            throw le;
-        } catch (NoSuchAlgorithmException e) {
+                certificate, privateKey, keyStoreAlias);
+        } catch (KeyStoreException | NoSuchAlgorithmException e) {
             LoginException le = new LoginException("Error using keystore");
             le.initCause(e);
             throw le;

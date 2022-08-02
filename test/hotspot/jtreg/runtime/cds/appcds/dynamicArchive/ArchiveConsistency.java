@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,9 +27,9 @@
  * @summary Corrupt the header CRC fields of the top archive. VM should exit with an error.
  * @requires vm.cds
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds /test/hotspot/jtreg/runtime/cds/appcds/test-classes
- * @build Hello sun.hotspot.WhiteBox
+ * @build Hello jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar hello.jar Hello
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI ArchiveConsistency on
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI ArchiveConsistency auto
  */
@@ -202,5 +202,32 @@ public class ArchiveConsistency extends DynamicArchiveTestBase {
         runTwo(nonExistBase, nonExistTop,
                appJar, mainClass, isAuto ? 0 : 1,
                "Specified shared archive not found (" + nonExistBase + ")");
+
+        // following two tests:
+        //   -Xshare:auto -XX:SharedArchiveFile=top.jsa, but base does not exist.
+
+      if (!isUseSharedSpacesDisabled()) {
+        new File(baseArchiveName).delete();
+
+        startTest("10. -XX:+AutoCreateSharedArchive -XX:SharedArchiveFile=" + topArchiveName);
+        run(topArchiveName,
+            "-Xshare:auto",
+            "-XX:+AutoCreateSharedArchive",
+            "-cp",
+            appJar, mainClass)
+            .assertNormalExit(output -> {
+                output.shouldContain("warning: -XX:+AutoCreateSharedArchive is unsupported when base CDS archive is not loaded");
+            });
+
+        startTest("11. -XX:SharedArchiveFile=" + topArchiveName + " -XX:ArchiveClassesAtExit=" + getNewArchiveName("top3"));
+        run(topArchiveName,
+            "-Xshare:auto",
+            "-XX:ArchiveClassesAtExit=" + getNewArchiveName("top3"),
+            "-cp",
+            appJar, mainClass)
+            .assertNormalExit(output -> {
+                output.shouldContain("VM warning: -XX:ArchiveClassesAtExit is unsupported when base CDS archive is not loaded");
+            });
+      }
     }
 }

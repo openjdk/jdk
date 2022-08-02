@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -298,10 +298,10 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
      * @param doc the destination for the insertion
      * @param pos the location in the document to place the
      *   content
-     * @exception IOException on any I/O error
-     * @exception BadLocationException if pos represents an invalid
+     * @throws IOException on any I/O error
+     * @throws BadLocationException if pos represents an invalid
      *   location within the document
-     * @exception RuntimeException (will eventually be a BadLocationException)
+     * @throws RuntimeException (will eventually be a BadLocationException)
      *            if pos is invalid
      */
     public void read(Reader in, Document doc, int pos) throws IOException, BadLocationException {
@@ -337,7 +337,7 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
      *
      * @throws BadLocationException if {@code offset} is invalid
      * @throws IOException on I/O error
-     * @exception RuntimeException (will eventually be a BadLocationException)
+     * @throws RuntimeException (will eventually be a BadLocationException)
      *            if pos is invalid
      */
     public void insertHTML(HTMLDocument doc, int offset, String html,
@@ -367,8 +367,8 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
      * @param pos the location in the document to fetch the
      *   content
      * @param len the amount to write out
-     * @exception IOException on any I/O error
-     * @exception BadLocationException if {@code pos} represents an invalid
+     * @throws IOException on any I/O error
+     * @throws BadLocationException if {@code pos} represents an invalid
      *   location within the document
      */
     public void write(Writer out, Document doc, int pos, int len)
@@ -1299,6 +1299,29 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
      *     <td>FrameView
      * </tbody>
      * </table>
+     *
+     * @implNote
+     * Parsed tags that are unrecognized or are recognized but unsupported are
+     * handled differently by the editor.
+     *
+     * <ul>
+     * <li>When the container is editable:
+     *     <ul>
+     *         <li>The tags will be displayed as editable text fields with the
+     *         tag name.</li>
+     *         <li>The content within the tags will be handled by the editor as
+     *         regular text.</li>
+     *     </ul>
+     * </li>
+     * <li>When the container is not editable:
+     *     <ul>
+     *         <li>If the tag is recognized but not supported, such as script tags,
+     *         the tag and its contents will be hidden.</li>
+     *         <li>If the tag is unknown, the tag will be hidden but its contents
+     *         will display as regular text.</li>
+     *     </ul>
+     * </li>
+     * </ul>
      */
     public static class HTMLFactory implements ViewFactory {
         /**
@@ -1881,10 +1904,8 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
                 getHTMLEditorKit(editor).insertHTML(doc, offset, html,
                                                     popDepth, pushDepth,
                                                     addTag);
-            } catch (IOException ioe) {
-                throw new RuntimeException("Unable to insert: " + ioe);
-            } catch (BadLocationException ble) {
-                throw new RuntimeException("Unable to insert: " + ble);
+            } catch (IOException | BadLocationException e) {
+                throw new RuntimeException("Unable to insert: " + e);
             }
         }
 

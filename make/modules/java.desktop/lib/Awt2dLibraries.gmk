@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -459,7 +459,7 @@ else
 
    HARFBUZZ_DISABLED_WARNINGS_gcc := type-limits missing-field-initializers strict-aliasing
    HARFBUZZ_DISABLED_WARNINGS_CXX_gcc := reorder delete-non-virtual-dtor strict-overflow \
-        maybe-uninitialized class-memaccess unused-result extra
+        maybe-uninitialized class-memaccess unused-result extra use-after-free
    HARFBUZZ_DISABLED_WARNINGS_clang := unused-value incompatible-pointer-types \
         tautological-constant-out-of-range-compare int-to-pointer-cast \
         undef missing-field-initializers range-loop-analysis \
@@ -469,7 +469,6 @@ else
    LIBFONTMANAGER_CFLAGS += $(HARFBUZZ_CFLAGS)
 
 endif
-
 
 LIBFONTMANAGER_EXTRA_HEADER_DIRS := \
     libharfbuzz \
@@ -484,6 +483,14 @@ LIBFONTMANAGER_CFLAGS += $(LIBFREETYPE_CFLAGS)
 BUILD_LIBFONTMANAGER_FONTLIB +=  $(LIBFREETYPE_LIBS)
 
 LIBFONTMANAGER_OPTIMIZATION := HIGHEST
+
+ifneq ($(filter $(TOOLCHAIN_TYPE), gcc clang), )
+  # gcc (and to an extent clang) is particularly bad at optimizing these files,
+  # causing a massive spike in compile time. We don't care about these
+  # particular files anyway, so lower optimization level.
+  BUILD_LIBFONTMANAGER_hb-subset.cc_OPTIMIZATION := SIZE
+  BUILD_LIBFONTMANAGER_hb-subset-plan.cc_OPTIMIZATION := SIZE
+endif
 
 ifeq ($(call isTargetOs, windows), true)
   LIBFONTMANAGER_EXCLUDE_FILES += X11FontScaler.c \
@@ -673,6 +680,7 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
 
   ifeq ($(USE_EXTERNAL_LIBZ), false)
     LIBSPLASHSCREEN_EXTRA_SRC += java.base:libzip/zlib
+    LIBZ_DISABLED_WARNINGS_CLANG := format-nonliteral
   endif
 
   ifeq ($(call isTargetOs, macosx), true)
@@ -742,7 +750,7 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
           maybe-uninitialized shift-negative-value implicit-fallthrough \
           unused-function, \
       DISABLED_WARNINGS_clang := incompatible-pointer-types sign-compare \
-          deprecated-declarations, \
+          deprecated-declarations null-pointer-subtraction $(LIBZ_DISABLED_WARNINGS_CLANG), \
       DISABLED_WARNINGS_microsoft := 4018 4244 4267, \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,8 +66,6 @@ public class Resources_de extends java.util.ListResourceBundle {
         {"Subject.", "Subjekt:\n"},
         {".Principal.", "\tPrincipal: "},
         {".Public.Credential.", "\t\u00D6ffentliche Zugangsdaten: "},
-        {".Private.Credentials.inaccessible.",
-                "\tKein Zugriff auf private Zugangsdaten\n"},
         {".Private.Credential.", "\tPrivate Zugangsdaten: "},
         {".Private.Credential.inaccessible.",
                 "\tKein Zugriff auf private Zugangsdaten\n"},
@@ -89,16 +87,6 @@ public class Resources_de extends java.util.ListResourceBundle {
                 "Ung\u00FCltiger Nullwert f\u00FCr CallbackHandler angegeben"},
         {"null.subject.logout.called.before.login",
                 "Nullsubjekt - Abmeldung vor Anmeldung aufgerufen"},
-        {"unable.to.instantiate.LoginModule.module.because.it.does.not.provide.a.no.argument.constructor",
-                "LoginModule {0} kann nicht instanziiert werden, da es keinen argumentlosen Constructor angibt"},
-        {"unable.to.instantiate.LoginModule",
-                "LoginModule kann nicht instanziiert werden"},
-        {"unable.to.instantiate.LoginModule.",
-                "LoginModule kann nicht instanziiert werden: "},
-        {"unable.to.find.LoginModule.class.",
-                "LoginModule-Klasse kann nicht gefunden werden: "},
-        {"unable.to.access.LoginModule.",
-                "Kein Zugriff auf LoginModule m\u00F6glich: "},
         {"Login.Failure.all.modules.ignored",
                 "Anmeldefehler: Alle Module werden ignoriert"},
 
@@ -150,11 +138,6 @@ public class Resources_de extends java.util.ListResourceBundle {
         // sun.security.pkcs11.SunPKCS11
         {"PKCS11.Token.providerName.Password.",
                 "Kennwort f\u00FCr PKCS11-Token [{0}]: "},
-
-        /* --- DEPRECATED --- */
-        // javax.security.auth.Policy
-        {"unable.to.instantiate.Subject.based.policy",
-                "Subjektbasierte Policy kann nicht instanziiert werden"}
     };
 
 

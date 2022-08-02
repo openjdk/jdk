@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -334,6 +334,11 @@ void LogOutput::update_config_string(const size_t on_level[LogLevel::Count]) {
 
     assert(n_deviates < deviating_tagsets, "deviating tag set array overflow");
     assert(prev_deviates > n_deviates, "number of deviating tag sets must never grow");
+
+    if (n_deviates == 1 && n_selections == 0) {
+      // we're done as we couldn't reduce things any further
+      break;
+    }
   }
   FREE_C_HEAP_ARRAY(LogTagSet*, deviates);
   FREE_C_HEAP_ARRAY(Selection, selections);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1BiasedArray.hpp"
 #include "gc/g1/g1CardTable.hpp"
+#include "gc/g1/g1CardSet.hpp"
 #include "gc/g1/g1CollectionSet.hpp"
 #include "gc/g1/g1CollectorState.hpp"
 #include "gc/g1/g1ConcurrentMark.hpp"
@@ -54,6 +55,7 @@
 #include "memory/allocation.hpp"
 #include "memory/iterator.hpp"
 #include "memory/memRegion.hpp"
+#include "runtime/mutexLocker.hpp"
 #include "utilities/bitMap.hpp"
 
 // A "G1CollectedHeap" is an implementation of a java heap for HotSpot.
@@ -227,34 +229,12 @@ private:
   // Helper for monitoring and management support.
   G1MonitoringSupport* _monitoring_support;
 
-  // Records whether the region at the given index is (still) a
-  // candidate for eager reclaim.  Only valid for humongous start
-  // regions; other regions have unspecified values.  Humongous start
-  // regions are initialized at start of collection pause, with
-  // candidates removed from the set as they are found reachable from
-  // roots or the young generation.
-  class HumongousReclaimCandidates : public G1BiasedMappedArray<bool> {
-  protected:
-    bool default_value() const override { return false; }
-  public:
-    void clear() { G1BiasedMappedArray<bool>::clear(); }
-    void set_candidate(uint region, bool value) {
-      set_by_index(region, value);
-    }
-    bool is_candidate(uint region) {
-      return get_by_index(region);
-    }
-  };
-
-  HumongousReclaimCandidates _humongous_reclaim_candidates;
   uint _num_humongous_objects; // Current amount of (all) humongous objects found in the heap.
   uint _num_humongous_reclaim_candidates; // Number of humongous object eager reclaim candidates.
 public:
   uint num_humongous_objects() const { return _num_humongous_objects; }
   uint num_humongous_reclaim_candidates() const { return _num_humongous_reclaim_candidates; }
   bool has_humongous_reclaim_candidates() const { return _num_humongous_reclaim_candidates > 0; }
-
-  bool should_do_eager_reclaim() const;
 
   void set_humongous_stats(uint num_humongous_total, uint num_humongous_candidates);
 
@@ -486,13 +466,13 @@ private:
   //   otherwise it's for a failed allocation.
   // - if clear_all_soft_refs is true, all soft references should be
   //   cleared during the GC.
-  // - if do_maximum_compaction is true, full gc will do a maximally
+  // - if do_maximal_compaction is true, full gc will do a maximally
   //   compacting collection, leaving no dead wood.
   // - it returns false if it is unable to do the collection due to the
   //   GC locker being active, true otherwise.
   bool do_full_collection(bool explicit_gc,
                           bool clear_all_soft_refs,
-                          bool do_maximum_compaction);
+                          bool do_maximal_compaction);
 
   // Callback from VM_G1CollectFull operation, or collect_as_vm_thread.
   void do_full_collection(bool clear_all_soft_refs) override;
@@ -507,7 +487,7 @@ private:
                                       bool* succeeded);
   // Internal helpers used during full GC to split it up to
   // increase readability.
-  void abort_concurrent_cycle();
+  bool abort_concurrent_cycle();
   void verify_before_full_collection(bool explicit_gc);
   void prepare_heap_for_full_collection();
   void prepare_heap_for_mutators();
@@ -518,7 +498,7 @@ private:
   // Helper method for satisfy_failed_allocation()
   HeapWord* satisfy_failed_allocation_helper(size_t word_size,
                                              bool do_gc,
-                                             bool maximum_compaction,
+                                             bool maximal_compaction,
                                              bool expect_null_mutator_alloc_region,
                                              bool* gc_succeeded);
 
@@ -588,9 +568,6 @@ public:
   // Does the given region fulfill remembered set based eager reclaim candidate requirements?
   bool is_potential_eager_reclaim_candidate(HeapRegion* r) const;
 
-  // Modify the reclaim candidate set and test for presence.
-  // These are only valid for starts_humongous regions.
-  inline void set_humongous_reclaim_candidate(uint region, bool value);
   inline bool is_humongous_reclaim_candidate(uint region);
 
   // Remove from the reclaim candidate set.  Also remove from the
@@ -622,7 +599,7 @@ public:
   // for all regions.
   void verify_region_attr_remset_is_tracked() PRODUCT_RETURN;
 
-  void clear_prev_bitmap_for_region(HeapRegion* hr);
+  void clear_bitmap_for_region(HeapRegion* hr);
 
   bool is_user_requested_concurrent_full_gc(GCCause::Cause cause);
 
@@ -936,6 +913,8 @@ public:
 
   void fill_with_dummy_object(HeapWord* start, HeapWord* end, bool zap) override;
 
+  static void start_codecache_marking_cycle_if_inactive();
+
   // Apply the given closure on all cards in the Hot Card Cache, emptying it.
   void iterate_hcc_closure(G1CardTableEntryClosure* cl, uint worker_id);
 
@@ -1041,9 +1020,9 @@ public:
 
   // Return "TRUE" iff the given object address is within the collection
   // set. Assumes that the reference points into the heap.
-  inline bool is_in_cset(const HeapRegion *hr);
-  inline bool is_in_cset(oop obj);
-  inline bool is_in_cset(HeapWord* addr);
+  inline bool is_in_cset(const HeapRegion *hr) const;
+  inline bool is_in_cset(oop obj) const;
+  inline bool is_in_cset(HeapWord* addr) const;
 
   inline bool is_in_cset_or_humongous(const oop obj);
 
@@ -1178,7 +1157,8 @@ public:
   size_t max_tlab_size() const override;
   size_t unsafe_max_tlab_alloc(Thread* ignored) const override;
 
-  inline bool is_in_young(const oop obj);
+  inline bool is_in_young(const oop obj) const;
+  inline bool requires_barriers(stackChunkOop obj) const override;
 
   // Returns "true" iff the given word_size is "very large".
   static bool is_humongous(size_t word_size) {
@@ -1230,32 +1210,23 @@ public:
   bool check_young_list_empty();
 #endif
 
-  bool is_marked_next(oop obj) const;
+  bool is_marked(oop obj) const;
 
   // Determine if an object is dead, given the object and also
   // the region to which the object belongs.
   inline bool is_obj_dead(const oop obj, const HeapRegion* hr) const;
 
-  // This function returns true when an object has been
-  // around since the previous marking and hasn't yet
-  // been marked during this marking, and is not in a closed archive region.
-  inline bool is_obj_ill(const oop obj, const HeapRegion* hr) const;
-
   // Determine if an object is dead, given only the object itself.
   // This will find the region to which the object belongs and
   // then call the region version of the same function.
-
-  // Added if it is NULL it isn't dead.
-
+  // If obj is NULL it is not dead.
   inline bool is_obj_dead(const oop obj) const;
-
-  inline bool is_obj_ill(const oop obj) const;
 
   inline bool is_obj_dead_full(const oop obj, const HeapRegion* hr) const;
   inline bool is_obj_dead_full(const oop obj) const;
 
   // Mark the live object that failed evacuation in the prev bitmap.
-  inline void mark_evac_failure_object(const oop obj, uint worker_id) const;
+  void mark_evac_failure_object(oop obj) const;
 
   G1ConcurrentMark* concurrent_mark() const { return _cm; }
 
@@ -1300,20 +1271,6 @@ public:
   void prepare_for_verify() override;
 
   // Perform verification.
-
-  // vo == UsePrevMarking -> use "prev" marking information,
-  // vo == UseNextMarking -> use "next" marking information
-  // vo == UseFullMarking -> use "next" marking bitmap but no TAMS
-  //
-  // NOTE: Only the "prev" marking information is guaranteed to be
-  // consistent most of the time, so most calls to this should use
-  // vo == UsePrevMarking.
-  // Currently, there is only one case where this is called with
-  // vo == UseNextMarking, which is to verify the "next" marking
-  // information at the end of remark.
-  // Currently there is only one place where this is called with
-  // vo == UseFullMarking, which is to verify the marking during a
-  // full GC.
   void verify(VerifyOption vo) override;
 
   // WhiteBox testing support.

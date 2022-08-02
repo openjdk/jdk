@@ -102,7 +102,7 @@ public class CloseTimeoutChannel {
                 System.out.println(INDENT+"Listening on port "+
                     _listener.socket().getLocalPort());
                 ByteBuffer buf=ByteBuffer.allocate(5);
-                Socket client=_listener.accept().socket();;
+                Socket client=_listener.accept().socket();
                 System.out.println(INDENT+"Accepted client");
 
                 OutputStream out=client.getOutputStream();

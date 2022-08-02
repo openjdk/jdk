@@ -93,7 +93,7 @@ public:
   G1FullCollector(G1CollectedHeap* heap,
                   bool explicit_gc,
                   bool clear_soft_refs,
-                  bool do_maximum_compaction);
+                  bool do_maximal_compaction);
   ~G1FullCollector();
 
   void prepare_collection();

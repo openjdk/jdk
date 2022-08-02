@@ -30,9 +30,6 @@
 #include "utilities/exceptions.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/macros.hpp"
-#ifndef _WINDOWS
-# include <setjmp.h>
-#endif
 #ifdef __APPLE__
 # include <mach/mach_time.h>
 #endif
@@ -246,7 +243,7 @@ class os: AllStatic {
     // which being declared MP when in fact not, is a problem - then
     // the bootstrap routine for the stub generator needs to check
     // the processor count directly and leave the bootstrap routine
-    // in place until called after initialization has ocurred.
+    // in place until called after initialization has occurred.
     return (_processor_count != 1);
   }
 
@@ -287,6 +284,22 @@ class os: AllStatic {
   static void map_stack_shadow_pages(address sp);
   static bool stack_shadow_pages_available(Thread *thread, const methodHandle& method, address sp);
 
+ private:
+  // Minimum stack size a thread can be created with (allowing
+  // the VM to completely create the thread and enter user code).
+  // The initial values exclude any guard pages (by HotSpot or libc).
+  // set_minimum_stack_sizes() will add the size required for
+  // HotSpot guard pages depending on page size and flag settings.
+  // Libc guard pages are never considered by these values.
+  static size_t _compiler_thread_min_stack_allowed;
+  static size_t _java_thread_min_stack_allowed;
+  static size_t _vm_internal_thread_min_stack_allowed;
+  static size_t _os_min_stack_allowed;
+
+  // Check and sets minimum stack sizes
+  static jint set_minimum_stack_sizes();
+
+ public:
   // Find committed memory region within specified range (start, start + size),
   // return true if found any
   static bool committed_in_range(address start, size_t size, address& committed_start, size_t& committed_size);
@@ -338,7 +351,7 @@ class os: AllStatic {
   static int    vm_allocation_granularity();
 
   // Reserves virtual memory.
-  static char*  reserve_memory(size_t bytes, bool executable = false, MEMFLAGS flags = mtOther);
+  static char*  reserve_memory(size_t bytes, bool executable = false, MEMFLAGS flags = mtNone);
 
   // Reserves virtual memory that starts at an address that is aligned to 'alignment'.
   static char*  reserve_memory_aligned(size_t size, size_t alignment, bool executable = false);
@@ -365,10 +378,9 @@ class os: AllStatic {
   // Prints all mappings
   static void print_memory_mappings(outputStream* st);
 
-  // Touch memory pages that cover the memory range from start to end (exclusive)
-  // to make the OS back the memory range with actual memory.
-  // Current implementation may not touch the last page if unaligned addresses
-  // are passed.
+  // Touch memory pages that cover the memory range from start to end
+  // (exclusive) to make the OS back the memory range with actual memory.
+  // Other threads may use the memory range concurrently with pretouch.
   static void   pretouch_memory(void* start, void* end, size_t page_size = vm_page_size());
 
   enum ProtType { MEM_PROT_NONE, MEM_PROT_READ, MEM_PROT_RW, MEM_PROT_RWX };
@@ -550,8 +562,6 @@ class os: AllStatic {
   // the input pointer.
   static char* native_path(char *path);
   static int ftruncate(int fd, jlong length);
-  static int fsync(int fd);
-  static int available(int fd, jlong *bytes);
   static int get_fileno(FILE* fp);
   static void flockfile(FILE* fp);
   static void funlockfile(FILE* fp);
@@ -677,6 +687,7 @@ class os: AllStatic {
   static void print_dll_info(outputStream* st);
   static void print_environment_variables(outputStream* st, const char** env_list);
   static void print_context(outputStream* st, const void* context);
+  static void print_tos_pc(outputStream* st, const void* context);
   static void print_register_info(outputStream* st, const void* context);
   static bool signal_sent_by_kill(const void* siginfo);
   static void print_siginfo(outputStream* st, const void* siginfo);
@@ -858,10 +869,6 @@ class os: AllStatic {
   static bool supports_map_sync();
 
  public:
-  class CrashProtectionCallback : public StackObj {
-  public:
-    virtual void call() = 0;
-  };
 
   // Platform dependent stuff
 #ifndef _WINDOWS
@@ -910,103 +917,10 @@ class os: AllStatic {
   static char*  build_agent_function_name(const char *sym, const char *cname,
                                           bool is_absolute_path);
 
-  class SuspendedThreadTaskContext {
-  public:
-    SuspendedThreadTaskContext(Thread* thread, void *ucontext) : _thread(thread), _ucontext(ucontext) {}
-    Thread* thread() const { return _thread; }
-    void* ucontext() const { return _ucontext; }
-  private:
-    Thread* _thread;
-    void* _ucontext;
-  };
-
-  class SuspendedThreadTask {
-  public:
-    SuspendedThreadTask(Thread* thread) : _thread(thread), _done(false) {}
-    void run();
-    bool is_done() { return _done; }
-    virtual void do_task(const SuspendedThreadTaskContext& context) = 0;
-  protected:
-    ~SuspendedThreadTask() {}
-  private:
-    void internal_do_task();
-    Thread* _thread;
-    bool _done;
-  };
-
 #if defined(__APPLE__) && defined(AARCH64)
   // Enables write or execute access to writeable and executable pages.
   static void current_thread_enable_wx(WXMode mode);
 #endif // __APPLE__ && AARCH64
-
-#ifndef _WINDOWS
-  // Suspend/resume support
-  // Protocol:
-  //
-  // a thread starts in SR_RUNNING
-  //
-  // SR_RUNNING can go to
-  //   * SR_SUSPEND_REQUEST when the WatcherThread wants to suspend it
-  // SR_SUSPEND_REQUEST can go to
-  //   * SR_RUNNING if WatcherThread decides it waited for SR_SUSPENDED too long (timeout)
-  //   * SR_SUSPENDED if the stopped thread receives the signal and switches state
-  // SR_SUSPENDED can go to
-  //   * SR_WAKEUP_REQUEST when the WatcherThread has done the work and wants to resume
-  // SR_WAKEUP_REQUEST can go to
-  //   * SR_RUNNING when the stopped thread receives the signal
-  //   * SR_WAKEUP_REQUEST on timeout (resend the signal and try again)
-  class SuspendResume {
-   public:
-    enum State {
-      SR_RUNNING,
-      SR_SUSPEND_REQUEST,
-      SR_SUSPENDED,
-      SR_WAKEUP_REQUEST
-    };
-
-  private:
-    volatile State _state;
-
-  private:
-    /* try to switch state from state "from" to state "to"
-     * returns the state set after the method is complete
-     */
-    State switch_state(State from, State to);
-
-  public:
-    SuspendResume() : _state(SR_RUNNING) { }
-
-    State state() const { return _state; }
-
-    State request_suspend() {
-      return switch_state(SR_RUNNING, SR_SUSPEND_REQUEST);
-    }
-
-    State cancel_suspend() {
-      return switch_state(SR_SUSPEND_REQUEST, SR_RUNNING);
-    }
-
-    State suspended() {
-      return switch_state(SR_SUSPEND_REQUEST, SR_SUSPENDED);
-    }
-
-    State request_wakeup() {
-      return switch_state(SR_SUSPENDED, SR_WAKEUP_REQUEST);
-    }
-
-    State running() {
-      return switch_state(SR_WAKEUP_REQUEST, SR_RUNNING);
-    }
-
-    bool is_running() const {
-      return _state == SR_RUNNING;
-    }
-
-    bool is_suspended() const {
-      return _state == SR_SUSPENDED;
-    }
-  };
-#endif // !WINDOWS
 
  protected:
   static volatile unsigned int _rand_seed;    // seed for random number generator

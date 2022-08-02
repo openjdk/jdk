@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,16 +24,16 @@
  */
 
 /**
- *  The implementation of the <em>javadoc</em> tool and associated doclets.
+ * The implementation of the <em>javadoc</em> tool and associated doclets.
  *
- *  <p>Internally, <em>javadoc</em> is composed of two primary parts:
- *  the {@link jdk.javadoc.internal.tool tool}, and a series of
- *  {@link jdk.javadoc.internal.doclets doclets}.
+ * <p>Internally, <em>javadoc</em> is composed of two primary parts:
+ * the {@link jdk.javadoc.internal.tool tool}, and a series of
+ * {@link jdk.javadoc.internal.doclets doclets}.
  *
- *  <p>The tool provides a common infrastructure for command-line processing,
- *  and for reading the declarations and documentation comments in Java source files,
- *  while doclets provide a user-selectable backend for determining
- *  how to process the declarations and their documentation comments.
+ * <p>The tool provides a common infrastructure for command-line processing,
+ * and for reading the declarations and documentation comments in Java source files,
+ * while doclets provide a user-selectable backend for determining
+ * how to process the declarations and their documentation comments.
  *
  * <p>The following provides a top-down description of the overall <em>javadoc</em>
  * software stack.

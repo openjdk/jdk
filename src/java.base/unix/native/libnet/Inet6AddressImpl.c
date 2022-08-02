@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,8 +81,7 @@ lookupIfLocalhost(JNIEnv *env, const char *hostname, jboolean includeV6, int cha
     jobjectArray result = NULL;
     char myhostname[NI_MAXHOST + 1];
     struct ifaddrs *ifa = NULL;
-    int familyOrder = 0;
-    int count = 0, i, j;
+    int i, j;
     int addrs4 = 0, addrs6 = 0, numV4Loopbacks = 0, numV6Loopbacks = 0;
     jboolean includeLoopback = JNI_FALSE;
     jobject name;
@@ -220,7 +219,7 @@ Java_java_net_Inet6AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
         JNU_ThrowNullPointerException(env, "host argument is null");
         return NULL;
     }
-    hostname = JNU_GetStringPlatformChars(env, host, JNI_FALSE);
+    hostname = JNU_GetStringPlatformChars(env, host, NULL);
     CHECK_NULL_RETURN(hostname, NULL);
 
     // try once, with our static buffer

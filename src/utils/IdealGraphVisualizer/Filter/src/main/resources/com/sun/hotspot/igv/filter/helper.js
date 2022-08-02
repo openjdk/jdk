@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,12 @@ function colorize(property, regexp, color) {
     var f = new ColorFilter("");
     f.addRule(new ColorFilter.ColorRule(new MatcherSelector(new Properties.RegexpPropertyMatcher(property, regexp)), color));
     f.apply(graph); 
+}
+
+function warn(propertyToMatch, regexp, propertyToShow) {
+    var f = new WarningFilter("", "[" + propertyToShow + "]");
+    f.addRule(new WarningFilter.WarningRule(new MatcherSelector(new Properties.RegexpPropertyMatcher(propertyToMatch, regexp))));
+    f.apply(graph);
 }
 
 function remove(property, regexp) {

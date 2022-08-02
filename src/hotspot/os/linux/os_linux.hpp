@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,6 +120,7 @@ class Linux {
   static bool _stack_is_executable;
   static void *dlopen_helper(const char *name, char *ebuf, int ebuflen);
   static void *dll_load_in_vmthread(const char *name, char *ebuf, int ebuflen);
+  static const char *dll_path(void* lib);
 
   static void init_thread_fpu_state();
   static int  get_fpu_control_word();

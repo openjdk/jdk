@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,11 +28,13 @@
  * @compile/fail/ref=GuardsErrors.out -XDrawDiagnostics --enable-preview -source ${jdk.version} GuardsErrors.java
  */
 
+//TODO: tests and error recovery for misplaced guards
+
 public class GuardsErrors {
 
     void typeTestPatternSwitchTest(Object o, int check) {
         switch (o) {
-            case Integer i && i == check -> System.err.println(); //error: check is not effectivelly final
+            case Integer i when i == check -> System.err.println(); //error: check is not effectivelly final
             default -> {}
         }
         check = 0;

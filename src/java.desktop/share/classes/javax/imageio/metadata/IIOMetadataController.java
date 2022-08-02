@@ -79,7 +79,7 @@ public interface IIOMetadataController {
      * @return {@code true} if the {@code IIOMetadata} has been
      * modified, {@code false} otherwise.
      *
-     * @exception IllegalArgumentException if {@code metadata} is
+     * @throws IllegalArgumentException if {@code metadata} is
      * {@code null} or is not an instance of the correct class.
      */
     boolean activate(IIOMetadata metadata);

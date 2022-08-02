@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,7 +84,7 @@ public class MonitoredHostProvider extends MonitoredHost {
     /**
      * {@inheritDoc}.
      * <p>
-     * Note - the <em>file:</em> protocol currenly does not support
+     * Note - the <em>file:</em> protocol currently does not support
      * registration or notification of event listeners. This method
      * silently ignores the add request.
      */
@@ -95,7 +95,7 @@ public class MonitoredHostProvider extends MonitoredHost {
     /**
      * {@inheritDoc}.
      * <p>
-     * Note - the <em>file:</em> protocol currenly does not support
+     * Note - the <em>file:</em> protocol currently does not support
      * registration or notification of event listeners. This method
      * silently ignores the remove request.
      */

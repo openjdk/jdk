@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -229,6 +229,10 @@ bool ParallelScavengeHeap::is_in(const void* p) const {
 
 bool ParallelScavengeHeap::is_in_reserved(const void* p) const {
   return young_gen()->is_in_reserved(p) || old_gen()->is_in_reserved(p);
+}
+
+bool ParallelScavengeHeap::requires_barriers(stackChunkOop p) const {
+  return !is_in_young(p);
 }
 
 // There are two levels of allocation policy here.
@@ -796,6 +800,16 @@ void ParallelScavengeHeap::resize_young_gen(size_t eden_size,
 void ParallelScavengeHeap::resize_old_gen(size_t desired_free_space) {
   // Delegate the resize to the generation.
   _old_gen->resize(desired_free_space);
+}
+
+HeapWord* ParallelScavengeHeap::allocate_loaded_archive_space(size_t size) {
+  return _old_gen->allocate(size);
+}
+
+void ParallelScavengeHeap::complete_loaded_archive_space(MemRegion archive_space) {
+  assert(_old_gen->object_space()->used_region().contains(archive_space),
+         "Archive space not contained in old gen");
+  _old_gen->complete_loaded_archive_space(archive_space);
 }
 
 #ifndef PRODUCT

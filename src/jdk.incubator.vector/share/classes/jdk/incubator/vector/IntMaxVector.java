@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
  */
 package jdk.incubator.vector;
 
-import java.nio.ByteBuffer;
+import java.lang.foreign.MemorySegment;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.IntUnaryOperator;
@@ -370,6 +370,12 @@ final class IntMaxVector extends IntVector {
         return super.testTemplate(IntMaxMask.class, op);  // specialize
     }
 
+    @Override
+    @ForceInline
+    public final IntMaxMask test(Test op, VectorMask<Integer> m) {
+        return super.testTemplate(IntMaxMask.class, op, (IntMaxMask) m);  // specialize
+    }
+
     // Specialized comparisons
 
     @Override
@@ -466,6 +472,22 @@ final class IntMaxVector extends IntVector {
             super.rearrangeTemplate(IntMaxShuffle.class,
                                     (IntMaxShuffle) s,
                                     (IntMaxVector) v);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public IntMaxVector compress(VectorMask<Integer> m) {
+        return (IntMaxVector)
+            super.compressTemplate(IntMaxMask.class,
+                                   (IntMaxMask) m);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public IntMaxVector expand(VectorMask<Integer> m) {
+        return (IntMaxVector)
+            super.expandTemplate(IntMaxMask.class,
+                                   (IntMaxMask) m);  // specialize
     }
 
     @Override
@@ -640,6 +662,15 @@ final class IntMaxVector extends IntVector {
         public IntMaxMask not() {
             return xor(maskAll(true));
         }
+
+        @Override
+        @ForceInline
+        public IntMaxMask compress() {
+            return (IntMaxMask)VectorSupport.compressExpandOp(VectorSupport.VECTOR_OP_MASK_COMPRESS,
+                IntMaxVector.class, IntMaxMask.class, ETYPE, VLENGTH, null, this,
+                (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT, m1.trueCount()));
+        }
+
 
         // Binary operations
 
@@ -828,8 +859,8 @@ final class IntMaxVector extends IntVector {
     @ForceInline
     @Override
     final
-    IntVector fromArray0(int[] a, int offset, VectorMask<Integer> m) {
-        return super.fromArray0Template(IntMaxMask.class, a, offset, (IntMaxMask) m);  // specialize
+    IntVector fromArray0(int[] a, int offset, VectorMask<Integer> m, int offsetInRange) {
+        return super.fromArray0Template(IntMaxMask.class, a, offset, (IntMaxMask) m, offsetInRange);  // specialize
     }
 
     @ForceInline
@@ -844,29 +875,15 @@ final class IntMaxVector extends IntVector {
     @ForceInline
     @Override
     final
-    IntVector fromByteArray0(byte[] a, int offset) {
-        return super.fromByteArray0Template(a, offset);  // specialize
+    IntVector fromMemorySegment0(MemorySegment ms, long offset) {
+        return super.fromMemorySegment0Template(ms, offset);  // specialize
     }
 
     @ForceInline
     @Override
     final
-    IntVector fromByteArray0(byte[] a, int offset, VectorMask<Integer> m) {
-        return super.fromByteArray0Template(IntMaxMask.class, a, offset, (IntMaxMask) m);  // specialize
-    }
-
-    @ForceInline
-    @Override
-    final
-    IntVector fromByteBuffer0(ByteBuffer bb, int offset) {
-        return super.fromByteBuffer0Template(bb, offset);  // specialize
-    }
-
-    @ForceInline
-    @Override
-    final
-    IntVector fromByteBuffer0(ByteBuffer bb, int offset, VectorMask<Integer> m) {
-        return super.fromByteBuffer0Template(IntMaxMask.class, bb, offset, (IntMaxMask) m);  // specialize
+    IntVector fromMemorySegment0(MemorySegment ms, long offset, VectorMask<Integer> m, int offsetInRange) {
+        return super.fromMemorySegment0Template(IntMaxMask.class, ms, offset, (IntMaxMask) m, offsetInRange);  // specialize
     }
 
     @ForceInline
@@ -894,22 +911,8 @@ final class IntMaxVector extends IntVector {
     @ForceInline
     @Override
     final
-    void intoByteArray0(byte[] a, int offset) {
-        super.intoByteArray0Template(a, offset);  // specialize
-    }
-
-    @ForceInline
-    @Override
-    final
-    void intoByteArray0(byte[] a, int offset, VectorMask<Integer> m) {
-        super.intoByteArray0Template(IntMaxMask.class, a, offset, (IntMaxMask) m);  // specialize
-    }
-
-    @ForceInline
-    @Override
-    final
-    void intoByteBuffer0(ByteBuffer bb, int offset, VectorMask<Integer> m) {
-        super.intoByteBuffer0Template(IntMaxMask.class, bb, offset, (IntMaxMask) m);
+    void intoMemorySegment0(MemorySegment ms, long offset, VectorMask<Integer> m) {
+        super.intoMemorySegment0Template(IntMaxMask.class, ms, offset, (IntMaxMask) m);
     }
 
 
@@ -918,3 +921,4 @@ final class IntMaxVector extends IntVector {
     // ================================================
 
 }
+

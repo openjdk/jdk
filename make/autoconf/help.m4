@@ -117,6 +117,8 @@ apt_help() {
       PKGHANDLER_COMMAND="sudo apt-get install ccache" ;;
     dtrace)
       PKGHANDLER_COMMAND="sudo apt-get install systemtap-sdt-dev" ;;
+    capstone)
+      PKGHANDLER_COMMAND="sudo apt-get install libcapstone-dev" ;;
   esac
 }
 
@@ -168,6 +170,8 @@ brew_help() {
       PKGHANDLER_COMMAND="brew install freetype" ;;
     ccache)
       PKGHANDLER_COMMAND="brew install ccache" ;;
+    capstone)
+      PKGHANDLER_COMMAND="brew install capstone" ;;
   esac
 }
 
@@ -292,6 +296,13 @@ AC_DEFUN_ONCE([HELP_PRINT_SUMMARY_AND_WARNINGS],
   printf "* OpenJDK target: OS: $OPENJDK_TARGET_OS, CPU architecture: $OPENJDK_TARGET_CPU_ARCH, address length: $OPENJDK_TARGET_CPU_BITS\n"
   printf "* Version string: $VERSION_STRING ($VERSION_SHORT)\n"
 
+  if test "x$SOURCE_DATE" != xupdated; then
+    source_date_info="$SOURCE_DATE ($SOURCE_DATE_ISO_8601)"
+  else
+    source_date_info="Determined at build time"
+  fi
+  printf "* Source date:    $source_date_info\n"
+
   printf "\n"
   printf "Tools summary:\n"
   if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
@@ -300,6 +311,13 @@ AC_DEFUN_ONCE([HELP_PRINT_SUMMARY_AND_WARNINGS],
   fi
   printf "* Boot JDK:       $BOOT_JDK_VERSION (at $BOOT_JDK)\n"
   printf "* Toolchain:      $TOOLCHAIN_TYPE ($TOOLCHAIN_DESCRIPTION)\n"
+  if test "x$DEVKIT_NAME" != x; then
+    printf "* Devkit:         $DEVKIT_NAME ($DEVKIT_ROOT)\n"
+  elif test "x$DEVKIT_ROOT" != x; then
+    printf "* Devkit:         $DEVKIT_ROOT\n"
+  elif test "x$SYSROOT" != x; then
+    printf "* Sysroot:        $SYSROOT\n"
+  fi
   printf "* C Compiler:     Version $CC_VERSION_NUMBER (at ${CC#"$FIXPATH "})\n"
   printf "* C++ Compiler:   Version $CXX_VERSION_NUMBER (at ${CXX#"$FIXPATH "})\n"
 

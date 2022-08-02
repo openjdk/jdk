@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,7 +78,7 @@ void ZBarrierSetAssembler::load_at(MacroAssembler* masm,
   __ tst(dst, rscratch1);
   __ br(Assembler::EQ, done);
 
-  __ enter();
+  __ enter(/*strip_ret_addr*/true);
 
   __ push_call_clobbered_registers_except(RegSet::of(dst));
 
@@ -237,7 +237,7 @@ void ZBarrierSetAssembler::generate_c1_load_barrier_stub(LIR_Assembler* ce,
   assert_different_registers(ref, ref_addr, noreg);
 
   // Save r0 unless it is the result or tmp register
-  // Set up SP to accomodate parameters and maybe r0..
+  // Set up SP to accommodate parameters and maybe r0..
   if (ref != r0 && tmp != r0) {
     __ sub(sp, sp, 32);
     __ str(r0, Address(sp, 16));
@@ -252,7 +252,7 @@ void ZBarrierSetAssembler::generate_c1_load_barrier_stub(LIR_Assembler* ce,
   __ far_call(stub->runtime_stub());
 
   // Verify result
-  __ verify_oop(r0, "Bad oop");
+  __ verify_oop(r0);
 
   // Move result into place
   if (ref != r0) {

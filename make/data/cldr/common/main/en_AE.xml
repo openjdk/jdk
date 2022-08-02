@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2021 Unicode, Inc.
+<!-- Copyright © 1991-2022 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 
-Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
 UAE English locale, based on US English orthography, formats from en_001
+Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
 -->
 <ldml>
 	<identity>
@@ -36,6 +36,7 @@ UAE English locale, based on US English orthography, formats from en_001
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>dd/MM/r</pattern>
+							<datetimeSkeleton>rMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -123,6 +124,7 @@ UAE English locale, based on US English orthography, formats from en_001
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>dd/MM/y GGGGG</pattern>
+							<datetimeSkeleton>GGGGGyMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -213,6 +215,7 @@ UAE English locale, based on US English orthography, formats from en_001
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>dd/MM/y</pattern>
+							<datetimeSkeleton>yMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>

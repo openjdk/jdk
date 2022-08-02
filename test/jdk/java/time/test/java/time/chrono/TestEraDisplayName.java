@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,15 +120,15 @@ public class TestEraDisplayName {
             { ThaiBuddhistEra.BE,           TextStyle.NARROW, THAI,         "\u0e1e.\u0e28." },
 
             // MinguoEra
-            { MinguoEra.BEFORE_ROC, TextStyle.FULL,     Locale.US,      "Before R.O.C." },
+            { MinguoEra.BEFORE_ROC, TextStyle.FULL,     Locale.US,      "B.R.O.C." },
             { MinguoEra.ROC,        TextStyle.FULL,     Locale.US,      "Minguo" },
             { MinguoEra.BEFORE_ROC, TextStyle.FULL,     Locale.TAIWAN,  "\u6c11\u570b\u524d" },
             { MinguoEra.ROC,        TextStyle.FULL,     Locale.TAIWAN,  "\u6c11\u570b" },
-            { MinguoEra.BEFORE_ROC, TextStyle.SHORT,    Locale.US,      "Before R.O.C." },
+            { MinguoEra.BEFORE_ROC, TextStyle.SHORT,    Locale.US,      "B.R.O.C." },
             { MinguoEra.ROC,        TextStyle.SHORT,    Locale.US,      "Minguo" },
             { MinguoEra.BEFORE_ROC, TextStyle.SHORT,    Locale.TAIWAN,  "\u6c11\u570b\u524d" },
             { MinguoEra.ROC,        TextStyle.SHORT,    Locale.TAIWAN,  "\u6c11\u570b" },
-            { MinguoEra.BEFORE_ROC, TextStyle.NARROW,   Locale.US,      "Before R.O.C." },
+            { MinguoEra.BEFORE_ROC, TextStyle.NARROW,   Locale.US,      "B.R.O.C." },
             { MinguoEra.ROC,        TextStyle.NARROW,   Locale.US,      "Minguo" },
             { MinguoEra.BEFORE_ROC, TextStyle.NARROW,   Locale.TAIWAN,  "\u6c11\u570b\u524d" },
             { MinguoEra.ROC,        TextStyle.NARROW,   Locale.TAIWAN,  "\u6c11\u570b" },

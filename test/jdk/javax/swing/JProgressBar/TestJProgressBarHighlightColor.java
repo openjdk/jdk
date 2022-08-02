@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,7 +103,7 @@ public class TestJProgressBarHighlightColor {
                     panel.add(progressBar, BorderLayout.CENTER);
                     frame = new JFrame("TestSelectedTextBackgroundColor");
                     frame.add(panel);
-                    frame.setSize(200, 200);
+                    frame.setSize(400, 400);
                     frame.setAlwaysOnTop(true);
                     frame.setLocationRelativeTo(null);
                     frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);

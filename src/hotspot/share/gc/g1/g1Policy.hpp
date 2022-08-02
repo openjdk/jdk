@@ -331,8 +331,7 @@ public:
   void record_concurrent_mark_cleanup_start();
   void record_concurrent_mark_cleanup_end(bool has_rebuilt_remembered_sets);
 
-  bool next_gc_should_be_mixed(const char* true_action_str,
-                               const char* false_action_str) const;
+  bool next_gc_should_be_mixed(const char* no_candidates_str) const;
 
   // Amount of allowed waste in bytes in the collection set.
   size_t allowed_waste_in_collection_set() const;
@@ -382,7 +381,7 @@ public:
   // This must be called at the very beginning of an evacuation pause.
   void decide_on_concurrent_start_pause();
 
-  size_t young_list_target_length() const { return _young_list_target_length; }
+  uint young_list_target_length() const { return _young_list_target_length; }
 
   bool should_allocate_mutator_region() const;
 

@@ -39,8 +39,8 @@
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "interpreter/interpreter.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/sharedRuntime.hpp"
-#include "runtime/thread.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "vm_version_ppc.hpp"
 

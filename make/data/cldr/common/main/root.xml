@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2021 Unicode, Inc.
+<!-- Copyright © 1991-2022 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 
 the U.S. and other countries. CLDR data files are interpreted according to
 the LDML specification (http://unicode.org/reports/tr35/) Proper interpretation
 of these files requires synthesis of missing items, as per ​http://unicode.org/repos/cldr/trunk/specs/ldml/tr35-general.html#Annotations
-Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 for derived annotations.
+Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
 -->
 <ldml>
 	<identity>
@@ -360,21 +360,25 @@ for derived annotations.
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern>r(U) MMMM d, EEEE</pattern>
+							<datetimeSkeleton>rMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>r(U) MMMM d</pattern>
+							<datetimeSkeleton>rMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>r MMM d</pattern>
+							<datetimeSkeleton>rMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>r-MM-dd</pattern>
+							<datetimeSkeleton>rMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -412,9 +416,12 @@ for derived annotations.
 						<dateFormatItem id="EBhms">E h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="Ed">d, E</dateFormatItem>
 						<dateFormatItem id="Gy">r U</dateFormatItem>
-						<dateFormatItem id="GyMMM">r(U) MMM</dateFormatItem>
+						<dateFormatItem id="GyMMM">r MMM</dateFormatItem>
 						<dateFormatItem id="GyMMMd">r MMM d</dateFormatItem>
-						<dateFormatItem id="GyMMMEd">r(U) MMM d, E</dateFormatItem>
+						<dateFormatItem id="GyMMMEd">r MMM d, E</dateFormatItem>
+						<dateFormatItem id="GyMMMM">r(U) MMMM</dateFormatItem>
+						<dateFormatItem id="GyMMMMd">r(U) MMMM d</dateFormatItem>
+						<dateFormatItem id="GyMMMMEd">r(U) MMMM d, E</dateFormatItem>
 						<dateFormatItem id="h">h a</dateFormatItem>
 						<dateFormatItem id="H">HH</dateFormatItem>
 						<dateFormatItem id="hm">h:mm a</dateFormatItem>
@@ -439,10 +446,12 @@ for derived annotations.
 						<dateFormatItem id="yyyyM">r-MM</dateFormatItem>
 						<dateFormatItem id="yyyyMd">r-MM-dd</dateFormatItem>
 						<dateFormatItem id="yyyyMEd">r-MM-dd, E</dateFormatItem>
-						<dateFormatItem id="yyyyMMM">r(U) MMM</dateFormatItem>
+						<dateFormatItem id="yyyyMMM">r MMM</dateFormatItem>
 						<dateFormatItem id="yyyyMMMd">r MMM d</dateFormatItem>
-						<dateFormatItem id="yyyyMMMEd">r(U) MMM d, E</dateFormatItem>
+						<dateFormatItem id="yyyyMMMEd">r MMM d, E</dateFormatItem>
 						<dateFormatItem id="yyyyMMMM">r(U) MMMM</dateFormatItem>
+						<dateFormatItem id="yyyyMMMMd">r(U) MMMM d</dateFormatItem>
+						<dateFormatItem id="yyyyMMMMEd">r(U) MMMM d, E</dateFormatItem>
 						<dateFormatItem id="yyyyQQQ">r(U) QQQ</dateFormatItem>
 						<dateFormatItem id="yyyyQQQQ">r(U) QQQQ</dateFormatItem>
 					</availableFormats>
@@ -860,21 +869,25 @@ for derived annotations.
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern>G y MMMM d, EEEE</pattern>
+							<datetimeSkeleton>GyMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>G y MMMM d</pattern>
+							<datetimeSkeleton>GyMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>G y MMM d</pattern>
+							<datetimeSkeleton>GyMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>GGGGG y-MM-dd</pattern>
+							<datetimeSkeleton>GGGGGyMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -916,6 +929,7 @@ for derived annotations.
 						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">G y</dateFormatItem>
+						<dateFormatItem id="GyMd">GGGGG y-MM-dd</dateFormatItem>
 						<dateFormatItem id="GyMMM">G y MMM</dateFormatItem>
 						<dateFormatItem id="GyMMMd">G y MMM d</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">G y MMM d, E</dateFormatItem>
@@ -1262,21 +1276,25 @@ for derived annotations.
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern>y MMMM d, EEEE</pattern>
+							<datetimeSkeleton>yMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>y MMMM d</pattern>
+							<datetimeSkeleton>yMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>y MMM d</pattern>
+							<datetimeSkeleton>yMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>y-MM-dd</pattern>
+							<datetimeSkeleton>yMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -1284,21 +1302,25 @@ for derived annotations.
 					<timeFormatLength type="full">
 						<timeFormat>
 							<pattern>HH:mm:ss zzzz</pattern>
+							<datetimeSkeleton>HHmmsszzzz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="long">
 						<timeFormat>
 							<pattern>HH:mm:ss z</pattern>
+							<datetimeSkeleton>HHmmssz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="medium">
 						<timeFormat>
 							<pattern>HH:mm:ss</pattern>
+							<datetimeSkeleton>HHmmss</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="short">
 						<timeFormat>
 							<pattern>HH:mm</pattern>
+							<datetimeSkeleton>HHmm</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 				</timeFormats>
@@ -1337,6 +1359,7 @@ for derived annotations.
 						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">G y</dateFormatItem>
+						<dateFormatItem id="GyMd">GGGGG y-MM-dd</dateFormatItem>
 						<dateFormatItem id="GyMMM">G y MMM</dateFormatItem>
 						<dateFormatItem id="GyMMMd">G y MMM d</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">G y MMM d, E</dateFormatItem>
@@ -2890,6 +2913,9 @@ for derived annotations.
 			<zone type="America/Lower_Princes">
 				<exemplarCity>Lower Prince’s Quarter</exemplarCity>
 			</zone>
+			<zone type="Europe/Kiev">
+				<exemplarCity>Kyiv</exemplarCity>
+			</zone>
 			<zone type="America/North_Dakota/Beulah">
 				<exemplarCity>Beulah, North Dakota</exemplarCity>
 			</zone>
@@ -3010,6 +3036,9 @@ for derived annotations.
 			<alias source="locale" path="../symbols[@numberSystem='latn']"/>
 		</symbols>
 		<symbols numberSystem="hanidec">
+			<alias source="locale" path="../symbols[@numberSystem='latn']"/>
+		</symbols>
+		<symbols numberSystem="hmnp">
 			<alias source="locale" path="../symbols[@numberSystem='latn']"/>
 		</symbols>
 		<symbols numberSystem="java">
@@ -3810,9 +3839,6 @@ for derived annotations.
 			<currency type="BWP">
 				<symbol alt="narrow">P</symbol>
 			</currency>
-			<currency type="BYN">
-				<symbol alt="narrow">р.</symbol>
-			</currency>
 			<currency type="BZD">
 				<symbol alt="narrow">$</symbol>
 			</currency>
@@ -4013,9 +4039,6 @@ for derived annotations.
 			</currency>
 			<currency type="RUB">
 				<symbol alt="narrow">₽</symbol>
-			</currency>
-			<currency type="RUR">
-				<symbol alt="narrow">р.</symbol>
 			</currency>
 			<currency type="RWF">
 				<symbol alt="narrow">RF</symbol>
@@ -4435,6 +4458,10 @@ for derived annotations.
 				<displayName>mmol/L</displayName>
 				<unitPattern count="other">{0} mmol/L</unitPattern>
 			</unit>
+			<unit type="concentr-item">
+				<displayName>item</displayName>
+				<unitPattern count="other">{0} item</unitPattern>
+			</unit>
 			<unit type="concentr-permillion">
 				<displayName>ppm</displayName>
 				<unitPattern count="other">{0} ppm</unitPattern>
@@ -4640,6 +4667,10 @@ for derived annotations.
 			<unit type="force-newton">
 				<displayName>N</displayName>
 				<unitPattern count="other">{0} N</unitPattern>
+			</unit>
+			<unit type="force-kilowatt-hour-per-100-kilometer">
+				<displayName>kWh/100km</displayName>
+				<unitPattern count="other">{0} kWh/100km</unitPattern>
 			</unit>
 			<unit type="frequency-gigahertz">
 				<displayName>GHz</displayName>

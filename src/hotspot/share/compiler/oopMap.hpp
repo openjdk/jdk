@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "code/compressedStream.hpp"
 #include "code/vmreg.hpp"
 #include "memory/allocation.hpp"
+#include "memory/iterator.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "utilities/growableArray.hpp"
 
@@ -44,6 +45,8 @@ enum class DerivedPointerIterationMode;
 class frame;
 class RegisterMap;
 class OopClosure;
+class CodeBlob;
+class ImmutableOopMap;
 
 enum class derived_pointer : intptr_t {};
 
@@ -147,9 +150,14 @@ public:
 class OopMap: public ResourceObj {
   friend class OopMapStream;
   friend class VMStructs;
+  friend class OopMapSet;
+  friend class OopMapSort;
  private:
   int  _pc_offset; // offset in the code that this OopMap corresponds to
   int  _omv_count; // number of OopMapValues in the stream
+  int  _num_oops;  // number of oops
+  int  _index;     // index in OopMapSet
+  bool _has_derived_oops;
   CompressedWriteStream* _write_stream;
 
   debug_only( OopMapValue::oop_types* _locs_used; int _locs_length;)
@@ -158,10 +166,11 @@ class OopMap: public ResourceObj {
   int omv_count() const                       { return _omv_count; }
   void set_omv_count(int value)               { _omv_count = value; }
   void increment_count()                      { _omv_count++; }
+  void increment_num_oops()                   { _num_oops++; }
+  void set_has_derived_oops(bool value)       { _has_derived_oops = value; }
   CompressedWriteStream* write_stream() const { return _write_stream; }
   void set_write_stream(CompressedWriteStream* value) { _write_stream = value; }
 
- private:
   enum DeepCopyToken { _deep_copy_token };
   OopMap(DeepCopyToken, OopMap* source);  // used only by deep_copy
 
@@ -176,6 +185,9 @@ class OopMap: public ResourceObj {
   int count() const { return _omv_count; }
   int data_size() const  { return write_stream()->position(); }
   address data() const { return write_stream()->buffer(); }
+  int num_oops() const { return _num_oops; }
+  bool has_derived_oops() const { return _has_derived_oops; }
+  int index() const { return _index; }
 
   // Construction
   // frame_size units are stack-slots (4 bytes) NOT intptr_t; we can name odd
@@ -187,6 +199,7 @@ class OopMap: public ResourceObj {
 
   int heap_size() const;
   void copy_data_to(address addr) const;
+  void copy_and_sort_data_to(address addr) const;
   OopMap* deep_copy();
 
   bool legal_vm_reg_name(VMReg local) {
@@ -204,7 +217,7 @@ class OopMapSet : public ResourceObj {
  private:
   GrowableArray<OopMap*> _list;
 
-  void add(OopMap* value) { _list.append(value); }
+  int add(OopMap* value) { return _list.append(value); }
 
  public:
   OopMapSet();
@@ -215,23 +228,29 @@ class OopMapSet : public ResourceObj {
   OopMap* at(int index) const { return _list.at(index); }
 
   // Collect OopMaps.
-  void add_gc_map(int pc, OopMap* map);
+  int add_gc_map(int pc, OopMap* map);
 
   // Methods oops_do() and all_do() filter out NULL oops and
   // oop == CompressedOops::base() before passing oops
   // to closures.
 
+  static const ImmutableOopMap* find_map(const CodeBlob* cb, address pc);
+  static const ImmutableOopMap* find_map(const frame *fr);
+
   // Iterates through frame for a compiled method
+  static void oops_do            (const frame* fr,
+                                  const RegisterMap* reg_map,
+                                  OopClosure* f,
+                                  DerivedOopClosure* df);
   static void oops_do            (const frame* fr,
                                   const RegisterMap* reg_map,
                                   OopClosure* f,
                                   DerivedPointerIterationMode mode);
   static void update_register_map(const frame* fr, RegisterMap *reg_map);
 
-  // Iterates through frame for a compiled method for dead ones and values, too
-  static void all_do(const frame* fr, const RegisterMap* reg_map,
-                     OopClosure* oop_fn,
-                     void derived_oop_fn(oop* base, derived_pointer* derived, OopClosure* oop_fn));
+#ifndef PRODUCT
+  static void trace_codeblob_maps(const frame *fr, const RegisterMap *reg_map);
+#endif
 
   // Printing
   void print_on(outputStream* st) const;
@@ -240,23 +259,46 @@ class OopMapSet : public ResourceObj {
 
 class ImmutableOopMapBuilder;
 
+class OopMapClosure : public Closure {
+ public:
+  virtual bool handle_type(OopMapValue::oop_types type) { return true; }
+  virtual void do_value(VMReg reg, OopMapValue::oop_types type) = 0;
+};
+
+template <typename OopFnT, typename DerivedOopFnT, typename ValueFilterT>
+class OopMapDo;
+
 class ImmutableOopMap {
   friend class OopMapStream;
   friend class VMStructs;
+  template <typename OopFnT, typename DerivedOopFnT, typename ValueFilterT>
+  friend class OopMapDo;
 #ifdef ASSERT
   friend class ImmutableOopMapBuilder;
 #endif
 private:
   int _count; // contains the number of entries in this OopMap
+  int _num_oops;
+  bool _has_derived_oops;
 
   address data_addr() const { return (address) this + sizeof(ImmutableOopMap); }
 public:
   ImmutableOopMap(const OopMap* oopmap);
 
   int count() const { return _count; }
+  int num_oops() const { return _num_oops; }
+  bool has_derived_oops() const { return _has_derived_oops; }
+  bool has_any(OopMapValue::oop_types type) const;
+
 #ifdef ASSERT
   int nr_of_bytes() const; // this is an expensive operation, only used in debug builds
 #endif
+
+  void oops_do(const frame* fr, const RegisterMap* reg_map, OopClosure* f, DerivedOopClosure* df) const;
+  void oops_do(const frame* fr, const RegisterMap* reg_map, OopClosure* f, DerivedPointerIterationMode derived_mode) const;
+  void all_type_do(const frame *fr, OopMapValue::oop_types type, OopMapClosure* fn) const;
+  void all_type_do(const frame *fr, OopMapClosure* fn) const;
+  void update_register_map(const frame* fr, RegisterMap *reg_map) const;
 
   // Printing
   void print_on(outputStream* st) const;
@@ -303,7 +345,9 @@ public:
 
   static ImmutableOopMapSet* build_from(const OopMapSet* oopmap_set);
 
+  int find_slot_for_offset(int pc_offset) const;
   const ImmutableOopMap* find_map_at_offset(int pc_offset) const;
+  const ImmutableOopMap* find_map_at_slot(int slot, int pc_offset) const;
 
   const ImmutableOopMapPair* pair_at(int index) const { assert(index >= 0 && index < _count, "check"); return &get_pairs()[index]; }
 
@@ -316,7 +360,7 @@ public:
 
 class OopMapStream : public StackObj {
  private:
-  CompressedReadStream* _stream;
+  CompressedReadStream _stream;
   int _size;
   int _position;
   bool _valid_omv;
@@ -324,13 +368,13 @@ class OopMapStream : public StackObj {
   void find_next();
 
  public:
-  OopMapStream(OopMap* oop_map);
+  OopMapStream(const OopMap* oop_map);
   OopMapStream(const ImmutableOopMap* oop_map);
   bool is_done()                        { if(!_valid_omv) { find_next(); } return !_valid_omv; }
   void next()                           { find_next(); }
   OopMapValue current()                 { return _omv; }
 #ifdef ASSERT
-  int stream_position() const           { return _stream->position(); }
+  int stream_position() const           { return _stream.position(); }
 #endif
 };
 
@@ -403,6 +447,29 @@ private:
   void fill(ImmutableOopMapSet* set, int size);
 };
 
+class SkipNullValue {
+public:
+  static inline bool should_skip(oop val);
+};
+
+class IncludeAllValues {
+public:
+  static bool should_skip(oop value) { return false; }
+};
+
+template <typename OopFnT, typename DerivedOopFnT, typename ValueFilterT>
+class OopMapDo {
+private:
+  OopFnT* _oop_fn;
+  DerivedOopFnT* _derived_oop_fn;
+public:
+  OopMapDo(OopFnT* oop_fn, DerivedOopFnT* derived_oop_fn) : _oop_fn(oop_fn), _derived_oop_fn(derived_oop_fn) {}
+  template <typename RegisterMapT>
+  void oops_do(const frame* fr, const RegisterMapT* reg_map, const ImmutableOopMap* oopmap);
+private:
+  template <typename RegisterMapT>
+  void iterate_oops_do(const frame *fr, const RegisterMapT *reg_map, const ImmutableOopMap* oopmap);
+};
 
 // Derived pointer support. This table keeps track of all derived points on a
 // stack.  It is cleared before each scavenge/GC.  During the traversal of all

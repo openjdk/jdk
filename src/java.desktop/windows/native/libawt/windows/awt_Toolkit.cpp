@@ -530,7 +530,7 @@ void ToolkitThreadProc(void *param)
     JNIEnv *env;
     JavaVMAttachArgs attachArgs;
     attachArgs.version  = JNI_VERSION_1_2;
-    attachArgs.name     = "AWT-Windows";
+    attachArgs.name     = (char*)"AWT-Windows";
     attachArgs.group    = data->threadGroup;
 
     jint res = jvm->AttachCurrentThreadAsDaemon((void **)&env, &attachArgs);

@@ -70,7 +70,7 @@ abstract class SunFileWriter extends AudioFileWriter {
      * Protected helper method to read 64 bits and changing the order of
      * each bytes.
      * @return 32 bits swapped value.
-     * @exception IOException
+     * @throws IOException
      */
     final int rllong(DataInputStream dis) throws IOException {
 
@@ -112,7 +112,7 @@ abstract class SunFileWriter extends AudioFileWriter {
      * rlshort
      * Protected helper method to read 16 bits value. Swap high with low byte.
      * @return the swapped value.
-     * @exception IOException
+     * @throws IOException
      */
     final short rlshort(DataInputStream dis)  throws IOException {
 

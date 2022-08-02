@@ -201,6 +201,24 @@ bool PhaseIdealLoop::split_up( Node *n, Node *blk1, Node *blk2 ) {
       return true;
     }
   }
+  if (n->Opcode() == Op_OpaqueLoopStride || n->Opcode() == Op_OpaqueLoopInit) {
+    Unique_Node_List wq;
+    wq.push(n);
+    for (uint i = 0; i < wq.size(); i++) {
+      Node* m = wq.at(i);
+      if (m->is_If()) {
+        assert(skeleton_predicate_has_opaque(m->as_If()), "opaque node not reachable from if?");
+        Node* bol = clone_skeleton_predicate_bool(m, NULL, NULL, m->in(0));
+        _igvn.replace_input_of(m, 1, bol);
+      } else {
+        assert(!m->is_CFG(), "not CFG expected");
+        for (DUIterator_Fast jmax, j = m->fast_outs(jmax); j < jmax; j++) {
+          Node* u = m->fast_out(j);
+          wq.push(u);
+        }
+      }
+    }
+  }
 
   // See if splitting-up a Store.  Any anti-dep loads must go up as
   // well.  An anti-dep load might be in the wrong block, because in

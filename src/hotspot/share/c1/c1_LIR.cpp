@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -186,7 +186,6 @@ bool LIR_Opr::is_oop() const {
 void LIR_Op2::verify() const {
 #ifdef ASSERT
   switch (code()) {
-    case lir_cmove:
     case lir_xchg:
       break;
 
@@ -237,8 +236,7 @@ void LIR_Op2::verify() const {
 
 
 LIR_OpBranch::LIR_OpBranch(LIR_Condition cond, BlockBegin* block)
-  : LIR_Op(lir_branch, LIR_OprFact::illegalOpr, (CodeEmitInfo*)NULL)
-  , _cond(cond)
+  : LIR_Op2(lir_branch, cond, LIR_OprFact::illegalOpr, LIR_OprFact::illegalOpr, (CodeEmitInfo*)NULL)
   , _label(block->label())
   , _block(block)
   , _ublock(NULL)
@@ -246,8 +244,7 @@ LIR_OpBranch::LIR_OpBranch(LIR_Condition cond, BlockBegin* block)
 }
 
 LIR_OpBranch::LIR_OpBranch(LIR_Condition cond, CodeStub* stub) :
-  LIR_Op(lir_branch, LIR_OprFact::illegalOpr, (CodeEmitInfo*)NULL)
-  , _cond(cond)
+  LIR_Op2(lir_branch, cond, LIR_OprFact::illegalOpr, LIR_OprFact::illegalOpr, (CodeEmitInfo*)NULL)
   , _label(stub->entry())
   , _block(NULL)
   , _ublock(NULL)
@@ -255,8 +252,7 @@ LIR_OpBranch::LIR_OpBranch(LIR_Condition cond, CodeStub* stub) :
 }
 
 LIR_OpBranch::LIR_OpBranch(LIR_Condition cond, BlockBegin* block, BlockBegin* ublock)
-  : LIR_Op(lir_cond_float_branch, LIR_OprFact::illegalOpr, (CodeEmitInfo*)NULL)
-  , _cond(cond)
+  : LIR_Op2(lir_cond_float_branch, cond, LIR_OprFact::illegalOpr, LIR_OprFact::illegalOpr, (CodeEmitInfo*)NULL)
   , _label(block->label())
   , _block(block)
   , _ublock(ublock)
@@ -278,13 +274,13 @@ void LIR_OpBranch::change_ublock(BlockBegin* b) {
 }
 
 void LIR_OpBranch::negate_cond() {
-  switch (_cond) {
-    case lir_cond_equal:        _cond = lir_cond_notEqual;     break;
-    case lir_cond_notEqual:     _cond = lir_cond_equal;        break;
-    case lir_cond_less:         _cond = lir_cond_greaterEqual; break;
-    case lir_cond_lessEqual:    _cond = lir_cond_greater;      break;
-    case lir_cond_greaterEqual: _cond = lir_cond_less;         break;
-    case lir_cond_greater:      _cond = lir_cond_lessEqual;    break;
+  switch (cond()) {
+    case lir_cond_equal:        set_cond(lir_cond_notEqual);     break;
+    case lir_cond_notEqual:     set_cond(lir_cond_equal);        break;
+    case lir_cond_less:         set_cond(lir_cond_greaterEqual); break;
+    case lir_cond_lessEqual:    set_cond(lir_cond_greater);      break;
+    case lir_cond_greaterEqual: set_cond(lir_cond_less);         break;
+    case lir_cond_greater:      set_cond(lir_cond_lessEqual);    break;
     default: ShouldNotReachHere();
   }
 }
@@ -507,6 +503,13 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
       assert(op->as_OpBranch() != NULL, "must be");
       LIR_OpBranch* opBranch = (LIR_OpBranch*)op;
 
+      assert(opBranch->_tmp1->is_illegal() && opBranch->_tmp2->is_illegal() &&
+             opBranch->_tmp3->is_illegal() && opBranch->_tmp4->is_illegal() &&
+             opBranch->_tmp5->is_illegal(), "not used");
+
+      if (opBranch->_opr1->is_valid()) do_input(opBranch->_opr1);
+      if (opBranch->_opr2->is_valid()) do_input(opBranch->_opr2);
+
       if (opBranch->_info != NULL)     do_info(opBranch->_info);
       assert(opBranch->_result->is_illegal(), "not used");
       if (opBranch->_stub != NULL)     opBranch->stub()->visit(this);
@@ -595,17 +598,19 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
     // to the result operand, otherwise the backend fails
     case lir_cmove:
     {
-      assert(op->as_Op2() != NULL, "must be");
-      LIR_Op2* op2 = (LIR_Op2*)op;
+      assert(op->as_Op4() != NULL, "must be");
+      LIR_Op4* op4 = (LIR_Op4*)op;
 
-      assert(op2->_info == NULL && op2->_tmp1->is_illegal() && op2->_tmp2->is_illegal() &&
-             op2->_tmp3->is_illegal() && op2->_tmp4->is_illegal() && op2->_tmp5->is_illegal(), "not used");
-      assert(op2->_opr1->is_valid() && op2->_opr2->is_valid() && op2->_result->is_valid(), "used");
+      assert(op4->_info == NULL && op4->_tmp1->is_illegal() && op4->_tmp2->is_illegal() &&
+             op4->_tmp3->is_illegal() && op4->_tmp4->is_illegal() && op4->_tmp5->is_illegal(), "not used");
+      assert(op4->_opr1->is_valid() && op4->_opr2->is_valid() && op4->_result->is_valid(), "used");
 
-      do_input(op2->_opr1);
-      do_input(op2->_opr2);
-      do_temp(op2->_opr2);
-      do_output(op2->_result);
+      do_input(op4->_opr1);
+      do_input(op4->_opr2);
+      if (op4->_opr3->is_valid()) do_input(op4->_opr3);
+      if (op4->_opr4->is_valid()) do_input(op4->_opr4);
+      do_temp(op4->_opr2);
+      do_output(op4->_result);
 
       break;
     }
@@ -1049,6 +1054,10 @@ void LIR_Op3::emit_code(LIR_Assembler* masm) {
   masm->emit_op3(this);
 }
 
+void LIR_Op4::emit_code(LIR_Assembler* masm) {
+  masm->emit_op4(this);
+}
+
 void LIR_OpLock::emit_code(LIR_Assembler* masm) {
   masm->emit_lock(this);
   if (stub()) {
@@ -1089,6 +1098,10 @@ LIR_List::LIR_List(Compilation* compilation, BlockBegin* block)
   , _file(NULL)
   , _line(0)
 #endif
+#ifdef RISCV
+  , _cmp_opr1(LIR_OprFact::illegalOpr)
+  , _cmp_opr2(LIR_OprFact::illegalOpr)
+#endif
 { }
 
 
@@ -1106,6 +1119,38 @@ void LIR_List::set_file_and_line(const char * file, int line) {
 }
 #endif
 
+#ifdef RISCV
+void LIR_List::set_cmp_oprs(LIR_Op* op) {
+  switch (op->code()) {
+    case lir_cmp:
+      _cmp_opr1 = op->as_Op2()->in_opr1();
+      _cmp_opr2 = op->as_Op2()->in_opr2();
+      break;
+    case lir_branch: // fall through
+    case lir_cond_float_branch:
+      assert(op->as_OpBranch()->cond() == lir_cond_always ||
+            (_cmp_opr1 != LIR_OprFact::illegalOpr && _cmp_opr2 != LIR_OprFact::illegalOpr),
+            "conditional branches must have legal operands");
+      if (op->as_OpBranch()->cond() != lir_cond_always) {
+        op->as_Op2()->set_in_opr1(_cmp_opr1);
+        op->as_Op2()->set_in_opr2(_cmp_opr2);
+      }
+      break;
+    case lir_cmove:
+      op->as_Op4()->set_in_opr3(_cmp_opr1);
+      op->as_Op4()->set_in_opr4(_cmp_opr2);
+      break;
+#if INCLUDE_ZGC
+    case lir_zloadbarrier_test:
+      _cmp_opr1 = FrameMap::as_opr(t1);
+      _cmp_opr2 = LIR_OprFact::intConst(0);
+      break;
+#endif
+    default:
+      break;
+  }
+}
+#endif
 
 void LIR_List::append(LIR_InsertionBuffer* buffer) {
   assert(this == buffer->lir_list(), "wrong lir list");
@@ -1677,7 +1722,6 @@ const char * LIR_Op::name() const {
      case lir_cmp_l2i:               s = "cmp_l2i";       break;
      case lir_ucmp_fd2i:             s = "ucomp_fd2i";    break;
      case lir_cmp_fd2i:              s = "comp_fd2i";     break;
-     case lir_cmove:                 s = "cmove";         break;
      case lir_add:                   s = "add";           break;
      case lir_sub:                   s = "sub";           break;
      case lir_mul:                   s = "mul";           break;
@@ -1700,6 +1744,8 @@ const char * LIR_Op::name() const {
      case lir_irem:                  s = "irem";          break;
      case lir_fmad:                  s = "fmad";          break;
      case lir_fmaf:                  s = "fmaf";          break;
+     // LIR_Op4
+     case lir_cmove:                 s = "cmove";         break;
      // LIR_OpJavaCall
      case lir_static_call:           s = "static";        break;
      case lir_optvirtual_call:       s = "optvirtual";    break;
@@ -1833,6 +1879,8 @@ void LIR_Op1::print_patch_code(outputStream* out, LIR_PatchCode code) {
 // LIR_OpBranch
 void LIR_OpBranch::print_instr(outputStream* out) const {
   print_condition(out, cond());             out->print(" ");
+  in_opr1()->print(out); out->print(" ");
+  in_opr2()->print(out); out->print(" ");
   if (block() != NULL) {
     out->print("[B%d] ", block()->block_id());
   } else if (stub() != NULL) {
@@ -1913,7 +1961,7 @@ void LIR_OpRoundFP::print_instr(outputStream* out) const {
 
 // LIR_Op2
 void LIR_Op2::print_instr(outputStream* out) const {
-  if (code() == lir_cmove || code() == lir_cmp) {
+  if (code() == lir_cmp || code() == lir_branch || code() == lir_cond_float_branch) {
     print_condition(out, condition());         out->print(" ");
   }
   in_opr1()->print(out);    out->print(" ");
@@ -1964,6 +2012,15 @@ void LIR_Op3::print_instr(outputStream* out) const {
   result_opr()->print(out);
 }
 
+// LIR_Op4
+void LIR_Op4::print_instr(outputStream* out) const {
+  print_condition(out, condition()); out->print(" ");
+  in_opr1()->print(out);             out->print(" ");
+  in_opr2()->print(out);             out->print(" ");
+  in_opr3()->print(out);             out->print(" ");
+  in_opr4()->print(out);             out->print(" ");
+  result_opr()->print(out);
+}
 
 void LIR_OpLock::print_instr(outputStream* out) const {
   hdr_opr()->print(out);   out->print(" ");

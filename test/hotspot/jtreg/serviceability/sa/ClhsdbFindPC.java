@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import jtreg.SkippedException;
  * @test id=xcomp-process
  * @bug 8193124
  * @summary Test the clhsdb 'findpc' command with Xcomp on live process
+ * @requires vm.compMode != "Xcomp"
  * @requires vm.hasSA
  * @requires vm.compiler1.enabled
  * @requires vm.opt.DeoptimizeALot != true
@@ -49,6 +50,7 @@ import jtreg.SkippedException;
  * @requires vm.compMode != "Xcomp"
  * @requires vm.hasSA
  * @requires vm.compiler1.enabled
+ * @requires vm.opt.DeoptimizeALot != true
  * @library /test/lib
  * @run main/othervm/timeout=480 ClhsdbFindPC true true
  */
@@ -59,7 +61,6 @@ import jtreg.SkippedException;
  * @summary Test the clhsdb 'findpc' command w/o Xcomp on live process
  * @requires vm.hasSA
  * @requires vm.compiler1.enabled
- * @requires vm.opt.DeoptimizeALot != true
  * @library /test/lib
  * @run main/othervm/timeout=480 ClhsdbFindPC false false
  */
@@ -68,7 +69,6 @@ import jtreg.SkippedException;
  * @test id=no-xcomp-core
  * @bug 8193124
  * @summary Test the clhsdb 'findpc' command w/o Xcomp on core file
- * @requires vm.compMode != "Xcomp"
  * @requires vm.hasSA
  * @requires vm.compiler1.enabled
  * @library /test/lib

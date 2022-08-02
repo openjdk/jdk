@@ -173,6 +173,18 @@ public:
   bool is_index_range_check() const;
 };
 
+//------------------------------CmpU3Node--------------------------------------
+// Compare 2 unsigned values, returning integer value (-1, 0 or 1).
+class CmpU3Node : public CmpUNode {
+public:
+  CmpU3Node( Node *in1, Node *in2 ) : CmpUNode(in1,in2) {
+    // Since it is not consumed by Bools, it is not really a Cmp.
+    init_class_id(Class_Sub);
+  }
+  virtual int Opcode() const;
+  virtual uint ideal_reg() const { return Op_RegI; }
+};
+
 //------------------------------CmpPNode---------------------------------------
 // Compare 2 pointer values, returning condition codes (-1, 0 or 1).
 class CmpPNode : public CmpNode {
@@ -220,7 +232,19 @@ public:
     // Since it is not consumed by Bools, it is not really a Cmp.
     init_class_id(Class_Sub);
   }
-  virtual int    Opcode() const;
+  virtual int Opcode() const;
+  virtual uint ideal_reg() const { return Op_RegI; }
+};
+
+//------------------------------CmpUL3Node-------------------------------------
+// Compare 2 unsigned long values, returning integer value (-1, 0 or 1).
+class CmpUL3Node : public CmpULNode {
+public:
+  CmpUL3Node( Node *in1, Node *in2 ) : CmpULNode(in1,in2) {
+    // Since it is not consumed by Bools, it is not really a Cmp.
+    init_class_id(Class_Sub);
+  }
+  virtual int Opcode() const;
   virtual uint ideal_reg() const { return Op_RegI; }
 };
 
@@ -376,7 +400,7 @@ public:
 
 //------------------------------AbsFNode---------------------------------------
 // Absolute value a float, a common float-point idiom with a cheap hardware
-// implemention on most chips.  Since a naive graph involves control flow, we
+// implementation on most chips.  Since a naive graph involves control flow, we
 // "match" it in the ideal world (so the control flow can be removed).
 class AbsFNode : public AbsNode {
 public:
@@ -388,7 +412,7 @@ public:
 
 //------------------------------AbsDNode---------------------------------------
 // Absolute value a double, a common float-point idiom with a cheap hardware
-// implemention on most chips.  Since a naive graph involves control flow, we
+// implementation on most chips.  Since a naive graph involves control flow, we
 // "match" it in the ideal world (so the control flow can be removed).
 class AbsDNode : public AbsNode {
 public:
@@ -546,6 +570,26 @@ public:
   virtual int Opcode() const;
   const Type *bottom_type() const { return TypeInt::SHORT; }
   virtual uint ideal_reg() const { return Op_RegI; }
+};
+
+//-------------------------------ReverseINode--------------------------------
+// reverse bits of an int
+class ReverseINode : public Node {
+public:
+  ReverseINode(Node *c, Node *in1) : Node(c, in1) {}
+  virtual int Opcode() const;
+  const Type *bottom_type() const { return TypeInt::INT; }
+  virtual uint ideal_reg() const { return Op_RegI; }
+};
+
+//-------------------------------ReverseLNode--------------------------------
+// reverse bits of a long
+class ReverseLNode : public Node {
+public:
+  ReverseLNode(Node *c, Node *in1) : Node(c, in1) {}
+  virtual int Opcode() const;
+  const Type *bottom_type() const { return TypeLong::LONG; }
+  virtual uint ideal_reg() const { return Op_RegL; }
 };
 
 #endif // SHARE_OPTO_SUBNODE_HPP

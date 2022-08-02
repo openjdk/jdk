@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,16 +113,17 @@ public class FileMapInfo {
   }
 
   private static void populateMetadataTypeArray(TypeDataBase db) {
-    metadataTypeArray = new Type[8];
+    metadataTypeArray = new Type[9];
 
     metadataTypeArray[0] = db.lookupType("ConstantPool");
     metadataTypeArray[1] = db.lookupType("InstanceKlass");
     metadataTypeArray[2] = db.lookupType("InstanceClassLoaderKlass");
     metadataTypeArray[3] = db.lookupType("InstanceMirrorKlass");
     metadataTypeArray[4] = db.lookupType("InstanceRefKlass");
-    metadataTypeArray[5] = db.lookupType("Method");
-    metadataTypeArray[6] = db.lookupType("ObjArrayKlass");
-    metadataTypeArray[7] = db.lookupType("TypeArrayKlass");
+    metadataTypeArray[5] = db.lookupType("InstanceStackChunkKlass");
+    metadataTypeArray[6] = db.lookupType("Method");
+    metadataTypeArray[7] = db.lookupType("ObjArrayKlass");
+    metadataTypeArray[8] = db.lookupType("TypeArrayKlass");
   }
 
   public FileMapHeader getHeader() {

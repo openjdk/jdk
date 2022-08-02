@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2021, 2022, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,23 @@
 #include "gc/shenandoah/shenandoahTaskqueue.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/shenandoahVerifier.hpp"
+#include "runtime/continuation.hpp"
+
+void ShenandoahMark::start_mark() {
+  // Tell the sweeper that we start a marking cycle.
+  if (!Continuations::is_gc_marking_cycle_active()) {
+    Continuations::on_gc_marking_cycle_start();
+  }
+}
+
+void ShenandoahMark::end_mark() {
+  // Tell the sweeper that we finished a marking cycle.
+  // Unlike other GCs, we do not arm the nmethods
+  // when marking terminates.
+  if (!ShenandoahHeap::heap()->is_concurrent_old_mark_in_progress()) {
+    Continuations::on_gc_marking_cycle_finish();
+  }
+}
 
 ShenandoahMarkRefsSuperClosure::ShenandoahMarkRefsSuperClosure(ShenandoahObjToScanQueue* q,  ShenandoahReferenceProcessor* rp, ShenandoahObjToScanQueue* old_q) :
   MetadataVisitingOopIterateClosure(rp),
@@ -59,26 +76,14 @@ void ShenandoahMark::mark_loop_prework(uint w, TaskTerminator *t, ShenandoahRefe
 
   // TODO: We can clean up this if we figure out how to do templated oop closures that
   // play nice with specialized_oop_iterators.
-  if (heap->unload_classes()) {
-    if (update_refs) {
-      using Closure = ShenandoahMarkUpdateRefsMetadataClosure<GENERATION>;
-      Closure cl(q, rp, old);
-      mark_loop_work<Closure, GENERATION, CANCELLABLE, STRING_DEDUP>(&cl, ld, w, t, req);
-    } else {
-      using Closure = ShenandoahMarkRefsMetadataClosure<GENERATION>;
-      Closure cl(q, rp, old);
-      mark_loop_work<Closure, GENERATION, CANCELLABLE, STRING_DEDUP>(&cl, ld, w, t, req);
-    }
+  if (update_refs) {
+    using Closure = ShenandoahMarkUpdateRefsClosure<GENERATION>;
+    Closure cl(q, rp, old);
+    mark_loop_work<Closure, GENERATION, CANCELLABLE, STRING_DEDUP>(&cl, ld, w, t, req);
   } else {
-    if (update_refs) {
-      using Closure = ShenandoahMarkUpdateRefsClosure<GENERATION>;
-      Closure cl(q, rp, old);
-      mark_loop_work<Closure, GENERATION, CANCELLABLE, STRING_DEDUP>(&cl, ld, w, t, req);
-    } else {
-      using Closure = ShenandoahMarkRefsClosure<GENERATION>;
-      Closure cl(q, rp, old);
-      mark_loop_work<Closure, GENERATION, CANCELLABLE, STRING_DEDUP>(&cl, ld, w, t, req);
-    }
+    using Closure = ShenandoahMarkRefsClosure<GENERATION>;
+    Closure cl(q, rp, old);
+    mark_loop_work<Closure, GENERATION, CANCELLABLE, STRING_DEDUP>(&cl, ld, w, t, req);
   }
 
   heap->flush_liveness_cache(w);

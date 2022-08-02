@@ -75,9 +75,9 @@ public class Beans {
      * @param     beanName    the name of the bean within the class-loader.
      *                        For example "sun.beanbox.foobah"
      *
-     * @exception ClassNotFoundException if the class of a serialized
+     * @throws ClassNotFoundException if the class of a serialized
      *              object could not be found.
-     * @exception IOException if an I/O error occurs.
+     * @throws IOException if an I/O error occurs.
      */
 
     public static Object instantiate(ClassLoader cls, String beanName) throws IOException, ClassNotFoundException {
@@ -97,9 +97,9 @@ public class Beans {
      *                        For example "sun.beanbox.foobah"
      * @param     beanContext The BeanContext in which to nest the new bean
      *
-     * @exception ClassNotFoundException if the class of a serialized
+     * @throws ClassNotFoundException if the class of a serialized
      *              object could not be found.
-     * @exception IOException if an I/O error occurs.
+     * @throws IOException if an I/O error occurs.
      * @since 1.2
      */
     @SuppressWarnings("deprecation")
@@ -156,9 +156,9 @@ public class Beans {
      * @param     beanContext The BeanContext in which to nest the new bean
      * @param     initializer The AppletInitializer for the new bean
      *
-     * @exception ClassNotFoundException if the class of a serialized
+     * @throws ClassNotFoundException if the class of a serialized
      *              object could not be found.
-     * @exception IOException if an I/O error occurs.
+     * @throws IOException if an I/O error occurs.
      * @since 1.2
      *
      * @deprecated It is recommended to use
@@ -432,7 +432,7 @@ public class Beans {
      * method is called. This could result in a SecurityException.
      *
      * @param isDesignTime  True if we're in an application builder tool.
-     * @exception  SecurityException  if a security manager exists and its
+     * @throws  SecurityException  if a security manager exists and its
      *             {@code checkPropertiesAccess} method doesn't allow setting
      *              of system properties.
      * @see SecurityManager#checkPropertiesAccess
@@ -459,7 +459,7 @@ public class Beans {
      * method is called. This could result in a SecurityException.
      *
      * @param isGuiAvailable  True if GUI interaction is available.
-     * @exception  SecurityException  if a security manager exists and its
+     * @throws  SecurityException  if a security manager exists and its
      *             {@code checkPropertiesAccess} method doesn't allow setting
      *              of system properties.
      * @see SecurityManager#checkPropertiesAccess

@@ -1,7 +1,7 @@
 [general]
 project=shenandoah
 jbs=JDK
-version=19
+version=20
 
 [checks]
 error=author,committer,reviewers,executable,symlink,message,hg-tag,whitespace,problemlists

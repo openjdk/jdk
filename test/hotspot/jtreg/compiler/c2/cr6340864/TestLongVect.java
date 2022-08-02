@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -432,7 +432,10 @@ public class TestLongVect {
       for (int i=0; i<ARRLEN; i++) {
         errn += verify("test_srav_and: ", i, a0[i], (long)(((long)(ADD_INIT+i) & BIT_MASK)>>VALUE));
       }
-
+      test_reverse_bytes(a0, a1);
+      for (int i=0; i<ARRLEN; i++) {
+        errn += verify("test_reverse_bytes: ", i, a0[i], Long.reverseBytes(a1[i]));
+      }
     }
 
     if (errn > 0)
@@ -853,6 +856,13 @@ public class TestLongVect {
     end = System.currentTimeMillis();
     System.out.println("test_srav_and: " + (end - start));
 
+    start = System.currentTimeMillis();
+    for (int i=0; i<ITERS; i++) {
+      test_reverse_bytes(a0, a1);
+    }
+    end = System.currentTimeMillis();
+    System.out.println("test_reverse_bytes: " + (end - start));
+
     return errn;
   }
 
@@ -1121,6 +1131,11 @@ public class TestLongVect {
   static void test_srav_and(long[] a0, long[] a1, long b) {
     for (int i = 0; i < a0.length; i+=1) {
       a0[i] = (long)((a1[i] & b)>>VALUE);
+    }
+  }
+  static void test_reverse_bytes(long[] a0, long[] a1) {
+    for(int i = 0; i < a0.length; i++) {
+      a0[i] = Long.reverseBytes(a1[i]);
     }
   }
 

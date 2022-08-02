@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,9 @@
 class BytecodeStream;
 
 // The MethodData object collects counts and other profile information
-// during zeroth-tier (interpretive) and first-tier execution.
+// during zeroth-tier (interpreter) and third-tier (C1 with full profiling)
+// execution.
+//
 // The profile is used later by compilation heuristics.  Some heuristics
 // enable use of aggressive (or "heroic") optimizations.  An aggressive
 // optimization often has a down-side, a corner case that it handles
@@ -96,7 +98,7 @@ private:
   } _header;
 
   // The data layout has an arbitrary number of cells, each sized
-  // to accomodate a pointer or an integer.
+  // to accommodate a pointer or an integer.
   intptr_t _cells[1];
 
   // Some types of data layouts need a length field.
@@ -1604,7 +1606,7 @@ public:
 // A MultiBranchData is used to access profiling information for
 // a multi-way branch (*switch bytecodes).  It consists of a series
 // of (count, displacement) pairs, which count the number of times each
-// case was taken and specify the data displacment for each branch target.
+// case was taken and specify the data displacement for each branch target.
 class MultiBranchData : public ArrayData {
   friend class VMStructs;
   friend class JVMCIVMStructs;
@@ -1878,7 +1880,7 @@ public:
 // During interpretation, if profiling in enabled, the interpreter
 // maintains a method data pointer (mdp), which points at the entry
 // in the array corresponding to the current bci.  In the course of
-// intepretation, when a bytecode is encountered that has profile data
+// interpretation, when a bytecode is encountered that has profile data
 // associated with it, the entry pointed to by mdp is updated, then the
 // mdp is adjusted to point to the next appropriate DataLayout.  If mdp
 // is NULL to begin with, the interpreter assumes that the current method

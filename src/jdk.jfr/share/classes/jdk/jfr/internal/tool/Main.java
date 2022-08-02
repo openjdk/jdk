@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,9 @@
 
 package jdk.jfr.internal.tool;
 
+import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Deque;
-import java.util.LinkedList;
 
 /**
  * Launcher class for the JDK_HOME\bin\jfr tool
@@ -40,7 +40,7 @@ public final class Main {
     private static final int EXIT_WRONG_ARGUMENTS = 2;
 
     public static void main(String... args) {
-        Deque<String> argList = new LinkedList<>(Arrays.asList(args));
+        Deque<String> argList = new ArrayDeque<>(Arrays.asList(args));
         if (argList.isEmpty()) {
             System.out.println(Command.title);
             System.out.println();
@@ -66,7 +66,7 @@ public final class Main {
             System.out.println();
             System.out.println(" jfr print --json --events CPULoad recording.jfr");
             System.out.println();
-            char q = Print.quoteCharacter();
+            char q = Command.quoteCharacter();
             System.out.println(" jfr print --categories " + q + "GC,JVM,Java*" + q + " recording.jfr");
             System.out.println();
             System.out.println(" jfr print --events " + q + "jdk.*" + q + " --stack-depth 64 recording.jfr");

@@ -63,11 +63,13 @@ requires.properties= \
     vm.debug \
     vm.hasSA \
     vm.hasJFR \
+    vm.hasDTrace \
     vm.rtm.cpu \
     vm.rtm.compiler \
     vm.cds \
     vm.cds.custom.loaders \
     vm.cds.write.archived.java.heap \
+    vm.continuations \
     vm.jvmti \
     vm.graal.enabled \
     vm.compiler1.enabled \

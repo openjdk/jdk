@@ -304,14 +304,16 @@ Node* AddNode::IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt) {
     }
   }
 
-  // Convert "x+(0-y)" into "(x-y)"
-  if (op2 == Op_Sub(bt) && phase->type(in2->in(1)) == TypeInteger::zero(bt)) {
-    return SubNode::make(in1, in2->in(2), bt);
+  // Convert (con - y) + x into "(x - y) + con"
+  if (op1 == Op_Sub(bt) && in1->in(1)->Opcode() == Op_ConIL(bt)
+      && in1 != in1->in(2) && !(in1->in(2)->is_Phi() && in1->in(2)->as_Phi()->is_tripcount(bt))) {
+    return AddNode::make(phase->transform(SubNode::make(in2, in1->in(2), bt)), in1->in(1), bt);
   }
 
-  // Convert "(0-y)+x" into "(x-y)"
-  if (op1 == Op_Sub(bt) && phase->type(in1->in(1)) == TypeInteger::zero(bt)) {
-    return SubNode::make(in2, in1->in(2), bt);
+  // Convert x + (con - y) into "(x - y) + con"
+  if (op2 == Op_Sub(bt) && in2->in(1)->Opcode() == Op_ConIL(bt)
+      && in2 != in2->in(2) && !(in2->in(2)->is_Phi() && in2->in(2)->as_Phi()->is_tripcount(bt))) {
+    return AddNode::make(phase->transform(SubNode::make(in1, in2->in(2), bt)), in2->in(1), bt);
   }
 
   // Associative

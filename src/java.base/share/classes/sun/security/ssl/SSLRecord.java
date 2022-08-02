@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,7 +70,7 @@ interface SSLRecord extends Record {
     /*
      * The maximum large record size.
      *
-     * Some SSL/TLS implementations support large fragment upto 2^15 bytes,
+     * Some SSL/TLS implementations support large fragment up to 2^15 bytes,
      * such as Microsoft. We support large incoming fragments.
      *
      * The maximum large record size is defined as maxRecordSize plus 2^14,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
 #include "memory/memRegion.hpp"
 #include "runtime/globals.hpp"
 
-// A very simple data structure representing a contigous word-aligned
+// A very simple data structure representing a contiguous word-aligned
 // region of address space.
 
 MemRegion MemRegion::intersection(const MemRegion mr2) const {

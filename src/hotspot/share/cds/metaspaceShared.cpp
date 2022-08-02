@@ -164,7 +164,7 @@ class DumpClassListCLDClosure : public CLDClosure {
     if (!created) {
       return;
     }
-    if (_dumped_classes.maybe_grow(MAX_TABLE_SIZE)) {
+    if (_dumped_classes.maybe_grow()) {
       log_info(cds, hashtables)("Expanded _dumped_classes table to %d", _dumped_classes.table_size());
     }
     if (ik->java_super()) {
@@ -180,7 +180,7 @@ class DumpClassListCLDClosure : public CLDClosure {
 
 public:
   DumpClassListCLDClosure(fileStream* f)
-  : CLDClosure(), _dumped_classes(INITIAL_TABLE_SIZE) {
+  : CLDClosure(), _dumped_classes(INITIAL_TABLE_SIZE, MAX_TABLE_SIZE) {
     _stream = f;
   }
 
@@ -582,7 +582,7 @@ void VM_PopulateDumpSharedSpace::doit() {
   // There may be pending VM operations. We have changed some global states
   // (such as vmClasses::_klasses) that may cause these VM operations
   // to fail. For safety, forget these operations and exit the VM directly.
-  vm_direct_exit(0);
+  os::_exit(0);
 }
 
 class CollectCLDClosure : public CLDClosure {
@@ -1055,7 +1055,7 @@ MapArchiveResult MetaspaceShared::map_archives(FileMapInfo* static_mapinfo, File
 
   if (dynamic_mapinfo != NULL) {
     // Ensure that the OS won't be able to allocate new memory spaces between the two
-    // archives, or else it would mess up the simple comparision in MetaspaceObj::is_shared().
+    // archives, or else it would mess up the simple comparison in MetaspaceObj::is_shared().
     assert(static_mapinfo->mapping_end_offset() == dynamic_mapinfo->mapping_base_offset(), "no gap");
   }
 
@@ -1580,7 +1580,7 @@ void MetaspaceShared::print_on(outputStream* st) {
     address top = (address)MetaspaceObj::shared_metaspace_top();
     st->print("[" PTR_FORMAT "-" PTR_FORMAT "-" PTR_FORMAT "), ", p2i(base), p2i(static_top), p2i(top));
     st->print("size " SIZE_FORMAT ", ", top - base);
-    st->print("SharedBaseAddress: " PTR_FORMAT ", ArchiveRelocationMode: %d.", SharedBaseAddress, (int)ArchiveRelocationMode);
+    st->print("SharedBaseAddress: " PTR_FORMAT ", ArchiveRelocationMode: %d.", SharedBaseAddress, ArchiveRelocationMode);
   } else {
     st->print("CDS archive(s) not mapped");
   }

@@ -28,6 +28,7 @@
 #include "logging/logLevel.hpp"
 #include "logging/logTag.hpp"
 #include "memory/allStatic.hpp"
+#include "memory/allocation.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/java.hpp"
 #include "runtime/os.hpp"
@@ -35,6 +36,8 @@
 #include "utilities/vmEnums.hpp"
 
 // Arguments parses the command line and recognizes options
+
+class JVMFlag;
 
 // Invocation API hook typedefs (these should really be defined in jni.h)
 extern "C" {
@@ -59,14 +62,15 @@ struct LegacyGCLogging {
 // PathString is used as:
 //  - the underlying value for a SystemProperty
 //  - the path portion of an --patch-module module/path pair
-//  - the string that represents the system boot class path, Arguments::_system_boot_class_path.
+//  - the string that represents the boot class path, Arguments::_boot_class_path.
 class PathString : public CHeapObj<mtArguments> {
  protected:
   char* _value;
  public:
   char* value() const { return _value; }
 
-  bool set_value(const char *value);
+  // return false iff OOM && alloc_failmode == AllocFailStrategy::RETURN_NULL
+  bool set_value(const char *value, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
   void append_value(const char *value);
 
   PathString(const char* value);
@@ -98,7 +102,6 @@ class SystemProperty : public PathString {
   SystemProperty* _next;
   bool            _internal;
   bool            _writeable;
-  bool writeable() { return _writeable; }
 
  public:
   // Accessors
@@ -107,8 +110,9 @@ class SystemProperty : public PathString {
   bool internal() const               { return _internal; }
   SystemProperty* next() const        { return _next; }
   void set_next(SystemProperty* next) { _next = next; }
+  bool writeable() const              { return _writeable; }
 
-  bool is_readable() const {
+  bool readable() const {
     return !_internal || (strcmp(_key, "jdk.boot.class.path.append") == 0 &&
                           value() != NULL);
   }
@@ -120,11 +124,10 @@ class SystemProperty : public PathString {
   // via -Xbootclasspath/a or JVMTI OnLoad phase call to AddToBootstrapClassLoaderSearch.
   // In those cases for jdk.boot.class.path.append, the base class
   // set_value and append_value methods are called directly.
-  bool set_writeable_value(const char *value) {
+  void set_writeable_value(const char *value) {
     if (writeable()) {
-      return set_value(value);
+      set_value(value);
     }
-    return false;
   }
   void append_writeable_value(const char *value) {
     if (writeable()) {
@@ -237,6 +240,7 @@ class Arguments : AllStatic {
   friend class JvmtiExport;
   friend class CodeCacheExtensions;
   friend class ArgumentsTest;
+  friend class LargeOptionsTest;
  public:
   // Operation modi
   enum Mode {
@@ -301,10 +305,10 @@ class Arguments : AllStatic {
   // calls to AddToBootstrapClassLoaderSearch.  This is the
   // final form before ClassLoader::setup_bootstrap_search().
   // Note: since --patch-module is a module name/path pair, the
-  // system boot class path string no longer contains the "prefix"
+  // boot class path string no longer contains the "prefix"
   // to the boot class path base piece as it did when
   // -Xbootclasspath/p was supported.
-  static PathString *_system_boot_class_path;
+  static PathString* _boot_class_path;
 
   // Set if a modular java runtime image is present vs. a build with exploded modules
   static bool _has_jimage;
@@ -462,20 +466,21 @@ class Arguments : AllStatic {
 
   // Return the real name for the flag passed on the command line (either an alias name or "flag_name").
   static const char* real_flag_name(const char *flag_name);
+  static JVMFlag* find_jvm_flag(const char* name, size_t name_length);
 
   // Return the "real" name for option arg if arg is an alias, and print a warning if arg is deprecated.
   // Return NULL if the arg has expired.
-  static const char* handle_aliases_and_deprecation(const char* arg, bool warn);
+  static const char* handle_aliases_and_deprecation(const char* arg);
 
   static char*  SharedArchivePath;
   static char*  SharedDynamicArchivePath;
   static size_t _default_SharedBaseAddress; // The default value specified in globals.hpp
-  static int num_archives(const char* archive_path) NOT_CDS_RETURN_(0);
   static void extract_shared_archive_paths(const char* archive_path,
                                          char** base_archive_path,
                                          char** top_archive_path) NOT_CDS_RETURN;
 
  public:
+  static int num_archives(const char* archive_path) NOT_CDS_RETURN_(0);
   // Parses the arguments, first phase
   static jint parse(const JavaVMInitArgs* args);
   // Parse a string for a unsigned integer.  Returns true if value
@@ -594,21 +599,21 @@ class Arguments : AllStatic {
   static void set_library_path(const char *value) { _java_library_path->set_value(value); }
   static void set_ext_dirs(char *value)     { _ext_dirs = os::strdup_check_oom(value); }
 
-  // Set up the underlying pieces of the system boot class path
+  // Set up the underlying pieces of the boot class path
   static void add_patch_mod_prefix(const char *module_name, const char *path, bool* patch_mod_javabase);
-  static void set_sysclasspath(const char *value, bool has_jimage) {
+  static void set_boot_class_path(const char *value, bool has_jimage) {
     // During start up, set by os::set_boot_path()
-    assert(get_sysclasspath() == NULL, "System boot class path previously set");
-    _system_boot_class_path->set_value(value);
+    assert(get_boot_class_path() == NULL, "Boot class path previously set");
+    _boot_class_path->set_value(value);
     _has_jimage = has_jimage;
   }
   static void append_sysclasspath(const char *value) {
-    _system_boot_class_path->append_value(value);
+    _boot_class_path->append_value(value);
     _jdk_boot_class_path_append->append_value(value);
   }
 
   static GrowableArray<ModulePatchPath*>* get_patch_mod_prefix() { return _patch_mod_prefix; }
-  static char* get_sysclasspath() { return _system_boot_class_path->value(); }
+  static char* get_boot_class_path() { return _boot_class_path->value(); }
   static char* get_jdk_boot_class_path_append() { return _jdk_boot_class_path_append->value(); }
   static bool has_jimage() { return _has_jimage; }
 

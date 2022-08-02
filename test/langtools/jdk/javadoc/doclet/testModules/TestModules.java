@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1184,12 +1184,7 @@ public class TestModules extends JavadocTester {
                     her Modules</button>\
                     </div>
                     <div id="all-modules-table.tabpanel" role="tabpanel">
-                    <div class="summary-table two-column-summary" aria-labelledby="all-modules-table-tab0">""",
-                """
-                    var evenRowColor = "even-row-color";
-                    var oddRowColor = "odd-row-color";
-                    var tableTab = "table-tab";
-                    var activeTableTab = "active-table-tab";""");
+                    <div class="summary-table two-column-summary" aria-labelledby="all-modules-table-tab0">""");
         checkOutput("index.html", false,
                 """
                     <div class="overview-summary">
@@ -1270,12 +1265,7 @@ public class TestModules extends JavadocTester {
                     ackage Group 1</button>\
                     </div>
                     <div id="all-packages-table.tabpanel" role="tabpanel">
-                    <div class="summary-table two-column-summary" aria-labelledby="all-packages-table-tab0">""",
-                """
-                    var evenRowColor = "even-row-color";
-                    var oddRowColor = "odd-row-color";
-                    var tableTab = "table-tab";
-                    var activeTableTab = "active-table-tab";""");
+                    <div class="summary-table two-column-summary" aria-labelledby="all-packages-table-tab0">""");
     }
 
     void checkGroupOptionPackageOrdering() {

@@ -117,8 +117,8 @@ bool frame::safe_for_sender(JavaThread *thread) {
       return false;
     }
 
-    z_abi_160* sender_abi = (z_abi_160*) fp;
-    intptr_t* sender_sp = (intptr_t*) sender_abi->callers_sp;
+    z_abi_16* sender_abi = (z_abi_16*)fp;
+    intptr_t* sender_sp = (intptr_t*) fp;
     address   sender_pc = (address)   sender_abi->return_pc;
 
     // We must always be able to find a recognizable pc.
@@ -142,7 +142,7 @@ bool frame::safe_for_sender(JavaThread *thread) {
     // sender_fp must be within the stack and above (but not
     // equal) current frame's fp.
     if (!thread->is_in_stack_range_excl(sender_fp, fp)) {
-        return false;
+      return false;
     }
 
     // If the potential sender is the interpreter then we can do some more checking.
@@ -215,12 +215,12 @@ frame frame::sender_for_entry_frame(RegisterMap *map) const {
   return fr;
 }
 
-OptimizedEntryBlob::FrameData* OptimizedEntryBlob::frame_data_for_frame(const frame& frame) const {
+UpcallStub::FrameData* UpcallStub::frame_data_for_frame(const frame& frame) const {
   ShouldNotCallThis();
   return nullptr;
 }
 
-bool frame::optimized_entry_frame_is_first() const {
+bool frame::upcall_stub_frame_is_first() const {
   ShouldNotCallThis();
   return false;
 }
@@ -230,71 +230,41 @@ frame frame::sender_for_interpreter_frame(RegisterMap *map) const {
   return frame(sender_sp(), sender_pc(), (intptr_t*)(ijava_state()->sender_sp));
 }
 
-frame frame::sender_for_compiled_frame(RegisterMap *map) const {
-  assert(map != NULL, "map must be set");
-  // Frame owned by compiler.
-
-  address pc = *compiled_sender_pc_addr(_cb);
-  frame caller(compiled_sender_sp(_cb), pc);
-
-  // Now adjust the map.
-
-  // Get the rest.
-  if (map->update_map()) {
-    // Tell GC to use argument oopmaps for some runtime stubs that need it.
-    map->set_include_argument_oops(_cb->caller_must_gc_arguments(map->thread()));
-    if (_cb->oop_maps() != NULL) {
-      OopMapSet::update_register_map(this, map);
-    }
-  }
-
-  return caller;
-}
-
-intptr_t* frame::compiled_sender_sp(CodeBlob* cb) const {
-  return sender_sp();
-}
-
-address* frame::compiled_sender_pc_addr(CodeBlob* cb) const {
-  return sender_pc_addr();
-}
-
-frame frame::sender(RegisterMap* map) const {
-  // Default is we don't have to follow them. The sender_for_xxx will
-  // update it accordingly.
-  map->set_include_argument_oops(false);
-
-  if (is_entry_frame()) {
-    return sender_for_entry_frame(map);
-  }
-  if (is_interpreted_frame()) {
-    return sender_for_interpreter_frame(map);
-  }
-  assert(_cb == CodeCache::find_blob(pc()),"Must be the same");
-  if (_cb != NULL) {
-    return sender_for_compiled_frame(map);
-  }
-  // Must be native-compiled frame, i.e. the marshaling code for native
-  // methods that exists in the core system.
-  return frame(sender_sp(), sender_pc());
-}
-
 void frame::patch_pc(Thread* thread, address pc) {
   assert(_cb == CodeCache::find_blob(pc), "unexpected pc");
+  address* pc_addr = (address*)&(own_abi()->return_pc);
+
   if (TracePcPatching) {
     tty->print_cr("patch_pc at address  " PTR_FORMAT " [" PTR_FORMAT " -> " PTR_FORMAT "] ",
                   p2i(&((address*) _sp)[-1]), p2i(((address*) _sp)[-1]), p2i(pc));
   }
+  assert(!Continuation::is_return_barrier_entry(*pc_addr), "return barrier");
+  assert(_pc == *pc_addr || pc == *pc_addr || 0 == *pc_addr,
+         "must be (pc: " INTPTR_FORMAT " _pc: " INTPTR_FORMAT " pc_addr: " INTPTR_FORMAT
+         " *pc_addr: " INTPTR_FORMAT  " sp: " INTPTR_FORMAT ")",
+         p2i(pc), p2i(_pc), p2i(pc_addr), p2i(*pc_addr), p2i(sp()));
+  DEBUG_ONLY(address old_pc = _pc;)
   own_abi()->return_pc = (uint64_t)pc;
+  _pc = pc; // must be set before call to get_deopt_original_pc
   address original_pc = CompiledMethod::get_deopt_original_pc(this);
   if (original_pc != NULL) {
-    assert(original_pc == _pc, "expected original to be stored before patching");
+    // assert(original_pc == _pc, "expected original to be stored before patching");
     _deopt_state = is_deoptimized;
-    // Leave _pc as is.
+    _pc = original_pc;
   } else {
     _deopt_state = not_deoptimized;
-    _pc = pc;
   }
+  assert(!is_compiled_frame() || !_cb->as_compiled_method()->is_deopt_entry(_pc), "must be");
+
+  #ifdef ASSERT
+  {
+    frame f(this->sp(), pc, this->unextended_sp());
+    assert(f.is_deoptimized_frame() == this->is_deoptimized_frame() && f.pc() == this->pc() && f.raw_pc() == this->raw_pc(),
+           "must be (f.is_deoptimized_frame(): %d this->is_deoptimized_frame(): %d "
+           "f.pc(): " INTPTR_FORMAT " this->pc(): " INTPTR_FORMAT " f.raw_pc(): " INTPTR_FORMAT " this->raw_pc(): " INTPTR_FORMAT ")",
+           f.is_deoptimized_frame(), this->is_deoptimized_frame(), p2i(f.pc()), p2i(this->pc()), p2i(f.raw_pc()), p2i(this->raw_pc()));
+  }
+  #endif
 }
 
 bool frame::is_interpreted_frame_valid(JavaThread* thread) const {
@@ -319,8 +289,8 @@ bool frame::is_interpreted_frame_valid(JavaThread* thread) const {
   // do some validation of frame elements
 
   // first the method
-
-  Method* m = *interpreter_frame_method_addr();
+  // Need to use "unchecked" versions to avoid "z_istate_magic_number" assertion.
+  Method* m = (Method*)(ijava_state_unchecked()->method);
 
   // validate the method we'd find in this potential sender
   if (!Method::is_valid_method(m)) return false;
@@ -335,19 +305,17 @@ bool frame::is_interpreted_frame_valid(JavaThread* thread) const {
   }
 
   // validate bci/bcx
-
-  address  bcp    = interpreter_frame_bcp();
+  address bcp = (address)(ijava_state_unchecked()->bcp);
   if (m->validate_bci_from_bcp(bcp) < 0) {
     return false;
   }
 
   // validate constantPoolCache*
-  ConstantPoolCache* cp = *interpreter_frame_cache_addr();
+  ConstantPoolCache* cp = (ConstantPoolCache*)(ijava_state_unchecked()->cpoolCache);
   if (MetaspaceObj::is_valid(cp) == false) return false;
 
   // validate locals
-
-  address locals =  (address) *interpreter_frame_locals_addr();
+  address locals = (address)(ijava_state_unchecked()->locals);
   return thread->is_in_stack_range_incl(locals, (address)fp());
 }
 
@@ -682,3 +650,13 @@ intptr_t *frame::initial_deoptimization_info() {
   // Used to reset the saved FP.
   return fp();
 }
+
+// Pointer beyond the "oldest/deepest" BasicObjectLock on stack.
+BasicObjectLock* frame::interpreter_frame_monitor_end() const {
+  return interpreter_frame_monitors();
+}
+
+intptr_t* frame::interpreter_frame_tos_at(jint offset) const {
+  return &interpreter_frame_tos_address()[offset];
+}
+

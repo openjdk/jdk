@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -181,19 +181,10 @@ public:
 
   HeapWord* mem_allocate(size_t size, bool*  gc_overhead_limit_was_exceeded);
 
-  // We may support a shared contiguous allocation area, if the youngest
-  // generation does.
-  bool supports_inline_contig_alloc() const;
-  HeapWord* volatile* top_addr() const;
-  HeapWord** end_addr() const;
-
   // Perform a full collection of the heap; intended for use in implementing
   // "System.gc". This implies as full a collection as the CollectedHeap
   // supports. Caller does not hold the Heap_lock on entry.
   virtual void collect(GCCause::Cause cause);
-
-  // The same as above but assume that the caller holds the Heap_lock.
-  void collect_locked(GCCause::Cause cause);
 
   // Perform a full collection of generations up to and including max_generation.
   // Mostly used for testing purposes. Caller does not hold the Heap_lock on entry.
@@ -207,8 +198,10 @@ public:
 
   // Returns true if the reference is to an object in the reserved space
   // for the young generation.
-  // Assumes the the young gen address range is less than that of the old gen.
-  bool is_in_young(oop p);
+  // Assumes the young gen address range is less than that of the old gen.
+  bool is_in_young(oop p) const;
+
+  virtual bool requires_barriers(stackChunkOop obj) const;
 
 #ifdef ASSERT
   bool is_in_partial_collection(const void* p);
@@ -419,11 +412,6 @@ private:
   // iterating over spaces.
   void prepare_for_compaction();
 #endif
-
-  // Perform a full collection of the generations up to and including max_generation.
-  // This is the low level interface used by the public versions of
-  // collect() and collect_locked(). Caller holds the Heap_lock on entry.
-  void collect_locked(GCCause::Cause cause, GenerationType max_generation);
 
   // Save the tops of the spaces in all generations
   void record_gen_tops_before_GC() PRODUCT_RETURN;

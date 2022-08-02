@@ -103,7 +103,7 @@ public abstract class ImageInputStreamImpl implements ImageInputStream {
      * Subclasses may call this method from any of their methods that
      * require the stream not to be closed.
      *
-     * @exception IOException if the stream is closed.
+     * @throws IOException if the stream is closed.
      */
     protected final void checkClosed() throws IOException {
         if (isClosed) {
@@ -134,7 +134,7 @@ public abstract class ImageInputStreamImpl implements ImageInputStream {
      * @return the value of the next byte in the stream, or {@code -1}
      * if EOF is reached.
      *
-     * @exception IOException if the stream has been closed.
+     * @throws IOException if the stream has been closed.
      */
     public abstract int read() throws IOException;
 
@@ -147,9 +147,9 @@ public abstract class ImageInputStreamImpl implements ImageInputStream {
      * @return the number of bytes actually read, or {@code -1}
      * to indicate EOF.
      *
-     * @exception NullPointerException if {@code b} is
+     * @throws NullPointerException if {@code b} is
      * {@code null}.
-     * @exception IOException if an I/O error occurs.
+     * @throws IOException if an I/O error occurs.
      */
     public int read(byte[] b) throws IOException {
         return read(b, 0, b.length);
@@ -175,12 +175,12 @@ public abstract class ImageInputStreamImpl implements ImageInputStream {
      * @return the number of bytes actually read, or {@code -1}
      * to indicate EOF.
      *
-     * @exception IndexOutOfBoundsException if {@code off} is
+     * @throws IndexOutOfBoundsException if {@code off} is
      * negative, {@code len} is negative, or {@code off + len}
      * is greater than {@code b.length}.
-     * @exception NullPointerException if {@code b} is
+     * @throws NullPointerException if {@code b} is
      * {@code null}.
-     * @exception IOException if an I/O error occurs.
+     * @throws IOException if an I/O error occurs.
      */
     public abstract int read(byte[] b, int off, int len) throws IOException;
 
@@ -729,7 +729,7 @@ public abstract class ImageInputStreamImpl implements ImageInputStream {
      * @return an {@code int} representing the number of bytes
      * skipped.
      *
-     * @exception IOException if {@code getStreamPosition}
+     * @throws IOException if {@code getStreamPosition}
      * throws an {@code IOException} when computing either
      * the starting or ending position.
      */
@@ -750,7 +750,7 @@ public abstract class ImageInputStreamImpl implements ImageInputStream {
      * @return a {@code long} representing the number of bytes
      * skipped.
      *
-     * @exception IOException if {@code getStreamPosition}
+     * @throws IOException if {@code getStreamPosition}
      * throws an {@code IOException} when computing either
      * the starting or ending position.
      */
@@ -791,7 +791,7 @@ public abstract class ImageInputStreamImpl implements ImageInputStream {
      * <p> An {@code IOException} will be thrown if the previous
      * marked position lies in the discarded portion of the stream.
      *
-     * @exception IOException if an I/O error occurs.
+     * @throws IOException if an I/O error occurs.
      */
     public void reset() throws IOException {
         if (markByteStack.empty()) {
@@ -865,7 +865,7 @@ public abstract class ImageInputStreamImpl implements ImageInputStream {
      * source.  This method should not be called from application
      * code.
      *
-     * @exception Throwable if an error occurs during superclass
+     * @throws Throwable if an error occurs during superclass
      * finalization.
      *
      * @deprecated Finalization has been deprecated for removal.  See

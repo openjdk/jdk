@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -24,23 +24,24 @@
 
 /*
  * @test
+ * @enablePreview
  * @run testng TestSegmentCopy
  */
 
-import jdk.incubator.foreign.MemoryHandles;
-import jdk.incubator.foreign.MemorySegment;
-import jdk.incubator.foreign.ResourceScope;
-import jdk.incubator.foreign.ValueLayout;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
-
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.MemorySession;
+import java.lang.foreign.ValueLayout;
+import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.IntFunction;
 
-import static jdk.incubator.foreign.ValueLayout.JAVA_BYTE;
+import org.testng.annotations.DataProvider;
+import org.testng.annotations.Test;
+
+import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 import static org.testng.Assert.*;
 
 public class TestSegmentCopy {
@@ -96,21 +97,21 @@ public class TestSegmentCopy {
 
     enum Type {
         // Byte
-        BYTE(byte.class, ValueLayout.JAVA_BYTE, i -> (byte)i),
+        BYTE(byte.class, JAVA_BYTE, i -> (byte)i),
         //LE
-        SHORT_LE(short.class, ValueLayout.JAVA_SHORT.withOrder(ByteOrder.LITTLE_ENDIAN), i -> (short)i),
-        CHAR_LE(char.class, ValueLayout.JAVA_CHAR.withOrder(ByteOrder.LITTLE_ENDIAN), i -> (char)i),
-        INT_LE(int.class, ValueLayout.JAVA_INT.withOrder(ByteOrder.LITTLE_ENDIAN), i -> i),
-        FLOAT_LE(float.class, ValueLayout.JAVA_FLOAT.withOrder(ByteOrder.LITTLE_ENDIAN), i -> (float)i),
-        LONG_LE(long.class, ValueLayout.JAVA_LONG.withOrder(ByteOrder.LITTLE_ENDIAN), i -> (long)i),
-        DOUBLE_LE(double.class, ValueLayout.JAVA_DOUBLE.withOrder(ByteOrder.LITTLE_ENDIAN), i -> (double)i),
+        SHORT_LE(short.class, ValueLayout.JAVA_SHORT.withBitAlignment(8).withOrder(ByteOrder.LITTLE_ENDIAN), i -> (short)i),
+        CHAR_LE(char.class, ValueLayout.JAVA_CHAR.withBitAlignment(8).withOrder(ByteOrder.LITTLE_ENDIAN), i -> (char)i),
+        INT_LE(int.class, ValueLayout.JAVA_INT.withBitAlignment(8).withOrder(ByteOrder.LITTLE_ENDIAN), i -> i),
+        FLOAT_LE(float.class, ValueLayout.JAVA_FLOAT.withBitAlignment(8).withOrder(ByteOrder.LITTLE_ENDIAN), i -> (float)i),
+        LONG_LE(long.class, ValueLayout.JAVA_LONG.withBitAlignment(8).withOrder(ByteOrder.LITTLE_ENDIAN), i -> (long)i),
+        DOUBLE_LE(double.class, ValueLayout.JAVA_DOUBLE.withBitAlignment(8).withOrder(ByteOrder.LITTLE_ENDIAN), i -> (double)i),
         //BE
-        SHORT_BE(short.class, ValueLayout.JAVA_SHORT.withOrder(ByteOrder.BIG_ENDIAN), i -> (short)i),
-        CHAR_BE(char.class, ValueLayout.JAVA_CHAR.withOrder(ByteOrder.BIG_ENDIAN), i -> (char)i),
-        INT_BE(int.class, ValueLayout.JAVA_INT.withOrder(ByteOrder.BIG_ENDIAN), i -> i),
-        FLOAT_BE(float.class, ValueLayout.JAVA_FLOAT.withOrder(ByteOrder.BIG_ENDIAN), i -> (float)i),
-        LONG_BE(long.class, ValueLayout.JAVA_LONG.withOrder(ByteOrder.BIG_ENDIAN), i -> (long)i),
-        DOUBLE_BE(double.class, ValueLayout.JAVA_DOUBLE.withOrder(ByteOrder.BIG_ENDIAN), i -> (double)i);
+        SHORT_BE(short.class, ValueLayout.JAVA_SHORT.withBitAlignment(8).withOrder(ByteOrder.BIG_ENDIAN), i -> (short)i),
+        CHAR_BE(char.class, ValueLayout.JAVA_CHAR.withBitAlignment(8).withOrder(ByteOrder.BIG_ENDIAN), i -> (char)i),
+        INT_BE(int.class, ValueLayout.JAVA_INT.withBitAlignment(8).withOrder(ByteOrder.BIG_ENDIAN), i -> i),
+        FLOAT_BE(float.class, ValueLayout.JAVA_FLOAT.withBitAlignment(8).withOrder(ByteOrder.BIG_ENDIAN), i -> (float)i),
+        LONG_BE(long.class, ValueLayout.JAVA_LONG.withBitAlignment(8).withOrder(ByteOrder.BIG_ENDIAN), i -> (long)i),
+        DOUBLE_BE(double.class, ValueLayout.JAVA_DOUBLE.withBitAlignment(8).withOrder(ByteOrder.BIG_ENDIAN), i -> (double)i);
 
         final ValueLayout layout;
         final IntFunction<Object> valueConverter;
@@ -128,7 +129,7 @@ public class TestSegmentCopy {
         }
 
         VarHandle handle() {
-            return MemoryHandles.varHandle(layout);
+            return MethodHandles.memorySegmentViewVarHandle(layout);
         }
 
         void set(SegmentSlice slice, int index, int val) {
@@ -143,7 +144,7 @@ public class TestSegmentCopy {
     static class SegmentSlice {
 
         enum Kind {
-            NATIVE(i -> MemorySegment.allocateNative(i, ResourceScope.newImplicitScope())),
+            NATIVE(i -> MemorySegment.allocateNative(i, MemorySession.openImplicit())),
             ARRAY(i -> MemorySegment.ofArray(new byte[i]));
 
             final IntFunction<MemorySegment> segmentFactory;

@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2021 Unicode, Inc.
+<!-- Copyright © 1991-2022 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -142,21 +142,25 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern>EEEE, G y MMMM dd</pattern>
+							<datetimeSkeleton>GyMMMMEEEEdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>G y MMMM d</pattern>
+							<datetimeSkeleton>GyMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>G y MMM d</pattern>
+							<datetimeSkeleton>GyMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>GGGGG yy/MM/dd</pattern>
+							<datetimeSkeleton>GGGGGyyMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -197,7 +201,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="2">Gashyantare</month>
 							<month type="3">Werurwe</month>
 							<month type="4">Mata</month>
-							<month type="5">Gicuransi</month>
+							<month type="5">Gicurasi</month>
 							<month type="6">Kamena</month>
 							<month type="7">Nyakanga</month>
 							<month type="8">Kanama</month>
@@ -241,7 +245,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="2">Gashyantare</month>
 							<month type="3">Werurwe</month>
 							<month type="4">Mata</month>
-							<month type="5">Gicuransi</month>
+							<month type="5">Gicurasi</month>
 							<month type="6">Kamena</month>
 							<month type="7">Nyakanga</month>
 							<month type="8">Kanama</month>
@@ -416,21 +420,25 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern>y MMMM d, EEEE</pattern>
+							<datetimeSkeleton>yMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>y MMMM d</pattern>
+							<datetimeSkeleton>yMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>y MMM d</pattern>
+							<datetimeSkeleton>yMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>y-MM-dd</pattern>
+							<datetimeSkeleton>yMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -438,21 +446,25 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<timeFormatLength type="full">
 						<timeFormat>
 							<pattern>HH:mm:ss zzzz</pattern>
+							<datetimeSkeleton>HHmmsszzzz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="long">
 						<timeFormat>
 							<pattern>HH:mm:ss z</pattern>
+							<datetimeSkeleton>HHmmssz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="medium">
 						<timeFormat>
 							<pattern>HH:mm:ss</pattern>
+							<datetimeSkeleton>HHmmss</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="short">
 						<timeFormat>
 							<pattern>HH:mm</pattern>
+							<datetimeSkeleton>HHmm</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 				</timeFormats>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@ package sun.jvm.hotspot.debugger.posix;
 
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.debugger.cdbg.*;
-import sun.jvm.hotspot.utilities.memo.*;
 
 /** Provides a simple wrapper around the ELF library which handles
     relocation. */
@@ -69,10 +68,9 @@ public abstract class DSO implements LoadObject {
     }
 
     public boolean equals(Object o) {
-        if (o == null || !(o instanceof DSO)) {
+        if (!(o instanceof DSO other)) {
            return false;
         }
-        DSO other = (DSO)o;
         return getBase().equals(other.getBase());
     }
 

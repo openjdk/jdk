@@ -185,16 +185,6 @@ public class UnreferencedSockets {
             fileDescriptorField.setAccessible(true);
             FileDescriptor fileDescriptor = (FileDescriptor) fileDescriptorField.get(socketImpl);
             extractRefs(fileDescriptor, name);
-
-            Class<?> socketImplClass = socketImpl.getClass();
-            System.out.printf("socketImplClass: %s%n", socketImplClass);
-            if (socketImplClass.getClass().getName().equals("java.net.TwoStacksPlainSocketImpl")) {
-                Field fileDescriptor1Field = socketImplClass.getDeclaredField("fd1");
-                fileDescriptor1Field.setAccessible(true);
-                FileDescriptor fileDescriptor1 = (FileDescriptor) fileDescriptor1Field.get(socketImpl);
-                extractRefs(fileDescriptor1, name + "::twoStacksFd1");
-
-            }
         } catch (NoSuchFieldException | IllegalAccessException ex) {
             ex.printStackTrace();
             throw new AssertionError("missing field", ex);

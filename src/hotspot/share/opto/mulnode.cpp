@@ -262,7 +262,7 @@ Node *MulINode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   // Get low bit; check for being the only bit
   Node *res = NULL;
-  unsigned int bit1 = abs_con & (0-abs_con);       // Extract low bit
+  unsigned int bit1 = submultiple_power_of_2(abs_con);
   if (bit1 == abs_con) {           // Found a power of 2?
     res = new LShiftINode(in(1), phase->intcon(log2i_exact(bit1)));
   } else {
@@ -270,11 +270,20 @@ Node *MulINode::Ideal(PhaseGVN *phase, bool can_reshape) {
     unsigned int bit2 = abs_con - bit1;
     bit2 = bit2 & (0 - bit2);          // Extract 2nd bit
     if (bit2 + bit1 == abs_con) {    // Found all bits in con?
+      if (!phase->C->post_loop_opts_phase()) {
+        // Defer this because it breaks loop range check hoisting
+        phase->C->record_for_post_loop_opts_igvn(this);
+        return MulNode::Ideal(phase, can_reshape);
+      }
       Node *n1 = phase->transform(new LShiftINode(in(1), phase->intcon(log2i_exact(bit1))));
       Node *n2 = phase->transform(new LShiftINode(in(1), phase->intcon(log2i_exact(bit2))));
       res = new AddINode(n2, n1);
     } else if (is_power_of_2(abs_con + 1)) {
-      // Sleezy: power-of-2 - 1.  Next time be generic.
+      if (!phase->C->post_loop_opts_phase()) {
+        // Defer this because it breaks loop range check hoisting
+        phase->C->record_for_post_loop_opts_igvn(this);
+        return MulNode::Ideal(phase, can_reshape);
+      }
       unsigned int temp = abs_con + 1;
       Node *n1 = phase->transform(new LShiftINode(in(1), phase->intcon(log2i_exact(temp))));
       res = new SubINode(n1, in(1));
@@ -356,21 +365,28 @@ Node *MulLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   // Get low bit; check for being the only bit
   Node *res = NULL;
-  julong bit1 = abs_con & (0-abs_con);      // Extract low bit
+  julong bit1 = submultiple_power_of_2(abs_con);
   if (bit1 == abs_con) {           // Found a power of 2?
     res = new LShiftLNode(in(1), phase->intcon(log2i_exact(bit1)));
   } else {
-
     // Check for constant with 2 bits set
     julong bit2 = abs_con-bit1;
     bit2 = bit2 & (0-bit2);          // Extract 2nd bit
     if (bit2 + bit1 == abs_con) {    // Found all bits in con?
+      if (!phase->C->post_loop_opts_phase()) {
+        // Defer this because it breaks loop range check hoisting
+        phase->C->record_for_post_loop_opts_igvn(this);
+        return MulNode::Ideal(phase, can_reshape);
+      }
       Node *n1 = phase->transform(new LShiftLNode(in(1), phase->intcon(log2i_exact(bit1))));
       Node *n2 = phase->transform(new LShiftLNode(in(1), phase->intcon(log2i_exact(bit2))));
       res = new AddLNode(n2, n1);
-
     } else if (is_power_of_2(abs_con+1)) {
-      // Sleezy: power-of-2 -1.  Next time be generic.
+      if (!phase->C->post_loop_opts_phase()) {
+        // Defer this because it breaks loop range check hoisting
+        phase->C->record_for_post_loop_opts_igvn(this);
+        return MulNode::Ideal(phase, can_reshape);
+      }
       julong temp = abs_con + 1;
       Node *n1 = phase->transform( new LShiftLNode(in(1), phase->intcon(log2i_exact(temp))));
       res = new SubLNode(n1, in(1));
@@ -813,6 +829,8 @@ Node *LShiftINode::Ideal(PhaseGVN *phase, bool can_reshape) {
       // Left input is an add of the same number?
       if (add1->in(1) == add1->in(2)) {
         // Convert "(x + x) << c0" into "x << (c0 + 1)"
+        // In general, this optimization cannot be applied for c0 == 31 since
+        // 2x << 31 != x << 32 = x << 0 = x (e.g. x = 1: 2 << 31 = 0 != 1)
         return new LShiftINode(add1->in(1), phase->intcon(con + 1));
       }
 
@@ -930,8 +948,13 @@ Node *LShiftLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     assert( add1 != add1->in(1), "dead loop in LShiftLNode::Ideal" );
 
     // Left input is an add of the same number?
-    if (add1->in(1) == add1->in(2)) {
+    if (con != (BitsPerJavaLong - 1) && add1->in(1) == add1->in(2)) {
       // Convert "(x + x) << c0" into "x << (c0 + 1)"
+      // Can only be applied if c0 != 63 because:
+      // (x + x) << 63 = 2x << 63, while
+      // (x + x) << 63 --transform--> x << 64 = x << 0 = x (!= 2x << 63, for example for x = 1)
+      // According to the Java spec, chapter 15.19, we only consider the six lowest-order bits of the right-hand operand
+      // (i.e. "right-hand operand" & 0b111111). Therefore, x << 64 is the same as x << 0 (64 = 0b10000000 & 0b0111111 = 0).
       return new LShiftLNode(add1->in(1), phase->intcon(con + 1));
     }
 
@@ -1759,6 +1782,10 @@ bool MulNode::AndIL_shift_and_mask_is_always_zero(PhaseGVN* phase, Node* shift, 
   if (mask == NULL || shift == NULL) {
     return false;
   }
+  shift = shift->uncast();
+  if (shift == NULL) {
+    return false;
+  }
   const TypeInteger* mask_t = phase->type(mask)->isa_integer(bt);
   const TypeInteger* shift_t = phase->type(shift)->isa_integer(bt);
   if (mask_t == NULL || shift_t == NULL) {
@@ -1768,6 +1795,10 @@ bool MulNode::AndIL_shift_and_mask_is_always_zero(PhaseGVN* phase, Node* shift, 
   if (bt == T_LONG && shift->Opcode() == Op_ConvI2L) {
     bt = T_INT;
     Node* val = shift->in(1);
+    if (val == NULL) {
+      return false;
+    }
+    val = val->uncast();
     if (val == NULL) {
       return false;
     }

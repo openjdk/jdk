@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #include "opto/loopnode.hpp"
 #include "opto/addnode.hpp"
 #include "opto/callnode.hpp"
+#include "opto/castnode.hpp"
 #include "opto/connode.hpp"
 #include "opto/convertnode.hpp"
 #include "opto/loopnode.hpp"
@@ -145,7 +146,7 @@ ProjNode* PhaseIdealLoop::create_new_if_for_predicate(ProjNode* cont_proj, Node*
 
   Node* entry = iff->in(0);
   if (new_entry != NULL) {
-    // Clonning the predicate to new location.
+    // Cloning the predicate to new location.
     entry = new_entry;
   }
   // Create new_iff
@@ -491,24 +492,25 @@ Node* PhaseIdealLoop::skip_loop_predicates(Node* entry) {
 }
 
 Node* PhaseIdealLoop::skip_all_loop_predicates(Node* entry) {
-  Node* predicate = NULL;
-  predicate = find_predicate_insertion_point(entry, Deoptimization::Reason_loop_limit_check);
-  if (predicate != NULL) {
-    entry = skip_loop_predicates(entry);
-  }
-  if (UseProfiledLoopPredicate) {
-    predicate = find_predicate_insertion_point(entry, Deoptimization::Reason_profile_predicate);
-    if (predicate != NULL) { // right pattern that can be used by loop predication
-      entry = skip_loop_predicates(entry);
+  Predicates predicates(entry);
+  return predicates.skip_all();
+}
+
+//--------------------------next_predicate---------------------------------
+// Find next related predicate, useful for iterating over all related predicates
+ProjNode* PhaseIdealLoop::next_predicate(ProjNode* predicate) {
+  IfNode* iff = predicate->in(0)->as_If();
+  ProjNode* uncommon_proj = iff->proj_out(1 - predicate->_con);
+  Node* rgn = uncommon_proj->unique_ctrl_out();
+  assert(rgn->is_Region() || rgn->is_Call(), "must be a region or call uct");
+  Node* next = iff->in(0);
+  if (next != nullptr && next->is_Proj() && next->in(0)->is_If()) {
+    uncommon_proj = next->in(0)->as_If()->proj_out(1 - next->as_Proj()->_con);
+    if (uncommon_proj->unique_ctrl_out() == rgn) { // lead into same region
+      return next->as_Proj();
     }
   }
-  if (UseLoopPredicate) {
-    predicate = find_predicate_insertion_point(entry, Deoptimization::Reason_predicate);
-    if (predicate != NULL) { // right pattern that can be used by loop predication
-      entry = skip_loop_predicates(entry);
-    }
-  }
-  return entry;
+  return nullptr;
 }
 
 //--------------------------find_predicate_insertion_point-------------------
@@ -520,6 +522,28 @@ ProjNode* PhaseIdealLoop::find_predicate_insertion_point(Node* start_c, Deoptimi
     return start_c->as_Proj();
   }
   return NULL;
+}
+
+//--------------------------Predicates::Predicates--------------------------
+// given loop entry, find all predicates above loop
+PhaseIdealLoop::Predicates::Predicates(Node* entry) {
+  _loop_limit_check = find_predicate_insertion_point(entry, Deoptimization::Reason_loop_limit_check);
+  if (_loop_limit_check != nullptr) {
+    entry = skip_loop_predicates(entry);
+  }
+  if (UseProfiledLoopPredicate) {
+    _profile_predicate = find_predicate_insertion_point(entry, Deoptimization::Reason_profile_predicate);
+    if (_profile_predicate != nullptr) {
+      entry = skip_loop_predicates(entry);
+    }
+  }
+  if (UseLoopPredicate) {
+    _predicate = find_predicate_insertion_point(entry, Deoptimization::Reason_predicate);
+    if (_predicate != nullptr) {
+      entry = skip_loop_predicates(entry);
+    }
+  }
+  _entry_to_all_predicates = entry;
 }
 
 //--------------------------find_predicate------------------------------------
@@ -759,7 +783,7 @@ bool IdealLoopTree::is_range_check_if(IfNode *iff, PhaseIdealLoop *phase, BasicT
   }
   scale  = 0;
   offset = NULL;
-  if (!phase->is_scaled_iv_plus_offset(cmp->in(1), iv, &scale, &offset, bt)) {
+  if (!phase->is_scaled_iv_plus_offset(cmp->in(1), iv, bt, &scale, &offset)) {
     return false;
   }
   return true;
@@ -1014,192 +1038,165 @@ bool PhaseIdealLoop::loop_predication_should_follow_branches(IdealLoopTree *loop
   return follow_branches;
 }
 
-// Compute probability of reaching some CFG node from a fixed
-// dominating CFG node
-class PathFrequency {
-private:
-  Node* _dom; // frequencies are computed relative to this node
-  Node_Stack _stack;
-  GrowableArray<float> _freqs_stack; // keep track of intermediate result at regions
-  GrowableArray<float> _freqs; // cache frequencies
-  PhaseIdealLoop* _phase;
-
-  float check_and_truncate_frequency(float f) {
-    assert(f >= 0, "Incorrect frequency");
-    // We do not perform an exact (f <= 1) check
-    // this would be error prone with rounding of floats.
-    // Performing a check like (f <= 1+eps) would be of benefit,
-    // however, it is not evident how to determine such an eps,
-    // given that an arbitrary number of add/mul operations
-    // are performed on these frequencies.
-    return (f > 1) ? 1 : f;
-  }
-
-public:
-  PathFrequency(Node* dom, PhaseIdealLoop* phase)
-    : _dom(dom), _stack(0), _phase(phase) {
-  }
-
-  float to(Node* n) {
-    // post order walk on the CFG graph from n to _dom
-    IdealLoopTree* loop = _phase->get_loop(_dom);
-    Node* c = n;
-    for (;;) {
-      assert(_phase->get_loop(c) == loop, "have to be in the same loop");
-      if (c == _dom || _freqs.at_grow(c->_idx, -1) >= 0) {
-        float f = c == _dom ? 1 : _freqs.at(c->_idx);
-        Node* prev = c;
-        while (_stack.size() > 0 && prev == c) {
-          Node* n = _stack.node();
-          if (!n->is_Region()) {
-            if (_phase->get_loop(n) != _phase->get_loop(n->in(0))) {
-              // Found an inner loop: compute frequency of reaching this
-              // exit from the loop head by looking at the number of
-              // times each loop exit was taken
-              IdealLoopTree* inner_loop = _phase->get_loop(n->in(0));
-              LoopNode* inner_head = inner_loop->_head->as_Loop();
-              assert(_phase->get_loop(n) == loop, "only 1 inner loop");
-              if (inner_head->is_OuterStripMinedLoop()) {
-                inner_head->verify_strip_mined(1);
-                if (n->in(0) == inner_head->in(LoopNode::LoopBackControl)->in(0)) {
-                  n = n->in(0)->in(0)->in(0);
-                }
-                inner_loop = inner_loop->_child;
-                inner_head = inner_loop->_head->as_Loop();
-                inner_head->verify_strip_mined(1);
+float PathFrequency::to(Node* n) {
+  // post order walk on the CFG graph from n to _dom
+  IdealLoopTree* loop = _phase->get_loop(_dom);
+  Node* c = n;
+  for (;;) {
+    assert(_phase->get_loop(c) == loop, "have to be in the same loop");
+    if (c == _dom || _freqs.at_grow(c->_idx, -1) >= 0) {
+      float f = c == _dom ? 1 : _freqs.at(c->_idx);
+      Node* prev = c;
+      while (_stack.size() > 0 && prev == c) {
+        Node* n = _stack.node();
+        if (!n->is_Region()) {
+          if (_phase->get_loop(n) != _phase->get_loop(n->in(0))) {
+            // Found an inner loop: compute frequency of reaching this
+            // exit from the loop head by looking at the number of
+            // times each loop exit was taken
+            IdealLoopTree* inner_loop = _phase->get_loop(n->in(0));
+            LoopNode* inner_head = inner_loop->_head->as_Loop();
+            assert(_phase->get_loop(n) == loop, "only 1 inner loop");
+            if (inner_head->is_OuterStripMinedLoop()) {
+              inner_head->verify_strip_mined(1);
+              if (n->in(0) == inner_head->in(LoopNode::LoopBackControl)->in(0)) {
+                n = n->in(0)->in(0)->in(0);
               }
-              float loop_exit_cnt = 0.0f;
-              for (uint i = 0; i < inner_loop->_body.size(); i++) {
-                Node *n = inner_loop->_body[i];
-                float c = inner_loop->compute_profile_trip_cnt_helper(n);
-                loop_exit_cnt += c;
-              }
-              float cnt = -1;
-              if (n->in(0)->is_If()) {
-                IfNode* iff = n->in(0)->as_If();
-                float p = n->in(0)->as_If()->_prob;
-                if (n->Opcode() == Op_IfFalse) {
-                  p = 1 - p;
-                }
-                if (p > PROB_MIN) {
-                  cnt = p * iff->_fcnt;
-                } else {
-                  cnt = 0;
-                }
-              } else {
-                assert(n->in(0)->is_Jump(), "unsupported node kind");
-                JumpNode* jmp = n->in(0)->as_Jump();
-                float p = n->in(0)->as_Jump()->_probs[n->as_JumpProj()->_con];
-                cnt = p * jmp->_fcnt;
-              }
-              float this_exit_f = cnt > 0 ? cnt / loop_exit_cnt : 0;
-              this_exit_f = check_and_truncate_frequency(this_exit_f);
-              f = f * this_exit_f;
-              f = check_and_truncate_frequency(f);
-            } else {
-              float p = -1;
-              if (n->in(0)->is_If()) {
-                p = n->in(0)->as_If()->_prob;
-                if (n->Opcode() == Op_IfFalse) {
-                  p = 1 - p;
-                }
-              } else {
-                assert(n->in(0)->is_Jump(), "unsupported node kind");
-                p = n->in(0)->as_Jump()->_probs[n->as_JumpProj()->_con];
-              }
-              f = f * p;
-              f = check_and_truncate_frequency(f);
+              inner_loop = inner_loop->_child;
+              inner_head = inner_loop->_head->as_Loop();
+              inner_head->verify_strip_mined(1);
             }
-            _freqs.at_put_grow(n->_idx, (float)f, -1);
-            _stack.pop();
-          } else {
-            float prev_f = _freqs_stack.pop();
-            float new_f = f;
-            f = new_f + prev_f;
+            float loop_exit_cnt = 0.0f;
+            for (uint i = 0; i < inner_loop->_body.size(); i++) {
+              Node *n = inner_loop->_body[i];
+              float c = inner_loop->compute_profile_trip_cnt_helper(n);
+              loop_exit_cnt += c;
+            }
+            float cnt = -1;
+            if (n->in(0)->is_If()) {
+              IfNode* iff = n->in(0)->as_If();
+              float p = n->in(0)->as_If()->_prob;
+              if (n->Opcode() == Op_IfFalse) {
+                p = 1 - p;
+              }
+              if (p > PROB_MIN) {
+                cnt = p * iff->_fcnt;
+              } else {
+                cnt = 0;
+              }
+            } else {
+              assert(n->in(0)->is_Jump(), "unsupported node kind");
+              JumpNode* jmp = n->in(0)->as_Jump();
+              float p = n->in(0)->as_Jump()->_probs[n->as_JumpProj()->_con];
+              cnt = p * jmp->_fcnt;
+            }
+            float this_exit_f = cnt > 0 ? cnt / loop_exit_cnt : 0;
+            this_exit_f = check_and_truncate_frequency(this_exit_f);
+            f = f * this_exit_f;
             f = check_and_truncate_frequency(f);
-            uint i = _stack.index();
-            if (i < n->req()) {
-              c = n->in(i);
-              _stack.set_index(i+1);
-              _freqs_stack.push(f);
-            } else {
-              _freqs.at_put_grow(n->_idx, f, -1);
-              _stack.pop();
-            }
-          }
-        }
-        if (_stack.size() == 0) {
-          return check_and_truncate_frequency(f);
-        }
-      } else if (c->is_Loop()) {
-        ShouldNotReachHere();
-        c = c->in(LoopNode::EntryControl);
-      } else if (c->is_Region()) {
-        _freqs_stack.push(0);
-        _stack.push(c, 2);
-        c = c->in(1);
-      } else {
-        if (c->is_IfProj()) {
-          IfNode* iff = c->in(0)->as_If();
-          if (iff->_prob == PROB_UNKNOWN) {
-            // assume never taken
-            _freqs.at_put_grow(c->_idx, 0, -1);
-          } else if (_phase->get_loop(c) != _phase->get_loop(iff)) {
-            if (iff->_fcnt == COUNT_UNKNOWN) {
-              // assume never taken
-              _freqs.at_put_grow(c->_idx, 0, -1);
-            } else {
-              // skip over loop
-              _stack.push(c, 1);
-              c = _phase->get_loop(c->in(0))->_head->as_Loop()->skip_strip_mined()->in(LoopNode::EntryControl);
-            }
           } else {
-            _stack.push(c, 1);
-            c = iff;
-          }
-        } else if (c->is_JumpProj()) {
-          JumpNode* jmp = c->in(0)->as_Jump();
-          if (_phase->get_loop(c) != _phase->get_loop(jmp)) {
-            if (jmp->_fcnt == COUNT_UNKNOWN) {
-              // assume never taken
-              _freqs.at_put_grow(c->_idx, 0, -1);
+            float p = -1;
+            if (n->in(0)->is_If()) {
+              p = n->in(0)->as_If()->_prob;
+              if (n->Opcode() == Op_IfFalse) {
+                p = 1 - p;
+              }
             } else {
-              // skip over loop
-              _stack.push(c, 1);
-              c = _phase->get_loop(c->in(0))->_head->as_Loop()->skip_strip_mined()->in(LoopNode::EntryControl);
+              assert(n->in(0)->is_Jump(), "unsupported node kind");
+              p = n->in(0)->as_Jump()->_probs[n->as_JumpProj()->_con];
             }
-          } else {
-            _stack.push(c, 1);
-            c = jmp;
+            f = f * p;
+            f = check_and_truncate_frequency(f);
           }
-        } else if (c->Opcode() == Op_CatchProj &&
-                   c->in(0)->Opcode() == Op_Catch &&
-                   c->in(0)->in(0)->is_Proj() &&
-                   c->in(0)->in(0)->in(0)->is_Call()) {
-          // assume exceptions are never thrown
-          uint con = c->as_Proj()->_con;
-          if (con == CatchProjNode::fall_through_index) {
-            Node* call = c->in(0)->in(0)->in(0)->in(0);
-            if (_phase->get_loop(call) != _phase->get_loop(c)) {
-              _freqs.at_put_grow(c->_idx, 0, -1);
-            } else {
-              c = call;
-            }
-          } else {
-            assert(con >= CatchProjNode::catch_all_index, "what else?");
-            _freqs.at_put_grow(c->_idx, 0, -1);
-          }
-        } else if (c->unique_ctrl_out() == NULL && !c->is_If() && !c->is_Jump()) {
-          ShouldNotReachHere();
+          _freqs.at_put_grow(n->_idx, (float)f, -1);
+          _stack.pop();
         } else {
-          c = c->in(0);
+          float prev_f = _freqs_stack.pop();
+          float new_f = f;
+          f = new_f + prev_f;
+          f = check_and_truncate_frequency(f);
+          uint i = _stack.index();
+          if (i < n->req()) {
+            c = n->in(i);
+            _stack.set_index(i+1);
+            _freqs_stack.push(f);
+          } else {
+            _freqs.at_put_grow(n->_idx, f, -1);
+            _stack.pop();
+          }
         }
       }
+      if (_stack.size() == 0) {
+        return check_and_truncate_frequency(f);
+      }
+    } else if (c->is_Loop()) {
+      ShouldNotReachHere();
+      c = c->in(LoopNode::EntryControl);
+    } else if (c->is_Region()) {
+      _freqs_stack.push(0);
+      _stack.push(c, 2);
+      c = c->in(1);
+    } else {
+      if (c->is_IfProj()) {
+        IfNode* iff = c->in(0)->as_If();
+        if (iff->_prob == PROB_UNKNOWN) {
+          // assume never taken
+          _freqs.at_put_grow(c->_idx, 0, -1);
+        } else if (_phase->get_loop(c) != _phase->get_loop(iff)) {
+          if (iff->_fcnt == COUNT_UNKNOWN) {
+            // assume never taken
+            _freqs.at_put_grow(c->_idx, 0, -1);
+          } else {
+            // skip over loop
+            _stack.push(c, 1);
+            c = _phase->get_loop(c->in(0))->_head->as_Loop()->skip_strip_mined()->in(LoopNode::EntryControl);
+          }
+        } else {
+          _stack.push(c, 1);
+          c = iff;
+        }
+      } else if (c->is_JumpProj()) {
+        JumpNode* jmp = c->in(0)->as_Jump();
+        if (_phase->get_loop(c) != _phase->get_loop(jmp)) {
+          if (jmp->_fcnt == COUNT_UNKNOWN) {
+            // assume never taken
+            _freqs.at_put_grow(c->_idx, 0, -1);
+          } else {
+            // skip over loop
+            _stack.push(c, 1);
+            c = _phase->get_loop(c->in(0))->_head->as_Loop()->skip_strip_mined()->in(LoopNode::EntryControl);
+          }
+        } else {
+          _stack.push(c, 1);
+          c = jmp;
+        }
+      } else if (c->Opcode() == Op_CatchProj &&
+                 c->in(0)->Opcode() == Op_Catch &&
+                 c->in(0)->in(0)->is_Proj() &&
+                 c->in(0)->in(0)->in(0)->is_Call()) {
+        // assume exceptions are never thrown
+        uint con = c->as_Proj()->_con;
+        if (con == CatchProjNode::fall_through_index) {
+          Node* call = c->in(0)->in(0)->in(0)->in(0);
+          if (_phase->get_loop(call) != _phase->get_loop(c)) {
+            _freqs.at_put_grow(c->_idx, 0, -1);
+          } else {
+            c = call;
+          }
+        } else {
+          assert(con >= CatchProjNode::catch_all_index, "what else?");
+          _freqs.at_put_grow(c->_idx, 0, -1);
+        }
+      } else if (c->unique_ctrl_out_or_null() == NULL && !c->is_If() && !c->is_Jump()) {
+        ShouldNotReachHere();
+      } else {
+        c = c->in(0);
+      }
     }
-    ShouldNotReachHere();
-    return -1;
   }
-};
+  ShouldNotReachHere();
+  return -1;
+}
 
 void PhaseIdealLoop::loop_predication_follow_branches(Node *n, IdealLoopTree *loop, float loop_trip_cnt,
                                                       PathFrequency& pf, Node_Stack& stack, VectorSet& seen,
@@ -1405,6 +1402,10 @@ ProjNode* PhaseIdealLoop::insert_initial_skeleton_predicate(IfNode* iff, IdealLo
   register_new_node(max_value, new_proj);
   max_value = new AddINode(opaque_init, max_value);
   register_new_node(max_value, new_proj);
+  // init + (current stride - initial stride) is within the loop so narrow its type by leveraging the type of the iv Phi
+  max_value = new CastIINode(max_value, loop->_head->as_CountedLoop()->phi()->bottom_type());
+  register_new_node(max_value, predicate_proj);
+
   bol = rc_predicate(loop, new_proj, scale, offset, max_value, limit, stride, rng, (stride > 0) != (scale > 0), overflow, negate);
   opaque_bol = new Opaque4Node(C, bol, _igvn.intcon(1));
   C->add_skeleton_predicate_opaq(opaque_bol);
@@ -1412,6 +1413,7 @@ ProjNode* PhaseIdealLoop::insert_initial_skeleton_predicate(IfNode* iff, IdealLo
   new_proj = create_new_if_for_predicate(predicate_proj, NULL, reason, overflow ? Op_If : iff->Opcode());
   _igvn.replace_input_of(new_proj->in(0), 1, opaque_bol);
   assert(max_value->outcnt() > 0, "should be used");
+  assert(skeleton_predicate_has_opaque(new_proj->in(0)->as_If()), "unexpected");
 
   return new_proj;
 }
@@ -1531,7 +1533,7 @@ bool PhaseIdealLoop::loop_predication_impl(IdealLoopTree *loop) {
           // Both arms are inside the loop. There are two cases:
           // (1) there is one backward branch. In this case, any remaining proj
           //     in the if_proj list post-dominates "iff". So, the condition of "iff"
-          //     does not determine the execution the remining projs directly, and we
+          //     does not determine the execution the remaining projs directly, and we
           //     can safely continue.
           // (2) both arms are forwarded, i.e. a diamond shape. In this case, "proj"
           //     does not dominate loop->tail(), so it can not be in the if_proj list.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,9 @@
 #include "sizecalc.h"
 #include <jni_util.h>
 #include <stdio.h>
+#include <math.h>
 #include "awt.h"
+#include "debug_assert.h"
 
 static void *gtk3_libhandle = NULL;
 static void *gthread_libhandle = NULL;
@@ -2861,33 +2863,46 @@ static void transform_detail_string (const gchar *detail,
     }
 }
 
+inline static int scale_down_ceiling(int what, int scale) {
+    return (int)ceilf(what / (float)scale);
+}
+
+inline static int scale_down_floor(int what, int scale) {
+    return (int)floorf(what / (float)scale);
+}
+
 static gboolean gtk3_get_drawable_data(JNIEnv *env, jintArray pixelArray,
-     int x, jint y, jint width, jint height, jint jwidth, int dx, int dy,
-                                                                   jint scale) {
+     int x, jint y, jint width, jint height, jint jwidth, int dx, int dy) {
     GdkPixbuf *pixbuf;
     jint *ary;
 
+    int skip_left = 0;
+    int skip_top = 0;
     GdkWindow *root = (*fp_gdk_get_default_root_window)();
     if (gtk3_version_3_10) {
         int win_scale = (*fp_gdk_window_get_scale_factor)(root);
+
+        // Scale the coordinate and size carefully such that the captured area
+        // is at least as large as requested. We trim off excess later by
+        // using the skip_* variables.
+        const int x_scaled = scale_down_floor(x, win_scale);
+        const int y_scaled = scale_down_floor(y, win_scale);
+        skip_left = x - x_scaled*win_scale;
+        skip_top  = y - y_scaled*win_scale;
+        DASSERT(skip_left >= 0 && skip_top >= 0);
+
+        const int x_right_scaled = scale_down_ceiling(x + width, win_scale);
+        const int width_scaled = x_right_scaled - x_scaled;
+        DASSERT(width_scaled > 0);
+
+        const int y_bottom_scaled = scale_down_ceiling(y + height, win_scale);
+        const int height_scaled = y_bottom_scaled - y_scaled;
+        DASSERT(height_scaled > 0);
+
         pixbuf = (*fp_gdk_pixbuf_get_from_drawable)(
-            root, x, y, (int) (width / (float) win_scale + 0.5), (int) (height / (float) win_scale + 0.5));
+            root, x_scaled, y_scaled, width_scaled, height_scaled);
     } else {
         pixbuf = (*fp_gdk_pixbuf_get_from_drawable)(root, x, y, width, height);
-    }
-
-    if (pixbuf && scale != 1) {
-        GdkPixbuf *scaledPixbuf;
-        x /= scale;
-        y /= scale;
-        width /= scale;
-        height /= scale;
-        dx /= scale;
-        dy /= scale;
-        scaledPixbuf = (*fp_gdk_pixbuf_scale_simple)(pixbuf, width, height,
-                                                     GDK_INTERP_BILINEAR);
-        (*fp_g_object_unref)(pixbuf);
-        pixbuf = scaledPixbuf;
     }
 
     if (pixbuf) {
@@ -2906,7 +2921,8 @@ static gboolean gtk3_get_drawable_data(JNIEnv *env, jintArray pixelArray,
                 int index;
                 for (_y = 0; _y < height; _y++) {
                     for (_x = 0; _x < width; _x++) {
-                        p = pix + (intptr_t) _y * stride + _x * nchan;
+                        p = pix + (intptr_t) (_y + skip_top) * stride
+                                + (_x + skip_left) * nchan;
 
                         index = (_y + dy) * jwidth + (_x + dx);
                         ary[index] = 0xff000000

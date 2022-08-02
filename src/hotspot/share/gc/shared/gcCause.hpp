@@ -63,12 +63,10 @@ class GCCause : public AllStatic {
 
     /* implementation specific */
 
-    _tenured_generation_full,
+    _codecache_GC_threshold,
     _metadata_GC_threshold,
     _metadata_GC_clear_soft_refs,
 
-    _old_generation_expanded_on_last_scavenge,
-    _old_generation_too_full_to_scavenge,
     _adaptive_size_policy,
 
     _g1_inc_collection_pause,
@@ -108,24 +106,18 @@ class GCCause : public AllStatic {
 
   // Causes for collection of the tenured gernation
   inline static bool is_tenured_allocation_failure_gc(GCCause::Cause cause) {
-    assert(cause != GCCause::_old_generation_too_full_to_scavenge &&
-           cause != GCCause::_old_generation_expanded_on_last_scavenge,
-           "This GCCause may be correct but is not expected yet: %s",
-           to_string(cause));
-    // _tenured_generation_full for full tenured generations
     // _adaptive_size_policy for a full collection after a young GC
     // _allocation_failure is the generic cause a collection which could result
     // in the collection of the tenured generation if there is not enough space
     // in the tenured generation to support a young GC.
-    return (cause == GCCause::_tenured_generation_full ||
-            cause == GCCause::_adaptive_size_policy ||
+    return (cause == GCCause::_adaptive_size_policy ||
             cause == GCCause::_allocation_failure);
   }
 
   // Causes for collection of the young generation
   inline static bool is_allocation_failure_gc(GCCause::Cause cause) {
     // _allocation_failure is the generic cause a collection for allocation failure
-    // _adaptive_size_policy is for a collecton done before a full GC
+    // _adaptive_size_policy is for a collection done before a full GC
     return (cause == GCCause::_allocation_failure ||
             cause == GCCause::_adaptive_size_policy ||
             cause == GCCause::_shenandoah_allocation_failure_evac);

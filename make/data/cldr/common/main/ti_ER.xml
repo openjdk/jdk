@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2021 Unicode, Inc.
+<!-- Copyright © 1991-2022 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -11,6 +11,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<language type="ti"/>
 		<territory type="ER"/>
 	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="ar_001">ዘመናዊ ምዱብ ዓረብ</language>
+			<language type="nds_NL">ትሑት ሳክሰን</language>
+			<language type="nl_BE">ፍላሚሽ</language>
+			<language type="zh_Hans">ቀሊል ቻይንኛ</language>
+			<language type="zh_Hans" alt="long">ቀሊል ማንዳሪን ቻይንኛ</language>
+			<language type="zh_Hant">ባህላዊ ቻይንኛ</language>
+			<language type="zh_Hant" alt="long">ባህላዊ ማንዳሪን ቻይንኛ</language>
+		</languages>
+	</localeDisplayNames>
 	<characters>
 		<exemplarCharacters draft="unconfirmed">[\u135F ፡ ፣-፧ ። ፠ ፨ ፲-፼ ፩-፱ ሀ-ሆ ለ-ሟ ረ-ቆ ቈ ቊ-ቍ ቐ-ቖ ቘ ቚ-ቝ በ-ኆ ኈ ኊ-ኍ ነ-ኮ ኰ ኲ-ኵ ኸ-ኾ ዀ ዂ-ዅ ወ-ዎ ዐ-ዖ ዘ-ዮ ደ-ዷ ጀ-ጎ ጐ ጒ-ጕ ጠ-ጯ ጸ-ጿ ፈ-ፗ]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary" draft="unconfirmed">[᎐ ᎑ ᎒ ᎓ ᎔ ᎕ ᎖ ᎗ ᎘ ᎙ ሇ ⶀ ᎀ ᎁ ᎂ ᎃ ⶁ ሠ ሡ ሢ ሣ ሤ ሥ ሦ ሧ ⶂ ⶃ ⶄ ቇ ᎄ ᎅ ᎆ ᎇ ⶅ ⶆ ⶇ ኇ ⶈ ⶉ ⶊ ኯ ዏ ⶋ ዯ ⶌ ዸ ዹ ዺ ዻ ዼ ዽ ዾ ዿ ⶍ ⶎ ጏ ጘ ጙ ጚ ጛ ጜ ጝ ጞ ጟ ⶓ ⶔ ⶕ ⶖ ⶏ ⶐ ⶑ ፀ ፁ ፂ ፃ ፄ ፅ ፆ ፇ ᎈ ᎉ ᎊ ᎋ ᎌ ᎍ ᎎ ᎏ ⶒ ፘ ፙ ፚ ⶠ ⶡ ⶢ ⶣ ⶤ ⶥ ⶦ ⶨ ⶩ ⶪ ⶫ ⶬ ⶭ ⶮ ⶰ ⶱ ⶲ ⶳ ⶴ ⶵ ⶶ ⶸ ⶹ ⶺ ⶻ ⶼ ⶽ ⶾ ⷀ ⷁ ⷂ ⷃ ⷄ ⷅ ⷆ ⷈ ⷉ ⷊ ⷋ ⷌ ⷍ ⷎ ⷐ ⷑ ⷒ ⷓ ⷔ ⷕ ⷖ ⷘ ⷙ ⷚ ⷛ ⷜ ⷝ ⷞ]</exemplarCharacters>
@@ -19,8 +30,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	<delimiters>
 		<quotationStart>‘</quotationStart>
 		<quotationEnd>’</quotationEnd>
-		<alternateQuotationStart>“</alternateQuotationStart>
-		<alternateQuotationEnd>”</alternateQuotationEnd>
 	</delimiters>
 	<dates>
 		<calendars>
@@ -29,6 +38,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern>EEEE፡ dd MMMM መዓልቲ y G</pattern>
+							<datetimeSkeleton>GyMMMMEEEEdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -86,13 +96,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</dateTimeFormats>
 			</calendar>
 			<calendar type="gregorian">
-				<days>
-					<dayContext type="stand-alone">
-						<dayWidth type="narrow">
-							<day type="tue">ሰ</day>
-						</dayWidth>
-					</dayContext>
-				</days>
 				<eras>
 					<eraNames>
 						<era type="0">ዓመተ ዓለም</era>

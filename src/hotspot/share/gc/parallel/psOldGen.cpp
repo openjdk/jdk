@@ -163,7 +163,7 @@ bool PSOldGen::expand_for_allocate(size_t word_size) {
   assert(word_size > 0, "allocating zero words?");
   bool result = true;
   {
-    MutexLocker x(ExpandHeap_lock);
+    MutexLocker x(PSOldGenExpand_lock);
     // Avoid "expand storms" by rechecking available space after obtaining
     // the lock, because another thread may have already made sufficient
     // space available.  If insufficient space available, that will remain
@@ -181,7 +181,7 @@ bool PSOldGen::expand_for_allocate(size_t word_size) {
 }
 
 bool PSOldGen::expand(size_t bytes) {
-  assert_lock_strong(ExpandHeap_lock);
+  assert_lock_strong(PSOldGenExpand_lock);
   assert_locked_or_safepoint(Heap_lock);
   assert(bytes > 0, "precondition");
   const size_t alignment = virtual_space()->alignment();
@@ -219,7 +219,7 @@ bool PSOldGen::expand(size_t bytes) {
 }
 
 bool PSOldGen::expand_by(size_t bytes) {
-  assert_lock_strong(ExpandHeap_lock);
+  assert_lock_strong(PSOldGenExpand_lock);
   assert_locked_or_safepoint(Heap_lock);
   assert(bytes > 0, "precondition");
   bool result = virtual_space()->expand_by(bytes);
@@ -255,7 +255,7 @@ bool PSOldGen::expand_by(size_t bytes) {
 }
 
 bool PSOldGen::expand_to_reserved() {
-  assert_lock_strong(ExpandHeap_lock);
+  assert_lock_strong(PSOldGenExpand_lock);
   assert_locked_or_safepoint(Heap_lock);
 
   bool result = false;
@@ -268,12 +268,11 @@ bool PSOldGen::expand_to_reserved() {
 }
 
 void PSOldGen::shrink(size_t bytes) {
-  assert_lock_strong(ExpandHeap_lock);
+  assert_lock_strong(PSOldGenExpand_lock);
   assert_locked_or_safepoint(Heap_lock);
 
   size_t size = align_down(bytes, virtual_space()->alignment());
   if (size > 0) {
-    assert_lock_strong(ExpandHeap_lock);
     virtual_space()->shrink_by(bytes);
     post_resize();
 
@@ -281,6 +280,15 @@ void PSOldGen::shrink(size_t bytes) {
     size_t old_mem_size = new_mem_size + bytes;
     log_debug(gc)("Shrinking %s from " SIZE_FORMAT "K by " SIZE_FORMAT "K to " SIZE_FORMAT "K",
                   name(), old_mem_size/K, bytes/K, new_mem_size/K);
+  }
+}
+
+void PSOldGen::complete_loaded_archive_space(MemRegion archive_space) {
+  HeapWord* cur = archive_space.start();
+  while (cur < archive_space.end()) {
+    _start_array.allocate_block(cur);
+    size_t word_size = cast_to_oop(cur)->size();
+    cur += word_size;
   }
 }
 
@@ -312,11 +320,11 @@ void PSOldGen::resize(size_t desired_free_space) {
   }
   if (new_size > current_size) {
     size_t change_bytes = new_size - current_size;
-    MutexLocker x(ExpandHeap_lock);
+    MutexLocker x(PSOldGenExpand_lock);
     expand(change_bytes);
   } else {
     size_t change_bytes = current_size - new_size;
-    MutexLocker x(ExpandHeap_lock);
+    MutexLocker x(PSOldGenExpand_lock);
     shrink(change_bytes);
   }
 

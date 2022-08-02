@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1697,7 +1697,7 @@ final class WPathGraphics extends PathGraphics {
             /* selectStylePen is not supported, must be Win 9X */
             else {
 
-                /* let's see if we can use a a default pen
+                /* let's see if we can use the default pen
                  *  if it's round end (Windows' default style)
                  *  or it's vertical/horizontal
                  *  or stroke is too thin.

@@ -616,6 +616,8 @@ public:
   bool is_in_old(const void* p) const;
   inline bool is_old(oop pobj) const;
 
+  bool requires_barriers(stackChunkOop obj) const;
+
   MemRegion reserved_region() const { return _reserved; }
   bool is_in_reserved(const void* addr) const { return _reserved.contains(addr); }
 

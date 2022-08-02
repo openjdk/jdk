@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #include "jvm.h"
 #include "cds/archiveUtils.hpp"
 #include "cds/classListWriter.hpp"
+#include "cds/heapShared.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "classfile/classFileParser.hpp"
 #include "classfile/classFileStream.hpp"
@@ -33,7 +34,6 @@
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/moduleEntry.hpp"
-#include "classfile/resolutionErrors.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/systemDictionaryShared.hpp"
@@ -64,6 +64,7 @@
 #include "oops/instanceKlass.inline.hpp"
 #include "oops/instanceMirrorKlass.hpp"
 #include "oops/instanceOop.hpp"
+#include "oops/instanceStackChunkKlass.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/method.hpp"
 #include "oops/oop.inline.hpp"
@@ -78,10 +79,11 @@
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/javaThread.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/reflectionUtils.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/threads.hpp"
 #include "services/classLoadingService.hpp"
 #include "services/finalizerService.hpp"
 #include "services/threadService.hpp"
@@ -160,6 +162,12 @@ static inline bool is_class_loader(const Symbol* class_name,
     }
   }
   return false;
+}
+
+static inline bool is_stack_chunk_class(const Symbol* class_name,
+                                        const ClassLoaderData* loader_data) {
+  return (class_name == vmSymbols::jdk_internal_vm_StackChunk() &&
+          loader_data->is_the_null_class_loader_data());
 }
 
 // private: called to verify that k is a static member of this nest.
@@ -437,21 +445,21 @@ InstanceKlass* InstanceKlass::allocate_instance_klass(const ClassFileParser& par
   InstanceKlass* ik;
 
   // Allocation
-  if (REF_NONE == parser.reference_type()) {
-    if (class_name == vmSymbols::java_lang_Class()) {
-      // mirror
-      ik = new (loader_data, size, THREAD) InstanceMirrorKlass(parser);
-    }
-    else if (is_class_loader(class_name, parser)) {
-      // class loader
-      ik = new (loader_data, size, THREAD) InstanceClassLoaderKlass(parser);
-    } else {
-      // normal
-      ik = new (loader_data, size, THREAD) InstanceKlass(parser, InstanceKlass::_kind_other);
-    }
-  } else {
-    // reference
+  if (parser.is_instance_ref_klass()) {
+    // java.lang.ref.Reference
     ik = new (loader_data, size, THREAD) InstanceRefKlass(parser);
+  } else if (class_name == vmSymbols::java_lang_Class()) {
+    // mirror - java.lang.Class
+    ik = new (loader_data, size, THREAD) InstanceMirrorKlass(parser);
+  } else if (is_stack_chunk_class(class_name, loader_data)) {
+    // stack chunk
+    ik = new (loader_data, size, THREAD) InstanceStackChunkKlass(parser);
+  } else if (is_class_loader(class_name, parser)) {
+    // class loader - java.lang.ClassLoader
+    ik = new (loader_data, size, THREAD) InstanceClassLoaderKlass(parser);
+  } else {
+    // normal
+    ik = new (loader_data, size, THREAD) InstanceKlass(parser);
   }
 
   // Check for pending exception before adding to the loader data and incrementing
@@ -485,8 +493,12 @@ Array<int>* InstanceKlass::create_new_default_vtable_indices(int len, TRAPS) {
   return vtable_indices;
 }
 
-InstanceKlass::InstanceKlass(const ClassFileParser& parser, unsigned kind, KlassID id) :
-  Klass(id),
+static Monitor* create_init_monitor(const char* name) {
+  return new Monitor(Mutex::safepoint, name);
+}
+
+InstanceKlass::InstanceKlass(const ClassFileParser& parser, KlassKind kind, ReferenceType reference_type) :
+  Klass(kind),
   _nest_members(NULL),
   _nest_host(NULL),
   _permitted_subclasses(NULL),
@@ -496,11 +508,11 @@ InstanceKlass::InstanceKlass(const ClassFileParser& parser, unsigned kind, Klass
   _itable_len(parser.itable_size()),
   _nest_host_index(0),
   _init_state(allocated),
-  _reference_type(parser.reference_type()),
+  _reference_type(reference_type),
+  _init_monitor(create_init_monitor("InstanceKlassInitMonitor_lock")),
   _init_thread(NULL)
 {
   set_vtable_length(parser.vtable_size());
-  set_kind(kind);
   set_access_flags(parser.access_flags());
   if (parser.is_hidden()) set_is_hidden();
   set_layout_helper(Klass::instance_layout_helper(parser.layout_size(),
@@ -702,25 +714,6 @@ klassItable InstanceKlass::itable() const {
   return klassItable(const_cast<InstanceKlass*>(this));
 }
 
-void InstanceKlass::eager_initialize(Thread *thread) {
-  if (!EagerInitialization) return;
-
-  if (this->is_not_initialized()) {
-    // abort if the the class has a class initializer
-    if (this->class_initializer() != NULL) return;
-
-    // abort if it is java.lang.Object (initialization is handled in genesis)
-    Klass* super_klass = super();
-    if (super_klass == NULL) return;
-
-    // abort if the super class should be initialized
-    if (!InstanceKlass::cast(super_klass)->is_initialized()) return;
-
-    // call body to expose the this pointer
-    eager_initialize_impl();
-  }
-}
-
 // JVMTI spec thinks there are signers and protection domain in the
 // instanceKlass.  These accessors pretend these fields are there.
 // The hprof specification also thinks these fields are in InstanceKlass.
@@ -733,60 +726,6 @@ objArrayOop InstanceKlass::signers() const {
   // return the signers from the mirror
   return java_lang_Class::signers(java_mirror());
 }
-
-oop InstanceKlass::init_lock() const {
-  // return the init lock from the mirror
-  oop lock = java_lang_Class::init_lock(java_mirror());
-  // Prevent reordering with any access of initialization state
-  OrderAccess::loadload();
-  assert(lock != NULL || !is_not_initialized(), // initialized or in_error state
-         "only fully initialized state can have a null lock");
-  return lock;
-}
-
-// Set the initialization lock to null so the object can be GC'ed.  Any racing
-// threads to get this lock will see a null lock and will not lock.
-// That's okay because they all check for initialized state after getting
-// the lock and return.
-void InstanceKlass::fence_and_clear_init_lock() {
-  // make sure previous stores are all done, notably the init_state.
-  OrderAccess::storestore();
-  java_lang_Class::clear_init_lock(java_mirror());
-  assert(!is_not_initialized(), "class must be initialized now");
-}
-
-void InstanceKlass::eager_initialize_impl() {
-  EXCEPTION_MARK;
-  HandleMark hm(THREAD);
-  Handle h_init_lock(THREAD, init_lock());
-  ObjectLocker ol(h_init_lock, THREAD);
-
-  // abort if someone beat us to the initialization
-  if (!is_not_initialized()) return;  // note: not equivalent to is_initialized()
-
-  ClassState old_state = init_state();
-  link_class_impl(THREAD);
-  if (HAS_PENDING_EXCEPTION) {
-    CLEAR_PENDING_EXCEPTION;
-    // Abort if linking the class throws an exception.
-
-    // Use a test to avoid redundantly resetting the state if there's
-    // no change.  Set_init_state() asserts that state changes make
-    // progress, whereas here we might just be spinning in place.
-    if (old_state != _init_state)
-      set_init_state(old_state);
-  } else {
-    // linking successfull, mark class as initialized
-    set_init_state(fully_initialized);
-    fence_and_clear_init_lock();
-    // trace
-    if (log_is_enabled(Info, class, init)) {
-      ResourceMark rm(THREAD);
-      log_info(class, init)("[Initialized %s without side effects]", external_name());
-    }
-  }
-}
-
 
 // See "The Virtual Machine Specification" section 2.16.5 for a detailed explanation of the class initialization
 // process. The step comments refers to the procedure described in that section.
@@ -812,6 +751,26 @@ void InstanceKlass::link_class(TRAPS) {
   assert(is_loaded(), "must be loaded");
   if (!is_linked()) {
     link_class_impl(CHECK);
+  }
+}
+
+void InstanceKlass::check_link_state_and_wait(JavaThread* current) {
+  MonitorLocker ml(current, _init_monitor);
+
+  // Another thread is linking this class, wait.
+  while (is_being_linked() && !is_init_thread(current)) {
+    ml.wait();
+  }
+
+  // This thread is recursively linking this class, continue
+  if (is_being_linked() && is_init_thread(current)) {
+    return;
+  }
+
+  // If this class wasn't linked already, set state to being_linked
+  if (!is_linked()) {
+    set_init_state(being_linked);
+    set_init_thread(current);
   }
 }
 
@@ -893,9 +852,8 @@ bool InstanceKlass::link_class_impl(TRAPS) {
 
   // verification & rewriting
   {
-    HandleMark hm(THREAD);
-    Handle h_init_lock(THREAD, init_lock());
-    ObjectLocker ol(h_init_lock, jt);
+    LockLinkState init_lock(this, jt);
+
     // rewritten will have been set if loader constraint error found
     // on an earlier link attempt
     // don't verify or rewrite if already rewritten
@@ -953,17 +911,7 @@ bool InstanceKlass::link_class_impl(TRAPS) {
       // In case itable verification is ever added.
       // itable().verify(tty, true);
 #endif
-      if (UseVtableBasedCHA) {
-        MutexLocker ml(THREAD, Compile_lock);
-        set_init_state(linked);
-
-        // Now flush all code that assume the class is not linked.
-        if (Universe::is_fully_initialized()) {
-          CodeCache::flush_dependents_on(this);
-        }
-      } else {
-        set_init_state(linked);
-      }
+      set_initialization_state_and_notify(linked, THREAD);
       if (JvmtiExport::should_post_class_prepare()) {
         JvmtiExport::post_class_prepare(THREAD, this);
       }
@@ -1076,28 +1024,25 @@ void InstanceKlass::initialize_impl(TRAPS) {
   DTRACE_CLASSINIT_PROBE(required, -1);
 
   bool wait = false;
+  bool throw_error = false;
 
   JavaThread* jt = THREAD;
 
   // refer to the JVM book page 47 for description of steps
   // Step 1
   {
-    Handle h_init_lock(THREAD, init_lock());
-    ObjectLocker ol(h_init_lock, jt);
+    MonitorLocker ml(THREAD, _init_monitor);
 
     // Step 2
-    // If we were to use wait() instead of waitInterruptibly() then
-    // we might end up throwing IE from link/symbol resolution sites
-    // that aren't expected to throw.  This would wreak havoc.  See 6320309.
-    while (is_being_initialized() && !is_reentrant_initialization(jt)) {
+    while (is_being_initialized() && !is_init_thread(jt)) {
       wait = true;
       jt->set_class_to_be_initialized(this);
-      ol.wait_uninterruptibly(jt);
+      ml.wait();
       jt->set_class_to_be_initialized(NULL);
     }
 
     // Step 3
-    if (is_being_initialized() && is_reentrant_initialization(jt)) {
+    if (is_being_initialized() && is_init_thread(jt)) {
       DTRACE_CLASSINIT_PROBE_WAIT(recursive, -1, wait);
       return;
     }
@@ -1110,23 +1055,29 @@ void InstanceKlass::initialize_impl(TRAPS) {
 
     // Step 5
     if (is_in_error_state()) {
-      DTRACE_CLASSINIT_PROBE_WAIT(erroneous, -1, wait);
-      ResourceMark rm(THREAD);
-      Handle cause(THREAD, get_initialization_error(THREAD));
+      throw_error = true;
+    } else {
 
-      stringStream ss;
-      ss.print("Could not initialize class %s", external_name());
-      if (cause.is_null()) {
-        THROW_MSG(vmSymbols::java_lang_NoClassDefFoundError(), ss.as_string());
-      } else {
-        THROW_MSG_CAUSE(vmSymbols::java_lang_NoClassDefFoundError(),
-                        ss.as_string(), cause);
-      }
+      // Step 6
+      set_init_state(being_initialized);
+      set_init_thread(jt);
     }
+  }
 
-    // Step 6
-    set_init_state(being_initialized);
-    set_init_thread(jt);
+  // Throw error outside lock
+  if (throw_error) {
+    DTRACE_CLASSINIT_PROBE_WAIT(erroneous, -1, wait);
+    ResourceMark rm(THREAD);
+    Handle cause(THREAD, get_initialization_error(THREAD));
+
+    stringStream ss;
+    ss.print("Could not initialize class %s", external_name());
+    if (cause.is_null()) {
+      THROW_MSG(vmSymbols::java_lang_NoClassDefFoundError(), ss.as_string());
+    } else {
+      THROW_MSG_CAUSE(vmSymbols::java_lang_NoClassDefFoundError(),
+                      ss.as_string(), cause);
+    }
   }
 
   // Step 7
@@ -1186,7 +1137,7 @@ void InstanceKlass::initialize_impl(TRAPS) {
 
   // Step 9
   if (!HAS_PENDING_EXCEPTION) {
-    set_initialization_state_and_notify(fully_initialized, CHECK);
+    set_initialization_state_and_notify(fully_initialized, THREAD);
     debug_only(vtable().verify(tty, true);)
   }
   else {
@@ -1219,19 +1170,23 @@ void InstanceKlass::initialize_impl(TRAPS) {
 }
 
 
-void InstanceKlass::set_initialization_state_and_notify(ClassState state, TRAPS) {
-  Handle h_init_lock(THREAD, init_lock());
-  if (h_init_lock() != NULL) {
-    ObjectLocker ol(h_init_lock, THREAD);
+void InstanceKlass::set_initialization_state_and_notify(ClassState state, JavaThread* current) {
+  MonitorLocker ml(current, _init_monitor);
+
+  // Now flush all code that assume the class is not linked.
+  // Set state under the Compile_lock also.
+  if (state == linked && UseVtableBasedCHA && Universe::is_fully_initialized()) {
+    MutexLocker ml(current, Compile_lock);
+
     set_init_thread(NULL); // reset _init_thread before changing _init_state
     set_init_state(state);
-    fence_and_clear_init_lock();
-    ol.notify_all(CHECK);
+
+    CodeCache::flush_dependents_on(this);
   } else {
-    assert(h_init_lock() != NULL, "The initialization state should never be set twice");
     set_init_thread(NULL); // reset _init_thread before changing _init_state
     set_init_state(state);
   }
+  ml.notify_all();
 }
 
 InstanceKlass* InstanceKlass::implementor() const {
@@ -1502,6 +1457,17 @@ void InstanceKlass::call_class_initializer(TRAPS) {
     // Hide the existence of the initializer for the purpose of replaying the compile
     return;
   }
+
+#if INCLUDE_CDS
+  // This is needed to ensure the consistency of the archived heap objects.
+  if (has_archived_enum_objs()) {
+    assert(is_shared(), "must be");
+    bool initialized = HeapShared::initialize_enum_klass(this, CHECK);
+    if (initialized) {
+      return;
+    }
+  }
+#endif
 
   methodHandle h_method(THREAD, class_initializer());
   assert(!is_initialized(), "we cannot initialize twice");
@@ -2062,6 +2028,52 @@ Method* InstanceKlass::lookup_method_in_all_interfaces(Symbol* name,
   return NULL;
 }
 
+PrintClassClosure::PrintClassClosure(outputStream* st, bool verbose)
+  :_st(st), _verbose(verbose) {
+  ResourceMark rm;
+  _st->print("%-18s  ", "KlassAddr");
+  _st->print("%-4s  ", "Size");
+  _st->print("%-20s  ", "State");
+  _st->print("%-7s  ", "Flags");
+  _st->print("%-5s  ", "ClassName");
+  _st->cr();
+}
+
+void PrintClassClosure::do_klass(Klass* k)  {
+  ResourceMark rm;
+  // klass pointer
+  _st->print(INTPTR_FORMAT "  ", p2i(k));
+  // klass size
+  _st->print("%4d  ", k->size());
+  // initialization state
+  if (k->is_instance_klass()) {
+    _st->print("%-20s  ",InstanceKlass::cast(k)->init_state_name());
+  } else {
+    _st->print("%-20s  ","");
+  }
+  // misc flags(Changes should synced with ClassesDCmd::ClassesDCmd help doc)
+  char buf[10];
+  int i = 0;
+  if (k->has_finalizer()) buf[i++] = 'F';
+  if (k->has_final_method()) buf[i++] = 'f';
+  if (k->is_instance_klass()) {
+    InstanceKlass* ik = InstanceKlass::cast(k);
+    if (ik->is_rewritten()) buf[i++] = 'W';
+    if (ik->is_contended()) buf[i++] = 'C';
+    if (ik->has_been_redefined()) buf[i++] = 'R';
+    if (ik->is_shared()) buf[i++] = 'S';
+  }
+  buf[i++] = '\0';
+  _st->print("%-7s  ", buf);
+  // klass name
+  _st->print("%-5s  ", k->external_name());
+  // end
+  _st->cr();
+  if (_verbose) {
+    k->print_on(_st);
+  }
+}
+
 /* jni_id_for for jfieldIds only */
 JNIid* InstanceKlass::jni_id_for(int offset) {
   MutexLocker ml(JfieldIdCreation_lock);
@@ -2503,6 +2515,7 @@ void InstanceKlass::remove_unshareable_info() {
   _nest_host = NULL;
   init_shared_package_entry();
   _dep_context_last_cleaned = 0;
+  _init_monitor = NULL;
 }
 
 void InstanceKlass::remove_java_mirror() {
@@ -2582,6 +2595,9 @@ void InstanceKlass::restore_unshareable_info(ClassLoaderData* loader_data, Handl
   if (DiagnoseSyncOnValueBasedClasses && has_value_based_class_annotation()) {
     set_is_value_based();
   }
+
+  // restore the monitor
+  _init_monitor = create_init_monitor("InstanceKlassInitMonitorRestored_lock");
 }
 
 // Check if a class or any of its supertypes has a version older than 50.
@@ -2688,6 +2704,9 @@ void InstanceKlass::release_C_heap_structures(bool release_constant_pool) {
 
   // Deallocate and call destructors for MDO mutexes
   methods_do(method_release_C_heap_structures);
+
+  // Destroy the init_monitor
+  delete _init_monitor;
 
   // Deallocate oop map cache
   if (_oop_map_cache != NULL) {
@@ -3362,7 +3381,7 @@ nmethod* InstanceKlass::lookup_osr_nmethod(const Method* m, int bci, int comp_le
 #define BULLET  " - "
 
 static const char* state_names[] = {
-  "allocated", "loaded", "linked", "being_initialized", "fully_initialized", "initialization_error"
+  "allocated", "loaded", "being_linked", "linked", "being_initialized", "fully_initialized", "initialization_error"
 };
 
 static void print_vtable(intptr_t* start, int len, outputStream* st) {
@@ -3381,6 +3400,10 @@ static void print_vtable(vtableEntry* start, int len, outputStream* st) {
   return print_vtable(reinterpret_cast<intptr_t*>(start), len, st);
 }
 
+const char* InstanceKlass::init_state_name() const {
+  return state_names[_init_state];
+}
+
 void InstanceKlass::print_on(outputStream* st) const {
   assert(is_klass(), "must be klass");
   Klass::print_on(st);
@@ -3388,7 +3411,7 @@ void InstanceKlass::print_on(outputStream* st) const {
   st->print(BULLET"instance size:     %d", size_helper());                        st->cr();
   st->print(BULLET"klass size:        %d", size());                               st->cr();
   st->print(BULLET"access:            "); access_flags().print_on(st);            st->cr();
-  st->print(BULLET"state:             "); st->print_cr("%s", state_names[_init_state]);
+  st->print(BULLET"state:             "); st->print_cr("%s", init_state_name());
   st->print(BULLET"name:              "); name()->print_value_on(st);             st->cr();
   st->print(BULLET"super:             "); Metadata::print_value_on_maybe_null(st, super()); st->cr();
   st->print(BULLET"sub:               ");
@@ -3912,13 +3935,17 @@ void JNIid::verify(Klass* holder) {
 }
 
 void InstanceKlass::set_init_state(ClassState state) {
+  if (state > loaded) {
+    assert_lock_strong(_init_monitor);
+  }
 #ifdef ASSERT
   bool good_state = is_shared() ? (_init_state <= state)
                                                : (_init_state < state);
-  assert(good_state || state == allocated, "illegal state transition");
+  bool link_failed = _init_state == being_linked && state == loaded;
+  assert(good_state || state == allocated || link_failed, "illegal state transition");
 #endif
   assert(_init_thread == NULL, "should be cleared before state change");
-  _init_state = (u1)state;
+  _init_state = state;
 }
 
 #if INCLUDE_JVMTI

@@ -193,7 +193,7 @@ public class List extends Component implements ItemSelectable, Accessible {
      * not allowed.  Note that this is a convenience method for
      * {@code List(0, false)}.  Also note that the number of visible
      * lines in the list cannot be changed after it has been created.
-     * @exception HeadlessException if GraphicsEnvironment.isHeadless()
+     * @throws HeadlessException if GraphicsEnvironment.isHeadless()
      * returns true.
      * @see java.awt.GraphicsEnvironment#isHeadless
      */
@@ -209,7 +209,7 @@ public class List extends Component implements ItemSelectable, Accessible {
      * of visible rows in the list cannot be changed after it has
      * been created.
      * @param       rows the number of items to show.
-     * @exception HeadlessException if GraphicsEnvironment.isHeadless()
+     * @throws HeadlessException if GraphicsEnvironment.isHeadless()
      * returns true.
      * @see java.awt.GraphicsEnvironment#isHeadless
      * @since       1.1
@@ -238,7 +238,7 @@ public class List extends Component implements ItemSelectable, Accessible {
      * @param       multipleMode   if {@code true},
      *                     then multiple selections are allowed;
      *                     otherwise, only one item can be selected at a time.
-     * @exception HeadlessException if GraphicsEnvironment.isHeadless()
+     * @throws HeadlessException if GraphicsEnvironment.isHeadless()
      * returns true.
      * @see java.awt.GraphicsEnvironment#isHeadless
      */
@@ -411,7 +411,7 @@ public class List extends Component implements ItemSelectable, Accessible {
      * with the new string.
      * @param       newValue   a new string to replace an existing item
      * @param       index      the position of the item to replace
-     * @exception ArrayIndexOutOfBoundsException if {@code index}
+     * @throws ArrayIndexOutOfBoundsException if {@code index}
      *          is out of range
      */
     public synchronized void replaceItem(String newValue, int index) {
@@ -448,7 +448,7 @@ public class List extends Component implements ItemSelectable, Accessible {
      * If the specified item is selected, and is the only selected
      * item in the list, the list is set to have no selection.
      * @param        item  the item to remove from the list
-     * @exception    IllegalArgumentException
+     * @throws    IllegalArgumentException
      *                     if the item doesn't exist in the list
      * @since        1.1
      */
@@ -470,7 +470,7 @@ public class List extends Component implements ItemSelectable, Accessible {
      * @param      position   the index of the item to delete
      * @see        #add(String, int)
      * @since      1.1
-     * @exception    ArrayIndexOutOfBoundsException
+     * @throws    ArrayIndexOutOfBoundsException
      *               if the {@code position} is less than 0 or
      *               greater than {@code getItemCount()-1}
      */
@@ -1053,7 +1053,7 @@ public class List extends Component implements ItemSelectable, Accessible {
      *          <code><em>Foo</em>Listener</code>s on this list,
      *          or an empty array if no such
      *          listeners have been added
-     * @exception ClassCastException if {@code listenerType}
+     * @throws ClassCastException if {@code listenerType}
      *          doesn't specify a class or interface that implements
      *          {@code java.util.EventListener}
      *
@@ -1631,7 +1631,7 @@ public class List extends Component implements ItemSelectable, Accessible {
              * @return This component's locale.  If this component does not have
              * a locale, the locale of its parent is returned.
              *
-             * @exception IllegalComponentStateException
+             * @throws IllegalComponentStateException
              * If the Component does not have its own locale and has not yet
              * been added to a containment hierarchy such that the locale can
              * be determined from the containing parent.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1466,7 +1466,7 @@ public class ScanTest {
         // Test case reported from India
         try {
             String Message = "123978.90 $";
-            Locale locale = new Locale("hi","IN");
+            Locale locale = Locale.of("hi","IN");
             NumberFormat form = NumberFormat.getInstance(locale);
             double myNumber = 1902.09;
             Scanner scanner = new Scanner(form.format(myNumber).toString());
@@ -1485,7 +1485,7 @@ public class ScanTest {
         Pattern delimiter = sc.delimiter();
         Pattern a = Pattern.compile("A");
         sc.useDelimiter(a);
-        Locale dummy = new Locale("en", "US", "dummy");
+        Locale dummy = Locale.of("en", "US", "dummy");
         sc.useLocale(dummy);
         sc.useRadix(16);
         if (sc.radix() != 16 ||

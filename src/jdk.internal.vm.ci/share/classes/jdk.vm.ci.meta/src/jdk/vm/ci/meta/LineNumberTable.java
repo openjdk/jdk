@@ -25,7 +25,7 @@ package jdk.vm.ci.meta;
 /**
  * Maps bytecode indexes to source line numbers.
  *
- * @see "https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html#jvms-4.7.12"
+ * @jvms 4.7.12
  */
 public class LineNumberTable {
 

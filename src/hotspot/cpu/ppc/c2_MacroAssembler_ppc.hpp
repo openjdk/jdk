@@ -28,6 +28,9 @@
 // C2_MacroAssembler contains high-level macros for C2
 
  public:
+  void emit_entry_barrier_stub(C2EntryBarrierStub* stub) {}
+  static int entry_barrier_stub_size() { return 0; }
+
   // Intrinsics for CompactStrings
   // Compress char[] to byte[] by compressing 16 bytes at once.
   void string_compress_16(Register src, Register dst, Register cnt,
@@ -63,6 +66,6 @@
   void string_indexof_char(Register result, Register haystack, Register haycnt,
                            Register needle, jchar needleChar, Register tmp1, Register tmp2, bool is_byte);
 
-  void has_negatives(Register src, Register cnt, Register result, Register tmp1, Register tmp2);
+  void count_positives(Register src, Register cnt, Register result, Register tmp1, Register tmp2);
 
 #endif // CPU_PPC_C2_MACROASSEMBLER_PPC_HPP

@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 
 #include "compiler/oopMap.hpp"
+#include "gc/shared/continuationGCSupport.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
 #include "gc/shared/tlab_globals.hpp"
@@ -56,8 +57,8 @@
 #include "memory/universe.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/orderAccess.hpp"
-#include "runtime/thread.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/events.hpp"
@@ -1101,6 +1102,8 @@ public:
 
   void do_oop(oop* p)       { do_oop_work(p); }
   void do_oop(narrowOop* p) { do_oop_work(p); }
+  void do_method(Method* m) {}
+  void do_nmethod(nmethod* nm) {}
 };
 
 class ShenandoahAdjustPointersObjectClosure : public ObjectClosure {
@@ -1208,6 +1211,8 @@ public:
       HeapWord* compact_to = cast_from_oop<HeapWord*>(p->forwardee());
       Copy::aligned_conjoint_words(compact_from, compact_to, size);
       oop new_obj = cast_to_oop(compact_to);
+
+      ContinuationGCSupport::relativize_stack_chunk(new_obj);
       new_obj->init_mark();
     }
   }
@@ -1333,6 +1338,7 @@ void ShenandoahFullGC::compact_humongous_objects() {
       assert(old_start != new_start, "must be real move");
       assert(r->is_stw_move_allowed(), "Region " SIZE_FORMAT " should be movable", r->index());
 
+      ContinuationGCSupport::relativize_stack_chunk(cast_to_oop<HeapWord*>(heap->get_region(old_start)->bottom()));
       log_debug(gc)("Full GC compaction moves humongous object from region " SIZE_FORMAT " to region " SIZE_FORMAT,
                     old_start, new_start);
 

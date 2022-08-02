@@ -178,7 +178,7 @@ public class Introspector {
      *
      * @param beanClass  The bean class to be analyzed.
      * @return  A BeanInfo object describing the target bean.
-     * @exception IntrospectionException if an exception occurs during
+     * @throws IntrospectionException if an exception occurs during
      *              introspection.
      * @see #flushCaches
      * @see #flushFromCaches
@@ -216,7 +216,7 @@ public class Introspector {
      *           associated with the specified beanClass or any of its
      *           parent classes.
      * @return  A BeanInfo object describing the target bean.
-     * @exception IntrospectionException if an exception occurs during
+     * @throws IntrospectionException if an exception occurs during
      *              introspection.
      * @since 1.2
      */
@@ -237,7 +237,7 @@ public class Introspector {
      * @param stopClass The baseclass at which to stop the analysis.  Any
      *    methods/properties/events in the stopClass or in its baseclasses
      *    will be ignored in the analysis.
-     * @exception IntrospectionException if an exception occurs during
+     * @throws IntrospectionException if an exception occurs during
      *              introspection.
      */
     public static BeanInfo getBeanInfo(Class<?> beanClass, Class<?> stopClass)
@@ -269,7 +269,7 @@ public class Introspector {
      * @param stopClass  the parent class at which to stop the analysis
      * @param flags      flags to control the introspection
      * @return a BeanInfo object describing the target bean
-     * @exception IntrospectionException if an exception occurs during introspection
+     * @throws IntrospectionException if an exception occurs during introspection
      *
      * @since 1.7
      */
@@ -339,7 +339,7 @@ public class Introspector {
      * method is called. This could result in a SecurityException.
      *
      * @param path  Array of package names.
-     * @exception  SecurityException  if a security manager exists and its
+     * @throws  SecurityException  if a security manager exists and its
      *             {@code checkPropertiesAccess} method doesn't allow setting
      *              of system properties.
      * @see SecurityManager#checkPropertiesAccess

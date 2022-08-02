@@ -77,7 +77,6 @@ static int totalInstructionNodes = 0;
 
 class PhaseTraceTime: public TraceTime {
  private:
-  JavaThread* _thread;
   CompileLog* _log;
   TimerName _timer;
 
@@ -363,6 +362,7 @@ int Compilation::emit_code_body() {
   }
 #endif /* PRODUCT */
 
+  _immediate_oops_patched = lir_asm.nr_immediate_oops_patched();
   return frame_map()->framesize();
 }
 
@@ -380,6 +380,10 @@ int Compilation::compile_java_method() {
 
   if (is_profiling() && !method()->ensure_method_data()) {
     BAILOUT_("mdo allocation failed", no_frame_size);
+  }
+
+  if (method()->is_synchronized()) {
+    set_has_monitors(true);
   }
 
   {
@@ -426,7 +430,9 @@ void Compilation::install_code(int frame_size) {
     implicit_exception_table(),
     compiler(),
     has_unsafe_access(),
-    SharedRuntime::is_wide_vector(max_vector_size())
+    SharedRuntime::is_wide_vector(max_vector_size()),
+    has_monitors(),
+    _immediate_oops_patched
   );
 }
 
@@ -560,9 +566,11 @@ Compilation::Compilation(AbstractCompiler* compiler, ciEnv* env, ciMethod* metho
 , _has_exception_handlers(false)
 , _has_fpu_code(true)   // pessimistic assumption
 , _has_unsafe_access(false)
+, _has_irreducible_loops(false)
 , _would_profile(false)
 , _has_method_handle_invokes(false)
 , _has_reserved_stack_access(method->has_reserved_stack_access())
+, _has_monitors(false)
 , _install_code(install_code)
 , _bailout_msg(NULL)
 , _exception_info_list(NULL)
@@ -570,6 +578,7 @@ Compilation::Compilation(AbstractCompiler* compiler, ciEnv* env, ciMethod* metho
 , _code(buffer_blob)
 , _has_access_indexed(false)
 , _interpreter_frame_size(0)
+, _immediate_oops_patched(0)
 , _current_instruction(NULL)
 #ifndef PRODUCT
 , _last_instruction_printed(NULL)

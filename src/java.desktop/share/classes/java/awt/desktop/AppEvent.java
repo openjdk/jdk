@@ -37,7 +37,18 @@ import java.util.EventObject;
  *
  * @since 9
  */
-public class AppEvent extends EventObject {
+public sealed class AppEvent extends EventObject
+    permits AboutEvent,
+            AppForegroundEvent,
+            AppHiddenEvent,
+            AppReopenedEvent,
+            FilesEvent,
+            OpenURIEvent,
+            PreferencesEvent,
+            QuitEvent,
+            ScreenSleepEvent,
+            SystemSleepEvent,
+            UserSessionEvent {
 
     /**
      * Use serialVersionUID from JDK 9 for interoperability.

@@ -227,9 +227,12 @@ public final class FileServerHandler implements HttpHandler {
             // resolve each path segment against the root
             Path path = root;
             for (var segment : pathSegment) {
+                if (!URIPathSegment.isSupported(segment)) {
+                    return null;  // stop resolution, null results in 404 response
+                }
                 path = path.resolve(segment);
                 if (!Files.isReadable(path) || isHiddenOrSymLink(path)) {
-                    return null;  // stop resolution, null results in 404 response
+                    return null;  // stop resolution
                 }
             }
             path = path.normalize();

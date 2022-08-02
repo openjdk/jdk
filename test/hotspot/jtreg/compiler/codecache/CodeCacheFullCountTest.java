@@ -55,7 +55,7 @@ public class CodeCacheFullCountTest {
 
     public static void runTest() throws Throwable {
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-          "-XX:ReservedCodeCacheSize=2496k", "-XX:-UseCodeCacheFlushing", "CodeCacheFullCountTest", "WasteCodeCache");
+          "-XX:ReservedCodeCacheSize=2496k", "-XX:-UseCodeCacheFlushing", "-XX:-MethodFlushing", "CodeCacheFullCountTest", "WasteCodeCache");
         OutputAnalyzer oa = ProcessTools.executeProcess(pb);
         oa.shouldHaveExitValue(0);
         String stdout = oa.getStdout();
@@ -64,7 +64,7 @@ public class CodeCacheFullCountTest {
         Matcher stdoutMatcher = pattern.matcher(stdout);
         if (stdoutMatcher.find()) {
             int fullCount = Integer.parseInt(stdoutMatcher.group(1));
-            if (fullCount != 1) {
+            if (fullCount == 0) {
                 throw new RuntimeException("the value of full_count is wrong.");
             }
         } else {

@@ -144,7 +144,7 @@
     return false;
   }
 
-  // true means we have fast l2f convers
+  // true means we have fast l2f conversion
   // false means that conversion is done by runtime call
   static constexpr bool convL2FSupported(void) {
       return true;
@@ -152,5 +152,26 @@
 
   // Implements a variant of EncodeISOArrayNode that encode ASCII only
   static const bool supports_encode_ascii_array = true;
+
+  // Returns pre-selection estimated size of a vector operation.
+  static int vector_op_pre_select_sz_estimate(int vopc, BasicType ety, int vlen) {
+    switch(vopc) {
+      default: return 0;
+      case Op_RoundVF: // fall through
+      case Op_RoundVD: {
+        return 30;
+      }
+    }
+  }
+  // Returns pre-selection estimated size of a scalar operation.
+  static int scalar_op_pre_select_sz_estimate(int vopc, BasicType ety) {
+    switch(vopc) {
+      default: return 0;
+      case Op_RoundF: // fall through
+      case Op_RoundD: {
+        return 30;
+      }
+    }
+  }
 
 #endif // CPU_S390_MATCHER_S390_HPP

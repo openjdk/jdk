@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -555,8 +555,12 @@ void CompactibleSpace::compact() {
       // copy object and reinit its mark
       assert(cur_obj != compaction_top, "everything in this pass should be moving");
       Copy::aligned_conjoint_words(cur_obj, compaction_top, size);
-      cast_to_oop(compaction_top)->init_mark();
-      assert(cast_to_oop(compaction_top)->klass() != NULL, "should have a class");
+      oop new_obj = cast_to_oop(compaction_top);
+
+      ContinuationGCSupport::transform_stack_chunk(new_obj);
+
+      new_obj->init_mark();
+      assert(new_obj->klass() != NULL, "should have a class");
 
       debug_only(prev_obj = cur_obj);
       cur_obj += size;

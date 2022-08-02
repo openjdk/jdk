@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,8 +34,8 @@ package gc.arguments;
  * @modules java.management
  * @library /test/lib
  * @library /
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run driver gc.arguments.TestVerifyBeforeAndAfterGCFlags
  */
 
@@ -44,9 +44,7 @@ import java.util.Collections;
 
 import jdk.test.lib.Utils;
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.process.ProcessTools;
-
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 public class TestVerifyBeforeAndAfterGCFlags {
 

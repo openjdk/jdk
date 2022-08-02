@@ -260,7 +260,13 @@ bool CgroupSubsystemFactory::determine_type(CgroupInfo* cg_infos,
       }
     }
     if (is_cgroupsV2) {
+      // On some systems we have mixed cgroups v1 and cgroups v2 controllers (e.g. freezer on cg1 and
+      // all relevant controllers on cg2). Only set the cgroup path when we see a hierarchy id of 0.
+      if (hierarchy_id != 0) {
+        continue;
+      }
       for (int i = 0; i < CG_INFO_LENGTH; i++) {
+        assert(cg_infos[i]._cgroup_path == NULL, "cgroup path must only be set once");
         cg_infos[i]._cgroup_path = os::strdup(cgroup_path);
       }
     }
@@ -495,7 +501,12 @@ int CgroupSubsystem::active_processor_count() {
   cpu_count = limit_count = os::Linux::active_processor_count();
   int quota  = cpu_quota();
   int period = cpu_period();
-  int share  = cpu_shares();
+
+  // It's not a good idea to use cpu_shares() to limit the number
+  // of CPUs used by the JVM. See JDK-8281181.
+  // UseContainerCpuShares and PreferContainerQuotaForCPUCount are
+  // deprecated and will be removed in the next JDK release.
+  int share  = UseContainerCpuShares ? cpu_shares() : -1;
 
   if (quota > -1 && period > 0) {
     quota_count = ceilf((float)quota / (float)period);

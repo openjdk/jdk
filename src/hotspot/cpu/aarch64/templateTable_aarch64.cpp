@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -137,7 +137,7 @@ static Assembler::Condition j_not(TemplateTable::Condition cc) {
 }
 
 
-// Miscelaneous helper routines
+// Miscellaneous helper routines
 // Store an oop (or NULL) at the Address described by obj.
 // If val == noreg this means store a NULL
 static void do_oop_store(InterpreterMacroAssembler* _masm,
@@ -2230,7 +2230,7 @@ void TemplateTable::_return(TosState state)
 //
 // According to the new Java Memory Model (JMM):
 // (1) All volatiles are serialized wrt to each other.  ALSO reads &
-//     writes act as aquire & release, so:
+//     writes act as acquire & release, so:
 // (2) A read cannot let unrelated NON-volatile memory refs that
 //     happen after the read float up to before the read.  It's OK for
 //     non-volatile memory refs that happen before the volatile read to
@@ -3468,7 +3468,6 @@ void TemplateTable::_new() {
   Label slow_case;
   Label done;
   Label initialize_header;
-  Label initialize_object; // including clearing the fields
 
   __ get_cpool_and_tags(r4, r0);
   // Make sure the class we're about to instantiate has been resolved.
@@ -3501,17 +3500,10 @@ void TemplateTable::_new() {
   //  If TLAB is enabled:
   //    Try to allocate in the TLAB.
   //    If fails, go to the slow path.
-  //  Else If inline contiguous allocations are enabled:
-  //    Try to allocate in eden.
-  //    If fails due to heap end, go to slow path.
-  //
-  //  If TLAB is enabled OR inline contiguous is enabled:
   //    Initialize the allocation.
   //    Exit.
   //
   //  Go to slow path.
-  const bool allow_shared_alloc =
-    Universe::heap()->supports_inline_contig_alloc();
 
   if (UseTLAB) {
     __ tlab_allocate(r0, r3, 0, noreg, r1, slow_case);
@@ -3519,25 +3511,10 @@ void TemplateTable::_new() {
     if (ZeroTLAB) {
       // the fields have been already cleared
       __ b(initialize_header);
-    } else {
-      // initialize both the header and fields
-      __ b(initialize_object);
     }
-  } else {
-    // Allocation in the shared Eden, if allowed.
-    //
-    // r3: instance size in bytes
-    if (allow_shared_alloc) {
-      __ eden_allocate(r0, r3, 0, r10, slow_case);
-    }
-  }
 
-  // If UseTLAB or allow_shared_alloc are true, the object is created above and
-  // there is an initialize need. Otherwise, skip and go to the slow path.
-  if (UseTLAB || allow_shared_alloc) {
     // The object is initialized before the header.  If the object size is
     // zero, go directly to the header initialization.
-    __ bind(initialize_object);
     __ sub(r3, r3, sizeof(oopDesc));
     __ cbz(r3, initialize_header);
 
@@ -3772,7 +3749,7 @@ void TemplateTable::athrow() {
 // [monitor entry]
 // [frame data   ] <--- monitor block bot
 // ...
-// [saved rbp    ] <--- rbp
+// [saved rfp    ] <--- rfp
 void TemplateTable::monitorenter()
 {
   transition(atos, vtos);
@@ -3827,13 +3804,17 @@ void TemplateTable::monitorenter()
   {
     Label entry, loop;
     // 1. compute new pointers            // rsp: old expression stack top
+
+    __ check_extended_sp();
+    __ sub(sp, sp, entry_size);           // make room for the monitor
+    __ mov(rscratch1, sp);
+    __ str(rscratch1, Address(rfp, frame::interpreter_frame_extended_sp_offset * wordSize));
+
     __ ldr(c_rarg1, monitor_block_bot);   // c_rarg1: old expression stack bottom
     __ sub(esp, esp, entry_size);         // move expression stack top
     __ sub(c_rarg1, c_rarg1, entry_size); // move expression stack bottom
     __ mov(c_rarg3, esp);                 // set start value for copy loop
     __ str(c_rarg1, monitor_block_bot);   // set new monitor block bottom
-
-    __ sub(sp, sp, entry_size);           // make room for the monitor
 
     __ b(entry);
     // 2. move expression stack contents
@@ -3854,7 +3835,7 @@ void TemplateTable::monitorenter()
 
   // Increment bcp to point to the next bytecode, so exception
   // handling for async. exceptions work correctly.
-  // The object has already been poped from the stack, so the
+  // The object has already been popped from the stack, so the
   // expression stack looks correct.
   __ increment(rbcp);
 

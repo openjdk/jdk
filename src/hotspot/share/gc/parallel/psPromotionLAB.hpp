@@ -72,7 +72,7 @@ class PSPromotionLAB : public CHeapObj<mtGC> {
 
   bool is_flushed()                  { return _state == flushed; }
 
-  bool unallocate_object(HeapWord* obj, size_t obj_size);
+  void unallocate_object(HeapWord* obj, size_t obj_size);
 
   // Returns a subregion containing all objects in this space.
   MemRegion used_region()            { return MemRegion(bottom(), top()); }

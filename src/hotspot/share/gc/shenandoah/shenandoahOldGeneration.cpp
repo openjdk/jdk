@@ -42,6 +42,7 @@
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahStringDedup.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
+#include "runtime/threads.hpp"
 
 class ShenandoahFlushAllSATB : public ThreadClosure {
  private:

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -568,6 +568,19 @@ public class TransTypes extends TreeTranslator {
         result = tree;
     }
 
+    @Override
+    public void visitConstantCaseLabel(JCConstantCaseLabel tree) {
+        tree.expr = translate(tree.expr, null);
+        result = tree;
+    }
+
+    @Override
+    public void visitPatternCaseLabel(JCPatternCaseLabel tree) {
+        tree.pat = translate(tree.pat, null);
+        tree.guard = translate(tree.guard, syms.booleanType);
+        result = tree;
+    }
+
     public void visitSwitchExpression(JCSwitchExpression tree) {
         Type selsuper = types.supertype(tree.selector.type);
         boolean enumSwitch = selsuper != null &&
@@ -585,10 +598,11 @@ public class TransTypes extends TreeTranslator {
         result = tree;
     }
 
-    @Override
-    public void visitGuardPattern(JCGuardPattern tree) {
-        tree.patt = translate(tree.patt, null);
-        tree.expr = translate(tree.expr, syms.booleanType);
+    public void visitRecordPattern(JCRecordPattern tree) {
+        tree.fullComponentTypes = tree.record.getRecordComponents()
+                                             .map(rc -> types.memberType(tree.type, rc));
+        tree.deconstructor = translate(tree.deconstructor, null);
+        tree.nested = translate(tree.nested, null);
         result = tree;
     }
 

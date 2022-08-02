@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
 #include "services/mallocSiteTable.hpp"
 
 // Malloc site hashtable buckets
-MallocSiteHashtableEntry*  MallocSiteTable::_table[MallocSiteTable::table_size];
+MallocSiteHashtableEntry**  MallocSiteTable::_table = NULL;
 const NativeCallStack* MallocSiteTable::_hash_entry_allocation_stack = NULL;
 const MallocSiteHashtableEntry* MallocSiteTable::_hash_entry_allocation_site = NULL;
 
@@ -42,6 +42,12 @@ const MallocSiteHashtableEntry* MallocSiteTable::_hash_entry_allocation_site = N
  * time, it is in single-threaded mode from JVM perspective.
  */
 bool MallocSiteTable::initialize() {
+
+  ALLOW_C_FUNCTION(::calloc,
+                   _table = (MallocSiteHashtableEntry**)::calloc(table_size, sizeof(MallocSiteHashtableEntry*));)
+  if (_table == nullptr) {
+    return false;
+  }
 
   // Fake the call stack for hashtable entry allocation
   assert(NMT_TrackingStackDepth > 1, "At least one tracking stack");
@@ -67,7 +73,7 @@ bool MallocSiteTable::initialize() {
 
   assert(_hash_entry_allocation_stack == NULL &&
          _hash_entry_allocation_site == NULL,
-         "Already initailized");
+         "Already initialized");
 
   _hash_entry_allocation_stack = &stack;
   _hash_entry_allocation_site = &entry;
@@ -106,13 +112,11 @@ bool MallocSiteTable::walk(MallocSiteWalker* walker) {
  *    2. Overflow hash bucket.
  *  Under any of above circumstances, caller should handle the situation.
  */
-MallocSite* MallocSiteTable::lookup_or_add(const NativeCallStack& key, size_t* bucket_idx,
-  size_t* pos_idx, MEMFLAGS flags) {
+MallocSite* MallocSiteTable::lookup_or_add(const NativeCallStack& key, uint32_t* marker, MEMFLAGS flags) {
   assert(flags != mtNone, "Should have a real memory type");
   const unsigned int hash = key.calculate_hash();
   const unsigned int index = hash_to_index(hash);
-  *bucket_idx = (size_t)index;
-  *pos_idx = 0;
+  *marker = 0;
 
   // First entry for this hash bucket
   if (_table[index] == NULL) {
@@ -122,41 +126,47 @@ MallocSite* MallocSiteTable::lookup_or_add(const NativeCallStack& key, size_t* b
 
     // swap in the head
     if (Atomic::replace_if_null(&_table[index], entry)) {
+      *marker = build_marker(index, 0);
       return entry->data();
     }
 
     delete entry;
   }
 
+  unsigned pos_idx = 0;
   MallocSiteHashtableEntry* head = _table[index];
-  while (head != NULL && (*pos_idx) <= MAX_BUCKET_LENGTH) {
+  while (head != NULL && pos_idx < MAX_BUCKET_LENGTH) {
     if (head->hash() == hash) {
       MallocSite* site = head->data();
       if (site->flag() == flags && site->equals(key)) {
+        *marker = build_marker(index, pos_idx);
         return head->data();
       }
     }
 
-    if (head->next() == NULL && (*pos_idx) < MAX_BUCKET_LENGTH) {
+    if (head->next() == NULL && pos_idx < (MAX_BUCKET_LENGTH - 1)) {
       MallocSiteHashtableEntry* entry = new_entry(key, flags);
       // OOM check
       if (entry == NULL) return NULL;
       if (head->atomic_insert(entry)) {
-        (*pos_idx) ++;
+        pos_idx ++;
+        *marker = build_marker(index, pos_idx);
         return entry->data();
       }
       // contended, other thread won
       delete entry;
     }
     head = (MallocSiteHashtableEntry*)head->next();
-    (*pos_idx) ++;
+    pos_idx ++;
   }
   return NULL;
 }
 
 // Access malloc site
-MallocSite* MallocSiteTable::malloc_site(size_t bucket_idx, size_t pos_idx) {
+MallocSite* MallocSiteTable::malloc_site(uint32_t marker) {
+  uint16_t bucket_idx = bucket_idx_from_marker(marker);
   assert(bucket_idx < table_size, "Invalid bucket index");
+  const uint16_t pos_idx = pos_idx_from_marker(marker);
   MallocSiteHashtableEntry* head = _table[bucket_idx];
   for (size_t index = 0;
        index < pos_idx && head != NULL;
@@ -172,28 +182,6 @@ MallocSiteHashtableEntry* MallocSiteTable::new_entry(const NativeCallStack& key,
   void* p = AllocateHeap(sizeof(MallocSiteHashtableEntry), mtNMT,
     *hash_entry_allocation_stack(), AllocFailStrategy::RETURN_NULL);
   return ::new (p) MallocSiteHashtableEntry(key, flags);
-}
-
-void MallocSiteTable::reset() {
-  for (int index = 0; index < table_size; index ++) {
-    MallocSiteHashtableEntry* head = _table[index];
-    _table[index] = NULL;
-    delete_linked_list(head);
-  }
-
-  _hash_entry_allocation_stack = NULL;
-  _hash_entry_allocation_site = NULL;
-}
-
-void MallocSiteTable::delete_linked_list(MallocSiteHashtableEntry* head) {
-  MallocSiteHashtableEntry* p;
-  while (head != NULL) {
-    p = head;
-    head = (MallocSiteHashtableEntry*)head->next();
-    if (p != hash_entry_allocation_site()) {
-      delete p;
-    }
-  }
 }
 
 bool MallocSiteTable::walk_malloc_site(MallocSiteWalker* walker) {

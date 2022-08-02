@@ -70,7 +70,7 @@ inline void G1DetermineCompactionQueueClosure::add_to_compaction_queue(HeapRegio
   hr->set_compaction_top(hr->bottom());
   G1FullGCCompactionPoint* cp = next_compaction_point();
   if (!cp->is_initialized()) {
-    cp->initialize(hr, true);
+    cp->initialize(hr);
   }
   // Add region to the compaction queue.
   cp->add(hr);

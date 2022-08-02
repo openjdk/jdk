@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -160,9 +160,8 @@ class Deoptimization : AllStatic {
 
 #if INCLUDE_JVMCI
   static address deoptimize_for_missing_exception_handler(CompiledMethod* cm);
-#endif
-
   static oop get_cached_box(AutoBoxObjectValue* bv, frame* fr, RegisterMap* reg_map, TRAPS);
+#endif
 
   private:
   // Does the actual work for deoptimizing a single frame

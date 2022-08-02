@@ -124,6 +124,8 @@ private:
   void op_cleanup_complete();
   void op_global_coalesce_and_fill();
 
+  void start_mark();
+
   // Messages for GC trace events, they have to be immortal for
   // passing around the logging/tracing systems
   void init_mark_event_message(char* buf, size_t len) const;

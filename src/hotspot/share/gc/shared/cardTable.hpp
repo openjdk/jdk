@@ -218,10 +218,6 @@ public:
 
   static uintx ct_max_alignment_constraint();
 
-  // Apply closure "cl" to the dirty cards containing some part of
-  // MemRegion "mr".
-  void dirty_card_iterate(MemRegion mr, MemRegionClosure* cl);
-
   // Return the MemRegion corresponding to the first maximal run
   // of dirty cards lying completely within MemRegion mr.
   // If reset is "true", then sets those card table entries to the given

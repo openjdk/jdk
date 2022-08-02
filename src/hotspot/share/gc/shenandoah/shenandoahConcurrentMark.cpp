@@ -43,6 +43,8 @@
 #include "gc/shenandoah/shenandoahScanRemembered.inline.hpp"
 #include "memory/iterator.inline.hpp"
 #include "memory/resourceArea.hpp"
+#include "runtime/continuation.hpp"
+#include "runtime/threads.hpp"
 
 template <GenerationMode GENERATION>
 class ShenandoahConcurrentMarkingTask : public WorkerTask {
@@ -281,6 +283,8 @@ void ShenandoahConcurrentMark::finish_mark() {
 
   _generation->set_concurrent_mark_in_progress(false);
   _generation->set_mark_complete();
+
+  end_mark();
 }
 
 void ShenandoahConcurrentMark::finish_mark_work() {

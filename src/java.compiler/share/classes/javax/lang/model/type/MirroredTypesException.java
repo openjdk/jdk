@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,9 +37,6 @@ import javax.lang.model.element.Element;
  * Thrown when an application attempts to access a sequence of {@link
  * Class} objects each corresponding to a {@link TypeMirror}.
  *
- * @author Joseph D. Darcy
- * @author Scott Seligman
- * @author Peter von der Ah&eacute;
  * @see MirroredTypeException
  * @see Element#getAnnotation(Class)
  * @since 1.6

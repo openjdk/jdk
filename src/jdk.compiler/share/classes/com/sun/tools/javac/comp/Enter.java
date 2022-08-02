@@ -377,7 +377,7 @@ public class Enter extends JCTree.Visitor {
                 ClassSymbol c = syms.enterClass(tree.modle, name, tree.packge);
                 c.flatname = names.fromString(tree.packge + "." + name);
                 c.classfile = c.sourcefile = tree.sourcefile;
-            c.completer = Completer.NULL_COMPLETER;
+                c.completer = Completer.NULL_COMPLETER;
                 c.members_field = WriteableScope.create(c);
                 tree.packge.package_info = c;
                 tree.packge.sourcefile = tree.sourcefile;

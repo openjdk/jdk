@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -487,6 +487,12 @@ public class WhiteBox {
   public final String AFTER_CONCURRENT_REFERENCE_PROCESSING_STARTED =
     "AFTER CONCURRENT REFERENCE PROCESSING STARTED";
 
+  // G1 specific GC breakpoints.
+  public final String G1_AFTER_REBUILD_STARTED = "AFTER REBUILD STARTED";
+  public final String G1_BEFORE_REBUILD_COMPLETED = "BEFORE REBUILD COMPLETED";
+  public final String G1_AFTER_CLEANUP_STARTED = "AFTER CLEANUP STARTED";
+  public final String G1_BEFORE_CLEANUP_COMPLETED = "BEFORE CLEANUP COMPLETED";
+
   public void concurrentGCAcquireControl() {
     checkConcurrentGCBreakpointsSupported();
     if (concurrentGCIsControlled) {
@@ -634,6 +640,7 @@ public class WhiteBox {
   public native boolean isSharedInternedString(String s);
   public native boolean isCDSIncluded();
   public native boolean isJFRIncluded();
+  public native boolean isDTraceIncluded();
   public native boolean canWriteJavaHeapArchive();
   public native Object  getResolvedReferences(Class<?> c);
   public native void    linkClass(Class<?> c);

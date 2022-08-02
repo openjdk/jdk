@@ -29,6 +29,9 @@
 // C2_MacroAssembler contains high-level macros for C2
 
  public:
+  void emit_entry_barrier_stub(C2EntryBarrierStub* stub) {}
+  static int entry_barrier_stub_size() { return 0; }
+
   //-------------------------------------------
   // Special String Intrinsics Implementation.
   //-------------------------------------------
@@ -57,9 +60,7 @@
   //   len is signed int. Counts # characters, not bytes.
   unsigned int string_inflate_const(Register src, Register dst, Register tmp, int len);
 
-  // Kills src.
-  unsigned int has_negatives(Register result, Register src, Register cnt,
-                             Register odd_reg, Register even_reg, Register tmp);
+  unsigned int count_positives(Register result, Register src, Register cnt, Register tmp);
 
   unsigned int string_compare(Register str1, Register str2, Register cnt1, Register cnt2,
                               Register odd_reg, Register even_reg, Register result, int ae);

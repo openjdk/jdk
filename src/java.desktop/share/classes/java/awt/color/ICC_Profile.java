@@ -83,7 +83,9 @@ import sun.java2d.cmm.ProfileDeferralInfo;
  *
  * @see ICC_ColorSpace
  */
-public class ICC_Profile implements Serializable {
+public sealed class ICC_Profile implements Serializable
+    permits ICC_ProfileGray,
+            ICC_ProfileRGB {
 
     /**
      * Use serialVersionUID from JDK 1.2 for interoperability.

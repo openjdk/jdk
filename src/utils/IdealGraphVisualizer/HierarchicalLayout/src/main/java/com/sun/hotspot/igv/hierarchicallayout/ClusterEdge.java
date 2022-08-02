@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@ package com.sun.hotspot.igv.hierarchicallayout;
 
 import com.sun.hotspot.igv.layout.Link;
 import com.sun.hotspot.igv.layout.Port;
+import com.sun.hotspot.igv.layout.Cluster;
 import java.awt.Point;
 import java.util.List;
 
@@ -53,6 +54,14 @@ public class ClusterEdge implements Link {
         return from.getInputSlot();
     }
 
+    public Cluster getFromCluster() {
+        return from.getCluster();
+    }
+
+    public Cluster getToCluster() {
+        return to.getCluster();
+    }
+
     public void setControlPoints(List<Point> p) {
         this.points = p;
     }
@@ -63,5 +72,10 @@ public class ClusterEdge implements Link {
 
     public boolean isVIP() {
         return false;
+    }
+
+    @Override
+    public String toString() {
+        return from + "->" + to;
     }
 }

@@ -695,7 +695,7 @@ void MacroAssembler::avx_ghash(Register input_state, Register htbl,
     // Perform carryless multiplication of (H^7 * 2, data block #1)
     schoolbookAAD(7, htbl, data, tmp0, tmp1, tmp2, tmp3);
     movdqu(data, Address(input_data, 16 * 0));
-    // xor data block#0 with input state before perfoming carry-less multiplication
+    // xor data block#0 with input state before performing carry-less multiplication
     vpshufb(data, data, bswap_mask, Assembler::AVX_128bit);
     vpxor(data, data, state, Assembler::AVX_128bit);
     // Perform carryless multiplication of (H^8 * 2, data block #0)
@@ -1209,7 +1209,7 @@ void MacroAssembler::aesctr_encrypt(Register src_addr, Register dest_addr, Regis
     movdqu(Address(saved_encCounter_start, 0), xmm0);
     // XOR encryted block cipher in xmm0 with PT to produce CT
     evpxorq(xmm0, xmm0, Address(src_addr, pos, Address::times_1, 0), Assembler::AVX_128bit);
-    // extract upto 15 bytes of CT from xmm0 as specified by length register
+    // extract up to 15 bytes of CT from xmm0 as specified by length register
     testptr(len_reg, 8);
     jcc(Assembler::zero, EXTRACT_TAIL_4BYTES);
     pextrq(Address(dest_addr, pos), xmm0, 0);
@@ -1593,7 +1593,7 @@ void MacroAssembler::ghash16_encrypt16_parallel(Register key, Register subkeyHtb
     cmpl(rounds, 52);
     jcc(Assembler::greaterEqual, AES_192);
     jmp(LAST_AES_RND);
-    // AES rounds upto 11 (AES192) or 13 (AES256)
+    // AES rounds up to 11 (AES192) or 13 (AES256)
     bind(AES_192);
     roundEncode(ZTMP17, ZTMP0, ZTMP1, ZTMP2, ZTMP3);
     ev_load_key(ZTMP18, key, 11 * 16, xmm29);
@@ -1715,7 +1715,7 @@ void MacroAssembler::aesgcm_encrypt(Register in, Register len, Register ct, Regi
         roundEncode(ZTMP4, ZTMP5, ZTMP6, ZTMP7, ZTMP8);
     }
     ev_load_key(ZTMP4, key, 10 * 16, xmm29);
-    // AES rounds upto 11 (AES192) or 13 (AES256)
+    // AES rounds up to 11 (AES192) or 13 (AES256)
     cmpl(rounds, 52);
     jcc(Assembler::greaterEqual, AES_192);
     lastroundEncode(ZTMP4, ZTMP5, ZTMP6, ZTMP7, ZTMP8);

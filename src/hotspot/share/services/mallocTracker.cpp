@@ -24,9 +24,9 @@
 #include "precompiled.hpp"
 
 #include "runtime/os.hpp"
+#include "runtime/safefetch.hpp"
 #include "services/mallocSiteTable.hpp"
 #include "services/mallocTracker.hpp"
-#include "services/mallocTracker.inline.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/ostream.hpp"
@@ -112,20 +112,6 @@ void MallocHeader::mark_block_as_dead() {
   _canary = _header_canary_dead_mark;
   NOT_LP64(_alt_canary = _header_alt_canary_dead_mark);
   set_footer(_footer_canary_dead_mark);
-}
-
-void MallocHeader::release() {
-  assert(MemTracker::enabled(), "Sanity");
-
-  assert_block_integrity();
-
-  MallocMemorySummary::record_free(size(), flags());
-  MallocMemorySummary::record_free_malloc_header(sizeof(MallocHeader));
-  if (MemTracker::tracking_level() == NMT_detail) {
-    MallocSiteTable::deallocation_at(size(), _bucket_idx, _pos_idx);
-  }
-
-  mark_block_as_dead();
 }
 
 void MallocHeader::print_block_on_error(outputStream* st, address bad_address) const {
@@ -232,13 +218,8 @@ bool MallocHeader::check_block_integrity(char* msg, size_t msglen, address* p_co
   return true;
 }
 
-bool MallocHeader::record_malloc_site(const NativeCallStack& stack, size_t size,
-  size_t* bucket_idx, size_t* pos_idx, MEMFLAGS flags) const {
-  return MallocSiteTable::allocation_at(stack, size, bucket_idx, pos_idx, flags);
-}
-
 bool MallocHeader::get_stack(NativeCallStack& stack) const {
-  return MallocSiteTable::access_stack(stack, _bucket_idx, _pos_idx);
+  return MallocSiteTable::access_stack(stack, _mst_marker);
 }
 
 bool MallocTracker::initialize(NMT_TrackingLevel level) {
@@ -254,29 +235,33 @@ bool MallocTracker::initialize(NMT_TrackingLevel level) {
 
 // Record a malloc memory allocation
 void* MallocTracker::record_malloc(void* malloc_base, size_t size, MEMFLAGS flags,
-  const NativeCallStack& stack, NMT_TrackingLevel level) {
-  assert(level != NMT_off, "precondition");
-  void*         memblock;      // the address for user data
-  MallocHeader* header = NULL;
+  const NativeCallStack& stack)
+{
+  assert(MemTracker::enabled(), "precondition");
+  assert(malloc_base != NULL, "precondition");
 
-  if (malloc_base == NULL) {
-    return NULL;
+  MallocMemorySummary::record_malloc(size, flags);
+  MallocMemorySummary::record_new_malloc_header(sizeof(MallocHeader));
+  uint32_t mst_marker = 0;
+  if (MemTracker::tracking_level() == NMT_detail) {
+    MallocSiteTable::allocation_at(stack, size, &mst_marker, flags);
   }
 
   // Uses placement global new operator to initialize malloc header
-
-  header = ::new (malloc_base)MallocHeader(size, flags, stack, level);
-  memblock = (void*)((char*)malloc_base + sizeof(MallocHeader));
+  MallocHeader* const header = ::new (malloc_base)MallocHeader(size, flags, stack, mst_marker);
+  void* const memblock = (void*)((char*)malloc_base + sizeof(MallocHeader));
 
   // The alignment check: 8 bytes alignment for 32 bit systems.
   //                      16 bytes alignment for 64-bit systems.
   assert(((size_t)memblock & (sizeof(size_t) * 2 - 1)) == 0, "Alignment check");
 
 #ifdef ASSERT
-  if (level > NMT_off) {
-    // Read back
-    assert(get_size(memblock) == size,   "Wrong size");
-    assert(get_flags(memblock) == flags, "Wrong flags");
+  // Read back
+  {
+    MallocHeader* const header2 = malloc_header(memblock);
+    assert(header2->size() == size, "Wrong size");
+    assert(header2->flags() == flags, "Wrong flags");
+    header2->assert_block_integrity();
   }
 #endif
 
@@ -284,8 +269,48 @@ void* MallocTracker::record_malloc(void* malloc_base, size_t size, MEMFLAGS flag
 }
 
 void* MallocTracker::record_free(void* memblock) {
-  assert(MemTracker::tracking_level() != NMT_off && memblock != NULL, "precondition");
-  MallocHeader* header = malloc_header(memblock);
-  header->release();
+  assert(MemTracker::enabled(), "Sanity");
+  assert(memblock != NULL, "precondition");
+
+  MallocHeader* const header = malloc_header(memblock);
+  header->assert_block_integrity();
+
+  MallocMemorySummary::record_free(header->size(), header->flags());
+  MallocMemorySummary::record_free_malloc_header(sizeof(MallocHeader));
+  if (MemTracker::tracking_level() == NMT_detail) {
+    MallocSiteTable::deallocation_at(header->size(), header->mst_marker());
+  }
+
+  header->mark_block_as_dead();
+
   return (void*)header;
+}
+
+// Given a pointer, if it seems to point to the start of a valid malloced block,
+// print the block. Note that since there is very low risk of memory looking
+// accidentally like a valid malloc block header (canaries and all) this is not
+// totally failproof. Only use this during debugging or when you can afford
+// signals popping up, e.g. when writing an hs_err file.
+bool MallocTracker::print_pointer_information(const void* p, outputStream* st) {
+  assert(MemTracker::enabled(), "NMT must be enabled");
+  if (os::is_readable_pointer(p)) {
+    const NMT_TrackingLevel tracking_level = MemTracker::tracking_level();
+    const MallocHeader* mhdr = malloc_header(p);
+    char msg[256];
+    address p_corrupted;
+    if (os::is_readable_pointer(mhdr) &&
+        mhdr->check_block_integrity(msg, sizeof(msg), &p_corrupted)) {
+      st->print_cr(PTR_FORMAT " malloc'd " SIZE_FORMAT " bytes by %s",
+          p2i(p), mhdr->size(), NMTUtil::flag_to_name(mhdr->flags()));
+      if (tracking_level == NMT_detail) {
+        NativeCallStack ncs;
+        if (mhdr->get_stack(ncs)) {
+          ncs.print_on(st);
+          st->cr();
+        }
+      }
+      return true;
+    }
+  }
+  return false;
 }

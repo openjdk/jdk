@@ -34,6 +34,7 @@
 #include "oops/klass.hpp"
 #include "oops/method.inline.hpp"
 #include "oops/symbol.hpp"
+#include "opto/phasetype.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/jniHandles.hpp"
@@ -682,6 +683,21 @@ static void scan_value(enum OptionType type, char* line, int& total_bytes_read,
         if (!validator.is_valid()) {
           jio_snprintf(errorbuf, buf_size, "Unrecognized intrinsic detected in %s: %s", option2name(option), validator.what());
         }
+      }
+#ifndef PRODUCT
+      else if (option == CompileCommand::PrintIdealPhase) {
+        uint64_t mask = 0;
+        PhaseNameValidator validator(value, mask);
+
+        if (!validator.is_valid()) {
+          jio_snprintf(errorbuf, buf_size, "Unrecognized phase name in %s: %s", option2name(option), validator.what());
+        }
+      } else if (option == CompileCommand::TestOptionList) {
+        // all values are ok
+      }
+#endif
+      else {
+        assert(false, "Ccstrlist type option missing validator");
       }
 
       register_command(matcher, option, (ccstr) value);

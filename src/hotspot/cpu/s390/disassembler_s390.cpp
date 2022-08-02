@@ -36,53 +36,6 @@
 #include "runtime/stubRoutines.hpp"
 #include "utilities/align.hpp"
 
-// List of all major opcodes, as of
-// Principles of Operation, Eleventh Edition, March 2015
-bool Disassembler::valid_opcodes[] =
-{ true,  true,  false, false, true,  true,  true,  true,  // 0x00..07
-  false, false, true,  true,  true,  true,  true,  true,  // 0x08..0f
-  true,  true,  true,  true,  true,  true,  true,  true,  // 0x10..17
-  true,  true,  true,  true,  true,  true,  true,  true,  // 0x18..1f
-  true,  true,  true,  true,  true,  true,  true,  true,  // 0x20..27
-  true,  true,  true,  true,  true,  true,  true,  true,  // 0x28..2f
-  true,  true,  true,  true,  true,  true,  true,  true,  // 0x30..37
-  true,  true,  true,  true,  true,  true,  true,  true,  // 0x38..3f
-  true,  true,  true,  true,  true,  true,  true,  true,  // 0x40..47
-  true,  true,  true,  true,  true,  true,  true,  true,  // 0x48..4f
-  true,  true,  false, false, true,  true,  true,  true,  // 0x50..57
-  true,  true,  true,  true,  true,  true,  true,  true,  // 0x58..5f
-  true,  false, false, false, false, false, false, true,  // 0x60..67
-  true,  true,  true,  true,  true,  true,  true,  true,  // 0x68..6f
-  true,  true,  false, false, false, false, false, false, // 0x70..77
-  true,  true,  true,  true,  true,  true,  true,  true,  // 0x78..7f
-  true,  false, true,  true,  true,  true,  true,  true,  // 0x80..87
-  true,  true,  true,  true,  true,  true,  true,  true,  // 0x88..8f
-  true,  true,  true,  true,  true,  true,  true,  true,  // 0x90..97
-  true,  true,  true,  true,  false, false, false, false, // 0x98..9f
-  false, false, false, false, false, true,  false, true,  // 0xa0..a7
-  true,  true,  false, false, true,  true,  true,  true,  // 0xa8..af
-  false, true,  true,  true,  false, false, true,  true,  // 0xb0..b7
-  false, true,  true,  true,  false, true,  true,  true,  // 0xb8..bf
-  true,  false, true,  false, true,  false, true,  false, // 0xc0..c7
-  true,  false, false, false, true,  false, false, false, // 0xc8..cf
-  true,  true,  true,  true,  true,  true,  true,  true,  // 0xd0..d7
-  false, true,  true,  true,  true,  true,  true,  true,  // 0xd8..df
-  false, true,  true,  true,  false, true,  false, true,  // 0xe0..e7
-  true,  true,  true,  true,  true,  true,  true,  true,  // 0xe8..ef
-  true,  true,  true,  true,  false, false, false, false, // 0xf0..f7
-  true,  true,  true,  true,  true,  true,  false, false, // 0xf8..ff
-};
-// Check for valid opcodes.
-//
-// The major opcode (one byte) at the passed location is inspected.
-// If the opcode found is assigned, the function returns true, false otherwise.
-// The true indication is not reliable. It may well be that the major opcode is
-// assigned, but there exists a minor opcode field in the instruction which
-// which has unassigned values.
-bool Disassembler::is_valid_opcode_at(address here) {
-  return valid_opcodes[*here];
-}
-
 // This method does plain instruction decoding, no frills.
 // It may be called before the binutils disassembler kicks in
 // to handle special cases the binutils disassembler does not.
@@ -168,74 +121,6 @@ address Disassembler::decode_instruction0(address here, outputStream * st, addre
   }
   return next;
 }
-
-// Count the instructions contained in the range [begin..end).
-// The range must exactly contain the instructions, i.e.
-//  - the first instruction starts @begin
-//  - the last instruction ends @(end-1)
-// The caller has to make sure that the given range is readable.
-// This function performs no safety checks!
-// Return value:
-//  - The number of instructions, if there was exact containment.
-//  - If there is no exact containment, a negative value is returned.
-//    Its absolute value is the number of instructions from begin to end,
-//    where the last instruction counted runs over the range end.
-//  - 0 (zero) is returned if there was a parameter error
-//    (inverted range, bad starting point).
-int Disassembler::count_instr(address begin, address end) {
-  if (end < begin+2) return 0; // no instructions in range
-  if (!Disassembler::is_valid_opcode_at(begin)) return 0; // bad starting point
-
-  address p = begin;
-  int     n = 0;
-  while(p < end) {
-    p += Assembler::instr_len(p);
-    n++;
-  }
-  return (p == end) ? n : -n;
-}
-
-// Find preceding instruction.
-//
-// Starting at the passed location, the n-th preceding (towards lower addresses)
-// instruction is searched. With variable length instructions, there may be
-// more than one solution, or no solution at all (if the passed location
-// does not point to the start of an instruction or if the storage area
-// does not contain instructions at all).
-// instructions - has the passed location as n-th successor.
-//  - If multiple such locations exist between (here-n*instr_maxlen()) and here,
-//    the most distant location is selected.
-//  - If no such location exists, NULL is returned. The caller should then
-//    terminate its search and react properly.
-// Must be placed here in disassembler_s390.cpp. It does not compile
-// in the header. There the class 'Assembler' is not available.
-address Disassembler::find_prev_instr(address here, int n_instr) {
-  if (!os::is_readable_pointer(here)) return NULL;    // obviously a bad location to decode
-
-  // Find most distant possible starting point.
-  // Narrow down because we don't want to SEGV while printing.
-  address start = here - n_instr*Assembler::instr_maxlen(); // starting point can't be further away.
-  while ((start < here) && !os::is_readable_range(start, here)) {
-    start = align_down(start, os::min_page_size()) + os::min_page_size();
-  }
-  if (start >= here) {
-    // Strange. Can only happen with here on page boundary.
-    return NULL;
-  }
-
-  //---<  Find a starting point  >---
-  int i_count = 0;
-  while ((start < here) && ((i_count = count_instr(start, here)) <= 0)) start += 2;
-  if (i_count == 0) return NULL; // There is something seriously wrong
-
-  //---<  Narrow down distance (estimate was too large)  >---
-  while(i_count-- > n_instr) {
-    start   += Assembler::instr_len(start);
-  }
-  assert(n_instr >= count_instr(start, here), "just checking");
-  return start;
-}
-
 
 // Print annotations (value of loaded constant)
 void Disassembler::annotate(address here, outputStream* st) {

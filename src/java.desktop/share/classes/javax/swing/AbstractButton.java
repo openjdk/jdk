@@ -876,7 +876,7 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
      * <li>{@code SwingConstants.LEADING}
      * <li>{@code SwingConstants.TRAILING} (the default)
      * </ul>
-     * @exception IllegalArgumentException if <code>textPosition</code>
+     * @throws IllegalArgumentException if <code>textPosition</code>
      *          is not one of the legal values listed above
      */
     @BeanProperty(visualUpdate = true, enumerationValues = {
@@ -953,7 +953,7 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
      *        {@code IllegalArgumentException} that is thrown for an invalid
      *        value
      * @return the {@code key} argument
-     * @exception IllegalArgumentException if key is not one of the legal
+     * @throws IllegalArgumentException if key is not one of the legal
      *            values listed above
      * @see #setHorizontalTextPosition
      * @see #setHorizontalAlignment
@@ -984,7 +984,7 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
      *        {@code IllegalArgumentException} that is thrown for an invalid
      *        value
      * @return the {@code key} argument
-     * @exception IllegalArgumentException if key is not one of the legal
+     * @throws IllegalArgumentException if key is not one of the legal
      *            values listed above
      */
     protected int checkVerticalKey(int key, String exception) {
@@ -1571,7 +1571,7 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
      *
      * @since 1.4
      * @param index Index into the String to underline
-     * @exception IllegalArgumentException will be thrown if <code>index</code>
+     * @throws IllegalArgumentException will be thrown if <code>index</code>
      *            is &gt;= length of the text, or &lt; -1
      * @see #getDisplayedMnemonicIndex
      */
@@ -1654,7 +1654,7 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
      * @see #getMultiClickThreshhold
      * @param threshhold the amount of time required between mouse
      *        press events to generate corresponding action events
-     * @exception   IllegalArgumentException if threshhold &lt; 0
+     * @throws   IllegalArgumentException if threshhold &lt; 0
      * @since 1.4
      */
     public void setMultiClickThreshhold(long threshhold) {
@@ -1791,10 +1791,10 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
      * @param     index the position in the container's list at which to
      *                 insert the component, where <code>-1</code>
      *                 means append to the end
-     * @exception IllegalArgumentException if <code>index</code> is invalid
-     * @exception IllegalArgumentException if adding the container's parent
+     * @throws IllegalArgumentException if <code>index</code> is invalid
+     * @throws IllegalArgumentException if adding the container's parent
      *                  to itself
-     * @exception IllegalArgumentException if adding a window to a container
+     * @throws IllegalArgumentException if adding a window to a container
      * @since 1.5
      */
     protected void addImpl(Component comp, Object constraints, int index) {
@@ -3064,7 +3064,7 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
              *
              * @param i zero-based index of the key bindings
              * @return a javax.lang.Object which specifies the key binding
-             * @exception IllegalArgumentException if the index is
+             * @throws IllegalArgumentException if the index is
              * out of bounds
              * @see #getAccessibleKeyBindingCount
              */

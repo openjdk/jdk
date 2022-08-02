@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2013, 2022, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@
 #include "gc/shenandoah/shenandoahCollectionSet.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahConcurrentMark.hpp"
+#include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
 #include "gc/shenandoah/shenandoahControlThread.hpp"
 #include "gc/shenandoah/shenandoahRegulatorThread.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
@@ -2959,6 +2960,24 @@ void ShenandoahHeap::flush_liveness_cache(uint worker_id) {
       ld[i] = 0;
     }
   }
+}
+
+bool ShenandoahHeap::requires_barriers(stackChunkOop obj) const {
+  if (is_idle()) return false;
+
+  // Objects allocated after marking start are implicitly alive, don't need any barriers during
+  // marking phase.
+  if (is_concurrent_mark_in_progress() &&
+     !marking_context()->allocated_after_mark_start(obj)) {
+    return true;
+  }
+
+  // Can not guarantee obj is deeply good.
+  if (has_forwarded_objects()) {
+    return true;
+  }
+
+  return false;
 }
 
 void ShenandoahHeap::transfer_old_pointers_from_satb() {

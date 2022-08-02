@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,8 +32,8 @@ import java.util.Locale;
 
 public class Bug5047314 {
 
-    private static Collator colLao = Collator.getInstance(new Locale("lo"));
-    private static Collator colThai = Collator.getInstance(new Locale("th"));
+    private static Collator colLao = Collator.getInstance(Locale.of("lo"));
+    private static Collator colThai = Collator.getInstance(Locale.of("th"));
 
     private static String[] textLao = {
         "\u0ec0", "\u0ec1", "\u0ec2", "\u0ec3", "\u0ec4"

@@ -966,7 +966,7 @@ public class PrintJob2D extends PrintJob implements Printable, Runnable {
      * @return PAGE_EXISTS if the page is rendered successfully
      *         or NO_SUCH_PAGE if {@code pageIndex} specifies a
      *         non-existent page.
-     * @exception java.awt.print.PrinterException
+     * @throws java.awt.print.PrinterException
      *         thrown when the print job is terminated.
      */
     public int print(Graphics graphics, PageFormat pageFormat, int pageIndex)

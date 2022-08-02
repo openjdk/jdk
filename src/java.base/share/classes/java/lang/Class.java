@@ -36,6 +36,7 @@ import java.io.InputStream;
 import java.io.ObjectStreamField;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.AnnotatedType;
+import java.lang.reflect.AccessFlag;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
@@ -357,6 +358,11 @@ public final class Class<T> implements java.io.Serializable,
      * A call to {@code forName("X")} causes the class named
      * {@code X} to be initialized.
      *
+     * <p>
+     * In cases where this method is called from a context where there is no
+     * caller frame on the stack (e.g. when called directly from a JNI
+     * attached thread), the system class loader is used.
+     *
      * @param      className   the fully qualified name of the desired class.
      * @return     the {@code Class} object for the class with the
      *             specified name.
@@ -380,7 +386,9 @@ public final class Class<T> implements java.io.Serializable,
     @CallerSensitiveAdapter
     private static Class<?> forName(String className, Class<?> caller)
             throws ClassNotFoundException {
-        return forName0(className, true, ClassLoader.getClassLoader(caller), caller);
+        ClassLoader loader = (caller == null) ? ClassLoader.getSystemClassLoader()
+                                              : ClassLoader.getClassLoader(caller);
+        return forName0(className, true, loader, caller);
     }
 
     /**
@@ -1305,6 +1313,7 @@ public final class Class<T> implements java.io.Serializable,
      *
      * @return the {@code int} representing the modifiers for this class
      * @see     java.lang.reflect.Modifier
+     * @see #accessFlags()
      * @see <a
      * href="{@docRoot}/java.base/java/lang/reflect/package-summary.html#LanguageJvmModel">Java
      * programming language and JVM modeling in core reflection</a>
@@ -1315,6 +1324,39 @@ public final class Class<T> implements java.io.Serializable,
     @IntrinsicCandidate
     public native int getModifiers();
 
+    /**
+     * {@return an unmodifiable set of the {@linkplain AccessFlag access
+     * flags} for this class, possibly empty}
+     *
+     * <p> If the underlying class is an array class, then its
+     * {@code PUBLIC}, {@code PRIVATE} and {@code PROTECTED}
+     * access flags are the same as those of its component type.  If this
+     * {@code Class} object represents a primitive type or void, the
+     * {@code PUBLIC} access flag is present, and the
+     * {@code PROTECTED} and {@code PRIVATE} access flags are always
+     * absent. If this {@code Class} object represents an array class, a
+     * primitive type or void, then the {@code FINAL} access flag is always
+     * present and the interface access flag is always
+     * absent. The values of its other access flags are not determined
+     * by this specification.
+     *
+     * @see #getModifiers()
+     * @jvms 4.1 The ClassFile Structure
+     * @jvms 4.7.6 The InnerClasses Attribute
+     * @since 20
+     */
+    public Set<AccessFlag> accessFlags() {
+        // This likely needs some refinement. Exploration of hidden
+        // classes, array classes.  Location.CLASS allows SUPER and
+        // AccessFlag.MODULE which INNER_CLASS forbids. INNER_CLASS
+        // allows PRIVATE, PROTECTED, and STATIC, which are not
+        // allowed on Location.CLASS.
+        return AccessFlag.maskToAccessFlags(getModifiers(),
+                                            (isMemberClass() || isLocalClass() ||
+                                             isAnonymousClass() || isArray()) ?
+                                            AccessFlag.Location.INNER_CLASS :
+                                            AccessFlag.Location.CLASS);
+    }
 
     /**
      * Gets the signers of this class.
@@ -1732,8 +1774,18 @@ public final class Class<T> implements java.io.Serializable,
      * <li>an array whose component type does not have a canonical name</li>
      * </ul>
      *
+     * The canonical name for a primitive class is the keyword for the
+     * corresponding primitive type ({@code byte}, {@code short},
+     * {@code char}, {@code int}, and so on).
+     *
+     * <p>An array type has a canonical name if and only if its
+     * component type has a canonical name. When an array type has a
+     * canonical name, it is equal to the canonical name of the
+     * component type followed by "{@code []}".
+     *
      * @return the canonical name of the underlying class if it exists, and
      * {@code null} otherwise.
+     * @jls 6.7 Fully Qualified Names and Canonical Names
      * @since 1.5
      */
     public String getCanonicalName() {
@@ -2992,9 +3044,9 @@ public final class Class<T> implements java.io.Serializable,
         if (callerModule != thisModule) {
             String pn = Resources.toPackageName(name);
             if (thisModule.getDescriptor().packages().contains(pn)) {
-                if (callerModule == null && !thisModule.isOpen(pn)) {
-                    // no caller, package not open
-                    return false;
+                if (callerModule == null) {
+                    // no caller, return true if the package is open to all modules
+                    return thisModule.isOpen(pn);
                 }
                 if (!thisModule.isOpen(pn, callerModule)) {
                     // package not open to caller
@@ -3115,7 +3167,7 @@ public final class Class<T> implements java.io.Serializable,
         }
         // check package access on the proxy interfaces
         if (checkProxyInterfaces && Proxy.isProxyClass(this)) {
-            ReflectUtil.checkProxyPackageAccess(ccl, this.getInterfaces());
+            ReflectUtil.checkProxyPackageAccess(ccl, this.getInterfaces(/* cloneArray */ false));
         }
     }
 
@@ -3363,7 +3415,7 @@ public final class Class<T> implements java.io.Serializable,
         addAll(fields, privateGetDeclaredFields(true));
 
         // Direct superinterfaces, recursively
-        for (Class<?> si : getInterfaces()) {
+        for (Class<?> si : getInterfaces(/* cloneArray */ false)) {
             addAll(fields, si.privateGetPublicFields());
         }
 
@@ -3900,7 +3952,7 @@ public final class Class<T> implements java.io.Serializable,
             if (universe == null)
                 throw new IllegalArgumentException(
                     getName() + " is not an enum class");
-            directory = new HashMap<>((int)(universe.length / 0.75f) + 1);
+            directory = HashMap.newHashMap(universe.length);
             for (T constant : universe) {
                 directory.put(((Enum<?>)constant).name(), constant);
             }
@@ -4115,10 +4167,10 @@ public final class Class<T> implements java.io.Serializable,
                 Class<? extends Annotation> annotationClass = e.getKey();
                 if (AnnotationType.getInstance(annotationClass).isInherited()) {
                     if (annotations == null) { // lazy construction
-                        annotations = new LinkedHashMap<>((Math.max(
+                        annotations = LinkedHashMap.newLinkedHashMap(Math.max(
                                 declaredAnnotations.size(),
                                 Math.min(12, declaredAnnotations.size() + superAnnotations.size())
-                            ) * 4 + 2) / 3
+                            )
                         );
                     }
                     annotations.put(annotationClass, e.getValue());
@@ -4475,12 +4527,21 @@ public final class Class<T> implements java.io.Serializable,
      * Returns a {@code Class} for an array type whose component type
      * is described by this {@linkplain Class}.
      *
+     * @throws UnsupportedOperationException if this component type is {@linkplain
+     *         Void#TYPE void} or if the number of dimensions of the resulting array
+     *         type would exceed 255.
      * @return a {@code Class} describing the array type
+     * @jvms 4.3.2 Field Descriptors
+     * @jvms 4.4.1 The {@code CONSTANT_Class_info} Structure
      * @since 12
      */
     @Override
     public Class<?> arrayType() {
-        return Array.newInstance(this, 0).getClass();
+        try {
+            return Array.newInstance(this, 0).getClass();
+        } catch (IllegalArgumentException iae) {
+            throw new UnsupportedOperationException(iae);
+        }
     }
 
     /**

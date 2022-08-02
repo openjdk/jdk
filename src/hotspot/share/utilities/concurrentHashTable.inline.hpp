@@ -31,6 +31,7 @@
 #include "runtime/atomic.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/prefetch.inline.hpp"
+#include "runtime/safepoint.hpp"
 #include "utilities/globalCounter.inline.hpp"
 #include "utilities/numberSeq.hpp"
 #include "utilities/spinYield.hpp"

@@ -28,14 +28,16 @@
 // C2_MacroAssembler contains high-level macros for C2
 
 public:
+  // C2 compiled method's prolog code.
+  void verified_entry(int framesize, int stack_bang_size, bool fp_mode_24b, bool is_stub);
+
+  void emit_entry_barrier_stub(C2EntryBarrierStub* stub);
+  static int entry_barrier_stub_size();
+
   Assembler::AvxVectorLen vector_length_encoding(int vlen_in_bytes);
 
-  // special instructions for EVEX
-  void setvectmask(Register dst, Register src, KRegister mask);
-  void restorevectmask(KRegister mask);
-
   // Code used by cmpFastLock and cmpFastUnlock mach instructions in .ad file.
-  // See full desription in macroAssembler_x86.cpp.
+  // See full description in macroAssembler_x86.cpp.
   void fast_lock(Register obj, Register box, Register tmp,
                  Register scr, Register cx1, Register cx2,
                  RTMLockingCounters* rtm_counters,
@@ -92,6 +94,11 @@ public:
                  XMMRegister zero, XMMRegister one,
                  Register scratch);
 
+  void vector_compress_expand(int opcode, XMMRegister dst, XMMRegister src, KRegister mask,
+                              bool merge, BasicType bt, int vec_enc);
+
+  void vector_mask_compress(KRegister dst, KRegister src, Register rtmp1, Register rtmp2, int mask_len);
+
   void vextendbw(bool sign, XMMRegister dst, XMMRegister src, int vector_len);
   void vextendbw(bool sign, XMMRegister dst, XMMRegister src);
   void vextendbd(bool sign, XMMRegister dst, XMMRegister src, int vector_len);
@@ -123,8 +130,8 @@ public:
   void evgather(BasicType typ, XMMRegister dst, KRegister mask, Register base, XMMRegister idx, int vector_len);
   void evscatter(BasicType typ, Register base, XMMRegister idx, KRegister mask, XMMRegister src, int vector_len);
 
-  void evmovdqu(BasicType type, KRegister kmask, XMMRegister dst, Address src, int vector_len);
-  void evmovdqu(BasicType type, KRegister kmask, Address dst, XMMRegister src, int vector_len);
+  void evmovdqu(BasicType type, KRegister kmask, XMMRegister dst, Address src, bool merge, int vector_len);
+  void evmovdqu(BasicType type, KRegister kmask, Address dst, XMMRegister src, bool merge, int vector_len);
 
   // extract
   void extract(BasicType typ, Register dst, XMMRegister src, int idx);
@@ -136,6 +143,12 @@ public:
   void vectortest(int bt, int vlen, XMMRegister src1, XMMRegister src2,
                   XMMRegister vtmp1 = xnoreg, XMMRegister vtmp2 = xnoreg, KRegister mask = knoreg);
 
+ // Covert B2X
+ void vconvert_b2x(BasicType to_elem_bt, XMMRegister dst, XMMRegister src, int vlen_enc);
+#ifdef _LP64
+ void vpbroadcast(BasicType elem_bt, XMMRegister dst, Register src, int vlen_enc);
+#endif
+
   // blend
   void evpcmp(BasicType typ, KRegister kdmask, KRegister ksmask, XMMRegister src1, AddressLiteral adr, int comparison, int vector_len, Register scratch = rscratch1);
   void evpcmp(BasicType typ, KRegister kdmask, KRegister ksmask, XMMRegister src1, XMMRegister src2, int comparison, int vector_len);
@@ -144,6 +157,8 @@ public:
   void load_vector_mask(XMMRegister dst, XMMRegister src, int vlen_in_bytes, BasicType elem_bt, bool is_legacy);
   void load_vector_mask(KRegister dst, XMMRegister src, XMMRegister xtmp, Register tmp, bool novlbwdq, int vlen_enc);
 
+  void load_vector(XMMRegister dst, Address src, int vlen_in_bytes);
+  void load_vector(XMMRegister dst, AddressLiteral src, int vlen_in_bytes, Register rscratch = rscratch1);
   void load_iota_indices(XMMRegister dst, Register scratch, int vlen_in_bytes);
 
   // Reductions for vectors of bytes, shorts, ints, longs, floats, and doubles.
@@ -269,11 +284,10 @@ public:
                       XMMRegister vec1, int ae, KRegister mask = knoreg);
 
   // Search for Non-ASCII character (Negative byte value) in a byte array,
-  // return true if it has any and false otherwise.
-  void has_negatives(Register ary1, Register len,
-                     Register result, Register tmp1,
-                     XMMRegister vec1, XMMRegister vec2, KRegister mask1 = knoreg, KRegister mask2 = knoreg);
-
+  // return index of the first such character, otherwise len.
+  void count_positives(Register ary1, Register len,
+                       Register result, Register tmp1,
+                       XMMRegister vec1, XMMRegister vec2, KRegister mask1 = knoreg, KRegister mask2 = knoreg);
   // Compare char[] or byte[] arrays.
   void arrays_equals(bool is_array_equ, Register ary1, Register ary2,
                      Register limit, Register result, Register chr,
@@ -302,14 +316,141 @@ public:
                            KRegister ktmp1, KRegister ktmp2, AddressLiteral float_sign_flip,
                            Register scratch, int vec_enc);
 
+  void vector_castF2L_evex(XMMRegister dst, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2,
+                           KRegister ktmp1, KRegister ktmp2, AddressLiteral double_sign_flip,
+                           Register scratch, int vec_enc);
+
   void vector_castD2L_evex(XMMRegister dst, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2,
                            KRegister ktmp1, KRegister ktmp2, AddressLiteral double_sign_flip,
                            Register scratch, int vec_enc);
+
+  void vector_castD2X_evex(BasicType to_elem_bt, XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
+                           XMMRegister xtmp2, KRegister ktmp1, KRegister ktmp2, AddressLiteral double_sign_flip,
+                           Register scratch, int vec_enc);
+
+  void vector_unsigned_cast(XMMRegister dst, XMMRegister src, int vlen_enc,
+                            BasicType from_elem_bt, BasicType to_elem_bt);
+
+  void vector_cast_double_special_cases_evex(XMMRegister dst, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2,
+                                             KRegister ktmp1, KRegister ktmp2, Register scratch, AddressLiteral double_sign_flip,
+                                             int vec_enc);
+
+  void vector_cast_float_special_cases_evex(XMMRegister dst, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2,
+                                            KRegister ktmp1, KRegister ktmp2, Register scratch, AddressLiteral float_sign_flip,
+                                            int vec_enc);
+
+  void vector_cast_float_to_long_special_cases_evex(XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
+                                                    XMMRegister xtmp2, KRegister ktmp1, KRegister ktmp2,
+                                                    Register scratch, AddressLiteral double_sign_flip,
+                                                    int vec_enc);
+
+  void vector_cast_float_special_cases_avx(XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
+                                           XMMRegister xtmp2, XMMRegister xtmp3, XMMRegister xtmp4,
+                                           Register scratch, AddressLiteral float_sign_flip,
+                                           int vec_enc);
+
+#ifdef _LP64
+  void vector_round_double_evex(XMMRegister dst, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2,
+                                KRegister ktmp1, KRegister ktmp2, AddressLiteral double_sign_flip,
+                                AddressLiteral new_mxcsr, Register scratch, int vec_enc);
+
+  void vector_round_float_evex(XMMRegister dst, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2,
+                               KRegister ktmp1, KRegister ktmp2, AddressLiteral double_sign_flip,
+                               AddressLiteral new_mxcsr, Register scratch, int vec_enc);
+
+  void vector_round_float_avx(XMMRegister dst, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2,
+                              XMMRegister xtmp3, XMMRegister xtmp4, AddressLiteral float_sign_flip,
+                              AddressLiteral new_mxcsr, Register scratch, int vec_enc);
+#endif
+
+  void udivI(Register rax, Register divisor, Register rdx);
+  void umodI(Register rax, Register divisor, Register rdx);
+  void udivmodI(Register rax, Register divisor, Register rdx, Register tmp);
+
+#ifdef _LP64
+  void udivL(Register rax, Register divisor, Register rdx);
+  void umodL(Register rax, Register divisor, Register rdx);
+  void udivmodL(Register rax, Register divisor, Register rdx, Register tmp);
+#endif
 
   void evpternlog(XMMRegister dst, int func, KRegister mask, XMMRegister src2, XMMRegister src3,
                   bool merge, BasicType bt, int vlen_enc);
 
   void evpternlog(XMMRegister dst, int func, KRegister mask, XMMRegister src2, Address src3,
                   bool merge, BasicType bt, int vlen_enc);
+
+  void vector_reverse_bit(BasicType bt, XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
+                          XMMRegister xtmp2, Register rtmp, int vec_enc);
+
+  void vector_reverse_bit_gfni(BasicType bt, XMMRegister dst, XMMRegister src, XMMRegister xtmp,
+                               AddressLiteral mask, Register rtmp, int vec_enc);
+
+  void vector_reverse_byte(BasicType bt, XMMRegister dst, XMMRegister src, Register rtmp, int vec_enc);
+
+  void vector_popcount_int(XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
+                           XMMRegister xtmp2, Register rtmp, int vec_enc);
+
+  void vector_popcount_long(XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
+                            XMMRegister xtmp2, Register rtmp, int vec_enc);
+
+  void vector_popcount_short(XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
+                             XMMRegister xtmp2, Register rtmp, int vec_enc);
+
+  void vector_popcount_byte(XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
+                            XMMRegister xtmp2, Register rtmp, int vec_enc);
+
+  void vector_popcount_integral(BasicType bt, XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
+                                XMMRegister xtmp2, Register rtmp, int vec_enc);
+
+  void vector_popcount_integral_evex(BasicType bt, XMMRegister dst, XMMRegister src,
+                                     KRegister mask, bool merge, int vec_enc);
+
+  void vbroadcast(BasicType bt, XMMRegister dst, int imm32, Register rtmp, int vec_enc);
+
+  void vector_reverse_byte64(BasicType bt, XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
+                             XMMRegister xtmp2, Register rtmp, int vec_enc);
+
+  void vector_count_leading_zeros_evex(BasicType bt, XMMRegister dst, XMMRegister src,
+                                       XMMRegister xtmp1, XMMRegister xtmp2, XMMRegister xtmp3,
+                                       KRegister ktmp, Register rtmp, bool merge, int vec_enc);
+
+  void vector_count_leading_zeros_byte_avx(XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
+                                           XMMRegister xtmp2, XMMRegister xtmp3, Register rtmp, int vec_enc);
+
+  void vector_count_leading_zeros_short_avx(XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
+                                            XMMRegister xtmp2, XMMRegister xtmp3, Register rtmp, int vec_enc);
+
+  void vector_count_leading_zeros_int_avx(XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
+                                          XMMRegister xtmp2, XMMRegister xtmp3, int vec_enc);
+
+  void vector_count_leading_zeros_long_avx(XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
+                                           XMMRegister xtmp2, XMMRegister xtmp3, Register rtmp, int vec_enc);
+
+  void vector_count_leading_zeros_avx(BasicType bt, XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
+                                      XMMRegister xtmp2, XMMRegister xtmp3, Register rtmp, int vec_enc);
+
+  void vpadd(BasicType bt, XMMRegister dst, XMMRegister src1, XMMRegister src2, int vec_enc);
+
+  void vpsub(BasicType bt, XMMRegister dst, XMMRegister src1, XMMRegister src2, int vec_enc);
+
+  void vector_count_trailing_zeros_evex(BasicType bt, XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
+                                        XMMRegister xtmp2, XMMRegister xtmp3, XMMRegister xtmp4, KRegister ktmp,
+                                        Register rtmp, int vec_enc);
+
+  void vector_swap_nbits(int nbits, int bitmask, XMMRegister dst, XMMRegister src,
+                         XMMRegister xtmp1, Register rtmp, int vec_enc);
+
+  void vector_count_trailing_zeros_avx(BasicType bt, XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
+                                       XMMRegister xtmp2, XMMRegister xtmp3, Register rtmp, int vec_enc);
+
+  void vector_signum_avx(int opcode, XMMRegister dst, XMMRegister src, XMMRegister zero, XMMRegister one,
+                         XMMRegister xtmp1, int vec_enc);
+
+  void vector_signum_evex(int opcode, XMMRegister dst, XMMRegister src, XMMRegister zero, XMMRegister one,
+                          KRegister ktmp1, int vec_enc);
+
+  void vmovmask(BasicType elem_bt, XMMRegister dst, Address src, XMMRegister mask, int vec_enc);
+
+  void vmovmask(BasicType elem_bt, Address dst, XMMRegister src, XMMRegister mask, int vec_enc);
 
 #endif // CPU_X86_C2_MACROASSEMBLER_X86_HPP

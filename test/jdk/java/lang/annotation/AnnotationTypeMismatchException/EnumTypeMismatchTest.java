@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,7 @@ public class EnumTypeMismatchTest {
         } catch (AnnotationTypeMismatchException e) {
             if (!e.element().getName().equals("value")) {
                 throw new IllegalStateException("Unexpected element: " + e.element());
-            } else if (!e.foundType().equals("@" + AnAnnotation.class.getName() + "(" + AnEnum.VALUE.name() + ")")) {
+            } else if (!e.foundType().equals("@" + AnAnnotation.class.getCanonicalName() + "(" + AnEnum.VALUE.name() + ")")) {
                 throw new IllegalStateException("Unexpected type: " + e.foundType());
             }
         }

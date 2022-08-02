@@ -52,14 +52,14 @@ For terms of use, see http://www.unicode.org/copyright.html
             <languageAlias type="zh_min_nan" replacement="nan" reason="deprecated"/> <!-- Minnan, Hokkien, Amoy, Taiwanese, Southern Min, Southern Fujian, Hoklo, Southern Fukien, Ho-lo -->
             <languageAlias type="zh_xiang" replacement="hsn" reason="deprecated"/> <!-- Xiang or Hunanese -->
             <languageAlias type="en_GB_oed" replacement="en_GB_oxendict" reason="deprecated"/>  <!-- English, Oxford English Dictionary spelling -->
-            
+
             <!-- deprecated iso codes -->
             <languageAlias type="in" replacement="id" reason="deprecated"/> <!-- Indonesian -->
             <languageAlias type="iw" replacement="he" reason="deprecated"/> <!-- Hebrew -->
             <languageAlias type="ji" replacement="yi" reason="deprecated"/> <!-- Yiddish -->
             <languageAlias type="jw" replacement="jv" reason="deprecated"/> <!-- Javanese -->
             <languageAlias type="mo" replacement="ro" reason="deprecated"/> <!-- Moldovan -->
-            <languageAlias type="scc" replacement="sr" reason="deprecated"/> <!-- Serbian --> 
+            <languageAlias type="scc" replacement="sr" reason="deprecated"/> <!-- Serbian -->
             <languageAlias type="scr" replacement="hr" reason="deprecated"/> <!-- Croatian -->
 			<languageAlias type="aam" replacement="aas" reason="deprecated"/> <!-- Aramanik -->
 			<languageAlias type="adp" replacement="dz" reason="deprecated"/> <!-- Adap -->
@@ -144,13 +144,16 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<languageAlias type="ais" replacement="ami" reason="deprecated"/>  <!-- Nataoran Amis -->
 			<languageAlias type="baz" replacement="nvo" reason="deprecated"/>  <!-- Tunen -->
 			<languageAlias type="bhk" replacement="fbl" reason="deprecated"/>  <!-- Albay Bicolano -->
+			<languageAlias type="bic" replacement="bir" reason="deprecated"/> <!-- Bikaru ⇒ Bisorio -->
 			<languageAlias type="bjq" replacement="bzc" reason="deprecated"/>  <!-- Southern Betsimisaraka Malagasy -->
 			<languageAlias type="bkb" replacement="ebk" reason="deprecated"/>  <!-- Finallig -->
+			<languageAlias type="blg" replacement="iba" reason="deprecated"/> <!-- Balau ⇒ Iban -->
 			<languageAlias type="btb" replacement="beb" reason="deprecated"/>  <!-- Beti (Cameroon) -->
 			<languageAlias type="daf" replacement="dnj" reason="deprecated"/>  <!-- Dan -->
 			<languageAlias type="dap" replacement="njz" reason="deprecated"/>  <!-- Nisi (India) -->
 			<languageAlias type="djl" replacement="dze" reason="deprecated"/>  <!-- Djiwarli -->
 			<languageAlias type="dkl" replacement="aqd" reason="deprecated"/>  <!-- Kolum So Dogon -->
+			<languageAlias type="drr" replacement="kzk" reason="deprecated"/> <!-- Dororo ⇒ Kazukuru -->
 			<languageAlias type="dud" replacement="uth" reason="deprecated"/>  <!-- Hun-Saare -->
 			<languageAlias type="duj" replacement="dwu" reason="deprecated"/>  <!-- Dhuwal -->
 			<languageAlias type="dwl" replacement="dbt" reason="deprecated"/>  <!-- Walo Kumbe Dogon -->
@@ -159,12 +162,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<languageAlias type="ggo" replacement="esg" reason="deprecated"/>  <!-- Southern Gondi -->
 			<languageAlias type="ggr" replacement="gtu" reason="deprecated"/>  <!-- Aghu Tharnggalu -->
 			<languageAlias type="gio" replacement="aou" reason="deprecated"/>  <!-- Gelao -->
+			<languageAlias type="gli" replacement="kzk" reason="deprecated"/> <!-- Guliguli ⇒ Kazukuru -->
 			<languageAlias type="ill" replacement="ilm" reason="deprecated"/>  <!-- Iranun -->
 			<languageAlias type="izi" replacement="eza" reason="deprecated"/>  <!-- Izi-Ezaa-Ikwo-Mgbo -->
 			<languageAlias type="jar" replacement="jgk" reason="deprecated"/>  <!-- Jarawa (Nigeria) -->
 			<languageAlias type="kdv" replacement="zkd" reason="deprecated"/>  <!-- Kado -->
 			<languageAlias type="kgd" replacement="ncq" reason="deprecated"/>  <!-- Kataang -->
 			<languageAlias type="kpp" replacement="jkm" reason="deprecated"/>  <!-- Paku Karen -->
+			<languageAlias type="kxl" replacement="kru" reason="deprecated"/> <!-- Nepali Kurux ⇒ Kurukh -->
 			<languageAlias type="kzh" replacement="dgl" reason="deprecated"/>  <!-- Kenuzi-Dongola -->
 			<languageAlias type="leg" replacement="enl" reason="deprecated"/>  <!-- Lengua -->
 			<languageAlias type="mgx" replacement="jbk" reason="deprecated"/>  <!-- Omati -->
@@ -176,25 +181,23 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<languageAlias type="nln" replacement="azd" reason="deprecated"/>  <!-- Durango Nahuatl -->
 			<languageAlias type="nlr" replacement="nrk" reason="deprecated"/>  <!-- Ngarla -->
 			<languageAlias type="noo" replacement="dtd" reason="deprecated"/>  <!-- Nootka -->
+			<languageAlias type="nxu" replacement="bpp" reason="deprecated"/> <!-- Narau ⇒ Kaure -->
+			<languageAlias type="pat" replacement="kxr" reason="deprecated"/> <!-- Papitalai ⇒ Koro [Papua New Guinea] -->
 			<languageAlias type="rmr" replacement="emx" reason="deprecated"/>  <!-- Caló -->
 			<languageAlias type="sap" replacement="aqt" reason="deprecated"/>  <!-- Sanapaná -->
 			<languageAlias type="sgl" replacement="isk" reason="deprecated"/>  <!-- Sanglechi-Ishkashimi -->
 			<languageAlias type="sul" replacement="sgd" reason="deprecated"/>  <!-- Surigaonon -->
 			<languageAlias type="sum" replacement="ulw" reason="deprecated"/>  <!-- Sumo-Mayangna -->
 			<languageAlias type="tgg" replacement="bjp" reason="deprecated"/>  <!-- Tangga -->
+			<languageAlias type="thw" replacement="ola" reason="deprecated"/> <!-- Thudam ⇒ Walungge -->
 			<languageAlias type="tid" replacement="itd" reason="deprecated"/>  <!-- Tidong -->
 			<languageAlias type="unp" replacement="wro" reason="deprecated"/>  <!-- Worora -->
 			<languageAlias type="wgw" replacement="wgb" reason="deprecated"/>  <!-- Wagawaga -->
 			<languageAlias type="wit" replacement="nol" reason="deprecated"/>  <!-- Wintu -->
 			<languageAlias type="wiw" replacement="nwo" reason="deprecated"/>  <!-- Wirangu -->
+			<languageAlias type="xrq" replacement="dmw" reason="deprecated"/> <!-- Karranga ⇒ Mudburra -->
 			<languageAlias type="yen" replacement="ynq" reason="deprecated"/>  <!-- Yendang -->
 			<languageAlias type="yiy" replacement="yrm" reason="deprecated"/>  <!-- Yir Yoront -->
-			<languageAlias type="drr" replacement="kzk" reason="deprecated"/> <!-- Dororo ⇒ Kazukuru -->
-			<languageAlias type="gli" replacement="kzk" reason="deprecated"/> <!-- Guliguli ⇒ Kazukuru -->
-			<languageAlias type="kxl" replacement="kru" reason="deprecated"/> <!-- Nepali Kurux ⇒ Kurukh -->
-			<languageAlias type="nxu" replacement="bpp" reason="deprecated"/> <!-- Narau ⇒ Kaure -->
-			<languageAlias type="thw" replacement="ola" reason="deprecated"/> <!-- Thudam ⇒ Walungge -->
-			<languageAlias type="xrq" replacement="dmw" reason="deprecated"/> <!-- Karranga ⇒ Mudburra -->
 			<languageAlias type="zir" replacement="scv" reason="deprecated"/> <!-- Ziriya ⇒ Sheni -->
 			<!-- miscellaneous deprecated -->
 
@@ -225,7 +228,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<languageAlias type="zh_gan" replacement="gan" reason="deprecated"/>  <!-- Kan or Gan -->
 			<languageAlias type="zh_wuu" replacement="wuu" reason="deprecated"/>  <!-- Shanghainese or Wu -->
 			<languageAlias type="zh_yue" replacement="yue" reason="deprecated"/>  <!-- Cantonese -->
-			
+
 			<!-- miscellaneous deprecated -->
             <languageAlias type="no_bokmal" replacement="nb" reason="deprecated"/>
             <languageAlias type="no_nynorsk" replacement="nn" reason="deprecated"/>
@@ -406,7 +409,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<languageAlias type="lav" replacement="lv" reason="overlong"/> <!-- [Latvian] -->
 			<languageAlias type="mlg" replacement="mg" reason="overlong"/> <!-- [Malagasy] -->
 			<languageAlias type="mah" replacement="mh" reason="overlong"/> <!-- [Marshallese] -->
-			<languageAlias type="mri" replacement="mi" reason="overlong"/> <!-- [Maori] -->
+			<languageAlias type="mri" replacement="mi" reason="overlong"/> <!-- [Māori] -->
 			<languageAlias type="mkd" replacement="mk" reason="overlong"/> <!-- [Macedonian] -->
 			<languageAlias type="mal" replacement="ml" reason="overlong"/> <!-- [Malayalam] -->
 			<languageAlias type="mon" replacement="mn" reason="overlong"/> <!-- [Mongolian] -->
@@ -504,7 +507,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<languageAlias type="gre" replacement="el" reason="bibliographic"/> <!-- [Modern Greek (1453-)] -->
 			<languageAlias type="ice" replacement="is" reason="bibliographic"/> <!-- [Icelandic] -->
 			<languageAlias type="mac" replacement="mk" reason="bibliographic"/> <!-- [Macedonian] -->
-			<languageAlias type="mao" replacement="mi" reason="bibliographic"/> <!-- [Maori] -->
+			<languageAlias type="mao" replacement="mi" reason="bibliographic"/> <!-- [Māori] -->
 			<languageAlias type="may" replacement="ms" reason="bibliographic"/> <!-- [Malay (macrolanguage)] -->
 			<languageAlias type="per" replacement="fa" reason="bibliographic"/> <!-- [Persian] -->
 			<languageAlias type="rum" replacement="ro" reason="bibliographic"/> <!-- [Romanian, Moldavian, Moldovan] -->
@@ -517,7 +520,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<languageAlias type="i_enochian" replacement="und_x_i_enochian" reason="legacy"/> <!-- irregular bcp47 code -->
 			<languageAlias type="i_mingo" replacement="see_x_i_mingo" reason="legacy"/> <!-- irregular bcp47 code -->
 			<languageAlias type="zh_min" replacement="nan_x_zh_min" reason="legacy"/> <!-- irregular bcp47 code -->
-			
+
 			<languageAlias type="und_aaland" replacement="und_AX" reason="deprecated"/>
 			<languageAlias type="hy_arevmda" replacement="hyw" reason="deprecated"/>
 			<languageAlias type="und_arevmda" replacement="und" reason="deprecated"/>
@@ -529,7 +532,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<languageAlias type="und_hakka" replacement="und" reason="deprecated"/>
 			<languageAlias type="und_xiang" replacement="und" reason="deprecated"/>
 			<languageAlias type="und_hepburn_heploc" replacement="und_alalc97" reason="deprecated"/>
-			
+
             <!-- scripts -->
             <scriptAlias type="Qaai" replacement="Zinh" reason="deprecated"/>
             <!-- deprecated ISO territories in 3066 + CLDR ones (older deprecated ISO codes -->
@@ -1179,21 +1182,16 @@ For terms of use, see http://www.unicode.org/copyright.html
 
 			<subdivisionAlias type="fi01" replacement="AX" reason="overlong"/> <!-- Åland Islands -->
 			<subdivisionAlias type="frcp" replacement="CP" reason="overlong"/> <!-- Clipperton Island -->
-			<subdivisionAlias type="frgf" replacement="GF" reason="overlong"/> <!-- French Guiana -->
-			<subdivisionAlias type="frmq" replacement="MQ" reason="overlong"/> <!-- Martinique -->
 			<subdivisionAlias type="shta" replacement="TA" reason="overlong"/> <!-- Tristan da Cunha -->
 
 			<!-- start of data generated with GenerateSubdivisions -->
 			<subdivisionAlias type="frbl" replacement="BL" reason="overlong"/> <!-- St. Barthélemy => St. Barthélemy -->
-			<subdivisionAlias type="frgp" replacement="GP" reason="overlong"/> <!-- Guadeloupe => Guadeloupe -->
 			<subdivisionAlias type="frmf" replacement="MF" reason="overlong"/> <!-- St. Martin => St. Martin -->
 			<subdivisionAlias type="frnc" replacement="NC" reason="overlong"/> <!-- New Caledonia => New Caledonia -->
 			<subdivisionAlias type="frpf" replacement="PF" reason="overlong"/> <!-- French Polynesia => French Polynesia -->
 			<subdivisionAlias type="frpm" replacement="PM" reason="overlong"/> <!-- St. Pierre & Miquelon => St. Pierre & Miquelon -->
-			<subdivisionAlias type="frre" replacement="RE" reason="overlong"/> <!-- Réunion => Réunion -->
 			<subdivisionAlias type="frtf" replacement="TF" reason="overlong"/> <!-- French Southern Territories => French Southern Territories -->
 			<subdivisionAlias type="frwf" replacement="WF" reason="overlong"/> <!-- Wallis & Futuna => Wallis & Futuna -->
-			<subdivisionAlias type="fryt" replacement="YT" reason="overlong"/> <!-- Mayotte => Mayotte -->
 			<subdivisionAlias type="nlaw" replacement="AW" reason="overlong"/> <!-- Aruba => Aruba -->
 			<subdivisionAlias type="nlcw" replacement="CW" reason="overlong"/> <!-- Curaçao => Curaçao -->
 			<subdivisionAlias type="nlsx" replacement="SX" reason="overlong"/> <!-- Sint Maarten => Sint Maarten -->
@@ -1361,33 +1359,55 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<subdivisionAlias type="czus" replacement="cz42" reason="deprecated"/> <!-- ??? => Ústecký -->
 			<subdivisionAlias type="czvy" replacement="cz63" reason="deprecated"/> <!-- ??? => Vysočina -->
 			<subdivisionAlias type="czzl" replacement="cz72" reason="deprecated"/> <!-- ??? => Zlínský -->
+			<!-- <subdivisionAlias type="ee44" replacement="ee?" reason="deprecated"/> <!- - Ida-Viru => ?? -->
+			<!-- <subdivisionAlias type="ee49" replacement="ee?" reason="deprecated"/> <!- - Jõgeva => ?? -->
+			<!-- <subdivisionAlias type="ee51" replacement="ee?" reason="deprecated"/> <!- - Järva => ?? -->
+			<!-- <subdivisionAlias type="ee57" replacement="ee?" reason="deprecated"/> <!- - Lääne => ?? -->
+			<!-- <subdivisionAlias type="ee59" replacement="ee?" reason="deprecated"/> <!- - Lääne-Viru => ?? -->
+			<!-- <subdivisionAlias type="ee65" replacement="ee?" reason="deprecated"/> <!- - Põlva => ?? -->
+			<!-- <subdivisionAlias type="ee67" replacement="ee?" reason="deprecated"/> <!- - Pärnu => ?? -->
+			<!-- <subdivisionAlias type="ee70" replacement="ee?" reason="deprecated"/> <!- - Rapla => ?? -->
+			<!-- <subdivisionAlias type="ee78" replacement="ee?" reason="deprecated"/> <!- - Tartu => ?? -->
+			<!-- <subdivisionAlias type="ee82" replacement="ee?" reason="deprecated"/> <!- - Valga => ?? -->
+			<!-- <subdivisionAlias type="ee86" replacement="ee?" reason="deprecated"/> <!- - Võru => ?? -->
+			<!-- <subdivisionAlias type="fr75" replacement="fr?" reason="deprecated"/> <!- - Paris => ?? -->
 			<subdivisionAlias type="fra" replacement="frges" reason="deprecated"/> <!-- ??? => Grand-Est -->
 			<subdivisionAlias type="frb" replacement="frnaq" reason="deprecated"/> <!-- ??? => Nouvelle-Aquitaine -->
 			<subdivisionAlias type="frc" replacement="frara" reason="deprecated"/> <!-- ??? => Auvergne-Rhône-Alpes -->
+			<!-- <subdivisionAlias type="frcor" replacement="fr?" reason="deprecated"/> <!- - Corsica => ?? -->
 			<subdivisionAlias type="frd" replacement="frbfc" reason="deprecated"/> <!-- ??? => Burgundy-Franche-Comté -->
 			<subdivisionAlias type="fre" replacement="frbre" reason="deprecated"/> <!-- ??? => Brittany -->
 			<subdivisionAlias type="frf" replacement="frcvl" reason="deprecated"/> <!-- ??? => Centre-Val de Loire -->
 			<subdivisionAlias type="frg" replacement="frges" reason="deprecated"/> <!-- ??? => Grand-Est -->
+			<subdivisionAlias type="frgf" replacement="GF" reason="overlong"/> <!-- French Guiana => French Guiana -->
+			<subdivisionAlias type="frgp" replacement="GP" reason="overlong"/> <!-- Guadeloupe => Guadeloupe -->
+			<!-- <subdivisionAlias type="frgua" replacement="fr?" reason="deprecated"/> <!- - Guadeloupe => ?? -->
 			<subdivisionAlias type="frh" replacement="frcor" reason="deprecated"/> <!-- ??? => Corsica -->
 			<subdivisionAlias type="fri" replacement="frbfc" reason="deprecated"/> <!-- ??? => Burgundy-Franche-Comté -->
 			<subdivisionAlias type="frj" replacement="fridf" reason="deprecated"/> <!-- ??? => Île-de-France² -->
 			<subdivisionAlias type="frk" replacement="frocc" reason="deprecated"/> <!-- ??? => Occitanie -->
 			<subdivisionAlias type="frl" replacement="frnaq" reason="deprecated"/> <!-- ??? => Nouvelle-Aquitaine -->
+			<!-- <subdivisionAlias type="frlre" replacement="fr?" reason="deprecated"/> <!- - La Réunion => ?? -->
 			<subdivisionAlias type="frm" replacement="frges" reason="deprecated"/> <!-- ??? => Grand-Est -->
+			<!-- <subdivisionAlias type="frmay" replacement="fr?" reason="deprecated"/> <!- - Mayotte => ?? -->
+			<subdivisionAlias type="frmq" replacement="MQ" reason="overlong"/> <!-- Martinique => Martinique -->
 			<subdivisionAlias type="frn" replacement="frocc" reason="deprecated"/> <!-- ??? => Occitanie -->
 			<subdivisionAlias type="fro" replacement="frhdf" reason="deprecated"/> <!-- ??? => Hauts-de-France -->
 			<subdivisionAlias type="frp" replacement="frnor" reason="deprecated"/> <!-- ??? => Normandie -->
 			<subdivisionAlias type="frq" replacement="frnor" reason="deprecated"/> <!-- ??? => Normandie -->
 			<subdivisionAlias type="frr" replacement="frpdl" reason="deprecated"/> <!-- ??? => Pays-de-la-Loire -->
+			<subdivisionAlias type="frre" replacement="RE" reason="overlong"/> <!-- Réunion => Réunion -->
 			<subdivisionAlias type="frs" replacement="frhdf" reason="deprecated"/> <!-- ??? => Hauts-de-France -->
 			<subdivisionAlias type="frt" replacement="frnaq" reason="deprecated"/> <!-- ??? => Nouvelle-Aquitaine -->
 			<subdivisionAlias type="fru" replacement="frpac" reason="deprecated"/> <!-- ??? => Provence-Alpes-Côte-d’Azur -->
 			<subdivisionAlias type="frv" replacement="frara" reason="deprecated"/> <!-- ??? => Auvergne-Rhône-Alpes -->
+			<subdivisionAlias type="fryt" replacement="YT" reason="overlong"/> <!-- Mayotte => Mayotte -->
 			<!-- <subdivisionAlias type="gbant" replacement="gb?" reason="deprecated"/> <!- - Antrim => ?? -->
 			<!-- <subdivisionAlias type="gbard" replacement="gb?" reason="deprecated"/> <!- - Ards => ?? -->
 			<!-- <subdivisionAlias type="gbarm" replacement="gb?" reason="deprecated"/> <!- - Armagh => ?? -->
 			<!-- <subdivisionAlias type="gbbla" replacement="gb?" reason="deprecated"/> <!- - Ballymena => ?? -->
 			<!-- <subdivisionAlias type="gbbly" replacement="gb?" reason="deprecated"/> <!- - Ballymoney => ?? -->
+			<!-- <subdivisionAlias type="gbbmh" replacement="gb?" reason="deprecated"/> <!- - Bournemouth => ?? -->
 			<!-- <subdivisionAlias type="gbbnb" replacement="gb?" reason="deprecated"/> <!- - Banbridge => ?? -->
 			<!-- <subdivisionAlias type="gbcgv" replacement="gb?" reason="deprecated"/> <!- - Craigavon => ?? -->
 			<!-- <subdivisionAlias type="gbckf" replacement="gb?" reason="deprecated"/> <!- - Carrickfergus => ?? -->
@@ -1398,7 +1418,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<!-- <subdivisionAlias type="gbdow" replacement="gb?" reason="deprecated"/> <!- - Down => ?? -->
 			<!-- <subdivisionAlias type="gbdry" replacement="gb?" reason="deprecated"/> <!- - Derry => ?? -->
 			<!-- <subdivisionAlias type="gbeaw" replacement="gb?" reason="deprecated"/> <!- - England and Wales => ?? -->
-			<!-- <subdivisionAlias type="gbeng" replacement="gb?" reason="deprecated"/> <!- - England => ?? -->
 			<!-- <subdivisionAlias type="gbfer" replacement="gb?" reason="deprecated"/> <!- - Fermanagh => ?? -->
 			<!-- <subdivisionAlias type="gbgbn" replacement="gb?" reason="deprecated"/> <!- - Great Britain => ?? -->
 			<!-- <subdivisionAlias type="gblmv" replacement="gb?" reason="deprecated"/> <!- - Limavady => ?? -->
@@ -1407,14 +1426,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<!-- <subdivisionAlias type="gbmft" replacement="gb?" reason="deprecated"/> <!- - Magherafelt => ?? -->
 			<!-- <subdivisionAlias type="gbmyl" replacement="gb?" reason="deprecated"/> <!- - Moyle => ?? -->
 			<!-- <subdivisionAlias type="gbndn" replacement="gb?" reason="deprecated"/> <!- - North Down => ?? -->
-			<!-- <subdivisionAlias type="gbnir" replacement="gb?" reason="deprecated"/> <!- - Northern Ireland => ?? -->
 			<!-- <subdivisionAlias type="gbnta" replacement="gb?" reason="deprecated"/> <!- - Newtownabbey => ?? -->
 			<!-- <subdivisionAlias type="gbnym" replacement="gb?" reason="deprecated"/> <!- - Newry and Mourne => ?? -->
 			<!-- <subdivisionAlias type="gbomh" replacement="gb?" reason="deprecated"/> <!- - Omagh => ?? -->
-			<!-- <subdivisionAlias type="gbsct" replacement="gb?" reason="deprecated"/> <!- - Scotland => ?? -->
+			<!-- <subdivisionAlias type="gbpol" replacement="gb?" reason="deprecated"/> <!- - Poole => ?? -->
 			<!-- <subdivisionAlias type="gbstb" replacement="gb?" reason="deprecated"/> <!- - Strabane => ?? -->
 			<!-- <subdivisionAlias type="gbukm" replacement="gb?" reason="deprecated"/> <!- - United Kingdom => ?? -->
-			<!-- <subdivisionAlias type="gbwls" replacement="gb?" reason="deprecated"/> <!- - Wales => ?? -->
 			<!-- <subdivisionAlias type="ghba" replacement="gh?" reason="deprecated"/> <!- - Brong-Ahafo => ?? -->
 			<!-- <subdivisionAlias type="glqa" replacement="gl?" reason="deprecated"/> <!- - Qaasuitsup => ?? -->
 			<!-- <subdivisionAlias type="gr01" replacement="gr?" reason="deprecated"/> <!- - Aetolia-Acarnania => ?? -->
@@ -1468,20 +1485,127 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<!-- <subdivisionAlias type="gr93" replacement="gr?" reason="deprecated"/> <!- - Rethymno => ?? -->
 			<!-- <subdivisionAlias type="gr94" replacement="gr?" reason="deprecated"/> <!- - Chania => ?? -->
 			<!-- <subdivisionAlias type="gra1" replacement="gr?" reason="deprecated"/> <!- - Attica Department => ?? -->
+			<!-- <subdivisionAlias type="gtav" replacement="gt?" reason="deprecated"/> <!- - Alta Verapaz => ?? -->
+			<!-- <subdivisionAlias type="gtbv" replacement="gt?" reason="deprecated"/> <!- - Baja Verapaz => ?? -->
+			<!-- <subdivisionAlias type="gtcm" replacement="gt?" reason="deprecated"/> <!- - Chimaltenango => ?? -->
+			<!-- <subdivisionAlias type="gtcq" replacement="gt?" reason="deprecated"/> <!- - Chiquimula => ?? -->
+			<!-- <subdivisionAlias type="gtes" replacement="gt?" reason="deprecated"/> <!- - Escuintla => ?? -->
+			<!-- <subdivisionAlias type="gtgu" replacement="gt?" reason="deprecated"/> <!- - Guatemala => ?? -->
+			<!-- <subdivisionAlias type="gthu" replacement="gt?" reason="deprecated"/> <!- - Huehuetenango => ?? -->
+			<!-- <subdivisionAlias type="gtiz" replacement="gt?" reason="deprecated"/> <!- - Izabal => ?? -->
+			<!-- <subdivisionAlias type="gtja" replacement="gt?" reason="deprecated"/> <!- - Jalapa => ?? -->
+			<!-- <subdivisionAlias type="gtju" replacement="gt?" reason="deprecated"/> <!- - Jutiapa => ?? -->
+			<!-- <subdivisionAlias type="gtpe" replacement="gt?" reason="deprecated"/> <!- - Petén => ?? -->
+			<!-- <subdivisionAlias type="gtpr" replacement="gt?" reason="deprecated"/> <!- - El Progreso => ?? -->
+			<!-- <subdivisionAlias type="gtqc" replacement="gt?" reason="deprecated"/> <!- - Quiché => ?? -->
+			<!-- <subdivisionAlias type="gtqz" replacement="gt?" reason="deprecated"/> <!- - Quetzaltenango => ?? -->
+			<!-- <subdivisionAlias type="gtre" replacement="gt?" reason="deprecated"/> <!- - Retalhuleu => ?? -->
+			<!-- <subdivisionAlias type="gtsa" replacement="gt?" reason="deprecated"/> <!- - Sacatepéquez => ?? -->
+			<!-- <subdivisionAlias type="gtsm" replacement="gt?" reason="deprecated"/> <!- - San Marcos => ?? -->
+			<!-- <subdivisionAlias type="gtso" replacement="gt?" reason="deprecated"/> <!- - Sololá => ?? -->
+			<!-- <subdivisionAlias type="gtsr" replacement="gt?" reason="deprecated"/> <!- - Santa Rosa => ?? -->
+			<!-- <subdivisionAlias type="gtsu" replacement="gt?" reason="deprecated"/> <!- - Suchitepéquez => ?? -->
+			<!-- <subdivisionAlias type="gtto" replacement="gt?" reason="deprecated"/> <!- - Totonicapán => ?? -->
+			<!-- <subdivisionAlias type="gtza" replacement="gt?" reason="deprecated"/> <!- - Zacapa => ?? -->
+			<!-- <subdivisionAlias type="indd" replacement="in?" reason="deprecated"/> <!- - Daman and Diu => ?? -->
+			<!-- <subdivisionAlias type="indn" replacement="in?" reason="deprecated"/> <!- - Dadra and Nagar Haveli => ?? -->
+			<!-- <subdivisionAlias type="ir31" replacement="ir?" reason="deprecated"/> <!- - North Khorasan => ?? -->
+			<!-- <subdivisionAlias type="ir32" replacement="ir?" reason="deprecated"/> <!- - Alborz => ?? -->
 			<!-- <subdivisionAlias type="is0" replacement="is?" reason="deprecated"/> <!- - Reykjavík => ?? -->
+			<!-- <subdivisionAlias type="isbfj" replacement="is?" reason="deprecated"/> <!- - Borgarfjarðarhreppur => ?? -->
+			<!-- <subdivisionAlias type="isdju" replacement="is?" reason="deprecated"/> <!- - Djúpavogshreppur => ?? -->
+			<!-- <subdivisionAlias type="isfld" replacement="is?" reason="deprecated"/> <!- - Fljótsdalshérað => ?? -->
+			<!-- <subdivisionAlias type="issey" replacement="is?" reason="deprecated"/> <!- - Seyðisfjarðarkaupstaður => ?? -->
 			<!-- <subdivisionAlias type="itao" replacement="it?" reason="deprecated"/> <!- - Aosta => ?? -->
 			<!-- <subdivisionAlias type="itci" replacement="it?" reason="deprecated"/> <!- - Carbonia-Iglesias => ?? -->
-			<!-- <subdivisionAlias type="itgo" replacement="it?" reason="deprecated"/> <!- - Gorizia => ?? -->
 			<!-- <subdivisionAlias type="itog" replacement="it?" reason="deprecated"/> <!- - Ogliastra => ?? -->
 			<!-- <subdivisionAlias type="itot" replacement="it?" reason="deprecated"/> <!- - Olbia-Tempio => ?? -->
-			<!-- <subdivisionAlias type="itpn" replacement="it?" reason="deprecated"/> <!- - Pordenone => ?? -->
-			<!-- <subdivisionAlias type="itts" replacement="it?" reason="deprecated"/> <!- - Trieste => ?? -->
-			<!-- <subdivisionAlias type="itud" replacement="it?" reason="deprecated"/> <!- - Udine => ?? -->
+			<!-- <subdivisionAlias type="itsd" replacement="it?" reason="deprecated"/> <!- - Sud Sardegna => ?? -->
 			<!-- <subdivisionAlias type="itvs" replacement="it?" reason="deprecated"/> <!- - Medio Campidano => ?? -->
+			<!-- <subdivisionAlias type="kzbay" replacement="kz?" reason="deprecated"/> <!- - Bayqongyr => ?? -->
 			<subdivisionAlias type="laxn" replacement="laxs" reason="deprecated"/> <!-- ??? => Xaisomboun -->
 			<subdivisionAlias type="lud" replacement="lucl ludi lurd luvd luwi" reason="deprecated"/> <!-- ??? => Clervaux, Diekirch, Redange, Vianden, Wiltz -->
 			<subdivisionAlias type="lug" replacement="luec lugr lurm" reason="deprecated"/> <!-- ??? => Echternach, Grevenmacher, Remich -->
 			<subdivisionAlias type="lul" replacement="luca lues lulu lume" reason="deprecated"/> <!-- ??? => Capellen, Esch-sur-Alzette, Luxembourg, Mersch -->
+			<!-- <subdivisionAlias type="lv001" replacement="lv?" reason="deprecated"/> <!- - Aglona => ?? -->
+			<!-- <subdivisionAlias type="lv003" replacement="lv?" reason="deprecated"/> <!- - Aizpute => ?? -->
+			<!-- <subdivisionAlias type="lv004" replacement="lv?" reason="deprecated"/> <!- - Aknīste => ?? -->
+			<!-- <subdivisionAlias type="lv005" replacement="lv?" reason="deprecated"/> <!- - Aloja => ?? -->
+			<!-- <subdivisionAlias type="lv006" replacement="lv?" reason="deprecated"/> <!- - Alsunga => ?? -->
+			<!-- <subdivisionAlias type="lv008" replacement="lv?" reason="deprecated"/> <!- - Amata => ?? -->
+			<!-- <subdivisionAlias type="lv009" replacement="lv?" reason="deprecated"/> <!- - Ape => ?? -->
+			<!-- <subdivisionAlias type="lv010" replacement="lv?" reason="deprecated"/> <!- - Auce => ?? -->
+			<!-- <subdivisionAlias type="lv012" replacement="lv?" reason="deprecated"/> <!- - Babīte => ?? -->
+			<!-- <subdivisionAlias type="lv013" replacement="lv?" reason="deprecated"/> <!- - Baldone => ?? -->
+			<!-- <subdivisionAlias type="lv014" replacement="lv?" reason="deprecated"/> <!- - Baltinava => ?? -->
+			<!-- <subdivisionAlias type="lv017" replacement="lv?" reason="deprecated"/> <!- - Beverīna => ?? -->
+			<!-- <subdivisionAlias type="lv018" replacement="lv?" reason="deprecated"/> <!- - Brocēni => ?? -->
+			<!-- <subdivisionAlias type="lv019" replacement="lv?" reason="deprecated"/> <!- - Burtnieki => ?? -->
+			<!-- <subdivisionAlias type="lv020" replacement="lv?" reason="deprecated"/> <!- - Carnikava => ?? -->
+			<!-- <subdivisionAlias type="lv021" replacement="lv?" reason="deprecated"/> <!- - Cesvaine => ?? -->
+			<!-- <subdivisionAlias type="lv023" replacement="lv?" reason="deprecated"/> <!- - Cibla => ?? -->
+			<!-- <subdivisionAlias type="lv024" replacement="lv?" reason="deprecated"/> <!- - Dagda => ?? -->
+			<!-- <subdivisionAlias type="lv025" replacement="lv?" reason="deprecated"/> <!- - Daugavpils Municipality => ?? -->
+			<!-- <subdivisionAlias type="lv027" replacement="lv?" reason="deprecated"/> <!- - Dundaga => ?? -->
+			<!-- <subdivisionAlias type="lv028" replacement="lv?" reason="deprecated"/> <!- - Durbe => ?? -->
+			<!-- <subdivisionAlias type="lv029" replacement="lv?" reason="deprecated"/> <!- - Engure => ?? -->
+			<!-- <subdivisionAlias type="lv030" replacement="lv?" reason="deprecated"/> <!- - Ērgļi => ?? -->
+			<!-- <subdivisionAlias type="lv031" replacement="lv?" reason="deprecated"/> <!- - Garkalne => ?? -->
+			<!-- <subdivisionAlias type="lv032" replacement="lv?" reason="deprecated"/> <!- - Grobiņa => ?? -->
+			<!-- <subdivisionAlias type="lv034" replacement="lv?" reason="deprecated"/> <!- - Iecava => ?? -->
+			<!-- <subdivisionAlias type="lv035" replacement="lv?" reason="deprecated"/> <!- - Ikšķile => ?? -->
+			<!-- <subdivisionAlias type="lv036" replacement="lv?" reason="deprecated"/> <!- - Ilūkste => ?? -->
+			<!-- <subdivisionAlias type="lv037" replacement="lv?" reason="deprecated"/> <!- - Inčukalns => ?? -->
+			<!-- <subdivisionAlias type="lv038" replacement="lv?" reason="deprecated"/> <!- - Jaunjelgava => ?? -->
+			<!-- <subdivisionAlias type="lv039" replacement="lv?" reason="deprecated"/> <!- - Jaunpiebalga => ?? -->
+			<!-- <subdivisionAlias type="lv040" replacement="lv?" reason="deprecated"/> <!- - Jaunpils => ?? -->
+			<!-- <subdivisionAlias type="lv043" replacement="lv?" reason="deprecated"/> <!- - Kandava => ?? -->
+			<!-- <subdivisionAlias type="lv044" replacement="lv?" reason="deprecated"/> <!- - Kārsava => ?? -->
+			<!-- <subdivisionAlias type="lv045" replacement="lv?" reason="deprecated"/> <!- - Kocēni => ?? -->
+			<!-- <subdivisionAlias type="lv046" replacement="lv?" reason="deprecated"/> <!- - Koknese => ?? -->
+			<!-- <subdivisionAlias type="lv048" replacement="lv?" reason="deprecated"/> <!- - Krimulda => ?? -->
+			<!-- <subdivisionAlias type="lv049" replacement="lv?" reason="deprecated"/> <!- - Krustpils => ?? -->
+			<!-- <subdivisionAlias type="lv051" replacement="lv?" reason="deprecated"/> <!- - Ķegums => ?? -->
+			<!-- <subdivisionAlias type="lv053" replacement="lv?" reason="deprecated"/> <!- - Lielvārde => ?? -->
+			<!-- <subdivisionAlias type="lv055" replacement="lv?" reason="deprecated"/> <!- - Līgatne => ?? -->
+			<!-- <subdivisionAlias type="lv057" replacement="lv?" reason="deprecated"/> <!- - Lubāna => ?? -->
+			<!-- <subdivisionAlias type="lv060" replacement="lv?" reason="deprecated"/> <!- - Mazsalaca => ?? -->
+			<!-- <subdivisionAlias type="lv061" replacement="lv?" reason="deprecated"/> <!- - Mālpils => ?? -->
+			<!-- <subdivisionAlias type="lv063" replacement="lv?" reason="deprecated"/> <!- - Mērsrags => ?? -->
+			<!-- <subdivisionAlias type="lv064" replacement="lv?" reason="deprecated"/> <!- - Naukšēni => ?? -->
+			<!-- <subdivisionAlias type="lv065" replacement="lv?" reason="deprecated"/> <!- - Nereta => ?? -->
+			<!-- <subdivisionAlias type="lv066" replacement="lv?" reason="deprecated"/> <!- - Nīca => ?? -->
+			<!-- <subdivisionAlias type="lv069" replacement="lv?" reason="deprecated"/> <!- - Ozolnieki => ?? -->
+			<!-- <subdivisionAlias type="lv070" replacement="lv?" reason="deprecated"/> <!- - Pārgauja => ?? -->
+			<!-- <subdivisionAlias type="lv071" replacement="lv?" reason="deprecated"/> <!- - Pāvilosta => ?? -->
+			<!-- <subdivisionAlias type="lv072" replacement="lv?" reason="deprecated"/> <!- - Pļaviņas => ?? -->
+			<!-- <subdivisionAlias type="lv074" replacement="lv?" reason="deprecated"/> <!- - Priekule => ?? -->
+			<!-- <subdivisionAlias type="lv075" replacement="lv?" reason="deprecated"/> <!- - Priekuļi => ?? -->
+			<!-- <subdivisionAlias type="lv076" replacement="lv?" reason="deprecated"/> <!- - Rauna => ?? -->
+			<!-- <subdivisionAlias type="lv078" replacement="lv?" reason="deprecated"/> <!- - Riebiņi => ?? -->
+			<!-- <subdivisionAlias type="lv079" replacement="lv?" reason="deprecated"/> <!- - Roja => ?? -->
+			<!-- <subdivisionAlias type="lv081" replacement="lv?" reason="deprecated"/> <!- - Rucava => ?? -->
+			<!-- <subdivisionAlias type="lv082" replacement="lv?" reason="deprecated"/> <!- - Rugāji => ?? -->
+			<!-- <subdivisionAlias type="lv083" replacement="lv?" reason="deprecated"/> <!- - Rundāle => ?? -->
+			<!-- <subdivisionAlias type="lv084" replacement="lv?" reason="deprecated"/> <!- - Rūjiena => ?? -->
+			<!-- <subdivisionAlias type="lv085" replacement="lv?" reason="deprecated"/> <!- - Sala => ?? -->
+			<!-- <subdivisionAlias type="lv086" replacement="lv?" reason="deprecated"/> <!- - Salacgrīva => ?? -->
+			<!-- <subdivisionAlias type="lv090" replacement="lv?" reason="deprecated"/> <!- - Sēja => ?? -->
+			<!-- <subdivisionAlias type="lv092" replacement="lv?" reason="deprecated"/> <!- - Skrīveri => ?? -->
+			<!-- <subdivisionAlias type="lv093" replacement="lv?" reason="deprecated"/> <!- - Skrunda => ?? -->
+			<!-- <subdivisionAlias type="lv095" replacement="lv?" reason="deprecated"/> <!- - Stopiņi => ?? -->
+			<!-- <subdivisionAlias type="lv096" replacement="lv?" reason="deprecated"/> <!- - Strenči => ?? -->
+			<!-- <subdivisionAlias type="lv098" replacement="lv?" reason="deprecated"/> <!- - Tērvete => ?? -->
+			<!-- <subdivisionAlias type="lv100" replacement="lv?" reason="deprecated"/> <!- - Vaiņode => ?? -->
+			<!-- <subdivisionAlias type="lv103" replacement="lv?" reason="deprecated"/> <!- - Vārkava => ?? -->
+			<!-- <subdivisionAlias type="lv104" replacement="lv?" reason="deprecated"/> <!- - Vecpiebalga => ?? -->
+			<!-- <subdivisionAlias type="lv105" replacement="lv?" reason="deprecated"/> <!- - Vecumnieki => ?? -->
+			<!-- <subdivisionAlias type="lv107" replacement="lv?" reason="deprecated"/> <!- - Viesīte => ?? -->
+			<!-- <subdivisionAlias type="lv108" replacement="lv?" reason="deprecated"/> <!- - Viļaka => ?? -->
+			<!-- <subdivisionAlias type="lv109" replacement="lv?" reason="deprecated"/> <!- - Viļāni => ?? -->
+			<!-- <subdivisionAlias type="lv110" replacement="lv?" reason="deprecated"/> <!- - Zilupe => ?? -->
+			<!-- <subdivisionAlias type="lvjkb" replacement="lv?" reason="deprecated"/> <!- - Jēkabpils => ?? -->
+			<!-- <subdivisionAlias type="lvvmr" replacement="lv?" reason="deprecated"/> <!- - Valmiera => ?? -->
 			<!-- <subdivisionAlias type="ma13" replacement="ma?" reason="deprecated"/> <!- - Souss-Massa-Drâa => ?? -->
 			<!-- <subdivisionAlias type="ma14" replacement="ma?" reason="deprecated"/> <!- - Guelmim-Es Semara => ?? -->
 			<!-- <subdivisionAlias type="ma15" replacement="ma?" reason="deprecated"/> <!- - Laâyoune-Boujdour-Sakia El Hamra => ?? -->
@@ -1575,6 +1699,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<!-- <subdivisionAlias type="mk84" replacement="mk?" reason="deprecated"/> <!- - Šuto Orizari => ?? -->
 			<!-- <subdivisionAlias type="mk85" replacement="mk?" reason="deprecated"/> <!- - Skopje => ?? -->
 			<subdivisionAlias type="mrnkc" replacement="mr13 mr14 mr15" reason="deprecated"/> <!-- ??? => Nouakchott Ouest, Nouakchott Nord, Nouakchott Sud -->
+			<!-- <subdivisionAlias type="mubr" replacement="mu?" reason="deprecated"/> <!- - Beau-Bassin Rose-Hill => ?? -->
+			<!-- <subdivisionAlias type="mucu" replacement="mu?" reason="deprecated"/> <!- - Curepipe => ?? -->
+			<!-- <subdivisionAlias type="mupu" replacement="mu?" reason="deprecated"/> <!- - Port Louis => ?? -->
+			<!-- <subdivisionAlias type="muqb" replacement="mu?" reason="deprecated"/> <!- - Quatre Bornes => ?? -->
+			<!-- <subdivisionAlias type="muvp" replacement="mu?" reason="deprecated"/> <!- - Vacoas-Phoenix => ?? -->
 			<!-- <subdivisionAlias type="mvce" replacement="mv?" reason="deprecated"/> <!- - Central Province => ?? -->
 			<!-- <subdivisionAlias type="mvnc" replacement="mv?" reason="deprecated"/> <!- - North Central Province => ?? -->
 			<!-- <subdivisionAlias type="mvno" replacement="mv?" reason="deprecated"/> <!- - North Province => ?? -->
@@ -1583,8 +1712,21 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<!-- <subdivisionAlias type="mvun" replacement="mv?" reason="deprecated"/> <!- - Upper North Province => ?? -->
 			<!-- <subdivisionAlias type="mvus" replacement="mv?" reason="deprecated"/> <!- - Upper South Province => ?? -->
 			<!-- <subdivisionAlias type="mxdif" replacement="mx?" reason="deprecated"/> <!- - Mexico City => ?? -->
+			<!-- <subdivisionAlias type="no01" replacement="no?" reason="deprecated"/> <!- - Østfold => ?? -->
+			<!-- <subdivisionAlias type="no02" replacement="no?" reason="deprecated"/> <!- - Akershus => ?? -->
+			<!-- <subdivisionAlias type="no04" replacement="no?" reason="deprecated"/> <!- - Hedmark => ?? -->
+			<!-- <subdivisionAlias type="no05" replacement="no?" reason="deprecated"/> <!- - Oppland => ?? -->
+			<!-- <subdivisionAlias type="no06" replacement="no?" reason="deprecated"/> <!- - Buskerud => ?? -->
+			<!-- <subdivisionAlias type="no07" replacement="no?" reason="deprecated"/> <!- - Vestfold => ?? -->
+			<!-- <subdivisionAlias type="no08" replacement="no?" reason="deprecated"/> <!- - Telemark => ?? -->
+			<!-- <subdivisionAlias type="no09" replacement="no?" reason="deprecated"/> <!- - Aust-Agder => ?? -->
+			<!-- <subdivisionAlias type="no10" replacement="no?" reason="deprecated"/> <!- - Vest-Agder => ?? -->
+			<!-- <subdivisionAlias type="no12" replacement="no?" reason="deprecated"/> <!- - Hordaland => ?? -->
+			<!-- <subdivisionAlias type="no14" replacement="no?" reason="deprecated"/> <!- - Sogn og Fjordane => ?? -->
 			<!-- <subdivisionAlias type="no16" replacement="no?" reason="deprecated"/> <!- - Sør-Trøndelag => ?? -->
 			<!-- <subdivisionAlias type="no17" replacement="no?" reason="deprecated"/> <!- - Nord-Trøndelag => ?? -->
+			<!-- <subdivisionAlias type="no19" replacement="no?" reason="deprecated"/> <!- - Troms => ?? -->
+			<!-- <subdivisionAlias type="no20" replacement="no?" reason="deprecated"/> <!- - Finnmark => ?? -->
 			<subdivisionAlias type="no23" replacement="no50" reason="deprecated"/> <!-- Trøndelag => Trøndelag -->
 			<subdivisionAlias type="nzn" replacement="nzauk nzbop nzgis nzhkb nzmwt nzntl nztki nzwgn nzwko" reason="deprecated"/> <!-- ??? => Auckland, Bay of Plenty, Gisborne, Hawke’s Bay, Manawatu-Wanganui, Northland, Taranaki, Wellington, Waikato -->
 			<subdivisionAlias type="nzs" replacement="nzcan nzmbh nznsn nzota nzstl nztas nzwtc" reason="deprecated"/> <!-- ??? => Canterbury, Marl, Nelson, Otago, Southland, Tasman, West Coast -->
@@ -1607,6 +1749,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<subdivisionAlias type="plwn" replacement="pl28" reason="deprecated"/> <!-- ??? => Warmia-Masuria -->
 			<subdivisionAlias type="plwp" replacement="pl30" reason="deprecated"/> <!-- ??? => Greater Poland -->
 			<subdivisionAlias type="plzp" replacement="pl32" reason="deprecated"/> <!-- ??? => West Pomerania -->
+			<!-- <subdivisionAlias type="sts" replacement="st?" reason="deprecated"/> <!- - São Tomé => ?? -->
 			<subdivisionAlias type="tteto" replacement="tttob" reason="deprecated"/> <!-- ??? => Tobago -->
 			<subdivisionAlias type="ttrcm" replacement="ttmrc" reason="deprecated"/> <!-- ??? => Mayaro-Rio Claro -->
 			<subdivisionAlias type="ttwto" replacement="tttob" reason="deprecated"/> <!-- ??? => Tobago -->
@@ -1618,14 +1761,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<!-- <subdivisionAlias type="zanl" replacement="za?" reason="deprecated"/> <!- - KwaZulu-Natal => ?? -->
 			<!-- end of data generated with GenerateSubdivisions -->
 
-			<!-- Curated subdivision data, if any -->	
-						
-			
+			<!-- Curated subdivision data, if any -->
+
+
             <!-- variants -->
             <variantAlias type="polytoni" replacement="polyton" reason="deprecated"/>
 			<variantAlias type="heploc" replacement="alalc97" reason="deprecated"/> <!-- heploc -->
-            <zoneAlias type="Africa/Timbuktu" replacement="Africa/Bamako" reason="deprecated"/>          
-            <zoneAlias type="Pacific/Yap" replacement="Pacific/Truk" reason="deprecated"/>          
+            <zoneAlias type="Africa/Timbuktu" replacement="Africa/Bamako" reason="deprecated"/>
+            <zoneAlias type="Pacific/Yap" replacement="Pacific/Truk" reason="deprecated"/>
             <zoneAlias type="Europe/Belfast" replacement="Europe/London" reason="deprecated"/>
             <zoneAlias type="SystemV/AST4ADT" replacement="America/Halifax" reason="deprecated"/>
             <zoneAlias type="SystemV/EST5EDT" replacement="America/New_York" reason="deprecated"/>
@@ -1642,7 +1785,7 @@ For terms of use, see http://www.unicode.org/copyright.html
             <zoneAlias type="SystemV/PST8" replacement="Pacific/Pitcairn" reason="deprecated"/>
             <zoneAlias type="SystemV/YST9" replacement="Pacific/Gambier" reason="deprecated"/>
             <zoneAlias type="SystemV/HST10" replacement="Pacific/Honolulu" reason="deprecated"/>
-            <zoneAlias type="HST" replacement="Pacific/Honolulu" reason="deprecated"/>       
+            <zoneAlias type="HST" replacement="Pacific/Honolulu" reason="deprecated"/>
             <zoneAlias type="Atlantic/Jan_Mayen" replacement="Europe/Oslo" reason="deprecated"/>
             <zoneAlias type="America/Shiprock" replacement="America/Denver" reason="deprecated"/>
             <zoneAlias type="Antarctica/South_Pole" replacement="Pacific/Auckland" reason="deprecated"/>
@@ -1652,17 +1795,19 @@ For terms of use, see http://www.unicode.org/copyright.html
             <zoneAlias type="Asia/Kashgar" replacement="Asia/Urumqi" reason="deprecated"/>
         </alias>
 		<defaultContent locales="
-			aa_ET af_ZA agq_CM ak_GH am_ET an_ES ar_001 arn_CL as_IN asa_TZ ast_ES
+			aa_ET ab_GE af_ZA agq_CM ak_GH am_ET an_ES ar_001 arn_CL as_IN asa_TZ ast_ES
 			az_Arab_IR az_Cyrl_AZ az_Latn az_Latn_AZ
-			ba_RU bas_CM be_BY bem_ZM bez_TZ bg_BG bgn_PK blt_VN bm_ML bm_Nkoo_ML bn_BD
-			bo_CN br_FR brx_IN bs_Cyrl_BA bs_Latn bs_Latn_BA bss_CM byn_ER
+			ba_RU bal_Arab bal_Arab_PK bal_Latn_PK bas_CM be_BY bem_ZM bez_TZ bg_BG bgn_PK
+			blt_VN bm_ML bm_Nkoo_ML bn_BD bo_CN br_FR brx_IN bs_Cyrl_BA bs_Latn bs_Latn_BA
+			bss_CM byn_ER
 			ca_ES cad_US cch_NG ccp_BD ce_RU ceb_PH cgg_UG chr_US cic_US ckb_IQ co_FR cs_CZ
 			cu_RU cv_RU cy_GB
 			da_DK dav_KE de_DE dje_NE doi_IN dsb_DE dua_CM dv_MV dyo_SN dz_BT
 			ebu_KE ee_GH el_GR en_Dsrt_US en_US eo_001 es_ES et_EE eu_ES ewo_CM
 			fa_IR ff_Adlm_GN ff_Latn ff_Latn_SN fi_FI fil_PH fo_FO fr_FR fur_IT fy_NL
 			ga_IE gaa_GH gd_GB gez_ET gl_ES gn_PY gsw_CH gu_IN guz_KE gv_IM
-			ha_Arab_NG ha_NG haw_US he_IL hi_IN hi_Latn_IN hr_HR hsb_DE hu_HU hy_AM
+			ha_Arab_NG ha_NG haw_US he_IL hi_IN hi_Latn_IN hnj_Hmnp hnj_Hmnp_US hr_HR
+			hsb_DE hu_HU hy_AM
 			ia_001 id_ID ife_TG ig_NG ii_CN io_001 is_IS it_IT iu_CA iu_Latn_CA
 			ja_JP jbo_001 jgo_CM jmc_TZ jv_ID
 			ka_GE kab_DZ kaj_NG kam_KE kcg_NG kde_TZ kea_CV ken_CM kgp_BR khq_ML ki_KE
@@ -1673,24 +1818,24 @@ For terms of use, see http://www.unicode.org/copyright.html
 			mai_IN mas_KE mer_KE mfe_MU mg_MG mgh_MZ mgo_CM mi_NZ mk_MK ml_IN mn_MN
 			mn_Mong_CN mni_Beng mni_Beng_IN mni_Mtei_IN moh_CA mr_IN ms_Arab_MY ms_MY mt_MT
 			mua_CM mus_US my_MM myv_RU mzn_IR
-			naq_NA nb nb_NO nd_ZW nds_DE ne_NP nl_NL nmg_CM nn_NO nnh_CM nqo_GN nr_ZA nso_ZA nus_SS
-			nv_US ny_MW nyn_UG
+			naq_NA nb nb_NO nd_ZW nds_DE ne_NP nl_NL nmg_CM nn_NO nnh_CM nqo_GN nr_ZA
+			nso_ZA nus_SS nv_US ny_MW nyn_UG
 			oc_FR om_ET or_IN os_GE osa_US
 			pa_Arab_PK pa_Guru pa_Guru_IN pcm_NG pl_PL prg_001 ps_AF pt_BR
 			qu_PE quc_GT
-			rm_CH rn_BI ro_RO rof_TZ ru_RU rw_RW rwk_TZ
+			rhg_Rohg rhg_Rohg_MM rm_CH rn_BI ro_RO rof_TZ ru_RU rw_RW rwk_TZ
 			sa_IN sah_RU saq_KE sat_Deva_IN sat_Olck sat_Olck_IN sbp_TZ sc_IT scn_IT
 			sd_Arab sd_Arab_PK sd_Deva_IN sdh_IR se_NO seh_MZ ses_ML sg_CF shi_Latn_MA
 			shi_Tfng shi_Tfng_MA si_LK sid_ET sk_SK sl_SI sma_SE smj_SE smn_FI sms_FI sn_ZW
 			so_SO sq_AL sr_Cyrl sr_Cyrl_RS sr_Latn_RS ss_ZA ssy_ER st_ZA su_Latn su_Latn_ID
 			sv_SE sw_TZ syr_IQ szl_PL
-			ta_IN te_IN teo_UG tg_TJ th_TH ti_ET tig_ER tk_TM tn_ZA to_TO tr_TR trv_TW
-			trw_PK ts_ZA tt_RU twq_NE tzm_MA
+			ta_IN te_IN teo_UG tg_TJ th_TH ti_ET tig_ER tk_TM tn_ZA to_TO tpi_PG tr_TR
+			trv_TW trw_PK ts_ZA tt_RU twq_NE tzm_MA
 			ug_CN uk_UA ur_PK uz_Arab_AF uz_Cyrl_UZ uz_Latn uz_Latn_UZ
 			vai_Latn_LR vai_Vaii vai_Vaii_LR ve_ZA vi_VN vo_001 vun_TZ
 			wa_BE wae_CH wal_ET wbp_AU wo_SN
 			xh_ZA xog_UG
-			yav_CM yi_001 yo_NG yue_Hans_CN yue_Hant yue_Hant_HK
+			yav_CM yi_001 yo_NG yrl_BR yue_Hans_CN yue_Hant yue_Hant_HK
 			zgh_MA zh_Hans zh_Hans_CN zh_Hant_TW zu_ZA"
 		/>
     </metadata>

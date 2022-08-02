@@ -99,7 +99,8 @@ static FindEntry_t       FindEntry          = NULL;
 static ReadEntry_t       ReadEntry          = NULL;
 static GetNextEntry_t    GetNextEntry       = NULL;
 static Crc32_t           Crc32              = NULL;
-int ClassLoader::_libzip_loaded = 0;
+int    ClassLoader::_libzip_loaded          = 0;
+void*  ClassLoader::_zip_handle             = NULL;
 
 // Entry points for jimage.dll for loading jimage file entries
 
@@ -506,15 +507,15 @@ void ClassLoader::trace_class_path(const char* msg, const char* name) {
 }
 
 void ClassLoader::setup_bootstrap_search_path(JavaThread* current) {
-  const char* sys_class_path = Arguments::get_sysclasspath();
-  assert(sys_class_path != NULL, "System boot class path must not be NULL");
+  const char* bootcp = Arguments::get_boot_class_path();
+  assert(bootcp != NULL, "Boot class path must not be NULL");
   if (PrintSharedArchiveAndExit) {
-    // Don't print sys_class_path - this is the bootcp of this current VM process, not necessarily
-    // the same as the bootcp of the shared archive.
+    // Don't print bootcp - this is the bootcp of this current VM process, not necessarily
+    // the same as the boot classpath of the shared archive.
   } else {
-    trace_class_path("bootstrap loader class path=", sys_class_path);
+    trace_class_path("bootstrap loader class path=", bootcp);
   }
-  setup_bootstrap_search_path_impl(current, sys_class_path);
+  setup_bootstrap_search_path_impl(current, bootcp);
 }
 
 #if INCLUDE_CDS
@@ -672,7 +673,7 @@ void ClassLoader::setup_bootstrap_search_path_impl(JavaThread* current, const ch
       }
       set_base_piece = false;
     } else {
-      // Every entry on the system boot class path after the initial base piece,
+      // Every entry on the boot class path after the initial base piece,
       // which is set by os::set_boot_path(), is considered an appended entry.
       update_class_path_entry_list(current, path, false, true, false);
     }
@@ -942,20 +943,19 @@ void ClassLoader::load_zip_library() {
   assert(ZipOpen == NULL, "should not load zip library twice");
   char path[JVM_MAXPATHLEN];
   char ebuf[1024];
-  void* handle = NULL;
   if (os::dll_locate_lib(path, sizeof(path), Arguments::get_dll_dir(), "zip")) {
-    handle = os::dll_load(path, ebuf, sizeof ebuf);
+    _zip_handle = os::dll_load(path, ebuf, sizeof ebuf);
   }
-  if (handle == NULL) {
+  if (_zip_handle == NULL) {
     vm_exit_during_initialization("Unable to load zip library", path);
   }
 
-  ZipOpen = CAST_TO_FN_PTR(ZipOpen_t, dll_lookup(handle, "ZIP_Open", path));
-  ZipClose = CAST_TO_FN_PTR(ZipClose_t, dll_lookup(handle, "ZIP_Close", path));
-  FindEntry = CAST_TO_FN_PTR(FindEntry_t, dll_lookup(handle, "ZIP_FindEntry", path));
-  ReadEntry = CAST_TO_FN_PTR(ReadEntry_t, dll_lookup(handle, "ZIP_ReadEntry", path));
-  GetNextEntry = CAST_TO_FN_PTR(GetNextEntry_t, dll_lookup(handle, "ZIP_GetNextEntry", path));
-  Crc32 = CAST_TO_FN_PTR(Crc32_t, dll_lookup(handle, "ZIP_CRC32", path));
+  ZipOpen = CAST_TO_FN_PTR(ZipOpen_t, dll_lookup(_zip_handle, "ZIP_Open", path));
+  ZipClose = CAST_TO_FN_PTR(ZipClose_t, dll_lookup(_zip_handle, "ZIP_Close", path));
+  FindEntry = CAST_TO_FN_PTR(FindEntry_t, dll_lookup(_zip_handle, "ZIP_FindEntry", path));
+  ReadEntry = CAST_TO_FN_PTR(ReadEntry_t, dll_lookup(_zip_handle, "ZIP_ReadEntry", path));
+  GetNextEntry = CAST_TO_FN_PTR(GetNextEntry_t, dll_lookup(_zip_handle, "ZIP_GetNextEntry", path));
+  Crc32 = CAST_TO_FN_PTR(Crc32_t, dll_lookup(_zip_handle, "ZIP_CRC32", path));
 }
 
 void ClassLoader::load_jimage_library() {
@@ -1177,7 +1177,7 @@ InstanceKlass* ClassLoader::load_class(Symbol* name, bool search_append_only, TR
     // class is still loaded from the runtime image even if it might
     // appear in the _patch_mod_entries. The runtime shared class visibility
     // check will determine if a shared class is visible based on the runtime
-    // environemnt, including the runtime --patch-module setting.
+    // environment, including the runtime --patch-module setting.
     //
     // DynamicDumpSharedSpaces requires UseSharedSpaces to be enabled. Since --patch-module
     // is not supported with UseSharedSpaces, it is not supported with DynamicDumpSharedSpaces.
@@ -1562,7 +1562,7 @@ void ClassLoader::create_javabase() {
   JavaThread* current = JavaThread::current();
 
   // Create java.base's module entry for the boot
-  // class loader prior to loading j.l.Ojbect.
+  // class loader prior to loading j.l.Object.
   ClassLoaderData* null_cld = ClassLoaderData::the_null_class_loader_data();
 
   // Get module entry table
@@ -1585,7 +1585,7 @@ void ClassLoader::create_javabase() {
 }
 
 // Please keep following two functions at end of this file. With them placed at top or in middle of the file,
-// they could get inlined by agressive compiler, an unknown trick, see bug 6966589.
+// they could get inlined by aggressive compiler, an unknown trick, see bug 6966589.
 void PerfClassTraceTime::initialize() {
   if (!UsePerfData) return;
 

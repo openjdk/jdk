@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ import java.util.TimeZone;
 /*
  * @test
  * @summary Tests that the Properties.store() APIs generate output that is reproducible
- * @bug 8231640
+ * @bug 8231640 8282023
  * @library /test/lib
  * @run driver StoreReproducibilityTest
  */
@@ -52,8 +52,8 @@ public class StoreReproducibilityTest {
 
     private static final String DATE_FORMAT_PATTERN = "EEE MMM dd HH:mm:ss zzz uuuu";
     private static final String SYS_PROP_JAVA_PROPERTIES_DATE = "java.properties.date";
-    private static final DateTimeFormatter reproducibleDateTimeFormatter = DateTimeFormatter.ofPattern(DATE_FORMAT_PATTERN)
-            .withLocale(Locale.ROOT).withZone(ZoneOffset.UTC);
+    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern(DATE_FORMAT_PATTERN, Locale.ROOT)
+            .withZone(ZoneOffset.UTC);
 
     public static void main(final String[] args) throws Exception {
         // no security manager enabled
@@ -88,7 +88,7 @@ public class StoreReproducibilityTest {
      */
     private static void testWithoutSecurityManager() throws Exception {
         final List<Path> storedFiles = new ArrayList<>();
-        final String sysPropVal = reproducibleDateTimeFormatter.format(Instant.ofEpochSecond(243535322));
+        final String sysPropVal = FORMATTER.format(Instant.ofEpochSecond(243535322));
         for (int i = 0; i < 5; i++) {
             final Path tmpFile = Files.createTempFile("8231640", ".props");
             storedFiles.add(tmpFile);
@@ -130,7 +130,7 @@ public class StoreReproducibilityTest {
                 };
                 """));
         final List<Path> storedFiles = new ArrayList<>();
-        final String sysPropVal = reproducibleDateTimeFormatter.format(Instant.ofEpochSecond(1234342423));
+        final String sysPropVal = FORMATTER.format(Instant.ofEpochSecond(1234342423));
         for (int i = 0; i < 5; i++) {
             final Path tmpFile = Files.createTempFile("8231640", ".props");
             storedFiles.add(tmpFile);
@@ -174,7 +174,7 @@ public class StoreReproducibilityTest {
                 };
                 """));
         final List<Path> storedFiles = new ArrayList<>();
-        final String sysPropVal = reproducibleDateTimeFormatter.format(Instant.ofEpochSecond(1234342423));
+        final String sysPropVal = FORMATTER.format(Instant.ofEpochSecond(1234342423));
         for (int i = 0; i < 5; i++) {
             final Path tmpFile = Files.createTempFile("8231640", ".props");
             storedFiles.add(tmpFile);
@@ -425,10 +425,10 @@ public class StoreReproducibilityTest {
         System.out.println("Found date comment " + dateComment + " in file " + destFile);
         final Date parsedDate;
         try {
-            Instant instant = Instant.from(DateTimeFormatter.ofPattern(DATE_FORMAT_PATTERN).parse(dateComment));
+            Instant instant = Instant.from(FORMATTER.parse(dateComment));
             parsedDate = new Date(instant.toEpochMilli());
         } catch (DateTimeParseException pe) {
-            throw new RuntimeException("Unexpected date " + dateComment + " in stored properties " + destFile);
+            throw new RuntimeException("Unexpected date " + dateComment + " in stored properties " + destFile, pe);
         }
         if (!parsedDate.after(date)) {
             throw new RuntimeException("Expected date comment " + dateComment + " to be after " + date

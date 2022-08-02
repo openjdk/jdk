@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,16 +34,16 @@ import java.util.TimeZone;
 
 public class Bug6377794 {
     static Locale[] locales2Test = new Locale[] {
-        new Locale("en"),
-        new Locale("de"),
-        new Locale("es"),
-        new Locale("fr"),
-        new Locale("it"),
-        new Locale("ja"),
-        new Locale("ko"),
-        new Locale("sv"),
-        new Locale("zh","CN"),
-        new Locale("zh","TW")
+        Locale.ENGLISH,
+        Locale.GERMAN,
+        Locale.of("es"),
+        Locale.FRENCH,
+        Locale.ITALIAN,
+        Locale.JAPANESE,
+        Locale.KOREAN,
+        Locale.of("sv"),
+        Locale.SIMPLIFIED_CHINESE,
+        Locale.TRADITIONAL_CHINESE
     };
 
     public static void main(String[] args) {

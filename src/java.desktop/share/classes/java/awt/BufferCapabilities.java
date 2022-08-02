@@ -47,7 +47,7 @@ public class BufferCapabilities implements Cloneable {
      * cannot be {@code null}
      * @param flipContents the contents of the back buffer after page-flipping,
      * {@code null} if page flipping is not used (implies blitting)
-     * @exception IllegalArgumentException if frontCaps or backCaps are
+     * @throws IllegalArgumentException if frontCaps or backCaps are
      * {@code null}
      */
     public BufferCapabilities(ImageCapabilities frontCaps,

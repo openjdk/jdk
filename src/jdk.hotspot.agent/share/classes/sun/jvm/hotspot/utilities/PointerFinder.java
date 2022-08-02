@@ -87,6 +87,7 @@ public class PointerFinder {
     if (heap instanceof GenCollectedHeap) {
       GenCollectedHeap genheap = (GenCollectedHeap) heap;
       if (genheap.isIn(a)) {
+        loc.heap = heap;
         for (int i = 0; i < genheap.nGens(); i++) {
           Generation g = genheap.getGen(i);
           if (g.isIn(a)) {
@@ -139,7 +140,7 @@ public class PointerFinder {
             loc.blob = c.findBlobUnsafe(a);
         } catch (Exception e) {
             // Since we potentially have a random address in the codecache and therefore could
-            // be dealing with a freed or partialy intialized blob, exceptions are possible.
+            // be dealing with a freed or partially initialized blob, exceptions are possible.
         }
         if (loc.blob == null) {
             // It's possible that there is no CodeBlob for this address. Let

@@ -97,7 +97,7 @@ public class JSeparator extends JComponent implements SwingConstants, Accessible
      * @param orientation an integer specifying
      *          <code>SwingConstants.HORIZONTAL</code> or
      *          <code>SwingConstants.VERTICAL</code>
-     * @exception IllegalArgumentException if <code>orientation</code>
+     * @throws IllegalArgumentException if <code>orientation</code>
      *          is neither <code>SwingConstants.HORIZONTAL</code> nor
      *          <code>SwingConstants.VERTICAL</code>
      */
@@ -190,7 +190,7 @@ public class JSeparator extends JComponent implements SwingConstants, Accessible
      * The default value of this property is HORIZONTAL.
      * @param orientation  either <code>SwingConstants.HORIZONTAL</code>
      *                  or <code>SwingConstants.VERTICAL</code>
-     * @exception IllegalArgumentException  if <code>orientation</code>
+     * @throws IllegalArgumentException  if <code>orientation</code>
      *          is neither <code>SwingConstants.HORIZONTAL</code>
      *          nor <code>SwingConstants.VERTICAL</code>
      *

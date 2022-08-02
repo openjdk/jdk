@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -134,7 +134,16 @@ public class LocalExecutionControl extends DirectExecutionControl {
                 throw new InternalException("Process-local code snippets thread group is null. Aborting stop.");
             }
 
-            execThreadGroup.stop();
+            Thread[] threads;
+            int len, threadCount;
+            do {
+                len = execThreadGroup.activeCount() + 4;
+                threads = new Thread[len];
+                threadCount = execThreadGroup.enumerate(threads);
+            } while (threadCount == len);
+            for (int i = 0; i < threadCount; i++) {
+                threads[i].stop();
+            }
         }
     }
 

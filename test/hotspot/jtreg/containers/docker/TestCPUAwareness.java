@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,6 +100,11 @@ public class TestCPUAwareness {
         String cpuSetStr = CPUSetsReader.readFromProcStatus("Cpus_allowed_list");
         System.out.println("cpuSetStr = " + cpuSetStr);
 
+        // OLD = use the deprecated -XX:+UseContainerCpuShares flag, which
+        // will be removed in the next JDK release. See JDK-8281181.
+        boolean OLD = true;
+        boolean NEW = false;
+
         if (cpuSetStr == null) {
             System.out.printf("The cpuset test cases are skipped");
         } else {
@@ -108,23 +113,32 @@ public class TestCPUAwareness {
             // Test subset of cpuset with one element
             if (cpuSet.size() >= 1) {
                 String testCpuSet = CPUSetsReader.listToString(cpuSet, 1);
-                testAPCCombo(testCpuSet, 200*1000, 100*1000,   4*1024, true, 1);
+                testAPCCombo(OLD, testCpuSet, 200*1000, 100*1000,   4*1024, true, 1);
+                testAPCCombo(NEW, testCpuSet, 200*1000, 100*1000,   4*1024, true, 1);
             }
 
             // Test subset of cpuset with two elements
             if (cpuSet.size() >= 2) {
                 String testCpuSet = CPUSetsReader.listToString(cpuSet, 2);
-                testAPCCombo(testCpuSet, 200*1000, 100*1000, 4*1024, true, 2);
-                testAPCCombo(testCpuSet, 200*1000, 100*1000, 1023,   true, 2);
-                testAPCCombo(testCpuSet, 200*1000, 100*1000, 1023,   false,  1);
+                testAPCCombo(OLD, testCpuSet, 200*1000, 100*1000, 4*1024, true, 2);
+                testAPCCombo(OLD, testCpuSet, 200*1000, 100*1000, 1023,   true, 2);
+                testAPCCombo(OLD, testCpuSet, 200*1000, 100*1000, 1023,   false,1);
+
+                testAPCCombo(NEW, testCpuSet, 200*1000, 100*1000, 4*1024, true, 2);
+                testAPCCombo(NEW, testCpuSet, 200*1000, 100*1000, 1023,   true, 2);
+                testAPCCombo(NEW, testCpuSet, 200*1000, 100*1000, 1023,   false,2);
             }
 
             // Test subset of cpuset with three elements
             if (cpuSet.size() >= 3) {
                 String testCpuSet = CPUSetsReader.listToString(cpuSet, 3);
-                testAPCCombo(testCpuSet, 100*1000, 100*1000, 2*1024, true, 1);
-                testAPCCombo(testCpuSet, 200*1000, 100*1000, 1023,   true, 2);
-                testAPCCombo(testCpuSet, 200*1000, 100*1000, 1023,   false,  1);
+                testAPCCombo(OLD, testCpuSet, 100*1000, 100*1000, 2*1024, true, 1);
+                testAPCCombo(OLD, testCpuSet, 200*1000, 100*1000, 1023,   true, 2);
+                testAPCCombo(OLD, testCpuSet, 200*1000, 100*1000, 1023,   false,1);
+
+                testAPCCombo(NEW, testCpuSet, 100*1000, 100*1000, 2*1024, true, 1);
+                testAPCCombo(NEW, testCpuSet, 200*1000, 100*1000, 1023,   true, 2);
+                testAPCCombo(NEW, testCpuSet, 200*1000, 100*1000, 1023,   false,2);
             }
         }
     }
@@ -181,8 +195,11 @@ public class TestCPUAwareness {
     }
 
 
-    // Test correctess of automatically selected active processor cound
-    private static void testAPCCombo(String cpuset, int quota, int period, int shares,
+    // Test correctess of automatically selected active processor count
+    // Note: when -XX:+UseContainerCpuShares is removed,
+    // useContainerCpuShares, shares, and usePreferContainerQuotaForCPUCount
+    // should also be removed.
+    private static void testAPCCombo(boolean useContainerCpuShares, String cpuset, int quota, int period, int shares,
                                      boolean usePreferContainerQuotaForCPUCount,
                                      int expectedAPC) throws Exception {
         Common.logNewTestCase("test APC Combo");
@@ -190,6 +207,7 @@ public class TestCPUAwareness {
         System.out.println("quota = " + quota);
         System.out.println("period = " + period);
         System.out.println("shares = " + shares);
+        System.out.println("useContainerCpuShares = " + useContainerCpuShares);
         System.out.println("usePreferContainerQuotaForCPUCount = " + usePreferContainerQuotaForCPUCount);
         System.out.println("expectedAPC = " + expectedAPC);
 
@@ -201,13 +219,15 @@ public class TestCPUAwareness {
             .addDockerOpts("--cpu-quota=" + quota)
             .addDockerOpts("--cpu-shares=" + shares);
 
-        if (!usePreferContainerQuotaForCPUCount) opts.addJavaOpts("-XX:-PreferContainerQuotaForCPUCount");
+        if (useContainerCpuShares) opts.addJavaOpts("-XX:+UseContainerCpuShares");  // deprecated
+        if (!usePreferContainerQuotaForCPUCount) opts.addJavaOpts("-XX:-PreferContainerQuotaForCPUCount");  // deprecated
 
         Common.run(opts)
             .shouldMatch("active_processor_count.*" + expectedAPC);
     }
 
 
+    // Note: when -XX:+UseContainerCpuShares is removed, this test should also be removed.
     private static void testCpuShares(int shares, int expectedAPC) throws Exception {
         Common.logNewTestCase("test cpu shares, shares = " + shares);
         System.out.println("expectedAPC = " + expectedAPC);
@@ -216,6 +236,7 @@ public class TestCPUAwareness {
 
         DockerRunOptions opts = Common.newOpts(imageName)
             .addDockerOpts("--cpu-shares=" + shares);
+        opts.addJavaOpts("-XX:+UseContainerCpuShares"); // deprecated
         OutputAnalyzer out = Common.run(opts);
         // Cgroups v2 needs to do some scaling of raw shares values. Hence,
         // 256 CPU shares come back as 264. Raw value written to cpu.weight

@@ -161,8 +161,8 @@ void initializeActions() {
     [sActions setObject:NSAccessibilityPressAction forKey:@"click"];
     [sActions setObject:NSAccessibilityIncrementAction forKey:@"increment"];
     [sActions setObject:NSAccessibilityDecrementAction forKey:@"decrement"];
-    [sActions setObject:NSAccessibilityShowMenuAction forKey:@"togglePopup"];
-    [sActions setObject:NSAccessibilityPressAction forKey:@"toggleExpand"];
+    [sActions setObject:NSAccessibilityShowMenuAction forKey:@"toggle popup"];
+    [sActions setObject:NSAccessibilityPressAction forKey:@"toggleexpand"];
 
     sActionSelectors = [[NSMutableDictionary alloc] initWithCapacity:actionsCount];
 
