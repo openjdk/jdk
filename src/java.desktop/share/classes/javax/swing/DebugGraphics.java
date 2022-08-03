@@ -95,7 +95,7 @@ public class DebugGraphics extends Graphics {
                 }
             });
 
-            if(walker.getCallerClass() != this.getClass()) {
+            if (walker.getCallerClass() != this.getClass()) {
                 BufferedImage bi = new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB);
                 graphics = bi.createGraphics();
             }
