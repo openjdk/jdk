@@ -783,7 +783,7 @@ void MacroAssembler::avx_ghash(Register input_state, Register htbl,
 void MacroAssembler::aesctr_encrypt(Register src_addr, Register dest_addr, Register key, Register counter,
     Register len_reg, Register used, Register used_addr, Register saved_encCounter_start) {
 
-    const Register rounds = 0;
+    const Register rounds = rax;
     const Register pos = r12;
 
     Label PRELOOP_START, EXIT_PRELOOP, REMAINDER, REMAINDER_16, LOOP, END, EXIT, END_LOOP,

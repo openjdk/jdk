@@ -31,6 +31,9 @@ public:
   // C2 compiled method's prolog code.
   void verified_entry(int framesize, int stack_bang_size, bool fp_mode_24b, bool is_stub);
 
+  void emit_entry_barrier_stub(C2EntryBarrierStub* stub);
+  static int entry_barrier_stub_size();
+
   Assembler::AvxVectorLen vector_length_encoding(int vlen_in_bytes);
 
   // Code used by cmpFastLock and cmpFastUnlock mach instructions in .ad file.
@@ -365,6 +368,10 @@ public:
   void udivmodI(Register rax, Register divisor, Register rdx, Register tmp);
 
 #ifdef _LP64
+  void reverseI(Register dst, Register src, XMMRegister xtmp1,
+                XMMRegister xtmp2, Register rtmp);
+  void reverseL(Register dst, Register src, XMMRegister xtmp1,
+                XMMRegister xtmp2, Register rtmp1, Register rtmp2);
   void udivL(Register rax, Register divisor, Register rdx);
   void umodL(Register rax, Register divisor, Register rdx);
   void udivmodL(Register rax, Register divisor, Register rdx, Register tmp);

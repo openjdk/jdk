@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,25 +20,30 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-#include <jni.h>
-#include <stdlib.h>
-#include <time.h>
 
-extern "C" {
+/*
+ * @test
+ * @bug 8290705
+ * @summary Test correctness of the string concatenation optimization with
+ *          a store between StringBuffer allocation and constructor invocation.
+ * @compile SideEffectBeforeConstructor.jasm
+ * @run main/othervm -Xbatch compiler.stringopts.TestSideEffectBeforeConstructor
+ */
 
-JNIEXPORT void JNICALL Java_gc_gctests_mallocWithGC2_mallocWithGC2_getMallocLock02
-(JNIEnv *env, jobject obj) {
-        char *c_ptr;
-        time_t current_time, old_time;
+package compiler.stringopts;
 
-        old_time = time(NULL);
-        current_time = 0;
+public class TestSideEffectBeforeConstructor {
 
-        while (current_time - old_time < 180) {
-                c_ptr = (char *) malloc(1);
-                free(c_ptr);
-                current_time = time(NULL);
+    public static void main(String[] args) {
+        for (int i = 0; i < 100_000; ++i) {
+            try {
+                SideEffectBeforeConstructor.test(null);
+            } catch (NullPointerException npe) {
+                // Expected
+            }
         }
-}
-
+        if (SideEffectBeforeConstructor.result != 100_000) {
+            throw new RuntimeException("Unexpected result: " + SideEffectBeforeConstructor.result);
+        }
+    }
 }

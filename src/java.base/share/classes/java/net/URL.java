@@ -1243,7 +1243,7 @@ public final class URL implements java.io.Serializable {
     private static final URLStreamHandlerFactory defaultFactory = new DefaultFactory();
 
     private static class DefaultFactory implements URLStreamHandlerFactory {
-        private static String PREFIX = "sun.net.www.protocol.";
+        private static final String PREFIX = "sun.net.www.protocol.";
 
         public URLStreamHandler createURLStreamHandler(String protocol) {
             // Avoid using reflection during bootstrap

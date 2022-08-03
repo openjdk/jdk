@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ const char*       ZGlobalPhaseToString();
 extern uint32_t   ZGlobalSeqNum;
 
 // Granule shift/size
-const size_t      ZGranuleSizeShift             = ZPlatformGranuleSizeShift;
+const size_t      ZGranuleSizeShift             = 21; // 2MB
 const size_t      ZGranuleSize                  = (size_t)1 << ZGranuleSizeShift;
 
 // Number of heap views

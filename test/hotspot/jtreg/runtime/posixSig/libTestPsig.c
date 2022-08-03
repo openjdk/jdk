@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,25 +20,35 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+#include <stdio.h>
 #include <jni.h>
-#include <stdlib.h>
-#include <time.h>
+#include <signal.h>
+#include <sys/ucontext.h>
+#include <errno.h>
+#include <string.h>
 
+#ifdef __cplusplus
 extern "C" {
+#endif
 
-JNIEXPORT void JNICALL Java_gc_gctests_mallocWithGC1_mallocWithGC1_getMallocLock01
-(JNIEnv *env, jobject obj) {
-        char *c_ptr;
-        time_t current_time, old_time;
+void sig_handler(int sig, siginfo_t *info, ucontext_t *context) {
 
-        old_time = time(NULL);
-        current_time = 0;
-
-        while (current_time - old_time < 180) {
-                c_ptr = (char *) malloc(1);
-                free(c_ptr);
-                current_time = time(NULL);
-        }
+    printf( " HANDLER (1) " );
 }
 
+JNIEXPORT void JNICALL Java_TestPosixSig_changeSigActionFor(JNIEnv *env, jclass klass, jint val) {
+    struct sigaction act;
+    act.sa_handler = (void (*)())sig_handler;
+    sigemptyset(&act.sa_mask);
+    act.sa_flags = 0;
+    int retval = sigaction(val, &act, 0);
+    if (retval != 0) {
+        printf("ERROR: failed to set %d signal handler error=%s\n", val, strerror(errno));
+    }
 }
+
+#ifdef __cplusplus
+}
+#endif
+
