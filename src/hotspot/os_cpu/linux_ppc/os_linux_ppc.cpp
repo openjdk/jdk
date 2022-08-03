@@ -517,9 +517,8 @@ int os::extra_bang_size_in_bytes() {
   return 0;
 }
 
-#if !defined(ABI_ELFv2)
-// On Linux, this is used on PPC only (and specifically "ppc" but not "ppcle")
-void* os::resolve_function_descriptor(void* p) {
+#ifdef HAVE_FUNCTION_DESCRIPTORS
+void* os::Linux::resolve_function_descriptor(void* p) {
   return ((const FunctionDescriptor*)p)->entry();
 }
 #endif

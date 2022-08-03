@@ -34,4 +34,8 @@ inline bool os::platform_print_native_stack(outputStream* st, const void* contex
   return os::Aix::platform_print_native_stack(st, context, buf, buf_size);
 }
 
+#define HAVE_FUNCTION_DESCRIPTORS 1
+inline void* os::resolve_function_descriptor(void* p) {
+  return os::Aix::resolve_function_descriptor(p);
+}
 #endif // OS_CPU_AIX_PPC_OS_AIX_PPC_INLINE_HPP

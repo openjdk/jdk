@@ -427,6 +427,8 @@ class os::Linux {
   static const GrowableArray<int>* numa_nindex_to_node() {
     return _nindex_to_node;
   }
+
+  void* resolve_function_descriptor(void* p);
 };
 
 #endif // OS_LINUX_OS_LINUX_HPP

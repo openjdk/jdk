@@ -515,7 +515,8 @@ bool os::Aix::platform_print_native_stack(outputStream* st, void* context, char 
   return true;
 }
 
-void* os::resolve_function_descriptor(void* p) {
+// HAVE_FUNCTION_DESCRIPTORS
+void* os::Aix::resolve_function_descriptor(void* p) {
   return ((const FunctionDescriptor*)p)->entry();
 }
 

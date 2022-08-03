@@ -53,4 +53,10 @@ inline bool os::register_code_area(char *low, char *high) {
 }
 #endif
 
+#ifndef HAVE_FUNCTION_DESCRIPTORS
+inline void* os::resolve_function_descriptor(void* p) {
+  return NULL;
+}
+#endif
+
 #endif // SHARE_RUNTIME_OS_INLINE_HPP
