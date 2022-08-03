@@ -42,8 +42,6 @@ import java.security.PrivilegedExceptionAction;
 
 import jdk.internal.misc.VM;
 import jdk.internal.misc.VM.BufferPool;
-import jdk.internal.platform.Metrics;
-import jdk.internal.platform.SystemMetrics;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -63,8 +61,6 @@ import java.util.stream.Collectors;
  */
 public class ManagementFactoryHelper {
 
-    private static final String CONTAINER_MBEAN_NAME =
-            "java.lang:type=Container";
 
     static {
         // make sure that the management lib is loaded within
@@ -72,11 +68,6 @@ public class ManagementFactoryHelper {
         try {
             MethodHandles.lookup().ensureInitialized(ManagementFactory.class);
         } catch (IllegalAccessException e) {}
-        MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
-        ContainerInfo containerInfoMBean = getContainerInfoMBean();
-        if (containerInfoMBean != null) {
-            addMBean(mbs, containerInfoMBean, CONTAINER_MBEAN_NAME);
-        }
     }
 
     private static final VMManagement jvm = new VMManagementImpl();
@@ -416,17 +407,7 @@ public class ManagementFactoryHelper {
     private static HotspotThread hsThreadMBean = null;
     private static HotspotCompilation hsCompileMBean = null;
     private static HotspotMemory hsMemoryMBean = null;
-    private static ContainerInfo containerInfoMBean = null;
 
-    private static synchronized ContainerInfo getContainerInfoMBean() {
-        if (containerInfoMBean == null) {
-            Metrics containerMetrics = SystemMetrics.instance();
-            if (containerMetrics != null) {
-                containerInfoMBean = new ContainerInfo(containerMetrics);
-            }
-        }
-        return containerInfoMBean;
-    }
 
     /**
      * This method is for testing only.

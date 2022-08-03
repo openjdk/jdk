@@ -21,11 +21,11 @@
  * questions.
  */
 
-package sun.management;
+package com.sun.management.internal;
 
 import jdk.internal.platform.Metrics;
 
-import java.lang.management.internal.mBeans.ContainerInfoMXBean;
+import com.sun.management.ContainerInfoMXBean;
 
 public class ContainerInfo implements ContainerInfoMXBean {
     final Metrics containerMetrics ;

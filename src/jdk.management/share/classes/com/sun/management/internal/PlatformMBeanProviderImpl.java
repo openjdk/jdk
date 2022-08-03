@@ -40,24 +40,38 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.management.DynamicMBean;
+import javax.management.*;
+
+import jdk.internal.platform.Metrics;
+import jdk.internal.platform.SystemMetrics;
 import sun.management.ManagementFactoryHelper;
+import sun.management.Util;
 import sun.management.spi.PlatformMBeanProvider;
 
 @SuppressWarnings("removal")
 public final class PlatformMBeanProviderImpl extends PlatformMBeanProvider {
     static final String DIAGNOSTIC_COMMAND_MBEAN_NAME =
         "com.sun.management:type=DiagnosticCommand";
+    private static final String CONTAINER_MBEAN_NAME =
+        "java.lang:type=Container";
 
     private final List<PlatformComponent<?>> mxbeanList;
     private static HotSpotDiagnostic hsDiagMBean = null;
     private static OperatingSystemMXBean osMBean = null;
+    private static ContainerInfo containerInfoMBean = null;
 
     static {
        AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
            System.loadLibrary("management_ext");
            return null;
        });
+        MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
+        ContainerInfo containerInfoMBean = getContainerInfoMBean();
+        if (containerInfoMBean != null) {
+            try {
+                mbs.registerMBean(containerInfoMBean, new ObjectName(CONTAINER_MBEAN_NAME));
+            } catch (InstanceAlreadyExistsException|MBeanRegistrationException|NotCompliantMBeanException|MalformedObjectNameException e) {}
+        }
     }
 
     public PlatformMBeanProviderImpl() {
@@ -281,4 +295,15 @@ public final class PlatformMBeanProviderImpl extends PlatformMBeanProvider {
         }
         return osMBean;
     }
+
+    private static synchronized com.sun.management.internal.ContainerInfo getContainerInfoMBean() {
+        if (containerInfoMBean == null) {
+            Metrics containerMetrics = SystemMetrics.instance();
+            if (containerMetrics != null) {
+                containerInfoMBean = new ContainerInfo(containerMetrics);
+            }
+        }
+        return containerInfoMBean;
+    }
+
 }
