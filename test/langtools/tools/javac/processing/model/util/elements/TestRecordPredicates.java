@@ -117,7 +117,7 @@ public class TestRecordPredicates extends JavacTestingAbstractProcessor {
             if (b == 0) return Math.abs(a);
             else return gcd(b, a % b);
         }
-   
+
         // Compact ctor
         Rational {
             int gcd = gcd(num, denom);
@@ -133,7 +133,7 @@ public class TestRecordPredicates extends JavacTestingAbstractProcessor {
             if (b == 0) return Math.abs(a);
             else return gcd(b, a % b);
         }
-   
+
         // Non-compact ctor
         RationalAlt(int num, int denom) {
             int gcd = gcd(num, denom);
