@@ -60,8 +60,6 @@ import java.util.stream.Collectors;
  * instances of the management interface.
  */
 public class ManagementFactoryHelper {
-
-
     static {
         // make sure that the management lib is loaded within
         // java.lang.management.ManagementFactory
@@ -407,7 +405,6 @@ public class ManagementFactoryHelper {
     private static HotspotThread hsThreadMBean = null;
     private static HotspotCompilation hsCompileMBean = null;
     private static HotspotMemory hsMemoryMBean = null;
-
 
     /**
      * This method is for testing only.
