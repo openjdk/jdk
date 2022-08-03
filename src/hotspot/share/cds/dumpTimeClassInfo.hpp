@@ -156,6 +156,7 @@ public:
     _enum_klass_static_fields = NULL;
   }
   DumpTimeClassInfo(const DumpTimeClassInfo& src);
+  DumpTimeClassInfo& operator=(const DumpTimeClassInfo&) = delete;
   ~DumpTimeClassInfo();
 
   void add_verification_constraint(InstanceKlass* k, Symbol* name,

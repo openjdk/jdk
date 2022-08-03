@@ -109,6 +109,7 @@ public:
   GrowableArray<InstanceKlass*>* _proxy_klasses;
   DumpTimeLambdaProxyClassInfo() : _proxy_klasses(NULL) {}
   DumpTimeLambdaProxyClassInfo(const DumpTimeLambdaProxyClassInfo& src);
+  DumpTimeLambdaProxyClassInfo& operator=(const DumpTimeLambdaProxyClassInfo&) = delete;
   ~DumpTimeLambdaProxyClassInfo();
 
   void add_proxy_klass(InstanceKlass* proxy_klass) {
