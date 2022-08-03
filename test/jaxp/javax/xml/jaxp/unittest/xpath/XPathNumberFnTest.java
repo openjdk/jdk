@@ -22,19 +22,16 @@
  */
 package xpath;
 
-import org.testng.Assert;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import org.w3c.dom.Document;
-
-import javax.xml.xpath.*;
 
 /*
  * @test
  * @bug 8290838
  * @library /javax/xml/jaxp/unittest
  * @run testng xpath.XPathNumberFnTest
- * @summary Tests the XPath Boolean Functions
+ * @summary Tests the XPath Number Functions
  */
 public class XPathNumberFnTest extends XPathTestBase {
 
@@ -70,7 +67,6 @@ public class XPathNumberFnTest extends XPathTestBase {
                 {"floor(//Customer[2]/Age)", 1.0},
                 {"floor(//Customer[1]/Name)", Double.NaN},
 
-
                 {"ceiling(1.1)", 2.0},
                 {"ceiling(-1.4)", -1.0},
                 {"ceiling(1.0 div 0)", Double.POSITIVE_INFINITY},
@@ -99,12 +95,6 @@ public class XPathNumberFnTest extends XPathTestBase {
      */
     @Test(dataProvider = "numberExpTestCases")
     void testNumberFn(String exp, double expected) throws Exception {
-        XPath xPath = XPathFactory.newInstance().newXPath();
-
-        double d = xPath.evaluateExpression(exp, doc, Double.class);
-        double d2 = (double) xPath.evaluate(exp, doc, XPathConstants.NUMBER);
-
-        Assert.assertEquals(d, expected);
-        Assert.assertEquals(d2, d);
+        testExp(doc, exp, expected, Double.class);
     }
 }

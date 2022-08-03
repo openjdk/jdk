@@ -22,12 +22,9 @@
  */
 package xpath;
 
-import org.testng.Assert;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import org.w3c.dom.Document;
-
-import javax.xml.xpath.*;
 
 /*
  * @test
@@ -96,12 +93,6 @@ public class XPathBooleanFnTest extends XPathTestBase {
      */
     @Test(dataProvider = "booleanExpTestCases")
     void testBooleanFn(String exp, boolean expected) throws Exception {
-        XPath xPath = XPathFactory.newInstance().newXPath();
-
-        boolean b = xPath.evaluateExpression(exp, doc, Boolean.class);
-        boolean b2 = (boolean) xPath.evaluate(exp, doc, XPathConstants.BOOLEAN);
-
-        Assert.assertEquals(b, expected);
-        Assert.assertEquals(b2, b);
+        testExp(doc, exp, expected, Boolean.class);
     }
 }

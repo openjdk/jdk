@@ -38,6 +38,7 @@ import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
 
+import org.testng.Assert;
 import org.testng.annotations.DataProvider;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
@@ -198,6 +199,29 @@ class XPathTestBase {
                 return;
         }
         assertFalse(true, "Unsupported type");
+    }
+
+    /**
+     * Evaluates XPath expression and checks if it matches the expected result.
+     *
+     * @param doc xml document {@link org.w3c.dom.Document}
+     * @param exp xpath expression string
+     * @param expected expected result
+     * @param clazz expected result type for evaluation.
+     * @param <T> expected result type
+     *
+     * @throws Exception if test fails
+     */
+    static <T> void testExp(Document doc, String exp, T expected,
+                          Class<T> clazz) throws Exception {
+        XPath xPath = XPathFactory.newInstance().newXPath();
+
+        T b = xPath.evaluateExpression(exp, doc, clazz);
+        T b2 = (T) xPath.evaluate(exp, doc,
+                XPathEvaluationResult.XPathResultType.getQNameType(clazz));
+
+        Assert.assertEquals(b, expected);
+        Assert.assertEquals(b2, b);
     }
 
     /*

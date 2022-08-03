@@ -22,13 +22,9 @@
  */
 package xpath;
 
-import org.testng.Assert;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-
-import javax.xml.xpath.*;
 
 /*
  * @test
@@ -245,13 +241,7 @@ public class XPathStringFnTest extends XPathTestBase {
      */
     @Test(dataProvider = "stringExpTestCases")
     void testStringFn(String exp, String expected) throws Exception {
-        XPath xPath = XPathFactory.newInstance().newXPath();
-
-        String s = xPath.evaluateExpression(exp, doc, String.class);
-        String s2 = (String) xPath.evaluate(exp, doc, XPathConstants.STRING);
-
-        Assert.assertEquals(s, expected);
-        Assert.assertEquals(s2, s);
+        testExp(doc, exp, expected, String.class);
     }
 
     /**
@@ -264,13 +254,7 @@ public class XPathStringFnTest extends XPathTestBase {
      */
     @Test(dataProvider = "concatExpTestCases")
     void testConcatFn(String exp, String expected) throws Exception {
-        XPath xPath = XPathFactory.newInstance().newXPath();
-
-        String s = xPath.evaluateExpression(exp, doc, String.class);
-        String s2 = (String) xPath.evaluate(exp, doc, XPathConstants.STRING);
-
-        Assert.assertEquals(s, expected);
-        Assert.assertEquals(s2, s);
+        testExp(doc, exp, expected, String.class);
     }
 
     /**
@@ -283,13 +267,7 @@ public class XPathStringFnTest extends XPathTestBase {
      */
     @Test(dataProvider = "substringExpTestCases")
     void testSubstringFn(String exp, String expected) throws Exception {
-        XPath xPath = XPathFactory.newInstance().newXPath();
-
-        String s = xPath.evaluateExpression(exp, doc, String.class);
-        String s2 = (String) xPath.evaluate(exp, doc, XPathConstants.STRING);
-
-        Assert.assertEquals(s, expected);
-        Assert.assertEquals(s2, s);
+        testExp(doc, exp, expected, String.class);
     }
 
     /**
@@ -302,13 +280,7 @@ public class XPathStringFnTest extends XPathTestBase {
      */
     @Test(dataProvider = "normalizeExpTestCases")
     void testNormalizeSpaceFn(String exp, String expected) throws Exception {
-        XPath xPath = XPathFactory.newInstance().newXPath();
-
-        String s = xPath.evaluateExpression(exp, doc, String.class);
-        String s2 = (String) xPath.evaluate(exp, doc, XPathConstants.STRING);
-
-        Assert.assertEquals(s, expected);
-        Assert.assertEquals(s2, s);
+        testExp(doc, exp, expected, String.class);
     }
 
     /**
@@ -321,13 +293,7 @@ public class XPathStringFnTest extends XPathTestBase {
      */
     @Test(dataProvider = "translateExpTestCases")
     void testTranslateFn(String exp, String expected) throws Exception {
-        XPath xPath = XPathFactory.newInstance().newXPath();
-
-        String s = xPath.evaluateExpression(exp, doc, String.class);
-        String s2 = (String) xPath.evaluate(exp, doc, XPathConstants.STRING);
-
-        Assert.assertEquals(s, expected);
-        Assert.assertEquals(s2, s);
+        testExp(doc, exp, expected, String.class);
     }
 
     /**
@@ -340,13 +306,7 @@ public class XPathStringFnTest extends XPathTestBase {
      */
     @Test(dataProvider = "stringLengthExpTestCases")
     void testStringLengthFn(String exp, double expected) throws Exception {
-        XPath xPath = XPathFactory.newInstance().newXPath();
-
-        double s = xPath.evaluateExpression(exp, doc, Double.class);
-        double s2 = (double) xPath.evaluate(exp, doc, XPathConstants.NUMBER);
-
-        Assert.assertEquals(s, expected);
-        Assert.assertEquals(s2, s);
+        testExp(doc, exp, expected, Double.class);
     }
 
     /**
@@ -359,13 +319,7 @@ public class XPathStringFnTest extends XPathTestBase {
      */
     @Test(dataProvider = "startsWithExpTestCases")
     void testStartsWithFn(String exp, boolean expected) throws Exception {
-        XPath xPath = XPathFactory.newInstance().newXPath();
-
-        boolean b = xPath.evaluateExpression(exp, doc, Boolean.class);
-        boolean b2 = (boolean) xPath.evaluate(exp, doc, XPathConstants.BOOLEAN);
-
-        Assert.assertEquals(b, expected);
-        Assert.assertEquals(b2, b);
+        testExp(doc, exp, expected, Boolean.class);
     }
 
     /**
@@ -377,24 +331,7 @@ public class XPathStringFnTest extends XPathTestBase {
      * @throws Exception if test fails
      */
     @Test(dataProvider = "containsExpTestCases")
-    void testContainsFn(String exp, boolean expected) throws Exception {
-        XPath xPath = XPathFactory.newInstance().newXPath();
-
-        boolean b = xPath.evaluateExpression(exp, doc, Boolean.class);
-        boolean b2 = (boolean) xPath.evaluate(exp, doc, XPathConstants.BOOLEAN);
-
-        Assert.assertEquals(b, expected);
-        Assert.assertEquals(b2, b);
-    }
-
-    @Test
-    void test() throws Exception {
-        XPath xPath = XPathFactory.newDefaultInstance().newXPath();
-
-        String exp = "string(-1.0 div 0.0)";
-        String b = xPath.evaluateExpression(exp, doc, String.class);
-
-        System.out.println("-->" + b);
-
+    void testContainsFn(String exp, Boolean expected) throws Exception {
+        testExp(doc, exp, expected, Boolean.class);
     }
 }
