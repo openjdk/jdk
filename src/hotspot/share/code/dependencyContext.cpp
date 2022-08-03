@@ -215,15 +215,8 @@ nmethodBucket* DependencyContext::release_and_get_next_not_unloading(nmethodBuck
 // Invalidate all dependencies in the context
 void DependencyContext::remove_all_dependents() {
   nmethodBucket* b = dependencies_not_unloading();
-   set_dependencies(NULL);
-   int removed = 0;
-   while (b != NULL) {
-     b = release_and_get_next_not_unloading(b);
-     ++removed;
-   }
-   if (UsePerfData && removed > 0) {
-     _perf_total_buckets_deallocated_count->inc(removed);
-   }
+  set_dependencies(NULL);
+  assert(b == nullptr, "All dependents should be unloading");
 }
 
 int DependencyContext::remove_and_mark_for_deoptimization_all_dependents() {
