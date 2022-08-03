@@ -363,7 +363,7 @@ HeapWord* G1PLABAllocator::allocate_direct_or_new_plab(G1HeapRegionAttr dest,
   // Boosting the PLAB also increasingly allows more waste to occur.
   if ((required_in_plab <= next_plab_word_size) &&
     may_throw_away_buffer(required_in_plab, plab_word_size)) {
-  
+
     PLAB* alloc_buf = alloc_buffer(dest, node_index);
     guarantee(alloc_buf->words_remaining() <= required_in_plab, "must be");
 
