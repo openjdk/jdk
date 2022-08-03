@@ -157,8 +157,8 @@ public enum Opcode {
     DNEG(Classfile.DNEG, 1, CodeElement.Kind.OPERATOR, TypeKind.DoubleType),
     ISHL(Classfile.ISHL, 1, CodeElement.Kind.OPERATOR, TypeKind.IntType),
     LSHL(Classfile.LSHL, 1, CodeElement.Kind.OPERATOR, TypeKind.LongType),
-    ISHR(Classfile.ISHR, 1, CodeElement.Kind.OPERATOR, TypeKind.FloatType),
-    LSHR(Classfile.LSHR, 1, CodeElement.Kind.OPERATOR, TypeKind.DoubleType),
+    ISHR(Classfile.ISHR, 1, CodeElement.Kind.OPERATOR, TypeKind.IntType),
+    LSHR(Classfile.LSHR, 1, CodeElement.Kind.OPERATOR, TypeKind.LongType),
     IUSHR(Classfile.IUSHR, 1, CodeElement.Kind.OPERATOR, TypeKind.IntType),
     LUSHR(Classfile.LUSHR, 1, CodeElement.Kind.OPERATOR, TypeKind.LongType),
     IAND(Classfile.IAND, 1, CodeElement.Kind.OPERATOR, TypeKind.IntType),
@@ -288,11 +288,11 @@ public enum Opcode {
         this(bytecode, sizeIfFixed, kind, primaryTypeKind, secondaryTypeKind, 0, null);
     }
 
-    Opcode(int bytecode, 
-           int sizeIfFixed, 
-           CodeElement.Kind kind, 
-           TypeKind primaryTypeKind, 
-           TypeKind secondaryTypeKind, 
+    Opcode(int bytecode,
+           int sizeIfFixed,
+           CodeElement.Kind kind,
+           TypeKind primaryTypeKind,
+           TypeKind secondaryTypeKind,
            int slot,
            ConstantDesc constantValue) {
         this.bytecode = bytecode;
@@ -303,7 +303,7 @@ public enum Opcode {
         this.slot = slot;
         this.constantValue = constantValue;
     }
-    
+
     public int bytecode() { return bytecode; }
 
     public boolean isWide() { return bytecode > 255 && !isPseudo(); }
