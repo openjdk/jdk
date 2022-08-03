@@ -26,7 +26,7 @@
 #ifndef OS_AIX_OS_AIX_INLINE_HPP
 #define OS_AIX_OS_AIX_INLINE_HPP
 
-// os_aix.hpp included by os.hpp
+#include "os_aix.hpp"
 
 #include "runtime/os.hpp"
 #include "os_posix.inline.hpp"

@@ -25,8 +25,9 @@
 #ifndef OS_BSD_OS_BSD_INLINE_HPP
 #define OS_BSD_OS_BSD_INLINE_HPP
 
-#include "runtime/os.hpp"
 #include "os_bsd.hpp"
+
+#include "runtime/os.hpp"
 #include "os_posix.inline.hpp"
 
 inline bool os::zero_page_read_protected() {
