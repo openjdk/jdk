@@ -2326,9 +2326,6 @@ void Matcher::find_shared_post_visit(Node* n, uint opcode) {
   }
 
   switch(opcode) {       // Handle some opcodes special
-    case Op_StorePConditional:
-    case Op_StoreIConditional:
-    case Op_StoreLConditional:
     case Op_CompareAndExchangeB:
     case Op_CompareAndExchangeS:
     case Op_CompareAndExchangeI:
