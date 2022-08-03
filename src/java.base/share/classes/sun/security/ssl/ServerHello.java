@@ -30,14 +30,10 @@ import java.nio.ByteBuffer;
 import java.security.AlgorithmConstraints;
 import java.security.CryptoPrimitive;
 import java.security.GeneralSecurityException;
+import java.security.Security;
 import java.text.MessageFormat;
-import java.util.Arrays;
-import java.util.EnumSet;
-import java.util.HexFormat;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.net.ssl.SSLException;
@@ -49,6 +45,7 @@ import sun.security.ssl.SSLCipher.SSLReadCipher;
 import sun.security.ssl.SSLCipher.SSLWriteCipher;
 import sun.security.ssl.SSLHandshake.HandshakeMessage;
 import sun.security.ssl.SupportedVersionsExtension.SHSupportedVersionsSpec;
+import sun.security.util.LegacyAlgorithmConstraints;
 
 /**
  * Pack of the ServerHello/HelloRetryRequest handshake message.
@@ -415,6 +412,10 @@ final class ServerHello {
             }
 
             List<CipherSuite> legacySuites = new LinkedList<>();
+
+            // for debugging purpose only
+            List<CipherSuite.KeyExchange> keyExchanges = null;
+
             for (CipherSuite cs : preferred) {
                 if (!HandshakeContext.isNegotiable(
                         proposed, shc.negotiatedProtocol, cs)) {
@@ -431,9 +432,16 @@ final class ServerHello {
 
                 SSLKeyExchange ke = SSLKeyExchange.valueOf(
                         cs.keyExchange, shc.negotiatedProtocol);
+
                 if (ke == null) {
                     continue;
                 }
+
+                if (sun.security.ssl.SSLLogger.isOn && sun.security.ssl.SSLLogger.isOn("ssl,handshake")) {
+                    keyExchanges = new LinkedList<>();
+                    keyExchanges.add(cs.keyExchange);
+                }
+
                 if (!ServerHandshakeContext.legacyAlgorithmConstraints.permits(
                         EnumSet.of(CryptoPrimitive.KEY_AGREEMENT), cs.name, null)) {
                     legacySuites.add(cs);
@@ -444,19 +452,26 @@ final class ServerHello {
                 if ((hcds == null) || (hcds.length == 0)) {
                     continue;
                 }
-
                 // The cipher suite has been negotiated.
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine("use cipher suite " + cs.name);
                 }
-
                 return new KeyExchangeProperties(cs, ke, hcds);
             }
 
             for (CipherSuite cs : legacySuites) {
                 SSLKeyExchange ke = SSLKeyExchange.valueOf(
                         cs.keyExchange,  shc.negotiatedProtocol);
+
                 if (ke != null) {
+
+                    if (sun.security.ssl.SSLLogger.isOn && sun.security.ssl.SSLLogger.isOn("ssl,handshake")) {
+                        if(keyExchanges == null){
+                            keyExchanges = new LinkedList<>();
+                        }
+                        keyExchanges.add(cs.keyExchange);
+                    }
+
                     SSLPossession[] hcds = ke.createPossessions(shc);
                     if ((hcds != null) && (hcds.length != 0)) {
                         if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
@@ -467,11 +482,48 @@ final class ServerHello {
                     }
                 }
             }
-
+            //negotiation failed between client and server, print server enabled cipher suites
+            printServerEnabledCipherSuites(shc, legacySuites, keyExchanges);
             throw shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                     "no cipher suites in common");
         }
 
+        /* *
+         *  When debugging enabled with the value of "ssl, handshake", print out enabled cipher suites on the server side
+         */
+        private static void printServerEnabledCipherSuites(sun.security.ssl.ServerHandshakeContext shc,
+                                                           List<CipherSuite> legacySuites,
+                                                           List<CipherSuite.KeyExchange> keyExchanges){
+
+            if (sun.security.ssl.SSLLogger.isOn && sun.security.ssl.SSLLogger.isOn("ssl,handshake")) {
+
+                MessageFormat messageFormat = new MessageFormat(
+                        "\"{0}\": '\n{'\n" +
+                                "  \"preferred cipher suites\"     : \"{1}\",\n" +
+                                "  \"client auth type\"            : \"{2}\",\n" +
+                                "  \"enabled server cipher suites\": \"{3}\",\n" +
+                                "  \"legacy algorithms\"           : \"{4}\",\n" +
+                                "  \"legacy suites\"               : \"{5}\",\n" +
+                                "  \"ssl key exchange info\"       : \"{6}\"\n" +
+                                "'}'",
+                        Locale.ENGLISH);
+                Object[] messageFields = {
+                        "Server Cipher Suites Debugging Information",
+                        shc.sslConfig.preferLocalCipherSuites ? "using server cipher suites" : "using client cipher suites",
+                        shc.sslConfig.clientAuthType,
+                        shc.activeCipherSuites != null ? shc.activeCipherSuites.toString() : "Not Set",
+                        Security.getProperty(LegacyAlgorithmConstraints.PROPERTY_TLS_LEGACY_ALGS),
+                        legacySuites != null ? legacySuites.stream()
+                                .map(n -> n.name())
+                                .collect(Collectors.joining(",", "[", "]")) : "Not Set",
+                        keyExchanges != null ? keyExchanges.stream()
+                                .map(n -> n.name())
+                                .collect(Collectors.joining(",", "[", "]")) : "Not Set"
+                };
+
+                sun.security.ssl.SSLLogger.fine(messageFormat.format(messageFields));
+            }
+        }
         private static final class KeyExchangeProperties {
             final CipherSuite cipherSuite;
             final SSLKeyExchange keyExchange;
@@ -745,7 +797,33 @@ final class ServerHello {
             }
 
             // no cipher suites in common
+            printServerEnabledCipherSuites(shc);
             return null;
+        }
+
+        /* *
+         *  When debugging enabled with the value of "ssl, handshake", print out enabled cipher suites on the server side
+         */
+
+        private static void printServerEnabledCipherSuites(sun.security.ssl.ServerHandshakeContext shc){
+            if (sun.security.ssl.SSLLogger.isOn && sun.security.ssl.SSLLogger.isOn("ssl,handshake")) {
+                MessageFormat messageFormat = new MessageFormat(
+                        "\"{0}\": '\n{'\n" +
+                                "  \"preferred cipher suites\"     : \"{1}\",\n" +
+                                "  \"enabled server cipher suites\": \"{2}\",\n" +
+                                "  \"legacy algorithms\"           : \"{3}\",\n" +
+                                "  \"legacy cipher suite\"         : \"{4}\",\n" +
+                                "'}'",
+                        Locale.ENGLISH);
+                Object[] messageFields = {
+                        "Server Cipher Suites Debugging Info",
+                        shc.sslConfig.preferLocalCipherSuites ? "using server cipher suites" : "using client cipher suites",
+                        shc.activeCipherSuites != null ? shc.activeCipherSuites.toString() : "Not Set",
+                        Security.getProperty(LegacyAlgorithmConstraints.PROPERTY_TLS_LEGACY_ALGS),
+                        "Not set"
+                };
+                sun.security.ssl.SSLLogger.fine(messageFormat.format(messageFields));
+            }
         }
     }
 
