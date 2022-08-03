@@ -33,7 +33,7 @@ import jdk.test.lib.Utils;
  * @bug 8289422
  * @key randomness
  * @summary Auto-vectorization enhancement to support vector conditional move on AArch64
- * @requires (os.simpleArch == "x64" & vm.cpu.features ~= ".*avx2.*") | os.arch=="aarch64"
+ * @requires os.arch=="aarch64"
  * @library /test/lib /
  * @run driver compiler.c2.irTests.TestVectorConditionalMove
  */
