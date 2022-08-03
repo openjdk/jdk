@@ -40,6 +40,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 import jdk.classfile.Attribute;
 
 import static jdk.classfile.Classfile.*;
@@ -328,7 +329,7 @@ public final class StackMapGenerator {
             var frame = frames.get(i);
             if (DEBUG) System.out.println("    " + frame);
             if (frame.flags == -1) {
-                if (!patchDeadCode) generatorError("Unable to generate stack map frame for dead code");
+                if (!patchDeadCode) generatorError("Unable to generate stack map frame for dead code", frame.offset);
                 //patch frame
                 frame.pushStack(Type.THROWABLE_TYPE);
                 if (maxStack < 1) maxStack = 1;
@@ -717,7 +718,7 @@ public final class StackMapGenerator {
             case TAG_CONSTANTDYNAMIC ->
                 currentFrame.pushStack(((ConstantDynamicEntry)cp.entryByIndex(index)).asSymbol().constantType());
             default ->
-                generatorError("Invalid index in ldc");
+                generatorError("CP entry #%d %s is not loadable constant".formatted(index, cp.entryByIndex(index).tag()));
         }
     }
 
@@ -848,7 +849,7 @@ public final class StackMapGenerator {
     }
 
     private Type getNewarrayType(int index) {
-        if (index < T_BOOLEAN || index > T_LONG) generatorError("Illegal newarray instruction");
+        if (index < T_BOOLEAN || index > T_LONG) generatorError("Illegal newarray instruction type %d".formatted(index));
         return ARRAY_FROM_BASIC_TYPE[index];
     }
 
@@ -862,7 +863,20 @@ public final class StackMapGenerator {
      * @param msg error message
      */
     private void generatorError(String msg) {
-        throw new VerifyError(String.format("%s at %s", msg, methodName));
+        generatorError(msg, currentFrame.offset);
+    }
+
+        /**
+     * Throws <code>java.lang.VerifyError</code> with given error message
+     * @param msg error message
+     * @param offset bytecode offset where the error occured
+     */
+    private void generatorError(String msg, int offset) {
+        throw new VerifyError(String.format("%s at bytecode offset %d of method %s(%s)",
+                msg,
+                offset,
+                methodName,
+                methodDesc.parameterList().stream().map(ClassDesc::displayName).collect(Collectors.joining(","))));
     }
 
     /**
@@ -874,15 +888,14 @@ public final class StackMapGenerator {
         var offsets = new BitSet() {
             @Override
             public void set(int i) {
-                if (i < 0 || i >= bytecode.capacity())
-                    generatorError("Frame offset out of bytecode range");
+                if (i < 0 || i >= bytecode.capacity()) throw new IllegalArgumentException();
                 super.set(i);
             }
         };
         RawBytecodeHelper bcs = new RawBytecodeHelper(bytecode);
         boolean no_control_flow = false;
-        int opcode, bci;
-        while (!bcs.isLastBytecode()) {
+        int opcode, bci = 0;
+        while (!bcs.isLastBytecode()) try {
             opcode = bcs.rawNext();
             bci = bcs.bci;
             if (no_control_flow) {
@@ -927,9 +940,13 @@ public final class StackMapGenerator {
                      Classfile.ARETURN, Classfile.RETURN, Classfile.ATHROW -> true;
                 default -> false;
             };
+        } catch (IllegalArgumentException iae) {
+            generatorError("Detected branch target out of bytecode range", bci);
         }
-        for (var exhandler : exceptionTable) {
+        for (var exhandler : exceptionTable) try {
             offsets.set(labelContext.labelToBci(exhandler.handler()));
+        } catch (IllegalArgumentException iae) {
+            generatorError("Detected exception handler out of bytecode range");
         }
         return offsets;
     }
