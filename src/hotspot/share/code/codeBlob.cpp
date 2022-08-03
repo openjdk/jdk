@@ -79,12 +79,6 @@ unsigned int CodeBlob::allocation_size(CodeBuffer* cb, int header_size) {
 }
 
 CodeBlob::CodeBlob(const char* name, CompilerType type, const CodeBlobLayout& layout, int frame_complete_offset, int frame_size, ImmutableOopMapSet* oop_maps, bool caller_must_gc_arguments, bool compiled) :
-  _type(type),
-  _size(layout.size()),
-  _header_size(layout.header_size()),
-  _frame_complete_offset(frame_complete_offset),
-  _data_offset(layout.data_offset()),
-  _frame_size(frame_size),
   _code_begin(layout.code_begin()),
   _code_end(layout.code_end()),
   _content_begin(layout.content_begin()),
@@ -92,9 +86,15 @@ CodeBlob::CodeBlob(const char* name, CompilerType type, const CodeBlobLayout& la
   _relocation_begin(layout.relocation_begin()),
   _relocation_end(layout.relocation_end()),
   _oop_maps(oop_maps),
+  _name(name),
+  _size(layout.size()),
+  _header_size(layout.header_size()),
+  _frame_complete_offset(frame_complete_offset),
+  _data_offset(layout.data_offset()),
+  _frame_size(frame_size),
   _caller_must_gc_arguments(caller_must_gc_arguments),
   _is_compiled(compiled),
-  _name(name)
+  _type(type)
 {
   assert(is_aligned(layout.size(),            oopSize), "unaligned size");
   assert(is_aligned(layout.header_size(),     oopSize), "unaligned size");
@@ -108,21 +108,21 @@ CodeBlob::CodeBlob(const char* name, CompilerType type, const CodeBlobLayout& la
 }
 
 CodeBlob::CodeBlob(const char* name, CompilerType type, const CodeBlobLayout& layout, CodeBuffer* cb /*UNUSED*/, int frame_complete_offset, int frame_size, OopMapSet* oop_maps, bool caller_must_gc_arguments, bool compiled) :
-  _type(type),
-  _size(layout.size()),
-  _header_size(layout.header_size()),
-  _frame_complete_offset(frame_complete_offset),
-  _data_offset(layout.data_offset()),
-  _frame_size(frame_size),
   _code_begin(layout.code_begin()),
   _code_end(layout.code_end()),
   _content_begin(layout.content_begin()),
   _data_end(layout.data_end()),
   _relocation_begin(layout.relocation_begin()),
   _relocation_end(layout.relocation_end()),
+  _name(name),
+  _size(layout.size()),
+  _header_size(layout.header_size()),
+  _frame_complete_offset(frame_complete_offset),
+  _data_offset(layout.data_offset()),
+  _frame_size(frame_size),
   _caller_must_gc_arguments(caller_must_gc_arguments),
   _is_compiled(compiled),
-  _name(name)
+  _type(type)
 {
   assert(is_aligned(_size,        oopSize), "unaligned size");
   assert(is_aligned(_header_size, oopSize), "unaligned size");

@@ -122,7 +122,6 @@ inline static void check_obj_during_refinement(T* p, oop const obj) {
 
   HeapRegion* from = g1h->heap_region_containing(p);
 
-  assert(from != NULL, "from region must be non-NULL");
   assert(from->is_in_reserved(p) ||
          (from->is_humongous() &&
           g1h->heap_region_containing(p)->is_humongous() &&
@@ -173,7 +172,7 @@ inline void G1ScanCardClosure::do_oop_work(T* p) {
 
   assert(!_g1h->is_in_cset((HeapWord*)p),
          "Oop originates from " PTR_FORMAT " (region: %u) which is in the collection set.",
-         p2i(p), _g1h->addr_to_region((HeapWord*)p));
+         p2i(p), _g1h->addr_to_region(p));
 
   const G1HeapRegionAttr region_attr = _g1h->region_attr(obj);
   if (region_attr.is_in_cset()) {

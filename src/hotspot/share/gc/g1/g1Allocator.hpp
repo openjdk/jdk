@@ -161,6 +161,10 @@ private:
   // Number of words allocated directly (not counting PLAB allocation).
   size_t _direct_allocated[G1HeapRegionAttr::Num];
 
+  // Number of PLAB refills experienced so far.
+  size_t _num_plab_fills[G1HeapRegionAttr::Num];
+  size_t _num_direct_allocations[G1HeapRegionAttr::Num];
+
   void flush_and_retire_stats();
   inline PLAB* alloc_buffer(G1HeapRegionAttr dest, uint node_index) const;
   inline PLAB* alloc_buffer(region_type_t dest, uint node_index) const;

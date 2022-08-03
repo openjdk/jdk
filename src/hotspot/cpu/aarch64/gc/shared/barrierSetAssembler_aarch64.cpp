@@ -160,63 +160,6 @@ void BarrierSetAssembler::tlab_allocate(MacroAssembler* masm, Register obj,
   // verify_tlab();
 }
 
-// Defines obj, preserves var_size_in_bytes
-void BarrierSetAssembler::eden_allocate(MacroAssembler* masm, Register obj,
-                                        Register var_size_in_bytes,
-                                        int con_size_in_bytes,
-                                        Register t1,
-                                        Label& slow_case) {
-  assert_different_registers(obj, var_size_in_bytes, t1);
-  if (!Universe::heap()->supports_inline_contig_alloc()) {
-    __ b(slow_case);
-  } else {
-    Register end = t1;
-    Register heap_end = rscratch2;
-    Label retry;
-    __ bind(retry);
-    {
-      uint64_t offset;
-      __ adrp(rscratch1, ExternalAddress((address) Universe::heap()->end_addr()), offset);
-      __ ldr(heap_end, Address(rscratch1, offset));
-    }
-
-    ExternalAddress heap_top((address) Universe::heap()->top_addr());
-
-    // Get the current top of the heap
-    {
-      uint64_t offset;
-      __ adrp(rscratch1, heap_top, offset);
-      // Use add() here after ARDP, rather than lea().
-      // lea() does not generate anything if its offset is zero.
-      // However, relocs expect to find either an ADD or a load/store
-      // insn after an ADRP.  add() always generates an ADD insn, even
-      // for add(Rn, Rn, 0).
-      __ add(rscratch1, rscratch1, offset);
-      __ ldaxr(obj, rscratch1);
-    }
-
-    // Adjust it my the size of our new object
-    if (var_size_in_bytes == noreg) {
-      __ lea(end, Address(obj, con_size_in_bytes));
-    } else {
-      __ lea(end, Address(obj, var_size_in_bytes));
-    }
-
-    // if end < obj then we wrapped around high memory
-    __ cmp(end, obj);
-    __ br(Assembler::LO, slow_case);
-
-    __ cmp(end, heap_end);
-    __ br(Assembler::HI, slow_case);
-
-    // If heap_top hasn't been changed by some other thread, update it.
-    __ stlxr(rscratch2, end, rscratch1);
-    __ cbnzw(rscratch2, retry);
-
-    incr_allocated_bytes(masm, var_size_in_bytes, con_size_in_bytes, t1);
-  }
-}
-
 void BarrierSetAssembler::incr_allocated_bytes(MacroAssembler* masm,
                                                Register var_size_in_bytes,
                                                int con_size_in_bytes,
@@ -246,18 +189,38 @@ void BarrierSetAssembler::clear_patching_epoch() {
   _patching_epoch = 0;
 }
 
-void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm) {
+void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label* slow_path, Label* continuation, Label* guard) {
   BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
 
   if (bs_nm == NULL) {
     return;
   }
 
-  Label skip_barrier, guard;
+  Label local_guard;
+  Label skip_barrier;
+  NMethodPatchingType patching_type = nmethod_patching_type();
 
-  __ ldrw(rscratch1, guard);
+  if (slow_path == NULL) {
+    guard = &local_guard;
+  }
 
-  if (nmethod_code_patching()) {
+  // If the slow path is out of line in a stub, we flip the condition
+  Assembler::Condition condition = slow_path == NULL ? Assembler::EQ : Assembler::NE;
+  Label& barrier_target = slow_path == NULL ? skip_barrier : *slow_path;
+
+  __ ldrw(rscratch1, *guard);
+
+  if (patching_type == NMethodPatchingType::stw_instruction_and_data_patch) {
+    // With STW patching, no data or instructions are updated concurrently,
+    // which means there isn't really any need for any fencing for neither
+    // data nor instruction modifications happening concurrently. The
+    // instruction patching is handled with isb fences on the way back
+    // from the safepoint to Java. So here we can do a plain conditional
+    // branch with no fencing.
+    Address thread_disarmed_addr(rthread, in_bytes(bs_nm->thread_disarmed_offset()));
+    __ ldrw(rscratch2, thread_disarmed_addr);
+    __ cmp(rscratch1, rscratch2);
+  } else if (patching_type == NMethodPatchingType::conc_instruction_and_data_patch) {
     // If we patch code we need both a code patching and a loadload
     // fence. It's not super cheap, so we use a global epoch mechanism
     // to hide them in a slow path.
@@ -278,24 +241,28 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm) {
     Address thread_disarmed_and_epoch_addr(rthread, in_bytes(bs_nm->thread_disarmed_offset()));
     __ ldr(rscratch2, thread_disarmed_and_epoch_addr);
     __ cmp(rscratch1, rscratch2);
-    __ br(Assembler::EQ, skip_barrier);
   } else {
+    assert(patching_type == NMethodPatchingType::conc_data_patch, "must be");
     // Subsequent loads of oops must occur after load of guard value.
     // BarrierSetNMethod::disarm sets guard with release semantics.
     __ membar(__ LoadLoad);
     Address thread_disarmed_addr(rthread, in_bytes(bs_nm->thread_disarmed_offset()));
     __ ldrw(rscratch2, thread_disarmed_addr);
     __ cmpw(rscratch1, rscratch2);
-    __ br(Assembler::EQ, skip_barrier);
   }
+  __ br(condition, barrier_target);
 
-  __ movptr(rscratch1, (uintptr_t) StubRoutines::aarch64::method_entry_barrier());
-  __ blr(rscratch1);
-  __ b(skip_barrier);
+  if (slow_path == NULL) {
+    __ movptr(rscratch1, (uintptr_t) StubRoutines::aarch64::method_entry_barrier());
+    __ blr(rscratch1);
+    __ b(skip_barrier);
 
-  __ bind(guard);
+    __ bind(local_guard);
 
-  __ emit_int32(0);   // nmethod guard value. Skipped over in common case.
+    __ emit_int32(0);   // nmethod guard value. Skipped over in common case.
+  } else {
+    __ bind(*continuation);
+  }
 
   __ bind(skip_barrier);
 }

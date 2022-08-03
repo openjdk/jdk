@@ -2,7 +2,7 @@
  * @test /nodynamiccopyright/
  * @bug 7154127 8007464
  * @summary Inference cleanup: remove bound check analysis from visitors in Types.java
- * @compile/fail/ref=T7154127.out -Xlint:-options -source 7 -XDrawDiagnostics T7154127.java
+ * @compile/fail/ref=T7154127.out -Xlint:-options --release 7 -XDrawDiagnostics T7154127.java
  * @compile T7154127.java
  */
 class T7154127 {
