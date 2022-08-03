@@ -77,7 +77,7 @@ address Relocation::pd_call_destination(address orig_addr) {
   }
 }
 
-void Relocation::pd_set_call_destination(address x) {
+void Relocation::pd_set_call_destination(address x, bool) {
   address inst_loc = addr();
 
   if (NativeFarCall::is_far_call_at(inst_loc)) {

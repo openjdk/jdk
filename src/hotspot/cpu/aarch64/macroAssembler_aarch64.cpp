@@ -335,21 +335,6 @@ public:
     uintptr_t dest = (uintptr_t)target;
     int offset_lo = dest & 0xfff;
     Instruction_aarch64::patch(insn_addr + sizeof (uint32_t), 21, 10, offset_lo);
-
-    unsigned insn3 = insn_at(insn_addr, 2);
-    address insn3_addr = insn_addr + sizeof(uint32_t) * 2;
-    if (insn_addr < target + Assembler::branch_range && target < insn_addr + Assembler::branch_range
-      && (Instruction_aarch64::extract(insn3, 31, 10) == 0b1101011000011111000000
-        || Instruction_aarch64::extract(insn3, 31, 26) == 0b000101)) {
-      Instruction_aarch64::patch(insn3_addr, 31, 26, 0b000101);                   // b
-      Instruction_aarch64::spatch(insn3_addr, 25, 0, (target - insn3_addr) >> 2); // unconditionalBranch
-      return 3;
-    } else if (Instruction_aarch64::extract(insn3, 31, 26) == 0b000101) {
-      Instruction_aarch64::patch(insn3_addr, 31, 10, 0b1101011000011111000000);   // br
-      Instruction_aarch64::patch(insn3_addr, 9, 5, Instruction_aarch64::extract(insn_at(insn_addr, 0), 4, 0));
-      Instruction_aarch64::patch(insn3_addr, 4, 0, 0);
-      return 3;
-    }
     return 2;
   }
   static int adrpMovk_impl(address insn_addr, address &target) {
@@ -379,6 +364,30 @@ public:
       assert(address_is == target, "should be");
     }
 #endif
+  }
+};
+
+class FinalPatcher : public Patcher {
+public:
+  FinalPatcher(address insn_addr) : Patcher(insn_addr) {}
+
+  virtual int adrp(address insn_addr, address &target, reloc_insn inner) {
+    if ((insn_addr < target + Assembler::branch_range && target < insn_addr + Assembler::branch_range)
+      && (inner == Patcher::adrpAdd_impl)
+      && Instruction_aarch64::extract(insn_at(insn_addr, 2), 31, 10) == 0b1101011000011111000000) {
+      int instructions = 3;
+#ifdef ASSERT
+      assert(Instruction_aarch64::extract(_insn, 28, 24) == 0b10000, "must be");
+#endif
+      precond(inner != nullptr);
+      Instruction_aarch64::patch(insn_addr, 31, 26, 0b000101);                      // b
+      Instruction_aarch64::spatch(insn_addr, 25, 0, (target - insn_addr) >> 2);
+      Instruction_aarch64::patch(insn_addr + 4, 31, 10, 0b1101011000011111000000);  // nop
+      Instruction_aarch64::patch(insn_addr + 8, 31, 10, 0b1101011000011111000000);  // nop
+      return instructions;
+    } else {
+      return Patcher::adrp(insn_addr, target, inner);
+    }
   }
 };
 
@@ -514,9 +523,14 @@ address MacroAssembler::target_addr_for_insn(address insn_addr, uint32_t insn) {
 
 // Patch any kind of instruction; there may be several instructions.
 // Return the total length (in bytes) of the instructions.
-int MacroAssembler::pd_patch_instruction_size(address insn_addr, address target) {
-  Patcher patcher(insn_addr);
-  return patcher.run(insn_addr, target);
+int MacroAssembler::pd_patch_instruction_size(address insn_addr, address target, bool is_final_patch) {
+  if (!is_final_patch) {
+    Patcher patcher(insn_addr);
+    return patcher.run(insn_addr, target);
+  } else {
+    FinalPatcher patcher(insn_addr);
+    return patcher.run(insn_addr, target);
+  }
 }
 
 int MacroAssembler::patch_oop(address insn_addr, address o) {

@@ -109,7 +109,7 @@ address Relocation::pd_call_destination(address orig_addr) {
 }
 
 
-void Relocation::pd_set_call_destination(address x) {
+void Relocation::pd_set_call_destination(address x, bool) {
   NativeInstruction* ni = nativeInstruction_at(addr());
   if (ni->is_call()) {
     nativeCall_at(addr())->set_destination(x);

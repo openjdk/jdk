@@ -79,7 +79,7 @@ address Relocation::pd_call_destination(address orig_addr) {
 }
 
 
-void Relocation::pd_set_call_destination(address x) {
+void Relocation::pd_set_call_destination(address x, bool is_final_patch) {
   assert(is_call(), "should be a call here");
   if (NativeCall::is_call_at(addr())) {
     address trampoline = nativeCall_at(addr())->get_trampoline();
@@ -88,7 +88,7 @@ void Relocation::pd_set_call_destination(address x) {
       return;
     }
   }
-  MacroAssembler::pd_patch_instruction(addr(), x);
+  MacroAssembler::pd_patch_instruction(addr(), x, NULL, 0, is_final_patch);
   assert(pd_call_destination(addr()) == x, "fail in reloc");
 }
 

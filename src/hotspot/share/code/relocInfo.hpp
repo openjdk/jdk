@@ -747,7 +747,7 @@ class Relocation {
   void       pd_set_data_value       (address x, intptr_t off, bool verify_only = false); // a set or mem-ref
   void       pd_verify_data_value    (address x, intptr_t off) { pd_set_data_value(x, off, true); }
   address    pd_call_destination     (address orig_addr = NULL);
-  void       pd_set_call_destination (address x);
+  void       pd_set_call_destination (address x, bool is_final_patch = false);
 
   // this extracts the address of an address in the code stream instead of the reloc data
   address* pd_address_in_code       ();

@@ -79,7 +79,7 @@ address Relocation::pd_call_destination(address orig_addr) {
   return MacroAssembler::pd_call_destination(addr());
 }
 
-void Relocation::pd_set_call_destination(address x) {
+void Relocation::pd_set_call_destination(address x, bool) {
   assert(is_call(), "should be an address instruction here");
   if (NativeCall::is_call_at(addr())) {
     address trampoline = nativeCall_at(addr())->get_trampoline();
