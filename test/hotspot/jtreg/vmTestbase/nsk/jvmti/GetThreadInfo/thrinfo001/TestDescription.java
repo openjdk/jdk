@@ -41,10 +41,10 @@
  *     Fixed according to the 4480280 bug.
  *     Ported from JVMDI.
  *
+ * @requires vm.jvmti & vm.continuations
  * @library /vmTestbase
  *          /test/lib
  * @build nsk.jvmti.GetThreadInfo.thrinfo001
- * @requires vm.jvmti & vm.continuations
  * @run main/othervm/native ExecDriver --java
  *      --enable-preview
  *      -agentlib:thrinfo001
