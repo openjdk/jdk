@@ -109,8 +109,9 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
             return len;
         }
 
-        int multiple = (len + MIN_BUFFER_SIZE - 1)/MIN_BUFFER_SIZE;
-        return multiple*MIN_BUFFER_SIZE;
+        // len is positive and not a multiple of MIN_BUFFER_SIZE; return
+        // the smallest multiple of MIN_BUFFER_SIZE greater than len.
+        return (1 + len/MIN_BUFFER_SIZE)*MIN_BUFFER_SIZE;
     }
 
     /**
