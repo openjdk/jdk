@@ -56,9 +56,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.management.JMX;
 
-import jdk.internal.platform.Metrics;
-import jdk.internal.platform.SystemMetrics;
-import sun.management.ContainerInfo;
 import sun.management.Util;
 import sun.management.spi.PlatformMBeanProvider;
 import sun.management.spi.PlatformMBeanProvider.PlatformComponent;
@@ -1019,25 +1016,8 @@ public class ManagementFactory {
         }
     }
 
-    private static class ReadOnlyExtensionMBeanInitializer {
-       public static void init() {
-            Metrics containerMetrics = SystemMetrics.instance();
-            if (containerMetrics != null) {
-                MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
-                ContainerInfoMXBean mbean = new ContainerInfo(containerMetrics);
-                try {
-                    ObjectName name = new ObjectName("java.lang:type=Container");
-                    mbs.registerMBean(mbean, name);
-                } catch (Exception e) {
-                }
-            }
-
-        }
-    }
-
     static {
         loadNativeLib();
-        ReadOnlyExtensionMBeanInitializer.init();
     }
 
     @SuppressWarnings("removal")

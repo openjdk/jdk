@@ -49,6 +49,7 @@ module java.management {
     exports javax.management.relation;
     exports javax.management.remote;
     exports javax.management.timer;
+    exports java.lang.management.internal.mBeans;
 
     exports com.sun.jmx.remote.internal to
         java.management.rmi,

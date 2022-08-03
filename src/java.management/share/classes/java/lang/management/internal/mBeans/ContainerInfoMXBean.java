@@ -21,7 +21,7 @@
  * questions.
  */
 
-package java.lang.management;
+package java.lang.management.internal.mBeans;
 
 /**
  * This is a special bean , only available on Linux systems

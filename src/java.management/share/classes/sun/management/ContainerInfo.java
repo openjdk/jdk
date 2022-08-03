@@ -25,7 +25,7 @@ package sun.management;
 
 import jdk.internal.platform.Metrics;
 
-import java.lang.management.ContainerInfoMXBean;
+import java.lang.management.internal.mBeans.ContainerInfoMXBean;
 
 public class ContainerInfo implements ContainerInfoMXBean {
     final Metrics containerMetrics ;
