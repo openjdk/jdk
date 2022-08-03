@@ -297,16 +297,22 @@ G1PLABAllocator::G1PLABAllocator(G1Allocator* allocator) :
   _g1h(G1CollectedHeap::heap()),
   _allocator(allocator) {
 
-  // See G1EvacStats::compute_desired_plab_sz for the reasoning why this is the
-  // expected number of refills.
-  double const ExpectedNumberOfRefills = G1LastPLABAverageOccupancy / TargetPLABWastePct;
-  // Add some padding to the threshold to not boost exactly when the targeted refills
-  // were reached.
-  // E.g. due to limitation of PLAB size to non-humongous objects and region boundaries
-  // a thread may experience more refills than expected. Keeping the PLAB waste low
-  // is the main goal, so being a bit conservative is better.
-  double const PadFactor = 1.5;
-  _tolerated_refills = MAX2(ExpectedNumberOfRefills, 1.0) * PadFactor;
+  if (ResizePLAB) {
+    // See G1EvacStats::compute_desired_plab_sz for the reasoning why this is the
+    // expected number of refills.
+    double const ExpectedNumberOfRefills = G1LastPLABAverageOccupancy / TargetPLABWastePct;
+    // Add some padding to the threshold to not boost exactly when the targeted refills
+    // were reached.
+    // E.g. due to limitation of PLAB size to non-humongous objects and region boundaries
+    // a thread may experience more refills than expected. Keeping the PLAB waste low
+    // is the main goal, so being a bit conservative is better.
+    double const PadFactor = 1.5;
+    _tolerated_refills = MAX2(ExpectedNumberOfRefills, 1.0) * PadFactor;
+  } else {
+    // Make the tolerated refills a huge number; -2 because we add one to this
+    // value later and it would overflow otherwise.
+    _tolerated_refills = (size_t)-2;
+  }
 
   for (region_type_t state = 0; state < G1HeapRegionAttr::Num; state++) {
     _direct_allocated[state] = 0;
