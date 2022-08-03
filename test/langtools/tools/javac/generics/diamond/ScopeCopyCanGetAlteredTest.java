@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,21 +21,31 @@
  * questions.
  */
 
-
 /*
  * @test
- *
- * @key randomness
- *
- * @requires vm.jvmti & vm.continuations
- * @library /vmTestbase
- *          /test/lib
- * @build nsk.jvmti.RedefineClasses.StressRedefine
- * @run main/othervm/native ExecDriver --java
- *      --enable-preview
- *      -agentlib:stressRedefine
- *      nsk.jvmti.RedefineClasses.StressRedefine
- *      ./bin
- *      -corruptingBytecodeProbability 0.0
- *      -virtualThreads
+ * @bug 8260892
+ * @summary Compilation fails: lambda parameter not visible in body when generics involved
+ * @compile ScopeCopyCanGetAlteredTest.java
  */
+
+import java.util.function.Function;
+import java.util.function.IntFunction;
+
+class ScopeCopyCanGetAlteredTest {
+    interface GenericOp<A> {
+        <B> A apply(IntFunction<B> func1, Function<B, A> func2);
+    }
+
+    static <A> GenericOp<A> foo(IntFunction<GenericOp<A>> f) {
+        return null;
+    }
+
+    static <A> GenericOp<A> bar() {
+        return foo((int arg) -> new GenericOp<>() {
+            @Override
+            public <B> A apply(IntFunction<B> func1, Function<B, A> func2) {
+                return func2.apply(func1.apply(arg));
+            }
+        });
+    }
+}
