@@ -25,10 +25,7 @@ import java.lang.ref.Cleaner;
 import java.lang.ref.Reference;
 import java.lang.ref.PhantomReference;
 import java.lang.ref.ReferenceQueue;
-import java.lang.ref.SoftReference;
-import java.lang.ref.WeakReference;
 import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
@@ -64,6 +61,9 @@ import org.testng.annotations.Test;
  * @run testng/othervm --enable-preview
  *      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *      -verbose:gc CleanerTest
+ * @run testng/othervm --enable-preview
+ *      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
+ *      -verbose:gc -Xcomp CleanerTest
  */
 
 @Test
@@ -217,7 +217,7 @@ public class CleanerTest {
         System.out.println(test);
         int r = test.expectedResult();
 
-        CleanableCase cc = setupPhantom(COMMON, test.getCleanable());
+        CleanableCase cc = setupPhantom(test.getCleaner(), test.getCleanable());
         test.clearCleanable();        // release this hard reference
 
         checkCleaned(test.getSemaphore(),
@@ -320,7 +320,7 @@ public class CleanerTest {
         Semaphore s1 = new Semaphore(0);
         Cleaner.Cleanable c1 = cleaner.register(obj, () -> s1.release());
 
-        return new CleanableCase(new PhantomReference<>(obj, null), c1, s1);
+        return new CleanableCase(new PhantomReference<>(obj, null), c1, s1, cleaner);
     }
 
     /**
@@ -341,7 +341,7 @@ public class CleanerTest {
             }
         };
 
-        return new CleanableCase(new PhantomReference<>(obj, null), c1, s1);
+        return new CleanableCase(new PhantomReference<>(obj, null), c1, s1, cleaner);
     }
 
     /**
@@ -363,7 +363,8 @@ public class CleanerTest {
             }
         };
 
-        return new CleanableCase(new PhantomReference<>(obj, null), c1, s1, true);
+        return new CleanableCase(new PhantomReference<>(obj, null), c1, s1,
+                cleaner,true);
     }
 
     /**
@@ -380,6 +381,7 @@ public class CleanerTest {
         private volatile Reference<?> ref;
         private volatile Cleaner.Cleanable cleanup;
         private final Semaphore semaphore;
+        private final Cleaner cleaner;
         private final boolean throwsEx;
         private final int[] events;   // Sequence of calls to clean, clear, etc.
         private volatile int eventNdx;
@@ -392,20 +394,22 @@ public class CleanerTest {
 
 
         CleanableCase(Reference<Object> ref, Cleaner.Cleanable cleanup,
-                      Semaphore semaphore) {
+                      Semaphore semaphore, Cleaner cleaner) {
             this.ref = ref;
             this.cleanup = cleanup;
             this.semaphore = semaphore;
+            this.cleaner = cleaner;
             this.throwsEx = false;
             this.events = new int[4];
             this.eventNdx = 0;
         }
         CleanableCase(Reference<Object> ref, Cleaner.Cleanable cleanup,
-                      Semaphore semaphore,
+                      Semaphore semaphore, Cleaner cleaner,
                       boolean throwsEx) {
             this.ref = ref;
             this.cleanup = cleanup;
             this.semaphore = semaphore;
+            this.cleaner = cleaner;
             this.throwsEx = throwsEx;
             this.events = new int[4];
             this.eventNdx = 0;
@@ -448,6 +452,10 @@ public class CleanerTest {
 
         public Semaphore getSemaphore() {
             return semaphore;
+        }
+
+        public Cleaner getCleaner() {
+            return cleaner;
         }
 
         public boolean isCleaned() {
