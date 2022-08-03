@@ -1197,6 +1197,9 @@ private:
   void evcvtpd2qq(XMMRegister dst, XMMRegister src, int vector_len);
   void evcvttpd2qq(XMMRegister dst, XMMRegister src, int vector_len);
 
+  // Convert vector double to int
+  void vcvttpd2dq(XMMRegister dst, XMMRegister src, int vector_len);
+
   // Evex casts with truncation
   void evpmovwb(XMMRegister dst, XMMRegister src, int vector_len);
   void evpmovdw(XMMRegister dst, XMMRegister src, int vector_len);

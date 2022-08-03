@@ -188,6 +188,10 @@
     switch(vopc) {
       default:
         return 0;
+      case Op_VectorCastF2X: // fall through
+      case Op_VectorCastD2X: {
+        return is_subword_type(ety) ? 75 : 70;
+      }
       case Op_CountTrailingZerosV:
       case Op_CountLeadingZerosV:
         return VM_Version::supports_avx512cd() && (ety == T_INT || ety == T_LONG) ? 0 : 40;
