@@ -92,7 +92,7 @@ public class StackMapsTest {
         testTransformedStackMaps(buildDeadCode());
     }
 
-    @Test(expectedExceptions = VerifyError.class, expectedExceptionsMessageRegExp = "Unable to generate stack map frame for dead code at bytecode offset 1 of method twoReturns\\(\\)")
+    @Test(expectedExceptions = VerifyError.class, expectedExceptionsMessageRegExp = "Unable to generate stack map frame for dead code at bytecode offset 1 of method twoReturns.+opcode: RETURN.+")
     public void testDeadCodePatternFail() throws Exception {
         testTransformedStackMaps(buildDeadCode(), Classfile.Option.patchDeadCode(false));
     }
@@ -157,7 +157,7 @@ public class StackMapsTest {
         testTransformedStackMaps("/testdata/Pattern10.class");
     }
 
-    @Test(expectedExceptions = VerifyError.class, expectedExceptionsMessageRegExp = "Detected branch target out of bytecode range at bytecode offset 0 of method frameOutOfRangeMethod\\(\\)")
+    @Test(expectedExceptions = VerifyError.class, expectedExceptionsMessageRegExp = "Detected branch target out of bytecode range at bytecode offset 0 of method frameOutOfRangeMethod.+opcode: GOTO.+")
     public void testFrameOutOfBytecodeRange() {
         Classfile.parse(
                 Classfile.build(ClassDesc.of("TestClass"), clb ->

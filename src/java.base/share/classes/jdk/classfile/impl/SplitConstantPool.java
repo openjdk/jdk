@@ -84,7 +84,7 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
 
     private final ClassReaderImpl parent;
     private final int parentSize, parentBsmSize;
-    private final Options options;
+    final Options options;
 
     private int size, bsmSize;
     private PoolEntry[] myEntries;

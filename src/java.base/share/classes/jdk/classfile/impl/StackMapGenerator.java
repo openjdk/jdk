@@ -36,9 +36,7 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import jdk.classfile.Attribute;
@@ -46,9 +44,10 @@ import jdk.classfile.Attribute;
 import static jdk.classfile.Classfile.*;
 import jdk.classfile.BufWriter;
 import jdk.classfile.Label;
-import jdk.classfile.Opcode;
 import jdk.classfile.attribute.StackMapTableAttribute;
 import jdk.classfile.Attributes;
+import jdk.classfile.ClassPrinter;
+import jdk.classfile.attribute.CodeAttribute;
 
 /**
  * StackMapGenerator is responsible for stack map frames generation.
@@ -156,19 +155,6 @@ import jdk.classfile.Attributes;
 
 public final class StackMapGenerator {
 
-    private static final boolean TRACE, DEBUG;
-    private static final Map<Integer, String> OPCODE_NAMES;
-    static {
-        TRACE = Boolean.getBoolean(StackMapGenerator.class.getName() + ".TRACE");
-        DEBUG = TRACE || Boolean.getBoolean(StackMapGenerator.class.getName() + ".DEBUG");
-        if (DEBUG) {
-            OPCODE_NAMES = new HashMap<>();
-            for (var o : Opcode.values())
-                OPCODE_NAMES.put(o.bytecode(), o.name());
-        } else
-            OPCODE_NAMES = null;
-    }
-
     private static final String OBJECT_INITIALIZER_NAME = "<init>";
     private static final int FLAG_THIS_UNINIT = 0x01;
     private static final int FRAME_DEFAULT_CAPACITY = 10;
@@ -207,7 +193,6 @@ public final class StackMapGenerator {
     private List<Frame> frames;
     private final Frame currentFrame;
     private int maxStack, maxLocals;
-    private boolean trace = TRACE;
 
     /**
      * Primary constructor of the <code>Generator</code> class.
@@ -244,17 +229,7 @@ public final class StackMapGenerator {
         this.classHierarchy = new ClassHierarchyImpl(cp.optionValue(Classfile.Option.Key.HIERARCHY_RESOLVER));
         this.patchDeadCode = cp.optionValue(Classfile.Option.Key.PATCH_DEAD_CODE);
         this.currentFrame = new Frame(classHierarchy);
-        if (DEBUG) System.out.println("Generating stack maps for class: " + thisClass.displayName() + " method: " + methodName + " with signature: " + methodDesc);
-        try {
-            generate();
-        } catch (Error | Exception e) {
-            if (DEBUG && !trace) {
-                e.printStackTrace(System.out);
-                trace = true;
-                generate();
-            }
-            throw e;
-        }
+        generate();
     }
 
     /**
@@ -307,7 +282,6 @@ public final class StackMapGenerator {
             if (end_pc > exMax) exMax = end_pc;
         }
         BitSet frameOffsets = detectFrameOffsets();
-        if (trace) System.out.println("  Detected mandatory frame bytecode offsets: " + frameOffsets);
         int framesCount = frameOffsets.cardinality();
         frames = new ArrayList<>(framesCount);
         int offset = -1;
@@ -316,18 +290,14 @@ public final class StackMapGenerator {
             frames.add(new Frame(offset, classHierarchy));
         }
         do {
-            if (trace) System.out.println("  Entering generator loop");
             processMethod();
         } while (isAnyFrameDirty());
         maxLocals = currentFrame.frameMaxLocals;
         maxStack = currentFrame.frameMaxStack;
-        if (DEBUG) System.out.println("  Calculated maxLocals: " + maxLocals + " maxStack: " + maxStack);
 
-        if (framesCount > 0) if (DEBUG) System.out.println("  Generated stack map frames:");
         //dead code patching
         for (int i = 0; i < framesCount; i++) {
             var frame = frames.get(i);
-            if (DEBUG) System.out.println("    " + frame);
             if (frame.flags == -1) {
                 if (!patchDeadCode) generatorError("Unable to generate stack map frame for dead code", frame.offset);
                 //patch frame
@@ -335,7 +305,6 @@ public final class StackMapGenerator {
                 if (maxStack < 1) maxStack = 1;
                 int blockSize = (i < framesCount - 1 ? frames.get(i + 1).offset : bytecode.limit()) - frame.offset;
                 //patch bytecode
-                if (trace) System.out.println("      Patching dead code range <" + frame.offset + ",  " + (frame.offset + blockSize) + ")");
                 bytecode.position(frame.offset);
                 for (int n=1; n<blockSize; n++) {
                     bytecode.put((byte) Classfile.NOP);
@@ -357,7 +326,6 @@ public final class StackMapGenerator {
                 //out of range
                 continue;
             }
-            if (trace) System.out.println("      Removing dead code range from exception handler start: " + handlerStart + " end: " + handlerEnd);
             if (rangeStart <= handlerStart) {
               if (rangeEnd >= handlerEnd) {
                   //complete removal
@@ -441,7 +409,6 @@ public final class StackMapGenerator {
                     }
                     bcs.rawNext(nextFrame.offset); //skip code up-to the next frame
                     currentFrame.offset = bcs.bci;
-                    if (trace) System.out.println("    " + currentFrame);
                     currentFrame.copyFrom(nextFrame);
                     nextFrame.dirty = false;
                 } else if (thisOffset < bcs.bci) {
@@ -452,7 +419,6 @@ public final class StackMapGenerator {
             }
             ncf = processBlock(bcs);
         }
-        if (trace) System.out.println("    " + currentFrame);
     }
 
     private boolean processBlock(RawBytecodeHelper bcs) {
@@ -461,7 +427,6 @@ public final class StackMapGenerator {
         boolean this_uninit = false;
         boolean verified_exc_handlers = false;
         int bci = bcs.bci;
-        if (trace) System.out.println("    " +currentFrame +"\n    @" + bci + " " + OPCODE_NAMES.get(opcode));
         Type type1, type2, type3, type4;
         if (RawBytecodeHelper.isStoreIntoLocal(opcode) && bci >= exMin && bci < exMax) {
             processExceptionHandlerTargets(bci, this_uninit);
@@ -872,11 +837,34 @@ public final class StackMapGenerator {
      * @param offset bytecode offset where the error occured
      */
     private void generatorError(String msg, int offset) {
-        throw new VerifyError(String.format("%s at bytecode offset %d of method %s(%s)",
+        var sb = new StringBuilder("%s at bytecode offset %d of method %s(%s)".formatted(
                 msg,
                 offset,
                 methodName,
                 methodDesc.parameterList().stream().map(ClassDesc::displayName).collect(Collectors.joining(","))));
+        //try to attach debug info about corrupted bytecode to the message
+        try {
+            ((SplitConstantPool)cp).options.generateStackmaps = false;
+            var clb = new DirectClassBuilder(cp, cp.classEntry(ClassDesc.of("FakeClass")));
+            clb.withMethod(methodName, methodDesc, isStatic ? ACC_STATIC : 0, mb ->
+                    ((DirectMethodBuilder)mb).writeAttribute(new UnboundAttribute.AdHocAttribute<CodeAttribute>(Attributes.CODE) {
+                        @Override
+                        public void writeBody(BufWriter b) {
+                            b.writeU2(-1);//max stack
+                            b.writeU2(-1);//max locals
+                            b.writeInt(bytecode.limit());
+                            b.writeBytes(bytecode.array(), 0, bytecode.limit());
+                            b.writeU2(0);//exception handlers
+                            b.writeU2(0);//attributes
+                        }
+                    }));
+            ClassPrinter.toYaml(Classfile.parse(clb.build()).methods().get(0).code().get(), ClassPrinter.Verbosity.TRACE_ALL, sb::append);
+        } catch (Error | Exception suppresed) {
+            var err = new VerifyError(sb.toString());
+            err.addSuppressed(suppresed);
+            throw err;
+        }
+        throw new VerifyError(sb.toString());
     }
 
     /**
