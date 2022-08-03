@@ -41,6 +41,16 @@ class DumpTimeClassInfo: public CHeapObj<mtClass> {
   bool                         _is_early_klass;
   bool                         _has_checked_exclusion;
 
+  static void maybe_increment_refcount(Symbol* s) {
+    if (s != NULL) {
+      s->increment_refcount();
+    }
+  }
+  static void maybe_decrement_refcount(Symbol* s) {
+    if (s != NULL) {
+      s->decrement_refcount();
+    }
+  }
   class DTLoaderConstraint {
     Symbol* _name;
     char _loader_type1;
@@ -48,19 +58,22 @@ class DumpTimeClassInfo: public CHeapObj<mtClass> {
   public:
     DTLoaderConstraint() : _name(NULL), _loader_type1('0'), _loader_type2('0') {}
     DTLoaderConstraint(Symbol* name, char l1, char l2) : _name(name), _loader_type1(l1), _loader_type2(l2) {
-      increment_if_needed();
+      maybe_increment_refcount(_name);
     }
     DTLoaderConstraint(const DTLoaderConstraint& src) {
-      copy(src);
-      increment_if_needed();
+      _name = src._name;
+      _loader_type1 = src._loader_type1;
+      _loader_type2 = src._loader_type2;
+      maybe_increment_refcount(_name);
     }
-    void operator=(const DTLoaderConstraint& src) {
-      decrement_if_needed();
-      copy(src);
-      increment_if_needed();
+    DTLoaderConstraint& operator=(DTLoaderConstraint src) {
+      swap(_name, src._name); // c++ copy-and-swap idiom
+      _loader_type1 = src._loader_type1;
+      _loader_type2 = src._loader_type2;
+      return *this;
     }
     ~DTLoaderConstraint() {
-      decrement_if_needed();
+      maybe_decrement_refcount(_name);
     }
 
     bool equals(const DTLoaderConstraint& t) {
@@ -75,23 +88,6 @@ class DumpTimeClassInfo: public CHeapObj<mtClass> {
     Symbol* name()      { return _name;         }
     char loader_type1() { return _loader_type1; }
     char loader_type2() { return _loader_type2; }
-
-private:
-    void copy(const DTLoaderConstraint& src) {
-      _name = src._name;
-      _loader_type1 = src._loader_type1;
-      _loader_type2 = src._loader_type2;
-    }
-    void increment_if_needed() {
-      if (_name != NULL) {
-        _name->increment_refcount();
-      }
-    }
-    void decrement_if_needed() {
-      if (_name != NULL) {
-        _name->decrement_refcount();
-      }
-    }
   };
 
   class DTVerifierConstraint {
@@ -100,19 +96,23 @@ private:
   public:
     DTVerifierConstraint() : _name(NULL), _from_name(NULL) {}
     DTVerifierConstraint(Symbol* n, Symbol* fn) : _name(n), _from_name(fn) {
-      increment_if_needed();
+      maybe_increment_refcount(_name);
+      maybe_increment_refcount(_from_name);
     }
     DTVerifierConstraint(const DTVerifierConstraint& src) {
-      copy(src);
-      increment_if_needed();
+      _name = src._name;
+      _from_name = src._from_name;
+      maybe_increment_refcount(_name);
+      maybe_increment_refcount(_from_name);
     }
-    void operator=(const DTVerifierConstraint& src) {
-      decrement_if_needed();
-      copy(src);
-      increment_if_needed();
+    DTVerifierConstraint& operator=(DTVerifierConstraint src) {
+      swap(_name, src._name); // c++ copy-and-swap idiom
+      swap(_from_name, src._from_name); // c++ copy-and-swap idiom
+      return *this;
     }
     ~DTVerifierConstraint() {
-      decrement_if_needed();
+      maybe_decrement_refcount(_name);
+      maybe_decrement_refcount(_from_name);
     }
     bool equals(Symbol* n, Symbol* fn) {
       return (_name == n) && (_from_name == fn);
@@ -124,28 +124,6 @@ private:
 
     Symbol* name()      { return _name;      }
     Symbol* from_name() { return _from_name; }
-
-  private:
-    void copy(const DTVerifierConstraint& src) {
-      _name = src._name;
-      _from_name = src._from_name;
-    }
-    void increment_if_needed() {
-      if (_name != NULL) {
-        _name->increment_refcount();
-      }
-      if (_from_name != NULL) {
-        _from_name->increment_refcount();
-      }
-    }
-    void decrement_if_needed() {
-      if (_name != NULL) {
-        _name->decrement_refcount();
-      }
-      if (_from_name != NULL) {
-        _from_name->decrement_refcount();
-      }
-    }
   };
 
 public:
