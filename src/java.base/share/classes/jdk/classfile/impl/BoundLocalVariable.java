@@ -25,6 +25,7 @@
 
 package jdk.classfile.impl;
 
+import java.lang.constant.ClassDesc;
 import jdk.classfile.Opcode;
 import jdk.classfile.attribute.LocalVariableInfo;
 import jdk.classfile.constantpool.Utf8Entry;
@@ -50,6 +51,11 @@ public final class BoundLocalVariable
     @Override
     public Utf8Entry type() {
         return secondaryEntry();
+    }
+
+    @Override
+    public ClassDesc typeSymbol() {
+        return ClassDesc.ofDescriptor(type().stringValue());
     }
 
     @Override

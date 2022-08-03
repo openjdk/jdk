@@ -61,7 +61,7 @@ import jdk.classfile.instruction.InvokeInstruction;
 import java.lang.reflect.AccessFlag;
 import jdk.classfile.transforms.LabelsRemapper;
 import jdk.classfile.jdktypes.ModuleDesc;
-import jdk.classfile.util.ClassPrinter;
+import jdk.classfile.ClassPrinter;
 import static java.lang.annotation.ElementType.*;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -184,31 +184,24 @@ public class AdvancedTransformationsTest {
                                 Rec.class.getResourceAsStream(Rec.class.getName() + ".class")
                                         .readAllBytes())));
         var sb = new StringBuilder();
-        ClassPrinter.yamlPrinter(ClassPrinter.VerbosityLevel.TRACE_ALL, sb::append).printClass(remapped);
+        ClassPrinter.toYaml(remapped, ClassPrinter.Verbosity.TRACE_ALL, sb::append);
         String out = sb.toString();
         assertContains(out,
-                "type: 'LAdvancedTransformationsTest$Bar;'",
-                "['AdvancedTransformationsTest$Bar', 'AdvancedTransformationsTest', 'Foo', [PUBLIC, STATIC]]",
-                "descriptor: 'LAdvancedTransformationsTest$Bar;'",
-                "descriptor: '(LAdvancedTransformationsTest$Bar;)V'",
-                "[NEW, {type: 'AdvancedTransformationsTest$Bar'}]",
-                "[INVOKESPECIAL, {owner: 'AdvancedTransformationsTest$Bar', name: '<init>', descriptor: '()V'}]",
-                "[PUTFIELD, {owner: 'AdvancedTransformationsTest$Rec', name: 'foo', descriptor: 'LAdvancedTransformationsTest$Bar;'}]",
-                "[ANEWARRAY, {dimensions: 1, descriptor: 'AdvancedTransformationsTest$Bar'}]",
-                "[PUTSTATIC, {owner: 'AdvancedTransformationsTest$Bar', name: 'fooField', descriptor: 'LAdvancedTransformationsTest$Bar;'}]",
-                "[INVOKESTATIC, {owner: 'AdvancedTransformationsTest$Bar', name: 'fooMethod', descriptor: '(LAdvancedTransformationsTest$Bar;)LAdvancedTransformationsTest$Bar;'}]",
-                "descriptor: '()LAdvancedTransformationsTest$Bar;'",
-                "[GETFIELD, {owner: 'AdvancedTransformationsTest$Rec', name: 'foo', descriptor: 'LAdvancedTransformationsTest$Bar;'}]",
-                "{class: 'LAdvancedTransformationsTest$BarAnno;'}",
-                "{class: 'LAdvancedTransformationsTest$BarAnno;', target type: 'FIELD'}",
-                "{class: 'LAdvancedTransformationsTest$BarAnno;', target type: 'METHOD_RETURN'}",
-                "{class: 'LAdvancedTransformationsTest$BarAnno;', target type: 'NEW'}",
-                "{class: 'LAdvancedTransformationsTest$BarAnno;', target type: 'LOCAL_VARIABLE'}",
-                "#visible type annotation: {class: 'LAdvancedTransformationsTest$BarAnno;', target type: 'NEW'}",
-                "#visible type annotation: {class: 'LAdvancedTransformationsTest$BarAnno;', target type: 'LOCAL_VARIABLE'}");
+                "annotation class: LAdvancedTransformationsTest$BarAnno;",
+                "type: LAdvancedTransformationsTest$Bar;",
+                "inner class: AdvancedTransformationsTest$Bar",
+                "inner class: AdvancedTransformationsTest$BarAnno",
+                "field type: LAdvancedTransformationsTest$Bar;",
+                "method type: (LAdvancedTransformationsTest$Bar;)V",
+                "stack map frame @0: {locals: [THIS, AdvancedTransformationsTest$Bar",
+                "[{annotation class: LAdvancedTransformationsTest$BarAnno;",
+                "INVOKESPECIAL, owner: AdvancedTransformationsTest$Bar",
+                "ANEWARRAY, dimensions: 1, descriptor: AdvancedTransformationsTest$Bar",
+                "PUTSTATIC, owner: AdvancedTransformationsTest$Bar, field name: fooField, field type: LAdvancedTransformationsTest$Bar;",
+                "INVOKESTATIC, owner: AdvancedTransformationsTest$Bar, method name: fooMethod, method type: (LAdvancedTransformationsTest$Bar;)LAdvancedTransformationsTest$Bar",
+                "method type: ()LAdvancedTransformationsTest$Bar;",
+                "GETFIELD, owner: AdvancedTransformationsTest$Rec, field name: foo, field type: LAdvancedTransformationsTest$Bar;");
     }
-
-
 
     private static void assertContains(String actual, String... expected) {
         for (String exp : expected)

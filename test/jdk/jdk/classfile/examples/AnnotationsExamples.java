@@ -39,7 +39,7 @@ import jdk.classfile.ClassTransform;
 import jdk.classfile.Classfile;
 import jdk.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
 import jdk.classfile.constantpool.ConstantPoolBuilder;
-import jdk.classfile.util.ClassPrinter;
+import jdk.classfile.ClassPrinter;
 import org.testng.Assert;
 import org.testng.annotations.Factory;
 import org.testng.annotations.Test;
@@ -154,7 +154,7 @@ public class AnnotationsExamples extends CorpusTestHelper {
         int size = m2.findAttribute(Attributes.RUNTIME_VISIBLE_ANNOTATIONS).orElseThrow().annotations().size();
         if (size !=2) {
             StringBuilder sb = new StringBuilder();
-            ClassPrinter.jsonPrinter(ClassPrinter.VerbosityLevel.TRACE_ALL, sb::append).printClass(m2);
+            ClassPrinter.toJson(m2, ClassPrinter.Verbosity.TRACE_ALL, sb::append);
             System.err.println(sb.toString());
         }
     }

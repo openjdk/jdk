@@ -68,6 +68,6 @@ public class TempConstantPoolBuilderTest {
               );
         });
         ClassModel m = Classfile.parse(bytes);
-        //ClassPrinter.jsonPrinter(ClassPrinter.VerbosityLevel.TRACE_ALL, System.out::println).printClass(m);
+        //ClassPrinter.toJson(m, ClassPrinter.Verbosity.TRACE_ALL, System.out::println);
     }
 }

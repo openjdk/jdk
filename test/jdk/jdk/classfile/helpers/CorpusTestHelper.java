@@ -85,7 +85,7 @@ public class CorpusTestHelper  {
 //        ClassRecord.assertEqualsDeep(
 //                ClassRecord.ofClassModel(ClassModel.of(Files.readAllBytes(root.resolve(targetClassFile)))),
 //                ClassRecord.ofClassModel(ClassModel.of(Files.readAllBytes(root.resolve(sourceClassFile)))));
-//        ClassPrinter.yamlPrinter(ClassPrinter.VerbosityLevel.TRACE_ALL, System.out::print).printClass(ClassModel.of(Files.readAllBytes(root.resolve(targetClassFile))));
+//        ClassPrinter.toYaml(ClassModel.of(Files.readAllBytes(root.resolve(targetClassFile))), ClassPrinter.Verbosity.TRACE_ALL, System.out::print);
     }
 
     @DataProvider(name = "corpus")

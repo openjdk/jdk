@@ -24,6 +24,7 @@
  */
 package jdk.classfile.attribute;
 
+import java.lang.constant.ClassDesc;
 import jdk.classfile.constantpool.Utf8Entry;
 import jdk.classfile.impl.BoundLocalVariable;
 import jdk.classfile.impl.UnboundAttribute;
@@ -55,6 +56,13 @@ sealed public interface LocalVariableInfo
      * {@return the field descriptor of the local variable}
      */
     Utf8Entry type();
+
+    /**
+     * {@return the field descriptor of the local variable}
+     */
+    default ClassDesc typeSymbol() {
+        return ClassDesc.ofDescriptor(type().stringValue());
+    }
 
     /**
      * {@return the index into the local variable array of the current frame

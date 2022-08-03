@@ -44,7 +44,6 @@ import java.lang.constant.ConstantDescs;
 import java.lang.constant.MethodTypeDesc;
 import java.util.List;
 import java.lang.reflect.AccessFlag;
-import jdk.classfile.util.ClassPrinter;
 
 /**
  * StackMapsTest

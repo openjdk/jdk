@@ -30,7 +30,7 @@ import java.util.List;
 import java.util.function.Consumer;
 import jdk.classfile.ClassHierarchyResolver;
 import jdk.classfile.ClassModel;
-import jdk.classfile.util.ClassPrinter;
+import jdk.classfile.ClassPrinter;
 import jdk.classfile.Classfile;
 import jdk.classfile.impl.ClassHierarchyImpl;
 import jdk.classfile.impl.RawBytecodeHelper;
@@ -1826,7 +1826,7 @@ static final char JVM_SIGNATURE_SLASH = '/',
     }
 
     private void dumpMethod() {
-        if (_logger != null) ClassPrinter.yamlPrinter(ClassPrinter.VerbosityLevel.CRITICAL_ATTRIBUTES, _logger).printMethod(_method.m);
+        if (_logger != null) ClassPrinter.toTree(_method.m, ClassPrinter.Verbosity.CRITICAL_ATTRIBUTES).toYaml(_logger);
     }
 
     void verifyError(String msg) {
