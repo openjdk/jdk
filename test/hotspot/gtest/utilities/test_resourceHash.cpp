@@ -289,6 +289,55 @@ TEST_VM_F(GenericResourceHashtableTest, identity_hash_no_rm) {
   Runner<identity_hash, primitive_equals<K>, 1, ResourceObj::C_HEAP>::test(512);
 }
 
+// Simple ResourceHashtable whose key is a Symbol* and value is an int
+// This test is to show that you need to manipulate the refcount of the Symbol to store
+// in the table.
+class SimpleResourceHashtableDeleteTest : public ::testing::Test {
+ public:
+    ResourceHashtable<Symbol*, int, 107, ResourceObj::C_HEAP, mtTest> _simple_test_table;
+
+    class SimpleDeleter : public StackObj {
+      public:
+        bool do_entry(Symbol*& key, int value) {
+          // We need to decrement the refcount for the key in the delete function.
+          // Since we incremented the key, in this case, we should decrement it.
+          key->decrement_refcount();
+          return true;
+        }
+    };
+};
+
+TEST_VM_F(SimpleResourceHashtableDeleteTest, simple_remove) {
+  TempNewSymbol s = SymbolTable::new_symbol("abcdefg_simple");
+  int s_orig_count = s->refcount();
+  // Need to increment a Symbol* when you keep it in a table.
+  s->increment_refcount();
+  _simple_test_table.put(s, 55);
+  ASSERT_EQ(s->refcount(), s_orig_count + 1) << "refcount should be incremented in table";
+
+  // Deleting this value from a hashtable
+  _simple_test_table.remove(s);
+  // Now decrement the refcount for s since it's no longer in the table.
+  s->decrement_refcount();
+  ASSERT_EQ(s->refcount(), s_orig_count) << "refcount should be same as start";
+}
+
+TEST_VM_F(SimpleResourceHashtableDeleteTest, simple_delete) {
+  TempNewSymbol s = SymbolTable::new_symbol("abcdefg_simple");
+  int s_orig_count = s->refcount();
+  // Need to increment a Symbol* when you keep it in a table.
+  s->increment_refcount();
+  _simple_test_table.put(s, 66);
+  ASSERT_EQ(s->refcount(), s_orig_count + 1) << "refcount should be incremented in table";
+
+  // Use unlink to remove the matching (or all) values from the table.
+  SimpleDeleter deleter;
+  _simple_test_table.unlink(&deleter);
+  ASSERT_EQ(s->refcount(), s_orig_count) << "refcount should be same as start";
+}
+
+// More complicated ResourceHashtable with Symbol* as the key. Since the *same* Symbol is part
+// of the value, it's not necessary to maniuplate the refcount of the key, but you must in the value.
 class ResourceHashtableDeleteTest : public ::testing::Test {
  public:
     class TestValue : public CHeapObj<mtTest> {
@@ -314,13 +363,12 @@ class ResourceHashtableDeleteTest : public ::testing::Test {
         Symbol* s() const { return _s; }
     };
 
-    // ResourceHashtable whose value is a copy of TestValue.
+    // ResourceHashtable whose value is a *copy* of TestValue.
     ResourceHashtable<Symbol*, TestValue, 107, ResourceObj::C_HEAP, mtTest> _test_table;
 
     class Deleter : public StackObj {
       public:
         bool do_entry(Symbol*& key, TestValue& value) {
-          // decrement the refcount in key or not?
           // Since we didn't increment the key, we shouldn't decrement it.
           // Calling delete on the hashtable Node which contains value will
           // decrement the refcount.  That's actually best since the whole
@@ -335,81 +383,32 @@ class ResourceHashtableDeleteTest : public ::testing::Test {
     class PtrDeleter : public StackObj {
       public:
         bool do_entry(Symbol*& key, TestValue*& value) {
-          // decrement the refcount in key or not?
-          // Since we incremented the key, in this case, we should decrement it.
-          key->decrement_refcount();
           // If the hashtable value is a pointer, need to delete it from here.
+          // This will also potentially make the refcount of the Key = 0, but the
+          // next thing that happens is that the hashtable node is deleted so this is ok.
           delete value;
-          // The risk is that if this is the last reference to the key, it'll be
-          // pointed to in the table with refcount 0.
-          // But the node is going to be deleted next anyway, so a pointer to dead data
-          // is ok?
-          return true;
-        }
-    };
-
-    // Simple ResourceHashtable whose value is an int
-    ResourceHashtable<Symbol*, int, 107, ResourceObj::C_HEAP, mtTest> _simple_test_table;
-
-    class SimpleDeleter : public StackObj {
-      public:
-        bool do_entry(Symbol*& key, int value) {
-          // We need to decrement the refcount for the key in the delete function.
-          // Since we incremented the key, in this case, we should decrement it.
-          key->decrement_refcount();
           return true;
         }
     };
 };
 
-TEST_VM_F(ResourceHashtableDeleteTest, simple_remove) {
-  TempNewSymbol s = SymbolTable::new_symbol("abcdefg_simple");
-  int s_orig_count = s->refcount();
-  // Need to increment a Symbol* when you keep it in a table.
-  s->increment_refcount();
-  _simple_test_table.put(s, 55);
-  ASSERT_EQ(s->refcount(), s_orig_count + 1) << "refcount should be incremented in table";
-
-  // Deleting this value from a hashtable
-  _simple_test_table.remove(s);
-  // Now decrement the refcount for s since it's no longer in the table.
-  s->decrement_refcount();
-  ASSERT_EQ(s->refcount(), s_orig_count) << "refcount should be same as start";
-}
-
-TEST_VM_F(ResourceHashtableDeleteTest, simple_delete) {
-  TempNewSymbol s = SymbolTable::new_symbol("abcdefg_simple");
-  int s_orig_count = s->refcount();
-  // Need to increment a Symbol* when you keep it in a table.
-  s->increment_refcount();
-  _simple_test_table.put(s, 55);
-  ASSERT_EQ(s->refcount(), s_orig_count + 1) << "refcount should be incremented in table";
-
-  // Use unlink to remove the matching (or all) values from the table.
-  SimpleDeleter deleter;
-  _simple_test_table.unlink(&deleter);
-  ASSERT_EQ(s->refcount(), s_orig_count) << "refcount should be same as start";
-}
 
 TEST_VM_F(ResourceHashtableDeleteTest, value_remove) {
   TempNewSymbol s = SymbolTable::new_symbol("abcdefg");
   int s_orig_count = s->refcount();
   {
     TestValue tv(s);
-    // If you use a Symbol* as key in the ResourceHashtable, you must increment the
-    // refcount outside the hashtable functions.
-    s->increment_refcount();
+    // Since TestValue contains the pointer to the key, it will handle the
+    // refcounting.
     _test_table.put(s, tv);
-    ASSERT_EQ(s->refcount(), s_orig_count + 3) << "refcount incremented";
+    ASSERT_EQ(s->refcount(), s_orig_count + 2) << "refcount incremented by copy";
   }
-  ASSERT_EQ(s->refcount(), s_orig_count + 2) << "refcount not copied";
+  ASSERT_EQ(s->refcount(), s_orig_count + 1) << "refcount incremented in table";
 
   // Deleting this value from a hashtable calls the destructor!
   _test_table.remove(s);
-  // Now decrement the refcount for s since it's no longer in the table.
-  s->decrement_refcount();
   // Removal should make the refcount be the original refcount.
-  ASSERT_EQ(s->refcount(), s_orig_count) << "refcount now decremented";
+  ASSERT_EQ(s->refcount(), s_orig_count) << "refcount should be as we started";
 }
 
 TEST_VM_F(ResourceHashtableDeleteTest, value_delete) {
@@ -417,12 +416,12 @@ TEST_VM_F(ResourceHashtableDeleteTest, value_delete) {
   int d_orig_count = d->refcount();
   {
     TestValue tv(d);
-    // On the other hand, if the Key Symbol* is already a member of the entry, it's not strictly
-    // necessary to increment the refcount on the symbol.
+    // Same as above, but the do_entry does nothing because the value is deleted when the
+    // hashtable node is deleted.
     _test_table.put(d, tv);
-    ASSERT_EQ(d->refcount(), d_orig_count + 2) << "refcount incremented";
+    ASSERT_EQ(d->refcount(), d_orig_count + 2) << "refcount incremented by copy";
   }
-  ASSERT_EQ(d->refcount(), d_orig_count + 1) << "refcount incremented";
+  ASSERT_EQ(d->refcount(), d_orig_count + 1) << "refcount incremented in table";
   Deleter deleter;
   _test_table.unlink(&deleter);
   ASSERT_EQ(d->refcount(), d_orig_count) << "refcount should be as we started";
@@ -433,18 +432,17 @@ TEST_VM_F(ResourceHashtableDeleteTest, check_delete_ptr) {
   int s_orig_count = s->refcount();
   {
     TestValue* tv = new TestValue(s);
-    // If you use a Symbol* as key in the ResourceHashtable, you must increment the
-    // refcount outside the hashtable functions.
-    s->increment_refcount();
+    // Again since TestValue contains the pointer to the key Symbol, it will
+    // handle the refcounting.
     _ptr_test_table.put(s, tv);
-    ASSERT_EQ(s->refcount(), s_orig_count + 2) << "refcount incremented";
+    ASSERT_EQ(s->refcount(), s_orig_count + 1) << "refcount incremented by allocation";
   }
-  ASSERT_EQ(s->refcount(), s_orig_count + 2) << "refcount not copied";
+  ASSERT_EQ(s->refcount(), s_orig_count + 1) << "refcount incremented in table";
 
   // Deleting this pointer value from a hashtable must call the destructor in the
   // do_entry function.
   PtrDeleter deleter;
   _ptr_test_table.unlink(&deleter);
   // Removal should make the refcount be the original refcount.
-  ASSERT_EQ(s->refcount(), s_orig_count) << "refcount now decremented";
+  ASSERT_EQ(s->refcount(), s_orig_count) << "refcount should be as we started";
 }
