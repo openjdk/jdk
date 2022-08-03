@@ -206,9 +206,9 @@ void DependencyContext::clean_unloading_dependents() {
 }
 
 nmethodBucket* DependencyContext::release_and_get_next_not_unloading(nmethodBucket* b) {
-     nmethodBucket* next = b->next_not_unloading();
-     release(b);
-     return next;
+  nmethodBucket* next = b->next_not_unloading();
+  release(b);
+  return next;
  }
 
 //
@@ -221,22 +221,22 @@ void DependencyContext::remove_all_dependents() {
 
 int DependencyContext::remove_and_mark_for_deoptimization_all_dependents() {
   nmethodBucket* b = dependencies_not_unloading();
-   set_dependencies(NULL);
-   int marked = 0;
-   int removed = 0;
-   while (b != NULL) {
-     nmethod* nm = b->get_nmethod();
-     if (b->count() > 0 && nm->is_alive() && !nm->is_marked_for_deoptimization()) {
-       nm->mark_for_deoptimization();
-       marked++;
-     }
-     b = release_and_get_next_not_unloading(b);
-     removed++;
-   }
-   if (UsePerfData && removed > 0) {
-     _perf_total_buckets_deallocated_count->inc(removed);
-   }
-   return marked;
+  set_dependencies(NULL);
+  int marked = 0;
+  int removed = 0;
+  while (b != NULL) {
+    nmethod* nm = b->get_nmethod();
+    if (b->count() > 0 && nm->is_alive() && !nm->is_marked_for_deoptimization()) {
+      nm->mark_for_deoptimization();
+      marked++;
+    }
+    b = release_and_get_next_not_unloading(b);
+    removed++;
+  }
+  if (UsePerfData && removed > 0) {
+    _perf_total_buckets_deallocated_count->inc(removed);
+  }
+  return marked;
  }
 
 #ifndef PRODUCT
