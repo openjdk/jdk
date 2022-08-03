@@ -101,8 +101,8 @@ instanceOop MemoryManager::get_memory_manager_instance(TRAPS) {
     }
 
     if (k == nullptr) {
-      THROW_MSG_(vmSymbols::java_lang_IllegalArgumentException(),
-                 "This GCMemoryManager doesn't have a GarbageCollectorMXBean", NULL);
+      fatal("Should have the ManagementFactoryHelper or GarbageCollectorExtImpl class");
+      return nullptr; // silence the compiler
     }
 
     InstanceKlass* ik = InstanceKlass::cast(k);

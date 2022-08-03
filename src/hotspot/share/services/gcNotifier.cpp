@@ -83,7 +83,7 @@ static Handle getGcInfoBuilder(GCMemoryManager *gcManager,TRAPS) {
 
   Klass* gcMBeanKlass = Management::com_sun_management_internal_GarbageCollectorExtImpl_klass(CHECK_NH);
 
-  instanceOop i = gcManager->get_memory_manager_instance(CHECK_NH);
+  instanceOop i = gcManager->get_memory_manager_instance(THREAD);
   instanceHandle ih(THREAD, i);
 
   JavaValue result(T_OBJECT);
@@ -201,7 +201,7 @@ void GCNotifier::sendNotificationInternal(TRAPS) {
     Handle objCause = java_lang_String::create_from_str(request->gcCause, CHECK);
     InstanceKlass* gc_mbean_klass = Management::com_sun_management_internal_GarbageCollectorExtImpl_klass(CHECK);
 
-    instanceOop gc_mbean = request->gcManager->get_memory_manager_instance(CHECK);
+    instanceOop gc_mbean = request->gcManager->get_memory_manager_instance(THREAD);
     instanceHandle gc_mbean_h(THREAD, gc_mbean);
     if (!gc_mbean_h->is_a(gc_mbean_klass)) {
       THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),

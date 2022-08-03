@@ -463,9 +463,10 @@ void DCmdFactory::send_notification_internal(TRAPS) {
 
     Klass* k = Management::com_sun_management_internal_DiagnosticCommandImpl_klass(CHECK);
     if (k == nullptr) {
-      THROW_MSG(vmSymbols::java_lang_IllegalStateException(),
-                "DiagnosticCommandImpl is not available");
+      fatal("Should have the DiagnosticCommandImpl class");
+      return; // silence the compiler
     }
+
     InstanceKlass* dcmd_mbean_klass = InstanceKlass::cast(k);
 
     JavaValue result(T_OBJECT);
