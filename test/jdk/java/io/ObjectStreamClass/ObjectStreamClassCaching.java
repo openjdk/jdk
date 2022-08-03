@@ -65,6 +65,15 @@ import static org.testng.Assert.assertTrue;
  * @summary ObjectStreamClass caches keep ClassLoaders alive (Shenandoah GC)
  * @run testng/othervm -Xmx64m -XX:+UseShenandoahGC ObjectStreamClassCaching
  */
+
+/*
+ * @test id=with_SerialGC
+ * @requires vm.gc.Serial
+ * @bug 8277072
+ * @library /test/lib/
+ * @summary ObjectStreamClass caches keep ClassLoaders alive (Serial GC)
+ * @run testng/othervm -Xmx64m -XX:+UseSerialGC ObjectStreamClassCaching
+ */
 public class ObjectStreamClassCaching {
 
     /**
