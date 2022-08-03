@@ -43,7 +43,7 @@ final class CloneFile {
      * {@code IOStatus.UNSUPPORTED}.
      *
      * @param src the path of the source file
-     * @param dst the path of the desintation file (clone)
+     * @param dst the path of the destination file (clone)
      * @param followLinks whether to follow links
      *
      * @return 0 on success, IOStatus.UNSUPPORTED_CASE if the call does not work
