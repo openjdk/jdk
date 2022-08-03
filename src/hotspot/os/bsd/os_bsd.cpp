@@ -1474,14 +1474,6 @@ void os::jvm_path(char *buf, jint buflen) {
   saved_jvm_path[MAXPATHLEN - 1] = '\0';
 }
 
-void os::print_jni_name_prefix_on(outputStream* st, int args_size) {
-  // no prefix required, not even "_"
-}
-
-void os::print_jni_name_suffix_on(outputStream* st, int args_size) {
-  // no suffix required
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 // Virtual Memory
 
@@ -1991,15 +1983,18 @@ jint os::init_2(void) {
       log_info(os)("os::init_2 getrlimit failed: %s", os::strerror(errno));
     } else {
       nbr_files.rlim_cur = nbr_files.rlim_max;
-
-#ifdef __APPLE__
-      // Darwin returns RLIM_INFINITY for rlim_max, but fails with EINVAL if
-      // you attempt to use RLIM_INFINITY. As per setrlimit(2), OPEN_MAX must
-      // be used instead
-      nbr_files.rlim_cur = MIN(OPEN_MAX, nbr_files.rlim_cur);
-#endif
-
       status = setrlimit(RLIMIT_NOFILE, &nbr_files);
+#ifdef __APPLE__
+      if (status != 0 && errno == EINVAL) {
+        // On macOS >= 10.6 if we define _DARWIN_UNLIMITED_STREAMS or _DARWIN_C_SOURCE
+        // (we define _DARWIN_C_SOURCE) we can ask for RLIM_INFINITY,
+        // however, on macOS < 10.6 Darwin returns RLIM_INFINITY for rlim_max,
+        // but fails with EINVAL if you attempt to use RLIM_INFINITY.
+        // As per setrlimit(2), OPEN_MAX must be used instead.
+        nbr_files.rlim_cur = MIN(OPEN_MAX, nbr_files.rlim_cur);
+        status = setrlimit(RLIMIT_NOFILE, &nbr_files);
+      }
+#endif // __APPLE__
       if (status != 0) {
         log_info(os)("os::init_2 setrlimit failed: %s", os::strerror(errno));
       }
