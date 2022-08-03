@@ -72,7 +72,7 @@ address Relocation::pd_call_destination(address orig_addr) {
   return NULL;
 }
 
-void Relocation::pd_set_call_destination(address x, bool) {
+void Relocation::pd_set_call_destination(address x, bool is_final_patch) {
   address pc = addr();
   NativeInstruction* ni = nativeInstruction_at(pc);
 

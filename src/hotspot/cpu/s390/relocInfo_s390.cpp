@@ -119,7 +119,7 @@ address Relocation::pd_call_destination(address orig_addr) {
   return (address) nativeMovConstReg_at(inst_addr)->data();
 }
 
-void Relocation::pd_set_call_destination(address x, bool) {
+void Relocation::pd_set_call_destination(address x, bool is_final_patch) {
   address inst_addr = addr();
 
   if (NativeFarCall::is_far_call_at(inst_addr)) {

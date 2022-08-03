@@ -123,6 +123,8 @@ define_pd_global(intx, InlineSmallCode,          1000);
           range(1, 99)                                                  \
   product(ccstr, UseBranchProtection, "none",                           \
           "Branch Protection to use: none, standard, pac-ret")          \
+  product(bool, PatchFarBranch, true,                                   \
+          "Patch far branches with direct branches")                    \
 
 // end of ARCH_FLAGS
 

@@ -93,6 +93,7 @@ public class TestFarJump {
             "-XX:ReservedCodeCacheSize=" + (bigCodeHeap ? "256M" : "200M"),
             "-XX:+UnlockDiagnosticVMOptions",
             "-XX:+PrintAssembly",
+            "-XX:-PatchFarBranch",
             className};
 
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(procArgs);

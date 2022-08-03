@@ -372,19 +372,23 @@ public:
   FinalPatcher(address insn_addr) : Patcher(insn_addr) {}
 
   virtual int adrp(address insn_addr, address &target, reloc_insn inner) {
-    if ((insn_addr < target + Assembler::branch_range && target < insn_addr + Assembler::branch_range)
-      && (inner == Patcher::adrpAdd_impl)
-      && Instruction_aarch64::extract(insn_at(insn_addr, 2), 31, 10) == 0b1101011000011111000000) {
-      int instructions = 3;
 #ifdef ASSERT
-      assert(Instruction_aarch64::extract(_insn, 28, 24) == 0b10000, "must be");
+    assert(Instruction_aarch64::extract(_insn, 28, 24) == 0b10000, "must be");
 #endif
-      precond(inner != nullptr);
-      Instruction_aarch64::patch(insn_addr, 31, 26, 0b000101);                      // b
-      Instruction_aarch64::spatch(insn_addr, 25, 0, (target - insn_addr) >> 2);
-      Instruction_aarch64::patch(insn_addr + 4, 31, 10, 0b1101011000011111000000);  // nop
-      Instruction_aarch64::patch(insn_addr + 8, 31, 10, 0b1101011000011111000000);  // nop
-      return instructions;
+    constexpr uint32_t nop = 0b11010101000000110010000000011111;
+    if (Assembler::reachable_from_branch_at(insn_addr + 8, target) && inner == Patcher::adrpAdd_impl) {
+      Instruction_aarch64::patch(insn_addr,     31, 0, nop);
+      Instruction_aarch64::patch(insn_addr + 4, 31, 0, nop);
+
+      if (Instruction_aarch64::extract(insn_at(insn_addr, 2), 31, 10) == 0b1101011000011111000000) {
+        Instruction_aarch64::patch(insn_addr + 8, 31, 26, 0b000101);  // b
+        unconditionalBranch(insn_addr + 8, target);
+      } else {
+        assert(Instruction_aarch64::extract(insn_at(insn_addr, 2), 31, 10) == 0b1101011000111111000000, "blr");
+        Instruction_aarch64::patch(insn_addr + 8, 31, 26, 0b100101);  // bl
+        unconditionalBranch(insn_addr + 8, target);
+      }
+      return 3;
     } else {
       return Patcher::adrp(insn_addr, target, inner);
     }
@@ -432,9 +436,16 @@ public:
     return 1;
   }
   virtual int conditionalBranch(address insn_addr, address &target) {
-    intptr_t offset = Instruction_aarch64::sextract(_insn, 23, 5);
-    target = address(((uint64_t)insn_addr + (offset << 2)));
-    return 1;
+    constexpr uint32_t nop = 0b11010101000000110010000000011111;
+    if (Instruction_aarch64::extract(_insn, 31, 0) != nop) {
+      intptr_t offset = Instruction_aarch64::sextract(_insn, 23, 5);
+      target = address(((uint64_t)insn_addr + (offset << 2)));
+      return 1;
+    } else {
+      assert(Instruction_aarch64::extract(insn_at(1), 31, 0) == nop, "nop");
+      target = address((uint64_t)insn_addr + 8 + (Instruction_aarch64::sextract(insn_at(2), 25, 0) << 2));
+      return 3;
+    }
   }
   virtual int testAndBranch(address insn_addr, address &target) {
     intptr_t offset = Instruction_aarch64::sextract(_insn, 18, 5);
@@ -524,7 +535,7 @@ address MacroAssembler::target_addr_for_insn(address insn_addr, uint32_t insn) {
 // Patch any kind of instruction; there may be several instructions.
 // Return the total length (in bytes) of the instructions.
 int MacroAssembler::pd_patch_instruction_size(address insn_addr, address target, bool is_final_patch) {
-  if (!is_final_patch) {
+  if (!is_final_patch || !PatchFarBranch) {
     Patcher patcher(insn_addr);
     return patcher.run(insn_addr, target);
   } else {
