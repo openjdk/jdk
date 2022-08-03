@@ -69,29 +69,32 @@ public class XPathNodeSetFnTest extends XPathTestBase {
                 {"count(//Customer)", CUSTOMERS},
                 {"count(//@id)", ID_ATTRIBUTES},
                 {"count(//Customer/@id)", CUSTOMERS},
-                {"count(//@*)", ID_ATTRIBUTES + FOO_ID_ATTRIBUTES},
+                {"count(//@*)",
+                        LANG_ATTRIBUTES + ID_ATTRIBUTES + FOO_ID_ATTRIBUTES},
                 {"count(//*)",
                         ROOT + CUSTOMERS + FOO_CUSTOMERS +
                                 (CUSTOMERS + FOO_CUSTOMERS) *
-                                        CUSTOMER_ELEMENTS},
+                                        (CUSTOMER_ELEMENTS + ADDRESS_ELEMENTS)},
                 {"count(//*[@id])", ID_ATTRIBUTES},
                 {"count(./*)", ROOT},
                 {"count(//Customer[1]/following::*)",
                         CUSTOMERS - 1 + FOO_CUSTOMERS +
                                 (CUSTOMERS - 1 + FOO_CUSTOMERS) *
-                                        CUSTOMER_ELEMENTS},
+                                        (CUSTOMER_ELEMENTS + ADDRESS_ELEMENTS)},
                 {"count(//Customer[1]/following-sibling::*)",
                         CUSTOMERS - 1 + FOO_CUSTOMERS},
                 {"count(//Customer[3]/preceding::*)",
-                        CUSTOMERS - 1 + (CUSTOMERS - 1) * CUSTOMER_ELEMENTS},
+                        CUSTOMERS - 1 + (CUSTOMERS - 1) * (CUSTOMER_ELEMENTS + ADDRESS_ELEMENTS)},
                 {"count(//Customer[3]/preceding-sibling::*)", CUSTOMERS - 1},
                 {"count(//Customer[1]/ancestor::*)", ROOT},
                 {"count(//Customer[1]/ancestor-or-self::*)", ROOT + 1},
-                {"count(//Customer[1]/descendant::*)", CUSTOMER_ELEMENTS},
+                {"count(//Customer[1]/descendant::*)", CUSTOMER_ELEMENTS + ADDRESS_ELEMENTS},
                 {"count(//Customer[1]/descendant-or-self::*)",
-                        CUSTOMER_ELEMENTS + 1},
+                        CUSTOMER_ELEMENTS + ADDRESS_ELEMENTS + 1},
+                // node() returns all children of the context node including
+                // element nodes and text nodes.
                 {"count(//Customer/node())",
-                        ID_ATTRIBUTES + CUSTOMERS * CUSTOMER_ELEMENTS},
+                        CUSTOMERS + CUSTOMERS * (CUSTOMER_ELEMENTS * 2)},
         };
     }
 

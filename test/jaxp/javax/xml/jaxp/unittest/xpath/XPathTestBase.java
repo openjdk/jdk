@@ -52,11 +52,13 @@ class XPathTestBase {
     static final String DTD = """
             <!DOCTYPE Customers [
                <!ELEMENT Customers (Customer*)>
-               <!ELEMENT Customer (Name, Phone, Email, Address)>
+               <!ELEMENT Customer (Name, Phone, Email, Address, Age, ClubMember)>
                <!ELEMENT Name (#PCDATA)>
                <!ELEMENT Phone (#PCDATA)>
                <!ELEMENT Email (#PCDATA)>
                <!ELEMENT Address (Street, City, State)>
+               <!ELEMENT Age (#PCDATA)>
+               <!ELEMENT ClubMember (#PCDATA)>
                <!ELEMENT Street (#PCDATA)>
                <!ELEMENT City (#PCDATA)>
                <!ELEMENT State (#PCDATA)>
@@ -67,7 +69,7 @@ class XPathTestBase {
             """;
 
     static final String RAW_XML
-            = "<Customers xmlns:foo=\"foo\">"
+            = "<Customers xmlns:foo=\"foo\" xml:lang=\"en\">"
             + "    <Customer id=\"x1\">"
             + "        <Name>name1</Name>"
             + "        <Phone>1111111111</Phone>"
@@ -77,16 +79,20 @@ class XPathTestBase {
             + "            <City>The City</City>"
             + "            <State>The State</State>"
             + "        </Address>"
+            + "        <Age>0</Age>"
+            + "        <ClubMember>true</ClubMember>"
             + "    </Customer>"
             + "    <Customer id=\"x2\">"
             + "        <Name>name2</Name>"
             + "        <Phone>2222222222</Phone>"
             + "        <Email id=\"y\">123@xyz.com</Email>"
             + "        <Address>"
-            + "            <Street>2222 222nd ave</Street>"
+            + "            <Street>  2222 222nd ave  </Street>"
             + "            <City>The City</City>"
             + "            <State>The State</State>"
             + "        </Address>"
+            + "        <Age>1.0</Age>"
+            + "        <ClubMember>false</ClubMember>"
             + "    </Customer>"
             + "    <Customer id=\"x3\">"
             + "        <Name>name3</Name>"
@@ -97,6 +103,8 @@ class XPathTestBase {
             + "            <City>The City</City>"
             + "            <State>The State</State>"
             + "        </Address>"
+            + "        <Age>-1.0</Age>"
+            + "        <ClubMember>false</ClubMember>"
             + "    </Customer>"
             + "    <foo:Customer foo:id=\"x1\">"
             + "        <foo:Name>name1</foo:Name>"
@@ -107,17 +115,22 @@ class XPathTestBase {
             + "            <foo:City>The City</foo:City>"
             + "            <foo:State>The State</foo:State>"
             + "        </foo:Address>"
+            + "        <foo:Age>0</foo:Age>"
+            + "        <foo:ClubMember>true</foo:ClubMember>"
             + "    </foo:Customer>"
             + "</Customers>";
 
     // Number of root element.
     final int ROOT = 1;
     // Number of Customer elements.
+    final int LANG_ATTRIBUTES = 1;
     final int CUSTOMERS = 3;
     // Number of id attributes.
     final int ID_ATTRIBUTES = 6;
     // Number of child elements of Customer.
-    final int CUSTOMER_ELEMENTS = 7;
+    final int CUSTOMER_ELEMENTS = 6;
+    // Number of Address elements.
+    final int ADDRESS_ELEMENTS = 3;
     // Number of Customer in the foo namespace.
     final int FOO_CUSTOMERS = 1;
     // Number of id attributes in the foo namespace.
