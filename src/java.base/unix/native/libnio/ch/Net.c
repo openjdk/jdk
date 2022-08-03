@@ -159,12 +159,10 @@ JNIEXPORT jboolean JNICALL
 Java_sun_nio_ch_Net_shouldSetBothIPv4AndIPv6Options0(JNIEnv* env, jclass cl)
 {
 #if defined(__linux__)
-    /* Set both IPv4 and IPv6 socket options when setting multicast
-        and dontfragment options */
+    /* Set both IPv4 and IPv6 socket options when setting multicast options */
     return JNI_TRUE;
 #else
-    /* Do not set both IPv4 and IPv6 socket options when setting multicast
-        and dontfragment options */
+    /* Do not set both IPv4 and IPv6 socket options when setting multicast options */
     return JNI_FALSE;
 #endif
 }
