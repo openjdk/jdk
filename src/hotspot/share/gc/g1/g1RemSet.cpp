@@ -1668,12 +1668,13 @@ bool G1RemSet::clean_card_before_refine(CardValue** const card_ptr_addr) {
     } else if (card_ptr != orig_card_ptr) {
       // Original card was inserted and an old card was evicted.
       start = _ct->addr_for(card_ptr);
-      r = _g1h->heap_region_containing(start);
+      r = _g1h->heap_region_containing_or_null(start);
 
       // Check whether the region formerly in the cache should be
       // ignored, as discussed earlier for the original card.  The
-      // region could have been freed while in the cache.
-      if (!r->is_old_or_humongous_or_archive()) {
+      // region could have been freed (or even uncommitted) while
+      // in the cache.
+      if (r == nullptr || !r->is_old_or_humongous_or_archive()) {
         return false;
       }
       *card_ptr_addr = card_ptr;
