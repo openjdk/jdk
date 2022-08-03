@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
 
 /*
- * @test id=with_G1GC
+ * @test id=G1
  * @requires vm.gc.G1
  * @bug 8277072
  * @library /test/lib/
@@ -40,7 +40,7 @@ import static org.testng.Assert.assertTrue;
  */
 
 /*
- * @test id=with_ParallelGC
+ * @test id=Parallel
  * @requires vm.gc.Parallel
  * @bug 8277072
  * @library /test/lib/
@@ -49,7 +49,7 @@ import static org.testng.Assert.assertTrue;
  */
 
 /*
- * @test id=with_ZGC
+ * @test id=Z
  * @requires vm.gc.Z
  * @bug 8277072
  * @library /test/lib/
@@ -58,7 +58,7 @@ import static org.testng.Assert.assertTrue;
  */
 
 /*
- * @test id=with_ShenandoahGC
+ * @test id=Shenandoah
  * @requires vm.gc.Shenandoah
  * @bug 8277072
  * @library /test/lib/
@@ -67,7 +67,7 @@ import static org.testng.Assert.assertTrue;
  */
 
 /*
- * @test id=with_SerialGC
+ * @test id=Serial
  * @requires vm.gc.Serial
  * @bug 8277072
  * @library /test/lib/
@@ -98,10 +98,8 @@ public class ObjectStreamClassCaching {
             oome = true;
         }
         assertFalse(oome, "WeakReference was not cleared although memory was pressed hard");
-        assertFalse(
-            ref1.refersTo(null),
-            "Cache lost entry together with WeakReference being cleared although memory was not under pressure"
-        );
+        assertFalse(ref1.refersTo(null),
+                    "Cache lost entry together with WeakReference being cleared although memory was not under pressure");
         System.gc();
         Thread.sleep(100L);
     }
