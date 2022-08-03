@@ -218,6 +218,9 @@ public:
   // Register a new class loader
   static ClassLoaderData* register_loader(Handle class_loader, bool create_mirror_cld = false);
 
+  static void set_system_loader(ClassLoaderData *cld);
+  static void set_platform_loader(ClassLoaderData *cld);
+
   static Symbol* check_signature_loaders(Symbol* signature, Klass* klass_being_linked,
                                          Handle loader1, Handle loader2, bool is_method);
 

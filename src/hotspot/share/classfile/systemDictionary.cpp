@@ -122,21 +122,26 @@ oop SystemDictionary::java_platform_loader() {
 void SystemDictionary::compute_java_loaders(TRAPS) {
   JavaValue result(T_OBJECT);
   InstanceKlass* class_loader_klass = vmClasses::ClassLoader_klass();
-  JavaCalls::call_static(&result,
-                         class_loader_klass,
-                         vmSymbols::getSystemClassLoader_name(),
-                         vmSymbols::void_classloader_signature(),
-                         CHECK);
 
-  _java_system_loader = OopHandle(Universe::vm_global(), result.get_oop());
+  if (_java_system_loader.is_empty()) {
+    JavaCalls::call_static(&result,
+                           class_loader_klass,
+                           vmSymbols::getSystemClassLoader_name(),
+                           vmSymbols::void_classloader_signature(),
+                           CHECK);
 
-  JavaCalls::call_static(&result,
-                         class_loader_klass,
-                         vmSymbols::getPlatformClassLoader_name(),
-                         vmSymbols::void_classloader_signature(),
-                         CHECK);
+    _java_system_loader = OopHandle(Universe::vm_global(), result.get_oop());
+  }
 
-  _java_platform_loader = OopHandle(Universe::vm_global(), result.get_oop());
+  if (_java_platform_loader.is_empty()) {
+    JavaCalls::call_static(&result,
+                           class_loader_klass,
+                           vmSymbols::getPlatformClassLoader_name(),
+                           vmSymbols::void_classloader_signature(),
+                           CHECK);
+
+    _java_platform_loader = OopHandle(Universe::vm_global(), result.get_oop());
+  }
 }
 
 ClassLoaderData* SystemDictionary::register_loader(Handle class_loader, bool create_mirror_cld) {
@@ -146,6 +151,18 @@ ClassLoaderData* SystemDictionary::register_loader(Handle class_loader, bool cre
   } else {
     return (class_loader() == NULL) ? ClassLoaderData::the_null_class_loader_data() :
                                       ClassLoaderDataGraph::find_or_create(class_loader);
+  }
+}
+
+void SystemDictionary::set_system_loader(ClassLoaderData *cld) {
+  if (_java_system_loader.is_empty()) {
+    _java_system_loader = cld->class_loader_handle();
+  }
+}
+
+void SystemDictionary::set_platform_loader(ClassLoaderData *cld) {
+  if (_java_platform_loader.is_empty()) {
+    _java_platform_loader = cld->class_loader_handle();
   }
 }
 

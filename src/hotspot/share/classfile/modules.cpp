@@ -499,9 +499,11 @@ void Modules::define_archived_modules(Handle h_platform_loader, Handle h_system_
   }
 
   ClassLoaderData* platform_loader_data = SystemDictionary::register_loader(h_platform_loader);
+  SystemDictionary::set_platform_loader(platform_loader_data);
   ClassLoaderDataShared::restore_java_platform_loader_from_archive(platform_loader_data);
 
   ClassLoaderData* system_loader_data = SystemDictionary::register_loader(h_system_loader);
+  SystemDictionary::set_system_loader(system_loader_data);
   ClassLoaderDataShared::restore_java_system_loader_from_archive(system_loader_data);
 }
 
