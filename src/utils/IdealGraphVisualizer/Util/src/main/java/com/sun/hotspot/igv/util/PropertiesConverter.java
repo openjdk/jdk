@@ -28,7 +28,7 @@ import com.sun.hotspot.igv.data.Properties;
 import com.sun.hotspot.igv.data.Property;
 
 /**
- * 
+ *
  * @author ksakata
  */
 public class PropertiesConverter {
