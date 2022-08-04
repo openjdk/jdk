@@ -49,6 +49,7 @@ public class DeconstructionDesugaring {
         assertEquals(1, task.applyAsInt(new R1(new R2(""))));
         assertEquals(2, task.applyAsInt(new R1(new R2(1))));
         assertEquals(3, task.applyAsInt(new R1(new R2(1.0))));
+        assertEquals(-1, task.applyAsInt(new R1(new R2(null))));
         assertEquals(4, task.applyAsInt(new R1(new R2(new StringBuilder()))));
         assertEquals(5, task.applyAsInt(new R1(new R3(""))));
         assertEquals(6, task.applyAsInt(new R1(new R3(1))));

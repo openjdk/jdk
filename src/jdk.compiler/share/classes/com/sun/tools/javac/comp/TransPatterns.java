@@ -746,7 +746,7 @@ public class TransPatterns extends TreeTranslator {
                                 accList.tail.isEmpty();
                         List<JCCaseLabel> newLabel;
                         if (hasUnconditional) {
-                            newLabel = List.of(make.ConstantCaseLabel(makeLit(syms.botType, 0)),
+                            newLabel = List.of(make.ConstantCaseLabel(makeNull()),
                                                make.DefaultCaseLabel());
                         } else {
                             newLabel = List.of(make.PatternCaseLabel(binding, newGuard));
@@ -757,7 +757,8 @@ public class TransPatterns extends TreeTranslator {
                         JCContinue continueSwitch = make.Continue(null);
                         continueSwitch.target = currentSwitch;
                         nestedCases.add(make.Case(CaseKind.STATEMENT,
-                                                  List.of(make.DefaultCaseLabel()),
+                                                  List.of(make.ConstantCaseLabel(makeNull()),
+                                                          make.DefaultCaseLabel()),
                                                   List.of(continueSwitch),
                                                   null));
                     }
