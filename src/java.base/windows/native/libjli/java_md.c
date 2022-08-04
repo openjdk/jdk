@@ -245,7 +245,7 @@ LoadMSVCRT()
             JLI_TraceLauncher("CRT path is %s\n", crtpath);
             if (_access(crtpath, 0) == 0) {
                 if (LoadLibrary(crtpath) == 0) {
-                    JLI_ReportErrorMessage(DLL_ERROR4, crtpath);
+                    JLI_ReportErrorMessageSys(DLL_ERROR4 "%s", crtpath);
                     return JNI_FALSE;
                 }
             }
@@ -262,7 +262,7 @@ LoadMSVCRT()
             JLI_TraceLauncher("CRT path is %s\n", crtpath);
             if (_access(crtpath, 0) == 0) {
                 if (LoadLibrary(crtpath) == 0) {
-                    JLI_ReportErrorMessage(DLL_ERROR4, crtpath);
+                    JLI_ReportErrorMessageSys(DLL_ERROR4 "%s", crtpath);
                     return JNI_FALSE;
                 }
             }
@@ -279,7 +279,7 @@ LoadMSVCRT()
             JLI_TraceLauncher("PRT path is %s\n", crtpath);
             if (_access(crtpath, 0) == 0) {
                 if (LoadLibrary(crtpath) == 0) {
-                    JLI_ReportErrorMessage(DLL_ERROR4, crtpath);
+                    JLI_ReportErrorMessageSys(DLL_ERROR4 "%s", crtpath);
                     return JNI_FALSE;
                 }
             }
@@ -384,9 +384,9 @@ LoadJavaVM(const char *jvmpath, InvocationFunctions *ifn)
      */
     LoadMSVCRT();
 
-    /* Load the Java VM DLL */
+    /* Load the Java Virtual Machine */
     if ((handle = LoadLibrary(jvmpath)) == 0) {
-        JLI_ReportErrorMessage(DLL_ERROR4, (char *)jvmpath);
+        JLI_ReportErrorMessageSys(DLL_ERROR4 "%s", (char *)jvmpath);
         return JNI_FALSE;
     }
 
@@ -646,17 +646,13 @@ JLI_ReportErrorMessageSys(const char *fmt, ...)
         int mlen;
         /* get the length of the string we need */
         int len = mlen =  _vscprintf(fmt, vl) + 1;
-        if (freeit) {
-           mlen += (int)JLI_StrLen(errtext);
-        }
+        mlen += (int)JLI_StrLen(errtext);
 
         message = (char *)JLI_MemAlloc(mlen);
         _vsnprintf(message, len, fmt, vl);
         message[len]='\0';
 
-        if (freeit) {
-           JLI_StrCat(message, errtext);
-        }
+        JLI_StrCat(message, errtext);
 
         MessageBox(NULL, message, "Java Virtual Machine Launcher",
             (MB_OK|MB_ICONSTOP|MB_APPLMODAL));
@@ -664,9 +660,7 @@ JLI_ReportErrorMessageSys(const char *fmt, ...)
         JLI_MemFree(message);
     } else {
         vfprintf(stderr, fmt, vl);
-        if (freeit) {
-           fprintf(stderr, "%s", errtext);
-        }
+        fprintf(stderr, "%s", errtext);
     }
     if (freeit) {
         (void)LocalFree((HLOCAL)errtext);
