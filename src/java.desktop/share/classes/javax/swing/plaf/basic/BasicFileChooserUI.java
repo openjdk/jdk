@@ -709,7 +709,8 @@ public class BasicFileChooserUI extends FileChooserUI {
                         if (objects.length == 1
                             && ((File)objects[0]).isDirectory()
                             && chooser.isTraversable(((File)objects[0]))
-                            && (useSetDirectory || !fsv.isFileSystem(((File)objects[0])))) {
+                            && (useSetDirectory || (!fsv.isFileSystem(((File)objects[0]))
+                            && !Files.isSymbolicLink(Paths.get(((File)objects[0]).getPath()))))) {
                             setDirectorySelected(true);
                             setDirectory(((File)objects[0]));
                         } else {
