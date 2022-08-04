@@ -34,6 +34,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #ifdef MACOSX
+#include <sys/attr.h>
 #include <sys/param.h>
 #include <sys/mount.h>
 #else
@@ -291,6 +292,7 @@ Java_sun_nio_fs_UnixNativeDispatcher_init(JNIEnv* env, jclass this)
 #ifdef _ALLBSD_SOURCE
     capabilities |= sun_nio_fs_UnixNativeDispatcher_SUPPORTS_FUTIMES;
     capabilities |= sun_nio_fs_UnixNativeDispatcher_SUPPORTS_LUTIMES;
+    capabilities |= sun_nio_fs_UnixNativeDispatcher_SUPPORTS_SETATTRLIST;
 #else
     if (my_futimesat_func != NULL)
         capabilities |= sun_nio_fs_UnixNativeDispatcher_SUPPORTS_FUTIMES;
@@ -746,6 +748,49 @@ Java_sun_nio_fs_UnixNativeDispatcher_lutimes0(JNIEnv* env, jclass this,
     if (err == -1) {
         throwUnixException(env, errno);
     }
+}
+
+JNIEXPORT void JNICALL
+Java_sun_nio_fs_UnixNativeDispatcher_setattrlist0(JNIEnv* env, jclass this,
+    jlong pathAddress, int commonattr, jlong modTime, jlong accTime,
+    jlong createTime, jlong options)
+{
+#ifdef _ALLBSD_SOURCE
+    const char* path = (const char*)jlong_to_ptr(pathAddress);
+    // attributes must align on 4-byte boundaries per the getattrlist(2) spec
+    const int attrsize = ((sizeof(struct timespec) + 3)/4)*4;
+    char buf[3*attrsize];
+
+    int count = 0;
+    // attributes are ordered per the getattrlist(2) spec
+    if ((commonattr & ATTR_CMN_CRTIME) != 0) {
+        struct timespec* t = (struct timespec*)buf;
+        t->tv_sec   = createTime / 1000000000;
+        t->tv_nsec  = createTime % 1000000000;
+        count++;
+    }
+    if ((commonattr & ATTR_CMN_MODTIME) != 0) {
+        struct timespec* t = (struct timespec*)(buf + count*attrsize);
+        t->tv_sec   = modTime / 1000000000;
+        t->tv_nsec  = modTime % 1000000000;
+        count++;
+    }
+    if ((commonattr & ATTR_CMN_ACCTIME) != 0) {
+        struct timespec* t = (struct timespec*)(buf + count*attrsize);
+        t->tv_sec   = accTime / 1000000000;
+        t->tv_nsec  = accTime % 1000000000;
+        count++;
+    }
+
+    struct attrlist attrList;
+    memset(&attrList, 0, sizeof(struct attrlist));
+    attrList.bitmapcount = ATTR_BIT_MAP_COUNT;
+    attrList.commonattr = commonattr;
+
+    if (setattrlist(path, &attrList, (void*)buf, count*attrsize, options) != 0) {
+        throwUnixException(env, errno);
+    }
+#endif
 }
 
 JNIEXPORT jlong JNICALL

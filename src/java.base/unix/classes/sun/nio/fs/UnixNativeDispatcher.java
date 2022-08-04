@@ -528,6 +528,28 @@ class UnixNativeDispatcher {
         throws UnixException;
 
     /**
+     * setattrlist(const char* path, struct attrlist* attrList, void* attrBuf,
+     *             size_t attrBufSize, unsigned long options)
+     */
+    static void setattrlist(UnixPath path, int commonattr, long modTime,
+                            long accTime, long createTime, long options)
+        throws UnixException {
+        try (NativeBuffer buffer = copyToNativeBuffer(path)) {
+            long comp = Blocker.begin();
+            try {
+                setattrlist0(buffer.address(), commonattr, modTime, accTime,
+                             createTime, options);
+            } finally {
+                Blocker.end(comp);
+            }
+        }
+    }
+    private static native void setattrlist0(long pathAddress, int commonattr,
+                                            long modTime, long accTime,
+                                            long createTime, long options)
+        throws UnixException;
+
+    /**
      * DIR *opendir(const char* dirname)
      */
     static long opendir(UnixPath path) throws UnixException {
@@ -766,6 +788,7 @@ class UnixNativeDispatcher {
     private static final int SUPPORTS_FUTIMENS      = 1 << 3;
     private static final int SUPPORTS_LUTIMES       = 1 << 4;
     private static final int SUPPORTS_XATTR         = 1 << 5;
+    private static final int SUPPORTS_SETATTRLIST   = 1 << 6;
     private static final int SUPPORTS_BIRTHTIME     = 1 << 16; // other features
     private static final int capabilities;
 
@@ -802,6 +825,13 @@ class UnixNativeDispatcher {
      */
     static boolean birthtimeSupported() {
         return (capabilities & SUPPORTS_BIRTHTIME) != 0;
+    }
+
+    /**
+     * Supports setting file creation time attribute
+     */
+    static boolean setattrlistSupported() {
+        return (capabilities & SUPPORTS_SETATTRLIST) != 0;
     }
 
     /**
