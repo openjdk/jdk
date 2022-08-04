@@ -55,8 +55,8 @@ public class Util {
     // The max size allowed for a cached temp buffer, in bytes
     private static final long MAX_CACHED_BUFFER_SIZE = getMaxCachedBufferSize();
 
-    // Per-thread cache of temporary direct buffers
-    private static ThreadLocal<BufferCache> bufferCache = new TerminatingThreadLocal<>() {
+    // Per-carrier-thread cache of temporary direct buffers
+    private static TerminatingThreadLocal<BufferCache> bufferCache = new TerminatingThreadLocal<>() {
         @Override
         protected BufferCache initialValue() {
             return new BufferCache();
@@ -230,7 +230,7 @@ public class Util {
             return ByteBuffer.allocateDirect(size);
         }
 
-        BufferCache cache = JLA.getCarrierThreadLocal(bufferCache);
+        BufferCache cache = bufferCache.get();
         ByteBuffer buf = cache.get(size);
         if (buf != null) {
             return buf;
@@ -257,7 +257,7 @@ public class Util {
                     .alignedSlice(alignment);
         }
 
-        BufferCache cache = JLA.getCarrierThreadLocal(bufferCache);
+        BufferCache cache = bufferCache.get();
         ByteBuffer buf = cache.get(size);
         if (buf != null) {
             if (buf.alignmentOffset(0, alignment) == 0) {
@@ -294,7 +294,7 @@ public class Util {
         }
 
         assert buf != null;
-        BufferCache cache = JLA.getCarrierThreadLocal(bufferCache);
+        BufferCache cache = bufferCache.get();
         if (!cache.offerFirst(buf)) {
             // cache is full
             free(buf);
@@ -316,7 +316,7 @@ public class Util {
         }
 
         assert buf != null;
-        BufferCache cache = JLA.getCarrierThreadLocal(bufferCache);
+        BufferCache cache = bufferCache.get();
         if (!cache.offerLast(buf)) {
             // cache is full
             free(buf);
