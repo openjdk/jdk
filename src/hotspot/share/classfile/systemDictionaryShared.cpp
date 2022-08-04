@@ -515,6 +515,7 @@ void SystemDictionaryShared::init_dumptime_info(InstanceKlass* k) {
 
 void SystemDictionaryShared::remove_dumptime_info(InstanceKlass* k) {
   MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
+  get_info_locked(k)->free_saved_cpcache_entries();
   _dumptime_table->remove(k);
 }
 
@@ -1327,6 +1328,16 @@ void SystemDictionaryShared::update_shared_entry(InstanceKlass* k, int id) {
   assert(DumpSharedSpaces, "supported only when dumping");
   DumpTimeClassInfo* info = get_info(k);
   info->_id = id;
+}
+
+void SystemDictionaryShared::save_cpcache_entries(InstanceKlass* k, ConstantPoolCacheEntry* entries) {
+  get_info(k)->save_cpcache_entries(entries);
+}
+
+ConstantPoolCacheEntry* SystemDictionaryShared::get_saved_cpcache_entries_locked(InstanceKlass* dumped_k) {
+  assert_lock_strong(DumpTimeTable_lock);
+  InstanceKlass* orig_k = (InstanceKlass*)ArchiveBuilder::current()->get_src_obj((address)dumped_k);
+  return get_info_locked(orig_k)->get_saved_cpcache_entries();
 }
 
 const char* class_loader_name_for_shared(Klass* k) {

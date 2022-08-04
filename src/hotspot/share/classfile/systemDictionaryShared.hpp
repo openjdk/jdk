@@ -108,6 +108,7 @@
 
 class BootstrapInfo;
 class ClassFileStream;
+class ConstantPoolCacheEntry;
 class Dictionary;
 class DumpTimeClassInfo;
 class DumpTimeSharedClassTable;
@@ -235,6 +236,9 @@ public:
   static Dictionary* boot_loader_dictionary() {
     return ClassLoaderData::the_null_class_loader_data()->dictionary();
   }
+
+  static void save_cpcache_entries(InstanceKlass* k, ConstantPoolCacheEntry* entries);
+  static ConstantPoolCacheEntry* get_saved_cpcache_entries_locked(InstanceKlass* k);
 
   static void update_shared_entry(InstanceKlass* klass, int id);
   static void set_shared_class_misc_info(InstanceKlass* k, ClassFileStream* cfs);
