@@ -541,7 +541,6 @@ private:
     // Stack pointer must be 16 bytes aligned for the call
     _spill_offset = _spill_size = align_up(xmm_spill_size + gp_spill_size + opmask_spill_size + arg_spill_size, 16);
   }
-PRAGMA_DIAG_POP
 
 public:
   ZSaveLiveRegisters(MacroAssembler* masm, ZLoadBarrierStubC2* stub) :

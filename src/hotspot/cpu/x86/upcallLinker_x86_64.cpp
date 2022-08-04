@@ -395,4 +395,3 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
 
   return blob->code_begin();
 }
-PRAGMA_DIAG_POP

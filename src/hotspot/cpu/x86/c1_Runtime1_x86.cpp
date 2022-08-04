@@ -414,7 +414,6 @@ static OopMap* generate_oop_map(StubAssembler* sasm, int num_rt_args,
 
   return map;
 }
-PRAGMA_DIAG_POP
 
 #define __ this->
 

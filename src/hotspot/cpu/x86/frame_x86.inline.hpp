@@ -334,7 +334,6 @@ inline void frame::set_saved_oop_result(RegisterMap* map, oop obj) {
 
   *result_adr = obj;
 }
-PRAGMA_DIAG_POP
 
 inline bool frame::is_interpreted_frame() const {
   return Interpreter::contains(pc());

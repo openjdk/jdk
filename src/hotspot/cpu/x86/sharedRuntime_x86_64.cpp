@@ -361,7 +361,6 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
 
   return map;
 }
-PRAGMA_DIAG_POP
 
 void RegisterSaver::restore_live_registers(MacroAssembler* masm, bool restore_wide_vectors) {
   int num_xmm_regs = XMMRegisterImpl::available_xmm_registers();
