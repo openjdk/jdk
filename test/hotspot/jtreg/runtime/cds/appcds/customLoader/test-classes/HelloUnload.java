@@ -25,7 +25,7 @@
 import java.io.File;
 import java.net.URL;
 import java.net.URLClassLoader;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 import jdk.test.lib.classloader.ClassUnloadCommon;
 
 public class HelloUnload {

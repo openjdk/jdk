@@ -1217,8 +1217,7 @@ bool LibraryCallKit::inline_vector_mem_masked_operation(bool is_store) {
   int mem_num_elem = using_byte_array ? num_elem * type2aelembytes(elem_bt) : num_elem;
   BasicType mem_elem_bt = using_byte_array ? T_BYTE : elem_bt;
   bool supports_predicate = arch_supports_vector(is_store ? Op_StoreVectorMasked : Op_LoadVectorMasked,
-                                                mem_num_elem, mem_elem_bt,
-                                                (VectorMaskUseType) (VecMaskUseLoad | VecMaskUsePred));
+                                                mem_num_elem, mem_elem_bt, VecMaskUseLoad);
 
   // If current arch does not support the predicated operations, we have to bail
   // out when current case uses the predicate feature.

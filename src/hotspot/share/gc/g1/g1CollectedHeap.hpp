@@ -1077,7 +1077,7 @@ public:
 
   // Calculate the region index of the given address. Given address must be
   // within the heap.
-  inline uint addr_to_region(HeapWord* addr) const;
+  inline uint addr_to_region(const void* addr) const;
 
   inline HeapWord* bottom_addr_for_region(uint index) const;
 
@@ -1121,14 +1121,12 @@ public:
                                  size_t length,
                                  uint worker_id) const;
 
-  // Returns the HeapRegion that contains addr. addr must not be NULL.
-  template <class T>
-  inline HeapRegion* heap_region_containing(const T addr) const;
+  // Returns the HeapRegion that contains addr. addr must not be nullptr.
+  inline HeapRegion* heap_region_containing(const void* addr) const;
 
-  // Returns the HeapRegion that contains addr, or NULL if that is an uncommitted
-  // region. addr must not be NULL.
-  template <class T>
-  inline HeapRegion* heap_region_containing_or_null(const T addr) const;
+  // Returns the HeapRegion that contains addr, or nullptr if that is an uncommitted
+  // region. addr must not be nullptr.
+  inline HeapRegion* heap_region_containing_or_null(const void* addr) const;
 
   // A CollectedHeap is divided into a dense sequence of "blocks"; that is,
   // each address in the (reserved) heap is a member of exactly

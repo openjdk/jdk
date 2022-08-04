@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,12 +24,10 @@
 
 #include "precompiled.hpp"
 #include "jfr/utilities/jfrTime.hpp"
-#include "runtime/os.hpp"
+#include "runtime/os.inline.hpp"
 #if defined(X86) && !defined(ZERO)
 #include "rdtsc_x86.hpp"
 #endif
-
-#include OS_HEADER_INLINE(os)
 
 bool JfrTime::_ft_enabled = false;
 

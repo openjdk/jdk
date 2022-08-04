@@ -24,25 +24,17 @@
 
 #ifndef OS_WINDOWS_OS_WINDOWS_HPP
 #define OS_WINDOWS_OS_WINDOWS_HPP
+
+#include "runtime/os.hpp"
+
 // Win32_OS defines the interface to windows operating systems
 
-// strtok_s is the Windows thread-safe equivalent of POSIX strtok_r
-#define strtok_r strtok_s
+class outputStream;
+class Thread;
 
-#define S_ISCHR(mode)   (((mode) & _S_IFCHR) == _S_IFCHR)
-#define S_ISFIFO(mode)  (((mode) & _S_IFIFO) == _S_IFIFO)
-
-// Information about the protection of the page at address '0' on this os.
-static bool zero_page_read_protected() { return true; }
-
-// File conventions
-static const char* file_separator() { return "\\"; }
-static const char* line_separator() { return "\r\n"; }
-static const char* path_separator() { return ";"; }
-
-class win32 {
+class os::win32 {
   friend class os;
-  friend unsigned __stdcall thread_native_entry(class Thread*);
+  friend unsigned __stdcall thread_native_entry(Thread*);
 
  protected:
   static int    _vm_page_size;
@@ -55,6 +47,11 @@ class win32 {
 
   static void print_windows_version(outputStream* st);
   static void print_uptime_info(outputStream* st);
+
+  static bool platform_print_native_stack(outputStream* st, const void* context,
+                                          char *buf, int buf_size);
+
+  static bool register_code_area(char *low, char *high);
 
  public:
   // Windows-specific interface:

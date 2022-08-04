@@ -34,8 +34,8 @@ import jdk.internal.platform.Metrics;
  * @requires os.family == "linux"
  * @modules java.base/jdk.internal.platform
  * @library /test/lib
- * @build sun.hotspot.WhiteBox PrintContainerInfo CheckOperatingSystemMXBean
- * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar whitebox.jar sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox PrintContainerInfo CheckOperatingSystemMXBean
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar whitebox.jar jdk.test.whitebox.WhiteBox
  * @run main TestMemoryWithCgroupV1
  */
 public class TestMemoryWithCgroupV1 {

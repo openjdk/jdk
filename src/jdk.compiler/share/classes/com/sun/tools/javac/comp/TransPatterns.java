@@ -531,7 +531,21 @@ public class TransPatterns extends TreeTranslator {
                         currentValue = temp;
                         JCExpression test = (JCExpression) this.<JCTree>translate(label.pat);
                         if (label.guard != null) {
-                            test = makeBinary(Tag.AND, test, translate(label.guard));
+                            JCExpression guard = translate(label.guard);
+                            if (hasJoinedNull) {
+                                JCPattern pattern = label.pat;
+                                while (pattern instanceof JCParenthesizedPattern parenthesized) {
+                                    pattern = parenthesized.pattern;
+                                }
+                                Assert.check(pattern.hasTag(Tag.BINDINGPATTERN));
+                                VarSymbol binding = ((JCBindingPattern) pattern).var.sym;
+                                guard = makeBinary(Tag.OR,
+                                                   makeBinary(Tag.EQ,
+                                                              make.Ident(binding),
+                                                              makeNull()),
+                                                   guard);
+                            }
+                            test = makeBinary(Tag.AND, test, guard);
                         }
                         c.stats = translate(c.stats);
                         JCContinue continueSwitch = make.at(clearedPatterns.head.pos()).Continue(null);

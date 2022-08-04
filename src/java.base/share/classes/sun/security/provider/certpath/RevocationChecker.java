@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -488,10 +488,10 @@ class RevocationChecker extends PKIXRevocationChecker {
                 }
                 break;
             case "SSLServer":
-                result = (t != null && t instanceof IOException);
+                result = (t instanceof IOException);
                 break;
             case "URI":
-                result = (t != null && t instanceof IOException);
+                result = (t instanceof IOException);
                 break;
             default:
                 // we don't know about any other remote CertStore types

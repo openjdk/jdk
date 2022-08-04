@@ -5145,7 +5145,7 @@ class StubGenerator: public StubCodeGenerator {
     return entry;
   }
 
-    address generate_method_entry_barrier() {
+  address generate_method_entry_barrier() {
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", "nmethod_entry_barrier");
 
@@ -5155,10 +5155,10 @@ class StubGenerator: public StubCodeGenerator {
 
     BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
 
-    if (bs_asm->nmethod_code_patching()) {
+    if (bs_asm->nmethod_patching_type() == NMethodPatchingType::conc_instruction_and_data_patch) {
       BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
       // We can get here despite the nmethod being good, if we have not
-      // yet applied our cross modification fence.
+      // yet applied our cross modification fence (or data fence).
       Address thread_epoch_addr(rthread, in_bytes(bs_nm->thread_disarmed_offset()) + 4);
       __ lea(rscratch2, ExternalAddress(bs_asm->patching_epoch_addr()));
       __ ldrw(rscratch2, rscratch2);
@@ -6958,7 +6958,6 @@ class StubGenerator: public StubCodeGenerator {
     __ bind(L);
 #endif // ASSERT
     __ far_jump(RuntimeAddress(StubRoutines::forward_exception_entry()));
-
 
     // codeBlob framesize is in words (not VMRegImpl::slot_size)
     RuntimeStub* stub =
