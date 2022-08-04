@@ -44,6 +44,7 @@
 #include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
 #include "prims/jvmtiExport.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaCalls.hpp"
@@ -504,6 +505,11 @@ void Modules::define_archived_modules(Handle h_platform_loader, Handle h_system_
 
   ClassLoaderData* system_loader_data = SystemDictionary::register_loader(h_system_loader);
   SystemDictionary::set_system_loader(system_loader_data);
+  // system_loader_data here is always an instance of jdk.internal.loader.ClassLoader$AppClassLoader.
+  // However, if -Djava.system.class.loader=xxx is specified, java_platform_loader() would
+  // be an instance of a user-defined class, so make sure this never happens.
+  assert(Arguments::get_property("java.system.class.loader") == NULL,
+           "archived full module should have been disabled");
   ClassLoaderDataShared::restore_java_system_loader_from_archive(system_loader_data);
 }
 
