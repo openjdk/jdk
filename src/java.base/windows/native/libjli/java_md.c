@@ -627,7 +627,7 @@ JLI_ReportErrorMessageSys(const char *fmt, ...)
             FORMAT_MESSAGE_IGNORE_INSERTS|FORMAT_MESSAGE_ALLOCATE_BUFFER,
             NULL, errval, 0, (LPTSTR)&errtext, 0, NULL);
         if (errtext == NULL || n == 0) {                /* Paranoia check */
-            errtext = "";
+            errtext = "Could not properly determine underlying error";
             n = 0;
         } else {
             freeit = JNI_TRUE;
