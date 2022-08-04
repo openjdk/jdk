@@ -217,22 +217,31 @@ public class DocFinder {
         Output output = new Output();
         Utils utils = configuration.utils;
         if (input.isInheritDocTag) {
-            //Do nothing because "element" does not have any documentation.
-            //All it has is {@inheritDoc}.
+            // Get documentation that {@inheritDoc} contained in the inheritable
+            // tag description or main description expands to. To do that, we
+            // must first ascend the inheritance hierarchy.
         } else if (input.taglet == null) {
-            //We want overall documentation.
+            // either get main description (the part of the doc comment from
+            // the beginning of the comment, up to the first block tag), or
+            // get its first sentence
             output.inlineTags = input.isFirstSentence
                     ? utils.getFirstSentenceTrees(input.element)
                     : utils.getFullBody(input.element);
             output.holder = input.element;
         } else {
+            // get contents of the inheritable tag
             input.taglet.inherit(input, output);
         }
 
         if (!output.inlineTags.isEmpty()) {
             return output;
         }
+        // if we are unable to find methods up the inheritance hierarchy and
+        // this search was initiated for {@inheritDoc}, that tag will be
+        // considered erroneous
         output.isValidInheritDocTag = false;
+        // a less cleaner alternative to copy() would be to restore values
+        // mutated by recursive call in try-finally
         Input inheritedSearchInput = input.copy();
         inheritedSearchInput.isInheritDocTag = false;
         if (utils.isMethod(input.element)) {
