@@ -24,9 +24,7 @@
 
 
 #include "jvm.h"
-#ifdef LINUX
 #include "classfile/classLoader.hpp"
-#endif
 #include "jvmtifiles/jvmti.h"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
@@ -51,6 +49,9 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/vmError.hpp"
+#ifdef LINUX
+#include "os_linux.hpp"
+#endif
 
 #include <dirent.h>
 #include <dlfcn.h>
@@ -554,7 +555,7 @@ void os::Posix::print_umask(outputStream* st, mode_t umsk) {
   st->print((umsk & S_IXOTH) ? "x" : "-");
 }
 
-void os::Posix::print_user_info(outputStream* st) {
+void os::print_user_info(outputStream* st) {
   unsigned id = (unsigned) ::getuid();
   st->print("uid  : %u ", id);
   id = (unsigned) ::geteuid();
@@ -568,13 +569,13 @@ void os::Posix::print_user_info(outputStream* st) {
   mode_t umsk = ::umask(0);
   ::umask(umsk);
   st->print("umask: %04o (", (unsigned) umsk);
-  print_umask(st, umsk);
+  os::Posix::print_umask(st, umsk);
   st->print_cr(")");
   st->cr();
 }
 
 // Print all active locale categories, one line each
-void os::Posix::print_active_locale(outputStream* st) {
+void os::print_active_locale(outputStream* st) {
   st->print_cr("Active Locale:");
   // Posix is quiet about how exactly LC_ALL is implemented.
   // Just print it out too, in case LC_ALL is held separately
@@ -1128,8 +1129,8 @@ bool os::Posix::handle_stack_overflow(JavaThread* thread, address addr, address 
                       "enabled executable stack (see man page execstack(8))");
 
   } else {
-#if !defined(AIX) && !defined(__APPLE__)
-    // bsd and aix don't have this
+#ifdef LINUX
+    // This only works with os::Linux::manually_expand_stack()
 
     // Accessing stack address below sp may cause SEGV if current
     // thread has MAP_GROWSDOWN stack. This should only happen when
@@ -1147,7 +1148,7 @@ bool os::Posix::handle_stack_overflow(JavaThread* thread, address addr, address 
     }
 #else
     tty->print_raw_cr("SIGSEGV happened inside stack but outside yellow and red zone.");
-#endif // AIX or BSD
+#endif // LINUX
   }
   return false;
 }
@@ -2010,3 +2011,8 @@ void os::die() {
     ::abort();
   }
 }
+
+const char* os::file_separator() { return "/"; }
+const char* os::line_separator() { return "\n"; }
+const char* os::path_separator() { return ":"; }
+
