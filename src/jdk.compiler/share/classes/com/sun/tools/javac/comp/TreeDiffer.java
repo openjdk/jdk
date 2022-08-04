@@ -26,6 +26,7 @@
 
 package com.sun.tools.javac.comp;
 
+import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.JCAnnotatedType;
@@ -641,9 +642,10 @@ public class TreeDiffer extends TreeScanner {
     @Override
     public void visitVarDef(JCVariableDecl tree) {
         JCVariableDecl that = (JCVariableDecl) parameter;
+        boolean synthetic = (tree.mods.flags & Flags.SYNTHETIC) != 0;
         result =
                 scan(tree.mods, that.mods)
-                        && tree.name == that.name
+                        && (tree.name == that.name || synthetic)
                         && scan(tree.nameexpr, that.nameexpr)
                         && scan(tree.vartype, that.vartype)
                         && scan(tree.init, that.init);

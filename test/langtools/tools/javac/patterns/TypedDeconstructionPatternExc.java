@@ -29,6 +29,7 @@
 
 import java.util.Objects;
 import java.util.function.Function;
+import java.util.function.ToIntFunction;
 
 public class TypedDeconstructionPatternExc {
 
@@ -39,6 +40,8 @@ public class TypedDeconstructionPatternExc {
     void run() {
         run(this::testExpr);
         run(this::testExprCond);
+        testTryExpr();
+        run(this::testLambda);
     }
 
     void run(Function<Pair<String, Integer>, Integer> tested) {
@@ -81,6 +84,51 @@ public class TypedDeconstructionPatternExc {
         } else {
             return -1;
         }
+    }
+
+    void testTryExpr() {
+        TEST: {
+            try {
+                var v = switch ((Pair<String, Integer>) (Object) new Pair<Integer, Integer>(1, 1)) {
+                    case Pair<String, Integer>(String s, Integer i) -> s.length() + i;
+                    case Object o -> -1;
+                };
+            } catch (ClassCastException ex) {
+                //OK
+                break TEST;
+            } catch (Throwable t) {
+                t.printStackTrace();
+                fail("Unexpected Throwable!");
+            }
+            fail("ClassCastException not thrown!");
+        }
+        TEST: {
+            try {
+                var v = switch (new Pair<String, Integer>("fail", 1)) {
+                    case Pair<String, Integer>(String s, Integer i) -> s.length() + i;
+                    case Object o -> -1;
+                };
+            } catch (MatchException ex) {
+                //OK
+                break TEST;
+            } catch (Throwable t) {
+                t.printStackTrace();
+                fail("Unexpected Throwable!");
+            }
+            fail("MatchException not thrown!");
+        }
+    }
+
+    int testLambda(Pair<String, Integer> p) {
+        var r = prepareLambda();
+        return r.applyAsInt(p);
+    }
+
+    ToIntFunction<Pair<String, Integer>> prepareLambda() {
+        return p -> switch (p) {
+            case Pair<String, Integer>(String s, Integer i) -> s.length() + i;
+            case Object o -> -1;
+        };
     }
 
     static final String EXCEPTION_MESSAGE = "exception-message";

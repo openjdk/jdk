@@ -94,6 +94,10 @@ public class Switches {
         assertEquals("a", deconstructExpression(new R("a")));
         assertEquals("1", deconstructExpression(new R(1)));
         assertEquals("other", deconstructExpression(""));
+        assertEquals("a", translationTest("a"));
+        assertEquals("Rb", translationTest(new R("b")));
+        assertEquals("R2c", translationTest(new R2("c")));
+        assertEquals("other", translationTest(0));
     }
 
     void run(Function<Object, Integer> mapper) {
@@ -633,6 +637,15 @@ public class Switches {
         };
     }
 
+    String translationTest(Object o) {
+        return switch (o) {
+            case R(String s) -> "R" + s;
+            case String s -> s;
+            case R2(String s) -> "R2" + s;
+            default -> "other";
+        };
+    }
+
     //verify that for cases like:
     //case ConstantClassClash ->
     //ConstantClassClash is interpreted as a field, not as a class
@@ -674,4 +687,5 @@ public class Switches {
     }
 
     record R(Object o) {}
+    record R2(Object o) {}
 }
