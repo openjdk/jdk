@@ -439,11 +439,9 @@ Node *MulFNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   const TypeF *t2 = phase->type(in(2))->isa_float_constant();
 
   // x * 2 -> x + x
-  if (t2 != NULL) {
-    if (t2->getf() == 2) {
-      Node* base = in(1);
-      return new AddFNode(base, base);
-    }
+  if (t2 != NULL && t2->getf() == 2) {
+    Node* base = in(1);
+    return new AddFNode(base, base);
   }
 
   return MulNode::Ideal(phase, can_reshape);
@@ -464,11 +462,9 @@ Node *MulDNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   const TypeD *t2 = phase->type(in(2))->isa_double_constant();
 
   // x * 2 -> x + x
-  if (t2 != NULL) {
-    if (t2->getd() == 2) {
-      Node* base = in(1);
-      return new AddDNode(base, base);
-    }
+  if (t2 != NULL && t2->getd() == 2) {
+    Node* base = in(1);
+    return new AddDNode(base, base);
   }
 
   return MulNode::Ideal(phase, can_reshape);
