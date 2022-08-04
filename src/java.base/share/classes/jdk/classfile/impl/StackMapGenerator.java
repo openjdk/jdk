@@ -860,6 +860,14 @@ public final class StackMapGenerator {
                     }));
             ClassPrinter.toYaml(Classfile.parse(clb.build()).methods().get(0).code().get(), ClassPrinter.Verbosity.TRACE_ALL, sb::append);
         } catch (Error | Exception suppresed) {
+            //fallback to bytecode hex dump
+            bytecode.rewind();
+            while (bytecode.position() < bytecode.limit()) {
+                sb.append("%n%04x:".formatted(bytecode.position()));
+                for (int i = 0; i < 16 && bytecode.position() < bytecode.limit(); i++) {
+                    sb.append(" %02x".formatted(bytecode.get()));
+                }
+            }
             var err = new VerifyError(sb.toString());
             err.addSuppressed(suppresed);
             throw err;
