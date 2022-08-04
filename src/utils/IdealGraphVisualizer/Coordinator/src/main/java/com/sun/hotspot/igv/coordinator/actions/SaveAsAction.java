@@ -125,7 +125,7 @@ public final class SaveAsAction extends NodeAction {
     protected boolean enable(Node[] nodes) {
         if (nodes.length > 0) {
             for (Node n : nodes) {
-                if (!(n instanceof FolderNode)) {
+                if (!(n instanceof FolderNode) || ((FolderNode) n).isRootNode()) {
                     return false;
                 }
             }

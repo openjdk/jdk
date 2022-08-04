@@ -141,6 +141,11 @@ public class FolderNode extends AbstractNode {
         }
     }
 
+    public boolean isRootNode() {
+        Folder folder = getFolder();
+        return (folder != null && folder instanceof GraphDocument);
+    }
+
     @Override
     public Image getOpenedIcon(int i) {
         return getIcon(i);
