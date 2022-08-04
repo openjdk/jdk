@@ -30,6 +30,7 @@ import java.security.InvalidAlgorithmParameterException;
 import java.security.NoSuchAlgorithmException;
 import java.security.ProviderException;
 import java.security.spec.AlgorithmParameterSpec;
+import java.util.Objects;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import sun.security.internal.spec.TlsMasterSecretParameterSpec;
@@ -43,7 +44,7 @@ enum SSLMasterKeyDerivation implements SSLKeyDerivationGenerator {
 
     final String name;
 
-    private SSLMasterKeyDerivation(String name) {
+    SSLMasterKeyDerivation(String name) {
         this.name = name;
     }
 
@@ -128,7 +129,7 @@ enum SSLMasterKeyDerivation implements SSLKeyDerivationGenerator {
 
                 // For the session hash, use the handshake messages up to and
                 // including the ClientKeyExchange message.
-                context.handshakeHash.utilize();
+                Objects.requireNonNull(context.handshakeHash).utilize();
                 byte[] sessionHash = context.handshakeHash.digest();
                 spec = new TlsMasterSecretParameterSpec(
                         preMasterSecret,

@@ -48,7 +48,7 @@ public class ResourcesMgr {
         if (!VM.isBooted()) {
             // don't expect this be called before the system is fully initialized.
             // This triggers loading of any resource bundle that should be
-            // be done during initialization of system class loader.
+            // done during initialization of system class loader.
             throw new InternalError("Expected to use ResourceBundle only after booted");
         }
         return bundles.computeIfAbsent(bundleName, ResourceBundle::getBundle);

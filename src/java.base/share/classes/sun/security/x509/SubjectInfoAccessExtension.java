@@ -126,7 +126,7 @@ public class SubjectInfoAccessExtension extends Extension
             throw new IOException("Invalid encoding for " +
                                   "SubjectInfoAccessExtension.");
         }
-        accessDescriptions = new ArrayList<AccessDescription>();
+        accessDescriptions = new ArrayList<>();
         while (val.data.available() != 0) {
             DerValue seq = val.data.getDerValue();
             AccessDescription accessDescription = new AccessDescription(seq);
@@ -202,7 +202,7 @@ public class SubjectInfoAccessExtension extends Extension
     public void delete(String name) throws IOException {
         if (name.equalsIgnoreCase(DESCRIPTIONS)) {
             accessDescriptions =
-                Collections.<AccessDescription>emptyList();
+                Collections.emptyList();
         } else {
             throw new IOException("Attribute name [" + name +
                                 "] not recognized by " +

@@ -69,11 +69,11 @@ public class TSRequest {
 
     private int version = 1;
 
-    private AlgorithmId hashAlgorithmId = null;
+    private final AlgorithmId hashAlgorithmId;
 
-    private byte[] hashValue;
+    private final byte[] hashValue;
 
-    private String policyId = null;
+    private String policyId;
 
     private BigInteger nonce = null;
 
@@ -132,7 +132,7 @@ public class TSRequest {
      * Request that the TSA include its signing certificate in the response.
      *
      * @param returnCertificate True if the TSA should return its signing
-     *                          certificate. By default it is not returned.
+     *                          certificate. By default, it is not returned.
      */
     public void requestCertificate(boolean returnCertificate) {
         this.returnCertificate = returnCertificate;

@@ -38,7 +38,7 @@ import java.util.Optional;
  */
 public interface RegisteredDomain {
 
-    public enum Type {
+    enum Type {
         /**
          * An ICANN registered domain.
          */
@@ -79,7 +79,7 @@ public interface RegisteredDomain {
      *    empty if the domain is unknown or not registerable
      * @throws NullPointerException if domain is null
      */
-    public static Optional<RegisteredDomain> from(String domain) {
+    static Optional<RegisteredDomain> from(String domain) {
         return Optional.ofNullable(DomainName.registeredDomain(domain));
     }
 }

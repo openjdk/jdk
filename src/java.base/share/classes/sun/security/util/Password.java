@@ -29,6 +29,7 @@ import java.io.*;
 import java.nio.*;
 import java.nio.charset.*;
 import java.util.Arrays;
+import java.util.Objects;
 
 /**
  * A utility class for reading passwords
@@ -52,7 +53,7 @@ public class Password {
 
         try {
             // Use the new java.io.Console class
-            Console con = null;
+            Console con;
             if (!isEchoOn && in == System.in && ((con = System.console()) != null)) {
                 consoleEntered = con.readPassword();
                 // readPassword returns "" if you just print ENTER,
@@ -69,7 +70,6 @@ public class Password {
 
             char[] lineBuffer;
             char[] buf;
-            int i;
 
             buf = lineBuffer = new char[128];
 
@@ -79,7 +79,7 @@ public class Password {
 
             boolean done = false;
             while (!done) {
-                switch (c = in.read()) {
+                switch (c = Objects.requireNonNull(in).read()) {
                   case -1:
                   case '\n':
                       done = true;

@@ -36,7 +36,7 @@ import sun.security.util.*;
  * @author Hemma Prafullchandra
  */
 public class CertificatePolicyId {
-    private ObjectIdentifier id;
+    private final ObjectIdentifier id;
 
     /**
      * Create a CertificatePolicyId with the ObjectIdentifier.
@@ -67,11 +67,10 @@ public class CertificatePolicyId {
      * Returns a printable representation of the CertificatePolicyId.
      */
     public String toString() {
-        String s = "CertificatePolicyId: ["
-                 + id.toString()
-                 + "]\n";
 
-        return (s);
+        return ("CertificatePolicyId: ["
+                 + id.toString()
+                 + "]\n");
     }
 
     /**

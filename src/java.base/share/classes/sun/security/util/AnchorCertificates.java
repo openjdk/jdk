@@ -100,7 +100,7 @@ public class AnchorCertificates {
      */
     public static boolean contains(X509Certificate cert) {
         String key = X509CertImpl.getFingerprint(HASH, cert, debug);
-        boolean result = (key == null ? false : certs.contains(key));
+        boolean result = (key != null && certs.contains(key));
         if (result && debug != null) {
             debug.println("AnchorCertificate.contains: matched " +
                     cert.getSubjectX500Principal());

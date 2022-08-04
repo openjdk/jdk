@@ -27,6 +27,8 @@ package sun.security.ssl;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.Objects;
+
 import sun.security.ssl.SSLHandshake.HandshakeMessage;
 
 /**
@@ -197,7 +199,7 @@ final class HelloRequest {
                 }
 
                 // update the responders
-                chc.handshakeProducers.put(
+                Objects.requireNonNull(chc.handshakeProducers).put(
                         SSLHandshake.CLIENT_HELLO.id,
                         SSLHandshake.CLIENT_HELLO);
 

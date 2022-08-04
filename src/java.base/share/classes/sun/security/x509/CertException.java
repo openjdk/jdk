@@ -82,7 +82,7 @@ public class CertException extends SecurityException {
     public static final int err_ENCODING = 12;
 
     // Private data members
-    private int         verfCode;
+    private final int         verfCode;
     private String      moreData;
 
 

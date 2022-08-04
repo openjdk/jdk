@@ -194,11 +194,7 @@ implements CertAttrSet<String> {
          DerOutputStream tmp = new DerOutputStream();
          if (extensionValue == null) {
              this.extensionId = PKIXExtensions.BasicConstraints_Id;
-             if (ca) {
-                 critical = true;
-             } else {
-                 critical = false;
-             }
+             critical = ca;
              encodeThis();
          }
          super.encode(tmp);

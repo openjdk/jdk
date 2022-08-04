@@ -67,7 +67,7 @@ implements CertAttrSet<String> {
     public static final String SUBJECT_NAME = "subject_name";
 
     // private data members
-    GeneralNames        names = null;
+    GeneralNames        names;
 
     // Encode this extension
     private void encodeThis() throws IOException {

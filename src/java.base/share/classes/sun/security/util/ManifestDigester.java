@@ -89,7 +89,6 @@ public class ManifestDigester {
     {
         int i = offset, len = rawBytes.length;
         int last = offset - 1;
-        int next;
         boolean allBlank = true;
 
         /* denotes that a position is not yet assigned.
@@ -216,7 +215,7 @@ public class ManifestDigester {
         // According to the JAR File Specification: "If there are multiple
         // individual sections for the same file entry, the attributes in
         // these sections are merged."
-        private List<Section> sections = new ArrayList<>();
+        private final List<Section> sections = new ArrayList<>();
         boolean oldStyle;
 
         private Entry addSection(Section sec)

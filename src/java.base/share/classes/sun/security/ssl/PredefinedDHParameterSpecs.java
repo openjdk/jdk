@@ -30,6 +30,7 @@ import java.security.*;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.crypto.spec.DHParameterSpec;
@@ -216,11 +217,11 @@ final class PredefinedDHParameterSpecs {
     private static final Pattern spacesPattern = Pattern.compile("\\s+");
 
     private static final Pattern syntaxPattern = Pattern.compile(
-            "(\\{[0-9A-Fa-f]+,[0-9A-Fa-f]+\\})" +
-            "(,\\{[0-9A-Fa-f]+,[0-9A-Fa-f]+\\})*");
+            "(\\{[0-9A-Fa-f]+,[0-9A-Fa-f]+})" +
+            "(,\\{[0-9A-Fa-f]+,[0-9A-Fa-f]+})*");
 
     private static final Pattern paramsPattern = Pattern.compile(
-            "\\{([0-9A-Fa-f]+),([0-9A-Fa-f]+)\\}");
+            "\\{([0-9A-Fa-f]+),([0-9A-Fa-f]+)}");
 
     // cache of predefined default DH ephemeral parameters
     static final Map<Integer, DHParameterSpec> definedParams;
@@ -265,7 +266,7 @@ final class PredefinedDHParameterSpecs {
                 Matcher paramsFinder = paramsPattern.matcher(property);
                 while(paramsFinder.find()) {
                     String primeModulus = paramsFinder.group(1);
-                    BigInteger p = new BigInteger(primeModulus, 16);
+                    BigInteger p = new BigInteger(Objects.requireNonNull(primeModulus), 16);
                     if (!p.isProbablePrime(PRIME_CERTAINTY)) {
                         if (SSLLogger.isOn && SSLLogger.isOn("sslctx")) {
                             SSLLogger.fine(
@@ -278,7 +279,7 @@ final class PredefinedDHParameterSpecs {
                     }
 
                     String baseGenerator = paramsFinder.group(2);
-                    BigInteger g = new BigInteger(baseGenerator, 16);
+                    BigInteger g = new BigInteger(Objects.requireNonNull(baseGenerator), 16);
 
                     DHParameterSpec spec = new DHParameterSpec(p, g);
                     int primeLen = p.bitLength();
@@ -307,8 +308,8 @@ final class PredefinedDHParameterSpecs {
         }
 
         ffdheParams =
-            Collections.<Integer,DHParameterSpec>unmodifiableMap(tempFFDHEs);
+            Collections.unmodifiableMap(tempFFDHEs);
         definedParams =
-            Collections.<Integer,DHParameterSpec>unmodifiableMap(defaultParams);
+            Collections.unmodifiableMap(defaultParams);
     }
 }

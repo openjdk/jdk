@@ -49,12 +49,11 @@ final class HandshakeHash {
     // fix the negotiated protocol version and cipher suite
     void determine(ProtocolVersion protocolVersion,
             CipherSuite cipherSuite) {
-        if (!(transcriptHash instanceof CacheOnlyHash)) {
+        if (!(transcriptHash instanceof CacheOnlyHash coh)) {
             throw new IllegalStateException(
                     "Not expected instance of transcript hash");
         }
 
-        CacheOnlyHash coh = (CacheOnlyHash)transcriptHash;
         if (protocolVersion.useTLS13PlusSpec()) {
             transcriptHash = new T13HandshakeHash(cipherSuite);
         } else if (protocolVersion.useTLS12PlusSpec()) {

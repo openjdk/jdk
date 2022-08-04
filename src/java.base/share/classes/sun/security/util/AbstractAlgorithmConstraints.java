@@ -29,12 +29,10 @@ import java.security.AccessController;
 import java.security.AlgorithmConstraints;
 import java.security.PrivilegedAction;
 import java.security.Security;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.TreeSet;
-import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * The class contains common functionality for algorithm constraints classes.

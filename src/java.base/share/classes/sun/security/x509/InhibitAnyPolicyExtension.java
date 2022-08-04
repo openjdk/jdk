@@ -126,7 +126,7 @@ implements CertAttrSet<String> {
         if (!critical.booleanValue())
             throw new IOException("Criticality cannot be false for " +
                                   "InhibitAnyPolicy");
-        this.critical = critical.booleanValue();
+        this.critical = true;
 
         this.extensionValue = (byte[]) value;
         DerValue val = new DerValue(this.extensionValue);
@@ -151,8 +151,7 @@ implements CertAttrSet<String> {
       * Return user readable form of extension.
       */
      public String toString() {
-         String s = super.toString() + "InhibitAnyPolicy: " + skipCerts + "\n";
-         return s;
+         return super.toString() + "InhibitAnyPolicy: " + skipCerts + "\n";
      }
 
      /**

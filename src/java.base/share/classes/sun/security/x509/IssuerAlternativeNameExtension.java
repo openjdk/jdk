@@ -62,7 +62,7 @@ extends Extension implements CertAttrSet<String> {
     public static final String ISSUER_NAME = "issuer_name";
 
     // private data members
-    GeneralNames names = null;
+    GeneralNames names;
 
     // Encode this extension
     private void encodeThis() throws IOException {

@@ -27,9 +27,9 @@ package sun.security.util;
 
 import java.io.IOException;
 import java.math.BigInteger;
-
-import java.security.spec.*;
-import java.util.Arrays;
+import java.security.spec.ECParameterSpec;
+import java.security.spec.ECPoint;
+import java.security.spec.EllipticCurve;
 
 /**
  * Contains Elliptic Curve parameters.

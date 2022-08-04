@@ -43,7 +43,7 @@ public final class Event {
     }
 
     public interface Reporter {
-        public void handle(String type, Object... args);
+        void handle(String type, Object... args);
     }
 
     public static void setReportListener(ReporterCategory cat, Reporter re) {

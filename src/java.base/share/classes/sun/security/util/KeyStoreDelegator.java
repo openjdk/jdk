@@ -25,14 +25,17 @@
 
 package sun.security.util;
 
-import java.io.*;
+import java.io.BufferedInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.security.*;
 import java.security.cert.Certificate;
-import java.security.cert.CertificateFactory;
 import java.security.cert.CertificateException;
-import java.util.*;
-
-import sun.security.util.Debug;
+import java.util.Date;
+import java.util.Enumeration;
+import java.util.Objects;
+import java.util.Set;
 
 /**
  * This class delegates to a primary or secondary keystore implementation.
@@ -45,15 +48,15 @@ public class KeyStoreDelegator extends KeyStoreSpi {
     private static final String KEYSTORE_TYPE_COMPAT = "keystore.type.compat";
     private static final Debug debug = Debug.getInstance("keystore");
 
-    private String primaryType;   // the primary keystore's type
-    private String secondaryType; // the secondary keystore's type
-    private Class<? extends KeyStoreSpi> primaryKeyStore;
+    private final String primaryType;   // the primary keystore's type
+    private final String secondaryType; // the secondary keystore's type
+    private final Class<? extends KeyStoreSpi> primaryKeyStore;
                                   // the primary keystore's class
-    private Class<? extends KeyStoreSpi> secondaryKeyStore;
+    private final Class<? extends KeyStoreSpi> secondaryKeyStore;
                                   // the secondary keystore's class
     private String type; // the delegate's type
     private KeyStoreSpi keystore; // the delegate
-    private boolean compatModeEnabled = true;
+    private final boolean compatModeEnabled;
 
     public KeyStoreDelegator(
         String primaryType,
@@ -213,7 +216,7 @@ public class KeyStoreDelegator extends KeyStoreSpi {
             if (debug != null) {
                 debug.println("Creating a new keystore in " + type + " format");
             }
-            keystore.engineLoad(stream, password);
+            Objects.requireNonNull(keystore).engineLoad(null, password);
 
         } else {
             // First try the primary keystore then try the secondary keystore
@@ -223,7 +226,7 @@ public class KeyStoreDelegator extends KeyStoreSpi {
             try {
                 @SuppressWarnings("deprecation")
                 KeyStoreSpi tmp = primaryKeyStore.newInstance();
-                tmp.engineLoad(bufferedStream, password);
+                Objects.requireNonNull(tmp).engineLoad(bufferedStream, password);
                 keystore = tmp;
                 type = primaryType;
 
@@ -244,7 +247,7 @@ public class KeyStoreDelegator extends KeyStoreSpi {
                     @SuppressWarnings("deprecation")
                     KeyStoreSpi tmp = secondaryKeyStore.newInstance();
                     bufferedStream.reset();
-                    tmp.engineLoad(bufferedStream, password);
+                    Objects.requireNonNull(tmp).engineLoad(bufferedStream, password);
                     keystore = tmp;
                     type = secondaryType;
 
@@ -301,14 +304,14 @@ public class KeyStoreDelegator extends KeyStoreSpi {
             KeyStoreSpi tmp = primaryKeyStore.newInstance();
             keystore = tmp;
             type = primaryType;
-            result = keystore.engineProbe(stream);
+            result = Objects.requireNonNull(keystore).engineProbe(stream);
 
         } catch (Exception e) {
             throw new IOException(e);
 
         } finally {
             // reset
-            if (result == false) {
+            if (!result) {
                 type = null;
                 keystore = null;
             }

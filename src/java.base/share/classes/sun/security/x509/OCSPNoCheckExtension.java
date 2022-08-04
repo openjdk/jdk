@@ -26,10 +26,7 @@
 package sun.security.x509;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.util.Enumeration;
-
-import sun.security.util.*;
 
 /**
  * Represent the OCSP NoCheck Extension from RFC2560.

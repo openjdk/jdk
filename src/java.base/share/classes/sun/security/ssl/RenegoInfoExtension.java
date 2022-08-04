@@ -31,6 +31,7 @@ import java.security.MessageDigest;
 import java.text.MessageFormat;
 import java.util.Arrays;
 import java.util.Locale;
+import java.util.Objects;
 import javax.net.ssl.SSLProtocolException;
 import sun.security.ssl.ClientHello.ClientHelloMessage;
 import static sun.security.ssl.SSLExtension.CH_RENEGOTIATION_INFO;
@@ -65,7 +66,7 @@ final class RenegoInfoExtension {
      * The "renegotiation_info" extension.
      */
     static final class RenegotiationInfoSpec implements SSLExtensionSpec {
-        // A nominal object that does not holding any real renegotiation info.
+        // A nominal object that does not hold any real renegotiation info.
         static final RenegotiationInfoSpec NOMINAL =
                 new RenegotiationInfoSpec(new byte[0]);
 
@@ -92,17 +93,17 @@ final class RenegoInfoExtension {
         public String toString() {
             MessageFormat messageFormat = new MessageFormat(
                 "\"renegotiated connection\": '['{0}']'", Locale.ENGLISH);
+            Object[] messageFields;
             if (renegotiatedConnection.length == 0) {
-                Object[] messageFields = {
+                messageFields = new Object[]{
                         "<no renegotiated connection>"
-                    };
-                return messageFormat.format(messageFields);
+                };
             } else {
-                Object[] messageFields = {
+                messageFields = new Object[]{
                         Utilities.toHexString(renegotiatedConnection)
-                    };
-                return messageFormat.format(messageFields);
+                };
             }
+            return messageFormat.format(messageFields);
         }
     }
 
@@ -137,7 +138,7 @@ final class RenegoInfoExtension {
             ClientHandshakeContext chc = (ClientHandshakeContext)context;
 
             // Is it a supported and enabled extension?
-            if (!chc.sslConfig.isAvailable(CH_RENEGOTIATION_INFO)) {
+            if (!Objects.requireNonNull(chc.sslConfig).isAvailable(CH_RENEGOTIATION_INFO)) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
                             "Ignore unavailable renegotiation_info extension");
@@ -147,7 +148,7 @@ final class RenegoInfoExtension {
             }
 
             if (!chc.conContext.isNegotiated) {
-                if (chc.activeCipherSuites.contains(
+                if (Objects.requireNonNull(chc.activeCipherSuites).contains(
                         CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV)) {
                     // Using the TLS_EMPTY_RENEGOTIATION_INFO_SCSV instead.
                     return null;
@@ -215,7 +216,7 @@ final class RenegoInfoExtension {
             ServerHandshakeContext shc = (ServerHandshakeContext)context;
 
             // Is it a supported and enabled extension?
-            if (!shc.sslConfig.isAvailable(CH_RENEGOTIATION_INFO)) {
+            if (!Objects.requireNonNull(shc.sslConfig).isAvailable(CH_RENEGOTIATION_INFO)) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine("Ignore unavailable extension: " +
                             CH_RENEGOTIATION_INFO.name);
@@ -419,11 +420,11 @@ final class RenegoInfoExtension {
             ClientHandshakeContext chc = (ClientHandshakeContext)context;
 
             // In response to the client renegotiation_info extension request
-            // or SCSV signling, which is mandatory for ClientHello message.
+            // or SCSV signaling, which is mandatory for ClientHello message.
             RenegotiationInfoSpec requestedSpec = (RenegotiationInfoSpec)
                     chc.handshakeExtensions.get(CH_RENEGOTIATION_INFO);
             if (requestedSpec == null &&
-                    !chc.activeCipherSuites.contains(
+                    !Objects.requireNonNull(chc.activeCipherSuites).contains(
                             CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV)) {
                 throw chc.conContext.fatal(Alert.INTERNAL_ERROR,
                     "Missing renegotiation_info and SCSV detected in " +
@@ -497,11 +498,11 @@ final class RenegoInfoExtension {
             ClientHandshakeContext chc = (ClientHandshakeContext)context;
 
             // In response to the client renegotiation_info extension request
-            // or SCSV signling, which is mandatory for ClientHello message.
+            // or SCSV signaling, which is mandatory for ClientHello message.
             RenegotiationInfoSpec requestedSpec = (RenegotiationInfoSpec)
                     chc.handshakeExtensions.get(CH_RENEGOTIATION_INFO);
             if (requestedSpec == null &&
-                    !chc.activeCipherSuites.contains(
+                    !Objects.requireNonNull(chc.activeCipherSuites).contains(
                             CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV)) {
                 throw chc.conContext.fatal(Alert.INTERNAL_ERROR,
                     "Missing renegotiation_info and SCSV detected in " +

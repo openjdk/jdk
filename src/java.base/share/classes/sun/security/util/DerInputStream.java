@@ -289,7 +289,7 @@ public class DerInputStream {
      * Mark the current position in the buffer, so that
      * a later call to <code>reset</code> will return here.
      * The {@code readAheadLimit} is useless here because
-     * all data is available and we can go to anywhere at will.
+     * all data is available, and we can go to anywhere at will.
      */
     public void mark(int readAheadLimit) { mark = pos; }
 
@@ -324,7 +324,6 @@ public class DerInputStream {
      *
      * @param rule the rule to check for the tag.
      * @return true if matches, false if not or stream is at end.
-     * @throws IOException if an I/O error happens while peeking the byte
      */
     private boolean checkNextTag(Predicate<Byte> rule) {
         return available() > 0 && rule.test(data[pos]);
@@ -335,7 +334,6 @@ public class DerInputStream {
      *
      * @param tag the expected tag
      * @return true if matches, false if not or stream is at end.
-     * @throws IOException if an I/O error happens while peeking the byte
      */
     private boolean checkNextTag(byte tag) {
         return checkNextTag(t -> t == tag);

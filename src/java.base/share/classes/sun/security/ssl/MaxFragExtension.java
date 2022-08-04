@@ -27,6 +27,7 @@ package sun.security.ssl;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.Objects;
 import javax.net.ssl.SSLProtocolException;
 import static sun.security.ssl.SSLExtension.CH_MAX_FRAGMENT_LENGTH;
 import static sun.security.ssl.SSLExtension.EE_MAX_FRAGMENT_LENGTH;
@@ -100,7 +101,7 @@ final class MaxFragExtension {
         }
     }
 
-    static enum MaxFragLenEnum {
+    enum MaxFragLenEnum {
         MFL_512     ((byte)0x01,  512,  "2^9"),
         MFL_1024    ((byte)0x02, 1024,  "2^10"),
         MFL_2048    ((byte)0x03, 2048,  "2^11"),
@@ -110,7 +111,7 @@ final class MaxFragExtension {
         final int fragmentSize;
         final String description;
 
-        private MaxFragLenEnum(byte id, int fragmentSize, String description) {
+        MaxFragLenEnum(byte id, int fragmentSize, String description) {
             this.id = id;
             this.fragmentSize = fragmentSize;
             this.description = description;
@@ -175,7 +176,7 @@ final class MaxFragExtension {
             ClientHandshakeContext chc = (ClientHandshakeContext)context;
 
             // Is it a supported and enabled extension?
-            if (!chc.sslConfig.isAvailable(CH_MAX_FRAGMENT_LENGTH)) {
+            if (!Objects.requireNonNull(chc.sslConfig).isAvailable(CH_MAX_FRAGMENT_LENGTH)) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
                         "Ignore unavailable max_fragment_length extension");
@@ -242,7 +243,7 @@ final class MaxFragExtension {
             // The consuming happens in server side only.
             ServerHandshakeContext shc = (ServerHandshakeContext)context;
 
-            if (!shc.sslConfig.isAvailable(CH_MAX_FRAGMENT_LENGTH)) {
+            if (!Objects.requireNonNull(shc.sslConfig).isAvailable(CH_MAX_FRAGMENT_LENGTH)) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
                         "Ignore unavailable max_fragment_length extension");
@@ -296,7 +297,7 @@ final class MaxFragExtension {
             }
 
             if ((shc.maxFragmentLength > 0) &&
-                    (shc.sslConfig.maximumPacketSize != 0)) {
+                    (Objects.requireNonNull(shc.sslConfig).maximumPacketSize != 0)) {
                 int estimatedMaxFragSize =
                         shc.negotiatedCipherSuite.calculatePacketSize(
                                 shc.maxFragmentLength, shc.negotiatedProtocol,
@@ -404,7 +405,7 @@ final class MaxFragExtension {
             }
 
             if ((chc.maxFragmentLength > 0) &&
-                    (chc.sslConfig.maximumPacketSize != 0)) {
+                    (Objects.requireNonNull(chc.sslConfig).maximumPacketSize != 0)) {
                 int estimatedMaxFragSize =
                         chc.negotiatedCipherSuite.calculatePacketSize(
                                 chc.maxFragmentLength, chc.negotiatedProtocol,
@@ -463,7 +464,7 @@ final class MaxFragExtension {
             }
 
             if ((shc.maxFragmentLength > 0) &&
-                    (shc.sslConfig.maximumPacketSize != 0)) {
+                    (Objects.requireNonNull(shc.sslConfig).maximumPacketSize != 0)) {
                 int estimatedMaxFragSize =
                         shc.negotiatedCipherSuite.calculatePacketSize(
                                 shc.maxFragmentLength, shc.negotiatedProtocol,
@@ -569,7 +570,7 @@ final class MaxFragExtension {
             }
 
             if ((chc.maxFragmentLength > 0) &&
-                    (chc.sslConfig.maximumPacketSize != 0)) {
+                    (Objects.requireNonNull(chc.sslConfig).maximumPacketSize != 0)) {
                 int estimatedMaxFragSize =
                         chc.negotiatedCipherSuite.calculatePacketSize(
                                 chc.maxFragmentLength, chc.negotiatedProtocol,

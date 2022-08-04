@@ -47,7 +47,7 @@ import sun.security.util.*;
  * containing the required parameters prior to using the key in cryptographic
  * operations.  The following is an example of how this may be done assuming
  * that we have a certificate called <code>currentCert</code> which doesn't
- * contain DSS/DSA parameters and we need to derive DSS/DSA parameters
+ * contain DSS/DSA parameters, and we need to derive DSS/DSA parameters
  * from a CA's certificate called <code>caCert</code>.
  *
  * <pre>{@code

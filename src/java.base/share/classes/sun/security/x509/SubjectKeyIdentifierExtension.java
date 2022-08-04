@@ -38,9 +38,9 @@ import sun.security.util.*;
  * public key used in an application.  This extension by default is marked
  * non-critical.
  *
- * <p>Extensions are addiitonal attributes which can be inserted in a X509
+ * <p>Extensions are additional attributes which can be inserted in a X509
  * v3 certificate. For example a "Driving License Certificate" could have
- * the driving license number as a extension.
+ * the driving license number as an extension.
  *
  * <p>Extensions are represented as a sequence of the extension identifier
  * (Object Identifier), a boolean flag stating whether the extension is to
@@ -67,7 +67,7 @@ implements CertAttrSet<String> {
     public static final String KEY_ID = "key_id";
 
     // Private data member
-    private KeyIdentifier id = null;
+    private KeyIdentifier id;
 
     // Encode this extension value
     private void encodeThis() throws IOException {

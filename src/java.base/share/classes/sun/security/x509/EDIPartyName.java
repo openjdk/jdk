@@ -181,13 +181,10 @@ public class EDIPartyName implements GeneralNameInterface {
         }
         String otherParty = ((EDIPartyName)other).party;
         if (this.party == null) {
-            if (otherParty != null)
-                return false;
+            return otherParty == null;
         } else {
-            if (!(this.party.equals(otherParty)))
-                return false;
+            return this.party.equals(otherParty);
         }
-        return true;
     }
 
     /**

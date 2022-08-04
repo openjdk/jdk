@@ -25,12 +25,11 @@
 
 package sun.security.x509;
 
-import java.io.IOException;
-import java.util.*;
-
-import sun.security.util.BitArray;
 import sun.security.util.DerOutputStream;
 import sun.security.util.DerValue;
+
+import java.io.IOException;
+import java.util.Objects;
 
 /**
  * Represents the DistributionPointName ASN.1 type.
@@ -196,10 +195,9 @@ public class DistributionPointName {
         if (this == obj) {
             return true;
         }
-        if (obj instanceof DistributionPointName == false) {
+        if (!(obj instanceof DistributionPointName other)) {
             return false;
         }
-        DistributionPointName other = (DistributionPointName)obj;
 
         return Objects.equals(this.fullName, other.fullName) &&
                Objects.equals(this.relativeName, other.relativeName);

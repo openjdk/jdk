@@ -408,7 +408,7 @@ public class X509CRLEntryImpl extends X509CRLEntry
 
             if (extAlias == null) { // may be unknown
                 ObjectIdentifier findOID = ObjectIdentifier.of(oid);
-                Extension ex = null;
+                Extension ex;
                 ObjectIdentifier inCertOID;
                 for (Enumeration<Extension> e = extensions.getElements();
                                                  e.hasMoreElements();) {

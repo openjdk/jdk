@@ -181,8 +181,7 @@ final class TrustStoreManager {
                 return true;
             }
 
-            if (obj instanceof TrustStoreDescriptor) {
-                TrustStoreDescriptor that = (TrustStoreDescriptor)obj;
+            if (obj instanceof TrustStoreDescriptor that) {
                 return ((this.lastModified == that.lastModified) &&
                     Objects.equals(this.storeName, that.storeName) &&
                     Objects.equals(this.storeType, that.storeType) &&
@@ -409,7 +408,7 @@ final class TrustStoreManager {
          */
         private static Set<X509Certificate> loadTrustedCerts(KeyStore ks) {
             if (ks == null) {
-                return Collections.<X509Certificate>emptySet();
+                return Collections.emptySet();
             }
 
             return TrustStoreUtil.getTrustedCerts(ks);

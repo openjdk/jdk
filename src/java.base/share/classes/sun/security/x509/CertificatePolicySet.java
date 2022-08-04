@@ -71,11 +71,10 @@ public class CertificatePolicySet {
      * Return printable form of the object.
      */
     public String toString() {
-        String s = "CertificatePolicySet:[\n"
-                 + ids.toString()
-                 + "]\n";
 
-        return (s);
+        return ("CertificatePolicySet:[\n"
+                 + ids.toString()
+                 + "]\n");
     }
 
     /**

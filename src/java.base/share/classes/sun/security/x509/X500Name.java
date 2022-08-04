@@ -148,7 +148,7 @@ public class X500Name implements GeneralNameInterface, Principal {
      * @param dname the X.500 Distinguished Name
      */
     public X500Name(String dname) throws IOException {
-        this(dname, Collections.<String, String>emptyMap());
+        this(dname, Collections.emptyMap());
     }
 
     /**
@@ -181,7 +181,7 @@ public class X500Name implements GeneralNameInterface, Principal {
         if (format.equalsIgnoreCase("RFC2253")) {
             parseRFC2253DN(dname);
         } else if (format.equalsIgnoreCase("DEFAULT")) {
-            parseDN(dname, Collections.<String, String>emptyMap());
+            parseDN(dname, Collections.emptyMap());
         } else {
             throw new IOException("Unsupported format " + format);
         }
@@ -198,7 +198,7 @@ public class X500Name implements GeneralNameInterface, Principal {
      * @param commonName common name of a person, e.g. "Vivette Davis"
      * @param organizationUnit small organization name, e.g. "Purchasing"
      * @param organizationName large organization name, e.g. "Onizuka, Inc."
-     * @param country two letter country code, e.g. "CH"
+     * @param country two-letter country code, e.g. "CH"
      */
     public X500Name(String commonName, String organizationUnit,
                      String organizationName, String country)
@@ -235,7 +235,7 @@ public class X500Name implements GeneralNameInterface, Principal {
      * @param organizationName large organization name, e.g. "Onizuka, Inc."
      * @param localityName locality (city) name, e.g. "Palo Alto"
      * @param stateName state name, e.g. "California"
-     * @param country two letter country code, e.g. "CH"
+     * @param country two-letter country code, e.g. "CH"
      */
     public X500Name(String commonName, String organizationUnit,
                     String organizationName, String localityName,
@@ -408,10 +408,9 @@ public class X500Name implements GeneralNameInterface, Principal {
         if (this == obj) {
             return true;
         }
-        if (obj instanceof X500Name == false) {
+        if (!(obj instanceof X500Name other)) {
             return false;
         }
-        X500Name other = (X500Name)obj;
         // if we already have the canonical forms, compare now
         if ((this.canonicalDn != null) && (other.canonicalDn != null)) {
             return this.canonicalDn.equals(other.canonicalDn);
@@ -636,7 +635,7 @@ public class X500Name implements GeneralNameInterface, Principal {
      * keywords defined in RFC 1779 are emitted.
      */
     public String getRFC1779Name() {
-        return getRFC1779Name(Collections.<String, String>emptyMap());
+        return getRFC1779Name(Collections.emptyMap());
     }
 
     /**
@@ -649,12 +648,10 @@ public class X500Name implements GeneralNameInterface, Principal {
         throws IllegalArgumentException {
         if (oidMap.isEmpty()) {
             // return cached result
-            if (rfc1779Dn != null) {
-                return rfc1779Dn;
-            } else {
+            if (rfc1779Dn == null) {
                 rfc1779Dn = generateRFC1779DN(oidMap);
-                return rfc1779Dn;
             }
+            return rfc1779Dn;
         }
         return generateRFC1779DN(oidMap);
     }
@@ -665,7 +662,7 @@ public class X500Name implements GeneralNameInterface, Principal {
      * keywords defined in RFC 2253 are emitted.
      */
     public String getRFC2253Name() {
-        return getRFC2253Name(Collections.<String, String>emptyMap());
+        return getRFC2253Name(Collections.emptyMap());
     }
 
     /**
@@ -677,12 +674,10 @@ public class X500Name implements GeneralNameInterface, Principal {
     public String getRFC2253Name(Map<String, String> oidMap) {
         /* check for and return cached name */
         if (oidMap.isEmpty()) {
-            if (rfc2253Dn != null) {
-                return rfc2253Dn;
-            } else {
+            if (rfc2253Dn == null) {
                 rfc2253Dn = generateRFC2253DN(oidMap);
-                return rfc2253Dn;
             }
+            return rfc2253Dn;
         }
         return generateRFC2253DN(oidMap);
     }
@@ -789,7 +784,7 @@ public class X500Name implements GeneralNameInterface, Principal {
         // more and order matters.  We scan them in order, which
         // conventionally is big-endian.
         //
-        DerValue[] nameseq = null;
+        DerValue[] nameseq;
         byte[] derBytes = in.toByteArray();
 
         try {
@@ -892,11 +887,9 @@ public class X500Name implements GeneralNameInterface, Principal {
         String rdnString;
         int quoteCount = 0;
 
-        String dnString = input;
-
         int searchOffset = 0;
-        int nextComma = dnString.indexOf(',');
-        int nextSemiColon = dnString.indexOf(';');
+        int nextComma = input.indexOf(',');
+        int nextSemiColon = input.indexOf(';');
         while (nextComma >=0 || nextSemiColon >=0) {
 
             if (nextSemiColon < 0) {
@@ -906,7 +899,7 @@ public class X500Name implements GeneralNameInterface, Principal {
             } else {
                 rdnEnd = Math.min(nextComma, nextSemiColon);
             }
-            quoteCount += countQuotes(dnString, searchOffset, rdnEnd);
+            quoteCount += countQuotes(input, searchOffset, rdnEnd);
 
             /*
              * We have encountered an RDN delimiter (comma or a semicolon).
@@ -916,12 +909,12 @@ public class X500Name implements GeneralNameInterface, Principal {
              * delimit the RDN under consideration from any subsequent RDNs.
              */
             if (rdnEnd >= 0 && quoteCount != 1 &&
-                !escaped(rdnEnd, searchOffset, dnString)) {
+                !escaped(rdnEnd, searchOffset, input)) {
 
                 /*
                  * Comma/semicolon is a separator
                  */
-                rdnString = dnString.substring(dnOffset, rdnEnd);
+                rdnString = input.substring(dnOffset, rdnEnd);
 
                 // Parse RDN, and store it in vector
                 RDN rdn = new RDN(rdnString, keywordMap);
@@ -935,12 +928,12 @@ public class X500Name implements GeneralNameInterface, Principal {
             }
 
             searchOffset = rdnEnd + 1;
-            nextComma = dnString.indexOf(',', searchOffset);
-            nextSemiColon = dnString.indexOf(';', searchOffset);
+            nextComma = input.indexOf(',', searchOffset);
+            nextSemiColon = input.indexOf(';', searchOffset);
         }
 
         // Parse last or only RDN, and store it in vector
-        rdnString = dnString.substring(dnOffset);
+        rdnString = input.substring(dnOffset);
         RDN rdn = new RDN(rdnString, keywordMap);
         dnVector.add(rdn);
 
@@ -949,7 +942,7 @@ public class X500Name implements GeneralNameInterface, Principal {
          * NOTE: It's only on output that little-endian ordering is used.
          */
         Collections.reverse(dnVector);
-        names = dnVector.toArray(new RDN[dnVector.size()]);
+        names = dnVector.toArray(new RDN[0]);
     }
 
     private void parseRFC2253DN(String dnString) throws IOException {
@@ -1000,7 +993,7 @@ public class X500Name implements GeneralNameInterface, Principal {
           * NOTE: It's only on output that little-endian ordering is used.
           */
          Collections.reverse(dnVector);
-         names = dnVector.toArray(new RDN[dnVector.size()]);
+         names = dnVector.toArray(new RDN[0]);
     }
 
     /*
@@ -1023,7 +1016,7 @@ public class X500Name implements GeneralNameInterface, Principal {
     private static boolean escaped
                 (int rdnEnd, int searchOffset, String dnString) {
 
-        if (rdnEnd == 1 && dnString.charAt(rdnEnd - 1) == '\\') {
+        if (rdnEnd == 1 && dnString.charAt(0) == '\\') {
 
             //  case 1:
             //  \,
@@ -1054,7 +1047,7 @@ public class X500Name implements GeneralNameInterface, Principal {
             }
 
             // if count is odd, then rdnEnd is escaped
-            return (count % 2) != 0 ? true : false;
+            return (count % 2) != 0;
 
         } else {
             return false;
@@ -1071,11 +1064,6 @@ public class X500Name implements GeneralNameInterface, Principal {
     private void generateDN() {
         if (names.length == 1) {
             dn = names[0].toString();
-            return;
-        }
-
-        if (names == null) {
-            dn = "";
             return;
         }
 
@@ -1098,10 +1086,6 @@ public class X500Name implements GeneralNameInterface, Principal {
     private String generateRFC1779DN(Map<String, String> oidMap) {
         if (names.length == 1) {
             return names[0].toRFC1779String(oidMap);
-        }
-
-        if (names == null) {
-            return "";
         }
 
         StringJoiner sj = new StringJoiner(", ");
@@ -1299,7 +1283,7 @@ public class X500Name implements GeneralNameInterface, Principal {
         if (thisLen == 0 || otherLen == 0) {
             return null;
         }
-        int minLen = (thisLen < otherLen) ? thisLen: otherLen;
+        int minLen = Math.min(thisLen, otherLen);
 
         //Compare names from highest RDN down the naming tree
         //Note that these are stored in RDN[0]...
@@ -1316,11 +1300,9 @@ public class X500Name implements GeneralNameInterface, Principal {
 
         //Copy matching RDNs into new RDN array
         RDN[] ancestor = new RDN[i];
-        for (int j=0; j < i; j++) {
-            ancestor[j] = names[j];
-        }
+        System.arraycopy(names, 0, ancestor, 0, i);
 
-        X500Name commonAncestor = null;
+        X500Name commonAncestor;
         try {
             commonAncestor = new X500Name(ancestor);
         } catch (IOException ioe) {
@@ -1345,17 +1327,15 @@ public class X500Name implements GeneralNameInterface, Principal {
      */
     static {
         PrivilegedExceptionAction<Object[]> pa =
-                new PrivilegedExceptionAction<>() {
-            public Object[] run() throws Exception {
-                Class<X500Principal> pClass = X500Principal.class;
-                Class<?>[] args = new Class<?>[] { X500Name.class };
-                Constructor<X500Principal> cons = pClass.getDeclaredConstructor(args);
-                cons.setAccessible(true);
-                Field field = pClass.getDeclaredField("thisX500Name");
-                field.setAccessible(true);
-                return new Object[] {cons, field};
-            }
-        };
+                () -> {
+                    Class<X500Principal> pClass = X500Principal.class;
+                    Class<?>[] args = new Class<?>[] { X500Name.class };
+                    Constructor<X500Principal> cons = pClass.getDeclaredConstructor(args);
+                    cons.setAccessible(true);
+                    Field field = pClass.getDeclaredField("thisX500Name");
+                    field.setAccessible(true);
+                    return new Object[] {cons, field};
+                };
         try {
             @SuppressWarnings("removal")
             Object[] result = AccessController.doPrivileged(pa);

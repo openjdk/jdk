@@ -139,7 +139,7 @@ public class Debug {
 
     /**
      * Get a Debug object corresponding to whether or not the given
-     * option is set. Set the prefix to be prefix.
+     * option is set. Set the prefix to prefix.
      */
     public static Debug getInstance(String option, String prefix)
     {
@@ -214,7 +214,7 @@ public class Debug {
     }
 
     /**
-     * PrintStream for debug methods. Currently only System.err is supported.
+     * PrintStream for debug methods. Currently, only System.err is supported.
      */
     public PrintStream getPrintStream() {
         return System.err;

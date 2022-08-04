@@ -41,7 +41,7 @@ public interface DerEncoder {
      *
      * @param out  the stream on which the DER encoding is written.
      */
-    public void derEncode(OutputStream out)
+    void derEncode(OutputStream out)
         throws IOException;
 
 }

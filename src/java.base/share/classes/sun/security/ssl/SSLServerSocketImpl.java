@@ -44,7 +44,7 @@ import javax.net.ssl.SSLServerSocket;
  * the standard SSLServerSocketFactory API.
  *
  * <P> System security defaults prevent server sockets from accepting
- * connections if they the authentication context has not been given
+ * connections if the authentication context has not been given
  * a certificate chain and its matching private key.  If the clients
  * of your application support "anonymous" cipher suites, you may be
  * able to configure a server socket to accept those suites.

@@ -69,7 +69,7 @@ public class HandshakeOutStream extends ByteArrayOutputStream {
 
             // reset the byte array output stream
             reset();
-        }   // otherwise, the handshake outstream is temporarily used only.
+        }   // otherwise, the handshake output stream is temporarily used only.
     }
 
     //
@@ -110,14 +110,14 @@ public class HandshakeOutStream extends ByteArrayOutputStream {
         super.write(i);
     }
 
-    void putInt24(int i) throws IOException {
+    void putInt24(int i) {
         checkOverflow(i, Record.OVERFLOW_OF_INT24);
         super.write(i >> 16);
         super.write(i >> 8);
         super.write(i);
     }
 
-    void putInt32(int i) throws IOException {
+    void putInt32(int i) {
         super.write(i >> 24);
         super.write(i >> 16);
         super.write(i >> 8);
@@ -146,7 +146,7 @@ public class HandshakeOutStream extends ByteArrayOutputStream {
         }
     }
 
-    void putBytes24(byte[] b) throws IOException {
+    void putBytes24(byte[] b) {
         if (b == null) {
             putInt24(0);
         } else {

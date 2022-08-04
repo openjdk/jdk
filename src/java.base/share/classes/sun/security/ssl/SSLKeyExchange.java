@@ -26,11 +26,9 @@
 package sun.security.ssl;
 
 import java.io.IOException;
+import java.util.*;
 import java.util.AbstractMap.SimpleImmutableEntry;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+
 import sun.security.ssl.SupportedGroupsExtension.SupportedGroups;
 import sun.security.ssl.X509Authentication.X509Possession;
 
@@ -64,10 +62,9 @@ final class SSLKeyExchange implements SSLKeyAgreementGenerator,
 
             if (authPossession == null) {
                 return new SSLPossession[0];
-            } else if (context instanceof ServerHandshakeContext) {
+            } else if (context instanceof ServerHandshakeContext shc) {
                 // The authentication information may be used further for
                 // key agreement parameters negotiation.
-                ServerHandshakeContext shc = (ServerHandshakeContext)context;
                 shc.interimAuthn = authPossession;
             }
         }
@@ -403,7 +400,7 @@ final class SSLKeyExchange implements SSLKeyAgreementGenerator,
                 return (Map.Entry<Byte, HandshakeProducer>[])(new Map.Entry[0]);
             }
 
-            if (handshakeContext.sslConfig.isClientMode) {
+            if (Objects.requireNonNull(handshakeContext.sslConfig).isClientMode) {
                 switch (this) {
                     case RSA:
                     case RSA_EXPORT:
@@ -486,7 +483,7 @@ final class SSLKeyExchange implements SSLKeyAgreementGenerator,
                 return (Map.Entry<Byte, SSLConsumer>[])(new Map.Entry[0]);
             }
 
-            if (handshakeContext.sslConfig.isClientMode) {
+            if (Objects.requireNonNull(handshakeContext.sslConfig).isClientMode) {
                 switch (this) {
                     case RSA_EXPORT:
                         return (Map.Entry<Byte,

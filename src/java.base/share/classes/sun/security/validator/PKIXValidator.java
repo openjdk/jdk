@@ -54,7 +54,7 @@ public final class PKIXValidator extends Validator {
     /**
      * Flag indicating whether to enable revocation check for the PKIX trust
      * manager. Typically, this will only work if the PKIX implementation
-     * supports CRL distribution points as we do not manually setup CertStores.
+     * supports CRL distribution points as we do not manually set up CertStores.
      */
     private static final boolean checkTLSRevocation = GetBooleanAction
             .privilegedGetProperty("com.sun.net.ssl.checkRevocation");
@@ -83,7 +83,7 @@ public final class PKIXValidator extends Validator {
         super(TYPE_PKIX, variant);
         this.trustedCerts = (trustedCerts instanceof Set) ?
                             (Set<X509Certificate>)trustedCerts :
-                            new HashSet<X509Certificate>(trustedCerts);
+                new HashSet<>(trustedCerts);
 
         Set<TrustAnchor> trustAnchors = new HashSet<>();
         for (X509Certificate cert : trustedCerts) {
@@ -106,7 +106,7 @@ public final class PKIXValidator extends Validator {
 
     PKIXValidator(String variant, PKIXBuilderParameters params) {
         super(TYPE_PKIX, variant);
-        trustedCerts = new HashSet<X509Certificate>();
+        trustedCerts = new HashSet<>();
         for (TrustAnchor anchor : params.getTrustAnchors()) {
             X509Certificate cert = anchor.getTrustedCert();
             if (cert != null) {
@@ -140,7 +140,7 @@ public final class PKIXValidator extends Validator {
             if (subjectMap.containsKey(dn)) {
                 keys = subjectMap.get(dn);
             } else {
-                keys = new ArrayList<PublicKey>();
+                keys = new ArrayList<>();
                 subjectMap.put(dn, keys);
             }
             keys.add(cert.getPublicKey());
@@ -173,8 +173,8 @@ public final class PKIXValidator extends Validator {
      * revocation checking. In the future, this should be configurable.
      */
     private void setDefaultParameters(String variant) {
-        if ((variant == Validator.VAR_TLS_SERVER) ||
-                (variant == Validator.VAR_TLS_CLIENT)) {
+        if ((Objects.equals(variant, Validator.VAR_TLS_SERVER)) ||
+                (Objects.equals(variant, Validator.VAR_TLS_CLIENT))) {
             parameterTemplate.setRevocationEnabled(checkTLSRevocation);
         } else {
             parameterTemplate.setRevocationEnabled(false);
@@ -216,13 +216,13 @@ public final class PKIXValidator extends Validator {
 
         // add new algorithm constraints checker
         if (constraints != null) {
-            pkixParameters.addCertPathChecker(
+            Objects.requireNonNull(pkixParameters).addCertPathChecker(
                     new AlgorithmChecker(constraints, variant));
         }
 
         // attach it to the PKIXBuilderParameters.
         if (!responseList.isEmpty()) {
-            addResponses(pkixParameters, chain, responseList);
+            addResponses(Objects.requireNonNull(pkixParameters), chain, responseList);
         }
 
         // check that chain is in correct order and check if chain contains
@@ -368,7 +368,7 @@ public final class PKIXValidator extends Validator {
 
             // setup CertStores
             Collection<X509Certificate> certs =
-                                        new ArrayList<X509Certificate>();
+                    new ArrayList<>();
             certs.addAll(Arrays.asList(chain));
             if (otherCerts != null) {
                 certs.addAll(otherCerts);

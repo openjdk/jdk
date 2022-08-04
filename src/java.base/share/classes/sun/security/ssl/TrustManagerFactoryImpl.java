@@ -62,7 +62,7 @@ abstract class TrustManagerFactoryImpl extends TrustManagerFactorySpi {
             } catch (RuntimeException re) {
                 if (SSLLogger.isOn && SSLLogger.isOn("trustmanager")) {
                     SSLLogger.fine(
-                        "SunX509: skip default keystor", re);
+                        "SunX509: skip default keystore", re);
                 }
                 throw re;
             } catch (Exception e) {
@@ -114,7 +114,7 @@ abstract class TrustManagerFactoryImpl extends TrustManagerFactorySpi {
         return AccessController.doPrivileged(
                 new PrivilegedExceptionAction<FileInputStream>() {
                     @Override
-                    public FileInputStream run() throws Exception {
+                    public FileInputStream run() {
                         try {
                             if (file.exists()) {
                                 return new FileInputStream(file);
@@ -162,11 +162,10 @@ abstract class TrustManagerFactoryImpl extends TrustManagerFactorySpi {
             }
             CertPathParameters params =
                 ((CertPathTrustManagerParameters)spec).getParameters();
-            if (!(params instanceof PKIXBuilderParameters)) {
+            if (!(params instanceof PKIXBuilderParameters pkixParams)) {
                 throw new InvalidAlgorithmParameterException
                     ("Encapsulated parameters must be PKIXBuilderParameters");
             }
-            PKIXBuilderParameters pkixParams = (PKIXBuilderParameters)params;
             return new X509TrustManagerImpl(Validator.TYPE_PKIX, pkixParams);
         }
     }

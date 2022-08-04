@@ -25,6 +25,8 @@
 
 package sun.security.util;
 
+import sun.security.validator.Validator;
+
 import java.security.CodeSigner;
 import java.security.Key;
 import java.security.Timestamp;
@@ -34,9 +36,6 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import sun.security.util.AnchorCertificates;
-import sun.security.util.ConstraintsParameters;
-import sun.security.validator.Validator;
 
 /**
  * This class contains parameters for checking signed JARs against
@@ -49,7 +48,7 @@ public class JarConstraintsParameters implements ConstraintsParameters {
     private boolean anchorIsJdkCA;
     private boolean anchorIsJdkCASet;
     // The timestamp of the signed JAR file, if timestamped
-    private Date timestamp;
+    private final Date timestamp;
     // The keys of the signers and TSA
     private final Set<Key> keys;
     // The certs in the signers and TSA chain that are issued by the trust anchor

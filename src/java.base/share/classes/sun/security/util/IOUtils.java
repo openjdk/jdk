@@ -23,7 +23,7 @@
  * questions.
  */
 
-/**
+/*
  * IOUtils: A collection of IO-related public static methods.
  */
 

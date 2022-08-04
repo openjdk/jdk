@@ -40,7 +40,7 @@ import sun.security.util.*;
  * @author Hemma Prafullchandra
  */
 public class KeyIdentifier {
-    private byte[] octetString;
+    private final byte[] octetString;
 
     /**
      * Create a KeyIdentifier with the passed bit settings.
@@ -90,7 +90,7 @@ public class KeyIdentifier {
         AlgorithmId algid = AlgorithmId.parse(algAndKey.data.getDerValue());
         byte[] key = algAndKey.data.getUnalignedBitString().toByteArray();
 
-        MessageDigest md = null;
+        MessageDigest md;
         try {
             md = MessageDigest.getInstance("SHA1");
         } catch (NoSuchAlgorithmException e3) {

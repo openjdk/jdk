@@ -561,7 +561,7 @@ final class SSLEngineImpl extends SSLEngine implements SSLTransport {
 
         /*
          * If we have a task outstanding, this *MUST* be done before
-         * doing any more unwrapping, because we could be in the middle
+         * doing anymore unwrapping, because we could be in the middle
          * of receiving a handshake message, for example, a finished
          * message which would change the ciphers.
          */
@@ -1130,7 +1130,7 @@ final class SSLEngineImpl extends SSLEngine implements SSLTransport {
                     if (conContext.delegatedThrown == exc) {
                         // clear if/only if both are the same
                         conContext.delegatedThrown = null;
-                    } // otherwise report the hc delegatedThrown
+                    } // otherwise, report the hc delegatedThrown
                 } else {
                     // Nothing waiting in HandshakeContext, but one is in the
                     // TransportContext.

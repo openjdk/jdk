@@ -28,7 +28,6 @@ package sun.security.util;
 import java.security.AlgorithmParameters;
 import java.security.CryptoPrimitive;
 import java.security.Key;
-import java.util.List;
 import java.util.Set;
 
 /**

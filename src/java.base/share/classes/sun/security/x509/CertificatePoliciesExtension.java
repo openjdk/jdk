@@ -145,7 +145,7 @@ implements CertAttrSet<String> {
             throw new IOException("Invalid encoding for " +
                                    "CertificatePoliciesExtension.");
         }
-        certPolicies = new ArrayList<PolicyInformation>();
+        certPolicies = new ArrayList<>();
         while (val.data.available() != 0) {
             DerValue seq = val.data.getDerValue();
             PolicyInformation policy = new PolicyInformation(seq);

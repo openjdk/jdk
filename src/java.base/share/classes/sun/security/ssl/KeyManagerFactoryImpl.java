@@ -83,7 +83,7 @@ abstract class KeyManagerFactoryImpl extends KeyManagerFactorySpi {
                 UnrecoverableKeyException {
             if (ks == null) {
                 keyManager = new X509KeyManagerImpl(
-                        Collections.<Builder>emptyList());
+                        Collections.emptyList());
             } else {
                 try {
                     Builder builder = Builder.newInstance(ks,

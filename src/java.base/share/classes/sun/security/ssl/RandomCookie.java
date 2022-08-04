@@ -27,7 +27,6 @@ package sun.security.ssl;
 
 import sun.security.util.ByteArrays;
 
-import java.io.*;
 import java.nio.ByteBuffer;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
@@ -99,7 +98,7 @@ final class RandomCookie {
         }
     }
 
-    RandomCookie(ByteBuffer m) throws IOException {
+    RandomCookie(ByteBuffer m) {
         m.get(randomBytes);
     }
 

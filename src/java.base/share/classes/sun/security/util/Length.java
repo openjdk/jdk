@@ -39,5 +39,5 @@ public interface Length {
      * @return the length of this object
      * @throws UnsupportedOperationException if the operation is not supported
      */
-    public int length();
+    int length();
 }

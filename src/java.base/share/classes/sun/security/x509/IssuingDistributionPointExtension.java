@@ -139,9 +139,7 @@ public class IssuingDistributionPointExtension extends Extension
         boolean hasOnlyAttributeCerts, boolean isIndirectCRL)
             throws IOException {
 
-        if ((hasOnlyUserCerts && (hasOnlyCACerts || hasOnlyAttributeCerts)) ||
-            (hasOnlyCACerts && (hasOnlyUserCerts || hasOnlyAttributeCerts)) ||
-            (hasOnlyAttributeCerts && (hasOnlyUserCerts || hasOnlyCACerts))) {
+        if (hasOnlyUserCerts && (hasOnlyCACerts || hasOnlyAttributeCerts) || hasOnlyCACerts && hasOnlyAttributeCerts) {
             throw new IllegalArgumentException(
                 "Only one of hasOnlyUserCerts, hasOnlyCACerts, " +
                 "hasOnlyAttributeCerts may be set to true");
@@ -187,7 +185,7 @@ public class IssuingDistributionPointExtension extends Extension
         }
 
         DerInputStream in = val.data;
-        while (in != null && in.available() != 0) {
+        while (in.available() != 0) {
             DerValue opt = in.getDerValue();
 
             if (opt.isContextSpecific(TAG_DISTRIBUTION_POINT) &&

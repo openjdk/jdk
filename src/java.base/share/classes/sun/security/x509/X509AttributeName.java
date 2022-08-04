@@ -36,7 +36,7 @@ public class X509AttributeName {
     private static final char SEPARATOR = '.';
 
     // Private data members
-    private String prefix = null;
+    private String prefix;
     private String suffix = null;
 
     /**

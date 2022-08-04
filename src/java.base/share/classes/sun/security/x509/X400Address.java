@@ -335,7 +335,7 @@ import sun.security.util.DerOutputStream;
 public class X400Address implements GeneralNameInterface {
 
     // Private data members
-    byte[] nameValue = null;
+    byte[] nameValue;
 
     /**
      * Create the X400Address object from the specified byte array

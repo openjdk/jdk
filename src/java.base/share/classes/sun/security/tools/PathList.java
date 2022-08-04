@@ -27,11 +27,9 @@ package sun.security.tools;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.String;
-import java.util.StringTokenizer;
-import java.net.URL;
-import java.net.URLClassLoader;
 import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.StringTokenizer;
 
 /**
  * A utility class for handle path list
@@ -68,9 +66,7 @@ public class PathList {
         int count = 0;
         while (st.hasMoreTokens()) {
             URL url = fileToURL(new File(st.nextToken()));
-            if (url != null) {
-                urls[count++] = url;
-            }
+            urls[count++] = url;
         }
         if (urls.length != count) {
             URL[] tmp = new URL[count];

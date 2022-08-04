@@ -42,7 +42,7 @@ import sun.security.util.*;
  */
 public class RFC822Name implements GeneralNameInterface
 {
-    private String name;
+    private final String name;
 
     /**
      * Create the RFC822Name object from the passed encoded Der value.
@@ -137,10 +137,8 @@ public class RFC822Name implements GeneralNameInterface
         if (this == obj)
             return true;
 
-        if (!(obj instanceof RFC822Name))
+        if (!(obj instanceof RFC822Name other))
             return false;
-
-        RFC822Name other = (RFC822Name)obj;
 
         // RFC 5280 mandates that these names are
         // not case-sensitive

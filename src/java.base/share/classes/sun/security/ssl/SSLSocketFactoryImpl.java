@@ -83,8 +83,7 @@ public final class SSLSocketFactoryImpl extends SSLSocketFactory {
      */
     @Override
     public Socket createSocket(String host, int port)
-    throws IOException, UnknownHostException
-    {
+    throws IOException {
         return new SSLSocketImpl(context, host, port);
     }
 

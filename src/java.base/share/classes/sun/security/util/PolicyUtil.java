@@ -74,7 +74,7 @@ public class PolicyUtil {
                 String keyStoreProvider,        // input: keyStore provider
                 String storePassURL,            // input: keyStore password
                 Debug debug)
-        throws KeyStoreException, MalformedURLException, IOException,
+        throws KeyStoreException, IOException,
                 NoSuchProviderException, NoSuchAlgorithmException,
                 java.security.cert.CertificateException {
 
@@ -131,13 +131,12 @@ public class PolicyUtil {
 
             if (NONE.equals(keyStoreName)) {
                 ks.load(null, keyStorePassword);
-                return ks;
             } else {
                 /*
                  * location of keystore is specified as absolute URL in policy
                  * file, or is relative to URL of policy file
                  */
-                URL keyStoreUrl = null;
+                URL keyStoreUrl;
                 try {
                     keyStoreUrl = new URL(keyStoreName);
                     // absolute URL
@@ -157,8 +156,8 @@ public class PolicyUtil {
                         new BufferedInputStream(getInputStream(keyStoreUrl))) {
                     ks.load(inStream, keyStorePassword);
                 }
-                return ks;
             }
+            return ks;
         } finally {
             if (keyStorePassword != null) {
                 Arrays.fill(keyStorePassword, ' ');

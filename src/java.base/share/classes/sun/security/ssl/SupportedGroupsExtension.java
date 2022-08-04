@@ -29,11 +29,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.security.AlgorithmConstraints;
 import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Locale;
+import java.util.*;
 import javax.net.ssl.SSLProtocolException;
 import sun.security.action.GetPropertyAction;
 import sun.security.ssl.NamedGroup.NamedGroupSpec;
@@ -95,7 +91,7 @@ final class SupportedGroupsExtension {
                     "Invalid supported_groups extension: unknown extra data"));
             }
 
-            if ((ngs == null) || (ngs.length == 0) || (ngs.length % 2 != 0)) {
+            if (ngs.length == 0 || ngs.length % 2 != 0) {
                 throw hc.conContext.fatal(Alert.DECODE_ERROR,
                         new SSLProtocolException(
                     "Invalid supported_groups extension: incomplete data"));
@@ -340,7 +336,7 @@ final class SupportedGroupsExtension {
             ClientHandshakeContext chc = (ClientHandshakeContext)context;
 
             // Is it a supported and enabled extension?
-            if (!chc.sslConfig.isAvailable(CH_SUPPORTED_GROUPS)) {
+            if (!Objects.requireNonNull(chc.sslConfig).isAvailable(CH_SUPPORTED_GROUPS)) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
                         "Ignore unavailable supported_groups extension");
@@ -358,8 +354,8 @@ final class SupportedGroupsExtension {
                 }
 
                 if (ng.isAvailable(chc.activeProtocols) &&
-                        ng.isSupported(chc.activeCipherSuites) &&
-                        ng.isPermitted(chc.algorithmConstraints)) {
+                    ng.isSupported(Objects.requireNonNull(chc.activeCipherSuites)) &&
+                    ng.isPermitted(Objects.requireNonNull(chc.algorithmConstraints))) {
                     namedGroups.add(ng);
                 } else if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
@@ -385,7 +381,7 @@ final class SupportedGroupsExtension {
 
             // Update the context.
             chc.clientRequestedNamedGroups =
-                    Collections.<NamedGroup>unmodifiableList(namedGroups);
+                    Collections.unmodifiableList(namedGroups);
             chc.handshakeExtensions.put(CH_SUPPORTED_GROUPS,
                     new SupportedGroupsSpec(namedGroups));
 
@@ -411,7 +407,7 @@ final class SupportedGroupsExtension {
             ServerHandshakeContext shc = (ServerHandshakeContext)context;
 
             // Is it a supported and enabled extension?
-            if (!shc.sslConfig.isAvailable(CH_SUPPORTED_GROUPS)) {
+            if (!Objects.requireNonNull(shc.sslConfig).isAvailable(CH_SUPPORTED_GROUPS)) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
                         "Ignore unavailable supported_groups extension");
@@ -486,7 +482,7 @@ final class SupportedGroupsExtension {
             ServerHandshakeContext shc = (ServerHandshakeContext)context;
 
             // Is it a supported and enabled extension?
-            if (!shc.sslConfig.isAvailable(EE_SUPPORTED_GROUPS)) {
+            if (!Objects.requireNonNull(shc.sslConfig).isAvailable(EE_SUPPORTED_GROUPS)) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
                         "Ignore unavailable supported_groups extension");
@@ -507,8 +503,8 @@ final class SupportedGroupsExtension {
                 }
 
                 if (ng.isAvailable(shc.activeProtocols) &&
-                        ng.isSupported(shc.activeCipherSuites) &&
-                        ng.isPermitted(shc.algorithmConstraints)) {
+                    ng.isSupported(Objects.requireNonNull(shc.activeCipherSuites)) &&
+                    ng.isPermitted(Objects.requireNonNull(shc.algorithmConstraints))) {
                     namedGroups.add(ng);
                 } else if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
@@ -534,7 +530,7 @@ final class SupportedGroupsExtension {
 
             // Update the context.
             shc.conContext.serverRequestedNamedGroups =
-                    Collections.<NamedGroup>unmodifiableList(namedGroups);
+                    Collections.unmodifiableList(namedGroups);
             SupportedGroupsSpec spec = new SupportedGroupsSpec(namedGroups);
             shc.handshakeExtensions.put(EE_SUPPORTED_GROUPS, spec);
 
@@ -556,7 +552,7 @@ final class SupportedGroupsExtension {
             ClientHandshakeContext chc = (ClientHandshakeContext)context;
 
             // Is it a supported and enabled extension?
-            if (!chc.sslConfig.isAvailable(EE_SUPPORTED_GROUPS)) {
+            if (!Objects.requireNonNull(chc.sslConfig).isAvailable(EE_SUPPORTED_GROUPS)) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
                         "Ignore unavailable supported_groups extension");

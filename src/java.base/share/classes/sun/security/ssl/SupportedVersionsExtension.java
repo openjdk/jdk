@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.text.MessageFormat;
 import java.util.Locale;
+import java.util.Objects;
 import javax.net.ssl.SSLProtocolException;
 import static sun.security.ssl.SSLExtension.CH_SUPPORTED_VERSIONS;
 import sun.security.ssl.SSLExtension.ExtensionConsumer;
@@ -89,7 +90,7 @@ final class SupportedVersionsExtension {
                     "Invalid supported_versions extension: unknown extra data"));
             }
 
-            if (vbs == null || vbs.length == 0 || (vbs.length & 0x01) != 0) {
+            if (vbs.length == 0 || (vbs.length & 0x01) != 0) {
                 throw hc.conContext.fatal(Alert.DECODE_ERROR,
                         new SSLProtocolException(
                     "Invalid supported_versions extension: incomplete data"));
@@ -167,7 +168,7 @@ final class SupportedVersionsExtension {
             ClientHandshakeContext chc = (ClientHandshakeContext)context;
 
             // Is it a supported and enabled extension?
-            if (!chc.sslConfig.isAvailable(CH_SUPPORTED_VERSIONS)) {
+            if (!Objects.requireNonNull(chc.sslConfig).isAvailable(CH_SUPPORTED_VERSIONS)) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
                         "Ignore unavailable extension: " +
@@ -179,7 +180,7 @@ final class SupportedVersionsExtension {
             // Produce the extension.
             //
             // The activated protocols are used as the supported versions.
-            int[] protocols = new int[chc.activeProtocols.size()];
+            int[] protocols = new int[Objects.requireNonNull(chc.activeProtocols).size()];
             int verLen = protocols.length * 2;
             byte[] extData = new byte[verLen + 1];      // 1: versions length
             extData[0] = (byte)(verLen & 0xFF);
@@ -215,7 +216,7 @@ final class SupportedVersionsExtension {
             ServerHandshakeContext shc = (ServerHandshakeContext)context;
 
             // Is it a supported and enabled extension?
-            if (!shc.sslConfig.isAvailable(CH_SUPPORTED_VERSIONS)) {
+            if (!Objects.requireNonNull(shc.sslConfig).isAvailable(CH_SUPPORTED_VERSIONS)) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
                         "Ignore unavailable extension: " +
@@ -316,7 +317,7 @@ final class SupportedVersionsExtension {
             }
 
             // Is it a supported and enabled extension?
-            if (!shc.sslConfig.isAvailable(SH_SUPPORTED_VERSIONS)) {
+            if (!Objects.requireNonNull(shc.sslConfig).isAvailable(SH_SUPPORTED_VERSIONS)) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
                         "Ignore unavailable extension: " +
@@ -355,7 +356,7 @@ final class SupportedVersionsExtension {
             ClientHandshakeContext chc = (ClientHandshakeContext)context;
 
             // Is it a supported and enabled extension?
-            if (!chc.sslConfig.isAvailable(SH_SUPPORTED_VERSIONS)) {
+            if (!Objects.requireNonNull(chc.sslConfig).isAvailable(SH_SUPPORTED_VERSIONS)) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
                         "Ignore unavailable extension: " +
@@ -398,7 +399,7 @@ final class SupportedVersionsExtension {
             ServerHandshakeContext shc = (ServerHandshakeContext)context;
 
             // Is it a supported and enabled extension?
-            if (!shc.sslConfig.isAvailable(HRR_SUPPORTED_VERSIONS)) {
+            if (!Objects.requireNonNull(shc.sslConfig).isAvailable(HRR_SUPPORTED_VERSIONS)) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
                         "Ignore unavailable extension: " +
@@ -440,7 +441,7 @@ final class SupportedVersionsExtension {
             ClientHandshakeContext chc = (ClientHandshakeContext)context;
 
             // Is it a supported and enabled extension?
-            if (!chc.sslConfig.isAvailable(HRR_SUPPORTED_VERSIONS)) {
+            if (!Objects.requireNonNull(chc.sslConfig).isAvailable(HRR_SUPPORTED_VERSIONS)) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
                         "Ignore unavailable extension: " +
@@ -482,7 +483,7 @@ final class SupportedVersionsExtension {
             ServerHandshakeContext shc = (ServerHandshakeContext)context;
 
             // Is it a supported and enabled extension?
-            if (!shc.sslConfig.isAvailable(HRR_SUPPORTED_VERSIONS)) {
+            if (!Objects.requireNonNull(shc.sslConfig).isAvailable(HRR_SUPPORTED_VERSIONS)) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
                         "[Reproduce] Ignore unavailable extension: " +

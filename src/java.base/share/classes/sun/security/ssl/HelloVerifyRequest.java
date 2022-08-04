@@ -29,6 +29,8 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.text.MessageFormat;
 import java.util.Locale;
+import java.util.Objects;
+
 import sun.security.ssl.ClientHello.ClientHelloMessage;
 import sun.security.ssl.SSLHandshake.HandshakeMessage;
 
@@ -104,10 +106,11 @@ final class HelloVerifyRequest {
         @Override
         public String toString() {
             MessageFormat messageFormat = new MessageFormat(
-                "\"HelloVerifyRequest\": '{'\n" +
-                "  \"server version\"      : \"{0}\",\n" +
-                "  \"cookie\"              : \"{1}\",\n" +
-                "'}'",
+                    """
+                            "HelloVerifyRequest": '{'
+                              "server version"      : "{0}",
+                              "cookie"              : "{1}",
+                            '}'""",
                 Locale.ENGLISH);
             Object[] messageFields = {
                 ProtocolVersion.nameOf(serverVersion),
@@ -135,7 +138,7 @@ final class HelloVerifyRequest {
             ServerHandshakeContext shc = (ServerHandshakeContext)context;
 
             // clean up this producer
-            shc.handshakeProducers.remove(SSLHandshake.HELLO_VERIFY_REQUEST.id);
+            Objects.requireNonNull(shc.handshakeProducers).remove(SSLHandshake.HELLO_VERIFY_REQUEST.id);
 
             HelloVerifyRequestMessage hvrm =
                     new HelloVerifyRequestMessage(shc, message);
@@ -151,7 +154,7 @@ final class HelloVerifyRequest {
             // update the context
 
             // Stateless, clean up the handshake context as well?
-            shc.handshakeHash.finish();     // forgot about the handshake hash
+            Objects.requireNonNull(shc.handshakeHash).finish();     // forgot about the handshake hash
             shc.handshakeExtensions.clear();
 
             // What's the expected response?
@@ -192,7 +195,7 @@ final class HelloVerifyRequest {
             }
 
             // Refresh handshake hash.
-            chc.handshakeHash.finish();     // forgot about the handshake hash
+            Objects.requireNonNull(chc.handshakeHash).finish();     // forgot about the handshake hash
 
             HelloVerifyRequestMessage hvrm =
                     new HelloVerifyRequestMessage(chc, message);
@@ -203,7 +206,7 @@ final class HelloVerifyRequest {
 
             // Note that HelloVerifyRequest.server_version is used solely to
             // indicate packet formatting, and not as part of version
-            // negotiation.  Need not to check version values match for
+            // negotiation.  Need not check version values match for
             // HelloVerifyRequest message.
             chc.initialClientHelloMsg.setHelloCookie(hvrm.cookie);
 

@@ -299,13 +299,12 @@ final class SSLExtensions {
                     if (old != null) {
                         encodedLength -= old.length + 4;
                     }
-                    encodedLength += encoded.length + 4;
                 } else {
                     extMap.put(extension, encoded);
-                    encodedLength += encoded.length + 4;
-                                                    // extension_type (2)
+                    // extension_type (2)
                                                     // extension_data length(2)
                 }
+                encodedLength += encoded.length + 4;
             } else if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                 // The extension is not available in the context.
                 SSLLogger.fine(
@@ -365,7 +364,6 @@ final class SSLExtensions {
                     }
                 }
 
-                return builder.toString();
             } else {
                 for (Map.Entry<SSLExtension, byte[]> en : extMap.entrySet()) {
                     if (builder.length() != 0) {
@@ -376,17 +374,18 @@ final class SSLExtensions {
                                 ByteBuffer.wrap(en.getValue())));
                 }
 
-                return builder.toString();
             }
+            return builder.toString();
         }
     }
 
     private static String toString(int extId, byte[] extData) {
         String extName = SSLExtension.nameOf(extId);
         MessageFormat messageFormat = new MessageFormat(
-            "\"{0} ({1})\": '{'\n" +
-            "{2}\n" +
-            "'}'",
+                """
+                        "{0} ({1})": '{'
+                        {2}
+                        '}'""",
             Locale.ENGLISH);
 
         HexDumpEncoder hexEncoder = new HexDumpEncoder();

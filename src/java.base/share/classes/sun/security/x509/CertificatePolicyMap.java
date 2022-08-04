@@ -36,8 +36,8 @@ import sun.security.util.*;
  * @author Hemma Prafullchandra
  */
 public class CertificatePolicyMap {
-    private CertificatePolicyId issuerDomain;
-    private CertificatePolicyId subjectDomain;
+    private final CertificatePolicyId issuerDomain;
+    private final CertificatePolicyId subjectDomain;
 
     /**
      * Create a CertificatePolicyMap with the passed CertificatePolicyId's.
@@ -82,12 +82,11 @@ public class CertificatePolicyMap {
      * Returns a printable representation of the CertificatePolicyId.
      */
     public String toString() {
-        String s = "CertificatePolicyMap: [\n"
+
+        return ("CertificatePolicyMap: [\n"
                  + "IssuerDomain:" + issuerDomain.toString()
                  + "SubjectDomain:" + subjectDomain.toString()
-                 + "]\n";
-
-        return (s);
+                 + "]\n");
     }
 
     /**

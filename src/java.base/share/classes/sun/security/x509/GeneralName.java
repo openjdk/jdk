@@ -52,7 +52,7 @@ import sun.security.util.*;
 public class GeneralName {
 
     // Private data members
-    private GeneralNameInterface name = null;
+    private final GeneralNameInterface name;
 
     /**
      * Default constructor for the class.

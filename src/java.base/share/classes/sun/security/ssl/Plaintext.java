@@ -39,7 +39,7 @@ final class Plaintext {
     final byte       minorVersion;
     final int        recordEpoch;     // increments on every cipher state change
     final long       recordSN;        // epoch | sequence number
-    final ByteBuffer fragment;        // null if need to be reassembled
+    final ByteBuffer fragment;        // null if it needs to be reassembled
 
     HandshakeStatus  handshakeStatus; // null if not used or not handshaking
 

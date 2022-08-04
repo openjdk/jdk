@@ -45,13 +45,13 @@ public class CurveDB {
     private static final int BD = 6; // binary curve, mark as default
 
     private static final Map<String,NamedCurve> oidMap =
-        new LinkedHashMap<String,NamedCurve>();
+            new LinkedHashMap<>();
     private static final Map<String,NamedCurve> nameMap =
-        new HashMap<String,NamedCurve>();
+            new HashMap<>();
     private static final Map<Integer,NamedCurve> lengthMap =
-        new HashMap<Integer,NamedCurve>();
+            new HashMap<>();
 
-    private static Collection<? extends NamedCurve> specCollection;
+    private static final Collection<? extends NamedCurve> specCollection;
 
     // Return a NamedCurve for the specified OID/name or null if unknown.
     public static NamedCurve lookup(String name) {

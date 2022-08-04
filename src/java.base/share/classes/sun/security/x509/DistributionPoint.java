@@ -328,16 +328,14 @@ public class DistributionPoint {
         if (this == obj) {
             return true;
         }
-        if (obj instanceof DistributionPoint == false) {
+        if (!(obj instanceof DistributionPoint other)) {
             return false;
         }
-        DistributionPoint other = (DistributionPoint)obj;
 
-        boolean equal = Objects.equals(this.fullName, other.fullName)
+        return Objects.equals(this.fullName, other.fullName)
                      && Objects.equals(this.relativeName, other.relativeName)
                      && Objects.equals(this.crlIssuer, other.crlIssuer)
                      && Arrays.equals(this.reasonFlags, other.reasonFlags);
-        return equal;
     }
 
     public int hashCode() {
