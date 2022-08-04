@@ -75,7 +75,7 @@ class WEPollSelectorImpl extends SelectorImpl {
 
         // wakeup support
         try {
-            this.pipe = new PipeImpl(sp, /*buffering*/ false);
+            this.pipe = new PipeImpl(sp, /* AF_UNIX */ true, /*buffering*/ false);
         } catch (IOException ioe) {
             WEPoll.freePollArray(pollArrayAddress);
             WEPoll.close(eph);
