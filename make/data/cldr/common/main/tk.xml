@@ -8352,7 +8352,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</typographicNames>
 	<personNames>
 		<nameOrderLocales order="givenFirst" draft="contributed">und tk</nameOrderLocales>
-		<nameOrderLocales order="surnameFirst" draft="contributed"/>
+		<nameOrderLocales order="surnameFirst" draft="contributed">zxx</nameOrderLocales>
 		<personName order="givenFirst" length="short" usage="referring" formality="formal">
 			<namePattern draft="contributed">{given-initial} {given2-initial} {surname}</namePattern>
 		</personName>

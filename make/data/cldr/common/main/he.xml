@@ -6405,10 +6405,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<currencyFormats numberSystem="latn">
 			<currencyFormatLength>
 				<currencyFormat type="standard">
-					<pattern>‏#,##0.00 ¤;‏-#,##0.00 ¤</pattern>
+					<pattern>‏#,##0.00 ‏¤;‏-#,##0.00 ‏¤</pattern>
 				</currencyFormat>
 				<currencyFormat type="accounting">
-					<pattern>#,##0.00 ¤</pattern>
+					<pattern>‏#,##0.00 ‏¤;‏-#,##0.00 ‏¤</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<currencyFormatLength type="short">

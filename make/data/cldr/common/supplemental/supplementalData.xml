@@ -4757,7 +4757,7 @@ XXX Code for transations where no currency is involved
 			001
 			AD AI AL AM AN AR AT AU AX AZ
 			BA BE BG BM BN BY
-			CH CL CM CR CY CZ
+			CH CL CM CN CR CY CZ
 			DE DK
 			EC EE ES
 			FI FJ FO FR
@@ -4781,7 +4781,7 @@ XXX Code for transations where no currency is involved
           <firstDay day="sun"  territories="
 			AG AS
 			BD BR BS BT BW BZ
-			CA CN CO
+			CA CO
 			DM DO
 			ET
 			GT GU

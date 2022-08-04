@@ -29,10 +29,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<calendars>
 			<calendar type="generic">
 				<dateTimeFormats>
-					<availableFormats>
-						<dateFormatItem id="MEd">E dd/MM</dateFormatItem>
-						<dateFormatItem id="MMMEd">E d MMM</dateFormatItem>
-					</availableFormats>
 					<intervalFormats>
 						<intervalFormatItem id="Md">
 							<greatestDifference id="d">dd/MM–dd/MM</greatestDifference>
@@ -240,8 +236,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
-						<dateFormatItem id="EBhm">E h:mm B</dateFormatItem>
-						<dateFormatItem id="EBhms">E h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="GyMd">d/M/y GGGGG</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>

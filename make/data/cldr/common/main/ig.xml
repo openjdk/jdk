@@ -3005,8 +3005,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>Ego Dollar obodo Liberia</displayName>
 			</currency>
 			<currency type="LSL">
-				<displayName>This is not a translation</displayName>
-				<displayName count="other">This is not a translation</displayName>
+				<displayName>Ego loti obodo Lesotho</displayName>
+				<displayName count="other">Ego loti obodo Lesotho</displayName>
+				<symbol>LSL</symbol>
 			</currency>
 			<currency type="LYD">
 				<displayName>Ego Dinar obodo Libya</displayName>
