@@ -245,7 +245,7 @@ LoadMSVCRT()
             JLI_TraceLauncher("CRT path is %s\n", crtpath);
             if (_access(crtpath, 0) == 0) {
                 if (LoadLibrary(crtpath) == NULL) {
-                    JLI_ReportErrorMessageSys(DLL_ERROR4 "%s", crtpath);
+                    JLI_ReportErrorMessageSys(DLL_ERROR4 "%s", crtpath, " - ");
                     return JNI_FALSE;
                 }
             }
@@ -262,7 +262,7 @@ LoadMSVCRT()
             JLI_TraceLauncher("CRT path is %s\n", crtpath);
             if (_access(crtpath, 0) == 0) {
                 if (LoadLibrary(crtpath) == NULL) {
-                    JLI_ReportErrorMessageSys(DLL_ERROR4 "%s", crtpath);
+                    JLI_ReportErrorMessageSys(DLL_ERROR4 "%s", crtpath, " - ");
                     return JNI_FALSE;
                 }
             }
@@ -279,7 +279,7 @@ LoadMSVCRT()
             JLI_TraceLauncher("PRT path is %s\n", crtpath);
             if (_access(crtpath, 0) == 0) {
                 if (LoadLibrary(crtpath) == NULL) {
-                    JLI_ReportErrorMessageSys(DLL_ERROR4 "%s", crtpath);
+                    JLI_ReportErrorMessageSys(DLL_ERROR4 "%s", crtpath, " - ");
                     return JNI_FALSE;
                 }
             }
@@ -386,7 +386,7 @@ LoadJavaVM(const char *jvmpath, InvocationFunctions *ifn)
 
     /* Load the Java Virtual Machine */
     if ((handle = LoadLibrary(jvmpath)) == NULL) {
-        JLI_ReportErrorMessageSys(DLL_ERROR4 "%s", (char *)jvmpath);
+        JLI_ReportErrorMessageSys(DLL_ERROR4 "%s", (char *)jvmpath, " - ");
         return JNI_FALSE;
     }
 
