@@ -1589,8 +1589,6 @@ const bool Matcher::match_rule_supported(int opcode) {
 
     case Op_VectorCmpMasked:
     case Op_VectorMaskGen:
-    case Op_LoadVectorMasked:
-    case Op_StoreVectorMasked:
       if (!is_LP64  || UseAVX < 3 || !VM_Version::supports_bmi2()) {
         return false;
       }
@@ -1753,12 +1751,16 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
     case Op_ClearArray:
     case Op_VectorMaskGen:
     case Op_VectorCmpMasked:
-    case Op_LoadVectorMasked:
-    case Op_StoreVectorMasked:
       if (!is_LP64 || !VM_Version::supports_avx512bw()) {
         return false;
       }
       if ((size_in_bits != 512) && !VM_Version::supports_avx512vl()) {
+        return false;
+      }
+      break;
+    case Op_LoadVectorMasked:
+    case Op_StoreVectorMasked:
+      if (!VM_Version::supports_avx512bw() && (is_subword_type(bt) || UseAVX < 1)) {
         return false;
       }
       break;
@@ -9082,9 +9084,59 @@ instruct vprorate(vec dst, vec src, vec shift) %{
   ins_pipe( pipe_slow );
 %}
 
-#ifdef _LP64
 // ---------------------------------- Masked Operations ------------------------------------
+instruct vmasked_load_avx_non_subword(vec dst, memory mem, vec mask) %{
+  predicate(!n->in(3)->bottom_type()->isa_vectmask());
+  match(Set dst (LoadVectorMasked mem mask));
+  format %{ "vector_masked_load $dst, $mem, $mask \t! vector masked copy" %}
+  ins_encode %{
+    BasicType elmType = this->bottom_type()->is_vect()->element_basic_type();
+    int vlen_enc = vector_length_encoding(this);
+    __ vmovmask(elmType, $dst$$XMMRegister, $mem$$Address, $mask$$XMMRegister, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
 
+
+instruct vmasked_load_evex(vec dst, memory mem, kReg mask) %{
+  predicate(n->in(3)->bottom_type()->isa_vectmask());
+  match(Set dst (LoadVectorMasked mem mask));
+  format %{ "vector_masked_load $dst, $mem, $mask \t! vector masked copy" %}
+  ins_encode %{
+    BasicType elmType =  this->bottom_type()->is_vect()->element_basic_type();
+    int vector_len = vector_length_encoding(this);
+    __ evmovdqu(elmType, $mask$$KRegister, $dst$$XMMRegister, $mem$$Address, false, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vmasked_store_avx_non_subword(memory mem, vec src, vec mask) %{
+  predicate(!n->in(3)->in(2)->bottom_type()->isa_vectmask());
+  match(Set mem (StoreVectorMasked mem (Binary src mask)));
+  format %{ "vector_masked_store $mem, $src, $mask \t! vector masked store" %}
+  ins_encode %{
+    const MachNode* src_node = static_cast<const MachNode*>(this->in(this->operand_index($src)));
+    int vlen_enc = vector_length_encoding(src_node);
+    BasicType elmType =  src_node->bottom_type()->is_vect()->element_basic_type();
+    __ vmovmask(elmType, $mem$$Address, $src$$XMMRegister, $mask$$XMMRegister, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vmasked_store_evex(memory mem, vec src, kReg mask) %{
+  predicate(n->in(3)->in(2)->bottom_type()->isa_vectmask());
+  match(Set mem (StoreVectorMasked mem (Binary src mask)));
+  format %{ "vector_masked_store $mem, $src, $mask \t! vector masked store" %}
+  ins_encode %{
+    const MachNode* src_node = static_cast<const MachNode*>(this->in(this->operand_index($src)));
+    BasicType elmType =  src_node->bottom_type()->is_vect()->element_basic_type();
+    int vlen_enc = vector_length_encoding(src_node);
+    __ evmovdqu(elmType, $mask$$KRegister, $mem$$Address, $src$$XMMRegister, true, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+#ifdef _LP64
 instruct vmask_cmp_node(rRegI dst, vec src1, vec src2, kReg mask, kReg ktmp1, kReg ktmp2, rFlagsReg cr) %{
   match(Set dst (VectorCmpMasked src1 (Binary src2 mask)));
   effect(TEMP_DEF dst, TEMP ktmp1, TEMP ktmp2, KILL cr);
@@ -9111,17 +9163,6 @@ instruct vmask_cmp_node(rRegI dst, vec src1, vec src2, kReg mask, kReg ktmp1, kR
 %}
 
 
-instruct vmasked_load64(vec dst, memory mem, kReg mask) %{
-  match(Set dst (LoadVectorMasked mem mask));
-  format %{ "vector_masked_load $dst, $mem, $mask \t! vector masked copy" %}
-  ins_encode %{
-    BasicType elmType =  this->bottom_type()->is_vect()->element_basic_type();
-    int vector_len = vector_length_encoding(this);
-    __ evmovdqu(elmType, $mask$$KRegister, $dst$$XMMRegister, $mem$$Address, false, vector_len);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
 instruct vmask_gen(kReg dst, rRegL len, rRegL temp) %{
   match(Set dst (VectorMaskGen len));
   effect(TEMP temp);
@@ -9139,18 +9180,6 @@ instruct vmask_gen_imm(kReg dst, immL len, rRegL temp) %{
   ins_encode %{
     __ mov64($temp$$Register, (0xFFFFFFFFFFFFFFFFUL >> (64 -$len$$constant)));
     __ kmovql($dst$$KRegister, $temp$$Register);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct vmasked_store64(memory mem, vec src, kReg mask) %{
-  match(Set mem (StoreVectorMasked mem (Binary src mask)));
-  format %{ "vector_masked_store $mem, $src, $mask \t! vector masked store" %}
-  ins_encode %{
-    const MachNode* src_node = static_cast<const MachNode*>(this->in(this->operand_index($src)));
-    BasicType elmType =  src_node->bottom_type()->is_vect()->element_basic_type();
-    int vector_len = vector_length_encoding(src_node);
-    __ evmovdqu(elmType, $mask$$KRegister, $mem$$Address, $src$$XMMRegister, true, vector_len);
   %}
   ins_pipe( pipe_slow );
 %}

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,7 +78,6 @@ class ProtectionDomainCacheEntry;
 class GCTimer;
 class EventClassLoad;
 class Symbol;
-class TableStatistics;
 
 class SystemDictionary : AllStatic {
   friend class BootstrapInfo;
@@ -400,11 +399,6 @@ protected:
                                 bool defining, TRAPS);
   static void update_dictionary(unsigned int hash,
                                 InstanceKlass* k, Handle loader);
-
-public:
-  static TableStatistics placeholders_statistics();
-  static TableStatistics loader_constraints_statistics();
-  static TableStatistics protection_domain_cache_statistics();
 };
 
 #endif // SHARE_CLASSFILE_SYSTEMDICTIONARY_HPP

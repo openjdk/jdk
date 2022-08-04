@@ -966,13 +966,9 @@ SelectVersion(int argc, char **argv, char **main_class)
 {
     char    *arg;
     char    *operand;
-    char    *version = NULL;
-    char    *jre = NULL;
     int     jarflag = 0;
     int     headlessflag = 0;
-    int     restrict_search = -1;               /* -1 implies not known */
     manifest_info info;
-    char    env_entry[MAXNAMELEN + 24] = ENV_ENTRY "=";
     char    *splash_file_name = NULL;
     char    *splash_jar_name = NULL;
     char    *env_in;
@@ -2007,7 +2003,6 @@ ReadKnownVMs(const char *jvmCfgName, jboolean speculative)
     int vmType;
     char *tmpPtr;
     char *altVMName = NULL;
-    char *serverClassVMName = NULL;
     static char *whiteSpace = " \t";
     if (JLI_IsTraceLauncher()) {
         start = CurrentTimeMicros();

@@ -57,6 +57,7 @@
 #include "runtime/icache.hpp"
 #include "runtime/java.hpp"
 #include "runtime/mutexLocker.hpp"
+#include "runtime/os.inline.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/sweeper.hpp"
 #include "runtime/vmThread.hpp"
@@ -1366,6 +1367,7 @@ void CodeCache::report_codemem_full(int code_blob_type, bool print) {
     event.set_adaptorCount(heap->adapter_count());
     event.set_unallocatedCapacity(heap->unallocated_capacity());
     event.set_fullCount(heap->full_count());
+    event.set_codeCacheMaxCapacity(CodeCache::max_capacity());
     event.commit();
   }
 }

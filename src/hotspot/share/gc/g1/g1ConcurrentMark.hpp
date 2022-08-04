@@ -596,7 +596,6 @@ public:
   void print_on_error(outputStream* st) const;
 
   // Mark the given object on the marking bitmap if it is below TAMS.
-  inline bool mark_in_bitmap(uint worker_id, HeapRegion* const hr, oop const obj);
   inline bool mark_in_bitmap(uint worker_id, oop const obj);
 
   inline bool is_marked_in_bitmap(oop p) const;
