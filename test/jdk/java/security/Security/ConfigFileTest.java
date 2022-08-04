@@ -34,7 +34,7 @@ import java.util.Optional;
 
 /*
  * @test
- * @summary Static security policies need attention
+ * @summary Throw error if default java.security file is missing
  * @bug 8155246
  * @library /test/lib
  * @run main ConfigFileTest
