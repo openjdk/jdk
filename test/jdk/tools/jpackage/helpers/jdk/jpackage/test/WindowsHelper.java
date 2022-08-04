@@ -356,7 +356,7 @@ public class WindowsHelper {
         private final String name;
     }
 
-    private static String queryRegistryValue(String keyPath, String valueName) {
+    public static String queryRegistryValue(String keyPath, String valueName) {
         var status = Executor.of("reg", "query", keyPath, "/v", valueName)
                 .saveOutput()
                 .executeWithoutExitCodeCheck();
