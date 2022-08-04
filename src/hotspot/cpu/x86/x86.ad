@@ -2454,11 +2454,8 @@ static bool is_base_pattern(Node* n, Node* m) {
     }
     if (VM_Version::supports_fast_3op_lea() && m->Opcode() == Op_AddL &&
         check_all_uses(m, [](Node* n){
-          if (n->in(2)->Opcode() != Op_ConL) {
-            return false;
-          }
-          long con = n->in(2)->get_long();
-          return con <= max_jint && con >= min_jint; 
+          return n->in(2)->Opcode() == Op_ConL &&
+                 AbstractAssembler::is_simm32(n->in(2)->get_long());
         })) {
       return true;
     }
