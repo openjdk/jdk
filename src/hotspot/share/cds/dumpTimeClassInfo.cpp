@@ -31,6 +31,8 @@
 #include "classfile/systemDictionaryShared.hpp"
 #include "memory/resourceArea.hpp"
 
+// This constructor is used only by SystemDictionaryShared::clone_dumptime_tables().
+// See comments there about the need for making a deep copy.
 DumpTimeClassInfo::DumpTimeClassInfo(const DumpTimeClassInfo& src) {
   assert(DynamicDumpSharedSpaces, "must be");
 

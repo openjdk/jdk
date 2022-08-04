@@ -27,6 +27,8 @@
 #include "cds/lambdaProxyClassDictionary.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 
+// This constructor is used only by SystemDictionaryShared::clone_dumptime_tables().
+// See comments there about the need for making a deep copy.
 DumpTimeLambdaProxyClassInfo::DumpTimeLambdaProxyClassInfo(const DumpTimeLambdaProxyClassInfo& src) {
   _proxy_klasses = NULL;
   if (src._proxy_klasses != NULL && src._proxy_klasses->length() > 0) {

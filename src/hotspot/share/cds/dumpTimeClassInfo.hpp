@@ -41,16 +41,6 @@ class DumpTimeClassInfo: public CHeapObj<mtClass> {
   bool                         _is_early_klass;
   bool                         _has_checked_exclusion;
 
-  static void maybe_increment_refcount(Symbol* s) {
-    if (s != NULL) {
-      s->increment_refcount();
-    }
-  }
-  static void maybe_decrement_refcount(Symbol* s) {
-    if (s != NULL) {
-      s->decrement_refcount();
-    }
-  }
   class DTLoaderConstraint {
     Symbol* _name;
     char _loader_type1;
@@ -58,13 +48,13 @@ class DumpTimeClassInfo: public CHeapObj<mtClass> {
   public:
     DTLoaderConstraint() : _name(NULL), _loader_type1('0'), _loader_type2('0') {}
     DTLoaderConstraint(Symbol* name, char l1, char l2) : _name(name), _loader_type1(l1), _loader_type2(l2) {
-      maybe_increment_refcount(_name);
+      Symbol::maybe_increment_refcount(_name);
     }
     DTLoaderConstraint(const DTLoaderConstraint& src) {
       _name = src._name;
       _loader_type1 = src._loader_type1;
       _loader_type2 = src._loader_type2;
-      maybe_increment_refcount(_name);
+      Symbol::maybe_increment_refcount(_name);
     }
     DTLoaderConstraint& operator=(DTLoaderConstraint src) {
       swap(_name, src._name); // c++ copy-and-swap idiom
@@ -73,7 +63,7 @@ class DumpTimeClassInfo: public CHeapObj<mtClass> {
       return *this;
     }
     ~DTLoaderConstraint() {
-      maybe_decrement_refcount(_name);
+      Symbol::maybe_decrement_refcount(_name);
     }
 
     bool equals(const DTLoaderConstraint& t) {
@@ -96,14 +86,14 @@ class DumpTimeClassInfo: public CHeapObj<mtClass> {
   public:
     DTVerifierConstraint() : _name(NULL), _from_name(NULL) {}
     DTVerifierConstraint(Symbol* n, Symbol* fn) : _name(n), _from_name(fn) {
-      maybe_increment_refcount(_name);
-      maybe_increment_refcount(_from_name);
+      Symbol::maybe_increment_refcount(_name);
+      Symbol::maybe_increment_refcount(_from_name);
     }
     DTVerifierConstraint(const DTVerifierConstraint& src) {
       _name = src._name;
       _from_name = src._from_name;
-      maybe_increment_refcount(_name);
-      maybe_increment_refcount(_from_name);
+      Symbol::maybe_increment_refcount(_name);
+      Symbol::maybe_increment_refcount(_from_name);
     }
     DTVerifierConstraint& operator=(DTVerifierConstraint src) {
       swap(_name, src._name); // c++ copy-and-swap idiom
@@ -111,8 +101,8 @@ class DumpTimeClassInfo: public CHeapObj<mtClass> {
       return *this;
     }
     ~DTVerifierConstraint() {
-      maybe_decrement_refcount(_name);
-      maybe_decrement_refcount(_from_name);
+      Symbol::maybe_decrement_refcount(_name);
+      Symbol::maybe_decrement_refcount(_from_name);
     }
     bool equals(Symbol* n, Symbol* fn) {
       return (_name == n) && (_from_name == fn);

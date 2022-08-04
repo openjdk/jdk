@@ -1451,6 +1451,7 @@ class CloneDumpTimeClassTable: public StackObj {
     if (!info.is_excluded()) {
       bool created;
       _cloned_table->put_if_absent(k, info, &created);
+      assert(created, "must be");
     }
   }
 };
@@ -1472,10 +1473,23 @@ class CloneDumpTimeLambdaProxyClassTable: StackObj {
     // make copies then store in _clone_table
     LambdaProxyClassKey keyCopy = key;
     _cloned_table->put_if_absent(keyCopy, info, &created);
+    assert(created, "must be");
     ++ _cloned_table->_count;
     return true; // keep on iterating
   }
 };
+
+// When dumping the CDS archive, the ArchiveBuilder will irrecoverably modify the
+// _dumptime_table and _dumptime_lambda_proxy_class_dictionary (e.g., metaspace
+// pointers are changed to use "buffer" addresses.)
+//
+// We save a copy of these tables and restore them after the dumping is finished.
+// This makes it possible to repeat the dumping operation (e.g., use
+// "jcmd VM.cds dynamic_dump" multiple times on the same JVM process).
+//
+// We use the copy constructors to clone the values in these tables. The copy constructors
+// must make a deep copy, as internal data structures such as the contents of
+// DumpTimeClassInfo::_loader_constraints are also modified by the ArchiveBuilder.
 
 void SystemDictionaryShared::clone_dumptime_tables() {
   Arguments::assert_is_dumping_archive();
