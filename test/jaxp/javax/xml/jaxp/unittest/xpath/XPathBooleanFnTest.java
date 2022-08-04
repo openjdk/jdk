@@ -95,8 +95,7 @@ public class XPathBooleanFnTest extends XPathTestBase {
      * DataProvider for testing TransformerException being thrown on
      * invalid number function usage.
      * Data columns:
-     *  see parameters of the test "testExceptionEval" and
-     *  "testExceptionEvalExp"
+     *  see parameters of the test "testExceptionOnEval"
      */
     @DataProvider(name = "exceptionExpTestCases")
     public Object[][] getExceptionExp() {
@@ -122,30 +121,14 @@ public class XPathBooleanFnTest extends XPathTestBase {
     }
 
     /**
-     * Verifies that TransformerException is thrown on evaluateExpression.
+     * Verifies that TransformerException is thrown on xpath evaluation.
      *
      * @param exp XPath expression
      * @throws Exception if test fails
      */
     @Test(dataProvider = "exceptionExpTestCases", expectedExceptions =
             XPathExpressionException.class)
-    void testExceptionEvalExp(String exp) throws Exception {
-        XPath xPath = XPathFactory.newInstance().newXPath();
-
-        xPath.evaluateExpression(exp, doc);
-    }
-
-    /**
-     * Verifies that TransformerException is thrown on evaluate.
-     *
-     * @param exp XPath expression
-     * @throws Exception if test fails
-     */
-    @Test(dataProvider = "exceptionExpTestCases", expectedExceptions =
-            XPathExpressionException.class)
-    void testExceptionEval(String exp) throws Exception {
-        XPath xPath = XPathFactory.newInstance().newXPath();
-
-        xPath.evaluate(exp, doc);
+    void testExceptionOnEval(String exp) throws Exception {
+        testEval(doc, exp);
     }
 }

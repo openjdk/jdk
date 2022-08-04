@@ -77,6 +77,7 @@ public class XPathNodeSetFnTest extends XPathTestBase {
                                         (CUSTOMER_ELEMENTS + ADDRESS_ELEMENTS)},
                 {"count(//*[@id])", ID_ATTRIBUTES},
                 {"count(./*)", ROOT},
+                {"count(.)", ROOT},
                 {"count(//Customer[1]/following::*)",
                         CUSTOMERS - 1 + FOO_CUSTOMERS +
                                 (CUSTOMERS - 1 + FOO_CUSTOMERS) *
@@ -107,6 +108,7 @@ public class XPathNodeSetFnTest extends XPathTestBase {
     public Object[][] getPositionExp() {
         return new Object[][]{
                 {"//Customer[position()=1]", "Customer_x1"},
+                {"//Customer[position()]", "Customer_x1"},
                 {"//Customer[position()=last()]", "Customer_x3"},
                 {"//Customer[position()>1 and position()<last()]",
                         "Customer_x2"},
@@ -128,6 +130,7 @@ public class XPathNodeSetFnTest extends XPathTestBase {
                 {"local-name(//Customer/@id)", "id"},
                 {"local-name(//foo:Customer/@foo:id)", "id"},
                 {"local-name(//*[local-name()='Customer'])", "Customer"},
+                {"local-name(//*[local-name(.)='Customer'])", "Customer"},
                 {"namespace-uri(.)", ""},
                 {"namespace-uri(//Customers)", ""},
                 {"namespace-uri(//Customer)", ""},
@@ -135,11 +138,33 @@ public class XPathNodeSetFnTest extends XPathTestBase {
                 {"namespace-uri(//@id)", ""},
                 {"namespace-uri(//@foo:id)", "foo"},
                 {"name(//*[namespace-uri()=\"foo\"])", "foo:Customer"},
+                {"name(//*[namespace-uri(.)=\"foo\"])", "foo:Customer"},
                 {"name(//Customer)", "Customer"},
                 {"name(//foo:Customer)", "foo:Customer"},
                 {"name(//Customer/@id)", "id"},
                 {"name(//foo:Customer/@foo:id)", "foo:id"},
                 {"name(//*[name()='foo:Customer'])", "foo:Customer"},
+                {"name(//*[name(.)='foo:Customer'])", "foo:Customer"},
+        };
+    }
+
+    /*
+     * DataProvider for testing TransformerException being thrown on
+     * invalid number function usage.
+     * Data columns:
+     *  see parameters of the test "testExceptionOnEval"
+     */
+    @DataProvider(name = "exceptionExpTestCases")
+    public Object[][] getExceptionExp() {
+        return new Object[][]{
+                {"//Customer[id()]"},
+                {"//Customer[id()='x1']"},
+                {"//Customer[count()]"},
+                {"//*[count()=3]"},
+                {"//Customer[position(.)]"},
+                {"//*[position(//Customer[1])]"},
+                {"//Customer[last(.)]"},
+                {"//*[last(//Customer[1])]"},
         };
     }
 
@@ -221,5 +246,17 @@ public class XPathNodeSetFnTest extends XPathTestBase {
 
         Assert.assertEquals(s, expected);
         Assert.assertEquals(s2, s);
+    }
+
+    /**
+     * Verifies that TransformerException is thrown on xpath evaluation.
+     *
+     * @param exp XPath expression
+     * @throws Exception if test fails
+     */
+    @Test(dataProvider = "exceptionExpTestCases", expectedExceptions =
+            XPathExpressionException.class)
+    void testExceptionOnEval(String exp) throws Exception {
+        testEval(doc, exp);
     }
 }

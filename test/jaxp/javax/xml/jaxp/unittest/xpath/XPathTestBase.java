@@ -223,6 +223,24 @@ class XPathTestBase {
         Assert.assertEquals(b2, b);
     }
 
+    /**
+     * Evaluates XPath expression.
+     *
+     * @param doc xml document {@link org.w3c.dom.Document}
+     * @param exp xpath expression string
+     *
+     * @throws Exception if test fails
+     */
+    static void testEval(Document doc, String exp) throws Exception {
+        XPath xPath = XPathFactory.newInstance().newXPath();
+
+        try {
+            xPath.evaluateExpression(exp, doc);
+        } catch (XPathExpressionException e) {
+            xPath.evaluate(exp, doc);
+        }
+    }
+
     /*
      * DataProvider: XPath object
      */
