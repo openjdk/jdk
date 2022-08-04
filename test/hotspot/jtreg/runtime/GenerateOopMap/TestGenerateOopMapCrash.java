@@ -45,7 +45,6 @@ public class TestGenerateOopMapCrash {
             ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
                     "-XX:-TieredCompilation",
                     "-XX:CompileCommand=dontinline,compiler/linkage/if_icmpleIsLastOpcode.m*",
-                    "-XX:-CreateCoredumpOnCrash",
                     "-Xmx64m",
                     TestGenerateOopMapCrash.class.getName(),
                     "run");
