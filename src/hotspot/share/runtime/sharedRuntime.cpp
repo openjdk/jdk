@@ -3091,8 +3091,8 @@ void AdapterHandlerLibrary::create_native_wrapper(const methodHandle& method) {
   ResourceMark rm;
   nmethod* nm = NULL;
 
-  // Let the code cache know we are about to allocate
-  CodeCache::on_allocation();
+  // Check if memory should be freed before allocation
+  CodeCache::gc_on_allocation();
 
   assert(method->is_native(), "must be native");
   assert(method->is_special_native_intrinsic() ||

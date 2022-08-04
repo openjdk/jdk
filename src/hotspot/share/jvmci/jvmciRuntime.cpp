@@ -2081,9 +2081,8 @@ JVMCI::CodeInstallResult JVMCIRuntime::register_method(JVMCIEnv* JVMCIENV,
   }
 
   if (result == JVMCI::ok) {
-    // Notify code cache unloading that we are about to allocate, which may
-    // or may not require freeing up memory first
-    CodeCache::on_allocation();
+    // Check if memory should be freed before allocation
+    CodeCache::gc_on_allocation();
 
     // To prevent compile queue updates.
     MutexLocker locker(THREAD, MethodCompileQueue_lock);

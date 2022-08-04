@@ -776,7 +776,7 @@ uint64_t CodeCache::cold_gc_count() {
   return _cold_gc_count;
 }
 
-void CodeCache::on_allocation() {
+void CodeCache::gc_on_allocation() {
   if (!is_init_completed()) {
     // Let's not heuristically trigger GCs before the JVM is ready for GCs, no matter what
     return;
