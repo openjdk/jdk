@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.SecureRandom;
+import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -64,6 +65,7 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
     public JPackageCommand() {
         prerequisiteActions = new Actions();
         verifyActions = new Actions();
+        installArguments = new ArrayList<>();
     }
 
     public JPackageCommand(JPackageCommand cmd) {
@@ -76,6 +78,7 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
         immutable = cmd.immutable;
         prerequisiteActions = new Actions(cmd.prerequisiteActions);
         verifyActions = new Actions(cmd.verifyActions);
+        installArguments = new ArrayList<>(cmd.installArguments);
     }
 
     JPackageCommand createImmutableCopy() {
@@ -178,8 +181,17 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
         return values.toArray(String[]::new);
     }
 
+    public List<String> getInstallArguments() {
+        return installArguments;
+    }
+
     public JPackageCommand addArguments(String name, Path value) {
         return addArguments(name, value.toString());
+    }
+
+    public JPackageCommand addInstallArguments(String... args) {
+        this.installArguments.addAll(Arrays.asList(args));
+        return this;
     }
 
     public boolean isImagePackageType() {
@@ -1060,6 +1072,7 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
     private boolean immutable;
     private final Actions prerequisiteActions;
     private final Actions verifyActions;
+    private final List<String> installArguments;
     private static boolean defaultWithToolProvider;
 
     private final static Map<String, PackageType> PACKAGE_TYPES = Functional.identity(

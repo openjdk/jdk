@@ -64,6 +64,8 @@ import static jdk.jpackage.test.PackageType.NATIVE;
 import static jdk.jpackage.test.PackageType.WINDOWS;
 import static jdk.jpackage.test.PackageType.WIN_EXE;
 import static jdk.jpackage.test.PackageType.WIN_MSI;
+import static jdk.jpackage.test.WindowsHelper.faFeatureInstalled;
+import static jdk.jpackage.test.WindowsHelper.filesFeatureInstalled;
 
 
 /**
@@ -265,7 +267,8 @@ public final class PackageTest extends RunnablePackageTest {
         }
 
         addInstallVerifier(cmd -> {
-            if (cmd.isFakeRuntime(noActionMsg) || cmd.isPackageUnpacked(noActionMsg)) {
+            if (cmd.isFakeRuntime(noActionMsg) || cmd.isPackageUnpacked(noActionMsg) ||
+                    !faFeatureInstalled(cmd)) {
                 return;
             }
 
@@ -618,10 +621,12 @@ public final class PackageTest extends RunnablePackageTest {
             }
             TKit.trace(String.format(formatString, cmd.getPrintableCommandLine()));
 
-            Optional.ofNullable(cmd.unpackedPackageDirectory()).ifPresent(
-                    unpackedDir -> {
-                        verifyRootCountInUnpackedPackage(cmd, unpackedDir);
-                    });
+            if (filesFeatureInstalled(cmd)) {
+                Optional.ofNullable(cmd.unpackedPackageDirectory()).ifPresent(
+                        unpackedDir -> {
+                            verifyRootCountInUnpackedPackage(cmd, unpackedDir);
+                        });
+            }
 
             if (!cmd.isRuntime()) {
                 if (WINDOWS.contains(cmd.packageType())
@@ -641,7 +646,9 @@ public final class PackageTest extends RunnablePackageTest {
                 LauncherAsServiceVerifier.verify(cmd);
             }
 
-            cmd.assertAppLayout();
+            if (filesFeatureInstalled(cmd)) {
+                cmd.assertAppLayout();
+            }
 
             installVerifiers.forEach(v -> v.accept(cmd));
         }

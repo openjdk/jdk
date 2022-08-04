@@ -91,8 +91,13 @@ public class WindowsHelper {
     static PackageHandlers createMsiPackageHandlers() {
         BiConsumer<JPackageCommand, Boolean> installMsi = (cmd, install) -> {
             cmd.verifyIsOfType(PackageType.WIN_MSI);
-            runMsiexecWithRetries(Executor.of("msiexec", "/qn", "/norestart",
-                    install ? "/i" : "/x").addArgument(cmd.outputBundle().normalize()));
+            Executor exec = Executor.of("msiexec", "/qn", "/norestart",
+                    install ? "/i" : "/x");
+            exec.addArgument(cmd.outputBundle().normalize());
+            if (install) {
+                exec.addArguments(cmd.getInstallArguments());
+            }
+            runMsiexecWithRetries(exec);
         };
 
         PackageHandlers msi = new PackageHandlers();
@@ -134,6 +139,7 @@ public class WindowsHelper {
             Executor exec = new Executor().setExecutable(cmd.outputBundle());
             if (install) {
                 exec.addArgument("/qn").addArgument("/norestart");
+                exec.addArguments(cmd.getInstallArguments());
             } else {
                 exec.addArgument("uninstall");
             }
@@ -201,7 +207,8 @@ public class WindowsHelper {
 
             isUserLocalInstall = isUserLocalInstall(cmd);
 
-            appInstalled = cmd.appLauncherPath(launcherName).toFile().exists();
+            appInstalled = cmd.appLauncherPath(launcherName).toFile().exists() ||
+                    !filesFeatureInstalled(cmd);
 
             desktopShortcutPath = Path.of(name + ".lnk");
 
@@ -220,12 +227,16 @@ public class WindowsHelper {
                         () -> cmd.hasArgument("--win-shortcut"));
             }
 
-            verifyStartMenuShortcut();
+            if (shortcutsFeatureInstalled(cmd)) {
+                verifyStartMenuShortcut();
 
-            verifyDesktopShortcut();
+                verifyDesktopShortcut();
+            }
 
-            Stream.of(cmd.getAllArgumentValues("--file-associations")).map(
-                    Path::of).forEach(this::verifyFileAssociationsRegistry);
+            if (faFeatureInstalled(cmd)) {
+                Stream.of(cmd.getAllArgumentValues("--file-associations")).map(
+                        Path::of).forEach(this::verifyFileAssociationsRegistry);
+            }
         }
 
         private void verifyDesktopShortcut() {
@@ -412,6 +423,32 @@ public class WindowsHelper {
         }
 
         return value;
+    }
+
+    public static boolean filesFeatureInstalled(JPackageCommand cmd) {
+        return featureInstalled(cmd, "_Files");
+    }
+
+    public static boolean shortcutsFeatureInstalled(JPackageCommand cmd) {
+        return featureInstalled(cmd, "_Shortcuts");
+    }
+
+    public static boolean faFeatureInstalled(JPackageCommand cmd) {
+        return featureInstalled(cmd, "_FileAssociations");
+    }
+
+    // Always true if no ADDLOCAL specified, checks the suffix matches otherwise.
+    private static boolean featureInstalled(JPackageCommand cmd, String suffix) {
+        boolean addlocalFound = false;
+        for (String iarg : cmd.getInstallArguments()) {
+            if (iarg.startsWith("ADDLOCAL=")) {
+                addlocalFound = true;
+                if (iarg.endsWith(suffix)) {
+                    return true;
+                }
+            }
+        }
+        return !addlocalFound;
     }
 
     static final Set<Path> CRITICAL_RUNTIME_FILES = Set.of(Path.of(

@@ -488,8 +488,7 @@ class WixAppImageFragmentBuilder extends WixFragmentBuilder {
             xml.writeAttribute("Name", launcherBasename);
             xml.writeAttribute("WorkingDirectory", INSTALLDIR.toString());
             xml.writeAttribute("Advertise", "no");
-            xml.writeAttribute("Target", String.format("[#%s]",
-                    Component.File.idOf(launcherPath)));
+            xml.writeAttribute("Target", "[ARPMAINLAUNCHERLOCATION]");
         });
     }
 
@@ -530,11 +529,17 @@ class WixAppImageFragmentBuilder extends WixFragmentBuilder {
                 xml.writeAttribute("Id", "open");
                 xml.writeAttribute("Command", "Open");
                 xml.writeAttribute("Argument", "\"%1\" %*");
-                xml.writeAttribute("TargetFile", Id.File.of(fa.launcherPath));
+                xml.writeAttribute("TargetProperty", "ARPMAINLAUNCHERLOCATION");
                 xml.writeEndElement(); // <Verb>
 
                 xml.writeEndElement(); // <Extension>
             }));
+        }
+        // Adding icon file Component to FA group because ICE69 warning becomes
+        // an error if Icon attribute value points to an .ico file that
+        // belongs to other Feature.
+        if (fa.iconPath != null) {
+            components.add("c" + Id.File.of(getInstalledFaIcoPath(fa)));
         }
 
         return components;

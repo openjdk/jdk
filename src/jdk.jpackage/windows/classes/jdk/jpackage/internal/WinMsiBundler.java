@@ -512,6 +512,17 @@ public class WinMsiBundler  extends AbstractBundler {
             data.put("JpIsSystemWide", "yes");
         }
 
+        // Set the main launcher variable to use it from Shortcut and FileAssociations
+        final String mainLauncherLocation;
+        if (StandardBundlerParam.isRuntimeInstaller(params)) {
+            mainLauncherLocation = "";
+        } else {
+            Path appImageRoot = WIN_APP_IMAGE.fetchFrom(params);
+            var launchers = AppImageFile.getLaunchers(appImageRoot, params);
+            mainLauncherLocation = String.format("[INSTALLDIR]%s.exe", launchers.get(0).getName());
+        }
+        data.put("JpMainLauncherLocation", mainLauncherLocation);
+
         // Copy standard l10n files.
         for (String loc : Arrays.asList("en", "ja", "zh_CN")) {
             String fname = "MsiInstallerStrings_" + loc + ".wxl";
