@@ -517,7 +517,7 @@ final class ServerHello {
                                 .map(n -> n.name())
                                 .collect(Collectors.joining(",", "[", "]")) : "Not Set",
                         keyExchanges != null ? keyExchanges.stream()
-                                .map(n -> n.name())
+                                .map(n -> n.name()).distinct()
                                 .collect(Collectors.joining(",", "[", "]")) : "Not Set"
                 };
 
