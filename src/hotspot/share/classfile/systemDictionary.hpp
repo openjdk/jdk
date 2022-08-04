@@ -134,6 +134,7 @@ class SystemDictionary : AllStatic {
                                                   TRAPS);
 
   static oop get_system_class_loader_impl(TRAPS);
+  static oop get_platform_class_loader_impl(TRAPS);
 
  public:
   // Resolve either a hidden or normal class from a stream of bytes, based on ClassLoadInfo

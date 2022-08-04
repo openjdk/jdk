@@ -134,15 +134,16 @@ void SystemDictionary::compute_java_loaders(TRAPS) {
  }
 
   if (_java_platform_loader.is_empty()) {
-    JavaValue result(T_OBJECT);
-    InstanceKlass* class_loader_klass = vmClasses::ClassLoader_klass();
-    JavaCalls::call_static(&result,
-                           class_loader_klass,
-                           vmSymbols::getPlatformClassLoader_name(),
-                           vmSymbols::void_classloader_signature(),
-                           CHECK);
-
-    _java_platform_loader = OopHandle(Universe::vm_global(), result.get_oop());
+    oop platform_loader = get_platform_class_loader_impl(CHECK);
+    _java_platform_loader = OopHandle(Universe::vm_global(), platform_loader);
+  } else {
+    // It must have been restored from the archived module graph
+    assert(UseSharedSpaces, "must be");
+    assert(MetaspaceShared::use_full_module_graph(), "must be");
+    DEBUG_ONLY(
+      oop platform_loader = get_platform_class_loader_impl(CHECK);
+      assert(_java_platform_loader.resolve() == platform_loader, "must be");
+    )
   }
 }
 
@@ -152,6 +153,17 @@ oop SystemDictionary::get_system_class_loader_impl(TRAPS) {
   JavaCalls::call_static(&result,
                          class_loader_klass,
                          vmSymbols::getSystemClassLoader_name(),
+                         vmSymbols::void_classloader_signature(),
+                         CHECK_NULL);
+  return result.get_oop();
+}
+
+oop SystemDictionary::get_platform_class_loader_impl(TRAPS) {
+  JavaValue result(T_OBJECT);
+  InstanceKlass* class_loader_klass = vmClasses::ClassLoader_klass();
+  JavaCalls::call_static(&result,
+                         class_loader_klass,
+                         vmSymbols::getPlatformClassLoader_name(),
                          vmSymbols::void_classloader_signature(),
                          CHECK_NULL);
   return result.get_oop();

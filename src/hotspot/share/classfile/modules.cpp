@@ -509,7 +509,7 @@ void Modules::define_archived_modules(Handle h_platform_loader, Handle h_system_
   // However, if -Djava.system.class.loader=xxx is specified, java_platform_loader() would
   // be an instance of a user-defined class, so make sure this never happens.
   assert(Arguments::get_property("java.system.class.loader") == NULL,
-           "archived full module should have been disabled");
+           "archived full module should have been disabled if -Djava.system.class.loader is specified");
   ClassLoaderDataShared::restore_java_system_loader_from_archive(system_loader_data);
 }
 
