@@ -1492,6 +1492,7 @@ private:
   void movb(Register dst, Address src);
 
   void movddup(XMMRegister dst, XMMRegister src);
+  void movddup(XMMRegister dst, Address src);
   void vmovddup(XMMRegister dst, Address src, int vector_len);
 
   void kandbl(KRegister dst, KRegister src1, KRegister src2);
@@ -1662,6 +1663,11 @@ private:
   void movswq(Register dst, Address src);
   void movswq(Register dst, Register src);
 #endif
+
+  void movups(XMMRegister dst, Address src);
+  void vmovups(XMMRegister dst, Address src, int vector_len);
+  void movups(Address dst, XMMRegister src);
+  void vmovups(Address dst, XMMRegister src, int vector_len);
 
   void movw(Address dst, int imm16);
   void movw(Register dst, Address src);
@@ -1942,10 +1948,10 @@ private:
   void pshuflw(XMMRegister dst, Address src,     int mode);
 
   //shuffle floats and doubles
-  void pshufps(XMMRegister, XMMRegister, int);
-  void pshufpd(XMMRegister, XMMRegister, int);
-  void vpshufps(XMMRegister, XMMRegister, XMMRegister, int, int);
-  void vpshufpd(XMMRegister, XMMRegister, XMMRegister, int, int);
+  void shufps(XMMRegister, XMMRegister, int);
+  void shufpd(XMMRegister, XMMRegister, int);
+  void vshufps(XMMRegister, XMMRegister, XMMRegister, int, int);
+  void vshufpd(XMMRegister, XMMRegister, XMMRegister, int, int);
 
   // Shuffle packed values at 128 bit granularity
   void evshufi64x2(XMMRegister dst, XMMRegister nds, XMMRegister src, int imm8, int vector_len);
