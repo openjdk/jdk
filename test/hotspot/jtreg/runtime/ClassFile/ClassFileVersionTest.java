@@ -46,7 +46,7 @@ public class ClassFileVersionTest {
             int got_minor = (ver >> 16) & 0x0000FFFF;
             int got_major = ver & 0x0000FFFF;
             throw new RuntimeException(
-                "Expected " + exp_major + ":" + exp_minor + " but got " + got_major + ":" + got_minor);
+                "Expected " + exp_minor + ":" + exp_major + " but got " + got_minor + ":" + got_major);
         }
     }
 
@@ -57,9 +57,9 @@ public class ClassFileVersionTest {
 
         testIt("Version64", 64);
         testIt("Version59", 59);
-        testIt("Version45_3", 0x3002D);  // 45.3
+        testIt("Version45_3", 0x3002D);  // 3:45
         // test minor version of 65535.
-        testIt("Version64_65535", 0xFFFF0040);  // 0xFFFF0040 = 64.65535
+        testIt("Version64_65535", 0xFFFF0040);  // 0xFFFF0040 = 65535:64
 
         // test primitive array.  should return latest version.
         int ver = (int)m.invoke((new int[3]).getClass());
@@ -67,7 +67,7 @@ public class ClassFileVersionTest {
             int got_minor = (ver >> 16) & 0x0000FFFF;
             int got_major = ver & 0x0000FFFF;
             throw new RuntimeException(
-                "Expected 64:0, but got " + got_major + ":" + got_minor + " for primitive array");
+                "Expected 0:64, but got " + got_minor + ":" + got_major + " for primitive array");
         }
 
         // test object array.  should return class file version of component.
@@ -76,7 +76,7 @@ public class ClassFileVersionTest {
             int got_minor = (ver >> 16) & 0x0000FFFF;
             int got_major = ver & 0x0000FFFF;
             throw new RuntimeException(
-                "Expected 59:0, but got " + got_major + ":" + got_minor + " for object array");
+                "Expected 0:59, but got " + got_minor + ":" + got_major + " for object array");
         }
 
         // test multi-dimensional object array.  should return class file version of component.
@@ -85,7 +85,7 @@ public class ClassFileVersionTest {
             int got_minor = (ver >> 16) & 0x0000FFFF;
             int got_major = ver & 0x0000FFFF;
             throw new RuntimeException(
-                "Expected 59:0, but got " + got_major + ":" + got_minor + " for object array");
+                "Expected 0:59, but got " + got_minor + ":" + got_major + " for object array");
         }
     }
 }
