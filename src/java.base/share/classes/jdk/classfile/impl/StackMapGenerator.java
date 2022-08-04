@@ -947,7 +947,7 @@ public final class StackMapGenerator {
         return offsets;
     }
 
-    private static final class Frame {
+    private final class Frame {
 
         int offset;
         int localsSize, stackSize;
@@ -1013,13 +1013,13 @@ public final class StackMapGenerator {
         }
 
         Type popStack() {
-            if (stackSize < 1) throw new VerifyError("Operand stack underflow");
+            if (stackSize < 1) generatorError("Operand stack underflow");
             return stack[--stackSize];
         }
 
         Frame decStack(int size) {
             stackSize -= size;
-            if (stackSize < 0) throw new VerifyError("Operand stack underflow");
+            if (stackSize < 0) generatorError("Operand stack underflow");
             return this;
         }
 
