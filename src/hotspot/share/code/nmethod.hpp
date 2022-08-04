@@ -265,7 +265,7 @@ class nmethod : public CompiledMethod {
   bool _load_reported;
 
   // Protected by CompiledMethod_lock
-  volatile signed char _state;         // {not_installed, in_use, not_entrant, zombie, unloaded}
+  volatile signed char _state;         // {not_installed, in_use, not_entrant}
 
   // For native wrappers
   nmethod(Method* method,
@@ -466,7 +466,7 @@ class nmethod : public CompiledMethod {
 
   bool has_dependencies()                         { return dependencies_size() != 0; }
   void print_dependencies()                       PRODUCT_RETURN;
-  void flush_dependencies(bool delete_immediately);
+  void flush_dependencies();
   bool has_flushed_dependencies()                 { return _has_flushed_dependencies; }
   void set_has_flushed_dependencies()             {
     assert(!has_flushed_dependencies(), "should only happen once");

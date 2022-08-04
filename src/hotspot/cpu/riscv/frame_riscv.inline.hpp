@@ -115,10 +115,8 @@ inline frame::frame(intptr_t* ptr_sp, intptr_t* ptr_fp) {
   _pc = (address)(ptr_sp[-1]);
 
   // Here's a sticky one. This constructor can be called via AsyncGetCallTrace
-  // when last_Java_sp is non-null but the pc fetched is junk. If we are truly
-  // unlucky the junk value could be to a zombied method and we'll die on the
-  // find_blob call. This is also why we can have no asserts on the validity
-  // of the pc we find here. AsyncGetCallTrace -> pd_get_top_frame_for_signal_handler
+  // when last_Java_sp is non-null but the pc fetched is junk.
+  // AsyncGetCallTrace -> pd_get_top_frame_for_signal_handler
   // -> pd_last_frame should use a specialized version of pd_last_frame which could
   // call a specilaized frame constructor instead of this one.
   // Then we could use the assert below. However this assert is of somewhat dubious

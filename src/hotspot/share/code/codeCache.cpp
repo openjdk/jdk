@@ -1287,7 +1287,7 @@ static void reset_old_method_table() {
   }
 }
 
-// Remove this method when zombied or unloaded.
+// Remove this method when flushed.
 void CodeCache::unregister_old_nmethod(CompiledMethod* c) {
   assert_lock_strong(CodeCache_lock);
   if (old_compiled_method_table != NULL) {
@@ -1640,7 +1640,7 @@ void CodeCache::print_internals() {
   tty->print_cr("buffer blobs: %d",bufferBlobCount);
   tty->print_cr("deoptimization_stubs: %d",deoptimizationStubCount);
   tty->print_cr("uncommon_traps: %d",uncommonTrapStubCount);
-  tty->print_cr("\nnmethod size distribution (non-zombie java)");
+  tty->print_cr("\nnmethod size distribution");
   tty->print_cr("-------------------------------------------------");
 
   for(int i=0; i<bucketLimit; i++) {

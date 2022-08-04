@@ -208,9 +208,9 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
 
       // Handle signal from NativeJump::patch_verified_entry().
       if ((sig == SIGILL || sig == SIGTRAP)
-          && nativeInstruction_at(pc)->is_sigill_zombie_not_entrant()) {
+          && nativeInstruction_at(pc)->is_sigill_not_entrant()) {
         if (TraceTraps) {
-          tty->print_cr("trap: zombie_not_entrant (%s)", (sig == SIGTRAP) ? "SIGTRAP" : "SIGILL");
+          tty->print_cr("trap: not_entrant (%s)", (sig == SIGTRAP) ? "SIGTRAP" : "SIGILL");
         }
         stub = SharedRuntime::get_handle_wrong_method_stub();
       } else if (sig == SIGSEGV && SafepointMechanism::is_poll_address((address)info->si_addr)) {

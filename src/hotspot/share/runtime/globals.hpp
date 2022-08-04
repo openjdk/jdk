@@ -379,7 +379,7 @@ const int ObjectAlignmentInBytes = 8;
           "Deoptimize random frames on random exit from the runtime system")\
                                                                             \
   notproduct(bool, ZombieALot, false,                                       \
-          "Create zombies (non-entrant) at exit from the runtime system")   \
+          "Create non-entrant nmethods at exit from the runtime system")    \
                                                                             \
   notproduct(bool, WalkStackALot, false,                                    \
           "Trace stack (no print) at every exit from the runtime system")   \

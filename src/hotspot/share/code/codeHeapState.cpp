@@ -216,18 +216,16 @@ const char* blobTypeName[] = {"noType"
                              ,          "nMethod (active)"
                              ,               "nMethod (inactive)"
                              ,                    "nMethod (deopt)"
-                             ,                         "nMethod (zombie)"
-                             ,                              "nMethod (unloaded)"
-                             ,                                   "runtime stub"
-                             ,                                        "ricochet stub"
-                             ,                                             "deopt stub"
-                             ,                                                  "uncommon trap stub"
-                             ,                                                       "exception stub"
-                             ,                                                            "safepoint stub"
-                             ,                                                                 "adapter blob"
-                             ,                                                                      "MH adapter blob"
-                             ,                                                                           "buffer blob"
-                             ,                                                                                "lastType"
+                             ,                         "runtime stub"
+                             ,                              "ricochet stub"
+                             ,                                   "deopt stub"
+                             ,                                        "uncommon trap stub"
+                             ,                                             "exception stub"
+                             ,                                                  "safepoint stub"
+                             ,                                                       "adapter blob"
+                             ,                                                            "MH adapter blob"
+                             ,                                                                 "buffer blob"
+                             ,                                                                      "lastType"
                              };
 const char* compTypeName[] = { "none", "c1", "c2", "jvmci" };
 
@@ -249,8 +247,6 @@ static bool         segment_granules      = false;
 static unsigned int nBlocks_t1            = 0;  // counting "in_use" nmethods only.
 static unsigned int nBlocks_t2            = 0;  // counting "in_use" nmethods only.
 static unsigned int nBlocks_alive         = 0;  // counting "not_used" and "not_entrant" nmethods only.
-static unsigned int nBlocks_dead          = 0;  // counting "zombie" and "unloaded" methods only.
-static unsigned int nBlocks_unloaded      = 0;  // counting "unloaded" nmethods only. This is a transient state.
 static unsigned int nBlocks_stub          = 0;
 
 static struct FreeBlk*          FreeArray = NULL;
@@ -314,8 +310,6 @@ void CodeHeapState::get_HeapStatGlobals(outputStream* out, const char* heapName)
     nBlocks_t1            = CodeHeapStatArray[ix].nBlocks_t1;
     nBlocks_t2            = CodeHeapStatArray[ix].nBlocks_t2;
     nBlocks_alive         = CodeHeapStatArray[ix].nBlocks_alive;
-    nBlocks_dead          = CodeHeapStatArray[ix].nBlocks_dead;
-    nBlocks_unloaded      = CodeHeapStatArray[ix].nBlocks_unloaded;
     nBlocks_stub          = CodeHeapStatArray[ix].nBlocks_stub;
     FreeArray             = CodeHeapStatArray[ix].FreeArray;
     alloc_freeBlocks      = CodeHeapStatArray[ix].alloc_freeBlocks;
@@ -333,8 +327,6 @@ void CodeHeapState::get_HeapStatGlobals(outputStream* out, const char* heapName)
     nBlocks_t1            = 0;
     nBlocks_t2            = 0;
     nBlocks_alive         = 0;
-    nBlocks_dead          = 0;
-    nBlocks_unloaded      = 0;
     nBlocks_stub          = 0;
     FreeArray             = NULL;
     alloc_freeBlocks      = 0;
@@ -356,8 +348,6 @@ void CodeHeapState::set_HeapStatGlobals(outputStream* out, const char* heapName)
     CodeHeapStatArray[ix].nBlocks_t1            = nBlocks_t1;
     CodeHeapStatArray[ix].nBlocks_t2            = nBlocks_t2;
     CodeHeapStatArray[ix].nBlocks_alive         = nBlocks_alive;
-    CodeHeapStatArray[ix].nBlocks_dead          = nBlocks_dead;
-    CodeHeapStatArray[ix].nBlocks_unloaded      = nBlocks_unloaded;
     CodeHeapStatArray[ix].nBlocks_stub          = nBlocks_stub;
     CodeHeapStatArray[ix].FreeArray             = FreeArray;
     CodeHeapStatArray[ix].alloc_freeBlocks      = alloc_freeBlocks;
@@ -645,8 +635,6 @@ void CodeHeapState::aggregate(outputStream* out, CodeHeap* heap, size_t granular
     nBlocks_t1       = 0;
     nBlocks_t2       = 0;
     nBlocks_alive    = 0;
-    nBlocks_dead     = 0;
-    nBlocks_unloaded = 0;
     nBlocks_stub     = 0;
 
     nBlocks_free     = 0;
@@ -678,8 +666,6 @@ void CodeHeapState::aggregate(outputStream* out, CodeHeap* heap, size_t granular
     size_t       aliveSpace    = 0;
     size_t       disconnSpace  = 0;
     size_t       notentrSpace  = 0;
-    size_t       deadSpace     = 0;
-    size_t       unloadedSpace = 0;
     size_t       stubSpace     = 0;
     size_t       freeSpace     = 0;
     size_t       maxFreeSize   = 0;
@@ -964,7 +950,6 @@ void CodeHeapState::aggregate(outputStream* out, CodeHeap* heap, size_t granular
               StatArray[ix_beg].compiler  = cType;
               break;
             default:
-              // must be a stub, if it's not a dead or alive nMethod
               nBlocks_stub++;
               stubSpace   += hb_bytelen;
               StatArray[ix_beg].stub_count++;
@@ -1033,7 +1018,6 @@ void CodeHeapState::aggregate(outputStream* out, CodeHeap* heap, size_t granular
                 StatArray[ix].compiler  = cType;
                 break;
               default:
-                // must be a stub, if it's not a dead or alive nMethod
                 StatArray[ix].stub_count++;
                 StatArray[ix].stub_space += (unsigned short)(granule_size>>log2_seg_size);
                 break;
@@ -1056,8 +1040,6 @@ void CodeHeapState::aggregate(outputStream* out, CodeHeap* heap, size_t granular
       ast->print_cr("  Alive Space    = " SIZE_FORMAT_W(8) "k, nBlocks_alive    = %6d, %10.3f%% of capacity, %10.3f%% of max_capacity", aliveSpace/(size_t)K,    nBlocks_alive,    (100.0*aliveSpace)/size,    (100.0*aliveSpace)/res_size);
       ast->print_cr("    disconnected = " SIZE_FORMAT_W(8) "k, nBlocks_disconn  = %6d, %10.3f%% of capacity, %10.3f%% of max_capacity", disconnSpace/(size_t)K,  nBlocks_disconn,  (100.0*disconnSpace)/size,  (100.0*disconnSpace)/res_size);
       ast->print_cr("    not entrant  = " SIZE_FORMAT_W(8) "k, nBlocks_notentr  = %6d, %10.3f%% of capacity, %10.3f%% of max_capacity", notentrSpace/(size_t)K,  nBlocks_notentr,  (100.0*notentrSpace)/size,  (100.0*notentrSpace)/res_size);
-      ast->print_cr("  unloadedSpace  = " SIZE_FORMAT_W(8) "k, nBlocks_unloaded = %6d, %10.3f%% of capacity, %10.3f%% of max_capacity", unloadedSpace/(size_t)K, nBlocks_unloaded, (100.0*unloadedSpace)/size, (100.0*unloadedSpace)/res_size);
-      ast->print_cr("  deadSpace      = " SIZE_FORMAT_W(8) "k, nBlocks_dead     = %6d, %10.3f%% of capacity, %10.3f%% of max_capacity", deadSpace/(size_t)K,     nBlocks_dead,     (100.0*deadSpace)/size,     (100.0*deadSpace)/res_size);
       ast->print_cr("  stubSpace      = " SIZE_FORMAT_W(8) "k, nBlocks_stub     = %6d, %10.3f%% of capacity, %10.3f%% of max_capacity", stubSpace/(size_t)K,     nBlocks_stub,     (100.0*stubSpace)/size,     (100.0*stubSpace)/res_size);
       ast->print_cr("ZombieBlocks     = %8d. These are HeapBlocks which could not be identified as CodeBlobs.", nBlocks_zomb);
       ast->cr();
@@ -1087,9 +1069,6 @@ void CodeHeapState::aggregate(outputStream* out, CodeHeap* heap, size_t granular
         if (StatArray[ix].stub_count > granule_segs) {
           out->print_cr("stub_count[%d] = %d", ix, StatArray[ix].stub_count);
         }
-        if (StatArray[ix].dead_count > granule_segs) {
-          out->print_cr("dead_count[%d] = %d", ix, StatArray[ix].dead_count);
-        }
         if (StatArray[ix].t1_space   > granule_segs) {
           out->print_cr("t1_space[%d]   = %d", ix, StatArray[ix].t1_space);
         }
@@ -1102,14 +1081,11 @@ void CodeHeapState::aggregate(outputStream* out, CodeHeap* heap, size_t granular
         if (StatArray[ix].stub_space > granule_segs) {
           out->print_cr("stub_space[%d] = %d", ix, StatArray[ix].stub_space);
         }
-        if (StatArray[ix].dead_space > granule_segs) {
-          out->print_cr("dead_space[%d] = %d", ix, StatArray[ix].dead_space);
-        }
         //   this cast is awful! I need it because NT/Intel reports a signed/unsigned mismatch.
-        if ((size_t)(StatArray[ix].t1_count+StatArray[ix].t2_count+StatArray[ix].tx_count+StatArray[ix].stub_count+StatArray[ix].dead_count) > granule_segs) {
+        if ((size_t)(StatArray[ix].t1_count+StatArray[ix].t2_count+StatArray[ix].tx_count+StatArray[ix].stub_count) > granule_segs) {
           out->print_cr("t1_count[%d] = %d, t2_count[%d] = %d, tx_count[%d] = %d, stub_count[%d] = %d", ix, StatArray[ix].t1_count, ix, StatArray[ix].t2_count, ix, StatArray[ix].tx_count, ix, StatArray[ix].stub_count);
         }
-        if ((size_t)(StatArray[ix].t1_space+StatArray[ix].t2_space+StatArray[ix].tx_space+StatArray[ix].stub_space+StatArray[ix].dead_space) > granule_segs) {
+        if ((size_t)(StatArray[ix].t1_space+StatArray[ix].t2_space+StatArray[ix].tx_space+StatArray[ix].stub_space) > granule_segs) {
           out->print_cr("t1_space[%d] = %d, t2_space[%d] = %d, tx_space[%d] = %d, stub_space[%d] = %d", ix, StatArray[ix].t1_space, ix, StatArray[ix].t2_space, ix, StatArray[ix].tx_space, ix, StatArray[ix].stub_space);
         }
       }
@@ -1279,7 +1255,7 @@ void CodeHeapState::print_usedSpace(outputStream* out, CodeHeap* heap) {
     ast->print("%9s", "compiler");
     ast->fill_to(66);
     ast->print_cr("%6s", "method");
-    ast->print_cr("%18s %13s %17s %4s %9s  %5s %s",      "Addr(module)      ", "offset", "size", "type", " type lvl", " temp", "Name");
+    ast->print_cr("%18s %13s %17s %9s  %5s %s",      "Addr(module)      ", "offset", "size", "type", " type lvl", "Name");
     BUFFEREDSTREAM_FLUSH_LOCKED("")
 
     //---<  print Top Ten Used Blocks  >---
@@ -1668,7 +1644,7 @@ void CodeHeapState::print_count(outputStream* out, CodeHeap* heap) {
       for (unsigned int ix = 0; ix < alloc_granules; ix++) {
         print_line_delim(out, ast, low_bound, ix, granules_per_line);
         unsigned int count = StatArray[ix].t1_count   + StatArray[ix].t2_count   + StatArray[ix].tx_count
-                           + StatArray[ix].stub_count + StatArray[ix].dead_count;
+                           + StatArray[ix].stub_count;
         print_count_single(ast, count);
       }
     }
@@ -1756,28 +1732,8 @@ void CodeHeapState::print_count(outputStream* out, CodeHeap* heap) {
   }
 
   {
-    if (nBlocks_dead > 0) {
-      printBox(ast, '-', "Dead nMethod count only, 0x1..0xf. '*' indicates >= 16 blocks, ' ' indicates empty", NULL);
-
-      granules_per_line = 128;
-      for (unsigned int ix = 0; ix < alloc_granules; ix++) {
-        print_line_delim(out, ast, low_bound, ix, granules_per_line);
-        if (segment_granules && StatArray[ix].dead_count > 0) {
-          print_blobType_single(ast, StatArray[ix].type);
-        } else {
-          print_count_single(ast, StatArray[ix].dead_count);
-        }
-      }
-      ast->print("|");
-    } else {
-      ast->print("No dead nMethods found in CodeHeap.");
-    }
-    BUFFEREDSTREAM_FLUSH_LOCKED("\n\n\n")
-  }
-
-  {
     if (!segment_granules) { // Prevent totally redundant printouts
-      printBox(ast, '-', "Count by tier (combined, no dead blocks): <#t1>:<#t2>:<#s>, 0x0..0xf. '*' indicates >= 16 blocks", NULL);
+      printBox(ast, '-', "Count by tier (combined): <#t1>:<#t2>:<#s>, 0x0..0xf. '*' indicates >= 16 blocks", NULL);
 
       granules_per_line = 24;
       for (unsigned int ix = 0; ix < alloc_granules; ix++) {
@@ -1849,7 +1805,7 @@ void CodeHeapState::print_space(outputStream* out, CodeHeap* heap) {
       for (unsigned int ix = 0; ix < alloc_granules; ix++) {
         print_line_delim(out, ast, low_bound, ix, granules_per_line);
         unsigned int space    = StatArray[ix].t1_space   + StatArray[ix].t2_space  + StatArray[ix].tx_space
-                              + StatArray[ix].stub_space + StatArray[ix].dead_space;
+                              + StatArray[ix].stub_space;
         print_space_single(ast, space);
       }
     }
@@ -1932,22 +1888,6 @@ void CodeHeapState::print_space(outputStream* out, CodeHeap* heap) {
       ast->print("|");
     } else {
       ast->print("No Stubs and Blobs found in CodeHeap.");
-    }
-    BUFFEREDSTREAM_FLUSH_LOCKED("\n\n\n")
-  }
-
-  {
-    if (nBlocks_dead > 0) {
-      printBox(ast, '-', "Dead space consumption. ' ' indicates empty, '*' indicates full", NULL);
-
-      granules_per_line = 128;
-      for (unsigned int ix = 0; ix < alloc_granules; ix++) {
-        print_line_delim(out, ast, low_bound, ix, granules_per_line);
-        print_space_single(ast, StatArray[ix].dead_space);
-      }
-      ast->print("|");
-    } else {
-      ast->print("No dead nMethods found in CodeHeap.");
     }
     BUFFEREDSTREAM_FLUSH_LOCKED("\n\n\n")
   }
@@ -2146,7 +2086,7 @@ void CodeHeapState::print_names(outputStream* out, CodeHeap* heap) {
     }
     // Only check granule if it contains at least one blob.
     unsigned int nBlobs  = StatArray[ix].t1_count   + StatArray[ix].t2_count + StatArray[ix].tx_count +
-                           StatArray[ix].stub_count + StatArray[ix].dead_count;
+                           StatArray[ix].stub_count;
     if (nBlobs > 0 ) {
     for (unsigned int is = 0; is < granule_size; is+=(unsigned int)seg_size) {
       // heap->find_start() is safe. Only works on _segmap.
@@ -2189,7 +2129,7 @@ void CodeHeapState::print_names(outputStream* out, CodeHeap* heap) {
           ast->print("%9s", "compiler");
           ast->fill_to(61);
           ast->print_cr("%6s", "method");
-          ast->print_cr("%18s %13s %17s %9s  %5s %18s  %s", "Addr(module)      ", "offset", "size", " type lvl", " temp", "blobType          ", "Name");
+          ast->print_cr("%18s %13s %17s %9s  %18s  %s", "Addr(module)      ", "offset", "size", " type lvl", "blobType          ", "Name");
           BUFFEREDSTREAM_FLUSH_AUTO("")
         }
 
@@ -2214,9 +2154,9 @@ void CodeHeapState::print_names(outputStream* out, CodeHeap* heap) {
           ast->fill_to(51);
           ast->print("%5s %3d", compTypeName[StatArray[ix].compiler], StatArray[ix].level);
           //---<  name and signature  >---
-          ast->fill_to(62+6);
+          ast->fill_to(62);
           ast->print("%s", blobTypeName[cbType]);
-          ast->fill_to(82+6);
+          ast->fill_to(82);
 
           if (get_name) {
             Symbol* methName  = method->name();
@@ -2236,12 +2176,12 @@ void CodeHeapState::print_names(outputStream* out, CodeHeap* heap) {
             ast->print("%s", blob_name);
           }
         } else if (blob_is_safe) {
-          ast->fill_to(62+6);
+          ast->fill_to(62);
           ast->print("%s", blobTypeName[cbType]);
-          ast->fill_to(82+6);
+          ast->fill_to(82);
           ast->print("%s", blob_name);
         } else {
-          ast->fill_to(62+6);
+          ast->fill_to(62);
           ast->print("<stale blob>");
         }
         ast->cr();

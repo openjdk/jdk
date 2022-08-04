@@ -119,7 +119,6 @@ class DependencyContext : public StackObj {
 
   int  mark_dependent_nmethods(DepChange& changes);
   void add_dependent_nmethod(nmethod* nm);
-  void remove_dependent_nmethod(nmethod* nm);
   int  remove_all_dependents();
   void clean_unloading_dependents();
   static void purge_dependency_contexts();

@@ -68,8 +68,6 @@ int DependencyContext::mark_dependent_nmethods(DepChange& changes) {
   int found = 0;
   for (nmethodBucket* b = dependencies_not_unloading(); b != NULL; b = b->next_not_unloading()) {
     nmethod* nm = b->get_nmethod();
-    // since dependencies aren't removed until an nmethod becomes a zombie,
-    // the dependency list may contain nmethods which aren't alive.
     if (b->count() > 0 && !nm->is_marked_for_deoptimization() && nm->check_dependency_on(changes)) {
       if (TraceDependencies) {
         ResourceMark rm;
@@ -134,40 +132,6 @@ void DependencyContext::release(nmethodBucket* b) {
       _perf_total_buckets_stale_count->inc();
       _perf_total_buckets_stale_acc_count->inc();
     }
-  }
-}
-
-//
-// Remove an nmethod dependency from the context.
-// Decrement count of the nmethod in the dependency list and, optionally, remove
-// the bucket completely when the count goes to 0.  This method must find
-// a corresponding bucket otherwise there's a bug in the recording of dependencies.
-// Can be called concurrently by parallel GC threads.
-//
-void DependencyContext::remove_dependent_nmethod(nmethod* nm) {
-  assert_locked_or_safepoint(CodeCache_lock);
-  nmethodBucket* first = dependencies_not_unloading();
-  nmethodBucket* last = NULL;
-  for (nmethodBucket* b = first; b != NULL; b = b->next_not_unloading()) {
-    if (nm == b->get_nmethod()) {
-      int val = b->decrement();
-      guarantee(val >= 0, "Underflow: %d", val);
-      if (val == 0) {
-        if (last == NULL) {
-          // If there was not a head that was not unloading, we can set a new
-          // head without a CAS, because we know there is no contending cleanup.
-          set_dependencies(b->next_not_unloading());
-        } else {
-          // Only supports a single inserting thread (protected by CodeCache_lock)
-          // for now. Therefore, the next pointer only competes with another cleanup
-          // operation. That interaction does not need a CAS.
-          last->set_next(b->next_not_unloading());
-        }
-        release(b);
-      }
-      return;
-    }
-    last = b;
   }
 }
 

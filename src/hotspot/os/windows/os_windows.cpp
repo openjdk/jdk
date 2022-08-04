@@ -2697,9 +2697,9 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
     if (in_java &&
         (exception_code == EXCEPTION_ILLEGAL_INSTRUCTION ||
           exception_code == EXCEPTION_ILLEGAL_INSTRUCTION_2)) {
-      if (nativeInstruction_at(pc)->is_sigill_zombie_not_entrant()) {
+      if (nativeInstruction_at(pc)->is_sigill_not_entrant()) {
         if (TraceTraps) {
-          tty->print_cr("trap: zombie_not_entrant");
+          tty->print_cr("trap: not_entrant");
         }
         return Handle_Exception(exceptionInfo, SharedRuntime::get_handle_wrong_method_stub());
       }

@@ -40,9 +40,9 @@
 #include "c1/c1_Runtime1.hpp"
 #endif
 
-// We use an illtrap for marking a method as not_entrant or zombie
+// We use an illtrap for marking a method as not_entrant
 // Work around a C++ compiler bug which changes 'this'
-bool NativeInstruction::is_sigill_zombie_not_entrant_at(address addr) {
+bool NativeInstruction::is_sigill_not_entrant_at(address addr) {
   if (*(int*)addr != 0 /*illtrap*/) return false;
   CodeBlob* cb = CodeCache::find_blob(addr);
   if (cb == NULL || !cb->is_nmethod()) return false;
@@ -343,7 +343,7 @@ void NativeJump::patch_verified_entry(address entry, address verified_entry, add
     a->b(dest);
   } else {
     // The signal handler will continue at dest=OptoRuntime::handle_wrong_method_stub().
-    // We use an illtrap for marking a method as not_entrant or zombie.
+    // We use an illtrap for marking a method as not_entrant.
     a->illtrap();
   }
   ICache::ppc64_flush_icache_bytes(verified_entry, code_size);

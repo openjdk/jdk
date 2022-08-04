@@ -2342,10 +2342,6 @@ void InstanceKlass::add_dependent_nmethod(nmethod* nm) {
   dependencies().add_dependent_nmethod(nm);
 }
 
-void InstanceKlass::remove_dependent_nmethod(nmethod* nm) {
-  dependencies().remove_dependent_nmethod(nm);
-}
-
 void InstanceKlass::clean_dependency_context() {
   dependencies().clean_unloading_dependents();
 }

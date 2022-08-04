@@ -367,8 +367,6 @@ bool CompiledIC::set_to_clean(bool in_use) {
 
   address entry = _call->get_resolve_call_stub(is_optimized());
 
-  // A zombie transition will always be safe, since the metadata has already been set to NULL, so
-  // we only need to patch the destination
   bool safe_transition = _call->is_safe_for_patching() || !in_use || is_optimized() || SafepointSynchronize::is_at_safepoint();
 
   if (safe_transition) {

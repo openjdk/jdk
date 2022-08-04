@@ -306,7 +306,7 @@ ScopeDesc* CompiledMethod::scope_desc_near(address pc) {
 }
 
 address CompiledMethod::oops_reloc_begin() const {
-  // If the method is not entrant or zombie then a JMP is plastered over the
+  // If the method is not entrant then a JMP is plastered over the
   // first few bytes.  If an oop in the old code was there, that oop
   // should not get GC'd.  Skip the first few bytes of oops on
   // not-entrant methods.
@@ -508,11 +508,10 @@ bool CompiledMethod::clean_ic_if_metadata_is_dead(CompiledIC *ic) {
 template <class CompiledICorStaticCall>
 static bool clean_if_nmethod_is_unloaded(CompiledICorStaticCall *ic, address addr, CompiledMethod* from,
                                          bool clean_all) {
-  // Ok, to lookup references to zombies here
   CodeBlob *cb = CodeCache::find_blob(addr);
   CompiledMethod* nm = (cb != NULL) ? cb->as_compiled_method_or_null() : NULL;
   if (nm != NULL) {
-    // Clean inline caches pointing to both zombie and not_entrant methods
+    // Clean inline caches pointing to bad nmethods
     if (clean_all || !nm->is_in_use() || nm->is_unloading() || (nm->method()->code() != nm)) {
       if (!ic->set_to_clean(!from->is_unloading())) {
         return false;
@@ -592,8 +591,7 @@ bool CompiledMethod::cleanup_inline_caches_impl(bool unloading_occurred, bool cl
   assert(CompiledICLocker::is_safe(this), "mt unsafe call");
   ResourceMark rm;
 
-  // Find all calls in an nmethod and clear the ones that point to non-entrant,
-  // zombie and unloaded nmethods.
+  // Find all calls in an nmethod and clear the ones that point to bad nmethods.
   RelocIterator iter(this, oops_reloc_begin());
   bool is_in_static_stub = false;
   while(iter.next()) {

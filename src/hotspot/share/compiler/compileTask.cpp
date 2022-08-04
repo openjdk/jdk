@@ -240,9 +240,6 @@ void CompileTask::print_impl(outputStream* st, Method* method, int compile_id, i
   }
   st->print("%4d ", compile_id);    // print compilation number
 
-  // For unloaded methods the transition to zombie occurs after the
-  // method is cleared so it's impossible to report accurate
-  // information for that case.
   bool is_synchronized = false;
   bool has_exception_handler = false;
   bool is_native = false;

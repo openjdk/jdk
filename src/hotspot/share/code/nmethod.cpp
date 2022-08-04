@@ -1163,12 +1163,11 @@ void nmethod::verify_clean_inline_caches() {
       case relocInfo::virtual_call_type:
       case relocInfo::opt_virtual_call_type: {
         CompiledIC *ic = CompiledIC_at(&iter);
-        // Ok, to lookup references to zombies here
         CodeBlob *cb = CodeCache::find_blob(ic->ic_destination());
         assert(cb != NULL, "destination not in CodeBlob?");
         nmethod* nm = cb->as_nmethod_or_null();
         if( nm != NULL ) {
-          // Verify that inline caches pointing to both zombie and not_entrant methods are clean
+          // Verify that inline caches pointing to bad nmethods are clean
           if (!nm->is_in_use() || (nm->method()->code() != nm)) {
             assert(ic->is_clean(), "IC should be clean");
           }
@@ -1181,7 +1180,7 @@ void nmethod::verify_clean_inline_caches() {
         assert(cb != NULL, "destination not in CodeBlob?");
         nmethod* nm = cb->as_nmethod_or_null();
         if( nm != NULL ) {
-          // Verify that inline caches pointing to both zombie and not_entrant methods are clean
+          // Verify that inline caches pointing to bad nmethods are clean
           if (!nm->is_in_use() || (nm->method()->code() != nm)) {
             assert(csc->is_clean(), "IC should be clean");
           }
@@ -1305,6 +1304,14 @@ bool nmethod::make_not_entrant() {
       inc_decompile_count();
     }
 
+    BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
+    if (bs_nm == nullptr || !bs_nm->supports_entry_barrier(this)) {
+      // If nmethod entry barriers are not supported, we won't mark
+      // nmethods as on-stack when they become on-stack. So we
+      // degrade to a less accurate flushing strategy, for now.
+      mark_as_maybe_on_stack();
+    }
+
     // Change state
     bool success = try_transition(not_entrant);
     assert(success, "Transition can't fail");
@@ -1345,7 +1352,7 @@ void nmethod::unlink() {
     return;
   }
 
-  flush_dependencies(false /* delete_immediately */);
+  flush_dependencies();
 
   // unlink_from_method will take the CompiledMethod_lock.
   // In this case we don't strictly need it when unlinking nmethods from
@@ -1418,50 +1425,24 @@ oop nmethod::oop_at_phantom(int index) const {
 
 //
 // Notify all classes this nmethod is dependent on that it is no
-// longer dependent. This should only be called in two situations.
-// First, when a nmethod transitions to a zombie all dependents need
-// to be clear.  Since zombification happens at a safepoint there's no
-// synchronization issues.  The second place is a little more tricky.
-// During phase 1 of mark sweep class unloading may happen and as a
-// result some nmethods may get unloaded.  In this case the flushing
-// of dependencies must happen during phase 1 since after GC any
-// dependencies in the unloaded nmethod won't be updated, so
-// traversing the dependency information in unsafe.  In that case this
-// function is called with a boolean argument and this function only
-// notifies instanceKlasses that are reachable
+// longer dependent.
 
-void nmethod::flush_dependencies(bool delete_immediately) {
-  DEBUG_ONLY(bool called_by_gc = Universe::heap()->is_gc_active() ||
-                                 Thread::current()->is_ConcurrentGC_thread() ||
-                                 Thread::current()->is_Worker_thread();)
-  assert(called_by_gc != delete_immediately,
-  "delete_immediately is false if and only if we are called during GC");
+void nmethod::flush_dependencies() {
   if (!has_flushed_dependencies()) {
     set_has_flushed_dependencies();
     for (Dependencies::DepStream deps(this); deps.next(); ) {
       if (deps.type() == Dependencies::call_site_target_value) {
         // CallSite dependencies are managed on per-CallSite instance basis.
         oop call_site = deps.argument_oop(0);
-        if (delete_immediately) {
-          assert_locked_or_safepoint(CodeCache_lock);
-          MethodHandles::remove_dependent_nmethod(call_site, this);
-        } else {
-          MethodHandles::clean_dependency_context(call_site);
-        }
+        MethodHandles::clean_dependency_context(call_site);
       } else {
         Klass* klass = deps.context_type();
         if (klass == NULL) {
           continue;  // ignore things like evol_method
         }
-        // During GC delete_immediately is false, and liveness
-        // of dependee determines class that needs to be updated.
-        if (delete_immediately) {
-          assert_locked_or_safepoint(CodeCache_lock);
-          InstanceKlass::cast(klass)->remove_dependent_nmethod(this);
-        } else if (klass->is_loader_alive()) {
-          // The GC may clean dependency contexts concurrently and in parallel.
-          InstanceKlass::cast(klass)->clean_dependency_context();
-        }
+        // During GC liveness of dependee determines class that needs to be updated.
+        // The GC may clean dependency contexts concurrently and in parallel.
+        InstanceKlass::cast(klass)->clean_dependency_context();
       }
     }
   }
@@ -1598,6 +1579,14 @@ bool nmethod::is_cold() {
     // Not entrant nmethods that are not on any stack can just
     // be removed
     return true;
+  }
+
+  BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
+  if (bs_nm == nullptr || !bs_nm->supports_entry_barrier(this)) {
+    // On platforms that don't support nmethod entry barriers, we can't
+    // trust the temporal aspect of the gc epochs. So we can't detect
+    // cold nmethods on such platforms.
+    return false;
   }
 
   if (!UseCodeCacheFlushing) {
