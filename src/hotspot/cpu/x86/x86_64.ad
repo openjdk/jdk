@@ -6721,6 +6721,50 @@ instruct countTrailingZerosL_bsf(rRegI dst, rRegL src, rFlagsReg cr) %{
   ins_pipe(ialu_reg);
 %}
 
+//--------------- Reverse Operation Instructions ----------------
+instruct bytes_reversebit_int(rRegI dst, rRegI src, rRegI rtmp, rFlagsReg cr) %{
+  predicate(!VM_Version::supports_gfni());
+  match(Set dst (ReverseI src));
+  effect(TEMP dst, TEMP rtmp, KILL cr);
+  format %{ "reverse_int $dst $src\t! using $rtmp as TEMP" %}
+  ins_encode %{
+    __ reverseI($dst$$Register, $src$$Register, xnoreg, xnoreg, $rtmp$$Register);
+  %}
+  ins_pipe( ialu_reg );
+%}
+
+instruct bytes_reversebit_int_gfni(rRegI dst, rRegI src, regF xtmp1, regF xtmp2, rRegL rtmp, rFlagsReg cr) %{
+  predicate(VM_Version::supports_gfni());
+  match(Set dst (ReverseI src));
+  effect(TEMP dst, TEMP xtmp1, TEMP xtmp2, TEMP rtmp, KILL cr);
+  format %{ "reverse_int $dst $src\t! using $rtmp, $xtmp1 and $xtmp2 as TEMP" %}
+  ins_encode %{
+    __ reverseI($dst$$Register, $src$$Register, $xtmp1$$XMMRegister, $xtmp2$$XMMRegister, $rtmp$$Register);
+  %}
+  ins_pipe( ialu_reg );
+%}
+
+instruct bytes_reversebit_long(rRegL dst, rRegL src, rRegL rtmp1, rRegL rtmp2, rFlagsReg cr) %{
+  predicate(!VM_Version::supports_gfni());
+  match(Set dst (ReverseL src));
+  effect(TEMP dst, TEMP rtmp1, TEMP rtmp2, KILL cr);
+  format %{ "reverse_long $dst $src\t! using $rtmp1 and $rtmp2 as TEMP" %}
+  ins_encode %{
+    __ reverseL($dst$$Register, $src$$Register, xnoreg, xnoreg, $rtmp1$$Register, $rtmp2$$Register);
+  %}
+  ins_pipe( ialu_reg );
+%}
+
+instruct bytes_reversebit_long_gfni(rRegL dst, rRegL src, regD xtmp1, regD xtmp2, rRegL rtmp, rFlagsReg cr) %{
+  predicate(VM_Version::supports_gfni());
+  match(Set dst (ReverseL src));
+  effect(TEMP dst, TEMP xtmp1, TEMP xtmp2, TEMP rtmp, KILL cr);
+  format %{ "reverse_long $dst $src\t! using $rtmp, $xtmp1 and $xtmp2 as TEMP" %}
+  ins_encode %{
+    __ reverseL($dst$$Register, $src$$Register, $xtmp1$$XMMRegister, $xtmp2$$XMMRegister, $rtmp$$Register, noreg);
+  %}
+  ins_pipe( ialu_reg );
+%}
 
 //---------- Population Count Instructions -------------------------------------
 
@@ -8023,71 +8067,6 @@ instruct castDD(regD dst)
   ins_cost(0);
   ins_pipe(empty);
 %}
-
-// LoadP-locked same as a regular LoadP when used with compare-swap
-instruct loadPLocked(rRegP dst, memory mem)
-%{
-  match(Set dst (LoadPLocked mem));
-
-  ins_cost(125); // XXX
-  format %{ "movq    $dst, $mem\t# ptr locked" %}
-  ins_encode %{
-    __ movq($dst$$Register, $mem$$Address);
-  %}
-  ins_pipe(ialu_reg_mem); // XXX
-%}
-
-// Conditional-store of the updated heap-top.
-// Used during allocation of the shared heap.
-// Sets flags (EQ) on success.  Implemented with a CMPXCHG on Intel.
-
-instruct storePConditional(memory heap_top_ptr,
-                           rax_RegP oldval, rRegP newval,
-                           rFlagsReg cr)
-%{
-  predicate(n->as_LoadStore()->barrier_data() == 0);
-  match(Set cr (StorePConditional heap_top_ptr (Binary oldval newval)));
-
-  format %{ "cmpxchgq $heap_top_ptr, $newval\t# (ptr) "
-            "If rax == $heap_top_ptr then store $newval into $heap_top_ptr" %}
-  ins_encode %{
-    __ lock();
-    __ cmpxchgq($newval$$Register, $heap_top_ptr$$Address);
-  %}
-  ins_pipe(pipe_cmpxchg);
-%}
-
-// Conditional-store of an int value.
-// ZF flag is set on success, reset otherwise.  Implemented with a CMPXCHG.
-instruct storeIConditional(memory mem, rax_RegI oldval, rRegI newval, rFlagsReg cr)
-%{
-  match(Set cr (StoreIConditional mem (Binary oldval newval)));
-  effect(KILL oldval);
-
-  format %{ "cmpxchgl $mem, $newval\t# If rax == $mem then store $newval into $mem" %}
-  opcode(0x0F, 0xB1);
-  ins_encode(lock_prefix,
-             REX_reg_mem(newval, mem),
-             OpcP, OpcS,
-             reg_mem(newval, mem));
-  ins_pipe(pipe_cmpxchg);
-%}
-
-// Conditional-store of a long value.
-// ZF flag is set on success, reset otherwise.  Implemented with a CMPXCHG.
-instruct storeLConditional(memory mem, rax_RegL oldval, rRegL newval, rFlagsReg cr)
-%{
-  match(Set cr (StoreLConditional mem (Binary oldval newval)));
-  effect(KILL oldval);
-
-  format %{ "cmpxchgq $mem, $newval\t# If rax == $mem then store $newval into $mem" %}
-  ins_encode %{
-    __ lock();
-    __ cmpxchgq($newval$$Register, $mem$$Address);
-  %}
-  ins_pipe(pipe_cmpxchg);
-%}
-
 
 // XXX No flag versions for CompareAndSwap{P,I,L} because matcher can't match them
 instruct compareAndSwapP(rRegI res,

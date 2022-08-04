@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -29,8 +29,27 @@
 
 #define __ _masm->
 
+// SYSCALL_RISCV_FLUSH_ICACHE is used to flush instruction cache. The "fence.i" instruction
+// only work on the current hart, so kernel provides the icache flush syscall to flush icache
+// on each hart. You can pass a flag to determine a global or local icache flush.
+static void icache_flush(long int start, long int end)
+{
+  const int SYSCALL_RISCV_FLUSH_ICACHE = 259;
+  register long int __a7 asm ("a7") = SYSCALL_RISCV_FLUSH_ICACHE;
+  register long int __a0 asm ("a0") = start;
+  register long int __a1 asm ("a1") = end;
+  // the flush can be applied to either all threads or only the current.
+  // 0 means a global icache flush, and the icache flush will be applied
+  // to other harts concurrently executing.
+  register long int __a2 asm ("a2") = 0;
+  __asm__ volatile ("ecall\n\t"
+                    : "+r" (__a0)
+                    : "r" (__a0), "r" (__a1), "r" (__a2), "r" (__a7)
+                    : "memory");
+}
+
 static int icache_flush(address addr, int lines, int magic) {
-  os::icache_flush((long int) addr, (long int) (addr + (lines << ICache::log2_line_size)));
+  icache_flush((long int) addr, (long int) (addr + (lines << ICache::log2_line_size)));
   return magic;
 }
 

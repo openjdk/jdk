@@ -32,6 +32,7 @@
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "nativeInst_x86.hpp"
+#include "os_windows.hpp"
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm_misc.hpp"
 #include "runtime/arguments.hpp"
@@ -41,6 +42,7 @@
 #include "runtime/javaCalls.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
+#include "runtime/os.inline.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
@@ -165,7 +167,7 @@ typedef struct {
 // Arguments:  low and high are the address of the full reserved
 // codeCache area
 //
-bool os::register_code_area(char *low, char *high) {
+bool os::win32::register_code_area(char *low, char *high) {
 #ifdef AMD64
 
   ResourceMark rm;
@@ -209,7 +211,7 @@ bool os::register_code_area(char *low, char *high) {
   return true;
 }
 
-#ifdef AMD64
+#ifdef HAVE_PLATFORM_PRINT_NATIVE_STACK
 /*
  * Windows/x64 does not use stack frames the way expected by Java:
  * [1] in most cases, there is no frame pointer. All locals are addressed via RSP
@@ -221,8 +223,8 @@ bool os::register_code_area(char *low, char *high) {
  *     while (...) {...  fr = os::get_sender_for_C_frame(&fr); }
  * loop in vmError.cpp. We need to roll our own loop.
  */
-bool os::platform_print_native_stack(outputStream* st, const void* context,
-                                     char *buf, int buf_size)
+bool os::win32::platform_print_native_stack(outputStream* st, const void* context,
+                                            char *buf, int buf_size)
 {
   CONTEXT ctx;
   if (context != NULL) {
@@ -293,7 +295,7 @@ bool os::platform_print_native_stack(outputStream* st, const void* context,
 
   return true;
 }
-#endif // AMD64
+#endif // HAVE_PLATFORM_PRINT_NATIVE_STACK
 
 address os::fetch_frame_from_context(const void* ucVoid,
                     intptr_t** ret_sp, intptr_t** ret_fp) {
@@ -557,4 +559,8 @@ void os::verify_stack_alignment() {
 int os::extra_bang_size_in_bytes() {
   // JDK-8050147 requires the full cache line bang for x86.
   return VM_Version::L1_line_size();
+}
+
+bool os::supports_sse() {
+  return true;
 }

@@ -196,6 +196,10 @@ inline JavaCallWrapper** frame::entry_frame_call_wrapper_addr() const {
 
 // Compiled frames
 
+// Register is a class, but it would be assigned numerical value.
+// "0" is assigned for rax. Thus we need to ignore -Wnonnull.
+PRAGMA_DIAG_PUSH
+PRAGMA_NONNULL_IGNORED
 inline oop frame::saved_oop_result(RegisterMap* map) const {
   oop* result_adr = (oop*) map->location(R0->as_VMReg(), nullptr);
   guarantee(result_adr != NULL, "bad register save location");
@@ -207,6 +211,7 @@ inline void frame::set_saved_oop_result(RegisterMap* map, oop obj) {
   guarantee(result_adr != NULL, "bad register save location");
   *result_adr = obj;
 }
+PRAGMA_DIAG_POP
 
 inline int frame::frame_size() const {
   return sender_sp() - sp();

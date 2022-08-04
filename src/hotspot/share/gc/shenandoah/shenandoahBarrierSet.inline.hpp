@@ -200,7 +200,7 @@ inline oop ShenandoahBarrierSet::oop_cmpxchg(DecoratorSet decorators, T* addr, o
 
   // Note: We don't need a keep-alive-barrier here. We already enqueue any loaded reference for SATB anyway,
   // because it must be the previous value.
-  res = load_reference_barrier(decorators, res, reinterpret_cast<T*>(NULL));
+  res = load_reference_barrier(decorators, res, static_cast<T*>(nullptr));
   satb_enqueue(res);
   return res;
 }
@@ -211,7 +211,7 @@ inline oop ShenandoahBarrierSet::oop_xchg(DecoratorSet decorators, T* addr, oop 
   oop previous = RawAccess<>::oop_atomic_xchg(addr, new_value);
   // Note: We don't need a keep-alive-barrier here. We already enqueue any loaded reference for SATB anyway,
   // because it must be the previous value.
-  previous = load_reference_barrier<T>(decorators, previous, reinterpret_cast<T*>(NULL));
+  previous = load_reference_barrier<T>(decorators, previous, static_cast<T*>(nullptr));
   satb_enqueue(previous);
   return previous;
 }
