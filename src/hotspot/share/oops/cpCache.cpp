@@ -684,15 +684,18 @@ void ConstantPoolCache::record_gc_epoch() {
 }
 
 void ConstantPoolCache::save_for_archive() {
+#if INCLUDE_CDS
   ConstantPoolCacheEntry* copy = NEW_C_HEAP_ARRAY(ConstantPoolCacheEntry, length(), mtClassShared);
   for (int i = 0; i < length(); i++) {
     copy[i] = *entry_at(i);
   }
 
   SystemDictionaryShared::save_cpcache_entries(constant_pool()->pool_holder(), copy);
+#endif
 }
 
 void ConstantPoolCache::remove_unshareable_info() {
+#if INCLUDE_CDS
   Arguments::assert_is_dumping_archive();
   InstanceKlass* ik = constant_pool()->pool_holder();
   ConstantPoolCacheEntry* saved = SystemDictionaryShared::get_saved_cpcache_entries_locked(ik);
@@ -701,6 +704,7 @@ void ConstantPoolCache::remove_unshareable_info() {
     // has finished.
     *entry_at(i) = saved[i];
   }
+#endif
 }
 
 void ConstantPoolCache::deallocate_contents(ClassLoaderData* data) {
