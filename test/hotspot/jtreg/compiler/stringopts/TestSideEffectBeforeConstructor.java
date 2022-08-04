@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2007, 2008, 2010 Red Hat, Inc.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,16 +19,31 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef OS_CPU_BSD_ZERO_OS_BSD_ZERO_HPP
-#define OS_CPU_BSD_ZERO_OS_BSD_ZERO_HPP
+/*
+ * @test
+ * @bug 8290705
+ * @summary Test correctness of the string concatenation optimization with
+ *          a store between StringBuffer allocation and constructor invocation.
+ * @compile SideEffectBeforeConstructor.jasm
+ * @run main/othervm -Xbatch compiler.stringopts.TestSideEffectBeforeConstructor
+ */
 
-  static void setup_fpu() {}
+package compiler.stringopts;
 
-  // Used to register dynamic code cache area with the OS
-  // Note: Currently only used in 64 bit Windows implementations
-  static bool register_code_area(char *low, char *high) { return true; }
+public class TestSideEffectBeforeConstructor {
 
-#endif // OS_CPU_BSD_ZERO_OS_BSD_ZERO_HPP
+    public static void main(String[] args) {
+        for (int i = 0; i < 100_000; ++i) {
+            try {
+                SideEffectBeforeConstructor.test(null);
+            } catch (NullPointerException npe) {
+                // Expected
+            }
+        }
+        if (SideEffectBeforeConstructor.result != 100_000) {
+            throw new RuntimeException("Unexpected result: " + SideEffectBeforeConstructor.result);
+        }
+    }
+}

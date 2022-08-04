@@ -3922,7 +3922,6 @@ void TemplateTable::_new() {
   Label slow_case_no_pop;
   Label done;
   Label initialize_header;
-  Label initialize_object;  // including clearing the fields
 
   __ get_cpool_and_tags(rcx, rax);
 
@@ -3952,48 +3951,23 @@ void TemplateTable::_new() {
   //  If TLAB is enabled:
   //    Try to allocate in the TLAB.
   //    If fails, go to the slow path.
-  //  Else If inline contiguous allocations are enabled:
-  //    Try to allocate in eden.
-  //    If fails due to heap end, go to slow path.
-  //
-  //  If TLAB is enabled OR inline contiguous is enabled:
   //    Initialize the allocation.
   //    Exit.
   //
   //  Go to slow path.
 
-  const bool allow_shared_alloc =
-    Universe::heap()->supports_inline_contig_alloc();
-
   const Register thread = LP64_ONLY(r15_thread) NOT_LP64(rcx);
-#ifndef _LP64
-  if (UseTLAB || allow_shared_alloc) {
-    __ get_thread(thread);
-  }
-#endif // _LP64
 
   if (UseTLAB) {
+    NOT_LP64(__ get_thread(thread);)
     __ tlab_allocate(thread, rax, rdx, 0, rcx, rbx, slow_case);
     if (ZeroTLAB) {
       // the fields have been already cleared
       __ jmp(initialize_header);
-    } else {
-      // initialize both the header and fields
-      __ jmp(initialize_object);
     }
-  } else if (allow_shared_alloc) {
-    // Allocation in the shared Eden, if allowed.
-    //
-    // rdx: instance size in bytes
-    __ eden_allocate(thread, rax, rdx, 0, rbx, slow_case);
-  }
 
-  // If UseTLAB or allow_shared_alloc are true, the object is created above and
-  // there is an initialize need. Otherwise, skip and go to the slow path.
-  if (UseTLAB || allow_shared_alloc) {
     // The object is initialized before the header.  If the object size is
     // zero, go directly to the header initialization.
-    __ bind(initialize_object);
     __ decrement(rdx, sizeof(oopDesc));
     __ jcc(Assembler::zero, initialize_header);
 

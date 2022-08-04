@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package sun.security.ssl;
 
-import java.io.*;
 import java.security.*;
 import java.security.cert.*;
 import java.util.*;
@@ -166,6 +165,7 @@ abstract class TrustManagerFactoryImpl extends TrustManagerFactorySpi {
                 throw new InvalidAlgorithmParameterException
                     ("Encapsulated parameters must be PKIXBuilderParameters");
             }
+            PKIXBuilderParameters pkixParams = (PKIXBuilderParameters)params;
             return new X509TrustManagerImpl(Validator.TYPE_PKIX, pkixParams);
         }
     }

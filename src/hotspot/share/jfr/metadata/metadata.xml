@@ -414,7 +414,9 @@
     <Field type="ulong" contentType="bytes" name="undoWaste" label="Undo Wasted" description="Total memory wasted due to allocation undo within PLABs" />
     <Field type="ulong" contentType="bytes" name="regionEndWaste" label="Region End Wasted" description="Total memory wasted at the end of regions due to refill" />
     <Field type="uint" name="regionsRefilled" label="Region Refills" description="Number of regions refilled" />
+    <Field type="ulong" name="numPlabsFilled" label="PLAB Fills" description="Number of PLABs filled" />
     <Field type="ulong" contentType="bytes" name="directAllocated" label="Allocated (direct)" description="Total memory allocated using direct allocation outside of PLABs" />
+    <Field type="ulong" name="numDirectAllocated" label="Direct allocations" description="Number of direct allocations" />
     <Field type="ulong" contentType="bytes" name="failureUsed" label="Used (failure)" description="Total memory occupied by objects in regions where evacuation failed" />
     <Field type="ulong" contentType="bytes" name="failureWaste" label="Wasted (failure)" description="Total memory left unused in regions where evacuation failed" />
   </Type>
@@ -829,42 +831,6 @@
   </Event>
 
   <Event name="StringTableStatistics" category="Java Virtual Machine, Runtime, Tables" label="String Table Statistics" period="everyChunk">
-    <Field type="ulong" name="bucketCount" label="Bucket Count" description="Number of buckets" />
-    <Field type="ulong" name="entryCount" label="Entry Count" description="Number of all entries" />
-    <Field type="ulong" contentType="bytes" name="totalFootprint" label="Total Footprint" description="Total memory footprint (the table itself plus all of the entries)" />
-    <Field type="ulong" name="bucketCountMaximum" label="Maximum Bucket Count" description="The maximum bucket length (entries in a single bucket)" />
-    <Field type="float" name="bucketCountAverage" label="Average Bucket Count" description="The average bucket length" />
-    <Field type="float" name="bucketCountVariance" label="Bucket Count Variance" description="How far bucket lengths are spread out from their average value" />
-    <Field type="float" name="bucketCountStandardDeviation" label="Bucket Count Standard Deviation" description="How far bucket lengths are spread out from their mean (expected) value" />
-    <Field type="float" name="insertionRate" label="Insertion Rate" description="How many items were added since last event (per second)" />
-    <Field type="float" name="removalRate" label="Removal Rate" description="How many items were removed since last event (per second)" />
-  </Event>
-
-  <Event name="PlaceholderTableStatistics" category="Java Virtual Machine, Runtime, Tables" label="Placeholder Table Statistics" period="everyChunk">
-    <Field type="ulong" name="bucketCount" label="Bucket Count" description="Number of buckets" />
-    <Field type="ulong" name="entryCount" label="Entry Count" description="Number of all entries" />
-    <Field type="ulong" contentType="bytes" name="totalFootprint" label="Total Footprint" description="Total memory footprint (the table itself plus all of the entries)" />
-    <Field type="ulong" name="bucketCountMaximum" label="Maximum Bucket Count" description="The maximum bucket length (entries in a single bucket)" />
-    <Field type="float" name="bucketCountAverage" label="Average Bucket Count" description="The average bucket length" />
-    <Field type="float" name="bucketCountVariance" label="Bucket Count Variance" description="How far bucket lengths are spread out from their average value" />
-    <Field type="float" name="bucketCountStandardDeviation" label="Bucket Count Standard Deviation" description="How far bucket lengths are spread out from their mean (expected) value" />
-    <Field type="float" name="insertionRate" label="Insertion Rate" description="How many items were added since last event (per second)" />
-    <Field type="float" name="removalRate" label="Removal Rate" description="How many items were removed since last event (per second)" />
-  </Event>
-
-  <Event name="LoaderConstraintsTableStatistics" category="Java Virtual Machine, Runtime, Tables" label="Loader Constraints Table Statistics" period="everyChunk">
-    <Field type="ulong" name="bucketCount" label="Bucket Count" />
-    <Field type="ulong" name="entryCount" label="Entry Count" description="Number of all entries" />
-    <Field type="ulong" contentType="bytes" name="totalFootprint" label="Total Footprint" description="Total memory footprint (the table itself plus all of the entries)" />
-    <Field type="ulong" name="bucketCountMaximum" label="Maximum Bucket Count" description="The maximum bucket length (entries in a single bucket)" />
-    <Field type="float" name="bucketCountAverage" label="Average Bucket Count" description="The average bucket length" />
-    <Field type="float" name="bucketCountVariance" label="Bucket Count Variance" description="How far bucket lengths are spread out from their average value" />
-    <Field type="float" name="bucketCountStandardDeviation" label="Bucket Count Standard Deviation" description="How far bucket lengths are spread out from their mean (expected) value" />
-    <Field type="float" name="insertionRate" label="Insertion Rate" description="How many items were added since last event (per second)" />
-    <Field type="float" name="removalRate" label="Removal Rate" description="How many items were removed since last event (per second)" />
-  </Event>
-
-  <Event name="ProtectionDomainCacheTableStatistics" category="Java Virtual Machine, Runtime, Tables" label="Protection Domain Cache Table Statistics" period="everyChunk">
     <Field type="ulong" name="bucketCount" label="Bucket Count" description="Number of buckets" />
     <Field type="ulong" name="entryCount" label="Entry Count" description="Number of all entries" />
     <Field type="ulong" contentType="bytes" name="totalFootprint" label="Total Footprint" description="Total memory footprint (the table itself plus all of the entries)" />

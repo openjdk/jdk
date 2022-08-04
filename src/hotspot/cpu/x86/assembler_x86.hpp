@@ -781,6 +781,21 @@ private:
                     int disp,
                     RelocationHolder const& rspec);
 
+  void emit_operand_helper(KRegister kreg,
+                           int base_enc, int index_enc, Address::ScaleFactor scale,
+                           int disp,
+                           RelocationHolder const& rspec,
+                           int rip_relative_correction = 0);
+
+  void emit_operand(KRegister kreg, Address adr,
+                    int rip_relative_correction = 0);
+
+  void emit_operand(KRegister kreg,
+                    Register base, Register index, Address::ScaleFactor scale,
+                    int disp,
+                    RelocationHolder const& rspec,
+                    int rip_relative_correction = 0);
+
   void emit_operand(XMMRegister reg, Address adr);
 
   // Immediate-to-memory forms
@@ -2801,6 +2816,7 @@ private:
   void evpblendmq(XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int vector_len);
 
   // Galois field affine transformation instructions.
+  void gf2p8affineqb(XMMRegister dst, XMMRegister src, int imm8);
   void vgf2p8affineqb(XMMRegister dst, XMMRegister src2, XMMRegister src3, int imm8, int vector_len);
 
  protected:
