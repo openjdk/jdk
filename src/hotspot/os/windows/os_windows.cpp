@@ -615,8 +615,10 @@ bool os::create_attached_thread(JavaThread* thread) {
 
   thread->set_osthread(osthread);
 
-  log_info(os, thread)("Thread attached (tid: " UINTX_FORMAT ").",
-    os::current_thread_id());
+  log_info(os, thread)("Thread attached (tid: " UINTX_FORMAT ", stack: "
+                       PTR_FORMAT " - " PTR_FORMAT " (" SIZE_FORMAT "k) ).",
+                       os::current_thread_id(), p2i(thread->stack_base()),
+                       p2i(thread->stack_end()), thread->stack_size());
 
   return true;
 }
@@ -5935,4 +5937,17 @@ void os::print_memory_mappings(char* addr, size_t bytes, outputStream* st) {
       }
     }
   }
+}
+
+// File conventions
+const char* os::file_separator() { return "\\"; }
+const char* os::line_separator() { return "\r\n"; }
+const char* os::path_separator() { return ";"; }
+
+void os::print_user_info(outputStream* st) {
+  // not implemented yet
+}
+
+void os::print_active_locale(outputStream* st) {
+  // not implemented yet
 }

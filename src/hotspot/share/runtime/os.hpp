@@ -37,9 +37,73 @@
 class AgentLibrary;
 class frame;
 
-// os defines the interface to operating system; this includes traditional
-// OS services (time, I/O) as well as other functionality with system-
-// dependent code.
+// Rules for using and implementing methods declared in the "os" class
+// ===================================================================
+//
+// The "os" class defines a number of the interfaces for porting HotSpot
+// to different operating systems. For example, I/O, memory, timing, etc.
+// Note that additional classes such as Semaphore, Mutex, etc., are used for
+// porting specific groups of features.
+//
+// Structure of os*.{cpp, hpp} files
+//
+// - os.hpp
+//
+//   (This file) declares the entire API of the "os" class.
+//
+// - os.inline.hpp
+//
+//   To use any of the inline methods declared in the "os" class, this
+//   header file must be included.
+//
+// - src/hotspot/os/<os>/os_<os>.hpp
+// - src/hotspot/os/posix/os_posix.hpp
+//
+//   These headers declare APIs that should be used only within the
+//   platform-specific source files for that particular OS.
+//
+//   For example, os_linux.hpp declares the os::Linux class, which provides
+//   many methods that can be used by files under os/linux/ and os_cpu/linux_*/
+//
+//   os_posix.hpp can be used by platform-specific files for POSIX-like
+//   OSes such as aix, bsd and linux.
+//
+//   Platform-independent source files should not include these header files
+//   (although sadly there are some rare exceptions ...)
+//
+// - os.cpp
+//
+//   Platform-independent methods of the "os" class are defined
+//   in os.cpp. These are not part of the porting interface, but rather
+//   can be considered as convenience functions for accessing
+//   the porting interface. E.g., os::print_function_and_library_name().
+//
+// The methods declared in os.hpp but not implemented in os.cpp are
+// a part the HotSpot Porting APIs. They must be implemented in one of
+// the following four files:
+//
+// - src/hotspot/os/<os>/os_<os>.inline.hpp
+// - src/hotspot/os_cpu/<os>_<cpu>/os_<os>_<cpu>.inline.hpp
+// - src/hotspot/os/<os>/os_<os>.cpp
+// - src/hotspot/os_cpu/<os>_<cpu>/os_<os>_<cpu>.cpp
+//
+//   The Porting APIs declared as "inline" in os.hpp MUST be
+//   implemented in one of the two .inline.hpp files, depending on
+//   whether the feature is specific to a particular CPU architecture
+//   for this OS. These two files are automatically included by
+//   os.inline.hpp. Platform-independent source files must not include
+//   these two files directly.
+//
+//   If the full definition of an inline method is too complex to fit in a
+//   header file, the actual implementation can be deferred to another
+//   method defined in the .cpp files.
+//
+//   The Porting APIs that are *not* declared as "inline" in os.hpp MUST
+//   be implemented in one of the two .cpp files above. These files
+//   also implement OS-specific APIs such as os::Linux, os::Posix, etc.
+//
+// (Note: on the POSIX-like platforms, some of the Porting APIs are implemented
+// in os_posix.cpp instead).
 
 class Thread;
 class JavaThread;
@@ -279,9 +343,9 @@ class os: AllStatic {
   // Interface for stack banging (predetect possible stack overflow for
   // exception processing)  There are guard pages, and above that shadow
   // pages for stack overflow checking.
-  static bool uses_stack_guard_pages();
-  static bool must_commit_stack_guard_pages();
-  static void map_stack_shadow_pages(address sp);
+  inline static bool uses_stack_guard_pages();
+  inline static bool must_commit_stack_guard_pages();
+  inline static void map_stack_shadow_pages(address sp);
   static bool stack_shadow_pages_available(Thread *thread, const methodHandle& method, address sp);
 
  private:
@@ -349,6 +413,7 @@ class os: AllStatic {
                                                   const size_t size);
 
   static int    vm_allocation_granularity();
+  inline static size_t cds_core_region_alignment();
 
   // Reserves virtual memory.
   static char*  reserve_memory(size_t bytes, bool executable = false, MEMFLAGS flags = mtNone);
@@ -632,6 +697,9 @@ class os: AllStatic {
                                               bool demangle = true,
                                               bool strip_arguments = false);
 
+  // Used only on PPC.
+  inline static void* resolve_function_descriptor(void* p);
+
   // Find out whether the pc is in the static code for jvm.dll/libjvm.so.
   static bool address_is_in_vm(address addr);
 
@@ -694,6 +762,9 @@ class os: AllStatic {
   static void print_signal_handlers(outputStream* st, char* buf, size_t buflen);
   static void print_date_and_time(outputStream* st, char* buf, size_t buflen);
   static void print_instructions(outputStream* st, address pc, int unitsize);
+
+  static void print_user_info(outputStream* st);
+  static void print_active_locale(outputStream* st);
 
   // helper for output of seconds in days , hours and months
   static void print_dhm(outputStream* st, const char* startStr, long sec);
@@ -870,25 +941,58 @@ class os: AllStatic {
 
  public:
 
-  // Platform dependent stuff
-#ifndef _WINDOWS
-# include "os_posix.hpp"
+  // File conventions
+  static const char* file_separator();
+  static const char* line_separator();
+  static const char* path_separator();
+
+  // Information about the protection of the page at address '0' on this os.
+  inline static bool zero_page_read_protected();
+
+  static void setup_fpu();
+  static bool supports_sse();
+  static juint cpu_microcode_revision();
+
+  static inline jlong rdtsc();
+
+  // Used to register dynamic code cache area with the OS
+  // Note: Currently only used in 64 bit Windows implementations
+  inline static bool register_code_area(char *low, char *high);
+
+  // Platform-specific code for interacting with individual OSes.
+  // TODO: This is for compatibility only with current usage of os::Linux, etc.
+  // We can get rid of the following block if we rename such a class to something
+  // like ::LinuxUtils
+#if defined(AIX)
+  class Aix;
+#elif defined(BSD)
+  class Bsd;
+#elif defined(LINUX)
+  class Linux;
+#elif defined(_WINDOWS)
+  class win32;
 #endif
-#include OS_CPU_HEADER(os)
-#include OS_HEADER(os)
+
+  // Ditto - Posix-specific API. Ideally should be moved to something like ::PosixUtils.
+#ifndef _WINDOWS
+  class Posix;
+#endif
+
+  // FIXME - some random stuff that was in os_windows.hpp
+#ifdef _WINDOWS
+  // strtok_s is the Windows thread-safe equivalent of POSIX strtok_r
+# define strtok_r strtok_s
+# define S_ISCHR(mode)   (((mode) & _S_IFCHR) == _S_IFCHR)
+# define S_ISFIFO(mode)  (((mode) & _S_IFIFO) == _S_IFIFO)
+#endif
 
 #ifndef OS_NATIVE_THREAD_CREATION_FAILED_MSG
 #define OS_NATIVE_THREAD_CREATION_FAILED_MSG "unable to create native thread: possibly out of memory or process/resource limits reached"
 #endif
 
  public:
-#ifndef PLATFORM_PRINT_NATIVE_STACK
-  // No platform-specific code for printing the native stack.
-  static bool platform_print_native_stack(outputStream* st, const void* context,
-                                          char *buf, int buf_size) {
-    return false;
-  }
-#endif
+  inline static bool platform_print_native_stack(outputStream* st, const void* context,
+                                                 char *buf, int buf_size);
 
   // debugging support (mostly used by debug.cpp but also fatal error handler)
   static bool find(address pc, outputStream* st = tty); // OS specific function to make sense out of an address
