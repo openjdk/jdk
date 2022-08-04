@@ -22,9 +22,14 @@
  */
 package xpath;
 
+import org.testng.Assert;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+
+import javax.xml.transform.TransformerException;
+import javax.xml.xpath.*;
 
 /*
  * @test
@@ -52,27 +57,40 @@ public class XPathNumberFnTest extends XPathTestBase {
                 {"number(//Customer[2]/Age)", 1.0},
                 {"number(//Customer[1]/Age + //Customer[2]/Age)", 1.0},
                 {"number('abc')", Double.NaN},
-                {"number(.)", Double.NaN},
+                {"number('')", Double.NaN},
+                {"number(//Age[number()=1.0])", 1.0},
+                {"number(//Age[number(.)=1.0])", 1.0},
                 {"number(//Customer[1]/Name)", Double.NaN},
                 {"number(//Customer[2]/Age + //Customer[1]/Name)", Double.NaN},
                 {"number(true())", 1},
                 {"number(false())", 0},
 
                 {"sum(//Age)", 0},
+                {"sum(//Customer[2]/Age)", 1},
 
                 {"floor(1.1)", 1.0},
                 {"floor(-1.6)", -2.0},
                 {"floor(1.0 div 0)", Double.POSITIVE_INFINITY},
                 {"floor(-1.0 div 0)", Double.NEGATIVE_INFINITY},
+                {"floor(true())", 1},
+                {"floor(false())", 0},
+                {"floor(abc)", Double.NaN},
+                {"floor('')", Double.NaN},
                 {"floor(//Customer[2]/Age)", 1.0},
                 {"floor(//Customer[1]/Name)", Double.NaN},
+                {"number(//Age[floor(.)=1.0])", 1.0},
 
                 {"ceiling(1.1)", 2.0},
                 {"ceiling(-1.4)", -1.0},
                 {"ceiling(1.0 div 0)", Double.POSITIVE_INFINITY},
                 {"ceiling(-1.0 div 0)", Double.NEGATIVE_INFINITY},
+                {"ceiling(true())", 1},
+                {"ceiling(false())", 0},
+                {"ceiling(abc)", Double.NaN},
+                {"ceiling('')", Double.NaN},
                 {"ceiling(//Customer[2]/Age)", 1.0},
                 {"ceiling(//Customer[1]/Name)", Double.NaN},
+                {"number(//Age[ceiling(.)=1.0])", 1.0},
 
                 {"round(1.49)", 1.0},
                 {"round(1.5)", 2.0},
@@ -80,8 +98,37 @@ public class XPathNumberFnTest extends XPathTestBase {
                 {"round(-1.51)", -2.0},
                 {"round(1.0 div 0)", Double.POSITIVE_INFINITY},
                 {"round(-1.0 div 0)", Double.NEGATIVE_INFINITY},
+                {"round(true())", 1},
+                {"round(false())", 0},
+                {"round(abc)", Double.NaN},
+                {"round('')", Double.NaN},
                 {"round(//Customer[2]/Age)", 1.0},
                 {"round(//Customer[1]/Name)", Double.NaN},
+                {"number(//Age[round(.)=1.0])", 1.0},
+        };
+    }
+
+    /*
+     * DataProvider for testing TransformerException being thrown on
+     * invalid number function usage.
+     * Data columns:
+     *  see parameters of the test "testExceptionEval" and
+     *  "testExceptionEvalExp"
+     */
+    @DataProvider(name = "exceptionExpTestCases")
+    public Object[][] getExceptionExp() {
+        return new Object[][]{
+                {"number(//Age[floor()=1.0])"},
+
+                {"number(//Age[ceiling()=1.0])"},
+
+                {"number(//Age[round()=1.0])"},
+
+                {"sum(1)"},
+                {"sum(true())"},
+                {"sum('')"},
+                {"sum('abc')"},
+                {"number(//Age[sum()])"},
         };
     }
 
@@ -96,5 +143,33 @@ public class XPathNumberFnTest extends XPathTestBase {
     @Test(dataProvider = "numberExpTestCases")
     void testNumberFn(String exp, double expected) throws Exception {
         testExp(doc, exp, expected, Double.class);
+    }
+
+    /**
+     * Verifies that TransformerException is thrown on evaluateExpression.
+     *
+     * @param exp XPath expression
+     * @throws Exception if test fails
+     */
+    @Test(dataProvider = "exceptionExpTestCases", expectedExceptions =
+            XPathExpressionException.class)
+    void testExceptionEvalExp(String exp) throws Exception {
+        XPath xPath = XPathFactory.newInstance().newXPath();
+
+        xPath.evaluateExpression(exp, doc);
+    }
+
+    /**
+     * Verifies that TransformerException is thrown on evaluate.
+     *
+     * @param exp XPath expression
+     * @throws Exception if test fails
+     */
+    @Test(dataProvider = "exceptionExpTestCases", expectedExceptions =
+            XPathExpressionException.class)
+    void testExceptionEval(String exp) throws Exception {
+        XPath xPath = XPathFactory.newInstance().newXPath();
+
+        xPath.evaluate(exp, doc);
     }
 }

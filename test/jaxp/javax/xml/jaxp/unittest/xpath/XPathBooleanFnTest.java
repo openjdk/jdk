@@ -26,6 +26,10 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import org.w3c.dom.Document;
 
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathExpressionException;
+import javax.xml.xpath.XPathFactory;
+
 /*
  * @test
  * @bug 8290837
@@ -68,6 +72,8 @@ public class XPathBooleanFnTest extends XPathTestBase {
                         "//Customer[2]/ClubMember)", true},
                 {"boolean(//Customer[1]/ClubMember and " +
                         "//Customer[2]/ClubMember)", true},
+                {"boolean(//*[boolean(.)=true()])", true},
+                {"boolean(//*[boolean(.)=false()])", false},
 
                 {"not(1)", false},
                 {"not(-1)", false},
@@ -77,9 +83,28 @@ public class XPathBooleanFnTest extends XPathTestBase {
                 {"not(//Customer[1]/ClubMember)", false},
                 {"not(//Customer[2]/ClubMember)", false},
                 {"not(//Customer[2]/ClubMember='true')", true},
+                {"boolean(//*[not(.)=true()])", false},
+                {"boolean(//*[not(.)=false()])", true},
 
                 {"boolean(//*[lang('en')])", true},
                 {"boolean(//*[lang('es')])", false},
+        };
+    }
+
+    /*
+     * DataProvider for testing TransformerException being thrown on
+     * invalid number function usage.
+     * Data columns:
+     *  see parameters of the test "testExceptionEval" and
+     *  "testExceptionEvalExp"
+     */
+    @DataProvider(name = "exceptionExpTestCases")
+    public Object[][] getExceptionExp() {
+        return new Object[][]{
+                {"boolean(//*[boolean()=true()])"},
+                {"boolean(//*[boolean()=false()])"},
+                {"boolean(//*[not()=true()])"},
+                {"boolean(//*[not()=false()])"},
         };
     }
 
@@ -94,5 +119,33 @@ public class XPathBooleanFnTest extends XPathTestBase {
     @Test(dataProvider = "booleanExpTestCases")
     void testBooleanFn(String exp, boolean expected) throws Exception {
         testExp(doc, exp, expected, Boolean.class);
+    }
+
+    /**
+     * Verifies that TransformerException is thrown on evaluateExpression.
+     *
+     * @param exp XPath expression
+     * @throws Exception if test fails
+     */
+    @Test(dataProvider = "exceptionExpTestCases", expectedExceptions =
+            XPathExpressionException.class)
+    void testExceptionEvalExp(String exp) throws Exception {
+        XPath xPath = XPathFactory.newInstance().newXPath();
+
+        xPath.evaluateExpression(exp, doc);
+    }
+
+    /**
+     * Verifies that TransformerException is thrown on evaluate.
+     *
+     * @param exp XPath expression
+     * @throws Exception if test fails
+     */
+    @Test(dataProvider = "exceptionExpTestCases", expectedExceptions =
+            XPathExpressionException.class)
+    void testExceptionEval(String exp) throws Exception {
+        XPath xPath = XPathFactory.newInstance().newXPath();
+
+        xPath.evaluate(exp, doc);
     }
 }

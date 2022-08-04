@@ -26,6 +26,10 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import org.w3c.dom.Document;
 
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathExpressionException;
+import javax.xml.xpath.XPathFactory;
+
 /*
  * @test
  * @bug 8290836
@@ -65,7 +69,8 @@ public class XPathStringFnTest extends XPathTestBase {
                         "//Customer[2]/ClubMember)", "true"},
                 {"string(//Customer[1]/ClubMember and " +
                         "//Customer[2]/ClubMember='true')", "false"},
-                {"string(//Name[string()='name2'])", "name2"},
+                {"string(//*[string()='name2'])", "name2"},
+                {"string(//*[string(.)='name2'])", "name2"},
                 {"string(//*[string(Name)='name2']/Name)", "name2"},
                 {"string(//*[string(@id)='x1']//Street)", "1111 111st ave"},
                 {"string(//*[string(../@id)='x1']/Street)", "1111 111st ave"},
@@ -139,6 +144,7 @@ public class XPathStringFnTest extends XPathTestBase {
                 {"normalize-space(//Customer[2]//Street)", "2222 222nd ave"},
                 {"normalize-space(//LastName)", ""},
                 {"string(//*[normalize-space()='name1'])", "name1"},
+                {"string(//*[normalize-space(.)='name1'])", "name1"},
                 {"string(//*[normalize-space(Name)='name2']/Name)", "name2"},
                 {"string(//*[normalize-space(@id)='x1']//Street)", "1111 " +
                         "111st ave"},
@@ -188,6 +194,7 @@ public class XPathStringFnTest extends XPathTestBase {
                 {"string-length(//Customer[1]/Name)", 5},
                 {"string-length(//Customer[1]/@id)", 2},
                 {"string-length(name(//*[string-length()=10]))", 5},
+                {"string-length(name(//*[string-length(.)=10]))", 5},
         };
     }
 
@@ -228,6 +235,37 @@ public class XPathStringFnTest extends XPathTestBase {
                 {"boolean(//*[contains(., 'name2')]='name2')", true},
                 {"boolean(//*[contains(text(), 'name')]='name2')", true},
                 {"boolean(//*[contains(., 'name1')]/.='name2')", false},
+        };
+    }
+
+    /*
+     * DataProvider for testing TransformerException being thrown on
+     * invalid number function usage.
+     * Data columns:
+     *  see parameters of the test "testExceptionEval" and
+     *  "testExceptionEvalExp"
+     */
+    @DataProvider(name = "exceptionExpTestCases")
+    public Object[][] getExceptionExp() {
+        return new Object[][]{
+                {"concat('Hello')"},
+
+                {"string(//*[concat()='name2'])"},
+                {"string(//*[concat(.)='name2'])"},
+
+                {"substring('123@xyz.com')"},
+                {"string(//*[substring()='name2'])"},
+                {"string(//*[substring(.)='name2'])"},
+
+                {"translate('1111 111st ave')"},
+                {"string(//*[translate()='name2'])"},
+                {"string(//*[translate(.)='name2'])"},
+
+                {"boolean(//*[contains()])"},
+                {"boolean(//*[contains(.)])"},
+
+                {"boolean(//*[starts-with()])"},
+                {"boolean(//*[starts-with(.)])"},
         };
     }
 
@@ -333,5 +371,33 @@ public class XPathStringFnTest extends XPathTestBase {
     @Test(dataProvider = "containsExpTestCases")
     void testContainsFn(String exp, Boolean expected) throws Exception {
         testExp(doc, exp, expected, Boolean.class);
+    }
+
+    /**
+     * Verifies that TransformerException is thrown on evaluateExpression.
+     *
+     * @param exp XPath expression
+     * @throws Exception if test fails
+     */
+    @Test(dataProvider = "exceptionExpTestCases", expectedExceptions =
+            XPathExpressionException.class)
+    void testExceptionEvalExp(String exp) throws Exception {
+        XPath xPath = XPathFactory.newInstance().newXPath();
+
+        xPath.evaluateExpression(exp, doc);
+    }
+
+    /**
+     * Verifies that TransformerException is thrown on evaluate.
+     *
+     * @param exp XPath expression
+     * @throws Exception if test fails
+     */
+    @Test(dataProvider = "exceptionExpTestCases", expectedExceptions =
+            XPathExpressionException.class)
+    void testExceptionEval(String exp) throws Exception {
+        XPath xPath = XPathFactory.newInstance().newXPath();
+
+        xPath.evaluate(exp, doc);
     }
 }
