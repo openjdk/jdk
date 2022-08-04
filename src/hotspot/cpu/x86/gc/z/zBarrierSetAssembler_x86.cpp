@@ -466,10 +466,6 @@ private:
     _spill_offset += 8;
   }
 
-// Register is a class, but it would be assigned numerical value.
-// "0" is assigned for rax. Thus we need to ignore -Wnonnull.
-PRAGMA_DIAG_PUSH
-PRAGMA_NONNULL_IGNORED
   void initialize(ZLoadBarrierStubC2* stub) {
     // Create mask of caller saved registers that need to
     // be saved/restored if live
