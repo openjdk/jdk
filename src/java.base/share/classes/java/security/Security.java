@@ -183,26 +183,9 @@ public final class Security {
         }
 
         if (!loadedProps) {
-            initializeStatic();
-            if (sdebug != null) {
-                sdebug.println("unable to load security properties " +
-                        "-- using defaults");
-            }
+            throw new InternalError("java.security file missing");
         }
 
-    }
-
-    /*
-     * Initialize to default values, if <java.home>/lib/java.security
-     * is not found.
-     */
-    private static void initializeStatic() {
-        props.put("security.provider.1", "sun.security.provider.Sun");
-        props.put("security.provider.2", "sun.security.rsa.SunRsaSign");
-        props.put("security.provider.3", "sun.security.ssl.SunJSSE");
-        props.put("security.provider.4", "com.sun.crypto.provider.SunJCE");
-        props.put("security.provider.5", "sun.security.jgss.SunProvider");
-        props.put("security.provider.6", "com.sun.security.sasl.Provider");
     }
 
     /**
