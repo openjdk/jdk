@@ -39,8 +39,6 @@ import java.util.Arrays;
 import java.util.Map;
 import javax.net.ssl.X509ExtendedKeyManager;
 
-import sun.security.ssl.SupportedGroupsExtension.SupportedGroups;
-
 enum X509Authentication implements SSLAuthentication {
     // Require rsaEncryption public key
     RSA         ("RSA",         "RSA"),
@@ -344,7 +342,7 @@ enum X509Authentication implements SSLAuthentication {
                         ((ECPublicKey) serverPublicKey).getParams();
                 NamedGroup namedGroup = NamedGroup.valueOf(params);
                 if ((namedGroup == null) ||
-                        (!SupportedGroups.isSupported(namedGroup)) ||
+                        (!NamedGroup.isEnabled(shc.sslConfig, namedGroup)) ||
                         ((shc.clientRequestedNamedGroups != null) &&
                                 !shc.clientRequestedNamedGroups.contains(namedGroup))) {
 

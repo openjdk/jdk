@@ -41,7 +41,6 @@ import sun.security.ssl.NamedGroup.NamedGroupSpec;
 import sun.security.ssl.SSLExtension.ExtensionConsumer;
 import sun.security.ssl.SSLExtension.SSLExtensionSpec;
 import sun.security.ssl.SSLHandshake.HandshakeMessage;
-import sun.security.ssl.SupportedGroupsExtension.SupportedGroups;
 import sun.security.util.HexDumpEncoder;
 
 /**
@@ -348,7 +347,7 @@ final class KeyShareExtension {
             List<SSLCredentials> credentials = new LinkedList<>();
             for (KeyShareEntry entry : spec.clientShares) {
                 NamedGroup ng = NamedGroup.valueOf(entry.namedGroupId);
-                if (ng == null || !SupportedGroups.isActivatable(
+                if (ng == null || !NamedGroup.isActivatable(shc.sslConfig,
                         shc.algorithmConstraints, ng)) {
                     if (SSLLogger.isOn &&
                             SSLLogger.isOn("ssl,handshake")) {
@@ -650,7 +649,7 @@ final class KeyShareExtension {
             SHKeyShareSpec spec = new SHKeyShareSpec(chc, buffer);
             KeyShareEntry keyShare = spec.serverShare;
             NamedGroup ng = NamedGroup.valueOf(keyShare.namedGroupId);
-            if (ng == null || !SupportedGroups.isActivatable(
+            if (ng == null || !NamedGroup.isActivatable(chc.sslConfig,
                     chc.algorithmConstraints, ng)) {
                 throw chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
                         "Unsupported named group: " +
@@ -803,7 +802,7 @@ final class KeyShareExtension {
 
             NamedGroup selectedGroup = null;
             for (NamedGroup ng : shc.clientRequestedNamedGroups) {
-                if (SupportedGroups.isActivatable(
+                if (NamedGroup.isActivatable(shc.sslConfig,
                         shc.algorithmConstraints, ng)) {
                     if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                         SSLLogger.fine(
