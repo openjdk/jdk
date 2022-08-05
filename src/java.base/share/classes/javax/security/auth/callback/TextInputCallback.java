@@ -48,7 +48,7 @@ public class TextInputCallback implements Callback, java.io.Serializable {
      * @serial
      * @since 1.4
      */
-    private String defaultText;
+    private final String defaultText;
     /**
      * @serial
      * @since 1.4
@@ -67,6 +67,7 @@ public class TextInputCallback implements Callback, java.io.Serializable {
         if (prompt == null || prompt.isEmpty())
             throw new IllegalArgumentException();
         this.prompt = prompt;
+        this.defaultText = null;
     }
 
     /**
