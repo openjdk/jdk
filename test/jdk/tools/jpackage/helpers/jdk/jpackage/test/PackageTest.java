@@ -285,13 +285,15 @@ public final class PackageTest extends RunnablePackageTest {
             });
 
             if (TKit.isWindows()) {
-                // verify context menu label in registry
+                // Verify context menu label in registry.
                 String progId = WindowsHelper.queryRegistryValue(
-                        "HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\" + fa.getSuffix(), "");
+                        String.format("HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\%s", fa.getSuffix()), "");
+                TKit.assertNotNull(progId, "context menu progId found");
                 String contextMenuLabel = WindowsHelper.queryRegistryValue(
-                        "HKEY_CLASSES_ROOT\\" + progId + "\\shell\\open", "");
+                        String.format("HKEY_CLASSES_ROOT\\%s\\shell\\open", progId), "");
                 TKit.assertNotNull(contextMenuLabel, "context menu label found");
-                TKit.assertTrue(contextMenuLabel.startsWith("Open with"), "context menu label text");
+                String appName = cmd.getArgumentValue("--name");
+                TKit.assertTrue(String.format("Open with %s", appName).equals(contextMenuLabel), "context menu label text");
             }
         });
 
