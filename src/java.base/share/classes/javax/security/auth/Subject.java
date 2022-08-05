@@ -25,8 +25,6 @@
 
 package javax.security.auth;
 
-import sun.security.util.ResourcesMgr;
-
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -36,6 +34,8 @@ import java.text.MessageFormat;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletionException;
+
+import sun.security.util.ResourcesMgr;
 
 /**
  * <p> A {@code Subject} represents a grouping of related information
@@ -851,7 +851,7 @@ public final class Subject implements java.io.Serializable {
      * {@code Class}.
      *
      * <p> If a security manager is installed, the caller must have a
-     * {@link PrivateCredentialPermission} to access all the requested
+     * {@link PrivateCredentialPermission} to access all of the requested
      * Credentials, or a {@code SecurityException} will be thrown.
      *
      * <p> The returned {@code Set} is not backed by this Subject's
@@ -1206,8 +1206,8 @@ public final class Subject implements java.io.Serializable {
                     if (sm != null) {
                         try {
                             sm.checkPermission(new PrivateCredentialPermission
-                                    (list.get(i.nextIndex()).getClass().getName(),
-                                            subject.getPrincipals()));
+                                (list.get(i.nextIndex()).getClass().getName(),
+                                subject.getPrincipals()));
                         } catch (SecurityException se) {
                             i.next();
                             throw (se);
@@ -1227,15 +1227,15 @@ public final class Subject implements java.io.Serializable {
                     java.lang.SecurityManager sm = System.getSecurityManager();
                     if (sm != null) {
                         switch (which) {
-                            case Subject.PRINCIPAL_SET:
-                                sm.checkPermission(AuthPermissionHolder.MODIFY_PRINCIPALS_PERMISSION);
-                                break;
-                            case Subject.PUB_CREDENTIAL_SET:
-                                sm.checkPermission(AuthPermissionHolder.MODIFY_PUBLIC_CREDENTIALS_PERMISSION);
-                                break;
-                            default:
-                                sm.checkPermission(AuthPermissionHolder.MODIFY_PRIVATE_CREDENTIALS_PERMISSION);
-                                break;
+                        case Subject.PRINCIPAL_SET:
+                            sm.checkPermission(AuthPermissionHolder.MODIFY_PRINCIPALS_PERMISSION);
+                            break;
+                        case Subject.PUB_CREDENTIAL_SET:
+                            sm.checkPermission(AuthPermissionHolder.MODIFY_PUBLIC_CREDENTIALS_PERMISSION);
+                            break;
+                        default:
+                            sm.checkPermission(AuthPermissionHolder.MODIFY_PRIVATE_CREDENTIALS_PERMISSION);
+                            break;
                         }
                     }
                     i.remove();
