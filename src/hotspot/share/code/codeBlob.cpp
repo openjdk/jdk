@@ -792,6 +792,7 @@ void UpcallStub::verify() {
 void UpcallStub::print_on(outputStream* st) const {
   RuntimeBlob::print_on(st);
   print_value_on(st);
+  Disassembler::decode((RuntimeBlob*)this, st);
 }
 
 void UpcallStub::print_value_on(outputStream* st) const {

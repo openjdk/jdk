@@ -389,9 +389,13 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
                          receiver,
                          in_ByteSize(frame_data_offset));
 
-  if (TraceOptimizedUpcallStubs) {
-    blob->print_on(tty);
+#ifndef PRODUCT
+  if (lt.is_enabled()) {
+    ResourceMark rm;
+    LogStream ls(lt);
+    blob->print_on(&ls);
   }
+#endif
 
   return blob->code_begin();
 }
