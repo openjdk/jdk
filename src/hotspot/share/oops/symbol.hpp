@@ -172,6 +172,16 @@ class Symbol : public MetaspaceObj {
   void set_permanent() NOT_CDS_RETURN;
   void make_permanent();
 
+  static void maybe_increment_refcount(Symbol* s) {
+    if (s != NULL) {
+      s->increment_refcount();
+    }
+  }
+  static void maybe_decrement_refcount(Symbol* s) {
+    if (s != NULL) {
+      s->decrement_refcount();
+    }
+  }
   // Function char_at() returns the Symbol's selected u1 byte as a char type.
   //
   // Note that all multi-byte chars have the sign bit set on all their bytes.

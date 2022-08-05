@@ -145,7 +145,7 @@ public class XECOperations {
 
     /**
      * Prune an encoded scalar value by modifying it in place. The extra
-     * high-order bits are masked off, the highest valid bit it set, and the
+     * high-order bits are masked off, the highest valid bit is set, and the
      * number is rounded down to a multiple of the cofactor.
      *
      * @param k an encoded scalar value

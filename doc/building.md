@@ -1559,9 +1559,9 @@ make
 
 Note that regardless if you specify a source date for `configure` or not, the
 JDK build system will set `SOURCE_DATE_EPOCH` for all build tools when building.
-If `--with-source-date` has the value `updated` (which is the default unless
+If `--with-source-date` has the value `current` (which is the default unless
 `SOURCE_DATE_EPOCH` is found by in the environment by `configure`), the source
-date value will be determined at build time.
+date value will be determined at configure time.
 
 There are several aspects of reproducible builds that can be individually
 adjusted by `configure` arguments. If any of these are given, they will override
@@ -1582,7 +1582,7 @@ the value derived from `SOURCE_DATE_EPOCH`. These arguments are:
 
     When `SOURCE_DATE_EPOCH` is set, the default value for `--with-source-date`
     will be the value given by `SOURCE_DATE_EPOCH`. Otherwise, the default value
-    is `updated`.
+    is `current`.
 
  * `--with-hotspot-build-time`
 
