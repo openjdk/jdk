@@ -26,6 +26,7 @@
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
 #include "opto/c2_MacroAssembler.hpp"
+#include "opto/compile.hpp"
 #include "opto/intrinsicnode.hpp"
 #include "opto/matcher.hpp"
 #include "opto/output.hpp"
@@ -1654,3 +1655,17 @@ void C2_MacroAssembler::vector_round_sve(FloatRegister dst, FloatRegister src, F
   sve_fcvtzs(dst, T, ptrue, dst, T);
   // result in dst
 }
+
+bool C2_MacroAssembler::emit_trampoline_stub(int insts_call_instruction_offset, address target) {
+  if (ciEnv::current()->task() != NULL) {
+    assert(is_c2_compile(ciEnv::current()->task()->comp_level()), "not C2 compilation task");
+    PhaseOutput* phase_output = Compile::current()->output();
+    if (phase_output != NULL && phase_output->in_scratch_emit_size()) {
+      // We don't want to emit a trampoline if C2 is generating dummy
+      // code during its branch shortening phase.
+      return true;
+    }
+  }
+  return MacroAssembler::emit_trampoline_stub(insts_call_instruction_offset, target);
+}
+

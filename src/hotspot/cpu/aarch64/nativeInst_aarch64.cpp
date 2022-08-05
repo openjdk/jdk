@@ -526,23 +526,20 @@ void NativeCallTrampolineStub::set_destination(address new_destination) {
 
 // Generate a trampoline for a branch to dest.  If there's no need for a
 // trampoline, simply patch the call directly to dest.
-address NativeCall::trampoline_jump(CodeBuffer &cbuf, address dest) {
+void NativeCall::trampoline_jump(CodeBuffer &cbuf, address dest) {
   MacroAssembler a(&cbuf);
-  address stub = NULL;
 
   if (a.far_branches()
       && ! is_NativeCallTrampolineStub_at(instruction_address() + displacement())) {
-    stub = a.emit_trampoline_stub(instruction_address() - cbuf.insts()->start(), dest);
+    bool result = a.emit_trampoline_stub(instruction_address() - cbuf.insts()->start(), dest);
+    assert(result, "failed to generate a trampoline stub");
+    return;
   }
 
-  if (stub == NULL) {
-    // If we generated no stub, patch this call directly to dest.
-    // This will happen if we don't need far branches or if there
-    // already was a trampoline.
-    set_destination(dest);
-  }
-
-  return stub;
+  // If we generated no stub, patch this call directly to dest.
+  // This will happen if we don't need far branches or if there
+  // already was a trampoline.
+  set_destination(dest);
 }
 
 void NativePostCallNop::make_deopt() {

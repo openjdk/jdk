@@ -851,18 +851,19 @@ void MacroAssembler::call_VM_helper(Register oop_result, address entry_point, in
 
 // Maybe emit a call via a trampoline. If the code cache is small
 // trampolines won't be emitted.
-address MacroAssembler::trampoline_call(Address entry, CodeBuffer* cbuf,
-                                        bool check_emit_size) {
+address MacroAssembler::trampoline_call(Address entry, CodeBuffer* cbuf) {
   assert(entry.rspec().type() == relocInfo::runtime_call_type
          || entry.rspec().type() == relocInfo::opt_virtual_call_type
          || entry.rspec().type() == relocInfo::static_call_type
          || entry.rspec().type() == relocInfo::virtual_call_type, "wrong reloc type");
 
+  address target = entry.target();
+
+  // We might need a trampoline if branches are far.
   bool need_trampoline = far_branches();
   if (!need_trampoline && entry.rspec().type() == relocInfo::runtime_call_type && !CodeCache::contains(entry.target())) {
     // If it is a runtime call of an address outside small CodeCache,
     // we need to check whether it is in range.
-    address target = entry.target();
     assert(target < CodeCache::low_bound() || target >= CodeCache::high_bound(), "target is inside CodeCache");
     // Case 1: -------T-------L====CodeCache====H-------
     //                ^-------longest branch---|
@@ -873,35 +874,18 @@ address MacroAssembler::trampoline_call(Address entry, CodeBuffer* cbuf,
     need_trampoline = !reachable_from_branch_at(longest_branch_start, target);
   }
 
-  // We need a trampoline if branches are far.
   if (need_trampoline) {
-    bool in_scratch_emit_size = false;
-#ifdef COMPILER2
-    if (check_emit_size) {
-      // We don't want to emit a trampoline if C2 is generating dummy
-      // code during its branch shortening phase.
-      CompileTask* task = ciEnv::current()->task();
-      in_scratch_emit_size =
-        (task != NULL && is_c2_compile(task->comp_level()) &&
-         Compile::current()->output()->in_scratch_emit_size());
+    if (!emit_trampoline_stub(offset(), target)) {
+      postcond(pc() == badAddress);
+      return NULL; // CodeCache is full
     }
-#endif
-    if (!in_scratch_emit_size) {
-      address stub = emit_trampoline_stub(offset(), entry.target());
-      if (stub == NULL) {
-        postcond(pc() == badAddress);
-        return NULL; // CodeCache is full
-      }
-    }
+    target = pc();
   }
 
   if (cbuf) cbuf->set_insts_mark();
   relocate(entry.rspec());
-  if (!need_trampoline) {
-    bl(entry.target());
-  } else {
-    bl(pc());
-  }
+  bl(target);
+
   // just need to return a non-null address
   postcond(pc() != badAddress);
   return pc();
@@ -918,13 +902,13 @@ address MacroAssembler::trampoline_call(Address entry, CodeBuffer* cbuf,
 //   load the call target from the constant pool
 //   branch (LR still points to the call site above)
 
-address MacroAssembler::emit_trampoline_stub(int insts_call_instruction_offset,
-                                             address dest) {
+bool MacroAssembler::emit_trampoline_stub(int insts_call_instruction_offset,
+                                          address dest) {
   // Max stub size: alignment nop, TrampolineStub.
   address stub = start_a_stub(NativeInstruction::instruction_size
                    + NativeCallTrampolineStub::instruction_size);
   if (stub == NULL) {
-    return NULL;  // CodeBuffer::expand failed
+    return false;  // CodeBuffer::expand failed
   }
 
   // Create a trampoline stub relocation which relates this trampoline stub
@@ -951,7 +935,7 @@ address MacroAssembler::emit_trampoline_stub(int insts_call_instruction_offset,
   assert(is_NativeCallTrampolineStub_at(stub_start_addr), "doesn't look like a trampoline");
 
   end_a_stub();
-  return stub_start_addr;
+  return true;
 }
 
 void MacroAssembler::emit_static_call_stub() {

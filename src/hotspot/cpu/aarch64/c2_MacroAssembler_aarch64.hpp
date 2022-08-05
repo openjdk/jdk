@@ -27,6 +27,14 @@
 
 // C2_MacroAssembler contains high-level macros for C2
 
+ private:
+  // If the phase output is in the scratch emit size mode,
+  // no trampoline is emitted and true returned.
+  //
+  // Note: To unconditionally emit a trampoline stub,
+  // MacroAssembler::emit_trampoline_stub must be used.
+  virtual bool emit_trampoline_stub(int insts_call_instruction_offset, address target) override;
+
  public:
   void emit_entry_barrier_stub(C2EntryBarrierStub* stub);
   static int entry_barrier_stub_size();
