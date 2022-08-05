@@ -64,7 +64,6 @@ public final class CCompositeGlyphMapper extends CompositeGlyphMapper {
     @Override
     protected int convertToGlyph(int unicode) {
         int glyph = convertToGlyph(unicode, 0);
-//        setCachedGlyphCode(unicode, glyph);
         return glyph;
     }
 

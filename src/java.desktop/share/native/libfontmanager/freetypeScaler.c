@@ -352,7 +352,7 @@ static void setInterpreterVersion(FT_Library library) {
     ((FT_MulFix(units_per_EM, y_scale) / BOLD_DIVISOR ))
 
 #define BOLD_MODIFIER(units_per_EM, y_scale) \
-    (context->doBold ? BOLD_FACTOR(units_per_EM, y_scale) : 0)
+    ((context->doBold && !context->colorFont) ? BOLD_FACTOR(units_per_EM, y_scale) : 0)
 
 static void GlyphSlot_Embolden(FT_GlyphSlot slot, FT_Matrix transform) {
     FT_Pos extra = 0;
@@ -591,7 +591,7 @@ Java_sun_font_FreetypeFontScaler_createScalerContextNative(
 
 static void setupTransform(FT_Matrix* target, FTScalerContext *context) {
     FT_Matrix* transform = &context->transform;
-    if (context->doItalize) {
+    if (context->doItalize && !context->colorFont) {
         // we cannot use FT_GlyphSlot_Oblique as it doesn't work well with arbitrary transforms,
         // so we add corresponding shear transform to the requested glyph transformation
         target->xx = FT_MATRIX_ONE;
@@ -618,16 +618,18 @@ static int setupFTContext(JNIEnv *env,
     scalerInfo->font2D = font2D;
 
     if (context != NULL) {
+        context->colorFont =
+            FT_HAS_COLOR(scalerInfo->face) || !FT_IS_SCALABLE(scalerInfo->face) ?
+            JNI_TRUE : JNI_FALSE;
+
         setupTransform(&matrix, context);
         FT_Set_Transform(scalerInfo->face, &matrix, NULL);
 
         int charSize;
         if (FT_IS_SCALABLE(scalerInfo->face)) { // Standard scalable face
-            context->colorFont = FT_HAS_COLOR(scalerInfo->face) ? JNI_TRUE : JNI_FALSE;
             context->fixedSizeIndex = -1;
             charSize = context->ptsz;
         } else { // Non-scalable face (that should only be bitmap faces)
-            context->colorFont = JNI_TRUE;
             const int ptsz = context->ptsz;
             // Best size is smallest, but not smaller than requested
             int bestSizeIndex = 0;
@@ -658,7 +660,8 @@ static int setupFTContext(JNIEnv *env,
 }
 
 // using same values as for the transformation matrix
-#define OBLIQUE_MODIFIER(y)  (context->doItalize ? ((y)*FT_MATRIX_OBLIQUE_XY/FT_MATRIX_ONE) : 0)
+#define OBLIQUE_MODIFIER(y) \
+    ((context->doItalize && !context->colorFont) ? ((y)*FT_MATRIX_OBLIQUE_XY/FT_MATRIX_ONE) : 0)
 
 /*
  * Class:     sun_font_FreetypeFontScaler
@@ -1522,7 +1525,7 @@ Java_sun_font_FreetypeFontScaler_getGlyphCodeNative(
 #define FloatToF26Dot6(x) ((unsigned int) ((x)*64))
 
 static FT_Outline* getFTOutlineNoSetup(FTScalerContext *context, FTScalerInfo* scalerInfo,
-                                       jint glyphCode, jfloat xpos, jfloat ypos, jboolean allowBold) {
+                                       jint glyphCode, jfloat xpos, jfloat ypos) {
     int renderFlags;
     FT_Error error;
     FT_GlyphSlot ftglyph;
@@ -1535,9 +1538,10 @@ static FT_Outline* getFTOutlineNoSetup(FTScalerContext *context, FTScalerInfo* s
     }
 
     ftglyph = scalerInfo->face->glyph;
+    int outlineGlyph = ftglyph->format == FT_GLYPH_FORMAT_OUTLINE;
 
     /* apply styles */
-    if (context->doBold && allowBold) { /* if bold style */
+    if (context->doBold && outlineGlyph && !context->colorFont) { /* if bold style */
         GlyphSlot_Embolden(ftglyph, context->transform);
     }
 
@@ -1563,7 +1567,7 @@ static FT_Outline* getFTOutline(JNIEnv* env, jobject font2D,
         return NULL;
     }
 
-    return getFTOutlineNoSetup(context, scalerInfo, glyphCode, xpos, ypos, JNI_TRUE);
+    return getFTOutlineNoSetup(context, scalerInfo, glyphCode, xpos, ypos);
 }
 
 #define F26Dot6ToFloat(n) (((float)(n))/((float) 64))
@@ -1784,7 +1788,7 @@ static jboolean addColorLayersRenderData(JNIEnv* env, FTScalerContext *context,
                                   &glyphIndex, &colorIndex, &iterator)) return JNI_FALSE;
     (*env)->CallVoidMethod(env, result, sunFontIDs.glyphRenderDataSetColorLayersListMID, iterator.num_layers);
     do {
-        FT_Outline* outline = getFTOutlineNoSetup(context, scalerInfo, glyphIndex, xpos, ypos, JNI_FALSE);
+        FT_Outline* outline = getFTOutlineNoSetup(context, scalerInfo, glyphIndex, xpos, ypos);
         jobject gp = outlineToGeneralPath(env, outline);
 
         if (colorIndex == 0xFFFF) {
@@ -1886,7 +1890,7 @@ Java_sun_font_FreetypeFontScaler_getGlyphRenderDataNative(
     if (context->fixedSizeIndex == -1) {
         if (!context->colorFont ||
             !addColorLayersRenderData(env, context, scalerInfo, glyphCode, xpos, ypos, result)) {
-            FT_Outline* outline = getFTOutlineNoSetup(context, scalerInfo, glyphCode, xpos, ypos, JNI_TRUE);
+            FT_Outline* outline = getFTOutlineNoSetup(context, scalerInfo, glyphCode, xpos, ypos);
             jobject gp = outlineToGeneralPath(env, outline);
             if (gp != NULL) {
                 (*env)->SetObjectField(env, result, sunFontIDs.glyphRenderDataOutline, gp);
