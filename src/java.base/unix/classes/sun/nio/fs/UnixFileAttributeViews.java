@@ -165,7 +165,7 @@ class UnixFileAttributeViews {
         }
     }
 
-    private static class Posix extends Basic implements PosixFileAttributeView {
+    static class Posix extends Basic implements PosixFileAttributeView {
         private static final String PERMISSIONS_NAME = "permissions";
         private static final String OWNER_NAME = "owner";
         private static final String GROUP_NAME = "group";

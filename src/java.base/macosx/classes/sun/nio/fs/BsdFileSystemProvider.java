@@ -63,6 +63,11 @@ class BsdFileSystemProvider extends UnixFileSystemProvider {
             boolean followLinks = Util.followLinks(options);
             return (V) new BsdBasicFileAttributeView(file, followLinks);
         }
+        if (type == PosixFileAttributeView.class) {
+            UnixPath file = UnixPath.toUnixPath(obj);
+            boolean followLinks = Util.followLinks(options);
+            return (V) new BsdPosixFileAttributeView(file, followLinks);
+        }
         return super.getFileAttributeView(obj, type, options);
     }
 
@@ -79,6 +84,11 @@ class BsdFileSystemProvider extends UnixFileSystemProvider {
             UnixPath file = UnixPath.toUnixPath(obj);
             boolean followLinks = Util.followLinks(options);
             return new BsdBasicFileAttributeView(file, followLinks);
+        }
+        if (name.equals("posix")) {
+            UnixPath file = UnixPath.toUnixPath(obj);
+            boolean followLinks = Util.followLinks(options);
+            return new BsdPosixFileAttributeView(file, followLinks);
         }
         return super.getFileAttributeView(obj, name, options);
     }

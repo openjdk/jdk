@@ -32,14 +32,9 @@ import static sun.nio.fs.BsdNativeDispatcher.setattrlist;
 
 class BsdBasicFileAttributeView extends UnixFileAttributeViews.Basic
 {
-    BsdBasicFileAttributeView(UnixPath file, boolean followLinks) {
-        super(file, followLinks);
-    }
-
-    @Override
-    public void setTimes(FileTime lastModifiedTime,
-                         FileTime lastAccessTime,
-                         FileTime createTime) throws IOException
+    static void setFileTimes(UnixPath path, FileTime lastModifiedTime,
+                             FileTime lastAccessTime, FileTime createTime,
+                             boolean followLinks) throws IOException
     {
         // null => don't change
         if (lastModifiedTime == null && lastAccessTime == null &&
@@ -49,7 +44,7 @@ class BsdBasicFileAttributeView extends UnixFileAttributeViews.Basic
         }
 
         // permission check
-        file.checkWrite();
+        path.checkWrite();
 
         int commonattr = 0;
         long modValue = 0L;
@@ -69,10 +64,23 @@ class BsdBasicFileAttributeView extends UnixFileAttributeViews.Basic
         }
 
         try {
-            setattrlist(file, commonattr, modValue, accValue, createValue,
+            setattrlist(path, commonattr, modValue, accValue, createValue,
                         followLinks ?  0 : UnixConstants.FSOPT_NOFOLLOW);
         } catch (UnixException x) {
-            x.rethrowAsIOException(file);
+            x.rethrowAsIOException(path);
         }
+    }
+
+    BsdBasicFileAttributeView(UnixPath file, boolean followLinks) {
+        super(file, followLinks);
+    }
+
+    @Override
+    public void setTimes(FileTime lastModifiedTime,
+                         FileTime lastAccessTime,
+                         FileTime createTime) throws IOException
+    {
+        setFileTimes(file, lastModifiedTime, lastAccessTime, createTime,
+                     followLinks);
     }
 }
