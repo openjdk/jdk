@@ -1680,6 +1680,12 @@ const bool Matcher::match_rule_supported(int opcode) {
       // Together with common x86 rules, this handles all UseSSE cases.
 #endif
       break;
+    case Op_ConvF2HF:
+    case Op_ConvHF2F:
+      if (!VM_Version::supports_evex() || !VM_Version::supports_avx512vl()) {
+        return false;
+      }
+      break;
   }
   return true;  // Match rules are supported by default.
 }
