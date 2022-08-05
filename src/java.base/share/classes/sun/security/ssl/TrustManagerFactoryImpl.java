@@ -104,30 +104,6 @@ abstract class TrustManagerFactoryImpl extends TrustManagerFactorySpi {
         return new TrustManager[] { trustManager };
     }
 
-    /*
-     * Try to get an InputStream based on the file we pass in.
-     */
-    @SuppressWarnings("removal")
-    private static FileInputStream getFileInputStream(final File file)
-            throws Exception {
-        return AccessController.doPrivileged(
-                new PrivilegedExceptionAction<FileInputStream>() {
-                    @Override
-                    public FileInputStream run() {
-                        try {
-                            if (file.exists()) {
-                                return new FileInputStream(file);
-                            } else {
-                                return null;
-                            }
-                        } catch (FileNotFoundException e) {
-                            // couldn't find it, oh well.
-                            return null;
-                        }
-                    }
-                });
-    }
-
     public static final class SimpleFactory extends TrustManagerFactoryImpl {
         @Override
         X509TrustManager getInstance(
@@ -165,7 +141,6 @@ abstract class TrustManagerFactoryImpl extends TrustManagerFactorySpi {
                 throw new InvalidAlgorithmParameterException
                     ("Encapsulated parameters must be PKIXBuilderParameters");
             }
-            PKIXBuilderParameters pkixParams = (PKIXBuilderParameters)params;
             return new X509TrustManagerImpl(Validator.TYPE_PKIX, pkixParams);
         }
     }
