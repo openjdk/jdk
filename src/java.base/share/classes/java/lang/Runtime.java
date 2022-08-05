@@ -44,44 +44,54 @@ import jdk.internal.reflect.Reflection;
  * {@code Runtime} that allows the application to interface with
  * the environment in which the application is running. The current
  * runtime can be obtained from the {@code getRuntime} method.
- * <p>
- * An application cannot create its own instance of this class.
+ *
+ * <p>An application cannot create its own instance of this class.
  *
  * <h2><a id="shutdown">Shutdown Sequence</a></h2>
- * <p>
- * The Java Virtual Machine initiates the <i>shutdown sequence</i> in response
+ *
+ * <p>The Java Virtual Machine initiates the <i>shutdown sequence</i> in response
  * to one of several events:
  * <ol>
  * <li>when the number of {@linkplain Thread#isAlive() live} non-daemon threads drops to zero
  * for the first time;</li>
- * <li>when the {@link #exit Runtime.exit} or {@link System#exit System.exit} method is called; or</li>
+ * <li>when the {@link #exit Runtime.exit} or {@link System#exit System.exit} method is called
+ * for the first time; or</li>
  * <li>when some external event occurs, such as an interrupt or a signal is received from
  * the operating system.</li>
  * </ol>
  *
- * <p>At the beginning of the shutdown sequence, the set of registered
- * {@linkplain #addShutdownHook shutdown hooks} is established atomically. After this point,
- * registration and de-registration of shutdown hooks with {@link #addShutdownHook addShutdownHook}
- * and {@link #removeShutdownHook removeShutdownHook} is prohibited. The shutdown hooks are then
- * started in some unspecified order, and they are allowed to run concurrently. Existing
- * {@linkplain Thread#isAlive() live} threads and any newly started threads also continue to run
- * concurrently during the shutdown sequence.
- * <p>
- * When all shutdown hooks have completed, the Java Virtual Machine terminates as described
- * below. If for some reason one of the shutdown hooks does not complete, if for example
- * {@link #exit exit} is called, this will prevent the shutdown sequence from completing.
- * In this case other threads (including shutdown hooks) continue to execute and can
- * terminate the JVM via the {@link #halt halt} method.
- * <p>
- * If a shutdown hook is started explicitly by calling its {@link Thread#start} method, it is
- * unspecified whether the shutdown sequence will wait for it to complete.
+ * <p>At the beginning of the shutdown sequence, the registered shutdown hooks are
+ * {@linkplain Thread#start started} in some unspecified order, and they are allowed to run
+ * concurrently. After this point, registration and de-registration of shutdown hooks with
+ * {@link #addShutdownHook addShutdownHook} and {@link #removeShutdownHook removeShutdownHook}
+ * is prohibited.
+ *
+ * <p>During the shutdown sequence, threads that were {@linkplain Thread#isAlive() alive}
+ * at the beginning of the shutdown sequence continue to run. Threads and shutdown hooks running
+ * during the shutdown sequence are permitted to create and start other threads. These threads
+ * also run concurrently during the shutdown sequence.
+ *
+ * <p>The shutdown sequence finishes when all shutdown hooks have terminated. At this point,
+ * the Java Virtual Machine terminates as described below.
+ *
+ * <p>It is possible that one or more shutdown hooks do not terminate, for example, because
+ * of an infinite loop. In this case, the shutdown sequence will never finish. Other threads
+ * and shutdown hooks continue to run and can terminate the JVM via the {@link #halt halt} method.
+ *
+ * <p>Prior to the beginning of the shutdown sequence, it is possible for a program to start
+ * a shutdown hook by calling its {@link Thread#start start} method explicitly. If this occurs, the
+ * effect on the shutdown sequence is unspecified.
  *
  * <h2><a id="termination">Virtual Machine Termination</a></h2>
- * <p>
- * When the JVM terminates, all threads (daemon, non-daemon, and shutdown hooks) are immediately
- * prevented from executing any further Java code. The threads' current methods do not complete
- * normally or abruptly. No {@code finally} clause of any method is executed, nor is any uncaught
- * exception handler.
+ *
+ * <p>The JVM terminates when the shutdown sequence finishes or when {@link #halt halt} has
+ * been called.
+ *
+ * <p>When the JVM terminates, all threads are immediately prevented from executing any further
+ * Java code. This includes shutdown hooks as well as daemon and non-daemon threads. The
+ * threads' current methods do not complete normally or abruptly; no {@code finally} clause
+ * of any method is executed, nor is any {@linkplain Thread.UncaughtExceptionHandler
+ * uncaught exception handler}.
  *
  * @implNote
  * Conventionally, the native code that has launched the JVM will invoke the JNI function
@@ -126,12 +136,12 @@ public class Runtime {
      *
      * <p> Invocations of this method are serialized such that only one
      * invocation will actually proceed with the shutdown sequence and
-     * halt the VM with the given status code. All other invocations
+     * terminate the VM with the given status code. All other invocations
      * simply block indefinitely.
      *
      * <p> Because this method always blocks indefinitely, if it is invoked from
-     * a shutdown hook, it will prevent that shutdown hook from completing.
-     * Consequently, this will prevent the entire shutdown sequence from completing.
+     * a shutdown hook, it will prevent that shutdown hook from terminating.
+     * Consequently, this will prevent the shutdown sequence from finishing.
      *
      * <p> The {@link System#exit(int) System.exit} method is the
      * conventional and convenient means of invoking this method.
@@ -164,14 +174,15 @@ public class Runtime {
      * Registers a new virtual-machine shutdown hook.
      *
      * <p> A <i>shutdown hook</i> is simply an initialized but unstarted thread. Shutdown hooks
-     * are started at the beginning of the <a href="shutdown">shutdown sequence</a>.
+     * are started at the beginning of the <a href="#shutdown">shutdown sequence</a>.
      * Registration and de-registration of shutdown hooks is disallowed once the shutdown
      * sequence has begun.
      * <p>
      * Uncaught exceptions are handled in shutdown hooks just as in any other thread, as
      * specified in {@link Thread.UncaughtExceptionHandler}. After the uncaught exception
-     * handler has completed, the shutdown hook is considered to have completed and is not
-     * treated differently from a hook that has completed normally.
+     * handler has completed, the shutdown hook is considered to have terminated and is not
+     * treated differently from a hook that has terminated without having thrown an
+     * uncaught exception.
      *
      * @apiNote
      * Shutdown hooks run at a delicate time in the life cycle of a virtual
@@ -253,10 +264,10 @@ public class Runtime {
     }
 
     /**
-     * Immediately terminates the Java Virtual Machine. <a href="#termination">Termination</a>
+     * Immediately <a href="#termination">terminates</a> the Java Virtual Machine. Termination
      * is unconditional and immediate. This method does not initiate the
-     * <a href="#shutdown">shutdown sequence</a>, nor does it wait for the completion of the
-     * shutdown sequence if it is already in progress. This method never returns normally.
+     * <a href="#shutdown">shutdown sequence</a>, nor does it wait for the shutdown sequence
+     * to finish if it is already in progress. This method never returns normally.
      *
      * @apiNote
      * This method should be used with extreme caution. Using it may circumvent or disrupt
