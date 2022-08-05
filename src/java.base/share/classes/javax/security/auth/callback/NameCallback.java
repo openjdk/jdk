@@ -47,7 +47,7 @@ public class NameCallback implements Callback, java.io.Serializable {
      * @serial
      * @since 1.4
      */
-    private String defaultName;
+    private final String defaultName;
     /**
      * @serial
      * @since 1.4
@@ -66,6 +66,7 @@ public class NameCallback implements Callback, java.io.Serializable {
         if (prompt == null || prompt.isEmpty())
             throw new IllegalArgumentException();
         this.prompt = prompt;
+        this.defaultName = null;
     }
 
     /**
