@@ -7257,61 +7257,6 @@ instruct castDD_PR( regDPR dst ) %{
   ins_pipe( empty );
 %}
 
-// Load-locked - same as a regular pointer load when used with compare-swap
-instruct loadPLocked(eRegP dst, memory mem) %{
-  match(Set dst (LoadPLocked mem));
-
-  ins_cost(125);
-  format %{ "MOV    $dst,$mem\t# Load ptr. locked" %}
-  opcode(0x8B);
-  ins_encode( OpcP, RegMem(dst,mem));
-  ins_pipe( ialu_reg_mem );
-%}
-
-// Conditional-store of the updated heap-top.
-// Used during allocation of the shared heap.
-// Sets flags (EQ) on success.  Implemented with a CMPXCHG on Intel.
-instruct storePConditional( memory heap_top_ptr, eAXRegP oldval, eRegP newval, eFlagsReg cr ) %{
-  match(Set cr (StorePConditional heap_top_ptr (Binary oldval newval)));
-  // EAX is killed if there is contention, but then it's also unused.
-  // In the common case of no contention, EAX holds the new oop address.
-  format %{ "CMPXCHG $heap_top_ptr,$newval\t# If EAX==$heap_top_ptr Then store $newval into $heap_top_ptr" %}
-  ins_encode( lock_prefix, Opcode(0x0F), Opcode(0xB1), RegMem(newval,heap_top_ptr) );
-  ins_pipe( pipe_cmpxchg );
-%}
-
-// Conditional-store of an int value.
-// ZF flag is set on success, reset otherwise.  Implemented with a CMPXCHG on Intel.
-instruct storeIConditional( memory mem, eAXRegI oldval, rRegI newval, eFlagsReg cr ) %{
-  match(Set cr (StoreIConditional mem (Binary oldval newval)));
-  effect(KILL oldval);
-  format %{ "CMPXCHG $mem,$newval\t# If EAX==$mem Then store $newval into $mem" %}
-  ins_encode( lock_prefix, Opcode(0x0F), Opcode(0xB1), RegMem(newval, mem) );
-  ins_pipe( pipe_cmpxchg );
-%}
-
-// Conditional-store of a long value.
-// ZF flag is set on success, reset otherwise.  Implemented with a CMPXCHG8 on Intel.
-instruct storeLConditional( memory mem, eADXRegL oldval, eBCXRegL newval, eFlagsReg cr ) %{
-  match(Set cr (StoreLConditional mem (Binary oldval newval)));
-  effect(KILL oldval);
-  format %{ "XCHG   EBX,ECX\t# correct order for CMPXCHG8 instruction\n\t"
-            "CMPXCHG8 $mem,ECX:EBX\t# If EDX:EAX==$mem Then store ECX:EBX into $mem\n\t"
-            "XCHG   EBX,ECX"
-  %}
-  ins_encode %{
-    // Note: we need to swap rbx, and rcx before and after the
-    //       cmpxchg8 instruction because the instruction uses
-    //       rcx as the high order word of the new value to store but
-    //       our register encoding uses rbx.
-    __ xchgl(as_Register(EBX_enc), as_Register(ECX_enc));
-    __ lock();
-    __ cmpxchg8($mem$$Address);
-    __ xchgl(as_Register(EBX_enc), as_Register(ECX_enc));
-  %}
-  ins_pipe( pipe_cmpxchg );
-%}
-
 // No flag versions for CompareAndSwap{P,I,L} because matcher can't match them
 
 instruct compareAndSwapL( rRegI res, eSIRegP mem_ptr, eADXRegL oldval, eBCXRegL newval, eFlagsReg cr ) %{

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,26 +19,36 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef OS_CPU_BSD_X86_OS_BSD_X86_HPP
-#define OS_CPU_BSD_X86_OS_BSD_X86_HPP
+#include <stdio.h>
+#include <jni.h>
+#include <signal.h>
+#include <sys/ucontext.h>
+#include <errno.h>
+#include <string.h>
 
-// Core region alignment is 16K to be able to run binaries built on MacOS x64
-// on MacOS aarch64.
-#if defined(__APPLE__) && defined(COMPATIBLE_CDS_ALIGNMENT)
-#define CDS_CORE_REGION_ALIGNMENT (16*K)
+#ifdef __cplusplus
+extern "C" {
 #endif
 
-  static void setup_fpu();
-  static bool supports_sse();
-  static juint cpu_microcode_revision();
+void sig_handler(int sig, siginfo_t *info, ucontext_t *context) {
 
-  static jlong rdtsc();
+    printf( " HANDLER (1) " );
+}
 
-  // Used to register dynamic code cache area with the OS
-  // Note: Currently only used in 64 bit Windows implementations
-  static bool register_code_area(char *low, char *high) { return true; }
+JNIEXPORT void JNICALL Java_TestPosixSig_changeSigActionFor(JNIEnv *env, jclass klass, jint val) {
+    struct sigaction act;
+    act.sa_handler = (void (*)())sig_handler;
+    sigemptyset(&act.sa_mask);
+    act.sa_flags = 0;
+    int retval = sigaction(val, &act, 0);
+    if (retval != 0) {
+        printf("ERROR: failed to set %d signal handler error=%s\n", val, strerror(errno));
+    }
+}
 
-#endif // OS_CPU_BSD_X86_OS_BSD_X86_HPP
+#ifdef __cplusplus
+}
+#endif
+

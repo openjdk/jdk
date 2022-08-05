@@ -218,8 +218,9 @@ void LambdaFormInvokers::regenerate_class(char* class_name, ClassFileStream& st,
   assert(!HAS_PENDING_EXCEPTION, "Invariant");
 
   result->set_is_generated_shared_class();
-  SystemDictionaryShared::set_excluded(InstanceKlass::cast(klass)); // exclude the existing class from dump
-  SystemDictionaryShared::init_dumptime_info(result);
+  if (!klass->is_shared()) {
+    SystemDictionaryShared::set_excluded(InstanceKlass::cast(klass)); // exclude the existing class from dump
+  }
   log_info(cds, lambda)("Regenerated class %s, old: " INTPTR_FORMAT " new: " INTPTR_FORMAT,
                  class_name, p2i(klass), p2i(result));
 }

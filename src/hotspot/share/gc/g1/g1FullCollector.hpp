@@ -45,6 +45,7 @@ class G1FullGCMarker;
 class G1FullGCScope;
 class G1FullGCCompactionPoint;
 class GCMemoryManager;
+class HeapRegion;
 class ReferenceProcessor;
 
 // Subject-to-discovery closure for reference processing during Full GC. During
@@ -89,6 +90,8 @@ class G1FullCollector : StackObj {
 
   G1FullGCHeapRegionAttr _region_attr_table;
 
+  HeapWord* volatile* _compaction_tops;
+
 public:
   G1FullCollector(G1CollectedHeap* heap,
                   bool explicit_gc,
@@ -127,6 +130,9 @@ public:
   inline void set_free(uint region_idx);
   inline bool is_free(uint region_idx) const;
   inline void update_from_compacting_to_skip_compacting(uint region_idx);
+
+  inline void set_compaction_top(HeapRegion* r, HeapWord* value);
+  inline HeapWord* compaction_top(HeapRegion* r) const;
 
 private:
   void phase1_mark_live_objects();

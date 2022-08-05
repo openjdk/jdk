@@ -2226,7 +2226,7 @@ void G1CollectedHeap::start_concurrent_gc_for_metadata_allocation(GCCause::Cause
 }
 
 bool G1CollectedHeap::is_in(const void* p) const {
-  return is_in_reserved(p) && _hrm.is_available(addr_to_region((HeapWord*)p));
+  return is_in_reserved(p) && _hrm.is_available(addr_to_region(p));
 }
 
 // Iteration functions.
@@ -2520,7 +2520,7 @@ public:
     if (occupied == 0) {
       tty->print_cr("  RSet is empty");
     } else {
-      hrrs->print();
+      tty->print_cr("hrrs " INTPTR_FORMAT, p2i(hrrs));
     }
     tty->print_cr("----------");
     return false;
@@ -2572,7 +2572,8 @@ G1HeapSummary G1CollectedHeap::create_g1_heap_summary() {
 G1EvacSummary G1CollectedHeap::create_g1_evac_summary(G1EvacStats* stats) {
   return G1EvacSummary(stats->allocated(), stats->wasted(), stats->undo_wasted(),
                        stats->unused(), stats->used(), stats->region_end_waste(),
-                       stats->regions_filled(), stats->direct_allocated(),
+                       stats->regions_filled(), stats->num_plab_filled(),
+                       stats->direct_allocated(), stats->num_direct_allocated(),
                        stats->failure_used(), stats->failure_waste());
 }
 

@@ -49,13 +49,13 @@ import java.util.Map;
  * a {@code Subject}, a {@code CallbackHandler}, shared
  * {@code LoginModule} state, and LoginModule-specific options.
  *
- * The {@code Subject} represents the
+ * <p> The {@code Subject} represents the
  * {@code Subject} currently being authenticated and is updated
  * with relevant Credentials if authentication succeeds.
  * LoginModules use the {@code CallbackHandler} to
  * communicate with users.  The {@code CallbackHandler} may be
  * used to prompt for usernames and passwords, for example.
- * Note that the {@code CallbackHandler} may be null.  LoginModules
+ * Note that the {@code CallbackHandler} may be {@code null}.  LoginModules
  * which absolutely require a {@code CallbackHandler} to authenticate
  * the {@code Subject} may throw a {@code LoginException}.
  * LoginModules optionally use the shared state to share information
@@ -128,7 +128,7 @@ import java.util.Map;
 public interface LoginModule {
 
     /**
-     * Initialize this LoginModule.
+     * Initialize this {@code LoginModule}.
      *
      * <p> This method is called by the {@code LoginContext}
      * after this {@code LoginModule} has been instantiated.
@@ -162,12 +162,12 @@ public interface LoginModule {
      * {@code Subject} information such
      * as a username and password and then attempt to verify the password.
      * This method saves the result of the authentication attempt
-     * as private state within the LoginModule.
+     * as private state within the {@code LoginModule}.
      *
      * @exception LoginException if the authentication fails
      *
-     * @return true if the authentication succeeded, or false if this
-     *                  {@code LoginModule} should be ignored.
+     * @return {@code true} if the authentication succeeded, or {@code false}
+     *                  if this {@code LoginModule} should be ignored.
      */
     boolean login() throws LoginException;
 
@@ -189,8 +189,8 @@ public interface LoginModule {
      *
      * @exception LoginException if the commit fails
      *
-     * @return true if this method succeeded, or false if this
-     *                  {@code LoginModule} should be ignored.
+     * @return {@code true} if this method succeeded, or {@code false}
+     *                  if this {@code LoginModule} should be ignored.
      */
     boolean commit() throws LoginException;
 
@@ -209,8 +209,8 @@ public interface LoginModule {
      *
      * @exception LoginException if the abort fails
      *
-     * @return true if this method succeeded, or false if this
-     *                  {@code LoginModule} should be ignored.
+     * @return {@code true} if this method succeeded, or {@code false}
+     *                  if this {@code LoginModule} should be ignored.
      */
     boolean abort() throws LoginException;
 
@@ -222,8 +222,15 @@ public interface LoginModule {
      *
      * @exception LoginException if the logout fails
      *
-     * @return true if this method succeeded, or false if this
-     *                  {@code LoginModule} should be ignored.
+     * @return {@code true} if this method succeeded, or {@code false}
+     *                  if this {@code LoginModule} should be ignored.
+     *
+     * @implSpec Implementations should check if a variable is {@code null}
+     *      before removing it from the Principals or Credentials set
+     *      of a {@code Subject}, otherwise a {@code NullPointerException}
+     *      will be thrown as these sets {@linkplain Subject#Subject()
+     *      prohibit null elements}. This is especially important if
+     *      this method is called after a login failure.
      */
     boolean logout() throws LoginException;
 }

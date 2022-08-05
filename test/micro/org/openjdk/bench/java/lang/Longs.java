@@ -168,4 +168,11 @@ public class Longs {
             res[i] = Long.reverseBytes(longArraySmall[i]);
         }
     }
+
+    @Benchmark
+    public void reverse() {
+        for (int i = 0; i < size; i++) {
+            res[i] = Long.reverse(longArraySmall[i]);
+        }
+    }
 }

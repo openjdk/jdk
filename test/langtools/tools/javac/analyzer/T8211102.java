@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 8211102
  * @summary Verify javac does not crash in lambda analyzer
- * @compile -Werror -XDfind=lambda -source 7 -Xlint:-options T8211102.java
+ * @compile -Werror -XDfind=lambda --release 7 -Xlint:-options T8211102.java
  */
 import java.util.*;
 
