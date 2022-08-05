@@ -26,10 +26,9 @@ import org.testng.Assert;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import org.w3c.dom.Document;
-import org.w3c.dom.Node;
 
-import javax.xml.transform.TransformerException;
-import javax.xml.xpath.*;
+import javax.xml.xpath.XPathExpressionException;
+import java.util.stream.IntStream;
 
 /*
  * @test
@@ -54,19 +53,22 @@ public class XPathNumberFnTest extends XPathTestBase {
                 {"number(1)", 1.0},
                 {"number(-1)", -1.0},
                 {"number(0)", 0},
-                {"number(//Customer[2]/Age)", 1.0},
-                {"number(//Customer[1]/Age + //Customer[2]/Age)", 1.0},
+                {"number(//Customer[2]/Age)", CUSTOMER_AGES[1]},
+                {"number(//Customer[1]/Age + //Customer[2]/Age)",
+                        CUSTOMER_AGES[0] + CUSTOMER_AGES[1]},
                 {"number('abc')", Double.NaN},
                 {"number('')", Double.NaN},
-                {"number(//Age[number()=1.0])", 1.0},
-                {"number(//Age[number(.)=1.0])", 1.0},
+                {String.format("number(//Age[number()=%d])", CUSTOMER_AGES[1]),
+                        CUSTOMER_AGES[1]},
+                {String.format("number(//Age[number(.)=%d])", CUSTOMER_AGES[1]),
+                        CUSTOMER_AGES[1]},
                 {"number(//Customer[1]/Name)", Double.NaN},
                 {"number(//Customer[2]/Age + //Customer[1]/Name)", Double.NaN},
                 {"number(true())", 1},
                 {"number(false())", 0},
 
-                {"sum(//Age)", 0},
-                {"sum(//Customer[2]/Age)", 1},
+                {"sum(//Age)", IntStream.of(CUSTOMER_AGES).sum()},
+                {"sum(//Customer[2]/Age)", CUSTOMER_AGES[1]},
 
                 {"floor(1.1)", 1.0},
                 {"floor(-1.6)", -2.0},
@@ -76,9 +78,10 @@ public class XPathNumberFnTest extends XPathTestBase {
                 {"floor(false())", 0},
                 {"floor(abc)", Double.NaN},
                 {"floor('')", Double.NaN},
-                {"floor(//Customer[2]/Age)", 1.0},
+                {"floor(//Customer[2]/Age)", CUSTOMER_AGES[1]},
                 {"floor(//Customer[1]/Name)", Double.NaN},
-                {"number(//Age[floor(.)=1.0])", 1.0},
+                {String.format("number(//Age[floor(.)=%d])", CUSTOMER_AGES[1]),
+                        CUSTOMER_AGES[1]},
 
                 {"ceiling(1.1)", 2.0},
                 {"ceiling(-1.4)", -1.0},
@@ -88,9 +91,10 @@ public class XPathNumberFnTest extends XPathTestBase {
                 {"ceiling(false())", 0},
                 {"ceiling(abc)", Double.NaN},
                 {"ceiling('')", Double.NaN},
-                {"ceiling(//Customer[2]/Age)", 1.0},
+                {"ceiling(//Customer[2]/Age)", CUSTOMER_AGES[1]},
                 {"ceiling(//Customer[1]/Name)", Double.NaN},
-                {"number(//Age[ceiling(.)=1.0])", 1.0},
+                {String.format("number(//Age[ceiling(.)=%d])",
+                        CUSTOMER_AGES[1]), CUSTOMER_AGES[1]},
 
                 {"round(1.49)", 1.0},
                 {"round(1.5)", 2.0},
@@ -102,14 +106,15 @@ public class XPathNumberFnTest extends XPathTestBase {
                 {"round(false())", 0},
                 {"round(abc)", Double.NaN},
                 {"round('')", Double.NaN},
-                {"round(//Customer[2]/Age)", 1.0},
+                {"round(//Customer[2]/Age)", CUSTOMER_AGES[1]},
                 {"round(//Customer[1]/Name)", Double.NaN},
-                {"number(//Age[round(.)=1.0])", 1.0},
+                {String.format("number(//Age[round(.)=%d])",
+                        CUSTOMER_AGES[1]), CUSTOMER_AGES[1]},
         };
     }
 
     /*
-     * DataProvider for testing TransformerException being thrown on
+     * DataProvider for testing XPathExpressionException being thrown on
      * invalid number function usage.
      * Data columns:
      *  see parameters of the test "testExceptionOnEval"
@@ -117,17 +122,17 @@ public class XPathNumberFnTest extends XPathTestBase {
     @DataProvider(name = "exceptionExpTestCases")
     public Object[][] getExceptionExp() {
         return new Object[][]{
-                {"number(//Age[floor()=1.0])"},
+                // Argument is required for these functions
+                {"//Age[floor()=1.0]"},
+                {"(/Age[ceiling()=1.0]"},
+                {"//Age[round()=1.0]"},
+                {"//Age[sum()]"},
 
-                {"number(//Age[ceiling()=1.0])"},
-
-                {"number(//Age[round()=1.0])"},
-
+                // Node-set argument is required for these functions
                 {"sum(1)"},
                 {"sum(true())"},
                 {"sum('')"},
                 {"sum('abc')"},
-                {"number(//Age[sum()])"},
         };
     }
 
@@ -145,14 +150,13 @@ public class XPathNumberFnTest extends XPathTestBase {
     }
 
     /**
-     * Verifies that TransformerException is thrown on xpath evaluation.
+     * Verifies that XPathExpressionException is thrown on xpath evaluation.
      *
      * @param exp XPath expression
-     * @throws Exception if test fails
      */
-    @Test(dataProvider = "exceptionExpTestCases", expectedExceptions =
-            XPathExpressionException.class)
-    void testExceptionOnEval(String exp) throws Exception {
-        testEval(doc, exp);
+    @Test(dataProvider = "exceptionExpTestCases")
+    void testExceptionOnEval(String exp) {
+        Assert.assertThrows(XPathExpressionException.class, () -> testEval(doc,
+                exp));
     }
 }

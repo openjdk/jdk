@@ -27,7 +27,6 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.BiConsumer;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.xpath.*;
@@ -38,7 +37,6 @@ import static org.testng.Assert.assertTrue;
 
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 
@@ -91,7 +89,7 @@ class XPathTestBase {
             + "            <City>The City</City>"
             + "            <State>The State</State>"
             + "        </Address>"
-            + "        <Age>1.0</Age>"
+            + "        <Age>100</Age>"
             + "        <ClubMember>false</ClubMember>"
             + "    </Customer>"
             + "    <Customer id=\"x3\">"
@@ -103,7 +101,7 @@ class XPathTestBase {
             + "            <City>The City</City>"
             + "            <State>The State</State>"
             + "        </Address>"
-            + "        <Age>-1.0</Age>"
+            + "        <Age>-100</Age>"
             + "        <ClubMember>false</ClubMember>"
             + "    </Customer>"
             + "    <foo:Customer foo:id=\"x1\">"
@@ -135,6 +133,8 @@ class XPathTestBase {
     final int FOO_CUSTOMERS = 1;
     // Number of id attributes in the foo namespace.
     final int FOO_ID_ATTRIBUTES = 2;
+    // Customer Ages
+    final int[] CUSTOMER_AGES = {0, 100, -100, 0};
 
     /**
      * Returns a {@link org.w3c.dom.Document} for XML with DTD.
@@ -215,12 +215,12 @@ class XPathTestBase {
                           Class<T> clazz) throws Exception {
         XPath xPath = XPathFactory.newInstance().newXPath();
 
-        T b = xPath.evaluateExpression(exp, doc, clazz);
-        T b2 = (T) xPath.evaluate(exp, doc,
+        T result = xPath.evaluateExpression(exp, doc, clazz);
+        T result2 = (T) xPath.evaluate(exp, doc,
                 XPathEvaluationResult.XPathResultType.getQNameType(clazz));
 
-        Assert.assertEquals(b, expected);
-        Assert.assertEquals(b2, b);
+        Assert.assertEquals(result, expected);
+        Assert.assertEquals(result2, result);
     }
 
     /**

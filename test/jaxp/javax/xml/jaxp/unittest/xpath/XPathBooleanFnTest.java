@@ -22,13 +22,12 @@
  */
 package xpath;
 
+import org.testng.Assert;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import org.w3c.dom.Document;
 
-import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathExpressionException;
-import javax.xml.xpath.XPathFactory;
 
 /*
  * @test
@@ -92,18 +91,27 @@ public class XPathBooleanFnTest extends XPathTestBase {
     }
 
     /*
-     * DataProvider for testing TransformerException being thrown on
-     * invalid number function usage.
+     * DataProvider for testing XPathExpressionException being thrown on
+     * invalid boolean function usage.
      * Data columns:
      *  see parameters of the test "testExceptionOnEval"
      */
     @DataProvider(name = "exceptionExpTestCases")
     public Object[][] getExceptionExp() {
         return new Object[][]{
-                {"boolean(//*[boolean()=true()])"},
-                {"boolean(//*[boolean()=false()])"},
-                {"boolean(//*[not()=true()])"},
-                {"boolean(//*[not()=false()])"},
+                // Argument is required for these functions
+                {"boolean()"},
+                {"//*[boolean()=true()]"},
+                {"not()"},
+                {"//*[not()=true()]"},
+                {"lang()"},
+                {"/*[lang()=true()]"},
+
+                // No arguments should be passed to these functions
+                {"true(1)"},
+                {"false(0)"},
+                {"//*[true(.)=true()]"},
+                {"//*[false(.)=false()]"},
         };
     }
 
@@ -121,14 +129,13 @@ public class XPathBooleanFnTest extends XPathTestBase {
     }
 
     /**
-     * Verifies that TransformerException is thrown on xpath evaluation.
+     * Verifies that XPathExpressionException is thrown on xpath evaluation.
      *
      * @param exp XPath expression
-     * @throws Exception if test fails
      */
-    @Test(dataProvider = "exceptionExpTestCases", expectedExceptions =
-            XPathExpressionException.class)
-    void testExceptionOnEval(String exp) throws Exception {
-        testEval(doc, exp);
+    @Test(dataProvider = "exceptionExpTestCases")
+    void testExceptionOnEval(String exp) {
+        Assert.assertThrows(XPathExpressionException.class, () -> testEval(doc,
+                exp));
     }
 }

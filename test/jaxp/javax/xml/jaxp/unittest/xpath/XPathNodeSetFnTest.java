@@ -85,11 +85,13 @@ public class XPathNodeSetFnTest extends XPathTestBase {
                 {"count(//Customer[1]/following-sibling::*)",
                         CUSTOMERS - 1 + FOO_CUSTOMERS},
                 {"count(//Customer[3]/preceding::*)",
-                        CUSTOMERS - 1 + (CUSTOMERS - 1) * (CUSTOMER_ELEMENTS + ADDRESS_ELEMENTS)},
+                        CUSTOMERS - 1 + (CUSTOMERS - 1) *
+                                (CUSTOMER_ELEMENTS + ADDRESS_ELEMENTS)},
                 {"count(//Customer[3]/preceding-sibling::*)", CUSTOMERS - 1},
                 {"count(//Customer[1]/ancestor::*)", ROOT},
                 {"count(//Customer[1]/ancestor-or-self::*)", ROOT + 1},
-                {"count(//Customer[1]/descendant::*)", CUSTOMER_ELEMENTS + ADDRESS_ELEMENTS},
+                {"count(//Customer[1]/descendant::*)",
+                        CUSTOMER_ELEMENTS + ADDRESS_ELEMENTS},
                 {"count(//Customer[1]/descendant-or-self::*)",
                         CUSTOMER_ELEMENTS + ADDRESS_ELEMENTS + 1},
                 // node() returns all children of the context node including
@@ -149,22 +151,43 @@ public class XPathNodeSetFnTest extends XPathTestBase {
     }
 
     /*
-     * DataProvider for testing TransformerException being thrown on
-     * invalid number function usage.
+     * DataProvider for testing XPathExpressionException being thrown on
+     * invalid node set function usage.
      * Data columns:
      *  see parameters of the test "testExceptionOnEval"
      */
     @DataProvider(name = "exceptionExpTestCases")
     public Object[][] getExceptionExp() {
         return new Object[][]{
+                // Argument is required for these functions
                 {"//Customer[id()]"},
                 {"//Customer[id()='x1']"},
                 {"//Customer[count()]"},
                 {"//*[count()=3]"},
+
+                // No argument should be passed to these functions
                 {"//Customer[position(.)]"},
                 {"//*[position(//Customer[1])]"},
                 {"//Customer[last(.)]"},
                 {"//*[last(//Customer[1])]"},
+
+                // Node-set argument is required for these functions
+                {"count(1)"},
+                {"count(true())"},
+                {"count('')"},
+                {"count('abc')"},
+                {"local-name(1)"},
+                {"local-name(true())"},
+                {"local-name('')"},
+                {"local-name('abc')"},
+                {"name(1)"},
+                {"name(true())"},
+                {"name('')"},
+                {"name('abc')"},
+                {"namespace-uri(1)"},
+                {"namespace-uri(true())"},
+                {"namespace-uri('')"},
+                {"namespace-uri('abc')"},
         };
     }
 
@@ -249,14 +272,13 @@ public class XPathNodeSetFnTest extends XPathTestBase {
     }
 
     /**
-     * Verifies that TransformerException is thrown on xpath evaluation.
+     * Verifies that XPathExpressionException is thrown on xpath evaluation.
      *
      * @param exp XPath expression
-     * @throws Exception if test fails
      */
-    @Test(dataProvider = "exceptionExpTestCases", expectedExceptions =
-            XPathExpressionException.class)
-    void testExceptionOnEval(String exp) throws Exception {
-        testEval(doc, exp);
+    @Test(dataProvider = "exceptionExpTestCases")
+    void testExceptionOnEval(String exp) {
+        Assert.assertThrows(XPathExpressionException.class, () -> testEval(doc,
+                exp));
     }
 }

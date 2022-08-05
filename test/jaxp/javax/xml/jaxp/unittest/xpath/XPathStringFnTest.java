@@ -22,13 +22,12 @@
  */
 package xpath;
 
+import org.testng.Assert;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import org.w3c.dom.Document;
 
-import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathExpressionException;
-import javax.xml.xpath.XPathFactory;
 
 /*
  * @test
@@ -59,9 +58,12 @@ public class XPathStringFnTest extends XPathTestBase {
                 {"string(//Customer/Name)", "name1"},
                 {"string(//Customer[1]/@id)", "x1"},
                 {"string(//Customer/LastName)", ""},
-                {"string(//Customer[1]/Age)", "0"},
-                {"string(number(//Customer[2]/Age))", "1"},
-                {"string(//Customer[1]/Age + //Customer[2]/Age)", "1"},
+                {"string(//Customer[1]/Age)",
+                        Integer.toString(CUSTOMER_AGES[0])},
+                {"string(number(//Customer[2]/Age))",
+                        Integer.toString(CUSTOMER_AGES[1])},
+                {"string(//Customer[1]/Age + //Customer[2]/Age)",
+                        Integer.toString(CUSTOMER_AGES[0] + CUSTOMER_AGES[1])},
                 {"string(//Customer[1]/Age + //Customer[1]/Name)", "NaN"},
                 {"string(//Customer[1]/ClubMember='true')", "true"},
                 {"string(//Customer[2]/ClubMember='true')", "false"},
@@ -239,32 +241,29 @@ public class XPathStringFnTest extends XPathTestBase {
     }
 
     /*
-     * DataProvider for testing TransformerException being thrown on
-     * invalid number function usage.
+     * DataProvider for testing XPathExpressionException being thrown on
+     * invalid string function usage.
      * Data columns:
      *  see parameters of the test "testExceptionOnEval"
      */
     @DataProvider(name = "exceptionExpTestCases")
     public Object[][] getExceptionExp() {
         return new Object[][]{
-                {"concat('Hello')"},
-
-                {"string(//*[concat()='name2'])"},
-                {"string(//*[concat(.)='name2'])"},
-
-                {"substring('123@xyz.com')"},
-                {"string(//*[substring()='name2'])"},
-                {"string(//*[substring(.)='name2'])"},
-
-                {"translate('1111 111st ave')"},
-                {"string(//*[translate()='name2'])"},
-                {"string(//*[translate(.)='name2'])"},
-
-                {"boolean(//*[contains()])"},
-                {"boolean(//*[contains(.)])"},
-
-                {"boolean(//*[starts-with()])"},
-                {"boolean(//*[starts-with(.)])"},
+                // At least two arguments are required for these functions
+                {"//*[concat()='name2']"},
+                {"//*[concat(.)='name2']"},
+                {"//*[substring()='name2']"},
+                {"//*[substring(.)='name2']"},
+                {"//*[substring-before()='name2']"},
+                {"//*[substring-before(.)='name2']"},
+                {"//*[substring-after()='name2']"},
+                {"//*[substring-after(.)='name2']"},
+                {"//*[translate()='name2']"},
+                {"//*[translate(.)='name2']"},
+                {"//*[contains()]"},
+                {"//*[contains(.)]"},
+                {"//*[starts-with()]"},
+                {"//*[starts-with(.)]"},
         };
     }
 
@@ -373,14 +372,13 @@ public class XPathStringFnTest extends XPathTestBase {
     }
 
     /**
-     * Verifies that TransformerException is thrown on xpath evaluation.
+     * Verifies that XPathExpressionException is thrown on xpath evaluation.
      *
      * @param exp XPath expression
-     * @throws Exception if test fails
      */
-    @Test(dataProvider = "exceptionExpTestCases", expectedExceptions =
-            XPathExpressionException.class)
-    void testExceptionOnEval(String exp) throws Exception {
-        testEval(doc, exp);
+    @Test(dataProvider = "exceptionExpTestCases")
+    void testExceptionOnEval(String exp) {
+        Assert.assertThrows(XPathExpressionException.class, () -> testEval(doc,
+                exp));
     }
 }
