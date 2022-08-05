@@ -24,7 +24,7 @@
 
 // Old class file with a method whose last bytecode is an unreachable
 // conditional branch.
-public class compiler/linkage/if_icmpleIsLastOpcode version 49:0 {
+public class if_icmpleIsLastOpcode version 49:0 {
     public static Method m1:"()I" stack 1 locals 0 {
         iconst_0;
         ireturn;
@@ -40,8 +40,8 @@ public class compiler/linkage/if_icmpleIsLastOpcode version 49:0 {
         Loop: stack_frame_type append;
         locals_map int;
         iload_0;
-        invokestatic Method compiler/linkage/if_icmpleIsLastOpcode."m1":"()I";
-        invokestatic Method compiler/linkage/if_icmpleIsLastOpcode."m2":"(I)V";
+        invokestatic Method if_icmpleIsLastOpcode."m1":"()I";
+        invokestatic Method if_icmpleIsLastOpcode."m2":"(I)V";
         iinc 0, 1;
         ldc 100000;
         if_icmple Loop;

@@ -28,10 +28,8 @@
  * @library /test/lib /
  * @requires vm.flagless
  * @compile if_icmpleIsLastOpcode.jasm
- * @run driver compiler.linkage.TestGenerateOopMapCrash
+ * @run driver TestGenerateOopMapCrash
  */
-
-package compiler.linkage;
 
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
@@ -44,7 +42,7 @@ public class TestGenerateOopMapCrash {
             // Spawn new VM instance to execute test
             ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
                     "-XX:-TieredCompilation",
-                    "-XX:CompileCommand=dontinline,compiler/linkage/if_icmpleIsLastOpcode.m*",
+                    "-XX:CompileCommand=dontinline,if_icmpleIsLastOpcode.m*",
                     "-Xmx64m",
                     TestGenerateOopMapCrash.class.getName(),
                     "run");
