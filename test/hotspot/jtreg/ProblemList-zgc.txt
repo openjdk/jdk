@@ -53,6 +53,7 @@ serviceability/sa/ClhsdbFindPC.java#xcomp-core                8000000    generic
 serviceability/sa/ClhsdbFindPC.java#xcomp-process             8000000    generic-all
 serviceability/sa/ClhsdbFindPC.java#no-xcomp-core             8000000    generic-all
 serviceability/sa/ClhsdbFindPC.java#no-xcomp-process          8000000    generic-all
+serviceability/sa/ClhsdbThreadContext.java                    8000000    generic-all
 serviceability/sa/TestSysProps.java   			      8000000    generic-all
 serviceability/sa/TestJhsdbJstackLineNumbers.java             8000000    generic-all
 serviceability/sa/LingeredAppWithInvokeDynamic.java           8000000    generic-all
