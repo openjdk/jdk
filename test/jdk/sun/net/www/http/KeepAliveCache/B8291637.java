@@ -58,7 +58,8 @@ public class B8291637 {
         public void close() {
             try {
                 serverSocket.close();
-                s.close();
+                if (s != null)
+                    s.close();
             } catch (IOException e) {}
         }
 
