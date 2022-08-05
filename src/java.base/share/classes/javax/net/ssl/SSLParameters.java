@@ -860,7 +860,7 @@ public class SSLParameters {
      * @implNote
      * Note that applications may use the
      * {@systemProperty jdk.tls.namedGroups} system property with the SunJSSE
-     * provider to override the provider-specific default signature schemes.
+     * provider to override the provider-specific default named groups.
      *
      * @return an array of key exchange named group names {@code Strings} or
      *         {@code null} if none have been set.  For non-null returns, this
