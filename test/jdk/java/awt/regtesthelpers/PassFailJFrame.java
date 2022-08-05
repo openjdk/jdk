@@ -176,7 +176,6 @@ public class PassFailJFrame {
         frame.add(buttonsPanel, BorderLayout.SOUTH);
         frame.pack();
         frame.setLocationRelativeTo(null);
-        frame.setVisible(true);
         windowList.add(frame);
     }
 
@@ -265,17 +264,18 @@ public class PassFailJFrame {
      * Position the instruction frame with testWindow (testcase created
      * window) by the specified position.
      * Note: This method should be invoked from the method that creates
-     * testWindow.
+     * testWindow. At test-level, the testWindow must be made visible
+     * after calling this method.
      *
      * @param testWindow test window that the test is created
      * @param position  position can either be:
      *                  HORIZONTAL - the test instruction frame is positioned
-     *                  such that the right edge aligns with screen's vertical
+     *                  such that its right edge aligns with screen's vertical
      *                  center and the test window is placed to the right of
      *                  the instruction frame.
      *
      *                  VERTICAL - the test instruction frame is positioned such
-     *                  that the bottom edge aligns with the screen's horizontal
+     *                  that its bottom edge aligns with the screen's horizontal
      *                  center and the test window is placed below the instruction
      *                  frame.
      *
@@ -287,27 +287,58 @@ public class PassFailJFrame {
     public static void positionTestWindow(Window testWindow, Position position) {
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
 
+        // to get the screen insets inorder to position the frame by taking into
+        // account the location of taskbar/menubars on screen
+        GraphicsConfiguration gc = GraphicsEnvironment.getLocalGraphicsEnvironment()
+                .getDefaultScreenDevice().getDefaultConfiguration();
+        Insets screenInsets = Toolkit.getDefaultToolkit().getScreenInsets(gc);
+
         if (position.equals(Position.HORIZONTAL)) {
             int newX = ((screenSize.width / 2) - frame.getWidth());
-            frame.setLocation(newX, frame.getY());
+            frame.setLocation((newX + screenInsets.left),
+                    (frame.getY() + screenInsets.top));
+            // added to push the updated frame location to window manager
+            // before using it to reposition the test window.
+            Toolkit.getDefaultToolkit().sync();
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
 
             testWindow.setLocation((frame.getX() + frame.getWidth() + 5),
                     frame.getY());
+
         } else if (position.equals(Position.VERTICAL)) {
             int newY = ((screenSize.height / 2) - frame.getHeight());
-            frame.setLocation(frame.getX(), newY);
+            frame.setLocation((frame.getX() + screenInsets.left),
+                    (newY + screenInsets.top));
+
+            Toolkit.getDefaultToolkit().sync();
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
 
             testWindow.setLocation(frame.getX(),
                     (frame.getY() + frame.getHeight() + 5));
-        } else if (position.equals(Position.TOP_LEFT_CORNER)) {
-            GraphicsConfiguration gc = GraphicsEnvironment.getLocalGraphicsEnvironment()
-                    .getDefaultScreenDevice().getDefaultConfiguration();
-            Insets screenInsets = Toolkit.getDefaultToolkit().getScreenInsets(gc);
 
+        } else if (position.equals(Position.TOP_LEFT_CORNER)) {
             frame.setLocation(screenInsets.left, screenInsets.top);
+
+            Toolkit.getDefaultToolkit().sync();
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
             testWindow.setLocation((frame.getX() + frame.getWidth() + 5),
                     frame.getY());
         }
+        // make instruction frame visible after updating frame & window positions
+        frame.setVisible(true);
     }
 
     /**

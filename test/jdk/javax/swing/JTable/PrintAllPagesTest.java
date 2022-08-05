@@ -63,15 +63,14 @@ public class PrintAllPagesTest {
 
         PassFailJFrame passFailJFrame = new PassFailJFrame(INSTRUCTIONS);
 
-        SwingUtilities.invokeAndWait(() -> {
-            printAllPagesTest();
-        });
+        SwingUtilities.invokeAndWait(PrintAllPagesTest::printAllPagesTest);
 
         // add the test frame to dispose
         PassFailJFrame.addTestWindow(f);
 
         // Arrange the test instruction frame and test frame side by side
         PassFailJFrame.positionTestWindow(f, PassFailJFrame.Position.HORIZONTAL);
+        f.setVisible(true);
 
         SwingUtilities.invokeAndWait(() -> {
             try {
@@ -112,6 +111,5 @@ public class PrintAllPagesTest {
         f = new JFrame("Table test");
         f.add(scrollpane);
         f.setSize(1000, 800);
-        f.setVisible(true);
     }
 }
