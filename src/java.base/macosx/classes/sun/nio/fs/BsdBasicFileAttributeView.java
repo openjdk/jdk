@@ -69,10 +69,8 @@ class BsdBasicFileAttributeView extends UnixFileAttributeViews.Basic
         }
 
         try {
-            long options = followLinks ?  0 : UnixConstants.FSOPT_NOFOLLOW;
-            setattrlist(file, commonattr, modValue, accValue,
-                        createValue, options);
-            return;
+            setattrlist(file, commonattr, modValue, accValue, createValue,
+                        followLinks ?  0 : UnixConstants.FSOPT_NOFOLLOW);
         } catch (UnixException x) {
             x.rethrowAsIOException(file);
         }
