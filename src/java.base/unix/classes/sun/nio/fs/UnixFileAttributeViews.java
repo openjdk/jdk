@@ -63,42 +63,13 @@ class UnixFileAttributeViews {
                              FileTime createTime) throws IOException
         {
             // null => don't change
-            if (lastModifiedTime == null && lastAccessTime == null &&
-                (createTime == null || !setattrlistSupported())) {
+            if (lastModifiedTime == null && lastAccessTime == null) {
                 // no effect
                 return;
             }
 
             // permission check
             file.checkWrite();
-
-            if (setattrlistSupported()) {
-                int commonattr = 0;
-                long modValue = 0L;
-                if (lastModifiedTime != null) {
-                    modValue = lastModifiedTime.to(TimeUnit.NANOSECONDS);
-                    commonattr |= UnixConstants.ATTR_CMN_MODTIME;
-                }
-                long accValue = 0L;
-                if (lastAccessTime != null) {
-                    accValue = lastAccessTime.to(TimeUnit.NANOSECONDS);
-                    commonattr |= UnixConstants.ATTR_CMN_ACCTIME;
-                }
-                long createValue = 0L;
-                if (createTime != null) {
-                    createValue = createTime.to(TimeUnit.NANOSECONDS);
-                    commonattr |= UnixConstants.ATTR_CMN_CRTIME;
-                }
-                try {
-                    long options = followLinks ?
-                        0 : UnixConstants.FSOPT_NOFOLLOW;
-                    setattrlist(file, commonattr, modValue, accValue,
-                                createValue, options);
-                    return;
-                } catch (UnixException x) {
-                    x.rethrowAsIOException(file);
-                }
-            }
 
             boolean haveFd = false;
             boolean useFutimes = false;

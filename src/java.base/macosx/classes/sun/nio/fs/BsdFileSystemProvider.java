@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,6 +58,11 @@ class BsdFileSystemProvider extends UnixFileSystemProvider {
             return (V) new BsdUserDefinedFileAttributeView(UnixPath.toUnixPath(obj),
                     Util.followLinks(options));
         }
+        if (type == BasicFileAttributeView.class) {
+            UnixPath file = UnixPath.toUnixPath(obj);
+            boolean followLinks = Util.followLinks(options);
+            return (V) new BsdBasicFileAttributeView(file, followLinks);
+        }
         return super.getFileAttributeView(obj, type, options);
     }
 
@@ -69,6 +74,11 @@ class BsdFileSystemProvider extends UnixFileSystemProvider {
         if (name.equals("user")) {
             return new BsdUserDefinedFileAttributeView(UnixPath.toUnixPath(obj),
                     Util.followLinks(options));
+        }
+        if (name.equals("basic")) {
+            UnixPath file = UnixPath.toUnixPath(obj);
+            boolean followLinks = Util.followLinks(options);
+            return new BsdBasicFileAttributeView(file, followLinks);
         }
         return super.getFileAttributeView(obj, name, options);
     }
