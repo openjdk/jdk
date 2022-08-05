@@ -31,12 +31,12 @@ import java.util.function.Consumer;
 
 /*
  * @test
- * @bug 8202788
+ * @bug 8202788 8291897
  * @summary TerminatingThreadLocal unit test
  * @modules java.base/jdk.internal.misc
  * @requires vm.continuations
- * @compile --enable-preview -source ${jdk.version} TestTerminatingThreadLocal.java
- * @run main/othervm --enable-preview -Djdk.virtualThreadScheduler.parallelism=1 -Djdk.virtualThreadScheduler.maxPoolSize=2 TestTerminatingThreadLocal
+ * @enablePreview
+ * @run main/othervm -Djdk.virtualThreadScheduler.parallelism=1 -Djdk.virtualThreadScheduler.maxPoolSize=2 TestTerminatingThreadLocal
  */
 public class TestTerminatingThreadLocal {
 
@@ -145,7 +145,10 @@ public class TestTerminatingThreadLocal {
             throw new RuntimeException(e);
         }
 
-        System.out.println("terminatedValues after VirtualThread.join(): " + terminatedValues);
+        if (!terminatedValues.isEmpty()) {
+            throw new AssertionError("Unexpected terminated values after virtual thread.join(): " +
+                                     terminatedValues);
+        }
 
         // we now unblock the blocker thread but keep it running
         synchronized (lock) {
