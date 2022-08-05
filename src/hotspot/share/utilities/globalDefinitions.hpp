@@ -738,6 +738,10 @@ inline bool is_signed_subword_type(BasicType t) {
   return (t == T_BYTE || t == T_SHORT);
 }
 
+inline bool is_unsigned_subword_type(BasicType t) {
+  return (t == T_BOOLEAN || t == T_CHAR);
+}
+
 inline bool is_double_word_type(BasicType t) {
   return (t == T_DOUBLE || t == T_LONG);
 }

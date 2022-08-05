@@ -29,8 +29,8 @@
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  *
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *
  * @run main/othervm
  *        -Xbootclasspath/a:.
@@ -45,7 +45,7 @@
 
 package compiler.intrinsics.string;
 
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

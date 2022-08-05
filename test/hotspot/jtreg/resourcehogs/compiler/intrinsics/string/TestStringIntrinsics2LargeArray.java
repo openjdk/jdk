@@ -31,8 +31,8 @@
  * @library /test/lib /test/hotspot/jtreg
  *
  * @build compiler.intrinsics.string.TestStringIntrinsics2
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *
  * @run main/othervm
  *        -mx8G

@@ -77,7 +77,7 @@ import jdk.internal.javac.PreviewFeature;
  * ).withName("TaggedValues");
  * }
  *
- * <h2><a id = "layout-align">Size, alignment and byte order</a></h2>
+ * <h2 id="layout-align">Size, alignment and byte order</h2>
  *
  * All layouts have a size; layout size for value and padding layouts is always explicitly denoted; this means that a layout description
  * always has the same size in bits, regardless of the platform in which it is used. For derived layouts, the size is computed
@@ -105,7 +105,7 @@ import jdk.internal.javac.PreviewFeature;
  * <p>
  * All value layouts have an <em>explicit</em> byte order (see {@link java.nio.ByteOrder}) which is set when the layout is created.
  *
- * <h2><a id = "layout-paths">Layout paths</a></h2>
+ * <h2 id="layout-paths">Layout paths</h2>
  *
  * A <em>layout path</em> originates from a <em>root</em> layout (typically a group or a sequence layout) and terminates
  * at a layout nested within the root layout - this is the layout <em>selected</em> by the layout path.
@@ -584,17 +584,18 @@ public sealed interface MemoryLayout permits AbstractLayout, SequenceLayout, Gro
      * the same kind, have the same size, name and alignment constraints. Furthermore, depending on the layout kind, additional
      * conditions must be satisfied:
      * <ul>
-     *     <li>two value layouts are considered equal if they have the same byte order (see {@link ValueLayout#order()})</li>
+     *     <li>two value layouts are considered equal if they have the same {@linkplain ValueLayout#order() order},
+     *     and {@linkplain ValueLayout#carrier() carrier}</li>
      *     <li>two sequence layouts are considered equal if they have the same element count (see {@link SequenceLayout#elementCount()}), and
      *     if their element layouts (see {@link SequenceLayout#elementLayout()}) are also equal</li>
      *     <li>two group layouts are considered equal if they are of the same kind (see {@link GroupLayout#isStruct()},
      *     {@link GroupLayout#isUnion()}) and if their member layouts (see {@link GroupLayout#memberLayouts()}) are also equal</li>
      * </ul>
      *
-     * @param that the object to be compared for equality with this layout.
+     * @param other the object to be compared for equality with this layout.
      * @return {@code true} if the specified object is equal to this layout.
      */
-    boolean equals(Object that);
+    boolean equals(Object other);
 
     /**
      * {@return the hash code value for this layout}

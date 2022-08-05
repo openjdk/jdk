@@ -34,34 +34,41 @@ public enum CABI {
     LinuxAArch64,
     MacOsAArch64;
 
-    private static final CABI current;
+    private static final CABI ABI;
+    private static final String ARCH;
+    private static final String OS;
+    private static final long ADDRESS_SIZE;
 
     static {
-        String arch = privilegedGetProperty("os.arch");
-        String os = privilegedGetProperty("os.name");
-        long addressSize = ADDRESS.bitSize();
+        ARCH = privilegedGetProperty("os.arch");
+        OS = privilegedGetProperty("os.name");
+        ADDRESS_SIZE = ADDRESS.bitSize();
         // might be running in a 32-bit VM on a 64-bit platform.
         // addressSize will be correctly 32
-        if ((arch.equals("amd64") || arch.equals("x86_64")) && addressSize == 64) {
-            if (os.startsWith("Windows")) {
-                current = Win64;
+        if ((ARCH.equals("amd64") || ARCH.equals("x86_64")) && ADDRESS_SIZE == 64) {
+            if (OS.startsWith("Windows")) {
+                ABI = Win64;
             } else {
-                current = SysV;
+                ABI = SysV;
             }
-        } else if (arch.equals("aarch64")) {
-            if (os.startsWith("Mac")) {
-                current = MacOsAArch64;
+        } else if (ARCH.equals("aarch64")) {
+            if (OS.startsWith("Mac")) {
+                ABI = MacOsAArch64;
             } else {
                 // The Linux ABI follows the standard AAPCS ABI
-                current = LinuxAArch64;
+                ABI = LinuxAArch64;
             }
         } else {
-            throw new UnsupportedOperationException(
-                "Unsupported os, arch, or address size: " + os + ", " + arch + ", " + addressSize);
+            // unsupported
+            ABI = null;
         }
     }
 
     public static CABI current() {
-        return current;
+        if (ABI == null) {
+            throw new UnsupportedOperationException(
+                    "Unsupported os, arch, or address size: " + OS + ", " + ARCH + ", " + ADDRESS_SIZE);
+        }
+        return ABI;
     }
 }

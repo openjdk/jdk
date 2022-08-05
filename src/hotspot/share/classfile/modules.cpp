@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@
 #include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
 #include "prims/jvmtiExport.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaCalls.hpp"
@@ -447,7 +448,7 @@ void Modules::define_module(Handle module, jboolean is_open, jstring version,
   }
 
   // If the module is defined to the boot loader and an exploded build is being
-  // used, prepend <java.home>/modules/modules_name to the system boot class path.
+  // used, prepend <java.home>/modules/modules_name to the boot class path.
   if (h_loader.is_null() && !ClassLoader::has_jrt_entry()) {
     ClassLoader::add_to_exploded_build_list(THREAD, module_symbol);
   }
@@ -499,9 +500,16 @@ void Modules::define_archived_modules(Handle h_platform_loader, Handle h_system_
   }
 
   ClassLoaderData* platform_loader_data = SystemDictionary::register_loader(h_platform_loader);
+  SystemDictionary::set_platform_loader(platform_loader_data);
   ClassLoaderDataShared::restore_java_platform_loader_from_archive(platform_loader_data);
 
   ClassLoaderData* system_loader_data = SystemDictionary::register_loader(h_system_loader);
+  SystemDictionary::set_system_loader(system_loader_data);
+  // system_loader_data here is always an instance of jdk.internal.loader.ClassLoader$AppClassLoader.
+  // However, if -Djava.system.class.loader=xxx is specified, java_platform_loader() would
+  // be an instance of a user-defined class, so make sure this never happens.
+  assert(Arguments::get_property("java.system.class.loader") == NULL,
+           "archived full module should have been disabled if -Djava.system.class.loader is specified");
   ClassLoaderDataShared::restore_java_system_loader_from_archive(system_loader_data);
 }
 

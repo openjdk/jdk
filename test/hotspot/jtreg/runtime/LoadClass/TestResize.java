@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,7 @@ import java.util.Scanner;
 public class TestResize {
 
   static double MAX_LOAD_FACTOR = 5.0; // see _resize_load_trigger in dictionary.cpp
+  static int CLASSES_TO_LOAD = 30000;
 
   static int getInt(String string) {
     int start = 0;
@@ -73,6 +74,7 @@ public class TestResize {
     analyzer.shouldHaveExitValue(0);
 
     boolean resized = false;
+    boolean checked_load_factor = false;
 
     // Split string into lines using platform independent end of line marker.
     String[] lines = output.split("\\R");
@@ -82,45 +84,57 @@ public class TestResize {
         if (line.contains("resizing system dictionaries")) {
           resized = true;
         }
-      } else if (resized && line.startsWith("Java dictionary (")) {
-        // ex. Java dictionary (table_size=10103, classes=5002)
-        Scanner scanner = new Scanner(line);
-        scanner.next(); // skip "Java"
-        scanner.next(); // skip "dictionary"
-        int table_size = getInt(scanner.next()); // process "(table_size=40423"
-        int classes = getInt(scanner.next()); // process ", classes=50002"
-        scanner.close();
+      } else if (resized) {
+        int index = -1;
+        if ((index = line.indexOf("Java dictionary (")) != -1) {
+          // ex. Java dictionary (table_size=10103, classes=5002)
+          String dict = line.substring(index);
+          Scanner scanner = new Scanner(dict);
+          scanner.next(); // skip "Java"
+          scanner.next(); // skip "dictionary"
+          int table_size = getInt(scanner.next()); // process "(table_size=40423"
+          int classes = getInt(scanner.next()); // process ", classes=50002"
+          scanner.close();
 
-        double loadFactor = (double)classes / (double)table_size;
-        if (loadFactor > MAX_LOAD_FACTOR) {
+          checked_load_factor = classes >= CLASSES_TO_LOAD;
 
-          // We've hit an error, so print all of the output.
-          System.out.println(output);
+          double loadFactor = (double)classes / (double)table_size;
+          if (loadFactor > MAX_LOAD_FACTOR) {
 
-          throw new RuntimeException("Load factor too high, expected MAX " + MAX_LOAD_FACTOR +
-            ", got " + loadFactor + " [table size " + table_size + ", number of clases " + classes + "]");
-        } else {
-          System.out.println("PASS table_size: " + table_size + ", classes: " + classes +
-          ", load factor: " + loadFactor + " <= " + MAX_LOAD_FACTOR);
-          // There are more than one system dictionary to check, so keep looking...
+            // We've hit an error, so print all of the output.
+            System.out.println(output);
+
+            throw new RuntimeException("Load factor too high, expected MAX " + MAX_LOAD_FACTOR +
+                  ", got " + loadFactor + " [table size " + table_size + ", number of clases " + classes + "]");
+          } else {
+            checked_load_factor = true;
+            System.out.println("PASS table_size: " + table_size + ", classes: " + classes +
+                ", load factor: " + loadFactor + " <= " + MAX_LOAD_FACTOR);
+                // There are more than one system dictionary to check, so keep looking...
+          }
         }
       }
     }
 
     if (!resized) {
       System.out.println("PASS trivially. No resizing occurred, so did not check the load.");
+    } else {
+      // Make sure the load factor was checked
+      if (!checked_load_factor) {
+        throw new RuntimeException("Test didn't check load factor");
+      }
     }
   }
 
   public static void main(String[] args) throws Exception {
-    // -XX:+PrintSystemDictionaryAtExit will print the details of system dictionary,
+    // -XX:+PrintClassLoaderDataGraphAtExit will print the summary of the dictionaries,
     // that will allow us to calculate the table's load factor.
     // -Xlog:safepoint+cleanup will print out cleanup details at safepoint
     // that will allow us to detect if the system dictionary resized.
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+PrintSystemDictionaryAtExit",
+    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+PrintClassLoaderDataGraphAtExit",
                                                               "-Xlog:safepoint+cleanup",
                                                               "TriggerResize",
-                                                              "50000");
+                                                              String.valueOf(CLASSES_TO_LOAD));
     analyzeOutputOn(pb);
   }
 }

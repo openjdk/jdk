@@ -117,7 +117,7 @@ SystemProperty *Arguments::_jdk_boot_class_path_append = NULL;
 SystemProperty *Arguments::_vm_info = NULL;
 
 GrowableArray<ModulePatchPath*> *Arguments::_patch_mod_prefix = NULL;
-PathString *Arguments::_system_boot_class_path = NULL;
+PathString *Arguments::_boot_class_path = NULL;
 bool Arguments::_has_jimage = false;
 
 char* Arguments::_ext_dirs = NULL;
@@ -389,10 +389,10 @@ void Arguments::process_sun_java_launcher_properties(JavaVMInitArgs* args) {
 // Initialize system properties key and value.
 void Arguments::init_system_properties() {
 
-  // Set up _system_boot_class_path which is not a property but
+  // Set up _boot_class_path which is not a property but
   // relies heavily on argument processing and the jdk.boot.class.path.append
-  // property. It is used to store the underlying system boot class path.
-  _system_boot_class_path = new PathString(NULL);
+  // property. It is used to store the underlying boot class path.
+  _boot_class_path = new PathString(NULL);
 
   PropertyList_add(&_system_properties, new SystemProperty("java.vm.specification.name",
                                                            "Java Virtual Machine Specification",  false));

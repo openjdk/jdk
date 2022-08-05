@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2021, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,7 +26,6 @@
 #ifndef CPU_RISCV_GC_Z_ZGLOBALS_RISCV_HPP
 #define CPU_RISCV_GC_Z_ZGLOBALS_RISCV_HPP
 
-const size_t ZPlatformGranuleSizeShift = 21; // 2MB
 const size_t ZPlatformHeapViews        = 3;
 const size_t ZPlatformCacheLineSize    = 64;
 

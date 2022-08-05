@@ -164,10 +164,7 @@ static void restore_callee_saved_registers(MacroAssembler* _masm, const ABIDescr
 
   __ block_comment("} restore_callee_saved_regs ");
 }
-// Register is a class, but it would be assigned numerical value.
-// "0" is assigned for rax and for xmm0. Thus we need to ignore -Wnonnull.
-PRAGMA_DIAG_PUSH
-PRAGMA_NONNULL_IGNORED
+
 address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
                                        BasicType* in_sig_bt, int total_in_args,
                                        BasicType* out_sig_bt, int total_out_args,
@@ -398,4 +395,3 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
 
   return blob->code_begin();
 }
-PRAGMA_DIAG_POP

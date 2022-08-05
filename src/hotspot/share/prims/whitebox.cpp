@@ -383,9 +383,6 @@ WB_ENTRY(jboolean, WB_isObjectInOldGen(JNIEnv* env, jobject o, jobject obj))
   if (UseG1GC) {
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
     const HeapRegion* hr = g1h->heap_region_containing(p);
-    if (hr == NULL) {
-      return false;
-    }
     return !(hr->is_young());
   }
 #endif
@@ -767,7 +764,10 @@ WB_END
 WB_ENTRY(jboolean, WB_IsFrameDeoptimized(JNIEnv* env, jobject o, jint depth))
   bool result = false;
   if (thread->has_last_Java_frame()) {
-    RegisterMap reg_map(thread);
+    RegisterMap reg_map(thread,
+                        RegisterMap::UpdateMap::include,
+                        RegisterMap::ProcessFrames::include,
+                        RegisterMap::WalkContinuation::skip);
     javaVFrame *jvf = thread->last_java_vframe(&reg_map);
     for (jint d = 0; d < depth && jvf != NULL; d++) {
       jvf = jvf->java_sender();
@@ -1170,7 +1170,7 @@ WB_ENTRY(void, WB_MarkMethodProfiled(JNIEnv* env, jobject o, jobject method))
 
   MethodData* mdo = mh->method_data();
   if (mdo == NULL) {
-    Method::build_interpreter_method_data(mh, CHECK_AND_CLEAR);
+    Method::build_profiling_method_data(mh, CHECK_AND_CLEAR);
     mdo = mh->method_data();
   }
   mdo->init();
@@ -1472,12 +1472,12 @@ WB_ENTRY(jstring, WB_GetCPUFeatures(JNIEnv* env, jobject o))
   return features_string;
 WB_END
 
-int WhiteBox::get_blob_type(const CodeBlob* code) {
+CodeBlobType WhiteBox::get_blob_type(const CodeBlob* code) {
   guarantee(WhiteBoxAPI, "internal testing API :: WhiteBox has to be enabled");
   return CodeCache::get_code_heap(code)->code_blob_type();
 }
 
-CodeHeap* WhiteBox::get_code_heap(int blob_type) {
+CodeHeap* WhiteBox::get_code_heap(CodeBlobType blob_type) {
   guarantee(WhiteBoxAPI, "internal testing API :: WhiteBox has to be enabled");
   return CodeCache::get_code_heap(blob_type);
 }
@@ -1486,7 +1486,7 @@ struct CodeBlobStub {
   CodeBlobStub(const CodeBlob* blob) :
       name(os::strdup(blob->name())),
       size(blob->size()),
-      blob_type(WhiteBox::get_blob_type(blob)),
+      blob_type(static_cast<jint>(WhiteBox::get_blob_type(blob))),
       address((jlong) blob) { }
   ~CodeBlobStub() { os::free((void*) name); }
   const char* const name;
@@ -1566,7 +1566,7 @@ WB_ENTRY(jobjectArray, WB_GetNMethod(JNIEnv* env, jobject o, jobject method, jbo
   return result;
 WB_END
 
-CodeBlob* WhiteBox::allocate_code_blob(int size, int blob_type) {
+CodeBlob* WhiteBox::allocate_code_blob(int size, CodeBlobType blob_type) {
   guarantee(WhiteBoxAPI, "internal testing API :: WhiteBox has to be enabled");
   BufferBlob* blob;
   int full_size = CodeBlob::align_code_offset(sizeof(BufferBlob));
@@ -1590,7 +1590,7 @@ WB_ENTRY(jlong, WB_AllocateCodeBlob(JNIEnv* env, jobject o, jint size, jint blob
     THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(),
       err_msg("WB_AllocateCodeBlob: size is negative: " INT32_FORMAT, size));
   }
-  return (jlong) WhiteBox::allocate_code_blob(size, blob_type);
+  return (jlong) WhiteBox::allocate_code_blob(size, static_cast<CodeBlobType>(blob_type));
 WB_END
 
 WB_ENTRY(void, WB_FreeCodeBlob(JNIEnv* env, jobject o, jlong addr))
@@ -1605,7 +1605,7 @@ WB_ENTRY(jobjectArray, WB_GetCodeHeapEntries(JNIEnv* env, jobject o, jint blob_t
   GrowableArray<CodeBlobStub*> blobs;
   {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    CodeHeap* heap = WhiteBox::get_code_heap(blob_type);
+    CodeHeap* heap = WhiteBox::get_code_heap(static_cast<CodeBlobType>(blob_type));
     if (heap == NULL) {
       return NULL;
     }
@@ -2103,7 +2103,10 @@ WB_ENTRY(jboolean, WB_HandshakeReadMonitors(JNIEnv* env, jobject wb, jobject thr
       if (!jt->has_last_Java_frame()) {
         return;
       }
-      RegisterMap rmap(jt);
+      RegisterMap rmap(jt,
+                       RegisterMap::UpdateMap::include,
+                       RegisterMap::ProcessFrames::include,
+                       RegisterMap::WalkContinuation::skip);
       for (javaVFrame* vf = jt->last_java_vframe(&rmap); vf != NULL; vf = vf->java_sender()) {
         GrowableArray<MonitorInfo*> *monitors = vf->monitors();
         if (monitors != NULL) {

@@ -3474,7 +3474,6 @@ void TemplateTable::_new() {
   Label slow_case;
   Label done;
   Label initialize_header;
-  Label initialize_object; // including clearing the fields
 
   __ get_cpool_and_tags(x14, x10);
   // Make sure the class we're about to instantiate has been resolved.
@@ -3508,15 +3507,9 @@ void TemplateTable::_new() {
   //  If TLAB is enabled:
   //    Try to allocate in the TLAB.
   //    If fails, go to the slow path.
-  //  Else If inline contiguous allocations are enabled:
-  //    Try to allocate in eden.
-  //    If fails due to heap end, go to slow path
-  //
-  //  If TLAB is enabled OR inline contiguous is enabled:
   //    Initialize the allocation.
   //    Exit.
   //  Go to slow path.
-  const bool allow_shared_alloc = Universe::heap()->supports_inline_contig_alloc();
 
   if (UseTLAB) {
     __ tlab_allocate(x10, x13, 0, noreg, x11, slow_case);
@@ -3524,25 +3517,10 @@ void TemplateTable::_new() {
     if (ZeroTLAB) {
       // the fields have been already cleared
       __ j(initialize_header);
-    } else {
-      // initialize both the header and fields
-      __ j(initialize_object);
     }
-  } else {
-    // Allocation in the shared Eden, if allowed.
-    //
-    // x13: instance size in bytes
-    if (allow_shared_alloc) {
-      __ eden_allocate(x10, x13, 0, x28, slow_case);
-    }
-  }
 
-  // If USETLAB or allow_shared_alloc are true, the object is created above and
-  // there is an initialized need. Otherwise, skip and go to the slow path.
-  if (UseTLAB || allow_shared_alloc) {
     // The object is initialized before the header. If the object size is
     // zero, go directly to the header initialization.
-    __ bind(initialize_object);
     __ sub(x13, x13, sizeof(oopDesc));
     __ beqz(x13, initialize_header);
 
@@ -3834,12 +3812,16 @@ void TemplateTable::monitorenter()
    {
      Label entry, loop;
      // 1. compute new pointers            // esp: old expression stack top
+
+     __ check_extended_sp();
+     __ sub(sp, sp, entry_size);           // make room for the monitor
+     __ sd(sp, Address(fp, frame::interpreter_frame_extended_sp_offset * wordSize));
+
      __ ld(c_rarg1, monitor_block_bot);    // c_rarg1: old expression stack bottom
      __ sub(esp, esp, entry_size);         // move expression stack top
      __ sub(c_rarg1, c_rarg1, entry_size); // move expression stack bottom
      __ mv(c_rarg3, esp);                  // set start value for copy loop
      __ sd(c_rarg1, monitor_block_bot);    // set new monitor block bottom
-     __ sub(sp, sp, entry_size);           // make room for the monitor
 
      __ j(entry);
      // 2. move expression stack contents
