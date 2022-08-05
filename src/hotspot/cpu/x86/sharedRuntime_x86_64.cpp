@@ -173,7 +173,7 @@ class RegisterSaver {
 
 OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_frame_words, int* total_frame_words, bool save_wide_vectors) {
   int off = 0;
-  int num_xmm_regs = XMMRegisterImpl::available_xmm_registers();
+  int num_xmm_regs = XMMRegister::available_xmm_registers();
 #if COMPILER2_OR_JVMCI
   if (save_wide_vectors && UseAVX == 0) {
     save_wide_vectors = false; // vectors larger than 16 byte long are supported only with AVX
@@ -223,7 +223,7 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
 #if COMPILER2_OR_JVMCI
       base_addr = XSAVE_AREA_OPMASK_BEGIN;
       off = 0;
-      for(int n = 0; n < KRegisterImpl::number_of_registers; n++) {
+      for(int n = 0; n < KRegister::number_of_registers; n++) {
         __ kmov(Address(rsp, base_addr+(off++*8)), as_KRegister(n));
       }
 #endif
@@ -240,7 +240,7 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
 #if COMPILER2_OR_JVMCI
       base_addr = XSAVE_AREA_OPMASK_BEGIN;
       off = 0;
-      for(int n = 0; n < KRegisterImpl::number_of_registers; n++) {
+      for(int n = 0; n < KRegister::number_of_registers; n++) {
         __ kmov(Address(rsp, base_addr+(off++*8)), as_KRegister(n));
       }
 #endif
@@ -363,7 +363,7 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
 }
 
 void RegisterSaver::restore_live_registers(MacroAssembler* masm, bool restore_wide_vectors) {
-  int num_xmm_regs = XMMRegisterImpl::available_xmm_registers();
+  int num_xmm_regs = XMMRegister::available_xmm_registers();
   if (frame::arg_reg_save_area_bytes != 0) {
     // Pop arg register save area
     __ addptr(rsp, frame::arg_reg_save_area_bytes);
@@ -403,7 +403,7 @@ void RegisterSaver::restore_live_registers(MacroAssembler* masm, bool restore_wi
 #if COMPILER2_OR_JVMCI
       base_addr = XSAVE_AREA_OPMASK_BEGIN;
       off = 0;
-      for (int n = 0; n < KRegisterImpl::number_of_registers; n++) {
+      for (int n = 0; n < KRegister::number_of_registers; n++) {
         __ kmov(as_KRegister(n), Address(rsp, base_addr+(off++*8)));
       }
 #endif
@@ -420,7 +420,7 @@ void RegisterSaver::restore_live_registers(MacroAssembler* masm, bool restore_wi
 #if COMPILER2_OR_JVMCI
       base_addr = XSAVE_AREA_OPMASK_BEGIN;
       off = 0;
-      for (int n = 0; n < KRegisterImpl::number_of_registers; n++) {
+      for (int n = 0; n < KRegister::number_of_registers; n++) {
         __ kmov(as_KRegister(n), Address(rsp, base_addr+(off++*8)));
       }
 #endif
@@ -464,8 +464,8 @@ bool SharedRuntime::is_wide_vector(int size) {
 // refer to 4-byte stack slots.  All stack slots are based off of the stack pointer
 // as framesizes are fixed.
 // VMRegImpl::stack0 refers to the first slot 0(sp).
-// and VMRegImpl::stack0+1 refers to the memory word 4-byes higher.  Register
-// up to RegisterImpl::number_of_registers) are the 64-bit
+// and VMRegImpl::stack0+1 refers to the memory word 4-byes higher.
+// Register up to Register::number_of_registers are the 64-bit
 // integer registers.
 
 // Note: the INPUTS in sig_bt are in units of Java argument words, which are
@@ -1806,12 +1806,12 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
 
 #ifdef ASSERT
-  bool reg_destroyed[RegisterImpl::number_of_registers];
-  bool freg_destroyed[XMMRegisterImpl::number_of_registers];
-  for ( int r = 0 ; r < RegisterImpl::number_of_registers ; r++ ) {
+  bool reg_destroyed[Register::number_of_registers];
+  bool freg_destroyed[XMMRegister::number_of_registers];
+  for ( int r = 0 ; r < Register::number_of_registers ; r++ ) {
     reg_destroyed[r] = false;
   }
-  for ( int f = 0 ; f < XMMRegisterImpl::number_of_registers ; f++ ) {
+  for ( int f = 0 ; f < XMMRegister::number_of_registers ; f++ ) {
     freg_destroyed[f] = false;
   }
 
