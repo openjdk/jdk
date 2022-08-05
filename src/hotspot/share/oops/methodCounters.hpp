@@ -48,14 +48,6 @@ class MethodCounters : public Metadata {
 #if INCLUDE_JVMTI
   u2                _number_of_breakpoints;      // fullspeed debugging support
 #endif
-  // NMethod age is a counter for warm methods detection in the code cache sweeper.
-  // The counter is reset by the sweeper and is decremented by some of the compiled
-  // code. The counter values are interpreted as follows:
-  // 1. (HotMethodDetection..INT_MAX] - initial value, no counters inserted
-  // 2. [1..HotMethodDetectionLimit)  - the method is warm, the counter is used
-  //                                    to figure out which methods can be flushed.
-  // 3. (INT_MIN..0]                  - method is hot and will deopt and get
-  //                                    recompiled without the counters
   u1                _highest_comp_level;          // Highest compile level this method has ever seen.
   u1                _highest_osr_comp_level;      // Same for OSR level
 

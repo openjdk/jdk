@@ -985,11 +985,6 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, PrintMethodFlushingStatistics, false, DIAGNOSTIC,           \
           "print statistics about method flushing")                         \
                                                                             \
-  product(intx, HotMethodDetectionLimit, 100000, DIAGNOSTIC,                \
-          "Number of compiled code invocations after which "                \
-          "the method is considered as hot by the flusher")                 \
-          range(1, max_jint)                                                \
-                                                                            \
   product(intx, MinPassesBeforeFlush, 10, DIAGNOSTIC,                       \
           "Minimum number of sweeper passes before an nmethod "             \
           "can be flushed")                                                 \
