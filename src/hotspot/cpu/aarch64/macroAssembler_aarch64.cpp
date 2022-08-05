@@ -861,7 +861,7 @@ address MacroAssembler::trampoline_call(Address entry, CodeBuffer* cbuf) {
 
   // We might need a trampoline if branches are far.
   bool need_trampoline = far_branches();
-  if (!need_trampoline && entry.rspec().type() == relocInfo::runtime_call_type && !CodeCache::contains(entry.target())) {
+  if (!need_trampoline && entry.rspec().type() == relocInfo::runtime_call_type && !CodeCache::contains(target)) {
     // If it is a runtime call of an address outside small CodeCache,
     // we need to check whether it is in range.
     assert(target < CodeCache::low_bound() || target >= CodeCache::high_bound(), "target is inside CodeCache");
