@@ -717,7 +717,7 @@ public class BasicFileChooserUI extends FileChooserUI {
                         } else {
                             ArrayList<File> fList = new ArrayList<File>(objects.length);
                             for (Object object : objects) {
-                                File f = (File) object;
+                                File f = (File)object;
                                 boolean isDir = f.isDirectory();
                                 Path path = f.toPath();
                                 if ((chooser.isFileSelectionEnabled() && !isDir)
@@ -744,8 +744,7 @@ public class BasicFileChooserUI extends FileChooserUI {
                         setDirectorySelected(true);
                         setDirectory(file);
                         if (usesSingleFilePane) {
-                            Path path = Paths.get(file.getPath());
-                            if (Files.isSymbolicLink(path)) {
+                            if (Files.isSymbolicLink(file.toPath())) {
                                 chooser.setSelectedFile(file);
                             } else {
                                 chooser.setSelectedFile(null);

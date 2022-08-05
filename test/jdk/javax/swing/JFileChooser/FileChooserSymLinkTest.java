@@ -22,7 +22,6 @@
  */
 
 import java.awt.BorderLayout;
-import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.beans.PropertyChangeEvent;
@@ -114,15 +113,15 @@ public class FileChooserSymLinkTest {
         frame = new JFrame("JFileChooser Symbolic Link test");
         panel = new JPanel(new BorderLayout());
         multiSelection = new JCheckBox("Enable Multi-Selection");
-        pathList = new JTextArea(10,50);
+        pathList = new JTextArea(10, 50);
         jfc = new JFileChooser(new File("C:\\"));
-        passFailJFrame = new PassFailJFrame("Test Instructions",INSTRUCTIONS,5L,35,40);
+        passFailJFrame = new PassFailJFrame("Test Instructions", INSTRUCTIONS, 5L, 35, 40);
 
         PassFailJFrame.addTestWindow(frame);
         PassFailJFrame.positionTestWindow(frame, PassFailJFrame.Position.HORIZONTAL);
         frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-        panel.add(multiSelection,BorderLayout.EAST);
-        panel.add(new JScrollPane(pathList),BorderLayout.WEST);
+        panel.add(multiSelection, BorderLayout.EAST);
+        panel.add(new JScrollPane(pathList), BorderLayout.WEST);
         jfc.setDialogType(JFileChooser.CUSTOM_DIALOG);
         jfc.setControlButtonsAreShown(false);
         jfc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
