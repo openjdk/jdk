@@ -362,3 +362,5 @@ void os::current_thread_enable_wx(WXMode mode) {
   pthread_jit_write_protect_np(mode == WXExec);
 }
 #endif
+
+void os::setup_fpu() {}

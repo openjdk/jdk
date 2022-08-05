@@ -99,7 +99,7 @@ class CodeHeap : public CHeapObj<mtCode> {
   size_t       _max_allocated_capacity;          // Peak capacity that was allocated during lifetime of the heap
 
   const char*  _name;                            // Name of the CodeHeap
-  const int    _code_blob_type;                  // CodeBlobType it contains
+  const CodeBlobType _code_blob_type;            // CodeBlobType it contains
   int          _blob_count;                      // Number of CodeBlobs
   int          _nmethod_count;                   // Number of nmethods
   int          _adapter_count;                   // Number of adapters
@@ -146,7 +146,7 @@ class CodeHeap : public CHeapObj<mtCode> {
   void on_code_mapping(char* base, size_t size);
 
  public:
-  CodeHeap(const char* name, const int code_blob_type);
+  CodeHeap(const char* name, const CodeBlobType code_blob_type);
 
   // Heap extents
   bool  reserve(ReservedSpace rs, size_t committed_size, size_t segment_size);
@@ -205,9 +205,9 @@ class CodeHeap : public CHeapObj<mtCode> {
   size_t unallocated_capacity() const            { return max_capacity() - allocated_capacity(); }
 
   // Returns true if the CodeHeap contains CodeBlobs of the given type
-  bool accepts(int code_blob_type) const         { return (_code_blob_type == CodeBlobType::All) ||
+  bool accepts(CodeBlobType code_blob_type) const{ return (_code_blob_type == CodeBlobType::All) ||
                                                           (_code_blob_type == code_blob_type); }
-  int code_blob_type() const                     { return _code_blob_type; }
+  CodeBlobType code_blob_type() const            { return _code_blob_type; }
 
   // Debugging / Profiling
   const char* name() const                       { return _name; }

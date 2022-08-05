@@ -36,3 +36,8 @@ vmTestbase/vm/mlvm/mixed/stress/regression/b6969574/INDIFY_Test.java 8265295 lin
 serviceability/sa/TestJhsdbJstackMixed.java 8248675 linux-aarch64
 
 serviceability/jvmti/VMObjectAlloc/VMObjectAllocTest.java 8288430 generic-all
+
+java/lang/Integer/BitTwiddle.java 8291649 generic-x64
+java/lang/Long/BitTwiddle.java    8291649 generic-x64
+java/util/zip/TestCRC32C.java     8291649 generic-x64
+java/util/zip/TestChecksum.java   8291649 generic-x64

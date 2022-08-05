@@ -33,7 +33,7 @@
 
 // Implementation of Heap
 
-CodeHeap::CodeHeap(const char* name, const int code_blob_type)
+CodeHeap::CodeHeap(const char* name, const CodeBlobType code_blob_type)
   : _code_blob_type(code_blob_type) {
   _name                         = name;
   _number_of_committed_segments = 0;
