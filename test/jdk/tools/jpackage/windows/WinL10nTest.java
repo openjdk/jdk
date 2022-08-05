@@ -22,17 +22,21 @@
  */
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import jdk.jpackage.test.TKit;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.PackageType;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.Annotations.Parameters;
+
+import java.util.Arrays;
 import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
-import java.util.stream.Collectors;
 import jdk.jpackage.test.Executor;
+
+import static jdk.jpackage.test.WindowsHelper.getTempDirectory;
 
 /*
  * @test
@@ -88,11 +92,14 @@ public class WinL10nTest {
             {new WixFileInitializer[] {
                 WixFileInitializer.create("c.wxl", "it"),
                 WixFileInitializer.createMalformed("b.wxl")
-            }, null, null}
+            }, null, null},
+            {new WixFileInitializer[] {
+                WixFileInitializer.create("MsiInstallerStrings_de.wxl", "de")
+            }, "en-us", null},
         });
     }
 
-    private final static Stream<String> getLightCommandLine(
+    private static Stream<String> getLightCommandLine(
             Executor.Result result) {
         return result.getOutput().stream().filter(s -> {
             s = s.trim();
@@ -101,8 +108,16 @@ public class WinL10nTest {
         });
     }
 
+    private static List<TKit.TextStreamVerifier> createDefaultL10nFilesLocVerifiers(Path tempDir) {
+        return Arrays.stream(DEFAULT_L10N_FILES).map(loc ->
+                TKit.assertTextStream("-loc " + tempDir.resolve(
+                        String.format("config/MsiInstallerStrings_%s.wxl", loc)).normalize()))
+                .toList();
+    }
+
     @Test
     public void test() throws IOException {
+        final Path tempRoot = TKit.createTempDirectory("tmp");
 
         final boolean allWxlFilesValid;
         if (wxlFileInitializers != null) {
@@ -119,6 +134,9 @@ public class WinL10nTest {
             // 1. Set fake run time to save time by skipping jlink step of jpackage.
             // 2. Instruct test to save jpackage output.
             cmd.setFakeRuntime().saveConsoleOutput(true);
+            Path tempDir = getTempDirectory(cmd, tempRoot);
+            Files.createDirectories(tempDir.getParent());
+            cmd.addArguments("--temp", tempDir.toString());
         })
         .addBundleVerifier((cmd, result) -> {
             if (expectedCulture != null) {
@@ -134,8 +152,14 @@ public class WinL10nTest {
             if (wxlFileInitializers != null) {
                 if (allWxlFilesValid) {
                     for (var v : wxlFileInitializers) {
-                        v.createCmdOutputVerifier(resourceDir).apply(
-                                getLightCommandLine(result));
+                        if (!v.name.startsWith("MsiInstallerStrings_")) {
+                            v.createCmdOutputVerifier(resourceDir).apply(
+                                    getLightCommandLine(result));
+                        }
+                    }
+                    Path tempDir = getTempDirectory(cmd, tempRoot).toAbsolutePath();
+                    for (var v : createDefaultL10nFilesLocVerifiers(tempDir)) {
+                        v.apply(getLightCommandLine(result));
                     }
                 } else {
                     Stream.of(wxlFileInitializers)
@@ -168,7 +192,7 @@ public class WinL10nTest {
         test.run();
     }
 
-    final private WixFileInitializer wxlFileInitializers[];
+    final private WixFileInitializer[] wxlFileInitializers;
     final private String expectedCulture;
     final private String expectedErrorMessage;
     private Path resourceDir;
@@ -221,7 +245,7 @@ public class WinL10nTest {
 
         TKit.TextStreamVerifier createCmdOutputVerifier(Path root) {
             return TKit.assertTextStream(
-                    root.resolve(name).toAbsolutePath().toString());
+                    "-loc " + root.resolve(name).toAbsolutePath().normalize());
         }
 
         boolean isValid() {
@@ -236,4 +260,6 @@ public class WinL10nTest {
         private final String name;
         private final String culture;
     }
+
+    private static final String[] DEFAULT_L10N_FILES = { "de", "en", "ja", "zh_CN" };
 }
