@@ -111,7 +111,7 @@ public class TranslationTest extends TestRunner {
                            case
                            case
                            case
-                           default
+                           case ..., default
                    default
                """);
     }
@@ -161,14 +161,14 @@ public class TranslationTest extends TestRunner {
                                                switch
                                                    case
                                                    case
-                                                   default
+                                                   case ..., default
                                            case
                                                switch
                                                    case
                                                    case
-                                                   default
-                                           default
-                                   default
+                                                   case ..., default
+                                           case ..., default
+                                   case ..., default
                            case
                                switch
                                    case
@@ -177,15 +177,15 @@ public class TranslationTest extends TestRunner {
                                                switch
                                                    case
                                                    case
-                                                   default
+                                                   case ..., default
                                            case
                                                switch
                                                    case
                                                    case
-                                                   default
-                                           default
-                                   default
-                           default
+                                                   case ..., default
+                                           case ..., default
+                                   case ..., default
+                           case ..., default
                    default
                """);
     }
@@ -277,6 +277,8 @@ public class TranslationTest extends TestRunner {
                 int prevIndent = indent;
                 if (node.labels.size() == 1 && node.labels.head.hasTag(Tag.DEFAULTCASELABEL)) {
                     appendLine("default");
+                } else if (node.labels.stream().anyMatch(l -> l.hasTag(Tag.DEFAULTCASELABEL))) {
+                    appendLine("case ..., default");
                 } else {
                     appendLine("case");
                 }
