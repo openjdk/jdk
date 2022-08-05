@@ -24,7 +24,8 @@
 /*
  * @test
  * @bug 8291637
- * @run main/othervm -Dhttp.keepAlive.time.server=20 -esa -ea B8291637
+ * @run main/othervm -Dhttp.keepAlive.time.server=20 -esa -ea B8291637 timeout
+ * @run main/othervm -Dhttp.keepAlive.time.server=20 -esa -ea B8291637 max
  */
 
 import java.io.IOException;
@@ -40,12 +41,14 @@ public class B8291637 {
     static class Server extends Thread {
         final ServerSocket serverSocket;
         final int port;
+        final String param; // the parameter to test "max" or "timeout"
         volatile Socket s;
 
-        public Server() throws IOException {
+        public Server(String param) throws IOException {
             serverSocket = new ServerSocket(0);
             port = serverSocket.getLocalPort();
             setDaemon(true);
+            this.param = param;
         }
 
         public int getPort() {
@@ -76,7 +79,7 @@ public class B8291637 {
                             "HTTP/1.1 200 OK\r\n" +
                             "Content-Length: 11\r\n" +
                             "Connection: Keep-Alive\r\n" +
-                            "Keep-Alive: timeout=-10\r\n" + // invalid negative value
+                            "Keep-Alive: " + param + "=-10\r\n" + // invalid negative value
                             "\r\n" +
                             "Hello World";
                     os.write(resp.getBytes(StandardCharsets.ISO_8859_1));
@@ -91,6 +94,8 @@ public class B8291637 {
                      * then the timeout will occur the first time the keep alive
                      * thread wakes up which is after 5 seconds. This allows
                      * very large leeway with slow running hardware.
+                     *
+                     * Same behavior should occur in case of max=-1 with the bug
                      */
                     if (diff < 19) {
                         passed.complete(false);
@@ -99,14 +104,15 @@ public class B8291637 {
                     }
                     System.out.println("Time diff = " + diff);
                 }
-            } catch (IOException e) {
-                System.err.println("Server exception terminating");
+            } catch (Throwable t) {
+                System.err.println("Server exception terminating: " + t);
+                passed.completeExceptionally(t);
             }
         }
     }
 
     public static void main(String[] args) throws Exception {
-        Server server = new Server();
+        Server server = new Server(args[0]);
         int port = server.getPort();
         server.start();
         URL url = new URL("http://127.0.0.1:" + Integer.toString(port) + "/");
@@ -119,12 +125,14 @@ public class B8291637 {
         }
         i.close();
         System.out.println("Read " + count );
-        if (!passed.get()) {
+        try {
+            if (!passed.get()) {
+                throw new RuntimeException("Test failed");
+            } else {
+                System.out.println("Test passed");
+            }
+        } finally {
             server.close();
-            throw new RuntimeException("Test failed");
-        } else {
-            server.close();
-            System.out.println("Test passed");
         }
     }
 }

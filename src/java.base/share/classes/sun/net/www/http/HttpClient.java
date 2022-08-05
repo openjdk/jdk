@@ -900,6 +900,9 @@ public class HttpClient extends NetworkClient {
                             responses.findValue("Keep-Alive"));
                         /* default should be larger in case of proxy */
                         keepAliveConnections = p.findInt("max", usingProxy?50:5);
+                        if (keepAliveConnections < 0) {
+                            keepAliveConnections = usingProxy?50:5;
+                        }
                         keepAliveTimeout = p.findInt("timeout", -1);
                         if (keepAliveTimeout < -1) {
                             // if the server specified a negative (invalid) value
