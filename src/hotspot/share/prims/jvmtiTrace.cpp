@@ -30,6 +30,7 @@
 #include "memory/resourceArea.hpp"
 #include "prims/jvmtiTrace.hpp"
 #include "runtime/javaThread.hpp"
+#include "runtime/threadJavaClasses.hpp"
 
 //
 // class JvmtiTrace

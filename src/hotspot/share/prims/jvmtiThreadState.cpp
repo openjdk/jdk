@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "classfile/javaClasses.inline.hpp"
 #include "jvmtifiles/jvmtiEnv.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oopHandle.inline.hpp"
@@ -36,6 +35,7 @@
 #include "runtime/jniHandles.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/stackFrameStream.inline.hpp"
+#include "runtime/threadJavaClasses.inline.hpp"
 #include "runtime/vframe.hpp"
 
 // marker for when the stack depth has been reset and is now unknown.

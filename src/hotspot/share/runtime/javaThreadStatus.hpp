@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_CLASSFILE_JAVATHREADSTATUS_HPP
-#define SHARE_CLASSFILE_JAVATHREADSTATUS_HPP
+#ifndef SHARE_RUNTIME_JAVATHREADSTATUS_HPP
+#define SHARE_RUNTIME_JAVATHREADSTATUS_HPP
 
 #include "jvmtifiles/jvmti.h"
 
@@ -59,4 +59,4 @@ enum class JavaThreadStatus : int {
   TERMINATED               = JVMTI_THREAD_STATE_TERMINATED
 };
 
-#endif // SHARE_CLASSFILE_JAVATHREADSTATUS_HPP
+#endif // SHARE_RUNTIME_JAVATHREADSTATUS_HPP

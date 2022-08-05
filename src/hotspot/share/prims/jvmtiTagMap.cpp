@@ -61,6 +61,7 @@
 #include "runtime/reflectionUtils.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/timerTrace.hpp"
+#include "runtime/threadJavaClasses.inline.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/vframe.hpp"
 #include "runtime/vmThread.hpp"

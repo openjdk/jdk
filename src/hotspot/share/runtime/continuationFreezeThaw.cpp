@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "classfile/javaClasses.inline.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.inline.hpp"
 #include "code/compiledMethod.inline.hpp"
@@ -62,6 +61,7 @@
 #include "runtime/stackFrameStream.inline.hpp"
 #include "runtime/stackOverflow.hpp"
 #include "runtime/stackWatermarkSet.inline.hpp"
+#include "runtime/threadJavaClasses.inline.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/macros.hpp"

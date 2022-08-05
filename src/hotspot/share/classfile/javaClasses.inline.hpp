@@ -195,30 +195,6 @@ bool java_lang_ref_Reference::is_phantom(oop ref) {
   return InstanceKlass::cast(ref->klass())->reference_type() == REF_PHANTOM;
 }
 
-inline oop java_lang_Thread::continuation(oop java_thread) {
-  return java_thread->obj_field(_continuation_offset);
-}
-
-inline int64_t java_lang_Thread::thread_id(oop java_thread) {
-  return java_thread->long_field(_tid_offset);
-}
-
-inline oop java_lang_VirtualThread::vthread_scope() {
-  oop base = vmClasses::VirtualThread_klass()->static_field_base_raw();
-  return base->obj_field(static_vthread_scope_offset);
-}
-
-#if INCLUDE_JFR
-inline u2 java_lang_Thread::jfr_epoch(oop ref) {
-  return ref->short_field(_jfr_epoch_offset);
-}
-
-inline void java_lang_Thread::set_jfr_epoch(oop ref, u2 epoch) {
-  ref->short_field_put(_jfr_epoch_offset, epoch);
-}
-#endif // INCLUDE_JFR
-
-
 inline void java_lang_invoke_CallSite::set_target_volatile(oop site, oop target) {
   site->obj_field_put_volatile(_target_offset, target);
 }

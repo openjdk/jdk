@@ -27,10 +27,10 @@
 
 #include "jfr/support/jfrThreadId.hpp"
 
-#include "classfile/javaClasses.inline.hpp"
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceIdEpoch.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
 #include "memory/allocation.inline.hpp"
+#include "runtime/threadJavaClasses.inline.hpp"
 
 static constexpr const u2 excluded_bit = 32768;
 static constexpr const u2 epoch_mask = excluded_bit - 1;

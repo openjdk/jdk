@@ -30,6 +30,7 @@
 #include "jvmtifiles/jvmti.h"
 #include "runtime/javaThread.hpp"
 #include "runtime/osThread.hpp"
+#include "runtime/threadJavaClasses.inline.hpp"
 
 struct jvmti_thread_state {
   u8 id;

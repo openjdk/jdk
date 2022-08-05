@@ -26,14 +26,14 @@
 #define SHARE_SERVICES_THREADSERVICE_HPP
 
 #include "classfile/classLoader.hpp"
-#include "classfile/javaClasses.hpp"
-#include "classfile/javaThreadStatus.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/init.hpp"
 #include "runtime/javaThread.hpp"
+#include "runtime/javaThreadStatus.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/perfData.hpp"
 #include "runtime/safepoint.hpp"
+#include "runtime/threadJavaClasses.hpp"
 #include "runtime/threadSMR.hpp"
 #include "services/management.hpp"
 

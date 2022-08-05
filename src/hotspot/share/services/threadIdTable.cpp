@@ -24,10 +24,10 @@
 */
 
 #include "precompiled.hpp"
-#include "classfile/javaClasses.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaThread.inline.hpp"
+#include "runtime/threadJavaClasses.inline.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/timerTrace.hpp"
 #include "services/threadIdTable.hpp"

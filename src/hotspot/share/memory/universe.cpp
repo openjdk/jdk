@@ -72,6 +72,7 @@
 #include "runtime/java.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/jniHandles.hpp"
+#include "runtime/threadJavaClasses.hpp"
 #include "runtime/threads.hpp"
 #include "runtime/timerTrace.hpp"
 #include "services/memoryService.hpp"

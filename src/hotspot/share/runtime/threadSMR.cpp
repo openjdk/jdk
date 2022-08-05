@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "classfile/javaClasses.inline.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
 #include "runtime/atomic.hpp"
@@ -32,6 +31,7 @@
 #include "runtime/orderAccess.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/thread.inline.hpp"
+#include "runtime/threadJavaClasses.inline.hpp"
 #include "runtime/threads.hpp"
 #include "runtime/threadSMR.inline.hpp"
 #include "runtime/vmOperations.hpp"

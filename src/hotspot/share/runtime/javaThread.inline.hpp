@@ -28,7 +28,7 @@
 
 #include "runtime/javaThread.hpp"
 
-#include "classfile/javaClasses.hpp"
+#include "classfile/vmClasses.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "memory/universe.hpp"
 #include "oops/instanceKlass.hpp"
@@ -38,6 +38,7 @@
 #include "runtime/continuationEntry.inline.hpp"
 #include "runtime/nonJavaThread.hpp"
 #include "runtime/orderAccess.hpp"
+#include "runtime/threadJavaClasses.hpp"
 #include "runtime/safepoint.hpp"
 
 inline void JavaThread::set_suspend_flag(SuspendFlags f) {

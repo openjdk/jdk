@@ -27,6 +27,7 @@
 
 #include "classfile/javaClasses.hpp"
 #include "runtime/continuationJavaClasses.hpp"
+#include "runtime/threadJavaClasses.hpp"
 #include "utilities/macros.hpp"
 
 #define ALL_INJECTED_FIELDS(macro)          \
