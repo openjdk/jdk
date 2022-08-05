@@ -51,7 +51,7 @@ class Request {
         do {
             startLine = readLine();
             /* skip blank lines */
-        } while (startLine != null && startLine.equals (""));
+        } while ("".equals(startLine));
     }
 
 
