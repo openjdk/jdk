@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2013 SAP SE. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,22 +19,40 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef OS_CPU_LINUX_PPC_OS_LINUX_PPC_HPP
-#define OS_CPU_LINUX_PPC_OS_LINUX_PPC_HPP
+super public class compiler/stringopts/SideEffectBeforeConstructor
+	version 51:0
+{
+  public static Field result:I;
 
-  static void setup_fpu() {}
+  static Method "<clinit>":"()V"
+	stack 2 locals 0
+  {
+		iconst_0;
+		putstatic	Field result:"I";
+		return;
+  }
+  public Method "<init>":"()V"
+	stack 1 locals 1
+  {
+		aload_0;
+		invokespecial	Method java/lang/Object."<init>":"()V";
+		return;
+  }
 
-  // Used to register dynamic code cache area with the OS
-  // Note: Currently only used in 64 bit Windows implementations
-  static bool register_code_area(char *low, char *high) { return true; }
-
-#if !defined(ABI_ELFv2)
-  // ppc (not ppcle) has function descriptors
-  #define HAVE_FUNCTION_DESCRIPTORS 1
-  static void* resolve_function_descriptor(void* p);
-#endif
-
-#endif // OS_CPU_LINUX_PPC_OS_LINUX_PPC_HPP
+  public static Method test:"(Ljava/lang/String;)V"
+	stack 4 locals 1
+  {
+		new	class java/lang/StringBuffer;
+		dup;
+		getstatic	Field result:"I";
+		iconst_1;
+		iadd;
+		putstatic	Field result:"I";
+		aload_0;
+		invokespecial	Method java/lang/StringBuffer."<init>":"(Ljava/lang/String;)V";
+		invokevirtual	Method java/lang/StringBuffer.toString:"()Ljava/lang/String;";
+		return;
+  }
+}
