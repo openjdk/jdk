@@ -21,12 +21,12 @@
  * questions.
  */
 
-/* 
+/*
  * @test
  * @bug 7189422
  * @key headful
  * @requires (os.family == "mac")
- * @summary Verifies arrow position in submenu with empty title 
+ * @summary Verifies arrow position in submenu with empty title
  * @run main TestSubMenuArrowPosition
  */
 
@@ -80,8 +80,8 @@ public class TestSubMenuArrowPosition {
 
             p = subMenu.getLocationOnScreen();
             BufferedImage img =
-                    robot.createScreenCapture(new Rectangle(p.x, p.y, 
-                                              subMenu.getWidth(), 
+                    robot.createScreenCapture(new Rectangle(p.x, p.y,
+                                              subMenu.getWidth(),
                                               subMenu.getHeight()));
 
             System.out.println("width " + img.getWidth() +
@@ -90,7 +90,7 @@ public class TestSubMenuArrowPosition {
                                                    img.getHeight() / 2));
             boolean passed = false;
             for (int x = img.getWidth() / 2; x < img.getWidth() - 1; ++x) {
-                System.out.println("x " + x + " rgb = " + 
+                System.out.println("x " + x + " rgb = " +
                                      Integer.toHexString(
                                       img.getRGB(x, img.getHeight() / 2)));
                 Color c = new Color(img.getRGB(x, img.getHeight() / 2));
