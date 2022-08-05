@@ -76,7 +76,7 @@ public class DebugGraphics extends Graphics {
      * down drawing.
      * <p>
      * NOTE: This constructor should not be called by
-     * application, it is for Internal use only. When called directly
+     * applications, it is for internal use only. When called directly
      * it will create an un-usable instance.
      */
     @SuppressWarnings("removal")

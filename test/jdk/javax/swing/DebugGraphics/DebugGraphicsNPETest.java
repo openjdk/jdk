@@ -27,13 +27,11 @@ import javax.swing.SwingUtilities;
 
 /* @test
  * @bug 6521141
- * @key headful
  * @summary Test to check if NPE does not occur when graphics is not
  *  initialized and DebugGraphics instance is created with default
  *  Constructor and used.
  * @run main DebugGraphicsNPETest
  */
-
 public class DebugGraphicsNPETest {
     public static void main(String[] args) throws Exception {
         SwingUtilities.invokeAndWait(new Runnable() {
