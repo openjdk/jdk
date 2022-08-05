@@ -262,27 +262,29 @@ public class PassFailJFrame {
 
     /**
      * Position the instruction frame with testWindow (testcase created
-     * window) by the specified position.
+     * window) by the specified position. If testWindow is null, only
+     * the instruction frame is positioned according to the Position
+     * parameter.
      * Note: This method should be invoked from the method that creates
      * testWindow. At test-level, the testWindow must be made visible
      * after calling this method.
      *
-     * @param testWindow test window that the test is created
+     * @param testWindow test window that the test is created. It can be null.
      * @param position  position can either be:
      *                  HORIZONTAL - the test instruction frame is positioned
      *                  such that its right edge aligns with screen's vertical
-     *                  center and the test window is placed to the right of
-     *                  the instruction frame.
+     *                  center and the test window (if not null) is placed to
+     *                  the right of the instruction frame.
      *
      *                  VERTICAL - the test instruction frame is positioned such
      *                  that its bottom edge aligns with the screen's horizontal
-     *                  center and the test window is placed below the instruction
-     *                  frame.
+     *                  center and the test window (if not null) is placed below
+     *                  the instruction frame.
      *
      *                  TOP_LEFT_CORNER - the test instruction frame is positioned
      *                  such that its top left corner is at the top left corner of
-     *                  the screen and the test window is placed to the right of
-     *                  the instruction frame.
+     *                  the screen and the test window (if not null) is placed to
+     *                  the right of the instruction frame.
      */
     public static void positionTestWindow(Window testWindow, Position position) {
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
@@ -306,8 +308,10 @@ public class PassFailJFrame {
                 e.printStackTrace();
             }
 
-            testWindow.setLocation((frame.getX() + frame.getWidth() + 5),
-                    frame.getY());
+            if (testWindow != null) {
+                testWindow.setLocation((frame.getX() + frame.getWidth() + 5),
+                        frame.getY());
+            }
 
         } else if (position.equals(Position.VERTICAL)) {
             int newY = ((screenSize.height / 2) - frame.getHeight());
@@ -321,8 +325,10 @@ public class PassFailJFrame {
                 e.printStackTrace();
             }
 
-            testWindow.setLocation(frame.getX(),
-                    (frame.getY() + frame.getHeight() + 5));
+            if (testWindow != null) {
+                testWindow.setLocation(frame.getX(),
+                        (frame.getY() + frame.getHeight() + 5));
+            }
 
         } else if (position.equals(Position.TOP_LEFT_CORNER)) {
             frame.setLocation(screenInsets.left, screenInsets.top);
@@ -334,8 +340,10 @@ public class PassFailJFrame {
                 e.printStackTrace();
             }
 
-            testWindow.setLocation((frame.getX() + frame.getWidth() + 5),
-                    frame.getY());
+            if (testWindow != null) {
+                testWindow.setLocation((frame.getX() + frame.getWidth() + 5),
+                        frame.getY());
+            }
         }
         // make instruction frame visible after updating frame & window positions
         frame.setVisible(true);
