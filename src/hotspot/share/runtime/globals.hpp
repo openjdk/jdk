@@ -1365,6 +1365,15 @@ const int ObjectAlignmentInBytes = 8;
           "allocate (for testing only)")                                    \
           range(0, max_uintx)                                               \
                                                                             \
+  product(ccstr, MallocLimit, nullptr, DIAGNOSTIC,                          \
+          "Limit malloc allocation size from hotspot (requires NMT). "      \
+          "Reaching the limit will trigger a fatal error."                  \
+          "Usage:"                                                          \
+          "- MallocLimit=<size> to set a total limit. "                     \
+          "- MallocLimit=<NMT category>:<size>[,<NMT category>:<size>..] "  \
+          "  to set one or more category-specific limits."                  \
+          "Example: -XX:MallocLimit=compiler:500m")                         \
+                                                                            \
   product(intx, TypeProfileWidth, 2,                                        \
           "Number of receiver types to record in call/cast profile")        \
           range(0, 8)                                                       \
