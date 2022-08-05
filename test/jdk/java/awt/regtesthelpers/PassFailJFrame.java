@@ -299,54 +299,42 @@ public class PassFailJFrame {
             int newX = ((screenSize.width / 2) - frame.getWidth());
             frame.setLocation((newX + screenInsets.left),
                     (frame.getY() + screenInsets.top));
-            // added to push the updated frame location to window manager
-            // before using it to reposition the test window.
-            Toolkit.getDefaultToolkit().sync();
-            try {
-                Thread.sleep(500);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-
+            syncLocationToWindowManager();
             if (testWindow != null) {
                 testWindow.setLocation((frame.getX() + frame.getWidth() + 5),
                         frame.getY());
             }
-
         } else if (position.equals(Position.VERTICAL)) {
             int newY = ((screenSize.height / 2) - frame.getHeight());
             frame.setLocation((frame.getX() + screenInsets.left),
                     (newY + screenInsets.top));
-
-            Toolkit.getDefaultToolkit().sync();
-            try {
-                Thread.sleep(500);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-
+            syncLocationToWindowManager();
             if (testWindow != null) {
                 testWindow.setLocation(frame.getX(),
                         (frame.getY() + frame.getHeight() + 5));
             }
-
         } else if (position.equals(Position.TOP_LEFT_CORNER)) {
             frame.setLocation(screenInsets.left, screenInsets.top);
-
-            Toolkit.getDefaultToolkit().sync();
-            try {
-                Thread.sleep(500);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-
+            syncLocationToWindowManager();
             if (testWindow != null) {
                 testWindow.setLocation((frame.getX() + frame.getWidth() + 5),
                         frame.getY());
             }
         }
-        // make instruction frame visible after updating frame & window positions
+        // make instruction frame visible after updating
+        // frame & window positions
         frame.setVisible(true);
+    }
+
+    // this method pushes the updated frame location to window manager
+    // before it is used to reposition the test window.
+    private static void syncLocationToWindowManager() {
+        Toolkit.getDefaultToolkit().sync();
+        try {
+            Thread.sleep(500);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
     /**
