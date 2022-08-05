@@ -23,7 +23,6 @@
 
 import java.awt.Font;
 import javax.swing.DebugGraphics;
-import javax.swing.SwingUtilities;
 
 /* @test
  * @bug 6521141
@@ -34,17 +33,9 @@ import javax.swing.SwingUtilities;
  */
 public class DebugGraphicsNPETest {
     public static void main(String[] args) throws Exception {
-        SwingUtilities.invokeAndWait(new Runnable() {
-            public void run() {
-                runTest();
-            }
-        });
-        System.out.println("Test Pass!");
-    }
-
-    static void runTest() {
         DebugGraphics dg = new DebugGraphics();
         Font font = new Font(Font.SERIF, Font.PLAIN, 10);
         dg.setFont(font);
+        System.out.println("Test Pass!");
     }
 }
