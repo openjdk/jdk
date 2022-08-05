@@ -3652,11 +3652,13 @@ bool PhaseIdealLoop::is_deleteable_safept(Node* sfpt) {
 void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
   assert(loop->_head->is_CountedLoop(), "");
   CountedLoopNode *cl = loop->_head->as_CountedLoop();
-  if (!cl->is_valid_counted_loop(T_INT))
+  if (!cl->is_valid_counted_loop(T_INT)) {
     return;         // skip malformed counted loop
+  }
   Node *incr = cl->incr();
-  if (incr == NULL)
+  if (incr == NULL) {
     return;         // Dead loop?
+  }
   Node *init = cl->init_trip();
   Node *phi  = cl->phi();
   int stride_con = cl->stride_con();
@@ -3665,8 +3667,10 @@ void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
   for (DUIterator i = cl->outs(); cl->has_out(i); i++) {
     Node *out = cl->out(i);
     // Look for other phis (secondary IVs). Skip dead ones
-    if (!out->is_Phi() || out == phi || !has_node(out))
+    if (!out->is_Phi() || out == phi || !has_node(out)) {
       continue;
+    }
+
     PhiNode* phi2 = out->as_Phi();
     Node *incr2 = phi2->in( LoopNode::LoopBackControl );
     // Look for induction variables of the form:  X += constant
@@ -3675,15 +3679,15 @@ void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
         incr2->in(1)->uncast() != phi2 ||
         incr2 == incr ||
         incr2->Opcode() != Op_AddI ||
-        !incr2->in(2)->is_Con())
+        !incr2->in(2)->is_Con()) {
       continue;
+    }
 
-    if (incr2->in(1)->is_ConstraintCast()) {
-      if (!incr2->in(1)->in(0)->is_RangeCheck()) {
-        // The form of Phi->CastXX->AddX appears when using Preconditions.checkIndex, and it would
-        // be recognized as additional IV when 1) Phi != phi2, 2) CastXX is controlled by RangeCheck
-        continue;
-      }
+    if (incr2->in(1)->is_ConstraintCast() && !incr2->in(1)->in(0)->is_RangeCheck()) {
+      // The form of Phi->CastXX->AddX appears when using Preconditions.checkIndex, and it would
+      // be recognized as additional IV when 1) Phi != phi2, 2) CastXX is controlled by RangeCheck
+      // (to reflect changes in LibraryCallKit::inline_preconditions_checkIndex)
+      continue;
     }
     // Check for parallel induction variable (parallel to trip counter)
     // via an affine function.  In particular, count-down loops with
