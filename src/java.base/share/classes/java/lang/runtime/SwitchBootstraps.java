@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,10 @@ import java.lang.invoke.ConstantCallSite;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.stream.Stream;
 
 import jdk.internal.javac.PreviewFeature;
@@ -52,15 +56,21 @@ public class SwitchBootstraps {
 
     private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
 
-    private static final MethodHandle DO_TYPE_SWITCH;
     private static final MethodHandle DO_ENUM_SWITCH;
+    private static final MethodHandle INSTANCEOF_CHECK;
+    private static final MethodHandle EQ_CHECK;
+    private static final MethodHandle NULL_CHECK;
 
     static {
         try {
-            DO_TYPE_SWITCH = LOOKUP.findStatic(SwitchBootstraps.class, "doTypeSwitch",
-                                           MethodType.methodType(int.class, Object.class, int.class, Object[].class));
             DO_ENUM_SWITCH = LOOKUP.findStatic(SwitchBootstraps.class, "doEnumSwitch",
                                            MethodType.methodType(int.class, Enum.class, int.class, Object[].class));
+            INSTANCEOF_CHECK = LOOKUP.findStatic(SwitchBootstraps.class, "instanceofCheck",
+                                           MethodType.methodType(boolean.class, Object.class, Class.class));
+            EQ_CHECK = LOOKUP.findStatic(SwitchBootstraps.class, "eqCheck",
+                                           MethodType.methodType(boolean.class, Object.class, Object.class));
+            NULL_CHECK = LOOKUP.findStatic(SwitchBootstraps.class, "nullCheck",
+                                           MethodType.methodType(boolean.class, Object.class));
         }
         catch (ReflectiveOperationException e) {
             throw new ExceptionInInitializerError(e);
@@ -127,7 +137,8 @@ public class SwitchBootstraps {
         labels = labels.clone();
         Stream.of(labels).forEach(SwitchBootstraps::verifyLabel);
 
-        MethodHandle target = MethodHandles.insertArguments(DO_TYPE_SWITCH, 2, (Object) labels);
+        MethodHandle target  = createMethodHandleSwitch(labels);
+
         return new ConstantCallSite(target);
     }
 
@@ -143,29 +154,64 @@ public class SwitchBootstraps {
         }
     }
 
-    private static int doTypeSwitch(Object target, int startIndex, Object[] labels) {
-        if (target == null)
-            return -1;
+    private static MethodHandle createMethodHandleSwitch(Object[] labels) {
+        MethodHandle mainTest;
+        MethodHandle def = MethodHandles.dropArguments(MethodHandles.constant(int.class, labels.length), 0, Object.class);
+        if (labels.length > 0) {
+            MethodHandle[] testChains = new MethodHandle[labels.length];
+            List<Object> labelsList = new ArrayList<>(Arrays.asList(labels));
+            Collections.reverse(labelsList);
+            for (int i = 0; i < labels.length; i++) {
+                MethodHandle test = def;
+                int idx = labels.length - 1;
+                List<Object> currentLabels = labelsList.subList(0, labels.length - i);
 
-        // Dumbest possible strategy
-        Class<?> targetClass = target.getClass();
-        for (int i = startIndex; i < labels.length; i++) {
-            Object label = labels[i];
-            if (label instanceof Class<?> c) {
-                if (c.isAssignableFrom(targetClass))
-                    return i;
-            } else if (label instanceof Integer constant) {
-                if (target instanceof Number input && constant.intValue() == input.intValue()) {
-                    return i;
-                } else if (target instanceof Character input && constant.intValue() == input.charValue()) {
-                    return i;
+                for (int j = 0; j < currentLabels.size(); j++, idx--) {
+                    Object currentLabel = currentLabels.get(j);
+                    if (j + 1 < currentLabels.size() && currentLabels.get(j + 1) == currentLabel) continue;
+                    MethodHandle currentTest;
+                    if (currentLabel instanceof Class<?>) {
+                        currentTest = INSTANCEOF_CHECK;
+                    } else {
+                        currentTest = EQ_CHECK;
+                    }
+                    test = MethodHandles.guardWithTest(MethodHandles.insertArguments(currentTest, 1, currentLabel),
+                                                       MethodHandles.dropArguments(MethodHandles.constant(int.class, idx), 0, Object.class),
+                                                       test);
                 }
-            } else if (label.equals(target)) {
-                return i;
+                testChains[i] = MethodHandles.dropArguments(test, 0, int.class);
             }
+            mainTest = MethodHandles.tableSwitch(MethodHandles.dropArguments(def, 0, int.class), testChains);
+        } else {
+            mainTest = MethodHandles.dropArguments(def, 0, int.class);
+        }
+        MethodHandle body =
+                MethodHandles.guardWithTest(MethodHandles.dropArguments(NULL_CHECK, 0, int.class),
+                                            MethodHandles.dropArguments(MethodHandles.constant(int.class, -1), 0, int.class, Object.class),
+                                            mainTest);
+        return MethodHandles.permuteArguments(body, MethodType.methodType(int.class, Object.class, int.class), 1, 0);
+    }
+
+    private static boolean instanceofCheck(Object value, Class<?> label) {
+        return label.isAssignableFrom(value.getClass());
+    }
+
+    private static boolean eqCheck(Object value, Object label) {
+        if (label instanceof Integer constant) {
+            if (value instanceof Number input && constant.intValue() == input.intValue()) {
+                return true;
+            } else if (value instanceof Character input && constant.intValue() == input.charValue()) {
+                return true;
+            }
+        } else if (label.equals(value)) {
+            return true;
         }
 
-        return labels.length;
+        return false;
+    }
+
+    private static boolean nullCheck(Object value) {
+        return value == null;
     }
 
     /**
