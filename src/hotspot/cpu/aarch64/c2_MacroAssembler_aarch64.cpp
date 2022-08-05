@@ -1658,7 +1658,6 @@ void C2_MacroAssembler::vector_round_sve(FloatRegister dst, FloatRegister src, F
 
 bool C2_MacroAssembler::emit_trampoline_stub(int insts_call_instruction_offset, address target) {
   if (ciEnv::current()->task() != NULL) {
-    assert(is_c2_compile(ciEnv::current()->task()->comp_level()), "not C2 compilation task");
     PhaseOutput* phase_output = Compile::current()->output();
     if (phase_output != NULL && phase_output->in_scratch_emit_size()) {
       // We don't want to emit a trampoline if C2 is generating dummy
