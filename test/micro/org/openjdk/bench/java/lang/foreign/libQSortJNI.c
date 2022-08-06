@@ -68,7 +68,7 @@ int java_cmp(const void *a, const void *b) {
    int v2 = *((int*)b);
 
    JNIEnv* env;
-   (*VM)->GetEnv(VM, (void**) &env, JNI_VERSION_10);
+   (*VM)->GetEnv(VM, (void**) &env, JNI_VERSION_19);
 
    jclass qsortClass = (*env)->FindClass(env, "org/openjdk/bench/java/lang/foreign/QSort");
    jmethodID methodId = (*env)->GetStaticMethodID(env, qsortClass, "jni_upcall_compar", "(II)I");

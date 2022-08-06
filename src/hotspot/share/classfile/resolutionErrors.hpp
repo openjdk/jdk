@@ -26,7 +26,6 @@
 #define SHARE_CLASSFILE_RESOLUTIONERRORS_HPP
 
 #include "oops/constantPool.hpp"
-#include "utilities/hashtable.hpp"
 
 class ResolutionErrorEntry;
 
@@ -39,48 +38,23 @@ class ResolutionErrorEntry;
 // index of another entry in the table.
 const int CPCACHE_INDEX_MANGLE_VALUE = 1000000;
 
-class ResolutionErrorTable : public Hashtable<ConstantPool*, mtClass> {
-
-private:
-  void free_entry(ResolutionErrorEntry *entry);
+class ResolutionErrorTable : AllStatic {
 
 public:
-  ResolutionErrorTable(int table_size);
 
-  ResolutionErrorEntry* bucket(int i) {
-    return (ResolutionErrorEntry*)Hashtable<ConstantPool*, mtClass>::bucket(i);
-  }
-
-  ResolutionErrorEntry** bucket_addr(int i) {
-    return (ResolutionErrorEntry**)Hashtable<ConstantPool*, mtClass>::bucket_addr(i);
-  }
-
-  void add_entry(int index, ResolutionErrorEntry* new_entry) {
-    Hashtable<ConstantPool*, mtClass>::add_entry(index,
-      (HashtableEntry<ConstantPool*, mtClass>*)new_entry);
-  }
-
-  void add_entry(int index, unsigned int hash,
-                 const constantPoolHandle& pool, int which, Symbol* error, Symbol* message,
+  static void add_entry(const constantPoolHandle& pool, int which, Symbol* error, Symbol* message,
                  Symbol* cause, Symbol* cause_msg);
 
-  void add_entry(int index, unsigned int hash,
-                 const constantPoolHandle& pool, int which, const char* message);
+  static void add_entry(const constantPoolHandle& pool, int which, const char* message);
 
   // find error given the constant pool and constant pool index
-  ResolutionErrorEntry* find_entry(int index, unsigned int hash,
-                                   const constantPoolHandle& pool, int cp_index);
-
-
-  unsigned int compute_hash(const constantPoolHandle& pool, int cp_index) {
-    return (unsigned int) pool->identity_hash() + cp_index;
-  }
+  static ResolutionErrorEntry* find_entry(const constantPoolHandle& pool, int cp_index);
 
   // purges unloaded entries from the table
-  void purge_resolution_errors();
+  static void purge_resolution_errors();
 
   // RedefineClasses support - remove obsolete constant pool entry
-  void delete_entry(ConstantPool* c);
+  static void delete_entry(ConstantPool* c);
 
   // This function is used to encode an index to differentiate it from a
   // constant pool index.  It assumes it is being called with a cpCache index
@@ -89,46 +63,52 @@ public:
     assert(index < 0, "Unexpected non-negative cpCache index");
     return index + CPCACHE_INDEX_MANGLE_VALUE;
   }
+
+  static uintptr_t convert_key(const constantPoolHandle& pool, int cp_index) {
+    return (uintptr_t) (pool() + cp_index);
+  }
 };
 
 
-class ResolutionErrorEntry : public HashtableEntry<ConstantPool*, mtClass> {
+class ResolutionErrorEntry : public CHeapObj<mtClass> {
  private:
   int               _cp_index;
   Symbol*           _error;
   Symbol*           _message;
   Symbol*           _cause;
   Symbol*           _cause_msg;
+  ConstantPool*     _pool;
   const char*       _nest_host_error;
 
  public:
-  ConstantPool*      pool() const               { return literal(); }
 
+    ResolutionErrorEntry(ConstantPool* pool, int cp_index, Symbol* error, Symbol* message,
+      Symbol* cause, Symbol* cause_msg);
+
+    ResolutionErrorEntry(ConstantPool* pool, int cp_index, const char* message):
+        _cp_index(cp_index),
+        _error(nullptr),
+        _message(nullptr),
+        _cause(nullptr),
+        _cause_msg(nullptr),
+        _pool(pool),
+        _nest_host_error(message) {}
+
+    ~ResolutionErrorEntry();
+
+    void set_nest_host_error(const char* message) {
+      _nest_host_error = message;
+    }
+
+
+  ConstantPool*      pool() const               { return _pool; }
   int                cp_index() const           { return _cp_index; }
-  void               set_cp_index(int cp_index) { _cp_index = cp_index; }
-
   Symbol*            error() const              { return _error; }
-  void               set_error(Symbol* e);
-
   Symbol*            message() const            { return _message; }
-  void               set_message(Symbol* c);
-
   Symbol*            cause() const              { return _cause; }
-  void               set_cause(Symbol* c);
-
   Symbol*            cause_msg() const          { return _cause_msg; }
-  void               set_cause_msg(Symbol* c);
-
   const char*        nest_host_error() const    { return _nest_host_error; }
-  void               set_nest_host_error(const char* message);
 
-  ResolutionErrorEntry* next() const {
-    return (ResolutionErrorEntry*)HashtableEntry<ConstantPool*, mtClass>::next();
-  }
-
-  ResolutionErrorEntry** next_addr() {
-    return (ResolutionErrorEntry**)HashtableEntry<ConstantPool*, mtClass>::next_addr();
-  }
 };
 
 #endif // SHARE_CLASSFILE_RESOLUTIONERRORS_HPP

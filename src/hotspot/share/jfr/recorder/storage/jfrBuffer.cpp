@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 #include "jfr/recorder/storage/jfrBuffer.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/javaThread.hpp"
 
 static const u1* const TOP_CRITICAL_SECTION = NULL;
 

@@ -894,7 +894,7 @@ void MachPrologNode::format(PhaseRegAlloc* ra_, outputStream* st) const {
 
 void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   Compile* C = ra_->C;
-  MacroAssembler _masm(&cbuf);
+  C2_MacroAssembler _masm(&cbuf);
 
   int framesize = C->output()->frame_size_in_bytes();
   int bangsize = C->output()->bang_size_in_bytes();
@@ -2168,12 +2168,18 @@ encode %{
                                                   : static_call_Relocation::spec(method_index);
       emit_d32_reloc(cbuf, (int) ($meth$$method - ((intptr_t) cbuf.insts_end()) - 4),
                      rspec, RELOC_DISP32);
-      // Emit stubs for static call.
       address mark = cbuf.insts_mark();
-      address stub = CompiledStaticCall::emit_to_interp_stub(cbuf, mark);
-      if (stub == NULL) {
-        ciEnv::current()->record_failure("CodeCache is full");
-        return;
+      if (CodeBuffer::supports_shared_stubs() && _method->can_be_statically_bound()) {
+        // Calls of the same statically bound method can share
+        // a stub to the interpreter.
+        cbuf.shared_stub_to_interp_for(_method, cbuf.insts()->mark_off());
+      } else {
+        // Emit stubs for static call.
+        address stub = CompiledStaticCall::emit_to_interp_stub(cbuf, mark);
+        if (stub == NULL) {
+          ciEnv::current()->record_failure("CodeCache is full");
+          return;
+        }
       }
     }
     _masm.clear_inst_mark();
@@ -6715,6 +6721,50 @@ instruct countTrailingZerosL_bsf(rRegI dst, rRegL src, rFlagsReg cr) %{
   ins_pipe(ialu_reg);
 %}
 
+//--------------- Reverse Operation Instructions ----------------
+instruct bytes_reversebit_int(rRegI dst, rRegI src, rRegI rtmp, rFlagsReg cr) %{
+  predicate(!VM_Version::supports_gfni());
+  match(Set dst (ReverseI src));
+  effect(TEMP dst, TEMP rtmp, KILL cr);
+  format %{ "reverse_int $dst $src\t! using $rtmp as TEMP" %}
+  ins_encode %{
+    __ reverseI($dst$$Register, $src$$Register, xnoreg, xnoreg, $rtmp$$Register);
+  %}
+  ins_pipe( ialu_reg );
+%}
+
+instruct bytes_reversebit_int_gfni(rRegI dst, rRegI src, regF xtmp1, regF xtmp2, rRegL rtmp, rFlagsReg cr) %{
+  predicate(VM_Version::supports_gfni());
+  match(Set dst (ReverseI src));
+  effect(TEMP dst, TEMP xtmp1, TEMP xtmp2, TEMP rtmp, KILL cr);
+  format %{ "reverse_int $dst $src\t! using $rtmp, $xtmp1 and $xtmp2 as TEMP" %}
+  ins_encode %{
+    __ reverseI($dst$$Register, $src$$Register, $xtmp1$$XMMRegister, $xtmp2$$XMMRegister, $rtmp$$Register);
+  %}
+  ins_pipe( ialu_reg );
+%}
+
+instruct bytes_reversebit_long(rRegL dst, rRegL src, rRegL rtmp1, rRegL rtmp2, rFlagsReg cr) %{
+  predicate(!VM_Version::supports_gfni());
+  match(Set dst (ReverseL src));
+  effect(TEMP dst, TEMP rtmp1, TEMP rtmp2, KILL cr);
+  format %{ "reverse_long $dst $src\t! using $rtmp1 and $rtmp2 as TEMP" %}
+  ins_encode %{
+    __ reverseL($dst$$Register, $src$$Register, xnoreg, xnoreg, $rtmp1$$Register, $rtmp2$$Register);
+  %}
+  ins_pipe( ialu_reg );
+%}
+
+instruct bytes_reversebit_long_gfni(rRegL dst, rRegL src, regD xtmp1, regD xtmp2, rRegL rtmp, rFlagsReg cr) %{
+  predicate(VM_Version::supports_gfni());
+  match(Set dst (ReverseL src));
+  effect(TEMP dst, TEMP xtmp1, TEMP xtmp2, TEMP rtmp, KILL cr);
+  format %{ "reverse_long $dst $src\t! using $rtmp, $xtmp1 and $xtmp2 as TEMP" %}
+  ins_encode %{
+    __ reverseL($dst$$Register, $src$$Register, $xtmp1$$XMMRegister, $xtmp2$$XMMRegister, $rtmp$$Register, noreg);
+  %}
+  ins_pipe( ialu_reg );
+%}
 
 //---------- Population Count Instructions -------------------------------------
 
@@ -8017,71 +8067,6 @@ instruct castDD(regD dst)
   ins_cost(0);
   ins_pipe(empty);
 %}
-
-// LoadP-locked same as a regular LoadP when used with compare-swap
-instruct loadPLocked(rRegP dst, memory mem)
-%{
-  match(Set dst (LoadPLocked mem));
-
-  ins_cost(125); // XXX
-  format %{ "movq    $dst, $mem\t# ptr locked" %}
-  ins_encode %{
-    __ movq($dst$$Register, $mem$$Address);
-  %}
-  ins_pipe(ialu_reg_mem); // XXX
-%}
-
-// Conditional-store of the updated heap-top.
-// Used during allocation of the shared heap.
-// Sets flags (EQ) on success.  Implemented with a CMPXCHG on Intel.
-
-instruct storePConditional(memory heap_top_ptr,
-                           rax_RegP oldval, rRegP newval,
-                           rFlagsReg cr)
-%{
-  predicate(n->as_LoadStore()->barrier_data() == 0);
-  match(Set cr (StorePConditional heap_top_ptr (Binary oldval newval)));
-
-  format %{ "cmpxchgq $heap_top_ptr, $newval\t# (ptr) "
-            "If rax == $heap_top_ptr then store $newval into $heap_top_ptr" %}
-  ins_encode %{
-    __ lock();
-    __ cmpxchgq($newval$$Register, $heap_top_ptr$$Address);
-  %}
-  ins_pipe(pipe_cmpxchg);
-%}
-
-// Conditional-store of an int value.
-// ZF flag is set on success, reset otherwise.  Implemented with a CMPXCHG.
-instruct storeIConditional(memory mem, rax_RegI oldval, rRegI newval, rFlagsReg cr)
-%{
-  match(Set cr (StoreIConditional mem (Binary oldval newval)));
-  effect(KILL oldval);
-
-  format %{ "cmpxchgl $mem, $newval\t# If rax == $mem then store $newval into $mem" %}
-  opcode(0x0F, 0xB1);
-  ins_encode(lock_prefix,
-             REX_reg_mem(newval, mem),
-             OpcP, OpcS,
-             reg_mem(newval, mem));
-  ins_pipe(pipe_cmpxchg);
-%}
-
-// Conditional-store of a long value.
-// ZF flag is set on success, reset otherwise.  Implemented with a CMPXCHG.
-instruct storeLConditional(memory mem, rax_RegL oldval, rRegL newval, rFlagsReg cr)
-%{
-  match(Set cr (StoreLConditional mem (Binary oldval newval)));
-  effect(KILL oldval);
-
-  format %{ "cmpxchgq $mem, $newval\t# If rax == $mem then store $newval into $mem" %}
-  ins_encode %{
-    __ lock();
-    __ cmpxchgq($newval$$Register, $mem$$Address);
-  %}
-  ins_pipe(pipe_cmpxchg);
-%}
-
 
 // XXX No flag versions for CompareAndSwap{P,I,L} because matcher can't match them
 instruct compareAndSwapP(rRegI res,
@@ -9994,6 +9979,48 @@ instruct rorL_rReg_Var(rRegL dst, rcx_RegI shift, rFlagsReg cr)
     __ rorq($dst$$Register);
   %}
   ins_pipe(ialu_reg_reg);
+%}
+
+//----------------------------- CompressBits/ExpandBits ------------------------
+
+instruct compressBitsL_reg(rRegL dst, rRegL src, rRegL mask) %{
+  predicate(n->bottom_type()->isa_long());
+  match(Set dst (CompressBits src mask));
+  format %{ "pextq  $dst, $src, $mask\t! parallel bit extract" %}
+  ins_encode %{
+    __ pextq($dst$$Register, $src$$Register, $mask$$Register);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct expandBitsL_reg(rRegL dst, rRegL src, rRegL mask) %{
+  predicate(n->bottom_type()->isa_long());
+  match(Set dst (ExpandBits src mask));
+  format %{ "pdepq  $dst, $src, $mask\t! parallel bit deposit" %}
+  ins_encode %{
+    __ pdepq($dst$$Register, $src$$Register, $mask$$Register);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct compressBitsL_mem(rRegL dst, rRegL src, memory mask) %{
+  predicate(n->bottom_type()->isa_long());
+  match(Set dst (CompressBits src (LoadL mask)));
+  format %{ "pextq  $dst, $src, $mask\t! parallel bit extract" %}
+  ins_encode %{
+    __ pextq($dst$$Register, $src$$Register, $mask$$Address);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct expandBitsL_mem(rRegL dst, rRegL src, memory mask) %{
+  predicate(n->bottom_type()->isa_long());
+  match(Set dst (ExpandBits src (LoadL mask)));
+  format %{ "pdepq  $dst, $src, $mask\t! parallel bit deposit" %}
+  ins_encode %{
+    __ pdepq($dst$$Register, $src$$Register, $mask$$Address);
+  %}
+  ins_pipe( pipe_slow );
 %}
 
 
@@ -12980,6 +13007,32 @@ instruct testL_reg_mem2(rFlagsReg cr, rRegP src, memory mem, immL0 zero)
   ins_pipe(ialu_cr_reg_mem);
 %}
 
+// Manifest a CmpU result in an integer register.  Very painful.
+// This is the test to avoid.
+instruct cmpU3_reg_reg(rRegI dst, rRegI src1, rRegI src2, rFlagsReg flags)
+%{
+  match(Set dst (CmpU3 src1 src2));
+  effect(KILL flags);
+
+  ins_cost(275); // XXX
+  format %{ "cmpl    $src1, $src2\t# CmpL3\n\t"
+            "movl    $dst, -1\n\t"
+            "jb,u    done\n\t"
+            "setne   $dst\n\t"
+            "movzbl  $dst, $dst\n\t"
+    "done:" %}
+  ins_encode %{
+    Label done;
+    __ cmpl($src1$$Register, $src2$$Register);
+    __ movl($dst$$Register, -1);
+    __ jccb(Assembler::below, done);
+    __ setne($dst$$Register);
+    __ movzbl($dst$$Register, $dst$$Register);
+    __ bind(done);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
 // Manifest a CmpL result in an integer register.  Very painful.
 // This is the test to avoid.
 instruct cmpL3_reg_reg(rRegI dst, rRegL src1, rRegL src2, rFlagsReg flags)
@@ -12999,6 +13052,32 @@ instruct cmpL3_reg_reg(rRegI dst, rRegL src1, rRegL src2, rFlagsReg flags)
     __ cmpq($src1$$Register, $src2$$Register);
     __ movl($dst$$Register, -1);
     __ jccb(Assembler::less, done);
+    __ setne($dst$$Register);
+    __ movzbl($dst$$Register, $dst$$Register);
+    __ bind(done);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// Manifest a CmpUL result in an integer register.  Very painful.
+// This is the test to avoid.
+instruct cmpUL3_reg_reg(rRegI dst, rRegL src1, rRegL src2, rFlagsReg flags)
+%{
+  match(Set dst (CmpUL3 src1 src2));
+  effect(KILL flags);
+
+  ins_cost(275); // XXX
+  format %{ "cmpq    $src1, $src2\t# CmpL3\n\t"
+            "movl    $dst, -1\n\t"
+            "jb,u    done\n\t"
+            "setne   $dst\n\t"
+            "movzbl  $dst, $dst\n\t"
+    "done:" %}
+  ins_encode %{
+    Label done;
+    __ cmpq($src1$$Register, $src2$$Register);
+    __ movl($dst$$Register, -1);
+    __ jccb(Assembler::below, done);
     __ setne($dst$$Register);
     __ movzbl($dst$$Register, $dst$$Register);
     __ bind(done);

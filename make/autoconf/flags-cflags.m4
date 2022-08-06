@@ -116,6 +116,18 @@ AC_DEFUN([FLAGS_SETUP_DEBUG_SYMBOLS],
     CFLAGS_DEBUG_SYMBOLS="-g"
     ASFLAGS_DEBUG_SYMBOLS="-g"
   elif test "x$TOOLCHAIN_TYPE" = xclang; then
+    if test "x$ALLOW_ABSOLUTE_PATHS_IN_OUTPUT" = "xfalse"; then
+      # Check if compiler supports -fdebug-prefix-map. If so, use that to make
+      # the debug symbol paths resolve to paths relative to the workspace root.
+      workspace_root_trailing_slash="${WORKSPACE_ROOT%/}/"
+      DEBUG_PREFIX_CFLAGS="-fdebug-prefix-map=${workspace_root_trailing_slash}="
+      FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [${DEBUG_PREFIX_CFLAGS}],
+        IF_FALSE: [
+            DEBUG_PREFIX_CFLAGS=
+        ]
+      )
+    fi
+
     CFLAGS_DEBUG_SYMBOLS="-g"
     ASFLAGS_DEBUG_SYMBOLS="-g"
   elif test "x$TOOLCHAIN_TYPE" = xxlc; then
@@ -774,10 +786,8 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
     $1_TOOLCHAIN_CFLAGS="${NO_DELETE_NULL_POINTER_CHECKS_CFLAG}"
   fi
 
-  if test "x$TOOLCHAIN_TYPE" = xmicrosoft && test "x$ENABLE_REPRODUCIBLE_BUILD" = xtrue; then
-    # Enabling deterministic creates warnings if __DATE__ or __TIME__ are
-    # used, and since we are, silence that warning.
-    REPRODUCIBLE_CFLAGS="-experimental:deterministic -wd5048"
+  if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
+    REPRODUCIBLE_CFLAGS="-experimental:deterministic"
     FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [${REPRODUCIBLE_CFLAGS}],
         PREFIX: $3,
         IF_FALSE: [
@@ -804,8 +814,7 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
               FILE_MACRO_CFLAGS=
           ]
       )
-    elif test "x$TOOLCHAIN_TYPE" = xmicrosoft &&
-        test "x$ENABLE_REPRODUCIBLE_BUILD" = xtrue; then
+    elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
       # There is a known issue with the pathmap if the mapping is made to the
       # empty string. Add a minimal string "s" as prefix to work around this.
       # PATHMAP_FLAGS is also added to LDFLAGS in flags-ldflags.m4.

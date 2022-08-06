@@ -2847,13 +2847,12 @@ public abstract class LongVector extends AbstractVector<Long> {
                                    long[] a, int offset,
                                    VectorMask<Long> m) {
         LongSpecies vsp = (LongSpecies) species;
-        if (offset >= 0 && offset <= (a.length - species.length())) {
-            return vsp.dummyVector().fromArray0(a, offset, m);
+        if (VectorIntrinsics.indexInRange(offset, vsp.length(), a.length)) {
+            return vsp.dummyVector().fromArray0(a, offset, m, OFFSET_IN_RANGE);
         }
 
-        // FIXME: optimize
         checkMaskFromIndexSize(offset, vsp, m, 1, a.length);
-        return vsp.vOp(m, i -> a[offset + i]);
+        return vsp.dummyVector().fromArray0(a, offset, m, OFFSET_OUT_OF_RANGE);
     }
 
     /**
@@ -3080,13 +3079,12 @@ public abstract class LongVector extends AbstractVector<Long> {
                                            ByteOrder bo,
                                            VectorMask<Long> m) {
         LongSpecies vsp = (LongSpecies) species;
-        if (offset >= 0 && offset <= (ms.byteSize() - species.vectorByteSize())) {
-            return vsp.dummyVector().fromMemorySegment0(ms, offset, m).maybeSwap(bo);
+        if (VectorIntrinsics.indexInRange(offset, vsp.vectorByteSize(), ms.byteSize())) {
+            return vsp.dummyVector().fromMemorySegment0(ms, offset, m, OFFSET_IN_RANGE).maybeSwap(bo);
         }
 
-        // FIXME: optimize
         checkMaskFromIndexSize(offset, vsp, m, 8, ms.byteSize());
-        return vsp.ldLongOp(ms, offset, m, LongVector::memorySegmentGet);
+        return vsp.dummyVector().fromMemorySegment0(ms, offset, m, OFFSET_OUT_OF_RANGE).maybeSwap(bo);
     }
 
     // Memory store operations
@@ -3152,7 +3150,9 @@ public abstract class LongVector extends AbstractVector<Long> {
             intoArray(a, offset);
         } else {
             LongSpecies vsp = vspecies();
-            checkMaskFromIndexSize(offset, vsp, m, 1, a.length);
+            if (!VectorIntrinsics.indexInRange(offset, vsp.length(), a.length)) {
+                checkMaskFromIndexSize(offset, vsp, m, 1, a.length);
+            }
             intoArray0(a, offset, m);
         }
     }
@@ -3308,7 +3308,9 @@ public abstract class LongVector extends AbstractVector<Long> {
                 throw new UnsupportedOperationException("Attempt to write a read-only segment");
             }
             LongSpecies vsp = vspecies();
-            checkMaskFromIndexSize(offset, vsp, m, 8, ms.byteSize());
+            if (!VectorIntrinsics.indexInRange(offset, vsp.vectorByteSize(), ms.byteSize())) {
+                checkMaskFromIndexSize(offset, vsp, m, 8, ms.byteSize());
+            }
             maybeSwap(bo).intoMemorySegment0(ms, offset, m);
         }
     }
@@ -3349,16 +3351,16 @@ public abstract class LongVector extends AbstractVector<Long> {
 
     /*package-private*/
     abstract
-    LongVector fromArray0(long[] a, int offset, VectorMask<Long> m);
+    LongVector fromArray0(long[] a, int offset, VectorMask<Long> m, int offsetInRange);
     @ForceInline
     final
     <M extends VectorMask<Long>>
-    LongVector fromArray0Template(Class<M> maskClass, long[] a, int offset, M m) {
+    LongVector fromArray0Template(Class<M> maskClass, long[] a, int offset, M m, int offsetInRange) {
         m.check(species());
         LongSpecies vsp = vspecies();
         return VectorSupport.loadMasked(
             vsp.vectorType(), maskClass, vsp.elementType(), vsp.laneCount(),
-            a, arrayAddress(a, offset), m,
+            a, arrayAddress(a, offset), m, offsetInRange,
             a, offset, vsp,
             (arr, off, s, vm) -> s.ldOp(arr, (int) off, vm,
                                         (arr_, off_, i) -> arr_[off_ + i]));
@@ -3433,16 +3435,16 @@ public abstract class LongVector extends AbstractVector<Long> {
     }
 
     abstract
-    LongVector fromMemorySegment0(MemorySegment ms, long offset, VectorMask<Long> m);
+    LongVector fromMemorySegment0(MemorySegment ms, long offset, VectorMask<Long> m, int offsetInRange);
     @ForceInline
     final
     <M extends VectorMask<Long>>
-    LongVector fromMemorySegment0Template(Class<M> maskClass, MemorySegment ms, long offset, M m) {
+    LongVector fromMemorySegment0Template(Class<M> maskClass, MemorySegment ms, long offset, M m, int offsetInRange) {
         LongSpecies vsp = vspecies();
         m.check(vsp);
         return ScopedMemoryAccess.loadFromMemorySegmentMasked(
                 vsp.vectorType(), maskClass, vsp.elementType(), vsp.laneCount(),
-                (AbstractMemorySegmentImpl) ms, offset, m, vsp,
+                (AbstractMemorySegmentImpl) ms, offset, m, vsp, offsetInRange,
                 (msp, off, s, vm) -> {
                     return s.ldLongOp((MemorySegment) msp, off, vm, LongVector::memorySegmentGet);
                 });

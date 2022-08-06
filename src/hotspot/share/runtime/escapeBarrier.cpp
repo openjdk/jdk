@@ -33,6 +33,7 @@
 #include "runtime/handles.hpp"
 #include "runtime/handshake.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/javaThread.inline.hpp"
 #include "runtime/keepStackGCProcessed.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/registerMap.hpp"
@@ -79,7 +80,10 @@ bool EscapeBarrier::deoptimize_objects(int d1, int d2) {
     KeepStackGCProcessedMark ksgcpm(deoptee_thread());
     ResourceMark rm(calling_thread());
     HandleMark   hm(calling_thread());
-    RegisterMap  reg_map(deoptee_thread(), false /* update_map */, false /* process_frames */);
+    RegisterMap  reg_map(deoptee_thread(),
+                         RegisterMap::UpdateMap::skip,
+                         RegisterMap::ProcessFrames::skip,
+                         RegisterMap::WalkContinuation::skip);
     vframe* vf = deoptee_thread()->last_java_vframe(&reg_map);
     int cur_depth = 0;
 
@@ -131,7 +135,10 @@ bool EscapeBarrier::deoptimize_objects_all_threads() {
     }
     if (jt->has_last_Java_frame()) {
       KeepStackGCProcessedMark ksgcpm(jt);
-      RegisterMap reg_map(jt, false /* update_map */, false /* process_frames */);
+      RegisterMap reg_map(jt,
+                          RegisterMap::UpdateMap::skip,
+                          RegisterMap::ProcessFrames::skip,
+                          RegisterMap::WalkContinuation::skip);
       vframe* vf = jt->last_java_vframe(&reg_map);
       assert(jt->frame_anchor()->walkable(),
              "The stack of JavaThread " PTR_FORMAT " is not walkable. Thread state is %d",

@@ -23,11 +23,13 @@
 
 /**
  * @test
+ * @bug 8284161 8288214
  * @summary Verifies that FRAME_POP event is delivered when called from URL.openStream().
  * @requires vm.continuations
- * @compile --enable-preview -source ${jdk.version}  VThreadNotifyFramePopTest.java
+ * @enablePreview
+ * @modules jdk.httpserver
+ * @library /test/lib
  * @run main/othervm/native
- *     --enable-preview
  *     -agentlib:VThreadNotifyFramePopTest
  *     -Djdk.defaultScheduler.parallelism=2 -Djdk.defaultScheduler.maxPoolSize=2
  *     VThreadNotifyFramePopTest
@@ -35,8 +37,8 @@
 
 /*
  * This test reproduces a bug with NotifyFramePop not working properly when called
- * from URL.openStream() while executing on a VThread. The FRAME_POP event is never
- * delivered.
+ * from URL.openStream() while executing on a virtual thread. The FRAME_POP event is
+ * never delivered.
  *
  * The test first sets up a breakpoint on URL.openStream(). Once it is hit the test
  * does a NotifyFramePop on the current frame, and also sets up a breakpoint on
@@ -44,18 +46,41 @@
  * returns. The expaction is that the FRAME_POP event should be delevered before
  * hitting the breakpoint in brkpoint().
  */
+import java.io.IOException;
 import java.io.InputStream;
-import java.net.URI;
+import java.io.OutputStream;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.ServerSocket;
 import java.net.URL;
 import java.time.Duration;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
+import com.sun.net.httpserver.HttpServer;
+import jdk.test.lib.net.URIBuilder;
 
 public class VThreadNotifyFramePopTest {
     private static final String agentLib = "VThreadNotifyFramePopTest";
 
     static native void enableEvents(Thread thread, Class testClass, Class urlClass);
     static native boolean check();
+
+
+    /**
+     * Creates a HTTP server bound to the loopback address. The server responds to
+     * the request "/hello" with a message.
+     */
+    static HttpServer createHttpServer() throws IOException {
+        InetAddress lb = InetAddress.getLoopbackAddress();
+        HttpServer server = HttpServer.create(new InetSocketAddress(lb, 0), 16);
+        server.createContext("/hello", e -> {
+            byte[] response = "Hello".getBytes("UTF-8");
+            e.sendResponseHeaders(200, response.length);
+            try (OutputStream out = e.getResponseBody()) {
+                out.write(response);
+            }
+        });
+        return server;
+    }
 
     static int brkpoint() {
         return 5;
@@ -71,25 +96,37 @@ public class VThreadNotifyFramePopTest {
     }
     static void run4() {
         try {
-            URL url = URI.create("http://openjdk.java.net/").toURL();
-            try (InputStream in = url.openStream()) {
-                brkpoint();
-                in.readAllBytes();
-                System.out.println("readAllBytes done");
+            HttpServer server = createHttpServer();
+            server.start();
+            try {
+                URL url = URIBuilder.newBuilder()
+                        .scheme("http")
+                        .loopback()
+                        .port(server.getAddress().getPort())
+                        .path("/hello")
+                        .toURL();
+                System.out.println("open " + url);
+                try (InputStream in = url.openStream()) {
+                    brkpoint();
+                    System.out.println("reading response");
+                    in.readAllBytes();
+                }
+            } finally {
+                System.out.println("stop server");
+                server.stop(1);
             }
-            System.out.println("try done");
         } catch (Exception e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
         System.out.println("run done");
     }
 
     void runTest() throws Exception {
         enableEvents(Thread.currentThread(), VThreadNotifyFramePopTest.class, URL.class);
-        ThreadFactory factory = Thread.ofVirtual().factory();
-        try (var executor = Executors.newThreadPerTaskExecutor(factory)) {
-            executor.submit(VThreadNotifyFramePopTest::run);
-            System.out.println("submit done");
+        try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            var future = executor.submit(VThreadNotifyFramePopTest::run);
+            System.out.println("virtual thread started");
+            future.get();
         }
         System.out.println("Step::main done");
     }

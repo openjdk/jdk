@@ -524,11 +524,12 @@ class MacroAssembler: public Assembler {
   void push_CPU_state();
   void pop_CPU_state();
 
-  void push_cont_fastpath(Register java_thread);
-  void pop_cont_fastpath(Register java_thread);
-  void inc_held_monitor_count(Register java_thread);
-  void dec_held_monitor_count(Register java_thread);
-  void reset_held_monitor_count(Register java_thread);
+  void push_cont_fastpath();
+  void pop_cont_fastpath();
+
+  void inc_held_monitor_count();
+  void dec_held_monitor_count();
+
   DEBUG_ONLY(void stop_if_in_cont(Register cont_reg, const char* name);)
 
   // Round up to a power of two
@@ -564,14 +565,6 @@ public:
   }
 
   // allocation
-  void eden_allocate(
-    Register thread,                   // Current thread
-    Register obj,                      // result: pointer to object after successful allocation
-    Register var_size_in_bytes,        // object size in bytes if unknown at compile time; invalid otherwise
-    int      con_size_in_bytes,        // object size in bytes if   known at compile time
-    Register t1,                       // temp register
-    Label&   slow_case                 // continuation point if fast allocation fails
-  );
   void tlab_allocate(
     Register thread,                   // Current thread
     Register obj,                      // result: pointer to object after successful allocation
@@ -865,6 +858,8 @@ public:
   // Emit the CompiledIC call idiom
   void ic_call(address entry, jint method_index = 0);
 
+  void emit_static_call_stub();
+
   // Jumps
 
   // NOTE: these jumps transfer to the effective address of dst NOT
@@ -1119,6 +1114,12 @@ public:
   void addpd(XMMRegister dst, Address src)        { Assembler::addpd(dst, src); }
   void addpd(XMMRegister dst, AddressLiteral src);
 
+  using Assembler::vbroadcastsd;
+  void vbroadcastsd(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch = rscratch1);
+
+  using Assembler::vbroadcastss;
+  void vbroadcastss(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch = rscratch1);
+
   void divsd(XMMRegister dst, XMMRegister src)    { Assembler::divsd(dst, src); }
   void divsd(XMMRegister dst, Address src)        { Assembler::divsd(dst, src); }
   void divsd(XMMRegister dst, AddressLiteral src);
@@ -1155,13 +1156,17 @@ public:
   void kmov(Register dst, KRegister src);
   void kmov(KRegister dst, Register src);
 
+  using Assembler::movddup;
+  void movddup(XMMRegister dst, AddressLiteral src, Register rscratch = rscratch1);
+  using Assembler::vmovddup;
+  void vmovddup(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch = rscratch1);
+
   // AVX Unaligned forms
   void vmovdqu(Address     dst, XMMRegister src);
   void vmovdqu(XMMRegister dst, Address src);
   void vmovdqu(XMMRegister dst, XMMRegister src);
   void vmovdqu(XMMRegister dst, AddressLiteral src, Register scratch_reg = rscratch1);
   void vmovdqu(XMMRegister dst, AddressLiteral src, Register scratch_reg, int vector_len);
-
 
   // AVX512 Unaligned
   void evmovdqu(BasicType type, KRegister kmask, Address dst, XMMRegister src,  bool merge, int vector_len);
@@ -1233,9 +1238,6 @@ public:
   void movsd(Address dst, XMMRegister src)     { Assembler::movsd(dst, src); }
   void movsd(XMMRegister dst, Address src)     { Assembler::movsd(dst, src); }
   void movsd(XMMRegister dst, AddressLiteral src);
-
-  using Assembler::vmovddup;
-  void vmovddup(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch = rscratch1);
 
   void mulpd(XMMRegister dst, XMMRegister src)    { Assembler::mulpd(dst, src); }
   void mulpd(XMMRegister dst, Address src)        { Assembler::mulpd(dst, src); }
@@ -1342,16 +1344,11 @@ public:
   void vpand(XMMRegister dst, XMMRegister nds, Address src, int vector_len) { Assembler::vpand(dst, nds, src, vector_len); }
   void vpand(XMMRegister dst, XMMRegister nds, AddressLiteral src, int vector_len, Register scratch_reg = rscratch1);
 
-  void vpbroadcastw(XMMRegister dst, XMMRegister src, int vector_len);
-  void vpbroadcastw(XMMRegister dst, Address src, int vector_len) { Assembler::vpbroadcastw(dst, src, vector_len); }
+  using Assembler::vpbroadcastd;
+  void vpbroadcastd(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch = rscratch1);
 
-  using Assembler::vbroadcastsd;
-  void vbroadcastsd(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch = rscratch1);
+  using Assembler::vpbroadcastq;
   void vpbroadcastq(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch = rscratch1);
-  void vpbroadcastq(XMMRegister dst, XMMRegister src, int vector_len) { Assembler::vpbroadcastq(dst, src, vector_len); }
-  void vpbroadcastq(XMMRegister dst, Address src, int vector_len) { Assembler::vpbroadcastq(dst, src, vector_len); }
-
-
 
   void vpcmpeqb(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
 
@@ -1879,9 +1876,6 @@ public:
 
 
  public:
-  // C2 compiled method's prolog code.
-  void verified_entry(int framesize, int stack_bang_size, bool fp_mode_24b, bool is_stub);
-
   // clear memory of size 'cnt' qwords, starting at 'base';
   // if 'is_large' is set, do not try to produce short loop
   void clear_mem(Register base, Register cnt, Register rtmp, XMMRegister xtmp, bool is_large, KRegister mask=knoreg);

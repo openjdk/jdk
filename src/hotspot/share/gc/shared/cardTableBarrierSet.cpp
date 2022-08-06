@@ -31,7 +31,7 @@
 #include "logging/log.hpp"
 #include "memory/virtualspace.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/javaThread.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/align.hpp"
 #include "utilities/macros.hpp"

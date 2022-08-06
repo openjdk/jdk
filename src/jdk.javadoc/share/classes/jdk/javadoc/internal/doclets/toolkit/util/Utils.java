@@ -124,7 +124,6 @@ import static javax.lang.model.element.ElementKind.*;
 import static javax.lang.model.type.TypeKind.*;
 
 import static com.sun.source.doctree.DocTree.Kind.*;
-import static jdk.javadoc.internal.doclets.toolkit.builders.ConstantsSummaryBuilder.MAX_CONSTANT_VALUE_INDEX_LENGTH;
 
 /**
  * Utilities Class for Doclets.
@@ -906,22 +905,6 @@ public class Utils {
     }
 
     /**
-     * Parse the package name.  We only want to display package name up to
-     * 2 levels.
-     */
-    public String parsePackageName(PackageElement p) {
-        String pkgname = p.isUnnamed() ? "" : getPackageName(p);
-        int index = -1;
-        for (int j = 0; j < MAX_CONSTANT_VALUE_INDEX_LENGTH; j++) {
-            index = pkgname.indexOf(".", index + 1);
-        }
-        if (index != -1) {
-            pkgname = pkgname.substring(0, index);
-        }
-        return pkgname;
-    }
-
-    /**
      * Given an annotation, return true if it should be documented and false
      * otherwise.
      *
@@ -1102,9 +1085,9 @@ public class Utils {
     }
 
     /**
-     * Given a class, return the closest visible super class.
+     * Given a class, return the closest visible superclass.
      * @param type the TypeMirror to be interrogated
-     * @return  the closest visible super class.  Return null if it cannot
+     * @return  the closest visible superclass.  Return null if it cannot
      *          be found.
      */
     public TypeMirror getFirstVisibleSuperClass(TypeMirror type) {
@@ -1113,10 +1096,10 @@ public class Utils {
 
 
     /**
-     * Given a class, return the closest visible super class.
+     * Given a class, return the closest visible superclass.
      *
      * @param te the TypeElement to be interrogated
-     * @return the closest visible super class.  Return null if it cannot
+     * @return the closest visible superclass.  Return null if it cannot
      *         be found.
      */
     public TypeMirror getFirstVisibleSuperClass(TypeElement te) {
@@ -1434,26 +1417,6 @@ public class Utils {
             filteredOutClasses.add(e);
         }
         return filteredOutClasses;
-    }
-
-    /**
-     * Compares two elements.
-     * @param e1 first Element
-     * @param e2 second Element
-     * @return a true if they are the same, false otherwise.
-     */
-    public boolean elementsEqual(Element e1, Element e2) {
-        if (e1.getKind() != e2.getKind()) {
-            return false;
-        }
-        String s1 = getSimpleName(e1);
-        String s2 = getSimpleName(e2);
-        if (compareStrings(s1, s2) == 0) {
-            String f1 = getFullyQualifiedName(e1, true);
-            String f2 = getFullyQualifiedName(e2, true);
-            return compareStrings(f1, f2) == 0;
-        }
-        return false;
     }
 
     /**
@@ -2193,18 +2156,6 @@ public class Utils {
         return mdle.getQualifiedName().toString();
     }
 
-    public boolean isStartElement(DocTree doctree) {
-        return isKind(doctree, START_ELEMENT);
-    }
-
-    public boolean isText(DocTree doctree) {
-        return isKind(doctree, TEXT);
-    }
-
-    private boolean isKind(DocTree doctree, DocTree.Kind match) {
-        return  doctree.getKind() == match;
-    }
-
     private final CommentHelperCache commentHelperCache = new CommentHelperCache(this);
 
     public CommentHelper getCommentHelper(Element element) {
@@ -2230,7 +2181,7 @@ public class Utils {
                 .toList();
     }
 
-    public <T extends DocTree> List<? extends T> getBlockTags(Element element, Predicate<DocTree> filter, Class<T> tClass) {
+    public <T extends DocTree> List<T> getBlockTags(Element element, Predicate<DocTree> filter, Class<T> tClass) {
         return getBlockTags(element).stream()
                 .filter(t -> t.getKind() != ERRONEOUS)
                 .filter(filter)
@@ -2477,21 +2428,21 @@ public class Utils {
         return getBlockTags(field, DocTree.Kind.SERIAL_FIELD, SerialFieldTree.class);
     }
 
-    public List<? extends ThrowsTree> getThrowsTrees(Element element) {
+    public List<ThrowsTree> getThrowsTrees(Element element) {
         return getBlockTags(element,
                 t -> switch (t.getKind()) { case EXCEPTION, THROWS -> true; default -> false; },
                 ThrowsTree.class);
     }
 
-    public List<? extends ParamTree> getTypeParamTrees(Element element) {
+    public List<ParamTree> getTypeParamTrees(Element element) {
         return getParamTrees(element, true);
     }
 
-    public List<? extends ParamTree> getParamTrees(Element element) {
+    public List<ParamTree> getParamTrees(Element element) {
         return getParamTrees(element, false);
     }
 
-    private  List<? extends ParamTree> getParamTrees(Element element, boolean isTypeParameters) {
+    private  List<ParamTree> getParamTrees(Element element, boolean isTypeParameters) {
         return getBlockTags(element,
                 t -> t.getKind() == PARAM && ((ParamTree) t).isTypeParameter() == isTypeParameters,
                 ParamTree.class);

@@ -58,6 +58,7 @@
 #include "runtime/os.hpp"
 #include "runtime/os_perf.hpp"
 #include "runtime/thread.inline.hpp"
+#include "runtime/threads.hpp"
 #include "runtime/sweeper.hpp"
 #include "runtime/vmThread.hpp"
 #include "runtime/vm_version.hpp"
@@ -549,21 +550,6 @@ TRACE_REQUEST_FUNC(SymbolTableStatistics) {
 TRACE_REQUEST_FUNC(StringTableStatistics) {
   TableStatistics statistics = StringTable::get_table_statistics();
   emit_table_statistics<EventStringTableStatistics>(statistics);
-}
-
-TRACE_REQUEST_FUNC(PlaceholderTableStatistics) {
-  TableStatistics statistics = SystemDictionary::placeholders_statistics();
-  emit_table_statistics<EventPlaceholderTableStatistics>(statistics);
-}
-
-TRACE_REQUEST_FUNC(LoaderConstraintsTableStatistics) {
-  TableStatistics statistics = SystemDictionary::loader_constraints_statistics();
-  emit_table_statistics<EventLoaderConstraintsTableStatistics>(statistics);
-}
-
-TRACE_REQUEST_FUNC(ProtectionDomainCacheTableStatistics) {
-  TableStatistics statistics = SystemDictionary::protection_domain_cache_statistics();
-  emit_table_statistics<EventProtectionDomainCacheTableStatistics>(statistics);
 }
 
 TRACE_REQUEST_FUNC(CompilerStatistics) {

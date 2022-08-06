@@ -32,8 +32,8 @@
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "interpreter/interpreter.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/sharedRuntime.hpp"
-#include "runtime/thread.hpp"
 #include "utilities/macros.hpp"
 #ifdef COMPILER1
 #include "c1/c1_LIRAssembler.hpp"

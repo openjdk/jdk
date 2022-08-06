@@ -1819,7 +1819,7 @@ public class PolicyFile extends java.security.Policy {
             return null;
         }
 
-        if (cert == null || !(cert instanceof X509Certificate)) {
+        if (!(cert instanceof X509Certificate x509Cert)) {
             if (debug != null) {
                 debug.println("  -- No certificate for '" +
                                 alias +
@@ -1827,8 +1827,6 @@ public class PolicyFile extends java.security.Policy {
             }
             return null;
         } else {
-            X509Certificate x509Cert = (X509Certificate)cert;
-
             // 4702543:  X500 names with an EmailAddress
             // were encoded incorrectly.  create new
             // X500Principal name with correct encoding

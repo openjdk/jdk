@@ -31,6 +31,7 @@
 #include "memory/allocation.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/universe.hpp"
+#include "oops/stackChunkOop.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/perfDataTypes.hpp"
 #include "runtime/safepoint.hpp"
@@ -317,27 +318,6 @@ class CollectedHeap : public CHeapObj<mtGC> {
   static size_t lab_alignment_reserve() {
     assert(_lab_alignment_reserve != ~(size_t)0, "uninitialized");
     return _lab_alignment_reserve;
-  }
-
-  // Some heaps may offer a contiguous region for shared non-blocking
-  // allocation, via inlined code (by exporting the address of the top and
-  // end fields defining the extent of the contiguous allocation region.)
-
-  // This function returns "true" iff the heap supports this kind of
-  // allocation.  (Default is "no".)
-  virtual bool supports_inline_contig_alloc() const {
-    return false;
-  }
-  // These functions return the addresses of the fields that define the
-  // boundaries of the contiguous allocation area.  (These fields should be
-  // physically near to one another.)
-  virtual HeapWord* volatile* top_addr() const {
-    guarantee(false, "inline contiguous allocation not supported");
-    return NULL;
-  }
-  virtual HeapWord** end_addr() const {
-    guarantee(false, "inline contiguous allocation not supported");
-    return NULL;
   }
 
   // Some heaps may be in an unparseable state at certain times between

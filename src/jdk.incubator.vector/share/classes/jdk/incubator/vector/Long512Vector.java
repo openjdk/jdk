@@ -852,8 +852,8 @@ final class Long512Vector extends LongVector {
     @ForceInline
     @Override
     final
-    LongVector fromArray0(long[] a, int offset, VectorMask<Long> m) {
-        return super.fromArray0Template(Long512Mask.class, a, offset, (Long512Mask) m);  // specialize
+    LongVector fromArray0(long[] a, int offset, VectorMask<Long> m, int offsetInRange) {
+        return super.fromArray0Template(Long512Mask.class, a, offset, (Long512Mask) m, offsetInRange);  // specialize
     }
 
     @ForceInline
@@ -875,8 +875,8 @@ final class Long512Vector extends LongVector {
     @ForceInline
     @Override
     final
-    LongVector fromMemorySegment0(MemorySegment ms, long offset, VectorMask<Long> m) {
-        return super.fromMemorySegment0Template(Long512Mask.class, ms, offset, (Long512Mask) m);  // specialize
+    LongVector fromMemorySegment0(MemorySegment ms, long offset, VectorMask<Long> m, int offsetInRange) {
+        return super.fromMemorySegment0Template(Long512Mask.class, ms, offset, (Long512Mask) m, offsetInRange);  // specialize
     }
 
     @ForceInline

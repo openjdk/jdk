@@ -1390,19 +1390,23 @@ static bool skeleton_follow_inputs(Node* n, int op) {
           op == Op_OrL ||
           op == Op_RShiftL ||
           op == Op_LShiftL ||
+          op == Op_LShiftI ||
           op == Op_AddL ||
           op == Op_AddI ||
           op == Op_MulL ||
           op == Op_MulI ||
           op == Op_SubL ||
           op == Op_SubI ||
-          op == Op_ConvI2L);
+          op == Op_ConvI2L ||
+          op == Op_CastII);
 }
 
 bool PhaseIdealLoop::skeleton_predicate_has_opaque(IfNode* iff) {
   ResourceMark rm;
   Unique_Node_List wq;
   wq.push(iff->in(1)->in(1));
+  uint init = 0;
+  uint stride = 0;
   for (uint i = 0; i < wq.size(); i++) {
     Node* n = wq.at(i);
     int op = n->Opcode();
@@ -1415,11 +1419,39 @@ bool PhaseIdealLoop::skeleton_predicate_has_opaque(IfNode* iff) {
       }
       continue;
     }
-    if (n->is_Opaque1()) {
-      return true;
+    if (n->Opcode() == Op_OpaqueLoopInit) {
+      init++;
+    } else if (n->Opcode() == Op_OpaqueLoopStride) {
+      stride++;
     }
   }
-  return false;
+#ifdef ASSERT
+  wq.clear();
+  wq.push(iff->in(1)->in(1));
+  uint verif_init = 0;
+  uint verif_stride = 0;
+  for (uint i = 0; i < wq.size(); i++) {
+    Node* n = wq.at(i);
+    int op = n->Opcode();
+    if (!n->is_CFG()) {
+      if (n->Opcode() == Op_OpaqueLoopInit) {
+        verif_init++;
+      } else if (n->Opcode() == Op_OpaqueLoopStride) {
+        verif_stride++;
+      } else {
+        for (uint j = 1; j < n->req(); j++) {
+          Node* m = n->in(j);
+          if (m != NULL) {
+            wq.push(m);
+          }
+        }
+      }
+    }
+  }
+  assert(init == verif_init && stride == verif_stride, "missed opaque node");
+#endif
+  assert(stride == 0 || init != 0, "init should be there every time stride is");
+  return init != 0;
 }
 
 // Clone the skeleton predicate bool for a main or unswitched loop:
@@ -3096,6 +3128,9 @@ int PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
           register_new_node(max_value, predicate_proj);
           max_value = new AddINode(opaque_init, max_value);
           register_new_node(max_value, predicate_proj);
+          // init + (current stride - initial stride) is within the loop so narrow its type by leveraging the type of the iv Phi
+          max_value = new CastIINode(max_value, loop->_head->as_CountedLoop()->phi()->bottom_type());
+          register_new_node(max_value, predicate_proj);
           predicate_proj = add_range_check_predicate(loop, cl, predicate_proj, scale_con, int_offset, int_limit, stride_con, max_value);
           assert(skeleton_predicate_has_opaque(predicate_proj->in(0)->as_If()), "unexpected");
 
@@ -3400,10 +3435,7 @@ void IdealLoopTree::adjust_loop_exit_prob(PhaseIdealLoop *phase) {
       if (iff->outcnt() == 2) {         // Ignore dead tests
         Node *bol = iff->in(1);
         if (bol && bol->req() > 1 && bol->in(1) &&
-            ((bol->in(1)->Opcode() == Op_StorePConditional) ||
-             (bol->in(1)->Opcode() == Op_StoreIConditional) ||
-             (bol->in(1)->Opcode() == Op_StoreLConditional) ||
-             (bol->in(1)->Opcode() == Op_CompareAndExchangeB) ||
+            ((bol->in(1)->Opcode() == Op_CompareAndExchangeB) ||
              (bol->in(1)->Opcode() == Op_CompareAndExchangeS) ||
              (bol->in(1)->Opcode() == Op_CompareAndExchangeI) ||
              (bol->in(1)->Opcode() == Op_CompareAndExchangeL) ||

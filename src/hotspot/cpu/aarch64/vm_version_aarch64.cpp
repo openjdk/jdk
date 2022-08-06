@@ -28,12 +28,10 @@
 #include "runtime/arguments.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"
-#include "runtime/os.hpp"
+#include "runtime/os.inline.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/formatBuffer.hpp"
 #include "utilities/macros.hpp"
-
-#include OS_HEADER_INLINE(os)
 
 int VM_Version::_cpu;
 int VM_Version::_model;
@@ -222,8 +220,6 @@ void VM_Version::initialize() {
       FLAG_SET_DEFAULT(UseSignumIntrinsic, true);
     }
   }
-
-  if (_cpu == CPU_ARM && (_model == 0xd07 || _model2 == 0xd07)) _features |= CPU_STXR_PREFETCH;
 
   char buf[512];
   sprintf(buf, "0x%02x:0x%x:0x%03x:%d", _cpu, _variant, _model, _revision);
@@ -425,9 +421,10 @@ void VM_Version::initialize() {
     _rop_protection = false;
   } else if (strcmp(UseBranchProtection, "standard") == 0) {
     _rop_protection = false;
-    // Enable PAC if this code has been built with branch-protection and the CPU/OS supports it.
+    // Enable PAC if this code has been built with branch-protection, the CPU/OS
+    // supports it, and incompatible preview features aren't enabled.
 #ifdef __ARM_FEATURE_PAC_DEFAULT
-    if (VM_Version::supports_paca()) {
+    if (VM_Version::supports_paca() && !Arguments::enable_preview()) {
       _rop_protection = true;
     }
 #endif
@@ -437,6 +434,10 @@ void VM_Version::initialize() {
     if (!VM_Version::supports_paca()) {
       warning("ROP-protection specified, but not supported on this CPU.");
       // Disable PAC to prevent illegal instruction crashes.
+      _rop_protection = false;
+    } else if (Arguments::enable_preview()) {
+      // Not currently compatible with continuation freeze/thaw.
+      warning("PAC-RET is incompatible with virtual threads preview feature.");
       _rop_protection = false;
     }
 #else

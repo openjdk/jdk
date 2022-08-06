@@ -83,12 +83,10 @@ void registerAsParallelCapable(JNIEnv* env) {
  * Class exp = Class.forName("open.OpenResources");
  */
 void forName(JNIEnv* env) {
-/* coming soon
     StaticCall m_Class_forName { env,
         "java/lang/Class", "forName", "(Ljava/lang/String;)Ljava/lang/Class;" };
 
     m_Class_forName.callReturnNotNull(env->NewStringUTF("open.OpenResources"));
-*/
 }
 
 /*

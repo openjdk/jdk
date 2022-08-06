@@ -844,8 +844,8 @@ final class Long256Vector extends LongVector {
     @ForceInline
     @Override
     final
-    LongVector fromArray0(long[] a, int offset, VectorMask<Long> m) {
-        return super.fromArray0Template(Long256Mask.class, a, offset, (Long256Mask) m);  // specialize
+    LongVector fromArray0(long[] a, int offset, VectorMask<Long> m, int offsetInRange) {
+        return super.fromArray0Template(Long256Mask.class, a, offset, (Long256Mask) m, offsetInRange);  // specialize
     }
 
     @ForceInline
@@ -867,8 +867,8 @@ final class Long256Vector extends LongVector {
     @ForceInline
     @Override
     final
-    LongVector fromMemorySegment0(MemorySegment ms, long offset, VectorMask<Long> m) {
-        return super.fromMemorySegment0Template(Long256Mask.class, ms, offset, (Long256Mask) m);  // specialize
+    LongVector fromMemorySegment0(MemorySegment ms, long offset, VectorMask<Long> m, int offsetInRange) {
+        return super.fromMemorySegment0Template(Long256Mask.class, ms, offset, (Long256Mask) m, offsetInRange);  // specialize
     }
 
     @ForceInline

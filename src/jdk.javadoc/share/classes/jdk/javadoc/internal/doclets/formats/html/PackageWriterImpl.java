@@ -153,7 +153,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
     private List<PackageElement> findRelatedPackages() {
         String pkgName = packageElement.getQualifiedName().toString();
 
-        // always add super package
+        // always add superpackage
         int lastdot = pkgName.lastIndexOf('.');
         String pkgPrefix = lastdot > 0 ? pkgName.substring(0, lastdot) : null;
         List<PackageElement> packages = new ArrayList<>(
@@ -168,7 +168,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
             packages.addAll(subpackages);
         }
 
-        // only add sibling packages if there is a non-empty super package, we are beneath threshold,
+        // only add sibling packages if there is a non-empty superpackage, we are beneath threshold,
         // and number of siblings is beneath threshold as well
         if (hasSuperPackage && pkgPrefix != null && packages.size() <= MAX_SIBLING_PACKAGES) {
             Pattern siblingPattern = Pattern.compile(pkgPrefix.replace(".", "\\.") + "\\.\\w+");

@@ -250,4 +250,8 @@ abstract class ExchangeImpl<T> {
     // Needed to handle cancellation during the upgrade from
     // Http1Exchange to Stream
     void upgraded() { }
+
+    // Called when server returns non 100 response to
+    // an Expect-Continue
+    void expectContinueFailed(int rcode) { }
 }

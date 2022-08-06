@@ -848,8 +848,8 @@ final class ShortMaxVector extends ShortVector {
     @ForceInline
     @Override
     final
-    ShortVector fromArray0(short[] a, int offset, VectorMask<Short> m) {
-        return super.fromArray0Template(ShortMaxMask.class, a, offset, (ShortMaxMask) m);  // specialize
+    ShortVector fromArray0(short[] a, int offset, VectorMask<Short> m, int offsetInRange) {
+        return super.fromArray0Template(ShortMaxMask.class, a, offset, (ShortMaxMask) m, offsetInRange);  // specialize
     }
 
 
@@ -863,8 +863,8 @@ final class ShortMaxVector extends ShortVector {
     @ForceInline
     @Override
     final
-    ShortVector fromCharArray0(char[] a, int offset, VectorMask<Short> m) {
-        return super.fromCharArray0Template(ShortMaxMask.class, a, offset, (ShortMaxMask) m);  // specialize
+    ShortVector fromCharArray0(char[] a, int offset, VectorMask<Short> m, int offsetInRange) {
+        return super.fromCharArray0Template(ShortMaxMask.class, a, offset, (ShortMaxMask) m, offsetInRange);  // specialize
     }
 
 
@@ -878,8 +878,8 @@ final class ShortMaxVector extends ShortVector {
     @ForceInline
     @Override
     final
-    ShortVector fromMemorySegment0(MemorySegment ms, long offset, VectorMask<Short> m) {
-        return super.fromMemorySegment0Template(ShortMaxMask.class, ms, offset, (ShortMaxMask) m);  // specialize
+    ShortVector fromMemorySegment0(MemorySegment ms, long offset, VectorMask<Short> m, int offsetInRange) {
+        return super.fromMemorySegment0Template(ShortMaxMask.class, ms, offset, (ShortMaxMask) m, offsetInRange);  // specialize
     }
 
     @ForceInline

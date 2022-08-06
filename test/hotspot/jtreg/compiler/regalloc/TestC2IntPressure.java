@@ -29,9 +29,9 @@
  *
  * @library /test/lib
  *
- * @build sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
  *
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *
  * @run main/othervm -Xbatch
  *                   -XX:-Inline
@@ -43,7 +43,7 @@
 
 package compiler.regalloc;
 
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 public class TestC2IntPressure {
 

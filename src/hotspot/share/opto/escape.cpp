@@ -581,8 +581,7 @@ void ConnectionGraph::add_node_to_connection_graph(Node *n, Unique_Node_List *de
       break;
     }
     case Op_LoadP:
-    case Op_LoadN:
-    case Op_LoadPLocked: {
+    case Op_LoadN: {
       add_objload_to_connection_graph(n, delayed_worklist);
       break;
     }
@@ -635,7 +634,6 @@ void ConnectionGraph::add_node_to_connection_graph(Node *n, Unique_Node_List *de
     case Op_StoreP:
     case Op_StoreN:
     case Op_StoreNKlass:
-    case Op_StorePConditional:
     case Op_WeakCompareAndSwapP:
     case Op_WeakCompareAndSwapN:
     case Op_CompareAndSwapP:
@@ -738,8 +736,7 @@ void ConnectionGraph::add_final_edges(Node *n) {
       break;
     }
     case Op_LoadP:
-    case Op_LoadN:
-    case Op_LoadPLocked: {
+    case Op_LoadN: {
       // Using isa_ptr() instead of isa_oopptr() for LoadP and Phi because
       // ThreadLocal has RawPtr type.
       assert(_igvn->type(n)->make_ptr() != NULL, "Unexpected node type");
@@ -794,8 +791,7 @@ void ConnectionGraph::add_final_edges(Node *n) {
     case Op_WeakCompareAndSwapN:
     case Op_StoreP:
     case Op_StoreN:
-    case Op_StoreNKlass:
-    case Op_StorePConditional:{
+    case Op_StoreNKlass:{
       add_final_edges_unsafe_access(n, opcode);
       break;
     }
@@ -2641,7 +2637,7 @@ bool ConnectionGraph::split_AddP(Node *addp, Node *base) {
   // this code branch will go away.
   //
   if (!t->is_known_instance() &&
-      !t->maybe_java_subtype_of(base_t)) {
+      !base_t->maybe_java_subtype_of(t)) {
      return false; // bail out
   }
   const TypeOopPtr *tinst = base_t->add_offset(t->offset())->is_oopptr();
@@ -3325,7 +3321,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
         } else {
           tn_t = tn_type->isa_oopptr();
         }
-        if (tn_t != NULL && tn_t->maybe_java_subtype_of(tinst)) {
+        if (tn_t != NULL && tinst->maybe_java_subtype_of(tn_t)) {
           if (tn_type->isa_narrowoop()) {
             tn_type = tinst->make_narrowoop();
           } else {
@@ -3338,7 +3334,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
           record_for_optimizer(n);
         } else {
           assert(tn_type == TypePtr::NULL_PTR ||
-                 tn_t != NULL && !tinst->is_java_subtype_of(tn_t),
+                 tn_t != NULL && !tinst->maybe_java_subtype_of(tn_t),
                  "unexpected type");
           continue; // Skip dead path with different type
         }

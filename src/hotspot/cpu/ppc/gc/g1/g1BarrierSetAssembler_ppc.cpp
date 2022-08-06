@@ -469,16 +469,6 @@ void G1BarrierSetAssembler::generate_c1_pre_barrier_runtime_stub(StubAssembler* 
   __ std(tmp, -16, R1_SP);
   __ std(tmp2, -24, R1_SP);
 
-  // Is marking still active?
-  if (in_bytes(SATBMarkQueue::byte_width_of_active()) == 4) {
-    __ lwz(tmp, satb_q_active_byte_offset, R16_thread);
-  } else {
-    assert(in_bytes(SATBMarkQueue::byte_width_of_active()) == 1, "Assumption");
-    __ lbz(tmp, satb_q_active_byte_offset, R16_thread);
-  }
-  __ cmpdi(CCR0, tmp, 0);
-  __ beq(CCR0, marking_not_active);
-
   __ bind(restart);
   // Load the index into the SATB buffer. SATBMarkQueue::_index is a
   // size_t so ld_ptr is appropriate.

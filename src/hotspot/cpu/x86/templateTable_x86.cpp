@@ -2592,11 +2592,10 @@ void TemplateTable::_return(TosState state) {
 #endif
     __ jcc(Assembler::zero, no_safepoint);
     __ push(state);
-    __ push_cont_fastpath(NOT_LP64(thread) LP64_ONLY(r15_thread));
+    __ push_cont_fastpath();
     __ call_VM(noreg, CAST_FROM_FN_PTR(address,
                                        InterpreterRuntime::at_safepoint));
-    NOT_LP64(__ get_thread(thread);)
-    __ pop_cont_fastpath(NOT_LP64(thread) LP64_ONLY(r15_thread));
+    __ pop_cont_fastpath();
     __ pop(state);
     __ bind(no_safepoint);
   }
@@ -3923,7 +3922,6 @@ void TemplateTable::_new() {
   Label slow_case_no_pop;
   Label done;
   Label initialize_header;
-  Label initialize_object;  // including clearing the fields
 
   __ get_cpool_and_tags(rcx, rax);
 
@@ -3953,48 +3951,23 @@ void TemplateTable::_new() {
   //  If TLAB is enabled:
   //    Try to allocate in the TLAB.
   //    If fails, go to the slow path.
-  //  Else If inline contiguous allocations are enabled:
-  //    Try to allocate in eden.
-  //    If fails due to heap end, go to slow path.
-  //
-  //  If TLAB is enabled OR inline contiguous is enabled:
   //    Initialize the allocation.
   //    Exit.
   //
   //  Go to slow path.
 
-  const bool allow_shared_alloc =
-    Universe::heap()->supports_inline_contig_alloc();
-
   const Register thread = LP64_ONLY(r15_thread) NOT_LP64(rcx);
-#ifndef _LP64
-  if (UseTLAB || allow_shared_alloc) {
-    __ get_thread(thread);
-  }
-#endif // _LP64
 
   if (UseTLAB) {
+    NOT_LP64(__ get_thread(thread);)
     __ tlab_allocate(thread, rax, rdx, 0, rcx, rbx, slow_case);
     if (ZeroTLAB) {
       // the fields have been already cleared
       __ jmp(initialize_header);
-    } else {
-      // initialize both the header and fields
-      __ jmp(initialize_object);
     }
-  } else {
-    // Allocation in the shared Eden, if allowed.
-    //
-    // rdx: instance size in bytes
-    __ eden_allocate(thread, rax, rdx, 0, rbx, slow_case);
-  }
 
-  // If UseTLAB or allow_shared_alloc are true, the object is created above and
-  // there is an initialize need. Otherwise, skip and go to the slow path.
-  if (UseTLAB || allow_shared_alloc) {
     // The object is initialized before the header.  If the object size is
     // zero, go directly to the header initialization.
-    __ bind(initialize_object);
     __ decrement(rdx, sizeof(oopDesc));
     __ jcc(Assembler::zero, initialize_header);
 
@@ -4364,11 +4337,6 @@ void TemplateTable::monitorenter() {
   __ movptr(Address(rmon, BasicObjectLock::obj_offset_in_bytes()), rax);
   __ lock_object(rmon);
 
-  // The object is stored so counter should be increased even if stackoverflow is generated
-  Register rthread = LP64_ONLY(r15_thread) NOT_LP64(rbx);
-  NOT_LP64(__ get_thread(rthread);)
-  __ inc_held_monitor_count(rthread);
-
   // check to make sure this monitor doesn't cause stack overflow after locking
   __ save_bcp();  // in case of exception
   __ generate_stack_overflow_check(0);
@@ -4427,11 +4395,6 @@ void TemplateTable::monitorexit() {
   __ bind(found);
   __ push_ptr(rax); // make sure object is on stack (contract with oopMaps)
   __ unlock_object(rtop);
-
-  Register rthread = LP64_ONLY(r15_thread) NOT_LP64(rax);
-  NOT_LP64(__ get_thread(rthread);)
-  __ dec_held_monitor_count(rthread);
-
   __ pop_ptr(rax); // discard object
 }
 

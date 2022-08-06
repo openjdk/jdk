@@ -138,7 +138,7 @@ inline void JfrTraceIdBits::store(jbyte bits, const T* ptr) {
   // goes away with minor code perturbations, such as replacing function calls
   // with equivalent code directly inlined.
   PRAGMA_DIAG_PUSH
-  PRAGMA_DISABLE_GCC_WARNING("-Wstringop-overflow")
+  PRAGMA_STRINGOP_OVERFLOW_IGNORED
   set(bits, traceid_tag_byte(ptr));
   PRAGMA_DIAG_POP
 }

@@ -75,7 +75,7 @@ import jdk.javadoc.internal.doclets.toolkit.PropertyUtils;
  * Extra Members: these are members enclosed in an undocumented
  * package-private type element, and may not be linkable (or documented),
  * however, the members of such a type element may be documented, as if
- * declared in the sub type, only if the enclosing type is not being
+ * declared in the subtype, only if the enclosing type is not being
  * documented by a filter such as -public, -protected, etc.
  * <p>
  * Visible Members: these are the members that are "visible"
@@ -205,8 +205,8 @@ public class VisibleMemberTable {
      * sole {@code {@inheritDoc}} or devoid of any API comments.
      * <p>
      * b.The list may contain (extra) members, inherited by inaccessible
-     * super types, primarily package private types. These members are
-     * required to be documented in the subtype when the super type is
+     * supertypes, primarily package private types. These members are
+     * required to be documented in the subtype when the supertype is
      * not documented.
      *
      * @param kind the member kind
@@ -307,12 +307,12 @@ public class VisibleMemberTable {
         // Add this type element first.
         result.add(te);
 
-        // Add the super classes.
+        // Add the superclasses.
         allSuperclasses.stream()
                 .map(vmt -> vmt.te)
                 .forEach(result::add);
 
-        // ... and finally the sorted super interfaces.
+        // ... and finally the sorted superinterfaces.
         allSuperinterfaces.stream()
                 .map(vmt -> vmt.te)
                 .sorted(utils.comparators.makeGeneralPurposeComparator())
@@ -419,7 +419,7 @@ public class VisibleMemberTable {
             VisibleMemberTable vmt = mcache.getVisibleMemberTable(parent);
             allSuperclasses.add(vmt);
             allSuperclasses.addAll(vmt.getAllSuperclasses());
-            // Add direct super interfaces of a super class, if any.
+            // Add direct superinterfaces of a superclass, if any.
             allSuperinterfaces.addAll(vmt.getAllSuperinterfaces());
             parents.add(vmt);
         }

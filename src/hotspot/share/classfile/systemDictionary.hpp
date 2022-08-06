@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,7 +71,6 @@ class ClassFileStream;
 class ClassLoadInfo;
 class Dictionary;
 template <MEMFLAGS F> class HashtableBucket;
-class ResolutionErrorTable;
 class SymbolPropertyTable;
 class PackageEntry;
 class ProtectionDomainCacheTable;
@@ -79,7 +78,6 @@ class ProtectionDomainCacheEntry;
 class GCTimer;
 class EventClassLoad;
 class Symbol;
-class TableStatistics;
 
 class SystemDictionary : AllStatic {
   friend class BootstrapInfo;
@@ -293,9 +291,6 @@ public:
  private:
   // Static tables owned by the SystemDictionary
 
-  // Resolution errors
-  static ResolutionErrorTable*   _resolution_errors;
-
   // Invoke methods (JSR 292)
   static SymbolPropertyTable*    _invoke_method_table;
 
@@ -312,15 +307,10 @@ private:
   static OopHandle  _java_system_loader;
   static OopHandle  _java_platform_loader;
 
-  static ResolutionErrorTable* resolution_errors() { return _resolution_errors; }
   static SymbolPropertyTable* invoke_method_table() { return _invoke_method_table; }
 
 private:
   // Basic loading operations
-  static InstanceKlass* resolve_instance_class_or_null_helper(Symbol* name,
-                                                              Handle class_loader,
-                                                              Handle protection_domain,
-                                                              TRAPS);
   static InstanceKlass* resolve_instance_class_or_null(Symbol* class_name,
                                                        Handle class_loader,
                                                        Handle protection_domain, TRAPS);
@@ -409,11 +399,6 @@ protected:
                                 bool defining, TRAPS);
   static void update_dictionary(unsigned int hash,
                                 InstanceKlass* k, Handle loader);
-
-public:
-  static TableStatistics placeholders_statistics();
-  static TableStatistics loader_constraints_statistics();
-  static TableStatistics protection_domain_cache_statistics();
 };
 
 #endif // SHARE_CLASSFILE_SYSTEMDICTIONARY_HPP

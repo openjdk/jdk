@@ -25,8 +25,6 @@ package jdk.vm.ci.hotspot;
 
 import static jdk.vm.ci.hotspot.CompilerToVM.compilerToVM;
 
-import java.util.Arrays;
-import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
@@ -52,8 +50,8 @@ public final class JFR {
     }
 
     /**
-     * Helper methods for managing JFR CompilerPhase events.
-     * The events are defined in {see @code src/share/jfr/metadata/metadata.xml}.
+     * Helper methods for managing JFR CompilerPhase events. The events are defined in {see @code
+     * src/share/jfr/metadata/metadata.xml}.
      */
     public static final class CompilerPhaseEvent {
 

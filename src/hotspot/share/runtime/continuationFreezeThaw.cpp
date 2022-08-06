@@ -48,9 +48,11 @@
 #include "runtime/continuation.hpp"
 #include "runtime/continuationEntry.inline.hpp"
 #include "runtime/continuationHelper.inline.hpp"
+#include "runtime/continuationJavaClasses.inline.hpp"
 #include "runtime/continuationWrapper.inline.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/javaThread.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/keepStackGCProcessed.hpp"
 #include "runtime/orderAccess.hpp"
@@ -1142,7 +1144,10 @@ NOINLINE freeze_result FreezeBase::recurse_freeze_stub_frame(frame& f, frame& ca
   NOT_PRODUCT(_frames++;)
   _freeze_size += fsize;
 
-  RegisterMap map(_cont.thread(), true, false, false);
+  RegisterMap map(_cont.thread(),
+                  RegisterMap::UpdateMap::include,
+                  RegisterMap::ProcessFrames::skip,
+                  RegisterMap::WalkContinuation::skip);
   map.set_include_argument_oops(false);
   ContinuationHelper::update_register_map<ContinuationHelper::StubFrame>(f, &map);
   f.oop_map()->update_register_map(&f, &map); // we have callee-save registers in this case
@@ -1336,7 +1341,10 @@ static void jvmti_yield_cleanup(JavaThread* thread, ContinuationWrapper& cont) {
 #ifdef ASSERT
 static bool monitors_on_stack(JavaThread* thread) {
   ContinuationEntry* ce = thread->last_continuation();
-  RegisterMap map(thread, true, false, false);
+  RegisterMap map(thread,
+                  RegisterMap::UpdateMap::include,
+                  RegisterMap::ProcessFrames::skip,
+                  RegisterMap::WalkContinuation::skip);
   map.set_include_argument_oops(false);
   for (frame f = thread->last_frame(); Continuation::is_frame_in_continuation(ce, f); f = f.sender(&map)) {
     if ((f.is_interpreted_frame() && ContinuationHelper::InterpretedFrame::is_owning_locks(f)) ||
@@ -1349,7 +1357,10 @@ static bool monitors_on_stack(JavaThread* thread) {
 
 static bool interpreted_native_or_deoptimized_on_stack(JavaThread* thread) {
   ContinuationEntry* ce = thread->last_continuation();
-  RegisterMap map(thread, false, false, false);
+  RegisterMap map(thread,
+                  RegisterMap::UpdateMap::skip,
+                  RegisterMap::ProcessFrames::skip,
+                  RegisterMap::WalkContinuation::skip);
   map.set_include_argument_oops(false);
   for (frame f = thread->last_frame(); Continuation::is_frame_in_continuation(ce, f); f = f.sender(&map)) {
     if (f.is_interpreted_frame() || f.is_native_frame() || f.is_deoptimized_frame()) {
@@ -1405,7 +1416,8 @@ static inline int freeze_internal(JavaThread* current, intptr_t* const sp) {
 
   assert(entry->is_virtual_thread() == (entry->scope() == java_lang_VirtualThread::vthread_scope()), "");
 
-  assert(monitors_on_stack(current) == (current->held_monitor_count() > 0), "");
+  assert(monitors_on_stack(current) == ((current->held_monitor_count() - current->jni_monitor_count()) > 0),
+         "Held monitor count and locks on stack invariant: " INT64_FORMAT " JNI: " INT64_FORMAT, (int64_t)current->held_monitor_count(), (int64_t)current->jni_monitor_count());
 
   if (entry->is_pinned() || current->held_monitor_count() > 0) {
     log_develop_debug(continuations)("PINNED due to critical section/hold monitor");
@@ -1457,7 +1469,10 @@ static freeze_result is_pinned0(JavaThread* thread, oop cont_scope, bool safepoi
     return freeze_pinned_monitor;
   }
 
-  RegisterMap map(thread, true, false, false);
+  RegisterMap map(thread,
+                  RegisterMap::UpdateMap::include,
+                  RegisterMap::ProcessFrames::skip,
+                  RegisterMap::WalkContinuation::skip);
   map.set_include_argument_oops(false);
   frame f = thread->last_frame();
 
@@ -1965,6 +1980,10 @@ inline void ThawBase::patch(frame& f, const frame& caller, bool bottom) {
   if (bottom) {
     ContinuationHelper::Frame::patch_pc(caller, _cont.is_empty() ? caller.pc()
                                                                  : StubRoutines::cont_returnBarrier());
+  } else {
+    // caller might have been deoptimized during thaw but we've overwritten the return address when copying f from the heap.
+    // If the caller is not deoptimized, pc is unchanged.
+    ContinuationHelper::Frame::patch_pc(caller, caller.raw_pc());
   }
 
   patch_pd(f, caller);
@@ -2061,6 +2080,9 @@ void ThawBase::recurse_thaw_compiled_frame(const frame& hf, frame& caller, int n
     _align_size += frame::align_wiggle; // we add one whether or not we've aligned because we add it in freeze_interpreted_frame
   }
 
+  // new_stack_frame must construct the resulting frame using hf.pc() rather than hf.raw_pc() because the frame is not
+  // yet laid out in the stack, and so the original_pc is not stored in it.
+  // As a result, f.is_deoptimized_frame() is always false and we must test hf to know if the frame is deoptimized.
   frame f = new_stack_frame<ContinuationHelper::CompiledFrame>(hf, caller, is_bottom_frame);
   intptr_t* const stack_frame_top = f.sp();
   intptr_t* const heap_frame_top = hf.unextended_sp();
@@ -2082,7 +2104,9 @@ void ThawBase::recurse_thaw_compiled_frame(const frame& hf, frame& caller, int n
 
   patch(f, caller, is_bottom_frame);
 
-  if (f.is_deoptimized_frame()) {
+  // f.is_deoptimized_frame() is always false and we must test hf.is_deoptimized_frame() (see comment above)
+  assert(!f.is_deoptimized_frame(), "");
+  if (hf.is_deoptimized_frame()) {
     maybe_set_fastpath(f.sp());
   } else if (_thread->is_interp_only_mode()
               || (_cont.is_preempted() && f.cb()->as_compiled_method()->is_marked_for_deoptimization())) {
@@ -2114,7 +2138,10 @@ void ThawBase::recurse_thaw_stub_frame(const frame& hf, frame& caller, int num_f
   DEBUG_ONLY(_frames++;)
 
   {
-    RegisterMap map(nullptr, true, false, false);
+    RegisterMap map(nullptr,
+                    RegisterMap::UpdateMap::include,
+                    RegisterMap::ProcessFrames::skip,
+                    RegisterMap::WalkContinuation::skip);
     map.set_include_argument_oops(false);
     _stream.next(&map);
     assert(!_stream.is_done(), "");
@@ -2142,7 +2169,10 @@ void ThawBase::recurse_thaw_stub_frame(const frame& hf, frame& caller, int num_f
                   fsize + frame::metadata_words);
 
   { // can only fix caller once this frame is thawed (due to callee saved regs)
-    RegisterMap map(nullptr, true, false, false); // map.clear();
+    RegisterMap map(nullptr,
+                    RegisterMap::UpdateMap::include,
+                    RegisterMap::ProcessFrames::skip,
+                    RegisterMap::WalkContinuation::skip); // map.clear();
     map.set_include_argument_oops(false);
     f.oop_map()->update_register_map(&f, &map);
     ContinuationHelper::update_register_map_with_callee(caller, &map);
@@ -2242,7 +2272,7 @@ static inline intptr_t* thaw_internal(JavaThread* thread, const Continuation::th
   assert(is_aligned(sp, frame::frame_alignment), "");
 
   // All the frames have been thawed so we know they don't hold any monitors
-  thread->reset_held_monitor_count();
+  assert(thread->held_monitor_count() == 0, "Must be");
 
 #ifdef ASSERT
   intptr_t* sp0 = sp;
@@ -2371,7 +2401,10 @@ static void log_frames(JavaThread* thread) {
     ls.print_cr("NO ANCHOR!");
   }
 
-  RegisterMap map(thread, true, true, false);
+  RegisterMap map(thread,
+                  RegisterMap::UpdateMap::include,
+                  RegisterMap::ProcessFrames::include,
+                  RegisterMap::WalkContinuation::skip);
   map.set_include_argument_oops(false);
 
   if (false) {
@@ -2409,8 +2442,11 @@ static void print_frame_layout(const frame& f, bool callee_complete, outputStrea
   FrameValues values;
   assert(f.get_cb() != nullptr, "");
   RegisterMap map(f.is_heap_frame() ?
-                  (JavaThread*)nullptr :
-                  JavaThread::current(), true, false, false);
+                    (JavaThread*)nullptr :
+                    JavaThread::current(),
+                  RegisterMap::UpdateMap::include,
+                  RegisterMap::ProcessFrames::skip,
+                  RegisterMap::WalkContinuation::skip);
   map.set_include_argument_oops(false);
   map.set_skip_missing(true);
   if (callee_complete) {

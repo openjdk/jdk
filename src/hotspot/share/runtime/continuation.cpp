@@ -23,12 +23,15 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/shared/barrierSetNMethod.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/continuationEntry.inline.hpp"
 #include "runtime/continuationHelper.inline.hpp"
+#include "runtime/continuationJavaClasses.inline.hpp"
 #include "runtime/continuationWrapper.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/javaThread.inline.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/vframe.inline.hpp"
 #include "runtime/vframe_hp.hpp"
@@ -144,6 +147,13 @@ ContinuationEntry* Continuation::get_continuation_entry_for_sp(JavaThread* threa
   while (entry != nullptr && !is_sp_in_continuation(entry, sp)) {
     entry = entry->parent();
   }
+  return entry;
+}
+
+ContinuationEntry* Continuation::get_continuation_entry_for_entry_frame(JavaThread* thread, const frame& f) {
+  assert(is_continuation_enterSpecial(f), "");
+  ContinuationEntry* entry = (ContinuationEntry*)f.unextended_sp();
+  assert(entry == get_continuation_entry_for_sp(thread, f.sp()-2), "mismatched entry");
   return entry;
 }
 

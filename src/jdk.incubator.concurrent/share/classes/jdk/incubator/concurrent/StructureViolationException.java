@@ -27,7 +27,6 @@ package jdk.incubator.concurrent;
 /**
  * Thrown when a structure violation is detected.
  *
- * @see StructuredTaskScope#fork(Callable)
  * @see StructuredTaskScope#close()
  *
  * @since 19

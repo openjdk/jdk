@@ -480,8 +480,13 @@ public class DocTreeMaker implements DocTreeFactory {
 
     @Override @DefinedBy(Api.COMPILER_TREE)
     public DCValue newValueTree(ReferenceTree ref) {
+        return newValueTree(null, ref);
+    }
+
+    @Override @DefinedBy(Api.COMPILER_TREE)
+    public DCValue newValueTree(TextTree format, ReferenceTree ref) {
         // TODO: verify the reference is to a constant value
-        DCValue tree = new DCValue((DCReference) ref);
+        DCValue tree = new DCValue((DCText) format, (DCReference) ref);
         tree.pos = pos;
         return tree;
     }

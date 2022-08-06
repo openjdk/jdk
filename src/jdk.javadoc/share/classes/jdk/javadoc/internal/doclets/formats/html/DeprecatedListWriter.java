@@ -27,7 +27,6 @@ package jdk.javadoc.internal.doclets.formats.html;
 
 import com.sun.source.doctree.DeprecatedTree;
 import java.util.List;
-import java.util.ListIterator;
 
 import javax.lang.model.element.Element;
 
@@ -81,24 +80,34 @@ public class DeprecatedListWriter extends SummaryListWriter<DeprecatedAPIListBui
     @Override
     protected void addExtraSection(DeprecatedAPIListBuilder list, Content content) {
         List<String> releases = configuration.deprecatedAPIListBuilder.releases;
-        if (!releases.isEmpty()) {
+        if (releases.size() > 1) {
             Content tabs = HtmlTree.DIV(HtmlStyle.checkboxes, contents.getContent(
                     "doclet.Deprecated_API_Checkbox_Label"));
             for (int i = 0; i < releases.size(); i++) {
-                int releaseIndex = i + 1;
-                String release = releases.get(i);
-                HtmlId htmlId = HtmlId.of("release-" + releaseIndex);
-                tabs.add(HtmlTree.LABEL(htmlId.name(),
-                                HtmlTree.INPUT("checkbox", htmlId)
-                                        .put(HtmlAttr.CHECKED, "")
-                                        .put(HtmlAttr.ONCLICK,
-                                                "toggleGlobal(this, '" + releaseIndex + "', 3)"))
-                        .add(HtmlTree.SPAN(Text.of(release))));
+                // Table column ids are 1-based
+                tabs.add(Text.of(" ")).add(getReleaseCheckbox(releases.get(i), i + 1));
             }
             content.add(tabs);
         }
         addSummaryAPI(list.getForRemoval(), HtmlIds.FOR_REMOVAL,
                 TERMINALLY_DEPRECATED_KEY, "doclet.Element", content);
+    }
+
+    private Content getReleaseCheckbox(String name, int index) {
+        // Empty string represents other/uncategorized releases. Since we can't make any assumptions
+        // about release names this is arguably the safest way to avoid naming collisions.
+        boolean isOtherReleases = name.isEmpty();
+        Content releaseLabel = isOtherReleases
+                ? contents.getContent("doclet.Deprecated_API_Checkbox_Other_Releases")
+                : Text.of(name);
+        HtmlId htmlId = HtmlId.of("release-" + index);
+        String releaseId = isOtherReleases ? "" : Integer.toString(index);
+        return HtmlTree.LABEL(htmlId.name(),
+                        HtmlTree.INPUT("checkbox", htmlId)
+                                .put(HtmlAttr.CHECKED, "")
+                                .put(HtmlAttr.ONCLICK,
+                                        "toggleGlobal(this, '" + releaseId + "', 3)"))
+                .add(HtmlTree.SPAN(releaseLabel));
     }
 
     @Override
@@ -122,10 +131,12 @@ public class DeprecatedListWriter extends SummaryListWriter<DeprecatedAPIListBui
     protected void addTableTabs(Table table, String headingKey) {
         List<String> releases = configuration.deprecatedAPIListBuilder.releases;
         if (!releases.isEmpty()) {
+            table.setGridStyle(HtmlStyle.threeColumnReleaseSummary);
+        }
+        if (releases.size() > 1) {
             table.setDefaultTab(getTableCaption(headingKey))
                     .setAlwaysShowDefaultTab(true)
-                    .setRenderTabs(false)
-                    .setGridStyle(HtmlStyle.threeColumnReleaseSummary);
+                    .setRenderTabs(false);
             for (String release : releases) {
                 Content tab = TERMINALLY_DEPRECATED_KEY.equals(headingKey)
                         ? contents.getContent("doclet.Terminally_Deprecated_In_Release", release)

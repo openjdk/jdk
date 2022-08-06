@@ -41,13 +41,14 @@
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/javaThread.inline.hpp"
 #include "runtime/init.hpp"
-#include "runtime/os.hpp"
+#include "runtime/os.inline.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/safefetch.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/stackFrameStream.inline.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/threads.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/vmThread.hpp"
 #include "runtime/vmOperations.hpp"
@@ -331,7 +332,10 @@ static frame next_frame(frame fr, Thread* t) {
       return invalid;
     }
     if (fr.is_java_frame() || fr.is_native_frame() || fr.is_runtime_frame()) {
-      RegisterMap map(JavaThread::cast(t), false); // No update
+      RegisterMap map(JavaThread::cast(t),
+                      RegisterMap::UpdateMap::skip,
+                      RegisterMap::ProcessFrames::include,
+                      RegisterMap::WalkContinuation::skip); // No update
       return fr.sender(&map);
     } else {
       // is_first_C_frame() does only simple checks for frame pointer,
@@ -552,14 +556,14 @@ void VMError::report(outputStream* st, bool _verbose) {
   // error handler after a secondary crash works.
   STEP("test secondary crash 1")
     if (_verbose && TestCrashInErrorHandler == TEST_SECONDARY_CRASH) {
-      st->print_cr("Will crash now (TestCrashInErrorHandler=" UINTX_FORMAT ")...",
+      st->print_cr("Will crash now (TestCrashInErrorHandler=%u)...",
         TestCrashInErrorHandler);
       controlled_crash(TestCrashInErrorHandler);
     }
 
   STEP("test secondary crash 2")
     if (_verbose && TestCrashInErrorHandler == TEST_SECONDARY_CRASH) {
-      st->print_cr("Will crash now (TestCrashInErrorHandler=" UINTX_FORMAT ")...",
+      st->print_cr("Will crash now (TestCrashInErrorHandler=%u)...",
         TestCrashInErrorHandler);
       controlled_crash(TestCrashInErrorHandler);
     }
@@ -989,13 +993,11 @@ void VMError::report(outputStream* st, bool _verbose) {
        st->cr();
      }
 
-#ifndef _WIN32
   STEP("printing user info")
 
      if (ExtensiveErrorReports && _verbose) {
-       os::Posix::print_user_info(st);
+       os::print_user_info(st);
      }
-#endif
 
   STEP("printing all threads")
 
@@ -1154,14 +1156,12 @@ void VMError::report(outputStream* st, bool _verbose) {
        st->cr();
      }
 
-#ifndef _WIN32
   STEP("printing locale settings")
 
      if (_verbose) {
-       os::Posix::print_active_locale(st);
+       os::print_active_locale(st);
        st->cr();
      }
-#endif
 
   STEP("printing signal handlers")
 
@@ -1345,10 +1345,10 @@ void VMError::print_vm_info(outputStream* st) {
   st->cr();
 
   // STEP("printing locale settings")
-#ifndef _WIN32
-  os::Posix::print_active_locale(st);
+
+  os::print_active_locale(st);
   st->cr();
-#endif
+
 
   // STEP("printing signal handlers")
 

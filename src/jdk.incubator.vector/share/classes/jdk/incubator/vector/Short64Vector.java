@@ -854,8 +854,8 @@ final class Short64Vector extends ShortVector {
     @ForceInline
     @Override
     final
-    ShortVector fromArray0(short[] a, int offset, VectorMask<Short> m) {
-        return super.fromArray0Template(Short64Mask.class, a, offset, (Short64Mask) m);  // specialize
+    ShortVector fromArray0(short[] a, int offset, VectorMask<Short> m, int offsetInRange) {
+        return super.fromArray0Template(Short64Mask.class, a, offset, (Short64Mask) m, offsetInRange);  // specialize
     }
 
 
@@ -869,8 +869,8 @@ final class Short64Vector extends ShortVector {
     @ForceInline
     @Override
     final
-    ShortVector fromCharArray0(char[] a, int offset, VectorMask<Short> m) {
-        return super.fromCharArray0Template(Short64Mask.class, a, offset, (Short64Mask) m);  // specialize
+    ShortVector fromCharArray0(char[] a, int offset, VectorMask<Short> m, int offsetInRange) {
+        return super.fromCharArray0Template(Short64Mask.class, a, offset, (Short64Mask) m, offsetInRange);  // specialize
     }
 
 
@@ -884,8 +884,8 @@ final class Short64Vector extends ShortVector {
     @ForceInline
     @Override
     final
-    ShortVector fromMemorySegment0(MemorySegment ms, long offset, VectorMask<Short> m) {
-        return super.fromMemorySegment0Template(Short64Mask.class, ms, offset, (Short64Mask) m);  // specialize
+    ShortVector fromMemorySegment0(MemorySegment ms, long offset, VectorMask<Short> m, int offsetInRange) {
+        return super.fromMemorySegment0Template(Short64Mask.class, ms, offset, (Short64Mask) m, offsetInRange);  // specialize
     }
 
     @ForceInline

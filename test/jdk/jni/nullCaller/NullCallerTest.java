@@ -24,7 +24,7 @@
 
 /**
  * @test
- * @bug 8280902 8281000 8281003 8281006
+ * @bug 8280902 8281000 8281003 8281006 8281001
  * @summary Test uses custom launcher that starts VM using JNI that verifies
  *          various API called with a null caller class function properly.
  * @library /test/lib

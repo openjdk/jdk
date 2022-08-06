@@ -80,6 +80,7 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/javaThread.inline.hpp"
 #include "runtime/jfieldIDWorkaround.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/reflection.hpp"
@@ -99,7 +100,7 @@
 #include "jvmci/jvmciCompiler.hpp"
 #endif
 
-static jint CurrentVersion = JNI_VERSION_10;
+static jint CurrentVersion = JNI_VERSION_19;
 
 #if defined(_WIN32) && !defined(USE_VECTORED_EXCEPTION_HANDLING)
 extern LONG WINAPI topLevelExceptionFilter(_EXCEPTION_POINTERS* );
@@ -2718,12 +2719,7 @@ JNI_ENTRY(jint, jni_MonitorEnter(JNIEnv *env, jobject jobj))
 
   Handle obj(thread, JNIHandles::resolve_non_null(jobj));
   ObjectSynchronizer::jni_enter(obj, thread);
-  if (!Continuation::pin(thread)) {
-    ObjectSynchronizer::jni_exit(obj(), CHECK_(JNI_ERR));
-    THROW_(vmSymbols::java_lang_VirtualMachineError(), JNI_ERR);
-  }
-  ret = JNI_OK;
-  return ret;
+  return JNI_OK;
 JNI_END
 
 DT_RETURN_MARK_DECL(MonitorExit, jint
@@ -2741,11 +2737,7 @@ JNI_ENTRY(jint, jni_MonitorExit(JNIEnv *env, jobject jobj))
 
   Handle obj(THREAD, JNIHandles::resolve_non_null(jobj));
   ObjectSynchronizer::jni_exit(obj(), CHECK_(JNI_ERR));
-  if (!Continuation::unpin(thread)) {
-    ShouldNotReachHere();
-  }
-  ret = JNI_OK;
-  return ret;
+  return JNI_OK;
 JNI_END
 
 //

@@ -31,7 +31,7 @@
 #include "jfr/utilities/jfrTime.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
 #include "jfr/writers/jfrNativeEventWriter.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/javaThread.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/ticks.hpp"
 #ifdef ASSERT

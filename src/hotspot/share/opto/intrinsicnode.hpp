@@ -262,6 +262,33 @@ class SignumFNode : public Node {
   virtual uint ideal_reg() const { return Op_RegF; }
 };
 
+//----------------------------CompressBits/ExpandBits---------------------------
+class CompressBitsNode : public TypeNode {
+ public:
+  CompressBitsNode(Node* in1, Node* in2, const Type* type) : TypeNode(type, 3) {
+    init_req(1, in1);
+    init_req(2, in2);
+  }
+  virtual int Opcode() const;
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+  virtual Node* Identity(PhaseGVN* phase);
+  virtual const Type* Value(PhaseGVN* phase) const;
+  static jlong compress_bits(jlong src, jlong mask, int bit_size);
+};
+
+class ExpandBitsNode : public TypeNode {
+ public:
+  ExpandBitsNode(Node* in1, Node* in2, const Type* type) : TypeNode(type, 3) {
+    init_req(1, in1);
+    init_req(2, in2);
+  }
+  virtual int Opcode() const;
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+  virtual Node* Identity(PhaseGVN* phase);
+  virtual const Type* Value(PhaseGVN* phase) const;
+  static jlong expand_bits(jlong src, jlong mask, int bit_size);
+};
+
 //---------- IsInfiniteFNode -----------------------------------------------------
 class IsInfiniteFNode : public Node {
   public:

@@ -1586,10 +1586,14 @@ void Parse::adjust_map_after_if(BoolTest::mask btest, Node* c, float prob,
 
   if (path_is_suitable_for_uncommon_trap(prob)) {
     repush_if_args();
-    uncommon_trap(Deoptimization::Reason_unstable_if,
+    Node* call = uncommon_trap(Deoptimization::Reason_unstable_if,
                   Deoptimization::Action_reinterpret,
                   NULL,
                   (is_fallthrough ? "taken always" : "taken never"));
+
+    if (call != nullptr) {
+      C->record_unstable_if_trap(new UnstableIfTrap(call->as_CallStaticJava(), path));
+    }
     return;
   }
 
