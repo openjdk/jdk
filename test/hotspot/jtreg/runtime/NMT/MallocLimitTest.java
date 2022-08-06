@@ -162,7 +162,7 @@ public class MallocLimitTest {
         );
         test_valid_setting(
                 "gc:1234567891,mtInternal:987654321,Object Monitors:1g",
-                "[0.001s][info][nmt] MallocLimit: category \"GC\" limit: 1234567891",
+                "[nmt] MallocLimit: category \"GC\" limit: 1234567891",
                 "[nmt] MallocLimit: category \"Internal\" limit: 987654321",
                 "[nmt] MallocLimit: category \"Object Monitors\" limit: 1073741824",
                 "[nmt] NMT initialized: summary"
