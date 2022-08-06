@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,22 +21,21 @@
  * questions.
  */
 
-import org.testng.annotations.Test;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.module.ModuleDescriptor;
 import java.util.Set;
 
+import org.testng.annotations.Test;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotSame;
 
 /**
  * @test
- * @bug 8275509
+ * @bug 8275509 8290041
+ * @summary Tests the ModuleDescriptor.hashCode()
  * @run testng ModuleDescriptorHashCodeTest
  * @run testng/othervm -Xshare:off ModuleDescriptorHashCodeTest
- * @summary Tests the ModuleDescriptor.hashCode() for boot layer modules
  */
 public class ModuleDescriptorHashCodeTest {
 
@@ -61,6 +60,45 @@ public class ModuleDescriptorHashCodeTest {
             assertEquals(mdFromBuilder.compareTo(bootMD), 0,
                     "Unexpected ModuleDescriptor.compareTo() for " + mdFromBuilder);
         }
+    }
+
+    /**
+     * Verifies that two "equal" module descriptors which only differ in the order of
+     * {@link ModuleDescriptor.Opens.Modifier opens modifiers}, that were used to construct the
+     * descriptors, have the same hashcode.
+     */
+    @Test
+    public void testModifiersOrdering() throws Exception {
+        // create a module descriptor
+
+        // important to use Set.of() (i.e. backed by immutable set) to reproduce the issue
+        final Set<ModuleDescriptor.Opens.Modifier> mod1 = Set.of(
+                ModuleDescriptor.Opens.Modifier.SYNTHETIC, ModuleDescriptor.Opens.Modifier.MANDATED);
+        final ModuleDescriptor desc1 = ModuleDescriptor.newModule("foobar")
+                .opens(mod1, "a.p1", Set.of("a.m1"))
+                .build();
+
+        // create the same module descriptor again and this time just change the order of the
+        // "opens" modifiers' Set.
+
+        // important to use Set.of() (i.e. backed by immutable set) to reproduce the issue
+        final Set<ModuleDescriptor.Opens.Modifier> mod2 = Set.of(
+                ModuleDescriptor.Opens.Modifier.MANDATED, ModuleDescriptor.Opens.Modifier.SYNTHETIC);
+        final ModuleDescriptor desc2 = ModuleDescriptor.newModule("foobar")
+                .opens(mod2, "a.p1", Set.of("a.m1"))
+                .build();
+
+        // basic verification of the modifiers themselves before we check the module descriptors
+        assertEquals(mod1, mod2, "Modifiers were expected to be equal");
+
+        // now verify the module descriptors
+        assertEquals(desc1, desc2, "Module descriptors were expected to be equal");
+        assertEquals(desc1.compareTo(desc2), 0, "compareTo was expected to return" +
+                " 0 for module descriptors that are equal");
+        System.out.println(desc1 + " hashcode = " + desc1.hashCode());
+        System.out.println(desc2 + " hashcode = " + desc2.hashCode());
+        assertEquals(desc1.hashCode(), desc2.hashCode(), "Module descriptor hashcodes" +
+                " were expected to be equal");
     }
 
     // Returns a ModuleDescriptor parsed out of the module-info.class of the passed Module
