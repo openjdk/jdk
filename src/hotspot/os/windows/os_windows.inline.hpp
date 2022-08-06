@@ -25,11 +25,15 @@
 #ifndef OS_WINDOWS_OS_WINDOWS_INLINE_HPP
 #define OS_WINDOWS_OS_WINDOWS_INLINE_HPP
 
-// os_windows.hpp included by os.hpp
+#include "os_windows.hpp"
 
 #include "runtime/javaThread.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/os.hpp"
+
+inline bool os::zero_page_read_protected() {
+  return true;
+}
 
 inline bool os::uses_stack_guard_pages() {
   return true;

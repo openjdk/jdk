@@ -33,8 +33,8 @@ import jdk.test.lib.Utils;
  * @summary Auto-vectorization enhancement for integer Math.max/Math.min operations
  * @library /test/lib /
  * @requires vm.compiler2.enabled
- * @requires (os.simpleArch == "x64" & ((vm.cpu.features ~= ".*avx.*")
- *           | (vm.cpu.features ~= ".*sse4.*"))) | os.arch == "aarch64" | os.arch == "riscv64"
+ * @requires (os.simpleArch == "x64" & (vm.opt.UseSSE == "null" | vm.opt.UseSSE > 3))
+ *           | os.arch == "aarch64" | os.arch == "riscv64"
  * @run driver compiler.c2.irTests.TestAutoVecIntMinMax
  */
 

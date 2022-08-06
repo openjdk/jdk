@@ -162,6 +162,8 @@ public final class ChunkHeader {
                     Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Chunk: finalChunk=" + finalChunk);
                     absoluteChunkEnd = absoluteChunkStart + chunkSize;
                     return;
+                } else if (finished) {
+                    throw new IOException("No metadata event found in finished chunk.");
                 }
             }
         }

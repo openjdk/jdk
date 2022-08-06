@@ -27,6 +27,7 @@
 #include "gc/g1/g1SegmentedArray.inline.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/vmOperations.hpp"
 #include "utilities/globalCounter.inline.hpp"
 
 G1SegmentedArraySegment::G1SegmentedArraySegment(uint slot_size, uint num_slots, G1SegmentedArraySegment* next, MEMFLAGS flag) :
@@ -48,6 +49,11 @@ G1SegmentedArraySegment* G1SegmentedArraySegment::create_segment(uint slot_size,
 }
 
 void G1SegmentedArraySegment::delete_segment(G1SegmentedArraySegment* segment) {
+  // Wait for concurrent readers of the segment to exit before freeing; but only if the VM
+  // isn't exiting.
+  if (!VM_Exit::vm_exited()) {
+    GlobalCounter::write_synchronize();
+  }
   segment->~G1SegmentedArraySegment();
   FREE_C_HEAP_ARRAY(_mem_flag, segment);
 }

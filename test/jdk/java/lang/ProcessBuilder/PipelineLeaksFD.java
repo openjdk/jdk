@@ -68,11 +68,18 @@ public class PipelineLeaksFD {
             Assert.fail("There should be at least 3 pipes before, (0, 1, 2)");
         }
 
+        // Redirect all of the error streams to stdout (except the last)
+        // so those file descriptors are not left open
+        for (int i = 0; i < builders.size() - 1; i++) {
+            builders.get(i).redirectErrorStream(true);
+        }
+
         List<Process> processes = ProcessBuilder.startPipeline(builders);
 
-        OutputStream out = processes.get(0).getOutputStream();
-        out.write('a');
-        out.close();
+        // Write something through the pipeline
+        try (OutputStream out = processes.get(0).getOutputStream()) {
+            out.write('a');
+        }
 
         Process last = processes.get(processes.size() - 1);
         try (InputStream inputStream = last.getInputStream();
@@ -86,7 +93,6 @@ public class PipelineLeaksFD {
         processes.forEach(p -> waitForQuiet(p));
 
         Set<PipeRecord> pipesAfter = myPipes();
-        printPipes(pipesAfter, "DEBUG: All Pipes After");
         if (!pipesBefore.equals(pipesAfter)) {
             Set<PipeRecord> missing = new HashSet<>(pipesBefore);
             missing.removeAll(pipesAfter);
