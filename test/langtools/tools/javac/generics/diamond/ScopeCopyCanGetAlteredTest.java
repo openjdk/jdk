@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2013 SAP SE. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,23 +19,33 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef OS_CPU_AIX_PPC_OS_AIX_PPC_HPP
-#define OS_CPU_AIX_PPC_OS_AIX_PPC_HPP
+/*
+ * @test
+ * @bug 8260892
+ * @summary Compilation fails: lambda parameter not visible in body when generics involved
+ * @compile ScopeCopyCanGetAlteredTest.java
+ */
 
-  static void setup_fpu() {}
+import java.util.function.Function;
+import java.util.function.IntFunction;
 
-  // Used to register dynamic code cache area with the OS
-  // Note: Currently only used in 64 bit Windows implementations
-  static bool register_code_area(char *low, char *high) { return true; }
+class ScopeCopyCanGetAlteredTest {
+    interface GenericOp<A> {
+        <B> A apply(IntFunction<B> func1, Function<B, A> func2);
+    }
 
-  #define PLATFORM_PRINT_NATIVE_STACK 1
-  static bool platform_print_native_stack(outputStream* st, void* context,
-                                          char *buf, int buf_size);
+    static <A> GenericOp<A> foo(IntFunction<GenericOp<A>> f) {
+        return null;
+    }
 
-  #define HAVE_FUNCTION_DESCRIPTORS 1
-  static void* resolve_function_descriptor(void* p);
-
-#endif // OS_CPU_AIX_PPC_OS_AIX_PPC_HPP
+    static <A> GenericOp<A> bar() {
+        return foo((int arg) -> new GenericOp<>() {
+            @Override
+            public <B> A apply(IntFunction<B> func1, Function<B, A> func2) {
+                return func2.apply(func1.apply(arg));
+            }
+        });
+    }
+}

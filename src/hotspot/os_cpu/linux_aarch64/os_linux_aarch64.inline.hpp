@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016 SAP SE. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +22,16 @@
  *
  */
 
-#ifndef OS_CPU_LINUX_S390_OS_LINUX_S390_HPP
-#define OS_CPU_LINUX_S390_OS_LINUX_S390_HPP
+#ifndef OS_CPU_LINUX_AARCH64_OS_LINUX_AARCH64_INLINE_HPP
+#define OS_CPU_LINUX_AARCH64_OS_LINUX_AARCH64_INLINE_HPP
 
-  static void setup_fpu() {}
+#include "runtime/os.hpp"
 
-  // Used to register dynamic code cache area with the OS.
-  static bool register_code_area(char *low, char *high) { return true; }
+#if defined(COMPATIBLE_CDS_ALIGNMENT)
+#define HAVE_CDS_CORE_REGION_ALIGNMENT 1
+inline size_t os::cds_core_region_alignment() {
+  return (64*K);
+}
+#endif
 
-#endif // OS_CPU_LINUX_S390_OS_LINUX_S390_HPP
+#endif // OS_CPU_LINUX_AARCH64_OS_LINUX_AARCH64_INLINE_HPP
