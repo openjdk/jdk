@@ -3678,17 +3678,6 @@ operand no_rax_rdx_RegL()
   interface(REG_INTER);
 %}
 
-operand no_rax_RegL()
-%{
-  constraint(ALLOC_IN_RC(long_no_rax_rdx_reg));
-  match(RegL);
-  match(rRegL);
-  match(rdx_RegL);
-
-  format %{ %}
-  interface(REG_INTER);
-%}
-
 operand rax_RegL()
 %{
   constraint(ALLOC_IN_RC(long_rax_reg));
