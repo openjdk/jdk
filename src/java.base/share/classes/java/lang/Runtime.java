@@ -61,15 +61,15 @@ import jdk.internal.reflect.Reflection;
  * </ol>
  *
  * <p>At the beginning of the shutdown sequence, the registered shutdown hooks are
- * {@linkplain Thread#start started} in some unspecified order, and they are allowed to run
- * concurrently. After this point, registration and de-registration of shutdown hooks with
- * {@link #addShutdownHook addShutdownHook} and {@link #removeShutdownHook removeShutdownHook}
- * is prohibited.
+ * {@linkplain Thread#start started} in some unspecified order. They run concurrently
+ * with any daemon or non-daemon threads that were {@linkplain Thread#isAlive() alive}
+ * at the beginning of the shutdown sequence.
  *
- * <p>During the shutdown sequence, threads that were {@linkplain Thread#isAlive() alive}
- * at the beginning of the shutdown sequence continue to run. Threads and shutdown hooks running
- * during the shutdown sequence are permitted to create and start other threads. These threads
- * also run concurrently during the shutdown sequence.
+ * <p>After the shutdown sequence has begun, registration and de-registration of shutdown hooks
+ * with {@link #addShutdownHook addShutdownHook} and {@link #removeShutdownHook removeShutdownHook}
+ * is prohibited. However, creating and starting new threads is permitted. New threads run
+ * concurrently with the registered shutdown hooks and with any daemon or non-daemon threads
+ * that are already running.
  *
  * <p>The shutdown sequence finishes when all shutdown hooks have terminated. At this point,
  * the Java Virtual Machine terminates as described below.
@@ -84,8 +84,7 @@ import jdk.internal.reflect.Reflection;
  *
  * <h2><a id="termination">Virtual Machine Termination</a></h2>
  *
- * <p>The JVM terminates when the shutdown sequence finishes or when {@link #halt halt} has
- * been called.
+ * <p>The JVM terminates when the shutdown sequence finishes or when {@link #halt halt} is called.
  *
  * <p>When the JVM terminates, all threads are immediately prevented from executing any further
  * Java code. This includes shutdown hooks as well as daemon and non-daemon threads. The
