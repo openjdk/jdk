@@ -482,36 +482,8 @@ void ObjectSynchronizer::enter(Handle obj, JavaThread* current) {
         }
         // Otherwise retry.
         header = witness;
-      } else if (header.is_fast_locked()) {
-        bool own = lock_stack.contains(obj());
-        ObjectMonitor* monitor = new ObjectMonitor(obj());
-        // Pre-lock monitor to anon or current thread.
-        if (own) {
-          monitor->set_owner_from(NULL, current);
-        } else {
-          monitor->set_owner_anonymous();
-        }
-        monitor->set_header(header.set_unlocked());
-        markWord witness = obj()->cas_set_mark(markWord::encode(monitor), header);
-        if (witness == header) {
-          _in_use_list.add(monitor);
-
-          // Successfully inflated. Get in line for monitor enter
-          if (monitor->enter(current)) {
-            if (own) {
-              lock_stack.remove(obj());
-            }
-            return;
-          }
-          // Else we have been beaten by concurrent monitor deflation and need to try again.
-          header = obj()->mark_acquire();
-          delete monitor;
-        } else {
-          // If we failed the installation of the monitor, we have been beaten by another thread and need to try again.
-          delete monitor;
-          header = witness;
-        }
       } else {
+        // Fall-through to inflate-enter.
         break;
       }
     }
