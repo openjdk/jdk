@@ -33,6 +33,6 @@
  *          /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm/native -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI gc.lock.LockerTest -lockers malloc
+ * @run main/othervm/native -Xbootclasspath/a:. -Xlog:gc=debug:gc.log -XX:+HeapDumpOnOutOfMemoryError -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI gc.lock.LockerTest -lockers malloc -t 1
  */
 

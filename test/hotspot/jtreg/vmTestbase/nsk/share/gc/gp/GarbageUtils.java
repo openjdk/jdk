@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.invoke.*;
 import java.util.*;
+import jdk.test.whitebox.WhiteBox;
 import nsk.share.gc.gp.array.*;
 import nsk.share.gc.gp.string.*;
 import nsk.share.gc.gp.list.*;
@@ -84,6 +85,22 @@ public final class GarbageUtils {
         public static final Throwable preloadThrowable = new Throwable("preload");
 
         private GarbageUtils() {
+        }
+
+        public static void engageGC(ExecutionController stresser, long testMemory) {
+            // Number of Young GC iterations before triggering full GC.
+            final long YOUNG_GC_ITERATIONS = 100;
+            final long memChunk = testMemory / YOUNG_GC_ITERATIONS;
+            int iteration = 0;
+
+            while (stresser.continueExecution()) {
+                while (iteration++ < YOUNG_GC_ITERATIONS) {
+                    byteArrayProducer.create(memChunk);
+                    WhiteBox.getWhiteBox().youngGC();
+                }
+                iteration = 0;
+                WhiteBox.getWhiteBox().fullGC();
+            }
         }
 
         /**

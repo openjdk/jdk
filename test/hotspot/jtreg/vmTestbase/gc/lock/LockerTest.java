@@ -25,6 +25,7 @@ package gc.lock;
 import jdk.test.whitebox.WhiteBox;
 import nsk.share.runner.*;
 import nsk.share.gc.*;
+import nsk.share.gc.gp.GarbageUtils;
 import nsk.share.gc.lock.*;
 
 /**
@@ -39,7 +40,7 @@ public class LockerTest extends ThreadedGCTest implements LockersAware {
 
     private class Worker implements Runnable {
 
-        byte[] rezerve = new byte[1024 * 1024];
+        byte[] rezerve = new byte[1024];
         private Locker locker = lockers.createLocker(rezerve);
 
         public Worker() {
@@ -48,7 +49,9 @@ public class LockerTest extends ThreadedGCTest implements LockersAware {
 
         public void run() {
             locker.lock();
-            WhiteBox.getWhiteBox().fullGC();
+            // Use only 30% of the heap.
+            final long testMemory = 3 * Runtime.getRuntime().maxMemory() / 10;
+            GarbageUtils.engageGC(getExecutionController(), testMemory);
             locker.unlock();
         }
     }
