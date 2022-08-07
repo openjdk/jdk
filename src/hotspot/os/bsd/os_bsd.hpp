@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,11 @@
 #ifndef OS_BSD_OS_BSD_HPP
 #define OS_BSD_OS_BSD_HPP
 
+#include "runtime/os.hpp"
+
 // Bsd_OS defines the interface to Bsd operating systems
 
-// Information about the protection of the page at address '0' on this os.
-static bool zero_page_read_protected() { return true; }
-
-class Bsd {
+class os::Bsd {
   friend class os;
 
 #ifdef __APPLE__
