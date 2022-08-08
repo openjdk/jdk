@@ -190,7 +190,7 @@ public:
 
   size_t waste() const;
   size_t undo_waste() const;
-  size_t lab_size(G1HeapRegionAttr which) const;
+  size_t plab_size(G1HeapRegionAttr which) const;
 
   // Allocate word_sz words in dest, either directly into the regions or by
   // allocating a new PLAB. Returns the address of the allocated memory, NULL if

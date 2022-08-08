@@ -348,7 +348,7 @@ HeapWord* G1PLABAllocator::allocate_direct_or_new_plab(G1HeapRegionAttr dest,
                                                        size_t word_sz,
                                                        bool* plab_refill_failed,
                                                        uint node_index) {
-  size_t plab_word_size = lab_size(dest.type());
+  size_t plab_word_size = plab_size(dest.type());
   size_t next_plab_word_size = plab_word_size;
 
   bool const should_boost_plab = _plab_fill_counter[dest.type()] == 0;
@@ -429,8 +429,8 @@ void G1PLABAllocator::flush_and_retire_stats(uint num_workers) {
   }
 
   log_trace(gc, plab)("PLAB boost: Young %zu -> %zu refills %zu (tolerated %zu) Old %zu -> %zu refills %zu (tolerated %zu)",
-                      _g1h->alloc_buffer_stats(G1HeapRegionAttr::Young)->desired_plab_sz(num_workers), lab_size(G1HeapRegionAttr::Young), _num_plab_fills[G1HeapRegionAttr::Young], _tolerated_refills,
-                      _g1h->alloc_buffer_stats(G1HeapRegionAttr::Old)->desired_plab_sz(num_workers), lab_size(G1HeapRegionAttr::Old), _num_plab_fills[G1HeapRegionAttr::Old], _tolerated_refills);
+                      _g1h->alloc_buffer_stats(G1HeapRegionAttr::Young)->desired_plab_sz(num_workers), plab_size(G1HeapRegionAttr::Young), _num_plab_fills[G1HeapRegionAttr::Young], _tolerated_refills,
+                      _g1h->alloc_buffer_stats(G1HeapRegionAttr::Old)->desired_plab_sz(num_workers), plab_size(G1HeapRegionAttr::Old), _num_plab_fills[G1HeapRegionAttr::Old], _tolerated_refills);
 }
 
 size_t G1PLABAllocator::waste() const {
@@ -446,7 +446,7 @@ size_t G1PLABAllocator::waste() const {
   return result;
 }
 
-size_t G1PLABAllocator::lab_size(G1HeapRegionAttr which) const {
+size_t G1PLABAllocator::plab_size(G1HeapRegionAttr which) const {
   return _cur_desired_plab_size[which.type()];
 }
 
