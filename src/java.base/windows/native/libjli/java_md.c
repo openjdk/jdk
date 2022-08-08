@@ -646,7 +646,7 @@ JLI_ReportErrorMessageSys(const char *fmt, ...)
         }
 
         if (winerr != NULL) {
-            mlen += 2 + (int) JLI_StrLen(winerr);
+            mlen += 1 + (int) JLI_StrLen(winerr);
         } else {
             ++mlen;
         }
@@ -663,9 +663,8 @@ JLI_ReportErrorMessageSys(const char *fmt, ...)
         if (winerr != NULL) {
             JLI_StrCat(message, '\n');
             JLI_StrCat(message, winerr);
-            JLI_StrCat(message, '\n');
         } else {
-            JLI_StrCat(message, '\n');
+            JLI_StrCat(message, '\0');
         }
 
         MessageBox(NULL, message, "Java Virtual Machine Launcher",
