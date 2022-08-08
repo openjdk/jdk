@@ -878,9 +878,6 @@ address MacroAssembler::trampoline_call(Address entry, CodeBuffer* cbuf,
     bool in_scratch_emit_size = false;
 #ifdef COMPILER2
     if (check_emit_size) {
-      assert(StubRoutines::aarch64::complete() &&
-             Thread::current()->is_Compiler_thread() &&
-             Compile::current()->output() != NULL, "not in output phase of C2 compilation");
       // We don't want to emit a trampoline if C2 is generating dummy
       // code during its branch shortening phase.
       CompileTask* task = ciEnv::current()->task();

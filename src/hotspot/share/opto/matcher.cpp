@@ -41,7 +41,7 @@
 #include "opto/runtime.hpp"
 #include "opto/type.hpp"
 #include "opto/vectornode.hpp"
-#include "runtime/os.hpp"
+#include "runtime/os.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/align.hpp"
 
