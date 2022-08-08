@@ -880,12 +880,6 @@ public class LoginContext {
                     if (debug != null)
                         debug.println(methodName + " OPTIONAL failure");
 
-                    java.io.StringWriter sw = new java.io.StringWriter();
-                    ite.printStackTrace
-                            (new java.io.PrintWriter(sw));
-                    sw.flush();
-                    le = new LoginException(sw.toString());
-
                     // mark down that an OPTIONAL module failed
                     if (firstError == null)
                         firstError = le;
