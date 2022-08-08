@@ -53,7 +53,7 @@ import jdk.internal.reflect.Reflection;
  * to one of several events:
  * <ol>
  * <li>when the number of {@linkplain Thread#isAlive() live} non-daemon threads drops to zero
- * for the first time;</li>
+ * for the first time (see note below on {@code DestroyJavaVM});</li>
  * <li>when the {@link #exit Runtime.exit} or {@link System#exit System.exit} method is called
  * for the first time; or</li>
  * <li>when some external event occurs, such as an interrupt or a signal is received from
@@ -80,9 +80,9 @@ import jdk.internal.reflect.Reflection;
  *
  * <p>Prior to the beginning of the shutdown sequence, it is possible for a program to start
  * a shutdown hook by calling its {@link Thread#start start} method explicitly. If this occurs, the
- * effect on the shutdown sequence is unspecified.
+ * behavior of the shutdown sequence is unspecified.
  *
- * <h2><a id="termination">Virtual Machine Termination</a></h2>
+ * <h2><a id="termination">Java Virtual Machine Termination</a></h2>
  *
  * <p>The JVM terminates when the shutdown sequence finishes or when {@link #halt halt} is called.
  *
@@ -94,7 +94,7 @@ import jdk.internal.reflect.Reflection;
  *
  * @implNote
  * Conventionally, the native code that has launched the JVM will invoke the JNI function
- * <a href="{@docRoot}/../specs/jni/invocation.html#destroyjavavm">DestroyJavaVM</a>.
+ * <a href="{@docRoot}/../specs/jni/invocation.html#destroyjavavm">{@code DestroyJavaVM}</a>.
  * This function is responsible for initiating the shutdown sequence when the number of running
  * ({@linkplain Thread#isAlive() live}) non-daemon threads first drops to zero. When the shutdown
  * sequence completes and the JVM terminates, control is returned to native invocation code.

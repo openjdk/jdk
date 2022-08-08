@@ -101,9 +101,7 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
  * thread (the thread that typically calls the application's {@code main} method).
  * The <a href="Runtime.html#shutdown">shutdown sequence</a> begins when all started
  * non-daemon threads have terminated. Unstarted non-daemon threads do not prevent
- * the shutdown sequence from commencing. Invoking the {@linkplain Runtime#exit(int)}
- * method will start the shutdown sequence regardless of whether non-daemon threads
- * are still running.
+ * the shutdown sequence from beginning.
  *
  * <p> In addition to the daemon status, platform threads have a {@linkplain
  * #getPriority() thread priority} and are members of a {@linkplain ThreadGroup
