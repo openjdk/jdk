@@ -74,10 +74,6 @@ DumpTimeClassInfo::DumpTimeClassInfo(const DumpTimeClassInfo& src) {
       }
     }
   }
-
-  // The saved cp entries array is not modified by the ArchiveBuilder, so there's
-  // no need to make a deep copy. It will be freed when the holder class is removed.
-  _saved_cpcache_entries = src._saved_cpcache_entries;
 }
 
 DumpTimeClassInfo::~DumpTimeClassInfo() {
@@ -88,18 +84,6 @@ DumpTimeClassInfo::~DumpTimeClassInfo() {
   }
   if (_loader_constraints != NULL) {
     delete _loader_constraints;
-  }
-}
-
-void DumpTimeClassInfo::save_cpcache_entries(ConstantPoolCacheEntry* entries) {
-  free_saved_cpcache_entries(); // in case of class redefinition
-  _saved_cpcache_entries = entries;
-}
-
-void DumpTimeClassInfo::free_saved_cpcache_entries() {
-  if (_saved_cpcache_entries != NULL) {
-    FREE_C_HEAP_ARRAY(ConstantPoolCacheEntry, _saved_cpcache_entries);
-    _saved_cpcache_entries = NULL;
   }
 }
 
@@ -217,8 +201,7 @@ DumpTimeClassInfo* DumpTimeSharedClassTable::get_info(InstanceKlass* k) {
   DumpTimeClassInfo* p = get(k);
   assert(p != NULL, "we must not see any non-shared InstanceKlass* that's "
          "not stored with SystemDictionaryShared::init_dumptime_info");
-  assert(p->_klass == k || p->_klass == ArchiveBuilder::get_relocated_klass(k),
-         "Sanity");
+  assert(p->_klass == k, "Sanity");
   return p;
 }
 

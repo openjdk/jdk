@@ -386,6 +386,9 @@ public:
 
   address get_dumped_addr(address src_obj) const;
   address get_src_obj(address dumped_addr) const;
+  template <typename T> T get_src_obj(T dumped_addr) const {
+    return (T)get_src_obj((address)dumped_addr);
+  }
 
   // All klasses and symbols that will be copied into the archive
   GrowableArray<Klass*>*  klasses() const { return _klasses; }

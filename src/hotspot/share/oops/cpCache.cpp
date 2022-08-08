@@ -690,15 +690,15 @@ void ConstantPoolCache::save_for_archive() {
     copy[i] = *entry_at(i);
   }
 
-  SystemDictionaryShared::save_cpcache_entries(constant_pool()->pool_holder(), copy);
+  SystemDictionaryShared::set_saved_cpcache_entries(this, copy);
 #endif
 }
 
 void ConstantPoolCache::remove_unshareable_info() {
 #if INCLUDE_CDS
   Arguments::assert_is_dumping_archive();
-  InstanceKlass* ik = constant_pool()->pool_holder();
-  ConstantPoolCacheEntry* saved = SystemDictionaryShared::get_saved_cpcache_entries_locked(ik);
+  ConstantPoolCache* orig_cpc = ArchiveBuilder::current()->get_src_obj(this);
+  ConstantPoolCacheEntry* saved = SystemDictionaryShared::get_saved_cpcache_entries_locked(orig_cpc);
   for (int i=0; i<length(); i++) {
     // Restore each entry to the initial state -- just after Rewriter::make_constant_pool_cache()
     // has finished.
@@ -713,6 +713,12 @@ void ConstantPoolCache::deallocate_contents(ClassLoaderData* data) {
   set_resolved_references(OopHandle());
   MetadataFactory::free_array<u2>(data, _reference_map);
   set_reference_map(NULL);
+
+#if INCLUDE_CDS
+  if (Arguments::is_dumping_archive()) {
+    SystemDictionaryShared::remove_saved_cpcache_entries(this);
+  }
+#endif
 }
 
 #if INCLUDE_CDS_JAVA_HEAP
