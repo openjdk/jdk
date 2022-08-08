@@ -529,7 +529,7 @@ class WixAppImageFragmentBuilder extends WixFragmentBuilder {
                 xml.writeStartElement("Verb");
                 xml.writeAttribute("Id", "open");
                 xml.writeAttribute("Command", "Open");
-                xml.writeAttribute("Argument", "\"%1\"");
+                xml.writeAttribute("Argument", "\"%1\" %*");
                 xml.writeAttribute("TargetFile", Id.File.of(fa.launcherPath));
                 xml.writeEndElement(); // <Verb>
 

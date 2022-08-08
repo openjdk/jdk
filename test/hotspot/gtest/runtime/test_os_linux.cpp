@@ -30,6 +30,7 @@
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
 #include "concurrentTestRunner.inline.hpp"
+#include "os_linux.hpp"
 #include "unittest.hpp"
 #include "utilities/align.hpp"
 #include "utilities/decoder.hpp"
