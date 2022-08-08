@@ -359,9 +359,9 @@ define SetupCompileNativeFileBody
       $1_FLAGS := $(BASIC_ASFLAGS) $$($1_BASE_ASFLAGS)
       $1_COMPILER := $(AS)
 
-      # gcc assembly files must contain an appropriate relative .file
+      # gcc or clang assembly files must contain an appropriate relative .file
       # path for reproducible builds.
-      ifeq ($(TOOLCHAIN_TYPE), gcc)
+      ifneq ($(findstring $(TOOLCHAIN_TYPE), gcc clang), )
         # If no absolute paths allowed, work out relative source file path
         # for assembly .file substitution, otherwise use full file path
         ifeq ($(ALLOW_ABSOLUTE_PATHS_IN_OUTPUT), false)
@@ -403,8 +403,9 @@ define SetupCompileNativeFileBody
     $1_OBJ_DEPS := $$($1_SRC_FILE) $$($$($1_BASE)_COMPILE_VARDEPS_FILE) \
         $$($$($1_BASE)_EXTRA_DEPS) $$($1_VARDEPS_FILE)
     $1_COMPILE_OPTIONS := $$($1_FLAGS) $(CC_OUT_OPTION)$$($1_OBJ) $$($1_SRC_FILE)
-    # For reproducible builds with gcc ensure random symbol generation is seeded deterministically
-    ifeq ($(TOOLCHAIN_TYPE), gcc)
+    # For reproducible builds with gcc and clang ensure random symbol generation is
+    # seeded deterministically
+    ifneq ($(findstring $(TOOLCHAIN_TYPE), gcc clang), )
        ifeq ($$(ENABLE_REPRODUCIBLE_BUILD), true)
          $1_COMPILE_OPTIONS += -frandom-seed="$$($1_FILENAME)"
        endif
