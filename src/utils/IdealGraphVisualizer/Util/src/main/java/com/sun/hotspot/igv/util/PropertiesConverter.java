@@ -33,11 +33,11 @@ import com.sun.hotspot.igv.data.Property;
  */
 public class PropertiesConverter {
     public static String convertToHTML(final Properties properties) {
-        StringBuilder sb = new StringBuilder("<html><body><table>");
+        StringBuilder sb = new StringBuilder("<html><body><table cellpadding="0" cellspacing="0">");
         for (Property p : properties) {
             sb.append("<tr><td>")
               .append(p.getName())
-              .append("</td><td>")
+              .append("</td><td width="10"></td><td>")
               .append(p.getValue())
               .append("</td></tr>");
         }
