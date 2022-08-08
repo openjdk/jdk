@@ -346,11 +346,11 @@ static void MacOSXStartup(int argc, char *argv[]) {
     // Fire up the main thread
     pthread_t main_thr;
     if (pthread_create(&main_thr, NULL, &apple_main, &args) != 0) {
-        JLI_ReportErrorMessageSys("Could not create main thread: %s\n", strerror(errno));
+        JLI_ReportErrorMessageSys("Could not create main thread");
         exit(1);
     }
     if (pthread_detach(main_thr)) {
-        JLI_ReportErrorMessageSys("pthread_detach() failed: %s\n", strerror(errno));
+        JLI_ReportErrorMessageSys("pthread_detach() failed");
         exit(1);
     }
 
