@@ -216,9 +216,7 @@ nmethodBucket* DependencyContext::release_and_get_next_not_unloading(nmethodBuck
 void DependencyContext::remove_all_dependents() {
   nmethodBucket* b = dependencies_not_unloading();
   set_dependencies(NULL);
-  while (b != NULL) {
-    b = release_and_get_next_not_unloading(b);
-  }
+  assert(b == nullptr, "All dependents should be unloading");
 }
 
 int DependencyContext::remove_and_mark_for_deoptimization_all_dependents() {
