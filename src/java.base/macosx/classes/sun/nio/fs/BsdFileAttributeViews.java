@@ -30,11 +30,14 @@ import java.nio.file.attribute.FileTime;
 import java.util.concurrent.TimeUnit;
 import static sun.nio.fs.BsdNativeDispatcher.setattrlist;
 
-class BsdBasicFileAttributeView extends UnixFileAttributeViews.Basic
-{
-    static void setFileTimes(UnixPath path, FileTime lastModifiedTime,
-                             FileTime lastAccessTime, FileTime createTime,
-                             boolean followLinks) throws IOException
+class BsdFileAttributeViews {
+    //
+    // Use setattrlist(2) system call which can set creation, modification,
+    // and access times.
+    //
+    private static void setTimes(UnixPath path, FileTime lastModifiedTime,
+                                 FileTime lastAccessTime, FileTime createTime,
+                                 boolean followLinks) throws IOException
     {
         // null => don't change
         if (lastModifiedTime == null && lastAccessTime == null &&
@@ -71,16 +74,63 @@ class BsdBasicFileAttributeView extends UnixFileAttributeViews.Basic
         }
     }
 
-    BsdBasicFileAttributeView(UnixPath file, boolean followLinks) {
-        super(file, followLinks);
+    static class Basic extends UnixFileAttributeViews.Basic {
+        Basic(UnixPath file, boolean followLinks) {
+            super(file, followLinks);
+        }
+
+        @Override
+        public void setTimes(FileTime lastModifiedTime,
+                             FileTime lastAccessTime,
+                             FileTime createTime) throws IOException
+        {
+            BsdFileAttributeViews.setTimes(file, lastModifiedTime,
+                                           lastAccessTime, createTime,
+                                           followLinks);
+        }
     }
 
-    @Override
-    public void setTimes(FileTime lastModifiedTime,
-                         FileTime lastAccessTime,
-                         FileTime createTime) throws IOException
-    {
-        setFileTimes(file, lastModifiedTime, lastAccessTime, createTime,
-                     followLinks);
+    static class Posix extends UnixFileAttributeViews.Posix {
+        Posix(UnixPath file, boolean followLinks) {
+            super(file, followLinks);
+        }
+
+        @Override
+        public void setTimes(FileTime lastModifiedTime,
+                             FileTime lastAccessTime,
+                             FileTime createTime) throws IOException
+        {
+            BsdFileAttributeViews.setTimes(file, lastModifiedTime,
+                                           lastAccessTime, createTime,
+                                           followLinks);
+        }
+    }
+
+    static class Unix extends UnixFileAttributeViews.Unix {
+        Unix(UnixPath file, boolean followLinks) {
+            super(file, followLinks);
+        }
+
+        @Override
+        public void setTimes(FileTime lastModifiedTime,
+                             FileTime lastAccessTime,
+                             FileTime createTime) throws IOException
+        {
+            BsdFileAttributeViews.setTimes(file, lastModifiedTime,
+                                           lastAccessTime, createTime,
+                                           followLinks);
+        }
+    }
+
+    static Basic createBasicView(UnixPath file, boolean followLinks) {
+        return new Basic(file, followLinks);
+    }
+
+    static Posix createPosixView(UnixPath file, boolean followLinks) {
+        return new Posix(file, followLinks);
+    }
+
+    static Unix createUnixView(UnixPath file, boolean followLinks) {
+        return new Unix(file, followLinks);
     }
 }

@@ -70,7 +70,8 @@ class BsdNativeDispatcher extends UnixNativeDispatcher {
      */
     static void setattrlist(UnixPath path, int commonattr, long modTime,
                             long accTime, long createTime, long options)
-        throws UnixException {
+        throws UnixException
+    {
         try (NativeBuffer buffer = copyToNativeBuffer(path)) {
             long comp = Blocker.begin();
             try {

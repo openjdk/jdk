@@ -331,7 +331,7 @@ class UnixFileAttributeViews {
         }
     }
 
-    private static class Unix extends Posix {
+    static class Unix extends Posix {
         private static final String MODE_NAME = "mode";
         private static final String INO_NAME = "ino";
         private static final String DEV_NAME = "dev";
