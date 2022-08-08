@@ -28,7 +28,7 @@
 #include "memory/allStatic.hpp"
 #include "utilities/debug.hpp"
 
-// Static information about the operation system. Initialized exactly once
+// Static information about the operating system. Initialized exactly once
 // at VM start-up and never changes again.
 class OSInfo : AllStatic {
   static int    _vm_page_size;
