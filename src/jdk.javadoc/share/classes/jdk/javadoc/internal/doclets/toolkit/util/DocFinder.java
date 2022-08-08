@@ -26,8 +26,10 @@
 package jdk.javadoc.internal.doclets.toolkit.util;
 
 import java.util.*;
+import java.util.function.Function;
 
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 
@@ -268,5 +270,139 @@ public class DocFinder {
             }
         }
         return output;
+    }
+
+    static class InvalidInheritDocException extends Exception {
+        @java.io.Serial
+        static final long serialVersionUID = 1L;
+    }
+
+    public static Optional<List<? extends DocTree>> expandInheritDoc(
+            ExecutableElement method,
+            Function<? super ExecutableElement, Optional<List<? extends DocTree>>> documentationExtractor,
+            BaseConfiguration configuration) throws InvalidInheritDocException
+    {
+        var overriddenMethods = methodsOverriddenBy(method, configuration);
+        if (!overriddenMethods.hasNext()) {
+            throw new InvalidInheritDocException();
+        }
+        do {
+            var m = overriddenMethods.next();
+            var d = documentationExtractor.apply(m);
+            if (d.isPresent()) {
+                return d;
+            }
+        } while (overriddenMethods.hasNext());
+        return Optional.empty();
+    }
+
+    public static Optional<List<? extends DocTree>> inheritDocumentation(
+            ExecutableElement method,
+            Function<? super ExecutableElement, Optional<List<? extends DocTree>>> documentationExtractor,
+            BaseConfiguration configuration)
+    {
+        var d = documentationExtractor.apply(method);
+        if (d.isPresent()) {
+            return d;
+        }
+        var overriddenMethods = methodsOverriddenBy(method, configuration);
+        while (overriddenMethods.hasNext()) {
+            var m = overriddenMethods.next();
+            d = documentationExtractor.apply(m);
+            if (d.isPresent()) {
+                return d;
+            }
+        }
+        return Optional.empty();
+    }
+
+    static Iterator<ExecutableElement> methodsOverriddenBy(ExecutableElement method,
+                                                           BaseConfiguration configuration) {
+        return new HierarchyTraversingIterator(method, configuration);
+    }
+
+    private static class HierarchyTraversingIterator implements Iterator<ExecutableElement> {
+
+        final BaseConfiguration configuration;
+        final Deque<LazilyAccessedImplementedMethods> path = new LinkedList<>();
+        ExecutableElement next;
+
+        /*
+         * Constructs an iterator over methods overridden by the given method.
+         *
+         * The iteration order is as defined in the Documentation Comment
+         * Specification for the Standard Doclet. The iteration sequence
+         * does not include the given method itself.
+         */
+        public HierarchyTraversingIterator(ExecutableElement method, BaseConfiguration configuration) {
+            assert method.getKind() == ElementKind.METHOD : method.getKind();
+            this.configuration = configuration;
+            next = method;
+            updateNext();
+        }
+
+        @Override
+        public boolean hasNext() {
+            return next != null;
+        }
+
+        @Override
+        public ExecutableElement next() {
+            if (next == null) {
+                throw new NoSuchElementException();
+            }
+            var r = next;
+            updateNext();
+            return r;
+        }
+
+        private void updateNext() {
+            assert next != null;
+            var superClassMethod = configuration.utils.overriddenMethod(next);
+            path.push(new LazilyAccessedImplementedMethods(next));
+            if (superClassMethod != null) {
+                next = superClassMethod;
+                return;
+            }
+            while (!path.isEmpty()) {
+                var superInterfaceMethods = path.peek();
+                if (superInterfaceMethods.hasNext()) {
+                    next = superInterfaceMethods.next();
+                    return;
+                } else {
+                    path.pop();
+                }
+            }
+            next = null; // end-of-hierarchy
+        }
+
+        class LazilyAccessedImplementedMethods implements Iterator<ExecutableElement> {
+
+            final ExecutableElement method;
+            Iterator<ExecutableElement> iterator;
+
+            public LazilyAccessedImplementedMethods(ExecutableElement method) {
+                this.method = method;
+            }
+
+            @Override
+            public boolean hasNext() {
+                return getIterator().hasNext();
+            }
+
+            @Override
+            public ExecutableElement next() {
+                return getIterator().next();
+            }
+
+            Iterator<ExecutableElement> getIterator() {
+                if (iterator != null) {
+                    return iterator;
+                }
+                var type = configuration.utils.getEnclosingTypeElement(next);
+                var table = configuration.getVisibleMemberTable(type);
+                return iterator = table.getImplementedMethods(method).iterator();
+            }
+        }
     }
 }
