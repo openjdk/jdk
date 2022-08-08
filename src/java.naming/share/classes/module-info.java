@@ -93,11 +93,15 @@
  *     <li>{@systemProperty com.sun.jndi.ldap.object.trustSerialData}:
  *          <br>The value of this system property is the string representation of a boolean value
  *          which allows to control the deserialization of java objects from the {@code javaSerializedData} LDAP
- *          attribute, and reconstruction of RMI references from {@code javaRemoteLocation} LDAP attribute.
- *          To allow the deserialization or reconstruction of java objects from {@code javaSerializedData} or
- *          {@code javaRemoteLocation} attributes, the system property value can be set to {@code true}.
- *          <br>If the property is not specified then the deserialization of java objects
- *          from the {@code javaSerializedData} or the {@code javaRemoteLocation} attributes is not allowed.
+ *          attribute, reconstruction of RMI references from the {@code javaRemoteLocation} LDAP attribute, and
+ *          reconstruction of {@linkplain javax.naming.BinaryRefAddr binary reference addresses} from
+ *          the {@code javaReferenceAddress} LDAP attribute.
+ *          To allow the deserialization or reconstruction of java objects from {@code javaSerializedData},
+ *          {@code javaRemoteLocation} or {@code javaReferenceAddress} attributes, the system property value can be
+ *          set to {@code true}.
+ *          <br>If the property is not specified the deserialization of java objects
+ *          from the {@code javaSerializedData}, the {@code javaRemoteLocation}, or {@code javaReferenceAddress}
+ *          attributes is not allowed.
  *     </li>
  * </ul>
  * <p>Other providers may define additional properties in their module description:
