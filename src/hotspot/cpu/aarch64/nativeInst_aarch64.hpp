@@ -251,7 +251,7 @@ public:
   void set_destination_mt_safe(address dest, bool assert_lock = true);
 
   address get_trampoline();
-  void trampoline_jump(CodeBuffer &cbuf, address dest);
+  address trampoline_jump(CodeBuffer &cbuf, address dest);
 };
 
 inline NativeCall* nativeCall_at(address address) {

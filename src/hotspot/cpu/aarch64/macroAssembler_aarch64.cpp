@@ -875,9 +875,14 @@ address MacroAssembler::trampoline_call(Address entry, CodeBuffer* cbuf) {
   }
 
   if (need_trampoline) {
-    if (!emit_trampoline_stub(offset(), target)) {
-      postcond(pc() == badAddress);
-      return NULL; // CodeCache is full
+    if (!in_scratch_emit_size()) {
+      // We don't want to emit a trampoline if C2 is generating dummy
+      // code during its branch shortening phase.
+      address stub = emit_trampoline_stub(offset(), target);
+      if (stub == NULL) {
+        postcond(pc() == badAddress);
+        return NULL; // CodeCache is full
+      }
     }
     target = pc();
   }
@@ -902,13 +907,13 @@ address MacroAssembler::trampoline_call(Address entry, CodeBuffer* cbuf) {
 //   load the call target from the constant pool
 //   branch (LR still points to the call site above)
 
-bool MacroAssembler::emit_trampoline_stub(int insts_call_instruction_offset,
-                                          address dest) {
+address MacroAssembler::emit_trampoline_stub(int insts_call_instruction_offset,
+                                             address dest) {
   // Max stub size: alignment nop, TrampolineStub.
   address stub = start_a_stub(NativeInstruction::instruction_size
                    + NativeCallTrampolineStub::instruction_size);
   if (stub == NULL) {
-    return false;  // CodeBuffer::expand failed
+    return NULL;  // CodeBuffer::expand failed
   }
 
   // Create a trampoline stub relocation which relates this trampoline stub
@@ -935,7 +940,7 @@ bool MacroAssembler::emit_trampoline_stub(int insts_call_instruction_offset,
   assert(is_NativeCallTrampolineStub_at(stub_start_addr), "doesn't look like a trampoline");
 
   end_a_stub();
-  return true;
+  return stub_start_addr;
 }
 
 void MacroAssembler::emit_static_call_stub() {

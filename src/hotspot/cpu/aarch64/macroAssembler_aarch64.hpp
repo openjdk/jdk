@@ -633,8 +633,11 @@ public:
   static int patch_oop(address insn_addr, address o);
   static int patch_narrow_klass(address insn_addr, narrowKlass n);
 
-  // Return false if it fails to emit a stub.
-  virtual bool emit_trampoline_stub(int insts_call_instruction_offset, address target);
+  // Return whether code is emitted to a scratch blob.
+  virtual bool in_scratch_emit_size() {
+    return false;
+  }
+  address emit_trampoline_stub(int insts_call_instruction_offset, address target);
   void emit_static_call_stub();
 
   // The following 4 methods return the offset of the appropriate move instruction

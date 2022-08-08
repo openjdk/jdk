@@ -1656,15 +1656,13 @@ void C2_MacroAssembler::vector_round_sve(FloatRegister dst, FloatRegister src, F
   // result in dst
 }
 
-bool C2_MacroAssembler::emit_trampoline_stub(int insts_call_instruction_offset, address target) {
+bool C2_MacroAssembler::in_scratch_emit_size() {
   if (ciEnv::current()->task() != NULL) {
     PhaseOutput* phase_output = Compile::current()->output();
     if (phase_output != NULL && phase_output->in_scratch_emit_size()) {
-      // We don't want to emit a trampoline if C2 is generating dummy
-      // code during its branch shortening phase.
       return true;
     }
   }
-  return MacroAssembler::emit_trampoline_stub(insts_call_instruction_offset, target);
+  return MacroAssembler::in_scratch_emit_size();
 }
 
