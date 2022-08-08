@@ -25,7 +25,6 @@ package com.sun.hotspot.igv.coordinator;
 
 import com.sun.hotspot.igv.coordinator.actions.RemoveCookie;
 import com.sun.hotspot.igv.data.*;
-import com.sun.hotspot.igv.util.PropertiesConverter;
 import com.sun.hotspot.igv.util.PropertiesSheet;
 import java.awt.Image;
 import java.util.List;
@@ -126,10 +125,6 @@ public class FolderNode extends AbstractNode {
                     folderElement.getParent().removeElement(folderElement);
                 }
             });
-        }
-        if (this.children.folder instanceof Properties.Entity) {
-            Properties.Entity p = (Properties.Entity) children.folder;
-            this.setShortDescription(PropertiesConverter.convertToHTML(p.getProperties()));
         }
     }
 

@@ -32,7 +32,6 @@ import com.sun.hotspot.igv.coordinator.actions.GraphRemoveCookie;
 import com.sun.hotspot.igv.data.InputGraph;
 import com.sun.hotspot.igv.data.Properties;
 import com.sun.hotspot.igv.data.services.GraphViewer;
-import com.sun.hotspot.igv.util.PropertiesConverter;
 import com.sun.hotspot.igv.util.PropertiesSheet;
 import java.awt.Image;
 import javax.swing.Action;
@@ -88,22 +87,15 @@ public class GraphNode extends AbstractNode {
                 GraphNode.this.graph = null;
             }
         });
-
-        this.setShortDescription(PropertiesConverter.convertToHTML(createProperties()));
-    }
-
-    protected Properties createProperties() {
-        Properties p = new Properties();
-        p.add(graph.getProperties());
-        p.setProperty("nodeCount", Integer.toString(graph.getNodes().size()));
-        p.setProperty("edgeCount", Integer.toString(graph.getEdges().size()));
-        return p;
     }
 
     @Override
     protected Sheet createSheet() {
         Sheet s = super.createSheet();
-        Properties p = createProperties();
+        Properties p = new Properties();
+        p.add(graph.getProperties());
+        p.setProperty("nodeCount", Integer.toString(graph.getNodes().size()));
+        p.setProperty("edgeCount", Integer.toString(graph.getEdges().size()));
         PropertiesSheet.initializeSheet(p, s);
         return s;
     }
