@@ -827,11 +827,11 @@ void ZBarrierSetC2::eliminate_gc_barrier(PhaseMacroExpand* macro, Node* node) co
 }
 
 void ZBarrierSetC2::eliminate_gc_barrier_data(Node* node) const {
-  if (node->is_Mem()) {
-    MemNode* mem = node->as_Mem();
-    mem->set_barrier_data(ZBarrierElided);
-  } else if (node->is_LoadStore()) {
+  if (node->is_LoadStore()) {
     LoadStoreNode* loadstore = node->as_LoadStore();
     loadstore->set_barrier_data(ZBarrierElided);
+  } else if (node->is_Mem()) {
+    MemNode* mem = node->as_Mem();
+    mem->set_barrier_data(ZBarrierElided);
   }
 }
