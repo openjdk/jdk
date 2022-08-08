@@ -101,7 +101,7 @@ bool ZRemembered::should_scan_page(ZPage* page) const {
     return true;
   }
 
-  // If we get, we know that the old collection is concurrently relocating
+  // If we get here, we know that the old collection is concurrently relocating
   // objects. We need to be extremely careful not to scan a page that is
   // concurrently being in-place relocated because it's objects and previous
   // bits could be concurrently be moving around.
