@@ -30,10 +30,6 @@ void BarrierSetNMethod::deoptimize(nmethod* nm, address* return_address_ptr) {
   ShouldNotReachHere();
 }
 
-void BarrierSetNMethod::disarm(nmethod* nm) {
-  ShouldNotReachHere();
-}
-
 void BarrierSetNMethod::disarm_with_value(nmethod* nm, int value) {
   ShouldNotReachHere();
 }
