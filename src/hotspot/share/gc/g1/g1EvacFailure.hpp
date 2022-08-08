@@ -35,20 +35,39 @@ class G1EvacFailureRegions;
 
 // Task to fixup self-forwarding pointers
 // installed as a result of an evacuation failure.
-class G1ParRemoveSelfForwardPtrsTask: public WorkerTask {
-protected:
+class G1ParRemoveSelfForwardPtrsTask : public WorkerTask {
   G1CollectedHeap* _g1h;
-  HeapRegionClaimer _hrclaimer;
-
+  bool _during_concurrent_start;
   G1EvacFailureRegions* _evac_failure_regions;
-  uint volatile _num_failed_regions;
+  CHeapBitMap _chunk_bitmap;
 
+  // Initialized outside of the constructor because #workers was unknown at that time
+  uint _num_chunks_per_region;
+  uint _num_evac_fail_regions;
+  size_t _chunk_size;
+
+  bool claim_chunk(uint chunk_idx) {
+    return _chunk_bitmap.par_set_bit(chunk_idx);
+  }
+
+  class RegionMarkedWordsCache;
+  void process_chunk(uint worker_id, uint chunk_idx, RegionMarkedWordsCache* cache);
 public:
-  G1ParRemoveSelfForwardPtrsTask(G1EvacFailureRegions* evac_failure_regions);
+  explicit G1ParRemoveSelfForwardPtrsTask(G1EvacFailureRegions* evac_failure_regions);
 
   void work(uint worker_id);
 
-  uint num_failed_regions() const;
+  void pre_start(uint num_workers) {
+    _num_evac_fail_regions = _evac_failure_regions->num_regions_failed_evacuation();
+    // Same heuristic as G1RemSetScanState
+    _num_chunks_per_region = 1u << (HeapRegion::LogOfHRGrainBytes / 2 - 4);
+    assert(HeapRegion::GrainWords % _num_chunks_per_region == 0, "inv");
+    _chunk_size = static_cast<uint>(HeapRegion::GrainWords / _num_chunks_per_region);
+    log_debug(gc, ergo)("Initializing removing self forwards with %u chunks per region given %u workers",
+                        _num_chunks_per_region, num_workers);
+
+    _chunk_bitmap.resize(_num_chunks_per_region * _num_evac_fail_regions);
+  }
 };
 
 #endif // SHARE_GC_G1_G1EVACFAILURE_HPP

@@ -372,6 +372,12 @@
            number of free regions and the expected survival rates in each   \
            section of the heap.")                                           \
                                                                             \
+  product(uint, G1PerRetainedRegionThreads, 2, DIAGNOSTIC,                  \
+          "The number of worker threads used for each retained "            \
+          "(evacuation failure) region, subject to ParallelGCThreads "      \
+          "constraint.")                                                    \
+          range(1, 16)                                                      \
+                                                                            \
   GC_G1_EVACUATION_FAILURE_FLAGS(develop,                                   \
                     develop_pd,                                             \
                     product,                                                \

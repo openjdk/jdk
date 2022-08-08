@@ -269,6 +269,7 @@ void HeapRegion::report_region_type_change(G1HeapRegionTraceType::Type to) {
 }
 
 void HeapRegion::note_self_forwarding_removal_start(bool during_concurrent_start) {
+  clear_index_in_opt_cset();
   // We always scrub the region to make sure the entire region is
   // parsable after the self-forwarding point removal.
   _garbage_bytes = 0;
@@ -285,14 +286,11 @@ void HeapRegion::note_self_forwarding_removal_start(bool during_concurrent_start
   }
 }
 
-void HeapRegion::note_self_forwarding_removal_end(size_t marked_bytes) {
-  assert(marked_bytes <= used(),
-         "marked: " SIZE_FORMAT " used: " SIZE_FORMAT, marked_bytes, used());
-  _garbage_bytes = used() - marked_bytes;
+void HeapRegion::note_self_forwarding_removal_end_par(size_t marked_bytes) {
+  //FIXME: Atomic::add(&_prev_marked_bytes, marked_bytes, memory_order_relaxed);
 }
 
 // Code roots support
-
 void HeapRegion::add_code_root(nmethod* nm) {
   HeapRegionRemSet* hrrs = rem_set();
   hrrs->add_code_root(nm);
