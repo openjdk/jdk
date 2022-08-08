@@ -129,7 +129,7 @@ public:
   GrowableArray<char>*                 _verifier_constraint_flags;
   GrowableArray<DTLoaderConstraint>*   _loader_constraints;
   GrowableArray<int>*                  _enum_klass_static_fields;
-  ConstantPoolCacheEntry*       _saved_cpcache_entries;
+  ConstantPoolCacheEntry*              _saved_cpcache_entries;
 
   DumpTimeClassInfo() {
     _klass = NULL;
@@ -218,7 +218,7 @@ public:
 
   size_t runtime_info_bytesize() const;
 
-  ConstantPoolCacheEntry* get_saved_cpcache_entries() {
+  ConstantPoolCacheEntry* get_saved_cpcache_entries() const {
     return _saved_cpcache_entries;
   }
 
