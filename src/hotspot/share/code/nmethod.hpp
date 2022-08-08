@@ -265,7 +265,7 @@ class nmethod : public CompiledMethod {
   bool _load_reported;
 
   // Protected by CompiledMethod_lock
-  volatile signed char _state;         // {not_installed, in_use, not_entrant}
+  volatile signed char _state;         // {not_installed, in_use, not_used, not_entrant}
 
   // For native wrappers
   nmethod(Method* method,
