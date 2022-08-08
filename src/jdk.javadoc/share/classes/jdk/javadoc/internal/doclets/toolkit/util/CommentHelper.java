@@ -26,6 +26,7 @@
 package jdk.javadoc.internal.doclets.toolkit.util;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import javax.lang.model.element.Element;
@@ -533,12 +534,13 @@ public class CommentHelper {
 
     private DocTreePath getInheritedDocTreePath(DocTree dtree, ExecutableElement ee) {
         Utils utils = configuration.utils;
-        DocFinder.Output inheritedDoc =
-                DocFinder.search(configuration,
-                        new DocFinder.Input(utils, ee));
-        return inheritedDoc.holder.equals(ee)
+        Optional<DocFinder.Result> inheritedDoc = DocFinder.inheritDocumentation(ee, (m -> {
+            List<? extends DocTree> fullBody = utils.getFullBody(m);
+            return fullBody.isEmpty() ? Optional.empty() : Optional.of(fullBody);
+        }), configuration);
+        return inheritedDoc.isEmpty() || inheritedDoc.get().method().equals(ee)
                 ? null
-                : utils.getCommentHelper(inheritedDoc.holder).getDocTreePath(dtree);
+                : utils.getCommentHelper(inheritedDoc.get().method()).getDocTreePath(dtree);
     }
 
     /**
