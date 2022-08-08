@@ -205,12 +205,12 @@ JLI_ReportErrorMessageSys(const char* fmt, ...) {
     vfprintf(stderr, fmt, vl);
 
     /*
-     * TODO: its safer to use strerror_r but is not available on
-     * Solaris 8. Until then....
+     * Buffer of length 1024 copied from jni_util_md.c
      */
-    char* err = strerror(errno);
-    if (err != NULL) {
-        fprintf(stderr, "\n%s\n", err);
+    char buffer[1024];
+
+    if (strerror_r(errno, buffer, sizeof buffer) != 0) {
+        fprintf(stderr, " - %s\n", buffer);
     } else {
         fprintf(stderr, "\n");
     }
