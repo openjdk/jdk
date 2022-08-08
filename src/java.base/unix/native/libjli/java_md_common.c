@@ -208,7 +208,7 @@ JLI_ReportErrorMessageSys(const char* fmt, ...) {
      * TODO: its safer to use strerror_r but is not available on
      * Solaris 8. Until then....
      */
-    char *err = strerror(errno);
+    char* err = strerror(errno);
     if (err != NULL) {
         fprintf(stderr, "\n%s\n", err);
     } else {
