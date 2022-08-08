@@ -86,6 +86,9 @@ public class FigureWidget extends Widget implements Properties.Provider, PopupMe
         return boundary;
     }
 
+    public Node getNode() {
+        return node;
+    }
 
     @Override
     public boolean isHitAt(Point localLocation) {
