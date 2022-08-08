@@ -2158,6 +2158,10 @@ public class File
         File tmpdir = (directory != null) ? directory
                                           : TempDirectory.location();
 
+        if(!tmpdir.exists()) {
+            throw new IOException("The specified directory does no exist! Please contact system administrator!");
+        }
+
         @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         File f;
