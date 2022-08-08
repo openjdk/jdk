@@ -27,6 +27,7 @@
 #if !defined(_WINDOWS) && !defined(__APPLE__)
 #include "decoder_elf.hpp"
 #include "logging/log.hpp"
+#include "runtime/os.hpp"
 
 ElfDecoder::~ElfDecoder() {
   if (_opened_elf_files != NULL) {
