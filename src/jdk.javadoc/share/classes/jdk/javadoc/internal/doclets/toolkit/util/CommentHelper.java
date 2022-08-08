@@ -536,7 +536,7 @@ public class CommentHelper {
         DocFinder.Output inheritedDoc =
                 DocFinder.search(configuration,
                         new DocFinder.Input(utils, ee));
-        return inheritedDoc.holder == ee
+        return inheritedDoc.holder.equals(ee)
                 ? null
                 : utils.getCommentHelper(inheritedDoc.holder).getDocTreePath(dtree);
     }
