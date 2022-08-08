@@ -429,8 +429,14 @@ void G1PLABAllocator::flush_and_retire_stats(uint num_workers) {
   }
 
   log_trace(gc, plab)("PLAB boost: Young %zu -> %zu refills %zu (tolerated %zu) Old %zu -> %zu refills %zu (tolerated %zu)",
-                      _g1h->alloc_buffer_stats(G1HeapRegionAttr::Young)->desired_plab_sz(num_workers), plab_size(G1HeapRegionAttr::Young), _num_plab_fills[G1HeapRegionAttr::Young], _tolerated_refills,
-                      _g1h->alloc_buffer_stats(G1HeapRegionAttr::Old)->desired_plab_sz(num_workers), plab_size(G1HeapRegionAttr::Old), _num_plab_fills[G1HeapRegionAttr::Old], _tolerated_refills);
+                      _g1h->alloc_buffer_stats(G1HeapRegionAttr::Young)->desired_plab_size(num_workers),
+                      plab_size(G1HeapRegionAttr::Young),
+                      _num_plab_fills[G1HeapRegionAttr::Young],
+                      _tolerated_refills,
+                      _g1h->alloc_buffer_stats(G1HeapRegionAttr::Old)->desired_plab_size(num_workers),
+                      plab_size(G1HeapRegionAttr::Old),
+                      _num_plab_fills[G1HeapRegionAttr::Old],
+                      _tolerated_refills);
 }
 
 size_t G1PLABAllocator::waste() const {

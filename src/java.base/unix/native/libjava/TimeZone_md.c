@@ -554,58 +554,39 @@ findJavaTZ_md(const char *java_home_dir)
 /**
  * Returns a GMT-offset-based zone ID. (e.g., "GMT-08:00")
  */
+char *
+getGMTOffsetID()
+{
+    char buf[32];
+    char offset[6];
+    struct tm localtm;
+    time_t clock = time(NULL);
+    if (localtime_r(&clock, &localtm) == NULL) {
+        return strdup("GMT");
+    }
 
 #if defined(MACOSX)
-
-char *
-getGMTOffsetID()
-{
-    time_t offset;
-    char sign, buf[32];
-    struct tm local_tm;
-    time_t clock;
-
-    clock = time(NULL);
-    if (localtime_r(&clock, &local_tm) == NULL) {
+    time_t gmt_offset;
+    gmt_offset = (time_t)localtm.tm_gmtoff;
+    if (gmt_offset == 0) {
         return strdup("GMT");
     }
-    offset = (time_t)local_tm.tm_gmtoff;
-    if (offset == 0) {
-        return strdup("GMT");
-    }
-    if (offset > 0) {
-        sign = '+';
-    } else {
-        offset = -offset;
-        sign = '-';
-    }
-    sprintf(buf, (const char *)"GMT%c%02d:%02d",
-            sign, (int)(offset/3600), (int)((offset%3600)/60));
-    return strdup(buf);
-}
-
 #else
-
-char *
-getGMTOffsetID()
-{
-    time_t offset;
-    char sign, buf[32];
-    offset = timezone;
-
-    if (offset == 0) {
+    struct tm gmt;
+    if (gmtime_r(&clock, &gmt) == NULL) {
         return strdup("GMT");
     }
 
-    /* Note that the time offset direction is opposite. */
-    if (offset > 0) {
-        sign = '-';
-    } else {
-        offset = -offset;
-        sign = '+';
+    if(localtm.tm_hour == gmt.tm_hour && localtm.tm_min == gmt.tm_min) {
+        return strdup("GMT");
     }
-    sprintf(buf, (const char *)"GMT%c%02d:%02d",
-            sign, (int)(offset/3600), (int)((offset%3600)/60));
+#endif
+
+    if (strftime(offset, 6, "%z", &localtm) != 5) {
+        return strdup("GMT");
+    }
+
+    sprintf(buf, (const char *)"GMT%c%c%c:%c%c", offset[0], offset[1], offset[2],
+        offset[3], offset[4]);
     return strdup(buf);
 }
-#endif /* MACOSX */

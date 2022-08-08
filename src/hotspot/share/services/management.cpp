@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2170,7 +2170,10 @@ JVM_ENTRY(jlong, jmm_GetThreadCpuTimeWithKind(JNIEnv *env, jlong thread_id, jboo
     ThreadsListHandle tlh;
     java_thread = tlh.list()->find_JavaThread_from_java_tid(thread_id);
     if (java_thread != NULL) {
-      return os::thread_cpu_time((Thread*) java_thread, user_sys_cpu_time != 0);
+      oop thread_obj = java_thread->threadObj();
+      if (thread_obj != NULL && !thread_obj->is_a(vmClasses::BasicVirtualThread_klass())) {
+        return os::thread_cpu_time((Thread*) java_thread, user_sys_cpu_time != 0);
+      }
     }
   }
   return -1;

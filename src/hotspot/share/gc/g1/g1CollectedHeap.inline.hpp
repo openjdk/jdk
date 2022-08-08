@@ -66,7 +66,7 @@ G1EvacStats* G1CollectedHeap::alloc_buffer_stats(G1HeapRegionAttr dest) {
 }
 
 size_t G1CollectedHeap::desired_plab_sz(G1HeapRegionAttr dest) {
-  size_t gclab_word_size = alloc_buffer_stats(dest)->desired_plab_sz(workers()->active_workers());
+  size_t gclab_word_size = alloc_buffer_stats(dest)->desired_plab_size(workers()->active_workers());
   return clamp_plab_size(gclab_word_size);
 }
 
