@@ -266,7 +266,7 @@ public abstract class MemberSummaryBuilder extends AbstractMemberBuilder {
                         var firstSentenceTrees = utils.getFirstSentenceTrees(m);
                         return firstSentenceTrees.isEmpty() ? Optional.empty() : Optional.of(firstSentenceTrees);
                     }), configuration);
-                    writer.addMemberSummary(typeElement, member, r.orElse(List.of()));
+                    writer.addMemberSummary(typeElement, member, r.isPresent() ? r.get().documentation() : List.of());
                 } else {
                     writer.addMemberSummary(typeElement, member, utils.getFirstSentenceTrees(member));
                 }

@@ -32,6 +32,7 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;
 
+import com.sun.source.doctree.DocTree;
 import jdk.javadoc.internal.doclets.toolkit.BaseOptions;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.DocletException;
@@ -166,11 +167,12 @@ public class MethodBuilder extends AbstractMemberBuilder {
         if (!options.noComment()) {
             assert utils.isMethod(currentMethod); // not all executables are methods
             ExecutableElement method = currentMethod;
-            if (utils.getFullBody(currentMethod).isEmpty()) {
-                DocFinder.Output docs = DocFinder.search(configuration,
-                        new DocFinder.Input(utils, currentMethod));
-                if (!docs.inlineTags.isEmpty())
-                    method = (ExecutableElement) docs.holder;
+            Optional<DocFinder.Result> r = DocFinder.inheritDocumentation(currentMethod, m -> {
+                List<? extends DocTree> fullBody = utils.getFullBody(m);
+                return fullBody.isEmpty() ? Optional.empty() : Optional.of(fullBody);
+            }, configuration);
+            if (r.isPresent()) {
+                method = r.get().method();
             }
             TypeMirror containingType = method.getEnclosingElement().asType();
             writer.addComments(containingType, method, methodContent);
