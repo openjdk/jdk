@@ -86,7 +86,7 @@ public class DebugGraphics extends Graphics {
         xOffset = yOffset = 0;
 
         //  Creates a Graphics context when the constructor is called.
-        if (graphics == null) {
+        if (this.graphics == null) {
             StackWalker walker = AccessController.doPrivileged(new PrivilegedAction<StackWalker>() {
                 @Override
                 public StackWalker run() {
@@ -97,7 +97,7 @@ public class DebugGraphics extends Graphics {
 
             if (walker.getCallerClass() != this.getClass()) {
                 BufferedImage bi = new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB);
-                graphics = bi.createGraphics();
+                this.graphics = bi.createGraphics();
             }
         }
     }
