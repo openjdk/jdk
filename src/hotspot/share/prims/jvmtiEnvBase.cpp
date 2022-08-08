@@ -1393,7 +1393,11 @@ JvmtiEnvBase::get_object_monitor_usage(JavaThread* calling_thread, jobject objec
         // by a non-owning JavaThread, but only the owning JavaThread
         // can change the owner field from the Lock word to the
         // JavaThread * and it may not have done that yet.
-        owner = (address)mon->owner();
+        if (mon->is_owner_anonymous()) {
+          owner = cast_from_oop<address>(hobj());
+        } else {
+          owner = (address) mon->owner();
+        }
       }
     }
 
