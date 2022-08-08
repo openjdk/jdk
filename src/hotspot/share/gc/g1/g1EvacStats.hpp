@@ -38,7 +38,9 @@ class G1EvacStats : public PLABStats {
 
   size_t _region_end_waste; // Number of words wasted due to skipping to the next region.
   uint   _regions_filled;   // Number of regions filled completely.
+  size_t _num_plab_filled; // Number of PLABs filled and retired.
   size_t _direct_allocated; // Number of words allocated directly into the regions.
+  size_t _num_direct_allocated; // Number of direct allocation attempts.
 
   // Number of words in live objects remaining in regions that ultimately suffered an
   // evacuation failure. This is used in the regions when the regions are made old regions.
@@ -52,7 +54,9 @@ class G1EvacStats : public PLABStats {
     PLABStats::reset();
     _region_end_waste = 0;
     _regions_filled = 0;
+    _num_plab_filled = 0;
     _direct_allocated = 0;
+    _num_direct_allocated = 0;
     _failure_used = 0;
     _failure_waste = 0;
   }
@@ -74,15 +78,19 @@ public:
   void adjust_desired_plab_size();
 
   uint regions_filled() const { return _regions_filled; }
+  size_t num_plab_filled() const { return _num_plab_filled; }
   size_t region_end_waste() const { return _region_end_waste; }
   size_t direct_allocated() const { return _direct_allocated; }
+  size_t num_direct_allocated() const { return _num_direct_allocated; }
 
   // Amount of space in heapwords used in the failing regions when an evacuation failure happens.
   size_t failure_used() const { return _failure_used; }
   // Amount of space in heapwords wasted (unused) in the failing regions when an evacuation failure happens.
   size_t failure_waste() const { return _failure_waste; }
 
+  inline void add_num_plab_filled(size_t value);
   inline void add_direct_allocated(size_t value);
+  inline void add_num_direct_allocated(size_t value);
   inline void add_region_end_waste(size_t value);
   inline void add_failure_used_and_waste(size_t used, size_t waste);
 };

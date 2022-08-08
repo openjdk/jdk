@@ -46,13 +46,17 @@ void G1EvacStats::log_plab_allocation() {
   log_debug(gc, plab)("%s other allocation: "
                       "region end waste: %zuB, "
                       "regions filled: %u, "
+                      "num plab filled: %zu, "
                       "direct allocated: %zuB, "
+                      "num direct allocated: %zu, "
                       "failure used: %zuB, "
                       "failure wasted: %zuB",
                       _description,
                       _region_end_waste * HeapWordSize,
                       _regions_filled,
+                      _num_plab_filled,
                       _direct_allocated * HeapWordSize,
+                      _num_direct_allocated,
                       _failure_used * HeapWordSize,
                       _failure_waste * HeapWordSize);
 }
@@ -116,7 +120,9 @@ G1EvacStats::G1EvacStats(const char* description, size_t default_per_thread_plab
   _net_plab_size_filter(wt),
   _region_end_waste(0),
   _regions_filled(0),
+  _num_plab_filled(0),
   _direct_allocated(0),
+  _num_direct_allocated(0),
   _failure_used(0),
   _failure_waste(0) {
 }

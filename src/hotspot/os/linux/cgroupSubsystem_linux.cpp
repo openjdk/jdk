@@ -30,6 +30,7 @@
 #include "cgroupV2Subsystem_linux.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.hpp"
+#include "os_linux.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
 #include "utilities/globalDefinitions.hpp"

@@ -65,13 +65,6 @@ public:
     Label&   slow_case                 // continuation point if fast allocation fails
   );
 
-  void eden_allocate(MacroAssembler* masm,
-    Register obj,                      // result: pointer to object after successful allocation
-    Register var_size_in_bytes,        // object size in bytes if unknown at compile time; invalid otherwise
-    int      con_size_in_bytes,        // object size in bytes if   known at compile time
-    Register t1,                       // temp register
-    Label&   slow_case                 // continuation point if fast allocation fails
-  );
   virtual void barrier_stubs_init() {}
 
   virtual NMethodPatchingType nmethod_patching_type() { return NMethodPatchingType::stw_instruction_and_data_patch; }

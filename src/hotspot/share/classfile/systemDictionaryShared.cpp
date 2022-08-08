@@ -81,8 +81,8 @@ DumpTimeSharedClassTable* SystemDictionaryShared::_cloned_dumptime_table = NULL;
 DumpTimeLambdaProxyClassDictionary* SystemDictionaryShared::_dumptime_lambda_proxy_class_dictionary = NULL;
 DumpTimeLambdaProxyClassDictionary* SystemDictionaryShared::_cloned_dumptime_lambda_proxy_class_dictionary = NULL;
 
-DEBUG_ONLY(bool SystemDictionaryShared::_no_class_loading_should_happen = false;)
-bool SystemDictionaryShared::_dump_in_progress = false;
+// Used by NoClassLoadingMark
+DEBUG_ONLY(bool SystemDictionaryShared::_class_loading_may_happen = true;)
 
 InstanceKlass* SystemDictionaryShared::load_shared_class_for_builtin_loader(
                  Symbol* class_name, Handle class_loader, TRAPS) {
@@ -178,27 +178,20 @@ InstanceKlass* SystemDictionaryShared::acquire_class_for_current_thread(
   return shared_klass;
 }
 
-void SystemDictionaryShared::start_dumping() {
+// Guaranteed to return non-NULL value for non-shared classes.
+// k must not be a shared class.
+DumpTimeClassInfo* SystemDictionaryShared::get_info(InstanceKlass* k) {
   MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
-  _dump_in_progress = true;
+  assert(!k->is_shared(), "sanity");
+  return get_info_locked(k);
 }
 
-void SystemDictionaryShared::stop_dumping() {
+DumpTimeClassInfo* SystemDictionaryShared::get_info_locked(InstanceKlass* k) {
   assert_lock_strong(DumpTimeTable_lock);
-  _dump_in_progress = false;
-}
-
-DumpTimeClassInfo* SystemDictionaryShared::find_or_allocate_info_for(InstanceKlass* k) {
-  MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
-  return find_or_allocate_info_for_locked(k);
-}
-
-DumpTimeClassInfo* SystemDictionaryShared::find_or_allocate_info_for_locked(InstanceKlass* k) {
-  assert_lock_strong(DumpTimeTable_lock);
-  if (_dumptime_table == NULL) {
-    _dumptime_table = new (ResourceObj::C_HEAP, mtClass) DumpTimeSharedClassTable;
-  }
-  return _dumptime_table->find_or_allocate_info_for(k, _dump_in_progress);
+  assert(!k->is_shared(), "sanity");
+  DumpTimeClassInfo* info = _dumptime_table->get_info(k);
+  assert(info != NULL, "must be");
+  return info;
 }
 
 bool SystemDictionaryShared::check_for_exclusion(InstanceKlass* k, DumpTimeClassInfo* info) {
@@ -501,48 +494,27 @@ InstanceKlass* SystemDictionaryShared::lookup_super_for_unregistered_class(
 void SystemDictionaryShared::set_shared_class_misc_info(InstanceKlass* k, ClassFileStream* cfs) {
   Arguments::assert_is_dumping_archive();
   assert(!is_builtin(k), "must be unregistered class");
-  DumpTimeClassInfo* info = find_or_allocate_info_for(k);
-  if (info != NULL) {
-    info->_clsfile_size  = cfs->length();
-    info->_clsfile_crc32 = ClassLoader::crc32(0, (const char*)cfs->buffer(), cfs->length());
+  DumpTimeClassInfo* info = get_info(k);
+  info->_clsfile_size  = cfs->length();
+  info->_clsfile_crc32 = ClassLoader::crc32(0, (const char*)cfs->buffer(), cfs->length());
+}
+
+void SystemDictionaryShared::initialize() {
+  if (Arguments::is_dumping_archive()) {
+    _dumptime_table = new (ResourceObj::C_HEAP, mtClass) DumpTimeSharedClassTable;
+    _dumptime_lambda_proxy_class_dictionary =
+                      new (ResourceObj::C_HEAP, mtClass) DumpTimeLambdaProxyClassDictionary;
   }
 }
 
 void SystemDictionaryShared::init_dumptime_info(InstanceKlass* k) {
-  (void)find_or_allocate_info_for(k);
+  MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
+  assert(SystemDictionaryShared::class_loading_may_happen(), "sanity");
+  _dumptime_table->allocate_info(k);
 }
 
 void SystemDictionaryShared::remove_dumptime_info(InstanceKlass* k) {
   MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
-  DumpTimeClassInfo* p = _dumptime_table->get(k);
-  if (p == NULL) {
-    return;
-  }
-  if (p->_verifier_constraints != NULL) {
-    for (int i = 0; i < p->_verifier_constraints->length(); i++) {
-      DumpTimeClassInfo::DTVerifierConstraint constraint = p->_verifier_constraints->at(i);
-      if (constraint._name != NULL ) {
-        constraint._name->decrement_refcount();
-      }
-      if (constraint._from_name != NULL ) {
-        constraint._from_name->decrement_refcount();
-      }
-    }
-    FREE_C_HEAP_ARRAY(DumpTimeClassInfo::DTVerifierConstraint, p->_verifier_constraints);
-    p->_verifier_constraints = NULL;
-    FREE_C_HEAP_ARRAY(char, p->_verifier_constraint_flags);
-    p->_verifier_constraint_flags = NULL;
-  }
-  if (p->_loader_constraints != NULL) {
-    for (int i = 0; i < p->_loader_constraints->length(); i++) {
-      DumpTimeClassInfo::DTLoaderConstraint ld =  p->_loader_constraints->at(i);
-      if (ld._name != NULL) {
-        ld._name->decrement_refcount();
-      }
-    }
-    FREE_C_HEAP_ARRAY(DumpTimeClassInfo::DTLoaderConstraint, p->_loader_constraints);
-    p->_loader_constraints = NULL;
-  }
   _dumptime_table->remove(k);
 }
 
@@ -591,7 +563,7 @@ void SystemDictionaryShared::validate_before_archiving(InstanceKlass* k) {
   ResourceMark rm;
   const char* name = k->name()->as_C_string();
   DumpTimeClassInfo* info = _dumptime_table->get(k);
-  assert(_no_class_loading_should_happen, "class loading must be disabled");
+  assert(!class_loading_may_happen(), "class loading must be disabled");
   guarantee(info != NULL, "Class %s must be entered into _dumptime_table", name);
   guarantee(!info->is_excluded(), "Should not attempt to archive excluded class %s", name);
   if (is_builtin(k)) {
@@ -649,7 +621,7 @@ public:
 };
 
 void SystemDictionaryShared::check_excluded_classes() {
-  assert(no_class_loading_should_happen(), "sanity");
+  assert(!class_loading_may_happen(), "class loading must be disabled");
   assert_lock_strong(DumpTimeTable_lock);
 
   if (DynamicDumpSharedSpaces) {
@@ -671,45 +643,34 @@ void SystemDictionaryShared::check_excluded_classes() {
 }
 
 bool SystemDictionaryShared::is_excluded_class(InstanceKlass* k) {
-  assert(_no_class_loading_should_happen, "sanity");
+  assert(!class_loading_may_happen(), "class loading must be disabled");
   assert_lock_strong(DumpTimeTable_lock);
   Arguments::assert_is_dumping_archive();
-  DumpTimeClassInfo* p = find_or_allocate_info_for_locked(k);
-  return (p == NULL) ? true : p->is_excluded();
+  DumpTimeClassInfo* p = get_info_locked(k);
+  return p->is_excluded();
 }
 
 void SystemDictionaryShared::set_excluded_locked(InstanceKlass* k) {
   assert_lock_strong(DumpTimeTable_lock);
   Arguments::assert_is_dumping_archive();
-  DumpTimeClassInfo* info = find_or_allocate_info_for_locked(k);
-  if (info != NULL) {
-    info->set_excluded();
-  }
+  DumpTimeClassInfo* info = get_info_locked(k);
+  info->set_excluded();
 }
 
 void SystemDictionaryShared::set_excluded(InstanceKlass* k) {
   Arguments::assert_is_dumping_archive();
-  DumpTimeClassInfo* info = find_or_allocate_info_for(k);
-  if (info != NULL) {
-    info->set_excluded();
-  }
+  DumpTimeClassInfo* info = get_info(k);
+  info->set_excluded();
 }
 
 void SystemDictionaryShared::set_class_has_failed_verification(InstanceKlass* ik) {
   Arguments::assert_is_dumping_archive();
-  DumpTimeClassInfo* p = find_or_allocate_info_for(ik);
-  if (p != NULL) {
-    p->set_failed_verification();
-  }
+  DumpTimeClassInfo* p = get_info(ik);
+  p->set_failed_verification();
 }
 
 bool SystemDictionaryShared::has_class_failed_verification(InstanceKlass* ik) {
   Arguments::assert_is_dumping_archive();
-  if (_dumptime_table == NULL) {
-    assert(DynamicDumpSharedSpaces, "sanity");
-    assert(ik->is_shared(), "must be a shared class in the static archive");
-    return false;
-  }
   DumpTimeClassInfo* p = _dumptime_table->get(ik);
   return (p == NULL) ? false : p->failed_verification();
 }
@@ -724,27 +685,22 @@ void SystemDictionaryShared::dumptime_classes_do(class MetaspaceClosure* it) {
   };
   _dumptime_table->iterate_all_live_classes(do_klass);
 
-  if (_dumptime_lambda_proxy_class_dictionary != NULL) {
-    auto do_lambda = [&] (LambdaProxyClassKey& key, DumpTimeLambdaProxyClassInfo& info) {
-      if (key.caller_ik()->is_loader_alive()) {
-        info.metaspace_pointers_do(it);
-        key.metaspace_pointers_do(it);
-      }
-    };
-    _dumptime_lambda_proxy_class_dictionary->iterate_all(do_lambda);
-  }
+  auto do_lambda = [&] (LambdaProxyClassKey& key, DumpTimeLambdaProxyClassInfo& info) {
+    if (key.caller_ik()->is_loader_alive()) {
+      info.metaspace_pointers_do(it);
+      key.metaspace_pointers_do(it);
+    }
+  };
+  _dumptime_lambda_proxy_class_dictionary->iterate_all(do_lambda);
 }
 
 bool SystemDictionaryShared::add_verification_constraint(InstanceKlass* k, Symbol* name,
          Symbol* from_name, bool from_field_is_protected, bool from_is_array, bool from_is_object) {
   Arguments::assert_is_dumping_archive();
-  DumpTimeClassInfo* info = find_or_allocate_info_for(k);
-  if (info != NULL) {
-    info->add_verification_constraint(k, name, from_name, from_field_is_protected,
-                                      from_is_array, from_is_object);
-  } else {
-    return true;
-  }
+  DumpTimeClassInfo* info = get_info(k);
+  info->add_verification_constraint(k, name, from_name, from_field_is_protected,
+                                    from_is_array, from_is_object);
+
   if (DynamicDumpSharedSpaces) {
     // For dynamic dumping, we can resolve all the constraint classes for all class loaders during
     // the initial run prior to creating the archive before vm exit. We will also perform verification
@@ -766,28 +722,19 @@ bool SystemDictionaryShared::add_verification_constraint(InstanceKlass* k, Symbo
 
 void SystemDictionaryShared::add_enum_klass_static_field(InstanceKlass* ik, int root_index) {
   assert(DumpSharedSpaces, "static dump only");
-  DumpTimeClassInfo* info = SystemDictionaryShared::find_or_allocate_info_for_locked(ik);
-  assert(info != NULL, "must be");
+  DumpTimeClassInfo* info = get_info_locked(ik);
   info->add_enum_klass_static_field(root_index);
 }
 
 void SystemDictionaryShared::add_to_dump_time_lambda_proxy_class_dictionary(LambdaProxyClassKey& key,
                                                            InstanceKlass* proxy_klass) {
   assert_lock_strong(DumpTimeTable_lock);
-  if (_dumptime_lambda_proxy_class_dictionary == NULL) {
-    _dumptime_lambda_proxy_class_dictionary =
-      new (ResourceObj::C_HEAP, mtClass) DumpTimeLambdaProxyClassDictionary;
-  }
-  DumpTimeLambdaProxyClassInfo* lambda_info = _dumptime_lambda_proxy_class_dictionary->get(key);
-  if (lambda_info == NULL) {
-    DumpTimeLambdaProxyClassInfo info;
-    info.add_proxy_klass(proxy_klass);
-    _dumptime_lambda_proxy_class_dictionary->put(key, info);
-    //lambda_info = _dumptime_lambda_proxy_class_dictionary->get(key);
-    //assert(lambda_info->_proxy_klass == proxy_klass, "must be"); // debug only -- remove
+
+  bool created;
+  DumpTimeLambdaProxyClassInfo* info = _dumptime_lambda_proxy_class_dictionary->put_if_absent(key, &created);
+  info->add_proxy_klass(proxy_klass);
+  if (created) {
     ++_dumptime_lambda_proxy_class_dictionary->_count;
-  } else {
-    lambda_info->add_proxy_klass(proxy_klass);
   }
 }
 
@@ -1030,10 +977,8 @@ void SystemDictionaryShared::record_linking_constraint(Symbol* name, InstanceKla
   assert(!Thread::current()->is_VM_thread(), "must be");
 
   Arguments::assert_is_dumping_archive();
-  DumpTimeClassInfo* info = find_or_allocate_info_for(klass);
-  if (info != NULL) {
-    info->record_linking_constraint(name, loader1, loader2);
-  }
+  DumpTimeClassInfo* info = get_info(klass);
+  info->record_linking_constraint(name, loader1, loader2);
 }
 
 // returns true IFF there's no need to re-initialize the i/v-tables for klass for
@@ -1160,14 +1105,12 @@ size_t SystemDictionaryShared::estimate_size_for_archive() {
   size_t total_size = est.total() +
     CompactHashtableWriter::estimate_size(_dumptime_table->count_of(true)) +
     CompactHashtableWriter::estimate_size(_dumptime_table->count_of(false));
-  if (_dumptime_lambda_proxy_class_dictionary != NULL) {
-    size_t bytesize = align_up(sizeof(RunTimeLambdaProxyClassInfo), SharedSpaceObjectAlignment);
-    total_size +=
+
+  size_t bytesize = align_up(sizeof(RunTimeLambdaProxyClassInfo), SharedSpaceObjectAlignment);
+  total_size +=
       (bytesize * _dumptime_lambda_proxy_class_dictionary->_count) +
       CompactHashtableWriter::estimate_size(_dumptime_lambda_proxy_class_dictionary->_count);
-  } else {
-    total_size += CompactHashtableWriter::estimate_size(0);
-  }
+
   return total_size;
 }
 
@@ -1300,20 +1243,15 @@ void SystemDictionaryShared::write_dictionary(RunTimeSharedDictionary* dictionar
 void SystemDictionaryShared::write_to_archive(bool is_static_archive) {
   ArchiveInfo* archive = get_archive(is_static_archive);
 
-  if (_dumptime_table != NULL) {
-    write_dictionary(&archive->_builtin_dictionary, true);
-    write_dictionary(&archive->_unregistered_dictionary, false);
-  }
-  if (_dumptime_lambda_proxy_class_dictionary != NULL) {
-    write_lambda_proxy_class_dictionary(&archive->_lambda_proxy_class_dictionary);
-  }
+  write_dictionary(&archive->_builtin_dictionary, true);
+  write_dictionary(&archive->_unregistered_dictionary, false);
+
+  write_lambda_proxy_class_dictionary(&archive->_lambda_proxy_class_dictionary);
 }
 
 void SystemDictionaryShared::adjust_lambda_proxy_class_dictionary() {
-  if (_dumptime_lambda_proxy_class_dictionary != NULL) {
-    AdjustLambdaProxyClassInfo adjuster;
-    _dumptime_lambda_proxy_class_dictionary->iterate(&adjuster);
-  }
+  AdjustLambdaProxyClassInfo adjuster;
+  _dumptime_lambda_proxy_class_dictionary->iterate(&adjuster);
 }
 
 void SystemDictionaryShared::serialize_dictionary_headers(SerializeClosure* soc,
@@ -1387,7 +1325,7 @@ InstanceKlass* SystemDictionaryShared::find_builtin_class(Symbol* name) {
 
 void SystemDictionaryShared::update_shared_entry(InstanceKlass* k, int id) {
   assert(DumpSharedSpaces, "supported only when dumping");
-  DumpTimeClassInfo* info = find_or_allocate_info_for(k);
+  DumpTimeClassInfo* info = get_info(k);
   info->_id = id;
 }
 
@@ -1493,9 +1431,6 @@ void SystemDictionaryShared::print_table_statistics(outputStream* st) {
 
 bool SystemDictionaryShared::is_dumptime_table_empty() {
   assert_lock_strong(DumpTimeTable_lock);
-  if (_dumptime_table == NULL) {
-    return true;
-  }
   _dumptime_table->update_counts();
   if (_dumptime_table->count_of(true) == 0 && _dumptime_table->count_of(false) == 0){
     return true;
@@ -1515,7 +1450,8 @@ class CloneDumpTimeClassTable: public StackObj {
   void do_entry(InstanceKlass* k, DumpTimeClassInfo& info) {
     if (!info.is_excluded()) {
       bool created;
-      _cloned_table->put_if_absent(k, info.clone(), &created);
+      _cloned_table->put_if_absent(k, info, &created);
+      assert(created, "must be");
     }
   }
 };
@@ -1536,31 +1472,42 @@ class CloneDumpTimeLambdaProxyClassTable: StackObj {
     bool created;
     // make copies then store in _clone_table
     LambdaProxyClassKey keyCopy = key;
-    _cloned_table->put_if_absent(keyCopy, info.clone(), &created);
+    _cloned_table->put_if_absent(keyCopy, info, &created);
+    assert(created, "must be");
     ++ _cloned_table->_count;
     return true; // keep on iterating
   }
 };
 
+// When dumping the CDS archive, the ArchiveBuilder will irrecoverably modify the
+// _dumptime_table and _dumptime_lambda_proxy_class_dictionary (e.g., metaspace
+// pointers are changed to use "buffer" addresses.)
+//
+// We save a copy of these tables and restore them after the dumping is finished.
+// This makes it possible to repeat the dumping operation (e.g., use
+// "jcmd VM.cds dynamic_dump" multiple times on the same JVM process).
+//
+// We use the copy constructors to clone the values in these tables. The copy constructors
+// must make a deep copy, as internal data structures such as the contents of
+// DumpTimeClassInfo::_loader_constraints are also modified by the ArchiveBuilder.
+
 void SystemDictionaryShared::clone_dumptime_tables() {
   Arguments::assert_is_dumping_archive();
   assert_lock_strong(DumpTimeTable_lock);
-  if (_dumptime_table != NULL) {
-    assert(_cloned_dumptime_table == NULL, "_cloned_dumptime_table must be cleaned");
-    _cloned_dumptime_table = new (ResourceObj::C_HEAP, mtClass) DumpTimeSharedClassTable;
-    CloneDumpTimeClassTable copy_classes(_dumptime_table, _cloned_dumptime_table);
-    _dumptime_table->iterate_all_live_classes(&copy_classes);
-    _cloned_dumptime_table->update_counts();
-  }
-  if (_dumptime_lambda_proxy_class_dictionary != NULL) {
-    assert(_cloned_dumptime_lambda_proxy_class_dictionary == NULL,
-           "_cloned_dumptime_lambda_proxy_class_dictionary must be cleaned");
-    _cloned_dumptime_lambda_proxy_class_dictionary =
-                                          new (ResourceObj::C_HEAP, mtClass) DumpTimeLambdaProxyClassDictionary;
-    CloneDumpTimeLambdaProxyClassTable copy_proxy_classes(_dumptime_lambda_proxy_class_dictionary,
-                                                          _cloned_dumptime_lambda_proxy_class_dictionary);
-    _dumptime_lambda_proxy_class_dictionary->iterate(&copy_proxy_classes);
-  }
+
+  assert(_cloned_dumptime_table == NULL, "_cloned_dumptime_table must be cleaned");
+  _cloned_dumptime_table = new (ResourceObj::C_HEAP, mtClass) DumpTimeSharedClassTable;
+  CloneDumpTimeClassTable copy_classes(_dumptime_table, _cloned_dumptime_table);
+  _dumptime_table->iterate_all_live_classes(&copy_classes);
+  _cloned_dumptime_table->update_counts();
+
+  assert(_cloned_dumptime_lambda_proxy_class_dictionary == NULL,
+         "_cloned_dumptime_lambda_proxy_class_dictionary must be cleaned");
+  _cloned_dumptime_lambda_proxy_class_dictionary =
+                                        new (ResourceObj::C_HEAP, mtClass) DumpTimeLambdaProxyClassDictionary;
+  CloneDumpTimeLambdaProxyClassTable copy_proxy_classes(_dumptime_lambda_proxy_class_dictionary,
+                                                        _cloned_dumptime_lambda_proxy_class_dictionary);
+  _dumptime_lambda_proxy_class_dictionary->iterate(&copy_proxy_classes);
 }
 
 void SystemDictionaryShared::restore_dumptime_tables() {
@@ -1568,6 +1515,7 @@ void SystemDictionaryShared::restore_dumptime_tables() {
   delete _dumptime_table;
   _dumptime_table = _cloned_dumptime_table;
   _cloned_dumptime_table = NULL;
+
   delete _dumptime_lambda_proxy_class_dictionary;
   _dumptime_lambda_proxy_class_dictionary = _cloned_dumptime_lambda_proxy_class_dictionary;
   _cloned_dumptime_lambda_proxy_class_dictionary = NULL;
@@ -1598,10 +1546,8 @@ class CleanupDumpTimeLambdaProxyClassTable: StackObj {
 
 void SystemDictionaryShared::cleanup_lambda_proxy_class_dictionary() {
   assert_lock_strong(DumpTimeTable_lock);
-  if (_dumptime_lambda_proxy_class_dictionary != NULL) {
-    CleanupDumpTimeLambdaProxyClassTable cleanup_proxy_classes;
-    _dumptime_lambda_proxy_class_dictionary->unlink(&cleanup_proxy_classes);
-  }
+  CleanupDumpTimeLambdaProxyClassTable cleanup_proxy_classes;
+  _dumptime_lambda_proxy_class_dictionary->unlink(&cleanup_proxy_classes);
 }
 
 #if INCLUDE_CDS_JAVA_HEAP

@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2013 SAP SE. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,22 +19,36 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef OS_CPU_LINUX_PPC_OS_LINUX_PPC_HPP
-#define OS_CPU_LINUX_PPC_OS_LINUX_PPC_HPP
+#include <stdio.h>
+#include <jni.h>
+#include <signal.h>
+#include <sys/ucontext.h>
+#include <errno.h>
+#include <string.h>
 
-  static void setup_fpu() {}
-
-  // Used to register dynamic code cache area with the OS
-  // Note: Currently only used in 64 bit Windows implementations
-  static bool register_code_area(char *low, char *high) { return true; }
-
-#if !defined(ABI_ELFv2)
-  // ppc (not ppcle) has function descriptors
-  #define HAVE_FUNCTION_DESCRIPTORS 1
-  static void* resolve_function_descriptor(void* p);
+#ifdef __cplusplus
+extern "C" {
 #endif
 
-#endif // OS_CPU_LINUX_PPC_OS_LINUX_PPC_HPP
+void sig_handler(int sig, siginfo_t *info, ucontext_t *context) {
+
+    printf( " HANDLER (1) " );
+}
+
+JNIEXPORT void JNICALL Java_TestPosixSig_changeSigActionFor(JNIEnv *env, jclass klass, jint val) {
+    struct sigaction act;
+    act.sa_handler = (void (*)())sig_handler;
+    sigemptyset(&act.sa_mask);
+    act.sa_flags = 0;
+    int retval = sigaction(val, &act, 0);
+    if (retval != 0) {
+        printf("ERROR: failed to set %d signal handler error=%s\n", val, strerror(errno));
+    }
+}
+
+#ifdef __cplusplus
+}
+#endif
+

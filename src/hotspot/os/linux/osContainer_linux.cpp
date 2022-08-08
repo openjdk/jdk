@@ -28,6 +28,7 @@
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
 #include "logging/log.hpp"
+#include "os_linux.hpp"
 #include "osContainer_linux.hpp"
 #include "cgroupSubsystem_linux.hpp"
 
