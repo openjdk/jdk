@@ -214,7 +214,7 @@ JLI_ReportErrorMessageSys(const char* fmt, ...) {
     if (err != NULL) {
         fprintf(stderr, "\n%s\n", err);
     } else {
-    	fprintf(stderr, "\n");
+        fprintf(stderr, "\n");
     }
 
     va_end(vl);
