@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 #include "jvm.h"
-#include "classfile/javaClasses.hpp"
+#include "classfile/javaClasses.inline.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
@@ -64,6 +64,7 @@
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/sweeper.hpp"
+#include "runtime/threads.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/timerTrace.hpp"
 #include "runtime/vframe.inline.hpp"
@@ -443,6 +444,11 @@ CompileTask* CompileQueue::get(CompilerThread* thread) {
     AbstractCompiler* compiler = thread->compiler();
     guarantee(compiler != nullptr, "Compiler object must exist");
     compiler->on_empty_queue(this, thread);
+    if (_first != nullptr) {
+      // The call to on_empty_queue may have temporarily unlocked the MCQ lock
+      // so check again whether any tasks were added to the queue.
+      break;
+    }
 
     // If there are no compilation tasks and we can compile new jobs
     // (i.e., there is enough free space in the code cache) there is
@@ -2307,8 +2313,9 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
       /* Repeat compilation without installing code for profiling purposes */
       int repeat_compilation_count = directive->RepeatCompilationOption;
       while (repeat_compilation_count > 0) {
+        ResourceMark rm(thread);
         task->print_ul("NO CODE INSTALLED");
-        comp->compile_method(&ci_env, target, osr_bci, false , directive);
+        comp->compile_method(&ci_env, target, osr_bci, false, directive);
         repeat_compilation_count--;
       }
     }
@@ -2728,8 +2735,11 @@ void CompileBroker::print_times(bool per_compiler, bool aggregate) {
   }
 #if INCLUDE_JVMCI
   if (EnableJVMCI) {
-    tty->cr();
-    JVMCICompiler::print_hosted_timers();
+    JVMCICompiler *jvmci_comp = JVMCICompiler::instance(false, JavaThread::current_or_null());
+    if (jvmci_comp != nullptr && jvmci_comp != comp) {
+      tty->cr();
+      jvmci_comp->print_timers();
+    }
   }
 #endif
 

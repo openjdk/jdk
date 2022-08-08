@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
 #define SHARE_RUNTIME_REGISTERMAP_HPP
 
 #include "code/vmreg.hpp"
+#include "oops/stackChunkOop.hpp"
+#include "runtime/handles.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
@@ -58,7 +60,7 @@ class JavaThread;
 //      values of the callee-saved registers does not matter, e.g., if you
 //      only need the static properties such as frame type, pc, and such.
 //      Updating of the RegisterMap can be turned off by instantiating the
-//      register map as: RegisterMap map(thread, false);
+//      register map with RegisterMap::UpdateMap::skip
 
 class RegisterMap : public StackObj {
  public:
@@ -68,14 +70,24 @@ class RegisterMap : public StackObj {
     location_valid_type_size = sizeof(LocationValidType)*8,
     location_valid_size = (reg_count+location_valid_type_size-1)/location_valid_type_size
   };
+  enum class UpdateMap { skip, include };
+  enum class ProcessFrames { skip, include };
+  enum class WalkContinuation { skip, include };
  private:
-  intptr_t*    _location[reg_count];    // Location of registers (intptr_t* looks better than address in the debugger)
+  intptr_t*         _location[reg_count];     // Location of registers (intptr_t* looks better than address in the debugger)
   LocationValidType _location_valid[location_valid_size];
-  bool        _include_argument_oops;   // Should include argument_oop marked locations for compiler
-  JavaThread* _thread;                  // Reference to current thread
-  bool        _update_map;              // Tells if the register map need to be
-                                        // updated when traversing the stack
-  bool        _process_frames;          // Should frames be processed by stack watermark barriers?
+  bool              _include_argument_oops;   // Should include argument_oop marked locations for compiler
+  JavaThread*       _thread;                  // Reference to current thread
+  stackChunkHandle  _chunk;                   // The current continuation stack chunk, if any
+  int               _chunk_index;             // incremented whenever a new chunk is set
+
+  bool              _update_map;              // Tells if the register map need to be
+                                              // updated when traversing the stack
+  bool              _process_frames;          // Should frames be processed by stack watermark barriers?
+  bool              _walk_cont;               // whether to walk frames on a continuation stack
+
+  NOT_PRODUCT(bool  _skip_missing;) // ignore missing registers
+  NOT_PRODUCT(bool  _async;)        // walking frames asynchronously, at arbitrary points
 
 #ifdef ASSERT
   void check_location_valid();
@@ -84,11 +96,12 @@ class RegisterMap : public StackObj {
 #endif
 
  public:
-  debug_only(intptr_t* _update_for_id;) // Assert that RegisterMap is not updated twice for same frame
-  RegisterMap(JavaThread *thread, bool update_map = true, bool process_frames = true);
+  DEBUG_ONLY(intptr_t* _update_for_id;) // Assert that RegisterMap is not updated twice for same frame
+  RegisterMap(JavaThread *thread, UpdateMap update_map, ProcessFrames process_frames, WalkContinuation walk_cont);
+  RegisterMap(oop continuation, UpdateMap update_map);
   RegisterMap(const RegisterMap* map);
 
-  address location(VMReg reg) const {
+  address location(VMReg reg, intptr_t* sp) const {
     int index = reg->value() / location_valid_type_size;
     assert(0 <= reg->value() && reg->value() < reg_count, "range check");
     assert(0 <= index && index < location_valid_size, "range check");
@@ -103,7 +116,17 @@ class RegisterMap : public StackObj {
     if (slot_idx > 0) {
       return pd_location(base_reg, slot_idx);
     } else {
-      return location(base_reg);
+      return location(base_reg, nullptr);
+    }
+  }
+
+  address trusted_location(VMReg reg) const {
+    return (address) _location[reg->value()];
+  }
+
+  void verify(RegisterMap& other) {
+    for (int i = 0; i < reg_count; ++i) {
+      assert(_location[i] == other._location[i], "");
     }
   }
 
@@ -126,9 +149,32 @@ class RegisterMap : public StackObj {
   JavaThread *thread()  const { return _thread; }
   bool update_map()     const { return _update_map; }
   bool process_frames() const { return _process_frames; }
+  bool walk_cont()      const { return _walk_cont; }
+
+  void set_walk_cont(bool value) { _walk_cont = value; }
+
+  bool in_cont()        const { return _chunk() != NULL; } // Whether we are currently on the hstack; if true, frames are relativized
+  oop cont() const;
+  stackChunkHandle stack_chunk() const { return _chunk; }
+  void set_stack_chunk(stackChunkOop chunk);
+  int stack_chunk_index() const { return _chunk_index; }
+  void set_stack_chunk_index(int index) { _chunk_index = index; }
+
+  const RegisterMap* as_RegisterMap() const { return this; }
+  RegisterMap* as_RegisterMap() { return this; }
 
   void print_on(outputStream* st) const;
   void print() const;
+
+  void set_async(bool value)        { NOT_PRODUCT(_async = value;) }
+  void set_skip_missing(bool value) { NOT_PRODUCT(_skip_missing = value;) }
+
+#ifndef PRODUCT
+  bool is_async() const             { return _async; }
+  bool should_skip_missing() const  { return _skip_missing; }
+
+  VMReg find_register_spilled_here(void* p, intptr_t* sp);
+#endif
 
   // the following contains the definition of pd_xxx methods
 #include CPU_HEADER(registerMap)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,8 @@ public class WaitingThread extends RecursiveMonitoringThread {
         private Object readyLock = new Object();
         private static final String[] expectedMethods = {
                 "nsk.monitoring.share.thread.WaitingThread.runInside",
-                "java.lang.Object.wait"
+                "java.lang.Object.wait",
+                "java.lang.Object.wait0"
         };
 
         public WaitingThread(Log log, RunType recursionType, int maxDepth) {

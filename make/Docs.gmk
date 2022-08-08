@@ -104,14 +104,14 @@ JAVADOC_DISABLED_DOCLINT_PACKAGES := org.w3c.* javax.smartcardio
 
 # The initial set of options for javadoc
 JAVADOC_OPTIONS := -use -keywords -notimestamp \
-    -serialwarn -encoding ISO-8859-1 -docencoding UTF-8 -breakiterator \
+    -encoding ISO-8859-1 -docencoding UTF-8 -breakiterator \
     -splitIndex --system none -javafx --expand-requires transitive \
     --override-methods=summary
 
 # The reference options must stay stable to allow for comparisons across the
 # development cycle.
 REFERENCE_OPTIONS := -XDignore.symbol.file=true -use -keywords -notimestamp \
-    -serialwarn -encoding ISO-8859-1 -breakiterator -splitIndex --system none \
+    -encoding ISO-8859-1 -breakiterator -splitIndex --system none \
     -html5 -javafx --expand-requires transitive
 
 # Should we add DRAFT stamps to the generated javadoc?

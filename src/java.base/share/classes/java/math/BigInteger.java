@@ -720,7 +720,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         if (numBytes > 0) {
             rnd.nextBytes(randomBits);
             int excessBits = 8*numBytes - numBits;
-            randomBits[0] &= (1 << (8-excessBits)) - 1;
+            randomBits[0] &= (byte)((1 << (8-excessBits)) - 1);
         }
         return randomBits;
     }
@@ -1273,13 +1273,14 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
          * with just the very first value.  Additional values will be created
          * on demand.
          */
-        powerCache = new BigInteger[Character.MAX_RADIX+1][];
+        BigInteger[][] cache = new BigInteger[Character.MAX_RADIX+1][];
         logCache = new double[Character.MAX_RADIX+1];
 
         for (int i=Character.MIN_RADIX; i <= Character.MAX_RADIX; i++) {
-            powerCache[i] = new BigInteger[] { BigInteger.valueOf(i) };
+            cache[i] = new BigInteger[] { BigInteger.valueOf(i) };
             logCache[i] = Math.log(i);
         }
+        BigInteger.powerCache = cache;
     }
 
     /**
@@ -1605,6 +1606,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * @param  val value to be multiplied by this BigInteger.
      * @return {@code this * val}
      * @see #multiply
+     * @since 19
      */
     public BigInteger parallelMultiply(BigInteger val) {
         return multiply(val, false, true, 0);
@@ -3388,7 +3390,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
 
         // Mask out any excess bits
         int excessBits = (numInts << 5) - p;
-        mag[0] &= (1L << (32-excessBits)) - 1;
+        mag[0] &= (int)((1L << (32-excessBits)) - 1);
 
         return (mag[0] == 0 ? new BigInteger(1, mag) : new BigInteger(mag, 1));
     }

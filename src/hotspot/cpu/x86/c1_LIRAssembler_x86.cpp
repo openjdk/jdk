@@ -398,13 +398,6 @@ int LIR_Assembler::initial_frame_size_in_bytes() const {
 
 
 int LIR_Assembler::emit_exception_handler() {
-  // if the last instruction is a call (typically to do a throw which
-  // is coming at the end after block reordering) the return address
-  // must still point into the code area in order to avoid assertion
-  // failures when searching for the corresponding bci => add a nop
-  // (was bug 5/14/1999 - gri)
-  __ nop();
-
   // generate code for exception handler
   address handler_base = __ start_a_stub(exception_handler_size());
   if (handler_base == NULL) {
@@ -445,7 +438,7 @@ int LIR_Assembler::emit_unwind_handler() {
 
   // Fetch the exception from TLS and clear out exception related thread state
   Register thread = NOT_LP64(rsi) LP64_ONLY(r15_thread);
-  NOT_LP64(__ get_thread(rsi));
+  NOT_LP64(__ get_thread(thread));
   __ movptr(rax, Address(thread, JavaThread::exception_oop_offset()));
   __ movptr(Address(thread, JavaThread::exception_oop_offset()), (intptr_t)NULL_WORD);
   __ movptr(Address(thread, JavaThread::exception_pc_offset()), (intptr_t)NULL_WORD);
@@ -499,13 +492,6 @@ int LIR_Assembler::emit_unwind_handler() {
 
 
 int LIR_Assembler::emit_deopt_handler() {
-  // if the last instruction is a call (typically to do a throw which
-  // is coming at the end after block reordering) the return address
-  // must still point into the code area in order to avoid assertion
-  // failures when searching for the corresponding bci => add a nop
-  // (was bug 5/14/1999 - gri)
-  __ nop();
-
   // generate code for exception handler
   address handler_base = __ start_a_stub(deopt_handler_size());
   if (handler_base == NULL) {
@@ -2878,6 +2864,7 @@ void LIR_Assembler::call(LIR_OpJavaCall* op, relocInfo::relocType rtype) {
          "must be aligned");
   __ call(AddressLiteral(op->addr(), rtype));
   add_call_info(code_offset(), op->info());
+  __ post_call_nop();
 }
 
 
@@ -2886,6 +2873,7 @@ void LIR_Assembler::ic_call(LIR_OpJavaCall* op) {
   add_call_info(code_offset(), op->info());
   assert((__ offset() - NativeCall::instruction_size + NativeCall::displacement_offset) % BytesPerWord == 0,
          "must be aligned");
+  __ post_call_nop();
 }
 
 
@@ -3514,6 +3502,10 @@ void LIR_Assembler::emit_lock(LIR_OpLock* op) {
   Register hdr = op->hdr_opr()->as_register();
   Register lock = op->lock_opr()->as_register();
   if (UseHeavyMonitors) {
+    if (op->info() != NULL) {
+      add_debug_info_for_null_check_here(op->info());
+      __ null_check(obj);
+    }
     __ jmp(*op->stub()->entry());
   } else if (op->code() == lir_lock) {
     assert(BasicLock::displaced_header_offset_in_bytes() == 0, "lock_reg must point to the displaced header");
@@ -3900,6 +3892,7 @@ void LIR_Assembler::rt_call(LIR_Opr result, address dest, const LIR_OprList* arg
   if (info != NULL) {
     add_call_info_here(info);
   }
+  __ post_call_nop();
 }
 
 

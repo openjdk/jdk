@@ -44,7 +44,9 @@ public final class IntegerPolynomial1305 extends IntegerPolynomial {
     private static final BigInteger MODULUS
         = TWO.pow(POWER).subtract(BigInteger.valueOf(SUBTRAHEND));
 
-    public IntegerPolynomial1305() {
+    public static final IntegerPolynomial1305 ONE = new IntegerPolynomial1305();
+
+    private IntegerPolynomial1305() {
         super(BITS_PER_LIMB, NUM_LIMBS, 1, MODULUS);
     }
 

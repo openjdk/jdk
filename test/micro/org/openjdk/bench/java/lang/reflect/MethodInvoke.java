@@ -25,11 +25,14 @@ package org.openjdk.bench.java.lang.reflect;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.CompilerControl;
+import org.openjdk.jmh.annotations.Fork;
+import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
+import org.openjdk.jmh.annotations.Warmup;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -43,6 +46,9 @@ import java.util.concurrent.TimeUnit;
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @State(Scope.Thread)
+@Warmup(iterations = 10, time = 1, timeUnit = TimeUnit.SECONDS)
+@Measurement(iterations = 5, time = 2, timeUnit = TimeUnit.SECONDS)
+@Fork(3)
 public class MethodInvoke {
 
     private Method staticMeth_0;

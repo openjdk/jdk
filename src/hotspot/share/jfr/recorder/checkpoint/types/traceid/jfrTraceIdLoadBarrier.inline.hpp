@@ -35,7 +35,7 @@
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceIdMacros.hpp"
 #include "oops/klass.hpp"
 #include "oops/method.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "utilities/debug.hpp"
 
 inline bool is_not_tagged(traceid value) {

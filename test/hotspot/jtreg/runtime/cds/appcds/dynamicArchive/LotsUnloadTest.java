@@ -29,9 +29,9 @@
  * @requires vm.cds
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  *          /test/hotspot/jtreg/runtime/cds/appcds/dynamicArchive/test-classes
- * @build sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
  * @build LotsUnloadApp
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar LotsUnloadApp.jar LotsUnloadApp DefinedAsHiddenKlass
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. LotsUnloadTest
  */

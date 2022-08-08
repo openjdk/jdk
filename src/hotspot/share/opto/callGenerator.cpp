@@ -40,7 +40,6 @@
 #include "opto/runtime.hpp"
 #include "opto/subnode.hpp"
 #include "runtime/sharedRuntime.hpp"
-#include "ci/ciNativeEntryPoint.hpp"
 #include "utilities/debug.hpp"
 
 // Utility function.
@@ -1003,31 +1002,6 @@ CallGenerator* CallGenerator::for_method_handle_call(JVMState* jvms, ciMethod* c
   }
 }
 
-class NativeCallGenerator : public CallGenerator {
-private:
-  address _call_addr;
-  ciNativeEntryPoint* _nep;
-public:
-  NativeCallGenerator(ciMethod* m, address call_addr, ciNativeEntryPoint* nep)
-   : CallGenerator(m), _call_addr(call_addr), _nep(nep) {}
-
-  virtual JVMState* generate(JVMState* jvms);
-};
-
-JVMState* NativeCallGenerator::generate(JVMState* jvms) {
-  GraphKit kit(jvms);
-
-  Node* call = kit.make_native_call(_call_addr, tf(), method()->arg_size(), _nep); // -fallback, - nep
-  if (call == NULL) return NULL;
-
-  kit.C->print_inlining_update(this);
-  if (kit.C->log() != NULL) {
-    kit.C->log()->elem("l2n_intrinsification_success bci='%d' entry_point='" INTPTR_FORMAT "'", jvms->bci(), p2i(_call_addr));
-  }
-
-  return kit.transfer_exceptions_into_jvms();
-}
-
 CallGenerator* CallGenerator::for_method_handle_inline(JVMState* jvms, ciMethod* caller, ciMethod* callee, bool allow_inline, bool& input_not_const) {
   GraphKit kit(jvms);
   PhaseGVN& gvn = kit.gvn();
@@ -1044,22 +1018,29 @@ CallGenerator* CallGenerator::for_method_handle_inline(JVMState* jvms, ciMethod*
       Node* receiver = kit.argument(0);
       if (receiver->Opcode() == Op_ConP) {
         input_not_const = false;
-        const TypeOopPtr* oop_ptr = receiver->bottom_type()->is_oopptr();
-        ciMethod* target = oop_ptr->const_oop()->as_method_handle()->get_vmtarget();
-        const int vtable_index = Method::invalid_vtable_index;
+        const TypeOopPtr* recv_toop = receiver->bottom_type()->isa_oopptr();
+        if (recv_toop != NULL) {
+          ciMethod* target = recv_toop->const_oop()->as_method_handle()->get_vmtarget();
+          const int vtable_index = Method::invalid_vtable_index;
 
-        if (!ciMethod::is_consistent_info(callee, target)) {
+          if (!ciMethod::is_consistent_info(callee, target)) {
+            print_inlining_failure(C, callee, jvms->depth() - 1, jvms->bci(),
+                                   "signatures mismatch");
+            return NULL;
+          }
+
+          CallGenerator *cg = C->call_generator(target, vtable_index,
+                                                false /* call_does_dispatch */,
+                                                jvms,
+                                                allow_inline,
+                                                PROB_ALWAYS);
+          return cg;
+        } else {
+          assert(receiver->bottom_type() == TypePtr::NULL_PTR, "not a null: %s",
+                 Type::str(receiver->bottom_type()));
           print_inlining_failure(C, callee, jvms->depth() - 1, jvms->bci(),
-                                 "signatures mismatch");
-          return NULL;
+                                 "receiver is always null");
         }
-
-        CallGenerator* cg = C->call_generator(target, vtable_index,
-                                              false /* call_does_dispatch */,
-                                              jvms,
-                                              allow_inline,
-                                              PROB_ALWAYS);
-        return cg;
       } else {
         print_inlining_failure(C, callee, jvms->depth() - 1, jvms->bci(),
                                "receiver not constant");
@@ -1154,22 +1135,8 @@ CallGenerator* CallGenerator::for_method_handle_inline(JVMState* jvms, ciMethod*
     break;
 
     case vmIntrinsics::_linkToNative:
-    {
-      Node* addr_n = kit.argument(1); // target address
-      Node* nep_n = kit.argument(callee->arg_size() - 1); // NativeEntryPoint
-      // This check needs to be kept in sync with the one in CallStaticJavaNode::Ideal
-      if (addr_n->Opcode() == Op_ConL && nep_n->Opcode() == Op_ConP) {
-        input_not_const = false;
-        const TypeLong* addr_t = addr_n->bottom_type()->is_long();
-        const TypeOopPtr* nep_t = nep_n->bottom_type()->is_oopptr();
-        address addr = (address) addr_t->get_con();
-        ciNativeEntryPoint* nep = nep_t->const_oop()->as_native_entry_point();
-        return new NativeCallGenerator(callee, addr, nep);
-      } else {
-        print_inlining_failure(C, callee, jvms->depth() - 1, jvms->bci(),
-                               "NativeEntryPoint not constant");
-      }
-    }
+    print_inlining_failure(C, callee, jvms->depth() - 1, jvms->bci(),
+                           "native call");
     break;
 
   default:
@@ -1178,7 +1145,6 @@ CallGenerator* CallGenerator::for_method_handle_inline(JVMState* jvms, ciMethod*
   }
   return NULL;
 }
-
 
 //------------------------PredicatedIntrinsicGenerator------------------------------
 // Internal class which handles all predicated Intrinsic calls.

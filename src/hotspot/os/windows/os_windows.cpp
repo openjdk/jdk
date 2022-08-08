@@ -22,8 +22,7 @@
  *
  */
 
-// Must be at least Windows Vista or Server 2008 to use InitOnceExecuteOnce
-#define _WIN32_WINNT 0x0600
+// API level must be at least Windows Vista or Server 2008 to use InitOnceExecuteOnce
 
 // no precompiled headers
 #include "jvm.h"
@@ -40,7 +39,6 @@
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "os_share_windows.hpp"
 #include "os_windows.inline.hpp"
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm_misc.hpp"
@@ -51,10 +49,12 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/osThread.hpp"
+#include "runtime/park.hpp"
 #include "runtime/perfMemory.hpp"
 #include "runtime/safefetch.hpp"
 #include "runtime/safepointMechanism.hpp"
@@ -62,7 +62,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/statSampler.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/threads.hpp"
 #include "runtime/threadCritical.hpp"
 #include "runtime/timer.hpp"
 #include "runtime/vm_version.hpp"
@@ -102,6 +102,7 @@
 #include <psapi.h>
 #include <mmsystem.h>
 #include <winsock2.h>
+#include <versionhelpers.h>
 
 // for timer info max values which include all bits
 #define ALL_64_BITS CONST64(-1)
@@ -554,13 +555,6 @@ static unsigned __stdcall thread_native_entry(Thread* thread) {
 
   log_info(os, thread)("Thread finished (tid: " UINTX_FORMAT ").", os::current_thread_id());
 
-  // One less thread is executing
-  // When the VMThread gets here, the main thread may have already exited
-  // which frees the CodeHeap containing the Atomic::add code
-  if (thread != VMThread::vm_thread() && VMThread::vm_thread() != NULL) {
-    Atomic::dec(&os::win32::_os_thread_count);
-  }
-
   // Thread must not return from exit_process_or_thread(), but if it does,
   // let it proceed to exit normally
   return (unsigned)os::win32::exit_process_or_thread(os::win32::EPT_THREAD, res);
@@ -774,8 +768,6 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
     delete osthread;
     return false;
   }
-
-  Atomic::inc(&os::win32::_os_thread_count);
 
   // Store info on the Win32 thread into the OSThread
   osthread->set_thread_handle(thread_handle);
@@ -1245,7 +1237,18 @@ void os::die() {
 const char* os::dll_file_extension() { return ".dll"; }
 
 void  os::dll_unload(void *lib) {
-  ::FreeLibrary((HMODULE)lib);
+  char name[MAX_PATH];
+  if (::GetModuleFileName((HMODULE)lib, name, sizeof(name)) == 0) {
+    snprintf(name, MAX_PATH, "<not available>");
+  }
+  if (::FreeLibrary((HMODULE)lib)) {
+    Events::log_dll_message(NULL, "Unloaded dll \"%s\" [" INTPTR_FORMAT "]", name, p2i(lib));
+    log_info(os)("Unloaded dll \"%s\" [" INTPTR_FORMAT "]", name, p2i(lib));
+  } else {
+    const DWORD errcode = ::GetLastError();
+    Events::log_dll_message(NULL, "Attempt to unload dll \"%s\" [" INTPTR_FORMAT "] failed (error code %d)", name, p2i(lib), errcode);
+    log_info(os)("Attempt to unload dll \"%s\" [" INTPTR_FORMAT "] failed (error code %d)", name, p2i(lib), errcode);
+  }
 }
 
 void* os::dll_lookup(void *lib, const char *name) {
@@ -1516,7 +1519,7 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
 
   void * result = LoadLibrary(name);
   if (result != NULL) {
-    Events::log(NULL, "Loaded shared library %s", name);
+    Events::log_dll_message(NULL, "Loaded shared library %s", name);
     // Recalculate pdb search path if a DLL was loaded successfully.
     SymbolEngine::recalc_search_path();
     log_info(os)("shared library load of %s was successful", name);
@@ -1527,7 +1530,7 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
   // It may or may not be overwritten below (in the for loop and just above)
   lasterror(ebuf, (size_t) ebuflen);
   ebuf[ebuflen - 1] = '\0';
-  Events::log(NULL, "Loading shared library %s failed, error code %lu", name, errcode);
+  Events::log_dll_message(NULL, "Loading shared library %s failed, error code %lu", name, errcode);
   log_info(os)("shared library load of %s failed, error code %lu", name, errcode);
 
   if (errcode == ERROR_MOD_NOT_FOUND) {
@@ -1695,7 +1698,7 @@ void os::get_summary_os_info(char* buf, size_t buflen) {
 int os::vsnprintf(char* buf, size_t len, const char* fmt, va_list args) {
 #if _MSC_VER >= 1900
   // Starting with Visual Studio 2015, vsnprint is C99 compliant.
-  int result = ::vsnprintf(buf, len, fmt, args);
+  ALLOW_C_FUNCTION(::vsnprintf, int result = ::vsnprintf(buf, len, fmt, args);)
   // If an encoding error occurred (result < 0) then it's not clear
   // whether the buffer is NUL terminated, so ensure it is.
   if ((result < 0) && (len > 0)) {
@@ -1768,21 +1771,11 @@ void os::print_os_info(outputStream* st) {
 }
 
 void os::win32::print_windows_version(outputStream* st) {
-  OSVERSIONINFOEX osvi;
   VS_FIXEDFILEINFO *file_info;
   TCHAR kernel32_path[MAX_PATH];
   UINT len, ret;
 
-  // Use the GetVersionEx information to see if we're on a server or
-  // workstation edition of Windows. Starting with Windows 8.1 we can't
-  // trust the OS version information returned by this API.
-  ZeroMemory(&osvi, sizeof(OSVERSIONINFOEX));
-  osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
-  if (!GetVersionEx((OSVERSIONINFO *)&osvi)) {
-    st->print_cr("Call to GetVersionEx failed");
-    return;
-  }
-  bool is_workstation = (osvi.wProductType == VER_NT_WORKSTATION);
+  bool is_workstation = !IsWindowsServer();
 
   // Get the full path to \Windows\System32\kernel32.dll and use that for
   // determining what version of Windows we're running on.
@@ -2728,6 +2721,26 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
       if (result==EXCEPTION_CONTINUE_EXECUTION) return result;
     }
 #endif
+
+    if (in_java && (exception_code == EXCEPTION_ILLEGAL_INSTRUCTION || exception_code == EXCEPTION_ILLEGAL_INSTRUCTION_2)) {
+      // Check for UD trap caused by NOP patching.
+      // If it is, patch return address to be deopt handler.
+      if (NativeDeoptInstruction::is_deopt_at(pc)) {
+        CodeBlob* cb = CodeCache::find_blob_unsafe(pc);
+        if (cb != NULL && cb->is_compiled()) {
+          CompiledMethod* cm = cb->as_compiled_method();
+          frame fr = os::fetch_frame_from_context((void*)exceptionInfo->ContextRecord);
+          address deopt = cm->is_method_handle_return(pc) ?
+            cm->deopt_mh_handler_begin() :
+            cm->deopt_handler_begin();
+          assert(cm->insts_contains_inclusive(pc), "");
+          cm->set_original_pc(&fr, pc);
+          // Set pc to handler
+          exceptionInfo->ContextRecord->PC_NAME = (DWORD64)deopt;
+          return EXCEPTION_CONTINUE_EXECUTION;
+        }
+      }
+    }
   }
 
 #if !defined(USE_VECTORED_EXCEPTION_HANDLING)
@@ -3438,9 +3451,6 @@ bool os::pd_release_memory_special(char* base, size_t bytes) {
   return pd_release_memory(base, bytes);
 }
 
-void os::print_statistics() {
-}
-
 static void warn_fail_commit_memory(char* addr, size_t bytes, bool exec) {
   int err = os::get_last_error();
   char buf[256];
@@ -3875,10 +3885,6 @@ int    os::win32::_processor_type            = 0;
 // Processor level is not available on non-NT systems, use vm_version instead
 int    os::win32::_processor_level           = 0;
 julong os::win32::_physical_memory           = 0;
-size_t os::win32::_default_stack_size        = 0;
-
-intx          os::win32::_os_thread_limit    = 0;
-volatile intx os::win32::_os_thread_count    = 0;
 
 bool   os::win32::_is_windows_server         = false;
 
@@ -3909,26 +3915,7 @@ void os::win32::initialize_system_info() {
     FLAG_SET_DEFAULT(MaxRAM, MIN2(MaxRAM, (uint64_t) ms.ullTotalVirtual));
   }
 
-  OSVERSIONINFOEX oi;
-  oi.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
-  GetVersionEx((OSVERSIONINFO*)&oi);
-  switch (oi.dwPlatformId) {
-  case VER_PLATFORM_WIN32_NT:
-    {
-      int os_vers = oi.dwMajorVersion * 1000 + oi.dwMinorVersion;
-      if (oi.wProductType == VER_NT_DOMAIN_CONTROLLER ||
-          oi.wProductType == VER_NT_SERVER) {
-        _is_windows_server = true;
-      }
-    }
-    break;
-  default: fatal("Unknown platform");
-  }
-
-  _default_stack_size = os::current_stack_size();
-  assert(_default_stack_size > (size_t) _vm_page_size, "invalid stack size");
-  assert((_default_stack_size & (_vm_page_size - 1)) == 0,
-         "stack size not a multiple of page size");
+  _is_windows_server = IsWindowsServer();
 
   initialize_performance_counter();
 }
@@ -4161,9 +4148,9 @@ int os::win32::exit_process_or_thread(Ept what, int exit_code) {
   if (what == EPT_THREAD) {
     _endthreadex((unsigned)exit_code);
   } else if (what == EPT_PROCESS) {
-    ::exit(exit_code);
+    ALLOW_C_FUNCTION(::exit, ::exit(exit_code);)
   } else { // EPT_PROCESS_DIE
-    ::_exit(exit_code);
+    ALLOW_C_FUNCTION(::_exit, ::_exit(exit_code);)
   }
 
   // Should not reach here
@@ -4250,6 +4237,21 @@ extern "C" {
 
 static jint initSock();
 
+// Minimum usable stack sizes required to get to user code. Space for
+// HotSpot guard pages is added later.
+size_t os::_compiler_thread_min_stack_allowed = 48 * K;
+size_t os::_java_thread_min_stack_allowed = 40 * K;
+#ifdef _LP64
+size_t os::_vm_internal_thread_min_stack_allowed = 64 * K;
+#else
+size_t os::_vm_internal_thread_min_stack_allowed = (48 DEBUG_ONLY(+ 4)) * K;
+#endif // _LP64
+
+// If stack_commit_size is 0, windows will reserve the default size,
+// but only commit a small portion of it.  This stack size is the size of this
+// current thread but is larger than we need for Java threads.
+// If -Xss is given to the launcher, it will pick 64K as default stack size and pass that.
+size_t os::_os_min_stack_allowed = 64 * K;
 
 // this is called _after_ the global arguments have been parsed
 jint os::init_2(void) {
@@ -4275,51 +4277,10 @@ jint os::init_2(void) {
   __asm { fldcw fp_control_word }
 #endif
 
-  // If stack_commit_size is 0, windows will reserve the default size,
-  // but only commit a small portion of it.
-  size_t stack_commit_size = align_up(ThreadStackSize*K, os::vm_page_size());
-  size_t default_reserve_size = os::win32::default_stack_size();
-  size_t actual_reserve_size = stack_commit_size;
-  if (stack_commit_size < default_reserve_size) {
-    // If stack_commit_size == 0, we want this too
-    actual_reserve_size = default_reserve_size;
-  }
-
-  // Check minimum allowable stack size for thread creation and to initialize
-  // the java system classes, including StackOverflowError - depends on page
-  // size.  Add two 4K pages for compiler2 recursion in main thread.
-  // Add in 4*BytesPerWord 4K pages to account for VM stack during
-  // class initialization depending on 32 or 64 bit VM.
-  size_t min_stack_allowed =
-            (size_t)(StackOverflow::stack_guard_zone_size() +
-                     StackOverflow::stack_shadow_zone_size() +
-                     (4*BytesPerWord COMPILER2_PRESENT(+2)) * 4 * K);
-
-  min_stack_allowed = align_up(min_stack_allowed, os::vm_page_size());
-
-  if (actual_reserve_size < min_stack_allowed) {
-    tty->print_cr("\nThe Java thread stack size specified is too small. "
-                  "Specify at least %dk",
-                  min_stack_allowed / K);
+  // Check and sets minimum stack sizes against command line options
+  if (set_minimum_stack_sizes() == JNI_ERR) {
     return JNI_ERR;
   }
-
-  JavaThread::set_stack_size_at_create(stack_commit_size);
-
-  // Calculate theoretical max. size of Threads to guard gainst artificial
-  // out-of-memory situations, where all available address-space has been
-  // reserved by thread stacks.
-  assert(actual_reserve_size != 0, "Must have a stack");
-
-  // Calculate the thread limit when we should start doing Virtual Memory
-  // banging. Currently when the threads will have used all but 200Mb of space.
-  //
-  // TODO: consider performing a similar calculation for commit size instead
-  // as reserve size, since on a 64-bit platform we'll run into that more
-  // often than running out of virtual memory space.  We can use the
-  // lower value of the two calculations as the os_thread_limit.
-  size_t max_address_space = ((size_t)1 << (BitsPerWord - 1)) - (200 * K * K);
-  win32::_os_thread_limit = (intx)(max_address_space / actual_reserve_size);
 
   // at exit methods are called in the reverse order of their registration.
   // there is no limit to the number of functions registered. atexit does
@@ -5135,35 +5096,6 @@ bool os::pd_unmap_memory(char* addr, size_t bytes) {
   return true;
 }
 
-Thread* os::ThreadCrashProtection::_protected_thread = NULL;
-os::ThreadCrashProtection* os::ThreadCrashProtection::_crash_protection = NULL;
-
-os::ThreadCrashProtection::ThreadCrashProtection() {
-  _protected_thread = Thread::current();
-  assert(_protected_thread->is_JfrSampler_thread(), "should be JFRSampler");
-}
-
-// See the caveats for this class in os_windows.hpp
-// Protects the callback call so that raised OS EXCEPTIONS causes a jump back
-// into this method and returns false. If no OS EXCEPTION was raised, returns
-// true.
-// The callback is supposed to provide the method that should be protected.
-//
-bool os::ThreadCrashProtection::call(os::CrashProtectionCallback& cb) {
-  bool success = true;
-  __try {
-    _crash_protection = this;
-    cb.call();
-  } __except(EXCEPTION_EXECUTE_HANDLER) {
-    // only for protection, nothing to do
-    success = false;
-  }
-  _crash_protection = NULL;
-  _protected_thread = NULL;
-  return success;
-}
-
-
 class HighResolutionInterval : public CHeapObj<mtThread> {
   // The default timer resolution seems to be 10 milliseconds.
   // (Where is this written down?)
@@ -5261,7 +5193,7 @@ class HighResolutionInterval : public CHeapObj<mtThread> {
 // explicit "PARKED" == 01b and "SIGNALED" == 10b bits.
 //
 
-int os::PlatformEvent::park(jlong Millis) {
+int PlatformEvent::park(jlong Millis) {
   // Transitions for _Event:
   //   -1 => -1 : illegal
   //    1 =>  0 : pass - return immediately
@@ -5318,7 +5250,7 @@ int os::PlatformEvent::park(jlong Millis) {
   }
   v = _Event;
   _Event = 0;
-  // see comment at end of os::PlatformEvent::park() below:
+  // see comment at end of PlatformEvent::park() below:
   OrderAccess::fence();
   // If we encounter a nearly simultaneous timeout expiry and unpark()
   // we return OS_OK indicating we awoke via unpark().
@@ -5326,7 +5258,7 @@ int os::PlatformEvent::park(jlong Millis) {
   return (v >= 0) ? OS_OK : OS_TIMEOUT;
 }
 
-void os::PlatformEvent::park() {
+void PlatformEvent::park() {
   // Transitions for _Event:
   //   -1 => -1 : illegal
   //    1 =>  0 : pass - return immediately
@@ -5360,7 +5292,7 @@ void os::PlatformEvent::park() {
   guarantee(_Event >= 0, "invariant");
 }
 
-void os::PlatformEvent::unpark() {
+void PlatformEvent::unpark() {
   guarantee(_ParkHandle != NULL, "Invariant");
 
   // Transitions for _Event:
@@ -5433,7 +5365,7 @@ void Parker::unpark() {
 // Platform Monitor implementation
 
 // Must already be locked
-int os::PlatformMonitor::wait(jlong millis) {
+int PlatformMonitor::wait(jlong millis) {
   assert(millis >= 0, "negative timeout");
   int ret = OS_TIMEOUT;
   int status = SleepConditionVariableCS(&_cond, &_mutex,
@@ -5603,7 +5535,7 @@ void get_thread_handle_for_extended_context(HANDLE* h,
 
 // Thread sampling implementation
 //
-void os::SuspendedThreadTask::internal_do_task() {
+void SuspendedThreadTask::internal_do_task() {
   CONTEXT    ctxt;
   HANDLE     h = NULL;
 

@@ -79,7 +79,7 @@ public abstract class TagletWriter {
      *
      * @return the output
      */
-    protected abstract Content codeTagOutput(Element element, DocTree tag);
+    protected abstract Content codeTagOutput(Element element, LiteralTree tag);
 
     /**
      * Returns the output for a {@code {@index...}} tag.
@@ -275,8 +275,8 @@ public abstract class TagletWriter {
 
         Content output = getOutputInstance();
         Utils utils = configuration().utils;
-        tagletManager.checkTags(element, utils.getBlockTags(element), false);
-        tagletManager.checkTags(element, utils.getFullBody(element), true);
+        tagletManager.checkTags(element, utils.getBlockTags(element));
+        tagletManager.checkTags(element, utils.getFullBody(element));
         for (Taglet taglet : taglets) {
             if (utils.isTypeElement(element) && taglet instanceof ParamTaglet) {
                 // The type parameters and state components are documented in a special
@@ -326,15 +326,12 @@ public abstract class TagletWriter {
      *
      * @param holder        the element associated with the doc comment
      * @param tagletManager the taglet manager for the current doclet
-     * @param holderTag     the tag that holds this inline tag, or {@code null} if
-     *                      there is no tag that holds it
      * @param inlineTag     the inline tag to be documented
      *
      * @return the content, or {@code null}
      */
     public Content getInlineTagOutput(Element holder,
                                       TagletManager tagletManager,
-                                      DocTree holderTag,
                                       DocTree inlineTag) {
 
         Map<String, Taglet> inlineTags = tagletManager.getInlineTaglets();
@@ -346,9 +343,7 @@ public abstract class TagletWriter {
         }
 
         try {
-            Content tagletOutput = t.getInlineTagOutput(holder,
-                    holderTag != null && t.getName().equals("inheritDoc") ? holderTag : inlineTag,
-                    this);
+            Content tagletOutput = t.getInlineTagOutput(holder, inlineTag, this);
             tagletManager.seenTag(t.getName());
             return tagletOutput;
         } catch (UnsupportedTagletOperationException e) {

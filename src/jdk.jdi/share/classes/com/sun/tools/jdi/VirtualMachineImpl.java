@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -832,6 +832,10 @@ class VirtualMachineImpl extends MirrorImpl
         return versionInfo().jdwpMajor >= 9;
     }
 
+    boolean mayCreateVirtualThreads() {
+        return versionInfo().jdwpMajor >= 19;
+    }
+
     public void setDebugTraceMode(int traceFlags) {
         validateVM();
         this.traceFlags = traceFlags;
@@ -1320,7 +1324,7 @@ class VirtualMachineImpl extends MirrorImpl
             int size = batchedDisposeRequests.size();
             if (size >= DISPOSE_THRESHOLD) {
                 if ((traceFlags & TRACE_OBJREFS) != 0) {
-                    printTrace("Dispose threashold reached. Will dispose "
+                    printTrace("Dispose threshold reached. Will dispose "
                                + size + " object references...");
                 }
                 requests = new JDWP.VirtualMachine.DisposeObjects.Request[size];

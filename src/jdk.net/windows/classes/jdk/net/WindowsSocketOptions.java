@@ -37,6 +37,11 @@ class WindowsSocketOptions extends PlatformSocketOptions {
     }
 
     @Override
+    boolean ipDontFragmentSupported() {
+        return true;
+    }
+
+    @Override
     void setIpDontFragment(int fd, final boolean value) throws SocketException {
         setIpDontFragment0(fd, value);
     }

@@ -183,7 +183,7 @@ class ExceptionMessageBuilder : public StackObj {
 
   static const int _max_cause_detail = 5;
 
-  // Merges the stack the the given bci with the given stack. If there
+  // Merges the stack at the given bci with the given stack. If there
   // is no stack at the bci, we just put the given stack there. This
   // method doesn't takes ownership of the stack.
   void merge(int bci, SimulatedOperandStack* stack);
@@ -1149,7 +1149,7 @@ int ExceptionMessageBuilder::get_NPE_null_slot(int bci) {
         int name_index = cp->name_ref_index_at(name_and_type_index);
         Symbol* name = cp->symbol_at(name_index);
 
-        // Assume the the call of a constructor can never cause a NullPointerException
+        // Assume the call of a constructor can never cause a NullPointerException
         // (which is true in Java). This is mainly used to avoid generating wrong
         // messages for NullPointerExceptions created explicitly by new in Java code.
         if (name != vmSymbols::object_initializer_name()) {

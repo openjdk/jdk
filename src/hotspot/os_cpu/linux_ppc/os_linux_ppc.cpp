@@ -34,7 +34,6 @@
 #include "interpreter/interpreter.hpp"
 #include "memory/allocation.inline.hpp"
 #include "nativeInst_ppc.hpp"
-#include "os_share_linux.hpp"
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm_misc.hpp"
 #include "runtime/arguments.hpp"
@@ -42,12 +41,12 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "runtime/thread.inline.hpp"
 #include "runtime/timer.hpp"
 #include "runtime/vm_version.hpp"
 #include "signals_posix.hpp"
@@ -430,9 +429,9 @@ void os::Linux::set_fpu_control_word(int fpu_control) {
 
 // Minimum usable stack sizes required to get to user code. Space for
 // HotSpot guard pages is added later.
-size_t os::Posix::_compiler_thread_min_stack_allowed = 64 * K;
-size_t os::Posix::_java_thread_min_stack_allowed = 64 * K;
-size_t os::Posix::_vm_internal_thread_min_stack_allowed = 64 * K;
+size_t os::_compiler_thread_min_stack_allowed = 64 * K;
+size_t os::_java_thread_min_stack_allowed = 64 * K;
+size_t os::_vm_internal_thread_min_stack_allowed = 64 * K;
 
 // Return default stack size for thr_type.
 size_t os::Posix::default_stack_size(os::ThreadType thr_type) {
@@ -460,6 +459,12 @@ void os::print_context(outputStream *st, const void *context) {
   }
   st->cr();
   st->cr();
+}
+
+void os::print_tos_pc(outputStream *st, const void *context) {
+  if (context == NULL) return;
+
+  const ucontext_t* uc = (const ucontext_t*)context;
 
   intptr_t *sp = (intptr_t *)os::Linux::ucontext_get_sp(uc);
   st->print_cr("Top of Stack: (sp=" PTR_FORMAT ")", p2i(sp));

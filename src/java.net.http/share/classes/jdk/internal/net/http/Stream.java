@@ -301,6 +301,13 @@ class Stream<T> extends ExchangeImpl<T> {
         return endStream;
     }
 
+    @Override
+    void expectContinueFailed(int rcode) {
+        // Have to mark request as sent, due to no request body being sent in the
+        // event of a 417 Expectation Failed or some other non 100 response code
+        requestSent();
+    }
+
     // This method is called by Http2Connection::decrementStreamCount in order
     // to make sure that the stream count is decremented only once for
     // a given stream.

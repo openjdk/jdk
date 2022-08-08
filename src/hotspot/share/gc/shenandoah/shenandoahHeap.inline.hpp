@@ -30,6 +30,7 @@
 #include "classfile/javaClasses.inline.hpp"
 #include "gc/shared/markBitMap.inline.hpp"
 #include "gc/shared/threadLocalAllocBuffer.inline.hpp"
+#include "gc/shared/continuationGCSupport.inline.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
@@ -46,8 +47,8 @@
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/prefetch.inline.hpp"
-#include "runtime/thread.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -335,6 +336,13 @@ inline oop ShenandoahHeap::evacuate_object(oop p, Thread* thread) {
 
   // Try to install the new forwarding pointer.
   oop copy_val = cast_to_oop(copy);
+  if (!copy_val->mark().is_marked()) {
+    // If we copied a mark-word that indicates 'forwarded' state, then
+    // another thread beat us, and this new copy will never be published.
+    // ContinuationGCSupport would get a corrupt Klass* in that case,
+    // so don't even attempt it.
+    ContinuationGCSupport::relativize_stack_chunk(copy_val);
+  }
   oop result = ShenandoahForwarding::try_update_forwardee(p, copy_val);
   if (result == copy_val) {
     // Successfully evacuated. Our copy is now the public one!

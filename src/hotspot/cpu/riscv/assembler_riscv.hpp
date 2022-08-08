@@ -141,8 +141,10 @@ REGISTER_DECLARATION(Register, xthread,   x23);
 REGISTER_DECLARATION(Register, xbcp,      x22);
 // Dispatch table base
 REGISTER_DECLARATION(Register, xdispatch, x21);
-// Java stack pointer
+// Java expression stack pointer
 REGISTER_DECLARATION(Register, esp,       x20);
+// Sender's SP while in interpreter
+REGISTER_DECLARATION(Register, x19_sender_sp, x19);
 
 // temporary register(caller-save registers)
 REGISTER_DECLARATION(Register, t0, x5);
@@ -266,12 +268,32 @@ class InternalAddress: public Address {
 class Assembler : public AbstractAssembler {
 public:
 
-  enum { instruction_size = 4 };
+  enum {
+    instruction_size = 4,
+    compressed_instruction_size = 2,
+  };
+
+  // instruction must start at passed address
+  static bool is_compressed_instr(address instr) {
+    // The RISC-V ISA Manual, Section 'Base Instruction-Length Encoding':
+    // Instructions are stored in memory as a sequence of 16-bit little-endian parcels, regardless of
+    // memory system endianness. Parcels forming one instruction are stored at increasing halfword
+    // addresses, with the lowest-addressed parcel holding the lowest-numbered bits in the instruction
+    // specification.
+    if (UseRVC && (((uint16_t *)instr)[0] & 0b11) != 0b11) {
+      // 16-bit instructions have their lowest two bits equal to 0b00, 0b01, or 0b10
+      return true;
+    }
+    // 32-bit instructions have their lowest two bits set to 0b11
+    return false;
+  }
 
   //---<  calculate length of instruction  >---
   // We just use the values set above.
   // instruction must start at passed address
-  static unsigned int instr_len(unsigned char *instr) { return instruction_size; }
+  static unsigned int instr_len(address instr) {
+    return is_compressed_instr(instr) ? compressed_instruction_size : instruction_size;
+  }
 
   //---<  longest instructions  >---
   static unsigned int instr_maxlen() { return instruction_size; }
@@ -388,8 +410,51 @@ public:
     emit_int32((jint)insn);
   }
 
-  void _halt() {
-    emit_int32(0);
+  enum csr {
+    cycle = 0xc00,
+    time,
+    instret,
+    hpmcounter3,
+    hpmcounter4,
+    hpmcounter5,
+    hpmcounter6,
+    hpmcounter7,
+    hpmcounter8,
+    hpmcounter9,
+    hpmcounter10,
+    hpmcounter11,
+    hpmcounter12,
+    hpmcounter13,
+    hpmcounter14,
+    hpmcounter15,
+    hpmcounter16,
+    hpmcounter17,
+    hpmcounter18,
+    hpmcounter19,
+    hpmcounter20,
+    hpmcounter21,
+    hpmcounter22,
+    hpmcounter23,
+    hpmcounter24,
+    hpmcounter25,
+    hpmcounter26,
+    hpmcounter27,
+    hpmcounter28,
+    hpmcounter29,
+    hpmcounter30,
+    hpmcounter31 = 0xc1f
+  };
+
+  // Emit an illegal instruction that's known to trap, with 32 read-only CSR
+  // to choose as the input operand.
+  // According to the RISC-V Assembly Programmer's Manual, a de facto implementation
+  // of this instruction is the UNIMP pseduo-instruction, 'CSRRW x0, cycle, x0',
+  // attempting to write zero to a read-only CSR 'cycle' (0xC00).
+  // RISC-V ISAs provide a set of up to 32 read-only CSR registers 0xC00-0xC1F,
+  // and an attempt to write into any read-only CSR (whether it exists or not)
+  // will generate an illegal instruction exception.
+  void illegal_instruction(csr csr_reg) {
+    csrrw(x0, (unsigned)csr_reg, x0);
   }
 
 // Register Instruction
@@ -2854,20 +2919,6 @@ public:
 
 #undef INSN
 
-#define INSN(NAME)                                                      \
-  void NAME() {                                                         \
-    /* The illegal instruction in RVC is presented by a 16-bit 0. */    \
-    if (do_compress()) {                                                \
-      emit_int16(0);                                                    \
-      return;                                                           \
-    }                                                                   \
-    _halt();                                                            \
-  }
-
-  INSN(halt);
-
-#undef INSN
-
 // --------------------------
 // Immediate Instructions
 // --------------------------
@@ -3015,11 +3066,12 @@ public:
   void wrap_label(Register r, Label &L, Register t, load_insn_by_temp insn);
   void wrap_label(Register r, Label &L, jal_jalr_insn insn);
 
-  // calculate pseudoinstruction
+  // Computational pseudo instructions
   void add(Register Rd, Register Rn, int64_t increment, Register temp = t0);
-  void addw(Register Rd, Register Rn, int64_t increment, Register temp = t0);
+  void addw(Register Rd, Register Rn, int32_t increment, Register temp = t0);
+
   void sub(Register Rd, Register Rn, int64_t decrement, Register temp = t0);
-  void subw(Register Rd, Register Rn, int64_t decrement, Register temp = t0);
+  void subw(Register Rd, Register Rn, int32_t decrement, Register temp = t0);
 
   // RVB pseudo instructions
   // zero extend word

@@ -36,6 +36,7 @@ narrowKlass markWord::narrow_klass() const {
 }
 
 Klass* markWord::klass() const {
+  assert(!CompressedKlassPointers::is_null(narrow_klass()), "narrow klass must not be null: " INTPTR_FORMAT, value());
   return CompressedKlassPointers::decode_not_null(narrow_klass());
 }
 

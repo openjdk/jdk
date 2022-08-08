@@ -58,6 +58,11 @@ class LinuxSocketOptions extends PlatformSocketOptions {
         return keepAliveOptionsSupported0();
     }
 
+    @Override
+    boolean ipDontFragmentSupported() {
+        return true;
+    }
+
     boolean peerCredentialsSupported() {
         return true;
     }

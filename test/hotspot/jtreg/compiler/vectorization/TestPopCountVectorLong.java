@@ -25,8 +25,8 @@
 * @test
 * @summary Test vectorization of popcount for Long
 * @requires vm.compiler2.enabled
-* @requires vm.cpu.features ~= ".*avx512bw.*"
-* @requires os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64"
+* @requires vm.cpu.features ~= ".*avx512bw.*" | vm.cpu.features ~= ".*sve.*"
+* @requires os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64" | os.arch=="aarch64"
 * @library /test/lib /
 * @run driver compiler.vectorization.TestPopCountVectorLong
 */
@@ -57,7 +57,7 @@ public class TestPopCountVectorLong {
 
     @Test // needs to be run in (fast) debug mode
     @Warmup(10000)
-    @IR(counts = {"PopCountVL", ">= 1"}) // Atleast one PopCountVL node is generated if vectorization is successful
+    @IR(counts = {"PopCountVL", ">= 1"}) // At least one PopCountVL node is generated if vectorization is successful
     public void vectorizeBitCount() {
         for (int i = 0; i < LEN; ++i) {
             output[i] = Long.bitCount(input[i]);

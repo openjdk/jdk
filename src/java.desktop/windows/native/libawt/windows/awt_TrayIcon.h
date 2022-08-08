@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,6 @@ public:
 
     virtual void Dispose();
 
-    BOOL SendTrayMessage(DWORD dwMessage);
     void LinkObjects(JNIEnv *env, jobject peer);
     void UnlinkObjects();
 
@@ -85,6 +84,8 @@ public:
     INLINE HICON GetIcon() { return m_nid.hIcon; }
 
     void DisplayMessage(LPCTSTR caption, LPCTSTR text, LPCTSTR msgType);
+
+    void UpdateImage();
 
     // Adds to the head of the list
     INLINE void AddTrayIconItem(UINT id) {
@@ -121,6 +122,7 @@ public:
      */
     static jfieldID idID;
     static jfieldID actionCommandID;
+    static jmethodID updateImageID;
 
     // ************************
 
@@ -150,6 +152,22 @@ private:
         AwtTrayIcon* m_trayIcon;
         TrayIconListItem* m_next;
     };
+
+    BOOL SendTrayMessage(DWORD dwMessage);
+
+    INLINE void AddTrayIcon() {
+        BOOL result = SendTrayMessage(NIM_ADD);
+        // 6270114: Instructs the taskbar to behave according to the Shell version 5.0
+        if (result) {
+            SendTrayMessage(NIM_SETVERSION);
+        }
+    }
+
+    INLINE void ModifyTrayIcon() {
+        SendTrayMessage(NIM_MODIFY);
+    }
+
+    static bool m_bDPIChanged;
 
 public:
     static TrayIconListItem* sm_trayIconList;

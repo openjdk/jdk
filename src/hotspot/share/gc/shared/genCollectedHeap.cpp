@@ -36,6 +36,7 @@
 #include "gc/shared/cardTableRS.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/collectorCounters.hpp"
+#include "gc/shared/continuationGCSupport.inline.hpp"
 #include "gc/shared/gcId.hpp"
 #include "gc/shared/gcLocker.hpp"
 #include "gc/shared/gcPolicyCounters.hpp"
@@ -63,9 +64,11 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/continuation.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
+#include "runtime/threads.hpp"
 #include "runtime/vmThread.hpp"
 #include "services/memoryService.hpp"
 #include "utilities/autoRestore.hpp"
@@ -302,8 +305,6 @@ HeapWord* GenCollectedHeap::mem_allocate_work(size_t size,
 
     // First allocation attempt is lock-free.
     Generation *young = _young_gen;
-    assert(young->supports_inline_contig_alloc(),
-      "Otherwise, must do alloc within heap lock");
     if (young->should_allocate(size, is_tlab)) {
       result = young->par_allocate(size, is_tlab);
       if (result != NULL) {
@@ -608,12 +609,18 @@ void GenCollectedHeap::do_collection(bool           full,
       increment_total_full_collections();
     }
 
+    Continuations::on_gc_marking_cycle_start();
+    Continuations::arm_all_nmethods();
+
     collect_generation(_old_gen,
                        full,
                        size,
                        is_tlab,
                        run_verification && VerifyGCLevel <= 1,
                        do_clear_all_soft_refs);
+
+    Continuations::on_gc_marking_cycle_finish();
+    Continuations::arm_all_nmethods();
 
     // Adjust generation sizes.
     _old_gen->compute_new_size();
@@ -792,7 +799,10 @@ void GenCollectedHeap::full_process_roots(bool is_adjust_phase,
                                           bool only_strong_roots,
                                           OopClosure* root_closure,
                                           CLDClosure* cld_closure) {
-  MarkingCodeBlobClosure mark_code_closure(root_closure, is_adjust_phase);
+  // Called from either the marking phase or the adjust phase.
+  const bool is_marking_phase = !is_adjust_phase;
+
+  MarkingCodeBlobClosure mark_code_closure(root_closure, is_adjust_phase, is_marking_phase);
   CLDClosure* weak_cld_closure = only_strong_roots ? NULL : cld_closure;
 
   process_roots(so, root_closure, cld_closure, weak_cld_closure, &mark_code_closure);
@@ -805,18 +815,6 @@ void GenCollectedHeap::gen_process_weak_roots(OopClosure* root_closure) {
 bool GenCollectedHeap::no_allocs_since_save_marks() {
   return _young_gen->no_allocs_since_save_marks() &&
          _old_gen->no_allocs_since_save_marks();
-}
-
-bool GenCollectedHeap::supports_inline_contig_alloc() const {
-  return _young_gen->supports_inline_contig_alloc();
-}
-
-HeapWord* volatile* GenCollectedHeap::top_addr() const {
-  return _young_gen->top_addr();
-}
-
-HeapWord** GenCollectedHeap::end_addr() const {
-  return _young_gen->end_addr();
 }
 
 // public collection interfaces
@@ -890,11 +888,15 @@ void GenCollectedHeap::do_full_collection(bool clear_all_soft_refs,
   }
 }
 
-bool GenCollectedHeap::is_in_young(oop p) {
+bool GenCollectedHeap::is_in_young(oop p) const {
   bool result = cast_from_oop<HeapWord*>(p) < _old_gen->reserved().start();
   assert(result == _young_gen->is_in_reserved(p),
          "incorrect test - result=%d, p=" INTPTR_FORMAT, result, p2i((void*)p));
   return result;
+}
+
+bool GenCollectedHeap::requires_barriers(stackChunkOop obj) const {
+  return !is_in_young(obj);
 }
 
 // Returns "TRUE" iff "p" points into the committed areas of the heap.
@@ -1176,8 +1178,6 @@ class GenGCEpilogueClosure: public GenCollectedHeap::GenClosure {
 void GenCollectedHeap::gc_epilogue(bool full) {
 #if COMPILER2_OR_JVMCI
   assert(DerivedPointerTable::is_empty(), "derived pointer present");
-  size_t actual_gap = pointer_delta((HeapWord*) (max_uintx-3), *(end_addr()));
-  guarantee(!CompilerConfig::is_c2_or_jvmci_compiler_enabled() || actual_gap > (size_t)FastAllocateSizeLimit, "inline allocation wraps");
 #endif // COMPILER2_OR_JVMCI
 
   resize_all_tlabs();
@@ -1216,19 +1216,4 @@ void GenCollectedHeap::ensure_parsability(bool retire_tlabs) {
   CollectedHeap::ensure_parsability(retire_tlabs);
   GenEnsureParsabilityClosure ep_cl;
   generation_iterate(&ep_cl, false);
-}
-
-oop GenCollectedHeap::handle_failed_promotion(Generation* old_gen,
-                                              oop obj,
-                                              size_t obj_size) {
-  guarantee(old_gen == _old_gen, "We only get here with an old generation");
-  assert(obj_size == obj->size(), "bad obj_size passed in");
-  HeapWord* result = NULL;
-
-  result = old_gen->expand_and_allocate(obj_size, false);
-
-  if (result != NULL) {
-    Copy::aligned_disjoint_words(cast_from_oop<HeapWord*>(obj), result, obj_size);
-  }
-  return cast_to_oop(result);
 }

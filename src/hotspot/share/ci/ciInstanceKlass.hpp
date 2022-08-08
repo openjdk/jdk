@@ -59,6 +59,7 @@ private:
   bool                   _has_nonstatic_concrete_methods;
   bool                   _is_hidden;
   bool                   _is_record;
+  bool                   _has_trusted_loader;
 
   ciFlags                _flags;
 
@@ -107,6 +108,7 @@ protected:
   bool compute_shared_has_subklass();
   int  compute_nonstatic_fields();
   GrowableArray<ciField*>* compute_nonstatic_fields_impl(GrowableArray<ciField*>* super_fields);
+  bool compute_has_trusted_loader();
 
   // Update the init_state for shared klasses
   void update_if_shared(InstanceKlass::ClassState expected) {
@@ -285,6 +287,10 @@ public:
   bool can_be_instantiated() {
     assert(is_loaded(), "must be loaded");
     return !is_interface() && !is_abstract();
+  }
+
+  bool has_trusted_loader() const {
+    return _has_trusted_loader;
   }
 
   // Replay support

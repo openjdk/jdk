@@ -27,8 +27,8 @@
 
 #include "gc/shenandoah/shenandoahPadding.hpp"
 #include "memory/allocation.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/safepoint.hpp"
-#include "runtime/thread.hpp"
 
 class ShenandoahLock  {
 private:
@@ -92,7 +92,7 @@ public:
 
 class ShenandoahSimpleLock {
 private:
-  os::PlatformMonitor   _lock; // native lock
+  PlatformMonitor   _lock; // native lock
 public:
   ShenandoahSimpleLock();
 

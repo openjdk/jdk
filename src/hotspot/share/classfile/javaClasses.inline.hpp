@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,9 +28,11 @@
 #include "classfile/javaClasses.hpp"
 
 #include "oops/access.inline.hpp"
+#include "oops/instanceKlass.inline.hpp"
 #include "oops/method.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oopsHierarchy.hpp"
+#include "oops/typeArrayOop.inline.hpp"
 
 void java_lang_String::set_coder(oop string, jbyte coder) {
   string->byte_field_put(_coder_offset, coder);
@@ -133,6 +135,10 @@ oop java_lang_ref_Reference::weak_referent_no_keepalive(oop ref) {
   return ref->obj_field_access<ON_WEAK_OOP_REF | AS_NO_KEEPALIVE>(_referent_offset);
 }
 
+oop java_lang_ref_Reference::weak_referent(oop ref) {
+  return ref->obj_field_access<ON_WEAK_OOP_REF>(_referent_offset);
+}
+
 oop java_lang_ref_Reference::phantom_referent_no_keepalive(oop ref) {
   return ref->obj_field_access<ON_PHANTOM_OOP_REF | AS_NO_KEEPALIVE>(_referent_offset);
 }
@@ -188,6 +194,30 @@ bool java_lang_ref_Reference::is_final(oop ref) {
 bool java_lang_ref_Reference::is_phantom(oop ref) {
   return InstanceKlass::cast(ref->klass())->reference_type() == REF_PHANTOM;
 }
+
+inline oop java_lang_Thread::continuation(oop java_thread) {
+  return java_thread->obj_field(_continuation_offset);
+}
+
+inline int64_t java_lang_Thread::thread_id(oop java_thread) {
+  return java_thread->long_field(_tid_offset);
+}
+
+inline oop java_lang_VirtualThread::vthread_scope() {
+  oop base = vmClasses::VirtualThread_klass()->static_field_base_raw();
+  return base->obj_field(static_vthread_scope_offset);
+}
+
+#if INCLUDE_JFR
+inline u2 java_lang_Thread::jfr_epoch(oop ref) {
+  return ref->short_field(_jfr_epoch_offset);
+}
+
+inline void java_lang_Thread::set_jfr_epoch(oop ref, u2 epoch) {
+  ref->short_field_put(_jfr_epoch_offset, epoch);
+}
+#endif // INCLUDE_JFR
+
 
 inline void java_lang_invoke_CallSite::set_target_volatile(oop site, oop target) {
   site->obj_field_put_volatile(_target_offset, target);

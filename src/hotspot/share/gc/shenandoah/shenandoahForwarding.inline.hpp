@@ -29,7 +29,7 @@
 
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "oops/markWord.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/javaThread.hpp"
 
 inline oop ShenandoahForwarding::get_forwardee_raw(oop obj) {
   shenandoah_assert_in_heap(NULL, obj);

@@ -877,6 +877,32 @@ public class DocCommentParser {
                     }
                     nextChar();
                 }
+            } else {
+                String CDATA = "[CDATA[";  // full prefix is <![CDATA[
+                for (int i = 0; i < CDATA.length(); i++) {
+                    if (ch == CDATA.charAt(i)) {
+                        nextChar();
+                    } else {
+                        return erroneous("dc.invalid.html", p);
+                    }
+                }
+                // suffix is ]]>
+                while (bp < buflen) {
+                    if (ch == ']') {
+                        int n = 0;
+                        while (bp < buflen && ch == ']') {
+                            n++;
+                            nextChar();
+                        }
+                        if (n >= 2 && ch == '>') {
+                            nextChar();
+                            return m.at(p).newTextTree(newString(p, bp));
+                        }
+                    } else {
+                        nextChar();
+                    }
+                }
+                return erroneous("dc.invalid.html", p);
             }
         }
 
@@ -1234,7 +1260,7 @@ public class DocCommentParser {
                     if (ch == '}') {
                         throw new ParseException("dc.no.content");
                     }
-                    DCTree term = ch == '"' ? quotedString() : inlineWord();
+                    DCText term = ch == '"' ? quotedString() : inlineWord();
                     if (term == null) {
                         throw new ParseException("dc.no.content");
                     }
@@ -1579,15 +1605,32 @@ public class DocCommentParser {
                 }
             },
 
-            // {@value package.class#field}
+            // {@value [format-string] package.class#field}
             new TagParser(TagParser.Kind.INLINE, DCTree.Kind.VALUE) {
                 @Override
                 public DCTree parse(int pos) throws ParseException {
+                    skipWhitespace();
+                    DCText format;
+                    switch (ch) {
+                        case '%' -> {
+                            format = inlineWord();
+                            skipWhitespace();
+                        }
+                        case '"' -> {
+                            format = quotedString();
+                            skipWhitespace();
+                        }
+                        default -> {
+                            format = null;
+                        }
+                    }
                     DCReference ref = reference(true);
                     skipWhitespace();
                     if (ch == '}') {
                         nextChar();
-                        return m.at(pos).newValueTree(ref);
+                        return format == null
+                                ? m.at(pos).newValueTree(ref)
+                                : m.at(pos).newValueTree(format, ref);
                     }
                     nextChar();
                     throw new ParseException("dc.unexpected.content");

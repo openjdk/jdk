@@ -33,6 +33,7 @@
 #include "gc/g1/g1StringDedup.hpp"
 #include "gc/g1/g1Trace.hpp"
 #include "gc/g1/g1YoungGCEvacFailureInjector.inline.hpp"
+#include "gc/shared/continuationGCSupport.inline.hpp"
 #include "gc/shared/partialArrayTaskStepper.inline.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
@@ -533,6 +534,8 @@ oop G1ParScanThreadState::do_copy_to_survivor_space(G1HeapRegionAttr const regio
       return obj;
     }
 
+    ContinuationGCSupport::transform_stack_chunk(obj);
+
     // Check for deduplicating young Strings.
     if (G1StringDedup::is_candidate_from_evacuation(klass,
                                                     region_attr,
@@ -628,15 +631,18 @@ oop G1ParScanThreadState::handle_evacuation_failure_par(oop old, markWord m, siz
     HeapRegion* r = _g1h->heap_region_containing(old);
 
     // Objects failing evacuation will turn into old objects since the regions
-    // are relabeled as such. We mark the failing objects in the prev bitmap and
-    // later use it to handle all failed objects.
-    _g1h->mark_evac_failure_object(old, _worker_id);
+    // are relabeled as such. We mark the failing objects in the marking bitmap
+    // and later use it to handle all failed objects.
+    _g1h->mark_evac_failure_object(old);
 
     if (_evac_failure_regions->record(r->hrm_index())) {
       _g1h->hr_printer()->evac_failure(r);
     }
 
     _preserved_marks->push_if_necessary(old, m);
+
+    ContinuationGCSupport::transform_stack_chunk(old);
+
     _evacuation_failed_info.register_copy_failure(word_sz);
 
     // For iterating objects that failed evacuation currently we can reuse the

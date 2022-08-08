@@ -221,7 +221,7 @@ public class LogRecord implements java.io.Serializable {
         message = msg;
         // Assign a thread ID and a unique sequence number.
         sequenceNumber = globalSequenceNumber.getAndIncrement();
-        long id = Thread.currentThread().getId();
+        long id = Thread.currentThread().threadId();
         // threadID is deprecated and this value is synthesised for backward compatibility
         threadID = shortThreadID(id);
         longThreadID = id;

@@ -180,8 +180,9 @@ void HeapShared::fixup_regions() {
 }
 
 unsigned HeapShared::oop_hash(oop const& p) {
-  unsigned hash = (unsigned)p->identity_hash();
-  return hash;
+  // Do not call p->identity_hash() as that will update the
+  // object header.
+  return primitive_hash(cast_from_oop<intptr_t>(p));
 }
 
 static void reset_states(oop obj, TRAPS) {
@@ -305,6 +306,8 @@ void HeapShared::clear_root(int index) {
 oop HeapShared::archive_object(oop obj) {
   assert(DumpSharedSpaces, "dump-time only");
 
+  assert(!obj->is_stackChunk(), "do not archive stack chunks");
+
   oop ao = find_archived_heap_object(obj);
   if (ao != NULL) {
     // already archived
@@ -356,9 +359,9 @@ oop HeapShared::archive_object(oop obj) {
     log_error(cds, heap)(
       "Cannot allocate space for object " PTR_FORMAT " in archived heap region",
       p2i(obj));
-    vm_direct_exit(-1,
-      err_msg("Out of memory. Please run with a larger Java heap, current MaxHeapSize = "
-              SIZE_FORMAT "M", MaxHeapSize/M));
+    log_error(cds)("Out of memory. Please run with a larger Java heap, current MaxHeapSize = "
+        SIZE_FORMAT "M", MaxHeapSize/M);
+    os::_exit(-1);
   }
   return archived_oop;
 }
@@ -1172,7 +1175,7 @@ oop HeapShared::archive_reachable_objects_from(int level,
     // these objects that are referenced (directly or indirectly) by static fields.
     ResourceMark rm;
     log_error(cds, heap)("Cannot archive object of class %s", orig_obj->klass()->external_name());
-    vm_direct_exit(1);
+    os::_exit(1);
   }
 
   // java.lang.Class instances cannot be included in an archived object sub-graph. We only support
@@ -1182,7 +1185,7 @@ oop HeapShared::archive_reachable_objects_from(int level,
   // object that is referenced (directly or indirectly) by static fields.
   if (java_lang_Class::is_instance(orig_obj)) {
     log_error(cds, heap)("(%d) Unknown java.lang.Class object is in the archived sub-graph", level);
-    vm_direct_exit(1);
+    os::_exit(1);
   }
 
   oop archived_obj = find_archived_heap_object(orig_obj);
@@ -1218,7 +1221,7 @@ oop HeapShared::archive_reachable_objects_from(int level,
         // We don't know how to handle an object that has been archived, but some of its reachable
         // objects cannot be archived. Bail out for now. We might need to fix this in the future if
         // we have a real use case.
-        vm_direct_exit(1);
+        os::_exit(1);
       }
     }
 
@@ -1587,9 +1590,12 @@ class FindEmbeddedNonNullPointers: public BasicOopIterateClosure {
     : _start(start), _oopmap(oopmap), _num_total_oops(0),  _num_null_oops(0) {}
 
   virtual void do_oop(narrowOop* p) {
+    assert(UseCompressedOops, "sanity");
     _num_total_oops ++;
     narrowOop v = *p;
     if (!CompressedOops::is_null(v)) {
+      // Note: HeapShared::to_requested_address() is not necessary because
+      // the heap always starts at a deterministic address with UseCompressedOops==true.
       size_t idx = p - (narrowOop*)_start;
       _oopmap->set_bit(idx);
     } else {
@@ -1597,10 +1603,15 @@ class FindEmbeddedNonNullPointers: public BasicOopIterateClosure {
     }
   }
   virtual void do_oop(oop* p) {
+    assert(!UseCompressedOops, "sanity");
     _num_total_oops ++;
     if ((*p) != NULL) {
       size_t idx = p - (oop*)_start;
       _oopmap->set_bit(idx);
+      if (DumpSharedSpaces) {
+        // Make heap content deterministic.
+        *p = HeapShared::to_requested_address(*p);
+      }
     } else {
       _num_null_oops ++;
     }
@@ -1608,6 +1619,34 @@ class FindEmbeddedNonNullPointers: public BasicOopIterateClosure {
   int num_total_oops() const { return _num_total_oops; }
   int num_null_oops()  const { return _num_null_oops; }
 };
+
+
+address HeapShared::to_requested_address(address dumptime_addr) {
+  assert(DumpSharedSpaces, "static dump time only");
+  if (dumptime_addr == NULL || UseCompressedOops) {
+    return dumptime_addr;
+  }
+
+  // With UseCompressedOops==false, actual_base is selected by the OS so
+  // it's different across -Xshare:dump runs.
+  address actual_base = (address)G1CollectedHeap::heap()->reserved().start();
+  address actual_end  = (address)G1CollectedHeap::heap()->reserved().end();
+  assert(actual_base <= dumptime_addr && dumptime_addr <= actual_end, "must be an address in the heap");
+
+  // We always write the objects as if the heap started at this address. This
+  // makes the heap content deterministic.
+  //
+  // Note that at runtime, the heap address is also selected by the OS, so
+  // the archive heap will not be mapped at 0x10000000. Instead, we will call
+  // HeapShared::patch_embedded_pointers() to relocate the heap contents
+  // accordingly.
+  const address REQUESTED_BASE = (address)0x10000000;
+  intx delta = REQUESTED_BASE - actual_base;
+
+  address requested_addr = dumptime_addr + delta;
+  assert(REQUESTED_BASE != 0 && requested_addr != NULL, "sanity");
+  return requested_addr;
+}
 
 ResourceBitMap HeapShared::calculate_oopmap(MemRegion region) {
   size_t num_bits = region.byte_size() / (UseCompressedOops ? sizeof(narrowOop) : sizeof(oop));
@@ -1629,7 +1668,7 @@ ResourceBitMap HeapShared::calculate_oopmap(MemRegion region) {
     ++ num_objs;
   }
 
-  log_info(cds, heap)("calculate_oopmap: objects = %6d, embedded oops = %7d, nulls = %7d",
+  log_info(cds, heap)("calculate_oopmap: objects = %6d, oop fields = %7d (nulls = %7d)",
                       num_objs, finder.num_total_oops(), finder.num_null_oops());
   return oopmap;
 }

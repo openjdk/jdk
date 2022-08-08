@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2018, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -28,6 +28,7 @@
 #define CPU_RISCV_NATIVEINST_RISCV_HPP
 
 #include "asm/assembler.hpp"
+#include "runtime/continuation.hpp"
 #include "runtime/icache.hpp"
 #include "runtime/os.hpp"
 
@@ -195,7 +196,7 @@ class NativeInstruction {
   }
   static bool is_lwu_to_zr(address instr);
 
-  inline bool is_nop();
+  inline bool is_nop() const;
   inline bool is_jump_or_nop();
   bool is_safepoint_poll();
   bool is_sigill_zombie_not_entrant();
@@ -311,18 +312,14 @@ class NativeCall: public NativeInstruction {
 inline NativeCall* nativeCall_at(address addr) {
   assert_cond(addr != NULL);
   NativeCall* call = (NativeCall*)(addr - NativeCall::instruction_offset);
-#ifdef ASSERT
-  call->verify();
-#endif
+  DEBUG_ONLY(call->verify());
   return call;
 }
 
 inline NativeCall* nativeCall_before(address return_address) {
   assert_cond(return_address != NULL);
   NativeCall* call = (NativeCall*)(return_address - NativeCall::return_address_offset);
-#ifdef ASSERT
-  call->verify();
-#endif
+  DEBUG_ONLY(call->verify());
   return call;
 }
 
@@ -362,7 +359,7 @@ class NativeMovConstReg: public NativeInstruction {
   }
 
   intptr_t data() const;
-  void  set_data(intptr_t x);
+  void set_data(intptr_t x);
 
   void flush() {
     if (!maybe_cpool_ref(instruction_address())) {
@@ -370,8 +367,8 @@ class NativeMovConstReg: public NativeInstruction {
     }
   }
 
-  void  verify();
-  void  print();
+  void verify();
+  void print();
 
   // Creation
   inline friend NativeMovConstReg* nativeMovConstReg_at(address addr);
@@ -381,55 +378,53 @@ class NativeMovConstReg: public NativeInstruction {
 inline NativeMovConstReg* nativeMovConstReg_at(address addr) {
   assert_cond(addr != NULL);
   NativeMovConstReg* test = (NativeMovConstReg*)(addr - NativeMovConstReg::instruction_offset);
-#ifdef ASSERT
-  test->verify();
-#endif
+  DEBUG_ONLY(test->verify());
   return test;
 }
 
 inline NativeMovConstReg* nativeMovConstReg_before(address addr) {
   assert_cond(addr != NULL);
   NativeMovConstReg* test = (NativeMovConstReg*)(addr - NativeMovConstReg::instruction_size - NativeMovConstReg::instruction_offset);
-#ifdef ASSERT
-  test->verify();
-#endif
+  DEBUG_ONLY(test->verify());
   return test;
 }
 
-// RISCV should not use C1 runtime patching, so just leave NativeMovRegMem Unimplemented.
+// RISCV should not use C1 runtime patching, but still implement
+// NativeMovRegMem to keep some compilers happy.
 class NativeMovRegMem: public NativeInstruction {
  public:
-  int instruction_start() const {
-    Unimplemented();
-    return 0;
-  }
+  enum RISCV_specific_constants {
+    instruction_size            =    NativeInstruction::instruction_size,
+    instruction_offset          =    0,
+    data_offset                 =    0,
+    next_instruction_offset     =    NativeInstruction::instruction_size
+  };
 
-  address instruction_address() const {
-    Unimplemented();
-    return NULL;
-  }
+  int instruction_start() const { return instruction_offset; }
 
-  int num_bytes_to_end_of_patch() const {
-    Unimplemented();
-    return 0;
-  }
+  address instruction_address() const { return addr_at(instruction_offset); }
+
+  int num_bytes_to_end_of_patch() const { return instruction_offset + instruction_size; }
 
   int offset() const;
 
   void set_offset(int x);
 
-  void add_offset_in_bytes(int add_offset) { Unimplemented(); }
+  void add_offset_in_bytes(int add_offset) {
+    set_offset(offset() + add_offset);
+  }
 
   void verify();
   void print();
 
  private:
-  inline friend NativeMovRegMem* nativeMovRegMem_at (address addr);
+  inline friend NativeMovRegMem* nativeMovRegMem_at(address addr);
 };
 
-inline NativeMovRegMem* nativeMovRegMem_at (address addr) {
-  Unimplemented();
-  return NULL;
+inline NativeMovRegMem* nativeMovRegMem_at(address addr) {
+  NativeMovRegMem* test = (NativeMovRegMem*)(addr - NativeMovRegMem::instruction_offset);
+  DEBUG_ONLY(test->verify());
+  return test;
 }
 
 class NativeJump: public NativeInstruction {
@@ -460,9 +455,7 @@ class NativeJump: public NativeInstruction {
 
 inline NativeJump* nativeJump_at(address addr) {
   NativeJump* jump = (NativeJump*)(addr - NativeJump::instruction_offset);
-#ifdef ASSERT
-  jump->verify();
-#endif
+  DEBUG_ONLY(jump->verify());
   return jump;
 }
 
@@ -494,7 +487,7 @@ class NativeIllegalInstruction: public NativeInstruction {
   static void insert(address code_pos);
 };
 
-inline bool NativeInstruction::is_nop()         {
+inline bool NativeInstruction::is_nop() const {
   uint32_t insn = *(uint32_t*)addr_at(0);
   return insn == 0x13;
 }
@@ -566,6 +559,41 @@ public:
   static inline int instruction_size() {
     // 2 for fence.i + fence
     return (UseConservativeFence ? 2 : 1) * NativeInstruction::instruction_size;
+  }
+};
+
+class NativePostCallNop: public NativeInstruction {
+public:
+  bool check() const { return is_nop(); }
+  int displacement() const { return 0; }
+  void patch(jint diff) { Unimplemented(); }
+  void make_deopt() { Unimplemented(); }
+};
+
+inline NativePostCallNop* nativePostCallNop_at(address address) {
+  NativePostCallNop* nop = (NativePostCallNop*) address;
+  if (nop->check()) {
+    return nop;
+  }
+  return NULL;
+}
+
+class NativeDeoptInstruction: public NativeInstruction {
+public:
+  address instruction_address() const       { Unimplemented(); return NULL; }
+  address next_instruction_address() const  { Unimplemented(); return NULL; }
+
+  void  verify() { Unimplemented(); }
+
+  static bool is_deopt_at(address instr) {
+    if (!Continuations::enabled()) return false;
+    Unimplemented();
+    return false;
+  }
+
+  // MT-safe patching
+  static void insert(address code_pos) {
+    Unimplemented();
   }
 };
 

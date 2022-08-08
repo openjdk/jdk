@@ -158,6 +158,7 @@ public class TestMetadata extends JavadocTester {
         "package-index-page",
         "package-tree-page",
         "package-use-page",
+        "search-page",
         "serialized-form-page",
         "source-page",
         "system-properties-page",
@@ -223,6 +224,7 @@ public class TestMetadata extends JavadocTester {
             "PackageTreeWriter",
             "PackageUseWriter",
             "PackageWriterImpl",
+            "SearchWriter",
             "SerializedFormWriterImpl",
             "SourceToHTMLConverter",
             "SystemPropertiesWriter",
@@ -356,6 +358,10 @@ public class TestMetadata extends JavadocTester {
             case "PackageTreeWriter":
             case "TreeWriter":
                 check(generator, content, content.contains("tree"));
+                break;
+
+            case "SearchWriter":
+                check(generator, content, content.contains("search"));
                 break;
 
             case "SerializedFormWriterImpl":

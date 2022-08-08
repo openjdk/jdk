@@ -1,9 +1,9 @@
 RecordParamsTest.java:13: warning: @param "a" has already been specified
  * @param a aaa
    ^
-RecordParamsTest.java:14: error: invalid use of @param
+RecordParamsTest.java:14: error: @param name not found
  * @param z zzz
-   ^
+          ^
 RecordParamsTest.java:16: warning: no @param for b
 public record RecordParamsTest(int a, int b, int c) {  }
        ^

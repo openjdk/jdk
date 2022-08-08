@@ -28,36 +28,38 @@ package javax.crypto;
 import java.io.*;
 
 /**
- * A CipherOutputStream is composed of an OutputStream and a Cipher so
- * that write() methods first process the data before writing them out
- * to the underlying OutputStream.  The cipher must be fully
- * initialized before being used by a CipherOutputStream.
+ * A {@code CipherOutputStream} is composed of an {@code OutputStream}
+ * and a {@code Cipher} object so that write() methods first process the data
+ * before writing them out to the underlying {@code OutputStream}.
+ * The {@code Cipher} object must be fully initialized before being used by a
+ * {@code CipherOutputStream}.
  *
- * <p> For example, if the cipher is initialized for encryption, the
- * CipherOutputStream will attempt to encrypt data before writing out the
- * encrypted data.
+ * <p> For example, if the {@code Cipher} object is initialized for encryption,
+ * the {@code CipherOutputStream} will attempt to encrypt data before
+ * writing out the encrypted data.
  *
  * <p> This class adheres strictly to the semantics, especially the
  * failure semantics, of its ancestor classes
- * java.io.OutputStream and java.io.FilterOutputStream.  This class
- * has exactly those methods specified in its ancestor classes, and
+ * {@code java.io.OutputStream} and
+ * {@code java.io.FilterOutputStream}.
+ * This class has exactly those methods specified in its ancestor classes, and
  * overrides them all.  Moreover, this class catches all exceptions
  * that are not thrown by its ancestor classes. In particular, this
- * class catches BadPaddingException and other exceptions thrown by
+ * class catches {@code BadPaddingException} and other exceptions thrown by
  * failed integrity checks during decryption. These exceptions are not
  * re-thrown, so the client will not be informed that integrity checks
  * failed. Because of this behavior, this class may not be suitable
  * for use with decryption in an authenticated mode of operation (e.g. GCM)
  * if the application requires explicit notification when authentication
- * fails. Such an application can use the Cipher API directly as an
- * alternative to using this class.
+ * fails. Such an application can use the {@code Cipher} API directly as
+ * an alternative to using this class.
  *
  * <p> It is crucial for a programmer using this class not to use
  * methods that are not defined or overridden in this class (such as a
  * new method or constructor that is later added to one of the super
  * classes), because the design and implementation of those methods
  * are unlikely to have considered security impact with regard to
- * CipherOutputStream.
+ * {@code CipherOutputStream}.
  *
  * @author  Li Gong
  * @see     java.io.OutputStream
@@ -87,7 +89,7 @@ public class CipherOutputStream extends FilterOutputStream {
 
     /**
      * Ensure obuffer is big enough for the next update or doFinal
-     * operation, given the input length <code>inLen</code> (in bytes)
+     * operation, given the input length {@code inLen} (in bytes)
      *
      * @param inLen the input length (in bytes)
      */
@@ -100,14 +102,14 @@ public class CipherOutputStream extends FilterOutputStream {
 
     /**
      *
-     * Constructs a CipherOutputStream from an OutputStream and a
-     * Cipher.
+     * Constructs a {@code CipherOutputStream} from an
+     * {@code OutputStream} and a {@code Cipher} object.
      * <br>Note: if the specified output stream or cipher is
-     * null, a NullPointerException may be thrown later when
+     * {@code null}, {@code a NullPointerException} may be thrown later when
      * they are used.
      *
-     * @param os  the OutputStream object
-     * @param c   an initialized Cipher object
+     * @param os  the {@code OutputStream} object
+     * @param c   an initialized {@code Cipher} object
      */
     public CipherOutputStream(OutputStream os, Cipher c) {
         super(os);
@@ -116,13 +118,14 @@ public class CipherOutputStream extends FilterOutputStream {
     }
 
     /**
-     * Constructs a CipherOutputStream from an OutputStream without
-     * specifying a Cipher. This has the effect of constructing a
-     * CipherOutputStream using a NullCipher.
-     * <br>Note: if the specified output stream is null, a
-     * NullPointerException may be thrown later when it is used.
+     * Constructs a {@code CipherOutputStream} from an
+     * {@code OutputStream} without specifying a {@code Cipher} object.
+     * This has the effect of constructing a {@code CipherOutputStream}
+     * using a {@code NullCipher}.
+     * <br>Note: if the specified output stream is {@code null}, a
+     * {@code NullPointerException} may be thrown later when it is used.
      *
-     * @param os  the OutputStream object
+     * @param os  the {@code OutputStream} object
      */
     protected CipherOutputStream(OutputStream os) {
         super(os);
@@ -133,7 +136,7 @@ public class CipherOutputStream extends FilterOutputStream {
     /**
      * Writes the specified byte to this output stream.
      *
-     * @param      b   the <code>byte</code>.
+     * @param      b   the {@code byte}.
      * @exception  IOException  if an I/O error occurs.
      */
     @Override
@@ -152,16 +155,16 @@ public class CipherOutputStream extends FilterOutputStream {
     }
 
     /**
-     * Writes <code>b.length</code> bytes from the specified byte array
+     * Writes {@code b.length} bytes from the specified byte array
      * to this output stream.
      * <p>
-     * The <code>write</code> method of
-     * <code>CipherOutputStream</code> calls the <code>write</code>
+     * The {@code write} method of
+     * {@code CipherOutputStream} calls the {@code write}
      * method of three arguments with the three arguments
-     * <code>b</code>, <code>0</code>, and <code>b.length</code>.
+     * {@code b}, {@code 0}, and {@code b.length}.
      *
      * @param      b   the data.
-     * @exception  NullPointerException if <code>b</code> is null.
+     * @exception  NullPointerException if {@code b} is {@code null}.
      * @exception  IOException  if an I/O error occurs.
      * @see        javax.crypto.CipherOutputStream#write(byte[], int, int)
      */
@@ -171,8 +174,8 @@ public class CipherOutputStream extends FilterOutputStream {
     }
 
     /**
-     * Writes <code>len</code> bytes from the specified byte array
-     * starting at offset <code>off</code> to this output stream.
+     * Writes {@code len} bytes from the specified byte array
+     * starting at offset {@code off} to this output stream.
      *
      * @param      b     the data.
      * @param      off   the start offset in the data.
@@ -195,14 +198,15 @@ public class CipherOutputStream extends FilterOutputStream {
 
     /**
      * Flushes this output stream by forcing any buffered output bytes
-     * that have already been processed by the encapsulated cipher object
-     * to be written out.
+     * that have already been processed by the encapsulated {@code Cipher}
+     * object to be written out.
      *
-     * <p>Any bytes buffered by the encapsulated cipher
+     * <p>Any bytes buffered by the encapsulated {@code Cipher} object
      * and waiting to be processed by it will not be written out. For example,
-     * if the encapsulated cipher is a block cipher, and the total number of
-     * bytes written using one of the <code>write</code> methods is less than
-     * the cipher's block size, no bytes will be written out.
+     * if the encapsulated {@code Cipher} object is a block cipher, and the
+     * total number of bytes written using one of the {@code write}
+     * methods is less than the cipher's block size, no bytes will be written
+     * out.
      *
      * @exception  IOException  if an I/O error occurs.
      */
@@ -217,14 +221,14 @@ public class CipherOutputStream extends FilterOutputStream {
      * Closes this output stream and releases any system resources
      * associated with this stream.
      * <p>
-     * This method invokes the <code>doFinal</code> method of the encapsulated
-     * cipher object, which causes any bytes buffered by the encapsulated
-     * cipher to be processed. The result is written out by calling the
-     * <code>flush</code> method of this output stream.
+     * This method invokes the {@code doFinal} method of the encapsulated
+     * {@code Cipher} object, which causes any bytes buffered by the
+     * encapsulated {@code Cipher} object to be processed. The result is written
+     * out by calling the {@code flush} method of this output stream.
      * <p>
-     * This method resets the encapsulated cipher object to its initial state
-     * and calls the <code>close</code> method of the underlying output
-     * stream.
+     * This method resets the encapsulated {@code Cipher} object to its
+     * initial state and calls the {@code close} method of the underlying
+     * output stream.
      *
      * @exception  IOException  if an I/O error occurs.
      */

@@ -30,9 +30,11 @@
 #include "memory/metaspace/metaspaceSettings.hpp"
 #include "memory/metaspace/virtualSpaceNode.hpp"
 #include "runtime/mutexLocker.hpp"
+#include "runtime/os.hpp"
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/ostream.hpp"
 
 namespace metaspace {
 

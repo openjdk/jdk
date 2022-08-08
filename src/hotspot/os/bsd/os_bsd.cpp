@@ -37,7 +37,6 @@
 #include "oops/oop.inline.hpp"
 #include "os_bsd.inline.hpp"
 #include "os_posix.inline.hpp"
-#include "os_share_bsd.hpp"
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm_misc.hpp"
 #include "runtime/arguments.hpp"
@@ -47,6 +46,7 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/osThread.hpp"
@@ -55,8 +55,8 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/statSampler.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "runtime/thread.inline.hpp"
 #include "runtime/threadCritical.hpp"
+#include "runtime/threads.hpp"
 #include "runtime/timer.hpp"
 #include "services/attachListener.hpp"
 #include "services/memTracker.hpp"
@@ -979,7 +979,7 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
 
   void * result= ::dlopen(filename, RTLD_LAZY);
   if (result != NULL) {
-    Events::log(NULL, "Loaded shared library %s", filename);
+    Events::log_dll_message(NULL, "Loaded shared library %s", filename);
     // Successful loading
     log_info(os)("shared library load of %s was successful", filename);
     return result;
@@ -994,7 +994,7 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
     ::strncpy(ebuf, error_report, ebuflen-1);
     ebuf[ebuflen-1]='\0';
   }
-  Events::log(NULL, "Loading shared library %s failed, %s", filename, error_report);
+  Events::log_dll_message(NULL, "Loading shared library %s failed, %s", filename, error_report);
   log_info(os)("shared library load of %s failed, %s", filename, error_report);
 
   return NULL;
@@ -1008,7 +1008,7 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   log_info(os)("attempting shared library load of %s", filename);
   void * result= ::dlopen(filename, RTLD_LAZY);
   if (result != NULL) {
-    Events::log(NULL, "Loaded shared library %s", filename);
+    Events::log_dll_message(NULL, "Loaded shared library %s", filename);
     // Successful loading
     log_info(os)("shared library load of %s was successful", filename);
     return result;
@@ -1025,7 +1025,7 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
     ::strncpy(ebuf, error_report, ebuflen-1);
     ebuf[ebuflen-1]='\0';
   }
-  Events::log(NULL, "Loading shared library %s failed, %s", filename, error_report);
+  Events::log_dll_message(NULL, "Loading shared library %s failed, %s", filename, error_report);
   log_info(os)("shared library load of %s failed, %s", filename, error_report);
 
   int diag_msg_max_length=ebuflen-strlen(ebuf);
@@ -1787,13 +1787,6 @@ char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes, bool 
   return NULL;
 }
 
-// Sleep forever; naked call to OS-specific sleep; use with CAUTION
-void os::infinite_sleep() {
-  while (true) {    // sleep forever ...
-    ::sleep(100);   // ... 100 seconds at a time
-  }
-}
-
 // Used to convert frequent JVM_Yield() to nops
 bool os::dont_yield() {
   return DontYieldALot;
@@ -1980,7 +1973,7 @@ jint os::init_2(void) {
   }
 
   // Check and sets minimum stack sizes against command line options
-  if (Posix::set_minimum_stack_sizes() == JNI_ERR) {
+  if (set_minimum_stack_sizes() == JNI_ERR) {
     return JNI_ERR;
   }
 
@@ -2164,28 +2157,6 @@ void os::os_exception_wrapper(java_call_t f, JavaValue* value,
   f(value, method, args, thread);
 }
 
-void os::print_statistics() {
-}
-
-bool os::message_box(const char* title, const char* message) {
-  int i;
-  fdStream err(defaultStream::error_fd());
-  for (i = 0; i < 78; i++) err.print_raw("=");
-  err.cr();
-  err.print_raw_cr(title);
-  for (i = 0; i < 78; i++) err.print_raw("-");
-  err.cr();
-  err.print_raw_cr(message);
-  for (i = 0; i < 78; i++) err.print_raw("=");
-  err.cr();
-
-  char buf[16];
-  // Prevent process from exiting upon "read error" without consuming all CPU
-  while (::read(0, buf, sizeof(buf)) <= 0) { ::sleep(100); }
-
-  return buf[0] == 'y' || buf[0] == 'Y';
-}
-
 static inline struct timespec get_mtime(const char* filename) {
   struct stat st;
   int ret = os::stat(filename, &st);
@@ -2205,25 +2176,6 @@ int os::compare_file_modified_times(const char* file1, const char* file2) {
     return filetime1.tv_nsec - filetime2.tv_nsec;
   }
   return diff;
-}
-
-// Is a (classpath) directory empty?
-bool os::dir_is_empty(const char* path) {
-  DIR *dir = NULL;
-  struct dirent *ptr;
-
-  dir = opendir(path);
-  if (dir == NULL) return true;
-
-  // Scan the directory
-  bool result = true;
-  while (result && (ptr = readdir(dir)) != NULL) {
-    if (strcmp(ptr->d_name, ".") != 0 && strcmp(ptr->d_name, "..") != 0) {
-      result = false;
-    }
-  }
-  closedir(dir);
-  return result;
 }
 
 // This code originates from JDK's sysOpen and open64_w

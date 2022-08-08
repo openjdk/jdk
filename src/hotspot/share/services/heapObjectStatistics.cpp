@@ -31,6 +31,7 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/mutexLocker.hpp"
 #include "runtime/vmThread.hpp"
 #include "services/heapObjectStatistics.hpp"
 #include "utilities/copy.hpp"

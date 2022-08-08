@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package jdk.jfr.consumer;
 
 import jdk.jfr.internal.consumer.ObjectContext;
+import jdk.internal.javac.PreviewFeature;
 
 /**
  * A recorded thread.
@@ -53,7 +54,7 @@ public final class RecordedThread extends RecordedObject {
     /**
      * Returns the thread ID used by the operating system.
      *
-     * @return The Java thread ID, or {@code -1} if doesn't exist
+     * @return the OS thread ID, or {@code -1} if doesn't exist
      */
     public long getOSThreadId() {
         Long l = getTyped("osThreadId", Long.class, -1L);
@@ -85,6 +86,8 @@ public final class RecordedThread extends RecordedObject {
      * Returns the Java thread ID, or {@code -1} if it's not a Java thread.
      *
      * @return the Java thread ID, or {@code -1} if it's not a Java thread
+     *
+     * @see java.lang.Thread#threadId()
      */
     public long getJavaThreadId() {
         Long l = getTyped("javaThreadId", Long.class, -1L);
@@ -96,11 +99,25 @@ public final class RecordedThread extends RecordedObject {
      * reused within the lifespan of the JVM.
      * <p>
      * See {@link #getJavaThreadId()} for the ID that is returned by
-     * {@code java.lang.Thread.getId()}
+     * {@code java.lang.Thread.threadId()}.
+     * <p>
+     * See {@link #getOSThreadId()} for the ID that is returned by
+     * the operating system.
      *
      * @return a unique ID for the thread
      */
     public long getId() {
         return uniqueId;
     }
+
+    /**
+     * {@return {@code true} if this is a virtual Thread, {@code false} otherwise}
+     *
+     * @since 19
+     */
+    @PreviewFeature(feature = PreviewFeature.Feature.VIRTUAL_THREADS, reflective = true)
+    public boolean isVirtual() {
+        return getTyped("virtual", Boolean.class, Boolean.FALSE);
+    }
+
 }

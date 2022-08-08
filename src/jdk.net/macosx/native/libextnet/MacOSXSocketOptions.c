@@ -191,6 +191,35 @@ static int socketFamily(jint fd) {
 
 /*
  * Class:     jdk_net_MacOSXSocketOptions
+ * Method:    ipDontFragmentSupported0
+ * Signature: ()Z;
+ */
+JNIEXPORT jboolean JNICALL Java_jdk_net_MacOSXSocketOptions_ipDontFragmentSupported0
+(JNIEnv *env, jobject unused) {
+    jint rv, fd, value;
+    fd = socket(AF_INET, SOCK_DGRAM, 0);
+    if (fd == -1)
+        return JNI_FALSE;
+    value = 1;
+    rv = setsockopt(fd, IPPROTO_IP, IP_DONTFRAG, &value, sizeof(value));
+    close(fd);
+    if (rv == -1) {
+        return JNI_FALSE;
+    }
+    fd = socket(AF_INET6, SOCK_DGRAM, 0);
+    if (fd == -1)
+        return JNI_FALSE;
+    value = 1;
+    rv = setsockopt(fd, IPPROTO_IPV6, IPV6_DONTFRAG, &value, sizeof(value));
+    close(fd);
+    if (rv == -1) {
+        return JNI_FALSE;
+    }
+    return JNI_TRUE;
+}
+
+/*
+ * Class:     jdk_net_MacOSXSocketOptions
  * Method:    setIpDontFragment0
  * Signature: (IZ)V
  */

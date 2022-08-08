@@ -27,10 +27,13 @@
 #define CPU_AARCH64_MACROASSEMBLER_AARCH64_HPP
 
 #include "asm/assembler.inline.hpp"
+#include "code/vmreg.hpp"
 #include "metaprogramming/enableIf.hpp"
 #include "oops/compressedOops.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/powerOfTwo.hpp"
+
+class OopMap;
 
 // MacroAssembler extends Assembler by frequently used macros.
 //
@@ -115,7 +118,8 @@ class MacroAssembler: public Assembler {
  virtual void check_and_handle_popframe(Register java_thread);
  virtual void check_and_handle_earlyret(Register java_thread);
 
-  void safepoint_poll(Label& slow_path, bool at_return, bool acquire, bool in_nmethod);
+  void safepoint_poll(Label& slow_path, bool at_return, bool acquire, bool in_nmethod, Register tmp = rscratch1);
+  void rt_call(address dest, Register tmp = rscratch1);
 
   // Helper functions for statistics gathering.
   // Unconditional atomic increment.
@@ -204,8 +208,11 @@ class MacroAssembler: public Assembler {
   inline void cmp(Register Rd, unsigned char imm8)  { subs(zr, Rd, imm8); }
   inline void cmp(Register Rd, unsigned imm) = delete;
 
-  inline void cmnw(Register Rd, unsigned imm) { addsw(zr, Rd, imm); }
-  inline void cmn(Register Rd, unsigned imm) { adds(zr, Rd, imm); }
+  template<class T>
+  inline void cmnw(Register Rd, T imm) { addsw(zr, Rd, imm); }
+
+  inline void cmn(Register Rd, unsigned char imm8)  { adds(zr, Rd, imm8); }
+  inline void cmn(Register Rd, unsigned imm) = delete;
 
   void cset(Register Rd, Assembler::Condition cond) {
     csinc(Rd, zr, zr, ~cond);
@@ -223,7 +230,7 @@ class MacroAssembler: public Assembler {
 
   inline void movw(Register Rd, Register Rn) {
     if (Rd == sp || Rn == sp) {
-      addw(Rd, Rn, 0U);
+      Assembler::addw(Rd, Rn, 0U);
     } else {
       orrw(Rd, zr, Rn);
     }
@@ -232,7 +239,7 @@ class MacroAssembler: public Assembler {
     assert(Rd != r31_sp && Rn != r31_sp, "should be");
     if (Rd == Rn) {
     } else if (Rd == sp || Rn == sp) {
-      add(Rd, Rn, 0U);
+      Assembler::add(Rd, Rn, 0U);
     } else {
       orr(Rd, zr, Rn);
     }
@@ -698,6 +705,9 @@ public:
   // Alignment
   void align(int modulus);
 
+  // nop
+  void post_call_nop();
+
   // Stack frame creation/removal
   void enter(bool strip_ret_addr = false);
   void leave();
@@ -713,6 +723,20 @@ public:
   // Support for getting the JavaThread pointer (i.e.; a reference to thread-local information)
   // The pointer will be loaded into the thread register.
   void get_thread(Register thread);
+
+  // support for argument shuffling
+  void move32_64(VMRegPair src, VMRegPair dst, Register tmp = rscratch1);
+  void float_move(VMRegPair src, VMRegPair dst, Register tmp = rscratch1);
+  void long_move(VMRegPair src, VMRegPair dst, Register tmp = rscratch1);
+  void double_move(VMRegPair src, VMRegPair dst, Register tmp = rscratch1);
+  void object_move(
+                   OopMap* map,
+                   int oop_handle_offset,
+                   int framesize_in_slots,
+                   VMRegPair src,
+                   VMRegPair dst,
+                   bool is_receiver,
+                   int* receiver_offset);
 
 
   // Support for VM calls
@@ -883,6 +907,9 @@ public:
   void pop_CPU_state(bool restore_vectors = false, bool use_sve = false,
                      int sve_vector_size_in_bytes = 0, int total_predicate_in_bytes = 0);
 
+  void push_cont_fastpath(Register java_thread);
+  void pop_cont_fastpath(Register java_thread);
+
   // Round up to a power of two
   void round_to(Register reg, int modulus);
 
@@ -891,13 +918,6 @@ public:
   void java_round_float(Register dst, FloatRegister src, FloatRegister ftmp);
 
   // allocation
-  void eden_allocate(
-    Register obj,                      // result: pointer to object after successful allocation
-    Register var_size_in_bytes,        // object size in bytes if unknown at compile time; invalid otherwise
-    int      con_size_in_bytes,        // object size in bytes if   known at compile time
-    Register t1,                       // temp register
-    Label&   slow_case                 // continuation point if fast allocation fails
-  );
   void tlab_allocate(
     Register obj,                      // result: pointer to object after successful allocation
     Register var_size_in_bytes,        // object size in bytes if unknown at compile time; invalid otherwise
@@ -964,7 +984,7 @@ public:
 
   Address argument_address(RegisterOrConstant arg_slot, int extra_slot_offset = 0);
 
-  void verify_sve_vector_length();
+  void verify_sve_vector_length(Register tmp = rscratch1);
   void reinitialize_ptrue() {
     if (UseSVE > 0) {
       sve_ptrue(ptrue, B);
@@ -1012,6 +1032,10 @@ public:
   void unimplemented(const char* what = "");
 
   void should_not_reach_here()                   { stop("should not reach here"); }
+
+  void _assert_asm(Condition cc, const char* msg);
+#define assert_asm0(cc, msg) _assert_asm(cc, FILE_AND_LINE ": " msg)
+#define assert_asm(masm, command, cc, msg) DEBUG_ONLY(command; (masm)->_assert_asm(cc, FILE_AND_LINE ": " #command " " #cc ": " msg))
 
   // Stack overflow checking
   void bang_stack_with_offset(int offset) {
@@ -1091,9 +1115,77 @@ private:
 #endif
 
 public:
-  // Calls
+  // AArch64 OpenJDK uses four different types of calls:
+  //   - direct call: bl pc_relative_offset
+  //     This is the shortest and the fastest, but the offset has the range:
+  //     +/-128MB for the release build, +/-2MB for the debug build.
+  //
+  //   - far call: adrp reg, pc_relative_offset; add; bl reg
+  //     This is longer than a direct call. The offset has
+  //     the range +/-4GB. As the code cache size is limited to 4GB,
+  //     far calls can reach anywhere in the code cache. If a jump is
+  //     needed rather than a call, a far jump 'b reg' can be used instead.
+  //     All instructions are embedded at a call site.
+  //
+  //   - trampoline call:
+  //     This is only available in C1/C2-generated code (nmethod). It is a combination
+  //     of a direct call, which is used if the destination of a call is in range,
+  //     and a register-indirect call. It has the advantages of reaching anywhere in
+  //     the AArch64 address space and being patchable at runtime when the generated
+  //     code is being executed by other threads.
+  //
+  //     [Main code section]
+  //       bl trampoline
+  //     [Stub code section]
+  //     trampoline:
+  //       ldr reg, pc + 8
+  //       br reg
+  //       <64-bit destination address>
+  //
+  //     If the destination is in range when the generated code is moved to the code
+  //     cache, 'bl trampoline' is replaced with 'bl destination' and the trampoline
+  //     is not used.
+  //     The optimization does not remove the trampoline from the stub section.
+  //     This is necessary because the trampoline may well be redirected later when
+  //     code is patched, and the new destination may not be reachable by a simple BR
+  //     instruction.
+  //
+  //   - indirect call: move reg, address; blr reg
+  //     This too can reach anywhere in the address space, but it cannot be
+  //     patched while code is running, so it must only be modified at a safepoint.
+  //     This form of call is most suitable for targets at fixed addresses, which
+  //     will never be patched.
+  //
+  // The patching we do conforms to the "Concurrent modification and
+  // execution of instructions" section of the Arm Architectural
+  // Reference Manual, which only allows B, BL, BRK, HVC, ISB, NOP, SMC,
+  // or SVC instructions to be modified while another thread is
+  // executing them.
+  //
+  // To patch a trampoline call when the BL can't reach, we first modify
+  // the 64-bit destination address in the trampoline, then modify the
+  // BL to point to the trampoline, then flush the instruction cache to
+  // broadcast the change to all executing threads. See
+  // NativeCall::set_destination_mt_safe for the details.
+  //
+  // There is a benign race in that the other thread might observe the
+  // modified BL before it observes the modified 64-bit destination
+  // address. That does not matter because the destination method has been
+  // invalidated, so there will be a trap at its start.
+  // For this to work, the destination address in the trampoline is
+  // always updated, even if we're not using the trampoline.
 
-  address trampoline_call(Address entry, CodeBuffer* cbuf = NULL);
+  // Emit a direct call if the entry address will always be in range,
+  // otherwise a trampoline call.
+  // Supported entry.rspec():
+  // - relocInfo::runtime_call_type
+  // - relocInfo::opt_virtual_call_type
+  // - relocInfo::static_call_type
+  // - relocInfo::virtual_call_type
+  //
+  // Return: NULL if CodeCache is full.
+  address trampoline_call(Address entry, CodeBuffer* cbuf = NULL) { return trampoline_call1(entry, cbuf, true); }
+  address trampoline_call1(Address entry, CodeBuffer* cbuf, bool check_emit_size = true);
 
   static bool far_branches() {
     return ReservedCodeCacheSize > branch_range;
@@ -1104,8 +1196,17 @@ public:
     return CodeCache::max_distance_to_non_nmethod() > branch_range;
   }
 
-  // Jumps that can reach anywhere in the code cache.
-  // Trashes tmp.
+  // Emit a direct call/jump if the entry address will always be in range,
+  // otherwise a far call/jump.
+  // The address must be inside the code cache.
+  // Supported entry.rspec():
+  // - relocInfo::external_word_type
+  // - relocInfo::runtime_call_type
+  // - relocInfo::none
+  // In the case of a far call/jump, the entry address is put in the tmp register.
+  // The tmp register is invalidated.
+  //
+  // Far_jump returns the amount of the emitted code.
   void far_call(Address entry, CodeBuffer *cbuf = NULL, Register tmp = rscratch1);
   int far_jump(Address entry, CodeBuffer *cbuf = NULL, Register tmp = rscratch1);
 
@@ -1153,17 +1254,17 @@ public:
 
   // If a constant does not fit in an immediate field, generate some
   // number of MOV instructions and then perform the operation
-  void wrap_add_sub_imm_insn(Register Rd, Register Rn, unsigned imm,
+  void wrap_add_sub_imm_insn(Register Rd, Register Rn, uint64_t imm,
                              add_sub_imm_insn insn1,
-                             add_sub_reg_insn insn2);
+                             add_sub_reg_insn insn2, bool is32);
   // Separate vsn which sets the flags
-  void wrap_adds_subs_imm_insn(Register Rd, Register Rn, unsigned imm,
-                             add_sub_imm_insn insn1,
-                             add_sub_reg_insn insn2);
+  void wrap_adds_subs_imm_insn(Register Rd, Register Rn, uint64_t imm,
+                               add_sub_imm_insn insn1,
+                               add_sub_reg_insn insn2, bool is32);
 
-#define WRAP(INSN)                                                      \
-  void INSN(Register Rd, Register Rn, unsigned imm) {                   \
-    wrap_add_sub_imm_insn(Rd, Rn, imm, &Assembler::INSN, &Assembler::INSN); \
+#define WRAP(INSN, is32)                                                \
+  void INSN(Register Rd, Register Rn, uint64_t imm) {                   \
+    wrap_add_sub_imm_insn(Rd, Rn, imm, &Assembler::INSN, &Assembler::INSN, is32); \
   }                                                                     \
                                                                         \
   void INSN(Register Rd, Register Rn, Register Rm,                      \
@@ -1180,12 +1281,12 @@ public:
     Assembler::INSN(Rd, Rn, Rm, option, amount);                        \
   }
 
-  WRAP(add) WRAP(addw) WRAP(sub) WRAP(subw)
+  WRAP(add, false) WRAP(addw, true) WRAP(sub, false) WRAP(subw, true)
 
 #undef WRAP
-#define WRAP(INSN)                                                      \
-  void INSN(Register Rd, Register Rn, unsigned imm) {                   \
-    wrap_adds_subs_imm_insn(Rd, Rn, imm, &Assembler::INSN, &Assembler::INSN); \
+#define WRAP(INSN, is32)                                                \
+  void INSN(Register Rd, Register Rn, uint64_t imm) {                   \
+    wrap_adds_subs_imm_insn(Rd, Rn, imm, &Assembler::INSN, &Assembler::INSN, is32); \
   }                                                                     \
                                                                         \
   void INSN(Register Rd, Register Rn, Register Rm,                      \
@@ -1202,7 +1303,7 @@ public:
     Assembler::INSN(Rd, Rn, Rm, option, amount);                        \
   }
 
-  WRAP(adds) WRAP(addsw) WRAP(subs) WRAP(subsw)
+  WRAP(adds, false) WRAP(addsw, true) WRAP(subs, false) WRAP(subsw, true)
 
   void add(Register Rd, Register Rn, RegisterOrConstant increment);
   void addw(Register Rd, Register Rn, RegisterOrConstant increment);
@@ -1275,7 +1376,7 @@ public:
                      int elem_size);
 
   void fill_words(Register base, Register cnt, Register value);
-  void zero_words(Register base, uint64_t cnt);
+  address zero_words(Register base, uint64_t cnt);
   address zero_words(Register ptr, Register cnt);
   void zero_dcache_blocks(Register base, Register cnt);
 

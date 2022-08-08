@@ -42,8 +42,10 @@
 #include "oops/compressedOops.inline.hpp"
 #include "oops/klass.inline.hpp"
 #include "prims/methodHandles.hpp"
+#include "runtime/continuation.hpp"
 #include "runtime/flags/flagSetting.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/os.hpp"
@@ -51,8 +53,6 @@
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "runtime/thread.hpp"
-#include "utilities/align.hpp"
 #include "utilities/macros.hpp"
 #include "crc32c.h"
 
@@ -506,16 +506,12 @@ void MacroAssembler::call_VM_leaf_base(address entry_point, int num_args) {
   jcc(Assembler::zero, L);
 
   subq(rsp, 8);
-  {
-    call(RuntimeAddress(entry_point));
-  }
+  call(RuntimeAddress(entry_point));
   addq(rsp, 8);
   jmp(E);
 
   bind(L);
-  {
-    call(RuntimeAddress(entry_point));
-  }
+  call(RuntimeAddress(entry_point));
 
   bind(E);
 
@@ -915,7 +911,7 @@ static int reg2offset_out(VMReg r) {
 }
 
 // A long move
-void MacroAssembler::long_move(VMRegPair src, VMRegPair dst) {
+void MacroAssembler::long_move(VMRegPair src, VMRegPair dst, Register tmp, int in_stk_bias, int out_stk_bias) {
 
   // The calling conventions assures us that each VMregpair is either
   // all really one physical register or adjacent stack slots.
@@ -926,21 +922,22 @@ void MacroAssembler::long_move(VMRegPair src, VMRegPair dst) {
         mov(dst.first()->as_Register(), src.first()->as_Register());
       }
     } else {
-      assert(dst.is_single_reg(), "not a stack pair");
-      movq(Address(rsp, reg2offset_out(dst.first())), src.first()->as_Register());
+      assert(dst.is_single_reg(), "not a stack pair: (%s, %s), (%s, %s)",
+             src.first()->name(), src.second()->name(), dst.first()->name(), dst.second()->name());
+      movq(Address(rsp, reg2offset_out(dst.first()) + out_stk_bias), src.first()->as_Register());
     }
   } else if (dst.is_single_phys_reg()) {
     assert(src.is_single_reg(),  "not a stack pair");
-    movq(dst.first()->as_Register(), Address(rbp, reg2offset_out(src.first())));
+    movq(dst.first()->as_Register(), Address(rbp, reg2offset_in(src.first()) + in_stk_bias));
   } else {
     assert(src.is_single_reg() && dst.is_single_reg(), "not stack pairs");
-    movq(rax, Address(rbp, reg2offset_in(src.first())));
-    movq(Address(rsp, reg2offset_out(dst.first())), rax);
+    movq(tmp, Address(rbp, reg2offset_in(src.first()) + in_stk_bias));
+    movq(Address(rsp, reg2offset_out(dst.first()) + out_stk_bias), tmp);
   }
 }
 
 // A double move
-void MacroAssembler::double_move(VMRegPair src, VMRegPair dst) {
+void MacroAssembler::double_move(VMRegPair src, VMRegPair dst, Register tmp, int in_stk_bias, int out_stk_bias) {
 
   // The calling conventions assures us that each VMregpair is either
   // all really one physical register or adjacent stack slots.
@@ -953,21 +950,21 @@ void MacroAssembler::double_move(VMRegPair src, VMRegPair dst) {
       }
     } else {
       assert(dst.is_single_reg(), "not a stack pair");
-      movdbl(Address(rsp, reg2offset_out(dst.first())), src.first()->as_XMMRegister());
+      movdbl(Address(rsp, reg2offset_out(dst.first()) + out_stk_bias), src.first()->as_XMMRegister());
     }
   } else if (dst.is_single_phys_reg()) {
     assert(src.is_single_reg(),  "not a stack pair");
-    movdbl(dst.first()->as_XMMRegister(), Address(rbp, reg2offset_out(src.first())));
+    movdbl(dst.first()->as_XMMRegister(), Address(rbp, reg2offset_in(src.first()) + in_stk_bias));
   } else {
     assert(src.is_single_reg() && dst.is_single_reg(), "not stack pairs");
-    movq(rax, Address(rbp, reg2offset_in(src.first())));
-    movq(Address(rsp, reg2offset_out(dst.first())), rax);
+    movq(tmp, Address(rbp, reg2offset_in(src.first()) + in_stk_bias));
+    movq(Address(rsp, reg2offset_out(dst.first()) + out_stk_bias), tmp);
   }
 }
 
 
 // A float arg may have to do float reg int reg conversion
-void MacroAssembler::float_move(VMRegPair src, VMRegPair dst) {
+void MacroAssembler::float_move(VMRegPair src, VMRegPair dst, Register tmp, int in_stk_bias, int out_stk_bias) {
   assert(!src.second()->is_valid() && !dst.second()->is_valid(), "bad float_move");
 
   // The calling conventions assures us that each VMregpair is either
@@ -975,17 +972,17 @@ void MacroAssembler::float_move(VMRegPair src, VMRegPair dst) {
 
   if (src.first()->is_stack()) {
     if (dst.first()->is_stack()) {
-      movl(rax, Address(rbp, reg2offset_in(src.first())));
-      movptr(Address(rsp, reg2offset_out(dst.first())), rax);
+      movl(tmp, Address(rbp, reg2offset_in(src.first()) + in_stk_bias));
+      movptr(Address(rsp, reg2offset_out(dst.first()) + out_stk_bias), tmp);
     } else {
       // stack to reg
       assert(dst.first()->is_XMMRegister(), "only expect xmm registers as parameters");
-      movflt(dst.first()->as_XMMRegister(), Address(rbp, reg2offset_in(src.first())));
+      movflt(dst.first()->as_XMMRegister(), Address(rbp, reg2offset_in(src.first()) + in_stk_bias));
     }
   } else if (dst.first()->is_stack()) {
     // reg to stack
     assert(src.first()->is_XMMRegister(), "only expect xmm registers as parameters");
-    movflt(Address(rsp, reg2offset_out(dst.first())), src.first()->as_XMMRegister());
+    movflt(Address(rsp, reg2offset_out(dst.first()) + out_stk_bias), src.first()->as_XMMRegister());
   } else {
     // reg to reg
     // In theory these overlap but the ordering is such that this is likely a nop
@@ -999,21 +996,21 @@ void MacroAssembler::float_move(VMRegPair src, VMRegPair dst) {
 // 64 bits items (x86_32/64 abi) even though java would only store
 // 32bits for a parameter. On 32bit it will simply be 32 bits
 // So this routine will do 32->32 on 32bit and 32->64 on 64bit
-void MacroAssembler::move32_64(VMRegPair src, VMRegPair dst) {
+void MacroAssembler::move32_64(VMRegPair src, VMRegPair dst, Register tmp, int in_stk_bias, int out_stk_bias) {
   if (src.first()->is_stack()) {
     if (dst.first()->is_stack()) {
       // stack to stack
-      movslq(rax, Address(rbp, reg2offset_in(src.first())));
-      movq(Address(rsp, reg2offset_out(dst.first())), rax);
+      movslq(tmp, Address(rbp, reg2offset_in(src.first()) + in_stk_bias));
+      movq(Address(rsp, reg2offset_out(dst.first()) + out_stk_bias), tmp);
     } else {
       // stack to reg
-      movslq(dst.first()->as_Register(), Address(rbp, reg2offset_in(src.first())));
+      movslq(dst.first()->as_Register(), Address(rbp, reg2offset_in(src.first()) + in_stk_bias));
     }
   } else if (dst.first()->is_stack()) {
     // reg to stack
     // Do we really have to sign extend???
     // __ movslq(src.first()->as_Register(), src.first()->as_Register());
-    movq(Address(rsp, reg2offset_out(dst.first())), src.first()->as_Register());
+    movq(Address(rsp, reg2offset_out(dst.first()) + out_stk_bias), src.first()->as_Register());
   } else {
     // Do we really have to sign extend???
     // __ movslq(dst.first()->as_Register(), src.first()->as_Register());
@@ -1073,7 +1070,7 @@ void MacroAssembler::object_move(OopMap* map,
     cmovptr(Assembler::equal, rHandle, Address(rbp, reg2offset_in(src.first())));
   } else {
 
-    // Oop is in an a register we must store it to the space we reserve
+    // Oop is in a register we must store it to the space we reserve
     // on the stack for oop_handles and pass a handle if oop is non-NULL
 
     const Register rOop = src.first()->as_Register();
@@ -1179,6 +1176,26 @@ void MacroAssembler::align(int modulus, int target) {
   if (target % modulus != 0) {
     nop(modulus - (target % modulus));
   }
+}
+
+void MacroAssembler::push_f(XMMRegister r) {
+  subptr(rsp, wordSize);
+  movflt(Address(rsp, 0), r);
+}
+
+void MacroAssembler::pop_f(XMMRegister r) {
+  movflt(r, Address(rsp, 0));
+  addptr(rsp, wordSize);
+}
+
+void MacroAssembler::push_d(XMMRegister r) {
+  subptr(rsp, 2 * wordSize);
+  movdbl(Address(rsp, 0), r);
+}
+
+void MacroAssembler::pop_d(XMMRegister r) {
+  movdbl(r, Address(rsp, 0));
+  addptr(rsp, 2 * Interpreter::stackElementSize);
 }
 
 void MacroAssembler::andpd(XMMRegister dst, AddressLiteral src, Register scratch_reg) {
@@ -1311,6 +1328,13 @@ void MacroAssembler::ic_call(address entry, jint method_index) {
   RelocationHolder rh = virtual_call_Relocation::spec(pc(), method_index);
   movptr(rax, (intptr_t)Universe::non_oop_word());
   call(AddressLiteral(entry, rh));
+}
+
+void MacroAssembler::emit_static_call_stub() {
+  // Static stub relocation also tags the Method* in the code-stream.
+  mov_metadata(rbx, (Metadata*) NULL);  // Method is zapped till fixup time.
+  // This is recognized as unresolved by relocs/nativeinst/ic code.
+  jump(RuntimeAddress(pc()));
 }
 
 // Implementation of call_VM versions
@@ -1638,6 +1662,20 @@ void MacroAssembler::call_VM_leaf(address entry_point, Register arg_0, Register 
   call_VM_leaf(entry_point, 3);
 }
 
+void MacroAssembler::call_VM_leaf(address entry_point, Register arg_0, Register arg_1, Register arg_2, Register arg_3) {
+  LP64_ONLY(assert(arg_0 != c_rarg3, "smashed arg"));
+  LP64_ONLY(assert(arg_1 != c_rarg3, "smashed arg"));
+  LP64_ONLY(assert(arg_2 != c_rarg3, "smashed arg"));
+  pass_arg3(this, arg_3);
+  LP64_ONLY(assert(arg_0 != c_rarg2, "smashed arg"));
+  LP64_ONLY(assert(arg_1 != c_rarg2, "smashed arg"));
+  pass_arg2(this, arg_2);
+  LP64_ONLY(assert(arg_0 != c_rarg1, "smashed arg"));
+  pass_arg1(this, arg_1);
+  pass_arg0(this, arg_0);
+  call_VM_leaf(entry_point, 3);
+}
+
 void MacroAssembler::super_call_VM_leaf(address entry_point, Register arg_0) {
   pass_arg0(this, arg_0);
   MacroAssembler::call_VM_leaf_base(entry_point, 1);
@@ -1918,7 +1956,7 @@ void MacroAssembler::decrementl(Address dst, int value) {
 }
 
 void MacroAssembler::division_with_shift (Register reg, int shift_value) {
-  assert (shift_value > 0, "illegal shift value");
+  assert(shift_value > 0, "illegal shift value");
   Label _is_positive;
   testl (reg, reg);
   jcc (Assembler::positive, _is_positive);
@@ -1957,16 +1995,29 @@ void MacroAssembler::enter() {
   mov(rbp, rsp);
 }
 
+void MacroAssembler::post_call_nop() {
+  if (!Continuations::enabled()) {
+    return;
+  }
+  InstructionMark im(this);
+  relocate(post_call_nop_Relocation::spec());
+  emit_int8((int8_t)0x0f);
+  emit_int8((int8_t)0x1f);
+  emit_int8((int8_t)0x84);
+  emit_int8((int8_t)0x00);
+  emit_int32(0x00);
+}
+
 // A 5 byte nop that is safe for patching (see patch_verified_entry)
 void MacroAssembler::fat_nop() {
   if (UseAddressNop) {
     addr_nop_5();
   } else {
-    emit_int8(0x26); // es:
-    emit_int8(0x2e); // cs:
-    emit_int8(0x64); // fs:
-    emit_int8(0x65); // gs:
-    emit_int8((unsigned char)0x90);
+    emit_int8((int8_t)0x26); // es:
+    emit_int8((int8_t)0x2e); // cs:
+    emit_int8((int8_t)0x64); // fs:
+    emit_int8((int8_t)0x65); // gs:
+    emit_int8((int8_t)0x90);
   }
 }
 
@@ -2535,8 +2586,9 @@ void MacroAssembler::vmovdqu(XMMRegister dst, AddressLiteral src, Register scrat
 }
 
 void MacroAssembler::vmovdqu(XMMRegister dst, AddressLiteral src, Register scratch_reg, int vector_len) {
-  assert(vector_len <= AVX_256bit, "AVX2 vector length");
-  if (vector_len == AVX_256bit) {
+  if (vector_len == AVX_512bit) {
+    evmovdquq(dst, src, AVX_512bit, scratch_reg);
+  } else if (vector_len == AVX_256bit) {
     vmovdqu(dst, src, scratch_reg);
   } else {
     movdqu(dst, src, scratch_reg);
@@ -2609,18 +2661,10 @@ void MacroAssembler::kmovwl(KRegister dst, AddressLiteral src, Register scratch_
 void MacroAssembler::evmovdqub(XMMRegister dst, KRegister mask, AddressLiteral src, bool merge,
                                int vector_len, Register scratch_reg) {
   if (reachable(src)) {
-    if (mask == k0) {
-      Assembler::evmovdqub(dst, as_Address(src), merge, vector_len);
-    } else {
-      Assembler::evmovdqub(dst, mask, as_Address(src), merge, vector_len);
-    }
+    Assembler::evmovdqub(dst, mask, as_Address(src), merge, vector_len);
   } else {
     lea(scratch_reg, src);
-    if (mask == k0) {
-      Assembler::evmovdqub(dst, Address(scratch_reg, 0), merge, vector_len);
-    } else {
-      Assembler::evmovdqub(dst, mask, Address(scratch_reg, 0), merge, vector_len);
-    }
+    Assembler::evmovdqub(dst, mask, Address(scratch_reg, 0), merge, vector_len);
   }
 }
 
@@ -2797,6 +2841,109 @@ void MacroAssembler::push_IU_state() {
   LP64_ONLY(subq(rsp, 8));
   pusha();
 }
+
+void MacroAssembler::push_cont_fastpath() {
+  if (!Continuations::enabled()) return;
+
+#ifndef _LP64
+  Register rthread = rax;
+  Register rrealsp = rbx;
+  push(rthread);
+  push(rrealsp);
+
+  get_thread(rthread);
+
+  // The code below wants the original RSP.
+  // Move it back after the pushes above.
+  movptr(rrealsp, rsp);
+  addptr(rrealsp, 2*wordSize);
+#else
+  Register rthread = r15_thread;
+  Register rrealsp = rsp;
+#endif
+
+  Label done;
+  cmpptr(rrealsp, Address(rthread, JavaThread::cont_fastpath_offset()));
+  jccb(Assembler::belowEqual, done);
+  movptr(Address(rthread, JavaThread::cont_fastpath_offset()), rrealsp);
+  bind(done);
+
+#ifndef _LP64
+  pop(rrealsp);
+  pop(rthread);
+#endif
+}
+
+void MacroAssembler::pop_cont_fastpath() {
+  if (!Continuations::enabled()) return;
+
+#ifndef _LP64
+  Register rthread = rax;
+  Register rrealsp = rbx;
+  push(rthread);
+  push(rrealsp);
+
+  get_thread(rthread);
+
+  // The code below wants the original RSP.
+  // Move it back after the pushes above.
+  movptr(rrealsp, rsp);
+  addptr(rrealsp, 2*wordSize);
+#else
+  Register rthread = r15_thread;
+  Register rrealsp = rsp;
+#endif
+
+  Label done;
+  cmpptr(rrealsp, Address(rthread, JavaThread::cont_fastpath_offset()));
+  jccb(Assembler::below, done);
+  movptr(Address(rthread, JavaThread::cont_fastpath_offset()), 0);
+  bind(done);
+
+#ifndef _LP64
+  pop(rrealsp);
+  pop(rthread);
+#endif
+}
+
+void MacroAssembler::inc_held_monitor_count() {
+#ifndef _LP64
+  Register thread = rax;
+  push(thread);
+  get_thread(thread);
+  incrementl(Address(thread, JavaThread::held_monitor_count_offset()));
+  pop(thread);
+#else // LP64
+  incrementq(Address(r15_thread, JavaThread::held_monitor_count_offset()));
+#endif
+}
+
+void MacroAssembler::dec_held_monitor_count() {
+#ifndef _LP64
+  Register thread = rax;
+  push(thread);
+  get_thread(thread);
+  decrementl(Address(thread, JavaThread::held_monitor_count_offset()));
+  pop(thread);
+#else // LP64
+  decrementq(Address(r15_thread, JavaThread::held_monitor_count_offset()));
+#endif
+}
+
+#ifdef ASSERT
+void MacroAssembler::stop_if_in_cont(Register cont, const char* name) {
+#ifdef _LP64
+  Label no_cont;
+  movptr(cont, Address(r15_thread, JavaThread::cont_entry_offset()));
+  testl(cont, cont);
+  jcc(Assembler::zero, no_cont);
+  stop(name);
+  bind(no_cont);
+#else
+  Unimplemented();
+#endif
+}
+#endif
 
 void MacroAssembler::reset_last_Java_frame(Register java_thread, bool clear_fp) { // determine java_thread register
   if (!java_thread->is_valid()) {
@@ -3146,6 +3293,15 @@ void MacroAssembler::vpand(XMMRegister dst, XMMRegister nds, AddressLiteral src,
 void MacroAssembler::vpbroadcastw(XMMRegister dst, XMMRegister src, int vector_len) {
   assert(((dst->encoding() < 16 && src->encoding() < 16) || VM_Version::supports_avx512vlbw()),"XMM register should be 0-15");
   Assembler::vpbroadcastw(dst, src, vector_len);
+}
+
+void MacroAssembler::vpbroadcastq(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch) {
+  if (reachable(src)) {
+    Assembler::vpbroadcastq(dst, as_Address(src), vector_len);
+  } else {
+    lea(rscratch, src);
+    Assembler::vpbroadcastq(dst, Address(rscratch, 0), vector_len);
+  }
 }
 
 void MacroAssembler::vbroadcastsd(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch) {
@@ -3766,16 +3922,6 @@ void MacroAssembler::pop_set(RegSet set, int offset) {
   }
 }
 
-// Defines obj, preserves var_size_in_bytes
-void MacroAssembler::eden_allocate(Register thread, Register obj,
-                                   Register var_size_in_bytes,
-                                   int con_size_in_bytes,
-                                   Register t1,
-                                   Label& slow_case) {
-  BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  bs->eden_allocate(this, thread, obj, var_size_in_bytes, con_size_in_bytes, t1, slow_case);
-}
-
 // Preserves the contents of address, destroys the contents length_in_bytes and temp.
 void MacroAssembler::zero_memory(Register address, Register length_in_bytes, int offset_in_bytes, Register temp) {
   assert(address != length_in_bytes && address != temp && temp != length_in_bytes, "registers must be different");
@@ -4084,7 +4230,7 @@ void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
 
   // Get super_klass value into rax (even if it was in rdi or rcx).
   bool pushed_rax = false, pushed_rcx = false, pushed_rdi = false;
-  if (super_klass != rax || UseCompressedOops) {
+  if (super_klass != rax) {
     if (!IS_A_TEMP(rax)) { push(rax); pushed_rax = true; }
     mov(rax, super_klass);
   }
@@ -5265,95 +5411,6 @@ void MacroAssembler::reinit_heapbase() {
 
 #endif // _LP64
 
-// C2 compiled method's prolog code.
-void MacroAssembler::verified_entry(int framesize, int stack_bang_size, bool fp_mode_24b, bool is_stub) {
-
-  // WARNING: Initial instruction MUST be 5 bytes or longer so that
-  // NativeJump::patch_verified_entry will be able to patch out the entry
-  // code safely. The push to verify stack depth is ok at 5 bytes,
-  // the frame allocation can be either 3 or 6 bytes. So if we don't do
-  // stack bang then we must use the 6 byte frame allocation even if
-  // we have no frame. :-(
-  assert(stack_bang_size >= framesize || stack_bang_size <= 0, "stack bang size incorrect");
-
-  assert((framesize & (StackAlignmentInBytes-1)) == 0, "frame size not aligned");
-  // Remove word for return addr
-  framesize -= wordSize;
-  stack_bang_size -= wordSize;
-
-  // Calls to C2R adapters often do not accept exceptional returns.
-  // We require that their callers must bang for them.  But be careful, because
-  // some VM calls (such as call site linkage) can use several kilobytes of
-  // stack.  But the stack safety zone should account for that.
-  // See bugs 4446381, 4468289, 4497237.
-  if (stack_bang_size > 0) {
-    generate_stack_overflow_check(stack_bang_size);
-
-    // We always push rbp, so that on return to interpreter rbp, will be
-    // restored correctly and we can correct the stack.
-    push(rbp);
-    // Save caller's stack pointer into RBP if the frame pointer is preserved.
-    if (PreserveFramePointer) {
-      mov(rbp, rsp);
-    }
-    // Remove word for ebp
-    framesize -= wordSize;
-
-    // Create frame
-    if (framesize) {
-      subptr(rsp, framesize);
-    }
-  } else {
-    // Create frame (force generation of a 4 byte immediate value)
-    subptr_imm32(rsp, framesize);
-
-    // Save RBP register now.
-    framesize -= wordSize;
-    movptr(Address(rsp, framesize), rbp);
-    // Save caller's stack pointer into RBP if the frame pointer is preserved.
-    if (PreserveFramePointer) {
-      movptr(rbp, rsp);
-      if (framesize > 0) {
-        addptr(rbp, framesize);
-      }
-    }
-  }
-
-  if (VerifyStackAtCalls) { // Majik cookie to verify stack depth
-    framesize -= wordSize;
-    movptr(Address(rsp, framesize), (int32_t)0xbadb100d);
-  }
-
-#ifndef _LP64
-  // If method sets FPU control word do it now
-  if (fp_mode_24b) {
-    fldcw(ExternalAddress(StubRoutines::x86::addr_fpu_cntrl_wrd_24()));
-  }
-  if (UseSSE >= 2 && VerifyFPU) {
-    verify_FPU(0, "FPU stack must be clean on entry");
-  }
-#endif
-
-#ifdef ASSERT
-  if (VerifyStackAtCalls) {
-    Label L;
-    push(rax);
-    mov(rax, rsp);
-    andptr(rax, StackAlignmentInBytes-1);
-    cmpptr(rax, StackAlignmentInBytes-wordSize);
-    pop(rax);
-    jcc(Assembler::equal, L);
-    STOP("Stack is not properly aligned!");
-    bind(L);
-  }
-#endif
-
-  if (!is_stub) {
-    BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-    bs->nmethod_entry_barrier(this);
-  }
-}
-
 #if COMPILER2_OR_JVMCI
 
 // clear memory of size 'cnt' qwords, starting at 'base' using XMM/YMM/ZMM registers
@@ -5429,10 +5486,28 @@ void MacroAssembler::clear_mem(Register base, int cnt, Register rtmp, XMMRegiste
 
   int vector64_count = (cnt & (~0x7)) >> 3;
   cnt = cnt & 0x7;
+  const int fill64_per_loop = 4;
+  const int max_unrolled_fill64 = 8;
 
   // 64 byte initialization loop.
   vpxor(xtmp, xtmp, xtmp, use64byteVector ? AVX_512bit : AVX_256bit);
-  for (int i = 0; i < vector64_count; i++) {
+  int start64 = 0;
+  if (vector64_count > max_unrolled_fill64) {
+    Label LOOP;
+    Register index = rtmp;
+
+    start64 = vector64_count - (vector64_count % fill64_per_loop);
+
+    movl(index, 0);
+    BIND(LOOP);
+    for (int i = 0; i < fill64_per_loop; i++) {
+      fill64(Address(base, index, Address::times_1, i * 64), xtmp, use64byteVector);
+    }
+    addl(index, fill64_per_loop * 64);
+    cmpl(index, start64 * 64);
+    jccb(Assembler::less, LOOP);
+  }
+  for (int i = start64; i < vector64_count; i++) {
     fill64(base, i * 64, xtmp, use64byteVector);
   }
 
@@ -5444,23 +5519,23 @@ void MacroAssembler::clear_mem(Register base, int cnt, Register rtmp, XMMRegiste
         movq(Address(base, disp), xtmp);
         break;
       case 2:
-        evmovdqu(T_LONG, k0, Address(base, disp), xtmp, Assembler::AVX_128bit);
+        evmovdqu(T_LONG, k0, Address(base, disp), xtmp, false, Assembler::AVX_128bit);
         break;
       case 3:
         movl(rtmp, 0x7);
         kmovwl(mask, rtmp);
-        evmovdqu(T_LONG, mask, Address(base, disp), xtmp, Assembler::AVX_256bit);
+        evmovdqu(T_LONG, mask, Address(base, disp), xtmp, true, Assembler::AVX_256bit);
         break;
       case 4:
-        evmovdqu(T_LONG, k0, Address(base, disp), xtmp, Assembler::AVX_256bit);
+        evmovdqu(T_LONG, k0, Address(base, disp), xtmp, false, Assembler::AVX_256bit);
         break;
       case 5:
         if (use64byteVector) {
           movl(rtmp, 0x1F);
           kmovwl(mask, rtmp);
-          evmovdqu(T_LONG, mask, Address(base, disp), xtmp, Assembler::AVX_512bit);
+          evmovdqu(T_LONG, mask, Address(base, disp), xtmp, true, Assembler::AVX_512bit);
         } else {
-          evmovdqu(T_LONG, k0, Address(base, disp), xtmp, Assembler::AVX_256bit);
+          evmovdqu(T_LONG, k0, Address(base, disp), xtmp, false, Assembler::AVX_256bit);
           movq(Address(base, disp + 32), xtmp);
         }
         break;
@@ -5468,22 +5543,22 @@ void MacroAssembler::clear_mem(Register base, int cnt, Register rtmp, XMMRegiste
         if (use64byteVector) {
           movl(rtmp, 0x3F);
           kmovwl(mask, rtmp);
-          evmovdqu(T_LONG, mask, Address(base, disp), xtmp, Assembler::AVX_512bit);
+          evmovdqu(T_LONG, mask, Address(base, disp), xtmp, true, Assembler::AVX_512bit);
         } else {
-          evmovdqu(T_LONG, k0, Address(base, disp), xtmp, Assembler::AVX_256bit);
-          evmovdqu(T_LONG, k0, Address(base, disp + 32), xtmp, Assembler::AVX_128bit);
+          evmovdqu(T_LONG, k0, Address(base, disp), xtmp, false, Assembler::AVX_256bit);
+          evmovdqu(T_LONG, k0, Address(base, disp + 32), xtmp, false, Assembler::AVX_128bit);
         }
         break;
       case 7:
         if (use64byteVector) {
           movl(rtmp, 0x7F);
           kmovwl(mask, rtmp);
-          evmovdqu(T_LONG, mask, Address(base, disp), xtmp, Assembler::AVX_512bit);
+          evmovdqu(T_LONG, mask, Address(base, disp), xtmp, true, Assembler::AVX_512bit);
         } else {
-          evmovdqu(T_LONG, k0, Address(base, disp), xtmp, Assembler::AVX_256bit);
+          evmovdqu(T_LONG, k0, Address(base, disp), xtmp, false, Assembler::AVX_256bit);
           movl(rtmp, 0x7);
           kmovwl(mask, rtmp);
-          evmovdqu(T_LONG, mask, Address(base, disp + 32), xtmp, Assembler::AVX_256bit);
+          evmovdqu(T_LONG, mask, Address(base, disp + 32), xtmp, true, Assembler::AVX_256bit);
         }
         break;
       default:
@@ -6455,7 +6530,7 @@ void MacroAssembler::vectorized_mismatch(Register obja, Register objb, Register 
 
     bind(VECTOR64_LOOP);
     // AVX512 code to compare 64 byte vectors.
-    evmovdqub(rymm0, Address(obja, result), false, Assembler::AVX_512bit);
+    evmovdqub(rymm0, Address(obja, result), Assembler::AVX_512bit);
     evpcmpeqb(k7, rymm0, Address(objb, result), Assembler::AVX_512bit);
     kortestql(k7, k7);
     jcc(Assembler::aboveEqual, VECTOR64_NOT_EQUAL);     // mismatch
@@ -8296,7 +8371,7 @@ void MacroAssembler::char_array_compress(Register src, Register dst, Register le
     negptr(len);
 
     bind(copy_32_loop);
-    evmovdquw(tmp1Reg, Address(src, len, Address::times_2), /*merge*/ false, Assembler::AVX_512bit);
+    evmovdquw(tmp1Reg, Address(src, len, Address::times_2), Assembler::AVX_512bit);
     evpcmpuw(mask1, tmp1Reg, tmp2Reg, Assembler::le, Assembler::AVX_512bit);
     kortestdl(mask1, mask1);
     jcc(Assembler::carryClear, return_zero);
@@ -8466,7 +8541,7 @@ void MacroAssembler::byte_array_inflate(Register src, Register dst, Register len
     // inflate 32 chars per iter
     bind(copy_32_loop);
     vpmovzxbw(tmp1, Address(src, len, Address::times_1), Assembler::AVX_512bit);
-    evmovdquw(Address(dst, len, Address::times_2), tmp1, /*merge*/ false, Assembler::AVX_512bit);
+    evmovdquw(Address(dst, len, Address::times_2), tmp1, Assembler::AVX_512bit);
     addptr(len, 32);
     jcc(Assembler::notZero, copy_32_loop);
 
@@ -8568,23 +8643,23 @@ void MacroAssembler::byte_array_inflate(Register src, Register dst, Register len
 }
 
 
-void MacroAssembler::evmovdqu(BasicType type, KRegister kmask, XMMRegister dst, Address src, int vector_len) {
+void MacroAssembler::evmovdqu(BasicType type, KRegister kmask, XMMRegister dst, Address src, bool merge, int vector_len) {
   switch(type) {
     case T_BYTE:
     case T_BOOLEAN:
-      evmovdqub(dst, kmask, src, false, vector_len);
+      evmovdqub(dst, kmask, src, merge, vector_len);
       break;
     case T_CHAR:
     case T_SHORT:
-      evmovdquw(dst, kmask, src, false, vector_len);
+      evmovdquw(dst, kmask, src, merge, vector_len);
       break;
     case T_INT:
     case T_FLOAT:
-      evmovdqul(dst, kmask, src, false, vector_len);
+      evmovdqul(dst, kmask, src, merge, vector_len);
       break;
     case T_LONG:
     case T_DOUBLE:
-      evmovdquq(dst, kmask, src, false, vector_len);
+      evmovdquq(dst, kmask, src, merge, vector_len);
       break;
     default:
       fatal("Unexpected type argument %s", type2name(type));
@@ -8592,23 +8667,23 @@ void MacroAssembler::evmovdqu(BasicType type, KRegister kmask, XMMRegister dst, 
   }
 }
 
-void MacroAssembler::evmovdqu(BasicType type, KRegister kmask, Address dst, XMMRegister src, int vector_len) {
+void MacroAssembler::evmovdqu(BasicType type, KRegister kmask, Address dst, XMMRegister src, bool merge, int vector_len) {
   switch(type) {
     case T_BYTE:
     case T_BOOLEAN:
-      evmovdqub(dst, kmask, src, true, vector_len);
+      evmovdqub(dst, kmask, src, merge, vector_len);
       break;
     case T_CHAR:
     case T_SHORT:
-      evmovdquw(dst, kmask, src, true, vector_len);
+      evmovdquw(dst, kmask, src, merge, vector_len);
       break;
     case T_INT:
     case T_FLOAT:
-      evmovdqul(dst, kmask, src, true, vector_len);
+      evmovdqul(dst, kmask, src, merge, vector_len);
       break;
     case T_LONG:
     case T_DOUBLE:
-      evmovdquq(dst, kmask, src, true, vector_len);
+      evmovdquq(dst, kmask, src, merge, vector_len);
       break;
     default:
       fatal("Unexpected type argument %s", type2name(type));
@@ -8997,7 +9072,7 @@ void MacroAssembler::fill_masked(BasicType bt, Address dst, XMMRegister xmm, KRe
   movptr(temp, -1);
   bzhiq(temp, temp, length);
   kmov(mask, temp);
-  evmovdqu(bt, mask, dst, xmm, vec_enc);
+  evmovdqu(bt, mask, dst, xmm, true, vec_enc);
 }
 
 // Set memory operation for length "less than" 64 bytes.
@@ -9026,20 +9101,27 @@ void MacroAssembler::fill32_masked(uint shift, Register dst, int disp,
 }
 
 
-void MacroAssembler::fill32(Register dst, int disp, XMMRegister xmm) {
+void MacroAssembler::fill32(Address dst, XMMRegister xmm) {
   assert(MaxVectorSize >= 32, "vector length should be >= 32");
-  vmovdqu(Address(dst, disp), xmm);
+  vmovdqu(dst, xmm);
+}
+
+void MacroAssembler::fill32(Register dst, int disp, XMMRegister xmm) {
+  fill32(Address(dst, disp), xmm);
+}
+
+void MacroAssembler::fill64(Address dst, XMMRegister xmm, bool use64byteVector) {
+  assert(MaxVectorSize >= 32, "vector length should be >= 32");
+  if (!use64byteVector) {
+    fill32(dst, xmm);
+    fill32(dst.plus_disp(32), xmm);
+  } else {
+    evmovdquq(dst, xmm, Assembler::AVX_512bit);
+  }
 }
 
 void MacroAssembler::fill64(Register dst, int disp, XMMRegister xmm, bool use64byteVector) {
-  assert(MaxVectorSize >= 32, "vector length should be >= 32");
-  BasicType type[] = {T_BYTE,  T_SHORT,  T_INT,   T_LONG};
-  if (!use64byteVector) {
-    fill32(dst, disp, xmm);
-    fill32(dst, disp + 32, xmm);
-  } else {
-    evmovdquq(Address(dst, disp), xmm, Assembler::AVX_512bit);
-  }
+  fill64(Address(dst, disp), xmm, use64byteVector);
 }
 
 #ifdef _LP64
@@ -9122,7 +9204,7 @@ void MacroAssembler::generate_fill_avx3(BasicType type, Register to, Register va
       mov64(r8, -1L);
       bzhiq(r8, r8, rtmp);
       kmovql(k2, r8);
-      evmovdqu(T_BYTE, k2, Address(to, 0), xtmp, Assembler::AVX_256bit);
+      evmovdqu(T_BYTE, k2, Address(to, 0), xtmp, true, Assembler::AVX_256bit);
       addq(to, rtmp);
       shrq(rtmp, shift);
       subq(count, rtmp);
@@ -9192,7 +9274,7 @@ void MacroAssembler::generate_fill_avx3(BasicType type, Register to, Register va
       mov64(r8, -1L);
       bzhiq(r8, r8, rtmp);
       kmovql(k2, r8);
-      evmovdqu(T_BYTE, k2, Address(to, 0), xtmp, Assembler::AVX_512bit);
+      evmovdqu(T_BYTE, k2, Address(to, 0), xtmp, true, Assembler::AVX_512bit);
       addq(to, rtmp);
       shrq(rtmp, shift);
       subq(count, rtmp);

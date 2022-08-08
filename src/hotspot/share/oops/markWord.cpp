@@ -25,7 +25,7 @@
 #include "precompiled.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/markWord.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/objectMonitor.inline.hpp"
 #include "utilities/ostream.hpp"
 

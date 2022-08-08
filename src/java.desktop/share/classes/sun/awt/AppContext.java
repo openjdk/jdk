@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -504,7 +504,16 @@ public final class AppContext {
 
         // Then, we stop any remaining Threads
         AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
-            threadGroup.stop();
+            Thread[] threads;
+            int len, threadCount;
+            do {
+                len = threadGroup.activeCount() + 4;
+                threads = new Thread[len];
+                threadCount = threadGroup.enumerate(threads);
+            } while (threadCount == len);
+            for (int i = 0; i < threadCount; i++) {
+                threads[i].stop();
+            }
             return null;
         });
 

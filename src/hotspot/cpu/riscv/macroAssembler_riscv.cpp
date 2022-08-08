@@ -42,10 +42,10 @@
 #include "oops/klass.inline.hpp"
 #include "oops/oop.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "runtime/thread.hpp"
 #include "utilities/powerOfTwo.hpp"
 #ifdef COMPILER2
 #include "opto/compile.hpp"
@@ -379,7 +379,7 @@ void MacroAssembler::_verify_oop(Register reg, const char* s, const char* file, 
 
   mv(c_rarg0, reg); // c_rarg0 : x10
   // The length of the instruction sequence emitted should be independent
-  // of the values of the local char buffer address so that the size of mach
+  // of the value of the local char buffer address so that the size of mach
   // nodes for scratch emit and normal emit matches.
   mv(t0, (address)b);
 
@@ -418,7 +418,7 @@ void MacroAssembler::_verify_oop_addr(Address addr, const char* s, const char* f
   }
 
   // The length of the instruction sequence emitted should be independent
-  // of the values of the local char buffer address so that the size of mach
+  // of the value of the local char buffer address so that the size of mach
   // nodes for scratch emit and normal emit matches.
   mv(t0, (address)b);
 
@@ -535,17 +535,9 @@ void MacroAssembler::resolve_jobject(Register value, Register thread, Register t
 }
 
 void MacroAssembler::stop(const char* msg) {
-  address ip = pc();
-  pusha();
-  // The length of the instruction sequence emitted should be independent
-  // of the values of msg and ip so that the size of mach nodes for scratch
-  // emit and normal emit matches.
-  mv(c_rarg0, (address)msg);
-  mv(c_rarg1, (address)ip);
-  mv(c_rarg2, sp);
-  mv(c_rarg3, CAST_FROM_FN_PTR(address, MacroAssembler::debug64));
-  jalr(c_rarg3);
-  ebreak();
+  BLOCK_COMMENT(msg);
+  illegal_instruction(Assembler::csr::time);
+  emit_int64((uintptr_t)msg);
 }
 
 void MacroAssembler::unimplemented(const char* what) {
@@ -1119,18 +1111,6 @@ void MacroAssembler::pop_call_clobbered_registers_except(RegSet exclude) {
   pop_reg(RegSet::of(x7) + RegSet::range(x10, x17) + RegSet::range(x28, x31) - exclude, sp);
 }
 
-// Push all the integer registers, except zr(x0) & sp(x2) & gp(x3) & tp(x4).
-void MacroAssembler::pusha() {
-  CompressibleRegion cr(this);
-  push_reg(0xffffffe2, sp);
-}
-
-// Pop all the integer registers, except zr(x0) & sp(x2) & gp(x3) & tp(x4).
-void MacroAssembler::popa() {
-  CompressibleRegion cr(this);
-  pop_reg(0xffffffe2, sp);
-}
-
 void MacroAssembler::push_CPU_state(bool save_vectors, int vector_size_in_bytes) {
   CompressibleRegion cr(this);
   // integer registers, except zr(x0) & ra(x1) & sp(x2) & gp(x3) & tp(x4)
@@ -1201,12 +1181,12 @@ static int patch_offset_in_pc_relative(address branch, int64_t offset) {
 
 static int patch_addr_in_movptr(address branch, address target) {
   const int MOVPTR_INSTRUCTIONS_NUM = 6;                                        // lui + addi + slli + addi + slli + addi/jalr/load
-  int32_t lower = ((intptr_t)target << 36) >> 36;
-  int64_t upper = ((intptr_t)target - lower) >> 28;
-  Assembler::patch(branch + 0,  31, 12, upper & 0xfffff);                       // Lui.             target[47:28] + target[27] ==> branch[31:12]
-  Assembler::patch(branch + 4,  31, 20, (lower >> 16) & 0xfff);                 // Addi.            target[27:16] ==> branch[31:20]
-  Assembler::patch(branch + 12, 31, 20, (lower >> 5) & 0x7ff);                  // Addi.            target[15: 5] ==> branch[31:20]
-  Assembler::patch(branch + 20, 31, 20, lower & 0x1f);                          // Addi/Jalr/Load.  target[ 4: 0] ==> branch[31:20]
+  int32_t lower = ((intptr_t)target << 35) >> 35;
+  int64_t upper = ((intptr_t)target - lower) >> 29;
+  Assembler::patch(branch + 0,  31, 12, upper & 0xfffff);                       // Lui.             target[48:29] + target[28] ==> branch[31:12]
+  Assembler::patch(branch + 4,  31, 20, (lower >> 17) & 0xfff);                 // Addi.            target[28:17] ==> branch[31:20]
+  Assembler::patch(branch + 12, 31, 20, (lower >> 6) & 0x7ff);                  // Addi.            target[16: 6] ==> branch[31:20]
+  Assembler::patch(branch + 20, 31, 20, lower & 0x3f);                          // Addi/Jalr/Load.  target[ 5: 0] ==> branch[31:20]
   return MOVPTR_INSTRUCTIONS_NUM * NativeInstruction::instruction_size;
 }
 
@@ -1220,7 +1200,7 @@ static int patch_imm_in_li64(address branch, address target) {
   tmp_lower = (tmp_lower << 52) >> 52;
   tmp_upper -= tmp_lower;
   tmp_upper >>= 12;
-  // Load upper 32 bits. Upper = target[63:32], but if target[31] = 1 or (target[31:28] == 0x7ff && target[19] == 1),
+  // Load upper 32 bits. Upper = target[63:32], but if target[31] = 1 or (target[31:20] == 0x7ff && target[19] == 1),
   // upper = target[63:32] + 1.
   Assembler::patch(branch + 0,  31, 12, tmp_upper & 0xfffff);                       // Lui.
   Assembler::patch(branch + 4,  31, 20, tmp_lower & 0xfff);                         // Addi.
@@ -1278,9 +1258,9 @@ static long get_offset_of_pc_relative(address insn_addr) {
 
 static address get_target_of_movptr(address insn_addr) {
   assert_cond(insn_addr != NULL);
-  intptr_t target_address = (((int64_t)Assembler::sextract(((unsigned*)insn_addr)[0], 31, 12)) & 0xfffff) << 28;    // Lui.
-  target_address += ((int64_t)Assembler::sextract(((unsigned*)insn_addr)[1], 31, 20)) << 16;                        // Addi.
-  target_address += ((int64_t)Assembler::sextract(((unsigned*)insn_addr)[3], 31, 20)) << 5;                         // Addi.
+  intptr_t target_address = (((int64_t)Assembler::sextract(((unsigned*)insn_addr)[0], 31, 12)) & 0xfffff) << 29;    // Lui.
+  target_address += ((int64_t)Assembler::sextract(((unsigned*)insn_addr)[1], 31, 20)) << 17;                        // Addi.
+  target_address += ((int64_t)Assembler::sextract(((unsigned*)insn_addr)[3], 31, 20)) << 6;                         // Addi.
   target_address += ((int64_t)Assembler::sextract(((unsigned*)insn_addr)[5], 31, 20));                              // Addi/Jalr/Load.
   return (address) target_address;
 }
@@ -2644,7 +2624,7 @@ void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
     pushed_registers += x15;
   }
 
-  if (super_klass != x10 || UseCompressedOops) {
+  if (super_klass != x10) {
     if (!IS_A_TEMP(x10)) {
       pushed_registers += x10;
     }
@@ -2706,18 +2686,6 @@ void MacroAssembler::tlab_allocate(Register obj,
   BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
   bs->tlab_allocate(this, obj, var_size_in_bytes, con_size_in_bytes, tmp1, tmp2, slow_case, is_far);
 }
-
-// Defines obj, preserves var_size_in_bytes
-void MacroAssembler::eden_allocate(Register obj,
-                                   Register var_size_in_bytes,
-                                   int con_size_in_bytes,
-                                   Register tmp,
-                                   Label& slow_case,
-                                   bool is_far) {
-  BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  bs->eden_allocate(this, obj, var_size_in_bytes, con_size_in_bytes, tmp, slow_case, is_far);
-}
-
 
 // get_thread() can be called anywhere inside generated code so we
 // need to save whatever non-callee save context might get clobbered
@@ -2936,9 +2904,7 @@ address MacroAssembler::emit_trampoline_stub(int insts_call_instruction_offset,
   // with the call instruction at insts_call_instruction_offset in the
   // instructions code-section.
 
-  // make sure 4 byte aligned here, so that the destination address would be
-  // 8 byte aligned after 3 instructions
-  // when we reach here we may get a 2-byte alignment so need to align it
+  // Make sure the address of destination 8-byte aligned after 3 instructions.
   align(wordSize, NativeCallTrampolineStub::data_offset);
 
   relocate(trampoline_stub_Relocation::spec(code()->insts()->start() +
@@ -2977,19 +2943,47 @@ Address MacroAssembler::add_memory_helper(const Address dst) {
   }
 }
 
-void MacroAssembler::add_memory_int64(const Address dst, int64_t imm) {
+void MacroAssembler::increment(const Address dst, int64_t value) {
+  assert(((dst.getMode() == Address::base_plus_offset &&
+           is_offset_in_range(dst.offset(), 12)) || is_imm_in_range(value, 12, 0)),
+          "invalid value and address mode combination");
   Address adr = add_memory_helper(dst);
-  assert_different_registers(adr.base(), t0);
+  assert(!adr.uses(t0), "invalid dst for address increment");
   ld(t0, adr);
-  addi(t0, t0, imm);
+  add(t0, t0, value, t1);
   sd(t0, adr);
 }
 
-void MacroAssembler::add_memory_int32(const Address dst, int32_t imm) {
+void MacroAssembler::incrementw(const Address dst, int32_t value) {
+  assert(((dst.getMode() == Address::base_plus_offset &&
+           is_offset_in_range(dst.offset(), 12)) || is_imm_in_range(value, 12, 0)),
+          "invalid value and address mode combination");
   Address adr = add_memory_helper(dst);
-  assert_different_registers(adr.base(), t0);
+  assert(!adr.uses(t0), "invalid dst for address increment");
   lwu(t0, adr);
-  addiw(t0, t0, imm);
+  addw(t0, t0, value, t1);
+  sw(t0, adr);
+}
+
+void MacroAssembler::decrement(const Address dst, int64_t value) {
+  assert(((dst.getMode() == Address::base_plus_offset &&
+           is_offset_in_range(dst.offset(), 12)) || is_imm_in_range(value, 12, 0)),
+          "invalid value and address mode combination");
+  Address adr = add_memory_helper(dst);
+  assert(!adr.uses(t0), "invalid dst for address decrement");
+  ld(t0, adr);
+  sub(t0, t0, value, t1);
+  sd(t0, adr);
+}
+
+void MacroAssembler::decrementw(const Address dst, int32_t value) {
+  assert(((dst.getMode() == Address::base_plus_offset &&
+           is_offset_in_range(dst.offset(), 12)) || is_imm_in_range(value, 12, 0)),
+          "invalid value and address mode combination");
+  Address adr = add_memory_helper(dst);
+  assert(!adr.uses(t0), "invalid dst for address decrement");
+  lwu(t0, adr);
+  subw(t0, t0, value, t1);
   sw(t0, adr);
 }
 

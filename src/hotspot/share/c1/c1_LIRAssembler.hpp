@@ -44,6 +44,7 @@ class LIR_Assembler: public CompilationResourceObj {
 
   Instruction*       _pending_non_safepoint;
   int                _pending_non_safepoint_offset;
+  int                _immediate_oops_patched;
 
   Label              _unwind_handler_entry;
 
@@ -257,6 +258,7 @@ class LIR_Assembler: public CompilationResourceObj {
 #include CPU_HEADER(c1_LIRAssembler)
 
  public:
+  int nr_immediate_oops_patched() const { return _immediate_oops_patched; }
 
   static int call_stub_size() {
     return _call_stub_size;

@@ -38,14 +38,17 @@
 #include "oops/method.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"
+#include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/arguments.hpp"
+#include "runtime/continuation.hpp"
+#include "runtime/continuationEntry.inline.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubCodeGenerator.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "runtime/thread.inline.hpp"
 #ifdef COMPILER2
 #include "opto/runtime.hpp"
 #endif
@@ -54,6 +57,9 @@
 #endif
 #if INCLUDE_ZGC
 #include "gc/z/zThreadLocalData.hpp"
+#endif
+#if INCLUDE_JFR
+#include "jfr/support/jfrIntrinsics.hpp"
 #endif
 
 // Declaration and definition of StubGenerator (no .hpp file).
@@ -72,6 +78,10 @@
 
 #define BIND(label) bind(label); BLOCK_COMMENT(#label ":")
 const int MXCSR_MASK = 0xFFC0;  // Mask out any pending exceptions
+
+OopMap* continuation_enter_setup(MacroAssembler* masm, int& stack_slots);
+void fill_continuation_entry(MacroAssembler* masm);
+void continuation_enter_cleanup(MacroAssembler* masm);
 
 // Stub Code definitions
 
@@ -382,6 +392,8 @@ class StubGenerator: public StubCodeGenerator {
       __ bind(L3);
     }
 #endif
+
+    __ pop_cont_fastpath();
 
     // restore regs belonging to calling function
 #ifdef _WIN64
@@ -795,6 +807,21 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  address generate_count_leading_zeros_lut(const char *stub_name) {
+    __ align64();
+    StubCodeMark mark(this, "StubRoutines", stub_name);
+    address start = __ pc();
+    __ emit_data64(0x0101010102020304, relocInfo::none);
+    __ emit_data64(0x0000000000000000, relocInfo::none);
+    __ emit_data64(0x0101010102020304, relocInfo::none);
+    __ emit_data64(0x0000000000000000, relocInfo::none);
+    __ emit_data64(0x0101010102020304, relocInfo::none);
+    __ emit_data64(0x0000000000000000, relocInfo::none);
+    __ emit_data64(0x0101010102020304, relocInfo::none);
+    __ emit_data64(0x0000000000000000, relocInfo::none);
+    return start;
+  }
+
   address generate_popcount_avx_lut(const char *stub_name) {
     __ align64();
     StubCodeMark mark(this, "StubRoutines", stub_name);
@@ -822,6 +849,66 @@ class StubGenerator: public StubCodeGenerator {
     __ emit_data64(0x2F2E2D2C2B2A2928, relocInfo::none);
     __ emit_data64(0x3736353433323130, relocInfo::none);
     __ emit_data64(0x3F3E3D3C3B3A3938, relocInfo::none);
+    return start;
+  }
+
+  address generate_vector_reverse_bit_lut(const char *stub_name) {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", stub_name);
+    address start = __ pc();
+    __ emit_data64(0x0E060A020C040800, relocInfo::none);
+    __ emit_data64(0x0F070B030D050901, relocInfo::none);
+    __ emit_data64(0x0E060A020C040800, relocInfo::none);
+    __ emit_data64(0x0F070B030D050901, relocInfo::none);
+    __ emit_data64(0x0E060A020C040800, relocInfo::none);
+    __ emit_data64(0x0F070B030D050901, relocInfo::none);
+    __ emit_data64(0x0E060A020C040800, relocInfo::none);
+    __ emit_data64(0x0F070B030D050901, relocInfo::none);
+    return start;
+  }
+
+  address generate_vector_reverse_byte_perm_mask_long(const char *stub_name) {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", stub_name);
+    address start = __ pc();
+    __ emit_data64(0x0001020304050607, relocInfo::none);
+    __ emit_data64(0x08090A0B0C0D0E0F, relocInfo::none);
+    __ emit_data64(0x0001020304050607, relocInfo::none);
+    __ emit_data64(0x08090A0B0C0D0E0F, relocInfo::none);
+    __ emit_data64(0x0001020304050607, relocInfo::none);
+    __ emit_data64(0x08090A0B0C0D0E0F, relocInfo::none);
+    __ emit_data64(0x0001020304050607, relocInfo::none);
+    __ emit_data64(0x08090A0B0C0D0E0F, relocInfo::none);
+    return start;
+  }
+
+  address generate_vector_reverse_byte_perm_mask_int(const char *stub_name) {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", stub_name);
+    address start = __ pc();
+    __ emit_data64(0x0405060700010203, relocInfo::none);
+    __ emit_data64(0x0C0D0E0F08090A0B, relocInfo::none);
+    __ emit_data64(0x0405060700010203, relocInfo::none);
+    __ emit_data64(0x0C0D0E0F08090A0B, relocInfo::none);
+    __ emit_data64(0x0405060700010203, relocInfo::none);
+    __ emit_data64(0x0C0D0E0F08090A0B, relocInfo::none);
+    __ emit_data64(0x0405060700010203, relocInfo::none);
+    __ emit_data64(0x0C0D0E0F08090A0B, relocInfo::none);
+    return start;
+  }
+
+  address generate_vector_reverse_byte_perm_mask_short(const char *stub_name) {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", stub_name);
+    address start = __ pc();
+    __ emit_data64(0x0607040502030001, relocInfo::none);
+    __ emit_data64(0x0E0F0C0D0A0B0809, relocInfo::none);
+    __ emit_data64(0x0607040502030001, relocInfo::none);
+    __ emit_data64(0x0E0F0C0D0A0B0809, relocInfo::none);
+    __ emit_data64(0x0607040502030001, relocInfo::none);
+    __ emit_data64(0x0E0F0C0D0A0B0809, relocInfo::none);
+    __ emit_data64(0x0607040502030001, relocInfo::none);
+    __ emit_data64(0x0E0F0C0D0A0B0809, relocInfo::none);
     return start;
   }
 
@@ -7454,6 +7541,260 @@ address generate_avx_ghash_processBlocks() {
   }
 #endif // _LP64
 
+  RuntimeStub* generate_cont_doYield() {
+    if (!Continuations::enabled()) return nullptr;
+
+    enum layout {
+      rbp_off,
+      rbpH_off,
+      return_off,
+      return_off2,
+      framesize // inclusive of return address
+    };
+
+    CodeBuffer code("cont_doYield", 512, 64);
+    MacroAssembler* _masm = new MacroAssembler(&code);
+
+    address start = __ pc();
+    __ enter();
+    address the_pc = __ pc();
+
+    int frame_complete = the_pc - start;
+
+    // This nop must be exactly at the PC we push into the frame info.
+    // We use this nop for fast CodeBlob lookup, associate the OopMap
+    // with it right away.
+    __ post_call_nop();
+    OopMapSet* oop_maps = new OopMapSet();
+    OopMap* map = new OopMap(framesize, 1);
+    oop_maps->add_gc_map(frame_complete, map);
+
+    __ set_last_Java_frame(rsp, rbp, the_pc);
+    __ movptr(c_rarg0, r15_thread);
+    __ movptr(c_rarg1, rsp);
+    __ call_VM_leaf(Continuation::freeze_entry(), 2);
+    __ reset_last_Java_frame(true);
+
+    Label L_pinned;
+
+    __ testptr(rax, rax);
+    __ jcc(Assembler::notZero, L_pinned);
+
+    __ movptr(rsp, Address(r15_thread, JavaThread::cont_entry_offset()));
+    continuation_enter_cleanup(_masm);
+    __ pop(rbp);
+    __ ret(0);
+
+    __ bind(L_pinned);
+
+    // Pinned, return to caller
+    __ leave();
+    __ ret(0);
+
+    RuntimeStub* stub =
+      RuntimeStub::new_runtime_stub(code.name(),
+                                    &code,
+                                    frame_complete,
+                                    (framesize >> (LogBytesPerWord - LogBytesPerInt)),
+                                    oop_maps,
+                                    false);
+    return stub;
+  }
+
+  address generate_cont_thaw(const char* label, Continuation::thaw_kind kind) {
+    if (!Continuations::enabled()) return nullptr;
+
+    bool return_barrier = Continuation::is_thaw_return_barrier(kind);
+    bool return_barrier_exception = Continuation::is_thaw_return_barrier_exception(kind);
+
+    StubCodeMark mark(this, "StubRoutines", label);
+    address start = __ pc();
+
+    // TODO: Handle Valhalla return types. May require generating different return barriers.
+
+    if (!return_barrier) {
+      // Pop return address. If we don't do this, we get a drift,
+      // where the bottom-most frozen frame continuously grows.
+      __ pop(c_rarg3);
+    } else {
+      __ movptr(rsp, Address(r15_thread, JavaThread::cont_entry_offset()));
+    }
+
+#ifdef ASSERT
+    {
+      Label L_good_sp;
+      __ cmpptr(rsp, Address(r15_thread, JavaThread::cont_entry_offset()));
+      __ jcc(Assembler::equal, L_good_sp);
+      __ stop("Incorrect rsp at thaw entry");
+      __ BIND(L_good_sp);
+    }
+#endif
+
+    if (return_barrier) {
+      // Preserve possible return value from a method returning to the return barrier.
+      __ push(rax);
+      __ push_d(xmm0);
+    }
+
+    __ movptr(c_rarg0, r15_thread);
+    __ movptr(c_rarg1, (return_barrier ? 1 : 0));
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, Continuation::prepare_thaw), 2);
+    __ movptr(rbx, rax);
+
+    if (return_barrier) {
+      // Restore return value from a method returning to the return barrier.
+      // No safepoint in the call to thaw, so even an oop return value should be OK.
+      __ pop_d(xmm0);
+      __ pop(rax);
+    }
+
+#ifdef ASSERT
+    {
+      Label L_good_sp;
+      __ cmpptr(rsp, Address(r15_thread, JavaThread::cont_entry_offset()));
+      __ jcc(Assembler::equal, L_good_sp);
+      __ stop("Incorrect rsp after prepare thaw");
+      __ BIND(L_good_sp);
+    }
+#endif
+
+    // rbx contains the size of the frames to thaw, 0 if overflow or no more frames
+    Label L_thaw_success;
+    __ testptr(rbx, rbx);
+    __ jccb(Assembler::notZero, L_thaw_success);
+    __ jump(ExternalAddress(StubRoutines::throw_StackOverflowError_entry()));
+    __ bind(L_thaw_success);
+
+    // Make room for the thawed frames and align the stack.
+    __ subptr(rsp, rbx);
+    __ andptr(rsp, -StackAlignmentInBytes);
+
+    if (return_barrier) {
+      // Preserve possible return value from a method returning to the return barrier. (Again.)
+      __ push(rax);
+      __ push_d(xmm0);
+    }
+
+    // If we want, we can templatize thaw by kind, and have three different entries.
+    __ movptr(c_rarg0, r15_thread);
+    __ movptr(c_rarg1, kind);
+    __ call_VM_leaf(Continuation::thaw_entry(), 2);
+    __ movptr(rbx, rax);
+
+    if (return_barrier) {
+      // Restore return value from a method returning to the return barrier. (Again.)
+      // No safepoint in the call to thaw, so even an oop return value should be OK.
+      __ pop_d(xmm0);
+      __ pop(rax);
+    } else {
+      // Return 0 (success) from doYield.
+      __ xorptr(rax, rax);
+    }
+
+    // After thawing, rbx is the SP of the yielding frame.
+    // Move there, and then to saved RBP slot.
+    __ movptr(rsp, rbx);
+    __ subptr(rsp, 2*wordSize);
+
+    if (return_barrier_exception) {
+      __ movptr(c_rarg0, r15_thread);
+      __ movptr(c_rarg1, Address(rsp, wordSize)); // return address
+
+      // rax still holds the original exception oop, save it before the call
+      __ push(rax);
+
+      __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::exception_handler_for_return_address), 2);
+      __ movptr(rbx, rax);
+
+      // Continue at exception handler:
+      //   rax: exception oop
+      //   rbx: exception handler
+      //   rdx: exception pc
+      __ pop(rax);
+      __ verify_oop(rax);
+      __ pop(rbp); // pop out RBP here too
+      __ pop(rdx);
+      __ jmp(rbx);
+    } else {
+      // We are "returning" into the topmost thawed frame; see Thaw::push_return_frame
+      __ pop(rbp);
+      __ ret(0);
+    }
+
+    return start;
+  }
+
+  address generate_cont_thaw() {
+    return generate_cont_thaw("Cont thaw", Continuation::thaw_top);
+  }
+
+  // TODO: will probably need multiple return barriers depending on return type
+
+  address generate_cont_returnBarrier() {
+    return generate_cont_thaw("Cont thaw return barrier", Continuation::thaw_return_barrier);
+  }
+
+  address generate_cont_returnBarrier_exception() {
+    return generate_cont_thaw("Cont thaw return barrier exception", Continuation::thaw_return_barrier_exception);
+  }
+
+#if INCLUDE_JFR
+
+  // For c2: c_rarg0 is junk, call to runtime to write a checkpoint.
+  // It returns a jobject handle to the event writer.
+  // The handle is dereferenced and the return value is the event writer oop.
+  RuntimeStub* generate_jfr_write_checkpoint() {
+    enum layout {
+      rbp_off,
+      rbpH_off,
+      return_off,
+      return_off2,
+      framesize // inclusive of return address
+    };
+
+    CodeBuffer code("jfr_write_checkpoint", 512, 64);
+    MacroAssembler* _masm = new MacroAssembler(&code);
+
+    address start = __ pc();
+    __ enter();
+    address the_pc = __ pc();
+
+    int frame_complete = the_pc - start;
+
+    __ set_last_Java_frame(rsp, rbp, the_pc);
+    __ movptr(c_rarg0, r15_thread);
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, JfrIntrinsicSupport::write_checkpoint), 1);
+    __ reset_last_Java_frame(true);
+
+    // rax is jobject handle result, unpack and process it through a barrier.
+    Label L_null_jobject;
+    __ testptr(rax, rax);
+    __ jcc(Assembler::zero, L_null_jobject);
+
+    BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
+    bs->load_at(_masm, ACCESS_READ | IN_NATIVE, T_OBJECT, rax, Address(rax, 0), c_rarg0, r15_thread);
+
+    __ bind(L_null_jobject);
+
+    __ leave();
+    __ ret(0);
+
+    OopMapSet* oop_maps = new OopMapSet();
+    OopMap* map = new OopMap(framesize, 1);
+    oop_maps->add_gc_map(frame_complete, map);
+
+    RuntimeStub* stub =
+      RuntimeStub::new_runtime_stub(code.name(),
+                                    &code,
+                                    frame_complete,
+                                    (framesize >> (LogBytesPerWord - LogBytesPerInt)),
+                                    oop_maps,
+                                    false);
+    return stub;
+  }
+
+#endif // INCLUDE_JFR
+
 #undef __
 #define __ masm->
 
@@ -7678,6 +8019,19 @@ address generate_avx_ghash_processBlocks() {
 #endif
   }
 
+  void generate_phase1() {
+    // Continuation stubs:
+    StubRoutines::_cont_thaw          = generate_cont_thaw();
+    StubRoutines::_cont_returnBarrier = generate_cont_returnBarrier();
+    StubRoutines::_cont_returnBarrierExc = generate_cont_returnBarrier_exception();
+    StubRoutines::_cont_doYield_stub = generate_cont_doYield();
+    StubRoutines::_cont_doYield      = StubRoutines::_cont_doYield_stub == nullptr ? nullptr
+                                        : StubRoutines::_cont_doYield_stub->entry_point();
+
+    JFR_ONLY(StubRoutines::_jfr_write_checkpoint_stub = generate_jfr_write_checkpoint();)
+    JFR_ONLY(StubRoutines::_jfr_write_checkpoint = StubRoutines::_jfr_write_checkpoint_stub->entry_point();)
+  }
+
   void generate_all() {
     // Generates all stubs and initializes the entry points
 
@@ -7723,8 +8077,13 @@ address generate_avx_ghash_processBlocks() {
     StubRoutines::x86::_vector_long_shuffle_mask = generate_vector_mask("vector_long_shuffle_mask", 0x0000000100000000);
     StubRoutines::x86::_vector_long_sign_mask = generate_vector_mask("vector_long_sign_mask", 0x8000000000000000);
     StubRoutines::x86::_vector_iota_indices = generate_iota_indices("iota_indices");
+    StubRoutines::x86::_vector_count_leading_zeros_lut = generate_count_leading_zeros_lut("count_leading_zeros_lut");
+    StubRoutines::x86::_vector_reverse_bit_lut = generate_vector_reverse_bit_lut("reverse_bit_lut");
+    StubRoutines::x86::_vector_reverse_byte_perm_mask_long = generate_vector_reverse_byte_perm_mask_long("perm_mask_long");
+    StubRoutines::x86::_vector_reverse_byte_perm_mask_int = generate_vector_reverse_byte_perm_mask_int("perm_mask_int");
+    StubRoutines::x86::_vector_reverse_byte_perm_mask_short = generate_vector_reverse_byte_perm_mask_short("perm_mask_short");
 
-    if (UsePopCountInstruction && VM_Version::supports_avx2() && !VM_Version::supports_avx512_vpopcntdq()) {
+    if (VM_Version::supports_avx2() && !VM_Version::supports_avx512_vpopcntdq()) {
       // lut implementation influenced by counting 1s algorithm from section 5-1 of Hackers' Delight.
       StubRoutines::x86::_vector_popcount_lut = generate_popcount_avx_lut("popcount_lut");
     }
@@ -7941,19 +8300,119 @@ address generate_avx_ghash_processBlocks() {
   }
 
  public:
-  StubGenerator(CodeBuffer* code, bool all) : StubCodeGenerator(code) {
-    if (all) {
-      generate_all();
-    } else {
+  StubGenerator(CodeBuffer* code, int phase) : StubCodeGenerator(code) {
+    if (phase == 0) {
       generate_initial();
+    } else if (phase == 1) {
+      generate_phase1(); // stubs that must be available for the interpreter
+    } else {
+      generate_all();
     }
   }
 }; // end class declaration
 
 #define UCM_TABLE_MAX_ENTRIES 16
-void StubGenerator_generate(CodeBuffer* code, bool all) {
+void StubGenerator_generate(CodeBuffer* code, int phase) {
   if (UnsafeCopyMemory::_table == NULL) {
     UnsafeCopyMemory::create_table(UCM_TABLE_MAX_ENTRIES);
   }
-  StubGenerator g(code, all);
+  StubGenerator g(code, phase);
 }
+
+#undef __
+#define __ masm->
+
+//---------------------------- continuation_enter_setup ---------------------------
+//
+// Arguments:
+//   None.
+//
+// Results:
+//   rsp: pointer to blank ContinuationEntry
+//
+// Kills:
+//   rax
+//
+OopMap* continuation_enter_setup(MacroAssembler* masm, int& stack_slots) {
+  assert(ContinuationEntry::size() % VMRegImpl::stack_slot_size == 0, "");
+  assert(in_bytes(ContinuationEntry::cont_offset())  % VMRegImpl::stack_slot_size == 0, "");
+  assert(in_bytes(ContinuationEntry::chunk_offset()) % VMRegImpl::stack_slot_size == 0, "");
+
+  stack_slots += checked_cast<int>(ContinuationEntry::size()) / wordSize;
+  __ subptr(rsp, checked_cast<int32_t>(ContinuationEntry::size()));
+
+  int frame_size = (checked_cast<int>(ContinuationEntry::size()) + wordSize) / VMRegImpl::stack_slot_size;
+  OopMap* map = new OopMap(frame_size, 0);
+  ContinuationEntry::setup_oopmap(map);
+
+  __ movptr(rax, Address(r15_thread, JavaThread::cont_entry_offset()));
+  __ movptr(Address(rsp, ContinuationEntry::parent_offset()), rax);
+  __ movptr(Address(r15_thread, JavaThread::cont_entry_offset()), rsp);
+
+  return map;
+}
+
+//---------------------------- fill_continuation_entry ---------------------------
+//
+// Arguments:
+//   rsp: pointer to blank Continuation entry
+//   reg_cont_obj: pointer to the continuation
+//   reg_flags: flags
+//
+// Results:
+//   rsp: pointer to filled out ContinuationEntry
+//
+// Kills:
+//   rax
+//
+void fill_continuation_entry(MacroAssembler* masm, Register reg_cont_obj, Register reg_flags) {
+  assert_different_registers(rax, reg_cont_obj, reg_flags);
+
+  DEBUG_ONLY(__ movl(Address(rsp, ContinuationEntry::cookie_offset()), ContinuationEntry::cookie_value());)
+
+  __ movptr(Address(rsp, ContinuationEntry::cont_offset()), reg_cont_obj);
+  __ movl  (Address(rsp, ContinuationEntry::flags_offset()), reg_flags);
+  __ movptr(Address(rsp, ContinuationEntry::chunk_offset()), 0);
+  __ movl(Address(rsp, ContinuationEntry::argsize_offset()), 0);
+  __ movl(Address(rsp, ContinuationEntry::pin_count_offset()), 0);
+
+  __ movptr(rax, Address(r15_thread, JavaThread::cont_fastpath_offset()));
+  __ movptr(Address(rsp, ContinuationEntry::parent_cont_fastpath_offset()), rax);
+  __ movq(rax, Address(r15_thread, JavaThread::held_monitor_count_offset()));
+  __ movq(Address(rsp, ContinuationEntry::parent_held_monitor_count_offset()), rax);
+
+  __ movptr(Address(r15_thread, JavaThread::cont_fastpath_offset()), 0);
+  __ movq(Address(r15_thread, JavaThread::held_monitor_count_offset()), 0);
+}
+
+//---------------------------- continuation_enter_cleanup ---------------------------
+//
+// Arguments:
+//   rsp: pointer to the ContinuationEntry
+//
+// Results:
+//   rsp: pointer to the spilled rbp in the entry frame
+//
+// Kills:
+//   rbx
+//
+void continuation_enter_cleanup(MacroAssembler* masm) {
+#ifdef ASSERT
+  Label L_good_sp;
+  __ cmpptr(rsp, Address(r15_thread, JavaThread::cont_entry_offset()));
+  __ jcc(Assembler::equal, L_good_sp);
+  __ stop("Incorrect rsp at continuation_enter_cleanup");
+  __ bind(L_good_sp);
+#endif
+
+  __ movptr(rbx, Address(rsp, ContinuationEntry::parent_cont_fastpath_offset()));
+  __ movptr(Address(r15_thread, JavaThread::cont_fastpath_offset()), rbx);
+  __ movq(rbx, Address(rsp, ContinuationEntry::parent_held_monitor_count_offset()));
+  __ movq(Address(r15_thread, JavaThread::held_monitor_count_offset()), rbx);
+
+  __ movptr(rbx, Address(rsp, ContinuationEntry::parent_offset()));
+  __ movptr(Address(r15_thread, JavaThread::cont_entry_offset()), rbx);
+  __ addptr(rsp, (int32_t)ContinuationEntry::size());
+}
+
+#undef __

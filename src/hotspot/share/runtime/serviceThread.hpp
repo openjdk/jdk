@@ -26,7 +26,7 @@
 #define SHARE_RUNTIME_SERVICETHREAD_HPP
 
 #include "prims/jvmtiImpl.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/javaThread.hpp"
 
 // A hidden from external view JavaThread for JVMTI compiled-method-load
 // events, oop storage cleanup, and the maintenance of string, symbol,

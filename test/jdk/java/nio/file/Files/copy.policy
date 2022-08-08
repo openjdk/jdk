@@ -1,0 +1,4 @@
+grant {
+    permission java.io.FilePermission "<<ALL FILES>>", "read,write";
+    permission java.io.FilePermission "out.zip", "delete";
+};
