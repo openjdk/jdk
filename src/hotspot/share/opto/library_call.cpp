@@ -525,6 +525,8 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_numberOfTrailingZeros_l:
   case vmIntrinsics::_bitCount_i:
   case vmIntrinsics::_bitCount_l:
+  case vmIntrinsics::_reverse_i:
+  case vmIntrinsics::_reverse_l:
   case vmIntrinsics::_reverseBytes_i:
   case vmIntrinsics::_reverseBytes_l:
   case vmIntrinsics::_reverseBytes_s:
@@ -2060,6 +2062,8 @@ bool LibraryCallKit::inline_number_methods(vmIntrinsics::ID id) {
   case vmIntrinsics::_reverseBytes_s:           n = new ReverseBytesSNode( 0,   arg);  break;
   case vmIntrinsics::_reverseBytes_i:           n = new ReverseBytesINode( 0,   arg);  break;
   case vmIntrinsics::_reverseBytes_l:           n = new ReverseBytesLNode( 0,   arg);  break;
+  case vmIntrinsics::_reverse_i:                n = new ReverseINode(0, arg); break;
+  case vmIntrinsics::_reverse_l:                n = new ReverseLNode(0, arg); break;
   default:  fatal_unexpected_iid(id);  break;
   }
   set_result(_gvn.transform(n));

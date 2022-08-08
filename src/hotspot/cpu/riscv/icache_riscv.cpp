@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -30,7 +30,7 @@
 #define __ _masm->
 
 static int icache_flush(address addr, int lines, int magic) {
-  os::icache_flush((long int) addr, (long int) (addr + (lines << ICache::log2_line_size)));
+  __builtin___clear_cache(addr, addr + (lines << ICache::log2_line_size));
   return magic;
 }
 

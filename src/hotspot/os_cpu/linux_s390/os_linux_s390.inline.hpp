@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Arm Limited. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,36 +19,10 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-package org.openjdk.bench.vm.compiler;
+#ifndef OS_CPU_LINUX_S390_OS_LINUX_S390_INLINE_HPP
+#define OS_CPU_LINUX_S390_OS_LINUX_S390_INLINE_HPP
 
-import org.openjdk.jmh.annotations.Benchmark;
-import org.openjdk.jmh.annotations.Param;
-import org.openjdk.jmh.annotations.Scope;
-import org.openjdk.jmh.annotations.State;
-
-@State(Scope.Benchmark)
-public class RangeCheckHoisting {
-
-    private static final int SIZE = 65536;
-
-    @Param("6789") private int count;
-
-    private static int[] a = new int[SIZE];
-    private static int[] b = new int[SIZE];
-
-    @Benchmark
-    public void ivScaled3() {
-        for (int i = 0; i < count; i++) {
-            b[3 * i] = a[3 * i];
-        }
-    }
-
-    @Benchmark
-    public void ivScaled7() {
-        for (int i = 0; i < count; i++) {
-            b[7 * i] = a[7 * i];
-        }
-    }
-}
+#endif // OS_CPU_LINUX_S390_OS_LINUX_S390_INLINE_HPP

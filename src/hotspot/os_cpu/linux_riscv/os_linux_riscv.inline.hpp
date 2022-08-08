@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2014, Red Hat Inc. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,17 +22,7 @@
  *
  */
 
-#ifndef OS_CPU_LINUX_AARCH64_OS_LINUX_AARCH64_HPP
-#define OS_CPU_LINUX_AARCH64_OS_LINUX_AARCH64_HPP
+#ifndef OS_CPU_LINUX_RISCV_OS_LINUX_RISCV_INLINE_HPP
+#define OS_CPU_LINUX_RISCV_OS_LINUX_RISCV_INLINE_HPP
 
-#if defined(COMPATIBLE_CDS_ALIGNMENT)
-#define CDS_CORE_REGION_ALIGNMENT (64*K)
-#endif
-
-  static void setup_fpu();
-
-  // Used to register dynamic code cache area with the OS
-  // Note: Currently only used in 64 bit Windows implementations
-  static bool register_code_area(char *low, char *high) { return true; }
-
-#endif // OS_CPU_LINUX_AARCH64_OS_LINUX_AARCH64_HPP
+#endif // OS_CPU_LINUX_RISCV_OS_LINUX_RISCV_INLINE_HPP

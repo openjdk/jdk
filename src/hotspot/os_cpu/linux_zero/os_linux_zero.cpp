@@ -33,6 +33,8 @@
 #include "interpreter/interpreter.hpp"
 #include "memory/allocation.inline.hpp"
 #include "nativeInst_zero.hpp"
+#include "os_linux.hpp"
+#include "os_posix.hpp"
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm_misc.hpp"
 #include "runtime/arguments.hpp"
@@ -398,3 +400,5 @@ int os::extra_bang_size_in_bytes() {
   // Zero does not require an additional stack banging.
   return 0;
 }
+
+void os::setup_fpu() {}

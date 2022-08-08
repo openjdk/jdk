@@ -29,6 +29,7 @@
 #include "code/compiledMethod.hpp"
 #include "code/nativeInst.hpp"
 #include "logging/log.hpp"
+#include "os_posix.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
