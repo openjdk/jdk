@@ -623,7 +623,7 @@ JLI_ReportErrorMessageSys(const char *fmt, ...)
             FORMAT_MESSAGE_IGNORE_INSERTS|FORMAT_MESSAGE_ALLOCATE_BUFFER,
             NULL, errval, 0, (LPTSTR)&winerr, 0, NULL);
         if (n == 0) {
-        	winerr = "Java could not correctly determine the native platform error";
+            winerr = "Java could not correctly determine the native platform error";
             n = 0;
         } else {
             freeit = JNI_TRUE;
@@ -648,7 +648,7 @@ JLI_ReportErrorMessageSys(const char *fmt, ...)
         if (winerr != NULL) {
             mlen += 2 + (int) JLI_StrLen(winerr);
         } else {
-        	++mlen;
+            ++mlen;
         }
 
         message = (char *)JLI_MemAlloc(mlen);
@@ -656,16 +656,16 @@ JLI_ReportErrorMessageSys(const char *fmt, ...)
         message[len]='\0';
 
         if (crterr != NULL) {
-        	JLI_StrCat(message, '\n');
+            JLI_StrCat(message, '\n');
             JLI_StrCat(message, crterr);
         }
 
         if (winerr != NULL) {
-        	JLI_StrCat(message, '\n');
+            JLI_StrCat(message, '\n');
             JLI_StrCat(message, winerr);
             JLI_StrCat(message, '\n');
         } else {
-        	JLI_StrCat(message, '\n');
+            JLI_StrCat(message, '\n');
         }
 
         MessageBox(NULL, message, "Java Virtual Machine Launcher",
@@ -675,12 +675,12 @@ JLI_ReportErrorMessageSys(const char *fmt, ...)
     } else {
         vfprintf(stderr, fmt, vl);
         if (crterr != NULL) {
-           fprintf(stderr, "\nC Runtime Error: %s", crterr);
+            fprintf(stderr, "\nC Runtime Error: %s", crterr);
         }
         if (winerr != NULL) {
-        	fprintf(stderr, "\nWindows API Error: %s\n", winerr);
+            fprintf(stderr, "\nWindows API Error: %s\n", winerr);
         } else {
-        	fprintf(stderr, "\n");
+            fprintf(stderr, "\n");
         }
     }
     if (freeit) {
