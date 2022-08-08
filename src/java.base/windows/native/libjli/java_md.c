@@ -642,15 +642,13 @@ JLI_ReportErrorMessageSys(const char *fmt, ...)
         char *message;
         int mlen;
         /* Get the length of the string we need */
-        int len = mlen =  _vscprintf(fmt, vl) + 1;
+        int len = mlen = _vscprintf(fmt, vl) + 1;
         if (crterr != NULL) {
             mlen += 1 + (int) JLI_StrLen(crterr);
         }
 
         if (winerr != NULL) {
             mlen += 1 + (int) JLI_StrLen(winerr);
-        } else {
-            ++mlen;
         }
 
         message = (char *)JLI_MemAlloc(mlen);
@@ -658,15 +656,14 @@ JLI_ReportErrorMessageSys(const char *fmt, ...)
         message[len]='\0';
 
         if (crterr != NULL) {
-            JLI_StrCat(message, '\n');
+            message[len + 1] = '\n';
             JLI_StrCat(message, crterr);
         }
 
         if (winerr != NULL) {
-            JLI_StrCat(message, '\n');
+            /* Trailing null terminator */
+        	message[mlen - 1 - JLI_StrLen(winerr)] = '\n';
             JLI_StrCat(message, winerr);
-        } else {
-            JLI_StrCat(message, '\0');
         }
 
         MessageBox(NULL, message, "Java Virtual Machine Launcher",
