@@ -33,6 +33,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import javax.lang.model.element.Element;
@@ -260,19 +261,15 @@ public abstract class MemberSummaryBuilder extends AbstractMemberBuilder {
                 if (property != null && member instanceof ExecutableElement ee) {
                     configuration.cmtUtils.updatePropertyMethodComment(ee, property);
                 }
-                List<? extends DocTree> firstSentenceTags = utils.getFirstSentenceTrees(member);
-                if (utils.isMethod(member) && firstSentenceTags.isEmpty()) {
-                    //Inherit comments from overridden or implemented method if
-                    //necessary.
-                    DocFinder.Output inheritedDoc =
-                            DocFinder.search(configuration,
-                                    new DocFinder.Input(utils, member));
-                    if (inheritedDoc.holder != null
-                            && !utils.getFirstSentenceTrees(inheritedDoc.holder).isEmpty()) {
-                        firstSentenceTags = utils.getFirstSentenceTrees(inheritedDoc.holder);
-                    }
+                if (utils.isMethod(member)) {
+                    var r = DocFinder.inheritDocumentation((ExecutableElement) member, (m -> {
+                        var firstSentenceTrees = utils.getFirstSentenceTrees(m);
+                        return firstSentenceTrees.isEmpty() ? Optional.empty() : Optional.of(firstSentenceTrees);
+                    }), configuration);
+                    writer.addMemberSummary(typeElement, member, r.orElse(List.of()));
+                } else {
+                    writer.addMemberSummary(typeElement, member, utils.getFirstSentenceTrees(member));
                 }
-                writer.addMemberSummary(typeElement, member, firstSentenceTags);
             }
             summaryTreeList.add(writer.getSummaryTable(typeElement));
         }
