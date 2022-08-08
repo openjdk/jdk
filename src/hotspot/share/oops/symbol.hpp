@@ -297,6 +297,14 @@ class Symbol : public MetaspaceObj {
     return _vm_symbols[static_cast<int>(vm_symbol_id)];
   }
 
+  static unsigned int compute_hash(const Symbol* const& name) {
+    return (unsigned int) name->identity_hash();
+  }
+
+  static bool compare(const Symbol* const& name, const Symbol* const& name2) {
+    return name == name2;
+  }
+
 #ifndef PRODUCT
   // Empty constructor to create a dummy symbol object on stack
   // only for getting its vtable pointer.
