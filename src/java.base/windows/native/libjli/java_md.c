@@ -618,7 +618,8 @@ JLI_ReportErrorMessageSys(const char *fmt, ...)
 
     va_start(vl, fmt);
 
-    if ((errval = GetLastError()) != 0) {               /* Platform SDK / DOS Error */
+    /* Platform SDK / DOS Error */
+    if ((errval = GetLastError()) != 0) {
         int n = FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM|
             FORMAT_MESSAGE_IGNORE_INSERTS|FORMAT_MESSAGE_ALLOCATE_BUFFER,
             NULL, errval, 0, (LPTSTR)&winerr, 0, NULL);
@@ -628,7 +629,8 @@ JLI_ReportErrorMessageSys(const char *fmt, ...)
         } else {
             freeit = JNI_TRUE;
             /* Paranoia check */
-            if (winerr != NULL && n > 2) {                                /* Drop final CR, LF */
+            if (winerr != NULL && n > 2) {
+            	/* Drop final CR, LF */
                 if (winerr[n - 1] == '\n') n--;
                 if (winerr[n - 1] == '\r') n--;
                 winerr[n] = '\0';
@@ -639,7 +641,7 @@ JLI_ReportErrorMessageSys(const char *fmt, ...)
     if (IsJavaw()) {
         char *message;
         int mlen;
-        /* get the length of the string we need */
+        /* Get the length of the string we need */
         int len = mlen =  _vscprintf(fmt, vl) + 1;
         if (crterr != NULL) {
             mlen += 1 + (int) JLI_StrLen(crterr);
