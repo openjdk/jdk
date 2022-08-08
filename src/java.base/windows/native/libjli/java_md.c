@@ -662,7 +662,7 @@ JLI_ReportErrorMessageSys(const char *fmt, ...)
 
         if (winerr != NULL) {
             /* Trailing null terminator */
-        	message[mlen - 1 - JLI_StrLen(winerr)] = '\n';
+            message[mlen - 1 - JLI_StrLen(winerr)] = '\n';
             JLI_StrCat(message, winerr);
         }
 
