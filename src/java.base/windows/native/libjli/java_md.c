@@ -630,7 +630,7 @@ JLI_ReportErrorMessageSys(const char *fmt, ...)
             freeit = JNI_TRUE;
             /* Paranoia check */
             if (winerr != NULL && n > 2) {
-            	/* Drop final CR, LF */
+                /* Drop final CR, LF */
                 if (winerr[n - 1] == '\n') n--;
                 if (winerr[n - 1] == '\r') n--;
                 winerr[n] = '\0';
