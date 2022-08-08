@@ -555,7 +555,6 @@ void MacroAssembler::emit_static_call_stub() {
   // CompiledDirectStaticCall::set_to_interpreted knows the
   // exact layout of this stub.
 
-  ifence();
   mov_metadata(xmethod, (Metadata*)NULL);
 
   // Jump to the entry point of the i2c stub.
@@ -1668,7 +1667,6 @@ void MacroAssembler::movoop(Register dst, jobject obj, bool immediate) {
 
   // nmethod entry barrier necessitate using the constant pool. They have to be
   // ordered with respected to oop access.
-  // Using immediate literals would necessitate fence.i.
   if (BarrierSet::barrier_set()->barrier_set_nmethod() != NULL || !immediate) {
     address dummy = address(uintptr_t(pc()) & -wordSize); // A nearby aligned address
     ld_constant(dst, Address(dummy, rspec));
@@ -2746,7 +2744,6 @@ void MacroAssembler::build_frame(int framesize) {
   sd(fp, Address(sp, framesize - 2 * wordSize));
   sd(ra, Address(sp, framesize - wordSize));
   if (PreserveFramePointer) { add(fp, sp, framesize); }
-  verify_cross_modify_fence_not_required();
 }
 
 void MacroAssembler::remove_frame(int framesize) {
@@ -2797,7 +2794,6 @@ address MacroAssembler::read_polling_page(Register r, int32_t offset, relocInfo:
     lwu(zr, Address(r, offset));
     mark = inst_mark();
   }
-  verify_cross_modify_fence_not_required();
   return mark;
 }
 
@@ -3981,29 +3977,3 @@ void MacroAssembler::cmp_l2i(Register dst, Register src1, Register src2, Registe
   neg(dst, dst);
   bind(done);
 }
-
-void MacroAssembler::safepoint_ifence() {
-  ifence();
-#ifndef PRODUCT
-  if (VerifyCrossModifyFence) {
-    // Clear the thread state.
-    sb(zr, Address(xthread, in_bytes(JavaThread::requires_cross_modify_fence_offset())));
-  }
-#endif
-}
-
-#ifndef PRODUCT
-void MacroAssembler::verify_cross_modify_fence_not_required() {
-  if (VerifyCrossModifyFence) {
-    // Check if thread needs a cross modify fence.
-    lbu(t0, Address(xthread, in_bytes(JavaThread::requires_cross_modify_fence_offset())));
-    Label fence_not_required;
-    beqz(t0, fence_not_required);
-    // If it does then fail.
-    la(t0, RuntimeAddress(CAST_FROM_FN_PTR(address, JavaThread::verify_cross_modify_fence_failure)));
-    mv(c_rarg0, xthread);
-    jalr(t0);
-    bind(fence_not_required);
-  }
-}
-#endif
