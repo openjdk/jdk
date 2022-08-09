@@ -29,6 +29,7 @@
 
 class ShenandoahHeapRegion;
 class ShenandoahHeapRegionClosure;
+class ShenandoahOldHeuristics;
 
 class ShenandoahOldGeneration : public ShenandoahGeneration {
  public:
@@ -47,6 +48,8 @@ class ShenandoahOldGeneration : public ShenandoahGeneration {
   void set_concurrent_mark_in_progress(bool in_progress) override;
 
   virtual void cancel_marking() override;
+
+  virtual void prepare_gc() override;
 
   void prepare_regions_and_collection_set(bool concurrent) override;
 
@@ -73,6 +76,32 @@ class ShenandoahOldGeneration : public ShenandoahGeneration {
   void transfer_pointers_from_satb();
 
   bool is_concurrent_mark_in_progress() override;
+
+  virtual void record_success_concurrent(bool abbreviated) override;
+
+  enum State {
+    IDLE, FILLING, BOOTSTRAPPING, MARKING, WAITING
+  };
+
+  static const char* state_name(State state);
+
+  void transition_to(State new_state);
+
+#ifdef ASSERT
+  bool validate_transition(State new_state);
+#endif
+
+  State state() const {
+    return _state;
+  }
+
+ private:
+  bool entry_coalesce_and_fill();
+  bool coalesce_and_fill();
+
+  ShenandoahHeapRegion** _coalesce_and_fill_region_array;
+  ShenandoahOldHeuristics* _old_heuristics;
+  State _state;
 };
 
 

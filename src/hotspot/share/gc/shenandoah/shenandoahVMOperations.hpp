@@ -60,12 +60,10 @@ public:
 class VM_ShenandoahInitMark: public VM_ShenandoahOperation {
 private:
   ShenandoahConcurrentGC* const _gc;
-  const bool _do_old_gc_bootstrap;
 public:
-  VM_ShenandoahInitMark(ShenandoahConcurrentGC* gc, bool do_old_gc_bootstrap) :
+  explicit VM_ShenandoahInitMark(ShenandoahConcurrentGC* gc) :
     VM_ShenandoahOperation(),
-    _gc(gc),
-    _do_old_gc_bootstrap(do_old_gc_bootstrap) {};
+    _gc(gc) {};
   VM_Operation::VMOp_Type type() const { return VMOp_ShenandoahInitMark; }
   const char* name()             const { return "Shenandoah Init Marking"; }
   virtual void doit();
@@ -75,7 +73,7 @@ class VM_ShenandoahFinalMarkStartEvac: public VM_ShenandoahOperation {
 private:
   ShenandoahConcurrentGC* const _gc;
 public:
-  VM_ShenandoahFinalMarkStartEvac(ShenandoahConcurrentGC* gc) :
+  explicit VM_ShenandoahFinalMarkStartEvac(ShenandoahConcurrentGC* gc) :
     VM_ShenandoahOperation(),
     _gc(gc) {};
   VM_Operation::VMOp_Type type() const { return VMOp_ShenandoahFinalMarkStartEvac; }

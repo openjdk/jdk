@@ -35,19 +35,7 @@ private:
   ShenandoahMarkingContext* const _ctx;
   ShenandoahHeapLock* const _lock;
 public:
-  ShenandoahFinalMarkUpdateRegionStateClosure(ShenandoahMarkingContext* ctx);
-
-  void heap_region_do(ShenandoahHeapRegion* r);
-
-  bool is_thread_safe() { return true; }
-};
-
-class ShenandoahCaptureUpdateWaterMarkForOld : public ShenandoahHeapRegionClosure {
-private:
-  ShenandoahMarkingContext* const _ctx;
-  ShenandoahHeapLock* const _lock;
-public:
-  ShenandoahCaptureUpdateWaterMarkForOld(ShenandoahMarkingContext* ctx);
+  explicit ShenandoahFinalMarkUpdateRegionStateClosure(ShenandoahMarkingContext* ctx);
 
   void heap_region_do(ShenandoahHeapRegion* r);
 

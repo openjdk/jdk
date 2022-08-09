@@ -49,7 +49,7 @@ class outputStream;
 
 #define SHENANDOAH_PHASE_DO(f)                                                         \
   f(conc_reset,                                     "Concurrent Reset")                \
-                                                                                       \
+  f(conc_reset_old,                                 "Concurrent Reset (OLD)")          \
   f(init_mark_gross,                                "Pause Init Mark (G)")             \
   f(init_mark,                                      "Pause Init Mark (N)")             \
   f(init_manage_tlabs,                              "  Manage TLABs")                  \
@@ -102,7 +102,7 @@ class outputStream;
   f(conc_strong_roots,                              "Concurrent Strong Roots")         \
   SHENANDOAH_PAR_PHASE_DO(conc_strong_roots_,       "  CSR: ", f)                      \
   f(coalesce_and_fill,                              "Coalesce and Fill Old Dead")      \
-  SHENANDOAH_PAR_PHASE_DO(coalesce_and_fill_,       "    CFOD: ", f)                   \
+  SHENANDOAH_PAR_PHASE_DO(coalesce_and_fill_,       "  CFOD: ", f)                     \
   f(conc_evac,                                      "Concurrent Evacuation")           \
                                                                                        \
   f(final_roots_gross,                              "Pause Final Roots (G)")           \

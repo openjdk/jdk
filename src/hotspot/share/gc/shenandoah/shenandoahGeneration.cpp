@@ -23,12 +23,13 @@
  */
 
 #include "precompiled.hpp"
-
+#include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahMarkClosures.hpp"
 #include "gc/shenandoah/shenandoahMonitoringSupport.hpp"
+#include "gc/shenandoah/shenandoahOldGeneration.hpp"
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
@@ -61,7 +62,7 @@ class ShenandoahResetBitmapTask : public ShenandoahHeapRegionClosure {
   ShenandoahMarkingContext* const _ctx;
  public:
   ShenandoahResetBitmapTask() :
-     _heap(ShenandoahHeap::heap()),
+    _heap(ShenandoahHeap::heap()),
     _ctx(_heap->marking_context()) {}
 
   void heap_region_do(ShenandoahHeapRegion* region) {
@@ -204,21 +205,12 @@ void ShenandoahGeneration::merge_write_table() {
   heap->old_generation()->parallel_heap_region_iterate(&task);
 }
 
-void ShenandoahGeneration::prepare_gc(bool do_old_gc_bootstrap) {
+void ShenandoahGeneration::prepare_gc() {
   // Reset mark bitmap for this generation (typically young)
   reset_mark_bitmap();
-  if (do_old_gc_bootstrap) {
-    // Reset mark bitmap for old regions also.  Note that do_old_gc_bootstrap is only true if this generation is YOUNG.
-    ShenandoahHeap::heap()->old_generation()->reset_mark_bitmap();
-  }
-
   // Capture Top At Mark Start for this generation (typically young)
   ShenandoahResetUpdateRegionStateClosure cl;
   parallel_heap_region_iterate(&cl);
-  if (do_old_gc_bootstrap) {
-    // Capture top at mark start for both old-gen regions also.  Note that do_old_gc_bootstrap is only true if generation is YOUNG.
-    ShenandoahHeap::heap()->old_generation()->parallel_heap_region_iterate(&cl);
-  }
 }
 
 void ShenandoahGeneration::compute_evacuation_budgets(ShenandoahHeap* heap, bool* preselected_regions,
@@ -420,7 +412,7 @@ void ShenandoahGeneration::adjust_evacuation_budgets(ShenandoahHeap* heap, Shena
                                                      size_t minimum_evacuation_reserve, size_t consumed_by_advance_promotion) {
   if (heap->mode()->is_generational()) {
     size_t region_size_bytes = ShenandoahHeapRegion::region_size_bytes();
-    ShenandoahGeneration* old_generation = heap->old_generation();
+    ShenandoahOldGeneration* old_generation = heap->old_generation();
     ShenandoahYoungGeneration* young_generation = heap->young_generation();
     size_t old_evacuated = collection_set->get_old_bytes_reserved_for_evacuation();
     size_t old_evacuated_committed = (size_t) (ShenandoahEvacWaste * old_evacuated);
@@ -649,17 +641,20 @@ void ShenandoahGeneration::prepare_regions_and_collection_set(bool concurrent) {
   assert(generation_mode() != OLD, "Only YOUNG and GLOBAL GC perform evacuations");
   {
     ShenandoahGCPhase phase(concurrent ? ShenandoahPhaseTimings::final_update_region_states :
-                                         ShenandoahPhaseTimings::degen_gc_final_update_region_states);
+                            ShenandoahPhaseTimings::degen_gc_final_update_region_states);
     ShenandoahFinalMarkUpdateRegionStateClosure cl(complete_marking_context());
-
     parallel_heap_region_iterate(&cl);
-    heap->assert_pinned_region_status();
 
     if (generation_mode() == YOUNG) {
-      // Also capture update_watermark for old-gen regions.
-      ShenandoahCaptureUpdateWaterMarkForOld old_cl(complete_marking_context());
+      // We always need to update the watermark for old regions. If there
+      // are mixed collections pending, we also need to synchronize the
+      // pinned status for old regions. Since we are already visiting every
+      // old region here, go ahead and sync the pin status too.
+      ShenandoahFinalMarkUpdateRegionStateClosure old_cl(nullptr);
       heap->old_generation()->parallel_heap_region_iterate(&old_cl);
     }
+
+    heap->assert_pinned_region_status();
   }
 
   {
@@ -855,4 +850,14 @@ size_t ShenandoahGeneration::adjusted_available() const {
   size_t in_use = used();
   size_t capacity = _adjusted_capacity;
   return in_use > capacity ? 0 : capacity - in_use;
+}
+
+void ShenandoahGeneration::record_success_concurrent(bool abbreviated) {
+  heuristics()->record_success_concurrent(abbreviated);
+  ShenandoahHeap::heap()->shenandoah_policy()->record_success_concurrent();
+}
+
+void ShenandoahGeneration::record_success_degenerated() {
+  heuristics()->record_success_degenerated();
+  ShenandoahHeap::heap()->shenandoah_policy()->record_success_degenerated();
 }

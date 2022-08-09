@@ -40,13 +40,8 @@ class ShenandoahOldGC : public ShenandoahConcurrentGC {
   virtual void op_final_mark();
 
  private:
-  ShenandoahHeapRegion** _coalesce_and_fill_region_array;
 
-  void start_old_evacuations();
-  bool entry_coalesce_and_fill();
   ShenandoahSharedFlag& _allow_preemption;
-  bool op_coalesce_and_fill();
-  void entry_coalesce_and_fill_message(char *buf, size_t len) const;
 };
 
 

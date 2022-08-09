@@ -258,7 +258,7 @@ void ShenandoahConcurrentGC::vmop_entry_init_mark() {
   ShenandoahTimingsTracker timing(ShenandoahPhaseTimings::init_mark_gross);
 
   heap->try_inject_alloc_failure();
-  VM_ShenandoahInitMark op(this, _do_old_gc_bootstrap);
+  VM_ShenandoahInitMark op(this);
   VMThread::execute(&op); // jump to entry_init_mark() under safepoint
 }
 
@@ -567,7 +567,7 @@ void ShenandoahConcurrentGC::op_reset() {
   if (ShenandoahPacing) {
     heap->pacer()->setup_for_reset();
   }
-  _generation->prepare_gc(_do_old_gc_bootstrap);
+  _generation->prepare_gc();
 }
 
 class ShenandoahInitMarkUpdateRegionStateClosure : public ShenandoahHeapRegionClosure {
@@ -642,10 +642,13 @@ void ShenandoahConcurrentGC::op_init_mark() {
 
   if (_do_old_gc_bootstrap) {
     // Update region state for both young and old regions
+    // TODO: We should be able to pull this out of the safepoint for the bootstrap
+    // cycle. The top of an old region will only move when a GC cycle evacuates
+    // objects into it. When we start an old cycle, we know that nothing can touch
+    // the top of old regions.
     ShenandoahGCPhase phase(ShenandoahPhaseTimings::init_update_region_states);
     ShenandoahInitMarkUpdateRegionStateClosure cl;
     heap->parallel_heap_region_iterate(&cl);
-    heap->old_generation()->parallel_heap_region_iterate(&cl);
   } else {
     // Update region state for only young regions
     ShenandoahGCPhase phase(ShenandoahPhaseTimings::init_update_region_states);

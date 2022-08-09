@@ -25,74 +25,84 @@
 #ifndef SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHOLDHEURISTICS_HPP
 #define SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHOLDHEURISTICS_HPP
 
-#include "gc/shenandoah/shenandoahCollectionSet.inline.hpp"
-#include "gc/shenandoah/shenandoahGeneration.hpp"
-#include "gc/shenandoah/shenandoahHeap.inline.hpp"
-#include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
+
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
+
+class ShenandoahCollectionSet;
+class ShenandoahHeapRegion;
+class ShenandoahOldGeneration;
 
 class ShenandoahOldHeuristics : public ShenandoahHeuristics {
 
 private:
 
-  // if (_generation->generation_mode() == OLD) _old_collection_candidates
-  //  represent the number of regions selected for collection following the
-  //  most recently completed old-gen mark that have not yet been selected
-  //  for evacuation and _next_collection_candidate is the index within
-  //  _region_data of the next candidate region to be selected for evacuation.
-  // if (_generation->generation_mode() != OLD) these two variables are
-  //  not used.
-  uint _old_collection_candidates;
+  static uint NOT_FOUND;
+
+  // After final marking of the old generation, this heuristic will select
+  // a set of candidate regions to be included in subsequent mixed collections.
+  // The regions are sorted into a `_region_data` array (declared in base
+  // class) in decreasing order of garbage. The heuristic will give priority
+  // to regions containing more garbage.
+
+  // The following members are used to keep track of which candidate regions
+  // have yet to be added to a mixed collection. There is also some special
+  // handling for pinned regions, described further below.
+
+  // This points to the first candidate of the current mixed collection. This
+  // is only used for an assertion when handling pinned regions.
+  debug_only(uint _start_candidate);
+
+  // Pinned regions may not be included in the collection set. Any old regions
+  // which were pinned at the time when old regions were added to the mixed
+  // collection will have been skipped. These regions are still contain garbage,
+  // so we want to include them at the start of the list of candidates for the
+  // _next_ mixed collection cycle. This variable is the index of the _first_
+  // old region which is pinned when the mixed collection set is formed.
+  uint _first_pinned_candidate;
+
+  // This is the index of the last region which is above the garbage threshold.
+  // No regions after this will be considered for inclusion in a mixed collection
+  // set.
+  uint _last_old_collection_candidate;
+
+  // This index points to the first candidate in line to be added to the mixed
+  // collection set. It is updated as regions are added to the collection set.
   uint _next_old_collection_candidate;
 
-  // At the time we select the old-gen collection set, _hidden_old_collection_candidates
-  // and _hidden_next_old_collection_candidates are set to remember the intended old-gen
-  // collection set.  After all old-gen regions not in the old-gen collection set have been
-  // coalesced and filled, the content of these variables is copied to _old_collection_candidates
-  // and _next_old_collection_candidates so that evacuations can begin evacuating these regions.
-  uint _hidden_old_collection_candidates;
-  uint _hidden_next_old_collection_candidate;
-
-  // if (_generation->generation_mode() == OLD)
-  //  _old_coalesce_and_fill_candidates represents the number of regions
-  //  that were chosen for the garbage contained therein to be coalesced
-  //  and filled and _first_coalesce_and_fill_candidate represents the
-  //  the index of the first such region within the _region_data array.
-  // if (_generation->generation_mode() != OLD) these two variables are
-  //  not used.
-  uint _old_coalesce_and_fill_candidates;
-  uint _first_coalesce_and_fill_candidate;
+  // This is the last index in the array of old regions which were active at
+  // the end of old final mark.
+  uint _last_old_region;
 
   // This can be the 'static' or 'adaptive' heuristic.
   ShenandoahHeuristics* _trigger_heuristic;
 
-  // Flag is set when promotion failure is detected (by gc thread), cleared when old generation collection begins (by control thread)
+  // Flag is set when promotion failure is detected (by gc thread), and cleared when
+  // old generation collection begins (by control thread).
   volatile bool _promotion_failed;
 
-  // Prepare for evacuation of old-gen regions by capturing the mark results of a recently completed concurrent mark pass.
-  void prepare_for_old_collections();
+  // Keep a pointer to our generation that we can use without down casting a protected member from the base class.
+  ShenandoahOldGeneration* _old_generation;
 
  protected:
   virtual void choose_collection_set_from_regiondata(ShenandoahCollectionSet* set, RegionData* data, size_t data_size,
                                                      size_t free) override;
 
 public:
-  ShenandoahOldHeuristics(ShenandoahGeneration* generation, ShenandoahHeuristics* trigger_heuristic);
+  ShenandoahOldHeuristics(ShenandoahOldGeneration* generation, ShenandoahHeuristics* trigger_heuristic);
 
   virtual void choose_collection_set(ShenandoahCollectionSet* collection_set, ShenandoahOldHeuristics* old_heuristics) override;
 
+  // Prepare for evacuation of old-gen regions by capturing the mark results of a recently completed concurrent mark pass.
+  void prepare_for_old_collections();
+
   // Return true iff the collection set is primed with at least one old-gen region.
   bool prime_collection_set(ShenandoahCollectionSet* set);
-
-  // Having coalesced and filled all old-gen heap regions that are not part of the old-gen collection set, begin
-  // evacuating the collection set.
-  void start_old_evacuations();
 
   // How many old-collection candidates have not yet been processed?
   uint unprocessed_old_collection_candidates();
 
   // How many old or hidden collection candidates have not yet been processed?
-  uint unprocessed_old_or_hidden_collection_candidates();
+  uint last_old_collection_candidate_index();
 
   // Return the next old-collection candidate in order of decreasing amounts of garbage.  (We process most-garbage regions
   // first.)  This does not consume the candidate.  If the candidate is selected for inclusion in a collection set, then
@@ -104,13 +114,13 @@ public:
 
   // How many old-collection regions were identified at the end of the most recent old-gen mark to require their
   // unmarked objects to be coalesced and filled?
-  uint old_coalesce_and_fill_candidates();
+  uint last_old_region_index() const;
 
   // Fill in buffer with all of the old-collection regions that were identified at the end of the most recent old-gen
   // mark to require their unmarked objects to be coalesced and filled.  The buffer array must have at least
-  // old_coalesce_and_fill_candidates() entries, or memory may be corrupted when this function overwrites the
+  // last_old_region_index() entries, or memory may be corrupted when this function overwrites the
   // end of the array.
-  void get_coalesce_and_fill_candidates(ShenandoahHeapRegion** buffer);
+  unsigned int get_coalesce_and_fill_candidates(ShenandoahHeapRegion** buffer);
 
   // If a GLOBAL gc occurs, it will collect the entire heap which invalidates any collection candidates being
   // held by this heuristic for supplying mixed collections.
@@ -151,6 +161,8 @@ public:
 
   virtual bool is_experimental() override;
 
+ private:
+  void slide_pinned_regions_to_front();
 };
 
 #endif // SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHOLDHEURISTICS_HPP

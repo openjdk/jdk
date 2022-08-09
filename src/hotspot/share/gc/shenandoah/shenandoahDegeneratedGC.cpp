@@ -33,6 +33,7 @@
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahMetrics.hpp"
 #include "gc/shenandoah/shenandoahMonitoringSupport.hpp"
+#include "gc/shenandoah/shenandoahOldGeneration.hpp"
 #include "gc/shenandoah/shenandoahOopClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahRootProcessor.inline.hpp"
 #include "gc/shenandoah/shenandoahSTWMark.hpp"
@@ -319,7 +320,7 @@ void ShenandoahDegenGC::op_degenerated() {
 }
 
 void ShenandoahDegenGC::op_reset() {
-  _generation->prepare_gc(false);
+  _generation->prepare_gc();
 }
 
 void ShenandoahDegenGC::op_mark() {

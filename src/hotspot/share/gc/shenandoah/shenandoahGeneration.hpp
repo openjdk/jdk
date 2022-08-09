@@ -120,10 +120,10 @@ private:
   // Update the read cards with the state of the write table (write table is not cleared).
   void merge_write_table();
 
-  // Used by concurrent and degenerated GC to reset regions.
-  void prepare_gc(bool do_old_gc_bootstrap);
+  // Called before init mark, expected to prepare regions for marking.
+  virtual void prepare_gc();
 
-  // Return true iff prepared collection set includes at least one old-gen HeapRegion.
+  // Called during final mark, chooses collection set, rebuilds free set.
   virtual void prepare_regions_and_collection_set(bool concurrent);
 
   // Cancel marking (used by Full collect and when cancelling cycle).
@@ -171,6 +171,9 @@ private:
 
   virtual bool is_concurrent_mark_in_progress() = 0;
   void confirm_heuristics_mode();
+
+  virtual void record_success_concurrent(bool abbreviated);
+  virtual void record_success_degenerated();
 };
 
 #endif // SHARE_VM_GC_SHENANDOAH_SHENANDOAHGENERATION_HPP

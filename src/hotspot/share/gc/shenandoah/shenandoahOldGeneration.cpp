@@ -26,9 +26,11 @@
 #include "precompiled.hpp"
 
 #include "gc/shared/strongRootsScope.hpp"
+#include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/heuristics/shenandoahAdaptiveHeuristics.hpp"
 #include "gc/shenandoah/heuristics/shenandoahAggressiveHeuristics.hpp"
 #include "gc/shenandoah/heuristics/shenandoahCompactHeuristics.hpp"
+#include "gc/shenandoah/heuristics/shenandoahOldHeuristics.hpp"
 #include "gc/shenandoah/heuristics/shenandoahStaticHeuristics.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
@@ -37,12 +39,17 @@
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
 #include "gc/shenandoah/shenandoahMarkClosures.hpp"
 #include "gc/shenandoah/shenandoahMark.inline.hpp"
+#include "gc/shenandoah/shenandoahMonitoringSupport.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
 #include "gc/shenandoah/shenandoahOopClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahStringDedup.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
+#include "gc/shenandoah/shenandoahWorkerPolicy.hpp"
+#include "gc/shenandoah/shenandoahYoungGeneration.hpp"
+#include "prims/jvmtiTagMap.hpp"
 #include "runtime/threads.hpp"
+#include "utilities/events.hpp"
 
 class ShenandoahFlushAllSATB : public ThreadClosure {
  private:
@@ -125,8 +132,50 @@ public:
   }
 };
 
+class ShenandoahConcurrentCoalesceAndFillTask : public WorkerTask {
+ private:
+  uint _nworkers;
+  ShenandoahHeapRegion** _coalesce_and_fill_region_array;
+  uint _coalesce_and_fill_region_count;
+  volatile bool _is_preempted;
+
+ public:
+  ShenandoahConcurrentCoalesceAndFillTask(uint nworkers, ShenandoahHeapRegion** coalesce_and_fill_region_array,
+                                          uint region_count) :
+    WorkerTask("Shenandoah Concurrent Coalesce and Fill"),
+    _nworkers(nworkers),
+    _coalesce_and_fill_region_array(coalesce_and_fill_region_array),
+    _coalesce_and_fill_region_count(region_count),
+    _is_preempted(false) {
+  }
+
+  void work(uint worker_id) {
+    for (uint region_idx = worker_id; region_idx < _coalesce_and_fill_region_count; region_idx += _nworkers) {
+      ShenandoahHeapRegion* r = _coalesce_and_fill_region_array[region_idx];
+      if (r->is_humongous()) {
+        // there's only one object in this region and it's not garbage, so no need to coalesce or fill
+        continue;
+      }
+
+      if (!r->oop_fill_and_coalesce()) {
+        // Coalesce and fill has been preempted
+        Atomic::store(&_is_preempted, true);
+        return;
+      }
+    }
+  }
+
+  // Value returned from is_completed() is only valid after all worker thread have terminated.
+  bool is_completed() {
+    return !Atomic::load(&_is_preempted);
+  }
+};
+
 ShenandoahOldGeneration::ShenandoahOldGeneration(uint max_queues, size_t max_capacity, size_t soft_max_capacity)
-  : ShenandoahGeneration(OLD, max_queues, max_capacity, soft_max_capacity) {
+  : ShenandoahGeneration(OLD, max_queues, max_capacity, soft_max_capacity),
+    _coalesce_and_fill_region_array(NEW_C_HEAP_ARRAY(ShenandoahHeapRegion*, ShenandoahHeap::heap()->num_regions(), mtGC)),
+    _state(IDLE)
+{
   // Always clear references for old generation
   ref_processor()->set_soft_reference_policy(true);
 }
@@ -166,6 +215,66 @@ void ShenandoahOldGeneration::cancel_marking() {
   ShenandoahGeneration::cancel_marking();
 }
 
+void ShenandoahOldGeneration::prepare_gc() {
+
+  // Make the old generation regions parseable, so they can be safely
+  // scanned when looking for objects in memory indicated by dirty cards.
+  entry_coalesce_and_fill();
+
+  // Now that we have made the old generation parseable, it is safe to reset the mark bitmap.
+  {
+    static const char* msg = "Concurrent reset (OLD)";
+    ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::conc_reset_old);
+    ShenandoahWorkerScope scope(ShenandoahHeap::heap()->workers(),
+                                ShenandoahWorkerPolicy::calc_workers_for_conc_reset(),
+                                msg);
+    ShenandoahGeneration::prepare_gc();
+  }
+}
+
+bool ShenandoahOldGeneration::entry_coalesce_and_fill() {
+  char msg[1024];
+  ShenandoahHeap* const heap = ShenandoahHeap::heap();
+
+  ShenandoahConcurrentPhase gc_phase("Coalescing and filling (OLD)", ShenandoahPhaseTimings::coalesce_and_fill);
+
+  // TODO: I don't think we're using these concurrent collection counters correctly.
+  TraceCollectorStats tcs(heap->monitoring_support()->concurrent_collection_counters());
+  EventMark em("%s", msg);
+  ShenandoahWorkerScope scope(heap->workers(),
+                              ShenandoahWorkerPolicy::calc_workers_for_conc_marking(),
+                              "concurrent coalesce and fill");
+
+  return coalesce_and_fill();
+}
+
+bool ShenandoahOldGeneration::coalesce_and_fill() {
+  ShenandoahHeap* const heap = ShenandoahHeap::heap();
+  heap->set_prepare_for_old_mark_in_progress(true);
+  transition_to(FILLING);
+
+  ShenandoahOldHeuristics* old_heuristics = heap->old_heuristics();
+  WorkerThreads* workers = heap->workers();
+  uint nworkers = workers->active_workers();
+
+  log_debug(gc)("Starting (or resuming) coalesce-and-fill of old heap regions");
+  uint coalesce_and_fill_regions_count = old_heuristics->get_coalesce_and_fill_candidates(_coalesce_and_fill_region_array);
+  assert(coalesce_and_fill_regions_count <= heap->num_regions(), "Sanity");
+  ShenandoahConcurrentCoalesceAndFillTask task(nworkers, _coalesce_and_fill_region_array, coalesce_and_fill_regions_count);
+
+  workers->run_task(&task);
+  if (task.is_completed()) {
+    // Remember that we're done with coalesce-and-fill.
+    heap->set_prepare_for_old_mark_in_progress(false);
+    transition_to(BOOTSTRAPPING);
+    return true;
+  } else {
+    log_debug(gc)("Suspending coalesce-and-fill of old heap regions");
+    // Otherwise, we got preempted before the work was done.
+    return false;
+  }
+}
+
 void ShenandoahOldGeneration::transfer_pointers_from_satb() {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   shenandoah_assert_safepoint();
@@ -195,17 +304,120 @@ void ShenandoahOldGeneration::prepare_regions_and_collection_set(bool concurrent
   }
 
   {
+    // This doesn't actually choose a collection set, but prepares a list of
+    // regions as 'candidates' for inclusion in a mixed collection.
     ShenandoahGCPhase phase(concurrent ? ShenandoahPhaseTimings::choose_cset : ShenandoahPhaseTimings::degen_gc_choose_cset);
     ShenandoahHeapLocker locker(heap->lock());
     heuristics()->choose_collection_set(nullptr, nullptr);
   }
 
   {
+    // Though we did not choose a collection set above, we still may have
+    // freed up immediate garbage regions so proceed with rebuilding the free set.
     ShenandoahGCPhase phase(concurrent ? ShenandoahPhaseTimings::final_rebuild_freeset : ShenandoahPhaseTimings::degen_gc_final_rebuild_freeset);
     ShenandoahHeapLocker locker(heap->lock());
     heap->free_set()->rebuild();
   }
 }
+
+const char* ShenandoahOldGeneration::state_name(State state) {
+  switch (state) {
+    case IDLE:          return "Idle";
+    case FILLING:       return "Coalescing";
+    case BOOTSTRAPPING: return "Bootstrapping";
+    case MARKING:       return "Marking";
+    case WAITING:       return "Waiting";
+    default:
+      ShouldNotReachHere();
+      return "Unknown";
+  }
+}
+
+void ShenandoahOldGeneration::transition_to(State new_state) {
+  if (_state != new_state) {
+    log_info(gc)("Old generation transition from %s to %s", state_name(_state), state_name(new_state));
+    assert(validate_transition(new_state), "Invalid state transition.");
+    _state = new_state;
+  }
+}
+
+#ifdef ASSERT
+// This diagram depicts the expected state transitions for marking the old generation
+// and preparing for old collections. When a young generation cycle executes, the
+// remembered set scan must visit objects in old regions. Visiting an object which
+// has become dead on previous old cycles will result in crashes. To avoid visiting
+// such objects, the remembered set scan will use the old generation mark bitmap when
+// possible. It is _not_ possible to use the old generation bitmap when old marking
+// is active (bitmap is not complete). For this reason, the old regions are made
+// parseable _before_ the old generation bitmap is reset. The diagram does not depict
+// global and full collections, both of which cancel any old generation activity.
+//
+//                              +-----------------+
+//               +------------> |      IDLE       |
+//               |   +--------> |                 |
+//               |   |          +-----------------+
+//               |   |            |
+//               |   |            | Begin Old Mark
+//               |   |            v
+//               |   |          +-----------------+     +--------------------+
+//               |   |          |     FILLING     | <-> |      YOUNG GC      |
+//               |   |          |                 |     | (RSet Uses Bitmap) |
+//               |   |          +-----------------+     +--------------------+
+//               |   |            |
+//               |   |            | Reset Bitmap
+//               |   |            v
+//               |   |          +-----------------+
+//               |   |          |    BOOTSTRAP    |
+//               |   |          |                 |
+//               |   |          +-----------------+
+//               |   |            |
+//               |   |            | Continue Marking
+//               |   |            v
+//               |   |          +-----------------+     +----------------------+
+//               |   |          |    MARKING      | <-> |       YOUNG GC       |
+//               |   +----------|                 |     | (RSet Parses Region) |
+//               |              +-----------------+     +----------------------+
+//               |                |
+//               |                | Has Candidates
+//               |                v
+//               |              +-----------------+
+//               |              |     WAITING     |
+//               +------------- |                 |
+//                              +-----------------+
+//
+bool ShenandoahOldGeneration::validate_transition(State new_state) {
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
+  switch (new_state) {
+    case IDLE:
+      assert(!heap->is_concurrent_old_mark_in_progress(), "Cannot become idle during old mark.");
+      assert(_old_heuristics->unprocessed_old_collection_candidates() == 0, "Cannot become idle with collection candidates");
+      assert(!heap->is_prepare_for_old_mark_in_progress(), "Cannot become idle while making old generation parseable.");
+      assert(heap->young_generation()->old_gen_task_queues() == nullptr, "Cannot become idle when setup for bootstrapping.");
+      return true;
+    case FILLING:
+      assert(_state == IDLE, "Cannot begin filling without first being idle.");
+      assert(heap->is_prepare_for_old_mark_in_progress(), "Should be preparing for old mark now.");
+      return true;
+    case BOOTSTRAPPING:
+      assert(_state == FILLING, "Cannot reset bitmap without making old regions parseable.");
+      // assert(heap->young_generation()->old_gen_task_queues() != nullptr, "Cannot bootstrap without old mark queues.");
+      assert(!heap->is_prepare_for_old_mark_in_progress(), "Cannot still be making old regions parseable.");
+      return true;
+    case MARKING:
+      assert(_state == BOOTSTRAPPING, "Must have finished bootstrapping before marking.");
+      assert(heap->young_generation()->old_gen_task_queues() != nullptr, "Young generation needs old mark queues.");
+      assert(heap->is_concurrent_old_mark_in_progress(), "Should be marking old now.");
+      return true;
+    case WAITING:
+      assert(_state == MARKING, "Cannot have old collection candidates without first marking.");
+      assert(_old_heuristics->unprocessed_old_collection_candidates() > 0, "Must have collection candidates here.");
+      return true;
+    default:
+      ShouldNotReachHere();
+      return false;
+  }
+}
+#endif
 
 ShenandoahHeuristics* ShenandoahOldGeneration::initialize_heuristics(ShenandoahMode* gc_mode) {
   assert(ShenandoahOldGCHeuristics != NULL, "ShenandoahOldGCHeuristics should not equal NULL");
@@ -222,6 +434,12 @@ ShenandoahHeuristics* ShenandoahOldGeneration::initialize_heuristics(ShenandoahM
     return NULL;
   }
   trigger->set_guaranteed_gc_interval(ShenandoahGuaranteedOldGCInterval);
-  _heuristics = new ShenandoahOldHeuristics(this, trigger);
+  _old_heuristics = new ShenandoahOldHeuristics(this, trigger);
+  _heuristics = _old_heuristics;
   return _heuristics;
+}
+
+void ShenandoahOldGeneration::record_success_concurrent(bool abbreviated) {
+  heuristics()->record_success_concurrent(abbreviated);
+  ShenandoahHeap::heap()->shenandoah_policy()->record_success_old();
 }

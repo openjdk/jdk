@@ -43,8 +43,8 @@ const char* ShenandoahYoungGeneration::name() const {
 void ShenandoahYoungGeneration::set_concurrent_mark_in_progress(bool in_progress) {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   heap->set_concurrent_young_mark_in_progress(in_progress);
-  if (_old_gen_task_queues != nullptr && in_progress && !heap->is_concurrent_prep_for_mixed_evacuation_in_progress()) {
-    // This is not a bug. When the young generation marking is complete,
+  if (_old_gen_task_queues != nullptr && in_progress && !heap->is_prepare_for_old_mark_in_progress()) {
+    // This is not a bug. When the bootstrapping marking phase is complete,
     // the old generation marking is still in progress, unless it's not.
     // In the case that old-gen preparation for mixed evacuation has been
     // preempted, we do not want to set concurrent old mark to be in progress.

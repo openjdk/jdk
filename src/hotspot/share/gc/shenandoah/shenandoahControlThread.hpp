@@ -73,7 +73,7 @@ public:
     concurrent_normal,
     stw_degenerated,
     stw_full,
-    marking_old
+    servicing_old
   } GCMode;
 
   void run_service();
@@ -102,8 +102,11 @@ private:
   volatile GCMode _mode;
   shenandoah_padding(3);
 
+  // Returns true if the cycle has been cancelled or degenerated.
   bool check_cancellation_or_degen(ShenandoahGC::ShenandoahDegenPoint point);
-  void resume_concurrent_old_cycle(ShenandoahGeneration* generation, GCCause::Cause cause);
+
+  // Returns true if the old generation marking completed (i.e., final mark executed for old generation).
+  bool resume_concurrent_old_cycle(ShenandoahGeneration* generation, GCCause::Cause cause);
   void service_concurrent_cycle(ShenandoahGeneration* generation, GCCause::Cause cause, bool reset_old_bitmap_specially);
   void service_stw_full_cycle(GCCause::Cause cause);
 
@@ -112,8 +115,11 @@ private:
   bool service_stw_degenerated_cycle(GCCause::Cause cause, ShenandoahGC::ShenandoahDegenPoint point);
   void service_uncommit(double shrink_before, size_t shrink_until);
 
+  // Return true if setting the flag which indicates allocation failure succeeds.
   bool try_set_alloc_failure_gc();
+  // Notify threads waiting for GC to complete.
   void notify_alloc_failure_waiters();
+  // True if allocation failure flag has been set.
   bool is_alloc_failure_gc();
 
   void reset_gc_id();
@@ -128,8 +134,10 @@ private:
   bool is_explicit_gc(GCCause::Cause cause) const;
   bool is_implicit_gc(GCCause::Cause cause) const;
 
+  // Returns true if the old generation marking was interrupted to allow a young cycle.
   bool preempt_old_marking(GenerationMode generation);
 
+  // Returns true if the soft maximum heap has been changed using management APIs.
   bool check_soft_max_changed() const;
 
   void process_phase_timings(const ShenandoahHeap* heap);
@@ -148,6 +156,7 @@ public:
   void handle_alloc_failure_evac(size_t words);
 
   void request_gc(GCCause::Cause cause);
+  // Return true if the request to start a concurrent GC for the given generation succeeded.
   bool request_concurrent_gc(GenerationMode generation);
 
   void handle_counters_update();
@@ -183,6 +192,9 @@ public:
  private:
   static const char* gc_mode_name(GCMode mode);
   void notify_control_thread();
+
+  void service_concurrent_cycle(const ShenandoahHeap* heap, ShenandoahGeneration* generation, GCCause::Cause &cause,
+                                bool do_old_gc_bootstrap);
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHCONTROLTHREAD_HPP
