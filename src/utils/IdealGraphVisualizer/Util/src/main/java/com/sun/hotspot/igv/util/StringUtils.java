@@ -58,7 +58,7 @@ public class StringUtils {
                             str.append("&quot;");
                             break;
                         case '\'':
-                            str.append("&#39");
+                            str.append("&#39;");
                             break;
                         default:
                             assert false;
