@@ -995,15 +995,15 @@ void Deoptimization::mark_and_deoptimize_dependents_on(InstanceKlass* dependee) 
   }
 }
 
-bool DeoptimizationContext::_context_active = false;
+volatile bool DeoptimizationContext::_context_active = false;
 
 DeoptimizationContext::DeoptimizationContext()
   : _nsv(),
     _marked(0),
     _deoptimized(false) {
   assert_locked_or_safepoint(Compile_lock);
-  assert(!_context_active, "Cannot create a DeoptimizationContext while another one is active");
-  _context_active = true;
+  assert(!Atomic::load(&_context_active), "Cannot create a DeoptimizationContext while another one is active");
+  Atomic::store(&_context_active, true);
 }
 
 DeoptimizationContext::~DeoptimizationContext() {
@@ -1029,13 +1029,14 @@ void DeoptimizationContext::deopt_compiled_methods() {
 }
 
 void DeoptimizationContext::deopt_frames() {
+  assert_locked_or_safepoint(Compile_lock);
   // DeoptimizationContext is considered active from its creation until
   // deopt_compiled_methods() finishes processing marked nmethods.
   // deopt_compiled_methods() occurs as the first step of deoptimize()
-  assert(_context_active, "deoptimize() must be called on an active context");
-  _context_active = false;
+  assert(Atomic::load(&_context_active), "deoptimize() must be called on an active context");
+  Atomic::store(&_context_active, false);
 
-  if (!_marked) {
+  if (_marked == 0) {
     return; // Nothing to do
   }
 
