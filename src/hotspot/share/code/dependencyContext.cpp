@@ -217,10 +217,9 @@ void DependencyContext::remove_all_dependents() {
   assert(b == nullptr, "All dependents should be unloading");
 }
 
-int DependencyContext::remove_and_mark_for_deoptimization_all_dependents(DeoptimizationContext* deopt) {
+void DependencyContext::remove_and_mark_for_deoptimization_all_dependents(DeoptimizationContext* deopt) {
   nmethodBucket* b = dependencies_not_unloading();
   set_dependencies(NULL);
-  int marked = 0;
   while (b != NULL) {
     nmethod* nm = b->get_nmethod();
     if (b->count() > 0 && nm->is_alive() && !nm->is_marked_for_deoptimization()) {
@@ -228,7 +227,6 @@ int DependencyContext::remove_and_mark_for_deoptimization_all_dependents(Deoptim
     }
     b = release_and_get_next_not_unloading(b);
   }
-  return marked;
 }
 
 #ifndef PRODUCT
