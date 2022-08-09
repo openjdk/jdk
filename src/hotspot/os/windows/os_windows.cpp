@@ -5938,3 +5938,16 @@ void os::print_memory_mappings(char* addr, size_t bytes, outputStream* st) {
     }
   }
 }
+
+// File conventions
+const char* os::file_separator() { return "\\"; }
+const char* os::line_separator() { return "\r\n"; }
+const char* os::path_separator() { return ";"; }
+
+void os::print_user_info(outputStream* st) {
+  // not implemented yet
+}
+
+void os::print_active_locale(outputStream* st) {
+  // not implemented yet
+}
