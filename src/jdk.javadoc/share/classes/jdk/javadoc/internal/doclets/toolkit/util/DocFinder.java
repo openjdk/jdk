@@ -296,26 +296,21 @@ public class DocFinder {
         return Optional.empty();
     }
 
-    /*
-     * The result of an attempt to inherit comments.
-     */
-    public record Result(List<? extends DocTree> documentation, ExecutableElement method) { }
-
-    public static Optional<Result> inheritDocumentation(
+    public static <T> Optional<T> inheritDocumentation(
             ExecutableElement method,
-            Function<? super ExecutableElement, Optional<List<? extends DocTree>>> documentationExtractor,
+            Function<? super ExecutableElement, Optional<T>> documentationExtractor,
             BaseConfiguration configuration)
     {
         var d = documentationExtractor.apply(method);
         if (d.isPresent()) {
-            return Optional.of(new Result(d.get(), method));
+            return d;
         }
         var overriddenMethods = methodsOverriddenBy(method, configuration);
         while (overriddenMethods.hasNext()) {
             var m = overriddenMethods.next();
             d = documentationExtractor.apply(m);
             if (d.isPresent()) {
-                return Optional.of(new Result(d.get(), m));
+                return d;
             }
         }
         return Optional.empty();

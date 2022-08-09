@@ -38,7 +38,6 @@ import jdk.javadoc.doclet.Taglet.Location;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFinder;
-import jdk.javadoc.internal.doclets.toolkit.util.DocFinder.Input;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
 /**
@@ -70,7 +69,7 @@ public class SeeTaglet extends BaseTaglet implements InheritableTaglet {
         List<? extends SeeTree> tags = utils.getSeeTrees(holder);
         Element e = holder;
         if (utils.isMethod(holder)) {
-            Optional<DocFinder.Result> result = DocFinder.inheritDocumentation(
+            Optional<Result> result = DocFinder.inheritDocumentation(
                     (ExecutableElement) holder, m -> extract(utils, m), writer.configuration());
             if (result.isPresent()) {
                 ExecutableElement m = result.get().method();
@@ -81,12 +80,13 @@ public class SeeTaglet extends BaseTaglet implements InheritableTaglet {
         return writer.seeTagOutput(e, tags);
     }
 
-    private static Optional<List<? extends DocTree>> extract(Utils utils, ExecutableElement method) {
+    private record Result(List<? extends SeeTree> seeTrees, ExecutableElement method) { }
+
+    private static Optional<Result> extract(Utils utils, ExecutableElement method) {
         List<? extends SeeTree> tags = utils.getSeeTrees(method);
         if (tags.isEmpty()) {
             return Optional.empty();
         }
-        CommentHelper ch = utils.getCommentHelper(method);
-        return Optional.of(ch.getReference(tags.get(0)));
+        return Optional.of(new Result(tags, method));
     }
 }
