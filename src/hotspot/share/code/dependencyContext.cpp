@@ -232,7 +232,7 @@ int DependencyContext::remove_and_mark_for_deoptimization_all_dependents() {
     b = release_and_get_next_not_unloading(b);
   }
   return marked;
- }
+}
 
 #ifndef PRODUCT
 void DependencyContext::print_dependent_nmethods(bool verbose) {
