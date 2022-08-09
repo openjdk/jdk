@@ -457,16 +457,10 @@ reportEvents(JNIEnv *env, jbyte sessionID, jthread thread, EventIndex ei,
     }
 }
 
-/* A bagEnumerateFunction.  Create a synthetic class unload event
- * for every class no longer present.  Analogous to event_callback
- * combined with a handler in a unload specific (no event
- * structure) kind of way.
- */
-static jboolean
-synthesizeUnloadEvent(void *signatureVoid, void *envVoid)
+/* Create a synthetic class unload event for the specified signature. */
+jboolean
+eventHandler_synthesizeUnloadEvent(char *signature, JNIEnv *env)
 {
-    JNIEnv *env = (JNIEnv *)envVoid;
-    char *signature = *(char **)signatureVoid;
     char *classname;
     HandlerNode *node;
     jbyte eventSessionID = currentSessionID;
@@ -620,39 +614,10 @@ event_callback(JNIEnv *env, EventInfo *evinfo)
     currentException = JNI_FUNC_PTR(env,ExceptionOccurred)(env);
     JNI_FUNC_PTR(env,ExceptionClear)(env);
 
-    /* See if a garbage collection finish event happened earlier.
-     *
-     * Note: The "if" is an optimization to avoid entering the lock on every
-     *       event; garbageCollected may be zapped before we enter
-     *       the lock but then this just becomes one big no-op.
-     */
-    if ( garbageCollected > 0 ) {
-        struct bag *unloadedSignatures = NULL;
-
-        /* We want to compact the hash table of all
-         * objects sent to the front end by removing objects that have
-         * been collected.
-         */
+    /* See if a garbage collection finish event happened earlier. */
+    if ( garbageCollected > 0) {
         commonRef_compact();
-
-        /* We also need to simulate the class unload events. */
-
-        debugMonitorEnter(handlerLock);
-
-        /* Clear garbage collection counter */
         garbageCollected = 0;
-
-        /* Analyze which class unloads occurred */
-        unloadedSignatures = classTrack_processUnloads(env);
-
-        debugMonitorExit(handlerLock);
-
-        /* Generate the synthetic class unload events and/or just cleanup.  */
-        if ( unloadedSignatures != NULL ) {
-            (void)bagEnumerateOver(unloadedSignatures, synthesizeUnloadEvent,
-                             (void *)env);
-            bagDestroyBag(unloadedSignatures);
-        }
     }
 
     thread = evinfo->thread;
@@ -1709,9 +1674,6 @@ installHandler(HandlerNode *node,
 
     node->handlerID = external? ++requestIdCounter : 0;
     error = eventFilterRestricted_install(node);
-    if (node->ei == EI_GC_FINISH) {
-        classTrack_activate(getEnv());
-    }
     if (error == JVMTI_ERROR_NONE) {
         insert(getHandlerChain(node->ei), node);
     }

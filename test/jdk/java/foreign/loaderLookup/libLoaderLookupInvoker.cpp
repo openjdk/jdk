@@ -23,18 +23,21 @@
  */
 
 #include "jni.h"
-#include <thread>
+#include "testlib_threads.h"
 
-jobject res;
+struct Context {
+    JavaVM* jvm;
+    jobject res;
+};
 
-jobject call(JavaVM *jvm) {
+void call(void* ctxt) {
+    Context* context = (Context*) ctxt;
     JNIEnv* env;
-    jvm->AttachCurrentThread((void**)&env, NULL);
+    context->jvm->AttachCurrentThread((void**)&env, NULL);
     jclass symbolLookupClass = env->FindClass("java/lang/foreign/SymbolLookup");
     jmethodID loaderLookupMethod = env->GetStaticMethodID(symbolLookupClass, "loaderLookup", "()Ljava/lang/foreign/SymbolLookup;");
-    res = env->NewGlobalRef(env->CallStaticObjectMethod(symbolLookupClass, loaderLookupMethod));
-    jvm->DetachCurrentThread();
-    return res;
+    context->res = env->NewGlobalRef(env->CallStaticObjectMethod(symbolLookupClass, loaderLookupMethod));
+    context->jvm->DetachCurrentThread();
 }
 
 extern "C" {
@@ -42,8 +45,9 @@ extern "C" {
     Java_TestLoaderLookupJNI_loaderLookup0(JNIEnv *env, jclass cls) {
         JavaVM* jvm;
         env->GetJavaVM(&jvm);
-        std::thread thrd(call, jvm);
-        thrd.join();
-        return res;
+        Context context;
+        context.jvm = jvm;
+        run_in_new_thread_and_join(call, &context);
+        return context.res;
     }
 }

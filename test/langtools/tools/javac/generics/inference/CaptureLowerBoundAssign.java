@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @bug 8075793
  * @summary Capture variable as an inference lower bound followed by an invariant assignment
  * @compile CaptureLowerBoundAssign.java
- * @compile -Xlint:-options -source 7 CaptureLowerBoundAssign.java
+ * @compile --release 7 CaptureLowerBoundAssign.java
  */
 
 class CaptureLowerBoundAssign {

@@ -27,16 +27,17 @@ import com.sun.hotspot.igv.connection.Server;
 import com.sun.hotspot.igv.coordinator.actions.*;
 import com.sun.hotspot.igv.data.GraphDocument;
 import com.sun.hotspot.igv.data.Group;
+import com.sun.hotspot.igv.data.InputGraph;
 import com.sun.hotspot.igv.data.services.GroupCallback;
 import com.sun.hotspot.igv.data.services.InputGraphProvider;
 import com.sun.hotspot.igv.util.LookupHistory;
+import com.sun.hotspot.igv.view.EditorTopComponent;
 import java.awt.BorderLayout;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.io.Serializable;
-import javax.swing.SwingUtilities;
-import javax.swing.UIManager;
+import javax.swing.*;
 import javax.swing.border.Border;
 import org.openide.ErrorManager;
 import org.openide.actions.GarbageCollectAction;
@@ -69,6 +70,9 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
     private FolderNode root;
     private Server server;
     private Server binaryServer;
+    private SaveAllAction saveAllAction;
+    private RemoveAllAction removeAllAction;
+
 
     private OutlineTopComponent() {
         initComponents();
@@ -92,25 +96,37 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
     }
 
     private void initToolbar() {
-
         Toolbar toolbar = new Toolbar();
         Border b = (Border) UIManager.get("Nb.Editor.Toolbar.border"); //NOI18N
         toolbar.setBorder(b);
         this.add(toolbar, BorderLayout.NORTH);
 
         toolbar.add(ImportAction.get(ImportAction.class));
-
         toolbar.add(((NodeAction) SaveAsAction.get(SaveAsAction.class)).createContextAwareInstance(this.getLookup()));
-        toolbar.add(SaveAllAction.get(SaveAllAction.class));
+
+        saveAllAction = SaveAllAction.get(SaveAllAction.class);
+        saveAllAction.setEnabled(false);
+        toolbar.add(saveAllAction);
 
         toolbar.add(((NodeAction) RemoveAction.get(RemoveAction.class)).createContextAwareInstance(this.getLookup()));
-        toolbar.add(RemoveAllAction.get(RemoveAllAction.class));
+
+        removeAllAction = RemoveAllAction.get(RemoveAllAction.class);
+        removeAllAction.setEnabled(false);
+        toolbar.add(removeAllAction);
 
         toolbar.add(GarbageCollectAction.get(GarbageCollectAction.class).getToolbarPresenter());
 
         for (Toolbar tb : ToolbarPool.getDefault().getToolbars()) {
             tb.setVisible(false);
         }
+
+        document.getChangedEvent().addListener(g -> documentChanged());
+    }
+
+    private void documentChanged() {
+        boolean enableButton = !document.getElements().isEmpty();
+        saveAllAction.setEnabled(enableButton);
+        removeAllAction.setEnabled(enableButton);
     }
 
     private void initReceivers() {
@@ -133,13 +149,22 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
     // Fetch and select the latest active graph.
     private void updateGraphSelection() {
         final InputGraphProvider p = LookupHistory.getLast(InputGraphProvider.class);
-        if (p == null) {
-            return;
-        }
-        try {
-            manager.setSelectedNodes(new GraphNode[]{FolderNode.getGraphNode(p.getGraph())});
-        } catch (Exception e) {
-            Exceptions.printStackTrace(e);
+        if (p != null) {
+            try {
+                InputGraph graph = p.getGraph();
+                if (graph.isDiffGraph()) {
+                    EditorTopComponent editor = EditorTopComponent.getActive();
+                    if (editor != null) {
+                        InputGraph firstGraph = editor.getModel().getFirstGraph();
+                        InputGraph secondGraph = editor.getModel().getSecondGraph();
+                        manager.setSelectedNodes(new GraphNode[]{FolderNode.getGraphNode(firstGraph), FolderNode.getGraphNode(secondGraph)});
+                    }
+                } else {
+                    manager.setSelectedNodes(new GraphNode[]{FolderNode.getGraphNode(graph)});
+                }
+            } catch (Exception e) {
+                Exceptions.printStackTrace(e);
+            }
         }
     }
 

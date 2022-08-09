@@ -898,13 +898,13 @@ spawn failed</code></pre>
 <pre><code>export SOURCE_DATE_EPOCH=946684800
 bash configure --with-version-opt=adhoc
 make</code></pre>
-<p>Note that regardless if you specify a source date for <code>configure</code> or not, the JDK build system will set <code>SOURCE_DATE_EPOCH</code> for all build tools when building. If <code>--with-source-date</code> has the value <code>updated</code> (which is the default unless <code>SOURCE_DATE_EPOCH</code> is found by in the environment by <code>configure</code>), the source date value will be determined at build time.</p>
+<p>Note that regardless if you specify a source date for <code>configure</code> or not, the JDK build system will set <code>SOURCE_DATE_EPOCH</code> for all build tools when building. If <code>--with-source-date</code> has the value <code>current</code> (which is the default unless <code>SOURCE_DATE_EPOCH</code> is found by in the environment by <code>configure</code>), the source date value will be determined at configure time.</p>
 <p>There are several aspects of reproducible builds that can be individually adjusted by <code>configure</code> arguments. If any of these are given, they will override the value derived from <code>SOURCE_DATE_EPOCH</code>. These arguments are:</p>
 <ul>
 <li><p><code>--with-source-date</code></p>
 <p>This option controls how the JDK build sets <code>SOURCE_DATE_EPOCH</code> when building. It can be set to a value describing a date, either an epoch based timestamp as an integer, or a valid ISO-8601 date.</p>
 <p>It can also be set to one of the special values <code>current</code>, <code>updated</code> or <code>version</code>. <code>current</code> means that the time of running <code>configure</code> will be used. <code>version</code> will use the nominal release date for the current JDK version. <code>updated</code>, which means that <code>SOURCE_DATE_EPOCH</code> will be set to the current time each time you are running <code>make</code>. All choices, except for <code>updated</code>, will set a fixed value for the source date timestamp.</p>
-<p>When <code>SOURCE_DATE_EPOCH</code> is set, the default value for <code>--with-source-date</code> will be the value given by <code>SOURCE_DATE_EPOCH</code>. Otherwise, the default value is <code>updated</code>.</p></li>
+<p>When <code>SOURCE_DATE_EPOCH</code> is set, the default value for <code>--with-source-date</code> will be the value given by <code>SOURCE_DATE_EPOCH</code>. Otherwise, the default value is <code>current</code>.</p></li>
 <li><p><code>--with-hotspot-build-time</code></p>
 <p>This option controls the build time string that will be included in the hotspot library (<code>libjvm.so</code> or <code>jvm.dll</code>). When the source date is fixed (e.g. by setting <code>SOURCE_DATE_EPOCH</code>), the default value for <code>--with-hotspot-build-time</code> will be an ISO 8601 representation of that time stamp. Otherwise the default value will be the current time when building hotspot.</p></li>
 <li><p><code>--with-copyright-year</code></p>

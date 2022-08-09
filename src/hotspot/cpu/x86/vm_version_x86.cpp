@@ -33,13 +33,11 @@
 #include "memory/universe.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"
-#include "runtime/os.hpp"
+#include "runtime/os.inline.hpp"
 #include "runtime/stubCodeGenerator.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/virtualizationSupport.hpp"
-
-#include OS_HEADER_INLINE(os)
 
 int VM_Version::_cpu;
 int VM_Version::_model;
@@ -938,8 +936,6 @@ void VM_Version::get_processor_features() {
     _features &= ~CPU_HT;
   }
 
-  // Note: Any modifications to following suppressed feature list for KNL target
-  // should also be applied to test/hotspot/jtreg/compiler/lib/ir_framework/test/IREncodingPrinter.java
   if (is_intel()) { // Intel cpus specific settings
     if (is_knights_family()) {
       _features &= ~CPU_VZEROUPPER;

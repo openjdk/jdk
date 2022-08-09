@@ -950,13 +950,6 @@ void MacroAssembler::null_check(Register reg, Register tmp, int offset) {
 }
 
 // Puts address of allocated object into register `obj` and end of allocated object into register `obj_end`.
-void MacroAssembler::eden_allocate(Register obj, Register obj_end, Register tmp1, Register tmp2,
-                                 RegisterOrConstant size_expression, Label& slow_case) {
-  BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  bs->eden_allocate(this, obj, obj_end, tmp1, tmp2, size_expression, slow_case);
-}
-
-// Puts address of allocated object into register `obj` and end of allocated object into register `obj_end`.
 void MacroAssembler::tlab_allocate(Register obj, Register obj_end, Register tmp1,
                                  RegisterOrConstant size_expression, Label& slow_case) {
   BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();

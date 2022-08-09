@@ -220,7 +220,7 @@ public:
     return extend(uval, msb - lsb);
   }
 
-  static void patch(address a, int msb, int lsb, uint64_t val) {
+  static ALWAYSINLINE void patch(address a, int msb, int lsb, uint64_t val) {
     int nbits = msb - lsb + 1;
     guarantee(val < (1ULL << nbits), "Field too big for insn");
     assert_cond(msb >= lsb);
@@ -718,7 +718,7 @@ public:
     wrap_label(Rd, L, &Assembler::_adrp);
   }
 
-  void adrp(Register Rd, const Address &dest, uint64_t &offset);
+  void adrp(Register Rd, const Address &dest, uint64_t &offset) = delete;
 
 #undef INSN
 
