@@ -2838,8 +2838,8 @@ G1JFRTracerMark::~G1JFRTracerMark() {
 void G1CollectedHeap::prepare_tlabs_for_mutator() {
   Ticks start = Ticks::now();
 
-  _survivor_evac_stats.adjust_desired_plab_sz();
-  _old_evac_stats.adjust_desired_plab_sz();
+  _survivor_evac_stats.adjust_desired_plab_size();
+  _old_evac_stats.adjust_desired_plab_size();
 
   allocate_dummy_regions();
 

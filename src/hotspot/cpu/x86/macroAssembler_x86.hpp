@@ -1114,6 +1114,12 @@ public:
   void addpd(XMMRegister dst, Address src)        { Assembler::addpd(dst, src); }
   void addpd(XMMRegister dst, AddressLiteral src);
 
+  using Assembler::vbroadcastsd;
+  void vbroadcastsd(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch = rscratch1);
+
+  using Assembler::vbroadcastss;
+  void vbroadcastss(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch = rscratch1);
+
   void divsd(XMMRegister dst, XMMRegister src)    { Assembler::divsd(dst, src); }
   void divsd(XMMRegister dst, Address src)        { Assembler::divsd(dst, src); }
   void divsd(XMMRegister dst, AddressLiteral src);
@@ -1150,13 +1156,17 @@ public:
   void kmov(Register dst, KRegister src);
   void kmov(KRegister dst, Register src);
 
+  using Assembler::movddup;
+  void movddup(XMMRegister dst, AddressLiteral src, Register rscratch = rscratch1);
+  using Assembler::vmovddup;
+  void vmovddup(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch = rscratch1);
+
   // AVX Unaligned forms
   void vmovdqu(Address     dst, XMMRegister src);
   void vmovdqu(XMMRegister dst, Address src);
   void vmovdqu(XMMRegister dst, XMMRegister src);
   void vmovdqu(XMMRegister dst, AddressLiteral src, Register scratch_reg = rscratch1);
   void vmovdqu(XMMRegister dst, AddressLiteral src, Register scratch_reg, int vector_len);
-
 
   // AVX512 Unaligned
   void evmovdqu(BasicType type, KRegister kmask, Address dst, XMMRegister src,  bool merge, int vector_len);
@@ -1228,9 +1238,6 @@ public:
   void movsd(Address dst, XMMRegister src)     { Assembler::movsd(dst, src); }
   void movsd(XMMRegister dst, Address src)     { Assembler::movsd(dst, src); }
   void movsd(XMMRegister dst, AddressLiteral src);
-
-  using Assembler::vmovddup;
-  void vmovddup(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch = rscratch1);
 
   void mulpd(XMMRegister dst, XMMRegister src)    { Assembler::mulpd(dst, src); }
   void mulpd(XMMRegister dst, Address src)        { Assembler::mulpd(dst, src); }
@@ -1337,16 +1344,11 @@ public:
   void vpand(XMMRegister dst, XMMRegister nds, Address src, int vector_len) { Assembler::vpand(dst, nds, src, vector_len); }
   void vpand(XMMRegister dst, XMMRegister nds, AddressLiteral src, int vector_len, Register scratch_reg = rscratch1);
 
-  void vpbroadcastw(XMMRegister dst, XMMRegister src, int vector_len);
-  void vpbroadcastw(XMMRegister dst, Address src, int vector_len) { Assembler::vpbroadcastw(dst, src, vector_len); }
+  using Assembler::vpbroadcastd;
+  void vpbroadcastd(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch = rscratch1);
 
-  using Assembler::vbroadcastsd;
-  void vbroadcastsd(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch = rscratch1);
+  using Assembler::vpbroadcastq;
   void vpbroadcastq(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch = rscratch1);
-  void vpbroadcastq(XMMRegister dst, XMMRegister src, int vector_len) { Assembler::vpbroadcastq(dst, src, vector_len); }
-  void vpbroadcastq(XMMRegister dst, Address src, int vector_len) { Assembler::vpbroadcastq(dst, src, vector_len); }
-
-
 
   void vpcmpeqb(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
 
