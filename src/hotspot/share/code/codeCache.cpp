@@ -709,7 +709,6 @@ void CodeCache::update_cold_gc_count() {
   double last_time = _last_unloading_time;
 
   double time = os::elapsedTime();
-  double duration = time - last_time;
 
   size_t free = unallocated_capacity();
   size_t max = max_capacity();
@@ -727,7 +726,7 @@ void CodeCache::update_cold_gc_count() {
     return;
   }
 
-  if (duration <= 0.0 || last_used >= used) {
+  if (gc_interval <= 0.0 || last_used >= used) {
     // Dodge corner cases where there is no pressure or negative pressure
     // on the code cache. Just don't unload when this happens.
     _cold_gc_count = INT_MAX;
@@ -735,7 +734,7 @@ void CodeCache::update_cold_gc_count() {
     return;
   }
 
-  double allocation_rate = (used - last_used) / duration;
+  double allocation_rate = (used - last_used) / gc_interval;
 
   _unloading_allocation_rates.add(allocation_rate);
   _unloading_gc_intervals.add(gc_interval);
