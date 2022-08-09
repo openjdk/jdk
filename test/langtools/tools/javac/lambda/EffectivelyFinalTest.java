@@ -4,7 +4,7 @@
  * @summary Add lambda tests
  *  Integrate effectively final check with DA/DU analysis
  * @compile/fail/ref=EffectivelyFinalTest01.out -XDrawDiagnostics EffectivelyFinalTest.java
- * @compile/fail/ref=EffectivelyFinalTest02.out -source 7 -Xlint:-options -XDrawDiagnostics EffectivelyFinalTest.java
+ * @compile/fail/ref=EffectivelyFinalTest02.out --release 7 -Xlint:-options -XDrawDiagnostics EffectivelyFinalTest.java
  */
 class EffectivelyFinalTest {
 

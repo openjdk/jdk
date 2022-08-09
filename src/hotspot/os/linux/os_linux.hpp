@@ -25,12 +25,11 @@
 #ifndef OS_LINUX_OS_LINUX_HPP
 #define OS_LINUX_OS_LINUX_HPP
 
-// Linux_OS defines the interface to Linux operating systems
+#include "runtime/os.hpp"
 
-// Information about the protection of the page at address '0' on this os.
-static bool zero_page_read_protected() { return true; }
+// os::Linux defines the interface to Linux operating systems
 
-class Linux {
+class os::Linux {
   friend class CgroupSubsystem;
   friend class os;
   friend class OSContainer;
@@ -157,6 +156,7 @@ class Linux {
 
   // Stack overflow handling
   static bool manually_expand_stack(JavaThread * t, address addr);
+  static void expand_stack_to(address bottom);
 
   // fast POSIX clocks support
   static void fast_thread_clock_init(void);
@@ -198,7 +198,6 @@ class Linux {
 
  private:
   static void numa_init();
-  static void expand_stack_to(address bottom);
 
   typedef int (*sched_getcpu_func_t)(void);
   typedef int (*numa_node_to_cpus_func_t)(int node, unsigned long *buffer, int bufferlen);
@@ -428,6 +427,8 @@ class Linux {
   static const GrowableArray<int>* numa_nindex_to_node() {
     return _nindex_to_node;
   }
+
+  void* resolve_function_descriptor(void* p);
 };
 
 #endif // OS_LINUX_OS_LINUX_HPP

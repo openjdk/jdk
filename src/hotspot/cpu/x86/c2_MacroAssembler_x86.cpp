@@ -1643,12 +1643,12 @@ void C2_MacroAssembler::load_vector_mask(KRegister dst, XMMRegister src, XMMRegi
 
 void C2_MacroAssembler::load_vector(XMMRegister dst, Address src, int vlen_in_bytes) {
   switch (vlen_in_bytes) {
-  case 4:  movdl(dst, src);   break;
-  case 8:  movq(dst, src);    break;
-  case 16: movdqu(dst, src);  break;
-  case 32: vmovdqu(dst, src); break;
-  case 64: evmovdquq(dst, src, Assembler::AVX_512bit); break;
-  default: ShouldNotReachHere();
+    case 4:  movdl(dst, src);   break;
+    case 8:  movq(dst, src);    break;
+    case 16: movdqu(dst, src);  break;
+    case 32: vmovdqu(dst, src); break;
+    case 64: evmovdqul(dst, src, Assembler::AVX_512bit); break;
+    default: ShouldNotReachHere();
   }
 }
 
@@ -1658,6 +1658,38 @@ void C2_MacroAssembler::load_vector(XMMRegister dst, AddressLiteral src, int vle
   } else {
     lea(rscratch, src);
     load_vector(dst, Address(rscratch, 0), vlen_in_bytes);
+  }
+}
+
+void C2_MacroAssembler::load_constant_vector(BasicType bt, XMMRegister dst, InternalAddress src, int vlen) {
+  int vlen_enc = vector_length_encoding(vlen);
+  if (VM_Version::supports_avx()) {
+    if (bt == T_LONG) {
+      if (VM_Version::supports_avx2()) {
+        vpbroadcastq(dst, src, vlen_enc, noreg);
+      } else {
+        vmovddup(dst, src, vlen_enc, noreg);
+      }
+    } else if (bt == T_DOUBLE) {
+      if (vlen_enc != Assembler::AVX_128bit) {
+        vbroadcastsd(dst, src, vlen_enc, noreg);
+      } else {
+        vmovddup(dst, src, vlen_enc, noreg);
+      }
+    } else {
+      if (VM_Version::supports_avx2() && is_integral_type(bt)) {
+        vpbroadcastd(dst, src, vlen_enc, noreg);
+      } else {
+        vbroadcastss(dst, src, vlen_enc, noreg);
+      }
+    }
+  } else if (VM_Version::supports_sse3()) {
+    movddup(dst, src);
+  } else {
+    movq(dst, src);
+    if (vlen == 16) {
+      punpcklqdq(dst, dst);
+    }
   }
 }
 
@@ -2317,9 +2349,9 @@ void C2_MacroAssembler::get_elem(BasicType typ, XMMRegister dst, XMMRegister src
     if (typ == T_FLOAT) {
       if (UseAVX == 0) {
         movdqu(dst, src);
-        pshufps(dst, dst, eindex);
+        shufps(dst, dst, eindex);
       } else {
-        vpshufps(dst, src, src, eindex, Assembler::AVX_128bit);
+        vshufps(dst, src, src, eindex, Assembler::AVX_128bit);
       }
     } else {
       if (UseAVX == 0) {
@@ -5484,6 +5516,90 @@ void C2_MacroAssembler::udivmodI(Register rax, Register divisor, Register rdx, R
 }
 
 #ifdef _LP64
+void C2_MacroAssembler::reverseI(Register dst, Register src, XMMRegister xtmp1,
+                                 XMMRegister xtmp2, Register rtmp) {
+  if(VM_Version::supports_gfni()) {
+    // Galois field instruction based bit reversal based on following algorithm.
+    // http://0x80.pl/articles/avx512-galois-field-for-bit-shuffling.html
+    mov64(rtmp, 0x8040201008040201L);
+    movq(xtmp1, src);
+    movq(xtmp2, rtmp);
+    gf2p8affineqb(xtmp1, xtmp2, 0);
+    movq(dst, xtmp1);
+  } else {
+    // Swap even and odd numbered bits.
+    movl(rtmp, src);
+    andl(rtmp, 0x55555555);
+    shll(rtmp, 1);
+    movl(dst, src);
+    andl(dst, 0xAAAAAAAA);
+    shrl(dst, 1);
+    orl(dst, rtmp);
+
+    // Swap LSB and MSB 2 bits of each nibble.
+    movl(rtmp, dst);
+    andl(rtmp, 0x33333333);
+    shll(rtmp, 2);
+    andl(dst, 0xCCCCCCCC);
+    shrl(dst, 2);
+    orl(dst, rtmp);
+
+    // Swap LSB and MSB 4 bits of each byte.
+    movl(rtmp, dst);
+    andl(rtmp, 0x0F0F0F0F);
+    shll(rtmp, 4);
+    andl(dst, 0xF0F0F0F0);
+    shrl(dst, 4);
+    orl(dst, rtmp);
+  }
+  bswapl(dst);
+}
+
+void C2_MacroAssembler::reverseL(Register dst, Register src, XMMRegister xtmp1,
+                                 XMMRegister xtmp2, Register rtmp1, Register rtmp2) {
+  if(VM_Version::supports_gfni()) {
+    // Galois field instruction based bit reversal based on following algorithm.
+    // http://0x80.pl/articles/avx512-galois-field-for-bit-shuffling.html
+    mov64(rtmp1, 0x8040201008040201L);
+    movq(xtmp1, src);
+    movq(xtmp2, rtmp1);
+    gf2p8affineqb(xtmp1, xtmp2, 0);
+    movq(dst, xtmp1);
+  } else {
+    // Swap even and odd numbered bits.
+    movq(rtmp1, src);
+    mov64(rtmp2, 0x5555555555555555L);
+    andq(rtmp1, rtmp2);
+    shlq(rtmp1, 1);
+    movq(dst, src);
+    notq(rtmp2);
+    andq(dst, rtmp2);
+    shrq(dst, 1);
+    orq(dst, rtmp1);
+
+    // Swap LSB and MSB 2 bits of each nibble.
+    movq(rtmp1, dst);
+    mov64(rtmp2, 0x3333333333333333L);
+    andq(rtmp1, rtmp2);
+    shlq(rtmp1, 2);
+    notq(rtmp2);
+    andq(dst, rtmp2);
+    shrq(dst, 2);
+    orq(dst, rtmp1);
+
+    // Swap LSB and MSB 4 bits of each byte.
+    movq(rtmp1, dst);
+    mov64(rtmp2, 0x0F0F0F0F0F0F0F0FL);
+    andq(rtmp1, rtmp2);
+    shlq(rtmp1, 4);
+    notq(rtmp2);
+    andq(dst, rtmp2);
+    shrq(dst, 4);
+    orq(dst, rtmp1);
+  }
+  bswapq(dst);
+}
+
 void C2_MacroAssembler::udivL(Register rax, Register divisor, Register rdx) {
   Label done;
   Label neg_divisor_fastpath;

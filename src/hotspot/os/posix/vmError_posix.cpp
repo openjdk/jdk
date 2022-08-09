@@ -25,6 +25,7 @@
 
 #include "precompiled.hpp"
 #include "cds/metaspaceShared.hpp"
+#include "os_posix.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/os.hpp"
 #include "runtime/safefetch.hpp"
