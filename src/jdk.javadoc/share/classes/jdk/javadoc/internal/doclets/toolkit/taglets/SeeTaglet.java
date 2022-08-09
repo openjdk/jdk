@@ -27,8 +27,10 @@ package jdk.javadoc.internal.doclets.toolkit.taglets;
 
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Optional;
 
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ExecutableElement;
 
 import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.SeeTree;
@@ -54,6 +56,7 @@ public class SeeTaglet extends BaseTaglet implements InheritableTaglet {
         if (!tags.isEmpty()) {
             CommentHelper ch = input.utils.getCommentHelper(input.element);
             output.holder = input.element;
+            // TODO investigate: this seems to inherit the first @see tag only
             output.holderTag = tags.get(0);
             output.inlineTags = input.isFirstSentence
                     ? ch.getFirstSentenceTrees(output.holderTag)
@@ -66,14 +69,24 @@ public class SeeTaglet extends BaseTaglet implements InheritableTaglet {
         Utils utils = writer.configuration().utils;
         List<? extends SeeTree> tags = utils.getSeeTrees(holder);
         Element e = holder;
-        if (tags.isEmpty() && utils.isMethod(holder)) {
-            Input input = new DocFinder.Input(utils, holder, this);
-            DocFinder.Output inheritedDoc = DocFinder.search(writer.configuration(), input);
-            if (inheritedDoc.holder != null) {
-                tags = utils.getSeeTrees(inheritedDoc.holder);
-                e = inheritedDoc.holder;
+        if (utils.isMethod(holder)) {
+            Optional<DocFinder.Result> result = DocFinder.inheritDocumentation(
+                    (ExecutableElement) holder, m -> extract(utils, m), writer.configuration());
+            if (result.isPresent()) {
+                ExecutableElement m = result.get().method();
+                tags = utils.getSeeTrees(m);
+                e = m;
             }
         }
         return writer.seeTagOutput(e, tags);
+    }
+
+    private static Optional<List<? extends DocTree>> extract(Utils utils, ExecutableElement method) {
+        List<? extends SeeTree> tags = utils.getSeeTrees(method);
+        if (tags.isEmpty()) {
+            return Optional.empty();
+        }
+        CommentHelper ch = utils.getCommentHelper(method);
+        return Optional.of(ch.getReference(tags.get(0)));
     }
 }
