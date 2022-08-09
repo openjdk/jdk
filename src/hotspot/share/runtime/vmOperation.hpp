@@ -60,11 +60,11 @@
   template(G1PauseRemark)                         \
   template(G1PauseCleanup)                        \
   template(G1TryInitiateConcMark)                 \
+  template(ZMarkEndOld)                           \
+  template(ZMarkEndYoung)                         \
   template(ZMarkFlushOperation)                   \
   template(ZMarkStartYoung)                       \
   template(ZMarkStartYoungAndOld)                 \
-  template(ZMarkEndOld)                           \
-  template(ZMarkEndYoung)                         \
   template(ZRelocateStartOld)                     \
   template(ZRelocateStartYoung)                   \
   template(ZRendezvousGCThreads)                  \
