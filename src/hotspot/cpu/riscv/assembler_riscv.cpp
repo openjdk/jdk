@@ -311,13 +311,6 @@ void Assembler::movptr(Register Rd, address addr) {
   addi(Rd, Rd, offset);
 }
 
-void Assembler::ifence() {
-  fence_i();
-  if (UseConservativeFence) {
-    fence(ir, ir);
-  }
-}
-
 #define INSN(NAME, NEG_INSN)                                                         \
   void Assembler::NAME(Register Rs, Register Rt, const address &dest) {              \
     NEG_INSN(Rt, Rs, dest);                                                          \

@@ -255,10 +255,12 @@ void FileMapHeader::populate(FileMapInfo *info, size_t core_region_alignment,
       _heap_begin = CompressedOops::begin();
       _heap_end = CompressedOops::end();
     } else {
+#if INCLUDE_G1GC
       address start = (address)G1CollectedHeap::heap()->reserved().start();
       address end = (address)G1CollectedHeap::heap()->reserved().end();
       _heap_begin = HeapShared::to_requested_address(start);
       _heap_end = HeapShared::to_requested_address(end);
+#endif
     }
   }
   _compressed_oops = UseCompressedOops;
@@ -1522,7 +1524,9 @@ void FileMapInfo::write_region(int region, char* base, size_t size,
     if (UseCompressedOops) {
       mapping_offset = (size_t)CompressedOops::encode_not_null(cast_to_oop(base));
     } else {
+#if INCLUDE_G1GC
       mapping_offset = requested_base - (char*)G1CollectedHeap::heap()->reserved().start();
+#endif
     }
     assert(mapping_offset == (size_t)(uint32_t)mapping_offset, "must be 32-bit only");
   } else {
