@@ -2,7 +2,7 @@
  * @test /nodynamiccopyright/
  * @bug 8262891
  * @summary Check null handling for non-pattern switches.
- * @compile/fail/ref=CaseDefault.out -source 16 -Xlint:-options -XDrawDiagnostics CaseDefault.java
+ * @compile/fail/ref=CaseDefault.out --release 16 -XDrawDiagnostics CaseDefault.java
  * @compile --enable-preview -source ${jdk.version} CaseDefault.java
  * @run main/othervm --enable-preview CaseDefault
  */

@@ -1486,7 +1486,7 @@ JVM_ENTRY(void, MHN_clearCallSiteContext(JNIEnv* env, jobject igcls, jobject con
   {
     MutexLocker mu2(thread, CodeCache_lock, Mutex::_no_safepoint_check_flag);
     DependencyContext deps = java_lang_invoke_MethodHandleNatives_CallSiteContext::vmdependencies(context());
-    deps.remove_and_mark_all_dependents(&deopt);
+    deps.remove_and_mark_for_deoptimization_all_dependents(&deopt);
   }
 
   deopt.deoptimize();

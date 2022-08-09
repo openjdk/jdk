@@ -122,26 +122,22 @@ import sun.security.util.SecurityConstants;
  * in this class causes a {@link NullPointerException NullPointerException} to
  * be thrown. </p>
  *
- * <h2> Example usage: </h2>
+ * <h2> Example </h2>
  *
  * <p> This example creates a configuration by resolving a module named
  * "{@code myapp}" with the configuration for the boot layer as the parent. It
  * then creates a new layer with the modules in this configuration. All modules
  * are defined to the same class loader. </p>
  *
- * <pre>{@code
+ * {@snippet :
  *     ModuleFinder finder = ModuleFinder.of(dir1, dir2, dir3);
- *
  *     ModuleLayer parent = ModuleLayer.boot();
- *
- *     Configuration cf = parent.configuration().resolve(finder, ModuleFinder.of(), Set.of("myapp"));
- *
+ *     Configuration cf = parent.configuration()
+ *                              .resolve(finder, ModuleFinder.of(), Set.of("myapp"));
  *     ClassLoader scl = ClassLoader.getSystemClassLoader();
- *
  *     ModuleLayer layer = parent.defineModulesWithOneLoader(cf, scl);
- *
  *     Class<?> c = layer.findLoader("myapp").loadClass("app.Main");
- * }</pre>
+ * }
  *
  * @since 9
  * @see Module#getLayer()
