@@ -66,8 +66,6 @@ public class TestDaemonDestroy {
         pb.environment().merge(envVar, Platform.jvmLibDir().toString(),
                                (x, y) -> y + File.pathSeparator + x);
 
-        //        pb.environment().put("CLASSPATH", Utils.TEST_CLASS_PATH);
-
         OutputAnalyzer oa = new OutputAnalyzer(pb.start());
         oa.shouldHaveExitValue(0);
         oa.shouldNotContain("Error: T1 isAlive");
