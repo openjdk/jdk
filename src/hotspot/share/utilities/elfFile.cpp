@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -168,7 +168,7 @@ void ElfFile::cleanup_tables() {
 NullDecoder::decoder_status ElfFile::parse_elf(const char* filepath) {
   assert(filepath, "null file path");
 
-  _file = fopen(filepath, "r");
+  _file = os::fopen(filepath, "r");
   if (_file != NULL) {
     return load_tables();
   } else {
@@ -234,7 +234,7 @@ NullDecoder::decoder_status ElfFile::load_tables() {
     }
   }
 #if defined(PPC64) && !defined(ABI_ELFv2)
-  // Now read the .opd section wich contains the PPC64 function descriptor table.
+  // Now read the .opd section which contains the PPC64 function descriptor table.
   // The .opd section is only available on PPC64 (see for example:
   // http://refspecs.linuxfoundation.org/LSB_3.1.1/LSB-Core-PPC64/LSB-Core-PPC64/specialsections.html)
   // so this code should do no harm on other platforms but because of performance reasons we only

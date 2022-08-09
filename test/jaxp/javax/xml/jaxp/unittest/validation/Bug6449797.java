@@ -33,7 +33,7 @@ import org.xml.sax.SAXException;
  * @test
  * @bug 6449797
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true validation.Bug6449797
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow validation.Bug6449797
  * @run testng/othervm validation.Bug6449797
  * @summary Test SchemaFactory can parse the specified attribute value with a specified namespace.
  */

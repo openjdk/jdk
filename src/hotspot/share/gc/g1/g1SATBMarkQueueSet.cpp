@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/g1/g1BarrierSet.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1SATBMarkQueueSet.hpp"
 #include "gc/g1/g1ThreadLocalData.hpp"
@@ -37,10 +38,11 @@ G1SATBMarkQueueSet::G1SATBMarkQueueSet(BufferNode::Allocator* allocator) :
 {}
 
 void G1SATBMarkQueueSet::handle_zero_index_for_thread(Thread* t) {
-  G1ThreadLocalData::satb_mark_queue(t).handle_zero_index();
+  G1SATBMarkQueueSet& qset = G1BarrierSet::satb_mark_queue_set();
+  qset.handle_zero_index(qset.satb_queue_for_thread(t));
 }
 
-SATBMarkQueue& G1SATBMarkQueueSet::satb_queue_for_thread(Thread* const t) const{
+SATBMarkQueue& G1SATBMarkQueueSet::satb_queue_for_thread(Thread* const t) const {
   return G1ThreadLocalData::satb_mark_queue(t);
 }
 
@@ -51,10 +53,10 @@ SATBMarkQueue& G1SATBMarkQueueSet::satb_queue_for_thread(Thread* const t) const{
 // be a NULL pointer.  NULL pointers are pre-filtered and never
 // inserted into a SATB buffer.
 //
-// An entry that is below the NTAMS pointer for the containing heap
+// An entry that is below the TAMS pointer for the containing heap
 // region requires marking. Such an entry must point to a valid object.
 //
-// An entry that is at least the NTAMS pointer for the containing heap
+// An entry that is at least the TAMS pointer for the containing heap
 // region might be any of the following, none of which should be marked.
 //
 // * A reference to an object allocated since marking started.
@@ -73,7 +75,7 @@ SATBMarkQueue& G1SATBMarkQueueSet::satb_queue_for_thread(Thread* const t) const{
 //   humongous object is recorded and then reclaimed, the reference
 //   becomes stale.
 //
-// The stale reference cases are implicitly handled by the NTAMS
+// The stale reference cases are implicitly handled by the TAMS
 // comparison. Because of the possibility of stale references, buffer
 // processing must be somewhat circumspect and not assume entries
 // in an unfiltered buffer refer to valid objects.
@@ -84,19 +86,18 @@ static inline bool requires_marking(const void* entry, G1CollectedHeap* g1h) {
          "Non-heap pointer in SATB buffer: " PTR_FORMAT, p2i(entry));
 
   HeapRegion* region = g1h->heap_region_containing(entry);
-  assert(region != NULL, "No region for " PTR_FORMAT, p2i(entry));
-  if (entry >= region->next_top_at_mark_start()) {
+  if (entry >= region->top_at_mark_start()) {
     return false;
   }
 
-  assert(oopDesc::is_oop(oop(entry), true /* ignore mark word */),
+  assert(oopDesc::is_oop(cast_to_oop(entry), true /* ignore mark word */),
          "Invalid oop in SATB buffer: " PTR_FORMAT, p2i(entry));
 
   return true;
 }
 
 static inline bool discard_entry(const void* entry, G1CollectedHeap* g1h) {
-  return !requires_marking(entry, g1h) || g1h->is_marked_next((oop)entry);
+  return !requires_marking(entry, g1h) || g1h->is_marked(cast_to_oop(entry));
 }
 
 // Workaround for not yet having std::bind.
@@ -113,6 +114,6 @@ public:
   }
 };
 
-void G1SATBMarkQueueSet::filter(SATBMarkQueue* queue) {
+void G1SATBMarkQueueSet::filter(SATBMarkQueue& queue) {
   apply_filter(G1SATBMarkQueueFilterFn(), queue);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 #include "gc/g1/g1CollectionSetChooser.hpp"
 #include "gc/g1/g1RemSetTrackingPolicy.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
-#include "gc/g1/heapRegionRemSet.hpp"
+#include "gc/g1/heapRegionRemSet.inline.hpp"
 #include "runtime/safepoint.hpp"
 
 bool G1RemSetTrackingPolicy::needs_scan_for_rebuild(HeapRegion* r) const {
@@ -62,19 +62,17 @@ void G1RemSetTrackingPolicy::update_at_free(HeapRegion* r) {
 
 static void print_before_rebuild(HeapRegion* r, bool selected_for_rebuild, size_t total_live_bytes, size_t live_bytes) {
   log_trace(gc, remset, tracking)("Before rebuild region %u "
-                                  "(ntams: " PTR_FORMAT ") "
-                                  "total_live_bytes " SIZE_FORMAT " "
+                                  "(tams: " PTR_FORMAT ") "
+                                  "total_live_bytes %zu "
                                   "selected %s "
-                                  "(live_bytes " SIZE_FORMAT " "
-                                  "next_marked " SIZE_FORMAT " "
-                                  "marked " SIZE_FORMAT " "
+                                  "(live_bytes %zu "
+                                  "marked %zu "
                                   "type %s)",
                                   r->hrm_index(),
-                                  p2i(r->next_top_at_mark_start()),
+                                  p2i(r->top_at_mark_start()),
                                   total_live_bytes,
                                   BOOL_TO_STR(selected_for_rebuild),
                                   live_bytes,
-                                  r->next_marked_bytes(),
                                   r->marked_bytes(),
                                   r->get_type_str());
 }
@@ -93,7 +91,7 @@ bool G1RemSetTrackingPolicy::update_humongous_before_rebuild(HeapRegion* r, bool
   // For humongous regions, to be of interest for rebuilding the remembered set the following must apply:
   // - We always try to update the remembered sets of humongous regions containing
   // type arrays as they might have been reset after full gc.
-  if (is_live && oop(r->humongous_start_region()->bottom())->is_typeArray() && !r->rem_set()->is_tracked()) {
+  if (is_live && cast_to_oop(r->humongous_start_region()->bottom())->is_typeArray() && !r->rem_set()->is_tracked()) {
     r->rem_set()->set_state_updating();
     selected_for_rebuild = true;
   }
@@ -116,8 +114,8 @@ bool G1RemSetTrackingPolicy::update_before_rebuild(HeapRegion* r, size_t live_by
 
   assert(!r->rem_set()->is_updating(), "Remembered set of region %u is updating before rebuild", r->hrm_index());
 
-  size_t between_ntams_and_top = (r->top() - r->next_top_at_mark_start()) * HeapWordSize;
-  size_t total_live_bytes = live_bytes + between_ntams_and_top;
+  size_t between_tams_and_top = (r->top() - r->top_at_mark_start()) * HeapWordSize;
+  size_t total_live_bytes = live_bytes + between_tams_and_top;
 
   bool selected_for_rebuild = false;
   // For old regions, to be of interest for rebuilding the remembered set the following must apply:
@@ -152,7 +150,7 @@ void G1RemSetTrackingPolicy::update_after_rebuild(HeapRegion* r) {
     // cycle as e.g. remembered set entries will always be added.
     if (r->is_starts_humongous() && !g1h->is_potential_eager_reclaim_candidate(r)) {
       // Handle HC regions with the HS region.
-      uint const size_in_regions = (uint)g1h->humongous_obj_size_in_regions(oop(r->bottom())->size());
+      uint const size_in_regions = (uint)g1h->humongous_obj_size_in_regions(cast_to_oop(r->bottom())->size());
       uint const region_idx = r->hrm_index();
       for (uint j = region_idx; j < (region_idx + size_in_regions); j++) {
         HeapRegion* const cur = g1h->region_at(j);
@@ -163,15 +161,13 @@ void G1RemSetTrackingPolicy::update_after_rebuild(HeapRegion* r) {
     }
     G1ConcurrentMark* cm = G1CollectedHeap::heap()->concurrent_mark();
     log_trace(gc, remset, tracking)("After rebuild region %u "
-                                    "(ntams " PTR_FORMAT " "
-                                    "liveness " SIZE_FORMAT " "
-                                    "next_marked_bytes " SIZE_FORMAT " "
-                                    "remset occ " SIZE_FORMAT " "
-                                    "size " SIZE_FORMAT ")",
+                                    "(tams " PTR_FORMAT " "
+                                    "liveness %zu "
+                                    "remset occ %zu "
+                                    "size %zu)",
                                     r->hrm_index(),
-                                    p2i(r->next_top_at_mark_start()),
-                                    cm->liveness(r->hrm_index()) * HeapWordSize,
-                                    r->next_marked_bytes(),
+                                    p2i(r->top_at_mark_start()),
+                                    cm->live_bytes(r->hrm_index()),
                                     r->rem_set()->occupied(),
                                     r->rem_set()->mem_size());
   }

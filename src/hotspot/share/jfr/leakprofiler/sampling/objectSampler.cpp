@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,11 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/oopStorage.hpp"
 #include "gc/shared/oopStorageSet.hpp"
 #include "jfr/jfrEvents.hpp"
+#include "jfr/leakprofiler/checkpoint/objectSampleCheckpoint.hpp"
 #include "jfr/leakprofiler/sampling/objectSample.hpp"
 #include "jfr/leakprofiler/sampling/objectSampler.hpp"
 #include "jfr/leakprofiler/sampling/sampleList.hpp"
@@ -40,9 +42,9 @@
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/safepoint.hpp"
-#include "runtime/thread.hpp"
 
 // Timestamp of when the gc last processed the set of sampled objects.
 // Atomic access to prevent word tearing on 32-bit platforms.
@@ -73,7 +75,7 @@ void ObjectSampler::oop_storage_gc_notification(size_t num_dead) {
 }
 
 bool ObjectSampler::create_oop_storage() {
-  _oop_storage = OopStorageSet::create_weak("Weak JFR Old Object Samples");
+  _oop_storage = OopStorageSet::create_weak("Weak JFR Old Object Samples", mtTracing);
   assert(_oop_storage != NULL, "invariant");
   _oop_storage->register_num_dead_callback(&oop_storage_gc_notification);
   return true;
@@ -106,6 +108,7 @@ ObjectSampler::~ObjectSampler() {
 bool ObjectSampler::create(size_t size) {
   assert(SafepointSynchronize::is_at_safepoint(), "invariant");
   assert(_oop_storage != NULL, "should be already created");
+  ObjectSampleCheckpoint::clear();
   assert(_instance == NULL, "invariant");
   _instance = new ObjectSampler(size);
   return _instance != NULL;
@@ -141,8 +144,9 @@ void ObjectSampler::release() {
   _lock = 0;
 }
 
-static traceid get_thread_id(JavaThread* thread) {
+static traceid get_thread_id(JavaThread* thread, bool* virtual_thread) {
   assert(thread != NULL, "invariant");
+  assert(virtual_thread != NULL, "invariant");
   if (thread->threadObj() == NULL) {
     return 0;
   }
@@ -151,42 +155,69 @@ static traceid get_thread_id(JavaThread* thread) {
   if (tl->is_excluded()) {
     return 0;
   }
-  if (!tl->has_thread_blob()) {
-    JfrCheckpointManager::create_thread_blob(thread);
-  }
-  assert(tl->has_thread_blob(), "invariant");
-  return tl->thread_id();
+  *virtual_thread = tl->is_vthread(thread);
+  return JfrThreadLocal::thread_id(thread);
 }
 
-static void record_stacktrace(JavaThread* thread) {
+static JfrBlobHandle get_thread_blob(JavaThread* thread, traceid tid, bool virtual_thread) {
   assert(thread != NULL, "invariant");
-  if (JfrEventSetting::has_stacktrace(EventOldObjectSample::eventId)) {
-    JfrStackTraceRepository::record_and_cache(thread);
+  JfrThreadLocal* const tl = thread->jfr_thread_local();
+  assert(tl != NULL, "invariant");
+  assert(!tl->is_excluded(), "invariant");
+  if (virtual_thread) {
+    // TODO: blob cache for virtual threads
+    return JfrCheckpointManager::create_thread_blob(thread, tid, thread->vthread());
   }
+  if (!tl->has_thread_blob()) {
+    // for regular threads, the blob is cached in the thread local data structure
+    tl->set_thread_blob(JfrCheckpointManager::create_thread_blob(thread, tid));
+    assert(tl->has_thread_blob(), "invariant");
+  }
+  return tl->thread_blob();
 }
+
+class RecordStackTrace {
+ private:
+  JavaThread* _jt;
+  bool _enabled;
+ public:
+  RecordStackTrace(JavaThread* jt) : _jt(jt),
+    _enabled(JfrEventSetting::has_stacktrace(EventOldObjectSample::eventId)) {
+    if (_enabled) {
+      JfrStackTraceRepository::record_for_leak_profiler(jt);
+    }
+  }
+  ~RecordStackTrace() {
+    if (_enabled) {
+      _jt->jfr_thread_local()->clear_cached_stack_trace();
+    }
+  }
+};
 
 void ObjectSampler::sample(HeapWord* obj, size_t allocated, JavaThread* thread) {
   assert(thread != NULL, "invariant");
   assert(is_created(), "invariant");
-  const traceid thread_id = get_thread_id(thread);
+  bool virtual_thread = false;
+  const traceid thread_id = get_thread_id(thread, &virtual_thread);
   if (thread_id == 0) {
     return;
   }
-  record_stacktrace(thread);
+  const JfrBlobHandle bh = get_thread_blob(thread, thread_id, virtual_thread);
+  assert(bh.valid(), "invariant");
+  RecordStackTrace rst(thread);
   // try enter critical section
   JfrTryLock tryLock(&_lock);
-  if (!tryLock.has_lock()) {
+  if (!tryLock.acquired()) {
     log_trace(jfr, oldobject, sampling)("Skipping old object sample due to lock contention");
     return;
   }
-  instance().add(obj, allocated, thread_id, thread);
+  instance().add(obj, allocated, thread_id, virtual_thread, bh, thread);
 }
 
-void ObjectSampler::add(HeapWord* obj, size_t allocated, traceid thread_id, JavaThread* thread) {
+void ObjectSampler::add(HeapWord* obj, size_t allocated, traceid thread_id, bool virtual_thread, const JfrBlobHandle& bh, JavaThread* thread) {
   assert(obj != NULL, "invariant");
   assert(thread_id != 0, "invariant");
   assert(thread != NULL, "invariant");
-  assert(thread->jfr_thread_local()->has_thread_blob(), "invariant");
 
   if (Atomic::load(&_dead_samples)) {
     // There's a small race where a GC scan might reset this to true, potentially
@@ -212,10 +243,12 @@ void ObjectSampler::add(HeapWord* obj, size_t allocated, traceid thread_id, Java
 
   assert(sample != NULL, "invariant");
   sample->set_thread_id(thread_id);
+  if (virtual_thread) {
+    sample->set_thread_is_virtual();
+  }
+  sample->set_thread(bh);
 
   const JfrThreadLocal* const tl = thread->jfr_thread_local();
-  sample->set_thread(tl->thread_blob());
-
   const unsigned int stacktrace_hash = tl->cached_stack_trace_hash();
   if (stacktrace_hash != 0) {
     sample->set_stack_trace_id(tl->cached_stack_trace_id());
@@ -223,7 +256,7 @@ void ObjectSampler::add(HeapWord* obj, size_t allocated, traceid thread_id, Java
   }
 
   sample->set_span(allocated);
-  sample->set_object((oop)obj);
+  sample->set_object(cast_to_oop(obj));
   sample->set_allocated(allocated);
   sample->set_allocation_time(JfrTicks::now());
   sample->set_heap_used_at_last_gc(Universe::heap()->used_at_last_gc());

@@ -175,7 +175,7 @@ public class HyperlinkEvent extends EventObject {
     /**
      * Returns the {@code InputEvent} that triggered the hyperlink event.
      * This will typically be a {@code MouseEvent}.  If a constructor is used
-     * that does not specify an {@code InputEvent}, or @{code null}
+     * that does not specify an {@code InputEvent}, or {@code null}
      * was specified as the {@code InputEvent}, this returns {@code null}.
      *
      * @return  InputEvent that triggered the hyperlink event, or null

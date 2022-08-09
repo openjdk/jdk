@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
  */
 
 package java.awt;
+
+import java.io.Serial;
 
 /**
  * The {@code GridLayout} class is a layout manager that
@@ -87,9 +89,11 @@ package java.awt;
  * @since   1.0
  */
 public class GridLayout implements LayoutManager, java.io.Serializable {
-    /*
-     * serialVersionUID
+
+    /**
+     * Use serialVersionUID from JDK 1.6 for interoperability.
      */
+    @Serial
     private static final long serialVersionUID = -7411804673224730901L;
 
     /**
@@ -182,7 +186,7 @@ public class GridLayout implements LayoutManager, java.io.Serializable {
      *                   any number of columns
      * @param     hgap   the horizontal gap
      * @param     vgap   the vertical gap
-     * @exception   IllegalArgumentException  if the value of both
+     * @throws   IllegalArgumentException  if the value of both
      *                  {@code rows} and {@code cols} is
      *                  set to zero
      */
@@ -208,7 +212,7 @@ public class GridLayout implements LayoutManager, java.io.Serializable {
     /**
      * Sets the number of rows in this layout to the specified value.
      * @param        rows   the number of rows in this layout
-     * @exception    IllegalArgumentException  if the value of both
+     * @throws    IllegalArgumentException  if the value of both
      *               {@code rows} and {@code cols} is set to zero
      * @since        1.1
      */
@@ -236,7 +240,7 @@ public class GridLayout implements LayoutManager, java.io.Serializable {
      * of columns displayed in the layout is determined by the total
      * number of components and the number of rows specified.
      * @param        cols   the number of columns in this layout
-     * @exception    IllegalArgumentException  if the value of both
+     * @throws    IllegalArgumentException  if the value of both
      *               {@code rows} and {@code cols} is set to zero
      * @since        1.1
      */

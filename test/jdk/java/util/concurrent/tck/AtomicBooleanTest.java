@@ -122,6 +122,7 @@ public class AtomicBooleanTest extends JSR166TestCase {
      * repeated weakCompareAndSet succeeds in changing value when equal
      * to expected
      */
+    @SuppressWarnings("deprecation")
     public void testWeakCompareAndSet() {
         AtomicBoolean ai = new AtomicBoolean(true);
         do {} while (!ai.weakCompareAndSet(true, false));

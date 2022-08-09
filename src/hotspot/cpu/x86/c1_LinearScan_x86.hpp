@@ -101,12 +101,7 @@ inline void LinearScan::pd_add_temps(LIR_Op* op) {
 // Implementation of LinearScanWalker
 
 inline bool LinearScanWalker::pd_init_regs_for_alloc(Interval* cur) {
-  int last_xmm_reg = pd_last_xmm_reg;
-#ifdef _LP64
-  if (UseAVX < 3) {
-    last_xmm_reg = pd_first_xmm_reg + (pd_nof_xmm_regs_frame_map / 2) - 1;
-  }
-#endif
+  int last_xmm_reg = pd_first_xmm_reg + XMMRegisterImpl::available_xmm_registers() - 1;
   if (allocator()->gen()->is_vreg_flag_set(cur->reg_num(), LIRGenerator::byte_reg)) {
     assert(cur->type() != T_FLOAT && cur->type() != T_DOUBLE, "cpu regs only");
     _first_reg = pd_first_byte_reg;

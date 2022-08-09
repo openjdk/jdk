@@ -24,10 +24,9 @@
  */
 
 #import <Cocoa/Cocoa.h>
-#include "jni.h"
+#include "JNIUtilities.h"
 
 jobject CGToJavaRect(JNIEnv *env, CGRect rect);
-CGRect JavaToCGRect(JNIEnv *env, jobject rect);
 
 jobject NSToJavaRect(JNIEnv *env, NSRect rect);
 NSRect JavaToNSRect(JNIEnv *env, jobject rect);

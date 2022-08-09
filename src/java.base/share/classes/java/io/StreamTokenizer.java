@@ -658,29 +658,16 @@ public class StreamTokenizer {
                         } else
                           d = c2;
                     } else {
-                        switch (c) {
-                        case 'a':
-                            c = 0x7;
-                            break;
-                        case 'b':
-                            c = '\b';
-                            break;
-                        case 'f':
-                            c = 0xC;
-                            break;
-                        case 'n':
-                            c = '\n';
-                            break;
-                        case 'r':
-                            c = '\r';
-                            break;
-                        case 't':
-                            c = '\t';
-                            break;
-                        case 'v':
-                            c = 0xB;
-                            break;
-                        }
+                        c = switch (c) {
+                            case 'a' -> 0x7;
+                            case 'b' -> '\b';
+                            case 'f' -> 0xC;
+                            case 'n' -> '\n';
+                            case 'r' -> '\r';
+                            case 't' -> '\t';
+                            case 'v' -> 0xB;
+                            default  -> c;
+                        };
                         d = read();
                     }
                 } else {
@@ -791,43 +778,28 @@ public class StreamTokenizer {
      * @see     java.io.StreamTokenizer#ttype
      */
     public String toString() {
-        String ret;
-        switch (ttype) {
-          case TT_EOF:
-            ret = "EOF";
-            break;
-          case TT_EOL:
-            ret = "EOL";
-            break;
-          case TT_WORD:
-            ret = sval;
-            break;
-          case TT_NUMBER:
-            ret = "n=" + nval;
-            break;
-          case TT_NOTHING:
-            ret = "NOTHING";
-            break;
-          default: {
+        String ret = switch (ttype) {
+            case TT_EOF     -> "EOF";
+            case TT_EOL     -> "EOL";
+            case TT_WORD    -> sval;
+            case TT_NUMBER  -> "n=" + nval;
+            case TT_NOTHING -> "NOTHING";
+            default         -> {
                 /*
                  * ttype is the first character of either a quoted string or
                  * is an ordinary character. ttype can definitely not be less
                  * than 0, since those are reserved values used in the previous
                  * case statements
                  */
-                if (ttype < 256 &&
-                    ((ctype[ttype] & CT_QUOTE) != 0)) {
-                    ret = sval;
-                    break;
+                if (ttype < 256 && ((ctype[ttype] & CT_QUOTE) != 0)) {
+                    yield sval;
                 }
-
                 char s[] = new char[3];
                 s[0] = s[2] = '\'';
                 s[1] = (char) ttype;
-                ret = new String(s);
-                break;
+                yield new String(s);
             }
-        }
+        };
         return "Token[" + ret + "], line " + LINENO;
     }
 

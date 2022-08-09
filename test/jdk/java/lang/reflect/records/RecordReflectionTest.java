@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,9 @@
  * @test
  * @bug 8235369 8235550 8247444
  * @summary reflection test for records
- * @compile --enable-preview -source ${jdk.version} RecordReflectionTest.java
- * @run testng/othervm --enable-preview RecordReflectionTest
- * @run testng/othervm/java.security.policy=allPermissions.policy --enable-preview RecordReflectionTest
+ * @compile RecordReflectionTest.java
+ * @run testng/othervm RecordReflectionTest
+ * @run testng/othervm/java.security.policy=allPermissions.policy RecordReflectionTest
  */
 
 import java.lang.annotation.*;
@@ -162,7 +162,7 @@ public class RecordReflectionTest {
         RecordComponent rc = recordClass.getRecordComponents()[0];
         Annotation[] annos = rc.getAnnotations();
         assertEquals(annos.length, 1);
-        assertEquals(annos[0].toString(), "@RecordReflectionTest$RCA()");
+        assertEquals(annos[0].toString(), "@RecordReflectionTest.RCA()");
 
         Field f = recordClass.getDeclaredField("i");
         assertEquals(f.getAnnotations().length, 1);
@@ -181,7 +181,7 @@ public class RecordReflectionTest {
         AnnotatedType at = rc.getAnnotatedType();
         Annotation[] annos = at.getAnnotations();
         assertEquals(annos.length, 1);
-        assertEquals(annos[0].toString(), "@RecordReflectionTest$TYPE_USE()");
+        assertEquals(annos[0].toString(), "@RecordReflectionTest.TYPE_USE()");
 
         Field f = recordClass.getDeclaredField("i");
         assertEquals(f.getAnnotatedType().getAnnotations().length, 1);

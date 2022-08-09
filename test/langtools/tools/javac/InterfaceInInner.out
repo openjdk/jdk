@@ -1,2 +1,2 @@
-InterfaceInInner.java:12:13: compiler.err.static.declaration.not.allowed.in.inner.classes
+InterfaceInInner.java:13:13: compiler.err.icls.cant.have.static.decl: foo
 1 error

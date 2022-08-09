@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@ import java.security.spec.*;
 
 /**
  * @test
- * @bug 8080462
+ * @bug 8080462 8242332
  * @summary Make sure old state is cleared when init is called again
  * @library /test/lib ..
  * @modules jdk.crypto.cryptoki
@@ -38,18 +38,22 @@ public class InitAgainPSS extends PKCS11Test {
 
     @Override
     public void main(Provider p) throws Exception {
+        test("RSASSA-PSS", p);
+    }
+
+    private void test(String sigAlg, Provider p) throws Exception {
         Signature s1;
         try {
-            s1 = Signature.getInstance("RSASSA-PSS", p);
+            s1 = Signature.getInstance(sigAlg, p);
         } catch (NoSuchAlgorithmException e) {
-            System.out.println("Skip testing RSASSA-PSS" +
+            System.out.println("Skip testing " + sigAlg +
                 " due to no support");
             return;
         }
 
         byte[] msg = "hello".getBytes();
 
-        Signature s2 = Signature.getInstance("RSASSA-PSS", p);
+        Signature s2 = Signature.getInstance(sigAlg, p);
 
         PSSParameterSpec params = new PSSParameterSpec("SHA-256", "MGF1",
             new MGF1ParameterSpec("SHA-256"), 32,

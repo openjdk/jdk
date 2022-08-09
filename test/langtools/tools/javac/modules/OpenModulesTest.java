@@ -90,11 +90,12 @@ public class OpenModulesTest extends ModuleTestBase {
                 .replace(System.getProperty("line.separator"), "\n")
                 .replaceAll("@[^;]*;", ";");
 
-        String expected = "module m1x {\n" +
-                          "  requires java.base;\n" +
-                          "  exports api1;\n" +
-                          "  opens api2;\n" +
-                          "}";
+        String expected = """
+            module m1x {
+              requires java.base;
+              exports api1;
+              opens api2;
+            }""";
 
         if (!decompiled.contains(expected)) {
             throw new Exception("expected output not found: " + decompiled);
@@ -154,10 +155,11 @@ public class OpenModulesTest extends ModuleTestBase {
                 .replace(System.getProperty("line.separator"), "\n")
                 .replaceAll("@[^;]*;", ";");
 
-        String expected = "open module m1x {\n" +
-                          "  requires java.base;\n" +
-                          "  exports api1;\n" +
-                          "}";
+        String expected = """
+                open module m1x {
+                  requires java.base;
+                  exports api1;
+                }""";
 
         if (!decompiled.contains(expected)) {
             throw new Exception("expected output not found: " + decompiled);

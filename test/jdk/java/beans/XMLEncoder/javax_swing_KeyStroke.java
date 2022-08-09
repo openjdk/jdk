@@ -25,6 +25,7 @@
  * @test
  * @bug 6501431
  * @summary Tests KeyStroke encoding
+ * @run main/othervm -Djava.security.manager=allow javax_swing_KeyStroke
  * @author Sergey Malenkov
  */
 

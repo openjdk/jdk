@@ -56,6 +56,7 @@ struct hb_ot_map_t
     unsigned int auto_zwnj : 1;
     unsigned int auto_zwj : 1;
     unsigned int random : 1;
+    unsigned int per_syllable : 1;
 
     int cmp (const hb_tag_t tag_) const
     { return tag_ < tag ? -1 : tag_ > tag ? 1 : 0; }
@@ -66,6 +67,7 @@ struct hb_ot_map_t
     unsigned short auto_zwnj : 1;
     unsigned short auto_zwj : 1;
     unsigned short random : 1;
+    unsigned short per_syllable : 1;
     hb_mask_t mask;
 
     HB_INTERNAL static int cmp (const void *pa, const void *pb)
@@ -140,12 +142,12 @@ struct hb_ot_map_t
   void get_stage_lookups (unsigned int table_index, unsigned int stage,
                           const struct lookup_map_t **plookups, unsigned int *lookup_count) const
   {
-    if (unlikely (stage == UINT_MAX)) {
+    if (unlikely (stage > stages[table_index].length))
+    {
       *plookups = nullptr;
       *lookup_count = 0;
       return;
     }
-    assert (stage <= stages[table_index].length);
     unsigned int start = stage ? stages[table_index][stage - 1].last_lookup : 0;
     unsigned int end   = stage < stages[table_index].length ? stages[table_index][stage].last_lookup : lookups[table_index].length;
     *plookups = end == start ? nullptr : &lookups[table_index][start];
@@ -183,7 +185,8 @@ enum hb_ot_map_feature_flags_t
   F_GLOBAL_MANUAL_JOINERS= F_GLOBAL | F_MANUAL_JOINERS,
   F_GLOBAL_HAS_FALLBACK = F_GLOBAL | F_HAS_FALLBACK,
   F_GLOBAL_SEARCH       = 0x0010u, /* If feature not found in LangSys, look for it in global feature list and pick one. */
-  F_RANDOM              = 0x0020u  /* Randomly select a glyph from an AlternateSubstFormat1 subtable. */
+  F_RANDOM              = 0x0020u, /* Randomly select a glyph from an AlternateSubstFormat1 subtable. */
+  F_PER_SYLLABLE        = 0x0040u  /* Contain lookup application to within syllable. */
 };
 HB_MARK_AS_FLAG_T (hb_ot_map_feature_flags_t);
 
@@ -237,7 +240,8 @@ struct hb_ot_map_builder_t
                                 hb_mask_t     mask,
                                 bool          auto_zwnj = true,
                                 bool          auto_zwj = true,
-                                bool          random = false);
+                                bool          random = false,
+                                bool          per_syllable = false);
 
   struct feature_info_t {
     hb_tag_t tag;

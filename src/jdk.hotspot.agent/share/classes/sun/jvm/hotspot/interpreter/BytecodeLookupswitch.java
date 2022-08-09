@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,19 +78,19 @@ public class BytecodeLookupswitch extends Bytecode {
   }
 
   public String toString() {
-    StringBuffer buf = new StringBuffer();
+    StringBuilder buf = new StringBuilder();
     buf.append("lookupswitch");
     buf.append(spaces);
     buf.append("default: ");
-    buf.append(Integer.toString(bci() + defaultOffset()));
+    buf.append(bci() + defaultOffset());
     buf.append(comma);
     int i = numberOfPairs() - 1;
     while (i-- > 0) {
       LookupswitchPair pair = pairAt(i);
       buf.append("case ");
-      buf.append(Integer.toString(pair.match()));
+      buf.append(pair.match());
       buf.append(':');
-      buf.append(Integer.toString(bci() + pair.offset()));
+      buf.append(bci() + pair.offset());
       buf.append(comma);
     }
 

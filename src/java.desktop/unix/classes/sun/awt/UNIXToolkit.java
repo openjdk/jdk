@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,6 +84,7 @@ public abstract class UNIXToolkit extends SunToolkit
     private BufferedImage tmpImage = null;
 
     public static int getDatatransferTimeout() {
+        @SuppressWarnings("removal")
         Integer dt = AccessController.doPrivileged(
                 new GetIntegerAction("sun.awt.datatransfer.timeout"));
         if (dt == null || dt <= 0) {
@@ -96,6 +97,7 @@ public abstract class UNIXToolkit extends SunToolkit
     @Override
     public String getDesktop() {
         String gnome = "gnome";
+        @SuppressWarnings("removal")
         String gsi = AccessController.doPrivileged(
                         (PrivilegedAction<String>) ()
                                 -> System.getenv("GNOME_DESKTOP_SESSION_ID"));
@@ -103,6 +105,7 @@ public abstract class UNIXToolkit extends SunToolkit
             return gnome;
         }
 
+        @SuppressWarnings("removal")
         String desktop = AccessController.doPrivileged(
                 (PrivilegedAction<String>) ()
                         -> System.getenv("XDG_CURRENT_DESKTOP"));
@@ -396,6 +399,7 @@ public abstract class UNIXToolkit extends SunToolkit
     }
 
     public static GtkVersions getEnabledGtkVersion() {
+        @SuppressWarnings("removal")
         String version = AccessController.doPrivileged(
                 new GetPropertyAction("jdk.gtk.version"));
         if (version == null) {
@@ -412,6 +416,7 @@ public abstract class UNIXToolkit extends SunToolkit
         return GtkVersions.getVersion(get_gtk_version());
     }
 
+    @SuppressWarnings("removal")
     public static boolean isGtkVerbose() {
         return AccessController.doPrivileged((PrivilegedAction<Boolean>)()
                 -> Boolean.getBoolean("jdk.gtk.verbose"));

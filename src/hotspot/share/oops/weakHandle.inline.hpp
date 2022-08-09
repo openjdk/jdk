@@ -26,6 +26,7 @@
 #define SHARE_OOPS_WEAKHANDLE_INLINE_HPP
 
 #include "oops/weakHandle.hpp"
+
 #include "oops/access.inline.hpp"
 
 inline oop WeakHandle::resolve() const {

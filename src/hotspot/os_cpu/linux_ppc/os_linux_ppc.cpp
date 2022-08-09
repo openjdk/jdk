@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2019 SAP SE. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,8 @@
 
 // no precompiled headers
 #include "jvm.h"
+#include "assembler_ppc.hpp"
 #include "asm/assembler.inline.hpp"
-#include "classfile/classLoader.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
 #include "code/icBuffer.hpp"
@@ -35,7 +34,6 @@
 #include "interpreter/interpreter.hpp"
 #include "memory/allocation.inline.hpp"
 #include "nativeInst_ppc.hpp"
-#include "os_share_linux.hpp"
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm_misc.hpp"
 #include "runtime/arguments.hpp"
@@ -43,13 +41,14 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "runtime/thread.inline.hpp"
 #include "runtime/timer.hpp"
+#include "runtime/vm_version.hpp"
 #include "signals_posix.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/events.hpp"
@@ -78,12 +77,7 @@
 
 
 address os::current_stack_pointer() {
-  intptr_t* csp;
-
-  // inline assembly `mr regno(csp), R1_SP':
-  __asm__ __volatile__ ("mr %0, 1":"=r"(csp):);
-
-  return (address) csp;
+  return (address)__builtin_frame_address(0);
 }
 
 char* os::non_memory_address_word() {
@@ -179,13 +173,9 @@ frame os::get_sender_for_C_frame(frame* fr) {
 
 
 frame os::current_frame() {
-  intptr_t* csp = (intptr_t*) *((intptr_t*) os::current_stack_pointer());
-  // hack.
-  frame topframe(csp, (address)0x8);
-  // Return sender of sender of current topframe which hopefully
-  // both have pc != NULL.
-  frame tmp = os::get_sender_for_C_frame(&topframe);
-  return os::get_sender_for_C_frame(&tmp);
+  intptr_t* csp = *(intptr_t**) __builtin_frame_address(0);
+  frame topframe(csp, CAST_FROM_FN_PTR(address, os::current_frame));
+  return os::get_sender_for_C_frame(&topframe);
 }
 
 bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
@@ -213,16 +203,6 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
     }
   }
 
-  // Moved SafeFetch32 handling outside thread!=NULL conditional block to make
-  // it work if no associated JavaThread object exists.
-  if (uc) {
-    address const pc = os::Posix::ucontext_get_pc(uc);
-    if (pc && StubRoutines::is_safefetch_fault(pc)) {
-      os::Posix::ucontext_set_pc(uc, StubRoutines::continuation_for_safefetch_fault(pc));
-      return true;
-    }
-  }
-
   // decide if this trap can be handled by a stub
   address stub = NULL;
   address pc   = NULL;
@@ -238,8 +218,8 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
       // "Instruction Storage Interrupt" is generated and 'pc' (NIP) already
       // contains the invalid address. Otherwise, the SIGSEGV is caused due to
       // load/store instruction trying to load/store from/to an invalid address
-      // and causing a "Data Storage Interrupt", so we inspect the intruction
-      // in order to extract the faulty data addresss.
+      // and causing a "Data Storage Interrupt", so we inspect the instruction
+      // in order to extract the faulty data address.
       address addr;
       if ((ucontext_get_trap(uc) & 0x0F00 /* no IRQ reply bits */) == 0x0400) {
         // Instruction Storage Interrupt (ISI)
@@ -287,6 +267,17 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
                         USE_POLL_BIT_ONLY ? "SIGTRAP" : "SIGSEGV");
         }
         stub = SharedRuntime::get_poll_stub(pc);
+      }
+
+      else if (UseSIGTRAP && sig == SIGTRAP &&
+               ((NativeInstruction*)pc)->is_safepoint_poll_return() &&
+               CodeCache::contains((void*) pc) &&
+               ((cb = CodeCache::find_blob(pc)) != NULL) &&
+               cb->is_compiled()) {
+        if (TraceTraps) {
+          tty->print_cr("trap: safepoint_poll at return at " INTPTR_FORMAT " (nmethod)", p2i(pc));
+        }
+        stub = SharedRuntime::polling_page_return_handler_blob()->entry_point();
       }
 
       // SIGTRAP-based ic miss check in compiled code.
@@ -349,7 +340,14 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
           tty->print_cr("trap: %s: %s (SIGTRAP, stop type %d)", msg, detail_msg, stop_type);
         }
 
-        return false; // Fatal error
+        // End life with a fatal error, message and detail message and the context.
+        // Note: no need to do any post-processing here (e.g. signal chaining)
+        va_list va_dummy;
+        VMError::report_and_die(thread, uc, NULL, 0, msg, detail_msg, va_dummy);
+        va_end(va_dummy);
+
+        ShouldNotReachHere();
+
       }
 
       else if (sig == SIGBUS) {
@@ -431,9 +429,9 @@ void os::Linux::set_fpu_control_word(int fpu_control) {
 
 // Minimum usable stack sizes required to get to user code. Space for
 // HotSpot guard pages is added later.
-size_t os::Posix::_compiler_thread_min_stack_allowed = 64 * K;
-size_t os::Posix::_java_thread_min_stack_allowed = 64 * K;
-size_t os::Posix::_vm_internal_thread_min_stack_allowed = 64 * K;
+size_t os::_compiler_thread_min_stack_allowed = 64 * K;
+size_t os::_java_thread_min_stack_allowed = 64 * K;
+size_t os::_vm_internal_thread_min_stack_allowed = 64 * K;
 
 // Return default stack size for thr_type.
 size_t os::Posix::default_stack_size(os::ThreadType thr_type) {
@@ -461,6 +459,12 @@ void os::print_context(outputStream *st, const void *context) {
   }
   st->cr();
   st->cr();
+}
+
+void os::print_tos_pc(outputStream *st, const void *context) {
+  if (context == NULL) return;
+
+  const ucontext_t* uc = (const ucontext_t*)context;
 
   intptr_t *sp = (intptr_t *)os::Linux::ucontext_get_sp(uc);
   st->print_cr("Top of Stack: (sp=" PTR_FORMAT ")", p2i(sp));
@@ -509,3 +513,9 @@ int os::extra_bang_size_in_bytes() {
   // PPC does not require the additional stack bang.
   return 0;
 }
+
+#ifdef HAVE_FUNCTION_DESCRIPTORS
+void* os::resolve_function_descriptor(void* p) {
+  return ((const FunctionDescriptor*)p)->entry();
+}
+#endif

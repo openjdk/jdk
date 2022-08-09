@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,14 +22,17 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package java.awt;
 
 import java.awt.geom.AffineTransform;
 import java.awt.geom.PathIterator;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
-import sun.awt.geom.Crossings;
+import java.io.Serial;
 import java.util.Arrays;
+
+import sun.awt.geom.Crossings;
 
 /**
  * The {@code Polygon} class encapsulates a description of a
@@ -109,9 +112,10 @@ public class Polygon implements Shape, java.io.Serializable {
      */
     protected Rectangle bounds;
 
-    /*
-     * JDK 1.1 serialVersionUID
+    /**
+     * Use serialVersionUID from JDK 1.1 for interoperability.
      */
+    @Serial
     private static final long serialVersionUID = -6460061437900069969L;
 
     /*
@@ -135,12 +139,12 @@ public class Polygon implements Shape, java.io.Serializable {
      * @param ypoints an array of Y coordinates
      * @param npoints the total number of points in the
      *                          {@code Polygon}
-     * @exception  NegativeArraySizeException if the value of
+     * @throws  NegativeArraySizeException if the value of
      *                       {@code npoints} is negative.
-     * @exception  IndexOutOfBoundsException if {@code npoints} is
+     * @throws  IndexOutOfBoundsException if {@code npoints} is
      *             greater than the length of {@code xpoints}
      *             or the length of {@code ypoints}.
-     * @exception  NullPointerException if {@code xpoints} or
+     * @throws  NullPointerException if {@code xpoints} or
      *             {@code ypoints} is {@code null}.
      * @since 1.0
      */
@@ -571,7 +575,7 @@ public class Polygon implements Shape, java.io.Serializable {
         return getPathIterator(at);
     }
 
-    class PolygonPathIterator implements PathIterator {
+    static class PolygonPathIterator implements PathIterator {
         Polygon poly;
         AffineTransform transform;
         int index;

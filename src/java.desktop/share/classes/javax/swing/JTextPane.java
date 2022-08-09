@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,15 +22,28 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package javax.swing;
 
-import java.awt.*;
-import java.beans.JavaBean;
+import java.awt.Component;
 import java.beans.BeanProperty;
-import java.io.ObjectOutputStream;
+import java.beans.JavaBean;
 import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.io.Serial;
 
-import javax.swing.text.*;
+import javax.swing.text.AbstractDocument;
+import javax.swing.text.AttributeSet;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.Caret;
+import javax.swing.text.Document;
+import javax.swing.text.EditorKit;
+import javax.swing.text.Element;
+import javax.swing.text.MutableAttributeSet;
+import javax.swing.text.Style;
+import javax.swing.text.StyleConstants;
+import javax.swing.text.StyledDocument;
+import javax.swing.text.StyledEditorKit;
 
 /**
  * A text component that can be marked up with attributes that are
@@ -125,7 +138,7 @@ public class JTextPane extends JEditorPane {
      * must be a <code>StyledDocument</code>.
      *
      * @param doc  the document to display/edit
-     * @exception IllegalArgumentException  if <code>doc</code> can't
+     * @throws IllegalArgumentException  if <code>doc</code> can't
      *   be narrowed to a <code>StyledDocument</code> which is the
      *   required type of model for this text component
      */
@@ -436,6 +449,7 @@ public class JTextPane extends JEditorPane {
      *
      * @param s the output stream
      */
+    @Serial
     private void writeObject(ObjectOutputStream s) throws IOException {
         s.defaultWriteObject();
         if (getUIClassID().equals(uiClassID)) {
@@ -466,7 +480,7 @@ public class JTextPane extends JEditorPane {
      * establishes the content type of the editor.
      *
      * @param kit the desired editor behavior
-     * @exception IllegalArgumentException if kit is not a
+     * @throws IllegalArgumentException if kit is not a
      *          <code>StyledEditorKit</code>
      */
     public final void setEditorKit(EditorKit kit) {

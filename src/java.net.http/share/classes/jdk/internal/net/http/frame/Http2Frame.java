@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,30 +80,20 @@ public abstract class Http2Frame {
 
 
     public static String asString(int type) {
-        switch (type) {
-          case DataFrame.TYPE:
-            return "DATA";
-          case HeadersFrame.TYPE:
-            return "HEADERS";
-          case ContinuationFrame.TYPE:
-            return "CONTINUATION";
-          case ResetFrame.TYPE:
-            return "RESET";
-          case PriorityFrame.TYPE:
-            return "PRIORITY";
-          case SettingsFrame.TYPE:
-            return "SETTINGS";
-          case GoAwayFrame.TYPE:
-            return "GOAWAY";
-          case PingFrame.TYPE:
-            return "PING";
-          case PushPromiseFrame.TYPE:
-            return "PUSH_PROMISE";
-          case WindowUpdateFrame.TYPE:
-            return "WINDOW_UPDATE";
-          default:
-            return "UNKNOWN";
-        }
+        return switch (type) {
+            case DataFrame.TYPE         -> "DATA";
+            case HeadersFrame.TYPE      -> "HEADERS";
+            case ContinuationFrame.TYPE -> "CONTINUATION";
+            case ResetFrame.TYPE        -> "RESET";
+            case PriorityFrame.TYPE     -> "PRIORITY";
+            case SettingsFrame.TYPE     -> "SETTINGS";
+            case GoAwayFrame.TYPE       -> "GOAWAY";
+            case PingFrame.TYPE         -> "PING";
+            case PushPromiseFrame.TYPE  -> "PUSH_PROMISE";
+            case WindowUpdateFrame.TYPE -> "WINDOW_UPDATE";
+
+            default -> "UNKNOWN";
+        };
     }
 
     @Override
@@ -111,7 +101,7 @@ public abstract class Http2Frame {
         StringBuilder sb = new StringBuilder();
         sb.append(typeAsString())
                 .append(": length=")
-                .append(Integer.toString(length()))
+                .append(length())
                 .append(", streamid=")
                 .append(streamid)
                 .append(", flags=");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,10 +30,9 @@
  * @run driver DeterministicDump
  */
 
+import jdk.test.lib.cds.CDSOptions;
 import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.Platform;
-import jdk.test.lib.process.ProcessTools;
-import jdk.test.lib.process.OutputAnalyzer;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -55,6 +54,11 @@ public class DeterministicDump {
         baseArgs.add("-Xmx128M");
 
         if (Platform.is64bit()) {
+            if (!compressed) {
+                System.out.println("CDS archives with uncompressed oops are still non-deterministic");
+                System.out.println("See https://bugs.openjdk.java.net/browse/JDK-8282828");
+                return;
+            }
             // These options are available only on 64-bit.
             String sign = (compressed) ?  "+" : "-";
             baseArgs.add("-XX:" + sign + "UseCompressedOops");
@@ -79,16 +83,14 @@ public class DeterministicDump {
     static String dump(ArrayList<String> args, String... more) throws Exception {
         String logName = "SharedArchiveFile" + (id++);
         String archiveName = logName + ".jsa";
-        args = (ArrayList<String>)args.clone();
-        args.add("-XX:SharedArchiveFile=" + archiveName);
-        args.add("-Xshare:dump");
-        args.add("-Xlog:cds=debug");
-        for (String m : more) {
-            args.add(m);
-        }
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(args);
-        OutputAnalyzer out = CDSTestUtils.executeAndLog(pb, logName);
-        CDSTestUtils.checkDump(out);
+        String mapName = logName + ".map";
+        CDSOptions opts = (new CDSOptions())
+            .addPrefix("-Xlog:cds=debug")
+            .addPrefix("-Xlog:cds+map=trace:file=" + mapName + ":none:filesize=0")
+            .setArchiveName(archiveName)
+            .addSuffix(args)
+            .addSuffix(more);
+        CDSTestUtils.createArchiveAndCheck(opts);
 
         return archiveName;
     }

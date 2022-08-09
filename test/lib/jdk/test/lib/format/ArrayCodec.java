@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@ package jdk.test.lib.format;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * A codec helping representing arrays in a string form.
@@ -141,7 +140,7 @@ public class ArrayCodec<E> {
      * @throws IllegalArgumentException if {@code array}'s component type is not supported
      * @return an ArrayCodec for the provided array
      */
-    public static ArrayCodec of(Object array) {
+    public static ArrayCodec<?> of(Object array) {
         var type = array.getClass().getComponentType();
         if (type == byte.class) {
             return ArrayCodec.of((byte[])array);

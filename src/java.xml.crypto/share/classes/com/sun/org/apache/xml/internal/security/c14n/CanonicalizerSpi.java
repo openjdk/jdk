@@ -26,11 +26,10 @@ import java.io.ByteArrayInputStream;
 import java.io.OutputStream;
 import java.util.Set;
 
+import com.sun.org.apache.xml.internal.security.parser.XMLParserException;
 import com.sun.org.apache.xml.internal.security.utils.XMLUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import org.xml.sax.InputSource;
 
 /**
  * Base class which all Canonicalization algorithms extend.
@@ -38,61 +37,25 @@ import org.xml.sax.InputSource;
  */
 public abstract class CanonicalizerSpi {
 
-    /** Reset the writer after a c14n */
-    protected boolean reset = false;
-    protected boolean secureValidation;
-
     /**
      * Method canonicalize
      *
      * @param inputBytes
-     * @return the c14n bytes.
+     * @param writer OutputStream to write the canonicalization result
+     * @param secureValidation Whether secure validation is enabled
      *
-     * @throws CanonicalizationException
+     * @throws XMLParserException
      * @throws java.io.IOException
      * @throws javax.xml.parsers.ParserConfigurationException
-     * @throws org.xml.sax.SAXException
      */
-    public byte[] engineCanonicalize(byte[] inputBytes)
-        throws javax.xml.parsers.ParserConfigurationException, java.io.IOException,
-        org.xml.sax.SAXException, CanonicalizationException {
+    public void engineCanonicalize(byte[] inputBytes, OutputStream writer, boolean secureValidation)
+        throws XMLParserException, java.io.IOException, CanonicalizationException {
 
         Document document = null;
         try (java.io.InputStream bais = new ByteArrayInputStream(inputBytes)) {
-            InputSource in = new InputSource(bais);
-
-            document = XMLUtils.read(in, secureValidation);
+            document = XMLUtils.read(bais, secureValidation);
         }
-        return this.engineCanonicalizeSubTree(document);
-    }
-
-    /**
-     * Method engineCanonicalizeXPathNodeSet
-     *
-     * @param xpathNodeSet
-     * @return the c14n bytes
-     * @throws CanonicalizationException
-     */
-    public byte[] engineCanonicalizeXPathNodeSet(NodeList xpathNodeSet)
-        throws CanonicalizationException {
-        return this.engineCanonicalizeXPathNodeSet(
-            XMLUtils.convertNodelistToSet(xpathNodeSet)
-        );
-    }
-
-    /**
-     * Method engineCanonicalizeXPathNodeSet
-     *
-     * @param xpathNodeSet
-     * @param inclusiveNamespaces
-     * @return the c14n bytes
-     * @throws CanonicalizationException
-     */
-    public byte[] engineCanonicalizeXPathNodeSet(NodeList xpathNodeSet, String inclusiveNamespaces)
-        throws CanonicalizationException {
-        return this.engineCanonicalizeXPathNodeSet(
-            XMLUtils.convertNodelistToSet(xpathNodeSet), inclusiveNamespaces
-        );
+        this.engineCanonicalizeSubTree(document, writer);
     }
 
     /**
@@ -102,19 +65,13 @@ public abstract class CanonicalizerSpi {
     public abstract String engineGetURI();
 
     /**
-     * Returns true if comments are included
-     * @return true if comments are included
-     */
-    public abstract boolean engineGetIncludeComments();
-
-    /**
      * C14n a nodeset
      *
      * @param xpathNodeSet
-     * @return the c14n bytes
+     * @param writer OutputStream to write the canonicalization result
      * @throws CanonicalizationException
      */
-    public abstract byte[] engineCanonicalizeXPathNodeSet(Set<Node> xpathNodeSet)
+    public abstract void engineCanonicalizeXPathNodeSet(Set<Node> xpathNodeSet, OutputStream writer)
         throws CanonicalizationException;
 
     /**
@@ -122,21 +79,21 @@ public abstract class CanonicalizerSpi {
      *
      * @param xpathNodeSet
      * @param inclusiveNamespaces
-     * @return the c14n bytes
+     * @param writer OutputStream to write the canonicalization result
      * @throws CanonicalizationException
      */
-    public abstract byte[] engineCanonicalizeXPathNodeSet(
-        Set<Node> xpathNodeSet, String inclusiveNamespaces
+    public abstract void engineCanonicalizeXPathNodeSet(
+        Set<Node> xpathNodeSet, String inclusiveNamespaces, OutputStream writer
     ) throws CanonicalizationException;
 
     /**
      * C14n a node tree.
      *
      * @param rootNode
-     * @return the c14n bytes
+     * @param writer OutputStream to write the canonicalization result
      * @throws CanonicalizationException
      */
-    public abstract byte[] engineCanonicalizeSubTree(Node rootNode)
+    public abstract void engineCanonicalizeSubTree(Node rootNode, OutputStream writer)
         throws CanonicalizationException;
 
     /**
@@ -144,10 +101,10 @@ public abstract class CanonicalizerSpi {
      *
      * @param rootNode
      * @param inclusiveNamespaces
-     * @return the c14n bytes
+     * @param writer OutputStream to write the canonicalization result
      * @throws CanonicalizationException
      */
-    public abstract byte[] engineCanonicalizeSubTree(Node rootNode, String inclusiveNamespaces)
+    public abstract void engineCanonicalizeSubTree(Node rootNode, String inclusiveNamespaces, OutputStream writer)
         throws CanonicalizationException;
 
     /**
@@ -156,26 +113,12 @@ public abstract class CanonicalizerSpi {
      * @param rootNode
      * @param inclusiveNamespaces
      * @param propagateDefaultNamespace If true the default namespace will be propagated to the c14n-ized root element
-     * @return the c14n bytes
+     * @param writer OutputStream to write the canonicalization result
      * @throws CanonicalizationException
      */
-    public abstract byte[] engineCanonicalizeSubTree(
-            Node rootNode, String inclusiveNamespaces, boolean propagateDefaultNamespace)
+    public abstract void engineCanonicalizeSubTree(
+            Node rootNode, String inclusiveNamespaces, boolean propagateDefaultNamespace, OutputStream writer)
             throws CanonicalizationException;
 
-    /**
-     * Sets the writer where the canonicalization ends. ByteArrayOutputStream if
-     * none is set.
-     * @param os
-     */
-    public abstract void setWriter(OutputStream os);
-
-    public boolean isSecureValidation() {
-        return secureValidation;
-    }
-
-    public void setSecureValidation(boolean secureValidation) {
-        this.secureValidation = secureValidation;
-    }
 
 }

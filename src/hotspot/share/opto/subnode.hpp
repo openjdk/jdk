@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,6 +60,8 @@ public:
   // Supplied function to return the additive identity type.
   // This is returned whenever the subtracts inputs are the same.
   virtual const Type *add_id() const = 0;
+
+  static SubNode* make(Node* in1, Node* in2, BasicType bt);
 };
 
 
@@ -171,6 +173,18 @@ public:
   bool is_index_range_check() const;
 };
 
+//------------------------------CmpU3Node--------------------------------------
+// Compare 2 unsigned values, returning integer value (-1, 0 or 1).
+class CmpU3Node : public CmpUNode {
+public:
+  CmpU3Node( Node *in1, Node *in2 ) : CmpUNode(in1,in2) {
+    // Since it is not consumed by Bools, it is not really a Cmp.
+    init_class_id(Class_Sub);
+  }
+  virtual int Opcode() const;
+  virtual uint ideal_reg() const { return Op_RegI; }
+};
+
 //------------------------------CmpPNode---------------------------------------
 // Compare 2 pointer values, returning condition codes (-1, 0 or 1).
 class CmpPNode : public CmpNode {
@@ -218,7 +232,19 @@ public:
     // Since it is not consumed by Bools, it is not really a Cmp.
     init_class_id(Class_Sub);
   }
-  virtual int    Opcode() const;
+  virtual int Opcode() const;
+  virtual uint ideal_reg() const { return Op_RegI; }
+};
+
+//------------------------------CmpUL3Node-------------------------------------
+// Compare 2 unsigned long values, returning integer value (-1, 0 or 1).
+class CmpUL3Node : public CmpULNode {
+public:
+  CmpUL3Node( Node *in1, Node *in2 ) : CmpULNode(in1,in2) {
+    // Since it is not consumed by Bools, it is not really a Cmp.
+    init_class_id(Class_Sub);
+  }
+  virtual int Opcode() const;
   virtual uint ideal_reg() const { return Op_RegI; }
 };
 
@@ -282,10 +308,15 @@ public:
 // Convert condition codes to a boolean test value (0 or -1).
 // We pick the values as 3 bits; the low order 2 bits we compare against the
 // condition codes, the high bit flips the sense of the result.
+// For vector compares, additionally, the 4th bit indicates if the compare is unsigned
 struct BoolTest {
-  enum mask { eq = 0, ne = 4, le = 5, ge = 7, lt = 3, gt = 1, overflow = 2, no_overflow = 6, never = 8, illegal = 9 };
+  enum mask { eq = 0, ne = 4, le = 5, ge = 7, lt = 3, gt = 1, overflow = 2, no_overflow = 6, never = 8, illegal = 9,
+              // The following values are used with vector compares
+              // A BoolTest value should not be constructed for such values
+              unsigned_compare = 16,
+              ule = unsigned_compare | le, uge = unsigned_compare | ge, ult = unsigned_compare | lt, ugt = unsigned_compare | gt };
   mask _test;
-  BoolTest( mask btm ) : _test(btm) {}
+  BoolTest( mask btm ) : _test(btm) { assert((btm & unsigned_compare) == 0, "unsupported");}
   const Type *cc2logical( const Type *CC ) const;
   // Commute the test.  I use a small table lookup.  The table is created as
   // a simple char array where each element is the ASCII version of a 'mask'
@@ -340,6 +371,9 @@ public:
 class AbsNode : public Node {
 public:
   AbsNode( Node *value ) : Node(0,value) {}
+  virtual Node* Identity(PhaseGVN* phase);
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+  virtual const Type* Value(PhaseGVN* phase) const;
 };
 
 //------------------------------AbsINode---------------------------------------
@@ -366,7 +400,7 @@ public:
 
 //------------------------------AbsFNode---------------------------------------
 // Absolute value a float, a common float-point idiom with a cheap hardware
-// implemention on most chips.  Since a naive graph involves control flow, we
+// implementation on most chips.  Since a naive graph involves control flow, we
 // "match" it in the ideal world (so the control flow can be removed).
 class AbsFNode : public AbsNode {
 public:
@@ -378,7 +412,7 @@ public:
 
 //------------------------------AbsDNode---------------------------------------
 // Absolute value a double, a common float-point idiom with a cheap hardware
-// implemention on most chips.  Since a naive graph involves control flow, we
+// implementation on most chips.  Since a naive graph involves control flow, we
 // "match" it in the ideal world (so the control flow can be removed).
 class AbsDNode : public AbsNode {
 public:
@@ -536,6 +570,30 @@ public:
   virtual int Opcode() const;
   const Type *bottom_type() const { return TypeInt::SHORT; }
   virtual uint ideal_reg() const { return Op_RegI; }
+};
+
+//-------------------------------ReverseINode--------------------------------
+// reverse bits of an int
+class ReverseINode : public Node {
+public:
+  ReverseINode(Node *c, Node *in1) : Node(c, in1) {}
+  virtual int Opcode() const;
+  const Type *bottom_type() const { return TypeInt::INT; }
+  virtual uint ideal_reg() const { return Op_RegI; }
+  virtual Node* Identity(PhaseGVN* phase);
+  virtual const Type* Value(PhaseGVN* phase) const;
+};
+
+//-------------------------------ReverseLNode--------------------------------
+// reverse bits of a long
+class ReverseLNode : public Node {
+public:
+  ReverseLNode(Node *c, Node *in1) : Node(c, in1) {}
+  virtual int Opcode() const;
+  const Type *bottom_type() const { return TypeLong::LONG; }
+  virtual uint ideal_reg() const { return Op_RegL; }
+  virtual Node* Identity(PhaseGVN* phase);
+  virtual const Type* Value(PhaseGVN* phase) const;
 };
 
 #endif // SHARE_OPTO_SUBNODE_HPP

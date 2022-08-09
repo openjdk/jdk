@@ -103,7 +103,7 @@ define ProcessMarkdown
 	$$(call LogInfo, Post-processing markdown file $2)
 	$$(call MakeDir, $$(SUPPORT_OUTPUTDIR)/markdown $$($1_$2_TARGET_DIR))
 	$$(call ExecuteWithLog, $$(SUPPORT_OUTPUTDIR)/markdown/$$($1_$2_MARKER)_post, \
-	    ( $$($1_POST_PROCESS) < $$($1_$2_PANDOC_OUTPUT) > $$($1_$2_OUTPUT_FILE) ) )
+	    ( $$($1_POST_PROCESS) $$($1_$2_PANDOC_OUTPUT) > $$($1_$2_OUTPUT_FILE) ) )
   endif
 
   $1 += $$($1_$2_OUTPUT_FILE)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,8 @@
 
 package java.awt.color;
 
+import java.io.Serial;
+
 import sun.java2d.cmm.Profile;
 import sun.java2d.cmm.ProfileDeferralInfo;
 
@@ -56,7 +58,7 @@ import sun.java2d.cmm.ProfileDeferralInfo;
  * To transform from a device profile color space to the CIEXYZ Profile
  * Connection Space, each device color component is first linearized by a lookup
  * through the corresponding tone reproduction curve (TRC). The resulting linear
- * RGB components are converted to the CIEXYZ PCS using a a 3x3 matrix
+ * RGB components are converted to the CIEXYZ PCS using a 3x3 matrix
  * constructed from the RGB colorants.
  * <pre>
  *
@@ -78,11 +80,12 @@ import sun.java2d.cmm.ProfileDeferralInfo;
  * RGB components through the inverse of the above 3x3 matrix, and then
  * converting linear RGB to device RGB through inverses of the TRCs.
  */
-public class ICC_ProfileRGB extends ICC_Profile {
+public final class ICC_ProfileRGB extends ICC_Profile {
 
     /**
      * Use serialVersionUID from JDK 1.2 for interoperability.
      */
+    @Serial
     private static final long serialVersionUID = 8505067385152579334L;
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -124,14 +124,8 @@ public class PolicyUtil {
                     debug.println("reading password"+passURL);
                 }
 
-                InputStream in = null;
-                try {
-                    in = passURL.openStream();
+                try (InputStream in = passURL.openStream()) {
                     keyStorePassword = Password.readPassword(in);
-                } finally {
-                    if (in != null) {
-                        in.close();
-                    }
                 }
             }
 
@@ -159,13 +153,9 @@ public class PolicyUtil {
                     debug.println("reading keystore"+keyStoreUrl);
                 }
 
-                InputStream inStream = null;
-                try {
-                    inStream =
-                        new BufferedInputStream(getInputStream(keyStoreUrl));
+                try (InputStream inStream =
+                        new BufferedInputStream(getInputStream(keyStoreUrl))) {
                     ks.load(inStream, keyStorePassword);
-                } finally {
-                    inStream.close();
                 }
                 return ks;
             }

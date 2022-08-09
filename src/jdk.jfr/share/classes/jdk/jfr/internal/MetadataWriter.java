@@ -137,8 +137,8 @@ final class MetadataWriter {
     private void buildStringPool(Element element, Set<String> pool) {
         pool.add(element.name);
         for (Attribute a : element.attributes) {
-            pool.add(a.name);
-            pool.add(a.value);
+            pool.add(a.name());
+            pool.add(a.value());
         }
         for (Element child : element.elements) {
             buildStringPool(child, pool);
@@ -149,8 +149,8 @@ final class MetadataWriter {
         writeInt(output, lookup.get(element.name));
         writeInt(output, element.attributes.size());
         for (Attribute a : element.attributes) {
-            writeInt(output, lookup.get(a.name));
-            writeInt(output, lookup.get(a.value));
+            writeInt(output, lookup.get(a.name()));
+            writeInt(output, lookup.get(a.value()));
         }
         writeInt(output, element.elements.size());
         for (Element child : element.elements) {
@@ -169,8 +169,8 @@ final class MetadataWriter {
             element.addAttribute(ATTRIBUTE_SIMPLE_TYPE, true);
         }
         element.addAttribute(ATTRIBUTE_ID, type.getId());
-        if (type instanceof PlatformEventType) {
-            for (SettingDescriptor v : ((PlatformEventType)type).getSettings()) {
+        if (type instanceof PlatformEventType pType) {
+            for (SettingDescriptor v : pType.getSettings()) {
                 makeSettingElement(element, v);
             }
         }

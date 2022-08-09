@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import jdk.internal.access.JavaSecurityAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.util.StaticProperty;
+import sun.nio.fs.DefaultFileSystemProvider;
 import sun.security.util.*;
 import sun.net.www.ParseUtil;
 
@@ -238,6 +239,7 @@ import static jdk.internal.access.JavaSecurityAccess.ProtectionDomainCache;
  * @see java.security.Permissions
  * @see java.security.ProtectionDomain
  */
+@SuppressWarnings("removal")
 public class PolicyFile extends java.security.Policy {
 
     private static final Debug debug = Debug.getInstance("policy");
@@ -274,6 +276,13 @@ public class PolicyFile extends java.security.Policy {
      */
     private static Set<URL> badPolicyURLs =
         Collections.newSetFromMap(new ConcurrentHashMap<URL,Boolean>());
+
+    /**
+     * Use the platform's default file system to avoid recursive initialization
+     * issues when the VM is configured to use a custom file system provider.
+     */
+    private static final java.nio.file.FileSystem builtInFS =
+        DefaultFileSystemProvider.theFileSystem();
 
     /**
      * Initializes the Policy object and reads the default policy
@@ -474,7 +483,7 @@ public class PolicyFile extends java.security.Policy {
     }
 
     private void initDefaultPolicy(PolicyInfo newInfo) {
-        Path defaultPolicy = Path.of(StaticProperty.javaHome(),
+        Path defaultPolicy = builtInFS.getPath(StaticProperty.javaHome(),
                                      "lib",
                                      "security",
                                      "default.policy");
@@ -606,6 +615,9 @@ public class PolicyFile extends java.security.Policy {
                                 ("java.specification.version",
                                     SecurityConstants.PROPERTY_READ_ACTION));
                 pe.add(new PropertyPermission
+                                ("java.specification.maintenance.version",
+                                    SecurityConstants.PROPERTY_READ_ACTION));
+                pe.add(new PropertyPermission
                                 ("java.specification.vendor",
                                     SecurityConstants.PROPERTY_READ_ACTION));
                 pe.add(new PropertyPermission
@@ -627,7 +639,7 @@ public class PolicyFile extends java.security.Policy {
                 pe.add(new PropertyPermission("java.vm.name",
                     SecurityConstants.PROPERTY_READ_ACTION));
 
-                // No need to sync because noone has access to newInfo yet
+                // No need to sync because no one has access to newInfo yet
                 newInfo.policyEntries.add(pe);
 
                 return null;
@@ -714,7 +726,7 @@ public class PolicyFile extends java.security.Policy {
                                 + SELF;
                     }
                     // check for self
-                    if (pe.name != null && pe.name.indexOf(SELF) != -1) {
+                    if (pe.name != null && pe.name.contains(SELF)) {
                         // Create a "SelfPermission" , it could be an
                         // an unresolved permission which will be resolved
                         // when implies is called
@@ -765,7 +777,7 @@ public class PolicyFile extends java.security.Policy {
                     }
                 } catch (java.lang.reflect.InvocationTargetException ite) {
                     Object[] source = {pe.permission,
-                                       ite.getTargetException().toString()};
+                                       ite.getCause().toString()};
                     System.err.println(
                         LocalizedMessage.getNonlocalized(
                             POLICY + ".error.adding.Permission.perm.message",
@@ -780,7 +792,7 @@ public class PolicyFile extends java.security.Policy {
                 }
             }
 
-            // No need to sync because noone has access to newInfo yet
+            // No need to sync because no one has access to newInfo yet
             newInfo.policyEntries.add(entry);
         } catch (Exception e) {
             Object[] source = {e.toString()};
@@ -1807,7 +1819,7 @@ public class PolicyFile extends java.security.Policy {
             return null;
         }
 
-        if (cert == null || !(cert instanceof X509Certificate)) {
+        if (!(cert instanceof X509Certificate x509Cert)) {
             if (debug != null) {
                 debug.println("  -- No certificate for '" +
                                 alias +
@@ -1815,8 +1827,6 @@ public class PolicyFile extends java.security.Policy {
             }
             return null;
         } else {
-            X509Certificate x509Cert = (X509Certificate)cert;
-
             // 4702543:  X500 names with an EmailAddress
             // were encoded incorrectly.  create new
             // X500Principal name with correct encoding

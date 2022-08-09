@@ -90,12 +90,12 @@ import java.util.Objects;
  * This date operates using the {@linkplain MinguoChronology Minguo calendar}.
  * This calendar system is primarily used in the Republic of China, often known as Taiwan.
  * Dates are aligned such that {@code 0001-01-01 (Minguo)} is {@code 1912-01-01 (ISO)}.
- *
  * <p>
  * This is a <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>
- * class; use of identity-sensitive operations (including reference equality
- * ({@code ==}), identity hash code, or synchronization) on instances of
- * {@code MinguoDate} may have unpredictable results and should be avoided.
+ * class; programmers should treat instances that are
+ * {@linkplain #equals(Object) equal} as interchangeable and should not
+ * use instances for synchronization, or unpredictable behavior may
+ * occur. For example, in a future release, synchronization may fail.
  * The {@code equals} method should be used for comparisons.
  *
  * @implSpec
@@ -103,6 +103,7 @@ import java.util.Objects;
  *
  * @since 1.8
  */
+@jdk.internal.ValueBased
 public final class MinguoDate
         extends ChronoLocalDateImpl<MinguoDate>
         implements ChronoLocalDate, Serializable {
@@ -310,30 +311,27 @@ public final class MinguoDate
     //-----------------------------------------------------------------------
     @Override
     public MinguoDate with(TemporalField field, long newValue) {
-        if (field instanceof ChronoField) {
-            ChronoField f = (ChronoField) field;
-            if (getLong(f) == newValue) {
+        if (field instanceof ChronoField chronoField) {
+            if (getLong(chronoField) == newValue) {
                 return this;
             }
-            switch (f) {
-                case PROLEPTIC_MONTH:
-                    getChronology().range(f).checkValidValue(newValue, f);
-                    return plusMonths(newValue - getProlepticMonth());
-                case YEAR_OF_ERA:
-                case YEAR:
-                case ERA: {
-                    int nvalue = getChronology().range(f).checkValidIntValue(newValue, f);
-                    switch (f) {
-                        case YEAR_OF_ERA:
-                            return with(isoDate.withYear(getProlepticYear() >= 1 ? nvalue + YEARS_DIFFERENCE : (1 - nvalue)  + YEARS_DIFFERENCE));
-                        case YEAR:
-                            return with(isoDate.withYear(nvalue + YEARS_DIFFERENCE));
-                        case ERA:
-                            return with(isoDate.withYear((1 - getProlepticYear()) + YEARS_DIFFERENCE));
-                    }
+            return switch (chronoField) {
+                case PROLEPTIC_MONTH -> {
+                    getChronology().range(chronoField).checkValidValue(newValue, chronoField);
+                    yield plusMonths(newValue - getProlepticMonth());
                 }
-            }
-            return with(isoDate.with(field, newValue));
+                case YEAR_OF_ERA -> {
+                    int nvalue = getChronology().range(chronoField).checkValidIntValue(newValue, chronoField);
+                    yield with(isoDate.withYear(getProlepticYear() >= 1 ? nvalue + YEARS_DIFFERENCE : (1 - nvalue) + YEARS_DIFFERENCE));
+                }
+                case YEAR -> {
+                    int nvalue = getChronology().range(chronoField).checkValidIntValue(newValue, chronoField);
+                    yield with(isoDate.withYear(nvalue + YEARS_DIFFERENCE));
+                }
+                case ERA -> with(isoDate.withYear((1 - getProlepticYear()) + YEARS_DIFFERENCE));
+
+                default -> with(isoDate.with(field, newValue));
+            };
         }
         return super.with(field, newValue);
     }
@@ -458,11 +456,8 @@ public final class MinguoDate
         if (this == obj) {
             return true;
         }
-        if (obj instanceof MinguoDate) {
-            MinguoDate otherDate = (MinguoDate) obj;
-            return this.isoDate.equals(otherDate.isoDate);
-        }
-        return false;
+        return (obj instanceof MinguoDate otherDate)
+                && this.isoDate.equals(otherDate.isoDate);
     }
 
     /**

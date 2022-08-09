@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package java.awt.geom;
 import java.awt.Shape;
 import java.beans.ConstructorProperties;
 import java.io.IOException;
+import java.io.Serial;
 
 /**
  * The {@code AffineTransform} class represents a 2D affine transform
@@ -2666,7 +2667,7 @@ public class AffineTransform implements Cloneable, java.io.Serializable {
      * @return a new {@code AffineTransform} object representing the
      * inverse transformation.
      * @see #getDeterminant
-     * @exception NoninvertibleTransformException
+     * @throws NoninvertibleTransformException
      * if the matrix cannot be inverted.
      * @since 1.2
      */
@@ -2761,7 +2762,7 @@ public class AffineTransform implements Cloneable, java.io.Serializable {
      * transform has no inverse, in which case an exception will be
      * thrown if the {@code invert} method is called.
      * @see #getDeterminant
-     * @exception NoninvertibleTransformException
+     * @throws NoninvertibleTransformException
      * if the matrix cannot be inverted.
      * @since 1.6
      */
@@ -3463,7 +3464,7 @@ public class AffineTransform implements Cloneable, java.io.Serializable {
      * @param ptDst the resulting transformed point
      * @return {@code ptDst}, which contains the result of the
      * inverse transform.
-     * @exception NoninvertibleTransformException  if the matrix cannot be
+     * @throws NoninvertibleTransformException  if the matrix cannot be
      *                                         inverted.
      * @since 1.2
      */
@@ -3549,7 +3550,7 @@ public class AffineTransform implements Cloneable, java.io.Serializable {
      * @param dstOff the offset to the location of the first
      * transformed point that is stored in the destination array
      * @param numPts the number of point objects to be transformed
-     * @exception NoninvertibleTransformException  if the matrix cannot be
+     * @throws NoninvertibleTransformException  if the matrix cannot be
      *                                         inverted.
      * @since 1.2
      */
@@ -3938,9 +3939,10 @@ public class AffineTransform implements Cloneable, java.io.Serializable {
      * readObject method as it is in the 6-argument matrix constructor.
      */
 
-    /*
-     * JDK 1.2 serialVersionUID
+    /**
+     * Use serialVersionUID from JDK 1.2 for interoperability.
      */
+    @Serial
     private static final long serialVersionUID = 1330973210523860834L;
 
     /**
@@ -3949,6 +3951,7 @@ public class AffineTransform implements Cloneable, java.io.Serializable {
      * @param  s the {@code ObjectOutputStream} to write
      * @throws IOException if an I/O error occurs
      */
+    @Serial
     private void writeObject(java.io.ObjectOutputStream s)
         throws java.io.IOException
     {
@@ -3963,6 +3966,7 @@ public class AffineTransform implements Cloneable, java.io.Serializable {
      *         not be found
      * @throws IOException if an I/O error occurs
      */
+    @Serial
     private void readObject(java.io.ObjectInputStream s)
         throws java.lang.ClassNotFoundException, java.io.IOException
     {

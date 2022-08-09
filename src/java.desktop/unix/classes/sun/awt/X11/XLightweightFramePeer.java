@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,7 +82,7 @@ public class XLightweightFramePeer extends XFramePeer implements OverrideNativeW
         getLwTarget().removeDropTarget(dt);
     }
 
-    private volatile long overriddenWindowHandle = 0L;
+    private volatile long overriddenWindowHandle;
 
     @Override
     public void overrideWindowHandle(final long handle) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,7 @@
 
 package java.beans.beancontext;
 
-import java.beans.beancontext.BeanContextChild;
-import java.beans.beancontext.BeanContextEvent;
-
-import java.beans.beancontext.BeanContextServices;
-
+import java.io.Serial;
 import java.util.Iterator;
 
 /**
@@ -40,6 +36,11 @@ import java.util.Iterator;
  */
 
 public class BeanContextServiceAvailableEvent extends BeanContextEvent {
+
+    /**
+     * Use serialVersionUID from JDK 1.7 for interoperability.
+     */
+    @Serial
     private static final long serialVersionUID = -5333985775656400778L;
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,9 +49,9 @@ public interface Wrapper {
      * or a proxy for the receiver. If the receiver is a wrapper
      * and the wrapped object implements the interface then the result is the
      * wrapped object or a proxy for the wrapped object. Otherwise return the
-     * the result of calling <code>unwrap</code> recursively on the wrapped object
+     * the result of calling {@code unwrap} recursively on the wrapped object
      * or a proxy for that result. If the receiver is not a
-     * wrapper and does not implement the interface, then an <code>SQLException</code> is thrown.
+     * wrapper and does not implement the interface, then an {@code SQLException} is thrown.
      *
      * @param <T> the type of the class modeled by this Class object
      * @param iface A Class defining an interface that the result must implement.
@@ -64,11 +64,11 @@ public interface Wrapper {
     /**
      * Returns true if this either implements the interface argument or is directly or indirectly a wrapper
      * for an object that does. Returns false otherwise. If this implements the interface then return true,
-     * else if this is a wrapper then return the result of recursively calling <code>isWrapperFor</code> on the wrapped
+     * else if this is a wrapper then return the result of recursively calling {@code isWrapperFor} on the wrapped
      * object. If this does not implement the interface and is not a wrapper, return false.
-     * This method should be implemented as a low-cost operation compared to <code>unwrap</code> so that
-     * callers can use this method to avoid expensive <code>unwrap</code> calls that may fail. If this method
-     * returns true then calling <code>unwrap</code> with the same argument should succeed.
+     * This method should be implemented as a low-cost operation compared to {@code unwrap} so that
+     * callers can use this method to avoid expensive {@code unwrap} calls that may fail. If this method
+     * returns true then calling {@code unwrap} with the same argument should succeed.
      *
      * @param iface a Class defining an interface.
      * @return true if this implements the interface or directly or indirectly wraps an object that does.

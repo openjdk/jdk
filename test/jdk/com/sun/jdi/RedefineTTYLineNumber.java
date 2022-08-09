@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,7 @@ class RedefineTTYLineNumberTarg {
 
 public class RedefineTTYLineNumber extends JdbTest {
 
-    public static void main(String argv[]) {
+    public static void main(String[] argv) {
         new RedefineTTYLineNumber().run();
     }
 
@@ -104,7 +104,7 @@ public class RedefineTTYLineNumber extends JdbTest {
         // so bp2Line should be equals bp1Line-1
         Asserts.assertEquals(bp2Line, bp1Line - 1, "BP line numbers");
         verifyBPSource(1, bp1Reply);
-        // uncomment the following line to reproduce JDK-8210927
-        //verifyBPSource(2, bp2Reply);
+        // verify source code is printed correctly
+        verifyBPSource(2, bp2Reply);
     }
 }

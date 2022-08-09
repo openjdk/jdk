@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2017, 2020 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,9 +30,11 @@
 #include "memory/metaspace/metaspaceSettings.hpp"
 #include "memory/metaspace/virtualSpaceNode.hpp"
 #include "runtime/mutexLocker.hpp"
+#include "runtime/os.hpp"
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/ostream.hpp"
 
 namespace metaspace {
 
@@ -48,7 +50,7 @@ char Metachunk::get_state_char() const {
 
 #ifdef ASSERT
 void Metachunk::assert_have_expand_lock() {
-  assert_lock_strong(MetaspaceExpand_lock);
+  assert_lock_strong(Metaspace_lock);
 }
 #endif
 
@@ -91,7 +93,7 @@ bool Metachunk::commit_up_to(size_t new_committed_words) {
 #endif
 
   // We should hold the expand lock at this point.
-  assert_lock_strong(MetaspaceExpand_lock);
+  assert_lock_strong(Metaspace_lock);
 
   const size_t commit_from = _committed_words;
   const size_t commit_to =   MIN2(align_up(new_committed_words, Settings::commit_granule_words()), word_size());
@@ -117,7 +119,7 @@ bool Metachunk::commit_up_to(size_t new_committed_words) {
 bool Metachunk::ensure_committed(size_t new_committed_words) {
   bool rc = true;
   if (new_committed_words > committed_words()) {
-    MutexLocker cl(MetaspaceExpand_lock, Mutex::_no_safepoint_check_flag);
+    MutexLocker cl(Metaspace_lock, Mutex::_no_safepoint_check_flag);
     rc = commit_up_to(new_committed_words);
   }
   return rc;
@@ -125,7 +127,7 @@ bool Metachunk::ensure_committed(size_t new_committed_words) {
 
 bool Metachunk::ensure_committed_locked(size_t new_committed_words) {
   // the .._locked() variant should be called if we own the lock already.
-  assert_lock_strong(MetaspaceExpand_lock);
+  assert_lock_strong(Metaspace_lock);
   bool rc = true;
   if (new_committed_words > committed_words()) {
     rc = commit_up_to(new_committed_words);
@@ -137,13 +139,13 @@ bool Metachunk::ensure_committed_locked(size_t new_committed_words) {
 // commit granule size (in other words, we cannot uncommit chunks smaller than
 // a commit granule size).
 void Metachunk::uncommit() {
-  MutexLocker cl(MetaspaceExpand_lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker cl(Metaspace_lock, Mutex::_no_safepoint_check_flag);
   uncommit_locked();
 }
 
 void Metachunk::uncommit_locked() {
   // Only uncommit chunks which are free, have no used words set (extra precaution) and are equal or larger in size than a single commit granule.
-  assert_lock_strong(MetaspaceExpand_lock);
+  assert_lock_strong(Metaspace_lock);
   assert(_state == State::Free && _used_words == 0 && word_size() >= Settings::commit_granule_words(),
          "Only free chunks equal or larger than commit granule size can be uncommitted "
          "(chunk " METACHUNK_FULL_FORMAT ").", METACHUNK_FULL_FORMAT_ARGS(this));
@@ -184,7 +186,7 @@ void Metachunk::zap_header(uint8_t c) {
 // Verifies linking with neighbors in virtual space.
 // Can only be done under expand lock protection.
 void Metachunk::verify_neighborhood() const {
-  assert_lock_strong(MetaspaceExpand_lock);
+  assert_lock_strong(Metaspace_lock);
   assert(!is_dead(), "Do not call on dead chunks.");
   if (is_root_chunk()) {
     // Root chunks are all alone in the world.
@@ -214,7 +216,7 @@ void Metachunk::verify_neighborhood() const {
 
     // One of the neighbors must be the buddy. It can be whole or splintered.
 
-    // The chunk following us or preceeding us may be our buddy or a splintered part of it.
+    // The chunk following us or preceding us may be our buddy or a splintered part of it.
     Metachunk* buddy = is_leader() ? next_in_vs() : prev_in_vs();
     assert(buddy != NULL, "Missing neighbor.");
     assert(!buddy->is_dead(), "Invalid buddy state.");

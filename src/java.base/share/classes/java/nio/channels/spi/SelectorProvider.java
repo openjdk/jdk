@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,6 +73,7 @@ import java.util.ServiceConfigurationError;
 public abstract class SelectorProvider {
 
     private static Void checkPermission() {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null)
             sm.checkPermission(new RuntimePermission("selectorProvider"));
@@ -94,6 +95,7 @@ public abstract class SelectorProvider {
     private static class Holder {
         static final SelectorProvider INSTANCE = provider();
 
+        @SuppressWarnings("removal")
         static SelectorProvider provider() {
             PrivilegedAction<SelectorProvider> pa = () -> {
                 SelectorProvider sp;

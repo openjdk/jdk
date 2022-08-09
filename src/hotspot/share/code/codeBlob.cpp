@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
 #include "code/relocInfo.hpp"
 #include "code/vtableStubs.hpp"
 #include "compiler/disassembler.hpp"
+#include "compiler/oopMap.hpp"
 #include "interpreter/bytecode.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/allocation.inline.hpp"
@@ -40,9 +41,13 @@
 #include "prims/jvmtiExport.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/javaFrameAnchor.hpp"
+#include "runtime/jniHandles.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/stubCodeGenerator.hpp"
+#include "runtime/stubRoutines.hpp"
 #include "runtime/vframe.hpp"
 #include "services/memoryService.hpp"
 #include "utilities/align.hpp"
@@ -73,13 +78,7 @@ unsigned int CodeBlob::allocation_size(CodeBuffer* cb, int header_size) {
   return size;
 }
 
-CodeBlob::CodeBlob(const char* name, CompilerType type, const CodeBlobLayout& layout, int frame_complete_offset, int frame_size, ImmutableOopMapSet* oop_maps, bool caller_must_gc_arguments) :
-  _type(type),
-  _size(layout.size()),
-  _header_size(layout.header_size()),
-  _frame_complete_offset(frame_complete_offset),
-  _data_offset(layout.data_offset()),
-  _frame_size(frame_size),
+CodeBlob::CodeBlob(const char* name, CompilerType type, const CodeBlobLayout& layout, int frame_complete_offset, int frame_size, ImmutableOopMapSet* oop_maps, bool caller_must_gc_arguments, bool compiled) :
   _code_begin(layout.code_begin()),
   _code_end(layout.code_end()),
   _content_begin(layout.content_begin()),
@@ -87,9 +86,15 @@ CodeBlob::CodeBlob(const char* name, CompilerType type, const CodeBlobLayout& la
   _relocation_begin(layout.relocation_begin()),
   _relocation_end(layout.relocation_end()),
   _oop_maps(oop_maps),
+  _name(name),
+  _size(layout.size()),
+  _header_size(layout.header_size()),
+  _frame_complete_offset(frame_complete_offset),
+  _data_offset(layout.data_offset()),
+  _frame_size(frame_size),
   _caller_must_gc_arguments(caller_must_gc_arguments),
-  _name(name)
-  NOT_PRODUCT(COMMA _strings(CodeStrings()))
+  _is_compiled(compiled),
+  _type(type)
 {
   assert(is_aligned(layout.size(),            oopSize), "unaligned size");
   assert(is_aligned(layout.header_size(),     oopSize), "unaligned size");
@@ -102,22 +107,22 @@ CodeBlob::CodeBlob(const char* name, CompilerType type, const CodeBlobLayout& la
   S390_ONLY(_ctable_offset = 0;) // avoid uninitialized fields
 }
 
-CodeBlob::CodeBlob(const char* name, CompilerType type, const CodeBlobLayout& layout, CodeBuffer* cb, int frame_complete_offset, int frame_size, OopMapSet* oop_maps, bool caller_must_gc_arguments) :
-  _type(type),
-  _size(layout.size()),
-  _header_size(layout.header_size()),
-  _frame_complete_offset(frame_complete_offset),
-  _data_offset(layout.data_offset()),
-  _frame_size(frame_size),
+CodeBlob::CodeBlob(const char* name, CompilerType type, const CodeBlobLayout& layout, CodeBuffer* cb /*UNUSED*/, int frame_complete_offset, int frame_size, OopMapSet* oop_maps, bool caller_must_gc_arguments, bool compiled) :
   _code_begin(layout.code_begin()),
   _code_end(layout.code_end()),
   _content_begin(layout.content_begin()),
   _data_end(layout.data_end()),
   _relocation_begin(layout.relocation_begin()),
   _relocation_end(layout.relocation_end()),
+  _name(name),
+  _size(layout.size()),
+  _header_size(layout.header_size()),
+  _frame_complete_offset(frame_complete_offset),
+  _data_offset(layout.data_offset()),
+  _frame_size(frame_size),
   _caller_must_gc_arguments(caller_must_gc_arguments),
-  _name(name)
-  NOT_PRODUCT(COMMA _strings(CodeStrings()))
+  _is_compiled(compiled),
+  _type(type)
 {
   assert(is_aligned(_size,        oopSize), "unaligned size");
   assert(is_aligned(_header_size, oopSize), "unaligned size");
@@ -156,10 +161,23 @@ RuntimeBlob::RuntimeBlob(
   cb->copy_code_and_locs_to(this);
 }
 
+void RuntimeBlob::free(RuntimeBlob* blob) {
+  assert(blob != NULL, "caller must check for NULL");
+  ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
+  blob->flush();
+  {
+    MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+    CodeCache::free(blob);
+  }
+  // Track memory usage statistic after releasing CodeCache_lock
+  MemoryService::track_code_cache_memory_usage();
+}
+
 void CodeBlob::flush() {
   FREE_C_HEAP_ARRAY(unsigned char, _oop_maps);
   _oop_maps = NULL;
-  NOT_PRODUCT(_strings.free();)
+  NOT_PRODUCT(_asm_remarks.clear());
+  NOT_PRODUCT(_dbg_strings.clear());
 }
 
 void CodeBlob::set_oop_maps(OopMapSet* p) {
@@ -177,7 +195,9 @@ void RuntimeBlob::trace_new_stub(RuntimeBlob* stub, const char* name1, const cha
   // Do not hold the CodeCache lock during name formatting.
   assert(!CodeCache_lock->owned_by_self(), "release CodeCache before registering the stub");
 
-  if (stub != NULL) {
+  if (stub != NULL && (PrintStubCode ||
+                       Forte::is_enabled() ||
+                       JvmtiExport::should_post_dynamic_code_generated())) {
     char stub_id[256];
     assert(strlen(name1) + strlen(name2) < sizeof(stub_id), "");
     jio_snprintf(stub_id, sizeof(stub_id), "%s%s", name1, name2);
@@ -185,7 +205,8 @@ void RuntimeBlob::trace_new_stub(RuntimeBlob* stub, const char* name1, const cha
       ttyLocker ttyl;
       tty->print_cr("- - - [BEGIN] - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -");
       tty->print_cr("Decoding %s " INTPTR_FORMAT, stub_id, (intptr_t) stub);
-      Disassembler::decode(stub->code_begin(), stub->code_end(), tty);
+      Disassembler::decode(stub->code_begin(), stub->code_end(), tty
+                           NOT_PRODUCT(COMMA &stub->asm_remarks()));
       if ((stub->oop_maps() != NULL) && AbstractDisassembler::show_structs()) {
         tty->print_cr("- - - [OOP MAPS]- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -");
         stub->oop_maps()->print();
@@ -193,7 +214,9 @@ void RuntimeBlob::trace_new_stub(RuntimeBlob* stub, const char* name1, const cha
       tty->print_cr("- - - [END] - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -");
       tty->cr();
     }
-    Forte::register_stub(stub_id, stub->code_begin(), stub->code_end());
+    if (Forte::is_enabled()) {
+      Forte::register_stub(stub_id, stub->code_begin(), stub->code_end());
+    }
 
     if (JvmtiExport::should_post_dynamic_code_generated()) {
       const char* stub_name = name2;
@@ -206,7 +229,7 @@ void RuntimeBlob::trace_new_stub(RuntimeBlob* stub, const char* name1, const cha
   MemoryService::track_code_cache_memory_usage();
 }
 
-const ImmutableOopMap* CodeBlob::oop_map_for_return_address(address return_address) {
+const ImmutableOopMap* CodeBlob::oop_map_for_return_address(address return_address) const {
   assert(_oop_maps != NULL, "nope");
   return _oop_maps->find_map_at_offset((intptr_t) return_address - (intptr_t) code_begin());
 }
@@ -269,15 +292,7 @@ void* BufferBlob::operator new(size_t s, unsigned size) throw() {
 }
 
 void BufferBlob::free(BufferBlob *blob) {
-  assert(blob != NULL, "caller must check for NULL");
-  ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
-  blob->flush();
-  {
-    MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    CodeCache::free((RuntimeBlob*)blob);
-  }
-  // Track memory usage statistic after releasing CodeCache_lock
-  MemoryService::track_code_cache_memory_usage();
+  RuntimeBlob::free(blob);
 }
 
 
@@ -304,12 +319,22 @@ AdapterBlob* AdapterBlob::create(CodeBuffer* cb) {
   return blob;
 }
 
+void* VtableBlob::operator new(size_t s, unsigned size) throw() {
+  // Handling of allocation failure stops compilation and prints a bunch of
+  // stuff, which requires unlocking the CodeCache_lock, so that the Compile_lock
+  // can be locked, and then re-locking the CodeCache_lock. That is not safe in
+  // this context as we hold the CompiledICLocker. So we just don't handle code
+  // cache exhaustion here; we leave that for a later allocation that does not
+  // hold the CompiledICLocker.
+  return CodeCache::allocate(size, CodeBlobType::NonNMethod, false /* handle_alloc_failure */);
+}
+
 VtableBlob::VtableBlob(const char* name, int size) :
   BufferBlob(name, size) {
 }
 
 VtableBlob* VtableBlob::create(const char* name, int buffer_size) {
-  ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
+  assert(JavaThread::current()->thread_state() == _thread_in_vm, "called with the wrong state");
 
   VtableBlob* blob = NULL;
   unsigned int size = sizeof(VtableBlob);
@@ -318,8 +343,21 @@ VtableBlob* VtableBlob::create(const char* name, int buffer_size) {
   size += align_up(buffer_size, oopSize);
   assert(name != NULL, "must provide a name");
   {
-    MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+    if (!CodeCache_lock->try_lock()) {
+      // If we can't take the CodeCache_lock, then this is a bad time to perform the ongoing
+      // IC transition to megamorphic, for which this stub will be needed. It is better to
+      // bail out the transition, and wait for a more opportune moment. Not only is it not
+      // worth waiting for the lock blockingly for the megamorphic transition, it might
+      // also result in a deadlock to blockingly wait, when concurrent class unloading is
+      // performed. At this point in time, the CompiledICLocker is taken, so we are not
+      // allowed to blockingly wait for the CodeCache_lock, as these two locks are otherwise
+      // consistently taken in the opposite order. Bailing out results in an IC transition to
+      // the clean state instead, which will cause subsequent calls to retry the transitioning
+      // eventually.
+      return NULL;
+    }
     blob = new (size) VtableBlob(name, size);
+    CodeCache_lock->unlock();
   }
   // Track memory usage statistic after releasing CodeCache_lock
   MemoryService::track_code_cache_memory_usage();
@@ -375,10 +413,10 @@ RuntimeStub* RuntimeStub::new_runtime_stub(const char* stub_name,
                                            bool caller_must_gc_arguments)
 {
   RuntimeStub* stub = NULL;
+  unsigned int size = CodeBlob::allocation_size(cb, sizeof(RuntimeStub));
   ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
   {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    unsigned int size = CodeBlob::allocation_size(cb, sizeof(RuntimeStub));
     stub = new (size) RuntimeStub(stub_name, cb, size, frame_complete, frame_size, oop_maps, caller_must_gc_arguments);
   }
 
@@ -434,10 +472,10 @@ DeoptimizationBlob* DeoptimizationBlob::create(
   int        frame_size)
 {
   DeoptimizationBlob* blob = NULL;
+  unsigned int size = CodeBlob::allocation_size(cb, sizeof(DeoptimizationBlob));
   ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
   {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    unsigned int size = CodeBlob::allocation_size(cb, sizeof(DeoptimizationBlob));
     blob = new (size) DeoptimizationBlob(cb,
                                          size,
                                          oop_maps,
@@ -473,10 +511,10 @@ UncommonTrapBlob* UncommonTrapBlob::create(
   int        frame_size)
 {
   UncommonTrapBlob* blob = NULL;
+  unsigned int size = CodeBlob::allocation_size(cb, sizeof(UncommonTrapBlob));
   ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
   {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    unsigned int size = CodeBlob::allocation_size(cb, sizeof(UncommonTrapBlob));
     blob = new (size) UncommonTrapBlob(cb, size, oop_maps, frame_size);
   }
 
@@ -509,10 +547,10 @@ ExceptionBlob* ExceptionBlob::create(
   int         frame_size)
 {
   ExceptionBlob* blob = NULL;
+  unsigned int size = CodeBlob::allocation_size(cb, sizeof(ExceptionBlob));
   ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
   {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    unsigned int size = CodeBlob::allocation_size(cb, sizeof(ExceptionBlob));
     blob = new (size) ExceptionBlob(cb, size, oop_maps, frame_size);
   }
 
@@ -544,10 +582,10 @@ SafepointBlob* SafepointBlob::create(
   int         frame_size)
 {
   SafepointBlob* blob = NULL;
+  unsigned int size = CodeBlob::allocation_size(cb, sizeof(SafepointBlob));
   ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
   {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    unsigned int size = CodeBlob::allocation_size(cb, sizeof(SafepointBlob));
     blob = new (size) SafepointBlob(cb, size, oop_maps, frame_size);
   }
 
@@ -625,7 +663,12 @@ void CodeBlob::dump_for_addr(address addr, outputStream* st, bool verbose) const
       nm->method()->print_value_on(st);
     }
     st->cr();
-    nm->print_nmethod(verbose);
+    if (verbose && st == tty) {
+      // verbose is only ever true when called from findpc in debug.cpp
+      nm->print_nmethod(true);
+    } else {
+      nm->print(st);
+    }
     return;
   }
   st->print_cr(INTPTR_FORMAT " is at code_begin+%d in ", p2i(addr), (int)(addr - code_begin()));
@@ -682,4 +725,73 @@ void SingletonBlob::print_value_on(outputStream* st) const {
 
 void DeoptimizationBlob::print_value_on(outputStream* st) const {
   st->print_cr("Deoptimization (frame not available)");
+}
+
+// Implementation of UpcallStub
+
+UpcallStub::UpcallStub(const char* name, CodeBuffer* cb, int size,
+                       intptr_t exception_handler_offset,
+                       jobject receiver, ByteSize frame_data_offset) :
+  RuntimeBlob(name, cb, sizeof(UpcallStub), size, CodeOffsets::frame_never_safe, 0 /* no frame size */,
+              /* oop maps = */ nullptr, /* caller must gc arguments = */ false),
+  _exception_handler_offset(exception_handler_offset),
+  _receiver(receiver),
+  _frame_data_offset(frame_data_offset) {
+  CodeCache::commit(this);
+}
+
+void* UpcallStub::operator new(size_t s, unsigned size) throw() {
+  return CodeCache::allocate(size, CodeBlobType::NonNMethod);
+}
+
+UpcallStub* UpcallStub::create(const char* name, CodeBuffer* cb,
+                               intptr_t exception_handler_offset,
+                               jobject receiver, ByteSize frame_data_offset) {
+  ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
+
+  UpcallStub* blob = nullptr;
+  unsigned int size = CodeBlob::allocation_size(cb, sizeof(UpcallStub));
+  {
+    MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+    blob = new (size) UpcallStub(name, cb, size,
+                                         exception_handler_offset, receiver, frame_data_offset);
+  }
+  // Track memory usage statistic after releasing CodeCache_lock
+  MemoryService::track_code_cache_memory_usage();
+
+  trace_new_stub(blob, "UpcallStub");
+
+  return blob;
+}
+
+void UpcallStub::oops_do(OopClosure* f, const frame& frame) {
+  frame_data_for_frame(frame)->old_handles->oops_do(f);
+}
+
+JavaFrameAnchor* UpcallStub::jfa_for_frame(const frame& frame) const {
+  return &frame_data_for_frame(frame)->jfa;
+}
+
+void UpcallStub::free(UpcallStub* blob) {
+  assert(blob != nullptr, "caller must check for NULL");
+  JNIHandles::destroy_global(blob->receiver());
+  RuntimeBlob::free(blob);
+}
+
+void UpcallStub::preserve_callee_argument_oops(frame fr, const RegisterMap* reg_map, OopClosure* f) {
+  ShouldNotReachHere(); // caller should never have to gc arguments
+}
+
+// Misc.
+void UpcallStub::verify() {
+  // unimplemented
+}
+
+void UpcallStub::print_on(outputStream* st) const {
+  RuntimeBlob::print_on(st);
+  print_value_on(st);
+}
+
+void UpcallStub::print_value_on(outputStream* st) const {
+  st->print_cr("UpcallStub (" INTPTR_FORMAT  ") used for %s", p2i(this), name());
 }

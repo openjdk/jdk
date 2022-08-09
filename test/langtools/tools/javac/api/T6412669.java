@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,13 +73,13 @@ public class T6412669 extends AbstractProcessor {
         Trees trees = Trees.instance(processingEnv);
         SourcePositions sp = trees.getSourcePositions();
         Messager m = processingEnv.getMessager();
-        m.printMessage(Diagnostic.Kind.NOTE, "processing annotations");
+        m.printNote("processing annotations");
         int count = 0;
         for (TypeElement anno: annotations) {
             count++;
-            m.printMessage(Diagnostic.Kind.NOTE, "  processing annotation " + anno);
+            m.printNote("  processing annotation " + anno);
             for (Element e: roundEnv.getElementsAnnotatedWith(anno)) {
-                m.printMessage(Diagnostic.Kind.NOTE, "    processing element " + e);
+                m.printNote("    processing element " + e);
                 TreePath p = trees.getPath(e);
                 long start = sp.getStartPosition(p.getCompilationUnit(), p.getLeaf());
                 long end = sp.getEndPosition(p.getCompilationUnit(), p.getLeaf());
@@ -89,7 +89,7 @@ public class T6412669 extends AbstractProcessor {
             }
         }
         if (count == 0)
-            m.printMessage(Diagnostic.Kind.NOTE, "no annotations found");
+            m.printNote("no annotations found");
         return true;
     }
 

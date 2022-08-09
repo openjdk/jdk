@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,8 +87,8 @@ public class ZoneOffsets {
 
     private static Locale[] locales = {
         Locale.getDefault(),
-        new Locale("th", "TH"),
-        new Locale("ja", "JP", "JP")};
+        Locale.of("th", "TH"),
+        Locale.of("ja", "JP", "JP")};
 
     private static final int HOUR = 60 * 60 * 1000;
 

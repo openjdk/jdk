@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,8 @@
 enum class JavaThreadStatus : int;
 enum class JVMFlagOrigin : int;
 enum JVMFlagsEnum : int;
+enum class vmClassID : int;
+enum class vmIntrinsicID : int;
 enum class vmSymbolID : int;
 
 #endif // SHARE_UTILITIES_VMENUMS_HPP

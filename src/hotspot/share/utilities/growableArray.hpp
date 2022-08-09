@@ -124,6 +124,23 @@ protected:
   ~GrowableArrayView() {}
 
 public:
+  const static GrowableArrayView EMPTY;
+
+  bool operator==(const GrowableArrayView<E>& rhs) const {
+    if (_len != rhs._len)
+      return false;
+    for (int i = 0; i < _len; i++) {
+      if (at(i) != rhs.at(i)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  bool operator!=(const GrowableArrayView<E>& rhs) const {
+    return !(*this == rhs);
+  }
+
   E& at(int i) {
     assert(0 <= i && i < _len, "illegal index");
     return _data[i];
@@ -235,6 +252,14 @@ public:
     _len--;
   }
 
+  // Remove all elements up to the index (exclusive). The order is preserved.
+  void remove_till(int idx) {
+    for (int i = 0, j = idx; j < length(); i++, j++) {
+      at_put(i, at(j));
+    }
+    trunc_to(length() - idx);
+  }
+
   // The order is changed.
   void delete_at(int index) {
     assert(0 <= index && index < _len, "illegal index");
@@ -295,7 +320,22 @@ public:
     return min;
   }
 
-  void print() {
+  void truncate_to(int idx) {
+    for (int i = 0, j = idx; j < length(); i++, j++) {
+      at_put(i, at(j));
+    }
+    trunc_to(length() - idx);
+  }
+
+  void truncate_from(int idx) {
+    trunc_to(idx);
+  }
+
+  size_t data_size_in_bytes() const {
+    return _len * sizeof(E);
+  }
+
+  void print() const {
     tty->print("Growable Array " INTPTR_FORMAT, p2i(this));
     tty->print(": length %d (_max %d) { ", _len, _max);
     for (int i = 0; i < _len; i++) {
@@ -304,6 +344,9 @@ public:
     tty->print("}\n");
   }
 };
+
+template<typename E>
+const GrowableArrayView<E> GrowableArrayView<E>::EMPTY(nullptr, 0, 0);
 
 // GrowableArrayWithAllocator extends the "view" with
 // the capability to grow and deallocate the data array.
@@ -415,7 +458,7 @@ public:
 
   // Binary search and insertion utility.  Search array for element
   // matching key according to the static compare function.  Insert
-  // that element is not already in the list.  Assumes the list is
+  // that element if not already in the list.  Assumes the list is
   // already sorted according to compare function.
   template <int compare(const E&, const E&)> E insert_sorted(const E& key) {
     bool found;

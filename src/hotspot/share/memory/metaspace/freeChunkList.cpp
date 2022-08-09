@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2020 SAP SE. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,15 @@
 
 namespace metaspace {
 
+// Calculates total number of committed words over all chunks (walks chunks).
+size_t FreeChunkList::calc_committed_word_size() const {
+  size_t s = 0;
+  for (const Metachunk* c = _first; c != NULL; c = c->next()) {
+    s += c->committed_words();
+  }
+  return s;
+}
+
 void FreeChunkList::print_on(outputStream* st) const {
   if (_num_chunks.get() > 0) {
     for (const Metachunk* c = _first; c != NULL; c = c->next()) {
@@ -60,9 +69,7 @@ void FreeChunkList::verify() const {
     assert(_last == NULL, "Sanity");
   } else {
     assert(_last != NULL, "Sanity");
-    size_t committed = 0;
     int num = 0;
-    bool uncommitted = (_first->committed_words() == 0);
     for (Metachunk* c = _first; c != NULL; c = c->next()) {
       assert(c->is_free(), "Chunks in freelist should be free");
       assert(c->used_words() == 0, "Chunk in freelist should have not used words.");
@@ -71,11 +78,9 @@ void FreeChunkList::verify() const {
       assert(c->prev() == NULL || c->prev()->next() == c, "back link broken");
       assert(c != c->prev() && c != c->next(), "circle");
       c->verify();
-      committed += c->committed_words();
       num++;
     }
     _num_chunks.check(num);
-    _committed_word_size.check(committed);
   }
 }
 
@@ -90,13 +95,17 @@ size_t FreeChunkListVector::word_size() const {
   return sum;
 }
 
-// Returns total committed size in all lists
-size_t FreeChunkListVector::committed_word_size() const {
+// Calculates total number of committed words over all chunks (walks chunks).
+size_t FreeChunkListVector::calc_committed_word_size() const {
   size_t sum = 0;
   for (chunklevel_t l = chunklevel::LOWEST_CHUNK_LEVEL; l <= chunklevel::HIGHEST_CHUNK_LEVEL; l++) {
-    sum += list_for_level(l)->committed_word_size();
+    sum += calc_committed_word_size_at_level(l);
   }
   return sum;
+}
+
+size_t FreeChunkListVector::calc_committed_word_size_at_level(chunklevel_t lvl) const {
+  return list_for_level(lvl)->calc_committed_word_size();
 }
 
 // Returns total committed size in all lists
@@ -146,8 +155,8 @@ void FreeChunkListVector::print_on(outputStream* st) const {
     list_for_level(l)->print_on(st);
     st->cr();
   }
-  st->print_cr("total chunks: %d, total word size: " SIZE_FORMAT ", committed word size: " SIZE_FORMAT ".",
-               num_chunks(), word_size(), committed_word_size());
+  st->print_cr("total chunks: %d, total word size: " SIZE_FORMAT ".",
+               num_chunks(), word_size());
 }
 
 #ifdef ASSERT

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -459,6 +459,64 @@ public class MissingClassFile {
         }
     }
 
+    void testGetEnclosingOnMissingType() throws Exception {
+        Path base = Paths.get(".", "testGetEnclosingOnMissingType");
+        Path libClasses = compileLib(base,
+                                     "package pkg;\n" +
+                                     "public class A<E> {\n" +
+                                     "    public static class N<E> {}\n" +
+                                     "}\n",
+                                     "package pkg;\n" +
+                                     "public class T<E> {\n" +
+                                     "    T<A<T>> n;\n" +
+                                     "}\n");
+        try (OutputStream out = Files.newOutputStream(libClasses.resolve("pkg/A.class"))) {
+            out.write(0);
+        }
+
+        Path testSrc = base.resolve("test-src");
+        tb.createDirectories(testSrc);
+        Path testClasses = base.resolve("test-classes");
+        tb.createDirectories(testClasses);
+
+        tb.writeJavaFiles(testSrc, "class Test { }");
+        tb.cleanDirectory(testClasses);
+
+        JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+
+        List<Consumer<DeclaredType>> validators = Arrays.asList(
+                dt -> { if (dt.getEnclosingType().getKind() != TypeKind.NONE)
+                            throw new AssertionError("Unexpected enclosing type: " +
+                                                     dt.getEnclosingType());
+                },
+                dt -> { if (!"pkg.T<pkg.A<pkg.T>>".equals(dt.toString()))
+                            throw new AssertionError("Unexpected toString: " +
+                                                     dt.toString());
+                }
+        );
+
+        try (StandardJavaFileManager fm = compiler.getStandardFileManager(null, null, null)) {
+            for (Consumer<DeclaredType> validator : validators) {
+                com.sun.source.util.JavacTask task = (com.sun.source.util.JavacTask)
+                        compiler.getTask(null,
+                                         null,
+                                         null,
+                                         Arrays.asList("-XDrawDiagnostics",
+                                                       "-classpath",
+                                                       libClasses.toString()),
+                                         null,
+                                         fm.getJavaFileObjects(tb.findJavaFiles(testSrc)));
+                task.analyze();
+                TypeElement a = task.getElements()
+                                    .getTypeElement(task.getElements()
+                                                        .getModuleElement(""),
+                                                    "pkg.T");
+                DeclaredType type = (DeclaredType) a.getEnclosedElements().get(0).asType();
+                validator.accept(type);
+            }
+        }
+    }
+
     private Path compileLib(Path base, String... sources) throws Exception {
         Path libSrc = base.resolve("lib-src");
         tb.createDirectories(libSrc);
@@ -625,6 +683,7 @@ public class MissingClassFile {
         t.testAnnotationProcessing();
         t.testGetTypeElement();
         t.testScope();
+        t.testGetEnclosingOnMissingType();
     }
 
     static class TestVariant {

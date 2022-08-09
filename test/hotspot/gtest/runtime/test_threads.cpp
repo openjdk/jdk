@@ -25,8 +25,9 @@
 #include "precompiled.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/threads.hpp"
 #include "runtime/vmOperations.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -175,4 +176,17 @@ TEST_VM(ThreadsTest, claim_overflow) {
   Threads::Test::VM_TestClaimOverflow op;
   ThreadInVMfromNative invm(JavaThread::current());
   VMThread::execute(&op);
+}
+
+TEST_VM(ThreadsTest, fast_jni_in_vm) {
+  JavaThread* current = JavaThread::current();
+  JNIEnv* env = current->jni_environment();
+  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, current));
+
+  // DirectByteBuffer is an easy way to trigger GetIntField,
+  // see JDK-8262896
+  jlong capacity = 0x10000;
+  jobject buffer = env->NewDirectByteBuffer(NULL, (jlong)capacity);
+  ASSERT_NE((void*)NULL, buffer);
+  ASSERT_EQ(capacity, env->GetDirectBufferCapacity(buffer));
 }

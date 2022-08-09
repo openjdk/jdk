@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,11 +71,10 @@ public final class Security {
         // things in initialize that might require privs.
         // (the FileInputStream call and the File.exists call,
         // the securityPropFile call, etc)
-        AccessController.doPrivileged(new PrivilegedAction<>() {
-            public Void run() {
-                initialize();
-                return null;
-            }
+        @SuppressWarnings("removal")
+        var dummy = AccessController.doPrivileged((PrivilegedAction<Object>) () -> {
+            initialize();
+            return null;
         });
     }
 
@@ -90,8 +89,7 @@ public final class Security {
         if (propFile.exists()) {
             InputStream is = null;
             try {
-                FileInputStream fis = new FileInputStream(propFile);
-                is = new BufferedInputStream(fis);
+                is = new FileInputStream(propFile);
                 props.load(is);
                 loadedProps = true;
 
@@ -139,7 +137,7 @@ public final class Security {
             // now load the user-specified file so its values
             // will win if they conflict with the earlier values
             if (extraPropFile != null) {
-                BufferedInputStream bis = null;
+                InputStream is = null;
                 try {
                     URL propURL;
 
@@ -151,8 +149,8 @@ public final class Security {
                     } else {
                         propURL = new URL(extraPropFile);
                     }
-                    bis = new BufferedInputStream(propURL.openStream());
-                    props.load(bis);
+                    is = propURL.openStream();
+                    props.load(is);
                     loadedProps = true;
 
                     if (sdebug != null) {
@@ -171,9 +169,9 @@ public final class Security {
                         e.printStackTrace();
                     }
                 } finally {
-                    if (bis != null) {
+                    if (is != null) {
                         try {
-                            bis.close();
+                            is.close();
                         } catch (IOException ioe) {
                             if (sdebug != null) {
                                 sdebug.println("unable to close input stream");
@@ -225,16 +223,15 @@ public final class Security {
      * Looks up providers, and returns the property (and its associated
      * provider) mapping the key, if any.
      * The order in which the providers are looked up is the
-     * provider-preference order, as specificed in the security
+     * provider-preference order, as specified in the security
      * properties file.
      */
     private static ProviderProperty getProviderProperty(String key) {
-        ProviderProperty entry = null;
 
         List<Provider> providers = Providers.getProviderList().providers();
         for (int i = 0; i < providers.size(); i++) {
 
-            String matchKey = null;
+            String matchKey;
             Provider prov = providers.get(i);
             String prop = prov.getProperty(key);
 
@@ -242,7 +239,7 @@ public final class Security {
                 // Is there a match if we do a case-insensitive property name
                 // comparison? Let's try ...
                 for (Enumeration<Object> e = prov.keys();
-                                e.hasMoreElements() && prop == null; ) {
+                                e.hasMoreElements(); ) {
                     matchKey = (String)e.nextElement();
                     if (key.equalsIgnoreCase(matchKey)) {
                         prop = prov.getProperty(matchKey);
@@ -259,7 +256,7 @@ public final class Security {
             }
         }
 
-        return entry;
+        return null;
     }
 
     /**
@@ -271,7 +268,7 @@ public final class Security {
             // Is there a match if we do a case-insensitive property name
             // comparison? Let's try ...
             for (Enumeration<Object> e = provider.keys();
-                                e.hasMoreElements() && prop == null; ) {
+                                e.hasMoreElements(); ) {
                 String matchKey = (String)e.nextElement();
                 if (key.equalsIgnoreCase(matchKey)) {
                     prop = provider.getProperty(matchKey);
@@ -348,7 +345,7 @@ public final class Security {
      * added, or -1 if the provider was not added because it is
      * already installed.
      *
-     * @throws  NullPointerException if provider is null
+     * @throws  NullPointerException if provider is {@code null}
      * @throws  SecurityException
      *          if a security manager exists and its {@link
      *          java.lang.SecurityManager#checkSecurityAccess} method
@@ -388,7 +385,7 @@ public final class Security {
      * added, or -1 if the provider was not added because it is
      * already installed.
      *
-     * @throws  NullPointerException if provider is null
+     * @throws  NullPointerException if provider is {@code null}
      * @throws  SecurityException
      *          if a security manager exists and its {@link
      *          java.lang.SecurityManager#checkSecurityAccess} method
@@ -417,7 +414,7 @@ public final class Security {
      * providers).
      *
      * <p>This method returns silently if the provider is not installed or
-     * if name is null.
+     * if name is {@code null}.
      *
      * <p>First, if there is a security manager, its
      * {@code checkSecurityAccess}
@@ -459,8 +456,8 @@ public final class Security {
 
     /**
      * Returns the provider installed with the specified name, if
-     * any. Returns null if no provider with the specified name is
-     * installed or if name is null.
+     * any. Returns {@code null} if no provider with the specified name is
+     * installed or if name is {@code null}.
      *
      * @param name the name of the provider to get.
      *
@@ -475,8 +472,8 @@ public final class Security {
 
     /**
      * Returns an array containing all installed providers that satisfy the
-     * specified selection criterion, or null if no such providers have been
-     * installed. The returned providers are ordered
+     * specified selection criterion, or {@code null} if no such providers
+     * have been installed. The returned providers are ordered
      * according to their
      * {@linkplain #insertProviderAt(java.security.Provider, int) preference order}.
      *
@@ -524,18 +521,18 @@ public final class Security {
      * providers. The filter is case-insensitive.
      *
      * @return all the installed providers that satisfy the selection
-     * criterion, or null if no such providers have been installed.
+     * criterion, or {@code null} if no such providers have been installed.
      *
      * @throws InvalidParameterException
      *         if the filter is not in the required format
-     * @throws NullPointerException if filter is null
+     * @throws NullPointerException if filter is {@code null}
      *
      * @see #getProviders(java.util.Map)
      * @since 1.3
      */
     public static Provider[] getProviders(String filter) {
-        String key = null;
-        String value = null;
+        String key;
+        String value;
         int index = filter.indexOf(':');
 
         if (index == -1) {
@@ -554,8 +551,8 @@ public final class Security {
 
     /**
      * Returns an array containing all installed providers that satisfy the
-     * specified selection criteria, or null if no such providers have been
-     * installed. The returned providers are ordered
+     * specified selection criteria, or {@code null} if no such providers have
+     * been installed. The returned providers are ordered
      * according to their
      * {@linkplain #insertProviderAt(java.security.Provider, int)
      * preference order}.
@@ -595,11 +592,11 @@ public final class Security {
      * providers. The filter is case-insensitive.
      *
      * @return all the installed providers that satisfy the selection
-     * criteria, or null if no such providers have been installed.
+     * criteria, or {@code null} if no such providers have been installed.
      *
      * @throws InvalidParameterException
      *         if the filter is not in the required format
-     * @throws NullPointerException if filter is null
+     * @throws NullPointerException if filter is {@code null}
      *
      * @see #getProviders(java.lang.String)
      * @since 1.3
@@ -621,8 +618,7 @@ public final class Security {
 
         // For each selection criterion, remove providers
         // which don't satisfy the criterion from the candidate set.
-        for (Iterator<String> ite = keySet.iterator(); ite.hasNext(); ) {
-            String key = ite.next();
+        for (String key : keySet) {
             String value = filter.get(key);
 
             LinkedHashSet<Provider> newCandidates = getAllQualifyingCandidates(key, value,
@@ -632,17 +628,11 @@ public final class Security {
                 firstSearch = false;
             }
 
-            if ((newCandidates != null) && !newCandidates.isEmpty()) {
+            if (!newCandidates.isEmpty()) {
                 // For each provider in the candidates set, if it
                 // isn't in the newCandidate set, we should remove
                 // it from the candidate set.
-                for (Iterator<Provider> cansIte = candidates.iterator();
-                     cansIte.hasNext(); ) {
-                    Provider prov = cansIte.next();
-                    if (!newCandidates.contains(prov)) {
-                        cansIte.remove();
-                    }
-                }
+                candidates.removeIf(prov -> !newCandidates.contains(prov));
             } else {
                 candidates = null;
                 break;
@@ -652,14 +642,7 @@ public final class Security {
         if (candidates == null || candidates.isEmpty())
             return null;
 
-        Object[] candidatesArray = candidates.toArray();
-        Provider[] result = new Provider[candidatesArray.length];
-
-        for (int i = 0; i < result.length; i++) {
-            result[i] = (Provider)candidatesArray[i];
-        }
-
-        return result;
+        return candidates.toArray(new Provider[0]);
     }
 
     // Map containing cached Spi Class objects of the specified type
@@ -690,7 +673,7 @@ public final class Security {
      * an instance of an implementation of the requested algorithm
      * and type, and the second object in the array identifies the provider
      * of that implementation.
-     * The {@code provider} argument can be null, in which case all
+     * The {@code provider} argument can be {@code null}, in which case all
      * configured providers will be searched in order of preference.
      */
     static Object[] getImpl(String algorithm, String type, String provider)
@@ -721,7 +704,7 @@ public final class Security {
      * an instance of an implementation of the requested algorithm
      * and type, and the second object in the array identifies the provider
      * of that implementation.
-     * The {@code provider} argument cannot be null.
+     * The {@code provider} argument cannot be {@code null}.
      */
     static Object[] getImpl(String algorithm, String type, Provider provider)
             throws NoSuchAlgorithmException {
@@ -743,7 +726,7 @@ public final class Security {
      * {@code checkPermission}  method is called with a
      * {@code java.security.SecurityPermission("getProperty."+key)}
      * permission to see if it's ok to retrieve the specified
-     * security property value..
+     * security property value.
      *
      * @param key the key of the property being retrieved.
      *
@@ -754,12 +737,13 @@ public final class Security {
      *          java.lang.SecurityManager#checkPermission} method
      *          denies
      *          access to retrieve the specified security property value
-     * @throws  NullPointerException is key is null
+     * @throws  NullPointerException is key is {@code null}
      *
      * @see #setProperty
      * @see java.security.SecurityPermission
      */
     public static String getProperty(String key) {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(new SecurityPermission("getProperty."+
@@ -788,7 +772,7 @@ public final class Security {
      *          if a security manager exists and its {@link
      *          java.lang.SecurityManager#checkPermission} method
      *          denies access to set the specified security property value
-     * @throws  NullPointerException if key or datum is null
+     * @throws  NullPointerException if key or datum is {@code null}
      *
      * @see #getProperty
      * @see java.security.SecurityPermission
@@ -814,7 +798,7 @@ public final class Security {
      * setProperty() was either "package.access" or
      * "package.definition", we need to signal to the SecurityManager
      * class that the value has just changed, and that it should
-     * invalidate it's local cache values.
+     * invalidate its local cache values.
      */
     private static void invalidateSMCache(String key) {
 
@@ -827,6 +811,7 @@ public final class Security {
     }
 
     private static void check(String directive) {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkSecurityAccess(directive);
@@ -834,6 +819,7 @@ public final class Security {
     }
 
     private static void checkInsertProvider(String name) {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             try {
@@ -863,7 +849,7 @@ public final class Security {
 
         // The first component is the service name.
         // The second is the algorithm name.
-        // If the third isn't null, that is the attrinute name.
+        // If the third isn't null, that is the attribute name.
         String serviceName = filterComponents[0];
         String algName = filterComponents[1];
         String attrName = filterComponents[2];
@@ -890,7 +876,7 @@ public final class Security {
     }
 
     /*
-     * Returns true if the given provider satisfies
+     * Returns {@code true} if the given provider satisfies
      * the selection criterion key:value.
      */
     private static boolean isCriterionSatisfied(Provider prov,
@@ -949,8 +935,8 @@ public final class Security {
     }
 
     /*
-     * Returns true if the attribute is a standard attribute;
-     * otherwise, returns false.
+     * Returns {@code true} if the attribute is a standard attribute;
+     * otherwise, returns {@code false}.
      */
     private static boolean isStandardAttr(String attribute) {
         // For now, we just have two standard attributes:
@@ -958,15 +944,12 @@ public final class Security {
         if (attribute.equalsIgnoreCase("KeySize"))
             return true;
 
-        if (attribute.equalsIgnoreCase("ImplementedIn"))
-            return true;
-
-        return false;
+        return attribute.equalsIgnoreCase("ImplementedIn");
     }
 
     /*
-     * Returns true if the requested attribute value is supported;
-     * otherwise, returns false.
+     * Returns {@code true} if the requested attribute value is supported;
+     * otherwise, returns {@code false}.
      */
     private static boolean isConstraintSatisfied(String attribute,
                                                  String value,
@@ -976,11 +959,7 @@ public final class Security {
         if (attribute.equalsIgnoreCase("KeySize")) {
             int requestedSize = Integer.parseInt(value);
             int maxSize = Integer.parseInt(prop);
-            if (requestedSize <= maxSize) {
-                return true;
-            } else {
-                return false;
-            }
+            return requestedSize <= maxSize;
         }
 
         // For Type, prop is the type of the implementation
@@ -1002,7 +981,7 @@ public final class Security {
         }
 
         String serviceName = filterKey.substring(0, algIndex);
-        String algName = null;
+        String algName;
         String attrName = null;
 
         if (filterValue.isEmpty()) {
@@ -1010,7 +989,7 @@ public final class Security {
             // should be in the format of <crypto_service>.<algorithm_or_type>.
             algName = filterKey.substring(algIndex + 1).trim();
             if (algName.isEmpty()) {
-                // There must be a algorithm or type name.
+                // There must be an algorithm or type name.
                 throw new InvalidParameterException("Invalid filter");
             }
         } else {
@@ -1048,23 +1027,25 @@ public final class Security {
     }
 
     /**
-     * Returns a Set of Strings containing the names of all available
-     * algorithms or types for the specified Java cryptographic service
-     * (e.g., Signature, MessageDigest, Cipher, Mac, KeyStore). Returns
-     * an empty Set if there is no provider that supports the
-     * specified service or if serviceName is null. For a complete list
-     * of Java cryptographic services, please see the
+     * Returns a Set of {@code String} objects containing the names of all
+     * available algorithms or types for the specified Java cryptographic
+     * service (e.g., {@code Signature}, {@code MessageDigest}, {@code Cipher},
+     * {@code Mac}, {@code KeyStore}).
+     * Returns an empty set if there is no provider that supports the
+     * specified service or if {@code serviceName} is {@code null}.
+     * For a complete list of Java cryptographic services, please see the
      * {@extLink security_guide_jca
      * Java Cryptography Architecture (JCA) Reference Guide}.
      * Note: the returned set is immutable.
      *
      * @param serviceName the name of the Java cryptographic
-     * service (e.g., Signature, MessageDigest, Cipher, Mac, KeyStore).
+     * service (e.g., {@code Signature}, {@code MessageDigest}, {@code Cipher},
+     * {@code Mac}, {@code KeyStore}).
      * Note: this parameter is case-insensitive.
      *
-     * @return a Set of Strings containing the names of all available
-     * algorithms or types for the specified Java cryptographic service
-     * or an empty set if no provider supports the specified service.
+     * @return a Set of {@code String} objects containing the names of all
+     * available algorithms or types for the specified Java cryptographic
+     * service or an empty set if no provider supports the specified service.
      *
      * @since 1.4
      */

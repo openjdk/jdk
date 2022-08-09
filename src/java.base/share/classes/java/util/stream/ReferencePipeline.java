@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@ package java.util.stream;
 
 import java.util.Comparator;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Spliterator;
@@ -44,6 +45,7 @@ import java.util.function.Supplier;
 import java.util.function.ToDoubleFunction;
 import java.util.function.ToIntFunction;
 import java.util.function.ToLongFunction;
+import jdk.internal.access.SharedSecrets;
 
 /**
  * Abstract base class for an intermediate pipeline stage or pipeline source
@@ -610,7 +612,7 @@ abstract class ReferencePipeline<P_IN, P_OUT>
         // Runtime checking will be performed when an element is stored in A[], thus if A is not a
         // super type of U an ArrayStoreException will be thrown.
         @SuppressWarnings("rawtypes")
-        IntFunction rawGenerator = (IntFunction) generator;
+        IntFunction rawGenerator = generator;
         return (A[]) Nodes.flatten(evaluateToArrayNode(rawGenerator), rawGenerator)
                               .asArray(rawGenerator);
     }
@@ -618,6 +620,11 @@ abstract class ReferencePipeline<P_IN, P_OUT>
     @Override
     public final Object[] toArray() {
         return toArray(Object[]::new);
+    }
+
+    @Override
+    public List<P_OUT> toList() {
+        return SharedSecrets.getJavaUtilCollectionAccess().listFromTrustedArrayNullsAllowed(this.toArray());
     }
 
     @Override

@@ -25,7 +25,8 @@
 #ifndef SHARE_GC_EPSILON_EPSILONTHREADLOCALDATA_HPP
 #define SHARE_GC_EPSILON_EPSILONTHREADLOCALDATA_HPP
 
-#include "runtime/thread.hpp"
+#include "gc/shared/gc_globals.hpp"
+#include "runtime/javaThread.hpp"
 #include "utilities/debug.hpp"
 
 class EpsilonThreadLocalData {

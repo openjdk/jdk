@@ -25,6 +25,7 @@
 #define SHARE_GC_Z_ZRESURRECTION_INLINE_HPP
 
 #include "gc/z/zResurrection.hpp"
+
 #include "runtime/atomic.hpp"
 
 inline bool ZResurrection::is_blocked() {

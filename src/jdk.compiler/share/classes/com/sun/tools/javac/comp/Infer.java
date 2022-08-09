@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,6 +68,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
+import java.util.function.Predicate;
 
 import static com.sun.tools.javac.code.TypeTag.*;
 
@@ -1120,7 +1121,7 @@ public class Infer {
      * t = java.util.ArrayList<java.lang.String>
      * s = java.util.List<T>
      *
-     * we get this ouput (singleton list):
+     * we get this output (singleton list):
      *
      * [Pair[java.util.List<java.lang.String>,java.util.List<T>]]
      */
@@ -1201,14 +1202,10 @@ public class Infer {
 
         @Override
         public boolean equals(Object o) {
-            if (!(o instanceof IncorporationBinaryOp)) {
-                return false;
-            } else {
-                IncorporationBinaryOp that = (IncorporationBinaryOp)o;
-                return opKind == that.opKind &&
-                        types.isSameType(op1, that.op1) &&
-                        types.isSameType(op2, that.op2);
-            }
+            return (o instanceof IncorporationBinaryOp incorporationBinaryOp)
+                    && opKind == incorporationBinaryOp.opKind
+                    && types.isSameType(op1, incorporationBinaryOp.op1)
+                    && types.isSameType(op2, incorporationBinaryOp.op2);
         }
 
         @Override
@@ -1229,7 +1226,7 @@ public class Infer {
     /** an incorporation cache keeps track of all executed incorporation-related operations */
     Map<IncorporationBinaryOp, Boolean> incorporationCache = new HashMap<>();
 
-    protected static class BoundFilter implements Filter<Type> {
+    protected static class BoundFilter implements Predicate<Type> {
 
         InferenceContext inferenceContext;
 
@@ -1238,7 +1235,7 @@ public class Infer {
         }
 
         @Override
-        public boolean accepts(Type t) {
+        public boolean test(Type t) {
             return !t.isErroneous() && !inferenceContext.free(t) &&
                     !t.hasTag(BOT);
         }
@@ -1312,6 +1309,12 @@ public class Infer {
 
             public NodeNotFoundException(InferenceGraph graph) {
                 this.graph = graph;
+            }
+
+            @Override
+            public Throwable fillInStackTrace() {
+                // This is an internal exception; the stack trace is irrelevant.
+                return this;
             }
         }
         /**

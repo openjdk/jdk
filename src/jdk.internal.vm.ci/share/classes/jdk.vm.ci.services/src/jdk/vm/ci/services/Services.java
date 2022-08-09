@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,8 @@ import java.util.ServiceLoader;
 import java.util.Set;
 
 import jdk.internal.misc.VM;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Provides utilities needed by JVMCI clients.
@@ -97,6 +99,7 @@ public final class Services {
             if (savedProperties == null) {
                 synchronized (Services.class) {
                     if (savedProperties == null) {
+                        @SuppressWarnings("removal")
                         SecurityManager sm = System.getSecurityManager();
                         if (sm != null) {
                             sm.checkPermission(new JVMCIPermission());
@@ -186,6 +189,7 @@ public final class Services {
      *             {@link RuntimePermission}("jvmci")</tt>
      */
     public static <S> Iterable<S> load(Class<S> service) {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(new JVMCIPermission());
@@ -203,6 +207,7 @@ public final class Services {
      *             {@link RuntimePermission}("jvmci")</tt>
      */
     public static <S> S loadSingle(Class<S> service, boolean required) {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(new JVMCIPermission());
@@ -283,8 +288,8 @@ public final class Services {
                 String name = e.getKey();
                 String value = e.getValue();
                 if (name.length() > MAX_UTF8_PROPERTY_STRING_LENGTH || value.length() > MAX_UTF8_PROPERTY_STRING_LENGTH) {
-                    byte[] utf8Name = name.getBytes("UTF-8");
-                    byte[] utf8Value = value.getBytes("UTF-8");
+                    byte[] utf8Name = name.getBytes(UTF_8);
+                    byte[] utf8Value = value.getBytes(UTF_8);
                     out.writeInt(utf8Name.length);
                     out.write(utf8Name);
                     out.writeInt(utf8Value.length);
@@ -326,8 +331,8 @@ public final class Services {
                 int valueLen = in.readInt();
                 byte[] valueBytes = new byte[valueLen];
                 in.read(valueBytes);
-                String name = new String(nameBytes, "UTF-8");
-                String value = new String(valueBytes, "UTF-8");
+                String name = new String(nameBytes, UTF_8);
+                String value = new String(valueBytes, UTF_8);
                 props.put(name, value);
             }
             index++;

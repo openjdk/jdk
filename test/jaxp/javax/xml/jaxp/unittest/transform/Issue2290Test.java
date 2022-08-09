@@ -47,7 +47,7 @@ import org.testng.annotations.Test;
 /*
  * @test
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true transform.Issue2290Test
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow transform.Issue2290Test
  * @run testng/othervm transform.Issue2290Test
  * @summary Test XSL extension for RTF works, for https://issues.apache.org/jira/i#browse/XALANJ-2290.
  */

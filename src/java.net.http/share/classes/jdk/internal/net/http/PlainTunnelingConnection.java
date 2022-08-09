@@ -38,6 +38,7 @@ import java.net.http.HttpHeaders;
 import jdk.internal.net.http.common.FlowTube;
 import jdk.internal.net.http.common.MinimalFuture;
 import static java.net.http.HttpResponse.BodyHandlers.discarding;
+import static jdk.internal.net.http.common.Utils.ProxyHeaders;
 
 /**
  * A plain text socket tunnel through a proxy. Uses "CONNECT" but does not
@@ -47,14 +48,14 @@ import static java.net.http.HttpResponse.BodyHandlers.discarding;
 final class PlainTunnelingConnection extends HttpConnection {
 
     final PlainHttpConnection delegate;
-    final HttpHeaders proxyHeaders;
+    final ProxyHeaders proxyHeaders;
     final InetSocketAddress proxyAddr;
     private volatile boolean connected;
 
     protected PlainTunnelingConnection(InetSocketAddress addr,
                                        InetSocketAddress proxy,
                                        HttpClientImpl client,
-                                       HttpHeaders proxyHeaders) {
+                                       ProxyHeaders proxyHeaders) {
         super(addr, client);
         this.proxyAddr = proxy;
         this.proxyHeaders = proxyHeaders;

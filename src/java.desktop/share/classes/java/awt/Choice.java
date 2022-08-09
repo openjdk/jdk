@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.awt.peer.ChoicePeer;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.Serial;
 import java.util.EventListener;
 import java.util.Vector;
 
@@ -102,9 +103,10 @@ public class Choice extends Component implements ItemSelectable, Accessible {
     private static final String base = "choice";
     private static int nameCounter = 0;
 
-    /*
-     * JDK 1.1 serialVersionUID
+    /**
+     * Use serialVersionUID from JDK 1.1 for interoperability.
      */
+    @Serial
     private static final long serialVersionUID = -4075310674757313071L;
 
     static {
@@ -122,7 +124,7 @@ public class Choice extends Component implements ItemSelectable, Accessible {
      * By default, the first item added to the choice menu becomes the
      * selected item, until a different selection is made by the user
      * by calling one of the {@code select} methods.
-     * @exception HeadlessException if GraphicsEnvironment.isHeadless()
+     * @throws HeadlessException if GraphicsEnvironment.isHeadless()
      * returns true
      * @see       java.awt.GraphicsEnvironment#isHeadless
      * @see       #select(int)
@@ -203,7 +205,7 @@ public class Choice extends Component implements ItemSelectable, Accessible {
     /**
      * Adds an item to this {@code Choice} menu.
      * @param      item    the item to be added
-     * @exception  NullPointerException   if the item's value is
+     * @throws  NullPointerException   if the item's value is
      *                  {@code null}
      * @since      1.1
      */
@@ -217,7 +219,7 @@ public class Choice extends Component implements ItemSelectable, Accessible {
      * <p>
      * Adds an item to this {@code Choice} menu.
      * @param item the item to be added
-     * @exception NullPointerException if the item's value is equal to
+     * @throws NullPointerException if the item's value is equal to
      *          {@code null}
      */
     public void addItem(String item) {
@@ -236,7 +238,7 @@ public class Choice extends Component implements ItemSelectable, Accessible {
      * invoking this method.
      * @param item the item to be added
      * @param index the new item position
-     * @exception NullPointerException if the item's value is equal to
+     * @throws NullPointerException if the item's value is equal to
      *          {@code null}
      */
     private void insertNoInvalidate(String item, int index) {
@@ -272,7 +274,7 @@ public class Choice extends Component implements ItemSelectable, Accessible {
      * the selected item.
      * @param item the non-{@code null} item to be inserted
      * @param index the position at which the item should be inserted
-     * @exception IllegalArgumentException if index is less than 0
+     * @throws IllegalArgumentException if index is less than 0
      */
     public void insert(String item, int index) {
         synchronized (this) {
@@ -298,7 +300,7 @@ public class Choice extends Component implements ItemSelectable, Accessible {
      * item remains selected (and the selected index is
      * updated accordingly).
      * @param      item  the item to remove from this {@code Choice} menu
-     * @exception  IllegalArgumentException  if the item doesn't
+     * @throws  IllegalArgumentException  if the item doesn't
      *                     exist in the choice menu
      * @since      1.1
      */
@@ -428,7 +430,7 @@ public class Choice extends Component implements ItemSelectable, Accessible {
      * {@code ItemEvent} is by user interaction.
      *
      * @param      pos      the position of the selected item
-     * @exception  IllegalArgumentException if the specified
+     * @throws  IllegalArgumentException if the specified
      *                            position is greater than the
      *                            number of items or less than zero
      * @see        #getSelectedItem
@@ -559,7 +561,7 @@ public class Choice extends Component implements ItemSelectable, Accessible {
      *          <code><em>Foo</em>Listener</code>s on this choice,
      *          or an empty array if no such
      *          listeners have been added
-     * @exception ClassCastException if {@code listenerType}
+     * @throws ClassCastException if {@code listenerType}
      *          doesn't specify a class or interface that implements
      *          {@code java.util.EventListener}
      *
@@ -684,6 +686,7 @@ public class Choice extends Component implements ItemSelectable, Accessible {
      * @see java.awt.Component#itemListenerK
      * @see #readObject(ObjectInputStream)
      */
+    @Serial
     private void writeObject(ObjectOutputStream s)
       throws java.io.IOException
     {
@@ -705,12 +708,13 @@ public class Choice extends Component implements ItemSelectable, Accessible {
      * @throws IOException if an I/O error occurs
      * @throws HeadlessException if {@code GraphicsEnvironment.isHeadless()}
      *         returns {@code true}
-     * @serial
+     *
      * @see #removeItemListener(ItemListener)
      * @see #addItemListener(ItemListener)
      * @see java.awt.GraphicsEnvironment#isHeadless
      * @see #writeObject(ObjectOutputStream)
      */
+    @Serial
     private void readObject(ObjectInputStream s)
       throws ClassNotFoundException, IOException, HeadlessException
     {
@@ -766,9 +770,10 @@ public class Choice extends Component implements ItemSelectable, Accessible {
     protected class AccessibleAWTChoice extends AccessibleAWTComponent
         implements AccessibleAction
     {
-        /*
-         * JDK 1.3 serialVersionUID
+        /**
+         * Use serialVersionUID from JDK 1.3 for interoperability.
          */
+        @Serial
         private static final long serialVersionUID = 7175603582428509322L;
 
         /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,7 +84,7 @@ public class ClhsdbCDSJstackPrintAll {
                 "Common-Cleaner",
                 "Signal Dispatcher",
                 "Method*",
-                "LingeredApp.main"));
+                "LingeredApp.steadyState"));
             unExpStrMap.put("jstack -v", List.of(
                 "sun.jvm.hotspot.types.WrongTypeException",
                 "No suitable match for type of address"));
@@ -105,8 +105,8 @@ public class ClhsdbCDSJstackPrintAll {
                 "illegal code",
                 "Failure occurred at bci"));
             expStrMap.put("where -a", List.of(
-                "Java Stack Trace for main",
-                "public static void main"));
+                "Java Stack Trace for SteadyStateThread",
+                "private static void steadyState"));
             unExpStrMap.put("where -a", List.of(
                 "illegal code",
                 "Failure occurred at bci"));

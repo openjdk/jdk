@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -62,7 +62,7 @@ import org.w3c.dom.Element;
  * </complexType>
  *
  * @xerces.internal
- * @LastModified: Apr 2019
+ * @LastModified: Oct 2021
  */
 
 class  XSDComplexTypeTraverser extends XSDAbstractParticleTraverser {
@@ -131,7 +131,9 @@ class  XSDComplexTypeTraverser extends XSDAbstractParticleTraverser {
 
         private static final long serialVersionUID = 6802729912091130335L;
 
+        @SuppressWarnings("serial") // Array component type is not Serializable
         Object[] errorSubstText=null;
+        @SuppressWarnings("serial") // Type of field is not Serializable
         Element  errorElem = null;
         ComplexTypeRecoverableError() {
             super();

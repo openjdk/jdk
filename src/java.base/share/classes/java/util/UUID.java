@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -152,7 +152,7 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
         randomBytes[6]  &= 0x0f;  /* clear version        */
         randomBytes[6]  |= 0x40;  /* set to version 4     */
         randomBytes[8]  &= 0x3f;  /* clear variant        */
-        randomBytes[8]  |= 0x80;  /* set to IETF variant  */
+        randomBytes[8]  |= (byte) 0x80;  /* set to IETF variant  */
         return new UUID(randomBytes);
     }
 
@@ -176,7 +176,7 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
         md5Bytes[6]  &= 0x0f;  /* clear version        */
         md5Bytes[6]  |= 0x30;  /* set to version 3     */
         md5Bytes[8]  &= 0x3f;  /* clear variant        */
-        md5Bytes[8]  |= 0x80;  /* set to IETF variant  */
+        md5Bytes[8]  |= (byte) 0x80;  /* set to IETF variant  */
         return new UUID(md5Bytes);
     }
 
@@ -264,7 +264,7 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
             throw new IllegalArgumentException("UUID string too large");
         }
 
-        int dash1 = name.indexOf('-', 0);
+        int dash1 = name.indexOf('-');
         int dash2 = name.indexOf('-', dash1 + 1);
         int dash3 = name.indexOf('-', dash2 + 1);
         int dash4 = name.indexOf('-', dash3 + 1);
@@ -456,6 +456,7 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
      *
      * @return  A string representation of this {@code UUID}
      */
+    @Override
     public String toString() {
         return jla.fastUUID(leastSigBits, mostSigBits);
     }
@@ -465,9 +466,9 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
      *
      * @return  A hash code value for this {@code UUID}
      */
+    @Override
     public int hashCode() {
-        long hilo = mostSigBits ^ leastSigBits;
-        return ((int)(hilo >> 32)) ^ (int) hilo;
+        return Long.hashCode(mostSigBits ^ leastSigBits);
     }
 
     /**
@@ -482,6 +483,7 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
      * @return  {@code true} if the objects are the same; {@code false}
      *          otherwise
      */
+    @Override
     public boolean equals(Object obj) {
         if ((null == obj) || (obj.getClass() != UUID.class))
             return false;
@@ -506,13 +508,11 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
      *          greater than {@code val}
      *
      */
+    @Override
     public int compareTo(UUID val) {
         // The ordering is intentionally set up so that the UUIDs
         // can simply be numerically compared as two numbers
-        return (this.mostSigBits < val.mostSigBits ? -1 :
-                (this.mostSigBits > val.mostSigBits ? 1 :
-                 (this.leastSigBits < val.leastSigBits ? -1 :
-                  (this.leastSigBits > val.leastSigBits ? 1 :
-                   0))));
+        int mostSigBits = Long.compare(this.mostSigBits, val.mostSigBits);
+        return mostSigBits != 0 ? mostSigBits : Long.compare(this.leastSigBits, val.leastSigBits);
     }
 }

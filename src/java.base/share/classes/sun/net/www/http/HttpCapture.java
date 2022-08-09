@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,6 +65,7 @@ public class HttpCapture {
 
     private static synchronized void init() {
         initialized = true;
+        @SuppressWarnings("removal")
         String rulesFile = java.security.AccessController.doPrivileged(
             new java.security.PrivilegedAction<>() {
                 public String run() {
@@ -156,7 +157,7 @@ public class HttpCapture {
             if (p.matcher(s).find()) {
                 String f = capFiles.get(i);
                 File fi;
-                if (f.indexOf("%d") >= 0) {
+                if (f.contains("%d")) {
                     java.util.Random rand = new java.util.Random();
                     do {
                         String f2 = f.replace("%d", Integer.toString(rand.nextInt()));

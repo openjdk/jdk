@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -246,7 +246,7 @@ public class XRGlyphCache implements GlyphDisposedListener {
          * something not that stupid ;)
          */
         ArrayList<XRGlyphCacheEntry> cacheList = new ArrayList<XRGlyphCacheEntry>(cacheMap.values());
-        Collections.sort(cacheList, new Comparator<XRGlyphCacheEntry>() {
+        cacheList.sort(new Comparator<XRGlyphCacheEntry>() {
             public int compare(XRGlyphCacheEntry e1, XRGlyphCacheEntry e2) {
                 return e2.getLastUsed() - e1.getLastUsed();
             }

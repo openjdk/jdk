@@ -28,11 +28,11 @@
  * @summary converted from VM Testbase gc/gctests/LoadUnloadGC.
  * VM Testbase keywords: [gc, stress, stressopt, nonconcurrent, monitoring]
  * VM Testbase readme:
- * In this test a 1000 classes are loaded and unloaded in a loop.
+ * In this test 1000 classes are loaded and unloaded in a loop.
  * Class0 gets loaded which results in Class1 getting loaded and so on all
- * the way uptill class1000.  The classes should be unloaded whenever a
+ * the way up to class1000.  The classes should be unloaded whenever a
  * garbage collection takes place because their classloader is made unreachable
- * at the end of the each loop iteration. The loop is repeated 1000 times.
+ * at the end of each loop iteration. The loop is repeated 1000 times.
  *
  * @requires vm.opt.final.ClassUnloading
  * @library /vmTestbase
@@ -41,6 +41,30 @@
  * @run main/othervm
  *      -XX:MaxMetaspaceSize=64M
  *      -XX:MetaspaceSize=32M
+ *      -XX:CompressedClassSpaceSize=32M
+ *      gc.gctests.LoadUnloadGC.LoadUnloadGC
+ */
+
+/*
+ * @test
+ * @key stress
+ *
+ * @summary converted from VM Testbase gc/gctests/LoadUnloadGC.
+ * VM Testbase keywords: [gc, stress, stressopt, nonconcurrent, monitoring]
+ * VM Testbase readme:
+ * In this test 1000 classes are loaded and unloaded in a loop.
+ * Class0 gets loaded which results in Class1 getting loaded and so on all
+ * the way up to class1000.  The classes should be unloaded whenever a
+ * garbage collection takes place because their classloader is made unreachable
+ * at the end of each loop iteration. The loop is repeated 1000 times.
+ *
+ * @requires vm.opt.final.ClassUnloading
+ * @library /vmTestbase
+ *          /test/lib
+ * @build nsk.share.gc.ClassChain
+ * @run main/othervm
+ *      -XX:MaxMetaspaceSize=64M
+ *      -XX:MetaspaceSize=64M
  *      -XX:CompressedClassSpaceSize=32M
  *      gc.gctests.LoadUnloadGC.LoadUnloadGC
  */

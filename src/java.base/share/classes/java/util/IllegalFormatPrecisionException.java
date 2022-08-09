@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,11 +28,13 @@ package java.util;
 /**
  * Unchecked exception thrown when the precision is a negative value other than
  * {@code -1}, the conversion does not support a precision, or the value is
- * otherwise unsupported.
+ * otherwise unsupported. If the precision is not representable by an
+ * {@code int} type, then the value {@code Integer.MIN_VALUE} will be used
+ * in the exception.
  *
  * @since 1.5
  */
-public class IllegalFormatPrecisionException extends IllegalFormatException {
+public non-sealed class IllegalFormatPrecisionException extends IllegalFormatException {
 
     @java.io.Serial
     private static final long serialVersionUID = 18711008L;
@@ -50,7 +52,8 @@ public class IllegalFormatPrecisionException extends IllegalFormatException {
     }
 
     /**
-     * Returns the precision
+     * Returns the precision. If the precision isn't representable by an
+     * {@code int}, then will return {@code Integer.MIN_VALUE}.
      *
      * @return  The precision
      */

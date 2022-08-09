@@ -1,0 +1,2 @@
+# Re-enable SHA-1 since OldSig.java test uses it
+jdk.jar.disabledAlgorithms=MD2,MD5,RSA keySize < 1024,DSA keySize < 1024

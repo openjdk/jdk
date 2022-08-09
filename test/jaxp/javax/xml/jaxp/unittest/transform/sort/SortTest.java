@@ -47,7 +47,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 8193830
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true transform.sort.SortTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow transform.sort.SortTest
  * @run testng/othervm transform.sort.SortTest
  * @summary verify xsl:sort lang attribute
  */

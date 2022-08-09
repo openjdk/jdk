@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "aot/aotLoader.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/stringTable.hpp"
 #include "gc/shared/oopStorage.inline.hpp"
@@ -38,9 +37,12 @@
 #include "oops/oop.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/jniHandles.hpp"
 #include "runtime/mutexLocker.hpp"
+#include "runtime/stackFrameStream.inline.hpp"
 #include "runtime/vframe_hp.hpp"
 #include "services/management.hpp"
+#include "utilities/enumIterator.hpp"
 #include "utilities/growableArray.hpp"
 
 class ReferenceLocateClosure : public OopClosure {
@@ -98,7 +100,6 @@ class ReferenceToRootClosure : public StackObj {
   bool do_cldg_roots();
   bool do_oop_storage_roots();
   bool do_string_table_roots();
-  bool do_aot_loader_roots();
 
   bool do_roots();
 
@@ -130,14 +131,14 @@ bool ReferenceToRootClosure::do_cldg_roots() {
 }
 
 bool ReferenceToRootClosure::do_oop_storage_roots() {
-  int i = 0;
-  for (OopStorageSet::Iterator it = OopStorageSet::strong_iterator(); !it.is_end(); ++it, ++i) {
+  using Range = EnumRange<OopStorageSet::StrongId>;
+  for (auto id : Range()) {
     assert(!complete(), "invariant");
-    OopStorage* oop_storage = *it;
+    OopStorage* oop_storage = OopStorageSet::storage(id);
     OldObjectRoot::Type type = JNIHandles::is_global_storage(oop_storage) ?
                                OldObjectRoot::_global_jni_handle :
                                OldObjectRoot::_global_oop_handle;
-    OldObjectRoot::System system = OldObjectRoot::System(OldObjectRoot::_strong_oop_storage_set_first + i);
+    OldObjectRoot::System system = OldObjectRoot::System(OldObjectRoot::_strong_oop_storage_set_first + Range().index(id));
     ReferenceLocateClosure rlc(_callback, system, type, NULL);
     oop_storage->oops_do(&rlc);
     if (rlc.complete()) {
@@ -145,13 +146,6 @@ bool ReferenceToRootClosure::do_oop_storage_roots() {
     }
   }
   return false;
-}
-
-bool ReferenceToRootClosure::do_aot_loader_roots() {
-  assert(!complete(), "invariant");
-  ReferenceLocateClosure rcl(_callback, OldObjectRoot::_aot, OldObjectRoot::_type_undetermined, NULL);
-  AOTLoader::oops_do(&rcl);
-  return rcl.complete();
 }
 
 bool ReferenceToRootClosure::do_roots() {
@@ -165,11 +159,6 @@ bool ReferenceToRootClosure::do_roots() {
   }
 
   if (do_oop_storage_roots()) {
-   _complete = true;
-    return true;
-  }
-
-  if (do_aot_loader_roots()) {
    _complete = true;
     return true;
   }

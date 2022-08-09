@@ -42,7 +42,7 @@ HeapWord* ObjectStartArray::object_start(HeapWord* addr) const {
   HeapWord* next = scroll_forward;
   while (next <= addr) {
     scroll_forward = next;
-    next += oop(next)->size();
+    next += cast_to_oop(next)->size();
   }
   assert(scroll_forward <= addr, "wrong order for current and arg");
   assert(addr <= next, "wrong order for arg and next");

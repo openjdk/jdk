@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,10 @@
 
 package java.awt.geom;
 
-import java.awt.Shape;
 import java.awt.Rectangle;
+import java.awt.Shape;
+import java.io.Serial;
 import java.io.Serializable;
-import sun.awt.geom.Curve;
 
 /**
  * The {@code QuadCurve2D} class defines a quadratic parametric curve
@@ -239,21 +239,9 @@ public abstract class QuadCurve2D implements Shape, Cloneable {
         }
 
         /**
-         * {@inheritDoc}
-         * @since 1.2
+         * Use serialVersionUID from JDK 1.6 for interoperability.
          */
-        public Rectangle2D getBounds2D() {
-            float left   = Math.min(Math.min(x1, x2), ctrlx);
-            float top    = Math.min(Math.min(y1, y2), ctrly);
-            float right  = Math.max(Math.max(x1, x2), ctrlx);
-            float bottom = Math.max(Math.max(y1, y2), ctrly);
-            return new Rectangle2D.Float(left, top,
-                                         right - left, bottom - top);
-        }
-
-        /*
-         * JDK 1.6 serialVersionUID
-         */
+        @Serial
         private static final long serialVersionUID = -8511188402130719609L;
     }
 
@@ -428,21 +416,9 @@ public abstract class QuadCurve2D implements Shape, Cloneable {
         }
 
         /**
-         * {@inheritDoc}
-         * @since 1.2
+         * Use serialVersionUID from JDK 1.6 for interoperability.
          */
-        public Rectangle2D getBounds2D() {
-            double left   = Math.min(Math.min(x1, x2), ctrlx);
-            double top    = Math.min(Math.min(y1, y2), ctrly);
-            double right  = Math.max(Math.max(x1, x2), ctrlx);
-            double bottom = Math.max(Math.max(y1, y2), ctrly);
-            return new Rectangle2D.Double(left, top,
-                                          right - left, bottom - top);
-        }
-
-        /*
-         * JDK 1.6 serialVersionUID
-         */
+        @Serial
         private static final long serialVersionUID = 4217149928428559721L;
     }
 
@@ -1337,6 +1313,14 @@ public abstract class QuadCurve2D implements Shape, Cloneable {
      * {@inheritDoc}
      * @since 1.2
      */
+    public Rectangle2D getBounds2D() {
+        return Path2D.getBounds2D(getPathIterator(null));
+    }
+
+    /**
+     * {@inheritDoc}
+     * @since 1.2
+     */
     public Rectangle getBounds() {
         return getBounds2D().getBounds();
     }
@@ -1386,7 +1370,7 @@ public abstract class QuadCurve2D implements Shape, Cloneable {
      * as this object.
      *
      * @return     a clone of this instance.
-     * @exception  OutOfMemoryError            if there is not enough memory.
+     * @throws  OutOfMemoryError            if there is not enough memory.
      * @see        java.lang.Cloneable
      * @since      1.2
      */

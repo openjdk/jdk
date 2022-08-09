@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2015 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -31,17 +31,17 @@
   //////////////////////////////////////////////////////////////////////////////
   // PPC64 load/store emission
   //
-  // The PPC ld/st instructions cannot accomodate displacements > 16 bits long.
+  // The PPC ld/st instructions cannot accommodate displacements > 16 bits long.
   // The following "pseudo" instructions (load/store) make it easier to
   // use the indexed addressing mode by allowing 32 bit displacements:
   //
 
   void explicit_null_check(Register addr, CodeEmitInfo* info);
 
-  int store(LIR_Opr from_reg, Register base, int offset, BasicType type, bool wide, bool unaligned);
+  int store(LIR_Opr from_reg, Register base, int offset, BasicType type, bool wide);
   int store(LIR_Opr from_reg, Register base, Register disp, BasicType type, bool wide);
 
-  int load(Register base, int offset, LIR_Opr to_reg, BasicType type, bool wide, bool unaligned);
+  int load(Register base, int offset, LIR_Opr to_reg, BasicType type, bool wide);
   int load(Register base, Register disp, LIR_Opr to_reg, BasicType type, bool wide);
 
   int shift_amount(BasicType t);
@@ -62,7 +62,6 @@
 enum {
   _static_call_stub_size = 4 * BytesPerInstWord + MacroAssembler::b64_patchable_size, // or smaller
   _call_stub_size = _static_call_stub_size + MacroAssembler::trampoline_stub_size, // or smaller
-  _call_aot_stub_size = 0,
   _exception_handler_size = MacroAssembler::b64_patchable_size, // or smaller
   _deopt_handler_size = MacroAssembler::bl64_patchable_size
 };
@@ -70,11 +69,7 @@ enum {
   // '_static_call_stub_size' is only used on ppc (see LIR_Assembler::emit_static_call_stub()
   // in c1_LIRAssembler_ppc.cpp. The other, shared getters are defined in c1_LIRAssembler.hpp
   static int static_call_stub_size() {
-    if (UseAOT) {
-      return _static_call_stub_size + _call_aot_stub_size;
-    } else {
-      return _static_call_stub_size;
-    }
+    return _static_call_stub_size;
   }
 
 #endif // CPU_PPC_C1_LIRASSEMBLER_PPC_HPP

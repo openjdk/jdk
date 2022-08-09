@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,10 @@
 #ifndef SHARE_LOGGING_LOGTAG_HPP
 #define SHARE_LOGGING_LOGTAG_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "utilities/globalDefinitions.hpp"
+
+class outputStream;
 
 // List of available logging tags. New tags should be added here, in
 // alphabetical order.
@@ -36,11 +38,9 @@
   LOG_TAG(age) \
   LOG_TAG(alloc) \
   LOG_TAG(annotation) \
-  LOG_TAG(aot) \
   LOG_TAG(arguments) \
   LOG_TAG(attach) \
   LOG_TAG(barrier) \
-  LOG_TAG(biasedlocking) \
   LOG_TAG(blocks) \
   LOG_TAG(bot) \
   LOG_TAG(breakpoint) \
@@ -58,6 +58,7 @@
   LOG_TAG(constantpool) \
   LOG_TAG(constraints) \
   LOG_TAG(container) \
+  LOG_TAG(continuations) \
   LOG_TAG(coops) \
   LOG_TAG(cpu) \
   LOG_TAG(cset) \
@@ -66,14 +67,18 @@
   LOG_TAG(dcmd) \
   LOG_TAG(decoder) \
   LOG_TAG(defaultmethods) \
+  LOG_TAG(deoptimization) \
   LOG_TAG(director) \
+  NOT_PRODUCT(LOG_TAG(downcall)) \
   LOG_TAG(dump) \
   LOG_TAG(dynamic) \
   LOG_TAG(ergo) \
   LOG_TAG(event) \
   LOG_TAG(exceptions) \
   LOG_TAG(exit) \
+  LOG_TAG(finalizer) \
   LOG_TAG(fingerprint) \
+  NOT_PRODUCT(LOG_TAG(foreign)) \
   LOG_TAG(free) \
   LOG_TAG(freelist) \
   LOG_TAG(gc) \
@@ -94,6 +99,7 @@
   LOG_TAG(jfr) \
   LOG_TAG(jit) \
   LOG_TAG(jni) \
+  LOG_TAG(jvmci) \
   LOG_TAG(jvmti) \
   LOG_TAG(lambda) \
   LOG_TAG(library) \
@@ -138,9 +144,10 @@
   LOG_TAG(periodic) \
   LOG_TAG(phases) \
   LOG_TAG(plab) \
+  LOG_TAG(placeholders) \
+  LOG_TAG(preempt) \
   LOG_TAG(preorder)  /* Trace all classes loaded in order referenced (not loaded) */ \
   LOG_TAG(preview)   /* Trace loading of preview feature types */ \
-  LOG_TAG(primitivewrappers) \
   LOG_TAG(promotion) \
   LOG_TAG(protectiondomain) /* "Trace protection domain verification" */ \
   LOG_TAG(ptrqueue) \
@@ -164,6 +171,7 @@
   LOG_TAG(stacktrace) \
   LOG_TAG(stackwalk) \
   LOG_TAG(start) \
+  LOG_TAG(startup) \
   LOG_TAG(startuptime) \
   LOG_TAG(state) \
   LOG_TAG(stats) \
@@ -172,6 +180,7 @@
   LOG_TAG(stringtable) \
   LOG_TAG(subclass) \
   LOG_TAG(survivor) \
+  LOG_TAG(suspend) \
   LOG_TAG(sweep) \
   LOG_TAG(symboltable) \
   LOG_TAG(system) \
@@ -179,21 +188,22 @@
   LOG_TAG(task) \
   DEBUG_ONLY(LOG_TAG(test)) \
   LOG_TAG(thread) \
-  LOG_TAG(time) \
+  LOG_TAG(throttle) \
   LOG_TAG(timer) \
   LOG_TAG(tlab) \
   LOG_TAG(tracking) \
   LOG_TAG(unload) /* Trace unloading of classes */ \
   LOG_TAG(unshareable) \
+  NOT_PRODUCT(LOG_TAG(upcall)) \
   LOG_TAG(update) \
+  LOG_TAG(valuebasedclasses) \
   LOG_TAG(verification) \
   LOG_TAG(verify) \
   LOG_TAG(vmmutex) \
   LOG_TAG(vmoperation) \
   LOG_TAG(vmthread) \
   LOG_TAG(vtables) \
-  LOG_TAG(vtablestubs) \
-  LOG_TAG(workgang)
+  LOG_TAG(vtablestubs)
 
 #define PREFIX_LOG_TAG(T) (LogTag::_##T)
 

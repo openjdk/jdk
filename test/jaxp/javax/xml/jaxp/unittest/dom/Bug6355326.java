@@ -47,7 +47,7 @@ import org.xml.sax.SAXException;
  * @test
  * @bug 6355326
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true dom.Bug6355326
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow dom.Bug6355326
  * @run testng/othervm dom.Bug6355326
  * @summary Test DOM implementation encoding.
  */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,8 @@
 #define SHARE_RUNTIME_HANDLES_INLINE_HPP
 
 #include "runtime/handles.hpp"
-#include "runtime/thread.hpp"
+
+#include "runtime/javaThread.hpp"
 #include "oops/metadata.hpp"
 #include "oops/oop.hpp"
 
@@ -40,6 +41,14 @@ inline Handle::Handle(Thread* thread, oop obj) {
   } else {
     _handle = thread->handle_area()->allocate_handle(obj);
   }
+}
+
+inline void Handle::replace(oop obj) {
+  // Unlike in OopHandle::replace, we shouldn't use a barrier here.
+  // OopHandle has its storage in OopStorage, which is walked concurrently and uses barriers.
+  // Handle is thread private, and iterated by Thread::oops_do, which is why it shouldn't have any barriers at all.
+  assert(_handle != NULL, "should not use replace");
+  *_handle = obj;
 }
 
 // Inline constructors for Specific Handles for different oop types

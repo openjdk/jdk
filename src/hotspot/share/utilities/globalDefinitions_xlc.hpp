@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2019 SAP SE. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,10 +109,6 @@ inline int g_isnan(double f) { return isnan(f); }
 inline int g_isfinite(jfloat  f)                 { return finite(f); }
 inline int g_isfinite(jdouble f)                 { return finite(f); }
 
-// Wide characters
-inline int wcslen(const jchar* x) { return wcslen((const wchar_t*)x); }
-
-
 // Formatting.
 #ifdef _LP64
 #define FORMAT64_MODIFIER "l"
@@ -127,8 +123,7 @@ inline int wcslen(const jchar* x) { return wcslen((const wchar_t*)x); }
 // offset_of as it is defined for gcc.
 #define offset_of(klass,field) (size_t)((intx)&(((klass*)16)->field) - 16)
 
-// AIX 5.3 has buggy __thread support. (see JDK-8176442).
-#define USE_LIBRARY_BASED_TLS_ONLY 1
+#define THREAD_LOCAL __thread
 
 // Inlining support
 //
@@ -137,7 +132,7 @@ inline int wcslen(const jchar* x) { return wcslen((const wchar_t*)x); }
 //
 //   void* operator new(size_t size) throw() NOINLINE;
 //
-// For function/method defintions, the more common placement BEFORE the
+// For function/method definitions, the more common placement BEFORE the
 // function/method declarator seems to be supported as well:
 //
 //   NOINLINE void* CHeapObj<F>::operator new(size_t size) throw() {...}

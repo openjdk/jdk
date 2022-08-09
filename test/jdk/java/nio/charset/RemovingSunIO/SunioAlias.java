@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4454622
+ * @bug 4454622 8260265
  * @summary Check if all supported sun.io encoding names are supported in nio.charset
  * @modules jdk.charsets
  */
@@ -89,7 +89,7 @@ public class SunioAlias {
         aliasTable.put("iso_646.irv:1983",      "ASCII");       // Linux POSIX locale
         aliasTable.put("ansi_x3.4-1968",        "ASCII");       // Caldera linux
         aliasTable.put("iso646-us",             "ASCII");
-        aliasTable.put("default",               "ASCII");       // compatibility with obsolete "Default" converters
+//      aliasTable.put("default",               "ASCII");       // compatibility with obsolete "Default" converters
         aliasTable.put("ascii7",                "ASCII");       // compatibility with obsolete "Default" converters
 
         // Core encodings

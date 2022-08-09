@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ import jdk.jfr.SettingDescriptor;
  */
 public final class PlatformEventType extends Type {
     private final boolean isJVM;
-    private final boolean  isJDK;
+    private final boolean isJDK;
     private final boolean isMethodSampling;
     private final List<SettingDescriptor> settings = new ArrayList<>(5);
     private final boolean dynamicSettings;
@@ -59,6 +59,7 @@ public final class PlatformEventType extends Type {
     private boolean hasDuration = true;
     private boolean hasPeriod = true;
     private boolean hasCutoff = false;
+    private boolean hasThrottle = false;
     private boolean isInstrumented;
     private boolean markForInstrumentation;
     private boolean registered = true;
@@ -84,7 +85,7 @@ public final class PlatformEventType extends Type {
         return false;
     }
 
-    private static boolean isUsingHandler(String name) {
+    private static boolean isUsingConfiguration(String name) {
         switch (name) {
             case Type.EVENT_NAME_PREFIX + "SocketRead"  :
             case Type.EVENT_NAME_PREFIX + "SocketWrite" :
@@ -101,11 +102,11 @@ public final class PlatformEventType extends Type {
             if (isExceptionEvent(name)) {
                 return 4;
             }
-            if (isUsingHandler(name)) {
+            if (isUsingConfiguration(name)) {
                 return 3;
             }
         }
-        return 4;
+        return 3;
     }
 
     public void add(SettingDescriptor settingDescriptor) {
@@ -142,10 +143,20 @@ public final class PlatformEventType extends Type {
        this.hasCutoff = hasCutoff;
     }
 
+    public void setHasThrottle(boolean hasThrottle) {
+        this.hasThrottle = hasThrottle;
+    }
+
     public void setCutoff(long cutoffNanos) {
         if (isJVM) {
             long cutoffTicks = Utils.nanosToTicks(cutoffNanos);
             JVM.getJVM().setCutoff(getId(), cutoffTicks);
+        }
+    }
+
+    public void setThrottle(long eventSampleSize, long period_ms) {
+        if (isJVM) {
+            JVM.getJVM().setThrottle(getId(), eventSampleSize, period_ms);
         }
     }
 
@@ -169,8 +180,16 @@ public final class PlatformEventType extends Type {
         return this.hasCutoff;
     }
 
+    public boolean hasThrottle() {
+        return this.hasThrottle;
+    }
+
     public boolean isEnabled() {
         return enabled;
+    }
+
+    public boolean isSystem() {
+        return isJVM || isJDK;
     }
 
     public boolean isJVM() {
@@ -187,7 +206,7 @@ public final class PlatformEventType extends Type {
         if (isJVM) {
             if (isMethodSampling) {
                 long p = enabled ? period : 0;
-                JVM.getJVM().setMethodSamplingInterval(getId(), p);
+                JVM.getJVM().setMethodSamplingPeriod(getId(), p);
             } else {
                 JVM.getJVM().setEnabled(getId(), enabled);
             }
@@ -197,7 +216,7 @@ public final class PlatformEventType extends Type {
     public void setPeriod(long periodMillis, boolean beginChunk, boolean endChunk) {
         if (isMethodSampling) {
             long p = enabled ? periodMillis : 0;
-            JVM.getJVM().setMethodSamplingInterval(getId(), p);
+            JVM.getJVM().setMethodSamplingPeriod(getId(), p);
         }
         this.beginChunk = beginChunk;
         this.endChunk = endChunk;
@@ -270,7 +289,7 @@ public final class PlatformEventType extends Type {
         if (this.registered != registered) {
             this.registered = registered;
             updateCommittable();
-            LogTag logTag = isJVM() || isJDK() ? LogTag.JFR_SYSTEM_EVENT : LogTag.JFR_EVENT;
+            LogTag logTag = isSystem() ? LogTag.JFR_SYSTEM_METADATA : LogTag.JFR_METADATA;
             if (registered) {
                 Logger.log(logTag, LogLevel.INFO, "Registered " + getLogName());
             } else {
@@ -307,5 +326,9 @@ public final class PlatformEventType extends Type {
 
     public void setLargeSize() {
         largeSize = true;
+    }
+
+    public boolean isMethodSampling() {
+        return isMethodSampling;
     }
 }

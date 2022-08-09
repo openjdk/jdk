@@ -78,7 +78,7 @@ public class ModuleInfoBuilder {
         // add targets to modulepath if it has module-info.class
         List<Path> paths = args.stream()
             .map(fn -> Paths.get(fn))
-            .collect(toList());
+            .toList();
 
         // automatic module to convert to normal module
         this.automaticToNormalModule = ModuleFinder.of(paths.toArray(new Path[0]))

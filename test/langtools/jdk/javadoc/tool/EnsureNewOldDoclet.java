@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -106,18 +106,21 @@ public class EnsureNewOldDoclet extends TestRunner {
     // outcome: new tool and new doclet
     @Test
     public void testDefault() throws Exception {
-        setArgs("-classpath", ".", // insulates us from ambient classpath
+        setArgs("-J-Duser.language=en", "-J-Duser.country=US",
+                "-classpath", ".", // insulates us from ambient classpath
                   testSrc.toString());
         Task.Result tr = task.run(Task.Expect.SUCCESS);
-        List<String> out = tr.getOutputLines(Task.OutputKind.STDOUT);
-        checkOutput(testName, out, NEW_HEADER);
+        List<String> err = tr.getOutputLines(Task.OutputKind.STDERR);
+        checkOutput(testName, err, NEW_HEADER);
     }
 
     // input: new doclet and new taglet
     // outcome: new doclet and new taglet should register
     @Test
     public void testNewDocletNewTaglet() throws Exception {
-        setArgs("-classpath", ".", // ambient classpath insulation
+        setArgs("-J-Duser.language=en",
+                "-J-Duser.country=US",
+                "-classpath", ".", // ambient classpath insulation
                 "-doclet",
                 NEW_STDDOCLET,
                 "-taglet",
@@ -128,8 +131,8 @@ public class EnsureNewOldDoclet extends TestRunner {
         Task.Result tr = task.run(Task.Expect.SUCCESS);
         List<String> out = tr.getOutputLines(Task.OutputKind.STDOUT);
         List<String> err = tr.getOutputLines(Task.OutputKind.STDERR);
-        checkOutput(testName, out, NEW_HEADER);
-        checkOutput(testName, out, NEW_TAGLET_MARKER);
+        checkOutput(testName, err, NEW_HEADER);
+        checkOutput(testName, err, NEW_TAGLET_MARKER);
     }
 
     void setArgs(String... args) {

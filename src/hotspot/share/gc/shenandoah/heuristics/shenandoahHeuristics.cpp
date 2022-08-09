@@ -50,7 +50,7 @@ ShenandoahHeuristics::ShenandoahHeuristics() :
   _last_cycle_end(0),
   _gc_times_learned(0),
   _gc_time_penalties(0),
-  _gc_time_history(new TruncatedSeq(5)),
+  _gc_time_history(new TruncatedSeq(10, ShenandoahAdaptiveDecayFactor)),
   _metaspace_oom()
 {
   // No unloading during concurrent mark? Communicate that to heuristics
@@ -119,7 +119,7 @@ void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
       // Reclaim humongous regions here, and count them as the immediate garbage
 #ifdef ASSERT
       bool reg_live = region->has_live();
-      bool bm_live = ctx->is_marked(oop(region->bottom()));
+      bool bm_live = ctx->is_marked(cast_to_oop(region->bottom()));
       assert(reg_live == bm_live,
              "Humongous liveness and marks should agree. Region live: %s; Bitmap live: %s; Region Live Words: " SIZE_FORMAT,
              BOOL_TO_STR(reg_live), BOOL_TO_STR(bm_live), region->get_live_data_words());
@@ -182,7 +182,7 @@ void ShenandoahHeuristics::record_cycle_end() {
   _last_cycle_end = os::elapsedTime();
 }
 
-bool ShenandoahHeuristics::should_start_gc() const {
+bool ShenandoahHeuristics::should_start_gc() {
   // Perform GC to cleanup metaspace
   if (has_metaspace_oom()) {
     // Some of vmTestbase/metaspace tests depend on following line to count GC cycles

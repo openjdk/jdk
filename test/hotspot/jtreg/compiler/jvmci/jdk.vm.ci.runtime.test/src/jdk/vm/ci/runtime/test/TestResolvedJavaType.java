@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,8 @@ import static java.lang.reflect.Modifier.isPrivate;
 import static java.lang.reflect.Modifier.isProtected;
 import static java.lang.reflect.Modifier.isPublic;
 import static java.lang.reflect.Modifier.isStatic;
+import static jdk.vm.ci.meta.MetaUtil.internalNameToJava;
+import static jdk.vm.ci.meta.MetaUtil.toInternalName;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -87,6 +89,17 @@ public class TestResolvedJavaType extends TypeUniverse {
     private static final Class<? extends Annotation> SIGNATURE_POLYMORPHIC_CLASS = findPolymorphicSignatureClass();
 
     public TestResolvedJavaType() {
+    }
+
+    @Test
+    public void equalsTest() {
+        for (ResolvedJavaType t : javaTypes) {
+            for (ResolvedJavaType that : javaTypes) {
+                boolean expect = t == that;
+                boolean actual = t.equals(that);
+                assertEquals(expect, actual);
+            }
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -162,43 +175,16 @@ public class TestResolvedJavaType extends TypeUniverse {
         }
     }
 
-    private static Class<?> anonClass() throws Exception {
-        ClassWriter cw = new ClassWriter(0);
-        cw.visit(Opcodes.V1_8, Opcodes.ACC_FINAL + Opcodes.ACC_SUPER, "Anon", null, "java/lang/Object", null);
-        FieldVisitor intField = cw.visitField(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, "intField", "I", null, 0);
-        intField.visitEnd();
-        cw.visitEnd();
-        return unsafe.defineAnonymousClass(TypeUniverse.class, cw.toByteArray(), null);
-    }
-
     @Test
-    public void getHostClassTest() throws Exception {
-        ResolvedJavaType type = metaAccess.lookupJavaType(anonClass());
-        ResolvedJavaType host = type.getHostClass();
-        assertNotNull(host);
-        for (Class<?> c : classes) {
-            type = metaAccess.lookupJavaType(c);
-            host = type.getHostClass();
-            assertNull(host);
-            if (type.equals(predicateType)) {
-                assertTrue(c.isHidden());
-            }
-        }
-
-        class LocalClass {
-        }
-        Cloneable clone = new Cloneable() {
-        };
-        assertNull(metaAccess.lookupJavaType(LocalClass.class).getHostClass());
-        assertNull(metaAccess.lookupJavaType(clone.getClass()).getHostClass());
-
+    public void lambdaInternalNameTest() {
+        // Verify that the last dot in lambda types is properly handled when transitioning from internal name to java
+        // name and vice versa.
         Supplier<Runnable> lambda = () -> () -> System.out.println("run");
         ResolvedJavaType lambdaType = metaAccess.lookupJavaType(lambda.getClass());
-        ResolvedJavaType nestedLambdaType = metaAccess.lookupJavaType(lambda.get().getClass());
-        assertNull(lambdaType.getHostClass());
-        assertTrue(lambda.getClass().isHidden());
-        assertNull(nestedLambdaType.getHostClass());
-        assertTrue(lambda.get().getClass().isHidden());
+        String typeName = lambdaType.getName();
+        String javaName = lambda.getClass().getName();
+        assertEquals(typeName, toInternalName(javaName));
+        assertEquals(javaName, internalNameToJava(typeName, true, true));
     }
 
     @Test
@@ -1155,6 +1141,7 @@ public class TestResolvedJavaType extends TypeUniverse {
         "isLinked",
         "getJavaClass",
         "getObjectHub",
+        "getHostClass",
         "hasFinalizableSubclass",
         "hasFinalizer",
         "isLocal",

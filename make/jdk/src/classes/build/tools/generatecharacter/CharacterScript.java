@@ -115,7 +115,7 @@ public class CharacterScript {
 
             for (j = 0; j < scriptSize; j++) {
                 for (int cp = scripts[j][0]; cp <= scripts[j][1]; cp++) {
-                    String name = names[scripts[j][2]].toUpperCase(Locale.ENGLISH);;
+                    String name = names[scripts[j][2]].toUpperCase(Locale.ENGLISH);
                     if (cp > 0xffff)
                         System.out.printf("%05X    %s%n", cp, name);
                     else

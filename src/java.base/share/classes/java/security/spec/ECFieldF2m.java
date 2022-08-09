@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,8 +39,8 @@ import java.util.Arrays;
  */
 public class ECFieldF2m implements ECField {
 
-    private int m;
-    private int[] ks;
+    private final int m;
+    private final int[] ks;
     private BigInteger rp;
 
     /**
@@ -217,13 +217,12 @@ public class ECFieldF2m implements ECField {
      */
     public boolean equals(Object obj) {
         if (this == obj) return true;
-        if (obj instanceof ECFieldF2m) {
+
+        return obj instanceof ECFieldF2m other
             // no need to compare rp here since ks and rp
             // should be equivalent
-            return ((m == ((ECFieldF2m)obj).m) &&
-                    (Arrays.equals(ks, ((ECFieldF2m) obj).ks)));
-        }
-        return false;
+            && (m == other.m)
+            && (Arrays.equals(ks, other.ks));
     }
 
     /**

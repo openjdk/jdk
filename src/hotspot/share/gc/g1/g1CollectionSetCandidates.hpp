@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 #define SHARE_GC_G1_G1COLLECTIONSETCANDIDATES_HPP
 
 #include "gc/g1/g1CollectionSetCandidates.hpp"
-#include "gc/shared/workgroup.hpp"
+#include "gc/shared/workerThread.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/globals.hpp"
 
@@ -74,10 +74,16 @@ public:
     return res;
   }
 
+  // Remove num_regions from the front of the collection set candidate list.
   void remove(uint num_regions);
+  // Remove num_remove regions from the back of the collection set candidate list.
+  void remove_from_end(uint num_remove, size_t wasted);
 
   // Iterate over all remaining collection set candidate regions.
   void iterate(HeapRegionClosure* cl);
+  // Iterate over all remaining collection set candidate regions from the end
+  // to the beginning of the set.
+  void iterate_backwards(HeapRegionClosure* cl);
 
   // Return the number of candidate regions remaining.
   uint num_remaining() { return _num_regions - _front_idx; }

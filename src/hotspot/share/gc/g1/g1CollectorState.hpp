@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 #ifndef SHARE_GC_G1_G1COLLECTORSTATE_HPP
 #define SHARE_GC_G1_G1COLLECTORSTATE_HPP
 
-#include "gc/g1/g1YCTypes.hpp"
+#include "gc/g1/g1GCPauseType.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 // State of the G1 collection.
@@ -42,8 +42,8 @@ class G1CollectorState {
   // pause, it is a suggestion that the pause should start a marking
   // cycle by doing the concurrent start work. However, it is possible
   // that the concurrent marking thread is still finishing up the
-  // previous marking cycle (e.g., clearing the next marking
-  // bitmap). If that is the case we cannot start a new cycle and
+  // previous marking cycle (e.g., clearing the marking bitmap).
+  // If that is the case we cannot start a new cycle and
   // we'll have to wait for the concurrent marking thread to finish
   // what it is doing. In this case we will postpone the marking cycle
   // initiation decision for the next pause. When we eventually decide
@@ -64,9 +64,8 @@ class G1CollectorState {
   // of the concurrent start pause to the end of the Cleanup pause.
   bool _mark_or_rebuild_in_progress;
 
-  // The next bitmap is currently being cleared or about to be cleared. TAMS and bitmap
-  // may be out of sync.
-  bool _clearing_next_bitmap;
+  // The marking bitmap is currently being cleared or about to be cleared.
+  bool _clearing_bitmap;
 
   // Set during a full gc pause.
   bool _in_full_gc;
@@ -80,7 +79,7 @@ public:
     _initiate_conc_mark_if_possible(false),
 
     _mark_or_rebuild_in_progress(false),
-    _clearing_next_bitmap(false),
+    _clearing_bitmap(false),
     _in_full_gc(false) { }
 
   // Phase setters
@@ -94,11 +93,11 @@ public:
   void set_initiate_conc_mark_if_possible(bool v) { _initiate_conc_mark_if_possible = v; }
 
   void set_mark_or_rebuild_in_progress(bool v) { _mark_or_rebuild_in_progress = v; }
-  void set_clearing_next_bitmap(bool v) { _clearing_next_bitmap = v; }
+  void set_clearing_bitmap(bool v) { _clearing_bitmap = v; }
 
   // Phase getters
   bool in_young_only_phase() const { return _in_young_only_phase && !_in_full_gc; }
-  bool in_mixed_phase() const { return !in_young_only_phase() && !_in_full_gc; }
+  bool in_mixed_phase() const { return !_in_young_only_phase && !_in_full_gc; }
 
   // Specific pauses
   bool in_young_gc_before_mixed() const { return _in_young_gc_before_mixed; }
@@ -108,19 +107,10 @@ public:
   bool initiate_conc_mark_if_possible() const { return _initiate_conc_mark_if_possible; }
 
   bool mark_or_rebuild_in_progress() const { return _mark_or_rebuild_in_progress; }
-  bool clearing_next_bitmap() const { return _clearing_next_bitmap; }
+  bool clearing_bitmap() const { return _clearing_bitmap; }
 
-  G1YCType yc_type() const {
-    if (in_concurrent_start_gc()) {
-      return ConcurrentStart;
-    } else if (mark_or_rebuild_in_progress()) {
-      return DuringMarkOrRebuild;
-    } else if (in_young_only_phase()) {
-      return Normal;
-    } else {
-      return Mixed;
-    }
-  }
+  // Calculate GC Pause Type from internal state.
+  G1GCPauseType young_gc_pause_type(bool concurrent_operation_is_full_mark) const;
 };
 
 #endif // SHARE_GC_G1_G1COLLECTORSTATE_HPP

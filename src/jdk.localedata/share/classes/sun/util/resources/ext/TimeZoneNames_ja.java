@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -351,7 +351,7 @@ public final class TimeZoneNames_ja extends TimeZoneNamesBundle {
             {"Africa/Gaborone", CAT},
             {"Africa/Harare", CAT},
             {"Africa/Johannesburg", SAST},
-            {"Africa/Juba", EAT},
+            {"Africa/Juba", CAT},
             {"Africa/Kampala", EAT},
             {"Africa/Khartoum", CAT},
             {"Africa/Kigali", CAT},
@@ -378,7 +378,9 @@ public final class TimeZoneNames_ja extends TimeZoneNamesBundle {
             {"Africa/Timbuktu", GMT},
             {"Africa/Tripoli", EET},
             {"Africa/Tunis", CET},
-            {"Africa/Windhoek", CAT},
+            {"Africa/Windhoek", new String[] {"Central African Time", "CAT",
+                                              "Western African Time", "WAT",
+                                              "Central African Time", "CAT"}},
             {"America/Adak", HST},
             {"America/Anguilla", AST},
             {"America/Antigua", AST},
@@ -564,9 +566,9 @@ public final class TimeZoneNames_ja extends TimeZoneNamesBundle {
             {"Antarctica/DumontDUrville", new String[] {"\u30c7\u30e5\u30e2\u30f3\u30c7\u30e5\u30eb\u30f4\u30a3\u30eb\u6642\u9593", "DDUT",
                                                         "\u30c7\u30e5\u30e2\u30f3\u30c7\u30e5\u30eb\u30f4\u30a3\u30eb\u590f\u6642\u9593", "DDUST",
                                                         "\u30C7\u30E5\u30E2\u30F3\u30FB\u30C7\u30E5\u30EB\u30D3\u30EB\u6642\u9593", "DDUT"}},
-            {"Antarctica/Macquarie", new String[] {"\u30DE\u30C3\u30B3\u30FC\u30EA\u30FC\u5CF6\u6642\u9593", "MIST",
-                                                   "\u30DE\u30C3\u30B3\u30FC\u30EA\u30FC\u5CF6\u590F\u6642\u9593", "MIST",
-                                                   "\u30DE\u30C3\u30B3\u30FC\u30EA\u30FC\u5CF6\u6642\u9593", "MIST"}},
+            {"Antarctica/Macquarie", new String[] {"Australian Eastern Standard Time (Macquarie)", "AEST",
+                                                   "Australian Eastern Daylight Time (Macquarie)", "AEDT",
+                                                   "Australian Eastern Time (Macquarie)", "AET"}},
             {"Antarctica/Mawson", new String[] {"\u30e2\u30fc\u30bd\u30f3\u6642\u9593", "MAWT",
                                                 "\u30e2\u30fc\u30bd\u30f3\u590f\u6642\u9593", "MAWST",
                                                 "\u30E2\u30FC\u30BD\u30F3\u6642\u9593", "MAWT"}},

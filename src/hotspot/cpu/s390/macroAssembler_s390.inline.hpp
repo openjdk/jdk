@@ -30,7 +30,7 @@
 #include "asm/macroAssembler.hpp"
 #include "asm/codeBuffer.hpp"
 #include "code/codeCache.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/javaThread.hpp"
 
 // Simplified shift operations for single register operands, constant shift amount.
 inline void MacroAssembler::lshift(Register r, int places, bool is_DW) {

@@ -54,13 +54,13 @@ import java.util.List;
  * to return {@code RunnableFuture} implementations other than
  * {@code FutureTask}.
  *
- * <p><b>Extension example</b>. Here is a sketch of a class
+ * <p><b>Extension example.</b> Here is a sketch of a class
  * that customizes {@link ThreadPoolExecutor} to use
  * a {@code CustomTask} class instead of the default {@code FutureTask}:
  * <pre> {@code
  * public class CustomThreadPoolExecutor extends ThreadPoolExecutor {
  *
- *   static class CustomTask<V> implements RunnableFuture<V> {...}
+ *   static class CustomTask<V> implements RunnableFuture<V> { ... }
  *
  *   protected <V> RunnableFuture<V> newTaskFor(Callable<V> c) {
  *       return new CustomTask<V>(c);

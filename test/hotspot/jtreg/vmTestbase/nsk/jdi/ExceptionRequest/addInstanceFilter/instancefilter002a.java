@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,7 @@ public class instancefilter002a {
 
     //====================================================== test program
 
-    static instancefilter002aThread thread1 = null;
+    static Thread thread1 = null;
 
     static instancefilter002aTestClass objTC[] = { new instancefilter002aTestClass(), new instancefilter002aTestClass() };
 
@@ -100,7 +100,7 @@ public class instancefilter002a {
 
 
                     case 0:
-                            thread1 = new instancefilter002aThread("thread1");
+                            thread1 = JDIThreadFactory.newThread(new instancefilter002aThread("thread1"));
                             break;
 
     //-------------------------------------------------    standard end section
@@ -141,19 +141,17 @@ public class instancefilter002a {
 
     static class instancefilter002aThread extends Thread {
 
-        String tName = null;
         int tNumber;
 
         public instancefilter002aThread(String threadName) {
             super(threadName);
-            tName = threadName;
             tNumber = number;
             number++;
             lockingObj[tNumber] = threadName;
         }
 
         public void run() {
-            log1("  'run': enter  :: threadName == " + tName);
+            log1("  'run': enter  :: threadName == " + getName());
             if (lockingObj[tNumber] == null)
                 log1("lockingObj[tNumber] == null");
             synchronized(lockingObj[tNumber]) {
@@ -162,7 +160,7 @@ public class instancefilter002a {
                 }
                 objTC[tNumber].method();
             }
-            log1("  'run': exit   :: threadName == " + tName);
+            log1("  'run': exit   :: threadName == " + getName());
             return;
         }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@
 #include "gc/g1/g1FullGCMarker.hpp"
 #include "gc/g1/g1FullGCMarkTask.hpp"
 #include "gc/g1/g1FullGCOopClosures.inline.hpp"
-#include "gc/g1/g1FullGCReferenceProcessorExecutor.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 #include "memory/iterator.inline.hpp"
@@ -46,7 +45,7 @@ void G1FullGCMarkTask::work(uint worker_id) {
   Ticks start = Ticks::now();
   ResourceMark rm;
   G1FullGCMarker* marker = collector()->marker(worker_id);
-  MarkingCodeBlobClosure code_closure(marker->mark_closure(), !CodeBlobToOopClosure::FixRelocations);
+  MarkingCodeBlobClosure code_closure(marker->mark_closure(), !CodeBlobToOopClosure::FixRelocations, true /* keepalive nmethods */);
 
   if (ClassUnloading) {
     _root_processor.process_strong_roots(marker->mark_closure(),
@@ -60,6 +59,7 @@ void G1FullGCMarkTask::work(uint worker_id) {
 
   // Mark stack is populated, now process and drain it.
   marker->complete_marking(collector()->oop_queue_set(), collector()->array_queue_set(), &_terminator);
+  marker->flush_mark_stats_cache();
 
   // This is the point where the entire marking should have completed.
   assert(marker->oop_stack()->is_empty(), "Marking should have completed");

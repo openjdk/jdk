@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,7 +70,7 @@ enum Platform {UNKNOWN, WINDOWS, LINUX, MAC;
             platform = Platform.UNKNOWN;
         }
 
-        String version = System.getProperty("os.version").toString();
+        String version = System.getProperty("os.version");
         String[] parts = version.split(Pattern.quote("."));
 
         if (parts.length > 0) {
@@ -109,6 +109,10 @@ enum Platform {UNKNOWN, WINDOWS, LINUX, MAC;
 
     static boolean isMac() {
         return getPlatform() == MAC;
+    }
+
+    static boolean isArmMac() {
+        return (isMac() && "aarch64".equals(System.getProperty("os.arch")));
     }
 
     static boolean isLinux() {

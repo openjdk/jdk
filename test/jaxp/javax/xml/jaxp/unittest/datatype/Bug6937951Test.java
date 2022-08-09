@@ -35,7 +35,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 6937951
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true datatype.Bug6937951Test
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow datatype.Bug6937951Test
  * @run testng/othervm datatype.Bug6937951Test
  * @summary Test midnight is same as the start of the next day in XMLGregorianCalendar.
  */

@@ -26,7 +26,7 @@
  * @bug 6436919 6460930
  * @summary check that XML Signatures can be generated and validated with
  *  SecurityManager enabled and default policy
- * @run main/othervm XMLDSigWithSecMgr
+ * @run main/othervm -Djava.security.manager=allow XMLDSigWithSecMgr
  * @author Sean Mullan
  */
 import java.io.*;

@@ -33,20 +33,20 @@
 class JfrTryLock {
  private:
   volatile int* const _lock;
-  bool _has_lock;
+  bool _acquired;
 
  public:
-  JfrTryLock(volatile int* lock) : _lock(lock), _has_lock(Atomic::cmpxchg(lock, 0, 1) == 0) {}
+  JfrTryLock(volatile int* lock) : _lock(lock), _acquired(Atomic::cmpxchg(lock, 0, 1) == 0) {}
 
   ~JfrTryLock() {
-    if (_has_lock) {
+    if (_acquired) {
       OrderAccess::fence();
       *_lock = 0;
     }
   }
 
-  bool has_lock() const {
-    return _has_lock;
+  bool acquired() const {
+    return _acquired;
   }
 };
 

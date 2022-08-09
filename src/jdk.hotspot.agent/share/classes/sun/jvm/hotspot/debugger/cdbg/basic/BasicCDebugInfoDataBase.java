@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -137,7 +137,7 @@ public class BasicCDebugInfoDataBase implements CDebugInfoDataBase {
 
     // Sort blocks in ascending order of starting address (but do not
     // change ordering among blocks with the same starting address)
-    Collections.sort(blocks, new Comparator<>() {
+    blocks.sort(new Comparator<>() {
         public int compare(BlockSym b1, BlockSym b2) {
           Address a1 = b1.getAddress();
           Address a2 = b2.getAddress();

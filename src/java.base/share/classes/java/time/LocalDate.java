@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -123,12 +123,12 @@ import java.util.stream.Stream;
  * For most applications written today, the ISO-8601 rules are entirely suitable.
  * However, any application that makes use of historical dates, and requires them
  * to be accurate will find the ISO-8601 approach unsuitable.
- *
  * <p>
  * This is a <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>
- * class; use of identity-sensitive operations (including reference equality
- * ({@code ==}), identity hash code, or synchronization) on instances of
- * {@code LocalDate} may have unpredictable results and should be avoided.
+ * class; programmers should treat instances that are
+ * {@linkplain #equals(Object) equal} as interchangeable and should not
+ * use instances for synchronization, or unpredictable behavior may
+ * occur. For example, in a future release, synchronization may fail.
  * The {@code equals} method should be used for comparisons.
  *
  * @implSpec
@@ -136,6 +136,7 @@ import java.util.stream.Stream;
  *
  * @since 1.8
  */
+@jdk.internal.ValueBased
 public final class LocalDate
         implements Temporal, TemporalAdjuster, ChronoLocalDate, Serializable {
 
@@ -151,6 +152,8 @@ public final class LocalDate
     public static final LocalDate MAX = LocalDate.of(Year.MAX_VALUE, 12, 31);
     /**
      * The epoch year {@code LocalDate}, '1970-01-01'.
+     *
+     * @since 9
      */
     public static final LocalDate EPOCH = LocalDate.of(1970, 1, 1);
 
@@ -362,13 +365,16 @@ public final class LocalDate
 
         // convert march-based values back to january-based
         int marchMonth0 = (marchDoy0 * 5 + 2) / 153;
-        int month = (marchMonth0 + 2) % 12 + 1;
+        int month = marchMonth0 + 3;
+        if (month > 12) {
+            month -= 12;
+        }
         int dom = marchDoy0 - (marchMonth0 * 306 + 5) / 10 + 1;
-        yearEst += marchMonth0 / 10;
+        if (marchDoy0 >= 306) {
+            yearEst++;
+        }
 
-        // check year now we are certain it is correct
-        int year = YEAR.checkValidIntValue(yearEst);
-        return new LocalDate(year, month, dom);
+        return new LocalDate((int)yearEst, month, dom);
     }
 
     //-----------------------------------------------------------------------
@@ -441,18 +447,11 @@ public final class LocalDate
      */
     private static LocalDate create(int year, int month, int dayOfMonth) {
         if (dayOfMonth > 28) {
-            int dom = 31;
-            switch (month) {
-                case 2:
-                    dom = (IsoChronology.INSTANCE.isLeapYear(year) ? 29 : 28);
-                    break;
-                case 4:
-                case 6:
-                case 9:
-                case 11:
-                    dom = 30;
-                    break;
-            }
+            int dom = switch (month) {
+                case 2 -> (IsoChronology.INSTANCE.isLeapYear(year) ? 29 : 28);
+                case 4, 6, 9, 11 -> 30;
+                default -> 31;
+            };
             if (dayOfMonth > dom) {
                 if (dayOfMonth == 29) {
                     throw new DateTimeException("Invalid date 'February 29' as '" + year + "' is not a leap year");
@@ -474,15 +473,8 @@ public final class LocalDate
      */
     private static LocalDate resolvePreviousValid(int year, int month, int day) {
         switch (month) {
-            case 2:
-                day = Math.min(day, IsoChronology.INSTANCE.isLeapYear(year) ? 29 : 28);
-                break;
-            case 4:
-            case 6:
-            case 9:
-            case 11:
-                day = Math.min(day, 30);
-                break;
+            case 2 -> day = Math.min(day, IsoChronology.INSTANCE.isLeapYear(year) ? 29 : 28);
+            case 4, 6, 9, 11 -> day = Math.min(day, 30);
         }
         return new LocalDate(year, month, day);
     }
@@ -601,17 +593,15 @@ public final class LocalDate
      */
     @Override
     public ValueRange range(TemporalField field) {
-        if (field instanceof ChronoField) {
-            ChronoField f = (ChronoField) field;
-            if (f.isDateBased()) {
-                switch (f) {
-                    case DAY_OF_MONTH: return ValueRange.of(1, lengthOfMonth());
-                    case DAY_OF_YEAR: return ValueRange.of(1, lengthOfYear());
-                    case ALIGNED_WEEK_OF_MONTH: return ValueRange.of(1, getMonth() == Month.FEBRUARY && isLeapYear() == false ? 4 : 5);
-                    case YEAR_OF_ERA:
-                        return (getYear() <= 0 ? ValueRange.of(1, Year.MAX_VALUE + 1) : ValueRange.of(1, Year.MAX_VALUE));
-                }
-                return field.range();
+        if (field instanceof ChronoField chronoField) {
+            if (chronoField.isDateBased()) {
+                return switch (chronoField) {
+                    case DAY_OF_MONTH -> ValueRange.of(1, lengthOfMonth());
+                    case DAY_OF_YEAR -> ValueRange.of(1, lengthOfYear());
+                    case ALIGNED_WEEK_OF_MONTH -> ValueRange.of(1, getMonth() == Month.FEBRUARY && !isLeapYear() ? 4 : 5);
+                    case YEAR_OF_ERA -> (getYear() <= 0 ? ValueRange.of(1, Year.MAX_VALUE + 1) : ValueRange.of(1, Year.MAX_VALUE));
+                    default -> field.range();
+                };
             }
             throw new UnsupportedTemporalTypeException("Unsupported field: " + field);
         }
@@ -691,22 +681,22 @@ public final class LocalDate
     }
 
     private int get0(TemporalField field) {
-        switch ((ChronoField) field) {
-            case DAY_OF_WEEK: return getDayOfWeek().getValue();
-            case ALIGNED_DAY_OF_WEEK_IN_MONTH: return ((day - 1) % 7) + 1;
-            case ALIGNED_DAY_OF_WEEK_IN_YEAR: return ((getDayOfYear() - 1) % 7) + 1;
-            case DAY_OF_MONTH: return day;
-            case DAY_OF_YEAR: return getDayOfYear();
-            case EPOCH_DAY: throw new UnsupportedTemporalTypeException("Invalid field 'EpochDay' for get() method, use getLong() instead");
-            case ALIGNED_WEEK_OF_MONTH: return ((day - 1) / 7) + 1;
-            case ALIGNED_WEEK_OF_YEAR: return ((getDayOfYear() - 1) / 7) + 1;
-            case MONTH_OF_YEAR: return month;
-            case PROLEPTIC_MONTH: throw new UnsupportedTemporalTypeException("Invalid field 'ProlepticMonth' for get() method, use getLong() instead");
-            case YEAR_OF_ERA: return (year >= 1 ? year : 1 - year);
-            case YEAR: return year;
-            case ERA: return (year >= 1 ? 1 : 0);
-        }
-        throw new UnsupportedTemporalTypeException("Unsupported field: " + field);
+        return switch ((ChronoField) field) {
+            case DAY_OF_WEEK -> getDayOfWeek().getValue();
+            case ALIGNED_DAY_OF_WEEK_IN_MONTH -> ((day - 1) % 7) + 1;
+            case ALIGNED_DAY_OF_WEEK_IN_YEAR -> ((getDayOfYear() - 1) % 7) + 1;
+            case DAY_OF_MONTH -> day;
+            case DAY_OF_YEAR -> getDayOfYear();
+            case EPOCH_DAY -> throw new UnsupportedTemporalTypeException("Invalid field 'EpochDay' for get() method, use getLong() instead");
+            case ALIGNED_WEEK_OF_MONTH -> ((day - 1) / 7) + 1;
+            case ALIGNED_WEEK_OF_YEAR -> ((getDayOfYear() - 1) / 7) + 1;
+            case MONTH_OF_YEAR -> month;
+            case PROLEPTIC_MONTH -> throw new UnsupportedTemporalTypeException("Invalid field 'ProlepticMonth' for get() method, use getLong() instead");
+            case YEAR_OF_ERA -> (year >= 1 ? year : 1 - year);
+            case YEAR -> year;
+            case ERA -> (year >= 1 ? 1 : 0);
+            default -> throw new UnsupportedTemporalTypeException("Unsupported field: " + field);
+        };
     }
 
     private long getProlepticMonth() {
@@ -866,17 +856,11 @@ public final class LocalDate
      */
     @Override
     public int lengthOfMonth() {
-        switch (month) {
-            case 2:
-                return (isLeapYear() ? 29 : 28);
-            case 4:
-            case 6:
-            case 9:
-            case 11:
-                return 30;
-            default:
-                return 31;
-        }
+        return switch (month) {
+            case 2 -> (isLeapYear() ? 29 : 28);
+            case 4, 6, 9, 11 -> 30;
+            default -> 31;
+        };
     }
 
     /**
@@ -1044,25 +1028,24 @@ public final class LocalDate
      */
     @Override
     public LocalDate with(TemporalField field, long newValue) {
-        if (field instanceof ChronoField) {
-            ChronoField f = (ChronoField) field;
-            f.checkValidValue(newValue);
-            switch (f) {
-                case DAY_OF_WEEK: return plusDays(newValue - getDayOfWeek().getValue());
-                case ALIGNED_DAY_OF_WEEK_IN_MONTH: return plusDays(newValue - getLong(ALIGNED_DAY_OF_WEEK_IN_MONTH));
-                case ALIGNED_DAY_OF_WEEK_IN_YEAR: return plusDays(newValue - getLong(ALIGNED_DAY_OF_WEEK_IN_YEAR));
-                case DAY_OF_MONTH: return withDayOfMonth((int) newValue);
-                case DAY_OF_YEAR: return withDayOfYear((int) newValue);
-                case EPOCH_DAY: return LocalDate.ofEpochDay(newValue);
-                case ALIGNED_WEEK_OF_MONTH: return plusWeeks(newValue - getLong(ALIGNED_WEEK_OF_MONTH));
-                case ALIGNED_WEEK_OF_YEAR: return plusWeeks(newValue - getLong(ALIGNED_WEEK_OF_YEAR));
-                case MONTH_OF_YEAR: return withMonth((int) newValue);
-                case PROLEPTIC_MONTH: return plusMonths(newValue - getProlepticMonth());
-                case YEAR_OF_ERA: return withYear((int) (year >= 1 ? newValue : 1 - newValue));
-                case YEAR: return withYear((int) newValue);
-                case ERA: return (getLong(ERA) == newValue ? this : withYear(1 - year));
-            }
-            throw new UnsupportedTemporalTypeException("Unsupported field: " + field);
+        if (field instanceof ChronoField chronoField) {
+            chronoField.checkValidValue(newValue);
+            return switch (chronoField) {
+                case DAY_OF_WEEK -> plusDays(newValue - getDayOfWeek().getValue());
+                case ALIGNED_DAY_OF_WEEK_IN_MONTH -> plusDays(newValue - getLong(ALIGNED_DAY_OF_WEEK_IN_MONTH));
+                case ALIGNED_DAY_OF_WEEK_IN_YEAR -> plusDays(newValue - getLong(ALIGNED_DAY_OF_WEEK_IN_YEAR));
+                case DAY_OF_MONTH -> withDayOfMonth((int) newValue);
+                case DAY_OF_YEAR -> withDayOfYear((int) newValue);
+                case EPOCH_DAY -> LocalDate.ofEpochDay(newValue);
+                case ALIGNED_WEEK_OF_MONTH -> plusWeeks(newValue - getLong(ALIGNED_WEEK_OF_MONTH));
+                case ALIGNED_WEEK_OF_YEAR -> plusWeeks(newValue - getLong(ALIGNED_WEEK_OF_YEAR));
+                case MONTH_OF_YEAR -> withMonth((int) newValue);
+                case PROLEPTIC_MONTH -> plusMonths(newValue - getProlepticMonth());
+                case YEAR_OF_ERA -> withYear((int) (year >= 1 ? newValue : 1 - newValue));
+                case YEAR -> withYear((int) newValue);
+                case ERA -> (getLong(ERA) == newValue ? this : withYear(1 - year));
+                default -> throw new UnsupportedTemporalTypeException("Unsupported field: " + field);
+            };
         }
         return field.adjustInto(this, newValue);
     }
@@ -1167,8 +1150,7 @@ public final class LocalDate
      */
     @Override
     public LocalDate plus(TemporalAmount amountToAdd) {
-        if (amountToAdd instanceof Period) {
-            Period periodToAdd = (Period) amountToAdd;
+        if (amountToAdd instanceof Period periodToAdd) {
             return plusMonths(periodToAdd.toTotalMonths()).plusDays(periodToAdd.getDays());
         }
         Objects.requireNonNull(amountToAdd, "amountToAdd");
@@ -1258,19 +1240,18 @@ public final class LocalDate
      */
     @Override
     public LocalDate plus(long amountToAdd, TemporalUnit unit) {
-        if (unit instanceof ChronoUnit) {
-            ChronoUnit f = (ChronoUnit) unit;
-            switch (f) {
-                case DAYS: return plusDays(amountToAdd);
-                case WEEKS: return plusWeeks(amountToAdd);
-                case MONTHS: return plusMonths(amountToAdd);
-                case YEARS: return plusYears(amountToAdd);
-                case DECADES: return plusYears(Math.multiplyExact(amountToAdd, 10));
-                case CENTURIES: return plusYears(Math.multiplyExact(amountToAdd, 100));
-                case MILLENNIA: return plusYears(Math.multiplyExact(amountToAdd, 1000));
-                case ERAS: return with(ERA, Math.addExact(getLong(ERA), amountToAdd));
-            }
-            throw new UnsupportedTemporalTypeException("Unsupported unit: " + unit);
+        if (unit instanceof ChronoUnit chronoUnit) {
+            return switch (chronoUnit) {
+                case DAYS      -> plusDays(amountToAdd);
+                case WEEKS     -> plusWeeks(amountToAdd);
+                case MONTHS    -> plusMonths(amountToAdd);
+                case YEARS     -> plusYears(amountToAdd);
+                case DECADES   -> plusYears(Math.multiplyExact(amountToAdd, 10));
+                case CENTURIES -> plusYears(Math.multiplyExact(amountToAdd, 100));
+                case MILLENNIA -> plusYears(Math.multiplyExact(amountToAdd, 1000));
+                case ERAS      -> with(ERA, Math.addExact(getLong(ERA), amountToAdd));
+                default -> throw new UnsupportedTemporalTypeException("Unsupported unit: " + unit);
+            };
         }
         return unit.addTo(this, amountToAdd);
     }
@@ -1417,8 +1398,7 @@ public final class LocalDate
      */
     @Override
     public LocalDate minus(TemporalAmount amountToSubtract) {
-        if (amountToSubtract instanceof Period) {
-            Period periodToSubtract = (Period) amountToSubtract;
+        if (amountToSubtract instanceof Period periodToSubtract) {
             return minusMonths(periodToSubtract.toTotalMonths()).minusDays(periodToSubtract.getDays());
         }
         Objects.requireNonNull(amountToSubtract, "amountToSubtract");
@@ -1643,18 +1623,18 @@ public final class LocalDate
     @Override
     public long until(Temporal endExclusive, TemporalUnit unit) {
         LocalDate end = LocalDate.from(endExclusive);
-        if (unit instanceof ChronoUnit) {
-            switch ((ChronoUnit) unit) {
-                case DAYS: return daysUntil(end);
-                case WEEKS: return daysUntil(end) / 7;
-                case MONTHS: return monthsUntil(end);
-                case YEARS: return monthsUntil(end) / 12;
-                case DECADES: return monthsUntil(end) / 120;
-                case CENTURIES: return monthsUntil(end) / 1200;
-                case MILLENNIA: return monthsUntil(end) / 12000;
-                case ERAS: return end.getLong(ERA) - getLong(ERA);
-            }
-            throw new UnsupportedTemporalTypeException("Unsupported unit: " + unit);
+        if (unit instanceof ChronoUnit chronoUnit) {
+            return switch (chronoUnit) {
+                case DAYS      -> daysUntil(end);
+                case WEEKS     -> daysUntil(end) / 7;
+                case MONTHS    -> monthsUntil(end);
+                case YEARS     -> monthsUntil(end) / 12;
+                case DECADES   -> monthsUntil(end) / 120;
+                case CENTURIES -> monthsUntil(end) / 1200;
+                case MILLENNIA -> monthsUntil(end) / 12000;
+                case ERAS      -> end.getLong(ERA) - getLong(ERA);
+                default -> throw new UnsupportedTemporalTypeException("Unsupported unit: " + unit);
+            };
         }
         return unit.between(this, end);
     }
@@ -1939,7 +1919,7 @@ public final class LocalDate
         // need to handle case where there is a gap from 11:30 to 00:30
         // standard ZDT factory would result in 01:00 rather than 00:30
         LocalDateTime ldt = atTime(LocalTime.MIDNIGHT);
-        if (zone instanceof ZoneOffset == false) {
+        if (!(zone instanceof ZoneOffset)) {
             ZoneRules rules = zone.getRules();
             ZoneOffsetTransition trans = rules.getTransition(ldt);
             if (trans != null && trans.isGap()) {

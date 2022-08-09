@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,10 @@
  * questions.
  */
 
+import java.io.IOException;
+
+import jdk.test.lib.dcmd.CommandExecutor;
+
 /*
  * @test
  * @summary Test of diagnostic command GC.heap_dump -all=true
@@ -29,7 +33,7 @@
  *          java.compiler
  *          java.management
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
- * @run testng HeapDumpAllTest
+ * @run testng/timeout=240 HeapDumpAllTest
  */
 public class HeapDumpAllTest extends HeapDumpTest {
     public HeapDumpAllTest() {
@@ -37,6 +41,13 @@ public class HeapDumpAllTest extends HeapDumpTest {
         heapDumpArgs = "-all=true";
     }
 
+    @Override
+    public void run(CommandExecutor executor, boolean overwrite) throws IOException {
+        // Trigger gc by hand, so the created heap dump isnt't too large and
+        // takes too long to parse.
+        System.gc();
+        super.run(executor, overwrite);
+    }
+
     /* See HeapDumpTest for test cases */
 }
-

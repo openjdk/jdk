@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,17 @@
 
 #include <io.h>
 #include <fcntl.h>
+#include <stdlib.h>
 #include <windows.h>
 
 #include "AppLauncher.h"
 #include "JvmLauncher.h"
 #include "Log.h"
 #include "Dll.h"
+#include "WinApp.h"
 #include "Toolbox.h"
 #include "FileUtils.h"
+#include "PackageFile.h"
 #include "UniqueHandle.h"
 #include "ErrorHandling.h"
 #include "WinSysInfo.h"
@@ -131,26 +134,86 @@ tstring getJvmLibPath(const Jvm& jvm) {
 }
 
 
+void addCfgFileLookupDirForEnvVariable(
+        const PackageFile& pkgFile, AppLauncher& appLauncher,
+        const tstring& envVarName) {
+
+    tstring path;
+    JP_TRY;
+    path = SysInfo::getEnvVariable(envVarName);
+    JP_CATCH_ALL;
+
+    if (!path.empty()) {
+        appLauncher.addCfgFileLookupDir(FileUtils::mkpath() << path
+                << pkgFile.getPackageName());
+    }
+}
+
+
 void launchApp() {
     // [RT-31061] otherwise UI can be left in back of other windows.
     ::AllowSetForegroundWindow(ASFW_ANY);
 
     const tstring launcherPath = SysInfo::getProcessModulePath();
     const tstring appImageRoot = FileUtils::dirname(launcherPath);
-    const tstring runtimeBinPath = FileUtils::mkpath()
-            << appImageRoot << _T("runtime") << _T("bin");
+    const tstring appDirPath = FileUtils::mkpath() << appImageRoot << _T("app");
 
-    std::unique_ptr<Jvm> jvm(AppLauncher()
-        .setImageRoot(appImageRoot)
+    const PackageFile pkgFile = PackageFile::loadFromAppDir(appDirPath);
+
+    AppLauncher appLauncher = AppLauncher().setImageRoot(appImageRoot)
         .addJvmLibName(_T("bin\\jli.dll"))
-        .setAppDir(FileUtils::mkpath() << appImageRoot << _T("app"))
+        .setAppDir(appDirPath)
+        .setLibEnvVariableName(_T("PATH"))
         .setDefaultRuntimePath(FileUtils::mkpath() << appImageRoot
-                << _T("runtime"))
-        .createJvmLauncher());
+            << _T("runtime"));
 
-    // zip.dll may be loaded by java without full path
+    if (!pkgFile.getPackageName().empty()) {
+        addCfgFileLookupDirForEnvVariable(pkgFile, appLauncher, _T("LOCALAPPDATA"));
+        addCfgFileLookupDirForEnvVariable(pkgFile, appLauncher, _T("APPDATA"));
+    }
+
+    const bool restart = !appLauncher.libEnvVariableContainsAppDir();
+
+    std::unique_ptr<Jvm> jvm(appLauncher.createJvmLauncher());
+
+    if (restart) {
+        jvm->setEnvVariables();
+
+        jvm = std::unique_ptr<Jvm>();
+
+        STARTUPINFOW si;
+        ZeroMemory(&si, sizeof(si));
+        si.cb = sizeof(si);
+
+        PROCESS_INFORMATION pi;
+        ZeroMemory(&pi, sizeof(pi));
+
+        if (!CreateProcessW(launcherPath.c_str(), GetCommandLineW(),
+                NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi)) {
+            JP_THROW(SysError(tstrings::any() << "CreateProcessW() failed",
+                                                            CreateProcessW));
+        }
+
+        WaitForSingleObject(pi.hProcess, INFINITE);
+
+        UniqueHandle childProcessHandle(pi.hProcess);
+        UniqueHandle childThreadHandle(pi.hThread);
+
+        DWORD exitCode;
+        if (!GetExitCodeProcess(pi.hProcess, &exitCode)) {
+            JP_THROW(SysError(tstrings::any() << "GetExitCodeProcess() failed",
+                                                        GetExitCodeProcess));
+        }
+
+        exit(exitCode);
+        return;
+    }
+
+    // zip.dll (and others) may be loaded by java without full path
     // make sure it will look in runtime/bin
+    const tstring runtimeBinPath = FileUtils::dirname(jvm->getPath());
     SetDllDirectory(runtimeBinPath.c_str());
+    LOG_TRACE(tstrings::any() << "SetDllDirectory to: " << runtimeBinPath);
 
     const DllWrapper jliDll(jvm->getPath());
     std::unique_ptr<DllWrapper> splashDll;
@@ -170,113 +233,13 @@ void launchApp() {
 #ifndef JP_LAUNCHERW
 
 int __cdecl  wmain() {
-    return AppLauncher::launch(std::nothrow, launchApp);
+    return app::launch(std::nothrow, launchApp);
 }
 
 #else
 
-namespace {
-
-class LastErrorGuiLogAppender : public LogAppender {
-public:
-    virtual void append(const LogEvent& v) {
-        JP_TRY;
-
-        const std::wstring msg = (tstrings::any()
-                << AppLauncher::lastErrorMsg()).wstr();
-        MessageBox(0, msg.c_str(),
-            FileUtils::basename(SysInfo::getProcessModulePath()).c_str(),
-            MB_ICONERROR | MB_OK);
-
-        JP_CATCH_ALL;
-    }
-};
-
-
-class Console {
-public:
-    Console() {
-        if (!AttachConsole(ATTACH_PARENT_PROCESS)) {
-            // Failed to connect to parent's console. Create our own.
-            if (!AllocConsole()) {
-                // We already have a console, no need to redirect std I/O.
-                return;
-            }
-        }
-
-        stdoutChannel = std::unique_ptr<Channel>(new Channel(stdout));
-        stderrChannel = std::unique_ptr<Channel>(new Channel(stderr));
-    }
-
-    struct FileCloser {
-        typedef FILE* pointer;
-
-        void operator()(pointer h) {
-            ::fclose(h);
-        }
-    };
-
-    typedef std::unique_ptr<
-        FileCloser::pointer,
-        FileCloser
-    > UniqueFILEHandle;
-
-private:
-    class Channel {
-    public:
-        Channel(FILE* stdFILEHandle): stdFILEHandle(stdFILEHandle) {
-            const char* stdFileName = "CONOUT$";
-            const char* openMode = "w";
-            if (stdFILEHandle == stdin) {
-                stdFileName = "CONIN$";
-                openMode = "r";
-            }
-
-            FILE* fp = 0;
-            freopen_s(&fp, stdFileName, openMode, stdFILEHandle);
-
-            fileHandle = UniqueFILEHandle(fp);
-
-            std::ios_base::sync_with_stdio();
-        }
-
-        virtual ~Channel() {
-            JP_TRY;
-
-            FILE* fp = 0;
-            fileHandle = UniqueFILEHandle(fp);
-            std::ios_base::sync_with_stdio();
-
-            JP_CATCH_ALL;
-        }
-
-    private:
-        UniqueFILEHandle fileHandle;
-        FILE *stdFILEHandle;
-    };
-
-    std::unique_ptr<Channel> stdoutChannel;
-    std::unique_ptr<Channel> stderrChannel;
-};
-
-
-void launchAppW() {
-    std::unique_ptr<Console> console;
-    if (AppLauncher::isWithLogging()) {
-        console = std::unique_ptr<Console>(new Console());
-    }
-
-    launchApp();
-}
-
-} // namespace
-
-
 int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int) {
-    LastErrorGuiLogAppender lastErrorLogAppender;
-    TeeLogAppender logAppender(&AppLauncher::defaultLastErrorLogAppender(),
-            &lastErrorLogAppender);
-    return AppLauncher::launch(std::nothrow, launchAppW, &logAppender);
+    return app::wlaunch(std::nothrow, launchApp);
 }
 
 #endif

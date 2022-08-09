@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -198,8 +198,8 @@ final class LdapReferralContext implements DirContext, LdapContext {
 
     void setHopCount(int hopCount) {
         this.hopCount = hopCount;
-        if ((refCtx != null) && (refCtx instanceof LdapCtx)) {
-            ((LdapCtx)refCtx).setHopCount(hopCount);
+        if (refCtx instanceof LdapCtx ldapCtx) {
+            ldapCtx.setHopCount(hopCount);
         }
     }
 

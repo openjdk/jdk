@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,19 +22,20 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package javax.swing;
 
-import java.awt.*;
-import java.awt.event.*;
-import java.beans.*;
-import java.util.Hashtable;
-import java.util.Enumeration;
-import java.io.Serializable;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.Serial;
+import java.io.Serializable;
 import java.security.AccessController;
+
 import javax.swing.event.SwingPropertyChangeSupport;
+
 import sun.security.action.GetPropertyAction;
 
 /**
@@ -80,6 +81,7 @@ public abstract class AbstractAction implements Action, Cloneable, Serializable
      * Whether or not to reconfigure all action properties from the
      * specified event.
      */
+    @SuppressWarnings("removal")
     static boolean shouldReconfigure(PropertyChangeEvent e) {
         if (e.getPropertyName() == null) {
             synchronized(AbstractAction.class) {
@@ -191,7 +193,7 @@ public abstract class AbstractAction implements Action, Cloneable, Serializable
             // to change enabled, it would be possible for stack
             // overflow in the case where a developer implemented setEnabled
             // in terms of putValue.
-            if (newValue == null || !(newValue instanceof Boolean)) {
+            if (!(newValue instanceof Boolean)) {
                 newValue = false;
             }
             oldValue = enabled;
@@ -355,6 +357,7 @@ public abstract class AbstractAction implements Action, Cloneable, Serializable
         return newAction;
     }
 
+    @Serial
     private void writeObject(ObjectOutputStream s) throws IOException {
         // Store the default fields
         s.defaultWriteObject();
@@ -363,6 +366,7 @@ public abstract class AbstractAction implements Action, Cloneable, Serializable
         ArrayTable.writeArrayTable(s, arrayTable);
     }
 
+    @Serial
     private void readObject(ObjectInputStream s) throws ClassNotFoundException,
         IOException {
         s.defaultReadObject();

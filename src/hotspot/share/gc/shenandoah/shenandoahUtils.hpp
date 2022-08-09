@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2017, 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
 #include "gc/shared/gcVMOperations.hpp"
 #include "gc/shared/isGCActiveMark.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
-#include "gc/shared/weakProcessorPhaseTimes.hpp"
+#include "gc/shared/workerThread.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
 #include "jfr/jfrEvents.hpp"
@@ -147,9 +147,15 @@ public:
   static inline bool is_at_shenandoah_safepoint() {
     if (!SafepointSynchronize::is_at_safepoint()) return false;
 
+    Thread* const thr = Thread::current();
+    // Shenandoah GC specific safepoints are scheduled by control thread.
+    // So if we are enter here from control thread, then we are definitely not
+    // at Shenandoah safepoint, but at something else.
+    if (thr == ShenandoahHeap::heap()->control_thread()) return false;
+
     // This is not VM thread, cannot see what VM thread is doing,
     // so pretend this is a proper Shenandoah safepoint
-    if (!Thread::current()->is_VM_thread()) return true;
+    if (!thr->is_VM_thread()) return true;
 
     // Otherwise check we are at proper operation type
     VM_Operation* vm_op = VMThread::vm_operation();
@@ -160,6 +166,7 @@ public:
            type == VM_Operation::VMOp_ShenandoahFinalMarkStartEvac ||
            type == VM_Operation::VMOp_ShenandoahInitUpdateRefs ||
            type == VM_Operation::VMOp_ShenandoahFinalUpdateRefs ||
+           type == VM_Operation::VMOp_ShenandoahFinalRoots ||
            type == VM_Operation::VMOp_ShenandoahFullGC ||
            type == VM_Operation::VMOp_ShenandoahDegeneratedGC;
   }
@@ -167,16 +174,10 @@ public:
 
 class ShenandoahWorkerSession : public StackObj {
 protected:
-  uint _worker_id;
-
   ShenandoahWorkerSession(uint worker_id);
-  ~ShenandoahWorkerSession();
 public:
   static inline uint worker_id() {
-    Thread* thr = Thread::current();
-    uint id = ShenandoahThreadLocalData::worker_id(thr);
-    assert(id != ShenandoahThreadLocalData::INVALID_WORKER_ID, "Worker session has not been created");
-    return id;
+    return WorkerThread::worker_id();
   }
 };
 

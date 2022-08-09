@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,88 +54,99 @@ public class KeyEventForBadFocusOwnerTest {
     volatile static boolean unexpectedItemSelected = false;
 
     static Robot robot;
+    static JFrame frame;
 
     public static void main(String[] args) throws Exception {
-        SwingUtilities.invokeAndWait(new Runnable() {
-            public void run() {
-                JFrame frame = new JFrame("TEST");
-                JMenuBar mb = new JMenuBar();
-                JMenu one = new JMenu(ITEM_ONE_TEXT);
-                JMenu two = new JMenu(ITEM_TWO_TEXT);
+        try {
+            SwingUtilities.invokeAndWait(new Runnable() {
+                public void run() {
+                    frame = new JFrame("TEST");
+                    JMenuBar mb = new JMenuBar();
+                    JMenu one = new JMenu(ITEM_ONE_TEXT);
+                    JMenu two = new JMenu(ITEM_TWO_TEXT);
 
-                mb.add(one);
-                mb.add(two);
+                    mb.add(one);
+                    mb.add(two);
 
-                ActionListener al = new ActionListener() {
-                    public void actionPerformed(ActionEvent ae) {
-                        String itemText = ((JMenuItem)ae.getSource()).getText();
-                        System.out.println("--> " + itemText);
-                        unexpectedItemSelected = true;
-                    }
-                };
-                one.setMnemonic(KeyEvent.VK_O);
-                JMenuItem item = new JMenuItem("one 1");
-                item.setMnemonic(KeyEvent.VK_O);
-                item.addActionListener(al);
-                one.add(item);
-                one.add("two");
-                one.add("three");
-
-                two.setMnemonic(KeyEvent.VK_T);
-                item = new JMenuItem("two 2");
-                item.setMnemonic(KeyEvent.VK_T);
-                item.addActionListener(al);
-                two.add(item);
-                two.add("three");
-                two.add("four");
-
-                PopupMenuListener popupMenuListener = new PopupMenuListener() {
-                    public void popupMenuWillBecomeVisible(PopupMenuEvent e) {
-                        System.out.print(e);
-                        System.out.print(e.getSource());
-                        String itemText = ((JPopupMenu)e.getSource()).getName();
-                        System.out.println("Menu " + itemText + "is opened.");
-                        switch(itemText) {
-                            case ITEM_ONE_TEXT:
-                                itemOneSelected = true;
-                                break;
-                            case ITEM_TWO_TEXT:
-                                itemTwoSelected = true;
-                                break;
+                    ActionListener al = new ActionListener() {
+                        public void actionPerformed(ActionEvent ae) {
+                            String itemText = ((JMenuItem)ae.getSource()).getText();
+                            System.out.println("--> " + itemText);
+                            unexpectedItemSelected = true;
                         }
-                    }
+                    };
+                    one.setMnemonic(KeyEvent.VK_O);
+                    JMenuItem item = new JMenuItem("one 1");
+                    item.setMnemonic(KeyEvent.VK_O);
+                    item.addActionListener(al);
+                    one.add(item);
+                    one.add("two");
+                    one.add("three");
 
-                    public void popupMenuWillBecomeInvisible(PopupMenuEvent e) {}
-                    public void popupMenuCanceled(PopupMenuEvent e) {}
-                };
-                one.getPopupMenu().setName(ITEM_ONE_TEXT);
-                two.getPopupMenu().setName(ITEM_TWO_TEXT);
-                one.getPopupMenu().addPopupMenuListener(popupMenuListener);
-                two.getPopupMenu().addPopupMenuListener(popupMenuListener);
-                frame.setJMenuBar(mb);
-                frame.setSize(100,100);
-                frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-                frame.pack();
-                frame.setVisible(true);
+                    two.setMnemonic(KeyEvent.VK_T);
+                    item = new JMenuItem("two 2");
+                    item.setMnemonic(KeyEvent.VK_T);
+                    item.addActionListener(al);
+                    two.add(item);
+                    two.add("three");
+                    two.add("four");
+
+                    PopupMenuListener popupMenuListener = new PopupMenuListener() {
+                        public void popupMenuWillBecomeVisible(PopupMenuEvent e) {
+                            System.out.print(e);
+                            System.out.print(e.getSource());
+                            String itemText = ((JPopupMenu)e.getSource()).getName();
+                            System.out.println("Menu " + itemText + "is opened.");
+                            switch(itemText) {
+                                case ITEM_ONE_TEXT:
+                                    itemOneSelected = true;
+                                    break;
+                                case ITEM_TWO_TEXT:
+                                    itemTwoSelected = true;
+                                    break;
+                            }
+                        }
+
+                        public void popupMenuWillBecomeInvisible(PopupMenuEvent e) {}
+                        public void popupMenuCanceled(PopupMenuEvent e) {}
+                    };
+                    one.getPopupMenu().setName(ITEM_ONE_TEXT);
+                    two.getPopupMenu().setName(ITEM_TWO_TEXT);
+                    one.getPopupMenu().addPopupMenuListener(popupMenuListener);
+                    two.getPopupMenu().addPopupMenuListener(popupMenuListener);
+                    frame.setJMenuBar(mb);
+                    frame.setSize(100,100);
+                    frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+                    frame.setLocationRelativeTo(null);
+                    frame.pack();
+                    frame.setVisible(true);
+                }
+            });
+
+
+            robot = new Robot();
+            robot.setAutoDelay(100);
+            robot.waitForIdle();
+            robot.delay(1000);
+
+            Util.hitMnemonics(robot, KeyEvent.VK_O);
+            Util.hitMnemonics(robot, KeyEvent.VK_T);
+
+            robot.waitForIdle();
+            Thread.sleep(1000); // workaround for MacOS
+
+            if (unexpectedItemSelected) {
+                throw new Exception("Test failed. KeyEvent dispatched to old focus owner. ");
             }
-        });
-
-
-        robot = new Robot();
-        robot.setAutoDelay(100);
-        robot.waitForIdle();
-
-        Util.hitMnemonics(robot, KeyEvent.VK_O);
-        Util.hitMnemonics(robot, KeyEvent.VK_T);
-
-        robot.waitForIdle();
-        Thread.sleep(1000); // workaround for MacOS
-
-        if (unexpectedItemSelected) {
-            throw new Exception("Test failed. KeyEvent dispatched to old focus owner. ");
-        }
-        if (!itemOneSelected || !itemTwoSelected) {
-            throw new Exception("Not all expected events were received");
+            if (!itemOneSelected || !itemTwoSelected) {
+                throw new Exception("Not all expected events were received");
+            }
+        } finally {
+            SwingUtilities.invokeAndWait(() -> {
+                if (frame != null) {
+                    frame.dispose();
+                }
+            });
         }
     }
 }

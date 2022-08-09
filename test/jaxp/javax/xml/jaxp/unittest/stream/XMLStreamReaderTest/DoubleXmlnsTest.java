@@ -36,7 +36,7 @@ import org.testng.annotations.Test;
 /*
  * @test
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true stream.XMLStreamReaderTest.DoubleXmlnsTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow stream.XMLStreamReaderTest.DoubleXmlnsTest
  * @run testng/othervm stream.XMLStreamReaderTest.DoubleXmlnsTest
  * @summary Test double namespaces and nested namespaces.
  */

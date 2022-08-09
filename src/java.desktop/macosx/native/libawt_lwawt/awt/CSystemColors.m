@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,10 +28,10 @@
 #import "java_awt_SystemColor.h"
 #import "sun_lwawt_macosx_LWCToolkit.h"
 
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
 #import <JavaRuntimeSupport/JavaRuntimeSupport.h>
 
 #import "ThreadUtilities.h"
+#import "JNIUtilities.h"
 
 NSColor **sColors = nil;
 NSColor **appleColors = nil;
@@ -40,14 +40,12 @@ NSColor **appleColors = nil;
 
 + (void)initialize {
     JNIEnv *env = [ThreadUtilities getJNIEnv];
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
     [CSystemColors reloadColors];
     [[NSNotificationCenter defaultCenter] addObserver:[CSystemColors class] selector:@selector(systemColorsDidChange:) name:NSSystemColorsDidChangeNotification object:nil];
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 }
 
-static JNF_CLASS_CACHE(jc_LWCToolkit, "sun/lwawt/macosx/LWCToolkit");
-static JNF_STATIC_MEMBER_CACHE(jm_systemColorsChanged, jc_LWCToolkit, "systemColorsChanged", "()V");
 
 + (void)systemColorsDidChange:(NSNotification *)notification {
     AWT_ASSERT_APPKIT_THREAD;
@@ -57,7 +55,11 @@ static JNF_STATIC_MEMBER_CACHE(jm_systemColorsChanged, jc_LWCToolkit, "systemCol
     // Call LWCToolkit with the news. LWCToolkit makes certain to do its duties
     // from a new thread.
     JNIEnv* env = [ThreadUtilities getJNIEnv];
-    JNFCallStaticVoidMethod(env, jm_systemColorsChanged); // AWT_THREADING Safe (event)
+    DECLARE_CLASS(jc_LWCToolkit, "sun/lwawt/macosx/LWCToolkit");
+    DECLARE_STATIC_METHOD(jm_systemColorsChanged, jc_LWCToolkit, "systemColorsChanged", "()V");
+    (*env)->CallStaticVoidMethod(env, jc_LWCToolkit, jm_systemColorsChanged); // AWT_THREADING Safe (event)
+    CHECK_EXCEPTION();
+
 }
 
 
@@ -94,7 +96,11 @@ static JNF_STATIC_MEMBER_CACHE(jm_systemColorsChanged, jc_LWCToolkit, "systemCol
     sColors[java_awt_SystemColor_TEXT_INACTIVE_TEXT] =        [NSColor disabledControlTextColor];
     sColors[java_awt_SystemColor_CONTROL] =                    [NSColor controlColor];
     sColors[java_awt_SystemColor_CONTROL_TEXT] =            [NSColor controlTextColor];
-    sColors[java_awt_SystemColor_CONTROL_HIGHLIGHT] =        [NSColor alternateSelectedControlColor];
+    if (@available(macOS 10.14, *)) {
+        sColors[java_awt_SystemColor_CONTROL_HIGHLIGHT] =        [NSColor selectedContentBackgroundColor];
+    } else {
+        sColors[java_awt_SystemColor_CONTROL_HIGHLIGHT] =        [NSColor alternateSelectedControlColor];
+    }
     sColors[java_awt_SystemColor_CONTROL_LT_HIGHLIGHT] =    [NSColor alternateSelectedControlTextColor];
     sColors[java_awt_SystemColor_CONTROL_SHADOW] =            [NSColor controlShadowColor];
     sColors[java_awt_SystemColor_CONTROL_DK_SHADOW] =        [NSColor controlDarkShadowColor];
@@ -114,9 +120,16 @@ static JNF_STATIC_MEMBER_CACHE(jm_systemColorsChanged, jc_LWCToolkit, "systemCol
         }
     }
 
+    // added for JTable Focus Ring
+    if (@available(macOS 10.14, *)) {
+        appleColors[sun_lwawt_macosx_LWCToolkit_CELL_HIGHLIGHT_COLOR] =               [NSColor controlAccentColor];
+    } else {
+        appleColors[sun_lwawt_macosx_LWCToolkit_CELL_HIGHLIGHT_COLOR] =               [NSColor keyboardFocusIndicatorColor];
+    }
     appleColors[sun_lwawt_macosx_LWCToolkit_KEYBOARD_FOCUS_COLOR] =                    [NSColor keyboardFocusIndicatorColor];
     appleColors[sun_lwawt_macosx_LWCToolkit_INACTIVE_SELECTION_BACKGROUND_COLOR] =    [NSColor secondarySelectedControlColor];
     appleColors[sun_lwawt_macosx_LWCToolkit_INACTIVE_SELECTION_FOREGROUND_COLOR] =    [NSColor controlDarkShadowColor];
+    appleColors[sun_lwawt_macosx_LWCToolkit_SELECTED_CONTROL_TEXT_COLOR] =            [NSColor controlTextColor];
 
     for (i = 0; i < sun_lwawt_macosx_LWCToolkit_NUM_APPLE_COLORS; i++) {
         [appleColors[i] retain];

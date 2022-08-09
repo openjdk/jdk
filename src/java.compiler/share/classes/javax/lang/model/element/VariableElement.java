@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,20 +34,15 @@ import javax.lang.model.type.TypeKind;
  * parameter, local variable, resource variable, or exception
  * parameter.
  *
- * @author Joseph D. Darcy
- * @author Scott Seligman
- * @author Peter von der Ah&eacute;
  * @since 1.6
  */
 public interface VariableElement extends Element {
     /**
-     * Returns the type of this variable.
+     * {@return the type of this variable}
      *
      * Note that the types of variables range over {@linkplain
      * TypeKind many kinds} of types, including primitive types,
      * declared types, and array types, among others.
-     *
-     * @return the type of this variable
      *
      * @see TypeKind
      */
@@ -73,32 +68,28 @@ public interface VariableElement extends Element {
      * otherwise
      *
      * @see Elements#getConstantExpression(Object)
-     * @jls 15.28 Constant Expression
+     * @jls 15.29 Constant Expressions
      * @jls 4.12.4 final Variables
      */
     Object getConstantValue();
 
     /**
-     * Returns the simple name of this variable element.
+     * {@return the simple name of this variable element}
      *
      * <p>For method and constructor parameters, the name of each
      * parameter must be distinct from the names of all other
      * parameters of the same executable.  If the original source
      * names are not available, an implementation may synthesize names
      * subject to the distinctness requirement above.
-     *
-     * @return the simple name of this variable element
      */
     @Override
     Name getSimpleName();
 
     /**
-     * Returns the enclosing element of this variable.
+     * {@return the enclosing element of this variable}
      *
      * The enclosing element of a method or constructor parameter is
      * the executable declaring the parameter.
-     *
-     * @return the enclosing element of this variable
      */
     @Override
     Element getEnclosingElement();

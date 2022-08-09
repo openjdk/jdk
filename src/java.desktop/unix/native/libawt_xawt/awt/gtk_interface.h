@@ -510,7 +510,7 @@ typedef struct GtkApi {
                                              guint32 timestamp, GError **error);
     gboolean (*get_drawable_data)(JNIEnv *env, jintArray pixelArray,
                                        jint x, jint y, jint width, jint height,
-                                       jint jwidth, int dx, int dy, jint scale);
+                                       jint jwidth, int dx, int dy);
     void (*g_free)(gpointer mem);
 
 

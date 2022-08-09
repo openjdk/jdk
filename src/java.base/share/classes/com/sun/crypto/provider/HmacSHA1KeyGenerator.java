@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.security.SecureRandom;
 import java.security.InvalidParameterException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.spec.AlgorithmParameterSpec;
+import java.util.Arrays;
 import javax.crypto.KeyGeneratorSpi;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
@@ -87,6 +88,11 @@ public final class HmacSHA1KeyGenerator extends KeyGeneratorSpi {
      * @param random the source of randomness for this key generator
      */
     protected void engineInit(int keysize, SecureRandom random) {
+
+        if (keysize <= 0) {
+            throw new IllegalArgumentException("keysize must not be <= 0");
+        }
+
         this.keysize = (keysize+7) / 8;
         this.engineInit(random);
     }
@@ -103,7 +109,10 @@ public final class HmacSHA1KeyGenerator extends KeyGeneratorSpi {
 
         byte[] keyBytes = new byte[this.keysize];
         this.random.nextBytes(keyBytes);
-
-        return new SecretKeySpec(keyBytes, "HmacSHA1");
+        try {
+            return new SecretKeySpec(keyBytes, "HmacSHA1");
+        } finally {
+            Arrays.fill(keyBytes, (byte)0);
+        }
     }
 }

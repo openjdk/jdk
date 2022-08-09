@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.awt.peer.CheckboxPeer;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.Serial;
 import java.util.EventListener;
 
 import javax.accessibility.Accessible;
@@ -123,9 +124,10 @@ public class Checkbox extends Component implements ItemSelectable, Accessible {
     private static final String base = "checkbox";
     private static int nameCounter = 0;
 
-    /*
-     * JDK 1.1 serialVersionUID
+    /**
+     * Use serialVersionUID from JDK 1.1 for interoperability.
      */
+    @Serial
     private static final long serialVersionUID = 7270714317450821763L;
 
     /**
@@ -144,7 +146,7 @@ public class Checkbox extends Component implements ItemSelectable, Accessible {
      * Creates a check box with an empty string for its label.
      * The state of this check box is set to "off," and it is not
      * part of any check box group.
-     * @exception HeadlessException if GraphicsEnvironment.isHeadless()
+     * @throws HeadlessException if GraphicsEnvironment.isHeadless()
      * returns true
      * @see java.awt.GraphicsEnvironment#isHeadless
      */
@@ -159,7 +161,7 @@ public class Checkbox extends Component implements ItemSelectable, Accessible {
      *
      * @param     label   a string label for this check box,
      *                        or {@code null} for no label.
-     * @exception HeadlessException if
+     * @throws HeadlessException if
      *      {@code GraphicsEnvironment.isHeadless}
      *      returns {@code true}
      * @see java.awt.GraphicsEnvironment#isHeadless
@@ -176,7 +178,7 @@ public class Checkbox extends Component implements ItemSelectable, Accessible {
      * @param     label   a string label for this check box,
      *                        or {@code null} for no label
      * @param     state    the initial state of this check box
-     * @exception HeadlessException if
+     * @throws HeadlessException if
      *     {@code GraphicsEnvironment.isHeadless}
      *     returns {@code true}
      * @see java.awt.GraphicsEnvironment#isHeadless
@@ -194,7 +196,7 @@ public class Checkbox extends Component implements ItemSelectable, Accessible {
      * @param     state   the initial state of this check box.
      * @param     group   a check box group for this check box,
      *                           or {@code null} for no group.
-     * @exception HeadlessException if
+     * @throws HeadlessException if
      *     {@code GraphicsEnvironment.isHeadless}
      *     returns {@code true}
      * @see java.awt.GraphicsEnvironment#isHeadless
@@ -220,7 +222,7 @@ public class Checkbox extends Component implements ItemSelectable, Accessible {
      * @param     group   a check box group for this check box,
      *                           or {@code null} for no group.
      * @param     state   the initial state of this check box.
-     * @exception HeadlessException if
+     * @throws HeadlessException if
      *    {@code GraphicsEnvironment.isHeadless}
      *    returns {@code true}
      * @see java.awt.GraphicsEnvironment#isHeadless
@@ -506,7 +508,7 @@ public class Checkbox extends Component implements ItemSelectable, Accessible {
      *          <code><em>Foo</em>Listener</code>s on this checkbox,
      *          or an empty array if no such
      *          listeners have been added
-     * @exception ClassCastException if {@code listenerType}
+     * @throws ClassCastException if {@code listenerType}
      *          doesn't specify a class or interface that implements
      *          {@code java.util.EventListener}
      *
@@ -636,6 +638,7 @@ public class Checkbox extends Component implements ItemSelectable, Accessible {
      * @see java.awt.Component#itemListenerK
      * @see #readObject(ObjectInputStream)
      */
+    @Serial
     private void writeObject(ObjectOutputStream s)
       throws java.io.IOException
     {
@@ -657,12 +660,13 @@ public class Checkbox extends Component implements ItemSelectable, Accessible {
      * @throws IOException if an I/O error occurs
      * @throws HeadlessException if {@code GraphicsEnvironment.isHeadless()}
      *         returns {@code true}
-     * @serial
+     *
      * @see #removeItemListener(ItemListener)
      * @see #addItemListener(ItemListener)
      * @see java.awt.GraphicsEnvironment#isHeadless
      * @see #writeObject(ObjectOutputStream)
      */
+    @Serial
     private void readObject(ObjectInputStream s)
       throws ClassNotFoundException, IOException, HeadlessException
     {
@@ -718,9 +722,10 @@ public class Checkbox extends Component implements ItemSelectable, Accessible {
     protected class AccessibleAWTCheckbox extends AccessibleAWTComponent
         implements ItemListener, AccessibleAction, AccessibleValue
     {
-        /*
-         * JDK 1.3 serialVersionUID
+        /**
+         * Use serialVersionUID from JDK 1.3 for interoperability.
          */
+        @Serial
         private static final long serialVersionUID = 7881579233144754107L;
 
         /**

@@ -42,6 +42,16 @@ class MakeNotEntrantEvent extends BasicLogEvent {
      */
     private NMethod nmethod;
 
+    /**
+     * The compilation level.
+     */
+    private String level;
+
+    /**
+     * The compile kind.
+     */
+    private String compileKind;
+
     MakeNotEntrantEvent(double s, String i, boolean z, NMethod nm) {
         super(s, i);
         zombie = z;
@@ -63,4 +73,37 @@ class MakeNotEntrantEvent extends BasicLogEvent {
     public boolean isZombie() {
         return zombie;
     }
+
+  /**
+   * @return the level
+   */
+  public String getLevel() {
+      return level;
+  }
+
+  /**
+   * @param level the level to set
+   */
+  public void setLevel(String level) {
+      this.level = level;
+  }
+
+    /**
+   * @return the compileKind
+   */
+  public String getCompileKind() {
+      return compileKind;
+  }
+
+  /**
+   * @param compileKind the compileKind to set
+   */
+  public void setCompileKind(String compileKind) {
+      this.compileKind = compileKind;
+  }
+
+  public String toString() {
+      return "MakeNotEntrantEvent zombie:" + isZombie() + ", id:" + getId() + ", kind:" + getCompileKind();
+  }
+
 }

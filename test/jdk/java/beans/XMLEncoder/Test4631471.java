@@ -25,6 +25,7 @@
  * @test
  * @bug 4631471 6972468
  * @summary Tests DefaultTreeModel encoding
+ * @run main/othervm -Djava.security.manager=allow Test4631471
  * @author Sergey Malenkov, Mark Davidson
  */
 
@@ -57,7 +58,7 @@ public abstract class Test4631471 extends AbstractTest {
         }.test(false);
 
         // create a new model from the root node
-        // this simulates the the MetaData ctor:
+        // this simulates the MetaData ctor:
         // registerConstructor("javax.swing.tree.DefaultTreeModel", new String[]{"root"});
         new Test4631471() {
             protected Object getObject() {

@@ -85,7 +85,7 @@ static jfieldID JPEGHuffmanTable_valuesID;
 /*
  * Defined in jpegdecoder.c.  Copy code from there if and
  * when that disappears. */
-extern JavaVM *jvm;
+extern JavaVM *the_jvm;
 
 /*
  * The following sets of defines must match the warning messages in the
@@ -557,7 +557,7 @@ sun_jpeg_output_message (j_common_ptr cinfo)
     char buffer[JMSG_LENGTH_MAX];
     jstring string;
     imageIODataPtr data = (imageIODataPtr) cinfo->client_data;
-    JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
+    JNIEnv *env = (JNIEnv *)JNU_GetEnv(the_jvm, JNI_VERSION_1_2);
     jobject theObject;
 
     /* Create the message */
@@ -928,7 +928,7 @@ imageio_fill_input_buffer(j_decompress_ptr cinfo)
     struct jpeg_source_mgr *src = cinfo->src;
     imageIODataPtr data = (imageIODataPtr) cinfo->client_data;
     streamBufferPtr sb = &data->streamBuf;
-    JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
+    JNIEnv *env = (JNIEnv *)JNU_GetEnv(the_jvm, JNI_VERSION_1_2);
     int ret;
     jobject input = NULL;
 
@@ -1021,7 +1021,7 @@ imageio_fill_suspended_buffer(j_decompress_ptr cinfo)
     struct jpeg_source_mgr *src = cinfo->src;
     imageIODataPtr data = (imageIODataPtr) cinfo->client_data;
     streamBufferPtr sb = &data->streamBuf;
-    JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
+    JNIEnv *env = (JNIEnv *)JNU_GetEnv(the_jvm, JNI_VERSION_1_2);
     jint ret;
     size_t offset, buflen;
     jobject input = NULL;
@@ -1122,7 +1122,7 @@ imageio_skip_input_data(j_decompress_ptr cinfo, long num_bytes)
     struct jpeg_source_mgr *src = cinfo->src;
     imageIODataPtr data = (imageIODataPtr) cinfo->client_data;
     streamBufferPtr sb = &data->streamBuf;
-    JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
+    JNIEnv *env = (JNIEnv *)JNU_GetEnv(the_jvm, JNI_VERSION_1_2);
     jlong ret;
     jobject reader;
     jobject input = NULL;
@@ -1207,7 +1207,7 @@ imageio_term_source(j_decompress_ptr cinfo)
     // To pushback, just seek back by src->bytes_in_buffer
     struct jpeg_source_mgr *src = cinfo->src;
     imageIODataPtr data = (imageIODataPtr) cinfo->client_data;
-    JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
+    JNIEnv *env = (JNIEnv *)JNU_GetEnv(the_jvm, JNI_VERSION_1_2);
     jobject reader = data->imageIOobj;
     if (src->bytes_in_buffer > 0) {
          RELEASE_ARRAYS(env, data, src->next_input_byte);
@@ -2369,7 +2369,7 @@ imageio_init_destination (j_compress_ptr cinfo)
     struct jpeg_destination_mgr *dest = cinfo->dest;
     imageIODataPtr data = (imageIODataPtr) cinfo->client_data;
     streamBufferPtr sb = &data->streamBuf;
-    JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
+    JNIEnv *env = (JNIEnv *)JNU_GetEnv(the_jvm, JNI_VERSION_1_2);
 
     if (sb->buf == NULL) {
         // We forgot to pin the array
@@ -2395,7 +2395,7 @@ imageio_empty_output_buffer (j_compress_ptr cinfo)
     struct jpeg_destination_mgr *dest = cinfo->dest;
     imageIODataPtr data = (imageIODataPtr) cinfo->client_data;
     streamBufferPtr sb = &data->streamBuf;
-    JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
+    JNIEnv *env = (JNIEnv *)JNU_GetEnv(the_jvm, JNI_VERSION_1_2);
     jobject output = NULL;
 
     RELEASE_ARRAYS(env, data, (const JOCTET *)(dest->next_output_byte));
@@ -2431,7 +2431,7 @@ imageio_term_destination (j_compress_ptr cinfo)
     struct jpeg_destination_mgr *dest = cinfo->dest;
     imageIODataPtr data = (imageIODataPtr) cinfo->client_data;
     streamBufferPtr sb = &data->streamBuf;
-    JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
+    JNIEnv *env = (JNIEnv *)JNU_GetEnv(the_jvm, JNI_VERSION_1_2);
 
     /* find out how much needs to be written */
     /* this conversion from size_t to jint is safe, because the lenght of the buffer is limited by jint */

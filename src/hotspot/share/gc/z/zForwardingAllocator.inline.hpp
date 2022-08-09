@@ -25,6 +25,7 @@
 #define SHARE_GC_Z_ZFORWARDINGALLOCATOR_INLINE_HPP
 
 #include "gc/z/zForwardingAllocator.hpp"
+
 #include "runtime/atomic.hpp"
 #include "utilities/debug.hpp"
 

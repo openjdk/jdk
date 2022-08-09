@@ -21,16 +21,14 @@
  * under the License.
  */
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
- */
-/*
- * $Id: DOMSignedInfo.java 1854026 2019-02-21 09:30:01Z coheigea $
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 package org.jcp.xml.dsig.internal.dom;
 
 import javax.xml.crypto.*;
 import javax.xml.crypto.dom.DOMCryptoContext;
 import javax.xml.crypto.dsig.*;
+import javax.xml.crypto.dsig.spec.RSAPSSParameterSpec;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -38,8 +36,12 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.IOException;
 import java.security.Provider;
+import java.security.spec.AlgorithmParameterSpec;
+import java.security.spec.MGF1ParameterSpec;
+import java.security.spec.PSSParameterSpec;
 import java.util.*;
 
+import com.sun.org.apache.xml.internal.security.algorithms.implementations.SignatureBaseRSA;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -105,7 +107,7 @@ public final class DOMSignedInfo extends DOMStructure implements SignedInfo {
      * @param cm the canonicalization method
      * @param sm the signature method
      * @param references the list of references. The list is copied.
-     * @param id an optional identifer that will allow this
+     * @param id an optional identifier that will allow this
      *    {@code SignedInfo} to be referenced by other signatures and
      *    objects
      * @throws NullPointerException if {@code cm}, {@code sm},
@@ -155,6 +157,33 @@ public final class DOMSignedInfo extends DOMStructure implements SignedInfo {
                 " when secure validation is enabled"
             );
         }
+        if (secVal && signatureMethod instanceof DOMRSAPSSSignatureMethod.RSAPSS) {
+            AlgorithmParameterSpec spec = signatureMethod.getParameterSpec();
+            if (spec instanceof RSAPSSParameterSpec) {
+                try {
+                    PSSParameterSpec pspec = ((RSAPSSParameterSpec) spec).getPSSParameterSpec();
+                    String da = SignatureBaseRSA.SignatureRSASSAPSS.DigestAlgorithm
+                            .fromDigestAlgorithm(pspec.getDigestAlgorithm()).getXmlDigestAlgorithm();
+                    if (Policy.restrictAlg(da)) {
+                        throw new MarshalException(
+                                "It is forbidden to use algorithm " + da + " in PSS when secure validation is enabled"
+                        );
+                    }
+                    AlgorithmParameterSpec mspec = pspec.getMGFParameters();
+                    if (mspec instanceof MGF1ParameterSpec) {
+                        String da2 = SignatureBaseRSA.SignatureRSASSAPSS.DigestAlgorithm
+                                .fromDigestAlgorithm(((MGF1ParameterSpec) mspec).getDigestAlgorithm()).getXmlDigestAlgorithm();
+                        if (Policy.restrictAlg(da2)) {
+                            throw new MarshalException(
+                                    "It is forbidden to use algorithm " + da2 + " in MGF1 when secure validation is enabled"
+                            );
+                        }
+                    }
+                } catch (com.sun.org.apache.xml.internal.security.signature.XMLSignatureException e) {
+                    // Unknown digest algorithm. Ignored.
+                }
+            }
+        }
 
         // unmarshal References
         ArrayList<Reference> refList = new ArrayList<>(5);
@@ -171,7 +200,7 @@ public final class DOMSignedInfo extends DOMStructure implements SignedInfo {
             }
             refList.add(new DOMReference(refElem, context, provider));
             if (secVal && Policy.restrictNumReferences(refList.size())) {
-                String error = "A maxiumum of " + Policy.maxReferences()
+                String error = "A maximum of " + Policy.maxReferences()
                     + " references per Manifest are allowed when"
                     + " secure validation is enabled";
                 throw new MarshalException(error);

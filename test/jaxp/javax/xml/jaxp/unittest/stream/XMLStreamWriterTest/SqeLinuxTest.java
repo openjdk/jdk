@@ -35,7 +35,7 @@ import org.testng.annotations.Test;
 /*
  * @test
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true stream.XMLStreamWriterTest.SqeLinuxTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow stream.XMLStreamWriterTest.SqeLinuxTest
  * @run testng/othervm stream.XMLStreamWriterTest.SqeLinuxTest
  * @summary Test XMLStreamWriter can output multiple declarations if IS_REPAIRING_NAMESPACES is false.
  */

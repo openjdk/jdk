@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2009, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -30,16 +30,14 @@
 
 // no precompiled headers
 #include "jvm.h"
-#include "assembler_zero.inline.hpp"
-#include "classfile/classLoader.hpp"
-#include "classfile/systemDictionary.hpp"
+#include "asm/assembler.inline.hpp"
+#include "atomic_bsd_zero.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/allocation.inline.hpp"
 #include "nativeInst_zero.hpp"
-#include "os_share_bsd.hpp"
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm_misc.hpp"
 #include "runtime/arguments.hpp"
@@ -47,19 +45,15 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "runtime/thread.inline.hpp"
 #include "runtime/timer.hpp"
 #include "signals_posix.hpp"
 #include "utilities/events.hpp"
 #include "utilities/vmError.hpp"
-
-// See stubGenerator_zero.cpp
-#include <setjmp.h>
-extern sigjmp_buf* get_jmp_buf_for_continuation();
 
 address os::current_stack_pointer() {
   address dummy = (address) &dummy;
@@ -118,14 +112,6 @@ frame os::fetch_frame_from_context(const void* ucVoid) {
 bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
                                              ucontext_t* uc, JavaThread* thread) {
 
-  // handle SafeFetch faults the zero way
-  if (sig == SIGSEGV || sig == SIGBUS) {
-    sigjmp_buf* const pjb = get_jmp_buf_for_continuation();
-    if (pjb) {
-      siglongjmp(*pjb, 1);
-    }
-  }
-
   if (info != NULL && thread != NULL) {
     // Handle ALL stack overflow variations here
     if (sig == SIGSEGV || sig == SIGBUS) {
@@ -172,30 +158,12 @@ void os::Bsd::init_thread_fpu_state(void) {
   // Nothing to do
 }
 
-bool os::is_allocatable(size_t bytes) {
-#ifdef _LP64
-  return true;
-#else
-  if (bytes < 2 * G) {
-    return true;
-  }
-
-  char* addr = reserve_memory(bytes);
-
-  if (addr != NULL) {
-    release_memory(addr, bytes);
-  }
-
-  return addr != NULL;
-#endif // _LP64
-}
-
 ///////////////////////////////////////////////////////////////////////////////
 // thread stack
 
-size_t os::Posix::_compiler_thread_min_stack_allowed = 64 * K;
-size_t os::Posix::_java_thread_min_stack_allowed = 64 * K;
-size_t os::Posix::_vm_internal_thread_min_stack_allowed = 64 * K;
+size_t os::_compiler_thread_min_stack_allowed = 64 * K;
+size_t os::_java_thread_min_stack_allowed = 64 * K;
+size_t os::_vm_internal_thread_min_stack_allowed = 64 * K;
 
 size_t os::Posix::default_stack_size(os::ThreadType thr_type) {
 #ifdef _LP64
@@ -279,6 +247,10 @@ void os::print_context(outputStream* st, const void* context) {
   ShouldNotCallThis();
 }
 
+void os::print_tos_pc(outputStream *st, const void *context) {
+  ShouldNotCallThis();
+}
+
 void os::print_register_info(outputStream *st, const void *context) {
   ShouldNotCallThis();
 }
@@ -324,14 +296,14 @@ extern "C" {
     if (from > to) {
       const jlong *end = from + count;
       while (from < end)
-        os::atomic_copy64(from++, to++);
+        atomic_copy64(from++, to++);
     }
     else if (from < to) {
       const jlong *end = from;
       from += count - 1;
       to   += count - 1;
       while (from >= end)
-        os::atomic_copy64(from--, to--);
+        atomic_copy64(from--, to--);
     }
   }
 
@@ -382,3 +354,9 @@ int os::extra_bang_size_in_bytes() {
   // Zero does not require an additional stack bang.
   return 0;
 }
+
+#if defined(AARCH64) && defined(__APPLE__)
+void os::current_thread_enable_wx(WXMode mode) {
+  pthread_jit_write_protect_np(mode == WXExec);
+}
+#endif

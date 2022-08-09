@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
 
 package nsk.jdi.StackFrame.visibleVariableByName;
 
-import nsk.share.*;
 import nsk.share.jpda.*;
 import nsk.share.jdi.*;
 
@@ -94,8 +93,8 @@ public class visiblevarbyname002a {
     //------------------------------------------------------  section tested
 
                 case 0:
-                         Threadvisiblevarbyname002a test_thread =
-                             new Threadvisiblevarbyname002a("testedThread");
+                         Thread test_thread =
+                                 JDIThreadFactory.newThread(new Threadvisiblevarbyname002a("testedThread"));
                          log1("       thread2 is created");
 
                          label:
@@ -145,7 +144,7 @@ public class visiblevarbyname002a {
     }
 }
 
-class Threadvisiblevarbyname002a extends Thread {
+class Threadvisiblevarbyname002a extends NamedTask {
 
     public Threadvisiblevarbyname002a(String threadName) {
         super(threadName);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
 package nsk.jdi.StepRequest.size;
 
 import nsk.share.*;
-import nsk.share.jpda.*;
 import nsk.share.jdi.*;
 
 /**
@@ -54,7 +53,7 @@ public class size002a {
 
     //====================================================== test program
 
-    static Thread1size002a thread1 = null;
+    static Thread thread1 = null;
 
     static size002aTestClass10 obj = new size002aTestClass10();
 
@@ -98,7 +97,7 @@ public class size002a {
     //------------------------------------------------------  section tested
 
                     case 0:
-                            thread1 = new Thread1size002a("thread1");
+                            thread1 = JDIThreadFactory.newThread(new Thread1size002a("thread1"));
 
                             synchronized (lockObj) {
                                 threadStart(thread1);
@@ -156,24 +155,21 @@ class size002aTestClass11 extends size002aTestClass10{
     }
 }
 
-class Thread1size002a extends Thread {
-
-    String tName = null;
+class Thread1size002a extends NamedTask {
 
     public Thread1size002a(String threadName) {
         super(threadName);
-        tName = threadName;
     }
 
     public void run() {
-        size002a.log1("  'run': enter  :: threadName == " + tName);
+        size002a.log1("  'run': enter  :: threadName == " + getName());
         synchronized(size002a.waitnotifyObj) {
             size002a.waitnotifyObj.notify();
         }
         synchronized(size002a.lockObj) {
             size002aTestClass11.m11();
         }
-        size002a.log1("  'run': exit   :: threadName == " + tName);
+        size002a.log1("  'run': exit   :: threadName == " + getName());
         return;
     }
 }

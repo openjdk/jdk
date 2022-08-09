@@ -38,7 +38,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 7042647
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true datatype.Bug7042647Test
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow datatype.Bug7042647Test
  * @run testng/othervm datatype.Bug7042647Test
  * @summary Test getFirstDayOfWeek is correct after converting XMLGregorianCalendar to a GregorianCalendar.
  */

@@ -26,9 +26,9 @@
  * @bug 4531817 8026245
  * @library /test/lib
  * @summary Inet[46]Address.localHost need doPrivileged
- * @run main/othervm GetLocalHostWithSM
- * @run main/othervm -Djava.net.preferIPv4Stack=true GetLocalHostWithSM
- * @run main/othervm -Djava.net.preferIPv6Addresses=true GetLocalHostWithSM
+ * @run main/othervm -Djava.security.manager=allow GetLocalHostWithSM
+ * @run main/othervm -Djava.security.manager=allow -Djava.net.preferIPv4Stack=true GetLocalHostWithSM
+ * @run main/othervm -Djava.security.manager=allow -Djava.net.preferIPv6Addresses=true GetLocalHostWithSM
  * files needed: GetLocalHostWithSM.java, MyPrincipal.java, and policy.file
  */
 

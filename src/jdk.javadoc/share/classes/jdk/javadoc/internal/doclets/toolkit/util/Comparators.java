@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,12 +42,7 @@ import java.util.Comparator;
 import java.util.List;
 
 /**
- *  A collection of {@code Comparator} factory methods.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
+ * A collection of {@code Comparator} factory methods.
  */
 public class Comparators {
 
@@ -124,17 +119,18 @@ public class Comparators {
         return packageComparator;
     }
 
-    private Comparator<Element> deprecatedComparator = null;
+    private Comparator<Element> summaryComparator = null;
 
     /**
-     * Returns a Comparator for deprecated items listed on deprecated list page, by comparing the
+     * Returns a Comparator for items listed on summary list pages
+     * (like deprecated or preview summary pages), by comparing the
      * fully qualified names, and if those are equal the names of the enclosing modules.
      *
      * @return a Comparator
      */
-    public Comparator<Element> makeDeprecatedComparator() {
-        if (deprecatedComparator == null) {
-            deprecatedComparator = new ElementComparator() {
+    public Comparator<Element> makeSummaryComparator() {
+        if (summaryComparator == null) {
+            summaryComparator = new ElementComparator() {
                 @Override
                 public int compare(Element e1, Element e2) {
                     int result = compareFullyQualifiedNames(e1, e2);
@@ -150,7 +146,7 @@ public class Comparators {
                 }
             };
         }
-        return deprecatedComparator;
+        return summaryComparator;
     }
 
     private Comparator<SerialFieldTree> serialFieldTreeComparator = null;
@@ -216,17 +212,17 @@ public class Comparators {
     private Comparator<Element> indexUseComparator = null;
 
     /**
-     *  Returns an {@code Element} Comparator for index file presentations, and are sorted as follows.
-     *  If comparing modules and/or packages then simply compare the qualified names,
-     *  if comparing a module or a package with a type/member then compare the
-     *  FullyQualifiedName of the module or a package with the SimpleName of the entity,
-     *  otherwise:
-     *  1. compare the ElementKind ex: Module, Package, Interface etc.
-     *  2a. if equal and if the type is of ExecutableElement(Constructor, Methods),
-     *      a case insensitive comparison of parameter the type signatures
-     *  2b. if equal, case sensitive comparison of the type signatures
-     *  3. if equal, compare the FQNs of the entities
-     *  4. finally, if equal, compare the names of the enclosing modules
+     * Returns an {@code Element} Comparator for index file presentations, and are sorted as follows.
+     * If comparing modules and/or packages then simply compare the qualified names,
+     * if comparing a module or a package with a type/member then compare the
+     * FullyQualifiedName of the module or a package with the SimpleName of the entity,
+     * otherwise:
+     * 1. compare the ElementKind ex: Module, Package, Interface etc.
+     * 2a. if equal and if the type is of ExecutableElement(Constructor, Methods),
+     *     a case insensitive comparison of parameter the type signatures
+     * 2b. if equal, case sensitive comparison of the type signatures
+     * 3. if equal, compare the FQNs of the entities
+     * 4. finally, if equal, compare the names of the enclosing modules
      * @return an element comparator for index file use
      */
     public Comparator<Element> makeIndexElementComparator() {
@@ -510,7 +506,6 @@ public class Comparators {
             };
         }
 
-        @SuppressWarnings("preview")
         boolean hasParameters(Element e) {
             return new SimpleElementVisitor14<Boolean, Void>() {
                 @Override
@@ -532,7 +527,6 @@ public class Comparators {
          * @return a negative integer, zero, or a positive integer as the first argument is less
          * than, equal to, or greater than the second.
          */
-        @SuppressWarnings("preview")
         private String getFullyQualifiedName(Element e) {
             return new SimpleElementVisitor14<String, Void>() {
                 @Override

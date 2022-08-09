@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,7 +26,7 @@
 #include "precompiled.hpp"
 #include "asm/assembler.hpp"
 #include "code/vmreg.hpp"
-
+#include "vmreg_aarch64.inline.hpp"
 
 
 void VMRegImpl::set_regName() {

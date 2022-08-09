@@ -44,13 +44,15 @@ public class TestSuperClassInSerialForm extends JavadocTester {
     @Test
     public void test() {
         javadoc("-d", "out",
+                "--no-platform-links",
                 "-sourcepath", testSrc,
                 "pkg");
         checkExit(Exit.OK);
 
         checkOutput("serialized-form.html", true,
                 """
-                    <a href="pkg/SubClass.html" title="class in pkg">pkg.SubClass</a> extends <a hre\
-                    f="pkg/SuperClass.html" title="class in pkg">SuperClass</a>""");
+                    <h3>Class&nbsp;<a href="pkg/SubClass.html" title="class in pkg">pkg.SubClass</a></h3>
+                    <div class="type-signature">class SubClass extends <a href="pkg/SuperClass.html" tit\
+                    le="class in pkg">SuperClass</a> implements java.io.Serializable</div>""");
     }
 }

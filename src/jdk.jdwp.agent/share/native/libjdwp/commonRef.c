@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,13 +82,22 @@ newSeqNum(void)
     return gdata->nextSeqNum++;
 }
 
+/* Returns true if this is a strong reference, meaning that either or both of
+   isPinAll and isCommonPin are true. */
+static jboolean
+isStrong(RefNode* node)
+{
+    return node->isPinAll || node->isCommonPin;
+}
+
 /* Create a fresh RefNode structure, create a weak ref and tag the object */
 static RefNode *
 createNode(JNIEnv *env, jobject ref)
 {
     RefNode   *node;
-    jobject    weakRef;
+    jobject    strongOrWeakRef;
     jvmtiError error;
+    jboolean   pinAll = gdata->pinAllCount != 0;
 
     /* Could allocate RefNode's in blocks, not sure it would help much */
     node = (RefNode*)jvmtiAllocate((int)sizeof(RefNode));
@@ -96,29 +105,40 @@ createNode(JNIEnv *env, jobject ref)
         return NULL;
     }
 
-    /* Create weak reference to make sure we have a reference */
-    weakRef = JNI_FUNC_PTR(env,NewWeakGlobalRef)(env, ref);
-    // NewWeakGlobalRef can throw OOM, clear exception here.
-    if ((*env)->ExceptionCheck(env)) {
-        (*env)->ExceptionClear(env);
-        jvmtiDeallocate(node);
-        return NULL;
+    if (pinAll) {
+        /* Create strong reference to make sure we have a reference */
+        strongOrWeakRef = JNI_FUNC_PTR(env,NewGlobalRef)(env, ref);
+    } else {
+        /* Create weak reference to make sure we have a reference */
+        strongOrWeakRef = JNI_FUNC_PTR(env,NewWeakGlobalRef)(env, ref);
+
+        // NewWeakGlobalRef can throw OOM, clear exception here.
+        if ((*env)->ExceptionCheck(env)) {
+            (*env)->ExceptionClear(env);
+            jvmtiDeallocate(node);
+            return NULL;
+        }
     }
 
-    /* Set tag on weakRef */
+    /* Set tag on strongOrWeakRef */
     error = JVMTI_FUNC_PTR(gdata->jvmti, SetTag)
-                          (gdata->jvmti, weakRef, ptr_to_jlong(node));
+                          (gdata->jvmti, strongOrWeakRef, ptr_to_jlong(node));
     if ( error != JVMTI_ERROR_NONE ) {
-        JNI_FUNC_PTR(env,DeleteWeakGlobalRef)(env, weakRef);
+        if (pinAll) {
+            JNI_FUNC_PTR(env,DeleteGlobalRef)(env, strongOrWeakRef);
+        } else {
+            JNI_FUNC_PTR(env,DeleteWeakGlobalRef)(env, strongOrWeakRef);
+        }
         jvmtiDeallocate(node);
         return NULL;
     }
 
     /* Fill in RefNode */
-    node->ref      = weakRef;
-    node->isStrong = JNI_FALSE;
-    node->count    = 1;
-    node->seqNum   = newSeqNum();
+    node->ref         = strongOrWeakRef;
+    node->count       = 1;
+    node->isPinAll    = pinAll;
+    node->isCommonPin = JNI_FALSE;
+    node->seqNum      = newSeqNum();
 
     /* Count RefNode's created */
     gdata->objectsByIDcount++;
@@ -135,7 +155,7 @@ deleteNode(JNIEnv *env, RefNode *node)
         /* Clear tag */
         (void)JVMTI_FUNC_PTR(gdata->jvmti,SetTag)
                             (gdata->jvmti, node->ref, NULL_OBJECT_ID);
-        if (node->isStrong) {
+        if (isStrong(node)) {
             JNI_FUNC_PTR(env,DeleteGlobalRef)(env, node->ref);
         } else {
             JNI_FUNC_PTR(env,DeleteWeakGlobalRef)(env, node->ref);
@@ -147,9 +167,9 @@ deleteNode(JNIEnv *env, RefNode *node)
 
 /* Change a RefNode to have a strong reference */
 static jobject
-strengthenNode(JNIEnv *env, RefNode *node)
+strengthenNode(JNIEnv *env, RefNode *node, jboolean isPinAll)
 {
-    if (!node->isStrong) {
+    if (!isStrong(node)) {
         jobject strongRef;
 
         strongRef = JNI_FUNC_PTR(env,NewGlobalRef)(env, node->ref);
@@ -164,20 +184,28 @@ strengthenNode(JNIEnv *env, RefNode *node)
         }
         if (strongRef != NULL) {
             JNI_FUNC_PTR(env,DeleteWeakGlobalRef)(env, node->ref);
-            node->ref      = strongRef;
-            node->isStrong = JNI_TRUE;
+            node->ref         = strongRef;
+        } else {
+          return NULL;
         }
-        return strongRef;
-    } else {
-        return node->ref;
     }
+    if (isPinAll) {
+        node->isPinAll = JNI_TRUE;
+    } else {
+        node->isCommonPin = JNI_TRUE;
+    }
+    return node->ref;
 }
 
 /* Change a RefNode to have a weak reference */
 static jweak
-weakenNode(JNIEnv *env, RefNode *node)
+weakenNode(JNIEnv *env, RefNode *node, jboolean isUnpinAll)
 {
-    if (node->isStrong) {
+    jboolean willStillBeStrong = (node->isPinAll && !isUnpinAll) || (node->isCommonPin && isUnpinAll);
+
+    // If the node is strong, but the reason(s) for it being strong
+    // will no longer exist, then weaken it.
+    if (isStrong(node) && !willStillBeStrong) {
         jweak weakRef;
 
         weakRef = JNI_FUNC_PTR(env,NewWeakGlobalRef)(env, node->ref);
@@ -189,12 +217,17 @@ weakenNode(JNIEnv *env, RefNode *node)
         if (weakRef != NULL) {
             JNI_FUNC_PTR(env,DeleteGlobalRef)(env, node->ref);
             node->ref      = weakRef;
-            node->isStrong = JNI_FALSE;
+        } else {
+          return NULL;
         }
-        return weakRef;
-    } else {
-        return node->ref;
     }
+
+    if (isUnpinAll) {
+        node->isPinAll = JNI_FALSE;
+    } else {
+        node->isCommonPin = JNI_FALSE;
+    }
+    return node->ref;
 }
 
 /*
@@ -372,7 +405,8 @@ void
 commonRef_initialize(void)
 {
     gdata->refLock = debugMonitorCreate("JDWP Reference Table Monitor");
-    gdata->nextSeqNum       = 1; /* 0 used for error indication */
+    gdata->nextSeqNum = 1; /* 0 used for error indication */
+    gdata->pinAllCount = 0;
     initializeObjectsByID(HASH_INIT_SIZE);
 }
 
@@ -441,7 +475,7 @@ commonRef_refToID(JNIEnv *env, jobject ref)
  * Given an object ID obtained from the debugger front end, return a
  * strong, global reference to that object (or NULL if the object
  * has been collected). The reference can then be used for JNI and
- * JVMTI calls. Caller is resposible for deleting the returned reference.
+ * JVMTI calls. Caller is responsible for deleting the returned reference.
  */
 jobject
 commonRef_idToRef(JNIEnv *env, jlong id)
@@ -454,7 +488,7 @@ commonRef_idToRef(JNIEnv *env, jlong id)
 
         node = findNodeByID(env, id);
         if (node != NULL) {
-            if (node->isStrong) {
+          if (isStrong(node)) {
                 saveGlobalRef(env, node->ref, &ref);
             } else {
                 jobject lref;
@@ -506,7 +540,7 @@ commonRef_pin(jlong id)
         } else {
             jobject strongRef;
 
-            strongRef = strengthenNode(env, node);
+            strongRef = strengthenNode(env, node, JNI_FALSE /* isPinAll */);
             if (strongRef == NULL) {
                 /*
                  * Referent has been collected, clean up now.
@@ -535,13 +569,91 @@ commonRef_unpin(jlong id)
         if (node != NULL) {
             jweak weakRef;
 
-            weakRef = weakenNode(env, node);
+            weakRef = weakenNode(env, node, JNI_FALSE /* isUnpinAll */);
             if (weakRef == NULL) {
                 error = AGENT_ERROR_OUT_OF_MEMORY;
             }
         }
     } debugMonitorExit(gdata->refLock);
     return error;
+}
+
+/* Prevent garbage collection of object */
+void
+commonRef_pinAll()
+{
+    debugMonitorEnter(gdata->refLock); {
+        gdata->pinAllCount++;
+
+        if (gdata->pinAllCount == 1) {
+            JNIEnv  *env;
+            RefNode *node;
+            RefNode *prev;
+            int     i;
+
+            env = getEnv();
+
+            /*
+             * Walk through the id-based hash table. Detach any nodes
+             * for which the ref has been collected.
+             */
+            for (i = 0; i < gdata->objectsByIDsize; i++) {
+                node = gdata->objectsByID[i];
+                prev = NULL;
+                while (node != NULL) {
+                    jobject strongRef;
+
+                    strongRef = strengthenNode(env, node, JNI_TRUE /* isPinAll */);
+
+                    /* Has the object been collected? */
+                    if (strongRef == NULL) {
+                        RefNode *freed;
+
+                        /* Detach from the ID list */
+                        if (prev == NULL) {
+                            gdata->objectsByID[i] = node->next;
+                        } else {
+                            prev->next = node->next;
+                        }
+                        freed = node;
+                        node = node->next;
+                        deleteNode(env, freed);
+                    } else {
+                        prev = node;
+                        node = node->next;
+                    }
+                }
+            }
+        }
+    } debugMonitorExit(gdata->refLock);
+}
+
+/* Permit garbage collection of objects */
+void
+commonRef_unpinAll()
+{
+    debugMonitorEnter(gdata->refLock); {
+        gdata->pinAllCount--;
+
+        if (gdata->pinAllCount == 0) {
+            JNIEnv  *env;
+            RefNode *node;
+            int     i;
+
+            env = getEnv();
+
+            for (i = 0; i < gdata->objectsByIDsize; i++) {
+                for (node = gdata->objectsByID[i]; node != NULL; node = node->next) {
+                    jweak weakRef;
+
+                    weakRef = weakenNode(env, node, JNI_TRUE /* isUnpinAll */);
+                    if (weakRef == NULL) {
+                        EXIT_ERROR(AGENT_ERROR_NULL_POINTER,"NewWeakGlobalRef");
+                    }
+                }
+            }
+        }
+    } debugMonitorExit(gdata->refLock);
 }
 
 /* Release tracking of an object by ID */
@@ -582,8 +694,7 @@ commonRef_compact(void)
                 prev = NULL;
                 while (node != NULL) {
                     /* Has the object been collected? */
-                    if ( (!node->isStrong) &&
-                          isSameObject(env, node->ref, NULL)) {
+                  if (!isStrong(node) && isSameObject(env, node->ref, NULL)) {
                         RefNode *freed;
 
                         /* Detach from the ID list */

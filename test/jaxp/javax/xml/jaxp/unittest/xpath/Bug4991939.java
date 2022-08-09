@@ -36,7 +36,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 4991939
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true xpath.Bug4991939
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow xpath.Bug4991939
  * @run testng/othervm xpath.Bug4991939
  * @summary XPath.evaluate(...) throws IllegalArgumentException if returnType is not one of the types defined in XPathConstants.
  */

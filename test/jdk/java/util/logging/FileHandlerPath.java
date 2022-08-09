@@ -54,7 +54,7 @@ import java.util.logging.LoggingPermission;
  * @summary tests that using a simple (non composite) pattern does not lead
  *        to NPE when the lock file already exists.
  * @run main/othervm FileHandlerPath UNSECURE
- * @run main/othervm FileHandlerPath SECURE
+ * @run main/othervm -Djava.security.manager=allow FileHandlerPath SECURE
  * @author danielfuchs
  * @key randomness
  */

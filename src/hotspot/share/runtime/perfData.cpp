@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -277,7 +277,8 @@ void PerfDataManager::destroy() {
   os::naked_short_sleep(1);  // 1ms sleep to let other thread(s) run
 
   log_debug(perf, datacreation)("Total = %d, Sampled = %d, Constants = %d",
-                                _all->length(), _sampled->length(), _constants->length());
+                                _all->length(), _sampled == NULL ? 0 : _sampled->length(),
+                                _constants == NULL ? 0 : _constants->length());
 
   for (int index = 0; index < _all->length(); index++) {
     PerfData* p = _all->at(index);

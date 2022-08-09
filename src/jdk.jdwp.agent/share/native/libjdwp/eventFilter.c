@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,6 +92,10 @@ typedef struct SourceNameFilter {
     char *sourceNamePattern;
 } SourceNameFilter;
 
+typedef struct PlatformThreadsFilter {
+    char unused;  // to avoid an empty struct
+} PlatformThreadsFilter;
+
 typedef struct Filter_ {
     jbyte modifier;
     union {
@@ -107,6 +111,7 @@ typedef struct Filter_ {
         struct MatchFilter ClassMatch;
         struct MatchFilter ClassExclude;
         struct SourceNameFilter SourceNameOnly;
+        struct PlatformThreadsFilter PlatformThreadsOnly;
     } u;
 } Filter;
 
@@ -416,7 +421,7 @@ eventFilterRestricted_passesFilter(JNIEnv *env,
                 }
                 break;
 
-            /* This is kinda cheating assumming the event
+            /* This is kinda cheating assuming the event
              * fields will be in the same locations, but it is
              * true now.
              */
@@ -518,8 +523,7 @@ eventFilterRestricted_passesFilter(JNIEnv *env,
 
           case JDWP_REQUEST_MODIFIER(SourceNameMatch): {
               char* desiredNamePattern = filter->u.SourceNameOnly.sourceNamePattern;
-              if (searchAllSourceNames(env, clazz,
-                           desiredNamePattern) != 1) {
+              if (searchAllSourceNames(env, clazz, desiredNamePattern) != 1) {
                   /* The name isn't in the SDE; try the sourceName in the ref
                    * type
                    */
@@ -540,6 +544,14 @@ eventFilterRestricted_passesFilter(JNIEnv *env,
               }
               break;
           }
+
+        case JDWP_REQUEST_MODIFIER(PlatformThreadsOnly): {
+            jboolean isVirtual = JNI_FUNC_PTR(env, IsVirtualThread)(env, thread);
+            if (isVirtual) {
+                return JNI_FALSE;
+            }
+            break;
+        }
 
         default:
             EXIT_ERROR(AGENT_ERROR_ILLEGAL_ARGUMENT,"Invalid filter modifier");
@@ -943,7 +955,6 @@ eventFilter_setStepFilter(HandlerNode *node, jint index,
     return JVMTI_ERROR_NONE;
 }
 
-
 jvmtiError
 eventFilter_setSourceNameMatchFilter(HandlerNode *node,
                                     jint index,
@@ -959,6 +970,20 @@ eventFilter_setSourceNameMatchFilter(HandlerNode *node,
     FILTER(node, index).modifier =
                        JDWP_REQUEST_MODIFIER(SourceNameMatch);
     filter->sourceNamePattern = sourceNamePattern;
+    return JVMTI_ERROR_NONE;
+
+}
+
+jvmtiError eventFilter_setPlatformThreadsOnlyFilter(HandlerNode *node, jint index)
+{
+    PlatformThreadsFilter *filter = &FILTER(node, index).u.PlatformThreadsOnly;
+    if (index >= FILTER_COUNT(node)) {
+        return AGENT_ERROR_ILLEGAL_ARGUMENT;
+    }
+    if (NODE_EI(node) != EI_THREAD_START && NODE_EI(node) != EI_THREAD_END) {
+        return AGENT_ERROR_ILLEGAL_ARGUMENT;
+    }
+    FILTER(node, index).modifier = JDWP_REQUEST_MODIFIER(PlatformThreadsOnly);
     return JVMTI_ERROR_NONE;
 
 }
@@ -989,7 +1014,7 @@ findFilter(HandlerNode *node, jint modifier)
  * same location as the LocationFilter passed in arg.
  *
  * This is a match function called by a
- * eventHandlerRestricted_iterator invokation.
+ * eventHandlerRestricted_iterator invocation.
  */
 static jboolean
 matchBreakpoint(JNIEnv *env, HandlerNode *node, void *arg)
@@ -1094,7 +1119,7 @@ isBreakpointSet(jclass clazz, jmethodID method, jlocation location)
  * same field as the FieldFilter passed in arg.
  *
  * This is a match function called by a
- * eventHandlerRestricted_iterator invokation.
+ * eventHandlerRestricted_iterator invocation.
  */
 static jboolean
 matchWatchpoint(JNIEnv *env, HandlerNode *node, void *arg)
@@ -1204,7 +1229,7 @@ requestThread(HandlerNode *node)
  * thread filter with the thread passed in arg.
  *
  * This is a match function called by a
- * eventHandlerRestricted_iterator invokation.
+ * eventHandlerRestricted_iterator invocation.
  */
 static jboolean
 matchThread(JNIEnv *env, HandlerNode *node, void *arg)
@@ -1242,6 +1267,8 @@ enableEvents(HandlerNode *node)
         case EI_VM_DEATH:
         case EI_CLASS_PREPARE:
         case EI_GC_FINISH:
+        case EI_VIRTUAL_THREAD_START:
+        case EI_VIRTUAL_THREAD_END:
             return error;
 
         case EI_FIELD_ACCESS:
@@ -1301,6 +1328,8 @@ disableEvents(HandlerNode *node)
         case EI_VM_DEATH:
         case EI_CLASS_PREPARE:
         case EI_GC_FINISH:
+        case EI_VIRTUAL_THREAD_START:
+        case EI_VIRTUAL_THREAD_END:
             return error;
 
         case EI_FIELD_ACCESS:
@@ -1359,3 +1388,95 @@ eventFilterRestricted_deinstall(HandlerNode *node)
 
     return error1 != JVMTI_ERROR_NONE? error1 : error2;
 }
+
+/***** debugging *****/
+
+#ifdef DEBUG
+
+void
+eventFilter_dumpHandlerFilters(HandlerNode *node)
+{
+    int i;
+    Filter *filter = FILTERS_ARRAY(node);
+
+    for (i = 0; i < FILTER_COUNT(node); ++i, ++filter) {
+        switch (filter->modifier) {
+            case JDWP_REQUEST_MODIFIER(ThreadOnly):
+                tty_message("ThreadOnly: thread(%p) isVThread(%d)",
+                            filter->u.ThreadOnly.thread,
+                            isVThread(filter->u.ThreadOnly.thread));
+                break;
+            case JDWP_REQUEST_MODIFIER(ClassOnly): {
+                char *class_name;
+                classSignature(filter->u.ClassOnly.clazz, &class_name, NULL);
+                tty_message("ClassOnly: clazz(%s)",
+                            class_name);
+                break;
+            }
+            case JDWP_REQUEST_MODIFIER(LocationOnly): {
+                char *method_name;
+                char *class_name;
+                methodSignature(filter->u.LocationOnly.method, &method_name, NULL, NULL);
+                classSignature(filter->u.LocationOnly.clazz, &class_name, NULL);
+                tty_message("LocationOnly: clazz(%s), method(%s) location(%d)",
+                            class_name,
+                            method_name,
+                            filter->u.LocationOnly.location);
+                break;
+            }
+            case JDWP_REQUEST_MODIFIER(FieldOnly): {
+                char *class_name;
+                classSignature(filter->u.FieldOnly.clazz, &class_name, NULL);
+                tty_message("FieldOnly: clazz(%p), field(%d)",
+                            class_name,
+                            filter->u.FieldOnly.field);
+                break;
+            }
+            case JDWP_REQUEST_MODIFIER(ExceptionOnly):
+                tty_message("ExceptionOnly: clazz(%p), caught(%d) uncaught(%d)",
+                            filter->u.ExceptionOnly.exception,
+                            filter->u.ExceptionOnly.caught,
+                            filter->u.ExceptionOnly.uncaught);
+                break;
+            case JDWP_REQUEST_MODIFIER(InstanceOnly):
+                tty_message("InstanceOnly: instance(%p)",
+                            filter->u.InstanceOnly.instance);
+                break;
+            case JDWP_REQUEST_MODIFIER(Count):
+                tty_message("Count: count(%d)",
+                            filter->u.Count.count);
+                break;
+            case JDWP_REQUEST_MODIFIER(Conditional):
+                tty_message("Conditional: exprID(%d)",
+                            filter->u.Conditional.exprID);
+                break;
+            case JDWP_REQUEST_MODIFIER(ClassMatch):
+                tty_message("ClassMatch: classPattern(%s)",
+                            filter->u.ClassMatch.classPattern);
+                break;
+            case JDWP_REQUEST_MODIFIER(ClassExclude):
+                tty_message("ClassExclude: classPattern(%s)",
+                            filter->u.ClassExclude.classPattern);
+                break;
+            case JDWP_REQUEST_MODIFIER(Step):
+                tty_message("Step: size(%d) depth(%d) thread(%p) isVThread(%d)",
+                            filter->u.Step.size,
+                            filter->u.Step.depth,
+                            filter->u.Step.thread,
+                            isVThread(filter->u.Step.thread));
+                break;
+            case JDWP_REQUEST_MODIFIER(SourceNameMatch):
+                tty_message("SourceNameMatch: sourceNamePattern(%s)",
+                            filter->u.SourceNameOnly.sourceNamePattern);
+                break;
+            case JDWP_REQUEST_MODIFIER(PlatformThreadsOnly):
+                tty_message("PlatformThreadsOnly: enabled");
+                break;
+            default:
+                EXIT_ERROR(AGENT_ERROR_ILLEGAL_ARGUMENT, "Invalid filter modifier");
+                return;
+        }
+    }
+}
+
+#endif /* DEBUG */

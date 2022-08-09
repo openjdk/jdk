@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import java.awt.peer.TextComponentPeer;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.Serial;
 import java.text.BreakIterator;
 import java.util.EventListener;
 
@@ -66,7 +67,9 @@ import sun.awt.InputMethodSupport;
  * @author      Arthur van Hoff
  * @since       1.0
  */
-public class TextComponent extends Component implements Accessible {
+public sealed class TextComponent extends Component implements Accessible
+     permits TextArea,
+             TextField {
 
     /**
      * The value of the text.
@@ -123,9 +126,10 @@ public class TextComponent extends Component implements Accessible {
      */
     protected transient TextListener textListener;
 
-    /*
-     * JDK 1.1 serialVersionUID
+    /**
+     * Use serialVersionUID from JDK 1.1 for interoperability.
      */
+    @Serial
     private static final long serialVersionUID = -2214773872412987419L;
 
     /**
@@ -135,7 +139,7 @@ public class TextComponent extends Component implements Accessible {
      * @param      text       the text to be displayed; if
      *             {@code text} is {@code null}, the empty
      *             string {@code ""} will be displayed
-     * @exception  HeadlessException if
+     * @throws  HeadlessException if
      *             {@code GraphicsEnvironment.isHeadless}
      *             returns true
      * @see        java.awt.GraphicsEnvironment#isHeadless
@@ -240,21 +244,18 @@ public class TextComponent extends Component implements Accessible {
      * @see         java.awt.TextComponent#getText
      */
     public synchronized void setText(String t) {
-        if (t == null) {
-            t = "";
-        }
-        TextComponentPeer peer = (TextComponentPeer)this.peer;
-        if (peer != null) {
-            text = peer.getText();
+        text = (t != null) ? t : "";
+        int selectionStart = getSelectionStart();
+        int selectionEnd = getSelectionEnd();
+        TextComponentPeer peer = (TextComponentPeer) this.peer;
+        if (peer != null && !text.equals(peer.getText())) {
             // Please note that we do not want to post an event
             // if TextArea.setText() or TextField.setText() replaces text
             // by same text, that is, if component's text remains unchanged.
-            if (!t.equals(text)) {
-                text = t;
-                peer.setText(text);
-            }
-        } else {
-            text = t;
+            peer.setText(text);
+        }
+        if (selectionStart != selectionEnd) {
+            select(selectionStart, selectionEnd);
         }
     }
 
@@ -512,7 +513,7 @@ public class TextComponent extends Component implements Accessible {
      * is thrown.
      *
      * @param        position the position of the text insertion caret
-     * @exception    IllegalArgumentException if {@code position}
+     * @throws    IllegalArgumentException if {@code position}
      *               is less than zero
      * @since        1.1
      */
@@ -646,7 +647,7 @@ public class TextComponent extends Component implements Accessible {
      *          <code><em>Foo</em>Listener</code>s on this text component,
      *          or an empty array if no such
      *          listeners have been added
-     * @exception ClassCastException if {@code listenerType}
+     * @throws ClassCastException if {@code listenerType}
      *          doesn't specify a class or interface that implements
      *          {@code java.util.EventListener}
      *
@@ -746,6 +747,7 @@ public class TextComponent extends Component implements Accessible {
      * Assigns a valid value to the canAccessClipboard instance variable.
      */
     private boolean canAccessClipboard() {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm == null) return true;
         try {
@@ -782,6 +784,7 @@ public class TextComponent extends Component implements Accessible {
      * @see AWTEventMulticaster#save(ObjectOutputStream, String, EventListener)
      * @see java.awt.Component#textListenerK
      */
+    @Serial
     private void writeObject(java.io.ObjectOutputStream s)
       throws IOException
     {
@@ -817,6 +820,7 @@ public class TextComponent extends Component implements Accessible {
      * @see #addTextListener
      * @see java.awt.GraphicsEnvironment#isHeadless
      */
+    @Serial
     private void readObject(ObjectInputStream s)
         throws ClassNotFoundException, IOException, HeadlessException
     {
@@ -874,9 +878,10 @@ public class TextComponent extends Component implements Accessible {
     protected class AccessibleAWTTextComponent extends AccessibleAWTComponent
         implements AccessibleText, TextListener
     {
-        /*
-         * JDK 1.3 serialVersionUID
+        /**
+         * Use serialVersionUID from JDK 1.3 for interoperability.
          */
+        @Serial
         private static final long serialVersionUID = 3631432373506317811L;
 
         /**

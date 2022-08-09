@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -348,6 +348,7 @@ public final class ProcessBuilder
      * @see    System#getenv()
      */
     public Map<String,String> environment() {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null)
             security.checkPermission(new RuntimePermission("getenv.*"));
@@ -673,9 +674,8 @@ public final class ProcessBuilder
         public boolean equals(Object obj) {
             if (obj == this)
                 return true;
-            if (! (obj instanceof Redirect))
+            if (! (obj instanceof Redirect r))
                 return false;
-            Redirect r = (Redirect) obj;
             if (r.type() != this.type())
                 return false;
             assert this.file() != null;
@@ -1093,6 +1093,7 @@ public final class ProcessBuilder
         // Throws IndexOutOfBoundsException if command is empty
         String prog = cmdarray[0];
 
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null)
             security.checkExec(prog);
@@ -1295,6 +1296,10 @@ public final class ProcessBuilder
                     redirects[1] = new RedirectPipeImpl();  // placeholder for new output
                 }
                 processes.add(builder.start(redirects));
+                if (prevOutput instanceof RedirectPipeImpl redir) {
+                    // Wrap the fd so it can be closed
+                    new Process.PipeInputStream(redir.getFd()).close();
+                }
                 prevOutput = redirects[1];
             }
         } catch (Exception ex) {

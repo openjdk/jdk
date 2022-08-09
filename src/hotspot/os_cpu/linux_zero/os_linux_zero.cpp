@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2009, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -25,16 +25,14 @@
 
 // no precompiled headers
 #include "jvm.h"
-#include "assembler_zero.inline.hpp"
-#include "classfile/classLoader.hpp"
-#include "classfile/systemDictionary.hpp"
+#include "asm/assembler.inline.hpp"
+#include "atomic_linux_zero.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/allocation.inline.hpp"
 #include "nativeInst_zero.hpp"
-#include "os_share_linux.hpp"
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm_misc.hpp"
 #include "runtime/arguments.hpp"
@@ -42,20 +40,16 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "runtime/thread.inline.hpp"
 #include "runtime/timer.hpp"
 #include "signals_posix.hpp"
 #include "utilities/align.hpp"
 #include "utilities/events.hpp"
 #include "utilities/vmError.hpp"
-
-// See stubGenerator_zero.cpp
-#include <setjmp.h>
-extern sigjmp_buf* get_jmp_buf_for_continuation();
 
 address os::current_stack_pointer() {
   // return the address of the current function
@@ -113,14 +107,6 @@ frame os::fetch_frame_from_context(const void* ucVoid) {
 
 bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
                                              ucontext_t* uc, JavaThread* thread) {
-
-  // handle SafeFetch faults
-  if (sig == SIGSEGV || sig == SIGBUS) {
-    sigjmp_buf* const pjb = get_jmp_buf_for_continuation();
-    if (pjb) {
-      siglongjmp(*pjb, 1);
-    }
-  }
 
   if (info != NULL && thread != NULL) {
     // Handle ALL stack overflow variations here
@@ -196,30 +182,12 @@ void os::Linux::set_fpu_control_word(int fpu) {
   ShouldNotCallThis();
 }
 
-bool os::is_allocatable(size_t bytes) {
-#ifdef _LP64
-  return true;
-#else
-  if (bytes < 2 * G) {
-    return true;
-  }
-
-  char* addr = reserve_memory(bytes);
-
-  if (addr != NULL) {
-    release_memory(addr, bytes);
-  }
-
-  return addr != NULL;
-#endif // _LP64
-}
-
 ///////////////////////////////////////////////////////////////////////////////
 // thread stack
 
-size_t os::Posix::_compiler_thread_min_stack_allowed = 64 * K;
-size_t os::Posix::_java_thread_min_stack_allowed = 64 * K;
-size_t os::Posix::_vm_internal_thread_min_stack_allowed = 64 * K;
+size_t os::_compiler_thread_min_stack_allowed = 64 * K;
+size_t os::_java_thread_min_stack_allowed = 64 * K;
+size_t os::_vm_internal_thread_min_stack_allowed = 64 * K;
 
 size_t os::Posix::default_stack_size(os::ThreadType thr_type) {
 #ifdef _LP64
@@ -231,6 +199,20 @@ size_t os::Posix::default_stack_size(os::ThreadType thr_type) {
 }
 
 static void current_stack_region(address *bottom, size_t *size) {
+  if (os::is_primordial_thread()) {
+    // primordial thread needs special handling because pthread_getattr_np()
+    // may return bogus value.
+    address stack_bottom = os::Linux::initial_thread_stack_bottom();
+    size_t stack_bytes  = os::Linux::initial_thread_stack_size();
+
+    assert(os::current_stack_pointer() >= stack_bottom, "should do");
+    assert(os::current_stack_pointer() < stack_bottom + stack_bytes, "should do");
+
+    *bottom = stack_bottom;
+    *size = stack_bytes;
+    return;
+  }
+
   pthread_attr_t attr;
   int res = pthread_getattr_np(pthread_self(), &attr);
   if (res != 0) {
@@ -279,18 +261,6 @@ static void current_stack_region(address *bottom, size_t *size) {
 
   pthread_attr_destroy(&attr);
 
-  // The initial thread has a growable stack, and the size reported
-  // by pthread_attr_getstack is the maximum size it could possibly
-  // be given what currently mapped.  This can be huge, so we cap it.
-  if (os::is_primordial_thread()) {
-    stack_bytes = stack_top - stack_bottom;
-
-    if (stack_bytes > JavaThread::stack_size_at_create())
-      stack_bytes = JavaThread::stack_size_at_create();
-
-    stack_bottom = stack_top - stack_bytes;
-  }
-
   assert(os::current_stack_pointer() >= stack_bottom, "should do");
   assert(os::current_stack_pointer() < stack_top, "should do");
 
@@ -317,6 +287,10 @@ size_t os::current_stack_size() {
 // helper functions for fatal error handler
 
 void os::print_context(outputStream* st, const void* context) {
+  ShouldNotCallThis();
+}
+
+void os::print_tos_pc(outputStream *st, const void *context) {
   ShouldNotCallThis();
 }
 
@@ -366,14 +340,14 @@ extern "C" {
     if (from > to) {
       const jlong *end = from + count;
       while (from < end)
-        os::atomic_copy64(from++, to++);
+        atomic_copy64(from++, to++);
     }
     else if (from < to) {
       const jlong *end = from;
       from += count - 1;
       to   += count - 1;
       while (from >= end)
-        os::atomic_copy64(from--, to--);
+        atomic_copy64(from--, to--);
     }
   }
 

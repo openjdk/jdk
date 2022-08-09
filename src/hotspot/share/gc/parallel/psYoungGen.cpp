@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -189,7 +189,7 @@ void PSYoungGen::set_space_boundaries(size_t eden_size, size_t survivor_size) {
   MemRegion to_mr  ((HeapWord*)to_start, (HeapWord*)from_start);
   MemRegion from_mr((HeapWord*)from_start, (HeapWord*)from_end);
 
-  WorkGang& pretouch_workers = ParallelScavengeHeap::heap()->workers();
+  WorkerThreads& pretouch_workers = ParallelScavengeHeap::heap()->workers();
   eden_space()->initialize(eden_mr, true, ZapUnusedHeapArea, MutableSpace::SetupPages, &pretouch_workers);
     to_space()->initialize(to_mr  , true, ZapUnusedHeapArea, MutableSpace::SetupPages, &pretouch_workers);
   from_space()->initialize(from_mr, true, ZapUnusedHeapArea, MutableSpace::SetupPages, &pretouch_workers);
@@ -317,7 +317,7 @@ bool PSYoungGen::resize_generation(size_t eden_size, size_t survivor_size) {
     if (orig_size == max_gen_size()) {
       log_trace(gc)("PSYoung generation size at maximum: " SIZE_FORMAT "K", orig_size/K);
     } else if (orig_size == min_gen_size()) {
-      log_trace(gc)("PSYoung generation size at minium: " SIZE_FORMAT "K", orig_size/K);
+      log_trace(gc)("PSYoung generation size at minimum: " SIZE_FORMAT "K", orig_size/K);
     }
   }
 
@@ -638,7 +638,7 @@ void PSYoungGen::resize_spaces(size_t requested_eden_size,
       to_space()->check_mangled_unused_area(limit);
   }
 
-  WorkGang* workers = &ParallelScavengeHeap::heap()->workers();
+  WorkerThreads* workers = &ParallelScavengeHeap::heap()->workers();
 
   // When an existing space is being initialized, it is not
   // mangled because the space has been previously mangled.

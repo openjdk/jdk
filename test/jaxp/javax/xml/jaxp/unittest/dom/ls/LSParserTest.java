@@ -42,7 +42,7 @@ import org.w3c.dom.ls.LSResourceResolver;
 /*
  * @test
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true dom.ls.LSParserTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow dom.ls.LSParserTest
  * @run testng/othervm dom.ls.LSParserTest
  * @summary Test LSParser's DOMConfiguration for supported properties.
  */

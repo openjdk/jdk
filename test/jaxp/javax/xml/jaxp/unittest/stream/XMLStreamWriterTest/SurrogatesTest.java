@@ -44,7 +44,7 @@ import org.testng.annotations.DataProvider;
  * @test
  * @bug 8145974
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true stream.XMLStreamWriterTest.SurrogatesTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow stream.XMLStreamWriterTest.SurrogatesTest
  * @run testng/othervm stream.XMLStreamWriterTest.SurrogatesTest
  * @summary Check that XMLStreamWriter generates valid xml with surrogate pair
  *  used within element text

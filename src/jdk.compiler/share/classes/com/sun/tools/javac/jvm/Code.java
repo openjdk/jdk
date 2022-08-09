@@ -621,7 +621,7 @@ public class Code {
             markDead();
             break;
         case athrow:
-            state.pop(1);
+            state.pop(state.stacksize);
             markDead();
             break;
         case lstore_0:
@@ -2015,7 +2015,7 @@ public class Code {
             if (localVar != null) {
                 for (LocalVar.Range range: localVar.aliveRanges) {
                     if (range.closed() && range.start_pc + range.length >= oldCP) {
-                        range.length += delta;
+                        range.length += (char)delta;
                     }
                 }
             }
@@ -2243,7 +2243,7 @@ public class Code {
     }
 
     private static class Mneumonics {
-        private final static String[] mnem = new String[ByteCodeCount];
+        private static final String[] mnem = new String[ByteCodeCount];
         static {
             mnem[nop] = "nop";
             mnem[aconst_null] = "aconst_null";

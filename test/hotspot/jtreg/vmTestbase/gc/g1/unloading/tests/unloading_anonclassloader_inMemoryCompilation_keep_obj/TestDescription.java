@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,8 +41,8 @@
  * @requires vm.gc.G1
  * @requires vm.opt.ClassUnloading != false
  * @requires vm.opt.ClassUnloadingWithConcurrentMark != false
- * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm
  *      -Xbootclasspath/a:.
  *      -XX:+UnlockDiagnosticVMOptions
@@ -52,7 +52,7 @@
  *      -Xlog:gc:gc.log
  *      -XX:-UseGCOverheadLimit
  *      gc.g1.unloading.UnloadingTest
- *      -classloadingMethod anonymous_classloader
+ *      -classloadingMethod hidden_classloader
  *      -inMemoryCompilation
  *      -keep object
  *      -numberOfChecksLimit 4

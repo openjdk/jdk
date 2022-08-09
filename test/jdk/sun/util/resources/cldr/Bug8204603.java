@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
  /*
  * @test
- * @bug 8204603
+ * @bug 8204603 8251317
  * @summary Test that correct data is retrieved for zh_CN and zh_TW locales
  * and CLDR provider supports all locales for which aliases exist.
  * @modules java.base/sun.util.locale.provider
@@ -33,12 +33,14 @@
 
 import java.text.DateFormatSymbols;
 import java.text.DecimalFormatSymbols;
+import java.util.Arrays;
 import java.util.Calendar;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
+
 import sun.util.locale.provider.LocaleProviderAdapter;
 
 /**
@@ -47,58 +49,57 @@ import sun.util.locale.provider.LocaleProviderAdapter;
 public class Bug8204603 {
 
     /**
-     * List of all locales for which CLDR provides alias Mappings. e.g alias of
+     * List of sample locales for which CLDR provides alias Mappings. e.g alias of
      * zh-HK is zh-Hant-HK
      */
-    private static final List<Locale> ALIAS_LOCALES
-            = List.of(Locale.forLanguageTag("az-AZ"), Locale.forLanguageTag("bs-BA"),
-                    Locale.forLanguageTag("ha-Latn-GH"), Locale.forLanguageTag("ha-Latn-NE"),
-                    Locale.forLanguageTag("ha-Latn-NG"), Locale.forLanguageTag("i-lux"),
-                    Locale.forLanguageTag("kk-Cyrl-KZ"), Locale.forLanguageTag("ks-Arab-IN"),
-                    Locale.forLanguageTag("ky-Cyrl-KG"), Locale.forLanguageTag("lb"),
-                    Locale.forLanguageTag("lb"), Locale.forLanguageTag("mn-Cyrl-MN"),
-                    Locale.forLanguageTag("mo"), Locale.forLanguageTag("ms-Latn-BN"),
-                    Locale.forLanguageTag("ms-Latn-MY"), Locale.forLanguageTag("ms-Latn-SG"),
-                    Locale.forLanguageTag("pa-IN"), Locale.forLanguageTag("pa-PK"),
-                    Locale.forLanguageTag("scc"), Locale.forLanguageTag("scr"),
-                    Locale.forLanguageTag("sh"), Locale.forLanguageTag("shi-MA"),
-                    Locale.forLanguageTag("sr-BA"), Locale.forLanguageTag("sr-RS"),
-                    Locale.forLanguageTag("sr-XK"), Locale.forLanguageTag("tl"),
-                    Locale.forLanguageTag("tzm-Latn-MA"), Locale.forLanguageTag("ug-Arab-CN"),
-                    Locale.forLanguageTag("uz-AF"), Locale.forLanguageTag("uz-UZ"),
-                    Locale.forLanguageTag("vai-LR"), Locale.forLanguageTag("vai-LR"),
-                    Locale.forLanguageTag("yue-CN"), Locale.forLanguageTag("yue-HK"),
-                    Locale.forLanguageTag("zh-CN"), Locale.forLanguageTag("zh-HK"),
-                    Locale.forLanguageTag("zh-MO"), Locale.forLanguageTag("zh-SG"),
-                    Locale.forLanguageTag("zh-TW"));
-
+    private static final List<Locale> ALIAS_LOCALES = List.of(
+        Locale.forLanguageTag("az-AZ"), Locale.forLanguageTag("bs-BA"),
+        Locale.forLanguageTag("ha-Latn-NG"), Locale.forLanguageTag("i-lux"),
+        Locale.forLanguageTag("kk-Cyrl-KZ"), Locale.forLanguageTag("ks-Arab-IN"),
+        Locale.forLanguageTag("ky-Cyrl-KG"), Locale.forLanguageTag("lb"),
+        Locale.forLanguageTag("lb"), Locale.forLanguageTag("mn-Cyrl-MN"),
+        Locale.forLanguageTag("mo"),
+        Locale.forLanguageTag("ms-Latn-MY"),
+        Locale.forLanguageTag("pa-IN"), Locale.forLanguageTag("pa-PK"),
+        Locale.forLanguageTag("scc"), Locale.forLanguageTag("scr"),
+        Locale.forLanguageTag("sh"), Locale.forLanguageTag("shi-MA"),
+        Locale.forLanguageTag("sr-RS"),
+        Locale.forLanguageTag("tl"),
+        Locale.forLanguageTag("tzm-Latn-MA"), Locale.forLanguageTag("ug-Arab-CN"),
+        Locale.forLanguageTag("uz-AF"), Locale.forLanguageTag("uz-UZ"),
+        Locale.forLanguageTag("vai-LR"), Locale.forLanguageTag("vai-LR"),
+        Locale.forLanguageTag("yue-CN"), Locale.forLanguageTag("yue-HK"),
+        Locale.forLanguageTag("zh-CN"), Locale.forLanguageTag("zh-HK"),
+        Locale.forLanguageTag("zh-MO"),
+        Locale.forLanguageTag("zh-TW"));
     private static final Map<Locale, String> CALENDAR_DATA_MAP = Map.of(
-            Locale.forLanguageTag("zh-CN"), "\u5468\u65E5",
-            Locale.forLanguageTag("zh-TW"), "\u9031\u65E5");
+        Locale.forLanguageTag("zh-CN"), "\u5468\u65E5",
+        Locale.forLanguageTag("zh-TW"), "\u9031\u65E5");
     private static final Map<Locale, String> NAN_DATA_MAP = Map.of(
-            Locale.forLanguageTag("zh-CN"), "NaN",
-            Locale.forLanguageTag("zh-TW"), "\u975E\u6578\u503C");
+        Locale.forLanguageTag("zh-CN"), "NaN",
+        Locale.forLanguageTag("zh-TW"), "\u975E\u6578\u503C");
 
     public static void main(String[] args) {
         testCldrSupportedLocales();
-        CALENDAR_DATA_MAP.forEach((k, v) -> testCalendarData(k, v));
-        NAN_DATA_MAP.forEach((k, v) -> testNanData(k, v));
+        CALENDAR_DATA_MAP.forEach(Bug8204603::testCalendarData);
+        NAN_DATA_MAP.forEach(Bug8204603::testNanData);
     }
 
     /**
      * tests that CLDR provider should return true for alias locales.
-     *
      */
     private static void testCldrSupportedLocales() {
         LocaleProviderAdapter cldr = LocaleProviderAdapter.forType(LocaleProviderAdapter.Type.CLDR);
-        Set<Locale> availableLocs = Set.of(cldr.getAvailableLocales());
-        Set<String> langtags = new HashSet<>();
-        availableLocs.forEach(loc -> langtags.add(loc.toLanguageTag()));
-        ALIAS_LOCALES.stream().filter(loc -> !cldr.isSupportedProviderLocale(loc, langtags)).findAny()
-                .ifPresent(l -> {
-                    throw new RuntimeException("Locale " + l
-                            + "  is not supported by CLDR locale provider");
-                });
+        Set<String> langtags = Arrays.stream(cldr.getAvailableLocales())
+            .map(Locale::toLanguageTag)
+            .collect(Collectors.toSet());
+        ALIAS_LOCALES.stream()
+            .filter(loc -> !cldr.isSupportedProviderLocale(loc, langtags))
+            .findAny()
+            .ifPresent(l -> {
+                throw new RuntimeException("Locale " + l
+                        + "  is not supported by CLDR locale provider");
+            });
     }
 
     private static void testCalendarData(Locale loc, String expected) {

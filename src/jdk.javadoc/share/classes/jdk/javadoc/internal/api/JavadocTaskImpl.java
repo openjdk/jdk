@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,9 @@
 package jdk.javadoc.internal.api;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.tools.DocumentationTool.DocumentationTask;
@@ -43,11 +43,6 @@ import jdk.javadoc.internal.tool.Start;
 /**
  * Provides access to functionality specific to the JDK documentation tool,
  * javadoc.
- *
- * <p><b>This is NOT part of any supported API.
- * If you write code that depends on this, you do so at your own
- * risk.  This code and its internal interfaces are subject to change
- * or deletion without notice.</b></p>
  */
 public class JavadocTaskImpl implements DocumentationTask {
     private final AtomicBoolean used = new AtomicBoolean();
@@ -67,9 +62,9 @@ public class JavadocTaskImpl implements DocumentationTask {
         this.context = context;
         this.docletClass = docletClass;
 
-        this.options = (options == null) ? Collections.emptySet()
+        this.options = (options == null) ? Set.of()
                 : nullCheck(options);
-        this.fileObjects = (fileObjects == null) ? Collections.emptySet()
+        this.fileObjects = (fileObjects == null) ? Set.of()
                 : nullCheck(fileObjects);
         setLocale(Locale.getDefault());
     }

@@ -25,9 +25,10 @@
 #ifndef SHARE_UTILITIES_STACK_INLINE_HPP
 #define SHARE_UTILITIES_STACK_INLINE_HPP
 
+#include "utilities/stack.hpp"
+
 #include "memory/allocation.inline.hpp"
 #include "utilities/align.hpp"
-#include "utilities/stack.hpp"
 #include "utilities/copy.hpp"
 
 template <MEMFLAGS F> StackBase<F>::StackBase(size_t segment_size, size_t max_cache_size,

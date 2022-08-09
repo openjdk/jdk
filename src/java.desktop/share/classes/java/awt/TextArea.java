@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package java.awt;
 import java.awt.peer.TextAreaPeer;
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.io.Serial;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -54,7 +55,7 @@ import javax.accessibility.AccessibleStateSet;
  * @author      Sami Shaio
  * @since       1.0
  */
-public class TextArea extends TextComponent {
+public non-sealed class TextArea extends TextComponent {
 
     /**
      * The number of rows in the {@code TextArea}.
@@ -126,9 +127,10 @@ public class TextArea extends TextComponent {
      */
     private static Set<AWTKeyStroke> forwardTraversalKeys, backwardTraversalKeys;
 
-    /*
-     * JDK 1.1 serialVersionUID
+    /**
+     * Use serialVersionUID from JDK 1.1 for interoperability.
      */
+     @Serial
      private static final long serialVersionUID = 3692302836626095722L;
 
     /**
@@ -155,7 +157,7 @@ public class TextArea extends TextComponent {
      * This text area is created with scrollbar visibility equal to
      * {@link #SCROLLBARS_BOTH}, so both vertical and horizontal
      * scrollbars will be visible for this text area.
-     * @exception HeadlessException if
+     * @throws HeadlessException if
      *    {@code GraphicsEnvironment.isHeadless} returns true
      * @see java.awt.GraphicsEnvironment#isHeadless()
      */
@@ -171,7 +173,7 @@ public class TextArea extends TextComponent {
      * @param      text       the text to be displayed; if
      *             {@code text} is {@code null}, the empty
      *             string {@code ""} will be displayed
-     * @exception HeadlessException if
+     * @throws HeadlessException if
      *        {@code GraphicsEnvironment.isHeadless} returns true
      * @see java.awt.GraphicsEnvironment#isHeadless()
      */
@@ -189,7 +191,7 @@ public class TextArea extends TextComponent {
      * text area.
      * @param rows the number of rows
      * @param columns the number of columns
-     * @exception HeadlessException if
+     * @throws HeadlessException if
      *     {@code GraphicsEnvironment.isHeadless} returns true
      * @see java.awt.GraphicsEnvironment#isHeadless()
      */
@@ -210,7 +212,7 @@ public class TextArea extends TextComponent {
      *             string {@code ""} will be displayed
      * @param     rows      the number of rows
      * @param     columns   the number of columns
-     * @exception HeadlessException if
+     * @throws HeadlessException if
      *   {@code GraphicsEnvironment.isHeadless} returns true
      * @see java.awt.GraphicsEnvironment#isHeadless()
      */
@@ -250,7 +252,7 @@ public class TextArea extends TextComponent {
      * @param      scrollbars  a constant that determines what
      *             scrollbars are created to view the text area
      * @since      1.1
-     * @exception HeadlessException if
+     * @throws HeadlessException if
      *    {@code GraphicsEnvironment.isHeadless} returns true
      * @see java.awt.GraphicsEnvironment#isHeadless()
      */
@@ -419,7 +421,7 @@ public class TextArea extends TextComponent {
      * @param       rows   the number of rows
      * @see         #getRows()
      * @see         #setColumns(int)
-     * @exception   IllegalArgumentException   if the value
+     * @throws   IllegalArgumentException   if the value
      *                 supplied for {@code rows}
      *                 is less than {@code 0}
      * @since       1.1
@@ -450,7 +452,7 @@ public class TextArea extends TextComponent {
      * @param       columns   the number of columns
      * @see         #getColumns()
      * @see         #setRows(int)
-     * @exception   IllegalArgumentException   if the value
+     * @throws   IllegalArgumentException   if the value
      *                 supplied for {@code columns}
      *                 is less than {@code 0}
      * @since       1.1
@@ -659,6 +661,7 @@ public class TextArea extends TextComponent {
      *         returns {@code true}
      * @see java.awt.GraphicsEnvironment#isHeadless
      */
+    @Serial
     private void readObject(ObjectInputStream s)
       throws ClassNotFoundException, IOException, HeadlessException
     {
@@ -719,9 +722,10 @@ public class TextArea extends TextComponent {
      */
     protected class AccessibleAWTTextArea extends AccessibleAWTTextComponent
     {
-        /*
-         * JDK 1.3 serialVersionUID
+        /**
+         * Use serialVersionUID from JDK 1.3 for interoperability.
          */
+        @Serial
         private static final long serialVersionUID = 3472827823632144419L;
 
         /**

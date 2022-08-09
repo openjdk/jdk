@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,6 @@ import java.util.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.applet.*;
-import java.beans.*;
-import javax.swing.event.*;
 import sun.awt.EmbeddedFrame;
 
 /**
@@ -137,7 +135,7 @@ class KeyboardManager {
      /**
        * Find the top focusable Window, Applet, or InternalFrame
        */
-     @SuppressWarnings("deprecation")
+     @SuppressWarnings("removal")
      private static Container getTopAncestor(JComponent c) {
         for(Container p = c.getParent(); p != null; p = p.getParent()) {
             if (p instanceof Window && ((Window)p).isFocusableWindow() ||
@@ -371,7 +369,7 @@ class KeyboardManager {
       * which looks up topContainers based on component, keystroke pairs
       * This is used to make unregistering KeyStrokes fast
       */
-    class ComponentKeyStrokePair {
+    static class ComponentKeyStrokePair {
         Object component;
         Object keyStroke;
 

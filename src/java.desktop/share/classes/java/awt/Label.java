@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package java.awt;
 import java.awt.peer.LabelPeer;
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.io.Serial;
 
 import javax.accessibility.Accessible;
 import javax.accessibility.AccessibleContext;
@@ -104,15 +105,16 @@ public class Label extends Component implements Accessible {
     private static final String base = "label";
     private static int nameCounter = 0;
 
-    /*
-     * JDK 1.1 serialVersionUID
+    /**
+     * Use serialVersionUID from JDK 1.1 for interoperability.
      */
+     @Serial
      private static final long serialVersionUID = 3094126758329070636L;
 
     /**
      * Constructs an empty label.
      * The text of the label is the empty string {@code ""}.
-     * @exception HeadlessException if GraphicsEnvironment.isHeadless()
+     * @throws HeadlessException if GraphicsEnvironment.isHeadless()
      * returns true.
      * @see java.awt.GraphicsEnvironment#isHeadless
      */
@@ -127,7 +129,7 @@ public class Label extends Component implements Accessible {
      *        A {@code null} value
      *        will be accepted without causing a NullPointerException
      *        to be thrown.
-     * @exception HeadlessException if GraphicsEnvironment.isHeadless()
+     * @throws HeadlessException if GraphicsEnvironment.isHeadless()
      * returns true.
      * @see java.awt.GraphicsEnvironment#isHeadless
      */
@@ -145,7 +147,7 @@ public class Label extends Component implements Accessible {
      *        will be accepted without causing a NullPointerException
      *        to be thrown.
      * @param     alignment   the alignment value.
-     * @exception HeadlessException if GraphicsEnvironment.isHeadless()
+     * @throws HeadlessException if GraphicsEnvironment.isHeadless()
      * returns true.
      * @see java.awt.GraphicsEnvironment#isHeadless
      */
@@ -164,10 +166,11 @@ public class Label extends Component implements Accessible {
      * @throws IOException if an I/O error occurs
      * @throws HeadlessException if {@code GraphicsEnvironment.isHeadless()}
      *         returns {@code true}
-     * @serial
+     *
      * @see java.awt.GraphicsEnvironment#isHeadless
      * @since 1.4
      */
+    @Serial
     private void readObject(ObjectInputStream s)
         throws ClassNotFoundException, IOException, HeadlessException {
         GraphicsEnvironment.checkHeadless();
@@ -213,7 +216,7 @@ public class Label extends Component implements Accessible {
      * Possible values are {@code Label.LEFT},
      * {@code Label.RIGHT}, and {@code Label.CENTER}.
      * @param      alignment    the alignment to be set.
-     * @exception  IllegalArgumentException if an improper value for
+     * @throws  IllegalArgumentException if an improper value for
      *                          {@code alignment} is given.
      * @see        java.awt.Label#getAlignment
      */
@@ -325,9 +328,10 @@ public class Label extends Component implements Accessible {
      */
     protected class AccessibleAWTLabel extends AccessibleAWTComponent
     {
-        /*
-         * JDK 1.3 serialVersionUID
+        /**
+         * Use serialVersionUID from JDK 1.3 for interoperability.
          */
+        @Serial
         private static final long serialVersionUID = -3568967560160480438L;
 
         /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -227,7 +227,7 @@ public class ExceptionsTest extends KullaTesting {
         assertExceptionMatch(se,
                 new ExceptionInfo(IllegalStateException.class, message,
                         newStackTraceElement("", "lambda$do_it$$0", se.snippet(), 1),
-                        new StackTraceElement("com.sun.proxy.$Proxy0", "hashCode", null, -1),
+                        new StackTraceElement("jdk.proxy1.$Proxy0", "hashCode", null, -1),
                         newStackTraceElement("", "", se.snippet(), 1)));
     }
 
@@ -244,6 +244,7 @@ public class ExceptionsTest extends KullaTesting {
         assertExceptionMatch(se,
                 new ExceptionInfo(ExceptionInInitializerError.class, null,
                         new StackTraceElement("java.lang.Class", "forName0",  "Class.java", -2),
+                        new StackTraceElement("java.lang.Class", "forName", "Class.java", -2),
                         new StackTraceElement("java.lang.Class", "forName", "Class.java", -2),
                         newStackTraceElement("", "", se.snippet(), 1)));
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,16 +81,17 @@ import java.util.stream.Stream;
  * <p>
  * The {@code ProcessHandle} static factory methods return instances that are
  * <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>,
- * immutable and thread-safe.
- * Use of identity-sensitive operations (including reference equality
- * ({@code ==}), identity hash code, or synchronization) on these instances of
- * {@code ProcessHandle} may have unpredictable results and should be avoided.
- * Use {@link #equals(Object) equals} or
- * {@link #compareTo(ProcessHandle) compareTo} methods to compare ProcessHandles.
+ * immutable and thread-safe. Programmers should treat instances that are
+ * {@linkplain #equals(Object) equal} as interchangeable and should not
+ * use instances for synchronization, or unpredictable behavior may occur.
+ * For example, in a future release, synchronization may fail.
+ * Use the {@code equals} or {@link #compareTo(ProcessHandle) compareTo} methods
+ * to compare ProcessHandles.
  *
  * @see Process
  * @since 9
  */
+@jdk.internal.ValueBased
 public interface ProcessHandle extends Comparable<ProcessHandle> {
 
     /**
@@ -240,7 +241,7 @@ public interface ProcessHandle extends Comparable<ProcessHandle> {
          *          <p>
          *          The executable pathname may contain only the
          *          name of the executable without the full path information.
-         *          It is undecideable whether white space separates different
+         *          It is undecidable whether white space separates different
          *          arguments or is part of a single argument.
          *
          * @return an {@code Optional<String>} of the command line

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @bug 8044860
  * @summary Vectors and fixed length fields should be verified
  *          for allowed sizes.
+ * @library /test/lib
  * @modules java.base/sun.security.ssl
  * @run main/othervm LengthCheckTest
  * @key randomness
@@ -75,6 +76,8 @@ import java.nio.*;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Iterator;
+
+import jdk.test.lib.security.SecurityUtils;
 
 public class LengthCheckTest {
 
@@ -300,6 +303,9 @@ public class LengthCheckTest {
      * Main entry point for this test.
      */
     public static void main(String args[]) throws Exception {
+        // Re-enable TLSv1 since test depends on it.
+        SecurityUtils.removeFromDisabledTlsAlgs("TLSv1");
+
         List<LengthCheckTest> ccsTests = new ArrayList<>();
 
         if (debug) {

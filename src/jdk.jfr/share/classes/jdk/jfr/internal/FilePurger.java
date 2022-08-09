@@ -36,16 +36,16 @@ import jdk.jfr.internal.SecuritySupport.SafePath;
 // so they can a later staged be removed.
 final class FilePurger {
 
-    private final static Set<SafePath> paths = new LinkedHashSet<>();
+    private static final Set<SafePath> paths = new LinkedHashSet<>();
 
-    public synchronized static void add(SafePath p) {
+    public static synchronized void add(SafePath p) {
         paths.add(p);
         if (paths.size() > 1000) {
             removeOldest();
         }
     }
 
-    public synchronized static void purge() {
+    public static synchronized void purge() {
         if (paths.isEmpty()) {
             return;
         }

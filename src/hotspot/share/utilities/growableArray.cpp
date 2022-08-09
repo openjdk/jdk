@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 #include "precompiled.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "utilities/growableArray.hpp"
 
 void* GrowableArrayResourceAllocator::allocate(int max, int elementSize) {
@@ -72,7 +72,7 @@ void GrowableArrayNestingCheck::on_stack_alloc() const {
 
 void GrowableArrayMetadata::init_checks(const GrowableArrayBase* array) const {
   // Stack allocated arrays support all three element allocation locations
-  if (array->allocated_on_stack()) {
+  if (array->allocated_on_stack_or_embedded()) {
     return;
   }
 

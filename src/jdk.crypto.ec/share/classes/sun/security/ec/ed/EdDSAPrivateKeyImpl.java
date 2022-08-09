@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@ public final class EdDSAPrivateKeyImpl
 
     private static final long serialVersionUID = 1L;
 
+    @SuppressWarnings("serial") // Type of field is not Serializable
     private final NamedParameterSpec paramSpec;
     private byte[] h;
 
@@ -51,12 +52,13 @@ public final class EdDSAPrivateKeyImpl
         this.algid = new AlgorithmId(params.getOid());
         this.h = h.clone();
 
-        DerOutputStream derKey = new DerOutputStream();
+        DerValue val = new DerValue(DerValue.tag_OctetString, h);
         try {
-            derKey.putOctetString(h);
-            this.key = derKey.toByteArray();
+            this.key = val.toByteArray();
         } catch (IOException ex) {
             throw new AssertionError("Should not happen", ex);
+        } finally {
+            val.clear();
         }
         checkLength(params);
     }

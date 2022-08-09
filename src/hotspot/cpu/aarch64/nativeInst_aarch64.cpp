@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -27,6 +27,7 @@
 #include "asm/macroAssembler.hpp"
 #include "code/codeCache.hpp"
 #include "code/compiledIC.hpp"
+#include "gc/shared/collectedHeap.hpp"
 #include "memory/resourceArea.hpp"
 #include "nativeInst_aarch64.hpp"
 #include "oops/oop.inline.hpp"
@@ -314,7 +315,7 @@ void NativeMovRegMem::set_offset(int x) {
 
 void NativeMovRegMem::verify() {
 #ifdef ASSERT
-  address dest = MacroAssembler::target_addr_for_insn(instruction_address());
+  address dest = MacroAssembler::target_addr_for_insn_or_null(instruction_address());
 #endif
 }
 
@@ -328,7 +329,7 @@ void NativeJump::check_verified_entry_alignment(address entry, address verified_
 
 
 address NativeJump::jump_destination() const          {
-  address dest = MacroAssembler::target_addr_for_insn(instruction_address());
+  address dest = MacroAssembler::target_addr_for_insn_or_null(instruction_address());
 
   // We use jump to self as the unresolved address which the inline
   // cache code (and relocs) know about
@@ -475,16 +476,9 @@ bool NativeInstruction::is_stop() {
 void NativeJump::patch_verified_entry(address entry, address verified_entry, address dest) {
 
   assert(dest == SharedRuntime::get_handle_wrong_method_stub(), "expected fixed destination of patch");
-
-#ifdef ASSERT
-  // This may be the temporary nmethod generated while we're AOT
-  // compiling.  Such an nmethod doesn't begin with a NOP but with an ADRP.
-  if (! (CalculateClassFingerprint && UseAOT && is_adrp_at(verified_entry))) {
-    assert(nativeInstruction_at(verified_entry)->is_jump_or_nop()
-           || nativeInstruction_at(verified_entry)->is_sigill_zombie_not_entrant(),
-           "Aarch64 cannot replace non-jump with jump");
-  }
-#endif
+  assert(nativeInstruction_at(verified_entry)->is_jump_or_nop()
+         || nativeInstruction_at(verified_entry)->is_sigill_zombie_not_entrant(),
+         "Aarch64 cannot replace non-jump with jump");
 
   // Patch this nmethod atomically.
   if (Assembler::reachable_from_branch_at(verified_entry, dest)) {
@@ -549,4 +543,46 @@ address NativeCall::trampoline_jump(CodeBuffer &cbuf, address dest) {
   }
 
   return stub;
+}
+
+void NativePostCallNop::make_deopt() {
+  NativeDeoptInstruction::insert(addr_at(0));
+}
+
+#ifdef ASSERT
+static bool is_movk_to_zr(uint32_t insn) {
+  return ((insn & 0xffe0001f) == 0xf280001f);
+}
+#endif
+
+void NativePostCallNop::patch(jint diff) {
+#ifdef ASSERT
+  assert(diff != 0, "must be");
+  uint32_t insn1 = uint_at(4);
+  uint32_t insn2 = uint_at(8);
+  assert (is_movk_to_zr(insn1) && is_movk_to_zr(insn2), "must be");
+#endif
+
+  uint32_t lo = diff & 0xffff;
+  uint32_t hi = (uint32_t)diff >> 16;
+  Instruction_aarch64::patch(addr_at(4), 20, 5, lo);
+  Instruction_aarch64::patch(addr_at(8), 20, 5, hi);
+}
+
+void NativeDeoptInstruction::verify() {
+}
+
+// Inserts an undefined instruction at a given pc
+void NativeDeoptInstruction::insert(address code_pos) {
+  // 1 1 0 1 | 0 1 0 0 | 1 0 1 imm16 0 0 0 0 1
+  // d       | 4       | a      | de | 0 | 0 |
+  // 0xd4, 0x20, 0x00, 0x00
+  uint32_t insn = 0xd4ade001;
+  uint32_t *pos = (uint32_t *) code_pos;
+  *pos = insn;
+  /**code_pos = 0xd4;
+  *(code_pos+1) = 0x60;
+  *(code_pos+2) = 0x00;
+  *(code_pos+3) = 0x00;*/
+  ICache::invalidate_range(code_pos, 4);
 }

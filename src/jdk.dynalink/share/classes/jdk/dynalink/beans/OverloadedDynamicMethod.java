@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -194,10 +194,12 @@ class OverloadedDynamicMethod extends DynamicMethod {
         }
     }
 
+    @SuppressWarnings("removal")
     private static final AccessControlContext GET_CALL_SITE_CLASS_LOADER_CONTEXT =
             AccessControlContextFactory.createAccessControlContext(
                     "getClassLoader", SecureLookupSupplier.GET_LOOKUP_PERMISSION_NAME);
 
+    @SuppressWarnings("removal")
     private static ClassLoader getCallSiteClassLoader(final CallSiteDescriptor callSiteDescriptor) {
         return AccessController.doPrivileged(
             (PrivilegedAction<ClassLoader>) () -> callSiteDescriptor.getLookup().lookupClass().getClassLoader(),

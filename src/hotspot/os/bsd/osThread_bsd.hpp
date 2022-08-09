@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,14 +67,6 @@
   intptr_t thread_identifier() const   { return (intptr_t)_pthread_id; }
 #endif
 
-#ifdef ASSERT
-  // We expect no reposition failures so kill vm if we get one.
-  //
-  bool valid_reposition_failure() {
-    return false;
-  }
-#endif // ASSERT
-
   pthread_t pthread_id() const {
     return _pthread_id;
   }
@@ -92,7 +84,7 @@ public:
   // flags that support signal based suspend/resume on Bsd are in a
   // separate class to avoid confusion with many flags in OSThread that
   // are used by VM level suspend/resume.
-  os::SuspendResume sr;
+  SuspendResume sr;
 
   // _ucontext and _siginfo are used by SR_handler() to save thread context,
   // and they will later be used to walk the stack or reposition thread PC.

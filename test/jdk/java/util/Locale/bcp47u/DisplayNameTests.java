@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,7 @@ public class DisplayNameTests {
                                                              "-ss-standard" +
                                                              "-tz-jptyo" +
                                                              "-va-posix");
-    private static final Locale loc2 = new Locale("ja", "JP", "JP");
+    private static final Locale loc2 = Locale.of("ja", "JP", "JP");
     private static final Locale loc3 = new Locale.Builder()
                                             .setRegion("US")
                                             .setScript("Latn")

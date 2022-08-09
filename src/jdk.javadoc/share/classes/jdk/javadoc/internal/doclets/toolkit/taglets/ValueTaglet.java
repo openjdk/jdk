@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,14 @@
 package jdk.javadoc.internal.doclets.toolkit.taglets;
 
 import java.util.EnumSet;
+import java.util.IllegalFormatException;
+import java.util.Optional;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.VariableElement;
 
 import com.sun.source.doctree.DocTree;
+import com.sun.source.doctree.TextTree;
+import com.sun.source.doctree.ValueTree;
 import jdk.javadoc.doclet.Taglet.Location;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
@@ -38,20 +42,14 @@ import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
 /**
- * An inline Taglet representing the value tag. This tag should only be used with
+ * An inline taglet representing the value tag. This tag should only be used with
  * constant fields that have a value.  It is used to access the value of constant
  * fields.  This inline tag has an optional field name parameter.  If the name is
  * specified, the constant value is retrieved from the specified field.  A link
  * is also created to the specified field.  If a name is not specified, the value
  * is retrieved for the field that the inline tag appears on.  The name is specified
  * in the following format:  [fully qualified class name]#[constant field name].
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
  */
-
 public class ValueTaglet extends BaseTaglet {
 
     /**
@@ -101,13 +99,28 @@ public class ValueTaglet extends BaseTaglet {
                         "doclet.value_tag_invalid_reference", tag.toString());
             }
         } else if (field.getConstantValue() != null) {
+            TextTree format = ((ValueTree) tag).getFormat();
+            String text;
+            if (format != null) {
+                String f = format.getBody();
+                if (f.startsWith("\"")) {
+                    f = f.substring(1, f.length() - 1);
+                }
+                try {
+                    text = String.format(configuration.getLocale(), f, field.getConstantValue());
+                } catch (IllegalFormatException e) {
+                    messages.error(holder,
+                            "doclet.value_tag_invalid_format", format);
+                    return writer.invalidTagOutput(
+                            messages.getResources().getText("doclet.value_tag_invalid_format", format),
+                            Optional.empty());
+                }
+            } else {
+                text = utils.constantValueExpression(field);
+            }
             return writer.valueTagOutput(field,
-                utils.constantValueExpression(field),
-                // TODO: investigate and cleanup
-                // in the j.l.m world, equals will not be accurate
-                // !field.equals(tag.holder())
-                !utils.elementsEqual(field, holder)
-            );
+                text,
+                !field.equals(holder));
         } else {
             //Referenced field is not a constant.
             messages.warning(holder,

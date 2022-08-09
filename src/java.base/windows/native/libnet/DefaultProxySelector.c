@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,7 +104,6 @@ static int createProxyList(LPWSTR win_proxy, const WCHAR *pproto, list_item **he
     int nr_elems = 0;
     wchar_t *context = NULL;
     wchar_t *current_proxy = NULL;
-    BOOL error = FALSE;
 
     /*
      * The proxy server list contains one or more of the following strings
@@ -116,7 +115,6 @@ static int createProxyList(LPWSTR win_proxy, const WCHAR *pproto, list_item **he
         LPWSTR pport;
         LPWSTR phost;
         int portVal = 0;
-        wchar_t *next_proxy = NULL;
         list_item *proxy = NULL;
         wchar_t* pos = NULL;
 
@@ -230,16 +228,12 @@ Java_sun_net_spi_DefaultProxySelector_getSystemProxies(JNIEnv *env,
         auto_proxy_options.dwFlags = WINHTTP_AUTOPROXY_AUTO_DETECT;
         auto_proxy_options.fAutoLogonIfChallenged = TRUE;
         use_auto_proxy = TRUE;
-    } else if (ie_proxy_config.lpszAutoConfigUrl != NULL) {
+    }
+    if (ie_proxy_config.lpszAutoConfigUrl != NULL) {
         /* Windows uses PAC file */
         auto_proxy_options.lpszAutoConfigUrl = ie_proxy_config.lpszAutoConfigUrl;
-        auto_proxy_options.dwFlags = WINHTTP_AUTOPROXY_CONFIG_URL;
+        auto_proxy_options.dwFlags |= WINHTTP_AUTOPROXY_CONFIG_URL;
         use_auto_proxy = TRUE;
-    } else if (ie_proxy_config.lpszProxy != NULL) {
-        /* Windows uses manually entered proxy. */
-        use_auto_proxy = FALSE;
-        win_bypass_proxy = ie_proxy_config.lpszProxyBypass;
-        win_proxy = ie_proxy_config.lpszProxy;
     }
 
     if (use_auto_proxy) {
@@ -252,6 +246,12 @@ Java_sun_net_spi_DefaultProxySelector_getSystemProxies(JNIEnv *env,
             win_proxy = proxy_info.lpszProxy;
             win_bypass_proxy = proxy_info.lpszProxyBypass;
         }
+    }
+
+    if (!use_auto_proxy && ie_proxy_config.lpszProxy != NULL) {
+        /* Windows uses manually entered proxy. */
+        win_bypass_proxy = ie_proxy_config.lpszProxyBypass;
+        win_proxy = ie_proxy_config.lpszProxy;
     }
 
     /* Check the bypass entry. */
@@ -290,7 +290,6 @@ Java_sun_net_spi_DefaultProxySelector_getSystemProxies(JNIEnv *env,
     }
 
     if (win_proxy != NULL) {
-        wchar_t *context = NULL;
         int defport = 0;
         int nr_elems = 0;
 
@@ -313,27 +312,28 @@ Java_sun_net_spi_DefaultProxySelector_getSystemProxies(JNIEnv *env,
         nr_elems = createProxyList(win_proxy, lpProto, &head);
         if (nr_elems != 0 && head != NULL) {
             int index = 0;
+            list_item *current = head;
             proxy_array = (*env)->NewObjectArray(env, nr_elems, proxy_class, NULL);
             if (proxy_array == NULL || (*env)->ExceptionCheck(env)) {
                 goto noproxy;
             }
-            while (head != NULL && index < nr_elems) {
+            while (current != NULL && index < nr_elems) {
                 jstring jhost;
                 jobject isa;
                 jobject proxy;
 
-                if (head->host != NULL && proxy_array != NULL) {
+                if (current->host != NULL && proxy_array != NULL) {
                     /* Let's create the appropriate Proxy object then. */
-                    if (head->port == 0) {
-                        head->port = defport;
+                    if (current->port == 0) {
+                        current->port = defport;
                     }
-                    jhost = (*env)->NewString(env, head->host, (jsize)wcslen(head->host));
+                    jhost = (*env)->NewString(env, current->host, (jsize)wcslen(current->host));
                     if (jhost == NULL || (*env)->ExceptionCheck(env)) {
                         proxy_array = NULL;
                     }
                     isa = (*env)->CallStaticObjectMethod(env, isaddr_class,
                                                          isaddr_createUnresolvedID, jhost,
-                                                         head->port);
+                                                         current->port);
                     if (isa == NULL || (*env)->ExceptionCheck(env)) {
                         proxy_array = NULL;
                     }
@@ -347,7 +347,7 @@ Java_sun_net_spi_DefaultProxySelector_getSystemProxies(JNIEnv *env,
                     }
                     index++;
                 }
-                head = head->next;
+                current = current->next;
             }
         }
     }

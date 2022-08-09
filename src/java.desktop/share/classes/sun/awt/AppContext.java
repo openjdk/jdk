@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -161,7 +161,7 @@ public final class AppContext {
        contained in another AppContext. It is implicitly created for
        standalone apps only (i.e. not applets)
      */
-    private static volatile AppContext mainAppContext = null;
+    private static volatile AppContext mainAppContext;
 
     private static class GetAppContextLock {};
     private static final Object getAppContextLock = new GetAppContextLock();
@@ -229,6 +229,7 @@ public final class AppContext {
      * @see     sun.awt.SunToolkit
      * @since   1.2
      */
+    @SuppressWarnings("removal")
     AppContext(ThreadGroup threadGroup) {
         numAppContexts.incrementAndGet();
 
@@ -253,6 +254,7 @@ public final class AppContext {
     private static final ThreadLocal<AppContext> threadAppContext =
             new ThreadLocal<AppContext>();
 
+    @SuppressWarnings("removal")
     private static void initMainAppContext() {
         // On the main Thread, we get the ThreadGroup, make a corresponding
         // AppContext, and instantiate the Java EventQueue.  This way, legacy
@@ -282,6 +284,7 @@ public final class AppContext {
      * @see     java.lang.ThreadGroup
      * @since   1.2
      */
+    @SuppressWarnings("removal")
     public static AppContext getAppContext() {
         // we are standalone app, return the main app context
         if (numAppContexts.get() == 1 && mainAppContext != null) {
@@ -388,11 +391,11 @@ public final class AppContext {
      * This method must be called from a Thread which is not contained
      * within this AppContext.
      *
-     * @exception  IllegalThreadStateException  if the current thread is
+     * @throws  IllegalThreadStateException  if the current thread is
      *                                    contained within this AppContext
      * @since      1.2
      */
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings({"deprecation", "removal"})
     public void dispose() throws IllegalThreadStateException {
         // Check to be sure that the current Thread isn't in this AppContext
         if (this.threadGroup.parentOf(Thread.currentThread().getThreadGroup())) {
@@ -501,7 +504,16 @@ public final class AppContext {
 
         // Then, we stop any remaining Threads
         AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
-            threadGroup.stop();
+            Thread[] threads;
+            int len, threadCount;
+            do {
+                len = threadGroup.activeCount() + 4;
+                threads = new Thread[len];
+                threadCount = threadGroup.enumerate(threads);
+            } while (threadCount == len);
+            for (int i = 0; i < threadCount; i++) {
+                threads[i].stop();
+            }
             return null;
         });
 
@@ -592,6 +604,7 @@ public final class AppContext {
                 // Create a thread that belongs to the thread group associated
                 // with the AppContext and invokes EventQueue.postEvent.
                 PrivilegedAction<Thread> action = new CreateThreadAction(appContext, r);
+                @SuppressWarnings("removal")
                 Thread thread = AccessController.doPrivileged(action);
                 thread.start();
             } else {
@@ -656,7 +669,7 @@ public final class AppContext {
      * @param      value   the value.
      * @return     the previous value of the specified key in this
      *             AppContext, or {@code null} if it did not have one.
-     * @exception  NullPointerException  if the key or value is
+     * @throws  NullPointerException  if the key or value is
      *               {@code null}.
      * @see     #get(Object)
      * @since   1.2
@@ -820,6 +833,7 @@ public final class AppContext {
     // Set up JavaAWTAccess in SharedSecrets
     static {
         SharedSecrets.setJavaAWTAccess(new JavaAWTAccess() {
+            @SuppressWarnings("removal")
             private boolean hasRootThreadGroup(final AppContext ecx) {
                 return AccessController.doPrivileged(new PrivilegedAction<Boolean>() {
                     @Override

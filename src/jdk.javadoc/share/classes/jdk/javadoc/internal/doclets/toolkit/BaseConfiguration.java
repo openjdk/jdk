@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,12 @@
 package jdk.javadoc.internal.doclets.toolkit;
 
 
+import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
+import java.nio.file.InvalidPathException;
+import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -41,6 +44,7 @@ import java.util.SortedMap;
 import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.function.Function;
 
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
@@ -49,11 +53,12 @@ import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.SimpleElementVisitor14;
+import javax.tools.DocumentationTool;
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
+import javax.tools.StandardJavaFileManager;
 
 import com.sun.source.tree.CompilationUnitTree;
-import com.sun.source.util.DocTreePath;
 import com.sun.source.util.TreePath;
 import com.sun.tools.javac.util.DefinedBy;
 import com.sun.tools.javac.util.DefinedBy.Api;
@@ -67,7 +72,6 @@ import jdk.javadoc.internal.doclets.toolkit.taglets.TagletManager;
 import jdk.javadoc.internal.doclets.toolkit.util.Comparators;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFile;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileFactory;
-import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.Extern;
 import jdk.javadoc.internal.doclets.toolkit.util.Group;
 import jdk.javadoc.internal.doclets.toolkit.util.MetaKeywords;
@@ -78,16 +82,12 @@ import jdk.javadoc.internal.doclets.toolkit.util.Utils.Pair;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberCache;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
 import jdk.javadoc.internal.doclint.DocLint;
+import jdk.javadoc.internal.doclint.Env;
 
 /**
- * Configure the output based on the options. Doclets should sub-class
+ * Configure the output based on the options. Doclets should subclass
  * BaseConfiguration, to configure and add their own options. This class contains
  * all user options which are supported by the standard doclet.
- * <p>
- * <p><b>This is NOT part of any supported API.
- * If you write code that depends on this, you do so at your own risk.
- * This code and its internal interfaces are subject to change or
- * deletion without notice.</b>
  */
 public abstract class BaseConfiguration {
     /**
@@ -104,16 +104,6 @@ public abstract class BaseConfiguration {
      * The taglet manager.
      */
     public TagletManager tagletManager;
-
-    /**
-     * The path to the builder XML input file.
-     */
-    public String builderXMLPath;
-
-    /**
-     * The default path to the builder XML.
-     */
-    public static final String DEFAULT_BUILDER_XML = "resources/doclet.xml";
 
     /**
      * The meta tag keywords instance.
@@ -209,7 +199,7 @@ public abstract class BaseConfiguration {
     protected static final String sharedResourceBundleName =
             "jdk.javadoc.internal.doclets.toolkit.resources.doclets";
 
-    VisibleMemberCache visibleMemberCache = null;
+    private VisibleMemberCache visibleMemberCache;
 
     public PropertyUtils propertyUtils = null;
 
@@ -237,7 +227,8 @@ public abstract class BaseConfiguration {
 
     private boolean initialized = false;
 
-    protected void initConfiguration(DocletEnvironment docEnv) {
+    protected void initConfiguration(DocletEnvironment docEnv,
+                                     Function<String, String> resourceKeyMapper) {
         if (initialized) {
             throw new IllegalStateException("configuration previously initialized");
         }
@@ -250,6 +241,8 @@ public abstract class BaseConfiguration {
         if (!options.javafx()) {
             options.setJavaFX(isJavaFXMode());
         }
+
+        getDocResources().setKeyMapper(resourceKeyMapper);
 
         // Once docEnv and Utils have been initialized, others should be safe.
         metakeywords = new MetaKeywords(this);
@@ -347,7 +340,7 @@ public abstract class BaseConfiguration {
         }
 
         // add entries for modules which may not have exported packages
-        modules.forEach(mdle -> modulePackages.computeIfAbsent(mdle, m -> Collections.emptySet()));
+        modules.forEach(mdle -> modulePackages.computeIfAbsent(mdle, m -> Set.of()));
 
         modules.addAll(modulePackages.keySet());
         showModules = !modules.isEmpty();
@@ -380,6 +373,28 @@ public abstract class BaseConfiguration {
             extern.checkPlatformLinks(options.linkPlatformProperties(), reporter);
         }
         typeElementCatalog = new TypeElementCatalog(includedTypeElements, this);
+
+        String snippetPath = options.snippetPath();
+        if (snippetPath != null) {
+            Messages messages = getMessages();
+            JavaFileManager fm = getFileManager();
+            if (fm instanceof StandardJavaFileManager) {
+                try {
+                    List<Path> sp = Arrays.stream(snippetPath.split(File.pathSeparator))
+                            .map(Path::of)
+                            .toList();
+                    StandardJavaFileManager sfm = (StandardJavaFileManager) fm;
+                    sfm.setLocationFromPaths(DocumentationTool.Location.SNIPPET_PATH, sp);
+                } catch (IOException | InvalidPathException e) {
+                    throw new SimpleDocletException(messages.getResources().getText(
+                            "doclet.error_setting_snippet_path", snippetPath, e), e);
+                }
+            } else {
+                throw new SimpleDocletException(messages.getResources().getText(
+                        "doclet.cannot_use_snippet_path", snippetPath));
+            }
+        }
+
         initTagletManager(options.customTagStrs());
         options.groupPairs().forEach(grp -> {
             if (showModules) {
@@ -603,18 +618,6 @@ public abstract class BaseConfiguration {
     public abstract WriterFactory getWriterFactory();
 
     /**
-     * Return the input stream to the builder XML.
-     *
-     * @return the input steam to the builder XML.
-     * @throws DocFileIOException when the given XML file cannot be found or opened.
-     */
-    public InputStream getBuilderXML() throws DocFileIOException {
-        return builderXMLPath == null ?
-                BaseConfiguration.class.getResourceAsStream(DEFAULT_BUILDER_XML) :
-                DocFile.createFileForInput(this, builderXMLPath).openInputStream();
-    }
-
-    /**
      * Return the Locale for this document.
      *
      * @return the current locale
@@ -635,15 +638,10 @@ public abstract class BaseConfiguration {
      */
     public abstract JavaFileManager getFileManager();
 
-    public abstract boolean showMessage(DocTreePath path, String key);
-
-    public abstract boolean showMessage(Element e, String key);
-
     /*
      * Splits the elements in a collection to its individual
      * collection.
      */
-    @SuppressWarnings("preview")
     private static class Splitter {
 
         final Set<ModuleElement> mset = new LinkedHashSet<>();
@@ -700,7 +698,7 @@ public abstract class BaseConfiguration {
         return getOptions().allowScriptInComments();
     }
 
-    public synchronized VisibleMemberTable getVisibleMemberTable(TypeElement te) {
+    public VisibleMemberTable getVisibleMemberTable(TypeElement te) {
         return visibleMemberCache.getVisibleMemberTable(te);
     }
 
@@ -794,15 +792,25 @@ public abstract class BaseConfiguration {
             doclintOpts.add(DocLint.XCUSTOM_TAGS_PREFIX + customTags);
         }
 
-        doclintOpts.add(DocLint.XHTML_VERSION_PREFIX + "html5");
-
         doclint = new DocLint();
         doclint.init(docEnv.getDocTrees(), docEnv.getElementUtils(), docEnv.getTypeUtils(),
                 doclintOpts.toArray(new String[0]));
     }
 
-    public boolean haveDocLint() {
-        return (doclint != null);
+    public boolean isDocLintReferenceGroupEnabled() {
+        return isDocLintGroupEnabled(jdk.javadoc.internal.doclint.Messages.Group.REFERENCE);
+    }
+
+    public boolean isDocLintSyntaxGroupEnabled() {
+        return isDocLintGroupEnabled(jdk.javadoc.internal.doclint.Messages.Group.SYNTAX);
+    }
+
+    private boolean isDocLintGroupEnabled(jdk.javadoc.internal.doclint.Messages.Group group) {
+        // Use AccessKind.PUBLIC as a stand-in, since it is not common to
+        // set DocLint options per access kind (as is common with javac.)
+        // A more sophisticated solution might be to derive the access kind from the
+        // element owning the comment, and its enclosing elements.
+        return doclint != null && doclint.isGroupEnabled(group, Env.AccessKind.PUBLIC);
     }
     //</editor-fold>
 }

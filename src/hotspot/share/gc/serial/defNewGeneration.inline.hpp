@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,13 @@
 #define SHARE_GC_SERIAL_DEFNEWGENERATION_INLINE_HPP
 
 #include "gc/serial/defNewGeneration.hpp"
+
 #include "gc/shared/cardTableRS.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
 #include "gc/shared/genOopClosures.inline.hpp"
 #include "gc/shared/space.inline.hpp"
 #include "oops/access.inline.hpp"
+#include "utilities/devirtualizer.inline.hpp"
 
 // Methods of protected closure types
 
@@ -61,8 +63,7 @@ inline void DefNewGeneration::KeepAliveClosure::do_oop_work(T* p) {
   // dirty cards in the young gen are never scanned, so the
   // extra check probably isn't worthwhile.
   if (GenCollectedHeap::heap()->is_in_reserved(p)) {
-    oop obj = RawAccess<IS_NOT_NULL>::oop_load(p);
-    _rs->inline_write_ref_field_gc(p, obj);
+    _rs->inline_write_ref_field_gc(p);
   }
 }
 
@@ -84,7 +85,7 @@ inline void DefNewGeneration::FastKeepAliveClosure::do_oop_work(T* p) {
   // generation pointer.
   oop obj = RawAccess<IS_NOT_NULL>::oop_load(p);
   if ((cast_from_oop<HeapWord*>(obj) < _boundary) && GenCollectedHeap::heap()->is_in_reserved(p)) {
-    _rs->inline_write_ref_field_gc(p, obj);
+    _rs->inline_write_ref_field_gc(p);
   }
 }
 

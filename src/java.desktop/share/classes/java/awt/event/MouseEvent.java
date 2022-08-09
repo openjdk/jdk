@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import java.awt.Point;
 import java.awt.Toolkit;
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.io.Serial;
 
 import sun.awt.AWTAccessor;
 import sun.awt.SunToolkit;
@@ -188,7 +189,7 @@ import sun.awt.SunToolkit;
  *
  * @since 1.1
  */
-public class MouseEvent extends InputEvent {
+public non-sealed class MouseEvent extends InputEvent {
 
     /**
      * The first number in the range of ids used for mouse events.
@@ -381,9 +382,10 @@ public class MouseEvent extends InputEvent {
      */
     boolean popupTrigger = false;
 
-    /*
-     * JDK 1.1 serialVersionUID
+    /**
+     * Use serialVersionUID from JDK 1.1 for interoperability.
      */
+    @Serial
     private static final long serialVersionUID = -991214153494842848L;
 
     /**
@@ -1192,8 +1194,8 @@ public class MouseEvent extends InputEvent {
      * @throws ClassNotFoundException if the class of a serialized object could
      *         not be found
      * @throws IOException if an I/O error occurs
-     * @serial
      */
+    @Serial
     @SuppressWarnings("deprecation")
     private void readObject(ObjectInputStream s)
       throws IOException, ClassNotFoundException {

@@ -35,8 +35,7 @@
 
 package java.util.concurrent;
 
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.VarHandle;
+import jdk.internal.misc.Unsafe;
 
 /**
  * A {@link ForkJoinTask} with a completion action performed when
@@ -357,7 +356,7 @@ import java.lang.invoke.VarHandle;
  * within this method to ensure thread safety of accesses to fields of
  * this task or other completed tasks.
  *
- * <p><b>Completion Traversals</b>. If using {@code onCompletion} to
+ * <p><b>Completion Traversals.</b> If using {@code onCompletion} to
  * process completions is inapplicable or inconvenient, you can use
  * methods {@link #firstComplete} and {@link #nextComplete} to create
  * custom traversals.  For example, to define a MapReducer that only
@@ -419,6 +418,8 @@ import java.lang.invoke.VarHandle;
  * PacketSender p = new PacketSender();
  * new HeaderBuilder(p, ...).fork();
  * new BodyBuilder(p, ...).fork();}</pre>
+ *
+ * @param <T> the type of the result of the completer
  *
  * @since 1.8
  * @author Doug Lea
@@ -538,7 +539,7 @@ public abstract class CountedCompleter<T> extends ForkJoinTask<T> {
      * @param delta the value to add
      */
     public final void addToPendingCount(int delta) {
-        PENDING.getAndAdd(this, delta);
+        U.getAndAddInt(this, PENDING, delta);
     }
 
     /**
@@ -550,7 +551,12 @@ public abstract class CountedCompleter<T> extends ForkJoinTask<T> {
      * @return {@code true} if successful
      */
     public final boolean compareAndSetPendingCount(int expected, int count) {
-        return PENDING.compareAndSet(this, expected, count);
+        return U.compareAndSetInt(this, PENDING, expected, count);
+    }
+
+    // internal-only weak version
+    final boolean weakCompareAndSetPendingCount(int expected, int count) {
+        return U.weakCompareAndSetInt(this, PENDING, expected, count);
     }
 
     /**
@@ -562,7 +568,7 @@ public abstract class CountedCompleter<T> extends ForkJoinTask<T> {
     public final int decrementPendingCountUnlessZero() {
         int c;
         do {} while ((c = pending) != 0 &&
-                     !PENDING.weakCompareAndSet(this, c, c - 1));
+                     !weakCompareAndSetPendingCount(c, c - 1));
         return c;
     }
 
@@ -595,7 +601,7 @@ public abstract class CountedCompleter<T> extends ForkJoinTask<T> {
                     return;
                 }
             }
-            else if (PENDING.weakCompareAndSet(a, c, c - 1))
+            else if (a.weakCompareAndSetPendingCount(c, c - 1))
                 return;
         }
     }
@@ -618,7 +624,7 @@ public abstract class CountedCompleter<T> extends ForkJoinTask<T> {
                     return;
                 }
             }
-            else if (PENDING.weakCompareAndSet(a, c, c - 1))
+            else if (a.weakCompareAndSetPendingCount(c, c - 1))
                 return;
         }
     }
@@ -663,7 +669,7 @@ public abstract class CountedCompleter<T> extends ForkJoinTask<T> {
         for (int c;;) {
             if ((c = pending) == 0)
                 return this;
-            else if (PENDING.weakCompareAndSet(this, c, c - 1))
+            else if (weakCompareAndSetPendingCount(c, c - 1))
                 return null;
         }
     }
@@ -718,30 +724,32 @@ public abstract class CountedCompleter<T> extends ForkJoinTask<T> {
      *                 processed.
      */
     public final void helpComplete(int maxTasks) {
-        Thread t; ForkJoinWorkerThread wt;
-        if (maxTasks > 0 && status >= 0) {
-            if ((t = Thread.currentThread()) instanceof ForkJoinWorkerThread)
-                (wt = (ForkJoinWorkerThread)t).pool.
-                    helpComplete(wt.workQueue, this, maxTasks);
-            else
-                ForkJoinPool.common.externalHelpComplete(this, maxTasks);
-        }
+        ForkJoinPool.WorkQueue q; Thread t; boolean owned;
+        if (owned = (t = Thread.currentThread()) instanceof ForkJoinWorkerThread)
+            q = ((ForkJoinWorkerThread)t).workQueue;
+        else
+            q = ForkJoinPool.commonQueue();
+        if (q != null && maxTasks > 0)
+            q.helpComplete(this, owned, maxTasks);
     }
+    // ForkJoinTask overrides
 
     /**
      * Supports ForkJoinTask exception propagation.
      */
-    void internalPropagateException(Throwable ex) {
-        CountedCompleter<?> a = this, s = a;
-        while (a.onExceptionalCompletion(ex, s) &&
-               (a = (s = a).completer) != null && a.status >= 0 &&
-               isExceptionalStatus(a.recordExceptionalCompletion(ex)))
-            ;
+    @Override
+    final int trySetException(Throwable ex) {
+        CountedCompleter<?> a = this, p = a;
+        do {} while (isExceptionalStatus(a.trySetThrown(ex)) &&
+                     a.onExceptionalCompletion(ex, p) &&
+                     (a = (p = a).completer) != null && a.status >= 0);
+        return status;
     }
 
     /**
      * Implements execution conventions for CountedCompleters.
      */
+    @Override
     protected final boolean exec() {
         compute();
         return false;
@@ -756,6 +764,7 @@ public abstract class CountedCompleter<T> extends ForkJoinTask<T> {
      *
      * @return the result of the computation
      */
+    @Override
     public T getRawResult() { return null; }
 
     /**
@@ -765,17 +774,19 @@ public abstract class CountedCompleter<T> extends ForkJoinTask<T> {
      * overridden to update existing objects or fields, then it must
      * in general be defined to be thread-safe.
      */
+    @Override
     protected void setRawResult(T t) { }
 
-    // VarHandle mechanics
-    private static final VarHandle PENDING;
+    /*
+     * This class uses jdk-internal Unsafe for atomics and special
+     * memory modes, rather than VarHandles, to avoid initialization
+     * dependencies in other jdk components that require early
+     * parallelism.
+     */
+    private static final Unsafe U;
+    private static final long PENDING;
     static {
-        try {
-            MethodHandles.Lookup l = MethodHandles.lookup();
-            PENDING = l.findVarHandle(CountedCompleter.class, "pending", int.class);
-
-        } catch (ReflectiveOperationException e) {
-            throw new ExceptionInInitializerError(e);
-        }
+        U = Unsafe.getUnsafe();
+        PENDING = U.objectFieldOffset(CountedCompleter.class, "pending");
     }
 }

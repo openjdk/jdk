@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,16 +40,11 @@ import jdk.javadoc.internal.doclets.toolkit.Messages;
 import static jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable.Kind.*;
 
 /**
- *  An alphabetical index of elements, search tags, and other items.
- *  Two tables are maintained:
- *  one is indexed by the first character of each items name;
- *  the other is index by the item's category, indicating the JavaScript
- *  file in which the item should be written.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
+ * An alphabetical index of elements, search tags, and other items.
+ * Two tables are maintained:
+ * one is indexed by the first character of each items name;
+ * the other is index by the item's category, indicating the JavaScript
+ * file in which the item should be written.
  */
 public class IndexBuilder {
 
@@ -172,7 +167,9 @@ public class IndexBuilder {
         }
 
         itemsByCategory.computeIfAbsent(item.getCategory(),
-                    c -> new TreeSet<>(mainComparator))
+                    c -> new TreeSet<>(c == IndexItem.Category.TYPES
+                            ? makeTypeSearchIndexComparator()
+                            : makeGenericSearchIndexComparator()))
                 .add(item);
     }
 
@@ -344,4 +341,28 @@ public class IndexBuilder {
         };
     }
 
+    /**
+     * Returns a Comparator for IndexItems in the types category of the search index.
+     * Items are compared by short name, falling back to the main comparator if names are equal.
+     *
+     * @return a Comparator
+     */
+    public Comparator<IndexItem> makeTypeSearchIndexComparator() {
+        Comparator<IndexItem> simpleNameComparator =
+                (ii1, ii2) -> utils.compareStrings(ii1.getSimpleName(), ii2.getSimpleName());
+        return simpleNameComparator.thenComparing(mainComparator);
+    }
+
+    /**
+     * Returns a Comparator for IndexItems in the modules, packages, members, and search tags
+     * categories of the search index.
+     * Items are compared by label, falling back to the main comparator if names are equal.
+     *
+     * @return a Comparator
+     */
+    public Comparator<IndexItem> makeGenericSearchIndexComparator() {
+        Comparator<IndexItem> labelComparator =
+                (ii1, ii2) -> utils.compareStrings(ii1.getLabel(), ii2.getLabel());
+        return labelComparator.thenComparing(mainComparator);
+    }
 }

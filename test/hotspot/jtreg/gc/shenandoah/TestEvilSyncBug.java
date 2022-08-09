@@ -23,7 +23,7 @@
  */
 
 /*
- * @test TestEvilSyncBug
+ * @test
  * @summary Tests for crash/assert when attaching init thread during shutdown
  * @requires vm.gc.Shenandoah
  * @library /test/lib

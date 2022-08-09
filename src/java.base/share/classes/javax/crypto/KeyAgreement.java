@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,9 @@ import sun.security.jca.GetInstance.Instance;
  * with two other parties, {@code doPhase} needs to be called twice,
  * the first time setting the {@code lastPhase} flag to
  * {@code false}, and the second time setting it to {@code true}.
- * There may be any number of parties involved in a key exchange.
+ * There may be any number of parties involved in a key exchange.  However,
+ * support for key exchanges with more than two parties is implementation
+ * specific or as specified by the standard key agreement algorithm.
  *
  * <p> Every implementation of the Java platform is required to support the
  * following standard {@code KeyAgreement} algorithm:
@@ -103,7 +105,7 @@ public class KeyAgreement {
     private final Object lock;
 
     /**
-     * Creates a KeyAgreement object.
+     * Creates a {@code KeyAgreement} object.
      *
      * @param keyAgreeSpi the delegate
      * @param provider the provider
@@ -141,11 +143,11 @@ public class KeyAgreement {
      * Returns a {@code KeyAgreement} object that implements the
      * specified key agreement algorithm.
      *
-     * <p> This method traverses the list of registered security Providers,
-     * starting with the most preferred Provider.
-     * A new KeyAgreement object encapsulating the
-     * KeyAgreementSpi implementation from the first
-     * Provider that supports the specified algorithm is returned.
+     * <p> This method traverses the list of registered security providers,
+     * starting with the most preferred provider.
+     * A new {@code KeyAgreement} object encapsulating the
+     * {@code KeyAgreementSpi} implementation from the first
+     * provider that supports the specified algorithm is returned.
      *
      * <p> Note that the list of registered providers may be retrieved via
      * the {@link Security#getProviders() Security.getProviders()} method.
@@ -155,7 +157,7 @@ public class KeyAgreement {
      * {@code jdk.security.provider.preferred}
      * {@link Security#getProperty(String) Security} property to determine
      * the preferred provider order for the specified algorithm. This
-     * may be different than the order of providers returned by
+     * may be different from the order of providers returned by
      * {@link Security#getProviders() Security.getProviders()}.
      *
      * @param algorithm the standard name of the requested key agreement
@@ -184,7 +186,7 @@ public class KeyAgreement {
         Iterator<Service> t = services.iterator();
         while (t.hasNext()) {
             Service s = t.next();
-            if (JceSecurity.canUseProvider(s.getProvider()) == false) {
+            if (!JceSecurity.canUseProvider(s.getProvider())) {
                 continue;
             }
             return new KeyAgreement(s, t, algorithm);
@@ -197,8 +199,8 @@ public class KeyAgreement {
      * Returns a {@code KeyAgreement} object that implements the
      * specified key agreement algorithm.
      *
-     * <p> A new KeyAgreement object encapsulating the
-     * KeyAgreementSpi implementation from the specified provider
+     * <p> A new {@code KeyAgreement} object encapsulating the
+     * {@code KeyAgreementSpi} implementation from the specified provider
      * is returned.  The specified provider must be registered
      * in the security provider list.
      *
@@ -244,9 +246,9 @@ public class KeyAgreement {
      * Returns a {@code KeyAgreement} object that implements the
      * specified key agreement algorithm.
      *
-     * <p> A new KeyAgreement object encapsulating the
-     * KeyAgreementSpi implementation from the specified Provider
-     * object is returned.  Note that the specified Provider object
+     * <p> A new {@code KeyAgreement} object encapsulating the
+     * {@code KeyAgreementSpi} implementation from the specified
+     * provider is returned.  Note that the specified provider
      * does not have to be registered in the provider list.
      *
      * @param algorithm the standard name of the requested key agreement
@@ -265,7 +267,7 @@ public class KeyAgreement {
      *
      * @throws NoSuchAlgorithmException if a {@code KeyAgreementSpi}
      *         implementation for the specified algorithm is not available
-     *         from the specified Provider object
+     *         from the specified {@code Provider} object
      *
      * @throws NullPointerException if {@code algorithm} is {@code null}
      *
@@ -317,12 +319,12 @@ public class KeyAgreement {
                 } else {
                     s = serviceIterator.next();
                 }
-                if (JceSecurity.canUseProvider(s.getProvider()) == false) {
+                if (!JceSecurity.canUseProvider(s.getProvider())) {
                     continue;
                 }
                 try {
                     Object obj = s.newInstance(null);
-                    if (obj instanceof KeyAgreementSpi == false) {
+                    if (!(obj instanceof KeyAgreementSpi)) {
                         continue;
                     }
                     spi = (KeyAgreementSpi)obj;
@@ -375,10 +377,10 @@ public class KeyAgreement {
                     s = serviceIterator.next();
                 }
                 // if provider says it does not support this key, ignore it
-                if (s.supportsParameter(key) == false) {
+                if (!s.supportsParameter(key)) {
                     continue;
                 }
-                if (JceSecurity.canUseProvider(s.getProvider()) == false) {
+                if (!JceSecurity.canUseProvider(s.getProvider())) {
                     continue;
                 }
                 try {
@@ -435,7 +437,8 @@ public class KeyAgreement {
      * implementation of the highest-priority
      * installed provider as the source of randomness.
      * (If none of the installed providers supply an implementation of
-     * SecureRandom, a system-provided source of randomness will be used.)
+     * {@code SecureRandom}, a system-provided source of randomness
+     * will be used.)
      *
      * @param key the party's private information. For example, in the case
      * of the Diffie-Hellman key agreement, this would be the party's own
@@ -446,7 +449,7 @@ public class KeyAgreement {
      * has an incompatible algorithm type.
      */
     public final void init(Key key) throws InvalidKeyException {
-        init(key, JCAUtil.getSecureRandom());
+        init(key, JCAUtil.getDefSecureRandom());
     }
 
     /**
@@ -498,7 +501,8 @@ public class KeyAgreement {
      * implementation of the highest-priority
      * installed provider as the source of randomness.
      * (If none of the installed providers supply an implementation of
-     * SecureRandom, a system-provided source of randomness will be used.)
+     * {@code SecureRandom}, a system-provided source of randomness
+     * will be used.)
      *
      * @param key the party's private information. For example, in the case
      * of the Diffie-Hellman key agreement, this would be the party's own
@@ -514,7 +518,7 @@ public class KeyAgreement {
     public final void init(Key key, AlgorithmParameterSpec params)
         throws InvalidKeyException, InvalidAlgorithmParameterException
     {
-        init(key, params, JCAUtil.getSecureRandom());
+        init(key, params, JCAUtil.getDefSecureRandom());
     }
 
     private String getProviderName() {
@@ -561,10 +565,10 @@ public class KeyAgreement {
      * @param key the key for this phase. For example, in the case of
      * Diffie-Hellman between 2 parties, this would be the other party's
      * Diffie-Hellman public key.
-     * @param lastPhase flag which indicates whether or not this is the last
+     * @param lastPhase flag which indicates whether this is the last
      * phase of this key agreement.
      *
-     * @return the (intermediate) key resulting from this phase, or null
+     * @return the (intermediate) key resulting from this phase, or {@code null}
      * if this phase does not yield a key
      *
      * @exception InvalidKeyException if the given key is inappropriate for

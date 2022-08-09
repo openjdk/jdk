@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/classLoaderData.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/z/zCollectedHeap.hpp"
@@ -37,7 +38,10 @@
 #include "gc/z/zUtils.inline.hpp"
 #include "memory/classLoaderMetaspace.hpp"
 #include "memory/iterator.hpp"
+#include "memory/metaspaceCriticalAllocation.hpp"
 #include "memory/universe.hpp"
+#include "oops/stackChunkOop.hpp"
+#include "runtime/continuationJavaClasses.hpp"
 #include "utilities/align.hpp"
 
 ZCollectedHeap* ZCollectedHeap::heap() {
@@ -49,8 +53,8 @@ ZCollectedHeap::ZCollectedHeap() :
     _barrier_set(),
     _initialize(&_barrier_set),
     _heap(),
-    _director(new ZDirector()),
     _driver(new ZDriver()),
+    _director(new ZDirector(_driver)),
     _stat(new ZStat()),
     _runtime_workers() {}
 
@@ -79,9 +83,8 @@ void ZCollectedHeap::initialize_serviceability() {
 class ZStopConcurrentGCThreadClosure : public ThreadClosure {
 public:
   virtual void do_thread(Thread* thread) {
-    if (thread->is_ConcurrentGC_thread() &&
-        !thread->is_GC_task_thread()) {
-      static_cast<ConcurrentGCThread*>(thread)->stop();
+    if (thread->is_ConcurrentGC_thread()) {
+      ConcurrentGCThread::cast(thread)->stop();
     }
   }
 };
@@ -121,6 +124,27 @@ bool ZCollectedHeap::is_in(const void* p) const {
   return _heap.is_in((uintptr_t)p);
 }
 
+bool ZCollectedHeap::requires_barriers(stackChunkOop obj) const {
+  uintptr_t* cont_addr = obj->field_addr<uintptr_t>(jdk_internal_vm_StackChunk::cont_offset());
+
+  if (!_heap.is_allocating(cast_from_oop<uintptr_t>(obj))) {
+    // An object that isn't allocating, is visible from GC tracing. Such
+    // stack chunks require barriers.
+    return true;
+  }
+
+  if (!ZAddress::is_good_or_null(*cont_addr)) {
+    // If a chunk is allocated after a GC started, but before relocate start
+    // we can have an allocating chunk that isn't deeply good. That means that
+    // the contained oops might be bad and require GC barriers.
+    return true;
+  }
+
+  // The chunk is allocating and its pointers are good. This chunk needs no
+  // GC barriers
+  return false;
+}
+
 uint32_t ZCollectedHeap::hash_oop(oop obj) const {
   return _heap.hash_oop(ZOop::to_address(obj));
 }
@@ -136,7 +160,7 @@ HeapWord* ZCollectedHeap::allocate_new_tlab(size_t min_size, size_t requested_si
   return (HeapWord*)addr;
 }
 
-oop ZCollectedHeap::array_allocate(Klass* klass, int size, int length, bool do_zero, TRAPS) {
+oop ZCollectedHeap::array_allocate(Klass* klass, size_t size, int length, bool do_zero, TRAPS) {
   if (!do_zero) {
     return CollectedHeap::array_allocate(klass, size, length, false /* do_zero */, THREAD);
   }
@@ -153,34 +177,17 @@ HeapWord* ZCollectedHeap::mem_allocate(size_t size, bool* gc_overhead_limit_was_
 MetaWord* ZCollectedHeap::satisfy_failed_metadata_allocation(ClassLoaderData* loader_data,
                                                              size_t size,
                                                              Metaspace::MetadataType mdtype) {
-  MetaWord* result;
-
   // Start asynchronous GC
   collect(GCCause::_metadata_GC_threshold);
 
   // Expand and retry allocation
-  result = loader_data->metaspace_non_null()->expand_and_allocate(size, mdtype);
+  MetaWord* const result = loader_data->metaspace_non_null()->expand_and_allocate(size, mdtype);
   if (result != NULL) {
     return result;
   }
 
-  // Start synchronous GC
-  collect(GCCause::_metadata_GC_clear_soft_refs);
-
-  // Retry allocation
-  result = loader_data->metaspace_non_null()->allocate(size, mdtype);
-  if (result != NULL) {
-    return result;
-  }
-
-  // Expand and retry allocation
-  result = loader_data->metaspace_non_null()->expand_and_allocate(size, mdtype);
-  if (result != NULL) {
-    return result;
-  }
-
-  // Out of memory
-  return NULL;
+  // As a last resort, try a critical allocation, riding on a synchronous full GC
+  return MetaspaceCriticalAllocation::allocate(loader_data, size, mdtype);
 }
 
 void ZCollectedHeap::collect(GCCause::Cause cause) {
@@ -226,18 +233,23 @@ bool ZCollectedHeap::uses_stack_watermark_barrier() const {
 }
 
 GrowableArray<GCMemoryManager*> ZCollectedHeap::memory_managers() {
-  return GrowableArray<GCMemoryManager*>(1, 1, _heap.serviceability_memory_manager());
+  GrowableArray<GCMemoryManager*> memory_managers(2);
+  memory_managers.append(_heap.serviceability_cycle_memory_manager());
+  memory_managers.append(_heap.serviceability_pause_memory_manager());
+  return memory_managers;
 }
 
 GrowableArray<MemoryPool*> ZCollectedHeap::memory_pools() {
-  return GrowableArray<MemoryPool*>(1, 1, _heap.serviceability_memory_pool());
+  GrowableArray<MemoryPool*> memory_pools(1);
+  memory_pools.append(_heap.serviceability_memory_pool());
+  return memory_pools;
 }
 
 void ZCollectedHeap::object_iterate(ObjectClosure* cl) {
   _heap.object_iterate(cl, true /* visit_weaks */);
 }
 
-ParallelObjectIterator* ZCollectedHeap::parallel_object_iterator(uint nworkers) {
+ParallelObjectIteratorImpl* ZCollectedHeap::parallel_object_iterator(uint nworkers) {
   return _heap.parallel_object_iterator(nworkers, true /* visit_weaks */);
 }
 
@@ -261,7 +273,7 @@ void ZCollectedHeap::verify_nmethod(nmethod* nm) {
   // Does nothing
 }
 
-WorkGang* ZCollectedHeap::safepoint_workers() {
+WorkerThreads* ZCollectedHeap::safepoint_workers() {
   return _runtime_workers.workers();
 }
 

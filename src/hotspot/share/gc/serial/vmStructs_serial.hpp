@@ -45,7 +45,7 @@
                           declare_toplevel_type,                              \
                           declare_integer_type)                               \
   declare_type(SerialHeap,                   GenCollectedHeap)                \
-  declare_type(TenuredGeneration,            CardGeneration)                  \
+  declare_type(TenuredGeneration,            Generation)                      \
   declare_type(TenuredSpace,                 OffsetTableContigSpace)          \
                                                                               \
   declare_type(DefNewGeneration,             Generation)                      \

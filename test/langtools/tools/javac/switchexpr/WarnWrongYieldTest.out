@@ -1,29 +1,29 @@
-WarnWrongYieldTest.java:39:11: compiler.warn.restricted.type.not.allowed: yield, 14
-WarnWrongYieldTest.java:45:5: compiler.warn.restricted.type.not.allowed: yield, 14
-WarnWrongYieldTest.java:72:15: compiler.warn.restricted.type.not.allowed: yield, 14
-WarnWrongYieldTest.java:75:15: compiler.warn.restricted.type.not.allowed: yield, 14
-WarnWrongYieldTest.java:81:21: compiler.warn.restricted.type.not.allowed: yield, 14
-WarnWrongYieldTest.java:93:9: compiler.warn.invalid.yield
-WarnWrongYieldTest.java:98:9: compiler.warn.invalid.yield
-WarnWrongYieldTest.java:103:9: compiler.warn.invalid.yield
-WarnWrongYieldTest.java:108:9: compiler.warn.invalid.yield
-WarnWrongYieldTest.java:113:9: compiler.warn.invalid.yield
-WarnWrongYieldTest.java:118:9: compiler.warn.invalid.yield
-WarnWrongYieldTest.java:123:22: compiler.warn.invalid.yield
-WarnWrongYieldTest.java:152:24: compiler.warn.invalid.yield
-WarnWrongYieldTest.java:164:18: compiler.warn.restricted.type.not.allowed: yield, 14
-WarnWrongYieldTest.java:168:23: compiler.warn.restricted.type.not.allowed: yield, 14
-WarnWrongYieldTest.java:34:28: compiler.warn.illegal.ref.to.restricted.type: yield
-WarnWrongYieldTest.java:45:5: compiler.warn.illegal.ref.to.restricted.type: yield
-WarnWrongYieldTest.java:168:23: compiler.warn.illegal.ref.to.restricted.type: yield
-WarnWrongYieldTest.java:72:9: compiler.warn.illegal.ref.to.restricted.type: yield
-WarnWrongYieldTest.java:75:9: compiler.warn.illegal.ref.to.restricted.type: yield
-WarnWrongYieldTest.java:75:24: compiler.warn.illegal.ref.to.restricted.type: yield
-WarnWrongYieldTest.java:78:25: compiler.warn.illegal.ref.to.restricted.type: yield
-WarnWrongYieldTest.java:81:15: compiler.warn.illegal.ref.to.restricted.type: yield
-WarnWrongYieldTest.java:81:30: compiler.warn.illegal.ref.to.restricted.type: yield
-WarnWrongYieldTest.java:84:27: compiler.warn.illegal.ref.to.restricted.type: yield
-WarnWrongYieldTest.java:84:43: compiler.warn.illegal.ref.to.restricted.type: yield
-WarnWrongYieldTest.java:153:24: compiler.warn.illegal.ref.to.restricted.type: yield
-WarnWrongYieldTest.java:164:18: compiler.warn.illegal.ref.to.restricted.type: yield
+WarnWrongYieldTest.java:16:11: compiler.warn.restricted.type.not.allowed: yield, 14
+WarnWrongYieldTest.java:22:5: compiler.warn.restricted.type.not.allowed: yield, 14
+WarnWrongYieldTest.java:49:15: compiler.warn.restricted.type.not.allowed: yield, 14
+WarnWrongYieldTest.java:52:15: compiler.warn.restricted.type.not.allowed: yield, 14
+WarnWrongYieldTest.java:58:21: compiler.warn.restricted.type.not.allowed: yield, 14
+WarnWrongYieldTest.java:70:9: compiler.warn.invalid.yield
+WarnWrongYieldTest.java:75:9: compiler.warn.invalid.yield
+WarnWrongYieldTest.java:80:9: compiler.warn.invalid.yield
+WarnWrongYieldTest.java:85:9: compiler.warn.invalid.yield
+WarnWrongYieldTest.java:90:9: compiler.warn.invalid.yield
+WarnWrongYieldTest.java:95:9: compiler.warn.invalid.yield
+WarnWrongYieldTest.java:100:22: compiler.warn.invalid.yield
+WarnWrongYieldTest.java:129:24: compiler.warn.invalid.yield
+WarnWrongYieldTest.java:141:18: compiler.warn.restricted.type.not.allowed: yield, 14
+WarnWrongYieldTest.java:145:23: compiler.warn.restricted.type.not.allowed: yield, 14
+WarnWrongYieldTest.java:11:28: compiler.warn.illegal.ref.to.restricted.type: yield
+WarnWrongYieldTest.java:22:5: compiler.warn.illegal.ref.to.restricted.type: yield
+WarnWrongYieldTest.java:145:23: compiler.warn.illegal.ref.to.restricted.type: yield
+WarnWrongYieldTest.java:49:9: compiler.warn.illegal.ref.to.restricted.type: yield
+WarnWrongYieldTest.java:52:9: compiler.warn.illegal.ref.to.restricted.type: yield
+WarnWrongYieldTest.java:52:24: compiler.warn.illegal.ref.to.restricted.type: yield
+WarnWrongYieldTest.java:55:25: compiler.warn.illegal.ref.to.restricted.type: yield
+WarnWrongYieldTest.java:58:15: compiler.warn.illegal.ref.to.restricted.type: yield
+WarnWrongYieldTest.java:58:30: compiler.warn.illegal.ref.to.restricted.type: yield
+WarnWrongYieldTest.java:61:27: compiler.warn.illegal.ref.to.restricted.type: yield
+WarnWrongYieldTest.java:61:43: compiler.warn.illegal.ref.to.restricted.type: yield
+WarnWrongYieldTest.java:130:24: compiler.warn.illegal.ref.to.restricted.type: yield
+WarnWrongYieldTest.java:141:18: compiler.warn.illegal.ref.to.restricted.type: yield
 28 warnings

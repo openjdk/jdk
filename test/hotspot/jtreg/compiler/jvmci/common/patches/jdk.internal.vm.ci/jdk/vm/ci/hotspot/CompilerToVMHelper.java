@@ -172,12 +172,7 @@ public class CompilerToVMHelper {
             speculations = new byte[0];
             failedSpeculationsAddress = 0L;
         }
-        return CTVM.installCode(target, compiledCode, code, failedSpeculationsAddress, speculations);
-    }
-
-    public static int getMetadata(TargetDescription target,
-            HotSpotCompiledCode compiledCode, HotSpotMetaData metaData) {
-        return CTVM.getMetadata(target, compiledCode, metaData);
+        return CTVM.installCode(compiledCode, code, failedSpeculationsAddress, speculations);
     }
 
     public static void resetCompilationStatistics() {
@@ -293,10 +288,6 @@ public class CompilerToVMHelper {
 
     public static boolean shouldDebugNonSafepoints() {
         return CTVM.shouldDebugNonSafepoints();
-    }
-
-    public static void writeDebugOutput(byte[] bytes, int offset, int length) {
-        CTVM.writeDebugOutput(bytes, offset, length, true, true);
     }
 
     public static void flushDebugOutput() {

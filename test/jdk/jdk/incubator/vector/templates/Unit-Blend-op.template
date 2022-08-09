@@ -7,5 +7,5 @@
     static void [[TEST]]$vectorteststype$(IntFunction<$type$[]> fa, IntFunction<$type$[]> fb,
                                           IntFunction<boolean[]> fm) {
 [[KERNEL]]
-        assertArraysEquals(a, b, r, mask, $vectorteststype$::blend);
+        assertArraysEquals(r, a, b, mask, $vectorteststype$::blend);
     }

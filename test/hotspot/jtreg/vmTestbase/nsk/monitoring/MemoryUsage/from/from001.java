@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,7 @@ public class from001 {
         Thread thread = Thread.currentThread();
         long id = thread.getId();
 
-        Object[] params = {new Long(id), new Integer(Integer.MAX_VALUE)};
+        Object[] params = {Long.valueOf(id), Integer.valueOf(Integer.MAX_VALUE)};
         String[] signature = {"long", "int"};
 
         ObjectName mbeanObjectName = null;

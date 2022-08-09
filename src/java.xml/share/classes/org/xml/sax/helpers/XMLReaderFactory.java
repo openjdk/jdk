@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -236,6 +236,7 @@ final public class XMLReaderFactory
      *
      * @return instance of provider class if found or null
      */
+    @SuppressWarnings("removal")
     private static <T> T findServiceProvider(final Class<T> type, final ClassLoader loader)
             throws SAXException {
         ClassLoader cl = Objects.requireNonNull(loader);

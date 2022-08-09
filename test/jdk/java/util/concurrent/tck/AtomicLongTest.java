@@ -129,6 +129,7 @@ public class AtomicLongTest extends JSR166TestCase {
      * repeated weakCompareAndSet succeeds in changing value when equal
      * to expected
      */
+    @SuppressWarnings("deprecation")
     public void testWeakCompareAndSet() {
         AtomicLong ai = new AtomicLong(1);
         do {} while (!ai.weakCompareAndSet(1, 2));

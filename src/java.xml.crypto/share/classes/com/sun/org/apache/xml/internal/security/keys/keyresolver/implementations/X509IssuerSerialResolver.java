@@ -22,6 +22,7 @@
  */
 package com.sun.org.apache.xml.internal.security.keys.keyresolver.implementations;
 
+import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
@@ -33,8 +34,8 @@ import com.sun.org.apache.xml.internal.security.keys.content.x509.XMLX509IssuerS
 import com.sun.org.apache.xml.internal.security.keys.keyresolver.KeyResolverException;
 import com.sun.org.apache.xml.internal.security.keys.keyresolver.KeyResolverSpi;
 import com.sun.org.apache.xml.internal.security.keys.storage.StorageResolver;
-import com.sun.org.apache.xml.internal.security.signature.XMLSignatureException;
 import com.sun.org.apache.xml.internal.security.utils.Constants;
+import com.sun.org.apache.xml.internal.security.utils.XMLUtils;
 import org.w3c.dom.Element;
 
 public class X509IssuerSerialResolver extends KeyResolverSpi {
@@ -42,14 +43,29 @@ public class X509IssuerSerialResolver extends KeyResolverSpi {
     private static final com.sun.org.slf4j.internal.Logger LOG =
         com.sun.org.slf4j.internal.LoggerFactory.getLogger(X509IssuerSerialResolver.class);
 
+    /** {@inheritDoc} */
+    @Override
+    protected boolean engineCanResolve(Element element, String baseURI, StorageResolver storage) {
+        if (XMLUtils.elementIsInSignatureSpace(element, Constants._TAG_X509DATA)) {
+            try {
+                X509Data x509Data = new X509Data(element, baseURI);
+                return x509Data.containsIssuerSerial();
+            } catch (XMLSecurityException e) {
+                return false;
+            }
+        } else {
+            return false;
+        }
+    }
 
     /** {@inheritDoc} */
-    public PublicKey engineLookupAndResolvePublicKey(
-        Element element, String baseURI, StorageResolver storage
+    @Override
+    protected PublicKey engineResolvePublicKey(
+        Element element, String baseURI, StorageResolver storage, boolean secureValidation
     ) throws KeyResolverException {
 
         X509Certificate cert =
-            this.engineLookupResolveX509Certificate(element, baseURI, storage);
+            this.engineResolveX509Certificate(element, baseURI, storage, secureValidation);
 
         if (cert != null) {
             return cert.getPublicKey();
@@ -59,19 +75,15 @@ public class X509IssuerSerialResolver extends KeyResolverSpi {
     }
 
     /** {@inheritDoc} */
-    public X509Certificate engineLookupResolveX509Certificate(
-        Element element, String baseURI, StorageResolver storage
+    @Override
+    protected X509Certificate engineResolveX509Certificate(
+        Element element, String baseURI, StorageResolver storage, boolean secureValidation
     ) throws KeyResolverException {
-        LOG.debug("Can I resolve {}?", element.getTagName());
 
         X509Data x509data = null;
         try {
             x509data = new X509Data(element, baseURI);
-        } catch (XMLSignatureException ex) {
-            LOG.debug("I can't");
-            return null;
         } catch (XMLSecurityException ex) {
-            LOG.debug("I can't");
             return null;
         }
 
@@ -80,7 +92,7 @@ public class X509IssuerSerialResolver extends KeyResolverSpi {
         }
         try {
             if (storage == null) {
-                Object exArgs[] = { Constants._TAG_X509ISSUERSERIAL };
+                Object[] exArgs = { Constants._TAG_X509ISSUERSERIAL };
                 KeyResolverException ex =
                     new KeyResolverException("KeyResolver.needStorageResolver", exArgs);
 
@@ -121,8 +133,17 @@ public class X509IssuerSerialResolver extends KeyResolverSpi {
     }
 
     /** {@inheritDoc} */
-    public javax.crypto.SecretKey engineLookupAndResolveSecretKey(
-        Element element, String baseURI, StorageResolver storage
+    @Override
+    protected javax.crypto.SecretKey engineResolveSecretKey(
+        Element element, String baseURI, StorageResolver storage, boolean secureValidation
+    ) {
+        return null;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    protected PrivateKey engineResolvePrivateKey(
+        Element element, String baseURI, StorageResolver storage, boolean secureValidation
     ) {
         return null;
     }

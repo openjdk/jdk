@@ -1097,9 +1097,9 @@ public class AWTEventMulticaster implements
      *          <code><em>Foo</em>Listener</code>s by the specified multicast
      *          listener, or an empty array if no such listeners have been
      *          chained by the specified multicast listener
-     * @exception NullPointerException if the specified
+     * @throws NullPointerException if the specified
      *             {@code listenertype} parameter is {@code null}
-     * @exception ClassCastException if {@code listenerType}
+     * @throws ClassCastException if {@code listenerType}
      *          doesn't specify a class or interface that implements
      *          {@code java.util.EventListener}
      *

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,6 @@ import java.net.Proxy;
 import java.net.ProxySelector;
 import java.util.List;
 import java.util.StringTokenizer;
-import java.util.Iterator;
 import java.security.Permission;
 import java.util.Properties;
 import sun.net.NetworkClient;
@@ -121,7 +120,7 @@ public class FtpURLConnection extends URLConnection {
      *   - The command socket (FtpClient).
      * Since that's the only class that needs to see that, it is an inner class.
      */
-    protected class FtpInputStream extends FilterInputStream {
+    protected static class FtpInputStream extends FilterInputStream {
         FtpClient ftp;
         FtpInputStream(FtpClient cl, InputStream fd) {
             super(new BufferedInputStream(fd));
@@ -144,7 +143,7 @@ public class FtpURLConnection extends URLConnection {
      *   - The command socket (FtpClient).
      * Since that's the only class that needs to see that, it is an inner class.
      */
-    protected class FtpOutputStream extends FilterOutputStream {
+    protected static class FtpOutputStream extends FilterOutputStream {
         FtpClient ftp;
         FtpOutputStream(FtpClient cl, OutputStream fd) {
             super(fd);
@@ -235,6 +234,7 @@ public class FtpURLConnection extends URLConnection {
             /**
              * Do we have to use a proxy?
              */
+            @SuppressWarnings("removal")
             ProxySelector sel = java.security.AccessController.doPrivileged(
                     new java.security.PrivilegedAction<ProxySelector>() {
                         public ProxySelector run() {
@@ -249,9 +249,8 @@ public class FtpURLConnection extends URLConnection {
                 } catch (IllegalArgumentException iae) {
                     throw new IOException("Failed to select a proxy", iae);
                 }
-                final Iterator<Proxy> it = proxies.iterator();
-                while (it.hasNext()) {
-                    p = it.next();
+                for (Proxy proxy : proxies) {
+                    p = proxy;
                     if (p == null || p == Proxy.NO_PROXY ||
                         p.type() == Proxy.Type.SOCKS) {
                         break;
@@ -411,13 +410,13 @@ public class FtpURLConnection extends URLConnection {
     }
 
     /**
-     * Get the InputStream to retreive the remote file. It will issue the
+     * Get the InputStream to retrieve the remote file. It will issue the
      * "get" (or "dir") command to the ftp server.
      *
      * @return  the {@code InputStream} to the connection.
      *
      * @throws  IOException if already opened for output
-     * @throws  FtpProtocolException if errors occur during the transfert.
+     * @throws  FtpProtocolException if errors occur during the transfer.
      */
     @Override
     public InputStream getInputStream() throws IOException {
@@ -511,17 +510,7 @@ public class FtpURLConnection extends URLConnection {
                 is = new FtpInputStream(ftp, ftp.list(null));
                 msgh.add("content-type", "text/plain");
                 msgh.add("access-type", "directory");
-            } catch (IOException ex) {
-                FileNotFoundException fnfe = new FileNotFoundException(fullpath);
-                if (ftp != null) {
-                    try {
-                        ftp.close();
-                    } catch (IOException ioe) {
-                        fnfe.addSuppressed(ioe);
-                    }
-                }
-                throw fnfe;
-            } catch (FtpProtocolException ex2) {
+            } catch (IOException | FtpProtocolException ex) {
                 FileNotFoundException fnfe = new FileNotFoundException(fullpath);
                 if (ftp != null) {
                     try {
@@ -554,7 +543,7 @@ public class FtpURLConnection extends URLConnection {
      *
      * @throws  IOException if already opened for input or the URL
      *          points to a directory
-     * @throws  FtpProtocolException if errors occur during the transfert.
+     * @throws  FtpProtocolException if errors occur during the transfer.
      */
     @Override
     public OutputStream getOutputStream() throws IOException {
@@ -564,7 +553,7 @@ public class FtpURLConnection extends URLConnection {
 
         if (http != null) {
             OutputStream out = http.getOutputStream();
-            // getInputStream() is neccessary to force a writeRequests()
+            // getInputStream() is necessary to force a writeRequests()
             // on the http client.
             http.getInputStream();
             return out;

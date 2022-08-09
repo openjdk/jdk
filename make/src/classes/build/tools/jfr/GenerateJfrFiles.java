@@ -172,7 +172,9 @@ public class GenerateJfrFiles {
         boolean startTime;
         String period = "";
         boolean cutoff;
+        boolean throttle;
         boolean experimental;
+        boolean internal;
         long id;
         boolean isEvent;
         boolean isRelation;
@@ -194,7 +196,9 @@ public class GenerateJfrFiles {
             pos.writeBoolean(startTime);
             pos.writeUTF(period);
             pos.writeBoolean(cutoff);
+            pos.writeBoolean(throttle);
             pos.writeBoolean(experimental);
+            pos.writeBoolean(internal);
             pos.writeLong(id);
             pos.writeBoolean(isEvent);
             pos.writeBoolean(isRelation);
@@ -485,11 +489,13 @@ public class GenerateJfrFiles {
                 currentType.description = getString(attributes, "description");
                 currentType.category = getString(attributes, "category");
                 currentType.experimental = getBoolean(attributes, "experimental", false);
+                currentType.internal = getBoolean(attributes, "internal", false);
                 currentType.thread = getBoolean(attributes, "thread", false);
                 currentType.stackTrace = getBoolean(attributes, "stackTrace", false);
                 currentType.startTime = getBoolean(attributes, "startTime", true);
                 currentType.period = getString(attributes, "period");
                 currentType.cutoff = getBoolean(attributes, "cutoff", false);
+                currentType.throttle = getBoolean(attributes, "throttle", false);
                 currentType.commitState = getString(attributes, "commitState");
                 currentType.isEvent = "Event".equals(qName);
                 currentType.isRelation = "Relation".equals(qName);
@@ -733,7 +739,6 @@ public class GenerateJfrFiles {
             out.write("#include \"utilities/ticks.hpp\"");
             out.write("#if INCLUDE_JFR");
             out.write("#include \"jfr/recorder/service/jfrEvent.hpp\"");
-            out.write("#include \"jfr/support/jfrEpochSynchronization.hpp\"");
             out.write("/*");
             out.write(" * Each event class has an assert member function verify() which is invoked");
             out.write(" * just before the engine writes the event and its fields to the data stream.");
@@ -759,6 +764,7 @@ public class GenerateJfrFiles {
             out.write("  void set_starttime(const Ticks&) const {}");
             out.write("  void set_endtime(const Ticks&) const {}");
             out.write("  bool should_commit() const { return false; }");
+            out.write("  bool is_started() const { return false; }");
             out.write("  static bool is_enabled() { return false; }");
             out.write("  void commit() {}");
             out.write("};");
@@ -820,6 +826,7 @@ public class GenerateJfrFiles {
             out.write("  static const bool hasStackTrace = " + event.stackTrace + ";");
             out.write("  static const bool isInstant = " + !event.startTime + ";");
             out.write("  static const bool hasCutoff = " + event.cutoff + ";");
+            out.write("  static const bool hasThrottle = " + event.throttle + ";");
             out.write("  static const bool isRequestable = " + !event.period.isEmpty() + ";");
             out.write("  static const JfrEventId eventId = Jfr" + event.name + "Event;");
             out.write("");
@@ -858,9 +865,8 @@ public class GenerateJfrFiles {
     private static void printWriteData(Printer out, TypeElement type) {
         out.write("  template <typename Writer>");
         out.write("  void writeData(Writer& w) {");
-        if (("_thread_in_native").equals(type.commitState)) {
-            out.write("    // explicit epoch synchronization check");
-            out.write("    JfrEpochSynchronization sync;");
+        if (type.isEvent && type.internal) {
+            out.write("    JfrEventSetting::unhide_internal_types();");
         }
         for (FieldElement field : type.fields) {
             if (field.struct) {

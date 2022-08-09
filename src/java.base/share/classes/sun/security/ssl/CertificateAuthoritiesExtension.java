@@ -211,7 +211,7 @@ final class CertificateAuthoritiesExtension {
             if (encodedCAs.isEmpty()) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.warning(
-                            "The number of CAs exceeds the maximum size" +
+                            "The number of CAs exceeds the maximum size " +
                             "of the certificate_authorities extension");
                 }
 

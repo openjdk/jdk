@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -160,22 +160,23 @@ import static java.util.Map.entry;
  * However, any call to {@code getRules} will fail with {@code ZoneRulesException}.
  * This approach is designed to allow a {@link ZonedDateTime} to be loaded and
  * queried, but not modified, on a Java Runtime with incomplete time-zone information.
- *
  * <p>
  * This is a <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>
- * class; use of identity-sensitive operations (including reference equality
- * ({@code ==}), identity hash code, or synchronization) on instances of
- * {@code ZoneId} may have unpredictable results and should be avoided.
+ * class; programmers should treat instances that are
+ * {@linkplain #equals(Object) equal} as interchangeable and should not
+ * use instances for synchronization, or unpredictable behavior may
+ * occur. For example, in a future release, synchronization may fail.
  * The {@code equals} method should be used for comparisons.
  *
  * @implSpec
- * This abstract class has two implementations, both of which are immutable and thread-safe.
- * One implementation models region-based IDs, the other is {@code ZoneOffset} modelling
- * offset-based IDs. This difference is visible in serialization.
+ * This abstract sealed class permits two implementations, both of which are immutable and
+ * thread-safe. One implementation models region-based IDs, the other is {@code ZoneOffset}
+ * modelling offset-based IDs. This difference is visible in serialization.
  *
  * @since 1.8
  */
-public abstract class ZoneId implements Serializable {
+@jdk.internal.ValueBased
+public abstract sealed class ZoneId implements Serializable permits ZoneOffset, ZoneRegion {
 
     /**
      * A map of zone overrides to enable the short time-zone names to be used.
@@ -470,11 +471,7 @@ public abstract class ZoneId implements Serializable {
     /**
      * Constructor only accessible within the package.
      */
-    ZoneId() {
-        if (getClass() != ZoneOffset.class && getClass() != ZoneRegion.class) {
-            throw new AssertionError("Invalid subclass");
-        }
-    }
+    ZoneId() {}
 
     //-----------------------------------------------------------------------
     /**
@@ -587,6 +584,11 @@ public abstract class ZoneId implements Serializable {
         return this;
     }
 
+    /**
+     * Get the effective offset for an instant at the given epochSecond.
+     */
+    /* package-private */ abstract ZoneOffset getOffset(long epochSecond);
+
     //-----------------------------------------------------------------------
     /**
      * Checks if this time-zone ID is equal to another time-zone ID.
@@ -601,11 +603,8 @@ public abstract class ZoneId implements Serializable {
         if (this == obj) {
            return true;
         }
-        if (obj instanceof ZoneId) {
-            ZoneId other = (ZoneId) obj;
-            return getId().equals(other.getId());
-        }
-        return false;
+        return (obj instanceof ZoneId other)
+                && getId().equals(other.getId());
     }
 
     /**

@@ -32,7 +32,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import static java.util.stream.Collectors.toList;
 
 /**
  * Parse command arguments, derived from StreamTokenizer by
@@ -44,10 +43,10 @@ class ArgTokenizer {
     private final String prefix;
     private final int length;
     private int next = 0;
-    private char buf[] = new char[20];
+    private char[] buf = new char[20];
     private int mark;
 
-    private final byte ctype[] = new byte[256];
+    private final byte[] ctype = new byte[256];
     private static final byte CT_ALPHA = 0;
     private static final byte CT_WHITESPACE = 1;
     private static final byte CT_QUOTE = 8;
@@ -102,7 +101,7 @@ class ArgTokenizer {
                 options.entrySet()
                        .stream()
                        .filter(e -> e.getKey().startsWith(opt))
-                       .collect(toList());
+                       .toList();
         if (matches.size() == 1) {
             matches.get(0).setValue(true);
         } else {
@@ -259,24 +258,17 @@ class ArgTokenizer {
     }
 
     private int unicode2ctype(int c) {
-        switch (c) {
-            case 0x1680:
-            case 0x180E:
-            case 0x200A:
-            case 0x202F:
-            case 0x205F:
-            case 0x3000:
-                return CT_WHITESPACE;
-            default:
-                return CT_ALPHA;
-        }
+        return switch (c) {
+            case 0x1680, 0x180E, 0x200A, 0x202F, 0x205F, 0x3000 -> CT_WHITESPACE;
+            default -> CT_ALPHA;
+        };
     }
 
     /**
      * Parses the next token of this tokenizer.
      */
     public void nextToken() {
-        byte ct[] = ctype;
+        byte[] ct = ctype;
         int c;
         int lctype;
         sval = null;
@@ -331,29 +323,16 @@ class ArgTokenizer {
                         } else
                           d = c2;
                     } else {
-                        switch (c) {
-                        case 'a':
-                            c = 0x7;
-                            break;
-                        case 'b':
-                            c = '\b';
-                            break;
-                        case 'f':
-                            c = 0xC;
-                            break;
-                        case 'n':
-                            c = '\n';
-                            break;
-                        case 'r':
-                            c = '\r';
-                            break;
-                        case 't':
-                            c = '\t';
-                            break;
-                        case 'v':
-                            c = 0xB;
-                            break;
-                        }
+                        c = switch (c) {
+                            case 'a' -> 0x7;
+                            case 'b' -> '\b';
+                            case 'f' -> 0xC;
+                            case 'n' -> '\n';
+                            case 'r' -> '\r';
+                            case 't' -> '\t';
+                            case 'v' -> 0xB;
+                            default  -> c;
+                        };
                         d = read();
                     }
                 } else {

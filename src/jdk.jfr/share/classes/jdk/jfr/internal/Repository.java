@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import jdk.jfr.internal.SecuritySupport.SafePath;
+import jdk.jfr.internal.management.ChunkFilename;
 
 public final class Repository {
 
@@ -45,6 +46,7 @@ public final class Repository {
     private final Set<SafePath> cleanupDirectories = new HashSet<>();
     private SafePath baseLocation;
     private SafePath repository;
+    private ChunkFilename chunkFilename;
 
     private Repository() {
     }
@@ -61,6 +63,7 @@ public final class Repository {
         // Probe to see if repository can be created, needed for fail fast
         // during JVM startup or JFR.configure
         this.repository = createRepository(baseLocation);
+        this.chunkFilename = null;
         try {
             // Remove so we don't "leak" repositories, if JFR is never started
             // and shutdown hook not added.
@@ -77,15 +80,21 @@ public final class Repository {
         }
     }
 
-    synchronized RepositoryChunk newChunk(ZonedDateTime timestamp) {
+    synchronized RepositoryChunk newChunk() {
+        ZonedDateTime timestamp = ZonedDateTime.now();
         try {
             if (!SecuritySupport.existDirectory(repository)) {
                 this.repository = createRepository(baseLocation);
                 jvm.setRepositoryLocation(repository.toString());
                 SecuritySupport.setProperty(JFR_REPOSITORY_LOCATION_PROPERTY, repository.toString());
                 cleanupDirectories.add(repository);
+                chunkFilename = null;
             }
-            return new RepositoryChunk(repository, timestamp);
+            if (chunkFilename == null) {
+                chunkFilename = ChunkFilename.newPriviliged(repository.toPath());
+            }
+            String filename = chunkFilename.next(timestamp.toLocalDateTime());
+            return new RepositoryChunk(new SafePath(filename));
         } catch (Exception e) {
             String errorMsg = String.format("Could not create chunk in repository %s, %s: %s", repository, e.getClass(), e.getMessage());
             Logger.log(LogTag.JFR, LogLevel.ERROR, errorMsg);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,28 +22,33 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package javax.swing;
 
-import javax.swing.plaf.*;
-import javax.swing.border.*;
-import javax.swing.event.*;
-import javax.accessibility.*;
+package javax.swing;
 
 import java.awt.Component;
 import java.awt.ComponentOrientation;
-import java.awt.Rectangle;
 import java.awt.Insets;
 import java.awt.LayoutManager;
 import java.awt.Point;
-
-import java.io.ObjectOutputStream;
-import java.io.IOException;
-
-import java.beans.JavaBean;
+import java.awt.Rectangle;
 import java.beans.BeanProperty;
+import java.beans.JavaBean;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.beans.Transient;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.io.Serial;
+
+import javax.accessibility.Accessible;
+import javax.accessibility.AccessibleContext;
+import javax.accessibility.AccessibleRelation;
+import javax.accessibility.AccessibleRole;
+import javax.swing.border.Border;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+import javax.swing.plaf.ScrollPaneUI;
+import javax.swing.plaf.UIResource;
 
 /**
  * Provides a scrollable view of a lightweight component.
@@ -413,7 +418,7 @@ public class JScrollPane extends JComponent implements ScrollPaneConstants, Acce
      * will invoke <code>syncWithScrollPane</code> on it.
      *
      * @param layout the specified layout manager
-     * @exception ClassCastException if layout is not a
+     * @throws ClassCastException if layout is not a
      *                  <code>ScrollPaneLayout</code>
      * @see java.awt.Container#getLayout
      * @see java.awt.Container#setLayout
@@ -471,7 +476,7 @@ public class JScrollPane extends JComponent implements ScrollPaneConstants, Acce
      * </ul>
      *
      * @param policy one of the three values listed above
-     * @exception IllegalArgumentException if <code>policy</code>
+     * @throws IllegalArgumentException if <code>policy</code>
      *                          is not one of the legal values shown above
      * @see #getVerticalScrollBarPolicy
      */
@@ -516,7 +521,7 @@ public class JScrollPane extends JComponent implements ScrollPaneConstants, Acce
      * </ul>
      *
      * @param policy one of the three values listed above
-     * @exception IllegalArgumentException if <code>policy</code>
+     * @throws IllegalArgumentException if <code>policy</code>
      *                          is not one of the legal values shown above
      * @see #getHorizontalScrollBarPolicy
      */
@@ -1190,7 +1195,7 @@ public class JScrollPane extends JComponent implements ScrollPaneConstants, Acce
      * <li>upperLeft
      * <li>upperRight
      * </ul>
-     * @exception IllegalArgumentException if corner key is invalid
+     * @throws IllegalArgumentException if corner key is invalid
      */
     public void setCorner(String key, Component corner)
     {
@@ -1293,6 +1298,7 @@ public class JScrollPane extends JComponent implements ScrollPaneConstants, Acce
      * <code>JComponent</code> for more
      * information about serialization in Swing.
      */
+    @Serial
     private void writeObject(ObjectOutputStream s) throws IOException {
         s.defaultWriteObject();
         if (getUIClassID().equals(uiClassID)) {

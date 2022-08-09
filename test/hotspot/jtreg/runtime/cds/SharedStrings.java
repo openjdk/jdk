@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,16 +25,18 @@
  * @test
  * @summary Check to make sure that shared strings in the bootstrap CDS archive
  *          are actually shared
- * @requires vm.cds.archived.java.heap
+ * @requires vm.cds.write.archived.java.heap
+ * @requires vm.flagless
  * @library /test/lib
- * @build SharedStringsWb sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller -jar whitebox.jar sun.hotspot.WhiteBox
+ * @build SharedStringsWb jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar whitebox.jar jdk.test.whitebox.WhiteBox
  * @run driver SharedStrings
  */
 
 import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.helpers.ClassFileInstaller;
 
 public class SharedStrings {
     public static void main(String[] args) throws Exception {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ import java.io.*;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.security.cert.X509Certificate;
-import java.security.cert.CertificateException;
 import java.util.Properties;
 
 import jdk.internal.util.StaticProperty;
@@ -51,16 +50,17 @@ public final class UntrustedCertificates {
     private static final String algorithm;
 
     static {
-        AccessController.doPrivileged(new PrivilegedAction<Void>() {
+        @SuppressWarnings("removal")
+        var dummy = AccessController.doPrivileged(new PrivilegedAction<Void>() {
             @Override
             public Void run() {
                 File f = new File(StaticProperty.javaHome(),
-                        "lib/security/blacklisted.certs");
+                        "lib/security/blocked.certs");
                 try (FileInputStream fin = new FileInputStream(f)) {
                     props.load(fin);
                 } catch (IOException fnfe) {
                     if (debug != null) {
-                        debug.println("Error parsing blacklisted.certs");
+                        debug.println("Error parsing blocked.certs");
                     }
                 }
                 return null;
@@ -79,17 +79,9 @@ public final class UntrustedCertificates {
         if (algorithm == null) {
             return false;
         }
-        String key;
-        if (cert instanceof X509CertImpl) {
-            key = ((X509CertImpl)cert).getFingerprint(algorithm);
-        } else {
-            try {
-                key = new X509CertImpl(cert.getEncoded()).getFingerprint(algorithm);
-            } catch (CertificateException cee) {
-                return false;
-            }
-        }
-        return props.containsKey(key);
+        // if fingerprint cannot be calculated, also treat it as untrusted
+        String key = X509CertImpl.getFingerprint(algorithm, cert, debug);
+        return (key == null || props.containsKey(key));
     }
 
     private UntrustedCertificates() {}

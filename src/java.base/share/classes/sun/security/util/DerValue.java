@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,10 @@ import java.math.BigInteger;
 import java.nio.charset.Charset;
 import java.util.*;
 
-import static java.nio.charset.StandardCharsets.*;
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
+import static java.nio.charset.StandardCharsets.US_ASCII;
+import static java.nio.charset.StandardCharsets.UTF_16BE;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Represents a single DER-encoded value.  DER encoding rules are a subset
@@ -170,7 +173,7 @@ public class DerValue {
     private final boolean allowBER;
 
     // Unsafe. Legacy. Never null.
-    final public DerInputStream data;
+    public final DerInputStream data;
 
     /*
      * These values are the high order bits for the other kinds of tags.
@@ -221,6 +224,9 @@ public class DerValue {
      * Creates a new DerValue by specifying all its fields.
      */
     DerValue(byte tag, byte[] buffer, int start, int end, boolean allowBER) {
+        if ((tag & 0x1f) == 0x1f) {
+            throw new IllegalArgumentException("Tag number over 30 is not supported");
+        }
         this.tag = tag;
         this.buffer = buffer;
         this.start = start;
@@ -284,6 +290,50 @@ public class DerValue {
     }
 
     /**
+     * Wraps a DerOutputStream. All bytes currently written
+     * into the stream will become the content of the newly
+     * created DerValue.
+     *
+     * Attention: do not reset the DerOutputStream after this call.
+     * No array copying is made.
+     *
+     * @param tag the tag
+     * @param out the DerOutputStream
+     * @return a new DerValue using out as its content
+     */
+    public static DerValue wrap(byte tag, DerOutputStream out) {
+        return new DerValue(tag, out.buf(), 0, out.size(), false);
+    }
+
+    /**
+     * Wraps a byte array as a single DerValue.
+     *
+     * Attention: no cloning is made.
+     *
+     * @param buf the byte array containing the DER-encoded datum
+     * @return a new DerValue
+     */
+    public static DerValue wrap(byte[] buf)
+            throws IOException {
+        return wrap(buf, 0, buf.length);
+    }
+
+    /**
+     * Wraps a byte array as a single DerValue.
+     *
+     * Attention: no cloning is made.
+     *
+     * @param buf the byte array containing the DER-encoded datum
+     * @param offset where the encoded datum starts inside {@code buf}
+     * @param len length of bytes to parse inside {@code buf}
+     * @return a new DerValue
+     */
+    public static DerValue wrap(byte[] buf, int offset, int len)
+            throws IOException {
+        return new DerValue(buf, offset, len, true, false);
+    }
+
+    /**
      * Parse an ASN.1/BER encoded datum. The entire encoding must hold exactly
      * one datum, including its tag and length.
      *
@@ -315,6 +365,9 @@ public class DerValue {
         }
         int pos = offset;
         tag = buf[pos++];
+        if ((tag & 0x1f) == 0x1f) {
+            throw new IOException("Tag number over 30 at " + offset + " is not supported");
+        }
         int lenByte = buf[pos++];
 
         int length;
@@ -388,6 +441,9 @@ public class DerValue {
     // arg to control whether DER checks are enforced.
     DerValue(InputStream in, boolean allowBER) throws IOException {
         this.tag = (byte)in.read();
+        if ((tag & 0x1f) == 0x1f) {
+            throw new IOException("Tag number over 30 is not supported");
+        }
         int length = DerInputStream.getLength(in);
         if (length == -1) { // indefinite length encoding found
             if (!allowBER) {
@@ -636,6 +692,28 @@ public class DerValue {
         };
     }
 
+    // check the number of pad bits, validate the pad bits in the bytes
+    // if enforcing DER (i.e. allowBER == false), and return the number of
+    // bits of the resulting BitString
+    private static int checkPaddedBits(int numOfPadBits, byte[] data,
+            int start, int end, boolean allowBER) throws IOException {
+        // number of pad bits should be from 0(min) to 7(max).
+        if ((numOfPadBits < 0) || (numOfPadBits > 7)) {
+            throw new IOException("Invalid number of padding bits");
+        }
+        int lenInBits = ((end - start) << 3) - numOfPadBits;
+        if (lenInBits < 0) {
+            throw new IOException("Not enough bytes in BitString");
+        }
+
+        // padding bits should be all zeros for DER
+        if (!allowBER && numOfPadBits != 0 &&
+                (data[end - 1] & (0xff >>> (8 - numOfPadBits))) != 0) {
+            throw new IOException("Invalid value of padding bits");
+        }
+        return lenInBits;
+    }
+
     /**
      * Returns an ASN.1 BIT STRING value, with the tag assumed implicit
      * based on the parameter.  The bit string must be byte-aligned.
@@ -652,18 +730,17 @@ public class DerValue {
         }
         if (end == start) {
             throw new IOException("Invalid encoding: zero length bit string");
-        }
-        int numOfPadBits = buffer[start];
-        if ((numOfPadBits < 0) || (numOfPadBits > 7)) {
-            throw new IOException("Invalid number of padding bits");
-        }
-        // minus the first byte which indicates the number of padding bits
-        byte[] retval = Arrays.copyOfRange(buffer, start + 1, end);
-        if (numOfPadBits != 0) {
-            // get rid of the padding bits
-            retval[end - start - 2] &= (0xff << numOfPadBits);
+
         }
         data.pos = data.end; // Compatibility. Reach end.
+
+        int numOfPadBits = buffer[start];
+        checkPaddedBits(numOfPadBits, buffer, start + 1, end, allowBER);
+        byte[] retval = Arrays.copyOfRange(buffer, start + 1, end);
+        if (allowBER && numOfPadBits != 0) {
+            // fix the potential non-zero padding bits
+            retval[retval.length - 1] &= (byte)((0xff << numOfPadBits));
+        }
         return retval;
     }
 
@@ -686,16 +763,11 @@ public class DerValue {
             throw new IOException("Invalid encoding: zero length bit string");
         }
         data.pos = data.end; // Compatibility. Reach end.
+
         int numOfPadBits = buffer[start];
-        if ((numOfPadBits < 0) || (numOfPadBits > 7)) {
-            throw new IOException("Invalid number of padding bits");
-        }
-        if (end == start + 1) {
-            return new BitArray(0);
-        } else {
-            return new BitArray(((end - start - 1) << 3) - numOfPadBits,
-                    Arrays.copyOfRange(buffer, start + 1, end));
-        }
+        int len = checkPaddedBits(numOfPadBits, buffer, start + 1, end,
+                allowBER);
+        return new BitArray(len, buffer, start + 1);
     }
 
     /**
@@ -1063,10 +1135,15 @@ public class DerValue {
      * @return DER-encoded value, including tag and length.
      */
     public byte[] toByteArray() throws IOException {
+        data.pos = data.start; // Compatibility. At head.
+        // Minimize content duplication by writing out tag and length only
         DerOutputStream out = new DerOutputStream();
-        encode(out);
-        data.pos = data.start; // encode go last, should go back
-        return out.toByteArray();
+        out.write(tag);
+        out.putLength(end - start);
+        int headLen = out.size();
+        byte[] result = Arrays.copyOf(out.buf(), end - start + headLen);
+        System.arraycopy(buffer, start, result, headLen, end - start);
+        return result;
     }
 
     /**
@@ -1140,6 +1217,9 @@ public class DerValue {
      * @param val the tag value
      */
     public static byte createTag(byte tagClass, boolean form, byte val) {
+        if (val < 0 || val > 30) {
+            throw new IllegalArgumentException("Tag number over 30 is not supported");
+        }
         byte tag = (byte)(tagClass | val);
         if (form) {
             tag |= (byte)0x20;
@@ -1193,7 +1273,7 @@ public class DerValue {
      * @param startLen estimated number of sub-values
      * @return the sub-values in an array
      */
-    DerValue[] subs(byte expectedTag, int startLen) throws IOException {
+    public DerValue[] subs(byte expectedTag, int startLen) throws IOException {
         if (expectedTag != 0 && expectedTag != tag) {
             throw new IOException("Not the correct tag");
         }
@@ -1203,5 +1283,9 @@ public class DerValue {
             result.add(dis.getDerValue());
         }
         return result.toArray(new DerValue[0]);
+    }
+
+    public void clear() {
+        Arrays.fill(buffer, start, end, (byte)0);
     }
 }

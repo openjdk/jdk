@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,33 +37,18 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
 
 /**
  * Class for generating an HTML document for javadoc output.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
  */
 public class HtmlDocument {
     private final DocType docType = DocType.HTML5;
-    private final List<Content> docContent;
+    private final Content docContent;
 
     /**
-     * Constructor to construct an HTML document.
+     * Constructs an HTML document.
      *
-     * @param docComment comment for the document
-     * @param htmlTree HTML tree of the document
+     * @param html the {@link TagName#HTML HTML} element of the document
      */
-    public HtmlDocument(Content docComment, Content htmlTree) {
-        docContent = Arrays.asList(docComment, htmlTree);
-    }
-
-    /**
-     * Constructor to construct an HTML document.
-     *
-     * @param htmlTree HTML tree of the document
-     */
-    public HtmlDocument(Content htmlTree) {
-        docContent = Collections.singletonList(htmlTree);
+    public HtmlDocument(Content html) {
+        docContent = html;
     }
 
     /**
@@ -93,9 +78,6 @@ public class HtmlDocument {
     private void write(Writer writer) throws IOException {
         writer.write(docType.text);
         writer.write(DocletConstants.NL);
-        boolean atNewline = true;
-        for (Content c : docContent) {
-            atNewline = c.write(writer, atNewline);
-        }
+        docContent.write(writer, true);
     }
 }

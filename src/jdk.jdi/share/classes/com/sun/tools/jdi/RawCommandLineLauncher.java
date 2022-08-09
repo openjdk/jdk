@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,9 +38,9 @@ import com.sun.jdi.connect.spi.TransportService;
 
 public class RawCommandLineLauncher extends AbstractLauncher {
 
-    static private final String ARG_COMMAND = "command";
-    static private final String ARG_ADDRESS = "address";
-    static private final String ARG_QUOTE   = "quote";
+    private static final String ARG_COMMAND = "command";
+    private static final String ARG_ADDRESS = "address";
+    private static final String ARG_QUOTE   = "quote";
 
     TransportService transportService;
     Transport transport;

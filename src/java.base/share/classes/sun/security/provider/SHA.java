@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,8 @@ import java.util.Arrays;
 import java.util.Objects;
 
 import static sun.security.provider.ByteArrayAccess.*;
+
+import jdk.internal.util.Preconditions;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 /**
@@ -62,7 +64,6 @@ public final class SHA extends DigestBase {
     public SHA() {
         super("SHA-1", 20, 64);
         state = new int[5];
-        W = new int[80];
         resetHashes();
     }
 
@@ -72,7 +73,7 @@ public final class SHA extends DigestBase {
     public Object clone() throws CloneNotSupportedException {
         SHA copy = (SHA) super.clone();
         copy.state = copy.state.clone();
-        copy.W = new int[80];
+        copy.W = null;
         return copy;
     }
 
@@ -83,7 +84,9 @@ public final class SHA extends DigestBase {
         // Load magic initialization constants.
         resetHashes();
         // clear out old data
-        Arrays.fill(W, 0);
+        if (W != null) {
+            Arrays.fill(W, 0);
+        }
     }
 
     private void resetHashes() {
@@ -118,7 +121,7 @@ public final class SHA extends DigestBase {
     private static final int round4_kt = 0xca62c1d6;
 
     /**
-     * Compute a the hash for the current block.
+     * Compute the hash for the current block.
      *
      * This is in the same vein as Peter Gutmann's algorithm listed in
      * the back of Applied Cryptography, Compact implementation of
@@ -132,11 +135,10 @@ public final class SHA extends DigestBase {
     private void implCompressCheck(byte[] buf, int ofs) {
         Objects.requireNonNull(buf);
 
-        // The checks performed by the method 'b2iBig64'
-        // are sufficient for the case when the method
-        // 'implCompress0' is replaced with a compiler
-        // intrinsic.
-        b2iBig64(buf, ofs, W);
+        // Checks similar to those performed by the method 'b2iBig64'
+        // are sufficient for the case when the method 'implCompress0' is
+        // replaced with a compiler intrinsic.
+        Preconditions.checkFromIndexSize(ofs, 64, buf.length, Preconditions.AIOOBE_FORMATTER);
     }
 
     // The method 'implCompress0 seems not to use its parameters.
@@ -146,11 +148,15 @@ public final class SHA extends DigestBase {
     // must be passed as parameter to the method.
     @IntrinsicCandidate
     private void implCompress0(byte[] buf, int ofs) {
+        if (W == null) {
+            W = new int[80];
+        }
+        b2iBig64(buf, ofs, W);
         // The first 16 ints have the byte stream, compute the rest of
         // the buffer
         for (int t = 16; t <= 79; t++) {
             int temp = W[t-3] ^ W[t-8] ^ W[t-14] ^ W[t-16];
-            W[t] = (temp << 1) | (temp >>> 31);
+            W[t] = Integer.rotateLeft(temp, 1);
         }
 
         int a = state[0];
@@ -161,44 +167,44 @@ public final class SHA extends DigestBase {
 
         // Round 1
         for (int i = 0; i < 20; i++) {
-            int temp = ((a<<5) | (a>>>(32-5))) +
+            int temp = Integer.rotateLeft(a, 5) +
                 ((b&c)|((~b)&d))+ e + W[i] + round1_kt;
             e = d;
             d = c;
-            c = ((b<<30) | (b>>>(32-30)));
+            c = Integer.rotateLeft(b, 30);
             b = a;
             a = temp;
         }
 
         // Round 2
         for (int i = 20; i < 40; i++) {
-            int temp = ((a<<5) | (a>>>(32-5))) +
+            int temp = Integer.rotateLeft(a, 5) +
                 (b ^ c ^ d) + e + W[i] + round2_kt;
             e = d;
             d = c;
-            c = ((b<<30) | (b>>>(32-30)));
+            c = Integer.rotateLeft(b, 30);
             b = a;
             a = temp;
         }
 
         // Round 3
         for (int i = 40; i < 60; i++) {
-            int temp = ((a<<5) | (a>>>(32-5))) +
+            int temp = Integer.rotateLeft(a, 5) +
                 ((b&c)|(b&d)|(c&d)) + e + W[i] + round3_kt;
             e = d;
             d = c;
-            c = ((b<<30) | (b>>>(32-30)));
+            c = Integer.rotateLeft(b, 30);
             b = a;
             a = temp;
         }
 
         // Round 4
         for (int i = 60; i < 80; i++) {
-            int temp = ((a<<5) | (a>>>(32-5))) +
+            int temp = Integer.rotateLeft(a, 5) +
                 (b ^ c ^ d) + e + W[i] + round4_kt;
             e = d;
             d = c;
-            c = ((b<<30) | (b>>>(32-30)));
+            c = Integer.rotateLeft(b, 30);
             b = a;
             a = temp;
         }

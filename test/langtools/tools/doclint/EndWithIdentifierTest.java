@@ -9,13 +9,17 @@
  * @author jlahoda
  */
 
-/**@deprecated*/
+/**
+ * .
+ * @deprecated*/
 public class EndWithIdentifierTest {
 
     /**{@link*/
     private void unfinishedInlineTagName() {}
 
-    /**@see List*/
+    /**
+     * .
+     * @see List*/
     private void endsWithIdentifier() {}
 
     /**&amp*/
@@ -29,5 +33,8 @@ public class EndWithIdentifierTest {
 
     /**<a name*/
     private void attribute() {}
+
+    /** . */
+    EndWithIdentifierTest() { }
 }
 

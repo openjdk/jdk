@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,31 +25,20 @@
  * @bug 6442088
  * @summary Change default DNS caching behavior for code not running under
  *          security manager.
- * @run main/othervm/timeout=200 -Dsun.net.inetaddr.ttl=20  DefaultCaching
+ * @run main/othervm/timeout=200 -Djdk.net.hosts.file=DefaultCachingHosts
+ *      -Dsun.net.inetaddr.ttl=20  DefaultCaching
  */
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.security.Security;
 import java.io.FileWriter;
 import java.io.PrintWriter;
 import java.io.BufferedWriter;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 public class DefaultCaching {
 
     public static void main(String args[]) throws Exception {
 
-        String hostsFileNameSrc = System.getProperty("test.src", ".") + "/DefaultCachingHosts";
-        String hostsFileName = System.getProperty("user.dir", ".") + "/DefaultCachingHosts";
-        if (!hostsFileNameSrc.equals(hostsFileName)) {
-            Files.copy(Path.of(hostsFileNameSrc), Path.of(hostsFileName), REPLACE_EXISTING);
-            System.out.println("Host file created: " + hostsFileName);
-        }
-        System.setProperty("jdk.net.hosts.file", hostsFileName);
-        // initial mapping
-        // name service needs to resolve this.
+        String hostsFileName = System.getProperty("jdk.net.hosts.file");
         addMappingToHostsFile("theclub", "129.156.220.219", hostsFileName, false);
 
         test("theclub", "129.156.220.219", true);      // lk: 1

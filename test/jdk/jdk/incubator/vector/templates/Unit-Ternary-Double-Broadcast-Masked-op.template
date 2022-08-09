@@ -1,3 +1,4 @@
+
     @Test(dataProvider = "$type$TernaryOpMaskProvider")
     static void [[TEST]]$vectorteststype$DoubleBroadcastMaskedSmokeTest(IntFunction<$type$[]> fa, IntFunction<$type$[]> fb,
                                           IntFunction<$type$[]> fc, IntFunction<boolean[]> fm) {
@@ -11,5 +12,5 @@
         final int INVOC_COUNT = count;
 #end[double]
 [[KERNEL]]
-        assertDoubleBroadcastArraysEquals(a, b, c, r, mask, $vectorteststype$::[[TEST]]);
+        assertDoubleBroadcastArraysEquals(r, a, b, c, mask, $vectorteststype$::[[TEST]]);
     }

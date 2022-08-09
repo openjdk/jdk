@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ void ClassLoaderStatsClosure::do_cld(ClassLoaderData* cld) {
   oop cl = cld->class_loader();
 
   // The hashtable key is the ClassLoader oop since we want to account
-  // for "real" classes and anonymous classes together
+  // for "real" classes and hidden classes together
   bool added = false;
   ClassLoaderStats* cls = _stats->put_if_absent(cl, &added);
   if (added) {
@@ -71,7 +71,7 @@ void ClassLoaderStatsClosure::do_cld(ClassLoaderData* cld) {
   cld->classes_do(&csc);
   bool is_hidden = false;
   if(cld->has_class_mirror_holder()) {
-    // If cld has a class holder then it must be either hidden or unsafe anonymous.
+    // If cld has a class holder then it must be hidden.
     // Either way, count it as a hidden class.
     cls->_hidden_classes_count += csc._num_classes;
   } else {

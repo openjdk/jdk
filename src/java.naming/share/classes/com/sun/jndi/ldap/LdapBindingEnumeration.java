@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@ import com.sun.jndi.toolkit.ctx.Continuation;
 final class LdapBindingEnumeration
         extends AbstractLdapNamingEnumeration<Binding> {
 
+    @SuppressWarnings("removal")
     private final AccessControlContext acc = AccessController.getContext();
 
     LdapBindingEnumeration(LdapCtx homeCtx, LdapResult answer, Name remain,
@@ -48,6 +49,7 @@ final class LdapBindingEnumeration
         super(homeCtx, answer, remain, cont);
     }
 
+    @SuppressWarnings("removal")
     @Override
     protected Binding
       createItem(String dn, Attributes attrs, Vector<Control> respCtls)
@@ -59,12 +61,8 @@ final class LdapBindingEnumeration
         if (attrs.get(Obj.JAVA_ATTRIBUTES[Obj.CLASSNAME]) != null) {
             // serialized object or object reference
             try {
-                obj = AccessController.doPrivileged(new PrivilegedExceptionAction<Object>() {
-                    @Override
-                    public Object run() throws NamingException {
-                        return Obj.decodeObject(attrs);
-                    }
-                }, acc);
+                PrivilegedExceptionAction<Object> pa = () -> Obj.decodeObject(attrs);
+                obj = AccessController.doPrivileged(pa, acc);
             } catch (PrivilegedActionException e) {
                 throw (NamingException)e.getException();
             }

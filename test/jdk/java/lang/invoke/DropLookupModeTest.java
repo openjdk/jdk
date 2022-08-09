@@ -44,7 +44,7 @@ public class DropLookupModeTest {
     public void testBasic() {
         final Lookup fullPowerLookup = MethodHandles.lookup();
         final Class<?> lc = fullPowerLookup.lookupClass();
-        assertTrue(fullPowerLookup.lookupModes() == (PUBLIC|MODULE|PACKAGE|PROTECTED|PRIVATE));
+        assertTrue(fullPowerLookup.lookupModes() == (PUBLIC|MODULE|PACKAGE|PROTECTED|PRIVATE|ORIGINAL));
 
         Lookup lookup = fullPowerLookup.dropLookupMode(PRIVATE);
         assertTrue(lookup.lookupClass() == lc);
@@ -78,7 +78,7 @@ public class DropLookupModeTest {
     public void testReducingAccess() {
         Lookup lookup = MethodHandles.lookup();
         final Class<?> lc = lookup.lookupClass();
-        assertTrue(lookup.lookupModes() == (PUBLIC|MODULE|PACKAGE|PROTECTED|PRIVATE));
+        assertTrue(lookup.lookupModes() == (PUBLIC|MODULE|PACKAGE|PROTECTED|PRIVATE|ORIGINAL));
 
         lookup = lookup.dropLookupMode(PROTECTED);
         assertTrue(lookup.lookupClass() == lc);

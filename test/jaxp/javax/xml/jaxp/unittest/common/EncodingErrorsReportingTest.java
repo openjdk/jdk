@@ -25,7 +25,7 @@
  * @bug 8038043
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
  * @run testng/othervm common.EncodingErrorsReportingTest
- * @run testng/othervm -DrunSecMngr=true common.EncodingErrorsReportingTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow common.EncodingErrorsReportingTest
  * @summary Verifies that parsers reports location of wrong UTF-8 symbols in
  *          XML files parsed and included via xi:include element
  */

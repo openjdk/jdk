@@ -44,7 +44,7 @@ import org.xml.sax.SAXException;
  * @test
  * @bug 6517707
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true dom.CR6517707Test
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow dom.CR6517707Test
  * @run testng/othervm dom.CR6517707Test
  * @summary Test Node.setNodeValue(value) shall throw DOMException.NO_MODIFICATION_ALLOWED_ERR if the node is read-only.
  */

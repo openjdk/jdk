@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,6 @@
 // no precompiled headers
 #include "jvm.h"
 #include "asm/macroAssembler.hpp"
-#include "classfile/classLoader.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
 #include "code/icBuffer.hpp"
@@ -34,7 +32,6 @@
 #include "interpreter/interpreter.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
-#include "os_share_bsd.hpp"
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm_misc.hpp"
 #include "runtime/arguments.hpp"
@@ -42,12 +39,12 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "runtime/thread.inline.hpp"
 #include "runtime/timer.hpp"
 #include "signals_posix.hpp"
 #include "utilities/align.hpp"
@@ -65,7 +62,6 @@
 # include <stdio.h>
 # include <unistd.h>
 # include <sys/resource.h>
-# include <pthread.h>
 # include <sys/stat.h>
 # include <sys/time.h>
 # include <sys/utsname.h>
@@ -392,16 +388,6 @@ enum {
 
 bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
                                              ucontext_t* uc, JavaThread* thread) {
-
-/*
-  NOTE: does not seem to work on bsd.
-  if (info == NULL || info->si_code <= 0 || info->si_code == SI_NOINFO) {
-    // can't decode this kind of signal
-    info = NULL;
-  } else {
-    assert(sig == info->si_signo, "bad siginfo");
-  }
-*/
   // decide if this trap can be handled by a stub
   address stub = NULL;
 
@@ -410,11 +396,6 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
   //%note os_trap_1
   if (info != NULL && uc != NULL && thread != NULL) {
     pc = (address) os::Posix::ucontext_get_pc(uc);
-
-    if (StubRoutines::is_safefetch_fault(pc)) {
-      os::Posix::ucontext_set_pc(uc, StubRoutines::continuation_for_safefetch_fault(pc));
-      return true;
-    }
 
     // Handle ALL stack overflow variations here
     if (sig == SIGSEGV || sig == SIGBUS) {
@@ -472,7 +453,10 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
 
 #ifdef AMD64
       if (sig == SIGFPE  &&
-          (info->si_code == FPE_INTDIV || info->si_code == FPE_FLTDIV)) {
+          (info->si_code == FPE_INTDIV || info->si_code == FPE_FLTDIV
+           // Workaround for macOS ARM incorrectly reporting FPE_FLTINV for "div by 0"
+           // instead of the expected FPE_FLTDIV when running x86_64 binary under Rosetta emulation
+           MACOS_ONLY(|| (VM_Version::is_cpu_emulated() && info->si_code == FPE_FLTINV)))) {
         stub =
           SharedRuntime::
           continuation_for_implicit_exception(thread,
@@ -566,6 +550,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
   // the si_code for this condition may change in the future.
   // Furthermore, a false-positive should be harmless.
   if (UnguardOnExecutionViolation > 0 &&
+      stub == NULL &&
       (sig == SIGSEGV || sig == SIGBUS) &&
       uc->context_trapno == trap_page_fault) {
     int page_size = os::vm_page_size();
@@ -656,26 +641,6 @@ bool os::supports_sse() {
   return true;
 }
 
-bool os::is_allocatable(size_t bytes) {
-#ifdef AMD64
-  // unused on amd64?
-  return true;
-#else
-
-  if (bytes < 2 * G) {
-    return true;
-  }
-
-  char* addr = reserve_memory(bytes);
-
-  if (addr != NULL) {
-    release_memory(addr, bytes);
-  }
-
-  return addr != NULL;
-#endif // AMD64
-}
-
 juint os::cpu_microcode_revision() {
   juint result = 0;
   char data[8];
@@ -693,12 +658,12 @@ juint os::cpu_microcode_revision() {
 
 // Minimum usable stack sizes required to get to user code. Space for
 // HotSpot guard pages is added later.
-size_t os::Posix::_compiler_thread_min_stack_allowed = 48 * K;
-size_t os::Posix::_java_thread_min_stack_allowed = 48 * K;
+size_t os::_compiler_thread_min_stack_allowed = 48 * K;
+size_t os::_java_thread_min_stack_allowed = 48 * K;
 #ifdef _LP64
-size_t os::Posix::_vm_internal_thread_min_stack_allowed = 64 * K;
+size_t os::_vm_internal_thread_min_stack_allowed = 64 * K;
 #else
-size_t os::Posix::_vm_internal_thread_min_stack_allowed = (48 DEBUG_ONLY(+ 4)) * K;
+size_t os::_vm_internal_thread_min_stack_allowed = (48 DEBUG_ONLY(+ 4)) * K;
 #endif // _LP64
 
 #ifndef AMD64
@@ -835,6 +800,7 @@ void os::print_context(outputStream *st, const void *context) {
   if (context == NULL) return;
 
   const ucontext_t *uc = (const ucontext_t*)context;
+
   st->print_cr("Registers:");
 #ifdef AMD64
   st->print(  "RAX=" INTPTR_FORMAT, (intptr_t)uc->context_rax);
@@ -878,6 +844,12 @@ void os::print_context(outputStream *st, const void *context) {
 #endif // AMD64
   st->cr();
   st->cr();
+}
+
+void os::print_tos_pc(outputStream *st, const void *context) {
+  if (context == NULL) return;
+
+  const ucontext_t* uc = (const ucontext_t*)context;
 
   intptr_t *sp = (intptr_t *)os::Bsd::ucontext_get_sp(uc);
   st->print_cr("Top of Stack: (sp=" INTPTR_FORMAT ")", (intptr_t)sp);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 package jdk.vm.ci.code;
 
 import java.nio.ByteOrder;
+import java.util.Set;
 
 import jdk.vm.ci.code.Register.RegisterCategory;
 import jdk.vm.ci.meta.JavaKind;
@@ -89,6 +90,11 @@ public abstract class Architecture {
         this.machineCodeCallDisplacementOffset = nativeCallDisplacementOffset;
         this.returnAddressSize = returnAddressSize;
     }
+
+    /**
+     * Gets the set of CPU features supported by the current platform.
+     */
+    public abstract Set<? extends CPUFeatureName> getFeatures();
 
     /**
      * Converts this architecture to a string.

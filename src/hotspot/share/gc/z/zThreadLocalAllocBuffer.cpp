@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,14 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/shared/tlab_globals.hpp"
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zStackWatermark.hpp"
 #include "gc/z/zThreadLocalAllocBuffer.hpp"
 #include "gc/z/zValue.inline.hpp"
 #include "runtime/globals.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/stackWatermarkSet.inline.hpp"
-#include "runtime/thread.hpp"
 
 ZPerWorker<ThreadLocalAllocStats>* ZThreadLocalAllocBuffer::_stats = NULL;
 

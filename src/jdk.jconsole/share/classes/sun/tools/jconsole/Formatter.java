@@ -30,17 +30,17 @@ import java.util.*;
 
 
 class Formatter {
-    final static long SECOND = 1000;
-    final static long MINUTE = 60 * SECOND;
-    final static long HOUR   = 60 * MINUTE;
-    final static long DAY    = 24 * HOUR;
+    static final long SECOND = 1000;
+    static final long MINUTE = 60 * SECOND;
+    static final long HOUR   = 60 * MINUTE;
+    static final long DAY    = 24 * HOUR;
 
-    final static String cr = System.getProperty("line.separator");
+    static final String cr = System.getProperty("line.separator");
 
-    final static DateFormat timeDF            = new SimpleDateFormat("HH:mm");
-    private final static DateFormat timeWithSecondsDF = new SimpleDateFormat("HH:mm:ss");
-    private final static DateFormat dateDF            = new SimpleDateFormat("yyyy-MM-dd");
-    private final static String decimalZero =
+    static final DateFormat timeDF            = new SimpleDateFormat("HH:mm");
+    private static final DateFormat timeWithSecondsDF = new SimpleDateFormat("HH:mm:ss");
+    private static final DateFormat dateDF            = new SimpleDateFormat("yyyy-MM-dd");
+    private static final String decimalZero =
                                 new DecimalFormatSymbols().getDecimalSeparator() + "0";
 
     static String formatTime(long t) {

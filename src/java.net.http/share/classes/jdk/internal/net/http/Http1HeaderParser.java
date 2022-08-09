@@ -96,9 +96,9 @@ class Http1HeaderParser {
                 headerName = headerName.substring(0, headerName.indexOf(':')+1) + "...";
             msg = format("parsing HTTP/1.1 header, receiving [%s]", headerName);
         } else {
-            msg =format("HTTP/1.1 parser receiving [%s]", state, sb.toString());
+            msg = format("HTTP/1.1 parser receiving [%s]", sb.toString());
         }
-        return format("%s, parser state [%s]", msg , state);
+        return format("%s, parser state [%s]", msg, state);
     }
 
     /**
@@ -116,42 +116,17 @@ class Http1HeaderParser {
 
         while (canContinueParsing(input)) {
             switch (state) {
-                case INITIAL:
-                    state = State.STATUS_LINE;
-                    break;
-                case STATUS_LINE:
-                    readResumeStatusLine(input);
-                    break;
-                // fallthrough
-                case STATUS_LINE_FOUND_CR:
-                case STATUS_LINE_FOUND_LF:
-                    readStatusLineFeed(input);
-                    break;
-                case STATUS_LINE_END:
-                    maybeStartHeaders(input);
-                    break;
-                // fallthrough
-                case STATUS_LINE_END_CR:
-                case STATUS_LINE_END_LF:
-                    maybeEndHeaders(input);
-                    break;
-                case HEADER:
-                    readResumeHeader(input);
-                    break;
-                // fallthrough
-                case HEADER_FOUND_CR:
-                case HEADER_FOUND_LF:
-                    resumeOrLF(input);
-                    break;
-                case HEADER_FOUND_CR_LF:
-                    resumeOrSecondCR(input);
-                    break;
-                case HEADER_FOUND_CR_LF_CR:
-                    resumeOrEndHeaders(input);
-                    break;
-                default:
-                    throw new InternalError(
-                            "Unexpected state: " + String.valueOf(state));
+                case INITIAL                                    ->  state = State.STATUS_LINE;
+                case STATUS_LINE                                ->  readResumeStatusLine(input);
+                case STATUS_LINE_FOUND_CR, STATUS_LINE_FOUND_LF ->  readStatusLineFeed(input);
+                case STATUS_LINE_END                            ->  maybeStartHeaders(input);
+                case STATUS_LINE_END_CR, STATUS_LINE_END_LF     ->  maybeEndHeaders(input);
+                case HEADER                                     ->  readResumeHeader(input);
+                case HEADER_FOUND_CR, HEADER_FOUND_LF           ->  resumeOrLF(input);
+                case HEADER_FOUND_CR_LF                         ->  resumeOrSecondCR(input);
+                case HEADER_FOUND_CR_LF_CR                      ->  resumeOrEndHeaders(input);
+
+                default -> throw new InternalError("Unexpected state: " + state);
             }
         }
 
@@ -161,13 +136,11 @@ class Http1HeaderParser {
     private boolean canContinueParsing(ByteBuffer buffer) {
         // some states don't require any input to transition
         // to the next state.
-        switch (state) {
-            case FINISHED: return false;
-            case STATUS_LINE_FOUND_LF: return true;
-            case STATUS_LINE_END_LF: return true;
-            case HEADER_FOUND_LF: return true;
-            default: return buffer.hasRemaining();
-        }
+        return switch (state) {
+            case FINISHED -> false;
+            case STATUS_LINE_FOUND_LF, STATUS_LINE_END_LF, HEADER_FOUND_LF -> true;
+            default -> buffer.hasRemaining();
+        };
     }
 
     /**

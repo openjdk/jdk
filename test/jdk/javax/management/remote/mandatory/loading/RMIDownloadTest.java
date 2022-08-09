@@ -27,10 +27,10 @@
  * @summary Check that class downloading is supported by RMI connector
  * @author Eamonn McManus
  *
- * @run main RMIDownloadTest receive without
- * @run main RMIDownloadTest send without
- * @run main RMIDownloadTest receive with
- * @run main RMIDownloadTest send with
+ * @run main/othervm -Djava.security.manager=allow RMIDownloadTest receive without
+ * @run main/othervm -Djava.security.manager=allow RMIDownloadTest send without
+ * @run main/othervm -Djava.security.manager=allow RMIDownloadTest receive with
+ * @run main/othervm -Djava.security.manager=allow RMIDownloadTest send with
  */
 
 /*

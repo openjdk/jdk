@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -243,7 +243,7 @@ public final class LocaleServiceProviderPool {
      * @param getter an object on which getObject() method
      *     is called to obtain the provider's instance.
      * @param locale the given locale that is used as the starting one
-     * @param isObjectProvider flag designating object provder or not
+     * @param isObjectProvider flag designating object provider or not
      * @param key the key string for name providers
      * @param params provider specific parameters
      * @return provider's instance, or null.
@@ -369,7 +369,7 @@ public final class LocaleServiceProviderPool {
                         "A locale(" + locale + ") has non-empty extensions, but has illformed fields.");
 
                 // Fallback - script field will be lost.
-                lookupLocale = new Locale(locale.getLanguage(), locale.getCountry(), locale.getVariant());
+                lookupLocale = Locale.of(locale.getLanguage(), locale.getCountry(), locale.getVariant());
             }
         }
         return lookupLocale;

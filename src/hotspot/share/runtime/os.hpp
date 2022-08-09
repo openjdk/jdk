@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,11 @@
 #ifndef SHARE_RUNTIME_OS_HPP
 #define SHARE_RUNTIME_OS_HPP
 
-#include "jvm.h"
+#include "jvm_md.h"
 #include "metaprogramming/integralConstant.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/macros.hpp"
-#ifndef _WINDOWS
-# include <setjmp.h>
-#endif
 #ifdef __APPLE__
 # include <mach/mach_time.h>
 #endif
@@ -77,12 +74,17 @@ enum ThreadPriority {        // JLS 20.20.1-3
   CriticalPriority = 11      // Critical thread priority
 };
 
+enum WXMode {
+  WXWrite,
+  WXExec
+};
+
 // Executable parameter flag for os::commit_memory() and
 // os::commit_memory_or_exit().
 const bool ExecMem = true;
 
 // Typedef for structured exception handling support
-typedef void (*java_call_t)(JavaValue* value, const methodHandle& method, JavaCallArguments* args, Thread* thread);
+typedef void (*java_call_t)(JavaValue* value, const methodHandle& method, JavaCallArguments* args, JavaThread* thread);
 
 class MallocTracker;
 
@@ -100,23 +102,34 @@ class os: AllStatic {
 #endif
 
  public:
-  enum { page_sizes_max = 9 }; // Size of _page_sizes array (8 plus a sentinel)
+
+  // A simple value class holding a set of page sizes (similar to sigset_t)
+  class PageSizes {
+    size_t _v; // actually a bitmap.
+  public:
+    PageSizes() : _v(0) {}
+    void add(size_t pagesize);
+    bool contains(size_t pagesize) const;
+    // Given a page size, return the next smaller page size in this set, or 0.
+    size_t next_smaller(size_t pagesize) const;
+    // Given a page size, return the next larger page size in this set, or 0.
+    size_t next_larger(size_t pagesize) const;
+    // Returns the largest page size in this set, or 0 if set is empty.
+    size_t largest() const;
+    // Returns the smallest page size in this set, or 0 if set is empty.
+    size_t smallest() const;
+    // Prints one line of comma separated, human readable page sizes, "empty" if empty.
+    void print_on(outputStream* st) const;
+  };
 
  private:
   static OSThread*          _starting_thread;
   static address            _polling_page;
- public:
-  static size_t             _page_sizes[page_sizes_max];
+  static PageSizes          _page_sizes;
 
- private:
-  static void init_page_sizes(size_t default_page_size) {
-    _page_sizes[0] = default_page_size;
-    _page_sizes[1] = 0; // sentinel
-  }
+  static char*  pd_reserve_memory(size_t bytes, bool executable);
 
-  static char*  pd_reserve_memory(size_t bytes);
-
-  static char*  pd_attempt_reserve_memory_at(char* addr, size_t bytes);
+  static char*  pd_attempt_reserve_memory_at(char* addr, size_t bytes, bool executable);
 
   static bool   pd_commit_memory(char* addr, size_t bytes, bool executable);
   static bool   pd_commit_memory(char* addr, size_t size, size_t alignment_hint,
@@ -128,7 +141,7 @@ class os: AllStatic {
   static void   pd_commit_memory_or_exit(char* addr, size_t size,
                                          size_t alignment_hint,
                                          bool executable, const char* mesg);
-  static bool   pd_uncommit_memory(char* addr, size_t bytes);
+  static bool   pd_uncommit_memory(char* addr, size_t bytes, bool executable);
   static bool   pd_release_memory(char* addr, size_t bytes);
 
   static char*  pd_attempt_map_memory_to_file_at(char* addr, size_t bytes, int file_desc);
@@ -143,7 +156,8 @@ class os: AllStatic {
   static void   pd_free_memory(char *addr, size_t bytes, size_t alignment_hint);
   static void   pd_realign_memory(char *addr, size_t bytes, size_t alignment_hint);
 
-  static char*  pd_reserve_memory_special(size_t size, size_t alignment,
+  static char*  pd_reserve_memory_special(size_t size, size_t alignment, size_t page_size,
+
                                           char* addr, bool executable);
   static bool   pd_release_memory_special(char* addr, size_t bytes);
 
@@ -169,8 +183,8 @@ class os: AllStatic {
   static jint init_2(void);                    // Called after command line parsing
                                                // and VM ergonomics processing
 
-  // unset environment variable
-  static bool unsetenv(const char* name);
+  // Get environ pointer, platform independently
+  static char** get_environ();
 
   static bool have_special_privileges();
 
@@ -179,7 +193,6 @@ class os: AllStatic {
   static void   javaTimeNanos_info(jvmtiTimerInfo *info_ptr);
   static void   javaTimeSystemUTC(jlong &seconds, jlong &nanos);
   static void   run_periodic_checks();
-  static bool   supports_monotonic_clock();
 
   // Returns the elapsed time in seconds since the vm started.
   static double elapsedTime();
@@ -207,6 +220,16 @@ class os: AllStatic {
   static char*      local_time_string(char *buf, size_t buflen);
   static struct tm* localtime_pd     (const time_t* clock, struct tm*  res);
   static struct tm* gmtime_pd        (const time_t* clock, struct tm*  res);
+
+  // "YYYY-MM-DDThh:mm:ss.mmm+zzzz" incl. terminating zero
+  static const size_t iso8601_timestamp_size = 29;
+
+  // Fill in buffer with an ISO-8601 string corresponding to the given javaTimeMillis value
+  // E.g., YYYY-MM-DDThh:mm:ss.mmm+zzzz.
+  // Returns buffer, or NULL if it failed.
+  static char* iso8601_time(jlong milliseconds_since_19700101, char* buffer,
+                            size_t buffer_length, bool utc = false);
+
   // Fill in buffer with current local time as an ISO-8601 string.
   // E.g., YYYY-MM-DDThh:mm:ss.mmm+zzzz.
   // Returns buffer, or NULL if it failed.
@@ -220,13 +243,13 @@ class os: AllStatic {
     // which being declared MP when in fact not, is a problem - then
     // the bootstrap routine for the stub generator needs to check
     // the processor count directly and leave the bootstrap routine
-    // in place until called after initialization has ocurred.
+    // in place until called after initialization has occurred.
     return (_processor_count != 1);
   }
 
   static julong available_memory();
   static julong physical_memory();
-  static bool has_allocatable_memory_limit(julong* limit);
+  static bool has_allocatable_memory_limit(size_t* limit);
   static bool is_server_class_machine();
 
   // Returns the id of the processor on which the calling thread is currently executing.
@@ -250,10 +273,6 @@ class os: AllStatic {
     return _initial_active_processor_count;
   }
 
-  // Binds the current process to a processor.
-  //    Returns true if it worked, false if it didn't.
-  static bool bind_to_processor(uint processor_id);
-
   // Give a name to the current thread.
   static void set_native_thread_name(const char *name);
 
@@ -265,6 +284,22 @@ class os: AllStatic {
   static void map_stack_shadow_pages(address sp);
   static bool stack_shadow_pages_available(Thread *thread, const methodHandle& method, address sp);
 
+ private:
+  // Minimum stack size a thread can be created with (allowing
+  // the VM to completely create the thread and enter user code).
+  // The initial values exclude any guard pages (by HotSpot or libc).
+  // set_minimum_stack_sizes() will add the size required for
+  // HotSpot guard pages depending on page size and flag settings.
+  // Libc guard pages are never considered by these values.
+  static size_t _compiler_thread_min_stack_allowed;
+  static size_t _java_thread_min_stack_allowed;
+  static size_t _vm_internal_thread_min_stack_allowed;
+  static size_t _os_min_stack_allowed;
+
+  // Check and sets minimum stack sizes
+  static jint set_minimum_stack_sizes();
+
+ public:
   // Find committed memory region within specified range (start, start + size),
   // return true if found any
   static bool committed_in_range(address start, size_t size, address& committed_start, size_t& committed_size);
@@ -273,6 +308,10 @@ class os: AllStatic {
 
   // Return the default page size.
   static int    vm_page_size();
+
+  // The set of page sizes which the VM is allowed to use (may be a subset of
+  //  the page sizes actually available on the platform).
+  static const PageSizes& page_sizes() { return _page_sizes; }
 
   // Returns the page size to use for a region of memory.
   // region_size / min_pages will always be greater than or equal to the
@@ -285,10 +324,7 @@ class os: AllStatic {
   static size_t page_size_for_region_unaligned(size_t region_size, size_t min_pages);
 
   // Return the largest page size that can be used
-  static size_t max_page_size() {
-    // The _page_sizes array is sorted in descending order.
-    return _page_sizes[0];
-  }
+  static size_t max_page_size() { return page_sizes().largest(); }
 
   // Return a lower bound for page sizes. Also works before os::init completed.
   static size_t min_page_size() { return 4 * K; }
@@ -315,24 +351,14 @@ class os: AllStatic {
   static int    vm_allocation_granularity();
 
   // Reserves virtual memory.
-  static char*  reserve_memory(size_t bytes, MEMFLAGS flags = mtOther);
+  static char*  reserve_memory(size_t bytes, bool executable = false, MEMFLAGS flags = mtNone);
 
   // Reserves virtual memory that starts at an address that is aligned to 'alignment'.
-  static char*  reserve_memory_aligned(size_t size, size_t alignment);
+  static char*  reserve_memory_aligned(size_t size, size_t alignment, bool executable = false);
 
   // Attempts to reserve the virtual memory at [addr, addr + bytes).
   // Does not overwrite existing mappings.
-  static char*  attempt_reserve_memory_at(char* addr, size_t bytes);
-
-  // Split a reserved memory region [base, base+size) into two regions [base, base+split) and
-  //  [base+split, base+size).
-  //  This may remove the original mapping, so its content may be lost.
-  // Both base and split point must be aligned to allocation granularity; split point shall
-  //  be >0 and <size.
-  // Splitting guarantees that the resulting two memory regions can be released independently
-  //  from each other using os::release_memory(). It also means NMT will track these regions
-  //  individually, allowing different tags to be set.
-  static void   split_reserved_memory(char *base, size_t size, size_t split);
+  static char*  attempt_reserve_memory_at(char* addr, size_t bytes, bool executable = false);
 
   static bool   commit_memory(char* addr, size_t bytes, bool executable);
   static bool   commit_memory(char* addr, size_t size, size_t alignment_hint,
@@ -344,13 +370,17 @@ class os: AllStatic {
   static void   commit_memory_or_exit(char* addr, size_t size,
                                       size_t alignment_hint,
                                       bool executable, const char* mesg);
-  static bool   uncommit_memory(char* addr, size_t bytes);
+  static bool   uncommit_memory(char* addr, size_t bytes, bool executable = false);
   static bool   release_memory(char* addr, size_t bytes);
 
-  // Touch memory pages that cover the memory range from start to end (exclusive)
-  // to make the OS back the memory range with actual memory.
-  // Current implementation may not touch the last page if unaligned addresses
-  // are passed.
+  // A diagnostic function to print memory mappings in the given range.
+  static void print_memory_mappings(char* addr, size_t bytes, outputStream* st);
+  // Prints all mappings
+  static void print_memory_mappings(outputStream* st);
+
+  // Touch memory pages that cover the memory range from start to end
+  // (exclusive) to make the OS back the memory range with actual memory.
+  // Other threads may use the memory range concurrently with pretouch.
   static void   pretouch_memory(void* start, void* end, size_t page_size = vm_page_size());
 
   enum ProtType { MEM_PROT_NONE, MEM_PROT_READ, MEM_PROT_RW, MEM_PROT_RWX };
@@ -405,7 +435,7 @@ class os: AllStatic {
 
   static char*  non_memory_address_word();
   // reserve, commit and pin the entire memory region
-  static char*  reserve_memory_special(size_t size, size_t alignment,
+  static char*  reserve_memory_special(size_t size, size_t alignment, size_t page_size,
                                        char* addr, bool executable);
   static bool   release_memory_special(char* addr, size_t bytes);
   static void   large_page_init();
@@ -421,11 +451,11 @@ class os: AllStatic {
 
   enum ThreadType {
     vm_thread,
-    cgc_thread,        // Concurrent GC thread
-    pgc_thread,        // Parallel GC thread
+    gc_thread,         // GC thread
     java_thread,       // Java, CodeCacheSweeper, JVMTIAgent and Service threads.
     compiler_thread,
     watcher_thread,
+    asynclog_thread,   // dedicated to flushing logs
     os_thread
   };
 
@@ -495,11 +525,16 @@ class os: AllStatic {
 
   static bool message_box(const char* title, const char* message);
 
-  // run cmd in a separate process and return its exit code; or -1 on failures
-  static int fork_and_exec(char *cmd, bool use_vfork_if_available = false);
+  // run cmd in a separate process and return its exit code; or -1 on failures.
+  // Note: only safe to use in fatal error situations.
+  static int fork_and_exec(const char *cmd);
 
-  // Call ::exit() on all platforms but Windows
+  // Call ::exit() on all platforms
   static void exit(int num);
+
+  // Call ::_exit() on all platforms. Similar semantics to die() except we never
+  // want a core dump.
+  static void _exit(int num);
 
   // Terminate the VM, but don't exit the process
   static void shutdown();
@@ -518,17 +553,15 @@ class os: AllStatic {
 
   // File i/o operations
   static int open(const char *path, int oflag, int mode);
-  static FILE* open(int fd, const char* mode);
+  static FILE* fdopen(int fd, const char* mode);
   static FILE* fopen(const char* path, const char* mode);
-  static int close(int fd);
   static jlong lseek(int fd, jlong offset, int whence);
+  static bool file_exists(const char* file);
   // This function, on Windows, canonicalizes a given path (see os_windows.cpp for details).
   // On Posix, this function is a noop: it does not change anything and just returns
   // the input pointer.
   static char* native_path(char *path);
   static int ftruncate(int fd, jlong length);
-  static int fsync(int fd);
-  static int available(int fd, jlong *bytes);
   static int get_fileno(FILE* fp);
   static void flockfile(FILE* fp);
   static void funlockfile(FILE* fp);
@@ -539,9 +572,8 @@ class os: AllStatic {
 
   //File i/o operations
 
-  static ssize_t read(int fd, void *buf, unsigned int nBytes);
   static ssize_t read_at(int fd, void *buf, unsigned int nBytes, jlong offset);
-  static size_t write(int fd, const void *buf, unsigned int nBytes);
+  static ssize_t write(int fd, const void *buf, unsigned int nBytes);
 
   // Reading directories.
   static DIR*           opendir(const char* dirname);
@@ -581,6 +613,24 @@ class os: AllStatic {
   // and offset is set to -1 (if offset is non-NULL).
   static bool dll_address_to_library_name(address addr, char* buf,
                                           int buflen, int* offset);
+
+  // Given an address, attempt to locate both the symbol and the library it
+  // resides in. If at least one of these steps was successful, prints information
+  // and returns true.
+  // - if no scratch buffer is given, stack is used
+  // - shorten_paths: path is omitted from library name
+  // - demangle: function name is demangled
+  // - strip_arguments: arguments are stripped (requires demangle=true)
+  // On success prints either one of:
+  // "<function name>+<offset> in <library>"
+  // "<function name>+<offset>"
+  // "<address> in <library>+<offset>"
+  static bool print_function_and_library_name(outputStream* st,
+                                              address addr,
+                                              char* buf = NULL, int buflen = 0,
+                                              bool shorten_paths = true,
+                                              bool demangle = true,
+                                              bool strip_arguments = false);
 
   // Find out whether the pc is in the static code for jvm.dll/libjvm.so.
   static bool address_is_in_vm(address addr);
@@ -637,6 +687,7 @@ class os: AllStatic {
   static void print_dll_info(outputStream* st);
   static void print_environment_variables(outputStream* st, const char** env_list);
   static void print_context(outputStream* st, const void* context);
+  static void print_tos_pc(outputStream* st, const void* context);
   static void print_register_info(outputStream* st, const void* context);
   static bool signal_sent_by_kill(const void* siginfo);
   static void print_siginfo(outputStream* st, const void* siginfo);
@@ -742,15 +793,7 @@ class os: AllStatic {
   // Like strdup, but exit VM when strdup() returns NULL
   static char* strdup_check_oom(const char*, MEMFLAGS flags = mtInternal);
 
-#ifndef PRODUCT
-  static julong num_mallocs;         // # of calls to malloc/realloc
-  static julong alloc_bytes;         // # of bytes allocated
-  static julong num_frees;           // # of calls to free
-  static julong free_bytes;          // # of bytes freed
-#endif
-
   // SocketInterface (ex HPI SocketInterface )
-  static int socket(int domain, int type, int protocol);
   static int socket_close(int fd);
   static int recv(int fd, char* buf, size_t nBytes, uint flags);
   static int send(int fd, char* buf, size_t nBytes, uint flags);
@@ -774,7 +817,7 @@ class os: AllStatic {
   static void init_random(unsigned int initval);    // initialize random sequence
 
   // Structured OS Exception support
-  static void os_exception_wrapper(java_call_t f, JavaValue* value, const methodHandle& method, JavaCallArguments* args, Thread* thread);
+  static void os_exception_wrapper(java_call_t f, JavaValue* value, const methodHandle& method, JavaCallArguments* args, JavaThread* thread);
 
   // On Posix compatible OS it will simply check core dump limits while on Windows
   // it will check if dump file can be created. Check or prepare a core dump to be
@@ -826,10 +869,6 @@ class os: AllStatic {
   static bool supports_map_sync();
 
  public:
-  class CrashProtectionCallback : public StackObj {
-  public:
-    virtual void call() = 0;
-  };
 
   // Platform dependent stuff
 #ifndef _WINDOWS
@@ -878,98 +917,10 @@ class os: AllStatic {
   static char*  build_agent_function_name(const char *sym, const char *cname,
                                           bool is_absolute_path);
 
-  class SuspendedThreadTaskContext {
-  public:
-    SuspendedThreadTaskContext(Thread* thread, void *ucontext) : _thread(thread), _ucontext(ucontext) {}
-    Thread* thread() const { return _thread; }
-    void* ucontext() const { return _ucontext; }
-  private:
-    Thread* _thread;
-    void* _ucontext;
-  };
-
-  class SuspendedThreadTask {
-  public:
-    SuspendedThreadTask(Thread* thread) : _thread(thread), _done(false) {}
-    void run();
-    bool is_done() { return _done; }
-    virtual void do_task(const SuspendedThreadTaskContext& context) = 0;
-  protected:
-    ~SuspendedThreadTask() {}
-  private:
-    void internal_do_task();
-    Thread* _thread;
-    bool _done;
-  };
-
-#ifndef _WINDOWS
-  // Suspend/resume support
-  // Protocol:
-  //
-  // a thread starts in SR_RUNNING
-  //
-  // SR_RUNNING can go to
-  //   * SR_SUSPEND_REQUEST when the WatcherThread wants to suspend it
-  // SR_SUSPEND_REQUEST can go to
-  //   * SR_RUNNING if WatcherThread decides it waited for SR_SUSPENDED too long (timeout)
-  //   * SR_SUSPENDED if the stopped thread receives the signal and switches state
-  // SR_SUSPENDED can go to
-  //   * SR_WAKEUP_REQUEST when the WatcherThread has done the work and wants to resume
-  // SR_WAKEUP_REQUEST can go to
-  //   * SR_RUNNING when the stopped thread receives the signal
-  //   * SR_WAKEUP_REQUEST on timeout (resend the signal and try again)
-  class SuspendResume {
-   public:
-    enum State {
-      SR_RUNNING,
-      SR_SUSPEND_REQUEST,
-      SR_SUSPENDED,
-      SR_WAKEUP_REQUEST
-    };
-
-  private:
-    volatile State _state;
-
-  private:
-    /* try to switch state from state "from" to state "to"
-     * returns the state set after the method is complete
-     */
-    State switch_state(State from, State to);
-
-  public:
-    SuspendResume() : _state(SR_RUNNING) { }
-
-    State state() const { return _state; }
-
-    State request_suspend() {
-      return switch_state(SR_RUNNING, SR_SUSPEND_REQUEST);
-    }
-
-    State cancel_suspend() {
-      return switch_state(SR_SUSPEND_REQUEST, SR_RUNNING);
-    }
-
-    State suspended() {
-      return switch_state(SR_SUSPEND_REQUEST, SR_SUSPENDED);
-    }
-
-    State request_wakeup() {
-      return switch_state(SR_SUSPENDED, SR_WAKEUP_REQUEST);
-    }
-
-    State running() {
-      return switch_state(SR_WAKEUP_REQUEST, SR_RUNNING);
-    }
-
-    bool is_running() const {
-      return _state == SR_RUNNING;
-    }
-
-    bool is_suspended() const {
-      return _state == SR_SUSPENDED;
-    }
-  };
-#endif // !WINDOWS
+#if defined(__APPLE__) && defined(AARCH64)
+  // Enables write or execute access to writeable and executable pages.
+  static void current_thread_enable_wx(WXMode mode);
+#endif // __APPLE__ && AARCH64
 
  protected:
   static volatile unsigned int _rand_seed;    // seed for random number generator

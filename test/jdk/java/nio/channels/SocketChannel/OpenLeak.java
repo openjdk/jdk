@@ -26,7 +26,7 @@
  * @summary SocketChannel.open(SocketAddress) leaks file descriptor if
  *     connection cannot be established
  * @build OpenLeak
- * @run main/othervm OpenLeak
+ * @run main/othervm -Djava.security.manager=allow OpenLeak
  */
 
 import java.net.InetAddress;

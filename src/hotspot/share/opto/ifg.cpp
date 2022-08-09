@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,8 @@
 #include "opto/machnode.hpp"
 #include "opto/memnode.hpp"
 #include "opto/opcodes.hpp"
+
+#include <fenv.h>
 
 PhaseIFG::PhaseIFG( Arena *arena ) : Phase(Interference_Graph), _arena(arena) {
 }
@@ -409,7 +411,9 @@ uint PhaseChaitin::count_int_pressure(IndexSet* liveout) {
     LRG& lrg = lrgs(lidx);
     if (lrg.mask_is_nonempty_and_up() &&
         !lrg.is_float_or_vector() &&
-        lrg.mask().overlap(*Matcher::idealreg2regmask[Op_RegI])) {
+        (lrg.mask().overlap(*Matcher::idealreg2regmask[Op_RegI]) ||
+         (Matcher::has_predicated_vectors() &&
+          lrg.mask().overlap(*Matcher::idealreg2regmask[Op_RegVectMask])))) {
       cnt += lrg.reg_pressure();
     }
     lidx = elements.next();
@@ -445,7 +449,9 @@ void PhaseChaitin::lower_pressure(Block* b, uint location, LRG& lrg, IndexSet* l
     } else {
       // Do not count the SP and flag registers
       const RegMask& r = lrg.mask();
-      if (r.overlap(*Matcher::idealreg2regmask[Op_RegI])) {
+      if (r.overlap(*Matcher::idealreg2regmask[Op_RegI]) ||
+           (Matcher::has_predicated_vectors() &&
+            r.overlap(*Matcher::idealreg2regmask[Op_RegVectMask]))) {
         int_pressure.lower(lrg, location);
       }
     }
@@ -500,7 +506,9 @@ void PhaseChaitin::raise_pressure(Block* b, LRG& lrg, Pressure& int_pressure, Pr
     } else {
       // Do not count the SP and flag registers
       const RegMask& rm = lrg.mask();
-      if (rm.overlap(*Matcher::idealreg2regmask[Op_RegI])) {
+      if (rm.overlap(*Matcher::idealreg2regmask[Op_RegI]) ||
+           (Matcher::has_predicated_vectors() &&
+            rm.overlap(*Matcher::idealreg2regmask[Op_RegVectMask]))) {
         int_pressure.raise(lrg);
       }
     }
@@ -778,7 +786,7 @@ void PhaseChaitin::add_input_to_liveout(Block* b, Node* n, IndexSet* liveout, do
       assert(int_pressure.current_pressure() == count_int_pressure(liveout), "the int pressure is incorrect");
       assert(float_pressure.current_pressure() == count_float_pressure(liveout), "the float pressure is incorrect");
     }
-    assert(lrg._area >= 0.0, "negative spill area" );
+    assert(lrg._area >= 0.0, "unexpected spill area value %g (rounding mode %x)", lrg._area, fegetround());
   }
 }
 
@@ -850,8 +858,8 @@ uint PhaseChaitin::build_ifg_physical( ResourceArea *a ) {
 
     move_exception_node_up(block, first_inst, last_inst);
 
-    Pressure int_pressure(last_inst + 1, INTPRESSURE);
-    Pressure float_pressure(last_inst + 1, FLOATPRESSURE);
+    Pressure int_pressure(last_inst + 1, Matcher::int_pressure_limit());
+    Pressure float_pressure(last_inst + 1, Matcher::float_pressure_limit());
     block->_reg_pressure = 0;
     block->_freg_pressure = 0;
 
@@ -889,7 +897,7 @@ uint PhaseChaitin::build_ifg_physical( ResourceArea *a ) {
           if (g_isfinite(cost)) {
             lrg._area -= cost;
           }
-          assert(lrg._area >= 0.0, "negative spill area" );
+          assert(lrg._area >= 0.0, "unexpected spill area value %g (rounding mode %x)", lrg._area, fegetround());
 
           assign_high_score_to_immediate_copies(block, n, lrg, location + 1, last_inst);
 

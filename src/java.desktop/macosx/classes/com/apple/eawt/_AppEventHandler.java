@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -281,7 +281,7 @@ class _AppEventHandler {
         }
     }
 
-    class _PreferencesDispatcher extends _AppEventDispatcher<PreferencesHandler> {
+    static class _PreferencesDispatcher extends _AppEventDispatcher<PreferencesHandler> {
         synchronized void setHandler(final PreferencesHandler handler) {
             super.setHandler(handler);
 
@@ -294,20 +294,20 @@ class _AppEventHandler {
         }
     }
 
-    class _OpenAppDispatcher extends _QueuingAppEventDispatcher<com.apple.eawt._OpenAppHandler> {
+    static class _OpenAppDispatcher extends _QueuingAppEventDispatcher<com.apple.eawt._OpenAppHandler> {
         void performUsing(com.apple.eawt._OpenAppHandler handler, _NativeEvent event) {
             handler.handleOpenApp();
         }
     }
 
-    class _AppReOpenedDispatcher extends _AppEventMultiplexor<AppReopenedListener> {
+    static class _AppReOpenedDispatcher extends _AppEventMultiplexor<AppReopenedListener> {
         void performOnListener(AppReopenedListener listener, final _NativeEvent event) {
             final AppReopenedEvent e = new AppReopenedEvent();
             listener.appReopened(e);
         }
     }
 
-    class _AppForegroundDispatcher extends _BooleanAppEventMultiplexor<AppForegroundListener, AppForegroundEvent> {
+    static class _AppForegroundDispatcher extends _BooleanAppEventMultiplexor<AppForegroundListener, AppForegroundEvent> {
         AppForegroundEvent createEvent(final boolean isTrue) { return new AppForegroundEvent(); }
 
         void performFalseEventOn(final AppForegroundListener listener, final AppForegroundEvent e) {
@@ -319,7 +319,7 @@ class _AppEventHandler {
         }
     }
 
-    class _HiddenAppDispatcher extends _BooleanAppEventMultiplexor<AppHiddenListener, AppHiddenEvent> {
+    static class _HiddenAppDispatcher extends _BooleanAppEventMultiplexor<AppHiddenListener, AppHiddenEvent> {
         AppHiddenEvent createEvent(final boolean isTrue) { return new AppHiddenEvent(); }
 
         void performFalseEventOn(final AppHiddenListener listener, final AppHiddenEvent e) {
@@ -331,7 +331,7 @@ class _AppEventHandler {
         }
     }
 
-    class _UserSessionDispatcher extends _BooleanAppEventMultiplexor<UserSessionListener, UserSessionEvent> {
+    static class _UserSessionDispatcher extends _BooleanAppEventMultiplexor<UserSessionListener, UserSessionEvent> {
         UserSessionEvent createEvent(final boolean isTrue) {
             return new UserSessionEvent(Reason.UNSPECIFIED);
         }
@@ -349,7 +349,7 @@ class _AppEventHandler {
         }
     }
 
-    class _ScreenSleepDispatcher extends _BooleanAppEventMultiplexor<ScreenSleepListener, ScreenSleepEvent> {
+    static class _ScreenSleepDispatcher extends _BooleanAppEventMultiplexor<ScreenSleepListener, ScreenSleepEvent> {
         ScreenSleepEvent createEvent(final boolean isTrue) { return new ScreenSleepEvent(); }
 
         void performFalseEventOn(final ScreenSleepListener listener, final ScreenSleepEvent e) {
@@ -365,7 +365,7 @@ class _AppEventHandler {
         }
     }
 
-    class _SystemSleepDispatcher extends _BooleanAppEventMultiplexor<SystemSleepListener, SystemSleepEvent> {
+    static class _SystemSleepDispatcher extends _BooleanAppEventMultiplexor<SystemSleepListener, SystemSleepEvent> {
         SystemSleepEvent createEvent(final boolean isTrue) { return new SystemSleepEvent(); }
 
         void performFalseEventOn(final SystemSleepListener listener, final SystemSleepEvent e) {
@@ -381,7 +381,7 @@ class _AppEventHandler {
         }
     }
 
-    class _OpenFileDispatcher extends _QueuingAppEventDispatcher<OpenFilesHandler> {
+    static class _OpenFileDispatcher extends _QueuingAppEventDispatcher<OpenFilesHandler> {
         void performUsing(final OpenFilesHandler handler, final _NativeEvent event) {
             // create file list from fileNames
             final List<String> fileNameList = event.get(0);
@@ -394,7 +394,7 @@ class _AppEventHandler {
         }
     }
 
-    class _PrintFileDispatcher extends _QueuingAppEventDispatcher<PrintFilesHandler> {
+    static class _PrintFileDispatcher extends _QueuingAppEventDispatcher<PrintFilesHandler> {
         void performUsing(final PrintFilesHandler handler, final _NativeEvent event) {
             // create file list from fileNames
             final List<String> fileNameList = event.get(0);
@@ -406,7 +406,7 @@ class _AppEventHandler {
     }
 
     // Java URLs can't handle unknown protocol types, which is why we use URIs
-    class _OpenURIDispatcher extends _QueuingAppEventDispatcher<OpenURIHandler> {
+    static class _OpenURIDispatcher extends _QueuingAppEventDispatcher<OpenURIHandler> {
         void performUsing(final OpenURIHandler handler, final _NativeEvent event) {
             final String urlString = event.get(0);
             try {
@@ -450,7 +450,7 @@ class _AppEventHandler {
         }
     }
 
-    abstract class _AppEventMultiplexor<L> {
+    abstract static class _AppEventMultiplexor<L> {
         private final Map<L, AppContext> listenerToAppContext =
                 new IdentityHashMap<L, AppContext>();
         boolean nativeListenerRegistered;
@@ -503,7 +503,7 @@ class _AppEventHandler {
         }
     }
 
-    abstract class _BooleanAppEventMultiplexor<L, E> extends _AppEventMultiplexor<L> {
+    abstract static class _BooleanAppEventMultiplexor<L, E> extends _AppEventMultiplexor<L> {
         @Override
         void performOnListener(L listener, final _NativeEvent event) {
             final boolean isTrue = Boolean.TRUE.equals(event.get(0));
@@ -530,7 +530,7 @@ class _AppEventHandler {
      *
      * User code is not (and should not be) run under any synchronized lock.
      */
-    abstract class _AppEventDispatcher<H> {
+    abstract static class _AppEventDispatcher<H> {
         H _handler;
         AppContext handlerContext;
 
@@ -575,7 +575,7 @@ class _AppEventHandler {
         }
     }
 
-    abstract class _QueuingAppEventDispatcher<H> extends _AppEventDispatcher<H> {
+    abstract static class _QueuingAppEventDispatcher<H> extends _AppEventDispatcher<H> {
         List<_NativeEvent> queuedEvents = new LinkedList<_NativeEvent>();
 
         @Override

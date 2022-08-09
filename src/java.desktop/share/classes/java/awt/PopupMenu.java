@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package java.awt;
 
 import java.awt.peer.PopupMenuPeer;
+import java.io.Serial;
 
 import javax.accessibility.AccessibleContext;
 import javax.accessibility.AccessibleRole;
@@ -60,14 +61,15 @@ public class PopupMenu extends Menu {
             });
     }
 
-    /*
-     * JDK 1.1 serialVersionUID
+    /**
+     * Use serialVersionUID from JDK 1.1 for interoperability.
      */
+    @Serial
     private static final long serialVersionUID = -4620452533522760060L;
 
     /**
      * Creates a new popup menu with an empty name.
-     * @exception HeadlessException if GraphicsEnvironment.isHeadless()
+     * @throws HeadlessException if GraphicsEnvironment.isHeadless()
      * returns true.
      * @see java.awt.GraphicsEnvironment#isHeadless
      */
@@ -80,7 +82,7 @@ public class PopupMenu extends Menu {
      *
      * @param label a non-{@code null} string specifying
      *                the popup menu's label
-     * @exception HeadlessException if GraphicsEnvironment.isHeadless()
+     * @throws HeadlessException if GraphicsEnvironment.isHeadless()
      * returns true.
      * @see java.awt.GraphicsEnvironment#isHeadless
      */
@@ -147,12 +149,12 @@ public class PopupMenu extends Menu {
      * @param origin the component which defines the coordinate space
      * @param x the x coordinate position to popup the menu
      * @param y the y coordinate position to popup the menu
-     * @exception NullPointerException  if the parent is {@code null}
-     * @exception IllegalArgumentException  if this {@code PopupMenu}
+     * @throws NullPointerException  if the parent is {@code null}
+     * @throws IllegalArgumentException  if this {@code PopupMenu}
      *                has a non-{@code Component} parent
-     * @exception IllegalArgumentException if the origin is not in the
+     * @throws IllegalArgumentException if the origin is not in the
      *                parent's hierarchy
-     * @exception RuntimeException if the parent is not showing on screen
+     * @throws RuntimeException if the parent is not showing on screen
      */
     @SuppressWarnings("deprecation")
     public void show(Component origin, int x, int y) {
@@ -223,9 +225,10 @@ public class PopupMenu extends Menu {
      */
     protected class AccessibleAWTPopupMenu extends AccessibleAWTMenu
     {
-        /*
-         * JDK 1.3 serialVersionUID
+        /**
+         * Use serialVersionUID from JDK 1.3 for interoperability.
          */
+        @Serial
         private static final long serialVersionUID = -4282044795947239955L;
 
         /**

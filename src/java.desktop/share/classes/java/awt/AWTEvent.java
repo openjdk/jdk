@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ import java.awt.event.TextEvent;
 import java.awt.event.WindowEvent;
 import java.awt.peer.ComponentPeer;
 import java.awt.peer.LightweightPeer;
+import java.io.Serial;
 import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.util.EventObject;
@@ -114,12 +115,14 @@ public abstract class AWTEvent extends EventObject {
    /*
     * The event's AccessControlContext.
     */
+    @SuppressWarnings("removal")
     private transient volatile AccessControlContext acc =
         AccessController.getContext();
 
    /*
     * Returns the acc this event was constructed with.
     */
+    @SuppressWarnings("removal")
     final AccessControlContext getAccessControlContext() {
         if (acc == null) {
             throw new SecurityException("AWTEvent is missing AccessControlContext");
@@ -252,9 +255,10 @@ public abstract class AWTEvent extends EventObject {
      */
     public static final int RESERVED_ID_MAX = 1999;
 
-    /*
-     * JDK 1.1 serialVersionUID
+    /**
+     * Use serialVersionUID from JDK 1.1 for interoperability.
      */
+    @Serial
     private static final long serialVersionUID = -1825314779160409405L;
 
     static {
@@ -277,6 +281,7 @@ public abstract class AWTEvent extends EventObject {
                     return ev.isSystemGenerated;
                 }
 
+                @SuppressWarnings("removal")
                 public AccessControlContext getAccessControlContext(AWTEvent ev) {
                     return ev.getAccessControlContext();
                 }
@@ -350,8 +355,7 @@ public abstract class AWTEvent extends EventObject {
         Component comp = null;
         if (newSource instanceof Component) {
             comp = (Component)newSource;
-            while (comp != null && comp.peer != null &&
-                   (comp.peer instanceof LightweightPeer)) {
+            while (comp != null && (comp.peer instanceof LightweightPeer)) {
                 comp = comp.parent;
             }
         }

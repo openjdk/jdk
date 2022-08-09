@@ -1,7 +1,0 @@
-/*
- * security policy used by the test process
- */
-
-grant {
-  permission java.security.AllPermission;
-};

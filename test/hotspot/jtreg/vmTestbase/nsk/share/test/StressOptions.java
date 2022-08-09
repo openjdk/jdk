@@ -200,10 +200,10 @@ public class StressOptions {
      * @param out output stream
      */
     public void printInfo(PrintStream out) {
-        out.println("Stress time: " + time + " seconds");
-        out.println("Stress iterations factor: " + iterationsFactor);
-        out.println("Stress threads factor: " + threadsFactor);
-        out.println("Stress runs factor: " + runsFactor);
+        out.println("Stress time: " + getTime() + " seconds");
+        out.println("Stress iterations factor: " + getIterationsFactor());
+        out.println("Stress threads factor: " + getThreadsFactor());
+        out.println("Stress runs factor: " + getRunsFactor());
     }
 
     private void error(String msg) {

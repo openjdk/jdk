@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,14 +32,14 @@
 #include "logging/log.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "runtime/thread.inline.hpp"
 
 //
 // Entry point for "JFR Recorder Thread" message loop.
 // The recorder thread executes service requests collected from the message system.
 //
-void recorderthread_entry(JavaThread* thread, Thread* unused) {
+void recorderthread_entry(JavaThread* thread, JavaThread* unused) {
   assert(thread != NULL, "invariant");
   #define START (msgs & (MSGBIT(MSG_START)))
   #define SHUTDOWN (msgs & MSGBIT(MSG_SHUTDOWN))
@@ -51,23 +51,24 @@ void recorderthread_entry(JavaThread* thread, Thread* unused) {
   log_debug(jfr, system)("Recorder thread STARTED");
 
   {
+    // Run as _thread_in_native to minimize impact on safepoint synchronization.
+    NoHandleMark nhm;
+    ThreadToNativeFromVM transition(thread);
+
     bool done = false;
     int msgs = 0;
     JfrRecorderService service;
-    MutexLocker msg_lock(JfrMsg_lock);
+
+    MonitorLocker msg_lock(JfrMsg_lock, Mutex::_no_safepoint_check_flag);
 
     // JFR MESSAGE LOOP PROCESSING - BEGIN
     while (!done) {
       if (post_box.is_empty()) {
-        JfrMsg_lock->wait();
+        msg_lock.wait();
       }
       msgs = post_box.collect();
-      JfrMsg_lock->unlock();
       {
-        // Run as _thread_in_native as much a possible
-        // to minimize impact on safepoint synchronizations.
-        NoHandleMark nhm;
-        ThreadToNativeFromVM transition(thread);
+        MutexUnlocker mul(JfrMsg_lock, Mutex::_no_safepoint_check_flag);
         if (PROCESS_FULL_BUFFERS) {
           service.process_full_buffers();
         }
@@ -82,18 +83,16 @@ void recorderthread_entry(JavaThread* thread, Thread* unused) {
           service.flushpoint();
         }
       }
-      JfrMsg_lock->lock();
       post_box.notify_waiters();
       if (SHUTDOWN) {
         log_debug(jfr, system)("Request to STOP recorder");
         done = true;
       }
     } // JFR MESSAGE LOOP PROCESSING - END
-
-  } // JfrMsg_lock scope
+    post_box.notify_collection_stop();
+  } // JfrMsg_lock scope and the thread returns to _thread_in_vm
 
   assert(!JfrMsg_lock->owned_by_self(), "invariant");
-  post_box.notify_collection_stop();
   JfrRecorder::on_recorder_thread_exit();
 
   #undef START

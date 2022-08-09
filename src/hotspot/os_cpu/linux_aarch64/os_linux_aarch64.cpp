@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,8 +26,6 @@
 // no precompiled headers
 #include "jvm.h"
 #include "asm/macroAssembler.hpp"
-#include "classfile/classLoader.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
 #include "code/icBuffer.hpp"
@@ -35,7 +33,6 @@
 #include "code/nativeInst.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/allocation.inline.hpp"
-#include "os_share_linux.hpp"
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm_misc.hpp"
 #include "runtime/arguments.hpp"
@@ -48,7 +45,7 @@
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/timer.hpp"
 #include "signals_posix.hpp"
 #include "utilities/debug.hpp"
@@ -185,11 +182,6 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
   if (info != NULL && uc != NULL && thread != NULL) {
     pc = (address) os::Posix::ucontext_get_pc(uc);
 
-    if (StubRoutines::is_safefetch_fault(pc)) {
-      os::Posix::ucontext_set_pc(uc, StubRoutines::continuation_for_safefetch_fault(pc));
-      return true;
-    }
-
     address addr = (address) info->si_addr;
 
     // Make sure the high order byte is sign extended, as it may be masked away by the hardware.
@@ -245,7 +237,14 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
           tty->print_cr("trap: %s: (SIGILL)", msg);
         }
 
-        return false; // Fatal error
+        // End life with a fatal error, message and detail message and the context.
+        // Note: no need to do any post-processing here (e.g. signal chaining)
+        va_list va_dummy;
+        VMError::report_and_die(thread, uc, NULL, 0, msg, detail_msg, va_dummy);
+        va_end(va_dummy);
+
+        ShouldNotReachHere();
+
       }
       else
 
@@ -304,18 +303,14 @@ int os::Linux::get_fpu_control_word(void) {
 void os::Linux::set_fpu_control_word(int fpu_control) {
 }
 
-bool os::is_allocatable(size_t bytes) {
-  return true;
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 // thread stack
 
 // Minimum usable stack sizes required to get to user code. Space for
 // HotSpot guard pages is added later.
-size_t os::Posix::_compiler_thread_min_stack_allowed = 72 * K;
-size_t os::Posix::_java_thread_min_stack_allowed = 72 * K;
-size_t os::Posix::_vm_internal_thread_min_stack_allowed = 72 * K;
+size_t os::_compiler_thread_min_stack_allowed = 72 * K;
+size_t os::_java_thread_min_stack_allowed = 72 * K;
+size_t os::_vm_internal_thread_min_stack_allowed = 72 * K;
 
 // return default stack size for thr_type
 size_t os::Posix::default_stack_size(os::ThreadType thr_type) {
@@ -331,12 +326,18 @@ void os::print_context(outputStream *st, const void *context) {
   if (context == NULL) return;
 
   const ucontext_t *uc = (const ucontext_t*)context;
+
   st->print_cr("Registers:");
   for (int r = 0; r < 31; r++) {
-    st->print("R%-2d=", r);
-    print_location(st, uc->uc_mcontext.regs[r]);
+    st->print_cr(  "R%d=" INTPTR_FORMAT, r, (uintptr_t)uc->uc_mcontext.regs[r]);
   }
   st->cr();
+}
+
+void os::print_tos_pc(outputStream *st, const void *context) {
+  if (context == NULL) return;
+
+  const ucontext_t* uc = (const ucontext_t*)context;
 
   intptr_t *sp = (intptr_t *)os::Linux::ucontext_get_sp(uc);
   st->print_cr("Top of Stack: (sp=" PTR_FORMAT ")", p2i(sp));
@@ -365,8 +366,10 @@ void os::print_register_info(outputStream *st, const void *context) {
 
   // this is only for the "general purpose" registers
 
-  for (int r = 0; r < 31; r++)
-    st->print_cr(  "R%d=" INTPTR_FORMAT, r, (uintptr_t)uc->uc_mcontext.regs[r]);
+  for (int r = 0; r < 31; r++) {
+    st->print("R%-2d=", r);
+    print_location(st, uc->uc_mcontext.regs[r]);
+  }
   st->cr();
 }
 
@@ -384,9 +387,26 @@ int os::extra_bang_size_in_bytes() {
   return 0;
 }
 
+static inline void atomic_copy64(const volatile void *src, volatile void *dst) {
+  *(jlong *) dst = *(const jlong *) src;
+}
+
 extern "C" {
   int SpinPause() {
-    return 0;
+    using spin_wait_func_ptr_t = void (*)();
+    spin_wait_func_ptr_t func = CAST_TO_FN_PTR(spin_wait_func_ptr_t, StubRoutines::aarch64::spin_wait());
+    assert(func != nullptr, "StubRoutines::aarch64::spin_wait must not be null.");
+    (*func)();
+    // If StubRoutines::aarch64::spin_wait consists of only a RET,
+    // SpinPause can be considered as implemented. There will be a sequence
+    // of instructions for:
+    // - call of SpinPause
+    // - load of StubRoutines::aarch64::spin_wait stub pointer
+    // - indirect call of the stub
+    // - return from the stub
+    // - return from SpinPause
+    // So '1' always is returned.
+    return 1;
   }
 
   void _Copy_conjoint_jshorts_atomic(const jshort* from, jshort* to, size_t count) {
@@ -417,18 +437,19 @@ extern "C" {
         *(to--) = *(from--);
     }
   }
+
   void _Copy_conjoint_jlongs_atomic(const jlong* from, jlong* to, size_t count) {
     if (from > to) {
       const jlong *end = from + count;
       while (from < end)
-        os::atomic_copy64(from++, to++);
+        atomic_copy64(from++, to++);
     }
     else if (from < to) {
       const jlong *end = from;
       from += count - 1;
       to   += count - 1;
       while (from >= end)
-        os::atomic_copy64(from--, to--);
+        atomic_copy64(from--, to--);
     }
   }
 

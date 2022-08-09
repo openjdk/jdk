@@ -40,7 +40,7 @@ import org.testng.annotations.Test;
 /*
  * @test
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true stream.XMLStreamReaderTest.DefaultAttributeTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow stream.XMLStreamReaderTest.DefaultAttributeTest
  * @run testng/othervm stream.XMLStreamReaderTest.DefaultAttributeTest
  * @summary Test StAX parses namespace and attribute.
  */

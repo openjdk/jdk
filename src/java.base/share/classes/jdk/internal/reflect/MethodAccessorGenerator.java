@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,8 @@ package jdk.internal.reflect;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 
-/** Generator for sun.reflect.MethodAccessor and
-    sun.reflect.ConstructorAccessor objects using bytecodes to
+/** Generator for jdk.internal.reflect.MethodAccessor and
+    jdk.internal.reflect.ConstructorAccessor objects using bytecodes to
     implement reflection. A java.lang.reflect.Method or
     java.lang.reflect.Constructor object can delegate its invoke or
     newInstance method to an accessor using native code or to one
@@ -121,6 +121,7 @@ class MethodAccessorGenerator extends AccessorGenerator {
     }
 
     /** This routine is not thread-safe */
+    @SuppressWarnings("removal")
     private MagicAccessorImpl generate(final Class<?> declaringClass,
                                        String name,
                                        Class<?>[] parameterTypes,

@@ -80,7 +80,7 @@ public interface PGPData extends XMLStructure {
      * value of the <code>type</code> parameter of the {@link RetrievalMethod}
      * class to describe a remote <code>PGPData</code> structure.
      */
-    final static String TYPE = "http://www.w3.org/2000/09/xmldsig#PGPData";
+    static final String TYPE = "http://www.w3.org/2000/09/xmldsig#PGPData";
 
     /**
      * Returns the PGP public key identifier of this <code>PGPData</code> as

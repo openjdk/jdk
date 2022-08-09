@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ import sun.security.util.KeyStoreDelegator;
  * @since 1.2
  */
 
-public abstract class JavaKeyStore extends KeyStoreSpi {
+public abstract sealed class JavaKeyStore extends KeyStoreSpi {
 
     // regular JKS
     public static final class JKS extends JavaKeyStore {
@@ -146,7 +146,7 @@ public abstract class JavaKeyStore extends KeyStoreSpi {
     {
         Object entry = entries.get(convertAlias(alias));
 
-        if (entry == null || !(entry instanceof KeyEntry)) {
+        if (!(entry instanceof KeyEntry keyEntry)) {
             return null;
         }
         if (password == null) {
@@ -155,7 +155,7 @@ public abstract class JavaKeyStore extends KeyStoreSpi {
 
         byte[] passwordBytes = convertToBytes(password);
         KeyProtector keyProtector = new KeyProtector(passwordBytes);
-        byte[] encrBytes = ((KeyEntry)entry).protectedPrivKey;
+        byte[] encrBytes = keyEntry.protectedPrivKey;
         EncryptedPrivateKeyInfo encrInfo;
         try {
             encrInfo = new EncryptedPrivateKeyInfo(encrBytes);
@@ -183,11 +183,11 @@ public abstract class JavaKeyStore extends KeyStoreSpi {
     public Certificate[] engineGetCertificateChain(String alias) {
         Object entry = entries.get(convertAlias(alias));
 
-        if (entry != null && entry instanceof KeyEntry) {
-            if (((KeyEntry)entry).chain == null) {
+        if (entry instanceof KeyEntry keyEntry) {
+            if (keyEntry.chain == null) {
                 return null;
             } else {
-                return ((KeyEntry)entry).chain.clone();
+                return keyEntry.chain.clone();
             }
         } else {
             return null;
@@ -280,6 +280,9 @@ public abstract class JavaKeyStore extends KeyStoreSpi {
 
         if (!(key instanceof java.security.PrivateKey)) {
             throw new KeyStoreException("Cannot store non-PrivateKeys");
+        }
+        if (password == null) {
+            throw new KeyStoreException("password can't be null");
         }
         try {
             synchronized(entries) {
@@ -381,7 +384,7 @@ public abstract class JavaKeyStore extends KeyStoreSpi {
         synchronized(entries) {
 
             Object entry = entries.get(convertAlias(alias));
-            if ((entry != null) && (entry instanceof KeyEntry)) {
+            if (entry instanceof KeyEntry) {
                 throw new KeyStoreException
                     ("Cannot overwrite own certificate");
             }
@@ -446,11 +449,7 @@ public abstract class JavaKeyStore extends KeyStoreSpi {
      */
     public boolean engineIsKeyEntry(String alias) {
         Object entry = entries.get(convertAlias(alias));
-        if ((entry != null) && (entry instanceof KeyEntry)) {
-            return true;
-        } else {
-            return false;
-        }
+        return entry instanceof KeyEntry;
     }
 
     /**
@@ -462,11 +461,7 @@ public abstract class JavaKeyStore extends KeyStoreSpi {
      */
     public boolean engineIsCertificateEntry(String alias) {
         Object entry = entries.get(convertAlias(alias));
-        if ((entry != null) && (entry instanceof TrustedCertEntry)) {
-            return true;
-        } else {
-            return false;
-        }
+        return entry instanceof TrustedCertEntry;
     }
 
     /**
@@ -551,7 +546,7 @@ public abstract class JavaKeyStore extends KeyStoreSpi {
              *     }
              *
              * ended by a keyed SHA1 hash (bytes only) of
-             *     { password + whitener + preceding body }
+             *     { password + extra data + preceding body }
              */
 
             // password is mandatory when storing
@@ -807,9 +802,9 @@ public abstract class JavaKeyStore extends KeyStoreSpi {
                 if (!MessageDigest.isEqual(computed, actual)) {
                     Throwable t = new UnrecoverableKeyException
                             ("Password verification failed");
-                    throw (IOException) new IOException
+                    throw new IOException
                             ("Keystore was tampered with, or "
-                                    + "password was incorrect").initCause(t);
+                                    + "password was incorrect", t);
                 }
             }
         }
@@ -817,7 +812,7 @@ public abstract class JavaKeyStore extends KeyStoreSpi {
 
     /**
      * To guard against tampering with the keystore, we append a keyed
-     * hash with a bit of whitener.
+     * hash with a bit of extra data.
      */
     private MessageDigest getPreKeyedHash(char[] password)
         throws NoSuchAlgorithmException

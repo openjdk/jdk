@@ -1,4 +1,4 @@
-/* /nodynamiccopyright */
+/* /nodynamiccopyright/ */
 
 public class Identifiers {
     public double E = Math.E;

@@ -44,7 +44,7 @@ import org.xml.sax.helpers.DefaultHandler;
  * @test
  * @bug 5011500
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true validation.Bug5011500
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow validation.Bug5011500
  * @run testng/othervm validation.Bug5011500
  * @summary Test ValidatorHanlder and Validator can work for the xml document.
  */

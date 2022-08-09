@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@ class SimpleScopeDesc : public StackObj {
   SimpleScopeDesc(CompiledMethod* code, address pc) {
     PcDesc* pc_desc = code->pc_desc_at(pc);
     assert(pc_desc != NULL, "Must be able to find matching PcDesc");
+    // save this here so we only have to look up the PcDesc once
     DebugInfoReadStream buffer(code, pc_desc->scope_decode_offset());
     int ignore_sender = buffer.read_int();
     _method           = buffer.read_method();

@@ -294,6 +294,7 @@ public class BasicStroke implements Stroke {
      * stroked outline of a specified {@code Shape}.
      * @param s the {@code Shape} boundary be stroked
      * @return the {@code Shape} of the stroked outline.
+     * @throws NullPointerException if {@code s} is {@code null}
      */
     public Shape createStrokedShape(Shape s) {
         sun.java2d.pipe.RenderingEngine re =

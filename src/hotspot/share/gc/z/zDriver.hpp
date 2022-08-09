@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,9 +30,25 @@
 
 class VM_ZOperation;
 
+class ZDriverRequest {
+private:
+  GCCause::Cause _cause;
+  uint           _nworkers;
+
+public:
+  ZDriverRequest();
+  ZDriverRequest(GCCause::Cause cause);
+  ZDriverRequest(GCCause::Cause cause, uint nworkers);
+
+  bool operator==(const ZDriverRequest& other) const;
+
+  GCCause::Cause cause() const;
+  uint nworkers() const;
+};
+
 class ZDriver : public ConcurrentGCThread {
 private:
-  ZMessagePort<GCCause::Cause> _gc_cycle_port;
+  ZMessagePort<ZDriverRequest> _gc_cycle_port;
   ZRendezvousPort              _gc_locker_port;
 
   template <typename T> bool pause();
@@ -41,6 +57,7 @@ private:
   void concurrent_mark();
   bool pause_mark_end();
   void concurrent_mark_continue();
+  void concurrent_mark_free();
   void concurrent_process_non_strong_references();
   void concurrent_reset_relocation_set();
   void pause_verify();
@@ -50,7 +67,7 @@ private:
 
   void check_out_of_memory();
 
-  void gc(GCCause::Cause cause);
+  void gc(const ZDriverRequest& request);
 
 protected:
   virtual void run_service();
@@ -59,7 +76,9 @@ protected:
 public:
   ZDriver();
 
-  void collect(GCCause::Cause cause);
+  bool is_busy() const;
+
+  void collect(const ZDriverRequest& request);
 };
 
 #endif // SHARE_GC_Z_ZDRIVER_HPP

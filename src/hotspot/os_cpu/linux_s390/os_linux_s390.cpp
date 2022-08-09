@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -28,8 +28,6 @@
 // no precompiled headers
 #include "jvm.h"
 #include "asm/assembler.inline.hpp"
-#include "classfile/classLoader.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/icBuffer.hpp"
 #include "code/nativeInst.hpp"
@@ -38,7 +36,6 @@
 #include "interpreter/interpreter.hpp"
 #include "memory/allocation.inline.hpp"
 #include "nativeInst_s390.hpp"
-#include "os_share_linux.hpp"
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm_misc.hpp"
 #include "runtime/arguments.hpp"
@@ -46,12 +43,12 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "runtime/thread.inline.hpp"
 #include "runtime/timer.hpp"
 #include "signals_posix.hpp"
 #include "utilities/events.hpp"
@@ -207,16 +204,6 @@ frame os::current_frame() {
 bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
                                              ucontext_t* uc, JavaThread* thread) {
 
-  // Moved SafeFetch32 handling outside thread!=NULL conditional block to make
-  // it work if no associated JavaThread object exists.
-  if (uc) {
-    address const pc = os::Posix::ucontext_get_pc(uc);
-    if (pc && StubRoutines::is_safefetch_fault(pc)) {
-      os::Posix::ucontext_set_pc(uc, StubRoutines::continuation_for_safefetch_fault(pc));
-      return true;
-    }
-  }
-
   // Decide if this trap can be handled by a stub.
   address stub    = NULL;
   address pc      = NULL;  // Pc as retrieved from PSW. Usually points past failing instruction.
@@ -316,7 +303,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
         CodeBlob* cb = CodeCache::find_blob_unsafe(pc);
         CompiledMethod* nm = (cb != NULL) ? cb->as_compiled_method_or_null() : NULL;
         if (nm != NULL && nm->has_unsafe_access()) {
-          // We don't really need a stub here! Just set the pending exeption and
+          // We don't really need a stub here! Just set the pending exception and
           // continue at the next instruction after the faulting read. Returning
           // garbage from this read is ok.
           thread->set_pending_unsafe_access_error();
@@ -341,7 +328,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
       } else if ((thread->thread_state() == _thread_in_vm ||
                   thread->thread_state() == _thread_in_native) &&
                  sig == SIGBUS && thread->doing_unsafe_access()) {
-        // We don't really need a stub here! Just set the pending exeption and
+        // We don't really need a stub here! Just set the pending exception and
         // continue at the next instruction after the faulting read. Returning
         // garbage from this read is ok.
         thread->set_pending_unsafe_access_error();
@@ -388,9 +375,9 @@ void os::Linux::set_fpu_control_word(int fpu_control) {
 
 // Minimum usable stack sizes required to get to user code. Space for
 // HotSpot guard pages is added later.
-size_t os::Posix::_compiler_thread_min_stack_allowed = (52 DEBUG_ONLY(+ 32)) * K;
-size_t os::Posix::_java_thread_min_stack_allowed = (32 DEBUG_ONLY(+ 8)) * K;
-size_t os::Posix::_vm_internal_thread_min_stack_allowed = 32 * K;
+size_t os::_compiler_thread_min_stack_allowed = (52 DEBUG_ONLY(+ 32)) * K;
+size_t os::_java_thread_min_stack_allowed = (32 DEBUG_ONLY(+ 8)) * K;
+size_t os::_vm_internal_thread_min_stack_allowed = 32 * K;
 
 // Return default stack size for thr_type.
 size_t os::Posix::default_stack_size(os::ThreadType thr_type) {
@@ -445,6 +432,12 @@ void os::print_context(outputStream *st, const void *context) {
   }
   st->cr();
   st->cr();
+}
+
+void os::print_tos_pc(outputStream *st, const void *context) {
+  if (context == NULL) return;
+
+  const ucontext_t* uc = (const ucontext_t*)context;
 
   intptr_t *sp = (intptr_t *)os::Linux::ucontext_get_sp(uc);
   st->print_cr("Top of Stack: (sp=" PTR_FORMAT ")", p2i(sp));

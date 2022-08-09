@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@ import sun.rmi.server.UnicastServerRef;
  *
  * @author Ann Wollrath
  */
-@SuppressWarnings("deprecation")
+@SuppressWarnings({"removal","deprecation"})
 public abstract class Transport {
 
     /** "transport" package log level */
@@ -190,7 +190,7 @@ public abstract class Transport {
                 ClassLoader savedCcl = Thread.currentThread().getContextClassLoader();
 
                 try {
-                    setContextClassLoader(ccl);
+                    if (ccl != savedCcl) setContextClassLoader(ccl);
                     currentTransport.set(this);
                     try {
                         java.security.AccessController.doPrivileged(
@@ -205,7 +205,7 @@ public abstract class Transport {
                         throw (IOException) pae.getException();
                     }
                 } finally {
-                    setContextClassLoader(savedCcl);
+                    if (ccl != savedCcl) setContextClassLoader(savedCcl);
                     currentTransport.set(null);
                 }
 

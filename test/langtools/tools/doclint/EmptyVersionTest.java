@@ -9,7 +9,10 @@
  */
 
 /** . */
-public class EmptyVersionTest {
-    /** @version */
+public class EmptyVersionTest { /** . */ EmptyVersionTest() { }
+    /**
+     * .
+     * @version
+     */
     void missingVersion() { }
 }

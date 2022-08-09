@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -163,23 +163,28 @@ public final class LdapPoolManager {
         }
 
         if (idleTimeout > 0) {
-            // Create cleaner to expire idle connections
-            PrivilegedAction<Void> pa = new PrivilegedAction<Void>() {
-                public Void run() {
-                    Thread t = InnocuousThread.newSystemThread(
-                            "LDAP PoolCleaner",
-                            new PoolCleaner(idleTimeout, pools));
-                    assert t.getContextClassLoader() == null;
-                    t.setDaemon(true);
-                    t.start();
-                    return null;
-                }};
-            AccessController.doPrivileged(pa);
+            startCleanerThread();
         }
 
         if (debug) {
             showStats(System.err);
         }
+    }
+
+    @SuppressWarnings("removal")
+    private static void startCleanerThread() {
+        // Create cleaner to expire idle connections
+        PrivilegedAction<Void> pa = new PrivilegedAction<Void>() {
+            public Void run() {
+                Thread t = InnocuousThread.newSystemThread(
+                        "LDAP PoolCleaner",
+                        new PoolCleaner(idleTimeout, pools));
+                assert t.getContextClassLoader() == null;
+                t.setDaemon(true);
+                t.start();
+                return null;
+            }};
+        AccessController.doPrivileged(pa);
     }
 
     // Cannot instantiate one of these
@@ -395,47 +400,21 @@ public final class LdapPoolManager {
         }
     }
 
-    private static final String getProperty(final String propName,
-        final String defVal) {
-        return AccessController.doPrivileged(
-            new PrivilegedAction<String>() {
-            public String run() {
-                try {
-                    return System.getProperty(propName, defVal);
-                } catch (SecurityException e) {
-                    return defVal;
-                }
-            }
-        });
+    @SuppressWarnings("removal")
+    private static final String getProperty(final String propName, final String defVal) {
+        PrivilegedAction<String> pa = () -> System.getProperty(propName, defVal);
+        return AccessController.doPrivileged(pa);
     }
 
-    private static final int getInteger(final String propName,
-        final int defVal) {
-        Integer val = AccessController.doPrivileged(
-            new PrivilegedAction<Integer>() {
-            public Integer run() {
-                try {
-                    return Integer.getInteger(propName, defVal);
-                } catch (SecurityException e) {
-                    return defVal;
-                }
-            }
-        });
-        return val.intValue();
+    @SuppressWarnings("removal")
+    private static final int getInteger(final String propName, final int defVal) {
+        PrivilegedAction<Integer> pa = () -> Integer.getInteger(propName, defVal);
+        return AccessController.doPrivileged(pa);
     }
 
-    private static final long getLong(final String propName,
-        final long defVal) {
-        Long val = AccessController.doPrivileged(
-            new PrivilegedAction<Long>() {
-            public Long run() {
-                try {
-                    return Long.getLong(propName, defVal);
-                } catch (SecurityException e) {
-                    return defVal;
-                }
-            }
-        });
-        return val.longValue();
+    @SuppressWarnings("removal")
+    private static final long getLong(final String propName, final long defVal) {
+        PrivilegedAction<Long> pa = () -> Long.getLong(propName, defVal);
+        return AccessController.doPrivileged(pa);
     }
 }

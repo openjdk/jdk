@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2018, 2019 SAP SE. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,9 @@
 #include "gc/g1/g1ThreadLocalData.hpp"
 #include "gc/g1/heapRegion.hpp"
 #include "interpreter/interp_masm.hpp"
+#include "runtime/jniHandles.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "utilities/macros.hpp"
 #ifdef COMPILER1
 #include "c1/c1_LIRAssembler.hpp"
 #include "c1/c1_MacroAssembler.hpp"
@@ -107,8 +109,10 @@ void G1BarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* mas
   __ restore_LR_CR(R0);
 }
 
-void G1BarrierSetAssembler::g1_write_barrier_pre(MacroAssembler* masm, DecoratorSet decorators, Register obj, RegisterOrConstant ind_or_offs, Register pre_val,
-                                                 Register tmp1, Register tmp2, bool needs_frame) {
+void G1BarrierSetAssembler::g1_write_barrier_pre(MacroAssembler* masm, DecoratorSet decorators,
+                                                 Register obj, RegisterOrConstant ind_or_offs, Register pre_val,
+                                                 Register tmp1, Register tmp2,
+                                                 MacroAssembler::PreservationLevel preservation_level) {
   bool not_null  = (decorators & IS_NOT_NULL) != 0,
        preloaded = obj == noreg;
   Register nv_save = noreg;
@@ -187,26 +191,49 @@ void G1BarrierSetAssembler::g1_write_barrier_pre(MacroAssembler* masm, Decorator
 
   __ bind(runtime);
 
+  // Determine necessary runtime invocation preservation measures
+  const bool needs_frame = preservation_level >= MacroAssembler::PRESERVATION_FRAME_LR;
+  const bool preserve_gp_registers = preservation_level >= MacroAssembler::PRESERVATION_FRAME_LR_GP_REGS;
+  const bool preserve_fp_registers = preservation_level >= MacroAssembler::PRESERVATION_FRAME_LR_GP_FP_REGS;
+  int nbytes_save = 0;
+
   // May need to preserve LR. Also needed if current frame is not compatible with C calling convention.
   if (needs_frame) {
+    if (preserve_gp_registers) {
+      nbytes_save = (MacroAssembler::num_volatile_gp_regs
+                     + (preserve_fp_registers ? MacroAssembler::num_volatile_fp_regs : 0)
+                    ) * BytesPerWord;
+      __ save_volatile_gprs(R1_SP, -nbytes_save, preserve_fp_registers);
+    }
+
     __ save_LR_CR(tmp1);
-    __ push_frame_reg_args(0, tmp2);
+    __ push_frame_reg_args(nbytes_save, tmp2);
   }
 
-  if (pre_val->is_volatile() && preloaded) { __ mr(nv_save, pre_val); } // Save pre_val across C call if it was preloaded.
+  if (pre_val->is_volatile() && preloaded && !preserve_gp_registers) {
+    __ mr(nv_save, pre_val); // Save pre_val across C call if it was preloaded.
+  }
   __ call_VM_leaf(CAST_FROM_FN_PTR(address, G1BarrierSetRuntime::write_ref_field_pre_entry), pre_val, R16_thread);
-  if (pre_val->is_volatile() && preloaded) { __ mr(pre_val, nv_save); } // restore
+  if (pre_val->is_volatile() && preloaded && !preserve_gp_registers) {
+    __ mr(pre_val, nv_save); // restore
+  }
 
   if (needs_frame) {
     __ pop_frame();
     __ restore_LR_CR(tmp1);
+
+    if (preserve_gp_registers) {
+      __ restore_volatile_gprs(R1_SP, -nbytes_save, preserve_fp_registers);
+    }
   }
 
   __ bind(filtered);
 }
 
-void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm, DecoratorSet decorators, Register store_addr, Register new_val,
-                                                  Register tmp1, Register tmp2, Register tmp3) {
+void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm, DecoratorSet decorators,
+                                                  Register store_addr, Register new_val,
+                                                  Register tmp1, Register tmp2, Register tmp3,
+                                                  MacroAssembler::PreservationLevel preservation_level) {
   bool not_null = (decorators & IS_NOT_NULL) != 0;
 
   Label runtime, filtered;
@@ -235,7 +262,7 @@ void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm, Decorato
   Register Rbase = tmp2;
   __ load_const_optimized(Rbase, (address)(ct->card_table()->byte_map_base()), /*temp*/ tmp3);
 
-  __ srdi(Rcard_addr, store_addr, CardTable::card_shift);
+  __ srdi(Rcard_addr, store_addr, CardTable::card_shift());
 
   // Get the address of the card.
   __ lbzx(/*card value*/ tmp3, Rbase, Rcard_addr);
@@ -271,6 +298,9 @@ void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm, Decorato
 
   __ bind(runtime);
 
+  assert(preservation_level == MacroAssembler::PRESERVATION_NONE,
+         "g1_write_barrier_post doesn't support preservation levels higher than PRESERVATION_NONE");
+
   // Save the live input values.
   __ call_VM_leaf(CAST_FROM_FN_PTR(address, G1BarrierSetRuntime::write_ref_field_post_entry), Rcard_addr, R16_thread);
 
@@ -279,15 +309,21 @@ void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm, Decorato
 
 void G1BarrierSetAssembler::oop_store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                                        Register base, RegisterOrConstant ind_or_offs, Register val,
-                                       Register tmp1, Register tmp2, Register tmp3, bool needs_frame) {
+                                       Register tmp1, Register tmp2, Register tmp3,
+                                       MacroAssembler::PreservationLevel preservation_level) {
   bool is_array = (decorators & IS_ARRAY) != 0;
   bool on_anonymous = (decorators & ON_UNKNOWN_OOP_REF) != 0;
   bool precise = is_array || on_anonymous;
   // Load and record the previous value.
-  g1_write_barrier_pre(masm, decorators, base, ind_or_offs,
-                       tmp1, tmp2, tmp3, needs_frame);
+  g1_write_barrier_pre(masm, decorators,
+                       base, ind_or_offs,
+                       tmp1, tmp2, tmp3,
+                       preservation_level);
 
-  BarrierSetAssembler::store_at(masm, decorators, type, base, ind_or_offs, val, tmp1, tmp2, tmp3, needs_frame);
+  BarrierSetAssembler::store_at(masm, decorators,
+                                type, base, ind_or_offs, val,
+                                tmp1, tmp2, tmp3,
+                                preservation_level);
 
   // No need for post barrier if storing NULL
   if (val != noreg) {
@@ -298,13 +334,17 @@ void G1BarrierSetAssembler::oop_store_at(MacroAssembler* masm, DecoratorSet deco
         __ add(base, ind_or_offs.as_register(), base);
       }
     }
-    g1_write_barrier_post(masm, decorators, base, val, tmp1, tmp2, tmp3);
+    g1_write_barrier_post(masm, decorators,
+                          base, val,
+                          tmp1, tmp2, tmp3,
+                          preservation_level);
   }
 }
 
 void G1BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                                     Register base, RegisterOrConstant ind_or_offs, Register dst,
-                                    Register tmp1, Register tmp2, bool needs_frame, Label *L_handle_null) {
+                                    Register tmp1, Register tmp2,
+                                    MacroAssembler::PreservationLevel preservation_level, Label *L_handle_null) {
   bool on_oop = is_reference_type(type);
   bool on_weak = (decorators & ON_WEAK_OOP_REF) != 0;
   bool on_phantom = (decorators & ON_PHANTOM_OOP_REF) != 0;
@@ -312,20 +352,27 @@ void G1BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorator
   Label done;
   if (on_oop && on_reference && L_handle_null == NULL) { L_handle_null = &done; }
   // Load the value of the referent field.
-  ModRefBarrierSetAssembler::load_at(masm, decorators, type, base, ind_or_offs, dst, tmp1, tmp2, needs_frame, L_handle_null);
+  ModRefBarrierSetAssembler::load_at(masm, decorators, type,
+                                     base, ind_or_offs, dst,
+                                     tmp1, tmp2,
+                                     preservation_level, L_handle_null);
   if (on_oop && on_reference) {
     // Generate the G1 pre-barrier code to log the value of
     // the referent field in an SATB buffer. Note with
     // these parameters the pre-barrier does not generate
     // the load of the previous value
     // We only reach here if value is not null.
-    g1_write_barrier_pre(masm, decorators | IS_NOT_NULL, noreg /* obj */, (intptr_t)0, dst /* pre_val */,
-                         tmp1, tmp2, needs_frame);
+    g1_write_barrier_pre(masm, decorators | IS_NOT_NULL,
+                         noreg /* obj */, (intptr_t)0, dst /* pre_val */,
+                         tmp1, tmp2,
+                         preservation_level);
   }
   __ bind(done);
 }
 
-void G1BarrierSetAssembler::resolve_jobject(MacroAssembler* masm, Register value, Register tmp1, Register tmp2, bool needs_frame) {
+void G1BarrierSetAssembler::resolve_jobject(MacroAssembler* masm, Register value,
+                                            Register tmp1, Register tmp2,
+                                            MacroAssembler::PreservationLevel preservation_level) {
   Label done, not_weak;
   __ cmpdi(CCR0, value, 0);
   __ beq(CCR0, done);         // Use NULL as-is.
@@ -338,7 +385,8 @@ void G1BarrierSetAssembler::resolve_jobject(MacroAssembler* masm, Register value
   __ verify_oop(value, FILE_AND_LINE);
   g1_write_barrier_pre(masm, IN_NATIVE | ON_PHANTOM_OOP_REF,
                        noreg, noreg, value,
-                       tmp1, tmp2, needs_frame);
+                       tmp1, tmp2,
+                       preservation_level);
   __ bind(not_weak);
   __ verify_oop(value, FILE_AND_LINE);
   __ bind(done);
@@ -362,7 +410,7 @@ void G1BarrierSetAssembler::gen_pre_barrier_stub(LIR_Assembler* ce, G1PreBarrier
   Register pre_val_reg = stub->pre_val()->as_register();
 
   if (stub->do_load()) {
-    ce->mem2reg(stub->addr(), stub->pre_val(), T_OBJECT, stub->patch_code(), stub->info(), false /*wide*/, false /*unaligned*/);
+    ce->mem2reg(stub->addr(), stub->pre_val(), T_OBJECT, stub->patch_code(), stub->info(), false /*wide*/);
   }
 
   __ cmpdi(CCR0, pre_val_reg, 0);
@@ -421,16 +469,6 @@ void G1BarrierSetAssembler::generate_c1_pre_barrier_runtime_stub(StubAssembler* 
   __ std(tmp, -16, R1_SP);
   __ std(tmp2, -24, R1_SP);
 
-  // Is marking still active?
-  if (in_bytes(SATBMarkQueue::byte_width_of_active()) == 4) {
-    __ lwz(tmp, satb_q_active_byte_offset, R16_thread);
-  } else {
-    assert(in_bytes(SATBMarkQueue::byte_width_of_active()) == 1, "Assumption");
-    __ lbz(tmp, satb_q_active_byte_offset, R16_thread);
-  }
-  __ cmpdi(CCR0, tmp, 0);
-  __ beq(CCR0, marking_not_active);
-
   __ bind(restart);
   // Load the index into the SATB buffer. SATBMarkQueue::_index is a
   // size_t so ld_ptr is appropriate.
@@ -457,11 +495,11 @@ void G1BarrierSetAssembler::generate_c1_pre_barrier_runtime_stub(StubAssembler* 
   const int nbytes_save = (MacroAssembler::num_volatile_regs + stack_slots) * BytesPerWord;
   __ save_volatile_gprs(R1_SP, -nbytes_save); // except R0
   __ mflr(R0);
-  __ std(R0, _abi(lr), R1_SP);
+  __ std(R0, _abi0(lr), R1_SP);
   __ push_frame_reg_args(nbytes_save, R0); // dummy frame for C call
   __ call_VM_leaf(CAST_FROM_FN_PTR(address, G1SATBMarkQueueSet::handle_zero_index_for_thread), R16_thread);
   __ pop_frame();
-  __ ld(R0, _abi(lr), R1_SP);
+  __ ld(R0, _abi0(lr), R1_SP);
   __ mtlr(R0);
   __ restore_volatile_gprs(R1_SP, -nbytes_save); // except R0
   __ b(restart);
@@ -485,7 +523,7 @@ void G1BarrierSetAssembler::generate_c1_post_barrier_runtime_stub(StubAssembler*
   __ std(addr, -8, R1_SP);
   __ std(tmp2, -16, R1_SP);
 
-  __ srdi(addr, R0, CardTable::card_shift); // Addr is passed in R0.
+  __ srdi(addr, R0, CardTable::card_shift()); // Addr is passed in R0.
   __ load_const_optimized(/*cardtable*/ tmp2, byte_map_base, tmp);
   __ add(addr, tmp2, addr);
   __ lbz(tmp, 0, addr); // tmp := [addr + cardtable]
@@ -537,11 +575,11 @@ void G1BarrierSetAssembler::generate_c1_post_barrier_runtime_stub(StubAssembler*
   const int nbytes_save = (MacroAssembler::num_volatile_regs + stack_slots) * BytesPerWord;
   __ save_volatile_gprs(R1_SP, -nbytes_save); // except R0
   __ mflr(R0);
-  __ std(R0, _abi(lr), R1_SP);
+  __ std(R0, _abi0(lr), R1_SP);
   __ push_frame_reg_args(nbytes_save, R0); // dummy frame for C call
   __ call_VM_leaf(CAST_FROM_FN_PTR(address, G1DirtyCardQueueSet::handle_zero_index_for_thread), R16_thread);
   __ pop_frame();
-  __ ld(R0, _abi(lr), R1_SP);
+  __ ld(R0, _abi0(lr), R1_SP);
   __ mtlr(R0);
   __ restore_volatile_gprs(R1_SP, -nbytes_save); // except R0
   __ b(restart);

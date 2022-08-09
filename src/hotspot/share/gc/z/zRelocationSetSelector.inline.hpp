@@ -24,9 +24,10 @@
 #ifndef SHARE_GC_Z_ZRELOCATIONSETSELECTOR_INLINE_HPP
 #define SHARE_GC_Z_ZRELOCATIONSETSELECTOR_INLINE_HPP
 
+#include "gc/z/zRelocationSetSelector.hpp"
+
 #include "gc/z/zArray.inline.hpp"
 #include "gc/z/zPage.inline.hpp"
-#include "gc/z/zRelocationSetSelector.hpp"
 
 inline size_t ZRelocationSetSelectorGroupStats::npages() const {
   return _npages;
@@ -40,20 +41,12 @@ inline size_t ZRelocationSetSelectorGroupStats::live() const {
   return _live;
 }
 
-inline size_t ZRelocationSetSelectorGroupStats::garbage() const {
-  return _garbage;
-}
-
 inline size_t ZRelocationSetSelectorGroupStats::empty() const {
   return _empty;
 }
 
-inline size_t ZRelocationSetSelectorGroupStats::compacting_from() const {
-  return _compacting_from;
-}
-
-inline size_t ZRelocationSetSelectorGroupStats::compacting_to() const {
-  return _compacting_to;
+inline size_t ZRelocationSetSelectorGroupStats::relocate() const {
+  return _relocate;
 }
 
 inline const ZRelocationSetSelectorGroupStats& ZRelocationSetSelectorStats::small() const {
@@ -81,7 +74,6 @@ inline void ZRelocationSetSelectorGroup::register_live_page(ZPage* page) {
   _stats._npages++;
   _stats._total += size;
   _stats._live += live;
-  _stats._garbage += garbage;
 }
 
 inline void ZRelocationSetSelectorGroup::register_empty_page(ZPage* page) {
@@ -89,7 +81,6 @@ inline void ZRelocationSetSelectorGroup::register_empty_page(ZPage* page) {
 
   _stats._npages++;
   _stats._total += size;
-  _stats._garbage += size;
   _stats._empty += size;
 }
 
@@ -151,12 +142,8 @@ inline size_t ZRelocationSetSelector::empty() const {
   return _small.stats().empty() + _medium.stats().empty() + _large.stats().empty();
 }
 
-inline size_t ZRelocationSetSelector::compacting_from() const {
-  return _small.stats().compacting_from() + _medium.stats().compacting_from() + _large.stats().compacting_from();
-}
-
-inline size_t ZRelocationSetSelector::compacting_to() const {
-  return _small.stats().compacting_to() + _medium.stats().compacting_to() + _large.stats().compacting_to();
+inline size_t ZRelocationSetSelector::relocate() const {
+  return _small.stats().relocate() + _medium.stats().relocate() + _large.stats().relocate();
 }
 
 inline const ZArray<ZPage*>* ZRelocationSetSelector::small() const {

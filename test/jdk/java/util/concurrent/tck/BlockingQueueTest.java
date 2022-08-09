@@ -79,7 +79,7 @@ public abstract class BlockingQueueTest extends JSR166TestCase {
      * Override for collections with unusual element types.
      */
     protected Object makeElement(int i) {
-        return Integer.valueOf(i);
+        return JSR166TestCase.itemFor(i);
     }
 
     //----------------------------------------------------------------
@@ -148,7 +148,7 @@ public abstract class BlockingQueueTest extends JSR166TestCase {
      */
     public void testAddAllNullElements() {
         final Collection q = emptyCollection();
-        final Collection<Integer> elements = Arrays.asList(new Integer[SIZE]);
+        final Collection elements = Arrays.asList(new Item[SIZE]);
         try {
             q.addAll(elements);
             shouldThrow();
@@ -223,13 +223,14 @@ public abstract class BlockingQueueTest extends JSR166TestCase {
         }
         if (q.remainingCapacity() > 0) {
             // Not SynchronousQueue, that is
-            Object one = makeElement(1);
-            q.add(one);
-            for (int n : ns)
-                assertEquals(0, q.drainTo(sink, n));
-            assertEquals(1, q.size());
-            assertSame(one, q.poll());
-            assertTrue(sink.isEmpty());
+            Object e = makeElement(1);
+            if (q.add(e)) {
+                for (int n : ns)
+                    assertEquals(0, q.drainTo(sink, n));
+                assertEquals(1, q.size());
+                assertEquals(e, q.poll());
+                assertTrue(sink.isEmpty());
+            }
         }
     }
 
@@ -376,8 +377,8 @@ public abstract class BlockingQueueTest extends JSR166TestCase {
             q.add(elts[i] = makeElement(i));
         for (int i = 1; i < size; i += 2) {
             for (int pass = 0; pass < 2; pass++) {
-                assertEquals((pass == 0), q.contains(elts[i]));
-                assertEquals((pass == 0), q.remove(elts[i]));
+                mustEqual((pass == 0), q.contains(elts[i]));
+                mustEqual((pass == 0), q.remove(elts[i]));
                 assertFalse(q.contains(elts[i]));
                 assertTrue(q.contains(elts[i - 1]));
                 if (i < size - 1)

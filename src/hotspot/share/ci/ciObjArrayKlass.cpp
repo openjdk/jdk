@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "ci/ciSymbol.hpp"
 #include "ci/ciUtilities.inline.hpp"
 #include "oops/objArrayKlass.hpp"
+#include "runtime/signature.hpp"
 
 // ciObjArrayKlass
 //
@@ -164,6 +165,14 @@ ciObjArrayKlass* ciObjArrayKlass::make_impl(ciKlass* element_klass) {
 // Make an array klass corresponding to the specified primitive type.
 ciObjArrayKlass* ciObjArrayKlass::make(ciKlass* element_klass) {
   GUARDED_VM_ENTRY(return make_impl(element_klass);)
+}
+
+ciObjArrayKlass* ciObjArrayKlass::make(ciKlass* element_klass, int dims) {
+  ciKlass* klass = element_klass;
+  for (int i = 0; i < dims; i++) {
+    klass = ciObjArrayKlass::make(klass);
+  }
+  return klass->as_obj_array_klass();
 }
 
 ciKlass* ciObjArrayKlass::exact_klass() {

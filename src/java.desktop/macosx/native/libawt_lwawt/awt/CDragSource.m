@@ -28,7 +28,6 @@
 #import "java_awt_dnd_DnDConstants.h"
 
 #import <Cocoa/Cocoa.h>
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
 
 #import "AWTEvent.h"
 #import "AWTView.h"
@@ -38,6 +37,7 @@
 #import "DnDUtilities.h"
 #import "ThreadUtilities.h"
 #import "LWCToolkit.h"
+#import "JNIUtilities.h"
 
 
 // When sIsJavaDragging is true Java drag gesture has been recognized and a drag is/has been initialized.
@@ -69,9 +69,17 @@ static BOOL sIsJavaDragging;
 }
 @end
 
-JNF_CLASS_CACHE(DataTransfererClass, "sun/awt/datatransfer/DataTransferer");
-JNF_CLASS_CACHE(CDragSourceContextPeerClass, "sun/lwawt/macosx/CDragSourceContextPeer");
-JNF_CLASS_CACHE(CImageClass, "sun/lwawt/macosx/CImage");
+static jclass DataTransfererClass = NULL;
+static jclass CDragSourceContextPeerClass =  NULL;
+
+#define GET_DT_CLASS() \
+    GET_CLASS(DataTransfererClass, "sun/awt/datatransfer/DataTransferer");
+
+#define GET_DT_CLASS_RETURN(ret) \
+    GET_CLASS_RETURN(DataTransfererClass, "sun/awt/datatransfer/DataTransferer", ret);
+
+#define GET_DSCP_CLASS() \
+    GET_CLASS(CDragSourceContextPeerClass, "sun/lwawt/macosx/CDragSourceContextPeer");
 
 static NSDragOperation    sDragOperation;
 static NSPoint            sDraggingLocation;
@@ -160,32 +168,32 @@ static BOOL                sNeedsEnter;
 
     // Clean up JNI refs
     if (fComponent != NULL) {
-        JNFDeleteGlobalRef(env, fComponent);
+        (*env)->DeleteGlobalRef(env, fComponent);
         fComponent = NULL;
     }
 
     if (fDragSourceContextPeer != NULL) {
-        JNFDeleteGlobalRef(env, fDragSourceContextPeer);
+        (*env)->DeleteGlobalRef(env, fDragSourceContextPeer);
         fDragSourceContextPeer = NULL;
     }
 
     if (fTransferable != NULL) {
-        JNFDeleteGlobalRef(env, fTransferable);
+        (*env)->DeleteGlobalRef(env, fTransferable);
         fTransferable = NULL;
     }
 
     if (fTriggerEvent != NULL) {
-        JNFDeleteGlobalRef(env, fTriggerEvent);
+        (*env)->DeleteGlobalRef(env, fTriggerEvent);
         fTriggerEvent = NULL;
     }
 
     if (fFormats != NULL) {
-        JNFDeleteGlobalRef(env, fFormats);
+        (*env)->DeleteGlobalRef(env, fFormats);
         fFormats = NULL;
     }
 
     if (fFormatMap != NULL) {
-        JNFDeleteGlobalRef(env, fFormatMap);
+        (*env)->DeleteGlobalRef(env, fFormatMap);
         fFormatMap = NULL;
     }
 
@@ -212,8 +220,11 @@ static BOOL                sNeedsEnter;
 //
 - (jobject)dataTransferer:(JNIEnv*)env
 {
-    JNF_STATIC_MEMBER_CACHE(getInstanceMethod, DataTransfererClass, "getInstance", "()Lsun/awt/datatransfer/DataTransferer;");
-    return JNFCallStaticObjectMethod(env, getInstanceMethod);
+    GET_DT_CLASS_RETURN(NULL);
+    DECLARE_STATIC_METHOD_RETURN(getInstanceMethod, DataTransfererClass, "getInstance", "()Lsun/awt/datatransfer/DataTransferer;", NULL);
+    jobject o = (*env)->CallStaticObjectMethod(env, DataTransfererClass, getInstanceMethod);
+    CHECK_EXCEPTION();
+    return o;
 }
 
 // Appropriated from Windows' awt_DataTransferer.cpp:
@@ -227,9 +238,11 @@ static BOOL                sNeedsEnter;
     jbyteArray data = nil;
 
     if (transferer != NULL) {
-        JNF_MEMBER_CACHE(convertDataMethod, DataTransfererClass, "convertData", "(Ljava/lang/Object;Ljava/awt/datatransfer/Transferable;JLjava/util/Map;Z)[B");
-        data = JNFCallObjectMethod(env, transferer, convertDataMethod, fComponent, fTransferable, format, fFormatMap, (jboolean) TRUE);
+        GET_DT_CLASS_RETURN(NULL);
+        DECLARE_METHOD_RETURN(convertDataMethod, DataTransfererClass, "convertData", "(Ljava/lang/Object;Ljava/awt/datatransfer/Transferable;JLjava/util/Map;Z)[B", NULL);
+        data = (*env)->CallObjectMethod(env, transferer, convertDataMethod, fComponent, fTransferable, format, fFormatMap, (jboolean) TRUE);
     }
+    CHECK_EXCEPTION();
 
     return data;
 }
@@ -555,11 +568,14 @@ static BOOL                sNeedsEnter;
         }
 
         // DragSourceContextPeer.dragDropFinished() should be called even if there was an error:
-        JNF_MEMBER_CACHE(dragDropFinishedMethod, CDragSourceContextPeerClass, "dragDropFinished", "(ZIII)V");
+        GET_DSCP_CLASS();
+        DECLARE_METHOD(dragDropFinishedMethod, CDragSourceContextPeerClass, "dragDropFinished", "(ZIII)V");
         DLog3(@"  -> posting dragDropFinished, point %f, %f", point.x, point.y);
-        JNFCallVoidMethod(env, fDragSourceContextPeer, dragDropFinishedMethod, success, dragOp, (jint) point.x, (jint) point.y); // AWT_THREADING Safe (event)
-                JNF_MEMBER_CACHE(resetHoveringMethod, CDragSourceContextPeerClass, "resetHovering", "()V");
-        JNFCallVoidMethod(env, fDragSourceContextPeer, resetHoveringMethod); // Hust reset static variable
+        (*env)->CallVoidMethod(env, fDragSourceContextPeer, dragDropFinishedMethod, success, dragOp, (jint) point.x, (jint) point.y);
+        CHECK_EXCEPTION();
+        DECLARE_METHOD(resetHoveringMethod, CDragSourceContextPeerClass, "resetHovering", "()V");
+        (*env)->CallVoidMethod(env, fDragSourceContextPeer, resetHoveringMethod); // Hust reset static variable
+        CHECK_EXCEPTION();
     } @finally {
         sNeedsEnter = NO;
         AWTToolkit.inDoDragDropLoop = NO;
@@ -577,7 +593,7 @@ static BOOL                sNeedsEnter;
 {
     AWT_ASSERT_NOT_APPKIT_THREAD;
 
-    [self performSelectorOnMainThread:@selector(doDrag) withObject:nil waitUntilDone:YES]; // AWT_THREADING Safe (called from unique asynchronous thread)
+    [self performSelectorOnMainThread:@selector(doDrag) withObject:nil waitUntilDone:YES];
 }
 
 /********************************  BEGIN NSDraggingSource Interface  ********************************/
@@ -594,8 +610,10 @@ static BOOL                sNeedsEnter;
     DLog3(@"  -> posting operationChanged, point %f, %f", point.x, point.y);
     jint modifiedModifiers = fDragKeyModifiers | fDragMouseModifiers | [DnDUtilities javaKeyModifiersForNSDragOperation:dragOp];
 
-    JNF_MEMBER_CACHE(operationChangedMethod, CDragSourceContextPeerClass, "operationChanged", "(IIII)V");
-    JNFCallVoidMethod(env, fDragSourceContextPeer, operationChangedMethod, targetActions, modifiedModifiers, (jint) point.x, (jint) point.y); // AWT_THREADING Safe (event)
+    GET_DSCP_CLASS();
+    DECLARE_METHOD(operationChangedMethod, CDragSourceContextPeerClass, "operationChanged", "(IIII)V");
+    (*env)->CallVoidMethod(env, fDragSourceContextPeer, operationChangedMethod, targetActions, modifiedModifiers, (jint) point.x, (jint) point.y);
+    CHECK_EXCEPTION();
 }
 
 - (NSDragOperation)draggingSourceOperationMaskForLocal:(BOOL)localDrag {
@@ -626,7 +644,7 @@ static BOOL                sNeedsEnter;
     //DLog4(@"[CDragSource draggedImage moved]: (%d, %d) %@\n", (int) screenPoint.x, (int) screenPoint.y, self);
     JNIEnv* env = [ThreadUtilities getJNIEnv];
 
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
     [AWTToolkit eventCountPlusPlus];
     // There are two things we would be interested in:
     // a) mouse pointer has moved
@@ -667,14 +685,16 @@ JNF_COCOA_ENTER(env);
         DLog4(@"[CDragSource draggedImage moved]: (%f, %f) %@\n", screenPoint.x, screenPoint.y, self);
 
         DLog3(@"  -> posting dragMotion, point %f, %f", point.x, point.y);
-        JNF_MEMBER_CACHE(dragMotionMethod, CDragSourceContextPeerClass, "dragMotion", "(IIII)V");
-        JNFCallVoidMethod(env, fDragSourceContextPeer, dragMotionMethod, targetActions, (jint) fModifiers, (jint) point.x, (jint) point.y); // AWT_THREADING Safe (event)
-
+        GET_DSCP_CLASS();
+        DECLARE_METHOD(dragMotionMethod, CDragSourceContextPeerClass, "dragMotion", "(IIII)V");
+        (*env)->CallVoidMethod(env, fDragSourceContextPeer, dragMotionMethod, targetActions, (jint) fModifiers, (jint) point.x, (jint) point.y);
+        CHECK_EXCEPTION();
         DLog3(@"  -> posting dragMouseMoved, point %f, %f", point.x, point.y);
-        JNF_MEMBER_CACHE(dragMouseMovedMethod, CDragSourceContextPeerClass, "dragMouseMoved", "(IIII)V");
-        JNFCallVoidMethod(env, fDragSourceContextPeer, dragMouseMovedMethod, targetActions, (jint) fModifiers, (jint) point.x, (jint) point.y); // AWT_THREADING Safe (event)
+        DECLARE_METHOD(dragMouseMovedMethod, CDragSourceContextPeerClass, "dragMouseMoved", "(IIII)V");
+        (*env)->CallVoidMethod(env, fDragSourceContextPeer, dragMouseMovedMethod, targetActions, (jint) fModifiers, (jint) point.x, (jint) point.y);
+        CHECK_EXCEPTION();
     }
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 }
 
 - (BOOL)ignoreModifierKeysWhileDragging {
@@ -696,8 +716,10 @@ JNF_COCOA_EXIT(env);
 
     NSPoint point = [self mapNSScreenPointToJavaWithOffset:sDraggingLocation];
     DLog3(@"  -> posting dragEnter, point %f, %f", point.x, point.y);
-    JNF_MEMBER_CACHE(dragEnterMethod, CDragSourceContextPeerClass, "dragEnter", "(IIII)V");
-    JNFCallVoidMethod(env, fDragSourceContextPeer, dragEnterMethod, targetActions, (jint) fModifiers, (jint) point.x, (jint) point.y); // AWT_THREADING Safe (event)
+    GET_DSCP_CLASS();
+    DECLARE_METHOD(dragEnterMethod, CDragSourceContextPeerClass, "dragEnter", "(IIII)V");
+    (*env)->CallVoidMethod(env, fDragSourceContextPeer, dragEnterMethod, targetActions, (jint) fModifiers, (jint) point.x, (jint) point.y);
+     CHECK_EXCEPTION();
 }
 
 - (void) postDragExit {
@@ -706,8 +728,11 @@ JNF_COCOA_EXIT(env);
 
     NSPoint point = [self mapNSScreenPointToJavaWithOffset:sDraggingLocation];
     DLog3(@"  -> posting dragExit, point %f, %f", point.x, point.y);
-    JNF_MEMBER_CACHE(dragExitMethod, CDragSourceContextPeerClass, "dragExit", "(II)V");
-    JNFCallVoidMethod(env, fDragSourceContextPeer, dragExitMethod, (jint) point.x, (jint) point.y); // AWT_THREADING Safe (event)
+    GET_DSCP_CLASS();
+    DECLARE_METHOD(dragExitMethod, CDragSourceContextPeerClass, "dragExit", "(II)V");
+    (*env)->CallVoidMethod(env, fDragSourceContextPeer, dragExitMethod, (jint) point.x, (jint) point.y);
+    CHECK_EXCEPTION();
+
 }
 
 

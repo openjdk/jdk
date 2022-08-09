@@ -33,7 +33,7 @@
 import java.util.StringJoiner;
 import java.util.stream.Stream;
 import org.testng.annotations.Test;
-import static jdk.internal.util.ArraysSupport.MAX_ARRAY_LENGTH;
+import static jdk.internal.util.ArraysSupport.SOFT_MAX_ARRAY_LENGTH;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.fail;
 
@@ -172,7 +172,7 @@ public class MergeTest {
     }
 
     public void OOM() {
-        String maxString = "*".repeat(MAX_ARRAY_LENGTH);
+        String maxString = "*".repeat(SOFT_MAX_ARRAY_LENGTH);
 
         try {
             StringJoiner sj1 = new StringJoiner("", "", "");

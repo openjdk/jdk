@@ -31,7 +31,7 @@ import org.xml.sax.ext.Attributes2Impl;
 /*
  * @test
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true sax.Attributes2ImplTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow sax.Attributes2ImplTest
  * @run testng/othervm sax.Attributes2ImplTest
  * @summary Test Attributes2Impl.
  */

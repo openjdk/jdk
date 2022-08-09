@@ -35,7 +35,7 @@ import org.testng.annotations.Test;
 /*
  * @test
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true stream.XMLStreamWriterTest.EncodingTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow stream.XMLStreamWriterTest.EncodingTest
  * @run testng/othervm stream.XMLStreamWriterTest.EncodingTest
  * @summary Test XMLStreamWriter writes a document with encoding setting.
  */

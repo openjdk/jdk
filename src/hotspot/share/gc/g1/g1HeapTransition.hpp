@@ -26,7 +26,7 @@
 #define SHARE_GC_G1_G1HEAPTRANSITION_HPP
 
 #include "gc/shared/plab.hpp"
-#include "memory/metaspace/metaspaceSizesSnapshot.hpp"
+#include "memory/metaspaceStats.hpp"
 
 class G1CollectedHeap;
 
@@ -37,7 +37,7 @@ class G1HeapTransition {
     size_t _old_length;
     size_t _archive_length;
     size_t _humongous_length;
-    const metaspace::MetaspaceSizesSnapshot _meta_sizes;
+    const MetaspaceCombinedStats _meta_sizes;
 
     // Only includes current eden regions.
     uint* _eden_length_per_node;

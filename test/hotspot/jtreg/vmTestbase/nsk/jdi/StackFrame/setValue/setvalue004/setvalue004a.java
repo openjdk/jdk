@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
 
 package nsk.jdi.StackFrame.setValue.setvalue004;
 
-import nsk.share.*;
 import nsk.share.jpda.*;
 import nsk.share.jdi.*;
 
@@ -93,8 +92,8 @@ public class setvalue004a {
     //------------------------------------------------------  section tested
 
                 case 0:
-                         Threadsetvalue004a test_thread =
-                             new Threadsetvalue004a("testedThread");
+                         Thread test_thread =
+                                 JDIThreadFactory.newThread(new Threadsetvalue004a("testedThread"));
                          log1("       thread2 is created");
 
                          label:
@@ -146,7 +145,7 @@ public class setvalue004a {
 
 
 
-class Threadsetvalue004a extends Thread {
+class Threadsetvalue004a extends NamedTask {
 
     public Threadsetvalue004a(String threadName) {
         super(threadName);

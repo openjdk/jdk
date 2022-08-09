@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import jdk.test.lib.JDWP;
 import nsk.share.*;
 import nsk.share.jpda.*;
 import nsk.share.jdi.*;
@@ -69,9 +70,6 @@ public class attachnosuspend001 {
     }
 
     private int runIt(String argv[], PrintStream out) {
-        String port;
-        String listenPort;
-        Process proc;
         ArgumentHandler argHandler = new ArgumentHandler(argv);
 
 // pass if "com.sun.jdi.SocketAttach" is not implemented
@@ -96,19 +94,17 @@ public class attachnosuspend001 {
         long timeout = argHandler.getWaitTime() * 60 * 1000;
         attempts = (int)(timeout / delay);
 
-        port = argHandler.getTransportPort();
-        listenPort = argHandler.getTransportPort();
-
         String java = argHandler.getLaunchExecPath()
                         + " " + argHandler.getLaunchOptions();
-        String cmd = java +
-                " -Xdebug -Xnoagent -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=" +
-                listenPort + " " + DEBUGEE_CLASS;
+        String cmd = java
+                + " -Xdebug -Xnoagent -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=0"
+                + " " + DEBUGEE_CLASS;
 
         Binder binder = new Binder(argHandler, log);
         log.display("command: " + cmd);
         Debugee debugee = binder.startLocalDebugee(cmd);
-        debugee.redirectOutput(log);
+        JDWP.ListenAddress listenAddress = debugee.redirectOutputAndDetectListeningAddress(log);
+        String port = listenAddress.address();
 
         if ((vm = attachTarget(argHandler.getTestHost(), port)) == null) {
             log.complain("TEST: Unable to attach the debugee VM");

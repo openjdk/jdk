@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,11 +37,11 @@ public class FileMapInfo {
   private static FileMapHeader headerObj;
 
   // Fields for handling the copied C++ vtables
-  private static Address mcRegionBaseAddress;
-  private static Address mcRegionEndAddress;
+  private static Address rwRegionBaseAddress;
+  private static Address rwRegionEndAddress;
   private static Address vtablesIndex;
 
-  // HashMap created by mapping the vTable addresses in the mc region with
+  // HashMap created by mapping the vTable addresses in the rw region with
   // the corresponding metadata type.
   private static Map<Address, Type> vTableTypeMap;
 
@@ -100,29 +100,30 @@ public class FileMapInfo {
     long cloned_vtable_offset = get_CIntegerField(FileMapHeader_type, header, "_cloned_vtables_offset");
     vtablesIndex = mapped_base_address.addOffsetTo(cloned_vtable_offset);
 
-    // CDSFileMapRegion* mc_space = &header->_space[mc];
-    // char* mcRegionBaseAddress = mc_space->_mapped_base;
-    // size_t used = mc_space->_used;
-    // char* mcRegionEndAddress = mcRegionBaseAddress + used;
-    Address mc_space = get_CDSFileMapRegion(FileMapHeader_type, header, 0);
-    mcRegionBaseAddress = get_AddressField(CDSFileMapRegion_type, mc_space, "_mapped_base");
-    long used = get_CIntegerField(CDSFileMapRegion_type, mc_space, "_used");
-    mcRegionEndAddress = mcRegionBaseAddress.addOffsetTo(used);
+    // CDSFileMapRegion* rw_space = &header->_space[rw];
+    // char* rwRegionBaseAddress = rw_space->_mapped_base;
+    // size_t used = rw_space->_used;
+    // char* rwRegionEndAddress = rwRegionBaseAddress + used;
+    Address rw_space = get_CDSFileMapRegion(FileMapHeader_type, header, 0);
+    rwRegionBaseAddress = get_AddressField(CDSFileMapRegion_type, rw_space, "_mapped_base");
+    long used = get_CIntegerField(CDSFileMapRegion_type, rw_space, "_used");
+    rwRegionEndAddress = rwRegionBaseAddress.addOffsetTo(used);
 
     populateMetadataTypeArray(db);
   }
 
   private static void populateMetadataTypeArray(TypeDataBase db) {
-    metadataTypeArray = new Type[8];
+    metadataTypeArray = new Type[9];
 
     metadataTypeArray[0] = db.lookupType("ConstantPool");
     metadataTypeArray[1] = db.lookupType("InstanceKlass");
     metadataTypeArray[2] = db.lookupType("InstanceClassLoaderKlass");
     metadataTypeArray[3] = db.lookupType("InstanceMirrorKlass");
     metadataTypeArray[4] = db.lookupType("InstanceRefKlass");
-    metadataTypeArray[5] = db.lookupType("Method");
-    metadataTypeArray[6] = db.lookupType("ObjArrayKlass");
-    metadataTypeArray[7] = db.lookupType("TypeArrayKlass");
+    metadataTypeArray[5] = db.lookupType("InstanceStackChunkKlass");
+    metadataTypeArray[6] = db.lookupType("Method");
+    metadataTypeArray[7] = db.lookupType("ObjArrayKlass");
+    metadataTypeArray[8] = db.lookupType("TypeArrayKlass");
   }
 
   public FileMapHeader getHeader() {
@@ -154,8 +155,8 @@ public class FileMapInfo {
       if (vptrAddress == null) {
         return false;
       }
-      if (vptrAddress.greaterThan(mcRegionBaseAddress) &&
-          vptrAddress.lessThanOrEqual(mcRegionEndAddress)) {
+      if (vptrAddress.greaterThan(rwRegionBaseAddress) &&
+          vptrAddress.lessThanOrEqual(rwRegionEndAddress)) {
         return true;
       }
       return false;

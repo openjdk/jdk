@@ -4,7 +4,7 @@
  *
  *   Build macros of the FreeType 2 library.
  *
- * Copyright (C) 1996-2020 by
+ * Copyright (C) 1996-2022 by
  * David Turner, Robert Wilhelm, and Werner Lemberg.
  *
  * This file is part of the FreeType project, and may only be used,
@@ -30,10 +30,12 @@
   /*    encapsulated in an `extern "C" { .. }` block when included from a  */
   /*    C++ compiler.                                                      */
   /*                                                                       */
-#ifdef __cplusplus
-#define FT_BEGIN_HEADER  extern "C" {
-#else
-#define FT_BEGIN_HEADER  /* nothing */
+#ifndef FT_BEGIN_HEADER
+#  ifdef __cplusplus
+#    define FT_BEGIN_HEADER  extern "C" {
+#  else
+#  define FT_BEGIN_HEADER  /* nothing */
+#  endif
 #endif
 
 
@@ -48,10 +50,12 @@
   /*    encapsulated in an `extern "C" { .. }` block when included from a  */
   /*    C++ compiler.                                                      */
   /*                                                                       */
-#ifdef __cplusplus
-#define FT_END_HEADER  }
-#else
-#define FT_END_HEADER  /* nothing */
+#ifndef FT_END_HEADER
+#  ifdef __cplusplus
+#    define FT_END_HEADER  }
+#  else
+#   define FT_END_HEADER  /* nothing */
+#  endif
 #endif
 
 
@@ -73,9 +77,16 @@
    *   Macro definitions used to `#include` specific header files.
    *
    * @description:
-   *   The following macros are defined to the name of specific FreeType~2
-   *   header files.  They can be used directly in `#include` statements as
-   *   in:
+   *   In addition to the normal scheme of including header files like
+   *
+   *   ```
+   *     #include <freetype/freetype.h>
+   *     #include <freetype/ftmm.h>
+   *     #include <freetype/ftglyph.h>
+   *   ```
+   *
+   *   it is possible to used named macros instead.  They can be used
+   *   directly in `#include` statements as in
    *
    *   ```
    *     #include FT_FREETYPE_H
@@ -83,13 +94,9 @@
    *     #include FT_GLYPH_H
    *   ```
    *
-   *   There are several reasons why we are now using macros to name public
-   *   header files.  The first one is that such macros are not limited to
-   *   the infamous 8.3~naming rule required by DOS (and
-   *   `FT_MULTIPLE_MASTERS_H` is a lot more meaningful than `ftmm.h`).
-   *
-   *   The second reason is that it allows for more flexibility in the way
-   *   FreeType~2 is installed on a given system.
+   *   These macros were introduced to overcome the infamous 8.3~naming rule
+   *   required by DOS (and `FT_MULTIPLE_MASTERS_H` is a lot more meaningful
+   *   than `ftmm.h`).
    *
    */
 
@@ -770,6 +777,18 @@
 #define FT_COLOR_H  <freetype/ftcolor.h>
 
 
+  /**************************************************************************
+   *
+   * @macro:
+   *   FT_OTSVG_H
+   *
+   * @description:
+   *   A macro used in `#include` statements to name the file containing the
+   *   FreeType~2 API which handles the OpenType 'SVG~' glyphs.
+   */
+#define FT_OTSVG_H  <freetype/otsvg.h>
+
+
   /* */
 
   /* These header files don't need to be included by the user. */
@@ -797,16 +816,19 @@
 #define FT_CACHE_INTERNAL_IMAGE_H    FT_CACHE_H
 #define FT_CACHE_INTERNAL_SBITS_H    FT_CACHE_H
 
-
-  /*
-   * Include internal headers definitions from `<internal/...>` only when
-   * building the library.
-   */
+/* TODO(david): Move this section below to a different header */
 #ifdef FT2_BUILD_LIBRARY
-#define  FT_INTERNAL_INTERNAL_H  <freetype/internal/internal.h>
-#include FT_INTERNAL_INTERNAL_H
-#endif /* FT2_BUILD_LIBRARY */
+#if defined( _MSC_VER )      /* Visual C++ (and Intel C++) */
 
+  /* We disable the warning `conditional expression is constant' here */
+  /* in order to compile cleanly with the maximum level of warnings.  */
+  /* In particular, the warning complains about stuff like `while(0)' */
+  /* which is very useful in macro definitions.  There is no benefit  */
+  /* in having it enabled.                                            */
+#pragma warning( disable : 4127 )
+
+#endif /* _MSC_VER */
+#endif /* FT2_BUILD_LIBRARY */
 
 #endif /* FTHEADER_H_ */
 

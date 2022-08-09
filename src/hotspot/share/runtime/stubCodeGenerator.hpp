@@ -38,19 +38,18 @@
 
 class StubCodeDesc: public CHeapObj<mtCode> {
  private:
-  static StubCodeDesc* _list;                  // the list of all descriptors
-  static bool          _frozen;                // determines whether _list modifications are allowed
+  static StubCodeDesc* _list;     // the list of all descriptors
+  static bool          _frozen;   // determines whether _list modifications are allowed
 
-  StubCodeDesc*        _next;                  // the next element in the linked list
-  const char*          _group;                 // the group to which the stub code belongs
-  const char*          _name;                  // the name assigned to the stub code
-  address              _begin;                 // points to the first byte of the stub code    (included)
-  address              _end;                   // points to the first byte after the stub code (excluded)
+  StubCodeDesc*        _next;     // the next element in the linked list
+  const char*          _group;    // the group to which the stub code belongs
+  const char*          _name;     // the name assigned to the stub code
+  address              _begin;    // points to the first byte of the stub code    (included)
+  address              _end;      // points to the first byte after the stub code (excluded)
+  uint                 _disp;     // Displacement relative base address in buffer.
 
-  void set_end(address end) {
-    assert(_begin <= end, "begin & end not properly ordered");
-    _end = end;
-  }
+  friend class StubCodeMark;
+  friend class StubCodeGenerator;
 
   void set_begin(address begin) {
     assert(begin >= _begin, "begin may not decrease");
@@ -58,8 +57,12 @@ class StubCodeDesc: public CHeapObj<mtCode> {
     _begin = begin;
   }
 
-  friend class StubCodeMark;
-  friend class StubCodeGenerator;
+  void set_end(address end) {
+    assert(_begin <= end, "begin & end not properly ordered");
+    _end = end;
+  }
+
+  void set_disp(uint disp) { _disp = disp; }
 
  public:
   static StubCodeDesc* first() { return _list; }
@@ -76,6 +79,7 @@ class StubCodeDesc: public CHeapObj<mtCode> {
     _name           = name;
     _begin          = begin;
     _end            = end;
+    _disp           = 0;
     _list           = this;
   };
 
@@ -85,6 +89,7 @@ class StubCodeDesc: public CHeapObj<mtCode> {
   const char* name() const                       { return _name; }
   address     begin() const                      { return _begin; }
   address     end() const                        { return _end; }
+  uint        disp() const                       { return _disp; }
   int         size_in_bytes() const              { return _end - _begin; }
   bool        contains(address pc) const         { return _begin <= pc && pc < _end; }
   void        print_on(outputStream* st) const;

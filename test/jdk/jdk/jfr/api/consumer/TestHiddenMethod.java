@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -53,10 +51,10 @@ import jdk.test.lib.jfr.Events;
  */
 public final class TestHiddenMethod {
 
-    public static void main(String[] args) throws Throwable {
-        try (Recording recording = new Recording()) {
-            recording.enable(MyEvent.class).withThreshold(Duration.ofMillis(0));
-            recording.start();
+    // Must call in separate thread because JTREG uses reflection
+    // to invoke main method, which uses hidden methods.
+    public static class TestThread extends Thread {
+        public void run() {
             // doPrivileged calls a method that has the @Hidden
             // annotation
             AccessController.doPrivileged(new PrivilegedAction<Void>() {
@@ -67,8 +65,19 @@ public final class TestHiddenMethod {
                     return null;
                 }
             });
+
             MyEvent event = new MyEvent();
             event.commit();
+        }
+    }
+
+    public static void main(String[] args) throws Throwable {
+        try (Recording recording = new Recording()) {
+            recording.enable(MyEvent.class).withThreshold(Duration.ofMillis(0));
+            recording.start();
+            Thread t = new TestThread();
+            t.start();
+            t.join();
             recording.stop();
 
             List<RecordedEvent> events = Events.fromRecording(recording);

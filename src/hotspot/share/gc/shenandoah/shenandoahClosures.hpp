@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2019, 2022, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,10 +24,13 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHCLOSURES_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHCLOSURES_HPP
 
+#include "code/nmethod.hpp"
 #include "memory/iterator.hpp"
 #include "oops/accessDecorators.hpp"
 #include "runtime/handshake.hpp"
 
+class BarrierSetNMethod;
+class ShenandoahBarrierSet;
 class ShenandoahHeap;
 class ShenandoahMarkingContext;
 class ShenandoahHeapRegionSet;
@@ -57,7 +60,24 @@ public:
   inline BoolObjectClosure* is_alive_closure();
 };
 
-class ShenandoahUpdateRefsClosure: public OopClosure {
+class ShenandoahKeepAliveClosure : public OopClosure {
+private:
+  ShenandoahBarrierSet* const _bs;
+public:
+  inline ShenandoahKeepAliveClosure();
+  inline void do_oop(oop* p);
+  inline void do_oop(narrowOop* p);
+private:
+  template <typename T>
+  void do_oop_work(T* p);
+};
+
+class ShenandoahOopClosureBase : public MetadataVisitingOopIterateClosure {
+public:
+  inline void do_nmethod(nmethod* nm);
+};
+
+class ShenandoahUpdateRefsClosure: public ShenandoahOopClosureBase {
 private:
   ShenandoahHeap* _heap;
 public:
@@ -69,30 +89,23 @@ private:
   inline void do_oop_work(T* p);
 };
 
-template <DecoratorSet MO = MO_UNORDERED>
-class ShenandoahEvacuateUpdateRootsClosure: public BasicOopIterateClosure {
-private:
-  ShenandoahHeap* _heap;
-  Thread* _thread;
+template <bool concurrent, bool stable_thread>
+class ShenandoahEvacuateUpdateRootClosureBase : public ShenandoahOopClosureBase {
+protected:
+  ShenandoahHeap* const _heap;
+  Thread* const _thread;
 public:
-  inline ShenandoahEvacuateUpdateRootsClosure();
+  inline ShenandoahEvacuateUpdateRootClosureBase();
   inline void do_oop(oop* p);
   inline void do_oop(narrowOop* p);
-
-private:
+protected:
   template <class T>
   inline void do_oop_work(T* p);
 };
 
-class ShenandoahEvacUpdateOopStorageRootsClosure : public BasicOopIterateClosure {
-private:
-  ShenandoahHeap* _heap;
-  Thread* _thread;
-public:
-  inline ShenandoahEvacUpdateOopStorageRootsClosure();
-  inline void do_oop(oop* p);
-  inline void do_oop(narrowOop* p);
-};
+using ShenandoahEvacuateUpdateMetadataClosure = ShenandoahEvacuateUpdateRootClosureBase<false, true>;
+using ShenandoahEvacuateUpdateRootsClosure = ShenandoahEvacuateUpdateRootClosureBase<true, false>;
+using ShenandoahContextEvacuateUpdateRootsClosure = ShenandoahEvacuateUpdateRootClosureBase<true, true>;
 
 template <bool CONCURRENT, typename IsAlive, typename KeepAlive>
 class ShenandoahCleanUpdateWeakOopsClosure : public OopClosure {
@@ -113,12 +126,6 @@ private:
 public:
   inline ShenandoahCodeBlobAndDisarmClosure(OopClosure* cl);
   inline void do_code_blob(CodeBlob* cb);
-};
-
-class ShenandoahRendezvousClosure : public HandshakeClosure {
-public:
-  inline ShenandoahRendezvousClosure();
-  inline void do_thread(Thread* thread);
 };
 
 #ifdef ASSERT

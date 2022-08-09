@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -154,8 +154,8 @@ enum SSLTrafficKeyDerivation implements SSLKeyDerivationGenerator {
                         ks.getKeyLength(cs),
                         ks.getAlgorithm(cs, algorithm));
             } catch (GeneralSecurityException gse) {
-                throw (SSLHandshakeException)(new SSLHandshakeException(
-                    "Could not generate secret").initCause(gse));
+                throw new SSLHandshakeException(
+                        "Could not generate secret", gse);
             }
         }
 
@@ -203,14 +203,10 @@ enum SSLTrafficKeyDerivation implements SSLKeyDerivationGenerator {
 
     @SuppressWarnings("deprecation")
     static final class LegacyTrafficKeyDerivation implements SSLKeyDerivation {
-        private final HandshakeContext context;
-        private final SecretKey masterSecret;
         private final TlsKeyMaterialSpec keyMaterialSpec;
 
         LegacyTrafficKeyDerivation(
                 HandshakeContext context, SecretKey masterSecret) {
-            this.context = context;
-            this.masterSecret = masterSecret;
 
             CipherSuite cipherSuite = context.negotiatedCipherSuite;
             ProtocolVersion protocolVersion = context.negotiatedProtocol;

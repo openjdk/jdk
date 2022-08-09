@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,6 +26,7 @@
 #include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
 #include "classfile/javaClasses.inline.hpp"
+#include "classfile/vmClasses.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "memory/allocation.inline.hpp"
@@ -33,6 +34,7 @@
 #include "prims/methodHandles.hpp"
 #include "runtime/flags/flagSetting.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/stubRoutines.hpp"
 
 #define __ _masm->
 
@@ -46,7 +48,7 @@
 
 void MethodHandles::load_klass_from_Class(MacroAssembler* _masm, Register klass_reg) {
   if (VerifyMethodHandles)
-    verify_klass(_masm, klass_reg, SystemDictionary::WK_KLASS_ENUM_NAME(java_lang_Class),
+    verify_klass(_masm, klass_reg, VM_CLASS_ID(java_lang_Class),
                  "MH argument is a Class");
   __ ldr(klass_reg, Address(klass_reg, java_lang_Class::klass_offset()));
 }
@@ -63,10 +65,10 @@ static int check_nonzero(const char* xname, int x) {
 
 #ifdef ASSERT
 void MethodHandles::verify_klass(MacroAssembler* _masm,
-                                 Register obj, SystemDictionary::WKID klass_id,
+                                 Register obj, vmClassID klass_id,
                                  const char* error_message) {
-  InstanceKlass** klass_addr = SystemDictionary::well_known_klass_addr(klass_id);
-  Klass* klass = SystemDictionary::well_known_klass(klass_id);
+  InstanceKlass** klass_addr = vmClasses::klass_addr_at(klass_id);
+  Klass* klass = vmClasses::klass_at(klass_id);
   Register temp = rscratch2;
   Register temp2 = rscratch1; // used by MacroAssembler::cmpptr
   Label L_ok, L_bad;
@@ -132,8 +134,6 @@ void MethodHandles::jump_to_lambda_form(MacroAssembler* _masm,
   assert(recv != noreg, "required register");
   assert(method_temp == rmethod, "required register for loading method");
 
-  //NOT_PRODUCT({ FlagSetting fs(TraceMethodHandles, true); trace_method_handle(_masm, "LZMH"); });
-
   // Load the invoker, as MH -> MH.form -> LF.vmentry
   __ verify_oop(recv);
   __ load_heap_oop(method_temp, Address(recv, NONZERO(java_lang_invoke_MethodHandle::form_offset())), temp2);
@@ -178,7 +178,14 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
     return NULL;
   }
 
-  // r13: sender SP (must preserve; see prepare_to_jump_from_interpreted)
+  // No need in interpreter entry for linkToNative for now.
+  // Interpreter calls compiled entry through i2c.
+  if (iid == vmIntrinsics::_linkToNative) {
+    __ hlt(0);
+    return NULL;
+  }
+
+  // r19_sender_sp: sender SP (must preserve; see prepare_to_jump_from_interpreted)
   // rmethod: Method*
   // r3: argument locator (parameter slot count, added to rsp)
   // r1: used as temp to hold mh or receiver
@@ -251,6 +258,21 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
   return entry_point;
 }
 
+void MethodHandles::jump_to_native_invoker(MacroAssembler* _masm, Register nep_reg, Register temp_target) {
+  BLOCK_COMMENT("jump_to_native_invoker {");
+  assert_different_registers(nep_reg, temp_target);
+  assert(nep_reg != noreg, "required register");
+
+  // Load the invoker, as NEP -> .invoker
+  __ verify_oop(nep_reg);
+  __ access_load_at(T_ADDRESS, IN_HEAP, temp_target,
+                    Address(nep_reg, NONZERO(jdk_internal_foreign_abi_NativeEntryPoint::downcall_stub_address_offset_in_bytes())),
+                    noreg, noreg);
+
+  __ br(temp_target);
+  BLOCK_COMMENT("} jump_to_native_invoker");
+}
+
 
 void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
                                                     vmIntrinsics::ID iid,
@@ -261,9 +283,9 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
   // temps used in this code are not used in *either* compiled or interpreted calling sequences
   Register temp1 = r10;
   Register temp2 = r11;
-  Register temp3 = r14;  // r13 is live by this point: it contains the sender SP
+  Register temp3 = r14;
   if (for_compiler_entry) {
-    assert(receiver_reg == (iid == vmIntrinsics::_linkToStatic ? noreg : j_rarg0), "only valid assignment");
+    assert(receiver_reg == (iid == vmIntrinsics::_linkToStatic || iid == vmIntrinsics::_linkToNative ? noreg : j_rarg0), "only valid assignment");
     assert_different_registers(temp1,        j_rarg0, j_rarg1, j_rarg2, j_rarg3, j_rarg4, j_rarg5, j_rarg6, j_rarg7);
     assert_different_registers(temp2,        j_rarg0, j_rarg1, j_rarg2, j_rarg3, j_rarg4, j_rarg5, j_rarg6, j_rarg7);
     assert_different_registers(temp3,        j_rarg0, j_rarg1, j_rarg2, j_rarg3, j_rarg4, j_rarg5, j_rarg6, j_rarg7);
@@ -276,11 +298,14 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
     // indirect through MH.form.vmentry.vmtarget
     jump_to_lambda_form(_masm, receiver_reg, rmethod, temp1, for_compiler_entry);
 
+  } else if (iid == vmIntrinsics::_linkToNative) {
+    assert(for_compiler_entry, "only compiler entry is supported");
+    jump_to_native_invoker(_masm, member_reg, temp1);
   } else {
     // The method is a member invoker used by direct method handles.
     if (VerifyMethodHandles) {
       // make sure the trailing argument really is a MemberName (caller responsibility)
-      verify_klass(_masm, member_reg, SystemDictionary::WK_KLASS_ENUM_NAME(java_lang_invoke_MemberName),
+      verify_klass(_masm, member_reg, VM_CLASS_ID(java_lang_invoke_MemberName),
                    "MemberName required for invokeVirtual etc.");
     }
 
@@ -331,7 +356,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
     // Live registers at this point:
     //  member_reg - MemberName that was the trailing argument
     //  temp1_recv_klass - klass of stacked receiver, if needed
-    //  r13 - interpreter linkage (if interpreted)  ??? FIXME
+    //  r19 - interpreter linkage (if interpreted)
     //  r1 ... r0 - compiler arguments (if compiled)
 
     Label L_incompatible_class_change_error;
@@ -414,11 +439,11 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
     }
 
     default:
-      fatal("unexpected intrinsic %d: %s", iid, vmIntrinsics::name_at(iid));
+      fatal("unexpected intrinsic %d: %s", vmIntrinsics::as_int(iid), vmIntrinsics::name_at(iid));
       break;
     }
 
-    // live at this point:  rmethod, r13 (if interpreted)
+    // live at this point:  rmethod, r19_sender_sp (if interpreted)
 
     // After figuring out which concrete method to call, jump into it.
     // Note that this works in the interpreter with no data motion.
@@ -434,7 +459,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
 
 #ifndef PRODUCT
 void trace_method_handle_stub(const char* adaptername,
-                              oop mh,
+                              oopDesc* mh,
                               intptr_t* saved_regs,
                               intptr_t* entry_sp) {  }
 

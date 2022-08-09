@@ -34,7 +34,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 6631262
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true stream.XMLStreamReaderTest.Issue44Test
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow stream.XMLStreamReaderTest.Issue44Test
  * @run testng/othervm stream.XMLStreamReaderTest.Issue44Test
  * @summary Test XMLStreamReader.getName() shall throw IllegalStateException if current event is not start/end element.
  */

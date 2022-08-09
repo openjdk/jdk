@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,16 +65,21 @@ implements java.io.Serializable {
     private int remCount;
 
     /**
-     * This empty constructor automatically seeds the generator.  We attempt
-     * to provide sufficient seed bytes to completely randomize the internal
-     * state of the generator (20 bytes).  Note, however, that our seed
-     * generation algorithm has not been thoroughly studied or widely deployed.
-     *
-     * <p>The first time this constructor is called in a given Virtual Machine,
-     * it may take several seconds of CPU time to seed the generator, depending
-     * on the underlying hardware.  Successive calls run quickly because they
-     * rely on the same (internal) pseudo-random number generator for their
-     * seed bits.
+     * An empty constructor that creates an unseeded SecureRandom object.
+     * <p>
+     * Unless the user calls setSeed(), the first call to engineGetBytes()
+     * will have the SeedGenerator provide sufficient seed bytes to
+     * completely randomize the internal state of the generator (20 bytes).
+     * Note that the old threaded seed generation algorithm is provided
+     * only as a fallback, and has not been thoroughly studied or widely
+     * deployed.
+     * <p>
+     * The SeedGenerator relies on a VM-wide entropy pool to generate
+     * seed bytes for these objects.  The first time the SeedGenerator is
+     * called, it may take several seconds of CPU time to initialize,
+     * depending on the underlying hardware.  Successive calls run
+     * quickly because they rely on the same (internal) pseudo-random
+     * number generator for their seed bits.
      */
     public SecureRandom() {
         init(null);

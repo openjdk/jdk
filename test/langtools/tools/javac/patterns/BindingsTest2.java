@@ -241,5 +241,11 @@ public class BindingsTest2 {
                 s.length();
             }
         }
+
+        {
+            if (o1 instanceof final String s) {
+                s = "";
+            }
+        }
     }
 }

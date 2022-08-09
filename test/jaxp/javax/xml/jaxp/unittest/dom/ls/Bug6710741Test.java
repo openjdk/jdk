@@ -38,7 +38,7 @@ import org.w3c.dom.ls.LSException;
  * @test
  * @bug 6710741
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true dom.ls.Bug6710741Test
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow dom.ls.Bug6710741Test
  * @run testng/othervm dom.ls.Bug6710741Test
  * @summary Test there should be stack trace information if LSSerializer().writeToString reports an exception.
  */

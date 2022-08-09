@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ public class PipedOutputStream extends OutputStream {
            more sophisticated.  Either using thread groups (but what about
            pipes within a thread?) or using finalization (but it may be a
            long time until the next GC). */
-    private PipedInputStream sink;
+    private volatile PipedInputStream sink;
 
     /**
      * Creates a piped output stream connected to the specified piped
@@ -114,7 +114,9 @@ public class PipedOutputStream extends OutputStream {
      *          {@link #connect(java.io.PipedInputStream) unconnected},
      *          closed, or if an I/O error occurs.
      */
+    @Override
     public void write(int b)  throws IOException {
+        var sink = this.sink;
         if (sink == null) {
             throw new IOException("Pipe not connected");
         }
@@ -127,14 +129,16 @@ public class PipedOutputStream extends OutputStream {
      * This method blocks until all the bytes are written to the output
      * stream.
      *
-     * @param   b     the data.
-     * @param   off   the start offset in the data.
-     * @param   len   the number of bytes to write.
+     * @param   b     {@inheritDoc}
+     * @param   off   {@inheritDoc}
+     * @param   len   {@inheritDoc}
      * @throws  IOException if the pipe is <a href=#BROKEN> broken</a>,
      *          {@link #connect(java.io.PipedInputStream) unconnected},
      *          closed, or if an I/O error occurs.
      */
-    public void write(byte b[], int off, int len) throws IOException {
+    @Override
+    public void write(byte[] b, int off, int len) throws IOException {
+        var sink = this.sink;
         if (sink == null) {
             throw new IOException("Pipe not connected");
         } else if (b == null) {
@@ -153,8 +157,9 @@ public class PipedOutputStream extends OutputStream {
      * to be written out.
      * This will notify any readers that bytes are waiting in the pipe.
      *
-     * @throws    IOException if an I/O error occurs.
+     * @throws    IOException {@inheritDoc}
      */
+    @Override
     public synchronized void flush() throws IOException {
         if (sink != null) {
             synchronized (sink) {
@@ -168,9 +173,11 @@ public class PipedOutputStream extends OutputStream {
      * associated with this stream. This stream may no longer be used for
      * writing bytes.
      *
-     * @throws     IOException  if an I/O error occurs.
+     * @throws     IOException  {@inheritDoc}
      */
+    @Override
     public void close()  throws IOException {
+        var sink = this.sink;
         if (sink != null) {
             sink.receivedLast();
         }

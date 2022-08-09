@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,6 +86,8 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import jdk.internal.vm.annotation.Stable;
+
 /**
  * A time-zone offset from Greenwich/UTC, such as {@code +02:00}.
  * <p>
@@ -114,12 +116,12 @@ import java.util.concurrent.ConcurrentMap;
  * Instances of {@code ZoneOffset} must be compared using {@link #equals}.
  * Implementations may choose to cache certain common offsets, however
  * applications must not rely on such caching.
- *
  * <p>
  * This is a <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>
- * class; use of identity-sensitive operations (including reference equality
- * ({@code ==}), identity hash code, or synchronization) on instances of
- * {@code ZoneOffset} may have unpredictable results and should be avoided.
+ * class; programmers should treat instances that are
+ * {@linkplain #equals(Object) equal} as interchangeable and should not
+ * use instances for synchronization, or unpredictable behavior may
+ * occur. For example, in a future release, synchronization may fail.
  * The {@code equals} method should be used for comparisons.
  *
  * @implSpec
@@ -127,6 +129,7 @@ import java.util.concurrent.ConcurrentMap;
  *
  * @since 1.8
  */
+@jdk.internal.ValueBased
 public final class ZoneOffset
         extends ZoneId
         implements TemporalAccessor, TemporalAdjuster, Comparable<ZoneOffset>, Serializable {
@@ -167,6 +170,11 @@ public final class ZoneOffset
      * The string form of the time-zone offset.
      */
     private final transient String id;
+    /**
+     * The zone rules for an offset will always return this offset. Cache it for efficiency.
+     */
+    @Stable
+    private transient ZoneRules rules;
 
     //-----------------------------------------------------------------------
     /**
@@ -416,15 +424,11 @@ public final class ZoneOffset
             throw new DateTimeException("Zone offset not in valid range: -18:00 to +18:00");
         }
         if (totalSeconds % (15 * SECONDS_PER_MINUTE) == 0) {
-            Integer totalSecs = totalSeconds;
-            ZoneOffset result = SECONDS_CACHE.get(totalSecs);
-            if (result == null) {
-                result = new ZoneOffset(totalSeconds);
-                SECONDS_CACHE.putIfAbsent(totalSecs, result);
-                result = SECONDS_CACHE.get(totalSecs);
+            return SECONDS_CACHE.computeIfAbsent(totalSeconds, totalSecs -> {
+                ZoneOffset result = new ZoneOffset(totalSecs);
                 ID_CACHE.putIfAbsent(result.getId(), result);
-            }
-            return result;
+                return result;
+            });
         } else {
             return new ZoneOffset(totalSeconds);
         }
@@ -503,7 +507,21 @@ public final class ZoneOffset
      */
     @Override
     public ZoneRules getRules() {
-        return ZoneRules.of(this);
+        ZoneRules rules = this.rules;
+        if (rules == null) {
+            rules = this.rules = ZoneRules.of(this);
+        }
+        return rules;
+    }
+
+    @Override
+    public ZoneId normalized() {
+        return this;
+    }
+
+    @Override
+    /* package-private */ ZoneOffset getOffset(long epochSecond) {
+        return this;
     }
 
     //-----------------------------------------------------------------------

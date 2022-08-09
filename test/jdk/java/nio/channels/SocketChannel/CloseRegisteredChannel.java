@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,8 +42,8 @@ public class CloseRegisteredChannel {
 
         SocketChannel client = SocketChannel.open ();
         client.connect (new InetSocketAddress (InetAddress.getLoopbackAddress(), port));
-        SocketChannel slave = server.accept ();
-        slave.configureBlocking (true);
+        SocketChannel peer = server.accept();
+        peer.configureBlocking(true);
 
         Selector selector = Selector.open ();
         client.configureBlocking (false);
@@ -53,7 +53,7 @@ public class CloseRegisteredChannel {
         client.close();
         //System.out.println ("client.isOpen = " + client.isOpen());
         System.out.println ("Will hang here...");
-        int nb = slave.read (ByteBuffer.allocate (1024));
+        int nb = peer.read(ByteBuffer.allocate (1024));
         //System.out.println("read nb=" + nb);
 
         selector.close();

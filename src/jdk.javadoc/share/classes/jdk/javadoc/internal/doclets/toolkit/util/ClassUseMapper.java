@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,7 @@ import static jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable.Kind.
  */
 public class ClassUseMapper {
 
-    private final ClassTree classtree;
+    private final ClassTree classTree;
 
     /**
      * Mapping of TypeElements to set of PackageElements used by that class.
@@ -192,20 +192,20 @@ public class ClassUseMapper {
     private final Utils utils;
     private final Comparators comparators;
 
-    public ClassUseMapper(BaseConfiguration configuration, ClassTree classtree) {
+    public ClassUseMapper(BaseConfiguration configuration, ClassTree classTree) {
         docEnv = configuration.docEnv;
         elementUtils = docEnv.getElementUtils();
         typeUtils = docEnv.getTypeUtils();
         utils = configuration.utils;
         comparators = utils.comparators;
-        this.classtree = classtree;
+        this.classTree = classTree;
         classToPackage = new TreeMap<>(comparators.makeClassUseComparator());
         // Map subclassing, subinterfacing implementing, ...
-        for (TypeElement te : classtree.baseClasses()) {
+        for (TypeElement te : classTree.classes().roots()) {
             subclasses(te);
         }
-        for (TypeElement intfc : classtree.baseInterfaces()) {
-            // does subinterfacing as side-effect
+        for (TypeElement intfc : classTree.interfaces().roots()) {
+            // does subinterfacing as a side-effect
             implementingClasses(intfc);
         }
         // Map methods, fields, constructors using a class.
@@ -221,7 +221,7 @@ public class ClassUseMapper {
             for (VariableElement fd : fields) {
                 mapTypeParameters(classToFieldTypeParam, fd, fd);
                 mapAnnotations(annotationToField, fd, fd);
-                SimpleTypeVisitor9<Void, VariableElement> stv = new SimpleTypeVisitor9<Void, VariableElement>() {
+                var stv = new SimpleTypeVisitor9<Void, VariableElement>() {
                     @Override
                     public Void visitArray(ArrayType t, VariableElement p) {
                         return visit(t.getComponentType(), p);
@@ -232,6 +232,7 @@ public class ClassUseMapper {
                         add(classToField, (TypeElement) t.asElement(), p);
                         return null;
                     }
+
                     @Override
                     public Void visitTypeVariable(TypeVariable t, VariableElement p) {
                         return visit(typeUtils.erasure(t), p);
@@ -252,7 +253,7 @@ public class ClassUseMapper {
                 mapExecutable(method);
                 mapTypeParameters(classToMethodTypeParam, method, method);
                 mapAnnotations(classToMethodAnnotations, method, method);
-                SimpleTypeVisitor9<Void, ExecutableElement> stv = new SimpleTypeVisitor9<Void, ExecutableElement>() {
+                var stv = new SimpleTypeVisitor9<Void, ExecutableElement>() {
                     @Override
                     public Void visitArray(ArrayType t, ExecutableElement p) {
                         TypeMirror componentType = t.getComponentType();
@@ -285,7 +286,7 @@ public class ClassUseMapper {
         Collection<TypeElement> ret = classToSubclass.get(te);
         if (ret == null) {
             ret = new TreeSet<>(comparators.makeClassUseComparator());
-            Set<TypeElement> subs = classtree.subClasses(te);
+            Set<TypeElement> subs = classTree.subClasses(te);
             if (subs != null) {
                 ret.addAll(subs);
                 for (TypeElement sub : subs) {
@@ -304,7 +305,7 @@ public class ClassUseMapper {
         Collection<TypeElement> ret = classToSubinterface.get(te);
         if (ret == null) {
             ret = new TreeSet<>(comparators.makeClassUseComparator());
-            Set<TypeElement> subs = classtree.subInterfaces(te);
+            Set<TypeElement> subs = classTree.subInterfaces(te);
             if (subs != null) {
                 ret.addAll(subs);
                 for (TypeElement sub : subs) {
@@ -325,7 +326,7 @@ public class ClassUseMapper {
         Collection<TypeElement> ret = classToImplementingClass.get(te);
         if (ret == null) {
             ret = new TreeSet<>(comparators.makeClassUseComparator());
-            Set<TypeElement> impl = classtree.implementingClasses(te);
+            Set<TypeElement> impl = classTree.implementingClasses(te);
             if (impl != null) {
                 ret.addAll(impl);
                 for (TypeElement anImpl : impl) {
@@ -385,7 +386,7 @@ public class ClassUseMapper {
 
         }
         for (TypeMirror anException : ee.getThrownTypes()) {
-            SimpleTypeVisitor9<Void, ExecutableElement> stv = new SimpleTypeVisitor9<Void, ExecutableElement>() {
+            var stv = new SimpleTypeVisitor9<Void, ExecutableElement>() {
 
                 @Override
                 public Void visitArray(ArrayType t, ExecutableElement p) {
@@ -418,12 +419,7 @@ public class ClassUseMapper {
     }
 
     private <T> List<T> refList(Map<TypeElement, List<T>> map, TypeElement element) {
-        List<T> list = map.get(element);
-        if (list == null) {
-            list = new ArrayList<>();
-            map.put(element, list);
-        }
-        return list;
+        return map.computeIfAbsent(element, k -> new ArrayList<>());
     }
 
     private Set<PackageElement> packageSet(TypeElement te) {
@@ -449,9 +445,9 @@ public class ClassUseMapper {
         refList(map, te).add(ref);
         // add ref's package to package map and class map
         packageSet(te).add(elementUtils.getPackageOf(ref));
-        TypeElement entry = (utils.isField((Element) ref)
-                || utils.isConstructor((Element) ref)
-                || utils.isMethod((Element) ref))
+        TypeElement entry = (utils.isField(ref)
+                || utils.isConstructor(ref)
+                || utils.isMethod(ref))
                 ? (TypeElement) ref.getEnclosingElement()
                 : (TypeElement) ref;
         classSet(te).add(entry);
@@ -483,51 +479,49 @@ public class ClassUseMapper {
     private <T extends Element> void mapTypeParameters(final Map<TypeElement, List<T>> map,
             Element element, final T holder) {
 
-        @SuppressWarnings("preview")
-        SimpleElementVisitor14<Void, Void> elementVisitor
-                = new SimpleElementVisitor14<Void, Void>() {
+        var elementVisitor = new SimpleElementVisitor14<Void, Void>() {
 
-                    private void addParameters(TypeParameterElement e) {
-                        for (TypeMirror type : utils.getBounds(e)) {
-                            addTypeParameterToMap(map, type, holder);
-                        }
-                    }
+            private void addParameters(TypeParameterElement e) {
+                for (TypeMirror type : utils.getBounds(e)) {
+                    addTypeParameterToMap(map, type, holder);
+                }
+            }
 
-                    @Override
-                    public Void visitType(TypeElement e, Void p) {
-                        for (TypeParameterElement param : e.getTypeParameters()) {
-                            addParameters(param);
-                        }
-                        return null;
-                    }
+            @Override
+            public Void visitType(TypeElement e, Void p) {
+                for (TypeParameterElement param : e.getTypeParameters()) {
+                    addParameters(param);
+                }
+                return null;
+            }
 
-                    @Override
-                    public Void visitExecutable(ExecutableElement e, Void p) {
-                        for (TypeParameterElement param : e.getTypeParameters()) {
-                            addParameters(param);
-                        }
-                        return null;
-                    }
+            @Override
+            public Void visitExecutable(ExecutableElement e, Void p) {
+                for (TypeParameterElement param : e.getTypeParameters()) {
+                    addParameters(param);
+                }
+                return null;
+            }
 
-                    @Override
-                    protected Void defaultAction(Element e, Void p) {
-                        mapTypeParameters(map, e.asType(), holder);
-                        return null;
-                    }
+            @Override
+            protected Void defaultAction(Element e, Void p) {
+                mapTypeParameters(map, e.asType(), holder);
+                return null;
+            }
 
-                    @Override
-                    public Void visitTypeParameter(TypeParameterElement e, Void p) {
-                        addParameters(e);
-                        return null;
-                    }
-                };
+            @Override
+            public Void visitTypeParameter(TypeParameterElement e, Void p) {
+                addParameters(e);
+                return null;
+            }
+        };
         elementVisitor.visit(element);
     }
 
     private <T extends Element> void mapTypeParameters(final Map<TypeElement, List<T>> map,
             TypeMirror aType, final T holder) {
 
-        SimpleTypeVisitor9<Void, Void> tv = new SimpleTypeVisitor9<Void, Void>() {
+        var tv = new SimpleTypeVisitor9<Void, Void>() {
 
             @Override
             public Void visitWildcard(WildcardType t, Void p) {
@@ -561,7 +555,6 @@ public class ClassUseMapper {
      * @param e whose type parameters are being checked.
      * @param holder owning the type parameters.
      */
-    @SuppressWarnings("preview")
     private <T extends Element> void mapAnnotations(final Map<TypeElement, List<T>> map,
             Element e, final T holder) {
         new SimpleElementVisitor14<Void, Void>() {

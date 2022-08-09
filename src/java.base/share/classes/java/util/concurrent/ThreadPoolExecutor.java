@@ -40,10 +40,12 @@ import java.util.ConcurrentModificationException;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.AbstractQueuedSynchronizer;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
+import jdk.internal.vm.SharedThreadContainer;
 
 /**
  * An {@link ExecutorService} that executes each submitted task using
@@ -221,13 +223,18 @@ import java.util.concurrent.locks.ReentrantLock;
  * simple feedback control mechanism that will slow down the rate that
  * new tasks are submitted.
  *
- * <li>In {@link ThreadPoolExecutor.DiscardPolicy}, a task that
- * cannot be executed is simply dropped.
+ * <li>In {@link ThreadPoolExecutor.DiscardPolicy}, a task that cannot
+ * be executed is simply dropped. This policy is designed only for
+ * those rare cases in which task completion is never relied upon.
  *
  * <li>In {@link ThreadPoolExecutor.DiscardOldestPolicy}, if the
  * executor is not shut down, the task at the head of the work queue
  * is dropped, and then execution is retried (which can fail again,
- * causing this to be repeated.)
+ * causing this to be repeated.) This policy is rarely acceptable.  In
+ * nearly all cases, you should also cancel the task to cause an
+ * exception in any component waiting for its completion, and/or log
+ * the failure, as illustrated in {@link
+ * ThreadPoolExecutor.DiscardOldestPolicy} documentation.
  *
  * </ol>
  *
@@ -272,7 +279,7 @@ import java.util.concurrent.locks.ReentrantLock;
  *
  * </dl>
  *
- * <p><b>Extension example</b>. Most extensions of this class
+ * <p><b>Extension example.</b> Most extensions of this class
  * override one or more of the protected hook methods. For example,
  * here is a subclass that adds a simple pause/resume feature:
  *
@@ -471,6 +478,11 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
      * Wait condition to support awaitTermination.
      */
     private final Condition termination = mainLock.newCondition();
+
+    /**
+     * The thread container for the worker threads.
+     */
+    private final SharedThreadContainer container;
 
     /**
      * Tracks largest attained pool size. Accessed only under
@@ -721,6 +733,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
                     } finally {
                         ctl.set(ctlOf(TERMINATED, 0));
                         termination.signalAll();
+                        container.close();
                     }
                     return;
                 }
@@ -745,6 +758,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
      */
     private void checkShutdownAccess() {
         // assert mainLock.isHeldByCurrentThread();
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkPermission(shutdownPerm);
@@ -936,7 +950,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
                     mainLock.unlock();
                 }
                 if (workerAdded) {
-                    t.start();
+                    container.start(t);
                     workerStarted = true;
                 }
             }
@@ -1149,8 +1163,10 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
 
     /**
      * Creates a new {@code ThreadPoolExecutor} with the given initial
-     * parameters, the default thread factory and the default rejected
-     * execution handler.
+     * parameters, the
+     * {@linkplain Executors#defaultThreadFactory default thread factory}
+     * and the {@linkplain ThreadPoolExecutor.AbortPolicy
+     * default rejected execution handler}.
      *
      * <p>It may be more convenient to use one of the {@link Executors}
      * factory methods instead of this general purpose constructor.
@@ -1184,7 +1200,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
 
     /**
      * Creates a new {@code ThreadPoolExecutor} with the given initial
-     * parameters and {@linkplain ThreadPoolExecutor.AbortPolicy
+     * parameters and the {@linkplain ThreadPoolExecutor.AbortPolicy
      * default rejected execution handler}.
      *
      * @param corePoolSize the number of threads to keep in the pool, even
@@ -1220,7 +1236,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
 
     /**
      * Creates a new {@code ThreadPoolExecutor} with the given initial
-     * parameters and
+     * parameters and the
      * {@linkplain Executors#defaultThreadFactory default thread factory}.
      *
      * @param corePoolSize the number of threads to keep in the pool, even
@@ -1301,6 +1317,9 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
         this.keepAliveTime = unit.toNanos(keepAliveTime);
         this.threadFactory = threadFactory;
         this.handler = handler;
+
+        String name = Objects.toIdentityString(this);
+        this.container = SharedThreadContainer.create(name);
     }
 
     /**
@@ -1469,8 +1488,13 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
      * @implNote Previous versions of this class had a finalize method
      * that shut down this executor, but in this version, finalize
      * does nothing.
+     *
+     * @deprecated Finalization has been deprecated for removal.  See
+     * {@link java.lang.Object#finalize} for background information and details
+     * about migration options.
      */
-    @Deprecated(since="9")
+    @Deprecated(since="9", forRemoval=true)
+    @SuppressWarnings("removal")
     protected void finalize() {}
 
     /**
@@ -2081,7 +2105,20 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
     /**
      * A handler for rejected tasks that discards the oldest unhandled
      * request and then retries {@code execute}, unless the executor
-     * is shut down, in which case the task is discarded.
+     * is shut down, in which case the task is discarded. This policy is
+     * rarely useful in cases where other threads may be waiting for
+     * tasks to terminate, or failures must be recorded. Instead consider
+     * using a handler of the form:
+     * <pre> {@code
+     * new RejectedExecutionHandler() {
+     *   public void rejectedExecution(Runnable r, ThreadPoolExecutor e) {
+     *     Runnable dropped = e.getQueue().poll();
+     *     if (dropped instanceof Future<?>) {
+     *       ((Future<?>)dropped).cancel(false);
+     *       // also consider logging the failure
+     *     }
+     *     e.execute(r);  // retry
+     * }}}</pre>
      */
     public static class DiscardOldestPolicy implements RejectedExecutionHandler {
         /**

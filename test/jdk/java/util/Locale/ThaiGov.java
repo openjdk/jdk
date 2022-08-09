@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,41 +33,16 @@ import java.text.*;
 
 public class ThaiGov {
 
-    char[] hex = {'0', '1', '2', '3',
-                  '4', '5', '6', '7',
-                  '8', '9', 'A', 'B',
-                  'C', 'D', 'E', 'F'};
-
     ThaiGov() {
         System.out.println("ThaiGov locale test...");
 
     }
 
-    String toHex(String str) {
-        StringBuffer buff = new StringBuffer();
-        int y=0;
-        for(int x=0; x < str.length(); ++x) {
-            buff.append("\\u");
-            buff.append(toHex(str.charAt(x)));
-        }
-        return buff.toString();
-    }
-
-    String toHex(char ch) {
-        StringBuffer buff = new StringBuffer();
-        buff.append(hex[ch>>12]);
-        buff.append(hex[(ch>>8) & 0x0F]);
-        buff.append(hex[(ch>>4) & 0x0F]);
-        buff.append(hex[ch & 0x0F]);
-        return buff.toString();
-    }
-
-
     void numberTest() throws RuntimeException {
         final String strExpected = "\u0E51\u0E52\u002C\u0E53\u0E54\u0E55\u002C\u0E56\u0E57\u0E58\u002E\u0E52\u0E53\u0E54";
         final double value =  12345678.234;
 
-        Locale locTH = new Locale("th", "TH", "TH");
+        Locale locTH = Locale.of("th", "TH", "TH");
 
         // th_TH_TH test
         NumberFormat nf = NumberFormat.getInstance(locTH);
@@ -83,7 +58,7 @@ public class ThaiGov {
         final String strExpected = "\u0E3F\u0E51\u0E52\u002C\u0E53\u0E54\u0E55\u002C\u0E56\u0E57\u0E58\u002E\u0E52\u0E53";
         final double value =  12345678.234;
 
-        Locale locTH = new Locale("th", "TH", "TH");
+        Locale locTH = Locale.of("th", "TH", "TH");
 
         // th_TH_TH test
         NumberFormat nf = NumberFormat.getCurrencyInstance(locTH);
@@ -96,7 +71,7 @@ public class ThaiGov {
     }
 
     void dateTest() throws RuntimeException {
-        Locale locTH = new Locale("th", "TH", "TH");
+        Locale locTH = Locale.of("th", "TH", "TH");
         TimeZone tz = TimeZone.getTimeZone("PST");
 
         Calendar calGregorian = Calendar.getInstance(tz, Locale.US);

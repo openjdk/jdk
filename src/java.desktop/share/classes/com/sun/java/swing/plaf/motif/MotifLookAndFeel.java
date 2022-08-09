@@ -678,7 +678,7 @@ public class MotifLookAndFeel extends BasicLookAndFeel
             "PopupMenu.border", popupMenuBorder,
             "PopupMenu.foreground", table.get("menuText"),
             "PopupMenu.font", dialogPlain12,
-            "PopupMenu.consumeEventOnClose", Boolean.TRUE,
+            "PopupMenu.consumeEventOnClose", Boolean.FALSE,
 
             "Label.font", dialogPlain12,
             "Label.background", table.get("control"),

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,7 @@ void PdhDll::initialize(void) {
   if (NULL == _hModule) {
     return;
   }
-  // The 'A' at the end means the ANSI (not the UNICODE) vesions of the methods
+  // The 'A' at the end means the ANSI (not the UNICODE) versions of the methods
   _PdhAddCounter               = (PdhAddCounter_Fn)::GetProcAddress(_hModule, "PdhAddCounterA");
   _PdhOpenQuery                = (PdhOpenQuery_Fn)::GetProcAddress(_hModule, "PdhOpenQueryA");
   _PdhCloseQuery               = (PdhCloseQuery_Fn)::GetProcAddress(_hModule, "PdhCloseQuery");

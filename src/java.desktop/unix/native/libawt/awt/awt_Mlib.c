@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,9 +36,50 @@
 #include "awt_Mlib.h"
 #include "java_awt_image_BufferedImage.h"
 
+#ifdef STATIC_BUILD
+#include "mlib_image.h"
+#endif
+
 static void start_timer(int numsec);
 static void stop_timer(int numsec, int ntimes);
 
+#ifdef STATIC_BUILD
+// Mapping functions to their names for runtime check
+static mlibFnS_t sMlibFnsStatic[] = {
+    {j2d_mlib_ImageConvMxN, "j2d_mlib_ImageConvMxN"},
+    {j2d_mlib_ImageAffine, "j2d_mlib_ImageAffine"},
+    {j2d_mlib_ImageLookUp, "j2d_mlib_ImageLookUp"},
+    {j2d_mlib_ImageConvKernelConvert, "j2d_mlib_ImageConvKernelConvert"},
+};
+
+mlib_status awt_getImagingLib(JNIEnv *env, mlibFnS_t *sMlibFns,
+                              mlibSysFnS_t *sMlibSysFns) {
+    mlibFnS_t *mptr;
+    int i;
+    char *fName;
+    mlibSysFnS_t tempSysFns;
+    mlib_status ret = MLIB_SUCCESS;
+
+    tempSysFns.createFP = j2d_mlib_ImageCreate;
+    tempSysFns.createStructFP = j2d_mlib_ImageCreateStruct;
+    tempSysFns.deleteImageFP = j2d_mlib_ImageDelete;
+    *sMlibSysFns = tempSysFns;
+
+    mptr = sMlibFns;
+    i = 0;
+    while (mptr[i].fname != NULL) {
+        fName = mptr[i].fname;
+        if(strcmp(fName, sMlibFnsStatic[i].fname) == 0) {
+            mptr[i].fptr = sMlibFnsStatic[i].fptr;
+        } else {
+            ret = MLIB_FAILURE;
+        }
+        i++;
+    }
+
+    return ret;
+}
+#else
 /*
  * This is called by awt_ImagingLib.initLib()
  */
@@ -121,6 +162,7 @@ mlib_status awt_getImagingLib(JNIEnv *env, mlibFnS_t *sMlibFns,
     }
     return ret;
 }
+#endif
 
 mlib_start_timer awt_setMlibStartTimer() {
     return start_timer;

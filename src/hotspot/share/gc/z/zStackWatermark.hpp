@@ -26,7 +26,8 @@
 
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
-#include "gc/z/zOopClosures.hpp"
+#include "gc/shared/threadLocalAllocBuffer.hpp"
+#include "gc/z/zBarrier.hpp"
 #include "memory/allocation.hpp"
 #include "memory/iterator.hpp"
 #include "oops/oopsHierarchy.hpp"

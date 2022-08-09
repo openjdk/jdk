@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,7 @@ public class ExtendedMapMode {
         try {
             PrivilegedExceptionAction<Lookup> pae = () ->
                 MethodHandles.privateLookupIn(MapMode.class, MethodHandles.lookup());
+            @SuppressWarnings("removal")
             Lookup lookup = AccessController.doPrivileged(pae);
             var methodType = MethodType.methodType(void.class, String.class);
             MAP_MODE_CONSTRUCTOR = lookup.findConstructor(MapMode.class, methodType);

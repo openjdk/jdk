@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,20 +36,67 @@ package sun.nio.ch;
 // On systems that do not require this type of signalling, the current() method
 // always returns -1 and the signal(long) method has no effect.
 
-
 public class NativeThread {
+    private static final long VIRTUAL_THREAD_ID = -1L;
+
+    /**
+     * Returns the id of the current native thread if the platform can signal
+     * native threads, 0 if the platform can not signal native threads, or
+     * -1L if the current thread is a virtual thread.
+     */
+    public static long current() {
+        if (Thread.currentThread().isVirtual()) {
+            return VIRTUAL_THREAD_ID;
+        } else {
+            return current0();
+        }
+    }
+
+    /**
+     * Returns the id of the current native thread if the platform can signal
+     * native threads, 0 if the platform can not signal native threads.
+     */
+    static long currentNativeThread() {
+        return current0();
+    }
+
+    /**
+     * Signals the given native thread.
+     *
+     * @throws IllegalArgumentException if tid is not a token to a native thread
+     */
+    public static void signal(long tid) {
+        if (tid == 0 || tid == VIRTUAL_THREAD_ID)
+            throw new IllegalArgumentException();
+        signal0(tid);
+    }
+
+    /**
+     * Returns true the tid is the id of a native thread.
+     */
+    static boolean isNativeThread(long tid) {
+        return (tid != 0 && tid != VIRTUAL_THREAD_ID);
+    }
+
+    /**
+     * Returns true if tid is -1L.
+     * @see #current()
+     */
+    static boolean isVirtualThread(long tid) {
+        return (tid == VIRTUAL_THREAD_ID);
+    }
 
     // Returns an opaque token representing the native thread underlying the
     // invoking Java thread.  On systems that do not require signalling, this
-    // method always returns -1.
+    // method always returns 0.
     //
-    public static native long current();
+    private static native long current0();
 
     // Signals the given native thread so as to release it from a blocking I/O
     // operation.  On systems that do not require signalling, this method has
     // no effect.
     //
-    public static native void signal(long nt);
+    private static native void signal0(long tid);
 
     private static native void init();
 

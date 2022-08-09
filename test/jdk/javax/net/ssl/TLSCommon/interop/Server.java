@@ -42,7 +42,7 @@ public interface Server extends Peer {
     /*
      * Checks if the peer is alive.
      */
-    public boolean isAlive() throws IOException;
+    public boolean isAlive();
 
     /*
      * Signals the server to stop if necessary.

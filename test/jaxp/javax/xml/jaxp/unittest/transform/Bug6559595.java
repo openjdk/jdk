@@ -42,7 +42,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 6559595
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true transform.Bug6559595
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow transform.Bug6559595
  * @run testng/othervm transform.Bug6559595
  * @summary Test ampersand in href attribute is not handled specially even if output is set to HTML.
  */

@@ -99,9 +99,8 @@ public final class ReleaseInfoPlugin extends AbstractPlugin {
                 if (keys == null || keys.isEmpty()) {
                     throw new IllegalArgumentException("No key specified for delete");
                 }
-                Utils.parseList(keys).stream().forEach((k) -> {
-                    release.remove(k);
-                });
+                Utils.parseList(keys)
+                        .forEach(release::remove);
             }
             break;
 

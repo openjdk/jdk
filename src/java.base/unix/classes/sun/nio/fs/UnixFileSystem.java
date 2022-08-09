@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@ package sun.nio.fs;
 
 import java.nio.file.*;
 import java.nio.file.attribute.*;
-import java.nio.file.spi.*;
+import java.nio.file.spi.FileSystemProvider;
 import java.io.IOException;
 import java.util.*;
 import java.util.regex.Pattern;
@@ -144,11 +144,11 @@ abstract class UnixFileSystem
      */
     @Override
     public final Iterable<Path> getRootDirectories() {
-        final List<Path> allowedList =
-           Collections.unmodifiableList(Arrays.asList((Path)rootDirectory));
+        final List<Path> allowedList = List.of(rootDirectory);
         return new Iterable<>() {
             public Iterator<Path> iterator() {
                 try {
+                    @SuppressWarnings("removal")
                     SecurityManager sm = System.getSecurityManager();
                     if (sm != null)
                         sm.checkRead(rootDirectory.toString());
@@ -195,6 +195,7 @@ abstract class UnixFileSystem
                     continue;
 
                 // check permission to read mount point
+                @SuppressWarnings("removal")
                 SecurityManager sm = System.getSecurityManager();
                 if (sm != null) {
                     try {
@@ -240,6 +241,7 @@ abstract class UnixFileSystem
 
     @Override
     public final Iterable<FileStore> getFileStores() {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             try {
@@ -343,7 +345,7 @@ abstract class UnixFileSystem
     // Override if the platform uses different Unicode normalization form
     // for native file path. For example on MacOSX, the native path is stored
     // in Unicode NFD form.
-    char[] normalizeNativePath(char[] path) {
+    String normalizeNativePath(String path) {
         return path;
     }
 

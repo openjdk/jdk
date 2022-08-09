@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@ import java.security.spec.*;
 
 /**
  * @test
- * @bug 8080462 8226651
+ * @bug 8080462 8226651 8242332
  * @summary Ensure that PSS key and params check are implemented properly
  *         regardless of call sequence
  * @library /test/lib ..
@@ -55,6 +55,7 @@ public class KeyAndParamCheckForPSS extends PKCS11Test {
                 " due to no support");
             return;
         }
+
         // NOTE: key length >= (digest length + 2) in bytes
         // otherwise, even salt length = 0 would not work
         runTest(p, 1024, "SHA-256", "SHA-256");
@@ -66,10 +67,30 @@ public class KeyAndParamCheckForPSS extends PKCS11Test {
         runTest(p, 1040, "SHA-512", "SHA-256");
         runTest(p, 1040, "SHA-512", "SHA-384");
         runTest(p, 1040, "SHA-512", "SHA-512");
+        runTest(p, 1024, "SHA3-256", "SHA3-256");
+        runTest(p, 1024, "SHA3-256", "SHA3-384");
+        runTest(p, 1024, "SHA3-256", "SHA3-512");
+        runTest(p, 1024, "SHA3-384", "SHA3-256");
+        runTest(p, 1024, "SHA3-384", "SHA3-384");
+        runTest(p, 1024, "SHA3-384", "SHA3-512");
+        runTest(p, 1040, "SHA3-512", "SHA3-256");
+        runTest(p, 1040, "SHA3-512", "SHA3-384");
+        runTest(p, 1040, "SHA3-512", "SHA3-512");
     }
 
     private void runTest(Provider p, int keySize, String hashAlg,
             String mgfHashAlg) throws Exception {
+
+        // skip further test if this provider does not support hashAlg or
+        // mgfHashAlg
+        try {
+            MessageDigest.getInstance(hashAlg, p);
+            MessageDigest.getInstance(mgfHashAlg, p);
+        } catch (NoSuchAlgorithmException nsae) {
+            System.out.println("No support for " + hashAlg + ", skip");
+            return;
+        }
+
         System.out.println("Testing [" + keySize + " " + hashAlg + "]");
 
         // create a key pair with the supplied size
@@ -95,6 +116,7 @@ public class KeyAndParamCheckForPSS extends PKCS11Test {
         } catch (InvalidKeyException ike) {
             System.out.println("test#1: got expected IKE");
         }
+
         sig.setParameter(paramsGood);
         sig.initSign(priv);
         System.out.println("test#1: pass");
@@ -108,8 +130,10 @@ public class KeyAndParamCheckForPSS extends PKCS11Test {
         } catch (InvalidKeyException ike) {
             System.out.println("test#2: got expected IKE");
         }
+
         sig.setParameter(paramsGood);
         sig.initVerify(pub);
+
         System.out.println("test#2: pass");
 
         // test#3 - initSign, then setParameter
@@ -121,6 +145,7 @@ public class KeyAndParamCheckForPSS extends PKCS11Test {
         } catch (InvalidAlgorithmParameterException iape) {
             System.out.println("test#3: got expected IAPE");
         }
+
         sig.setParameter(paramsGood);
         System.out.println("test#3: pass");
 
@@ -133,6 +158,7 @@ public class KeyAndParamCheckForPSS extends PKCS11Test {
         } catch (InvalidAlgorithmParameterException iape) {
             System.out.println("test#4: got expected IAPE");
         }
+
         sig.setParameter(paramsGood);
         System.out.println("test#4: pass");
     }

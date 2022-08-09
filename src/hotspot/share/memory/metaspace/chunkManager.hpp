@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2018, 2020 SAP SE. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,17 +95,14 @@ class ChunkManager : public CHeapObj<mtMetaspace> {
   //  chunks.
   void split_chunk_and_add_splinters(Metachunk* c, chunklevel_t target_level);
 
-  // See get_chunk(s,s,s)
-  Metachunk* get_chunk_locked(size_t preferred_word_size, size_t min_word_size, size_t min_committed_words);
-
-  // Uncommit all chunks equal or below the given level.
-  void uncommit_free_chunks(chunklevel_t max_level);
-
   // Return a single chunk to the freelist without doing any merging, and adjust accounting.
   void return_chunk_simple_locked(Metachunk* c);
 
   // See return_chunk().
   void return_chunk_locked(Metachunk* c);
+
+  // Calculates the total number of committed words over all chunks. Walks chunks.
+  size_t calc_committed_word_size_locked() const;
 
 public:
 
@@ -158,17 +155,14 @@ public:
   DEBUG_ONLY(void verify() const;)
   DEBUG_ONLY(void verify_locked() const;)
 
-  // Returns the name of this chunk manager.
-  const char* name() const                  { return _name; }
-
   // Returns total number of chunks
   int total_num_chunks() const              { return _chunks.num_chunks(); }
 
   // Returns number of words in all free chunks (regardless of commit state).
   size_t total_word_size() const            { return _chunks.word_size(); }
 
-  // Returns number of committed words in all free chunks.
-  size_t total_committed_word_size() const  { return _chunks.committed_word_size(); }
+  // Calculates the total number of committed words over all chunks. Walks chunks.
+  size_t calc_committed_word_size() const;
 
   // Update statistics.
   void add_to_statistics(ChunkManagerStats* out) const;

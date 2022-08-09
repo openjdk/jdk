@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 
 AC_DEFUN_ONCE([HELP_SETUP_DEPENDENCY_HELP],
 [
-  AC_CHECK_PROGS(PKGHANDLER, zypper apt-get yum brew port pkgutil pkgadd)
+  UTIL_LOOKUP_PROGS(PKGHANDLER, zypper apt-get yum brew port pkgutil pkgadd pacman apk)
 ])
 
 AC_DEFUN([HELP_MSG_MISSING_DEPENDENCY],
@@ -38,26 +38,28 @@ AC_DEFUN([HELP_MSG_MISSING_DEPENDENCY],
     HELP_MSG="OpenJDK distributions are available at http://jdk.java.net/."
   elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
     cygwin_help $MISSING_DEPENDENCY
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-    msys_help $MISSING_DEPENDENCY
   else
     PKGHANDLER_COMMAND=
 
     case $PKGHANDLER in
-      apt-get)
+      *apt-get)
         apt_help     $MISSING_DEPENDENCY ;;
-      yum)
+      *yum)
         yum_help     $MISSING_DEPENDENCY ;;
-      brew)
+      *brew)
         brew_help    $MISSING_DEPENDENCY ;;
-      port)
+      *port)
         port_help    $MISSING_DEPENDENCY ;;
-      pkgutil)
+      *pkgutil)
         pkgutil_help $MISSING_DEPENDENCY ;;
-      pkgadd)
+      *pkgadd)
         pkgadd_help  $MISSING_DEPENDENCY ;;
-      zypper)
+      *zypper)
         zypper_help  $MISSING_DEPENDENCY ;;
+      *pacman)
+        pacman_help  $MISSING_DEPENDENCY ;;
+      *apk)
+        apk_help     $MISSING_DEPENDENCY ;;
     esac
 
     if test "x$PKGHANDLER_COMMAND" != x; then
@@ -80,11 +82,15 @@ cygwin_help() {
       PKGHANDLER_COMMAND="( cd <location of cygwin setup.exe> && cmd /c setup -q -P make )"
       HELP_MSG="You might be able to fix this by running '$PKGHANDLER_COMMAND'."
       ;;
+    i686-w64-mingw32-gcc)
+      PKGHANDLER_COMMAND="( cd <location of cygwin setup.exe> && cmd /c setup -q -P gcc-core i686-w64-mingw32-gcc-core mingw64-i686-glib2.0 )"
+      HELP_MSG="You might be able to fix this by running '$PKGHANDLER_COMMAND'."
+      ;;
+    x86_64-w64-mingw32-gcc)
+      PKGHANDLER_COMMAND="( cd <location of cygwin setup.exe> && cmd /c setup -q -P gcc-core x86_64-w64-mingw32-gcc-core mingw64-x86_64-glib2.0 )"
+      HELP_MSG="You might be able to fix this by running '$PKGHANDLER_COMMAND'."
+      ;;
   esac
-}
-
-msys_help() {
-  PKGHANDLER_COMMAND=""
 }
 
 apt_help() {
@@ -111,6 +117,8 @@ apt_help() {
       PKGHANDLER_COMMAND="sudo apt-get install ccache" ;;
     dtrace)
       PKGHANDLER_COMMAND="sudo apt-get install systemtap-sdt-dev" ;;
+    capstone)
+      PKGHANDLER_COMMAND="sudo apt-get install libcapstone-dev" ;;
   esac
 }
 
@@ -162,6 +170,19 @@ brew_help() {
       PKGHANDLER_COMMAND="brew install freetype" ;;
     ccache)
       PKGHANDLER_COMMAND="brew install ccache" ;;
+    capstone)
+      PKGHANDLER_COMMAND="brew install capstone" ;;
+  esac
+}
+
+pacman_help() {
+  case $1 in
+    unzip)
+      PKGHANDLER_COMMAND="sudo pacman -S unzip" ;;
+    zip)
+      PKGHANDLER_COMMAND="sudo pacman -S zip" ;;
+    make)
+      PKGHANDLER_COMMAND="sudo pacman -S make" ;;
   esac
 }
 
@@ -175,6 +196,27 @@ pkgutil_help() {
 
 pkgadd_help() {
   PKGHANDLER_COMMAND=""
+}
+
+apk_help() {
+  case $1 in
+    devkit)
+      PKGHANDLER_COMMAND="sudo apk add alpine-sdk linux-headers" ;;
+    alsa)
+      PKGHANDLER_COMMAND="sudo apk add alsa-lib-dev" ;;
+    cups)
+      PKGHANDLER_COMMAND="sudo apk add cups-dev" ;;
+    fontconfig)
+      PKGHANDLER_COMMAND="sudo apk add fontconfig-dev" ;;
+    freetype)
+      PKGHANDLER_COMMAND="sudo apk add freetype-dev" ;;
+    harfbuzz)
+      PKGHANDLER_COMMAND="sudo apk add harfbuzz-dev" ;;
+    x11)
+      PKGHANDLER_COMMAND="sudo apk add libxtst-dev libxt-dev libxrender-dev libxrandr-dev" ;;
+    ccache)
+      PKGHANDLER_COMMAND="sudo apk add ccache" ;;
+  esac
 }
 
 # This function will check if we're called from the "configure" wrapper while
@@ -238,6 +280,7 @@ AC_DEFUN_ONCE([HELP_PRINT_SUMMARY_AND_WARNINGS],
 
   printf "\n"
   printf "Configuration summary:\n"
+  printf "* Name:           $CONF_NAME\n"
   printf "* Debug level:    $DEBUG_LEVEL\n"
   printf "* HS debug level: $HOTSPOT_DEBUG_LEVEL\n"
   printf "* JVM variants:   $JVM_VARIANTS\n"
@@ -253,23 +296,34 @@ AC_DEFUN_ONCE([HELP_PRINT_SUMMARY_AND_WARNINGS],
   printf "* OpenJDK target: OS: $OPENJDK_TARGET_OS, CPU architecture: $OPENJDK_TARGET_CPU_ARCH, address length: $OPENJDK_TARGET_CPU_BITS\n"
   printf "* Version string: $VERSION_STRING ($VERSION_SHORT)\n"
 
+  if test "x$SOURCE_DATE" != xupdated; then
+    source_date_info="$SOURCE_DATE ($SOURCE_DATE_ISO_8601)"
+  else
+    source_date_info="Determined at build time"
+  fi
+  printf "* Source date:    $source_date_info\n"
+
   printf "\n"
   printf "Tools summary:\n"
   if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
-    printf "* Environment:    $WINDOWS_ENV_VENDOR version $WINDOWS_ENV_VERSION. Windows version $WINDOWS_VERSION"
-    if test "x$WINDOWS_ENV_ROOT_PATH" != "x"; then
-      printf ". Root at $WINDOWS_ENV_ROOT_PATH"
-    fi
-    printf "\n"
+    printf "* Environment:    %s version %s; windows version %s; prefix \"%s\"; root \"%s\"\n" \
+        "$WINENV_VENDOR" "$WINENV_VERSION" "$WINDOWS_VERSION" "$WINENV_PREFIX" "$WINENV_ROOT"
   fi
   printf "* Boot JDK:       $BOOT_JDK_VERSION (at $BOOT_JDK)\n"
   printf "* Toolchain:      $TOOLCHAIN_TYPE ($TOOLCHAIN_DESCRIPTION)\n"
-  printf "* C Compiler:     Version $CC_VERSION_NUMBER (at $CC)\n"
-  printf "* C++ Compiler:   Version $CXX_VERSION_NUMBER (at $CXX)\n"
+  if test "x$DEVKIT_NAME" != x; then
+    printf "* Devkit:         $DEVKIT_NAME ($DEVKIT_ROOT)\n"
+  elif test "x$DEVKIT_ROOT" != x; then
+    printf "* Devkit:         $DEVKIT_ROOT\n"
+  elif test "x$SYSROOT" != x; then
+    printf "* Sysroot:        $SYSROOT\n"
+  fi
+  printf "* C Compiler:     Version $CC_VERSION_NUMBER (at ${CC#"$FIXPATH "})\n"
+  printf "* C++ Compiler:   Version $CXX_VERSION_NUMBER (at ${CXX#"$FIXPATH "})\n"
 
   printf "\n"
   printf "Build performance summary:\n"
-  printf "* Cores to use:   $JOBS\n"
+  printf "* Build jobs:     $JOBS\n"
   printf "* Memory limit:   $MEMORY_SIZE MB\n"
   if test "x$CCACHE_STATUS" != "x"; then
     printf "* ccache status:  $CCACHE_STATUS\n"

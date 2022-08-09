@@ -35,7 +35,7 @@ import org.xml.sax.SAXException;
  * @test
  * @bug 4969692
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true validation.Bug4969692
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow validation.Bug4969692
  * @run testng/othervm validation.Bug4969692
  * @summary Test Validator.get/setFeature() throw NullPointerException
  * instead of SAXNotRecognizedException in case the "feature name" parameter is null.

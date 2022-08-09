@@ -25,6 +25,7 @@
  * @test
  * @bug 4358979
  * @summary Tests StrokeBorder encoding
+ * @run main/othervm -Djava.security.manager=allow javax_swing_border_StrokeBorder
  * @author Sergey Malenkov
  */
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 #ifndef SHARE_OOPS_KLASS_HPP
 #define SHARE_OOPS_KLASS_HPP
 
-#include "classfile/classLoaderData.hpp"
 #include "memory/iterator.hpp"
 #include "memory/memRegion.hpp"
 #include "oops/markWord.hpp"
@@ -38,17 +37,18 @@
 #include "jfr/support/jfrTraceIdExtension.hpp"
 #endif
 
-// Klass IDs for all subclasses of Klass
-enum KlassID {
-  InstanceKlassID,
-  InstanceRefKlassID,
-  InstanceMirrorKlassID,
-  InstanceClassLoaderKlassID,
-  TypeArrayKlassID,
-  ObjArrayKlassID
+// Klass Kinds for all subclasses of Klass
+enum KlassKind {
+  InstanceKlassKind,
+  InstanceRefKlassKind,
+  InstanceMirrorKlassKind,
+  InstanceClassLoaderKlassKind,
+  InstanceStackChunkKlassKind,
+  TypeArrayKlassKind,
+  ObjArrayKlassKind
 };
 
-const uint KLASS_ID_COUNT = 6;
+const uint KLASS_KIND_COUNT = ObjArrayKlassKind + 1;
 
 //
 // A Klass provides:
@@ -67,6 +67,7 @@ const uint KLASS_ID_COUNT = 6;
 // Forward declarations.
 template <class T> class Array;
 template <class T> class GrowableArray;
+class ClassLoaderData;
 class fieldDescriptor;
 class klassVtable;
 class ModuleEntry;
@@ -114,11 +115,13 @@ class Klass : public Metadata {
   // because it is frequently queried.
   jint        _layout_helper;
 
-  // Klass identifier used to implement devirtualized oop closure dispatching.
-  const KlassID _id;
+  // Klass kind used to resolve the runtime type of the instance.
+  //  - Used to implement devirtualized oop closure dispatching.
+  //  - Various type checking in the JVM
+  const KlassKind _kind;
 
-  // vtable length
-  int _vtable_len;
+  // Processed access flags, for use by Class.getModifiers.
+  jint        _modifier_flags;
 
   // The fields _super_check_offset, _secondary_super_cache, _secondary_supers
   // and _primary_supers all help make fast subtype checks.  See big discussion
@@ -154,16 +157,13 @@ class Klass : public Metadata {
   // Provide access the corresponding instance java.lang.ClassLoader.
   ClassLoaderData* _class_loader_data;
 
-  jint        _modifier_flags;  // Processed access flags, for use by Class.getModifiers.
+  int _vtable_len;              // vtable length. This field may be read very often when we
+                                // have lots of itable dispatches (e.g., lambdas and streams).
+                                // Keep it away from the beginning of a Klass to avoid cacheline
+                                // contention that may happen when a nearby object is modified.
   AccessFlags _access_flags;    // Access flags. The class/interface distinction is stored here.
 
   JFR_ONLY(DEFINE_TRACE_ID_FIELD;)
-
-  // Biased locking implementation and statistics
-  // (the 64-bit chunk goes first, to avoid some fragmentation)
-  jlong    _last_biased_lock_bulk_revocation_time;
-  markWord _prototype_header;   // Used when biased locking is both enabled and disabled for this type
-  jint     _biased_lock_revocation_count;
 
 private:
   // This is an index into FileMapHeader::_shared_path_table[], to
@@ -173,10 +173,16 @@ private:
   jshort _shared_class_path_index;
 
 #if INCLUDE_CDS
-  // Flags of the current shared class.
+  // Various attributes for shared classes. Should be zero for a non-shared class.
   u2     _shared_class_flags;
-  enum {
-    _archived_lambda_proxy_is_available = 2
+  enum CDSSharedClassFlags {
+    _archived_lambda_proxy_is_available    = 1 << 1,
+    _has_value_based_class_annotation      = 1 << 2,
+    _verified_at_dump_time                 = 1 << 3,
+    _has_archived_enum_objs                = 1 << 4,
+    // This class was not loaded from a classfile in the module image
+    // or classpath.
+    _is_generated_shared_class             = 1 << 5
   };
 #endif
 
@@ -185,13 +191,13 @@ private:
 protected:
 
   // Constructor
-  Klass(KlassID id);
-  Klass() : _id(KlassID(-1)) { assert(DumpSharedSpaces || UseSharedSpaces, "only for cds"); }
+  Klass(KlassKind kind);
+  Klass() : _kind(KlassKind(-1)) { assert(DumpSharedSpaces || UseSharedSpaces, "only for cds"); }
 
   void* operator new(size_t size, ClassLoaderData* loader_data, size_t word_size, TRAPS) throw();
 
  public:
-  int id() { return _id; }
+  int kind() { return _kind; }
 
   enum class DefaultsLookupMode { find, skip };
   enum class OverpassLookupMode { find, skip };
@@ -318,6 +324,41 @@ protected:
   }
   bool lambda_proxy_is_available() const {
     CDS_ONLY(return (_shared_class_flags & _archived_lambda_proxy_is_available) != 0;)
+    NOT_CDS(return false;)
+  }
+
+  void set_has_value_based_class_annotation() {
+    CDS_ONLY(_shared_class_flags |= _has_value_based_class_annotation;)
+  }
+  void clear_has_value_based_class_annotation() {
+    CDS_ONLY(_shared_class_flags &= ~_has_value_based_class_annotation;)
+  }
+  bool has_value_based_class_annotation() const {
+    CDS_ONLY(return (_shared_class_flags & _has_value_based_class_annotation) != 0;)
+    NOT_CDS(return false;)
+  }
+
+  void set_verified_at_dump_time() {
+    CDS_ONLY(_shared_class_flags |= _verified_at_dump_time;)
+  }
+  bool verified_at_dump_time() const {
+    CDS_ONLY(return (_shared_class_flags & _verified_at_dump_time) != 0;)
+    NOT_CDS(return false;)
+  }
+
+  void set_has_archived_enum_objs() {
+    CDS_ONLY(_shared_class_flags |= _has_archived_enum_objs;)
+  }
+  bool has_archived_enum_objs() const {
+    CDS_ONLY(return (_shared_class_flags & _has_archived_enum_objs) != 0;)
+    NOT_CDS(return false;)
+  }
+
+  void set_is_generated_shared_class() {
+    CDS_ONLY(_shared_class_flags |= _is_generated_shared_class;)
+  }
+  bool is_generated_shared_class() const {
+    CDS_ONLY(return (_shared_class_flags & _is_generated_shared_class) != 0;)
     NOT_CDS(return false;)
   }
 
@@ -481,29 +522,22 @@ protected:
   }
 
   // array class with specific rank
-  Klass* array_klass(int rank, TRAPS)         {  return array_klass_impl(false, rank, THREAD); }
+  virtual Klass* array_klass(int rank, TRAPS) = 0;
 
   // array class with this klass as element type
-  Klass* array_klass(TRAPS)                   {  return array_klass_impl(false, THREAD); }
+  virtual Klass* array_klass(TRAPS) = 0;
 
   // These will return NULL instead of allocating on the heap:
-  // NB: these can block for a mutex, like other functions with TRAPS arg.
-  Klass* array_klass_or_null(int rank);
-  Klass* array_klass_or_null();
+  virtual Klass* array_klass_or_null(int rank) = 0;
+  virtual Klass* array_klass_or_null() = 0;
 
   virtual oop protection_domain() const = 0;
 
   oop class_loader() const;
 
-  // This loads the klass's holder as a phantom. This is useful when a weak Klass
-  // pointer has been "peeked" and then must be kept alive before it may
-  // be used safely.  All uses of klass_holder need to apply the appropriate barriers,
-  // except during GC.
-  oop klass_holder() const { return class_loader_data()->holder_phantom(); }
+  inline oop klass_holder() const;
 
  protected:
-  virtual Klass* array_klass_impl(bool or_null, int rank, TRAPS);
-  virtual Klass* array_klass_impl(bool or_null, TRAPS);
 
   // Error handling when length > max_length or length < 0
   static void check_array_allocation_length(int length, int max_length, TRAPS);
@@ -540,8 +574,8 @@ protected:
   // ALL FUNCTIONS BELOW THIS POINT ARE DISPATCHED FROM AN OOP
   // These functions describe behavior for the oop not the KLASS.
 
-  // actual oop size of obj in memory
-  virtual int oop_size(oop obj) const = 0;
+  // actual oop size of obj in memory in word size.
+  virtual size_t oop_size(oop obj) const = 0;
 
   // Size of klass in word size.
   virtual int size() const = 0;
@@ -585,18 +619,17 @@ protected:
   }
  public:
   #endif
-  inline  bool is_instance_klass()            const { return assert_same_query(
-                                                      layout_helper_is_instance(layout_helper()),
-                                                      is_instance_klass_slow()); }
-  inline  bool is_array_klass()               const { return assert_same_query(
-                                                    layout_helper_is_array(layout_helper()),
-                                                    is_array_klass_slow()); }
-  inline  bool is_objArray_klass()            const { return assert_same_query(
-                                                    layout_helper_is_objArray(layout_helper()),
-                                                    is_objArray_klass_slow()); }
-  inline  bool is_typeArray_klass()           const { return assert_same_query(
-                                                    layout_helper_is_typeArray(layout_helper()),
-                                                    is_typeArray_klass_slow()); }
+
+  bool is_instance_klass()              const { return assert_same_query(_kind <= InstanceStackChunkKlassKind, is_instance_klass_slow()); }
+  // Other is anything that is not one of the more specialized kinds of InstanceKlass.
+  bool is_other_instance_klass()        const { return _kind == InstanceKlassKind; }
+  bool is_reference_instance_klass()    const { return _kind == InstanceRefKlassKind; }
+  bool is_mirror_instance_klass()       const { return _kind == InstanceMirrorKlassKind; }
+  bool is_class_loader_instance_klass() const { return _kind == InstanceClassLoaderKlassKind; }
+  bool is_array_klass()                 const { return assert_same_query( _kind >= TypeArrayKlassKind, is_array_klass_slow()); }
+  bool is_stack_chunk_instance_klass()  const { return _kind == InstanceStackChunkKlassKind; }
+  bool is_objArray_klass()              const { return assert_same_query( _kind == ObjArrayKlassKind,  is_objArray_klass_slow()); }
+  bool is_typeArray_klass()             const { return assert_same_query( _kind == TypeArrayKlassKind, is_typeArray_klass_slow()); }
   #undef assert_same_query
 
   // Access flags
@@ -622,47 +655,20 @@ protected:
   void set_is_shared()                  { _access_flags.set_is_shared_class(); }
   bool is_hidden() const                { return access_flags().is_hidden_class(); }
   void set_is_hidden()                  { _access_flags.set_is_hidden_class(); }
-  bool is_non_strong_hidden() const     { return access_flags().is_hidden_class() &&
-                                          class_loader_data()->has_class_mirror_holder(); }
-  bool is_box() const                   { return access_flags().is_box_class(); }
-  void set_is_box()                     { _access_flags.set_is_box_class(); }
+  bool is_value_based()                 { return _access_flags.is_value_based_class(); }
+  void set_is_value_based()             { _access_flags.set_is_value_based_class(); }
+
+  inline bool is_non_strong_hidden() const;
 
   bool is_cloneable() const;
   void set_is_cloneable();
-
-  // Biased locking support
-  // Note: the prototype header is always set up to be at least the
-  // prototype markWord. If biased locking is enabled it may further be
-  // biasable and have an epoch.
-  markWord prototype_header() const      { return _prototype_header; }
-
-  // NOTE: once instances of this klass are floating around in the
-  // system, this header must only be updated at a safepoint.
-  // NOTE 2: currently we only ever set the prototype header to the
-  // biasable prototype for instanceKlasses. There is no technical
-  // reason why it could not be done for arrayKlasses aside from
-  // wanting to reduce the initial scope of this optimization. There
-  // are potential problems in setting the bias pattern for
-  // JVM-internal oops.
-  inline void set_prototype_header(markWord header);
-  static ByteSize prototype_header_offset() { return in_ByteSize(offset_of(Klass, _prototype_header)); }
-
-  int  biased_lock_revocation_count() const { return (int) _biased_lock_revocation_count; }
-  // Atomically increments biased_lock_revocation_count and returns updated value
-  int atomic_incr_biased_lock_revocation_count();
-  void set_biased_lock_revocation_count(int val) { _biased_lock_revocation_count = (jint) val; }
-  jlong last_biased_lock_bulk_revocation_time() { return _last_biased_lock_bulk_revocation_time; }
-  void  set_last_biased_lock_bulk_revocation_time(jlong cur_time) { _last_biased_lock_bulk_revocation_time = cur_time; }
 
   JFR_ONLY(DEFINE_TRACE_ID_METHODS;)
 
   virtual void metaspace_pointers_do(MetaspaceClosure* iter);
   virtual MetaspaceObj::Type type() const { return ClassType; }
 
-  // Iff the class loader (or mirror for unsafe anonymous classes) is alive the
-  // Klass is considered alive. This is safe to call before the CLD is marked as
-  // unloading, and hence during concurrent class unloading.
-  bool is_loader_alive() const { return class_loader_data()->is_alive(); }
+  inline bool is_loader_alive() const;
 
   void clean_subklass();
 
@@ -670,8 +676,6 @@ protected:
   static void clean_subklass_tree() {
     clean_weak_klass_links(/*unloading_occurred*/ true , /* clean_alive_klasses */ false);
   }
-
-  virtual void array_klasses_do(void f(Klass* k)) {}
 
   // Return self, except for abstract classes with exactly 1
   // implementor.  Then return the 1 concrete implementation.
@@ -681,11 +685,10 @@ protected:
   Symbol* name() const                   { return _name; }
   void set_name(Symbol* n);
 
-  virtual void release_C_heap_structures();
+  virtual void release_C_heap_structures(bool release_constant_pool = true);
 
  public:
-  // jvm support
-  virtual jint compute_modifier_flags(TRAPS) const;
+  virtual jint compute_modifier_flags() const = 0;
 
   // JVMTI support
   virtual jint jvmti_class_status() const;

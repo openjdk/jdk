@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,10 @@ public class OrderDouble extends Order {
         ck(buf.asReadOnlyBuffer().order(), expected);
         ck(buf.duplicate().order(), expected);
         ck(buf.slice().order(), expected);
+
+
+
+
     }
 
     static void ckDoubleBuffer() {
@@ -52,5 +56,27 @@ public class OrderDouble extends Order {
         buf = DoubleBuffer.allocate(LENGTH);
         ck(buf.order(), nord);
         ckDoubleBuffer(buf, nord);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     }
 }
+

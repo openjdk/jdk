@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,7 @@
 #include "code/location.hpp"
 #include "code/nmethod.hpp"
 #include "code/oopRecorder.hpp"
-#include "runtime/stackValue.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/javaThread.hpp"
 #include "utilities/growableArray.hpp"
 
 // Classes used for serializing debugging information.
@@ -42,6 +41,7 @@
 // - ConstantValue   describes a constant
 
 class ConstantOopReadValue;
+class ConstantOopWriteValue;
 class LocationValue;
 class ObjectValue;
 
@@ -61,6 +61,11 @@ class ScopeValue: public ResourceObj {
   ConstantOopReadValue* as_ConstantOopReadValue() {
     assert(is_constant_oop(), "must be");
     return (ConstantOopReadValue*) this;
+  }
+
+  ConstantOopWriteValue* as_ConstantOopWriteValue() {
+    assert(is_constant_oop(), "must be");
+    return (ConstantOopWriteValue*) this;
   }
 
   ObjectValue* as_ObjectValue() {
@@ -149,7 +154,7 @@ class ObjectValue: public ScopeValue {
   bool                        is_visited() const        { return _visited; }
 
   void                        set_value(oop value);
-  void                        set_visited(bool visited) { _visited = false; }
+  void                        set_visited(bool visited) { _visited = visited; }
 
   // Serialization of debugging information
   void read_object(DebugInfoReadStream* stream);

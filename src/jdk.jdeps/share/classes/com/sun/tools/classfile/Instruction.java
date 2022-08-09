@@ -285,6 +285,8 @@ public class Instruction {
                         int default_ = getInt(pad);
                         int low = getInt(pad + 4);
                         int high = getInt(pad + 8);
+                        if (low > high)
+                            throw new IllegalStateException();
                         int[] values = new int[high - low + 1];
                         for (int i = 0; i < values.length; i++)
                             values[i] = getInt(pad + 12 + 4 * i);
@@ -295,6 +297,8 @@ public class Instruction {
                         int pad = align(pc + 1) - pc;
                         int default_ = getInt(pad);
                         int npairs = getInt(pad + 4);
+                        if (npairs < 0)
+                            throw new IllegalStateException();
                         int[] matches = new int[npairs];
                         int[] offsets = new int[npairs];
                         for (int i = 0; i < npairs; i++) {

@@ -40,7 +40,7 @@ import org.xml.sax.helpers.DefaultHandler;
  * @test
  * @bug 6889654
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true sax.Bug6889654Test
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow sax.Bug6889654Test
  * @run testng/othervm sax.Bug6889654Test
  * @summary Test SAXException includes whole information.
  */

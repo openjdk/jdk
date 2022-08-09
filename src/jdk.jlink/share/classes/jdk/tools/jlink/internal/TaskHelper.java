@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.Collections;
 import java.util.Locale;
@@ -82,6 +81,7 @@ public final class TaskHelper {
             return this;
         }
         public final String key;
+        @SuppressWarnings("serial") // Array component type is not Serializable
         public final Object[] args;
         public boolean showUsage;
     }
@@ -130,7 +130,7 @@ public final class TaskHelper {
                       String shortname,
                       boolean isTerminal)
         {
-            this(hasArg, processing, false, name, shortname, "", isTerminal);
+            this(hasArg, processing, hidden, name, shortname, "", isTerminal);
         }
 
         public Option(boolean hasArg, Processing<T> processing, String name, String shortname, boolean isTerminal) {
@@ -306,7 +306,7 @@ public final class TaskHelper {
 
             // make sure that more than one plugin does not use the same option!
             if (optionsSeen.contains(option)) {
-                throw new BadArgs("err.plugin.mutiple.options",
+                throw new BadArgs("err.plugin.multiple.options",
                         option);
             }
             optionsSeen.add(option);
@@ -421,7 +421,7 @@ public final class TaskHelper {
                     ) throws IOException, BadArgs {
             if (output != null) {
                 if (Files.exists(output)) {
-                    throw new PluginException(PluginsResourceBundle.
+                    throw new IllegalArgumentException(PluginsResourceBundle.
                             getMessage("err.dir.already.exits", output));
                 }
             }
@@ -433,7 +433,7 @@ public final class TaskHelper {
                 List<Map<String, String>> argsMaps = entry.getValue();
 
                 // same plugin option may be used multiple times in command line.
-                // we call configure once for each occurrence. It is upto the plugin
+                // we call configure once for each occurrence. It is up to the plugin
                 // to 'merge' and/or 'override' arguments.
                 for (Map<String, String> map : argsMaps) {
                     try {
@@ -566,7 +566,7 @@ public final class TaskHelper {
                         if (option.isTerminal()) {
                             return ++i < args.length
                                         ? Stream.of(Arrays.copyOfRange(args, i, args.length))
-                                                .collect(Collectors.toList())
+                                                .toList()
                                         : Collections.emptyList();
 
                         }
@@ -576,7 +576,7 @@ public final class TaskHelper {
                     }
                 } else {
                     return Stream.of(Arrays.copyOfRange(args, i, args.length))
-                                 .collect(Collectors.toList());
+                                 .toList();
                 }
             }
             return Collections.emptyList();

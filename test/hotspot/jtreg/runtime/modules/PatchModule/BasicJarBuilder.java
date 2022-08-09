@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,12 +31,15 @@
 
 import java.io.File;
 import java.util.ArrayList;
-import sun.tools.jar.Main;
+import java.util.spi.ToolProvider;
 
 // Using JarBuilder requires that all to-be-jarred classes should be placed
 // in the current working directory, aka "."
 public class BasicJarBuilder {
     private static final String classDir = System.getProperty("test.classes");
+
+    private static final ToolProvider JAR = ToolProvider.findFirst("jar")
+        .orElseThrow(() -> new RuntimeException("ToolProvider for jar not found"));
 
     public static void build(boolean classesInWorkDir, String jarName,
         String ...classNames) throws Exception {
@@ -73,8 +76,7 @@ public class BasicJarBuilder {
     }
 
     private static void createJar(ArrayList<String> args) {
-        Main jarTool = new Main(System.out, System.err, "jar");
-        if (!jarTool.run(args.toArray(new String[1]))) {
+        if (JAR.run(System.out, System.err, args.toArray(new String[1])) != 0) {
             throw new RuntimeException("jar operation failed");
         }
     }

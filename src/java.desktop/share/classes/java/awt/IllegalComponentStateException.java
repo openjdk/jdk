@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 1997, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 
 package java.awt;
 
+import java.io.Serial;
+
 /**
  * Signals that an AWT component is not in an appropriate state for
  * the requested operation.
@@ -32,9 +34,11 @@ package java.awt;
  * @author      Jonni Kanerva
  */
 public class IllegalComponentStateException extends IllegalStateException {
-    /*
-     * JDK 1.1 serialVersionUID
+
+    /**
+     * Use serialVersionUID from JDK 1.1 for interoperability.
      */
+     @Serial
      private static final long serialVersionUID = -1889339587208144238L;
 
     /**

@@ -26,6 +26,7 @@
 #define SHARE_GC_SHARED_GCHEAPSUMMARY_HPP
 
 #include "memory/allocation.hpp"
+#include "memory/metaspaceStats.hpp"
 #include "memory/metaspaceChunkFreeListSummary.hpp"
 
 class VirtualSpaceSummary : public StackObj {
@@ -59,21 +60,6 @@ public:
   HeapWord* end() const { return _end; }
   size_t used() const { return _used; }
   size_t size() const { return (uintptr_t)_end - (uintptr_t)_start; }
-};
-
-class MetaspaceSizes : public StackObj {
-  size_t _committed;
-  size_t _used;
-  size_t _reserved;
-
- public:
-  MetaspaceSizes() : _committed(0), _used(0), _reserved(0) {}
-  MetaspaceSizes(size_t committed, size_t used, size_t reserved) :
-    _committed(committed), _used(used), _reserved(reserved) {}
-
-  size_t committed() const { return _committed; }
-  size_t used() const { return _used; }
-  size_t reserved() const { return _reserved; }
 };
 
 class GCHeapSummary;
@@ -147,39 +133,29 @@ class G1HeapSummary : public GCHeapSummary {
 
 class MetaspaceSummary : public StackObj {
   size_t _capacity_until_GC;
-  MetaspaceSizes _meta_space;
-  MetaspaceSizes _data_space;
-  MetaspaceSizes _class_space;
+  MetaspaceCombinedStats _stats;
   MetaspaceChunkFreeListSummary _metaspace_chunk_free_list_summary;
   MetaspaceChunkFreeListSummary _class_chunk_free_list_summary;
 
  public:
   MetaspaceSummary() :
     _capacity_until_GC(0),
-    _meta_space(),
-    _data_space(),
-    _class_space(),
+    _stats(),
     _metaspace_chunk_free_list_summary(),
     _class_chunk_free_list_summary()
   {}
   MetaspaceSummary(size_t capacity_until_GC,
-                   const MetaspaceSizes& meta_space,
-                   const MetaspaceSizes& data_space,
-                   const MetaspaceSizes& class_space,
+                   const MetaspaceCombinedStats& stats,
                    const MetaspaceChunkFreeListSummary& metaspace_chunk_free_list_summary,
                    const MetaspaceChunkFreeListSummary& class_chunk_free_list_summary) :
     _capacity_until_GC(capacity_until_GC),
-    _meta_space(meta_space),
-    _data_space(data_space),
-    _class_space(class_space),
+    _stats(stats),
     _metaspace_chunk_free_list_summary(metaspace_chunk_free_list_summary),
     _class_chunk_free_list_summary(class_chunk_free_list_summary)
   {}
 
   size_t capacity_until_GC() const { return _capacity_until_GC; }
-  const MetaspaceSizes& meta_space() const { return _meta_space; }
-  const MetaspaceSizes& data_space() const { return _data_space; }
-  const MetaspaceSizes& class_space() const { return _class_space; }
+  const MetaspaceCombinedStats& stats() const { return _stats; }
 
   const MetaspaceChunkFreeListSummary& metaspace_chunk_free_list_summary() const {
     return _metaspace_chunk_free_list_summary;
@@ -201,7 +177,9 @@ private:
 
   size_t _region_end_waste; // Number of words wasted due to skipping to the next region.
   uint   _regions_filled;   // Number of regions filled completely.
+  size_t _num_plab_filled;  // Number of PLABs refilled/retired.
   size_t _direct_allocated; // Number of words allocated directly into the regions.
+  size_t _num_direct_allocated; // Number of direct allocations.
 
   // Number of words in live objects remaining in regions that ultimately suffered an
   // evacuation failure. This is used in the regions when the regions are made old regions.
@@ -211,12 +189,23 @@ private:
   // end of regions.
   size_t _failure_waste;
 public:
-  G1EvacSummary(size_t allocated, size_t wasted, size_t undo_wasted, size_t unused,
-    size_t used, size_t region_end_waste, uint regions_filled, size_t direct_allocated,
-    size_t failure_used, size_t failure_waste) :
+  G1EvacSummary(size_t allocated,
+                size_t wasted,
+                size_t undo_wasted,
+                size_t unused,
+                size_t used,
+                size_t region_end_waste,
+                uint regions_filled,
+                size_t num_plab_filled,
+                size_t direct_allocated,
+                size_t num_direct_allocated,
+                size_t failure_used,
+                size_t failure_waste) :
     _allocated(allocated), _wasted(wasted), _undo_wasted(undo_wasted), _unused(unused),
-    _used(used),  _region_end_waste(region_end_waste), _regions_filled(regions_filled),
-    _direct_allocated(direct_allocated), _failure_used(failure_used), _failure_waste(failure_waste)
+    _used(used),  _region_end_waste(region_end_waste),
+    _regions_filled(regions_filled), _num_plab_filled(num_plab_filled),
+    _direct_allocated(direct_allocated),_num_direct_allocated(num_direct_allocated),
+    _failure_used(failure_used), _failure_waste(failure_waste)
   { }
 
   size_t allocated() const { return _allocated; }
@@ -226,7 +215,9 @@ public:
   size_t used() const { return _used; }
   size_t region_end_waste() const { return _region_end_waste; }
   uint regions_filled() const { return _regions_filled; }
+  size_t num_plab_filled() const { return _num_plab_filled; }
   size_t direct_allocated() const { return _direct_allocated; }
+  size_t num_direct_allocated() const { return _num_direct_allocated; }
   size_t failure_used() const { return _failure_used; }
   size_t failure_waste() const { return _failure_waste; }
 };

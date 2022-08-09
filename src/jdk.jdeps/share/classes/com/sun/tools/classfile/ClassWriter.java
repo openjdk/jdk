@@ -362,16 +362,14 @@ public class ClassWriter {
                 write(a, out);
         }
 
-        // Note: due to the use of shared resources, this method is not reentrant.
         public void write(Attribute attr, ClassOutputStream out) {
             out.writeShort(attr.attribute_name_index);
-            sharedOut.reset();
-            attr.accept(this, sharedOut);
-            out.writeInt(sharedOut.size());
-            sharedOut.writeTo(out);
+            ClassOutputStream nestedOut = new ClassOutputStream();
+            attr.accept(this, nestedOut);
+            out.writeInt(nestedOut.size());
+            nestedOut.writeTo(out);
         }
 
-        protected ClassOutputStream sharedOut = new ClassOutputStream();
         protected AnnotationWriter annotationWriter = new AnnotationWriter();
 
         @Override
@@ -756,8 +754,8 @@ public class ClassWriter {
             return null;
         }
 
-        protected void writeAccessFlags(AccessFlags flags, ClassOutputStream p) {
-            sharedOut.writeShort(flags.flags);
+        protected void writeAccessFlags(AccessFlags flags, ClassOutputStream out) {
+            out.writeShort(flags.flags);
         }
 
         protected StackMapTableWriter stackMapWriter;

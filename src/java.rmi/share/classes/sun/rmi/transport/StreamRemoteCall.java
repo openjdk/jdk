@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -139,6 +139,7 @@ public class StreamRemoteCall implements RemoteCall {
      * Get the InputStream the stub/skeleton should get results/arguments
      * from.
      */
+    @SuppressWarnings("removal")
     public ObjectInput getInputStream() throws IOException {
         if (in == null) {
             Transport.transportLog.log(Log.VERBOSE, "getting input stream");

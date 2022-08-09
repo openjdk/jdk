@@ -29,7 +29,7 @@ import java.util.logging.Logger;
  * @bug 8005899
  * @build TestLogger testlogger.MyResource
  * @run main/othervm TestLogger
- * @run main/othervm -Dsecurity=on TestLogger
+ * @run main/othervm -Djava.security.manager=allow -Dsecurity=on TestLogger
  **/
 public class TestLogger {
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -195,7 +195,7 @@ public class RowSetProvider {
         }
         try {
             ReflectUtil.checkPackageAccess(factoryClassName);
-        } catch (java.security.AccessControlException e) {
+        } catch (@SuppressWarnings("removal") java.security.AccessControlException e) {
             throw new SQLException("Access Exception",e);
         }
 
@@ -225,7 +225,8 @@ public class RowSetProvider {
      * @return The ClassLoader to use.
      *
      */
-    static private ClassLoader getContextClassLoader() throws SecurityException {
+    @SuppressWarnings("removal")
+    private static ClassLoader getContextClassLoader() throws SecurityException {
         return AccessController.doPrivileged(new PrivilegedAction<ClassLoader>() {
 
             public ClassLoader run() {
@@ -251,7 +252,7 @@ public class RowSetProvider {
      * context class loader followed by the current class loader.
      *  @return The class which was loaded
      */
-    static private Class<?> getFactoryClass(String factoryClassName, ClassLoader cl,
+    private static Class<?> getFactoryClass(String factoryClassName, ClassLoader cl,
             boolean doFallback) throws ClassNotFoundException {
         Class<?> factoryClass = null;
 
@@ -283,7 +284,7 @@ public class RowSetProvider {
      * Use the ServiceLoader mechanism to load  the default RowSetFactory
      * @return default RowSetFactory Implementation
      */
-    static private RowSetFactory loadViaServiceLoader() throws SQLException {
+    private static RowSetFactory loadViaServiceLoader() throws SQLException {
         RowSetFactory theFactory = null;
         try {
             trace("***in loadViaServiceLoader():");
@@ -308,7 +309,8 @@ public class RowSetProvider {
      * @return The System property value or NULL if the property does not exist
      * or a {@code SecurityException} occurs.
      */
-    static private String getSystemProperty(final String propName) {
+    @SuppressWarnings("removal")
+    private static String getSystemProperty(final String propName) {
         String property = null;
         try {
             property = AccessController.doPrivileged(new PrivilegedAction<String>() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 package java.security.spec;
 
 import java.math.BigInteger;
-import java.util.Arrays;
 
 /**
  * This immutable class holds the necessary values needed to represent
@@ -169,15 +168,11 @@ public class EllipticCurve {
      */
     public boolean equals(Object obj) {
         if (this == obj) return true;
-        if (obj instanceof EllipticCurve) {
-            EllipticCurve curve = (EllipticCurve) obj;
-            if ((field.equals(curve.field)) &&
-                (a.equals(curve.a)) &&
-                (b.equals(curve.b))) {
-                    return true;
-            }
-        }
-        return false;
+
+        return obj instanceof EllipticCurve other
+                && field.equals(other.field)
+                && a.equals(other.a)
+                && b.equals(other.b);
     }
 
     /**

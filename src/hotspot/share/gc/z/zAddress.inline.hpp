@@ -25,6 +25,7 @@
 #define SHARE_GC_Z_ZADDRESS_INLINE_HPP
 
 #include "gc/z/zAddress.hpp"
+
 #include "gc/z/zGlobals.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"

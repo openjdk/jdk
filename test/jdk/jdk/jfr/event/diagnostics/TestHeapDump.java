@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -65,8 +63,8 @@ public class TestHeapDump {
             RecordedEvent e = events.get(0);
             Events.assertField(e, "destination").equal(path.toString());
             Events.assertField(e, "gcBeforeDump").equal(true);
-            Events.assertField(e, "onOutOfMemoryError").equals(false);
-            Events.assertField(e, "size").equals(Files.size(path));
+            Events.assertField(e, "onOutOfMemoryError").equal(false);
+            Events.assertField(e, "size").equal(Files.size(path));
             System.out.println(e);
         }
     }

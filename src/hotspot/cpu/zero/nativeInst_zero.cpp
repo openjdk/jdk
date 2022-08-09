@@ -24,7 +24,7 @@
  */
 
 #include "precompiled.hpp"
-#include "assembler_zero.inline.hpp"
+#include "asm/assembler.inline.hpp"
 #include "entry_zero.hpp"
 #include "interpreter/zero/zeroInterpreter.hpp"
 #include "nativeInst_zero.hpp"

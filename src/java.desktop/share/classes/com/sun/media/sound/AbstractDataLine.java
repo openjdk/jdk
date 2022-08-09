@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -295,13 +295,7 @@ abstract class AbstractDataLine extends AbstractLine implements DataLine {
         //boolean sendEvents = false;
         //long position = getLongFramePosition();
 
-        synchronized (this) {
-
-            if (this.active != active) {
-                this.active = active;
-                //sendEvents = true;
-            }
-        }
+        this.active = active;
 
         // $$kk: 11.19.99: take ACTIVE / INACTIVE / EOM events out;
         // putting them in is technically an API change.
@@ -324,12 +318,9 @@ abstract class AbstractDataLine extends AbstractLine implements DataLine {
         boolean sendEvents = false;
         long position = getLongFramePosition();
 
-        synchronized (this) {
-
-            if (this.started != started) {
-                this.started = started;
-                sendEvents = true;
-            }
+        if (this.started != started) {
+            this.started = started;
+            sendEvents = true;
         }
 
         if (sendEvents) {

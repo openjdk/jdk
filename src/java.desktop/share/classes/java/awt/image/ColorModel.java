@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -201,6 +201,7 @@ public abstract class ColorModel implements Transparency{
      * that the name of the library is "awt".  -br.
      */
     private static boolean loaded = false;
+    @SuppressWarnings("removal")
     static void loadLibraries() {
         if (!loaded) {
             java.security.AccessController.doPrivileged(
@@ -1617,26 +1618,6 @@ public abstract class ColorModel implements Transparency{
     }
 
     /**
-     * Disposes of system resources associated with this
-     * {@code ColorModel} once this {@code ColorModel} is no
-     * longer referenced.
-     *
-     * @deprecated The {@code finalize} method has been deprecated.
-     *     Subclasses that override {@code finalize} in order to perform cleanup
-     *     should be modified to use alternative cleanup mechanisms and
-     *     to remove the overriding {@code finalize} method.
-     *     When overriding the {@code finalize} method, its implementation must explicitly
-     *     ensure that {@code super.finalize()} is invoked as described in {@link Object#finalize}.
-     *     See the specification for {@link Object#finalize()} for further
-     *     information about migration options.
-     */
-    @Deprecated(since = "9", forRemoval = true)
-    @SuppressWarnings("removal")
-    public void finalize() {
-    }
-
-
-    /**
      * Returns a {@code Raster} representing the alpha channel of an
      * image, extracted from the input {@code Raster}, provided that
      * pixel values of this {@code ColorModel} represent color and
@@ -1672,13 +1653,12 @@ public abstract class ColorModel implements Transparency{
      * {@code ColorModel} object.
      */
     public String toString() {
-       return new String("ColorModel: #pixelBits = "+pixel_bits
-                         + " numComponents = "+numComponents
-                         + " color space = "+colorSpace
-                         + " transparency = "+transparency
-                         + " has alpha = "+supportsAlpha
-                         + " isAlphaPre = "+isAlphaPremultiplied
-                         );
+       return "ColorModel: #pixelBits = " + pixel_bits
+               + " numComponents = " + numComponents
+               + " color space = " + colorSpace
+               + " transparency = " + transparency
+               + " has alpha = " + supportsAlpha
+               + " isAlphaPre = " + isAlphaPremultiplied;
     }
 
     static int getDefaultTransferType(int pixel_bits) {
@@ -1705,15 +1685,11 @@ public abstract class ColorModel implements Transparency{
     static Map<ICC_ColorSpace, short[]> lg16Toog16Map = null; // 16-bit linear to 16-bit "other" gray
 
     static boolean isLinearRGBspace(ColorSpace cs) {
-        // Note: CMM.LINEAR_RGBspace will be null if the linear
-        // RGB space has not been created yet.
-        return (cs == CMSManager.LINEAR_RGBspace);
+        return cs == ColorSpace.getInstance(ColorSpace.CS_LINEAR_RGB);
     }
 
     static boolean isLinearGRAYspace(ColorSpace cs) {
-        // Note: CMM.GRAYspace will be null if the linear
-        // gray space has not been created yet.
-        return (cs == CMSManager.GRAYspace);
+        return cs == ColorSpace.getInstance(ColorSpace.CS_GRAY);
     }
 
     static byte[] getLinearRGB8TosRGB8LUT() {

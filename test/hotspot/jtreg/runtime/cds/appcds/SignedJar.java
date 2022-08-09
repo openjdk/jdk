@@ -24,6 +24,7 @@
 
 /*
  * @test
+ * @bug 8276184
  * @summary AppCDS handling of signed JAR.
  * @requires vm.cds
  * @library /test/lib
@@ -42,24 +43,42 @@ public class SignedJar {
         // Test class exists in signed JAR
         String signedJar = TestCommon.getTestJar("signed_hello.jar");
         OutputAnalyzer output;
-        output = TestCommon.dump(signedJar, TestCommon.list("Hello"));
-        TestCommon.checkDump(output, "Skipping Hello: Signed JAR");
 
-        // At runtime, the Hello class should be loaded from the jar file
-        // instead of from the shared archive since a class from a signed
-        // jar shouldn't be dumped into the archive.
-        output = TestCommon.exec(signedJar, "-verbose:class", "Hello");
-        String expectedOutput = ".class,load. Hello source: file:.*signed_hello.jar";
+        // "testlambda" is for testing JDK-8276184
+        String[] mainArgs = { "dummy", "testlambda" };
+        String mainClass = "Hello";
 
-        try {
-            output.shouldMatch(expectedOutput);
-        } catch (Exception e) {
-            TestCommon.checkCommonExecExceptions(output, e);
+        String skipMsg = "Skipping Hello: Signed JAR";
+        String lambdaInArchive = "klasses.*=.*app.*Hello[$][$]Lambda[$].*hidden";
+        String loadFromJar = ".class,load. Hello source: file:.*signed_hello.jar";
+        String lambdaLoadFromHello = ".class.load. Hello[$][$]Lambda[$].*/0x.*source.*Hello";
+
+        for (String mainArg : mainArgs) {
+            output = TestCommon.dump(signedJar, TestCommon.list(mainClass),
+                                     "-Xlog:cds+class=debug", mainClass, mainArg);
+            TestCommon.checkDump(output, skipMsg);
+            output.shouldNotContain(lambdaInArchive);
+
+            // At runtime, the Hello class should be loaded from the jar file
+            // instead of from the shared archive since a class from a signed
+            // jar shouldn't be dumped into the archive.
+            output = TestCommon.exec(signedJar, "-verbose:class", mainClass, mainArg);
+
+            try {
+                output.shouldMatch(loadFromJar);
+                if (mainArg.equals("testlambda")) {
+                    output.shouldMatch(lambdaLoadFromHello);
+                }
+            } catch (Exception e) {
+                TestCommon.checkCommonExecExceptions(output, e);
+            }
+
+            // Test class exists in both signed JAR and unsigned JAR
+            String jars = signedJar + System.getProperty("path.separator") + unsignedJar;
+            output = TestCommon.dump(jars, TestCommon.list(mainClass),
+                                     "-Xlog:cds+class=debug", mainClass, mainArg);
+            TestCommon.checkDump(output, skipMsg);
+            output.shouldNotContain(lambdaInArchive);
         }
-
-        // Test class exists in both signed JAR and unsigned JAR
-        String jars = signedJar + System.getProperty("path.separator") + unsignedJar;
-        output = TestCommon.dump(jars, TestCommon.list("Hello"));
-        TestCommon.checkDump(output, "Skipping Hello: Signed JAR");
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,9 @@
 #ifndef SHARE_OPTO_C2_GLOBALS_HPP
 #define SHARE_OPTO_C2_GLOBALS_HPP
 
+#include "opto/c2_globals_pd.hpp"
 #include "runtime/globals_shared.hpp"
 #include "utilities/macros.hpp"
-
-#include CPU_HEADER(c2_globals)
-#include OS_HEADER(c2_globals)
 
 //
 // Defines all globals flags used by the server compiler.
@@ -52,9 +50,13 @@
   product(bool, StressIGVN, false, DIAGNOSTIC,                              \
           "Randomize worklist traversal in IGVN")                           \
                                                                             \
+  product(bool, StressCCP, false, DIAGNOSTIC,                               \
+          "Randomize worklist traversal in CCP")                            \
+                                                                            \
   product(uint, StressSeed, 0, DIAGNOSTIC,                                  \
           "Seed for randomized stress testing (if unset, a random one is "  \
-          "generated)")                                                     \
+          "generated). The seed is recorded in the compilation log, if "    \
+          "available.")                                                     \
           range(0, max_juint)                                               \
                                                                             \
   develop(bool, StressMethodHandleLinkerInlining, false,                    \
@@ -79,6 +81,16 @@
           "Max vector size in bytes, "                                      \
           "actual size could be less depending on elements type")           \
           range(0, max_jint)                                                \
+                                                                            \
+  product(intx, SuperWordMaxVectorSize, 64, DIAGNOSTIC,                     \
+          "Vector size limit in bytes for superword, "                      \
+          "superword vector size limit in bytes")                           \
+          range(0, max_jint)                                                \
+                                                                            \
+  product(intx, ArrayOperationPartialInlineSize, 0, DIAGNOSTIC,             \
+          "Partial inline size used for small array operations"             \
+          "(e.g. copy,cmp) acceleration.")                                  \
+          range(0, 256)                                                     \
                                                                             \
   product(bool, AlignVector, true,                                          \
           "Perform vector store/load alignment in loop")                    \
@@ -121,10 +133,6 @@
   notproduct(bool, PrintIdealNodeCount, false,                              \
           "Print liveness counts of ideal nodes")                           \
                                                                             \
-  develop(bool, IdealizedNumerics, false,                                   \
-          "Check performance difference allowing FP "                       \
-          "associativity and commutativity...")                             \
-                                                                            \
   product_pd(bool, IdealizeClearArrayNode, DIAGNOSTIC,                      \
           "Replace ClearArrayNode by subgraph of basic operations.")        \
                                                                             \
@@ -152,9 +160,6 @@
   develop_pd(bool, OptoPeephole,                                            \
           "Apply peephole optimizations after register allocation")         \
                                                                             \
-  develop(bool, OptoRemoveUseless, true,                                    \
-          "Remove useless nodes after parsing")                             \
-                                                                            \
   notproduct(bool, PrintFrameConverterAssembly, false,                      \
           "Print New compiler assembly output for frame converters")        \
                                                                             \
@@ -165,7 +170,7 @@
           "Print New compiler peephole replacements")                       \
                                                                             \
   develop(bool, PrintCFGBlockFreq, false,                                   \
-          "Print CFG block freqencies")                                     \
+          "Print CFG block frequencies")                                    \
                                                                             \
   develop(bool, TraceOptoParse, false,                                      \
           "Trace bytecode parse and control-flow merge")                    \
@@ -287,13 +292,17 @@
   notproduct(bool, VerifyRegisterAllocator , false,                         \
           "Verify Register Allocator")                                      \
                                                                             \
-  develop_pd(intx, FLOATPRESSURE,                                           \
-          "Number of float LRG's that constitute high register pressure")   \
-          range(0, max_jint)                                                \
+  develop(intx, FLOATPRESSURE, -1,                                          \
+          "Number of float LRG's that constitute high register pressure."   \
+          "-1: means the threshold is determined by number of available "   \
+          "float register for allocation")                                  \
+          range(-1, max_jint)                                               \
                                                                             \
-  develop_pd(intx, INTPRESSURE,                                             \
-          "Number of integer LRG's that constitute high register pressure") \
-          range(0, max_jint)                                                \
+  develop(intx, INTPRESSURE, -1,                                            \
+          "Number of integer LRG's that constitute high register pressure." \
+          "-1: means the threshold is determined by number of available "   \
+          "integer register for allocation")                                \
+          range(-1, max_jint)                                               \
                                                                             \
   notproduct(bool, TraceOptoPipelining, false,                              \
           "Trace pipelining information")                                   \
@@ -330,7 +339,7 @@
           "Trace loop unswitching")                                         \
                                                                             \
   product(bool, AllowVectorizeOnDemand, true,                               \
-          "Globally supress vectorization set in VectorizeMethod")          \
+          "Globally suppress vectorization set in VectorizeMethod")         \
                                                                             \
   product(bool, UseSuperWord, true,                                         \
           "Transform scalar operations into superword operations")          \
@@ -407,51 +416,14 @@
           "Set level of loop optimization for tier 1 compiles")             \
           range(5, 43)                                                      \
                                                                             \
+  product(bool, OptimizeUnstableIf, true, DIAGNOSTIC,                       \
+          "Optimize UnstableIf traps")                                      \
+                                                                            \
   /* controls for heat-based inlining */                                    \
                                                                             \
   develop(intx, NodeCountInliningCutoff, 18000,                             \
           "If parser node generation exceeds limit stop inlining")          \
           range(0, max_jint)                                                \
-                                                                            \
-  develop(intx, NodeCountInliningStep, 1000,                                \
-          "Target size of warm calls inlined between optimization passes")  \
-          range(0, max_jint)                                                \
-                                                                            \
-  develop(bool, InlineWarmCalls, false,                                     \
-          "Use a heat-based priority queue to govern inlining")             \
-                                                                            \
-  /* Max values must not exceed WarmCallInfo::MAX_VALUE(). */               \
-  develop(intx, HotCallCountThreshold, 999999,                              \
-          "large numbers of calls (per method invocation) force hotness")   \
-          range(0, ((intx)MIN2((int64_t)max_intx,(int64_t)(+1.0e10))))      \
-                                                                            \
-  develop(intx, HotCallProfitThreshold, 999999,                             \
-          "highly profitable inlining opportunities force hotness")         \
-          range(0, ((intx)MIN2((int64_t)max_intx,(int64_t)(+1.0e10))))      \
-                                                                            \
-  develop(intx, HotCallTrivialWork, -1,                                     \
-          "trivial execution time (no larger than this) forces hotness")    \
-          range(-1, ((intx)MIN2((int64_t)max_intx,(int64_t)(+1.0e10))))     \
-                                                                            \
-  develop(intx, HotCallTrivialSize, -1,                                     \
-          "trivial methods (no larger than this) force calls to be hot")    \
-          range(-1, ((intx)MIN2((int64_t)max_intx,(int64_t)(+1.0e10))))     \
-                                                                            \
-  develop(intx, WarmCallMinCount, -1,                                       \
-          "number of calls (per method invocation) to enable inlining")     \
-          range(-1, ((intx)MIN2((int64_t)max_intx,(int64_t)(+1.0e10))))     \
-                                                                            \
-  develop(intx, WarmCallMinProfit, -1,                                      \
-          "number of calls (per method invocation) to enable inlining")     \
-          range(-1, ((intx)MIN2((int64_t)max_intx,(int64_t)(+1.0e10))))     \
-                                                                            \
-  develop(intx, WarmCallMaxWork, 999999,                                    \
-          "execution time of the largest inlinable method")                 \
-          range(0, ((intx)MIN2((int64_t)max_intx,(int64_t)(+1.0e10))))      \
-                                                                            \
-  develop(intx, WarmCallMaxSize, 999999,                                    \
-          "size of the largest inlinable method")                           \
-          range(0, ((intx)MIN2((int64_t)max_intx,(int64_t)(+1.0e10))))      \
                                                                             \
   product(intx, MaxNodeLimit, 80000,                                        \
           "Maximum number of nodes")                                        \
@@ -487,10 +459,6 @@
                                                                             \
   notproduct(bool, PrintLockStatistics, false,                              \
           "Print precise statistics on the dynamic lock usage")             \
-                                                                            \
-  product(bool, PrintPreciseBiasedLockingStatistics, false, DIAGNOSTIC,     \
-          "(Deprecated) Print per-lock-site statistics of biased locking "  \
-          "in JVM")                                                         \
                                                                             \
   product(bool, PrintPreciseRTMLockingStatistics, false, DIAGNOSTIC,        \
           "Print per-lock-site statistics of rtm locking in JVM")           \
@@ -534,6 +502,10 @@
           "Array size (number of elements) limit for scalar replacement")   \
           range(0, max_jint)                                                \
                                                                             \
+  product(intx, EliminateAllocationFieldsLimit, 512, DIAGNOSTIC,            \
+          "Number of fields in instance limit for scalar replacement")      \
+          range(0, max_jint)                                                \
+                                                                            \
   product(bool, OptimizePtrCompare, true,                                   \
           "Use escape analysis to optimize pointers compare")               \
                                                                             \
@@ -542,9 +514,6 @@
                                                                             \
   notproduct(bool, VerifyConnectionGraph , true,                            \
           "Verify Connection Graph construction in Escape Analysis")        \
-                                                                            \
-  product(bool, UseOptoBiasInlining, true,                                  \
-          "(Deprecated) Generate biased locking code in C2 ideal graph")    \
                                                                             \
   product(bool, OptimizeStringConcat, true,                                 \
           "Optimize the construction of Strings by StringBuilder")          \
@@ -568,7 +537,7 @@
           "Use edge frequencies to drive block ordering")                   \
                                                                             \
   product(intx, BlockLayoutMinDiamondPercentage, 20,                        \
-          "Miniumum %% of a successor (predecessor) for which block "       \
+          "Minimum %% of a successor (predecessor) for which block "        \
           "layout a will allow a fork (join) in a single chain")            \
           range(0, 100)                                                     \
                                                                             \
@@ -669,7 +638,8 @@
           range(1, max_intx)                                                \
                                                                             \
   product(intx, AliasLevel,     3,                                          \
-          "0 for no aliasing, 1 for oop/field/static/array split, "         \
+          "(Deprecated) 0 for no aliasing, "                                \
+          "1 for oop/field/static/array split, "                            \
           "2 for class split, 3 for unique instances")                      \
           range(0, 3)                                                       \
           constraint(AliasLevelConstraintFunc,AfterErgo)                    \
@@ -709,8 +679,17 @@
   product(bool, IncrementalInline, true,                                    \
           "do post parse inlining")                                         \
                                                                             \
+  product(bool, IncrementalInlineMH, true, DIAGNOSTIC,                      \
+          "do post parse inlining of method handle calls")                  \
+                                                                            \
+  product(bool, IncrementalInlineVirtual, true, DIAGNOSTIC,                 \
+          "do post parse inlining of virtual calls")                        \
+                                                                            \
   develop(bool, AlwaysIncrementalInline, false,                             \
           "do all inlining incrementally")                                  \
+                                                                            \
+  product(bool, IncrementalInlineForceCleanup, false, DIAGNOSTIC,           \
+          "do cleanup after every iteration of incremental inlining")       \
                                                                             \
   product(intx, LiveNodeCountInliningCutoff, 40000,                         \
           "max number of live nodes in a method")                           \
@@ -748,6 +727,9 @@
                                                                             \
   product(bool, EnableVectorAggressiveReboxing, false, EXPERIMENTAL,        \
           "Enables aggressive reboxing of vectors")                         \
+                                                                            \
+  product(bool, UseVectorStubs, false, EXPERIMENTAL,                        \
+          "Use stubs for vector transcendental operations")                 \
                                                                             \
   product(bool, UseTypeSpeculation, true,                                   \
           "Speculatively propagate types from profiles")                    \
@@ -791,7 +773,20 @@
           "to stress handling of long counted loops: run inner loop"        \
           "for at most jint_max / StressLongCountedLoop")                   \
           range(0, max_juint)                                               \
+                                                                            \
+  product(bool, DuplicateBackedge, true, DIAGNOSTIC,                        \
+          "Transform loop with a merge point into 2 loops if inner loop is" \
+          "expected to optimize better")                                    \
+                                                                            \
+  develop(bool, StressDuplicateBackedge, false,                             \
+          "Run DuplicateBackedge whenever possible ignoring benefit"        \
+          "analysis")                                                       \
+                                                                            \
+  product(bool, VerifyReceiverTypes, trueInDebug, DIAGNOSTIC,               \
+          "Verify receiver types at runtime")                               \
 
 // end of C2_FLAGS
+
+DECLARE_FLAGS(C2_FLAGS)
 
 #endif // SHARE_OPTO_C2_GLOBALS_HPP

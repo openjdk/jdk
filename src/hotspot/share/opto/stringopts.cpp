@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,26 +23,23 @@
  */
 
 #include "precompiled.hpp"
+#include "ci/ciSymbols.hpp"
 #include "classfile/javaClasses.hpp"
 #include "compiler/compileLog.hpp"
-#include "opto/addnode.hpp"
-#include "opto/callGenerator.hpp"
 #include "opto/callnode.hpp"
-#include "opto/divnode.hpp"
 #include "opto/graphKit.hpp"
 #include "opto/idealKit.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/runtime.hpp"
 #include "opto/stringopts.hpp"
-#include "opto/subnode.hpp"
-#include "runtime/sharedRuntime.hpp"
+#include "runtime/atomic.hpp"
+#include "runtime/stubRoutines.hpp"
 
 #define __ kit.
 
 class StringConcat : public ResourceObj {
  private:
   PhaseStringOpts*    _stringopts;
-  Node*               _string_alloc;
   AllocateNode*       _begin;          // The allocation the begins the pattern
   CallStaticJavaNode* _end;            // The final call of the pattern.  Will either be
                                        // SB.toString or or String.<init>(SB.toString)
@@ -63,12 +60,12 @@ class StringConcat : public ResourceObj {
     StringMode,
     IntMode,
     CharMode,
-    StringNullCheckMode
+    StringNullCheckMode,
+    NegativeIntCheckMode
   };
 
   StringConcat(PhaseStringOpts* stringopts, CallStaticJavaNode* end):
     _stringopts(stringopts),
-    _string_alloc(NULL),
     _begin(NULL),
     _end(end),
     _multiple(false) {
@@ -78,29 +75,6 @@ class StringConcat : public ResourceObj {
 
   bool validate_mem_flow();
   bool validate_control_flow();
-
-  void merge_add() {
-#if 0
-    // XXX This is place holder code for reusing an existing String
-    // allocation but the logic for checking the state safety is
-    // probably inadequate at the moment.
-    CallProjections endprojs;
-    sc->end()->extract_projections(&endprojs, false);
-    if (endprojs.resproj != NULL) {
-      for (SimpleDUIterator i(endprojs.resproj); i.has_next(); i.next()) {
-        CallStaticJavaNode *use = i.get()->isa_CallStaticJava();
-        if (use != NULL && use->method() != NULL &&
-            use->method()->intrinsic_id() == vmIntrinsics::_String_String &&
-            use->in(TypeFunc::Parms + 1) == endprojs.resproj) {
-          // Found useless new String(sb.toString()) so reuse the newly allocated String
-          // when creating the result instead of allocating a new one.
-          sc->set_string_alloc(use->in(TypeFunc::Parms));
-          sc->set_end(use);
-        }
-      }
-    }
-#endif
-  }
 
   StringConcat* merge(StringConcat* other, Node* arg);
 
@@ -120,12 +94,19 @@ class StringConcat : public ResourceObj {
   void push_string(Node* value) {
     push(value, StringMode);
   }
+
   void push_string_null_check(Node* value) {
     push(value, StringNullCheckMode);
   }
+
+  void push_negative_int_check(Node* value) {
+    push(value, NegativeIntCheckMode);
+  }
+
   void push_int(Node* value) {
     push(value, IntMode);
   }
+
   void push_char(Node* value) {
     push(value, CharMode);
   }
@@ -199,7 +180,6 @@ class StringConcat : public ResourceObj {
   }
   CallStaticJavaNode* end() { return _end; }
   AllocateNode* begin() { return _begin; }
-  Node* string_alloc() { return _string_alloc; }
 
   void eliminate_unneeded_control();
   void eliminate_initialize(InitializeNode* init);
@@ -208,10 +188,7 @@ class StringConcat : public ResourceObj {
   void maybe_log_transform() {
     CompileLog* log = _stringopts->C->log();
     if (log != NULL) {
-      log->head("replace_string_concat arguments='%d' string_alloc='%d' multiple='%d'",
-                num_arguments(),
-                _string_alloc != NULL,
-                _multiple);
+      log->head("replace_string_concat arguments='%d' multiple='%d'", num_arguments(), _multiple);
       JVMState* p = _begin->jvms();
       while (p != NULL) {
         log->elem("jvms bci='%d' method='%d'", p->bci(), log->identify(p->method()));
@@ -231,7 +208,7 @@ class StringConcat : public ResourceObj {
       const TypePtr* no_memory_effects = NULL;
       Compile* C = _stringopts->C;
       CallStaticJavaNode* call = new CallStaticJavaNode(call_type, call_addr, "uncommon_trap",
-                                                        jvms->bci(), no_memory_effects);
+                                                        no_memory_effects);
       for (int e = 0; e < TypeFunc::Parms; e++) {
         call->init_req(e, uct->in(e));
       }
@@ -275,6 +252,20 @@ void StringConcat::eliminate_unneeded_control() {
       C->gvn_replace_by(n, n->in(0)->in(0));
       // get rid of the other projection
       C->gvn_replace_by(n->in(0)->as_If()->proj_out(false), C->top());
+    } else if (n->is_Region()) {
+      Node* iff = n->in(1)->in(0);
+      assert(n->req() == 3 && n->in(2)->in(0) == iff, "not a diamond");
+      assert(iff->is_If(), "no if for the diamond");
+      Node* bol = iff->in(1);
+      assert(bol->is_Bool(), "unexpected if shape");
+      Node* cmp = bol->in(1);
+      assert(cmp->is_Cmp(), "unexpected if shape");
+      if (cmp->in(1)->is_top() || cmp->in(2)->is_top()) {
+        // This region should lose its Phis and be optimized out by igvn but there's a chance the if folds to top first
+        // which then causes a reachable part of the graph to become dead.
+        Compile* C = _stringopts->C;
+        C->gvn_replace_by(n, iff->in(0));
+      }
     }
   }
 }
@@ -390,11 +381,13 @@ Node_List PhaseStringOpts::collect_toString_calls() {
     }
   }
 
+  uint encountered = 0;
   while (worklist.size() > 0) {
     Node* ctrl = worklist.pop();
     if (StringConcat::is_SB_toString(ctrl)) {
       CallStaticJavaNode* csj = ctrl->as_CallStaticJava();
       string_calls.push(csj);
+      encountered++;
     }
     if (ctrl->in(0) != NULL && !_visited.test_set(ctrl->in(0)->_idx)) {
       worklist.push(ctrl->in(0));
@@ -407,23 +400,47 @@ Node_List PhaseStringOpts::collect_toString_calls() {
       }
     }
   }
+#ifndef PRODUCT
+  Atomic::add(&_stropts_total, encountered);
+#endif
   return string_calls;
 }
 
-
+// Recognize a fluent-chain of StringBuilder/Buffer. They are either explicit usages
+// of them or the legacy bytecodes of string concatenation prior to JEP-280. eg.
+//
+// String result = new StringBuilder()
+//   .append("foo")
+//   .append("bar")
+//   .append(123)
+//   .toString(); // "foobar123"
+//
+// PS: Only a certain subset of constructor and append methods are acceptable.
+// The criterion is that the length of argument is easy to work out in this phrase.
+// It will drop complex cases such as Object.
+//
+// Since it walks along the receivers of fluent-chain, it will give up if the codeshape is
+// not "fluent" enough. eg.
+//   StringBuilder sb = new StringBuilder();
+//   sb.append("foo");
+//   sb.toString();
+//
+// The receiver of toString method is the result of Allocation Node(CheckCastPP).
+// The append method is overlooked. It will fail at validate_control_flow() test.
+//
 StringConcat* PhaseStringOpts::build_candidate(CallStaticJavaNode* call) {
   ciMethod* m = call->method();
   ciSymbol* string_sig;
   ciSymbol* int_sig;
   ciSymbol* char_sig;
   if (m->holder() == C->env()->StringBuilder_klass()) {
-    string_sig = ciSymbol::String_StringBuilder_signature();
-    int_sig = ciSymbol::int_StringBuilder_signature();
-    char_sig = ciSymbol::char_StringBuilder_signature();
+    string_sig = ciSymbols::String_StringBuilder_signature();
+    int_sig = ciSymbols::int_StringBuilder_signature();
+    char_sig = ciSymbols::char_StringBuilder_signature();
   } else if (m->holder() == C->env()->StringBuffer_klass()) {
-    string_sig = ciSymbol::String_StringBuffer_signature();
-    int_sig = ciSymbol::int_StringBuffer_signature();
-    char_sig = ciSymbol::char_StringBuffer_signature();
+    string_sig = ciSymbols::String_StringBuffer_signature();
+    int_sig = ciSymbols::int_StringBuffer_signature();
+    char_sig = ciSymbols::char_StringBuffer_signature();
   } else {
     return NULL;
   }
@@ -435,9 +452,7 @@ StringConcat* PhaseStringOpts::build_candidate(CallStaticJavaNode* call) {
 #endif
 
   StringConcat* sc = new StringConcat(this, call);
-
   AllocateNode* alloc = NULL;
-  InitializeNode* init = NULL;
 
   // possible opportunity for StringBuilder fusion
   CallStaticJavaNode* cnode = call;
@@ -470,14 +485,14 @@ StringConcat* PhaseStringOpts::build_candidate(CallStaticJavaNode* call) {
         if (use != NULL &&
             use->method() != NULL &&
             !use->method()->is_static() &&
-            use->method()->name() == ciSymbol::object_initializer_name() &&
+            use->method()->name() == ciSymbols::object_initializer_name() &&
             use->method()->holder() == m->holder()) {
           // Matched the constructor.
           ciSymbol* sig = use->method()->signature()->as_symbol();
-          if (sig == ciSymbol::void_method_signature() ||
-              sig == ciSymbol::int_void_signature() ||
-              sig == ciSymbol::string_void_signature()) {
-            if (sig == ciSymbol::string_void_signature()) {
+          if (sig == ciSymbols::void_method_signature() ||
+              sig == ciSymbols::int_void_signature() ||
+              sig == ciSymbols::string_void_signature()) {
+            if (sig == ciSymbols::string_void_signature()) {
               // StringBuilder(String) so pick this up as the first argument
               assert(use->in(TypeFunc::Parms + 1) != NULL, "what?");
               const Type* type = _gvn->type(use->in(TypeFunc::Parms + 1));
@@ -486,13 +501,35 @@ StringConcat* PhaseStringOpts::build_candidate(CallStaticJavaNode* call) {
 #ifndef PRODUCT
                 if (PrintOptimizeStringConcat) {
                   tty->print("giving up because StringBuilder(null) throws exception");
-                  alloc->jvms()->dump_spec(tty); tty->cr();
+                  alloc->jvms()->dump_spec(tty);
+                  tty->cr();
                 }
 #endif
                 return NULL;
               }
               // StringBuilder(str) argument needs null check.
               sc->push_string_null_check(use->in(TypeFunc::Parms + 1));
+            } else if (sig == ciSymbols::int_void_signature()) {
+              // StringBuilder(int) case.
+              Node* parm = use->in(TypeFunc::Parms + 1);
+              assert(parm != NULL, "must exist");
+              const TypeInt* type = _gvn->type(parm)->is_int();
+              if (type->_hi < 0) {
+                // Initial capacity argument is always negative in which case StringBuilder(int) throws
+                // a NegativeArraySizeException. Bail out from string opts.
+#ifndef PRODUCT
+                if (PrintOptimizeStringConcat) {
+                  tty->print("giving up because a negative argument is passed to StringBuilder(int) which "
+                             "throws a NegativeArraySizeException");
+                  alloc->jvms()->dump_spec(tty);
+                  tty->cr();
+                }
+#endif
+                return NULL;
+              } else if (type->_lo < 0) {
+                // Argument could be negative: We need a runtime check to throw NegativeArraySizeException in that case.
+                sc->push_negative_int_check(parm);
+              }
             }
             // The int variant takes an initial size for the backing
             // array so just treat it like the void version.
@@ -534,7 +571,7 @@ StringConcat* PhaseStringOpts::build_candidate(CallStaticJavaNode* call) {
       break;
     } else if (!cnode->method()->is_static() &&
                cnode->method()->holder() == m->holder() &&
-               cnode->method()->name() == ciSymbol::append_name() &&
+               cnode->method()->name() == ciSymbols::append_name() &&
                (cnode->method()->signature()->as_symbol() == string_sig ||
                 cnode->method()->signature()->as_symbol() == char_sig ||
                 cnode->method()->signature()->as_symbol() == int_sig)) {
@@ -592,14 +629,14 @@ StringConcat* PhaseStringOpts::build_candidate(CallStaticJavaNode* call) {
 }
 
 
-PhaseStringOpts::PhaseStringOpts(PhaseGVN* gvn, Unique_Node_List*):
+PhaseStringOpts::PhaseStringOpts(PhaseGVN* gvn):
   Phase(StringOpts),
   _gvn(gvn) {
 
   assert(OptimizeStringConcat, "shouldn't be here");
 
   size_table_field = C->env()->Integer_klass()->get_field_by_name(ciSymbol::make("sizeTable"),
-                                                                  ciSymbol::make("[I"), true);
+                                                                  ciSymbols::int_array_signature(), true);
   if (size_table_field == NULL) {
     // Something wrong so give up.
     assert(false, "why can't we find Integer.sizeTable?");
@@ -645,6 +682,7 @@ PhaseStringOpts::PhaseStringOpts(PhaseGVN* gvn, Unique_Node_List*):
             StringConcat* merged = sc->merge(other, arg);
             if (merged->validate_control_flow() && merged->validate_mem_flow()) {
 #ifndef PRODUCT
+              Atomic::inc(&_stropts_merged);
               if (PrintOptimizeStringConcat) {
                 tty->print_cr("stacking would succeed");
               }
@@ -710,7 +748,7 @@ void PhaseStringOpts::remove_dead_nodes() {
       }
       case Op_AddP:
       case Op_CreateEx: {
-        // Recurisvely clean up references to CreateEx so EA doesn't
+        // Recursively clean up references to CreateEx so EA doesn't
         // get unhappy about the partially collapsed graph.
         for (SimpleDUIterator i(use); i.has_next(); i.next()) {
           Node* m = i.get();
@@ -984,6 +1022,21 @@ bool StringConcat::validate_control_flow() {
       fail = true;
       break;
     } else if (ptr->is_Proj() && ptr->in(0)->is_Initialize()) {
+      // Check for side effect between Initialize and the constructor
+      for (SimpleDUIterator iter(ptr); iter.has_next(); iter.next()) {
+        Node* use = iter.get();
+        if (!use->is_CFG() && !use->is_CheckCastPP() && !use->is_Load()) {
+#ifndef PRODUCT
+          if (PrintOptimizeStringConcat) {
+            tty->print_cr("unexpected control use of Initialize");
+            ptr->in(0)->dump(); // Initialize node
+            use->dump(1);
+          }
+#endif
+          fail = true;
+          break;
+        }
+      }
       ptr = ptr->in(0)->in(0);
     } else if (ptr->is_Region()) {
       Node* copy = ptr->as_Region()->is_copy();
@@ -1001,6 +1054,7 @@ bool StringConcat::validate_control_flow() {
         // The IGVN will make this simple diamond go away when it
         // transforms the Region. Make sure it sees it.
         Compile::current()->record_for_igvn(ptr);
+        _control.push(ptr);
         ptr = ptr->in(1)->in(0)->in(0);
         continue;
       }
@@ -1149,6 +1203,11 @@ Node* PhaseStringOpts::int_stringSize(GraphKit& kit, Node* arg) {
     int arg_val = arg->get_int();
     int count = 1;
     if (arg_val < 0) {
+      // Special case for min_jint - it can't be negated.
+      if (arg_val == min_jint) {
+        return __ intcon(11);
+      }
+
       arg_val = -arg_val;
       count++;
     }
@@ -1222,7 +1281,7 @@ Node* PhaseStringOpts::int_stringSize(GraphKit& kit, Node* arg) {
     kit.set_control(loop);
     Node* sizeTable = fetch_static_field(kit, size_table_field);
 
-    Node* value = kit.load_array_element(NULL, sizeTable, index, TypeAryPtr::INTS);
+    Node* value = kit.load_array_element(sizeTable, index, TypeAryPtr::INTS, /* set_ctrl */ false);
     C->record_for_igvn(value);
     Node* limit = __ CmpI(phi, value);
     Node* limitb = __ Bool(limit, BoolTest::le);
@@ -1311,7 +1370,8 @@ void PhaseStringOpts::getChars(GraphKit& kit, Node* arg, Node* dst_array, BasicT
   Node* index = __ SubI(charPos, __ intcon((bt == T_BYTE) ? 1 : 2));
   Node* ch = __ AddI(r, __ intcon('0'));
   Node* st = __ store_to_memory(kit.control(), kit.array_element_address(dst_array, index, T_BYTE),
-                                ch, bt, byte_adr_idx, MemNode::unordered, (bt != T_BYTE) /* mismatched */);
+                                ch, bt, byte_adr_idx, MemNode::unordered, false /* require_atomic_access */,
+                                false /* unaligned */, (bt != T_BYTE) /* mismatched */);
 
   iff = kit.create_and_map_if(head, __ Bool(__ CmpI(q, __ intcon(0)), BoolTest::ne),
                               PROB_FAIR, COUNT_UNKNOWN);
@@ -1349,7 +1409,8 @@ void PhaseStringOpts::getChars(GraphKit& kit, Node* arg, Node* dst_array, BasicT
   } else {
     Node* index = __ SubI(charPos, __ intcon((bt == T_BYTE) ? 1 : 2));
     st = __ store_to_memory(kit.control(), kit.array_element_address(dst_array, index, T_BYTE),
-                            sign, bt, byte_adr_idx, MemNode::unordered, (bt != T_BYTE) /* mismatched */);
+                            sign, bt, byte_adr_idx, MemNode::unordered, false /* require_atomic_access */,
+                            false /* unaligned */, (bt != T_BYTE) /* mismatched */);
 
     final_merge->init_req(merge_index + 1, kit.control());
     final_mem->init_req(merge_index + 1, st);
@@ -1542,7 +1603,8 @@ void PhaseStringOpts::copy_constant_string(GraphKit& kit, IdealKit& ideal, ciTyp
       } else {
         val = readChar(src_array, i++);
       }
-      __ store(__ ctrl(), adr, __ ConI(val), T_CHAR, byte_adr_idx, MemNode::unordered, true /* mismatched */);
+      __ store(__ ctrl(), adr, __ ConI(val), T_CHAR, byte_adr_idx, MemNode::unordered, false /* require_atomic_access */,
+               true /* mismatched */);
       index = __ AddI(index, __ ConI(2));
     }
     if (src_is_byte) {
@@ -1629,7 +1691,8 @@ Node* PhaseStringOpts::copy_char(GraphKit& kit, Node* val, Node* dst_array, Node
   }
   if (!dcon || !dbyte) {
     // Destination is UTF16. Store a char.
-    __ store(__ ctrl(), adr, val, T_CHAR, byte_adr_idx, MemNode::unordered, true /* mismatched */);
+    __ store(__ ctrl(), adr, val, T_CHAR, byte_adr_idx, MemNode::unordered, false /* require_atomic_access */,
+             true /* mismatched */);
     __ set(end, __ AddI(start, __ ConI(2)));
   }
   if (!dcon) {
@@ -1706,7 +1769,7 @@ void PhaseStringOpts::replace_string_concat(StringConcat* sc) {
   SafePointNode* map = new SafePointNode(size, jvms);
 
   // copy the control and memory state from the final call into our
-  // new starting state.  This allows any preceeding tests to feed
+  // new starting state.  This allows any preceding tests to feed
   // into the new section of code.
   for (uint i1 = 0; i1 < TypeFunc::Parms; i1++) {
     map->init_req(i1, sc->end()->in(i1));
@@ -1768,6 +1831,23 @@ void PhaseStringOpts::replace_string_concat(StringConcat* sc) {
   for (int argi = 0; argi < sc->num_arguments(); argi++) {
     Node* arg = sc->argument(argi);
     switch (sc->mode(argi)) {
+      case StringConcat::NegativeIntCheckMode: {
+        // Initial capacity argument might be negative in which case StringBuilder(int) throws
+        // a NegativeArraySizeException. Insert a runtime check with an uncommon trap.
+        const TypeInt* type = kit.gvn().type(arg)->is_int();
+        assert(type->_hi >= 0 && type->_lo < 0, "no runtime int check needed");
+        Node* p = __ Bool(__ CmpI(arg, kit.intcon(0)), BoolTest::ge);
+        IfNode* iff = kit.create_and_map_if(kit.control(), p, PROB_MIN, COUNT_UNKNOWN);
+        {
+          // Negative int -> uncommon trap.
+          PreserveJVMState pjvms(&kit);
+          kit.set_control(__ IfFalse(iff));
+          kit.uncommon_trap(Deoptimization::Reason_intrinsic,
+                            Deoptimization::Action_maybe_recompile);
+        }
+        kit.set_control(__ IfTrue(iff));
+        break;
+      }
       case StringConcat::IntMode: {
         Node* string_size = int_stringSize(kit, arg);
 
@@ -1937,6 +2017,8 @@ void PhaseStringOpts::replace_string_concat(StringConcat* sc) {
       for (int argi = 0; argi < sc->num_arguments(); argi++) {
         Node* arg = sc->argument(argi);
         switch (sc->mode(argi)) {
+          case StringConcat::NegativeIntCheckMode:
+            break; // Nothing to do, was only needed to add a runtime check earlier.
           case StringConcat::IntMode: {
             start = int_getChars(kit, arg, dst_array, coder, start, string_sizes->in(argi));
             break;
@@ -1956,9 +2038,7 @@ void PhaseStringOpts::replace_string_concat(StringConcat* sc) {
       }
     }
 
-    // If we're not reusing an existing String allocation then allocate one here.
-    result = sc->string_alloc();
-    if (result == NULL) {
+    {
       PreserveReexecuteState preexecs(&kit);
       // The original jvms is for an allocation of either a String or
       // StringBuffer so no stack adjustment is necessary for proper
@@ -1985,4 +2065,17 @@ void PhaseStringOpts::replace_string_concat(StringConcat* sc) {
   // Unhook any hook nodes
   string_sizes->disconnect_inputs(C);
   sc->cleanup();
+#ifndef PRODUCT
+  Atomic::inc(&_stropts_replaced);
+#endif
 }
+
+#ifndef PRODUCT
+uint PhaseStringOpts::_stropts_replaced = 0;
+uint PhaseStringOpts::_stropts_merged = 0;
+uint PhaseStringOpts::_stropts_total = 0;
+
+void PhaseStringOpts::print_statistics() {
+  tty->print_cr("StringConcat: %4d/%4d/%4d(replaced/merged/total)", _stropts_replaced, _stropts_merged, _stropts_total);
+}
+#endif

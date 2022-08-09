@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
  * @bug 6505016
  * @summary Socket spec should clarify what getInetAddress/getPort/etc return after the Socket is closed
  * @run main TestAfterClose
- * @run main/othervm -Djdk.net.usePlainDatagramSocketImpl TestAfterClose
  */
 
 import java.net.*;

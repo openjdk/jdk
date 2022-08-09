@@ -7,9 +7,6 @@ HtmlTagsTest.java:14: error: unknown tag: xyz
 HtmlTagsTest.java:19: error: unknown tag: xyz
      * <div> <xyz> </div>
              ^
-HtmlTagsTest.java:24: error: self-closing element not allowed
-     * <br/>
-       ^
 HtmlTagsTest.java:29: error: element not allowed in documentation comments: <html>
      * <html>
        ^
@@ -17,6 +14,9 @@ HtmlTagsTest.java:29: error: element not closed: html
      * <html>
        ^
 HtmlTagsTest.java:34: error: block element not allowed within inline element <span>: p
+     * <span> <p> </span>
+              ^
+HtmlTagsTest.java:34: warning: empty <p> tag
      * <span> <p> </span>
               ^
 HtmlTagsTest.java:39: error: block element not allowed within @link: p
@@ -43,5 +43,5 @@ HtmlTagsTest.java:60: error: text not allowed in <ul> element
 HtmlTagsTest.java:65: error: tag not allowed here: <b>
      * <ul> <b>text</b> <li> ... </li> </ul>
             ^
-14 errors
-1 warning
+13 errors
+2 warnings

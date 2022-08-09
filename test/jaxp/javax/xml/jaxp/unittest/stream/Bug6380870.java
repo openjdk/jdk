@@ -34,7 +34,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 6380870
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true stream.Bug6380870
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow stream.Bug6380870
  * @run testng/othervm stream.Bug6380870
  * @summary Test StAX parser can parse VoiceXML DTD.
  */

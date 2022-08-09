@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ import jdk.internal.reflect.Reflection;
  * {@code Package} is compatible with a particular specification version
  * by using the {@link #isCompatibleWith Package.isCompatibleWith(String)}
  * method. In addition, information about the actual classes that make up the
- * run-time package can be provided when the Package is defined.
+ * run-time package can be provided when the {@code Package} is defined.
  * This information consists of an implementation title, version, and vendor
  * (indicating the supplier of the classes).
  * <p>
@@ -221,7 +221,15 @@ public class Package extends NamedPackage implements java.lang.reflect.Annotated
     /**
      * Returns true if this package is sealed.
      *
+     * @apiNote
+     * <a href="{@docRoot}/../specs/jar/jar.html#package-sealing">Package sealing</a>
+     * has no relationship with {@linkplain Class#isSealed() sealed classes or interfaces}.
+     * Package sealing is specific to JAR files defined for classes in an unnamed module.
+     * See the {@link Package Package} class specification for details
+     * how a {@code Package} is defined as sealed package.
+     *
      * @return true if the package is sealed, false otherwise
+     *
      */
     public boolean isSealed() {
         return module().isNamed() || versionInfo.sealBase != null;
@@ -230,6 +238,13 @@ public class Package extends NamedPackage implements java.lang.reflect.Annotated
     /**
      * Returns true if this package is sealed with respect to the specified
      * code source {@code url}.
+     *
+     * @apiNote
+     * <a href="{@docRoot}/../specs/jar/jar.html#package-sealing">Package sealing</a>
+     * has no relationship with {@linkplain Class#isSealed() sealed classes or interfaces}.
+     * Package sealing is specific to JAR files defined for classes in an unnamed module.
+     * See the {@link Package Package} class specification for details
+     * how a {@code Package} is defined as sealed package.
      *
      * @param  url the code source URL
      * @return true if this package is sealed with respect to the given {@code url}
@@ -410,6 +425,7 @@ public class Package extends NamedPackage implements java.lang.reflect.Annotated
             String cn = packageName() + ".package-info";
             Module module = module();
             PrivilegedAction<ClassLoader> pa = module::getClassLoader;
+            @SuppressWarnings("removal")
             ClassLoader loader = AccessController.doPrivileged(pa);
             Class<?> c;
             if (loader != null) {

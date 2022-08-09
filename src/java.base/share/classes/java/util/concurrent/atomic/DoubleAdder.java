@@ -92,13 +92,14 @@ public class DoubleAdder extends Striped64 implements Serializable {
             !casBase(b = base,
                      Double.doubleToRawLongBits
                      (Double.longBitsToDouble(b) + x))) {
+            int index = getProbe();
             boolean uncontended = true;
             if (cs == null || (m = cs.length - 1) < 0 ||
-                (c = cs[getProbe() & m]) == null ||
+                (c = cs[index & m]) == null ||
                 !(uncontended = c.cas(v = c.value,
                                       Double.doubleToRawLongBits
                                       (Double.longBitsToDouble(v) + x))))
-                doubleAccumulate(x, null, uncontended);
+                doubleAccumulate(x, null, uncontended, index);
         }
     }
 

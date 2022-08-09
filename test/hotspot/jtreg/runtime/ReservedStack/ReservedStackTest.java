@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,12 +29,16 @@
  * @modules java.base/jdk.internal.misc
  * @modules java.base/jdk.internal.vm.annotation
  *
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:MaxInlineLevel=2 -XX:C1MaxInlineLevel=2 -XX:CompileCommand=exclude,java/util/concurrent/locks/AbstractOwnableSynchronizer.setExclusiveOwnerThread ReservedStackTest
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:CompileCommand=DontInline,java/util/concurrent/locks/ReentrantLock.lock -XX:CompileCommand=exclude,java/util/concurrent/locks/AbstractOwnableSynchronizer.setExclusiveOwnerThread ReservedStackTest
  */
 
 /* The exclusion of java.util.concurrent.locks.AbstractOwnableSynchronizer.setExclusiveOwnerThread()
  * from the compilable methods is required to ensure that the test will be able
  * to trigger a StackOverflowError on the right method.
+ *
+ * The DontInline directive for ReentrantLock.lock() ensures that lockAndcall
+ * is not considered as being annotated by ReservedStackAccess by virtue of
+ * it inlining such a method.
  */
 
 
@@ -236,7 +240,7 @@ public class ReservedStackTest {
         return Platform.isAix() ||
             (Platform.isLinux() &&
              (Platform.isPPC() || Platform.isS390x() || Platform.isX64() ||
-              Platform.isX86() || Platform.isAArch64())) ||
+              Platform.isX86() || Platform.isAArch64() || Platform.isRISCV64())) ||
             Platform.isOSX();
     }
 

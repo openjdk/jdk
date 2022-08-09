@@ -4,7 +4,7 @@
  *
  *   WOFF2 format management (base).
  *
- * Copyright (C) 2019-2020 by
+ * Copyright (C) 2019-2022 by
  * Nikhil Ramakrishnan, David Turner, Robert Wilhelm, and Werner Lemberg.
  *
  * This file is part of the FreeType project, and may only be used,
@@ -15,19 +15,16 @@
  *
  */
 
-#include <ft2build.h>
 #include "sfwoff2.h"
 #include "woff2tags.h"
-#include FT_TRUETYPE_TAGS_H
-#include FT_INTERNAL_DEBUG_H
-#include FT_INTERNAL_STREAM_H
+#include <freetype/tttags.h>
+#include <freetype/internal/ftdebug.h>
+#include <freetype/internal/ftstream.h>
 
 
 #ifdef FT_CONFIG_OPTION_USE_BROTLI
 
 #include <brotli/decode.h>
-
-#endif
 
 
   /**************************************************************************
@@ -44,7 +41,8 @@
 
 #define READ_BASE128( var )    FT_SET_ERROR( ReadBase128( stream, &var ) )
 
-#define ROUND4( var )          ( ( var + 3 ) & ~3 )
+  /* `var' should be FT_ULong */
+#define ROUND4( var )          ( ( var + 3 ) & ~3UL )
 
 #define WRITE_USHORT( p, v )                \
           do                                \
@@ -64,12 +62,12 @@
                                              \
           } while ( 0 )
 
-#define WRITE_SHORT( p, v )        \
-          do                       \
-          {                        \
-            *(p)++ = ( (v) >> 8 ); \
-            *(p)++ = ( (v) >> 0 ); \
-                                   \
+#define WRITE_SHORT( p, v )                 \
+          do                                \
+          {                                 \
+            *(p)++ = (FT_Byte)( (v) >> 8 ); \
+            *(p)++ = (FT_Byte)( (v) >> 0 ); \
+                                            \
           } while ( 0 )
 
 #define WRITE_SFNT_BUF( buf, s ) \
@@ -86,6 +84,8 @@
 #define BBOX_STREAM         5
 #define INSTRUCTION_STREAM  6
 
+#define HAVE_OVERLAP_SIMPLE_BITMAP  0x1
+
 
   static void
   stream_close( FT_Stream  stream )
@@ -96,20 +96,19 @@
     FT_FREE( stream->base );
 
     stream->size  = 0;
-    stream->base  = NULL;
     stream->close = NULL;
   }
 
 
-  FT_CALLBACK_DEF( int )
+  FT_COMPARE_DEF( int )
   compare_tags( const void*  a,
                 const void*  b )
   {
     WOFF2_Table  table1 = *(WOFF2_Table*)a;
     WOFF2_Table  table2 = *(WOFF2_Table*)b;
 
-    FT_ULong  tag1 = table1->Tag;
-    FT_ULong  tag2 = table2->Tag;
+    FT_Tag  tag1 = table1->Tag;
+    FT_Tag  tag2 = table2->Tag;
 
 
     if ( tag1 > tag2 )
@@ -125,10 +124,10 @@
   Read255UShort( FT_Stream   stream,
                  FT_UShort*  value )
   {
-    static const FT_Int  oneMoreByteCode1 = 255;
-    static const FT_Int  oneMoreByteCode2 = 254;
-    static const FT_Int  wordCode         = 253;
-    static const FT_Int  lowestUCode      = 253;
+    const FT_Byte    oneMoreByteCode1 = 255;
+    const FT_Byte    oneMoreByteCode2 = 254;
+    const FT_Byte    wordCode         = 253;
+    const FT_UShort  lowestUCode      = 253;
 
     FT_Error   error        = FT_Err_Ok;
     FT_Byte    code;
@@ -281,12 +280,12 @@
 
 
   /* Calculate table checksum of `buf'. */
-  static FT_Long
+  static FT_ULong
   compute_ULong_sum( FT_Byte*  buf,
                      FT_ULong  size )
   {
     FT_ULong  checksum     = 0;
-    FT_ULong  aligned_size = size & ~3;
+    FT_ULong  aligned_size = size & ~3UL;
     FT_ULong  i;
     FT_ULong  v;
 
@@ -316,9 +315,9 @@
                     const FT_Byte*  src,
                     FT_ULong        src_size )
   {
-#ifdef FT_CONFIG_OPTION_USE_BROTLI
-
-    FT_ULong             uncompressed_size = dst_size;
+    /* this cast is only of importance on 32bit systems; */
+    /* we don't validate it                              */
+    FT_Offset            uncompressed_size = (FT_Offset)dst_size;
     BrotliDecoderResult  result;
 
 
@@ -336,20 +335,13 @@
 
     FT_TRACE2(( "woff2_decompress: Brotli stream decompressed.\n" ));
     return FT_Err_Ok;
-
-#else /* !FT_CONFIG_OPTION_USE_BROTLI */
-
-    FT_ERROR(( "woff2_decompress: Brotli support not available.\n" ));
-    return FT_THROW( Unimplemented_Feature );
-
-#endif /* !FT_CONFIG_OPTION_USE_BROTLI */
   }
 
 
   static WOFF2_Table
   find_table( WOFF2_Table*  tables,
               FT_UShort     num_tables,
-              FT_ULong      tag )
+              FT_Tag        tag )
   {
     FT_Int  i;
 
@@ -532,17 +524,18 @@
                 const WOFF2_Point  points,
                 FT_UShort          n_contours,
                 FT_UShort          instruction_len,
+                FT_Bool            have_overlap,
                 FT_Byte*           dst,
                 FT_ULong           dst_size,
                 FT_ULong*          glyph_size )
   {
     FT_UInt   flag_offset  = 10 + ( 2 * n_contours ) + 2 + instruction_len;
-    FT_Int    last_flag    = -1;
-    FT_Int    repeat_count =  0;
-    FT_Int    last_x       =  0;
-    FT_Int    last_y       =  0;
-    FT_UInt   x_bytes      =  0;
-    FT_UInt   y_bytes      =  0;
+    FT_Byte   last_flag    = 0xFFU;
+    FT_Byte   repeat_count = 0;
+    FT_Int    last_x       = 0;
+    FT_Int    last_y       = 0;
+    FT_UInt   x_bytes      = 0;
+    FT_UInt   y_bytes      = 0;
     FT_UInt   xy_bytes;
     FT_UInt   i;
     FT_UInt   x_offset;
@@ -554,10 +547,13 @@
     {
       const WOFF2_PointRec  point = points[i];
 
-      FT_Int  flag = point.on_curve ? GLYF_ON_CURVE : 0;
-      FT_Int  dx   = point.x - last_x;
-      FT_Int  dy   = point.y - last_y;
+      FT_Byte  flag = point.on_curve ? GLYF_ON_CURVE : 0;
+      FT_Int   dx   = point.x - last_x;
+      FT_Int   dy   = point.y - last_y;
 
+
+      if ( i == 0 && have_overlap )
+        flag |= GLYF_OVERLAP_SIMPLE;
 
       if ( dx == 0 )
         flag |= GLYF_THIS_X_IS_SAME;
@@ -633,7 +629,7 @@
       if ( dx == 0 )
         ;
       else if ( dx > -256 && dx < 256 )
-        dst[x_offset++] = FT_ABS( dx );
+        dst[x_offset++] = (FT_Byte)FT_ABS( dx );
       else
       {
         pointer = dst + x_offset;
@@ -646,7 +642,7 @@
       if ( dy == 0 )
         ;
       else if ( dy > -256 && dy < 256 )
-        dst[y_offset++] = FT_ABS( dy );
+        dst[y_offset++] = (FT_Byte)FT_ABS( dy );
       else
       {
         pointer = dst + y_offset;
@@ -788,7 +784,7 @@
       goto Fail;
 
     loca_buf_size = loca_values_size * offset_size;
-    if ( FT_NEW_ARRAY( loca_buf, loca_buf_size ) )
+    if ( FT_QNEW_ARRAY( loca_buf, loca_buf_size ) )
       goto Fail;
 
     dst = loca_buf;
@@ -843,15 +839,18 @@
 
     FT_UInt  num_substreams = 7;
 
+    FT_UShort  option_flags;
     FT_UShort  num_glyphs;
     FT_UShort  index_format;
     FT_ULong   expected_loca_length;
     FT_UInt    offset;
     FT_UInt    i;
     FT_ULong   points_size;
-    FT_ULong   bitmap_length;
     FT_ULong   glyph_buf_size;
     FT_ULong   bbox_bitmap_offset;
+    FT_ULong   bbox_bitmap_length;
+    FT_ULong   overlap_bitmap_offset = 0;
+    FT_ULong   overlap_bitmap_length = 0;
 
     const FT_ULong  glyf_start  = *out_offset;
     FT_ULong        dest_offset = *out_offset;
@@ -867,15 +866,17 @@
     if ( FT_NEW_ARRAY( substreams, num_substreams ) )
       goto Fail;
 
-    if ( FT_STREAM_SKIP( 4 ) )
+    if ( FT_STREAM_SKIP( 2 ) )
+      goto Fail;
+    if ( FT_READ_USHORT( option_flags ) )
       goto Fail;
     if ( FT_READ_USHORT( num_glyphs ) )
       goto Fail;
     if ( FT_READ_USHORT( index_format ) )
       goto Fail;
 
-    FT_TRACE4(( "num_glyphs = %u; index_format = %u\n",
-                num_glyphs, index_format ));
+    FT_TRACE4(( "option_flags = %u; num_glyphs = %u; index_format = %u\n",
+                option_flags, num_glyphs, index_format ));
 
     info->num_glyphs = num_glyphs;
 
@@ -888,7 +889,7 @@
     if ( info->loca_table->dst_length != expected_loca_length )
       goto Fail;
 
-    offset = ( 2 + num_substreams ) * 4;
+    offset = 2 + 2 + 2 + 2 + ( num_substreams * 4 );
     if ( offset > info->glyf_table->TransformLength )
       goto Fail;
 
@@ -911,6 +912,20 @@
       offset += substream_size;
     }
 
+    if ( option_flags & HAVE_OVERLAP_SIMPLE_BITMAP )
+    {
+      /* Size of overlapBitmap = floor((numGlyphs + 7) / 8) */
+      overlap_bitmap_length = ( num_glyphs + 7U ) >> 3;
+      if ( overlap_bitmap_length > info->glyf_table->TransformLength - offset )
+        goto Fail;
+
+      overlap_bitmap_offset = pos + offset;
+
+      FT_TRACE5(( "  Overlap bitmap: offset = %lu; size = %lu;\n",
+                  overlap_bitmap_offset, overlap_bitmap_length ));
+      offset += overlap_bitmap_length;
+    }
+
     if ( FT_NEW_ARRAY( loca_values, num_glyphs + 1 ) )
       goto Fail;
 
@@ -918,8 +933,9 @@
     bbox_bitmap_offset = substreams[BBOX_STREAM].offset;
 
     /* Size of bboxBitmap = 4 * floor((numGlyphs + 31) / 32) */
-    bitmap_length                   = ( ( num_glyphs + 31 ) >> 5 ) << 2;
-    substreams[BBOX_STREAM].offset += bitmap_length;
+    bbox_bitmap_length              = ( ( num_glyphs + 31U ) >> 5 ) << 2;
+    /* bboxStreamSize is the combined size of bboxBitmap and bboxStream. */
+    substreams[BBOX_STREAM].offset += bbox_bitmap_length;
 
     glyph_buf_size = WOFF2_DEFAULT_GLYPH_BUF;
     if ( FT_NEW_ARRAY( glyph_buf, glyph_buf_size ) )
@@ -957,7 +973,7 @@
         /* composite glyph */
         FT_Bool    have_instructions = FALSE;
         FT_UShort  instruction_size  = 0;
-        FT_ULong   composite_size;
+        FT_ULong   composite_size    = 0;
         FT_ULong   size_needed;
         FT_Byte*   pointer           = NULL;
 
@@ -1035,8 +1051,11 @@
         FT_ULong   flag_size;
         FT_ULong   triplet_size;
         FT_ULong   triplet_bytes_used;
-        FT_Byte*   flags_buf   = NULL;
-        FT_Byte*   triplet_buf = NULL;
+        FT_Bool    have_overlap  = FALSE;
+        FT_Byte    overlap_bitmap;
+        FT_ULong   overlap_offset;
+        FT_Byte*   flags_buf     = NULL;
+        FT_Byte*   triplet_buf   = NULL;
         FT_UShort  instruction_size;
         FT_ULong   size_needed;
         FT_Int     end_point;
@@ -1044,6 +1063,17 @@
 
         FT_Byte*   pointer = NULL;
 
+
+        /* Set `have_overlap`. */
+        if ( overlap_bitmap_offset )
+        {
+          overlap_offset = overlap_bitmap_offset + ( i >> 3 );
+          if ( FT_STREAM_SEEK( overlap_offset ) ||
+               FT_READ_BYTE( overlap_bitmap )   )
+            goto Fail;
+          if ( overlap_bitmap & ( 0x80 >> ( i & 7 ) ) )
+            have_overlap = TRUE;
+        }
 
         if ( FT_NEW_ARRAY( n_points_arr, n_contours ) )
           goto Fail;
@@ -1165,6 +1195,7 @@
                            points,
                            n_contours,
                            instruction_size,
+                           have_overlap,
                            glyph_buf,
                            glyph_buf_size,
                            &glyph_size ) )
@@ -1196,7 +1227,7 @@
 
       /* Store x_mins, may be required to reconstruct `hmtx'. */
       if ( n_contours > 0 )
-        info->x_mins[i] = x_min;
+        info->x_mins[i] = (FT_Short)x_min;
     }
 
     info->glyf_table->dst_length = dest_offset - info->glyf_table->dst_offset;
@@ -1220,7 +1251,7 @@
     FT_TRACE4(( "  loca table info:\n" ));
     FT_TRACE4(( "    dst_offset = %lu\n", info->loca_table->dst_offset ));
     FT_TRACE4(( "    dst_length = %lu\n", info->loca_table->dst_length ));
-    FT_TRACE4(( "    checksum = %09x\n", *loca_checksum ));
+    FT_TRACE4(( "    checksum = %09lx\n", *loca_checksum ));
 
     /* Set pointer `sfnt_bytes' to its correct value. */
     *sfnt_bytes = sfnt;
@@ -1287,6 +1318,12 @@
       return FT_THROW( Invalid_Table );
     }
 
+    if ( !info->loca_table )
+    {
+      FT_ERROR(( "`loca' table is missing.\n" ));
+      return FT_THROW( Invalid_Table );
+    }
+
     /* Read `numGlyphs' field from `maxp' table. */
     if ( FT_STREAM_SEEK( maxp_table->src_offset ) || FT_STREAM_SKIP( 8 ) )
       return error;
@@ -1338,7 +1375,7 @@
       if ( FT_STREAM_SEEK( glyf_offset ) || FT_STREAM_SKIP( 2 ) )
         return error;
 
-      if ( FT_READ_USHORT( info->x_mins[i] ) )
+      if ( FT_READ_SHORT( info->x_mins[i] ) )
         return error;
     }
 
@@ -1565,7 +1602,7 @@
       WOFF2_TableRec  table = *( indices[nn] );
 
 
-      FT_TRACE3(( "Seeking to %d with table size %d.\n",
+      FT_TRACE3(( "Seeking to %ld with table size %ld.\n",
                   table.src_offset, table.src_length ));
       FT_TRACE3(( "Table tag: %c%c%c%c.\n",
                   (FT_Char)( table.Tag >> 24 ),
@@ -1606,7 +1643,7 @@
 
         checksum = compute_ULong_sum( transformed_buf + table.src_offset,
                                       table.src_length );
-        FT_TRACE4(( "Checksum = %09x.\n", checksum ));
+        FT_TRACE4(( "Checksum = %09lx.\n", checksum ));
 
         if ( WRITE_SFNT_BUF( transformed_buf + table.src_offset,
                              table.src_length ) )
@@ -1631,7 +1668,7 @@
                                  memory ) )
             goto Fail;
 
-          FT_TRACE4(( "Checksum = %09x.\n", checksum ));
+          FT_TRACE4(( "Checksum = %09lx.\n", checksum ));
         }
 
         else if ( table.Tag == TTAG_loca )
@@ -1707,7 +1744,7 @@
 
     WRITE_ULONG( buf_cursor, font_checksum );
 
-    FT_TRACE2(( "Final checksum = %09x.\n", font_checksum ));
+    FT_TRACE2(( "Final checksum = %09lx.\n", font_checksum ));
 
     woff2->actual_sfnt_size = dest_offset;
 
@@ -1804,15 +1841,15 @@
     if ( FT_STREAM_READ_FIELDS( woff2_header_fields, &woff2 ) )
       return error;
 
-    FT_TRACE4(( "signature     -> 0x%X\n", woff2.signature ));
+    FT_TRACE4(( "signature     -> 0x%lX\n", woff2.signature ));
     FT_TRACE2(( "flavor        -> 0x%08lx\n", woff2.flavor ));
     FT_TRACE4(( "length        -> %lu\n", woff2.length ));
     FT_TRACE2(( "num_tables    -> %hu\n", woff2.num_tables ));
     FT_TRACE4(( "totalSfntSize -> %lu\n", woff2.totalSfntSize ));
-    FT_TRACE4(( "metaOffset    -> %hu\n", woff2.metaOffset ));
-    FT_TRACE4(( "metaLength    -> %hu\n", woff2.metaLength ));
-    FT_TRACE4(( "privOffset    -> %hu\n", woff2.privOffset ));
-    FT_TRACE4(( "privLength    -> %hu\n", woff2.privLength ));
+    FT_TRACE4(( "metaOffset    -> %lu\n", woff2.metaOffset ));
+    FT_TRACE4(( "metaLength    -> %lu\n", woff2.metaLength ));
+    FT_TRACE4(( "privOffset    -> %lu\n", woff2.privOffset ));
+    FT_TRACE4(( "privLength    -> %lu\n", woff2.privLength ));
 
     /* Make sure we don't recurse back here. */
     if ( woff2.flavor == TTAG_wOF2 )
@@ -1844,9 +1881,10 @@
          FT_NEW_ARRAY( indices, woff2.num_tables ) )
       goto Exit;
 
-    FT_TRACE2(( "\n"
-                "  tag    flags    transform   origLen   transformLen\n"
-                "  --------------------------------------------------\n" ));
+    FT_TRACE2(( "\n" ));
+    FT_TRACE2(( "  tag    flags    transform  origLen   transformLen   offset\n" ));
+    FT_TRACE2(( "  -----------------------------------------------------------\n" ));
+             /* "  XXXX  XXXXXXXX  XXXXXXXX   XXXXXXXX    XXXXXXXX    XXXXXXXX" */
 
     for ( nn = 0; nn < woff2.num_tables; nn++ )
     {
@@ -1916,7 +1954,7 @@
       src_offset       += table->TransformLength;
       table->flags      = flags;
 
-      FT_TRACE2(( "  %c%c%c%c  %08d  %08d    %08ld  %08ld\n",
+      FT_TRACE2(( "  %c%c%c%c  %08d  %08d   %08ld    %08ld    %08ld\n",
                   (FT_Char)( table->Tag >> 24 ),
                   (FT_Char)( table->Tag >> 16 ),
                   (FT_Char)( table->Tag >> 8  ),
@@ -1925,7 +1963,6 @@
                   ( table->FlagByte >> 6 ) & 0x03,
                   table->dst_length,
                   table->TransformLength,
-                  table->src_length,
                   table->src_offset ));
 
       indices[nn] = table;
@@ -1971,7 +2008,7 @@
         goto Exit;
       }
 
-      FT_TRACE4(( "Number of fonts in TTC: %ld\n", woff2.num_fonts ));
+      FT_TRACE4(( "Number of fonts in TTC: %d\n", woff2.num_fonts ));
 
       if ( FT_NEW_ARRAY( woff2.ttc_fonts, woff2.num_fonts ) )
         goto Exit;
@@ -1989,7 +2026,7 @@
         if ( FT_NEW_ARRAY( ttc_font->table_indices, ttc_font->num_tables ) )
           goto Exit;
 
-        FT_TRACE5(( "Number of tables in font %d: %ld\n",
+        FT_TRACE5(( "Number of tables in font %d: %d\n",
                     nn, ttc_font->num_tables ));
 
 #ifdef FT_DEBUG_LEVEL_TRACE
@@ -2067,7 +2104,7 @@
         error = FT_THROW( Invalid_Table );
         goto Exit;
       }
-      file_offset = ROUND4(woff2.metaOffset + woff2.metaLength);
+      file_offset = ROUND4( woff2.metaOffset + woff2.metaLength );
     }
 
     if ( woff2.privOffset )
@@ -2077,7 +2114,7 @@
         error = FT_THROW( Invalid_Table );
         goto Exit;
       }
-      file_offset = ROUND4(woff2.privOffset + woff2.privLength);
+      file_offset = ROUND4( woff2.privOffset + woff2.privLength );
     }
 
     if ( file_offset != ( ROUND4( woff2.length ) ) )
@@ -2089,7 +2126,7 @@
     /* Validate requested face index. */
     *num_faces = woff2.num_fonts;
     /* value -(N+1) requests information on index N */
-    if ( *face_instance_index < 0 )
+    if ( *face_instance_index < 0 && face_index > 0 )
       face_index--;
 
     if ( face_index >= woff2.num_fonts )
@@ -2110,8 +2147,8 @@
 
 
       /* Create a temporary array. */
-      if ( FT_NEW_ARRAY( temp_indices,
-                         ttc_font->num_tables ) )
+      if ( FT_QNEW_ARRAY( temp_indices,
+                          ttc_font->num_tables ) )
         goto Exit;
 
       FT_TRACE4(( "Storing tables for TTC face index %d.\n", face_index ));
@@ -2119,9 +2156,9 @@
         temp_indices[nn] = indices[ttc_font->table_indices[nn]];
 
       /* Resize array to required size. */
-      if ( FT_RENEW_ARRAY( indices,
-                           woff2.num_tables,
-                           ttc_font->num_tables ) )
+      if ( FT_QRENEW_ARRAY( indices,
+                            woff2.num_tables,
+                            ttc_font->num_tables ) )
         goto Exit;
 
       for ( nn = 0; nn < ttc_font->num_tables; nn++ )
@@ -2161,8 +2198,8 @@
     }
 
     /* Write sfnt header. */
-    if ( FT_ALLOC( sfnt, sfnt_size ) ||
-         FT_NEW( sfnt_stream )       )
+    if ( FT_QALLOC( sfnt, sfnt_size ) ||
+         FT_NEW( sfnt_stream )        )
       goto Exit;
 
     sfnt_header = sfnt;
@@ -2200,6 +2237,25 @@
               sizeof ( WOFF2_Table ),
               compare_tags );
 
+    /* reject fonts that have multiple tables with the same tag */
+    for ( nn = 1; nn < woff2.num_tables; nn++ )
+    {
+      FT_Tag  tag = indices[nn]->Tag;
+
+
+      if ( tag == indices[nn - 1]->Tag )
+      {
+        FT_ERROR(( "woff2_open_font:"
+                   " multiple tables with tag `%c%c%c%c'.\n",
+                   (FT_Char)( tag >> 24 ),
+                   (FT_Char)( tag >> 16 ),
+                   (FT_Char)( tag >> 8  ),
+                   (FT_Char)( tag       ) ));
+        error = FT_THROW( Invalid_Table );
+        goto Exit;
+      }
+    }
+
     if ( woff2.uncompressed_size < 1 )
     {
       error = FT_THROW( Invalid_Table );
@@ -2214,8 +2270,8 @@
     }
 
     /* Allocate memory for uncompressed table data. */
-    if ( FT_ALLOC( uncompressed_buf, woff2.uncompressed_size ) ||
-         FT_FRAME_ENTER( woff2.totalCompressedSize )           )
+    if ( FT_QALLOC( uncompressed_buf, woff2.uncompressed_size ) ||
+         FT_FRAME_ENTER( woff2.totalCompressedSize )            )
       goto Exit;
 
     /* Uncompress the stream. */
@@ -2323,6 +2379,13 @@
 #undef COMPOSITE_STREAM
 #undef BBOX_STREAM
 #undef INSTRUCTION_STREAM
+
+#else /* !FT_CONFIG_OPTION_USE_BROTLI */
+
+  /* ANSI C doesn't like empty source files */
+  typedef int  _sfwoff2_dummy;
+
+#endif /* !FT_CONFIG_OPTION_USE_BROTLI */
 
 
 /* END */

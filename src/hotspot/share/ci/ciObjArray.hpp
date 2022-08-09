@@ -39,8 +39,6 @@ class ciObjArray : public ciArray {
 protected:
   ciObjArray(objArrayHandle h_o) : ciArray(h_o) {}
 
-  ciObjArray(ciKlass* klass, int len) : ciArray(klass, len) {}
-
   objArrayOop get_objArrayOop() {
     return (objArrayOop)get_oop();
   }

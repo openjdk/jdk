@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,10 +90,6 @@ class ZipCoder {
         return UTF8.toString(ba, 0, len);
     }
 
-    static String toStringUTF8(byte[] ba, int off, int len) {
-        return UTF8.toString(ba, off, len);
-    }
-
     boolean isUTF8() {
         return false;
     }
@@ -102,15 +98,33 @@ class ZipCoder {
     // we first decoded the byte sequence to a String, then appended '/' if no
     // trailing slash was found, then called String.hashCode(). This
     // normalization ensures we can simplify and speed up lookups.
-    int normalizedHash(byte[] a, int off, int len) {
+    //
+    // Does encoding error checking and hashing in a single pass for efficiency.
+    // On an error, this function will throw CharacterCodingException while the
+    // UTF8ZipCoder override will throw IllegalArgumentException, so we declare
+    // throws Exception to keep things simple.
+    int checkedHash(byte[] a, int off, int len) throws Exception {
         if (len == 0) {
             return 0;
         }
-        return normalizedHashDecode(0, a, off, off + len);
+
+        int h = 0;
+        // cb will be a newly allocated CharBuffer with pos == 0,
+        // arrayOffset == 0, backed by an array.
+        CharBuffer cb = decoder().decode(ByteBuffer.wrap(a, off, len));
+        int limit = cb.limit();
+        char[] decoded = cb.array();
+        for (int i = 0; i < limit; i++) {
+            h = 31 * h + decoded[i];
+        }
+        if (limit > 0 && decoded[limit - 1] != '/') {
+            h = 31 * h + '/';
+        }
+        return h;
     }
 
-    // Matching normalized hash code function for Strings
-    static int normalizedHash(String name) {
+    // Hash function equivalent of checkedHash for String inputs
+    static int hash(String name) {
         int hsh = name.hashCode();
         int len = name.length();
         if (len > 0 && name.charAt(len - 1) != '/') {
@@ -123,29 +137,6 @@ class ZipCoder {
         byte[] slashBytes = slashBytes();
         return end >= slashBytes.length &&
             Arrays.mismatch(a, end - slashBytes.length, end, slashBytes, 0, slashBytes.length) == -1;
-    }
-
-    // Implements normalizedHash by decoding byte[] to char[] and then computing
-    // the hash. This is a slow-path used for non-UTF8 charsets and also when
-    // aborting the ASCII fast-path in the UTF8 implementation, so {@code h}
-    // might be a partially calculated hash code
-    int normalizedHashDecode(int h, byte[] a, int off, int end) {
-        try {
-            // cb will be a newly allocated CharBuffer with pos == 0,
-            // arrayOffset == 0, backed by an array.
-            CharBuffer cb = decoder().decode(ByteBuffer.wrap(a, off, end - off));
-            int limit = cb.limit();
-            char[] decoded = cb.array();
-            for (int i = 0; i < limit; i++) {
-                h = 31 * h + decoded[i];
-            }
-            if (limit > 0 && decoded[limit - 1] != '/') {
-                h = 31 * h + '/';
-            }
-        } catch (CharacterCodingException cce) {
-            // Ignore - return the hash code generated so far.
-        }
-        return h;
     }
 
     private byte[] slashBytes;
@@ -214,7 +205,7 @@ class ZipCoder {
         }
 
         @Override
-        int normalizedHash(byte[] a, int off, int len) {
+        int checkedHash(byte[] a, int off, int len) throws Exception {
             if (len == 0) {
                 return 0;
             }
@@ -223,12 +214,17 @@ class ZipCoder {
             int h = 0;
             while (off < end) {
                 byte b = a[off];
-                if (b < 0) {
-                    // Non-ASCII, fall back to decoder loop
-                    return normalizedHashDecode(h, a, off, end);
-                } else {
+                if (b >= 0) {
+                    // ASCII, keep going
                     h = 31 * h + b;
                     off++;
+                } else {
+                    // Non-ASCII, fall back to decoding a String
+                    // We avoid using decoder() here since the UTF8ZipCoder is
+                    // shared and that decoder is not thread safe.
+                    // We use the JLA.newStringUTF8NoRepl variant to throw
+                    // exceptions eagerly when opening ZipFiles
+                    return hash(JLA.newStringUTF8NoRepl(a, end - len, len));
                 }
             }
 

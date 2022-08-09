@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,8 +75,8 @@ class Bits {                            // package-private
         return PAGE_SIZE;
     }
 
-    static int pageCount(long size) {
-        return (int)(size + (long)pageSize() - 1L) / pageSize();
+    static long pageCount(long size) {
+        return (size + (long)pageSize() - 1L) / pageSize();
     }
 
     private static boolean UNALIGNED = UNSAFE.unalignedAccess();

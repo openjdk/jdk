@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,11 +31,11 @@ import sun.security.jgss.spi.*;
 import sun.security.krb5.*;
 import javax.security.auth.kerberos.KerberosTicket;
 import javax.security.auth.kerberos.KerberosPrincipal;
+import java.io.Serial;
 import java.net.InetAddress;
 import java.io.IOException;
 import java.util.Date;
 import java.security.AccessController;
-import java.security.AccessControlContext;
 import java.security.PrivilegedExceptionAction;
 import java.security.PrivilegedActionException;
 
@@ -51,12 +51,13 @@ public class Krb5InitCredential
     extends KerberosTicket
     implements Krb5CredElement {
 
+    @Serial
     private static final long serialVersionUID = 7723415700837898232L;
 
     @SuppressWarnings("serial") // Not statically typed as Serializable
-    private Krb5NameElement name;
+    private final Krb5NameElement name;
     @SuppressWarnings("serial") // Not statically typed as Serializable
-    private Credentials krb5Credentials;
+    private final Credentials krb5Credentials;
     public KerberosTicket proxyTicket;
 
     private Krb5InitCredential(Krb5NameElement name,
@@ -108,10 +109,7 @@ public class Krb5InitCredential
                                               endTime,
                                               renewTill,
                                               clientAddresses);
-        } catch (KrbException e) {
-            throw new GSSException(GSSException.NO_CRED, -1,
-                                   e.getMessage());
-        } catch (IOException e) {
+        } catch (KrbException | IOException e) {
             throw new GSSException(GSSException.NO_CRED, -1,
                                    e.getMessage());
         }
@@ -151,7 +149,7 @@ public class Krb5InitCredential
                 .kerberosTicketSetServerAlias(this, serverAlias);
         this.name = name;
         // A delegated cred does not have all fields set. So do not try to
-        // creat new Credentials out of the delegatedCred.
+        // create new Credentials out of the delegatedCred.
         this.krb5Credentials = delegatedCred;
     }
 
@@ -202,8 +200,8 @@ public class Krb5InitCredential
         EncryptionKey sessionKey = delegatedCred.getSessionKey();
 
         /*
-         * all of the following data is optional in a KRB-CRED
-         * messages. This check for each field.
+         * All the following data is optional in a KRB-CRED
+         * message. This check for each field.
          */
 
         PrincipalName cPrinc = delegatedCred.getClient();
@@ -348,6 +346,7 @@ public class Krb5InitCredential
     // XXX call to this.destroy() should destroy the locally cached copy
     // of krb5Credentials and then call super.destroy().
 
+    @SuppressWarnings("removal")
     private static KerberosTicket getTgt(GSSCaller caller, Krb5NameElement name,
                                                  int initLifetime)
         throws GSSException {
@@ -364,20 +363,17 @@ public class Krb5InitCredential
             clientPrincipal = null;
         }
 
-        final AccessControlContext acc = AccessController.getContext();
-
         try {
             final GSSCaller realCaller = (caller == GSSCaller.CALLER_UNKNOWN)
                                    ? GSSCaller.CALLER_INITIATE
                                    : caller;
-            return AccessController.doPrivileged(
+            return AccessController.doPrivilegedWithCombiner(
                 new PrivilegedExceptionAction<KerberosTicket>() {
                 public KerberosTicket run() throws Exception {
                     // It's OK to use null as serverPrincipal. TGT is almost
                     // the first ticket for a principal and we use list.
                     return Krb5Util.getInitialTicket(
-                        realCaller,
-                        clientPrincipal, acc);
+                        realCaller, clientPrincipal);
                         }});
         } catch (PrivilegedActionException e) {
             GSSException ge =
@@ -395,7 +391,7 @@ public class Krb5InitCredential
             Krb5NameElement kname = (Krb5NameElement)name;
             Credentials newCred = Credentials.acquireS4U2selfCreds(
                     kname.getKrb5PrincipalName(), krb5Credentials);
-            return new Krb5ProxyCredential(this, kname, newCred.getTicket());
+            return new Krb5ProxyCredential(this, kname, newCred);
         } catch (IOException | KrbException ke) {
             GSSException ge =
                 new GSSException(GSSException.FAILURE, -1,

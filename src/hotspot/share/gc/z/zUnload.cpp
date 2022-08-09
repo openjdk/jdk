@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,15 +29,23 @@
 #include "code/dependencyContext.hpp"
 #include "gc/shared/gcBehaviours.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
+#include "gc/z/zBarrier.inline.hpp"
 #include "gc/z/zLock.inline.hpp"
 #include "gc/z/zNMethod.hpp"
-#include "gc/z/zOopClosures.hpp"
 #include "gc/z/zStat.hpp"
 #include "gc/z/zUnload.hpp"
+#include "memory/metaspaceUtils.hpp"
 #include "oops/access.inline.hpp"
 
 static const ZStatSubPhase ZSubPhaseConcurrentClassesUnlink("Concurrent Classes Unlink");
 static const ZStatSubPhase ZSubPhaseConcurrentClassesPurge("Concurrent Classes Purge");
+
+class ZPhantomIsAliveObjectClosure : public BoolObjectClosure {
+public:
+  virtual bool do_object_b(oop o) {
+    return ZBarrier::is_alive_barrier_on_phantom_oop(o);
+  }
+};
 
 class ZIsUnloadingOopClosure : public OopClosure {
 private:

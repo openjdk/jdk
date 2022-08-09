@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,11 +30,12 @@
  * @requires vm.jvmti
  * @library /test/lib /test/hotspot/jtreg/serviceability/jvmti/RedefineClasses /test/hotspot/jtreg/runtime/cds/appcds
  * @run driver RedefineClassHelper
- * @build sun.hotspot.WhiteBox RedefineBasic
+ * @build jdk.test.whitebox.WhiteBox RedefineBasic
  * @run driver RedefineBasicTest
  */
 
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.helpers.ClassFileInstaller;
 
 public class RedefineBasicTest {
     public static String sharedClasses[] = {
@@ -51,7 +52,7 @@ public class RedefineBasicTest {
 
     public static void main(String[] args) throws Exception {
         String wbJar =
-            ClassFileInstaller.writeJar("WhiteBox.jar", "sun.hotspot.WhiteBox");
+            ClassFileInstaller.writeJar("WhiteBox.jar", "jdk.test.whitebox.WhiteBox");
         String appJar =
             ClassFileInstaller.writeJar("RedefineBasic.jar", sharedClasses);
         String useWb = "-Xbootclasspath/a:" + wbJar;

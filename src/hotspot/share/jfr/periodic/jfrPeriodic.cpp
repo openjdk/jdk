@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,13 +37,13 @@
 #include "gc/shared/gcVMOperations.hpp"
 #include "gc/shared/objectCountEventSender.hpp"
 #include "jfr/jfrEvents.hpp"
+#include "jfr/periodic/jfrFinalizerStatisticsEvent.hpp"
 #include "jfr/periodic/jfrModuleEvent.hpp"
 #include "jfr/periodic/jfrOSInterface.hpp"
 #include "jfr/periodic/jfrThreadCPULoadEvent.hpp"
 #include "jfr/periodic/jfrThreadDumpEvent.hpp"
 #include "jfr/periodic/jfrNetworkUtilization.hpp"
 #include "jfr/recorder/jfrRecorder.hpp"
-#include "jfr/support/jfrThreadId.hpp"
 #include "jfr/utilities/jfrThreadIterator.hpp"
 #include "jfr/utilities/jfrTime.hpp"
 #include "jfrfiles/jfrPeriodic.hpp"
@@ -58,8 +58,10 @@
 #include "runtime/os.hpp"
 #include "runtime/os_perf.hpp"
 #include "runtime/thread.inline.hpp"
+#include "runtime/threads.hpp"
 #include "runtime/sweeper.hpp"
 #include "runtime/vmThread.hpp"
+#include "runtime/vm_version.hpp"
 #include "services/classLoadingService.hpp"
 #include "services/management.hpp"
 #include "services/threadService.hpp"
@@ -428,7 +430,7 @@ TRACE_REQUEST_FUNC(ThreadAllocationStatistics) {
     JavaThread* const jt = iter.next();
     assert(jt != NULL, "invariant");
     allocated.append(jt->cooked_allocated_bytes());
-    thread_ids.append(JFR_THREAD_ID(jt));
+    thread_ids.append(JFR_JVM_THREAD_ID(jt));
   }
 
   // Write allocation statistics to buffer.
@@ -471,10 +473,14 @@ TRACE_REQUEST_FUNC(JavaThreadStatistics) {
 }
 
 TRACE_REQUEST_FUNC(ClassLoadingStatistics) {
+#if INCLUDE_MANAGEMENT
   EventClassLoadingStatistics event;
   event.set_loadedClassCount(ClassLoadingService::loaded_class_count());
   event.set_unloadedClassCount(ClassLoadingService::unloaded_class_count());
   event.commit();
+#else
+  log_debug(jfr, system)("Unable to generate requestable event ClassLoadingStatistics. The required jvm feature 'management' is missing.");
+#endif
 }
 
 class JfrClassLoaderStatsClosure : public ClassLoaderStatsClosure {
@@ -634,12 +640,19 @@ TRACE_REQUEST_FUNC(CodeSweeperConfiguration) {
   event.commit();
 }
 
-
 TRACE_REQUEST_FUNC(ShenandoahHeapRegionInformation) {
 #if INCLUDE_SHENANDOAHGC
   if (UseShenandoahGC) {
     VM_ShenandoahSendHeapRegionInfoEvents op;
     VMThread::execute(&op);
   }
+#endif
+}
+
+TRACE_REQUEST_FUNC(FinalizerStatistics) {
+#if INCLUDE_MANAGEMENT
+  JfrFinalizerStatisticsEvent::generate_events();
+#else
+  log_debug(jfr, system)("Unable to generate requestable event FinalizerStatistics. The required jvm feature 'management' is missing.");
 #endif
 }

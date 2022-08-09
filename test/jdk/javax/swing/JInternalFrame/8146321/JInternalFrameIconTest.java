@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,9 @@
  * @key headful
  * @bug 8146321 8151282
  * @summary verifies JInternalFrame Icon and ImageIcon
- * @library ../../regtesthelpers
- * @build Util
  * @run main JInternalFrameIconTest
  */
+import java.io.File;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Graphics;
@@ -37,6 +36,7 @@ import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Robot;
 import java.awt.image.BufferedImage;
+import javax.imageio.ImageIO;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JDesktopPane;
@@ -61,7 +61,6 @@ public class JInternalFrameIconTest {
 
     public static void main(String[] args) throws Exception {
         robot = new Robot();
-        robot.delay(2000);
         UIManager.LookAndFeelInfo[] lookAndFeelArray
                 = UIManager.getInstalledLookAndFeels();
         for (UIManager.LookAndFeelInfo lookAndFeelItem : lookAndFeelArray) {
@@ -76,21 +75,28 @@ public class JInternalFrameIconTest {
     private static void executeCase(String lookAndFeelString) throws Exception {
         if (tryLookAndFeel(lookAndFeelString)) {
             createImageIconUI(lookAndFeelString);
+            robot.waitForIdle();
             robot.delay(1000);
-            getImageIconBufferedImage();
+            getImageIconBufferedImage(lookAndFeelString);
+            robot.waitForIdle();
             robot.delay(1000);
             cleanUp();
             robot.waitForIdle();
+            robot.delay(1000);
 
             createIconUI(lookAndFeelString);
+            robot.waitForIdle();
             robot.delay(1000);
-            getIconBufferedImage();
+            getIconBufferedImage(lookAndFeelString);
+            robot.waitForIdle();
             robot.delay(1000);
             cleanUp();
             robot.waitForIdle();
+            robot.delay(1000);
 
             testIfSame(lookAndFeelString);
             robot.waitForIdle();
+            robot.delay(1000);
         }
 
     }
@@ -131,6 +137,7 @@ public class JInternalFrameIconTest {
                 frame.getContentPane().setLayout(new BorderLayout());
                 frame.getContentPane().add(desktopPane, "Center");
                 frame.setSize(500, 500);
+                frame.setUndecorated(true);
                 frame.setLocationRelativeTo(null);
                 frame.setVisible(true);
                 frame.toFront();
@@ -174,6 +181,7 @@ public class JInternalFrameIconTest {
                 frame.getContentPane().setLayout(new BorderLayout());
                 frame.getContentPane().add(desktopPane, "Center");
                 frame.setSize(500, 500);
+                frame.setUndecorated(true);
                 frame.setLocationRelativeTo(null);
                 frame.setVisible(true);
                 frame.toFront();
@@ -181,37 +189,57 @@ public class JInternalFrameIconTest {
         });
     }
 
-    private static void getImageIconBufferedImage() throws Exception {
+    private static void getImageIconBufferedImage(String lookAndFeelString) throws Exception {
         Point point = internalFrame.getLocationOnScreen();
         Rectangle rect = internalFrame.getBounds();
-        Rectangle captureRect = new Rectangle(
+        Rectangle captureRect = null;
+        if (lookAndFeelString.contains("Aqua")) {
+            captureRect = new Rectangle(
                 point.x + internalFrame.getInsets().left,
-                point.y,
-                rect.width,
+                point.y + internalFrame.getInsets().top,
+                rect.width - internalFrame.getInsets().left - internalFrame.getInsets().right,
                 internalFrame.getInsets().top);
-        imageIconImage
-                = robot.createScreenCapture(captureRect);
+        } else {
+            captureRect = new Rectangle(
+                point.x + internalFrame.getInsets().left,
+                point.y + internalFrame.getInsets().top,
+                titleImageIcon.getIconWidth(),
+                titleImageIcon.getIconHeight());
+        }
+        System.out.println("imageicon captureRect " + captureRect);
+        imageIconImage = robot.createScreenCapture(captureRect);
     }
 
-    private static void getIconBufferedImage() throws Exception {
+    private static void getIconBufferedImage(String lookAndFeelString) throws Exception {
         Point point = internalFrame.getLocationOnScreen();
         Rectangle rect = internalFrame.getBounds();
-        Rectangle captureRect = new Rectangle(
+        Rectangle captureRect = null;
+        if (lookAndFeelString.contains("Aqua")) {
+            captureRect = new Rectangle(
+                    point.x + internalFrame.getInsets().left,
+                    point.y + internalFrame.getInsets().top,
+                    rect.width - internalFrame.getInsets().left - internalFrame.getInsets().right,
+                    internalFrame.getInsets().top);
+        } else {
+            captureRect = new Rectangle(
                 point.x + internalFrame.getInsets().left,
-                point.y,
-                rect.width,
-                internalFrame.getInsets().top);
-        iconImage
-                = robot.createScreenCapture(captureRect);
+                point.y + internalFrame.getInsets().top,
+                titleIcon.getIconWidth(),
+                titleIcon.getIconHeight());
+        }
+        System.out.println("icon captureRect " + captureRect);
+        iconImage = robot.createScreenCapture(captureRect);
     }
 
     private static void testIfSame(final String lookAndFeelString)
             throws Exception {
         if (!bufferedImagesEqual(imageIconImage, iconImage)) {
+            ImageIO.write(imageIconImage, "png", new File("imageicon-fail.png"));
+            ImageIO.write(iconImage, "png", new File("iconImage-fail.png"));
             String error ="[" + lookAndFeelString
                     + "] : ERROR: icon and imageIcon not same.";
             errorString += error;
-            System.err.println(error);
+            System.out.println(error);
         } else {
             System.out.println("[" + lookAndFeelString
                     + "] : SUCCESS: icon and imageIcon same.");
@@ -224,7 +252,7 @@ public class JInternalFrameIconTest {
 
         if (bufferedImage1.getWidth() == bufferedImage2.getWidth()
                 && bufferedImage1.getHeight() == bufferedImage2.getHeight()) {
-            final int colorTolerance = 25;
+            final int colorTolerance = 1;
             final int mismatchTolerance = (int) (0.1
                     * bufferedImage1.getWidth() * bufferedImage1.getHeight());
             int mismatchCounter = 0;
@@ -240,14 +268,12 @@ public class JInternalFrameIconTest {
                     int red2 = (color2 >> 16) & 0x000000FF;
                     int green2 = (color2 >> 8) & 0x000000FF;
                     int blue2 = (color2) & 0x000000FF;
-                    if (red1 != red2 || green1 != green2 || blue1 != blue2) {
-                        ++mismatchCounter;
-                        if ((Math.abs(red1 - red2) > colorTolerance)
-                                || (Math.abs(green1 - green2) > colorTolerance)
-                                || (Math.abs(blue1 - blue2) > colorTolerance)) {
+                    if ((Math.abs(red1 - red2) > colorTolerance)
+                            || (Math.abs(green1 - green2) > colorTolerance)
+                            || (Math.abs(blue1 - blue2) > colorTolerance)) {
 
-                            flag = false;
-                        }
+                        ++mismatchCounter;
+                        flag = false;
                     }
                 }
             }

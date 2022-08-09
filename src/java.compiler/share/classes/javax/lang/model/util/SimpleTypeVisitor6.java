@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,10 +72,6 @@ import static javax.lang.model.SourceVersion.*;
  *            methods.  Use {@code Void} for visitors that do not need an
  *            additional parameter.
  *
- * @author Joseph D. Darcy
- * @author Scott Seligman
- * @author Peter von der Ah&eacute;
- *
  * @see SimpleTypeVisitor7
  * @see SimpleTypeVisitor8
  * @see SimpleTypeVisitor9
@@ -121,11 +117,11 @@ public class SimpleTypeVisitor6<R, P> extends AbstractTypeVisitor6<R, P> {
      * @implSpec The implementation in this class just returns {@link
      * #DEFAULT_VALUE}; subclasses will commonly override this method.
      *
-     * @param e the type to process
+     * @param t the type to process
      * @param p a visitor-specified parameter
      * @return {@code DEFAULT_VALUE} unless overridden
      */
-    protected R defaultAction(TypeMirror e, P p) {
+    protected R defaultAction(TypeMirror t, P p) {
         return DEFAULT_VALUE;
     }
 

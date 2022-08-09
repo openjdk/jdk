@@ -19,7 +19,7 @@ AccessibilityTest.java:41: error: heading used out of sequence: <H5>, compared t
 AccessibilityTest.java:46: error: no "alt" attribute for image
      * <img src="x.jpg">
        ^
-AccessibilityTest.java:61: error: no summary or caption for table
+AccessibilityTest.java:56: error: no caption for table
      * <table><tr><th>head<tr><td>data</table>
                                       ^
 8 errors

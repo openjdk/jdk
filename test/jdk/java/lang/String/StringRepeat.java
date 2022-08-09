@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,24 +24,36 @@
 /*
  * @test
  * @summary This exercises String#repeat patterns and limits.
- * @run main/othervm -Xmx2g StringRepeat
+ * @run main/othervm StringRepeat
+ */
+
+/*
+ * @test
+ * @summary This exercises String#repeat patterns with 16 * 1024 * 1024 repeats.
+ * @requires os.maxMemory >= 2G
+ * @run main/othervm -Xmx2g StringRepeat 16777216
  */
 
 import java.nio.CharBuffer;
 
 public class StringRepeat {
-    public static void main(String... arg) {
+    public static void main(String... args) {
+        if (args.length > 0) {
+            REPEATS = new int[args.length];
+            for (int i = 0; i < args.length; ++i) {
+                REPEATS[i] = Integer.parseInt(args[i]);
+            }
+        }
         test1();
         test2();
     }
 
     /*
-     * Varitions of repeat count.
+     * Default varitions of repeat count.
      */
     static int[] REPEATS = {
         0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
-        32, 64, 128, 256, 512, 1024, 64 * 1024, 1024 * 1024,
-        16 * 1024 * 1024
+        32, 64, 128, 256, 512, 1024, 64 * 1024, 1024 * 1024
     };
 
     /*

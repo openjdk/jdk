@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,7 +98,7 @@ public class DataInputStream extends FilterInputStream implements DataInput {
      * @see        java.io.FilterInputStream#in
      * @see        java.io.InputStream#read(byte[], int, int)
      */
-    public final int read(byte b[]) throws IOException {
+    public final int read(byte[] b) throws IOException {
         return in.read(b, 0, b.length);
     }
 
@@ -147,7 +147,7 @@ public class DataInputStream extends FilterInputStream implements DataInput {
      * @see        java.io.FilterInputStream#in
      * @see        java.io.InputStream#read(byte[], int, int)
      */
-    public final int read(byte b[], int off, int len) throws IOException {
+    public final int read(byte[] b, int off, int len) throws IOException {
         return in.read(b, off, len);
     }
 
@@ -168,7 +168,7 @@ public class DataInputStream extends FilterInputStream implements DataInput {
      *          another I/O error occurs.
      * @see     java.io.FilterInputStream#in
      */
-    public final void readFully(byte b[]) throws IOException {
+    public final void readFully(byte[] b) throws IOException {
         readFully(b, 0, b.length);
     }
 
@@ -194,7 +194,7 @@ public class DataInputStream extends FilterInputStream implements DataInput {
      *             another I/O error occurs.
      * @see        java.io.FilterInputStream#in
      */
-    public final void readFully(byte b[], int off, int len) throws IOException {
+    public final void readFully(byte[] b, int off, int len) throws IOException {
         Objects.checkFromIndexSize(off, len, b.length);
         int n = 0;
         while (n < len) {
@@ -595,8 +595,7 @@ loop:   while (true) {
         int utflen = in.readUnsignedShort();
         byte[] bytearr = null;
         char[] chararr = null;
-        if (in instanceof DataInputStream) {
-            DataInputStream dis = (DataInputStream)in;
+        if (in instanceof DataInputStream dis) {
             if (dis.bytearr.length < utflen){
                 dis.bytearr = new byte[utflen*2];
                 dis.chararr = new char[utflen*2];
@@ -624,12 +623,12 @@ loop:   while (true) {
         while (count < utflen) {
             c = (int) bytearr[count] & 0xff;
             switch (c >> 4) {
-                case 0: case 1: case 2: case 3: case 4: case 5: case 6: case 7:
+                case 0, 1, 2, 3, 4, 5, 6, 7 -> {
                     /* 0xxxxxxx*/
                     count++;
                     chararr[chararr_count++]=(char)c;
-                    break;
-                case 12: case 13:
+                }
+                case 12, 13 -> {
                     /* 110x xxxx   10xx xxxx*/
                     count += 2;
                     if (count > utflen)
@@ -641,8 +640,8 @@ loop:   while (true) {
                             "malformed input around byte " + count);
                     chararr[chararr_count++]=(char)(((c & 0x1F) << 6) |
                                                     (char2 & 0x3F));
-                    break;
-                case 14:
+                }
+                case 14 -> {
                     /* 1110 xxxx  10xx xxxx  10xx xxxx */
                     count += 3;
                     if (count > utflen)
@@ -656,8 +655,8 @@ loop:   while (true) {
                     chararr[chararr_count++]=(char)(((c     & 0x0F) << 12) |
                                                     ((char2 & 0x3F) << 6)  |
                                                     ((char3 & 0x3F) << 0));
-                    break;
-                default:
+                }
+                default ->
                     /* 10xx xxxx,  1111 xxxx */
                     throw new UTFDataFormatException(
                         "malformed input around byte " + count);

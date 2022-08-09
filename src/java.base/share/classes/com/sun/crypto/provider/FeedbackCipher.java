@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -199,47 +199,7 @@ abstract class FeedbackCipher {
      */
      int decryptFinal(byte[] cipher, int cipherOffset, int cipherLen,
                       byte[] plain, int plainOffset)
-         throws IllegalBlockSizeException, AEADBadTagException,
-         ShortBufferException {
+         throws IllegalBlockSizeException, ShortBufferException {
          return decrypt(cipher, cipherOffset, cipherLen, plain, plainOffset);
      }
-
-    /**
-     * Continues a multi-part update of the Additional Authentication
-     * Data (AAD), using a subset of the provided buffer. If this
-     * cipher is operating in either GCM or CCM mode, all AAD must be
-     * supplied before beginning operations on the ciphertext (via the
-     * {@code update} and {@code doFinal} methods).
-     * <p>
-     * NOTE: Given most modes do not accept AAD, default impl for this
-     * method throws IllegalStateException.
-     *
-     * @param src the buffer containing the AAD
-     * @param offset the offset in {@code src} where the AAD input starts
-     * @param len the number of AAD bytes
-     *
-     * @throws IllegalStateException if this cipher is in a wrong state
-     * (e.g., has not been initialized), does not accept AAD, or if
-     * operating in either GCM or CCM mode and one of the {@code update}
-     * methods has already been called for the active
-     * encryption/decryption operation
-     * @throws UnsupportedOperationException if this method
-     * has not been overridden by an implementation
-     *
-     * @since 1.8
-     */
-    void updateAAD(byte[] src, int offset, int len) {
-        throw new IllegalStateException("No AAD accepted");
-    }
-
-    /**
-     * @return the number of bytes that are buffered internally inside
-     * this FeedbackCipher instance.
-     * @since 1.8
-     */
-    int getBufferedLength() {
-        // Currently only AEAD cipher impl, e.g. GCM, buffers data
-        // internally during decryption mode
-        return 0;
-    }
 }

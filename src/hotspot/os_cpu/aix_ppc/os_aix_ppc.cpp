@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2020 SAP SE. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,8 @@
 
 // no precompiled headers
 #include "jvm.h"
+#include "assembler_ppc.hpp"
 #include "asm/assembler.inline.hpp"
-#include "classfile/classLoader.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
 #include "code/icBuffer.hpp"
@@ -35,7 +34,6 @@
 #include "interpreter/interpreter.hpp"
 #include "memory/allocation.inline.hpp"
 #include "nativeInst_ppc.hpp"
-#include "os_share_aix.hpp"
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm_misc.hpp"
 #include "porting_aix.hpp"
@@ -44,12 +42,12 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "runtime/thread.inline.hpp"
 #include "runtime/timer.hpp"
 #include "signals_posix.hpp"
 #include "utilities/events.hpp"
@@ -65,16 +63,7 @@
 # include <ucontext.h>
 
 address os::current_stack_pointer() {
-  address csp;
-
-#if !defined(USE_XLC_BUILTINS)
-  // inline assembly for `mr regno(csp), R1_SP':
-  __asm__ __volatile__ ("mr %0, 1":"=r"(csp):);
-#else
-  csp = (address) __builtin_frame_address(0);
-#endif
-
-  return csp;
+  return (address)__builtin_frame_address(0);
 }
 
 char* os::non_memory_address_word() {
@@ -159,13 +148,9 @@ frame os::get_sender_for_C_frame(frame* fr) {
 
 
 frame os::current_frame() {
-  intptr_t* csp = (intptr_t*) *((intptr_t*) os::current_stack_pointer());
-  // hack.
-  frame topframe(csp, (address)0x8);
-  // Return sender of sender of current topframe which hopefully
-  // both have pc != NULL.
-  frame tmp = os::get_sender_for_C_frame(&topframe);
-  return os::get_sender_for_C_frame(&tmp);
+  intptr_t* csp = *(intptr_t**) __builtin_frame_address(0);
+  frame topframe(csp, CAST_FROM_FN_PTR(address, os::current_frame));
+  return os::get_sender_for_C_frame(&topframe);
 }
 
 bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
@@ -179,17 +164,6 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
 
   // retrieve crash address
   address const addr = info ? (const address) info->si_addr : NULL;
-
-  // SafeFetch 32 handling:
-  // - make it work if _thread is null
-  // - make it use the standard os::...::ucontext_get/set_pc APIs
-  if (uc) {
-    address const pc = os::Posix::ucontext_get_pc(uc);
-    if (pc && StubRoutines::is_safefetch_fault(pc)) {
-      os::Posix::ucontext_set_pc(uc, StubRoutines::continuation_for_safefetch_fault(pc));
-      return true;
-    }
-  }
 
   if (info == NULL || uc == NULL) {
     return false; // Fatal error
@@ -246,6 +220,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
       //     happens rarely.  In heap based and disjoint base compressd oop modes also loads
       //     are used for null checks.
 
+      CodeBlob *cb = NULL;
       int stop_type = -1;
       // Handle signal from NativeJump::patch_verified_entry().
       if (sig == SIGILL && nativeInstruction_at(pc)->is_sigill_zombie_not_entrant()) {
@@ -256,14 +231,28 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
         goto run_stub;
       }
 
-      else if (USE_POLL_BIT_ONLY
-               ? (sig == SIGTRAP && ((NativeInstruction*)pc)->is_safepoint_poll())
-               : (sig == SIGSEGV && SafepointMechanism::is_poll_address(addr))) {
+      else if ((sig == USE_POLL_BIT_ONLY ? SIGTRAP : SIGSEGV) &&
+               ((NativeInstruction*)pc)->is_safepoint_poll() &&
+               CodeCache::contains((void*) pc) &&
+               ((cb = CodeCache::find_blob(pc)) != NULL) &&
+               cb->is_compiled()) {
         if (TraceTraps) {
           tty->print_cr("trap: safepoint_poll at " INTPTR_FORMAT " (%s)", p2i(pc),
                         USE_POLL_BIT_ONLY ? "SIGTRAP" : "SIGSEGV");
         }
         stub = SharedRuntime::get_poll_stub(pc);
+        goto run_stub;
+      }
+
+      else if (UseSIGTRAP && sig == SIGTRAP &&
+               ((NativeInstruction*)pc)->is_safepoint_poll_return() &&
+               CodeCache::contains((void*) pc) &&
+               ((cb = CodeCache::find_blob(pc)) != NULL) &&
+               cb->is_compiled()) {
+        if (TraceTraps) {
+          tty->print_cr("trap: safepoint_poll at return at " INTPTR_FORMAT " (nmethod)", p2i(pc));
+        }
+        stub = SharedRuntime::polling_page_return_handler_blob()->entry_point();
         goto run_stub;
       }
 
@@ -338,7 +327,13 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
           tty->print_cr("trap: %s: %s (SIGTRAP, stop type %d)", msg, detail_msg, stop_type);
         }
 
-        return false; // Fatal error
+        // End life with a fatal error, message and detail message and the context.
+        // Note: no need to do any post-processing here (e.g. signal chaining)
+        va_list va_dummy;
+        VMError::report_and_die(thread, uc, NULL, 0, msg, detail_msg, va_dummy);
+        va_end(va_dummy);
+
+        ShouldNotReachHere();
       }
 
       else if (sig == SIGBUS) {
@@ -421,9 +416,9 @@ void os::Aix::init_thread_fpu_state(void) {
 
 // Minimum usable stack sizes required to get to user code. Space for
 // HotSpot guard pages is added later.
-size_t os::Posix::_compiler_thread_min_stack_allowed = 192 * K;
-size_t os::Posix::_java_thread_min_stack_allowed = 64 * K;
-size_t os::Posix::_vm_internal_thread_min_stack_allowed = 64 * K;
+size_t os::_compiler_thread_min_stack_allowed = 192 * K;
+size_t os::_java_thread_min_stack_allowed = 64 * K;
+size_t os::_vm_internal_thread_min_stack_allowed = 64 * K;
 
 // Return default stack size for thr_type.
 size_t os::Posix::default_stack_size(os::ThreadType thr_type) {
@@ -451,6 +446,12 @@ void os::print_context(outputStream *st, const void *context) {
   }
   st->cr();
   st->cr();
+}
+
+void os::print_tos_pc(outputStream *st, const void *context) {
+  if (context == NULL) return;
+
+  const ucontext_t* uc = (const ucontext_t*)context;
 
   intptr_t *sp = (intptr_t *)os::Aix::ucontext_get_sp(uc);
   st->print_cr("Top of Stack: (sp=" PTR_FORMAT ")", sp);
@@ -510,4 +511,9 @@ int os::extra_bang_size_in_bytes() {
 bool os::platform_print_native_stack(outputStream* st, void* context, char *buf, int buf_size) {
   AixNativeCallstack::print_callstack_for_context(st, (const ucontext_t*)context, true, buf, (size_t) buf_size);
   return true;
+}
+
+// HAVE_FUNCTION_DESCRIPTORS
+void* os::resolve_function_descriptor(void* p) {
+  return ((const FunctionDescriptor*)p)->entry();
 }

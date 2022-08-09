@@ -42,7 +42,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 8077931
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true catalog.LoadCatalogTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow catalog.LoadCatalogTest
  * @run testng/othervm catalog.LoadCatalogTest
  * @summary When catalog resolver loads catalog files, the current catalog file
  *          and the catalog files specified by the nextCatalog entries may not

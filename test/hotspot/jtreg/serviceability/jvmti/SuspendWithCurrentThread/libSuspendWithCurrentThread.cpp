@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,45 +22,19 @@
  */
 
 #include <string.h>
+#include <atomic>
 #include "jvmti.h"
+#include "jvmti_common.h"
 
 extern "C" {
 
 static jvmtiEnv* jvmti = NULL;
 static jthread* threads = NULL;
 static jsize threads_count = 0;
-static jrawMonitorID agent_monitor = NULL;
-
-#define LOG(...) \
-  do { \
-    printf(__VA_ARGS__); \
-    printf("\n"); \
-    fflush(stdout); \
-  } while (0)
-
-static void
-check_jvmti_status(JNIEnv* jni, jvmtiError err, const char* msg) {
-  if (err != JVMTI_ERROR_NONE) {
-    LOG("check_jvmti_status: JVMTI function returned error: %d", err);
-    jni->FatalError(msg);
-  }
-}
-
-static void
-agent_lock(JNIEnv* jni) {
-  jvmtiError err = jvmti->RawMonitorEnter(agent_monitor);
-  check_jvmti_status(jni, err, "monitor_enter: error in JVMTI RawMonitorEnter");
-}
-
-static void
-agent_unlock(JNIEnv* jni) {
-  jvmtiError err = jvmti->RawMonitorExit(agent_monitor);
-  check_jvmti_status(jni, err, "monitor_exit: error in JVMTI RawMonitorExit");
-}
 
 JNIEXPORT void JNICALL
 Java_SuspendWithCurrentThread_registerTestedThreads(JNIEnv *jni, jclass cls, jobjectArray threadsArr) {
-  LOG("\nregisterTestedThreads: started");
+  LOG("\nregisterTestedThreads: started\n");
   threads_count = jni->GetArrayLength(threadsArr);
 
   jvmtiError err = jvmti->Allocate((threads_count * sizeof(jthread)),
@@ -74,64 +48,57 @@ Java_SuspendWithCurrentThread_registerTestedThreads(JNIEnv *jni, jclass cls, job
   LOG("registerTestedThreads: finished\n");
 }
 
-/* This function is executed on the suspender thread, not the Main thread */
-JNIEXPORT void JNICALL
-Java_ThreadToSuspend_init(JNIEnv *jni, jclass cls) {
-  jvmtiError err = jvmti->CreateRawMonitor("Agent monitor", &agent_monitor);
-  check_jvmti_status(jni, err, "Java_ThreadToSuspend_init: error in JVMTI CreateRawMonitor");
-
-  // Main thread has to wait for the suspender thread to complete tested threads suspension
-  agent_lock(jni);
-}
-
 /* This function is executed on the suspender thread which is not Main thread */
 JNIEXPORT void JNICALL
 Java_ThreadToSuspend_suspendTestedThreads(JNIEnv *jni, jclass cls) {
   jvmtiError* results = NULL;
   jvmtiError err;
+  const char* tname = get_thread_name(jvmti, jni, NULL); // current thread name
 
-  LOG("\nsuspendTestedThreads: started");
+  LOG("\nsuspendTestedThreads: started by thread: %s\n", tname);
   err = jvmti->Allocate((threads_count * sizeof(jvmtiError)),
                         (unsigned char**)&results);
   check_jvmti_status(jni, err, "suspendTestedThreads: error in JVMTI Allocate results array");
 
-  LOG("suspendTestedThreads: before JVMTI SuspendThreadList");
+  LOG("suspendTestedThreads: before JVMTI SuspendThreadList\n");
   err = jvmti->SuspendThreadList(threads_count, threads, results);
+  // is_exited_from_suspend.store(true); // TODO SERGUEI
   check_jvmti_status(jni, err, "suspendTestedThreads: error in JVMTI SuspendThreadList");
 
-  LOG("suspendTestedThreads: check and print SuspendThreadList results:");
+  LOG("suspendTestedThreads: check and print SuspendThreadList results:\n");
   for (int i = 0; i < threads_count; i++) {
-    LOG("  thread #%d: (%d)", i, (int)results[i]);
+    LOG("  thread #%d suspend errcode: (%d)\n", i, (int)results[i]);
     check_jvmti_status(jni, results[i], "suspendTestedThreads: error in SuspendThreadList results[i]");
   }
-  LOG("suspendTestedThreads: finished\n");
-
-  // Allow the Main thread to inspect the result of tested threads suspension
-  agent_unlock(jni);
+  LOG("suspendTestedThreads: finished by thread: %s\n", tname);
 
   err = jvmti->Deallocate((unsigned char*)results);
   check_jvmti_status(jni, err, "suspendTestedThreads: error in JVMTI Deallocate results");
+  err = jvmti->Deallocate((unsigned char*)tname);
 }
 
 JNIEXPORT jboolean JNICALL
 Java_SuspendWithCurrentThread_checkTestedThreadsSuspended(JNIEnv *jni, jclass cls) {
-  LOG("checkTestedThreadsSuspended: started");
-
-  // Block until the suspender thread competes the tested threads suspension
-  agent_lock(jni);
-  agent_unlock(jni);
+  LOG("checkTestedThreadsSuspended: started\n");
 
   for (int i = 0; i < threads_count; i++) {
-    jint state = 0;
-    jvmtiError err = jvmti->GetThreadState(threads[i], &state);
-    check_jvmti_status(jni, err, "checkTestedThreadsSuspended: error in GetThreadState");
+    while (true) { // loop until a timeout happens if the thread is not suspended
+      jint state = 0;
+      jvmtiError err = jvmti->GetThreadState(threads[i], &state);
+      check_jvmti_status(jni, err, "checkTestedThreadsSuspended: error in GetThreadState");
 
-    if ((state & JVMTI_THREAD_STATE_SUSPENDED) == 0) {
-      LOG("thread #%d has not been suspended yet: "
-             "#   state: (%#x)", i, (int)state);
-      jni->FatalError("checkTestedThreadsSuspended: error: expected all tested threads suspended");
+      if ((state & JVMTI_THREAD_STATE_SUSPENDED) == 0) {
+        LOG("thread #%d has not been suspended yet: # state: (%#x)\n", i, (int)state);
+      } else {
+        break;
+      }
+      sleep_ms(10);
     }
   }
+  // if (is_exited_from_suspend.load()) { // TODO SERGUEI
+  //   LOG("Thread didn't stop in self suspend.");
+  //   return JNI_FALSE;
+  // }
   LOG("checkTestedThreadsSuspended: finished\n");
   return JNI_TRUE;
 }
@@ -141,18 +108,18 @@ Java_SuspendWithCurrentThread_resumeTestedThreads(JNIEnv *jni, jclass cls) {
   jvmtiError* results = NULL;
   jvmtiError err;
 
-  LOG("\nresumeTestedThreads: started");
+  LOG("\nresumeTestedThreads: started\n");
   err = jvmti->Allocate((threads_count * sizeof(jvmtiError)),
                         (unsigned char**)&results);
   check_jvmti_status(jni, err, "resumeTestedThreads: error in JVMTI Allocate results array");
 
-  LOG("resumeTestedThreads: before JVMTI ResumeThreadList");
+  LOG("resumeTestedThreads: before JVMTI ResumeThreadList\n");
   err = jvmti->ResumeThreadList(threads_count, threads, results);
   check_jvmti_status(jni, err, "resumeTestedThreads: error in ResumeThreadList");
 
-  LOG("resumeTestedThreads: check and print ResumeThreadList results:");
+  LOG("resumeTestedThreads: check and print ResumeThreadList results:\n");
   for (int i = 0; i < threads_count; i++) {
-    LOG("  thread #%d: (%d)", i, (int)results[i]);
+    LOG("  thread #%d resume errcode: (%d)\n", i, (int)results[i]);
     check_jvmti_status(jni, results[i], "resumeTestedThreads: error in ResumeThreadList results[i]");
   }
 
@@ -166,10 +133,7 @@ JNIEXPORT void JNICALL
 Java_SuspendWithCurrentThread_releaseTestedThreadsInfo(JNIEnv *jni, jclass cls) {
   jvmtiError err;
 
-  LOG("\nreleaseTestedThreadsInfo: started");
-  err = jvmti->DestroyRawMonitor(agent_monitor);
-  check_jvmti_status(jni, err, "releaseTestedThreadsInfo: error in JVMTI DestroyRawMonitor");
-
+  LOG("\nreleaseTestedThreadsInfo: started\n");
   for (int i = 0; i < threads_count; i++) {
     if (threads[i] != NULL) {
       jni->DeleteGlobalRef(threads[i]);
@@ -186,7 +150,7 @@ Java_SuspendWithCurrentThread_releaseTestedThreadsInfo(JNIEnv *jni, jclass cls) 
 
 JNIEXPORT jint JNICALL
 Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
-  LOG("\nAgent_OnLoad started");
+  LOG("\nAgent_OnLoad started\n");
 
   // create JVMTI environment
   if (jvm->GetEnv((void **) (&jvmti), JVMTI_VERSION) != JNI_OK) {

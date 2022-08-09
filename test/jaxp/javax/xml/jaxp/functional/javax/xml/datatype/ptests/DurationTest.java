@@ -53,7 +53,7 @@ import org.testng.annotations.Test;
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true javax.xml.datatype.ptests.DurationTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow javax.xml.datatype.ptests.DurationTest
  * @run testng/othervm javax.xml.datatype.ptests.DurationTest
  * @summary Class containing the test cases for Duration.
  */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -461,7 +461,7 @@ final class DigitList implements Cloneable {
              * rounding done, is needed in this class.
              *
              * - For the  HALF_DOWN, HALF_EVEN, HALF_UP rounding rules below:
-             *   In the case of formating float or double, We must take into
+             *   In the case of formatting float or double, We must take into
              *   account what FloatingDecimal has done in the binary to decimal
              *   conversion.
              *
@@ -469,7 +469,7 @@ final class DigitList implements Cloneable {
              *   value (returning decimal digits equal to tie when it is below),
              *   or "truncate" the value to the tie while value is above it,
              *   or provide the exact decimal digits when the binary value can be
-             *   converted exactly to its decimal representation given formating
+             *   converted exactly to its decimal representation given formatting
              *   rules of FloatingDecimal ( we have thus an exact decimal
              *   representation of the binary value).
              *
@@ -702,9 +702,8 @@ final class DigitList implements Cloneable {
     public boolean equals(Object obj) {
         if (this == obj)                      // quick check
             return true;
-        if (!(obj instanceof DigitList))         // (1) same object?
+        if (!(obj instanceof DigitList other))         // (1) same object?
             return false;
-        DigitList other = (DigitList) obj;
         if (count != other.count ||
         decimalAt != other.decimalAt)
             return false;

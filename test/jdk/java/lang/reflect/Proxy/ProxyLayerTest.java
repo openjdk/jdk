@@ -99,8 +99,9 @@ public class ProxyLayerTest {
 
         Class<?> proxyClass = o.getClass();
         Package pkg = proxyClass.getPackage();
-        assertFalse(proxyClass.getModule().isNamed());
-        assertFalse(pkg.isSealed());
+        assertTrue(proxyClass.getModule().isNamed());
+        assertTrue(pkg.isSealed());
+        assertTrue(proxyClass.getModule().isExported(pkg.getName()));
         assertEquals(proxyClass.getModule().getLayer(), null);
     }
 
@@ -132,6 +133,7 @@ public class ProxyLayerTest {
         Package pkg = proxyClass.getPackage();
         assertTrue(proxyClass.getModule().isNamed());
         assertTrue(pkg.isSealed());
+        assertFalse(proxyClass.getModule().isExported(pkg.getName()));
         assertEquals(proxyClass.getModule().getLayer(), null);
     }
 

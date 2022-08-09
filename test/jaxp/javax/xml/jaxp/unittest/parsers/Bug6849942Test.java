@@ -39,7 +39,7 @@ import org.xml.sax.InputSource;
  * @test
  * @bug 6849942
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true parsers.Bug6849942Test
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow parsers.Bug6849942Test
  * @run testng/othervm parsers.Bug6849942Test
  * @summary Test parsing an XML that starts with a processing instruction and no prolog.
  */

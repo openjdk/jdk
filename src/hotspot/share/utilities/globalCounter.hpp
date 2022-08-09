@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 #ifndef SHARE_UTILITIES_GLOBALCOUNTER_HPP
 #define SHARE_UTILITIES_GLOBALCOUNTER_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "memory/padded.hpp"
 
 class Thread;
@@ -44,7 +44,7 @@ class Thread;
 class GlobalCounter : public AllStatic {
  private:
   // Since do not know what we will end up next to in BSS, we make sure the
-  // counter is on a seperate cacheline.
+  // counter is on a separate cacheline.
   struct PaddedCounter {
     DEFINE_PAD_MINUS_SIZE(0, DEFAULT_CACHE_LINE_SIZE, 0);
     volatile uintx _counter;
@@ -63,9 +63,10 @@ class GlobalCounter : public AllStatic {
   class CounterThreadCheck;
 
  public:
+
   // The type of the critical section context passed from
   // critical_section_begin() to critical_section_end().
-  typedef uintx CSContext;
+  enum class CSContext : uintx {};
 
   // Must be called before accessing the data.  The result must be passed
   // to the associated call to critical_section_end().  Acts as a full

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,23 +67,23 @@ public class IBM29626C
     static class Decoder extends CharsetDecoder
         implements DelegatableDecoder {
 
-        final static SingleByte.Decoder DEC0201 =
+        static final SingleByte.Decoder DEC0201 =
             (SingleByte.Decoder)new JIS_X_0201().newDecoder();
 
-        final static DoubleByte.Decoder DEC0208 =
+        static final DoubleByte.Decoder DEC0208 =
             (DoubleByte.Decoder)new JIS_X_0208().newDecoder();
 
-        final static DoubleByte.Decoder DEC0212 =
+        static final DoubleByte.Decoder DEC0212 =
             (DoubleByte.Decoder)new JIS_X_0212().newDecoder();
 
-        final static DoubleByte.Encoder ibm943 =
+        static final DoubleByte.Encoder ibm943 =
             (DoubleByte.Encoder)new IBM943().newEncoder();
 
         private final SingleByte.Decoder dec0201;
         private final DoubleByte.Decoder dec0208;
         private final DoubleByte.Decoder dec0212;
 
-        private final String G2_b =
+        private static final String G2_b =
             "\uA1F1\uA1F2\uA2CC\uADA1\uADA2\uADA3\uADA4\uADA5\uADA6\uADA7"+
             "\uADA8\uADA9\uADAA\uADAB\uADAC\uADAD\uADAE\uADAF\uADB0\uADB1"+
             "\uADB2\uADB3\uADB4\uADB5\uADB6\uADB7\uADB8\uADB9\uADBA\uADBB"+
@@ -94,7 +94,7 @@ public class IBM29626C
             "\uADED\uADEE\uADEF\uADF0\uADF1\uADF2\uADF3\uADF4\uADF5\uADF6"+
             "\uADF7\uADF8\uADF9\uADFA\uADFB\uADFC";
 
-        private final String G2_c =
+        private static final String G2_c =
             "\uFFE0\uFFE1\uFFE2\u2460\u2461\u2462\u2463\u2464\u2465\u2466"+
             "\u2467\u2468\u2469\u246A\u246B\u246C\u246D\u246E\u246F\u2470"+
             "\u2471\u2472\u2473\u2160\u2161\u2162\u2163\u2164\u2165\u2166"+
@@ -105,7 +105,7 @@ public class IBM29626C
             "\u337E\u337D\u337C\u2252\u2261\u222B\u222E\u2211\u221A\u22A5"+
             "\u2220\u221F\u22BF\u2235\u2229\u222A";
 
-        private final String G3_b =
+        private static final String G3_b =
             "\uF3B8\uF3B9\uF3AB\uF3AC\uF3AD\uF3AE\uF3AF\uF3B0\uF3B1\uF3B2"+
             "\uF3B3\uF3B4\uF3A1\uF3A2\uF3A3\uF3A4\uF3A5\uF3A6\uF3A7\uF3A8"+
             "\uF3A9\uF3AA\uF3B7\uF3B8\uF4A2\uF4A3\uF4A4\uF4A5\uF4A6\uF4A8"+
@@ -118,7 +118,7 @@ public class IBM29626C
             "\uF4D6\uF4D8\uF4DA\uF4DB\uF4DE\uF4E2\uF4E3\uF4E4\uF4E6\uF4E8"+
             "\uF4E9\uF4EC\uF4F1\uF4F2\uF4F3\uF4F7\uF3B6\uF3B5";
 
-        private final String G3_c =
+        private static final String G3_c =
             "\u2116\u2121\u2160\u2161\u2162\u2163\u2164\u2165\u2166\u2167"+
             "\u2168\u2169\u2170\u2171\u2172\u2173\u2174\u2175\u2176\u2177"+
             "\u2178\u2179\u3231\u00A6\u4EFC\u50F4\u51EC\u5307\u5324\u548A"+
@@ -164,7 +164,7 @@ public class IBM29626C
             return UNMAPPABLE_DECODING;
         }
 
-        final static String g1_c = "\u00a2\u00a3\u00ac\\\u007e";
+        static final String g1_c = "\u00a2\u00a3\u00ac\\\u007e";
 
         protected char decodeDouble(int byte1, int byte2) {
             if (byte1 == 0x8e) {
@@ -212,14 +212,10 @@ public class IBM29626C
             byte[] sa = src.array();
             int sp = src.arrayOffset() + src.position();
             int sl = src.arrayOffset() + src.limit();
-            assert (sp <= sl);
-            sp = (sp <= sl ? sp : sl);
 
             char[] da = dst.array();
             int dp = dst.arrayOffset() + dst.position();
             int dl = dst.arrayOffset() + dst.limit();
-            assert (dp <= dl);
-            dp = (dp <= dl ? dp : dl);
 
             int b1 = 0, b2 = 0;
             int inputSize = 0;
@@ -322,16 +318,16 @@ public class IBM29626C
 
     static class Encoder extends CharsetEncoder {
 
-        final static SingleByte.Encoder ENC0201 =
+        static final SingleByte.Encoder ENC0201 =
             (SingleByte.Encoder)new JIS_X_0201().newEncoder();
 
-        final static DoubleByte.Encoder ENC0208 =
+        static final DoubleByte.Encoder ENC0208 =
             (DoubleByte.Encoder)new JIS_X_0208().newEncoder();
 
-        final static DoubleByte.Encoder ENC0212 =
+        static final DoubleByte.Encoder ENC0212 =
             (DoubleByte.Encoder)new JIS_X_0212().newEncoder();
 
-        final static DoubleByte.Encoder ibm943 =
+        static final DoubleByte.Encoder ibm943 =
             (DoubleByte.Encoder)new IBM943().newEncoder();
 
         private final Surrogate.Parser sgp = new Surrogate.Parser();
@@ -340,7 +336,7 @@ public class IBM29626C
         private final DoubleByte.Encoder enc0208;
         private final DoubleByte.Encoder enc0212;
 
-        private final String G2_c =
+        private static final String G2_c =
             "\u2015\u2211\u221F\u2225\u222E\u22BF\u2460\u2461\u2462\u2463"+
             "\u2464\u2465\u2466\u2467\u2468\u2469\u246A\u246B\u246C\u246D"+
             "\u246E\u246F\u2470\u2471\u2472\u2473\u301D\u301F\u3232\u3239"+
@@ -353,7 +349,7 @@ public class IBM29626C
             "\u881F\u8EC0\u91AC\u91B1\u9830\u9839\u985A\u9A52\u9DD7\u9E7C"+
             "\u9EB4\u9EB5\uFF0D\uFF5E\uFFE0\uFFE1\uFFE2";
 
-        private final String G2_b =
+        private static final String G2_b =
             "\uA1BD\uADF4\uADF8\uA1C2\uADF3\uADF9\uADA1\uADA2\uADA3\uADA4"+
             "\uADA5\uADA6\uADA7\uADA8\uADA9\uADAA\uADAB\uADAC\uADAD\uADAE"+
             "\uADAF\uADB0\uADB1\uADB2\uADB3\uADB4\uADE0\uADE1\uADEB\uADEC"+
@@ -366,7 +362,7 @@ public class IBM29626C
             "\uCFB9\uB6ED\uBEDF\uC8B0\uCBCB\uF0F8\uC5BF\uC2CD\uB2AA\uB8B4"+
             "\uB9ED\uCCCD\uA1DD\uA1C1\uA1F1\uA1F2\uA2CC";
 
-        private final String G3_c =
+        private static final String G3_c =
             "\u2116\u2121\u2160\u2161\u2162\u2163\u2164\u2165\u2166\u2167"+
             "\u2168\u2169\u2170\u2171\u2172\u2173\u2174\u2175\u2176\u2177"+
             "\u2178\u2179\u3231\u4EFC\u50F4\u51EC\u5307\u5324\u548A\u5759"+
@@ -379,7 +375,7 @@ public class IBM29626C
             "\uFA1F\uFA20\uFA21\uFA22\uFA23\uFA24\uFA25\uFA26\uFA27\uFA28"+
             "\uFA29\uFA2A\uFA2B\uFA2C\uFA2D\uFF02\uFF07\uFFE4";
 
-        private final String G3_b =
+        private static final String G3_b =
             "\uF3B8\uF3B9\uF3AB\uF3AC\uF3AD\uF3AE\uF3AF\uF3B0\uF3B1\uF3B2"+
             "\uF3B3\uF3B4\uF3A1\uF3A2\uF3A3\uF3A4\uF3A5\uF3A6\uF3A7\uF3A8"+
             "\uF3A9\uF3AA\uF3B7\uF4A2\uF4A3\uF4A4\uF4A5\uF4A6\uF4A8\uF4A9"+
@@ -412,7 +408,7 @@ public class IBM29626C
                    encodeDouble(c) != UNMAPPABLE_ENCODING;
         }
 
-        private final static String G1_c = "\u00A2\u00A3\u00AC";
+        private static final String G1_c = "\u00A2\u00A3\u00AC";
 
         protected int encodeSingle(char inputChar, byte[] outputByte) {
             if (inputChar >= 0x80 && inputChar < 0x8e) {
@@ -484,13 +480,10 @@ public class IBM29626C
             char[] sa = src.array();
             int sp = src.arrayOffset() + src.position();
             int sl = src.arrayOffset() + src.limit();
-            assert (sp <= sl);
-            sp = (sp <= sl ? sp : sl);
+
             byte[] da = dst.array();
             int dp = dst.arrayOffset() + dst.position();
             int dl = dst.arrayOffset() + dst.limit();
-            assert (dp <= dl);
-            dp = (dp <= dl ? dp : dl);
 
             int outputSize = 0;
             byte[]  outputByte;

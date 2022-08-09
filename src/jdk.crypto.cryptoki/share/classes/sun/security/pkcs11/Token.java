@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ import sun.security.jca.JCAUtil;
 import sun.security.pkcs11.wrapper.*;
 import static sun.security.pkcs11.TemplateManager.*;
 import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
+import static sun.security.pkcs11.wrapper.PKCS11Exception.RV.*;
 
 /**
  * PKCS#11 token.
@@ -53,20 +54,25 @@ class Token implements Serializable {
     // how often to check if the token is still present (in ms)
     // this is different from checking if a token has been inserted,
     // that is done in SunPKCS11. Currently 50 ms.
-    private final static long CHECK_INTERVAL = 50;
+    private static final long CHECK_INTERVAL = 50;
 
     final SunPKCS11 provider;
 
+    @SuppressWarnings("serial") // Type of field is not Serializable
     final PKCS11 p11;
 
+    @SuppressWarnings("serial") // Type of field is not Serializable
     final Config config;
 
+    @SuppressWarnings("serial") // Type of field is not Serializable
     final CK_TOKEN_INFO tokenInfo;
 
     // session manager to pool sessions
+    @SuppressWarnings("serial") // Type of field is not Serializable
     final SessionManager sessionManager;
 
     // template manager to customize the attributes used when creating objects
+    @SuppressWarnings("serial") // Type of field is not Serializable
     private final TemplateManager templateManager;
 
     // flag indicating whether we need to explicitly cancel operations
@@ -75,16 +81,20 @@ class Token implements Serializable {
     final boolean explicitCancel;
 
     // translation cache for secret keys
+    @SuppressWarnings("serial") // Type of field is not Serializable
     final KeyCache secretCache;
 
     // translation cache for asymmetric keys (public and private)
+    @SuppressWarnings("serial") // Type of field is not Serializable
     final KeyCache privateCache;
 
     // cached instances of the various key factories, initialized on demand
+    @SuppressWarnings("serial") // Type of field is not Serializable
     private volatile P11KeyFactory rsaFactory, dsaFactory, dhFactory, ecFactory;
 
     // table which maps mechanisms to the corresponding cached
     // MechanismInfo objects
+    @SuppressWarnings("serial") // Type of field is not Serializable
     private final Map<Long, CK_MECHANISM_INFO> mechInfoMap;
 
     // single SecureRandomSpi instance we use per token
@@ -93,6 +103,7 @@ class Token implements Serializable {
 
     // single KeyStoreSpi instance we use per provider
     // initialized on demand
+    @SuppressWarnings("serial") // Type of field is not Serializable
     private volatile P11KeyStore keyStore;
 
     // whether this token is a removable token
@@ -117,10 +128,10 @@ class Token implements Serializable {
     private long lastLoginCheck;
 
     // mutex for token-present-check
-    private final static Object CHECK_LOCK = new Object();
+    private static final Object CHECK_LOCK = new Object();
 
     // object for indicating unsupported mechanism in 'mechInfoMap'
-    private final static CK_MECHANISM_INFO INVALID_MECH =
+    private static final CK_MECHANISM_INFO INVALID_MECH =
         new CK_MECHANISM_INFO(0, 0, 0);
 
     // flag indicating whether the token supports raw secret key material import
@@ -291,8 +302,12 @@ class Token implements Serializable {
     }
 
     void destroy() {
-        valid = false;
+        secretCache.clear();
+        privateCache.clear();
+
+        sessionManager.clearPools();
         provider.uninitToken(this);
+        valid = false;
     }
 
     Session getObjSession() throws PKCS11Exception {
@@ -385,7 +400,7 @@ class Token implements Serializable {
                                                 mechanism);
                 mechInfoMap.put(mechanism, result);
             } catch (PKCS11Exception e) {
-                if (e.getErrorCode() != PKCS11Constants.CKR_MECHANISM_INVALID) {
+                if (!e.match(CKR_MECHANISM_INVALID)) {
                     throw e;
                 } else {
                     mechInfoMap.put(mechanism, INVALID_MECH);

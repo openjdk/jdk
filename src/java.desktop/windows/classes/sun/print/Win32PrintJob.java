@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,22 +27,19 @@ package sun.print;
 
 import java.net.URI;
 import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.InputStream;
 import java.io.IOException;
-import java.io.FileNotFoundException;
 import java.io.Reader;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.Vector;
 
 import javax.print.CancelablePrintJob;
 import javax.print.Doc;
 import javax.print.DocFlavor;
-import javax.print.DocPrintJob;
 import javax.print.PrintService;
 import javax.print.PrintException;
 import javax.print.event.PrintJobEvent;
@@ -50,7 +47,6 @@ import javax.print.event.PrintJobListener;
 import javax.print.event.PrintJobAttributeListener;
 
 import javax.print.attribute.Attribute;
-import javax.print.attribute.AttributeSet;
 import javax.print.attribute.AttributeSetUtilities;
 import javax.print.attribute.DocAttributeSet;
 import javax.print.attribute.HashPrintJobAttributeSet;
@@ -367,12 +363,9 @@ public class Win32PrintJob implements CancelablePrintJob {
                 printableJob(new ImagePrinter(instream));
                 service.wakeNotifier();
                 return;
-            } catch (ClassCastException cce) {
+            } catch (ClassCastException | IOException e) {
                 notifyEvent(PrintJobEvent.JOB_FAILED);
-                throw new PrintException(cce);
-            } catch (IOException ioe) {
-                notifyEvent(PrintJobEvent.JOB_FAILED);
-                throw new PrintException(ioe);
+                throw new PrintException(e);
             }
         } else if (flavor.equals(DocFlavor.URL.GIF) ||
                    flavor.equals(DocFlavor.URL.JPEG) ||
@@ -390,24 +383,18 @@ public class Win32PrintJob implements CancelablePrintJob {
                 pageableJob((Pageable)doc.getPrintData());
                 service.wakeNotifier();
                 return;
-            } catch (ClassCastException cce) {
+            } catch (ClassCastException | IOException e) {
                 notifyEvent(PrintJobEvent.JOB_FAILED);
-                throw new PrintException(cce);
-            } catch (IOException ioe) {
-                notifyEvent(PrintJobEvent.JOB_FAILED);
-                throw new PrintException(ioe);
+                throw new PrintException(e);
             }
         } else if (repClassName.equals("java.awt.print.Printable")) {
             try {
                 printableJob((Printable)doc.getPrintData());
                 service.wakeNotifier();
                 return;
-            } catch (ClassCastException cce) {
+            } catch (ClassCastException | IOException e) {
                 notifyEvent(PrintJobEvent.JOB_FAILED);
-                throw new PrintException(cce);
-            } catch (IOException ioe) {
-                notifyEvent(PrintJobEvent.JOB_FAILED);
-                throw new PrintException(ioe);
+                throw new PrintException(e);
             }
         } else if (repClassName.equals("[B") ||
                    repClassName.equals("java.io.InputStream") ||
@@ -437,18 +424,7 @@ public class Win32PrintJob implements CancelablePrintJob {
 
             if (mDestination != null) { // if destination attribute is set
                 try {
-                    FileOutputStream fos = new FileOutputStream(mDestination);
-                    byte []buffer = new byte[1024];
-                    int cread;
-
-                    while ((cread = instream.read(buffer, 0, buffer.length)) >=0) {
-                        fos.write(buffer, 0, cread);
-                    }
-                    fos.flush();
-                    fos.close();
-                } catch (FileNotFoundException fnfe) {
-                    notifyEvent(PrintJobEvent.JOB_FAILED);
-                    throw new PrintException(fnfe.toString());
+                    Files.copy(instream, Path.of(mDestination), StandardCopyOption.REPLACE_EXISTING);
                 } catch (IOException ioe) {
                     notifyEvent(PrintJobEvent.JOB_FAILED);
                     throw new PrintException(ioe.toString());
@@ -699,6 +675,7 @@ public class Win32PrintJob implements CancelablePrintJob {
                   throw new PrintException(e);
                 }
                 // check write access
+                @SuppressWarnings("removal")
                 SecurityManager security = System.getSecurityManager();
                 if (security != null) {
                   try {

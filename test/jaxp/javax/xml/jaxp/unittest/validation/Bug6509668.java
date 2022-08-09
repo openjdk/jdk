@@ -49,7 +49,7 @@ import org.xml.sax.helpers.DefaultHandler;
  * @test
  * @bug 6509668
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true validation.Bug6509668
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow validation.Bug6509668
  * @run testng/othervm validation.Bug6509668
  * @summary Test TypeInfoProvider.getElementTypeInfo() for union type when startElement and endElement.
  */

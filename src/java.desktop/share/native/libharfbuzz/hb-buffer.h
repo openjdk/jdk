@@ -27,7 +27,7 @@
  * Google Author(s): Behdad Esfahbod
  */
 
-#ifndef HB_H_IN
+#if !defined(HB_H_IN) && !defined(HB_NO_SINGLE_HEADER_ERROR)
 #error "Include <hb.h> instead."
 #endif
 
@@ -59,8 +59,7 @@ HB_BEGIN_DECLS
  * The #hb_glyph_info_t is the structure that holds information about the
  * glyphs and their relation to input text.
  */
-typedef struct hb_glyph_info_t
-{
+typedef struct hb_glyph_info_t {
   hb_codepoint_t codepoint;
   /*< private >*/
   hb_mask_t      mask;
@@ -77,26 +76,83 @@ typedef struct hb_glyph_info_t
  * @HB_GLYPH_FLAG_UNSAFE_TO_BREAK: Indicates that if input text is broken at the
  *                                 beginning of the cluster this glyph is part of,
  *                                 then both sides need to be re-shaped, as the
- *                                 result might be different.  On the flip side,
- *                                 it means that when this flag is not present,
- *                                 then it's safe to break the glyph-run at the
- *                                 beginning of this cluster, and the two sides
- *                                 represent the exact same result one would get
- *                                 if breaking input text at the beginning of
- *                                 this cluster and shaping the two sides
- *                                 separately.  This can be used to optimize
- *                                 paragraph layout, by avoiding re-shaping
- *                                 of each line after line-breaking, or limiting
- *                                 the reshaping to a small piece around the
- *                                 breaking point only.
+ *                                 result might be different.
+ *                                 On the flip side, it means that when this
+ *                                 flag is not present, then it is safe to break
+ *                                 the glyph-run at the beginning of this
+ *                                 cluster, and the two sides will represent the
+ *                                 exact same result one would get if breaking
+ *                                 input text at the beginning of this cluster
+ *                                 and shaping the two sides separately.
+ *                                 This can be used to optimize paragraph
+ *                                 layout, by avoiding re-shaping of each line
+ *                                 after line-breaking.
+ * @HB_GLYPH_FLAG_UNSAFE_TO_CONCAT: Indicates that if input text is changed on one
+ *                                 side of the beginning of the cluster this glyph
+ *                                 is part of, then the shaping results for the
+ *                                 other side might change.
+ *                                 Note that the absence of this flag will NOT by
+ *                                 itself mean that it IS safe to concat text.
+ *                                 Only two pieces of text both of which clear of
+ *                                 this flag can be concatenated safely.
+ *                                 This can be used to optimize paragraph
+ *                                 layout, by avoiding re-shaping of each line
+ *                                 after line-breaking, by limiting the
+ *                                 reshaping to a small piece around the
+ *                                 breaking positin only, even if the breaking
+ *                                 position carries the
+ *                                 #HB_GLYPH_FLAG_UNSAFE_TO_BREAK or when
+ *                                 hyphenation or other text transformation
+ *                                 happens at line-break position, in the following
+ *                                 way:
+ *                                 1. Iterate back from the line-break position
+ *                                 until the first cluster start position that is
+ *                                 NOT unsafe-to-concat, 2. shape the segment from
+ *                                 there till the end of line, 3. check whether the
+ *                                 resulting glyph-run also is clear of the
+ *                                 unsafe-to-concat at its start-of-text position;
+ *                                 if it is, just splice it into place and the line
+ *                                 is shaped; If not, move on to a position further
+ *                                 back that is clear of unsafe-to-concat and retry
+ *                                 from there, and repeat.
+ *                                 At the start of next line a similar algorithm can
+ *                                 be implemented. That is: 1. Iterate forward from
+ *                                 the line-break position until the first cluster
+ *                                 start position that is NOT unsafe-to-concat, 2.
+ *                                 shape the segment from beginning of the line to
+ *                                 that position, 3. check whether the resulting
+ *                                 glyph-run also is clear of the unsafe-to-concat
+ *                                 at its end-of-text position; if it is, just splice
+ *                                 it into place and the beginning is shaped; If not,
+ *                                 move on to a position further forward that is clear
+ *                                 of unsafe-to-concat and retry up to there, and repeat.
+ *                                 A slight complication will arise in the
+ *                                 implementation of the algorithm above,
+ *                                 because while our buffer API has a way to
+ *                                 return flags for position corresponding to
+ *                                 start-of-text, there is currently no position
+ *                                 corresponding to end-of-text.  This limitation
+ *                                 can be alleviated by shaping more text than needed
+ *                                 and looking for unsafe-to-concat flag within text
+ *                                 clusters.
+ *                                 The #HB_GLYPH_FLAG_UNSAFE_TO_BREAK flag will
+ *                                 always imply this flag.
+ *                                 To use this flag, you must enable the buffer flag
+ *                                 @HB_BUFFER_FLAG_PRODUCE_UNSAFE_TO_CONCAT during
+ *                                 shaping, otherwise the buffer flag will not be
+ *                                 reliably produced.
+ *                                 Since: 4.0.0
  * @HB_GLYPH_FLAG_DEFINED: All the currently defined flags.
+ *
+ * Flags for #hb_glyph_info_t.
  *
  * Since: 1.5.0
  */
 typedef enum { /*< flags >*/
   HB_GLYPH_FLAG_UNSAFE_TO_BREAK         = 0x00000001,
+  HB_GLYPH_FLAG_UNSAFE_TO_CONCAT        = 0x00000002,
 
-  HB_GLYPH_FLAG_DEFINED                 = 0x00000001 /* OR of all defined flags */
+  HB_GLYPH_FLAG_DEFINED                 = 0x00000003 /* OR of all defined flags */
 } hb_glyph_flags_t;
 
 HB_EXTERN hb_glyph_flags_t
@@ -151,6 +207,11 @@ typedef struct hb_segment_properties_t {
   void           *reserved2;
 } hb_segment_properties_t;
 
+/**
+ * HB_SEGMENT_PROPERTIES_DEFAULT:
+ *
+ * The default #hb_segment_properties_t of of freshly created #hb_buffer_t.
+ */
 #define HB_SEGMENT_PROPERTIES_DEFAULT {HB_DIRECTION_INVALID, \
                                        HB_SCRIPT_INVALID, \
                                        HB_LANGUAGE_INVALID, \
@@ -164,6 +225,9 @@ hb_segment_properties_equal (const hb_segment_properties_t *a,
 HB_EXTERN unsigned int
 hb_segment_properties_hash (const hb_segment_properties_t *p);
 
+HB_EXTERN void
+hb_segment_properties_overlay (hb_segment_properties_t *p,
+                               const hb_segment_properties_t *src);
 
 
 /**
@@ -177,6 +241,13 @@ typedef struct hb_buffer_t hb_buffer_t;
 
 HB_EXTERN hb_buffer_t *
 hb_buffer_create (void);
+
+HB_EXTERN hb_buffer_t *
+hb_buffer_create_similar (const hb_buffer_t *src);
+
+HB_EXTERN void
+hb_buffer_reset (hb_buffer_t *buffer);
+
 
 HB_EXTERN hb_buffer_t *
 hb_buffer_get_empty (void);
@@ -204,6 +275,8 @@ hb_buffer_get_user_data (hb_buffer_t        *buffer,
  * @HB_BUFFER_CONTENT_TYPE_INVALID: Initial value for new buffer.
  * @HB_BUFFER_CONTENT_TYPE_UNICODE: The buffer contains input characters (before shaping).
  * @HB_BUFFER_CONTENT_TYPE_GLYPHS: The buffer contains output glyphs (after shaping).
+ *
+ * The type of #hb_buffer_t contents.
  */
 typedef enum {
   HB_BUFFER_CONTENT_TYPE_INVALID = 0,
@@ -216,7 +289,7 @@ hb_buffer_set_content_type (hb_buffer_t              *buffer,
                             hb_buffer_content_type_t  content_type);
 
 HB_EXTERN hb_buffer_content_type_t
-hb_buffer_get_content_type (hb_buffer_t *buffer);
+hb_buffer_get_content_type (const hb_buffer_t *buffer);
 
 
 HB_EXTERN void
@@ -224,21 +297,21 @@ hb_buffer_set_unicode_funcs (hb_buffer_t        *buffer,
                              hb_unicode_funcs_t *unicode_funcs);
 
 HB_EXTERN hb_unicode_funcs_t *
-hb_buffer_get_unicode_funcs (hb_buffer_t        *buffer);
+hb_buffer_get_unicode_funcs (const hb_buffer_t  *buffer);
 
 HB_EXTERN void
 hb_buffer_set_direction (hb_buffer_t    *buffer,
                          hb_direction_t  direction);
 
 HB_EXTERN hb_direction_t
-hb_buffer_get_direction (hb_buffer_t *buffer);
+hb_buffer_get_direction (const hb_buffer_t *buffer);
 
 HB_EXTERN void
 hb_buffer_set_script (hb_buffer_t *buffer,
                       hb_script_t  script);
 
 HB_EXTERN hb_script_t
-hb_buffer_get_script (hb_buffer_t *buffer);
+hb_buffer_get_script (const hb_buffer_t *buffer);
 
 HB_EXTERN void
 hb_buffer_set_language (hb_buffer_t   *buffer,
@@ -246,14 +319,14 @@ hb_buffer_set_language (hb_buffer_t   *buffer,
 
 
 HB_EXTERN hb_language_t
-hb_buffer_get_language (hb_buffer_t *buffer);
+hb_buffer_get_language (const hb_buffer_t *buffer);
 
 HB_EXTERN void
 hb_buffer_set_segment_properties (hb_buffer_t *buffer,
                                   const hb_segment_properties_t *props);
 
 HB_EXTERN void
-hb_buffer_get_segment_properties (hb_buffer_t *buffer,
+hb_buffer_get_segment_properties (const hb_buffer_t *buffer,
                                   hb_segment_properties_t *props);
 
 HB_EXTERN void
@@ -287,7 +360,22 @@ hb_buffer_guess_segment_properties (hb_buffer_t *buffer);
  * @HB_BUFFER_FLAG_DO_NOT_INSERT_DOTTED_CIRCLE:
  *                      flag indicating that a dotted circle should
  *                      not be inserted in the rendering of incorrect
- *                      character sequences (such at <0905 093E>). Since: 2.4
+ *                      character sequences (such at <0905 093E>). Since: 2.4.0
+ * @HB_BUFFER_FLAG_VERIFY:
+ *                      flag indicating that the hb_shape() call and its variants
+ *                      should perform various verification processes on the results
+ *                      of the shaping operation on the buffer.  If the verification
+ *                      fails, then either a buffer message is sent, if a message
+ *                      handler is installed on the buffer, or a message is written
+ *                      to standard error.  In either case, the shaping result might
+ *                      be modified to show the failed output. Since: 3.4.0
+ * @HB_BUFFER_FLAG_PRODUCE_UNSAFE_TO_CONCAT:
+ *                      flag indicating that the @HB_GLYPH_FLAG_UNSAFE_TO_CONCAT
+ *                      glyph-flag should be produced by the shaper. By default
+ *                      it will not be produced since it incurs a cost. Since: 4.0.0
+ * @HB_BUFFER_FLAG_DEFINED: All currently defined flags: Since: 4.4.0
+ *
+ * Flags for #hb_buffer_t.
  *
  * Since: 0.9.20
  */
@@ -297,7 +385,11 @@ typedef enum { /*< flags >*/
   HB_BUFFER_FLAG_EOT                            = 0x00000002u, /* End-of-text */
   HB_BUFFER_FLAG_PRESERVE_DEFAULT_IGNORABLES    = 0x00000004u,
   HB_BUFFER_FLAG_REMOVE_DEFAULT_IGNORABLES      = 0x00000008u,
-  HB_BUFFER_FLAG_DO_NOT_INSERT_DOTTED_CIRCLE    = 0x00000010u
+  HB_BUFFER_FLAG_DO_NOT_INSERT_DOTTED_CIRCLE    = 0x00000010u,
+  HB_BUFFER_FLAG_VERIFY                         = 0x00000020u,
+  HB_BUFFER_FLAG_PRODUCE_UNSAFE_TO_CONCAT       = 0x00000040u,
+
+  HB_BUFFER_FLAG_DEFINED                        = 0x0000007Fu
 } hb_buffer_flags_t;
 
 HB_EXTERN void
@@ -305,7 +397,7 @@ hb_buffer_set_flags (hb_buffer_t       *buffer,
                      hb_buffer_flags_t  flags);
 
 HB_EXTERN hb_buffer_flags_t
-hb_buffer_get_flags (hb_buffer_t *buffer);
+hb_buffer_get_flags (const hb_buffer_t *buffer);
 
 /**
  * hb_buffer_cluster_level_t:
@@ -315,6 +407,23 @@ hb_buffer_get_flags (hb_buffer_t *buffer);
  * @HB_BUFFER_CLUSTER_LEVEL_CHARACTERS: Don't group cluster values.
  * @HB_BUFFER_CLUSTER_LEVEL_DEFAULT: Default cluster level,
  *   equal to @HB_BUFFER_CLUSTER_LEVEL_MONOTONE_GRAPHEMES.
+ *
+ * Data type for holding HarfBuzz's clustering behavior options. The cluster level
+ * dictates one aspect of how HarfBuzz will treat non-base characters
+ * during shaping.
+ *
+ * In @HB_BUFFER_CLUSTER_LEVEL_MONOTONE_GRAPHEMES, non-base
+ * characters are merged into the cluster of the base character that precedes them.
+ *
+ * In @HB_BUFFER_CLUSTER_LEVEL_MONOTONE_CHARACTERS, non-base characters are initially
+ * assigned their own cluster values, which are not merged into preceding base
+ * clusters. This allows HarfBuzz to perform additional operations like reorder
+ * sequences of adjacent marks.
+ *
+ * @HB_BUFFER_CLUSTER_LEVEL_MONOTONE_GRAPHEMES is the default, because it maintains
+ * backward compatibility with older versions of HarfBuzz. New client programs that
+ * do not need to maintain such backward compatibility are recommended to use
+ * @HB_BUFFER_CLUSTER_LEVEL_MONOTONE_CHARACTERS instead of the default.
  *
  * Since: 0.9.42
  */
@@ -330,7 +439,7 @@ hb_buffer_set_cluster_level (hb_buffer_t               *buffer,
                              hb_buffer_cluster_level_t  cluster_level);
 
 HB_EXTERN hb_buffer_cluster_level_t
-hb_buffer_get_cluster_level (hb_buffer_t *buffer);
+hb_buffer_get_cluster_level (const hb_buffer_t *buffer);
 
 /**
  * HB_BUFFER_REPLACEMENT_CODEPOINT_DEFAULT:
@@ -347,18 +456,26 @@ hb_buffer_set_replacement_codepoint (hb_buffer_t    *buffer,
                                      hb_codepoint_t  replacement);
 
 HB_EXTERN hb_codepoint_t
-hb_buffer_get_replacement_codepoint (hb_buffer_t    *buffer);
+hb_buffer_get_replacement_codepoint (const hb_buffer_t *buffer);
 
 HB_EXTERN void
 hb_buffer_set_invisible_glyph (hb_buffer_t    *buffer,
                                hb_codepoint_t  invisible);
 
 HB_EXTERN hb_codepoint_t
-hb_buffer_get_invisible_glyph (hb_buffer_t    *buffer);
-
+hb_buffer_get_invisible_glyph (const hb_buffer_t *buffer);
 
 HB_EXTERN void
-hb_buffer_reset (hb_buffer_t *buffer);
+hb_buffer_set_not_found_glyph (hb_buffer_t    *buffer,
+                               hb_codepoint_t  not_found);
+
+HB_EXTERN hb_codepoint_t
+hb_buffer_get_not_found_glyph (const hb_buffer_t *buffer);
+
+
+/*
+ * Content API.
+ */
 
 HB_EXTERN void
 hb_buffer_clear_contents (hb_buffer_t *buffer);
@@ -426,7 +543,7 @@ hb_buffer_add_codepoints (hb_buffer_t          *buffer,
 
 HB_EXTERN void
 hb_buffer_append (hb_buffer_t *buffer,
-                  hb_buffer_t *source,
+                  const hb_buffer_t *source,
                   unsigned int start,
                   unsigned int end);
 
@@ -435,7 +552,7 @@ hb_buffer_set_length (hb_buffer_t  *buffer,
                       unsigned int  length);
 
 HB_EXTERN unsigned int
-hb_buffer_get_length (hb_buffer_t *buffer);
+hb_buffer_get_length (const hb_buffer_t *buffer);
 
 /* Getting glyphs out of the buffer */
 
@@ -446,6 +563,9 @@ hb_buffer_get_glyph_infos (hb_buffer_t  *buffer,
 HB_EXTERN hb_glyph_position_t *
 hb_buffer_get_glyph_positions (hb_buffer_t  *buffer,
                                unsigned int *length);
+
+HB_EXTERN hb_bool_t
+hb_buffer_has_positions (hb_buffer_t  *buffer);
 
 
 HB_EXTERN void
@@ -466,6 +586,7 @@ hb_buffer_normalize_glyphs (hb_buffer_t *buffer);
  * @HB_BUFFER_SERIALIZE_FLAG_GLYPH_FLAGS: serialize glyph flags. Since: 1.5.0
  * @HB_BUFFER_SERIALIZE_FLAG_NO_ADVANCES: do not serialize glyph advances,
  *  glyph offsets will reflect absolute glyph positions. Since: 1.8.0
+ * @HB_BUFFER_SERIALIZE_FLAG_DEFINED: All currently defined flags. Since: 4.4.0
  *
  * Flags that control what glyph information are serialized in hb_buffer_serialize_glyphs().
  *
@@ -478,7 +599,9 @@ typedef enum { /*< flags >*/
   HB_BUFFER_SERIALIZE_FLAG_NO_GLYPH_NAMES       = 0x00000004u,
   HB_BUFFER_SERIALIZE_FLAG_GLYPH_EXTENTS        = 0x00000008u,
   HB_BUFFER_SERIALIZE_FLAG_GLYPH_FLAGS          = 0x00000010u,
-  HB_BUFFER_SERIALIZE_FLAG_NO_ADVANCES          = 0x00000020u
+  HB_BUFFER_SERIALIZE_FLAG_NO_ADVANCES          = 0x00000020u,
+
+  HB_BUFFER_SERIALIZE_FLAG_DEFINED              = 0x0000003Fu
 } hb_buffer_serialize_flags_t;
 
 /**
@@ -518,6 +641,27 @@ hb_buffer_serialize_glyphs (hb_buffer_t *buffer,
                             hb_buffer_serialize_format_t format,
                             hb_buffer_serialize_flags_t flags);
 
+HB_EXTERN unsigned int
+hb_buffer_serialize_unicode (hb_buffer_t *buffer,
+                             unsigned int start,
+                             unsigned int end,
+                             char *buf,
+                             unsigned int buf_size,
+                             unsigned int *buf_consumed,
+                             hb_buffer_serialize_format_t format,
+                             hb_buffer_serialize_flags_t flags);
+
+HB_EXTERN unsigned int
+hb_buffer_serialize (hb_buffer_t *buffer,
+                     unsigned int start,
+                     unsigned int end,
+                     char *buf,
+                     unsigned int buf_size,
+                     unsigned int *buf_consumed,
+                     hb_font_t *font,
+                     hb_buffer_serialize_format_t format,
+                     hb_buffer_serialize_flags_t flags);
+
 HB_EXTERN hb_bool_t
 hb_buffer_deserialize_glyphs (hb_buffer_t *buffer,
                               const char *buf,
@@ -526,11 +670,48 @@ hb_buffer_deserialize_glyphs (hb_buffer_t *buffer,
                               hb_font_t *font,
                               hb_buffer_serialize_format_t format);
 
+HB_EXTERN hb_bool_t
+hb_buffer_deserialize_unicode (hb_buffer_t *buffer,
+                               const char *buf,
+                               int buf_len,
+                               const char **end_ptr,
+                               hb_buffer_serialize_format_t format);
+
+
 
 /*
  * Compare buffers
  */
 
+/**
+ * hb_buffer_diff_flags_t:
+ * @HB_BUFFER_DIFF_FLAG_EQUAL: equal buffers.
+ * @HB_BUFFER_DIFF_FLAG_CONTENT_TYPE_MISMATCH: buffers with different
+ *     #hb_buffer_content_type_t.
+ * @HB_BUFFER_DIFF_FLAG_LENGTH_MISMATCH: buffers with differing length.
+ * @HB_BUFFER_DIFF_FLAG_NOTDEF_PRESENT: `.notdef` glyph is present in the
+ *     reference buffer.
+ * @HB_BUFFER_DIFF_FLAG_DOTTED_CIRCLE_PRESENT: dotted circle glyph is present
+ *     in the reference buffer.
+ * @HB_BUFFER_DIFF_FLAG_CODEPOINT_MISMATCH: difference in #hb_glyph_info_t.codepoint
+ * @HB_BUFFER_DIFF_FLAG_CLUSTER_MISMATCH: difference in #hb_glyph_info_t.cluster
+ * @HB_BUFFER_DIFF_FLAG_GLYPH_FLAGS_MISMATCH: difference in #hb_glyph_flags_t.
+ * @HB_BUFFER_DIFF_FLAG_POSITION_MISMATCH: difference in #hb_glyph_position_t.
+ *
+ * Flags from comparing two #hb_buffer_t's.
+ *
+ * Buffer with different #hb_buffer_content_type_t cannot be meaningfully
+ * compared in any further detail.
+ *
+ * For buffers with differing length, the per-glyph comparison is not
+ * attempted, though we do still scan reference buffer for dotted circle and
+ * `.notdef` glyphs.
+ *
+ * If the buffers have the same length, we compare them glyph-by-glyph and
+ * report which aspect(s) of the glyph info/position are different.
+ *
+ * Since: 1.5.0
+ */
 typedef enum { /*< flags >*/
   HB_BUFFER_DIFF_FLAG_EQUAL                     = 0x0000,
 
@@ -570,6 +751,23 @@ hb_buffer_diff (hb_buffer_t *buffer,
  * Debugging.
  */
 
+/**
+ * hb_buffer_message_func_t:
+ * @buffer: An #hb_buffer_t to work upon
+ * @font: The #hb_font_t the @buffer is shaped with
+ * @message: %NULL-terminated message passed to the function
+ * @user_data: User data pointer passed by the caller
+ *
+ * A callback method for #hb_buffer_t. The method gets called with the
+ * #hb_buffer_t it was set on, the #hb_font_t the buffer is shaped with and a
+ * message describing what step of the shaping process will be performed.
+ * Returning %false from this method will skip this shaping step and move to
+ * the next one.
+ *
+ * Return value: %true to perform the shaping step, %false to skip it.
+ *
+ * Since: 1.1.3
+ */
 typedef hb_bool_t       (*hb_buffer_message_func_t)     (hb_buffer_t *buffer,
                                                          hb_font_t   *font,
                                                          const char  *message,

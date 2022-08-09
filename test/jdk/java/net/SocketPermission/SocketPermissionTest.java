@@ -31,7 +31,7 @@
  * @library /test/lib
  * @build jdk.test.lib.NetworkConfiguration
  *        jdk.test.lib.Platform
- * @run testng/othervm SocketPermissionTest
+ * @run testng/othervm -Djava.security.manager=allow SocketPermissionTest
  */
 
 import java.io.IOException;

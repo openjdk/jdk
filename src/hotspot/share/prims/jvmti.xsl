@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <!--
- Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -1104,7 +1104,7 @@ typedef struct {
                     The following capability
                   </xsl:when>
                   <xsl:otherwise>
-                    One of the following capabilities
+                    The following capabilities
                   </xsl:otherwise>
                 </xsl:choose>
                 (as returned by <a href="#GetCapabilities"><code>GetCapabilities</code></a>)
@@ -1495,7 +1495,7 @@ typedef struct {
 <xsl:template match="jthread" mode="errordesc2">
   <xsl:param name="id"/>
   <xsl:apply-templates select="." mode="paramlink"/>
-  <xsl:text> is not live (has not been started or is now dead).</xsl:text>
+  <xsl:text> is not alive (has not been started or has terminated).</xsl:text>
 </xsl:template>
 
 <xsl:template match="jthreadGroup" mode="errorid">

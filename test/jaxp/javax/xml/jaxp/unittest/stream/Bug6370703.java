@@ -34,7 +34,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 6370703
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true stream.Bug6370703
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow stream.Bug6370703
  * @run testng/othervm stream.Bug6370703
  * @summary Test StAX parser can parse attribute default value when START_ELEMENT.
  */

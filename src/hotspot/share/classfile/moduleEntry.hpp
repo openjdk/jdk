@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,8 @@
 #define SHARE_CLASSFILE_MODULEENTRY_HPP
 
 #include "jni.h"
-#include "classfile/classLoaderData.hpp"
 #include "oops/oopHandle.hpp"
 #include "oops/symbol.hpp"
-#include "runtime/jniHandles.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/hashtable.hpp"
@@ -47,6 +45,7 @@
 #define JAVA_BASE_NAME_LEN 9
 
 template <class T> class Array;
+class ClassLoaderData;
 class MetaspaceClosure;
 class ModuleClosure;
 
@@ -56,7 +55,7 @@ class ModuleClosure;
 //   - pointer to the java.lang.Module for this module.
 //   - pointer to the java.security.ProtectionDomain shared by classes defined to this module.
 //   - ClassLoaderData*, class loader of this module.
-//   - a growable array containg other module entries that this module can read.
+//   - a growable array containing other module entries that this module can read.
 //   - a flag indicating if this module can read all unnamed modules.
 //
 // The Mutex Module_lock is shared between ModuleEntry and PackageEntry, to lock either
@@ -113,11 +112,7 @@ public:
   void             set_shared_protection_domain(ClassLoaderData *loader_data, Handle pd);
 
   ClassLoaderData* loader_data() const                 { return _loader_data; }
-
-  void set_loader_data(ClassLoaderData* cld) {
-    assert(!cld->has_class_mirror_holder(), "Unexpected has_class_mirror_holder cld");
-    _loader_data = cld;
-  }
+  void set_loader_data(ClassLoaderData* cld);
 
   Symbol*          version() const                     { return _version; }
   void             set_version(Symbol* version);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
  * @test
  * @bug 4873188
  * @summary Support TLS 1.1
+ * @library /test/lib
  * @modules java.security.jgss
  *          java.security.jgss/sun.security.jgss.krb5
  *          java.security.jgss/sun.security.krb5:+open
@@ -49,6 +50,8 @@ import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
+
+import jdk.test.lib.security.SecurityUtils;
 
 public class GenericBlockCipher {
 
@@ -171,6 +174,9 @@ public class GenericBlockCipher {
     volatile Exception clientException = null;
 
     public static void main(String[] args) throws Exception {
+        // Re-enable TLSv1.1 since test depends on it.
+        SecurityUtils.removeFromDisabledTlsAlgs("TLSv1.1");
+
         String keyFilename =
             System.getProperty("test.src", ".") + "/" + pathToStores +
                 "/" + keyStoreFile;

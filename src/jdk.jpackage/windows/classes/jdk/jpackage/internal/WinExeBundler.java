@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ public class WinExeBundler extends AbstractBundler {
                     },
                     (s, p) -> null);
 
-    private final static String EXE_WRAPPER_NAME = "msiwrapper.exe";
+    private static final String EXE_WRAPPER_NAME = "msiwrapper.exe";
 
     @Override
     public String getName() {
@@ -140,6 +140,8 @@ public class WinExeBundler extends AbstractBundler {
         Files.deleteIfExists(dstExePath);
 
         Files.copy(exePath, dstExePath);
+
+        dstExePath.toFile().setWritable(true, true);
 
         Log.verbose(MessageFormat.format(
                 I18N.getString("message.output-location"),

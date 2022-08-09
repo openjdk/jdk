@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,35 +44,33 @@ class PlatformPCSC {
 
     static final Debug debug = Debug.getInstance("pcsc");
 
-    static final Throwable initException;
+    private static final String PROP_NAME = "sun.security.smartcardio.library";
 
-    private final static String PROP_NAME = "sun.security.smartcardio.library";
-
-    private final static String LIB1 = "/usr/$LIBISA/libpcsclite.so";
-    private final static String LIB2 = "/usr/local/$LIBISA/libpcsclite.so";
-    private final static String PCSC_FRAMEWORK = "/System/Library/Frameworks/PCSC.framework/Versions/Current/PCSC";
+    private static final String LIB1 = "/usr/$LIBISA/libpcsclite.so";
+    private static final String LIB2 = "/usr/local/$LIBISA/libpcsclite.so";
+    private static final String PCSC_FRAMEWORK = "/System/Library/Frameworks/PCSC.framework/Versions/Current/PCSC";
 
     PlatformPCSC() {
         // empty
     }
 
-    static {
-        initException = AccessController.doPrivileged(new PrivilegedAction<Throwable>() {
-            public Throwable run() {
-                try {
-                    System.loadLibrary("j2pcsc");
-                    String library = getLibraryName();
-                    if (debug != null) {
-                        debug.println("Using PC/SC library: " + library);
-                    }
-                    initialize(library);
-                    return null;
-                } catch (Throwable e) {
-                    return e;
+    @SuppressWarnings("removal")
+    static final Throwable initException
+            = AccessController.doPrivileged(new PrivilegedAction<Throwable>() {
+        public Throwable run() {
+            try {
+                System.loadLibrary("j2pcsc");
+                String library = getLibraryName();
+                if (debug != null) {
+                    debug.println("Using PC/SC library: " + library);
                 }
+                initialize(library);
+                return null;
+            } catch (Throwable e) {
+                return e;
             }
-        });
-    }
+        }
+    });
 
     // expand $LIBISA to the system specific directory name for libraries
     private static String expand(String lib) {
@@ -110,8 +108,26 @@ class PlatformPCSC {
             // if LIB2 exists, use that
             return lib;
         }
+
+        // As of macos 11, framework libraries have been removed from the file
+        // system, but in such a way that they can still be dlopen()ed, even
+        // though they can no longer be open()ed.
+        //
+        // https://developer.apple.com/documentation/macos-release-notes/macos-big-sur-11_0_1-release-notes
+        //
+        // """New in macOS Big Sur 11.0.1, the system ships with a built-in
+        // dynamic linker cache of all system-provided libraries. As part of
+        // this change, copies of dynamic libraries are no longer present on
+        // the filesystem. Code that attempts to check for dynamic library
+        // presence by looking for a file at a path or enumerating a directory
+        // will fail. Instead, check for library presence by attempting to
+        // dlopen() the path, which will correctly check for the library in the
+        // cache."""
+        //
+        // The directory structure remains otherwise intact, so check for
+        // existence of the containing directory instead of the file.
         lib = PCSC_FRAMEWORK;
-        if (new File(lib).isFile()) {
+        if (new File(lib).getParentFile().isDirectory()) {
             // if PCSC.framework exists, use that
             return lib;
         }
@@ -122,16 +138,16 @@ class PlatformPCSC {
 
     // PCSC constants defined differently under Windows and MUSCLE
     // MUSCLE version
-    final static int SCARD_PROTOCOL_T0     =  0x0001;
-    final static int SCARD_PROTOCOL_T1     =  0x0002;
-    final static int SCARD_PROTOCOL_RAW    =  0x0004;
+    static final int SCARD_PROTOCOL_T0     =  0x0001;
+    static final int SCARD_PROTOCOL_T1     =  0x0002;
+    static final int SCARD_PROTOCOL_RAW    =  0x0004;
 
-    final static int SCARD_UNKNOWN         =  0x0001;
-    final static int SCARD_ABSENT          =  0x0002;
-    final static int SCARD_PRESENT         =  0x0004;
-    final static int SCARD_SWALLOWED       =  0x0008;
-    final static int SCARD_POWERED         =  0x0010;
-    final static int SCARD_NEGOTIABLE      =  0x0020;
-    final static int SCARD_SPECIFIC        =  0x0040;
+    static final int SCARD_UNKNOWN         =  0x0001;
+    static final int SCARD_ABSENT          =  0x0002;
+    static final int SCARD_PRESENT         =  0x0004;
+    static final int SCARD_SWALLOWED       =  0x0008;
+    static final int SCARD_POWERED         =  0x0010;
+    static final int SCARD_NEGOTIABLE      =  0x0020;
+    static final int SCARD_SPECIFIC        =  0x0040;
 
 }

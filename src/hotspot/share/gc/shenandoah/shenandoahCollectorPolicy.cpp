@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2013, 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
+#include "gc/shenandoah/shenandoahGC.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "runtime/os.hpp"
 
@@ -41,7 +42,7 @@ ShenandoahCollectorPolicy::ShenandoahCollectorPolicy() :
   _implicit_full(0),
   _cycle_counter(0) {
 
-  Copy::zero_to_bytes(_degen_points, sizeof(size_t) * ShenandoahHeap::_DEGENERATED_LIMIT);
+  Copy::zero_to_bytes(_degen_points, sizeof(size_t) * ShenandoahGC::_DEGENERATED_LIMIT);
 
   _tracer = new (ResourceObj::C_HEAP, mtGC) ShenandoahTracer();
 
@@ -67,8 +68,8 @@ void ShenandoahCollectorPolicy::record_alloc_failure_to_full() {
   _alloc_failure_full++;
 }
 
-void ShenandoahCollectorPolicy::record_alloc_failure_to_degenerated(ShenandoahHeap::ShenandoahDegenPoint point) {
-  assert(point < ShenandoahHeap::_DEGENERATED_LIMIT, "sanity");
+void ShenandoahCollectorPolicy::record_alloc_failure_to_degenerated(ShenandoahGC::ShenandoahDegenPoint point) {
+  assert(point < ShenandoahGC::_DEGENERATED_LIMIT, "sanity");
   _alloc_failure_degenerated++;
   _degen_points[point]++;
 }
@@ -119,9 +120,9 @@ void ShenandoahCollectorPolicy::print_gc_stats(outputStream* out) const {
 
   out->print_cr(SIZE_FORMAT_W(5) " Degenerated GCs",                   _success_degenerated_gcs);
   out->print_cr("  " SIZE_FORMAT_W(5) " caused by allocation failure", _alloc_failure_degenerated);
-  for (int c = 0; c < ShenandoahHeap::_DEGENERATED_LIMIT; c++) {
+  for (int c = 0; c < ShenandoahGC::_DEGENERATED_LIMIT; c++) {
     if (_degen_points[c] > 0) {
-      const char* desc = ShenandoahHeap::degen_point_to_string((ShenandoahHeap::ShenandoahDegenPoint)c);
+      const char* desc = ShenandoahGC::degen_point_to_string((ShenandoahGC::ShenandoahDegenPoint)c);
       out->print_cr("    " SIZE_FORMAT_W(5) " happened at %s",         _degen_points[c], desc);
     }
   }

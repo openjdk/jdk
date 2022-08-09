@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7021614
+ * @bug 7021614 8278373
  * @summary extend com.sun.source API to support parsing javadoc comments
  * @summary check references in at-see and {at-link} tags
  * @modules jdk.compiler
@@ -39,19 +39,23 @@ import com.sun.source.doctree.SeeTree;
 import com.sun.source.doctree.TextTree;
 import com.sun.source.util.DocTreePath;
 import com.sun.source.util.DocTreePathScanner;
-import com.sun.source.util.DocTreeScanner;
 import com.sun.source.util.DocTrees;
 import com.sun.source.util.TreePath;
 
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.QualifiedNameable;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.TypeMirror;
 import javax.tools.Diagnostic.Kind;
 
 /**
@@ -174,14 +178,47 @@ public class ReferenceTest extends AbstractProcessor {
             if (label.size() > 0 && label.get(0) instanceof TextTree)
                 expect = ((TextTree) label.get(0)).getBody();
 
-            if (!expect.equalsIgnoreCase(found == null ? "bad" : found.getKind().name())) {
-                error(tree, "Unexpected value found: " + found +", expected: " + expect);
+            if (expect.startsWith("signature:")) {
+                expect = expect.substring("signature:".length());
+
+                String signature = found.getKind().name() + ":" + elementSignature(found);
+
+                if (!expect.equalsIgnoreCase(signature)) {
+                    error(tree, "Unexpected value found: " + signature +", expected: " + expect);
+                }
+            } else {
+                if (!expect.equalsIgnoreCase(found == null ? "bad" : found.getKind().name())) {
+                    error(tree, "Unexpected value found: " + found +", expected: " + expect);
+                }
             }
         }
 
         void error(DocTree tree, String msg) {
             trees.printMessage(Kind.ERROR, msg, tree, dc, path.getCompilationUnit());
         }
+    }
+
+    String elementSignature(Element el) {
+        return switch (el.getKind()) {
+            case METHOD -> elementSignature(el.getEnclosingElement()) + "." + el.getSimpleName() + "(" + executableParamNames((ExecutableElement) el) + ")";
+            case CLASS, INTERFACE -> ((QualifiedNameable) el).getQualifiedName().toString();
+            default -> throw new AssertionError("Unhandled Element kind: " + el.getKind());
+        };
+    }
+
+    String executableParamNames(ExecutableElement ee) {
+        return ee.getParameters()
+                 .stream()
+                 .map(p -> type2Name(p.asType()))
+                 .collect(Collectors.joining(", "));
+    }
+
+    String type2Name(TypeMirror type) {
+        return switch (type.getKind()) {
+            case DECLARED -> elementSignature(((DeclaredType) type).asElement());
+            case INT, LONG -> type.toString();
+            default -> throw new AssertionError("Unhandled type kind: " + type.getKind());
+        };
     }
 }
 
@@ -199,6 +236,17 @@ public class ReferenceTest extends AbstractProcessor {
  * @see #varargs(int... args)   Method
  * @see #varargs(int[])         Method
  * @see #varargs(int[] args)    Method
+ *
+ * @see #methodSearch(String)   signature:METHOD:ReferenceTestExtras.methodSearch(java.lang.String)
+ * @see #methodSearch(StringBuilder)   signature:METHOD:ReferenceTestExtras.methodSearch(java.lang.CharSequence)
+ * @see #methodSearchPrimitive1(int, int)   signature:METHOD:ReferenceTestExtras.methodSearchPrimitive1(int, int)
+ * @see #methodSearchPrimitive1(long, int)   signature:METHOD:ReferenceTestExtras.methodSearchPrimitive1(long, int)
+ * @see #methodSearchPrimitive1(int, long)   signature:METHOD:ReferenceTestExtras.methodSearchPrimitive1(int, long)
+ * @see #methodSearchPrimitive1(long, long)   signature:METHOD:ReferenceTestExtras.methodSearchPrimitive1(long, long)
+ * @see #methodSearchPrimitive2(int, int)   signature:METHOD:ReferenceTestExtras.methodSearchPrimitive2(int, int)
+ * @see #methodSearchPrimitive2(long, int)   signature:METHOD:ReferenceTestExtras.methodSearchPrimitive2(long, int)
+ * @see #methodSearchPrimitive2(int, long)   signature:METHOD:ReferenceTestExtras.methodSearchPrimitive2(int, long)
+ * @see #methodSearchPrimitive2(long, long)   signature:METHOD:ReferenceTestExtras.methodSearchPrimitive2(long, long)
  */
 class ReferenceTestExtras {
     int ReferenceTestExtras;            // field
@@ -214,6 +262,20 @@ class ReferenceTestExtras {
     void m(int i, int j) { }
 
     void varargs(int... args) { }
+
+    void methodSearch(Object o) {}
+    void methodSearch(String s) {}
+    void methodSearch(CharSequence cs) {}
+
+    void methodSearchPrimitive1(int i, int j) {}
+    void methodSearchPrimitive1(long i, int j) {}
+    void methodSearchPrimitive1(int i, long j) {}
+    void methodSearchPrimitive1(long i, long j) {}
+
+    void methodSearchPrimitive2(long i, long j) {}
+    void methodSearchPrimitive2(int i, long j) {}
+    void methodSearchPrimitive2(long i, int j) {}
+    void methodSearchPrimitive2(int i, int j) {}
 }
 
 

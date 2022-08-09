@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,8 +63,7 @@ namespace AccessInternal {
     BARRIER_ATOMIC_XCHG,
     BARRIER_ATOMIC_XCHG_AT,
     BARRIER_ARRAYCOPY,
-    BARRIER_CLONE,
-    BARRIER_RESOLVE
+    BARRIER_CLONE
   };
 
   template <DecoratorSet decorators, typename T>
@@ -114,7 +113,6 @@ namespace AccessInternal {
                                      arrayOop dst_obj, size_t dst_offset_in_bytes, T* dst_raw,
                                      size_t length);
     typedef void (*clone_func_t)(oop src, oop dst, size_t size);
-    typedef oop (*resolve_func_t)(oop obj);
   };
 
   template <DecoratorSet decorators>
@@ -141,7 +139,6 @@ namespace AccessInternal {
   ACCESS_GENERATE_ACCESS_FUNCTION(BARRIER_ATOMIC_XCHG_AT, atomic_xchg_at_func_t);
   ACCESS_GENERATE_ACCESS_FUNCTION(BARRIER_ARRAYCOPY, arraycopy_func_t);
   ACCESS_GENERATE_ACCESS_FUNCTION(BARRIER_CLONE, clone_func_t);
-  ACCESS_GENERATE_ACCESS_FUNCTION(BARRIER_RESOLVE, resolve_func_t);
 #undef ACCESS_GENERATE_ACCESS_FUNCTION
 
   template <DecoratorSet decorators, typename T, BarrierType barrier_type>
@@ -391,9 +388,12 @@ public:
                             size_t length);
 
   static void clone(oop src, oop dst, size_t size);
-
-  static oop resolve(oop obj) { return obj; }
 };
+
+namespace AccessInternal {
+  DEBUG_ONLY(void check_access_thread_state());
+#define assert_access_thread_state() DEBUG_ONLY(check_access_thread_state())
+}
 
 // Below is the implementation of the first 4 steps of the template pipeline:
 // * Step 1: Set default decorators and decay types. This step gets rid of CV qualifiers
@@ -456,6 +456,7 @@ namespace AccessInternal {
     static void store_init(void* addr, T value);
 
     static inline void store(void* addr, T value) {
+      assert_access_thread_state();
       _store_func(addr, value);
     }
   };
@@ -468,6 +469,7 @@ namespace AccessInternal {
     static void store_at_init(oop base, ptrdiff_t offset, T value);
 
     static inline void store_at(oop base, ptrdiff_t offset, T value) {
+      assert_access_thread_state();
       _store_at_func(base, offset, value);
     }
   };
@@ -480,6 +482,7 @@ namespace AccessInternal {
     static T load_init(void* addr);
 
     static inline T load(void* addr) {
+      assert_access_thread_state();
       return _load_func(addr);
     }
   };
@@ -492,6 +495,7 @@ namespace AccessInternal {
     static T load_at_init(oop base, ptrdiff_t offset);
 
     static inline T load_at(oop base, ptrdiff_t offset) {
+      assert_access_thread_state();
       return _load_at_func(base, offset);
     }
   };
@@ -504,6 +508,7 @@ namespace AccessInternal {
     static T atomic_cmpxchg_init(void* addr, T compare_value, T new_value);
 
     static inline T atomic_cmpxchg(void* addr, T compare_value, T new_value) {
+      assert_access_thread_state();
       return _atomic_cmpxchg_func(addr, compare_value, new_value);
     }
   };
@@ -516,6 +521,7 @@ namespace AccessInternal {
     static T atomic_cmpxchg_at_init(oop base, ptrdiff_t offset, T compare_value, T new_value);
 
     static inline T atomic_cmpxchg_at(oop base, ptrdiff_t offset, T compare_value, T new_value) {
+      assert_access_thread_state();
       return _atomic_cmpxchg_at_func(base, offset, compare_value, new_value);
     }
   };
@@ -528,6 +534,7 @@ namespace AccessInternal {
     static T atomic_xchg_init(void* addr, T new_value);
 
     static inline T atomic_xchg(void* addr, T new_value) {
+      assert_access_thread_state();
       return _atomic_xchg_func(addr, new_value);
     }
   };
@@ -540,6 +547,7 @@ namespace AccessInternal {
     static T atomic_xchg_at_init(oop base, ptrdiff_t offset, T new_value);
 
     static inline T atomic_xchg_at(oop base, ptrdiff_t offset, T new_value) {
+      assert_access_thread_state();
       return _atomic_xchg_at_func(base, offset, new_value);
     }
   };
@@ -556,6 +564,7 @@ namespace AccessInternal {
     static inline bool arraycopy(arrayOop src_obj, size_t src_offset_in_bytes, T* src_raw,
                                  arrayOop dst_obj, size_t dst_offset_in_bytes, T* dst_raw,
                                  size_t length) {
+      assert_access_thread_state();
       return _arraycopy_func(src_obj, src_offset_in_bytes, src_raw,
                              dst_obj, dst_offset_in_bytes, dst_raw,
                              length);
@@ -570,19 +579,8 @@ namespace AccessInternal {
     static void clone_init(oop src, oop dst, size_t size);
 
     static inline void clone(oop src, oop dst, size_t size) {
+      assert_access_thread_state();
       _clone_func(src, dst, size);
-    }
-  };
-
-  template <DecoratorSet decorators, typename T>
-  struct RuntimeDispatch<decorators, T, BARRIER_RESOLVE>: AllStatic {
-    typedef typename AccessFunction<decorators, T, BARRIER_RESOLVE>::type func_t;
-    static func_t _resolve_func;
-
-    static oop resolve_init(oop obj);
-
-    static inline oop resolve(oop obj) {
-      return _resolve_func(obj);
     }
   };
 
@@ -626,10 +624,6 @@ namespace AccessInternal {
   template <DecoratorSet decorators, typename T>
   typename AccessFunction<decorators, T, BARRIER_CLONE>::type
   RuntimeDispatch<decorators, T, BARRIER_CLONE>::_clone_func = &clone_init;
-
-  template <DecoratorSet decorators, typename T>
-  typename AccessFunction<decorators, T, BARRIER_RESOLVE>::type
-  RuntimeDispatch<decorators, T, BARRIER_RESOLVE>::_resolve_func = &resolve_init;
 
   // Step 3: Pre-runtime dispatching.
   // The PreRuntimeDispatch class is responsible for filtering the barrier strength

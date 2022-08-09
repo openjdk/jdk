@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #define SHARE_OOPS_CPCACHE_INLINE_HPP
 
 #include "oops/cpCache.hpp"
+
 #include "oops/oopHandle.inline.hpp"
 #include "runtime/atomic.hpp"
 
@@ -88,7 +89,8 @@ inline ConstantPoolCache::ConstantPoolCache(int length,
                                             const intStack& invokedynamic_inverse_index_map,
                                             const intStack& invokedynamic_references_map) :
                                                   _length(length),
-                                                  _constant_pool(NULL) {
+                                                  _constant_pool(NULL),
+                                                  _gc_epoch(0) {
   CDS_JAVA_HEAP_ONLY(_archived_references_index = -1;)
   initialize(inverse_index_map, invokedynamic_inverse_index_map,
              invokedynamic_references_map);

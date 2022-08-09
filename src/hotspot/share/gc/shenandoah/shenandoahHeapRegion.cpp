@@ -23,13 +23,14 @@
  */
 
 #include "precompiled.hpp"
-#include "memory/allocation.hpp"
+#include "gc/shared/space.inline.hpp"
+#include "gc/shared/tlab_globals.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionSet.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
-#include "gc/shared/space.inline.hpp"
 #include "jfr/jfrEvents.hpp"
+#include "memory/allocation.hpp"
 #include "memory/iterator.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
@@ -40,6 +41,7 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
 #include "runtime/safepoint.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 size_t ShenandoahHeapRegion::RegionCount = 0;
 size_t ShenandoahHeapRegion::RegionSizeBytes = 0;
@@ -390,7 +392,7 @@ void ShenandoahHeapRegion::oop_iterate_objects(OopIterateClosure* blk) {
   HeapWord* t = top();
   // Could call objects iterate, but this is easier.
   while (obj_addr < t) {
-    oop obj = oop(obj_addr);
+    oop obj = cast_to_oop(obj_addr);
     obj_addr += obj->oop_iterate_size(blk);
   }
 }
@@ -400,7 +402,7 @@ void ShenandoahHeapRegion::oop_iterate_humongous(OopIterateClosure* blk) {
   // Find head.
   ShenandoahHeapRegion* r = humongous_start_region();
   assert(r->is_humongous_start(), "need humongous head here");
-  oop obj = oop(r->bottom());
+  oop obj = cast_to_oop(r->bottom());
   obj->oop_iterate(blk, MemRegion(bottom(), top()));
 }
 
@@ -446,9 +448,9 @@ HeapWord* ShenandoahHeapRegion::block_start(const void* p) const {
     HeapWord* cur = last;
     while (cur <= p) {
       last = cur;
-      cur += oop(cur)->size();
+      cur += cast_to_oop(cur)->size();
     }
-    shenandoah_assert_correct(NULL, oop(last));
+    shenandoah_assert_correct(NULL, cast_to_oop(last));
     return last;
   }
 }
@@ -458,14 +460,14 @@ size_t ShenandoahHeapRegion::block_size(const HeapWord* p) const {
          "p (" PTR_FORMAT ") not in space [" PTR_FORMAT ", " PTR_FORMAT ")",
          p2i(p), p2i(bottom()), p2i(end()));
   if (p < top()) {
-    return oop(p)->size();
+    return cast_to_oop(p)->size();
   } else {
     assert(p == top(), "just checking");
     return pointer_delta(end(), (HeapWord*) p);
   }
 }
 
-void ShenandoahHeapRegion::setup_sizes(size_t max_heap_size) {
+size_t ShenandoahHeapRegion::setup_sizes(size_t max_heap_size) {
   // Absolute minimums we should not ever break.
   static const size_t MIN_REGION_SIZE = 256*K;
 
@@ -540,15 +542,30 @@ void ShenandoahHeapRegion::setup_sizes(size_t max_heap_size) {
     region_size = ShenandoahRegionSize;
   }
 
-  // Make sure region size is at least one large page, if enabled.
-  // Otherwise, uncommitting one region may falsely uncommit the adjacent
-  // regions too.
-  // Also see shenandoahArguments.cpp, where it handles UseLargePages.
-  if (UseLargePages && ShenandoahUncommit) {
-    region_size = MAX2(region_size, os::large_page_size());
+  // Make sure region size and heap size are page aligned.
+  // If large pages are used, we ensure that region size is aligned to large page size if
+  // heap size is large enough to accommodate minimal number of regions. Otherwise, we align
+  // region size to regular page size.
+
+  // Figure out page size to use, and aligns up heap to page size
+  int page_size = os::vm_page_size();
+  if (UseLargePages) {
+    size_t large_page_size = os::large_page_size();
+    max_heap_size = align_up(max_heap_size, large_page_size);
+    if ((max_heap_size / align_up(region_size, large_page_size)) >= MIN_NUM_REGIONS) {
+      page_size = (int)large_page_size;
+    } else {
+      // Should have been checked during argument initialization
+      assert(!ShenandoahUncommit, "Uncommit requires region size aligns to large page size");
+    }
+  } else {
+    max_heap_size = align_up(max_heap_size, page_size);
   }
 
-  int region_size_log = log2_long((jlong) region_size);
+  // Align region size to page size
+  region_size = align_up(region_size, page_size);
+
+  int region_size_log = log2i(region_size);
   // Recalculate the region size to make sure it's a power of
   // 2. This means that region_size is the largest power of 2 that's
   // <= what we've calculated so far.
@@ -573,7 +590,7 @@ void ShenandoahHeapRegion::setup_sizes(size_t max_heap_size) {
   RegionSizeBytesMask = RegionSizeBytes - 1;
 
   guarantee(RegionCount == 0, "we should only set it once");
-  RegionCount = max_heap_size / RegionSizeBytes;
+  RegionCount = align_up(max_heap_size, RegionSizeBytes) / RegionSizeBytes;
   guarantee(RegionCount >= MIN_NUM_REGIONS, "Should have at least minimum regions");
 
   guarantee(HumongousThresholdWords == 0, "we should only set it once");
@@ -610,6 +627,8 @@ void ShenandoahHeapRegion::setup_sizes(size_t max_heap_size) {
   guarantee(MaxTLABSizeBytes == 0, "we should only set it once");
   MaxTLABSizeBytes = MaxTLABSizeWords * HeapWordSize;
   assert (MaxTLABSizeBytes > MinTLABSize, "should be larger");
+
+  return max_heap_size;
 }
 
 void ShenandoahHeapRegion::do_commit() {

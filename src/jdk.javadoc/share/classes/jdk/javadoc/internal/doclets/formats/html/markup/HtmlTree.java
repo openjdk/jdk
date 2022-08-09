@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,14 +27,17 @@ package jdk.javadoc.internal.doclets.formats.html.markup;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.BitSet;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Function;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr.Role;
 import jdk.javadoc.internal.doclets.toolkit.Content;
@@ -56,11 +59,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
  * attributes for the element. See:
  * <a href="https://en.wikipedia.org/wiki/HTML_element">HTML element</a>.
  *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
- *
  * @see <a href="https://html.spec.whatwg.org/multipage/syntax.html#normal-elements">WhatWG: Normal Elements</a>
  * @see <a href="https://www.w3.org/TR/html51/syntax.html#writing-html-documents-elements">HTML 5.1: Elements</a>
  */
@@ -80,14 +78,9 @@ public class HtmlTree extends Content {
 
     /**
      * The enclosed content ("inner HTML") for this HTML element.
-     * The items in this list are never null.
+     * The items in this list are never {@code null}.
      */
     private List<Content> content = List.of();
-
-    /**
-     * A sentinel value to explicitly indicate empty content.
-     */
-    public static final Content EMPTY = new StringContent("");
 
     /**
      * Creates an {@code HTMLTree} object representing an HTML element
@@ -119,8 +112,8 @@ public class HtmlTree extends Content {
      * @param id the value for the attribute
      * @return this object
      */
-    public HtmlTree setId(String id) {
-        return put(HtmlAttr.ID, id);
+    public HtmlTree setId(HtmlId id) {
+        return put(HtmlAttr.ID, id.name());
     }
 
     /**
@@ -169,15 +162,36 @@ public class HtmlTree extends Content {
     /**
      * Adds additional content for the HTML element.
      *
+     * @implSpec In order to facilitate creation of succinct output this method
+     * silently drops discardable content as determined by {@link #isDiscardable()}.
+     * Use {@link #addUnchecked(Content)} to add content unconditionally.
+     *
      * @param content the content
+     * @return this HTML tree
      */
     @Override
     public HtmlTree add(Content content) {
-        if (content instanceof ContentBuilder) {
-            ((ContentBuilder) content).contents.forEach(this::add);
+        if (content instanceof ContentBuilder cb) {
+            cb.contents.forEach(this::add);
+        } else if (!content.isDiscardable()) {
+            // quietly avoid adding empty or invalid nodes
+            if (this.content.isEmpty())
+                this.content = new ArrayList<>();
+            this.content.add(content);
         }
-        else if (content == HtmlTree.EMPTY || content.isValid()) {
-            // quietly avoid adding empty or invalid nodes (except EMPTY)
+        return this;
+    }
+
+    /**
+     * Adds content to this HTML tree without checking whether it is discardable.
+     *
+     * @param content the content to add
+     * @return this HTML tree
+     */
+    public HtmlTree addUnchecked(Content content) {
+        if (content instanceof ContentBuilder cb) {
+            cb.contents.forEach(this::addUnchecked);
+        } else {
             if (this.content.isEmpty())
                 this.content = new ArrayList<>();
             this.content.add(content);
@@ -198,14 +212,14 @@ public class HtmlTree extends Content {
     public HtmlTree add(CharSequence stringContent) {
         if (!content.isEmpty()) {
             Content lastContent = content.get(content.size() - 1);
-            if (lastContent instanceof StringContent)
+            if (lastContent instanceof TextBuilder)
                 lastContent.add(stringContent);
             else {
-                add(new StringContent(stringContent));
+                add(new TextBuilder(stringContent));
             }
         }
         else {
-            add(new StringContent(stringContent));
+            add(new TextBuilder(stringContent));
         }
         return this;
     }
@@ -218,6 +232,20 @@ public class HtmlTree extends Content {
      */
     public HtmlTree add(List<? extends Content> list) {
         list.forEach(this::add);
+        return this;
+    }
+
+    /**
+     * Adds each of a collection of items, using a map function to create the content for each item.
+     *
+     * @param items  the items
+     * @param mapper the map function to generate the content for each item
+     *
+     * @return this object
+     */
+    @Override
+    public <T> HtmlTree addAll(Collection<T> items, Function<T, Content> mapper) {
+        items.forEach(item -> add(mapper.apply(item)));
         return this;
     }
 
@@ -300,14 +328,31 @@ public class HtmlTree extends Content {
 
     /**
      * Creates an HTML {@code A} element.
+     * The {@code ref} argument will be URL-encoded for use as the attribute value.
      *
-     * @param ref the value for the {@code href} attribute}
+     * @param ref the value for the {@code href} attribute
      * @param body the content for element
      * @return the element
      */
     public static HtmlTree A(String ref, Content body) {
         return new HtmlTree(TagName.A)
                 .put(HtmlAttr.HREF, encodeURL(ref))
+                .add(body);
+    }
+
+    /**
+     * Creates an HTML {@code A} element.
+     * The {@code ref} argument is assumed to be already suitably encoded,
+     * and will <i>not</i> be additionally URL-encoded, but will be
+     * {@link URI#toASCIIString() converted} to ASCII for use as the attribute value.
+     *
+     * @param ref the value for the {@code href} attribute
+     * @param body the content for element
+     * @return the element
+     */
+    public static HtmlTree A(URI ref, Content body) {
+        return new HtmlTree(TagName.A)
+                .put(HtmlAttr.HREF, ref.toASCIIString())
                 .add(body);
     }
 
@@ -342,6 +387,16 @@ public class HtmlTree extends Content {
     public static HtmlTree DD(Content body) {
         return new HtmlTree(TagName.DD)
                 .add(body);
+    }
+
+    /**
+     * Creates an HTML {@code DETAILS} element.
+     *
+     * @return the element
+     */
+    public static HtmlTree DETAILS(HtmlStyle style) {
+        return new HtmlTree(TagName.DETAILS)
+                .setStyle(style);
     }
 
     /**
@@ -494,12 +549,10 @@ public class HtmlTree extends Content {
     }
 
     private static TagName checkHeading(TagName headingTag) {
-        switch (headingTag) {
-            case H1: case H2: case H3: case H4: case H5: case H6:
-                return headingTag;
-            default:
-                throw new IllegalArgumentException(headingTag.toString());
-        }
+        return switch (headingTag) {
+            case H1, H2, H3, H4, H5, H6 -> headingTag;
+            default -> throw new IllegalArgumentException(headingTag.toString());
+        };
     }
 
     /**
@@ -519,20 +572,18 @@ public class HtmlTree extends Content {
     }
 
     /**
-     * Creates an HTML {@code INPUT} element with the given id and initial value.
+     * Creates an HTML {@code INPUT} element with the given id.
      * The element as marked as initially disabled.
      *
      * @param type  the type of input
      * @param id    the id
-     * @param value the initial value
      * @return the element
      */
-    public static HtmlTree INPUT(String type, String id, String value) {
+    public static HtmlTree INPUT(String type, HtmlId id) {
         return new HtmlTree(TagName.INPUT)
                 .put(HtmlAttr.TYPE, type)
-                .put(HtmlAttr.ID, id)
-                .put(HtmlAttr.VALUE, value)
-                .put(HtmlAttr.DISABLED, "disabled");
+                .setId(id)
+                .put(HtmlAttr.DISABLED, "");
     }
 
     /**
@@ -684,6 +735,16 @@ public class HtmlTree extends Content {
     }
 
     /**
+     * Creates an HTML {@code PRE} element with some content.
+     *
+     * @param body  the content
+     * @return the element
+     */
+    public static HtmlTree PRE(Content body) {
+        return new HtmlTree(TagName.PRE).add(body);
+    }
+
+    /**
      * Creates an HTML {@code SCRIPT} element with some script content.
      * The type of the script is set to {@code text/javascript}.
      *
@@ -744,6 +805,17 @@ public class HtmlTree extends Content {
     }
 
     /**
+     * Creates an HTML {@code SPAN} element with the given style.
+     *
+     * @param styleClass the style
+     * @return the element
+     */
+    public static HtmlTree SPAN(HtmlStyle styleClass) {
+        return new HtmlTree(TagName.SPAN)
+                .setStyle(styleClass);
+    }
+
+    /**
      * Creates an HTML {@code SPAN} element with the given style and some content.
      *
      * @param styleClass the style
@@ -762,7 +834,7 @@ public class HtmlTree extends Content {
      * @param body  the content
      * @return the element
      */
-    public static HtmlTree SPAN_ID(String id, Content body) {
+    public static HtmlTree SPAN_ID(HtmlId id, Content body) {
         return new HtmlTree(TagName.SPAN)
                 .setId(id)
                 .add(body);
@@ -776,10 +848,32 @@ public class HtmlTree extends Content {
      * @param body  the content
      * @return the element
      */
-    public static HtmlTree SPAN(String id, HtmlStyle style, Content body) {
+    public static HtmlTree SPAN(HtmlId id, HtmlStyle style, Content body) {
         return new HtmlTree(TagName.SPAN)
                 .setId(id)
                 .setStyle(style)
+                .add(body);
+    }
+
+    /**
+     * Creates an HTML {@code SUMMARY} element with the given content.
+     *
+     * @param body the content
+     * @return the element
+     */
+    public static HtmlTree SUMMARY(Content body) {
+        return new HtmlTree(TagName.SUMMARY)
+                .add(body);
+    }
+
+    /**
+     * Creates an HTML {@code SUP} element with the given content.
+     *
+     * @param body  the content
+     * @return the element
+     */
+    public static HtmlTree SUP(Content body) {
+        return new HtmlTree(TagName.SUP)
                 .add(body);
     }
 
@@ -832,7 +926,18 @@ public class HtmlTree extends Content {
      */
     public static HtmlTree TITLE(String body) {
         return new HtmlTree(TagName.TITLE)
-            .add(body);
+                .add(body);
+    }
+
+    /**
+     * Creates an HTML {@code UL} element with the given style.
+     *
+     * @param style the style
+     * @return the element
+     */
+    public static HtmlTree UL(HtmlStyle style) {
+        return new HtmlTree(TagName.UL)
+                .setStyle(style);
     }
 
     /**
@@ -844,13 +949,28 @@ public class HtmlTree extends Content {
      * @return the element
      */
     public static HtmlTree UL(HtmlStyle style, Content first, Content... more) {
-        HtmlTree htmlTree = new HtmlTree(TagName.UL)
+        var ul = new HtmlTree(TagName.UL)
                 .setStyle(style);
-        htmlTree.add(first);
+        ul.add(first);
         for (Content c : more) {
-            htmlTree.add(c);
+            ul.add(c);
         }
-        return htmlTree;
+        return ul;
+    }
+
+    /**
+     * Creates an HTML {@code UL} element with the given style and content generated
+     * from a collection of items.
+     *
+     * @param style the style
+     * @param items the items to be added to the list
+     * @param mapper a mapper to create the content for each item
+     * @return the element
+     */
+    public static <T> HtmlTree UL(HtmlStyle style, Collection<T> items, Function<T,Content> mapper) {
+        return new HtmlTree(TagName.UL)
+                .setStyle(style)
+                .addAll(items, mapper);
     }
 
     @Override
@@ -887,53 +1007,33 @@ public class HtmlTree extends Content {
     }
 
     /**
-     * Returns true if the HTML tree is valid. This check is more specific to
-     * standard doclet and not exactly similar to W3C specifications. But it
-     * ensures HTML validation.
+     * Returns {@code true} if the HTML tree does not affect the output and can be discarded.
+     * This implementation considers non-void elements without content or {@code id} attribute
+     * as discardable, with the exception of {@code SCRIPT} which can sometimes be used without
+     * content.
      *
-     * @return true if the HTML tree is valid
+     * @return true if the HTML tree can be discarded without affecting the output
      */
     @Override
-    public boolean isValid() {
-        switch (tagName) {
-            case A:
-                return (hasAttr(HtmlAttr.ID) || (hasAttr(HtmlAttr.HREF) && hasContent()));
-            case BR:
-                return (!hasContent() && (!hasAttrs() || hasAttr(HtmlAttr.CLEAR)));
-            case HR:
-            case INPUT:
-                return (!hasContent());
-            case IMG:
-                return (hasAttr(HtmlAttr.SRC) && hasAttr(HtmlAttr.ALT) && !hasContent());
-            case LINK:
-                return (hasAttr(HtmlAttr.HREF) && !hasContent());
-            case META:
-                return (hasAttr(HtmlAttr.CONTENT) && !hasContent());
-            case SCRIPT:
-                return ((hasAttr(HtmlAttr.TYPE) && hasAttr(HtmlAttr.SRC) && !hasContent()) ||
-                        (hasAttr(HtmlAttr.TYPE) && hasContent()));
-            case SPAN:
-                return (hasAttr(HtmlAttr.ID) || hasContent());
-            default :
-                return hasContent();
-        }
+    public boolean isDiscardable() {
+        return !isVoid()
+            && !hasContent()
+            && !hasAttr(HtmlAttr.ID)
+            && tagName != TagName.SCRIPT;
     }
 
     /**
      * Returns true if the element is a normal element that is <em>phrasing content</em>.
      *
-     * @return true if the HTML tag is an inline element
+     * @return true if this is an inline element
      *
      * @see <a href="https://www.w3.org/TR/html51/dom.html#kinds-of-content-phrasing-content">Phrasing Content</a>
      */
     public boolean isInline() {
-        switch (tagName) {
-            case A: case BUTTON: case BR: case CODE: case EM: case I: case IMG:
-            case LABEL: case SMALL: case SPAN: case STRONG: case SUB:
-                return true;
-            default:
-                return false;
-        }
+        return switch (tagName) {
+            case A, BUTTON, BR, CODE, EM, I, IMG, LABEL, SMALL, SPAN, STRONG, SUB, SUP, WBR -> true;
+            default -> false;
+        };
     }
 
     /**
@@ -944,12 +1044,10 @@ public class HtmlTree extends Content {
      * @see <a href="https://www.w3.org/TR/html51/syntax.html#void-elements">Void Elements</a>
      */
     public boolean isVoid() {
-        switch (tagName) {
-            case BR: case HR: case IMG: case INPUT: case LINK: case META:
-                return true;
-            default:
-                return false;
-        }
+        return switch (tagName) {
+            case BR, HR, IMG, INPUT, LINK, META, WBR -> true;
+            default -> false;
+        };
     }
 
     @Override
@@ -993,7 +1091,7 @@ public class HtmlTree extends Content {
 
     /**
      * Given a Content node, strips all html characters and
-     * return the result.
+     * returns the result.
      *
      * @param body The content node to check.
      * @return the plain text from the content node

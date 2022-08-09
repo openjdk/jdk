@@ -59,7 +59,7 @@ public interface InputMethod {
      * method.
      *
      * @param context the input method context for this input method
-     * @exception NullPointerException if {@code context} is null
+     * @throws NullPointerException if {@code context} is null
      */
     public void setInputMethodContext(InputMethodContext context);
 
@@ -80,7 +80,7 @@ public interface InputMethod {
      *
      * @param locale locale to input
      * @return whether the specified locale is supported
-     * @exception NullPointerException if {@code locale} is null
+     * @throws NullPointerException if {@code locale} is null
      */
     public boolean setLocale(Locale locale);
 
@@ -211,7 +211,7 @@ public interface InputMethod {
      * This method is called by {@link java.awt.im.InputContext#dispatchEvent InputContext.dispatchEvent}.
      *
      * @param event the event being dispatched to the input method
-     * @exception NullPointerException if {@code event} is null
+     * @throws NullPointerException if {@code event} is null
      */
     public void dispatchEvent(AWTEvent event);
 

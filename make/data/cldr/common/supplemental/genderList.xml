@@ -14,7 +14,7 @@ For terms of use, see http://www.unicode.org/copyright.html
         <!-- gender(all male) = male, gender(all female) = female, otherwise gender(list) = other -->
         <personList type="mixedNeutral" locales="el is"/>
         <!-- gender(all female) = female, otherwise gender(list) = male -->
-        <personList type="maleTaints" locales="ar ca cs hr es fr he hi it lt lv mr nl pl pt ro ru sk sl sr uk ur zh zh_Hant"/>
+        <personList type="maleTaints" locales="ar ca cs hr es fr he hi it lij lt lv mr nl pl pt ro ru sk sl sr uk ur zh zh_Hant"/>
     </gender>
 </supplementalData>
 

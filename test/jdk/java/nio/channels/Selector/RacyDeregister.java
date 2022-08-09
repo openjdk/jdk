@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,12 @@ import java.nio.channels.SocketChannel;
  * @author Frank Ding
  * @run main/timeout=1200 RacyDeregister
  */
+
+/* @test
+ * @requires (os.family == "windows")
+ * @run main/othervm/timeout=1200 -Djava.nio.channels.spi.SelectorProvider=sun.nio.ch.WindowsSelectorProvider RacyDeregister
+ */
+
 public class RacyDeregister {
 
     // 90% of 1200 second timeout as milliseconds

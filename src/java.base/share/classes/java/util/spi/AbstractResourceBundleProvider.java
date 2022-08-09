@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package java.util.spi;
 
 import jdk.internal.access.JavaUtilResourceBundleAccess;
 import jdk.internal.access.SharedSecrets;
+import sun.util.resources.Bundles;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -187,6 +188,17 @@ public abstract class AbstractResourceBundleProvider implements ResourceBundlePr
     public ResourceBundle getBundle(String baseName, Locale locale) {
         Module module = this.getClass().getModule();
         String bundleName = toBundleName(baseName, locale);
+        var bundle = getBundle0(module, bundleName);
+        if (bundle == null) {
+            var otherBundleName = Bundles.toOtherBundleName(baseName, bundleName, locale);
+            if (!bundleName.equals(otherBundleName)) {
+                bundle = getBundle0(module, Bundles.toOtherBundleName(baseName, bundleName, locale));
+            }
+        }
+        return bundle;
+    }
+
+    private ResourceBundle getBundle0(Module module, String bundleName) {
         ResourceBundle bundle = null;
 
         for (String format : formats) {
@@ -213,6 +225,7 @@ public abstract class AbstractResourceBundleProvider implements ResourceBundlePr
     private static ResourceBundle loadResourceBundle(Module module, String bundleName)
     {
         PrivilegedAction<Class<?>> pa = () -> Class.forName(module, bundleName);
+        @SuppressWarnings("removal")
         Class<?> c = AccessController.doPrivileged(pa, null, GET_CLASSLOADER_PERMISSION);
         if (c != null && ResourceBundle.class.isAssignableFrom(c)) {
             @SuppressWarnings("unchecked")
@@ -242,7 +255,7 @@ public abstract class AbstractResourceBundleProvider implements ResourceBundlePr
                 throw new UncheckedIOException(e);
             }
         };
-        try (InputStream stream = AccessController.doPrivileged(pa)) {
+        try (@SuppressWarnings("removal") InputStream stream = AccessController.doPrivileged(pa)) {
             if (stream != null) {
                 return new PropertyResourceBundle(stream);
             } else {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,9 +27,13 @@
 
 package com.sun.tools.javac.comp;
 
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import com.sun.source.tree.LambdaExpressionTree.BodyKind;
 import com.sun.tools.javac.code.*;
@@ -43,16 +47,19 @@ import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.JCDiagnostic.Error;
 import com.sun.tools.javac.util.JCDiagnostic.Warning;
 
-import com.sun.tools.javac.code.Kinds.Kind;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.tree.JCTree.*;
 
 import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Flags.BLOCK;
 import static com.sun.tools.javac.code.Kinds.Kind.*;
+import com.sun.tools.javac.code.Type.TypeVar;
 import static com.sun.tools.javac.code.TypeTag.BOOLEAN;
+import static com.sun.tools.javac.code.TypeTag.NONE;
 import static com.sun.tools.javac.code.TypeTag.VOID;
+import com.sun.tools.javac.resources.CompilerProperties.Fragments;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
+import com.sun.tools.javac.util.JCDiagnostic.Fragment;
 
 /** This pass implements dataflow analysis for Java programs though
  *  different AST visitor steps. Liveness analysis (see AliveAnalyzer) checks that
@@ -335,7 +342,7 @@ public class Flow {
      * Base visitor class for all visitors implementing dataflow analysis logic.
      * This class define the shared logic for handling jumps (break/continue statements).
      */
-    static abstract class BaseAnalyzer extends TreeScanner {
+    abstract static class BaseAnalyzer extends TreeScanner {
 
         enum JumpKind {
             BREAK(JCTree.Tag.BREAK) {
@@ -660,19 +667,14 @@ public class Flow {
             ListBuffer<PendingExit> prevPendingExits = pendingExits;
             pendingExits = new ListBuffer<>();
             scan(tree.selector);
-            boolean hasDefault = false;
+            boolean exhaustiveSwitch = TreeInfo.expectedExhaustive(tree);
             for (List<JCCase> l = tree.cases; l.nonEmpty(); l = l.tail) {
                 alive = Liveness.ALIVE;
                 JCCase c = l.head;
-                if (c.pats.isEmpty())
-                    hasDefault = true;
-                else {
-                    for (JCExpression pat : c.pats) {
-                        scan(pat);
-                    }
+                for (JCCaseLabel pat : c.labels) {
+                    scan(pat);
                 }
                 scanStats(c.stats);
-                c.completesNormally = alive != Liveness.DEAD;
                 if (alive != Liveness.DEAD && c.caseKind == JCCase.RULE) {
                     scanSyntheticBreak(make, tree);
                     alive = Liveness.DEAD;
@@ -685,7 +687,16 @@ public class Flow {
                                 l.tail.head.pos(),
                                 Warnings.PossibleFallThroughIntoCase);
             }
-            if (!hasDefault) {
+            tree.isExhaustive = tree.hasUnconditionalPattern ||
+                                TreeInfo.isErrorEnumSwitch(tree.selector, tree.cases);
+            if (exhaustiveSwitch) {
+                Set<Symbol> coveredSymbols = coveredSymbolsForCases(tree.pos(), tree.selector, tree.cases);
+                tree.isExhaustive |= isExhaustive(tree.selector.pos(), tree.selector.type, coveredSymbols);
+                if (!tree.isExhaustive) {
+                    log.error(tree, Errors.NotExhaustiveStatement);
+                }
+            }
+            if (!tree.hasUnconditionalPattern) {
                 alive = Liveness.ALIVE;
             }
             alive = alive.or(resolveBreaks(tree, prevPendingExits));
@@ -696,33 +707,12 @@ public class Flow {
             ListBuffer<PendingExit> prevPendingExits = pendingExits;
             pendingExits = new ListBuffer<>();
             scan(tree.selector);
-            Set<Object> constants = null;
-            TypeSymbol selectorSym = tree.selector.type.tsym;
-            if ((selectorSym.flags() & ENUM) != 0) {
-                constants = new HashSet<>();
-                Filter<Symbol> enumConstantFilter =
-                        s -> (s.flags() & ENUM) != 0 && s.kind == Kind.VAR;
-                for (Symbol s : selectorSym.members().getSymbols(enumConstantFilter)) {
-                    constants.add(s.name);
-                }
-            }
-            boolean hasDefault = false;
             Liveness prevAlive = alive;
             for (List<JCCase> l = tree.cases; l.nonEmpty(); l = l.tail) {
                 alive = Liveness.ALIVE;
                 JCCase c = l.head;
-                if (c.pats.isEmpty())
-                    hasDefault = true;
-                else {
-                    for (JCExpression pat : c.pats) {
-                        scan(pat);
-                        if (constants != null) {
-                            if (pat.hasTag(IDENT))
-                                constants.remove(((JCIdent) pat).name);
-                            if (pat.type != null)
-                                constants.remove(pat.type.constValue());
-                        }
-                    }
+                for (JCCaseLabel pat : c.labels) {
+                    scan(pat);
                 }
                 scanStats(c.stats);
                 if (alive == Liveness.ALIVE) {
@@ -734,24 +724,229 @@ public class Flow {
                                   Errors.SwitchExpressionCompletesNormally);
                     }
                 }
-                c.completesNormally = alive != Liveness.DEAD;
             }
-            if ((constants == null || !constants.isEmpty()) && !hasDefault) {
+            Set<Symbol> coveredSymbols = coveredSymbolsForCases(tree.pos(), tree.selector, tree.cases);
+            tree.isExhaustive = tree.hasUnconditionalPattern ||
+                                TreeInfo.isErrorEnumSwitch(tree.selector, tree.cases) ||
+                                isExhaustive(tree.selector.pos(), tree.selector.type, coveredSymbols);
+            if (!tree.isExhaustive) {
                 log.error(tree, Errors.NotExhaustive);
             }
             alive = prevAlive;
             alive = alive.or(resolveYields(tree, prevPendingExits));
         }
 
+        private Set<Symbol> coveredSymbolsForCases(DiagnosticPosition pos,
+                                                   JCExpression selector, List<JCCase> cases) {
+            HashSet<JCTree> labelValues = cases.stream()
+                                               .flatMap(c -> c.labels.stream())
+                                               .filter(TreeInfo::unguardedCaseLabel)
+                                               .filter(l -> !l.hasTag(DEFAULTCASELABEL))
+                                               .map(l -> l.hasTag(CONSTANTCASELABEL) ? ((JCConstantCaseLabel) l).expr
+                                                                                     : ((JCPatternCaseLabel) l).pat)
+                                               .collect(Collectors.toCollection(HashSet::new));
+            return coveredSymbols(pos, selector.type, labelValues);
+        }
+
+        private Set<Symbol> coveredSymbols(DiagnosticPosition pos, Type targetType,
+                                           Iterable<? extends JCTree> labels) {
+            Set<Symbol> coveredSymbols = new HashSet<>();
+            Map<Symbol, List<JCRecordPattern>> deconstructionPatternsBySymbol = new HashMap<>();
+
+            for (JCTree labelValue : labels) {
+                switch (labelValue.getTag()) {
+                    case BINDINGPATTERN, PARENTHESIZEDPATTERN -> {
+                        Type primaryPatternType = TreeInfo.primaryPatternType((JCPattern) labelValue);
+                        if (!primaryPatternType.hasTag(NONE)) {
+                            coveredSymbols.add(primaryPatternType.tsym);
+                        }
+                    }
+                    case RECORDPATTERN -> {
+                        JCRecordPattern dpat = (JCRecordPattern) labelValue;
+                        Symbol type = dpat.record;
+                        List<JCRecordPattern> augmentedPatterns =
+                                deconstructionPatternsBySymbol.getOrDefault(type, List.nil())
+                                                                 .prepend(dpat);
+
+                        deconstructionPatternsBySymbol.put(type, augmentedPatterns);
+                    }
+
+                    default -> {
+                        Assert.check(labelValue instanceof JCExpression, labelValue.getTag().name());
+                        JCExpression expr = (JCExpression) labelValue;
+                        if (expr.hasTag(IDENT) && ((JCIdent) expr).sym.isEnum())
+                            coveredSymbols.add(((JCIdent) expr).sym);
+                    }
+                }
+            }
+            for (Entry<Symbol, List<JCRecordPattern>> e : deconstructionPatternsBySymbol.entrySet()) {
+                if (coversDeconstructionFromComponent(pos, targetType, e.getValue(), 0)) {
+                    coveredSymbols.add(e.getKey());
+                }
+            }
+            return coveredSymbols;
+        }
+
+        private boolean coversDeconstructionFromComponent(DiagnosticPosition pos,
+                                                          Type targetType,
+                                                          List<JCRecordPattern> deconstructionPatterns,
+                                                          int component) {
+            //Given a set of record patterns for the same record, and a starting component,
+            //this method checks, whether the nested patterns for the components are exhaustive,
+            //i.e. represent all possible combinations.
+            //This is done by categorizing the patterns based on the type covered by the given
+            //starting component.
+            //For each such category, it is then checked if the nested patterns starting at the next
+            //component are exhaustive, by recursivelly invoking this method. If these nested patterns
+            //are exhaustive, the given covered type is accepted.
+            //All such covered types are then checked whether they cover the declared type of
+            //the starting component's declaration. If yes, the given set of patterns starting at
+            //the given component cover the given record exhaustivelly, and true is returned.
+            List<? extends RecordComponent> components =
+                    deconstructionPatterns.head.record.getRecordComponents();
+
+            if (components.size() == component) {
+                //no components remain to be checked:
+                return true;
+            }
+
+            //for the first tested component, gather symbols covered by the nested patterns:
+            Type instantiatedComponentType = types.memberType(targetType, components.get(component));
+            List<JCPattern> nestedComponentPatterns = deconstructionPatterns.map(d -> d.nested.get(component));
+            Set<Symbol> coveredSymbolsForComponent = coveredSymbols(pos, instantiatedComponentType,
+                                                                    nestedComponentPatterns);
+
+            //for each of the symbols covered by the starting component, find all deconstruction patterns
+            //that have the given type, or its supertype, as a type of the starting nested pattern:
+            Map<Symbol, List<JCRecordPattern>> coveredSymbol2Patterns = new HashMap<>();
+
+            for (JCRecordPattern deconstructionPattern : deconstructionPatterns) {
+                JCPattern nestedPattern = deconstructionPattern.nested.get(component);
+                Symbol componentPatternType;
+                switch (nestedPattern.getTag()) {
+                    case BINDINGPATTERN, PARENTHESIZEDPATTERN -> {
+                        Type primaryPatternType =
+                                TreeInfo.primaryPatternType(nestedPattern);
+                        componentPatternType = primaryPatternType.tsym;
+                    }
+                    case RECORDPATTERN -> {
+                        componentPatternType = ((JCRecordPattern) nestedPattern).record;
+                    }
+                    default -> {
+                        throw Assert.error("Unexpected tree kind: " + nestedPattern.getTag());
+                    }
+                }
+                for (Symbol currentType : coveredSymbolsForComponent) {
+                    if (types.isSubtype(types.erasure(currentType.type),
+                                        types.erasure(componentPatternType.type))) {
+                        coveredSymbol2Patterns.put(currentType,
+                                                   coveredSymbol2Patterns.getOrDefault(currentType,
+                                                                                       List.nil())
+                                              .prepend(deconstructionPattern));
+                    }
+                }
+            }
+
+            //Check the components following the starting component, for each of the covered symbol,
+            //if they are exhaustive. If yes, the given covered symbol should be part of the following
+            //exhaustiveness check:
+            Set<Symbol> covered = new HashSet<>();
+
+            for (Entry<Symbol, List<JCRecordPattern>> e : coveredSymbol2Patterns.entrySet()) {
+                if (coversDeconstructionFromComponent(pos, targetType, e.getValue(), component + 1)) {
+                    covered.add(e.getKey());
+                }
+            }
+
+            //verify whether the filtered symbols cover the given record's declared type:
+            return isExhaustive(pos, instantiatedComponentType, covered);
+        }
+
+        private void transitiveCovers(DiagnosticPosition pos, Type seltype, Set<Symbol> covered) {
+            List<Symbol> todo = List.from(covered);
+            while (todo.nonEmpty()) {
+                Symbol sym = todo.head;
+                todo = todo.tail;
+                switch (sym.kind) {
+                    case VAR -> {
+                        Iterable<Symbol> constants = sym.owner
+                                                        .members()
+                                                        .getSymbols(s -> s.isEnum() &&
+                                                                         s.kind == VAR);
+                        boolean hasAll = StreamSupport.stream(constants.spliterator(), false)
+                                                      .allMatch(covered::contains);
+
+                        if (hasAll && covered.add(sym.owner)) {
+                            todo = todo.prepend(sym.owner);
+                        }
+                    }
+
+                    case TYP -> {
+                        for (Type sup : types.directSupertypes(sym.type)) {
+                            if (sup.tsym.kind == TYP) {
+                                if (isTransitivelyCovered(pos, seltype, sup.tsym, covered) &&
+                                    covered.add(sup.tsym)) {
+                                    todo = todo.prepend(sup.tsym);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        private boolean isTransitivelyCovered(DiagnosticPosition pos, Type seltype,
+                                              Symbol sealed, Set<Symbol> covered) {
+            try {
+                if (covered.stream().anyMatch(c -> sealed.isSubClass(c, types)))
+                    return true;
+                if (sealed.kind == TYP && sealed.isAbstract() && sealed.isSealed()) {
+                    return ((ClassSymbol) sealed).permitted
+                                                 .stream()
+                                                 .filter(s -> {
+                                                     return types.isCastable(seltype, s.type/*, types.noWarnings*/);
+                                                 })
+                                                 .allMatch(s -> isTransitivelyCovered(pos, seltype, s, covered));
+                }
+                return false;
+            } catch (CompletionFailure cf) {
+                chk.completionError(pos, cf);
+                return true;
+            }
+        }
+
+        private boolean isExhaustive(DiagnosticPosition pos, Type seltype, Set<Symbol> covered) {
+            transitiveCovers(pos, seltype, covered);
+            return switch (seltype.getTag()) {
+                case CLASS -> {
+                    if (seltype.isCompound()) {
+                        if (seltype.isIntersection()) {
+                            yield ((Type.IntersectionClassType) seltype).getComponents()
+                                                                        .stream()
+                                                                        .anyMatch(t -> isExhaustive(pos, t, covered));
+                        }
+                        yield false;
+                    }
+                    yield covered.stream()
+                                 .filter(coveredSym -> coveredSym.kind == TYP)
+                                 .anyMatch(coveredSym -> types.isSubtype(types.erasure(seltype),
+                                                                         types.erasure(coveredSym.type)));
+                }
+                case TYPEVAR -> isExhaustive(pos, ((TypeVar) seltype).getUpperBound(), covered);
+                default -> {
+                    yield covered.contains(seltype.tsym);
+                }
+            };
+        }
+
         public void visitTry(JCTry tree) {
             ListBuffer<PendingExit> prevPendingExits = pendingExits;
             pendingExits = new ListBuffer<>();
             for (JCTree resource : tree.resources) {
-                if (resource instanceof JCVariableDecl) {
-                    JCVariableDecl vdecl = (JCVariableDecl) resource;
-                    visitVarDef(vdecl);
-                } else if (resource instanceof JCExpression) {
-                    scan((JCExpression) resource);
+                if (resource instanceof JCVariableDecl variableDecl) {
+                    visitVarDef(variableDecl);
+                } else if (resource instanceof JCExpression expression) {
+                    scan(expression);
                 } else {
                     throw new AssertionError(tree);  // parser error
                 }
@@ -941,8 +1136,7 @@ public class Flow {
             for (PendingExit exit = pendingExits.next();
                  exit != null;
                  exit = pendingExits.next()) {
-                if (exit instanceof ThrownPendingExit) {
-                    ThrownPendingExit thrownExit = (ThrownPendingExit) exit;
+                if (exit instanceof ThrownPendingExit thrownExit) {
                     if (classDef != null &&
                         classDef.pos == exit.tree.pos) {
                         log.error(exit.tree.pos(),
@@ -1194,7 +1388,7 @@ public class Flow {
             scan(selector);
             for (List<JCCase> l = cases; l.nonEmpty(); l = l.tail) {
                 JCCase c = l.head;
-                scan(c.pats);
+                scan(c.labels);
                 scan(c.stats);
             }
             if (tree.hasTag(SWITCH_EXPRESSION)) {
@@ -1220,11 +1414,10 @@ public class Flow {
             ListBuffer<PendingExit> prevPendingExits = pendingExits;
             pendingExits = new ListBuffer<>();
             for (JCTree resource : tree.resources) {
-                if (resource instanceof JCVariableDecl) {
-                    JCVariableDecl vdecl = (JCVariableDecl) resource;
-                    visitVarDef(vdecl);
-                } else if (resource instanceof JCExpression) {
-                    scan((JCExpression) resource);
+                if (resource instanceof JCVariableDecl variableDecl) {
+                    visitVarDef(variableDecl);
+                } else if (resource instanceof JCExpression expression) {
+                    scan(expression);
                 } else {
                     throw new AssertionError(tree);  // parser error
                 }
@@ -1521,6 +1714,10 @@ public class Flow {
     class SnippetAliveAnalyzer extends AliveAnalyzer {
         @Override
         public void visitClassDef(JCClassDecl tree) {
+            //skip
+        }
+        @Override
+        public void visitLambda(JCLambda tree) {
             //skip
         }
         public boolean isAlive() {
@@ -1931,6 +2128,14 @@ public class Flow {
             if (trees != null)
                 for (List<? extends JCExpression> l = trees; l.nonEmpty(); l = l.tail)
                     scanExpr(l.head);
+        }
+
+        void scanPattern(JCTree tree) {
+            scan(tree);
+            if (inits.isReset()) {
+                inits.assign(initsWhenTrue);
+                uninits.assign(uninitsWhenTrue);
+            }
         }
 
         /** Analyze a condition. Make sure to set (un)initsWhenTrue(WhenFalse)
@@ -2353,52 +2558,53 @@ public class Flow {
         }
 
         public void visitSwitch(JCSwitch tree) {
-            handleSwitch(tree, tree.selector, tree.cases);
+            handleSwitch(tree, tree.selector, tree.cases, tree.isExhaustive);
         }
 
         public void visitSwitchExpression(JCSwitchExpression tree) {
-            handleSwitch(tree, tree.selector, tree.cases);
+            handleSwitch(tree, tree.selector, tree.cases, tree.isExhaustive);
         }
 
-        private void handleSwitch(JCTree tree, JCExpression selector, List<JCCase> cases) {
+        private void handleSwitch(JCTree tree, JCExpression selector,
+                                  List<JCCase> cases, boolean isExhaustive) {
             ListBuffer<PendingExit> prevPendingExits = pendingExits;
             pendingExits = new ListBuffer<>();
             int nextadrPrev = nextadr;
             scanExpr(selector);
             final Bits initsSwitch = new Bits(inits);
             final Bits uninitsSwitch = new Bits(uninits);
-            boolean hasDefault = false;
             for (List<JCCase> l = cases; l.nonEmpty(); l = l.tail) {
                 inits.assign(initsSwitch);
                 uninits.assign(uninits.andSet(uninitsSwitch));
                 JCCase c = l.head;
-                if (c.pats.isEmpty()) {
-                    hasDefault = true;
-                } else {
-                    for (JCExpression pat : c.pats) {
-                        scanExpr(pat);
-                    }
+                for (JCCaseLabel pat : c.labels) {
+                    scanPattern(pat);
                 }
-                if (hasDefault) {
-                    inits.assign(initsSwitch);
-                    uninits.assign(uninits.andSet(uninitsSwitch));
+                if (l.head.stats.isEmpty() &&
+                    l.tail.nonEmpty() &&
+                    l.tail.head.labels.size() == 1 &&
+                    TreeInfo.isNullCaseLabel(l.tail.head.labels.head)) {
+                    //handling:
+                    //case Integer i:
+                    //case null:
+                    //joining these two cases together - processing Integer i pattern,
+                    //but statements from case null:
+                    l = l.tail;
+                    c = l.head;
                 }
                 scan(c.stats);
                 if (c.completesNormally && c.caseKind == JCCase.RULE) {
                     scanSyntheticBreak(make, tree);
                 }
                 addVars(c.stats, initsSwitch, uninitsSwitch);
-                if (!hasDefault) {
-                    inits.assign(initsSwitch);
-                    uninits.assign(uninits.andSet(uninitsSwitch));
-                }
                 // Warn about fall-through if lint switch fallthrough enabled.
             }
-            if (!hasDefault) {
+            if (!isExhaustive) {
                 if (tree.hasTag(SWITCH_EXPRESSION)) {
                     markDead();
-                } else {
-                    inits.andSet(initsSwitch);
+                } else if (tree.hasTag(SWITCH) && !TreeInfo.expectedExhaustive((JCSwitch) tree)) {
+                    inits.assign(initsSwitch);
+                    uninits.assign(uninits.andSet(uninitsSwitch));
                 }
             }
             if (tree.hasTag(SWITCH_EXPRESSION)) {
@@ -2430,13 +2636,12 @@ public class Flow {
             final Bits initsTry = new Bits(inits);
             uninitsTry.assign(uninits);
             for (JCTree resource : tree.resources) {
-                if (resource instanceof JCVariableDecl) {
-                    JCVariableDecl vdecl = (JCVariableDecl) resource;
-                    visitVarDef(vdecl);
-                    unrefdResources.enter(vdecl.sym);
-                    resourceVarDecls.append(vdecl);
-                } else if (resource instanceof JCExpression) {
-                    scanExpr((JCExpression) resource);
+                if (resource instanceof JCVariableDecl variableDecl) {
+                    visitVarDef(variableDecl);
+                    unrefdResources.enter(variableDecl.sym);
+                    resourceVarDecls.append(variableDecl);
+                } else if (resource instanceof JCExpression expression) {
+                    scanExpr(expression);
                 } else {
                     throw new AssertionError(tree);  // parser error
                 }
@@ -2493,9 +2698,9 @@ public class Flow {
                     // versus finally!
                     while (exits.nonEmpty()) {
                         PendingExit exit = exits.next();
-                        if (exit instanceof AssignPendingExit) {
-                            ((AssignPendingExit) exit).exit_inits.orSet(inits);
-                            ((AssignPendingExit) exit).exit_uninits.andSet(uninits);
+                        if (exit instanceof AssignPendingExit assignPendingExit) {
+                            assignPendingExit.exit_inits.orSet(inits);
+                            assignPendingExit.exit_uninits.andSet(uninits);
                         }
                         pendingExits.append(exit);
                     }
@@ -2760,9 +2965,29 @@ public class Flow {
         }
 
         @Override
+        public void visitTypeTest(JCInstanceOf tree) {
+            scanExpr(tree.expr);
+            scan(tree.pattern);
+        }
+
+        @Override
         public void visitBindingPattern(JCBindingPattern tree) {
-            super.visitBindingPattern(tree);
+            scan(tree.var);
             initParam(tree.var);
+        }
+
+        @Override
+        public void visitPatternCaseLabel(JCPatternCaseLabel tree) {
+            scan(tree.pat);
+            scan(tree.guard);
+        }
+
+        @Override
+        public void visitRecordPattern(JCRecordPattern tree) {
+            super.visitRecordPattern(tree);
+            if (tree.var != null) {
+                initParam(tree.var);
+            }
         }
 
         void referenced(Symbol sym) {
@@ -2854,6 +3079,7 @@ public class Flow {
                             }
                             break;
                         }
+                    case PATTERNCASELABEL:
                     case LAMBDA:
                         if ((sym.flags() & (EFFECTIVELY_FINAL | FINAL)) == 0) {
                            reportEffectivelyFinalError(pos, sym);
@@ -2877,6 +3103,7 @@ public class Flow {
                                 reportInnerClsNeedsFinalError(tree, sym);
                                 break;
                             }
+                        case CASE:
                         case LAMBDA:
                             reportEffectivelyFinalError(tree, sym);
                     }
@@ -2885,8 +3112,12 @@ public class Flow {
         }
 
         void reportEffectivelyFinalError(DiagnosticPosition pos, Symbol sym) {
-            String subKey = currentTree.hasTag(LAMBDA) ?
-                  "lambda"  : "inner.cls";
+            Fragment subKey = switch (currentTree.getTag()) {
+                case LAMBDA -> Fragments.Lambda;
+                case PATTERNCASELABEL -> Fragments.Guard;
+                case CLASSDEF -> Fragments.InnerCls;
+                default -> throw new AssertionError("Unexpected tree kind: " + currentTree.getTag());
+            };
             log.error(pos, Errors.CantRefNonEffectivelyFinalVar(sym, diags.fragment(subKey)));
         }
 
@@ -2904,7 +3135,7 @@ public class Flow {
         public void visitClassDef(JCClassDecl tree) {
             JCTree prevTree = currentTree;
             try {
-                currentTree = tree.sym.isLocal() ? tree : null;
+                currentTree = tree.sym.isDirectlyOrIndirectlyLocal() ? tree : null;
                 super.visitClassDef(tree);
             } finally {
                 currentTree = prevTree;
@@ -2920,6 +3151,35 @@ public class Flow {
             } finally {
                 currentTree = prevTree;
             }
+        }
+
+        @Override
+        public void visitBindingPattern(JCBindingPattern tree) {
+            scan(tree.var);
+        }
+
+        @Override
+        public void visitParenthesizedPattern(JCParenthesizedPattern tree) {
+            scan(tree.pattern);
+        }
+
+        @Override
+        public void visitPatternCaseLabel(JCPatternCaseLabel tree) {
+             scan(tree.pat);
+            JCTree prevTree = currentTree;
+            try {
+                currentTree = tree;
+                scan(tree.guard);
+            } finally {
+                currentTree = prevTree;
+            }
+        }
+
+        @Override
+        public void visitRecordPattern(JCRecordPattern tree) {
+            scan(tree.deconstructor);
+            scan(tree.nested);
+            scan(tree.var);
         }
 
         @Override

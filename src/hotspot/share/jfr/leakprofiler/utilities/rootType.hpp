@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,8 @@
 #define SHARE_JFR_LEAKPROFILER_UTILITIES_ROOTTYPE_HPP
 
 #include "gc/shared/oopStorageSet.hpp"
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
+#include "utilities/enumIterator.hpp"
 
 class OldObjectRoot : public AllStatic {
  public:
@@ -35,10 +36,9 @@ class OldObjectRoot : public AllStatic {
     _universe,
     _threads,
     _strong_oop_storage_set_first,
-    _strong_oop_storage_set_last = _strong_oop_storage_set_first + OopStorageSet::strong_count - 1,
+    _strong_oop_storage_set_last = _strong_oop_storage_set_first + EnumRange<OopStorageSet::StrongId>().size() - 1,
     _class_loader_data,
     _code_cache,
-    _aot,
     JVMCI_ONLY(_jvmci COMMA)
     _number_of_systems
   };

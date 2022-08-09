@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,11 +47,18 @@ import static java.lang.constant.ConstantDescs.DEFAULT_NAME;
  * {@code short}, as well as other constants and methods useful when
  * dealing with a {@code short}.
  *
+ * <p>This is a <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>
+ * class; programmers should treat instances that are
+ * {@linkplain #equals(Object) equal} as interchangeable and should not
+ * use instances for synchronization, or unpredictable behavior may
+ * occur. For example, in a future release, synchronization may fail.
+ *
  * @author  Nakul Saraiya
  * @author  Joseph D. Darcy
  * @see     java.lang.Number
  * @since   1.1
  */
+@jdk.internal.ValueBased
 public final class Short extends Number implements Comparable<Short>, Constable {
 
     /**
@@ -82,7 +89,7 @@ public final class Short extends Number implements Comparable<Short>, Constable 
      * @see java.lang.Integer#toString(int)
      */
     public static String toString(short s) {
-        return Integer.toString((int)s, 10);
+        return Integer.toString(s);
     }
 
     /**
@@ -342,7 +349,7 @@ public final class Short extends Number implements Comparable<Short>, Constable 
      * {@link #valueOf(short)} is generally a better choice, as it is
      * likely to yield significantly better space and time performance.
      */
-    @Deprecated(since="9")
+    @Deprecated(since="9", forRemoval = true)
     public Short(short value) {
         this.value = value;
     }
@@ -365,7 +372,7 @@ public final class Short extends Number implements Comparable<Short>, Constable 
      * {@code short} primitive, or use {@link #valueOf(String)}
      * to convert a string to a {@code Short} object.
      */
-    @Deprecated(since="9")
+    @Deprecated(since="9", forRemoval = true)
     public Short(String s) throws NumberFormatException {
         this.value = parseShort(s, 10);
     }
@@ -434,8 +441,9 @@ public final class Short extends Number implements Comparable<Short>, Constable 
      * @return  a string representation of the value of this object in
      *          base&nbsp;10.
      */
+    @Override
     public String toString() {
-        return Integer.toString((int)value);
+        return Integer.toString(value);
     }
 
     /**

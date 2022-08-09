@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,16 +33,19 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
+import static jdk.jpackage.internal.StandardBundlerParam.INSTALLER_NAME;
 import static jdk.jpackage.internal.StandardBundlerParam.LICENSE_FILE;
 import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
 import static jdk.jpackage.internal.StandardBundlerParam.RELEASE;
 import static jdk.jpackage.internal.StandardBundlerParam.TEMP_ROOT;
 import static jdk.jpackage.internal.OverridableResource.createResource;
+import static jdk.jpackage.internal.StandardBundlerParam.ABOUT_URL;
 
 /**
  * There are two command line options to configure license information for RPM
@@ -73,7 +76,7 @@ public class LinuxRpmBundler extends LinuxPackageBundler {
             Arguments.CLIOptions.LINUX_BUNDLE_NAME.getId(),
             String.class,
             params -> {
-                String nm = APP_NAME.fetchFrom(params);
+                String nm = INSTALLER_NAME.fetchFrom(params);
                 if (nm == null) return null;
 
                 // make sure to lower case and spaces become dashes
@@ -109,11 +112,11 @@ public class LinuxRpmBundler extends LinuxPackageBundler {
             params -> null,
             (s, p) -> s);
 
-    private final static String DEFAULT_SPEC_TEMPLATE = "template.spec";
+    private static final String DEFAULT_SPEC_TEMPLATE = "template.spec";
 
-    public final static String TOOL_RPM = "rpm";
-    public final static String TOOL_RPMBUILD = "rpmbuild";
-    public final static DottedVersion TOOL_RPMBUILD_MIN_VERSION = DottedVersion.lazy(
+    public static final String TOOL_RPM = "rpm";
+    public static final String TOOL_RPMBUILD = "rpmbuild";
+    public static final DottedVersion TOOL_RPMBUILD_MIN_VERSION = DottedVersion.lazy(
             "4.10");
 
     public LinuxRpmBundler() {
@@ -174,6 +177,7 @@ public class LinuxRpmBundler extends LinuxPackageBundler {
             appDirectory = appDirectory.resolve(PACKAGE_NAME.fetchFrom(params));
         }
 
+        data.put("APPLICATION_RELEASE", RELEASE.fetchFrom(params));
         data.put("APPLICATION_PREFIX", prefix.toString());
         data.put("APPLICATION_DIRECTORY", appDirectory.toString());
         data.put("APPLICATION_SUMMARY", APP_NAME.fetchFrom(params));
@@ -185,6 +189,9 @@ public class LinuxRpmBundler extends LinuxPackageBundler {
         }
         data.put("APPLICATION_LICENSE_FILE", licenseFile);
         data.put("APPLICATION_GROUP", GROUP.fetchFrom(params));
+
+        data.put("APPLICATION_URL", Optional.ofNullable(ABOUT_URL.fetchFrom(
+                params)).orElse(""));
 
         return data;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,12 +122,10 @@ public class TestIntegerModuloP {
         final int length = Integer.parseInt(args[1]);
         int seed = Integer.parseInt(args[2]);
 
-        Class<IntegerFieldModuloP> fieldBaseClass = IntegerFieldModuloP.class;
         try {
-            Class<? extends IntegerFieldModuloP> clazz =
-                Class.forName(className).asSubclass(fieldBaseClass);
-            IntegerFieldModuloP field =
-                clazz.getDeclaredConstructor().newInstance();
+            Class<?> clazz = Class.forName(className);
+            IntegerFieldModuloP field = (IntegerFieldModuloP)
+                    clazz.getDeclaredField("ONE").get(null);
 
             setUpFunctions(field, length);
 
@@ -195,21 +193,11 @@ public class TestIntegerModuloP {
             byte[] baselineResult = func.apply(baseline, right.baseline);
             if (!Arrays.equals(testResult, baselineResult)) {
                 throw new RuntimeException("Array values do not match: "
-                    + byteArrayToHexString(testResult) + " != "
-                    + byteArrayToHexString(baselineResult));
+                    + HexFormat.of().withUpperCase().formatHex(testResult) + " != "
+                    + HexFormat.of().withUpperCase().formatHex(baselineResult));
             }
         }
 
-    }
-
-    static String byteArrayToHexString(byte[] arr) {
-        StringBuilder result = new StringBuilder();
-        for (int i = 0; i < arr.length; ++i) {
-            byte curVal = arr[i];
-            result.append(Character.forDigit(curVal >> 4 & 0xF, 16));
-            result.append(Character.forDigit(curVal & 0xF, 16));
-        }
-        return result.toString();
     }
 
     static TestPair<IntegerModuloP>

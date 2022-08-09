@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,15 +32,16 @@ import jdk.test.lib.process.ProcessTools;
  * @summary C2 should convert ((var&16) == 16) to ((var&16) != 0) for power-of-two constants
  * @library /test/lib /
  *
- * @run driver compiler.c2.TestBit
- *
- * @requires os.arch=="aarch64" | os.arch=="amd64" | os.arch == "ppc64le"
+ * @requires vm.flagless
+ * @requires os.arch=="aarch64" | os.arch=="amd64" | os.arch == "ppc64le" | os.arch == "riscv64"
  * @requires vm.debug == true & vm.compiler2.enabled
+ *
+ * @run driver compiler.c2.TestBit
  */
 public class TestBit {
 
     static void runTest(String testName) throws Exception {
-        String className = "compiler.c2.TestBit";
+        String className = TestBit.class.getName();
         String[] procArgs = {
             "-Xbatch",
             "-XX:-TieredCompilation",
@@ -54,7 +55,8 @@ public class TestBit {
         String expectedTestBitInstruction =
             "ppc64le".equals(System.getProperty("os.arch")) ? "ANDI" :
             "aarch64".equals(System.getProperty("os.arch")) ? "tb"   :
-            "amd64".equals(System.getProperty("os.arch"))   ? "test" : null;
+            "amd64".equals(System.getProperty("os.arch"))   ? "test" :
+            "riscv64".equals(System.getProperty("os.arch")) ? "andi" : null;
 
         if (expectedTestBitInstruction != null) {
             output.shouldContain(expectedTestBitInstruction);

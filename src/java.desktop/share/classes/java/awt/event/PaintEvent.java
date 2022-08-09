@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package java.awt.event;
 
 import java.awt.Component;
 import java.awt.Rectangle;
+import java.io.Serial;
 
 /**
  * The component-level paint event.
@@ -78,9 +79,10 @@ public class PaintEvent extends ComponentEvent {
      */
     Rectangle updateRect;
 
-    /*
-     * JDK 1.1 serialVersionUID
+    /**
+     * Use serialVersionUID from JDK 1.1 for interoperability.
      */
+    @Serial
     private static final long serialVersionUID = 1267492026433337593L;
 
     /**

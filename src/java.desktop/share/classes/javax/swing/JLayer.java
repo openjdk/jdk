@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.io.Serial;
 import java.util.ArrayList;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -315,7 +316,7 @@ public final class JLayer<V extends Component>
      * a {@code JLayer}.
      *
      * @param mgr the specified layout manager
-     * @exception IllegalArgumentException this method is not supported
+     * @throws IllegalArgumentException this method is not supported
      */
     public void setLayout(LayoutManager mgr) {
         if (mgr != null) {
@@ -687,6 +688,7 @@ public final class JLayer<V extends Component>
         return 1;
     }
 
+    @Serial
     @SuppressWarnings("unchecked")
     private void readObject(ObjectInputStream s)
             throws IOException, ClassNotFoundException {
@@ -814,6 +816,7 @@ public final class JLayer<V extends Component>
             return currentEventMask;
         }
 
+        @SuppressWarnings("removal")
         private void addAWTEventListener(final long eventMask) {
             AccessController.doPrivileged(new PrivilegedAction<Void>() {
                 public Void run() {
@@ -825,6 +828,7 @@ public final class JLayer<V extends Component>
 
         }
 
+        @SuppressWarnings("removal")
         private void removeAWTEventListener() {
             AccessController.doPrivileged(new PrivilegedAction<Void>() {
                 public Void run() {

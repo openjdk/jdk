@@ -37,7 +37,7 @@ import org.testng.annotations.Test;
 /*
  * @test
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true validation.LargeMaxOccursTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow validation.LargeMaxOccursTest
  * @run testng/othervm validation.LargeMaxOccursTest
  * @summary Test Validator shall report error for maxOccurs > 5000 when FEATURE_SECURE_PROCESSING is on, except the schema can be applied for constant-space algorithm.
  */

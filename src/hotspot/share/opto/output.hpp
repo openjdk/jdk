@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@ class Arena;
 class Bundle;
 class Block;
 class Block_Array;
+class C2_MacroAssembler;
 class ciMethod;
 class Compile;
 class MachNode;
@@ -113,6 +114,34 @@ public:
   void emit(CodeBuffer& cb);
 };
 
+// We move non-hot code of the nmethod entry barrier to an out-of-line stub
+class C2EntryBarrierStub: public ResourceObj {
+  Label _slow_path;
+  Label _continuation;
+  Label _guard; // Used on AArch64
+
+public:
+  C2EntryBarrierStub() :
+    _slow_path(),
+    _continuation(),
+    _guard() {}
+
+  Label& slow_path() { return _slow_path; }
+  Label& continuation() { return _continuation; }
+  Label& guard() { return _guard; }
+
+};
+
+class C2EntryBarrierStubTable {
+  C2EntryBarrierStub* _stub;
+
+public:
+  C2EntryBarrierStubTable() : _stub(NULL) {}
+  C2EntryBarrierStub* add_entry_barrier();
+  int estimate_stub_size() const;
+  void emit(CodeBuffer& cb);
+};
+
 class PhaseOutput : public Phase {
 private:
   // Instruction bits passed off to the VM
@@ -122,6 +151,7 @@ private:
   ExceptionHandlerTable  _handler_table;         // Table of native-code exception handlers
   ImplicitExceptionTable _inc_table;             // Table of implicit null checks in native code
   C2SafepointPollStubTable _safepoint_poll_table;// Table for safepoint polls
+  C2EntryBarrierStubTable _entry_barrier_table;  // Table for entry barrier stubs
   OopMapSet*             _oop_map_set;           // Table of oop maps (one for each safepoint location)
   BufferBlob*            _scratch_buffer_blob;   // For temporary code buffers.
   relocInfo*             _scratch_locs_memory;   // For temporary code buffers.
@@ -164,14 +194,16 @@ public:
                     bool              has_wide_vectors,
                     RTMState          rtm_state);
 
-  void install_stub(const char* stub_name,
-                    bool        caller_must_gc_arguments);
+  void install_stub(const char* stub_name);
 
   // Constant table
   ConstantTable& constant_table() { return _constant_table; }
 
   // Safepoint poll table
   C2SafepointPollStubTable* safepoint_poll_table() { return &_safepoint_poll_table; }
+
+  // Entry barrier table
+  C2EntryBarrierStubTable* entry_barrier_table() { return &_entry_barrier_table; }
 
   // Code emission iterator
   Block* block()   { return _block; }
@@ -180,8 +212,9 @@ public:
   // The architecture description provides short branch variants for some long
   // branch instructions. Replace eligible long branches with short branches.
   void shorten_branches(uint* blk_starts);
-  ObjectValue* sv_for_node_id(GrowableArray<ScopeValue*> *objs, int id);
-  void set_sv_for_object_node(GrowableArray<ScopeValue*> *objs, ObjectValue* sv);
+  // If "objs" contains an ObjectValue whose id is "id", returns it, else NULL.
+  static ObjectValue* sv_for_node_id(GrowableArray<ScopeValue*> *objs, int id);
+  static void set_sv_for_object_node(GrowableArray<ScopeValue*> *objs, ObjectValue* sv);
   void FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
                      GrowableArray<ScopeValue*> *array,
                      GrowableArray<ScopeValue*> *objs );
@@ -240,8 +273,6 @@ public:
 
   int               bang_size_in_bytes() const;
 
-  uint              node_bundling_limit();
-  Bundle*           node_bundling_base();
   void          set_node_bundling_limit(uint n) { _node_bundling_limit = n; }
   void          set_node_bundling_base(Bundle* b) { _node_bundling_base = b; }
 
@@ -253,16 +284,15 @@ public:
   // Dump formatted assembly
 #if defined(SUPPORT_OPTO_ASSEMBLY)
   void dump_asm_on(outputStream* ost, int* pcs, uint pc_limit);
-  void dump_asm(int* pcs = NULL, uint pc_limit = 0) { dump_asm_on(tty, pcs, pc_limit); }
 #else
   void dump_asm_on(outputStream* ost, int* pcs, uint pc_limit) { return; }
-  void dump_asm(int* pcs = NULL, uint pc_limit = 0) { return; }
 #endif
 
   // Build OopMaps for each GC point
   void BuildOopMaps();
 
 #ifndef PRODUCT
+  void print_scheduling();
   static void print_statistics();
 #endif
 };

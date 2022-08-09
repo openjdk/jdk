@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,11 +28,11 @@
 #import "CGLGraphicsConfig.h"
 #import "CGLSurfaceData.h"
 #import "ThreadUtilities.h"
+#import "JNIUtilities.h"
 
 #import <stdlib.h>
 #import <string.h>
 #import <ApplicationServices/ApplicationServices.h>
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
 
 /**
  * Disposes all memory and resources associated with the given
@@ -120,8 +120,9 @@ Java_sun_java2d_opengl_CGLGraphicsConfig_getCGLConfigInfo
     (JNIEnv *env, jclass cglgc)
 {
     __block jlong ret = 0L;
-    JNF_COCOA_ENTER(env);
+    JNI_COCOA_ENTER(env);
     [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
+
         JNIEnv *env = [ThreadUtilities getJNIEnvUncached];
 
         J2dRlsTraceLn(J2D_TRACE_INFO, "CGLGraphicsConfig_getCGLConfigInfo");
@@ -165,7 +166,7 @@ Java_sun_java2d_opengl_CGLGraphicsConfig_getCGLConfigInfo
         NSWindow *window =
             [[NSWindow alloc]
                 initWithContentRect: contentRect
-                styleMask: NSBorderlessWindowMask
+                styleMask: NSWindowStyleMaskBorderless
                 backing: NSBackingStoreBuffered
                 defer: false];
         if (window == nil) {
@@ -287,8 +288,9 @@ Java_sun_java2d_opengl_CGLGraphicsConfig_getCGLConfigInfo
         [NSOpenGLContext clearCurrentContext];
         ret = ptr_to_jlong(cglinfo);
         [pool drain];
+
     }];
-    JNF_COCOA_EXIT(env);
+    JNI_COCOA_EXIT(env);
     return ret;
 }
 

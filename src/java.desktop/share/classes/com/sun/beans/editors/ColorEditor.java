@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,24 @@
 
 package com.sun.beans.editors;
 
-import java.awt.*;
-import java.beans.*;
+import java.awt.Canvas;
+import java.awt.Choice;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Event;
+import java.awt.Panel;
+import java.awt.TextField;
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
+import java.beans.PropertyEditor;
+import java.io.Serial;
 
 public class ColorEditor extends Panel implements PropertyEditor {
+
+    /**
+     * Use serialVersionUID from JDK 1.7 for interoperability.
+     */
+    @Serial
     private static final long serialVersionUID = 1781257185164716054L;
 
     @SuppressWarnings("deprecation")

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,6 +62,7 @@ public class MarshalInputStream extends ObjectInputStream {
      * The value is only false when the property is present
      * and is equal to "false".
      */
+    @SuppressWarnings("removal")
     private static final boolean useCodebaseOnlyProperty =
         ! java.security.AccessController.doPrivileged(
             (PrivilegedAction<String>) () -> System.getProperty(
@@ -86,28 +87,13 @@ public class MarshalInputStream extends ObjectInputStream {
     private boolean useCodebaseOnly = useCodebaseOnlyProperty;
 
     /*
-     * Fix for 4179055: The remote object services inside the
-     * activation daemon use stubs that are in the package
-     * sun.rmi.server.  Classes for these stubs should be loaded from
-     * the classpath by RMI system code and not by the normal
-     * unmarshalling process as applications should not need to have
-     * permission to access the sun implementation classes.
-     *
-     * Note: this fix should be redone when API changes may be
-     * integrated
-     *
      * During parameter unmarshalling RMI needs to explicitly permit
-     * access to three sun.* stub classes
+     * access to sun.* stub classes
      */
     static {
         try {
-            String system =
-                "sun.rmi.server.Activation$ActivationSystemImpl_Stub";
             String registry = "sun.rmi.registry.RegistryImpl_Stub";
-
-            permittedSunClasses.put(system, Class.forName(system));
             permittedSunClasses.put(registry, Class.forName(registry));
-
         } catch (ClassNotFoundException e) {
             throw new NoClassDefFoundError("Missing system class: " +
                                            e.getMessage());
@@ -212,7 +198,7 @@ public class MarshalInputStream extends ObjectInputStream {
         try {
             return RMIClassLoader.loadClass(codebase, className,
                                             defaultLoader);
-        } catch (AccessControlException e) {
+        } catch (@SuppressWarnings("removal") AccessControlException e) {
             return checkSunClass(className, e);
         } catch (ClassNotFoundException e) {
             /*
@@ -268,6 +254,7 @@ public class MarshalInputStream extends ObjectInputStream {
      * Fix for 4179055: Need to assist resolving sun stubs; resolve
      * class locally if it is a "permitted" sun class
      */
+    @SuppressWarnings("removal")
     private Class<?> checkSunClass(String className, AccessControlException e)
         throws AccessControlException
     {

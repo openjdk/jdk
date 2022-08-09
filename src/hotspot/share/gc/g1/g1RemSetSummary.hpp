@@ -25,6 +25,7 @@
 #ifndef SHARE_GC_G1_G1REMSETSUMMARY_HPP
 #define SHARE_GC_G1_G1REMSETSUMMARY_HPP
 
+#include "gc/g1/g1CardSet.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
 
@@ -33,16 +34,14 @@ class G1RemSet;
 // A G1RemSetSummary manages statistical information about the G1RemSet
 
 class G1RemSetSummary {
-  size_t _num_coarsenings;
-
   size_t _num_vtimes;
   double* _rs_threads_vtimes;
 
-  double _service_thread_vtime;
+  double _sampling_task_vtime;
 
   void set_rs_thread_vtime(uint thread, double value);
-  void set_service_thread_vtime(double value) {
-    _service_thread_vtime = value;
+  void set_sampling_task_vtime(double value) {
+    _sampling_task_vtime = value;
   }
 
   // update this summary with current data from various places
@@ -58,16 +57,12 @@ public:
   // subtract all counters from the other summary, and set them in the current
   void subtract_from(G1RemSetSummary* other);
 
-  void print_on(outputStream* out);
+  void print_on(outputStream* out, bool show_thread_times);
 
   double rs_thread_vtime(uint thread) const;
 
-  double service_thread_vtime() const {
-    return _service_thread_vtime;
-  }
-
-  size_t num_coarsenings() const {
-    return _num_coarsenings;
+  double sampling_task_vtime() const {
+    return _sampling_task_vtime;
   }
 };
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@
 #include "prims/jvmtiExport.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/javaCalls.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/javaThread.inline.hpp"
 #include "runtime/vframe.inline.hpp"
 #include "runtime/vframeArray.hpp"
 
@@ -71,8 +71,6 @@ enum {
 // Native interfaces for use by Forte tools.
 
 
-#if !defined(IA64)
-
 class vframeStreamForte : public vframeStreamCommon {
  public:
   // constructor that starts with sender of frame fr (top_frame)
@@ -92,8 +90,12 @@ static bool is_decipherable_interpreted_frame(JavaThread* thread,
 
 vframeStreamForte::vframeStreamForte(JavaThread *jt,
                                      frame fr,
-                                     bool stop_at_java_call_stub) : vframeStreamCommon(jt, false /* process_frames */) {
-
+                                     bool stop_at_java_call_stub)
+    : vframeStreamCommon(RegisterMap(jt,
+                                     RegisterMap::UpdateMap::skip,
+                                     RegisterMap::ProcessFrames::skip,
+                                     RegisterMap::WalkContinuation::skip)) {
+  _reg_map.set_async(true);
   _stop_at_java_call_stub = stop_at_java_call_stub;
   _frame = fr;
 
@@ -314,6 +316,49 @@ static bool find_initial_Java_frame(JavaThread* thread,
 
   frame candidate = *fr;
 
+#ifdef ZERO
+  // Zero has no frames with code blobs, so the generic code fails.
+  // Instead, try to do Zero-specific search for Java frame.
+
+  {
+    RegisterMap map(thread,
+                    RegisterMap::UpdateMap::skip,
+                    RegisterMap::ProcessFrames::skip,
+                    RegisterMap::WalkContinuation::skip);
+
+    while (true) {
+      // Cannot walk this frame? Cannot do anything anymore.
+      if (!candidate.safe_for_sender(thread)) {
+        return false;
+      }
+
+      if (candidate.is_entry_frame()) {
+        // jcw is NULL if the java call wrapper could not be found
+        JavaCallWrapper* jcw = candidate.entry_frame_call_wrapper_if_safe(thread);
+        // If initial frame is frame from StubGenerator and there is no
+        // previous anchor, there are no java frames associated with a method
+        if (jcw == NULL || jcw->is_first_frame()) {
+          return false;
+        }
+      }
+
+      // If we find a decipherable interpreted frame, this is our initial frame.
+      if (candidate.is_interpreted_frame()) {
+        if (is_decipherable_interpreted_frame(thread, &candidate, method_p, bci_p)) {
+          *initial_frame_p = candidate;
+          return true;
+        }
+      }
+
+      // Walk some more.
+      candidate = candidate.sender(&map);
+    }
+
+    // No dice, report no initial frames.
+    return false;
+  }
+#endif
+
   // If the starting frame we were given has no codeBlob associated with
   // it see if we can find such a frame because only frames with codeBlobs
   // are possible Java frames.
@@ -323,7 +368,10 @@ static bool find_initial_Java_frame(JavaThread* thread,
     // See if we can find a useful frame
     int loop_count;
     int loop_max = MaxJavaStackTraceDepth * 2;
-    RegisterMap map(thread, false);
+    RegisterMap map(thread,
+                    RegisterMap::UpdateMap::skip,
+                    RegisterMap::ProcessFrames::skip,
+                    RegisterMap::WalkContinuation::skip);
 
     for (loop_count = 0; loop_max == 0 || loop_count < loop_max; loop_count++) {
       if (!candidate.safe_for_sender(thread)) return false;
@@ -337,7 +385,10 @@ static bool find_initial_Java_frame(JavaThread* thread,
   // We will hopefully be able to figure out something to do with it.
   int loop_count;
   int loop_max = MaxJavaStackTraceDepth * 2;
-  RegisterMap map(thread, false);
+  RegisterMap map(thread,
+                  RegisterMap::UpdateMap::skip,
+                  RegisterMap::ProcessFrames::skip,
+                  RegisterMap::WalkContinuation::skip);
 
   for (loop_count = 0; loop_max == 0 || loop_count < loop_max; loop_count++) {
 
@@ -522,12 +573,14 @@ static void forte_fill_call_trace_given_top(JavaThread* thd,
 extern "C" {
 JNIEXPORT
 void AsyncGetCallTrace(ASGCT_CallTrace *trace, jint depth, void* ucontext) {
+
+  // Can't use thread_from_jni_environment as it may also perform a VM exit check that is unsafe to
+  // do from this context.
+  Thread* raw_thread = Thread::current_or_null_safe();
   JavaThread* thread;
 
-  if (trace->env_id == NULL ||
-    (thread = JavaThread::thread_from_jni_environment(trace->env_id)) == NULL ||
-    thread->is_exiting()) {
-
+  if (trace->env_id == NULL || raw_thread == NULL || !raw_thread->is_Java_thread() ||
+      (thread = JavaThread::cast(raw_thread))->is_exiting()) {
     // bad env_id, thread has exited or thread is exiting
     trace->num_frames = ticks_thread_exit; // -8
     return;
@@ -539,7 +592,8 @@ void AsyncGetCallTrace(ASGCT_CallTrace *trace, jint depth, void* ucontext) {
     return;
   }
 
-  assert(JavaThread::current() == thread,
+  // This is safe now as the thread has not terminated and so no VM exit check occurs.
+  assert(thread == JavaThread::thread_from_jni_environment(trace->env_id),
          "AsyncGetCallTrace must be called by the current interrupted thread");
 
   if (!JvmtiExport::should_post_class_load()) {
@@ -551,6 +605,9 @@ void AsyncGetCallTrace(ASGCT_CallTrace *trace, jint depth, void* ucontext) {
     trace->num_frames = ticks_GC_active; // -2
     return;
   }
+
+  // !important! make sure all to call thread->set_in_asgct(false) before every return
+  thread->set_in_asgct(true);
 
   switch (thread->thread_state()) {
   case _thread_new:
@@ -609,11 +666,12 @@ void AsyncGetCallTrace(ASGCT_CallTrace *trace, jint depth, void* ucontext) {
     trace->num_frames = ticks_unknown_state; // -7
     break;
   }
+  thread->set_in_asgct(false);
 }
 
 
 #ifndef _WINDOWS
-// Support for the Forte(TM) Peformance Tools collector.
+// Support for the Forte(TM) Performance Tools collector.
 //
 // The method prototype is derived from libcollector.h. For more
 // information, please see the libcollect man page.
@@ -621,10 +679,11 @@ void AsyncGetCallTrace(ASGCT_CallTrace *trace, jint depth, void* ucontext) {
 // Method to let libcollector know about a dynamically loaded function.
 // Because it is weakly bound, the calls become NOP's when the library
 // isn't present.
-#ifdef __APPLE__
+#if defined(__APPLE__) || defined(_AIX)
 // XXXDARWIN: Link errors occur even when __attribute__((weak_import))
 // is added
 #define collector_func_load(x0,x1,x2,x3,x4,x5,x6) ((void) 0)
+#define collector_func_load_enabled() false
 #else
 void    collector_func_load(char* name,
                             void* null_argument_1,
@@ -636,20 +695,28 @@ void    collector_func_load(char* name,
 #pragma weak collector_func_load
 #define collector_func_load(x0,x1,x2,x3,x4,x5,x6) \
         ( collector_func_load ? collector_func_load(x0,x1,x2,x3,x4,x5,x6),(void)0 : (void)0 )
-#endif // __APPLE__
+#define collector_func_load_enabled() (collector_func_load ? true : false)
+#endif // __APPLE__ || _AIX
 #endif // !_WINDOWS
 
 } // end extern "C"
-#endif // !IA64
+
+bool Forte::is_enabled() {
+#if !defined(_WINDOWS)
+  return collector_func_load_enabled();
+#else
+  return false;
+#endif
+}
 
 void Forte::register_stub(const char* name, address start, address end) {
-#if !defined(_WINDOWS) && !defined(IA64)
+#if !defined(_WINDOWS)
   assert(pointer_delta(end, start, sizeof(jbyte)) < INT_MAX,
          "Code size exceeds maximum range");
 
   collector_func_load((char*)name, NULL, NULL, start,
     pointer_delta(end, start, sizeof(jbyte)), 0, NULL);
-#endif // !_WINDOWS && !IA64
+#endif // !_WINDOWS
 }
 
 #else // INCLUDE_JVMTI

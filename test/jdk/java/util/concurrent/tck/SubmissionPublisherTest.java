@@ -682,7 +682,7 @@ public class SubmissionPublisherTest extends JSR166TestCase {
         return false;
     }
 
-    static boolean reqHandle(AtomicInteger count, Subscriber s) {
+    static boolean reqHandle(AtomicInteger count, Subscriber<?> s) {
         count.getAndIncrement();
         ((TestSubscriber)s).sn.request(Long.MAX_VALUE);
         return true;
@@ -985,7 +985,7 @@ public class SubmissionPublisherTest extends JSR166TestCase {
     public void testConsumeNPE() {
         SubmissionPublisher<Integer> p = basicPublisher();
         try {
-            CompletableFuture<Void> f = p.consume(null);
+            CompletableFuture<Void> unused = p.consume(null);
             shouldThrow();
         } catch (NullPointerException success) {}
     }

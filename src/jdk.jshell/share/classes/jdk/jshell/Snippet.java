@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -236,20 +236,12 @@ public abstract class Snippet {
         ENUM_SUBKIND(Kind.TYPE_DECL),
 
         /**
-         * {@preview Associated with records, a preview feature of the Java language.
-         *
-         *           This enum constant is associated with <i>records</i>, a preview
-         *           feature of the Java language. Preview features
-         *           may be removed in a future release, or upgraded to permanent
-         *           features of the Java language.}
-         *
          * A record declaration.
          * A {@code SubKind} of {@link Kind#TYPE_DECL}.
          * @jls 8.10 Record Types
          * @since 14
          *
          */
-        @jdk.internal.PreviewFeature(feature=jdk.internal.PreviewFeature.Feature.RECORDS)
         RECORD_SUBKIND(Kind.TYPE_DECL),
 
         /**
@@ -385,7 +377,7 @@ public abstract class Snippet {
      * {@link jdk.jshell.Snippet.Status#isActive()}, if, as the
      * JShell state changes, the snippet will update, possibly
      * changing {@code Status}.
-     * An executable Snippet can only be executed if it is in the the
+     * An executable Snippet can only be executed if it is in the
      * {@link jdk.jshell.Snippet.Status#VALID} {@code Status}.
      * @see JShell#status(jdk.jshell.Snippet)
      */

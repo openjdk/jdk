@@ -25,6 +25,7 @@
  * @test
  * @bug 7169395
  * @summary Tests that array list initialized correctly
+ * @run main/othervm -Djava.security.manager=allow Test7169395
  * @author Sergey Malenkov
  */
 

@@ -34,16 +34,12 @@ import java.util.stream.Stream;
  * A <a href="package-summary.html#nominal">nominal descriptor</a> for a
  * {@linkplain MethodType} constant.
  *
- * @apiNote In the future, if the Java language permits, {@linkplain MethodTypeDesc}
- * may become a {@code sealed} interface, which would prohibit subclassing except
- * by explicitly permitted types.  Non-platform classes should not implement
- * {@linkplain MethodTypeDesc} directly.
- *
  * @since 12
  */
-public interface MethodTypeDesc
+public sealed interface MethodTypeDesc
         extends ConstantDesc,
-                TypeDescriptor.OfMethod<ClassDesc, MethodTypeDesc> {
+                TypeDescriptor.OfMethod<ClassDesc, MethodTypeDesc>
+        permits MethodTypeDescImpl {
     /**
      * Creates a {@linkplain MethodTypeDesc} given a method descriptor string.
      *

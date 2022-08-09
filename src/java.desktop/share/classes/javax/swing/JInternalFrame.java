@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,22 +25,37 @@
 
 package javax.swing;
 
-import java.awt.*;
+import java.awt.BorderLayout;
+import java.awt.Component;
+import java.awt.Container;
+import java.awt.Cursor;
+import java.awt.Dimension;
+import java.awt.FocusTraversalPolicy;
+import java.awt.Graphics;
+import java.awt.KeyboardFocusManager;
+import java.awt.LayoutManager;
+import java.awt.Rectangle;
+import java.awt.Window;
+import java.beans.BeanProperty;
+import java.beans.JavaBean;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyVetoException;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.io.Serial;
 
-import java.beans.*;
-
+import javax.accessibility.Accessible;
+import javax.accessibility.AccessibleContext;
+import javax.accessibility.AccessibleRole;
+import javax.accessibility.AccessibleValue;
 import javax.swing.event.InternalFrameEvent;
 import javax.swing.event.InternalFrameListener;
-import javax.swing.plaf.*;
-
-import javax.accessibility.*;
-
-import java.io.ObjectOutputStream;
-import java.io.IOException;
+import javax.swing.plaf.DesktopIconUI;
+import javax.swing.plaf.InternalFrameUI;
 
 import sun.awt.AppContext;
 import sun.swing.SwingUtilities2;
-
 
 /**
  * A lightweight object that provides many of the features of
@@ -173,6 +188,8 @@ public class JInternalFrame extends JComponent implements
     protected String  title;
     /**
      * The icon that is displayed when this internal frame is iconified.
+     * Subclassers must ensure this is set to a non-null value
+     * during construction and not subsequently set this to null.
      * @see #iconable
      */
     protected JDesktopIcon desktopIcon;
@@ -480,10 +497,10 @@ public class JInternalFrame extends JComponent implements
      * @param comp the component to be enhanced
      * @param constraints the constraints to be respected
      * @param index the index
-     * @exception IllegalArgumentException if <code>index</code> is invalid
-     * @exception IllegalArgumentException if adding the container's parent
+     * @throws IllegalArgumentException if <code>index</code> is invalid
+     * @throws IllegalArgumentException if adding the container's parent
      *                  to itself
-     * @exception IllegalArgumentException if adding a window to a container
+     * @throws IllegalArgumentException if adding a window to a container
      *
      * @see #setRootPaneCheckingEnabled
      * @see javax.swing.RootPaneContainer
@@ -611,7 +628,7 @@ public class JInternalFrame extends JComponent implements
      *
      * @param c  the content pane for this internal frame
      *
-     * @exception java.awt.IllegalComponentStateException (a runtime
+     * @throws java.awt.IllegalComponentStateException (a runtime
      *           exception) if the content pane parameter is <code>null</code>
      * @see RootPaneContainer#getContentPane
      */
@@ -640,7 +657,7 @@ public class JInternalFrame extends JComponent implements
      *
      * @param layered the <code>JLayeredPane</code> for this internal frame
      *
-     * @exception java.awt.IllegalComponentStateException (a runtime
+     * @throws java.awt.IllegalComponentStateException (a runtime
      *           exception) if the layered pane parameter is <code>null</code>
      * @see RootPaneContainer#setLayeredPane
      */
@@ -777,7 +794,7 @@ public class JInternalFrame extends JComponent implements
      *
      * @param b must be <code>true</code>
      *
-     * @exception PropertyVetoException when the attempt to set the
+     * @throws PropertyVetoException when the attempt to set the
      *            property is vetoed by the <code>JInternalFrame</code>
      *
      * @see #isClosed()
@@ -889,7 +906,7 @@ public class JInternalFrame extends JComponent implements
      *
      * @param b a boolean, where <code>true</code> means to iconify this internal frame and
      *          <code>false</code> means to de-iconify it
-     * @exception PropertyVetoException when the attempt to set the
+     * @throws PropertyVetoException when the attempt to set the
      *            property is vetoed by the <code>JInternalFrame</code>
      *
      * @see InternalFrameEvent#INTERNAL_FRAME_ICONIFIED
@@ -968,7 +985,7 @@ public class JInternalFrame extends JComponent implements
      *
      * @param b  a boolean, where <code>true</code> maximizes this internal frame and <code>false</code>
      *           restores it
-     * @exception PropertyVetoException when the attempt to set the
+     * @throws PropertyVetoException when the attempt to set the
      *            property is vetoed by the <code>JInternalFrame</code>
      */
     @BeanProperty(description
@@ -1030,7 +1047,7 @@ public class JInternalFrame extends JComponent implements
      * @param selected  a boolean, where <code>true</code> means this internal frame
      *                  should become selected (currently active)
      *                  and <code>false</code> means it should become deselected
-     * @exception PropertyVetoException when the attempt to set the
+     * @throws PropertyVetoException when the attempt to set the
      *            property is vetoed by the <code>JInternalFrame</code>
      *
      * @see #isShowing
@@ -1216,10 +1233,9 @@ public class JInternalFrame extends JComponent implements
     @BeanProperty(bound = false, expert = true, description
             = "Specifies what desktop layer is used.")
     public void setLayer(Integer layer) {
-        if(getParent() != null && getParent() instanceof JLayeredPane) {
+        if (getParent() instanceof JLayeredPane p) {
             // Normally we want to do this, as it causes the LayeredPane
             // to draw properly.
-            JLayeredPane p = (JLayeredPane)getParent();
             p.setLayer(this, layer.intValue(), p.getPosition(this));
         } else {
              // Try to do the right thing
@@ -1292,11 +1308,15 @@ public class JInternalFrame extends JComponent implements
      * <code>JInternalFrame</code>.
      *
      * @param d the <code>JDesktopIcon</code> to display on the desktop
+     * @throws NullPointerException if the {@code d} is {@code null}
      * @see #getDesktopIcon
      */
     @BeanProperty(description
             = "The icon shown when this internal frame is minimized.")
     public void setDesktopIcon(JDesktopIcon d) {
+        if (d == null) {
+            throw new NullPointerException("JDesktopIcon is null");
+        }
         JDesktopIcon oldValue = getDesktopIcon();
         desktopIcon = d;
         firePropertyChange("desktopIcon", oldValue, d);
@@ -1858,6 +1878,7 @@ public class JInternalFrame extends JComponent implements
      * in <code>JComponent</code> for more
      * information about serialization in Swing.
      */
+    @Serial
     private void writeObject(ObjectOutputStream s) throws IOException {
         s.defaultWriteObject();
         if (getUIClassID().equals(uiClassID)) {
@@ -2257,6 +2278,7 @@ public class JInternalFrame extends JComponent implements
         ////////////////
         // Serialization support
         ////////////////
+        @Serial
         private void writeObject(ObjectOutputStream s) throws IOException {
             s.defaultWriteObject();
             if (getUIClassID().equals("DesktopIconUI")) {

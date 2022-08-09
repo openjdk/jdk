@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,34 @@
 #define SHARE_JVMCI_JVMCICOMPILER_HPP
 
 #include "compiler/abstractCompiler.hpp"
+#include "compiler/compiler_globals.hpp"
 #include "runtime/atomic.hpp"
 
 class JVMCICompiler : public AbstractCompiler {
-private:
+ public:
+  // Code installation specific statistics.
+  class CodeInstallStats {
+   private:
+    elapsedTimer _timer;
+    volatile int _count;
+    volatile int _codeBlobs_size;
+    volatile int _codeBlobs_code_size;
+   public:
+    CodeInstallStats() :
+      _count(0),
+      _codeBlobs_size(0),
+      _codeBlobs_code_size(0)
+    {}
+
+    elapsedTimer* timer() { return &_timer; }
+    void print_on(outputStream* st, const char* prefix) const;
+
+    // Notifies this object that `cb` has just been
+    // installed in the code cache.
+    void on_install(CodeBlob* cb);
+  };
+
+ private:
   bool _bootstrapping;
 
   /**
@@ -48,7 +72,8 @@ private:
 
   static JVMCICompiler* _instance;
 
-  static elapsedTimer _codeInstallTimer;
+  CodeInstallStats _jit_code_installs;     // CompileBroker compilations
+  CodeInstallStats _hosted_code_installs;  // Non-CompileBroker compilations
 
   /**
    * Exits the VM due to an unexpected exception.
@@ -58,20 +83,9 @@ private:
 public:
   JVMCICompiler();
 
-  static JVMCICompiler* instance(bool require_non_null, TRAPS) {
-    if (!EnableJVMCI) {
-      THROW_MSG_NULL(vmSymbols::java_lang_InternalError(), "JVMCI is not enabled")
-    }
-    if (_instance == NULL && require_non_null) {
-      THROW_MSG_NULL(vmSymbols::java_lang_InternalError(), "The JVMCI compiler instance has not been created");
-    }
-    return _instance;
-  }
+  static JVMCICompiler* instance(bool require_non_null, TRAPS);
 
   virtual const char* name() { return UseJVMCINativeLibrary ? "JVMCI-native" : "JVMCI"; }
-
-  virtual bool supports_native()                 { return true; }
-  virtual bool supports_osr   ()                 { return true; }
 
   bool is_jvmci()                                { return true; }
   bool is_c1   ()                                { return false; }
@@ -100,6 +114,10 @@ public:
   // Compilation entry point for methods
   virtual void compile_method(ciEnv* env, ciMethod* target, int entry_bci, bool install_code, DirectiveSet* directive);
 
+  virtual void stopping_compiler_thread(CompilerThread* current);
+
+  virtual void on_empty_queue(CompileQueue* queue, CompilerThread* thread);
+
   // Print compilation timers and statistics
   virtual void print_timers();
 
@@ -114,10 +132,13 @@ public:
   int global_compilation_ticks() const { return _global_compilation_ticks; }
   void inc_global_compilation_ticks();
 
-  // Print compilation timers and statistics
-  static void print_compilation_timers();
-
-  static elapsedTimer* codeInstallTimer() { return &_codeInstallTimer; }
+  CodeInstallStats* code_install_stats(bool hosted) {
+    if (!hosted) {
+      return &_jit_code_installs;
+    } else {
+      return &_hosted_code_installs;
+    }
+  }
 };
 
 #endif // SHARE_JVMCI_JVMCICOMPILER_HPP

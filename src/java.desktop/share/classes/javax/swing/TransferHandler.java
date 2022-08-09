@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1172,9 +1172,9 @@ public class TransferHandler implements Serializable {
          *
          * @param flavor the requested flavor for the data
          * @see DataFlavor#getRepresentationClass
-         * @exception IOException                if the data is no longer available
+         * @throws IOException                if the data is no longer available
          *              in the requested flavor.
-         * @exception UnsupportedFlavorException if the requested data flavor is
+         * @throws UnsupportedFlavorException if the requested data flavor is
          *              not supported.
          */
         public Object getTransferData(DataFlavor flavor) throws UnsupportedFlavorException, IOException {
@@ -1272,9 +1272,9 @@ public class TransferHandler implements Serializable {
                 // If the Drop target is inactive the dragExit will not be dispatched to the dtListener,
                 // so make sure that we clean up the dtListener anyway.
                 DropTargetListener dtListener = getDropTargetListener();
-                    if (dtListener != null && dtListener instanceof DropHandler) {
-                        ((DropHandler)dtListener).cleanup(false);
-                    }
+                if (dtListener instanceof DropHandler dropHandler) {
+                    dropHandler.cleanup(false);
+                }
             }
         }
 
@@ -1714,8 +1714,11 @@ public class TransferHandler implements Serializable {
                 }
             };
 
+            @SuppressWarnings("removal")
             final AccessControlContext stack = AccessController.getContext();
+            @SuppressWarnings("removal")
             final AccessControlContext srcAcc = AWTAccessor.getComponentAccessor().getAccessControlContext((Component)src);
+            @SuppressWarnings("removal")
             final AccessControlContext eventAcc = AWTAccessor.getAWTEventAccessor().getAccessControlContext(e);
 
                 if (srcAcc == null) {

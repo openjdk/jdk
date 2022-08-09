@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -123,7 +123,7 @@ final class DHServerKeyExchange {
             } else {
                 useExplicitSigAlgorithm =
                         shc.negotiatedProtocol.useTLS12PlusSpec();
-                Signature signer = null;
+                Signature signer;
                 if (useExplicitSigAlgorithm) {
                     Map.Entry<SignatureScheme, Signature> schemeAndSigner =
                             SignatureScheme.getSignerOfPreferableAlgorithm(
@@ -155,7 +155,7 @@ final class DHServerKeyExchange {
                     }
                 }
 
-                byte[] signature = null;
+                byte[] signature;
                 try {
                     updateSignature(signer, shc.clientHelloRandom.randomBytes,
                             shc.serverHelloRandom.randomBytes);
@@ -415,7 +415,7 @@ final class DHServerKeyExchange {
 
         private static Signature getSignature(String keyAlgorithm,
                 Key key) throws NoSuchAlgorithmException, InvalidKeyException {
-            Signature signer = null;
+            Signature signer;
             switch (keyAlgorithm) {
                 case "DSA":
                     signer = Signature.getInstance(JsseJce.SIGNATURE_DSA);
@@ -444,7 +444,6 @@ final class DHServerKeyExchange {
          */
         private void updateSignature(Signature sig, byte[] clntNonce,
                 byte[] svrNonce) throws SignatureException {
-            int tmp;
 
             sig.update(clntNonce);
             sig.update(svrNonce);

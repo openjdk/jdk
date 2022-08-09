@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -42,6 +42,7 @@ public class SecurityProperties {
      * @param  propName the name of the system or security property
      * @return the value of the system or security property
      */
+    @SuppressWarnings("removal")
     public static String privilegedGetOverridable(String propName) {
         if (System.getSecurityManager() == null) {
             return getOverridableProperty(propName);

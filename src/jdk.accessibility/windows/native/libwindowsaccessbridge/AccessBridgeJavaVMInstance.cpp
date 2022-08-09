@@ -47,7 +47,7 @@ extern bool isVMInstanceChainInUse;
 
 DEBUG_CODE(extern HWND theDialogWindow);
 extern "C" {
-    DEBUG_CODE(void AppendToCallInfo(char *s));
+    DEBUG_CODE(void AppendToCallInfo(const char *s));
 }
 
 

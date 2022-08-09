@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,11 +28,14 @@
 // C2_MacroAssembler contains high-level macros for C2
 
  public:
+  void emit_entry_barrier_stub(C2EntryBarrierStub* stub);
+  static int entry_barrier_stub_size();
 
   void string_compare(Register str1, Register str2,
                       Register cnt1, Register cnt2, Register result,
                       Register tmp1, Register tmp2, FloatRegister vtmp1,
-                      FloatRegister vtmp2, FloatRegister vtmp3, int ae);
+                      FloatRegister vtmp2, FloatRegister vtmp3,
+                      PRegister pgtmp1, PRegister pgtmp2, int ae);
 
   void string_indexof(Register str1, Register str2,
                       Register cnt1, Register cnt2,
@@ -46,7 +49,85 @@
                            Register tmp1, Register tmp2, Register tmp3);
 
   void stringL_indexof_char(Register str1, Register cnt1,
-                           Register ch, Register result,
-                           Register tmp1, Register tmp2, Register tmp3);
+                            Register ch, Register result,
+                            Register tmp1, Register tmp2, Register tmp3);
+
+  void string_indexof_char_sve(Register str1, Register cnt1,
+                               Register ch, Register result,
+                               FloatRegister ztmp1, FloatRegister ztmp2,
+                               PRegister pgtmp, PRegister ptmp, bool isL);
+
+  // Compress the least significant bit of each byte to the rightmost and clear
+  // the higher garbage bits.
+  void bytemask_compress(Register dst);
+
+  // Pack the lowest-numbered bit of each mask element in src into a long value
+  // in dst, at most the first 64 lane elements.
+  void sve_vmask_tolong(Register dst, PRegister src, BasicType bt, int lane_cnt,
+                        FloatRegister vtmp1, FloatRegister vtmp2);
+
+  // Unpack the mask, a long value in src, into predicate register dst based on the
+  // corresponding data type. Note that dst can support at most 64 lanes.
+  void sve_vmask_fromlong(PRegister dst, Register src, BasicType bt, int lane_cnt,
+                          FloatRegister vtmp1, FloatRegister vtmp2);
+
+  // SIMD&FP comparison
+  void neon_compare(FloatRegister dst, BasicType bt, FloatRegister src1,
+                    FloatRegister src2, int cond, bool isQ);
+
+  void sve_compare(PRegister pd, BasicType bt, PRegister pg,
+                   FloatRegister zn, FloatRegister zm, int cond);
+
+  void sve_vmask_lasttrue(Register dst, BasicType bt, PRegister src, PRegister ptmp);
+
+  void sve_vector_extend(FloatRegister dst, SIMD_RegVariant dst_size,
+                         FloatRegister src, SIMD_RegVariant src_size);
+
+  void sve_vector_narrow(FloatRegister dst, SIMD_RegVariant dst_size,
+                         FloatRegister src, SIMD_RegVariant src_size, FloatRegister tmp);
+
+  void sve_vmaskcast_extend(PRegister dst, PRegister src,
+                            uint dst_element_length_in_bytes, uint src_element_lenght_in_bytes);
+
+  void sve_vmaskcast_narrow(PRegister dst, PRegister src,
+                            uint dst_element_length_in_bytes, uint src_element_lenght_in_bytes);
+
+  void sve_reduce_integral(int opc, Register dst, BasicType bt, Register src1,
+                           FloatRegister src2, PRegister pg, FloatRegister tmp);
+
+  // Set elements of the dst predicate to true for lanes in the range of
+  // [0, lane_cnt), or to false otherwise. The input "lane_cnt" should be
+  // smaller than or equal to the supported max vector length of the basic
+  // type. Clobbers: rscratch1 and the rFlagsReg.
+  void sve_gen_mask_imm(PRegister dst, BasicType bt, uint32_t lane_cnt);
+
+  // Extract a scalar element from an sve vector at position 'idx'.
+  // The input elements in src are expected to be of integral type.
+  void sve_extract_integral(Register dst, SIMD_RegVariant size, FloatRegister src, int idx,
+                            bool is_signed, FloatRegister vtmp);
+
+  // java.lang.Math::round intrinsics
+  void vector_round_neon(FloatRegister dst, FloatRegister src, FloatRegister tmp1,
+                         FloatRegister tmp2, FloatRegister tmp3,
+                         SIMD_Arrangement T);
+  void vector_round_sve(FloatRegister dst, FloatRegister src, FloatRegister tmp1,
+                        FloatRegister tmp2, PRegister ptmp,
+                        SIMD_RegVariant T);
+
+  // Pack active elements of src, under the control of mask, into the
+  // lowest-numbered elements of dst. Any remaining elements of dst will
+  // be filled with zero.
+  void sve_compress_byte(FloatRegister dst, FloatRegister src, PRegister mask,
+                         FloatRegister vtmp1, FloatRegister vtmp2,
+                         FloatRegister vtmp3, FloatRegister vtmp4,
+                         PRegister ptmp, PRegister pgtmp);
+
+  void sve_compress_short(FloatRegister dst, FloatRegister src, PRegister mask,
+                          FloatRegister vtmp1, FloatRegister vtmp2,
+                          PRegister pgtmp);
+
+  void neon_reverse_bits(FloatRegister dst, FloatRegister src, BasicType bt, bool isQ);
+
+  void neon_reverse_bytes(FloatRegister dst, FloatRegister src, BasicType bt, bool isQ);
 
 #endif // CPU_AARCH64_C2_MACROASSEMBLER_AARCH64_HPP

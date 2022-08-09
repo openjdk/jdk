@@ -25,9 +25,13 @@
 #ifndef SHARE_JVMCI_JVMCI_GLOBALS_HPP
 #define SHARE_JVMCI_JVMCI_GLOBALS_HPP
 
+#include "runtime/globals_shared.hpp"
 #include "utilities/vmEnums.hpp"
 
 class fileStream;
+
+#define LIBJVMCI_ERR_FILE "hs_err_pid%p_libjvmci.log"
+#define DEFAULT_COMPILER_IDLE_DELAY 1000
 
 //
 // Declare all global flags used by the JVMCI compiler. Only flags that need
@@ -53,6 +57,21 @@ class fileStream;
   product(bool, UseJVMCICompiler, false, EXPERIMENTAL,                      \
           "Use JVMCI as the default compiler. Defaults to true if "         \
           "EnableJVMCIProduct is true.")                                    \
+                                                                            \
+  product(uint, JVMCIThreadsPerNativeLibraryRuntime, 0, EXPERIMENTAL,       \
+          "Max number of threads per JVMCI native runtime. "                \
+          "Specify 0 to force use of a single JVMCI native runtime. ")      \
+          range(0, max_jint)                                                \
+                                                                            \
+  product(uint, JVMCICompilerIdleDelay, DEFAULT_COMPILER_IDLE_DELAY, EXPERIMENTAL, \
+          "Number of milliseconds a JVMCI compiler queue should wait for "  \
+          "a compilation task before being considered idle. When a JVMCI "  \
+          "compiler queue becomes idle, it is detached from its JVMCIRuntime. "\
+          "Once the last thread is detached from a JVMCIRuntime, all "      \
+          "resources associated with the runtime are reclaimed. To use a "  \
+          "new runtime for every JVMCI compilation, set this value to 0 "   \
+          "and set JVMCIThreadsPerNativeLibraryRuntime to 1.")              \
+          range(0, max_jint)                                                \
                                                                             \
   product(bool, JVMCIPrintProperties, false, EXPERIMENTAL,                  \
           "Prints properties used by the JVMCI compiler and exits")         \
@@ -122,6 +141,11 @@ class fileStream;
           "on the HotSpot heap. Defaults to true if EnableJVMCIProduct is " \
           "true and a JVMCI native library is available.")                  \
                                                                             \
+  product(ccstr, JVMCINativeLibraryErrorFile, NULL, EXPERIMENTAL,           \
+          "If an error in the JVMCI native library occurs, save the "       \
+          "error data to this file"                                         \
+          "[default: ./" LIBJVMCI_ERR_FILE "] (%p replaced with pid)")      \
+                                                                            \
   NOT_COMPILER2(product(bool, UseMultiplyToLenIntrinsic, false, DIAGNOSTIC, \
           "Enables intrinsification of BigInteger.multiplyToLen()"))        \
                                                                             \
@@ -139,6 +163,8 @@ class fileStream;
 
 // end of JVMCI_FLAGS
 
+DECLARE_FLAGS(JVMCI_FLAGS)
+
 // The base name for the shared library containing the JVMCI based compiler
 #define JVMCI_SHARED_LIBRARY_NAME "jvmcicompiler"
 
@@ -155,7 +181,10 @@ class JVMCIGlobals {
   // Convert JVMCI experimental flags to product
   static bool enable_jvmci_product_mode(JVMFlagOrigin);
 
-  // Check and exit VM with error if selected GC is not supported by JVMCI.
+  // Returns true iff the GC fully supports JVMCI.
+  static bool gc_supports_jvmci();
+
+  // Check and turn off EnableJVMCI if selected GC does not support JVMCI.
   static void check_jvmci_supported_gc();
 
   static fileStream* get_jni_config_file() { return _jni_config_file; }

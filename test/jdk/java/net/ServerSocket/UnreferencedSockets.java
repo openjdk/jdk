@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@
  * @modules java.management java.base/java.io:+open java.base/java.net:+open
  * @run main/othervm UnreferencedSockets
  * @run main/othervm -Djava.net.preferIPv4Stack=true UnreferencedSockets
- * @run main/othervm -Djdk.net.usePlainSocketImpl UnreferencedSockets
  * @summary Check that unreferenced sockets are closed
  */
 
@@ -186,16 +185,6 @@ public class UnreferencedSockets {
             fileDescriptorField.setAccessible(true);
             FileDescriptor fileDescriptor = (FileDescriptor) fileDescriptorField.get(socketImpl);
             extractRefs(fileDescriptor, name);
-
-            Class<?> socketImplClass = socketImpl.getClass();
-            System.out.printf("socketImplClass: %s%n", socketImplClass);
-            if (socketImplClass.getClass().getName().equals("java.net.TwoStacksPlainSocketImpl")) {
-                Field fileDescriptor1Field = socketImplClass.getDeclaredField("fd1");
-                fileDescriptor1Field.setAccessible(true);
-                FileDescriptor fileDescriptor1 = (FileDescriptor) fileDescriptor1Field.get(socketImpl);
-                extractRefs(fileDescriptor1, name + "::twoStacksFd1");
-
-            }
         } catch (NoSuchFieldException | IllegalAccessException ex) {
             ex.printStackTrace();
             throw new AssertionError("missing field", ex);

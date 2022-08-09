@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,38 +40,39 @@ import java.util.Optional;
 import static java.util.Objects.requireNonNull;
 
 /**
- * This is the common base class of all Java language enumeration types.
+ * This is the common base class of all Java language enumeration classes.
  *
  * More information about enums, including descriptions of the
  * implicitly declared methods synthesized by the compiler, can be
  * found in section {@jls 8.9} of <cite>The Java Language
  * Specification</cite>.
  *
- * Enumeration types are all serializable and receive special handling
+ * Enumeration classes are all serializable and receive special handling
  * by the serialization mechanism. The serialized representation used
  * for enum constants cannot be customized. Declarations of methods
  * and fields that would otherwise interact with serialization are
- * ignored, including {@code serialVersionUID}; see the <cite>Java
- * Object Serialization Specification</cite> for details.
+ * ignored, including {@code serialVersionUID}; see the
+ * <a href="{@docRoot}/../specs/serialization/index.html"><cite>Java
+ * Object Serialization Specification</cite></a> for details.
  *
  * <p> Note that when using an enumeration type as the type of a set
  * or as the type of the keys in a map, specialized and efficient
  * {@linkplain java.util.EnumSet set} and {@linkplain
  * java.util.EnumMap map} implementations are available.
  *
- * @param <E> The enum type subclass
+ * @param <E> The type of the enum subclass
  * @serial exclude
  * @author  Josh Bloch
  * @author  Neal Gafter
  * @see     Class#getEnumConstants()
  * @see     java.util.EnumSet
  * @see     java.util.EnumMap
- * @jls 8.9 Enum Types
+ * @jls 8.9 Enum Classes
  * @jls 8.9.3 Enum Members
  * @since   1.5
  */
 @SuppressWarnings("serial") // No serialVersionUID needed due to
-                            // special-casing of enum types.
+                            // special-casing of enum classes.
 public abstract class Enum<E extends Enum<E>>
         implements Constable, Comparable<E>, Serializable {
     /**
@@ -126,7 +127,7 @@ public abstract class Enum<E extends Enum<E>>
     /**
      * Sole constructor.  Programmers cannot invoke this constructor.
      * It is for use by code emitted by the compiler in response to
-     * enum type declarations.
+     * enum class declarations.
      *
      * @param name - The name of this enum constant, which is the identifier
      *               used to declare it.
@@ -142,7 +143,7 @@ public abstract class Enum<E extends Enum<E>>
     /**
      * Returns the name of this enum constant, as contained in the
      * declaration.  This method may be overridden, though it typically
-     * isn't necessary or desirable.  An enum type should override this
+     * isn't necessary or desirable.  An enum class should override this
      * method when a more "programmer-friendly" string form exists.
      *
      * @return the name of this enum constant
@@ -193,7 +194,7 @@ public abstract class Enum<E extends Enum<E>>
      * method is the order in which the constants are declared.
      */
     public final int compareTo(E o) {
-        Enum<?> other = (Enum<?>)o;
+        Enum<?> other = o;
         Enum<E> self = this;
         if (self.getClass() != other.getClass() && // optimization
             self.getDeclaringClass() != other.getDeclaringClass())
@@ -236,47 +237,52 @@ public abstract class Enum<E extends Enum<E>>
     }
 
     /**
-     * Returns the enum constant of the specified enum type with the
+     * Returns the enum constant of the specified enum class with the
      * specified name.  The name must match exactly an identifier used
-     * to declare an enum constant in this type.  (Extraneous whitespace
+     * to declare an enum constant in this class.  (Extraneous whitespace
      * characters are not permitted.)
      *
-     * <p>Note that for a particular enum type {@code T}, the
+     * <p>Note that for a particular enum class {@code T}, the
      * implicitly declared {@code public static T valueOf(String)}
      * method on that enum may be used instead of this method to map
      * from a name to the corresponding enum constant.  All the
-     * constants of an enum type can be obtained by calling the
+     * constants of an enum class can be obtained by calling the
      * implicit {@code public static T[] values()} method of that
-     * type.
+     * class.
      *
-     * @param <T> The enum type whose constant is to be returned
-     * @param enumType the {@code Class} object of the enum type from which
+     * @param <T> The enum class whose constant is to be returned
+     * @param enumClass the {@code Class} object of the enum class from which
      *      to return a constant
      * @param name the name of the constant to return
-     * @return the enum constant of the specified enum type with the
+     * @return the enum constant of the specified enum class with the
      *      specified name
-     * @throws IllegalArgumentException if the specified enum type has
+     * @throws IllegalArgumentException if the specified enum class has
      *         no constant with the specified name, or the specified
-     *         class object does not represent an enum type
-     * @throws NullPointerException if {@code enumType} or {@code name}
+     *         class object does not represent an enum class
+     * @throws NullPointerException if {@code enumClass} or {@code name}
      *         is null
      * @since 1.5
      */
-    public static <T extends Enum<T>> T valueOf(Class<T> enumType,
+    public static <T extends Enum<T>> T valueOf(Class<T> enumClass,
                                                 String name) {
-        T result = enumType.enumConstantDirectory().get(name);
+        T result = enumClass.enumConstantDirectory().get(name);
         if (result != null)
             return result;
         if (name == null)
             throw new NullPointerException("Name is null");
         throw new IllegalArgumentException(
-            "No enum constant " + enumType.getCanonicalName() + "." + name);
+            "No enum constant " + enumClass.getCanonicalName() + "." + name);
     }
 
     /**
      * enum classes cannot have finalize methods.
+     *
+     * @deprecated Finalization has been deprecated for removal.  See
+     * {@link java.lang.Object#finalize} for background information and details
+     * about migration options.
      */
-    @SuppressWarnings("deprecation")
+    @Deprecated(since="18", forRemoval=true)
+    @SuppressWarnings("removal")
     protected final void finalize() { }
 
     /**
@@ -307,13 +313,13 @@ public abstract class Enum<E extends Enum<E>>
         /**
          * Constructs a nominal descriptor for the specified {@code enum} class and name.
          *
-         * @param constantType a {@link ClassDesc} describing the {@code enum} class
+         * @param constantClass a {@link ClassDesc} describing the {@code enum} class
          * @param constantName the unqualified name of the enum constant
          * @throws NullPointerException if any argument is null
          * @jvms 4.2.2 Unqualified Names
          */
-        private EnumDesc(ClassDesc constantType, String constantName) {
-            super(ConstantDescs.BSM_ENUM_CONSTANT, requireNonNull(constantName), requireNonNull(constantType));
+        private EnumDesc(ClassDesc constantClass, String constantName) {
+            super(ConstantDescs.BSM_ENUM_CONSTANT, requireNonNull(constantName), requireNonNull(constantClass));
         }
 
         /**

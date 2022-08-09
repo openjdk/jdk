@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,13 +24,15 @@
 #ifndef SHARE_GC_Z_ZBARRIER_INLINE_HPP
 #define SHARE_GC_Z_ZBARRIER_INLINE_HPP
 
-#include "classfile/javaClasses.hpp"
-#include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zBarrier.hpp"
+
+#include "code/codeCache.hpp"
+#include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zOop.inline.hpp"
 #include "gc/z/zResurrection.inline.hpp"
 #include "oops/oop.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/continuation.hpp"
 
 // A self heal must always "upgrade" the address metadata bits in
 // accordance with the metadata bits state machine, which has the
@@ -117,7 +119,7 @@ inline void ZBarrier::self_heal(volatile oop* p, uintptr_t addr, uintptr_t heal_
 
   for (;;) {
     // Heal
-    const uintptr_t prev_addr = Atomic::cmpxchg((volatile uintptr_t*)p, addr, heal_addr);
+    const uintptr_t prev_addr = Atomic::cmpxchg((volatile uintptr_t*)p, addr, heal_addr, memory_order_relaxed);
     if (prev_addr == addr) {
       // Success
       return;
@@ -242,18 +244,6 @@ inline void ZBarrier::load_barrier_on_oop_array(volatile oop* p, size_t length) 
   }
 }
 
-// ON_WEAK barriers should only ever be applied to j.l.r.Reference.referents.
-inline void verify_on_weak(volatile oop* referent_addr) {
-#ifdef ASSERT
-  if (referent_addr != NULL) {
-    uintptr_t base = (uintptr_t)referent_addr - java_lang_ref_Reference::referent_offset();
-    oop obj = cast_to_oop(base);
-    assert(oopDesc::is_oop(obj), "Verification failed for: ref " PTR_FORMAT " obj: " PTR_FORMAT, (uintptr_t)referent_addr, base);
-    assert(java_lang_ref_Reference::is_referent_field(obj, java_lang_ref_Reference::referent_offset()), "Sanity");
-  }
-#endif
-}
-
 inline oop ZBarrier::load_barrier_on_weak_oop_field_preloaded(volatile oop* p, oop o) {
   verify_on_weak(p);
 
@@ -299,11 +289,6 @@ inline oop ZBarrier::weak_load_barrier_on_weak_oop(oop o) {
   return weak_load_barrier_on_weak_oop_field_preloaded((oop*)NULL, o);
 }
 
-inline oop ZBarrier::weak_load_barrier_on_weak_oop_field(volatile oop* p) {
-  const oop o = Atomic::load(p);
-  return weak_load_barrier_on_weak_oop_field_preloaded(p, o);
-}
-
 inline oop ZBarrier::weak_load_barrier_on_weak_oop_field_preloaded(volatile oop* p, oop o) {
   verify_on_weak(p);
 
@@ -316,11 +301,6 @@ inline oop ZBarrier::weak_load_barrier_on_weak_oop_field_preloaded(volatile oop*
 
 inline oop ZBarrier::weak_load_barrier_on_phantom_oop(oop o) {
   return weak_load_barrier_on_phantom_oop_field_preloaded((oop*)NULL, o);
-}
-
-inline oop ZBarrier::weak_load_barrier_on_phantom_oop_field(volatile oop* p) {
-  const oop o = Atomic::load(p);
-  return weak_load_barrier_on_phantom_oop_field_preloaded(p, o);
 }
 
 inline oop ZBarrier::weak_load_barrier_on_phantom_oop_field_preloaded(volatile oop* p, oop o) {
@@ -352,22 +332,26 @@ inline bool ZBarrier::is_alive_barrier_on_phantom_oop(oop o) {
 // Keep alive barrier
 //
 inline void ZBarrier::keep_alive_barrier_on_weak_oop_field(volatile oop* p) {
-  // This operation is only valid when resurrection is blocked.
-  assert(ZResurrection::is_blocked(), "Invalid phase");
+  assert(ZResurrection::is_blocked(), "This operation is only valid when resurrection is blocked");
   const oop o = Atomic::load(p);
   barrier<is_good_or_null_fast_path, keep_alive_barrier_on_weak_oop_slow_path>(p, o);
 }
 
 inline void ZBarrier::keep_alive_barrier_on_phantom_oop_field(volatile oop* p) {
-  // This operation is only valid when resurrection is blocked.
-  assert(ZResurrection::is_blocked(), "Invalid phase");
+  assert(ZResurrection::is_blocked(), "This operation is only valid when resurrection is blocked");
   const oop o = Atomic::load(p);
   barrier<is_good_or_null_fast_path, keep_alive_barrier_on_phantom_oop_slow_path>(p, o);
 }
 
 inline void ZBarrier::keep_alive_barrier_on_phantom_root_oop_field(oop* p) {
-  // This operation is only valid when resurrection is blocked.
-  assert(ZResurrection::is_blocked(), "Invalid phase");
+  // The keep alive operation is only valid when resurrection is blocked.
+  //
+  // Except with Loom, where we intentionally trigger arms nmethods after
+  // unlinking, to get a sense of what nmethods are alive. This will trigger
+  // the keep alive barriers, but the oops are healed and the slow-paths
+  // will not trigger. We have stronger checks in the slow-paths.
+  assert(ZResurrection::is_blocked() || (Continuations::enabled() && CodeCache::contains((void*)p)),
+         "This operation is only valid when resurrection is blocked");
   const oop o = *p;
   root_barrier<is_good_or_null_fast_path, keep_alive_barrier_on_phantom_oop_slow_path>(p, o);
 }
@@ -377,7 +361,7 @@ inline void ZBarrier::keep_alive_barrier_on_oop(oop o) {
   assert(ZAddress::is_good(addr), "Invalid address");
 
   if (during_mark()) {
-    mark_barrier_on_oop_slow_path(addr);
+    keep_alive_barrier_on_oop_slow_path(addr);
   }
 }
 
@@ -405,19 +389,6 @@ inline void ZBarrier::mark_barrier_on_oop_array(volatile oop* p, size_t length, 
   for (volatile const oop* const end = p + length; p < end; p++) {
     mark_barrier_on_oop_field(p, finalizable);
   }
-}
-
-inline void ZBarrier::mark_barrier_on_root_oop_field(oop* p) {
-  const oop o = *p;
-  root_barrier<is_good_or_null_fast_path, mark_barrier_on_root_oop_slow_path>(p, o);
-}
-
-//
-// Relocate barrier
-//
-inline void ZBarrier::relocate_barrier_on_root_oop_field(oop* p) {
-  const oop o = *p;
-  root_barrier<is_good_or_null_fast_path, relocate_barrier_on_root_oop_slow_path>(p, o);
 }
 
 #endif // SHARE_GC_Z_ZBARRIER_INLINE_HPP

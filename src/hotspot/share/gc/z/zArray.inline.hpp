@@ -25,6 +25,7 @@
 #define SHARE_GC_Z_ZARRAY_INLINE_HPP
 
 #include "gc/z/zArray.hpp"
+
 #include "runtime/atomic.hpp"
 
 template <typename T, bool Parallel>

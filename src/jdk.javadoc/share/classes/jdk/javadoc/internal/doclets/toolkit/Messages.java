@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@ package jdk.javadoc.internal.doclets.toolkit;
 
 import javax.lang.model.element.Element;
 import javax.tools.Diagnostic;
+import javax.tools.FileObject;
 
 import com.sun.source.util.DocTreePath;
 import jdk.javadoc.doclet.Reporter;
@@ -76,8 +77,8 @@ public class Messages {
     /**
      * Reports an error message to the doclet's reporter.
      *
-     * @param key the name of a resource containing the message to be printed
-     * @param args optional arguments to be replaced in the message.
+     * @param key  the name of a resource containing the message to be printed
+     * @param args optional arguments to be replaced in the message
      */
     public void error(String key, Object... args) {
         report(ERROR, resources.getText(key, args));
@@ -86,13 +87,51 @@ public class Messages {
     /**
      * Reports an error message to the doclet's reporter.
      *
-     * @param path a path identifying the position to be included with
-     *  the message
-     * @param key the name of a resource containing the message to be printed
-     * @param args optional arguments to be replaced in the message.
+     * @param path a path identifying the position to be included with the message
+     * @param key  the name of a resource containing the message to be printed
+     * @param args optional arguments to be replaced in the message
      */
     public void error(DocTreePath path, String key, Object... args) {
         report(ERROR, path, resources.getText(key, args));
+    }
+
+    /**
+     * Reports an error message to the doclet's reporter.
+     *
+     * @param path  a path identifying the position to be included with the message
+     * @param start the start of a range of characters to be associated with the message
+     * @param pos   the position to be associated with the message
+     * @param end   the end of a range of characters to be associated with the message
+     * @param key   the name of a resource containing the message to be printed
+     * @param args  optional arguments to be replaced in the message
+     */
+    public void error(DocTreePath path, int start, int pos, int end, String key, Object... args) {
+        report(ERROR, path, start, pos, end, resources.getText(key, args));
+    }
+
+    /**
+     * Reports an error message to the doclet's reporter.
+     *
+     * @param fo    the file object to be associated with the message
+     * @param start the start of a range of characters to be associated with the message
+     * @param pos   the position to be associated with the message
+     * @param end   the end of a range of characters to be associated with the message
+     * @param key   the name of a resource containing the message to be printed
+     * @param args  optional arguments to be replaced in the message
+     */
+    public void error(FileObject fo, int start, int pos, int end, String key, Object... args) {
+        report(ERROR, fo, start, pos, end, resources.getText(key, args));
+    }
+
+    /**
+     * Reports an error message to the doclet's reporter.
+     *
+     * @param e    an element identifying the position to be included with the message
+     * @param key  the name of a resource containing the message to be printed
+     * @param args optional arguments to be replaced in the message
+     */
+    public void error(Element e, String key, Object... args) {
+        report(ERROR, e, resources.getText(key, args));
     }
 
     // ***** Warnings *****
@@ -100,8 +139,8 @@ public class Messages {
     /**
      * Reports a warning message to the doclet's reporter.
      *
-     * @param key the name of a resource containing the message to be printed
-     * @param args optional arguments to be replaced in the message.
+     * @param key  the name of a resource containing the message to be printed
+     * @param args optional arguments to be replaced in the message
      */
     public void warning(String key, Object... args) {
         report(WARNING, resources.getText(key, args));
@@ -110,42 +149,66 @@ public class Messages {
     /**
      * Reports a warning message to the doclet's reporter.
      *
-     * @param path a path identifying the position to be included with
-     *  the message
-     * @param key the name of a resource containing the message to be printed
-     * @param args optional arguments to be replaced in the message.
+     * @param path a path identifying the position to be included with the message
+     * @param key  the name of a resource containing the message to be printed
+     * @param args optional arguments to be replaced in the message
      */
     public void warning(DocTreePath path, String key, Object... args) {
-        if (configuration.showMessage(path, key)) {
-            report(WARNING, path, resources.getText(key, args));
-        }
+        report(WARNING, path, resources.getText(key, args));
     }
 
     /**
      * Reports a warning message to the doclet's reporter.
      *
-     * @param e an element identifying the declaration whose position should
-     *  to be included with the message
-     * @param key the name of a resource containing the message to be printed
-     * @param args optional arguments to be replaced in the message.
+     * @param path  a path identifying the position to be included with the message
+     * @param start the start of a range of characters to be associated with the message
+     * @param pos   the position to be associated with the message
+     * @param end   the end of a range of characters to be associated with the message
+     * @param key   the name of a resource containing the message to be printed
+     * @param args  optional arguments to be replaced in the message
+     */
+    public void warning(DocTreePath path, int start, int pos, int end, String key, Object... args) {
+        report(WARNING, path, start, pos, end, resources.getText(key, args));
+    }
+
+    /**
+     * Reports a warning message to the doclet's reporter.
+     *
+     * @param e    an element identifying the position to be included with the message
+     * @param key  the name of a resource containing the message to be printed
+     * @param args optional arguments to be replaced in the message
      */
     public void warning(Element e, String key, Object... args) {
-        if (configuration.showMessage(e, key)) {
-            report(WARNING, e, resources.getText(key, args));
-        }
+        report(WARNING, e, resources.getText(key, args));
+    }
+
+    /**
+     * Reports a warning message to the doclet's reporter.
+     *
+     * @param fo    the file object to be associated with the message
+     * @param start the start of a range of characters to be associated with the message
+     * @param pos   the position to be associated with the message
+     * @param end   the end of a range of characters to be associated with the message
+     * @param key   the name of a resource containing the message to be printed
+     * @param args  optional arguments to be replaced in the message
+     */
+    public void warning(FileObject fo, int start, int pos, int end, String key, Object... args) {
+        report(WARNING, fo, start, pos, end, resources.getText(key, args));
     }
 
     // ***** Notices *****
 
     /**
      * Reports an informational notice to the doclet's reporter.
+     * The message is written directly to the reporter's diagnostic stream.
      *
-     * @param key the name of a resource containing the message to be printed
-     * @param args optional arguments to be replaced in the message.
+     * @param key  the name of a resource containing the message to be printed
+     * @param args optional arguments to be replaced in the message
      */
     public void notice(String key, Object... args) {
         if (!configuration.getOptions().quiet()) {
-            report(NOTE, resources.getText(key, args));
+            // Note: we do not use report(NOTE, ...) which would prefix the output with "Note:"
+            reporter.getDiagnosticWriter().println(resources.getText(key, args));
         }
     }
 
@@ -161,5 +224,13 @@ public class Messages {
 
     private void report(Diagnostic.Kind k, Element e, String msg) {
         reporter.print(k, e, msg);
+    }
+
+    private void report(Diagnostic.Kind k, FileObject fo, int start, int pos, int end, String msg) {
+        reporter.print(k, fo, start, pos, end, msg);
+    }
+
+    private void report(Diagnostic.Kind k, DocTreePath path, int start, int pos, int end, String msg) {
+        reporter.print(k, path, start, pos, end, msg);
     }
 }

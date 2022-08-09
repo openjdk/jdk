@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,6 +64,7 @@ import org.xml.sax.helpers.DefaultHandler;
  * @author Philip Milne
  */
 public class XMLDecoder implements AutoCloseable {
+    @SuppressWarnings("removal")
     private final AccessControlContext acc = AccessController.getContext();
     private final DocumentHandler handler = new DocumentHandler();
     private final InputSource input;
@@ -188,6 +189,7 @@ public class XMLDecoder implements AutoCloseable {
         }
     }
 
+    @SuppressWarnings("removal")
     private boolean parsingComplete() {
         if (this.input == null) {
             return false;

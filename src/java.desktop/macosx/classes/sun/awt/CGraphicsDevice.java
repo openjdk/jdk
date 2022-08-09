@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,9 +34,12 @@ import java.awt.Rectangle;
 import java.awt.Window;
 import java.awt.geom.Rectangle2D;
 import java.awt.peer.WindowPeer;
+import java.util.Arrays;
 import java.util.Objects;
 
 import sun.java2d.SunGraphicsEnvironment;
+import sun.java2d.MacOSFlags;
+import sun.java2d.metal.MTLGraphicsConfig;
 import sun.java2d.opengl.CGLGraphicsConfig;
 
 import static java.awt.peer.ComponentPeer.SET_BOUNDS;
@@ -54,16 +57,78 @@ public final class CGraphicsDevice extends GraphicsDevice
     private volatile Rectangle bounds;
     private volatile int scale;
 
-    private final GraphicsConfiguration config;
+    private GraphicsConfiguration config;
+    private static boolean metalPipelineEnabled = false;
+    private static boolean oglPipelineEnabled = false;
+
 
     private static AWTPermission fullScreenExclusivePermission;
 
     // Save/restore DisplayMode for the Full Screen mode
     private DisplayMode originalMode;
+    private DisplayMode initialMode;
 
     public CGraphicsDevice(final int displayID) {
         this.displayID = displayID;
-        config = CGLGraphicsConfig.getConfig(this);
+        this.initialMode = getDisplayMode();
+
+        if (MacOSFlags.isMetalEnabled()) {
+            // Try to create MTLGraphicsConfig, if it fails,
+            // try to create CGLGraphicsConfig as a fallback
+            this.config = MTLGraphicsConfig.getConfig(this, displayID);
+
+            if (this.config != null) {
+                metalPipelineEnabled = true;
+            } else {
+                // Try falling back to OpenGL pipeline
+                if (MacOSFlags.isMetalVerbose()) {
+                    System.out.println("Metal rendering pipeline" +
+                        " initialization failed,using OpenGL" +
+                        " rendering pipeline");
+                }
+
+                this.config = CGLGraphicsConfig.getConfig(this);
+
+                if (this.config != null) {
+                    oglPipelineEnabled = true;
+                }
+            }
+        } else {
+            // Try to create CGLGraphicsConfig, if it fails,
+            // try to create MTLGraphicsConfig as a fallback
+            this.config = CGLGraphicsConfig.getConfig(this);
+
+            if (this.config != null) {
+                oglPipelineEnabled = true;
+            } else {
+                // Try falling back to Metal pipeline
+                if (MacOSFlags.isOGLVerbose()) {
+                    System.out.println("OpenGL rendering pipeline" +
+                        " initialization failed,using Metal" +
+                        " rendering pipeline");
+                }
+
+                this.config = MTLGraphicsConfig.getConfig(this, displayID);
+
+                if (this.config != null) {
+                    metalPipelineEnabled = true;
+                }
+            }
+        }
+
+        if (!metalPipelineEnabled && !oglPipelineEnabled) {
+            // This indicates fallback to other rendering pipeline also failed.
+            // Should never reach here
+            throw new InternalError("Error - unable to initialize any" +
+                " rendering pipeline.");
+        }
+
+        if (metalPipelineEnabled && MacOSFlags.isMetalVerbose()) {
+            System.out.println("Metal pipeline enabled on screen " + displayID);
+        } else if (oglPipelineEnabled && MacOSFlags.isOGLVerbose()) {
+            System.out.println("OpenGL pipeline enabled on screen " + displayID);
+        }
+
         // initializes default device state, might be redundant step since we
         // call "displayChanged()" later anyway, but we do not want to leave the
         // device in an inconsistent state after construction
@@ -139,6 +204,7 @@ public final class CGraphicsDevice extends GraphicsDevice
     public void invalidate(CGraphicsDevice device) {
         //TODO do we need to restore the full-screen window/modes on old device?
         displayID = device.displayID;
+        initialMode = device.initialMode;
     }
 
     @Override
@@ -198,6 +264,7 @@ public final class CGraphicsDevice extends GraphicsDevice
     }
 
     private static boolean isFSExclusiveModeAllowed() {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             if (fullScreenExclusivePermission == null) {
@@ -244,14 +311,47 @@ public final class CGraphicsDevice extends GraphicsDevice
         return true;
     }
 
+    /* If the modes are the same or the only difference is that
+     * the new mode will match any refresh rate, no need to change.
+     */
+    private boolean isSameMode(final DisplayMode newMode,
+                               final DisplayMode oldMode) {
+
+        return (Objects.equals(newMode, oldMode) ||
+                (newMode.getRefreshRate() == DisplayMode.REFRESH_RATE_UNKNOWN &&
+                 newMode.getWidth() == oldMode.getWidth() &&
+                 newMode.getHeight() == oldMode.getHeight() &&
+                 newMode.getBitDepth() == oldMode.getBitDepth()));
+    }
+
     @Override
     public void setDisplayMode(final DisplayMode dm) {
         if (dm == null) {
             throw new IllegalArgumentException("Invalid display mode");
         }
-        if (!Objects.equals(dm, getDisplayMode())) {
-            nativeSetDisplayMode(displayID, dm.getWidth(), dm.getHeight(),
-                                 dm.getBitDepth(), dm.getRefreshRate());
+        if (!isSameMode(dm, getDisplayMode())) {
+            try {
+                nativeSetDisplayMode(displayID, dm.getWidth(), dm.getHeight(),
+                                    dm.getBitDepth(), dm.getRefreshRate());
+            } catch (Throwable t) {
+                /* In some cases macOS doesn't report the initial mode
+                 * in the list of supported modes.
+                 * If trying to reset to that mode causes an exception
+                 * try one more time to reset using a different API.
+                 * This does not fix everything, such as it doesn't make
+                 * that mode reported and it restores all devices, but
+                 * this seems a better compromise than failing to restore
+                 */
+                if (isSameMode(dm, initialMode)) {
+                    nativeResetDisplayMode();
+                    if (!isSameMode(initialMode, getDisplayMode())) {
+                        throw new IllegalArgumentException(
+                            "Could not reset to initial mode");
+                    }
+                } else {
+                   throw t;
+                }
+            }
         }
     }
 
@@ -262,7 +362,26 @@ public final class CGraphicsDevice extends GraphicsDevice
 
     @Override
     public DisplayMode[] getDisplayModes() {
-        return nativeGetDisplayModes(displayID);
+        DisplayMode[] nativeModes = nativeGetDisplayModes(displayID);
+        boolean match = false;
+        for (DisplayMode mode : nativeModes) {
+            if (initialMode.equals(mode)) {
+                match = true;
+                break;
+            }
+        }
+        if (match) {
+            return nativeModes;
+        } else {
+          int len = nativeModes.length;
+          DisplayMode[] modes = Arrays.copyOf(nativeModes, len+1, DisplayMode[].class);
+          modes[len] = initialMode;
+          return modes;
+        }
+    }
+
+    public static boolean usingMetalPipeline() {
+        return metalPipelineEnabled;
     }
 
     private void initScaleFactor() {
@@ -277,6 +396,8 @@ public final class CGraphicsDevice extends GraphicsDevice
     }
 
     private static native double nativeGetScaleFactor(int displayID);
+
+    private static native void nativeResetDisplayMode();
 
     private static native void nativeSetDisplayMode(int displayID, int w, int h, int bpp, int refrate);
 

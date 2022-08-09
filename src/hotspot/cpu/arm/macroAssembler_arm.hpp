@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,6 @@
 
 #include "code/relocInfo.hpp"
 #include "utilities/powerOfTwo.hpp"
-
-class BiasedLockingCounters;
 
 // Introduced AddressLiteral and its subclasses to ease portability from
 // x86 and avoid relocation issues
@@ -342,8 +340,6 @@ public:
   inline void null_check(Register reg) { null_check(reg, noreg, -1); } // for C1 lir_null_check
 
   // Puts address of allocated object into register `obj` and end of allocated object into register `obj_end`.
-  void eden_allocate(Register obj, Register obj_end, Register tmp1, Register tmp2,
-                     RegisterOrConstant size_expression, Label& slow_case);
   void tlab_allocate(Register obj, Register obj_end, Register tmp1,
                      RegisterOrConstant size_expression, Label& slow_case);
 
@@ -358,29 +354,6 @@ public:
   void bang_stack_with_offset(int offset) {
     ShouldNotReachHere();
   }
-
-  // Biased locking support
-  // lock_reg and obj_reg must be loaded up with the appropriate values.
-  // swap_reg must be supplied.
-  // tmp_reg must be supplied.
-  // Done label is branched to with condition code EQ set if the lock is
-  // biased and we acquired it. Slow case label is branched to with
-  // condition code NE set if the lock is biased but we failed to acquire
-  // it. Otherwise fall through.
-  // Notes:
-  // - swap_reg and tmp_reg are scratched
-  // - Rtemp was (implicitly) scratched and can now be specified as the tmp2
-  void biased_locking_enter(Register obj_reg, Register swap_reg, Register tmp_reg,
-                            bool swap_reg_contains_mark,
-                            Register tmp2,
-                            Label& done, Label& slow_case,
-                            BiasedLockingCounters* counters = NULL);
-  void biased_locking_exit(Register obj_reg, Register temp_reg, Label& done);
-
-  // Building block for CAS cases of biased locking: makes CAS and records statistics.
-  // Optional slow_case label is used to transfer control if CAS fails. Otherwise leaves condition codes set.
-  void biased_locking_enter_with_cas(Register obj_reg, Register old_mark_reg, Register new_mark_reg,
-                                     Register tmp, Label& slow_case, int* counter_addr);
 
   void resolve_jobject(Register value, Register tmp1, Register tmp2);
 
@@ -878,11 +851,6 @@ public:
   void access_load_at(BasicType type, DecoratorSet decorators, Address src, Register dst, Register tmp1, Register tmp2, Register tmp3);
   void access_store_at(BasicType type, DecoratorSet decorators, Address obj, Register new_val, Register tmp1, Register tmp2, Register tmp3, bool is_null);
 
-  // Resolves obj for access. Result is placed in the same register.
-  // All other registers are preserved.
-  void resolve(DecoratorSet decorators, Register obj);
-
-
   void ldr_global_ptr(Register reg, address address_of_global);
   void ldr_global_s32(Register reg, address address_of_global);
   void ldrb_global(Register reg, address address_of_global);
@@ -1028,7 +996,7 @@ public:
 
 #ifndef PRODUCT
   // Preserves flags and all registers.
-  // On SMP the updated value might not be visible to external observers without a sychronization barrier
+  // On SMP the updated value might not be visible to external observers without a synchronization barrier
   void cond_atomic_inc32(AsmCondition cond, int* counter_addr);
 #endif // !PRODUCT
 

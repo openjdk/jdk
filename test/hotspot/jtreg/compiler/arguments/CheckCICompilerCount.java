@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @bug 8130858 8132525 8162881
  * @summary Check that correct range of values for CICompilerCount are allowed depending on whether tiered is enabled or not
  * @library /test/lib /
+ * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @run driver compiler.arguments.CheckCICompilerCount

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4405224
+ * @bug 4405224 8012229
  * @summary Test color conversion for images with alpha
  */
 
@@ -76,9 +76,10 @@ public class ColCvtAlpha {
         op.filter(src, dst);
 
         for (int i = 0; i < 10; i++) {
-            if (((dst.getRGB(0, i) >> 24) & 0xff) != 128) {
+            int rgb = (dst.getRGB(0, i) >> 24) & 0xff;
+            if (rgb != 128) {
                 throw new RuntimeException(
-                    "Incorrect destination alpha value.");
+                    "Incorrect destination alpha value: " + rgb);
             }
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,10 +26,9 @@
 #include "precompiled.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "interpreter/zero/bytecodeInterpreter.hpp"
-#include "runtime/thread.inline.hpp"
-#include "stack_zero.hpp"
-#include "stack_zero.inline.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/javaThread.inline.hpp"
+#include "stack_zero.inline.hpp"
 #include "utilities/align.hpp"
 
 // Inlined causes circular inclusion with thread.hpp
@@ -46,7 +45,7 @@ int ZeroStack::suggest_size(Thread *thread) const {
 }
 
 void ZeroStack::handle_overflow(TRAPS) {
-  JavaThread *thread = THREAD->as_Java_thread();
+  JavaThread *thread = THREAD;
 
   // Set up the frame anchor if it isn't already
   bool has_last_Java_frame = thread->has_last_Java_frame();

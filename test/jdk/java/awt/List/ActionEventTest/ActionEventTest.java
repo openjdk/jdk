@@ -56,6 +56,7 @@ public class ActionEventTest extends Frame {
         add(list);
         setSize(400,400);
         setLayout(new FlowLayout());
+        setLocationRelativeTo(null);
         pack();
         setVisible(true);
     }
@@ -70,9 +71,9 @@ public class ActionEventTest extends Frame {
 
                 if ((md & expectedMask) != expectedMask) {
 
-                    robot.keyRelease(KeyEvent.VK_ALT);
-                    robot.keyRelease(KeyEvent.VK_SHIFT);
                     robot.keyRelease(KeyEvent.VK_CONTROL);
+                    robot.keyRelease(KeyEvent.VK_SHIFT);
+                    robot.keyRelease(KeyEvent.VK_ALT);
                     dispose();
                     throw new RuntimeException("Action Event modifiers are not"
                         + " set correctly.");
@@ -87,9 +88,9 @@ public class ActionEventTest extends Frame {
         // Press Enter on list item, to generate action event.
         robot.keyPress(KeyEvent.VK_ENTER);
         robot.keyRelease(KeyEvent.VK_ENTER);
-        robot.keyRelease(KeyEvent.VK_ALT);
-        robot.keyRelease(KeyEvent.VK_SHIFT);
         robot.keyRelease(KeyEvent.VK_CONTROL);
+        robot.keyRelease(KeyEvent.VK_SHIFT);
+        robot.keyRelease(KeyEvent.VK_ALT);
     }
 
     public static void main(String args[]) {

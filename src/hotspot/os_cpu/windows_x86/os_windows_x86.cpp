@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,6 @@
 // no precompiled headers
 #include "jvm.h"
 #include "asm/macroAssembler.hpp"
-#include "classfile/classLoader.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
@@ -34,7 +32,6 @@
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "nativeInst_x86.hpp"
-#include "os_share_windows.hpp"
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm_misc.hpp"
 #include "runtime/arguments.hpp"
@@ -42,11 +39,11 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "runtime/thread.inline.hpp"
 #include "runtime/timer.hpp"
 #include "symbolengine.hpp"
 #include "unwind_windows_x86.hpp"
@@ -68,16 +65,17 @@
 #define REG_PC Eip
 #endif // AMD64
 
+JNIEXPORT
 extern LONG WINAPI topLevelExceptionFilter(_EXCEPTION_POINTERS* );
 
 // Install a win32 structured exception handler around thread.
-void os::os_exception_wrapper(java_call_t f, JavaValue* value, const methodHandle& method, JavaCallArguments* args, Thread* thread) {
+void os::os_exception_wrapper(java_call_t f, JavaValue* value, const methodHandle& method, JavaCallArguments* args, JavaThread* thread) {
   __try {
 
 #ifndef AMD64
     // We store the current thread in this wrapperthread location
     // and determine how far away this address is from the structured
-    // execption pointer that FS:[0] points to.  This get_thread
+    // exception pointer that FS:[0] points to.  This get_thread
     // code can then get the thread pointer via FS.
     //
     // Warning:  This routine must NEVER be inlined since we'd end up with
@@ -95,7 +93,7 @@ void os::os_exception_wrapper(java_call_t f, JavaValue* value, const methodHandl
       os::win32::set_thread_ptr_offset(thread_ptr_offset);
     }
 #ifdef ASSERT
-    // Verify that the offset hasn't changed since we initally captured
+    // Verify that the offset hasn't changed since we initially captured
     // it. This might happen if we accidentally ended up with an
     // inlined version of this routine.
     else {
@@ -323,13 +321,6 @@ frame os::fetch_frame_from_context(const void* ucVoid) {
   return frame(sp, fp, epc);
 }
 
-// VC++ does not save frame pointer on stack in optimized build. It
-// can be turned off by /Oy-. If we really want to walk C frames,
-// we can use the StackWalk() API.
-frame os::get_sender_for_C_frame(frame* fr) {
-  return frame(fr->sender_sp(), fr->link(), fr->sender_pc());
-}
-
 #ifndef AMD64
 // Ignore "C4172: returning address of local variable or temporary" on 32bit
 PRAGMA_DIAG_PUSH
@@ -390,49 +381,18 @@ bool os::win32::get_frame_at_stack_banging_point(JavaThread* thread,
   return true;
 }
 
-#ifndef AMD64
-intptr_t* _get_previous_fp() {
-  intptr_t **frameptr;
-  __asm {
-    mov frameptr, ebp
-  };
-  // ebp (frameptr) is for this frame (_get_previous_fp). We want the ebp for the
-  // caller of os::current_frame*(), so go up two frames. However, for
-  // optimized builds, _get_previous_fp() will be inlined, so only go
-  // up 1 frame in that case.
-#ifdef _NMT_NOINLINE_
-  return **(intptr_t***)frameptr;
-#else
-  return *frameptr;
-#endif
+
+// VC++ does not save frame pointer on stack in optimized build. It
+// can be turned off by /Oy-. If we really want to walk C frames,
+// we can use the StackWalk() API.
+frame os::get_sender_for_C_frame(frame* fr) {
+  ShouldNotReachHere();
+  return frame();
 }
-#endif // !AMD64
 
 frame os::current_frame() {
-
-#ifdef AMD64
-  // apparently _asm not supported on windows amd64
-  typedef intptr_t*      get_fp_func           ();
-  get_fp_func* func = CAST_TO_FN_PTR(get_fp_func*,
-                                     StubRoutines::x86::get_previous_fp_entry());
-  if (func == NULL) return frame();
-  intptr_t* fp = (*func)();
-  if (fp == NULL) {
-    return frame();
-  }
-#else
-  intptr_t* fp = _get_previous_fp();
-#endif // AMD64
-
-  frame myframe((intptr_t*)os::current_stack_pointer(),
-                (intptr_t*)fp,
-                CAST_FROM_FN_PTR(address, os::current_frame));
-  if (os::is_first_C_frame(&myframe)) {
-    // stack is not walkable
-    return frame();
-  } else {
-    return os::get_sender_for_C_frame(&myframe);
-  }
+  return frame();  // cannot walk Windows frames this way.  See os::get_native_stack
+                   // and os::platform_print_native_stack
 }
 
 void os::print_context(outputStream *st, const void *context) {
@@ -480,6 +440,12 @@ void os::print_context(outputStream *st, const void *context) {
 #endif // AMD64
   st->cr();
   st->cr();
+}
+
+void os::print_tos_pc(outputStream *st, const void *context) {
+  if (context == NULL) return;
+
+  const CONTEXT* uc = (const CONTEXT*)context;
 
   intptr_t *sp = (intptr_t *)uc->REG_SP;
   st->print_cr("Top of Stack: (sp=" PTR_FORMAT ")", sp);
@@ -493,7 +459,6 @@ void os::print_context(outputStream *st, const void *context) {
   print_instructions(st, pc, sizeof(char));
   st->cr();
 }
-
 
 void os::print_register_info(outputStream *st, const void *context) {
   if (context == NULL) return;
@@ -572,7 +537,7 @@ juint os::cpu_microcode_revision() {
 
 void os::setup_fpu() {
 #ifndef AMD64
-  int fpu_cntrl_word = StubRoutines::fpu_cntrl_wrd_std();
+  int fpu_cntrl_word = StubRoutines::x86::fpu_cntrl_wrd_std();
   __asm fldcw fpu_cntrl_word;
 #endif // !AMD64
 }

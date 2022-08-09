@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,16 +26,16 @@
 package javax.sql;
 
 /**
- * An <code>Event</code> object generated when an event occurs to a
- * <code>RowSet</code> object.  A <code>RowSetEvent</code> object is
+ * An {@code Event} object generated when an event occurs to a
+ * {@code RowSet} object.  A {@code RowSetEvent} object is
  * generated when a single row in a rowset is changed, the whole rowset
  * is changed, or the rowset cursor moves.
  * <P>
- * When an event occurs on a <code>RowSet</code> object, one of the
- * <code>RowSetListener</code> methods will be sent to all registered
- * listeners to notify them of the event.  An <code>Event</code> object
- * is supplied to the <code>RowSetListener</code> method so that the
- * listener can use it to find out which <code>RowSet</code> object is
+ * When an event occurs on a {@code RowSet} object, one of the
+ * {@code RowSetListener} methods will be sent to all registered
+ * listeners to notify them of the event.  An {@code Event} object
+ * is supplied to the {@code RowSetListener} method so that the
+ * listener can use it to find out which {@code RowSet} object is
  * the source of the event.
  *
  * @since 1.4
@@ -44,12 +44,12 @@ package javax.sql;
 public class RowSetEvent extends java.util.EventObject {
 
   /**
-   * Constructs a <code>RowSetEvent</code> object initialized with the
-   * given <code>RowSet</code> object.
+   * Constructs a {@code RowSetEvent} object initialized with the
+   * given {@code RowSet} object.
    *
-   * @param source the <code>RowSet</code> object whose data has changed or
+   * @param source the {@code RowSet} object whose data has changed or
    *        whose cursor has moved
-   * @throws IllegalArgumentException if <code>source</code> is null.
+   * @throws IllegalArgumentException if {@code source} is null.
    */
   public RowSetEvent(RowSet source)
     { super(source); }

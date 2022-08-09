@@ -33,17 +33,10 @@
 ShenandoahHeapRegionSetIterator::ShenandoahHeapRegionSetIterator(const ShenandoahHeapRegionSet* const set) :
         _set(set), _heap(ShenandoahHeap::heap()), _current_index(0) {}
 
-void ShenandoahHeapRegionSetIterator::reset(const ShenandoahHeapRegionSet* const set) {
-  _set = set;
-  _current_index = 0;
-}
-
 ShenandoahHeapRegionSet::ShenandoahHeapRegionSet() :
   _heap(ShenandoahHeap::heap()),
   _map_size(_heap->num_regions()),
-  _region_size_bytes_shift(ShenandoahHeapRegion::region_size_bytes_shift()),
   _set_map(NEW_C_HEAP_ARRAY(jbyte, _map_size, mtGC)),
-  _biased_set_map(_set_map - ((uintx)_heap->base() >> _region_size_bytes_shift)),
   _region_count(0)
 {
   // Use 1-byte data type
@@ -58,18 +51,9 @@ ShenandoahHeapRegionSet::~ShenandoahHeapRegionSet() {
 }
 
 void ShenandoahHeapRegionSet::add_region(ShenandoahHeapRegion* r) {
-  assert(!is_in(r), "Already in collection set");
+  assert(!is_in(r), "Already in region set");
   _set_map[r->index()] = 1;
   _region_count++;
-}
-
-bool ShenandoahHeapRegionSet::add_region_check_for_duplicates(ShenandoahHeapRegion* r) {
-  if (!is_in(r)) {
-    add_region(r);
-    return true;
-  } else {
-    return false;
-  }
 }
 
 void ShenandoahHeapRegionSet::remove_region(ShenandoahHeapRegion* r) {
@@ -77,64 +61,30 @@ void ShenandoahHeapRegionSet::remove_region(ShenandoahHeapRegion* r) {
   assert(Thread::current()->is_VM_thread(), "Must be VMThread");
   assert(is_in(r), "Not in region set");
   _set_map[r->index()] = 0;
-  _region_count --;
+  _region_count--;
 }
 
 void ShenandoahHeapRegionSet::clear() {
   assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "Must be at a safepoint");
   Copy::zero_to_bytes(_set_map, _map_size);
-
   _region_count = 0;
 }
 
-ShenandoahHeapRegion* ShenandoahHeapRegionSetIterator::claim_next() {
-  size_t num_regions = _heap->num_regions();
-  if (_current_index >= (jint)num_regions) {
-    return NULL;
-  }
-
-  jint saved_current = _current_index;
-  size_t index = (size_t)saved_current;
-
-  while(index < num_regions) {
-    if (_set->is_in(index)) {
-      jint cur = Atomic::cmpxchg(&_current_index, saved_current, (jint)(index + 1));
-      assert(cur >= (jint)saved_current, "Must move forward");
-      if (cur == saved_current) {
-        assert(_set->is_in(index), "Invariant");
-        return _heap->get_region(index);
-      } else {
-        index = (size_t)cur;
-        saved_current = cur;
-      }
-    } else {
-      index ++;
-    }
-  }
-  return NULL;
-}
-
 ShenandoahHeapRegion* ShenandoahHeapRegionSetIterator::next() {
-  size_t num_regions = _heap->num_regions();
-  for (size_t index = (size_t)_current_index; index < num_regions; index ++) {
+  for (size_t index = _current_index; index < _heap->num_regions(); index++) {
     if (_set->is_in(index)) {
-      _current_index = (jint)(index + 1);
+      _current_index = index + 1;
       return _heap->get_region(index);
     }
   }
-
   return NULL;
 }
 
 void ShenandoahHeapRegionSet::print_on(outputStream* out) const {
   out->print_cr("Region Set : " SIZE_FORMAT "", count());
-
-  debug_only(size_t regions = 0;)
-  for (size_t index = 0; index < _heap->num_regions(); index ++) {
+  for (size_t index = 0; index < _heap->num_regions(); index++) {
     if (is_in(index)) {
       _heap->get_region(index)->print_on(out);
-      debug_only(regions ++;)
     }
   }
-  assert(regions == count(), "Must match");
 }

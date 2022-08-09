@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
 package nsk.jdi.EventRequest.setEnabled;
 
 import nsk.share.*;
-import nsk.share.jpda.*;
 import nsk.share.jdi.*;
 
 /**
@@ -54,7 +53,7 @@ public class setenabled001a {
 
     //====================================================== test program
 
-    static setenabled001aThread1 thread1 = null;
+    static Thread thread1 = null;
 
     static setenabled001aTestClass11 obj = new setenabled001aTestClass11();
 
@@ -100,7 +99,7 @@ public class setenabled001a {
     //------------------------------------------------------  section tested
 
                     case 0:
-                            thread1 = new setenabled001aThread1("thread1");
+                            thread1 = JDIThreadFactory.newThread(new setenabled001aThread1("thread1"));
 
                             synchronized (lockObj) {
                                 threadStart(thread1);
@@ -202,24 +201,21 @@ class setenabled001aTestClass11 extends setenabled001aTestClass10{
     }
 }
 
-class setenabled001aThread1 extends Thread {
-
-    String tName = null;
+class setenabled001aThread1 extends NamedTask {
 
     public setenabled001aThread1(String threadName) {
         super(threadName);
-        tName = threadName;
     }
 
     public void run() {
-        setenabled001a.log1("  'run': enter  :: threadName == " + tName);
+        setenabled001a.log1("  'run': enter  :: threadName == " + getName());
         synchronized(setenabled001a.waitnotifyObj) {
             setenabled001a.waitnotifyObj.notify();
         }
         synchronized(setenabled001a.lockObj) {
             setenabled001aTestClass11.method11();
         }
-        setenabled001a.log1("  'run': exit   :: threadName == " + tName);
+        setenabled001a.log1("  'run': exit   :: threadName == " + getName());
         return;
     }
 }

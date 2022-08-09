@@ -39,9 +39,7 @@ import java.util.List;
 public interface UnionType extends TypeMirror {
 
     /**
-     * Return the alternatives comprising this union type.
-     *
-     * @return the alternatives comprising this union type.
+     * {@return the alternatives comprising this union type}
      */
     List<? extends TypeMirror> getAlternatives();
 }

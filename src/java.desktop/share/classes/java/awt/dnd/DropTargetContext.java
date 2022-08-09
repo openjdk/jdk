@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,16 +26,13 @@
 package java.awt.dnd;
 
 import java.awt.Component;
-
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
-
 import java.awt.dnd.peer.DropTargetContextPeer;
-
 import java.io.IOException;
+import java.io.Serial;
 import java.io.Serializable;
-
 import java.util.Arrays;
 import java.util.List;
 
@@ -56,8 +53,12 @@ import sun.awt.AWTAccessor.DropTargetContextAccessor;
  * @since 1.2
  */
 
-public class DropTargetContext implements Serializable {
+public final class DropTargetContext implements Serializable {
 
+    /**
+     * Use serialVersionUID from JDK 1.4 for interoperability.
+     */
+    @Serial
     private static final long serialVersionUID = -634158968993743371L;
 
     static {
@@ -228,7 +229,7 @@ public class DropTargetContext implements Serializable {
     }
 
     /**
-     * This method returns a the currently available DataFlavors
+     * This method returns the currently available DataFlavors
      * of the {@code Transferable} operand
      * as a {@code java.util.List}.
      *

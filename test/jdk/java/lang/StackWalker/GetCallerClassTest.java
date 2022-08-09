@@ -26,7 +26,7 @@
  * @bug 8140450 8152893 8189291
  * @summary Basic test for StackWalker.getCallerClass()
  * @run main/othervm GetCallerClassTest
- * @run main/othervm GetCallerClassTest sm
+ * @run main/othervm -Djava.security.manager=allow GetCallerClassTest sm
  */
 
 import static java.lang.StackWalker.Option.*;

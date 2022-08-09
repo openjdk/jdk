@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,12 @@
  *
  */
 #include "precompiled.hpp"
+#include "jvm_io.h"
 #include "utilities/ostream.hpp"
 #include "logging/log.hpp"
 #include "logging/logSelection.hpp"
 #include "logging/logTagSet.hpp"
-#include "runtime/os.inline.hpp"
+#include "runtime/os.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/quickSort.hpp"

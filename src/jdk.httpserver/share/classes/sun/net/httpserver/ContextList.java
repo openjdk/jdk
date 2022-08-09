@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,18 +26,21 @@
 package sun.net.httpserver;
 
 import java.util.*;
-import com.sun.net.httpserver.*;
-import com.sun.net.httpserver.spi.*;
 
 class ContextList {
 
-    final static int MAX_CONTEXTS = 50;
-
-    LinkedList<HttpContextImpl> list = new LinkedList<HttpContextImpl>();
+    private final LinkedList<HttpContextImpl> list = new LinkedList<>();
 
     public synchronized void add (HttpContextImpl ctx) {
         assert ctx.getPath() != null;
+        if (contains(ctx)) {
+            throw new IllegalArgumentException ("cannot add context to list");
+        }
         list.add (ctx);
+    }
+
+    boolean contains(HttpContextImpl ctx) {
+        return findContext(ctx.getProtocol(), ctx.getPath(), true) != null;
     }
 
     public synchronized int size () {

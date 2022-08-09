@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,8 @@
 #elif defined(arm)
 #include <asm/ptrace.h>
 #define user_regs_struct  pt_regs
+#elif defined(riscv64)
+#include <asm/ptrace.h>
 #endif
 
 // This C bool type must be int for compatibility with Linux calls and
@@ -96,6 +98,9 @@ const char* get_lib_name(struct ps_prochandle* ph, int index);
 
 // get base of lib
 uintptr_t get_lib_base(struct ps_prochandle* ph, int index);
+
+// get address range of lib
+void get_lib_addr_range(struct ps_prochandle* ph, int index, uintptr_t* base, uintptr_t* memsz);
 
 // returns true if given library is found in lib list
 bool find_lib(struct ps_prochandle* ph, const char *lib_name);

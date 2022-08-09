@@ -24,7 +24,7 @@
  * Google Author(s): Behdad Esfahbod
  */
 
-#ifndef HB_OT_H_IN
+#if !defined(HB_OT_H_IN) && !defined(HB_NO_SINGLE_HEADER_ERROR)
 #error "Include <hb-ot.h> instead."
 #endif
 
@@ -41,7 +41,29 @@ HB_BEGIN_DECLS
 
 
 /* https://github.com/harfbuzz/harfbuzz/issues/1734 */
+/**
+ * HB_MATH_GLYPH_PART_FLAG_EXTENDER:
+ *
+ * Use #HB_OT_MATH_GLYPH_PART_FLAG_EXTENDER instead.
+ *
+ * Deprecated: 2.5.1
+ */
 #define HB_MATH_GLYPH_PART_FLAG_EXTENDER HB_OT_MATH_GLYPH_PART_FLAG_EXTENDER
+
+/* https://github.com/harfbuzz/harfbuzz/pull/3417 */
+/**
+ * HB_OT_MATH_SCRIPT:
+ *
+ * Use #HB_SCRIPT_MATH or #HB_OT_TAG_MATH_SCRIPT instead.
+ *
+ * <note>Previous versions of this documentation recommended passing
+ * #HB_OT_MATH_SCRIPT to hb_buffer_set_script() to enable math shaping, but this
+ * usage is no longer supported. Use #HB_SCRIPT_MATH instead.</note>
+ *
+ * Since: 1.3.3
+ * Deprecated: 3.4.0
+ */
+#define HB_OT_MATH_SCRIPT HB_OT_TAG_MATH_SCRIPT
 
 
 /* Like hb_ot_layout_table_find_script, but takes zero-terminated array of scripts to test */
@@ -71,6 +93,8 @@ hb_ot_tag_from_language (hb_language_t language);
 /**
  * HB_OT_VAR_NO_AXIS_INDEX:
  *
+ * Do not use.
+ *
  * Since: 1.4.2
  * Deprecated: 2.2.0
  */
@@ -78,12 +102,18 @@ hb_ot_tag_from_language (hb_language_t language);
 
 /**
  * hb_ot_var_axis_t:
+ * @tag: axis tag
+ * @name_id: axis name identifier
+ * @min_value: minimum value of the axis
+ * @default_value: default value of the axis
+ * @max_value: maximum value of the axis
+ *
+ * Use #hb_ot_var_axis_info_t instead.
  *
  * Since: 1.4.2
  * Deprecated: 2.2.0
  */
-typedef struct hb_ot_var_axis_t
-{
+typedef struct hb_ot_var_axis_t {
   hb_tag_t tag;
   hb_ot_name_id_t name_id;
   float min_value;

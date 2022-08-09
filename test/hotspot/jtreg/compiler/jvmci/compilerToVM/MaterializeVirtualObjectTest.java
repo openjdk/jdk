@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,8 +41,8 @@
  *          jdk.internal.vm.ci/jdk.vm.ci.code.stack
  *          jdk.internal.vm.ci/jdk.vm.ci.meta
  *
- * @build jdk.internal.vm.ci/jdk.vm.ci.hotspot.CompilerToVMHelper sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.internal.vm.ci/jdk.vm.ci.hotspot.CompilerToVMHelper jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbatch -Xbootclasspath/a:.
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *                   -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
@@ -104,7 +104,7 @@ import jdk.vm.ci.hotspot.CompilerToVMHelper;
 import jdk.vm.ci.hotspot.HotSpotStackFrameReference;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jtreg.SkippedException;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 import java.lang.reflect.Method;
 
@@ -141,9 +141,7 @@ public class MaterializeVirtualObjectTest {
         FRAME3_RESOLVED = CTVMUtilities.getResolvedMethod(FRAME3_METHOD);
         INVALIDATE = Boolean.getBoolean(
                 "compiler.jvmci.compilerToVM.MaterializeVirtualObjectTest.invalidate");
-        COMPILE_THRESHOLD = WB.getBooleanVMFlag("TieredCompilation")
-                ? CompilerWhiteBoxTest.THRESHOLD
-                : CompilerWhiteBoxTest.THRESHOLD * 2;
+        COMPILE_THRESHOLD = CompilerWhiteBoxTest.THRESHOLD;
         MATERIALIZE_FIRST = Boolean.getBoolean(
                 "compiler.jvmci.compilerToVM.MaterializeVirtualObjectTest.materializeFirst");
         MATERIALIZED_RESOLVED = MATERIALIZE_FIRST ? resolved1 : FRAME2_RESOLVED;

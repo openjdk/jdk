@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3206,7 +3206,10 @@ public class AquaTabbedPaneCopyFromBasicUI extends TabbedPaneUI implements Swing
         }
 
         public String toString() {
-            return new String("viewport.viewSize=" + viewport.getViewSize() + "\n" + "viewport.viewRectangle=" + viewport.getViewRect() + "\n" + "leadingTabIndex=" + leadingTabIndex + "\n" + "tabViewPosition=" + tabViewPosition);
+            return "viewport.viewSize=" + viewport.getViewSize() + "\n"
+                    + "viewport.viewRectangle=" + viewport.getViewRect() + "\n"
+                    + "leadingTabIndex=" + leadingTabIndex + "\n"
+                    + "tabViewPosition=" + tabViewPosition;
         }
 
     }
@@ -3258,7 +3261,7 @@ public class AquaTabbedPaneCopyFromBasicUI extends TabbedPaneUI implements Swing
     }
 
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    private class ScrollableTabButton extends javax.swing.plaf.basic.BasicArrowButton implements UIResource, SwingConstants {
+    private static class ScrollableTabButton extends javax.swing.plaf.basic.BasicArrowButton implements UIResource, SwingConstants {
         public ScrollableTabButton(final int direction) {
             super(direction, UIManager.getColor("TabbedPane.selected"), UIManager.getColor("TabbedPane.shadow"), UIManager.getColor("TabbedPane.darkShadow"), UIManager.getColor("TabbedPane.highlight"));
         }
@@ -3805,12 +3808,8 @@ public class AquaTabbedPaneCopyFromBasicUI extends TabbedPaneUI implements Swing
                     method.invoke(klass, new Object[] { this });
                 } catch (final NoSuchMethodException nsme) {
                     assert false : "LazyActionMap unable to load actions " + klass;
-                } catch (final IllegalAccessException iae) {
-                    assert false : "LazyActionMap unable to load actions " + iae;
-                } catch (final InvocationTargetException ite) {
-                    assert false : "LazyActionMap unable to load actions " + ite;
-                } catch (final IllegalArgumentException iae) {
-                    assert false : "LazyActionMap unable to load actions " + iae;
+                } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+                    assert false : "LazyActionMap unable to load actions " + e;
                 }
             }
         }

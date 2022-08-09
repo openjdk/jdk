@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,8 +38,9 @@ import java.security.spec.MGF1ParameterSpec;
 import java.security.spec.PSSParameterSpec;
 import java.security.interfaces.*;
 import sun.security.pkcs11.wrapper.*;
+import sun.security.util.KnownOIDs;
 import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
-
+import static sun.security.pkcs11.wrapper.PKCS11Exception.RV.*;
 
 /**
  * RSASSA-PSS Signature implementation class. This class currently supports the
@@ -52,6 +53,10 @@ import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
  *   . SHA256withRSASSA-PSS
  *   . SHA384withRSASSA-PSS
  *   . SHA512withRSASSA-PSS
+ *   . SHA3-224withRSASSA-PSS
+ *   . SHA3-256withRSASSA-PSS
+ *   . SHA3-384withRSASSA-PSS
+ *   . SHA3-512withRSASSA-PSS
  *
  * Note that the underlying PKCS#11 token may support complete signature
  * algorithm (e.g. CKM_<md>_RSA_PKCS_PSS), or it may just
@@ -63,7 +68,7 @@ import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
  */
 final class P11PSSSignature extends SignatureSpi {
 
-    private final static boolean DEBUG = false;
+    private static final boolean DEBUG = false;
 
     // mappings of digest algorithms and their output length in bytes
     private static final Hashtable<String, Integer> DIGEST_LENGTHS =
@@ -71,20 +76,28 @@ final class P11PSSSignature extends SignatureSpi {
 
     static {
         DIGEST_LENGTHS.put("SHA-1", 20);
-        DIGEST_LENGTHS.put("SHA", 20);
-        DIGEST_LENGTHS.put("SHA1", 20);
         DIGEST_LENGTHS.put("SHA-224", 28);
-        DIGEST_LENGTHS.put("SHA224", 28);
         DIGEST_LENGTHS.put("SHA-256", 32);
-        DIGEST_LENGTHS.put("SHA256", 32);
         DIGEST_LENGTHS.put("SHA-384", 48);
-        DIGEST_LENGTHS.put("SHA384", 48);
         DIGEST_LENGTHS.put("SHA-512", 64);
-        DIGEST_LENGTHS.put("SHA512", 64);
         DIGEST_LENGTHS.put("SHA-512/224", 28);
-        DIGEST_LENGTHS.put("SHA512/224", 28);
         DIGEST_LENGTHS.put("SHA-512/256", 32);
-        DIGEST_LENGTHS.put("SHA512/256", 32);
+        DIGEST_LENGTHS.put("SHA3-224", 28);
+        DIGEST_LENGTHS.put("SHA3-256", 32);
+        DIGEST_LENGTHS.put("SHA3-384", 48);
+        DIGEST_LENGTHS.put("SHA3-512", 64);
+    }
+
+    // utility method for looking up the std digest algorithms
+    private static String toStdName(String givenDigestAlg) {
+        if (givenDigestAlg == null) return null;
+
+        KnownOIDs given2 = KnownOIDs.findMatch(givenDigestAlg);
+        if (given2 == null) {
+            return givenDigestAlg;
+        } else {
+            return given2.stdName();
+        }
     }
 
     // utility method for comparing digest algorithms
@@ -92,24 +105,8 @@ final class P11PSSSignature extends SignatureSpi {
     private static boolean isDigestEqual(String stdAlg, String givenAlg) {
         if (stdAlg == null || givenAlg == null) return false;
 
-        if (givenAlg.indexOf("-") != -1) {
-            return stdAlg.equalsIgnoreCase(givenAlg);
-        } else {
-            if (stdAlg.equals("SHA-1")) {
-                return (givenAlg.equalsIgnoreCase("SHA")
-                        || givenAlg.equalsIgnoreCase("SHA1"));
-            } else {
-                StringBuilder sb = new StringBuilder(givenAlg);
-                // case-insensitive check
-                if (givenAlg.regionMatches(true, 0, "SHA", 0, 3)) {
-                    givenAlg = sb.insert(3, "-").toString();
-                    return stdAlg.equalsIgnoreCase(givenAlg);
-                } else {
-                    throw new ProviderException("Unsupported digest algorithm "
-                            + givenAlg);
-                }
-            }
-        }
+        givenAlg = toStdName(givenAlg);
+        return stdAlg.equalsIgnoreCase(givenAlg);
     }
 
     // token instance
@@ -156,14 +153,14 @@ final class P11PSSSignature extends SignatureSpi {
     private int bytesProcessed = 0;
 
     // constant for signing mode
-    private final static int M_SIGN   = 1;
+    private static final int M_SIGN   = 1;
     // constant for verification mode
-    private final static int M_VERIFY = 2;
+    private static final int M_VERIFY = 2;
 
     // constant for type digesting, we do the hashing ourselves
-    private final static int T_DIGEST = 1;
+    private static final int T_DIGEST = 1;
     // constant for type update, token does everything
-    private final static int T_UPDATE = 2;
+    private static final int T_UPDATE = 2;
 
     P11PSSSignature(Token token, String algorithm, long mechId)
             throws NoSuchAlgorithmException, PKCS11Exception {
@@ -172,26 +169,57 @@ final class P11PSSSignature extends SignatureSpi {
         this.algorithm = algorithm;
         this.mechanism = new CK_MECHANISM(mechId);
         int idx = algorithm.indexOf("with");
-        this.mdAlg = (idx == -1? null : algorithm.substring(0, idx));
+        // convert to stdName
+        this.mdAlg = (idx == -1 ?
+                null : toStdName(algorithm.substring(0, idx)));
+
         switch ((int)mechId) {
         case (int)CKM_SHA1_RSA_PKCS_PSS:
         case (int)CKM_SHA224_RSA_PKCS_PSS:
         case (int)CKM_SHA256_RSA_PKCS_PSS:
         case (int)CKM_SHA384_RSA_PKCS_PSS:
         case (int)CKM_SHA512_RSA_PKCS_PSS:
+        case (int)CKM_SHA3_224_RSA_PKCS_PSS:
+        case (int)CKM_SHA3_256_RSA_PKCS_PSS:
+        case (int)CKM_SHA3_384_RSA_PKCS_PSS:
+        case (int)CKM_SHA3_512_RSA_PKCS_PSS:
             type = T_UPDATE;
+            this.md = null;
             break;
         case (int)CKM_RSA_PKCS_PSS:
+            // check if the digest algo is supported by underlying PKCS11 lib
+            if (this.mdAlg != null && token.getMechanismInfo
+                    (Functions.getHashMechId(this.mdAlg)) == null) {
+                throw new NoSuchAlgorithmException("Unsupported algorithm: " +
+                        algorithm);
+            }
+            this.md = (this.mdAlg == null ? null :
+                    MessageDigest.getInstance(this.mdAlg));
             type = T_DIGEST;
             break;
         default:
             throw new ProviderException("Unsupported mechanism: " + mechId);
         }
-        this.md = null;
+    }
+
+    private static PSSParameterSpec genDefaultParams(String digestAlg,
+            P11Key key) throws SignatureException {
+        int mdLen;
+        try {
+            mdLen = DIGEST_LENGTHS.get(digestAlg);
+        } catch (NullPointerException npe) {
+            throw new SignatureException("Unsupported digest: " +
+                    digestAlg);
+        }
+        int saltLen = Integer.min(mdLen, (key.length() >> 3) - mdLen -2);
+        return new PSSParameterSpec(digestAlg,
+                "MGF1", new MGF1ParameterSpec(digestAlg),
+                saltLen, PSSParameterSpec.TRAILER_FIELD_BC);
     }
 
     private void ensureInitialized() throws SignatureException {
         token.ensureValid();
+
         if (this.p11Key == null) {
             throw new SignatureException("Missing key");
         }
@@ -200,20 +228,19 @@ final class P11PSSSignature extends SignatureSpi {
                 // PSS Parameters are required for signature verification
                 throw new SignatureException
                     ("Parameters required for RSASSA-PSS signature");
-            } else {
-                int saltLen = DIGEST_LENGTHS.get(this.mdAlg).intValue();
-                // generate default params for both sign and verify?
-                this.sigParams = new PSSParameterSpec(this.mdAlg,
-                        "MGF1", new MGF1ParameterSpec(this.mdAlg),
-                        saltLen, PSSParameterSpec.TRAILER_FIELD_BC);
-                this.mechanism.setParameter(new CK_RSA_PKCS_PSS_PARAMS(
-                        this.mdAlg, "MGF1", this.mdAlg,
-                        DIGEST_LENGTHS.get(this.mdAlg).intValue()));
             }
+            // generate default params for both sign and verify?
+            this.sigParams = genDefaultParams(this.mdAlg, this.p11Key);
+            this.mechanism.setParameter(new CK_RSA_PKCS_PSS_PARAMS(
+                    this.mdAlg, "MGF1", this.mdAlg, sigParams.getSaltLength()));
         }
 
         if (initialized == false) {
-            initialize();
+            try {
+                initialize();
+            } catch (ProviderException pe) {
+                throw new SignatureException(pe);
+            }
         }
     }
 
@@ -242,9 +269,16 @@ final class P11PSSSignature extends SignatureSpi {
 
     private void cancelOperation() {
         token.ensureValid();
+
         if (DEBUG) System.out.print("Cancelling operation");
 
-        // cancel operation by finishing it; avoid killSession as some
+        if (P11Util.trySessionCancel(token, session,
+                (mode == M_SIGN ? CKF_SIGN : CKF_VERIFY))) {
+            if (DEBUG) System.out.println(" by C_SessionCancel");
+            return;
+        }
+
+        // cancel by finishing operations; avoid killSession call as some
         // hardware vendors may require re-login
         try {
             if (mode == M_SIGN) {
@@ -253,7 +287,7 @@ final class P11PSSSignature extends SignatureSpi {
                     token.p11.C_SignFinal(session.id(), 0);
                 } else {
                     byte[] digest =
-                        (md == null? new byte[0] : md.digest());
+                        (md == null ? new byte[0] : md.digest());
                     if (DEBUG) System.out.println(" by C_Sign");
                     token.p11.C_Sign(session.id(), digest);
                 }
@@ -265,12 +299,19 @@ final class P11PSSSignature extends SignatureSpi {
                     token.p11.C_VerifyFinal(session.id(), signature);
                 } else {
                     byte[] digest =
-                        (md == null? new byte[0] : md.digest());
+                        (md == null ? new byte[0] : md.digest());
                     if (DEBUG) System.out.println(" by C_Verify");
                     token.p11.C_Verify(session.id(), digest, signature);
                 }
             }
         } catch (PKCS11Exception e) {
+            if (e.match(CKR_OPERATION_NOT_INITIALIZED)) {
+                // Cancel Operation may be invoked after an error on a PKCS#11
+                // call. If the operation inside the token was already cancelled,
+                // do not fail here. This is part of a defensive mechanism for
+                // PKCS#11 libraries that do not strictly follow the standard.
+                return;
+            }
             if (mode == M_SIGN) {
                 throw new ProviderException("cancel failed", e);
             }
@@ -279,7 +320,7 @@ final class P11PSSSignature extends SignatureSpi {
     }
 
     // assumes current state is initialized == false
-    private void initialize() {
+    private void initialize() throws ProviderException {
         if (DEBUG) System.out.println("Initializing");
 
         if (p11Key == null) {
@@ -356,7 +397,8 @@ final class P11PSSSignature extends SignatureSpi {
         if (this.sigParams != null) {
             String digestAlg = this.sigParams.getDigestAlgorithm();
             int sLen = this.sigParams.getSaltLength();
-            int hLen = DIGEST_LENGTHS.get(digestAlg).intValue();
+
+            int hLen = DIGEST_LENGTHS.get(toStdName(digestAlg)).intValue();
             int minKeyLen = Math.addExact(Math.addExact(sLen, hLen), 2);
 
             if (keySize < minKeyLen) {
@@ -380,12 +422,24 @@ final class P11PSSSignature extends SignatureSpi {
         if (params == this.sigParams) return;
 
         String digestAlgorithm = params.getDigestAlgorithm();
-        if (this.mdAlg != null && !isDigestEqual(digestAlgorithm, this.mdAlg)) {
+        if (this.mdAlg != null && !isDigestEqual(this.mdAlg, digestAlgorithm)) {
             throw new InvalidAlgorithmParameterException
                     ("Digest algorithm in Signature parameters must be " +
                      this.mdAlg);
         }
-        Integer digestLen = DIGEST_LENGTHS.get(digestAlgorithm);
+
+        try {
+            if (token.getMechanismInfo(Functions.getHashMechId
+                    (digestAlgorithm)) == null) {
+                throw new InvalidAlgorithmParameterException
+                        ("Unsupported digest algorithm: " + digestAlgorithm);
+            }
+        } catch (PKCS11Exception pe) {
+            // should not happen
+            throw new InvalidAlgorithmParameterException(pe);
+        }
+
+        Integer digestLen = DIGEST_LENGTHS.get(toStdName(digestAlgorithm));
         if (digestLen == null) {
             throw new InvalidAlgorithmParameterException
                 ("Unsupported digest algorithm in Signature parameters: " +
@@ -458,8 +512,14 @@ final class P11PSSSignature extends SignatureSpi {
         mode = M_VERIFY;
         p11Key = P11KeyFactory.convertKey(token, publicKey, KEY_ALGO);
 
-        // For PSS, defer PKCS11 initialization calls to update/doFinal as it
-        // needs both key and params
+        // attempt initialization when key and params are both available
+        if (this.p11Key != null && this.sigParams != null) {
+            try {
+                initialize();
+            } catch (ProviderException pe) {
+                throw new InvalidKeyException(pe);
+            }
+        }
     }
 
     // see JCA spec
@@ -480,8 +540,14 @@ final class P11PSSSignature extends SignatureSpi {
         mode = M_SIGN;
         p11Key = P11KeyFactory.convertKey(token, privateKey, KEY_ALGO);
 
-        // For PSS, defer PKCS11 initialization calls to update/doFinal as it
-        // needs both key and params
+        // attempt initialization when key and params are both available
+        if (this.p11Key != null && this.sigParams != null) {
+            try {
+                initialize();
+            } catch (ProviderException pe) {
+                throw new InvalidKeyException(pe);
+            }
+        }
     }
 
     // see JCA spec
@@ -610,6 +676,11 @@ final class P11PSSSignature extends SignatureSpi {
             doCancel = false;
             return signature;
         } catch (PKCS11Exception pe) {
+            // As per the PKCS#11 standard, C_Sign and C_SignFinal may only
+            // keep the operation active on CKR_BUFFER_TOO_SMALL errors or
+            // successful calls to determine the output length. However,
+            // these cases are handled at OpenJDK's libj2pkcs11 native
+            // library. Thus, doCancel can safely be 'false' here.
             doCancel = false;
             throw new ProviderException(pe);
         } catch (ProviderException e) {
@@ -641,16 +712,9 @@ final class P11PSSSignature extends SignatureSpi {
             return true;
         } catch (PKCS11Exception pe) {
             doCancel = false;
-            long errorCode = pe.getErrorCode();
-            if (errorCode == CKR_SIGNATURE_INVALID) {
-                return false;
-            }
-            if (errorCode == CKR_SIGNATURE_LEN_RANGE) {
-                // return false rather than throwing an exception
-                return false;
-            }
-            // ECF bug?
-            if (errorCode == CKR_DATA_LEN_RANGE) {
+            if (pe.match(CKR_SIGNATURE_INVALID) ||
+                    pe.match(CKR_SIGNATURE_LEN_RANGE) ||
+                    pe.match(CKR_DATA_LEN_RANGE)) {
                 return false;
             }
             throw new ProviderException(pe);
@@ -684,6 +748,15 @@ final class P11PSSSignature extends SignatureSpi {
                 this.md = MessageDigest.getInstance(sigParams.getDigestAlgorithm());
             } catch (NoSuchAlgorithmException nsae) {
                 throw new InvalidAlgorithmParameterException(nsae);
+            }
+        }
+
+        // attempt initialization when key and params are both available
+        if (this.p11Key != null && this.sigParams != null) {
+            try {
+                initialize();
+            } catch (ProviderException pe) {
+                throw new InvalidAlgorithmParameterException(pe);
             }
         }
     }

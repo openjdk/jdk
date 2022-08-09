@@ -41,7 +41,7 @@ import org.testng.annotations.Test;
 /*
  * @test
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true stream.XMLOutputFactoryTest.StreamResultTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow stream.XMLOutputFactoryTest.StreamResultTest
  * @run testng/othervm stream.XMLOutputFactoryTest.StreamResultTest
  * @summary Test create XMLWriter with variant Result.
  */

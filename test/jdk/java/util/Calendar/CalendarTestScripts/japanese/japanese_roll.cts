@@ -435,12 +435,48 @@ test roll WEEK_OF_YEAR
 	check date BeforeMeiji $minyear Dec 25
 
 test WEEK_OF_MONTH
-	# Needs to wait for 6191841 fix. (WEEK_OF_MONTH needs to change
-	# ERA and YEAR in a transition month.)
+	use jcal
+	clear all
+
+	# Make sure this test does not throw AIOOBE
+	set date Heisei 1 Aug 1
+	roll week_of_month 1
+	check date Heisei 1 Aug 8
+
+	# Check transition dates
+	set date Showa 64 Jan 7
+	roll week_of_month 1
+	check date Showa 64 Jan 7
+	roll week_of_month -1
+	check date Showa 64 Jan 7
+
+	set date Heisei 1 Jan 31
+	roll week_of_month 1
+	check date Heisei 1 Jan 10
+	roll week_of_month -1
+	check date Heisei 1 Jan 31
 
 test DAY_OF_MONTH
-	# Needs to wait for 6191841 fix. (DAY_OF_MONTH needs to change
-	# ERA and YEAR in a transition month.)
+	use jcal
+	clear all
+
+	# Make sure this test does not throw AIOOBE
+	Set date Heisei 1 Aug 1
+	roll day_of_month 1
+	check date Heisei 1 Aug 2
+
+	# Check transition dates
+	set date Showa 64 Jan 7
+	roll day_of_month 1
+	check date Showa 64 Jan 1
+	roll day_of_month -1
+	check date Showa 64 Jan 7
+
+	set date Heisei 1 Jan 31
+	roll day_of_month 1
+	check date Heisei 1 Jan 8
+	roll day_of_month -1
+	check date Heisei 1 Jan 31
 
 test DAY_OF_YEAR
     use jcal

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/c2/barrierSetC2.hpp"
 #include "gc/shared/c2/cardTableBarrierSetC2.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "opto/arraycopynode.hpp"
 #include "opto/graphKit.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -119,7 +120,7 @@ int ArrayCopyNode::get_count(PhaseGVN *phase) const {
   if (is_clonebasic()) {
     if (src_type->isa_instptr()) {
       const TypeInstPtr* inst_src = src_type->is_instptr();
-      ciInstanceKlass* ik = inst_src->klass()->as_instance_klass();
+      ciInstanceKlass* ik = inst_src->instance_klass();
       // ciInstanceKlass::nof_nonstatic_fields() doesn't take injected
       // fields into account. They are rare anyway so easier to simply
       // skip instances with injected fields.
@@ -136,8 +137,8 @@ int ArrayCopyNode::get_count(PhaseGVN *phase) const {
       // length input to ArrayCopyNode is constant, length of input
       // array must be too.
 
-      assert((get_length_if_constant(phase) == -1) == !ary_src->size()->is_con() ||
-             phase->is_IterGVN() || StressReflectiveCode, "inconsistent");
+      assert((get_length_if_constant(phase) == -1) != ary_src->size()->is_con() ||
+             phase->is_IterGVN() || phase->C->inlining_incrementally() || StressReflectiveCode, "inconsistent");
 
       if (ary_src->size()->is_con()) {
         return ary_src->size()->get_con();
@@ -182,22 +183,30 @@ Node* ArrayCopyNode::try_clone_instance(PhaseGVN *phase, bool can_reshape, int c
   Node* in_mem = in(TypeFunc::Memory);
 
   const Type* src_type = phase->type(base_src);
-
-  MergeMemNode* mem = phase->transform(MergeMemNode::make(in_mem))->as_MergeMem();
-
   const TypeInstPtr* inst_src = src_type->isa_instptr();
-
   if (inst_src == NULL) {
     return NULL;
   }
 
-  if (!inst_src->klass_is_exact()) {
-    ciInstanceKlass* ik = inst_src->klass()->as_instance_klass();
-    assert(!ik->is_interface() && !ik->has_subklass(), "inconsistent klass hierarchy");
-    phase->C->dependencies()->assert_leaf_type(ik);
+  MergeMemNode* mem = phase->transform(MergeMemNode::make(in_mem))->as_MergeMem();
+  if (can_reshape) {
+    phase->is_IterGVN()->_worklist.push(mem);
   }
 
-  ciInstanceKlass* ik = inst_src->klass()->as_instance_klass();
+
+  ciInstanceKlass* ik = inst_src->instance_klass();
+
+  if (!inst_src->klass_is_exact()) {
+    assert(!ik->is_interface(), "inconsistent klass hierarchy");
+    if (ik->has_subklass()) {
+      // Concurrent class loading.
+      // Fail fast and return NodeSentinel to indicate that the transform failed.
+      return NodeSentinel;
+    } else {
+      phase->C->dependencies()->assert_leaf_type(ik);
+    }
+  }
+
   assert(ik->nof_nonstatic_fields() <= ArrayCopyLoadStoreMaxElem, "too many fields");
 
   BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
@@ -255,17 +264,16 @@ bool ArrayCopyNode::prepare_array_copy(PhaseGVN *phase, bool can_reshape,
 
     // newly allocated object is guaranteed to not overlap with source object
     disjoint_bases = is_alloc_tightly_coupled();
-
-    if (ary_src  == NULL || ary_src->klass()  == NULL ||
-        ary_dest == NULL || ary_dest->klass() == NULL) {
+    if (ary_src  == NULL || ary_src->elem()  == Type::BOTTOM ||
+        ary_dest == NULL || ary_dest->elem() == Type::BOTTOM) {
       // We don't know if arguments are arrays
       return false;
     }
 
-    BasicType src_elem  = ary_src->klass()->as_array_klass()->element_type()->basic_type();
-    BasicType dest_elem = ary_dest->klass()->as_array_klass()->element_type()->basic_type();
-    if (is_reference_type(src_elem))   src_elem  = T_OBJECT;
-    if (is_reference_type(dest_elem))  dest_elem = T_OBJECT;
+    BasicType src_elem = ary_src->elem()->array_element_basic_type();
+    BasicType dest_elem = ary_dest->elem()->array_element_basic_type();
+    if (is_reference_type(src_elem, true)) src_elem = T_OBJECT;
+    if (is_reference_type(dest_elem, true)) dest_elem = T_OBJECT;
 
     if (src_elem != dest_elem || dest_elem == T_VOID) {
       // We don't know if arguments are arrays of the same type
@@ -273,7 +281,7 @@ bool ArrayCopyNode::prepare_array_copy(PhaseGVN *phase, bool can_reshape,
     }
 
     BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-    if (bs->array_copy_requires_gc_barriers(is_alloc_tightly_coupled(), dest_elem, false, BarrierSetC2::Optimization)) {
+    if (bs->array_copy_requires_gc_barriers(is_alloc_tightly_coupled(), dest_elem, false, false, BarrierSetC2::Optimization)) {
       // It's an object array copy but we can't emit the card marking
       // that is needed
       return false;
@@ -285,9 +293,17 @@ bool ArrayCopyNode::prepare_array_copy(PhaseGVN *phase, bool can_reshape,
     uint header = arrayOopDesc::base_offset_in_bytes(dest_elem);
 
     src_offset = Compile::conv_I2X_index(phase, src_offset, ary_src->size());
-    dest_offset = Compile::conv_I2X_index(phase, dest_offset, ary_dest->size());
-    if (src_offset->is_top() || dest_offset->is_top()) {
+    if (src_offset->is_top()) {
       // Offset is out of bounds (the ArrayCopyNode will be removed)
+      return false;
+    }
+    dest_offset = Compile::conv_I2X_index(phase, dest_offset, ary_dest->size());
+    if (dest_offset->is_top()) {
+      // Offset is out of bounds (the ArrayCopyNode will be removed)
+      if (can_reshape) {
+        // record src_offset, so it can be deleted later (if it is dead)
+        phase->is_IterGVN()->_worklist.push(src_offset);
+      }
       return false;
     }
 
@@ -307,20 +323,20 @@ bool ArrayCopyNode::prepare_array_copy(PhaseGVN *phase, bool can_reshape,
 
     disjoint_bases = true;
 
-    adr_src  = phase->transform(new AddPNode(base_src, base_src, src_offset));
-    adr_dest = phase->transform(new AddPNode(base_dest, base_dest, dest_offset));
-
-    BasicType elem = ary_src->klass()->as_array_klass()->element_type()->basic_type();
-    if (is_reference_type(elem)) {
+    BasicType elem = ary_src->isa_aryptr()->elem()->array_element_basic_type();
+    if (is_reference_type(elem, true)) {
       elem = T_OBJECT;
     }
 
     BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-    if (bs->array_copy_requires_gc_barriers(true, elem, true, BarrierSetC2::Optimization)) {
+    if (bs->array_copy_requires_gc_barriers(true, elem, true, is_clone_inst(), BarrierSetC2::Optimization)) {
       return false;
     }
 
-    // The address is offseted to an aligned address where a raw copy would start.
+    adr_src  = phase->transform(new AddPNode(base_src, base_src, src_offset));
+    adr_dest = phase->transform(new AddPNode(base_dest, base_dest, dest_offset));
+
+    // The address is offsetted to an aligned address where a raw copy would start.
     // If the clone copy is decomposed into load-stores - the address is adjusted to
     // point at where the array starts.
     const Type* toff = phase->type(src_offset);
@@ -420,7 +436,7 @@ Node* ArrayCopyNode::array_copy_backward(PhaseGVN *phase,
     MergeMemNode* mm = MergeMemNode::make(mem);
 
     BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-    assert(copy_type != T_OBJECT || !bs->array_copy_requires_gc_barriers(false, T_OBJECT, false, BarrierSetC2::Optimization), "only tightly coupled allocations for object arrays");
+    assert(copy_type != T_OBJECT || !bs->array_copy_requires_gc_barriers(false, T_OBJECT, false, false, BarrierSetC2::Optimization), "only tightly coupled allocations for object arrays");
 
     if (count > 0) {
       for (int i = count-1; i >= 1; i--) {
@@ -453,7 +469,7 @@ bool ArrayCopyNode::finish_transform(PhaseGVN *phase, bool can_reshape,
       BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
       if (out_mem->outcnt() != 1 || !out_mem->raw_out(0)->is_MergeMem() ||
           out_mem->raw_out(0)->outcnt() != 1 || !out_mem->raw_out(0)->raw_out(0)->is_MemBar()) {
-        assert(bs->array_copy_requires_gc_barriers(true, T_OBJECT, true, BarrierSetC2::Optimization), "can only happen with card marking");
+        assert(bs->array_copy_requires_gc_barriers(true, T_OBJECT, true, is_clone_inst(), BarrierSetC2::Optimization), "can only happen with card marking");
         return false;
       }
 
@@ -557,6 +573,8 @@ Node *ArrayCopyNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if (!prepare_array_copy(phase, can_reshape,
                           adr_src, base_src, adr_dest, base_dest,
                           copy_type, value_type, disjoint_bases)) {
+    assert(adr_src == NULL, "no node can be left behind");
+    assert(adr_dest == NULL, "no node can be left behind");
     return NULL;
   }
 
@@ -620,6 +638,10 @@ Node *ArrayCopyNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   }
 
   if (!finish_transform(phase, can_reshape, ctl, mem)) {
+    if (can_reshape) {
+      // put in worklist, so that if it happens to be dead it is removed
+      phase->is_IterGVN()->_worklist.push(mem);
+    }
     return NULL;
   }
 
@@ -684,6 +706,8 @@ bool ArrayCopyNode::may_modify(const TypeOopPtr *t_oop, MemBarNode* mb, PhaseTra
     assert(c == mb->in(0) || (ac != NULL && ac->is_clonebasic() && !use_ReduceInitialCardMarks), "only for clone");
 #endif
     return true;
+  } else if (mb->trailing_partial_array_copy()) {
+    return true;
   }
 
   return false;
@@ -710,7 +734,9 @@ bool ArrayCopyNode::modifies(intptr_t offset_lo, intptr_t offset_hi, PhaseTransf
     return !must_modify;
   }
 
-  BasicType ary_elem = ary_t->klass()->as_array_klass()->element_type()->basic_type();
+  BasicType ary_elem = ary_t->isa_aryptr()->elem()->array_element_basic_type();
+  if (is_reference_type(ary_elem, true)) ary_elem = T_OBJECT;
+
   uint header = arrayOopDesc::base_offset_in_bytes(ary_elem);
   uint elemsize = type2aelembytes(ary_elem);
 
@@ -729,4 +755,17 @@ bool ArrayCopyNode::modifies(intptr_t offset_lo, intptr_t offset_hi, PhaseTransf
     }
   }
   return false;
+}
+
+// As an optimization, choose optimum vector size for copy length known at compile time.
+int ArrayCopyNode::get_partial_inline_vector_lane_count(BasicType type, int const_len) {
+  int lane_count = ArrayOperationPartialInlineSize/type2aelembytes(type);
+  if (const_len > 0) {
+    int size_in_bytes = const_len * type2aelembytes(type);
+    if (size_in_bytes <= 16)
+      lane_count = 16/type2aelembytes(type);
+    else if (size_in_bytes > 16 && size_in_bytes <= 32)
+      lane_count = 32/type2aelembytes(type);
+  }
+  return lane_count;
 }

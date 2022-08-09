@@ -52,6 +52,12 @@ bool MachODecoder::demangle(const char* symbol, char *buf, int buflen) {
 
 bool MachODecoder::decode(address addr, char *buf,
       int buflen, int *offset, const void *mach_base) {
+  if (addr == (address)(intptr_t)-1) {
+    // dladdr() in macOS12/Monterey returns success for -1, but that addr value
+    // won't work in this function. Should have been handled by the caller.
+    ShouldNotReachHere();
+    return false;
+  }
   struct symtab_command * symt = (struct symtab_command *)
     mach_find_command((struct mach_header_64 *)mach_base, LC_SYMTAB);
   if (symt == NULL) {

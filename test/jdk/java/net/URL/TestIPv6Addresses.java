@@ -23,11 +23,11 @@
 
 /* @test
  * @bug 4451522 4460484
- * @run main/othervm TestIPv6Addresses
+ * @run main/othervm -Djava.security.manager=allow TestIPv6Addresses
  * @summary URI and URL getHost() methods don't comform to RFC 2732
  */
 
-// Run in othervm because the tests sets a SecurityManager
+// Run in othervm -Djava.security.manager=allow because the tests sets a SecurityManager
 
 import java.net.*;
 

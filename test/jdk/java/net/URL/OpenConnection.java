@@ -24,7 +24,7 @@
 /* @test
  * @bug 5086348
  * @summary URL.openConnection(Proxy.NO_PROXY) throws NULLPointerException
- * @run main/othervm OpenConnection
+ * @run main/othervm -Djava.security.manager=allow OpenConnection
  */
 
 import java.io.*;

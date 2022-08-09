@@ -19,4 +19,6 @@ public class MaxDiagsTest {
 
     /** 4 undocumented signature items */
     public int warnings(int a1, int a2) throws Exception { return 0; }
+
+    /** */ MaxDiagsTest() { }
 }

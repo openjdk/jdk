@@ -39,8 +39,6 @@ class ciTypeArray : public ciArray {
 protected:
   ciTypeArray(typeArrayHandle h_t) : ciArray(h_t) {}
 
-  ciTypeArray(ciKlass* klass, int len) : ciArray(klass, len) {}
-
   typeArrayOop get_typeArrayOop() {
     return (typeArrayOop)get_oop();
   }

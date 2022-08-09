@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,23 +22,41 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package javax.swing;
 
 import java.awt.Component;
 import java.awt.Image;
-import java.awt.*;
-import java.text.*;
-import java.awt.geom.*;
-import java.beans.JavaBean;
+import java.awt.Insets;
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.Shape;
+import java.awt.geom.Rectangle2D;
 import java.beans.BeanProperty;
+import java.beans.JavaBean;
 import java.beans.Transient;
-
-import java.io.ObjectOutputStream;
 import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.io.Serial;
+import java.text.BreakIterator;
 
+import javax.accessibility.Accessible;
+import javax.accessibility.AccessibleContext;
+import javax.accessibility.AccessibleExtendedComponent;
+import javax.accessibility.AccessibleIcon;
+import javax.accessibility.AccessibleKeyBinding;
+import javax.accessibility.AccessibleRelation;
+import javax.accessibility.AccessibleRelationSet;
+import javax.accessibility.AccessibleRole;
+import javax.accessibility.AccessibleText;
 import javax.swing.plaf.LabelUI;
-import javax.accessibility.*;
-import javax.swing.text.*;
+import javax.swing.text.AttributeSet;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.Document;
+import javax.swing.text.Element;
+import javax.swing.text.Position;
+import javax.swing.text.StyledDocument;
+import javax.swing.text.View;
 
 /**
  * A display area for a short text string or an image,
@@ -533,7 +551,7 @@ public class JLabel extends JComponent implements SwingConstants, Accessible
      *
      * @since 1.4
      * @param index Index into the String to underline
-     * @exception IllegalArgumentException will be thrown if <code>index</code>
+     * @throws IllegalArgumentException will be thrown if <code>index</code>
      *            is &gt;= length of the text, or &lt; -1
      */
     @BeanProperty(visualUpdate = true, description
@@ -575,9 +593,9 @@ public class JLabel extends JComponent implements SwingConstants, Accessible
      *
      * @param key the property value to check
      * @param message the IllegalArgumentException detail message
-     * @return the key value if {@code key} is a a legal value for the
+     * @return the key value if {@code key} is a legal value for the
      *         horizontalAlignment properties
-     * @exception IllegalArgumentException if key isn't LEFT, CENTER, RIGHT,
+     * @throws IllegalArgumentException if key isn't LEFT, CENTER, RIGHT,
      * LEADING or TRAILING.
      * @see #setHorizontalTextPosition
      * @see #setHorizontalAlignment
@@ -604,7 +622,7 @@ public class JLabel extends JComponent implements SwingConstants, Accessible
      * @param message the IllegalArgumentException detail message
      * @return the key value if {@code key} is a legal value for the
      *         verticalAlignment or verticalTextPosition properties
-     * @exception IllegalArgumentException if key isn't TOP, CENTER, or BOTTOM.
+     * @throws IllegalArgumentException if key isn't TOP, CENTER, or BOTTOM.
      * @see #setVerticalAlignment
      * @see #setVerticalTextPosition
      */
@@ -880,6 +898,7 @@ public class JLabel extends JComponent implements SwingConstants, Accessible
      * See readObject() and writeObject() in JComponent for more
      * information about serialization in Swing.
      */
+    @Serial
     private void writeObject(ObjectOutputStream s) throws IOException {
         s.defaultWriteObject();
         if (getUIClassID().equals(uiClassID)) {
@@ -1056,6 +1075,10 @@ public class JLabel extends JComponent implements SwingConstants, Accessible
          * @see AccessibleContext#setAccessibleName
          */
         public String getAccessibleName() {
+            return getAccessibleNameCheckIcon(getAccessibleNameImpl());
+        }
+
+        private String getAccessibleNameImpl() {
             String name = accessibleName;
 
             if (name == null) {
@@ -1070,6 +1093,19 @@ public class JLabel extends JComponent implements SwingConstants, Accessible
             return name;
         }
 
+        private String getAccessibleNameCheckIcon(String name) {
+            if (((name == null) || name.isEmpty()) &&
+                    (JLabel.this.getIcon() != null)) {
+                if (JLabel.this.getIcon() instanceof Accessible) {
+                    AccessibleContext ac = ((Accessible) JLabel.this.getIcon()).getAccessibleContext();
+                    if (ac != null) {
+                        name = ac.getAccessibleName();
+                    }
+                }
+            }
+            return name;
+        }
+
         /**
          * Get the role of this object.
          *
@@ -1078,6 +1114,11 @@ public class JLabel extends JComponent implements SwingConstants, Accessible
          * @see AccessibleRole
          */
         public AccessibleRole getAccessibleRole() {
+            String name = getAccessibleNameImpl();
+            if (((name == null) || name.isEmpty()) &&
+                    (JLabel.this.getIcon() != null)) {
+                return AccessibleRole.ICON;
+            }
             return AccessibleRole.LABEL;
         }
 
@@ -1091,8 +1132,8 @@ public class JLabel extends JComponent implements SwingConstants, Accessible
             if (icon instanceof Accessible) {
                 AccessibleContext ac =
                 ((Accessible)icon).getAccessibleContext();
-                if (ac != null && ac instanceof AccessibleIcon) {
-                    return new AccessibleIcon[] { (AccessibleIcon)ac };
+                if (ac instanceof AccessibleIcon ai) {
+                    return new AccessibleIcon[] { ai };
                 }
             }
             return null;
@@ -1596,7 +1637,7 @@ public class JLabel extends JComponent implements SwingConstants, Accessible
              *
              * @param i zero-based index of the key bindings
              * @return a javax.lang.Object which specifies the key binding
-             * @exception IllegalArgumentException if the index is
+             * @throws IllegalArgumentException if the index is
              * out of bounds
              * @see #getAccessibleKeyBindingCount
              */

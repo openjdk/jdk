@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
  * @test
  * @bug 4851638
  * @summary Tests for StrictMath.log1p
- * @author Joseph D. Darcy
  */
 
 /**
@@ -44,7 +43,7 @@ public class Log1pTests {
 
     static int testLog1pCase(double input, double expected) {
         return Tests.test("StrictMath.log1p(double)", input,
-                          StrictMath.log1p(input), expected);
+                          StrictMath::log1p, expected);
     }
 
     static int testLog1p() {

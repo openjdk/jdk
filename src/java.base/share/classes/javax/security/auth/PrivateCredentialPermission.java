@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package javax.security.auth;
 
 import java.util.*;
+import java.io.IOException;
 import java.text.MessageFormat;
 import java.security.Permission;
 import java.security.PermissionCollection;
@@ -144,9 +145,7 @@ public final class PrivateCredentialPermission extends Permission {
             } else {
                 this.credOwners = new CredOwner[principals.size()];
                 int index = 0;
-                Iterator<Principal> i = principals.iterator();
-                while (i.hasNext()) {
-                    Principal p = i.next();
+                for (Principal p : principals) {
                     this.credOwners[index++] = new CredOwner
                                                 (p.getClass().getName(),
                                                 p.getName());
@@ -242,11 +241,8 @@ public final class PrivateCredentialPermission extends Permission {
      * the specified {@code Permission}, false if not.
      */
     public boolean implies(Permission p) {
-
-        if (p == null || !(p instanceof PrivateCredentialPermission))
+        if (!(p instanceof PrivateCredentialPermission that))
             return false;
-
-        PrivateCredentialPermission that = (PrivateCredentialPermission)p;
 
         if (!impliesCredentialClass(credentialClass, that.credentialClass))
             return false;
@@ -475,10 +471,14 @@ public final class PrivateCredentialPermission extends Permission {
 
     /**
      * Reads this object from a stream (i.e., deserializes it)
+     *
+     * @param  s the {@code ObjectInputStream} from which data is read
+     * @throws IOException if an I/O error occurs
+     * @throws ClassNotFoundException if a serialized class cannot be loaded
      */
     @java.io.Serial
     private void readObject(java.io.ObjectInputStream s) throws
-                                        java.io.IOException,
+                                        IOException,
                                         ClassNotFoundException {
 
         s.defaultReadObject();
@@ -521,10 +521,8 @@ public final class PrivateCredentialPermission extends Permission {
         }
 
         public boolean implies(Object obj) {
-            if (obj == null || !(obj instanceof CredOwner))
+            if (!(obj instanceof CredOwner that))
                 return false;
-
-            CredOwner that = (CredOwner)obj;
 
             if (principalClass.equals("*") ||
                 principalClass.equals(that.principalClass)) {

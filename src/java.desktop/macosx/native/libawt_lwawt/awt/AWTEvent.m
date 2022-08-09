@@ -27,9 +27,8 @@
 #import "java_awt_event_KeyEvent.h"
 #import "LWCToolkit.h"
 
-#import "jni_util.h"
+#import "JNIUtilities.h"
 
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
 #import <sys/time.h>
 #import <Carbon/Carbon.h>
 
@@ -466,14 +465,23 @@ NsCharToJavaVirtualKeyCode(unichar ch, BOOL isDeadChar,
         lower = tolower(ch);
         offset = lower - 'a';
         if (offset >= 0 && offset <= 25) {
-            // some chars in letter set are NOT actually A-Z characters?!
-            // skip them...
+            // checking for A-Z characters
             *postsTyped = YES;
             // do quick conversion
             *keyCode = java_awt_event_KeyEvent_VK_A + offset;
             *keyLocation = java_awt_event_KeyEvent_KEY_LOCATION_STANDARD;
             return;
-        }
+        } else {
+            // checking for non-english characters
+            // this value comes from ExtendedKeyCodes.java
+            offset += 0x01000000;
+            *postsTyped = YES;
+            // do quick conversion
+            // the keyCode is off by 32, so adding it here
+            *keyCode = java_awt_event_KeyEvent_VK_A + offset + 32;
+            *keyLocation = java_awt_event_KeyEvent_KEY_LOCATION_STANDARD;
+return;
+         }
     }
 
     if ([[NSCharacterSet decimalDigitCharacterSet] characterIsMember:ch]) {
@@ -668,11 +676,11 @@ Java_sun_lwawt_macosx_NSEvent_nsToJavaModifiers
 {
     jint jmodifiers = 0;
 
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
 
     jmodifiers = GetJavaMouseModifiers(modifierFlags);
 
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 
     return jmodifiers;
 }
@@ -688,7 +696,7 @@ Java_sun_lwawt_macosx_NSEvent_nsToJavaKeyInfo
 {
     BOOL postsTyped = NO;
 
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
 
     jboolean copy = JNI_FALSE;
     jint *data = (*env)->GetIntArrayElements(env, inData, &copy);
@@ -716,7 +724,7 @@ JNF_COCOA_ENTER(env);
 
     (*env)->ReleaseIntArrayElements(env, inData, data, 0);
 
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 
     return postsTyped;
 }
@@ -730,7 +738,7 @@ JNIEXPORT void JNICALL
 Java_sun_lwawt_macosx_NSEvent_nsKeyModifiersToJavaKeyInfo
 (JNIEnv *env, jclass cls, jintArray inData, jintArray outData)
 {
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
 
     jboolean copy = JNI_FALSE;
     jint *data = (*env)->GetIntArrayElements(env, inData, &copy);
@@ -757,7 +765,7 @@ JNF_COCOA_ENTER(env);
 
     (*env)->ReleaseIntArrayElements(env, inData, data, 0);
 
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 }
 
 /*
@@ -771,11 +779,11 @@ Java_sun_lwawt_macosx_NSEvent_nsToJavaChar
 {
     jchar javaChar = 0;
 
-JNF_COCOA_ENTER(env);
+JNI_COCOA_ENTER(env);
 
     javaChar = NsCharToJavaChar(nsChar, modifierFlags, spaceKeyTyped);
 
-JNF_COCOA_EXIT(env);
+JNI_COCOA_EXIT(env);
 
     return javaChar;
 }

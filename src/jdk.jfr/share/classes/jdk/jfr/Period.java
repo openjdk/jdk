@@ -44,7 +44,7 @@ public @interface Period {
     /**
      * Settings name {@code "period"} for configuring periodic events
      */
-    public final static String NAME = "period";
+    public static final String NAME = "period";
 
     /**
      * Returns the default setting value for a periodic setting.

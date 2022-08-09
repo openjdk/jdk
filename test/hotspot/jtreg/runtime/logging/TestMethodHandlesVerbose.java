@@ -26,10 +26,11 @@
  * @bug 8244946
  * @summary Run simple test with -XX:+Verbose and -Xlog:methodhandles.
  *
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+Verbose -Xlog:methodhandles TestMethodHandlesVerbose
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+Verbose -Xlog:methodhandles TestMethodHandlesVerbose a b
  */
 
 public class TestMethodHandlesVerbose {
     public static void main(String[] args) {
+        System.out.println(args[0] + args[1]);
     }
 }

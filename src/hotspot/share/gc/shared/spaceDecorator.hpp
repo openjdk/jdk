@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 #ifndef SHARE_GC_SHARED_SPACEDECORATOR_HPP
 #define SHARE_GC_SHARED_SPACEDECORATOR_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "memory/memRegion.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -98,7 +98,7 @@ class SpaceMangler: public CHeapObj<mtGC> {
   // Return true if q matches the mangled pattern.
   static bool is_mangled(HeapWord* q) PRODUCT_RETURN0;
 
-  // Used to save the an address in a space for later use during mangling.
+  // Used to save the address in a space for later use during mangling.
   void set_top_for_allocations(HeapWord* v);
 
   // Overwrites the unused portion of this space.

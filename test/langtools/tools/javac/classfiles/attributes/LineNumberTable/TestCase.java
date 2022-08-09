@@ -23,6 +23,7 @@
 
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -32,6 +33,8 @@ import java.util.Set;
 public class TestCase {
     public final String src;
     public final Set<Integer> expectedLines;
+    public final boolean exactLines;
+    public final List<String> extraCompilerOptions;
 
 
     private final String name;
@@ -41,8 +44,16 @@ public class TestCase {
     }
 
     public TestCase(String src, Collection<Integer> expectedLines, String name) {
+        this(src, expectedLines, false, List.of(), name);
+    }
+
+    public TestCase(String src, Collection<Integer> expectedLines,
+                    boolean exactLines, List<String> extraCompilerOptions,
+                    String name) {
         this.src = src;
         this.expectedLines = new HashSet<>(expectedLines);
+        this.exactLines = exactLines;
+        this.extraCompilerOptions = extraCompilerOptions;
         this.name = name;
     }
 }

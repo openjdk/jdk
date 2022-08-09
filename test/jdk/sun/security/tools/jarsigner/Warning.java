@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ import java.util.Arrays;
 
 /**
  * @test
- * @bug 8024302 8026037 8130132
+ * @bug 8024302 8026037 8130132 8243585
  * @summary warnings, errors and -strict
  * @library /lib/testlibrary /test/lib
  * @build jdk.test.lib.util.JarUtils
@@ -83,7 +83,7 @@ public class Warning {
 
         issueCert("b", "-sigalg MD5withRSA");
         run("jarsigner", "a.jar b")
-                .shouldMatch("chain is invalid. Reason:.*MD5withRSA");
+                .shouldMatch("chain is invalid. Reason:.*MD5.*");
 
         recreateJar();
 
@@ -175,6 +175,18 @@ public class Warning {
                 .shouldHaveExitValue(4)
                 .shouldContain("with signer errors")
                 .shouldMatch("(?s).*Error:.*has expired.*Warning:.*");
+
+        // Sign jar with Trust Anchor that has a 512 bit key. Make sure
+        // the error message indicates the key size is restricted.
+        recreateJar();
+        run("keytool", "-delete -alias ca");
+        newCert("ca", "-keysize 512", "-validity 365000", "-ext bc:c");
+        newCert("d");
+        issueCert("d");
+        run("jarsigner", "a.jar d")
+                .shouldContain("chain is invalid. " +
+                        "Reason: Algorithm constraints check failed on " +
+                        "keysize limits: RSA 512 bit key.");
     }
 
     // Creates a new jar without signature

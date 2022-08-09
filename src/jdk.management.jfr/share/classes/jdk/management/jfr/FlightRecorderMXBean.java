@@ -346,12 +346,22 @@ public interface FlightRecorderMXBean extends PlatformManagedObject {
      * <td>{@code "50000"},<br>
      * {@code "1000000"},<br>
      * </tr>
+     * <tr>
+     * <th scope="row">{@code streamVersion}</th>
+     * <td>Specifies format to use when reading data from a running recording
+     * </td>
+     * <td>{@code "1.0"}</td>
+     * <td>A version number with a major and minor.<br>
+     * <br>
+     * To be able to read from a running recording the value must be set</td>
+     * <td>{@code "1.0"}
+     * </tr>
      * </tbody>
      * </table>
      * If an option is omitted from the map the default value is used.
      * <p>
      * The recording with the specified ID must be stopped before a stream can
-     * be opened. This restriction might be lifted in future releases.
+     * be opened, unless the option {@code "streamVersion"} is specified.
      *
      * @param recordingId ID of the recording to open the stream for
      *

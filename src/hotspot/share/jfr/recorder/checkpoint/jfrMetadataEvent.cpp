@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,19 +24,33 @@
 
 #include "precompiled.hpp"
 #include "jfr/jni/jfrJavaSupport.hpp"
+#include "jfr/jni/jfrUpcalls.hpp"
 #include "jfr/recorder/checkpoint/jfrMetadataEvent.hpp"
 #include "jfr/recorder/repository/jfrChunkWriter.hpp"
+#include "jfr/recorder/jfrEventSetting.inline.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/javaThread.hpp"
+#include "utilities/exceptions.hpp"
 
 static jbyteArray metadata_blob = NULL;
 static u8 metadata_id = 0;
 static u8 last_metadata_id = 0;
 
-static void write_metadata_blob(JfrChunkWriter& chunkwriter, Thread* thread) {
+static void check_internal_types() {
+  static bool visible = false;
+  if (!visible && JfrEventSetting::is_internal_types_visible()) {
+    JavaThread* const jt = JavaThread::current();
+    DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(jt));
+    // can safepoint here
+    ThreadInVMfromNative transition(jt);
+    visible = JfrUpcalls::unhide_internal_types(jt);
+  }
+}
+
+static void write_metadata_blob(JfrChunkWriter& chunkwriter, JavaThread* thread) {
   assert(chunkwriter.is_valid(), "invariant");
   assert(thread != NULL, "invariant");
   assert(metadata_blob != NULL, "invariant");
@@ -53,6 +67,7 @@ static void write_metadata_blob(JfrChunkWriter& chunkwriter, Thread* thread) {
 
 void JfrMetadataEvent::write(JfrChunkWriter& chunkwriter) {
   assert(chunkwriter.is_valid(), "invariant");
+  check_internal_types();
   if (last_metadata_id == metadata_id && chunkwriter.has_metadata()) {
     return;
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 package nsk.jdi.EventRequestManager.stepRequests;
 
-import nsk.share.*;
+import java.lang.reflect.Method;
 import nsk.share.jpda.*;
 import nsk.share.jdi.*;
 
@@ -61,9 +61,11 @@ public class stepreq001t {
 // Get a monitor in order to prevent the threads from exiting
         synchronized(lockObj) {
             for (int i=1; i<stepreq001.THRDS_NUM; i++) {
-                thrs[i] = new stepreq001a(readyObj, lockObj,
-                    stepreq001.DEBUGGEE_THRDS[i]);
-                thrs[i].setDaemon(stepreq001.DAEMON_THRDS[i]);
+                thrs[i] = JDIThreadFactory.newThread(new stepreq001a(readyObj, lockObj,
+                    stepreq001.DEBUGGEE_THRDS[i]));
+                if (!isVirtual(thrs[i])) {
+                    thrs[i].setDaemon(stepreq001.DAEMON_THRDS[i]);
+                }
                 if (argHandler.verbose())
                     System.out.println("Debuggee: starting thread #"
                         + i + " \"" + thrs[i].getName() + "\"");
@@ -110,7 +112,16 @@ public class stepreq001t {
             stepreq001.PASSED;
     }
 
-    class stepreq001a extends Thread {
+    private static boolean isVirtual(Thread thread) {
+        try {
+            Method isVirtual = Thread.class.getMethod("isVirtual");
+            return (boolean) isVirtual.invoke(thread);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    class stepreq001a extends NamedTask {
         private Object readyObj;
         private Object lockObj;
 

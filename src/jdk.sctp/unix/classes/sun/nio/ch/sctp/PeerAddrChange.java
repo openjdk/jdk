@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,12 +36,12 @@ public class PeerAddrChange extends PeerAddressChangeNotification
     implements SctpNotification
 {
     /* static final ints so that they can be referenced from native */
-    @Native private final static int SCTP_ADDR_AVAILABLE = 1;
-    @Native private final static int SCTP_ADDR_UNREACHABLE = 2;
-    @Native private final static int SCTP_ADDR_REMOVED = 3;
-    @Native private final static int SCTP_ADDR_ADDED = 4;
-    @Native private final static int SCTP_ADDR_MADE_PRIM = 5;
-    @Native private final static int SCTP_ADDR_CONFIRMED =6;
+    @Native private static final int SCTP_ADDR_AVAILABLE = 1;
+    @Native private static final int SCTP_ADDR_UNREACHABLE = 2;
+    @Native private static final int SCTP_ADDR_REMOVED = 3;
+    @Native private static final int SCTP_ADDR_ADDED = 4;
+    @Native private static final int SCTP_ADDR_MADE_PRIM = 5;
+    @Native private static final int SCTP_ADDR_CONFIRMED =6;
 
     private Association association;
 

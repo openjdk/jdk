@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,8 +97,8 @@ class ZipUtils {
         if (month > 0 && month < 13 && day > 0 && hour < 24 && minute < 60 && second < 60) {
             try {
                 LocalDateTime ldt = LocalDateTime.of(year, month, day, hour, minute, second);
-                return TimeUnit.MILLISECONDS.convert(ldt.toEpochSecond(
-                        ZoneId.systemDefault().getRules().getOffset(ldt)), TimeUnit.SECONDS);
+                return TimeUnit.SECONDS.toMillis(ldt.toEpochSecond(
+                        ZoneId.systemDefault().getRules().getOffset(ldt)));
             } catch (DateTimeException dte) {
                 // ignore
             }
@@ -165,7 +165,7 @@ class ZipUtils {
      * Fetches unsigned 16-bit value from byte array at specified offset.
      * The bytes are assumed to be in Intel (little-endian) byte order.
      */
-    public static final int get16(byte b[], int off) {
+    public static final int get16(byte[] b, int off) {
         return (b[off] & 0xff) | ((b[off + 1] & 0xff) << 8);
     }
 
@@ -173,7 +173,7 @@ class ZipUtils {
      * Fetches unsigned 32-bit value from byte array at specified offset.
      * The bytes are assumed to be in Intel (little-endian) byte order.
      */
-    public static final long get32(byte b[], int off) {
+    public static final long get32(byte[] b, int off) {
         return (get16(b, off) | ((long)get16(b, off+2) << 16)) & 0xffffffffL;
     }
 
@@ -181,7 +181,7 @@ class ZipUtils {
      * Fetches signed 64-bit value from byte array at specified offset.
      * The bytes are assumed to be in Intel (little-endian) byte order.
      */
-    public static final long get64(byte b[], int off) {
+    public static final long get64(byte[] b, int off) {
         return get32(b, off) | (get32(b, off+4) << 32);
     }
 
@@ -190,7 +190,7 @@ class ZipUtils {
      * The bytes are assumed to be in Intel (little-endian) byte order.
      *
      */
-    public static final int get32S(byte b[], int off) {
+    public static final int get32S(byte[] b, int off) {
         return (get16(b, off) | (get16(b, off+2) << 16));
     }
 
@@ -283,7 +283,7 @@ class ZipUtils {
     static final int READBLOCKSZ = 128;
 
     /**
-     * Loads zip native library, if not already laoded
+     * Loads zip native library, if not already loaded
      */
     static void loadLibrary() {
         jdk.internal.loader.BootLoader.loadLibrary("zip");

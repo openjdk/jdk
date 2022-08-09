@@ -77,10 +77,10 @@ public class PaletteBuilder {
      * Result image then is an approximation constructed by octree
      * quantization method.
      *
-     * @exception IllegalArgumentException if {@code src} is
+     * @throws IllegalArgumentException if {@code src} is
      * {@code null}.
      *
-     * @exception UnsupportedOperationException if implemented method
+     * @throws UnsupportedOperationException if implemented method
      * is unable to create approximation of {@code src}
      * and {@code canCreatePalette} returns {@code false}.
      *
@@ -98,10 +98,10 @@ public class PaletteBuilder {
      * {@code img}. If number of colors in the given image exceeds
      * maximum palette size closest colors would be merged.
      *
-     * @exception IllegalArgumentException if {@code img} is
+     * @throws IllegalArgumentException if {@code img} is
      * {@code null}.
      *
-     * @exception UnsupportedOperationException if implemented method
+     * @throws UnsupportedOperationException if implemented method
      * is unable to create approximation of {@code img}
      * and {@code canCreatePalette} returns {@code false}.
      *
@@ -124,7 +124,7 @@ public class PaletteBuilder {
      * @return {@code true} if the {@code PaletteBuilder}
      * is likely to be able to create palette for this image type.
      *
-     * @exception IllegalArgumentException if {@code type}
+     * @throws IllegalArgumentException if {@code type}
      * is {@code null}.
      */
     public static boolean canCreatePalette(ImageTypeSpecifier type) {
@@ -144,7 +144,7 @@ public class PaletteBuilder {
      * @return {@code true} if the {@code PaletteBuilder}
      * is likely to be able to create palette for this image type.
      *
-     * @exception IllegalArgumentException if {@code image}
+     * @throws IllegalArgumentException if {@code image}
      * is {@code null}.
      */
     public static boolean canCreatePalette(RenderedImage image) {

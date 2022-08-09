@@ -31,27 +31,7 @@ package jdk.jfr;
  * <p>
  * The following example shows how to implement an {@code Event} class.
  *
- * <pre>{@literal
- * import jdk.jfr.Event;
- * import jdk.jfr.Description;
- * import jdk.jfr.Label;
- *
- * public class Example {
- *
- *   @Label("Hello World")
- *   @Description("Helps programmer getting started")
- *   static class HelloWorld extends Event {
- *       @Label("Message")
- *       String message;
- *   }
- *
- *   public static void main(String... args) {
- *       HelloWorld event = new HelloWorld();
- *       event.message = "hello, world!";
- *       event.commit();
- *   }
- * }
- * }</pre>
+ * {@snippet class="Snippets" region="EventOverview"}
  * <p>
  * After an event is allocated and its field members are populated, it can be
  * written to the Flight Recorder system by using the {@link #commit()} method.
@@ -86,7 +66,7 @@ package jdk.jfr;
 @Enabled(true)
 @StackTrace(true)
 @Registered(true)
-abstract public class Event extends jdk.internal.event.Event {
+public abstract class Event extends jdk.internal.event.Event {
     /**
      * Sole constructor, for invocation by subclass constructors, typically
      * implicit.
@@ -97,7 +77,8 @@ abstract public class Event extends jdk.internal.event.Event {
     /**
      * Starts the timing of this event.
      */
-    final public void begin() {
+    @Override
+    public final void begin() {
     }
 
     /**
@@ -105,7 +86,8 @@ abstract public class Event extends jdk.internal.event.Event {
      *
      * The {@code end} method must be invoked after the {@code begin} method.
      */
-    final public void end() {
+    @Override
+    public final void end() {
     }
 
     /**
@@ -116,7 +98,8 @@ abstract public class Event extends jdk.internal.event.Event {
      * not end with an explicit invocation of the {@code end} method, then the event
      * ends when the {@code commit} method is invoked.
      */
-    final public void commit() {
+    @Override
+    public final void commit() {
     }
 
     /**
@@ -126,7 +109,8 @@ abstract public class Event extends jdk.internal.event.Event {
      *
      * @return {@code true} if event is enabled, {@code false} otherwise
      */
-    final public boolean isEnabled() {
+    @Override
+    public final boolean isEnabled() {
         return false;
     }
 
@@ -139,7 +123,8 @@ abstract public class Event extends jdk.internal.event.Event {
      * @return {@code true} if the event can be written to the Flight Recorder
      *         system, {@code false} otherwise
      */
-    final public boolean shouldCommit() {
+    @Override
+    public final boolean shouldCommit() {
         return false;
     }
 
@@ -164,6 +149,7 @@ abstract public class Event extends jdk.internal.event.Event {
      * @see EventType#getFields()
      * @see EventFactory
      */
-    final public void set(int index, Object value) {
+    @Override
+    public final void set(int index, Object value) {
     }
 }

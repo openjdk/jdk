@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@ import java.lang.module.Configuration;
 import java.lang.module.ModuleDescriptor;
 import java.util.List;
 import java.util.Set;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 //
 // Test archived system module graph when open archive heap objects are mapped:
@@ -61,6 +61,7 @@ public class CheckArchivedModuleApp {
         checkModuleDescriptors(expectArchivedDescriptors);
         checkConfiguration(expectArchivedConfiguration);
         checkEmptyConfiguration(expectArchivedConfiguration);
+        checkEmptyLayer();
     }
 
     private static void checkModuleDescriptors(boolean expectArchivedDescriptors) {
@@ -137,6 +138,15 @@ public class CheckArchivedModuleApp {
                 throw new RuntimeException(
                     "FAILED. Boot layer configuration is archived.");
             }
+        }
+    }
+
+    private static void checkEmptyLayer() {
+        // ModuleLayer.EMPTY_FIELD returned by empty() method is singleton.
+        // Check that with CDS there is still a single instance of EMPTY_LAYER
+        // and boot() layer parent is THE empty layer.
+        if (ModuleLayer.empty() != ModuleLayer.boot().parents().get(0)) {
+            throw new RuntimeException("FAILED. Empty module layer is not singleton");
         }
     }
 }

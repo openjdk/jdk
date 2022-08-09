@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 package sun.awt.X11;
 
 import java.awt.*;
-import java.awt.peer.ComponentPeer;
 import java.awt.peer.TextAreaPeer;
 import java.awt.event.*;
 import javax.swing.event.DocumentListener;
@@ -526,7 +525,7 @@ final class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
         return jtext.getCaretPosition();
     }
 
-    final class AWTTextAreaUI extends MotifTextAreaUI {
+    static final class AWTTextAreaUI extends MotifTextAreaUI {
 
         private JTextArea jta;
 
@@ -633,7 +632,7 @@ final class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
     }
 
     @SuppressWarnings("serial") // JDK-implementation class
-    final class XAWTScrollBarButton extends BasicArrowButton {
+    static final class XAWTScrollBarButton extends BasicArrowButton {
 
         private UIDefaults uidefaults = XToolkit.getUIDefaults();
         private Color darkShadow = SystemColor.controlShadow;
@@ -804,7 +803,7 @@ final class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
         }
     }
 
-    final class XAWTScrollBarUI extends BasicScrollBarUI {
+    static final class XAWTScrollBarUI extends BasicScrollBarUI {
 
         @Override
         protected void installDefaults()
@@ -894,7 +893,7 @@ final class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
     }
 
     @SuppressWarnings("serial") // JDK-implementation class
-    final class AWTTextArea extends JTextArea implements DocumentListener {
+    static final class AWTTextArea extends JTextArea implements DocumentListener {
 
         private boolean isFocused = false;
         private final XTextAreaPeer peer;
@@ -983,7 +982,7 @@ final class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
         }
     }
 
-    final class XAWTScrollPaneUI extends BasicScrollPaneUI {
+    static final class XAWTScrollPaneUI extends BasicScrollPaneUI {
 
         private final Border vsbMarginBorderR = new EmptyBorder(0, 2, 0, 0);
         private final Border vsbMarginBorderL = new EmptyBorder(0, 0, 0, 2);
@@ -1093,7 +1092,7 @@ final class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
     }
 
     @SuppressWarnings("serial") // JDK-implementation class
-    private class AWTTextPane extends JScrollPane implements FocusListener {
+    private static class AWTTextPane extends JScrollPane implements FocusListener {
 
         private final JTextArea jtext;
         private final XWindow xwin;

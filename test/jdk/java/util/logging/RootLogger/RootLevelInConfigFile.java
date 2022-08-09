@@ -44,7 +44,7 @@ import jdk.internal.access.SharedSecrets;
  *      configuration file does work.
  * @modules java.base/jdk.internal.access
  *          java.logging
- * @run main/othervm RootLevelInConfigFile
+ * @run main/othervm -Djava.security.manager=allow RootLevelInConfigFile
  *
  * @author danielfuchs
  */

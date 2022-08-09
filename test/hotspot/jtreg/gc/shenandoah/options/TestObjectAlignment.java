@@ -23,7 +23,7 @@
  */
 
 /*
- * @test TestObjectAlignment
+ * @test id=default
  * @requires vm.gc.Shenandoah
  *
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC          TestObjectAlignment
@@ -37,7 +37,7 @@
  */
 
 /*
- * @test TestObjectAlignment
+ * @test id=16b
  * @requires vm.gc.Shenandoah
  * @requires vm.bits == "64"
  *

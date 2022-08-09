@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8049432 8069038 8234723
+ * @bug 8049432 8069038 8234723 8202343
  * @summary New tests for TLS property jdk.tls.client.protocols
  * @summary javax/net/ssl/TLS/TLSClientPropertyTest.java needs to be
  *     updated for JDK-8061210
@@ -79,7 +79,7 @@ public class TLSClientPropertyTest {
             }
             contextProtocol = null;
             expectedDefaultProtos = new String[] {
-                    "TLSv1", "TLSv1.1", "TLSv1.2", "TLSv1.3"
+                    "TLSv1.2", "TLSv1.3"
             };
             break;
         case "SSLv3":
@@ -90,26 +90,24 @@ public class TLSClientPropertyTest {
         case "TLSv1":
             contextProtocol = "TLSv1";
             expectedDefaultProtos = new String[] {
-                    "TLSv1"
             };
             break;
         case "TLSv11":
             contextProtocol = "TLSv1.1";
             expectedDefaultProtos = new String[] {
-                    "TLSv1", "TLSv1.1"
             };
             break;
         case "TLSv12":
             contextProtocol = "TLSv1.2";
             expectedDefaultProtos = new String[] {
-                    "TLSv1", "TLSv1.1", "TLSv1.2"
+                    "TLSv1.2"
             };
             break;
         case "TLSv13":
         case "TLS":
             contextProtocol = "TLSv1.3";
             expectedDefaultProtos = new String[] {
-                    "TLSv1", "TLSv1.1", "TLSv1.2", "TLSv1.3"
+                    "TLSv1.2", "TLSv1.3"
             };
             break;
         case "WrongProperty":

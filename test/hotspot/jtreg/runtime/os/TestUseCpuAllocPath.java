@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import jdk.test.lib.process.OutputAnalyzer;
  *   VM was either compiled on a platform which does not define CPU_ALLOC,
  *   or it is executed on a platform that does not support it.
  * @requires os.family == "linux"
+ * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @run driver TestUseCpuAllocPath
@@ -47,6 +48,7 @@ public class TestUseCpuAllocPath {
                                                   "-version");
 
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        output.shouldHaveExitValue(0);
         output.shouldContain(SUCCESS_STRING);
     }
 }

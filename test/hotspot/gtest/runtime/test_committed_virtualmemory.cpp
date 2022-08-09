@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,6 @@
 
 // Included early because the NMT flags don't include it.
 #include "utilities/macros.hpp"
-
-#if INCLUDE_NMT
 
 #include "runtime/thread.hpp"
 #include "services/memTracker.hpp"
@@ -101,8 +99,8 @@ public:
   static void test_committed_region_impl(size_t num_pages, size_t touch_pages, int* page_num) {
     const size_t page_sz = os::vm_page_size();
     const size_t size = num_pages * page_sz;
-    char* base = os::reserve_memory(size, mtThreadStack);
-    bool result = os::commit_memory(base, size, false);
+    char* base = os::reserve_memory(size, !ExecMem, mtThreadStack);
+    bool result = os::commit_memory(base, size, !ExecMem);
     size_t index;
     ASSERT_NE(base, (char*)NULL);
     for (index = 0; index < touch_pages; index ++) {
@@ -169,9 +167,9 @@ public:
     const size_t page_sz = os::vm_page_size();
     const size_t num_pages = 4;
     const size_t size = num_pages * page_sz;
-    char* base = os::reserve_memory(size, mtTest);
+    char* base = os::reserve_memory(size, !ExecMem, mtTest);
     ASSERT_NE(base, (char*)NULL);
-    result = os::commit_memory(base, size, false);
+    result = os::commit_memory(base, size, !ExecMem);
 
     ASSERT_TRUE(result);
     // touch all pages
@@ -202,16 +200,24 @@ public:
     ASSERT_TRUE(result);
     ASSERT_EQ(2 * page_sz, committed_size);
     ASSERT_EQ(committed_start, (address)(base + page_sz));
+
+    os::release_memory(base, size);
   }
 };
 
 TEST_VM(CommittedVirtualMemoryTracker, test_committed_virtualmemory_region) {
-  VirtualMemoryTracker::initialize(NMT_detail);
-  VirtualMemoryTracker::late_initialize(NMT_detail);
 
-  CommittedVirtualMemoryTest::test();
-  CommittedVirtualMemoryTest::test_committed_region();
-  CommittedVirtualMemoryTest::test_partial_region();
+  //  This tests the VM-global NMT facility. The test must *not* modify global state,
+  //  since that interferes with other tests!
+  // The gtestLauncher are called with and without -XX:NativeMemoryTracking during jtreg-controlled
+  //  gtests.
+
+  if (MemTracker::tracking_level() >= NMT_detail) {
+    CommittedVirtualMemoryTest::test();
+    CommittedVirtualMemoryTest::test_committed_region();
+    CommittedVirtualMemoryTest::test_partial_region();
+  } else {
+    tty->print_cr("skipped.");
+  }
+
 }
-
-#endif // INCLUDE_NMT

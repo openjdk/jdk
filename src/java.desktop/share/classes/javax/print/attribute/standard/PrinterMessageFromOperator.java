@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package javax.print.attribute.standard;
 
+import java.io.Serial;
 import java.util.Locale;
 
 import javax.print.attribute.Attribute;
@@ -59,7 +60,8 @@ public final class PrinterMessageFromOperator   extends TextSyntax
     /**
      * Use serialVersionUID from JDK 1.4 for interoperability.
      */
-    static final long serialVersionUID = -4486871203218629318L;
+    @Serial
+    private static final long serialVersionUID = -4486871203218629318L;
 
     /**
      * Constructs a new printer message from operator attribute with the given

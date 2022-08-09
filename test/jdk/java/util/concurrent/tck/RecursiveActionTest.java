@@ -947,7 +947,7 @@ public class RecursiveActionTest extends JSR166TestCase {
                 FibAction f = new FibAction(8);
                 FibAction g = new FibAction(9);
                 FibAction h = new FibAction(7);
-                HashSet set = new HashSet();
+                HashSet<ForkJoinTask<?>> set = new HashSet<>();
                 set.add(f);
                 set.add(g);
                 set.add(h);
@@ -1045,7 +1045,7 @@ public class RecursiveActionTest extends JSR166TestCase {
                 FailingFibAction f = new FailingFibAction(8);
                 FibAction g = new FibAction(9);
                 FibAction h = new FibAction(7);
-                HashSet set = new HashSet();
+                HashSet<ForkJoinTask<?>> set = new HashSet<>();
                 set.add(f);
                 set.add(g);
                 set.add(h);

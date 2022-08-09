@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -241,7 +241,7 @@ public:
   // Record an initial type for a node, the node's bottom type.
   void    set_type_bottom(const Node* n) {
     // Use this for initialization when bottom_type() (or better) is not handy.
-    // Usually the initialization shoudl be to n->Value(this) instead,
+    // Usually the initialization should be to n->Value(this) instead,
     // or a hand-optimized value like Type::MEMORY or Type::CONTROL.
     assert(_types[n->_idx] == NULL, "must set the initial type just once");
     _types.map(n->_idx, n->bottom_type());
@@ -335,9 +335,6 @@ public:
                                const Type* limit_type) const
   { ShouldNotCallThis(); return NULL; }
 
-  // Delayed node rehash if this is an IGVN phase
-  virtual void igvn_rehash_node_delayed(Node* n) {}
-
   // true if CFG node d dominates CFG node n
   virtual bool is_dominator(Node *d, Node *n) { fatal("unimplemented for this pass"); return false; };
 
@@ -369,18 +366,18 @@ public:
 class PhaseValues : public PhaseTransform {
 protected:
   NodeHash  _table;             // Hash table for value-numbering
-
+  bool      _iterGVN;
 public:
-  PhaseValues( Arena *arena, uint est_max_size );
-  PhaseValues( PhaseValues *pt );
-  NOT_PRODUCT( ~PhaseValues(); )
-  virtual PhaseIterGVN *is_IterGVN() { return 0; }
+  PhaseValues(Arena* arena, uint est_max_size);
+  PhaseValues(PhaseValues* pt);
+  NOT_PRODUCT(~PhaseValues();)
+  PhaseIterGVN* is_IterGVN() { return (_iterGVN) ? (PhaseIterGVN*)this : NULL; }
 
   // Some Ideal and other transforms delete --> modify --> insert values
-  bool   hash_delete(Node *n)     { return _table.hash_delete(n); }
-  void   hash_insert(Node *n)     { _table.hash_insert(n); }
-  Node  *hash_find_insert(Node *n){ return _table.hash_find_insert(n); }
-  Node  *hash_find(const Node *n) { return _table.hash_find(n); }
+  bool   hash_delete(Node* n)     { return _table.hash_delete(n); }
+  void   hash_insert(Node* n)     { _table.hash_insert(n); }
+  Node*  hash_find_insert(Node* n){ return _table.hash_find_insert(n); }
+  Node*  hash_find(const Node* n) { return _table.hash_find(n); }
 
   // Used after parsing to eliminate values that are no longer in program
   void   remove_useless_nodes(VectorSet &useful) {
@@ -391,8 +388,8 @@ public:
 
   virtual ConNode* uncached_makecon(const Type* t);  // override from PhaseTransform
 
-  virtual const Type* saturate(const Type* new_type, const Type* old_type,
-                               const Type* limit_type) const
+  const Type* saturate(const Type* new_type, const Type* old_type,
+                       const Type* limit_type) const
   { return new_type; }
 
 #ifndef PRODUCT
@@ -432,8 +429,11 @@ public:
   // Helper to call Node::Ideal() and BarrierSetC2::ideal_node().
   Node* apply_ideal(Node* i, bool can_reshape);
 
+#ifdef ASSERT
+  void dump_infinite_loop_info(Node* n, const char* where);
   // Check for a simple dead loop when a data node references itself.
-  DEBUG_ONLY(void dead_loop_check(Node *n);)
+  void dead_loop_check(Node *n);
+#endif
 };
 
 //------------------------------PhaseIterGVN-----------------------------------
@@ -451,7 +451,6 @@ private:
   void subsume_node( Node *old, Node *nn );
 
   Node_Stack _stack;      // Stack used to avoid recursion
-
 protected:
 
   // Shuffle worklist, for stress testing
@@ -463,14 +462,12 @@ protected:
   // improvement, such that it would take many (>>10) steps to reach 2**32.
 
 public:
-  PhaseIterGVN( PhaseIterGVN *igvn ); // Used by CCP constructor
-  PhaseIterGVN( PhaseGVN *gvn ); // Used after Parser
+  PhaseIterGVN(PhaseIterGVN* igvn); // Used by CCP constructor
+  PhaseIterGVN(PhaseGVN* gvn); // Used after Parser
 
   // Idealize new Node 'n' with respect to its inputs and its value
   virtual Node *transform( Node *a_node );
   virtual void record_for_igvn(Node *n) { }
-
-  virtual PhaseIterGVN *is_IterGVN() { return this; }
 
   Unique_Node_List _worklist;       // Iterative worklist
 
@@ -486,7 +483,7 @@ public:
 #endif
 
 #ifdef ASSERT
-  void dump_infinite_loop_info(Node* n);
+  void dump_infinite_loop_info(Node* n, const char* where);
   void trace_PhaseIterGVN_verbose(Node* n, int num_processed);
 #endif
 
@@ -527,14 +524,10 @@ public:
     _worklist.push(n);
   }
 
-  void igvn_rehash_node_delayed(Node* n) {
-    rehash_node_delayed(n);
-  }
-
   // Replace ith edge of "n" with "in"
   void replace_input_of(Node* n, int i, Node* in) {
     rehash_node_delayed(n);
-    n->set_req(i, in);
+    n->set_req_X(i, in, this);
   }
 
   // Delete ith edge of "n"
@@ -555,6 +548,7 @@ public:
   }
 
   bool is_dominator(Node *d, Node *n) { return is_dominator_helper(d, n, false); }
+  bool no_dependent_zero_check(Node* n) const;
 
 #ifndef PRODUCT
 protected:
@@ -573,6 +567,8 @@ protected:
 class PhaseCCP : public PhaseIterGVN {
   // Non-recursive.  Use analysis to transform single Node.
   virtual Node *transform_once( Node *n );
+
+  void push_and(Unique_Node_List& worklist, const Node* parent, const Node* use) const;
 
 public:
   PhaseCCP( PhaseIterGVN *igvn ); // Compute conditional constants

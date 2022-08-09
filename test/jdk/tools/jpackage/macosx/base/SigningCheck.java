@@ -47,7 +47,7 @@ public class SigningCheck {
 
     private static List<String> findCertificate(String name, String keyChain) {
         List<String> result = new Executor()
-                .setExecutable("security")
+                .setExecutable("/usr/bin/security")
                 .addArguments("find-certificate", "-c", name, "-a", keyChain)
                 .executeAndGetOutput();
 
@@ -89,7 +89,7 @@ public class SigningCheck {
         // will not be listed as trusted by dump-trust-settings
         if (SigningBase.DEV_NAME.equals("jpackage.openjdk.java.net")) {
             List<String> result = new Executor()
-                    .setExecutable("security")
+                    .setExecutable("/usr/bin/security")
                     .addArguments("dump-trust-settings")
                     .executeWithoutExitCodeCheckAndGetOutput();
             result.stream().forEachOrdered(TKit::trace);

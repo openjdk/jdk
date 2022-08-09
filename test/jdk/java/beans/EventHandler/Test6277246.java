@@ -25,7 +25,7 @@
  * @test
  * @bug 6277246
  * @summary Tests problem with java.beans use of reflection
- * @run main/othervm Test6277246
+ * @run main/othervm -Djava.security.manager=allow Test6277246
  * @author Jeff Nisewanger
  */
 

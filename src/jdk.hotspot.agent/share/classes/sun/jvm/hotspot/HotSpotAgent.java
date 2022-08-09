@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +36,7 @@ import sun.jvm.hotspot.debugger.MachineDescription;
 import sun.jvm.hotspot.debugger.MachineDescriptionAMD64;
 import sun.jvm.hotspot.debugger.MachineDescriptionPPC64;
 import sun.jvm.hotspot.debugger.MachineDescriptionAArch64;
+import sun.jvm.hotspot.debugger.MachineDescriptionRISCV64;
 import sun.jvm.hotspot.debugger.MachineDescriptionIntelX86;
 import sun.jvm.hotspot.debugger.NoSuchSymbolException;
 import sun.jvm.hotspot.debugger.bsd.BsdDebuggerLocal;
@@ -72,9 +74,9 @@ public class HotSpotAgent {
     //  - Starting debug server for core file
 
     // These are options for the "client" side of things
-    private static final int PROCESS_MODE   = 0;
-    private static final int CORE_FILE_MODE = 1;
-    private static final int REMOTE_MODE    = 2;
+    public static final int PROCESS_MODE   = 0;
+    public static final int CORE_FILE_MODE = 1;
+    public static final int REMOTE_MODE    = 2;
     private int startupMode;
 
     // This indicates whether we are really starting a server or not
@@ -89,6 +91,7 @@ public class HotSpotAgent {
 
     // All needed information for server side
     private String serverID;
+    private String serverName;
 
     private String[] jvmLibNames;
 
@@ -115,7 +118,7 @@ public class HotSpotAgent {
     // Accessors (once the system is set up)
     //
 
-    public synchronized Debugger getDebugger() {
+    public synchronized JVMDebugger getDebugger() {
         return debugger;
     }
 
@@ -202,7 +205,8 @@ public class HotSpotAgent {
       to which the RMI connector is bound. If not specified a random
       available port is used. */
     public synchronized void startServer(int processID,
-                                         String uniqueID,
+                                         String serverID,
+                                         String serverName,
                                          int rmiPort) {
         if (debugger != null) {
             throw new DebuggerException("Already attached");
@@ -210,7 +214,8 @@ public class HotSpotAgent {
         pid = processID;
         startupMode = PROCESS_MODE;
         isServer = true;
-        serverID = uniqueID;
+        this.serverID = serverID;
+        this.serverName = serverName;
         this.rmiPort = rmiPort;
         go();
     }
@@ -219,8 +224,8 @@ public class HotSpotAgent {
      starts a debug server, allowing remote machines to connect and
      examine this process. Uses specified name to uniquely identify a
      specific debuggee on the server */
-    public synchronized void startServer(int processID, String uniqueID) {
-        startServer(processID, uniqueID, 0);
+    public synchronized void startServer(int processID, String serverID, String serverName) {
+        startServer(processID, serverID, serverName, 0);
     }
 
     /** This attaches to a process running on the local machine and
@@ -228,7 +233,7 @@ public class HotSpotAgent {
       examine this process. */
     public synchronized void startServer(int processID)
     throws DebuggerException {
-        startServer(processID, null);
+        startServer(processID, null, null);
     }
 
     /** This opens a core file on the local machine and starts a debug
@@ -238,7 +243,8 @@ public class HotSpotAgent {
       is bound. If not specified a random available port is used.  */
     public synchronized void startServer(String javaExecutableName,
                                          String coreFileName,
-                                         String uniqueID,
+                                         String serverID,
+                                         String serverName,
                                          int rmiPort) {
         if (debugger != null) {
             throw new DebuggerException("Already attached");
@@ -250,7 +256,8 @@ public class HotSpotAgent {
         this.coreFileName = coreFileName;
         startupMode = CORE_FILE_MODE;
         isServer = true;
-        serverID = uniqueID;
+        this.serverID = serverID;
+        this.serverName = serverName;
         this.rmiPort = rmiPort;
         go();
     }
@@ -258,11 +265,12 @@ public class HotSpotAgent {
     /** This opens a core file on the local machine and starts a debug
      server, allowing remote machines to connect and examine this
      core file. Uses supplied uniqueID to uniquely identify a specific
-     debugee */
+     debuggee */
     public synchronized void startServer(String javaExecutableName,
                                          String coreFileName,
-                                         String uniqueID) {
-        startServer(javaExecutableName, coreFileName, uniqueID, 0);
+                                         String serverID,
+                                         String serverName) {
+        startServer(javaExecutableName, coreFileName, serverID, serverName, 0);
     }
 
     /** This opens a core file on the local machine and starts a debug
@@ -270,7 +278,7 @@ public class HotSpotAgent {
       core file. */
     public synchronized void startServer(String javaExecutableName, String coreFileName)
     throws DebuggerException {
-        startServer(javaExecutableName, coreFileName, null);
+        startServer(javaExecutableName, coreFileName, null, null);
     }
 
     /** This may only be called on the server side after startServer()
@@ -301,7 +309,7 @@ public class HotSpotAgent {
         DebuggerException ex = null;
         if (isServer) {
             try {
-                RMIHelper.unbind(serverID);
+                RMIHelper.unbind(serverID, serverName);
             }
             catch (DebuggerException de) {
                 ex = de;
@@ -376,23 +384,12 @@ public class HotSpotAgent {
                 catch (RemoteException rem) {
                     throw new DebuggerException(rem);
                 }
-                RMIHelper.rebind(serverID, remote);
+                RMIHelper.rebind(serverID, serverName, remote);
             }
         } else {
             //
             // Remote mode (client attaching to server)
             //
-
-            // Create and install a security manager
-
-            // FIXME: currently commented out because we were having
-            // security problems since we're "in the sun.* hierarchy" here.
-            // Perhaps a permissive policy file would work around this. In
-            // the long run, will probably have to move into com.sun.*.
-
-            //    if (System.getSecurityManager() == null) {
-            //      System.setSecurityManager(new RMISecurityManager());
-            //    }
 
             connectRemoteDebugger();
         }
@@ -443,16 +440,12 @@ public class HotSpotAgent {
             db.getJShortType().getSize());
         }
 
-        if (!isServer) {
-            // Do not initialize the VM on the server (unnecessary, since it's
-            // instantiated on the client)
-            try {
-                VM.initialize(db, debugger);
-            } catch (DebuggerException e) {
-                throw (e);
-            } catch (Exception e) {
-                throw new DebuggerException(e);
-            }
+        try {
+            VM.initialize(db, debugger);
+        } catch (DebuggerException e) {
+            throw (e);
+        } catch (Exception e) {
+            throw new DebuggerException(e);
         }
     }
 
@@ -484,12 +477,8 @@ public class HotSpotAgent {
             throw new DebuggerException("Cannot find alternate SA Debugger: '" + alternateName + "'");
         } catch (NoSuchMethodException nsme) {
             throw new DebuggerException("Alternate SA Debugger: '" + alternateName + "' has missing constructor.");
-        } catch (InstantiationException ie) {
-            throw new DebuggerException("Alternate SA Debugger: '" + alternateName + "' fails to initialise: ", ie);
-        } catch (IllegalAccessException iae) {
-            throw new DebuggerException("Alternate SA Debugger: '" + alternateName + "' fails to initialise: ", iae);
-        } catch (InvocationTargetException iae) {
-            throw new DebuggerException("Alternate SA Debugger: '" + alternateName + "' fails to initialise: ", iae);
+        } catch (InstantiationException | InvocationTargetException | IllegalAccessException e) {
+            throw new DebuggerException("Alternate SA Debugger: '" + alternateName + "' fails to initialise: ", e);
         }
 
         System.err.println("Loaded alternate HotSpot SA Debugger: " + alternateName);
@@ -566,6 +555,8 @@ public class HotSpotAgent {
             machDesc = new MachineDescriptionPPC64();
         } else if (cpu.equals("aarch64")) {
             machDesc = new MachineDescriptionAArch64();
+        } else if (cpu.equals("riscv64")) {
+            machDesc = new MachineDescriptionRISCV64();
         } else {
           try {
             machDesc = (MachineDescription)
@@ -621,8 +612,10 @@ public class HotSpotAgent {
 
         if (cpu.equals("amd64") || cpu.equals("x86_64")) {
             machDesc = new MachineDescriptionAMD64();
+        } else if (cpu.equals("aarch64")) {
+            machDesc = new MachineDescriptionAArch64();
         } else {
-            throw new DebuggerException("Darwin only supported on x86_64. Current arch: " + cpu);
+            throw new DebuggerException("Darwin only supported on x86_64/aarch64. Current arch: " + cpu);
         }
 
         BsdDebuggerLocal dbg = new BsdDebuggerLocal(machDesc, !isServer);
@@ -646,5 +639,9 @@ public class HotSpotAgent {
         } else {
             throw new DebuggerException("Should not call attach() for startupMode == " + startupMode);
         }
+    }
+
+    public int getStartupMode() {
+        return startupMode;
     }
 }

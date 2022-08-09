@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,10 +28,13 @@
 #define MEMORY_TYPE_DECLARE_NAME(type, human_readable) \
   human_readable,
 
+STATIC_ASSERT(NMT_off > NMT_unknown);
+STATIC_ASSERT(NMT_summary > NMT_off);
+STATIC_ASSERT(NMT_detail > NMT_summary);
+
 const char* NMTUtil::_memory_type_names[] = {
   MEMORY_TYPES_DO(MEMORY_TYPE_DECLARE_NAME)
 };
-
 
 const char* NMTUtil::scale_name(size_t scale) {
   switch(scale) {
@@ -60,3 +63,26 @@ size_t NMTUtil::scale_from_name(const char* scale) {
   return K;
 }
 
+const char* NMTUtil::tracking_level_to_string(NMT_TrackingLevel lvl) {
+  switch(lvl) {
+    case NMT_unknown: return "unknown"; break;
+    case NMT_off:     return "off"; break;
+    case NMT_summary: return "summary"; break;
+    case NMT_detail:  return "detail"; break;
+    default:          return "invalid"; break;
+  }
+}
+
+// Returns the parsed level; NMT_unknown if string is invalid
+NMT_TrackingLevel NMTUtil::parse_tracking_level(const char* s) {
+  if (s != NULL) {
+    if (strcmp(s, "summary") == 0) {
+      return NMT_summary;
+    } else if (strcmp(s, "detail") == 0) {
+      return NMT_detail;
+    } else if (strcmp(s, "off") == 0) {
+      return NMT_off;
+    }
+  }
+  return NMT_unknown;
+}

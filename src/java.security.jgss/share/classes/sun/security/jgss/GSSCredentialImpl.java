@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,9 +90,11 @@ public class GSSCredentialImpl implements GSSCredential {
             } catch (GSSException e) {
                 if (defaultList) {
                     // Try the next mechanism
-                    GSSUtil.debug("Ignore " + e + " while acquring cred for "
-                        + mechs[i]);
-                    //e.printStackTrace();
+                    if (GSSUtil.DEBUG) {
+                        GSSUtil.debug("Ignore " + e + " while acquiring cred for "
+                                + mechs[i]);
+                        // e.printStackTrace();
+                    }
                 } else throw e; // else try the next mechanism
             }
         }
@@ -170,8 +172,8 @@ public class GSSCredentialImpl implements GSSCredential {
                                         "no longer valid");
         }
 
-        SearchKey key = null;
-        GSSCredentialSpi element = null;
+        SearchKey key;
+        GSSCredentialSpi element;
 
         if (mech == null) mech = ProviderList.DEFAULT_MECH_OID;
 
@@ -211,7 +213,7 @@ public class GSSCredentialImpl implements GSSCredential {
 
         SearchKey tempKey;
         GSSCredentialSpi tempCred;
-        int tempLife = 0, tempInitLife = 0, tempAcceptLife = 0;
+        int tempLife, tempInitLife, tempAcceptLife;
         int min = INDEFINITE_LIFETIME;
 
         for (Enumeration<SearchKey> e = hashtable.keys();
@@ -225,9 +227,7 @@ public class GSSCredentialImpl implements GSSCredential {
             else {
                 tempInitLife = tempCred.getInitLifetime();
                 tempAcceptLife = tempCred.getAcceptLifetime();
-                tempLife = (tempInitLife < tempAcceptLife ?
-                            tempInitLife:
-                            tempAcceptLife);
+                tempLife = (Math.min(tempInitLife, tempAcceptLife));
             }
             if (min > tempLife)
                 min = tempLife;
@@ -243,8 +243,8 @@ public class GSSCredentialImpl implements GSSCredential {
                                         "no longer valid");
         }
 
-        GSSCredentialSpi element = null;
-        SearchKey key = null;
+        GSSCredentialSpi element;
+        SearchKey key;
         boolean found = false;
         int max = 0;
 
@@ -283,8 +283,8 @@ public class GSSCredentialImpl implements GSSCredential {
                                         "no longer valid");
         }
 
-        GSSCredentialSpi element = null;
-        SearchKey key = null;
+        GSSCredentialSpi element;
+        SearchKey key;
         boolean found = false;
         int max = 0;
 
@@ -359,8 +359,8 @@ public class GSSCredentialImpl implements GSSCredential {
                                         "no longer valid");
         }
 
-        GSSCredentialSpi element = null;
-        SearchKey key = null;
+        GSSCredentialSpi element;
+        SearchKey key;
         boolean initiate = false;
         boolean accept = false;
 
@@ -405,12 +405,12 @@ public class GSSCredentialImpl implements GSSCredential {
             throw new IllegalStateException("This credential is " +
                                         "no longer valid");
         }
-        Vector<Oid> result = new Vector<Oid>(hashtable.size());
+        ArrayList<Oid> result = new ArrayList<Oid>(hashtable.size());
 
         for (Enumeration<SearchKey> e = hashtable.keys();
                                                 e.hasMoreElements(); ) {
             SearchKey tempKey = e.nextElement();
-            result.addElement(tempKey.getMech());
+            result.add(tempKey.getMech());
         }
         return result.toArray(new Oid[0]);
     }
@@ -616,7 +616,7 @@ public class GSSCredentialImpl implements GSSCredential {
 
     Set<GSSCredentialSpi> getElements() {
         HashSet<GSSCredentialSpi> retVal =
-                        new HashSet<GSSCredentialSpi>(hashtable.size());
+                new HashSet<>(hashtable.size());
         Enumeration<GSSCredentialSpi> values = hashtable.elements();
         while (values.hasMoreElements()) {
             GSSCredentialSpi o = values.nextElement();
@@ -647,7 +647,7 @@ public class GSSCredentialImpl implements GSSCredential {
                                         "no longer valid");
         }
 
-        GSSCredentialSpi element = null;
+        GSSCredentialSpi element;
         StringBuilder sb = new StringBuilder("[GSSCredential: ");
         Object[] elements = hashtable.entrySet().toArray();
         for (int i = 0; i < elements.length; i++) {
@@ -674,7 +674,7 @@ public class GSSCredentialImpl implements GSSCredential {
     }
 
     static class SearchKey {
-        private Oid mechOid = null;
+        private final Oid mechOid;
         private int usage = GSSCredential.INITIATE_AND_ACCEPT;
         public SearchKey(Oid mechOid, int usage) {
 
@@ -688,9 +688,8 @@ public class GSSCredentialImpl implements GSSCredential {
             return usage;
         }
         public boolean equals(Object other) {
-            if (! (other instanceof SearchKey))
+            if (! (other instanceof SearchKey that))
                 return false;
-            SearchKey that = (SearchKey) other;
             return ((this.mechOid.equals(that.mechOid)) &&
                     (this.usage == that.usage));
         }

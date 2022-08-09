@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,16 +25,22 @@
 
 package javax.swing;
 
-import java.beans.JavaBean;
+import java.awt.Component;
+import java.awt.Graphics;
 import java.beans.BeanProperty;
 import java.beans.ConstructorProperties;
-import javax.swing.plaf.*;
-import javax.accessibility.*;
-
-import java.awt.*;
-
-import java.io.ObjectOutputStream;
+import java.beans.JavaBean;
 import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.io.Serial;
+
+import javax.accessibility.Accessible;
+import javax.accessibility.AccessibleContext;
+import javax.accessibility.AccessibleRole;
+import javax.accessibility.AccessibleState;
+import javax.accessibility.AccessibleStateSet;
+import javax.accessibility.AccessibleValue;
+import javax.swing.plaf.SplitPaneUI;
 
 /**
  * <code>JSplitPane</code> is used to divide two (and only two)
@@ -256,7 +262,7 @@ public class JSplitPane extends JComponent implements Accessible
      *
      * @param newOrientation  <code>JSplitPane.HORIZONTAL_SPLIT</code> or
      *                        <code>JSplitPane.VERTICAL_SPLIT</code>
-     * @exception IllegalArgumentException if <code>orientation</code>
+     * @throws IllegalArgumentException if <code>orientation</code>
      *          is not one of HORIZONTAL_SPLIT or VERTICAL_SPLIT.
      */
     @ConstructorProperties({"orientation"})
@@ -275,7 +281,7 @@ public class JSplitPane extends JComponent implements Accessible
      * @param newContinuousLayout  a boolean, true for the components to
      *        redraw continuously as the divider changes position, false
      *        to wait until the divider position stops changing to redraw
-     * @exception IllegalArgumentException if <code>orientation</code>
+     * @throws IllegalArgumentException if <code>orientation</code>
      *          is not one of HORIZONTAL_SPLIT or VERTICAL_SPLIT
      */
     public JSplitPane(int newOrientation,
@@ -298,7 +304,7 @@ public class JSplitPane extends JComponent implements Accessible
      *          appear on the right
      *          of a horizontally-split pane, or at the bottom of a
      *          vertically-split pane
-     * @exception IllegalArgumentException if <code>orientation</code>
+     * @throws IllegalArgumentException if <code>orientation</code>
      *          is not one of: HORIZONTAL_SPLIT or VERTICAL_SPLIT
      */
     public JSplitPane(int newOrientation,
@@ -328,7 +334,7 @@ public class JSplitPane extends JComponent implements Accessible
      *          appear on the right
      *          of a horizontally-split pane, or at the bottom of a
      *          vertically-split pane
-     * @exception IllegalArgumentException if <code>orientation</code>
+     * @throws IllegalArgumentException if <code>orientation</code>
      *          is not one of HORIZONTAL_SPLIT or VERTICAL_SPLIT
      */
     public JSplitPane(int newOrientation,
@@ -616,7 +622,7 @@ public class JSplitPane extends JComponent implements Accessible
      * </ul>
      *
      * @param orientation an integer specifying the orientation
-     * @exception IllegalArgumentException if orientation is not one of:
+     * @throws IllegalArgumentException if orientation is not one of:
      *        HORIZONTAL_SPLIT or VERTICAL_SPLIT.
      */
     @BeanProperty(enumerationValues = {
@@ -695,7 +701,7 @@ public class JSplitPane extends JComponent implements Accessible
      * extra space.
      *
      * @param value as described above
-     * @exception IllegalArgumentException if <code>value</code> is &lt; 0 or &gt; 1
+     * @throws IllegalArgumentException if <code>value</code> is &lt; 0 or &gt; 1
      * @since 1.3
      */
     @BeanProperty(description
@@ -748,7 +754,7 @@ public class JSplitPane extends JComponent implements Accessible
      * @param proportionalLocation  a double-precision floating point value
      *        that specifies a percentage, from zero (top/left) to 1.0
      *        (bottom/right)
-     * @exception IllegalArgumentException if the specified location is &lt; 0
+     * @throws IllegalArgumentException if the specified location is &lt; 0
      *            or &gt; 1.0
      */
     @BeanProperty(description
@@ -958,7 +964,7 @@ public class JSplitPane extends JComponent implements Accessible
      *                    (position) for this component
      * @param index       an integer specifying the index in the container's
      *                    list.
-     * @exception IllegalArgumentException  if the <code>constraints</code>
+     * @throws IllegalArgumentException  if the <code>constraints</code>
      *          object does not match an existing component
      * @see java.awt.Container#addImpl(Component, Object, int)
      */
@@ -1038,6 +1044,7 @@ public class JSplitPane extends JComponent implements Accessible
      * <code>JComponent</code> for more
      * information about serialization in Swing.
      */
+    @Serial
     private void writeObject(ObjectOutputStream s) throws IOException {
         s.defaultWriteObject();
         if (getUIClassID().equals(uiClassID)) {

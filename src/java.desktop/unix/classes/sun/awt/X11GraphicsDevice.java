@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,9 @@ import java.util.HashSet;
 import sun.awt.util.ThreadGroupUtils;
 import sun.java2d.SunGraphicsEnvironment;
 import sun.java2d.loops.SurfaceType;
+import sun.awt.X11.XToolkit;
 import sun.java2d.opengl.GLXGraphicsConfig;
+import sun.java2d.pipe.Region;
 import sun.java2d.xr.XRGraphicsConfig;
 
 /**
@@ -53,12 +55,15 @@ import sun.java2d.xr.XRGraphicsConfig;
  */
 public final class X11GraphicsDevice extends GraphicsDevice
         implements DisplayChangedListener {
-    int screen;
+    /**
+     * X11 screen number. This identifier can become non-valid at any time
+     * therefore methods, which is using this id should be ready to it.
+     */
+    private volatile int screen;
     HashMap<SurfaceType, Object> x11ProxyKeyMap = new HashMap<>();
 
     private static AWTPermission fullScreenExclusivePermission;
     private static Boolean xrandrExtSupported;
-    private final Object configLock = new Object();
     private SunDisplayChanger topLevels = new SunDisplayChanger();
     private DisplayMode origDisplayMode;
     private boolean shutdownHookRegistered;
@@ -105,6 +110,25 @@ public final class X11GraphicsDevice extends GraphicsDevice
         return TYPE_RASTER_SCREEN;
     }
 
+    public int scaleUp(int x) {
+        return Region.clipRound(x * (double)getScaleFactor());
+    }
+
+    public int scaleDown(int x) {
+        return Region.clipRound(x / (double)getScaleFactor());
+    }
+
+    public Rectangle getBounds() {
+        Rectangle rect = pGetBounds(getScreen());
+        if (getScaleFactor() != 1) {
+            rect.x = scaleDown(rect.x);
+            rect.y = scaleDown(rect.y);
+            rect.width = scaleDown(rect.width);
+            rect.height = scaleDown(rect.height);
+        }
+        return rect;
+    }
+
     /**
      * Returns the identification string associated with this graphics
      * device.
@@ -126,8 +150,11 @@ public final class X11GraphicsDevice extends GraphicsDevice
     @Override
     public GraphicsConfiguration[] getConfigurations() {
         if (configs == null) {
-            synchronized (configLock) {
+            XToolkit.awtLock();
+            try {
                 makeConfigurations();
+            } finally {
+                XToolkit.awtUnlock();
             }
         }
         return configs.clone();
@@ -165,8 +192,8 @@ public final class X11GraphicsDevice extends GraphicsDevice
                          doubleBufferVisuals.contains(Integer.valueOf(visNum)));
 
                     if (xrenderSupported) {
-                        ret[i] = XRGraphicsConfig.getConfig(this, visNum, depth,                                getConfigColormap(i, screen),
-                                doubleBuffer);
+                        ret[i] = XRGraphicsConfig.getConfig(this, visNum, depth,
+                                getConfigColormap(i, screen), doubleBuffer);
                     } else {
                        ret[i] = X11GraphicsConfig.getConfig(this, visNum, depth,
                               getConfigColormap(i, screen),
@@ -214,8 +241,11 @@ public final class X11GraphicsDevice extends GraphicsDevice
     @Override
     public GraphicsConfiguration getDefaultConfiguration() {
         if (defaultConfig == null) {
-            synchronized (configLock) {
+            XToolkit.awtLock();
+            try {
                 makeDefaultConfiguration();
+            } finally {
+                XToolkit.awtUnlock();
             }
         }
         return defaultConfig;
@@ -271,8 +301,8 @@ public final class X11GraphicsDevice extends GraphicsDevice
     private static native void configDisplayMode(int screen,
                                                  int width, int height,
                                                  int displayMode);
-    private static native void resetNativeData(int screen);
     private static native double getNativeScaleFactor(int screen);
+    private native Rectangle pGetBounds(int screenNum);
 
     /**
      * Returns true only if:
@@ -291,6 +321,7 @@ public final class X11GraphicsDevice extends GraphicsDevice
     public boolean isFullScreenSupported() {
         boolean fsAvailable = isXrandrExtensionSupported();
         if (fsAvailable) {
+            @SuppressWarnings("removal")
             SecurityManager security = System.getSecurityManager();
             if (security != null) {
                 if (fullScreenExclusivePermission == null) {
@@ -386,7 +417,10 @@ public final class X11GraphicsDevice extends GraphicsDevice
 
     @Override
     public synchronized DisplayMode[] getDisplayModes() {
-        if (!isFullScreenSupported()) {
+        if (!isFullScreenSupported()
+                || ((X11GraphicsEnvironment) GraphicsEnvironment
+                            .getLocalGraphicsEnvironment()).runningXinerama()) {
+            // only the current mode will be returned
             return super.getDisplayModes();
         }
         ArrayList<DisplayMode> modes = new ArrayList<DisplayMode>();
@@ -395,6 +429,7 @@ public final class X11GraphicsDevice extends GraphicsDevice
         return modes.toArray(retArray);
     }
 
+    @SuppressWarnings("removal")
     @Override
     public synchronized void setDisplayMode(DisplayMode dm) {
         if (!isDisplayChangeSupported()) {
@@ -511,7 +546,6 @@ public final class X11GraphicsDevice extends GraphicsDevice
     }
 
     public int getNativeScale() {
-        isXrandrExtensionSupported();
         return (int)Math.round(getNativeScaleFactor(screen));
     }
 
@@ -540,5 +574,11 @@ public final class X11GraphicsDevice extends GraphicsDevice
 
     public String toString() {
         return ("X11GraphicsDevice[screen="+screen+"]");
+    }
+
+    public void invalidate(X11GraphicsDevice device) {
+        assert XToolkit.isAWTLockHeldByCurrentThread();
+
+        screen = device.screen;
     }
 }

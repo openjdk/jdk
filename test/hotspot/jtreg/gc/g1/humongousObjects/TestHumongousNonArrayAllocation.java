@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 package gc.g1.humongousObjects;
 
 import jdk.test.lib.Asserts;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 import java.io.IOException;
 import java.net.URL;
@@ -41,27 +41,27 @@ import java.nio.file.Paths;
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc
  * @modules java.management
- * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *
  * @run main/othervm -Xms128M -Xmx128M -XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
- *                   -XX:G1HeapRegionSize=1M -XX:AbortVMOnException=java.lang.StackOverflowError
+ *                   -XX:G1HeapRegionSize=1M
  *                   gc.g1.humongousObjects.TestHumongousNonArrayAllocation LARGEST_NON_HUMONGOUS
  *
  * @run main/othervm -Xms128M -Xmx128M -XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
- *                   -XX:G1HeapRegionSize=1M -XX:AbortVMOnException=java.lang.StackOverflowError
+ *                   -XX:G1HeapRegionSize=1M
  *                   gc.g1.humongousObjects.TestHumongousNonArrayAllocation SMALLEST_HUMONGOUS
  *
  * @run main/othervm -Xms128M -Xmx128M -XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
- *                   -XX:G1HeapRegionSize=1M -XX:AbortVMOnException=java.lang.StackOverflowError
+ *                   -XX:G1HeapRegionSize=1M
  *                   gc.g1.humongousObjects.TestHumongousNonArrayAllocation ONE_REGION_HUMONGOUS
  *
  * @run main/othervm -Xms128M -Xmx128M -XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
- *                   -XX:G1HeapRegionSize=1M -XX:AbortVMOnException=java.lang.StackOverflowError
+ *                   -XX:G1HeapRegionSize=1M
  *                   gc.g1.humongousObjects.TestHumongousNonArrayAllocation TWO_REGION_HUMONGOUS
  *
  * @run main/othervm -Xms128M -Xmx128M -XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
- *                   -XX:G1HeapRegionSize=1M -XX:AbortVMOnException=java.lang.StackOverflowError
+ *                   -XX:G1HeapRegionSize=1M
  *                   gc.g1.humongousObjects.TestHumongousNonArrayAllocation MORE_THAN_TWO_REGION_HUMONGOUS
  *
  */

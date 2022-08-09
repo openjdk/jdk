@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -147,15 +147,13 @@ final class MemberName implements Member, Cloneable {
 
         // type is not a MethodType yet.  Convert it thread-safely.
         synchronized (this) {
-            if (type instanceof String) {
-                String sig = (String) type;
+            if (type instanceof String sig) {
                 MethodType res = MethodType.fromDescriptor(sig, getClassLoader());
                 type = res;
-            } else if (type instanceof Object[]) {
-                Object[] typeInfo = (Object[]) type;
+            } else if (type instanceof Object[] typeInfo) {
                 Class<?>[] ptypes = (Class<?>[]) typeInfo[1];
                 Class<?> rtype = (Class<?>) typeInfo[0];
-                MethodType res = MethodType.makeImpl(rtype, ptypes, true);
+                MethodType res = MethodType.methodType(rtype, ptypes, true);
                 type = res;
             }
             // Make sure type is a MethodType for racing threads.
@@ -235,8 +233,7 @@ final class MemberName implements Member, Cloneable {
 
         // type is not a Class yet.  Convert it thread-safely.
         synchronized (this) {
-            if (type instanceof String) {
-                String sig = (String) type;
+            if (type instanceof String sig) {
                 MethodType mtype = MethodType.fromDescriptor("()"+sig, getClassLoader());
                 Class<?> res = mtype.returnType();
                 type = res;
@@ -316,20 +313,22 @@ final class MemberName implements Member, Cloneable {
     /*non-public*/
     boolean referenceKindIsConsistentWith(int originalRefKind) {
         int refKind = getReferenceKind();
-        if (refKind == originalRefKind)  return true;
-        switch (originalRefKind) {
-        case REF_invokeInterface:
-            // Looking up an interface method, can get (e.g.) Object.hashCode
-            assert(refKind == REF_invokeVirtual ||
-                   refKind == REF_invokeSpecial) : this;
-            return true;
-        case REF_invokeVirtual:
-        case REF_newInvokeSpecial:
-            // Looked up a virtual, can get (e.g.) final String.hashCode.
-            assert(refKind == REF_invokeSpecial) : this;
-            return true;
+        if (refKind == originalRefKind) return true;
+        if (getClass().desiredAssertionStatus()) {
+            switch (originalRefKind) {
+                case REF_invokeInterface -> {
+                    // Looking up an interface method, can get (e.g.) Object.hashCode
+                    assert (refKind == REF_invokeVirtual || refKind == REF_invokeSpecial) : this;
+                }
+                case REF_invokeVirtual, REF_newInvokeSpecial -> {
+                    // Looked up a virtual, can get (e.g.) final String.hashCode.
+                    assert (refKind == REF_invokeSpecial) : this;
+                }
+                default -> {
+                    assert (false) : this + " != " + MethodHandleNatives.refKindName((byte) originalRefKind);
+                }
+            }
         }
-        assert(false) : this+" != "+MethodHandleNatives.refKindName((byte)originalRefKind);
         return true;
     }
     private boolean staticIsConsistent() {
@@ -773,7 +772,7 @@ final class MemberName implements Member, Cloneable {
     }
 
     @Override
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings({"deprecation", "removal"})
     public int hashCode() {
         // Avoid autoboxing getReferenceKind(), since this is used early and will force
         // early initialization of Byte$ByteCache
@@ -938,8 +937,7 @@ final class MemberName implements Member, Cloneable {
             } else {
                 Module m;
                 Class<?> plc;
-                if (from instanceof MethodHandles.Lookup) {
-                    MethodHandles.Lookup lookup = (MethodHandles.Lookup)from;
+                if (from instanceof MethodHandles.Lookup lookup) {
                     from = lookup.lookupClass();
                     m = lookup.lookupClass().getModule();
                     plc = lookup.previousLookupClass();

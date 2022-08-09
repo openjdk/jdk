@@ -24,7 +24,7 @@
 /*
  * @test
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true transform.CLITest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow transform.CLITest
  * @run testng/othervm transform.CLITest
  * @summary Test internal transform CLI.
  */

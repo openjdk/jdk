@@ -40,7 +40,7 @@ import org.xml.sax.SAXException;
  * @test
  * @bug 8135283 8138721
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true dom.ElementTraversal
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow dom.ElementTraversal
  * @run testng/othervm dom.ElementTraversal
  * @summary Tests for the Element Traversal interface.
  */

@@ -58,3 +58,19 @@ KeepStackGCProcessedMark::~KeepStackGCProcessedMark() {
 void KeepStackGCProcessedMark::finish_processing() {
   StackWatermarkSet::finish_processing(_jt, NULL /* context */, StackWatermarkKind::gc);
 }
+
+#ifdef ASSERT
+bool KeepStackGCProcessedMark::stack_is_kept_gc_processed(JavaThread* jt) {
+  if (!Thread::current()->is_Java_thread()) {
+    assert(SafepointSynchronize::is_at_safepoint() && Thread::current()->is_VM_thread(),
+           "must be either Java thread or VM thread in a safepoint");
+    return true;
+  }
+  StackWatermark* our_watermark = StackWatermarkSet::get(JavaThread::current(), StackWatermarkKind::gc);
+  if (our_watermark == nullptr) {
+    return true;
+  }
+  StackWatermark* their_watermark = StackWatermarkSet::get(jt, StackWatermarkKind::gc);
+  return our_watermark->linked_watermark() == their_watermark;
+}
+#endif // ASSERT

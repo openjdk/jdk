@@ -23,7 +23,7 @@
  */
 
 /*
- * @test TestRegionSizeArgs
+ * @test
  * @summary Test that Shenandoah region size args are checked
  * @requires vm.gc.Shenandoah
  * @library /test/lib

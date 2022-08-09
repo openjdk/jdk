@@ -262,3 +262,45 @@ TEST(power_of_2, max) {
   EXPECT_EQ(max_power_of_2<uint32_t>(), 0x80000000u);
   EXPECT_EQ(max_power_of_2<uint64_t>(), UCONST64(0x8000000000000000));
 }
+
+template <typename T, ENABLE_IF(std::is_integral<T>::value)>
+void check_log2i_variants_for(T dummy) {
+  int limit = sizeof(T) * BitsPerByte;
+  if (std::is_signed<T>::value) {
+    T min = std::numeric_limits<T>::min();
+    EXPECT_EQ(limit - 1, log2i_graceful(min));
+    EXPECT_EQ(limit - 1, log2i_graceful((T)-1));
+    limit--;
+  }
+  {
+    // Test log2i_graceful handles 0 input
+    EXPECT_EQ(-1, log2i_graceful(T(0)));
+  }
+  {
+    // Test the all-1s bit patterns
+    T var = 1;
+    for (int i = 0; i < limit; i++, var = (var << 1) | 1) {
+      EXPECT_EQ(i, log2i(var));
+    }
+  }
+  {
+    // Test the powers of 2 and powers + 1
+    T var = 1;
+    for (int i = 0; i < limit; i++, var <<= 1) {
+      EXPECT_EQ(i, log2i(var));
+      EXPECT_EQ(i, log2i_graceful(var));
+      EXPECT_EQ(i, log2i_exact(var));
+      EXPECT_EQ(i, log2i(var | 1));
+    }
+  }
+}
+
+TEST(power_of_2, log2i) {
+  check_log2i_variants_for((uintptr_t)0);
+  check_log2i_variants_for((intptr_t)0);
+  check_log2i_variants_for((julong)0);
+  check_log2i_variants_for((int)0);
+  check_log2i_variants_for((jint)0);
+  check_log2i_variants_for((uint)0);
+  check_log2i_variants_for((jlong)0);
+}

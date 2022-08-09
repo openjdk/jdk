@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,12 @@
 #ifndef SHARE_RUNTIME_STACKWATERMARK_INLINE_HPP
 #define SHARE_RUNTIME_STACKWATERMARK_INLINE_HPP
 
-#include "code/nmethod.hpp"
 #include "runtime/stackWatermark.hpp"
-#include "runtime/thread.hpp"
+
+#include "code/nmethod.hpp"
+#include "runtime/frame.inline.hpp"
+#include "runtime/javaThread.hpp"
+#include "runtime/registerMap.hpp"
 
 static inline bool is_above_watermark(uintptr_t sp, uintptr_t watermark) {
   if (watermark == 0) {
@@ -84,7 +87,10 @@ inline void StackWatermark::before_unwind() {
   frame f = _jt->last_frame();
 
   // Skip any stub frames etc up until the frame that triggered before_unwind().
-  RegisterMap map(_jt, false /* update_map */, false /* process_frames */);
+  RegisterMap map(_jt,
+                  RegisterMap::UpdateMap::skip,
+                  RegisterMap::ProcessFrames::skip,
+                  RegisterMap::WalkContinuation::skip);
   if (f.is_safepoint_blob_frame() || f.is_runtime_frame()) {
     f = f.sender(&map);
   }
@@ -105,7 +111,10 @@ inline void StackWatermark::after_unwind() {
 
   if (f.is_safepoint_blob_frame() || f.is_runtime_frame()) {
     // Skip safepoint blob.
-    RegisterMap map(_jt, false /* update_map */, false /* process_frames */);
+    RegisterMap map(_jt,
+                    RegisterMap::UpdateMap::skip,
+                    RegisterMap::ProcessFrames::skip,
+                    RegisterMap::WalkContinuation::skip);
     f = f.sender(&map);
   }
 

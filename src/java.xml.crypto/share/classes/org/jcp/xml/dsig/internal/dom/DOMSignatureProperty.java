@@ -21,10 +21,7 @@
  * under the License.
  */
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
- */
-/*
- * $Id: DOMSignatureProperty.java 1854026 2019-02-21 09:30:01Z coheigea $
+ * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
  */
 package org.jcp.xml.dsig.internal.dom;
 
@@ -169,7 +166,7 @@ public final class DOMSignatureProperty extends DOMStructure
 
         @SuppressWarnings("unchecked")
         List<XMLStructure> ospContent = osp.getContent();
-        return equalsContent(ospContent) &&
+        return equalsContent(content, ospContent) &&
                 target.equals(osp.getTarget()) && idsEqual;
     }
 
@@ -185,30 +182,4 @@ public final class DOMSignatureProperty extends DOMStructure
         return result;
     }
 
-    private boolean equalsContent(List<XMLStructure> otherContent) {
-        int osize = otherContent.size();
-        if (content.size() != osize) {
-            return false;
-        }
-        for (int i = 0; i < osize; i++) {
-            XMLStructure oxs = otherContent.get(i);
-            XMLStructure xs = content.get(i);
-            if (oxs instanceof javax.xml.crypto.dom.DOMStructure) {
-                if (!(xs instanceof javax.xml.crypto.dom.DOMStructure)) {
-                    return false;
-                }
-                Node onode = ((javax.xml.crypto.dom.DOMStructure)oxs).getNode();
-                Node node = ((javax.xml.crypto.dom.DOMStructure)xs).getNode();
-                if (!DOMUtils.nodesEqual(node, onode)) {
-                    return false;
-                }
-            } else {
-                if (!(xs.equals(oxs))) {
-                    return false;
-                }
-            }
-        }
-
-        return true;
-    }
 }

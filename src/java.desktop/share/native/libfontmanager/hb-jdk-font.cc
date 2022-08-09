@@ -28,9 +28,6 @@
 
 #include "hb.h"
 #include "hb-jdk.h"
-#ifdef MACOSX
-#include "hb-coretext.h"
-#endif
 #include <stdlib.h>
 
 #if defined(__GNUC__) &&  __GNUC__ >= 4
@@ -363,19 +360,12 @@ extern "C" {
 /*
  * Class:     sun_font_SunLayoutEngine
  * Method:    createFace
- * Signature: (Lsun/font/Font2D;ZJJ)J
+ * Signature: (Lsun/font/Font2D;JJ)J
  */
 JNIEXPORT jlong JNICALL Java_sun_font_SunLayoutEngine_createFace(JNIEnv *env,
                          jclass cls,
                          jobject font2D,
-                         jboolean aat,
                          jlong platformFontPtr) {
-#ifdef MACOSX
-    if (aat && platformFontPtr) {
-        hb_face_t *face = hb_coretext_face_create((CGFontRef)platformFontPtr);
-        return ptr_to_jlong(face);
-    }
-#endif
     Font2DPtr *fi = (Font2DPtr*)malloc(sizeof(Font2DPtr));
     if (!fi) {
         return 0;
@@ -439,10 +429,6 @@ static hb_font_t* _hb_jdk_ct_font_create(hb_face_t* face,
 hb_font_t* hb_jdk_font_create(hb_face_t* hbFace,
                              JDKFontInfo *jdkFontInfo,
                              hb_destroy_func_t destroy) {
-#ifdef MACOSX
-     if (jdkFontInfo->aat && jdkFontInfo->nativeFont) {
-         return _hb_jdk_ct_font_create(hbFace, jdkFontInfo);
-     }
-#endif
+
     return _hb_jdk_font_create(hbFace, jdkFontInfo, destroy);
 }

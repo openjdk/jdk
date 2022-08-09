@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,6 +103,7 @@ class WindowsFileSystem
 
         // iterate over roots, ignoring those that the security manager denies
         ArrayList<Path> result = new ArrayList<>();
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         for (int i = 0; i <= 25; i++) {  // 0->A, 1->B, 2->C...
             if ((drives & (1 << i)) != 0) {
@@ -185,6 +186,7 @@ class WindowsFileSystem
 
     @Override
     public Iterable<FileStore> getFileStores() {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             try {

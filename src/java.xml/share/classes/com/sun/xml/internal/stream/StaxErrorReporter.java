@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,7 +93,7 @@ public class StaxErrorReporter extends XMLErrorReporter {
             message = messageFormatter.formatMessage(fLocale, key, arguments);
         }
         else {
-            StringBuffer str = new StringBuffer();
+            StringBuilder str = new StringBuilder();
             str.append(domain);
             str.append('#');
             str.append(key);

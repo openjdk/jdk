@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,13 @@
 #define SHARE_LOGGING_LOGCONFIGURATION_HPP
 
 #include "logging/logLevel.hpp"
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class LogOutput;
 class LogDecorators;
 class LogSelectionList;
+class outputStream;
 
 // Global configuration of logging. Handles parsing and configuration of the logging framework,
 // and manages the list of configured log outputs. The actual tag and level configuration is
@@ -58,6 +59,7 @@ class LogConfiguration : public AllStatic {
 
   static UpdateListenerFunction*    _listener_callbacks;
   static size_t                     _n_listener_callbacks;
+  static bool                       _async_mode;
 
   // Create a new output. Returns NULL if failed.
   static LogOutput* new_output(const char* name, const char* options, outputStream* errstream);
@@ -123,6 +125,11 @@ class LogConfiguration : public AllStatic {
 
   // Rotates all LogOutput
   static void rotate_all_outputs();
+
+  static bool is_async_mode() { return _async_mode; }
+  static void set_async_mode(bool value) {
+    _async_mode = value;
+  }
 };
 
 #endif // SHARE_LOGGING_LOGCONFIGURATION_HPP

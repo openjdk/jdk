@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import java.util.Optional;
 
 import jdk.internal.math.FloatingDecimal;
 import jdk.internal.math.DoubleConsts;
+import jdk.internal.math.DoubleToDecimal;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 /**
@@ -46,11 +47,116 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * constants and methods useful when dealing with a
  * {@code double}.
  *
+ * <p>This is a <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>
+ * class; programmers should treat instances that are
+ * {@linkplain #equals(Object) equal} as interchangeable and should not
+ * use instances for synchronization, or unpredictable behavior may
+ * occur. For example, in a future release, synchronization may fail.
+ *
+ * <h2><a id=equivalenceRelation>Floating-point Equality, Equivalence,
+ * and Comparison</a></h2>
+ *
+ * IEEE 754 floating-point values include finite nonzero values,
+ * signed zeros ({@code +0.0} and {@code -0.0}), signed infinities
+ * {@linkplain Double#POSITIVE_INFINITY positive infinity} and
+ * {@linkplain Double#NEGATIVE_INFINITY negative infinity}), and
+ * {@linkplain Double#NaN NaN} (not-a-number).
+ *
+ * <p>An <em>equivalence relation</em> on a set of values is a boolean
+ * relation on pairs of values that is reflexive, symmetric, and
+ * transitive. For more discussion of equivalence relations and object
+ * equality, see the {@link Object#equals Object.equals}
+ * specification. An equivalence relation partitions the values it
+ * operates over into sets called <i>equivalence classes</i>.  All the
+ * members of the equivalence class are equal to each other under the
+ * relation. An equivalence class may contain only a single member. At
+ * least for some purposes, all the members of an equivalence class
+ * are substitutable for each other.  In particular, in a numeric
+ * expression equivalent values can be <em>substituted</em> for one
+ * another without changing the result of the expression, meaning
+ * changing the equivalence class of the result of the expression.
+ *
+ * <p>Notably, the built-in {@code ==} operation on floating-point
+ * values is <em>not</em> an equivalence relation. Despite not
+ * defining an equivalence relation, the semantics of the IEEE 754
+ * {@code ==} operator were deliberately designed to meet other needs
+ * of numerical computation. There are two exceptions where the
+ * properties of an equivalence relation are not satisfied by {@code
+ * ==} on floating-point values:
+ *
+ * <ul>
+ *
+ * <li>If {@code v1} and {@code v2} are both NaN, then {@code v1
+ * == v2} has the value {@code false}. Therefore, for two NaN
+ * arguments the <em>reflexive</em> property of an equivalence
+ * relation is <em>not</em> satisfied by the {@code ==} operator.
+ *
+ * <li>If {@code v1} represents {@code +0.0} while {@code v2}
+ * represents {@code -0.0}, or vice versa, then {@code v1 == v2} has
+ * the value {@code true} even though {@code +0.0} and {@code -0.0}
+ * are distinguishable under various floating-point operations. For
+ * example, {@code 1.0/+0.0} evaluates to positive infinity while
+ * {@code 1.0/-0.0} evaluates to <em>negative</em> infinity and
+ * positive infinity and negative infinity are neither equal to each
+ * other nor equivalent to each other. Thus, while a signed zero input
+ * most commonly determines the sign of a zero result, because of
+ * dividing by zero, {@code +0.0} and {@code -0.0} may not be
+ * substituted for each other in general. The sign of a zero input
+ * also has a non-substitutable effect on the result of some math
+ * library methods.
+ *
+ * </ul>
+ *
+ * <p>For ordered comparisons using the built-in comparison operators
+ * ({@code <}, {@code <=}, etc.), NaN values have another anomalous
+ * situation: a NaN is neither less than, nor greater than, nor equal
+ * to any value, including itself. This means the <i>trichotomy of
+ * comparison</i> does <em>not</em> hold.
+ *
+ * <p>To provide the appropriate semantics for {@code equals} and
+ * {@code compareTo} methods, those methods cannot simply be wrappers
+ * around {@code ==} or ordered comparison operations. Instead, {@link
+ * Double#equals equals} defines NaN arguments to be equal to each
+ * other and defines {@code +0.0} to <em>not</em> be equal to {@code
+ * -0.0}, restoring reflexivity. For comparisons, {@link
+ * Double#compareTo compareTo} defines a total order where {@code
+ * -0.0} is less than {@code +0.0} and where a NaN is equal to itself
+ * and considered greater than positive infinity.
+ *
+ * <p>The operational semantics of {@code equals} and {@code
+ * compareTo} are expressed in terms of {@linkplain #doubleToLongBits
+ * bit-wise converting} the floating-point values to integral values.
+ *
+ * <p>The <em>natural ordering</em> implemented by {@link #compareTo
+ * compareTo} is {@linkplain Comparable consistent with equals}. That
+ * is, two objects are reported as equal by {@code equals} if and only
+ * if {@code compareTo} on those objects returns zero.
+ *
+ * <p>The adjusted behaviors defined for {@code equals} and {@code
+ * compareTo} allow instances of wrapper classes to work properly with
+ * conventional data structures. For example, defining NaN
+ * values to be {@code equals} to one another allows NaN to be used as
+ * an element of a {@link java.util.HashSet HashSet} or as the key of
+ * a {@link java.util.HashMap HashMap}. Similarly, defining {@code
+ * compareTo} as a total ordering, including {@code +0.0}, {@code
+ * -0.0}, and NaN, allows instances of wrapper classes to be used as
+ * elements of a {@link java.util.SortedSet SortedSet} or as keys of a
+ * {@link java.util.SortedMap SortedMap}.
+ *
+ * @jls 4.2.3 Floating-Point Types, Formats, and Values
+ * @jls 4.2.4. Floating-Point Operations
+ * @jls 15.21.1 Numerical Equality Operators == and !=
+ * @jls 15.20.1 Numerical Comparison Operators {@code <}, {@code <=}, {@code >}, and {@code >=}
+ *
+ * @see <a href="https://standards.ieee.org/ieee/754/6210/">
+ *      <cite>IEEE Standard for Floating-Point Arithmetic</cite></a>
+ *
  * @author  Lee Boynton
  * @author  Arthur van Hoff
  * @author  Joseph D. Darcy
  * @since 1.0
  */
+@jdk.internal.ValueBased
 public final class Double extends Number
         implements Comparable<Double>, Constable, ConstantDesc {
     /**
@@ -104,13 +210,29 @@ public final class Double extends Number
     public static final double MIN_VALUE = 0x0.0000000000001P-1022; // 4.9e-324
 
     /**
+     * The number of bits used to represent a {@code double} value.
+     *
+     * @since 1.5
+     */
+    public static final int SIZE = 64;
+
+    /**
+     * The number of bits in the significand of a {@code double} value.
+     * This is the parameter N in section {@jls 4.2.3} of
+     * <cite>The Java Language Specification</cite>.
+     *
+     * @since 19
+     */
+    public static final int PRECISION = 53;
+
+    /**
      * Maximum exponent a finite {@code double} variable may have.
      * It is equal to the value returned by
      * {@code Math.getExponent(Double.MAX_VALUE)}.
      *
      * @since 1.6
      */
-    public static final int MAX_EXPONENT = 1023;
+    public static final int MAX_EXPONENT = (1 << (SIZE - PRECISION - 1)) - 1; // 1023
 
     /**
      * Minimum exponent a normalized {@code double} variable may
@@ -119,14 +241,7 @@ public final class Double extends Number
      *
      * @since 1.6
      */
-    public static final int MIN_EXPONENT = -1022;
-
-    /**
-     * The number of bits used to represent a {@code double} value.
-     *
-     * @since 1.5
-     */
-    public static final int SIZE = 64;
+    public static final int MIN_EXPONENT = 1 - MAX_EXPONENT; // -1022
 
     /**
      * The number of bytes used to represent a {@code double} value.
@@ -166,39 +281,109 @@ public final class Double extends Number
      * {@code "-0.0"} and positive zero produces the result
      * {@code "0.0"}.
      *
-     * <li>If <i>m</i> is greater than or equal to 10<sup>-3</sup> but less
-     * than 10<sup>7</sup>, then it is represented as the integer part of
-     * <i>m</i>, in decimal form with no leading zeroes, followed by
-     * '{@code .}' ({@code '\u005Cu002E'}), followed by one or
-     * more decimal digits representing the fractional part of <i>m</i>.
+     * <li> Otherwise <i>m</i> is positive and finite.
+     * It is converted to a string in two stages:
+     * <ul>
+     * <li> <em>Selection of a decimal</em>:
+     * A well-defined decimal <i>d</i><sub><i>m</i></sub>
+     * is selected to represent <i>m</i>.
+     * This decimal is (almost always) the <em>shortest</em> one that
+     * rounds to <i>m</i> according to the round to nearest
+     * rounding policy of IEEE 754 floating-point arithmetic.
+     * <li> <em>Formatting as a string</em>:
+     * The decimal <i>d</i><sub><i>m</i></sub> is formatted as a string,
+     * either in plain or in computerized scientific notation,
+     * depending on its value.
+     * </ul>
+     * </ul>
+     * </ul>
      *
-     * <li>If <i>m</i> is less than 10<sup>-3</sup> or greater than or
-     * equal to 10<sup>7</sup>, then it is represented in so-called
-     * "computerized scientific notation." Let <i>n</i> be the unique
-     * integer such that 10<sup><i>n</i></sup> &le; <i>m</i> {@literal <}
-     * 10<sup><i>n</i>+1</sup>; then let <i>a</i> be the
-     * mathematically exact quotient of <i>m</i> and
-     * 10<sup><i>n</i></sup> so that 1 &le; <i>a</i> {@literal <} 10. The
-     * magnitude is then represented as the integer part of <i>a</i>,
-     * as a single decimal digit, followed by '{@code .}'
-     * ({@code '\u005Cu002E'}), followed by decimal digits
-     * representing the fractional part of <i>a</i>, followed by the
-     * letter '{@code E}' ({@code '\u005Cu0045'}), followed
-     * by a representation of <i>n</i> as a decimal integer, as
-     * produced by the method {@link Integer#toString(int)}.
+     * <p>A <em>decimal</em> is a number of the form
+     * <i>s</i>&times;10<sup><i>i</i></sup>
+     * for some (unique) integers <i>s</i> &gt; 0 and <i>i</i> such that
+     * <i>s</i> is not a multiple of 10.
+     * These integers are the <em>significand</em> and
+     * the <em>exponent</em>, respectively, of the decimal.
+     * The <em>length</em> of the decimal is the (unique)
+     * positive integer <i>n</i> meeting
+     * 10<sup><i>n</i>-1</sup> &le; <i>s</i> &lt; 10<sup><i>n</i></sup>.
+     *
+     * <p>The decimal <i>d</i><sub><i>m</i></sub> for a finite positive <i>m</i>
+     * is defined as follows:
+     * <ul>
+     * <li>Let <i>R</i> be the set of all decimals that round to <i>m</i>
+     * according to the usual <em>round to nearest</em> rounding policy of
+     * IEEE 754 floating-point arithmetic.
+     * <li>Let <i>p</i> be the minimal length over all decimals in <i>R</i>.
+     * <li>When <i>p</i> &ge; 2, let <i>T</i> be the set of all decimals
+     * in <i>R</i> with length <i>p</i>.
+     * Otherwise, let <i>T</i> be the set of all decimals
+     * in <i>R</i> with length 1 or 2.
+     * <li>Define <i>d</i><sub><i>m</i></sub> as the decimal in <i>T</i>
+     * that is closest to <i>m</i>.
+     * Or if there are two such decimals in <i>T</i>,
+     * select the one with the even significand.
+     * </ul>
+     *
+     * <p>The (uniquely) selected decimal <i>d</i><sub><i>m</i></sub>
+     * is then formatted.
+     * Let <i>s</i>, <i>i</i> and <i>n</i> be the significand, exponent and
+     * length of <i>d</i><sub><i>m</i></sub>, respectively.
+     * Further, let <i>e</i> = <i>n</i> + <i>i</i> - 1 and let
+     * <i>s</i><sub>1</sub>&hellip;<i>s</i><sub><i>n</i></sub>
+     * be the usual decimal expansion of <i>s</i>.
+     * Note that <i>s</i><sub>1</sub> &ne; 0
+     * and <i>s</i><sub><i>n</i></sub> &ne; 0.
+     * Below, the decimal point {@code '.'} is {@code '\u005Cu002E'}
+     * and the exponent indicator {@code 'E'} is {@code '\u005Cu0045'}.
+     * <ul>
+     * <li>Case -3 &le; <i>e</i> &lt; 0:
+     * <i>d</i><sub><i>m</i></sub> is formatted as
+     * <code>0.0</code>&hellip;<code>0</code><!--
+     * --><i>s</i><sub>1</sub>&hellip;<i>s</i><sub><i>n</i></sub>,
+     * where there are exactly -(<i>n</i> + <i>i</i>) zeroes between
+     * the decimal point and <i>s</i><sub>1</sub>.
+     * For example, 123 &times; 10<sup>-4</sup> is formatted as
+     * {@code 0.0123}.
+     * <li>Case 0 &le; <i>e</i> &lt; 7:
+     * <ul>
+     * <li>Subcase <i>i</i> &ge; 0:
+     * <i>d</i><sub><i>m</i></sub> is formatted as
+     * <i>s</i><sub>1</sub>&hellip;<i>s</i><sub><i>n</i></sub><!--
+     * --><code>0</code>&hellip;<code>0.0</code>,
+     * where there are exactly <i>i</i> zeroes
+     * between <i>s</i><sub><i>n</i></sub> and the decimal point.
+     * For example, 123 &times; 10<sup>2</sup> is formatted as
+     * {@code 12300.0}.
+     * <li>Subcase <i>i</i> &lt; 0:
+     * <i>d</i><sub><i>m</i></sub> is formatted as
+     * <i>s</i><sub>1</sub>&hellip;<!--
+     * --><i>s</i><sub><i>n</i>+<i>i</i></sub><code>.</code><!--
+     * --><i>s</i><sub><i>n</i>+<i>i</i>+1</sub>&hellip;<!--
+     * --><i>s</i><sub><i>n</i></sub>,
+     * where there are exactly -<i>i</i> digits to the right of
+     * the decimal point.
+     * For example, 123 &times; 10<sup>-1</sup> is formatted as
+     * {@code 12.3}.
+     * </ul>
+     * <li>Case <i>e</i> &lt; -3 or <i>e</i> &ge; 7:
+     * computerized scientific notation is used to format
+     * <i>d</i><sub><i>m</i></sub>.
+     * Here <i>e</i> is formatted as by {@link Integer#toString(int)}.
+     * <ul>
+     * <li>Subcase <i>n</i> = 1:
+     * <i>d</i><sub><i>m</i></sub> is formatted as
+     * <i>s</i><sub>1</sub><code>.0E</code><i>e</i>.
+     * For example, 1 &times; 10<sup>23</sup> is formatted as
+     * {@code 1.0E23}.
+     * <li>Subcase <i>n</i> &gt; 1:
+     * <i>d</i><sub><i>m</i></sub> is formatted as
+     * <i>s</i><sub>1</sub><code>.</code><i>s</i><sub>2</sub><!--
+     * -->&hellip;<i>s</i><sub><i>n</i></sub><code>E</code><i>e</i>.
+     * For example, 123 &times; 10<sup>-21</sup> is formatted as
+     * {@code 1.23E-19}.
      * </ul>
      * </ul>
-     * How many digits must be printed for the fractional part of
-     * <i>m</i> or <i>a</i>? There must be at least one digit to represent
-     * the fractional part, and beyond that as many, but only as many, more
-     * digits as are needed to uniquely distinguish the argument value from
-     * adjacent values of type {@code double}. That is, suppose that
-     * <i>x</i> is the exact mathematical value represented by the decimal
-     * representation produced by this method for a finite nonzero argument
-     * <i>d</i>. Then <i>d</i> must be the {@code double} value nearest
-     * to <i>x</i>; or if two {@code double} values are equally close
-     * to <i>x</i>, then <i>d</i> must be one of them and the least
-     * significant bit of the significand of <i>d</i> must be {@code 0}.
      *
      * <p>To create localized string representations of a floating-point
      * value, use subclasses of {@link java.text.NumberFormat}.
@@ -207,7 +392,7 @@ public final class Double extends Number
      * @return a string representation of the argument.
      */
     public static String toString(double d) {
-        return FloatingDecimal.toJavaFormatString(d);
+        return DoubleToDecimal.toString(d);
     }
 
     /**
@@ -455,7 +640,7 @@ public final class Double extends Number
      * a {@code NumberFormatException} be thrown, the regular
      * expression below can be used to screen the input string:
      *
-     * <pre>{@code
+     * {@snippet lang="java" :
      *  final String Digits     = "(\\p{Digit}+)";
      *  final String HexDigits  = "(\\p{XDigit}+)";
      *  // an exponent is 'e' or 'E' followed by an optionally
@@ -494,13 +679,14 @@ public final class Double extends Number
      *        ")[pP][+-]?" + Digits + "))" +
      *       "[fFdD]?))" +
      *       "[\\x00-\\x20]*");// Optional trailing "whitespace"
-     *
+     *  // @link region substring="Pattern.matches" target ="java.util.regex.Pattern#matches"
      *  if (Pattern.matches(fpRegex, myString))
      *      Double.valueOf(myString); // Will not throw NumberFormatException
+     * // @end
      *  else {
      *      // Perform suitable alternative action
      *  }
-     * }</pre>
+     * }
      *
      * @param      s   the string to be parsed.
      * @return     a {@code Double} object holding the value
@@ -553,6 +739,10 @@ public final class Double extends Number
      * Returns {@code true} if the specified number is a
      * Not-a-Number (NaN) value, {@code false} otherwise.
      *
+     * @apiNote
+     * This method corresponds to the isNaN operation defined in IEEE
+     * 754.
+     *
      * @param   v   the value to be tested.
      * @return  {@code true} if the value of the argument is NaN;
      *          {@code false} otherwise.
@@ -565,10 +755,15 @@ public final class Double extends Number
      * Returns {@code true} if the specified number is infinitely
      * large in magnitude, {@code false} otherwise.
      *
+     * @apiNote
+     * This method corresponds to the isInfinite operation defined in
+     * IEEE 754.
+     *
      * @param   v   the value to be tested.
      * @return  {@code true} if the value of the argument is positive
      *          infinity or negative infinity; {@code false} otherwise.
      */
+    @IntrinsicCandidate
     public static boolean isInfinite(double v) {
         return (v == POSITIVE_INFINITY) || (v == NEGATIVE_INFINITY);
     }
@@ -577,6 +772,10 @@ public final class Double extends Number
      * Returns {@code true} if the argument is a finite floating-point
      * value; returns {@code false} otherwise (for NaN and infinity
      * arguments).
+     *
+     * @apiNote
+     * This method corresponds to the isFinite operation defined in
+     * IEEE 754.
      *
      * @param d the {@code double} value to be tested
      * @return {@code true} if the argument is a finite
@@ -605,7 +804,7 @@ public final class Double extends Number
      * {@link #valueOf(double)} is generally a better choice, as it is
      * likely to yield significantly better space and time performance.
      */
-    @Deprecated(since="9")
+    @Deprecated(since="9", forRemoval = true)
     public Double(double value) {
         this.value = value;
     }
@@ -626,7 +825,7 @@ public final class Double extends Number
      * {@code double} primitive, or use {@link #valueOf(String)}
      * to convert a string to a {@code Double} object.
      */
-    @Deprecated(since="9")
+    @Deprecated(since="9", forRemoval = true)
     public Double(String s) throws NumberFormatException {
         value = parseDouble(s);
     }
@@ -721,6 +920,10 @@ public final class Double extends Number
      * Returns the value of this {@code Double} as a {@code float}
      * after a narrowing primitive conversion.
      *
+     * @apiNote
+     * This method corresponds to the convertFormat operation defined
+     * in IEEE 754.
+     *
      * @return  the {@code double} value represented by this object
      *          converted to type {@code float}
      * @jls 5.1.3 Narrowing Primitive Conversion
@@ -775,8 +978,7 @@ public final class Double extends Number
      * @since 1.8
      */
     public static int hashCode(double value) {
-        long bits = doubleToLongBits(value);
-        return (int)(bits ^ (bits >>> 32));
+        return Long.hashCode(doubleToLongBits(value));
     }
 
     /**
@@ -790,33 +992,18 @@ public final class Double extends Number
      * #doubleToLongBits(double)} returns the identical
      * {@code long} value when applied to each.
      *
-     * <p>Note that in most cases, for two instances of class
-     * {@code Double}, {@code d1} and {@code d2}, the
-     * value of {@code d1.equals(d2)} is {@code true} if and
-     * only if
+     * @apiNote
+     * This method is defined in terms of {@link
+     * #doubleToLongBits(double)} rather than the {@code ==} operator
+     * on {@code double} values since the {@code ==} operator does
+     * <em>not</em> define an equivalence relation and to satisfy the
+     * {@linkplain Object#equals equals contract} an equivalence
+     * relation must be implemented; see <a
+     * href="#equivalenceRelation">this discussion</a> for details of
+     * floating-point equality and equivalence.
      *
-     * <blockquote>
-     *  {@code d1.doubleValue() == d2.doubleValue()}
-     * </blockquote>
-     *
-     * <p>also has the value {@code true}. However, there are two
-     * exceptions:
-     * <ul>
-     * <li>If {@code d1} and {@code d2} both represent
-     *     {@code Double.NaN}, then the {@code equals} method
-     *     returns {@code true}, even though
-     *     {@code Double.NaN==Double.NaN} has the value
-     *     {@code false}.
-     * <li>If {@code d1} represents {@code +0.0} while
-     *     {@code d2} represents {@code -0.0}, or vice versa,
-     *     the {@code equal} test has the value {@code false},
-     *     even though {@code +0.0==-0.0} has the value {@code true}.
-     * </ul>
-     * This definition allows hash tables to operate properly.
-     * @param   obj   the object to compare with.
-     * @return  {@code true} if the objects are the same;
-     *          {@code false} otherwise.
      * @see java.lang.Double#doubleToLongBits(double)
+     * @jls 15.21.1 Numerical Equality Operators == and !=
      */
     public boolean equals(Object obj) {
         return (obj instanceof Double)
@@ -929,13 +1116,13 @@ public final class Double extends Number
      * <p>In all other cases, let <i>s</i>, <i>e</i>, and <i>m</i> be three
      * values that can be computed from the argument:
      *
-     * <blockquote><pre>{@code
+     * {@snippet lang="java" :
      * int s = ((bits >> 63) == 0) ? 1 : -1;
      * int e = (int)((bits >> 52) & 0x7ffL);
      * long m = (e == 0) ?
      *                 (bits & 0xfffffffffffffL) << 1 :
      *                 (bits & 0xfffffffffffffL) | 0x10000000000000L;
-     * }</pre></blockquote>
+     * }
      *
      * Then the floating-point result equals the value of the mathematical
      * expression <i>s</i>&middot;<i>m</i>&middot;2<sup><i>e</i>-1075</sup>.
@@ -968,23 +1155,31 @@ public final class Double extends Number
     public static native double longBitsToDouble(long bits);
 
     /**
-     * Compares two {@code Double} objects numerically.  There
-     * are two ways in which comparisons performed by this method
-     * differ from those performed by the Java language numerical
-     * comparison operators ({@code <, <=, ==, >=, >})
-     * when applied to primitive {@code double} values:
-     * <ul><li>
-     *          {@code Double.NaN} is considered by this method
-     *          to be equal to itself and greater than all other
-     *          {@code double} values (including
-     *          {@code Double.POSITIVE_INFINITY}).
-     * <li>
-     *          {@code 0.0d} is considered by this method to be greater
-     *          than {@code -0.0d}.
+     * Compares two {@code Double} objects numerically.
+     *
+     * This method imposes a total order on {@code Double} objects
+     * with two differences compared to the incomplete order defined by
+     * the Java language numerical comparison operators ({@code <, <=,
+     * ==, >=, >}) on {@code double} values.
+     *
+     * <ul><li> A NaN is <em>unordered</em> with respect to other
+     *          values and unequal to itself under the comparison
+     *          operators.  This method chooses to define {@code
+     *          Double.NaN} to be equal to itself and greater than all
+     *          other {@code double} values (including {@code
+     *          Double.POSITIVE_INFINITY}).
+     *
+     *      <li> Positive zero and negative zero compare equal
+     *      numerically, but are distinct and distinguishable values.
+     *      This method chooses to define positive zero ({@code +0.0d}),
+     *      to be greater than negative zero ({@code -0.0d}).
      * </ul>
-     * This ensures that the <i>natural ordering</i> of
-     * {@code Double} objects imposed by this method is <i>consistent
-     * with equals</i>.
+
+     * This ensures that the <i>natural ordering</i> of {@code Double}
+     * objects imposed by this method is <i>consistent with
+     * equals</i>; see <a href="#equivalenceRelation">this
+     * discussion</a> for details of floating-point comparison and
+     * ordering.
      *
      * @param   anotherDouble   the {@code Double} to be compared.
      * @return  the value {@code 0} if {@code anotherDouble} is
@@ -995,6 +1190,7 @@ public final class Double extends Number
      *          {@code Double} is numerically greater than
      *          {@code anotherDouble}.
      *
+     * @jls 15.20.1 Numerical Comparison Operators {@code <}, {@code <=}, {@code >}, and {@code >=}
      * @since   1.2
      */
     public int compareTo(Double anotherDouble) {
@@ -1037,6 +1233,9 @@ public final class Double extends Number
     /**
      * Adds two {@code double} values together as per the + operator.
      *
+     * @apiNote This method corresponds to the addition operation
+     * defined in IEEE 754.
+     *
      * @param a the first operand
      * @param b the second operand
      * @return the sum of {@code a} and {@code b}
@@ -1052,6 +1251,10 @@ public final class Double extends Number
      * Returns the greater of two {@code double} values
      * as if by calling {@link Math#max(double, double) Math.max}.
      *
+     * @apiNote
+     * This method corresponds to the maximum operation defined in
+     * IEEE 754.
+     *
      * @param a the first operand
      * @param b the second operand
      * @return the greater of {@code a} and {@code b}
@@ -1065,6 +1268,10 @@ public final class Double extends Number
     /**
      * Returns the smaller of two {@code double} values
      * as if by calling {@link Math#min(double, double) Math.min}.
+     *
+     * @apiNote
+     * This method corresponds to the minimum operation defined in
+     * IEEE 754.
      *
      * @param a the first operand
      * @param b the second operand

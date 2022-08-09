@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ import javax.crypto.spec.PBEParameterSpec;
 
 /*
  * @test
- * @bug 8048599
+ * @bug 8048599 8248268
  * @summary  Tests for key wrap and unwrap operations
  */
 
@@ -86,6 +86,10 @@ public class TestCipherKeyWrapperTest {
         AESWrap_128("AES", "AESWrap_128", 128),
         AESWrap_192("AES", "AESWrap_192", 192),
         AESWrap_256("AES", "AESWrap_256", 256),
+        AESWrapPad("AES", "AESWrapPad", -1),
+        AESWrapPad_128("AES", "AESWrapPad_128", 128),
+        AESWrapPad_192("AES", "AESWrapPad_192", 192),
+        AESWrapPad_256("AES", "AESWrapPad_256", 256),
         DESedeWrap("desede", "DESedeWrap", -1),
         NegtiveWrap("AES", "DESedeWrap", -1);
 
@@ -287,6 +291,8 @@ public class TestCipherKeyWrapperTest {
             new Random().nextBytes(salt);
             pbeParams = new PBEParameterSpec(salt, iterCnt);
         }
+
+        out.println("Testing " + wrapAlgo + " cipher wrap/unwrap");
         // Wrap & UnWrap operation
         Cipher wrapCI = Cipher.getInstance(wrapAlgo);
         if (isPBE && !isAESBlowfish) {
@@ -297,7 +303,6 @@ public class TestCipherKeyWrapperTest {
         } else {
             wrapCI.init(Cipher.WRAP_MODE, initKey);
         }
-        out.println("keysize : " + wrapKey.getEncoded().length);
         byte[] keyWrapper = wrapCI.wrap(wrapKey);
         if (isPBE && !isAESBlowfish) {
             wrapCI.init(Cipher.UNWRAP_MODE, initKey, pbeParams);
@@ -309,6 +314,7 @@ public class TestCipherKeyWrapperTest {
         Key unwrappedKey = wrapCI.unwrap(keyWrapper, algo, keyType);
         // Comparison
         if (!Arrays.equals(wrapKey.getEncoded(), unwrappedKey.getEncoded())) {
+            out.println("keysize : " + wrapKey.getEncoded().length);
             throw new RuntimeException("Comparation failed testing "
                     + transformation + ":" + wrapAlgo + ":" + keyType);
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,17 +55,13 @@ public class ZGlobals {
 
     // Pointer part of address
     public static long ZAddressOffsetBits;
-    public static long ZAddressOffsetMask;
     public static long ZAddressOffsetMax;
-
-    // Address space start/end/size
-    public static long ZAddressSpaceStart;
 
     static {
         VM.registerVMInitializedObserver((o, d) -> initialize(VM.getVM().getTypeDataBase()));
     }
 
-    static private synchronized void initialize(TypeDataBase db) {
+    private static synchronized void initialize(TypeDataBase db) {
         Type type = db.lookupType("ZGlobalsForVMStructs");
 
         instanceField = type.getField("_instance_p");
@@ -82,15 +78,12 @@ public class ZGlobals {
         ZPageSizeMediumShift = db.lookupLongConstant("ZPageSizeMediumShift").longValue();
 
         ZObjectAlignmentMediumShift = db.lookupIntConstant("ZObjectAlignmentMediumShift").intValue();
-        ZObjectAlignmentLargeShift = db.lookupIntConstant("ZObjectAlignmentLargeShift").intValue();;
+        ZObjectAlignmentLargeShift = db.lookupIntConstant("ZObjectAlignmentLargeShift").intValue();
 
         ZAddressOffsetShift = db.lookupLongConstant("ZAddressOffsetShift").longValue();
 
         ZAddressOffsetBits = db.lookupLongConstant("ZAddressOffsetBits").longValue();
-        ZAddressOffsetMask = db.lookupLongConstant("ZAddressOffsetMask").longValue();
         ZAddressOffsetMax  = db.lookupLongConstant("ZAddressOffsetMax").longValue();
-
-        ZAddressSpaceStart = db.lookupLongConstant("ZAddressSpaceStart").longValue();
     }
 
     private static ZGlobalsForVMStructs instance() {
@@ -103,6 +96,18 @@ public class ZGlobals {
 
     public static int ZGlobalSeqNum() {
         return instance().ZGlobalSeqNum();
+    }
+
+    public static long ZAddressOffsetMask() {
+        return instance().ZAddressOffsetMask();
+    }
+
+    public static long ZAddressMetadataMask() {
+        return instance().ZAddressMetadataMask();
+    }
+
+    public static long ZAddressMetadataFinalizable() {
+        return instance().ZAddressMetadataFinalizable();
     }
 
     public static long ZAddressGoodMask() {

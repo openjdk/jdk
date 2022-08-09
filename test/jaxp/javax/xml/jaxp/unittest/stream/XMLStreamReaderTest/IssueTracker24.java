@@ -35,7 +35,7 @@ import org.testng.annotations.Test;
 /*
  * @test
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true stream.XMLStreamReaderTest.IssueTracker24
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow stream.XMLStreamReaderTest.IssueTracker24
  * @run testng/othervm stream.XMLStreamReaderTest.IssueTracker24
  * @summary Test no prefix is represented by "", not null.
  */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,16 @@
 #include "precompiled.hpp"
 #include "gc/parallel/mutableNUMASpace.hpp"
 #include "gc/shared/collectedHeap.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/spaceDecorator.hpp"
-#include "gc/shared/workgroup.hpp"
+#include "gc/shared/workerThread.hpp"
 #include "memory/allocation.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/typeArrayOop.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/java.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/javaThread.hpp"
+#include "runtime/os.inline.hpp"
 #include "runtime/threadSMR.hpp"
 #include "utilities/align.hpp"
 
@@ -574,7 +577,7 @@ void MutableNUMASpace::initialize(MemRegion mr,
                                   bool clear_space,
                                   bool mangle_space,
                                   bool setup_pages,
-                                  WorkGang* pretouch_gang) {
+                                  WorkerThreads* pretouch_workers) {
   assert(clear_space, "Reallocation will destroy data!");
   assert(lgrp_spaces()->length() > 0, "There should be at least one space");
 
@@ -586,7 +589,7 @@ void MutableNUMASpace::initialize(MemRegion mr,
 
   // Compute chunk sizes
   size_t prev_page_size = page_size();
-  set_page_size(UseLargePages ? alignment() : os::vm_page_size());
+  set_page_size(alignment());
   HeapWord* rounded_bottom = align_up(bottom(), page_size());
   HeapWord* rounded_end = align_down(end(), page_size());
   size_t base_space_size_pages = pointer_delta(rounded_end, rounded_bottom, sizeof(char)) / page_size();
@@ -725,7 +728,7 @@ void MutableNUMASpace::initialize(MemRegion mr,
 }
 
 // Set the top of the whole space.
-// Mark the the holes in chunks below the top() as invalid.
+// Mark the holes in chunks below the top() as invalid.
 void MutableNUMASpace::set_top(HeapWord* value) {
   bool found_top = false;
   for (int i = 0; i < lgrp_spaces()->length();) {
@@ -790,51 +793,6 @@ void MutableNUMASpace::clear(bool mangle_space) {
    objects.
  */
 
-HeapWord* MutableNUMASpace::allocate(size_t size) {
-  Thread* thr = Thread::current();
-  int lgrp_id = thr->lgrp_id();
-  if (lgrp_id == -1 || !os::numa_has_group_homing()) {
-    lgrp_id = os::numa_get_group_id();
-    thr->set_lgrp_id(lgrp_id);
-  }
-
-  int i = lgrp_spaces()->find(&lgrp_id, LGRPSpace::equals);
-
-  // It is possible that a new CPU has been hotplugged and
-  // we haven't reshaped the space accordingly.
-  if (i == -1) {
-    i = os::random() % lgrp_spaces()->length();
-  }
-
-  LGRPSpace* ls = lgrp_spaces()->at(i);
-  MutableSpace *s = ls->space();
-  HeapWord *p = s->allocate(size);
-
-  if (p != NULL) {
-    size_t remainder = s->free_in_words();
-    if (remainder < CollectedHeap::min_fill_size() && remainder > 0) {
-      s->set_top(s->top() - size);
-      p = NULL;
-    }
-  }
-  if (p != NULL) {
-    if (top() < s->top()) { // Keep _top updated.
-      MutableSpace::set_top(s->top());
-    }
-  }
-  // Make the page allocation happen here if there is no static binding..
-  if (p != NULL && !os::numa_has_static_binding()) {
-    for (HeapWord *i = p; i < p + size; i += os::vm_page_size() >> LogHeapWordSize) {
-      *(int*)i = 0;
-    }
-  }
-  if (p == NULL) {
-    ls->set_allocation_failed();
-  }
-  return p;
-}
-
-// This version is lock-free.
 HeapWord* MutableNUMASpace::cas_allocate(size_t size) {
   Thread* thr = Thread::current();
   int lgrp_id = thr->lgrp_id();

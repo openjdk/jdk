@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,21 +22,38 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package javax.swing;
 
-import java.awt.*;
-import java.awt.event.*;
-import java.beans.JavaBean;
+import java.awt.AWTEvent;
+import java.awt.Dimension;
+import java.awt.EventQueue;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.Insets;
+import java.awt.Rectangle;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.InputEvent;
 import java.beans.BeanProperty;
+import java.beans.JavaBean;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-import javax.swing.text.*;
-import javax.swing.event.*;
-import javax.accessibility.*;
-
-import java.io.ObjectOutputStream;
 import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.io.Serial;
 import java.io.Serializable;
+
+import javax.accessibility.AccessibleContext;
+import javax.accessibility.AccessibleState;
+import javax.accessibility.AccessibleStateSet;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+import javax.swing.event.EventListenerList;
+import javax.swing.text.Document;
+import javax.swing.text.JTextComponent;
+import javax.swing.text.PlainDocument;
+import javax.swing.text.TextAction;
 
 /**
  * <code>JTextField</code> is a lightweight component that allows the editing
@@ -225,7 +242,7 @@ public class JTextField extends JTextComponent implements SwingConstants {
      *   the preferred width &gt;= 0; if <code>columns</code>
      *   is set to zero, the preferred width will be whatever
      *   naturally results from the component implementation
-     * @exception IllegalArgumentException if <code>columns</code> &lt; 0
+     * @throws IllegalArgumentException if <code>columns</code> &lt; 0
      */
     public JTextField(Document doc, String text, int columns) {
         if (columns < 0) {
@@ -326,7 +343,7 @@ public class JTextField extends JTextComponent implements SwingConstants {
      * and a <code>PropertyChange</code> event ("horizontalAlignment") is fired.
      *
      * @param alignment the alignment
-     * @exception IllegalArgumentException if <code>alignment</code>
+     * @throws IllegalArgumentException if <code>alignment</code>
      *  is not a valid key
      */
      @BeanProperty(preferred = true, enumerationValues = {
@@ -376,7 +393,7 @@ public class JTextField extends JTextComponent implements SwingConstants {
      * and then invalidate the layout.
      *
      * @param columns the number of columns &gt;= 0
-     * @exception IllegalArgumentException if <code>columns</code>
+     * @throws IllegalArgumentException if <code>columns</code>
      *          is less than 0
      */
     @BeanProperty(bound = false, description
@@ -863,6 +880,7 @@ public class JTextField extends JTextComponent implements SwingConstants {
      * <code>JComponent</code> for more
      * information about serialization in Swing.
      */
+    @Serial
     private void writeObject(ObjectOutputStream s) throws IOException {
         s.defaultWriteObject();
         if (getUIClassID().equals(uiClassID)) {

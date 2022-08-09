@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4313887 6838333 6917021 7006126 6950237 8006645 8201407
+ * @bug 4313887 6838333 6917021 7006126 6950237 8006645 8201407 8267820
  * @summary Unit test for java.nio.file.Files copy and move methods (use -Dseed=X to set PRNG seed)
  * @library .. /test/lib
  * @build jdk.test.lib.Platform jdk.test.lib.RandomFactory
@@ -672,16 +672,15 @@ public class CopyAndMove {
             checkBasicAttributes(basicAttributes,
                 readAttributes(source, BasicFileAttributes.class, linkOptions));
 
+            // check POSIX attributes are copied
+            if (!Platform.isWindows() && testPosixAttributes) {
+                checkPosixAttributes(
+                    readAttributes(source, PosixFileAttributes.class, linkOptions),
+                    readAttributes(target, PosixFileAttributes.class, linkOptions));
+            }
+
             // verify other attributes when same provider
             if (source.getFileSystem().provider() == target.getFileSystem().provider()) {
-
-                // check POSIX attributes are copied
-                if (!Platform.isWindows() && testPosixAttributes) {
-                    checkPosixAttributes(
-                        readAttributes(source, PosixFileAttributes.class, linkOptions),
-                        readAttributes(target, PosixFileAttributes.class, linkOptions));
-                }
-
                 // check DOS attributes are copied
                 if (Platform.isWindows()) {
                     checkDosAttributes(

@@ -50,7 +50,7 @@ public class NTLMAuthSequence {
     // Used by native code to indicate when a particular protocol sequence is completed
     // and must not be re-used.
 
-    class Status {
+    static class Status {
         boolean sequenceComplete;
     }
 

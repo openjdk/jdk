@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -27,17 +27,17 @@
 #include "asm/macroAssembler.inline.hpp"
 #include "c1/c1_MacroAssembler.hpp"
 #include "c1/c1_Runtime1.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "gc/shared/collectedHeap.hpp"
+#include "gc/shared/tlab_globals.hpp"
 #include "interpreter/interpreter.hpp"
 #include "oops/arrayOop.hpp"
 #include "oops/markWord.hpp"
 #include "runtime/basicLock.hpp"
-#include "runtime/biasedLocking.hpp"
 #include "runtime/os.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/align.hpp"
+#include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 void C1_MacroAssembler::inline_cache_check(Register receiver, Register iCache) {
@@ -79,13 +79,16 @@ void C1_MacroAssembler::build_frame(int frame_size_in_bytes, int bang_size_in_by
   assert(bang_size_in_bytes >= frame_size_in_bytes, "stack bang size incorrect");
   generate_stack_overflow_check(bang_size_in_bytes);
 
-  std(return_pc, _abi(lr), R1_SP);     // SP->lr = return_pc
+  std(return_pc, _abi0(lr), R1_SP);     // SP->lr = return_pc
   push_frame(frame_size_in_bytes, R0); // SP -= frame_size_in_bytes
+
+  BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
+  bs->nmethod_entry_barrier(this, R20);
 }
 
 
-void C1_MacroAssembler::verified_entry() {
-  if (C1Breakpoint) illtrap();
+void C1_MacroAssembler::verified_entry(bool breakAtEntry) {
+  if (breakAtEntry) illtrap();
   // build frame
 }
 
@@ -105,15 +108,11 @@ void C1_MacroAssembler::lock_object(Register Rmark, Register Roop, Register Rbox
   // Save object being locked into the BasicObjectLock...
   std(Roop, BasicObjectLock::obj_offset_in_bytes(), Rbox);
 
-  if (DiagnoseSyncOnPrimitiveWrappers != 0) {
+  if (DiagnoseSyncOnValueBasedClasses != 0) {
     load_klass(Rscratch, Roop);
     lwz(Rscratch, in_bytes(Klass::access_flags_offset()), Rscratch);
-    testbitdi(CCR0, R0, Rscratch, exact_log2(JVM_ACC_IS_BOX_CLASS));
+    testbitdi(CCR0, R0, Rscratch, exact_log2(JVM_ACC_IS_VALUE_BASED_CLASS));
     bne(CCR0, slow_int);
-  }
-
-  if (UseBiasedLocking) {
-    biased_locking_enter(CCR0, Roop, Rmark, Rscratch, R0, done, &slow_int);
   }
 
   // ... and mark it unlocked.
@@ -161,21 +160,14 @@ void C1_MacroAssembler::unlock_object(Register Rmark, Register Roop, Register Rb
   Address mark_addr(Roop, oopDesc::mark_offset_in_bytes());
   assert(mark_addr.disp() == 0, "cas must take a zero displacement");
 
-  if (UseBiasedLocking) {
-    // Load the object out of the BasicObjectLock.
-    ld(Roop, BasicObjectLock::obj_offset_in_bytes(), Rbox);
-    verify_oop(Roop, FILE_AND_LINE);
-    biased_locking_exit(CCR0, Roop, R0, done);
-  }
   // Test first it it is a fast recursive unlock.
   ld(Rmark, BasicLock::displaced_header_offset_in_bytes(), Rbox);
   cmpdi(CCR0, Rmark, 0);
   beq(CCR0, done);
-  if (!UseBiasedLocking) {
-    // Load object.
-    ld(Roop, BasicObjectLock::obj_offset_in_bytes(), Rbox);
-    verify_oop(Roop, FILE_AND_LINE);
-  }
+
+  // Load object.
+  ld(Roop, BasicObjectLock::obj_offset_in_bytes(), Rbox);
+  verify_oop(Roop, FILE_AND_LINE);
 
   // Check if it is still a light weight lock, this is is true if we see
   // the stack address of the basicLock in the markWord of the object.
@@ -208,22 +200,14 @@ void C1_MacroAssembler::try_allocate(
   if (UseTLAB) {
     tlab_allocate(obj, var_size_in_bytes, con_size_in_bytes, t1, slow_case);
   } else {
-    eden_allocate(obj, var_size_in_bytes, con_size_in_bytes, t1, t2, slow_case);
-    RegisterOrConstant size_in_bytes = var_size_in_bytes->is_valid()
-                                       ? RegisterOrConstant(var_size_in_bytes)
-                                       : RegisterOrConstant(con_size_in_bytes);
-    incr_allocated_bytes(size_in_bytes, t1, t2);
+    b(slow_case);
   }
 }
 
 
 void C1_MacroAssembler::initialize_header(Register obj, Register klass, Register len, Register t1, Register t2) {
   assert_different_registers(obj, klass, len, t1, t2);
-  if (UseBiasedLocking && !len->is_valid()) {
-    ld(t1, in_bytes(Klass::prototype_header_offset()), klass);
-  } else {
-    load_const_optimized(t1, (intx)markWord::prototype().value());
-  }
+  load_const_optimized(t1, (intx)markWord::prototype().value());
   std(t1, oopDesc::mark_offset_in_bytes(), obj);
   store_klass(obj, klass);
   if (len->is_valid()) {
@@ -369,11 +353,7 @@ void C1_MacroAssembler::allocate_array(
   clrrdi(arr_size, arr_size, LogMinObjAlignmentInBytes);                              // Align array size.
 
   // Allocate space & initialize header.
-  if (UseTLAB) {
-    tlab_allocate(obj, arr_size, 0, t2, slow_case);
-  } else {
-    eden_allocate(obj, arr_size, 0, t2, t3, slow_case);
-  }
+  try_allocate(obj, arr_size, 0, t2, t3, slow_case);
   initialize_header(obj, klass, len, t2, t3);
 
   // Initialize body.

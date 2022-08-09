@@ -5,7 +5,7 @@
  *   Load the basic TrueType kerning table.  This doesn't handle
  *   kerning data within the GPOS table at the moment.
  *
- * Copyright (C) 1996-2020 by
+ * Copyright (C) 1996-2022 by
  * David Turner, Robert Wilhelm, and Werner Lemberg.
  *
  * This file is part of the FreeType project, and may only be used,
@@ -17,10 +17,9 @@
  */
 
 
-#include <ft2build.h>
-#include FT_INTERNAL_DEBUG_H
-#include FT_INTERNAL_STREAM_H
-#include FT_TRUETYPE_TAGS_H
+#include <freetype/internal/ftdebug.h>
+#include <freetype/internal/ftstream.h>
+#include <freetype/tttags.h>
 #include "ttkern.h"
 
 #include "sferrors.h"
@@ -95,7 +94,7 @@
 
       p_next = p;
 
-      p += 2; /* skip version */
+      p       += 2; /* skip version */
       length   = FT_NEXT_USHORT( p );
       coverage = FT_NEXT_USHORT( p );
 
@@ -145,7 +144,7 @@
 
 
           cur_pair = FT_NEXT_ULONG( p );
-          if ( cur_pair <= old_pair )
+          if ( cur_pair < old_pair )
             break;
 
           p += 2;
@@ -188,11 +187,18 @@
                        FT_UInt  left_glyph,
                        FT_UInt  right_glyph )
   {
-    FT_Int    result = 0;
-    FT_UInt   count, mask;
-    FT_Byte*  p       = face->kern_table;
-    FT_Byte*  p_limit = p + face->kern_table_size;
+    FT_Int   result = 0;
+    FT_UInt  count, mask;
 
+    FT_Byte*  p;
+    FT_Byte*  p_limit;
+
+
+    if ( !face->kern_table )
+      return result;
+
+    p       = face->kern_table;
+    p_limit = p + face->kern_table_size;
 
     p   += 4;
     mask = 0x0001;

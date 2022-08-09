@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ public class StandardThreadMonitoringScenarioFactory implements ThreadMonitoring
         }
 
         public int getScenarioCount(int basicThreadCount) {
-                // This is choosen to have one scenario of each type and recursionType.
+                // This is chosen to have one scenario of each type and recursionType.
                 basicThreadCount = Math.min(basicThreadCount, 3);
                 return basicThreadCount * typeCount * 3;
         }

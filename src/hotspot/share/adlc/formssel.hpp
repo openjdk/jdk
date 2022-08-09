@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -276,7 +276,7 @@ public:
   uint                alignment() { return _alignment; }
   void                set_alignment(uint val) { _alignment = val; }
 
-  // Seach through operands to determine operands unique positions.
+  // Search through operands to determine operands unique positions.
   void                set_unique_opnds();
   uint                num_unique_opnds() { return _num_uniq; }
   uint                unique_opnds_idx(int idx) {
@@ -434,7 +434,7 @@ private:
   // blank, RegReg, RegMem, MemReg, ...
   NameList    _encoding;
   // NameList    _parameter;
-  // The parameters for each encoding are preceeded by a NameList::_signal
+  // The parameters for each encoding are preceded by a NameList::_signal
   // and follow the parameters for the previous encoding.
 
   // char *_encode;                  // Type of instruction encoding
@@ -969,7 +969,7 @@ public:
 
   // Help build instruction predicates.  Search for operand names.
   void count_instr_names( Dict &names );
-  int build_instr_pred( char *buf, const char *name, int cnt );
+  int build_instr_pred( char *buf, const char *name, int cnt, int path_bitmask, int level);
   void build_internalop( );
 
   // Return the name of the operands associated with reducing to this operand:

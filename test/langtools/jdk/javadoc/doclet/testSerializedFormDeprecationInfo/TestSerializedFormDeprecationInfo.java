@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6802694 8025633 8026567 8183511 8074407 8182765
+ * @bug 6802694 8025633 8026567 8183511 8074407 8182765 8232644
  * @summary This test verifies deprecation info in serialized-form.html.
  * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -98,7 +98,11 @@ public class TestSerializedFormDeprecationInfo extends JavadocTester {
                     <dt>Throws:</dt>
                     <dd><code>java.io.IOException</code> - on error</dd>
                     <dt>See Also:</dt>
-                    <dd><a href="pkg1/C1.html#setUndecorated(boolean)"><code>C1.setUndecorated(boolean)</code></a></dd>
+                    <dd>
+                    <ul class="see-list">
+                    <li><a href="pkg1/C1.html#setUndecorated(boolean)"><code>C1.setUndecorated(boolean)</code></a></li>
+                    </ul>
+                    </dd>
                     </dl>""",
                 """
                     <span class="deprecated-label">Deprecated.</span>
@@ -106,12 +110,15 @@ public class TestSerializedFormDeprecationInfo extends JavadocTester {
                      <a href="pkg1/C1.html#setUndecorated(boolean)"><code>setUndecorated(boolean)</code></a>.</div>
                     </div>
                     <div class="block">This field indicates whether the C1 is undecorated.</div>
-                    &nbsp;
                     <dl class="notes">
                     <dt>Since:</dt>
                     <dd>1.4</dd>
                     <dt>See Also:</dt>
-                    <dd><a href="pkg1/C1.html#setUndecorated(boolean)"><code>C1.setUndecorated(boolean)</code></a></dd>
+                    <dd>
+                    <ul class="see-list">
+                    <li><a href="pkg1/C1.html#setUndecorated(boolean)"><code>C1.setUndecorated(boolean)</code></a></li>
+                    </ul>
+                    </dd>
                     </dl>""",
                 """
                     <span class="deprecated-label">Deprecated.</span>
@@ -120,6 +127,8 @@ public class TestSerializedFormDeprecationInfo extends JavadocTester {
                     </div>
                     <div class="block">Reads the object stream.</div>
                     <dl class="notes">
+                    <dt>Parameters:</dt>
+                    <dd><code>s</code> - ObjectInputStream</dd>
                     <dt>Throws:</dt>
                     <dd><code>java.io.IOException</code> - on error</dd>
                     </dl>""",

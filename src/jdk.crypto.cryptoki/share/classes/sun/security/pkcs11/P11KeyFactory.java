@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,12 @@ package sun.security.pkcs11;
 
 import java.security.*;
 import java.security.spec.*;
-
+import java.util.Map;
+import java.util.HashMap;
+import java.util.Locale;
 import sun.security.pkcs11.wrapper.PKCS11Exception;
+import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
+
 
 /**
  * KeyFactory base class. Provides common infrastructure for the RSA, DSA,
@@ -55,6 +59,28 @@ abstract class P11KeyFactory extends KeyFactorySpi {
         this.algorithm = algorithm;
     }
 
+    private static final Map<String,Long> keyTypes;
+
+    static {
+        keyTypes = new HashMap<String,Long>();
+        addKeyType("RSA", CKK_RSA);
+        addKeyType("DSA", CKK_DSA);
+        addKeyType("DH",  CKK_DH);
+        addKeyType("EC",  CKK_EC);
+    }
+
+    private static void addKeyType(String name, long id) {
+        Long l = Long.valueOf(id);
+        keyTypes.put(name, l);
+        keyTypes.put(name.toUpperCase(Locale.ENGLISH), l);
+    }
+
+    // returns the PKCS11 key type of the specified algorithm
+    static long getPKCS11KeyType(String algorithm) {
+        Long kt = keyTypes.get(algorithm);
+        return (kt != null) ? kt.longValue() : -1;
+    }
+
     /**
      * Convert an arbitrary key of algorithm into a P11Key of token.
      * Used by P11Signature.init() and RSACipher.init().
@@ -73,8 +99,8 @@ abstract class P11KeyFactory extends KeyFactorySpi {
                 ("key and keySpec must not be null");
         }
         // delegate to our Java based providers for PKCS#8 and X.509
-        if (PKCS8EncodedKeySpec.class.isAssignableFrom(keySpec)
-                || X509EncodedKeySpec.class.isAssignableFrom(keySpec)) {
+        if (keySpec.isAssignableFrom(PKCS8EncodedKeySpec.class)
+                || keySpec.isAssignableFrom(X509EncodedKeySpec.class)) {
             try {
                 return implGetSoftwareFactory().getKeySpec(key, keySpec);
             } catch (GeneralSecurityException e) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,8 @@
 #ifndef SHARE_GC_Z_ZUTILS_HPP
 #define SHARE_GC_Z_ZUTILS_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 class ZUtils : public AllStatic {
 public:
@@ -37,7 +38,8 @@ public:
 
   // Object
   static size_t object_size(uintptr_t addr);
-  static void object_copy(uintptr_t from, uintptr_t to, size_t size);
+  static void object_copy_disjoint(uintptr_t from, uintptr_t to, size_t size);
+  static void object_copy_conjoint(uintptr_t from, uintptr_t to, size_t size);
 };
 
 #endif // SHARE_GC_Z_ZUTILS_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,16 +25,15 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.Table;
-import jdk.javadoc.internal.doclets.formats.html.markup.TableHeader;
-
-import java.util.*;
+import java.util.Map;
+import java.util.Set;
+import java.util.SortedSet;
 
 import javax.lang.model.element.ModuleElement;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
+import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
@@ -42,11 +41,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 
 /**
  * Generate the module index page "index.html".
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
  */
 public class ModuleIndexWriter extends AbstractOverviewIndexWriter {
 
@@ -81,10 +75,10 @@ public class ModuleIndexWriter extends AbstractOverviewIndexWriter {
     /**
      * Adds the list of modules.
      *
-     * @param main the documentation tree to which the modules list will be added
+     * @param target the content to which the modules list will be added
      */
     @Override
-    protected void addIndex(Content main) {
+    protected void addIndex(Content target) {
         Map<String, SortedSet<ModuleElement>> groupModuleMap
                 = configuration.group.groupModules(modules);
 
@@ -93,33 +87,30 @@ public class ModuleIndexWriter extends AbstractOverviewIndexWriter {
             Table table =  new Table(HtmlStyle.summaryTable)
                     .setHeader(tableHeader)
                     .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast)
-                    .setId("all-modules-table")
-                    .setDefaultTab(resources.getText("doclet.All_Modules"));
+                    .setId(HtmlIds.ALL_MODULES_TABLE)
+                    .setDefaultTab(contents.getContent("doclet.All_Modules"));
 
             // add the tabs in command-line order
             for (String groupName : configuration.group.getGroupList()) {
                 Set<ModuleElement> groupModules = groupModuleMap.get(groupName);
                 if (groupModules != null) {
-                    table.addTab(groupName, groupModules::contains);
+                    table.addTab(Text.of(groupName), groupModules::contains);
                 }
             }
 
             for (ModuleElement mdle : modules) {
                 if (!mdle.isUnnamed()) {
                     if (!(options.noDeprecated() && utils.isDeprecated(mdle))) {
-                        Content moduleLinkContent = getModuleLink(mdle, new StringContent(mdle.getQualifiedName().toString()));
+                        Content moduleLinkContent = getModuleLink(mdle, Text.of(mdle.getQualifiedName().toString()));
                         Content summaryContent = new ContentBuilder();
+                        addPreviewSummary(mdle, summaryContent);
                         addSummaryComment(mdle, summaryContent);
                         table.addRow(mdle, moduleLinkContent, summaryContent);
                     }
                 }
             }
 
-            main.add(table);
-
-            if (table.needsScript()) {
-                mainBodyScript.append(table.getScript());
-            }
+            target.add(table);
         }
     }
 }

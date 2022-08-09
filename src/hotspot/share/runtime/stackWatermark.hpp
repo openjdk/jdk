@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 #ifndef SHARE_RUNTIME_STACKWATERMARK_HPP
 #define SHARE_RUNTIME_STACKWATERMARK_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/stackWatermarkKind.hpp"
 
@@ -130,6 +130,7 @@ public:
   void set_next(StackWatermark* n) { _next = n; }
 
   void link_watermark(StackWatermark* watermark);
+  DEBUG_ONLY(StackWatermark* linked_watermark() const { return _linked_watermark; })
 
   uintptr_t watermark();
   uintptr_t last_processed();

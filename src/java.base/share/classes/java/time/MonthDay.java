@@ -111,12 +111,12 @@ import java.util.Objects;
  * For most applications written today, the ISO-8601 rules are entirely suitable.
  * However, any application that makes use of historical dates, and requires them
  * to be accurate will find the ISO-8601 approach unsuitable.
- *
  * <p>
  * This is a <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>
- * class; use of identity-sensitive operations (including reference equality
- * ({@code ==}), identity hash code, or synchronization) on instances of
- * {@code MonthDay} may have unpredictable results and should be avoided.
+ * class; programmers should treat instances that are
+ * {@linkplain #equals(Object) equal} as interchangeable and should not
+ * use instances for synchronization, or unpredictable behavior may
+ * occur. For example, in a future release, synchronization may fail.
  * The {@code equals} method should be used for comparisons.
  *
  * @implSpec
@@ -124,6 +124,7 @@ import java.util.Objects;
  *
  * @since 1.8
  */
+@jdk.internal.ValueBased
 public final class MonthDay
         implements TemporalAccessor, TemporalAdjuster, Comparable<MonthDay>, Serializable {
 
@@ -443,13 +444,13 @@ public final class MonthDay
      */
     @Override
     public long getLong(TemporalField field) {
-        if (field instanceof ChronoField) {
-            switch ((ChronoField) field) {
+        if (field instanceof ChronoField chronoField) {
+            return switch (chronoField) {
                 // alignedDOW and alignedWOM not supported because they cannot be set in with()
-                case DAY_OF_MONTH: return day;
-                case MONTH_OF_YEAR: return month;
-            }
-            throw new UnsupportedTemporalTypeException("Unsupported field: " + field);
+                case DAY_OF_MONTH -> day;
+                case MONTH_OF_YEAR -> month;
+                default -> throw new UnsupportedTemporalTypeException("Unsupported field: " + field);
+            };
         }
         return field.getFrom(this);
     }
@@ -719,11 +720,9 @@ public final class MonthDay
         if (this == obj) {
             return true;
         }
-        if (obj instanceof MonthDay) {
-            MonthDay other = (MonthDay) obj;
-            return month == other.month && day == other.day;
-        }
-        return false;
+        return (obj instanceof MonthDay other)
+                && month == other.month
+                && day == other.day;
     }
 
     /**

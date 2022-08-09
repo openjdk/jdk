@@ -301,7 +301,7 @@ final class LambdaFormBuffer {
             int argp = firstChange, exprp = 0;
             for (int i = firstChange; i < arity; i++) {
                 Name name = names[i];
-                if (name.isParam()) {
+                if (name != null && name.isParam()) {
                     names[argp++] = name;
                 } else {
                     exprs[exprp++] = name;

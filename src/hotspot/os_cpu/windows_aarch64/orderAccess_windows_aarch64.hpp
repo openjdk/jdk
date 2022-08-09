@@ -28,7 +28,7 @@
 // Included in orderAccess.hpp header file.
 #include <atomic>
 using std::atomic_thread_fence;
-#include <intrin.h>
+#include <arm64intr.h>
 #include "vm_version_aarch64.hpp"
 #include "runtime/vm_version.hpp"
 
@@ -55,6 +55,8 @@ inline void OrderAccess::fence() {
   FULL_MEM_BARRIER;
 }
 
-inline void OrderAccess::cross_modify_fence() { }
+inline void OrderAccess::cross_modify_fence_impl() {
+  __isb(_ARM64_BARRIER_SY);
+}
 
 #endif // OS_CPU_WINDOWS_AARCH64_ORDERACCESS_WINDOWS_AARCH64_HPP

@@ -77,7 +77,7 @@ import com.sun.jndi.ldap.LdapCtx;
  * @see SortControl
  * @author Vincent Ryan
  */
-final public class SortResponseControl extends BasicControl {
+public final class SortResponseControl extends BasicControl {
 
     /**
      * The server-side sort response control's assigned object identifier

@@ -1,11 +1,11 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 8004832
+ * @bug 8004832 8247957
  * @summary Add new doclint package
  * @library ..
  * @modules jdk.javadoc/jdk.javadoc.internal.doclint
  * @build DocLintTester
- * @run main DocLintTester -ref TagNotAllowed.out TagNotAllowed.java
+ * @run main DocLintTester -Xmsgs:all,-missing -ref TagNotAllowed.out TagNotAllowed.java
  */
 
 /**

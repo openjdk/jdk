@@ -38,7 +38,7 @@ import org.w3c.dom.Document;
  * @test
  * @bug 4991857
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true xpath.Bug4991857
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow xpath.Bug4991857
  * @run testng/othervm xpath.Bug4991857
  * @summary XPath.evaluate(...) throws XPathExpressionException when context is null and expression refers to the context.
  */

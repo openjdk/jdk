@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,17 +32,17 @@ package java.sql;
  * division by 0, and invalid arguments to functions.
  * <p>
  * Please consult your driver vendor documentation for the vendor-specified
- * conditions for which this <code>Exception</code> may be thrown.
+ * conditions for which this {@code Exception} may be thrown.
  * @since 1.6
  */
 public class SQLDataException extends SQLNonTransientException {
 
         /**
-         * Constructs a <code>SQLDataException</code> object.
-         * The <code>reason</code>, <code>SQLState</code> are initialized
-         * to <code>null</code> and the vendor code is initialized to 0.
+         * Constructs a {@code SQLDataException} object.
+         * The {@code reason}, {@code SQLState} are initialized
+         * to {@code null} and the vendor code is initialized to 0.
          *
-         * The <code>cause</code> is not initialized, and may subsequently be
+         * The {@code cause} is not initialized, and may subsequently be
          * initialized by a call to
          * {@link Throwable#initCause(java.lang.Throwable)} method.
          *
@@ -53,12 +53,12 @@ public class SQLDataException extends SQLNonTransientException {
         }
 
         /**
-         * Constructs a <code>SQLDataException</code> object with a given
-         * <code>reason</code>.
-         * The <code>SQLState</code> is initialized
-         * to <code>null</code> and the vendor code is initialized to 0.
+         * Constructs a {@code SQLDataException} object with a given
+         * {@code reason}.
+         * The {@code SQLState} is initialized
+         * to {@code null} and the vendor code is initialized to 0.
          *
-         * The <code>cause</code> is not initialized, and may subsequently be
+         * The {@code cause} is not initialized, and may subsequently be
          * initialized by a call to
          * {@link Throwable#initCause(java.lang.Throwable)} method.
          *
@@ -70,11 +70,11 @@ public class SQLDataException extends SQLNonTransientException {
         }
 
         /**
-         * Constructs a <code>SQLDataException</code> object with a given
-         * <code>reason</code> and <code>SQLState</code>. The
+         * Constructs a {@code SQLDataException} object with a given
+         * {@code reason} and {@code SQLState}. The
          * vendor code is initialized to 0.
          *
-         * The <code>cause</code> is not initialized, and may subsequently be
+         * The {@code cause} is not initialized, and may subsequently be
          * initialized by a call to
          * {@link Throwable#initCause(java.lang.Throwable)} method.
          *
@@ -87,11 +87,11 @@ public class SQLDataException extends SQLNonTransientException {
         }
 
         /**
-         * Constructs a <code>SQLDataException</code> object with a given
-         * <code>reason</code>, <code>SQLState</code>  and
-         * <code>vendorCode</code>.
+         * Constructs a {@code SQLDataException} object with a given
+         * {@code reason}, {@code SQLState}  and
+         * {@code vendorCode}.
          *
-         * The <code>cause</code> is not initialized, and may subsequently be
+         * The {@code cause} is not initialized, and may subsequently be
          * initialized by a call to
          * {@link Throwable#initCause(java.lang.Throwable)} method.
          *
@@ -105,15 +105,15 @@ public class SQLDataException extends SQLNonTransientException {
         }
 
     /**
-     * Constructs a <code>SQLDataException</code> object with a given
-     * <code>cause</code>.
-     * The <code>SQLState</code> is initialized
-     * to <code>null</code> and the vendor code is initialized to 0.
-     * The <code>reason</code>  is initialized to <code>null</code> if
-     * <code>cause==null</code> or to <code>cause.toString()</code> if
-     * <code>cause!=null</code>.
+     * Constructs a {@code SQLDataException} object with a given
+     * {@code cause}.
+     * The {@code SQLState} is initialized
+     * to {@code null} and the vendor code is initialized to 0.
+     * The {@code reason}  is initialized to {@code null} if
+     * {@code cause==null} or to {@code cause.toString()} if
+     * {@code cause!=null}.
      *
-     * @param cause the underlying reason for this <code>SQLException</code> (which is saved for later retrieval by the <code>getCause()</code> method); may be null indicating
+     * @param cause the underlying reason for this {@code SQLException} (which is saved for later retrieval by the {@code getCause()} method); may be null indicating
      *     the cause is non-existent or unknown.
      * @since 1.6
          */
@@ -122,13 +122,13 @@ public class SQLDataException extends SQLNonTransientException {
     }
 
     /**
-     * Constructs a <code>SQLDataException</code> object with a given
-     * <code>reason</code> and  <code>cause</code>.
-     * The <code>SQLState</code> is  initialized to <code>null</code>
+     * Constructs a {@code SQLDataException} object with a given
+     * {@code reason} and  {@code cause}.
+     * The {@code SQLState} is  initialized to {@code null}
      * and the vendor code is initialized to 0.
      *
      * @param reason a description of the exception.
-     * @param cause the underlying reason for this <code>SQLException</code> (which is saved for later retrieval by the <code>getCause()</code> method); may be null indicating
+     * @param cause the underlying reason for this {@code SQLException} (which is saved for later retrieval by the {@code getCause()} method); may be null indicating
      *     the cause is non-existent or unknown.
      * @since 1.6
      */
@@ -137,13 +137,13 @@ public class SQLDataException extends SQLNonTransientException {
     }
 
     /**
-     *  Constructs a <code>SQLDataException</code> object with a given
-     * <code>reason</code>, <code>SQLState</code> and  <code>cause</code>.
+     *  Constructs a {@code SQLDataException} object with a given
+     * {@code reason}, {@code SQLState} and  {@code cause}.
      * The vendor code is initialized to 0.
      *
      * @param reason a description of the exception.
      * @param SQLState an XOPEN or SQL:2003 code identifying the exception
-     * @param cause the underlying reason for this <code>SQLException</code> (which is saved for later retrieval by the <code>getCause()</code> method); may be null indicating
+     * @param cause the underlying reason for this {@code SQLException} (which is saved for later retrieval by the {@code getCause()} method); may be null indicating
      *     the cause is non-existent or unknown.
      * @since 1.6
      */
@@ -152,14 +152,14 @@ public class SQLDataException extends SQLNonTransientException {
     }
 
     /**
-     * Constructs a <code>SQLDataException</code> object with a given
-     * <code>reason</code>, <code>SQLState</code>, <code>vendorCode</code>
-     * and  <code>cause</code>.
+     * Constructs a {@code SQLDataException} object with a given
+     * {@code reason}, {@code SQLState}, {@code vendorCode}
+     * and  {@code cause}.
      *
      * @param reason a description of the exception
      * @param SQLState an XOPEN or SQL:2003 code identifying the exception
      * @param vendorCode a database vendor-specific exception code
-     * @param cause the underlying reason for this <code>SQLException</code> (which is saved for later retrieval by the <code>getCause()</code> method); may be null indicating
+     * @param cause the underlying reason for this {@code SQLException} (which is saved for later retrieval by the {@code getCause()} method); may be null indicating
      *     the cause is non-existent or unknown.
      * @since 1.6
      */

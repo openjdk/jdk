@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@
 # include "semaphore_posix.hpp"
 
 #else
-// OS X doesn't support unamed POSIX semaphores, so the implementation in os_posix.cpp can't be used.
+// OS X doesn't support unnamed POSIX semaphores, so the implementation in os_posix.cpp can't be used.
 # include "memory/allocation.hpp"
 # include <mach/semaphore.h>
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,16 +21,33 @@
  * questions.
  */
 
+/*
+ * @test
+ *
+ * @modules java.base/jdk.internal.org.objectweb.asm:+open java.base/jdk.internal.org.objectweb.asm.util:+open
+ * @library /vmTestbase /test/lib
+ *
+ * @comment build retransform.jar in current dir
+ * @run driver vm.runtime.defmeth.shared.BuildJar
+ *
+ * @run driver jdk.test.lib.FileInstaller . .
+ * @run main/othervm/native
+ *      -agentlib:redefineClasses
+ *      -javaagent:retransform.jar
+ *      vm.runtime.defmeth.ConflictingDefaultsTest
+ */
 package vm.runtime.defmeth;
 
-import nsk.share.test.TestBase;
+import java.util.Set;
+
 import vm.runtime.defmeth.shared.DefMethTest;
-import vm.runtime.defmeth.shared.annotation.KnownFailure;
 import vm.runtime.defmeth.shared.annotation.NotApplicableFor;
+import vm.runtime.defmeth.shared.builder.TestBuilder;
 import vm.runtime.defmeth.shared.data.*;
+
+import static jdk.internal.org.objectweb.asm.Opcodes.ACC_SYNCHRONIZED;
 import static vm.runtime.defmeth.shared.data.method.body.CallMethod.Invoke.*;
 import static vm.runtime.defmeth.shared.data.method.body.CallMethod.IndexbyteOp.*;
-import vm.runtime.defmeth.shared.builder.TestBuilder;
 import static vm.runtime.defmeth.shared.ExecutionMode.*;
 
 /**
@@ -50,7 +67,11 @@ import static vm.runtime.defmeth.shared.ExecutionMode.*;
  */
 public class ConflictingDefaultsTest extends DefMethTest {
     public static void main(String[] args) {
-        TestBase.runTest(new ConflictingDefaultsTest(), args);
+        DefMethTest.runTest(ConflictingDefaultsTest.class,
+                /* majorVer */ Set.of(MIN_MAJOR_VER, MAX_MAJOR_VER),
+                /* flags    */ Set.of(0, ACC_SYNCHRONIZED),
+                /* redefine */ Set.of(false, true),
+                /* execMode */ Set.of(DIRECT, REFLECTION, INVOKE_EXACT, INVOKE_GENERIC, INVOKE_WITH_ARGS, INDY));
     }
 
     /*
@@ -62,9 +83,7 @@ public class ConflictingDefaultsTest extends DefMethTest {
      *
      * TEST: C c = new C(); c.m() ==> ICCE
      */
-    public void testConflict() {
-        TestBuilder b = factory.getBuilder();
-
+    public void testConflict(TestBuilder b) {
         Interface I = b.intf("I")
                 .defaultMethod("m", "()I").returns(1).build()
             .build();
@@ -77,9 +96,7 @@ public class ConflictingDefaultsTest extends DefMethTest {
 
         b.test().callSite(C, C, "m","()I")
                 .throws_(IncompatibleClassChangeError.class)
-            .done()
-
-        .run();
+            .done();
     }
 
     /*
@@ -91,9 +108,7 @@ public class ConflictingDefaultsTest extends DefMethTest {
      *
      * TEST: C c = new C(); c.m() return 2
      */
-    public void testMaximallySpecificDefault() {
-        TestBuilder b = factory.getBuilder();
-
+    public void testMaximallySpecificDefault(TestBuilder b) {
         Interface I = b.intf("I")
                 .abstractMethod("m", "()I").build()
             .build();
@@ -106,9 +121,7 @@ public class ConflictingDefaultsTest extends DefMethTest {
 
         b.test().callSite(C, C, "m","()I")
                 .returns(2)
-            .done()
-
-        .run();
+            .done();
     }
 
     /*
@@ -120,9 +133,7 @@ public class ConflictingDefaultsTest extends DefMethTest {
      *
      * TEST: C c = new C(); c.m() ==> AME
      */
-    public void testReabstract() {
-        TestBuilder b = factory.getBuilder();
-
+    public void testReabstract(TestBuilder b) {
         Interface I = b.intf("I")
                 .defaultMethod("m", "()I").returns(1).build()
             .build();
@@ -135,9 +146,7 @@ public class ConflictingDefaultsTest extends DefMethTest {
 
         b.test().callSite(C, C, "m","()I")
                 .throws_(AbstractMethodError.class)
-            .done()
-
-        .run();
+            .done();
     }
 
     /*
@@ -153,9 +162,7 @@ public class ConflictingDefaultsTest extends DefMethTest {
      * TEST: I i = new C(); i.m() ==> AME
      * TEST: D d = new D(); d.m() ==> callSuper C.m ==> AME
      */
-    public void testReabstract2() {
-        TestBuilder b = factory.getBuilder();
-
+    public void testReabstract2(TestBuilder b) {
         Interface I = b.intf("I")
                 .defaultMethod("m", "()I").returns(1).build()
             .build();
@@ -180,9 +187,7 @@ public class ConflictingDefaultsTest extends DefMethTest {
             .done()
          .test().callSite(D, D, "m","()I")
                 .throws_(AbstractMethodError.class)
-            .done()
-
-        .run();
+            .done();
     }
 
     /*
@@ -196,9 +201,7 @@ public class ConflictingDefaultsTest extends DefMethTest {
      *
      * TEST: A c = new C(); c.m() ==> AME
      */
-    public void testReabstractConflictingDefaults() {
-        TestBuilder b = factory.getBuilder();
-
+    public void testReabstractConflictingDefaults(TestBuilder b) {
         Interface I = b.intf("I")
                 .defaultMethod("m", "()I").returns(1).build()
             .build();
@@ -216,9 +219,7 @@ public class ConflictingDefaultsTest extends DefMethTest {
 
         b.test().callSite(A, C, "m","()I")
                 .throws_(AbstractMethodError.class)
-            .done()
-
-        .run();
+            .done();
     }
 
 
@@ -237,9 +238,7 @@ public class ConflictingDefaultsTest extends DefMethTest {
      * TEST: K k = new C(); k.m() ==> AME
      * TEST: L l = new D(); l.m() ==> AME
      */
-    public void testReabstractConflictingDefaultsInvokeInterface() {
-        TestBuilder b = factory.getBuilder();
-
+    public void testReabstractConflictingDefaultsInvokeInterface(TestBuilder b) {
         Interface I = b.intf("I")
                 .defaultMethod("m", "()I").returns(1).build()
             .build();
@@ -267,9 +266,7 @@ public class ConflictingDefaultsTest extends DefMethTest {
             .done()
          .test().callSite(L, D, "m","()I")
                 .throws_(AbstractMethodError.class)
-            .done()
-
-        .run();
+            .done();
     }
 
     /*
@@ -287,9 +284,7 @@ public class ConflictingDefaultsTest extends DefMethTest {
      * TEST: K k = new C(); CallSuper k.m() ==> AME
      * TEST: L l = new D(); l.m() ==> AME
      */
-    public void testReabstractConflictingDefaultsSuper() {
-        TestBuilder b = factory.getBuilder();
-
+    public void testReabstractConflictingDefaultsSuper(TestBuilder b) {
         Interface I = b.intf("I")
                 .defaultMethod("m", "()I").returns(1).build()
             .build();
@@ -316,9 +311,7 @@ public class ConflictingDefaultsTest extends DefMethTest {
             .done()
          .test().callSite(L, D, "m","()I")
                 .throws_(AbstractMethodError.class)
-            .done()
-
-        .run();
+            .done();
     }
 
     /*
@@ -346,9 +339,7 @@ public class ConflictingDefaultsTest extends DefMethTest {
      */
 
     @NotApplicableFor(modes = { REDEFINITION }) // Can't redefine a class that gets error during loading
-    public void testReabstractResolveMethod00705m2() {
-        TestBuilder b = factory.getBuilder();
-
+    public void testReabstractResolveMethod00705m2(TestBuilder b) {
         Interface I = b.intf("I")
                 .defaultMethod("m", "()I").returns(1).build()
             .build();
@@ -395,9 +386,7 @@ public class ConflictingDefaultsTest extends DefMethTest {
              .done()
           .test().callSite(A, C, "test_Amethod_ISIMR", "()V")
                  .throws_(expectedError2)
-             .done()
-
-         .run();
+             .done();
     }
 
     /*
@@ -409,9 +398,7 @@ public class ConflictingDefaultsTest extends DefMethTest {
      *
      * TEST: [I|J|C] c = new C(); c.m() == 2;
      */
-    public void testShadow() {
-        TestBuilder b = factory.getBuilder();
-
+    public void testShadow(TestBuilder b) {
         Interface I = b.intf("I")
                 .defaultMethod("m", "()I").returns(1).build()
             .build();
@@ -432,9 +419,7 @@ public class ConflictingDefaultsTest extends DefMethTest {
         .test()
                 .callSite(C, C, "m","()I")
                 .returns(2)
-            .done()
-
-        .run();
+            .done();
     }
 
     /*
@@ -446,9 +431,7 @@ public class ConflictingDefaultsTest extends DefMethTest {
      *
      * TEST: [I|J|C] c = new C(); c.m() == 2;
      */
-    public void testDisqualified() {
-        TestBuilder b = factory.getBuilder();
-
+    public void testDisqualified(TestBuilder b) {
         Interface I = b.intf("I")
                 .defaultMethod("m", "()I").returns(1).build()
             .build();
@@ -470,9 +453,7 @@ public class ConflictingDefaultsTest extends DefMethTest {
         .test()
                 .callSite(C, C, "m","()I")
                 .returns(2)
-            .done()
-
-        .run();
+            .done();
     }
 
     /*
@@ -486,10 +467,7 @@ public class ConflictingDefaultsTest extends DefMethTest {
      * TEST: J j = new C(); j.m() ==> NSME; j.m(0) == 2
      * TEST: C c = new C(); c.m() == 1; c.m(0) == 2
      */
-    @KnownFailure(modes = { INVOKE_EXACT, INVOKE_GENERIC, INDY }) // IncompatibleClassChangeError instead of NoSuchMethodError
-    public void testMixedArity1() {
-        TestBuilder b = factory.getBuilder();
-
+    public void testMixedArity1(TestBuilder b) {
         Interface I = b.intf("I")
                 .defaultMethod("m", "()I").returns(1).build()
             .build();
@@ -531,9 +509,7 @@ public class ConflictingDefaultsTest extends DefMethTest {
                 .callSite(C, C, "m","(I)I")
                 .params(0)
                 .returns(2)
-            .done()
-
-        .run();
+            .done();
     }
 
     /*
@@ -547,9 +523,7 @@ public class ConflictingDefaultsTest extends DefMethTest {
      * TEST: J j = new C(); j.m() ==> ICCE
      * TEST: C c = new C(); c.m() ==> ICCE; c.m(0) == 3
      */
-    public void testMixedArity2() {
-        TestBuilder b = factory.getBuilder();
-
+    public void testMixedArity2(TestBuilder b) {
         Interface I = b.intf("I")
                 .defaultMethod("m", "()I").returns(1).build()
             .build();
@@ -583,8 +557,6 @@ public class ConflictingDefaultsTest extends DefMethTest {
                 .callSite(C, C, "m","(I)I")
                 .params(0)
                 .returns(3)
-            .done()
-
-        .run();
+            .done();
     }
 }

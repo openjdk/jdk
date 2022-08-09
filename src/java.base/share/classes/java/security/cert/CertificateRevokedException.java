@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -187,11 +187,14 @@ public class CertificateRevokedException extends CertificateException {
     /**
      * Serialize this {@code CertificateRevokedException} instance.
      *
-     * @serialData the size of the extensions map (int), followed by all of
-     * the extensions in the map, in no particular order. For each extension,
+     * @serialData the size of the extensions map (int), followed by all the
+     * extensions in the map, in no particular order. For each extension,
      * the following data is emitted: the OID String (Object), the criticality
      * flag (boolean), the length of the encoded extension value byte array
      * (int), and the encoded extension value bytes.
+     *
+     * @param  oos the {@code ObjectOutputStream} to which data is written
+     * @throws IOException if an I/O error occurs
      */
     @java.io.Serial
     private void writeObject(ObjectOutputStream oos) throws IOException {
@@ -219,6 +222,10 @@ public class CertificateRevokedException extends CertificateException {
 
     /**
      * Deserialize the {@code CertificateRevokedException} instance.
+     *
+     * @param  ois the {@code ObjectInputStream} from which data is read
+     * @throws IOException if an I/O error occurs
+     * @throws ClassNotFoundException if a serialized class cannot be loaded
      */
     @java.io.Serial
     private void readObject(ObjectInputStream ois)
@@ -238,7 +245,7 @@ public class CertificateRevokedException extends CertificateException {
         } else if (size < 0) {
             throw new IOException("size cannot be negative");
         } else {
-            extensions = new HashMap<>(size > 20 ? 20 : size);
+            extensions = HashMap.newHashMap(Math.min(size, 20));
         }
 
         // Read in the extensions and put the mappings in the extensions map

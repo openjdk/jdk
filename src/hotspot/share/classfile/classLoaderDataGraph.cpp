@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,7 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
+#include "utilities/vmError.hpp"
 
 volatile size_t ClassLoaderDataGraph::_num_array_classes = 0;
 volatile size_t ClassLoaderDataGraph::_num_instance_classes = 0;
@@ -313,18 +314,21 @@ LockedClassesDo::~LockedClassesDo() {
 
 // Iterating over the CLDG needs to be locked because
 // unloading can remove entries concurrently soon.
-class ClassLoaderDataGraphIterator : public StackObj {
+template <bool keep_alive = true>
+class ClassLoaderDataGraphIteratorBase : public StackObj {
   ClassLoaderData* _next;
   Thread*          _thread;
   HandleMark       _hm;  // clean up handles when this is done.
-  Handle           _holder;
   NoSafepointVerifier _nsv; // No safepoints allowed in this scope
                             // unless verifying at a safepoint.
 
 public:
-  ClassLoaderDataGraphIterator() : _next(ClassLoaderDataGraph::_head), _thread(Thread::current()), _hm(_thread) {
-    _thread = Thread::current();
-    assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
+  ClassLoaderDataGraphIteratorBase() : _next(ClassLoaderDataGraph::_head), _thread(Thread::current()), _hm(_thread) {
+    if (keep_alive) {
+      assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
+    } else {
+      assert_at_safepoint();
+    }
   }
 
   ClassLoaderData* get_next() {
@@ -334,8 +338,10 @@ public:
       cld = cld->next();
     }
     if (cld != NULL) {
-      // Keep cld that is being returned alive.
-      _holder = Handle(_thread, cld->holder_phantom());
+      if (keep_alive) {
+        // Keep cld that is being returned alive.
+        Handle(_thread, cld->holder());
+      }
       _next = cld->next();
     } else {
       _next = NULL;
@@ -343,6 +349,9 @@ public:
     return cld;
   }
 };
+
+using ClassLoaderDataGraphIterator = ClassLoaderDataGraphIteratorBase<true /* keep_alive */>;
+using ClassLoaderDataGraphIteratorNoKeepAlive = ClassLoaderDataGraphIteratorBase<false /* keep_alive */>;
 
 void ClassLoaderDataGraph::loaded_cld_do(CLDClosure* cl) {
   ClassLoaderDataGraphIterator iter;
@@ -421,30 +430,18 @@ void ClassLoaderDataGraph::classes_unloading_do(void f(Klass* const)) {
   }
 }
 
+void ClassLoaderDataGraph::verify_dictionary() {
+  ClassLoaderDataGraphIteratorNoKeepAlive iter;
+  while (ClassLoaderData* cld = iter.get_next()) {
+    if (cld->dictionary() != nullptr) {
+      cld->dictionary()->verify();
+    }
+  }
+}
+
 #define FOR_ALL_DICTIONARY(X)   ClassLoaderDataGraphIterator iter; \
                                 while (ClassLoaderData* X = iter.get_next()) \
                                   if (X->dictionary() != NULL)
-
-// Walk classes in the loaded class dictionaries in various forms.
-// Only walks the classes defined in this class loader.
-void ClassLoaderDataGraph::dictionary_classes_do(void f(InstanceKlass*)) {
-  FOR_ALL_DICTIONARY(cld) {
-    cld->dictionary()->classes_do(f);
-  }
-}
-
-// Only walks the classes defined in this class loader.
-void ClassLoaderDataGraph::dictionary_classes_do(void f(InstanceKlass*, TRAPS), TRAPS) {
-  FOR_ALL_DICTIONARY(cld) {
-    cld->dictionary()->classes_do(f, CHECK);
-  }
-}
-
-void ClassLoaderDataGraph::verify_dictionary() {
-  FOR_ALL_DICTIONARY(cld) {
-    cld->dictionary()->verify();
-  }
-}
 
 void ClassLoaderDataGraph::print_dictionary(outputStream* st) {
   FOR_ALL_DICTIONARY(cld) {
@@ -662,7 +659,7 @@ Klass* ClassLoaderDataGraphKlassIteratorAtomic::next_klass() {
 }
 
 void ClassLoaderDataGraph::verify() {
-  ClassLoaderDataGraphIterator iter;
+  ClassLoaderDataGraphIteratorNoKeepAlive iter;
   while (ClassLoaderData* cld = iter.get_next()) {
     cld->verify();
   }
@@ -672,6 +669,7 @@ void ClassLoaderDataGraph::verify() {
 // callable from debugger
 extern "C" int print_loader_data_graph() {
   ResourceMark rm;
+  MutexLocker ml(ClassLoaderDataGraph_lock);
   ClassLoaderDataGraph::print_on(tty);
   return 0;
 }

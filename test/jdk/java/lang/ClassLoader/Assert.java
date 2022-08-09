@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,7 @@ public class Assert {
         int[] switches = new int[7];
 
         int switchSource = 0;
-        if (args.length == 0) { // This is master version
+        if (args.length == 0) { // This is the controller
 
             // This code is for an exhaustive test
             //while(switchSource < 2187) {
@@ -92,7 +92,7 @@ public class Assert {
                                           new InputStreamReader(p.getInputStream()));
                     String outString = blah.readLine();
                     while (outString != null) {
-                        System.out.println("from slave:"+outString);
+                        System.out.println("from BufferedReader:"+outString);
                         outString = blah.readLine();
                     }
                 }

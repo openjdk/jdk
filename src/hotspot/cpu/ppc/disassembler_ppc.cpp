@@ -26,7 +26,6 @@
 #include "asm/macroAssembler.inline.hpp"
 #include "code/codeCache.hpp"
 #include "compiler/disassembler.hpp"
-#include "depChecker_ppc.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
 #include "gc/shared/genOopClosures.inline.hpp"
@@ -87,22 +86,6 @@
       } \
     } \
   }
-
-address Disassembler::find_prev_instr(address here, int n_instr) {
-  if (!os::is_readable_pointer(here)) return NULL;    // obviously a bad location to decode
-
-  // Find most distant possible starting point.
-  // Narrow down because we don't want to SEGV while printing.
-  address start = here - n_instr*Assembler::instr_maxlen(); // starting point can't be further away.
-  while ((start < here) && !os::is_readable_range(start, here)) {
-    start = align_down(start, os::min_page_size()) + os::min_page_size();
-  }
-  if (start >= here) {
-    // Strange. Can only happen with here on page boundary.
-    return NULL;
-  }
-  return start;
-}
 
 address Disassembler::decode_instruction0(address here, outputStream * st, address virtual_begin ) {
   if (is_abstract()) {

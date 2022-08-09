@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,8 +41,11 @@
 #include "runtime/deoptimization.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/javaThread.inline.hpp"
+#include "runtime/jniHandles.hpp"
+#include "runtime/stackFrameStream.inline.hpp"
 #include "runtime/synchronizer.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/threads.hpp"
 #include "runtime/threadSMR.inline.hpp"
 #include "runtime/vmOperations.hpp"
 #include "services/threadService.hpp"
@@ -151,15 +154,10 @@ void VM_DeoptimizeAll::doit() {
 
 
 void VM_ZombieAll::doit() {
-  calling_thread()->as_Java_thread()->make_zombies();
+  JavaThread::cast(calling_thread())->make_zombies();
 }
 
 #endif // !PRODUCT
-
-void VM_Verify::doit() {
-  Universe::heap()->prepare_for_verify();
-  Universe::verify();
-}
 
 bool VM_PrintThreads::doit_prologue() {
   // Get Heap_lock if concurrent locks will be dumped
@@ -171,6 +169,9 @@ bool VM_PrintThreads::doit_prologue() {
 
 void VM_PrintThreads::doit() {
   Threads::print_on(_out, true, false, _print_concurrent_locks, _print_extended_info);
+  if (_print_jni_handle_info) {
+    JNIHandles::print_on(_out);
+  }
 }
 
 void VM_PrintThreads::doit_epilogue() {
@@ -178,10 +179,6 @@ void VM_PrintThreads::doit_epilogue() {
     // Release Heap_lock
     Heap_lock->unlock();
   }
-}
-
-void VM_PrintJNI::doit() {
-  JNIHandles::print_on(_out);
 }
 
 void VM_PrintMetadata::doit() {
@@ -283,6 +280,18 @@ void VM_ThreadDump::doit() {
     concurrent_locks.dump_at_safepoint();
   }
 
+  ObjectMonitorsHashtable table;
+  ObjectMonitorsHashtable* tablep = nullptr;
+  if (_with_locked_monitors) {
+    // The caller wants locked monitor information and that's expensive to gather
+    // when there are a lot of inflated monitors. So we deflate idle monitors and
+    // gather information about owned monitors at the same time.
+    tablep = &table;
+    while (ObjectSynchronizer::deflate_idle_monitors(tablep) >= (size_t)MonitorDeflationMax) {
+      ; /* empty */
+    }
+  }
+
   if (_num_threads == 0) {
     // Snapshot all live threads
 
@@ -297,7 +306,7 @@ void VM_ThreadDump::doit() {
       if (_with_locked_synchronizers) {
         tcl = concurrent_locks.thread_concurrent_locks(jt);
       }
-      snapshot_thread(jt, tcl);
+      snapshot_thread(jt, tcl, tablep);
     }
   } else {
     // Snapshot threads in the given _threads array
@@ -332,14 +341,15 @@ void VM_ThreadDump::doit() {
       if (_with_locked_synchronizers) {
         tcl = concurrent_locks.thread_concurrent_locks(jt);
       }
-      snapshot_thread(jt, tcl);
+      snapshot_thread(jt, tcl, tablep);
     }
   }
 }
 
-void VM_ThreadDump::snapshot_thread(JavaThread* java_thread, ThreadConcurrentLocks* tcl) {
+void VM_ThreadDump::snapshot_thread(JavaThread* java_thread, ThreadConcurrentLocks* tcl,
+                                    ObjectMonitorsHashtable* table) {
   ThreadSnapshot* snapshot = _result->add_thread_snapshot(java_thread);
-  snapshot->dump_stack_at_safepoint(_max_depth, _with_locked_monitors);
+  snapshot->dump_stack_at_safepoint(_max_depth, _with_locked_monitors, table, false);
   snapshot->set_concurrent_locks(tcl);
 }
 
@@ -357,7 +367,7 @@ int VM_Exit::set_vm_exited() {
   _shutdown_thread = thr_cur;
   _vm_exited = true;                                // global flag
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread *thr = jtiwh.next(); ) {
-    if (thr!=thr_cur && thr->thread_state() == _thread_in_native) {
+    if (thr != thr_cur && thr->thread_state() == _thread_in_native) {
       ++num_active;
       thr->set_terminated(JavaThread::_vm_exited);  // per-thread flag
     }
@@ -372,8 +382,7 @@ int VM_Exit::wait_for_threads_in_native_to_block() {
   assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint already");
 
   Thread * thr_cur = Thread::current();
-  Monitor timer(Mutex::leaf, "VM_Exit timer", true,
-                Monitor::_safepoint_check_never);
+  Monitor timer(Mutex::nosafepoint, "VM_ExitTimer_lock");
 
   // Compiler threads need longer wait because they can access VM data directly
   // while in native. If they are active and some structures being used are
@@ -486,7 +495,7 @@ void VM_Exit::wait_if_vm_exited() {
   if (_vm_exited &&
       Thread::current_or_null() != _shutdown_thread) {
     // _vm_exited is set at safepoint, and the Threads_lock is never released
-    // we will block here until the process dies
+    // so we will block here until the process dies.
     Threads_lock->lock();
     ShouldNotReachHere();
   }

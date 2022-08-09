@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,6 @@ import java.util.Objects;
 
 import jdk.jfr.internal.JVM;
 import jdk.jfr.internal.JVMSupport;
-import jdk.jfr.internal.LogLevel;
 import jdk.jfr.internal.Logger;
 import jdk.jfr.internal.MetadataRepository;
 import jdk.jfr.internal.Options;
@@ -93,15 +92,7 @@ public final class FlightRecorder {
      * <p>
      * The following example shows how to create a snapshot and write a subset of the data to a file.
      *
-     * <pre>{@literal
-     * try (Recording snapshot = FlightRecorder.getFlightRecorder().takeSnapshot()) {
-     *   if (snapshot.getSize() > 0) {
-     *     snapshot.setMaxSize(100_000_000);
-     *     snapshot.setMaxAge(Duration.ofMinutes(5));
-     *     snapshot.dump(Paths.get("snapshot.jfr"));
-     *   }
-     * }
-     * }</pre>
+     * {@snippet class="Snippets" region="FlightRecorderTakeSnapshot"}
      *
      * The caller must close the recording when access to the data is no longer
      * needed.
@@ -129,7 +120,7 @@ public final class FlightRecorder {
      *         does not have {@code FlightRecorderPermission("registerEvent")}
      */
     public static void register(Class<? extends Event> eventClass) {
-        Objects.requireNonNull(eventClass);
+        Objects.requireNonNull(eventClass, "eventClass");
         if (JVMSupport.isNotAvailable()) {
             return;
         }
@@ -151,7 +142,7 @@ public final class FlightRecorder {
      *         does not have {@code FlightRecorderPermission("registerEvent")}
      */
     public static void unregister(Class<? extends Event> eventClass) {
-        Objects.requireNonNull(eventClass);
+        Objects.requireNonNull(eventClass, "eventClass");
         if (JVMSupport.isNotAvailable()) {
             return;
         }
@@ -193,7 +184,6 @@ public final class FlightRecorder {
                     Logger.log(JFR, DEBUG, "globalbuffersize: " + Options.getGlobalBufferSize()+ " bytes");
                     Logger.log(JFR, DEBUG, "globalbuffercount: " + Options.getGlobalBufferCount());
                     Logger.log(JFR, DEBUG, "dumppath: " + Options.getDumpPath());
-                    Logger.log(JFR, DEBUG, "samplethreads: " + Options.getSampleThreads());
                     Logger.log(JFR, DEBUG, "stackdepth: " + Options.getStackDepth());
                     Logger.log(JFR, DEBUG, "threadbuffersize: " + Options.getThreadBufferSize());
                 }
@@ -225,14 +215,15 @@ public final class FlightRecorder {
      *         does not have {@code FlightRecorderPermission("registerEvent")}
      */
     public static void addPeriodicEvent(Class<? extends Event> eventClass, Runnable hook) throws SecurityException {
-        Objects.requireNonNull(eventClass);
-        Objects.requireNonNull(hook);
+        Objects.requireNonNull(eventClass, "eventClass");
+        Objects.requireNonNull(hook, "hook");
         if (JVMSupport.isNotAvailable()) {
             return;
         }
 
         Utils.ensureValidEventSubclass(eventClass);
         Utils.checkRegisterPermission();
+        @SuppressWarnings("removal")
         AccessControlContext acc = AccessController.getContext();
         RequestEngine.addHook(acc, EventType.getEventType(eventClass).getPlatformEventType(), hook);
     }
@@ -246,7 +237,7 @@ public final class FlightRecorder {
      *         does not have {@code FlightRecorderPermission("registerEvent")}
      */
     public static boolean removePeriodicEvent(Runnable hook) throws SecurityException {
-        Objects.requireNonNull(hook);
+        Objects.requireNonNull(hook, "hook");
         Utils.checkRegisterPermission();
         if (JVMSupport.isNotAvailable()) {
             return false;
@@ -283,7 +274,7 @@ public final class FlightRecorder {
      *         {@code FlightRecorderPermission("accessFlightRecorder")}
      */
     public static void addListener(FlightRecorderListener changeListener) {
-        Objects.requireNonNull(changeListener);
+        Objects.requireNonNull(changeListener, "changeListener");
         Utils.checkAccessFlightRecorder();
         if (JVMSupport.isNotAvailable()) {
             return;
@@ -307,7 +298,7 @@ public final class FlightRecorder {
      *         otherwise
      */
     public static boolean removeListener(FlightRecorderListener changeListener) {
-        Objects.requireNonNull(changeListener);
+        Objects.requireNonNull(changeListener, "changeListener");
         Utils.checkAccessFlightRecorder();
         if (JVMSupport.isNotAvailable()) {
             return false;

@@ -38,7 +38,7 @@ public class PrintNMTStatisticsWithNMTDisabled {
   public static void main(String args[]) throws Exception {
     ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
       "-XX:+UnlockDiagnosticVMOptions",
-      "-XX:+PrintNMTStatistics",
+      "-XX:+PrintNMTStatistics", "-XX:NativeMemoryTracking=off",
       "-version");
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
     output.shouldContain("warning: PrintNMTStatistics is disabled, because native memory tracking is not enabled");

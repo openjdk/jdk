@@ -26,7 +26,7 @@ import java.util.Random;
 import jdk.test.lib.Utils;
 
 /*
- * @test TestArrayCopyStress
+ * @test
  * @key randomness
  * @requires vm.gc.Shenandoah
  * @library /test/lib

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 
 package jdk.jfr.internal.dcmd;
 
-
+import java.io.IOException;
 
 import jdk.jfr.FlightRecorder;
 import jdk.jfr.internal.LogLevel;
@@ -59,7 +59,7 @@ final class DCmdConfigure extends AbstractDCmd {
      * @throws DCmdException
      *             if the dump could not be completed
      */
-    public String execute
+    public String[] execute
     (
             boolean verbose,
             String repositoryPath,
@@ -69,8 +69,7 @@ final class DCmdConfigure extends AbstractDCmd {
             Long globalBufferSize,
             Long threadBufferSize,
             Long memorySize,
-            Long maxChunkSize,
-            Boolean sampleThreads
+            Long maxChunkSize
 
     ) throws DCmdException {
         if (Logger.shouldLog(LogTag.JFR_DCMD, LogLevel.DEBUG)) {
@@ -81,8 +80,7 @@ final class DCmdConfigure extends AbstractDCmd {
                     ", globalbuffersize=" + globalBufferSize +
                     ", thread_buffer_size=" + threadBufferSize +
                     ", memorysize=" + memorySize +
-                    ", maxchunksize=" + maxChunkSize +
-                    ", samplethreads=" + sampleThreads);
+                    ", maxchunksize=" + maxChunkSize);
         }
 
 
@@ -106,7 +104,11 @@ final class DCmdConfigure extends AbstractDCmd {
         }
 
         if (dumpPath != null)  {
-            Options.setDumpPath(new SafePath(dumpPath));
+            try {
+                Options.setDumpPath(new SafePath(dumpPath));
+            } catch (IOException e) {
+                throw new DCmdException("Could not set " + dumpPath + " to emergency dump path. " + e.getMessage(), e);
+            }
             Logger.log(LogTag.JFR, LogLevel.INFO, "Emergency dump path set to " + dumpPath);
            if (verbose) {
                printDumpPath();
@@ -168,28 +170,20 @@ final class DCmdConfigure extends AbstractDCmd {
             updated = true;
         }
 
-        if (sampleThreads != null)  {
-            Options.setSampleThreads(sampleThreads);
-            Logger.log(LogTag.JFR, LogLevel.INFO, "Sample threads set to " + sampleThreads);
-            if (verbose) {
-                printSampleThreads();
-            }
-            updated = true;
-        }
         if (!verbose) {
-            return "";
+            return new String[0];
         }
         if (!updated) {
             println("Current configuration:");
             println();
             printRepositoryPath();
+            printDumpPath();
             printStackDepth();
             printGlobalBufferCount();
             printGlobalBufferSize();
             printThreadBufferSize();
             printMemorySize();
             printMaxChunkSize();
-            printSampleThreads();
         }
         return getResult();
     }
@@ -204,10 +198,6 @@ final class DCmdConfigure extends AbstractDCmd {
         print("Dump path: ");
         printPath(Options.getDumpPath());
         println();
-    }
-
-    private void printSampleThreads() {
-        println("Sample threads: " + Options.getSampleThreads());
     }
 
     private void printStackDepth() {
@@ -240,5 +230,20 @@ final class DCmdConfigure extends AbstractDCmd {
         print("Max chunk size: ");
         printBytes(Options.getMaxChunkSize());
         println();
+    }
+
+    @Override
+    public String[] printHelp() {
+        throw new InternalError("Should not reach here!");
+    }
+
+    @Override
+    public Argument[] getArgumentInfos() {
+        throw new InternalError("Should not reach here!");
+    }
+
+    @Override
+    protected void execute(ArgumentParser parser) throws DCmdException {
+        throw new InternalError("Should not reach here!");
     }
 }

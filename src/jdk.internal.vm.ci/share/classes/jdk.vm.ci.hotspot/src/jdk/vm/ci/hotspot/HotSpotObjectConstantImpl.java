@@ -23,6 +23,7 @@
 package jdk.vm.ci.hotspot;
 
 import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.runtime;
+import static jdk.vm.ci.services.Services.IS_IN_NATIVE_IMAGE;
 
 import jdk.vm.ci.meta.Assumptions;
 import jdk.vm.ci.meta.JavaConstant;
@@ -71,7 +72,7 @@ abstract class HotSpotObjectConstantImpl implements HotSpotObjectConstant {
         }
         // read ConstantCallSite.isFrozen as a volatile field
         HotSpotResolvedJavaField field = HotSpotMethodHandleAccessProvider.Internals.instance().constantCallSiteFrozenField;
-        boolean isFrozen = readFieldValue(field, true /* volatile */).asBoolean();
+        boolean isFrozen = readFieldValue(field).asBoolean();
         // isFrozen true implies fully-initialized
         return isFrozen;
     }
@@ -79,7 +80,7 @@ abstract class HotSpotObjectConstantImpl implements HotSpotObjectConstant {
     private HotSpotObjectConstantImpl readTarget() {
         // read CallSite.target as a volatile field
         HotSpotResolvedJavaField field = HotSpotMethodHandleAccessProvider.Internals.instance().callSiteTargetField;
-        return (HotSpotObjectConstantImpl) readFieldValue(field, true /* volatile */);
+        return (HotSpotObjectConstantImpl) readFieldValue(field);
     }
 
     @Override
@@ -183,8 +184,18 @@ abstract class HotSpotObjectConstantImpl implements HotSpotObjectConstant {
         return (compressed ? "NarrowOop" : getJavaKind().getJavaName()) + "[" + runtime().reflection.formatString(this) + "]";
     }
 
-    public JavaConstant readFieldValue(HotSpotResolvedJavaField field, boolean isVolatile) {
-        return runtime().reflection.readFieldValue(this, field, isVolatile);
+    public JavaConstant readFieldValue(HotSpotResolvedJavaField field) {
+        if (IS_IN_NATIVE_IMAGE && this instanceof DirectHotSpotObjectConstantImpl) {
+            // cannot read fields from objects due to lack of
+            // general reflection support in native image
+            return null;
+        }
+        if (field.isStatic()) {
+            return null;
+        }
+        HotSpotResolvedObjectTypeImpl declaringClass = (HotSpotResolvedObjectTypeImpl) field.getDeclaringClass();
+        char typeChar = field.getType().getJavaKind().getTypeChar();
+        return runtime().compilerToVm.readFieldValue(this, declaringClass, field.getOffset(), typeChar);
     }
 
     public ResolvedJavaType asJavaType() {

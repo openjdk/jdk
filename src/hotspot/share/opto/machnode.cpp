@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -681,6 +681,7 @@ void MachCallNode::dump_spec(outputStream *st) const {
 }
 #endif
 
+#ifndef _LP64
 bool MachCallNode::return_value_is_used() const {
   if (tf()->range()->cnt() == TypeFunc::Parms) {
     // void return
@@ -697,6 +698,7 @@ bool MachCallNode::return_value_is_used() const {
   }
   return false;
 }
+#endif
 
 // Similar to cousin class CallNode::returns_pointer
 // Because this is used in deoptimization, we want the type info, not the data

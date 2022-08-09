@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,10 +69,17 @@ jvmtiError eventFilter_setStepFilter(HandlerNode *node,
 jvmtiError eventFilter_setSourceNameMatchFilter(HandlerNode *node,
                                                 jint index,
                                                 char *sourceNamePattern);
+jvmtiError eventFilter_setPlatformThreadsOnlyFilter(HandlerNode *node, jint index);
 
 /***** misc *****/
 
 jboolean eventFilter_predictFiltering(HandlerNode *node, jclass clazz, char *classname);
 jboolean isBreakpointSet(jclass clazz, jmethodID method, jlocation location);
+
+/***** debugging *****/
+
+#ifdef DEBUG
+void eventFilter_dumpHandlerFilters(HandlerNode *node);
+#endif
 
 #endif /* _EVENT_FILTER_H */

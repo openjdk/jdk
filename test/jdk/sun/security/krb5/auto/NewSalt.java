@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ public class NewSalt {
         KDC kdc = new OneKDC(null);
         if (System.getProperty("onlyonepreauth") != null) {
             KDC.saveConfig(OneKDC.KRB5_CONF, kdc,
-                    "default_tgs_enctypes=des3-cbc-sha1");
+                    "default_tgs_enctypes=aes128-sha1");
             Config.refresh();
             kdc.setOption(KDC.Option.ONLY_ONE_PREAUTH, true);
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,9 @@
 #define SHARE_GC_Z_ZFUTURE_INLINE_HPP
 
 #include "gc/z/zFuture.hpp"
+
+#include "runtime/javaThread.hpp"
 #include "runtime/semaphore.inline.hpp"
-#include "runtime/thread.hpp"
 
 template <typename T>
 inline ZFuture<T>::ZFuture() :
@@ -46,7 +47,7 @@ inline T ZFuture<T>::get() {
   // Wait for notification
   Thread* const thread = Thread::current();
   if (thread->is_Java_thread()) {
-    _sema.wait_with_safepoint_check(thread->as_Java_thread());
+    _sema.wait_with_safepoint_check(JavaThread::cast(thread));
   } else {
     _sema.wait();
   }

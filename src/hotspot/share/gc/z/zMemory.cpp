@@ -85,7 +85,19 @@ void ZMemoryManager::register_callbacks(const Callbacks& callbacks) {
   _callbacks = callbacks;
 }
 
-uintptr_t ZMemoryManager::alloc_from_front(size_t size) {
+uintptr_t ZMemoryManager::peek_low_address() const {
+  ZLocker<ZLock> locker(&_lock);
+
+  const ZMemory* const area = _freelist.first();
+  if (area != NULL) {
+    return area->start();
+  }
+
+  // Out of memory
+  return UINTPTR_MAX;
+}
+
+uintptr_t ZMemoryManager::alloc_low_address(size_t size) {
   ZLocker<ZLock> locker(&_lock);
 
   ZListIterator<ZMemory> iter(&_freelist);
@@ -110,7 +122,7 @@ uintptr_t ZMemoryManager::alloc_from_front(size_t size) {
   return UINTPTR_MAX;
 }
 
-uintptr_t ZMemoryManager::alloc_from_front_at_most(size_t size, size_t* allocated) {
+uintptr_t ZMemoryManager::alloc_low_address_at_most(size_t size, size_t* allocated) {
   ZLocker<ZLock> locker(&_lock);
 
   ZMemory* area = _freelist.first();
@@ -136,7 +148,7 @@ uintptr_t ZMemoryManager::alloc_from_front_at_most(size_t size, size_t* allocate
   return UINTPTR_MAX;
 }
 
-uintptr_t ZMemoryManager::alloc_from_back(size_t size) {
+uintptr_t ZMemoryManager::alloc_high_address(size_t size) {
   ZLocker<ZLock> locker(&_lock);
 
   ZListReverseIterator<ZMemory> iter(&_freelist);
@@ -157,31 +169,6 @@ uintptr_t ZMemoryManager::alloc_from_back(size_t size) {
   }
 
   // Out of memory
-  return UINTPTR_MAX;
-}
-
-uintptr_t ZMemoryManager::alloc_from_back_at_most(size_t size, size_t* allocated) {
-  ZLocker<ZLock> locker(&_lock);
-
-  ZMemory* area = _freelist.last();
-  if (area != NULL) {
-    if (area->size() <= size) {
-      // Smaller than or equal to requested, remove area
-      const uintptr_t start = area->start();
-      *allocated = area->size();
-      _freelist.remove(area);
-      destroy(area);
-      return start;
-    } else {
-      // Larger than requested, shrink area
-      shrink_from_back(area, size);
-      *allocated = size;
-      return area->end();
-    }
-  }
-
-  // Out of memory
-  *allocated = 0;
   return UINTPTR_MAX;
 }
 

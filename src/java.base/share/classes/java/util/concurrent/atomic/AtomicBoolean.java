@@ -68,9 +68,8 @@ public class AtomicBoolean implements java.io.Serializable {
      * @param initialValue the initial value
      */
     public AtomicBoolean(boolean initialValue) {
-        if (initialValue) {
+        if (initialValue)
             value = 1;
-        }
     }
 
     /**

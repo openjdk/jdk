@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,62 +36,7 @@ import java.security.*;
 
 public class DigestKAT {
 
-    private final static char[] hexDigits = "0123456789abcdef".toCharArray();
-
-    public static String toString(byte[] b) {
-        StringBuffer sb = new StringBuffer(b.length * 3);
-        for (int i = 0; i < b.length; i++) {
-            int k = b[i] & 0xff;
-            if (i != 0) {
-                sb.append(':');
-            }
-            sb.append(hexDigits[k >>> 4]);
-            sb.append(hexDigits[k & 0xf]);
-        }
-        return sb.toString();
-    }
-
-    public static byte[] parse(String s) {
-        try {
-            int n = s.length();
-            ByteArrayOutputStream out = new ByteArrayOutputStream(n / 3);
-            StringReader r = new StringReader(s);
-            while (true) {
-                int b1 = nextNibble(r);
-                if (b1 < 0) {
-                    break;
-                }
-                int b2 = nextNibble(r);
-                if (b2 < 0) {
-                    throw new RuntimeException("Invalid string " + s);
-                }
-                int b = (b1 << 4) | b2;
-                out.write(b);
-            }
-            return out.toByteArray();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public static byte[] b(String s) {
-        return parse(s);
-    }
-
-    private static int nextNibble(StringReader r) throws IOException {
-        while (true) {
-            int ch = r.read();
-            if (ch == -1) {
-                return -1;
-            } else if ((ch >= '0') && (ch <= '9')) {
-                return ch - '0';
-            } else if ((ch >= 'a') && (ch <= 'f')) {
-                return ch - 'a' + 10;
-            } else if ((ch >= 'A') && (ch <= 'F')) {
-                return ch - 'A' + 10;
-            }
-        }
-    }
+    private static final HexFormat HEX = HexFormat.ofDelimiter(":");
 
     static abstract class Test {
         abstract void run(Provider p) throws Exception;
@@ -118,10 +63,10 @@ public class DigestKAT {
             if (Arrays.equals(digest, myDigest) == false) {
                 System.out.println("Digest test for " + alg + " failed:");
                 if (data.length < 256) {
-                    System.out.println("data: " + DigestKAT.toString(data));
+                    System.out.println("data: " + HEX.formatHex(data));
                 }
-                System.out.println("dig:  " + DigestKAT.toString(digest));
-                System.out.println("out:  " + DigestKAT.toString(myDigest));
+                System.out.println("dig:  " + HEX.formatHex(digest));
+                System.out.println("out:  " + HEX.formatHex(myDigest));
                 throw new Exception("Digest test for " + alg + " failed");
             }
 //          System.out.println("Passed " + alg);
@@ -137,7 +82,8 @@ public class DigestKAT {
     }
 
     private static Test t(String alg, byte[] data, String digest) {
-        return new DigestTest(alg, data, parse(digest));
+        HexFormat hex = (digest.indexOf(':') < 0) ? HexFormat.of() : HexFormat.ofDelimiter(":");
+        return new DigestTest(alg, data, hex.parseHex(digest));
     }
 
     private final static byte[] ALONG, BLONG;

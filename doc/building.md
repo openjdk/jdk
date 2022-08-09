@@ -3,11 +3,11 @@
 ## TL;DR (Instructions for the Impatient)
 
 If you are eager to try out building the JDK, these simple steps works most of
-the time. They assume that you have installed Mercurial (and Cygwin if running
+the time. They assume that you have installed Git (and Cygwin if running
 on Windows) and cloned the top-level JDK repository that you want to build.
 
  1. [Get the complete source code](#getting-the-source-code): \
-    `hg clone http://hg.openjdk.java.net/jdk/jdk`
+    `git clone https://git.openjdk.java.net/jdk/`
 
  2. [Run configure](#running-configure): \
     `bash configure`
@@ -47,14 +47,14 @@ JDK.
 
 Make sure you are getting the correct version. As of JDK 10, the source is no
 longer split into separate repositories so you only need to clone one single
-repository. At the [OpenJDK Mercurial server](http://hg.openjdk.java.net/) you
+repository. At the [OpenJDK Git site](https://git.openjdk.java.net/) you
 can see a list of all available repositories. If you want to build an older version,
-e.g. JDK 8, it is recommended that you get the `jdk8u` forest, which contains
-incremental updates, instead of the `jdk8` forest, which was frozen at JDK 8 GA.
+e.g. JDK 11, it is recommended that you get the `jdk11u` repo, which contains
+incremental updates, instead of the `jdk11` repo, which was frozen at JDK 11 GA.
 
-If you are new to Mercurial, a good place to start is the [Mercurial Beginner's
-Guide](http://www.mercurial-scm.org/guide). The rest of this document assumes a
-working knowledge of Mercurial.
+If you are new to Git, a good place to start is the book [Pro
+Git](https://git-scm.com/book/en/v2). The rest of this document
+assumes a working knowledge of Git.
 
 ### Special Considerations
 
@@ -89,9 +89,21 @@ on where and how to check out the source code.
         directory. This is especially important if your user name contains
         spaces and/or mixed upper and lower case letters.
 
-      * Clone the JDK repository using the Cygwin command line `hg` client
-        as instructed in this document. That is, do *not* use another Mercurial
-        client such as TortoiseHg.
+      * You need to install a git client. You have two choices, Cygwin git or
+        Git for Windows. Unfortunately there are pros and cons with each choice.
+
+        * The Cygwin `git` client has no line ending issues and understands
+          Cygwin paths (which are used throughout the JDK build system).
+          However, it does not currently work well with the Skara CLI tooling.
+          Please see the [Skara wiki on Git clients](
+          https://wiki.openjdk.java.net/display/SKARA/Skara#Skara-Git) for
+          up-to-date information about the Skara git client support.
+
+        * The [Git for Windows](https://gitforwindows.org) client has issues
+          with line endings, and do not understand Cygwin paths. It does work
+          well with the Skara CLI tooling, however. To alleviate the line ending
+          problems, make sure you set `core.autocrlf` to `false` (this is asked
+          during installation).
 
     Failure to follow this procedure might result in hard-to-debug build
     problems.
@@ -122,6 +134,14 @@ space is required.
 
 If you do not have access to sufficiently powerful hardware, it is also
 possible to use [cross-compiling](#cross-compiling).
+
+#### Branch Protection
+
+In order to use Branch Protection features in the VM, `--enable-branch-protection`
+must be used. This option requires C++ compiler support (GCC 9.1.0+ or Clang
+10+). The resulting build can be run on both machines with and without support
+for branch protection in hardware. Branch Protection is only supported for
+Linux targets.
 
 ### Building on 32-bit arm
 
@@ -167,13 +187,13 @@ On Windows, it is important that you pay attention to the instructions in the
 
 Windows is the only non-POSIX OS supported by the JDK, and as such, requires
 some extra care. A POSIX support layer is required to build on Windows.
-Currently, the only supported such layers are Cygwin and Windows Subsystem for
-Linux (WSL). (Msys is no longer supported due to a too old bash; msys2 would
-likely be possible to support in a future version but that would require effort
-to implement.)
+Currently, the only supported such layers are Cygwin, Windows Subsystem for
+Linux (WSL), and MSYS2. (MSYS is no longer supported due to an outdated bash;
+While OpenJDK can be built with MSYS2, support for it is still experimental, so
+build failures and unusual errors are not uncommon.)
 
 Internally in the build system, all paths are represented as Unix-style paths,
-e.g. `/cygdrive/c/hg/jdk9/Makefile` rather than `C:\hg\jdk9\Makefile`. This
+e.g. `/cygdrive/c/git/jdk/Makefile` rather than `C:\git\jdk\Makefile`. This
 rule also applies to input to the build system, e.g. in arguments to
 `configure`. So, use `--with-msvcr-dll=/cygdrive/c/msvcr100.dll` rather than
 `--with-msvcr-dll=c:\msvcr100.dll`. For details on this conversion, see the section
@@ -224,8 +244,8 @@ It's possible to build both Windows and Linux binaries from WSL. To build
 Windows binaries, you must use a Windows boot JDK (located in a
 Windows-accessible directory). To build Linux binaries, you must use a Linux
 boot JDK. The default behavior is to build for Windows. To build for Linux, pass
-`--build=x86_64-unknown-linux-gnu --host=x86_64-unknown-linux-gnu` to
-`configure`.
+`--build=x86_64-unknown-linux-gnu --openjdk-target=x86_64-unknown-linux-gnu`
+to `configure`.
 
 If building Windows binaries, the source code must be located in a Windows-
 accessible directory. This is because Windows executables (such as Visual Studio
@@ -309,9 +329,9 @@ issues.
 
  Operating system   Toolchain version
  ------------------ -------------------------------------------------------
- Linux              gcc 10.2.0
+ Linux              gcc 11.2.0
  macOS              Apple Xcode 10.1 (using clang 10.0.0)
- Windows            Microsoft Visual Studio 2019 update 16.7.2
+ Windows            Microsoft Visual Studio 2022 update 17.1.0
 
 All compilers are expected to be able to compile to the C99 language standard,
 as some C99 features are used in the source code. Microsoft Visual Studio
@@ -323,7 +343,7 @@ features that it does support.
 The minimum accepted version of gcc is 5.0. Older versions will generate a warning
 by `configure` and are unlikely to work.
 
-The JDK is currently known to be able to compile with at least version 10.2 of
+The JDK is currently known to be able to compile with at least version 11.2 of
 gcc.
 
 In general, any version between these two should be usable.
@@ -362,13 +382,17 @@ available for this update.
 
 ### Microsoft Visual Studio
 
-The minimum accepted version of Visual Studio is 2017. Older versions will not
-be accepted by `configure` and will not work. The maximum accepted
-version of Visual Studio is 2019.
+For aarch64 machines running Windows the minimum accepted version is Visual Studio 2019
+(16.8 or higher). For all other platforms the minimum accepted version of
+Visual Studio is 2017. Older versions will not be accepted by `configure` and will
+not work. For all platforms the maximum accepted version of Visual Studio is 2022.
 
 If you have multiple versions of Visual Studio installed, `configure` will by
 default pick the latest. You can request a specific version to be used by
 setting `--with-toolchain-version`, e.g. `--with-toolchain-version=2017`.
+
+If you have Visual Studio installed but `configure` fails to detect it, it may
+be because of [spaces in path](#spaces-in-path).
 
 ### IBM XL C/C++
 
@@ -439,6 +463,7 @@ rather than bundling the JDK's own copy.
   * To install on an rpm-based Linux, try running `sudo yum install
     freetype-devel`.
   * To install on Alpine Linux, try running `sudo apk add freetype-dev`.
+  * To install on macOS, try running `brew install freetype`.
 
 Use `--with-freetype-include=<path>` and `--with-freetype-lib=<path>`
 if `configure` does not automatically locate the platform FreeType files.
@@ -641,7 +666,7 @@ features, use `bash configure --help=short` instead.)
 On Linux, BSD and AIX, it is possible to override where Java by default
 searches for runtime/JNI libraries. This can be useful in situations where
 there is a special shared directory for system JNI libraries. This setting
-can in turn be overriden at runtime by setting the `java.library.path` property.
+can in turn be overridden at runtime by setting the `java.library.path` property.
 
   * `--with-jni-libpath=<path>` - Use the specified path as a default
   when searching for runtime libraries.
@@ -707,7 +732,7 @@ hard to use properly. Therefore, `configure` will print a warning if this is
 detected.
 
 However, there are a few `configure` variables, known as *control variables*
-that are supposed to be overriden on the command line. These are variables that
+that are supposed to be overridden on the command line. These are variables that
 describe the location of tools needed by the build, like `MAKE` or `GREP`. If
 any such variable is specified, `configure` will use that value instead of
 trying to autodetect the tool. For instance, `bash configure
@@ -787,7 +812,7 @@ broken build. Unless you're well versed in the build system, this is hard to
 use properly. Therefore, `make` will print a warning if this is detected.
 
 However, there are a few `make` variables, known as *control variables* that
-are supposed to be overriden on the command line. These make up the "make time"
+are supposed to be overridden on the command line. These make up the "make time"
 configuration, as opposed to the "configure time" configuration.
 
 #### General Make Control Variables
@@ -802,7 +827,7 @@ configuration, as opposed to the "configure time" configuration.
 #### Test Make Control Variables
 
 These make control variables only make sense when running tests. Please see
-[Testing the JDK](testing.html) for details.
+**Testing the JDK** ([html](testing.html), [markdown](testing.md)) for details.
 
   * `TEST`
   * `TEST_JOBS`
@@ -832,7 +857,7 @@ containing `lib/jtreg.jar` etc.
 
 The [Adoption Group](https://wiki.openjdk.java.net/display/Adoption) provides
 recent builds of jtreg [here](
-https://ci.adoptopenjdk.net/view/Dependencies/job/jtreg/lastSuccessfulBuild/artifact).
+https://ci.adoptopenjdk.net/view/Dependencies/job/dependency_pipeline/lastSuccessfulBuild/artifact/jtreg/).
 Download the latest `.tar.gz` file, unpack it, and point `--with-jtreg` to the
 `jtreg` directory that you just unpacked.
 
@@ -849,8 +874,8 @@ To execute the most basic tests (tier 1), use:
 make run-test-tier1
 ```
 
-For more details on how to run tests, please see the [Testing
-the JDK](testing.html) document.
+For more details on how to run tests, please see **Testing the JDK**
+([html](testing.html), [markdown](testing.md)).
 
 ## Cross-compiling
 
@@ -961,10 +986,15 @@ You *must* specify the target platform when cross-compiling. Doing so will also
 automatically turn the build into a cross-compiling mode. The simplest way to
 do this is to use the `--openjdk-target` argument, e.g.
 `--openjdk-target=arm-linux-gnueabihf`. or `--openjdk-target=aarch64-oe-linux`.
-This will automatically set the `--build`, `--host` and `--target` options for
+This will automatically set the `--host` and `--target` options for
 autoconf, which can otherwise be confusing. (In autoconf terminology, the
 "target" is known as "host", and "target" is used for building a Canadian
 cross-compiler.)
+
+If `--build` has not been explicitly passed to configure, `--openjdk-target`
+will autodetect the build platform and internally set the flag automatically,
+otherwise the platform that was explicitly passed to `--build` will be used
+instead.
 
 ### Toolchain Considerations
 
@@ -1074,7 +1104,7 @@ Note that X11 is needed even if you only want to build a headless JDK.
   * If the X11 libraries are not properly detected by `configure`, you can
     point them out by `--with-x`.
 
-### Creating And Using Sysroots With qemu-deboostrap
+### Cross compiling with Debian sysroots
 
 Fortunately, you can create sysroots for foreign architectures with tools
 provided by your OS. On Debian/Ubuntu systems, one could use `qemu-deboostrap` to
@@ -1095,7 +1125,7 @@ For example, cross-compiling to AArch64 from x86_64 could be done like this:
     sudo qemu-debootstrap \
       --arch=arm64 \
       --verbose \
-      --include=fakeroot,symlinks,build-essential,libx11-dev,libxext-dev,libxrender-dev,libxrandr-dev,libxtst-dev,libxt-dev,libcups2-dev,libfontconfig1-dev,libasound2-dev,libfreetype6-dev,libpng-dev \
+      --include=fakeroot,symlinks,build-essential,libx11-dev,libxext-dev,libxrender-dev,libxrandr-dev,libxtst-dev,libxt-dev,libcups2-dev,libfontconfig1-dev,libasound2-dev,libfreetype6-dev,libpng-dev,libffi-dev \
       --resolve-deps \
       buster \
       ~/sysroot-arm64 \
@@ -1109,13 +1139,9 @@ For example, cross-compiling to AArch64 from x86_64 could be done like this:
 
   * Configure and build with newly created chroot as sysroot/toolchain-path:
     ```
-    CC=aarch64-linux-gnu-gcc CXX=aarch64-linux-gnu-g++ sh ./configure \
-     --openjdk-target=aarch64-linux-gnu \
-     --with-sysroot=~/sysroot-arm64 \
-     --with-toolchain-path=~/sysroot-arm64 \
-     --with-freetype-lib=~/sysroot-arm64/usr/lib/aarch64-linux-gnu/ \
-     --with-freetype-include=~/sysroot-arm64/usr/include/freetype2/ \
-     --x-libraries=~/sysroot-arm64/usr/lib/aarch64-linux-gnu/
+    sh ./configure \
+      --openjdk-target=aarch64-linux-gnu \
+      --with-sysroot=~/sysroot-arm64
     make images
     ls build/linux-aarch64-server-release/
     ```
@@ -1123,17 +1149,34 @@ For example, cross-compiling to AArch64 from x86_64 could be done like this:
 The build does not create new files in that chroot, so it can be reused for multiple builds
 without additional cleanup.
 
+The build system should automatically detect the toolchain paths and dependencies, but sometimes
+it might require a little nudge with:
+
+  * Native compilers: override `CC` or `CXX` for `./configure`
+
+  * Freetype lib location: override `--with-freetype-lib`, for example `${sysroot}/usr/lib/${target}/`
+
+  * Freetype includes location: override `--with-freetype-include` for example `${sysroot}/usr/include/freetype2/`
+
+  * X11 libraries location: override `--x-libraries`, for example `${sysroot}/usr/lib/${target}/`
+
 Architectures that are known to successfully cross-compile like this are:
 
-  Target        `CC`                      `CXX`                       `--arch=...`  `--openjdk-target=...`
-  ------------  ------------------------- --------------------------- ------------- -----------------------
-  x86           default                   default                     i386          i386-linux-gnu
-  armhf         gcc-arm-linux-gnueabihf   g++-arm-linux-gnueabihf     armhf         arm-linux-gnueabihf
-  aarch64       gcc-aarch64-linux-gnu     g++-aarch64-linux-gnu       arm64         aarch64-linux-gnu
-  ppc64el       gcc-powerpc64le-linux-gnu g++-powerpc64le-linux-gnu   ppc64el       powerpc64le-linux-gnu
-  s390x         gcc-s390x-linux-gnu       g++-s390x-linux-gnu         s390x         s390x-linux-gnu
-
-Additional architectures might be supported by Debian/Ubuntu Ports.
+  Target        Debian tree  Debian arch   `--openjdk-target=...`   `--with-jvm-variants=...`
+  ------------  ------------ ------------- ------------------------ --------------
+  x86           buster       i386          i386-linux-gnu           (all)
+  arm           buster       armhf         arm-linux-gnueabihf      (all)
+  aarch64       buster       arm64         aarch64-linux-gnu        (all)
+  ppc64le       buster       ppc64el       powerpc64le-linux-gnu    (all)
+  s390x         buster       s390x         s390x-linux-gnu          (all)
+  mipsle        buster       mipsel        mipsel-linux-gnu         zero
+  mips64le      buster       mips64el      mips64el-linux-gnueabi64 zero
+  armel         buster       arm           arm-linux-gnueabi        zero
+  ppc           sid          powerpc       powerpc-linux-gnu        zero
+  ppc64be       sid          ppc64         powerpc64-linux-gnu      (all)
+  m68k          sid          m68k          m68k-linux-gnu           zero
+  alpha         sid          alpha         alpha-linux-gnu          zero
+  sh4           sid          sh4           sh4-linux-gnu            zero
 
 ### Building for ARM/aarch64
 
@@ -1253,8 +1296,10 @@ run `configure` using `--enable-icecc`.
 
 ### Using sjavac
 
-To speed up Java compilation, especially incremental compilations, you can try
-the experimental sjavac compiler by using `--enable-sjavac`.
+To speed up compilation of Java code, especially during incremental compilations,
+the sjavac server is automatically enabled in the configuration step by default.
+To explicitly enable or disable sjavac, use either `--enable-javac-server`
+or `--disable-javac-server`.
 
 ### Building the Right Target
 
@@ -1286,14 +1331,14 @@ ERROR: Build failed for target 'hotspot' in configuration 'linux-x64' (exit code
 
 === Output from failing command(s) repeated here ===
 * For target hotspot_variant-server_libjvm_objs_psMemoryPool.o:
-/localhome/hg/jdk9-sandbox/hotspot/src/share/vm/services/psMemoryPool.cpp:1:1: error: 'failhere' does not name a type
+/localhome/git/jdk-sandbox/hotspot/src/share/vm/services/psMemoryPool.cpp:1:1: error: 'failhere' does not name a type
    ... (rest of output omitted)
 
-* All command lines available in /localhome/hg/jdk9-sandbox/build/linux-x64/make-support/failure-logs.
+* All command lines available in /localhome/git/jdk-sandbox/build/linux-x64/make-support/failure-logs.
 === End of repeated output ===
 
 === Make failed targets repeated here ===
-lib/CompileJvm.gmk:207: recipe for target '/localhome/hg/jdk9-sandbox/build/linux-x64/hotspot/variant-server/libjvm/objs/psMemoryPool.o' failed
+lib/CompileJvm.gmk:207: recipe for target '/localhome/git/jdk-sandbox/build/linux-x64/hotspot/variant-server/libjvm/objs/psMemoryPool.o' failed
 make/Main.gmk:263: recipe for target 'hotspot-server-libs' failed
 === End of repeated output ===
 
@@ -1391,7 +1436,7 @@ order. Most issues will be solved at step 1 or 2.
 
  1. Make sure your repository is up-to-date
 
-    Run `hg pull -u` to make sure you have the latest changes.
+    Run `git pull origin master` to make sure you have the latest changes.
 
  2. Clean build results
 
@@ -1416,13 +1461,13 @@ order. Most issues will be solved at step 1 or 2.
     make
     ```
 
- 4. Re-clone the Mercurial repository
+ 4. Re-clone the Git repository
 
-    Sometimes the Mercurial repository gets in a state that causes the product
+    Sometimes the Git repository gets in a state that causes the product
     to be un-buildable. In such a case, the simplest solution is often the
     "sledgehammer approach": delete the entire repository, and re-clone it.
     If you have local changes, save them first to a different location using
-    `hg export`.
+    `git format-patch`.
 
 ### Specific Build Issues
 
@@ -1454,6 +1499,15 @@ This can be a sign of a Cygwin problem. See the information about solving
 problems in the [Cygwin](#cygwin) section. Rebooting the computer might help
 temporarily.
 
+#### Spaces in Path
+
+On Windows, when configuring, `fixpath.sh` may report that some directory
+names have spaces. Usually, it assumes those directories have
+[short paths](https://docs.microsoft.com/en-us/windows-server/administration/windows-commands/fsutil-8dot3name).
+You can run `fsutil file setshortname` in `cmd` on certain directories, such as
+`Microsoft Visual Studio` or `Windows Kits`, to assign arbitrary short paths so
+`configure` can access them.
+
 ### Getting Help
 
 If none of the suggestions in this document helps you, or if you find what you
@@ -1465,34 +1519,97 @@ If you need general help or advice about developing for the JDK, you can also
 contact the Adoption Group. See the section on [Contributing to OpenJDK](
 #contributing-to-openjdk) for more information.
 
+## Reproducible Builds
+
+Build reproducibility is the property of getting exactly the same bits out when
+building, every time, independent on who builds the product, or where. This is
+for many reasons a harder goal than it initially appears, but it is an important
+goal, for security reasons and others. Please see [Reproducible Builds](
+https://reproducible-builds.org) for more information about the background and
+reasons for reproducible builds.
+
+Currently, it is not possible to build OpenJDK fully reproducibly, but getting
+there is an ongoing effort.
+
+An absolute prerequisite for building reproducible is to speficy a fixed build
+time, since time stamps are embedded in many file formats. This is done by
+setting the `SOURCE_DATE_EPOCH` environment variable, which is an [industry
+standard]( https://reproducible-builds.org/docs/source-date-epoch/), that many
+tools, such as gcc, recognize, and use in place of the current time when
+generating output.
+
+To generate reproducible builds, you must set `SOURCE_DATE_EPOCH` before running
+`configure`. The value in `SOURCE_DATE_EPOCH` will be stored in the
+configuration, and used by `make`. Setting `SOURCE_DATE_EPOCH` before running
+`make` will have no effect on the build.
+
+You must also make sure your build does not rely on `configure`'s default adhoc
+version strings. Default adhoc version strings `OPT` segment include user name
+and source directory. You can either override just the `OPT` segment using
+`--with-version-opt=<any fixed string>`, or you can specify the entire version
+string using `--with-version-string=<your version>`.
+
+This is a typical example of how to build the JDK in a reproducible way:
+
+```
+export SOURCE_DATE_EPOCH=946684800
+bash configure --with-version-opt=adhoc
+make
+```
+
+Note that regardless if you specify a source date for `configure` or not, the
+JDK build system will set `SOURCE_DATE_EPOCH` for all build tools when building.
+If `--with-source-date` has the value `current` (which is the default unless
+`SOURCE_DATE_EPOCH` is found by in the environment by `configure`), the source
+date value will be determined at configure time.
+
+There are several aspects of reproducible builds that can be individually
+adjusted by `configure` arguments. If any of these are given, they will override
+the value derived from `SOURCE_DATE_EPOCH`. These arguments are:
+
+ * `--with-source-date`
+
+    This option controls how the JDK build sets `SOURCE_DATE_EPOCH` when
+    building. It can be set to a value describing a date, either an epoch based
+    timestamp as an integer, or a valid ISO-8601 date.
+
+    It can also be set to one of the special values `current`, `updated` or
+    `version`. `current` means that the time of running `configure` will be
+    used. `version` will use the nominal release date for the current JDK
+    version. `updated`, which means that `SOURCE_DATE_EPOCH` will be set to the
+    current time each time you are running `make`. All choices, except for
+    `updated`, will set a fixed value for the source date timestamp.
+
+    When `SOURCE_DATE_EPOCH` is set, the default value for `--with-source-date`
+    will be the value given by `SOURCE_DATE_EPOCH`. Otherwise, the default value
+    is `current`.
+
+ * `--with-hotspot-build-time`
+
+    This option controls the build time string that will be included in the
+    hotspot library (`libjvm.so` or `jvm.dll`). When the source date is fixed
+    (e.g. by setting `SOURCE_DATE_EPOCH`), the default value for
+    `--with-hotspot-build-time` will be an ISO 8601 representation of that time
+    stamp. Otherwise the default value will be the current time when building
+    hotspot.
+
+ * `--with-copyright-year`
+
+    This option controls the copyright year in some generated text files. When
+    the source date is fixed (e.g. by setting `SOURCE_DATE_EPOCH`), the default
+    value for `--with-copyright-year` will be the year of that time stamp.
+    Otherwise the default is the current year at the time of running configure.
+    This can be overridden by `--with-copyright-year=<year>`.
+
+ * `--enable-reproducible-build`
+
+    This option controls some additional behavior needed to make the build
+    reproducible. When the source date is fixed (e.g. by setting
+    `SOURCE_DATE_EPOCH`), this flag will be turned on by default. Otherwise, the
+    value is determined by heuristics. If it is explicitly turned off, the build
+    might not be reproducible.
+
 ## Hints and Suggestions for Advanced Users
-
-### Setting Up a Repository for Pushing Changes (defpath)
-
-To help you prepare a proper push path for a Mercurial repository, there exists
-a useful tool known as [defpath](
-http://openjdk.java.net/projects/code-tools/defpath). It will help you setup a
-proper push path for pushing changes to the JDK.
-
-Install the extension by cloning
-`http://hg.openjdk.java.net/code-tools/defpath` and updating your `.hgrc` file.
-Here's one way to do this:
-
-```
-cd ~
-mkdir hg-ext
-cd hg-ext
-hg clone http://hg.openjdk.java.net/code-tools/defpath
-cat << EOT >> ~/.hgrc
-[extensions]
-defpath=~/hg-ext/defpath/defpath.py
-EOT
-```
-
-You can now setup a proper push path using:
-```
-hg defpath -d -u <your OpenJDK username>
-```
 
 ### Bash Completion
 
@@ -1559,8 +1676,8 @@ update. This might speed up the build, but comes at the risk of an incorrect
 build result. This is only recommended if you know what you're doing.
 
 From time to time, you will also need to modify the command line to `configure`
-due to changes. Use `make print-configure` to show the command line used for
-your current configuration.
+due to changes. Use `make print-configuration` to show the command line used
+for your current configuration.
 
 ### Using Fine-Grained Make Targets
 
@@ -1633,16 +1750,6 @@ pattern that will be used to limit the set of files being recompiled. For
 instance, `make java.base JDK_FILTER=javax/crypto` (or, to combine methods,
 `make java.base-java-only JDK_FILTER=javax/crypto`) will limit the compilation
 to files in the `javax.crypto` package.
-
-### Learn About Mercurial
-
-To become an efficient JDK developer, it is recommended that you invest in
-learning Mercurial properly. Here are some links that can get you started:
-
-  * [Mercurial for git users](http://www.mercurial-scm.org/wiki/GitConcepts)
-  * [The official Mercurial tutorial](http://www.mercurial-scm.org/wiki/Tutorial)
-  * [hg init](http://hginit.com/)
-  * [Mercurial: The Definitive Guide](http://hgbook.red-bean.com/read/)
 
 ## Understanding the Build System
 

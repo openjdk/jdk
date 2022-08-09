@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,6 +71,8 @@ void JNICALL jfr_subscribe_log_level(JNIEnv* env, jobject jvm, jobject log_tag, 
 
 void JNICALL jfr_log(JNIEnv* env, jobject jvm, jint tag_set, jint level, jstring message);
 
+void JNICALL jfr_log_event(JNIEnv* env, jobject jvm, jint level, jobjectArray lines, jboolean system);
+
 void JNICALL jfr_retransform_classes(JNIEnv* env, jobject jvm, jobjectArray classes);
 
 void JNICALL jfr_set_enabled(JNIEnv* env, jobject jvm, jlong event_type_id, jboolean enabled);
@@ -81,11 +83,9 @@ void JNICALL jfr_set_global_buffer_count(JNIEnv* env, jobject jvm, jlong count);
 
 void JNICALL jfr_set_global_buffer_size(JNIEnv* env, jobject jvm, jlong size);
 
-void JNICALL jfr_set_method_sampling_interval(JNIEnv* env, jobject jvm, jlong type, jlong intervalMillis);
+void JNICALL jfr_set_method_sampling_period(JNIEnv* env, jobject jvm, jlong type, jlong periodMillis);
 
 void JNICALL jfr_set_output(JNIEnv* env, jobject jvm, jstring path);
-
-void JNICALL jfr_set_sample_threads(JNIEnv* env, jobject jvm, jboolean sampleThreads);
 
 void JNICALL jfr_set_stack_depth(JNIEnv* env, jobject jvm, jint depth);
 
@@ -111,6 +111,10 @@ jlong JNICALL jfr_type_id(JNIEnv* env, jobject jvm, jclass jc);
 
 void JNICALL jfr_set_repository_location(JNIEnv* env, jobject repo, jstring location);
 
+void JNICALL jfr_set_dump_path(JNIEnv* env, jobject jvm, jstring dumppath);
+
+jstring JNICALL jfr_get_dump_path(JNIEnv* env, jobject jvm);
+
 jobject JNICALL jfr_get_event_writer(JNIEnv* env, jclass cls);
 
 jobject JNICALL jfr_new_event_writer(JNIEnv* env, jclass cls);
@@ -120,9 +124,7 @@ jboolean JNICALL jfr_event_writer_flush(JNIEnv* env, jclass cls, jobject writer,
 void JNICALL jfr_flush(JNIEnv* env, jobject jvm);
 void JNICALL jfr_abort(JNIEnv* env, jobject jvm, jstring errorMsg);
 
-jlong JNICALL jfr_get_epoch_address(JNIEnv* env, jobject jvm);
-
-jboolean JNICALL jfr_add_string_constant(JNIEnv* env, jclass jvm, jboolean epoch, jlong id, jstring string);
+jboolean JNICALL jfr_add_string_constant(JNIEnv* env, jclass jvm, jlong id, jstring string);
 
 void JNICALL jfr_uncaught_exception(JNIEnv* env, jobject jvm, jobject thread, jthrowable throwable);
 
@@ -131,6 +133,8 @@ void JNICALL jfr_set_force_instrumentation(JNIEnv* env, jobject jvm, jboolean fo
 jlong JNICALL jfr_get_unloaded_event_classes_count(JNIEnv* env, jobject jvm);
 
 jboolean JNICALL jfr_set_cutoff(JNIEnv* env, jobject jvm, jlong event_type_id, jlong cutoff_ticks);
+
+jboolean JNICALL jfr_set_throttle(JNIEnv* env, jobject jvm, jlong event_type_id, jlong event_sample_size, jlong period_ms);
 
 void JNICALL jfr_emit_old_object_samples(JNIEnv* env, jobject jvm, jlong cutoff_ticks, jboolean, jboolean);
 
@@ -144,11 +148,17 @@ jboolean JNICALL jfr_is_thread_excluded(JNIEnv* env, jobject jvm, jobject t);
 
 jlong JNICALL jfr_chunk_start_nanos(JNIEnv* env, jobject jvm);
 
-jobject JNICALL jfr_get_handler(JNIEnv* env, jobject jvm, jobject clazz);
+jobject JNICALL jfr_get_configuration(JNIEnv* env, jobject jvm, jobject clazz);
 
-jboolean JNICALL jfr_set_handler(JNIEnv* env, jobject jvm, jobject clazz, jobject handler);
+jboolean JNICALL jfr_set_configuration(JNIEnv* env, jobject jvm, jobject clazz, jobject configuration);
 
 jlong JNICALL jfr_get_type_id_from_string(JNIEnv* env, jobject jvm, jstring type);
+
+jboolean JNICALL jfr_is_class_excluded(JNIEnv* env, jobject jvm, jclass clazz);
+
+jboolean JNICALL jfr_is_class_instrumented(JNIEnv* env, jobject jvm, jclass clazz);
+
+jboolean JNICALL jfr_is_containerized(JNIEnv* env, jobject jvm);
 
 #ifdef __cplusplus
 }

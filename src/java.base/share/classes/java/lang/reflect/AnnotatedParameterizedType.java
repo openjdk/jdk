@@ -38,6 +38,10 @@ public interface AnnotatedParameterizedType extends AnnotatedType {
     /**
      * Returns the potentially annotated actual type arguments of this parameterized type.
      *
+     * <p>Note that in some cases, the returned array can be empty. This can occur
+     * if this annotated type represents a non-parameterized type nested within
+     * a parameterized type.
+     *
      * @return the potentially annotated actual type arguments of this parameterized type
      * @see ParameterizedType#getActualTypeArguments()
      */
@@ -49,13 +53,13 @@ public interface AnnotatedParameterizedType extends AnnotatedType {
      * {@code @TA O<T>.I<S>}, return a representation of {@code @TA O<T>}.
      *
      * <p>Returns {@code null} if this {@code AnnotatedType} represents a
-     *     top-level type, or a local or anonymous class, or a primitive type, or
-     *     void.
+     *     top-level class or interface, or a local or anonymous class, or
+     *     a primitive type, or void.
      *
      * @return an {@code AnnotatedType} object representing the potentially
      *     annotated type that this type is a member of, or {@code null}
      * @throws TypeNotPresentException if the owner type
-     *     refers to a non-existent type declaration
+     *     refers to a non-existent class or interface declaration
      * @throws MalformedParameterizedTypeException if the owner type
      *     refers to a parameterized type that cannot be instantiated
      *     for any reason

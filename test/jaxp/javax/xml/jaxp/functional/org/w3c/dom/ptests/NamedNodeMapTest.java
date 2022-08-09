@@ -37,7 +37,7 @@ import org.w3c.dom.NodeList;
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true org.w3c.dom.ptests.NamedNodeMapTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow org.w3c.dom.ptests.NamedNodeMapTest
  * @run testng/othervm org.w3c.dom.ptests.NamedNodeMapTest
  * @summary Test for the methods of NamedNodeMap Interface
  */

@@ -61,7 +61,7 @@ import org.xml.sax.SAXParseException;
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true test.auctionportal.AuctionItemRepository
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow test.auctionportal.AuctionItemRepository
  * @run testng/othervm test.auctionportal.AuctionItemRepository
  */
 @Listeners({jaxp.library.FilePolicy.class})

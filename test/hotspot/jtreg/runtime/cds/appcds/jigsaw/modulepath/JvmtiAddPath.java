@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,8 @@
  * @summary JvmtiEnv::AddToBootstrapClassLoaderSearch and JvmtiEnv::AddToSystemClassLoaderSearch should disable AppCDS
  * @requires vm.cds
  * @library /test/jdk/lib/testlibrary /test/lib /test/hotspot/jtreg/runtime/cds/appcds
- * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @compile ../../test-classes/JvmtiApp.java
  * @run driver/timeout=240 JvmtiAddPath
  */
@@ -37,8 +37,9 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.process.OutputAnalyzer;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 public class JvmtiAddPath {
     static String use_whitebox_jar;
@@ -50,7 +51,7 @@ public class JvmtiAddPath {
         "[class,load] ExtraClass source: file:"
     };
 
-    private static final Path USER_DIR = Paths.get(System.getProperty("user.dir"));
+    private static final Path USER_DIR = Paths.get(CDSTestUtils.getOutputDir());
 
     private static final String TEST_SRC = System.getProperty("test.src");
 
@@ -93,7 +94,7 @@ public class JvmtiAddPath {
     public static void main(String[] args) throws Exception {
         buildTestModule();
         JarBuilder.build("jvmti_app", "JvmtiApp", "ExtraClass");
-        JarBuilder.build(true, "WhiteBox", "sun/hotspot/WhiteBox");
+        JarBuilder.build(true, "WhiteBox", "jdk/test/whitebox/WhiteBox");
 
         // In all the test cases below, appJar does not contain Hello.class. Instead, we
         // append JAR file(s) that contain Hello.class to the boot classpath, the app

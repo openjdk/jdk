@@ -170,55 +170,51 @@ class CharPredicates {
     /////////////////////////////////////////////////////////////////////////////
 
     private static CharPredicate getPosixPredicate(String name, boolean caseIns) {
-        switch (name) {
-            case "ALPHA": return ALPHABETIC();
-            case "LOWER": return caseIns
+        return switch (name) {
+            case "ALPHA" -> ALPHABETIC();
+            case "LOWER" -> caseIns
                                 ? LOWERCASE().union(UPPERCASE(), TITLECASE())
                                 : LOWERCASE();
-            case "UPPER": return caseIns
+            case "UPPER" -> caseIns
                                 ? UPPERCASE().union(LOWERCASE(), TITLECASE())
                                 : UPPERCASE();
-            case "SPACE": return WHITE_SPACE();
-            case "PUNCT": return PUNCTUATION();
-            case "XDIGIT": return HEX_DIGIT();
-            case "ALNUM": return ALNUM();
-            case "CNTRL": return CONTROL();
-            case "DIGIT": return DIGIT();
-            case "BLANK": return BLANK();
-            case "GRAPH": return GRAPH();
-            case "PRINT": return PRINT();
-            default: return null;
-        }
+            case "SPACE" -> WHITE_SPACE();
+            case "PUNCT" -> PUNCTUATION();
+            case "XDIGIT" -> HEX_DIGIT();
+            case "ALNUM" -> ALNUM();
+            case "CNTRL" -> CONTROL();
+            case "DIGIT" -> DIGIT();
+            case "BLANK" -> BLANK();
+            case "GRAPH" -> GRAPH();
+            case "PRINT" -> PRINT();
+            default -> null;
+        };
     }
 
     private static CharPredicate getUnicodePredicate(String name, boolean caseIns) {
-        switch (name) {
-            case "ALPHABETIC": return ALPHABETIC();
-            case "ASSIGNED": return ASSIGNED();
-            case "CONTROL": return CONTROL();
-            case "HEXDIGIT":
-            case "HEX_DIGIT": return HEX_DIGIT();
-            case "IDEOGRAPHIC": return IDEOGRAPHIC();
-            case "JOINCONTROL":
-            case "JOIN_CONTROL": return JOIN_CONTROL();
-            case "LETTER": return LETTER();
-            case "LOWERCASE": return caseIns
+        return switch (name) {
+            case "ALPHABETIC" -> ALPHABETIC();
+            case "ASSIGNED" -> ASSIGNED();
+            case "CONTROL" -> CONTROL();
+            case "HEXDIGIT", "HEX_DIGIT" -> HEX_DIGIT();
+            case "IDEOGRAPHIC" -> IDEOGRAPHIC();
+            case "JOINCONTROL", "JOIN_CONTROL" -> JOIN_CONTROL();
+            case "LETTER" -> LETTER();
+            case "LOWERCASE" -> caseIns
                                     ? LOWERCASE().union(UPPERCASE(), TITLECASE())
                                     : LOWERCASE();
-            case "NONCHARACTERCODEPOINT":
-            case "NONCHARACTER_CODE_POINT": return NONCHARACTER_CODE_POINT();
-            case "TITLECASE": return caseIns
+            case "NONCHARACTERCODEPOINT", "NONCHARACTER_CODE_POINT" -> NONCHARACTER_CODE_POINT();
+            case "TITLECASE" -> caseIns
                                     ? TITLECASE().union(LOWERCASE(), UPPERCASE())
                                     : TITLECASE();
-            case "PUNCTUATION": return PUNCTUATION();
-            case "UPPERCASE": return caseIns
+            case "PUNCTUATION" -> PUNCTUATION();
+            case "UPPERCASE" -> caseIns
                                     ? UPPERCASE().union(LOWERCASE(), TITLECASE())
                                     : UPPERCASE();
-            case "WHITESPACE":
-            case "WHITE_SPACE": return WHITE_SPACE();
-            case "WORD": return WORD();
-            default: return null;
-        }
+            case "WHITESPACE", "WHITE_SPACE" -> WHITE_SPACE();
+            case "WORD" -> WORD();
+            default -> null;
+        };
     }
 
     public static CharPredicate forUnicodeProperty(String propName, boolean caseIns) {
@@ -267,135 +263,135 @@ class CharPredicates {
     static CharPredicate forProperty(String name, boolean caseIns) {
         // Unicode character property aliases, defined in
         // http://www.unicode.org/Public/UNIDATA/PropertyValueAliases.txt
-        switch (name) {
-            case "Cn": return category(1<<Character.UNASSIGNED);
-            case "Lu": return category(caseIns ? (1<<Character.LOWERCASE_LETTER) |
-                                                 (1<<Character.UPPERCASE_LETTER) |
-                                                 (1<<Character.TITLECASE_LETTER)
-                                               : (1<<Character.UPPERCASE_LETTER));
-            case "Ll": return category(caseIns ? (1<<Character.LOWERCASE_LETTER) |
-                                                 (1<<Character.UPPERCASE_LETTER) |
-                                                 (1<<Character.TITLECASE_LETTER)
-                                               : (1<<Character.LOWERCASE_LETTER));
-            case "Lt": return category(caseIns ? (1<<Character.LOWERCASE_LETTER) |
-                                                 (1<<Character.UPPERCASE_LETTER) |
-                                                 (1<<Character.TITLECASE_LETTER)
-                                               : (1<<Character.TITLECASE_LETTER));
-            case "Lm": return category(1<<Character.MODIFIER_LETTER);
-            case "Lo": return category(1<<Character.OTHER_LETTER);
-            case "Mn": return category(1<<Character.NON_SPACING_MARK);
-            case "Me": return category(1<<Character.ENCLOSING_MARK);
-            case "Mc": return category(1<<Character.COMBINING_SPACING_MARK);
-            case "Nd": return category(1<<Character.DECIMAL_DIGIT_NUMBER);
-            case "Nl": return category(1<<Character.LETTER_NUMBER);
-            case "No": return category(1<<Character.OTHER_NUMBER);
-            case "Zs": return category(1<<Character.SPACE_SEPARATOR);
-            case "Zl": return category(1<<Character.LINE_SEPARATOR);
-            case "Zp": return category(1<<Character.PARAGRAPH_SEPARATOR);
-            case "Cc": return category(1<<Character.CONTROL);
-            case "Cf": return category(1<<Character.FORMAT);
-            case "Co": return category(1<<Character.PRIVATE_USE);
-            case "Cs": return category(1<<Character.SURROGATE);
-            case "Pd": return category(1<<Character.DASH_PUNCTUATION);
-            case "Ps": return category(1<<Character.START_PUNCTUATION);
-            case "Pe": return category(1<<Character.END_PUNCTUATION);
-            case "Pc": return category(1<<Character.CONNECTOR_PUNCTUATION);
-            case "Po": return category(1<<Character.OTHER_PUNCTUATION);
-            case "Sm": return category(1<<Character.MATH_SYMBOL);
-            case "Sc": return category(1<<Character.CURRENCY_SYMBOL);
-            case "Sk": return category(1<<Character.MODIFIER_SYMBOL);
-            case "So": return category(1<<Character.OTHER_SYMBOL);
-            case "Pi": return category(1<<Character.INITIAL_QUOTE_PUNCTUATION);
-            case "Pf": return category(1<<Character.FINAL_QUOTE_PUNCTUATION);
-            case "L": return category(((1<<Character.UPPERCASE_LETTER) |
-                              (1<<Character.LOWERCASE_LETTER) |
-                              (1<<Character.TITLECASE_LETTER) |
-                              (1<<Character.MODIFIER_LETTER)  |
-                              (1<<Character.OTHER_LETTER)));
-            case "M": return category(((1<<Character.NON_SPACING_MARK) |
-                              (1<<Character.ENCLOSING_MARK)   |
-                              (1<<Character.COMBINING_SPACING_MARK)));
-            case "N": return category(((1<<Character.DECIMAL_DIGIT_NUMBER) |
-                              (1<<Character.LETTER_NUMBER)        |
-                              (1<<Character.OTHER_NUMBER)));
-            case "Z": return category(((1<<Character.SPACE_SEPARATOR) |
-                              (1<<Character.LINE_SEPARATOR)  |
-                              (1<<Character.PARAGRAPH_SEPARATOR)));
-            case "C": return category(((1<<Character.CONTROL)     |
-                              (1<<Character.FORMAT)      |
-                              (1<<Character.PRIVATE_USE) |
-                              (1<<Character.SURROGATE)   |
-                              (1<<Character.UNASSIGNED))); // Other
-            case "P": return category(((1<<Character.DASH_PUNCTUATION)      |
-                              (1<<Character.START_PUNCTUATION)     |
-                              (1<<Character.END_PUNCTUATION)       |
-                              (1<<Character.CONNECTOR_PUNCTUATION) |
-                              (1<<Character.OTHER_PUNCTUATION)     |
-                              (1<<Character.INITIAL_QUOTE_PUNCTUATION) |
-                              (1<<Character.FINAL_QUOTE_PUNCTUATION)));
-            case "S": return category(((1<<Character.MATH_SYMBOL)     |
-                              (1<<Character.CURRENCY_SYMBOL) |
-                              (1<<Character.MODIFIER_SYMBOL) |
-                              (1<<Character.OTHER_SYMBOL)));
-            case "LC": return category(((1<<Character.UPPERCASE_LETTER) |
-                               (1<<Character.LOWERCASE_LETTER) |
-                               (1<<Character.TITLECASE_LETTER)));
-            case "LD": return category(((1<<Character.UPPERCASE_LETTER) |
-                               (1<<Character.LOWERCASE_LETTER) |
-                               (1<<Character.TITLECASE_LETTER) |
-                               (1<<Character.MODIFIER_LETTER)  |
-                               (1<<Character.OTHER_LETTER)     |
-                               (1<<Character.DECIMAL_DIGIT_NUMBER)));
-            case "L1": return range(0x00, 0xFF); // Latin-1
-            case "all": return Pattern.ALL();
+        return switch (name) {
+            case "Cn" -> category(1 << Character.UNASSIGNED);
+            case "Lu" -> category(caseIns ? (1 << Character.LOWERCASE_LETTER) |
+                                            (1 << Character.UPPERCASE_LETTER) |
+                                            (1 << Character.TITLECASE_LETTER)
+                                          : (1 << Character.UPPERCASE_LETTER));
+            case "Ll" -> category(caseIns ? (1 << Character.LOWERCASE_LETTER) |
+                                            (1 << Character.UPPERCASE_LETTER) |
+                                            (1 << Character.TITLECASE_LETTER)
+                                          : (1 << Character.LOWERCASE_LETTER));
+            case "Lt" -> category(caseIns ? (1 << Character.LOWERCASE_LETTER) |
+                                            (1 << Character.UPPERCASE_LETTER) |
+                                            (1 << Character.TITLECASE_LETTER)
+                                          : (1 << Character.TITLECASE_LETTER));
+            case "Lm" -> category(1 << Character.MODIFIER_LETTER);
+            case "Lo" -> category(1 << Character.OTHER_LETTER);
+            case "Mn" -> category(1 << Character.NON_SPACING_MARK);
+            case "Me" -> category(1 << Character.ENCLOSING_MARK);
+            case "Mc" -> category(1 << Character.COMBINING_SPACING_MARK);
+            case "Nd" -> category(1 << Character.DECIMAL_DIGIT_NUMBER);
+            case "Nl" -> category(1 << Character.LETTER_NUMBER);
+            case "No" -> category(1 << Character.OTHER_NUMBER);
+            case "Zs" -> category(1 << Character.SPACE_SEPARATOR);
+            case "Zl" -> category(1 << Character.LINE_SEPARATOR);
+            case "Zp" -> category(1 << Character.PARAGRAPH_SEPARATOR);
+            case "Cc" -> category(1 << Character.CONTROL);
+            case "Cf" -> category(1 << Character.FORMAT);
+            case "Co" -> category(1 << Character.PRIVATE_USE);
+            case "Cs" -> category(1 << Character.SURROGATE);
+            case "Pd" -> category(1 << Character.DASH_PUNCTUATION);
+            case "Ps" -> category(1 << Character.START_PUNCTUATION);
+            case "Pe" -> category(1 << Character.END_PUNCTUATION);
+            case "Pc" -> category(1 << Character.CONNECTOR_PUNCTUATION);
+            case "Po" -> category(1 << Character.OTHER_PUNCTUATION);
+            case "Sm" -> category(1 << Character.MATH_SYMBOL);
+            case "Sc" -> category(1 << Character.CURRENCY_SYMBOL);
+            case "Sk" -> category(1 << Character.MODIFIER_SYMBOL);
+            case "So" -> category(1 << Character.OTHER_SYMBOL);
+            case "Pi" -> category(1 << Character.INITIAL_QUOTE_PUNCTUATION);
+            case "Pf" -> category(1 << Character.FINAL_QUOTE_PUNCTUATION);
+            case "L" -> category(((1 << Character.UPPERCASE_LETTER) |
+                                  (1 << Character.LOWERCASE_LETTER) |
+                                  (1 << Character.TITLECASE_LETTER) |
+                                  (1 << Character.MODIFIER_LETTER) |
+                                  (1 << Character.OTHER_LETTER)));
+            case "M" -> category(((1 << Character.NON_SPACING_MARK) |
+                                  (1 << Character.ENCLOSING_MARK) |
+                                  (1 << Character.COMBINING_SPACING_MARK)));
+            case "N" -> category(((1 << Character.DECIMAL_DIGIT_NUMBER) |
+                                  (1 << Character.LETTER_NUMBER) |
+                                  (1 << Character.OTHER_NUMBER)));
+            case "Z" -> category(((1 << Character.SPACE_SEPARATOR) |
+                                  (1 << Character.LINE_SEPARATOR) |
+                                  (1 << Character.PARAGRAPH_SEPARATOR)));
+            case "C" -> category(((1 << Character.CONTROL) |
+                                  (1 << Character.FORMAT) |
+                                  (1 << Character.PRIVATE_USE) |
+                                  (1 << Character.SURROGATE) |
+                                  (1 << Character.UNASSIGNED))); // Other
+            case "P" -> category(((1 << Character.DASH_PUNCTUATION) |
+                                  (1 << Character.START_PUNCTUATION) |
+                                  (1 << Character.END_PUNCTUATION) |
+                                  (1 << Character.CONNECTOR_PUNCTUATION) |
+                                  (1 << Character.OTHER_PUNCTUATION) |
+                                  (1 << Character.INITIAL_QUOTE_PUNCTUATION) |
+                                  (1 << Character.FINAL_QUOTE_PUNCTUATION)));
+            case "S" -> category(((1 << Character.MATH_SYMBOL) |
+                                  (1 << Character.CURRENCY_SYMBOL) |
+                                  (1 << Character.MODIFIER_SYMBOL) |
+                                  (1 << Character.OTHER_SYMBOL)));
+            case "LC" -> category(((1 << Character.UPPERCASE_LETTER) |
+                                   (1 << Character.LOWERCASE_LETTER) |
+                                   (1 << Character.TITLECASE_LETTER)));
+            case "LD" -> category(((1 << Character.UPPERCASE_LETTER) |
+                                   (1 << Character.LOWERCASE_LETTER) |
+                                   (1 << Character.TITLECASE_LETTER) |
+                                   (1 << Character.MODIFIER_LETTER) |
+                                   (1 << Character.OTHER_LETTER) |
+                                   (1 << Character.DECIMAL_DIGIT_NUMBER)));
+            case "L1" -> range(0x00, 0xFF); // Latin-1
+            case "all" -> Pattern.ALL();
             // Posix regular expression character classes, defined in
             // http://www.unix.org/onlinepubs/009695399/basedefs/xbd_chap09.html
-            case "ASCII": return range(0x00, 0x7F);    // ASCII
-            case "Alnum": return ctype(ASCII.ALNUM);   // Alphanumeric characters
-            case "Alpha": return ctype(ASCII.ALPHA);   // Alphabetic characters
-            case "Blank": return ctype(ASCII.BLANK);   // Space and tab characters
-            case "Cntrl": return ctype(ASCII.CNTRL);   // Control characters
-            case "Digit": return range('0', '9');      // Numeric characters
-            case "Graph": return ctype(ASCII.GRAPH);   // printable and visible
-            case "Lower": return caseIns ? ctype(ASCII.ALPHA)
+            case "ASCII" -> range(0x00, 0x7F);    // ASCII
+            case "Alnum" -> ctype(ASCII.ALNUM);   // Alphanumeric characters
+            case "Alpha" -> ctype(ASCII.ALPHA);   // Alphabetic characters
+            case "Blank" -> ctype(ASCII.BLANK);   // Space and tab characters
+            case "Cntrl" -> ctype(ASCII.CNTRL);   // Control characters
+            case "Digit" -> range('0', '9');      // Numeric characters
+            case "Graph" -> ctype(ASCII.GRAPH);   // printable and visible
+            case "Lower" -> caseIns ? ctype(ASCII.ALPHA)
                                     : range('a', 'z'); // Lower-case alphabetic
-            case "Print": return range(0x20, 0x7E);    // Printable characters
-            case "Punct": return ctype(ASCII.PUNCT);   // Punctuation characters
-            case "Space": return ctype(ASCII.SPACE);   // Space characters
-            case "Upper": return caseIns ? ctype(ASCII.ALPHA)
+            case "Print" -> range(0x20, 0x7E);    // Printable characters
+            case "Punct" -> ctype(ASCII.PUNCT);   // Punctuation characters
+            case "Space" -> ctype(ASCII.SPACE);   // Space characters
+            case "Upper" -> caseIns ? ctype(ASCII.ALPHA)
                                     : range('A', 'Z'); // Upper-case alphabetic
-            case "XDigit": return ctype(ASCII.XDIGIT); // hexadecimal digits
+            case "XDigit" -> ctype(ASCII.XDIGIT); // hexadecimal digits
 
             // Java character properties, defined by methods in Character.java
-            case "javaLowerCase": return caseIns ? c -> Character.isLowerCase(c) ||
-                                                        Character.isUpperCase(c) ||
-                                                        Character.isTitleCase(c)
-                                                 : Character::isLowerCase;
-            case "javaUpperCase": return caseIns ? c -> Character.isUpperCase(c) ||
-                                                        Character.isLowerCase(c) ||
-                                                        Character.isTitleCase(c)
-                                                 : Character::isUpperCase;
-            case "javaAlphabetic": return Character::isAlphabetic;
-            case "javaIdeographic": return Character::isIdeographic;
-            case "javaTitleCase": return caseIns ? c -> Character.isTitleCase(c) ||
-                                                        Character.isLowerCase(c) ||
-                                                        Character.isUpperCase(c)
-                                                 : Character::isTitleCase;
-            case "javaDigit": return Character::isDigit;
-            case "javaDefined": return Character::isDefined;
-            case "javaLetter": return Character::isLetter;
-            case "javaLetterOrDigit": return Character::isLetterOrDigit;
-            case "javaJavaIdentifierStart": return Character::isJavaIdentifierStart;
-            case "javaJavaIdentifierPart": return Character::isJavaIdentifierPart;
-            case "javaUnicodeIdentifierStart": return Character::isUnicodeIdentifierStart;
-            case "javaUnicodeIdentifierPart": return Character::isUnicodeIdentifierPart;
-            case "javaIdentifierIgnorable": return Character::isIdentifierIgnorable;
-            case "javaSpaceChar": return Character::isSpaceChar;
-            case "javaWhitespace": return Character::isWhitespace;
-            case "javaISOControl": return Character::isISOControl;
-            case "javaMirrored": return Character::isMirrored;
-            default: return null;
-        }
+            case "javaLowerCase" -> caseIns ? c -> Character.isLowerCase(c) ||
+                                                   Character.isUpperCase(c) ||
+                                                   Character.isTitleCase(c)
+                                            : Character::isLowerCase;
+            case "javaUpperCase" -> caseIns ? c -> Character.isUpperCase(c) ||
+                                                   Character.isLowerCase(c) ||
+                                                   Character.isTitleCase(c)
+                                            : Character::isUpperCase;
+            case "javaAlphabetic" -> Character::isAlphabetic;
+            case "javaIdeographic" -> Character::isIdeographic;
+            case "javaTitleCase" -> caseIns ? c -> Character.isTitleCase(c) ||
+                                                   Character.isLowerCase(c) ||
+                                                   Character.isUpperCase(c)
+                                            : Character::isTitleCase;
+            case "javaDigit" -> Character::isDigit;
+            case "javaDefined" -> Character::isDefined;
+            case "javaLetter" -> Character::isLetter;
+            case "javaLetterOrDigit" -> Character::isLetterOrDigit;
+            case "javaJavaIdentifierStart" -> Character::isJavaIdentifierStart;
+            case "javaJavaIdentifierPart" -> Character::isJavaIdentifierPart;
+            case "javaUnicodeIdentifierStart" -> Character::isUnicodeIdentifierStart;
+            case "javaUnicodeIdentifierPart" -> Character::isUnicodeIdentifierPart;
+            case "javaIdentifierIgnorable" -> Character::isIdentifierIgnorable;
+            case "javaSpaceChar" -> Character::isSpaceChar;
+            case "javaWhitespace" -> Character::isWhitespace;
+            case "javaISOControl" -> Character::isISOControl;
+            case "javaMirrored" -> Character::isMirrored;
+            default -> null;
+        };
     }
 
     private static CharPredicate category(final int typeMask) {

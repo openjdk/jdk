@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 
 package java.awt;
 
-import java.util.Hashtable;
+import java.io.Serial;
 
 /**
  * A border layout lays out a container, arranging and resizing
@@ -338,9 +338,10 @@ public class BorderLayout implements LayoutManager2,
      */
     public static final String LINE_END = AFTER_LINE_ENDS;
 
-    /*
-     * JDK 1.1 serialVersionUID
+    /**
+     * Use serialVersionUID from JDK 1.1 for interoperability.
      */
+     @Serial
      private static final long serialVersionUID = -8658291919501921765L;
 
     /**
@@ -418,7 +419,7 @@ public class BorderLayout implements LayoutManager2,
      * @param   constraints  an object that specifies how and where
      *                       the component is added to the layout.
      * @see     java.awt.Container#add(java.awt.Component, java.lang.Object)
-     * @exception   IllegalArgumentException  if the constraint object is not
+     * @throws   IllegalArgumentException  if the constraint object is not
      *              a string, or if it not one of the five specified constants.
      * @since   1.1
      */
@@ -513,7 +514,7 @@ public class BorderLayout implements LayoutManager2,
      *                       {@code LINE_START}, {@code LINE_END}
      * @return  the component at the given location, or {@code null} if
      *          the location is empty
-     * @exception   IllegalArgumentException  if the constraint object is
+     * @throws   IllegalArgumentException  if the constraint object is
      *              not one of the nine specified constants
      * @see     #addLayoutComponent(java.awt.Component, java.lang.Object)
      * @since 1.5
@@ -561,9 +562,9 @@ public class BorderLayout implements LayoutManager2,
      *                     {@code Container}'s component orientation.
      * @return  the component at the given location, or {@code null} if
      *          the location is empty
-     * @exception   IllegalArgumentException  if the constraint object is
+     * @throws   IllegalArgumentException  if the constraint object is
      *              not one of the five specified constants
-     * @exception   NullPointerException  if the target parameter is null
+     * @throws   NullPointerException  if the target parameter is null
      * @see     #addLayoutComponent(java.awt.Component, java.lang.Object)
      * @since 1.5
      */

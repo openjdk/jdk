@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.awt.Desktop;
 import java.awt.GraphicsEnvironment;
 import java.awt.HeadlessException;
 import java.io.File;
+import java.io.Serial;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -37,11 +38,14 @@ import java.util.List;
  *
  * @since 9
  */
-public class FilesEvent extends AppEvent {
+public sealed class FilesEvent extends AppEvent
+    permits OpenFilesEvent,
+            PrintFilesEvent {
 
     /**
      * Use serialVersionUID from JDK 9 for interoperability.
      */
+    @Serial
     private static final long serialVersionUID = 5271763715462312871L;
 
     /**

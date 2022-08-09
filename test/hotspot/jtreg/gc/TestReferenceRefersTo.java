@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,8 @@ package gc;
 /* @test
  * @requires vm.gc != "Epsilon"
  * @library /test/lib
- * @build sun.hotspot.WhiteBox
- * @modules java.base
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm
  *      -Xbootclasspath/a:.
  *      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
@@ -39,7 +38,7 @@ import java.lang.ref.PhantomReference;
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 public class TestReferenceRefersTo {
     private static final WhiteBox WB = WhiteBox.getWhiteBox();
@@ -197,8 +196,6 @@ public class TestReferenceRefersTo {
             expectCleared(testPhantom1, "testPhantom1");
             expectCleared(testWeak2, "testWeak2");
             expectValue(testWeak3, testObject3, "testWeak3");
-            // This is true for all currently supported concurrent collectors.
-            expectNotCleared(testWeak4, "testWeak4");
 
             progress("verify get returns expected values");
             if (testWeak2.get() != null) {
@@ -213,11 +210,6 @@ public class TestReferenceRefersTo {
             }
 
             TestObject obj4 = testWeak4.get();
-            if (obj4 == null) {
-                fail("testWeak4.get() returned null");
-            } else if (obj4.value != 4) {
-                fail("testWeak4.get().value is " + obj4.value);
-            }
 
             progress("verify queue entries");
             long timeout = 60000; // 1 minute of milliseconds.
@@ -243,10 +235,10 @@ public class TestReferenceRefersTo {
                 fail("testWeak2 not notified");
             } else if (testWeak3 == null) {
                 fail("testWeak3 notified");
-            } else if (testWeak4 == null) {
-                if (obj4 != null) {
-                    fail("testWeak4 notified");
-                }
+            }
+            if ((testWeak4 == null) != (obj4 == null)) {
+                fail("either referent is cleared and we got notified, or neither of this happened: referent: "
+                     + obj4 + ", notified: " + (testWeak4 == null));
             }
 
         } finally {

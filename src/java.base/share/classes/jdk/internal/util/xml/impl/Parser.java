@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.UnsupportedEncodingException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import jdk.internal.org.xml.sax.InputSource;
@@ -42,7 +43,11 @@ public abstract class Parser {
 
     public static final String FAULT = "";
     protected static final int BUFFSIZE_READER = 512;
+    // Initial buffer (mBuff) size
     protected static final int BUFFSIZE_PARSER = 128;
+    // Max buffer size
+    private static final int MAX_ARRAY_SIZE = 1024 << 16;
+
     /**
      * The end of stream character.
      */
@@ -50,9 +55,9 @@ public abstract class Parser {
     private Pair mNoNS; // there is no namespace
     private Pair mXml;  // the xml namespace
     private Map<String, Input> mEnt;  // the entities look up table
-    private Map<String, Input> mPEnt; // the parmeter entities look up table
+    private Map<String, Input> mPEnt; // the parameter entities look up table
     protected boolean mIsSAlone;     // xml decl standalone flag
-    protected boolean mIsSAloneSet;  // standalone is explicitely set
+    protected boolean mIsSAloneSet;  // standalone is explicitly set
     protected boolean mIsNSAware;    // if true - namespace aware mode
     protected int mPh;  // current phase of document processing
     protected static final int PH_BEFORE_DOC = -1;  // before parsing
@@ -216,11 +221,11 @@ public abstract class Parser {
         while (i < 'A') {
             nmttyp[i++] = (byte) 0xff;
         }
-        // skiped upper case alphabetical character are already 0
+        // skipped upper case alphabetical character are already 0
         for (i = '['; i < 'a'; i++) {
             nmttyp[i] = (byte) 0xff;
         }
-        // skiped lower case alphabetical character are already 0
+        // skipped lower case alphabetical character are already 0
         for (i = '{'; i < 0x80; i++) {
             nmttyp[i] = (byte) 0xff;
         }
@@ -271,7 +276,7 @@ public abstract class Parser {
         mEnt = new HashMap<>();
         mDoc = mInp;          // current input is document entity
         mChars = mInp.chars;    // use document entity buffer
-        mPh = PH_DOC_START;  // the begining of the document
+        mPh = PH_DOC_START;  // the beginning of the document
     }
 
     /**
@@ -310,7 +315,7 @@ public abstract class Parser {
         mPEnt = null;
         mEnt = null;
         mDoc = null;
-        mPh = PH_AFTER_DOC;  // before documnet processing
+        mPh = PH_AFTER_DOC;  // before document processing
     }
 
     /**
@@ -396,7 +401,7 @@ public abstract class Parser {
                             mElm.name = mElm.local();
                             mElm.id = (mElm.next != null) ? mElm.next.id : 0;  // flags
                             mElm.num = 0;     // namespace counter
-                            //          Find the list of defined attributs of the current
+                            //          Find the list of defined attributes of the current
                             //          element
                             Pair elm = find(mAttL, mElm.chars);
                             mElm.list = (elm != null) ? elm.list : null;
@@ -525,6 +530,10 @@ public abstract class Parser {
         mPh = PH_DTD;  // DTD
         for (short st = 0; st >= 0;) {
             ch = getch();
+            // report error if EOS is reached while parsing the DTD
+            if (ch == EOS) {
+                panic(FAULT);
+            }
             switch (st) {
                 case 0:     // read the document type name
                     if (chtyp(ch) != ' ') {
@@ -1325,7 +1334,7 @@ public abstract class Parser {
      * and accumulates attributes.
      *
      * <p><code>att.num</code> carries attribute flags where: 0x1 - attribute is
-     * declared in DTD (attribute decalration had been read); 0x2 - attribute's
+     * declared in DTD (attribute declaration had been read); 0x2 - attribute's
      * default value is used.</p>
      *
      * @param att An object which reprecents current attribute.
@@ -1596,7 +1605,7 @@ public abstract class Parser {
                                 panic(FAULT);
                             }
                             //          This is processing instruction
-                            if (mPh == PH_DOC_START) // the begining of the document
+                            if (mPh == PH_DOC_START) // the beginning of the document
                             {
                                 mPh = PH_MISC_DTD;    // misc before DTD
                             }
@@ -1664,6 +1673,10 @@ public abstract class Parser {
         mBuffIdx = -1;
         for (short st = 0; st >= 0;) {
             ch = getch();
+            // report error if EOS is reached while parsing the DTD
+            if (ch == EOS) {
+                panic(FAULT);
+            }
             switch (st) {
                 case 0:     // the first '[' of the CDATA open
                     if (ch == '[') {
@@ -1871,7 +1884,7 @@ public abstract class Parser {
     }
 
     /**
-     * Resoves an entity.
+     * Resolves an entity.
      *
      * This method resolves built-in and character entity references. It is also
      * reports external entities to the application.
@@ -1993,19 +2006,17 @@ public abstract class Parser {
                             try {
                                 int i = Integer.parseInt(
                                         new String(mBuff, idx + 1, mBuffIdx - idx), 10);
-                                if (i >= 0xffff) {
-                                    panic(FAULT);
+                                //          Restore the buffer offset
+                                mBuffIdx = idx - 1;
+                                for(char character : Character.toChars(i)) {
+                                    if (character == ' ' || mInp.next != null) {
+                                        bappend(character, flag);
+                                    } else {
+                                        bappend(character);
+                                    }
                                 }
-                                ch = (char) i;
                             } catch (NumberFormatException nfe) {
                                 panic(FAULT);
-                            }
-                            //          Restore the buffer offset
-                            mBuffIdx = idx - 1;
-                            if (ch == ' ' || mInp.next != null) {
-                                bappend(ch, flag);
-                            } else {
-                                bappend(ch);
                             }
                             st = -1;
                             break;
@@ -2034,19 +2045,17 @@ public abstract class Parser {
                             try {
                                 int i = Integer.parseInt(
                                         new String(mBuff, idx + 1, mBuffIdx - idx), 16);
-                                if (i >= 0xffff) {
-                                    panic(FAULT);
+                                //          Restore the buffer offset
+                                mBuffIdx = idx - 1;
+                                for(char character : Character.toChars(i)) {
+                                    if (character == ' ' || mInp.next != null) {
+                                        bappend(character, flag);
+                                    } else {
+                                        bappend(character);
+                                    }
                                 }
-                                ch = (char) i;
                             } catch (NumberFormatException nfe) {
                                 panic(FAULT);
-                            }
-                            //          Restore the buffer offset
-                            mBuffIdx = idx - 1;
-                            if (ch == ' ' || mInp.next != null) {
-                                bappend(ch, flag);
-                            } else {
-                                bappend(ch);
                             }
                             st = -1;
                             break;
@@ -2065,7 +2074,7 @@ public abstract class Parser {
     }
 
     /**
-     * Resoves a parameter entity.
+     * Resolves a parameter entity.
      *
      * This method resolves a parameter entity references. It is also reports
      * external entities to the application.
@@ -2242,7 +2251,7 @@ public abstract class Parser {
     /**
      * Reports a comment.
      *
-     * @param text The comment text starting from first charcater.
+     * @param text The comment text starting from first character.
      * @param length The number of characters in comment.
      */
     protected abstract void comm(char[] text, int length);
@@ -2529,7 +2538,7 @@ public abstract class Parser {
     }
 
     /**
-     * Reads a single or double quotted string in to the buffer.
+     * Reads a single or double quoted string into the buffer.
      *
      * This method resolves entities inside a string unless the parser parses
      * DTD.
@@ -2664,7 +2673,7 @@ public abstract class Parser {
      * @param ch The character to append to the buffer.
      * @param mode The normalization mode.
      */
-    private void bappend(char ch, char mode) {
+    private void bappend(char ch, char mode) throws Exception {
         //              This implements attribute value normalization as
         //              described in the XML specification [#3.3.3].
         switch (mode) {
@@ -2714,16 +2723,9 @@ public abstract class Parser {
      *
      * @param ch The character to append to the buffer.
      */
-    private void bappend(char ch) {
-        try {
-            mBuff[++mBuffIdx] = ch;
-        } catch (Exception exp) {
-            //          Double the buffer size
-            char buff[] = new char[mBuff.length << 1];
-            System.arraycopy(mBuff, 0, buff, 0, mBuff.length);
-            mBuff = buff;
-            mBuff[mBuffIdx] = ch;
-        }
+    private void bappend(char ch) throws Exception {
+        ensureCapacity(++mBuffIdx);
+        mBuff[mBuffIdx] = ch;
     }
 
     /**
@@ -2733,14 +2735,9 @@ public abstract class Parser {
      * @param cidx The character buffer (mChars) start index.
      * @param bidx The parser buffer (mBuff) start index.
      */
-    private void bcopy(int cidx, int bidx) {
+    private void bcopy(int cidx, int bidx) throws Exception {
         int length = mChIdx - cidx;
-        if ((bidx + length + 1) >= mBuff.length) {
-            //          Expand the buffer
-            char buff[] = new char[mBuff.length + length];
-            System.arraycopy(mBuff, 0, buff, 0, mBuff.length);
-            mBuff = buff;
-        }
+        ensureCapacity(bidx + length + 1);
         System.arraycopy(mChars, cidx, mBuff, bidx, length);
         mBuffIdx += length;
     }
@@ -3327,7 +3324,7 @@ public abstract class Parser {
     }
 
     /**
-     * Retrives the next character in the document.
+     * Retrieves the next character in the document.
      *
      * @return The next character in the document.
      */
@@ -3432,5 +3429,24 @@ public abstract class Parser {
         mDltd = pair;
 
         return next;
+    }
+
+    private void ensureCapacity(int minCapacity) throws Exception {
+        if (mBuff == null) {
+            int newCapacity = minCapacity > BUFFSIZE_PARSER ?
+                    minCapacity + BUFFSIZE_PARSER : BUFFSIZE_PARSER;
+            mBuff = new char[newCapacity];
+            return;
+        }
+
+        if (mBuff.length <= minCapacity) {
+            int size = mBuff.length << 1;
+            int newCapacity = size > minCapacity ? size : minCapacity + BUFFSIZE_PARSER;
+            if (newCapacity < 0 || newCapacity > MAX_ARRAY_SIZE) {
+                panic(FAULT);
+            }
+
+            mBuff = Arrays.copyOf(mBuff, newCapacity);
+        }
     }
 }

@@ -25,7 +25,6 @@
 #ifndef SHARE_GC_EPSILON_EPSILONBARRIERSET_HPP
 #define SHARE_GC_EPSILON_EPSILONBARRIERSET_HPP
 
-#include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/barrierSet.hpp"
 
 // No interaction with application is required for Epsilon, and therefore

@@ -51,20 +51,20 @@ public class PlatformVersionTest {
     public static List<Object[]> data() {
         List<Object[]> data = new ArrayList<>();
         addTo(data, WIN_MSI_PRODUCT_VERSION_PARSER, true,
-            "255",
-            "0",
+            "0.0",
             "255.255",
+            "0.0.0",
             "255.255.65535",
-            "1.0",
-            "1",
-            "01.02.6"
+            "0.0.0.0",
+            "255.255.65535.999999"
         );
 
         addTo(data, WIN_MSI_PRODUCT_VERSION_PARSER, false,
-            "256",
+            "0",
+            "256.01",
             "255.256",
             "255.255.65536",
-            "1.2.3.4"
+            "1.2.3.4.5"
         );
 
         addTo(data, MAC_CFBUNDLE_VERSION_PARSER, true,

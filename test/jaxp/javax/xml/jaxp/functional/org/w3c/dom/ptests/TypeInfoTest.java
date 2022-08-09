@@ -40,7 +40,7 @@ import org.xml.sax.InputSource;
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true org.w3c.dom.ptests.TypeInfoTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow org.w3c.dom.ptests.TypeInfoTest
  * @run testng/othervm org.w3c.dom.ptests.TypeInfoTest
  * @summary Test getTypeName and getTypeNamespace methods of TypeInfo interface
  */

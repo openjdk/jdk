@@ -37,9 +37,6 @@
 #include "hb-ot-color-sbix-table.hh"
 #include "hb-ot-color-svg-table.hh"
 
-#include <stdlib.h>
-#include <string.h>
-
 
 /**
  * SECTION:hb-ot-color
@@ -64,7 +61,7 @@
  *
  * Tests whether a face includes a `CPAL` color-palette table.
  *
- * Return value: true if data found, false otherwise
+ * Return value: %true if data found, %false otherwise
  *
  * Since: 2.1.0
  */
@@ -119,7 +116,7 @@ hb_ot_color_palette_get_name_id (hb_face_t *face,
  * @color_index: The index of the color
  *
  * Fetches the `name` table Name ID that provides display names for
- * the specificed color in a face's `CPAL` color palette.
+ * the specified color in a face's `CPAL` color palette.
  *
  * Display names can be generic (e.g., "Background") or specific
  * (e.g., "Eye color").
@@ -195,7 +192,7 @@ hb_ot_color_palette_get_colors (hb_face_t     *face,
  *
  * Tests whether a face includes any `COLR` color layers.
  *
- * Return value: true if data found, false otherwise
+ * Return value: %true if data found, %false otherwise
  *
  * Since: 2.1.0
  */
@@ -242,7 +239,7 @@ hb_ot_color_glyph_get_layers (hb_face_t           *face,
  *
  * Tests whether a face includes any `SVG` glyph images.
  *
- * Return value: true if data found, false otherwise.
+ * Return value: %true if data found, %false otherwise.
  *
  * Since: 2.1.0
  */
@@ -258,6 +255,8 @@ hb_ot_color_has_svg (hb_face_t *face)
  * @glyph: a svg glyph index
  *
  * Fetches the SVG document for a glyph. The blob may be either plain text or gzip-encoded.
+ *
+ * If the glyph has no SVG document, the singleton empty blob is returned.
  *
  * Return value: (transfer full): An #hb_blob_t containing the SVG document of the glyph, if available
  *
@@ -280,7 +279,7 @@ hb_ot_color_glyph_reference_svg (hb_face_t *face, hb_codepoint_t glyph)
  *
  * Tests whether a face has PNG glyph images (either in `CBDT` or `sbix` tables).
  *
- * Return value: true if data found, false otherwise
+ * Return value: %true if data found, %false otherwise
  *
  * Since: 2.1.0
  */
@@ -298,6 +297,8 @@ hb_ot_color_has_png (hb_face_t *face)
  * Fetches the PNG image for a glyph. This function takes a font object, not a face object,
  * as input. To get an optimally sized PNG blob, the UPEM value must be set on the @font
  * object. If UPEM is unset, the blob returned will be the largest PNG available.
+ *
+ * If the glyph has no PNG image, the singleton empty blob is returned.
  *
  * Return value: (transfer full): An #hb_blob_t containing the PNG image for the glyph, if available
  *

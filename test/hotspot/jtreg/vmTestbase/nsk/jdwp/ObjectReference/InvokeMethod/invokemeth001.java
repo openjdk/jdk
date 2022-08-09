@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -251,7 +251,7 @@ public class invokemeth001 {
         log.display("  arguments: " + ARGUMENTS_COUNT);
         command.addInt(ARGUMENTS_COUNT);
         for (int i = 0; i < ARGUMENTS_COUNT; i++) {
-            JDWP.Value value = new JDWP.Value(JDWP.Tag.INT, new Integer(ARGUMENT_VALUE));
+            JDWP.Value value = new JDWP.Value(JDWP.Tag.INT, Integer.valueOf(ARGUMENT_VALUE));
             log.display("    arg: " + value);
             command.addValue(value);
         }

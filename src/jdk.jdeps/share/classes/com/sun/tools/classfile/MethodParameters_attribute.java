@@ -76,6 +76,11 @@ public class MethodParameters_attribute extends Attribute {
             flags = cr.readUnsignedShort();
         }
 
+        public Entry(int name_index, int flags) {
+            this.name_index = name_index;
+            this.flags = flags;
+        }
+
         public static int length() {
             return 6;
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,10 +29,13 @@
  * @bug 6976117 8234725
  * @summary SSLContext.getInstance("TLSv1.1") returns SSLEngines/SSLSockets
  *          without TLSv1.1 enabled
+ * @library /test/lib
  * @run main/othervm SSLContextVersion
  */
 
 import javax.net.ssl.*;
+
+import jdk.test.lib.security.SecurityUtils;
 
 public class SSLContextVersion {
     static enum ContextVersion {
@@ -60,6 +63,9 @@ public class SSLContextVersion {
     }
 
     public static void main(String[] args) throws Exception {
+        // Re-enable TLSv1 and TLSv1.1 since test depends on them.
+        SecurityUtils.removeFromDisabledTlsAlgs("TLSv1", "TLSv1.1");
+
         for (ContextVersion cv : ContextVersion.values()) {
             System.out.println("Checking SSLContext of " + cv.contextVersion);
             SSLContext context = SSLContext.getInstance(cv.contextVersion);

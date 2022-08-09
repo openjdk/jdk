@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2020, Microsoft Corporation. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +26,6 @@
 #include "precompiled.hpp"
 #include "jvm.h"
 #include "asm/macroAssembler.hpp"
-#include "classfile/classLoader.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
 #include "code/icBuffer.hpp"
@@ -41,11 +40,11 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "runtime/thread.inline.hpp"
 #include "runtime/timer.hpp"
 #include "unwind_windows_aarch64.hpp"
 #include "utilities/debug.hpp"
@@ -61,7 +60,7 @@
 # include <stdio.h>
 # include <intrin.h>
 
-void os::os_exception_wrapper(java_call_t f, JavaValue* value, const methodHandle& method, JavaCallArguments* args, Thread* thread) {
+void os::os_exception_wrapper(java_call_t f, JavaValue* value, const methodHandle& method, JavaCallArguments* args, JavaThread* thread) {
   f(value, method, args, thread);
 }
 
@@ -142,32 +141,14 @@ bool os::win32::get_frame_at_stack_banging_point(JavaThread* thread,
   return true;
 }
 
-// By default, gcc always saves frame pointer rfp on this stack. This
-// may get turned off by -fomit-frame-pointer.
 frame os::get_sender_for_C_frame(frame* fr) {
-  return frame(fr->link(), fr->link(), fr->sender_pc());
+  ShouldNotReachHere();
+  return frame();
 }
 
 frame os::current_frame() {
-  typedef intptr_t*      get_fp_func           ();
-  get_fp_func* func = CAST_TO_FN_PTR(get_fp_func*,
-                                     StubRoutines::aarch64::get_previous_fp_entry());
-  if (func == NULL) return frame();
-  intptr_t* fp = (*func)();
-  if (fp == NULL) {
-    return frame();
-  }
-
-  frame myframe((intptr_t*)os::current_stack_pointer(),
-                (intptr_t*)fp,
-                CAST_FROM_FN_PTR(address, os::current_frame));
-  if (os::is_first_C_frame(&myframe)) {
-
-    // stack is not walkable
-    return frame();
-  } else {
-    return os::get_sender_for_C_frame(&myframe);
-  }
+  return frame();  // cannot walk Windows frames this way.  See os::get_native_stack
+                   // and os::platform_print_native_stack
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -223,6 +204,12 @@ void os::print_context(outputStream *st, const void *context) {
   st->print(", X28=" INTPTR_FORMAT, uc->X28);
   st->cr();
   st->cr();
+}
+
+void os::print_tos_pc(outputStream *st, const void *context) {
+  if (context == NULL) return;
+
+  const CONTEXT* uc = (const CONTEXT*)context;
 
   intptr_t *sp = (intptr_t *)uc->Sp;
   st->print_cr("Top of Stack: (sp=" PTR_FORMAT ")", sp);
@@ -236,7 +223,6 @@ void os::print_context(outputStream *st, const void *context) {
   st->print_cr("Instructions: (pc=" PTR_FORMAT ")", pc);
   print_hex_dump(st, pc - 32, pc + 32, sizeof(char));
   st->cr();
-
 }
 
 void os::print_register_info(outputStream *st, const void *context) {

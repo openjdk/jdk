@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,14 +21,15 @@
  * questions.
  */
 
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
+
 import java.io.IOException;
 import java.io.Writer;
 
-import org.testng.annotations.AfterGroups;
-import org.testng.annotations.BeforeGroups;
-import org.testng.annotations.Test;
-
-import static org.testng.Assert.*;
+import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertSame;
 
 /*
  * @test
@@ -40,127 +41,123 @@ public class NullWriter {
     private static Writer openWriter;
     private static Writer closedWriter;
 
-    @BeforeGroups(groups = "open")
-    public static void openStream() {
+    @BeforeClass
+    public static void setup() throws IOException {
         openWriter = Writer.nullWriter();
-    }
-
-    @BeforeGroups(groups = "closed")
-    public static void openAndCloseStream() throws IOException {
         closedWriter = Writer.nullWriter();
         closedWriter.close();
     }
 
-    @AfterGroups(groups = "open")
+    @AfterClass
     public static void closeStream() throws IOException {
         openWriter.close();
     }
 
-    @Test(groups = "open")
+    @Test
     public static void testOpen() {
         assertNotNull(openWriter, "Writer.nullWriter() returned null");
     }
 
-    @Test(groups = "open")
+    @Test
     public static void testAppendChar() throws IOException {
         assertSame(openWriter, openWriter.append('x'));
     }
 
-    @Test(groups = "open")
+    @Test
     public static void testAppendCharSequence() throws IOException {
         CharSequence cs = "abc";
         assertSame(openWriter, openWriter.append(cs));
     }
 
-    @Test(groups = "open")
+    @Test
     public static void testAppendCharSequenceNull() throws IOException {
         assertSame(openWriter, openWriter.append(null));
     }
 
-    @Test(groups = "open")
+    @Test
     public static void testAppendCharSequenceII() throws IOException {
         CharSequence cs = "abc";
         assertSame(openWriter, openWriter.append(cs, 0, 1));
     }
 
-    @Test(groups = "open")
+    @Test
     public static void testAppendCharSequenceIINull() throws IOException {
         assertSame(openWriter, openWriter.append(null, 2, 1));
     }
 
-    @Test(groups = "open")
+    @Test
     public static void testFlush() throws IOException {
         openWriter.flush();
     }
 
-    @Test(groups = "open")
+    @Test
     public static void testWrite() throws IOException {
         openWriter.write(62832);
     }
 
-    @Test(groups = "open")
+    @Test
     public static void testWriteString() throws IOException {
         openWriter.write("");
     }
 
-    @Test(groups = "open")
+    @Test
     public static void testWriteStringII() throws IOException {
         openWriter.write("", 0, 0);
     }
 
-    @Test(groups = "open")
+    @Test
     public static void testWriteBII() throws IOException, Exception {
         openWriter.write(new char[]{(char) 6}, 0, 1);
     }
 
-    @Test(groups = "closed", expectedExceptions = IOException.class)
+    @Test(expectedExceptions = IOException.class)
     public static void testAppendCharClosed() throws IOException {
         closedWriter.append('x');
     }
 
-    @Test(groups = "closed", expectedExceptions = IOException.class)
+    @Test(expectedExceptions = IOException.class)
     public static void testAppendCharSequenceClosed() throws IOException {
         CharSequence cs = "abc";
         closedWriter.append(cs);
     }
 
-    @Test(groups = "closed", expectedExceptions = IOException.class)
+    @Test(expectedExceptions = IOException.class)
     public static void testAppendCharSequenceNullClosed() throws IOException {
         closedWriter.append(null);
     }
 
-    @Test(groups = "closed", expectedExceptions = IOException.class)
+    @Test(expectedExceptions = IOException.class)
     public static void testAppendCharSequenceIIClosed() throws IOException {
         CharSequence cs = "abc";
         closedWriter.append(cs, 0, 1);
     }
 
-    @Test(groups = "closed", expectedExceptions = IOException.class)
+    @Test(expectedExceptions = IOException.class)
     public static void testAppendCharSequenceIINullClosed() throws IOException {
         closedWriter.append(null, 2, 1);
     }
 
-    @Test(groups = "closed", expectedExceptions = IOException.class)
+    @Test(expectedExceptions = IOException.class)
     public static void testFlushClosed() throws IOException {
         closedWriter.flush();
     }
 
-    @Test(groups = "closed", expectedExceptions = IOException.class)
+    @Test(expectedExceptions = IOException.class)
     public static void testWriteClosed() throws IOException {
         closedWriter.write(62832);
     }
 
-    @Test(groups = "closed", expectedExceptions = IOException.class)
+    @Test(expectedExceptions = IOException.class)
     public static void testWriteStringClosed() throws IOException {
         closedWriter.write("");
     }
 
-    @Test(groups = "closed", expectedExceptions = IOException.class)
+    @Test(expectedExceptions = IOException.class)
     public static void testWriteStringIIClosed() throws IOException {
         closedWriter.write("", 0, 0);
     }
 
-    @Test(groups = "closed", expectedExceptions = IOException.class)
+    @Test(expectedExceptions = IOException.class)
     public static void testWriteBIIClosed() throws IOException {
         closedWriter.write(new char[]{(char) 6}, 0, 1);
     }

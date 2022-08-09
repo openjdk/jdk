@@ -32,12 +32,13 @@ static const LogTagSet& tagset = LogTagSetMapping<LOG_TAGS(logging, safepoint)>:
 static const LogDecorators default_decorators;
 
 TEST_VM(LogDecorations, level) {
+  char buf[LogDecorations::max_decoration_size + 1];
   for (uint l = LogLevel::First; l <= LogLevel::Last; l++) {
     LogLevelType level = static_cast<LogLevelType>(l);
     // Create a decorations object for the current level
     LogDecorations decorations(level, tagset, default_decorators);
     // Verify that the level decoration matches the specified level
-    EXPECT_STREQ(LogLevel::name(level), decorations.decoration(LogDecorators::level_decorator));
+    EXPECT_STREQ(LogLevel::name(level), decorations.decoration(LogDecorators::level_decorator, buf, sizeof(buf)));
 
     // Test changing level after object creation time
     LogLevelType other_level;
@@ -47,17 +48,18 @@ TEST_VM(LogDecorations, level) {
       other_level = static_cast<LogLevelType>(LogLevel::First);
     }
     decorations.set_level(other_level);
-    EXPECT_STREQ(LogLevel::name(other_level), decorations.decoration(LogDecorators::level_decorator))
+    EXPECT_STREQ(LogLevel::name(other_level), decorations.decoration(LogDecorators::level_decorator, buf, sizeof(buf)))
         << "Decoration reports incorrect value after changing the level";
   }
 }
 
 TEST_VM(LogDecorations, uptime) {
+  char buf[LogDecorations::max_decoration_size + 1];
   // Verify the format of the decoration
   int a, b;
   char decimal_point;
   LogDecorations decorations(LogLevel::Info, tagset, default_decorators);
-  const char* uptime = decorations.decoration(LogDecorators::uptime_decorator);
+  const char* uptime = decorations.decoration(LogDecorators::uptime_decorator, buf, sizeof(buf));
   int read = sscanf(uptime, "%d%c%ds", &a, &decimal_point, &b);
   EXPECT_EQ(3, read) << "Invalid uptime decoration: " << uptime;
   EXPECT_TRUE(decimal_point == '.' || decimal_point == ',') << "Invalid uptime decoration: " << uptime;
@@ -67,22 +69,24 @@ TEST_VM(LogDecorations, uptime) {
   for (int i = 0; i < 3; i++) {
     os::naked_short_sleep(10);
     LogDecorations d(LogLevel::Info, tagset, default_decorators);
-    double cur = strtod(d.decoration(LogDecorators::uptime_decorator), NULL);
+    double cur = strtod(d.decoration(LogDecorators::uptime_decorator, buf, sizeof(buf)), NULL);
     ASSERT_LT(prev, cur);
     prev = cur;
   }
 }
 
 TEST_VM(LogDecorations, tags) {
+  char buf[LogDecorations::max_decoration_size + 1];
   char expected_tags[1 * K];
   tagset.label(expected_tags, sizeof(expected_tags));
   // Verify that the expected tags are included in the tags decoration
   LogDecorations decorations(LogLevel::Info, tagset, default_decorators);
-  EXPECT_STREQ(expected_tags, decorations.decoration(LogDecorators::tags_decorator));
+  EXPECT_STREQ(expected_tags, decorations.decoration(LogDecorators::tags_decorator, buf, sizeof(buf)));
 }
 
 // Test each variation of the different timestamp decorations (ms, ns, uptime ms, uptime ns)
 TEST_VM(LogDecorations, timestamps) {
+  char buf[LogDecorations::max_decoration_size + 1];
   struct {
     const LogDecorators::Decorator decorator;
     const char* suffix;
@@ -102,7 +106,7 @@ TEST_VM(LogDecorations, timestamps) {
 
     // Create decorations with the decorator we want to test included
     LogDecorations decorations(LogLevel::Info, tagset, decorator_selection);
-    const char* decoration = decorations.decoration(decorator);
+    const char* decoration = decorations.decoration(decorator, buf, sizeof(buf));
 
     // Verify format of timestamp
     const char* suffix;
@@ -119,7 +123,7 @@ TEST_VM(LogDecorations, timestamps) {
       // at 15-16ms, so we use 20.
       os::naked_short_sleep(20);
       LogDecorations d(LogLevel::Info, tagset, decorator_selection);
-      julong val = strtoull(d.decoration(decorator), NULL, 10);
+      julong val = strtoull(d.decoration(decorator, buf, sizeof(buf)), NULL, 10);
       tty->print_cr("Read value: " UINT64_FORMAT, val);
       ASSERT_LT(prev, val);
       prev = val;
@@ -129,11 +133,12 @@ TEST_VM(LogDecorations, timestamps) {
 
 // Test the time decoration
 TEST(LogDecorations, iso8601_time) {
+  char buf[LogDecorations::max_decoration_size + 1];
   LogDecorators decorator_selection;
   ASSERT_TRUE(decorator_selection.parse("time"));
   LogDecorations decorations(LogLevel::Info, tagset, decorator_selection);
 
-  const char *timestr = decorations.decoration(LogDecorators::time_decorator);
+  const char *timestr = decorations.decoration(LogDecorators::time_decorator, buf, sizeof(buf));
   time_t expected_ts = time(NULL);
 
   // Verify format
@@ -163,11 +168,12 @@ TEST(LogDecorations, iso8601_time) {
 
 // Test the utctime decoration
 TEST(LogDecorations, iso8601_utctime) {
+  char buf[LogDecorations::max_decoration_size + 1];
   LogDecorators decorator_selection;
   ASSERT_TRUE(decorator_selection.parse("utctime"));
   LogDecorations decorations(LogLevel::Info, tagset, decorator_selection);
 
-  const char *timestr = decorations.decoration(LogDecorators::utctime_decorator);
+  const char *timestr = decorations.decoration(LogDecorators::utctime_decorator, buf, sizeof(buf));
   time_t expected_ts = time(NULL);
 
   // Verify format
@@ -204,6 +210,7 @@ TEST(LogDecorations, iso8601_utctime) {
 
 // Test the pid and tid decorations
 TEST(LogDecorations, identifiers) {
+  char buf[LogDecorations::max_decoration_size + 1];
   LogDecorators decorator_selection;
   ASSERT_TRUE(decorator_selection.parse("pid,tid"));
   LogDecorations decorations(LogLevel::Info, tagset, decorator_selection);
@@ -217,7 +224,7 @@ TEST(LogDecorations, identifiers) {
   };
 
   for (uint i = 0; i < ARRAY_SIZE(ids); i++) {
-    const char* reported = decorations.decoration(ids[i].decorator);
+    const char* reported = decorations.decoration(ids[i].decorator, buf, sizeof(buf));
 
     // Verify format
     const char* str;

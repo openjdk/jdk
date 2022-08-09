@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,19 +32,25 @@ import java.net.URISyntaxException;
 import java.security.NoSuchAlgorithmException;
 import java.security.Policy;
 import java.security.URIParameter;
+import java.util.concurrent.TimeUnit;
 
+import org.openjdk.jmh.annotations.Fork;
+import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
+import org.openjdk.jmh.annotations.Warmup;
 
 /**
  * Reflection benchmark
- *
- * @author sfriberg
  */
 @State(Scope.Benchmark)
+@Warmup(iterations = 10, time = 1, timeUnit = TimeUnit.SECONDS)
+@Measurement(iterations = 5, time = 2, timeUnit = TimeUnit.SECONDS)
+@Fork(3)
 public class ClazzWithSecurityManager extends Clazz {
 
+    @SuppressWarnings("removal")
     @Setup
     public void setup() throws IOException, NoSuchAlgorithmException, URISyntaxException {
         URI policyFile = ClazzWithSecurityManager.class.getResource("/jmh-security.policy").toURI();

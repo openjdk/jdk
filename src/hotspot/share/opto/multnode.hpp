@@ -48,7 +48,7 @@ public:
   virtual uint ideal_reg() const { return NotAMachineReg; }
   ProjNode* proj_out(uint which_proj) const; // Get a named projection
   ProjNode* proj_out_or_null(uint which_proj) const;
-
+  ProjNode* proj_out_or_null(uint which_proj, bool is_io_use) const;
 };
 
 //------------------------------ProjNode---------------------------------------

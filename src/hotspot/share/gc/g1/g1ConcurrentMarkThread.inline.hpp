@@ -25,8 +25,9 @@
 #ifndef SHARE_GC_G1_G1CONCURRENTMARKTHREAD_INLINE_HPP
 #define SHARE_GC_G1_G1CONCURRENTMARKTHREAD_INLINE_HPP
 
-#include "gc/g1/g1ConcurrentMark.hpp"
 #include "gc/g1/g1ConcurrentMarkThread.hpp"
+
+#include "gc/g1/g1ConcurrentMark.hpp"
 
   // Total virtual time so far.
 inline double G1ConcurrentMarkThread::vtime_accum() {
@@ -57,6 +58,10 @@ inline bool G1ConcurrentMarkThread::idle() const { return _state == Idle; }
 
 inline bool G1ConcurrentMarkThread::in_progress() const {
   return !idle();
+}
+
+inline bool G1ConcurrentMarkThread::in_undo_mark() const {
+  return _state == UndoMark;
 }
 
 #endif // SHARE_GC_G1_G1CONCURRENTMARKTHREAD_INLINE_HPP

@@ -37,7 +37,7 @@ import org.testng.annotations.Test;
 /*
  * @test
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true validation.ParticlesIg004Test
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow validation.ParticlesIg004Test
  * @run testng/othervm validation.ParticlesIg004Test
  * @summary Test particlesIg004.xsd.
  */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,25 +25,21 @@
 
 package com.sun.org.apache.xerces.internal.jaxp.validation;
 
-import com.sun.org.apache.xalan.internal.xsltc.trax.TransformerFactoryImpl;
 import com.sun.org.apache.xerces.internal.impl.Constants;
 import com.sun.org.apache.xerces.internal.utils.XMLSecurityManager;
 import java.io.IOException;
-
 import javax.xml.transform.Result;
 import javax.xml.transform.Source;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.TransformerFactoryConfigurationError;
 import javax.xml.transform.sax.SAXResult;
 import javax.xml.transform.sax.SAXTransformerFactory;
 import javax.xml.transform.sax.TransformerHandler;
 import javax.xml.transform.stax.StAXResult;
-import javax.xml.transform.stax.StAXSource;
+import jdk.xml.internal.JdkConstants;
 import jdk.xml.internal.JdkXmlUtils;
-
 import org.xml.sax.SAXException;
 
 /**
@@ -73,7 +69,7 @@ public final class StAXValidatorHelper implements ValidatorHelper {
             if( identityTransformer1==null ) {
                 try {
                     SAXTransformerFactory tf = JdkXmlUtils.getSAXTransformFactory(
-                            fComponentManager.getFeature(JdkXmlUtils.OVERRIDE_PARSER));
+                            fComponentManager.getFeature(JdkConstants.OVERRIDE_PARSER));
 
                     XMLSecurityManager securityManager =
                             (XMLSecurityManager)fComponentManager.getProperty(Constants.SECURITY_MANAGER);
@@ -85,7 +81,7 @@ public final class StAXValidatorHelper implements ValidatorHelper {
                             }
                         }
                         if (securityManager.printEntityCountInfo()) {
-                            tf.setAttribute(Constants.JDK_ENTITY_COUNT_INFO, "yes");
+                            tf.setAttribute(JdkConstants.JDK_DEBUG_LIMIT, "yes");
                         }
                     }
 

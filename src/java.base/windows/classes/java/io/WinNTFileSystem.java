@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,12 @@
 package java.io;
 
 import java.io.File;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.util.BitSet;
 import java.util.Locale;
 import java.util.Properties;
+import jdk.internal.misc.Blocker;
 import sun.security.action.GetPropertyAction;
 
 /**
@@ -44,6 +46,20 @@ class WinNTFileSystem extends FileSystem {
     private final char altSlash;
     private final char semicolon;
     private final String userDir;
+
+    // Whether to enable alternative data streams (ADS) by suppressing
+    // checking the path for invalid characters, in particular ":".
+    // By default, ADS support is enabled and will be disabled if and
+    // only if the property is set, ignoring case, to the string "false".
+    private static final boolean ENABLE_ADS;
+    static {
+        String enableADS = GetPropertyAction.privilegedGetProperty("jdk.io.File.enableADS");
+        if (enableADS != null) {
+            ENABLE_ADS = !enableADS.equalsIgnoreCase(Boolean.FALSE.toString());
+        } else {
+            ENABLE_ADS = true;
+        }
+    }
 
     public WinNTFileSystem() {
         Properties props = GetPropertyAction.privilegedGetProperties();
@@ -306,6 +322,36 @@ class WinNTFileSystem extends FileSystem {
     }
 
     @Override
+    public boolean isInvalid(File f) {
+        if (f.getPath().indexOf('\u0000') >= 0)
+            return true;
+
+        if (ENABLE_ADS)
+            return false;
+
+        // Invalid if there is a ":" at a position greater than 1, or if there
+        // is a ":" at position 1 and the first character is not a letter
+        String pathname = f.getPath();
+        int lastColon = pathname.lastIndexOf(":");
+
+        // Valid if there is no ":" present or if the last ":" present is
+        // at index 1 and the first character is a latter
+        if (lastColon < 0 ||
+            (lastColon == 1 && isLetter(pathname.charAt(0))))
+            return false;
+
+        // Invalid if path creation fails
+        Path path = null;
+        try {
+            path = sun.nio.fs.DefaultFileSystemProvider.theFileSystem().getPath(pathname);
+            return false;
+        } catch (InvalidPathException ignored) {
+        }
+
+        return true;
+    }
+
+    @Override
     public String resolve(File f) {
         String path = f.getPath();
         int pl = f.getPrefixLength();
@@ -333,6 +379,7 @@ class WinNTFileSystem extends FileSystem {
                    drive other than the current drive, insist that the caller
                    have read permission on the result */
                 String p = drive + (':' + dir + slashify(path.substring(2)));
+                @SuppressWarnings("removal")
                 SecurityManager security = System.getSecurityManager();
                 try {
                     if (security != null) security.checkRead(p);
@@ -350,11 +397,12 @@ class WinNTFileSystem extends FileSystem {
     private String getUserPath() {
         /* For both compatibility and security,
            we must look this up every time */
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPropertyAccess("user.dir");
         }
-        return normalize(userDir);
+        return userDir;
     }
 
     private String getDrive(String path) {
@@ -412,7 +460,12 @@ class WinNTFileSystem extends FileSystem {
             return "" + ((char) (c-32)) + ':' + '\\';
         }
         if (!useCanonCaches) {
-            return canonicalize0(path);
+            long comp = Blocker.begin();
+            try {
+                return canonicalize0(path);
+            } finally {
+                Blocker.end(comp);
+            }
         } else {
             String res = cache.get(path);
             if (res == null) {
@@ -529,38 +582,116 @@ class WinNTFileSystem extends FileSystem {
     /* -- Attribute accessors -- */
 
     @Override
-    public native int getBooleanAttributes(File f);
+    public int getBooleanAttributes(File f) {
+        long comp = Blocker.begin();
+        try {
+            return getBooleanAttributes0(f);
+        } finally {
+            Blocker.end(comp);
+        }
+    }
+    private native int getBooleanAttributes0(File f);
 
     @Override
-    public native boolean checkAccess(File f, int access);
+    public boolean checkAccess(File f, int access) {
+        long comp = Blocker.begin();
+        try {
+            return checkAccess0(f, access);
+        } finally {
+            Blocker.end(comp);
+        }
+    }
+    private native boolean checkAccess0(File f, int access);
 
     @Override
-    public native long getLastModifiedTime(File f);
+    public long getLastModifiedTime(File f) {
+        long comp = Blocker.begin();
+        try {
+            return getLastModifiedTime0(f);
+        } finally {
+            Blocker.end(comp);
+        }
+    }
+    private native long getLastModifiedTime0(File f);
 
     @Override
-    public native long getLength(File f);
+    public long getLength(File f) {
+        long comp = Blocker.begin();
+        try {
+            return getLength0(f);
+        } finally {
+            Blocker.end(comp);
+        }
+    }
+    private native long getLength0(File f);
 
     @Override
-    public native boolean setPermission(File f, int access, boolean enable,
-            boolean owneronly);
+    public boolean setPermission(File f, int access, boolean enable, boolean owneronly) {
+        long comp = Blocker.begin();
+        try {
+            return setPermission0(f, access, enable, owneronly);
+        } finally {
+            Blocker.end(comp);
+        }
+    }
+    private native boolean setPermission0(File f, int access, boolean enable, boolean owneronly);
 
     /* -- File operations -- */
 
     @Override
-    public native boolean createFileExclusively(String path)
-            throws IOException;
+    public boolean createFileExclusively(String path) throws IOException {
+        long comp = Blocker.begin();
+        try {
+            return createFileExclusively0(path);
+        } finally {
+            Blocker.end(comp);
+        }
+    }
+    private native boolean createFileExclusively0(String path) throws IOException;
 
     @Override
-    public native String[] list(File f);
+    public String[] list(File f) {
+        long comp = Blocker.begin();
+        try {
+            return list0(f);
+        } finally {
+            Blocker.end(comp);
+        }
+    }
+    private native String[] list0(File f);
 
     @Override
-    public native boolean createDirectory(File f);
+    public boolean createDirectory(File f) {
+        long comp = Blocker.begin();
+        try {
+            return createDirectory0(f);
+        } finally {
+            Blocker.end(comp);
+        }
+    }
+    private native boolean createDirectory0(File f);
 
     @Override
-    public native boolean setLastModifiedTime(File f, long time);
+    public boolean setLastModifiedTime(File f, long time) {
+        long comp = Blocker.begin();
+        try {
+            return setLastModifiedTime0(f, time);
+        } finally {
+            Blocker.end(comp);
+        }
+    }
+    private native boolean setLastModifiedTime0(File f, long time);
 
     @Override
-    public native boolean setReadOnly(File f);
+    public boolean setReadOnly(File f) {
+        long comp = Blocker.begin();
+        try {
+            return setReadOnly0(f);
+        } finally {
+            Blocker.end(comp);
+        }
+    }
+    private native boolean setReadOnly0(File f);
 
     @Override
     public boolean delete(File f) {
@@ -575,9 +706,13 @@ class WinNTFileSystem extends FileSystem {
         if (useCanonPrefixCache) {
             prefixCache.clear();
         }
-        return delete0(f);
+        long comp = Blocker.begin();
+        try {
+            return delete0(f);
+        } finally {
+            Blocker.end(comp);
+        }
     }
-
     private native boolean delete0(File f);
 
     @Override
@@ -593,9 +728,13 @@ class WinNTFileSystem extends FileSystem {
         if (useCanonPrefixCache) {
             prefixCache.clear();
         }
-        return rename0(f1, f2);
+        long comp = Blocker.begin();
+        try {
+            return rename0(f1, f2);
+        } finally {
+            Blocker.end(comp);
+        }
     }
-
     private native boolean rename0(File f1, File f2);
 
     /* -- Filesystem interface -- */
@@ -609,11 +748,11 @@ class WinNTFileSystem extends FileSystem {
             .filter(f -> access(f.getPath()) && f.exists())
             .toArray(File[]::new);
     }
-
     private static native int listRoots0();
 
     private boolean access(String path) {
         try {
+            @SuppressWarnings("removal")
             SecurityManager security = System.getSecurityManager();
             if (security != null) security.checkRead(path);
             return true;
@@ -631,7 +770,6 @@ class WinNTFileSystem extends FileSystem {
         }
         return 0;
     }
-
     private native long getSpace0(File f, int t);
 
     /* -- Basic infrastructure -- */

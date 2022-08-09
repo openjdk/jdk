@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,18 +22,35 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package javax.swing.text;
 
-import java.awt.*;
-import java.util.*;
-import java.io.*;
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.Toolkit;
+import java.io.IOException;
+import java.io.InvalidObjectException;
+import java.io.NotSerializableException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serial;
+import java.io.Serializable;
+import java.lang.ref.WeakReference;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.EventListener;
+import java.util.Hashtable;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Vector;
+import java.util.WeakHashMap;
 
 import javax.swing.SwingUtilities;
+import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.EventListenerList;
-import javax.swing.event.ChangeEvent;
-import java.lang.ref.WeakReference;
-import java.util.WeakHashMap;
 
 import sun.font.FontUtilities;
 
@@ -562,7 +579,7 @@ public class StyleContext implements Serializable, AbstractDocument.AttributeCon
      * Context-specific handling of writing out attributes
      * @param out the output stream
      * @param a the attribute set
-     * @exception IOException on any I/O error
+     * @throws IOException on any I/O error
      */
     public void writeAttributes(ObjectOutputStream out,
                                   AttributeSet a) throws IOException {
@@ -574,9 +591,9 @@ public class StyleContext implements Serializable, AbstractDocument.AttributeCon
      * @param in the object stream to read the attribute data from.
      * @param a  the attribute set to place the attribute
      *   definitions in.
-     * @exception ClassNotFoundException passed upward if encountered
+     * @throws ClassNotFoundException passed upward if encountered
      *  when reading the object stream.
-     * @exception IOException passed upward if encountered when
+     * @throws IOException passed upward if encountered when
      *  reading the object stream.
      */
     public void readAttributes(ObjectInputStream in,
@@ -596,7 +613,7 @@ public class StyleContext implements Serializable, AbstractDocument.AttributeCon
      *
      * @param out the output stream
      * @param a the attribute set
-     * @exception IOException on any I/O error
+     * @throws IOException on any I/O error
      */
     public static void writeAttributeSet(ObjectOutputStream out,
                                          AttributeSet a) throws IOException {
@@ -643,9 +660,9 @@ public class StyleContext implements Serializable, AbstractDocument.AttributeCon
      * @param in the object stream to read the attribute data from.
      * @param a  the attribute set to place the attribute
      *   definitions in.
-     * @exception ClassNotFoundException passed upward if encountered
+     * @throws ClassNotFoundException passed upward if encountered
      *  when reading the object stream.
-     * @exception IOException passed upward if encountered when
+     * @throws IOException passed upward if encountered when
      *  reading the object stream.
      */
     public static void readAttributeSet(ObjectInputStream in,
@@ -719,6 +736,7 @@ public class StyleContext implements Serializable, AbstractDocument.AttributeCon
         return key.getClass().getName() + "." + key.toString();
     }
 
+    @Serial
     private void writeObject(java.io.ObjectOutputStream s)
         throws IOException
     {
@@ -728,6 +746,7 @@ public class StyleContext implements Serializable, AbstractDocument.AttributeCon
         s.defaultWriteObject();
     }
 
+    @Serial
     private void readObject(ObjectInputStream s)
       throws ClassNotFoundException, IOException
     {
@@ -1036,7 +1055,7 @@ public class StyleContext implements Serializable, AbstractDocument.AttributeCon
     /**
      * An enumeration of the keys in a SmallAttributeSet.
      */
-    class KeyEnumeration implements Enumeration<Object> {
+    static class KeyEnumeration implements Enumeration<Object> {
 
         KeyEnumeration(Object[] attr) {
             this.attr = attr;
@@ -1058,7 +1077,7 @@ public class StyleContext implements Serializable, AbstractDocument.AttributeCon
          * Returns the next element of this enumeration.
          *
          * @return     the next element of this enumeration.
-         * @exception  NoSuchElementException  if no more elements exist.
+         * @throws  NoSuchElementException  if no more elements exist.
          * @since      1.0
          */
         public Object nextElement() {
@@ -1078,7 +1097,7 @@ public class StyleContext implements Serializable, AbstractDocument.AttributeCon
      * Sorts the key strings so that they can be very quickly compared
      * in the attribute set searches.
      */
-    class KeyBuilder {
+    static class KeyBuilder {
 
         public void initialize(AttributeSet a) {
             if (a instanceof SmallAttributeSet) {
@@ -1608,11 +1627,13 @@ public class StyleContext implements Serializable, AbstractDocument.AttributeCon
 
         // --- serialization ---------------------------------------------
 
+        @Serial
         private void writeObject(ObjectOutputStream s) throws IOException {
             s.defaultWriteObject();
             writeAttributeSet(s, attributes);
         }
 
+        @Serial
         private void readObject(ObjectInputStream s)
             throws ClassNotFoundException, IOException
         {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2013, 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,8 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHCOLLECTORPOLICY_HPP
 
 #include "gc/shared/gcTrace.hpp"
-#include "gc/shenandoah/shenandoahHeap.hpp"
+#include "gc/shenandoah/shenandoahGC.hpp"
+#include "gc/shenandoah/shenandoahSharedVariables.hpp"
 #include "memory/allocation.hpp"
 #include "utilities/ostream.hpp"
 
@@ -47,7 +48,7 @@ private:
   size_t _explicit_full;
   size_t _implicit_concurrent;
   size_t _implicit_full;
-  size_t _degen_points[ShenandoahHeap::_DEGENERATED_LIMIT];
+  size_t _degen_points[ShenandoahGC::_DEGENERATED_LIMIT];
 
   ShenandoahSharedFlag _in_shutdown;
 
@@ -65,7 +66,7 @@ public:
   void record_success_concurrent();
   void record_success_degenerated();
   void record_success_full();
-  void record_alloc_failure_to_degenerated(ShenandoahHeap::ShenandoahDegenPoint point);
+  void record_alloc_failure_to_degenerated(ShenandoahGC::ShenandoahDegenPoint point);
   void record_alloc_failure_to_full();
   void record_degenerated_upgrade_to_full();
   void record_explicit_to_concurrent();

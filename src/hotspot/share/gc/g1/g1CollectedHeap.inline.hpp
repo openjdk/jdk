@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,16 +25,29 @@
 #ifndef SHARE_GC_G1_G1COLLECTEDHEAP_INLINE_HPP
 #define SHARE_GC_G1_G1COLLECTEDHEAP_INLINE_HPP
 
-#include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1CollectedHeap.hpp"
+
+#include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1CollectorState.hpp"
+#include "gc/g1/g1ConcurrentMark.inline.hpp"
+#include "gc/g1/g1EvacFailureRegions.hpp"
 #include "gc/g1/g1Policy.hpp"
 #include "gc/g1/g1RemSet.hpp"
+#include "gc/g1/heapRegion.inline.hpp"
 #include "gc/g1/heapRegionManager.inline.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
 #include "gc/g1/heapRegionSet.inline.hpp"
 #include "gc/shared/markBitMap.inline.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
+#include "oops/stackChunkOop.hpp"
+#include "runtime/atomic.hpp"
+#include "utilities/bitMap.inline.hpp"
+
+inline bool G1STWIsAliveClosure::do_object_b(oop p) {
+  // An object is reachable if it is outside the collection set,
+  // or is inside and copied.
+  return !_g1h->is_in_cset(p) || p->is_forwarded();
+}
 
 G1GCPhaseTimes* G1CollectedHeap::phase_times() const {
   return _policy->phase_times();
@@ -73,7 +86,7 @@ inline HeapRegion* G1CollectedHeap::next_region_in_humongous(HeapRegion* hr) con
   return _hrm.next_region_in_humongous(hr);
 }
 
-inline uint G1CollectedHeap::addr_to_region(HeapWord* addr) const {
+inline uint G1CollectedHeap::addr_to_region(const void* addr) const {
   assert(is_in_reserved(addr),
          "Cannot calculate region index for address " PTR_FORMAT " that is outside of the heap [" PTR_FORMAT ", " PTR_FORMAT ")",
          p2i(addr), p2i(reserved().start()), p2i(reserved().end()));
@@ -84,21 +97,13 @@ inline HeapWord* G1CollectedHeap::bottom_addr_for_region(uint index) const {
   return _hrm.reserved().start() + index * HeapRegion::GrainWords;
 }
 
-template <class T>
-inline HeapRegion* G1CollectedHeap::heap_region_containing(const T addr) const {
-  assert(addr != NULL, "invariant");
-  assert(is_in_reserved((const void*) addr),
-         "Address " PTR_FORMAT " is outside of the heap ranging from [" PTR_FORMAT " to " PTR_FORMAT ")",
-         p2i((void*)addr), p2i(reserved().start()), p2i(reserved().end()));
-  return _hrm.addr_to_region((HeapWord*)(void*) addr);
+
+inline HeapRegion* G1CollectedHeap::heap_region_containing(const void* addr) const {
+  uint const region_idx = addr_to_region(addr);
+  return region_at(region_idx);
 }
 
-template <class T>
-inline HeapRegion* G1CollectedHeap::heap_region_containing_or_null(const T addr) const {
-  assert(addr != NULL, "invariant");
-  assert(is_in_reserved((const void*) addr),
-         "Address " PTR_FORMAT " is outside of the heap ranging from [" PTR_FORMAT " to " PTR_FORMAT ")",
-         p2i((void*)addr), p2i(reserved().start()), p2i(reserved().end()));
+inline HeapRegion* G1CollectedHeap::heap_region_containing_or_null(const void* addr) const {
   uint const region_idx = addr_to_region(addr);
   return region_at_or_null(region_idx);
 }
@@ -139,23 +144,27 @@ G1CollectedHeap::dirty_young_block(HeapWord* start, size_t word_size) {
   card_table()->g1_mark_as_young(mr);
 }
 
+inline G1ScannerTasksQueueSet* G1CollectedHeap::task_queues() const {
+  return _task_queues;
+}
+
 inline G1ScannerTasksQueue* G1CollectedHeap::task_queue(uint i) const {
   return _task_queues->queue(i);
 }
 
-inline bool G1CollectedHeap::is_marked_next(oop obj) const {
-  return _cm->next_mark_bitmap()->is_marked(obj);
+inline bool G1CollectedHeap::is_marked(oop obj) const {
+  return _cm->mark_bitmap()->is_marked(obj);
 }
 
-inline bool G1CollectedHeap::is_in_cset(oop obj) {
+inline bool G1CollectedHeap::is_in_cset(oop obj) const {
   return is_in_cset(cast_from_oop<HeapWord*>(obj));
 }
 
-inline bool G1CollectedHeap::is_in_cset(HeapWord* addr) {
+inline bool G1CollectedHeap::is_in_cset(HeapWord* addr) const {
   return _region_attr.is_in_cset(addr);
 }
 
-bool G1CollectedHeap::is_in_cset(const HeapRegion* hr) {
+bool G1CollectedHeap::is_in_cset(const HeapRegion* hr) const {
   return _region_attr.is_in_cset(hr);
 }
 
@@ -175,8 +184,12 @@ void G1CollectedHeap::register_humongous_region_with_region_attr(uint index) {
   _region_attr.set_humongous(index, region_at(index)->rem_set()->is_tracked());
 }
 
+void G1CollectedHeap::register_new_survivor_region_with_region_attr(HeapRegion* r) {
+  _region_attr.set_new_survivor_region(r->hrm_index());
+}
+
 void G1CollectedHeap::register_region_with_region_attr(HeapRegion* r) {
-  _region_attr.set_has_remset(r->hrm_index(), r->rem_set()->is_tracked());
+  _region_attr.set_remset_is_tracked(r->hrm_index(), r->rem_set()->is_tracked());
 }
 
 void G1CollectedHeap::register_old_region_with_region_attr(HeapRegion* r) {
@@ -188,83 +201,20 @@ void G1CollectedHeap::register_optional_region_with_region_attr(HeapRegion* r) {
   _region_attr.set_optional(r->hrm_index(), r->rem_set()->is_tracked());
 }
 
-#ifndef PRODUCT
-// Support for G1EvacuationFailureALot
-
-inline bool
-G1CollectedHeap::evacuation_failure_alot_for_gc_type(bool for_young_gc,
-                                                     bool during_concurrent_start,
-                                                     bool mark_or_rebuild_in_progress) {
-  bool res = false;
-  if (mark_or_rebuild_in_progress) {
-    res |= G1EvacuationFailureALotDuringConcMark;
-  }
-  if (during_concurrent_start) {
-    res |= G1EvacuationFailureALotDuringConcurrentStart;
-  }
-  if (for_young_gc) {
-    res |= G1EvacuationFailureALotDuringYoungGC;
-  } else {
-    // GCs are mixed
-    res |= G1EvacuationFailureALotDuringMixedGC;
-  }
-  return res;
-}
-
-inline void
-G1CollectedHeap::set_evacuation_failure_alot_for_current_gc() {
-  if (G1EvacuationFailureALot) {
-    // Note we can't assert that _evacuation_failure_alot_for_current_gc
-    // is clear here. It may have been set during a previous GC but that GC
-    // did not copy enough objects (i.e. G1EvacuationFailureALotCount) to
-    // trigger an evacuation failure and clear the flags and and counts.
-
-    // Check if we have gone over the interval.
-    const size_t gc_num = total_collections();
-    const size_t elapsed_gcs = gc_num - _evacuation_failure_alot_gc_number;
-
-    _evacuation_failure_alot_for_current_gc = (elapsed_gcs >= G1EvacuationFailureALotInterval);
-
-    // Now check if G1EvacuationFailureALot is enabled for the current GC type.
-    const bool in_young_only_phase = collector_state()->in_young_only_phase();
-    const bool in_concurrent_start_gc = collector_state()->in_concurrent_start_gc();
-    const bool mark_or_rebuild_in_progress = collector_state()->mark_or_rebuild_in_progress();
-
-    _evacuation_failure_alot_for_current_gc &=
-      evacuation_failure_alot_for_gc_type(in_young_only_phase,
-                                          in_concurrent_start_gc,
-                                          mark_or_rebuild_in_progress);
-  }
-}
-
-inline bool G1CollectedHeap::evacuation_should_fail() {
-  if (!G1EvacuationFailureALot || !_evacuation_failure_alot_for_current_gc) {
-    return false;
-  }
-  // G1EvacuationFailureALot is in effect for current GC
-  // Access to _evacuation_failure_alot_count is not atomic;
-  // the value does not have to be exact.
-  if (++_evacuation_failure_alot_count < G1EvacuationFailureALotCount) {
-    return false;
-  }
-  _evacuation_failure_alot_count = 0;
-  return true;
-}
-
-inline void G1CollectedHeap::reset_evacuation_should_fail() {
-  if (G1EvacuationFailureALot) {
-    _evacuation_failure_alot_gc_number = total_collections();
-    _evacuation_failure_alot_count = 0;
-    _evacuation_failure_alot_for_current_gc = false;
-  }
-}
-#endif  // #ifndef PRODUCT
-
-inline bool G1CollectedHeap::is_in_young(const oop obj) {
+inline bool G1CollectedHeap::is_in_young(const oop obj) const {
   if (obj == NULL) {
     return false;
   }
   return heap_region_containing(obj)->is_young();
+}
+
+inline bool G1CollectedHeap::requires_barriers(stackChunkOop obj) const {
+  assert(obj != NULL, "");
+  return !heap_region_containing(obj)->is_young(); // is_in_young does an unnecessary NULL check
+}
+
+inline bool G1CollectedHeap::is_obj_dead(const oop obj, const HeapRegion* hr) const {
+  return hr->is_obj_dead(obj, hr->parsable_bottom());
 }
 
 inline bool G1CollectedHeap::is_obj_dead(const oop obj) const {
@@ -274,49 +224,28 @@ inline bool G1CollectedHeap::is_obj_dead(const oop obj) const {
   return is_obj_dead(obj, heap_region_containing(obj));
 }
 
-inline bool G1CollectedHeap::is_obj_ill(const oop obj) const {
-  if (obj == NULL) {
-    return false;
-  }
-  return is_obj_ill(obj, heap_region_containing(obj));
-}
-
 inline bool G1CollectedHeap::is_obj_dead_full(const oop obj, const HeapRegion* hr) const {
-   return !is_marked_next(obj) && !hr->is_closed_archive();
+   return !is_marked(obj) && !hr->is_closed_archive();
 }
 
 inline bool G1CollectedHeap::is_obj_dead_full(const oop obj) const {
     return is_obj_dead_full(obj, heap_region_containing(obj));
 }
 
-inline void G1CollectedHeap::set_humongous_reclaim_candidate(uint region, bool value) {
-  assert(_hrm.at(region)->is_starts_humongous(), "Must start a humongous object");
-  _humongous_reclaim_candidates.set_candidate(region, value);
-}
-
 inline bool G1CollectedHeap::is_humongous_reclaim_candidate(uint region) {
   assert(_hrm.at(region)->is_starts_humongous(), "Must start a humongous object");
-  return _humongous_reclaim_candidates.is_candidate(region);
-}
-
-inline void G1CollectedHeap::set_has_humongous_reclaim_candidate(bool value) {
-  _has_humongous_reclaim_candidates = value;
+  return _region_attr.is_humongous(region);
 }
 
 inline void G1CollectedHeap::set_humongous_is_live(oop obj) {
-  uint region = addr_to_region(cast_from_oop<HeapWord*>(obj));
-  // Clear the flag in the humongous_reclaim_candidates table.  Also
-  // reset the entry in the region attribute table so that subsequent references
-  // to the same humongous object do not go into the slow path again.
-  // This is racy, as multiple threads may at the same time enter here, but this
-  // is benign.
-  // During collection we only ever clear the "candidate" flag, and only ever clear the
-  // entry in the in_cset_fast_table.
-  // We only ever evaluate the contents of these tables (in the VM thread) after
-  // having synchronized the worker threads with the VM thread, or in the same
-  // thread (i.e. within the VM thread).
-  if (is_humongous_reclaim_candidate(region)) {
-    set_humongous_reclaim_candidate(region, false);
+  uint region = addr_to_region(obj);
+  // Reset the entry in the region attribute table so that subsequent
+  // references to the same humongous object do not go into the slow path
+  // again. This is racy, as multiple threads may at the same time enter here,
+  // but this is benign because the transition is unidirectional, from
+  // humongous-candidate to not, and the write, in evacuation, is
+  // separated from the read, in post-evacuation.
+  if (_region_attr.is_humongous(region)) {
     _region_attr.clear_humongous(region);
   }
 }

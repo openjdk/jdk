@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -851,7 +851,7 @@ public abstract class SSLContextImpl extends SSLContextSpi {
             } else {
                 // Use the customized TLS protocols.
                 candidates =
-                    refactored.toArray(new ProtocolVersion[refactored.size()]);
+                    refactored.toArray(new ProtocolVersion[0]);
             }
 
             return getAvailableProtocols(candidates);
@@ -966,6 +966,7 @@ public abstract class SSLContextImpl extends SSLContextSpi {
             return tmf.getTrustManagers();
         }
 
+        @SuppressWarnings("removal")
         private static KeyManager[] getKeyManagers() throws Exception {
 
             final Map<String,String> props = new HashMap<>();
@@ -1023,9 +1024,7 @@ public abstract class SSLContextImpl extends SSLContextSpi {
                     passwd = defaultKeyStorePassword.toCharArray();
                 }
 
-                /**
-                 * Try to initialize key store.
-                 */
+                // Try to initialize key store.
                 if ((defaultKeyStoreType.length()) != 0) {
                     if (SSLLogger.isOn && SSLLogger.isOn("ssl,defaultctx")) {
                         SSLLogger.finest("init keystore");
@@ -1304,7 +1303,7 @@ public abstract class SSLContextImpl extends SSLContextSpi {
         private static final List<CipherSuite> clientDefaultCipherSuites;
         private static final List<CipherSuite> serverDefaultCipherSuites;
 
-        private static IllegalArgumentException reservedException = null;
+        private static IllegalArgumentException reservedException;
 
         // Don't want a java.lang.LinkageError for illegal system property.
         //
@@ -1486,14 +1485,14 @@ final class AbstractTrustManagerWrapper extends X509ExtendedTrustManager
                     String[] peerSupportedSignAlgs =
                             extSession.getLocalSupportedSignatureAlgorithms();
 
-                    constraints = new SSLAlgorithmConstraints(
+                    constraints = SSLAlgorithmConstraints.forSocket(
                                     sslSocket, peerSupportedSignAlgs, true);
                 } else {
                     constraints =
-                            new SSLAlgorithmConstraints(sslSocket, true);
+                            SSLAlgorithmConstraints.forSocket(sslSocket, true);
                 }
             } else {
-                constraints = new SSLAlgorithmConstraints(sslSocket, true);
+                constraints = SSLAlgorithmConstraints.forSocket(sslSocket, true);
             }
 
             checkAlgorithmConstraints(chain, constraints, checkClientTrusted);
@@ -1526,14 +1525,14 @@ final class AbstractTrustManagerWrapper extends X509ExtendedTrustManager
                     String[] peerSupportedSignAlgs =
                             extSession.getLocalSupportedSignatureAlgorithms();
 
-                    constraints = new SSLAlgorithmConstraints(
+                    constraints = SSLAlgorithmConstraints.forEngine(
                                     engine, peerSupportedSignAlgs, true);
                 } else {
                     constraints =
-                            new SSLAlgorithmConstraints(engine, true);
+                            SSLAlgorithmConstraints.forEngine(engine, true);
                 }
             } else {
-                constraints = new SSLAlgorithmConstraints(engine, true);
+                constraints = SSLAlgorithmConstraints.forEngine(engine, true);
             }
 
             checkAlgorithmConstraints(chain, constraints, checkClientTrusted);
@@ -1560,7 +1559,7 @@ final class AbstractTrustManagerWrapper extends X509ExtendedTrustManager
             // A forward checker, need to check from trust to target
             if (checkedLength >= 0) {
                 AlgorithmChecker checker =
-                    new AlgorithmChecker(constraints, null,
+                    new AlgorithmChecker(constraints,
                             (checkClientTrusted ? Validator.VAR_TLS_CLIENT :
                                         Validator.VAR_TLS_SERVER));
                 checker.init(false);
@@ -1599,7 +1598,7 @@ final class DummyX509TrustManager extends X509ExtendedTrustManager
     public void checkClientTrusted(X509Certificate[] chain, String authType)
         throws CertificateException {
         throw new CertificateException(
-            "No X509TrustManager implementation avaiable");
+            "No X509TrustManager implementation available");
     }
 
     /*

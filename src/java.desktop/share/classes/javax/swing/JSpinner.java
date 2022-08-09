@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,23 +25,54 @@
 
 package javax.swing;
 
-import java.awt.*;
-import java.awt.event.*;
-
-import javax.swing.event.*;
-import javax.swing.plaf.FontUIResource;
-import javax.swing.plaf.UIResource;
-import javax.swing.text.*;
-import javax.swing.plaf.SpinnerUI;
-
-import java.util.*;
-import java.beans.*;
-import java.text.*;
-import java.io.*;
+import java.awt.Component;
+import java.awt.ComponentOrientation;
+import java.awt.Container;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.Insets;
+import java.awt.LayoutManager;
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.event.ActionEvent;
+import java.beans.BeanProperty;
+import java.beans.JavaBean;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.io.Serial;
+import java.io.Serializable;
+import java.text.DateFormat;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.text.spi.DateFormatProvider;
 import java.text.spi.NumberFormatProvider;
+import java.util.Date;
+import java.util.Locale;
 
-import javax.accessibility.*;
+import javax.accessibility.Accessible;
+import javax.accessibility.AccessibleAction;
+import javax.accessibility.AccessibleContext;
+import javax.accessibility.AccessibleEditableText;
+import javax.accessibility.AccessibleRole;
+import javax.accessibility.AccessibleText;
+import javax.accessibility.AccessibleValue;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+import javax.swing.event.EventListenerList;
+import javax.swing.plaf.FontUIResource;
+import javax.swing.plaf.SpinnerUI;
+import javax.swing.plaf.UIResource;
+import javax.swing.text.AttributeSet;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.DateFormatter;
+import javax.swing.text.DefaultFormatterFactory;
+import javax.swing.text.DocumentFilter;
+import javax.swing.text.NumberFormatter;
+
 import sun.util.locale.provider.LocaleProviderAdapter;
 import sun.util.locale.provider.LocaleResources;
 
@@ -560,6 +591,7 @@ public class JSpinner extends JComponent implements Accessible
      *
      * @param s Stream to write to
      */
+    @Serial
     private void writeObject(ObjectOutputStream s) throws IOException {
         s.defaultWriteObject();
         if (getUIClassID().equals(uiClassID)) {
@@ -983,7 +1015,7 @@ public class JSpinner extends JComponent implements Accessible
          * on the new <code>JFormattedTextField</code>.
          *
          * @param spinner the spinner whose model <code>this</code> editor will monitor
-         * @exception IllegalArgumentException if the spinners model is not
+         * @throws IllegalArgumentException if the spinners model is not
          *     an instance of <code>SpinnerDateModel</code>
          *
          * @see #getModel
@@ -1007,7 +1039,7 @@ public class JSpinner extends JComponent implements Accessible
          * @param dateFormatPattern the initial pattern for the
          *     <code>SimpleDateFormat</code> object that's used to display
          *     and parse the value of the text field.
-         * @exception IllegalArgumentException if the spinners model is not
+         * @throws IllegalArgumentException if the spinners model is not
          *     an instance of <code>SpinnerDateModel</code>
          *
          * @see #getModel
@@ -1032,7 +1064,7 @@ public class JSpinner extends JComponent implements Accessible
          *        will monitor
          * @param format <code>DateFormat</code> object that's used to display
          *     and parse the value of the text field.
-         * @exception IllegalArgumentException if the spinners model is not
+         * @throws IllegalArgumentException if the spinners model is not
          *     an instance of <code>SpinnerDateModel</code>
          *
          * @see #getModel
@@ -1170,7 +1202,7 @@ public class JSpinner extends JComponent implements Accessible
          * on the new <code>JFormattedTextField</code>.
          *
          * @param spinner the spinner whose model <code>this</code> editor will monitor
-         * @exception IllegalArgumentException if the spinners model is not
+         * @throws IllegalArgumentException if the spinners model is not
          *     an instance of <code>SpinnerNumberModel</code>
          *
          * @see #getModel
@@ -1193,7 +1225,7 @@ public class JSpinner extends JComponent implements Accessible
          * @param decimalFormatPattern the initial pattern for the
          *     <code>DecimalFormat</code> object that's used to display
          *     and parse the value of the text field.
-         * @exception IllegalArgumentException if the spinners model is not
+         * @throws IllegalArgumentException if the spinners model is not
          *     an instance of <code>SpinnerNumberModel</code> or if
          *     <code>decimalFormatPattern</code> is not a legal
          *     argument to <code>DecimalFormat</code>
@@ -1219,7 +1251,7 @@ public class JSpinner extends JComponent implements Accessible
          * @param format the initial pattern for the
          *     <code>DecimalFormat</code> object that's used to display
          *     and parse the value of the text field.
-         * @exception IllegalArgumentException if the spinners model is not
+         * @throws IllegalArgumentException if the spinners model is not
          *     an instance of <code>SpinnerNumberModel</code>
          *
          * @see #getTextField
@@ -1314,7 +1346,7 @@ public class JSpinner extends JComponent implements Accessible
          * on the new <code>JFormattedTextField</code>.
          *
          * @param spinner the spinner whose model <code>this</code> editor will monitor
-         * @exception IllegalArgumentException if the spinners model is not
+         * @throws IllegalArgumentException if the spinners model is not
          *     an instance of <code>SpinnerListModel</code>
          *
          * @see #getModel

@@ -28,7 +28,7 @@
  * @library /test/lib ..
  * @modules jdk.crypto.cryptoki
  * @run main/othervm TestInterop
- * @run main/othervm TestInterop sm
+ * @run main/othervm -Djava.security.manager=allow TestInterop sm
  */
 import java.math.BigInteger;
 import java.security.KeyFactory;

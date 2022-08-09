@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,7 +103,7 @@
  * provider} with a parameter that is an object created by another provider,
  * will throw {@link java.nio.file.ProviderMismatchException}. </p>
  *
- * <h2>Optional Specific Exceptions</h2>
+ * <h2><a id="optspecex">Optional Specific Exceptions</a></h2>
  * Most of the methods defined by classes in this package that access the
  * file system specify that {@link java.io.IOException} be thrown when an I/O
  * error occurs. In some cases, these methods define specific I/O exceptions

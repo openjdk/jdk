@@ -25,8 +25,8 @@
 
 package jdk.jfr.consumer;
 
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 import jdk.jfr.internal.consumer.ObjectContext;
@@ -51,7 +51,7 @@ public final class RecordedStackTrace extends RecordedObject {
     public List<RecordedFrame> getFrames() {
         Object[] array = getTyped("frames", Object[].class, null);
         if (array == null) {
-            return Collections.EMPTY_LIST;
+            return new ArrayList<>(0);
         }
         List<?> list = Arrays.asList(array);
         return (List<RecordedFrame>) list;

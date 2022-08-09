@@ -11,12 +11,23 @@ library = ${pkcs11test.nss.lib}
 
 nssArgs = "configdir='${pkcs11test.nss.db}' certPrefix='' keyPrefix='' secmod='secmod.db' flags=readOnly"
 
-# HMAC_SHA256/384/512 broken until NSS 3.10.2
-# see https://bugzilla.mozilla.org/show_bug.cgi?id=291858
 disabledMechanisms = {
-  CKM_SHA256_HMAC
-  CKM_SHA384_HMAC
-  CKM_SHA512_HMAC
+  CKM_DSA_SHA224
+  CKM_DSA_SHA256
+  CKM_DSA_SHA384
+  CKM_DSA_SHA512
+  CKM_DSA_SHA3_224
+  CKM_DSA_SHA3_256
+  CKM_DSA_SHA3_384
+  CKM_DSA_SHA3_512
+  CKM_ECDSA_SHA224
+  CKM_ECDSA_SHA256
+  CKM_ECDSA_SHA384
+  CKM_ECDSA_SHA512
+  CKM_ECDSA_SHA3_224
+  CKM_ECDSA_SHA3_256
+  CKM_ECDSA_SHA3_384
+  CKM_ECDSA_SHA3_512
 }
 
 attributes = compatibility

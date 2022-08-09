@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,20 +24,17 @@
 #ifndef SHARE_GC_Z_ZVERIFY_HPP
 #define SHARE_GC_Z_ZVERIFY_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 
 class frame;
 class ZPageAllocator;
 
 class ZVerify : public AllStatic {
 private:
-  static void roots_concurrent_strong(bool verify_fixed);
+  static void roots_strong(bool verify_fixed);
   static void roots_weak();
-  static void roots_concurrent_weak();
 
-  static void roots(bool verify_concurrent_strong, bool verify_weaks);
   static void objects(bool verify_weaks);
-  static void roots_and_objects(bool verify_concurrent_strong, bool verify_weaks);
 
 public:
   static void before_zoperation();

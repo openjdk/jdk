@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
  * @test
  * @bug 7031830
  * @summary bad_record_mac failure on TLSv1.2 enabled connection with SSLEngine
+ * @library /test/lib
  * @run main/othervm SSLEngineBadBufferArrayAccess
  */
 
@@ -85,6 +86,8 @@ import java.security.*;
 import java.nio.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+
+import jdk.test.lib.security.SecurityUtils;
 
 public class SSLEngineBadBufferArrayAccess {
 
@@ -157,6 +160,9 @@ public class SSLEngineBadBufferArrayAccess {
         if (debug) {
             System.setProperty("javax.net.debug", "all");
         }
+
+        // Re-enable TLSv1 and TLSv1.1 since test depends on them.
+        SecurityUtils.removeFromDisabledTlsAlgs("TLSv1", "TLSv1.1");
 
         String [] protocols = new String [] {
             "SSLv3", "TLSv1", "TLSv1.1", "TLSv1.2" };

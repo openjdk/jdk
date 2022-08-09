@@ -68,7 +68,7 @@ public class ImportTest extends KullaTesting {
 
     public void testImportStatic() {
         assertImportKeyMatch("import static java.lang.Math.PI;", "PI", SINGLE_STATIC_IMPORT_SUBKIND, added(VALID));
-        assertEval("new Double(PI).toString().substring(0, 16).equals(\"3.14159265358979\");", "true");
+        assertEval("Double.valueOf(PI).toString().substring(0, 16).equals(\"3.14159265358979\");", "true");
     }
 
     public void testImportStaticOnDemand() {

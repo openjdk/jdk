@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,11 +44,11 @@ import jdk.test.lib.RandomFactory;
  * @modules java.management
  * @library /test/lib
  * @build TestMaxCachedBufferSize
- * @run main/othervm TestMaxCachedBufferSize
- * @run main/othervm -Djdk.nio.maxCachedBufferSize=0 TestMaxCachedBufferSize
- * @run main/othervm -Djdk.nio.maxCachedBufferSize=2000 TestMaxCachedBufferSize
- * @run main/othervm -Djdk.nio.maxCachedBufferSize=100000 TestMaxCachedBufferSize
- * @run main/othervm -Djdk.nio.maxCachedBufferSize=10000000 TestMaxCachedBufferSize
+ * @run main/othervm/timeout=150 TestMaxCachedBufferSize
+ * @run main/othervm/timeout=150 -Djdk.nio.maxCachedBufferSize=0 TestMaxCachedBufferSize
+ * @run main/othervm/timeout=150 -Djdk.nio.maxCachedBufferSize=2000 TestMaxCachedBufferSize
+ * @run main/othervm/timeout=150 -Djdk.nio.maxCachedBufferSize=100000 TestMaxCachedBufferSize
+ * @run main/othervm/timeout=150 -Djdk.nio.maxCachedBufferSize=10000000 TestMaxCachedBufferSize
  * @summary Test the implementation of the jdk.nio.maxCachedBufferSize property
  * (use -Dseed=X to set PRNG seed)
  * @key randomness

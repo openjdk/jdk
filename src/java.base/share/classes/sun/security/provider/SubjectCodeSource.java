@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,6 +80,7 @@ class SubjectCodeSource extends CodeSource implements java.io.Serializable {
      * @param certs the signers associated with this
      *                  <code>SubjectCodeSource</code> <p>
      */
+    @SuppressWarnings("removal")
     SubjectCodeSource(Subject subject,
         LinkedList<PrincipalEntry> principals,
         URL url, Certificate[] certs) {
@@ -163,16 +164,13 @@ class SubjectCodeSource extends CodeSource implements java.io.Serializable {
 
         LinkedList<PrincipalEntry> subjectList = null;
 
-        if (codesource == null ||
-            !(codesource instanceof SubjectCodeSource) ||
-            !(super.implies(codesource))) {
+        if (!(codesource instanceof SubjectCodeSource that) ||
+                !super.implies(codesource)) {
 
             if (debug != null)
                 debug.println("\tSubjectCodeSource.implies: FAILURE 1");
             return false;
         }
-
-        SubjectCodeSource that = (SubjectCodeSource)codesource;
 
         // if the principal list in the policy "implies"
         // the Subject associated with the current AccessControlContext,
@@ -365,6 +363,7 @@ class SubjectCodeSource extends CodeSource implements java.io.Serializable {
      *
      * @return a String representation of this <code>SubjectCodeSource</code>.
      */
+    @SuppressWarnings("removal")
     public String toString() {
         String returnMe = super.toString();
         if (getSubject() != null) {
@@ -382,9 +381,7 @@ class SubjectCodeSource extends CodeSource implements java.io.Serializable {
             }
         }
         if (principals != null) {
-            ListIterator<PrincipalEntry> li = principals.listIterator();
-            while (li.hasNext()) {
-                PrincipalEntry pppe = li.next();
+            for (PrincipalEntry pppe : principals) {
                 returnMe = returnMe + ResourcesMgr.getAuthResourceString("NEWLINE") +
                         pppe.getPrincipalClass() + " " +
                         pppe.getPrincipalName();

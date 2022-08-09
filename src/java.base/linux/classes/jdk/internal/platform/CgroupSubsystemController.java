@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Red Hat Inc.
+ * Copyright (c) 2020, 2022, Red Hat Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package jdk.internal.platform;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.math.BigInteger;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -169,8 +170,7 @@ public interface CgroupSubsystemController {
                                            .findFirst();
 
             return result.isPresent() ? Long.parseLong(result.get()) : defaultRetval;
-        }
-        catch (IOException e) {
+        } catch (UncheckedIOException | IOException e) {
             return defaultRetval;
         }
     }

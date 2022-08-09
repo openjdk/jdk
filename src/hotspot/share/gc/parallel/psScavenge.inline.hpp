@@ -25,19 +25,15 @@
 #ifndef SHARE_GC_PARALLEL_PSSCAVENGE_INLINE_HPP
 #define SHARE_GC_PARALLEL_PSSCAVENGE_INLINE_HPP
 
-#include "gc/parallel/parallelScavengeHeap.hpp"
 #include "gc/parallel/psScavenge.hpp"
+
+#include "gc/parallel/parallelScavengeHeap.hpp"
 #include "logging/log.hpp"
 #include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
-
-inline void PSScavenge::save_to_space_top_before_gc() {
-  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
-  _to_space_top_before_gc = heap->young_gen()->to_space()->top();
-}
 
 template <class T> inline bool PSScavenge::should_scavenge(T* p) {
   T heap_oop = RawAccess<>::oop_load(p);
@@ -50,7 +46,7 @@ inline bool PSScavenge::should_scavenge(T* p, MutableSpace* to_space) {
     oop obj = RawAccess<IS_NOT_NULL>::oop_load(p);
     // Skip objects copied to to_space since the scavenge started.
     HeapWord* const addr = cast_from_oop<HeapWord*>(obj);
-    return addr < to_space_top_before_gc() || addr >= to_space->end();
+    return addr < to_space->bottom() || addr >= to_space->end();
   }
   return false;
 }

@@ -24,6 +24,7 @@
 /*
  * @test
  * @summary Tests <double> element
+ * @run main/othervm -Djava.security.manager=allow TestDouble
  * @author Sergey Malenkov
  */
 

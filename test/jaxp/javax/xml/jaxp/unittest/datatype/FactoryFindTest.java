@@ -37,7 +37,7 @@ import org.testng.annotations.Test;
 /*
  * @test
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true datatype.FactoryFindTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow datatype.FactoryFindTest
  * @run testng/othervm datatype.FactoryFindTest
  * @summary Test Classloader for DatatypeFactory.
  */

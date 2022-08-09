@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,6 +68,14 @@ abstract class VarHandleBaseTest {
 
     static void checkIOOBE(Object message, ThrowingRunnable r) {
         checkWithThrowable(IndexOutOfBoundsException.class, message, r);
+    }
+
+    static void checkAIOOBE(ThrowingRunnable r) {
+        checkWithThrowable(ArrayIndexOutOfBoundsException.class, null, r);
+    }
+
+    static void checkAIOOBE(Object message, ThrowingRunnable r) {
+        checkWithThrowable(ArrayIndexOutOfBoundsException.class, message, r);
     }
 
     static void checkASE(ThrowingRunnable r) {

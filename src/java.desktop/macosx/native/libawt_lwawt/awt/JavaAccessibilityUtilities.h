@@ -23,25 +23,17 @@
  * questions.
  */
 
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
+#import "JNIUtilities.h"
 
 extern NSString *const JavaAccessibilityIgnore;
 
 extern NSMutableDictionary *sRoles;
 extern void initializeRoles();
 
-extern JNFClassInfo sjc_CAccessibility;
-extern JNFClassInfo sjc_AccessibleComponent;
-extern JNFClassInfo sjc_AccessibleContext;
-extern JNFClassInfo sjc_Accessible;
-extern JNFClassInfo sjc_AccessibleRole;
-extern JNFClassInfo sjc_Point;
-extern JNFClassInfo sjc_AccessibleText;
-
-extern JNFMemberInfo *sjm_getAccessibleRole;
-extern JNFMemberInfo *sjf_key;
-extern JNFMemberInfo *sjf_X;
-extern JNFMemberInfo *sjf_Y;
+#define GET_CACCESSIBILITY_CLASS() \
+    GET_CLASS(sjc_CAccessibility, "sun/lwawt/macosx/CAccessibility");
+#define GET_CACCESSIBILITY_CLASS_RETURN(ret) \
+    GET_CLASS_RETURN(sjc_CAccessibility, "sun/lwawt/macosx/CAccessibility", ret);
 
 NSSize getAxComponentSize(JNIEnv *env, jobject axComponent, jobject component);
 NSString *getJavaRole(JNIEnv *env, jobject axComponent, jobject component);
@@ -56,6 +48,7 @@ BOOL isVertical(JNIEnv *env, jobject axContext, jobject component);
 BOOL isHorizontal(JNIEnv *env, jobject axContext, jobject component);
 BOOL isShowing(JNIEnv *env, jobject axContext, jobject component);
 BOOL isSelectable(JNIEnv *env, jobject axContext, jobject component);
+BOOL isExpanded(JNIEnv *env, jobject axContext, jobject component);
 NSPoint getAxComponentLocationOnScreen(JNIEnv *env, jobject axComponent, jobject component);
 jint getAxTextCharCount(JNIEnv *env, jobject axText, jobject component);
 
@@ -68,3 +61,6 @@ void JavaAccessibilitySetAttributeValue(id element, NSString *attribute, id valu
 void JavaAccessibilityRaiseSetAttributeToIllegalTypeException(const char *functionName, id element, NSString *attribute, id value);
 void JavaAccessibilityRaiseUnimplementedAttributeException(const char *functionName, id element, NSString *attribute);
 void JavaAccessibilityRaiseIllegalParameterTypeException(const char *functionName, id element, NSString *attribute, id parameter);
+BOOL ObjectEquals(JNIEnv *env, jobject a, jobject b, jobject component);
+NSNumber* JavaNumberToNSNumber(JNIEnv *env, jobject jnumber);
+NSValue *javaIntArrayToNSRangeValue(JNIEnv* env, jintArray array);

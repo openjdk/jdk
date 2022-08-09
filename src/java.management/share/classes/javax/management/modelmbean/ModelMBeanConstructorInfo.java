@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -130,6 +130,7 @@ public class ModelMBeanConstructorInfo
     static {
         try {
             GetPropertyAction act = new GetPropertyAction("jmx.serial.form");
+            @SuppressWarnings("removal")
             String form = AccessController.doPrivileged(act);
             compat = (form != null && form.equals("1.0"));
         } catch (Exception e) {
@@ -151,7 +152,7 @@ public class ModelMBeanConstructorInfo
          */
         private Descriptor consDescriptor = validDescriptor(null);
 
-        private final static String currClass = "ModelMBeanConstructorInfo";
+        private static final String currClass = "ModelMBeanConstructorInfo";
 
 
         /**

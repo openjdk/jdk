@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,8 +44,8 @@ public class Constants {
      * null) are returned unchanged.
      */
     public static Object decode(Object value, Type type) {
-        if (value instanceof Integer) {
-            int i = (Integer) value;
+        if (value instanceof Integer intVal) {
+            int i = intVal;
             switch (type.getTag()) {
             case BOOLEAN:  return i != 0;
             case CHAR:     return (char) i;
@@ -69,8 +69,8 @@ public class Constants {
         case DOUBLE:    return formatDouble((Double) value);
         case CHAR:      return formatChar((Character) value);
         }
-        if (value instanceof String)
-            return formatString((String) value);
+        if (value instanceof String str)
+            return formatString(str);
         return value + "";
     }
 
@@ -80,13 +80,13 @@ public class Constants {
      * Java source.
      */
     public static String format(Object value) {
-        if (value instanceof Byte)      return formatByte((Byte) value);
-        if (value instanceof Short)     return formatShort((Short) value);
-        if (value instanceof Long)      return formatLong((Long) value);
-        if (value instanceof Float)     return formatFloat((Float) value);
-        if (value instanceof Double)    return formatDouble((Double) value);
-        if (value instanceof Character) return formatChar((Character) value);
-        if (value instanceof String)    return formatString((String) value);
+        if (value instanceof Byte byteVal)      return formatByte(byteVal);
+        if (value instanceof Short shortVal)     return formatShort(shortVal);
+        if (value instanceof Long longVal)      return formatLong(longVal);
+        if (value instanceof Float floatVal)     return formatFloat(floatVal);
+        if (value instanceof Double doubleVal)    return formatDouble(doubleVal);
+        if (value instanceof Character charVal) return formatChar(charVal);
+        if (value instanceof String strVal)    return formatString(strVal);
         if (value instanceof Integer ||
             value instanceof Boolean)   return value.toString();
         else

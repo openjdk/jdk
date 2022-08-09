@@ -47,7 +47,7 @@ import org.xml.sax.SAXException;
  * @test
  * @bug 8158084 8163232 8166220
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true catalog.CatalogSupport5
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow catalog.CatalogSupport5
  * @run testng/othervm catalog.CatalogSupport5
  * @summary extends CatalogSupport tests, verifies that when errors occur,
  * relevant checked Exceptions are returned.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,12 +30,19 @@
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/safepoint.hpp"
-#include "runtime/thread.hpp"
 #include "utilities/align.hpp"
 #include "utilities/macros.hpp"
 
-MutableSpace::MutableSpace(size_t alignment): ImmutableSpace(), _alignment(alignment), _top(NULL) {
+MutableSpace::MutableSpace(size_t alignment) :
+  _mangler(NULL),
+  _last_setup_region(),
+  _alignment(alignment),
+  _bottom(NULL),
+  _top(NULL),
+  _end(NULL)
+{
   assert(MutableSpace::alignment() % os::vm_page_size() == 0,
          "Space should be aligned");
   _mangler = new MutableSpaceMangler(this);
@@ -45,9 +52,8 @@ MutableSpace::~MutableSpace() {
   delete _mangler;
 }
 
-void MutableSpace::numa_setup_pages(MemRegion mr, bool clear_space) {
+void MutableSpace::numa_setup_pages(MemRegion mr, size_t page_size, bool clear_space) {
   if (!mr.is_empty()) {
-    size_t page_size = UseLargePages ? alignment() : os::vm_page_size();
     HeapWord *start = align_up(mr.start(), page_size);
     HeapWord *end =   align_down(mr.end(), page_size);
     if (end > start) {
@@ -65,7 +71,7 @@ void MutableSpace::initialize(MemRegion mr,
                               bool clear_space,
                               bool mangle_space,
                               bool setup_pages,
-                              WorkGang* pretouch_gang) {
+                              WorkerThreads* pretouch_workers) {
 
   assert(Universe::on_page_boundary(mr.start()) && Universe::on_page_boundary(mr.end()),
          "invalid space boundaries");
@@ -106,19 +112,19 @@ void MutableSpace::initialize(MemRegion mr,
     }
     assert(mr.contains(head) && mr.contains(tail), "Sanity");
 
+    size_t page_size = alignment();
+
     if (UseNUMA) {
-      numa_setup_pages(head, clear_space);
-      numa_setup_pages(tail, clear_space);
+      numa_setup_pages(head, page_size, clear_space);
+      numa_setup_pages(tail, page_size, clear_space);
     }
 
     if (AlwaysPreTouch) {
-      size_t page_size = UseLargePages ? os::large_page_size() : os::vm_page_size();
-
       PretouchTask::pretouch("ParallelGC PreTouch head", (char*)head.start(), (char*)head.end(),
-                             page_size, pretouch_gang);
+                             page_size, pretouch_workers);
 
       PretouchTask::pretouch("ParallelGC PreTouch tail", (char*)tail.start(), (char*)tail.end(),
-                             page_size, pretouch_gang);
+                             page_size, pretouch_workers);
     }
 
     // Remember where we stopped so that we can continue later.
@@ -126,7 +132,11 @@ void MutableSpace::initialize(MemRegion mr,
   }
 
   set_bottom(mr.start());
-  set_end(mr.end());
+  // When expanding concurrently with callers of cas_allocate, setting end
+  // makes the new space available for allocation by other threads.  So this
+  // assignment must follow all other configuration and initialization that
+  // might be done for expansion.
+  Atomic::release_store(end_addr(), mr.end());
 
   if (clear_space) {
     clear(mangle_space);
@@ -173,28 +183,13 @@ void MutableSpace::set_top_for_allocations() {
 }
 #endif
 
-// This version requires locking. */
-HeapWord* MutableSpace::allocate(size_t size) {
-  assert(Heap_lock->owned_by_self() ||
-         (SafepointSynchronize::is_at_safepoint() &&
-          Thread::current()->is_VM_thread()),
-         "not locked");
-  HeapWord* obj = top();
-  if (pointer_delta(end(), obj) >= size) {
-    HeapWord* new_top = obj + size;
-    set_top(new_top);
-    assert(is_object_aligned(obj) && is_object_aligned(new_top),
-           "checking alignment");
-    return obj;
-  } else {
-    return NULL;
-  }
-}
-
-// This version is lock-free.
 HeapWord* MutableSpace::cas_allocate(size_t size) {
   do {
-    HeapWord* obj = top();
+    // Read top before end, else the range check may pass when it shouldn't.
+    // If end is read first, other threads may advance end and top such that
+    // current top > old end and current top + size > current end.  Then
+    // pointer_delta underflows, allowing installation of top > current end.
+    HeapWord* obj = Atomic::load_acquire(top_addr());
     if (pointer_delta(end(), obj) >= size) {
       HeapWord* new_top = obj + size;
       HeapWord* result = Atomic::cmpxchg(top_addr(), obj, new_top);
@@ -219,20 +214,29 @@ bool MutableSpace::cas_deallocate(HeapWord *obj, size_t size) {
   return Atomic::cmpxchg(top_addr(), expected_top, obj) == expected_top;
 }
 
+// Only used by oldgen allocation.
+bool MutableSpace::needs_expand(size_t word_size) const {
+  assert_lock_strong(PSOldGenExpand_lock);
+  // Holding the lock means end is stable.  So while top may be advancing
+  // via concurrent allocations, there is no need to order the reads of top
+  // and end here, unlike in cas_allocate.
+  return pointer_delta(end(), top()) < word_size;
+}
+
 void MutableSpace::oop_iterate(OopIterateClosure* cl) {
   HeapWord* obj_addr = bottom();
   HeapWord* t = top();
   // Could call objects iterate, but this is easier.
   while (obj_addr < t) {
-    obj_addr += oop(obj_addr)->oop_iterate_size(cl);
+    obj_addr += cast_to_oop(obj_addr)->oop_iterate_size(cl);
   }
 }
 
 void MutableSpace::object_iterate(ObjectClosure* cl) {
   HeapWord* p = bottom();
   while (p < top()) {
-    cl->do_object(oop(p));
-    p += oop(p)->size();
+    cl->do_object(cast_to_oop(p));
+    p += cast_to_oop(p)->size();
   }
 }
 
@@ -254,9 +258,9 @@ void MutableSpace::verify() {
   HeapWord* t = top();
   HeapWord* prev_p = NULL;
   while (p < t) {
-    oopDesc::verify(oop(p));
+    oopDesc::verify(cast_to_oop(p));
     prev_p = p;
-    p += oop(p)->size();
+    p += cast_to_oop(p)->size();
   }
   guarantee(p == top(), "end of last object must match end of space");
 }

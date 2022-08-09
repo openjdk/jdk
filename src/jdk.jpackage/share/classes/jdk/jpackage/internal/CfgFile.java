@@ -112,7 +112,7 @@ final class CfgFile {
         }
 
         Path cfgFile = appImagelayout.appDirectory().resolve(launcherName + ".cfg");
-        Files.createDirectories(cfgFile.getParent());
+        Files.createDirectories(IOUtils.getParent(cfgFile));
 
         boolean[] addLineBreakAtSection = new boolean[1];
         Stream<String> lines = content.stream().map(entry -> {
@@ -144,5 +144,5 @@ final class CfgFile {
     List<String> javaOptions;
     private final ApplicationLayout appLayout;
 
-    private final static Object SECTION_TAG = new Object();
+    private static final Object SECTION_TAG = new Object();
 }

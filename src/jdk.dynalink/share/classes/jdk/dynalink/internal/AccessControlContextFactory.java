@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@ public final class AccessControlContextFactory {
      * Creates an access control context with no permissions.
      * @return an access control context with no permissions.
      */
+    @SuppressWarnings("removal")
     public static AccessControlContext createAccessControlContext() {
         return createAccessControlContext(new Permission[0]);
     }
@@ -51,6 +52,7 @@ public final class AccessControlContextFactory {
      * @param permissions the permissions for the newly created access control context.
      * @return a new access control context limited to only the specified permissions.
      */
+    @SuppressWarnings("removal")
     public static AccessControlContext createAccessControlContext(final Permission... permissions) {
         final Permissions perms = new Permissions();
         for(final Permission permission: permissions) {
@@ -67,6 +69,7 @@ public final class AccessControlContextFactory {
      * @return a new access control context limited to only the runtime
      * permissions with the specified names.
      */
+    @SuppressWarnings("removal")
     public static AccessControlContext createAccessControlContext(final String... runtimePermissionNames) {
         return createAccessControlContext(makeRuntimePermissions(runtimePermissionNames));
     }

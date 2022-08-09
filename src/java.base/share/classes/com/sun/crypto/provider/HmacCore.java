@@ -334,7 +334,6 @@ abstract class HmacCore extends MacSpi implements Cloneable {
     public static final class HmacSHA3_512 extends HmacCore {
         public HmacSHA3_512() throws NoSuchAlgorithmException {
             super("SHA3-512", 72);
-            System.out.println(AlgorithmId.get("HmacSHA3-512"));
         }
     }
 }

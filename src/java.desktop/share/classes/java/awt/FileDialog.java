@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.io.Serial;
 
 import sun.awt.AWTAccessor;
 
@@ -133,9 +134,10 @@ public class FileDialog extends Dialog {
     private static final String base = "filedlg";
     private static int nameCounter = 0;
 
-    /*
-     * JDK 1.1 serialVersionUID
+    /**
+     * Use serialVersionUID from JDK 1.1 for interoperability.
      */
+     @Serial
      private static final long serialVersionUID = 5035145889651310422L;
 
 
@@ -230,7 +232,7 @@ public class FileDialog extends Dialog {
      * @param     title   the title of the dialog
      * @param     mode   the mode of the dialog; either
      *            {@code FileDialog.LOAD} or {@code FileDialog.SAVE}
-     * @exception  IllegalArgumentException if an illegal file
+     * @throws  IllegalArgumentException if an illegal file
      *                 dialog mode is supplied
      * @see       java.awt.FileDialog#LOAD
      * @see       java.awt.FileDialog#SAVE
@@ -253,10 +255,10 @@ public class FileDialog extends Dialog {
      * displayed.
      *
      * @param     parent   the owner of the dialog
-     * @exception java.lang.IllegalArgumentException if the {@code parent}'s
+     * @throws java.lang.IllegalArgumentException if the {@code parent}'s
      *            {@code GraphicsConfiguration}
      *            is not from a screen device;
-     * @exception java.lang.IllegalArgumentException if {@code parent}
+     * @throws java.lang.IllegalArgumentException if {@code parent}
      *            is {@code null}; this exception is always thrown when
      *            {@code GraphicsEnvironment.isHeadless}
      *            returns {@code true}
@@ -283,10 +285,10 @@ public class FileDialog extends Dialog {
      * @param     title    the title of the dialog; a {@code null} value
      *                     will be accepted without causing a
      *                     {@code NullPointerException} to be thrown
-     * @exception java.lang.IllegalArgumentException if the {@code parent}'s
+     * @throws java.lang.IllegalArgumentException if the {@code parent}'s
      *            {@code GraphicsConfiguration}
      *            is not from a screen device;
-     * @exception java.lang.IllegalArgumentException if {@code parent}
+     * @throws java.lang.IllegalArgumentException if {@code parent}
      *            is {@code null}; this exception is always thrown when
      *            {@code GraphicsEnvironment.isHeadless}
      *            returns {@code true}
@@ -319,12 +321,12 @@ public class FileDialog extends Dialog {
      *                     {@code NullPointerException} to be thrown
      * @param     mode     the mode of the dialog; either
      *                     {@code FileDialog.LOAD} or {@code FileDialog.SAVE}
-     * @exception java.lang.IllegalArgumentException if an illegal
+     * @throws java.lang.IllegalArgumentException if an illegal
      *            file dialog mode is supplied;
-     * @exception java.lang.IllegalArgumentException if the {@code parent}'s
+     * @throws java.lang.IllegalArgumentException if the {@code parent}'s
      *            {@code GraphicsConfiguration}
      *            is not from a screen device;
-     * @exception java.lang.IllegalArgumentException if {@code parent}
+     * @throws java.lang.IllegalArgumentException if {@code parent}
      *            is {@code null}; this exception is always thrown when
      *            {@code GraphicsEnvironment.isHeadless}
      *            returns {@code true}
@@ -406,7 +408,7 @@ public class FileDialog extends Dialog {
      * @see        java.awt.FileDialog#LOAD
      * @see        java.awt.FileDialog#SAVE
      * @see        java.awt.FileDialog#getMode
-     * @exception  IllegalArgumentException if an illegal file
+     * @throws  IllegalArgumentException if an illegal file
      *                 dialog mode is supplied
      * @since      1.1
      */
@@ -605,6 +607,7 @@ public class FileDialog extends Dialog {
      *         not be found
      * @throws IOException if an I/O error occurs
      */
+    @Serial
     private void readObject(ObjectInputStream s)
         throws ClassNotFoundException, IOException
     {

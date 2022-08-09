@@ -410,8 +410,6 @@ public class CombinationsTargetTest2 extends ClassfileTestHelper {
                     "    boolean dataIsString = ( data instanceof _As_ _Bs_ String str && str.isEmpty());\n" +
                     "}\n").concat(sourceBase).replace("_OTHER_", annot2).replace("_As_",As).replace("_Bs_",Bs) +
                     "\n\n";
-                extraOptions = List.of("--enable-preview",
-                                       "-source", JDK_VERSION);
                 hasInnerClass=false;
                 break;
             case src8: // (repeating) type annotations in use of instanceof
@@ -464,8 +462,6 @@ public class CombinationsTargetTest2 extends ClassfileTestHelper {
                     "    }\n" +
                     "}\n").concat(sourceBase).replace("_OTHER_", annot2).replace("_As_",As).replace("_Bs_",Bs) +
                     "\n\n";
-                extraOptions = List.of("--enable-preview",
-                                       "-source", JDK_VERSION);
                 hasInnerClass=false;
                 break;
 

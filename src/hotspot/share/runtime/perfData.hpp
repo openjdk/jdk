@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #define SHARE_RUNTIME_PERFDATA_HPP
 
 #include "memory/allocation.hpp"
+#include "runtime/perfDataTypes.hpp"
 #include "runtime/perfMemory.hpp"
 #include "runtime/timer.hpp"
 
@@ -77,7 +78,7 @@ enum CounterNS {
  * by accessor methods to make algorithmic decisions as they are potentially
  * extracted from a shared memory region. Although any shared memory region
  * created is with appropriate access restrictions, allowing read-write access
- * only to the principal that created the JVM, it is believed that a the
+ * only to the principal that created the JVM, it is believed that the
  * shared memory region facilitates an easier attack path than attacks
  * launched through mechanisms such as /proc. For this reason, it is
  * recommended that data returned by PerfData accessor methods be used
@@ -349,9 +350,6 @@ class PerfLongSampleHelper : public CHeapObj<mtInternal> {
     virtual jlong take_sample() = 0;
 };
 
-typedef PerfLongSampleHelper PerfSampleHelper;
-
-
 /*
  * PerfLong is the base class for the various Long PerfData subtypes.
  * it contains implementation details that are common among its derived
@@ -394,8 +392,6 @@ class PerfLongConstant : public PerfLong {
        if (is_valid()) *(jlong*)_valuep = initial_value;
     }
 };
-
-typedef PerfLongConstant PerfConstant;
 
 /*
  * The PerfLongVariant class, and its alias PerfVariant, implement
@@ -459,8 +455,6 @@ class PerfLongCounter : public PerfLongVariant {
                                      sample_helper) { }
 };
 
-typedef PerfLongCounter PerfCounter;
-
 /*
  * The PerfLongVariable class, and its alias PerfVariable, implement
  * a PerfData subtype that holds a jlong data value that can
@@ -488,8 +482,6 @@ class PerfLongVariable : public PerfLongVariant {
   public:
     inline void set_value(jlong val) { (*(jlong*)_valuep) = val; }
 };
-
-typedef PerfLongVariable PerfVariable;
 
 /*
  * The PerfByteArray provides a PerfData subtype that allows the creation
@@ -915,7 +907,7 @@ class PerfTraceTime : public StackObj {
 };
 
 /* The PerfTraceTimedEvent class is responsible for counting the
- * occurrence of some event and measuring the the elapsed time of
+ * occurrence of some event and measuring the elapsed time of
  * the event in two separate PerfCounter instances.
  *
  * Example:

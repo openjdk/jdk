@@ -25,6 +25,7 @@
  * @test
  * @bug 6224433
  * @summary Tests class loader lookup problem in Statement
+ * @run main/othervm -Djava.security.manager=allow Test6224433
  * @author Jeff Nisewanger
  */
 

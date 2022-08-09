@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
  */
 
 import java.util.List;
+import jdk.test.lib.Utils;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 
@@ -154,6 +155,7 @@ public class TestCheckedJniExceptionCheck {
 
     // Check warnings appear where they should, with start/end statements in output...
     static void checkOuputForCorrectWarnings(OutputAnalyzer oa) throws RuntimeException {
+        oa.shouldHaveExitValue(0);
         List<String> lines = oa.asLines();
         int expectedWarnings = 0;
         int warningCount = 0;
@@ -175,12 +177,10 @@ public class TestCheckedJniExceptionCheck {
                     oa.reportDiagnosticSummary();
                     throw new RuntimeException("Unexpected warning at line " + lineNo);
                 }
-            }
-            else if (line.startsWith(EXPECT_WARNING_START)) {
+            } else if (line.startsWith(EXPECT_WARNING_START)) {
                 String countStr = line.substring(EXPECT_WARNING_START.length() + 1);
                 expectedWarnings = Integer.parseInt(countStr);
-            }
-            else if (line.startsWith(EXPECT_WARNING_END)) {
+            } else if (line.startsWith(EXPECT_WARNING_END)) {
                 if (warningCount != expectedWarnings) {
                     oa.reportDiagnosticSummary();
                     throw new RuntimeException("Missing warning at line " + lineNo);
@@ -188,6 +188,9 @@ public class TestCheckedJniExceptionCheck {
                 warningCount = 0;
                 expectedWarnings = 0;
             }
+        }
+        if (!testStartLine) {
+            throw new RuntimeException("Missing test start line after " + lineNo + " lines");
         }
         /*
         System.out.println("Output looks good...");
@@ -203,7 +206,8 @@ public class TestCheckedJniExceptionCheck {
 
         // launch and check output
         checkOuputForCorrectWarnings(ProcessTools.executeTestJvm("-Xcheck:jni",
-                                                                  "TestCheckedJniExceptionCheck"));
+                                                                 "-Djava.library.path=" + Utils.TEST_NATIVE_PATH,
+                                                                 "TestCheckedJniExceptionCheck"));
     }
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,6 +93,7 @@ public class Binder extends DebugeeBinder {
      *              <code>Binder(ArgumentHandler,Log)</code>
      *              constructor.
      */
+    @Deprecated
     public Binder (String args[]) {
         this(args, new Log(System.err));
     }
@@ -105,6 +106,7 @@ public class Binder extends DebugeeBinder {
      *              <code>Binder(ArgumentHandler,Log)</code>
      *              constructor.
      */
+    @Deprecated
     public Binder (String args[], Log log) {
         this(new ArgumentHandler(args), log);
     }
@@ -708,6 +710,10 @@ public class Binder extends DebugeeBinder {
 
         String cmdline = classToExecute + " " + ArgumentHandler.joinArguments(rawArgs, quote);
 
+        if(System.getProperty("main.wrapper") != null) {
+            cmdline = MainWrapper.class.getName() + " " + System.getProperty("main.wrapper") + " " + cmdline;
+        }
+
         arg = (Connector.StringArgument) arguments.get("main");
         arg.setValue(cmdline);
 
@@ -733,12 +739,22 @@ public class Binder extends DebugeeBinder {
             arg.setValue(argumentHandler.getLaunchExecName());
         }
 
+        // This flag is needed so VirtualMachine.allThreads() includes known vthreads.
+        arg = (Connector.StringArgument) arguments.get("includevirtualthreads");
+        arg.setValue("y");
+
         String vmArgs = "";
 
         String vmUserArgs = argumentHandler.getLaunchOptions();
 
         if (vmUserArgs != null) {
             vmArgs = vmUserArgs;
+        }
+
+        /* Need --enable-preview on the debuggee in order to support virtual threads. */
+        boolean vthreadMode = "Virtual".equals(System.getProperty("main.wrapper"));
+        if (vthreadMode) {
+            vmArgs += " --enable-preview";
         }
 
 /*

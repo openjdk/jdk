@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,6 +59,7 @@ public final class XErrorHandlerUtil {
     /**
      * Value of sun.awt.noisyerrorhandler system property.
      */
+    @SuppressWarnings("removal")
     private static boolean noisyAwtHandler = AccessController.doPrivileged(
         new GetBooleanAction("sun.awt.noisyerrorhandler"));
 

@@ -36,7 +36,7 @@ import com.sun.org.apache.xml.internal.security.keys.storage.StorageResolverSpi;
 public class SingleCertificateResolver extends StorageResolverSpi {
 
     /** Field certificate */
-    private X509Certificate certificate;
+    private final X509Certificate certificate;
 
     /**
      * @param x509cert the single {@link X509Certificate}
@@ -56,10 +56,10 @@ public class SingleCertificateResolver extends StorageResolverSpi {
     static class InternalIterator implements Iterator<Certificate> {
 
         /** Field alreadyReturned */
-        boolean alreadyReturned = false;
+        private boolean alreadyReturned;
 
         /** Field certificate */
-        X509Certificate certificate = null;
+        private final X509Certificate certificate;
 
         /**
          * Constructor InternalIterator

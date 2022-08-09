@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@
  *      6344623 6369500 6534606 6282094 6286592 6476425 5063507 6469160 6476168
  *      8059175 8204229
  *
- * @modules java.base
  * @run shell/timeout=240 Basic.sh
  */
 

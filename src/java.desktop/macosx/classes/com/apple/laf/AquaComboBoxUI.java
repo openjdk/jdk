@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -252,9 +252,8 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
                         if (editor instanceof AquaCustomComboTextField) {
                             ((AquaCustomComboTextField)editor).selectAll();
                         }
-                    } else {
-                        action.actionPerformed(e);
                     }
+                    action.actionPerformed(e);
                 }
             });
         }
@@ -598,8 +597,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
         final boolean editable = comboBox.isEditable();
 
         final Dimension size;
-        if (!editable && arrowButton != null && arrowButton instanceof AquaComboBoxButton) {
-            final AquaComboBoxButton button = (AquaComboBoxButton)arrowButton;
+        if (!editable && arrowButton instanceof final AquaComboBoxButton button) {
             final Insets buttonInsets = button.getInsets();
             //  Insets insets = comboBox.getInsets();
             final Insets insets = new Insets(0, 5, 0, 25);//comboBox.getInsets();
@@ -618,13 +616,6 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
             size.height += margin.top + margin.bottom;
         } else {
             size = super.getMinimumSize(c);
-        }
-
-        final Border border = c.getBorder();
-        if (border != null) {
-            final Insets insets = border.getBorderInsets(c);
-            size.height += insets.top + insets.bottom;
-            size.width += insets.left + insets.right;
         }
 
         cachedMinimumSize.setSize(size.width, size.height);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,6 +54,7 @@ public class FilterWithSecurityManagerTest {
     ObjectInputFilter filter;
 
     @BeforeClass
+    @SuppressWarnings("removal")
     public void setup() throws Exception {
         setSecurityManager = System.getSecurityManager() != null;
         Object toDeserialized = Long.MAX_VALUE;
@@ -65,7 +66,8 @@ public class FilterWithSecurityManagerTest {
      * Test that setting process-wide filter is checked by security manager.
      */
     @Test
-    public void testGlobalFilter() throws Exception {
+    @SuppressWarnings("removal")
+    public void testGlobalFilter() {
         ObjectInputFilter global = ObjectInputFilter.Config.getSerialFilter();
 
         try  {
@@ -88,6 +90,7 @@ public class FilterWithSecurityManagerTest {
      * Test that setting specific filter is checked by security manager.
      */
     @Test(dependsOnMethods = { "testGlobalFilter" })
+    @SuppressWarnings("removal")
     public void testSpecificFilter() throws Exception {
         try (ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
                 ObjectInputStream ois = new ObjectInputStream(bais)) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,6 @@ package gc.g1.unloading.configuration;
 
 public enum ClassloadingMethod {
 
-    PLAIN, REFLECTION, JNI, ANONYMOUS_CLASSLOADER
+    PLAIN, REFLECTION, JNI, HIDDEN_CLASSLOADER
 
 }

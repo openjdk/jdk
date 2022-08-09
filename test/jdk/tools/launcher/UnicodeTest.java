@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 5030265
+ * @bug 5030265 8260265
  * @modules jdk.compiler
  *          jdk.zipfs
  * @compile  -XDignore.symbol.file UnicodeTest.java
@@ -163,7 +163,7 @@ public class UnicodeTest extends TestHelper {
         return commandLineClassName;
     }
 
-    private static final String defaultEncoding = Charset.defaultCharset().name();
+    private static final String filePathEncoding = System.getProperty("sun.jnu.encoding");
 
     // language names taken from java.util.Locale.getDisplayLanguage for the respective language
     private static final String arabic = "\u0627\u0644\u0639\u0631\u0628\u064a\u0629";
@@ -230,7 +230,7 @@ public class UnicodeTest extends TestHelper {
 
         int column = isWindows ? 2 : 1;
         for (int i = 0; i < names.length; i++) {
-             if (names[i][0].equalsIgnoreCase(defaultEncoding)) {
+             if (names[i][0].equalsIgnoreCase(filePathEncoding)) {
                  return names[i][column];
              }
          }
@@ -238,7 +238,7 @@ public class UnicodeTest extends TestHelper {
     }
 
     private static boolean hasUnicodeFileSystem() {
-        return (isWindows) ? true : defaultEncoding.equalsIgnoreCase("UTF-8");
+        return (isWindows) ? true : filePathEncoding.equalsIgnoreCase("UTF-8");
     }
 
     private static void generateSource(String thisClass, String otherClass) throws Exception {

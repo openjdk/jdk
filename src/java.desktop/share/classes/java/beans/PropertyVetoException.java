@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package java.beans;
 
+import java.io.Serial;
 
 /**
  * A PropertyVetoException is thrown when a proposed change to a
@@ -34,6 +35,11 @@ package java.beans;
 
 public
 class PropertyVetoException extends Exception {
+
+    /**
+     * Use serialVersionUID from JDK 1.7 for interoperability.
+     */
+    @Serial
     private static final long serialVersionUID = 129596057694162164L;
 
     /**

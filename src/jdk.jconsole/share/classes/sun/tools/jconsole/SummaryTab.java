@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import java.lang.reflect.*;
 import java.text.*;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.function.LongSupplier;
 
 import javax.swing.*;
 
@@ -112,6 +113,7 @@ class SummaryTab extends Tab {
 
     StringBuilder buf;
 
+    @SuppressWarnings("deprecation")
     synchronized Result formatSummary() {
         Result result = new Result();
         ProxyClient proxyClient = vmPanel.getProxyClient();
@@ -257,9 +259,14 @@ class SummaryTab extends Tab {
                     String[] kbStrings1 =
                         formatKByteStrings(sunOSMBean.getCommittedVirtualMemorySize());
 
+                    // getTotalPhysicalMemorySize and getFreePhysicalMemorySize are deprecated,
+                    // but we want be able to get the data for old target VMs (see JDK-8255934).
+                    @SuppressWarnings("deprecation")
                     String[] kbStrings2 =
-                        formatKByteStrings(sunOSMBean.getTotalMemorySize(),
-                                           sunOSMBean.getFreeMemorySize(),
+                        formatKByteStrings(tryToGet(sunOSMBean::getTotalMemorySize,
+                                                    sunOSMBean::getTotalPhysicalMemorySize),
+                                           tryToGet(sunOSMBean::getFreeMemorySize,
+                                                    sunOSMBean::getFreePhysicalMemorySize),
                                            sunOSMBean.getTotalSwapSpaceSize(),
                                            sunOSMBean.getFreeSwapSpaceSize());
 
@@ -295,13 +302,7 @@ class SummaryTab extends Tab {
                        4);
                 append(endTable);
             }
-        } catch (IOException e) {
-            if (JConsole.isDebug()) {
-                e.printStackTrace();
-            }
-            proxyClient.markAsDead();
-            return null;
-        } catch (UndeclaredThrowableException e) {
+        } catch (IOException | UndeclaredThrowableException e) {
             if (JConsole.isDebug()) {
                 e.printStackTrace();
             }
@@ -315,6 +316,20 @@ class SummaryTab extends Tab {
         result.summary = buf.toString();
 
         return result;
+    }
+
+    /**
+     * Tries to get the specified value from the list of suppliers.
+     * Returns -1 if all suppliers fail.
+     */
+    private long tryToGet(LongSupplier ... getters) {
+        for (LongSupplier getter : getters) {
+            try {
+                return getter.getAsLong();
+            } catch (UndeclaredThrowableException e) {
+            }
+        }
+        return -1;
     }
 
     private synchronized void append(String str) {

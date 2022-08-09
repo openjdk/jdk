@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2017, 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,11 @@
  */
 
 /*
- * @test TestStringDedupStress
+ * @test id=passive
  * @summary Test Shenandoah string deduplication implementation
  * @key randomness
  * @requires vm.gc.Shenandoah
  * @library /test/lib
- * @modules java.base/jdk.internal.misc:open
  * @modules java.base/java.lang:open
  *          java.management
  *
@@ -44,12 +43,11 @@
  */
 
 /*
- * @test TestStringDedupStress
+ * @test id=default
  * @summary Test Shenandoah string deduplication implementation
  * @key randomness
  * @requires vm.gc.Shenandoah
  * @library /test/lib
- * @modules java.base/jdk.internal.misc:open
  * @modules java.base/java.lang:open
  *          java.management
  *
@@ -75,12 +73,11 @@
  */
 
  /*
- * @test TestStringDedupStress
+ * @test id=iu
  * @summary Test Shenandoah string deduplication implementation
  * @key randomness
  * @requires vm.gc.Shenandoah
  * @library /test/lib
- * @modules java.base/jdk.internal.misc:open
  * @modules java.base/java.lang:open
  *          java.management
  *
@@ -111,11 +108,8 @@ import java.lang.reflect.*;
 import java.util.*;
 import jdk.test.lib.Utils;
 
-import sun.misc.*;
-
 public class TestStringDedupStress {
     private static Field valueField;
-    private static Unsafe unsafe;
 
     private static final int TARGET_STRINGS = Integer.getInteger("targetStrings", 2_500_000);
     private static final long MAX_REWRITE_GC_CYCLES = 6;
@@ -125,10 +119,6 @@ public class TestStringDedupStress {
 
     static {
         try {
-            Field field = Unsafe.class.getDeclaredField("theUnsafe");
-            field.setAccessible(true);
-            unsafe = (Unsafe) field.get(null);
-
             valueField = String.class.getDeclaredField("value");
             valueField.setAccessible(true);
         } catch (Exception e) {

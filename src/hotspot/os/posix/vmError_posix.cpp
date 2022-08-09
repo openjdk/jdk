@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +24,10 @@
  */
 
 #include "precompiled.hpp"
-#include "memory/metaspaceShared.hpp"
-#include "runtime/arguments.hpp"
+#include "cds/metaspaceShared.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/os.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/safefetch.hpp"
 #include "signals_posix.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/vmError.hpp"
@@ -47,16 +48,6 @@
 #endif
 
 
-// handle all synchronous program error signals which may happen during error
-// reporting. They must be unblocked, caught, handled.
-
-static const int SIGNALS[] = { SIGSEGV, SIGBUS, SIGILL, SIGFPE, SIGTRAP }; // add more if needed
-static const int NUM_SIGNALS = sizeof(SIGNALS) / sizeof(int);
-
-// Space for our "saved" signal flags and handlers
-static int resettedSigflags[NUM_SIGNALS];
-static address resettedSighandler[NUM_SIGNALS];
-
 // Needed for cancelable steps.
 static volatile pthread_t reporter_thread_id;
 
@@ -68,43 +59,14 @@ void VMError::reporting_started() {
 void VMError::interrupt_reporting_thread() {
   // We misuse SIGILL here, but it does not really matter. We need
   //  a signal which is handled by crash_handler and not likely to
-  //  occurr during error reporting itself.
+  //  occur during error reporting itself.
   ::pthread_kill(reporter_thread_id, SIGILL);
-}
-
-static void save_signal(int idx, int sig)
-{
-  struct sigaction sa;
-  sigaction(sig, NULL, &sa);
-  resettedSigflags[idx]   = sa.sa_flags;
-  resettedSighandler[idx] = (sa.sa_flags & SA_SIGINFO)
-                              ? CAST_FROM_FN_PTR(address, sa.sa_sigaction)
-                              : CAST_FROM_FN_PTR(address, sa.sa_handler);
-}
-
-int VMError::get_resetted_sigflags(int sig) {
-  for (int i = 0; i < NUM_SIGNALS; i++) {
-    if (SIGNALS[i] == sig) {
-      return resettedSigflags[i];
-    }
-  }
-  return -1;
-}
-
-address VMError::get_resetted_sighandler(int sig) {
-  for (int i = 0; i < NUM_SIGNALS; i++) {
-    if (SIGNALS[i] == sig) {
-      return resettedSighandler[i];
-    }
-  }
-  return NULL;
 }
 
 static void crash_handler(int sig, siginfo_t* info, void* ucVoid) {
 
   PosixSignals::unblock_error_signals();
 
-  // support safefetch faults in error handling
   ucontext_t* const uc = (ucontext_t*) ucVoid;
   address pc = (uc != NULL) ? os::Posix::ucontext_get_pc(uc) : NULL;
 
@@ -113,9 +75,8 @@ static void crash_handler(int sig, siginfo_t* info, void* ucVoid) {
     pc = (address) info->si_addr;
   }
 
-  // Needed to make it possible to call SafeFetch.. APIs in error handling.
-  if (uc && pc && StubRoutines::is_safefetch_fault(pc)) {
-    os::Posix::ucontext_set_pc(uc, StubRoutines::continuation_for_safefetch_fault(pc));
+  // Handle safefetch here too, to be able to use SafeFetch() inside the error handler
+  if (handle_safefetch(sig, pc, uc)) {
     return;
   }
 
@@ -131,10 +92,15 @@ static void crash_handler(int sig, siginfo_t* info, void* ucVoid) {
   VMError::report_and_die(NULL, sig, pc, info, ucVoid);
 }
 
-void VMError::reset_signal_handlers() {
-  for (int i = 0; i < NUM_SIGNALS; i++) {
-    save_signal(i, SIGNALS[i]);
-    os::signal(SIGNALS[i], CAST_FROM_FN_PTR(void *, crash_handler));
+const void* VMError::crash_handler_address = CAST_FROM_FN_PTR(void *, crash_handler);
+
+void VMError::install_secondary_signal_handler() {
+  static const int signals_to_handle[] = {
+    SIGSEGV, SIGBUS, SIGILL, SIGFPE, SIGTRAP,
+    0 // end
+  };
+  for (int i = 0; signals_to_handle[i] != 0; i++) {
+    os::signal(signals_to_handle[i], CAST_FROM_FN_PTR(void *, crash_handler));
   }
 }
 

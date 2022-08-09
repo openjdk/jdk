@@ -1,2 +1,2 @@
-ASM_8_0_1
+ASM_9_3
 origin	http://gitlab.ow2.org/asm/asm.git (fetch)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Stream;
 
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.vm.annotation.Stable;
 import sun.invoke.util.BytecodeDescriptor;
 import sun.invoke.util.VerifyType;
@@ -199,19 +200,13 @@ class MethodType
     /*non-public*/
     static final int MAX_MH_INVOKER_ARITY = MAX_MH_ARITY-1;  // deduct one more for invoker
 
-    private static void checkRtype(Class<?> rtype) {
-        Objects.requireNonNull(rtype);
-    }
-    private static void checkPtype(Class<?> ptype) {
-        Objects.requireNonNull(ptype);
-        if (ptype == void.class)
-            throw newIllegalArgumentException("parameter type cannot be void");
-    }
     /** Return number of extra slots (count of long/double args). */
     private static int checkPtypes(Class<?>[] ptypes) {
         int slots = 0;
         for (Class<?> ptype : ptypes) {
-            checkPtype(ptype);
+            Objects.requireNonNull(ptype);
+            if (ptype == void.class)
+                throw newIllegalArgumentException("parameter type cannot be void");
             if (ptype == double.class || ptype == long.class) {
                 slots++;
             }
@@ -246,7 +241,7 @@ class MethodType
      * @throws IllegalArgumentException if any element of {@code ptypes} is {@code void.class}
      */
     public static MethodType methodType(Class<?> rtype, Class<?>[] ptypes) {
-        return makeImpl(rtype, ptypes, false);
+        return methodType(rtype, ptypes, false);
     }
 
     /**
@@ -260,7 +255,7 @@ class MethodType
      */
     public static MethodType methodType(Class<?> rtype, List<Class<?>> ptypes) {
         boolean notrust = false;  // random List impl. could return evil ptypes array
-        return makeImpl(rtype, listToArray(ptypes), notrust);
+        return methodType(rtype, listToArray(ptypes), notrust);
     }
 
     private static Class<?>[] listToArray(List<Class<?>> ptypes) {
@@ -281,9 +276,23 @@ class MethodType
      * @throws IllegalArgumentException if {@code ptype0} or {@code ptypes} or any element of {@code ptypes} is {@code void.class}
      */
     public static MethodType methodType(Class<?> rtype, Class<?> ptype0, Class<?>... ptypes) {
-        Class<?>[] ptypes1 = new Class<?>[1+ptypes.length];
+        int len = ptypes.length;
+        if (rtype == Object.class && ptype0 == Object.class) {
+            if (len == 0) {
+                return genericMethodType(1, false);
+            }
+            if (isAllObject(ptypes, len - 1)) {
+                Class<?> lastParam = ptypes[len - 1];
+                if (lastParam == Object.class) {
+                    return genericMethodType(len + 1, false);
+                } else if (lastParam == Object[].class) {
+                    return genericMethodType(len, true);
+                }
+            }
+        }
+        Class<?>[] ptypes1 = new Class<?>[1 + len];
         ptypes1[0] = ptype0;
-        System.arraycopy(ptypes, 0, ptypes1, 1, ptypes.length);
+        System.arraycopy(ptypes, 0, ptypes1, 1, len);
         return makeImpl(rtype, ptypes1, true);
     }
 
@@ -296,6 +305,9 @@ class MethodType
      * @throws NullPointerException if {@code rtype} is null
      */
     public static MethodType methodType(Class<?> rtype) {
+        if (rtype == Object.class) {
+            return genericMethodType(0, false);
+        }
         return makeImpl(rtype, NO_PTYPES, true);
     }
 
@@ -310,6 +322,13 @@ class MethodType
      * @throws IllegalArgumentException if {@code ptype0} is {@code void.class}
      */
     public static MethodType methodType(Class<?> rtype, Class<?> ptype0) {
+        if (rtype == Object.class) {
+            if (ptype0 == Object.class) {
+                return genericMethodType(1, false);
+            } else if (ptype0 == Object[].class) {
+                return genericMethodType(0, true);
+            }
+        }
         return makeImpl(rtype, new Class<?>[]{ ptype0 }, true);
     }
 
@@ -324,18 +343,49 @@ class MethodType
      * @throws NullPointerException if {@code rtype} or {@code ptypes} is null
      */
     public static MethodType methodType(Class<?> rtype, MethodType ptypes) {
-        return makeImpl(rtype, ptypes.ptypes, true);
+        return methodType(rtype, ptypes.ptypes, true);
+    }
+
+    private static boolean isAllObject(Class<?>[] ptypes, int to) {
+        for (int i = 0; i < to; i++) {
+            if (ptypes[i] != Object.class) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /*trusted*/
+    static MethodType methodType(Class<?> rtype, Class<?>[] ptypes, boolean trusted) {
+        if (rtype == Object.class) {
+            int last = ptypes.length - 1;
+            if (last < 0) {
+                return genericMethodType(0, false);
+            }
+            if (isAllObject(ptypes, last)) {
+                Class<?> lastParam = ptypes[last];
+                if (lastParam == Object.class) {
+                    return genericMethodType(last + 1, false);
+                } else if (lastParam == Object[].class) {
+                    return genericMethodType(last, true);
+                }
+            }
+        }
+        return makeImpl(rtype, ptypes, trusted);
     }
 
     /**
-     * Sole factory method to find or create an interned method type.
+     * Sole factory method to find or create an interned method type. Will perform
+     * input validation on behalf of factory methods
+     *
      * @param rtype desired return type
      * @param ptypes desired parameter types
      * @param trusted whether the ptypes can be used without cloning
+     * @throws NullPointerException if {@code rtype} or {@code ptypes} or any element of {@code ptypes} is null
+     * @throws IllegalArgumentException if any element of {@code ptypes} is {@code void.class}
      * @return the unique method type of the desired structure
      */
-    /*trusted*/
-    static MethodType makeImpl(Class<?> rtype, Class<?>[] ptypes, boolean trusted) {
+    private static MethodType makeImpl(Class<?> rtype, Class<?>[] ptypes, boolean trusted) {
         if (ptypes.length == 0) {
             ptypes = NO_PTYPES; trusted = true;
         }
@@ -345,7 +395,7 @@ class MethodType
             return mt;
 
         // promote the object to the Real Thing, and reprobe
-        MethodType.checkRtype(rtype);
+        Objects.requireNonNull(rtype);
         if (trusted) {
             MethodType.checkPtypes(ptypes);
             mt = primordialMT;
@@ -415,7 +465,6 @@ class MethodType
      */
     public MethodType changeParameterType(int num, Class<?> nptype) {
         if (parameterType(num) == nptype)  return this;
-        checkPtype(nptype);
         Class<?>[] nptypes = ptypes.clone();
         nptypes[num] = nptype;
         return makeImpl(rtype, nptypes, true);
@@ -632,7 +681,7 @@ class MethodType
                 System.arraycopy(ptypes, end, nptypes, start, tail);
             }
         }
-        return makeImpl(rtype, nptypes, true);
+        return methodType(rtype, nptypes, true);
     }
 
     /**
@@ -644,7 +693,7 @@ class MethodType
      */
     public MethodType changeReturnType(Class<?> nrtype) {
         if (returnType() == nrtype)  return this;
-        return makeImpl(nrtype, ptypes, true);
+        return methodType(nrtype, ptypes, true);
     }
 
     /**
@@ -745,7 +794,7 @@ class MethodType
         MethodType wt = (MethodType)pt.wrapAlt;
         if (wt == null) {
             // fill in lazily
-            wt = MethodTypeForm.canonicalize(pt, MethodTypeForm.WRAP, MethodTypeForm.WRAP);
+            wt = MethodTypeForm.canonicalize(pt, MethodTypeForm.WRAP);
             assert(wt != null);
             pt.wrapAlt = wt;
         }
@@ -757,7 +806,7 @@ class MethodType
         MethodType uwt = (MethodType)wt.wrapAlt;
         if (uwt == null) {
             // fill in lazily
-            uwt = MethodTypeForm.canonicalize(wt, MethodTypeForm.UNWRAP, MethodTypeForm.UNWRAP);
+            uwt = MethodTypeForm.canonicalize(wt, MethodTypeForm.UNWRAP);
             if (uwt == null)
                 uwt = wt;    // type has no wrappers or prims at all
             wt.wrapAlt = uwt;
@@ -795,7 +844,7 @@ class MethodType
      * @return the parameter types (as an immutable list)
      */
     public List<Class<?>> parameterList() {
-        return Collections.unmodifiableList(Arrays.asList(ptypes.clone()));
+        return List.of(ptypes);
     }
 
     /**
@@ -1137,6 +1186,7 @@ class MethodType
         throws IllegalArgumentException, TypeNotPresentException
     {
         if (loader == null) {
+            @SuppressWarnings("removal")
             SecurityManager sm = System.getSecurityManager();
             if (sm != null) {
                 sm.checkPermission(SecurityConstants.GET_CLASSLOADER_PERMISSION);
@@ -1166,7 +1216,7 @@ class MethodType
         List<Class<?>> types = BytecodeDescriptor.parseMethod(descriptor, loader);
         Class<?> rtype = types.remove(types.size() - 1);
         Class<?>[] ptypes = listToArray(types);
-        return makeImpl(rtype, ptypes, true);
+        return methodType(rtype, ptypes, true);
     }
 
     /**
@@ -1353,7 +1403,7 @@ s.writeObject(this.parameterArray());
 
         public ConcurrentWeakInternSet() {
             this.map = new ConcurrentHashMap<>(512);
-            this.stale = new ReferenceQueue<>();
+            this.stale = SharedSecrets.getJavaLangRefAccess().newNativeReferenceQueue();
         }
 
         /**

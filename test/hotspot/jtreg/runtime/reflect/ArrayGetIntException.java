@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ import java.lang.reflect.Array;
 
 public class ArrayGetIntException {
     public static void main(String[] args) throws Exception {
-        Object[] objArray = {new Integer(Integer.MAX_VALUE)};
+        Object[] objArray = {Integer.valueOf(Integer.MAX_VALUE)};
 
         // this access is legal
         try {

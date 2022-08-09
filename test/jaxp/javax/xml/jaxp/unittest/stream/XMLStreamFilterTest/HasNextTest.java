@@ -36,7 +36,7 @@ import org.testng.annotations.Test;
 /*
  * @test
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true stream.XMLStreamFilterTest.HasNextTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow stream.XMLStreamFilterTest.HasNextTest
  * @run testng/othervm stream.XMLStreamFilterTest.HasNextTest
  * @summary Test Filtered XMLStreamReader hasNext() always return the correct value if repeat to call it.
  */

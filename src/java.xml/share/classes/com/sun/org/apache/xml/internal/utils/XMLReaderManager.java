@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -20,14 +20,14 @@
 
 package com.sun.org.apache.xml.internal.utils;
 
-import com.sun.org.apache.xalan.internal.XalanConstants;
-import com.sun.org.apache.xalan.internal.utils.XMLSecurityManager;
 import java.util.HashMap;
 import javax.xml.XMLConstants;
 import javax.xml.catalog.CatalogFeatures;
+import jdk.xml.internal.JdkConstants;
 import jdk.xml.internal.JdkXmlFeatures;
 import jdk.xml.internal.JdkXmlUtils;
 import jdk.xml.internal.SecuritySupport;
+import jdk.xml.internal.XMLSecurityManager;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXNotRecognizedException;
 import org.xml.sax.SAXNotSupportedException;
@@ -37,7 +37,7 @@ import org.xml.sax.XMLReader;
  * Creates XMLReader objects and caches them for re-use.
  * This class follows the singleton pattern.
  *
- * @LastModified: Sep 2017
+ * @LastModified: Jan 2022
  */
 public class XMLReaderManager {
 
@@ -61,7 +61,7 @@ public class XMLReaderManager {
      /**
      * protocols allowed for external DTD references in source file and/or stylesheet.
      */
-    private String _accessExternalDTD = XalanConstants.EXTERNAL_ACCESS_DEFAULT;
+    private String _accessExternalDTD = JdkConstants.EXTERNAL_ACCESS_DEFAULT;
 
     private XMLSecurityManager _xmlSecurityManager;
 
@@ -136,20 +136,22 @@ public class XMLReaderManager {
         JdkXmlUtils.setXMLReaderPropertyIfSupport(reader, XMLConstants.ACCESS_EXTERNAL_DTD,
                 _accessExternalDTD, true);
 
-        JdkXmlUtils.setXMLReaderPropertyIfSupport(reader, JdkXmlUtils.CDATA_CHUNK_SIZE,
+        JdkXmlUtils.setXMLReaderPropertyIfSupport(reader, JdkConstants.CDATA_CHUNK_SIZE,
                 _cdataChunkSize, false);
 
         String lastProperty = "";
         try {
             if (_xmlSecurityManager != null) {
                 for (XMLSecurityManager.Limit limit : XMLSecurityManager.Limit.values()) {
-                    lastProperty = limit.apiProperty();
-                    reader.setProperty(lastProperty,
-                            _xmlSecurityManager.getLimitValueAsString(limit));
+                    if (limit.isSupported(XMLSecurityManager.Processor.PARSER)) {
+                        lastProperty = limit.apiProperty();
+                        reader.setProperty(lastProperty,
+                                _xmlSecurityManager.getLimitValueAsString(limit));
+                    }
                 }
                 if (_xmlSecurityManager.printEntityCountInfo()) {
-                    lastProperty = XalanConstants.JDK_ENTITY_COUNT_INFO;
-                    reader.setProperty(XalanConstants.JDK_ENTITY_COUNT_INFO, XalanConstants.JDK_YES);
+                    lastProperty = JdkConstants.JDK_DEBUG_LIMIT;
+                    reader.setProperty(lastProperty, JdkConstants.JDK_YES);
                 }
             }
         } catch (SAXException se) {
@@ -221,7 +223,7 @@ public class XMLReaderManager {
     public Object getProperty(String name) {
         if (name.equals(XMLConstants.ACCESS_EXTERNAL_DTD)) {
             return _accessExternalDTD;
-        } else if (name.equals(XalanConstants.SECURITY_MANAGER)) {
+        } else if (name.equals(JdkConstants.SECURITY_MANAGER)) {
             return _xmlSecurityManager;
         }
         return null;
@@ -233,11 +235,11 @@ public class XMLReaderManager {
     public void setProperty(String name, Object value) {
         if (name.equals(XMLConstants.ACCESS_EXTERNAL_DTD)) {
             _accessExternalDTD = (String)value;
-        } else if (name.equals(XalanConstants.SECURITY_MANAGER)) {
+        } else if (name.equals(JdkConstants.SECURITY_MANAGER)) {
             _xmlSecurityManager = (XMLSecurityManager)value;
         } else if (JdkXmlFeatures.CATALOG_FEATURES.equals(name)) {
             _catalogFeatures = (CatalogFeatures)value;
-        } else if (JdkXmlUtils.CDATA_CHUNK_SIZE.equals(name)) {
+        } else if (JdkConstants.CDATA_CHUNK_SIZE.equals(name)) {
             _cdataChunkSize = JdkXmlUtils.getValue(value, _cdataChunkSize);
         }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @summary class p3.c3 defined in an unnamed module tries to access c4 defined in an unnamed package
  *          and an unnamed module.
  *          Access allowed since any class in an unnamed module can read an unnamed module.
+ * @library /test/lib
  * @compile myloaders/MySameClassLoader.java
  * @compile c4.java
  * @compile p3/c3.jcod

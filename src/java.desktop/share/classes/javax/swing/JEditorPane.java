@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,21 +22,78 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package javax.swing;
 
-import java.awt.*;
-import java.beans.JavaBean;
+import java.awt.Component;
+import java.awt.Container;
+import java.awt.Dimension;
+import java.awt.Graphics;
+import java.awt.IllegalComponentStateException;
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.Shape;
 import java.beans.BeanProperty;
-import java.lang.reflect.*;
-import java.net.*;
-import java.util.*;
-import java.io.*;
+import java.beans.JavaBean;
+import java.io.BufferedInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.ObjectOutputStream;
+import java.io.OutputStream;
+import java.io.Reader;
+import java.io.Serial;
+import java.io.StringReader;
+import java.io.StringWriter;
+import java.lang.reflect.InvocationTargetException;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLConnection;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Hashtable;
+import java.util.Map;
+import java.util.Vector;
 
-import javax.swing.plaf.*;
-import javax.swing.text.*;
-import javax.swing.event.*;
-import javax.swing.text.html.*;
-import javax.accessibility.*;
+import javax.accessibility.Accessible;
+import javax.accessibility.AccessibleComponent;
+import javax.accessibility.AccessibleContext;
+import javax.accessibility.AccessibleHyperlink;
+import javax.accessibility.AccessibleHypertext;
+import javax.accessibility.AccessibleState;
+import javax.accessibility.AccessibleStateSet;
+import javax.accessibility.AccessibleText;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+import javax.swing.event.EventListenerList;
+import javax.swing.event.HyperlinkEvent;
+import javax.swing.event.HyperlinkListener;
+import javax.swing.plaf.TextUI;
+import javax.swing.text.AbstractDocument;
+import javax.swing.text.AttributeSet;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.BoxView;
+import javax.swing.text.Caret;
+import javax.swing.text.ChangedCharSetException;
+import javax.swing.text.CompositeView;
+import javax.swing.text.DefaultEditorKit;
+import javax.swing.text.Document;
+import javax.swing.text.EditorKit;
+import javax.swing.text.Element;
+import javax.swing.text.ElementIterator;
+import javax.swing.text.GlyphView;
+import javax.swing.text.JTextComponent;
+import javax.swing.text.StyleConstants;
+import javax.swing.text.StyledEditorKit;
+import javax.swing.text.View;
+import javax.swing.text.ViewFactory;
+import javax.swing.text.WrappedPlainView;
+import javax.swing.text.html.HTML;
+import javax.swing.text.html.HTMLDocument;
+import javax.swing.text.html.HTMLEditorKit;
+
 import sun.reflect.misc.ReflectUtil;
 
 /**
@@ -255,7 +312,7 @@ public class JEditorPane extends JTextComponent {
      * Creates a <code>JEditorPane</code> based on a specified URL for input.
      *
      * @param initialPage the URL
-     * @exception IOException if the URL is <code>null</code>
+     * @throws IOException if the URL is <code>null</code>
      *          or cannot be accessed
      */
     public JEditorPane(URL initialPage) throws IOException {
@@ -268,7 +325,7 @@ public class JEditorPane extends JTextComponent {
      * a URL specification.
      *
      * @param url the URL
-     * @exception IOException if the URL is <code>null</code> or
+     * @throws IOException if the URL is <code>null</code> or
      *          cannot be accessed
      */
     public JEditorPane(String url) throws IOException {
@@ -283,7 +340,7 @@ public class JEditorPane extends JTextComponent {
      *
      * @param type mime type of the given text
      * @param text the text to initialize with; may be <code>null</code>
-     * @exception NullPointerException if the <code>type</code> parameter
+     * @throws NullPointerException if the <code>type</code> parameter
      *          is <code>null</code>
      */
     public JEditorPane(String type, String text) {
@@ -405,7 +462,7 @@ public class JEditorPane extends JTextComponent {
      * thread is done whether the load was successful or not.
      *
      * @param page the URL of the page
-     * @exception IOException for a <code>null</code> or invalid
+     * @throws IOException for a <code>null</code> or invalid
      *          page specification, or exception from the stream being read
      * @see #getPage
      */
@@ -521,7 +578,7 @@ public class JEditorPane extends JTextComponent {
      *
      * @param in the stream from which to read
      * @param desc an object describing the stream
-     * @exception IOException as thrown by the stream being
+     * @throws IOException as thrown by the stream being
      *          used to initialize
      * @see JTextComponent#read
      * @see #setDocument
@@ -636,11 +693,7 @@ public class JEditorPane extends JTextComponent {
                                 setDocument(doc);
                             }
                         });
-                    } catch (InvocationTargetException ex) {
-                        UIManager.getLookAndFeel().provideErrorFeedback(
-                                                            JEditorPane.this);
-                        return old;
-                    } catch (InterruptedException ex) {
+                    } catch (InvocationTargetException | InterruptedException ex) {
                         UIManager.getLookAndFeel().provideErrorFeedback(
                                                             JEditorPane.this);
                         return old;
@@ -761,9 +814,7 @@ public class JEditorPane extends JTextComponent {
                         handleConnectionProperties(conn);
                     }
                 });
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            } catch (InvocationTargetException e) {
+            } catch (InterruptedException | InvocationTargetException e) {
                 throw new RuntimeException(e);
             }
         }
@@ -796,16 +847,12 @@ public class JEditorPane extends JTextComponent {
     private void handlePostData(HttpURLConnection conn, Object postData)
                                                             throws IOException {
         conn.setDoOutput(true);
-        DataOutputStream os = null;
-        try {
-            conn.setRequestProperty("Content-Type",
-                    "application/x-www-form-urlencoded");
-            os = new DataOutputStream(conn.getOutputStream());
-            os.writeBytes((String) postData);
-        } finally {
-            if (os != null) {
-                os.close();
-            }
+        conn.setRequestProperty("Content-Type",
+                "application/x-www-form-urlencoded");
+        try (OutputStream os = conn.getOutputStream();
+             DataOutputStream dos = new DataOutputStream(os))
+        {
+            dos.writeBytes((String)postData);
         }
     }
 
@@ -872,7 +919,7 @@ public class JEditorPane extends JTextComponent {
      * Sets the current URL being displayed.
      *
      * @param url the URL for display
-     * @exception IOException for a <code>null</code> or invalid URL
+     * @throws IOException for a <code>null</code> or invalid URL
      *          specification
      */
     public void setPage(String url) throws IOException {
@@ -1008,14 +1055,9 @@ public class JEditorPane extends JTextComponent {
                     putClientProperty("charset", charset);
                 }
             }
-        }
-        catch (IndexOutOfBoundsException e) {
+        } catch (IndexOutOfBoundsException | NullPointerException e) {
             // malformed parameter list, use charset we have
-        }
-        catch (NullPointerException e) {
-            // malformed parameter list, use charset we have
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             // malformed parameter list, use charset we have; but complain
             System.err.println("JEditorPane.getCharsetFromContentTypeParameters failed on: " + paramlist);
             e.printStackTrace();
@@ -1426,9 +1468,7 @@ public class JEditorPane extends JTextComponent {
             Reader r = new StringReader(t);
             EditorKit kit = getEditorKit();
             kit.read(r, doc, 0);
-        } catch (IOException ioe) {
-            UIManager.getLookAndFeel().provideErrorFeedback(JEditorPane.this);
-        } catch (BadLocationException ble) {
+        } catch (IOException | BadLocationException e) {
             UIManager.getLookAndFeel().provideErrorFeedback(JEditorPane.this);
         }
     }
@@ -1514,6 +1554,7 @@ public class JEditorPane extends JTextComponent {
      * <code>JComponent</code> for more
      * information about serialization in Swing.
      */
+    @Serial
     private void writeObject(ObjectOutputStream s) throws IOException {
         s.defaultWriteObject();
         if (getUIClassID().equals(uiClassID)) {
@@ -1564,7 +1605,7 @@ public class JEditorPane extends JTextComponent {
 
     /**
      * Key for a client property used to indicate whether
-     * <a href="http://www.w3.org/TR/CSS21/syndata.html#length-units">
+     * <a href="https://www.w3.org/TR/CSS22/syndata.html#length-units">
      * w3c compliant</a> length units are used for html rendering.
      * <p>
      * By default this is not enabled; to enable
@@ -2004,7 +2045,7 @@ public class JEditorPane extends JTextComponent {
         }
 
         /**
-         * Make one of these puppies
+         * Constructs a {@code JEditorPaneAccessibleHypertextSupport}.
          */
         public JEditorPaneAccessibleHypertextSupport() {
             hyperlinks = new LinkVector();

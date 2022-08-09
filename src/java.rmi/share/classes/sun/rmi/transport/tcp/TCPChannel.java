@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,31 +71,38 @@ public class TCPChannel implements Channel {
     private ConnectionAcceptor acceptor;
 
     /** most recently authorized AccessControlContext */
+    @SuppressWarnings("removal")
     private AccessControlContext okContext;
 
     /** cache of authorized AccessControlContexts */
+    @SuppressWarnings("removal")
     private WeakHashMap<AccessControlContext,
                         Reference<AccessControlContext>> authcache;
 
     /** the SecurityManager which authorized okContext and authcache */
+    @SuppressWarnings("removal")
     private SecurityManager cacheSecurityManager = null;
 
     /** client-side connection idle usage timeout */
+    @SuppressWarnings("removal")
     private static final long idleTimeout =             // default 15 seconds
         AccessController.doPrivileged((PrivilegedAction<Long>) () ->
             Long.getLong("sun.rmi.transport.connectionTimeout", 15000));
 
     /** client-side connection handshake read timeout */
+    @SuppressWarnings("removal")
     private static final int handshakeTimeout =         // default 1 minute
         AccessController.doPrivileged((PrivilegedAction<Integer>) () ->
             Integer.getInteger("sun.rmi.transport.tcp.handshakeTimeout", 60000));
 
     /** client-side connection response read timeout (after handshake) */
+    @SuppressWarnings("removal")
     private static final int responseTimeout =          // default infinity
         AccessController.doPrivileged((PrivilegedAction<Integer>) () ->
             Integer.getInteger("sun.rmi.transport.tcp.responseTimeout", 0));
 
     /** thread pool for scheduling delayed tasks */
+    @SuppressWarnings("removal")
     private static final ScheduledExecutorService scheduler =
         AccessController.doPrivileged(
             new RuntimeUtil.GetInstanceAction()).getScheduler();
@@ -121,6 +128,7 @@ public class TCPChannel implements Channel {
      * @exception SecurityException if caller is not allowed to use this
      * Channel.
      */
+    @SuppressWarnings("removal")
     private void checkConnectPermission() throws SecurityException {
         SecurityManager security = System.getSecurityManager();
         if (security == null)
@@ -459,6 +467,7 @@ class ConnectionAcceptor implements Runnable {
      * Start a new thread to accept connections.
      */
     public void startNewAcceptor() {
+        @SuppressWarnings("removal")
         Thread t = AccessController.doPrivileged(
             new NewThreadAction(ConnectionAcceptor.this,
                                 "TCPChannel Accept-" + ++ threadNum,

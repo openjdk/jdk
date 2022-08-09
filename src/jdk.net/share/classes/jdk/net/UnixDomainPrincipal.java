@@ -34,65 +34,23 @@ import java.util.Objects;
  * <a href="../../../java.base/java/nio/channels/package-summary.html#unixdomain">
  * Unix domain</a> socket.
  *
+ * @param user the user identity
+ * @param group the group identity
+ *
  * @since 16
  */
-
-public final class UnixDomainPrincipal {
-    private final UserPrincipal user;
-    private final GroupPrincipal group;
+public record UnixDomainPrincipal(UserPrincipal user, GroupPrincipal group) {
 
     /**
      * Creates a UnixDomainPrincipal.
      *
      * @param user the user identity
-     *
      * @param group the group identity
      *
      * @throws NullPointerException if {@code user} or {@code group} are {@code null}.
      */
-    public UnixDomainPrincipal(UserPrincipal user, GroupPrincipal group) {
-        this.user = Objects.requireNonNull(user);
-        this.group = Objects.requireNonNull(group);
-    }
-
-    /**
-     * Returns true if {@code obj} is a {@code UnixDomainPrincipal}
-     * and its user and group are equal to this user and group.
-     *
-     * @param obj the object to compare with
-     * @return true if this equal to obj
-     */
-    public boolean equals(Object obj) {
-        if (obj instanceof UnixDomainPrincipal) {
-            UnixDomainPrincipal that = (UnixDomainPrincipal) obj;
-            return Objects.equals(this.user, that.user)
-                    && Objects.equals(this.group, that.group);
-        }
-        return false;
-    }
-
-    /**
-     * Returns a hashcode calculated from the user and group
-     */
-    public int hashCode() {
-        return Objects.hash(user, group);
-    }
-
-    /**
-     * Returns this object's {@link UserPrincipal}
-     *
-     * @return this object's user
-     */
-    public UserPrincipal user() {
-        return user;
-    }
-
-    /**
-     * Returns this object's {@link GroupPrincipal}
-     *
-     * @return this object's user
-     */
-    public GroupPrincipal group() {
-        return group;
+    public UnixDomainPrincipal {
+        Objects.requireNonNull(user);
+        Objects.requireNonNull(group);
     }
 }

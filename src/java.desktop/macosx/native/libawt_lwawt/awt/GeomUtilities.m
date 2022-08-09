@@ -24,27 +24,13 @@
  */
 
 #import "GeomUtilities.h"
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
-
-static JNF_CLASS_CACHE(sjc_Point2D, "java/awt/geom/Point2D");
-static JNF_MEMBER_CACHE(jm_pt_getX, sjc_Point2D, "getX", "()D");
-static JNF_MEMBER_CACHE(jm_pt_getY, sjc_Point2D, "getY", "()D");
-
-static JNF_CLASS_CACHE(sjc_Dimension2D, "java/awt/geom/Dimension2D");
-static JNF_MEMBER_CACHE(jm_sz_getWidth, sjc_Dimension2D, "getWidth", "()D");
-static JNF_MEMBER_CACHE(jm_sz_getHeight, sjc_Dimension2D, "getHeight", "()D");
-
-static JNF_CLASS_CACHE(sjc_Rectangle2D, "java/awt/geom/Rectangle2D");
-static JNF_MEMBER_CACHE(jm_rect_getX, sjc_Rectangle2D, "getX", "()D");
-static JNF_MEMBER_CACHE(jm_rect_getY, sjc_Rectangle2D, "getY", "()D");
-static JNF_MEMBER_CACHE(jm_rect_getWidth, sjc_Rectangle2D, "getWidth", "()D");
-static JNF_MEMBER_CACHE(jm_rect_getHeight, sjc_Rectangle2D, "getHeight", "()D");
-
 
 static jobject NewJavaRect(JNIEnv *env, jdouble x, jdouble y, jdouble w, jdouble h) {
-    static JNF_CLASS_CACHE(sjc_Rectangle2DDouble, "java/awt/geom/Rectangle2D$Double");
-    static JNF_CTOR_CACHE(ctor_Rectangle2DDouble, sjc_Rectangle2DDouble, "(DDDD)V");
-    return JNFNewObject(env, ctor_Rectangle2DDouble, x, y, w, h);
+    DECLARE_CLASS_RETURN(sjc_Rectangle2DDouble, "java/awt/geom/Rectangle2D$Double", NULL);
+    DECLARE_METHOD_RETURN(ctor_Rectangle2DDouble, sjc_Rectangle2DDouble, "<init>", "(DDDD)V", NULL);
+    jobject o = (*env)->NewObject(env, sjc_Rectangle2DDouble, ctor_Rectangle2DDouble, x, y, w, h);
+    CHECK_EXCEPTION();
+    return o;
 }
 
 jobject CGToJavaRect(JNIEnv *env, CGRect rect) {
@@ -63,46 +49,60 @@ jobject NSToJavaRect(JNIEnv *env, NSRect rect) {
                        rect.size.height);
 }
 
-CGRect JavaToCGRect(JNIEnv *env, jobject rect) {
-    return CGRectMake(JNFCallDoubleMethod(env, rect, jm_rect_getX),
-                      JNFCallDoubleMethod(env, rect, jm_rect_getY),
-                      JNFCallDoubleMethod(env, rect, jm_rect_getWidth),
-                      JNFCallDoubleMethod(env, rect, jm_rect_getHeight));
-}
-
 NSRect JavaToNSRect(JNIEnv *env, jobject rect) {
-    return NSMakeRect(JNFCallDoubleMethod(env, rect, jm_rect_getX),
-                      JNFCallDoubleMethod(env, rect, jm_rect_getY),
-                      JNFCallDoubleMethod(env, rect, jm_rect_getWidth),
-                      JNFCallDoubleMethod(env, rect, jm_rect_getHeight));
+    DECLARE_CLASS_RETURN(sjc_Rectangle2D, "java/awt/geom/Rectangle2D", NSZeroRect);
+    DECLARE_METHOD_RETURN(jm_rect_getX, sjc_Rectangle2D, "getX", "()D", NSZeroRect);
+    DECLARE_METHOD_RETURN(jm_rect_getY, sjc_Rectangle2D, "getY", "()D", NSZeroRect);
+    DECLARE_METHOD_RETURN(jm_rect_getWidth, sjc_Rectangle2D, "getWidth", "()D", NSZeroRect);
+    DECLARE_METHOD_RETURN(jm_rect_getHeight, sjc_Rectangle2D, "getHeight", "()D", NSZeroRect);
+    jdouble x = (*env)->CallDoubleMethod(env, rect, jm_rect_getX); CHECK_EXCEPTION();
+    jdouble y = (*env)->CallDoubleMethod(env, rect, jm_rect_getY); CHECK_EXCEPTION();
+    jdouble w = (*env)->CallDoubleMethod(env, rect, jm_rect_getWidth); CHECK_EXCEPTION();
+    jdouble h = (*env)->CallDoubleMethod(env, rect, jm_rect_getHeight); CHECK_EXCEPTION();
+    return NSMakeRect(x, y, w, h);
 }
 
 jobject NSToJavaPoint(JNIEnv *env, NSPoint point) {
-    static JNF_CLASS_CACHE(sjc_Point2DDouble, "java/awt/geom/Point2D$Double");
-    static JNF_CTOR_CACHE(ctor_Point2DDouble, sjc_Point2DDouble, "(DD)V");
-    return JNFNewObject(env, ctor_Point2DDouble, (jdouble)point.x, (jdouble)point.y);
+    DECLARE_CLASS_RETURN(sjc_Point2DDouble, "java/awt/geom/Point2D$Double", NULL);
+    DECLARE_METHOD_RETURN(ctor_Point2DDouble, sjc_Point2DDouble, "<init>", "(DD)V", NULL);
+    jobject o =  (*env)->NewObject(env, sjc_Point2DDouble, ctor_Point2DDouble, (jdouble)point.x, (jdouble)point.y);
+    CHECK_EXCEPTION();
+    return o;
 }
 
 NSPoint JavaToNSPoint(JNIEnv *env, jobject point) {
-    return NSMakePoint(JNFCallDoubleMethod(env, point, jm_pt_getX),
-                       JNFCallDoubleMethod(env, point, jm_pt_getY));
+    DECLARE_CLASS_RETURN(sjc_Point2D, "java/awt/geom/Point2D", NSZeroPoint);
+    DECLARE_METHOD_RETURN(jm_pt_getX, sjc_Point2D, "getX", "()D", NSZeroPoint);
+    DECLARE_METHOD_RETURN(jm_pt_getY, sjc_Point2D, "getY", "()D", NSZeroPoint);
+    jdouble x = (*env)->CallDoubleMethod(env, point, jm_pt_getX); CHECK_EXCEPTION();
+    jdouble y = (*env)->CallDoubleMethod(env, point, jm_pt_getY); CHECK_EXCEPTION();
+    return NSMakePoint(x, y);
 }
 
 jobject NSToJavaSize(JNIEnv *env, NSSize size) {
-    static JNF_CLASS_CACHE(sjc_Dimension2DDouble, "java/awt/Dimension"); // No Dimension2D$Double :-(
-    static JNF_CTOR_CACHE(ctor_Dimension2DDouble, sjc_Dimension2DDouble, "(II)V");
-    return JNFNewObject(env, ctor_Dimension2DDouble, (jint)size.width, (jint)size.height);
+    DECLARE_CLASS_RETURN(sjc_Dimension2DDouble, "java/awt/Dimension", NULL); // No Dimension2D$Double :-(
+    DECLARE_METHOD_RETURN(ctor_Dimension2DDouble, sjc_Dimension2DDouble, "<init>", "(II)V", NULL);
+    jobject o = (*env)->NewObject(env, sjc_Dimension2DDouble, ctor_Dimension2DDouble, (jint)size.width, (jint)size.height);
+    CHECK_EXCEPTION();
+    return o;
 }
 
 NSSize JavaToNSSize(JNIEnv *env, jobject dimension) {
-    return NSMakeSize(JNFCallDoubleMethod(env, dimension, jm_sz_getWidth),
-                      JNFCallDoubleMethod(env, dimension, jm_sz_getHeight));
+    DECLARE_CLASS_RETURN(sjc_Dimension2D, "java/awt/geom/Dimension2D", NSZeroSize);
+    DECLARE_METHOD_RETURN(jm_sz_getWidth, sjc_Dimension2D, "getWidth", "()D", NSZeroSize);
+    DECLARE_METHOD_RETURN(jm_sz_getHeight, sjc_Dimension2D, "getHeight", "()D", NSZeroSize);
+    jdouble w = (*env)->CallDoubleMethod(env, dimension, jm_sz_getWidth); CHECK_EXCEPTION();
+    jdouble h = (*env)->CallDoubleMethod(env, dimension, jm_sz_getHeight); CHECK_EXCEPTION();
+    return NSMakeSize(w, h);
 }
 
 static NSScreen *primaryScreen(JNIEnv *env) {
     NSScreen *primaryScreen = [[NSScreen screens] objectAtIndex:0];
     if (primaryScreen != nil) return primaryScreen;
-    if (env != NULL) [JNFException raise:env as:kRuntimeException reason:"Failed to convert, no screen."];
+    if ((env != NULL) && ([NSThread isMainThread] == NO)) {
+        JNU_ThrowByName(env, "java/lang/RuntimeException", "Failed to convert, no screen.");
+    }
+    [NSException raise:NSGenericException format:@"Failed to convert, no screen."];
     return nil;
 }
 

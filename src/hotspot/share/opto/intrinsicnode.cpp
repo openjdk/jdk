@@ -24,8 +24,13 @@
 
 #include "precompiled.hpp"
 #include "opto/intrinsicnode.hpp"
+#include "opto/addnode.hpp"
+#include "opto/mulnode.hpp"
 #include "opto/memnode.hpp"
 #include "opto/phaseX.hpp"
+#include "utilities/population_count.hpp"
+#include "utilities/count_leading_zeros.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 //=============================================================================
 // Do not match memory edge.
@@ -47,7 +52,7 @@ Node* StrIntrinsicNode::Ideal(PhaseGVN* phase, bool can_reshape) {
     uint alias_idx = phase->C->get_alias_index(adr_type());
     mem = mem->is_MergeMem() ? mem->as_MergeMem()->memory_at(alias_idx) : mem;
     if (mem != in(MemNode::Memory)) {
-      set_req(MemNode::Memory, mem);
+      set_req_X(MemNode::Memory, mem, phase);
       return this;
     }
   }
@@ -112,3 +117,239 @@ SignumFNode* SignumFNode::make(PhaseGVN& gvn, Node* in) {
   return new SignumFNode(in, gvn.makecon(TypeF::ZERO), gvn.makecon(TypeF::ONE));
 }
 
+Node* CompressBitsNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  Node* src = in(1);
+  Node* mask = in(2);
+  if (bottom_type()->isa_int()) {
+    if (mask->Opcode() == Op_LShiftI && phase->type(mask->in(1))->is_int()->is_con()) {
+      // compress(x, 1 << n) == (x >> n & 1)
+      if (phase->type(mask->in(1))->higher_equal(TypeInt::ONE)) {
+        Node* rshift = phase->transform(new RShiftINode(in(1), mask->in(2)));
+        return new AndINode(rshift, phase->makecon(TypeInt::ONE));
+      // compress(x, -1 << n) == x >>> n
+      } else if (phase->type(mask->in(1))->higher_equal(TypeInt::MINUS_1)) {
+        return new URShiftINode(in(1), mask->in(2));
+      }
+    }
+    // compress(expand(x, m), m) == x & compress(m, m)
+    if (src->Opcode() == Op_ExpandBits &&
+        src->in(2) == mask) {
+      Node* compr = phase->transform(new CompressBitsNode(mask, mask, TypeInt::INT));
+      return new AndINode(compr, src->in(1));
+    }
+  } else {
+    assert(bottom_type()->isa_long(), "");
+    if (mask->Opcode() == Op_LShiftL && phase->type(mask->in(1))->is_long()->is_con()) {
+      // compress(x, 1 << n) == (x >> n & 1)
+      if (phase->type(mask->in(1))->higher_equal(TypeLong::ONE)) {
+        Node* rshift = phase->transform(new RShiftLNode(in(1), mask->in(2)));
+        return new AndLNode(rshift, phase->makecon(TypeLong::ONE));
+      // compress(x, -1 << n) == x >>> n
+      } else if (phase->type(mask->in(1))->higher_equal(TypeLong::MINUS_1)) {
+        return new URShiftLNode(in(1), mask->in(2));
+      }
+    }
+    // compress(expand(x, m), m) == x & compress(m, m)
+    if (src->Opcode() == Op_ExpandBits &&
+        src->in(2) == mask) {
+      Node* compr = phase->transform(new CompressBitsNode(mask, mask, TypeLong::LONG));
+      return new AndLNode(compr, src->in(1));
+    }
+  }
+  return NULL;
+}
+
+Node* compress_expand_identity(PhaseGVN* phase, Node* n) {
+  BasicType bt = n->bottom_type()->basic_type();
+  // compress(x, 0) == 0, expand(x, 0) == 0
+  if(phase->type(n->in(2))->higher_equal(TypeInteger::zero(bt))) return n->in(2);
+  // compress(x, -1) == x, expand(x, -1) == x
+  if(phase->type(n->in(2))->higher_equal(TypeInteger::minus_1(bt))) return n->in(1);
+  // expand(-1, x) == x
+  if(n->Opcode() == Op_ExpandBits &&
+     phase->type(n->in(1))->higher_equal(TypeInteger::minus_1(bt))) return n->in(2);
+  return n;
+}
+
+Node* CompressBitsNode::Identity(PhaseGVN* phase) {
+  return compress_expand_identity(phase, this);
+}
+
+Node* ExpandBitsNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  Node* src = in(1);
+  Node* mask = in(2);
+  if (bottom_type()->isa_int()) {
+    if (mask->Opcode() == Op_LShiftI && phase->type(mask->in(1))->is_int()->is_con()) {
+      // expand(x, 1 << n) == (x & 1) << n
+      if (phase->type(mask->in(1))->higher_equal(TypeInt::ONE)) {
+        Node* andnode = phase->transform(new AndINode(in(1), phase->makecon(TypeInt::ONE)));
+        return new LShiftINode(andnode, mask->in(2));
+      // expand(x, -1 << n) == x << n
+      } else if (phase->type(mask->in(1))->higher_equal(TypeInt::MINUS_1)) {
+        return new LShiftINode(in(1), mask->in(2));
+      }
+    }
+    // expand(compress(x, m), m) == x & m
+    if (src->Opcode() == Op_CompressBits &&
+        src->in(2) == mask) {
+      return new AndINode(src->in(1), mask);
+    }
+  } else {
+    assert(bottom_type()->isa_long(), "");
+    if (mask->Opcode() == Op_LShiftL && phase->type(mask->in(1))->is_long()->is_con()) {
+      // expand(x, 1 << n) == (x & 1) << n
+      if (phase->type(mask->in(1))->higher_equal(TypeLong::ONE)) {
+        Node* andnode = phase->transform(new AndLNode(in(1), phase->makecon(TypeLong::ONE)));
+        return new LShiftLNode(andnode, mask->in(2));
+      // expand(x, -1 << n) == x << n
+      } else if (phase->type(mask->in(1))->higher_equal(TypeLong::MINUS_1)) {
+        return new LShiftLNode(in(1), mask->in(2));
+      }
+    }
+    // expand(compress(x, m), m) == x & m
+    if (src->Opcode() == Op_CompressBits &&
+        src->in(2) == mask) {
+      return new AndLNode(src->in(1), mask);
+    }
+  }
+  return NULL;
+}
+
+Node* ExpandBitsNode::Identity(PhaseGVN* phase) {
+  return compress_expand_identity(phase, this);
+}
+
+static const Type* bitshuffle_value(const TypeInteger* src_type, const TypeInteger* mask_type, int opc, BasicType bt) {
+
+  jlong hi = bt == T_INT ? max_jint : max_jlong;
+  jlong lo = bt == T_INT ? min_jint : min_jlong;
+
+  if(mask_type->is_con() && mask_type->get_con_as_long(bt) != -1L) {
+    jlong maskcon = mask_type->get_con_as_long(bt);
+    int bitcount = population_count(static_cast<julong>(bt == T_INT ? maskcon & 0xFFFFFFFFL : maskcon));
+    if (opc == Op_CompressBits) {
+      // Bit compression selects the source bits corresponding to true mask bits
+      // and lays them out contiguously at desitination bit poistions starting from
+      // LSB, remaining higher order bits are set to zero.
+      // Thus, it will always generates a +ve value i.e. sign bit set to 0 if
+      // any bit of constant mask value is zero.
+      lo = 0L;
+      hi = (1L << bitcount) - 1;
+    } else {
+      assert(opc == Op_ExpandBits, "");
+      // Expansion sequentially reads source bits starting from LSB
+      // and places them over destination at bit positions corresponding
+      // set mask bit. Thus bit expansion for non-negative mask value
+      // will always generate a +ve value.
+      hi = maskcon >= 0L ? maskcon : maskcon ^ lo;
+      lo = maskcon >= 0L ? 0L : lo;
+    }
+  }
+
+  if (!mask_type->is_con()) {
+    int mask_max_bw;
+    int max_bw = bt == T_INT ? 32 : 64;
+    // Case 1) Mask value range includes -1.
+    if ((mask_type->lo_as_long() < 0L && mask_type->hi_as_long() >= -1L)) {
+      mask_max_bw = max_bw;
+    // Case 2) Mask value range is less than -1.
+    } else if (mask_type->hi_as_long() < -1L) {
+      mask_max_bw = max_bw - 1;
+    } else {
+    // Case 3) Mask value range only includes +ve values.
+      assert(mask_type->lo_as_long() >= 0, "");
+      jlong clz = count_leading_zeros(mask_type->hi_as_long());
+      clz = bt == T_INT ? clz - 32 : clz;
+      mask_max_bw = max_bw - clz;
+    }
+    if ( opc == Op_CompressBits) {
+      lo = mask_max_bw == max_bw ? lo : 0L;
+      // Compress operation is inherently an unsigned operation and
+      // result value range is primarily dependent on true count
+      // of participating mask value.
+      hi = mask_max_bw < max_bw ? (1L << mask_max_bw) - 1 : src_type->hi_as_long();
+    } else {
+      assert(opc == Op_ExpandBits, "");
+      jlong max_mask = mask_type->hi_as_long();
+      // Since mask here a range and not a constant value, hence being
+      // conservative in determining the value range of result.
+      lo = mask_type->lo_as_long() >= 0L ? 0L : lo;
+      hi = mask_type->lo_as_long() >= 0L ? max_mask : hi;
+    }
+  }
+
+  return bt == T_INT ? static_cast<const Type*>(TypeInt::make(lo, hi, Type::WidenMax)) :
+                       static_cast<const Type*>(TypeLong::make(lo, hi, Type::WidenMax));
+}
+
+jlong CompressBitsNode::compress_bits(jlong src, jlong mask, int bit_count) {
+  jlong res = 0;
+  for (int i = 0, j = 0; i < bit_count; i++) {
+    if(mask & 0x1) {
+      res |= (src & 0x1) << j++;
+    }
+    src >>= 1;
+    mask >>= 1;
+  }
+  return res;
+}
+
+const Type* CompressBitsNode::Value(PhaseGVN* phase) const {
+  const Type* t1 = phase->type(in(1));
+  const Type* t2 = phase->type(in(2));
+  if (t1 == Type::TOP || t2 == Type::TOP) {
+    return Type::TOP;
+  }
+
+  BasicType bt = bottom_type()->basic_type();
+  const TypeInteger* src_type = t1->is_integer(bt);
+  const TypeInteger* mask_type = t2->is_integer(bt);
+  int w = bt == T_INT ? 32 : 64;
+
+  // Constant fold if both src and mask are constants.
+  if (src_type->is_con() && mask_type->is_con()) {
+    jlong src = src_type->get_con_as_long(bt);
+    jlong mask = mask_type->get_con_as_long(bt);
+    jlong res = compress_bits(src, mask, w);
+    return bt == T_INT ? static_cast<const Type*>(TypeInt::make(res)) :
+                         static_cast<const Type*>(TypeLong::make(res));
+  }
+
+  return bitshuffle_value(src_type, mask_type, Op_CompressBits, bt);
+}
+
+jlong ExpandBitsNode::expand_bits(jlong src, jlong mask, int bit_count) {
+  jlong res = 0;
+  for (int i = 0; i < bit_count; i++) {
+    if(mask & 0x1) {
+      res |= (src & 0x1) << i;
+      src >>= 1;
+    }
+    mask >>= 1;
+  }
+  return res;
+}
+
+const Type* ExpandBitsNode::Value(PhaseGVN* phase) const {
+  const Type* t1 = phase->type(in(1));
+  const Type* t2 = phase->type(in(2));
+  if (t1 == Type::TOP || t2 == Type::TOP) {
+    return Type::TOP;
+  }
+
+  BasicType bt = bottom_type()->basic_type();
+  const TypeInteger* src_type = t1->is_integer(bt);
+  const TypeInteger* mask_type = t2->is_integer(bt);
+  int w = bt == T_INT ? 32 : 64;
+
+  // Constant fold if both src and mask are constants.
+  if (src_type->is_con() && mask_type->is_con()) {
+     jlong src = src_type->get_con_as_long(bt);
+     jlong mask = mask_type->get_con_as_long(bt);
+     jlong res = expand_bits(src, mask, w);
+     return bt == T_INT ? static_cast<const Type*>(TypeInt::make(res)) :
+                          static_cast<const Type*>(TypeLong::make(res));
+  }
+
+  return bitshuffle_value(src_type, mask_type, Op_ExpandBits, bt);
+}

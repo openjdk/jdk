@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,10 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/vmClasses.hpp"
 #include "compiler/compileBroker.hpp"
 #include "classfile/moduleEntry.hpp"
+#include "classfile/vmSymbols.hpp"
 #include "jvmci/jvmciEnv.hpp"
 #include "jvmci/jvmciRuntime.hpp"
 #include "oops/objArrayOop.inline.hpp"
@@ -31,7 +33,6 @@
 #include "runtime/handles.inline.hpp"
 
 JVMCICompiler* JVMCICompiler::_instance = NULL;
-elapsedTimer JVMCICompiler::_codeInstallTimer;
 
 JVMCICompiler::JVMCICompiler() : AbstractCompiler(compiler_jvmci) {
   _bootstrapping = false;
@@ -42,9 +43,19 @@ JVMCICompiler::JVMCICompiler() : AbstractCompiler(compiler_jvmci) {
   _instance = this;
 }
 
+JVMCICompiler* JVMCICompiler::instance(bool require_non_null, TRAPS) {
+  if (!EnableJVMCI) {
+    THROW_MSG_NULL(vmSymbols::java_lang_InternalError(), "JVMCI is not enabled")
+  }
+  if (_instance == NULL && require_non_null) {
+    THROW_MSG_NULL(vmSymbols::java_lang_InternalError(), "The JVMCI compiler instance has not been created");
+  }
+  return _instance;
+}
+
 // Initialization
 void JVMCICompiler::initialize() {
-  assert(!is_c1_or_interpreter_only(), "JVMCI is launched, it's not c1/interpreter only mode");
+  assert(!CompilerConfig::is_c1_or_interpreter_only_no_jvmci(), "JVMCI is launched, it's not c1/interpreter only mode");
   if (!UseCompiler || !EnableJVMCI || !UseJVMCICompiler || !should_perform_init()) {
     return;
   }
@@ -53,7 +64,6 @@ void JVMCICompiler::initialize() {
 }
 
 void JVMCICompiler::bootstrap(TRAPS) {
-  assert(THREAD->is_Java_thread(), "must be");
   if (Arguments::mode() == Arguments::_int) {
     // Nothing to do in -Xint mode
     return;
@@ -66,7 +76,7 @@ void JVMCICompiler::bootstrap(TRAPS) {
   }
   jlong start = os::javaTimeNanos();
 
-  Array<Method*>* objectMethods = SystemDictionary::Object_klass()->methods();
+  Array<Method*>* objectMethods = vmClasses::Object_klass()->methods();
   // Initialize compile queue with a selected set of methods.
   int len = objectMethods->length();
   for (int i = 0; i < len; i++) {
@@ -84,7 +94,7 @@ void JVMCICompiler::bootstrap(TRAPS) {
   do {
     // Loop until there is something in the queue.
     do {
-      THREAD->as_Java_thread()->sleep(100);
+      THREAD->sleep(100);
       qsize = CompileBroker::queue_size(CompLevel_full_optimization);
     } while (!_bootstrap_compilation_request_handled && first_round && qsize == 0);
     first_round = false;
@@ -141,19 +151,56 @@ void JVMCICompiler::compile_method(ciEnv* env, ciMethod* target, int entry_bci, 
   ShouldNotReachHere();
 }
 
-// Print compilation timers and statistics
-void JVMCICompiler::print_timers() {
-  tty->print_cr("    JVMCI Compile Time:      %7.3f s", stats()->total_time());
-  print_compilation_timers();
+void JVMCICompiler::stopping_compiler_thread(CompilerThread* current) {
+  if (UseJVMCINativeLibrary) {
+    JVMCIRuntime* runtime = JVMCI::compiler_runtime(current, false);
+    if (runtime != nullptr) {
+      MutexUnlocker unlock(CompileThread_lock);
+      runtime->detach_thread(current, "stopping idle compiler thread");
+    }
+  }
 }
 
-// Print compilation timers and statistics
-void JVMCICompiler::print_compilation_timers() {
-  double code_install_time = _codeInstallTimer.seconds();
-  if (code_install_time != 0.0) {
-    tty->cr();
-    tty->print_cr("    JVMCI code install time:        %6.3f s", code_install_time);
+void JVMCICompiler::on_empty_queue(CompileQueue* queue, CompilerThread* thread) {
+  if (UseJVMCINativeLibrary) {
+    int delay = JVMCICompilerIdleDelay;
+    JVMCIRuntime* runtime = JVMCI::compiler_runtime(thread, false);
+    // Don't detach JVMCI compiler threads from their JVMCI
+    // runtime during the VM startup grace period
+    if (runtime != nullptr && delay > 0 && tty->time_stamp().milliseconds() > DEFAULT_COMPILER_IDLE_DELAY) {
+      bool timeout = MethodCompileQueue_lock->wait(delay);
+      // Unlock as detaching or repacking can result in a JNI call to shutdown a JavaVM
+      // and locks cannot be held when making a VM to native transition.
+      MutexUnlocker unlock(MethodCompileQueue_lock);
+      if (timeout) {
+        runtime->detach_thread(thread, "releasing idle compiler thread");
+      } else {
+        runtime->repack(thread);
+      }
+    }
   }
+}
+
+// Print compilation timers
+void JVMCICompiler::print_timers() {
+  tty->print_cr("    JVMCI CompileBroker Time:");
+  tty->print_cr("       Compile:        %7.3f s", stats()->total_time());
+  _jit_code_installs.print_on(tty, "       Install Code:   ");
+  tty->cr();
+  tty->print_cr("    JVMCI Hosted Time:");
+  _hosted_code_installs.print_on(tty, "       Install Code:   ");
+}
+
+void JVMCICompiler::CodeInstallStats::print_on(outputStream* st, const char* prefix) const {
+  double time = _timer.seconds();
+  st->print_cr("%s%7.3f s (installs: %d, CodeBlob total size: %d, CodeBlob code size: %d)",
+      prefix, time, _count, _codeBlobs_size, _codeBlobs_code_size);
+}
+
+void JVMCICompiler::CodeInstallStats::on_install(CodeBlob* cb) {
+  Atomic::inc(&_count);
+  Atomic::add(&_codeBlobs_size, cb->size());
+  Atomic::add(&_codeBlobs_code_size, cb->code_size());
 }
 
 void JVMCICompiler::inc_methods_compiled() {

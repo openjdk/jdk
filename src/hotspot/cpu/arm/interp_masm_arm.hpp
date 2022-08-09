@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,10 +27,11 @@
 
 #include "asm/macroAssembler.hpp"
 #include "interpreter/invocationCounter.hpp"
+#include "oops/method.hpp"
 #include "runtime/frame.hpp"
 #include "prims/jvmtiExport.hpp"
 
-// This file specializes the assember with interpreter-specific macros
+// This file specializes the assembler with interpreter-specific macros
 
 
 class InterpreterMacroAssembler: public MacroAssembler {

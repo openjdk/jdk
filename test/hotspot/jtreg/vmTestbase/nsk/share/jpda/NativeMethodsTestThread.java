@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,21 +116,21 @@ public class NativeMethodsTestThread extends Thread {
 
     public static Object expectedObjectValue = new Object();
 
-    public static Boolean expectedBooleanWrapperValue = new Boolean(Boolean.TRUE);
+    public static Boolean expectedBooleanWrapperValue = Boolean.valueOf(Boolean.TRUE);
 
-    public static Byte expectedByteWrapperValue = new Byte(Byte.MAX_VALUE);
+    public static Byte expectedByteWrapperValue = Byte.valueOf(Byte.MAX_VALUE);
 
-    public static Character expectedCharWrapperValue = new Character(Character.MAX_VALUE);
+    public static Character expectedCharWrapperValue = Character.valueOf(Character.MAX_VALUE);
 
-    public static Short expectedShortWrapperValue = new Short(Short.MAX_VALUE);
+    public static Short expectedShortWrapperValue = Short.valueOf(Short.MAX_VALUE);
 
-    public static Integer expectedIntWrapperValue = new Integer(Integer.MAX_VALUE);
+    public static Integer expectedIntWrapperValue = Integer.valueOf(Integer.MAX_VALUE);
 
-    public static Long expectedLongWrapperValue = new Long(Long.MAX_VALUE);
+    public static Long expectedLongWrapperValue = Long.valueOf(Long.MAX_VALUE);
 
-    public static Float expectedFloatWrapperValue = new Float(Float.MAX_VALUE);
+    public static Float expectedFloatWrapperValue = Float.valueOf(Float.MAX_VALUE);
 
-    public static Double expectedDoubleWrapperValue = new Double(Double.MAX_VALUE);
+    public static Double expectedDoubleWrapperValue = Double.valueOf(Double.MAX_VALUE);
 
     // names of tested types, this names can be used to derive names of tested methods(typeName + 'Method'),
     public static String testedTypesNames[] = {"Void", "Boolean", "Byte", "Short", "Char", "Int", "Long", "Float", "Double", "ObjectArray",

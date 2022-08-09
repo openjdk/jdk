@@ -23,7 +23,7 @@
 
 /* @test
  * @bug 7003398
- * @run main/othervm Equals
+ * @run main/othervm -Djava.security.manager=allow Equals
  */
 
 import java.io.ByteArrayOutputStream;

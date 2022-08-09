@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,81 +28,119 @@ import java.io.*;
 import nsk.share.*;
 
 public class issuspended002 {
-    private static Wicket mainEntrance = new Wicket();
+    private final static int DEF_TIME_MAX = 30;  // default max # secs to test
+    private final static String PROG_NAME = "issuspended002";
+
+    private static Wicket mainEntrance;
     private static boolean testFailed = false;
+    private static Object waiter = new Object();
 
     public static void main(String[] argv) {
         System.exit(Consts.JCK_STATUS_BASE + run(argv, System.out));
     }
 
     public static int run(String[] argv, PrintStream out) {
-        ThreadMXBean mbean = ManagementFactory.getThreadMXBean();
-        MyThread thread = new MyThread(out);
-        thread.start();
-
-        // Wait for MyThread to start
-        mainEntrance.waitFor();
-
-        long id = thread.getId();
-        ThreadInfo info = mbean.getThreadInfo(id, Integer.MAX_VALUE);
-        boolean isSuspended = info.isSuspended();
-        if (isSuspended) {
-            out.println("Failure 1.");
-            out.println("ThreadInfo.isSuspended() returned true, before "
-                      + "Thread.suspend() was invoked.");
-            testFailed = true;
-        }
-
-        thread.suspend();
-        info = mbean.getThreadInfo(id, Integer.MAX_VALUE);
-        isSuspended = info.isSuspended();
-        if (!isSuspended) {
-            out.println("Failure 2.");
-            out.println("ThreadInfo.isSuspended() returned false, after "
-                      + "Thread.suspend() was invoked.");
-            testFailed = true;
-        }
-
-        thread.resume();
-        info = mbean.getThreadInfo(id, Integer.MAX_VALUE);
-        isSuspended = info.isSuspended();
-        if (isSuspended) {
-            out.println("Failure 3.");
-            out.println("ThreadInfo.isSuspended() returned true, after "
-                      + "Thread.resume() was invoked.");
-            testFailed = true;
-        }
-
-        thread.die = true;
-
-        int count = 0;
-        while (true) {
-            info = mbean.getThreadInfo(id, Integer.MAX_VALUE);
-            if (info == null) {
-                // the thread has exited
-                break;
+        int timeMax = 0;
+        if (argv.length == 0) {
+            timeMax = DEF_TIME_MAX;
+        } else {
+            try {
+                timeMax = Integer.parseUnsignedInt(argv[0]);
+            } catch (NumberFormatException nfe) {
+                System.err.println("'" + argv[0] + "': invalid timeMax value.");
+                usage();
             }
+        }
+
+        System.out.println("About to execute for " + timeMax + " seconds.");
+
+        long count = 0;
+        ThreadMXBean mbean = ManagementFactory.getThreadMXBean();
+        long start_time = System.currentTimeMillis();
+        while (System.currentTimeMillis() < start_time + (timeMax * 1000)) {
             count++;
-            isSuspended = info.isSuspended();
+
+            MyThread thread = new MyThread(out);
+            mainEntrance = new Wicket();
+            thread.start();
+
+            // Wait for MyThread to start
+            mainEntrance.waitFor();
+
+            long id = thread.getId();
+            ThreadInfo info = mbean.getThreadInfo(id, Integer.MAX_VALUE);
+            boolean isSuspended = info.isSuspended();
             if (isSuspended) {
-                out.println("Failure 4.");
-                out.println("ThreadInfo.isSuspended() returned true, after "
-                          + "thread.die was set to true.");
+                out.println("Failure 1.");
+                out.println("ThreadInfo.isSuspended() returned true, before "
+                            + "Thread.suspend() was invoked.");
                 testFailed = true;
                 break;
             }
+
+            thread.suspend();
+            info = mbean.getThreadInfo(id, Integer.MAX_VALUE);
+            isSuspended = info.isSuspended();
+            if (!isSuspended) {
+                out.println("Failure 2.");
+                out.println("ThreadInfo.isSuspended() returned false, after "
+                            + "Thread.suspend() was invoked.");
+                testFailed = true;
+                break;
+            }
+
+            thread.resume();
+            info = mbean.getThreadInfo(id, Integer.MAX_VALUE);
+            isSuspended = info.isSuspended();
+            if (isSuspended) {
+                out.println("Failure 3.");
+                out.println("ThreadInfo.isSuspended() returned true, after "
+                            + "Thread.resume() was invoked.");
+                testFailed = true;
+                break;
+            }
+
+            synchronized (waiter) {
+                thread.die = true;
+                waiter.notifyAll();
+            }
+
+            while (true) {
+                info = mbean.getThreadInfo(id, Integer.MAX_VALUE);
+                if (info == null) {
+                    // the thread has exited
+                    break;
+                }
+                isSuspended = info.isSuspended();
+                if (isSuspended) {
+                    out.println("Failure 4.");
+                    out.println("ThreadInfo.isSuspended() returned true, after "
+                                + "thread.die was set to true.");
+                    testFailed = true;
+                    break;
+                }
+            }
         }
 
-        out.println("INFO: made " + count + " late getThreadInfo() calls.");
+        System.out.println("Executed " + count + " loops in " + timeMax +
+                           " seconds.");
 
         if (testFailed)
             out.println("TEST FAILED");
         return (testFailed) ? Consts.TEST_FAILED : Consts.TEST_PASSED;
     }
 
+    public static void usage() {
+        System.err.println("Usage: " + PROG_NAME + " [time_max]");
+        System.err.println("where:");
+        System.err.println("    time_max  max looping time in seconds");
+        System.err.println("              (default is " + DEF_TIME_MAX +
+                           " seconds)");
+        System.exit(1);
+    }
+
     private static class MyThread extends Thread {
-        final static long WAIT_TIME = 500; // Milliseconds
-        Object object = new Object();
+        final static long WAIT_TIME = 10; // Milliseconds
         volatile boolean die = false;
         PrintStream out;
 
@@ -116,13 +154,14 @@ public class issuspended002 {
             mainEntrance.unlock();
 
             while (!die) {
-                synchronized(object) {
+                synchronized(waiter) {
                     try {
-                        object.wait(WAIT_TIME);
+                        waiter.wait(WAIT_TIME);
                     } catch (InterruptedException e) {
                         out.println("Unexpected exception.");
                         e.printStackTrace(out);
                         testFailed = true;
+                        break;
                     }
                 } // synchronized
             }

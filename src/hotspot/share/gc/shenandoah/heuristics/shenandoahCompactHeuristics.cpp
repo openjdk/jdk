@@ -44,7 +44,7 @@ ShenandoahCompactHeuristics::ShenandoahCompactHeuristics() : ShenandoahHeuristic
   SHENANDOAH_ERGO_OVERRIDE_DEFAULT(ShenandoahGarbageThreshold,     10);
 }
 
-bool ShenandoahCompactHeuristics::should_start_gc() const {
+bool ShenandoahCompactHeuristics::should_start_gc() {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
 
   size_t max_capacity = heap->max_capacity();

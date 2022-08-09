@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,10 +33,12 @@ const bool CCallingConventionRequiresIntsAsLongs = false;
 
 #define SUPPORTS_NATIVE_CX8
 
+#define SUPPORT_MONITOR_COUNT
+
 #define CPU_MULTI_COPY_ATOMIC
 
 // The expected size in bytes of a cache line, used to pad data structures.
-#if defined(TIERED)
+#if COMPILER1_AND_COMPILER2
   #ifdef _LP64
     // tiered, 64-bit, large machine
     #define DEFAULT_CACHE_LINE_SIZE 128
@@ -70,9 +72,11 @@ const bool CCallingConventionRequiresIntsAsLongs = false;
 #endif
 
 #if INCLUDE_JVMCI
-#define COMPRESSED_CLASS_POINTERS_DEPENDS_ON_COMPRESSED_OOPS (EnableJVMCI || UseAOT)
+#define COMPRESSED_CLASS_POINTERS_DEPENDS_ON_COMPRESSED_OOPS EnableJVMCI
 #else
 #define COMPRESSED_CLASS_POINTERS_DEPENDS_ON_COMPRESSED_OOPS false
 #endif
+
+#define USE_POINTERS_TO_REGISTER_IMPL_ARRAY
 
 #endif // CPU_X86_GLOBALDEFINITIONS_X86_HPP

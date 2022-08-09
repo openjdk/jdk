@@ -25,8 +25,9 @@
 #ifndef SHARE_OOPS_ARRAYKLASS_INLINE_HPP
 #define SHARE_OOPS_ARRAYKLASS_INLINE_HPP
 
-#include "runtime/atomic.hpp"
 #include "oops/arrayKlass.hpp"
+
+#include "runtime/atomic.hpp"
 
 inline Klass* ArrayKlass::higher_dimension_acquire() const {
   return Atomic::load_acquire(&_higher_dimension);

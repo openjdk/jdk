@@ -42,7 +42,7 @@ import javax.xml.stream.util.EventReaderDelegate;
 /*
  * @test
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true stream.EventReaderDelegateTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow stream.EventReaderDelegateTest
  * @run testng/othervm stream.EventReaderDelegateTest
  * @summary Test EventReaderDelegate.
  */

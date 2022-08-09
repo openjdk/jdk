@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@ import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Kinds.Kind.*;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
+import static com.sun.tools.javac.code.TypeTag.BOOLEAN;
 import static com.sun.tools.javac.code.TypeTag.BOT;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
 import static com.sun.tools.javac.tree.JCTree.Tag.BLOCK;
@@ -427,6 +428,9 @@ public class TreeInfo {
             JCTry t = (JCTry) tree;
             return endPos((t.finalizer != null) ? t.finalizer
                           : (t.catchers.nonEmpty() ? t.catchers.last().body : t.body));
+        } else if (tree.hasTag(SWITCH) &&
+                   ((JCSwitch) tree).endpos != Position.NOPOS) {
+            return ((JCSwitch) tree).endpos;
         } else if (tree.hasTag(SWITCH_EXPRESSION) &&
                    ((JCSwitchExpression) tree).endpos != Position.NOPOS) {
             return ((JCSwitchExpression) tree).endpos;
@@ -540,8 +544,13 @@ public class TreeInfo {
             }
             case ERRONEOUS: {
                 JCErroneous node = (JCErroneous)tree;
-                if (node.errs != null && node.errs.nonEmpty())
-                    return getStartPos(node.errs.head);
+                if (node.errs != null && node.errs.nonEmpty()) {
+                    int pos = getStartPos(node.errs.head);
+                    if (pos != Position.NOPOS) {
+                        return pos;
+                    }
+                }
+                break;
             }
         }
         return tree.pos;
@@ -627,6 +636,10 @@ public class TreeInfo {
                 return getEndPos(((JCWhileLoop) tree).body, endPosTable);
             case ANNOTATED_TYPE:
                 return getEndPos(((JCAnnotatedType) tree).underlyingType, endPosTable);
+            case PARENTHESIZEDPATTERN: {
+                JCParenthesizedPattern node = (JCParenthesizedPattern) tree;
+                return getEndPos(node.pattern, endPosTable);
+            }
             case ERRONEOUS: {
                 JCErroneous node = (JCErroneous)tree;
                 if (node.errs != null && node.errs.nonEmpty())
@@ -770,43 +783,6 @@ public class TreeInfo {
         DeclScanner s = new DeclScanner(sym);
         tree.accept(s);
         return s.result;
-    }
-
-    public static Env<AttrContext> scopeFor(JCTree node, JCCompilationUnit unit) {
-        return scopeFor(pathFor(node, unit));
-    }
-
-    public static Env<AttrContext> scopeFor(List<JCTree> path) {
-        // TODO: not implemented yet
-        throw new UnsupportedOperationException("not implemented yet");
-    }
-
-    public static List<JCTree> pathFor(final JCTree node, final JCCompilationUnit unit) {
-        class Result extends Error {
-            static final long serialVersionUID = -5942088234594905625L;
-            List<JCTree> path;
-            Result(List<JCTree> path) {
-                this.path = path;
-            }
-        }
-        class PathFinder extends TreeScanner {
-            List<JCTree> path = List.nil();
-            public void scan(JCTree tree) {
-                if (tree != null) {
-                    path = path.prepend(tree);
-                    if (tree == node)
-                        throw new Result(path);
-                    super.scan(tree);
-                    path = path.tail;
-                }
-            }
-        }
-        try {
-            new PathFinder().scan(unit);
-        } catch (Result result) {
-            return result.path;
-        }
-        return List.nil();
     }
 
     /** Return the statement referenced by a label.
@@ -1029,7 +1005,7 @@ public class TreeInfo {
      */
     public static long firstFlag(long flags) {
         long flag = 1;
-        while ((flag & flags & ExtendedStandardFlags) == 0)
+        while ((flag & flags) == 0)
             flag = flag << 1;
         return flag;
     }
@@ -1324,4 +1300,59 @@ public class TreeInfo {
         return tree.sourcefile.isNameCompatible("package-info", JavaFileObject.Kind.SOURCE);
     }
 
+    public static boolean isErrorEnumSwitch(JCExpression selector, List<JCCase> cases) {
+        return selector.type.tsym.kind == Kinds.Kind.ERR &&
+               cases.stream().flatMap(c -> c.labels.stream())
+                             .filter(l -> l.hasTag(CONSTANTCASELABEL))
+                             .map(l -> ((JCConstantCaseLabel) l).expr)
+                             .allMatch(p -> p.hasTag(IDENT));
+    }
+
+    public static Type primaryPatternType(JCTree pat) {
+        return switch (pat.getTag()) {
+            case BINDINGPATTERN -> pat.type;
+            case PARENTHESIZEDPATTERN -> primaryPatternType(((JCParenthesizedPattern) pat).pattern);
+            case RECORDPATTERN -> ((JCRecordPattern) pat).type;
+            default -> throw new AssertionError();
+        };
+    }
+
+    public static JCTree primaryPatternTypeTree(JCTree pat) {
+        return switch (pat.getTag()) {
+            case BINDINGPATTERN -> ((JCBindingPattern) pat).var.vartype;
+            case PARENTHESIZEDPATTERN -> primaryPatternTypeTree(((JCParenthesizedPattern) pat).pattern);
+            case RECORDPATTERN -> ((JCRecordPattern) pat).deconstructor;
+            default -> throw new AssertionError();
+        };
+    }
+
+    public static boolean expectedExhaustive(JCSwitch tree) {
+        return tree.patternSwitch ||
+               tree.cases.stream()
+                         .flatMap(c -> c.labels.stream())
+                         .anyMatch(l -> TreeInfo.isNullCaseLabel(l));
+    }
+
+    public static boolean unguardedCaseLabel(JCCaseLabel cse) {
+        if (!cse.hasTag(PATTERNCASELABEL)) {
+            return true;
+        }
+        JCExpression guard = ((JCPatternCaseLabel) cse).guard;
+        if (guard == null) {
+            return true;
+        }
+        return isBooleanWithValue(guard, 1);
+    }
+
+    public static boolean isBooleanWithValue(JCExpression guard, int value) {
+        var constValue = guard.type.constValue();
+        return constValue != null &&
+                guard.type.hasTag(BOOLEAN) &&
+                ((int) constValue) == value;
+    }
+
+    public static boolean isNullCaseLabel(JCCaseLabel label) {
+        return label.hasTag(CONSTANTCASELABEL) &&
+               TreeInfo.isNull(((JCConstantCaseLabel) label).expr);
+    }
 }

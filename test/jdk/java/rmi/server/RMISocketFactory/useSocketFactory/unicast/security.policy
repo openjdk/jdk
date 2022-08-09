@@ -29,6 +29,6 @@ grant {
   permission java.lang.RuntimePermission "accessClassInPackage.sun.rmi.transport.proxy";
   permission java.lang.RuntimePermission "accessClassInPackage.sun.rmi.transport.tcp";
 
-  // test needs to export rmid and communicate with objects on arbitrary ports
+  // test needs to communicate with objects on arbitrary ports
   permission java.net.SocketPermission "*:1024-", "connect,accept,listen";
 };

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -198,8 +198,8 @@ public class VerifyJimage {
     private static Set<String> EXCLUDED_MODULES =
         Set.of("javafx.deploy", "jdk.deploy", "jdk.plugin", "jdk.javaws",
             // All JVMCI packages other than jdk.vm.ci.services are dynamically
-            // exported to jdk.internal.vm.compiler and jdk.aot
-            "jdk.internal.vm.compiler", "jdk.aot"
+            // exported to jdk.internal.vm.compiler
+            "jdk.internal.vm.compiler"
         );
 
     private boolean accept(String entry) {

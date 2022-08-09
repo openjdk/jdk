@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 8025091 8198890
  * @summary Verify the presence visible members in the case of
- *          member hiding and overridding.
+ *          member hiding and overriding.
  * @library /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build javadoc.tester.* toolbox.ToolBox builder.ClassBuilder
@@ -309,7 +309,7 @@ public class TestVisibleMembers extends JavadocTester {
 
         checkOrder("p/C.html",
                 "METHOD DETAIL",
-                "public", "void", "method", "See Also:", "sub()", "I.sub1()",
+                "public", "void", "method", "See Also:", "sub()", "sub1()",
                 "public", "void", "m", "Method in C. See", "I.length()"
                 );
 
@@ -325,9 +325,8 @@ public class TestVisibleMembers extends JavadocTester {
                 "METHOD DETAIL",
                 "Method sub in p.IImpl",
                 "Specified by:", "I.html",
+                "Specified by:", "II.html",
                 "END OF CLASS DATA");
-
-        checkUnique("p/IImpl.html", "Specified by:");
     }
 
     // see j.u.Spliterator

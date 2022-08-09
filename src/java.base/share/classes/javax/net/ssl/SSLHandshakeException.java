@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,7 @@
  * questions.
  */
 
-
 package javax.net.ssl;
-
 
 /**
  * Indicates that the client and server could not negotiate the
@@ -34,9 +32,7 @@ package javax.net.ssl;
  * @since 1.4
  * @author David Brownell
  */
-public
-class SSLHandshakeException extends SSLException
-{
+public class SSLHandshakeException extends SSLException {
     @java.io.Serial
     private static final long serialVersionUID = -5045881315018326890L;
 
@@ -46,8 +42,23 @@ class SSLHandshakeException extends SSLException
      *
      * @param reason describes the problem.
      */
-    public SSLHandshakeException(String reason)
-    {
+    public SSLHandshakeException(String reason) {
         super(reason);
+    }
+
+    /**
+     * Creates a {@code SSLHandshakeException} with the specified detail
+     * message and cause.
+     *
+     * @param message the detail message (which is saved for later retrieval
+     *        by the {@link #getMessage()} method).
+     * @param cause the cause (which is saved for later retrieval by the
+     *        {@link #getCause()} method).  (A {@code null} value is
+     *        permitted, and indicates that the cause is nonexistent or
+     *        unknown.)
+     * @since 19
+     */
+    public SSLHandshakeException(String message, Throwable cause) {
+        super(message, cause);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,11 +39,12 @@ import java.nio.file.Paths;
 import static java.nio.file.StandardCopyOption.COPY_ATTRIBUTES;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import java.util.Arrays;
+import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.Platform;
 
 public class RelativePath {
 
-  private static final Path USER_DIR = Paths.get(System.getProperty("user.dir"));
+  private static final Path USER_DIR = Paths.get(CDSTestUtils.getOutputDir());
 
   public static void main(String[] args) throws Exception {
     String appJar = JarBuilder.getOrCreateHelloJar();

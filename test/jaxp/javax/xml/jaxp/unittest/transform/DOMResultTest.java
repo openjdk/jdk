@@ -49,7 +49,7 @@ import org.xml.sax.SAXException;
 /*
  * @test
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true transform.DOMResultTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow transform.DOMResultTest
  * @run testng/othervm transform.DOMResultTest
  * @summary Test DOMResult.
  */

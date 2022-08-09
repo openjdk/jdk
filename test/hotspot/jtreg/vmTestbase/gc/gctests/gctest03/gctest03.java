@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,7 +71,7 @@ public class gctest03 extends TestBase {
 
                 if (args.length > 0) {
                         try {
-                                dataNodeLimit = new Integer(args[0]).intValue();
+                                dataNodeLimit = Integer.valueOf(args[0]).intValue();
                         } catch (NumberFormatException e) {
                                 throw new TestBug("Bad input to gctest03. Expected integer, " +
                                                 " got: ->" + args[0] + "<-", e);

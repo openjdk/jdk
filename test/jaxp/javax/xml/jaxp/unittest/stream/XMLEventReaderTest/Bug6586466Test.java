@@ -37,7 +37,7 @@ import javax.xml.stream.events.XMLEvent;
  * @test
  * @bug 6586466
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true stream.XMLEventReaderTest.Bug6586466Test
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow stream.XMLEventReaderTest.Bug6586466Test
  * @run testng/othervm stream.XMLEventReaderTest.Bug6586466Test
  * @summary Test XMLEventReader.nextTag() shall update internal event state.
  */

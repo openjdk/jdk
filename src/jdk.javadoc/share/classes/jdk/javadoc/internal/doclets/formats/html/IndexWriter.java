@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
-import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
+import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
@@ -58,11 +58,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.IndexItem;
  * Generator for either a single index or split index for all
  * documented elements, terms defined in some documentation comments,
  * and summary pages.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
  *
  * @see IndexBuilder
  */
@@ -144,31 +139,31 @@ public class IndexWriter extends HtmlDocletWriter {
     /**
      * Adds a set of items to the page.
      *
-     * @param ch          the first character of the names of the items
-     * @param items       the items
-     * @param contentTree the tree to which to add the items
+     * @param ch      the first character of the names of the items
+     * @param items   the items
+     * @param content the content to which to add the items
      */
-    protected void addContents(char ch, SortedSet<IndexItem> items, Content contentTree) {
-        addHeading(ch, contentTree);
+    protected void addContents(char ch, SortedSet<IndexItem> items, Content content) {
+        addHeading(ch, content);
 
-        HtmlTree dl = HtmlTree.DL(HtmlStyle.index);
+        var dl = HtmlTree.DL(HtmlStyle.index);
         for (IndexItem item : items) {
             addDescription(item, dl);
         }
-        contentTree.add(dl);
+        content.add(dl);
     }
 
     /**
      * Adds a heading containing the first character for a set of items.
      *
-     * @param ch          the first character of the names of the items
-     * @param contentTree the tree to which to add the items
+     * @param ch      the first character of the names of the items
+     * @param content the content to which to add the items
      */
-    protected void addHeading(char ch, Content contentTree) {
-        Content headContent = new StringContent(String.valueOf(ch));
-        HtmlTree heading = HtmlTree.HEADING(Headings.CONTENT_HEADING, HtmlStyle.title, headContent)
-                .setId(getNameForIndex(ch));
-        contentTree.add(heading);
+    protected void addHeading(char ch, Content content) {
+        Content headContent = Text.of(String.valueOf(ch));
+        var heading = HtmlTree.HEADING(Headings.CONTENT_HEADING, HtmlStyle.title, headContent)
+                .setId(HtmlIds.forIndexChar(ch));
+        content.add(heading);
     }
 
     /**
@@ -189,20 +184,20 @@ public class IndexWriter extends HtmlDocletWriter {
      * Add one line summary comment for the item.
      *
      * @param item the item to be documented
-     * @param dlTree the content tree to which the description will be added
+     * @param target the content to which the description will be added
      */
-    protected void addElementDescription(IndexItem item, Content dlTree) {
+    protected void addElementDescription(IndexItem item, Content target) {
         Content dt;
         Element element = item.getElement();
         String label = item.getLabel();
         switch (element.getKind()) {
             case MODULE:
-                dt = HtmlTree.DT(getModuleLink((ModuleElement) element, new StringContent(label)));
+                dt = HtmlTree.DT(getModuleLink((ModuleElement) element, Text.of(label)));
                 dt.add(" - ").add(contents.module_).add(" " + label);
                 break;
 
             case PACKAGE:
-                dt = HtmlTree.DT(getPackageLink((PackageElement) element, new StringContent(label)));
+                dt = HtmlTree.DT(getPackageLink((PackageElement) element, Text.of(label)));
                 if (configuration.showModules) {
                     item.setContainingModule(utils.getFullyQualifiedName(utils.containingModule(element)));
                 }
@@ -214,8 +209,8 @@ public class IndexWriter extends HtmlDocletWriter {
             case RECORD:
             case ANNOTATION_TYPE:
             case INTERFACE:
-                dt = HtmlTree.DT(getLink(new LinkInfoImpl(configuration,
-                        LinkInfoImpl.Kind.INDEX, (TypeElement) element).strong(true)));
+                dt = HtmlTree.DT(getLink(new HtmlLinkInfo(configuration,
+                        HtmlLinkInfo.Kind.INDEX, (TypeElement) element).style(HtmlStyle.typeNameLink)));
                 dt.add(" - ");
                 addClassInfo((TypeElement) element, dt);
                 break;
@@ -225,8 +220,8 @@ public class IndexWriter extends HtmlDocletWriter {
             case FIELD:
             case ENUM_CONSTANT:
                 TypeElement containingType = item.getContainingTypeElement();
-                dt = HtmlTree.DT(HtmlTree.SPAN(HtmlStyle.memberNameLink,
-                        getDocLink(LinkInfoImpl.Kind.INDEX, containingType, element, new StringContent(label))));
+                dt = HtmlTree.DT(getDocLink(HtmlLinkInfo.Kind.INDEX, containingType, element,
+                                label, HtmlStyle.memberNameLink));
                 dt.add(" - ");
                 addMemberDesc(element, containingType, dt);
                 break;
@@ -234,27 +229,27 @@ public class IndexWriter extends HtmlDocletWriter {
             default:
                 throw new Error();
         }
-        dlTree.add(dt);
-        Content dd = new HtmlTree(TagName.DD);
+        target.add(dt);
+        var dd = new HtmlTree(TagName.DD);
         if (element.getKind() == ElementKind.MODULE || element.getKind() == ElementKind.PACKAGE) {
             addSummaryComment(element, dd);
         } else {
             addComment(element, dd);
         }
-        dlTree.add(dd);
+        target.add(dd);
     }
 
     /**
      * Adds information for the given type element.
      *
-     * @param te          the element
-     * @param contentTree the content tree to which the class info will be added
+     * @param te      the element
+     * @param content the content to which the class info will be added
      */
-    protected void addClassInfo(TypeElement te, Content contentTree) {
-        contentTree.add(contents.getContent("doclet.in",
+    protected void addClassInfo(TypeElement te, Content content) {
+        content.add(contents.getContent("doclet.in",
                 utils.getTypeElementKindName(te, false),
                 getPackageLink(utils.containingPackage(te),
-                    utils.getPackageName(utils.containingPackage(te)))
+                    getLocalizedPackageName(utils.containingPackage(te)))
                 ));
     }
 
@@ -262,23 +257,23 @@ public class IndexWriter extends HtmlDocletWriter {
      * Adds a description for an item found in a documentation comment.
      *
      * @param item   the item
-     * @param dlTree the list to which to add the description
+     * @param target the list to which to add the description
      */
-    protected void addTagDescription(IndexItem item, Content dlTree) {
+    protected void addTagDescription(IndexItem item, Content target) {
         String itemPath = pathToRoot.isEmpty() ? "" : pathToRoot.getPath() + "/";
         itemPath += item.getUrl();
-        HtmlTree labelLink = HtmlTree.A(itemPath, new StringContent(item.getLabel()));
-        Content dt = HtmlTree.DT(HtmlTree.SPAN(HtmlStyle.searchTagLink, labelLink));
+        var labelLink = HtmlTree.A(itemPath, Text.of(item.getLabel()));
+        var dt = HtmlTree.DT(labelLink.setStyle(HtmlStyle.searchTagLink));
         dt.add(" - ");
         dt.add(contents.getContent("doclet.Search_tag_in", item.getHolder()));
-        dlTree.add(dt);
-        Content dd = new HtmlTree(TagName.DD);
+        target.add(dt);
+        var dd = new HtmlTree(TagName.DD);
         if (item.getDescription().isEmpty()) {
             dd.add(Entity.NO_BREAK_SPACE);
         } else {
             dd.add(item.getDescription());
         }
-        dlTree.add(dd);
+        target.add(dd);
     }
 
     /**
@@ -288,40 +283,39 @@ public class IndexWriter extends HtmlDocletWriter {
      * the start and then print the normal comment.
      *
      * @param element     the element
-     * @param contentTree the content tree to which the comment will be added
+     * @param content the content to which the comment will be added
      */
-    protected void addComment(Element element, Content contentTree) {
-        Content span = HtmlTree.SPAN(HtmlStyle.deprecatedLabel, getDeprecatedPhrase(element));
-        HtmlTree div = new HtmlTree(TagName.DIV);
-        div.setStyle(HtmlStyle.deprecationBlock);
+    protected void addComment(Element element, Content content) {
+        var span = HtmlTree.SPAN(HtmlStyle.deprecatedLabel, getDeprecatedPhrase(element));
+        var div = HtmlTree.DIV(HtmlStyle.deprecationBlock);
         if (utils.isDeprecated(element)) {
             div.add(span);
             List<? extends DeprecatedTree> tags = utils.getDeprecatedTrees(element);
             if (!tags.isEmpty())
                 addInlineDeprecatedComment(element, tags.get(0), div);
-            contentTree.add(div);
+            content.add(div);
         } else {
             TypeElement encl = utils.getEnclosingTypeElement(element);
             while (encl != null) {
                 if (utils.isDeprecated(encl)) {
                     div.add(span);
-                    contentTree.add(div);
+                    content.add(div);
                     break;
                 }
                 encl = utils.getEnclosingTypeElement(encl);
             }
-            addSummaryComment(element, contentTree);
+            addSummaryComment(element, content);
         }
     }
 
     /**
      * Adds a description for a member element.
      *
-     * @param member      the element
-     * @param enclosing   the enclosing type element
-     * @param contentTree the content tree to which the member description will be added
+     * @param member    the element
+     * @param enclosing the enclosing type element
+     * @param content   the content to which the member description will be added
      */
-    protected void addMemberDesc(Element member, TypeElement enclosing, Content contentTree) {
+    protected void addMemberDesc(Element member, TypeElement enclosing, Content content) {
         String kindName = utils.getTypeElementKindName(enclosing, true);
         String resource = switch (member.getKind()) {
             case ENUM_CONSTANT ->
@@ -331,54 +325,47 @@ public class IndexWriter extends HtmlDocletWriter {
             case CONSTRUCTOR ->
                     "doclet.Constructor_for";
             case METHOD ->
-                    utils.isAnnotationType(enclosing) ? "doclet.Element_in"
+                    utils.isAnnotationInterface(enclosing) ? "doclet.Element_in"
                             : utils.isStatic(member) ? "doclet.Static_method_in" : "doclet.Method_in";
             case RECORD_COMPONENT ->
                     "doclet.Record_component_in";
             default -> throw new IllegalArgumentException(member.getKind().toString());
         };
-        contentTree.add(contents.getContent(resource, kindName)).add(" ");
-        addPreQualifiedClassLink(LinkInfoImpl.Kind.INDEX, enclosing,
-                false, contentTree);
+        content.add(contents.getContent(resource, kindName)).add(" ");
+        addPreQualifiedClassLink(HtmlLinkInfo.Kind.INDEX, enclosing,
+                null, content);
     }
 
     /**
      * Add links for all the index files, based on the first character of the names of the items.
      *
      * @param allFirstCharacters the list of all first characters to be linked
-     * @param contentTree        the content tree to which the links for indexes will be added
+     * @param content            the content to which the links for indexes will be added
      */
-    protected void addLinksForIndexes(List<Character> allFirstCharacters, Content contentTree) {
+    protected void addLinksForIndexes(List<Character> allFirstCharacters, Content content) {
         ListIterator<Character> iter = allFirstCharacters.listIterator();
         while (iter.hasNext()) {
             char ch = iter.next();
-            Content label = new StringContent(Character.toString(ch));
+            Content label = Text.of(Character.toString(ch));
             Content link = splitIndex
                     ? links.createLink(DocPaths.indexN(iter.nextIndex()), label)
-                    : links.createLink(getNameForIndex(ch), label);
-            contentTree.add(link);
-            contentTree.add(Entity.NO_BREAK_SPACE);
+                    : links.createLink(HtmlIds.forIndexChar(ch), label);
+            content.add(link);
+            content.add(Entity.NO_BREAK_SPACE);
         }
 
-        contentTree.add(new HtmlTree(TagName.BR));
+        content.add(new HtmlTree(TagName.BR));
         List<Content> pageLinks = Stream.of(IndexItem.Category.values())
                 .flatMap(c -> mainIndex.getItems(c).stream())
                 .filter(i -> !(i.isElementItem() || i.isTagItem()))
                 .sorted((i1,i2)-> utils.compareStrings(i1.getLabel(), i2.getLabel()))
                 .map(i -> links.createLink(pathToRoot.resolve(i.getUrl()),
                         contents.getNonBreakString(i.getLabel())))
-                .collect(Collectors.toList());
-        contentTree.add(contents.join(getVerticalSeparator(), pageLinks));
+                .toList();
+        content.add(contents.join(getVerticalSeparator(), pageLinks));
     }
 
-    /**
-     * Returns the anchor name for a first character of names in the index.
-     *
-     * @param firstCharacter the character
-     * @return               a name
-     */
-    protected String getNameForIndex(char firstCharacter) {
-        return "I:" + links.getName(Character.toString(firstCharacter));
+    private Content getVerticalSeparator() {
+        return HtmlTree.SPAN(HtmlStyle.verticalSeparator, Text.of("|"));
     }
-
 }

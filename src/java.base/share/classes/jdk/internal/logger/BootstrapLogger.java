@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -132,6 +132,7 @@ public final class BootstrapLogger implements Logger, PlatformLogger.Bridge,
         @Override
         public Thread newThread(Runnable r) {
             ExecutorService owner = getExecutor();
+            @SuppressWarnings("removal")
             Thread thread = AccessController.doPrivileged(new PrivilegedAction<Thread>() {
                 @Override
                 public Thread run() {
@@ -181,12 +182,10 @@ public final class BootstrapLogger implements Logger, PlatformLogger.Bridge,
         // This is used by tests.
         static boolean isAlive() {
             WeakReference<ExecutorService> ref = executorRef;
-            ExecutorService executor = ref == null ? null : ref.get();
-            if (executor != null) return true;
+            if (ref != null && !ref.refersTo(null)) return true;
             synchronized (BootstrapExecutors.class) {
                 ref = executorRef;
-                executor = ref == null ? null : ref.get();
-                return executor != null;
+                return ref != null && !ref.refersTo(null);
             }
         }
 
@@ -261,11 +260,13 @@ public final class BootstrapLogger implements Logger, PlatformLogger.Bridge,
         // the parameters etc... we need to store the context of the
         // caller who logged the message - so that we can reuse it when
         // we finally log the message.
+        @SuppressWarnings("removal")
         final AccessControlContext acc;
 
         // The next event in the queue
         LogEvent next;
 
+        @SuppressWarnings("removal")
         private LogEvent(BootstrapLogger bootstrap, Level level,
                 ResourceBundle bundle, String msg,
                 Throwable thrown, Object[] params) {
@@ -284,6 +285,7 @@ public final class BootstrapLogger implements Logger, PlatformLogger.Bridge,
             this.bootstrap = bootstrap;
         }
 
+        @SuppressWarnings("removal")
         private LogEvent(BootstrapLogger bootstrap, Level level,
                 Supplier<String> msgSupplier,
                 Throwable thrown, Object[] params) {
@@ -302,6 +304,7 @@ public final class BootstrapLogger implements Logger, PlatformLogger.Bridge,
             this.bootstrap = bootstrap;
         }
 
+        @SuppressWarnings("removal")
         private LogEvent(BootstrapLogger bootstrap,
                 PlatformLogger.Level platformLevel,
                 String sourceClass, String sourceMethod,
@@ -322,6 +325,7 @@ public final class BootstrapLogger implements Logger, PlatformLogger.Bridge,
             this.bootstrap = bootstrap;
         }
 
+        @SuppressWarnings("removal")
         private LogEvent(BootstrapLogger bootstrap,
                 PlatformLogger.Level platformLevel,
                 String sourceClass, String sourceMethod,
@@ -431,6 +435,7 @@ public final class BootstrapLogger implements Logger, PlatformLogger.Bridge,
                                 Objects.requireNonNull(level),
                                 Objects.requireNonNull(msgSupplier), null, null);
         }
+        @SuppressWarnings("removal")
         static void log(LogEvent log, Logger logger) {
             final SecurityManager sm = System.getSecurityManager();
             // not sure we can actually use lambda here. We may need to create
@@ -496,6 +501,7 @@ public final class BootstrapLogger implements Logger, PlatformLogger.Bridge,
                                 Objects.requireNonNull(level), sourceClass,
                                 sourceMethod, msgSupplier, thrown, null);
         }
+        @SuppressWarnings("removal")
         static void log(LogEvent log, PlatformLogger.Bridge logger) {
             final SecurityManager sm = System.getSecurityManager();
             if (sm == null || log.acc == null) {
@@ -849,7 +855,7 @@ public final class BootstrapLogger implements Logger, PlatformLogger.Bridge,
         else return VM.isBooted();
     }
 
-    // A bit of black magic. We try to find out the nature of the logging
+    // A bit of magic. We try to find out the nature of the logging
     // backend without actually loading it.
     private static enum LoggingBackend {
         // There is no LoggerFinder and JUL is not present
@@ -878,6 +884,7 @@ public final class BootstrapLogger implements Logger, PlatformLogger.Bridge,
     // The purpose of this class is to delay the initialization of
     // the detectedBackend field until it is actually read.
     // We do not want this field to get initialized if VM.isBooted() is false.
+    @SuppressWarnings("removal")
     private static final class DetectBackend {
         static final LoggingBackend detectedBackend;
         static {

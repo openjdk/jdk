@@ -56,13 +56,13 @@ public class TestClassLinks extends JavadocTester {
                 """
                     <code><a href="C2.html" title="class in p">C2</a></code>""",
                 """
-                    <code><span class="member-name-link"><a href="#%3Cinit%3E()">C1</a></span>()</code>""");
+                    <code><a href="#%3Cinit%3E()" class="member-name-link">C1</a>()</code>""");
 
         checkOutput("p/C2.html", true,
                 """
                     <code><a href="C3.html" title="class in p">C3</a></code>""",
                 """
-                    <code><span class="member-name-link"><a href="#%3Cinit%3E()">C2</a></span>()</code>""");
+                    <code><a href="#%3Cinit%3E()" class="member-name-link">C2</a>()</code>""");
 
         checkOutput("p/C3.html", true,
                 """
@@ -72,7 +72,7 @@ public class TestClassLinks extends JavadocTester {
                     /a>&lt;T&gt;</code>, <code><a href="IT2.html" title="interface in p">IT2</a>&lt;\
                     java.lang.String&gt;</code>""",
                 """
-                    <code><span class="member-name-link"><a href="#%3Cinit%3E()">C3</a></span>()</code>""");
+                    <code><a href="#%3Cinit%3E()" class="member-name-link">C3</a>()</code>""");
 
         checkOutput("p/I1.html", true,
                 """

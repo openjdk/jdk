@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,16 +22,30 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package javax.swing;
 
-import java.awt.*;
-import java.beans.JavaBean;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.Insets;
+import java.awt.Rectangle;
+import java.awt.TextComponent;
 import java.beans.BeanProperty;
-import javax.swing.text.*;
-import javax.accessibility.*;
-
-import java.io.ObjectOutputStream;
+import java.beans.JavaBean;
 import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.io.Serial;
+
+import javax.accessibility.AccessibleContext;
+import javax.accessibility.AccessibleState;
+import javax.accessibility.AccessibleStateSet;
+import javax.swing.text.AbstractDocument;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.Document;
+import javax.swing.text.Element;
+import javax.swing.text.JTextComponent;
+import javax.swing.text.PlainDocument;
 
 /**
  * A <code>JTextArea</code> is a multi-line area that displays plain text.
@@ -152,7 +166,7 @@ public class JTextArea extends JTextComponent {
      *
      * @param rows the number of rows &gt;= 0
      * @param columns the number of columns &gt;= 0
-     * @exception IllegalArgumentException if the rows or columns
+     * @throws IllegalArgumentException if the rows or columns
      *  arguments are negative.
      */
     public JTextArea(int rows, int columns) {
@@ -166,7 +180,7 @@ public class JTextArea extends JTextComponent {
      * @param text the text to be displayed, or null
      * @param rows the number of rows &gt;= 0
      * @param columns the number of columns &gt;= 0
-     * @exception IllegalArgumentException if the rows or columns
+     * @throws IllegalArgumentException if the rows or columns
      *  arguments are negative.
      */
     public JTextArea(String text, int rows, int columns) {
@@ -192,7 +206,7 @@ public class JTextArea extends JTextComponent {
      * @param text the text to be displayed, null if none
      * @param rows the number of rows &gt;= 0
      * @param columns the number of columns &gt;= 0
-     * @exception IllegalArgumentException if the rows or columns
+     * @throws IllegalArgumentException if the rows or columns
      *  arguments are negative.
      */
     public JTextArea(Document doc, String text, int rows, int columns) {
@@ -356,7 +370,7 @@ public class JTextArea extends JTextComponent {
      *
      * @param offset the offset &gt;= 0
      * @return the line number &gt;= 0
-     * @exception BadLocationException thrown if the offset is
+     * @throws BadLocationException thrown if the offset is
      *   less than zero or greater than the document length.
      */
     public int getLineOfOffset(int offset) throws BadLocationException {
@@ -387,7 +401,7 @@ public class JTextArea extends JTextComponent {
      *
      * @param line  the line number to translate &gt;= 0
      * @return the offset &gt;= 0
-     * @exception BadLocationException thrown if the line is
+     * @throws BadLocationException thrown if the line is
      * less than zero or greater or equal to the number of
      * lines contained in the document (as reported by
      * getLineCount).
@@ -410,7 +424,7 @@ public class JTextArea extends JTextComponent {
      *
      * @param line  the line &gt;= 0
      * @return the offset &gt;= 0
-     * @exception BadLocationException Thrown if the line is
+     * @throws BadLocationException Thrown if the line is
      * less than zero or greater or equal to the number of
      * lines contained in the document (as reported by
      * getLineCount).
@@ -438,7 +452,7 @@ public class JTextArea extends JTextComponent {
      *
      * @param str the text to insert
      * @param pos the position at which to insert &gt;= 0
-     * @exception IllegalArgumentException  if pos is an
+     * @throws IllegalArgumentException  if pos is an
      *  invalid position in the model
      * @see TextComponent#setText
      * @see #replaceRange
@@ -479,7 +493,7 @@ public class JTextArea extends JTextComponent {
      * @param str the text to use as the replacement
      * @param start the start position &gt;= 0
      * @param end the end position &gt;= start
-     * @exception IllegalArgumentException  if part of the range is an
+     * @throws IllegalArgumentException  if part of the range is an
      *  invalid position in the model
      * @see #insert
      */
@@ -518,7 +532,7 @@ public class JTextArea extends JTextComponent {
      * setting the new value.
      *
      * @param rows the number of rows &gt;= 0
-     * @exception IllegalArgumentException if rows is less than 0
+     * @throws IllegalArgumentException if rows is less than 0
      * @see #getRows
      */
     @BeanProperty(bound = false, description
@@ -562,7 +576,7 @@ public class JTextArea extends JTextComponent {
      * after setting the new value.
      *
      * @param columns the number of columns &gt;= 0
-     * @exception IllegalArgumentException if columns is less than 0
+     * @throws IllegalArgumentException if columns is less than 0
      * @see #getColumns
      */
     @BeanProperty(bound = false, description
@@ -712,7 +726,7 @@ public class JTextArea extends JTextComponent {
      * @param direction Less than zero to scroll up/left,
      *   greater than zero for down/right.
      * @return The "unit" increment for scrolling in the specified direction
-     * @exception IllegalArgumentException for an invalid orientation
+     * @throws IllegalArgumentException for an invalid orientation
      * @see JScrollBar#setUnitIncrement
      * @see #getRowHeight
      * @see #getColumnWidth
@@ -732,6 +746,7 @@ public class JTextArea extends JTextComponent {
      * See readObject() and writeObject() in JComponent for more
      * information about serialization in Swing.
      */
+    @Serial
     private void writeObject(ObjectOutputStream s) throws IOException {
         s.defaultWriteObject();
         if (getUIClassID().equals(uiClassID)) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,20 +101,28 @@ public class TestLinkOption extends JavadocTester {
                 "<code><b>getSystemClassLoader()</b></code>",
                 "<code>createTempFile(prefix,&nbsp;suffix,&nbsp;null)</code>",
                 """
-                    <dd><a href="http://www.ietf.org/rfc/rfc2279.txt"><i>RFC&nbsp;2279: UTF-8, a
-                     transformation format of ISO 10646</i></a>, <br><a href="http://www.ietf.org/rf\
-                    c/rfc2373.txt"><i>RFC&nbsp;2373: IPv6 Addressing
-                     Architecture</i></a>, <br><a href="http://www.ietf.org/rfc/rfc2396.txt"><i>RFC&nbsp;2396: Uniform
-                     Resource Identifiers (URI): Generic Syntax</i></a>, <br><a href="http://www.iet\
-                    f.org/rfc/rfc2732.txt"><i>RFC&nbsp;2732: Format for
-                     Literal IPv6 Addresses in URLs</i></a>, <br><a href="C.html">A nearby file</a></dd>
+                    <dd>
+                    <ul class="see-list-long">
+                    <li><a href="http://www.ietf.org/rfc/rfc2279.txt"><i>RFC&nbsp;2279: UTF-8, a
+                     transformation format of ISO 10646</i></a></li>
+                    <li><a href="http://www.ietf.org/rfc/rfc2373.txt"><i>RFC&nbsp;2373: IPv6 Addressing
+                     Architecture</i></a></li>
+                    <li><a href="http://www.ietf.org/rfc/rfc2396.txt"><i>RFC&nbsp;2396: Uniform
+                     Resource Identifiers (URI): Generic Syntax</i></a></li>
+                    <li><a href="http://www.ietf.org/rfc/rfc2732.txt"><i>RFC&nbsp;2732: Format for
+                     Literal IPv6 Addresses in URLs</i></a></li>
+                    <li><a href="C.html">A nearby file</a></li>
+                    </ul>
+                    </dd>
                     </dl>""");
 
         checkOutput("mylib/lang/StringBuilderChild.html", true,
                 """
-                    <pre>public abstract class <span class="type-name-label">StringBuilderChild</span>
-                    extends <a href=\"""" + url + """
-                    java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a></pre>"""
+                    <div class="type-signature"><span class="modifiers">public abstract class </span\
+                    ><span class="element-name type-name-label">StringBuilderChild</span>
+                    <span class="extends-implements">extends <a href=\"""" + url + """
+                    java/lang/Object.html" title="class or interface in java.lang" class="external-l\
+                    ink">Object</a></span></div>"""
         );
 
         // Generate the documentation using -linkoffline and a relative path as the first parameter.
@@ -155,8 +163,9 @@ public class TestLinkOption extends JavadocTester {
         checkExit(Exit.OK);
         checkOutput("pkg3/A.html", true,
                 """
-                    <pre>public class <span class="type-name-label">A</span>
-                    extends java.lang.Object</pre>
+                    <div class="type-signature"><span class="modifiers">public class </span><span cl\
+                    ass="element-name type-name-label">A</span>
+                    <span class="extends-implements">extends java.lang.Object</span></div>
                     <div class="block">Test links.
                      <br>
                      <a href="../../out2/pkg2/C2.html" title="class or interface in pkg2" class="ext\
@@ -179,8 +188,9 @@ public class TestLinkOption extends JavadocTester {
         checkExit(Exit.OK);
         checkOutput("pkg3/A.html", true,
                 """
-                    <pre>public class <span class="type-name-label">A</span>
-                    extends java.lang.Object</pre>
+                    <div class="type-signature"><span class="modifiers">public class </span><span cl\
+                    ass="element-name type-name-label">A</span>
+                    <span class="extends-implements">extends java.lang.Object</span></div>
                     <div class="block">Test links.
                      <br>
                      <a href="../../copy/out2/pkg2/C2.html" title="class or interface in pkg2" class\

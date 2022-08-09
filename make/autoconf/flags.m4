@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -125,19 +125,25 @@ AC_DEFUN([FLAGS_SETUP_MACOSX_VERSION],
 [
   # Additional macosx handling
   if test "x$OPENJDK_TARGET_OS" = xmacosx; then
+    # The expected format for <version> is either nn.n.n or nn.nn.nn. See
+    # /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/AvailabilityVersions.h
+
     # MACOSX_VERSION_MIN specifies the lowest version of Macosx that the built
     # binaries should be compatible with, even if compiled on a newer version
     # of the OS. It currently has a hard coded value. Setting this also limits
     # exposure to API changes in header files. Bumping this is likely to
     # require code changes to build.
-    MACOSX_VERSION_MIN=10.9.0
+    if test "x$OPENJDK_TARGET_CPU_ARCH" = xaarch64; then
+      MACOSX_VERSION_MIN=11.00.00
+    else
+      MACOSX_VERSION_MIN=10.12.0
+    fi
     MACOSX_VERSION_MIN_NODOTS=${MACOSX_VERSION_MIN//\./}
 
     AC_SUBST(MACOSX_VERSION_MIN)
 
     # Setting --with-macosx-version-max=<version> makes it an error to build or
-    # link to macosx APIs that are newer than the given OS version. The expected
-    # format for <version> is either nn.n.n or nn.nn.nn. See /usr/include/AvailabilityMacros.h.
+    # link to macosx APIs that are newer than the given OS version.
     AC_ARG_WITH([macosx-version-max], [AS_HELP_STRING([--with-macosx-version-max],
         [error on use of newer functionality. @<:@macosx@:>@])],
         [
@@ -209,8 +215,21 @@ AC_DEFUN([FLAGS_SETUP_SYSROOT_FLAGS],
       $1SYSROOT_CFLAGS="--sysroot=[$]$1SYSROOT"
       $1SYSROOT_LDFLAGS="--sysroot=[$]$1SYSROOT"
     elif test "x$TOOLCHAIN_TYPE" = xclang; then
-      $1SYSROOT_CFLAGS="-isysroot [$]$1SYSROOT"
-      $1SYSROOT_LDFLAGS="-isysroot [$]$1SYSROOT"
+      if test "x$OPENJDK_TARGET_OS" = "xlinux"; then
+        # -isysroot has no effect on linux
+        # https://bugs.llvm.org/show_bug.cgi?id=11503
+        $1SYSROOT_CFLAGS="--sysroot=[$]$1SYSROOT"
+        $1SYSROOT_LDFLAGS="--sysroot=[$]$1SYSROOT"
+        if test -d "$DEVKIT_TOOLCHAIN_PATH"; then
+          # In devkits, gcc is not located in the sysroot.
+          # use --gcc-toolchain to let clang find the gcc installation.
+          $1SYSROOT_CFLAGS="[$]$1SYSROOT_CFLAGS --gcc-toolchain=$DEVKIT_TOOLCHAIN_PATH/.."
+          $1SYSROOT_LDFLAGS="[$]$1SYSROOT_LDFLAGS --gcc-toolchain=$DEVKIT_TOOLCHAIN_PATH/.."
+        fi
+      else
+        $1SYSROOT_CFLAGS="-isysroot [$]$1SYSROOT"
+        $1SYSROOT_LDFLAGS="-isysroot [$]$1SYSROOT"
+      fi
     fi
   fi
 
@@ -226,6 +245,14 @@ AC_DEFUN([FLAGS_SETUP_SYSROOT_FLAGS],
     fi
   fi
 
+  # For the microsoft toolchain, we need to get the SYSROOT flags from the
+  # Visual Studio environment. Currently we cannot handle this as a separate
+  # build toolchain.
+  if test "x$1" = x && test "x$OPENJDK_BUILD_OS" = "xwindows" \
+      && test "x$TOOLCHAIN_TYPE" = "xmicrosoft"; then
+    TOOLCHAIN_SETUP_VISUAL_STUDIO_ENV
+  fi
+
   AC_SUBST($1SYSROOT_CFLAGS)
   AC_SUBST($1SYSROOT_LDFLAGS)
 ])
@@ -234,6 +261,7 @@ AC_DEFUN_ONCE([FLAGS_PRE_TOOLCHAIN],
 [
   # We should always include user supplied flags
   FLAGS_SETUP_USER_SUPPLIED_FLAGS
+
   # The sysroot flags are needed for configure to be able to run the compilers
   FLAGS_SETUP_SYSROOT_FLAGS
 
@@ -250,6 +278,14 @@ AC_DEFUN_ONCE([FLAGS_PRE_TOOLCHAIN],
     fi
   fi
 
+  if test "x$OPENJDK_TARGET_OS" = xmacosx; then
+    if test "x$OPENJDK_TARGET_CPU" = xaarch64; then
+      MACHINE_FLAG="$MACHINE_FLAG -arch arm64"
+    elif test "x$OPENJDK_TARGET_CPU" = xx86_64; then
+      MACHINE_FLAG="$MACHINE_FLAG -arch x86_64"
+    fi
+  fi
+
   # FIXME: global flags are not used yet...
   # The "global" flags will *always* be set. Without them, it is not possible to
   # get a working compilation.
@@ -258,12 +294,8 @@ AC_DEFUN_ONCE([FLAGS_PRE_TOOLCHAIN],
   GLOBAL_LDFLAGS="$MACHINE_FLAG $SYSROOT_LDFLAGS $USER_LDFLAGS"
   # FIXME: Don't really know how to do with this, but this was the old behavior
   GLOBAL_CPPFLAGS="$SYSROOT_CFLAGS"
-  AC_SUBST(GLOBAL_CFLAGS)
-  AC_SUBST(GLOBAL_CXXFLAGS)
-  AC_SUBST(GLOBAL_LDFLAGS)
-  AC_SUBST(GLOBAL_CPPFLAGS)
 
-  # FIXME: For compatilibity, export this as EXTRA_CFLAGS for now.
+  # FIXME: For compatibility, export this as EXTRA_CFLAGS for now.
   EXTRA_CFLAGS="$MACHINE_FLAG $USER_CFLAGS"
   EXTRA_CXXFLAGS="$MACHINE_FLAG $USER_CXXFLAGS"
   EXTRA_LDFLAGS="$MACHINE_FLAG $USER_LDFLAGS"
@@ -280,6 +312,14 @@ AC_DEFUN_ONCE([FLAGS_PRE_TOOLCHAIN],
   CXXFLAGS="$GLOBAL_CXXFLAGS"
   LDFLAGS="$GLOBAL_LDFLAGS"
   CPPFLAGS="$GLOBAL_CPPFLAGS"
+
+  if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
+    # When autoconf sends both compiler and linker flags to cl.exe at the same
+    # time, linker flags must be last at the command line. Achieve this by
+    # moving them to LIBS.
+    LIBS="$LIBS -link $LDFLAGS"
+    LDFLAGS=""
+  fi
 ])
 
 AC_DEFUN([FLAGS_SETUP_TOOLCHAIN_CONTROL],
@@ -300,7 +340,7 @@ AC_DEFUN([FLAGS_SETUP_TOOLCHAIN_CONTROL],
     # Check if @file is supported by gcc
     if test "x$TOOLCHAIN_TYPE" = xgcc; then
       AC_MSG_CHECKING([if @file is supported by gcc])
-      # Extra emtpy "" to prevent ECHO from interpreting '--version' as argument
+      # Extra empty "" to prevent ECHO from interpreting '--version' as argument
       $ECHO "" "--version" > command.file
       if $CXX @command.file 2>&AS_MESSAGE_LOG_FD >&AS_MESSAGE_LOG_FD; then
         AC_MSG_RESULT(yes)
@@ -347,15 +387,13 @@ AC_DEFUN([FLAGS_SETUP_TOOLCHAIN_CONTROL],
 
   # Generate make dependency files
   if test "x$TOOLCHAIN_TYPE" = xgcc; then
-    C_FLAG_DEPS="-MMD -MF"
+    GENDEPS_FLAGS="-MMD -MF"
   elif test "x$TOOLCHAIN_TYPE" = xclang; then
-    C_FLAG_DEPS="-MMD -MF"
+    GENDEPS_FLAGS="-MMD -MF"
   elif test "x$TOOLCHAIN_TYPE" = xxlc; then
-    C_FLAG_DEPS="-qmakedep=gcc -MF"
+    GENDEPS_FLAGS="-qmakedep=gcc -MF"
   fi
-  CXX_FLAG_DEPS="$C_FLAG_DEPS"
-  AC_SUBST(C_FLAG_DEPS)
-  AC_SUBST(CXX_FLAG_DEPS)
+  AC_SUBST(GENDEPS_FLAGS)
 ])
 
 AC_DEFUN_ONCE([FLAGS_POST_TOOLCHAIN],
@@ -370,9 +408,6 @@ AC_DEFUN_ONCE([FLAGS_POST_TOOLCHAIN],
       BUILD_SYSROOT_LDFLAGS="$SYSROOT_LDFLAGS"
     fi
   fi
-  AC_SUBST(BUILD_SYSROOT_CFLAGS)
-  AC_SUBST(BUILD_SYSROOT_LDFLAGS)
-
 ])
 
 AC_DEFUN([FLAGS_SETUP_FLAGS],

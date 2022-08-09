@@ -21,16 +21,18 @@
  * questions.
  */
 
-/* @test %W% %E%
+/* @test
    @bug 6698013
    @summary JFileChooser can no longer navigate non-local file systems.
-   @author Pavel Porvatov
    @run applet/manual=done bug6698013.html
 */
 
-import javax.swing.*;
-import javax.swing.filechooser.FileSystemView;
 import java.io.File;
+
+import javax.swing.JApplet;
+import javax.swing.JFileChooser;
+import javax.swing.SwingUtilities;
+import javax.swing.filechooser.FileSystemView;
 
 public class bug6698013 extends JApplet {
 
@@ -42,16 +44,14 @@ public class bug6698013 extends JApplet {
 
     final static VirtualFile subdirFile = new VirtualFile("testdir/subdir/subtest.txt", false);
 
-    public static void main(String[] args) {
-        JFileChooser chooser = new JFileChooser(new VirtualFileSystemView());
-        chooser.setCurrentDirectory(root);
-        chooser.showSaveDialog(null);
+    public static void main(String[] args) throws Exception {
+        SwingUtilities.invokeAndWait(() -> new bug6698013().init());
     }
 
     public void init() {
         JFileChooser chooser = new JFileChooser(new VirtualFileSystemView());
         chooser.setCurrentDirectory(root);
-        chooser.showSaveDialog(null);
+        chooser.showOpenDialog(null);
     }
 }
 

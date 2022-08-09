@@ -1,3 +1,4 @@
+
     static $type$ [[TEST]]($type$ a, $type$ b) {
         return ($type$)([[TEST_OP]]);
     }
@@ -9,6 +10,6 @@
     @Test(dataProvider = "$type$BinaryOpProvider")
     static void [[TEST]]$vectorteststype$(IntFunction<$type$[]> fa, IntFunction<$type$[]> fb) {
 [[KERNEL]]
-        assertArraysEqualsWithinOneUlp(a, b, r, $vectorteststype$::[[TEST]], $vectorteststype$::strict[[TEST]]);
+        assertArraysEqualsWithinOneUlp(r, a, b, $vectorteststype$::[[TEST]], $vectorteststype$::strict[[TEST]]);
     }
 

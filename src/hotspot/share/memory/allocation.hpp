@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@
 
 class outputStream;
 class Thread;
+class JavaThread;
 
 class AllocFailStrategy {
 public:
@@ -76,7 +77,7 @@ typedef AllocFailStrategy::AllocFailEnum AllocFailType;
 // destructor are not called. The preferable way to allocate objects
 // is using the new operator.
 //
-// WARNING: The array variant must only be used for a homogenous array
+// WARNING: The array variant must only be used for a homogeneous array
 // where all objects are of the exact type specified. If subtypes are
 // stored in the array then must pay attention to calling destructors
 // at needed.
@@ -96,24 +97,6 @@ typedef AllocFailStrategy::AllocFailEnum AllocFailType;
 // char* ReallocateHeap(char *old, size_t size, MEMFLAGS flag, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
 // void FreeHeap(void* p);
 //
-// In non product mode we introduce a super class for all allocation classes
-// that supports printing.
-// We avoid the superclass in product mode to save space.
-
-#ifdef PRODUCT
-#define ALLOCATION_SUPER_CLASS_SPEC
-#else
-#define ALLOCATION_SUPER_CLASS_SPEC : public AllocatedObj
-class AllocatedObj {
- public:
-  // Printing support
-  void print() const;
-  void print_value() const;
-
-  virtual void print_on(outputStream* st) const;
-  virtual void print_value_on(outputStream* st) const;
-};
-#endif
 
 #define MEMORY_TYPES_DO(f)                                                           \
   /* Memory type by sub systems. It occupies lower byte. */                          \
@@ -123,6 +106,7 @@ class AllocatedObj {
   f(mtThreadStack,    "Thread Stack")                                                \
   f(mtCode,           "Code")        /* generated code                            */ \
   f(mtGC,             "GC")                                                          \
+  f(mtGCCardSet,      "GCCardSet")   /* G1 card set remembered set                */ \
   f(mtCompiler,       "Compiler")                                                    \
   f(mtJVMCI,          "JVMCI")                                                       \
   f(mtInternal,       "Internal")    /* memory used by VM, but does not belong to */ \
@@ -143,6 +127,8 @@ class AllocatedObj {
   f(mtSynchronizer,   "Synchronization")                                             \
   f(mtServiceability, "Serviceability")                                              \
   f(mtMetaspace,      "Metaspace")                                                   \
+  f(mtStringDedup,    "String Deduplication")                                        \
+  f(mtObjectMonitor,  "Object Monitors")                                             \
   f(mtNone,           "Unknown")                                                     \
   //end
 
@@ -167,15 +153,7 @@ MEMORY_TYPES_DO(MEMORY_TYPE_SHORTNAME)
 // Make an int version of the sentinel end value.
 constexpr int mt_number_of_types = static_cast<int>(MEMFLAGS::mt_number_of_types);
 
-#if INCLUDE_NMT
-
 extern bool NMT_track_callsite;
-
-#else
-
-const bool NMT_track_callsite = false;
-
-#endif // INCLUDE_NMT
 
 class NativeCallStack;
 
@@ -196,7 +174,7 @@ char* ReallocateHeap(char *old,
 // handles NULL pointers
 void FreeHeap(void* p);
 
-template <MEMFLAGS F> class CHeapObj ALLOCATION_SUPER_CLASS_SPEC {
+template <MEMFLAGS F> class CHeapObj {
  public:
   ALWAYSINLINE void* operator new(size_t size) throw() {
     return (void*)AllocateHeap(size, F);
@@ -241,7 +219,7 @@ template <MEMFLAGS F> class CHeapObj ALLOCATION_SUPER_CLASS_SPEC {
 // Base class for objects allocated on the stack only.
 // Calling new or delete will result in fatal error.
 
-class StackObj ALLOCATION_SUPER_CLASS_SPEC {
+class StackObj {
  private:
   void* operator new(size_t size) throw();
   void* operator new [](size_t size) throw();
@@ -261,6 +239,21 @@ class ClassLoaderData;
 class MetaspaceClosure;
 
 class MetaspaceObj {
+  // There are functions that all subtypes of MetaspaceObj are expected
+  // to implement, so that templates which are defined for this class hierarchy
+  // can work uniformly. Within the sub-hierarchy of Metadata, these are virtuals.
+  // Elsewhere in the hierarchy of MetaspaceObj, type(), size(), and/or on_stack()
+  // can be static if constant.
+  //
+  // The following functions are required by MetaspaceClosure:
+  //   void metaspace_pointers_do(MetaspaceClosure* it) { <walk my refs> }
+  //   int size() const { return align_up(sizeof(<This>), wordSize) / wordSize; }
+  //   MetaspaceObj::Type type() const { return <This>Type; }
+  //
+  // The following functions are required by MetadataFactory::free_metadata():
+  //   bool on_stack() { return false; }
+  //   void deallocate_contents(ClassLoaderData* loader_data);
+
   friend class VMStructs;
   // When CDS is enabled, all shared metaspace objects are mapped
   // into a single contiguous memory block, so we can use these
@@ -343,8 +336,11 @@ class MetaspaceObj {
 
   void* operator new(size_t size, ClassLoaderData* loader_data,
                      size_t word_size,
-                     Type type, Thread* thread) throw();
+                     Type type, JavaThread* thread) throw();
                      // can't use TRAPS from this header file.
+  void* operator new(size_t size, ClassLoaderData* loader_data,
+                     size_t word_size,
+                     Type type) throw();
   void operator delete(void* p) { ShouldNotCallThis(); }
 
   // Declare a *static* method with the same signature in any subclass of MetaspaceObj
@@ -372,7 +368,7 @@ extern void resource_free_bytes( char *old, size_t size );
 // ResourceObj's can be allocated within other objects, but don't use
 // new or delete (allocation_type is unknown).  If new is used to allocate,
 // use delete to deallocate.
-class ResourceObj ALLOCATION_SUPER_CLASS_SPEC {
+class ResourceObj {
  public:
   enum allocation_type { STACK_OR_EMBEDDED = 0, RESOURCE_AREA, C_HEAP, ARENA, allocation_mask = 0x3 };
   static void set_allocation_type(address res, allocation_type type) NOT_DEBUG_RETURN;
@@ -387,7 +383,7 @@ class ResourceObj ALLOCATION_SUPER_CLASS_SPEC {
   void initialize_allocation_info();
  public:
   allocation_type get_allocation_type() const;
-  bool allocated_on_stack()    const { return get_allocation_type() == STACK_OR_EMBEDDED; }
+  bool allocated_on_stack_or_embedded() const { return get_allocation_type() == STACK_OR_EMBEDDED; }
   bool allocated_on_res_area() const { return get_allocation_type() == RESOURCE_AREA; }
   bool allocated_on_C_heap()   const { return get_allocation_type() == C_HEAP; }
   bool allocated_on_arena()    const { return get_allocation_type() == ARENA; }
@@ -400,15 +396,13 @@ protected:
 
  public:
   void* operator new(size_t size, allocation_type type, MEMFLAGS flags) throw();
-  void* operator new [](size_t size, allocation_type type, MEMFLAGS flags) throw();
+  void* operator new [](size_t size, allocation_type type, MEMFLAGS flags) throw() = delete;
   void* operator new(size_t size, const std::nothrow_t&  nothrow_constant,
       allocation_type type, MEMFLAGS flags) throw();
   void* operator new [](size_t size, const std::nothrow_t&  nothrow_constant,
-      allocation_type type, MEMFLAGS flags) throw();
-
+      allocation_type type, MEMFLAGS flags) throw() = delete;
   void* operator new(size_t size, Arena *arena) throw();
-
-  void* operator new [](size_t size, Arena *arena) throw();
+  void* operator new [](size_t size, Arena *arena) throw() = delete;
 
   void* operator new(size_t size) throw() {
       address res = (address)resource_allocate_bytes(size);
@@ -422,20 +416,16 @@ protected:
       return res;
   }
 
-  void* operator new [](size_t size) throw() {
-      address res = (address)resource_allocate_bytes(size);
-      DEBUG_ONLY(set_allocation_type(res, RESOURCE_AREA);)
-      return res;
-  }
-
-  void* operator new [](size_t size, const std::nothrow_t& nothrow_constant) throw() {
-      address res = (address)resource_allocate_bytes(size, AllocFailStrategy::RETURN_NULL);
-      DEBUG_ONLY(if (res != NULL) set_allocation_type(res, RESOURCE_AREA);)
-      return res;
-  }
-
+  void* operator new [](size_t size) throw() = delete;
+  void* operator new [](size_t size, const std::nothrow_t& nothrow_constant) throw() = delete;
   void  operator delete(void* p);
-  void  operator delete [](void* p);
+  void  operator delete [](void* p) = delete;
+
+#ifndef PRODUCT
+  // Printing support
+  void print() const;
+  virtual void print_on(outputStream* st) const;
+#endif // PRODUCT
 };
 
 // One of the following macros must be used when allocating an array
@@ -547,7 +537,7 @@ class ArrayAllocator : public AllStatic {
   static void free(E* addr, size_t length);
 };
 
-// Uses mmaped memory for all allocations. All allocations are initially
+// Uses mmapped memory for all allocations. All allocations are initially
 // zero-filled. No pre-touching.
 template <class E>
 class MmapArrayAllocator : public AllStatic {

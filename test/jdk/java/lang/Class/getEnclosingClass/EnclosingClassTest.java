@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,14 +24,29 @@
 /*
  * @test
  * @bug 4992173 4992170
- *
- * @run shell make_src.sh
- * @run shell build.sh
- * @run main/othervm -esa -ea EnclosingClassTest
- *
+ * @library /test/lib
+ * @modules jdk.compiler
+ * @run testng/othervm EnclosingClassTest
  * @summary Check getEnclosingClass and other methods
  * @author Peter von der Ah\u00e9
  */
+
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+import common.TestMe;
+import jdk.test.lib.compiler.CompilerUtils;
+import jdk.test.lib.util.FileUtils;
+import org.testng.Assert;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
 
 /*
  * We have five kinds of classes:
@@ -59,15 +74,73 @@
  * e o x x x
  */
 
-import java.util.List;
-import java.util.LinkedList;
-import java.lang.reflect.Field;
-import common.TestMe;
-
 public class EnclosingClassTest {
-    static void info(Class<?> c, Class<?> encClass, String desc) {
-        if (!"".equals(desc))
+    private static final String SRC_DIR = System.getProperty("test.src");
+    private static final Path ENCLOSING_CLASS_SRC = Path.of(SRC_DIR, "EnclosingClass.java");
+    private static final String GEN_SRC_DIR = "gensrc";
+
+    @BeforeClass
+    public void createEnclosingClasses() throws IOException {
+        Path pkg1Dir = Path.of(GEN_SRC_DIR, "pkg1");
+        Path pkg2Dir = Path.of(GEN_SRC_DIR, "pkg1", "pkg2");
+        Path pkg1File = pkg1Dir.resolve("EnclosingClass.java");
+        Path pkg2File = pkg2Dir.resolve("EnclosingClass.java");
+
+        if (!Files.notExists(pkg1Dir)) {
+            FileUtils.deleteFileTreeWithRetry(pkg1Dir);
+        }
+        Files.createDirectories(pkg2Dir);
+        createAndWriteEnclosingClasses(ENCLOSING_CLASS_SRC, pkg1File, "pkg1");
+        createAndWriteEnclosingClasses(ENCLOSING_CLASS_SRC, pkg2File, "pkg1.pkg2");
+
+        Assert.assertTrue(CompilerUtils.compile(ENCLOSING_CLASS_SRC, Path.of(System.getProperty("test.classes")),
+                "--source-path", SRC_DIR));
+        Assert.assertTrue(CompilerUtils.compile(pkg1File, Path.of(System.getProperty("test.classes")),
+                "-classpath", System.getProperty("test.class.path")));
+        Assert.assertTrue(CompilerUtils.compile(pkg2File, Path.of(System.getProperty("test.classes")),
+                        "-classpath", System.getProperty("test.class.path")));
+    }
+
+    @Test
+    public void testEnclosingClasses() throws ClassNotFoundException, NoSuchMethodException, IllegalAccessException,
+            InvocationTargetException, InstantiationException {
+        test(Class.forName("EnclosingClass").getDeclaredConstructor().newInstance());
+    }
+
+    @Test
+    public void testEnclosingClassesInPackage() throws ClassNotFoundException, NoSuchMethodException,
+            IllegalAccessException, InvocationTargetException, InstantiationException {
+        test(Class.forName("pkg1.EnclosingClass").getDeclaredConstructor().newInstance());
+    }
+
+    @Test
+    public void testEnclosingClassesInNestedPackage() throws ClassNotFoundException, NoSuchMethodException,
+            IllegalAccessException, InvocationTargetException, InstantiationException {
+        test(Class.forName("pkg1.pkg2.EnclosingClass").getDeclaredConstructor().newInstance());
+    }
+
+    private void createAndWriteEnclosingClasses(Path source, Path target, String packageName) throws IOException {
+        String className = packageName + ".EnclosingClass";
+        try (BufferedReader br = new BufferedReader(new FileReader(source.toFile()));
+        PrintWriter bw = new PrintWriter(new FileWriter(target.toFile()))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                if (line.contains("canonical=\"EnclosingClass")) {
+                    line = line.replaceAll("canonical=\"EnclosingClass", "canonical=\"" + className);
+                } else if (line.contains("\"class EnclosingClass")) {
+                    line = line.replaceAll("\"class EnclosingClass", "\"class " + className);
+                } else if (line.contains("//package")) {
+                    line = line.replaceAll("//package", "package " + packageName + ";");
+                }
+                bw.println(line);
+            }
+        }
+    }
+
+    private void info(Class<?> c, Class<?> encClass, String desc) {
+        if (!"".equals(desc)) {
             System.out.println(desc + ":");
+        }
         System.out.println(c);
         System.out.println("\tis enclosed by:\t\t" + encClass);
         System.out.println("\thas simple name:\t`" +
@@ -76,23 +149,23 @@ public class EnclosingClassTest {
                            c.getCanonicalName() + "'");
     }
 
-    static void match(String actual, String expected) {
-        assert((actual == null && expected == null) || actual.equals(expected));
+    private void match(String actual, String expected) {
+        Assert.assertTrue((actual == null && expected == null) || actual.equals(expected));
         System.out.println("\t`" +
                            actual + "' matches expected `" +
                            expected + "'");
     }
 
-    static void check(Class<?> c, Class<?> enc,
-                      String encName, String encNameExpected,
-                      String simpleName, String simpleNameExpected,
-                      String canonicalName, String canonicalNameExpected) {
+    private void check(Class<?> c, Class<?> enc,
+                       String encName, String encNameExpected,
+                       String simpleName, String simpleNameExpected,
+                       String canonicalName, String canonicalNameExpected) {
         match(encName, encNameExpected);
         match(simpleName, simpleNameExpected);
         match(canonicalName, canonicalNameExpected);
     }
 
-    static void testClass(Class<?> c, TestMe annotation, Field f) {
+    private void testClass(Class<?> c, TestMe annotation, Field f) {
         if (Void.class.equals(c))
             return;
         Class<?> encClass = c.getEnclosingClass();
@@ -114,7 +187,7 @@ public class EnclosingClassTest {
               annotation.hasCanonical() ? annotation.canonical()+"[]" : null);
     }
 
-    static void test(Object tests) {
+    private void test(Object tests) {
         for (Field f : tests.getClass().getFields()) {
             TestMe annotation = f.getAnnotation(TestMe.class);
             if (annotation != null) {
@@ -132,9 +205,5 @@ public class EnclosingClassTest {
             }
         }
     }
-    public static void main(String[] args) {
-        test(new EnclosingClass());
-        test(new pkg1.EnclosingClass());
-        test(new pkg1.pkg2.EnclosingClass());
-    }
 }
+

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@ import java.text.MessageFormat;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.HexFormat;
 import java.util.Locale;
 import java.util.Map;
 import java.util.ResourceBundle;
@@ -183,7 +184,7 @@ public final class SSLLogger {
     }
 
     private static void log(Level level, String msg, Object... params) {
-        if (logger.isLoggable(level)) {
+        if (logger != null && logger.isLoggable(level)) {
             if (params == null || params.length == 0) {
                 logger.log(level, msg);
             } else {
@@ -204,6 +205,15 @@ public final class SSLLogger {
         } catch (Exception exp) {
             return "unexpected exception thrown: " + exp.getMessage();
         }
+    }
+
+    // Logs a warning message and always returns false. This method
+    // can be used as an OR Predicate to add a log in a stream filter.
+    public static boolean logWarning(String option, String s) {
+        if (SSLLogger.isOn && SSLLogger.isOn(option)) {
+            SSLLogger.warning(s);
+        }
+        return false;
     }
 
     private static class SSLConsoleLogger implements Logger {
@@ -353,7 +363,7 @@ public final class SSLLogger {
                 Object[] messageFields = {
                     logger.loggerName,
                     level.getName(),
-                    Utilities.toHexString(Thread.currentThread().getId()),
+                    Utilities.toHexString(Thread.currentThread().threadId()),
                     Thread.currentThread().getName(),
                     dateTimeFormat.format(Instant.now()),
                     formatCaller(),
@@ -370,7 +380,7 @@ public final class SSLLogger {
             Object[] messageFields = {
                     logger.loggerName,
                     level.getName(),
-                    Utilities.toHexString(Thread.currentThread().getId()),
+                    Utilities.toHexString(Thread.currentThread().threadId()),
                     Thread.currentThread().getName(),
                     dateTimeFormat.format(Instant.now()),
                     formatCaller(),
@@ -580,7 +590,7 @@ public final class SSLLogger {
                     Utilities.toHexString((byte[])value) + "\"";
             } else if (value instanceof Byte) {
                 formatted = "\"" + key + "\": \"" +
-                    Utilities.toHexString((byte)value) + "\"";
+                        HexFormat.of().toHexDigits((byte)value) + "\"";
             } else {
                 formatted = "\"" + key + "\": " +
                     "\"" + value.toString() + "\"";

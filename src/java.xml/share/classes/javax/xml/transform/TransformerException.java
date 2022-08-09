@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,7 @@ public class TransformerException extends Exception {
     private static final long serialVersionUID = 975798773772956428L;
 
     /** Field locator specifies where the error occurred */
+    @SuppressWarnings("serial") // Type of field is not Serializable
     SourceLocator locator;
 
     /**
@@ -229,6 +230,7 @@ public class TransformerException extends Exception {
      * @return A string with location info, or null
      * if there is no location information.
      */
+    @SuppressWarnings("removal")
     public String getLocationAsString() {
         if (locator == null) {
             return null;
@@ -276,7 +278,7 @@ public class TransformerException extends Exception {
     }
 
     /**
-     * Print the the trace of methods from where the error
+     * Print the trace of methods from where the error
      * originated.  This will trace all nested exception
      * objects, as well as this object.
      */
@@ -286,7 +288,7 @@ public class TransformerException extends Exception {
     }
 
     /**
-     * Print the the trace of methods from where the error
+     * Print the trace of methods from where the error
      * originated.  This will trace all nested exception
      * objects, as well as this object.
      * @param s The stream where the dump will be sent to.
@@ -297,7 +299,7 @@ public class TransformerException extends Exception {
     }
 
     /**
-     * Print the the trace of methods from where the error
+     * Print the trace of methods from where the error
      * originated.  This will trace all nested exception
      * objects, as well as this object.
      * @param s The writer where the dump will be sent to.

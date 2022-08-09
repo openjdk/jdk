@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,10 @@ public final class ECPublicKeyImpl extends X509Key implements ECPublicKey {
 
     private static final long serialVersionUID = -2462037275160462289L;
 
+    @SuppressWarnings("serial") // Type of field is not
+                                // Serializable;see writeReplace
     private ECPoint w;
+    @SuppressWarnings("serial") // Type of field is not Serializable
     private ECParameterSpec params;
 
     /**
@@ -107,9 +110,7 @@ public final class ECPublicKeyImpl extends X509Key implements ECPublicKey {
         try {
             params = algParams.getParameterSpec(ECParameterSpec.class);
             w = ECUtil.decodePoint(key, params.getCurve());
-        } catch (IOException e) {
-            throw new InvalidKeyException("Invalid EC key", e);
-        } catch (InvalidParameterSpecException e) {
+        } catch (IOException | InvalidParameterSpecException e) {
             throw new InvalidKeyException("Invalid EC key", e);
         }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -439,6 +439,7 @@ public class XEmbedCanvasPeer extends XCanvasPeer implements WindowFocusListener
         }
     }
 
+    @SuppressWarnings("removal")
     void canvasFocusLost(FocusEvent e) {
         if (isXEmbedActive() && !e.isTemporary()) {
             xembedLog.fine("Forwarding FOCUS_LOST");
@@ -566,8 +567,7 @@ public class XEmbedCanvasPeer extends XCanvasPeer implements WindowFocusListener
         // Find the top-level and see if it is XEmbed client. If so, ask him to
         // register the accelerator
         XWindowPeer parent = getToplevelXWindow();
-        if (parent != null && parent instanceof XEmbeddedFramePeer) {
-            XEmbeddedFramePeer embedded = (XEmbeddedFramePeer)parent;
+        if (parent instanceof XEmbeddedFramePeer embedded) {
             embedded.registerAccelerator(stroke);
         }
     }
@@ -576,8 +576,7 @@ public class XEmbedCanvasPeer extends XCanvasPeer implements WindowFocusListener
         // Find the top-level and see if it is XEmbed client. If so, ask him to
         // register the accelerator
         XWindowPeer parent = getToplevelXWindow();
-        if (parent != null && parent instanceof XEmbeddedFramePeer) {
-            XEmbeddedFramePeer embedded = (XEmbeddedFramePeer)parent;
+        if (parent instanceof XEmbeddedFramePeer embedded) {
             embedded.unregisterAccelerator(stroke);
         }
     }

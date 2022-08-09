@@ -57,8 +57,8 @@ import sun.util.logging.PlatformLogger;
  * @modules java.base/sun.util.logging
  * @build CustomSystemClassLoader BaseLoggerFinder BasePlatformLoggerTest
  * @run  main/othervm -Djava.system.class.loader=CustomSystemClassLoader BasePlatformLoggerTest NOSECURITY
- * @run  main/othervm -Djava.system.class.loader=CustomSystemClassLoader BasePlatformLoggerTest NOPERMISSIONS
- * @run  main/othervm -Djava.system.class.loader=CustomSystemClassLoader BasePlatformLoggerTest WITHPERMISSIONS
+ * @run  main/othervm -Djava.security.manager=allow -Djava.system.class.loader=CustomSystemClassLoader BasePlatformLoggerTest NOPERMISSIONS
+ * @run  main/othervm -Djava.security.manager=allow -Djava.system.class.loader=CustomSystemClassLoader BasePlatformLoggerTest WITHPERMISSIONS
  * @author danielfuchs
  */
 public class BasePlatformLoggerTest {

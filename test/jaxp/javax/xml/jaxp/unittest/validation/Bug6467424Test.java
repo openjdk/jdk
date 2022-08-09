@@ -52,7 +52,7 @@ import org.xml.sax.SAXException;
  * @test
  * @bug 6467424
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true validation.Bug6467424Test
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow validation.Bug6467424Test
  * @run testng/othervm validation.Bug6467424Test
  * @summary Test Validator augments the default delement value if feature element-default is on.
  */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,20 +45,27 @@ static char* findLastPathComponent(char *buffer, const char *comp) {
 /*
  * Removes the trailing file name and any intermediate platform
  * directories, if any, and its enclosing directory.
+ * Second parameter is a hint about the type of a file. JNI_TRUE is for
+ * shared libraries and JNI_FALSE is for executables.
  * Ex: if a buffer contains "/foo/bin/javac" or "/foo/bin/x64/javac", the
  * truncated resulting buffer will contain "/foo".
  */
 static jboolean
-TruncatePath(char *buf)
+TruncatePath(char *buf, jboolean pathisdll)
 {
-    // try bin directory, maybe an executable
-    char *p = findLastPathComponent(buf, "/bin/");
+    /*
+     * If the file is a library, try lib directory first and then bin
+     * directory.
+     * If the file is an executable, try bin directory first and then lib
+     * directory.
+     */
+
+    char *p = findLastPathComponent(buf, pathisdll ? "/lib/" : "/bin/");
     if (p != NULL) {
         *p = '\0';
         return JNI_TRUE;
     }
-    // try lib directory, maybe a library
-    p = findLastPathComponent(buf, "/lib/");
+    p = findLastPathComponent(buf, pathisdll ? "/bin/" : "/lib/");
     if (p != NULL) {
         *p = '\0';
         return JNI_TRUE;
@@ -80,7 +87,7 @@ GetApplicationHome(char *buf, jint bufsize)
     } else {
         return JNI_FALSE;
     }
-    return TruncatePath(buf);
+    return TruncatePath(buf, JNI_FALSE);
 }
 
 /*
@@ -95,7 +102,7 @@ GetApplicationHomeFromDll(char *buf, jint bufsize)
     if (dladdr((void*)&GetApplicationHomeFromDll, &info) != 0) {
         char *path = realpath(info.dli_fname, buf);
         if (path == buf) {
-            return TruncatePath(buf);
+            return TruncatePath(buf, JNI_TRUE);
         }
     }
     return JNI_FALSE;
@@ -119,11 +126,14 @@ ProgramExists(char *name)
 static char *
 Resolve(char *indir, char *cmd)
 {
-    char name[PATH_MAX + 2], *real;
+    char name[PATH_MAX + 1], *real;
+    int snprintf_result;
 
-    if ((JLI_StrLen(indir) + JLI_StrLen(cmd) + 1)  > PATH_MAX) return 0;
-    JLI_Snprintf(name, sizeof(name), "%s%c%s", indir, FILE_SEPARATOR, cmd);
-    if (!ProgramExists(name)) return 0;
+    snprintf_result = JLI_Snprintf(name, sizeof(name), "%s%c%s", indir, FILE_SEPARATOR, cmd);
+    if ((snprintf_result < 0) || (snprintf_result >= (int)sizeof(name))) {
+      return NULL;
+    }
+    if (!ProgramExists(name)) return NULL;
     real = JLI_MemAlloc(PATH_MAX + 2);
     if (!realpath(name, real))
         JLI_StrCpy(real, name);
@@ -148,8 +158,7 @@ FindExecName(char *program)
         return Resolve("", program+1);
 
     /* relative path? */
-    if (JLI_StrRChr(program, FILE_SEPARATOR) != 0) {
-        char buf[PATH_MAX+2];
+    if (JLI_StrRChr(program, FILE_SEPARATOR) != NULL) {
         return Resolve(getcwd(cwdbuf, sizeof(cwdbuf)), program);
     }
 
@@ -159,10 +168,10 @@ FindExecName(char *program)
     tmp_path = JLI_MemAlloc(JLI_StrLen(path) + 2);
     JLI_StrCpy(tmp_path, path);
 
-    for (f=tmp_path; *f && result==0; ) {
+    for (f = tmp_path; *f && result == NULL; ) {
         char *s = f;
         while (*f && (*f != PATH_SEPARATOR)) ++f;
-        if (*f) *f++ = 0;
+        if (*f) *f++ = '\0';
         if (*s == FILE_SEPARATOR)
             result = Resolve(s, program);
         else {
@@ -172,7 +181,7 @@ FindExecName(char *program)
                     FILE_SEPARATOR, s);
             result = Resolve(dir, program);
         }
-        if (result != 0) break;
+        if (result != NULL) break;
     }
 
     JLI_MemFree(tmp_path);

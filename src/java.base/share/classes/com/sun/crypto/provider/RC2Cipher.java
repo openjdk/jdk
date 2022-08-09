@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package com.sun.crypto.provider;
 
 import java.security.*;
 import java.security.spec.*;
+import java.util.Arrays;
 
 import javax.crypto.*;
 import javax.crypto.spec.RC2ParameterSpec;
@@ -38,7 +39,8 @@ import javax.crypto.spec.RC2ParameterSpec;
  * @since   1.5
  * @author  Andreas Sterbenz
  */
-public final class RC2Cipher extends CipherSpi {
+public sealed class RC2Cipher extends CipherSpi
+        permits PKCS12PBECipherCore.PBEWithSHA1AndRC2 {
 
     // internal CipherCore & RC2Crypt objects which do the real work.
     private final CipherCore core;
@@ -84,9 +86,8 @@ public final class RC2Cipher extends CipherSpi {
     protected void engineInit(int opmode, Key key,
             AlgorithmParameterSpec params, SecureRandom random)
             throws InvalidKeyException, InvalidAlgorithmParameterException {
-        if (params != null && params instanceof RC2ParameterSpec) {
-            embeddedCipher.initEffectiveKeyBits
-                (((RC2ParameterSpec)params).getEffectiveKeyBits());
+        if (params instanceof RC2ParameterSpec rc2Spec) {
+            embeddedCipher.initEffectiveKeyBits(rc2Spec.getEffectiveKeyBits());
         } else {
             embeddedCipher.initEffectiveKeyBits(0);
         }
@@ -133,6 +134,7 @@ public final class RC2Cipher extends CipherSpi {
 
     protected int engineGetKeySize(Key key) throws InvalidKeyException {
         byte[] keyBytes = CipherCore.getKeyBytes(key);
+        Arrays.fill(keyBytes, (byte)0);
         RC2Crypt.checkKey(key.getAlgorithm(), keyBytes.length);
         return keyBytes.length << 3;
     }

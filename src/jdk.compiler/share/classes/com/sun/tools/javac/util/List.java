@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -358,11 +358,11 @@ public class List<A> extends AbstractCollection<A> implements java.util.List<A> 
      */
     @Override
     public boolean equals(Object other) {
-        if (other instanceof List<?>)
-            return equals(this, (List<?>)other);
-        if (other instanceof java.util.List<?>) {
+        if (other instanceof List<?> javacList)
+            return equals(this, javacList);
+        if (other instanceof java.util.List<?> javaUtilList) {
             List<A> t = this;
-            Iterator<?> oIter = ((java.util.List<?>) other).iterator();
+            Iterator<?> oIter = javaUtilList.iterator();
             while (t.tail != null && oIter.hasNext()) {
                 Object o = oIter.next();
                 if ( !(t.head == null ? o == null : t.head.equals(o)))

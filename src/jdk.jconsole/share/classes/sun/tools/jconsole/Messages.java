@@ -29,7 +29,7 @@ package sun.tools.jconsole;
  * Class that contains localized messages.
  *
  */
-final public class Messages {
+public final class Messages {
     private static final String BUNDLE_NAME = "sun.tools.jconsole.resources.messages";
 
     static {

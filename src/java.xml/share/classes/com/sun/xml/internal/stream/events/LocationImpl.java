@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,18 +67,11 @@ public class LocationImpl implements Location{
     }
 
     public String toString(){
-        StringBuffer sbuffer = new StringBuffer() ;
-        sbuffer.append("Line number = " + getLineNumber());
-        sbuffer.append("\n") ;
-        sbuffer.append("Column number = " + getColumnNumber());
-        sbuffer.append("\n") ;
-        sbuffer.append("System Id = " + getSystemId());
-        sbuffer.append("\n") ;
-        sbuffer.append("Public Id = " + getPublicId());
-        sbuffer.append("\n") ;
-        sbuffer.append("CharacterOffset = " + getCharacterOffset());
-        sbuffer.append("\n") ;
-        return sbuffer.toString();
+        return "Line number = " + getLineNumber() + "\n" +
+                "Column number = " + getColumnNumber() + "\n" +
+                "System Id = " + getSystemId() + "\n" +
+                "Public Id = " + getPublicId() + "\n" +
+                "CharacterOffset = " + getCharacterOffset() + "\n";
     }
 
 }

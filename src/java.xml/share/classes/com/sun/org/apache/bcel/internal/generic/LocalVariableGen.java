@@ -39,8 +39,8 @@ public class LocalVariableGen implements InstructionTargeter, NamedAndTyped, Clo
     private Type type;
     private InstructionHandle start;
     private InstructionHandle end;
-    private int orig_index; // never changes; used to match up with LocalVariableTypeTable entries
-    private boolean live_to_end;
+    private int origIndex; // never changes; used to match up with LocalVariableTypeTable entries
+    private boolean liveToEnd;
 
 
     /**
@@ -63,8 +63,8 @@ public class LocalVariableGen implements InstructionTargeter, NamedAndTyped, Clo
         this.index = index;
         setStart(start);
         setEnd(end);
-        this.orig_index = index;
-        this.live_to_end = end == null;
+        this.origIndex = index;
+        this.liveToEnd = end == null;
     }
 
 
@@ -77,12 +77,12 @@ public class LocalVariableGen implements InstructionTargeter, NamedAndTyped, Clo
      * @param type its type
      * @param start from where the instruction is valid (null means from the start)
      * @param end until where the instruction is valid (null means to the end)
-     * @param orig_index index of local variable prior to any changes to index
+     * @param origIndex index of local variable prior to any changes to index
      */
     public LocalVariableGen(final int index, final String name, final Type type, final InstructionHandle start,
-            final InstructionHandle end, final int orig_index) {
+            final InstructionHandle end, final int origIndex) {
         this(index, name, type, start, end);
-        this.orig_index = orig_index;
+        this.origIndex = origIndex;
     }
 
 
@@ -95,7 +95,7 @@ public class LocalVariableGen implements InstructionTargeter, NamedAndTyped, Clo
      * Note that due to the conversion from byte code offset to InstructionHandle,
      * it is impossible to tell the difference between a live range that ends BEFORE
      * the last insturction of the method or a live range that ends AFTER the last
-     * instruction of the method.  Hence the live_to_end flag to differentiate
+     * instruction of the method.  Hence the liveToEnd flag to differentiate
      * between these two cases.
      *
      * @param cp constant pool
@@ -106,14 +106,14 @@ public class LocalVariableGen implements InstructionTargeter, NamedAndTyped, Clo
         if ((start != null) && (end != null)) {
             start_pc = start.getPosition();
             length = end.getPosition() - start_pc;
-            if ((end.getNext() == null) && live_to_end) {
+            if ((end.getNext() == null) && liveToEnd) {
                 length += end.getInstruction().getLength();
             }
         }
         final int name_index = cp.addUtf8(name);
         final int signature_index = cp.addUtf8(type.getSignature());
         return new LocalVariable(start_pc, length, name_index, signature_index, index, cp
-                .getConstantPool(), orig_index);
+                .getConstantPool(), origIndex);
     }
 
 
@@ -128,17 +128,17 @@ public class LocalVariableGen implements InstructionTargeter, NamedAndTyped, Clo
 
 
     public int getOrigIndex() {
-        return orig_index;
+        return origIndex;
     }
 
 
     public void setLiveToEnd( final boolean live_to_end) {
-        this.live_to_end = live_to_end;
+        this.liveToEnd = live_to_end;
     }
 
 
     public boolean getLiveToEnd() {
-        return live_to_end;
+        return liveToEnd;
     }
 
 

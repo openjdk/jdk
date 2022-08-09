@@ -1,4 +1,4 @@
-## Little Color Management System (LCMS) v2.11
+## Little Color Management System (LCMS) v2.12
 
 ### LCMS License
 <pre>

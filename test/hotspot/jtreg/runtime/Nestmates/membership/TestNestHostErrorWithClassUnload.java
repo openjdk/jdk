@@ -28,14 +28,16 @@
  *          successfully but fail validation. This tests a specific, otherwise
  *          untested, code path in ResolutionErrorTable::free_entry.
  *
- * @library /runtime/testlibrary
+ * @library /test/lib
  * @compile TestNestHostErrorWithClassUnload.java
  *          Helper.java
  *          PackagedNestHost.java
  *          PackagedNestHost2.java
  * @compile PackagedNestHost2Member.jcod
- *
- * @run main/othervm -Xlog:class+unload=trace TestNestHostErrorWithClassUnload
+
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xlog:class+unload=trace TestNestHostErrorWithClassUnload
  */
 
 // Test setup:
@@ -61,6 +63,8 @@
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+
+import jdk.test.lib.classloader.ClassUnloadCommon;
 
 public class TestNestHostErrorWithClassUnload {
 

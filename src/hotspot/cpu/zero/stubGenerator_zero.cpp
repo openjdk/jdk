@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2010, 2015 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -24,8 +24,7 @@
  */
 
 #include "precompiled.hpp"
-#include "asm/assembler.hpp"
-#include "assembler_zero.inline.hpp"
+#include "asm/assembler.inline.hpp"
 #include "interpreter/interpreter.hpp"
 #include "nativeInst_zero.hpp"
 #include "oops/instanceOop.hpp"
@@ -35,26 +34,14 @@
 #include "prims/methodHandles.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubCodeGenerator.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "runtime/thread.inline.hpp"
 #include "stack_zero.inline.hpp"
 #ifdef COMPILER2
 #include "opto/runtime.hpp"
 #endif
-
-// For SafeFetch we need POSIX tls and setjmp
-#include <setjmp.h>
-#include <pthread.h>
-static pthread_key_t g_jmpbuf_key;
-
-// return the currently active jump buffer for this thread
-//  - if there is any, NULL otherwise. Called from
-//    zero signal handlers.
-extern sigjmp_buf* get_jmp_buf_for_continuation() {
-  return (sigjmp_buf*) pthread_getspecific(g_jmpbuf_key);
-}
 
 // Declaration and definition of StubGenerator (no .hpp file).
 // For a more detailed description of the stub routine structure
@@ -72,7 +59,7 @@ class StubGenerator: public StubCodeGenerator {
     intptr_t*        parameters,
     int              parameter_words,
     TRAPS) {
-    JavaThread *thread = THREAD->as_Java_thread();
+    JavaThread *thread = THREAD;
     ZeroStack *stack = thread->zero_stack();
 
     // Make sure we have no pending exceptions
@@ -189,57 +176,6 @@ class StubGenerator: public StubCodeGenerator {
       StubRoutines::_oop_arraycopy;
   }
 
-  static int SafeFetch32(int *adr, int errValue) {
-
-    // set up a jump buffer; anchor the pointer to the jump buffer in tls; then
-    // do the pointer access. If pointer is invalid, we crash; in signal
-    // handler, we retrieve pointer to jmp buffer from tls, and jump back.
-    //
-    // Note: the jump buffer itself - which can get pretty large depending on
-    // the architecture - lives on the stack and that is fine, because we will
-    // not rewind the stack: either we crash, in which case signal handler
-    // frame is below us, or we don't crash, in which case it does not matter.
-    sigjmp_buf jb;
-    if (sigsetjmp(jb, 1)) {
-      // we crashed. clean up tls and return default value.
-      pthread_setspecific(g_jmpbuf_key, NULL);
-      return errValue;
-    } else {
-      // preparation phase
-      pthread_setspecific(g_jmpbuf_key, &jb);
-    }
-
-    int value = errValue;
-    value = *adr;
-
-    // all went well. clean tls.
-    pthread_setspecific(g_jmpbuf_key, NULL);
-
-    return value;
-  }
-
-  static intptr_t SafeFetchN(intptr_t *adr, intptr_t errValue) {
-
-    sigjmp_buf jb;
-    if (sigsetjmp(jb, 1)) {
-      // we crashed. clean up tls and return default value.
-      pthread_setspecific(g_jmpbuf_key, NULL);
-      return errValue;
-    } else {
-      // preparation phase
-      pthread_setspecific(g_jmpbuf_key, &jb);
-    }
-
-    intptr_t value = errValue;
-    value = *adr;
-
-    // all went well. clean tls.
-    pthread_setspecific(g_jmpbuf_key, NULL);
-
-    return value;
-
-  }
-
   void generate_initial() {
     // Generates all stubs and initializes the entry points
 
@@ -286,15 +222,6 @@ class StubGenerator: public StubCodeGenerator {
     // arraycopy stubs used by compilers
     generate_arraycopy_stubs();
 
-    // Safefetch stubs.
-    pthread_key_create(&g_jmpbuf_key, NULL);
-    StubRoutines::_safefetch32_entry = CAST_FROM_FN_PTR(address, StubGenerator::SafeFetch32);
-    StubRoutines::_safefetch32_fault_pc = NULL;
-    StubRoutines::_safefetch32_continuation_pc = NULL;
-
-    StubRoutines::_safefetchN_entry = CAST_FROM_FN_PTR(address, StubGenerator::SafeFetchN);
-    StubRoutines::_safefetchN_fault_pc = NULL;
-    StubRoutines::_safefetchN_continuation_pc = NULL;
   }
 
  public:
@@ -307,8 +234,8 @@ class StubGenerator: public StubCodeGenerator {
   }
 };
 
-void StubGenerator_generate(CodeBuffer* code, bool all) {
-  StubGenerator g(code, all);
+void StubGenerator_generate(CodeBuffer* code, int phase) {
+  StubGenerator g(code, phase);
 }
 
 EntryFrame *EntryFrame::build(const intptr_t*  parameters,
@@ -316,7 +243,7 @@ EntryFrame *EntryFrame::build(const intptr_t*  parameters,
                               JavaCallWrapper* call_wrapper,
                               TRAPS) {
 
-  ZeroStack *stack = THREAD->as_Java_thread()->zero_stack();
+  ZeroStack *stack = THREAD->zero_stack();
   stack->overflow_check(header_words + parameter_words, CHECK_NULL);
 
   stack->push(0); // next_frame, filled in later

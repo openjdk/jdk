@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "ci/ciEnv.hpp"
 #include "ci/ciMethodData.hpp"
 #include "code/exceptionHandlerTable.hpp"
+#include "compiler/compiler_globals.hpp"
 #include "compiler/compilerDirectives.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/deoptimization.hpp"
@@ -48,11 +49,9 @@ class CodeEmitInfo;
 class ciEnv;
 class ciMethod;
 class ValueStack;
-class LIR_OprDesc;
 class C1_MacroAssembler;
 class CFGPrinter;
 class CFGPrinterOutput;
-typedef LIR_OprDesc* LIR_Opr;
 
 typedef GrowableArray<BasicType> BasicTypeArray;
 typedef GrowableArray<BasicType> BasicTypeList;
@@ -78,9 +77,11 @@ class Compilation: public StackObj {
   bool               _has_exception_handlers;
   bool               _has_fpu_code;
   bool               _has_unsafe_access;
+  bool               _has_irreducible_loops;
   bool               _would_profile;
   bool               _has_method_handle_invokes;  // True if this method has MethodHandle invokes.
   bool               _has_reserved_stack_access;
+  bool               _has_monitors; // Fastpath monitors detection for Continuations
   bool               _install_code;
   const char*        _bailout_msg;
   ExceptionInfoList* _exception_info_list;
@@ -91,6 +92,7 @@ class Compilation: public StackObj {
   CodeBuffer         _code;
   bool               _has_access_indexed;
   int                _interpreter_frame_size; // Stack space needed in case of a deoptimization
+  int                _immediate_oops_patched;
 
   // compilation helpers
   void initialize();
@@ -136,6 +138,8 @@ class Compilation: public StackObj {
   bool has_exception_handlers() const            { return _has_exception_handlers; }
   bool has_fpu_code() const                      { return _has_fpu_code; }
   bool has_unsafe_access() const                 { return _has_unsafe_access; }
+  bool has_monitors() const                      { return _has_monitors; }
+  bool has_irreducible_loops() const             { return _has_irreducible_loops; }
   int max_vector_size() const                    { return 0; }
   ciMethod* method() const                       { return _method; }
   int osr_bci() const                            { return _osr_bci; }
@@ -163,8 +167,10 @@ class Compilation: public StackObj {
   void set_has_exception_handlers(bool f)        { _has_exception_handlers = f; }
   void set_has_fpu_code(bool f)                  { _has_fpu_code = f; }
   void set_has_unsafe_access(bool f)             { _has_unsafe_access = f; }
+  void set_has_irreducible_loops(bool f)         { _has_irreducible_loops = f; }
   void set_would_profile(bool f)                 { _would_profile = f; }
   void set_has_access_indexed(bool f)            { _has_access_indexed = f; }
+  void set_has_monitors(bool f)                  { _has_monitors = f; }
   // Add a set of exception handlers covering the given PC offset
   void add_exception_handlers_for_pco(int pco, XHandlers* exception_handlers);
   // Statistics gathering
@@ -227,8 +233,6 @@ class Compilation: public StackObj {
     return env()->comp_level() == CompLevel_full_profile ||
            env()->comp_level() == CompLevel_limited_profile;
   }
-  bool count_invocations() { return is_profiling(); }
-  bool count_backedges()   { return is_profiling(); }
 
   // Helpers for generation of profile information
   bool profile_branches() {
@@ -264,8 +268,8 @@ class Compilation: public StackObj {
 
   // will compilation make optimistic assumptions that might lead to
   // deoptimization and that the runtime will account for?
-  bool is_optimistic() const                             {
-    return !TieredCompilation &&
+  bool is_optimistic() {
+    return CompilerConfig::is_c1_only_no_jvmci() && !is_profiling() &&
       (RangeCheckElimination || UseLoopInvariantCodeMotion) &&
       method()->method_data()->trap_count(Deoptimization::Reason_none) == 0;
   }
@@ -322,13 +326,19 @@ class InstructionMark: public StackObj {
 
 //----------------------------------------------------------------------
 // Base class for objects allocated by the compiler in the compilation arena
-class CompilationResourceObj ALLOCATION_SUPER_CLASS_SPEC {
+class CompilationResourceObj {
  public:
   void* operator new(size_t size) throw() { return Compilation::current()->arena()->Amalloc(size); }
   void* operator new(size_t size, Arena* arena) throw() {
     return arena->Amalloc(size);
   }
   void  operator delete(void* p) {} // nothing to do
+
+#ifndef PRODUCT
+  // Printing support
+  void print() const;
+  virtual void print_on(outputStream* st) const;
+#endif
 };
 
 

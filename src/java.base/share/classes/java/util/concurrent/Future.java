@@ -56,8 +56,8 @@ package java.util.concurrent;
  * <pre> {@code
  * interface ArchiveSearcher { String search(String target); }
  * class App {
- *   ExecutorService executor = ...
- *   ArchiveSearcher searcher = ...
+ *   ExecutorService executor = ...;
+ *   ArchiveSearcher searcher = ...;
  *   void showSearch(String target) throws InterruptedException {
  *     Callable<String> task = () -> searcher.search(target);
  *     Future<String> future = executor.submit(task);
@@ -88,25 +88,28 @@ package java.util.concurrent;
 public interface Future<V> {
 
     /**
-     * Attempts to cancel execution of this task.  This attempt will
-     * fail if the task has already completed, has already been cancelled,
-     * or could not be cancelled for some other reason. If successful,
-     * and this task has not started when {@code cancel} is called,
-     * this task should never run.  If the task has already started,
-     * then the {@code mayInterruptIfRunning} parameter determines
-     * whether the thread executing this task should be interrupted in
-     * an attempt to stop the task.
+     * Attempts to cancel execution of this task.  This method has no
+     * effect if the task is already completed or cancelled, or could
+     * not be cancelled for some other reason.  Otherwise, if this
+     * task has not started when {@code cancel} is called, this task
+     * should never run.  If the task has already started, then the
+     * {@code mayInterruptIfRunning} parameter determines whether the
+     * thread executing this task (when known by the implementation)
+     * is interrupted in an attempt to stop the task.
      *
-     * <p>After this method returns, subsequent calls to {@link #isDone} will
-     * always return {@code true}.  Subsequent calls to {@link #isCancelled}
-     * will always return {@code true} if this method returned {@code true}.
+     * <p>The return value from this method does not necessarily
+     * indicate whether the task is now cancelled; use {@link
+     * #isCancelled}.
      *
-     * @param mayInterruptIfRunning {@code true} if the thread executing this
-     * task should be interrupted; otherwise, in-progress tasks are allowed
-     * to complete
+     * @param mayInterruptIfRunning {@code true} if the thread
+     * executing this task should be interrupted (if the thread is
+     * known to the implementation); otherwise, in-progress tasks are
+     * allowed to complete
      * @return {@code false} if the task could not be cancelled,
-     * typically because it has already completed normally;
-     * {@code true} otherwise
+     * typically because it has already completed; {@code true}
+     * otherwise. If two or more threads cause a task to be cancelled,
+     * then at least one of them returns {@code true}. Implementations
+     * may provide stronger guarantees.
      */
     boolean cancel(boolean mayInterruptIfRunning);
 
@@ -158,4 +161,143 @@ public interface Future<V> {
      */
     V get(long timeout, TimeUnit unit)
         throws InterruptedException, ExecutionException, TimeoutException;
+
+    /**
+     * Returns the computed result, without waiting.
+     *
+     * <p> This method is for cases where the caller knows that the task has
+     * already completed successfully, for example when filtering a stream
+     * of Future objects for the successful tasks and using a mapping
+     * operation to obtain a stream of results.
+     * {@snippet lang=java :
+     *     results = futures.stream()
+     *                .filter(f -> f.state() == Future.State.SUCCESS)
+     *                .map(Future::resultNow)
+     *                .toList();
+     * }
+     *
+     * @implSpec
+     * The default implementation invokes {@code isDone()} to test if the task
+     * has completed. If done, it invokes {@code get()} to obtain the result.
+     *
+     * @return the computed result
+     * @throws IllegalStateException if the task has not completed or the task
+     * did not complete with a result
+     * @since 19
+     */
+    default V resultNow() {
+        if (!isDone())
+            throw new IllegalStateException("Task has not completed");
+        boolean interrupted = false;
+        try {
+            while (true) {
+                try {
+                    return get();
+                } catch (InterruptedException e) {
+                    interrupted = true;
+                } catch (ExecutionException e) {
+                    throw new IllegalStateException("Task completed with exception");
+                } catch (CancellationException e) {
+                    throw new IllegalStateException("Task was cancelled");
+                }
+            }
+        } finally {
+            if (interrupted) Thread.currentThread().interrupt();
+        }
+    }
+
+    /**
+     * Returns the exception thrown by the task, without waiting.
+     *
+     * <p> This method is for cases where the caller knows that the task
+     * has already completed with an exception.
+     *
+     * @implSpec
+     * The default implementation invokes {@code isDone()} to test if the task
+     * has completed. If done and not cancelled, it invokes {@code get()} and
+     * catches the {@code ExecutionException} to obtain the exception.
+     *
+     * @return the exception thrown by the task
+     * @throws IllegalStateException if the task has not completed, the task
+     * completed normally, or the task was cancelled
+     * @since 19
+     */
+    default Throwable exceptionNow() {
+        if (!isDone())
+            throw new IllegalStateException("Task has not completed");
+        if (isCancelled())
+            throw new IllegalStateException("Task was cancelled");
+        boolean interrupted = false;
+        try {
+            while (true) {
+                try {
+                    get();
+                    throw new IllegalStateException("Task completed with a result");
+                } catch (InterruptedException e) {
+                    interrupted = true;
+                } catch (ExecutionException e) {
+                    return e.getCause();
+                }
+            }
+        } finally {
+            if (interrupted) Thread.currentThread().interrupt();
+        }
+    }
+
+    /**
+     * Represents the computation state.
+     * @since 19
+     */
+    enum State {
+        /**
+         * The task has not completed.
+         */
+        RUNNING,
+        /**
+         * The task completed with a result.
+         * @see Future#resultNow()
+         */
+        SUCCESS,
+        /**
+         * The task completed with an exception.
+         * @see Future#exceptionNow()
+         */
+        FAILED,
+        /**
+         * The task was cancelled.
+         * @see #cancel(boolean)
+         */
+        CANCELLED
+    }
+
+    /**
+     * {@return the computation state}
+     *
+     * @implSpec
+     * The default implementation uses {@code isDone()}, {@code isCancelled()},
+     * and {@code get()} to determine the state.
+     *
+     * @since 19
+     */
+    default State state() {
+        if (!isDone())
+            return State.RUNNING;
+        if (isCancelled())
+            return State.CANCELLED;
+        boolean interrupted = false;
+        try {
+            while (true) {
+                try {
+                    get();  // may throw InterruptedException when done
+                    return State.SUCCESS;
+                } catch (InterruptedException e) {
+                    interrupted = true;
+                } catch (ExecutionException e) {
+                    return State.FAILED;
+                }
+            }
+        } finally {
+            if (interrupted) Thread.currentThread().interrupt();
+        }
+    }
 }

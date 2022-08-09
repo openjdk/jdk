@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,9 @@ import sun.nio.fs.AbstractFileSystemProvider;
 class UnixDomainSockets {
     private UnixDomainSockets() { }
 
-    static final UnixDomainSocketAddress UNNAMED = UnixDomainSocketAddress.of("");
+    private static class UnnamedHolder {
+        static final UnixDomainSocketAddress UNNAMED = UnixDomainSocketAddress.of("");
+    }
 
     private static final boolean supported;
 
@@ -58,6 +60,7 @@ class UnixDomainSockets {
     }
 
     static void checkPermission() {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null)
             sm.checkPermission(accessUnixDomainSocket);
@@ -70,7 +73,7 @@ class UnixDomainSockets {
             // Security check passed
         } catch (SecurityException e) {
             // Return unnamed address only if security check fails
-            addr = UNNAMED;
+            addr = unnamed();
         }
         return addr;
     }
@@ -82,6 +85,7 @@ class UnixDomainSockets {
 
     private static native byte[] localAddress0(FileDescriptor fd) throws IOException;
 
+    @SuppressWarnings("removal")
     static String getRevealedLocalAddressAsString(SocketAddress sa) {
         return (System.getSecurityManager() != null) ? sa.toString() : "";
     }
@@ -131,7 +135,11 @@ class UnixDomainSockets {
             throw new BindException("Could not locate temporary directory for sockets");
         int rnd = random.nextInt(Integer.MAX_VALUE);
         try {
-            Path path = Path.of(dir, "socket_" + rnd);
+            final Path path = Path.of(dir, "socket_" + rnd);
+            if (path.getFileSystem().provider() != sun.nio.fs.DefaultFileSystemProvider.instance()) {
+                throw new UnsupportedOperationException(
+                        "Unix Domain Sockets not supported on non-default file system");
+            }
             return UnixDomainSocketAddress.of(path);
         } catch (InvalidPathException e) {
             throw new BindException("Invalid temporary directory");
@@ -158,7 +166,11 @@ class UnixDomainSockets {
         return n;
     }
 
-    private static native boolean socketSupported();
+    static UnixDomainSocketAddress unnamed() {
+        return UnnamedHolder.UNNAMED;
+    }
+
+    private static native boolean init();
 
     private static native int socket0() throws IOException;
 
@@ -174,6 +186,6 @@ class UnixDomainSockets {
     static {
         // Load all required native libs
         IOUtil.load();
-        supported = socketSupported();
+        supported = init();
     }
 }

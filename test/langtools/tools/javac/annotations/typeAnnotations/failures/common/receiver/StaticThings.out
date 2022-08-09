@@ -1,5 +1,5 @@
-StaticThings.java:33:26: compiler.err.non-static.cant.be.ref: kindname.variable, this
-StaticThings.java:36:28: compiler.err.non-static.cant.be.ref: kindname.variable, this
-StaticThings.java:52:32: compiler.err.non-static.cant.be.ref: kindname.variable, this
-StaticThings.java:54:37: compiler.err.non-static.cant.be.ref: kindname.variable, this
+StaticThings.java:10:26: compiler.err.non-static.cant.be.ref: kindname.variable, this
+StaticThings.java:13:28: compiler.err.non-static.cant.be.ref: kindname.variable, this
+StaticThings.java:29:32: compiler.err.non-static.cant.be.ref: kindname.variable, this
+StaticThings.java:31:37: compiler.err.non-static.cant.be.ref: kindname.variable, this
 4 errors

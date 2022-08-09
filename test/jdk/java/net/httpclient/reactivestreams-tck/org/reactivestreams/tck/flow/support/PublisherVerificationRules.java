@@ -126,7 +126,7 @@ public interface PublisherVerificationRules {
    * <p>
    * The test is not executed if {@link org.reactivestreams.tck.PublisherVerification#maxElementsFromPublisher()} is less than 10.
    * <p>
-   * Note that this test is probabilistic, that is, may not capture any concurrent invocation in a {code Publisher} implementation.
+   * Note that this test is probabilistic, that is, may not capture any concurrent invocation in a {@code Publisher} implementation.
    * Note also that this test is sensitive to cases when a {@code request()} call in {@code onSubscribe()} triggers an asynchronous
    * call to the other {@code onXXX} methods. In contrast, the test allows synchronous call chain of
    * {@code onSubscribe -> request -> onNext}.

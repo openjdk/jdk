@@ -1,3 +1,4 @@
+
     @Test(dataProvider = "$type$TernaryOpProvider")
     static void [[TEST]]$vectorteststype$(IntFunction<$type$[]> fa, IntFunction<$type$[]> fb, IntFunction<$type$[]> fc) {
 #if[double]
@@ -10,5 +11,5 @@
         final int INVOC_COUNT = count;
 #end[double]
 [[KERNEL]]
-        assertArraysEquals(a, b, c, r, $vectorteststype$::[[TEST]]);
+        assertArraysEquals(r, a, b, c, $vectorteststype$::[[TEST]]);
     }

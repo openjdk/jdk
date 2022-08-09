@@ -30,7 +30,7 @@
 public class Exceptions {
     private static boolean ok = true;
 
-     private static void fail(Throwable ex, String s, Throwable got) {
+    private static void fail(Throwable ex, String s, Throwable got) {
         ok = false;
         System.err.println("expected "
                            + ex.getClass().getName() + ": " + ex.getMessage()
@@ -49,7 +49,6 @@ public class Exceptions {
         try {
             thunk.run();
         } catch (Throwable x) {
-//          x.printStackTrace();
             if (ex.getClass().isAssignableFrom(x.getClass()))
                 t = x;
             else
@@ -94,7 +93,7 @@ public class Exceptions {
 
         System.out.println("StringBuffer.replace(int start, int end, String str)");
         tryCatch("  -1, 2, \" \"",
-                 new StringIndexOutOfBoundsException("start -1, end 2, length 7"),
+                 new StringIndexOutOfBoundsException("Range [-1, 2) out of bounds for length 7"),
                  new Runnable() {
                 public void run() {
                     StringBuffer sb = new StringBuffer("hilbert");
@@ -102,23 +101,24 @@ public class Exceptions {
                 }});
 
         tryCatch("  7, 8, \" \"",
-                 new StringIndexOutOfBoundsException("start 7, end 6, length 6"),
+                 new StringIndexOutOfBoundsException("Range [7, 6) out of bounds for length 6"),
                  new Runnable() {
                 public void run() {
                     StringBuffer sb = new StringBuffer("banach");
                     sb.replace(7, 8, " ");
                 }});
         tryCatch("  2, 1, \" \"",
-                 new StringIndexOutOfBoundsException("start 2, end 1, length 7"),
+                 new StringIndexOutOfBoundsException("Range [2, 1) out of bounds for length 7"),
                  new Runnable() {
                 public void run() {
                     StringBuffer sb = new StringBuffer("riemann");
                     sb.replace(2, 1, " ");
                 }});
 
-        if (!ok)
+        if (!ok) {
             throw new RuntimeException("Some tests FAILED");
-        else
+        } else {
             System.out.println("All tests PASSED");
+        }
     }
 }

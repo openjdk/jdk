@@ -25,6 +25,7 @@
  * @test
  * @bug 4679556
  * @summary Tests for duplication of some kind instances
+ * @run main/othervm -Djava.security.manager=allow Test4679556
  * @author Sergey Malenkov, Mark Davidson, Philip Milne
  */
 

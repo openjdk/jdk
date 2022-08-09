@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2020 SAP SE. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,6 @@
 
 // no precompiled headers
 #include "jvm.h"
-#include "classfile/classLoader.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
@@ -44,11 +42,9 @@
 #include "libodm_aix.hpp"
 #include "loadlib_aix.hpp"
 #include "memory/allocation.inline.hpp"
-#include "memory/filemap.hpp"
 #include "misc_aix.hpp"
 #include "oops/oop.inline.hpp"
 #include "os_aix.inline.hpp"
-#include "os_share_aix.hpp"
 #include "porting_aix.hpp"
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm_misc.hpp"
@@ -59,16 +55,17 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/os.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/perfMemory.hpp"
+#include "runtime/safefetch.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/statSampler.hpp"
-#include "runtime/stubRoutines.hpp"
-#include "runtime/thread.inline.hpp"
 #include "runtime/threadCritical.hpp"
+#include "runtime/threads.hpp"
 #include "runtime/timer.hpp"
 #include "runtime/vm_version.hpp"
 #include "services/attachListener.hpp"
@@ -110,7 +107,6 @@
 #include <sys/types.h>
 #include <sys/utsname.h>
 #include <sys/vminfo.h>
-#include <sys/wait.h>
 
 // Missing prototypes for various system APIs.
 extern "C"
@@ -186,8 +182,6 @@ int       os::Aix::_extshm = -1;
 // local variables
 
 static volatile jlong max_real_time = 0;
-static jlong    initial_time_count = 0;
-static int      clock_tics_per_sec = 100;
 
 // Process break recorded at startup.
 static address g_brk_at_startup = NULL;
@@ -269,18 +263,6 @@ julong os::Aix::available_memory() {
 
 julong os::physical_memory() {
   return Aix::physical_memory();
-}
-
-// Return true if user is running as root.
-
-bool os::have_special_privileges() {
-  static bool init = false;
-  static bool privileges = false;
-  if (!init) {
-    privileges = (getuid() != geteuid()) || (getgid() != getegid());
-    init = true;
-  }
-  return privileges;
 }
 
 // Helper function, emulates disclaim64 using multiple 32bit disclaims
@@ -759,7 +741,7 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
   assert(thread->osthread() == NULL, "caller responsible");
 
   // Allocate the OSThread object.
-  OSThread* osthread = new OSThread(NULL, NULL);
+  OSThread* osthread = new OSThread();
   if (osthread == NULL) {
     return false;
   }
@@ -792,7 +774,7 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
   // JDK-8187028: It was observed that on some configurations (4K backed thread stacks)
   // the real thread stack size may be smaller than the requested stack size, by as much as 64K.
   // This very much looks like a pthread lib error. As a workaround, increase the stack size
-  // by 64K for small thread stacks (arbitrarily choosen to be < 4MB)
+  // by 64K for small thread stacks (arbitrarily chosen to be < 4MB)
   if (stack_size < 4096 * K) {
     stack_size += 64 * K;
   }
@@ -818,19 +800,24 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
     ret = pthread_attr_setguardsize(&attr, 0);
   }
 
+  ResourceMark rm;
   pthread_t tid = 0;
+
   if (ret == 0) {
-    ret = pthread_create(&tid, &attr, (void* (*)(void*)) thread_native_entry, thread);
+    int limit = 3;
+    do {
+      ret = pthread_create(&tid, &attr, (void* (*)(void*)) thread_native_entry, thread);
+    } while (ret == EAGAIN && limit-- > 0);
   }
 
   if (ret == 0) {
     char buf[64];
-    log_info(os, thread)("Thread started (pthread id: " UINTX_FORMAT ", attributes: %s). ",
-      (uintx) tid, os::Posix::describe_pthread_attr(buf, sizeof(buf), &attr));
+    log_info(os, thread)("Thread \"%s\" started (pthread id: " UINTX_FORMAT ", attributes: %s). ",
+                         thread->name(), (uintx) tid, os::Posix::describe_pthread_attr(buf, sizeof(buf), &attr));
   } else {
     char buf[64];
-    log_warning(os, thread)("Failed to start thread - pthread_create failed (%d=%s) for attributes: %s.",
-      ret, os::errno_name(ret), os::Posix::describe_pthread_attr(buf, sizeof(buf), &attr));
+    log_warning(os, thread)("Failed to start thread \"%s\" - pthread_create failed (%d=%s) for attributes: %s.",
+                            thread->name(), ret, os::errno_name(ret), os::Posix::describe_pthread_attr(buf, sizeof(buf), &attr));
     // Log some OS information which might explain why creating the thread failed.
     log_info(os, thread)("Number of threads approx. running in the VM: %d", Threads::number_of_threads());
     LogStream st(Log(os, thread)::info());
@@ -868,7 +855,7 @@ bool os::create_attached_thread(JavaThread* thread) {
 #endif
 
   // Allocate the OSThread object
-  OSThread* osthread = new OSThread(NULL, NULL);
+  OSThread* osthread = new OSThread();
 
   if (osthread == NULL) {
     return false;
@@ -902,8 +889,10 @@ bool os::create_attached_thread(JavaThread* thread) {
   // and save the caller's signal mask
   PosixSignals::hotspot_sigmask(thread);
 
-  log_info(os, thread)("Thread attached (tid: " UINTX_FORMAT ", kernel thread id: " UINTX_FORMAT ").",
-    os::current_thread_id(), (uintx) kernel_thread_id);
+  log_info(os, thread)("Thread attached (tid: " UINTX_FORMAT ", kernel thread  id: " UINTX_FORMAT
+                       ", stack: " PTR_FORMAT " - " PTR_FORMAT " (" SIZE_FORMAT "k) ).",
+                       os::current_thread_id(), (uintx) kernel_thread_id,
+                       p2i(thread->stack_base()), p2i(thread->stack_end()), thread->stack_size());
 
   return true;
 }
@@ -932,22 +921,6 @@ void os::free_thread(OSThread* osthread) {
 ////////////////////////////////////////////////////////////////////////////////
 // time support
 
-// Time since start-up in seconds to a fine granularity.
-// Used by VMSelfDestructTimer and the MemProfiler.
-double os::elapsedTime() {
-  return ((double)os::elapsed_counter()) / os::elapsed_frequency(); // nanosecond resolution
-}
-
-jlong os::elapsed_counter() {
-  return javaTimeNanos() - initial_time_count;
-}
-
-jlong os::elapsed_frequency() {
-  return NANOSECS_PER_SEC; // nanosecond resolution
-}
-
-bool os::supports_vtime() { return true; }
-
 double os::elapsedVTime() {
   struct rusage usage;
   int retval = getrusage(RUSAGE_THREAD, &usage);
@@ -957,21 +930,6 @@ double os::elapsedVTime() {
     // better than nothing, but not much
     return elapsedTime();
   }
-}
-
-jlong os::javaTimeMillis() {
-  timeval time;
-  int status = gettimeofday(&time, NULL);
-  assert(status != -1, "aix error at gettimeofday()");
-  return jlong(time.tv_sec) * 1000 + jlong(time.tv_usec / 1000);
-}
-
-void os::javaTimeSystemUTC(jlong &seconds, jlong &nanos) {
-  timeval time;
-  int status = gettimeofday(&time, NULL);
-  assert(status != -1, "aix error at gettimeofday()");
-  seconds = jlong(time.tv_sec);
-  nanos = jlong(time.tv_usec) * 1000;
 }
 
 // We use mread_real_time here.
@@ -1027,89 +985,6 @@ void os::javaTimeNanos_info(jvmtiTimerInfo *info_ptr) {
   info_ptr->may_skip_backward = false;
   info_ptr->may_skip_forward = false;
   info_ptr->kind = JVMTI_TIMER_ELAPSED;    // elapsed not CPU time
-}
-
-// Return the real, user, and system times in seconds from an
-// arbitrary fixed point in the past.
-bool os::getTimesSecs(double* process_real_time,
-                      double* process_user_time,
-                      double* process_system_time) {
-  struct tms ticks;
-  clock_t real_ticks = times(&ticks);
-
-  if (real_ticks == (clock_t) (-1)) {
-    return false;
-  } else {
-    double ticks_per_second = (double) clock_tics_per_sec;
-    *process_user_time = ((double) ticks.tms_utime) / ticks_per_second;
-    *process_system_time = ((double) ticks.tms_stime) / ticks_per_second;
-    *process_real_time = ((double) real_ticks) / ticks_per_second;
-
-    return true;
-  }
-}
-
-char * os::local_time_string(char *buf, size_t buflen) {
-  struct tm t;
-  time_t long_time;
-  time(&long_time);
-  localtime_r(&long_time, &t);
-  jio_snprintf(buf, buflen, "%d-%02d-%02d %02d:%02d:%02d",
-               t.tm_year + 1900, t.tm_mon + 1, t.tm_mday,
-               t.tm_hour, t.tm_min, t.tm_sec);
-  return buf;
-}
-
-struct tm* os::localtime_pd(const time_t* clock, struct tm* res) {
-  return localtime_r(clock, res);
-}
-
-////////////////////////////////////////////////////////////////////////////////
-// runtime exit support
-
-// Note: os::shutdown() might be called very early during initialization, or
-// called from signal handler. Before adding something to os::shutdown(), make
-// sure it is async-safe and can handle partially initialized VM.
-void os::shutdown() {
-
-  // allow PerfMemory to attempt cleanup of any persistent resources
-  perfMemory_exit();
-
-  // needs to remove object in file system
-  AttachListener::abort();
-
-  // flush buffered output, finish log files
-  ostream_abort();
-
-  // Check for abort hook
-  abort_hook_t abort_hook = Arguments::abort_hook();
-  if (abort_hook != NULL) {
-    abort_hook();
-  }
-}
-
-// Note: os::abort() might be called very early during initialization, or
-// called from signal handler. Before adding something to os::abort(), make
-// sure it is async-safe and can handle partially initialized VM.
-void os::abort(bool dump_core, void* siginfo, const void* context) {
-  os::shutdown();
-  if (dump_core) {
-    ::abort(); // dump core
-  }
-
-  ::exit(1);
-}
-
-// Die immediately, no exit hook, no abort hook, no cleanup.
-// Dump a core file, if possible, for debugging.
-void os::die() {
-  if (TestUnresponsiveErrorHandler && !CreateCoredumpOnCrash) {
-    // For TimeoutInErrorHandlingTest.java, we just kill the VM
-    // and don't take the time to generate a core file.
-    os::signal_raise(SIGKILL);
-  } else {
-    ::abort();
-  }
 }
 
 intx os::current_thread_id() {
@@ -1224,7 +1099,7 @@ void *os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   // RTLD_LAZY is currently not implemented. The dl is loaded immediately with all its dependants.
   void * result= ::dlopen(filename, RTLD_LAZY);
   if (result != NULL) {
-    Events::log(NULL, "Loaded shared library %s", filename);
+    Events::log_dll_message(NULL, "Loaded shared library %s", filename);
     // Reload dll cache. Don't do this in signal handling.
     LoadedLibraries::reload();
     log_info(os)("shared library load of %s was successful", filename);
@@ -1239,19 +1114,10 @@ void *os::dll_load(const char *filename, char *ebuf, int ebuflen) {
       snprintf(ebuf, ebuflen - 1, "%s, LIBPATH=%s, LD_LIBRARY_PATH=%s : %s",
                filename, ::getenv("LIBPATH"), ::getenv("LD_LIBRARY_PATH"), error_report);
     }
-    Events::log(NULL, "Loading shared library %s failed, %s", filename, error_report);
+    Events::log_dll_message(NULL, "Loading shared library %s failed, %s", filename, error_report);
     log_info(os)("shared library load of %s failed, %s", filename, error_report);
   }
   return NULL;
-}
-
-void* os::dll_lookup(void* handle, const char* name) {
-  void* res = dlsym(handle, name);
-  return res;
-}
-
-void* os::get_default_process_handle() {
-  return (void*)::dlopen(NULL, RTLD_LAZY);
 }
 
 void os::print_dll_info(outputStream *st) {
@@ -1267,7 +1133,11 @@ void os::get_summary_os_info(char* buf, size_t buflen) {
 }
 
 int os::get_loaded_modules_info(os::LoadedModulesCallbackFunc callback, void *param) {
-  // Not yet implemented.
+
+  if (!LoadedLibraries::for_each(callback, param)) {
+    return -1;
+  }
+
   return 0;
 }
 
@@ -1524,14 +1394,6 @@ void os::jvm_path(char *buf, jint buflen) {
   saved_jvm_path[sizeof(saved_jvm_path) - 1] = '\0';
 }
 
-void os::print_jni_name_prefix_on(outputStream* st, int args_size) {
-  // no prefix required, not even "_"
-}
-
-void os::print_jni_name_suffix_on(outputStream* st, int args_size) {
-  // no suffix required
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 // Virtual Memory
 
@@ -1642,10 +1504,10 @@ static char* reserve_shmated_memory (size_t bytes, char* requested_addr) {
   // We must prevent anyone from attaching too close to the
   // BRK because that may cause malloc OOM.
   if (requested_addr != NULL && is_close_to_brk((address)requested_addr)) {
-    trcVerbose("Wish address " PTR_FORMAT " is too close to the BRK segment. "
-      "Will attach anywhere.", p2i(requested_addr));
-    // Act like the OS refused to attach there.
-    requested_addr = NULL;
+    trcVerbose("Wish address " PTR_FORMAT " is too close to the BRK segment.", p2i(requested_addr));
+    // Since we treat an attach to the wrong address as an error later anyway,
+    // we return NULL here
+    return NULL;
   }
 
   // For old AS/400's (V5R4 and older) we should not even be here - System V shared memory is not
@@ -1771,10 +1633,10 @@ static char* reserve_mmaped_memory(size_t bytes, char* requested_addr) {
   // We must prevent anyone from attaching too close to the
   // BRK because that may cause malloc OOM.
   if (requested_addr != NULL && is_close_to_brk((address)requested_addr)) {
-    trcVerbose("Wish address " PTR_FORMAT " is too close to the BRK segment. "
-      "Will attach anywhere.", p2i(requested_addr));
-    // Act like the OS refused to attach there.
-    requested_addr = NULL;
+    trcVerbose("Wish address " PTR_FORMAT " is too close to the BRK segment.", p2i(requested_addr));
+    // Since we treat an attach to the wrong address as an error later anyway,
+    // we return NULL here
+    return NULL;
   }
 
   // In 64K mode, we lie and claim the global page size (os::vm_page_size()) is 64K
@@ -1816,6 +1678,11 @@ static char* reserve_mmaped_memory(size_t bytes, char* requested_addr) {
   if (addr == MAP_FAILED) {
     trcVerbose("mmap(" PTR_FORMAT ", " UINTX_FORMAT ", ..) failed (%d)", p2i(requested_addr), size, errno);
     return NULL;
+  } else if (requested_addr != NULL && addr != requested_addr) {
+    trcVerbose("mmap(" PTR_FORMAT ", " UINTX_FORMAT ", ..) succeeded, but at a different address than requested (" PTR_FORMAT "), will unmap",
+               p2i(requested_addr), size, p2i(addr));
+    ::munmap(addr, extra_size);
+    return NULL;
   }
 
   // Handle alignment.
@@ -1831,16 +1698,8 @@ static char* reserve_mmaped_memory(size_t bytes, char* requested_addr) {
   }
   addr = addr_aligned;
 
-  if (addr) {
-    trcVerbose("mmap-allocated " PTR_FORMAT " .. " PTR_FORMAT " (" UINTX_FORMAT " bytes)",
-      p2i(addr), p2i(addr + bytes), bytes);
-  } else {
-    if (requested_addr != NULL) {
-      trcVerbose("failed to mmap-allocate " UINTX_FORMAT " bytes at wish address " PTR_FORMAT ".", bytes, p2i(requested_addr));
-    } else {
-      trcVerbose("failed to mmap-allocate " UINTX_FORMAT " bytes at any address.", bytes);
-    }
-  }
+  trcVerbose("mmap-allocated " PTR_FORMAT " .. " PTR_FORMAT " (" UINTX_FORMAT " bytes)",
+    p2i(addr), p2i(addr + bytes), bytes);
 
   // bookkeeping
   vmembk_add(addr, size, 4*K, VMEM_MAPPED);
@@ -1958,7 +1817,7 @@ void os::pd_commit_memory_or_exit(char* addr, size_t size,
   pd_commit_memory_or_exit(addr, size, exec, mesg);
 }
 
-bool os::pd_uncommit_memory(char* addr, size_t size) {
+bool os::pd_uncommit_memory(char* addr, size_t size, bool exec) {
   assert(is_aligned_to(addr, os::vm_page_size()),
     "addr " PTR_FORMAT " not aligned to vm_page_size (" PTR_FORMAT ")",
     p2i(addr), os::vm_page_size());
@@ -2035,7 +1894,7 @@ char *os::scan_pages(char *start, char* end, page_info* page_expected, page_info
 }
 
 // Reserves and attaches a shared memory segment.
-char* os::pd_reserve_memory(size_t bytes) {
+char* os::pd_reserve_memory(size_t bytes, bool exec) {
   // Always round to os::vm_page_size(), which may be larger than 4K.
   bytes = align_up(bytes, os::vm_page_size());
 
@@ -2057,6 +1916,7 @@ bool os::pd_release_memory(char* addr, size_t size) {
   // Dynamically do different things for mmap/shmat.
   vmembk_t* const vmi = vmembk_find(addr);
   guarantee0(vmi);
+  vmi->assert_is_valid_subrange(addr, size);
 
   // Always round to os::vm_page_size(), which may be larger than 4K.
   size = align_up(size, os::vm_page_size());
@@ -2070,7 +1930,6 @@ bool os::pd_release_memory(char* addr, size_t size) {
     // - If user only wants to release a partial range, uncommit (disclaim) that
     //   range. That way, at least, we do not use memory anymore (bust still page
     //   table space).
-    vmi->assert_is_valid_subrange(addr, size);
     if (addr == vmi->addr && size == vmi->size) {
       rc = release_shmated_memory(addr, size);
       remove_bookkeeping = true;
@@ -2078,12 +1937,30 @@ bool os::pd_release_memory(char* addr, size_t size) {
       rc = uncommit_shmated_memory(addr, size);
     }
   } else {
-    // User may unmap partial regions but region has to be fully contained.
-#ifdef ASSERT
-    vmi->assert_is_valid_subrange(addr, size);
-#endif
+    // In mmap-mode:
+    //  - If the user wants to release the full range, we do that and remove the mapping.
+    //  - If the user wants to release part of the range, we release that part, but need
+    //    to adjust bookkeeping.
+    assert(is_aligned(size, 4 * K), "Sanity");
     rc = release_mmaped_memory(addr, size);
-    remove_bookkeeping = true;
+    if (addr == vmi->addr && size == vmi->size) {
+      remove_bookkeeping = true;
+    } else {
+      if (addr == vmi->addr && size < vmi->size) {
+        // Chopped from head
+        vmi->addr += size;
+        vmi->size -= size;
+      } else if (addr + size == vmi->addr + vmi->size) {
+        // Chopped from tail
+        vmi->size -= size;
+      } else {
+        // releasing a mapping in the middle of the original mapping:
+        // For now we forbid this, since this is an invalid scenario
+        // (the bookkeeping is easy enough to fix if needed but there
+        //  is no use case for it; any occurrence is likely an error.
+        ShouldNotReachHere();
+      }
+    }
   }
 
   // update bookkeeping
@@ -2099,7 +1976,7 @@ static bool checked_mprotect(char* addr, size_t size, int prot) {
   // Little problem here: if SPEC1170 behaviour is off, mprotect() on AIX will
   // not tell me if protection failed when trying to protect an un-protectable range.
   //
-  // This means if the memory was allocated using shmget/shmat, protection wont work
+  // This means if the memory was allocated using shmget/shmat, protection won't work
   // but mprotect will still return 0:
   //
   // See http://publib.boulder.ibm.com/infocenter/pseries/v5r3/index.jsp?topic=/com.ibm.aix.basetechref/doc/basetrf1/mprotect.htm
@@ -2122,36 +1999,33 @@ static bool checked_mprotect(char* addr, size_t size, int prot) {
   //
   if (!os::Aix::xpg_sus_mode()) {
 
-    if (CanUseSafeFetch32()) {
+    const bool read_protected =
+      (SafeFetch32((int*)addr, 0x12345678) == 0x12345678 &&
+       SafeFetch32((int*)addr, 0x76543210) == 0x76543210) ? true : false;
 
-      const bool read_protected =
-        (SafeFetch32((int*)addr, 0x12345678) == 0x12345678 &&
-         SafeFetch32((int*)addr, 0x76543210) == 0x76543210) ? true : false;
+    if (prot & PROT_READ) {
+      rc = !read_protected;
+    } else {
+      rc = read_protected;
+    }
 
-      if (prot & PROT_READ) {
-        rc = !read_protected;
-      } else {
-        rc = read_protected;
-      }
+    if (!rc) {
+      if (os::Aix::on_pase()) {
+        // There is an issue on older PASE systems where mprotect() will return success but the
+        // memory will not be protected.
+        // This has nothing to do with the problem of using mproect() on SPEC1170 incompatible
+        // machines; we only see it rarely, when using mprotect() to protect the guard page of
+        // a stack. It is an OS error.
+        //
+        // A valid strategy is just to try again. This usually works. :-/
 
-      if (!rc) {
-        if (os::Aix::on_pase()) {
-          // There is an issue on older PASE systems where mprotect() will return success but the
-          // memory will not be protected.
-          // This has nothing to do with the problem of using mproect() on SPEC1170 incompatible
-          // machines; we only see it rarely, when using mprotect() to protect the guard page of
-          // a stack. It is an OS error.
-          //
-          // A valid strategy is just to try again. This usually works. :-/
-
-          ::usleep(1000);
-          Events::log(NULL, "Protecting memory [" INTPTR_FORMAT "," INTPTR_FORMAT "] with protection modes %x", p2i(addr), p2i(addr+size), prot);
-          if (::mprotect(addr, size, prot) == 0) {
-            const bool read_protected_2 =
-              (SafeFetch32((int*)addr, 0x12345678) == 0x12345678 &&
-              SafeFetch32((int*)addr, 0x76543210) == 0x76543210) ? true : false;
-            rc = true;
-          }
+        ::usleep(1000);
+        Events::log(NULL, "Protecting memory [" INTPTR_FORMAT "," INTPTR_FORMAT "] with protection modes %x", p2i(addr), p2i(addr+size), prot);
+        if (::mprotect(addr, size, prot) == 0) {
+          const bool read_protected_2 =
+            (SafeFetch32((int*)addr, 0x12345678) == 0x12345678 &&
+            SafeFetch32((int*)addr, 0x76543210) == 0x76543210) ? true : false;
+          rc = true;
         }
       }
     }
@@ -2194,7 +2068,7 @@ void os::large_page_init() {
   return; // Nothing to do. See query_multipage_support and friends.
 }
 
-char* os::pd_reserve_memory_special(size_t bytes, size_t alignment, char* req_addr, bool exec) {
+char* os::pd_reserve_memory_special(size_t bytes, size_t alignment, size_t page_size, char* req_addr, bool exec) {
   fatal("os::reserve_memory_special should not be called on AIX.");
   return NULL;
 }
@@ -2236,7 +2110,7 @@ char* os::pd_attempt_map_memory_to_file_at(char* requested_addr, size_t bytes, i
 
 // Reserve memory at an arbitrary address, only if that area is
 // available (and not reserved for something else).
-char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes) {
+char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes, bool exec) {
   char* addr = NULL;
 
   // Always round to os::vm_page_size(), which may be larger than 4K.
@@ -2255,13 +2129,6 @@ char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes) {
   }
 
   return addr;
-}
-
-// Sleep forever; naked call to OS-specific sleep; use with CAUTION
-void os::infinite_sleep() {
-  while (true) {    // sleep forever ...
-    ::sleep(100);   // ... 100 seconds at a time
-  }
 }
 
 // Used to convert frequent JVM_Yield() to nops
@@ -2441,7 +2308,7 @@ void os::init(void) {
 
   // For now UseLargePages is just ignored.
   FLAG_SET_ERGO(UseLargePages, false);
-  _page_sizes[0] = 0;
+  _page_sizes.add(Aix::_page_size);
 
   // debug trace
   trcVerbose("os::vm_page_size %s", describe_pagesize(os::vm_page_size()));
@@ -2458,18 +2325,12 @@ void os::init(void) {
     libperfstat::perfstat_reset();
   }
 
-  // Now initialze basic system properties. Note that for some of the values we
+  // Now initialize basic system properties. Note that for some of the values we
   // need libperfstat etc.
   os::Aix::initialize_system_info();
 
-  clock_tics_per_sec = sysconf(_SC_CLK_TCK);
-
-  init_random(1234567);
-
   // _main_thread points to the thread that created/loaded the JVM.
   Aix::_main_thread = pthread_self();
-
-  initial_time_count = javaTimeNanos();
 
   os::Posix::init();
 }
@@ -2504,7 +2365,7 @@ jint os::init_2(void) {
   }
 
   // Check and sets minimum stack sizes against command line options
-  if (Posix::set_minimum_stack_sizes() == JNI_ERR) {
+  if (set_minimum_stack_sizes() == JNI_ERR) {
     return JNI_ERR;
   }
 
@@ -2567,11 +2428,6 @@ void os::set_native_thread_name(const char *name) {
   return;
 }
 
-bool os::bind_to_processor(uint processor_id) {
-  // Not yet implemented.
-  return false;
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 // debug support
 
@@ -2597,49 +2453,8 @@ bool os::find(address addr, outputStream* st) {
 // on, e.g., Win32.
 void
 os::os_exception_wrapper(java_call_t f, JavaValue* value, const methodHandle& method,
-                         JavaCallArguments* args, Thread* thread) {
+                         JavaCallArguments* args, JavaThread* thread) {
   f(value, method, args, thread);
-}
-
-void os::print_statistics() {
-}
-
-bool os::message_box(const char* title, const char* message) {
-  int i;
-  fdStream err(defaultStream::error_fd());
-  for (i = 0; i < 78; i++) err.print_raw("=");
-  err.cr();
-  err.print_raw_cr(title);
-  for (i = 0; i < 78; i++) err.print_raw("-");
-  err.cr();
-  err.print_raw_cr(message);
-  for (i = 0; i < 78; i++) err.print_raw("=");
-  err.cr();
-
-  char buf[16];
-  // Prevent process from exiting upon "read error" without consuming all CPU
-  while (::read(0, buf, sizeof(buf)) <= 0) { ::sleep(100); }
-
-  return buf[0] == 'y' || buf[0] == 'Y';
-}
-
-// Is a (classpath) directory empty?
-bool os::dir_is_empty(const char* path) {
-  DIR *dir = NULL;
-  struct dirent *ptr;
-
-  dir = opendir(path);
-  if (dir == NULL) return true;
-
-  /* Scan the directory */
-  bool result = true;
-  while (result && (ptr = readdir(dir)) != NULL) {
-    if (strcmp(ptr->d_name, ".") != 0 && strcmp(ptr->d_name, "..") != 0) {
-      result = false;
-    }
-  }
-  closedir(dir);
-  return result;
 }
 
 // This code originates from JDK's sysOpen and open64_w
@@ -2720,9 +2535,7 @@ int os::open(const char *path, int oflag, int mode) {
 // create binary file, rewriting existing file if required
 int os::create_binary_file(const char* path, bool rewrite_existing) {
   int oflags = O_WRONLY | O_CREAT;
-  if (!rewrite_existing) {
-    oflags |= O_EXCL;
-  }
+  oflags |= rewrite_existing ? O_TRUNC : O_EXCL;
   return ::open64(path, oflags, S_IREAD | S_IWRITE);
 }
 
@@ -2734,35 +2547,6 @@ jlong os::current_file_offset(int fd) {
 // move file pointer to the specified offset
 jlong os::seek_to_file_offset(int fd, jlong offset) {
   return (jlong)::lseek64(fd, (off64_t)offset, SEEK_SET);
-}
-
-// This code originates from JDK's sysAvailable
-// from src/solaris/hpi/src/native_threads/src/sys_api_td.c
-
-int os::available(int fd, jlong *bytes) {
-  jlong cur, end;
-  int mode;
-  struct stat64 buf64;
-
-  if (::fstat64(fd, &buf64) >= 0) {
-    mode = buf64.st_mode;
-    if (S_ISCHR(mode) || S_ISFIFO(mode) || S_ISSOCK(mode)) {
-      int n;
-      if (::ioctl(fd, FIONREAD, &n) >= 0) {
-        *bytes = n;
-        return 1;
-      }
-    }
-  }
-  if ((cur = ::lseek64(fd, 0L, SEEK_CUR)) == -1) {
-    return 0;
-  } else if ((end = ::lseek64(fd, 0L, SEEK_END)) == -1) {
-    return 0;
-  } else if (::lseek64(fd, cur, SEEK_SET) == -1) {
-    return 0;
-  }
-  *bytes = end - cur;
-  return 1;
 }
 
 // Map a block of memory.
@@ -2967,26 +2751,6 @@ int os::loadavg(double values[], int nelem) {
   }
 }
 
-void os::pause() {
-  char filename[MAX_PATH];
-  if (PauseAtStartupFile && PauseAtStartupFile[0]) {
-    jio_snprintf(filename, MAX_PATH, "%s", PauseAtStartupFile);
-  } else {
-    jio_snprintf(filename, MAX_PATH, "./vm.paused.%d", current_process_id());
-  }
-
-  int fd = ::open(filename, O_WRONLY | O_CREAT | O_TRUNC, 0666);
-  if (fd != -1) {
-    struct stat buf;
-    ::close(fd);
-    while (::stat(filename, &buf) == 0) {
-      (void)::poll(NULL, 0, 100);
-    }
-  } else {
-    trcVerbose("Could not open pause file '%s', continuing immediately.", filename);
-  }
-}
-
 bool os::is_primordial_thread(void) {
   if (pthread_self() == (pthread_t)1) {
     return true;
@@ -3057,7 +2821,7 @@ void os::Aix::scan_environment() {
   char* p;
   int rc;
 
-  // Warn explicity if EXTSHM=ON is used. That switch changes how
+  // Warn explicitly if EXTSHM=ON is used. That switch changes how
   // System V shared memory behaves. One effect is that page size of
   // shared memory cannot be change dynamically, effectivly preventing
   // large pages from working.
@@ -3169,64 +2933,6 @@ size_t os::current_stack_size() {
   return s;
 }
 
-extern char** environ;
-
-// Run the specified command in a separate process. Return its exit value,
-// or -1 on failure (e.g. can't fork a new process).
-// Unlike system(), this function can be called from signal handler. It
-// doesn't block SIGINT et al.
-int os::fork_and_exec(char* cmd, bool use_vfork_if_available) {
-  char* argv[4] = { (char*)"sh", (char*)"-c", cmd, NULL};
-
-  pid_t pid = fork();
-
-  if (pid < 0) {
-    // fork failed
-    return -1;
-
-  } else if (pid == 0) {
-    // child process
-
-    // Try to be consistent with system(), which uses "/usr/bin/sh" on AIX.
-    execve("/usr/bin/sh", argv, environ);
-
-    // execve failed
-    _exit(-1);
-
-  } else {
-    // copied from J2SE ..._waitForProcessExit() in UNIXProcess_md.c; we don't
-    // care about the actual exit code, for now.
-
-    int status;
-
-    // Wait for the child process to exit. This returns immediately if
-    // the child has already exited. */
-    while (waitpid(pid, &status, 0) < 0) {
-      switch (errno) {
-        case ECHILD: return 0;
-        case EINTR: break;
-        default: return -1;
-      }
-    }
-
-    if (WIFEXITED(status)) {
-      // The child exited normally; get its exit code.
-      return WEXITSTATUS(status);
-    } else if (WIFSIGNALED(status)) {
-      // The child exited because of a signal.
-      // The best value to return is 0x80 + signal number,
-      // because that is what all Unix shells do, and because
-      // it allows callers to distinguish between process exit and
-      // process death by signal.
-      return 0x80 + WTERMSIG(status);
-    } else {
-      // Unknown exit code; pass it through.
-      return status;
-    }
-  }
-  return -1;
-}
-
 // Get the default path to the core file
 // Returns the length of the string
 int os::get_core_path(char* buffer, size_t bufferSize) {
@@ -3242,12 +2948,6 @@ int os::get_core_path(char* buffer, size_t bufferSize) {
 
   return strlen(buffer);
 }
-
-#ifndef PRODUCT
-void TestReserveMemorySpecial_test() {
-  // No tests available for this platform
-}
-#endif
 
 bool os::start_debugging(char *buf, int buflen) {
   int len = (int)strlen(buf);
@@ -3290,3 +2990,5 @@ int os::compare_file_modified_times(const char* file1, const char* file2) {
 bool os::supports_map_sync() {
   return false;
 }
+
+void os::print_memory_mappings(char* addr, size_t bytes, outputStream* st) {}

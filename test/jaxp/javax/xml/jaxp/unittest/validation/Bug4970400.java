@@ -33,7 +33,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 4970400
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true validation.Bug4970400
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow validation.Bug4970400
  * @run testng/othervm validation.Bug4970400
  * @summary Test ValidatorHandler recognizes namespace-prefixes feature.
  */

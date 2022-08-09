@@ -24,6 +24,7 @@
 /*
  * @test
  * @summary Tests <field> element
+ * @run main/othervm -Djava.security.manager=allow TestField
  * @author Sergey Malenkov
  */
 

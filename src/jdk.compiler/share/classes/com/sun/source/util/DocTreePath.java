@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,37 +59,45 @@ public class DocTreePath implements Iterable<DocTree> {
      * @return a path identifying the target node
      */
     public static DocTreePath getPath(DocTreePath path, DocTree target) {
-        Objects.requireNonNull(path); //null check
-        Objects.requireNonNull(target); //null check
+        Objects.requireNonNull(path);
+        Objects.requireNonNull(target);
 
-        class Result extends Error {
-            static final long serialVersionUID = -5942088234594905625L;
-            DocTreePath path;
-            Result(DocTreePath path) {
-                this.path = path;
+        class PathFinder extends DocTreePathScanner<DocTreePath, DocTree> {
+            private DocTreePath result;
+
+            @Override
+            public DocTreePath scan(DocTreePath path, DocTree target) {
+                super.scan(path, target);
+                return result;
             }
-        }
 
-        class PathFinder extends DocTreePathScanner<DocTreePath,DocTree> {
             @Override
             public DocTreePath scan(DocTree tree, DocTree target) {
-                if (tree == target) {
-                    throw new Result(new DocTreePath(getCurrentPath(), target));
+                if (result == null) {
+                    if (tree == target) {
+                        result = new DocTreePath(getCurrentPath(), target);
+                    } else {
+                        super.scan(tree, target);
+                    }
                 }
-                return super.scan(tree, target);
+                return result;
+            }
+
+            @Override
+            public DocTreePath scan(Iterable<? extends DocTree> nodes, DocTree target) {
+                if (nodes != null && result == null) {
+                    for (DocTree node : nodes) {
+                        scan(node, target);
+                        if (result != null) {
+                            break;
+                        }
+                    }
+                }
+                return result;
             }
         }
-
-        if (path.getLeaf() == target) {
-            return path;
-        }
-
-        try {
-            new PathFinder().scan(path, target);
-        } catch (Result result) {
-            return result.path;
-        }
-        return null;
+        return path.getLeaf() == target ? path
+                : new PathFinder().scan(path, target);
     }
 
     /**

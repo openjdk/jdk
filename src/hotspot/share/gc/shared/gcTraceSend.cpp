@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -157,9 +157,9 @@ void OldGCTracer::send_old_gc_event() const {
 static JfrStructCopyFailed to_struct(const CopyFailedInfo& cf_info) {
   JfrStructCopyFailed failed_info;
   failed_info.set_objectCount(cf_info.failed_count());
-  failed_info.set_firstSize(cf_info.first_size());
-  failed_info.set_smallestSize(cf_info.smallest_size());
-  failed_info.set_totalSize(cf_info.total_size());
+  failed_info.set_firstSize(cf_info.first_size() * HeapWordSize);
+  failed_info.set_smallestSize(cf_info.smallest_size() * HeapWordSize);
+  failed_info.set_totalSize(cf_info.total_size() * HeapWordSize);
   return failed_info;
 }
 
@@ -265,13 +265,11 @@ void GCTracer::send_gc_heap_summary_event(GCWhen::Type when, const GCHeapSummary
   heap_summary.accept(&visitor);
 }
 
-static JfrStructMetaspaceSizes to_struct(const MetaspaceSizes& sizes) {
+static JfrStructMetaspaceSizes to_struct(const MetaspaceStats& sizes) {
   JfrStructMetaspaceSizes meta_sizes;
-
   meta_sizes.set_committed(sizes.committed());
   meta_sizes.set_used(sizes.used());
   meta_sizes.set_reserved(sizes.reserved());
-
   return meta_sizes;
 }
 
@@ -281,9 +279,9 @@ void GCTracer::send_meta_space_summary_event(GCWhen::Type when, const MetaspaceS
     e.set_gcId(GCId::current());
     e.set_when((u1) when);
     e.set_gcThreshold(meta_space_summary.capacity_until_GC());
-    e.set_metaspace(to_struct(meta_space_summary.meta_space()));
-    e.set_dataSpace(to_struct(meta_space_summary.data_space()));
-    e.set_classSpace(to_struct(meta_space_summary.class_space()));
+    e.set_metaspace(to_struct(meta_space_summary.stats())); // total stats (class + nonclass)
+    e.set_dataSpace(to_struct(meta_space_summary.stats().non_class_space_stats())); // "dataspace" aka non-class space
+    e.set_classSpace(to_struct(meta_space_summary.stats().class_space_stats()));
     e.commit();
   }
 }
@@ -344,3 +342,48 @@ void GCTracer::send_phase_events(TimePartitions* time_partitions) const {
     phase->accept(&phase_reporter);
   }
 }
+
+#if INCLUDE_JFR
+Ticks GCLockerTracer::_needs_gc_start_timestamp;
+volatile jint GCLockerTracer::_jni_lock_count = 0;
+volatile jint GCLockerTracer::_stall_count = 0;
+
+bool GCLockerTracer::is_started() {
+  return _needs_gc_start_timestamp != Ticks();
+}
+
+void GCLockerTracer::start_gc_locker(const jint jni_lock_count) {
+  assert(SafepointSynchronize::is_at_safepoint(), "sanity");
+  assert(!is_started(), "sanity");
+  assert(_jni_lock_count == 0, "sanity");
+  assert(_stall_count == 0, "sanity");
+  if (EventGCLocker::is_enabled()) {
+    _needs_gc_start_timestamp.stamp();
+    _jni_lock_count = jni_lock_count;
+  }
+}
+
+void GCLockerTracer::inc_stall_count() {
+  if (is_started()) {
+    _stall_count++;
+  }
+}
+
+void GCLockerTracer::report_gc_locker() {
+  if (is_started()) {
+    EventGCLocker event(UNTIMED);
+    if (event.should_commit()) {
+      event.set_starttime(_needs_gc_start_timestamp);
+      event.set_lockCount(_jni_lock_count);
+      event.set_stallCount(_stall_count);
+      event.commit();
+    }
+    // reset
+    _needs_gc_start_timestamp = Ticks();
+    _jni_lock_count = 0;
+    _stall_count = 0;
+
+    assert(!is_started(), "sanity");
+  }
+}
+#endif

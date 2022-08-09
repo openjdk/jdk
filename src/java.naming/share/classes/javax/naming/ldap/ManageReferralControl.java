@@ -39,7 +39,7 @@ package javax.naming.ldap;
  * @since 1.5
  * @author Vincent Ryan
  */
-final public class ManageReferralControl extends BasicControl {
+public final class ManageReferralControl extends BasicControl {
 
     /**
      * The ManageReferral control's assigned object identifier

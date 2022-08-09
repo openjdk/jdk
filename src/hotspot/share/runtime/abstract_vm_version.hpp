@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 #ifndef SHARE_RUNTIME_ABSTRACT_VM_VERSION_HPP
 #define SHARE_RUNTIME_ABSTRACT_VM_VERSION_HPP
 
-#include "memory/allocation.hpp"  // For declaration of class AllStatic
+#include "memory/allStatic.hpp"  // For declaration of class AllStatic
 #include "utilities/globalDefinitions.hpp"
 
 typedef enum {
@@ -166,9 +166,6 @@ class Abstract_VM_Version: AllStatic {
     return _data_cache_line_flush_size != 0;
   }
 
-  // ARCH specific policy for the BiasedLocking
-  static bool use_biased_locking()  { return true; }
-
   // Number of page sizes efficiently supported by the hardware.  Most chips now
   // support two sizes, thus this default implementation.  Processor-specific
   // subclasses should define new versions to hide this one as needed.  Note
@@ -189,6 +186,26 @@ class Abstract_VM_Version: AllStatic {
   constexpr static bool supports_stack_watermark_barrier() { return false; }
 
   static bool print_matching_lines_from_file(const char* filename, outputStream* st, const char* keywords_to_match[]);
+
+ protected:
+  // VM_Version statics
+  static const size_t      CPU_TYPE_DESC_BUF_SIZE = 256;
+  static const size_t      CPU_DETAILED_DESC_BUF_SIZE = 4096;
+
+  static int   _no_of_threads;
+  static int   _no_of_cores;
+  static int   _no_of_sockets;
+  static bool  _initialized;
+  static char  _cpu_name[CPU_TYPE_DESC_BUF_SIZE];
+  static char  _cpu_desc[CPU_DETAILED_DESC_BUF_SIZE];
+
+ public:
+  static int number_of_threads(void);
+  static int number_of_cores(void);
+  static int number_of_sockets(void);
+
+  static const char* cpu_name(void);
+  static const char* cpu_description(void);
 };
 
 #endif // SHARE_RUNTIME_ABSTRACT_VM_VERSION_HPP

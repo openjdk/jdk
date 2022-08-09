@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,21 +30,19 @@ import javax.lang.model.type.*;
 
 /**
  * Represents a method, constructor, or initializer (static or
- * instance) of a class or interface, including annotation type
+ * instance) of a class or interface, including annotation interface
  * elements.
+ * Annotation interface elements are methods restricted to have no
+ * formal parameters, no type parameters, and no {@code throws}
+ * clause, among other restrictions; see JLS {@jls 9.6.1} for details
  *
- * @author Joseph D. Darcy
- * @author Scott Seligman
- * @author Peter von der Ah&eacute;
  * @see ExecutableType
  * @since 1.6
  */
 public interface ExecutableElement extends Element, Parameterizable {
     /**
-     * Returns the {@linkplain ExecutableType executable type} defined
-     * by this executable element.
-     *
-     * @return the executable type defined by this executable element
+     * {@return the {@linkplain ExecutableType executable type} defined
+     * by this executable element}
      *
      * @see ExecutableType
      */
@@ -61,12 +59,10 @@ public interface ExecutableElement extends Element, Parameterizable {
     List<? extends TypeParameterElement> getTypeParameters();
 
     /**
-     * Returns the return type of this executable.
+     * {@return the return type of this executable}
      * Returns a {@link NoType} with kind {@link TypeKind#VOID VOID}
      * if this executable is not a method, or is a method that does not
      * return a value.
-     *
-     * @return the return type of this executable
      */
     TypeMirror getReturnType();
 
@@ -103,20 +99,14 @@ public interface ExecutableElement extends Element, Parameterizable {
     TypeMirror getReceiverType();
 
     /**
-     * Returns {@code true} if this method or constructor accepts a variable
-     * number of arguments and returns {@code false} otherwise.
-     *
-     * @return {@code true} if this method or constructor accepts a variable
-     * number of arguments and {@code false} otherwise
+     * {@return {@code true} if this method or constructor accepts a variable
+     * number of arguments and returns {@code false} otherwise}
      */
     boolean isVarArgs();
 
     /**
-     * Returns {@code true} if this method is a default method and
-     * returns {@code false} otherwise.
-     *
-     * @return {@code true} if this method is a default method and
-     * {@code false} otherwise
+     * {@return {@code true} if this method is a default method and
+     * returns {@code false} otherwise}
      * @since 1.8
      */
     boolean isDefault();
@@ -133,24 +123,27 @@ public interface ExecutableElement extends Element, Parameterizable {
 
     /**
      * Returns the default value if this executable is an annotation
-     * type element.  Returns {@code null} if this method is not an
-     * annotation type element, or if it is an annotation type element
-     * with no default value.
+     * interface element.  Returns {@code null} if this method is not
+     * an annotation interface element, or if it is an annotation
+     * interface element with no default value.
      *
      * @return the default value, or {@code null} if none
      */
     AnnotationValue getDefaultValue();
 
     /**
-     * Returns the simple name of a constructor, method, or
-     * initializer.  For a constructor, the name {@code "<init>"} is
+     * {@return the class or interface defining the executable}
+     */
+    @Override
+    Element getEnclosingElement();
+
+    /**
+     * {@return the simple name of a constructor, method, or
+     * initializer}  For a constructor, the name {@code "<init>"} is
      * returned, for a static initializer, the name {@code "<clinit>"}
      * is returned, and for an anonymous class or instance
      * initializer, an <a href=Name.html#empty_name>empty name</a> is
      * returned.
-     *
-     * @return the simple name of a constructor, method, or
-     * initializer
      */
     @Override
     Name getSimpleName();

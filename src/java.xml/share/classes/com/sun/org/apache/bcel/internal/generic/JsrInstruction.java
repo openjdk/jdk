@@ -74,7 +74,7 @@ public abstract class JsrInstruction extends BranchInstruction implements Uncond
         while (ih != null) {
             ih = ih.getNext();
             if ((ih != null) && (ih.getInstruction() == this)) {
-                throw new RuntimeException("physicalSuccessor() called on a shared JsrInstruction.");
+                throw new IllegalStateException("physicalSuccessor() called on a shared JsrInstruction.");
             }
         }
         // Return the physical successor

@@ -49,19 +49,11 @@ final class StatusCodes {
             return false;
         }
         // Codes below are not allowed to be sent using a WebSocket client API
-        switch (code) {
-            case PROTOCOL_ERROR:
-            case NOT_CONSISTENT:
-            case 1003:
-            case 1009:
-            case 1010:
-            case 1012:  // code sent by servers
-            case 1013:  // code sent by servers
-            case 1014:  // code sent by servers
-                return false;
-            default:
-                return true;
-        }
+        return switch (code) {
+            // 1012, 1013, 1014: codes sent by servers
+            case PROTOCOL_ERROR, NOT_CONSISTENT, 1003, 1009, 1010, 1012, 1013, 1014 -> false;
+            default -> true;
+        };
     }
 
     static boolean isLegalToReceiveFromServer(int code) {
@@ -84,13 +76,9 @@ final class StatusCodes {
         }
         // Codes below cannot appear on the wire. It's always an error either
         // to send a frame with such a code or to receive one.
-        switch (code) {
-            case NO_STATUS_CODE:
-            case CLOSED_ABNORMALLY:
-            case 1015:
-                return false;
-            default:
-                return true;
-        }
+        return switch (code) {
+            case NO_STATUS_CODE, CLOSED_ABNORMALLY, 1015 -> false;
+            default -> true;
+        };
     }
 }

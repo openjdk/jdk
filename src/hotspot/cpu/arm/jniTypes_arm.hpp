@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 #define CPU_ARM_JNITYPES_ARM_HPP
 
 #include "jni.h"
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "oops/oop.hpp"
 
 // This file holds platform-dependent routines used to write primitive jni
@@ -62,9 +62,8 @@ public:
   static inline void put_long(jlong *from, intptr_t *to, int& pos) { put_int2r((jint *) from, to, pos); }
 
   // Oops are stored in native format in one JavaCallArgument slot at *to.
-  static inline void put_obj(oop  from, intptr_t *to)           { *(oop *)(to +   0  ) =  from; }
-  static inline void put_obj(oop  from, intptr_t *to, int& pos) { *(oop *)(to + pos++) =  from; }
-  static inline void put_obj(oop *from, intptr_t *to, int& pos) { *(oop *)(to + pos++) = *from; }
+  static inline void put_obj(const Handle& from_handle, intptr_t *to, int& pos) { *(to + pos++) =  (intptr_t)from_handle.raw_value(); }
+  static inline void put_obj(jobject       from_handle, intptr_t *to, int& pos) { *(to + pos++) =  (intptr_t)from_handle; }
 
   // Floats are stored in native format in one JavaCallArgument slot at *to.
   static inline void put_float(jfloat  from, intptr_t *to)           { *(jfloat *)(to +   0  ) =  from;  }

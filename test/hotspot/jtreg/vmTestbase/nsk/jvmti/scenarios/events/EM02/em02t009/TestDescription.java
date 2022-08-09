@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,20 +34,20 @@
  *     1)
  *     - adds the <can_generate_method_entry_events>,
  *       <can_generate_method_exit_events> capabilities during the OnLoad phase;
- *     - sets callbacks for VM_INIT and choosen events during the OnLoad phase;
+ *     - sets callbacks for VM_INIT and chosen events during the OnLoad phase;
  *     - enables all optional events via SetEventNotificationMode during
  *       the OnLoad phase;
  *     - starts debuggee's method 1000 times;
  *     - expects that METHOD_ENTRY and METHOD_EXIT events are sent 1000 times.
  *     2)
- *     - changes callbacks for choosen event;
+ *     - changes callbacks for chosen event;
  *     - starts debuggee's method 1000 times;
  *     - checks that altered callback works and METHOD_ENTRY and METHOD_EXIT
  *       events will be sent 1000 times..
  *     3)
- *     - sets off callbacks for choosen event;
+ *     - sets off callbacks for chosen event;
  *     - sets callback for VM_DEATH event;
- *     - checks that no choosen events are sent until VMDeath event.
+ *     - checks that no chosen events are sent until VMDeath event.
  * COMMENTS
  *     Modified due to fix of the bug
  *     5010571 TEST_BUG: jvmti tests with VMObjectAlloc callbacks should

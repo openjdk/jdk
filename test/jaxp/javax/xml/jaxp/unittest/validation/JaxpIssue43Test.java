@@ -48,7 +48,7 @@ import org.w3c.dom.NodeList;
  * @test
  * @bug 6631318
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true validation.JaxpIssue43Test
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow validation.JaxpIssue43Test
  * @run testng/othervm validation.JaxpIssue43Test
  * @summary Test creating schema from a DOM fragment with namespace.
  */

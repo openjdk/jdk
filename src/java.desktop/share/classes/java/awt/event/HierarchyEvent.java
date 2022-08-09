@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package java.awt.event;
 import java.awt.AWTEvent;
 import java.awt.Component;
 import java.awt.Container;
+import java.io.Serial;
 
 /**
  * An event which indicates a change to the {@code Component}
@@ -90,9 +91,11 @@ import java.awt.Container;
  * @since       1.3
  */
 public class HierarchyEvent extends AWTEvent {
-    /*
-     * serialVersionUID
+
+    /**
+     * Use serialVersionUID from JDK 1.6 for interoperability.
      */
+    @Serial
     private static final long serialVersionUID = -5337576970038043990L;
 
     /**

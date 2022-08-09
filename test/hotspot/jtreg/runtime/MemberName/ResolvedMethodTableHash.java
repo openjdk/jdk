@@ -48,6 +48,14 @@ public class ResolvedMethodTableHash extends ClassLoader {
         return MethodHandles.publicLookup().findStatic(cls, "m", MethodType.methodType(void.class));
     }
 
+    private MethodHandle generateWithSameName() throws ReflectiveOperationException {
+        byte[] buf = new byte[100];
+        int size = writeClass(buf, "MH$$");
+        // use different classloader instances to load the classes with the same name
+        Class<?> cls = new ResolvedMethodTableHash().defineClass(null, buf, 0, size);
+        return MethodHandles.publicLookup().findStatic(cls, "m", MethodType.methodType(void.class));
+    }
+
     // Produce a class file with the given name and a single method:
     //     public static native void m();
     private int writeClass(byte[] buf, String className) {
@@ -82,7 +90,12 @@ public class ResolvedMethodTableHash extends ClassLoader {
         int count = args.length > 0 ? Integer.parseInt(args[0]) : 200000;
 
         for (int i = 0; i < count; i++) {
-            handles.add(generator.generate("MH$" + i));
+            // prevents metaspace oom
+            if (i % 20 != 0) {
+                handles.add(generator.generate("MH$" + i));
+            } else {
+                handles.add(generator.generateWithSameName());
+            }
             if (i % 1000 == 0) {
                 System.out.println("Generated " + i + " handles");
             }

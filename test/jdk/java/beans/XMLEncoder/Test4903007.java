@@ -25,6 +25,7 @@
  * @test
  * @bug 4903007 6972468
  * @summary Tests encoding of container with boxes and BoxLayout
+ * @run main/othervm -Djava.security.manager=allow Test4903007
  * @author Sergey Malenkov, Mark Davidson
  */
 

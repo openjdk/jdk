@@ -48,7 +48,6 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 import jdk.test.lib.RandomFactory;
-
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -518,7 +518,7 @@ public abstract class AbstractDrbg {
      * assumed to support prediction resistance and always contains
      * full-entropy.
      */
-    private final static EntropySource defaultES =
+    private static final EntropySource defaultES =
             (minE, minLen, maxLen, pr) -> {
         byte[] result = new byte[minLen];
         SeedGenerator.generateSeed(result);
@@ -591,7 +591,7 @@ public abstract class AbstractDrbg {
      * Returns the current configuration as a {@link DrbgParameters.Instantiation}
      * object.
      *
-     * @return the curent configuration
+     * @return the current configuration
      */
     protected SecureRandomParameters engineGetParameters() {
         // Or read from variable.
@@ -729,19 +729,6 @@ public abstract class AbstractDrbg {
     }
 
     // Misc
-
-    /** A handy method returning hexdump string with no colon or new line.
-     *
-     * @param in input byte array
-     * @return the hexdump string
-     */
-    protected static String hex(byte[] in) {
-        StringBuilder sb = new StringBuilder();
-        for (byte b : in) {
-            sb.append(String.format("%02x", b&0xff));
-        }
-        return sb.toString();
-    }
 
     /**
      * Returns the smallest standard strength (112, 128, 192, 256) that is

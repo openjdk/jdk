@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,313 +24,903 @@ package org.openjdk.bench.java.nio;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.Fork;
+import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Scope;
+import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
-
-import java.nio.ByteBuffer;
+import org.openjdk.jmh.annotations.Warmup;
+import java.nio.*;
 import java.util.concurrent.TimeUnit;
+import static java.nio.ByteOrder.*;
 
 /**
- * Benchmark operations on java.nio.Buffer.
+ * Benchmark for memory access operations on java.nio.Buffer ( and its views )
+ *
+ * A large number of variants are covered. The individual benchmarks conform to
+ * the following convention:
+ *   test(Direct|Heap)(Bulk|Loop)(Get|Put)(Byte|Char|Short|Int|Long|Float|Double)(Swap)?(RO)?
+ *
+ * This allows to easily run a subset of particular interest. For example:
+ *   Direct only :- "org.openjdk.bench.java.nio.ByteBuffers.testDirect.*"
+ *   Bulk only   :- "org.openjdk.bench.java.nio.ByteBuffers.test.*Bulk.*"
+ *   Loop Put Swapped Views: -
+ *      test(Direct|Heap)(Loop)(Put)Byte(View)+(Swap)+"
  */
 @BenchmarkMode(Mode.AverageTime)
+@Warmup(iterations = 5, time = 500, timeUnit = TimeUnit.MILLISECONDS)
+@Measurement(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @State(Scope.Thread)
+@Fork(3)
 public class ByteBuffers {
 
-    @Param({"10", "1000", "100000"})
+    static final int CARRIER_BYTE_WIDTH = 1;
+
+    @Param({"16", "1024", "131072"})
     private int size;
 
-    public byte dummyByte;
-    public char dummyChar;
-    public short dummyShort;
-    public int dummyInt;
-    public long dummyLong;
-    public float dummyFloat;
-    public double dummyDouble;
+    public byte byteValue;
+    public char charValue;
+    public short shortValue;
+    public int intValue;
+    public long longValue;
+    public float floatValue;
+    public double doubleValue;
+    public byte[] byteArray;
 
-    // ---------------- BULK GET TESTS
+    public ByteBuffer heapByteBuffer;
+    public ByteBuffer heapByteBufferRO;
+    public ByteBuffer directByteBuffer;
+    public ByteBuffer directByteBufferRO;
+    public ByteBuffer heapByteBufferSwap;
+    public ByteBuffer heapByteBufferSwapRO;
+    public ByteBuffer directByteBufferSwap;
+    public ByteBuffer directByteBufferSwapRO;
 
-    @Benchmark
-    public byte[] testBulkGet() {
-        return innerBufferBulkGet(ByteBuffer.allocate(size));
+    @Setup
+    public void setup() {
+        byteArray = new byte[size / CARRIER_BYTE_WIDTH];
+
+        // explicitly allocated heap carrier buffer
+        heapByteBuffer = ByteBuffer.allocate(size / CARRIER_BYTE_WIDTH);
+        heapByteBufferRO = ByteBuffer.allocate(size / CARRIER_BYTE_WIDTH).asReadOnlyBuffer();
+
+        heapByteBufferSwap     = ByteBuffer.allocate(size / CARRIER_BYTE_WIDTH).order(LITTLE_ENDIAN);
+        heapByteBufferSwapRO   = ByteBuffer.allocate(size / CARRIER_BYTE_WIDTH).order(LITTLE_ENDIAN).asReadOnlyBuffer();
+        directByteBuffer       = ByteBuffer.allocateDirect(size / CARRIER_BYTE_WIDTH);
+        directByteBufferRO     = ByteBuffer.allocateDirect(size / CARRIER_BYTE_WIDTH).asReadOnlyBuffer();
+        directByteBufferSwap   = ByteBuffer.allocateDirect(size / CARRIER_BYTE_WIDTH).order(LITTLE_ENDIAN);
+        directByteBufferSwapRO = ByteBuffer.allocateDirect(size / CARRIER_BYTE_WIDTH).order(LITTLE_ENDIAN).asReadOnlyBuffer();
     }
 
-    @Benchmark
-    public byte[] testDirectBulkGet() {
-        return innerBufferBulkGet(ByteBuffer.allocateDirect(size));
-    }
 
-    // ---------------- BULK PUT TESTS
+    // -- Heap___
 
     @Benchmark
-    public byte[] testBulkPut() {
-        return innerBufferBulkPut(ByteBuffer.allocate(size));
-    }
-
-    @Benchmark
-    public byte[] testDirectBulkPut() {
-        return innerBufferBulkPut(ByteBuffer.allocateDirect(size));
-    }
-
-    // ---------------- SINGLE GET TESTS
-
-    @Benchmark
-    public int testSingleGetByte() {
-        return innerSingleGetByte(ByteBuffer.allocate(1000));
-    }
-
-    @Benchmark
-    public int testSingleGetChar() {
-        return innerSingleGetChar(ByteBuffer.allocate(1000));
-    }
-
-    @Benchmark
-    public int testSingleGetShort() {
-        return innerSingleGetShort(ByteBuffer.allocate(1000));
+    public byte[] testHeapBulkPutByte() {
+        heapByteBuffer.put(0, byteArray);
+        return byteArray;
     }
 
     @Benchmark
-    public int testSingleGetInt() {
-        return innerSingleGetInt(ByteBuffer.allocate(1000));
+    public byte[] testHeapBulkGetByte() {
+        heapByteBuffer.get(0, byteArray);
+        return byteArray;
     }
+
+    // -- Heap_Byte_Swap_RO
 
     @Benchmark
-    public long testSingleGetLong() {
-        return innerSingleGetLong(ByteBuffer.allocate(1000));
-    }
-
-    @Benchmark
-    public float testSingleGetFloat() {
-        return innerSingleGetFloat(ByteBuffer.allocate(1000));
-    }
-
-    @Benchmark
-    public double testSingleGetDouble() {
-        return innerSingleGetDouble(ByteBuffer.allocate(1000));
-    }
-
-    @Benchmark
-    public int testDirectSingleGetByte() {
-        return innerSingleGetByte(ByteBuffer.allocateDirect(1000));
-    }
-
-    @Benchmark
-    public int testDirectSingleGetChar() {
-        return innerSingleGetChar(ByteBuffer.allocateDirect(1000));
-    }
-
-    @Benchmark
-    public int testDirectSingleGetShort() {
-        return innerSingleGetShort(ByteBuffer.allocateDirect(1000));
-    }
-
-    @Benchmark
-    public int testDirectSingleGetInt() {
-        return innerSingleGetInt(ByteBuffer.allocateDirect(1000));
-    }
-
-    @Benchmark
-    public long testDirectSingleGetLong() {
-        return innerSingleGetLong(ByteBuffer.allocateDirect(1000));
-    }
-
-    @Benchmark
-    public float testDirectSingleGetFloat() {
-        return innerSingleGetFloat(ByteBuffer.allocateDirect(1000));
-    }
-
-    @Benchmark
-    public double testDirectSingleGetDouble() {
-        return innerSingleGetDouble(ByteBuffer.allocateDirect(1000));
-    }
-
-    // ---------------- SINGLE PUT TESTS
-
-    @Benchmark
-    public void testSinglePutByte() {
-        innerSinglePutByte(ByteBuffer.allocate(1000));
-    }
-
-    @Benchmark
-    public void testSinglePutChar() {
-        innerSinglePutChar(ByteBuffer.allocate(1000));
-    }
-
-    @Benchmark
-    public void testSinglePutShort() {
-        innerSinglePutShort(ByteBuffer.allocate(1000));
-    }
-
-    @Benchmark
-    public void testSinglePutInt() {
-        innerSinglePutInt(ByteBuffer.allocate(1000));
-    }
-
-    @Benchmark
-    public void testSinglePutLong() {
-        innerSinglePutLong(ByteBuffer.allocate(1000));
-    }
-
-    @Benchmark
-    public void testSinglePutFloat() {
-        innerSinglePutFloat(ByteBuffer.allocate(1000));
-    }
-
-    @Benchmark
-    public void testSinglePutDouble() {
-        innerSinglePutDouble(ByteBuffer.allocate(1000));
-    }
-
-    @Benchmark
-    public void testDirectSinglePutByte() {
-        innerSinglePutByte(ByteBuffer.allocateDirect(1000));
-    }
-
-    @Benchmark
-    public void testDirectSinglePutChar() {
-        innerSinglePutChar(ByteBuffer.allocateDirect(1000));
-    }
-
-    @Benchmark
-    public void testDirectSinglePutShort() {
-        innerSinglePutShort(ByteBuffer.allocateDirect(1000));
-    }
-
-    @Benchmark
-    public void testDirectSinglePutInt() {
-        innerSinglePutInt(ByteBuffer.allocateDirect(1000));
-    }
-
-    @Benchmark
-    public void testDirectSinglePutLong() {
-        innerSinglePutLong(ByteBuffer.allocateDirect(1000));
-    }
-
-    @Benchmark
-    public void testDirectSinglePutFloat() {
-        innerSinglePutFloat(ByteBuffer.allocateDirect(1000));
-    }
-
-    @Benchmark
-    public void testDirectSinglePutDouble() {
-        innerSinglePutDouble(ByteBuffer.allocateDirect(1000));
-    }
-
-    // ---------------- HELPER METHODS
-
-    private byte[] innerBufferBulkGet(ByteBuffer bb) {
-        byte[] dummyByteArray = new byte[bb.capacity()];
-        bb.get(dummyByteArray);
-        bb.flip();
-        return dummyByteArray;
-    }
-
-    private byte[] innerBufferBulkPut(ByteBuffer bb) {
-        byte[] dummyByteArray = new byte[bb.capacity()];
-        bb.put(dummyByteArray);
-        bb.flip();
-        return dummyByteArray;
-    }
-
-    private int innerSingleGetByte(ByteBuffer bb) {
-        int r = 0;
-        for (int i = 0; i < bb.capacity(); i++) {
-            r += bb.get(i);
+    public byte testHeapLoopGetByteSwapRO() {
+        byte r = 0;
+        for (int i = 0; i < heapByteBufferSwapRO.capacity(); i+=1) {
+            r += heapByteBufferSwapRO.get(i);
         }
         return r;
     }
 
-    private int innerSingleGetChar(ByteBuffer bb) {
-        int r = 0;
-        for (int i = 0; i < bb.capacity(); i += 2) {
-            r += bb.getChar(i);
+    // -- Heap_Byte_Swap_
+
+    @Benchmark
+    public void testHeapLoopPutByteSwap() {
+        for (int i = 0; i < heapByteBufferSwap.capacity(); i+=1) {
+            heapByteBufferSwap.put(i, byteValue);
+        }
+    }
+
+    @Benchmark
+    public byte testHeapLoopGetByteSwap() {
+        byte r = 0;
+        for (int i = 0; i < heapByteBufferSwap.capacity(); i+=1) {
+            r += heapByteBufferSwap.get(i);
         }
         return r;
     }
 
-    private int innerSingleGetShort(ByteBuffer bb) {
-        int r = 0;
-        for (int i = 0; i < bb.capacity(); i += 2) {
-            r += bb.getShort(i);
+    // -- Heap_Byte__RO
+
+    @Benchmark
+    public byte testHeapLoopGetByteRO() {
+        byte r = 0;
+        for (int i = 0; i < heapByteBufferRO.capacity(); i+=1) {
+            r += heapByteBufferRO.get(i);
         }
         return r;
     }
 
-    private int innerSingleGetInt(ByteBuffer bb) {
-        int r = 0;
-        for (int i = 0; i < bb.capacity(); i += 4) {
-            r += bb.getInt(i);
+    // -- Heap_Byte__
+
+    @Benchmark
+    public void testHeapLoopPutByte() {
+        for (int i = 0; i < heapByteBuffer.capacity(); i+=1) {
+            heapByteBuffer.put(i, byteValue);
+        }
+    }
+
+    @Benchmark
+    public byte testHeapLoopGetByte() {
+        byte r = 0;
+        for (int i = 0; i < heapByteBuffer.capacity(); i+=1) {
+            r += heapByteBuffer.get(i);
         }
         return r;
     }
 
-    private long innerSingleGetLong(ByteBuffer bb) {
+    // -- Direct_Byte_Swap_RO
+
+    @Benchmark
+    public byte testDirectLoopGetByteSwapRO() {
+        byte r = 0;
+        for (int i = 0; i < directByteBufferSwapRO.capacity(); i+=1) {
+            r += directByteBufferSwapRO.get(i);
+        }
+        return r;
+    }
+
+    // -- Direct_Byte_Swap_
+
+    @Benchmark
+    public void testDirectLoopPutByteSwap() {
+        for (int i = 0; i < directByteBufferSwap.capacity(); i+=1) {
+            directByteBufferSwap.put(i, byteValue);
+        }
+    }
+
+    @Benchmark
+    public byte testDirectLoopGetByteSwap() {
+        byte r = 0;
+        for (int i = 0; i < directByteBufferSwap.capacity(); i+=1) {
+            r += directByteBufferSwap.get(i);
+        }
+        return r;
+    }
+
+    // -- Direct_Byte__RO
+
+    @Benchmark
+    public byte testDirectLoopGetByteRO() {
+        byte r = 0;
+        for (int i = 0; i < directByteBufferRO.capacity(); i+=1) {
+            r += directByteBufferRO.get(i);
+        }
+        return r;
+    }
+
+    // -- Direct_Byte__
+
+    @Benchmark
+    public void testDirectLoopPutByte() {
+        for (int i = 0; i < directByteBuffer.capacity(); i+=1) {
+            directByteBuffer.put(i, byteValue);
+        }
+    }
+
+    @Benchmark
+    public byte testDirectLoopGetByte() {
+        byte r = 0;
+        for (int i = 0; i < directByteBuffer.capacity(); i+=1) {
+            r += directByteBuffer.get(i);
+        }
+        return r;
+    }
+
+    // -- Heap_Char_Swap_RO
+
+    @Benchmark
+    public char testHeapLoopGetCharSwapRO() {
+        char r = 0;
+        for (int i = 0; i < heapByteBufferSwapRO.capacity(); i+=2) {
+            r += heapByteBufferSwapRO.getChar(i);
+        }
+        return r;
+    }
+
+    // -- Heap_Char_Swap_
+
+    @Benchmark
+    public void testHeapLoopPutCharSwap() {
+        for (int i = 0; i < heapByteBufferSwap.capacity(); i+=2) {
+            heapByteBufferSwap.putChar(i, charValue);
+        }
+    }
+
+    @Benchmark
+    public char testHeapLoopGetCharSwap() {
+        char r = 0;
+        for (int i = 0; i < heapByteBufferSwap.capacity(); i+=2) {
+            r += heapByteBufferSwap.getChar(i);
+        }
+        return r;
+    }
+
+    // -- Heap_Char__RO
+
+    @Benchmark
+    public char testHeapLoopGetCharRO() {
+        char r = 0;
+        for (int i = 0; i < heapByteBufferRO.capacity(); i+=2) {
+            r += heapByteBufferRO.getChar(i);
+        }
+        return r;
+    }
+
+    // -- Heap_Char__
+
+    @Benchmark
+    public void testHeapLoopPutChar() {
+        for (int i = 0; i < heapByteBuffer.capacity(); i+=2) {
+            heapByteBuffer.putChar(i, charValue);
+        }
+    }
+
+    @Benchmark
+    public char testHeapLoopGetChar() {
+        char r = 0;
+        for (int i = 0; i < heapByteBuffer.capacity(); i+=2) {
+            r += heapByteBuffer.getChar(i);
+        }
+        return r;
+    }
+
+    // -- Direct_Char_Swap_RO
+
+    @Benchmark
+    public char testDirectLoopGetCharSwapRO() {
+        char r = 0;
+        for (int i = 0; i < directByteBufferSwapRO.capacity(); i+=2) {
+            r += directByteBufferSwapRO.getChar(i);
+        }
+        return r;
+    }
+
+    // -- Direct_Char_Swap_
+
+    @Benchmark
+    public void testDirectLoopPutCharSwap() {
+        for (int i = 0; i < directByteBufferSwap.capacity(); i+=2) {
+            directByteBufferSwap.putChar(i, charValue);
+        }
+    }
+
+    @Benchmark
+    public char testDirectLoopGetCharSwap() {
+        char r = 0;
+        for (int i = 0; i < directByteBufferSwap.capacity(); i+=2) {
+            r += directByteBufferSwap.getChar(i);
+        }
+        return r;
+    }
+
+    // -- Direct_Char__RO
+
+    @Benchmark
+    public char testDirectLoopGetCharRO() {
+        char r = 0;
+        for (int i = 0; i < directByteBufferRO.capacity(); i+=2) {
+            r += directByteBufferRO.getChar(i);
+        }
+        return r;
+    }
+
+    // -- Direct_Char__
+
+    @Benchmark
+    public void testDirectLoopPutChar() {
+        for (int i = 0; i < directByteBuffer.capacity(); i+=2) {
+            directByteBuffer.putChar(i, charValue);
+        }
+    }
+
+    @Benchmark
+    public char testDirectLoopGetChar() {
+        char r = 0;
+        for (int i = 0; i < directByteBuffer.capacity(); i+=2) {
+            r += directByteBuffer.getChar(i);
+        }
+        return r;
+    }
+
+    // -- Heap_Short_Swap_RO
+
+    @Benchmark
+    public short testHeapLoopGetShortSwapRO() {
+        short r = 0;
+        for (int i = 0; i < heapByteBufferSwapRO.capacity(); i+=2) {
+            r += heapByteBufferSwapRO.getShort(i);
+        }
+        return r;
+    }
+
+    // -- Heap_Short_Swap_
+
+    @Benchmark
+    public void testHeapLoopPutShortSwap() {
+        for (int i = 0; i < heapByteBufferSwap.capacity(); i+=2) {
+            heapByteBufferSwap.putShort(i, shortValue);
+        }
+    }
+
+    @Benchmark
+    public short testHeapLoopGetShortSwap() {
+        short r = 0;
+        for (int i = 0; i < heapByteBufferSwap.capacity(); i+=2) {
+            r += heapByteBufferSwap.getShort(i);
+        }
+        return r;
+    }
+
+    // -- Heap_Short__RO
+
+    @Benchmark
+    public short testHeapLoopGetShortRO() {
+        short r = 0;
+        for (int i = 0; i < heapByteBufferRO.capacity(); i+=2) {
+            r += heapByteBufferRO.getShort(i);
+        }
+        return r;
+    }
+
+    // -- Heap_Short__
+
+    @Benchmark
+    public void testHeapLoopPutShort() {
+        for (int i = 0; i < heapByteBuffer.capacity(); i+=2) {
+            heapByteBuffer.putShort(i, shortValue);
+        }
+    }
+
+    @Benchmark
+    public short testHeapLoopGetShort() {
+        short r = 0;
+        for (int i = 0; i < heapByteBuffer.capacity(); i+=2) {
+            r += heapByteBuffer.getShort(i);
+        }
+        return r;
+    }
+
+    // -- Direct_Short_Swap_RO
+
+    @Benchmark
+    public short testDirectLoopGetShortSwapRO() {
+        short r = 0;
+        for (int i = 0; i < directByteBufferSwapRO.capacity(); i+=2) {
+            r += directByteBufferSwapRO.getShort(i);
+        }
+        return r;
+    }
+
+    // -- Direct_Short_Swap_
+
+    @Benchmark
+    public void testDirectLoopPutShortSwap() {
+        for (int i = 0; i < directByteBufferSwap.capacity(); i+=2) {
+            directByteBufferSwap.putShort(i, shortValue);
+        }
+    }
+
+    @Benchmark
+    public short testDirectLoopGetShortSwap() {
+        short r = 0;
+        for (int i = 0; i < directByteBufferSwap.capacity(); i+=2) {
+            r += directByteBufferSwap.getShort(i);
+        }
+        return r;
+    }
+
+    // -- Direct_Short__RO
+
+    @Benchmark
+    public short testDirectLoopGetShortRO() {
+        short r = 0;
+        for (int i = 0; i < directByteBufferRO.capacity(); i+=2) {
+            r += directByteBufferRO.getShort(i);
+        }
+        return r;
+    }
+
+    // -- Direct_Short__
+
+    @Benchmark
+    public void testDirectLoopPutShort() {
+        for (int i = 0; i < directByteBuffer.capacity(); i+=2) {
+            directByteBuffer.putShort(i, shortValue);
+        }
+    }
+
+    @Benchmark
+    public short testDirectLoopGetShort() {
+        short r = 0;
+        for (int i = 0; i < directByteBuffer.capacity(); i+=2) {
+            r += directByteBuffer.getShort(i);
+        }
+        return r;
+    }
+
+    // -- Heap_Int_Swap_RO
+
+    @Benchmark
+    public int testHeapLoopGetIntSwapRO() {
+        int r = 0;
+        for (int i = 0; i < heapByteBufferSwapRO.capacity(); i+=4) {
+            r += heapByteBufferSwapRO.getInt(i);
+        }
+        return r;
+    }
+
+    // -- Heap_Int_Swap_
+
+    @Benchmark
+    public void testHeapLoopPutIntSwap() {
+        for (int i = 0; i < heapByteBufferSwap.capacity(); i+=4) {
+            heapByteBufferSwap.putInt(i, intValue);
+        }
+    }
+
+    @Benchmark
+    public int testHeapLoopGetIntSwap() {
+        int r = 0;
+        for (int i = 0; i < heapByteBufferSwap.capacity(); i+=4) {
+            r += heapByteBufferSwap.getInt(i);
+        }
+        return r;
+    }
+
+    // -- Heap_Int__RO
+
+    @Benchmark
+    public int testHeapLoopGetIntRO() {
+        int r = 0;
+        for (int i = 0; i < heapByteBufferRO.capacity(); i+=4) {
+            r += heapByteBufferRO.getInt(i);
+        }
+        return r;
+    }
+
+    // -- Heap_Int__
+
+    @Benchmark
+    public void testHeapLoopPutInt() {
+        for (int i = 0; i < heapByteBuffer.capacity(); i+=4) {
+            heapByteBuffer.putInt(i, intValue);
+        }
+    }
+
+    @Benchmark
+    public int testHeapLoopGetInt() {
+        int r = 0;
+        for (int i = 0; i < heapByteBuffer.capacity(); i+=4) {
+            r += heapByteBuffer.getInt(i);
+        }
+        return r;
+    }
+
+    // -- Direct_Int_Swap_RO
+
+    @Benchmark
+    public int testDirectLoopGetIntSwapRO() {
+        int r = 0;
+        for (int i = 0; i < directByteBufferSwapRO.capacity(); i+=4) {
+            r += directByteBufferSwapRO.getInt(i);
+        }
+        return r;
+    }
+
+    // -- Direct_Int_Swap_
+
+    @Benchmark
+    public void testDirectLoopPutIntSwap() {
+        for (int i = 0; i < directByteBufferSwap.capacity(); i+=4) {
+            directByteBufferSwap.putInt(i, intValue);
+        }
+    }
+
+    @Benchmark
+    public int testDirectLoopGetIntSwap() {
+        int r = 0;
+        for (int i = 0; i < directByteBufferSwap.capacity(); i+=4) {
+            r += directByteBufferSwap.getInt(i);
+        }
+        return r;
+    }
+
+    // -- Direct_Int__RO
+
+    @Benchmark
+    public int testDirectLoopGetIntRO() {
+        int r = 0;
+        for (int i = 0; i < directByteBufferRO.capacity(); i+=4) {
+            r += directByteBufferRO.getInt(i);
+        }
+        return r;
+    }
+
+    // -- Direct_Int__
+
+    @Benchmark
+    public void testDirectLoopPutInt() {
+        for (int i = 0; i < directByteBuffer.capacity(); i+=4) {
+            directByteBuffer.putInt(i, intValue);
+        }
+    }
+
+    @Benchmark
+    public int testDirectLoopGetInt() {
+        int r = 0;
+        for (int i = 0; i < directByteBuffer.capacity(); i+=4) {
+            r += directByteBuffer.getInt(i);
+        }
+        return r;
+    }
+
+    // -- Heap_Long_Swap_RO
+
+    @Benchmark
+    public long testHeapLoopGetLongSwapRO() {
         long r = 0;
-        for (int i = 0; i < bb.capacity(); i += 8) {
-            r += bb.getLong(i);
+        for (int i = 0; i < heapByteBufferSwapRO.capacity(); i+=8) {
+            r += heapByteBufferSwapRO.getLong(i);
         }
         return r;
     }
 
-    private float innerSingleGetFloat(ByteBuffer bb) {
+    // -- Heap_Long_Swap_
+
+    @Benchmark
+    public void testHeapLoopPutLongSwap() {
+        for (int i = 0; i < heapByteBufferSwap.capacity(); i+=8) {
+            heapByteBufferSwap.putLong(i, longValue);
+        }
+    }
+
+    @Benchmark
+    public long testHeapLoopGetLongSwap() {
+        long r = 0;
+        for (int i = 0; i < heapByteBufferSwap.capacity(); i+=8) {
+            r += heapByteBufferSwap.getLong(i);
+        }
+        return r;
+    }
+
+    // -- Heap_Long__RO
+
+    @Benchmark
+    public long testHeapLoopGetLongRO() {
+        long r = 0;
+        for (int i = 0; i < heapByteBufferRO.capacity(); i+=8) {
+            r += heapByteBufferRO.getLong(i);
+        }
+        return r;
+    }
+
+    // -- Heap_Long__
+
+    @Benchmark
+    public void testHeapLoopPutLong() {
+        for (int i = 0; i < heapByteBuffer.capacity(); i+=8) {
+            heapByteBuffer.putLong(i, longValue);
+        }
+    }
+
+    @Benchmark
+    public long testHeapLoopGetLong() {
+        long r = 0;
+        for (int i = 0; i < heapByteBuffer.capacity(); i+=8) {
+            r += heapByteBuffer.getLong(i);
+        }
+        return r;
+    }
+
+    // -- Direct_Long_Swap_RO
+
+    @Benchmark
+    public long testDirectLoopGetLongSwapRO() {
+        long r = 0;
+        for (int i = 0; i < directByteBufferSwapRO.capacity(); i+=8) {
+            r += directByteBufferSwapRO.getLong(i);
+        }
+        return r;
+    }
+
+    // -- Direct_Long_Swap_
+
+    @Benchmark
+    public void testDirectLoopPutLongSwap() {
+        for (int i = 0; i < directByteBufferSwap.capacity(); i+=8) {
+            directByteBufferSwap.putLong(i, longValue);
+        }
+    }
+
+    @Benchmark
+    public long testDirectLoopGetLongSwap() {
+        long r = 0;
+        for (int i = 0; i < directByteBufferSwap.capacity(); i+=8) {
+            r += directByteBufferSwap.getLong(i);
+        }
+        return r;
+    }
+
+    // -- Direct_Long__RO
+
+    @Benchmark
+    public long testDirectLoopGetLongRO() {
+        long r = 0;
+        for (int i = 0; i < directByteBufferRO.capacity(); i+=8) {
+            r += directByteBufferRO.getLong(i);
+        }
+        return r;
+    }
+
+    // -- Direct_Long__
+
+    @Benchmark
+    public void testDirectLoopPutLong() {
+        for (int i = 0; i < directByteBuffer.capacity(); i+=8) {
+            directByteBuffer.putLong(i, longValue);
+        }
+    }
+
+    @Benchmark
+    public long testDirectLoopGetLong() {
+        long r = 0;
+        for (int i = 0; i < directByteBuffer.capacity(); i+=8) {
+            r += directByteBuffer.getLong(i);
+        }
+        return r;
+    }
+
+    // -- Heap_Float_Swap_RO
+
+    @Benchmark
+    public float testHeapLoopGetFloatSwapRO() {
         float r = 0;
-        for (int i = 0; i < bb.capacity(); i += 4) {
-            r += bb.getFloat(i);
+        for (int i = 0; i < heapByteBufferSwapRO.capacity(); i+=4) {
+            r += heapByteBufferSwapRO.getFloat(i);
         }
         return r;
     }
 
-    private double innerSingleGetDouble(ByteBuffer bb) {
-        double d = 0;
-        for (int i = 0; i < bb.capacity(); i += 8) {
-            d += bb.getDouble(i);
-        }
-        return d;
-    }
+    // -- Heap_Float_Swap_
 
-    private void innerSinglePutByte(ByteBuffer bb) {
-        for (int i = 0; i < bb.capacity(); i++) {
-            bb.put(i, dummyByte);
+    @Benchmark
+    public void testHeapLoopPutFloatSwap() {
+        for (int i = 0; i < heapByteBufferSwap.capacity(); i+=4) {
+            heapByteBufferSwap.putFloat(i, floatValue);
         }
     }
 
-    private void innerSinglePutChar(ByteBuffer bb) {
-        for (int i = 0; i < bb.capacity(); i += 2) {
-            bb.putChar(i, dummyChar);
+    @Benchmark
+    public float testHeapLoopGetFloatSwap() {
+        float r = 0;
+        for (int i = 0; i < heapByteBufferSwap.capacity(); i+=4) {
+            r += heapByteBufferSwap.getFloat(i);
+        }
+        return r;
+    }
+
+    // -- Heap_Float__RO
+
+    @Benchmark
+    public float testHeapLoopGetFloatRO() {
+        float r = 0;
+        for (int i = 0; i < heapByteBufferRO.capacity(); i+=4) {
+            r += heapByteBufferRO.getFloat(i);
+        }
+        return r;
+    }
+
+    // -- Heap_Float__
+
+    @Benchmark
+    public void testHeapLoopPutFloat() {
+        for (int i = 0; i < heapByteBuffer.capacity(); i+=4) {
+            heapByteBuffer.putFloat(i, floatValue);
         }
     }
 
-    private void innerSinglePutShort(ByteBuffer bb) {
-        for (int i = 0; i < bb.capacity(); i += 2) {
-            bb.putShort(i, dummyShort);
+    @Benchmark
+    public float testHeapLoopGetFloat() {
+        float r = 0;
+        for (int i = 0; i < heapByteBuffer.capacity(); i+=4) {
+            r += heapByteBuffer.getFloat(i);
+        }
+        return r;
+    }
+
+    // -- Direct_Float_Swap_RO
+
+    @Benchmark
+    public float testDirectLoopGetFloatSwapRO() {
+        float r = 0;
+        for (int i = 0; i < directByteBufferSwapRO.capacity(); i+=4) {
+            r += directByteBufferSwapRO.getFloat(i);
+        }
+        return r;
+    }
+
+    // -- Direct_Float_Swap_
+
+    @Benchmark
+    public void testDirectLoopPutFloatSwap() {
+        for (int i = 0; i < directByteBufferSwap.capacity(); i+=4) {
+            directByteBufferSwap.putFloat(i, floatValue);
         }
     }
 
-    private void innerSinglePutInt(ByteBuffer bb) {
-        for (int i = 0; i < bb.capacity(); i += 4) {
-            bb.putInt(i, dummyInt);
+    @Benchmark
+    public float testDirectLoopGetFloatSwap() {
+        float r = 0;
+        for (int i = 0; i < directByteBufferSwap.capacity(); i+=4) {
+            r += directByteBufferSwap.getFloat(i);
+        }
+        return r;
+    }
+
+    // -- Direct_Float__RO
+
+    @Benchmark
+    public float testDirectLoopGetFloatRO() {
+        float r = 0;
+        for (int i = 0; i < directByteBufferRO.capacity(); i+=4) {
+            r += directByteBufferRO.getFloat(i);
+        }
+        return r;
+    }
+
+    // -- Direct_Float__
+
+    @Benchmark
+    public void testDirectLoopPutFloat() {
+        for (int i = 0; i < directByteBuffer.capacity(); i+=4) {
+            directByteBuffer.putFloat(i, floatValue);
         }
     }
 
-    private void innerSinglePutLong(ByteBuffer bb) {
-        for (int i = 0; i < bb.capacity(); i += 8) {
-            bb.putLong(i, dummyLong);
+    @Benchmark
+    public float testDirectLoopGetFloat() {
+        float r = 0;
+        for (int i = 0; i < directByteBuffer.capacity(); i+=4) {
+            r += directByteBuffer.getFloat(i);
+        }
+        return r;
+    }
+
+    // -- Heap_Double_Swap_RO
+
+    @Benchmark
+    public double testHeapLoopGetDoubleSwapRO() {
+        double r = 0;
+        for (int i = 0; i < heapByteBufferSwapRO.capacity(); i+=8) {
+            r += heapByteBufferSwapRO.getDouble(i);
+        }
+        return r;
+    }
+
+    // -- Heap_Double_Swap_
+
+    @Benchmark
+    public void testHeapLoopPutDoubleSwap() {
+        for (int i = 0; i < heapByteBufferSwap.capacity(); i+=8) {
+            heapByteBufferSwap.putDouble(i, doubleValue);
         }
     }
 
-    private void innerSinglePutFloat(ByteBuffer bb) {
-        for (int i = 0; i < bb.capacity(); i += 4) {
-            bb.putFloat(i, dummyFloat);
+    @Benchmark
+    public double testHeapLoopGetDoubleSwap() {
+        double r = 0;
+        for (int i = 0; i < heapByteBufferSwap.capacity(); i+=8) {
+            r += heapByteBufferSwap.getDouble(i);
+        }
+        return r;
+    }
+
+    // -- Heap_Double__RO
+
+    @Benchmark
+    public double testHeapLoopGetDoubleRO() {
+        double r = 0;
+        for (int i = 0; i < heapByteBufferRO.capacity(); i+=8) {
+            r += heapByteBufferRO.getDouble(i);
+        }
+        return r;
+    }
+
+    // -- Heap_Double__
+
+    @Benchmark
+    public void testHeapLoopPutDouble() {
+        for (int i = 0; i < heapByteBuffer.capacity(); i+=8) {
+            heapByteBuffer.putDouble(i, doubleValue);
         }
     }
 
-    private void innerSinglePutDouble(ByteBuffer bb) {
-        for (int i = 0; i < bb.capacity(); i += 8) {
-            bb.putDouble(i, dummyDouble);
+    @Benchmark
+    public double testHeapLoopGetDouble() {
+        double r = 0;
+        for (int i = 0; i < heapByteBuffer.capacity(); i+=8) {
+            r += heapByteBuffer.getDouble(i);
         }
+        return r;
+    }
+
+    // -- Direct_Double_Swap_RO
+
+    @Benchmark
+    public double testDirectLoopGetDoubleSwapRO() {
+        double r = 0;
+        for (int i = 0; i < directByteBufferSwapRO.capacity(); i+=8) {
+            r += directByteBufferSwapRO.getDouble(i);
+        }
+        return r;
+    }
+
+    // -- Direct_Double_Swap_
+
+    @Benchmark
+    public void testDirectLoopPutDoubleSwap() {
+        for (int i = 0; i < directByteBufferSwap.capacity(); i+=8) {
+            directByteBufferSwap.putDouble(i, doubleValue);
+        }
+    }
+
+    @Benchmark
+    public double testDirectLoopGetDoubleSwap() {
+        double r = 0;
+        for (int i = 0; i < directByteBufferSwap.capacity(); i+=8) {
+            r += directByteBufferSwap.getDouble(i);
+        }
+        return r;
+    }
+
+    // -- Direct_Double__RO
+
+    @Benchmark
+    public double testDirectLoopGetDoubleRO() {
+        double r = 0;
+        for (int i = 0; i < directByteBufferRO.capacity(); i+=8) {
+            r += directByteBufferRO.getDouble(i);
+        }
+        return r;
+    }
+
+    // -- Direct_Double__
+
+    @Benchmark
+    public void testDirectLoopPutDouble() {
+        for (int i = 0; i < directByteBuffer.capacity(); i+=8) {
+            directByteBuffer.putDouble(i, doubleValue);
+        }
+    }
+
+    @Benchmark
+    public double testDirectLoopGetDouble() {
+        double r = 0;
+        for (int i = 0; i < directByteBuffer.capacity(); i+=8) {
+            r += directByteBuffer.getDouble(i);
+        }
+        return r;
     }
 }

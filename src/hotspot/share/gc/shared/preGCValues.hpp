@@ -26,7 +26,8 @@
 #ifndef SHARE_GC_SHARED_PREGCVALUES_HPP
 #define SHARE_GC_SHARED_PREGCVALUES_HPP
 
-#include "memory/metaspace/metaspaceSizesSnapshot.hpp"
+#include "memory/metaspaceStats.hpp"
+#include "memory/metaspaceUtils.hpp"
 
 // Simple class for storing info about the heap at the start of GC, to be used
 // after GC for comparison/printing.
@@ -47,7 +48,8 @@ public:
         _from_used(from_used),
         _from_capacity(from_capacity),
         _old_gen_used(old_gen_used),
-        _old_gen_capacity(old_gen_capacity) { }
+        _old_gen_capacity(old_gen_capacity),
+        _meta_sizes(MetaspaceUtils::get_combined_statistics()){ }
 
   size_t young_gen_used()     const { return _young_gen_used;     }
   size_t young_gen_capacity() const { return _young_gen_capacity; }
@@ -57,7 +59,7 @@ public:
   size_t from_capacity()      const { return _from_capacity;      }
   size_t old_gen_used()       const { return _old_gen_used;       }
   size_t old_gen_capacity()   const { return _old_gen_capacity;   }
-  const metaspace::MetaspaceSizesSnapshot& metaspace_sizes() const { return _meta_sizes; }
+  const MetaspaceCombinedStats& metaspace_sizes() const { return _meta_sizes; }
 
 private:
   const size_t _young_gen_used;
@@ -68,7 +70,7 @@ private:
   const size_t _from_capacity;
   const size_t _old_gen_used;
   const size_t _old_gen_capacity;
-  const metaspace::MetaspaceSizesSnapshot _meta_sizes;
+  const MetaspaceCombinedStats _meta_sizes;
 };
 
 #endif // SHARE_GC_SHARED_PREGCVALUES_HPP

@@ -46,13 +46,13 @@
 /**
  * hb_ot_name_list_names:
  * @face: font face.
- * @num_entries: (out) (allow-none): number of returned entries.
+ * @num_entries: (out) (optional): number of returned entries.
  *
  * Enumerates all available name IDs and language combinations. Returned
  * array is owned by the @face and should not be modified.  It can be
  * used as long as @face is alive.
  *
- * Returns: (out) (transfer none) (array length=num_entries): Array of available name entries.
+ * Returns: (transfer none) (array length=num_entries): Array of available name entries.
  * Since: 2.1.0
  **/
 const hb_ot_name_entry_t *
@@ -150,13 +150,14 @@ hb_ot_name_get_utf (hb_face_t       *face,
  * @face: font face.
  * @name_id: OpenType name identifier to fetch.
  * @language: language to fetch the name for.
- * @text_size: (inout) (allow-none): input size of @text buffer, and output size of
+ * @text_size: (inout) (optional): input size of @text buffer, and output size of
  *                                   text written to buffer.
  * @text: (out caller-allocates) (array length=text_size): buffer to write fetched name into.
  *
  * Fetches a font name from the OpenType 'name' table.
  * If @language is #HB_LANGUAGE_INVALID, English ("en") is assumed.
- * Returns string in UTF-8 encoding.
+ * Returns string in UTF-8 encoding. A NUL terminator is always written
+ * for convenience, and isn't included in the output @text_size.
  *
  * Returns: full length of the requested string, or 0 if not found.
  * Since: 2.1.0
@@ -177,13 +178,14 @@ hb_ot_name_get_utf8 (hb_face_t       *face,
  * @face: font face.
  * @name_id: OpenType name identifier to fetch.
  * @language: language to fetch the name for.
- * @text_size: (inout) (allow-none): input size of @text buffer, and output size of
+ * @text_size: (inout) (optional): input size of @text buffer, and output size of
  *                                   text written to buffer.
  * @text: (out caller-allocates) (array length=text_size): buffer to write fetched name into.
  *
  * Fetches a font name from the OpenType 'name' table.
  * If @language is #HB_LANGUAGE_INVALID, English ("en") is assumed.
- * Returns string in UTF-16 encoding.
+ * Returns string in UTF-16 encoding. A NUL terminator is always written
+ * for convenience, and isn't included in the output @text_size.
  *
  * Returns: full length of the requested string, or 0 if not found.
  * Since: 2.1.0
@@ -203,13 +205,14 @@ hb_ot_name_get_utf16 (hb_face_t       *face,
  * @face: font face.
  * @name_id: OpenType name identifier to fetch.
  * @language: language to fetch the name for.
- * @text_size: (inout) (allow-none): input size of @text buffer, and output size of
+ * @text_size: (inout) (optional): input size of @text buffer, and output size of
  *                                   text written to buffer.
  * @text: (out caller-allocates) (array length=text_size): buffer to write fetched name into.
  *
  * Fetches a font name from the OpenType 'name' table.
  * If @language is #HB_LANGUAGE_INVALID, English ("en") is assumed.
- * Returns string in UTF-32 encoding.
+ * Returns string in UTF-32 encoding. A NUL terminator is always written
+ * for convenience, and isn't included in the output @text_size.
  *
  * Returns: full length of the requested string, or 0 if not found.
  * Since: 2.1.0

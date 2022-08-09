@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,11 @@ public class TransformerAgent {
         public byte[] transform(ClassLoader loader, String name, Class<?> classBeingRedefined,
                                 ProtectionDomain pd, byte[] buffer) throws IllegalClassFormatException {
             try {
-                log("SimpleTransformer called for: " + name + "@" + incrCounter(name));
+                // Printing cause ClassCircularityError for java/util/concurrent/locks/AbstractQueuedSynchronizer$ExclusiveNode
+                // So don't try to print some system classes
+                if (!name.startsWith("java/")) {
+                    log("SimpleTransformer called for: " + name + "@" + incrCounter(name));
+                }
                 if (!shouldTransform(name))
                     return null;
 
@@ -98,9 +102,9 @@ public class TransformerAgent {
     static Integer incrCounter(String className) {
         Integer i = counterMap.get(className);
         if (i == null) {
-            i = new Integer(1);
+            i = Integer.valueOf(1);
         } else {
-            i = new Integer(i.intValue() + 1);
+            i = Integer.valueOf(i.intValue() + 1);
         }
         counterMap.put(className, i);
         return i;

@@ -118,6 +118,12 @@ class UncommonTrapEvent extends BasicLogEvent {
      */
     public void setCompilation(Compilation compilation) {
         super.setCompilation(compilation);
+
+        if (compilation.getSpecial() != null) {
+          assert compilation.getLevel() == 0 : "Should be 0";
+          return;
+        }
+
         // Attempt to associate a bytecode with with this trap
         CallSite site = compilation.getCall();
         int i = 0;

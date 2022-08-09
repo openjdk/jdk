@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,9 +28,9 @@
  */
 
 import java.security.Principal;
-import java.security.PrivilegedAction;
 import java.util.Collections;
 import java.util.Set;
+import java.util.concurrent.Callable;
 import javax.security.auth.Subject;
 import javax.security.auth.x500.X500Principal;
 
@@ -52,18 +52,18 @@ public class Synch {
             }
         }.start();
         for (int i = 0; i < 1000; i++) {
-            Subject.doAs(
+            Subject.callAs(
                 subject,
-                new PrivilegedAction() {
-                    public Object run() {
-                        return Subject.doAs(
+                new Callable() {
+                    public Object call() {
+                        return Subject.callAs(
                             new Subject(true,
                                         Collections.singleton(
                                             new X500Principal("CN=Claire")),
                                         Collections.EMPTY_SET,
                                         Collections.EMPTY_SET),
-                            new PrivilegedAction() {
-                                public Object run() {
+                            new Callable() {
+                                public Object call() {
                                     return null;
                                 }
                             });

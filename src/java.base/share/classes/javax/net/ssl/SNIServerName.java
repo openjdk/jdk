@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
 package javax.net.ssl;
 
 import java.util.Arrays;
+import java.util.HexFormat;
+import java.util.List;
 
 /**
  * Instances of this class represent a server name in a Server Name
@@ -51,9 +53,6 @@ public abstract class SNIServerName {
 
     // the encoded value of the server name
     private final byte[] encoded;
-
-    // the hex digitals
-    private static final char[] HEXES = "0123456789ABCDEF".toCharArray();
 
     /**
      * Creates an {@code SNIServerName} using the specified name type and
@@ -162,7 +161,7 @@ public abstract class SNIServerName {
      * name, and INTEGER is the integer value of the name type.  The format
      * of "{@literal <name value>}" is "XX:...:XX", where "XX" is the
      * hexadecimal digit representation of a byte value. For example, a
-     * returned value of an pseudo server name may look like:
+     * returned value of a pseudo server name may look like:
      * <pre>
      *     "type=(31), value=77:77:77:2E:65:78:61:6D:70:6C:65:2E:63:6E"
      * </pre>
@@ -192,22 +191,7 @@ public abstract class SNIServerName {
         if (bytes.length == 0) {
             return "(empty)";
         }
-
-        StringBuilder sb = new StringBuilder(bytes.length * 3 - 1);
-        boolean isInitial = true;
-        for (byte b : bytes) {
-            if (isInitial) {
-                isInitial = false;
-            } else {
-                sb.append(':');
-            }
-
-            int k = b & 0xFF;
-            sb.append(HEXES[k >>> 4]);
-            sb.append(HEXES[k & 0xF]);
-        }
-
-        return sb.toString();
+        return HexFormat.ofDelimiter(":").withUpperCase().formatHex(bytes);
     }
 }
 

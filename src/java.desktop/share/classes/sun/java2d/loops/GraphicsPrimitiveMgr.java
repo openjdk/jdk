@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,7 +79,7 @@ public final class GraphicsPrimitiveMgr {
             int id1 = o1.getUniqueID();
             int id2 = o2.getUniqueID();
 
-            return (id1 == id2 ? 0 : (id1 < id2 ? -1 : 1));
+            return Integer.compare(id1, id2);
         }
     };
 
@@ -88,7 +88,7 @@ public final class GraphicsPrimitiveMgr {
             int id1 = ((GraphicsPrimitive) o1).getUniqueID();
             int id2 = ((PrimitiveSpec) o2).uniqueID;
 
-            return (id1 == id2 ? 0 : (id1 < id2 ? -1 : 1));
+            return Integer.compare(id1, id2);
         }
     };
 
@@ -121,6 +121,12 @@ public final class GraphicsPrimitiveMgr {
         primitives = temp;
     }
 
+    /**
+     * Registers the general loop which will be used to produce specific
+     * primitives by the {@link GraphicsPrimitive#makePrimitive} function.
+     *
+     * @param gen the graphics primitive to be registered as the general loop
+     */
     public static synchronized void registerGeneral(GraphicsPrimitive gen) {
         if (generalPrimitives == null) {
             generalPrimitives = new GraphicsPrimitive[] {gen};

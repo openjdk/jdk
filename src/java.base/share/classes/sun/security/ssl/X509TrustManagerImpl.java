@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -156,7 +156,7 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
                 "null or zero-length authentication type");
         }
 
-        Validator v = null;
+        Validator v;
         if (checkClientTrusted) {
             v = clientValidator;
             if (v == null) {
@@ -197,7 +197,7 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
             boolean checkClientTrusted) throws CertificateException {
         Validator v = checkTrustedInit(chain, authType, checkClientTrusted);
 
-        X509Certificate[] trustedChain = null;
+        X509Certificate[] trustedChain;
         if ((socket != null) && socket.isConnected() &&
                                         (socket instanceof SSLSocket)) {
 
@@ -216,10 +216,10 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
                 String[] localSupportedSignAlgs =
                         extSession.getLocalSupportedSignatureAlgorithms();
 
-                constraints = new SSLAlgorithmConstraints(
+                constraints = SSLAlgorithmConstraints.forSocket(
                                 sslSocket, localSupportedSignAlgs, false);
             } else {
-                constraints = new SSLAlgorithmConstraints(sslSocket, false);
+                constraints = SSLAlgorithmConstraints.forSocket(sslSocket, false);
             }
 
             // Grab any stapled OCSP responses for use in validation
@@ -254,7 +254,7 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
             boolean checkClientTrusted) throws CertificateException {
         Validator v = checkTrustedInit(chain, authType, checkClientTrusted);
 
-        X509Certificate[] trustedChain = null;
+        X509Certificate[] trustedChain;
         if (engine != null) {
             SSLSession session = engine.getHandshakeSession();
             if (session == null) {
@@ -270,10 +270,10 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
                 String[] localSupportedSignAlgs =
                         extSession.getLocalSupportedSignatureAlgorithms();
 
-                constraints = new SSLAlgorithmConstraints(
+                constraints = SSLAlgorithmConstraints.forEngine(
                                 engine, localSupportedSignAlgs, false);
             } else {
-                constraints = new SSLAlgorithmConstraints(engine, false);
+                constraints = SSLAlgorithmConstraints.forEngine(engine, false);
             }
 
             // Grab any stapled OCSP responses for use in validation
@@ -370,7 +370,7 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
 
     private static List<SNIServerName> getRequestedServerNames(
             SSLSession session) {
-        if (session != null && (session instanceof ExtendedSSLSession)) {
+        if (session instanceof ExtendedSSLSession) {
             return ((ExtendedSSLSession)session).getRequestedServerNames();
         }
 
@@ -389,7 +389,7 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
      * in server_name extension or the peer host of the connection.  Peer host
      * is not always a reliable fully qualified domain name. The HostName in
      * server_name extension is more reliable than peer host. So we prefer
-     * the identity checking aginst the server_name extension if present, and
+     * the identity checking against the server_name extension if present, and
      * may failove to peer host checking.
      */
     static void checkIdentity(SSLSession session,
@@ -404,6 +404,12 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
 
         boolean identifiable = false;
         String peerHost = session.getPeerHost();
+        // Is it a Fully-Qualified Domain Names (FQDN) ending with a dot?
+        if (peerHost != null && peerHost.endsWith(".")) {
+            // Remove the ending dot, which is not allowed in SNIHostName.
+            peerHost = peerHost.substring(0, peerHost.length() - 1);
+        }
+
         if (!checkClientTrusted) {
             List<SNIServerName> sniNames = getRequestedServerNames(session);
             String sniHostName = getHostNameInSNI(sniNames);

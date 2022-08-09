@@ -25,7 +25,7 @@
 #include "precompiled.hpp"
 #include "memory/universe.hpp"
 #include "oops/oopsHierarchy.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 #ifdef CHECK_UNHANDLED_OOPS
@@ -36,8 +36,7 @@ void oop::register_oop() {
   // This gets expensive, which is why checking unhandled oops is on a switch.
   Thread* t = Thread::current_or_null();
   if (t != NULL && t->is_Java_thread()) {
-     frame fr = os::current_frame();
-     t->unhandled_oops()->register_unhandled_oop(this, fr.pc());
+     t->unhandled_oops()->register_unhandled_oop(this);
   }
 }
 

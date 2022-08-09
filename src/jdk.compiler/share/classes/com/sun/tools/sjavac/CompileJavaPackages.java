@@ -65,7 +65,7 @@ public class CompileJavaPackages implements Transformer {
     // The current limited sharing of data between concurrent JavaCompilers
     // in the server will not give speedups above 3 cores. Thus this limit.
     // We hope to improve this in the future.
-    final static int limitOnConcurrency = 3;
+    static final int limitOnConcurrency = 3;
 
     Options args;
 

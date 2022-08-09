@@ -29,7 +29,7 @@ import java.io.File;
 import java.util.TreeSet;
 
 public class DirDiff implements Runnable {
-    private final static String FILE_SEPARATOR = System.getProperty("file.separator");
+    private static final String FILE_SEPARATOR = System.getProperty("file.separator");
     private static final boolean traversSccsDirs;
     private static final boolean recurseExtraDirs;
     private static final boolean verboseMode;

@@ -25,6 +25,7 @@
 
 package sun.security.ssl;
 
+import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.util.Arrays;
 import javax.net.ssl.SSLProtocolException;
@@ -89,7 +90,7 @@ final class SessionId {
 
         if (obj instanceof SessionId) {
             SessionId that = (SessionId)obj;
-            return Arrays.equals(this.sessionId, that.sessionId);
+            return MessageDigest.isEqual(this.sessionId, that.sessionId);
         }
 
         return false;

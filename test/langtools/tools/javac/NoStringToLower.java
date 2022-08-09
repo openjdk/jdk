@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,14 +63,13 @@ public class NoStringToLower {
                 "javax.tools",
                 "com.sun.source",
                 "com.sun.tools.classfile",
-                "com.sun.tools.doclet",
                 "com.sun.tools.doclint",
                 "com.sun.tools.javac",
-                "com.sun.tools.javadoc",
                 "com.sun.tools.javah",
                 "com.sun.tools.javap",
                 "com.sun.tools.jdeps",
-                "com.sun.tools.sjavac"
+                "com.sun.tools.sjavac",
+                "jdk.javadoc"
             };
             for (String pkg: pkgs) {
                 for (JavaFileObject fo: fm.list(javacLoc,

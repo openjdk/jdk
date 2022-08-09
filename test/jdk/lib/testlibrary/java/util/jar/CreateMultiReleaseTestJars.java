@@ -35,10 +35,11 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.zip.ZipFile;
-import jdk.security.jarsigner.JarSigner;
+import java.io.File;
 
-import jdk.test.lib.util.JarBuilder;
+import jdk.security.jarsigner.JarSigner;
 import jdk.test.lib.compiler.Compiler;
+import jdk.test.lib.util.JarBuilder;
 
 public class CreateMultiReleaseTestJars {
     final private String main =

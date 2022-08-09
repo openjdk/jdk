@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,14 @@
 #ifndef SHARE_GC_G1_G1OOPCLOSURES_INLINE_HPP
 #define SHARE_GC_G1_G1OOPCLOSURES_INLINE_HPP
 
+#include "gc/g1/g1OopClosures.hpp"
+
 #include "gc/g1/g1CollectedHeap.hpp"
 #include "gc/g1/g1ConcurrentMark.inline.hpp"
-#include "gc/g1/g1OopClosures.hpp"
 #include "gc/g1/g1ParScanThreadState.inline.hpp"
 #include "gc/g1/g1RemSet.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
-#include "gc/g1/heapRegionRemSet.hpp"
+#include "gc/g1/heapRegionRemSet.inline.hpp"
 #include "memory/iterator.inline.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
@@ -87,8 +88,8 @@ inline void G1ScanEvacuatedObjClosure::do_oop_work(T* p) {
     prefetch_and_push(p, obj);
   } else if (!HeapRegion::is_in_same_region(p, obj)) {
     handle_non_cset_obj_common(region_attr, p, obj);
-    assert(_scanning_in_young != Uninitialized, "Scan location has not been initialized.");
-    if (_scanning_in_young == True) {
+    assert(_skip_card_enqueue != Uninitialized, "Scan location has not been initialized.");
+    if (_skip_card_enqueue == True) {
       return;
     }
     _par_scan_state->enqueue_card_if_tracked(region_attr, p, obj);
@@ -107,7 +108,7 @@ inline void G1RootRegionScanClosure::do_oop_work(T* p) {
     return;
   }
   oop obj = CompressedOops::decode_not_null(heap_oop);
-  _cm->mark_in_next_bitmap(_worker_id, obj);
+  _cm->mark_in_bitmap(_worker_id, obj);
 }
 
 template <class T>
@@ -121,7 +122,6 @@ inline static void check_obj_during_refinement(T* p, oop const obj) {
 
   HeapRegion* from = g1h->heap_region_containing(p);
 
-  assert(from != NULL, "from region must be non-NULL");
   assert(from->is_in_reserved(p) ||
          (from->is_humongous() &&
           g1h->heap_region_containing(p)->is_humongous() &&
@@ -172,13 +172,14 @@ inline void G1ScanCardClosure::do_oop_work(T* p) {
 
   assert(!_g1h->is_in_cset((HeapWord*)p),
          "Oop originates from " PTR_FORMAT " (region: %u) which is in the collection set.",
-         p2i(p), _g1h->addr_to_region((HeapWord*)p));
+         p2i(p), _g1h->addr_to_region(p));
 
   const G1HeapRegionAttr region_attr = _g1h->region_attr(obj);
   if (region_attr.is_in_cset()) {
     // Since the source is always from outside the collection set, here we implicitly know
     // that this is a cross-region reference too.
     prefetch_and_push(p, obj);
+    _heap_roots_found++;
   } else if (!HeapRegion::is_in_same_region(p, obj)) {
     handle_non_cset_obj_common(region_attr, p, obj);
     _par_scan_state->enqueue_card_if_tracked(region_attr, p, obj);
@@ -208,16 +209,16 @@ void G1ParCopyHelper::mark_object(oop obj) {
   assert(!_g1h->heap_region_containing(obj)->in_collection_set(), "should not mark objects in the CSet");
 
   // We know that the object is not moving so it's safe to read its size.
-  _cm->mark_in_next_bitmap(_worker_id, obj);
+  _cm->mark_in_bitmap(_worker_id, obj);
 }
 
 void G1ParCopyHelper::trim_queue_partially() {
   _par_scan_state->trim_queue_partially();
 }
 
-template <G1Barrier barrier, G1Mark do_mark_object>
+template <G1Barrier barrier, bool should_mark>
 template <class T>
-void G1ParCopyClosure<barrier, do_mark_object>::do_oop_work(T* p) {
+void G1ParCopyClosure<barrier, should_mark>::do_oop_work(T* p) {
   T heap_oop = RawAccess<>::oop_load(p);
 
   if (CompressedOops::is_null(heap_oop)) {
@@ -233,7 +234,7 @@ void G1ParCopyClosure<barrier, do_mark_object>::do_oop_work(T* p) {
     oop forwardee;
     markWord m = obj->mark();
     if (m.is_marked()) {
-      forwardee = (oop) m.decode_pointer();
+      forwardee = cast_to_oop(m.decode_pointer());
     } else {
       forwardee = _par_scan_state->copy_to_survivor_space(state, obj, m);
     }
@@ -250,9 +251,10 @@ void G1ParCopyClosure<barrier, do_mark_object>::do_oop_work(T* p) {
       _par_scan_state->remember_root_into_optional_region(p);
     }
 
-    // The object is not in collection set. If we're a root scanning
-    // closure during a concurrent start pause then attempt to mark the object.
-    if (do_mark_object == G1MarkFromRoot) {
+    // The object is not in the collection set. should_mark is true iff the
+    // current closure is applied on strong roots (and weak roots when class
+    // unloading is disabled) in a concurrent mark start pause.
+    if (should_mark) {
       mark_object(obj);
     }
   }
@@ -271,7 +273,9 @@ template <class T> void G1RebuildRemSetClosure::do_oop_work(T* p) {
 
   HeapRegion* to = _g1h->heap_region_containing(obj);
   HeapRegionRemSet* rem_set = to->rem_set();
-  rem_set->add_reference(p, _worker_id);
+  if (rem_set->is_tracked()) {
+    rem_set->add_reference(p, _worker_id);
+  }
 }
 
 #endif // SHARE_GC_G1_G1OOPCLOSURES_INLINE_HPP

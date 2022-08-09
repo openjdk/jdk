@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -123,8 +123,8 @@ class ExceptionHandlerTable {
   HandlerTableEntry* entry_for(int catch_pco, int handler_bci, int scope_depth) const;
 
   // debugging
-  void print_subtable(HandlerTableEntry* t) const;
-  void print() const;
+  void print_subtable(HandlerTableEntry* t, address base = NULL) const;
+  void print(address base = NULL) const;
   void print_subtable_for(int catch_pco) const;
 };
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,10 @@
 
 #include "precompiled.hpp"
 #include "classfile/javaClasses.hpp"
+#include "classfile/vmClasses.hpp"
 #include "memory/universe.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/notificationThread.hpp"
 #include "services/diagnosticArgument.hpp"
@@ -33,54 +35,16 @@
 #include "services/gcNotifier.hpp"
 #include "services/lowMemoryDetector.hpp"
 
-NotificationThread* NotificationThread::_instance = NULL;
-
 void NotificationThread::initialize() {
   EXCEPTION_MARK;
 
   const char* name = "Notification Thread";
-  Handle string = java_lang_String::create_from_str(name, CHECK);
+  Handle thread_oop = JavaThread::create_system_thread_object(name, true /* visible */, CHECK);
 
-  // Initialize thread_oop to put it into the system threadGroup
-  Handle thread_group (THREAD, Universe::system_thread_group());
-  Handle thread_oop = JavaCalls::construct_new_instance(
-                          SystemDictionary::Thread_klass(),
-                          vmSymbols::threadgroup_string_void_signature(),
-                          thread_group,
-                          string,
-                          CHECK);
+   NotificationThread* thread = new NotificationThread(&notification_thread_entry);
+   JavaThread::vm_exit_on_osthread_failure(thread);
 
-  Klass* group = SystemDictionary::ThreadGroup_klass();
-  JavaValue result(T_VOID);
-  JavaCalls::call_special(&result,
-                          thread_group,
-                          group,
-                          vmSymbols::add_method_name(),
-                          vmSymbols::thread_void_signature(),
-                          thread_oop,
-                          THREAD);
-  {
-    MutexLocker mu(THREAD, Threads_lock);
-    NotificationThread* thread =  new NotificationThread(&notification_thread_entry);
-
-    // At this point it may be possible that no osthread was created for the
-    // JavaThread due to lack of memory. We would have to throw an exception
-    // in that case. However, since this must work and we do not allow
-    // exceptions anyway, check and abort if this fails.
-    if (thread == NULL || thread->osthread() == NULL) {
-      vm_exit_during_initialization("java.lang.OutOfMemoryError",
-                                    os::native_thread_creation_failed_msg());
-    }
-
-    java_lang_Thread::set_thread(thread_oop(), thread);
-    java_lang_Thread::set_priority(thread_oop(), NearMaxPriority);
-    java_lang_Thread::set_daemon(thread_oop());
-    thread->set_threadObj(thread_oop());
-    _instance = thread;
-
-    Threads::add(thread);
-    Thread::start(thread);
-  }
+   JavaThread::start_internal_daemon(THREAD, thread, thread_oop, NearMaxPriority);
 }
 
 
@@ -106,8 +70,8 @@ void NotificationThread::notification_thread_entry(JavaThread* jt, TRAPS) {
               (has_dcmd_notification_event = DCmdFactory::has_pending_jmx_notification()) |
               (has_gc_notification_event = GCNotifier::has_event()))
              == 0) {
-        // Wait as a suspend equalent until notified that there is some work to do.
-        ml.wait(0, true);
+        // Wait until notified that there is some work to do.
+        ml.wait(0);
       }
 
     }
@@ -126,4 +90,3 @@ void NotificationThread::notification_thread_entry(JavaThread* jt, TRAPS) {
 
   }
 }
-

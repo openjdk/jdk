@@ -36,7 +36,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 8077931
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true catalog.UrnUnwrappingTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow catalog.UrnUnwrappingTest
  * @run testng/othervm catalog.UrnUnwrappingTest
  * @summary If the passed public identifier is started with "urn:publicid:",
  *          it has to be regarded as URN and normalized. And then the catalog

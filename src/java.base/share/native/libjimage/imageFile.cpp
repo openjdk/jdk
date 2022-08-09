@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -178,8 +178,8 @@ const char* ImageModuleData::package_to_module(const char* package_name) {
     // retrieve package location
     ImageLocation location;
     bool found = _image_file->find_location(path, location);
+    delete[] path;
     if (!found) {
-        delete[] path;
         return NULL;
     }
 
@@ -209,17 +209,6 @@ const char* ImageModuleData::package_to_module(const char* package_name) {
 ImageFileReaderTable::ImageFileReaderTable() : _count(0), _max(_growth) {
     _table = static_cast<ImageFileReader**>(calloc(_max, sizeof(ImageFileReader*)));
     assert(_table != NULL && "allocation failed");
-}
-
-ImageFileReaderTable::~ImageFileReaderTable() {
-    for (u4 i = 0; i < _count; i++) {
-        ImageFileReader* image = _table[i];
-
-        if (image != NULL) {
-            delete image;
-        }
-    }
-    free(_table);
 }
 
 // Add a new image entry to the table.
@@ -328,7 +317,7 @@ void ImageFileReader::close(ImageFileReader *reader) {
     }
 }
 
-// Return an id for the specifed ImageFileReader.
+// Return an id for the specified ImageFileReader.
 u8 ImageFileReader::reader_to_ID(ImageFileReader *reader) {
     // ID is just the cloaked reader address.
     return (u8)reader;
@@ -341,13 +330,13 @@ bool ImageFileReader::id_check(u8 id) {
     return _reader_table.contains((ImageFileReader*)id);
 }
 
-// Return an id for the specifed ImageFileReader.
+// Return an id for the specified ImageFileReader.
 ImageFileReader* ImageFileReader::id_to_reader(u8 id) {
     assert(id_check(id) && "invalid image id");
     return (ImageFileReader*)id;
 }
 
-// Constructor intializes to a closed state.
+// Constructor initializes to a closed state.
 ImageFileReader::ImageFileReader(const char* name, bool big_endian) :
     _module_data(NULL) {
     // Copy the image file name.

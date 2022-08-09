@@ -38,7 +38,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 6976938
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true stream.Bug6976938Test
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow stream.Bug6976938Test
  * @run testng/othervm stream.Bug6976938Test
  * @summary Test StAX parser won't throw StackOverflowError while reading valid XML file, in case the text content of an XML element contains many lines like "&lt; ... &gt;".
  */

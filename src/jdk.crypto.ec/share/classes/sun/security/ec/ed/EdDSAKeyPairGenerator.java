@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package sun.security.ec.ed;
 
-//import java.security.*;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.InvalidParameterException;
@@ -37,6 +36,7 @@ import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.EdECPoint;
 import java.security.spec.NamedParameterSpec;
+import java.util.Arrays;
 
 import sun.security.jca.JCAUtil;
 import sun.security.util.SecurityProviderConstants;
@@ -120,6 +120,8 @@ public class EdDSAKeyPairGenerator extends KeyPairGeneratorSpi {
             );
         } catch (InvalidKeyException ex) {
             throw new ProviderException(ex);
+        } finally {
+            Arrays.fill(privateKey, (byte)0);
         }
     }
 

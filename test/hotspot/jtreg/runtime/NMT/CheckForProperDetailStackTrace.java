@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,7 @@ public class CheckForProperDetailStackTrace {
        to make sure it matches even if the symbol is not unmangled.
     */
     private static String stackTraceDefault =
-        ".*Hashtable.*allocate_new_entry.*\n" +
+        ".*Hashtable.*new_entry.*\n" +
         ".*ModuleEntryTable.*new_entry.*\n" +
         ".*ModuleEntryTable.*locked_create_entry.*\n" +
         ".*Modules.*define_module.*\n";
@@ -71,7 +71,7 @@ public class CheckForProperDetailStackTrace {
        new_entry may be inlined.
     */
     private static String stackTraceAlternate =
-        ".*Hashtable.*allocate_new_entry.*\n" +
+        ".*Hashtable.*new_entry.*\n" +
         ".*ModuleEntryTable.*locked_create_entry.*\n" +
         ".*Modules.*define_module.*\n" +
         ".*JVM_DefineModule.*\n";
@@ -133,7 +133,7 @@ public class CheckForProperDetailStackTrace {
             // It's ok for ARM not to have symbols, because it does not support NMT detail
             // when targeting thumb2. It's also ok for Windows not to have symbols, because
             // they are only available if the symbols file is included with the build.
-            if (Platform.isWindows() || Platform.isARM()) {
+            if (Platform.isWindows() || Platform.isARM() || Platform.isRISCV64()) {
                 return; // we are done
             }
             output.reportDiagnosticSummary();

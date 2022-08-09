@@ -35,7 +35,7 @@ import javax.xml.stream.XMLStreamException;
  * @test
  * @bug 6847819
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true stream.XMLStreamReaderTest.Bug6847819Test
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow stream.XMLStreamReaderTest.Bug6847819Test
  * @run testng/othervm stream.XMLStreamReaderTest.Bug6847819Test
  * @summary Test StAX parser shall throw XMLStreamException for illegal xml declaration.
  */

@@ -67,15 +67,15 @@ public class TestInvalidOopMap extends CodeInstallerTest {
         BytecodePosition pos = new BytecodePosition(null, dummyMethod, 0);
         DebugInfo info = new DebugInfo(pos);
         info.setReferenceMap(refMap);
-        installEmptyCode(new Site[]{new Infopoint(0, info, InfopointReason.SAFEPOINT)}, new Assumption[0], new Comment[0], 16, new DataPatch[0], StackSlot.get(null, 0, true));
+        installEmptyCode(new Site[]{new Infopoint(0, info, InfopointReason.SAFEPOINT)}, new Assumption[0], new Comment[0], 8, new DataPatch[0], StackSlot.get(null, 0, true));
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test(expected = JVMCIError.class)
     public void testMissingReferenceMap() {
         test(null);
     }
 
-    @Test(expected = JVMCIError.class)
+    @Test(expected = ClassCastException.class)
     public void testInvalidReferenceMap() {
         test(new InvalidReferenceMap());
     }

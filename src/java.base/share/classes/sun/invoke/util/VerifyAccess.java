@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ package sun.invoke.util;
 
 import java.lang.reflect.Modifier;
 import static java.lang.reflect.Modifier.*;
-import java.util.Objects;
 import jdk.internal.reflect.Reflection;
 
 /**
@@ -39,6 +38,7 @@ public class VerifyAccess {
     private VerifyAccess() { }  // cannot instantiate
 
     private static final int UNCONDITIONAL_ALLOWED = java.lang.invoke.MethodHandles.Lookup.UNCONDITIONAL;
+    private static final int ORIGINAL_ALLOWED = java.lang.invoke.MethodHandles.Lookup.ORIGINAL;
     private static final int MODULE_ALLOWED = java.lang.invoke.MethodHandles.Lookup.MODULE;
     private static final int PACKAGE_ONLY = 0;
     private static final int PACKAGE_ALLOWED = java.lang.invoke.MethodHandles.Lookup.PACKAGE;
@@ -99,7 +99,7 @@ public class VerifyAccess {
                                              Class<?> prevLookupClass,
                                              int      allowedModes) {
         if (allowedModes == 0)  return false;
-        assert((allowedModes & ~(ALL_ACCESS_MODES|PACKAGE_ALLOWED|MODULE_ALLOWED|UNCONDITIONAL_ALLOWED)) == 0);
+        assert((allowedModes & ~(ALL_ACCESS_MODES|PACKAGE_ALLOWED|MODULE_ALLOWED|UNCONDITIONAL_ALLOWED|ORIGINAL_ALLOWED)) == 0);
         // The symbolic reference class (refc) must always be fully verified.
         if (!isClassAccessible(refc, lookupClass, prevLookupClass, allowedModes)) {
             return false;
@@ -189,7 +189,7 @@ public class VerifyAccess {
                                             Class<?> prevLookupClass,
                                             int allowedModes) {
         if (allowedModes == 0)  return false;
-        assert((allowedModes & ~(ALL_ACCESS_MODES|PACKAGE_ALLOWED|MODULE_ALLOWED|UNCONDITIONAL_ALLOWED)) == 0);
+        assert((allowedModes & ~(ALL_ACCESS_MODES|PACKAGE_ALLOWED|MODULE_ALLOWED|UNCONDITIONAL_ALLOWED|ORIGINAL_ALLOWED)) == 0);
 
         if ((allowedModes & PACKAGE_ALLOWED) != 0 &&
             isSamePackage(lookupClass, refc))
@@ -322,6 +322,7 @@ public class VerifyAccess {
         // memoization.  And the caller never gets to look at the alternate type binding
         // ("res"), whether it exists or not.
         final String name = type.getName();
+        @SuppressWarnings("removal")
         Class<?> res = java.security.AccessController.doPrivileged(
                 new java.security.PrivilegedAction<>() {
                     public Class<?> run() {
@@ -374,7 +375,7 @@ public class VerifyAccess {
             return true;
         if (class1.getClassLoader() != class2.getClassLoader())
             return false;
-        return Objects.equals(class1.getPackageName(), class2.getPackageName());
+        return class1.getPackageName() == class2.getPackageName();
     }
 
     /**

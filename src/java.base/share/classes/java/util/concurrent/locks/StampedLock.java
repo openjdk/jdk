@@ -212,8 +212,8 @@ import jdk.internal.vm.annotation.ReservedStackAccess;
  *     }
  *   }
  *
- *   // Upgrade read lock to write lock
- *   void moveIfAtOrigin(double newX, double newY) {
+ *   // upgrade read lock to write lock
+ *   void moveIfAtOrigin2(double newX, double newY) {
  *     long stamp = sl.readLock();
  *     try {
  *       while (x == 0.0 && y == 0.0) {

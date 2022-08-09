@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,9 +21,14 @@
  * questions.
  */
 
+import java.util.Arrays;
+import java.util.ArrayList;
+
+import jdk.test.lib.Platform;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.cli.*;
+import jdk.test.whitebox.WhiteBox;
 
 /*
  * @test
@@ -31,26 +36,41 @@ import jdk.test.lib.cli.*;
  * @summary Test that various options are deprecated. See deprecated_jvm_flags in arguments.cpp.
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
- * @run driver VMDeprecatedOptions
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI VMDeprecatedOptions
+
  */
 public class VMDeprecatedOptions {
 
+    private final static WhiteBox wb = WhiteBox.getWhiteBox();
     /**
      * each entry is {[0]: option name, [1]: value to set
      * (true/false/n/string)}.
      */
-    public static final String[][] DEPRECATED_OPTIONS = {
-        // deprecated non-alias flags:
-        {"MaxGCMinorPauseMillis",     "1032"},
-        {"MaxRAMFraction",            "8"},
-        {"MinRAMFraction",            "2"},
-        {"InitialRAMFraction",        "64"},
-        {"TLABStats",                 "false"},
-        {"AllowRedefinitionToAddDeleteMethods", "true"},
+    public static final String[][] DEPRECATED_OPTIONS;
+    static {
+        // Use an ArrayList so platform-specific flags can be
+        // optionally added.
+        ArrayList<String[]> deprecated = new ArrayList(
+          Arrays.asList(new String[][] {
+            // deprecated non-alias flags:
+            {"MaxGCMinorPauseMillis",     "1032"},
+            {"MaxRAMFraction",            "8"},
+            {"MinRAMFraction",            "2"},
+            {"InitialRAMFraction",        "64"},
+            {"TLABStats",                 "false"},
+            {"AllowRedefinitionToAddDeleteMethods", "true"},
 
-        // deprecated alias flags (see also aliased_jvm_flags):
-        {"DefaultMaxRAMFraction", "4"},
-        {"CreateMinidumpOnCrash", "false"}
+            // deprecated alias flags (see also aliased_jvm_flags):
+            {"DefaultMaxRAMFraction", "4"},
+            {"CreateMinidumpOnCrash", "false"}
+          }
+        ));
+        if (wb.isJFRIncluded()) {
+            deprecated.add(new String[] {"FlightRecorder", "false"});
+        }
+        DEPRECATED_OPTIONS = deprecated.toArray(new String[][]{});
     };
 
     static String getDeprecationString(String optionName) {

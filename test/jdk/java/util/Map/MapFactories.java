@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,6 @@ import java.util.Iterator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import org.testng.annotations.DataProvider;
@@ -45,8 +44,8 @@ import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertNotEquals;
 import static org.testng.Assert.assertNotSame;
 import static org.testng.Assert.assertSame;
+import static org.testng.Assert.assertThrows;
 import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.fail;
 
 /*
  * @test
@@ -470,7 +469,7 @@ public class MapFactories {
         Map<Integer, String> copy = Map.copyOf(map);
     }
 
-    // Map.entry() tests
+    // Map::entry tests
 
     @Test(expectedExceptions=NullPointerException.class)
     public void entryWithNullKeyDisallowed() {
@@ -483,6 +482,12 @@ public class MapFactories {
     }
 
     @Test
+    public void entrySetValueDisallowed() {
+        var e = Map.entry("a", "b");
+        assertThrows(UnsupportedOperationException.class, () -> e.setValue("x"));
+    }
+
+    @Test
     public void entryBasicTests() {
         Map.Entry<String,String> kvh1 = Map.entry("xyzzy", "plugh");
         Map.Entry<String,String> kvh2 = Map.entry("foobar", "blurfl");
@@ -492,8 +497,54 @@ public class MapFactories {
         assertTrue(sie.equals(kvh1));
         assertFalse(kvh2.equals(sie));
         assertFalse(sie.equals(kvh2));
-        assertEquals(sie.hashCode(), kvh1.hashCode());
-        assertEquals(sie.toString(), kvh1.toString());
+        assertEquals(kvh1.hashCode(), sie.hashCode());
+        assertEquals(kvh1.toString(), sie.toString());
+    }
+
+    // Map.Entry::copyOf tests
+
+    @Test(expectedExceptions=NullPointerException.class)
+    public void entryCopyNullDisallowed() {
+        Map.Entry.copyOf(null);
+    }
+
+    @Test
+    public void entryCopyWithNullKeyDisallowed() {
+        var e = new AbstractMap.SimpleEntry<>(null, "b");
+        assertThrows(NullPointerException.class, () -> Map.Entry.copyOf(e));
+    }
+
+    @Test
+    public void entryCopyWithNullValueDisallowed() {
+        var e = new AbstractMap.SimpleEntry<>("a", null);
+        assertThrows(NullPointerException.class, () -> Map.Entry.copyOf(e));
+    }
+
+    @Test
+    public void entryCopySetValueDisallowed() {
+        var e = new AbstractMap.SimpleEntry<>("a", "b");
+        var c = Map.Entry.copyOf(e);
+        assertThrows(UnsupportedOperationException.class, () -> c.setValue("x"));
+    }
+
+    @Test
+    public void entryCopyBasicTests() {
+        Map.Entry<String,String> orig = new AbstractMap.SimpleImmutableEntry<>("xyzzy", "plugh");
+        Map.Entry<String,String> copy1 = Map.Entry.copyOf(orig);
+        Map.Entry<String,String> copy2 = Map.Entry.copyOf(copy1);
+
+        assertEquals(orig, copy1);
+        assertEquals(copy1, orig);
+        assertEquals(orig, copy2);
+        assertEquals(copy2, orig);
+        assertEquals(copy1, copy2);
+        assertEquals(copy2, copy1);
+
+        assertNotSame(orig, copy1);
+        assertSame(copy1, copy2);
+
+        assertEquals(copy1.hashCode(), orig.hashCode());
+        assertEquals(copy1.toString(), orig.toString());
     }
 
     // compile-time test of wildcards

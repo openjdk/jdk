@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,14 +23,15 @@
  * questions.
  */
 
-
 package sun.print;
+
+import java.io.Serial;
+import java.util.ArrayList;
 
 import javax.print.attribute.EnumSyntax;
 import javax.print.attribute.standard.Media;
 import javax.print.attribute.standard.MediaSize;
 import javax.print.attribute.standard.MediaSizeName;
-import java.util.ArrayList;
 
 class CustomMediaSizeName extends MediaSizeName {
     private static ArrayList<String> customStringTable = new ArrayList<>();
@@ -86,8 +87,9 @@ class CustomMediaSizeName extends MediaSizeName {
     }
 
     /**
-     * Version ID for serialized form.
+     * Use serialVersionUID from JDK 1.5 for interoperability.
      */
+    @Serial
     private static final long serialVersionUID = 7412807582228043717L;
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 #include "precompiled.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/javaThreadStatus.hpp"
-#include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
 #include "code/debugInfoRec.hpp"
@@ -37,29 +37,47 @@
 #include "memory/resourceArea.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/stackChunkOop.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/javaThread.inline.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/objectMonitor.inline.hpp"
+#include "runtime/osThread.hpp"
 #include "runtime/signature.hpp"
+#include "runtime/stackFrameStream.inline.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/synchronizer.hpp"
-#include "runtime/thread.inline.hpp"
 #include "runtime/vframe.inline.hpp"
 #include "runtime/vframeArray.hpp"
 #include "runtime/vframe_hp.hpp"
 
 vframe::vframe(const frame* fr, const RegisterMap* reg_map, JavaThread* thread)
-: _reg_map(reg_map), _thread(thread) {
+: _reg_map(reg_map), _thread(thread),
+  _chunk(Thread::current(), reg_map->stack_chunk()()) {
   assert(fr != NULL, "must have frame");
   _fr = *fr;
 }
 
 vframe::vframe(const frame* fr, JavaThread* thread)
-: _reg_map(thread), _thread(thread) {
+: _reg_map(thread,
+           RegisterMap::UpdateMap::include,
+           RegisterMap::ProcessFrames::include,
+           RegisterMap::WalkContinuation::skip),
+  _thread(thread), _chunk() {
   assert(fr != NULL, "must have frame");
   _fr = *fr;
+  assert(!_reg_map.in_cont(), "");
+}
+
+vframe* vframe::new_vframe(StackFrameStream& fst, JavaThread* thread) {
+  if (fst.current()->is_runtime_frame()) {
+    fst.next();
+  }
+  guarantee(!fst.is_done(), "missing caller");
+  return new_vframe(fst.current(), fst.register_map(), thread);
 }
 
 vframe* vframe::new_vframe(const frame* f, const RegisterMap* reg_map, JavaThread* thread) {
@@ -96,10 +114,15 @@ vframe* vframe::new_vframe(const frame* f, const RegisterMap* reg_map, JavaThrea
 vframe* vframe::sender() const {
   RegisterMap temp_map = *register_map();
   assert(is_top(), "just checking");
+  if (_fr.is_empty()) return NULL;
   if (_fr.is_entry_frame() && _fr.is_first_frame()) return NULL;
   frame s = _fr.real_sender(&temp_map);
   if (s.is_first_frame()) return NULL;
   return vframe::new_vframe(&s, &temp_map, thread());
+}
+
+bool vframe::is_vthread_entry() const {
+  return _fr.is_first_vthread_frame(register_map()->thread());
 }
 
 vframe* vframe::top() const {
@@ -112,7 +135,9 @@ vframe* vframe::top() const {
 javaVFrame* vframe::java_sender() const {
   vframe* f = sender();
   while (f != NULL) {
-    if (f->is_java_frame()) return javaVFrame::cast(f);
+    if (f->is_vthread_entry()) break;
+    if (f->is_java_frame() && !javaVFrame::cast(f)->method()->is_continuation_enter_intrinsic())
+      return javaVFrame::cast(f);
     f = f->sender();
   }
   return NULL;
@@ -137,8 +162,8 @@ GrowableArray<MonitorInfo*>* javaVFrame::locked_monitors() {
   if (waiting_monitor == NULL) {
     pending_monitor = thread()->current_pending_monitor();
   }
-  oop pending_obj = (pending_monitor != NULL ? (oop) pending_monitor->object() : (oop) NULL);
-  oop waiting_obj = (waiting_monitor != NULL ? (oop) waiting_monitor->object() : (oop) NULL);
+  oop pending_obj = (pending_monitor != NULL ? pending_monitor->object() : (oop) NULL);
+  oop waiting_obj = (waiting_monitor != NULL ? waiting_monitor->object() : (oop) NULL);
 
   for (int index = (mons->length()-1); index >= 0; index--) {
     MonitorInfo* monitor = mons->at(index);
@@ -160,7 +185,7 @@ GrowableArray<MonitorInfo*>* javaVFrame::locked_monitors() {
 void javaVFrame::print_locked_object_class_name(outputStream* st, Handle obj, const char* lock_state) {
   if (obj.not_null()) {
     st->print("\t- %s <" INTPTR_FORMAT "> ", lock_state, p2i(obj()));
-    if (obj->klass() == SystemDictionary::Class_klass()) {
+    if (obj->klass() == vmClasses::Class_klass()) {
       st->print_cr("(a java.lang.Class for %s)", java_lang_Class::as_external_name(obj()));
     } else {
       Klass* k = obj->klass();
@@ -170,9 +195,9 @@ void javaVFrame::print_locked_object_class_name(outputStream* st, Handle obj, co
 }
 
 void javaVFrame::print_lock_info_on(outputStream* st, int frame_count) {
-  Thread* THREAD = Thread::current();
-  ResourceMark rm(THREAD);
-  HandleMark hm(THREAD);
+  Thread* current = Thread::current();
+  ResourceMark rm(current);
+  HandleMark hm(current);
 
   // If this is the first frame and it is java.lang.Object.wait(...)
   // then print out the receiver. Locals are not always available,
@@ -205,9 +230,8 @@ void javaVFrame::print_lock_info_on(outputStream* st, int frame_count) {
       Klass* k = obj->klass();
       st->print_cr("\t- %s <" INTPTR_FORMAT "> (a %s)", "parking to wait for ", p2i(obj), k->external_name());
     }
-    else if (thread()->osthread()->get_state() == OBJECT_WAIT) {
-      // We are waiting on an Object monitor but Object.wait() isn't the
-      // top-frame, so we should be waiting on a Class initialization monitor.
+    else if (thread()->osthread()->get_state() == CONDVAR_WAIT) {
+      // We are waiting on the native class initialization monitor.
       InstanceKlass* k = thread()->class_to_be_initialized();
       if (k != NULL) {
         st->print_cr("\t- waiting on the Class initialization monitor for %s", k->external_name());
@@ -225,9 +249,9 @@ void javaVFrame::print_lock_info_on(outputStream* st, int frame_count) {
       if (monitor->eliminated() && is_compiled_frame()) { // Eliminated in compiled code
         if (monitor->owner_is_scalar_replaced()) {
           Klass* k = java_lang_Class::as_Klass(monitor->owner_klass());
-          st->print("\t- eliminated <owner is scalar replaced> (a %s)", k->external_name());
+          st->print_cr("\t- eliminated <owner is scalar replaced> (a %s)", k->external_name());
         } else {
-          Handle obj(THREAD, monitor->owner());
+          Handle obj(current, monitor->owner());
           if (obj() != NULL) {
             print_locked_object_class_name(st, obj, "eliminated");
           }
@@ -256,7 +280,7 @@ void javaVFrame::print_lock_info_on(outputStream* st, int frame_count) {
             lock_state = "waiting to lock";
           }
         }
-        print_locked_object_class_name(st, Handle(THREAD, monitor->owner()), lock_state);
+        print_locked_object_class_name(st, Handle(current, monitor->owner()), lock_state);
 
         found_first_monitor = true;
       }
@@ -267,14 +291,16 @@ void javaVFrame::print_lock_info_on(outputStream* st, int frame_count) {
 // ------------- interpretedVFrame --------------
 
 u_char* interpretedVFrame::bcp() const {
-  return fr().interpreter_frame_bcp();
+  return stack_chunk() == NULL ? fr().interpreter_frame_bcp() : stack_chunk()->interpreter_frame_bcp(fr());
 }
 
 void interpretedVFrame::set_bcp(u_char* bcp) {
+  assert(stack_chunk() == NULL, "Not supported for heap frames"); // unsupported for now because seems to be unused
   fr().interpreter_frame_set_bcp(bcp);
 }
 
 intptr_t* interpretedVFrame::locals_addr_at(int offset) const {
+  assert(stack_chunk() == NULL, "Not supported for heap frames"); // unsupported for now because seems to be unused
   assert(fr().is_interpreted_frame(), "frame should be an interpreted frame");
   return fr().interpreter_frame_local_at(offset);
 }
@@ -282,10 +308,12 @@ intptr_t* interpretedVFrame::locals_addr_at(int offset) const {
 
 GrowableArray<MonitorInfo*>* interpretedVFrame::monitors() const {
   GrowableArray<MonitorInfo*>* result = new GrowableArray<MonitorInfo*>(5);
-  for (BasicObjectLock* current = (fr().previous_monitor_in_interpreter_frame(fr().interpreter_frame_monitor_begin()));
-       current >= fr().interpreter_frame_monitor_end();
-       current = fr().previous_monitor_in_interpreter_frame(current)) {
-    result->push(new MonitorInfo(current->obj(), current->lock(), false, false));
+  if (stack_chunk() == NULL) { // no monitors in continuations
+    for (BasicObjectLock* current = (fr().previous_monitor_in_interpreter_frame(fr().interpreter_frame_monitor_begin()));
+        current >= fr().interpreter_frame_monitor_end();
+        current = fr().previous_monitor_in_interpreter_frame(current)) {
+      result->push(new MonitorInfo(current->obj(), current->lock(), false, false));
+    }
   }
   return result;
 }
@@ -295,20 +323,29 @@ int interpretedVFrame::bci() const {
 }
 
 Method* interpretedVFrame::method() const {
-  return fr().interpreter_frame_method();
+  return stack_chunk() == NULL ? fr().interpreter_frame_method() : stack_chunk()->interpreter_frame_method(fr());
 }
 
 static StackValue* create_stack_value_from_oop_map(const InterpreterOopMap& oop_mask,
                                                    int index,
-                                                   const intptr_t* const addr) {
+                                                   const intptr_t* const addr,
+                                                   stackChunkOop chunk) {
 
   assert(index >= 0 &&
          index < oop_mask.number_of_entries(), "invariant");
 
   // categorize using oop_mask
   if (oop_mask.is_oop(index)) {
+    oop obj = NULL;
+    if (addr != NULL) {
+      if (chunk != NULL) {
+        obj = (chunk->has_bitmap() && UseCompressedOops) ? (oop)HeapAccess<>::oop_load((narrowOop*)addr) : HeapAccess<>::oop_load((oop*)addr);
+      } else {
+        obj = *(oop*)addr;
+      }
+    }
     // reference (oop) "r"
-    Handle h(Thread::current(), addr != NULL ? (*(oop*)addr) : (oop)NULL);
+    Handle h(Thread::current(), obj);
     return new StackValue(h);
   }
   // value (integer) "v"
@@ -318,7 +355,7 @@ static StackValue* create_stack_value_from_oop_map(const InterpreterOopMap& oop_
 static bool is_in_expression_stack(const frame& fr, const intptr_t* const addr) {
   assert(addr != NULL, "invariant");
 
-  // Ensure to be 'inside' the expresion stack (i.e., addr >= sp for Intel).
+  // Ensure to be 'inside' the expression stack (i.e., addr >= sp for Intel).
   // In case of exceptions, the expression stack is invalid and the sp
   // will be reset to express this condition.
   if (frame::interpreter_frame_expression_stack_direction() > 0) {
@@ -331,16 +368,22 @@ static bool is_in_expression_stack(const frame& fr, const intptr_t* const addr) 
 static void stack_locals(StackValueCollection* result,
                          int length,
                          const InterpreterOopMap& oop_mask,
-                         const frame& fr) {
+                         const frame& fr,
+                         const stackChunkOop chunk) {
 
   assert(result != NULL, "invariant");
 
   for (int i = 0; i < length; ++i) {
-    const intptr_t* const addr = fr.interpreter_frame_local_at(i);
+    const intptr_t* addr;
+    if (chunk == NULL) {
+      addr = fr.interpreter_frame_local_at(i);
+      assert(addr >= fr.sp(), "must be inside the frame");
+    } else {
+      addr = chunk->interpreter_frame_local_at(fr, i);
+    }
     assert(addr != NULL, "invariant");
-    assert(addr >= fr.sp(), "must be inside the frame");
 
-    StackValue* const sv = create_stack_value_from_oop_map(oop_mask, i, addr);
+    StackValue* const sv = create_stack_value_from_oop_map(oop_mask, i, addr, chunk);
     assert(sv != NULL, "sanity check");
 
     result->add(sv);
@@ -351,21 +394,28 @@ static void stack_expressions(StackValueCollection* result,
                               int length,
                               int max_locals,
                               const InterpreterOopMap& oop_mask,
-                              const frame& fr) {
+                              const frame& fr,
+                              const stackChunkOop chunk) {
 
   assert(result != NULL, "invariant");
 
   for (int i = 0; i < length; ++i) {
-    const intptr_t* addr = fr.interpreter_frame_expression_stack_at(i);
-    assert(addr != NULL, "invariant");
-    if (!is_in_expression_stack(fr, addr)) {
-      // Need to ensure no bogus escapes.
-      addr = NULL;
+    const intptr_t* addr;
+    if (chunk == NULL) {
+      addr = fr.interpreter_frame_expression_stack_at(i);
+      assert(addr != NULL, "invariant");
+      if (!is_in_expression_stack(fr, addr)) {
+        // Need to ensure no bogus escapes.
+        addr = NULL;
+      }
+    } else {
+      addr = chunk->interpreter_frame_expression_stack_at(fr, i);
     }
 
     StackValue* const sv = create_stack_value_from_oop_map(oop_mask,
                                                            i + max_locals,
-                                                           addr);
+                                                           addr,
+                                                           chunk);
     assert(sv != NULL, "sanity check");
 
     result->add(sv);
@@ -414,9 +464,9 @@ StackValueCollection* interpretedVFrame::stack_data(bool expressions) const {
   }
 
   if (expressions) {
-    stack_expressions(result, length, max_locals, oop_mask, fr());
+    stack_expressions(result, length, max_locals, oop_mask, fr(), stack_chunk());
   } else {
-    stack_locals(result, length, oop_mask, fr());
+    stack_locals(result, length, oop_mask, fr(), stack_chunk());
   }
 
   assert(length == result->size(), "invariant");
@@ -482,15 +532,54 @@ void vframeStreamCommon::found_bad_method_frame() const {
 
 // top-frame will be skipped
 vframeStream::vframeStream(JavaThread* thread, frame top_frame,
-                           bool stop_at_java_call_stub) :
-    vframeStreamCommon(thread, true /* process_frames */) {
+                          bool stop_at_java_call_stub) :
+    vframeStreamCommon(RegisterMap(thread,
+                                   RegisterMap::UpdateMap::include,
+                                   RegisterMap::ProcessFrames::include,
+                                   RegisterMap::WalkContinuation::include)) {
   _stop_at_java_call_stub = stop_at_java_call_stub;
 
   // skip top frame, as it may not be at safepoint
-  _prev_frame = top_frame;
   _frame  = top_frame.sender(&_reg_map);
   while (!fill_from_frame()) {
-    _prev_frame = _frame;
+    _frame = _frame.sender(&_reg_map);
+  }
+}
+
+vframeStream::vframeStream(JavaThread* thread, Handle continuation_scope, bool stop_at_java_call_stub)
+ : vframeStreamCommon(RegisterMap(thread,
+                                  RegisterMap::UpdateMap::include,
+                                  RegisterMap::ProcessFrames::include,
+                                  RegisterMap::WalkContinuation::include)) {
+
+  _stop_at_java_call_stub = stop_at_java_call_stub;
+  _continuation_scope = continuation_scope;
+
+  if (!thread->has_last_Java_frame()) {
+    _mode = at_end_mode;
+    return;
+  }
+
+  _frame = _thread->last_frame();
+  _cont_entry = _thread->last_continuation();
+  while (!fill_from_frame()) {
+    _frame = _frame.sender(&_reg_map);
+  }
+}
+
+vframeStream::vframeStream(oop continuation, Handle continuation_scope)
+ : vframeStreamCommon(RegisterMap(continuation, RegisterMap::UpdateMap::include)) {
+
+  _stop_at_java_call_stub = false;
+  _continuation_scope = continuation_scope;
+
+  if (!Continuation::has_last_Java_frame(continuation, &_frame, &_reg_map)) {
+    _mode = at_end_mode;
+    return;
+  }
+
+  // _chunk = _reg_map.stack_chunk();
+  while (!fill_from_frame()) {
     _frame = _frame.sender(&_reg_map);
   }
 }
@@ -561,33 +650,18 @@ void vframeStreamCommon::skip_prefixed_method_and_wrappers() {
   }
 }
 
-
-void vframeStreamCommon::skip_reflection_related_frames() {
-  while (!at_end() &&
-          (method()->method_holder()->is_subclass_of(SystemDictionary::reflect_MethodAccessorImpl_klass()) ||
-           method()->method_holder()->is_subclass_of(SystemDictionary::reflect_ConstructorAccessorImpl_klass()))) {
-    next();
-  }
-}
-
 javaVFrame* vframeStreamCommon::asJavaVFrame() {
   javaVFrame* result = NULL;
-  if (_mode == compiled_mode) {
-    guarantee(_frame.is_compiled_frame(), "expected compiled Java frame");
+  // FIXME, need to re-do JDK-8271140 and check is_native_frame?
+  if (_mode == compiled_mode && _frame.is_compiled_frame()) {
+    assert(_frame.is_compiled_frame() || _frame.is_native_frame(), "expected compiled Java frame");
+    guarantee(_reg_map.update_map(), "");
 
-    // lazy update to register map
-    bool update_map = true;
-    RegisterMap map(_thread, update_map);
-    frame f = _prev_frame.sender(&map);
-
-    guarantee(f.is_compiled_frame(), "expected compiled Java frame");
-
-    compiledVFrame* cvf = compiledVFrame::cast(vframe::new_vframe(&f, &map, _thread));
+    compiledVFrame* cvf = compiledVFrame::cast(vframe::new_vframe(&_frame, &_reg_map, _thread));
 
     guarantee(cvf->cb() == cb(), "wrong code blob");
 
-    // get the same scope as this stream
-    cvf = cvf->at_scope(_decode_offset, _vframe_id);
+    cvf = cvf->at_scope(_decode_offset, _vframe_id); // get the same scope as this stream
 
     guarantee(cvf->scope()->decode_offset() == _decode_offset, "wrong scope");
     guarantee(cvf->scope()->sender_decode_offset() == _sender_decode_offset, "wrong scope");
@@ -597,16 +671,14 @@ javaVFrame* vframeStreamCommon::asJavaVFrame() {
   } else {
     result = javaVFrame::cast(vframe::new_vframe(&_frame, &_reg_map, _thread));
   }
-  guarantee(result->method() == method(), "wrong method");
+  assert(result->method() == method(), "wrong method");
   return result;
 }
-
 
 #ifndef PRODUCT
 void vframe::print() {
   if (WizardMode) _fr.print_value_on(tty,NULL);
 }
-
 
 void vframe::print_value() const {
   ((vframe*)this)->print();
@@ -619,7 +691,7 @@ void entryVFrame::print_value() const {
 
 void entryVFrame::print() {
   vframe::print();
-  tty->print_cr("C Chunk inbetween Java");
+  tty->print_cr("C Chunk in between Java");
   tty->print_cr("C     link " INTPTR_FORMAT, p2i(_fr.link()));
 }
 
@@ -696,7 +768,7 @@ void javaVFrame::print_value() const {
   // Check frame size and print warning if it looks suspiciously large
   if (fr().sp() != NULL) {
     RegisterMap map = *register_map();
-    uint size = fr().frame_size(&map);
+    uint size = fr().frame_size();
 #ifdef _LP64
     if (size > 8*K) warning("SUSPICIOUSLY LARGE FRAME (%d)", size);
 #else
