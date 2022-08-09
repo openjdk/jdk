@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,12 @@
  */
 
 /*
- *
- *
- * @bug     6336608 6511738
+ * @test
+ * @bug     6336608 6511738 6367473
  * @summary Basic unit test of OperatingSystemMXBean.getSystemLoadAverage()
  * @author  Mandy Chung
+ *
+ * @run testng GetSystemLoadAverage
  */
 
 /*
@@ -42,6 +43,9 @@
  *     running on Windows.
  */
 
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
+
 import java.lang.management.*;
 import java.io.*;
 
@@ -54,25 +58,25 @@ public class GetSystemLoadAverage {
     // Allow some delta.
     private static double DELTA = 0.05;
 
-    public static void main(String args[]) throws Exception {
-        if (args.length > 1)  {
-            throw new IllegalArgumentException("Unexpected number of args " + args.length);
-        }
+    private static final String OS = System.getProperty("os.name");
 
-        if (args.length == 0) {
+    @BeforeMethod
+    void beforeMethod() throws InterruptedException {
+        System.out.println("Wait for 5 seconds.");
+        Thread.sleep(5000);
+    }
+
+    @Test(invocationCount = 5, timeOut = 300)
+    void testSystemLoadAvg() throws Exception {
+        if (!OS.contains("Win")) {
             // On Linux or Solaris
             checkLoadAvg();
         } else {
             // On Windows, the system load average is expected to be -1.0
-            if (!args[0].equals("-1.0")) {
-                throw new IllegalArgumentException("Invalid argument: " + args[0]);
-            } else {
-                double loadavg = mbean.getSystemLoadAverage();
-                if (loadavg != -1.0) {
-                    throw new RuntimeException("Expected load average : -1.0" +
-                        " but getSystemLoadAverage returned: " +
-                        loadavg);
-                }
+            double loadavg = mbean.getSystemLoadAverage();
+            if (loadavg != -1.0) {
+                throw new RuntimeException("Expected load average : -1.0" +
+                    " but getSystemLoadAverage returned: " + loadavg);
             }
         }
 
