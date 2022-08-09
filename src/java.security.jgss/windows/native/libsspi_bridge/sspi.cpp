@@ -736,8 +736,6 @@ gss_acquire_cred(OM_uint32 *minor_status,
             PP("Cannot get owner name of default creds");
             goto err;
         }
-        SEC_WCHAR* rnames = realname->name;
-        SEC_WCHAR* dnames = desired_name->name;
         int equals = 0;
         gss_compare_name(minor_status, realname, desired_name, &equals);
         gss_release_name(minor_status, &realname);

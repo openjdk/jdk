@@ -255,10 +255,12 @@ void FileMapHeader::populate(FileMapInfo *info, size_t core_region_alignment,
       _heap_begin = CompressedOops::begin();
       _heap_end = CompressedOops::end();
     } else {
+#if INCLUDE_G1GC
       address start = (address)G1CollectedHeap::heap()->reserved().start();
       address end = (address)G1CollectedHeap::heap()->reserved().end();
       _heap_begin = HeapShared::to_requested_address(start);
       _heap_end = HeapShared::to_requested_address(end);
+#endif
     }
   }
   _compressed_oops = UseCompressedOops;
@@ -866,7 +868,7 @@ bool FileMapInfo::validate_boot_class_paths() {
   // time path (e.g. the JDK image is copied to a different location
   // after generating the shared archive), which is acceptable. For most
   // common cases, the dump time boot path might contain modules_image only.
-  char* runtime_boot_path = Arguments::get_sysclasspath();
+  char* runtime_boot_path = Arguments::get_boot_class_path();
   char* rp = skip_first_path_entry(runtime_boot_path);
   assert(shared_path(0)->is_modules_image(), "first shared_path must be the modules image");
   int dp_len = header()->app_class_paths_start_index() - 1; // ignore the first path to the module image
@@ -1522,7 +1524,9 @@ void FileMapInfo::write_region(int region, char* base, size_t size,
     if (UseCompressedOops) {
       mapping_offset = (size_t)CompressedOops::encode_not_null(cast_to_oop(base));
     } else {
+#if INCLUDE_G1GC
       mapping_offset = requested_base - (char*)G1CollectedHeap::heap()->reserved().start();
+#endif
     }
     assert(mapping_offset == (size_t)(uint32_t)mapping_offset, "must be 32-bit only");
   } else {

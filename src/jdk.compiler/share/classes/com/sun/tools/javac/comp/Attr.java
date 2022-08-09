@@ -1694,9 +1694,7 @@ public class Attr extends JCTree.Visitor {
 
             // Attribute all cases and
             // check that there are no duplicate case labels or default clauses.
-            Set<Object> labels = new HashSet<>(); // The set of case labels.
-            List<Type> coveredTypesForPatterns = List.nil();
-            List<Type> coveredTypesForConstants = List.nil();
+            Set<Object> constants = new HashSet<>(); // The set of case constants.
             boolean hasDefault = false;           // Is there a default label?
             boolean hasUnconditionalPattern = false; // Is there a unconditional pattern?
             boolean lastPatternErroneous = false; // Has the last pattern erroneous type?
@@ -1732,10 +1730,8 @@ public class Attr extends JCTree.Visitor {
                             Symbol sym = enumConstant(expr, seltype);
                             if (sym == null) {
                                 log.error(expr.pos(), Errors.EnumLabelMustBeUnqualifiedEnum);
-                            } else if (!labels.add(sym)) {
+                            } else if (!constants.add(sym)) {
                                 log.error(label.pos(), Errors.DuplicateCaseLabel);
-                            } else {
-                                checkCaseLabelDominated(label.pos(), coveredTypesForConstants, sym.type);
                             }
                         } else if (errorEnumSwitch) {
                             //error recovery: the selector is erroneous, and all the case labels
@@ -1765,10 +1761,8 @@ public class Attr extends JCTree.Visitor {
                                     }
                                 } else if (!stringSwitch && !types.isAssignable(seltype, syms.intType)) {
                                     log.error(label.pos(), Errors.ConstantLabelNotCompatible(pattype, seltype));
-                                } else if (!labels.add(pattype.constValue())) {
+                                } else if (!constants.add(pattype.constValue())) {
                                     log.error(c.pos(), Errors.DuplicateCaseLabel);
-                                } else {
-                                    checkCaseLabelDominated(label.pos(), coveredTypesForConstants, types.boxedTypeOrType(pattype));
                                 }
                             }
                         }
@@ -1820,13 +1814,6 @@ public class Attr extends JCTree.Visitor {
                             hasUnconditionalPattern = true;
                         }
                         lastPatternErroneous = patternType.isErroneous();
-                        checkCaseLabelDominated(pat.pos(), coveredTypesForPatterns, patternType);
-                        if (!patternType.isErroneous()) {
-                            coveredTypesForConstants = coveredTypesForConstants.prepend(patternType);
-                            if (unguarded) {
-                                coveredTypesForPatterns = coveredTypesForPatterns.prepend(patternType);
-                            }
-                        }
                     } else {
                         Assert.error();
                     }
@@ -1850,6 +1837,7 @@ public class Attr extends JCTree.Visitor {
             }
             if (patternSwitch) {
                 chk.checkSwitchCaseStructure(cases);
+                chk.checkSwitchCaseLabelDominated(cases);
             }
             if (switchTree.hasTag(SWITCH)) {
                 ((JCSwitch) switchTree).hasUnconditionalPattern =
@@ -1873,14 +1861,6 @@ public class Attr extends JCTree.Visitor {
                 JCTree stat = stats.head;
                 if (stat.hasTag(VARDEF))
                     switchScope.enter(((JCVariableDecl) stat).sym);
-            }
-        }
-        private void checkCaseLabelDominated(DiagnosticPosition pos,
-                                             List<Type> coveredTypes, Type patternType) {
-            for (Type existing : coveredTypes) {
-                if (types.isSubtype(patternType, existing)) {
-                    log.error(pos, Errors.PatternDominated);
-                }
             }
         }
     // where
@@ -2960,7 +2940,7 @@ public class Attr extends JCTree.Visitor {
                     && ((tree.constructorType != null && inferenceContext.free(tree.constructorType))
                     || (tree.clazz.type != null && inferenceContext.free(tree.clazz.type)))) {
                 final ResultInfo resultInfoForClassDefinition = this.resultInfo;
-                Env<AttrContext> dupLocalEnv = localEnv.dup(localEnv.tree, localEnv.info.dup(localEnv.info.scope.dupUnshared()));
+                Env<AttrContext> dupLocalEnv = copyEnv(localEnv);
                 inferenceContext.addFreeTypeListener(List.of(tree.constructorType, tree.clazz.type),
                         instantiatedContext -> {
                             tree.constructorType = instantiatedContext.asInstType(tree.constructorType);
@@ -4493,7 +4473,11 @@ public class Attr extends JCTree.Visitor {
                    sym.name != names._class) {
             // If the qualified item is not a type and the selected item is static, report
             // a warning. Make allowance for the class of an array type e.g. Object[].class)
-            chk.warnStatic(tree, Warnings.StaticNotQualifiedByType(sym.kind.kindName(), sym.owner));
+            if (!sym.owner.isAnonymous()) {
+                chk.warnStatic(tree, Warnings.StaticNotQualifiedByType(sym.kind.kindName(), sym.owner));
+            } else {
+                chk.warnStatic(tree, Warnings.StaticNotQualifiedByType2(sym.kind.kindName()));
+            }
         }
 
         // If we are selecting an instance member via a `super', ...

@@ -1245,7 +1245,9 @@ void MethodData::initialize() {
   int extra_size = extra_data_count * DataLayout::compute_size_in_bytes(0);
 
   // Let's zero the space for the extra data
-  Copy::zero_to_bytes(((address)_data) + data_size, extra_size);
+  if (extra_size > 0) {
+    Copy::zero_to_bytes(((address)_data) + data_size, extra_size);
+  }
 
   // Add a cell to record information about modified arguments.
   // Set up _args_modified array after traps cells so that

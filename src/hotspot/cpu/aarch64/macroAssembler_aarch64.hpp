@@ -197,8 +197,11 @@ class MacroAssembler: public Assembler {
   inline void cmp(Register Rd, unsigned char imm8)  { subs(zr, Rd, imm8); }
   inline void cmp(Register Rd, unsigned imm) = delete;
 
-  inline void cmnw(Register Rd, unsigned imm) { addsw(zr, Rd, imm); }
-  inline void cmn(Register Rd, unsigned imm) { adds(zr, Rd, imm); }
+  template<class T>
+  inline void cmnw(Register Rd, T imm) { addsw(zr, Rd, imm); }
+
+  inline void cmn(Register Rd, unsigned char imm8)  { adds(zr, Rd, imm8); }
+  inline void cmn(Register Rd, unsigned imm) = delete;
 
   void cset(Register Rd, Assembler::Condition cond) {
     csinc(Rd, zr, zr, ~cond);
@@ -897,9 +900,6 @@ public:
 
   void push_cont_fastpath(Register java_thread);
   void pop_cont_fastpath(Register java_thread);
-  void inc_held_monitor_count(Register java_thread);
-  void dec_held_monitor_count(Register java_thread);
-  void reset_held_monitor_count(Register java_thread);
 
   // Round up to a power of two
   void round_to(Register reg, int modulus);
@@ -909,13 +909,6 @@ public:
   void java_round_float(Register dst, FloatRegister src, FloatRegister ftmp);
 
   // allocation
-  void eden_allocate(
-    Register obj,                      // result: pointer to object after successful allocation
-    Register var_size_in_bytes,        // object size in bytes if unknown at compile time; invalid otherwise
-    int      con_size_in_bytes,        // object size in bytes if   known at compile time
-    Register t1,                       // temp register
-    Label&   slow_case                 // continuation point if fast allocation fails
-  );
   void tlab_allocate(
     Register obj,                      // result: pointer to object after successful allocation
     Register var_size_in_bytes,        // object size in bytes if unknown at compile time; invalid otherwise
@@ -1182,8 +1175,7 @@ public:
   // - relocInfo::virtual_call_type
   //
   // Return: NULL if CodeCache is full.
-  address trampoline_call(Address entry, CodeBuffer* cbuf = NULL) { return trampoline_call1(entry, cbuf, true); }
-  address trampoline_call1(Address entry, CodeBuffer* cbuf, bool check_emit_size = true);
+  address trampoline_call(Address entry, CodeBuffer* cbuf = NULL, bool check_emit_size = true);
 
   static bool far_branches() {
     return ReservedCodeCacheSize > branch_range;
