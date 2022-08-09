@@ -296,19 +296,19 @@ public class DocFinder {
         return Optional.empty();
     }
 
-    public static <T> Optional<T> inheritDocumentation(
+    public static <T> Optional<T> search(
             ExecutableElement method,
-            Function<? super ExecutableElement, Optional<T>> documentationExtractor,
+            Function<? super ExecutableElement, Optional<T>> criteria,
             BaseConfiguration configuration)
     {
-        var d = documentationExtractor.apply(method);
+        var d = criteria.apply(method);
         if (d.isPresent()) {
             return d;
         }
         var overriddenMethods = methodsOverriddenBy(method, configuration);
         while (overriddenMethods.hasNext()) {
             var m = overriddenMethods.next();
-            d = documentationExtractor.apply(m);
+            d = criteria.apply(m);
             if (d.isPresent()) {
                 return d;
             }

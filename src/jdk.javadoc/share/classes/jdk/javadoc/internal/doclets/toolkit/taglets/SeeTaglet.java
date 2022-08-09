@@ -69,7 +69,7 @@ public class SeeTaglet extends BaseTaglet implements InheritableTaglet {
         List<? extends SeeTree> tags = utils.getSeeTrees(holder);
         Element e = holder;
         if (utils.isMethod(holder)) {
-            Optional<Result> result = DocFinder.inheritDocumentation(
+            Optional<Result> result = DocFinder.search(
                     (ExecutableElement) holder, m -> extract(utils, m), writer.configuration());
             if (result.isPresent()) {
                 ExecutableElement m = result.get().method();
