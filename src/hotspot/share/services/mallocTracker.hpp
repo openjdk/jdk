@@ -141,7 +141,7 @@ class MallocMemorySnapshot : public ResourceObj {
 
  private:
   MallocMemory      _malloc[mt_number_of_types];
-  MemoryCounter     _tracking_header;
+  MemoryCounter     _all_mallocs;
 
 
  public:
@@ -150,14 +150,20 @@ class MallocMemorySnapshot : public ResourceObj {
     return &_malloc[index];
   }
 
-  inline MemoryCounter* malloc_overhead() {
-    return &_tracking_header;
+  inline size_t malloc_overhead() const {
+    return _all_mallocs.count() * sizeof(MallocHeader);
   }
 
   // Total malloc invocation count
-  size_t total_count() const;
+  size_t total_count() const {
+    return _all_mallocs.count();
+  }
+
   // Total malloc'd memory amount
-  size_t total() const;
+  size_t total() const {
+    return _all_mallocs.size() + malloc_overhead() + total_arena();
+  }
+
   // Total malloc'd memory used by arenas
   size_t total_arena() const;
 
@@ -171,7 +177,7 @@ class MallocMemorySnapshot : public ResourceObj {
     // copy is going on, because their size is adjusted using this
     // buffer in make_adjustment().
     ThreadCritical tc;
-    s->_tracking_header = _tracking_header;
+    s->_all_mallocs = _all_mallocs;
     for (int index = 0; index < mt_number_of_types; index ++) {
       s->_malloc[index] = _malloc[index];
     }
@@ -195,10 +201,12 @@ class MallocMemorySummary : AllStatic {
 
    static inline void record_malloc(size_t size, MEMFLAGS flag) {
      as_snapshot()->by_type(flag)->record_malloc(size);
+     as_snapshot()->_all_mallocs.allocate(size);
    }
 
    static inline void record_free(size_t size, MEMFLAGS flag) {
      as_snapshot()->by_type(flag)->record_free(size);
+     as_snapshot()->_all_mallocs.deallocate(size);
    }
 
    static inline void record_new_arena(MEMFLAGS flag) {
@@ -218,18 +226,9 @@ class MallocMemorySummary : AllStatic {
      s->make_adjustment();
    }
 
-   // Record memory used by malloc tracking header
-   static inline void record_new_malloc_header(size_t sz) {
-     as_snapshot()->malloc_overhead()->allocate(sz);
-   }
-
-   static inline void record_free_malloc_header(size_t sz) {
-     as_snapshot()->malloc_overhead()->deallocate(sz);
-   }
-
    // The memory used by malloc tracking headers
    static inline size_t tracking_overhead() {
-     return as_snapshot()->malloc_overhead()->size();
+     return as_snapshot()->malloc_overhead();
    }
 
   static MallocMemorySnapshot* as_snapshot() {
