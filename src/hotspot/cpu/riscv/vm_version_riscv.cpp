@@ -77,6 +77,9 @@ void VM_Version::initialize() {
     if (FLAG_IS_DEFAULT(UseZfhmin)) {
       FLAG_SET_DEFAULT(UseZfhmin, true);
     }
+    if (FLAG_IS_DEFAULT(UseZihintpause)) {
+      FLAG_SET_DEFAULT(UseZihintpause, true);
+    }
   }
 
   if (UseZic64b) {

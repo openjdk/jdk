@@ -61,6 +61,8 @@ public:
 
   constexpr static bool supports_stack_watermark_barrier() { return true; }
 
+  static bool supports_on_spin_wait() { return UseZihintpause; }
+
   enum Feature_Flag {
 #define CPU_FEATURE_FLAGS(decl)               \
     decl(I,            "i",            8)     \
