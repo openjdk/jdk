@@ -27,6 +27,7 @@ import nsk.share.runner.*;
 import nsk.share.gc.*;
 import nsk.share.gc.gp.GarbageUtils;
 import nsk.share.gc.lock.*;
+import nsk.share.test.ExecutionController;
 
 /**
  * Test how GC is affected by locking.
@@ -48,11 +49,15 @@ public class LockerTest extends ThreadedGCTest implements LockersAware {
         }
 
         public void run() {
-            locker.lock();
+            ExecutionController stresser = getExecutionController();
             // Use only 30% of the heap.
             final long testMemory = 3 * Runtime.getRuntime().maxMemory() / 10;
-            GarbageUtils.engageGC(getExecutionController(), testMemory);
-            locker.unlock();
+
+            while (stresser.continueExecution()) {
+                locker.lock();
+                GarbageUtils.engageGC(testMemory);
+                locker.unlock();
+            }
         }
     }
 

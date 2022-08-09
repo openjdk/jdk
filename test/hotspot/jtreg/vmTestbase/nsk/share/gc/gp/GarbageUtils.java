@@ -87,20 +87,20 @@ public final class GarbageUtils {
         private GarbageUtils() {
         }
 
-        public static void engageGC(ExecutionController stresser, long testMemory) {
+        public static void engageGC(long testMemory) {
             // Number of Young GC iterations before triggering full GC.
             final long YOUNG_GC_ITERATIONS = 100;
             final long memChunk = testMemory / YOUNG_GC_ITERATIONS;
             int iteration = 0;
+            // To be released only for full GC.
+            Object initialAlloc = byteArrayProducer.create(memChunk);
 
-            while (stresser.continueExecution()) {
-                while (iteration++ < YOUNG_GC_ITERATIONS) {
-                    byteArrayProducer.create(memChunk);
-                    WhiteBox.getWhiteBox().youngGC();
-                }
-                iteration = 0;
-                WhiteBox.getWhiteBox().fullGC();
+            while (++iteration < YOUNG_GC_ITERATIONS) {
+                byteArrayProducer.create(memChunk);
+                WhiteBox.getWhiteBox().youngGC();
             }
+            initialAlloc = null;
+            WhiteBox.getWhiteBox().fullGC();
         }
 
         /**
