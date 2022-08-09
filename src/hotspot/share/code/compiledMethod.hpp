@@ -152,22 +152,8 @@ protected:
     deoptimize_done
   };
 
-  struct MarkedCompiledMethodLink;
+  MarkForDeoptimizationStatus _mark_for_deoptimization_status; // Used for stack deoptimization
 
-  static CompiledMethod* _root_mark_link;
-  MarkedCompiledMethodLink* _mark_link;
-
-  static MarkedCompiledMethodLink* mark_link(CompiledMethod* cm, MarkForDeoptimizationStatus mark) {
-    assert(((uintptr_t)cm & 0x3) == 0, "cm pointer must have zero lower two LSB");
-    return (MarkedCompiledMethodLink*)(((uintptr_t)cm & ~0x3) | static_cast<u1>(mark));
-  }
-
-  static MarkForDeoptimizationStatus extract_mark(MarkedCompiledMethodLink* link) {
-    return static_cast<MarkForDeoptimizationStatus>((uintptr_t)link & 0x3);
-  }
-  static CompiledMethod* extract_compiled_method(MarkedCompiledMethodLink* link) {
-    return (CompiledMethod*)((uintptr_t)link & ~0x3);
-  }
   // set during construction
   unsigned int _has_unsafe_access:1;         // May fault due to unsafe access.
   unsigned int _has_method_handle_invokes:1; // Has this method MethodHandle invokes?
@@ -257,14 +243,12 @@ public:
   bool is_at_poll_return(address pc);
   bool is_at_poll_or_poll_return(address pc);
 
-  bool  is_marked_for_deoptimization() const { return extract_mark(_mark_link) != not_marked; }
+  bool  is_marked_for_deoptimization() const { return _mark_for_deoptimization_status != not_marked; }
 
-  bool  has_been_deoptimized() const { return extract_mark(_mark_link) == deoptimize_done; }
+  bool  has_been_deoptimized() const { return _mark_for_deoptimization_status == deoptimize_done; }
 
 private:
   bool  mark_for_deoptimization(bool inc_recompile_counts = true);
-  CompiledMethod* next_marked() const;
-  static CompiledMethod* take_root();
 protected:
   void  mark_deoptimized();
 public:
@@ -275,8 +259,8 @@ public:
     // Update recompile counts when either the update is explicitly requested (deoptimize)
     // or the nmethod is not marked for deoptimization at all (not_marked).
     // The latter happens during uncommon traps when deoptimized nmethod is made not entrant.
-    MarkForDeoptimizationStatus mark_status = extract_mark(_mark_link);
-    return mark_status != deoptimize_noupdate && mark_status != deoptimize_done;
+    return _mark_for_deoptimization_status != deoptimize_noupdate &&
+        _mark_for_deoptimization_status != deoptimize_done;
   }
 
   // tells whether frames described by this nmethod can be deoptimized

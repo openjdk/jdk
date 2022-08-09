@@ -1009,20 +1009,14 @@ void DeoptimizationContext::mark(CompiledMethod* cm, bool inc_recompile_count) {
 }
 
 void DeoptimizationContext::deopt_compiled_methods() {
-  SweeperBlocker sw;
-  CompiledMethod* nm = CompiledMethod::take_root();
-  uint links_found = 0;
-  while (nm != nullptr) {
-    _deoptimized = true;
-    ++links_found;
-    assert(nm->is_marked_for_deoptimization(), "All nmethods in list must be marked");
-    if (!nm->has_been_deoptimized() && nm->can_be_deoptimized()) {
+  SweeperBlockingCompiledMethodIterator iter(SweeperBlockingCompiledMethodIterator::only_alive_and_not_unloading);
+  while(iter.next()) {
+    CompiledMethod* nm = iter.method();
+    if (nm->is_marked_for_deoptimization() && !nm->has_been_deoptimized() && nm->can_be_deoptimized()) {
       nm->make_not_entrant();
       nm->make_deoptimized();
     }
-    nm = nm->next_marked();
   }
-  assert(links_found ==_marked, "All marked nmethods must have been linked");
 }
 
 void DeoptimizationContext::deopt_frames() {
