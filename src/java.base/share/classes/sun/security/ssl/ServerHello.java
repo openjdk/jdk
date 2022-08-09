@@ -437,7 +437,7 @@ final class ServerHello {
                     continue;
                 }
 
-                if (sun.security.ssl.SSLLogger.isOn && sun.security.ssl.SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     keyExchanges = new LinkedList<>();
                     keyExchanges.add(cs.keyExchange);
                 }
@@ -465,7 +465,7 @@ final class ServerHello {
 
                 if (ke != null) {
 
-                    if (sun.security.ssl.SSLLogger.isOn && sun.security.ssl.SSLLogger.isOn("ssl,handshake")) {
+                    if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                         if(keyExchanges == null){
                             keyExchanges = new LinkedList<>();
                         }
@@ -483,7 +483,9 @@ final class ServerHello {
                 }
             }
             //negotiation failed between client and server, print server enabled cipher suites
-            printServerEnabledCipherSuites(shc, legacySuites, keyExchanges);
+            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                printServerSocketConfig(shc, legacySuites, keyExchanges);
+            }
             throw shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                     "no cipher suites in common");
         }
@@ -761,7 +763,9 @@ final class ServerHello {
             }
 
             // no cipher suites in common
-            printServerEnabledCipherSuites(shc, null, null);
+            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                printServerSocketConfig(shc, null, null);
+            }
             return null;
         }
     }
@@ -769,38 +773,35 @@ final class ServerHello {
     /* *
      *  When debugging enabled with the value of "ssl, handshake", print out enabled cipher suites on the server side
      */
-    private static void printServerEnabledCipherSuites(sun.security.ssl.ServerHandshakeContext shc,
+    private static void printServerSocketConfig(sun.security.ssl.ServerHandshakeContext shc,
                                                        List<CipherSuite> legacySuites,
                                                        List<CipherSuite.KeyExchange> keyExchanges){
 
-        if (sun.security.ssl.SSLLogger.isOn && sun.security.ssl.SSLLogger.isOn("ssl,handshake")) {
+        MessageFormat messageFormat = new MessageFormat(
+                "\"{0}\": '\n{'\n" +
+                        "  \"preferred cipher suites\"     : \"{1}\",\n" +
+                        "  \"client auth type\"            : \"{2}\",\n" +
+                        "  \"enabled server cipher suites\": \"{3}\",\n" +
+                        "  \"legacy algorithms\"           : \"{4}\",\n" +
+                        "  \"legacy suites\"               : \"{5}\",\n" +
+                        "  \"ssl key exchange info\"       : \"{6}\"\n" +
+                        "'}'",
+                Locale.ENGLISH);
+        Object[] messageFields = {
+                "Enabled Server Cipher Suites",
+                shc.sslConfig.preferLocalCipherSuites ? "using server cipher suites" : "using client cipher suites",
+                shc.sslConfig.clientAuthType,
+                shc.activeCipherSuites != null ? shc.activeCipherSuites.toString() : "Not Set",
+                Security.getProperty(LegacyAlgorithmConstraints.PROPERTY_TLS_LEGACY_ALGS),
+                legacySuites != null ? legacySuites.stream()
+                        .map(n -> n.name())
+                        .collect(Collectors.joining(",", "[", "]")) : "Not Set",
+                keyExchanges != null ? keyExchanges.stream()
+                        .map(n -> n.name()).distinct()
+                        .collect(Collectors.joining(",", "[", "]")) : "Not Set"
+        };
 
-            MessageFormat messageFormat = new MessageFormat(
-                    "\"{0}\": '\n{'\n" +
-                            "  \"preferred cipher suites\"     : \"{1}\",\n" +
-                            "  \"client auth type\"            : \"{2}\",\n" +
-                            "  \"enabled server cipher suites\": \"{3}\",\n" +
-                            "  \"legacy algorithms\"           : \"{4}\",\n" +
-                            "  \"legacy suites\"               : \"{5}\",\n" +
-                            "  \"ssl key exchange info\"       : \"{6}\"\n" +
-                            "'}'",
-                    Locale.ENGLISH);
-            Object[] messageFields = {
-                    "Enabled Server Cipher Suites",
-                    shc.sslConfig.preferLocalCipherSuites ? "using server cipher suites" : "using client cipher suites",
-                    shc.sslConfig.clientAuthType,
-                    shc.activeCipherSuites != null ? shc.activeCipherSuites.toString() : "Not Set",
-                    Security.getProperty(LegacyAlgorithmConstraints.PROPERTY_TLS_LEGACY_ALGS),
-                    legacySuites != null ? legacySuites.stream()
-                            .map(n -> n.name())
-                            .collect(Collectors.joining(",", "[", "]")) : "Not Set",
-                    keyExchanges != null ? keyExchanges.stream()
-                            .map(n -> n.name()).distinct()
-                            .collect(Collectors.joining(",", "[", "]")) : "Not Set"
-            };
-
-            sun.security.ssl.SSLLogger.fine(messageFormat.format(messageFields));
-        }
+        SSLLogger.fine(messageFormat.format(messageFields));
     }
 
     /**
