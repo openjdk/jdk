@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4245809 8029795 8285405
+ * @bug 4245809 8029795
  * @summary Basic test for LinkedHashMap.  (Based on MapBash)
  */
 
@@ -51,7 +51,7 @@ public class Basic {
         int numItr =  500;
         int mapSize = 500;
 
-        // LinkedHashMap tests
+        // Linked List testk
         for (int i=0; i<numItr; i++) {
             Map<Integer,Integer> m = new LinkedHashMap();
             Integer head = nil;
@@ -285,41 +285,8 @@ public class Basic {
         }
         if (!new ArrayList(m2.keySet()).equals(l))
             throw new Exception("Clone: order not properly altered by read.");
-        // run tests for LinkedHashMap#newLinkedHashMap
-        testNewLinkedHashMap();
-        System.err.println("Success.");
-    }
 
-    /**
-     * Runs basic tests for {@link LinkedHashMap#newLinkedHashMap(int)}
-     */
-    private static void testNewLinkedHashMap() {
-        final int[] negatives = new int[] {-1, Integer.MIN_VALUE, -42};
-        for (var negative : negatives) {
-            try {
-                LinkedHashMap.newLinkedHashMap(negative);
-                // expected to fail but didn't
-                throw new RuntimeException("LinkedHashMap.newLinkedHashMap was expected to throw" +
-                        " IllegalArgumentException for param " + negative + ", but didn't");
-            } catch (IllegalArgumentException iae) {
-                // got the expected exception
-            }
-        }
-        // verify for 0 and positive values
-        final int[] nonNegatives = new int[] {0, 42};
-        for (var numMappings : nonNegatives) {
-            var l = LinkedHashMap.newLinkedHashMap(numMappings);
-            if (l == null) {
-                throw new RuntimeException("LinkedHashMap.newLinkedHashMap unexpectedly returned " +
-                        "null for numMappings: " + numMappings);
-            }
-            // some other basic check
-            final int size = l.size();
-            if (size != 0) {
-                throw new RuntimeException("Unexpected size: " + size + " for LinkedHashMap created" +
-                        " from numMappings: " + numMappings);
-            }
-        }
+        System.err.println("Success.");
     }
 
     private static Map serClone(Map m) {

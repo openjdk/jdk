@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4245809 8285405
+ * @bug 4245809
  * @summary Basic test for LinkedHashSet.  (Based on SetBash)
  */
 
@@ -100,8 +100,6 @@ public class Basic {
             if (!s1.isEmpty())
                 throw new Exception("Set nonempty after clear.");
         }
-        // run tests for LinkedHashSet#newLinkedHashSet
-        testNewLinkedHashSet();
         System.err.println("Success.");
     }
 
@@ -157,38 +155,6 @@ public class Basic {
                 throw new Exception("Add returned true, but size didn't change.");
             if (!added && preSize != postSize)
                 throw new Exception("Add returned false, but size changed.");
-        }
-    }
-
-    /**
-     * Runs basic tests for {@link LinkedHashSet#newLinkedHashSet(int)}
-     */
-    private static void testNewLinkedHashSet() {
-        final int[] negatives = new int[] {-1, Integer.MIN_VALUE, -42};
-        for (var negative : negatives) {
-            try {
-                LinkedHashSet.newLinkedHashSet(negative);
-                // expected to fail but didn't
-                throw new RuntimeException("LinkedHashSet.newLinkedHashSet was expected to throw" +
-                        " IllegalArgumentException for param " + negative + ", but didn't");
-            } catch (IllegalArgumentException iae) {
-                // got the expected exception
-            }
-        }
-        // verify for 0 and positive values
-        final int[] nonNegatives = new int[] {0, 42};
-        for (var numElements : nonNegatives) {
-            var l = LinkedHashSet.newLinkedHashSet(numElements);
-            if (l == null) {
-                throw new RuntimeException("LinkedHashSet.newLinkedHashSet unexpectedly returned " +
-                        "null for numElements: " + numElements);
-            }
-            // some other basic check
-            final int size = l.size();
-            if (size != 0) {
-                throw new RuntimeException("Unexpected size: " + size + " for LinkedHashSet created" +
-                        " from numElements: " + numElements);
-            }
         }
     }
 }
