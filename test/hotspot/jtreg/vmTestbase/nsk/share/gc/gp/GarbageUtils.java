@@ -87,19 +87,24 @@ public final class GarbageUtils {
         private GarbageUtils() {
         }
 
+        /**
+         * engages GC by allocating memory chunks and triggering youngGC.
+         * Allocations are done for a total of YOUNG_GC_ITERATIONS times.
+         * Each iteration, we allocate a memory chunk and trigger youngGC.
+         * Finally fullGC is run once.
+         * This way the objects get to travel to various GC regions.
+         * @param testMemory - memory size to be operated on
+         */
         public static void engageGC(long testMemory) {
-            // Number of Young GC iterations before triggering full GC.
-            final long YOUNG_GC_ITERATIONS = 100;
+            final int YOUNG_GC_ITERATIONS = 100;
             final long memChunk = testMemory / YOUNG_GC_ITERATIONS;
             int iteration = 0;
-            // To be released only for full GC.
-            Object initialAlloc = byteArrayProducer.create(memChunk);
+            Object referenceArray[] = new Object[YOUNG_GC_ITERATIONS];
 
-            while (++iteration < YOUNG_GC_ITERATIONS) {
-                byteArrayProducer.create(memChunk);
+            while (iteration < YOUNG_GC_ITERATIONS) {
+                referenceArray[iteration++] = byteArrayProducer.create(memChunk);
                 WhiteBox.getWhiteBox().youngGC();
             }
-            initialAlloc = null;
             WhiteBox.getWhiteBox().fullGC();
         }
 
