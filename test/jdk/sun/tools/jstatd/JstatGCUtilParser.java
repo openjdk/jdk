@@ -109,7 +109,7 @@ public class JstatGCUtilParser {
                 }
                 double percentage = NumberFormat.getInstance().parse(value).doubleValue();
                 assertTrue(0 <= percentage && percentage <= 100,
-                        "Not a percentage: " + value);
+                        "Not a percentage. value: " + value + " percentage: " + percentage);
             }
         }
 
