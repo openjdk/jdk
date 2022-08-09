@@ -27,6 +27,8 @@ package jdk.javadoc.internal.doclets.toolkit.util;
 
 import java.util.*;
 import java.util.function.Function;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
@@ -272,53 +274,46 @@ public class DocFinder {
         return output;
     }
 
-    static class InvalidInheritDocException extends Exception {
-        @java.io.Serial
-        static final long serialVersionUID = 1L;
-    }
-
-    public static Optional<List<? extends DocTree>> expandInheritDoc(
-            ExecutableElement method,
-            Function<? super ExecutableElement, Optional<List<? extends DocTree>>> documentationExtractor,
-            BaseConfiguration configuration) throws InvalidInheritDocException
-    {
-        var overriddenMethods = methodsOverriddenBy(method, configuration);
-        if (!overriddenMethods.hasNext()) {
-            throw new InvalidInheritDocException();
-        }
-        do {
-            var m = overriddenMethods.next();
-            var d = documentationExtractor.apply(m);
-            if (d.isPresent()) {
-                return d;
-            }
-        } while (overriddenMethods.hasNext());
-        return Optional.empty();
-    }
+//    static class InvalidInheritDocException extends Exception {
+//        @java.io.Serial
+//        static final long serialVersionUID = 1L;
+//    }
+//
+//    public static Optional<List<? extends DocTree>> expandInheritDoc(
+//            ExecutableElement method,
+//            Function<? super ExecutableElement, Optional<List<? extends DocTree>>> documentationExtractor,
+//            BaseConfiguration configuration) throws InvalidInheritDocException
+//    {
+//        var overriddenMethods = methodsOverriddenBy(method, configuration);
+//        if (!overriddenMethods.hasNext()) {
+//            throw new InvalidInheritDocException();
+//        }
+//        do {
+//            var m = overriddenMethods.next();
+//            var d = documentationExtractor.apply(m);
+//            if (d.isPresent()) {
+//                return d;
+//            }
+//        } while (overriddenMethods.hasNext());
+//        return Optional.empty();
+//    }
 
     public static <T> Optional<T> search(
             ExecutableElement method,
             Function<? super ExecutableElement, Optional<T>> criteria,
             BaseConfiguration configuration)
     {
-        var d = criteria.apply(method);
-        if (d.isPresent()) {
-            return d;
-        }
-        var overriddenMethods = methodsOverriddenBy(method, configuration);
-        while (overriddenMethods.hasNext()) {
-            var m = overriddenMethods.next();
-            d = criteria.apply(m);
-            if (d.isPresent()) {
-                return d;
-            }
-        }
-        return Optional.empty();
+        return methodsOverriddenBy(method, true, configuration)
+                .flatMap(m -> criteria.apply(m).stream()).findFirst();
     }
 
-    static Iterator<ExecutableElement> methodsOverriddenBy(ExecutableElement method,
-                                                           BaseConfiguration configuration) {
-        return new HierarchyTraversingIterator(method, configuration);
+    static Stream<ExecutableElement> methodsOverriddenBy(ExecutableElement method,
+                                                         boolean includeMethod,
+                                                         BaseConfiguration configuration) {
+        var iterator = new HierarchyTraversingIterator(method, includeMethod, configuration);
+        var spliterator = Spliterators.spliteratorUnknownSize(iterator, Spliterator.ORDERED
+                | Spliterator.NONNULL | Spliterator.IMMUTABLE | Spliterator.DISTINCT);
+        return StreamSupport.stream(spliterator, false);
     }
 
     private static class HierarchyTraversingIterator implements Iterator<ExecutableElement> {
@@ -331,14 +326,19 @@ public class DocFinder {
          * Constructs an iterator over methods overridden by the given method.
          *
          * The iteration order is as defined in the Documentation Comment
-         * Specification for the Standard Doclet. The iteration sequence
-         * does not include the given method itself.
+         * Specification for the Standard Doclet. Whether the iteration
+         * sequence includes the given method itself is controlled by
+         * the includeMethod flag.
          */
-        public HierarchyTraversingIterator(ExecutableElement method, BaseConfiguration configuration) {
+        public HierarchyTraversingIterator(ExecutableElement method,
+                                           boolean includeMethod,
+                                           BaseConfiguration configuration) {
             assert method.getKind() == ElementKind.METHOD : method.getKind();
             this.configuration = configuration;
             next = method;
-            updateNext();
+            if (!includeMethod) {
+                updateNext();
+            }
         }
 
         @Override
