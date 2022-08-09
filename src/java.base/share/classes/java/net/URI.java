@@ -2106,7 +2106,7 @@ public final class URI
     // -- Normalization, resolution, and relativization --
 
     // RFC2396 5.2 (6)
-    private static String resolvePath(String base, String child)
+    private static String resolvePath(String base, String child, boolean absolute)
     {
         int i = base.lastIndexOf('/');
         int cn = child.length();
