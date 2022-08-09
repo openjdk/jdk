@@ -4000,6 +4000,7 @@ encode %{
       // Indicate success at cont.
       __ cmp(oop, oop);
       __ b(cont);
+      __ bind(slow);
     }
     __ tst(oop, oop); // Set NE to indicate 'failure' -> take slow-path. We know that oop != 0.
     __ b(cont);
