@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,19 +23,33 @@
  * questions.
  */
 
-package java.util.regex;
+package jdk.internal.util.regex;
 
-public class GraphemeTestAccessor {
-
-    public static boolean isExcludedSpacingMark(int cp) {
-        return Grapheme.isExcludedSpacingMark(cp);
+/**
+ * Holds data contained in the Unicode Technical Standard #51: Unicode
+ * Emoji. 
+ * 
+ * Currently it is only used for the rule "GB11" in UAX #29 Unicode Text
+ * Segmentation.
+ */
+final class EmojiData {
+    /**
+     * Returns whether the code point is an extended pictographic or not.
+     *
+     * @param cp code point to examine
+     * @return true if {@code cp} is an extended pictographic
+     */
+    static boolean isExtendedPictographic(int cp) {
+        if (cp < 0x2000) {
+            return
+%%%EXTPICT_LOW%%%
+        } else {
+            return isHigh(cp);
+        }
     }
 
-    public static int getType(int cp) {
-        return Grapheme.getType(cp);
+    private static boolean isHigh(int cp) {
+        return
+%%%EXTPICT_HIGH%%%
     }
 }
-
-
-
-
