@@ -28,8 +28,10 @@
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
+#include "gc/shared/collectedHeap.hpp"
 #include "logging/log.hpp"
 #include "memory/iterator.hpp"
+#include "memory/universe.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/method.hpp"
 #include "runtime/frame.inline.hpp"
@@ -38,11 +40,19 @@
 #include "runtime/threads.hpp"
 #include "utilities/debug.hpp"
 
-class LoadPhantomOopClosure : public OopClosure {
+class OopKeepaliveClosure : public OopClosure {
+private:
+  CollectedHeap* _heap;
+
 public:
+  OopKeepaliveClosure()
+    : _heap(Universe::heap()) {}
+
   virtual void do_oop(oop* p) {
-    NativeAccess<ON_PHANTOM_OOP_REF>::oop_load(p);
+    oop obj = NativeAccess<ON_PHANTOM_OOP_REF | AS_NO_KEEPALIVE>::oop_load(p);
+    _heap->keep_alive(obj);
   }
+
   virtual void do_oop(narrowOop* p) { ShouldNotReachHere(); }
 };
 
@@ -68,9 +78,8 @@ bool BarrierSetNMethod::supports_entry_barrier(nmethod* nm) {
 
 bool BarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
   // If the nmethod is the only thing pointing to the oops, and we are using a
-  // SATB GC, then it is important that this code marks them live. This is done
-  // by the phantom load.
-  LoadPhantomOopClosure cl;
+  // SATB GC, then it is important that this code marks them live.
+  OopKeepaliveClosure cl;
   nm->oops_do(&cl);
 
   // CodeCache sweeper support
@@ -105,8 +114,14 @@ public:
 void BarrierSetNMethod::arm_all_nmethods() {
   // Change to a new global GC phase. Doing this requires changing the thread-local
   // disarm value for all threads, to reflect the new GC phase.
+  // We wrap around at INT_MAX. That means that we assume nmethods won't have ABA
+  // problems in their nmethod disarm values after INT_MAX - 1 GCs. Every time a GC
+  // completes, ABA problems are removed, but if a concurrent GC is started and then
+  // aborted N times, that is when there could be ABA problems. If there are anything
+  // close to INT_MAX - 1 GCs starting without being able to finish, something is
+  // seriously wrong.
   ++_current_phase;
-  if (_current_phase == 4) {
+  if (_current_phase == INT_MAX) {
     _current_phase = 1;
   }
   BarrierSetNMethodArmClosure cl(_current_phase);
