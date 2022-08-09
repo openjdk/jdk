@@ -36,7 +36,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<approvalRequirement votes="=HIGH_BAR" locales="tr" paths="//ldml/localeDisplayNames/territories/territory\[@type=.CY.\]"/>
 			<approvalRequirement votes="=HIGH_BAR" locales="kea pt_CV" paths="//ldml/numbers/currencies/currency\[@type=.CVE.\]/(symbol|decimal)"/>
 			<!--  established locales - http://cldr.unicode.org/index/process#TOC-Draft-Status-of-Optimal-Field-Value -->
-			<approvalRequirement votes="=LOWER_BAR" locales="ar bn bg ca cs da de el en en_AU en_GB es_MX es et fa fi fil fr fr_CA gu he hi hr hu id is it ja kk kn ko lt lv mk ml mr ms nl no pa pl pt pt_PT ro ru sk sl sr sv ta te th tr ur uk vi zh zh_Hant" paths=""/>
+			<approvalRequirement votes="=LOWER_BAR" locales="ar bn bg ca cs da de el en en_AU es es_419 en_GB es_MX et fa fi fil fr fr_CA gu he hi hr hu id is it ja kk kn ko lt lv mk ml mr ms nl no pa pl pt pt_PT ro ru sk sl sr sv ta te th tr ur uk vi zh zh_Hant" paths=""/>
 			<!--  all other items -->
 			<approvalRequirement votes="=vetter" locales="*" paths=""/>
 		</approvalRequirements>

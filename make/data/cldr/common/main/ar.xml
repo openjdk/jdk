@@ -1440,8 +1440,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="M">L</dateFormatItem>
-						<dateFormatItem id="Md">d/‏M</dateFormatItem>
-						<dateFormatItem id="MEd">E، d/‏M</dateFormatItem>
+						<dateFormatItem id="Md">d‏/M</dateFormatItem>
+						<dateFormatItem id="MEd">E، d‏/M</dateFormatItem>
 						<dateFormatItem id="MMM">LLL</dateFormatItem>
 						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd">E، d MMM</dateFormatItem>
@@ -1451,7 +1451,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="yyyy">y G</dateFormatItem>
 						<dateFormatItem id="yyyyM">M‏/y G</dateFormatItem>
 						<dateFormatItem id="yyyyMd">d‏/M‏/y G</dateFormatItem>
-						<dateFormatItem id="yyyyMEd">E، d/‏M/‏y G</dateFormatItem>
+						<dateFormatItem id="yyyyMEd">E، d‏/M‏/y G</dateFormatItem>
 						<dateFormatItem id="yyyyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="yyyyMMMd">d MMM y G</dateFormatItem>
 						<dateFormatItem id="yyyyMMMEd">E، d MMM y G</dateFormatItem>
@@ -1538,12 +1538,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="M">M–M</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Md">
-							<greatestDifference id="d">d-M – d-M</greatestDifference>
-							<greatestDifference id="M">d-M – d-M</greatestDifference>
+							<greatestDifference id="d">d‏/M – d‏/M</greatestDifference>
+							<greatestDifference id="M">d‏/M – d‏/M</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MEd">
-							<greatestDifference id="d">E، d/‏M –‏ E، d/‏M</greatestDifference>
-							<greatestDifference id="M">E، d/‏M – E، d/‏M</greatestDifference>
+							<greatestDifference id="d">E، d‏/M – E، d‏/M</greatestDifference>
+							<greatestDifference id="M">E، d‏/M – E، d‏/M</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMM">
 							<greatestDifference id="M">MMM–MMM</greatestDifference>
@@ -2008,8 +2008,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="hmv">h:mm a v</dateFormatItem>
 						<dateFormatItem id="Hmv">HH:mm v</dateFormatItem>
 						<dateFormatItem id="M">L</dateFormatItem>
-						<dateFormatItem id="Md">d/‏M</dateFormatItem>
-						<dateFormatItem id="MEd">E، d/‏M</dateFormatItem>
+						<dateFormatItem id="Md">d‏/M</dateFormatItem>
+						<dateFormatItem id="MEd">E، d‏/M</dateFormatItem>
 						<dateFormatItem id="MMdd">dd‏/MM</dateFormatItem>
 						<dateFormatItem id="MMM">LLL</dateFormatItem>
 						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
@@ -2026,7 +2026,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="y">y</dateFormatItem>
 						<dateFormatItem id="yM">M‏/y</dateFormatItem>
 						<dateFormatItem id="yMd">d‏/M‏/y</dateFormatItem>
-						<dateFormatItem id="yMEd">E، d/‏M/‏y</dateFormatItem>
+						<dateFormatItem id="yMEd">E، d‏/M‏/y</dateFormatItem>
 						<dateFormatItem id="yMM">MM‏/y</dateFormatItem>
 						<dateFormatItem id="yMMM">MMM y</dateFormatItem>
 						<dateFormatItem id="yMMMd">d MMM y</dateFormatItem>
@@ -2123,12 +2123,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="M">M–M</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Md">
-							<greatestDifference id="d">d-M – d-M</greatestDifference>
-							<greatestDifference id="M">M/d – M/d</greatestDifference>
+							<greatestDifference id="d">d‏/M – d‏/M</greatestDifference>
+							<greatestDifference id="M">d‏/M – d‏/M</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MEd">
-							<greatestDifference id="d">E، d/‏M –‏ E، d/‏M</greatestDifference>
-							<greatestDifference id="M">E، d/‏M – E، d/‏M</greatestDifference>
+							<greatestDifference id="d">E، d‏/M – E، d‏/M</greatestDifference>
+							<greatestDifference id="M">E، d‏/M – E، d‏/M</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMM">
 							<greatestDifference id="M">MMM–MMM</greatestDifference>
@@ -2433,8 +2433,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="M">L</dateFormatItem>
-						<dateFormatItem id="Md">d/‏M</dateFormatItem>
-						<dateFormatItem id="MEd">E، d/‏M</dateFormatItem>
+						<dateFormatItem id="Md">d‏/M</dateFormatItem>
+						<dateFormatItem id="MEd">E، d‏/M</dateFormatItem>
 						<dateFormatItem id="MMM">LLL</dateFormatItem>
 						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd">E، d MMM</dateFormatItem>
@@ -2443,7 +2443,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="yyyy">y G</dateFormatItem>
 						<dateFormatItem id="yyyyM">M‏/y G</dateFormatItem>
 						<dateFormatItem id="yyyyMd">d‏/M‏/y G</dateFormatItem>
-						<dateFormatItem id="yyyyMEd">E، d/‏M/‏y G</dateFormatItem>
+						<dateFormatItem id="yyyyMEd">E، d‏/M‏/y G</dateFormatItem>
 						<dateFormatItem id="yyyyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="yyyyMMMd">d MMM y G</dateFormatItem>
 						<dateFormatItem id="yyyyMMMEd">E، d MMM y G</dateFormatItem>

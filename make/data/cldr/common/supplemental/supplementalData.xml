@@ -956,8 +956,8 @@ The printed version of ISO-4217:2001
             <currency iso4217="CSK" from="1953-06-01" to="1992-12-31"/>
         </region>
         <region iso3166="SL">
-            <currency iso4217="SLE" from="2022-04-01" tender="false"/>
-            <currency iso4217="SLL" from="1964-08-04"/>
+            <currency iso4217="SLE" from="2022-07-01"/>
+            <currency iso4217="SLL" from="1964-08-04" to="2022-10-01"/>
             <currency iso4217="GBP" from="1808-11-30" to="1966-02-04"/>
         </region>
         <region iso3166="SM">

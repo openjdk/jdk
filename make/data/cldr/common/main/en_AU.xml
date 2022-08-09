@@ -1422,9 +1422,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="SHP">
 				<symbol>SHP</symbol>
 			</currency>
-			<currency type="SLL">
-				<symbol>SLL</symbol>
-			</currency>
 			<currency type="SOS">
 				<symbol>SOS</symbol>
 			</currency>

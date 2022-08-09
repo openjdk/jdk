@@ -1720,22 +1720,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<calendar type="islamic">
 				<months>
 					<monthContext type="format">
-						<!-- UPLOAD ERRORS
-							 <monthWidth type="abbreviated">
-							 <month type="1" draft="contributed">Aşyr</month>
-							 <month type="2" draft="contributed">Sap.</month>
-							 <month type="3" draft="contributed">4 tir 1</month>
-							 <month type="4" draft="contributed">4 tir 2</month>
-							 <month type="5" draft="contributed">4 tir 3</month>
-							 <month type="6" draft="contributed">4 tir 4</month>
-							 <month type="7" draft="contributed">Rej.</month>
-							 <month type="8" draft="contributed">Mer.</month>
-							 <month type="9" draft="contributed">Ora.</month>
-							 <month type="10" draft="contributed">Baýr.</month>
-							 <month type="11" draft="contributed">Boş aý</month>
-							 <month type="12" draft="contributed">Gur.</month>
-							 </monthWidth>
-						-->
+						<monthWidth type="abbreviated">
+							<month type="1">Aşy</month>
+							<month type="2">Sap</month>
+							<month type="3">Tir I</month>
+							<month type="4">Tir II</month>
+							<month type="5">Tir III</month>
+							<month type="6">Tir IV</month>
+							<month type="7">Rej</month>
+							<month type="8">Mer</month>
+							<month type="9">Ora</month>
+							<month type="10">Baý</month>
+							<month type="11">Boş</month>
+							<month type="12">Gur</month>
+						</monthWidth>
 						<monthWidth type="narrow">
 							<month type="1" draft="contributed">1</month>
 							<month type="2" draft="contributed">2</month>
@@ -1766,22 +1764,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</monthWidth>
 					</monthContext>
 					<monthContext type="stand-alone">
-						<!-- UPLOAD ERRORS
-							 <monthWidth type="abbreviated">
-							 <month type="1" draft="contributed">Aşyr</month>
-							 <month type="2" draft="contributed">Sap.</month>
-							 <month type="3" draft="contributed">4 tir 1</month>
-							 <month type="4" draft="contributed">4 tir 2</month>
-							 <month type="5" draft="contributed">4 tir 3</month>
-							 <month type="6" draft="contributed">4 tir 4</month>
-							 <month type="7" draft="contributed">Rej.</month>
-							 <month type="8" draft="contributed">Mer.</month>
-							 <month type="9" draft="contributed">Ora.</month>
-							 <month type="10" draft="contributed">Baýr.</month>
-							 <month type="11" draft="contributed">Boş aý</month>
-							 <month type="12" draft="contributed">Gur.</month>
-							 </monthWidth>
-						-->
+						<monthWidth type="abbreviated">
+							<month type="1">Aşy</month>
+							<month type="2">Sap</month>
+							<month type="3">Tir I</month>
+							<month type="4">Tir II</month>
+							<month type="5">Tir III</month>
+							<month type="6">Tir IV</month>
+							<month type="7">Rej</month>
+							<month type="8">Mer</month>
+							<month type="9">Ora</month>
+							<month type="10">Baý</month>
+							<month type="11">Boş</month>
+							<month type="12">Gur</month>
+						</monthWidth>
 						<monthWidth type="narrow">
 							<month type="1" draft="contributed">1</month>
 							<month type="2" draft="contributed">2</month>
@@ -1815,70 +1811,68 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<eras>
 					<eraAbbr>
 						<era type="0" draft="contributed">HS</era>
-						<!-- UPLOAD ERRORS
-							 <dateFormats>
-							 <dateFormatLength type="full">
-							 <dateFormat>
-							 <pattern draft="contributed">EEEE, AAAA g, ý G</pattern>
-							 </dateFormat>
-							 </dateFormatLength>
-							 <dateFormatLength type="long">
-							 <dateFormat>
-							 <pattern draft="contributed">AAAA g, ý G</pattern>
-							 </dateFormat>
-							 </dateFormatLength>
-							 <dateFormatLength type="medium">
-							 <dateFormat>
-							 <pattern draft="contributed">AAA g, ý G</pattern>
-							 </dateFormat>
-							 </dateFormatLength>
-							 <dateFormatLength type="short">
-							 <dateFormat>
-							 <pattern draft="contributed">g/A/ý GGGGG</pattern>
-							 </dateFormat>
-							 </dateFormatLength>
-							 </dateFormats>
-							 <dateTimeFormats>
-							 <availableFormats>
-							 <dateFormatItem id="d" draft="contributed">g</dateFormatItem>
-							 <dateFormatItem id="E" draft="contributed">ccc</dateFormatItem>
-							 <dateFormatItem id="Ed" draft="contributed">g E</dateFormatItem>
-							 <dateFormatItem id="Gy" draft="contributed">b G</dateFormatItem>
-							 <dateFormatItem id="GyMd" draft="contributed">g/A/ý GGGGG</dateFormatItem>
-							 <dateFormatItem id="GyMMM" draft="contributed">AAA ý G</dateFormatItem>
-							 <dateFormatItem id="GyMMMd" draft="contributed">AAA g, ý G</dateFormatItem>
-							 <dateFormatItem id="GyMMMEd" draft="contributed">E, AAA g, ý G</dateFormatItem>
-							 <dateFormatItem id="M" draft="contributed">L</dateFormatItem>
-							 <dateFormatItem id="Md" draft="contributed">A/g</dateFormatItem>
-							 <dateFormatItem id="MEd" draft="contributed">E, A/g</dateFormatItem>
-							 <dateFormatItem id="MMM" draft="contributed">LLL</dateFormatItem>
-							 <dateFormatItem id="MMMd" draft="contributed">AAA g</dateFormatItem>
-							 <dateFormatItem id="MMMEd" draft="contributed">E, AAA g</dateFormatItem>
-							 <dateFormatItem id="MMMMd" draft="contributed">AAAA g</dateFormatItem>
-							 <dateFormatItem id="MMMMEd" draft="contributed">d/d</dateFormatItem>
-							 <dateFormatItem id="y" draft="contributed">ý G</dateFormatItem>
-							 <dateFormatItem id="yM" draft="contributed">d/d</dateFormatItem>
-							 <dateFormatItem id="yMd" draft="contributed">d/d</dateFormatItem>
-							 <dateFormatItem id="yMEd" draft="contributed">d/d</dateFormatItem>
-							 <dateFormatItem id="yMMM" draft="contributed">d/d</dateFormatItem>
-							 <dateFormatItem id="yMMMd" draft="contributed">d/d</dateFormatItem>
-							 <dateFormatItem id="yMMMEd" draft="contributed">d/d</dateFormatItem>
-							 <dateFormatItem id="yMMMM" draft="contributed">d/d</dateFormatItem>
-							 <dateFormatItem id="yyyy" draft="contributed">ý G</dateFormatItem>
-							 <dateFormatItem id="yyyyM" draft="contributed">A/ý GGGGG</dateFormatItem>
-							 <dateFormatItem id="yyyyMd" draft="contributed">g/A/ý GGGGG</dateFormatItem>
-							 <dateFormatItem id="yyyyMEd" draft="contributed">E, g/A/ý GGGGG</dateFormatItem>
-							 <dateFormatItem id="yyyyMMM" draft="contributed">AAA ý G</dateFormatItem>
-							 <dateFormatItem id="yyyyMMMd" draft="contributed">AAA g, ý G</dateFormatItem>
-							 <dateFormatItem id="yyyyMMMEd" draft="contributed">E, AAA g, ý G</dateFormatItem>
-							 <dateFormatItem id="yyyyMMMM" draft="contributed">AAAA ý G</dateFormatItem>
-							 <dateFormatItem id="yyyyQQQ" draft="contributed">QQQ ý G</dateFormatItem>
-							 <dateFormatItem id="yyyyQQQQ" draft="contributed">QQQQ ý G</dateFormatItem>
-							 </availableFormats>
-							 </dateTimeFormats>
-						-->
 					</eraAbbr>
 				</eras>
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern>EEEE, d MMMM, y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern>d MMMM, y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern>d MMM, y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern>d/M/y GGGGG</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="d">d</dateFormatItem>
+						<dateFormatItem id="E">ccc</dateFormatItem>
+						<dateFormatItem id="Ed">d, E</dateFormatItem>
+						<dateFormatItem id="Gy">y G</dateFormatItem>
+						<dateFormatItem id="GyMd">d/M/y GGGGG</dateFormatItem>
+						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMd">d MMM, y G</dateFormatItem>
+						<dateFormatItem id="GyMMMEd">E, d MMM, y G</dateFormatItem>
+						<dateFormatItem id="M">L</dateFormatItem>
+						<dateFormatItem id="Md">d/M</dateFormatItem>
+						<dateFormatItem id="MEd">E, d/M</dateFormatItem>
+						<dateFormatItem id="MMM">LLL</dateFormatItem>
+						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
+						<dateFormatItem id="MMMEd">E, d MMM</dateFormatItem>
+						<dateFormatItem id="MMMMd">d MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMEd">d MMMM, E</dateFormatItem>
+						<dateFormatItem id="y">y G</dateFormatItem>
+						<dateFormatItem id="yM">MM.y</dateFormatItem>
+						<dateFormatItem id="yMd">dd.MM.y</dateFormatItem>
+						<dateFormatItem id="yMEd">dd.MM.y E</dateFormatItem>
+						<dateFormatItem id="yMMM">MMM, y</dateFormatItem>
+						<dateFormatItem id="yMMMd">d MMM, y</dateFormatItem>
+						<dateFormatItem id="yMMMEd">d MMM, y, E</dateFormatItem>
+						<dateFormatItem id="yMMMM">MMMM, y</dateFormatItem>
+						<dateFormatItem id="yyyy">y G</dateFormatItem>
+						<dateFormatItem id="yyyyM">M/y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMd">d/M/y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMEd">E, d/M/y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMMM">MMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMd">d MMM, y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMEd">E, d MMM, y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMM">MMMM, y G</dateFormatItem>
+						<dateFormatItem id="yyyyQQQ">QQQ, y G</dateFormatItem>
+						<dateFormatItem id="yyyyQQQQ">QQQQ, y G</dateFormatItem>
+					</availableFormats>
+				</dateTimeFormats>
 			</calendar>
 		</calendars>
 		<fields>
