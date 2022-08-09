@@ -866,7 +866,7 @@ bool FileMapInfo::validate_boot_class_paths() {
   // time path (e.g. the JDK image is copied to a different location
   // after generating the shared archive), which is acceptable. For most
   // common cases, the dump time boot path might contain modules_image only.
-  char* runtime_boot_path = Arguments::get_sysclasspath();
+  char* runtime_boot_path = Arguments::get_boot_class_path();
   char* rp = skip_first_path_entry(runtime_boot_path);
   assert(shared_path(0)->is_modules_image(), "first shared_path must be the modules image");
   int dp_len = header()->app_class_paths_start_index() - 1; // ignore the first path to the module image
@@ -2519,7 +2519,7 @@ int FileMapHeader::compute_crc() {
 bool FileMapHeader::validate() {
   if (_obj_alignment != ObjectAlignmentInBytes) {
     FileMapInfo::fail_continue("The shared archive file's ObjectAlignmentInBytes of %d"
-                  " does not equal the current ObjectAlignmentInBytes of " INTX_FORMAT ".",
+                  " does not equal the current ObjectAlignmentInBytes of %d.",
                   _obj_alignment, ObjectAlignmentInBytes);
     return false;
   }

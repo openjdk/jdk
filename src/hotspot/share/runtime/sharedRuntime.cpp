@@ -23,8 +23,8 @@
  */
 
 #include "precompiled.hpp"
-#include "classfile/javaClasses.hpp"
 #include "jvm.h"
+#include "classfile/javaClasses.inline.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
@@ -996,11 +996,9 @@ JRT_ENTRY_NO_ASYNC(void, SharedRuntime::register_finalizer(JavaThread* current, 
 JRT_END
 
 jlong SharedRuntime::get_java_tid(Thread* thread) {
-  if (thread != NULL) {
-    if (thread->is_Java_thread()) {
-      oop obj = JavaThread::cast(thread)->threadObj();
-      return (obj == NULL) ? 0 : java_lang_Thread::thread_id(obj);
-    }
+  if (thread != NULL && thread->is_Java_thread()) {
+    oop obj = JavaThread::cast(thread)->threadObj();
+    return (obj == NULL) ? 0 : java_lang_Thread::thread_id(obj);
   }
   return 0;
 }
@@ -1073,8 +1071,6 @@ Handle SharedRuntime::find_callee_info(Bytecodes::Code& bc, CallInfo& callinfo, 
 
 Method* SharedRuntime::extract_attached_method(vframeStream& vfst) {
   CompiledMethod* caller = vfst.nm();
-
-  nmethodLocker caller_lock(caller);
 
   address pc = vfst.frame_pc();
   { // Get call instruction under lock because another thread may be busy patching it.
@@ -1153,7 +1149,10 @@ Handle SharedRuntime::find_callee_info_helper(vframeStream& vfst, Bytecodes::Cod
   if (has_receiver) {
     // This register map must be update since we need to find the receiver for
     // compiled frames. The receiver might be in a register.
-    RegisterMap reg_map2(current);
+    RegisterMap reg_map2(current,
+                         RegisterMap::UpdateMap::include,
+                         RegisterMap::ProcessFrames::include,
+                         RegisterMap::WalkContinuation::skip);
     frame stubFrame   = current->last_frame();
     // Caller-frame is a compiled frame
     frame callerFrame = stubFrame.sender(&reg_map2);
@@ -1226,7 +1225,10 @@ methodHandle SharedRuntime::find_callee_method(TRAPS) {
     // No Java frames were found on stack since we did the JavaCall.
     // Hence the stack can only contain an entry_frame.  We need to
     // find the target method from the stub frame.
-    RegisterMap reg_map(current, false);
+    RegisterMap reg_map(current,
+                        RegisterMap::UpdateMap::skip,
+                        RegisterMap::ProcessFrames::include,
+                        RegisterMap::WalkContinuation::skip);
     frame fr = current->last_frame();
     assert(fr.is_runtime_frame(), "must be a runtimeStub");
     fr = fr.sender(&reg_map);
@@ -1345,6 +1347,9 @@ bool SharedRuntime::resolve_sub_helper_internal(methodHandle callee_method, cons
           return true; // skip patching for JVMCI
         }
         CompiledStaticCall* ssc = caller_nm->compiledStaticCall_before(caller_frame.pc());
+        if (is_nmethod && caller_nm->method()->is_continuation_enter_intrinsic()) {
+          ssc->compute_entry_for_continuation_entry(callee_method, static_call_info);
+        }
         if (ssc->is_clean()) ssc->set(static_call_info);
       }
     }
@@ -1357,17 +1362,15 @@ bool SharedRuntime::resolve_sub_helper_internal(methodHandle callee_method, cons
 methodHandle SharedRuntime::resolve_sub_helper(bool is_virtual, bool is_optimized, TRAPS) {
   JavaThread* current = THREAD;
   ResourceMark rm(current);
-  RegisterMap cbl_map(current, false);
+  RegisterMap cbl_map(current,
+                      RegisterMap::UpdateMap::skip,
+                      RegisterMap::ProcessFrames::include,
+                      RegisterMap::WalkContinuation::skip);
   frame caller_frame = current->last_frame().sender(&cbl_map);
 
   CodeBlob* caller_cb = caller_frame.cb();
   guarantee(caller_cb != NULL && caller_cb->is_compiled(), "must be called from compiled method");
   CompiledMethod* caller_nm = caller_cb->as_compiled_method_or_null();
-
-  // make sure caller is not getting deoptimized
-  // and removed before we are done with it.
-  // CLEANUP - with lazy deopt shouldn't need this lock
-  nmethodLocker caller_lock(caller_nm);
 
   // determine call info & receiver
   // note: a) receiver is NULL for static calls
@@ -1405,7 +1408,7 @@ methodHandle SharedRuntime::resolve_sub_helper(bool is_virtual, bool is_optimize
 
   if (invoke_code == Bytecodes::_invokestatic) {
     assert(callee_method->method_holder()->is_initialized() ||
-           callee_method->method_holder()->is_reentrant_initialization(current),
+           callee_method->method_holder()->is_init_thread(current),
            "invalid class initialization state for invoke_static");
     if (!VM_Version::supports_fast_class_init_checks() && callee_method->needs_clinit_barrier()) {
       // In order to keep class initialization check, do not patch call
@@ -1455,7 +1458,10 @@ methodHandle SharedRuntime::resolve_sub_helper(bool is_virtual, bool is_optimize
 // Inline caches exist only in compiled code
 JRT_BLOCK_ENTRY(address, SharedRuntime::handle_wrong_method_ic_miss(JavaThread* current))
 #ifdef ASSERT
-  RegisterMap reg_map(current, false);
+  RegisterMap reg_map(current,
+                      RegisterMap::UpdateMap::skip,
+                      RegisterMap::ProcessFrames::include,
+                      RegisterMap::WalkContinuation::skip);
   frame stub_frame = current->last_frame();
   assert(stub_frame.is_runtime_frame(), "sanity check");
   frame caller_frame = stub_frame.sender(&reg_map);
@@ -1485,7 +1491,10 @@ JRT_BLOCK_ENTRY(address, SharedRuntime::handle_wrong_method(JavaThread* current)
   // place the callee method in the callee_target. It is stashed
   // there because if we try and find the callee by normal means a
   // safepoint is possible and have trouble gc'ing the compiled args.
-  RegisterMap reg_map(current, false);
+  RegisterMap reg_map(current,
+                      RegisterMap::UpdateMap::skip,
+                      RegisterMap::ProcessFrames::include,
+                      RegisterMap::WalkContinuation::skip);
   frame stub_frame = current->last_frame();
   assert(stub_frame.is_runtime_frame(), "sanity check");
   frame caller_frame = stub_frame.sender(&reg_map);
@@ -1535,7 +1544,10 @@ JRT_BLOCK_ENTRY(address, SharedRuntime::handle_wrong_method_abstract(JavaThread*
   DEBUG_ONLY( invoke.verify(); )
 
   // Find the compiled caller frame.
-  RegisterMap reg_map(current);
+  RegisterMap reg_map(current,
+                      RegisterMap::UpdateMap::include,
+                      RegisterMap::ProcessFrames::include,
+                      RegisterMap::WalkContinuation::skip);
   frame stubFrame = current->last_frame();
   assert(stubFrame.is_runtime_frame(), "must be");
   frame callerFrame = stubFrame.sender(&reg_map);
@@ -1559,10 +1571,35 @@ JRT_END
 // resolve a static call and patch code
 JRT_BLOCK_ENTRY(address, SharedRuntime::resolve_static_call_C(JavaThread* current ))
   methodHandle callee_method;
+  bool enter_special = false;
   JRT_BLOCK
     callee_method = SharedRuntime::resolve_helper(false, false, CHECK_NULL);
     current->set_vm_result_2(callee_method());
+
+    if (current->is_interp_only_mode()) {
+      RegisterMap reg_map(current,
+                          RegisterMap::UpdateMap::skip,
+                          RegisterMap::ProcessFrames::include,
+                          RegisterMap::WalkContinuation::skip);
+      frame stub_frame = current->last_frame();
+      assert(stub_frame.is_runtime_frame(), "must be a runtimeStub");
+      frame caller = stub_frame.sender(&reg_map);
+      enter_special = caller.cb() != NULL && caller.cb()->is_compiled()
+        && caller.cb()->as_compiled_method()->method()->is_continuation_enter_intrinsic();
+    }
   JRT_BLOCK_END
+
+  if (current->is_interp_only_mode() && enter_special) {
+    // enterSpecial is compiled and calls this method to resolve the call to Continuation::enter
+    // but in interp_only_mode we need to go to the interpreted entry
+    // The c2i won't patch in this mode -- see fixup_callers_callsite
+    //
+    // This should probably be done in all cases, not just enterSpecial (see JDK-8218403),
+    // but that's part of a larger fix, and the situation is worse for enterSpecial, as it has no
+    // interpreted version.
+    return callee_method->get_c2i_entry();
+  }
+
   // return compiled code entry point after potential safepoints
   assert(callee_method->verified_code_entry() != NULL, " Jump to zero!");
   return callee_method->verified_code_entry();
@@ -1697,7 +1734,10 @@ methodHandle SharedRuntime::handle_ic_miss_helper(TRAPS) {
   if (call_info.resolved_method()->can_be_statically_bound()) {
     methodHandle callee_method = SharedRuntime::reresolve_call_site(CHECK_(methodHandle()));
     if (TraceCallFixup) {
-      RegisterMap reg_map(current, false);
+      RegisterMap reg_map(current,
+                          RegisterMap::UpdateMap::skip,
+                          RegisterMap::ProcessFrames::include,
+                          RegisterMap::WalkContinuation::skip);
       frame caller_frame = current->last_frame().sender(&reg_map);
       ResourceMark rm(current);
       tty->print("converting IC miss to reresolve (%s) call to", Bytecodes::name(bc));
@@ -1723,7 +1763,10 @@ methodHandle SharedRuntime::handle_ic_miss_helper(TRAPS) {
 
   if (ICMissHistogram) {
     MutexLocker m(VMStatistic_lock);
-    RegisterMap reg_map(current, false);
+    RegisterMap reg_map(current,
+                        RegisterMap::UpdateMap::skip,
+                        RegisterMap::ProcessFrames::include,
+                        RegisterMap::WalkContinuation::skip);
     frame f = current->last_frame().real_sender(&reg_map);// skip runtime stub
     // produce statistics under the lock
     trace_ic_miss(f.pc());
@@ -1741,7 +1784,10 @@ methodHandle SharedRuntime::handle_ic_miss_helper(TRAPS) {
   // Transitioning IC caches may require transition stubs. If we run out
   // of transition stubs, we have to drop locks and perform a safepoint
   // that refills them.
-  RegisterMap reg_map(current, false);
+  RegisterMap reg_map(current,
+                      RegisterMap::UpdateMap::skip,
+                      RegisterMap::ProcessFrames::include,
+                      RegisterMap::WalkContinuation::skip);
   frame caller_frame = current->last_frame().sender(&reg_map);
   CodeBlob* cb = caller_frame.cb();
   CompiledMethod* caller_nm = cb->as_compiled_method();
@@ -1785,7 +1831,10 @@ static bool clear_ic_at_addr(CompiledMethod* caller_nm, address call_addr, bool 
 methodHandle SharedRuntime::reresolve_call_site(TRAPS) {
   JavaThread* current = THREAD;
   ResourceMark rm(current);
-  RegisterMap reg_map(current, false);
+  RegisterMap reg_map(current,
+                      RegisterMap::UpdateMap::skip,
+                      RegisterMap::ProcessFrames::include,
+                      RegisterMap::WalkContinuation::skip);
   frame stub_frame = current->last_frame();
   assert(stub_frame.is_runtime_frame(), "must be a runtimeStub");
   frame caller = stub_frame.sender(&reg_map);
@@ -1828,10 +1877,6 @@ methodHandle SharedRuntime::reresolve_call_site(TRAPS) {
       // Location of call instruction
       call_addr = caller_nm->call_instruction_address(pc);
     }
-    // Make sure nmethod doesn't get deoptimized and removed until
-    // this is done with it.
-    // CLEANUP - with lazy deopt shouldn't need this lock
-    nmethodLocker nmlock(caller_nm);
 
     // Check relocations for the matching call to 1) avoid false positives,
     // and 2) determine the type.
@@ -1993,6 +2038,9 @@ JRT_LEAF(void, SharedRuntime::fixup_callers_callsite(Method* method, address cal
   // Get the return PC for the passed caller PC.
   address return_pc = caller_pc + frame::pc_return_offset;
 
+  assert(!JavaThread::current()->is_interp_only_mode() || !nm->method()->is_continuation_enter_intrinsic()
+    || ContinuationEntry::is_interpreted_call(return_pc), "interp_only_mode but not in enterSpecial interpreted entry");
+
   // There is a benign race here. We could be attempting to patch to a compiled
   // entry point at the same time the callee is being deoptimized. If that is
   // the case then entry_point may in fact point to a c2i and we'd patch the
@@ -2028,6 +2076,13 @@ JRT_LEAF(void, SharedRuntime::fixup_callers_callsite(Method* method, address cal
            typ != relocInfo::opt_virtual_call_type &&
            typ != relocInfo::static_stub_type) {
         return;
+      }
+      if (nm->method()->is_continuation_enter_intrinsic()) {
+        assert(ContinuationEntry::is_interpreted_call(call->instruction_address()) == JavaThread::current()->is_interp_only_mode(),
+          "mode: %d", JavaThread::current()->is_interp_only_mode());
+        if (ContinuationEntry::is_interpreted_call(call->instruction_address())) {
+          return;
+        }
       }
       address destination = call->destination();
       if (should_fixup_call_destination(destination, entry_point, caller_pc, moop, cb)) {
@@ -2134,7 +2189,9 @@ void SharedRuntime::monitor_enter_helper(oopDesc* obj, BasicLock* lock, JavaThre
   if (!SafepointSynchronize::is_synchronizing()) {
     // Only try quick_enter() if we're not trying to reach a safepoint
     // so that the calling thread reaches the safepoint more quickly.
-    if (ObjectSynchronizer::quick_enter(obj, current, lock)) return;
+    if (ObjectSynchronizer::quick_enter(obj, current, lock)) {
+      return;
+    }
   }
   // NO_ASYNC required because an async exception on the state transition destructor
   // would leave you with the lock held and it would never be released.
@@ -2150,11 +2207,6 @@ void SharedRuntime::monitor_enter_helper(oopDesc* obj, BasicLock* lock, JavaThre
 // Handles the uncommon case in locking, i.e., contention or an inflated lock.
 JRT_BLOCK_ENTRY(void, SharedRuntime::complete_monitor_locking_C(oopDesc* obj, BasicLock* lock, JavaThread* current))
   SharedRuntime::monitor_enter_helper(obj, lock, current);
-JRT_END
-
-JRT_BLOCK_ENTRY(void, SharedRuntime::complete_monitor_locking_C_inc_held_monitor_count(oopDesc* obj, BasicLock* lock, JavaThread* current))
-  SharedRuntime::monitor_enter_helper(obj, lock, current);
-  current->inc_held_monitor_count();
 JRT_END
 
 void SharedRuntime::monitor_exit_helper(oopDesc* obj, BasicLock* lock, JavaThread* current) {
@@ -2683,16 +2735,20 @@ extern "C" void unexpected_adapter_call() {
 }
 
 static void post_adapter_creation(const AdapterBlob* new_adapter, const AdapterHandlerEntry* entry) {
-  char blob_id[256];
-  jio_snprintf(blob_id,
-                sizeof(blob_id),
-                "%s(%s)",
-                new_adapter->name(),
-                entry->fingerprint()->as_string());
-  Forte::register_stub(blob_id, new_adapter->content_begin(), new_adapter->content_end());
+  if (Forte::is_enabled() || JvmtiExport::should_post_dynamic_code_generated()) {
+    char blob_id[256];
+    jio_snprintf(blob_id,
+                 sizeof(blob_id),
+                 "%s(%s)",
+                 new_adapter->name(),
+                 entry->fingerprint()->as_string());
+    if (Forte::is_enabled()) {
+      Forte::register_stub(blob_id, new_adapter->content_begin(), new_adapter->content_end());
+    }
 
-  if (JvmtiExport::should_post_dynamic_code_generated()) {
-    JvmtiExport::post_dynamic_code_generated(blob_id, new_adapter->content_begin(), new_adapter->content_end());
+    if (JvmtiExport::should_post_dynamic_code_generated()) {
+      JvmtiExport::post_dynamic_code_generated(blob_id, new_adapter->content_begin(), new_adapter->content_end());
+    }
   }
 }
 
@@ -3058,7 +3114,7 @@ void AdapterHandlerLibrary::create_native_wrapper(const methodHandle& method) {
       CodeBuffer buffer(buf);
 
       if (method->is_continuation_enter_intrinsic()) {
-        buffer.initialize_stubs_size(64);
+        buffer.initialize_stubs_size(128);
       }
 
       struct { double data[20]; } locs_buf;
@@ -3267,7 +3323,10 @@ JRT_LEAF(intptr_t*, SharedRuntime::OSR_migration_begin( JavaThread *current) )
   }
   assert(i - max_locals == active_monitor_count*2, "found the expected number of monitors");
 
-  RegisterMap map(current, false);
+  RegisterMap map(current,
+                  RegisterMap::UpdateMap::skip,
+                  RegisterMap::ProcessFrames::include,
+                  RegisterMap::WalkContinuation::skip);
   frame sender = fr.sender(&map);
   if (sender.is_interpreted_frame()) {
     current->push_cont_fastpath(sender.sp());
@@ -3341,7 +3400,10 @@ frame SharedRuntime::look_for_reserved_stack_annotated_method(JavaThread* curren
 
   assert(fr.is_java_frame(), "Must start on Java frame");
 
-  RegisterMap map(JavaThread::current(), false, false); // don't walk continuations
+  RegisterMap map(JavaThread::current(),
+                  RegisterMap::UpdateMap::skip,
+                  RegisterMap::ProcessFrames::skip,
+                  RegisterMap::WalkContinuation::skip); // don't walk continuations
   for (; !fr.is_first_frame(); fr = fr.sender(&map)) {
     if (!fr.is_java_frame()) {
       continue;

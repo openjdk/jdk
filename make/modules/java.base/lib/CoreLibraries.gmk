@@ -172,8 +172,10 @@ ifeq ($(call isTargetOs, macosx), true)
 endif
 
 ifeq ($(call isTargetOs, windows), true)
-  # Supply the name of the C runtime lib.
-  LIBJLI_CFLAGS += -DMSVCR_DLL_NAME='"$(notdir $(MSVCR_DLL))"'
+  # Supply the name of the C runtime libs.
+  ifneq ($(MSVCR_DLL), )
+    LIBJLI_CFLAGS += -DMSVCR_DLL_NAME='"$(notdir $(MSVCR_DLL))"'
+  endif
   ifneq ($(VCRUNTIME_1_DLL), )
     LIBJLI_CFLAGS += -DVCRUNTIME_1_DLL_NAME='"$(notdir $(VCRUNTIME_1_DLL))"'
   endif

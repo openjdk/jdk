@@ -129,18 +129,17 @@ void MemTracker::final_report(outputStream* output) {
 void MemTracker::report(bool summary_only, outputStream* output, size_t scale) {
  assert(output != NULL, "No output stream");
   MemBaseline baseline;
-  if (baseline.baseline(summary_only)) {
-    if (summary_only) {
-      MemSummaryReporter rpt(baseline, output, scale);
-      rpt.report();
-    } else {
-      MemDetailReporter rpt(baseline, output, scale);
-      rpt.report();
-      output->print("Metaspace:");
-      // The basic metaspace report avoids any locking and should be safe to
-      // be called at any time.
-      MetaspaceUtils::print_basic_report(output, scale);
-    }
+  baseline.baseline(summary_only);
+  if (summary_only) {
+    MemSummaryReporter rpt(baseline, output, scale);
+    rpt.report();
+  } else {
+    MemDetailReporter rpt(baseline, output, scale);
+    rpt.report();
+    output->print("Metaspace:");
+    // The basic metaspace report avoids any locking and should be safe to
+    // be called at any time.
+    MetaspaceUtils::print_basic_report(output, scale);
   }
 }
 

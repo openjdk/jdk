@@ -37,8 +37,8 @@
 #include "oops/typeArrayKlass.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/os.hpp"
-#include "runtime/thread.inline.hpp"
 #include "utilities/exceptions.hpp"
 
 static Symbol* jvm_upcalls_class_sym = NULL;

@@ -353,7 +353,6 @@ java_props_t *
 GetJavaProperties(JNIEnv *env)
 {
     static java_props_t sprops;
-    char *v; /* tmp var */
 
     if (sprops.user_dir) {
         return &sprops;

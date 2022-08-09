@@ -43,9 +43,9 @@ public class JstatGCUtilParser {
     }
 
     public enum GcStatistics {
-        S0(GcStatisticsType.PERCENTAGE),
-        S1(GcStatisticsType.PERCENTAGE),
-        E(GcStatisticsType.PERCENTAGE),
+        S0(GcStatisticsType.PERCENTAGE_OR_DASH),
+        S1(GcStatisticsType.PERCENTAGE_OR_DASH),
+        E(GcStatisticsType.PERCENTAGE_OR_DASH),
         O(GcStatisticsType.PERCENTAGE),
         M(GcStatisticsType.PERCENTAGE_OR_DASH),
         CCS(GcStatisticsType.PERCENTAGE_OR_DASH),

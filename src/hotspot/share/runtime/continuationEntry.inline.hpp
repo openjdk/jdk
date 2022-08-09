@@ -28,8 +28,18 @@
 #include "runtime/continuationEntry.hpp"
 
 #include "oops/access.hpp"
+#include "runtime/frame.hpp"
+#include "utilities/align.hpp"
 
 #include CPU_HEADER_INLINE(continuationEntry)
+
+inline intptr_t* ContinuationEntry::bottom_sender_sp() const {
+  intptr_t* sp = entry_sp() - argsize();
+#ifdef _LP64
+  sp = align_down(sp, frame::frame_alignment);
+#endif
+  return sp;
+}
 
 inline oop ContinuationEntry::cont_oop() const {
   oop snapshot = _cont;

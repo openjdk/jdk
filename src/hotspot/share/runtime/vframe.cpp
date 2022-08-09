@@ -42,6 +42,7 @@
 #include "runtime/frame.inline.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/javaThread.inline.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/objectMonitor.inline.hpp"
 #include "runtime/osThread.hpp"
@@ -49,7 +50,6 @@
 #include "runtime/stackFrameStream.inline.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/synchronizer.hpp"
-#include "runtime/thread.inline.hpp"
 #include "runtime/vframe.inline.hpp"
 #include "runtime/vframeArray.hpp"
 #include "runtime/vframe_hp.hpp"
@@ -62,7 +62,11 @@ vframe::vframe(const frame* fr, const RegisterMap* reg_map, JavaThread* thread)
 }
 
 vframe::vframe(const frame* fr, JavaThread* thread)
-: _reg_map(thread), _thread(thread), _chunk() {
+: _reg_map(thread,
+           RegisterMap::UpdateMap::include,
+           RegisterMap::ProcessFrames::include,
+           RegisterMap::WalkContinuation::skip),
+  _thread(thread), _chunk() {
   assert(fr != NULL, "must have frame");
   _fr = *fr;
   assert(!_reg_map.in_cont(), "");
@@ -226,9 +230,8 @@ void javaVFrame::print_lock_info_on(outputStream* st, int frame_count) {
       Klass* k = obj->klass();
       st->print_cr("\t- %s <" INTPTR_FORMAT "> (a %s)", "parking to wait for ", p2i(obj), k->external_name());
     }
-    else if (thread()->osthread()->get_state() == OBJECT_WAIT) {
-      // We are waiting on an Object monitor but Object.wait() isn't the
-      // top-frame, so we should be waiting on a Class initialization monitor.
+    else if (thread()->osthread()->get_state() == CONDVAR_WAIT) {
+      // We are waiting on the native class initialization monitor.
       InstanceKlass* k = thread()->class_to_be_initialized();
       if (k != NULL) {
         st->print_cr("\t- waiting on the Class initialization monitor for %s", k->external_name());
@@ -530,7 +533,10 @@ void vframeStreamCommon::found_bad_method_frame() const {
 // top-frame will be skipped
 vframeStream::vframeStream(JavaThread* thread, frame top_frame,
                           bool stop_at_java_call_stub) :
-    vframeStreamCommon(RegisterMap(thread, true, true, true)) {
+    vframeStreamCommon(RegisterMap(thread,
+                                   RegisterMap::UpdateMap::include,
+                                   RegisterMap::ProcessFrames::include,
+                                   RegisterMap::WalkContinuation::include)) {
   _stop_at_java_call_stub = stop_at_java_call_stub;
 
   // skip top frame, as it may not be at safepoint
@@ -541,7 +547,10 @@ vframeStream::vframeStream(JavaThread* thread, frame top_frame,
 }
 
 vframeStream::vframeStream(JavaThread* thread, Handle continuation_scope, bool stop_at_java_call_stub)
- : vframeStreamCommon(RegisterMap(thread, true, true, true)) {
+ : vframeStreamCommon(RegisterMap(thread,
+                                  RegisterMap::UpdateMap::include,
+                                  RegisterMap::ProcessFrames::include,
+                                  RegisterMap::WalkContinuation::include)) {
 
   _stop_at_java_call_stub = stop_at_java_call_stub;
   _continuation_scope = continuation_scope;
@@ -559,7 +568,7 @@ vframeStream::vframeStream(JavaThread* thread, Handle continuation_scope, bool s
 }
 
 vframeStream::vframeStream(oop continuation, Handle continuation_scope)
- : vframeStreamCommon(RegisterMap(continuation, true)) {
+ : vframeStreamCommon(RegisterMap(continuation, RegisterMap::UpdateMap::include)) {
 
   _stop_at_java_call_stub = false;
   _continuation_scope = continuation_scope;

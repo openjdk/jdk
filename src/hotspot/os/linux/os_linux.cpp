@@ -38,7 +38,6 @@
 #include "oops/oop.inline.hpp"
 #include "os_linux.inline.hpp"
 #include "os_posix.inline.hpp"
-#include "os_share_linux.hpp"
 #include "osContainer_linux.hpp"
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm_misc.hpp"
@@ -50,6 +49,7 @@
 #include "runtime/init.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/osThread.hpp"
@@ -57,8 +57,8 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/statSampler.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "runtime/thread.inline.hpp"
 #include "runtime/threadCritical.hpp"
+#include "runtime/threads.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/timer.hpp"
 #include "runtime/vm_version.hpp"
@@ -72,6 +72,7 @@
 #include "utilities/events.hpp"
 #include "utilities/elfFile.hpp"
 #include "utilities/growableArray.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/vmError.hpp"
@@ -965,8 +966,10 @@ bool os::create_attached_thread(JavaThread* thread) {
   // and save the caller's signal mask
   PosixSignals::hotspot_sigmask(thread);
 
-  log_info(os, thread)("Thread attached (tid: " UINTX_FORMAT ", pthread id: " UINTX_FORMAT ").",
-    os::current_thread_id(), (uintx) pthread_self());
+  log_info(os, thread)("Thread attached (tid: " UINTX_FORMAT ", pthread id: " UINTX_FORMAT
+                       ", stack: " PTR_FORMAT " - " PTR_FORMAT " (" SIZE_FORMAT "k) ).",
+                       os::current_thread_id(), (uintx) pthread_self(),
+                       p2i(thread->stack_base()), p2i(thread->stack_end()), thread->stack_size());
 
   return true;
 }
@@ -1786,6 +1789,18 @@ void * os::Linux::dll_load_in_vmthread(const char *filename, char *ebuf,
   return result;
 }
 
+const char* os::Linux::dll_path(void* lib) {
+  struct link_map *lmap;
+  const char* l_path = NULL;
+  assert(lib != NULL, "dll_path parameter must not be NULL");
+
+  int res_dli = ::dlinfo(lib, RTLD_DI_LINKMAP, &lmap);
+  if (res_dli == 0) {
+    l_path = lmap->l_name;
+  }
+  return l_path;
+}
+
 static bool _print_ascii_file(const char* filename, outputStream* st, const char* hdr = NULL) {
   int fd = ::open(filename, O_RDONLY);
   if (fd == -1) {
@@ -2192,19 +2207,6 @@ void os::Linux::print_uptime_info(outputStream* st) {
   }
 }
 
-static void print_container_helper(outputStream* st, jlong j, const char* metrics) {
-  st->print("%s: ", metrics);
-  if (j > 0) {
-    if (j >= 1024) {
-      st->print_cr(UINT64_FORMAT " k", uint64_t(j) / 1024);
-    } else {
-      st->print_cr(UINT64_FORMAT, uint64_t(j));
-    }
-  } else {
-    st->print_cr("%s", j == OSCONTAINER_ERROR ? "not supported" : "unlimited");
-  }
-}
-
 bool os::Linux::print_container_info(outputStream* st) {
   if (!OSContainer::is_containerized()) {
     st->print_cr("container information not found.");
@@ -2260,11 +2262,13 @@ bool os::Linux::print_container_info(outputStream* st) {
     st->print_cr("%s", i == OSCONTAINER_ERROR ? "not supported" : "no shares");
   }
 
-  print_container_helper(st, OSContainer::memory_limit_in_bytes(), "memory_limit_in_bytes");
-  print_container_helper(st, OSContainer::memory_and_swap_limit_in_bytes(), "memory_and_swap_limit_in_bytes");
-  print_container_helper(st, OSContainer::memory_soft_limit_in_bytes(), "memory_soft_limit_in_bytes");
-  print_container_helper(st, OSContainer::memory_usage_in_bytes(), "memory_usage_in_bytes");
-  print_container_helper(st, OSContainer::memory_max_usage_in_bytes(), "memory_max_usage_in_bytes");
+  OSContainer::print_container_helper(st, OSContainer::memory_limit_in_bytes(), "memory_limit_in_bytes");
+  OSContainer::print_container_helper(st, OSContainer::memory_and_swap_limit_in_bytes(), "memory_and_swap_limit_in_bytes");
+  OSContainer::print_container_helper(st, OSContainer::memory_soft_limit_in_bytes(), "memory_soft_limit_in_bytes");
+  OSContainer::print_container_helper(st, OSContainer::memory_usage_in_bytes(), "memory_usage_in_bytes");
+  OSContainer::print_container_helper(st, OSContainer::memory_max_usage_in_bytes(), "memory_max_usage_in_bytes");
+
+  OSContainer::print_version_specific_info(st);
 
   jlong j = OSContainer::pids_max();
   st->print("maximum number of tasks: ");
@@ -2585,14 +2589,6 @@ void os::jvm_path(char *buf, jint buflen) {
 
   strncpy(saved_jvm_path, buf, MAXPATHLEN);
   saved_jvm_path[MAXPATHLEN - 1] = '\0';
-}
-
-void os::print_jni_name_prefix_on(outputStream* st, int args_size) {
-  // no prefix required, not even "_"
-}
-
-void os::print_jni_name_suffix_on(outputStream* st, int args_size) {
-  // no suffix required
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -4164,13 +4160,6 @@ char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes, bool 
   return NULL;
 }
 
-// Sleep forever; naked call to OS-specific sleep; use with CAUTION
-void os::infinite_sleep() {
-  while (true) {    // sleep forever ...
-    ::sleep(100);   // ... 100 seconds at a time
-  }
-}
-
 // Used to convert frequent JVM_Yield() to nops
 bool os::dont_yield() {
   return DontYieldALot;
@@ -4466,6 +4455,89 @@ void os::Linux::numa_init() {
   }
 }
 
+#if defined(IA32) && !defined(ZERO)
+/*
+ * Work-around (execute code at a high address) for broken NX emulation using CS limit,
+ * Red Hat patch "Exec-Shield" (IA32 only).
+ *
+ * Map and execute at a high VA to prevent CS lazy updates race with SMP MM
+ * invalidation.Further code generation by the JVM will no longer cause CS limit
+ * updates.
+ *
+ * Affects IA32: RHEL 5 & 6, Ubuntu 10.04 (LTS), 10.10, 11.04, 11.10, 12.04.
+ * @see JDK-8023956
+ */
+static void workaround_expand_exec_shield_cs_limit() {
+  assert(os::Linux::initial_thread_stack_bottom() != NULL, "sanity");
+  size_t page_size = os::vm_page_size();
+
+  /*
+   * JDK-8197429
+   *
+   * Expand the stack mapping to the end of the initial stack before
+   * attempting to install the codebuf.  This is needed because newer
+   * Linux kernels impose a distance of a megabyte between stack
+   * memory and other memory regions.  If we try to install the
+   * codebuf before expanding the stack the installation will appear
+   * to succeed but we'll get a segfault later if we expand the stack
+   * in Java code.
+   *
+   */
+  if (os::is_primordial_thread()) {
+    address limit = os::Linux::initial_thread_stack_bottom();
+    if (! DisablePrimordialThreadGuardPages) {
+      limit += StackOverflow::stack_red_zone_size() +
+               StackOverflow::stack_yellow_zone_size();
+    }
+    os::Linux::expand_stack_to(limit);
+  }
+
+  /*
+   * Take the highest VA the OS will give us and exec
+   *
+   * Although using -(pagesz) as mmap hint works on newer kernel as you would
+   * think, older variants affected by this work-around don't (search forward only).
+   *
+   * On the affected distributions, we understand the memory layout to be:
+   *
+   *   TASK_LIMIT= 3G, main stack base close to TASK_LIMT.
+   *
+   * A few pages south main stack will do it.
+   *
+   * If we are embedded in an app other than launcher (initial != main stack),
+   * we don't have much control or understanding of the address space, just let it slide.
+   */
+  char* hint = (char*)(os::Linux::initial_thread_stack_bottom() -
+                       (StackOverflow::stack_guard_zone_size() + page_size));
+  char* codebuf = os::attempt_reserve_memory_at(hint, page_size);
+
+  if (codebuf == NULL) {
+    // JDK-8197429: There may be a stack gap of one megabyte between
+    // the limit of the stack and the nearest memory region: this is a
+    // Linux kernel workaround for CVE-2017-1000364.  If we failed to
+    // map our codebuf, try again at an address one megabyte lower.
+    hint -= 1 * M;
+    codebuf = os::attempt_reserve_memory_at(hint, page_size);
+  }
+
+  if ((codebuf == NULL) || (!os::commit_memory(codebuf, page_size, true))) {
+    return; // No matter, we tried, best effort.
+  }
+
+  MemTracker::record_virtual_memory_type((address)codebuf, mtInternal);
+
+  log_info(os)("[CS limit NX emulation work-around, exec code at: %p]", codebuf);
+
+  // Some code to exec: the 'ret' instruction
+  codebuf[0] = 0xC3;
+
+  // Call the code in the codebuf
+  __asm__ volatile("call *%0" : : "r"(codebuf));
+
+  // keep the page mapped so CS limit isn't reduced.
+}
+#endif // defined(IA32) && !defined(ZERO)
+
 // this is called _after_ the global arguments have been parsed
 jint os::init_2(void) {
 
@@ -4596,7 +4668,8 @@ static int _cpu_count(const cpu_set_t* cpus) {
 // dynamic check - see 6515172 for details.
 // If anything goes wrong we fallback to returning the number of online
 // processors - which can be greater than the number available to the process.
-int os::Linux::active_processor_count() {
+static int get_active_processor_count() {
+  // Note: keep this function, with its CPU_xx macros, *outside* the os namespace (see JDK-8289477).
   cpu_set_t cpus;  // can represent at most 1024 (CPU_SETSIZE) processors
   cpu_set_t* cpus_p = &cpus;
   int cpus_size = sizeof(cpu_set_t);
@@ -4666,6 +4739,10 @@ int os::Linux::active_processor_count() {
 
   assert(cpu_count > 0 && cpu_count <= os::processor_count(), "sanity check");
   return cpu_count;
+}
+
+int os::Linux::active_processor_count() {
+  return get_active_processor_count();
 }
 
 // Determine the active processor count from one of
@@ -4808,28 +4885,6 @@ void
 os::os_exception_wrapper(java_call_t f, JavaValue* value, const methodHandle& method,
                          JavaCallArguments* args, JavaThread* thread) {
   f(value, method, args, thread);
-}
-
-void os::print_statistics() {
-}
-
-bool os::message_box(const char* title, const char* message) {
-  int i;
-  fdStream err(defaultStream::error_fd());
-  for (i = 0; i < 78; i++) err.print_raw("=");
-  err.cr();
-  err.print_raw_cr(title);
-  for (i = 0; i < 78; i++) err.print_raw("-");
-  err.cr();
-  err.print_raw_cr(message);
-  for (i = 0; i < 78; i++) err.print_raw("=");
-  err.cr();
-
-  char buf[16];
-  // Prevent process from exiting upon "read error" without consuming all CPU
-  while (::read(0, buf, sizeof(buf)) <= 0) { ::sleep(100); }
-
-  return buf[0] == 'y' || buf[0] == 'Y';
 }
 
 // This code originates from JDK's sysOpen and open64_w

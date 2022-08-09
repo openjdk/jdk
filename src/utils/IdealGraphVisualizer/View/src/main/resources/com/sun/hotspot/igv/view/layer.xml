@@ -1,20 +1,48 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE filesystem PUBLIC "-//NetBeans//DTD Filesystem 1.1//EN" "http://www.netbeans.org/dtds/filesystem-1_1.dtd">
 <filesystem>
+    <folder name="Shortcuts">
+        <file name="D-F.shadow">
+            <attr name="originalFile" stringvalue="Actions/Edit/org-netbeans-modules-quicksearch-QuickSearchAction.instance"/>
+        </file>
+        <file name="D-LEFT.shadow">
+            <attr name="originalFile" stringvalue="Actions/View/com-sun-hotspot-igv-view-actions-PrevDiagramAction.instance"/>
+        </file>
+        <file name="D-RIGHT.shadow">
+            <attr name="originalFile" stringvalue="Actions/View/com-sun-hotspot-igv-view-actions-NextDiagramAction.instance"/>
+        </file>
+        <file name="DS-RIGHT.shadow">
+            <attr name="originalFile" stringvalue="Actions/View/com-sun-hotspot-igv-view-actions-ExpandDiffAction.instance"/>
+        </file>
+        <file name="D-UP.shadow">
+            <attr name="originalFile" stringvalue="Actions/View/com-sun-hotspot-igv-view-actions-ExpandDiffAction.instance"/>
+        </file>
+        <file name="DS-LEFT.shadow">
+            <attr name="originalFile" stringvalue="Actions/View/com-sun-hotspot-igv-view-actions-ShrinkDiffAction.instance"/>
+        </file>
+        <file name="D-DOWN.shadow">
+            <attr name="originalFile" stringvalue="Actions/View/com-sun-hotspot-igv-view-actions-ShrinkDiffAction.instance"/>
+        </file>
+    </folder>
     <folder name="Actions">
         <folder name="File">
             <file name="com-sun-hotspot-igv-view-actions-ExportAction.instance">
                 <attr name="position" intvalue="1100"/>
             </file>
         </folder>
+        <folder name="Search">
+            <file name="org-netbeans-modules-quicksearch-QuickSearchAction.instance"><attr name="position" intvalue="2001"/></file>
+        </folder>
         <folder name="View">
-            <file name="com-sun-hotspot-igv-view-actions-NextDiagramAction.instance"><attr name="position" intvalue="2000"/></file>
             <file name="com-sun-hotspot-igv-view-actions-PrevDiagramAction.instance"><attr name="position" intvalue="2001"/></file>
+            <file name="com-sun-hotspot-igv-view-actions-NextDiagramAction.instance"><attr name="position" intvalue="2001"/></file>
+            <file name="com-sun-hotspot-igv-view-actions-ShrinkDiffAction.instance"><attr name="position" intvalue="2001"/></file>
+            <file name="com-sun-hotspot-igv-view-actions-ExpandDiffAction.instance"><attr name="position" intvalue="2001"/></file>
             <file name="com-sun-hotspot-igv-view-actions-ShowAllAction.instance"><attr name="position" intvalue="2001"/></file>
             <file name="com-sun-hotspot-igv-view-actions-ExtractAction.instance"><attr name="position" intvalue="2001"/></file>
             <file name="com-sun-hotspot-igv-view-actions-HideAction.instance"><attr name="position" intvalue="2001"/></file>
-            <file name="com-sun-hotspot-igv-view-actions-ZoomInAction.instance"><attr name="position" intvalue="2001"/></file>
             <file name="com-sun-hotspot-igv-view-actions-ZoomOutAction.instance"><attr name="position" intvalue="2001"/></file>
+            <file name="com-sun-hotspot-igv-view-actions-ZoomInAction.instance"><attr name="position" intvalue="2001"/></file>
             <file name="com-sun-hotspot-igv-view-actions-OverviewAction.instance"><attr name="position" intvalue="2001"/></file>
             <file name="com-sun-hotspot-igv-view-actions-PredSuccAction.instance"><attr name="position" intvalue="2001"/></file>
             <file name="com-sun-hotspot-igv-view-actions-ShowEmptyBlocksAction.instance"><attr name="position" intvalue="2001"/></file>
@@ -33,25 +61,33 @@
                 <attr name="originalFile" stringvalue="Actions/View/com-sun-hotspot-igv-view-actions-NextDiagramAction.instance"/>
                 <attr name="position" intvalue="150"/>
             </file>
+            <file name="com-sun-hotspot-igv-view-actions-ShrinkDiffAction.shadow">
+                <attr name="originalFile" stringvalue="Actions/View/com-sun-hotspot-igv-view-actions-ShrinkDiffAction.instance"/>
+                <attr name="position" intvalue="250"/>
+            </file>
+            <file name="com-sun-hotspot-igv-view-actions-ExpandDiffAction.shadow">
+                <attr name="originalFile" stringvalue="Actions/View/com-sun-hotspot-igv-view-actions-ExpandDiffAction.instance"/>
+                <attr name="position" intvalue="200"/>
+            </file>
             <file name="com-sun-hotspot-igv-view-actions-ShowAllAction.shadow">
                 <attr name="originalFile" stringvalue="Actions/View/com-sun-hotspot-igv-view-actions-ShowAllAction.instance"/>
-                <attr name="position" intvalue="200"/>
+                <attr name="position" intvalue="300"/>
             </file>
             <file name="com-sun-hotspot-igv-view-actions-ExtractAction.shadow">
                 <attr name="originalFile" stringvalue="Actions/View/com-sun-hotspot-igv-view-actions-ExtractAction.instance"/>
-                <attr name="position" intvalue="300"/>
+                <attr name="position" intvalue="350"/>
             </file>
             <file name="com-sun-hotspot-igv-view-actions-HideAction.shadow">
                 <attr name="originalFile" stringvalue="Actions/View/com-sun-hotspot-igv-view-actions-HideAction.instance"/>
                 <attr name="position" intvalue="400"/>
             </file>
-            <file name="com-sun-hotspot-igv-view-actions-ZoomInAction.shadow">
-                <attr name="originalFile" stringvalue="Actions/View/com-sun-hotspot-igv-view-actions-ZoomInAction.instance"/>
-                <attr name="position" intvalue="500"/>
-            </file>
             <file name="com-sun-hotspot-igv-view-actions-ZoomOutAction.shadow">
                 <attr name="originalFile" stringvalue="Actions/View/com-sun-hotspot-igv-view-actions-ZoomOutAction.instance"/>
-                <attr name="position" intvalue="550"/>
+                <attr name="position" intvalue="500"/>
+            </file>
+            <file name="com-sun-hotspot-igv-view-actions-ZoomInAction.shadow">
+                <attr name="originalFile" stringvalue="Actions/View/com-sun-hotspot-igv-view-actions-ZoomInAction.instance"/>
+                <attr name="position" intvalue="450"/>
             </file>
         </folder>
         <folder name="File">
@@ -63,11 +99,6 @@
                 <attr name="originalFile" stringvalue="Actions/File/com-sun-hotspot-igv-view-actions-ExportAction.instance"/>
                 <attr name="position" intvalue="710"/>
             </file>
-        </folder>
-        <folder name="Window">
-            <file name="Tools_hidden"/>
-            <file name="Web_hidden"/>
-            <file name="org-netbeans-modules-tasks-ui-DashboardTopComponent.shadow_hidden"/>
         </folder>
     </folder>
 
@@ -84,18 +115,11 @@
             <file name="com-sun-hotspot-igv-view-NodeQuickSearch.instance"/>
         </folder>
         <folder name="Blocks">
-            <attr name="command" stringvalue="n"/>
+            <attr name="command" stringvalue="b"/>
             <attr name="position" intvalue="1"/>
             <file name="com-sun-hotspot-igv-view-BlockQuickSearch.instance"/>
         </folder>
         <file name="Projects_hidden"/>
-    </folder>
-    
-    <folder name="QuickSearchShadow">
-        <file name="org-netbeans-modules-quicksearch-QuickSearchAction.shadow">
-            <attr name="originalFile" stringvalue="Actions/Edit/org-netbeans-modules-quicksearch-QuickSearchAction.instance"/>
-            
-        </file>    
     </folder>
     <folder name="Windows2">
         <folder name="Modes">

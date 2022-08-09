@@ -323,7 +323,7 @@ int _type2aelembytes[T_CONFLICT+1] = {
 
 #ifdef ASSERT
 int type2aelembytes(BasicType t, bool allow_address) {
-  assert(allow_address || t != T_ADDRESS, " ");
+  assert((allow_address || t != T_ADDRESS) && t <= T_CONFLICT, "unexpected basic type");
   return _type2aelembytes[t];
 }
 #endif

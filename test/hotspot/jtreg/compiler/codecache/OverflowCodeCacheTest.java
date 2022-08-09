@@ -29,8 +29,8 @@
  * @modules java.base/jdk.internal.misc
  *          java.management
  *
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -XX:CompileCommand=compileonly,null::*
  *                   -XX:-SegmentedCodeCache -Xmixed
@@ -47,9 +47,9 @@
 package compiler.codecache;
 
 import jdk.test.lib.Asserts;
-import sun.hotspot.WhiteBox;
-import sun.hotspot.code.BlobType;
-import sun.hotspot.code.CodeBlob;
+import jdk.test.whitebox.WhiteBox;
+import jdk.test.whitebox.code.BlobType;
+import jdk.test.whitebox.code.CodeBlob;
 
 import java.lang.management.MemoryPoolMXBean;
 import java.lang.reflect.Method;

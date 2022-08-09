@@ -27,7 +27,7 @@
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "runtime/continuation.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/javaThread.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/macros.hpp"
 

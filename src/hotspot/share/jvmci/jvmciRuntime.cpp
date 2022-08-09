@@ -31,6 +31,7 @@
 #include "gc/shared/oopStorage.inline.hpp"
 #include "jvmci/jniAccessMark.inline.hpp"
 #include "jvmci/jvmciCompilerToVM.hpp"
+#include "jvmci/jvmciCodeInstaller.hpp"
 #include "jvmci/jvmciRuntime.hpp"
 #include "jvmci/metadataHandles.hpp"
 #include "logging/log.hpp"
@@ -62,7 +63,10 @@
 
 static bool caller_is_deopted() {
   JavaThread* thread = JavaThread::current();
-  RegisterMap reg_map(thread, false);
+  RegisterMap reg_map(thread,
+                      RegisterMap::UpdateMap::skip,
+                      RegisterMap::ProcessFrames::include,
+                      RegisterMap::WalkContinuation::skip);
   frame runtime_frame = thread->last_frame();
   frame caller_frame = runtime_frame.sender(&reg_map);
   assert(caller_frame.is_compiled_frame(), "must be compiled");
@@ -73,7 +77,10 @@ static bool caller_is_deopted() {
 static void deopt_caller() {
   if ( !caller_is_deopted()) {
     JavaThread* thread = JavaThread::current();
-    RegisterMap reg_map(thread, false);
+    RegisterMap reg_map(thread,
+                        RegisterMap::UpdateMap::skip,
+                        RegisterMap::ProcessFrames::include,
+                        RegisterMap::WalkContinuation::skip);
     frame runtime_frame = thread->last_frame();
     frame caller_frame = runtime_frame.sender(&reg_map);
     Deoptimization::deoptimize_frame(thread, caller_frame.id(), Deoptimization::Reason_constraint);
@@ -254,7 +261,10 @@ JRT_ENTRY_NO_ASYNC(static address, exception_handler_for_pc_helper(JavaThread* c
   assert(cm != NULL, "this is not a compiled method");
   // Adjust the pc as needed/
   if (cm->is_deopt_pc(pc)) {
-    RegisterMap map(current, false);
+    RegisterMap map(current,
+                    RegisterMap::UpdateMap::skip,
+                    RegisterMap::ProcessFrames::include,
+                    RegisterMap::WalkContinuation::skip);
     frame exception_frame = current->last_frame().sender(&map);
     // if the frame isn't deopted then pc must not correspond to the caller of last_frame
     assert(exception_frame.is_deoptimized_frame(), "must be deopted");
@@ -294,7 +304,10 @@ JRT_ENTRY_NO_ASYNC(static address, exception_handler_for_pc_helper(JavaThread* c
     // notifications since the interpreter would also notify about
     // these same catches and throws as it unwound the frame.
 
-    RegisterMap reg_map(current);
+    RegisterMap reg_map(current,
+                        RegisterMap::UpdateMap::include,
+                        RegisterMap::ProcessFrames::include,
+                        RegisterMap::WalkContinuation::skip);
     frame stub_frame = current->last_frame();
     frame caller_frame = stub_frame.sender(&reg_map);
 
@@ -1414,6 +1427,8 @@ void JVMCIRuntime::initialize(JVMCIEnv* JVMCIENV) {
     create_jvmci_primitive_type(T_DOUBLE, JVMCI_CHECK_EXIT_((void)0));
     create_jvmci_primitive_type(T_VOID, JVMCI_CHECK_EXIT_((void)0));
 
+    DEBUG_ONLY(CodeInstaller::verify_bci_constants(JVMCIENV);)
+
     if (!JVMCIENV->is_hotspot()) {
       JVMCIENV->copy_saved_properties();
     }
@@ -2048,7 +2063,7 @@ JVMCI::CodeInstallResult JVMCIRuntime::register_method(JVMCIEnv* JVMCIENV,
                                 int speculations_len) {
   JVMCI_EXCEPTION_CONTEXT;
   nmethod* nm = NULL;
-  int comp_level = CompLevel_full_optimization;
+  CompLevel comp_level = CompLevel_full_optimization;
   char* failure_detail = NULL;
 
   bool install_default = JVMCIENV->get_HotSpotNmethod_isDefault(nmethod_mirror) != 0;

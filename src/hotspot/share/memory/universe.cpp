@@ -43,6 +43,7 @@
 #include "gc/shared/gcLogPrecious.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/oopStorageSet.hpp"
+#include "gc/shared/plab.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "logging/log.hpp"
@@ -69,8 +70,9 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
 #include "runtime/java.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/jniHandles.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/threads.hpp"
 #include "runtime/timerTrace.hpp"
 #include "services/memoryService.hpp"
 #include "utilities/align.hpp"
@@ -839,6 +841,7 @@ jint Universe::initialize_heap() {
 
 void Universe::initialize_tlab() {
   ThreadLocalAllocBuffer::set_max_size(Universe::heap()->max_tlab_size());
+  PLAB::startup_initialization();
   if (UseTLAB) {
     ThreadLocalAllocBuffer::startup_initialization();
   }

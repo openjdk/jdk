@@ -30,9 +30,10 @@
 #include "runtime/continuation.hpp"
 #include "utilities/sizes.hpp"
 
-class RegisterMap;
-class OopMap;
+class CompiledMethod;
 class JavaThread;
+class OopMap;
+class RegisterMap;
 
 // Metadata stored in the continuation entry frame
 class ContinuationEntry {
@@ -52,10 +53,13 @@ public:
 
 public:
   static int _return_pc_offset; // friend gen_continuation_enter
-  static void set_enter_code(CompiledMethod* nm); // friend SharedRuntime::generate_native_wrapper
+  static void set_enter_code(CompiledMethod* cm, int interpreted_entry_offset);
+  static bool is_interpreted_call(address call_address);
 
 private:
   static address _return_pc;
+  static CompiledMethod* _enter_special;
+  static int _interpreted_entry_offset;
 
 private:
   ContinuationEntry* _parent;
@@ -64,7 +68,11 @@ private:
   int _flags;
   int _argsize;
   intptr_t* _parent_cont_fastpath;
-  int _parent_held_monitor_count;
+#ifdef _LP64
+  int64_t   _parent_held_monitor_count;
+#else
+  int32_t   _parent_held_monitor_count;
+#endif
   uint _pin_count;
 
 public:
@@ -83,11 +91,16 @@ public:
   static size_t size() { return align_up((int)sizeof(ContinuationEntry), 2*wordSize); }
 
   ContinuationEntry* parent() const { return _parent; }
-  int parent_held_monitor_count() const { return _parent_held_monitor_count; }
+  int64_t parent_held_monitor_count() const { return (int64_t)_parent_held_monitor_count; }
 
   static address entry_pc() { return _return_pc; }
   intptr_t* entry_sp() const { return (intptr_t*)this; }
   intptr_t* entry_fp() const;
+
+  static address compiled_entry();
+  static address interpreted_entry();
+
+  static CompiledMethod* enter_special() { return _enter_special; }
 
   int argsize() const { return _argsize; }
   void set_argsize(int value) { _argsize = value; }
@@ -112,14 +125,7 @@ public:
   void update_register_map(RegisterMap* map) const;
   void flush_stack_processing(JavaThread* thread) const;
 
-  intptr_t* bottom_sender_sp() const {
-    intptr_t* sp = entry_sp() - argsize();
-#ifdef _LP64
-    sp = align_down(sp, frame::frame_alignment);
-#endif
-    return sp;
-  }
-
+  inline intptr_t* bottom_sender_sp() const;
   inline oop cont_oop() const;
   inline oop scope() const;
   inline static oop cont_oop_or_null(const ContinuationEntry* ce);
@@ -127,17 +133,7 @@ public:
   bool is_virtual_thread() const { return _flags != 0; }
 
 #ifndef PRODUCT
-  void describe(FrameValues& values, int frame_no) const {
-    address usp = (address)this;
-    values.describe(frame_no, (intptr_t*)(usp + in_bytes(ContinuationEntry::parent_offset())),    "parent");
-    values.describe(frame_no, (intptr_t*)(usp + in_bytes(ContinuationEntry::cont_offset())),      "continuation");
-    values.describe(frame_no, (intptr_t*)(usp + in_bytes(ContinuationEntry::flags_offset())),     "flags");
-    values.describe(frame_no, (intptr_t*)(usp + in_bytes(ContinuationEntry::chunk_offset())),     "chunk");
-    values.describe(frame_no, (intptr_t*)(usp + in_bytes(ContinuationEntry::argsize_offset())),   "argsize");
-    values.describe(frame_no, (intptr_t*)(usp + in_bytes(ContinuationEntry::pin_count_offset())), "pin_count");
-    values.describe(frame_no, (intptr_t*)(usp + in_bytes(ContinuationEntry::parent_cont_fastpath_offset())),      "parent fastpath");
-    values.describe(frame_no, (intptr_t*)(usp + in_bytes(ContinuationEntry::parent_held_monitor_count_offset())), "parent held monitor count");
-  }
+  void describe(FrameValues& values, int frame_no) const;
 #endif
 
 #ifdef ASSERT

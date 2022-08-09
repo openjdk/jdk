@@ -113,6 +113,7 @@ class vframe: public ResourceObj {
 #endif
 };
 
+class MonitorInfo;
 
 class javaVFrame: public vframe {
  public:

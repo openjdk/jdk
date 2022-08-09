@@ -25,7 +25,7 @@
 #ifndef SHARE_COMPILER_COMPILERTHREAD_HPP
 #define SHARE_COMPILER_COMPILERTHREAD_HPP
 
-#include "runtime/thread.hpp"
+#include "runtime/javaThread.hpp"
 
 class BufferBlob;
 class AbstractCompiler;

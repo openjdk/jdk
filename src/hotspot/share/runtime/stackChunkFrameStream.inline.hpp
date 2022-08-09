@@ -26,6 +26,7 @@
 
 #include "runtime/stackChunkFrameStream.hpp"
 
+#include "code/codeCache.inline.hpp"
 #include "compiler/oopMap.hpp"
 #include "interpreter/interpreter.hpp"
 #include "logging/log.hpp"
@@ -35,6 +36,7 @@
 #include "oops/instanceStackChunkKlass.inline.hpp"
 #include "runtime/frame.inline.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/devirtualizer.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include CPU_HEADER_INLINE(stackChunkFrameStream)
