@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2013, 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,12 +26,11 @@
 #ifndef OS_AIX_OS_AIX_HPP
 #define OS_AIX_OS_AIX_HPP
 
-// Information about the protection of the page at address '0' on this os.
-static bool zero_page_read_protected() { return false; }
+#include "runtime/os.hpp"
 
 // Class Aix defines the interface to the Aix operating systems.
 
-class Aix {
+class os::Aix {
   friend class os;
 
  private:
@@ -177,6 +176,9 @@ class Aix {
   // (on AIX, using libperfstat, on PASE with libo4.so).
   // Returns true if ok, false if error.
   static bool get_meminfo(meminfo_t* pmi);
+
+  static bool platform_print_native_stack(outputStream* st, void* context, char *buf, int buf_size);
+  static void* resolve_function_descriptor(void* p);
 };
 
 #endif // OS_AIX_OS_AIX_HPP

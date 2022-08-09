@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,30 +23,19 @@
  *
  */
 
-#ifndef OS_CPU_LINUX_X86_OS_LINUX_X86_HPP
-#define OS_CPU_LINUX_X86_OS_LINUX_X86_HPP
+#ifndef OS_CPU_AIX_PPC_OS_AIX_PPC_INLINE_HPP
+#define OS_CPU_AIX_PPC_OS_AIX_PPC_INLINE_HPP
 
-  static void setup_fpu();
-  static bool supports_sse();
-  static juint cpu_microcode_revision();
+#include "os_aix.hpp"
 
-  static jlong rdtsc();
+#define HAVE_PLATFORM_PRINT_NATIVE_STACK 1
+inline bool os::platform_print_native_stack(outputStream* st, const void* context,
+                                            char *buf, int buf_size) {
+  return os::Aix::platform_print_native_stack(st, context, buf, buf_size);
+}
 
-  // Used to register dynamic code cache area with the OS
-  // Note: Currently only used in 64 bit Windows implementations
-  static bool register_code_area(char *low, char *high) { return true; }
-
-  /*
-   * Work-around for broken NX emulation using CS limit, Red Hat patch "Exec-Shield"
-   * (IA32 only).
-   *
-   * Map and execute at a high VA to prevent CS lazy updates race with SMP MM
-   * invalidation.Further code generation by the JVM will no longer cause CS limit
-   * updates.
-   *
-   * Affects IA32: RHEL 5 & 6, Ubuntu 10.04 (LTS), 10.10, 11.04, 11.10, 12.04.
-   * @see JDK-8023956
-   */
-  static void workaround_expand_exec_shield_cs_limit();
-
-#endif // OS_CPU_LINUX_X86_OS_LINUX_X86_HPP
+#define HAVE_FUNCTION_DESCRIPTORS 1
+inline void* os::resolve_function_descriptor(void* p) {
+  return os::Aix::resolve_function_descriptor(p);
+}
+#endif // OS_CPU_AIX_PPC_OS_AIX_PPC_INLINE_HPP
