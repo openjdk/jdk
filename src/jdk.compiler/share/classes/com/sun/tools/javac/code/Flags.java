@@ -129,7 +129,7 @@ public class Flags {
 
     /** Flag is set for ClassSymbols that are being compiled from source.
      */
-    public static final int FROM_SOURCE      = 1<<21;
+    public static final int FROM_SOURCE      = 1<<21; //ClassSymbols
 
     /** Flag is set for nested classes that do not access instance members
      *  or `this' of an outer class and therefore don't need to be passed
