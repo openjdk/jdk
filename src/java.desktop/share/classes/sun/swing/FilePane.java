@@ -58,6 +58,7 @@ import java.io.FileNotFoundException;
 import java.text.DateFormat;
 import java.text.MessageFormat;
 import java.text.DecimalFormat;
+import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -1124,6 +1125,8 @@ public class FilePane extends JPanel implements PropertyChangeListener {
         JFileChooser chooser;
         DateFormat df;
         double baseFileSize = 1000.0;
+        MessageFormat mf = new MessageFormat("");
+        NumberFormat nf = NumberFormat.getNumberInstance();
 
         DetailsTableCellRenderer(JFileChooser chooser) {
             this.chooser = chooser;
@@ -1180,6 +1183,7 @@ public class FilePane extends JPanel implements PropertyChangeListener {
             // formatting cell text
             // TODO: it's rather a temporary trick, to be revised
             String text;
+            Object[] objs = new Object[1];
 
             if (value == null) {
                 text = "";
@@ -1193,26 +1197,41 @@ public class FilePane extends JPanel implements PropertyChangeListener {
             } else if (value instanceof Long len) {
                 if (listViewWindowsStyle) {
                     if (len == 0) {
-                        text = MessageFormat.format(kiloByteString, len);
+                        updateMessageFormatPattern(kiloByteString,0);
                     } else {
+                        updateMessageFormatPattern(kiloByteString,1);
                         len /= 1000L;
-                        text = MessageFormat.format(kiloByteString, len + 1);
                     }
+                    objs[0] = Long.valueOf(len);
+                    text = mf.format(objs);
                 } else if (len < 1000L) {
-                    text = MessageFormat.format(kiloByteString, (len==0 ? 0L : 1L));
+                    if (len == 0) {
+                        updateMessageFormatPattern(kiloByteString,0);
+                        objs[0] = Long.valueOf(0);
+                    } else {
+                        updateMessageFormatPattern(kiloByteString,1);
+                        objs[0] = Double.valueOf(1.0);
+                    }
+                    text = mf.format(objs);
                 } else {
                     double kbVal = formatToDoubleValue(len);
                     len = (long)kbVal;
                     if (kbVal < baseFileSize) {
-                        text = MessageFormat.format(kiloByteString, kbVal);
+                        updateMessageFormatPattern(kiloByteString,1);
+                        objs[0] = Double.valueOf(kbVal);
+                        text = mf.format(objs);
                     } else {
                         double mbVal = formatToDoubleValue(len);
                         len = (long)mbVal;
                         if (mbVal < baseFileSize) {
-                            text = MessageFormat.format(megaByteString, mbVal);
+                            updateMessageFormatPattern(megaByteString,1);
+                            objs[0] = Double.valueOf(mbVal);
+                            text = mf.format(objs);
                         } else {
+                            updateMessageFormatPattern(gigaByteString,1);
                             double gbVal = formatToDoubleValue(len);
-                            text = MessageFormat.format(gigaByteString, gbVal);
+                            objs[0] = Double.valueOf(gbVal);
+                            text = mf.format(objs);
                         }
                     }
                 }
@@ -1229,10 +1248,13 @@ public class FilePane extends JPanel implements PropertyChangeListener {
             return this;
         }
 
-        public double formatToDoubleValue(long len) {
-            DecimalFormat df = new DecimalFormat("0.0");
-            double val = len/baseFileSize;
-            return  Double.valueOf(df.format(val));
+        private void updateMessageFormatPattern(String pattern, int minFractionDigit) {
+            mf.applyPattern(pattern);
+            nf.setMinimumFractionDigits(minFractionDigit);
+            mf.setFormat(0, nf);
+        }
+        private double formatToDoubleValue(long len) {
+            return (len / 100L) / 10.0d;
         }
     }
 
