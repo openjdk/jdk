@@ -24,6 +24,7 @@
 
 /*
  * @test
+ * @bug 8146115 8292083
  * @key cgroups
  * @summary Test JVM's memory resource awareness when running inside docker container
  * @requires docker.support
@@ -40,6 +41,8 @@ import jdk.test.lib.containers.docker.Common;
 import jdk.test.lib.containers.docker.DockerRunOptions;
 import jdk.test.lib.containers.docker.DockerTestUtils;
 import jdk.test.lib.process.OutputAnalyzer;
+
+import java.lang.management.ManagementFactory;
 
 public class TestMemoryAwareness {
     private static final String imageName = Common.imageName("memory");
@@ -76,6 +79,7 @@ public class TestMemoryAwareness {
                 "1G", Integer.toString(((int) Math.pow(2, 20)) * 1024),
                 "1500M", Integer.toString(((int) Math.pow(2, 20)) * (1500 - 1024))
             );
+            testBadMemoryLimit();
         } finally {
             if (!DockerTestUtils.RETAIN_IMAGE_AFTER_TEST) {
                 DockerTestUtils.removeDockerImage(imageName);
@@ -94,6 +98,32 @@ public class TestMemoryAwareness {
 
         Common.run(opts)
             .shouldMatch("Memory Limit is:.*" + expectedTraceValue);
+    }
+
+    // JDK-8292083
+    // Ensure that Java ignores container memory limit values above the host's physical memory.
+    //
+    // let the host's physical memory be P; request 2P memory in the container.
+    // set java's InitialRAMPercentage to 25%, and check the calculated InitialHeapSize
+    // to see if that was calculated relative to P (P/4) or 2P (P/2).
+    private static void testBadMemoryLimit()
+            throws Exception {
+
+        com.sun.management.OperatingSystemMXBean os = (com.sun.management.OperatingSystemMXBean) ManagementFactory.getOperatingSystemMXBean();
+        long realMem = os.getTotalMemorySize();
+        long badMem = 2 * realMem;
+
+        Common.logNewTestCase("bad memory limit: " + badMem);
+
+        DockerRunOptions opts = Common.newOpts(imageName);
+        opts.addDockerOpts("--memory", Long.toString(badMem));
+        opts.addJavaOpts("-XX:InitialRAMPercentage=25.0");
+        opts.addJavaOpts("-XX:+PrintFlagsFinal");
+
+        // one significant digit, to avoid precision/rounding issues
+        String goodDigit = Long.toString(realMem/4).substring(0,1);
+        Common.run(opts)
+            .shouldMatch("size_t InitialHeapSize.*= "+goodDigit);
     }
 
 
