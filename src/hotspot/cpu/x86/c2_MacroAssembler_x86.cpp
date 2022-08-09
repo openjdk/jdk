@@ -597,11 +597,10 @@ void C2_MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmp
 
 #if INCLUDE_RTM_OPT
   if (UseRTMForStackLocks && use_rtm) {
-    // TODO: Implement fast-locking using RTM
     assert(!UseHeavyMonitors, "+UseHeavyMonitors and +UseRTMForStackLocks are mutually exclusive");
-    //rtm_stack_locking(objReg, tmpReg, scrReg, cx2Reg,
-    //                  stack_rtm_counters, method_data, profile_rtm,
-    //                  DONE_LABEL, IsInflated);
+    rtm_stack_locking(objReg, tmpReg, scrReg, cx2Reg,
+                      stack_rtm_counters, method_data, profile_rtm,
+                      DONE_LABEL, IsInflated);
   }
 #endif // INCLUDE_RTM_OPT
 
@@ -757,7 +756,14 @@ void C2_MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register t
 #if INCLUDE_RTM_OPT
   if (UseRTMForStackLocks && use_rtm) {
     assert(!UseHeavyMonitors, "+UseHeavyMonitors and +UseRTMForStackLocks are mutually exclusive");
-    // TODO: Implement fast-unlocking using RTM
+    Label L_regular_unlock;
+    movptr(tmpReg, Address(objReg, oopDesc::mark_offset_in_bytes())); // fetch markword
+    andptr(tmpReg, markWord::lock_mask_in_place);                     // look at 2 lock bits
+    cmpptr(tmpReg, markWord::unlocked_value);                         // bits = 01 unlocked
+    jccb(Assembler::notEqual, L_regular_unlock);                      // if !HLE RegularLock
+    xend();                                                           // otherwise end...
+    jmp(DONE_LABEL);                                                  // ... and we're done
+    bind(L_regular_unlock);
   }
 #endif
 
@@ -784,7 +790,7 @@ void C2_MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register t
     testptr(tmpReg, tmpReg);
     jccb(Assembler::notZero, L_regular_inflated_unlock);
     xend();
-    jmpb(DONE_LABEL);
+    jmp(DONE_LABEL);
     bind(L_regular_inflated_unlock);
   }
 #endif
