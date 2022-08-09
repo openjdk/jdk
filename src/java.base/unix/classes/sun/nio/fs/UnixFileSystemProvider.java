@@ -48,6 +48,20 @@ import static sun.nio.fs.UnixConstants.*;
 public abstract class UnixFileSystemProvider
     extends AbstractFileSystemProvider
 {
+    protected static volatile UnixCopyFile unixCopyFile;
+
+    // this method should be overriden if the subclass requires a
+    // subclass of UnixCopyFile which overrides any method(s)
+    protected UnixCopyFile fileCopier() {
+        UnixCopyFile copier = unixCopyFile;
+        if (copier == null) {
+            // OK if two or more threads create a UnixCopyFile instance
+            copier = new UnixCopyFile();
+            unixCopyFile = copier;
+        }
+        return copier;
+    }
+
     private static final byte[] EMPTY_PATH = new byte[0];
     private final UnixFileSystem theFileSystem;
 
@@ -274,7 +288,7 @@ public abstract class UnixFileSystemProvider
     public void copy(Path source, Path target, CopyOption... options)
         throws IOException
     {
-        UnixCopyFile.copy(UnixPath.toUnixPath(source),
+        fileCopier().copy(UnixPath.toUnixPath(source),
                           UnixPath.toUnixPath(target),
                           options);
     }
@@ -283,7 +297,7 @@ public abstract class UnixFileSystemProvider
     public void move(Path source, Path target, CopyOption... options)
         throws IOException
     {
-        UnixCopyFile.move(UnixPath.toUnixPath(source),
+        fileCopier().move(UnixPath.toUnixPath(source),
                           UnixPath.toUnixPath(target),
                           options);
     }

@@ -30,11 +30,10 @@ import sun.nio.ch.IOStatus;
 import static sun.nio.fs.UnixConstants.*;
 import static sun.nio.fs.UnixNativeDispatcher.*;
 
-/**
- * Implements a {@code clone) method for use by {@code UnixCopyFile} on Linux.
- */
-final class CloneFile {
-    private CloneFile() { }
+final class LinuxCopyFile extends UnixCopyFile {
+    LinuxCopyFile() {
+        super();
+    }
 
     private static UnixException catEx(UnixException x, UnixException y) {
         assert x != null || y != null;
@@ -61,7 +60,7 @@ final class CloneFile {
      *         with the given parameters, or IOStatus.UNSUPPORTED if cloning is
      *         not supported on this platform
      */
-    static int clone(UnixPath src, UnixPath dst, boolean followLinks)
+    protected int clone(UnixPath src, UnixPath dst, boolean followLinks)
         throws IOException {
         int srcFD = 0;
         try {

@@ -51,7 +51,7 @@ class UnixCopyFile {
     // minimum size of a temporary direct buffer
     private static final int MIN_BUFFER_SIZE = 16384;
 
-    private UnixCopyFile() {  }
+    UnixCopyFile() {  }
 
     // The flags that control how a file is copied or moved
     private static class Flags {
@@ -269,16 +269,16 @@ class UnixCopyFile {
     private static volatile boolean directCopyNotSupported;
 
     // copy regular file from source to target
-    private static void copyFile(UnixPath source,
-                                 UnixFileAttributes attrs,
-                                 UnixPath  target,
-                                 Flags flags,
-                                 long addressToPollForCancel)
+    private void copyFile(UnixPath source,
+                          UnixFileAttributes attrs,
+                          UnixPath  target,
+                          Flags flags,
+                          long addressToPollForCancel)
         throws IOException
     {
         boolean copied = false;
         if (addressToPollForCancel == 0 && !cloneFileNotSupported) {
-            int res = CloneFile.clone(source, target, flags.followLinks);
+            int res = clone(source, target, flags.followLinks);
             if (res == 0) {
                 copied = true;
             }
@@ -481,7 +481,7 @@ class UnixCopyFile {
     }
 
     // move file from source to target
-    static void move(UnixPath source, UnixPath target, CopyOption... options)
+    void move(UnixPath source, UnixPath target, CopyOption... options)
         throws IOException
     {
         // permission check
@@ -615,10 +615,33 @@ class UnixCopyFile {
         }
     }
 
+
+    /**
+     * Clones the file whose path name is {@code src} to that whose path
+     * name is {@code dst} using a platform-specific system call.
+     *
+     * @implSpec
+     * The implementation in this class always returns
+     * {@code IOStatus.UNSUPPORTED}. This method should be overridden
+     * on platforms which support file cloning.
+     *
+     * @param src the path of the source file
+     * @param dst the path of the destination file (clone)
+     * @param followLinks whether to follow links
+     *
+     * @return 0 on success, IOStatus.UNSUPPORTED_CASE if the call does not work
+     *         with the given parameters, or IOStatus.UNSUPPORTED if cloning is
+     *         not supported on this platform
+     */
+    protected int clone(UnixPath src, UnixPath dst, boolean followLinks)
+        throws IOException {
+        return IOStatus.UNSUPPORTED;
+    }
+
     // copy file from source to target
-    static void copy(final UnixPath source,
-                     final UnixPath target,
-                     CopyOption... options) throws IOException
+    void copy(final UnixPath source,
+              final UnixPath target,
+              CopyOption... options) throws IOException
     {
         // permission checks
         @SuppressWarnings("removal")

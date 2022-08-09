@@ -27,20 +27,16 @@ package sun.nio.fs;
 
 import java.io.IOException;
 import sun.nio.ch.IOStatus;
+import static sun.nio.fs.UnixConstants.*;
 
-/**
- * Implements a {@code clone) method for use by {@code UnixCopyFile} on AIX.
- */
-final class CloneFile {
-    private CloneFile() { }
+final class BsdCopyFile extends UnixCopyFile {
+    BsdCopyFile() {
+        super();
+    }
 
     /**
      * Clones the file whose path name is {@code src} to that whose path
-     * name is {@code dst} using a platform-specific system call.
-     *
-     * @implSpec
-     * The implementation in this class always returns
-     * {@code IOStatus.UNSUPPORTED}.
+     * name is {@code dst} using the {@code clonefile} system call.
      *
      * @param src the path of the source file
      * @param dst the path of the destination file (clone)
@@ -50,8 +46,23 @@ final class CloneFile {
      *         with the given parameters, or IOStatus.UNSUPPORTED if cloning is
      *         not supported on this platform
      */
-    static int clone(UnixPath src, UnixPath dst, boolean followLinks)
+    @Override
+    protected int clone(UnixPath src, UnixPath dst, boolean followLinks)
         throws IOException {
-        return IOStatus.UNSUPPORTED;
+        int flags = followLinks ? 0 : CLONE_NOFOLLOW;
+        try {
+            return BsdNativeDispatcher.clonefile(src, dst, flags);
+        } catch (UnixException x) {
+            switch (x.errno()) {
+                case ENOTSUP: // cloning not supported by filesystem
+                    return IOStatus.UNSUPPORTED;
+                case EXDEV:   // src and dst on different filesystems
+                case ENOTDIR: // problematic path parameter(s)
+                    return IOStatus.UNSUPPORTED_CASE;
+                default:
+                    x.rethrowAsIOException(src, dst);
+                    return IOStatus.THROWN;
+            }
+        }
     }
 }
