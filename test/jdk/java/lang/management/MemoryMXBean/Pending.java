@@ -38,7 +38,7 @@
  * @modules java.base/jdk.internal.misc
  *          java.management
  *
- * @run main/othervm Pending
+ * @run main Pending
  * @run main/othervm -XX:+UseParallelGC Pending
  */
 
