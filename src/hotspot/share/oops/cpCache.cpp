@@ -697,6 +697,9 @@ void ConstantPoolCache::save_for_archive() {
 void ConstantPoolCache::remove_unshareable_info() {
 #if INCLUDE_CDS
   Arguments::assert_is_dumping_archive();
+  // <this> is the copy to be written into the archive. It's in
+  // the ArchiveBuilder's "buffer space". However, the saved_cpcache_entries
+  // are recorded with the original ConstantPoolCache object.
   ConstantPoolCache* orig_cpc = ArchiveBuilder::current()->get_src_obj(this);
   ConstantPoolCacheEntry* saved = SystemDictionaryShared::get_saved_cpcache_entries_locked(orig_cpc);
   for (int i=0; i<length(); i++) {

@@ -1345,10 +1345,10 @@ void SystemDictionaryShared::set_saved_cpcache_entries(ConstantPoolCache* cpc, C
 ConstantPoolCacheEntry* SystemDictionaryShared::get_saved_cpcache_entries_locked(ConstantPoolCache* cpc) {
   assert_lock_strong(DumpTimeTable_lock);
   ConstantPoolCacheEntry** p = _saved_cpcache_entries_table->get(cpc);
-  if (p) {
+  if (p != nullptr) {
     return *p;
   } else {
-    return NULL;
+    return nullptr;
   }
 }
 
@@ -1360,7 +1360,7 @@ void SystemDictionaryShared::remove_saved_cpcache_entries(ConstantPoolCache* cpc
 void SystemDictionaryShared::remove_saved_cpcache_entries_locked(ConstantPoolCache* cpc) {
   assert_lock_strong(DumpTimeTable_lock);
   ConstantPoolCacheEntry** p = _saved_cpcache_entries_table->get(cpc);
-  if (p) {
+  if (p != nullptr) {
     _saved_cpcache_entries_table->remove(cpc);
     FREE_C_HEAP_ARRAY(ConstantPoolCacheEntry, *p);
   }

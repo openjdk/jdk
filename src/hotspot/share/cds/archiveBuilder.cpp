@@ -660,6 +660,7 @@ address ArchiveBuilder::get_dumped_addr(address src_obj) const {
 }
 
 address ArchiveBuilder::get_src_obj(address dumped_addr) const {
+  assert(is_in_buffer_space(dumped_addr), "must be");
   address* src_obj = _dumped_to_src_obj_table.get(dumped_addr);
   assert(src_obj != NULL && *src_obj != NULL, "must be");
   return *src_obj;
