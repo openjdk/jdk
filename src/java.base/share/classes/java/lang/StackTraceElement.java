@@ -51,6 +51,9 @@ import java.util.Set;
  */
 public final class StackTraceElement implements java.io.Serializable {
 
+    private static final String NATIVE_METHOD = "Native Method";
+    private static final String UNKNOWN_SOURCE = "Unknown Source";
+
     // For Throwables and StackWalker, the VM initially sets this field to a
     // reference to the declaring Class.  The Class reference is used to
     // construct the 'format' bitmap, and then is cleared.
@@ -356,12 +359,12 @@ public final class StackTraceElement implements java.io.Serializable {
      */
     @Override
     public String toString() {
-        int estimatedLength = Objects.requireNonNullElse(classLoaderName, "").length() + 1
-                + Objects.requireNonNullElse(moduleName, "").length() + 1
-                + Objects.requireNonNullElse(moduleVersion, "").length() + 1
+        int estimatedLength = length(classLoaderName) + 1
+                + length(moduleName) + 1
+                + length(moduleVersion) + 1
                 + declaringClass.length() + 1
                 + methodName.length() + 1
-                + Math.max("Unknown Source".length(), Objects.requireNonNullElse(fileName, "").length()) + 1
+                + Math.max(UNKNOWN_SOURCE.length(), length(fileName)) + 1
                 + 12;
 
         StringBuilder sb = new StringBuilder(estimatedLength);
@@ -382,9 +385,9 @@ public final class StackTraceElement implements java.io.Serializable {
 
         sb.append(declaringClass).append('.').append(methodName).append('(');
         if (isNativeMethod()) {
-            sb.append("Native Method");
+            sb.append(NATIVE_METHOD);
         } else if (fileName == null) {
-            sb.append("Unknown Source");
+            sb.append(UNKNOWN_SOURCE);
         } else {
             sb.append(fileName);
             if (lineNumber >= 0) {
@@ -394,6 +397,10 @@ public final class StackTraceElement implements java.io.Serializable {
         sb.append(')');
 
         return sb.toString();
+    }
+
+    private static int length(String s) {
+        return (s == null) ? 0 : s.length();
     }
 
     /**
