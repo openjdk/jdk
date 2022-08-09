@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,8 +33,13 @@
  *             be garbage collected.
  * @author  Alexei Guibadoulline and Mandy Chung
  *
+ * @requires vm.gc == null | vm.gc == "Parallel"
+ *
  * @modules java.base/jdk.internal.misc
  *          java.management
+ *
+ * @run main/othervm Pending
+ * @run main/othervm -XX:+UseParallelGC Pending
  */
 
 import java.lang.management.*;

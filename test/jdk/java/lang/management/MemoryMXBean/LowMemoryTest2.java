@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,23 @@
  * In the HotSpot implementation this causes metaspace to be consumed.
  * Test completes when we the notification is received or an OutOfMemory
  * is generated.
+ */
+
+/*
+ * @test
+ * @bug     4982128
+ * @summary Test low memory detection of non-heap memory pool
+ *
+ * @requires vm.gc == null | vm.gc == "Serial" | vm.gc == "Parallel"
+ *
+ * @run build MemoryUtil
+ *
+ * @run main/othervm/timeout=600 -noclassgc -XX:MaxMetaspaceSize=32m
+ * -XX:+UseSerialGC LowMemoryTest2
+ * @run main/othervm/timeout=600 -noclassgc -XX:MaxMetaspaceSize=32m
+ * -XX:+UseParallelGC LowMemoryTest2
+ * @run main/othervm/timeout=600 -noclassgc -XX:MaxMetaspaceSize=16m
+ * -XX:CompressedClassSpaceSize=4m LowMemoryTest2
  */
 
 import java.lang.management.*;

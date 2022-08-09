@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,20 @@
  *
  * @modules jdk.management
  * @run main MemoryTest 2 1
+ */
+
+/*
+ * @test
+ * @bug     4530538
+ * @summary Test with default collector and with parallel scavenger collector
+ *
+ * @author  Mandy Chung
+ *
+ * @requires vm.gc == null | vm.gc == "Parallel"
+ *
+ * @modules jdk.management
+ * @run main MemoryTest 2 3
+ * @run main/othervm -XX:+UseParallelGC MemoryTest 2 3
  */
 
 /*
