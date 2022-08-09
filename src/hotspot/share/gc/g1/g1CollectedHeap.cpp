@@ -2933,8 +2933,8 @@ void G1CollectedHeap::record_obj_copy_mem_stats() {
                                                create_g1_evac_summary(&_old_evac_stats));
 }
 
-void G1CollectedHeap::clear_bitmap_for_region(HeapRegion* hr) {
-  concurrent_mark()->clear_bitmap_for_region(hr);
+void G1CollectedHeap::clear_bitmap_for_region(HeapRegion* hr, bool update_tams) {
+  concurrent_mark()->clear_bitmap_for_region(hr, update_tams);
 }
 
 void G1CollectedHeap::free_region(HeapRegion* hr, FreeRegionList* free_list) {
@@ -3290,9 +3290,6 @@ HeapRegion* G1CollectedHeap::alloc_highest_free_region() {
 }
 
 void G1CollectedHeap::mark_evac_failure_object(const oop obj) const {
-  // All objects failing evacuation are live. What we'll do is
-  // that we'll update the marking info so that they are
-  // all below TAMS and explicitly marked.
   _cm->raw_mark_in_bitmap(obj);
 }
 

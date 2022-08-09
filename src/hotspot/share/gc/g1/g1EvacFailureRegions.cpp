@@ -35,8 +35,7 @@
 G1EvacFailureRegions::G1EvacFailureRegions() :
   _regions_failed_evacuation(mtGC),
   _evac_failure_regions(nullptr),
-  _evac_failure_regions_cur_length(0) {
-}
+  _evac_failure_regions_cur_length(0) { }
 
 G1EvacFailureRegions::~G1EvacFailureRegions() {
   assert(_evac_failure_regions == nullptr, "not cleaned up");
@@ -113,8 +112,7 @@ public:
     G1AbstractSubTask(G1GCPhaseTimes::PrepareRetainedRegions),
     _evac_failure_regions(evac_failure_regions),
     _num_workers(num_workers),
-    _claimer(_num_workers) {
-  }
+    _claimer(_num_workers) { }
 
   double worker_cost() const override {
     return 1.0;

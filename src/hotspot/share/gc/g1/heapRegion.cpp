@@ -103,7 +103,7 @@ void HeapRegion::setup_heap_region_size(size_t max_heap_size) {
 void HeapRegion::handle_evacuation_failure() {
   uninstall_surv_rate_group();
   clear_young_index_in_cset();
-  set_old();
+  move_to_old();
 }
 
 void HeapRegion::unlink_from_list() {
@@ -271,7 +271,9 @@ void HeapRegion::report_region_type_change(G1HeapRegionTraceType::Type to) {
 void HeapRegion::note_self_forwarding_removal_start(bool during_concurrent_start) {
   clear_index_in_opt_cset();
   // We always scrub the region to make sure the entire region is
-  // parsable after the self-forwarding point removal.
+  // parsable after the self-forwarding pointer removal.
+  reset_parsable_bottom();
+
   _garbage_bytes = 0;
 
   if (during_concurrent_start) {
@@ -286,8 +288,8 @@ void HeapRegion::note_self_forwarding_removal_start(bool during_concurrent_start
   }
 }
 
-void HeapRegion::note_self_forwarding_removal_end_par(size_t marked_bytes) {
-  //FIXME: Atomic::add(&_prev_marked_bytes, marked_bytes, memory_order_relaxed);
+void HeapRegion::note_self_forwarding_removal_end_par(size_t garbage_bytes) {
+  Atomic::add(&_garbage_bytes, garbage_bytes, memory_order_relaxed);
 }
 
 // Code roots support
@@ -444,8 +446,8 @@ void HeapRegion::print_on(outputStream* st) const {
   } else {
     st->print("|  ");
   }
-  st->print("|TAMS " PTR_FORMAT "| PB " PTR_FORMAT "| %s ",
-               p2i(top_at_mark_start()), p2i(parsable_bottom_acquire()), rem_set()->get_state_str());
+  st->print("|TAMS " PTR_FORMAT "| PB " PTR_FORMAT "| %s | %zu | %zu",
+               p2i(top_at_mark_start()), p2i(parsable_bottom_acquire()), rem_set()->get_state_str(), garbage_bytes(), live_bytes());
   if (UseNUMA) {
     G1NUMA* numa = G1NUMA::numa();
     if (node_index() < numa->num_active_nodes()) {

@@ -580,11 +580,12 @@ public:
   // Mark in the marking bitmap. Used during evacuation failure to
   // remember what objects need handling. Not for use during marking.
   inline void raw_mark_in_bitmap(oop p);
+  inline void notify_evac_failed_object(uint worker_id, oop obj, size_t size);
 
   // Clears marks for all objects in the given region in the marking
   // bitmap. This should only be used clean the bitmap during a
   // safepoint.
-  void clear_bitmap_for_region(HeapRegion* hr);
+  void clear_bitmap_for_region(HeapRegion* hr, bool update_tams);
 
   // Verify that there are no collection set oops on the stacks (taskqueues /
   // global mark stack) and fingers (global / per-task).

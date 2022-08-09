@@ -116,8 +116,8 @@ public:
     _task.work(worker_id);
   }
 
-  void pre_start(uint num_workers) {
-    _task.pre_start(num_workers);
+  void initialize(uint num_workers) {
+    _task.initialize(num_workers);
   }
 };
 
@@ -140,7 +140,7 @@ G1PostEvacuateCollectionSetCleanupTask1::G1PostEvacuateCollectionSetCleanupTask1
     add_parallel_task(remove_self_forward_task);
 
     uint num_workers = clamp(num_workers_estimate(), 1u, G1CollectedHeap::heap()->workers()->active_workers());
-    remove_self_forward_task->pre_start(num_workers);
+    remove_self_forward_task->initialize(num_workers);
   }
 }
 
@@ -327,7 +327,6 @@ public:
 };
 
 class RedirtyLoggedCardTableEntryClosure : public G1CardTableEntryClosure {
- private:
   size_t _num_dirtied;
   G1CollectedHeap* _g1h;
   G1CardTable* _g1_ct;
@@ -343,7 +342,7 @@ class RedirtyLoggedCardTableEntryClosure : public G1CardTableEntryClosure {
     return _g1h->is_in_cset(hr) && !_evac_failure_regions->contains(hr->hrm_index());
   }
 
- public:
+public:
   RedirtyLoggedCardTableEntryClosure(G1CollectedHeap* g1h, G1EvacFailureRegions* evac_failure_regions) :
     G1CardTableEntryClosure(),
     _num_dirtied(0),
@@ -364,25 +363,26 @@ class RedirtyLoggedCardTableEntryClosure : public G1CardTableEntryClosure {
   size_t num_dirtied()   const { return _num_dirtied; }
 };
 
-class G1PostEvacuateCollectionSetCleanupTask2::VerifyAfterSelfForwardingPtrRemovalTask : public G1AbstractSubTask {
+class G1PostEvacuateCollectionSetCleanupTask2::ClearRetainedRegionBitmaps : public G1AbstractSubTask {
   G1EvacFailureRegions* _evac_failure_regions;
   HeapRegionClaimer _claimer;
 
-  class VerifyRegionClosure : public HeapRegionClosure {
+  class ClearRetainedRegionBitmapsClosure : public HeapRegionClosure {
   public:
-    bool do_heap_region(HeapRegion* hr) override {
-      //FIXME: G1CollectedHeap::heap()->verifier()->check_bitmaps("Self-Forwarding Ptr Removal", hr);
+
+    bool do_heap_region(HeapRegion* r) override {
+//      log_debug(gc)("clear bitmap region %u", r->hrm_index());
+      G1CollectedHeap::heap()->clear_bitmap_for_region(r, false /* update_tams */);
       return false;
     }
   };
 
 public:
-  VerifyAfterSelfForwardingPtrRemovalTask(G1EvacFailureRegions* evac_failure_regions) :
-    G1AbstractSubTask(G1GCPhaseTimes::VerifyAfterSelfForwardingPtrRemoval),
+
+  ClearRetainedRegionBitmaps(G1EvacFailureRegions* evac_failure_regions) :
+    G1AbstractSubTask(G1GCPhaseTimes::ClearRetainedRegionBitmaps),
     _evac_failure_regions(evac_failure_regions),
-    _claimer(0) {
-    assert(G1VerifyBitmaps && _evac_failure_regions->evacuation_failed(), "precondition");
-  }
+    _claimer(0) { }
 
   void set_max_workers(uint max_workers) override {
     _claimer.set_n_workers(max_workers);
@@ -393,8 +393,8 @@ public:
   }
 
   void do_work(uint worker_id) override {
-    VerifyRegionClosure closure;
-    _evac_failure_regions->par_iterate(&closure, &_claimer, worker_id);
+    ClearRetainedRegionBitmapsClosure cl;
+    _evac_failure_regions->par_iterate(&cl, &_claimer, worker_id);
   }
 };
 
@@ -720,12 +720,13 @@ G1PostEvacuateCollectionSetCleanupTask2::G1PostEvacuateCollectionSetCleanupTask2
 
   if (evac_failure_regions->evacuation_failed()) {
     add_parallel_task(new RestorePreservedMarksTask(per_thread_states->preserved_marks_set()));
-    if (G1VerifyBitmaps) {
-      add_parallel_task(new VerifyAfterSelfForwardingPtrRemovalTask(evac_failure_regions));
+    // Keep marks on bitmaps in retained regions during concurrent start - they will all be old.
+    if (!G1CollectedHeap::heap()->collector_state()->in_concurrent_start_gc()) {
+      add_parallel_task(new ClearRetainedRegionBitmaps(evac_failure_regions));
     }
   }
   add_parallel_task(new RedirtyLoggedCardsTask(per_thread_states->rdcqs(), evac_failure_regions));
   add_parallel_task(new FreeCollectionSetTask(evacuation_info,
-                                                   per_thread_states->surviving_young_words(),
-                                                   evac_failure_regions));
+                                              per_thread_states->surviving_young_words(),
+                                              evac_failure_regions));
 }

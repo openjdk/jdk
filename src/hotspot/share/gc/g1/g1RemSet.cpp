@@ -1268,7 +1268,7 @@ class G1MergeHeapRootsTask : public WorkerTask {
 
     void assert_bitmap_clear(HeapRegion* hr, const G1CMBitMap* bitmap) {
       assert(bitmap->get_next_marked_addr(hr->bottom(), hr->end()) == hr->end(),
-             "Bitmap should have no mark for region %u", hr->hrm_index());
+             "Bitmap should have no mark for region %u (%s)", hr->hrm_index(), hr->get_short_type_str());
     }
 
   public:
@@ -1286,7 +1286,7 @@ class G1MergeHeapRootsTask : public WorkerTask {
       // concurrent bitmap clear. At that point the region's bitmap may contain marks
       // while being in the collection set at the same time.
       if (_g1h->collector_state()->clearing_bitmap() && hr->is_old()) {
-        _g1h->clear_bitmap_for_region(hr);
+        _g1h->clear_bitmap_for_region(hr, true /* update_tams */);
       } else {
         assert_bitmap_clear(hr, _g1h->concurrent_mark()->mark_bitmap());
       }

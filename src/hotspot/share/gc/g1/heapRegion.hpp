@@ -143,9 +143,9 @@ private:
                                                     HeapWord* const pb,
                                                     HeapWord* first_block) const;
 
+public:
   static bool obj_is_filler(oop obj);
 
-public:
   // Returns the address of the block reaching into or starting at addr.
   HeapWord* block_start(const void* addr) const;
   HeapWord* block_start(const void* addr, HeapWord* const pb) const;
@@ -511,7 +511,7 @@ public:
 
   // Notify the region that we have partially finished processing self-forwarded
   // objects during evacuation failure handling.
-  void note_self_forwarding_removal_end_par(size_t marked_bytes);
+  void note_self_forwarding_removal_end_par(size_t garbage_bytes);
 
   uint index_in_opt_cset() const {
     assert(has_index_in_opt_cset(), "Opt cset index not set.");

@@ -964,6 +964,86 @@ void G1YoungCollector::post_evacuate_cleanup_2(G1ParScanThreadStateSet* per_thre
   phase_times()->record_post_evacuate_cleanup_task_2_time((Ticks::now() - start).seconds() * 1000.0);
 }
 
+// FIXME: move
+class VerifyAfterSelfForwardingPtrRemovalTask : public WorkerTask {
+  G1EvacFailureRegions* _evac_failure_regions;
+  HeapRegionClaimer _claimer;
+
+  class VerifyRegionClosure : public HeapRegionClosure {
+    G1EvacFailureRegions* _evac_failure_regions;
+
+  public:
+    VerifyRegionClosure(G1EvacFailureRegions* evac_failure_regions) : _evac_failure_regions(evac_failure_regions) { }
+
+    bool do_heap_region(HeapRegion* hr) override {
+      assert(_evac_failure_regions->contains(hr->hrm_index()), "region %u did not fail evacuation", hr->hrm_index());
+      assert(hr->parsable_bottom() == hr->bottom(), "must be");
+
+      log_debug(gc)("verify evac failed region %u", hr->hrm_index());
+      G1CMBitMap* bitmap = G1CollectedHeap::heap()->concurrent_mark()->mark_bitmap();
+      assert(!G1CollectedHeap::heap()->collector_state()->in_concurrent_start_gc() ||
+             (hr->bottom() != hr->top_at_mark_start() &&
+              bitmap->get_next_marked_addr(hr->bottom(), hr->top_at_mark_start()) < hr->top_at_mark_start()), "region %u must have marks", hr->hrm_index());
+      assert(bitmap->get_next_marked_addr(hr->top_at_mark_start(), hr->end()) == hr->end(), "bitmap must be clear");
+
+      class VerifyObjectsInEvacFailedRegion : public ObjectClosure {
+        HeapRegion* _hr;
+        bool const _in_concurrent_start_gc;
+
+        size_t _live_words;
+        size_t _garbage_words;
+
+      public:
+        VerifyObjectsInEvacFailedRegion(HeapRegion* hr) :
+          _hr(hr),
+          _in_concurrent_start_gc(G1CollectedHeap::heap()->collector_state()->in_concurrent_start_gc()),
+          _live_words(0),
+          _garbage_words(0) { }
+
+        void do_object(oop obj) override {
+          if (HeapRegion::obj_is_filler(obj)) {
+            _garbage_words += obj->size();
+            assert(!G1CollectedHeap::heap()->is_marked(obj), "filler object " PTR_FORMAT " is marked", p2i(obj));
+          } else {
+            _live_words += obj->size();
+            assert(cast_from_oop<HeapWord*>(obj) >= _hr->top_at_mark_start() ||
+                   _in_concurrent_start_gc == G1CollectedHeap::heap()->is_marked(obj),
+                   "gc state %u should correspond to object " PTR_FORMAT " mark %u",
+                   _in_concurrent_start_gc, p2i(obj), G1CollectedHeap::heap()->is_marked(obj));
+          }
+        }
+
+        void verify_liveness() {
+          assert(_live_words + _garbage_words == _hr->used() / HeapWordSize,
+                 "Live words %zu + garbage words %zu does not match used words %zu",
+                 _live_words, _garbage_words, _hr->used() / HeapWordSize);
+        }
+
+        size_t garbage_bytes() const { return _garbage_words * HeapWordSize; }
+      } cl(hr);
+      hr->object_iterate(&cl);
+
+      assert(hr->garbage_bytes() == cl.garbage_bytes(), "Region %u recorded garbage bytes %zu different to found %zu", hr->hrm_index(), hr->garbage_bytes(), cl.garbage_bytes());
+      assert(hr->garbage_bytes() < hr->used(), "Too much garbage %zu in region %u used %zu", hr->garbage_bytes(), hr->hrm_index(), hr->used());
+
+      return false;
+    }
+  };
+
+public:
+  VerifyAfterSelfForwardingPtrRemovalTask(G1EvacFailureRegions* evac_failure_regions, uint max_workers) :
+    WorkerTask("Verify After Self Forwarding Ptr Removal"),
+    _evac_failure_regions(evac_failure_regions),
+    _claimer(max_workers) {
+    assert(VerifyAfterGC && _evac_failure_regions->evacuation_failed(), "precondition");
+  }
+
+  void work(uint worker_id) override {
+    VerifyRegionClosure closure(_evac_failure_regions);
+    _evac_failure_regions->par_iterate(&closure, &_claimer, worker_id);
+  }
+};
+
 void G1YoungCollector::post_evacuate_collection_set(G1EvacInfo* evacuation_info,
                                                     G1ParScanThreadStateSet* per_thread_states) {
   G1GCPhaseTimes* p = phase_times();
@@ -985,6 +1065,11 @@ void G1YoungCollector::post_evacuate_collection_set(G1EvacInfo* evacuation_info,
   post_evacuate_cleanup_1(per_thread_states);
 
   post_evacuate_cleanup_2(per_thread_states, evacuation_info);
+
+    if (VerifyAfterGC && _evac_failure_regions.evacuation_failed()) {
+      VerifyAfterSelfForwardingPtrRemovalTask cl(&_evac_failure_regions, _g1h->workers()->active_workers());
+      _g1h->workers()->run_task(&cl);
+    }
 
   _evac_failure_regions.post_collection();
 

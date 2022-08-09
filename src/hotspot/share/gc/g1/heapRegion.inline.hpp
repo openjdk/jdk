@@ -311,7 +311,11 @@ inline void HeapRegion::note_start_of_marking() {
 inline void HeapRegion::note_end_of_marking(size_t marked_bytes) {
   assert_at_safepoint();
 
+  size_t old_garbage_bytes = _garbage_bytes;
+  size_t old_live = live_bytes();
   _garbage_bytes = byte_size(bottom(), top_at_mark_start()) - marked_bytes;
+//  log_debug(gc)("noem: region %u old garbage %zu new garbage %zu marked %zu tams-bot %zu old live %zu new live %zu",
+//                hrm_index(), old_garbage_bytes, _garbage_bytes, marked_bytes, byte_size(bottom(), top_at_mark_start()), old_live, live_bytes());
 
   if (needs_scrubbing()) {
     _parsable_bottom = top_at_mark_start();

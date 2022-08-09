@@ -1226,6 +1226,7 @@ public:
 void G1ConcurrentMark::remark() {
   assert_at_safepoint_on_vm_thread();
 
+  //_g1h->print_heap_regions();
   // If a full collection has happened, we should not continue. However we might
   // have ended up here as the Remark VM operation has been scheduled already.
   if (has_aborted()) {
@@ -1328,6 +1329,8 @@ void G1ConcurrentMark::remark() {
   _remark_weak_ref_times.add((now - mark_work_end) * 1000.0);
   _remark_times.add((now - start) * 1000.0);
 
+  //  _g1h->print_heap_regions();
+
   policy->record_concurrent_mark_remark_end();
 }
 
@@ -1358,7 +1361,7 @@ class G1ReclaimEmptyRegionsTask : public WorkerTask {
 
     bool do_heap_region(HeapRegion *hr) {
       if (hr->used() > 0 && hr->live_bytes() == 0 && !hr->is_young() && !hr->is_closed_archive()) {
-        log_trace(gc)("Reclaimed empty old gen region %u (%s) bot " PTR_FORMAT,
+        log_debug(gc)("Reclaimed empty old gen region %u (%s) bot " PTR_FORMAT,
                       hr->hrm_index(), hr->get_short_type_str(), p2i(hr->bottom()));
         _freed_bytes += hr->used();
         hr->set_containing_set(NULL);
@@ -1885,10 +1888,12 @@ void G1ConcurrentMark::flush_all_task_caches() {
                        hits, misses, percent_of(hits, sum));
 }
 
-void G1ConcurrentMark::clear_bitmap_for_region(HeapRegion* hr) {
+void G1ConcurrentMark::clear_bitmap_for_region(HeapRegion* hr, bool update_tams) {
   assert_at_safepoint();
   _mark_bitmap.clear_range(MemRegion(hr->bottom(), hr->end()));
-  hr->note_end_of_clearing();
+  if (update_tams) {
+    hr->note_end_of_clearing();
+  }
 }
 
 HeapRegion* G1ConcurrentMark::claim_region(uint worker_id) {
@@ -1916,6 +1921,7 @@ HeapRegion* G1ConcurrentMark::claim_region(uint worker_id) {
       // someone else might have moved the finger even further
       assert(_finger >= end, "the finger should have moved forward");
 
+//      log_debug(gc)("claimed region %u " PTR_FORMAT " " PTR_FORMAT " has marks %u", curr_region->hrm_index(), p2i(bottom), p2i(limit), mark_bitmap()->get_next_marked_addr(bottom, limit) < limit);
       if (limit > bottom) {
         assert(!curr_region->is_closed_archive(), "CA regions should be skipped");
         return curr_region;

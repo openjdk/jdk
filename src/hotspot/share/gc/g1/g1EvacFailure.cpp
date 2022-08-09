@@ -44,10 +44,11 @@ class PhaseTimesStat {
   G1GCPhaseTimes* _phase_times;
   uint _worker_id;
   Ticks _start;
+
 public:
   PhaseTimesStat(G1GCPhaseTimes* phase_times, uint worker_id) :
     _phase_times(phase_times),
-    _worker_id(worker_id) {}
+    _worker_id(worker_id) { }
 
   ~PhaseTimesStat() {
     _phase_times->record_or_add_time_secs(phase_name,
@@ -70,7 +71,7 @@ public:
   }
 
   void register_objects_size(size_t marked_words) {
-    auto marked_bytes = marked_words * BytesPerWord;
+    size_t marked_bytes = marked_words * HeapWordSize;
     _phase_times->record_or_add_thread_work_item(phase_name,
                                                  _worker_id,
                                                  marked_bytes,
@@ -79,59 +80,40 @@ public:
 
   void register_objects_count(size_t num_marked_obj) {
     _phase_times->record_or_add_thread_work_item(phase_name,
-                                                  _worker_id,
-                                                  num_marked_obj,
-                                                  G1GCPhaseTimes::RemoveSelfForwardObjectsNum);
+                                                 _worker_id,
+                                                 num_marked_obj,
+                                                 G1GCPhaseTimes::RemoveSelfForwardObjectsNum);
   }
 };
 
 // Fill the memory area from start to end with filler objects, and update the BOT
-// accordingly. Since we clear and use the prev bitmap for marking objects that
-// failed evacuation, there is no work to be done there.
-static void zap_dead_objects(HeapRegion* hr, HeapWord* start, HeapWord* end) {
+// accordingly. Since we clear and use the bitmap for marking objects that failed
+// evacuation, there is no other work to be done there.
+static size_t zap_dead_objects(HeapRegion* hr, HeapWord* start, HeapWord* end) {
   assert(start <= end, "precondition");
   if (start == end) {
-    return;
+    return 0;
   }
 
-  size_t gap_size = pointer_delta(end, start);
-  if (gap_size >= CollectedHeap::min_fill_size()) {
-    CollectedHeap::fill_with_objects(start, gap_size);
+  hr->fill_range_with_dead_objects(start, end);
 
-    HeapWord* end_first_obj = start + cast_to_oop(start)->size();
-    hr->update_bot_for_block(start, end_first_obj);
-    // Fill_with_objects() may have created multiple (i.e. two)
-    // objects, as the max_fill_size() is half a region.
-    // After updating the BOT for the first object, also update the
-    // BOT for the second object to make the BOT complete.
-    if (end_first_obj != end) {
-      hr->update_bot_for_block(end_first_obj, end);
-#ifdef ASSERT
-      size_t size_second_obj = cast_to_oop(end_first_obj)->size();
-      HeapWord* end_of_second_obj = end_first_obj + size_second_obj;
-      assert(end == end_of_second_obj,
-             "More than two objects were used to fill the area from " PTR_FORMAT " to " PTR_FORMAT ", "
-             "second objects size " SIZE_FORMAT " ends at " PTR_FORMAT,
-             p2i(start), p2i(end), size_second_obj, p2i(end_of_second_obj));
-#endif
-    }
-  }
+  return pointer_delta(end, start);
 }
 
 static void prefetch_obj(HeapWord* obj_addr) {
   Prefetch::write(obj_addr, PrefetchScanIntervalInBytes);
 }
 
-// Caches the currently accumulated number of live/marked words found in this heap region.
-// Avoids direct (frequent) atomic operations on the HeapRegion's marked words.
-class G1ParRemoveSelfForwardPtrsTask::RegionMarkedWordsCache {
+// Caches the currently accumulated number of garbage words found in this heap region.
+// Avoids direct (frequent) atomic operations on the HeapRegion's garbage counter.
+class G1ParRemoveSelfForwardPtrsTask::RegionGarbageWordsCache {
   G1CollectedHeap* _g1h;
   const uint _uninitialized_idx;
   uint _region_idx;
-  size_t _marked_words;
+  size_t _garbage_words;
 
   void note_self_forwarding_removal_end_par() {
-    _g1h->region_at(_region_idx)->note_self_forwarding_removal_end_par(_marked_words * BytesPerWord);
+    _g1h->region_at(_region_idx)->note_self_forwarding_removal_end_par(_garbage_words * HeapWordSize);
   }
 
   void flush() {
@@ -139,39 +121,41 @@ class G1ParRemoveSelfForwardPtrsTask::RegionMarkedWordsCache {
       note_self_forwarding_removal_end_par();
     }
   }
+
 public:
-  RegionMarkedWordsCache(G1CollectedHeap* g1h):
+  RegionGarbageWordsCache(G1CollectedHeap* g1h):
     _g1h(g1h),
     _uninitialized_idx(_g1h->max_regions()),
     _region_idx(_uninitialized_idx),
-    _marked_words(0) { }
+    _garbage_words(0) { }
 
-  ~RegionMarkedWordsCache() {
+  ~RegionGarbageWordsCache() {
     flush();
   }
 
-  void add(uint region_idx, size_t marked_words) {
+  void add(uint region_idx, size_t garbage_words) {
     if (_region_idx == _uninitialized_idx) {
       _region_idx = region_idx;
-      _marked_words = marked_words;
+      _garbage_words = garbage_words;
     } else if (_region_idx == region_idx) {
-      _marked_words += marked_words;
+      _garbage_words += garbage_words;
     } else {
       note_self_forwarding_removal_end_par();
       _region_idx = region_idx;
-      _marked_words = marked_words;
+      _garbage_words = garbage_words;
     }
   }
 };
 
 void G1ParRemoveSelfForwardPtrsTask::process_chunk(uint worker_id,
                                                    uint chunk_idx,
-                                                   RegionMarkedWordsCache* cache) {
-  PhaseTimesStat stat{_g1h->phase_times(), worker_id};
+                                                   RegionGarbageWordsCache* cache) {
+  PhaseTimesStat stat(_g1h->phase_times(), worker_id);
 
-  G1CMBitMap* bitmap = _g1h->concurrent_mark()->mark_bitmap();
+  G1CMBitMap* bitmap = _cm->mark_bitmap();
   const uint region_idx = _evac_failure_regions->get_region_idx(chunk_idx / _num_chunks_per_region);
   HeapRegion* hr = _g1h->region_at(region_idx);
+
   HeapWord* hr_bottom = hr->bottom();
   HeapWord* hr_top = hr->top();
   HeapWord* chunk_start = hr_bottom + (chunk_idx % _num_chunks_per_region) * _chunk_size;
@@ -184,73 +168,85 @@ void G1ParRemoveSelfForwardPtrsTask::process_chunk(uint worker_id,
   HeapWord* chunk_end = MIN2(chunk_start + _chunk_size, hr_top);
   HeapWord* first_marked_addr = bitmap->get_next_marked_addr(chunk_start, hr_top);
 
+  size_t garbage_words = 0;
+
   if (chunk_start == hr_bottom) {
-    // first chunk in this region; zap [bottom, first_marked_addr)
-    zap_dead_objects(hr, hr_bottom, first_marked_addr);
+    // This is the first chunk in this region; zap [bottom, first_marked_addr).
+    garbage_words += zap_dead_objects(hr, hr_bottom, first_marked_addr);
   }
 
-  if (first_marked_addr >= chunk_end) {
+  if (first_marked_addr >= MIN2(chunk_end, hr_top)) {
     stat.register_empty_chunk();
+    cache->add(region_idx, garbage_words);
+    if (garbage_words > 0) {
+      //log_debug(gc)("chunk %u region %u empty garbage %zu", chunk_idx, region_idx, garbage_words);
+    }
     return;
   }
 
   stat.register_nonempty_chunk();
+
   size_t num_marked_objs = 0;
   size_t marked_words = 0;
 
   HeapWord* obj_addr = first_marked_addr;
-  assert(chunk_start <= obj_addr && obj_addr < chunk_end, "inv");
+  assert(chunk_start <= obj_addr && obj_addr < chunk_end,
+         "object " PTR_FORMAT " must be within chunk [" PTR_FORMAT ", " PTR_FORMAT "[",
+         p2i(obj_addr), p2i(chunk_start), p2i(chunk_end));
   do {
     assert(bitmap->is_marked(obj_addr), "inv");
     prefetch_obj(obj_addr);
+
     oop obj = cast_to_oop(obj_addr);
     const size_t obj_size = obj->size();
     HeapWord* const obj_end_addr = obj_addr + obj_size;
 
     {
-      // Process marked obj
-      assert(obj->is_forwarded() && obj->forwardee() == obj, "inv");
+      // Process marked object.
+      assert(obj->is_forwarded() && obj->forwardee() == obj, "must be self-forwarded");
       if (_during_concurrent_start) {
-        _g1h->concurrent_mark()->mark_in_bitmap(worker_id, obj);
+        _cm->notify_evac_failed_object(worker_id, obj, obj_size);
       }
       obj->init_mark();
       hr->update_bot_for_block(obj_addr, obj_end_addr);
 
-      // stat
+      // Statistics
       num_marked_objs++;
       marked_words += obj_size;
     }
 
     assert(obj_end_addr <= hr_top, "inv");
     // Use hr_top as the limit so that we zap dead ranges up to the next
-    // marked obj or hr_top
-    auto next_marked_obj_addr = bitmap->get_next_marked_addr(obj_end_addr,
-                                                                hr_top);
-    zap_dead_objects(hr, obj_end_addr, next_marked_obj_addr);
+    // marked obj or hr_top.
+    HeapWord* next_marked_obj_addr = bitmap->get_next_marked_addr(obj_end_addr, hr_top);
+    garbage_words += zap_dead_objects(hr, obj_end_addr, next_marked_obj_addr);
     obj_addr = next_marked_obj_addr;
-  } while (obj_addr < chunk_end);
+  } while (obj_addr < MIN2(hr_top, chunk_end));
 
   assert(marked_words > 0 && num_marked_objs > 0, "inv");
 
-  stat.register_objects_size(marked_words);
   stat.register_objects_count(num_marked_objs);
+  stat.register_objects_size(marked_words);
 
-  cache->add(region_idx, marked_words);
+  cache->add(region_idx, garbage_words);
+
+  //&/log_debug(gc)("chunk %u region %u num objs %zu obj size %zu garbage %zu", chunk_idx, region_idx, num_marked_objs, marked_words, garbage_words);
 }
 
 G1ParRemoveSelfForwardPtrsTask::G1ParRemoveSelfForwardPtrsTask(G1EvacFailureRegions* evac_failure_regions) :
   WorkerTask("G1 Remove Self-forwarding Pointers"),
   _g1h(G1CollectedHeap::heap()),
+  _cm(_g1h->concurrent_mark()),
   _during_concurrent_start(_g1h->collector_state()->in_concurrent_start_gc()),
   _evac_failure_regions(evac_failure_regions),
-  _chunk_bitmap() {}
+  _chunk_bitmap(mtGC) { }
 
 void G1ParRemoveSelfForwardPtrsTask::work(uint worker_id) {
   const uint total_workers = G1CollectedHeap::heap()->workers()->active_workers();
   const uint total_chunks = _num_chunks_per_region * _num_evac_fail_regions;
   const uint start_chunk_idx = worker_id * total_chunks / total_workers;
 
-  RegionMarkedWordsCache region_marked_words_cache{_g1h};
+  RegionGarbageWordsCache region_marked_words_cache(_g1h);
 
   for (uint i = 0; i < total_chunks; i++) {
     const uint chunk_idx = (start_chunk_idx + i) % total_chunks;

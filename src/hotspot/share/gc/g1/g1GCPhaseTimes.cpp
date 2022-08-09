@@ -115,7 +115,7 @@ G1GCPhaseTimes::G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads) :
 #endif
   _gc_par_phases[EagerlyReclaimHumongousObjects] = new WorkerDataArray<double>("EagerlyReclaimHumongousObjects", "Eagerly Reclaim Humongous Objects (ms):", max_gc_threads);
   _gc_par_phases[RestorePreservedMarks] = new WorkerDataArray<double>("RestorePreservedMarks", "Restore Preserved Marks (ms):", max_gc_threads);
-  _gc_par_phases[VerifyAfterSelfForwardingPtrRemoval] = new WorkerDataArray<double>("VerifyAfterSelfForwardingPtrRemoval", "Verify Retained Regions (ms):", max_gc_threads);
+  _gc_par_phases[ClearRetainedRegionBitmaps] = new WorkerDataArray<double>("ClearRetainedRegionsBitmap", "Clear Retained Region Bitmaps (ms):", max_gc_threads);
 
   _gc_par_phases[ScanHR]->create_thread_work_items("Scanned Cards:", ScanHRScannedCards);
   _gc_par_phases[ScanHR]->create_thread_work_items("Scanned Blocks:", ScanHRScannedBlocks);
@@ -502,9 +502,7 @@ double G1GCPhaseTimes::print_post_evacuate_collection_set(bool evacuation_failed
   if (evacuation_failed) {
     debug_phase(_gc_par_phases[RecalculateUsed], 1);
     debug_phase(_gc_par_phases[RestorePreservedMarks], 1);
-    if (G1VerifyBitmaps) {
-      debug_phase(_gc_par_phases[VerifyAfterSelfForwardingPtrRemoval], 1);
-    }
+    debug_phase(_gc_par_phases[ClearRetainedRegionBitmaps], 1);
   }
   debug_phase(_gc_par_phases[ResetHotCardCache], 1);
   debug_phase(_gc_par_phases[PurgeCodeRoots], 1);

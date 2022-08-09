@@ -90,7 +90,7 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 #endif
     EagerlyReclaimHumongousObjects,
     RestorePreservedMarks,
-    VerifyAfterSelfForwardingPtrRemoval,
+    ClearRetainedRegionBitmaps,
     CLDClearClaimedMarks,
     ResetMarkingState,
     NoteStartOfMark,
