@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,17 +27,23 @@
 #include "cds/lambdaProxyClassDictionary.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 
-DumpTimeLambdaProxyClassInfo DumpTimeLambdaProxyClassInfo::clone() {
-  DumpTimeLambdaProxyClassInfo res;
-  res._proxy_klasses = NULL;
-  if (_proxy_klasses != NULL && _proxy_klasses->length() > 0) {
-    int num_proxy_klasses = _proxy_klasses->length();
-    res._proxy_klasses = new (ResourceObj::C_HEAP, mtClassShared) GrowableArray<InstanceKlass*>(num_proxy_klasses, mtClassShared);
-    for (int i = 0; i < num_proxy_klasses; i++) {
-      res._proxy_klasses->append(_proxy_klasses->at(i));
+// This constructor is used only by SystemDictionaryShared::clone_dumptime_tables().
+// See comments there about the need for making a deep copy.
+DumpTimeLambdaProxyClassInfo::DumpTimeLambdaProxyClassInfo(const DumpTimeLambdaProxyClassInfo& src) {
+  _proxy_klasses = NULL;
+  if (src._proxy_klasses != NULL && src._proxy_klasses->length() > 0) {
+    int n = src._proxy_klasses->length();
+    _proxy_klasses = new (ResourceObj::C_HEAP, mtClassShared) GrowableArray<InstanceKlass*>(n, mtClassShared);
+    for (int i = 0; i < n; i++) {
+      _proxy_klasses->append(src._proxy_klasses->at(i));
     }
   }
-  return res;
+}
+
+DumpTimeLambdaProxyClassInfo::~DumpTimeLambdaProxyClassInfo() {
+  if (_proxy_klasses != NULL) {
+    delete _proxy_klasses;
+  }
 }
 
 void LambdaProxyClassKey::mark_pointers() {
