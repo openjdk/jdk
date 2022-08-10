@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -183,7 +183,7 @@ final class CertificateAuthoritiesExtension {
             ClientHandshakeContext chc = (ClientHandshakeContext)context;
 
             // Is it a supported and enabled extension?
-            if (!chc.sslConfig.isAvailable(
+            if (!Objects.requireNonNull(chc.sslConfig).isAvailable(
                     SSLExtension.CH_CERTIFICATE_AUTHORITIES)) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
@@ -261,7 +261,7 @@ final class CertificateAuthoritiesExtension {
             ServerHandshakeContext shc = (ServerHandshakeContext)context;
 
             // Is it a supported and enabled extension?
-            if (!shc.sslConfig.isAvailable(
+            if (!Objects.requireNonNull(shc.sslConfig).isAvailable(
                     SSLExtension.CH_CERTIFICATE_AUTHORITIES)) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
@@ -304,7 +304,7 @@ final class CertificateAuthoritiesExtension {
             ServerHandshakeContext shc = (ServerHandshakeContext)context;
 
             // Is it a supported and enabled extension?
-            if (!shc.sslConfig.isAvailable(
+            if (!Objects.requireNonNull(shc.sslConfig).isAvailable(
                     SSLExtension.CR_CERTIFICATE_AUTHORITIES)) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
@@ -382,7 +382,7 @@ final class CertificateAuthoritiesExtension {
             ClientHandshakeContext chc = (ClientHandshakeContext)context;
 
             // Is it a supported and enabled extension?
-            if (!chc.sslConfig.isAvailable(
+            if (!Objects.requireNonNull(chc.sslConfig).isAvailable(
                     SSLExtension.CR_CERTIFICATE_AUTHORITIES)) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(

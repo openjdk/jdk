@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,8 @@ package sun.security.ssl;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.Objects;
+
 import sun.security.ssl.SSLHandshake.HandshakeMessage;
 
 /**
@@ -160,7 +162,7 @@ final class ServerHelloDone {
             //
             // update
             //
-            chc.handshakeProducers.put(SSLHandshake.CLIENT_KEY_EXCHANGE.id,
+            Objects.requireNonNull(chc.handshakeProducers).put(SSLHandshake.CLIENT_KEY_EXCHANGE.id,
                     SSLHandshake.CLIENT_KEY_EXCHANGE);
             chc.handshakeProducers.put(SSLHandshake.FINISHED.id,
                     SSLHandshake.FINISHED);

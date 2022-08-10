@@ -67,7 +67,7 @@ import sun.security.util.LocalizedMessage;
  * <p>The protection domain contains a CodeSource
  * object, which encapsulates its codebase (URL) and public key attributes.
  * It also contains the principals associated with the domain.
- * The Policy object evaluates the global policy in light of who the
+ * The Policy object evaluates the global policy in light of whom the
  * principal is and what the code source is and returns an appropriate
  * Permissions object.
  *

@@ -47,6 +47,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.text.MessageFormat;
 import java.util.Locale;
+import java.util.Objects;
 
 /**
  * SessionTicketExtension is an implementation of RFC 5077 with some internals
@@ -176,7 +177,7 @@ final class SessionTicketExtension {
 
             synchronized (hc.sslContext.keyHashMap) {
                 // If the current key is no longer expired, it was already
-                // updated by a previous operation and we can return.
+                // updated by a previous operation, and we can return.
                 ssk = hc.sslContext.keyHashMap.get(currentKeyID);
                 if (ssk != null && !ssk.isExpired()) {
                     return ssk;
@@ -354,9 +355,10 @@ final class SessionTicketExtension {
             }
 
             MessageFormat messageFormat = new MessageFormat(
-                    "  \"ticket\" : '{'\n" +
-                            "{0}\n" +
-                            "  '}'",
+                    """
+                              "ticket" : '{'
+                            {0}
+                              '}'""",
                     Locale.ENGLISH);
             HexDumpEncoder hexEncoder = new HexDumpEncoder();
 
@@ -415,7 +417,7 @@ final class SessionTicketExtension {
             if (chc.localSupportedSignAlgs == null) {
                 chc.localSupportedSignAlgs =
                         SignatureScheme.getSupportedAlgorithms(
-                                chc.sslConfig,
+                                Objects.requireNonNull(chc.sslConfig),
                                 chc.algorithmConstraints, chc.activeProtocols);
             }
 
@@ -436,7 +438,7 @@ final class SessionTicketExtension {
             ServerHandshakeContext shc = (ServerHandshakeContext) context;
 
             // Skip if extension is not provided
-            if (!shc.sslConfig.isAvailable(CH_SESSION_TICKET)) {
+            if (!Objects.requireNonNull(shc.sslConfig).isAvailable(CH_SESSION_TICKET)) {
                 return;
             }
 
@@ -520,7 +522,7 @@ final class SessionTicketExtension {
             ClientHandshakeContext chc = (ClientHandshakeContext) context;
 
             // Skip if extension is not provided
-            if (!chc.sslConfig.isAvailable(SH_SESSION_TICKET)) {
+            if (!Objects.requireNonNull(chc.sslConfig).isAvailable(SH_SESSION_TICKET)) {
                 chc.statelessResumption = false;
                 return;
             }

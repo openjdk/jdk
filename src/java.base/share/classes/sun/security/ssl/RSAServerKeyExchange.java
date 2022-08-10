@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,8 @@ import java.security.spec.RSAPublicKeySpec;
 import java.text.MessageFormat;
 import java.util.EnumSet;
 import java.util.Locale;
+import java.util.Objects;
+
 import sun.security.ssl.RSAKeyExchange.EphemeralRSACredentials;
 import sun.security.ssl.RSAKeyExchange.EphemeralRSAPossession;
 import sun.security.ssl.SSLHandshake.HandshakeMessage;
@@ -164,21 +166,22 @@ final class RSAServerKeyExchange {
         @Override
         public String toString() {
             MessageFormat messageFormat = new MessageFormat(
-                "\"RSA ServerKeyExchange\": '{'\n" +
-                "  \"parameters\": '{'\n" +
-                "    \"rsa_modulus\": '{'\n" +
-                "{0}\n" +
-                "    '}',\n" +
-                "    \"rsa_exponent\": '{'\n" +
-                "{1}\n" +
-                "    '}'\n" +
-                "  '}',\n" +
-                "  \"digital signature\":  '{'\n" +
-                "    \"signature\": '{'\n" +
-                "{2}\n" +
-                "    '}',\n" +
-                "  '}'\n" +
-                "'}'",
+                    """
+                            "RSA ServerKeyExchange": '{'
+                              "parameters": '{'
+                                "rsa_modulus": '{'
+                            {0}
+                                '}',
+                                "rsa_exponent": '{'
+                            {1}
+                                '}'
+                              '}',
+                              "digital signature":  '{'
+                                "signature": '{'
+                            {2}
+                                '}',
+                              '}'
+                            '}'""",
                 Locale.ENGLISH);
 
             HexDumpEncoder hexEncoder = new HexDumpEncoder();
@@ -229,7 +232,7 @@ final class RSAServerKeyExchange {
 
             EphemeralRSAPossession rsaPossession = null;
             X509Possession x509Possession = null;
-            for (SSLPossession possession : shc.handshakePossessions) {
+            for (SSLPossession possession : Objects.requireNonNull(shc.handshakePossessions)) {
                 if (possession instanceof EphemeralRSAPossession) {
                     rsaPossession = (EphemeralRSAPossession)possession;
                     if (x509Possession != null) {
@@ -316,7 +319,7 @@ final class RSAServerKeyExchange {
                         "Could not generate RSAPublicKey", gse);
             }
 
-            if (!chc.algorithmConstraints.permits(
+            if (!Objects.requireNonNull(chc.algorithmConstraints).permits(
                     EnumSet.of(CryptoPrimitive.KEY_AGREEMENT), publicKey)) {
                 throw chc.conContext.fatal(Alert.INSUFFICIENT_SECURITY,
                         "RSA ServerKeyExchange does not comply to " +
@@ -326,7 +329,7 @@ final class RSAServerKeyExchange {
             //
             // update
             //
-            chc.handshakeCredentials.add(
+            Objects.requireNonNull(chc.handshakeCredentials).add(
                     new EphemeralRSACredentials(publicKey));
 
             //

@@ -551,7 +551,7 @@ public class AlgorithmId implements Serializable, DerEncoder {
         }
     }
 
-    // oid string cache index'ed by algorithm name and oid strings
+    // oid string cache indexed by algorithm name and oid strings
     private static volatile Map<String,String> aliasOidsTable;
 
     // called by sun.security.jca.Providers whenever provider list is changed

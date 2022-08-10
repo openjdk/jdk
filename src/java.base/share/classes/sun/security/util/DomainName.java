@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -611,7 +611,7 @@ class DomainName {
         public RegisteredDomain registeredDomain() {
             int nlabels = numLabels + 1;
             if (nlabels > target.size()) {
-                // special case when registered domain is same as pub suff
+                // special case when registered domain is same as pub suffix
                 return null;
             }
             return new RegisteredDomainImpl(getSuffixes(nlabels),

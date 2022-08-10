@@ -2998,9 +2998,7 @@ public final class Main {
                 CodeSigner[] signers = je.getCodeSigners();
                 if (signers != null) {
                     for (CodeSigner signer: signers) {
-                        if (!ss.contains(signer)) {
-                            ss.add(signer);
-                        }
+                        ss.add(signer);
                     }
                 }
             }

@@ -997,7 +997,7 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
             }
 
             if (!flightIsReady && needToCheckFlight) {
-                // check the fligth status
+                // check the flight status
                 flightIsReady = flightIsReady();
 
                 // Reset if this flight is ready.
@@ -1146,7 +1146,7 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
             }
 
             // The ciphertext handshake message can only be Finished (the
-            // end of this flight), ClinetHello or HelloRequest (the
+            // end of this flight), ClientHello or HelloRequest (the
             // beginning of the next flight) message.  Need not to check
             // any ChangeCipherSpec message.
             if (rFrag.contentType == ContentType.HANDSHAKE.id) {

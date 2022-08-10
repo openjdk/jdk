@@ -908,8 +908,7 @@ public class X500Name implements GeneralNameInterface, Principal {
              * is part of the RDN. Otherwise, it is used as a separator, to
              * delimit the RDN under consideration from any subsequent RDNs.
              */
-            if (rdnEnd >= 0 && quoteCount != 1 &&
-                !escaped(rdnEnd, searchOffset, input)) {
+            if (quoteCount != 1 && !escaped(rdnEnd, searchOffset, input)) {
 
                 /*
                  * Comma/semicolon is a separator

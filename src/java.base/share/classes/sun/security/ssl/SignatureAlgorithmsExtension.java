@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.text.MessageFormat;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import javax.net.ssl.SSLProtocolException;
 import sun.security.ssl.SSLExtension.ExtensionConsumer;
 import sun.security.ssl.SSLExtension.SSLExtensionSpec;
@@ -96,7 +97,7 @@ final class SignatureAlgorithmsExtension {
                     "Invalid signature_algorithms: unknown extra data"));
             }
 
-            if (algs == null || algs.length == 0 || (algs.length & 0x01) != 0) {
+            if (algs.length == 0 || (algs.length & 0x01) != 0) {
                 throw hc.conContext.fatal(Alert.DECODE_ERROR,
                         new SSLProtocolException(
                     "Invalid signature_algorithms: incomplete data"));
@@ -175,7 +176,7 @@ final class SignatureAlgorithmsExtension {
             ClientHandshakeContext chc = (ClientHandshakeContext)context;
 
             // Is it a supported and enabled extension?
-            if (!chc.sslConfig.isAvailable(
+            if (!Objects.requireNonNull(chc.sslConfig).isAvailable(
                     SSLExtension.CH_SIGNATURE_ALGORITHMS)) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
@@ -228,7 +229,7 @@ final class SignatureAlgorithmsExtension {
             ServerHandshakeContext shc = (ServerHandshakeContext)context;
 
             // Is it a supported and enabled extension?
-            if (!shc.sslConfig.isAvailable(
+            if (!Objects.requireNonNull(shc.sslConfig).isAvailable(
                     SSLExtension.CH_SIGNATURE_ALGORITHMS)) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
@@ -298,13 +299,13 @@ final class SignatureAlgorithmsExtension {
 
             if (!shc.isResumption &&
                     shc.negotiatedProtocol.useTLS13PlusSpec()) {
-                if (shc.sslConfig.clientAuthType !=
+                if (Objects.requireNonNull(shc.sslConfig).clientAuthType !=
                         ClientAuthType.CLIENT_AUTH_NONE) {
-                    shc.handshakeProducers.putIfAbsent(
+                    Objects.requireNonNull(shc.handshakeProducers).putIfAbsent(
                             SSLHandshake.CERTIFICATE_REQUEST.id,
                             SSLHandshake.CERTIFICATE_REQUEST);
                 }
-                shc.handshakeProducers.put(
+                Objects.requireNonNull(shc.handshakeProducers).put(
                         SSLHandshake.CERTIFICATE.id,
                         SSLHandshake.CERTIFICATE);
                 shc.handshakeProducers.putIfAbsent(
@@ -404,7 +405,7 @@ final class SignatureAlgorithmsExtension {
             //
             // Note that this is a mandatory extension for CertificateRequest
             // handshake message in TLS 1.3.
-            if (!shc.sslConfig.isAvailable(
+            if (!Objects.requireNonNull(shc.sslConfig).isAvailable(
                     SSLExtension.CR_SIGNATURE_ALGORITHMS)) {
                 throw shc.conContext.fatal(Alert.MISSING_EXTENSION,
                         "No available signature_algorithms extension " +
@@ -455,7 +456,7 @@ final class SignatureAlgorithmsExtension {
             //
             // Note that this is a mandatory extension for CertificateRequest
             // handshake message in TLS 1.3.
-            if (!chc.sslConfig.isAvailable(
+            if (!Objects.requireNonNull(chc.sslConfig).isAvailable(
                     SSLExtension.CR_SIGNATURE_ALGORITHMS)) {
                 throw chc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                         "No available signature_algorithms extension " +

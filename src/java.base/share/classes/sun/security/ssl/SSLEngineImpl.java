@@ -332,7 +332,7 @@ final class SSLEngineImpl extends SSLEngine implements SSLTransport {
             // after the last flight.  If the last flight get lost, the
             // application data may be discarded accordingly.  As could
             // be an issue for some applications.  This impact can be
-            // mitigated by sending the last fligth twice.
+            // mitigated by sending the last flight twice.
             if (SSLLogger.isOn && SSLLogger.isOn("ssl,verbose")) {
                 SSLLogger.finest("retransmit the last flight messages");
             }
@@ -561,7 +561,7 @@ final class SSLEngineImpl extends SSLEngine implements SSLTransport {
 
         /*
          * If we have a task outstanding, this *MUST* be done before
-         * doing anymore unwrapping, because we could be in the middle
+         * doing any more unwrapping, because we could be in the middle
          * of receiving a handshake message, for example, a finished
          * message which would change the ciphers.
          */

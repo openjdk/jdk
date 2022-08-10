@@ -249,7 +249,7 @@ public final class SecurityProviderConstants {
         store("NONEwithDSA", null, "RawDSA");
         store("DESede", null, "TripleDES");
         store("ARCFOUR", KnownOIDs.ARCFOUR);
-        // For backward compatility, refer to PKCS1 mapping for RSA
+        // For backward compatibility, refer to PKCS1 mapping for RSA
         // KeyPairGenerator and KeyFactory
         store("PKCS1", KnownOIDs.PKCS1, KnownOIDs.RSA.value());
 

@@ -65,7 +65,7 @@ class SubjectCodeSource extends CodeSource implements java.io.Serializable {
      * <code>AccessControlContext</code>.
      * The Principals are given as a <code>LinkedList</code>
      * of <code>PolicyParser.PrincipalEntry</code> objects.
-     * Typically, either a <code>Subject</code> will be provided,
+     * Typically either a <code>Subject</code> will be provided,
      * or a list of <code>principals</code> will be provided
      * (not both).
      *
@@ -88,8 +88,8 @@ class SubjectCodeSource extends CodeSource implements java.io.Serializable {
         super(url, certs);
         this.subject = subject;
         this.principals = (principals == null ?
-                new LinkedList<>() :
-                new LinkedList<>(principals));
+                new LinkedList<PrincipalEntry>() :
+                new LinkedList<PrincipalEntry>(principals));
         sysClassLoader = java.security.AccessController.doPrivileged
         (new java.security.PrivilegedAction<ClassLoader>() {
             public ClassLoader run() {

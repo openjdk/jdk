@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ import java.security.cert.CertificateException;
 import sun.security.util.*;
 
 /**
- * This class defines the mapping from OID {@literal &} name to classes and vice
+ * This class defines the mapping from OID {@literal &} name to class and vice
  * versa.  Used by CertificateExtensions {@literal &} PKCS10 to get the java
  * classes associated with a particular OID/name.
  *

@@ -624,42 +624,40 @@ public abstract class AbstractDrbg {
             params = DrbgParameters.instantiation(m.strength,
                     m.capability, m.personalizationString);
         }
-        if (params != null) {
-            if (params instanceof DrbgParameters.Instantiation inst) {
+        if (params instanceof DrbgParameters.Instantiation inst) {
 
-                // 800-90Ar1 9.1: Instantiate Process. Steps 1-5.
+            // 800-90Ar1 9.1: Instantiate Process. Steps 1-5.
 
-                // Step 1: Check requested_instantiation_security_strength
-                if (inst.getStrength() > highestSupportedSecurityStrength) {
-                    throw new IllegalArgumentException("strength too big: "
-                            + inst.getStrength());
-                }
-
-                // Step 2: Check prediction_resistance_flag
-                if (inst.getCapability().supportsPredictionResistance()
-                        && !supportPredictionResistance) {
-                    throw new IllegalArgumentException("pr not supported");
-                }
-
-                // Step 3: Check personalization_string
-                byte[] ps = inst.getPersonalizationString();
-                if (ps != null && ps.length > maxPersonalizationStringLength) {
-                    throw new IllegalArgumentException("ps too long: "
-                            + ps.length);
-                }
-
-                if (inst.getCapability().supportsReseeding()
-                        && !supportReseeding) {
-                    throw new IllegalArgumentException("reseed not supported");
-                }
-                this.personalizationString = ps;
-                this.predictionResistanceFlag =
-                        inst.getCapability().supportsPredictionResistance();
-                this.requestedInstantiationSecurityStrength = inst.getStrength();
-            } else {
-                throw new IllegalArgumentException("unknown params: "
-                        + params.getClass());
+            // Step 1: Check requested_instantiation_security_strength
+            if (inst.getStrength() > highestSupportedSecurityStrength) {
+                throw new IllegalArgumentException("strength too big: "
+                        + inst.getStrength());
             }
+
+            // Step 2: Check prediction_resistance_flag
+            if (inst.getCapability().supportsPredictionResistance()
+                    && !supportPredictionResistance) {
+                throw new IllegalArgumentException("pr not supported");
+            }
+
+            // Step 3: Check personalization_string
+            byte[] ps = inst.getPersonalizationString();
+            if (ps != null && ps.length > maxPersonalizationStringLength) {
+                throw new IllegalArgumentException("ps too long: "
+                        + ps.length);
+            }
+
+            if (inst.getCapability().supportsReseeding()
+                    && !supportReseeding) {
+                throw new IllegalArgumentException("reseed not supported");
+            }
+            this.personalizationString = ps;
+            this.predictionResistanceFlag =
+                    inst.getCapability().supportsPredictionResistance();
+            this.requestedInstantiationSecurityStrength = inst.getStrength();
+        } else {
+            throw new IllegalArgumentException("unknown params: "
+                    + params.getClass());
         }
 
         // Step 4: Set security_strength

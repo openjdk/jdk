@@ -283,7 +283,7 @@ public final class ObjectIdentifier implements Serializable {
         System.arraycopy(tmp, 0, encoding, 0, pos);
     }
 
-    // oid cache index'ed by the oid string
+    // oid cache indexed by the oid string
     private static final ConcurrentHashMap<String,ObjectIdentifier> oidTable =
             new ConcurrentHashMap<>();
 

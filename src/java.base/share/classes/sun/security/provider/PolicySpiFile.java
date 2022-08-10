@@ -44,17 +44,18 @@ import java.net.MalformedURLException;
 @SuppressWarnings("removal")
 public final class PolicySpiFile extends PolicySpi {
 
-    private final PolicyFile pf;
+    private PolicyFile pf;
 
     public PolicySpiFile(Policy.Parameters params) {
 
         if (params == null) {
             pf = new PolicyFile();
         } else {
-            if (!(params instanceof URIParameter uriParam)) {
+            if (!(params instanceof URIParameter)) {
                 throw new IllegalArgumentException
                         ("Unrecognized policy parameter: " + params);
             }
+            URIParameter uriParam = (URIParameter)params;
             try {
                 pf = new PolicyFile(uriParam.getURI().toURL());
             } catch (MalformedURLException mue) {

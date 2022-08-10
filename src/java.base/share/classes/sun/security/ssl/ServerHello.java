@@ -31,13 +31,7 @@ import java.security.AlgorithmConstraints;
 import java.security.CryptoPrimitive;
 import java.security.GeneralSecurityException;
 import java.text.MessageFormat;
-import java.util.Arrays;
-import java.util.EnumSet;
-import java.util.HexFormat;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.net.ssl.SSLException;
@@ -215,22 +209,23 @@ final class ServerHello {
             hos.putInt8(compressionMethod);
 
             extensions.send(hos);           // In TLS 1.3, use of certain
-                                            // extensions is mandatory.
+                                            // extensions are mandatory.
         }
 
         @Override
         public String toString() {
             MessageFormat messageFormat = new MessageFormat(
-                "\"{0}\": '{'\n" +
-                "  \"server version\"      : \"{1}\",\n" +
-                "  \"random\"              : \"{2}\",\n" +
-                "  \"session id\"          : \"{3}\",\n" +
-                "  \"cipher suite\"        : \"{4}\",\n" +
-                "  \"compression methods\" : \"{5}\",\n" +
-                "  \"extensions\"          : [\n" +
-                "{6}\n" +
-                "  ]\n" +
-                "'}'",
+                    """
+                            "{0}": '{'
+                              "server version"      : "{1}",
+                              "random"              : "{2}",
+                              "session id"          : "{3}",
+                              "cipher suite"        : "{4}",
+                              "compression methods" : "{5}",
+                              "extensions"          : [
+                            {6}
+                              ]
+                            '}'""",
                 Locale.ENGLISH);
             Object[] messageFields = {
                 serverRandom.isHelloRetryRequest() ?
@@ -269,7 +264,7 @@ final class ServerHello {
             // new one and choose its cipher suite and compression options,
             // unless new session creation is disabled for this connection!
             if (!shc.isResumption || shc.resumingSession == null) {
-                if (!shc.sslConfig.enableSessionCreation) {
+                if (!Objects.requireNonNull(shc.sslConfig).enableSessionCreation) {
                     throw new SSLException(
                         "Not resumption, and no new session is allowed");
                 }
@@ -302,14 +297,14 @@ final class ServerHello {
                 shc.negotiatedCipherSuite = credentials.cipherSuite;
                 shc.handshakeKeyExchange = credentials.keyExchange;
                 shc.handshakeSession.setSuite(credentials.cipherSuite);
-                shc.handshakePossessions.addAll(
+                Objects.requireNonNull(shc.handshakePossessions).addAll(
                         Arrays.asList(credentials.possessions));
-                shc.handshakeHash.determine(
+                Objects.requireNonNull(shc.handshakeHash).determine(
                         shc.negotiatedProtocol, shc.negotiatedCipherSuite);
 
                 // Check the incoming OCSP stapling extensions and attempt
-                // to get responses.  If the resulting stapleParams is non
-                // null, it implies that stapling is enabled on the server side.
+                // to get responses.  If the resulting stapleParams is non-null,
+                // it implies that stapling is enabled on the server side.
                 shc.stapleParams = StatusResponseManager.processStapling(shc);
                 shc.staplingActive = (shc.stapleParams != null);
 
@@ -318,7 +313,7 @@ final class ServerHello {
                 if (ke != null) {
                     for (Map.Entry<Byte, HandshakeProducer> me :
                             ke.getHandshakeProducers(shc)) {
-                        shc.handshakeProducers.put(
+                        Objects.requireNonNull(shc.handshakeProducers).put(
                                 me.getKey(), me.getValue());
                     }
                 }
@@ -330,14 +325,14 @@ final class ServerHello {
                     for (SSLHandshake hs :
                             ke.getRelatedHandshakers(shc)) {
                         if (hs == SSLHandshake.CERTIFICATE) {
-                            shc.handshakeProducers.put(
+                            Objects.requireNonNull(shc.handshakeProducers).put(
                                     SSLHandshake.CERTIFICATE_REQUEST.id,
                                     SSLHandshake.CERTIFICATE_REQUEST);
                             break;
                         }
                     }
                 }
-                shc.handshakeProducers.put(SSLHandshake.SERVER_HELLO_DONE.id,
+                Objects.requireNonNull(shc.handshakeProducers).put(SSLHandshake.SERVER_HELLO_DONE.id,
                         SSLHandshake.SERVER_HELLO_DONE);
             } else {
                 // stateless and use the client session id (RFC 5077 3.4)
@@ -353,7 +348,7 @@ final class ServerHello {
                 shc.negotiatedProtocol =
                         shc.resumingSession.getProtocolVersion();
                 shc.negotiatedCipherSuite = shc.resumingSession.getSuite();
-                shc.handshakeHash.determine(
+                Objects.requireNonNull(shc.handshakeHash).determine(
                         shc.negotiatedProtocol, shc.negotiatedCipherSuite);
             }
 
@@ -368,7 +363,7 @@ final class ServerHello {
 
             // Produce extensions for ServerHello handshake message.
             SSLExtension[] serverHelloExtensions =
-                shc.sslConfig.getEnabledExtensions(
+                Objects.requireNonNull(shc.sslConfig).getEnabledExtensions(
                         SSLHandshake.SERVER_HELLO, shc.negotiatedProtocol);
             shm.extensions.produce(shc, serverHelloExtensions);
             if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
@@ -393,7 +388,7 @@ final class ServerHello {
                 }
 
                 // update the responders
-                shc.handshakeProducers.put(SSLHandshake.FINISHED.id,
+                Objects.requireNonNull(shc.handshakeProducers).put(SSLHandshake.FINISHED.id,
                         SSLHandshake.FINISHED);
             }
 
@@ -510,7 +505,7 @@ final class ServerHello {
             // new one and choose its cipher suite and compression options,
             // unless new session creation is disabled for this connection!
             if (!shc.isResumption || shc.resumingSession == null) {
-                if (!shc.sslConfig.enableSessionCreation) {
+                if (!Objects.requireNonNull(shc.sslConfig).enableSessionCreation) {
                     throw new SSLException(
                         "Not resumption, and no new session is allowed");
                 }
@@ -541,21 +536,21 @@ final class ServerHello {
                 }
                 shc.negotiatedCipherSuite = cipherSuite;
                 shc.handshakeSession.setSuite(cipherSuite);
-                shc.handshakeHash.determine(
+                Objects.requireNonNull(shc.handshakeHash).determine(
                         shc.negotiatedProtocol, shc.negotiatedCipherSuite);
             } else {
                 shc.handshakeSession = shc.resumingSession;
 
                 // consider the handshake extension impact
                 SSLExtension[] enabledExtensions =
-                shc.sslConfig.getEnabledExtensions(
+                Objects.requireNonNull(shc.sslConfig).getEnabledExtensions(
                 SSLHandshake.CLIENT_HELLO, shc.negotiatedProtocol);
                 clientHello.extensions.consumeOnTrade(shc, enabledExtensions);
 
                 shc.negotiatedProtocol =
                         shc.resumingSession.getProtocolVersion();
                 shc.negotiatedCipherSuite = shc.resumingSession.getSuite();
-                shc.handshakeHash.determine(
+                Objects.requireNonNull(shc.handshakeHash).determine(
                         shc.negotiatedProtocol, shc.negotiatedCipherSuite);
 
                 setUpPskKD(shc,
@@ -563,7 +558,7 @@ final class ServerHello {
             }
 
             // update the responders
-            shc.handshakeProducers.put(SSLHandshake.ENCRYPTED_EXTENSIONS.id,
+            Objects.requireNonNull(shc.handshakeProducers).put(SSLHandshake.ENCRYPTED_EXTENSIONS.id,
                     SSLHandshake.ENCRYPTED_EXTENSIONS);
             shc.handshakeProducers.put(SSLHandshake.FINISHED.id,
                     SSLHandshake.FINISHED);
@@ -701,7 +696,7 @@ final class ServerHello {
 
         private static CipherSuite chooseCipherSuite(
                 ServerHandshakeContext shc,
-                ClientHelloMessage clientHello) throws IOException {
+                ClientHelloMessage clientHello) {
             List<CipherSuite> preferred;
             List<CipherSuite> proposed;
             if (shc.sslConfig.preferLocalCipherSuites) {
@@ -782,12 +777,12 @@ final class ServerHello {
             );
 
             shc.negotiatedCipherSuite = cipherSuite;
-            shc.handshakeHash.determine(
+            Objects.requireNonNull(shc.handshakeHash).determine(
                     shc.negotiatedProtocol, shc.negotiatedCipherSuite);
 
             // Produce extensions for HelloRetryRequest handshake message.
             SSLExtension[] serverHelloExtensions =
-                shc.sslConfig.getEnabledExtensions(
+                Objects.requireNonNull(shc.sslConfig).getEnabledExtensions(
                     SSLHandshake.HELLO_RETRY_REQUEST, shc.negotiatedProtocol);
             hhrm.extensions.produce(shc, serverHelloExtensions);
             if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
@@ -840,7 +835,7 @@ final class ServerHello {
 
             // Produce extensions for HelloRetryRequest handshake message.
             SSLExtension[] serverHelloExtensions =
-                shc.sslConfig.getEnabledExtensions(
+                Objects.requireNonNull(shc.sslConfig).getEnabledExtensions(
                     SSLHandshake.MESSAGE_HASH, shc.negotiatedProtocol);
             hhrm.extensions.produce(shc, serverHelloExtensions);
             if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
@@ -916,14 +911,14 @@ final class ServerHello {
                 serverVersion = helloRetryRequest.serverVersion;
             }
 
-            if (!chc.activeProtocols.contains(serverVersion)) {
+            if (!Objects.requireNonNull(chc.activeProtocols).contains(serverVersion)) {
                 throw chc.conContext.fatal(Alert.PROTOCOL_VERSION,
                     "The server selected protocol version " + serverVersion +
                     " is not accepted by client preferences " +
                     chc.activeProtocols);
             }
 
-            if (!serverVersion.useTLS13PlusSpec()) {
+            if (!Objects.requireNonNull(serverVersion).useTLS13PlusSpec()) {
                 throw chc.conContext.fatal(Alert.PROTOCOL_VERSION,
                     "Unexpected HelloRetryRequest for " + serverVersion.name);
             }
@@ -938,7 +933,7 @@ final class ServerHello {
             // possessions for TLS 1.3 key exchanges.
             //
             // Clean up before producing new client key share possessions.
-            chc.handshakePossessions.clear();
+            Objects.requireNonNull(chc.handshakePossessions).clear();
 
             if (serverVersion.isDTLS) {
                 d13HrrHandshakeConsumer.consume(chc, helloRetryRequest);
@@ -968,7 +963,7 @@ final class ServerHello {
                 serverVersion = serverHello.serverVersion;
             }
 
-            if (!chc.activeProtocols.contains(serverVersion)) {
+            if (!Objects.requireNonNull(chc.activeProtocols).contains(serverVersion)) {
                 throw chc.conContext.fatal(Alert.PROTOCOL_VERSION,
                     "The server selected protocol version " + serverVersion +
                     " is not accepted by client preferences " +
@@ -982,7 +977,7 @@ final class ServerHello {
             }
             if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine(
-                    "Negotiated protocol version: " + serverVersion.name);
+                    "Negotiated protocol version: " + Objects.requireNonNull(serverVersion).name);
             }
 
             if (serverHello.serverRandom.isVersionDowngrade(chc)) {
@@ -991,13 +986,13 @@ final class ServerHello {
             }
 
             // Consume the handshake message for the specific protocol version.
-            if (serverVersion.isDTLS) {
+            if (Objects.requireNonNull(serverVersion).isDTLS) {
                 if (serverVersion.useTLS13PlusSpec()) {
                     d13HandshakeConsumer.consume(chc, serverHello);
                 } else {
                     // TLS 1.3 key share extension may have produced client
                     // possessions for TLS 1.3 key exchanges.
-                    chc.handshakePossessions.clear();
+                    Objects.requireNonNull(chc.handshakePossessions).clear();
 
                     d12HandshakeConsumer.consume(chc, serverHello);
                 }
@@ -1007,7 +1002,7 @@ final class ServerHello {
                 } else {
                     // TLS 1.3 key share extension may have produced client
                     // possessions for TLS 1.3 key exchanges.
-                    chc.handshakePossessions.clear();
+                    Objects.requireNonNull(chc.handshakePossessions).clear();
 
                     t12HandshakeConsumer.consume(chc, serverHello);
                 }
@@ -1037,7 +1032,7 @@ final class ServerHello {
 
             // chc.negotiatedProtocol = serverHello.serverVersion;
             chc.negotiatedCipherSuite = serverHello.cipherSuite;
-            chc.handshakeHash.determine(
+            Objects.requireNonNull(chc.handshakeHash).determine(
                     chc.negotiatedProtocol, chc.negotiatedCipherSuite);
             chc.serverHelloRandom = serverHello.serverRandom;
             if (chc.negotiatedCipherSuite.keyExchange == null) {
@@ -1088,12 +1083,10 @@ final class ServerHello {
                     //
                     // Invalidate the session for initial handshake in case
                     // of reusing next time.
-                    if (chc.resumingSession != null) {
-                        chc.resumingSession.invalidate();
-                        chc.resumingSession = null;
-                    }
+                    chc.resumingSession.invalidate();
+                    chc.resumingSession = null;
                     chc.isResumption = false;
-                    if (!chc.sslConfig.enableSessionCreation) {
+                    if (!Objects.requireNonNull(chc.sslConfig).enableSessionCreation) {
                         throw chc.conContext.fatal(Alert.PROTOCOL_VERSION,
                             "New session creation is disabled");
                     }
@@ -1101,7 +1094,7 @@ final class ServerHello {
             }
 
             // Check and launch ClientHello extensions.
-            extTypes = chc.sslConfig.getEnabledExtensions(
+            extTypes = Objects.requireNonNull(chc.sslConfig).getEnabledExtensions(
                     SSLHandshake.SERVER_HELLO);
             serverHello.extensions.consumeOnLoad(chc, extTypes);
 
@@ -1228,7 +1221,7 @@ final class ServerHello {
             }
 
             chc.negotiatedCipherSuite = serverHello.cipherSuite;
-            chc.handshakeHash.determine(
+            Objects.requireNonNull(chc.handshakeHash).determine(
                     chc.negotiatedProtocol, chc.negotiatedCipherSuite);
             chc.serverHelloRandom = serverHello.serverRandom;
 
@@ -1237,7 +1230,7 @@ final class ServerHello {
             //
 
             // Check and launch ServerHello extensions.
-            SSLExtension[] extTypes = chc.sslConfig.getEnabledExtensions(
+            SSLExtension[] extTypes = Objects.requireNonNull(chc.sslConfig).getEnabledExtensions(
                     SSLHandshake.SERVER_HELLO);
             serverHello.extensions.consumeOnLoad(chc, extTypes);
             if (!chc.isResumption) {
@@ -1437,7 +1430,7 @@ final class ServerHello {
             //
 
             // Check and launch ClientHello extensions.
-            SSLExtension[] extTypes = chc.sslConfig.getEnabledExtensions(
+            SSLExtension[] extTypes = Objects.requireNonNull(chc.sslConfig).getEnabledExtensions(
                     SSLHandshake.HELLO_RETRY_REQUEST);
             helloRetryRequest.extensions.consumeOnLoad(chc, extTypes);
 
@@ -1448,7 +1441,7 @@ final class ServerHello {
 
             // Change client/server handshake traffic secrets.
             // Refresh handshake hash
-            chc.handshakeHash.finish();     // reset the handshake hash
+            Objects.requireNonNull(chc.handshakeHash).finish();     // reset the handshake hash
 
             // calculate the transcript hash of the 1st ClientHello message
             HandshakeOutStream hos = new HandshakeOutStream(null);
@@ -1483,7 +1476,7 @@ final class ServerHello {
             chc.handshakeHash.finish();     // reset the handshake hash
             chc.handshakeHash.deliver(hashedClientHello);
 
-            int hrrBodyLen = helloRetryRequest.handshakeRecord.remaining();
+            int hrrBodyLen = Objects.requireNonNull(helloRetryRequest.handshakeRecord).remaining();
             byte[] hrrMessage = new byte[4 + hrrBodyLen];
             hrrMessage[0] = SSLHandshake.HELLO_RETRY_REQUEST.id;
             hrrMessage[1] = (byte)((hrrBodyLen >> 16) & 0xFF);

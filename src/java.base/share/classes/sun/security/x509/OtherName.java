@@ -58,7 +58,7 @@ public class OtherName implements GeneralNameInterface {
     private int myhash = -1;
 
     /**
-     * Create the OtherName object from a passed ObjectIdentfier and
+     * Create the OtherName object from a passed ObjectIdentifier and
      * byte array name value
      *
      * @param oid ObjectIdentifier of this OtherName object

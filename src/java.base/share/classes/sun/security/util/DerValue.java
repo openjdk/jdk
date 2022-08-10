@@ -120,7 +120,7 @@ public class DerValue {
     /** Tag value indicating an ASN.1 "GeneralizedTime" value. */
     public static final byte    tag_GeneralizedTime = 0x18;
 
-    /** Tag value indicating an ASN.1 "GenerallString" value. */
+    /** Tag value indicating an ASN.1 "GeneralString" value. */
     public static final byte    tag_GeneralString = 0x1B;
 
     /** Tag value indicating an ASN.1 "UniversalString" value. */

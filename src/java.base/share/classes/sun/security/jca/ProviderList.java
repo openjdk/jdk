@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -126,7 +126,7 @@ public final class ProviderList {
         ProviderConfig[] configs = new ProviderConfig[providerList.size() - 1];
         int j = 0;
         for (ProviderConfig config : providerList.configs) {
-            if (!config.getProvider().getName().equals(name)) {
+            if (!Objects.requireNonNull(config.getProvider()).getName().equals(name)) {
                 configs[j++] = config;
             }
         }
@@ -373,7 +373,7 @@ public final class ProviderList {
                 (pList = preferredPropList.getAll(type, name)) != null) {
             for (i = 0; i < pList.size(); i++) {
                 Provider p = getProvider(pList.get(i).provider);
-                Service s = p.getService(type, name);
+                Service s = Objects.requireNonNull(p).getService(type, name);
                 if (s != null) {
                     return s;
                 }

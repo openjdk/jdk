@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,10 +31,7 @@ import java.nio.charset.Charset;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.security.Security;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLProtocolException;
 import javax.net.ssl.SSLSocket;
@@ -164,7 +161,7 @@ final class AlpnExtension {
             ClientHandshakeContext chc = (ClientHandshakeContext)context;
 
             // Is it a supported and enabled extension?
-            if (!chc.sslConfig.isAvailable(SSLExtension.CH_ALPN)) {
+            if (!Objects.requireNonNull(chc.sslConfig).isAvailable(SSLExtension.CH_ALPN)) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.info(
                             "Ignore client unavailable extension: " +
@@ -271,7 +268,7 @@ final class AlpnExtension {
             ServerHandshakeContext shc = (ServerHandshakeContext)context;
 
             // Is it a supported and enabled extension?
-            if (!shc.sslConfig.isAvailable(SSLExtension.CH_ALPN)) {
+            if (!Objects.requireNonNull(shc.sslConfig).isAvailable(SSLExtension.CH_ALPN)) {
                 shc.applicationProtocol = "";
                 shc.conContext.applicationProtocol = "";
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
@@ -392,7 +389,7 @@ final class AlpnExtension {
 
             List<String> alps = requestedAlps.applicationProtocols;
             if (shc.conContext.transport instanceof SSLEngine) {
-                if (shc.sslConfig.engineAPSelector != null) {
+                if (Objects.requireNonNull(shc.sslConfig).engineAPSelector != null) {
                     SSLEngine engine = (SSLEngine)shc.conContext.transport;
                     shc.applicationProtocol =
                         shc.sslConfig.engineAPSelector.apply(engine, alps);
@@ -405,7 +402,7 @@ final class AlpnExtension {
                     }
                 }
             } else {
-                if (shc.sslConfig.socketAPSelector != null) {
+                if (Objects.requireNonNull(shc.sslConfig).socketAPSelector != null) {
                     SSLSocket socket = (SSLSocket)shc.conContext.transport;
                     shc.applicationProtocol =
                         shc.sslConfig.socketAPSelector.apply(socket, alps);

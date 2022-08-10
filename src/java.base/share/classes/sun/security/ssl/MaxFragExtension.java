@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -191,8 +191,8 @@ final class MaxFragExtension {
                 requestedMFLength =
                     chc.resumingSession.getNegotiatedMaxFragSize();
             } else if (chc.sslConfig.maximumPacketSize != 0) {
-                // Maybe we can calculate the fragment size more accurate
-                // by condering the enabled cipher suites in the future.
+                // Maybe we can calculate the fragment size more accurately
+                // by considering the enabled cipher suites in the future.
                 requestedMFLength = chc.sslConfig.maximumPacketSize;
                 if (chc.sslContext.isDTLS()) {
                     requestedMFLength -= DTLSRecord.maxPlaintextPlusSize;

@@ -559,7 +559,7 @@ final class X509KeyManagerImpl extends X509ExtendedKeyManager
                 List<String> certEku = cert.getExtendedKeyUsage();
                 if ((certEku != null) &&
                         Collections.disjoint(validEku, certEku)) {
-                    // if extension present and it does not contain any of
+                    // if extension is present and does not contain any of
                     // the valid EKU OIDs, return extension_mismatch
                     return CheckResult.EXTENSION_MISMATCH;
                 }

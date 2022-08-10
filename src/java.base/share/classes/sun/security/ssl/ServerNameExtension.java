@@ -214,7 +214,7 @@ final class ServerNameExtension {
             ClientHandshakeContext chc = (ClientHandshakeContext)context;
 
             // Is it a supported and enabled extension?
-            if (!chc.sslConfig.isAvailable(CH_SERVER_NAME)) {
+            if (!Objects.requireNonNull(chc.sslConfig).isAvailable(CH_SERVER_NAME)) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.warning(
                         "Ignore unavailable server_name extension");
@@ -285,7 +285,7 @@ final class ServerNameExtension {
             ServerHandshakeContext shc = (ServerHandshakeContext)context;
 
             // Is it a supported and enabled extension?
-            if (!shc.sslConfig.isAvailable(CH_SERVER_NAME)) {
+            if (!Objects.requireNonNull(shc.sslConfig).isAvailable(CH_SERVER_NAME)) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
                         "Ignore unavailable extension: " + CH_SERVER_NAME.name);

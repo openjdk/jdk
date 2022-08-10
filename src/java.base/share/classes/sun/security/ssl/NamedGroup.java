@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,12 +24,6 @@
  */
 package sun.security.ssl;
 
-import sun.security.ssl.DHKeyExchange.DHEPossession;
-import sun.security.ssl.ECDHKeyExchange.ECDHEPossession;
-import sun.security.util.CurveDB;
-
-import javax.crypto.KeyAgreement;
-import javax.crypto.spec.DHParameterSpec;
 import java.io.IOException;
 import java.security.*;
 import java.security.spec.AlgorithmParameterSpec;
@@ -40,6 +34,11 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
+import javax.crypto.KeyAgreement;
+import javax.crypto.spec.DHParameterSpec;
+
+import sun.security.ssl.ECDHKeyExchange.ECDHEPossession;
+import sun.security.util.CurveDB;
 
 
 /**
