@@ -449,7 +449,10 @@ static bool rule_major_proactive() {
     return false;
   }
 
-  if (!ZGeneration::old()->stat_cycle()->is_warm()) {
+  ZStatCycle* old_cycle = ZGeneration::old()->stat_cycle();
+  ZStatCycle* young_cycle = ZGeneration::young()->stat_cycle();
+
+  if (!old_cycle->is_warm()) {
     // Rule disabled
     return false;
   }
@@ -467,7 +470,7 @@ static bool rule_major_proactive() {
   const size_t used_increase_threshold = ZHeap::heap()->soft_max_capacity() * 0.10; // 10%
   const size_t used_threshold = used_after_last_gc + used_increase_threshold;
   const size_t used = ZHeap::heap()->used();
-  const double time_since_last_gc = ZGeneration::old()->stat_cycle()->time_since_last();
+  const double time_since_last_gc = old_cycle->time_since_last();
   const double time_since_last_gc_threshold = 5 * 60; // 5 minutes
   if (used < used_threshold && time_since_last_gc < time_since_last_gc_threshold) {
     // Don't even consider doing a proactive GC
@@ -479,8 +482,12 @@ static bool rule_major_proactive() {
 
   const double assumed_throughput_drop_during_gc = 0.50; // 50%
   const double acceptable_throughput_drop = 0.01;        // 1%
-  const double serial_gc_time = ZGeneration::old()->stat_cycle()->serial_time().davg() + (ZGeneration::old()->stat_cycle()->serial_time().dsd() * one_in_1000);
-  const double parallelizable_gc_time = ZGeneration::old()->stat_cycle()->parallelizable_time().davg() + (ZGeneration::old()->stat_cycle()->parallelizable_time().dsd() * one_in_1000);
+  const double serial_old_gc_time = old_cycle->serial_time().davg() + (old_cycle->serial_time().dsd() * one_in_1000);
+  const double parallelizable_old_gc_time = old_cycle->parallelizable_time().davg() + (old_cycle->parallelizable_time().dsd() * one_in_1000);
+  const double serial_young_gc_time = young_cycle->serial_time().davg() + (young_cycle->serial_time().dsd() * one_in_1000);
+  const double parallelizable_young_gc_time = young_cycle->parallelizable_time().davg() + (young_cycle->parallelizable_time().dsd() * one_in_1000);
+  const double serial_gc_time = serial_old_gc_time + serial_young_gc_time;
+  const double parallelizable_gc_time = parallelizable_old_gc_time + parallelizable_young_gc_time;
   const double gc_duration = serial_gc_time + (parallelizable_gc_time / ConcGCThreads);
   const double acceptable_gc_interval = gc_duration * ((assumed_throughput_drop_during_gc / acceptable_throughput_drop) - 1.0);
   const double time_until_gc = acceptable_gc_interval - time_since_last_gc;
