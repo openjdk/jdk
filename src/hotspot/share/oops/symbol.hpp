@@ -301,10 +301,6 @@ class Symbol : public MetaspaceObj {
     return (unsigned int) name->identity_hash();
   }
 
-  static bool compare(const Symbol* const& name, const Symbol* const& name2) {
-    return name == name2;
-  }
-
 #ifndef PRODUCT
   // Empty constructor to create a dummy symbol object on stack
   // only for getting its vtable pointer.

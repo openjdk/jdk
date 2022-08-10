@@ -93,6 +93,7 @@ void ClassLoaderExt::process_module_table(JavaThread* current, ModuleEntryTable*
       }
     }
   };
+  MutexLocker ml(current, Module_lock);
   Process process(current);
   met->modules_do(&process);
 }

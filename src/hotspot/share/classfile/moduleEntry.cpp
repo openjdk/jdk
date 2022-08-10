@@ -263,7 +263,7 @@ ModuleEntry::ModuleEntry(Handle module_handle,
     _name(name),
     _loader_data(loader_data),
     _reads(nullptr),
-    _version(version),
+    _version(nullptr),
     _location(nullptr),
     CDS_ONLY(_shared_path_index(-1) COMMA)
     _can_read_all_unnamed(false),
@@ -284,7 +284,7 @@ ModuleEntry::ModuleEntry(Handle module_handle,
     _module = loader_data->add_handle(module_handle);
   }
 
-  Symbol::maybe_increment_refcount(_version);
+  set_version(version);
 
   // may need to add CDS info
   set_location(location);
@@ -356,10 +356,12 @@ ModuleEntryTable::ModuleEntryTable() { }
 class ModuleEntryTableDeleter : public StackObj {
  public:
   bool do_entry(const Symbol*& name, ModuleEntry*& entry) {
-    ResourceMark rm;
-    const char* str = name->as_C_string();
-    log_info(module, unload)("unloading module %s", str);
-    log_debug(module)("ModuleEntryTable: deleting module: %s", str);
+    if (log_is_enabled(Info, module, unload) || log_is_enabled(Debug, module)) {
+      ResourceMark rm;
+      const char* str = name->as_C_string();
+      log_info(module, unload)("unloading module %s", str);
+      log_debug(module)("ModuleEntryTable: deleting module: %s", str);
+    }
     delete entry;
     return true;
   }
@@ -674,6 +676,7 @@ void ModuleEntryTable::print(outputStream* st) {
   };
   st->print_cr("Module Entry Table (table_size=%d, entries=%d)",
                _table.table_size(), _table.number_of_entries());
+  assert_locked_or_safepoint(Module_lock);
   _table.iterate_all(printer);
 }
 
@@ -681,6 +684,7 @@ void ModuleEntryTable::modules_do(void f(ModuleEntry*)) {
   auto do_f = [&] (const Symbol*& key, ModuleEntry*& entry) {
     f(entry);
   };
+  assert_locked_or_safepoint(Module_lock);
   _table.iterate_all(do_f);
 }
 
@@ -688,6 +692,7 @@ void ModuleEntryTable::modules_do(ModuleClosure* closure) {
   auto do_f = [&] (const Symbol*& key, ModuleEntry*& entry) {
     closure->do_module(entry);
   };
+  assert_locked_or_safepoint(Module_lock);
   _table.iterate_all(do_f);
 }
 
@@ -706,6 +711,7 @@ void ModuleEntryTable::verify() {
   auto do_f = [&] (const Symbol*& key, ModuleEntry*& entry) {
     entry->verify();
   };
+  assert_locked_or_safepoint(Module_lock);
   _table.iterate_all(do_f);
 }
 

@@ -59,7 +59,7 @@ class ModuleClosure;
 //   - a flag indicating if this module can read all unnamed modules.
 //
 // The Mutex Module_lock is shared between ModuleEntry and PackageEntry, to lock either
-// data structure.
+// data structure.  This lock must be taken on all accesses to either table.
 class ModuleEntry : public CHeapObj<mtModule> {
 private:
   OopHandle _module;                   // java.lang.Module
@@ -206,7 +206,7 @@ class ModuleEntryTable : public CHeapObj<mtModule> {
 private:
   static ModuleEntry* _javabase_module;
   ResourceHashtable<const Symbol*, ModuleEntry*, 109, ResourceObj::C_HEAP, mtModule,
-                    Symbol::compute_hash, Symbol::compare> _table;
+                    Symbol::compute_hash> _table;
 
 public:
   ModuleEntryTable();
