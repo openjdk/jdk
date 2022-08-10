@@ -66,8 +66,9 @@
 
 static const ZStatPhaseGeneration ZPhaseGenerationYoung[] {
   ZStatPhaseGeneration("Generation Collection (Minor)", ZGenerationId::young),
-  ZStatPhaseGeneration("Generation Collection (Major Preclean)", ZGenerationId::young),
-  ZStatPhaseGeneration("Generation Collection (Major Roots)", ZGenerationId::young)
+  ZStatPhaseGeneration("Generation Collection (Major Full Preclean)", ZGenerationId::young),
+  ZStatPhaseGeneration("Generation Collection (Major Full Roots)", ZGenerationId::young),
+  ZStatPhaseGeneration("Generation Collection (Major Partial Roots)", ZGenerationId::young)
 };
 
 static const ZStatPhaseGeneration ZPhaseGenerationOld("Generation Collection (Major)", ZGenerationId::old);
@@ -501,7 +502,7 @@ public:
 
 bool ZGenerationYoung::should_record_stats() {
   return type() == ZYoungType::minor ||
-         ZDriver::major()->gc_cause() == GCCause::_z_warmup;
+         type() == ZYoungType::major_partial_roots;
 }
 
 void ZGenerationYoung::collect(ZYoungType type, ConcurrentGCTimer* timer) {
@@ -601,7 +602,8 @@ void ZGenerationYoung::flip_relocate_start() {
 }
 
 void ZGenerationYoung::pause_mark_start() {
-  if (type() == ZYoungType::major_roots) {
+  if (type() == ZYoungType::major_full_roots ||
+      type() == ZYoungType::major_partial_roots) {
     VM_ZMarkStartYoungAndOld().pause();
   } else {
     VM_ZMarkStartYoung().pause();
@@ -705,7 +707,7 @@ uint ZGenerationYoung::compute_tenuring_threshold(ZRelocationSetSelectorStats st
 
 void ZGenerationYoung::concurrent_select_relocation_set() {
   ZStatTimerYoung timer(ZPhaseConcurrentSelectRelocationSetYoung);
-  const bool promote_all = type() == ZYoungType::major_preclean;
+  const bool promote_all = type() == ZYoungType::major_full_preclean;
   select_relocation_set(_id, promote_all);
 }
 

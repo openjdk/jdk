@@ -174,8 +174,9 @@ public:
 
 enum class ZYoungType {
   minor,
-  major_preclean,
-  major_roots,
+  major_full_preclean,
+  major_full_roots,
+  major_partial_roots,
   none
 };
 

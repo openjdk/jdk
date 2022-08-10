@@ -397,13 +397,16 @@ void ZDriverMajor::gc(const ZDriverRequest& request) {
 
   if (should_preclean_young(request.cause())) {
     // Collect young generation and promote everything to old generation
-    ZGeneration::young()->collect(ZYoungType::major_preclean, &_gc_timer);
+    ZGeneration::young()->collect(ZYoungType::major_full_preclean, &_gc_timer);
+
+    abortpoint();
+
+    // Collect young generation and gather roots pointing into old generation
+    ZGeneration::young()->collect(ZYoungType::major_full_roots, &_gc_timer);
+  } else {
+    // Collect young generation and gather roots pointing into old generation
+    ZGeneration::young()->collect(ZYoungType::major_partial_roots, &_gc_timer);
   }
-
-  abortpoint();
-
-  // Collect young generation and gather roots pointing into old generation
-  ZGeneration::young()->collect(ZYoungType::major_roots, &_gc_timer);
 
   abortpoint();
 
