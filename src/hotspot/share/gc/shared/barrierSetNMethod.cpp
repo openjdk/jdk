@@ -64,11 +64,13 @@ bool BarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
   class OopKeepAliveClosure : public OopClosure {
   public:
     virtual void do_oop(oop* p) {
-      // Loads on nmethod oops are phantom strength. The intend of the load
-      // is to just read the oop, and then explicitly keep it alive w.r.t.
-      // concurrent marking. Using the keep alive side effects of a normal
-      // phantom load is less explicit, and doesn't actually do anything
-      // unless the returned value is used as an oop.
+      // Loads on nmethod oops are phantom strength.
+      //
+      // Note that we could have used NativeAccess<ON_PHANTOM_OOP_REF>::oop_load(p),
+      // but that would have *required* us to convert the returned LoadOopProxy to an oop,
+      // or else keep alive load barrier will never be called. It's the LoadOopProxy-to-oop
+      // conversion that performs the load barriers. This is too subtle, so we instead
+      // perform an explicit keep alive call.
       oop obj = NativeAccess<ON_PHANTOM_OOP_REF | AS_NO_KEEPALIVE>::oop_load(p);
       Universe::heap()->keep_alive(obj);
     }
