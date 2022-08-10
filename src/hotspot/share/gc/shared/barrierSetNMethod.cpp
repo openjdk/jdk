@@ -63,8 +63,6 @@ bool BarrierSetNMethod::supports_entry_barrier(nmethod* nm) {
 bool BarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
   class OopKeepAliveClosure : public OopClosure {
   public:
-    OopKeepAliveClosure() {}
-
     virtual void do_oop(oop* p) {
       // Loads on nmethod oops are phantom strength. The intend of the load
       // is to just read the oop, and then explicitly keep it alive w.r.t.
