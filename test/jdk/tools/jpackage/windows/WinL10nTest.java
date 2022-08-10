@@ -55,47 +55,60 @@ import static jdk.jpackage.test.WindowsHelper.getTempDirectory;
 public class WinL10nTest {
 
     public WinL10nTest(WixFileInitializer wxlFileInitializers[],
-            String expectedCulture, String expectedErrorMessage) {
+            String expectedCulture, String expectedErrorMessage,
+            String userLanguage, String userCountry,
+            boolean enableWixUIExtension) {
         this.wxlFileInitializers = wxlFileInitializers;
         this.expectedCulture = expectedCulture;
         this.expectedErrorMessage = expectedErrorMessage;
+        this.userLanguage = userLanguage;
+        this.userCountry = userCountry;
+        this.enableWixUIExtension = enableWixUIExtension;
     }
 
     @Parameters
     public static List<Object[]> data() {
         return List.of(new Object[][]{
-            {null, "en-us", null},
+            {null, "en-us", null, null, null, false},
+            {null, "en-us", null, "en", "US", false},
+            {null, "en-us", null, "en", "US", true},
+            {null, "de-de", null, "de", "DE", false},
+            {null, "de-de", null, "de", "DE", true},
+            {null, "ja-jp", null, "ja", "JP", false},
+            {null, "ja-jp", null, "ja", "JP", true},
+            {null, "zh-cn", null, "zh", "CN", false},
+            {null, "zh-cn", null, "zh", "CN", true},
             {new WixFileInitializer[] {
                 WixFileInitializer.create("a.wxl", "en-us")
-            }, "en-us", null},
+            }, "en-us", null, null, null, false},
             {new WixFileInitializer[] {
                 WixFileInitializer.create("a.wxl", "fr")
-            }, "fr;en-us", null},
+            }, "fr;en-us", null, null, null, false},
             {new WixFileInitializer[] {
                 WixFileInitializer.create("a.wxl", "fr"),
                 WixFileInitializer.create("b.wxl", "fr")
-            }, "fr;en-us", null},
+            }, "fr;en-us", null, null, null, false},
             {new WixFileInitializer[] {
                 WixFileInitializer.create("a.wxl", "it"),
                 WixFileInitializer.create("b.wxl", "fr")
-            }, "it;fr;en-us", null},
+            }, "it;fr;en-us", null, null, null, false},
             {new WixFileInitializer[] {
                 WixFileInitializer.create("c.wxl", "it"),
                 WixFileInitializer.create("b.wxl", "fr")
-            }, "fr;it;en-us", null},
+            }, "fr;it;en-us", null, null, null, false},
             {new WixFileInitializer[] {
                 WixFileInitializer.create("a.wxl", "fr"),
                 WixFileInitializer.create("b.wxl", "it"),
                 WixFileInitializer.create("c.wxl", "fr"),
                 WixFileInitializer.create("d.wxl", "it")
-            }, "fr;it;en-us", null},
+            }, "fr;it;en-us", null, null, null, false},
             {new WixFileInitializer[] {
                 WixFileInitializer.create("c.wxl", "it"),
                 WixFileInitializer.createMalformed("b.wxl")
-            }, null, null},
+            }, null, null, null, null, false},
             {new WixFileInitializer[] {
                 WixFileInitializer.create("MsiInstallerStrings_de.wxl", "de")
-            }, "en-us", null},
+            }, "en-us", null, null, null, false}
         });
     }
 
@@ -134,6 +147,23 @@ public class WinL10nTest {
             // 1. Set fake run time to save time by skipping jlink step of jpackage.
             // 2. Instruct test to save jpackage output.
             cmd.setFakeRuntime().saveConsoleOutput(true);
+
+            // Set JVM default locale that is used to select primary l10n file.
+            if (userLanguage != null) {
+                cmd.addArguments("-J-Duser.language=" + userLanguage);
+            }
+            if (userCountry != null) {
+                cmd.addArguments("-J-Duser.country=" + userCountry);
+            }
+
+            // Cultures handling is affected by the WiX extensions used.
+            // By default only WixUtilExtension is used, this flag
+            // additionally enables WixUIExtension.
+            if (enableWixUIExtension) {
+                cmd.addArgument("--win-dir-chooser");
+            }
+
+            // Preserve config dir to check the set of copied l10n files.
             Path tempDir = getTempDirectory(cmd, tempRoot);
             Files.createDirectories(tempDir.getParent());
             cmd.addArguments("--temp", tempDir.toString());
@@ -195,6 +225,9 @@ public class WinL10nTest {
     final private WixFileInitializer[] wxlFileInitializers;
     final private String expectedCulture;
     final private String expectedErrorMessage;
+    final private String userLanguage;
+    final private String userCountry;
+    final private boolean enableWixUIExtension;
     private Path resourceDir;
 
     private static class WixFileInitializer {
