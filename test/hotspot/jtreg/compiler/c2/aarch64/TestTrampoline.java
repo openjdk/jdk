@@ -35,10 +35,8 @@ import jdk.test.lib.process.ProcessTools;
  * @bug 8285487
  * @library /test/lib
  *
- * @requires vm.flagless
- * @requires os.arch=="aarch64"
- * @requires vm.debug == false
- * @requires vm.compiler2.enabled
+ * @requires vm.flagless & os.arch=="aarch64" &
+ *           vm.debug == false & vm.compiler2.enabled
  *
  * @run driver compiler.c2.aarch64.TestTrampoline
  */

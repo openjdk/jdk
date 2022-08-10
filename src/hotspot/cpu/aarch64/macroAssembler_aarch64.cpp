@@ -849,7 +849,8 @@ void MacroAssembler::call_VM_helper(Register oop_result, address entry_point, in
   call_VM_base(oop_result, noreg, noreg, entry_point, number_of_arguments, check_exceptions);
 }
 
-static bool is_always_reachable(Address entry) {
+// Check the entry target is always reachable from any branch.
+static bool is_always_within_branch_range(Address entry) {
   const address target = entry.target();
   if (!MacroAssembler::far_branches()) {
     if (entry.rspec().type() == relocInfo::runtime_call_type &&
@@ -880,8 +881,8 @@ static bool is_always_reachable(Address entry) {
           "runtime call of compiled method");
     const address right_longest_branch_start = CodeCache::high_bound() - NativeInstruction::instruction_size;
     const address left_longest_branch_start = CodeCache::low_bound();
-    bool is_reachable = Assembler::reachable_from_branch_at(left_longest_branch_start, target) &&
-                        Assembler::reachable_from_branch_at(right_longest_branch_start, target);
+    const bool is_reachable = Assembler::reachable_from_branch_at(left_longest_branch_start, target) &&
+                              Assembler::reachable_from_branch_at(right_longest_branch_start, target);
     return is_reachable;
   }
 
@@ -898,7 +899,7 @@ address MacroAssembler::trampoline_call(Address entry, CodeBuffer* cbuf) {
 
   address target = entry.target();
 
-  if (!is_always_reachable(entry)) {
+  if (!is_always_within_branch_range(entry)) {
     if (!in_scratch_emit_size()) {
       // We don't want to emit a trampoline if C2 is generating dummy
       // code during its branch shortening phase.
