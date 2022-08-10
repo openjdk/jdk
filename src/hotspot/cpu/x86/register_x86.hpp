@@ -368,28 +368,24 @@ constexpr KRegister k7 = as_KRegister(7);
 class ConcreteRegisterImpl : public AbstractRegisterImpl {
  public:
   enum {
-  // A big enough number for C2: all the registers plus flags
-  // This number must be large enough to cover REG_COUNT (defined by c2) registers.
-  // There is no requirement that any ordering here matches any ordering c2 gives
-  // it's optoregs.
+    max_gpr = Register::number_of_registers * Register::max_slots_per_register,
+    max_fpr = max_gpr + FloatRegister::number_of_registers * FloatRegister::max_slots_per_register,
+    max_xmm = max_fpr + XMMRegister::number_of_registers * XMMRegister::max_slots_per_register,
+    max_kpr = max_xmm + KRegister::number_of_registers * KRegister::max_slots_per_register,
 
-  // x86_32.ad defines additional dummy FILL0-FILL7 registers, in order to tally
-  // REG_COUNT (computed by ADLC based on the number of reg_defs seen in .ad files)
-  // with ConcreteRegisterImpl::number_of_registers additional count of 8 is being
-  // added for 32 bit jvm.
-    number_of_registers =
-        Register::number_of_registers * Register::max_slots_per_register +
-        FloatRegister::number_of_registers * FloatRegister::max_slots_per_register +
-        XMMRegister::number_of_registers * XMMRegister::max_slots_per_register +
-        KRegister::number_of_registers * KRegister::max_slots_per_register + // mask registers
-        NOT_LP64( 8 + ) // FILL0-FILL7 in x86_32.ad
-        1 // eflags
+    // A big enough number for C2: all the registers plus flags
+    // This number must be large enough to cover REG_COUNT (defined by c2) registers.
+    // There is no requirement that any ordering here matches any ordering c2 gives
+    // it's optoregs.
+
+    // x86_32.ad defines additional dummy FILL0-FILL7 registers, in order to tally
+    // REG_COUNT (computed by ADLC based on the number of reg_defs seen in .ad files)
+    // with ConcreteRegisterImpl::number_of_registers additional count of 8 is being
+    // added for 32 bit jvm.
+    number_of_registers = max_kpr +       // gpr/fpr/xmm/kpr
+                          NOT_LP64( 8 + ) // FILL0-FILL7 in x86_32.ad
+                          1               // eflags
   };
-
-  static const int max_gpr;
-  static const int max_fpr;
-  static const int max_xmm;
-  static const int max_kpr;
 };
 
 template <>

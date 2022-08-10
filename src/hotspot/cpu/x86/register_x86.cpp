@@ -31,17 +31,6 @@ FloatRegister::FloatRegisterImpl all_FloatRegisterImpls[FloatRegister::number_of
 XMMRegister::XMMRegisterImpl     all_XMMRegisterImpls  [XMMRegister::number_of_registers   + 1];
 KRegister::KRegisterImpl         all_KRegisterImpls    [KRegister::number_of_registers     + 1];
 
-const int ConcreteRegisterImpl::max_gpr = Register::number_of_registers LP64_ONLY( << 1 );
-
-const int ConcreteRegisterImpl::max_fpr = ConcreteRegisterImpl::max_gpr +
-    FloatRegister::number_of_registers * FloatRegister::max_slots_per_register;
-
-const int ConcreteRegisterImpl::max_xmm = ConcreteRegisterImpl::max_fpr +
-    XMMRegister::number_of_registers * XMMRegister::max_slots_per_register;
-
-const int ConcreteRegisterImpl::max_kpr = ConcreteRegisterImpl::max_xmm +
-    KRegister::number_of_registers * KRegister::max_slots_per_register;
-
 const char * Register::RegisterImpl::name() const {
   static const char *const names[number_of_registers] = {
 #ifdef _LP64
