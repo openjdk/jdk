@@ -959,7 +959,7 @@ private:
   void deoptimize();
   void make_zombies();
 
-  void deoptimize_marked_methods();
+  void deoptimize_enqueued_method_frames();
 
  public:
   // Returns the running thread as a JavaThread

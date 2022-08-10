@@ -4147,14 +4147,14 @@ void VM_RedefineClasses::flush_dependent_code() {
       CompiledMethod* nm = iter.method();
       if (!nm->method()->is_method_handle_intrinsic()) {
         if (nm->can_be_deoptimized()) {
-          deopt.mark(nm, true /* inc_recompile_count */);
+          deopt.enqueue(nm);
         }
         if (nm->has_evol_metadata()) {
           add_to_old_table(nm);
         }
       }
     }
-    log_debug(redefine, class, nmethod)("Marked all nmethods for deopt");
+    log_debug(redefine, class, nmethod)("Enqueued all nmethods for deopt");
   } else {
     // Each redefinition creates a new set of nmethods that have references to "old" Methods
     // So delete old method table and create a new one.
@@ -4165,11 +4165,11 @@ void VM_RedefineClasses::flush_dependent_code() {
       // This includes methods whose inline caches point to old methods, so
       // inline cache clearing is unnecessary.
       if (nm->has_evol_metadata()) {
-        deopt.mark(nm, true /* inc_recompile_count */);
+        deopt.enqueue(nm);
         add_to_old_table(nm);
       }
     }
-    log_debug(redefine, class, nmethod)("Marked %d dependent nmethods for deopt", deopt.marked());
+    log_debug(redefine, class, nmethod)("Enqueued %d dependent nmethods for deopt", deopt.enqueued());
   }
   deopt.deoptimize();
   // From now on we know that the dependency information is complete

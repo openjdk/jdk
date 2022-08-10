@@ -919,16 +919,16 @@ JRT_LEAF(BasicType, Deoptimization::unpack_frames(JavaThread* thread, int exec_m
   return bt;
 JRT_END
 
-class DeoptimizeMarkedClosure : public HandshakeClosure {
+class DeoptimizeEnqueueMethodFramesClosure : public HandshakeClosure {
  public:
-  DeoptimizeMarkedClosure() : HandshakeClosure("Deoptimize") {}
+  DeoptimizeEnqueueMethodFramesClosure() : HandshakeClosure("Deoptimize") {}
   void do_thread(Thread* thread) {
     JavaThread* jt = JavaThread::cast(thread);
-    jt->deoptimize_marked_methods();
+    jt->deoptimize_enqueued_method_frames();
   }
 };
 
-void Deoptimization::mark_and_deoptimize_all() {
+void Deoptimization::deoptimize_all_whitebox() {
   assert_locked_or_safepoint(Compile_lock);
   DeoptimizationContext deopt;
   {
@@ -937,7 +937,7 @@ void Deoptimization::mark_and_deoptimize_all() {
     while(iter.next()) {
       CompiledMethod* nm = iter.method();
       if (!nm->is_native_method()) {
-        deopt.mark(nm, true /* inc_recompile_count */);
+        deopt.enqueue(nm);
       }
     }
   }
@@ -952,7 +952,7 @@ NOT_PRODUCT(static elapsedTimer dependentCheckTime;)
   }
 #endif
 
-void Deoptimization::mark_and_deoptimize(KlassDepChange& changes) {
+void Deoptimization::deoptimize(KlassDepChange& changes) {
   DeoptimizationContext deopt;
   {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
@@ -961,7 +961,7 @@ void Deoptimization::mark_and_deoptimize(KlassDepChange& changes) {
     NoSafepointVerifier nsv;
     for (DepChange::ContextStream str(changes, nsv); str.next(); ) {
       Klass* d = str.klass();
-      InstanceKlass::cast(d)->mark_dependent_nmethods(changes, &deopt);
+      InstanceKlass::cast(d)->enqueue_deoptimization_dependent_nmethods(changes, &deopt);
     }
 
 #ifndef PRODUCT
@@ -979,7 +979,7 @@ void Deoptimization::mark_and_deoptimize(KlassDepChange& changes) {
 
 
 // Flushes compiled methods dependent on dependee.
-void Deoptimization::mark_and_deoptimize_dependents_on(InstanceKlass* dependee) {
+void Deoptimization::deoptimize_dependents(InstanceKlass* dependee) {
   assert_lock_strong(Compile_lock);
 
   if (CodeCache::number_of_nmethods_with_dependencies() == 0) return;
@@ -987,11 +987,11 @@ void Deoptimization::mark_and_deoptimize_dependents_on(InstanceKlass* dependee) 
   if (dependee->is_linked()) {
     // Class initialization state change.
     KlassInitDepChange changes(dependee);
-    mark_and_deoptimize(changes);
+    deoptimize(changes);
   } else {
     // New class is loaded.
     NewKlassDepChange changes(dependee);
-    mark_and_deoptimize(changes);
+    deoptimize(changes);
   }
 }
 
@@ -999,7 +999,7 @@ volatile bool DeoptimizationContext::_context_active = false;
 
 DeoptimizationContext::DeoptimizationContext()
   : _nsv(),
-    _marked(0),
+    _enqueued(0),
     _deoptimized(false) {
   assert_locked_or_safepoint(Compile_lock);
   assert(!Atomic::load(&_context_active), "Cannot create a DeoptimizationContext while another one is active");
@@ -1007,13 +1007,20 @@ DeoptimizationContext::DeoptimizationContext()
 }
 
 DeoptimizationContext::~DeoptimizationContext() {
-  assert(_marked == 0 || _deoptimized, "If something got marked, you have to call deoptimize");
+  assert(_enqueued == 0 || _deoptimized, "If something got enqueued, you have to call deoptimize");
 }
 
-void DeoptimizationContext::mark(CompiledMethod* cm, bool inc_recompile_count) {
-  assert(!_deoptimized, "Calling mark after deoptimize is invalid");
-  if (cm->mark_for_deoptimization(inc_recompile_count)) {
-    ++_marked;
+void DeoptimizationContext::enqueue(CompiledMethod* cm) {
+  assert(!_deoptimized, "Calling enqueue after deoptimize is invalid");
+  if (cm->enqueue_deoptimization(true /* inc_recompile_counts */)) {
+    ++_enqueued;
+  }
+}
+
+void DeoptimizationContext::enqueue_no_recompile_count_update(CompiledMethod* cm) {
+  assert(!_deoptimized, "Calling enqueue_no_recompile_count_update after deoptimize is invalid");
+  if (cm->enqueue_deoptimization(false /* inc_recompile_counts */)) {
+    ++_enqueued;
   }
 }
 
@@ -1021,7 +1028,7 @@ void DeoptimizationContext::deopt_compiled_methods() {
   SweeperBlockingCompiledMethodIterator iter(SweeperBlockingCompiledMethodIterator::only_alive_and_not_unloading);
   while(iter.next()) {
     CompiledMethod* nm = iter.method();
-    if (nm->is_marked_for_deoptimization() && !nm->has_been_deoptimized() && nm->can_be_deoptimized()) {
+    if (nm->has_been_enqueued_for_deoptimization() && !nm->has_been_deoptimized() && nm->can_be_deoptimized()) {
       nm->make_not_entrant();
       nm->make_deoptimized();
     }
@@ -1031,19 +1038,19 @@ void DeoptimizationContext::deopt_compiled_methods() {
 void DeoptimizationContext::deopt_frames() {
   assert_locked_or_safepoint(Compile_lock);
   // DeoptimizationContext is considered active from its creation until
-  // deopt_compiled_methods() finishes processing marked nmethods.
+  // deopt_compiled_methods() finishes processing enqueued nmethods.
   // deopt_compiled_methods() occurs as the first step of deoptimize()
   assert(Atomic::load(&_context_active), "deoptimize() must be called on an active context");
   Atomic::store(&_context_active, false);
 
-  if (_marked == 0) {
+  if (_enqueued == 0) {
     return; // Nothing to do
   }
 
   // DeoptimizationContext sets up a NSV to detect bugs in the client of this API.
   // But we must allow safepoints when performing thread-local handshakes
   PauseNoSafepointVerifier pnsv(&_nsv);
-  DeoptimizeMarkedClosure deopt;
+  DeoptimizeEnqueueMethodFramesClosure deopt;
   if (SafepointSynchronize::is_at_safepoint()) {
     Threads::java_threads_do(&deopt);
   } else {
@@ -1056,32 +1063,32 @@ void DeoptimizationContext::deoptimize() {
   deopt_frames();
 }
 
-void Deoptimization::mark_and_deoptimize_dependents(const methodHandle& m_h) {
+void Deoptimization::deoptimize_dependents(const methodHandle& m_h) {
   assert_locked_or_safepoint(Compile_lock);
-  Deoptimization::mark_and_deoptimize_dependents(m_h());
+  Deoptimization::deoptimize_dependents(m_h());
 }
 
-void Deoptimization::mark_dependents(Method* dependee, DeoptimizationContext* deopt) {
+void Deoptimization::enqueue_dependents(Method* dependee, DeoptimizationContext* deopt) {
   MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
   CompiledMethodIterator iter(CompiledMethodIterator::only_alive_and_not_unloading);
   while(iter.next()) {
     CompiledMethod* nm = iter.method();
     if (nm->is_dependent_on_method(dependee)) {
-      deopt->mark(nm, true /* inc_recompile_count */);
+      deopt->enqueue(nm);
     }
   }
 }
 
-void Deoptimization::mark_and_deoptimize_dependents(Method* dependee) {
+void Deoptimization::deoptimize_dependents(Method* dependee) {
   assert_locked_or_safepoint(Compile_lock);
   DeoptimizationContext deopt;
-  mark_dependents(dependee, &deopt);
+  enqueue_dependents(dependee, &deopt);
   deopt.deoptimize();
 }
 
-void Deoptimization::mark_and_deoptimize_nmethod(nmethod* nmethod) {
+void Deoptimization::deoptimize_nmethod(nmethod* nmethod) {
   DeoptimizationContext deopt;
-  deopt.mark(nmethod, true /* inc_recompile_count */);
+  deopt.enqueue(nmethod);
   deopt.deoptimize();
 }
 

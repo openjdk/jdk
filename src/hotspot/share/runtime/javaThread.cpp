@@ -1318,7 +1318,7 @@ void JavaThread::make_zombies() {
 #endif // PRODUCT
 
 
-void JavaThread::deoptimize_marked_methods() {
+void JavaThread::deoptimize_enqueued_method_frames() {
   if (!has_last_Java_frame()) return;
   StackFrameStream fst(this, false /* update */, true /* process_frames */);
   for (; !fst.is_done(); fst.next()) {

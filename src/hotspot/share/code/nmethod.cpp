@@ -1162,7 +1162,7 @@ void nmethod::make_deoptimized() {
     }
   }
   // Don't deopt this again.
-  mark_deoptimized();
+  make_deoptimized_done();
 }
 
 void nmethod::verify_clean_inline_caches() {
@@ -1469,6 +1469,7 @@ bool nmethod::make_not_entrant_or_zombie(int state) {
     }
 
     if (is_in_use() && update_recompile_counts()) {
+      // TODO: Fix terminology
       // It's a true state change, so mark the method as decompiled.
       // Do it only for transition from alive.
       inc_decompile_count();
@@ -2355,13 +2356,13 @@ void nmethod::check_all_dependencies(DepChange& changes) {
 
   DepTable* table = new DepTable();
 
-  // Iterate over live nmethods and check dependencies of all nmethods that are not
-  // marked for deoptimization. A particular dependency is only checked once.
+  // Iterate over live nmethods and check dependencies of all nmethods that has not
+  // been enqueue for deoptimization. A particular dependency is only checked once.
   NMethodIterator iter(NMethodIterator::only_alive_and_not_unloading);
   while(iter.next()) {
     nmethod* nm = iter.method();
     // Only notify for live nmethods
-    if (!nm->is_marked_for_deoptimization()) {
+    if (!nm->has_been_enqueued_for_deoptimization()) {
       for (Dependencies::DepStream deps(nm); deps.next(); ) {
         // Construct abstraction of a dependency.
         DependencySignature* current_sig = new DependencySignature(deps);
@@ -2377,7 +2378,7 @@ void nmethod::check_all_dependencies(DepChange& changes) {
             changes.print();
             nm->print();
             nm->print_dependencies();
-            assert(false, "Should have been marked for deoptimization");
+            assert(false, "Should have enqueued deoptimization");
           }
         }
       }
@@ -2400,7 +2401,6 @@ bool nmethod::check_dependency_on(DepChange& changes) {
   return found_check;
 }
 
-// Called from mark_for_deoptimization, when dependee is invalidated.
 bool nmethod::is_dependent_on_method(Method* dependee) {
   for (Dependencies::DepStream deps(this); deps.next(); ) {
     if (deps.type() != Dependencies::evol_method)

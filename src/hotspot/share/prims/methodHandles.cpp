@@ -1077,7 +1077,7 @@ void MethodHandles::flush_dependent_nmethods(Handle call_site, Handle target) {
     MutexLocker mu2(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     oop context = java_lang_invoke_CallSite::context_no_keepalive(call_site());
     DependencyContext deps = java_lang_invoke_MethodHandleNatives_CallSiteContext::vmdependencies(context);
-    deps.mark_dependent_nmethods(changes, &deopt);
+    deps.enqueue_deoptimization_dependent_nmethods(changes, &deopt);
   }
   deopt.deoptimize();
 }
@@ -1486,7 +1486,7 @@ JVM_ENTRY(void, MHN_clearCallSiteContext(JNIEnv* env, jobject igcls, jobject con
   {
     MutexLocker mu2(thread, CodeCache_lock, Mutex::_no_safepoint_check_flag);
     DependencyContext deps = java_lang_invoke_MethodHandleNatives_CallSiteContext::vmdependencies(context());
-    deps.remove_and_mark_for_deoptimization_all_dependents(&deopt);
+    deps.remove_and_enqueue_deoptimization_all_dependents(&deopt);
   }
 
   deopt.deoptimize();

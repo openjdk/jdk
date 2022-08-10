@@ -1650,7 +1650,7 @@ void SystemDictionary::add_to_hierarchy(InstanceKlass* k) {
   // Now flush all code that depended on old class hierarchy.
   // Note: must be done *after* linking k into the hierarchy (was bug 12/9/97)
   if (Universe::is_fully_initialized()) {
-    Deoptimization::mark_and_deoptimize_dependents_on(k);
+    Deoptimization::deoptimize_dependents(k);
   }
 }
 

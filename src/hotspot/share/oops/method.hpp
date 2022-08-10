@@ -915,8 +915,8 @@ public:
    return method_holder()->lookup_osr_nmethod(this, InvocationEntryBci, level, match_level) != NULL;
   }
 
-  void mark_osr_nmethods(DeoptimizationContext* deopt) {
-    method_holder()->mark_osr_nmethods(this, deopt);
+  void enqueue_deoptimization_osr_nmethods(DeoptimizationContext* deopt) {
+    method_holder()->enqueue_deoptimization_osr_nmethods(this, deopt);
   }
 
   nmethod* lookup_osr_nmethod_for(int bci, int level, bool match_level) {

@@ -119,11 +119,11 @@ class DependencyContext : public StackObj {
 
   static void init();
 
-  void mark_dependent_nmethods(DepChange& changes, DeoptimizationContext* deopt);
+  void enqueue_deoptimization_dependent_nmethods(DepChange& changes, DeoptimizationContext* deopt);
   void add_dependent_nmethod(nmethod* nm);
   void remove_dependent_nmethod(nmethod* nm);
   void remove_all_dependents();
-  void remove_and_mark_for_deoptimization_all_dependents(DeoptimizationContext* deopt);
+  void remove_and_enqueue_deoptimization_all_dependents(DeoptimizationContext* deopt);
   void clean_unloading_dependents();
   static void purge_dependency_contexts();
   static void release(nmethodBucket* b);

@@ -115,18 +115,18 @@ const char* CompiledMethod::state() const {
 }
 
 //-----------------------------------------------------------------------------
-bool CompiledMethod::mark_for_deoptimization(bool inc_recompile_counts) {
+bool CompiledMethod::enqueue_deoptimization(bool inc_recompile_counts) {
   assert_locked_or_safepoint(Compile_lock);
-  MarkForDeoptimizationStatus old_mark = _mark_for_deoptimization_status;
-  if (_mark_for_deoptimization_status != deoptimize_done) { // can't go backwards
-    _mark_for_deoptimization_status = (inc_recompile_counts ? deoptimize : deoptimize_noupdate);
+  DeoptimizationStatus old_status = _deoptimization_status;
+  if (_deoptimization_status != deoptimize_done) { // can't go backwards
+    _deoptimization_status = (inc_recompile_counts ? enqueued : enqueued_noupdate);
   }
-  return old_mark == not_marked;
+  return old_status == not_enqueued;
 }
 
-void  CompiledMethod::mark_deoptimized() {
+void  CompiledMethod::make_deoptimized_done() {
   assert_locked_or_safepoint(Compile_lock);
-  _mark_for_deoptimization_status = deoptimize_done;
+  _deoptimization_status = deoptimize_done;
 }
 
 //-----------------------------------------------------------------------------

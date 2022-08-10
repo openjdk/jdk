@@ -1181,7 +1181,7 @@ void InstanceKlass::set_initialization_state_and_notify(ClassState state, JavaTh
     set_init_thread(NULL); // reset _init_thread before changing _init_state
     set_init_state(state);
 
-     Deoptimization::mark_and_deoptimize_dependents_on(this);
+     Deoptimization::deoptimize_dependents(this);
   } else {
     set_init_thread(NULL); // reset _init_thread before changing _init_state
     set_init_state(state);
@@ -2334,8 +2334,8 @@ inline DependencyContext InstanceKlass::dependencies() {
   return dep_context;
 }
 
-void InstanceKlass::mark_dependent_nmethods(KlassDepChange& changes, DeoptimizationContext* deopt) {
-  dependencies().mark_dependent_nmethods(changes, deopt);
+void InstanceKlass::enqueue_deoptimization_dependent_nmethods(KlassDepChange& changes, DeoptimizationContext* deopt) {
+  dependencies().enqueue_deoptimization_dependent_nmethods(changes, deopt);
 }
 
 void InstanceKlass::add_dependent_nmethod(nmethod* nm) {
@@ -3319,14 +3319,14 @@ bool InstanceKlass::remove_osr_nmethod(nmethod* n) {
   return found;
 }
 
-void InstanceKlass::mark_osr_nmethods(const Method* m, DeoptimizationContext* deopt) {
+void InstanceKlass::enqueue_deoptimization_osr_nmethods(const Method* m, DeoptimizationContext* deopt) {
   MutexLocker ml(CompiledMethod_lock->owned_by_self() ? NULL : CompiledMethod_lock,
                  Mutex::_no_safepoint_check_flag);
   nmethod* osr = osr_nmethods_head();
   while (osr != NULL) {
     assert(osr->is_osr_method(), "wrong kind of nmethod found in chain");
     if (osr->method() == m) {
-      deopt->mark(osr, true /* inc_recompile_count */);
+      deopt->enqueue(osr);
     }
     osr = osr->osr_link();
   }

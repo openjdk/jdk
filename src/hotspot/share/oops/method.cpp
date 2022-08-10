@@ -2034,7 +2034,7 @@ void BreakpointInfo::set(Method* method) {
     // Deoptimize all dependents on this method
     HandleMark hm(thread);
     methodHandle mh(thread, method);
-    Deoptimization::mark_and_deoptimize_dependents(mh);
+    Deoptimization::deoptimize_dependents(mh);
   }
 }
 

@@ -152,15 +152,16 @@ class Deoptimization : AllStatic {
 #endif
 
 private:
-  static void mark_and_deoptimize(KlassDepChange& changes);
+  static void deoptimize(KlassDepChange& changes);
 
 public:
-  static void mark_and_deoptimize_nmethod(nmethod* nmethod);
-  static void mark_and_deoptimize_all();
-  static void mark_and_deoptimize_dependents(const methodHandle& dependee);
-  static void mark_and_deoptimize_dependents(Method* dependee);
-  static void mark_and_deoptimize_dependents_on(InstanceKlass* dependee);
-  static void mark_dependents(Method* dependee, DeoptimizationContext* deopt);
+  static void deoptimize_nmethod(nmethod* nmethod);
+  static void deoptimize_dependents(const methodHandle& dependee);
+  static void deoptimize_dependents(Method* dependee);
+  static void deoptimize_dependents(InstanceKlass* dependee);
+  static void enqueue_dependents(Method* dependee, DeoptimizationContext* deopt);
+  // Only called from whitebox API.
+  static void deoptimize_all_whitebox();
 
 #ifndef PRODUCT
   static void print_dependency_checking_time(outputStream* stream);
@@ -487,7 +488,7 @@ public:
 
 class DeoptimizationContext : StackObj {
   NoSafepointVerifier _nsv;
-  uint _marked;
+  uint _enqueued;
   bool _deoptimized;
   static volatile bool _context_active;
 
@@ -498,10 +499,11 @@ public:
   DeoptimizationContext();
   ~DeoptimizationContext();
 
-  void mark(CompiledMethod* cm, bool inc_recompile_count);
+  void enqueue(CompiledMethod* cm);
+  void enqueue_no_recompile_count_update(CompiledMethod* cm);
   void deoptimize();
 
-  uint marked() { return _marked; }
+  uint enqueued() { return _enqueued; }
 };
 
 #endif // SHARE_RUNTIME_DEOPTIMIZATION_HPP

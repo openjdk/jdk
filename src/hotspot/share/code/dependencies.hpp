@@ -684,7 +684,7 @@ class DepChange : public StackObj {
   virtual bool is_klass_init_change() const { return false; }
   virtual bool is_call_site_change()  const { return false; }
 
-  virtual void mark_for_deoptimization(nmethod* nm, DeoptimizationContext* deopt) = 0;
+  virtual void enqueue_deoptimization(nmethod* nm, DeoptimizationContext* deopt) = 0;
 
   // Subclass casting with assertions.
   KlassDepChange*    as_klass_change() {
@@ -782,8 +782,8 @@ class KlassDepChange : public DepChange {
   // What kind of DepChange is this?
   virtual bool is_klass_change() const { return true; }
 
-  virtual void mark_for_deoptimization(nmethod* nm, DeoptimizationContext* deopt) {
-    deopt->mark(nm, true /* inc_recompile_counts */);
+  virtual void enqueue_deoptimization(nmethod* nm, DeoptimizationContext* deopt) {
+    deopt->enqueue(nm);
   }
 
   InstanceKlass* type() { return _type; }
@@ -824,8 +824,8 @@ class CallSiteDepChange : public DepChange {
   // What kind of DepChange is this?
   virtual bool is_call_site_change() const { return true; }
 
-  virtual void mark_for_deoptimization(nmethod* nm, DeoptimizationContext* deopt) {
-    deopt->mark(nm, false /* inc_recompile_counts */);
+  virtual void enqueue_deoptimization(nmethod* nm, DeoptimizationContext* deopt) {
+    deopt->enqueue_no_recompile_count_update(nm);
   }
 
   oop call_site()     const { return _call_site();     }

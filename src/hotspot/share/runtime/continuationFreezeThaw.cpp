@@ -2109,7 +2109,7 @@ void ThawBase::recurse_thaw_compiled_frame(const frame& hf, frame& caller, int n
   if (hf.is_deoptimized_frame()) {
     maybe_set_fastpath(f.sp());
   } else if (_thread->is_interp_only_mode()
-              || (_cont.is_preempted() && f.cb()->as_compiled_method()->is_marked_for_deoptimization())) {
+              || (_cont.is_preempted() && f.cb()->as_compiled_method()->has_been_enqueued_for_deoptimization())) {
     // The caller of the safepoint stub when the continuation is preempted is not at a call instruction, and so
     // cannot rely on nmethod patching for deopt.
     assert(_thread->is_interp_only_mode() || stub_caller, "expected a stub-caller");
@@ -2357,7 +2357,7 @@ static bool do_verify_after_thaw(JavaThread* thread, stackChunkOop chunk, output
   fst.register_map()->set_include_argument_oops(false);
   ContinuationHelper::update_register_map_with_callee(*fst.current(), fst.register_map());
   for (; !fst.is_done() && !Continuation::is_continuation_enterSpecial(*fst.current()); fst.next()) {
-    if (fst.current()->cb()->is_compiled() && fst.current()->cb()->as_compiled_method()->is_marked_for_deoptimization()) {
+    if (fst.current()->cb()->is_compiled() && fst.current()->cb()->as_compiled_method()->has_been_enqueued_for_deoptimization()) {
       st->print_cr(">>> do_verify_after_thaw deopt");
       fst.current()->deoptimize(nullptr);
       fst.current()->print_on(st);

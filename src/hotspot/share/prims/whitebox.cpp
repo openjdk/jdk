@@ -778,7 +778,7 @@ WB_END
 
 WB_ENTRY(void, WB_DeoptimizeAll(JNIEnv* env, jobject o))
   MutexLocker ml(Compile_lock);
-  Deoptimization::mark_and_deoptimize_all();
+  Deoptimization::deoptimize_all_whitebox();
 WB_END
 
 WB_ENTRY(jint, WB_DeoptimizeMethod(JNIEnv* env, jobject o, jobject method, jboolean is_osr))
@@ -788,13 +788,13 @@ WB_ENTRY(jint, WB_DeoptimizeMethod(JNIEnv* env, jobject o, jobject method, jbool
   DeoptimizationContext deopt;
   methodHandle mh(THREAD, Method::checked_resolve_jmethod_id(jmid));
   if (is_osr) {
-    mh->mark_osr_nmethods(&deopt);
+    mh->enqueue_deoptimization_osr_nmethods(&deopt);
   } else if (mh->code() != NULL) {
-    deopt.mark(mh->code(), true /* inc_recompile_count */);
+    deopt.enqueue(mh->code());
   }
-  Deoptimization::mark_dependents(mh(), &deopt);
+  Deoptimization::enqueue_dependents(mh(), &deopt);
   deopt.deoptimize();
-  return (jint)deopt.marked();
+  return (jint)deopt.enqueued();
 WB_END
 
 WB_ENTRY(jboolean, WB_IsMethodCompiled(JNIEnv* env, jobject o, jobject method, jboolean is_osr))
@@ -806,7 +806,7 @@ WB_ENTRY(jboolean, WB_IsMethodCompiled(JNIEnv* env, jobject o, jobject method, j
   if (code == NULL) {
     return JNI_FALSE;
   }
-  return (code->is_alive() && !code->is_marked_for_deoptimization());
+  return (code->is_alive() && !code->has_been_enqueued_for_deoptimization());
 WB_END
 
 static bool is_excluded_for_compiler(AbstractCompiler* comp, methodHandle& mh) {

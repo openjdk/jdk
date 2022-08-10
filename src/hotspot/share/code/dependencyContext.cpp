@@ -62,23 +62,23 @@ void DependencyContext::init() {
 
 //
 // Walk the list of dependent nmethods searching for nmethods which
-// are dependent on the changes that were passed in and mark them for
-// deoptimization.  Returns the number of nmethods found.
+// are dependent on the changes that were passed in and enqueue
+// deoptimization for them.  Returns the number of nmethods found.
 //
-void DependencyContext::mark_dependent_nmethods(DepChange& changes, DeoptimizationContext* deopt) {
+void DependencyContext::enqueue_deoptimization_dependent_nmethods(DepChange& changes, DeoptimizationContext* deopt) {
   for (nmethodBucket* b = dependencies_not_unloading(); b != NULL; b = b->next_not_unloading()) {
     nmethod* nm = b->get_nmethod();
     // since dependencies aren't removed until an nmethod becomes a zombie,
     // the dependency list may contain nmethods which aren't alive.
-    if (b->count() > 0 && nm->is_alive() && !nm->is_marked_for_deoptimization() && nm->check_dependency_on(changes)) {
+    if (b->count() > 0 && nm->is_alive() && !nm->has_been_enqueued_for_deoptimization() && nm->check_dependency_on(changes)) {
       if (TraceDependencies) {
         ResourceMark rm;
-        tty->print_cr("Marked for deoptimization");
+        tty->print_cr("Enqueued deoptimization");
         changes.print();
         nm->print();
         nm->print_dependencies();
       }
-      changes.mark_for_deoptimization(nm, deopt);
+      changes.enqueue_deoptimization(nm, deopt);
     }
   }
 }
@@ -217,13 +217,13 @@ void DependencyContext::remove_all_dependents() {
   assert(b == nullptr, "All dependents should be unloading");
 }
 
-void DependencyContext::remove_and_mark_for_deoptimization_all_dependents(DeoptimizationContext* deopt) {
+void DependencyContext::remove_and_enqueue_deoptimization_all_dependents(DeoptimizationContext* deopt) {
   nmethodBucket* b = dependencies_not_unloading();
   set_dependencies(NULL);
   while (b != NULL) {
     nmethod* nm = b->get_nmethod();
-    if (b->count() > 0 && nm->is_alive() && !nm->is_marked_for_deoptimization()) {
-      deopt->mark(nm, true /* inc_recompile_counts */);
+    if (b->count() > 0 && nm->is_alive() && !nm->has_been_enqueued_for_deoptimization()) {
+      deopt->enqueue(nm);
     }
     b = release_and_get_next_not_unloading(b);
   }
