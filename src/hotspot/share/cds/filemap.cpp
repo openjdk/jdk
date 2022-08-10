@@ -462,6 +462,11 @@ bool SharedClassPathEntry::validate(bool is_class_path) const {
     } else {
       FileMapInfo::fail_continue("A jar file is not the one used while building"
                                  " the shared archive file: %s", name);
+      if (_timestamp != st.st_mtime) {
+        log_warning(cds)("%s timestamp has changed.", name);
+      } else {
+        log_warning(cds)("%s size has changed.", name);
+      }
     }
   }
 
@@ -1052,7 +1057,11 @@ bool FileMapInfo::validate_shared_path_table() {
     assert(shared_path(0)->is_modules_image(), "first shared_path must be the modules image");
   } else {
     if (!validate_boot_class_paths() || !validate_app_class_paths(shared_app_paths_len)) {
-      fail_continue("shared class paths mismatch (hint: enable -Xlog:class+path=info to diagnose the failure)");
+      const char* mismatch_msg = "shared class paths mismatch (hint: enable -Xlog:class+path=info to diagnose the failure)";
+      fail_continue("%s", mismatch_msg);
+      if (!log_is_enabled(Info, cds) && !log_is_enabled(Info, class, path)) {
+        log_warning(cds)("%s", mismatch_msg);
+      }
       return false;
     }
   }
