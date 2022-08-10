@@ -23,24 +23,31 @@
 
 import jdk.internal.misc.TerminatingThreadLocal;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 /*
  * @test
  * @bug 8202788 8291897
  * @summary TerminatingThreadLocal unit test
- * @modules java.base/jdk.internal.misc
+ * @modules java.base/java.lang:+open java.base/jdk.internal.misc
  * @requires vm.continuations
  * @enablePreview
- * @run main/othervm -Djdk.virtualThreadScheduler.parallelism=1 -Djdk.virtualThreadScheduler.maxPoolSize=2 TestTerminatingThreadLocal
+ * @run main/othervm TestTerminatingThreadLocal
  */
 public class TestTerminatingThreadLocal {
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         ttlTestSet(42, 112);
         ttlTestSet(null, 112);
         ttlTestSet(42, null);
@@ -96,7 +103,7 @@ public class TestTerminatingThreadLocal {
     @SafeVarargs
     static <T> void ttlTestVirtual(T initialValue,
                                    Consumer<? super TerminatingThreadLocal<T>> ttlOps,
-                                   T... expectedTerminatedValues) {
+                                   T... expectedTerminatedValues) throws Exception {
         List<T> terminatedValues = new CopyOnWriteArrayList<>();
 
         TerminatingThreadLocal<T> ttl = new TerminatingThreadLocal<>() {
@@ -111,77 +118,57 @@ public class TestTerminatingThreadLocal {
             }
         };
 
-        var lock = new Lock();
+        var carrierRef = new AtomicReference<Thread>();
 
-        var blockerThread = Thread.startVirtualThread(() -> {
-            // force compensation in carrier thread pool which will spin another
-            // carrier thread so that we can later observe it being terminated...
-            synchronized (lock) {
-                while (!lock.unblock) {
-                    try {
-                        lock.wait();
-                    } catch (InterruptedException e) {
-                        throw new RuntimeException(e);
-                    }
-                }
+        // use a single worker thread pool as the "scheduler"
+        try (var pool = Executors.newSingleThreadExecutor()) {
+
+            // capture carrier Thread
+            pool.submit(() -> carrierRef.set(Thread.currentThread()));
+
+            ThreadFactory factory = virtualThreadBuilder(pool)
+                    .name("ttl-test-virtual-", 0)
+                    .allowSetThreadLocals(false)
+                    .factory();
+            try (var executor = Executors.newThreadPerTaskExecutor(factory)) {
+                executor.submit(() -> ttlOps.accept(ttl)).get();
             }
-            // keep thread running in a non-blocking-fashion which keeps
-            // it bound to carrier thread
-            while (!lock.unspin) {
-                Thread.onSpinWait();
+
+            if (!terminatedValues.isEmpty()) {
+                throw new AssertionError("Unexpected terminated values after virtual thread terminated: " +
+                                         terminatedValues);
             }
-        });
-
-        Thread thread = Thread
-            .ofVirtual()
-            .allowSetThreadLocals(false)
-            .inheritInheritableThreadLocals(false)
-            .name("ttl-test-virtual")
-            .unstarted(() -> ttlOps.accept(ttl));
-        thread.start();
-        try {
-            thread.join();
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
         }
 
-        if (!terminatedValues.isEmpty()) {
-            throw new AssertionError("Unexpected terminated values after virtual thread.join(): " +
-                                     terminatedValues);
-        }
-
-        // we now unblock the blocker thread but keep it running
-        synchronized (lock) {
-            lock.unblock = true;
-            lock.notify();
-        }
-
-        // carrier thread pool has a 30 second keep-alive time to terminate excessive carrier
-        // threads. Since blockerThread is still pinning one of them we hope for the other
-        // thread to be terminated...
-        try {
-            TimeUnit.SECONDS.sleep(31);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
+        // wait for carrier to terminate
+        Thread carrier = carrierRef.get();
+        carrier.join();
 
         if (!terminatedValues.equals(Arrays.asList(expectedTerminatedValues))) {
             throw new AssertionError("Expected terminated values: " +
                                      Arrays.toString(expectedTerminatedValues) +
                                      " but got: " + terminatedValues);
         }
-
-        // we now terminate the blocker thread
-        lock.unspin = true;
-        try {
-            blockerThread.join();
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
     }
 
-    static class Lock {
-        boolean unblock;
-        volatile boolean unspin;
+    /**
+     * Returns a builder to create virtual threads that use the given scheduler.
+     */
+    private static Thread.Builder.OfVirtual virtualThreadBuilder(Executor scheduler) {
+        Thread.Builder.OfVirtual builder = Thread.ofVirtual();
+        try {
+            Class<?> clazz = Class.forName("java.lang.ThreadBuilders$VirtualThreadBuilder");
+            Constructor<?> ctor = clazz.getDeclaredConstructor(Executor.class);
+            ctor.setAccessible(true);
+            return (Thread.Builder.OfVirtual) ctor.newInstance(scheduler);
+        } catch (InvocationTargetException e) {
+            Throwable cause = e.getCause();
+            if (cause instanceof RuntimeException re) {
+                throw re;
+            }
+            throw new RuntimeException(e);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 }
