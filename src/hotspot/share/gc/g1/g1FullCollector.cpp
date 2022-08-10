@@ -115,7 +115,7 @@ G1FullCollector::G1FullCollector(G1CollectedHeap* heap,
                                  bool do_maximal_compaction) :
     _heap(heap),
     _tracer(),
-    _mark(&_tracer),
+    _cpu_time(&_tracer),
     _scope(heap->monitoring_support(), explicit_gc, clear_soft_refs, do_maximal_compaction, &_tracer),
     _num_workers(calc_active_workers()),
     _oop_queue_set(_num_workers),

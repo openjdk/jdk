@@ -73,7 +73,7 @@ void GCTraceTimeLoggerImpl::log_end(Ticks end) {
 
 GCTraceCPUTime::GCTraceCPUTime(GCTracer* tracer) :
   _active(log_is_enabled(Info, gc, cpu) ||
-          (tracer != nullptr && tracer->should_report_cpu_time())),
+          (tracer != nullptr && tracer->should_report_cpu_time_event())),
   _starting_user_time(0.0),
   _starting_system_time(0.0),
   _starting_real_time(0.0),
@@ -101,8 +101,8 @@ GCTraceCPUTime::~GCTraceCPUTime() {
       system_time -= _starting_system_time;
       real_time -= _starting_real_time;
       log_info(gc, cpu)("User=%3.2fs Sys=%3.2fs Real=%3.2fs", user_time, system_time, real_time);
-      if (_tracer != NULL) {
-        _tracer->report_cpu_time(user_time, system_time, real_time);
+      if (_tracer != nullptr) {
+        _tracer->report_cpu_time_event(user_time, system_time, real_time);
       }
     } else {
       log_warning(gc, cpu)("TraceCPUTime: os::getTimesSecs() returned invalid result");

@@ -37,8 +37,8 @@
 #include "utilities/macros.hpp"
 #include "utilities/ticks.hpp"
 
-bool GCTracer::should_report_cpu_time() const {
-  return should_send_cpu_time();
+bool GCTracer::should_report_cpu_time_event() const {
+  return should_send_cpu_time_event();
 }
 
 void GCTracer::report_gc_start_impl(GCCause::Cause cause, const Ticks& timestamp) {
@@ -63,8 +63,8 @@ void GCTracer::report_gc_end(const Ticks& timestamp, TimePartitions* time_partit
   report_gc_end_impl(timestamp, time_partitions);
 }
 
-void GCTracer::report_cpu_time(double user_time, double system_time, double real_time) const {
-  send_cpu_time(user_time, system_time, real_time);
+void GCTracer::report_cpu_time_event(double user_time, double system_time, double real_time) const {
+  send_cpu_time_event(user_time, system_time, real_time);
 }
 
 void GCTracer::report_gc_reference_stats(const ReferenceProcessorStats& rps) const {

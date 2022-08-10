@@ -36,7 +36,7 @@
 
 typedef uintptr_t TraceAddress;
 
-bool GCTracer::should_send_cpu_time() const {
+bool GCTracer::should_send_cpu_time_event() const {
   return EventGCCpuTime::is_enabled();
 }
 
@@ -54,7 +54,7 @@ void GCTracer::send_garbage_collection_event() const {
   }
 }
 
-void GCTracer::send_cpu_time(double user_time, double system_time, double real_time) const {
+void GCTracer::send_cpu_time_event(double user_time, double system_time, double real_time) const {
   EventGCCpuTime e;
   if (e.should_commit()) {
       e.set_gcId(GCId::current());
