@@ -400,13 +400,7 @@ void ClassLoaderData::modules_do(void f(ModuleEntry*)) {
     f(_unnamed_module);
   }
   if (_modules != NULL) {
-    for (int i = 0; i < _modules->table_size(); i++) {
-      for (ModuleEntry* entry = _modules->bucket(i);
-           entry != NULL;
-           entry = entry->next()) {
-        f(entry);
-      }
-    }
+    _modules->modules_do(f);
   }
 }
 
@@ -592,7 +586,7 @@ ModuleEntryTable* ClassLoaderData::modules() {
     MutexLocker m1(Module_lock);
     // Check if _modules got allocated while we were waiting for this lock.
     if ((modules = _modules) == NULL) {
-      modules = new ModuleEntryTable(ModuleEntryTable::_moduletable_entry_size);
+      modules = new ModuleEntryTable();
 
       {
         MutexLocker m1(metaspace_lock(), Mutex::_no_safepoint_check_flag);
@@ -715,7 +709,7 @@ ClassLoaderData::~ClassLoaderData() {
   }
 
   if (_unnamed_module != NULL) {
-    _unnamed_module->delete_unnamed_module();
+    delete _unnamed_module;
     _unnamed_module = NULL;
   }
 
@@ -1039,6 +1033,10 @@ void ClassLoaderData::verify() {
     guarantee(k->class_loader_data() == this, "Must be the same");
     k->verify();
     assert(k != k->next_link(), "no loops!");
+  }
+
+  if (_modules != NULL) {
+    _modules->verify();
   }
 }
 
