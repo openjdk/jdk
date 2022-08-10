@@ -51,11 +51,11 @@ public class LockerTest extends ThreadedGCTest implements LockersAware {
         public void run() {
             ExecutionController stresser = getExecutionController();
             // Use only 30% of the heap.
-            final long testMemory = 3 * Runtime.getRuntime().maxMemory() / 10;
+            final long testMemorySize = 3 * Runtime.getRuntime().maxMemory() / 10;
 
             while (stresser.continueExecution()) {
                 locker.lock();
-                GarbageUtils.engageGC(testMemory);
+                GarbageUtils.engageGC(testMemorySize);
                 locker.unlock();
             }
         }
