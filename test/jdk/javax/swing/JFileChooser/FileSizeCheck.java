@@ -50,7 +50,8 @@ public class FileSizeCheck {
     private static PassFailJFrame passFailJFrame;
     private static Path [] tempFilePaths;
     private static final String INSTRUCTIONS =
-            "Click on the \"Details\" button in right-top corner.\n\nScroll Down if required. \n\n" +
+            "Click on the \"Details\" button in right-top corner.\n\n" +
+                    "Scroll Down if required. \n\n" +
                     "Test 1: If the size of 1-Empty-File shows 0 KB\n" +
                     "Test 2: If the size of 2-File-2047-Byte shows 2.0 KB\n" +
                     "Test 3: If the size of 3-File-2.5-KB shows 2.5 KB\n" +
@@ -59,12 +60,13 @@ public class FileSizeCheck {
                     "Test 6: If the size of 6-File-2.8-MB shows 2.8 MB\n\n" +
                            "press PASS.\n\n";
 
-    public static void test() { //throws InterruptedException, InvocationTargetException {
+    public static void test() {
         frame = new JFrame("JFileChooser File Size test");
         fc = new JFileChooser();
         Path dir = Paths.get(System.getProperty("test.src"));
-        String [] tempFilesName = {"1-Empty-File", "2-File-2047-Byte", "3-File-2.5-KB", "4-File-999-KB", "5-File-1000-KB", "6-File-2.8-MB"};
-        int [] tempFilesSize = {0, 2047, 2500, 999000, 1000000, 2800000};
+        String [] tempFilesName = {"1-Empty-File", "2-File-2047-Byte",
+                "3-File-2.5-KB", "4-File-999-KB", "5-File-1000-KB", "6-File-2.8-MB"};
+        int [] tempFilesSize = {0, 2_047, 2_500, 999_000, 1_000_000, 2_800_000};
         tempFilePaths = new Path[tempFilesName.length];
         PassFailJFrame.addTestWindow(frame);
         PassFailJFrame.positionTestWindow(frame, PassFailJFrame.Position.HORIZONTAL);
@@ -89,14 +91,12 @@ public class FileSizeCheck {
         frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
     }
 
-    public static void main(String args[]) throws InterruptedException, InvocationTargetException {
-        passFailJFrame = new PassFailJFrame("JFileChooser Test Instructions" , INSTRUCTIONS, 5, 19, 35);
+    public static void main(String args[]) throws InterruptedException,
+            InvocationTargetException {
+        passFailJFrame = new PassFailJFrame("JFileChooser Test Instructions",
+                INSTRUCTIONS, 5, 19, 35);
         try {
-            SwingUtilities.invokeAndWait(new Runnable() {
-                public void run() {
-                    test();
-                }
-            });
+            SwingUtilities.invokeAndWait(FileSizeCheck::test);
             passFailJFrame.awaitAndCheck();
         } finally {
             try {

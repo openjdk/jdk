@@ -1197,19 +1197,19 @@ public class FilePane extends JPanel implements PropertyChangeListener {
             } else if (value instanceof Long len) {
                 if (listViewWindowsStyle) {
                     if (len == 0) {
-                        updateMessageFormatPattern(kiloByteString,0);
+                        updateMessageFormatPattern(kiloByteString, 0);
                     } else {
-                        updateMessageFormatPattern(kiloByteString,1);
+                        updateMessageFormatPattern(kiloByteString, 1);
                         len /= 1000L;
                     }
                     objs[0] = Long.valueOf(len);
                     text = mf.format(objs);
                 } else if (len < 1000L) {
                     if (len == 0) {
-                        updateMessageFormatPattern(kiloByteString,0);
+                        updateMessageFormatPattern(kiloByteString, 0);
                         objs[0] = Long.valueOf(0);
                     } else {
-                        updateMessageFormatPattern(kiloByteString,1);
+                        updateMessageFormatPattern(kiloByteString, 1);
                         objs[0] = Double.valueOf(1.0);
                     }
                     text = mf.format(objs);
@@ -1217,18 +1217,18 @@ public class FilePane extends JPanel implements PropertyChangeListener {
                     double kbVal = formatToDoubleValue(len);
                     len = (long)kbVal;
                     if (kbVal < baseFileSize) {
-                        updateMessageFormatPattern(kiloByteString,1);
+                        updateMessageFormatPattern(kiloByteString, 1);
                         objs[0] = Double.valueOf(kbVal);
                         text = mf.format(objs);
                     } else {
                         double mbVal = formatToDoubleValue(len);
                         len = (long)mbVal;
                         if (mbVal < baseFileSize) {
-                            updateMessageFormatPattern(megaByteString,1);
+                            updateMessageFormatPattern(megaByteString, 1);
                             objs[0] = Double.valueOf(mbVal);
                             text = mf.format(objs);
                         } else {
-                            updateMessageFormatPattern(gigaByteString,1);
+                            updateMessageFormatPattern(gigaByteString, 1);
                             double gbVal = formatToDoubleValue(len);
                             objs[0] = Double.valueOf(gbVal);
                             text = mf.format(objs);
@@ -1253,7 +1253,8 @@ public class FilePane extends JPanel implements PropertyChangeListener {
             nf.setMinimumFractionDigits(minFractionDigit);
             mf.setFormat(0, nf);
         }
-        private double formatToDoubleValue(long len) {
+
+        private static double formatToDoubleValue(long len) {
             return (len / 100L) / 10.0d;
         }
     }
