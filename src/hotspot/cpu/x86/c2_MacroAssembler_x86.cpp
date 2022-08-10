@@ -2446,54 +2446,35 @@ void C2_MacroAssembler::evpblend(BasicType typ, XMMRegister dst, KRegister kmask
   }
 }
 
-void C2_MacroAssembler::vectortest(int bt, int vlen, XMMRegister src1, XMMRegister src2,
-                                   XMMRegister vtmp1, XMMRegister vtmp2, KRegister mask) {
-  switch(vlen) {
+void C2_MacroAssembler::vectortest(XMMRegister src1, XMMRegister src2, XMMRegister vtmp, int vlen_in_bytes) {
+  switch(vlen_in_bytes) {
     case 4:
-      assert(vtmp1 != xnoreg, "required.");
+      assert(vtmp != xnoreg, "required.");
       // Broadcast lower 32 bits to 128 bits before ptest
-      pshufd(vtmp1, src1, 0x0);
-      if (bt == BoolTest::overflow) {
-        assert(vtmp2 != xnoreg, "required.");
-        pshufd(vtmp2, src2, 0x0);
+      pshufd(vtmp, src1, 0x0);
+      if (src1 != src2) {
+        ptest(vtmp, src2);
       } else {
-        assert(vtmp2 == xnoreg, "required.");
-        vtmp2 = src2;
+        ptest(vtmp, vtmp);
       }
-      ptest(vtmp1, vtmp2);
      break;
     case 8:
-      assert(vtmp1 != xnoreg, "required.");
+      assert(vtmp != xnoreg, "required.");
       // Broadcast lower 64 bits to 128 bits before ptest
-      pshufd(vtmp1, src1, 0x4);
-      if (bt == BoolTest::overflow) {
-        assert(vtmp2 != xnoreg, "required.");
-        pshufd(vtmp2, src2, 0x4);
+      pshufd(vtmp, src1, 0x4);
+      if (src1 != src2) {
+        ptest(vtmp, src2);
       } else {
-        assert(vtmp2 == xnoreg, "required.");
-        vtmp2 = src2;
+        ptest(vtmp, vtmp);
       }
-      ptest(vtmp1, vtmp2);
      break;
     case 16:
-      assert((vtmp1 == xnoreg) && (vtmp2 == xnoreg), "required.");
+      assert(vtmp == xnoreg, "required.");
       ptest(src1, src2);
       break;
     case 32:
-      assert((vtmp1 == xnoreg) && (vtmp2 == xnoreg), "required.");
+      assert(vtmp == xnoreg, "required.");
       vptest(src1, src2, Assembler::AVX_256bit);
-      break;
-    case 64:
-      {
-        assert((vtmp1 == xnoreg) && (vtmp2 == xnoreg), "required.");
-        evpcmpeqb(mask, src1, src2, Assembler::AVX_512bit);
-        if (bt == BoolTest::ne) {
-          ktestql(mask, mask);
-        } else {
-          assert(bt == BoolTest::overflow, "required");
-          kortestql(mask, mask);
-        }
-      }
       break;
     default:
       assert(false,"Should not reach here.");

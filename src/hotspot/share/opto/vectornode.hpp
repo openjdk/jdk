@@ -1436,9 +1436,8 @@ class VectorTestNode : public Node {
   virtual bool cmp( const Node &n ) const {
     return Node::cmp(n) && _predicate == ((VectorTestNode&)n)._predicate;
   }
-  virtual const Type *bottom_type() const { return TypeInt::BOOL; }
-  virtual uint ideal_reg() const { return Op_RegI; }  // TODO Should be RegFlags but due to missing comparison flags for BoolTest
-                                                      // in middle-end, we make it boolean result directly.
+  virtual const Type *bottom_type() const { return TypeInt::CC; }
+  virtual uint ideal_reg() const { return Op_RegFlags; }
   BoolTest::mask get_predicate() const { return _predicate; }
 };
 

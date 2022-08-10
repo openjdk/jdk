@@ -1803,10 +1803,16 @@ bool LibraryCallKit::inline_vector_test() {
   if (opd1 == NULL || opd2 == NULL) {
     return false; // operand unboxing failed
   }
-  Node* test = new VectorTestNode(opd1, opd2, booltest);
-  test = gvn().transform(test);
+  if (!Matcher::vectortest_need_second_argument(booltest == BoolTest::overflow, opd1->bottom_type()->isa_vectmask())) {
+    opd2 = opd1;
+  }
+  Node* cmp = new VectorTestNode(opd1, opd2, booltest);
+  cmp = gvn().transform(cmp);
+  BoolTest::mask test = (booltest == BoolTest::ne) ? BoolTest::ne : BoolTest::lt;
+  Node* bol = gvn().transform(new BoolNode(cmp, test));
+  Node* res = gvn().transform(new CMoveINode(bol, gvn().intcon(0), gvn().intcon(1), TypeInt::BOOL));
 
-  set_result(test);
+  set_result(res);
   C->set_max_vector_size(MAX2(C->max_vector_size(), (uint)(num_elem * type2aelembytes(elem_bt))));
   return true;
 }

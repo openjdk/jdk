@@ -1795,9 +1795,6 @@ public:
   void evrord(BasicType type, XMMRegister dst, KRegister mask, XMMRegister src, int shift, bool merge, int vlen_enc);
   void evrord(BasicType type, XMMRegister dst, KRegister mask, XMMRegister src1, XMMRegister src2, bool merge, int vlen_enc);
 
-  void alltrue(Register dst, uint masklen, KRegister src1, KRegister src2, KRegister kscratch);
-  void anytrue(Register dst, uint masklen, KRegister src, KRegister kscratch);
-
   void cmov32( Condition cc, Register dst, Address  src);
   void cmov32( Condition cc, Register dst, Register src);
 
