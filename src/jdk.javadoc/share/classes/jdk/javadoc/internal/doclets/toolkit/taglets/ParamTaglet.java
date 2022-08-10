@@ -38,7 +38,6 @@ import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.Messages;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFinder;
-import jdk.javadoc.internal.doclets.toolkit.util.DocFinder.Input;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
 /**
@@ -239,19 +238,38 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
                                              boolean isFirst) {
         Utils utils = writer.configuration().utils;
         Content result = writer.getOutputInstance();
-        Input input = new DocFinder.Input(writer.configuration().utils, holder, this,
-                Integer.toString(position), kind == ParamKind.TYPE_PARAMETER);
-        DocFinder.Output inheritedDoc = DocFinder.search(writer.configuration(), input);
-        if (!inheritedDoc.inlineTags.isEmpty()) {
+        var r = DocFinder.search((ExecutableElement) holder,
+                m -> extract(utils, m, position, kind == ParamKind.TYPE_PARAMETER),
+                writer.configuration());
+        if (r.isPresent()) {
             String name = kind != ParamKind.TYPE_PARAMETER
                     ? utils.getSimpleName(param)
                     : utils.getTypeName(param.asType(), false);
-            Content content = convertParam(inheritedDoc.holder, kind, writer,
-                    (ParamTree) inheritedDoc.holderTag,
-                    name, isFirst);
+            Content content = convertParam(r.get().method, kind, writer,
+                    r.get().paramTree, name, isFirst);
             result.add(content);
         }
         return result;
+    }
+
+    private record Result(ParamTree paramTree, ExecutableElement method) { }
+
+    private static Optional<Result> extract(Utils utils, ExecutableElement method, int position, boolean typeParam) {
+        CommentHelper ch = utils.getCommentHelper(method);
+        List<ParamTree> tags = typeParam
+                ? utils.getTypeParamTrees(method)
+                : utils.getParamTrees(method);
+        List<? extends Element> parameters = typeParam
+                ? method.getTypeParameters()
+                : method.getParameters();
+        Map<String, Integer> positionOfName = mapNameToPosition(utils, parameters);
+        for (ParamTree tag : tags) {
+            String paramName = ch.getParameterName(tag);
+            if (positionOfName.containsKey(paramName) && positionOfName.get(paramName).equals(position)) {
+                return Optional.of(new Result(tag, method));
+            }
+        }
+        return Optional.empty();
     }
 
     /**
