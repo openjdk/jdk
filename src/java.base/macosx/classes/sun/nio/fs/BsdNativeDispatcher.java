@@ -85,7 +85,29 @@ class BsdNativeDispatcher extends UnixNativeDispatcher {
         return -1;
     }
     private static native int clonefile0(long srcAddress, long dstAddress,
-                                         int flags)
+                                         int flags);
+
+    /**
+     * setattrlist(const char* path, struct attrlist* attrList, void* attrBuf,
+     *             size_t attrBufSize, unsigned long options)
+     */
+    static void setattrlist(UnixPath path, int commonattr, long modTime,
+                            long accTime, long createTime, long options)
+        throws UnixException
+    {
+        try (NativeBuffer buffer = copyToNativeBuffer(path)) {
+            long comp = Blocker.begin();
+            try {
+                setattrlist0(buffer.address(), commonattr, modTime, accTime,
+                             createTime, options);
+            } finally {
+                Blocker.end(comp);
+            }
+        }
+    }
+    private static native void setattrlist0(long pathAddress, int commonattr,
+                                            long modTime, long accTime,
+                                            long createTime, long options)
         throws UnixException;
 
     // initialize field IDs

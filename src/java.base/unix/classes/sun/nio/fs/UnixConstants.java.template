@@ -32,6 +32,7 @@
 #include <sys/stat.h>
 #ifdef _ALLBSD_SOURCE
 #include <sys/clonefile.h>
+#include <sys/attr.h>
 #endif
 
 /* To be able to name the Java constants the same as the C constants without
@@ -155,5 +156,17 @@ class UnixConstants {
     // flags used with clonefile(2)
     static final int PREFIX_CLONE_NOFOLLOW = CLONE_NOFOLLOW;
     static final int PREFIX_CLONE_NOOWNERCOPY = CLONE_NOOWNERCOPY;
+
+    // flags used with setattrlist
+    static final int PREFIX_ATTR_CMN_CRTIME = ATTR_CMN_CRTIME;
+    static final int PREFIX_ATTR_CMN_MODTIME = ATTR_CMN_MODTIME;
+    static final int PREFIX_ATTR_CMN_ACCTIME = ATTR_CMN_ACCTIME;
+    static final int PREFIX_FSOPT_NOFOLLOW = FSOPT_NOFOLLOW;
+#else
+    // not supported (dummy values will not be used at runtime).
+    static final int PREFIX_ATTR_CMN_CRTIME = 00;
+    static final int PREFIX_ATTR_CMN_MODTIME = 00;
+    static final int PREFIX_ATTR_CMN_ACCTIME = 00;
+    static final int PREFIX_FSOPT_NOFOLLOW = 00;
 #endif
 }
