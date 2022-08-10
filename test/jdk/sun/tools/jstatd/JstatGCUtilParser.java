@@ -99,11 +99,13 @@ public class JstatGCUtilParser {
                     && value.equals("-")) {
                     continue;
                 }
-                if (type.equals(GcStatisticsType.INTEGER)) {
+                if (type.equals(GcStatisticsType.INTEGER)
+                    || type.equals(GcStatisticsType.INTEGER_OR_DASH)) {
                     NumberFormat.getInstance().parse(value).intValue();
                     continue;
                 }
-                if (type.equals(GcStatisticsType.DOUBLE)) {
+                if (type.equals(GcStatisticsType.DOUBLE)
+                    || type.equals(GcStatisticsType.DOUBLE_OR_DASH)) {
                     NumberFormat.getInstance().parse(value).doubleValue();
                     continue;
                 }
