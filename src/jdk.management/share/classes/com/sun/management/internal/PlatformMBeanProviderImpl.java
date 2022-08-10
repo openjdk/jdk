@@ -24,9 +24,11 @@
  */
 package com.sun.management.internal;
 
+import com.sun.management.ContainerInfoMXBean;
 import com.sun.management.DiagnosticCommandMBean;
 import com.sun.management.HotSpotDiagnosticMXBean;
 import com.sun.management.ThreadMXBean;
+
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryManagerMXBean;
 import java.lang.management.OperatingSystemMXBean;
@@ -45,7 +47,6 @@ import javax.management.*;
 import jdk.internal.platform.Metrics;
 import jdk.internal.platform.SystemMetrics;
 import sun.management.ManagementFactoryHelper;
-import sun.management.Util;
 import sun.management.spi.PlatformMBeanProvider;
 
 @SuppressWarnings("removal")
@@ -58,20 +59,13 @@ public final class PlatformMBeanProviderImpl extends PlatformMBeanProvider {
     private final List<PlatformComponent<?>> mxbeanList;
     private static HotSpotDiagnostic hsDiagMBean = null;
     private static OperatingSystemMXBean osMBean = null;
-    private static ContainerInfo containerInfoMBean = null;
+    private static ContainerInfoMXBean containerInfoMBean = null;
 
     static {
        AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
            System.loadLibrary("management_ext");
            return null;
        });
-        MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
-        ContainerInfo containerInfoMBean = getContainerInfoMBean();
-        if (containerInfoMBean != null) {
-            try {
-                mbs.registerMBean(containerInfoMBean, new ObjectName(CONTAINER_MBEAN_NAME));
-            } catch (InstanceAlreadyExistsException|MBeanRegistrationException|NotCompliantMBeanException|MalformedObjectNameException e) {}
-        }
     }
 
     public PlatformMBeanProviderImpl() {
@@ -278,6 +272,33 @@ public final class PlatformMBeanProviderImpl extends PlatformMBeanProvider {
             });
         }
 
+        initMBeanList.add(new PlatformComponent<com.sun.management.ContainerInfoMXBean>() {
+            private final Set<String> containerMXBeanInterfaceNames =
+                    Collections.singleton("com.sun.management.ContainerInfoMXBean");
+
+            @Override
+            public Set<Class<? extends com.sun.management.ContainerInfoMXBean>> mbeanInterfaces() {
+                return Collections.singleton(com.sun.management.ContainerInfoMXBean.class);
+            }
+
+            @Override
+            public Set<String> mbeanInterfaceNames() {
+                return containerMXBeanInterfaceNames;
+            }
+
+            @Override
+            public String getObjectNamePattern() {
+                return "java.lang:type=Container";
+            }
+
+            @Override
+            public Map<String, com.sun.management.ContainerInfoMXBean> nameToMBeanMap() {
+                return Collections.<String, com.sun.management.ContainerInfoMXBean>singletonMap(
+                        "java.lang:type=Container",
+                        getContainerInfoMBean());
+            }
+        });
+
         initMBeanList.trimToSize();
         return initMBeanList;
     }
@@ -296,11 +317,11 @@ public final class PlatformMBeanProviderImpl extends PlatformMBeanProvider {
         return osMBean;
     }
 
-    private static synchronized com.sun.management.internal.ContainerInfo getContainerInfoMBean() {
+    private static synchronized ContainerInfoMXBean getContainerInfoMBean() {
         if (containerInfoMBean == null) {
             Metrics containerMetrics = SystemMetrics.instance();
             if (containerMetrics != null) {
-                containerInfoMBean = new ContainerInfo(containerMetrics);
+                containerInfoMBean = new ContainerInfoImpl(containerMetrics);
             }
         }
         return containerInfoMBean;

@@ -23,10 +23,12 @@
 
 package com.sun.management;
 
+import java.lang.management.PlatformManagedObject;
+
 /**
  * This is a special bean , only available on Linux systems
  */
-public interface ContainerInfoMXBean {
+public interface ContainerInfoMXBean  extends PlatformManagedObject {
     /**
      * Returns the interface responsible for providing the
      * platform metrics.

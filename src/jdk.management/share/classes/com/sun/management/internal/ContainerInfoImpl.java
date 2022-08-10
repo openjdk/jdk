@@ -27,10 +27,13 @@ import jdk.internal.platform.Metrics;
 
 import com.sun.management.ContainerInfoMXBean;
 
-public class ContainerInfo implements ContainerInfoMXBean {
+import javax.management.MalformedObjectNameException;
+import javax.management.ObjectName;
+
+public class ContainerInfoImpl implements ContainerInfoMXBean {
     final Metrics containerMetrics ;
 
-    public ContainerInfo(Metrics containerMetrics) {
+    public ContainerInfoImpl(Metrics containerMetrics) {
         this.containerMetrics = containerMetrics;
     }
 
@@ -75,4 +78,12 @@ public class ContainerInfo implements ContainerInfoMXBean {
         return containerMetrics.getMemoryAndSwapLimit();
     }
 
+    @Override
+    public ObjectName getObjectName() {
+        try {
+            return new ObjectName("java.lang:type=Container");
+        } catch (MalformedObjectNameException mne) {
+            throw new Error("Can't happen", mne);
+        }
+    }
 }
