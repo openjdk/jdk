@@ -84,9 +84,6 @@ public class SeeTaglet extends BaseTaglet implements InheritableTaglet {
 
     private static Optional<Result> extract(Utils utils, ExecutableElement method) {
         List<? extends SeeTree> tags = utils.getSeeTrees(method);
-        if (tags.isEmpty()) {
-            return Optional.empty();
-        }
-        return Optional.of(new Result(tags, method));
+        return tags.isEmpty() ? Optional.empty() : Optional.of(new Result(tags, method));
     }
 }
