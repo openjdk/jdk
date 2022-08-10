@@ -33,13 +33,10 @@
  *             be garbage collected.
  * @author  Alexei Guibadoulline and Mandy Chung
  *
- * @requires vm.gc == null | vm.gc == "Parallel"
- *
  * @modules java.base/jdk.internal.misc
  *          java.management
  *
  * @run main Pending
- * @run main/othervm -XX:+UseParallelGC Pending
  */
 
 import java.lang.management.*;

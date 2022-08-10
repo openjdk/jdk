@@ -36,14 +36,10 @@
  * @bug     4982128
  * @summary Test low memory detection of non-heap memory pool
  *
- * @requires vm.gc == null | vm.gc == "Serial" | vm.gc == "Parallel"
- *
  * @run build MemoryUtil
  *
  * @run main/othervm/timeout=600 -noclassgc -XX:MaxMetaspaceSize=32m
- * -XX:+UseSerialGC LowMemoryTest2
- * @run main/othervm/timeout=600 -noclassgc -XX:MaxMetaspaceSize=32m
- * -XX:+UseParallelGC LowMemoryTest2
+ * LowMemoryTest2
  * @run main/othervm/timeout=600 -noclassgc -XX:MaxMetaspaceSize=16m
  * -XX:CompressedClassSpaceSize=4m LowMemoryTest2
  */

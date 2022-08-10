@@ -34,17 +34,7 @@
  * @build MemoryManagement MemoryUtil
  * @run main/othervm/timeout=600 -Xmn8m -XX:+IgnoreUnrecognizedVMOptions
  * -XX:G1HeapRegionSize=1 -XX:-UseLargePages MemoryManagement
- */
-
-/*
- * @test
- * @bug     4530538
- * @summary Run MemoryManagement test with parallel GC and serial GC
- *
- * @requires vm.gc == null | vm.gc == "Serial" | vm.gc == "Parallel"
- *
- * @run main/othervm/timeout=600 -XX:+UseParallelGC MemoryManagement
- * @run main/othervm/timeout=600 -XX:+UseSerialGC MemoryManagement
+ * @run main/timeout=600 MemoryManagement
  */
 
 import java.lang.management.*;

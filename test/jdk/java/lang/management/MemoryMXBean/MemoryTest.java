@@ -46,20 +46,6 @@
  */
 
 /*
- * @test
- * @bug     4530538
- * @summary Test with default collector and with parallel scavenger collector
- *
- * @author  Mandy Chung
- *
- * @requires vm.gc == null | vm.gc == "Parallel"
- *
- * @modules jdk.management
- * @run main MemoryTest 2 3
- * @run main/othervm -XX:+UseParallelGC MemoryTest 2 3
- */
-
-/*
  * NOTE: This expected result is hardcoded in this test and this test
  *       will be affected if the heap memory layout is changed in
  *       the future implementation.
