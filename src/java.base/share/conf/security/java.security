@@ -22,6 +22,10 @@
 # the command line, set the key security.overridePropertiesFile
 # to false in the master security properties file. It is set to true
 # by default.
+#
+# If the master security properties file is missing, the JDK
+# implementation will throw an InternalError when initializing
+# the java.security.Security class.
 
 # In this file, various security properties are set for use by
 # java.security classes. This is where users can statically register
