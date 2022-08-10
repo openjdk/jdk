@@ -32,31 +32,32 @@ class ClassLoaderData;
 class LoaderConstraintEntry;
 class Symbol;
 
-class LoaderConstraintTable : public Hashtable<InstanceKlass*, mtClass> {
+class LoaderConstraintTable : AllStatic {
 
 private:
-  LoaderConstraintEntry** find_loader_constraint(Symbol* name,
+  static LoaderConstraintEntry* find_loader_constraint(Symbol* name,
                                                  Handle loader);
 
 public:
 
   LoaderConstraintTable(int table_size);
 
-  LoaderConstraintEntry* new_entry(unsigned int hash, Symbol* name,
+  static LoaderConstraintEntry* new_entry(unsigned int hash, Symbol* name,
                                    InstanceKlass* klass, int num_loaders,
                                    int max_loaders);
-  void free_entry(LoaderConstraintEntry *entry);
 
-  LoaderConstraintEntry* bucket(int i) const {
+  static void free_entry(LoaderConstraintEntry *entry);
+
+  /*LoaderConstraintEntry* bucket(int i) const {
     return (LoaderConstraintEntry*)Hashtable<InstanceKlass*, mtClass>::bucket(i);
   }
 
   LoaderConstraintEntry** bucket_addr(int i) {
     return (LoaderConstraintEntry**)Hashtable<InstanceKlass*, mtClass>::bucket_addr(i);
-  }
+  }*/
 
   // Check class loader constraints
-  bool add_entry(Symbol* name, InstanceKlass* klass1, Handle loader1,
+  static bool add_entry(Symbol* name, InstanceKlass* klass1, Handle loader1,
                                     InstanceKlass* klass2, Handle loader2);
 
   // Note:  The main entry point for this module is via SystemDictionary.
@@ -65,42 +66,54 @@ public:
   //                                           Handle loader1, Handle loader2,
   //                                           bool is_method)
 
-  InstanceKlass* find_constrained_klass(Symbol* name, Handle loader);
+  static InstanceKlass* find_constrained_klass(Symbol* name, Handle loader);
 
   // Class loader constraints
 
-  void ensure_loader_constraint_capacity(LoaderConstraintEntry *p, int nfree);
-  void extend_loader_constraint(LoaderConstraintEntry* p, Handle loader,
+  static void ensure_loader_constraint_capacity(LoaderConstraintEntry *p, int nfree);
+  static void extend_loader_constraint(LoaderConstraintEntry* p, Handle loader,
                                 InstanceKlass* klass);
-  void merge_loader_constraints(LoaderConstraintEntry** pp1,
-                                LoaderConstraintEntry** pp2, InstanceKlass* klass);
+  static void merge_loader_constraints(LoaderConstraintEntry* pp1,
+                                LoaderConstraintEntry* pp2, InstanceKlass* klass);
 
-  bool check_or_update(InstanceKlass* k, Handle loader, Symbol* name);
+  static bool check_or_update(InstanceKlass* k, Handle loader, Symbol* name);
 
-  void purge_loader_constraints();
+  static void purge_loader_constraints();
 
-  void verify(PlaceholderTable* placeholders);
-  void print() const;
-  void print_on(outputStream* st) const;
+  static void verify(PlaceholderTable* placeholders);
+  static void print();
+  static void print_on(outputStream* st);
 };
 
-class LoaderConstraintEntry : public HashtableEntry<InstanceKlass*, mtClass> {
+class LoaderConstraintEntry : public CHeapObj<mtClass> {
 private:
   Symbol*                _name;                   // class name
+  InstanceKlass*         _klass;
   int                    _num_loaders;
   int                    _max_loaders;
   // Loader constraints enforce correct linking behavior.
   // Thus, it really operates on ClassLoaderData which represents linking domain,
   // not class loaders.
-  ClassLoaderData**              _loaders;                // initiating loaders
+  ClassLoaderData**      _loaders;                // initiating loaders
+
 
 public:
 
-  InstanceKlass* klass() { return literal(); }
-  InstanceKlass** klass_addr() { return literal_addr(); }
-  void set_klass(InstanceKlass* k) { set_literal(k); }
+  LoaderConstraintEntry(Symbol* name, InstanceKlass* klass, int num_loaders, int max_loaders):
+    _name(name),
+    _klass(klass),
+    _num_loaders(num_loaders),
+    _max_loaders(max_loaders) {}
 
-  LoaderConstraintEntry* next() {
+  LoaderConstraintEntry(Symbol* name, InstanceKlass* klass, int num_loaders, int max_loaders, Handle class_loader1, Handle class_loader2);
+
+  ~LoaderConstraintEntry();
+
+  InstanceKlass* klass() { return _klass; }
+  //InstanceKlass** klass_addr() { return literal_addr(); }
+  void set_klass(InstanceKlass* k) { _klass = k; }
+
+  /*LoaderConstraintEntry* next() {
     return (LoaderConstraintEntry*)HashtableEntry<InstanceKlass*, mtClass>::next();
   }
 
@@ -109,7 +122,7 @@ public:
   }
   void set_next(LoaderConstraintEntry* next) {
     HashtableEntry<InstanceKlass*, mtClass>::set_next(next);
-  }
+  }*/
 
   Symbol* name() { return _name; }
   void set_name(Symbol* name) {
