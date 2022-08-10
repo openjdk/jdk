@@ -254,22 +254,17 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
 
     private record Result(ParamTree paramTree, ExecutableElement method) { }
 
-    private static Optional<Result> extract(Utils utils, ExecutableElement method, int position, boolean typeParam) {
-        CommentHelper ch = utils.getCommentHelper(method);
+    private static Optional<Result> extract(Utils utils, ExecutableElement method, Integer position, boolean typeParam) {
+        var ch = utils.getCommentHelper(method);
         List<ParamTree> tags = typeParam
                 ? utils.getTypeParamTrees(method)
                 : utils.getParamTrees(method);
         List<? extends Element> parameters = typeParam
                 ? method.getTypeParameters()
                 : method.getParameters();
-        Map<String, Integer> positionOfName = mapNameToPosition(utils, parameters);
-        for (ParamTree tag : tags) {
-            String paramName = ch.getParameterName(tag);
-            if (positionOfName.containsKey(paramName) && positionOfName.get(paramName).equals(position)) {
-                return Optional.of(new Result(tag, method));
-            }
-        }
-        return Optional.empty();
+        var positionOfName = mapNameToPosition(utils, parameters);
+        return tags.stream().filter(t -> position.equals(positionOfName.get(ch.getParameterName(t))))
+                .map(t -> new Result(t, method)).findAny();
     }
 
     /**
