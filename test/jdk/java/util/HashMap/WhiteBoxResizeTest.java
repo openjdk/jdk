@@ -48,6 +48,7 @@ import java.util.function.Supplier;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNull;
+import static org.testng.Assert.assertThrows;
 
 /*
  * @test
@@ -447,13 +448,6 @@ public class WhiteBoxResizeTest {
      */
     @Test(dataProvider = "negativeNumMappings")
     public void testNegativeNumMappings(final IntFunction<?> method, final String methodName) {
-        try {
-            method.apply(-1);
-            // expected to fail but didn't
-            throw new AssertionError(methodName + " was expected to throw" +
-                    " IllegalArgumentException for param -1, but didn't");
-        } catch (IllegalArgumentException expected) {
-            // received the expected exception
-        }
+        assertThrows(IllegalArgumentException.class, () -> method.apply(-1));
     }
 }
