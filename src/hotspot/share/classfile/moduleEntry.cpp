@@ -684,7 +684,6 @@ void ModuleEntryTable::modules_do(void f(ModuleEntry*)) {
   auto do_f = [&] (const Symbol*& key, ModuleEntry*& entry) {
     f(entry);
   };
-  assert_locked_or_safepoint(Module_lock);
   _table.iterate_all(do_f);
 }
 
@@ -692,7 +691,6 @@ void ModuleEntryTable::modules_do(ModuleClosure* closure) {
   auto do_f = [&] (const Symbol*& key, ModuleEntry*& entry) {
     closure->do_module(entry);
   };
-  assert_locked_or_safepoint(Module_lock);
   _table.iterate_all(do_f);
 }
 
