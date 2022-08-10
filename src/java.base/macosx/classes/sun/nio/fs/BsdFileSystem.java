@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,10 @@ import java.nio.file.*;
 import java.io.IOException;
 import java.util.*;
 import java.security.AccessController;
+import sun.nio.ch.IOStatus;
 import sun.security.action.GetPropertyAction;
+
+import static sun.nio.fs.UnixConstants.*;
 
 /**
  * Bsd implementation of FileSystem
@@ -65,6 +68,38 @@ class BsdFileSystem extends UnixFileSystem {
     @Override
     public Set<String> supportedFileAttributeViews() {
         return SupportedFileFileAttributeViewsHolder.supportedFileAttributeViews;
+    }
+
+    /**
+     * Clones the file whose path name is {@code src} to that whose path
+     * name is {@code dst} using the {@code clonefile} system call.
+     *
+     * @param src the path of the source file
+     * @param dst the path of the destination file (clone)
+     * @param followLinks whether to follow links
+     *
+     * @return 0 on success, IOStatus.UNSUPPORTED_CASE if the call does not work
+     *         with the given parameters, or IOStatus.UNSUPPORTED if cloning is
+     *         not supported on this platform
+     */
+    @Override
+    protected int clone(UnixPath src, UnixPath dst, boolean followLinks)
+        throws IOException {
+        int flags = followLinks ? 0 : CLONE_NOFOLLOW;
+        try {
+            return BsdNativeDispatcher.clonefile(src, dst, flags);
+        } catch (UnixException x) {
+            switch (x.errno()) {
+                case ENOTSUP: // cloning not supported by filesystem
+                    return IOStatus.UNSUPPORTED;
+                case EXDEV:   // src and dst on different filesystems
+                case ENOTDIR: // problematic path parameter(s)
+                    return IOStatus.UNSUPPORTED_CASE;
+                default:
+                    x.rethrowAsIOException(src, dst);
+                    return IOStatus.THROWN;
+            }
+        }
     }
 
     @Override

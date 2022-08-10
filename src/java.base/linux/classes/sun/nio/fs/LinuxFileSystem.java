@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,11 @@ package sun.nio.fs;
 import java.nio.file.*;
 import java.io.IOException;
 import java.util.*;
+import sun.nio.ch.IOStatus;
+
 import static sun.nio.fs.LinuxNativeDispatcher.*;
+import static sun.nio.fs.UnixConstants.*;
+import static sun.nio.fs.UnixNativeDispatcher.*;
 
 /**
  * Linux implementation of FileSystem
@@ -65,6 +69,115 @@ class LinuxFileSystem extends UnixFileSystem {
     @Override
     public Set<String> supportedFileAttributeViews() {
         return SupportedFileFileAttributeViewsHolder.supportedFileAttributeViews;
+    }
+
+    private static UnixException catEx(UnixException x, UnixException y) {
+        assert x != null || y != null;
+        UnixException ue = y;
+        if (x != null) {
+            ue = x;
+            if (y != null) {
+                ue.addSuppressed(y);
+            }
+        }
+        return ue;
+    }
+
+    /**
+     * Clones the file whose path name is {@code src} to that whose path
+     * name is {@code dst} using the {@code ioctl} system call with the
+     * {@code FICLONE} request code.
+     *
+     * @param src the path of the source file
+     * @param dst the path of the destination file (clone)
+     * @param followLinks whether to follow links
+     *
+     * @return 0 on success, IOStatus.UNSUPPORTED_CASE if the call does not work
+     *         with the given parameters, or IOStatus.UNSUPPORTED if cloning is
+     *         not supported on this platform
+     */
+    protected int clone(UnixPath src, UnixPath dst, boolean followLinks)
+        throws IOException {
+        int srcFD = 0;
+        try {
+            srcFD = open(src, O_RDONLY, 0);
+        } catch (UnixException x) {
+            x.rethrowAsIOException(src);
+            return IOStatus.THROWN;
+        }
+
+        int dstFD = 0;
+        try {
+            dstFD = open(dst, O_CREAT | O_WRONLY, 0666);
+        } catch (UnixException x) {
+            try {
+                UnixNativeDispatcher.close(srcFD);
+            } catch (UnixException y) {
+                catEx(x, y).rethrowAsIOException(src, dst);
+                return IOStatus.THROWN;
+            }
+            x.rethrowAsIOException(dst);
+            return IOStatus.THROWN;
+        }
+
+        UnixException ioctlEx = null;
+        int result;
+        try {
+            result = ioctl_ficlone(dstFD, srcFD);
+        } catch (UnixException x) {
+            switch (x.errno()) {
+                case EINVAL:
+                    result = IOStatus.UNSUPPORTED;
+                    break;
+                case EPERM:
+                    ioctlEx = x;
+                    result = IOStatus.THROWN;
+                    break;
+                default:
+                    result = IOStatus.UNSUPPORTED_CASE;
+                    break;
+            }
+        }
+
+        UnixException ue = ioctlEx;
+        UnixPath s = null;
+        UnixPath d = null;
+
+        try {
+            UnixNativeDispatcher.close(dstFD);
+        } catch (UnixException x) {
+            ue = catEx(ue, x);
+            d = dst;
+        }
+
+        // delete dst to avoid later exception in Java layer
+        if (result != 0) {
+            try {
+                unlink(dst);
+            } catch (UnixException x) {
+                ue = catEx(ue, x);
+                d = dst;
+            }
+        }
+
+        try {
+            UnixNativeDispatcher.close(srcFD);
+        } catch (UnixException x) {
+            ue = catEx(ue, x);
+            s = src;
+        }
+
+        if (ue != null) {
+            if (ioctlEx != null)
+                throw new IOException(ioctlEx.errorString(), ioctlEx);
+            else if (s != null && d != null)
+                ue.rethrowAsIOException(s, d);
+            else
+                ue.rethrowAsIOException(s != null ? s : d);
+            return IOStatus.THROWN;
+        }
+
+        return result;
     }
 
     @Override

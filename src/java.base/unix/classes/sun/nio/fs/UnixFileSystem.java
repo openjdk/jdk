@@ -31,6 +31,7 @@ import java.nio.file.spi.FileSystemProvider;
 import java.io.IOException;
 import java.util.*;
 import java.util.regex.Pattern;
+import sun.nio.ch.IOStatus;
 import sun.security.action.GetPropertyAction;
 
 /**
@@ -119,6 +120,28 @@ abstract class UnixFileSystem
     @Override
     public final void close() throws IOException {
         throw new UnsupportedOperationException();
+    }
+
+    /**
+     * Clones the file whose path name is {@code src} to that whose path
+     * name is {@code dst} using a platform-specific system call.
+     *
+     * @implSpec
+     * The implementation in this class always returns
+     * {@code IOStatus.UNSUPPORTED}. This method should be overridden
+     * on platforms which support file cloning.
+     *
+     * @param src the path of the source file
+     * @param dst the path of the destination file (clone)
+     * @param followLinks whether to follow links
+     *
+     * @return 0 on success, IOStatus.UNSUPPORTED_CASE if the call does not work
+     *         with the given parameters, or IOStatus.UNSUPPORTED if cloning is
+     *         not supported on this platform
+     */
+    protected int clone(UnixPath src, UnixPath dst, boolean followLinks)
+        throws IOException {
+        return IOStatus.UNSUPPORTED;
     }
 
     /**

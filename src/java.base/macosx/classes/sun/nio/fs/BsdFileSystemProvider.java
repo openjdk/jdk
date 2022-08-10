@@ -39,17 +39,6 @@ class BsdFileSystemProvider extends UnixFileSystemProvider {
     }
 
     @Override
-    protected UnixCopyFile fileCopier() {
-        UnixCopyFile copier = unixCopyFile;
-        if (copier == null) {
-            // OK if two or more threads create a BsdCopyFile instance
-            copier = new BsdCopyFile();
-            unixCopyFile = copier;
-        }
-        return copier;
-    }
-
-    @Override
     BsdFileSystem newFileSystem(String dir) {
         return new BsdFileSystem(this, dir);
     }

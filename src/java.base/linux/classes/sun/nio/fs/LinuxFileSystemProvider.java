@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,17 +39,6 @@ import jdk.internal.util.StaticProperty;
 class LinuxFileSystemProvider extends UnixFileSystemProvider {
     public LinuxFileSystemProvider() {
         super();
-    }
-
-    @Override
-    protected UnixCopyFile fileCopier() {
-        UnixCopyFile copier = unixCopyFile;
-        if (copier == null) {
-            // OK if two or more threads create a LinuxCopyFile instance
-            copier = new LinuxCopyFile();
-            unixCopyFile = copier;
-        }
-        return copier;
     }
 
     @Override
