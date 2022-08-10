@@ -180,9 +180,9 @@ void G1Policy::record_new_heap_size(uint new_number_of_regions) {
 }
 
 uint G1Policy::calculate_desired_eden_length_by_mmu() const {
-  // One could argue that any useful eden length to keep any MMU would be 1, but
-  // in theory this is possible. Other constraints enforce a minimum eden of 1
-  // anyway.
+  // One could argue that any useful eden length to keep any MMU wouldn't be zero, but
+  // in theory this is possible. Other constraints enforce a minimum eden size of one
+  // region anyway.
   uint desired_min_length = 0;
   if (use_adaptive_young_list_length()) {
     double now_sec = os::elapsedTime();
@@ -402,7 +402,6 @@ uint G1Policy::calculate_desired_eden_length_by_pause(double base_time_ms,
                                                       max_eden_length);
   }
 }
-
 
 uint G1Policy::calculate_desired_eden_length_before_young_only(double base_time_ms,
                                                                uint min_eden_length,
