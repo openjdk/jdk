@@ -754,6 +754,10 @@ public class MLet extends java.net.URLClassLoader
      public ObjectName preRegister(MBeanServer server, ObjectName name)
              throws Exception {
 
+         if (System.getProperty("com.sun.jmx.enableMLetRegistration") == null) {
+             throw new Exception("M-Let disabled: com.sun.jmx.enableMLetRegistration not set.");
+         }
+
          // Initialize local pointer to the MBean server
          setMBeanServer(server);
 

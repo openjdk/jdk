@@ -32,9 +32,9 @@
  *
  * @run clean ParserInfiniteLoopTest
  * @run build ParserInfiniteLoopTest
- * @run main/othervm ParserInfiniteLoopTest mlet1.html
- * @run main/othervm ParserInfiniteLoopTest mlet2.html
- * @run main/othervm ParserInfiniteLoopTest mlet3.html
+ * @run main/othervm -Dcom.sun.jmx.enableMLetRegistration=true ParserInfiniteLoopTest mlet1.html
+ * @run main/othervm -Dcom.sun.jmx.enableMLetRegistration=true ParserInfiniteLoopTest mlet2.html
+ * @run main/othervm -Dcom.sun.jmx.enableMLetRegistration=true ParserInfiniteLoopTest mlet3.html
  */
 
 import java.io.File;

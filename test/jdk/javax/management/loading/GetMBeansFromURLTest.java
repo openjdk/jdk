@@ -31,7 +31,7 @@
  *
  * @run clean GetMBeansFromURLTest
  * @run build GetMBeansFromURLTest
- * @run main GetMBeansFromURLTest
+ * @run main  GetMBeansFromURLTest
  */
 
 import javax.management.MBeanServer;
@@ -59,6 +59,8 @@ public class GetMBeansFromURLTest {
         // Register the MLet MBean with the MBeanServer
         //
         System.out.println("Register the MLet MBean");
+        // Set Property here, as test is on already in "othervm":
+        System.setProperty("com.sun.jmx.enableMLetRegistration", "true");
         ObjectName mletObjectName = new ObjectName("Test:type=MLet");
         mbs.registerMBean(mlet, mletObjectName);
 

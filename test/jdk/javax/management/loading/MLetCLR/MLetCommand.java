@@ -31,7 +31,7 @@
  *
  * @run clean MLetCommand
  * @run build MLetCommand
- * @run main/othervm/java.security.policy=policy MLetCommand
+ * @run main/othervm/java.security.policy=policy -Dcom.sun.jmx.enableMLetRegistration=true MLetCommand
  */
 
 import javax.management.MBeanServer;

@@ -29,7 +29,7 @@
  *
  * @run clean MletParserLocaleTest
  * @run build MletParserLocaleTest
- * @run main/othervm MletParserLocaleTest mlet4.html
+ * @run main/othervm -Dcom.sun.jmx.enableMLetRegistration=true MletParserLocaleTest mlet4.html
  */
 
 import java.io.File;
