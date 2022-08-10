@@ -40,21 +40,6 @@
 #include "runtime/threads.hpp"
 #include "utilities/debug.hpp"
 
-class OopKeepaliveClosure : public OopClosure {
-  CollectedHeap* _heap;
-
-public:
-  OopKeepaliveClosure()
-    : _heap(Universe::heap()) {}
-
-  virtual void do_oop(oop* p) {
-    oop obj = NativeAccess<ON_PHANTOM_OOP_REF | AS_NO_KEEPALIVE>::oop_load(p);
-    _heap->keep_alive(obj);
-  }
-
-  virtual void do_oop(narrowOop* p) { ShouldNotReachHere(); }
-};
-
 int BarrierSetNMethod::disarmed_value() const {
   return *disarmed_value_address();
 }
@@ -76,9 +61,26 @@ bool BarrierSetNMethod::supports_entry_barrier(nmethod* nm) {
 }
 
 bool BarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
+  class OopKeepAliveClosure : public OopClosure {
+  public:
+    OopKeepAliveClosure() {}
+
+    virtual void do_oop(oop* p) {
+      // Loads on nmethod oops are phantom strength. The intend of the load
+      // is to just read the oop, and then explicitly keep it alive w.r.t.
+      // concurrent marking. Using the keep alive side effects of a normal
+      // phantom load is less explicit, and doesn't actually do anything
+      // unless the returned value is used as an oop.
+      oop obj = NativeAccess<ON_PHANTOM_OOP_REF | AS_NO_KEEPALIVE>::oop_load(p);
+      Universe::heap()->keep_alive(obj);
+    }
+
+    virtual void do_oop(narrowOop* p) { ShouldNotReachHere(); }
+  };
+
   // If the nmethod is the only thing pointing to the oops, and we are using a
   // SATB GC, then it is important that this code marks them live.
-  OopKeepaliveClosure cl;
+  OopKeepAliveClosure cl;
   nm->oops_do(&cl);
 
   // CodeCache sweeper support
