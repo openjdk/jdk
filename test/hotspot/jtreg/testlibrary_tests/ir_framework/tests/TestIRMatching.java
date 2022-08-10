@@ -962,8 +962,8 @@ class Loops {
 
     @Test
     @IR(failOn = IRNode.LOOP) // fails
-    @IR(failOn = IRNode.COUNTEDLOOP)
-    @IR(failOn = IRNode.COUNTEDLOOP_MAIN)
+    @IR(failOn = IRNode.COUNTED_LOOP)
+    @IR(failOn = IRNode.COUNTED_LOOP_MAIN)
     public void loop() {
         for (int i = 0; i < limit; i++) {
             dontInline();
@@ -972,8 +972,8 @@ class Loops {
 
     @Test
     @IR(failOn = IRNode.LOOP)
-    @IR(failOn = IRNode.COUNTEDLOOP) // fails
-    @IR(failOn = IRNode.COUNTEDLOOP_MAIN)
+    @IR(failOn = IRNode.COUNTED_LOOP) // fails
+    @IR(failOn = IRNode.COUNTED_LOOP_MAIN)
     public void countedLoop() {
         for (int i = 0; i < 2000; i++) {
             dontInline();
@@ -982,8 +982,8 @@ class Loops {
 
     @Test
     @IR(failOn = IRNode.LOOP) // fails
-    @IR(failOn = IRNode.COUNTEDLOOP) // fails
-    @IR(failOn = IRNode.COUNTEDLOOP_MAIN)
+    @IR(failOn = IRNode.COUNTED_LOOP) // fails
+    @IR(failOn = IRNode.COUNTED_LOOP_MAIN)
     public void loopAndCountedLoop() {
         for (int i = 0; i < 2000; i++) {
             for (int j = 0; j < limit; j++) {
@@ -994,8 +994,8 @@ class Loops {
 
     @Test
     @IR(failOn = IRNode.LOOP)
-    @IR(failOn = IRNode.COUNTEDLOOP) // fails
-    @IR(failOn = IRNode.COUNTEDLOOP_MAIN) // fails
+    @IR(failOn = IRNode.COUNTED_LOOP) // fails
+    @IR(failOn = IRNode.COUNTED_LOOP_MAIN) // fails
     public void countedLoopMain() {
         // Cannot unroll completely -> create pre/main/post
         for (int i = 0; i < 100; i++) {
@@ -1005,8 +1005,8 @@ class Loops {
 
     @Test
     @IR(failOn = IRNode.LOOP)
-    @IR(failOn = IRNode.COUNTEDLOOP)
-    @IR(failOn = IRNode.COUNTEDLOOP_MAIN)
+    @IR(failOn = IRNode.COUNTED_LOOP)
+    @IR(failOn = IRNode.COUNTED_LOOP_MAIN)
     public void countedLoopUnrolled() {
         // Completely unrolled -> no pre/main/post
         for (int i = 0; i < 8; i++) {
@@ -1248,7 +1248,7 @@ class CheckCastArray {
 class CompilationOutputOfFails {
 
     @Test
-    @IR(failOn = IdealDefaultRegexes.COUNTEDLOOP + "[\\s\\S]*" + "call")
+    @IR(failOn = IdealDefaultRegexes.COUNTED_LOOP + "[\\s\\S]*" + "call")
     public void both1() {
         for (int i = 0; i < 100; i++) {
             dontInline();
@@ -1256,7 +1256,7 @@ class CompilationOutputOfFails {
     }
 
     @Test
-    @IR(failOn = IdealDefaultRegexes.COUNTEDLOOP + "|" + "call")
+    @IR(failOn = IdealDefaultRegexes.COUNTED_LOOP + "|" + "call")
     public void both2() {
         for (int i = 0; i < 100; i++) {
             dontInline();
@@ -1264,7 +1264,7 @@ class CompilationOutputOfFails {
     }
 
     @Test
-    @IR(failOn = IRNode.COUNTEDLOOP)
+    @IR(failOn = IRNode.COUNTED_LOOP)
     @IR(failOn = "call")
     public void both3() {
         for (int i = 0; i < 100; i++) {
@@ -1273,7 +1273,7 @@ class CompilationOutputOfFails {
     }
 
     @Test
-    @IR(counts = {IdealDefaultRegexes.COUNTEDLOOP + "[\\s\\S]*" + "call", "0"})
+    @IR(counts = {IdealDefaultRegexes.COUNTED_LOOP + "[\\s\\S]*" + "call", "0"})
     public void both4() {
         for (int i = 0; i < 100; i++) {
             dontInline();
@@ -1281,7 +1281,7 @@ class CompilationOutputOfFails {
     }
 
     @Test
-    @IR(counts = {IdealDefaultRegexes.COUNTEDLOOP + "|" + "call", "1"})
+    @IR(counts = {IdealDefaultRegexes.COUNTED_LOOP + "|" + "call", "1"})
     public void both5() {
         for (int i = 0; i < 100; i++) {
             dontInline();
@@ -1289,7 +1289,7 @@ class CompilationOutputOfFails {
     }
 
     @Test
-    @IR(counts = {IRNode.COUNTEDLOOP, "0"})
+    @IR(counts = {IRNode.COUNTED_LOOP, "0"})
     @IR(counts = {"call", "0"})
     public void both6() {
         for (int i = 0; i < 100; i++) {
@@ -1298,7 +1298,7 @@ class CompilationOutputOfFails {
     }
 
     @Test
-    @IR(failOn = IRNode.COUNTEDLOOP)
+    @IR(failOn = IRNode.COUNTED_LOOP)
     @IR(counts = {"call", "0"})
     public void both7() {
         for (int i = 0; i < 100; i++) {
@@ -1307,7 +1307,7 @@ class CompilationOutputOfFails {
     }
 
     @Test
-    @IR(failOn = IRNode.COUNTEDLOOP)
+    @IR(failOn = IRNode.COUNTED_LOOP)
     public void ideal1() {
         for (int i = 0; i < 100; i++) {
             dontInline();
@@ -1315,7 +1315,7 @@ class CompilationOutputOfFails {
     }
 
     @Test
-    @IR(failOn = IRNode.COUNTEDLOOP)
+    @IR(failOn = IRNode.COUNTED_LOOP)
     @IR(failOn = IRNode.ALLOC) // not fail
     public void ideal2() {
         for (int i = 0; i < 100; i++) {
@@ -1324,7 +1324,7 @@ class CompilationOutputOfFails {
     }
 
     @Test
-    @IR(failOn = IRNode.COUNTEDLOOP)
+    @IR(failOn = IRNode.COUNTED_LOOP)
     @IR(counts = {IRNode.ALLOC, "0"}) // not fail
     public void ideal3() {
         for (int i = 0; i < 100; i++) {
@@ -1333,7 +1333,7 @@ class CompilationOutputOfFails {
     }
 
     @Test
-    @IR(counts = {IRNode.COUNTEDLOOP, "2"})
+    @IR(counts = {IRNode.COUNTED_LOOP, "2"})
     public void ideal4() {
         for (int i = 0; i < 100; i++) {
             dontInline();
@@ -1342,7 +1342,7 @@ class CompilationOutputOfFails {
 
     @Test
     @IR(failOn = IRNode.ALLOC) // not fail
-    @IR(counts = {IRNode.COUNTEDLOOP, "2"})
+    @IR(counts = {IRNode.COUNTED_LOOP, "2"})
     public void ideal5() {
         for (int i = 0; i < 100; i++) {
             dontInline();
@@ -1351,7 +1351,7 @@ class CompilationOutputOfFails {
 
     @Test
     @IR(counts = {IRNode.ALLOC, "0"}) // not fail
-    @IR(counts = {IRNode.COUNTEDLOOP, "2"})
+    @IR(counts = {IRNode.COUNTED_LOOP, "2"})
     public void ideal6() {
         for (int i = 0; i < 100; i++) {
             dontInline();
@@ -1359,8 +1359,8 @@ class CompilationOutputOfFails {
     }
 
     @Test
-    @IR(counts = {IRNode.COUNTEDLOOP, "5"})
-    @IR(counts = {IRNode.COUNTEDLOOP, "2"})
+    @IR(counts = {IRNode.COUNTED_LOOP, "5"})
+    @IR(counts = {IRNode.COUNTED_LOOP, "2"})
     public void ideal7() {
         for (int i = 0; i < 100; i++) {
             dontInline();
@@ -1386,7 +1386,7 @@ class CompilationOutputOfFails {
 
     @Test
     @IR(failOn = "call")
-    @IR(counts = {IRNode.COUNTEDLOOP, "1"}) // not fail
+    @IR(counts = {IRNode.COUNTED_LOOP, "1"}) // not fail
     public void opto3() {
         for (int i = 0; i < 100; i++) {
             dontInline();

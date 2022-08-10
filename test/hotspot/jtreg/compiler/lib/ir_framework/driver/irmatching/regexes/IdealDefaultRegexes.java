@@ -66,6 +66,10 @@ import static compiler.lib.ir_framework.driver.irmatching.regexes.DefaultRegexes
  * @see CompilePhase
  * @see DefaultRegexes
  */
+
+/**
+ * TODO: Rethink this and MachDefaultRegexes to make it more user friendly and clearer...
+ */
 public class IdealDefaultRegexes {
 
     public static final String STORE = START + "Store(B|C|S|I|L|F|D|P|N)" + MID + END;
@@ -114,10 +118,10 @@ public class IdealDefaultRegexes {
     public static final String LOAD_KLASS  = START + "LoadK" + MID + END;
 
     public static final String LOOP   = START + "Loop" + MID + END;
-    public static final String COUNTEDLOOP = START + "CountedLoop\\b" + MID + END;
-    public static final String COUNTEDLOOP_MAIN = START + "CountedLoop\\b" + MID + "main" + END;
-    public static final String OUTERSTRIPMINED_LOOP = START + "OuterStripMinedLoop\\b" + MID + END;
-    public static final String LONGCOUNTED_LOOP = START + "LongCountedLoop\\b" + MID + END;
+    public static final String COUNTED_LOOP = START + "CountedLoop\\b" + MID + END;
+    public static final String COUNTED_LOOP_MAIN = START + "CountedLoop\\b" + MID + "main" + END;
+    public static final String OUTER_STRIP_MINED_LOOP = START + "OuterStripMinedLoop\\b" + MID + END;
+    public static final String LONG_COUNTED_LOOP = START + "LongCountedLoop\\b" + MID + END;
     public static final String IF = START + "If\\b" + MID + END;
 
     public static final String CALL = START + "Call.*Java" + MID + END;
@@ -214,6 +218,13 @@ public class IdealDefaultRegexes {
     public static final String MIN_V = START + "MinV" + MID + END;
     public static final String MAX_V = START + "MaxV" + MID + END;
 
+    public static final String AND_V = START + "AndV" + MID + END;
+    public static final String OR_V = START + "OrV" + MID + END;
+    public static final String XOR_V = START + "XorV" + MID + END;
+    public static final String AND_V_MASK = START + "AndVMask" + MID + END;
+    public static final String OR_V_MASK = START + "OrVMask" + MID + END;
+    public static final String XOR_V_MASK = START + "XorVMask" + MID + END;
+
     public static final String FAST_LOCK   = START + "FastLock" + MID + END;
     public static final String FAST_UNLOCK = START + "FastUnlock" + MID + END;
 
@@ -267,10 +278,10 @@ public class IdealDefaultRegexes {
         initAvailableForAllIdealPhases(IRNode.LOAD_KLASS, LOAD_KLASS);
 
         initRequireLoops(IRNode.LOOP, LOOP);
-        initCountedLoops(IRNode.COUNTEDLOOP, COUNTEDLOOP);
-        initCountedLoops(IRNode.COUNTEDLOOP_MAIN, COUNTEDLOOP_MAIN);
-        initCountedLoops(IRNode.OUTERSTRIPMINED_LOOP, OUTERSTRIPMINED_LOOP);
-        initCountedLoops(IRNode.LONGCOUNTED_LOOP, LONGCOUNTED_LOOP);
+        initCountedLoops(IRNode.COUNTED_LOOP, COUNTED_LOOP);
+        initCountedLoops(IRNode.COUNTED_LOOP_MAIN, COUNTED_LOOP_MAIN);
+        initCountedLoops(IRNode.OUTER_STRIP_MINED_LOOP, OUTER_STRIP_MINED_LOOP);
+        initCountedLoops(IRNode.LONG_COUNTED_LOOP, LONG_COUNTED_LOOP);
         initAvailableForAllIdealPhases(IRNode.IF, IF);
 
         initAvailableForAllIdealPhases(IRNode.CALL, CALL);
@@ -290,6 +301,7 @@ public class IdealDefaultRegexes {
         initAvailableForAllIdealPhases(IRNode.INTRINSIC_OR_TYPE_CHECKED_INLINING_TRAP, INTRINSIC_OR_TYPE_CHECKED_INLINING_TRAP);
 
         initAvailableForAllIdealPhases(IRNode.MEMBAR, MEMBAR);
+        initAvailableForAllIdealPhases(IRNode.MEMBAR_STORESTORE, MEMBAR_STORESTORE);
         initAvailableForAllIdealPhases(IRNode.SAFEPOINT, SAFEPOINT);
 
         initAvailableForAllIdealPhases(IRNode.CMOVEI, CMOVEI);
@@ -358,6 +370,12 @@ public class IdealDefaultRegexes {
         initRequireLoops(IRNode.ADD_VD, ADD_VD);
         initRequireLoops(IRNode.RSHIFT_VB, RSHIFT_VB);
         initRequireLoops(IRNode.RSHIFT_VS, RSHIFT_VS);
+        initRequireLoops(IRNode.AND_V, AND_V);
+        initRequireLoops(IRNode.OR_V, OR_V);
+        initRequireLoops(IRNode.XOR_V, XOR_V);
+        initRequireLoops(IRNode.AND_V_MASK, AND_V_MASK);
+        initRequireLoops(IRNode.OR_V_MASK, OR_V_MASK);
+        initRequireLoops(IRNode.XOR_V_MASK, XOR_V_MASK);
 
         initAvailableForAllIdealPhases(IRNode.MIN_I, MIN_I);
         initAvailableForAllIdealPhases(IRNode.MAX_I, MAX_I);

@@ -88,7 +88,7 @@ class HotSpotPidFileParser {
         }
     }
 
-    private void processMethodBlock(Map<Integer, IRMethod> compileIdMap, Line line, BlockOutputReader blockOutputReader)
+    private void processMethodBlock(Map<Integer, TestMethod> compileIdMap, Line line, BlockOutputReader blockOutputReader)
             throws IOException {
         Block block = blockOutputReader.readBlock();
         if (block.containsTestClassCompilations()) {
@@ -99,7 +99,7 @@ class HotSpotPidFileParser {
         setIRMethodOutput(block.getOutput(), line, compileIdMap);
     }
 
-    private void parseTestMethodCompileId(Map<Integer, IRMethod> compileIdMap, String line) {
+    private void parseTestMethodCompileId(Map<Integer, TestMethod> compileIdMap, String line) {
         String methodName = parseMethodName(line);
         if (isTestAnnotatedMethod(methodName)) {
             int compileId = getCompileId(line);
@@ -135,7 +135,7 @@ class HotSpotPidFileParser {
     /**
      * Is this line the start of a PrintIdeal/PrintOptoAssembly output block of a @Test method?
      */
-    private boolean isTestMethodBlockStart(Line line, Map<Integer, IRMethod> compileIdMap) {
+    private boolean isTestMethodBlockStart(Line line, Map<Integer, TestMethod> compileIdMap) {
       return line.isBlockStart() && isTestClassMethodBlock(line, compileIdMap);
     }
 

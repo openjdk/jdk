@@ -68,8 +68,8 @@ public class MachDefaultRegexes {
 
     public static void initMaps() {
         initAvailableForAllMachPhases(IRNode.LOOP, IdealDefaultRegexes.LOOP);
-        initAvailableForAllMachPhases(IRNode.COUNTEDLOOP, IdealDefaultRegexes.COUNTEDLOOP);
-        initAvailableForAllMachPhases(IRNode.COUNTEDLOOP_MAIN, IdealDefaultRegexes.COUNTEDLOOP_MAIN);
+        initAvailableForAllMachPhases(IRNode.COUNTED_LOOP, IdealDefaultRegexes.COUNTED_LOOP);
+        initAvailableForAllMachPhases(IRNode.COUNTED_LOOP_MAIN, IdealDefaultRegexes.COUNTED_LOOP_MAIN);
     }
 
     private static void initAvailableForAllMachPhases(String defaultRegexString, String idealString) {

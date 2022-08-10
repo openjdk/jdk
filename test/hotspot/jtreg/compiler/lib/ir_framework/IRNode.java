@@ -28,7 +28,7 @@ import compiler.lib.ir_framework.driver.irmatching.regexes.IdealDefaultRegexes;
 import compiler.lib.ir_framework.driver.irmatching.regexes.OptoAssemblyDefaultRegexes;
 import compiler.lib.ir_framework.shared.CheckedTestFrameworkException;
 import jdk.test.lib.Platform;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 /**
  * This class specifies placeholder strings for IR nodes that can be used in {@link IR#failOn()} and {@link IR#counts()}
@@ -106,10 +106,10 @@ public class IRNode {
     public static final String LOAD_KLASS = PREFIX + "LOAD_KLASS" + POSTFIX;
 
     public static final String LOOP = PREFIX + "LOOP" + POSTFIX;
-    public static final String COUNTEDLOOP = PREFIX + "COUNTEDLOOP" + POSTFIX;
-    public static final String COUNTEDLOOP_MAIN = PREFIX + "COUNTEDLOOP_MAIN" + POSTFIX;
-    public static final String OUTERSTRIPMINED_LOOP = PREFIX + "OUTERSTRIPMINED_LOOP" + POSTFIX;
-    public static final String LONGCOUNTED_LOOP = PREFIX + "LONGCOUNTED_LOOP" + POSTFIX;
+    public static final String COUNTED_LOOP = PREFIX + "COUNTED_LOOP" + POSTFIX;
+    public static final String COUNTED_LOOP_MAIN = PREFIX + "COUNTED_LOOP_MAIN" + POSTFIX;
+    public static final String OUTER_STRIP_MINED_LOOP = PREFIX + "OUTER_STRIP_MINED_LOOP" + POSTFIX;
+    public static final String LONG_COUNTED_LOOP = PREFIX + "LONG_COUNTED_LOOP" + POSTFIX;
     public static final String IF = PREFIX + "IF" + POSTFIX;
 
     public static final String CALL = PREFIX + "CALL" + POSTFIX;
@@ -131,6 +131,7 @@ public class IRNode {
 
     public static final String SCOPE_OBJECT = PREFIX + "SCOPE_OBJECT" + POSTFIX;
     public static final String MEMBAR = PREFIX + "MEMBAR" + POSTFIX;
+    public static final String MEMBAR_STORESTORE = PREFIX + "MEMBAR_STORESTORE" + POSTFIX;
     public static final String SAFEPOINT = PREFIX + "SAFEPOINT" + POSTFIX;
 
     public static final String CMOVEI = PREFIX + "CMOVEI" + POSTFIX;
@@ -204,6 +205,13 @@ public class IRNode {
     public static final String MAX_I = PREFIX + "MAX_I" + POSTFIX;
     public static final String MIN_V = PREFIX + "MIN_V" + POSTFIX;
     public static final String MAX_V = PREFIX + "MAX_V" + POSTFIX;
+
+    public static final String AND_V = PREFIX + "AND_V" + POSTFIX;
+    public static final String OR_V = PREFIX + "OR_V" + POSTFIX;
+    public static final String XOR_V = PREFIX + "XOR_V" + POSTFIX;
+    public static final String AND_V_MASK = PREFIX + "AND_V_MASK" + POSTFIX;
+    public static final String OR_V_MASK = PREFIX + "OR_V_MASK" + POSTFIX;
+    public static final String XOR_V_MASK = PREFIX + "XOR_V_MASK" + POSTFIX;
 
     public static final String FAST_LOCK = PREFIX + "FAST_LOCK" + POSTFIX;
     public static final String FAST_UNLOCK = PREFIX + "FAST_UNLOCK" + POSTFIX;
