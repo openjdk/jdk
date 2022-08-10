@@ -484,7 +484,7 @@ final class ServerHello {
             }
             //negotiation failed between client and server, print server enabled cipher suites
             if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
-                printServerSocketConfig(shc, legacySuites, keyExchanges);
+                printServerSocketConfig(shc, legacySuites, keyExchanges,false);
             }
             throw shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                     "no cipher suites in common");
@@ -764,7 +764,7 @@ final class ServerHello {
 
             // no cipher suites in common
             if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
-                printServerSocketConfig(shc, null, null);
+                printServerSocketConfig(shc, null, null,true);
             }
             return null;
         }
@@ -775,31 +775,45 @@ final class ServerHello {
      */
     private static void printServerSocketConfig(sun.security.ssl.ServerHandshakeContext shc,
                                                        List<CipherSuite> legacySuites,
-                                                       List<CipherSuite.KeyExchange> keyExchanges){
+                                                       List<CipherSuite.KeyExchange> keyExchanges,
+                                                boolean isT13Version){
+        StringBuilder sb = new StringBuilder();
+        sb.append("\"{0}\": '\n{'\n")
+                .append("  \"preferred cipher suites\"     : \"{1}\",\n")
+                .append("  \"client auth type\"            : \"{2}\",\n")
+                .append("  \"enabled server cipher suites\": \"{3}\",\n")
+                .append("  \"legacy algorithms\"           : \"{4}\"");
 
-        MessageFormat messageFormat = new MessageFormat(
-                "\"{0}\": '\n{'\n" +
-                        "  \"preferred cipher suites\"     : \"{1}\",\n" +
-                        "  \"client auth type\"            : \"{2}\",\n" +
-                        "  \"enabled server cipher suites\": \"{3}\",\n" +
-                        "  \"legacy algorithms\"           : \"{4}\",\n" +
-                        "  \"legacy suites\"               : \"{5}\",\n" +
-                        "  \"ssl key exchange info\"       : \"{6}\"\n" +
-                        "'}'",
-                Locale.ENGLISH);
-        Object[] messageFields = {
-                "Enabled Server Cipher Suites",
-                shc.sslConfig.preferLocalCipherSuites ? "using server cipher suites" : "using client cipher suites",
-                shc.sslConfig.clientAuthType,
-                shc.activeCipherSuites != null ? shc.activeCipherSuites.toString() : "Not Set",
-                Security.getProperty(LegacyAlgorithmConstraints.PROPERTY_TLS_LEGACY_ALGS),
-                legacySuites != null ? legacySuites.stream()
-                        .map(n -> n.name())
-                        .collect(Collectors.joining(",", "[", "]")) : "Not Set",
-                keyExchanges != null ? keyExchanges.stream()
-                        .map(n -> n.name()).distinct()
-                        .collect(Collectors.joining(",", "[", "]")) : "Not Set"
-        };
+        LinkedList<String> fieldsList = new LinkedList<>();
+
+        fieldsList.add("Enabled Server Cipher Suites");
+        fieldsList.add(shc.sslConfig.preferLocalCipherSuites ? "using server cipher suites" :
+                "using client cipher suites");
+        fieldsList.add(shc.sslConfig.clientAuthType.toString());
+        fieldsList.add(shc.activeCipherSuites != null ? shc.activeCipherSuites.toString() : "Not Set");
+        fieldsList.add(Security.getProperty(LegacyAlgorithmConstraints.PROPERTY_TLS_LEGACY_ALGS));
+
+
+        if(!isT13Version){
+            sb.append(",\n");
+            sb.append("  \"legacy suites\"               : \"{5}\",\n")
+                    .append("  \"ssl key exchange info\"       : \"{6}\"\n");
+
+            fieldsList.add(legacySuites != null ? legacySuites.stream()
+                    .map(n -> n.name())
+                    .collect(Collectors.joining(",", "[", "]")) : "Not Set");
+            fieldsList.add(keyExchanges != null ? keyExchanges.stream()
+                    .map(n -> n.name()).distinct()
+                    .collect(Collectors.joining(",", "[", "]")) : "Not Set");
+        }else {
+            sb.append("\n");
+        }
+        sb.append("'}'");
+
+        MessageFormat messageFormat = new MessageFormat(sb.toString(), Locale.ENGLISH);
+
+        Object[] messageFields = new Object[fieldsList.size()];
+        messageFields = fieldsList.toArray(messageFields);
 
         SSLLogger.fine(messageFormat.format(messageFields));
     }
