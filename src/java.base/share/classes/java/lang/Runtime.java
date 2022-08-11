@@ -53,7 +53,7 @@ import jdk.internal.reflect.Reflection;
  * to one of several events:
  * <ol>
  * <li>when the number of {@linkplain Thread#isAlive() live} non-daemon threads drops to zero
- * for the first time (see note below on {@code DestroyJavaVM});</li>
+ * for the first time (see note below on the JNI Invocation API);</li>
  * <li>when the {@link #exit Runtime.exit} or {@link System#exit System.exit} method is called
  * for the first time; or</li>
  * <li>when some external event occurs, such as an interrupt or a signal is received from
@@ -93,14 +93,19 @@ import jdk.internal.reflect.Reflection;
  * uncaught exception handler}.
  *
  * @implNote
- * Conventionally, the native code that has launched the JVM will invoke the JNI function
- * <a href="{@docRoot}/../specs/jni/invocation.html#destroyjavavm">{@code DestroyJavaVM}</a>.
- * This function is responsible for initiating the shutdown sequence when the number of running
- * ({@linkplain Thread#isAlive() live}) non-daemon threads first drops to zero. When the shutdown
- * sequence completes and the JVM terminates, control is returned to native invocation code.
+ * Native code typically uses the
+ * <a href="{@docRoot}/../specs/jni/invocation.html">JNI Invocation API</a>
+ * to control launching and termination of the JVM. Such native code invokes the
+ * <a href="{@docRoot}/../specs/jni/invocation.html#jni_createjavavm">{@code JNI_CreateJavaVM}</a>
+ * function to launch the JVM. Subsequently, the native code invokes the
+ * <a href="{@docRoot}/../specs/jni/invocation.html#destroyjavavm">{@code DestroyJavaVM}</a>
+ * function to await termination of that JVM. The {@code DestroyJavaVM} function is responsible for
+ * initiating the shutdown sequence when the number of {@linkplain Thread#isAlive() running}
+ * non-daemon threads first drops to zero. When the shutdown sequence completes and the JVM
+ * terminates, control is returned to the native code that invoked {@code DestroyJavaVM}.
  * <p>
- * In typical JVM implementations, calling {@link #exit exit} or {@link #halt halt} will also
- * terminate the OS process hosting the JVM.
+ * This differs from the {@link #exit exit} or {@link #halt halt} methods. These methods typically
+ * terminate the OS process hosting the JVM and do not interact with the JNI Invocation API.
  *
  * @see     java.lang.Runtime#getRuntime()
  * @jls     12.8 Program Exit
