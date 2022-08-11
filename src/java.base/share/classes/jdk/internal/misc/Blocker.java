@@ -81,7 +81,7 @@ public class Blocker {
                 }
             }
         }
-        return 0;
+        return -1;
     }
 
     /**
@@ -91,7 +91,7 @@ public class Blocker {
      * another value when blocking is false
      */
     public static long begin(boolean blocking) {
-        return (blocking) ? begin() : 0;
+        return (blocking) ? begin() : -1;
     }
 
     /**
@@ -99,7 +99,7 @@ public class Blocker {
      * @param compensateReturn the value returned by the begin method
      */
     public static void end(long compensateReturn) {
-        if (compensateReturn > 0) {
+        if (compensateReturn >= 0) {
             assert currentCarrierThread() instanceof CarrierThread ct && ct.inBlocking();
             CarrierThread ct = (CarrierThread) currentCarrierThread();
             ForkJoinPools.endCompensatedBlock(ct.getPool(), compensateReturn);
