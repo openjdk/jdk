@@ -31,6 +31,7 @@
 #include "opto/node.hpp"
 #include "opto/phaseX.hpp"
 #include "opto/regmask.hpp"
+#include "opto/subnode.hpp"
 #include "runtime/vm_version.hpp"
 
 class Compile;

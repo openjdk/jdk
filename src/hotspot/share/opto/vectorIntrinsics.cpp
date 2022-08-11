@@ -1803,12 +1803,12 @@ bool LibraryCallKit::inline_vector_test() {
   if (opd1 == NULL || opd2 == NULL) {
     return false; // operand unboxing failed
   }
-  if (!Matcher::vectortest_need_second_argument(booltest == BoolTest::overflow, opd1->bottom_type()->isa_vectmask())) {
+  if (!Matcher::vectortest_needs_second_argument(booltest == BoolTest::overflow, opd1->bottom_type()->isa_vectmask())) {
     opd2 = opd1;
   }
   Node* cmp = new VectorTestNode(opd1, opd2, booltest);
   cmp = gvn().transform(cmp);
-  BoolTest::mask test = (booltest == BoolTest::ne) ? BoolTest::ne : BoolTest::lt;
+  BoolTest::mask test = Matcher::vectortest_mask(booltest == BoolTest::overflow);
   Node* bol = gvn().transform(new BoolNode(cmp, test));
   Node* res = gvn().transform(new CMoveINode(bol, gvn().intcon(0), gvn().intcon(1), TypeInt::BOOL));
 

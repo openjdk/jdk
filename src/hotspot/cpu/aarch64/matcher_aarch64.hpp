@@ -164,8 +164,13 @@
   static const bool supports_encode_ascii_array = true;
 
   // Some architecture needs a helper to check for alltrue vector
-  static bool vectortest_need_second_argument(bool is_alltrue, bool is_predicate) {
+  static constexpr bool vectortest_needs_second_argument(bool is_alltrue, bool is_predicate) {
     return false;
+  }
+
+  // BoolTest mask for vector test intrinsics
+  static constexpr BoolTest::mask vectortest_mask(bool is_alltrue) {
+    return is_alltrue ? BoolTest::eq : BoolTest::ne;
   }
 
   // Returns pre-selection estimated size of a vector operation.
