@@ -403,6 +403,7 @@ final class ServerHello {
                 ClientHelloMessage clientHello) throws IOException {
             List<CipherSuite> preferred;
             List<CipherSuite> proposed;
+
             if (shc.sslConfig.preferLocalCipherSuites) {
                 preferred = shc.activeCipherSuites;
                 proposed = clientHello.cipherSuites;
@@ -459,6 +460,7 @@ final class ServerHello {
                 return new KeyExchangeProperties(cs, ke, hcds);
             }
 
+
             for (CipherSuite cs : legacySuites) {
                 SSLKeyExchange ke = SSLKeyExchange.valueOf(
                         cs.keyExchange,  shc.negotiatedProtocol);
@@ -482,12 +484,25 @@ final class ServerHello {
                     }
                 }
             }
+
+
+            String finalErrorMessage = "no cipher suites in common";
+
+            /**
+             *  legacySuites contains element, when arriving here, it is the failure of key exchanging
+             *  if legacySuites has zero element, the key exchange operation will not be executed.
+             */
+
+            if (legacySuites.size() > 0) {
+                finalErrorMessage = "key exchange failed";
+            }
+
             //negotiation failed between client and server, print server enabled cipher suites
             if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
-                printServerSocketConfig(shc, legacySuites, keyExchanges,false);
+                printServerSocketConfig(shc, legacySuites, keyExchanges);
             }
-            throw shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
-                    "no cipher suites in common");
+
+            throw shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,finalErrorMessage);
         }
 
         private static final class KeyExchangeProperties {
@@ -764,19 +779,16 @@ final class ServerHello {
 
             // no cipher suites in common
             if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
-                printServerSocketConfig(shc, null, null,true);
+                printServerSocketConfig(shc, null, null);
             }
             return null;
         }
     }
 
-    /* *
-     *  When debugging enabled with the value of "ssl, handshake", print out enabled cipher suites on the server side
-     */
-    private static void printServerSocketConfig(sun.security.ssl.ServerHandshakeContext shc,
+    // print out server socket config
+    private static void printServerSocketConfig(ServerHandshakeContext shc,
                                                        List<CipherSuite> legacySuites,
-                                                       List<CipherSuite.KeyExchange> keyExchanges,
-                                                boolean isT13Version){
+                                                       List<CipherSuite.KeyExchange> keyExchanges){
         StringBuilder sb = new StringBuilder();
         sb.append("\"{0}\": '\n{'\n")
                 .append("  \"preferred cipher suites\"     : \"{1}\",\n")
@@ -793,8 +805,7 @@ final class ServerHello {
         fieldsList.add(shc.activeCipherSuites != null ? shc.activeCipherSuites.toString() : "Not Set");
         fieldsList.add(Security.getProperty(LegacyAlgorithmConstraints.PROPERTY_TLS_LEGACY_ALGS));
 
-
-        if(!isT13Version){
+        if (!shc.negotiatedProtocol.name.equalsIgnoreCase(ProtocolVersion.TLS13.name)) {
             sb.append(",\n");
             sb.append("  \"legacy suites\"               : \"{5}\",\n")
                     .append("  \"ssl key exchange info\"       : \"{6}\"\n");
@@ -805,7 +816,7 @@ final class ServerHello {
             fieldsList.add(keyExchanges != null ? keyExchanges.stream()
                     .map(n -> n.name()).distinct()
                     .collect(Collectors.joining(",", "[", "]")) : "Not Set");
-        }else {
+        } else {
             sb.append("\n");
         }
         sb.append("'}'");
