@@ -29,7 +29,6 @@
 #include "prims/upcallLinker.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/signature.hpp"
-#include "runtime/signature.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/formatBuffer.hpp"
 #include "utilities/globalDefinitions.hpp"

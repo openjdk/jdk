@@ -510,6 +510,7 @@ java/lang/instrument/RetransformBigClass.sh                     8065756 generic-
 
 java/io/pathNames/GeneralWin32.java                             8180264 windows-all
 java/io/File/createTempFile/SpecialTempFile.java                8274122 windows11
+java/io/File/GetXSpace.java                                     8291911 windows-all
 
 ############################################################################
 
@@ -596,7 +597,6 @@ sun/security/tools/keytool/ListKeychainStore.sh                 8156889 macosx-a
 
 sun/security/tools/jarsigner/warnings/BadKeyUsageTest.java      8026393 generic-all
 
-javax/net/ssl/ServerName/SSLEngineExplorerMatchedSNI.java       8212096 generic-all
 javax/net/ssl/DTLS/CipherSuite.java                             8202059 macosx-x64
 
 sun/security/provider/KeyStore/DKSTest.sh                       8180266 windows-all

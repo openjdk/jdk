@@ -55,10 +55,6 @@
 #include "utilities/powerOfTwo.hpp"
 #include <sys/types.h>
 
-#ifndef PRODUCT
-#include "oops/method.hpp"
-#endif // !PRODUCT
-
 // Size of interpreter code.  Increase if too small.  Interpreter will
 // fail with a guarantee ("not enough space for interpreter generation");
 // if too small.
