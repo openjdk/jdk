@@ -384,6 +384,12 @@ public:
   void write_region(FileMapInfo* mapinfo, int region_idx, DumpRegion* dump_region,
                     bool read_only,  bool allow_exec);
 
+  // + When creating a CDS archive, we first load Java classes and create metadata
+  //   objects as usual. These are call "source" objects.
+  // + We then copy the source objects into the output buffer at "dumped addrsses".
+  //
+  // The following functions translate between these two (non-overlapping) spaces.
+  // (The API should be renamed to be less confusing!)
   address get_dumped_addr(address src_obj) const;
   address get_src_obj(address dumped_addr) const;
   template <typename T> T get_src_obj(T dumped_addr) const {
