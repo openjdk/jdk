@@ -497,7 +497,7 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
      *  before setting the new attributes
      */
     public void setCharacterAttributes(int offset, int length, AttributeSet s, boolean replace) {
-        if (length == 0) {
+        if (length <= 0) {
             return;
         }
         try {
