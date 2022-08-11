@@ -48,23 +48,23 @@ public final class bug4209065 {
 
     public static void createAndShowGUI() {
 
-            frame = new JFrame("JTabbedPane");
-            JTabbedPane tp = new JTabbedPane();
+        frame = new JFrame("JTabbedPane");
+        JTabbedPane tp = new JTabbedPane();
 
-            tp.addTab("<html><center><font size=+3>big</font></center></html>",
-                    new JLabel());
-            tp.addTab("<html><center><font color=red>red</font></center></html>",
-                    new JLabel());
-            tp.addTab("<html><center><em><b>Bold Italic!</b></em></center></html>",
-                    new JLabel());
+        tp.addTab("<html><center><font size=+3>big</font></center></html>",
+                new JLabel());
+        tp.addTab("<html><center><font color=red>red</font></center></html>",
+                new JLabel());
+        tp.addTab("<html><center><em><b>Bold Italic!</b></em></center></html>",
+                new JLabel());
 
-            frame.getContentPane().add(tp);
-            frame.setSize(400, 400);
+        frame.getContentPane().add(tp);
+        frame.setSize(400, 400);
 
-            PassFailJFrame.addTestWindow(frame);
-            PassFailJFrame.positionTestWindow(frame,
-                    PassFailJFrame.Position.HORIZONTAL);
-            frame.setVisible(true);
+        PassFailJFrame.addTestWindow(frame);
+        PassFailJFrame.positionTestWindow(frame,
+                PassFailJFrame.Position.HORIZONTAL);
+        frame.setVisible(true);
     }
 
     public static void main(String[] args) throws InterruptedException,

@@ -267,7 +267,7 @@ public class PassFailJFrame {
      * parameter.
      * Note: This method should be invoked from the method that creates
      * testWindow. At test-level, the testWindow must be made visible
-     * after calling this method.
+     * only after calling this method.
      *
      * @param testWindow test window that the test is created. It can be null.
      * @param position  position can either be:
@@ -326,8 +326,12 @@ public class PassFailJFrame {
         frame.setVisible(true);
     }
 
-    // this method pushes the updated frame location to window manager
-    // before it is used to reposition the test window.
+    /**
+     * To ensure the frame location is updated by the window manager
+     * if it adjusts the frame location after {@code setLocation}
+     *
+     * @see #positionTestWindow
+     */
     private static void syncLocationToWindowManager() {
         Toolkit.getDefaultToolkit().sync();
         try {
