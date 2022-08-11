@@ -219,7 +219,7 @@ public class CLETest extends TestScaffold {
                 // For now, we expect these two test cases to fail due to 8292217,
                 // so don't fail the overall test run as a result of these failures.
                 // testFailed = true;
-                System.out.println("TESTCASE #" + testcase + " FAILED: too many events in EventSest: " + set.size());
+                System.out.println("TESTCASE #" + testcase + " FAILED (ignoring): too many events in EventSest: " + set.size());
             }
             break;
         }
