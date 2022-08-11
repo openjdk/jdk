@@ -75,6 +75,7 @@ public class TestDaemonDestroy {
         OutputAnalyzer oa = new OutputAnalyzer(pb.start());
         oa.shouldHaveExitValue(0);
         oa.shouldNotContain("Error: T1 isAlive");
+        oa.shouldContain("T1 finished");
         oa.reportDiagnosticSummary();
     }
 }
