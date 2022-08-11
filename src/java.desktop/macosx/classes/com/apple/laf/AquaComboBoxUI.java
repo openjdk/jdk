@@ -280,6 +280,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
         return new BasicComboBoxUI.FocusHandler() {
             @Override
             public void focusGained(FocusEvent e) {
+
                 super.focusGained(e);
 
                 if (arrowButton != null) {
@@ -454,6 +455,32 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
     }
 
     class AquaComboBoxLayoutManager extends BasicComboBoxUI.ComboBoxLayoutManager {
+        protected Rectangle rectangleForCurrentValue() {
+            System.out.println("rectForCurrentValue NEW: " + comboBox.getHeight());
+            int width = comboBox.getWidth();
+            int height = 21;
+            Insets insets = getInsets();
+            int buttonSize = height - (insets.top + insets.bottom);
+            if ( arrowButton != null )  {
+                buttonSize = arrowButton.getWidth();
+            }
+            int midHeight = (comboBox.getHeight() - height - (insets.top + insets.bottom)) / 2 - 1;
+            if (midHeight < 0) {
+                midHeight = 0;
+            }
+
+            if(comboBox.getComponentOrientation().isLeftToRight()) {
+                return new Rectangle(insets.left, insets.top + midHeight,
+                        width - (insets.left + insets.right + buttonSize) + 4,
+                        height - (insets.top + insets.bottom));
+            }
+            else {
+                return new Rectangle(insets.left + buttonSize, insets.top + midHeight,
+                        width - (insets.left + insets.right + buttonSize) + 4,
+                        height - (insets.top + insets.bottom));
+            }
+        }
+
         public void layoutContainer(final Container parent) {
             if (arrowButton != null && !comboBox.isEditable()) {
                 final Insets insets = comboBox.getInsets();
@@ -477,9 +504,6 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
 
             if (editor != null) {
                 final Rectangle editorRect = rectangleForCurrentValue();
-                editorRect.width += 4;
-                editorRect.height += 2;
-                editorRect.y -= 2;
                 editor.setBounds(editorRect);
             }
         }

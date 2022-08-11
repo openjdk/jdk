@@ -31,6 +31,7 @@
  */
 
 import java.awt.FlowLayout;
+import java.awt.Font;
 import java.lang.reflect.InvocationTargetException;
 
 import javax.swing.JComboBox;
@@ -42,7 +43,7 @@ import javax.swing.UIManager;
 
 public class JComboBoxBorderTest {
     private static final String instructionsText = "Pass if you can see both " +
-            "an editable and non-editable JComboBox and if they display  " +
+            "an editable and non-editable JComboBox and if they display " +
             "reasonably. Fail if they do not appear or are misaligned.";
 
     private static JFrame frame;
@@ -64,8 +65,11 @@ public class JComboBoxBorderTest {
             JPanel panel = new JPanel(layout);
             panel.add(label);
             panel.add(comboBox);
+            comboBox.setFont(new Font("Serif", Font.PLAIN, 30));
+
             panel.add(label2);
             panel.add(comboBox2);
+            comboBox2.setFont(new Font("Serif", Font.PLAIN, 30));
 
             frame = new JFrame();
             frame.getContentPane().add(panel);
