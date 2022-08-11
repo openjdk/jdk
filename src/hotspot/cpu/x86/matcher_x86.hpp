@@ -183,6 +183,7 @@
   // Implements a variant of EncodeISOArrayNode that encode ASCII only
   static const bool supports_encode_ascii_array = true;
 
+  // Without predicated input, an all-one vector is needed for the vector test
   static bool vectortest_need_second_argument(bool is_alltrue, bool is_predicate) {
     return is_alltrue && !is_predicate;
   }
