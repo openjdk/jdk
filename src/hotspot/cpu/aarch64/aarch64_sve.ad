@@ -4747,7 +4747,7 @@ instruct vtest_anytrue(rFlagsReg cr, pRegGov src1, pRegGov src2)
 %{
   predicate(UseSVE > 0 &&
             static_cast<const VectorTestNode*>(n)->get_predicate() == BoolTest::ne);
-  match(Set dst (VectorTest src1 src2));
+  match(Set cr (VectorTest src1 src2));
   ins_cost(SVE_COST);
   format %{ "sve_ptest $src1\n\t" %}
   ins_encode %{
