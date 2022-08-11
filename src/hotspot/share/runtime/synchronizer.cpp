@@ -907,38 +907,8 @@ bool ObjectSynchronizer::current_thread_holds_lock(JavaThread* current,
 // FIXME: jvmti should call this
 JavaThread* ObjectSynchronizer::get_lock_owner(ThreadsList * t_list, Handle h_obj) {
   oop obj = h_obj();
-  address owner = NULL;
-
-  markWord mark = obj->mark_acquire();
-
-  if (mark.is_fast_locked()) {
-    owner = cast_from_oop<address>(obj);
-  }
-
-  // Contended case, header points to ObjectMonitor (tagged pointer)
-  else if (mark.has_monitor()) {
-    // The first stage of async deflation does not affect any field
-    // used by this comparison so the ObjectMonitor* is usable here.
-    ObjectMonitor* monitor = mark.monitor();
-    assert(monitor != NULL, "monitor should be non-null");
-    if (monitor->is_owner_anonymous()) {
-      owner = cast_from_oop<address>(obj);
-    } else {
-      owner = (address) monitor->owner();
-    }
-  }
-
-  if (owner != NULL) {
-    // owning_thread_from_monitor_owner() may also return NULL here
-    return Threads::owning_thread_from_monitor_owner(t_list, owner);
-  }
-
-  // Unlocked case, header in place
-  // Cannot have assertion since this object may have been
-  // locked by another thread when reaching here.
-  // assert(mark.is_neutral(), "sanity check");
-
-  return NULL;
+  ObjectMonitor* monitor_dummy;
+  return Threads::owning_thread_from_object(t_list, obj, &monitor_dummy);
 }
 
 // Visitors ...
