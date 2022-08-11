@@ -455,7 +455,6 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
 
     class AquaComboBoxLayoutManager extends BasicComboBoxUI.ComboBoxLayoutManager {
         protected Rectangle rectangleForCurrentValue() {
-            System.out.println("rectForCurrentValue NEW: " + comboBox.getHeight());
             int width = comboBox.getWidth();
             int height = 21;
             Insets insets = getInsets();
@@ -468,7 +467,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
                 midHeight = 0;
             }
 
-            if(comboBox.getComponentOrientation().isLeftToRight()) {
+            if (comboBox.getComponentOrientation().isLeftToRight()) {
                 return new Rectangle(insets.left, insets.top + midHeight,
                         width - (insets.left + insets.right + buttonSize) + 4,
                         height - (insets.top + insets.bottom));
