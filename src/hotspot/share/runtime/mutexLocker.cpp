@@ -349,14 +349,14 @@ void mutex_init() {
   defl(CompiledMethod_lock         , PaddedMutex  , CodeCache_lock);
 
   defl(Threads_lock                , PaddedMonitor, CompileThread_lock, true);
-  defl(Heap_lock                   , PaddedMonitor, MultiArray_lock);
   defl(Compile_lock                , PaddedMutex  , MethodCompileQueue_lock);
   defl(AdapterHandlerLibrary_lock  , PaddedMutex  , InvokeMethodTable_lock);
+  defl(Heap_lock                   , PaddedMonitor, AdapterHandlerLibrary_lock);
 
   defl(PerfDataMemAlloc_lock       , PaddedMutex  , Heap_lock);
   defl(PerfDataManager_lock        , PaddedMutex  , Heap_lock);
   defl(ClassLoaderDataGraph_lock   , PaddedMutex  , MultiArray_lock);
-  defl(VMOperation_lock            , PaddedMonitor, Compile_lock, true);
+  defl(VMOperation_lock            , PaddedMonitor, Heap_lock, true);
   defl(ClassInitError_lock         , PaddedMonitor, Threads_lock);
 
   if (UseG1GC) {
