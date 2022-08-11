@@ -1494,22 +1494,20 @@ instruct rearrange4I(vecX dst, vecX src, vecX shuffle, vecX tmp0, vecX tmp1)
 //-------------------------------- Anytrue/alltrue -----------------------------
 dnl
 define(`ANYTRUE_IN_MASK', `
-instruct anytrue_in_mask$1B`'(iRegINoSp dst, vec$2 src1, vec$2 src2, vec$2 tmp, rFlagsReg cr)
+instruct anytrue_in_mask$1B`'(rFlagsReg cr, vec$2 src1, vec$2 src2, vec$2 tmp)
 %{
   predicate(static_cast<const VectorTestNode*>(n)->get_predicate() == BoolTest::ne);
-  match(Set dst (VectorTest src1 src2 ));
+  match(Set cr (VectorTest src1 src2 ));
   ins_cost(INSN_COST);
-  effect(TEMP tmp, KILL cr);
+  effect(TEMP tmp);
   format %{ "addv  $tmp, T$1B, $src1\n\t"
             "umov  $dst, $tmp, B, 0\n\t"
-            "cmp   $dst, 0\n\t"
-            "cset  $dst\t# anytrue $1B" %}
+            "cmp   $dst, 0" %}
   ins_encode %{
     // No need to use src2.
     __ addv(as_FloatRegister($tmp$$reg), __ T$1B, as_FloatRegister($src1$$reg));
     __ umov($dst$$Register, as_FloatRegister($tmp$$reg), __ B, 0);
     __ cmpw($dst$$Register, zr);
-    __ csetw($dst$$Register, Assembler::NE);
   %}
   ins_pipe(pipe_slow);
 %}')dnl
@@ -1518,22 +1516,20 @@ ANYTRUE_IN_MASK(8,  D)
 ANYTRUE_IN_MASK(16, X)
 dnl
 define(`ALLTRUE_IN_MASK', `
-instruct alltrue_in_mask$1B`'(iRegINoSp dst, vec$2 src1, vec$2 src2, vec$2 tmp, rFlagsReg cr)
+instruct alltrue_in_mask$1B`'(rFlagsReg cr, vec$2 src1, vec$2 src2, vec$2 tmp)
 %{
   predicate(static_cast<const VectorTestNode*>(n)->get_predicate() == BoolTest::overflow);
-  match(Set dst (VectorTest src1 src2 ));
+  match(Set cr (VectorTest src1 src2 ));
   ins_cost(INSN_COST);
-  effect(TEMP tmp, KILL cr);
+  effect(TEMP tmp);
   format %{ "uminv $tmp, T$1B, $src1\n\t"
             "umov  $dst, $tmp, B, 0\n\t"
-            "cmp   $dst, 0xff\n\t"
-            "cset  $dst\t# alltrue $1B" %}
+            "cmp   $dst, 0xff" %}
   ins_encode %{
     // No need to use src2.
     __ uminv(as_FloatRegister($tmp$$reg), __ T$1B, as_FloatRegister($src1$$reg));
     __ umov($dst$$Register, as_FloatRegister($tmp$$reg), __ B, 0);
     __ cmpw($dst$$Register, 0xff);
-    __ csetw($dst$$Register, Assembler::EQ);
   %}
   ins_pipe(pipe_slow);
 %}')dnl

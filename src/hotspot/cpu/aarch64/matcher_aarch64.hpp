@@ -165,7 +165,7 @@
 
   // Some architecture needs a helper to check for alltrue vector
   static constexpr bool vectortest_needs_second_argument(bool is_alltrue, bool is_predicate) {
-    return false;
+    return is_predicate && is_alltrue;
   }
 
   // BoolTest mask for vector test intrinsics

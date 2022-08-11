@@ -4728,36 +4728,32 @@ instruct extractD(vRegD dst, vReg src, immI idx)
 
 // ------------------------------- VectorTest ----------------------------------
 
-instruct vtest_alltrue(iRegINoSp dst, pRegGov src1, pRegGov src2, pReg ptmp, rFlagsReg cr)
+instruct vtest_alltrue(rFlagsReg cr, pRegGov src1, pRegGov src2, pReg ptmp)
 %{
   predicate(UseSVE > 0 &&
             static_cast<const VectorTestNode*>(n)->get_predicate() == BoolTest::overflow);
-  match(Set dst (VectorTest src1 src2));
-  effect(TEMP ptmp, KILL cr);
+  match(Set cr (VectorTest src1 src2));
+  effect(TEMP ptmp);
   ins_cost(SVE_COST);
-  format %{ "sve_eors $ptmp, $src1, $src2\t# $src2 is all true mask\n"
-            "csetw $dst, EQ\t# VectorTest (sve) - alltrue" %}
+  format %{ "sve_eors $ptmp, $src1, $src2\n\t" %}
   ins_encode %{
     __ sve_eors(as_PRegister($ptmp$$reg), ptrue,
                 as_PRegister($src1$$reg), as_PRegister($src2$$reg));
-    __ csetw(as_Register($dst$$reg), Assembler::EQ);
   %}
   ins_pipe(pipe_slow);
 %}
 
-instruct vtest_anytrue(iRegINoSp dst, pRegGov src1, pRegGov src2, rFlagsReg cr)
+instruct vtest_anytrue(rFlagsReg cr, pRegGov src1, pRegGov src2)
 %{
   predicate(UseSVE > 0 &&
             static_cast<const VectorTestNode*>(n)->get_predicate() == BoolTest::ne);
   match(Set dst (VectorTest src1 src2));
   effect(KILL cr);
   ins_cost(SVE_COST);
-  format %{ "sve_ptest $src1\n\t"
-            "csetw $dst, NE\t# VectorTest (sve) - anytrue" %}
+  format %{ "sve_ptest $src1\n\t" %}
   ins_encode %{
     // "src2" is not used for sve.
     __ sve_ptest(ptrue, as_PRegister($src1$$reg));
-    __ csetw(as_Register($dst$$reg), Assembler::NE);
   %}
   ins_pipe(pipe_slow);
 %}

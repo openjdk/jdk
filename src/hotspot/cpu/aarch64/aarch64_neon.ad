@@ -2865,82 +2865,74 @@ instruct rearrange4I(vecX dst, vecX src, vecX shuffle, vecX tmp0, vecX tmp1)
 
 //-------------------------------- Anytrue/alltrue -----------------------------
 
-instruct anytrue_in_mask8B(iRegINoSp dst, vecD src1, vecD src2, vecD tmp, rFlagsReg cr)
+instruct anytrue_in_mask8B(rFlagsReg cr, vecD src1, vecD src2, vecD tmp)
 %{
   predicate(static_cast<const VectorTestNode*>(n)->get_predicate() == BoolTest::ne);
-  match(Set dst (VectorTest src1 src2 ));
+  match(Set cr (VectorTest src1 src2 ));
   ins_cost(INSN_COST);
-  effect(TEMP tmp, KILL cr);
+  effect(TEMP tmp);
   format %{ "addv  $tmp, T8B, $src1\n\t"
             "umov  $dst, $tmp, B, 0\n\t"
-            "cmp   $dst, 0\n\t"
-            "cset  $dst\t# anytrue 8B" %}
+            "cmp   $dst, 0" %}
   ins_encode %{
     // No need to use src2.
     __ addv(as_FloatRegister($tmp$$reg), __ T8B, as_FloatRegister($src1$$reg));
     __ umov($dst$$Register, as_FloatRegister($tmp$$reg), __ B, 0);
     __ cmpw($dst$$Register, zr);
-    __ csetw($dst$$Register, Assembler::NE);
   %}
   ins_pipe(pipe_slow);
 %}
 
-instruct anytrue_in_mask16B(iRegINoSp dst, vecX src1, vecX src2, vecX tmp, rFlagsReg cr)
+instruct anytrue_in_mask16B(rFlagsReg cr, vecX src1, vecX src2, vecX tmp)
 %{
   predicate(static_cast<const VectorTestNode*>(n)->get_predicate() == BoolTest::ne);
-  match(Set dst (VectorTest src1 src2 ));
+  match(Set cr (VectorTest src1 src2 ));
   ins_cost(INSN_COST);
-  effect(TEMP tmp, KILL cr);
+  effect(TEMP tmp);
   format %{ "addv  $tmp, T16B, $src1\n\t"
             "umov  $dst, $tmp, B, 0\n\t"
-            "cmp   $dst, 0\n\t"
-            "cset  $dst\t# anytrue 16B" %}
+            "cmp   $dst, 0" %}
   ins_encode %{
     // No need to use src2.
     __ addv(as_FloatRegister($tmp$$reg), __ T16B, as_FloatRegister($src1$$reg));
     __ umov($dst$$Register, as_FloatRegister($tmp$$reg), __ B, 0);
     __ cmpw($dst$$Register, zr);
-    __ csetw($dst$$Register, Assembler::NE);
   %}
   ins_pipe(pipe_slow);
 %}
 
-instruct alltrue_in_mask8B(iRegINoSp dst, vecD src1, vecD src2, vecD tmp, rFlagsReg cr)
+instruct alltrue_in_mask8B(rFlagsReg cr, vecD src1, vecD src2, vecD tmp)
 %{
   predicate(static_cast<const VectorTestNode*>(n)->get_predicate() == BoolTest::overflow);
-  match(Set dst (VectorTest src1 src2 ));
+  match(Set cr (VectorTest src1 src2 ));
   ins_cost(INSN_COST);
-  effect(TEMP tmp, KILL cr);
+  effect(TEMP tmp);
   format %{ "uminv $tmp, T8B, $src1\n\t"
             "umov  $dst, $tmp, B, 0\n\t"
-            "cmp   $dst, 0xff\n\t"
-            "cset  $dst\t# alltrue 8B" %}
+            "cmp   $dst, 0xff" %}
   ins_encode %{
     // No need to use src2.
     __ uminv(as_FloatRegister($tmp$$reg), __ T8B, as_FloatRegister($src1$$reg));
     __ umov($dst$$Register, as_FloatRegister($tmp$$reg), __ B, 0);
     __ cmpw($dst$$Register, 0xff);
-    __ csetw($dst$$Register, Assembler::EQ);
   %}
   ins_pipe(pipe_slow);
 %}
 
-instruct alltrue_in_mask16B(iRegINoSp dst, vecX src1, vecX src2, vecX tmp, rFlagsReg cr)
+instruct alltrue_in_mask16B(rFlagsReg cr, vecX src1, vecX src2, vecX tmp)
 %{
   predicate(static_cast<const VectorTestNode*>(n)->get_predicate() == BoolTest::overflow);
-  match(Set dst (VectorTest src1 src2 ));
+  match(Set cr (VectorTest src1 src2 ));
   ins_cost(INSN_COST);
-  effect(TEMP tmp, KILL cr);
+  effect(TEMP tmp);
   format %{ "uminv $tmp, T16B, $src1\n\t"
             "umov  $dst, $tmp, B, 0\n\t"
-            "cmp   $dst, 0xff\n\t"
-            "cset  $dst\t# alltrue 16B" %}
+            "cmp   $dst, 0xff" %}
   ins_encode %{
     // No need to use src2.
     __ uminv(as_FloatRegister($tmp$$reg), __ T16B, as_FloatRegister($src1$$reg));
     __ umov($dst$$Register, as_FloatRegister($tmp$$reg), __ B, 0);
     __ cmpw($dst$$Register, 0xff);
-    __ csetw($dst$$Register, Assembler::EQ);
   %}
   ins_pipe(pipe_slow);
 %}

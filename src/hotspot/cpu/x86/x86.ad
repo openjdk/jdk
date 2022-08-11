@@ -8035,11 +8035,11 @@ instruct vabsnegD(vec dst, vec src, rRegI scratch) %{
 //------------------------------------- VectorTest --------------------------------------------
 
 #ifdef _LP64
-instruct vptest_alltrue_lt16(rFlagsRegU dst, legVec src1, legVec src2, legVec vtmp) %{
+instruct vptest_alltrue_lt16(rFlagsRegU cr, legVec src1, legVec src2, legVec vtmp) %{
   predicate(Matcher::vector_length_in_bytes(n->in(1)) >= 4 &&
             Matcher::vector_length_in_bytes(n->in(1)) < 16 &&
             static_cast<const VectorTestNode*>(n)->get_predicate() == BoolTest::overflow);
-  match(Set dst (VectorTest src1 src2));
+  match(Set cr (VectorTest src1 src2));
   effect(TEMP vtmp);
   format %{ "vptest_alltrue_lt16 $dst, $src1, $src2\t! using $vtmp as TEMP" %}
   ins_encode %{
@@ -8049,11 +8049,11 @@ instruct vptest_alltrue_lt16(rFlagsRegU dst, legVec src1, legVec src2, legVec vt
   ins_pipe( pipe_slow );
 %}
 
-instruct vptest_anytrue_lt16(rFlagsRegU dst, legVec src1, legVec src2, legVec vtmp) %{
+instruct vptest_anytrue_lt16(rFlagsRegU cr, legVec src1, legVec src2, legVec vtmp) %{
   predicate(Matcher::vector_length_in_bytes(n->in(1)) >= 4 &&
             Matcher::vector_length_in_bytes(n->in(1)) < 16 &&
             static_cast<const VectorTestNode*>(n)->get_predicate() == BoolTest::ne);
-  match(Set dst (VectorTest src1 src2));
+  match(Set cr (VectorTest src1 src2));
   effect(TEMP vtmp);
   format %{ "vptest_anytrue_lt16 $dst, $src1, $src2\t! using $vtmp as TEMP" %}
   ins_encode %{
@@ -8063,10 +8063,10 @@ instruct vptest_anytrue_lt16(rFlagsRegU dst, legVec src1, legVec src2, legVec vt
   ins_pipe( pipe_slow );
 %}
 
-instruct vptest_ge16(rFlagsRegU dst, legVec src1, legVec src2) %{
+instruct vptest_ge16(rFlagsRegU cr, legVec src1, legVec src2) %{
   predicate(Matcher::vector_length_in_bytes(n->in(1)) >= 16 &&
             Matcher::vector_length_in_bytes(n->in(1)) <  64);
-  match(Set dst (VectorTest src1 src2));
+  match(Set cr (VectorTest src1 src2));
   format %{ "vptest_ge16  $dst, $src1, $src2\n\t" %}
   ins_encode %{
     int vlen = Matcher::vector_length_in_bytes(this, $src1);
@@ -8075,10 +8075,10 @@ instruct vptest_ge16(rFlagsRegU dst, legVec src1, legVec src2) %{
   ins_pipe( pipe_slow );
 %}
 
-instruct vptest_alltrue_64(rFlagsRegU dst, vec src1, vec src2, kReg ktmp) %{
+instruct vptest_alltrue_64(rFlagsRegU cr, vec src1, vec src2, kReg ktmp) %{
   predicate(Matcher::vector_length_in_bytes(n->in(1)) == 64 &&
             static_cast<const VectorTestNode*>(n)->get_predicate() == BoolTest::overflow);
-  match(Set dst (VectorTest src1 src2));
+  match(Set cr (VectorTest src1 src2));
   effect(TEMP ktmp);
   format %{ "vptest_alltrue_64  $dst, $src1, $src2\t! using $ktmp as TEMP" %}
   ins_encode %{
@@ -8089,10 +8089,10 @@ instruct vptest_alltrue_64(rFlagsRegU dst, vec src1, vec src2, kReg ktmp) %{
   ins_pipe( pipe_slow );
 %}
 
-instruct vptest_anytrue_64(rFlagsRegU dst, vec src1, vec src2, kReg ktmp) %{
+instruct vptest_anytrue_64(rFlagsRegU cr, vec src1, vec src2, kReg ktmp) %{
   predicate(Matcher::vector_length_in_bytes(n->in(1)) == 64 &&
             static_cast<const VectorTestNode*>(n)->get_predicate() == BoolTest::ne);
-  match(Set dst (VectorTest src1 src2));
+  match(Set cr (VectorTest src1 src2));
   effect(TEMP ktmp);
   format %{ "vptest_anytrue_64  $dst, $src1, $src2\t! using $ktmp as TEMP" %}
   ins_encode %{
@@ -8102,10 +8102,10 @@ instruct vptest_anytrue_64(rFlagsRegU dst, vec src1, vec src2, kReg ktmp) %{
   ins_pipe( pipe_slow );
 %}
 
-instruct ktest_le8(rFlagsRegU dst, kReg src1, kReg src2, rRegI tmp, kReg ktmp) %{
+instruct ktest_le8(rFlagsRegU cr, kReg src1, kReg src2, rRegI tmp, kReg ktmp) %{
   predicate((Matcher::vector_length(n->in(1)) < 8) ||
             (Matcher::vector_length(n->in(1)) == 8 && !VM_Version::supports_avx512dq()));
-  match(Set dst (VectorTest src1 src2));
+  match(Set cr (VectorTest src1 src2));
   effect(TEMP tmp, TEMP ktmp);
   format %{ "ktest_le8 $dst, $src1, $src2\t! using $tmp and $ktmp as TEMP" %}
   ins_encode %{
@@ -8118,10 +8118,10 @@ instruct ktest_le8(rFlagsRegU dst, kReg src1, kReg src2, rRegI tmp, kReg ktmp) %
   ins_pipe( pipe_slow );
 %}
 
-instruct ktest_ge8(rFlagsRegU dst, kReg src1, kReg src2) %{
+instruct ktest_ge8(rFlagsRegU cr, kReg src1, kReg src2) %{
   predicate((Matcher::vector_length(n->in(1)) >= 16) ||
             (Matcher::vector_length(n->in(1)) == 8 && VM_Version::supports_avx512dq()));
-  match(Set dst (VectorTest src1 src2));
+  match(Set cr (VectorTest src1 src2));
   format %{ "ktest_ge8 $dst, $src1, $src2\n\t" %}
   ins_encode %{
     uint masklen = Matcher::vector_length(this, $src1);
