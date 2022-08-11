@@ -814,7 +814,7 @@ void ShenandoahBarrierSetAssembler::cmpxchg_oop(MacroAssembler* masm,
     __ bind(L_failure);
     __ bind(L_success);
   } else {
-    assert(res != NULL, "need result register");
+    assert(res != noreg, "need result register");
 
     Label exit;
     __ bind(L_failure);
