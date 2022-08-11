@@ -194,10 +194,12 @@ PackageEntryTable::~PackageEntryTable() {
   class PackageEntryTableDeleter : public StackObj {
    public:
     bool do_entry(const Symbol*& name, PackageEntry*& entry) {
-      ResourceMark rm;
-      const char* str = name->as_C_string();
-      log_info(module, unload)("unloading package %s", str);
-      log_debug(module)("PackageEntry: deleting module: %s", str);
+      if (log_is_enabled(Info, module, unload) || log_is_enabled(Debug, module)) {
+        ResourceMark rm;
+        const char* str = name->as_C_string();
+        log_info(module, unload)("unloading package %s", str);
+        log_debug(module)("PackageEntry: deleting module: %s", str);
+      }
       delete entry;
       return true;
     }
@@ -343,7 +345,12 @@ PackageEntry* PackageEntryTable::locked_create_entry_if_absent(Symbol* name, Mod
   bool created;
   PackageEntry* entry = new PackageEntry(name, module);
   PackageEntry** old_entry = _table.put_if_absent(name, entry, &created);
-  return old_entry == nullptr ? nullptr : *old_entry;
+  if (created) {
+    return entry;
+  } else {
+    delete entry;
+    return *old_entry;
+  }
 }
 
 PackageEntry* PackageEntryTable::create_entry_if_absent(Symbol* name, ModuleEntry* module) {
