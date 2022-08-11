@@ -172,6 +172,7 @@ public class IRNode {
     public static final String SUB_L = START + "SubL" + MID + END;
     public static final String SUB_F = START + "SubF" + MID + END;
     public static final String SUB_D = START + "SubD" + MID + END;
+    public static final String CMP_I = START + "CmpI" + MID + END;
     public static final String CMP_U = START + "CmpU" + MID + END;
     public static final String CMP_UL = START + "CmpUL" + MID + END;
     public static final String CMP_U3 = START + "CmpU3" + MID + END;
@@ -210,6 +211,7 @@ public class IRNode {
     public static final String VECTOR_REINTERPRET = START + "VectorReinterpret" + MID + END;
     public static final String VECTOR_BLEND = START + "VectorBlend" + MID + END;
     public static final String REVERSE_BYTES_V = START + "ReverseBytesV" + MID + END;
+    public static final String VECTOR_TEST = START + "VectorTest" + MID + END;
 
     public static final String Min_V = START + "MinV" + MID + END;
     public static final String Max_V = START + "MaxV" + MID + END;

@@ -2865,74 +2865,74 @@ instruct rearrange4I(vecX dst, vecX src, vecX shuffle, vecX tmp0, vecX tmp1)
 
 //-------------------------------- Anytrue/alltrue -----------------------------
 
-instruct anytrue_in_mask8B(rFlagsReg cr, vecD src1, vecD src2, vecD tmp)
+instruct anytrue_in_mask8B(rFlagsReg cr, vecD src1, vecD src2, iRegINoSp tmp, vecD vtmp)
 %{
   predicate(static_cast<const VectorTestNode*>(n)->get_predicate() == BoolTest::ne);
-  match(Set cr (VectorTest src1 src2 ));
+  match(Set cr (VectorTest src1 src2));
   ins_cost(INSN_COST);
-  effect(TEMP tmp);
-  format %{ "addv  $tmp, T8B, $src1\n\t"
-            "umov  $dst, $tmp, B, 0\n\t"
-            "cmp   $dst, 0" %}
+  effect(TEMP tmp, TEMP vtmp);
+  format %{ "addv  $vtmp, T8B, $src1\n\t"
+            "umov  $tmp, $vtmp, B, 0\n\t"
+            "cmp   $tmp, 0" %}
   ins_encode %{
     // No need to use src2.
-    __ addv(as_FloatRegister($tmp$$reg), __ T8B, as_FloatRegister($src1$$reg));
-    __ umov($dst$$Register, as_FloatRegister($tmp$$reg), __ B, 0);
-    __ cmpw($dst$$Register, zr);
+    __ addv(as_FloatRegister($vtmp$$reg), __ T8B, as_FloatRegister($src1$$reg));
+    __ umov($tmp$$Register, as_FloatRegister($vtmp$$reg), __ B, 0);
+    __ cmpw($tmp$$Register, zr);
   %}
   ins_pipe(pipe_slow);
 %}
 
-instruct anytrue_in_mask16B(rFlagsReg cr, vecX src1, vecX src2, vecX tmp)
+instruct anytrue_in_mask16B(rFlagsReg cr, vecX src1, vecX src2, iRegINoSp tmp, vecX vtmp)
 %{
   predicate(static_cast<const VectorTestNode*>(n)->get_predicate() == BoolTest::ne);
-  match(Set cr (VectorTest src1 src2 ));
+  match(Set cr (VectorTest src1 src2));
   ins_cost(INSN_COST);
-  effect(TEMP tmp);
-  format %{ "addv  $tmp, T16B, $src1\n\t"
-            "umov  $dst, $tmp, B, 0\n\t"
-            "cmp   $dst, 0" %}
+  effect(TEMP tmp, TEMP vtmp);
+  format %{ "addv  $vtmp, T16B, $src1\n\t"
+            "umov  $tmp, $vtmp, B, 0\n\t"
+            "cmp   $tmp, 0" %}
   ins_encode %{
     // No need to use src2.
-    __ addv(as_FloatRegister($tmp$$reg), __ T16B, as_FloatRegister($src1$$reg));
-    __ umov($dst$$Register, as_FloatRegister($tmp$$reg), __ B, 0);
-    __ cmpw($dst$$Register, zr);
+    __ addv(as_FloatRegister($vtmp$$reg), __ T16B, as_FloatRegister($src1$$reg));
+    __ umov($tmp$$Register, as_FloatRegister($vtmp$$reg), __ B, 0);
+    __ cmpw($tmp$$Register, zr);
   %}
   ins_pipe(pipe_slow);
 %}
 
-instruct alltrue_in_mask8B(rFlagsReg cr, vecD src1, vecD src2, vecD tmp)
+instruct alltrue_in_mask8B(rFlagsReg cr, vecD src1, vecD src2, iRegINoSp tmp, vecD vtmp)
 %{
   predicate(static_cast<const VectorTestNode*>(n)->get_predicate() == BoolTest::overflow);
-  match(Set cr (VectorTest src1 src2 ));
+  match(Set cr (VectorTest src1 src2));
   ins_cost(INSN_COST);
-  effect(TEMP tmp);
-  format %{ "uminv $tmp, T8B, $src1\n\t"
-            "umov  $dst, $tmp, B, 0\n\t"
-            "cmp   $dst, 0xff" %}
+  effect(TEMP tmp, TEMP vtmp);
+  format %{ "uminv $vtmp, T8B, $src1\n\t"
+            "umov  $tmp, $vtmp, B, 0\n\t"
+            "cmp   $tmp, 0xff" %}
   ins_encode %{
     // No need to use src2.
-    __ uminv(as_FloatRegister($tmp$$reg), __ T8B, as_FloatRegister($src1$$reg));
-    __ umov($dst$$Register, as_FloatRegister($tmp$$reg), __ B, 0);
-    __ cmpw($dst$$Register, 0xff);
+    __ uminv(as_FloatRegister($vtmp$$reg), __ T8B, as_FloatRegister($src1$$reg));
+    __ umov($tmp$$Register, as_FloatRegister($vtmp$$reg), __ B, 0);
+    __ cmpw($tmp$$Register, 0xff);
   %}
   ins_pipe(pipe_slow);
 %}
 
-instruct alltrue_in_mask16B(rFlagsReg cr, vecX src1, vecX src2, vecX tmp)
+instruct alltrue_in_mask16B(rFlagsReg cr, vecX src1, vecX src2, iRegINoSp tmp, vecX vtmp)
 %{
   predicate(static_cast<const VectorTestNode*>(n)->get_predicate() == BoolTest::overflow);
-  match(Set cr (VectorTest src1 src2 ));
+  match(Set cr (VectorTest src1 src2));
   ins_cost(INSN_COST);
-  effect(TEMP tmp);
-  format %{ "uminv $tmp, T16B, $src1\n\t"
-            "umov  $dst, $tmp, B, 0\n\t"
-            "cmp   $dst, 0xff" %}
+  effect(TEMP tmp, TEMP vtmp);
+  format %{ "uminv $vtmp, T16B, $src1\n\t"
+            "umov  $tmp, $vtmp, B, 0\n\t"
+            "cmp   $tmp, 0xff" %}
   ins_encode %{
     // No need to use src2.
-    __ uminv(as_FloatRegister($tmp$$reg), __ T16B, as_FloatRegister($src1$$reg));
-    __ umov($dst$$Register, as_FloatRegister($tmp$$reg), __ B, 0);
-    __ cmpw($dst$$Register, 0xff);
+    __ uminv(as_FloatRegister($vtmp$$reg), __ T16B, as_FloatRegister($src1$$reg));
+    __ umov($tmp$$Register, as_FloatRegister($vtmp$$reg), __ B, 0);
+    __ cmpw($tmp$$Register, 0xff);
   %}
   ins_pipe(pipe_slow);
 %}
