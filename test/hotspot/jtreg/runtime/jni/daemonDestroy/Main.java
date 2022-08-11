@@ -33,7 +33,6 @@ public class Main {
 
     static volatile Thread t1;
 
-    // Note: not normal main(String[] args)
     public static void main() {
         t1 = new Thread(() -> {
                 System.out.println("T1 started");

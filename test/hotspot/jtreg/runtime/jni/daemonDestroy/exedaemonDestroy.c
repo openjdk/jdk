@@ -40,7 +40,7 @@ int main(int argc, char *argv[]) {
   JNIEnv *env;
 
   if (argc < 2) {
-    fprintf(stderr, "Usage: main <classpath property> [1]\n");
+    fprintf(stderr, "Usage: main <classpath property> [daemon]\n");
     exit(1);
   }
 
@@ -78,7 +78,8 @@ int main(int argc, char *argv[]) {
     exit(1);
   }
 
-  if (argc > 2 && argv[2][0] == '1') {
+  // Any additional arg implies to use a daemon thread.
+  if (argc > 2) {
     res = (*jvm)->AttachCurrentThreadAsDaemon(jvm, (void **)&env, NULL);
     if (res != JNI_OK) {
       fprintf(stderr, "Test Error: AttachCurrentThreadAsDaemon failed: %d\n", res);

@@ -46,6 +46,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 
 public class TestDaemonDestroy {
 
@@ -57,9 +59,13 @@ public class TestDaemonDestroy {
         System.out.println("Launcher = " + launcher +
                            (Files.exists(launcher) ? " (exists)" : " (missing)"));
 
-        ProcessBuilder pb = new ProcessBuilder(launcher.toString(),
-                                               "-Djava.class.path=" + Utils.TEST_CLASS_PATH,
-                                               args.length > 0 ? "1" : "");
+        List<String> cmd = new ArrayList<>();
+        cmd.add(launcher.toString());
+        cmd.add("-Djava.class.path=" + Utils.TEST_CLASS_PATH);
+        if (args.length > 0) {
+            cmd.add("daemon");
+        }
+        ProcessBuilder pb = new ProcessBuilder(cmd);
 
         // Need to add libjvm location to LD_LIBRARY_PATH
         String envVar = Platform.sharedLibraryPathVariableName();
