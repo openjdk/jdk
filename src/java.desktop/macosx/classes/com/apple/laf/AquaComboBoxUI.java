@@ -280,7 +280,6 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
         return new BasicComboBoxUI.FocusHandler() {
             @Override
             public void focusGained(FocusEvent e) {
-
                 super.focusGained(e);
 
                 if (arrowButton != null) {
