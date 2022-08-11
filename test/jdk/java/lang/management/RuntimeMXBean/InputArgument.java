@@ -22,11 +22,44 @@
  */
 
 /*
+ * @test
  * @bug     4530538
  * @summary Basic unit test of RuntimeMXBean.getInputArguments().
  *
  * @author  Mandy Chung
  *
+ * @run main InputArgument
+ */
+
+/*
+ * @test
+ * @bug     4530538
+ * @summary Basic unit test of RuntimeMXBean.getInputArguments().
+ *
+ * @author  Mandy Chung
+ *
+ * @run main/othervm -XX:+UseFastJNIAccessors -Xlog:gc*=debug InputArgument
+ */
+
+/*
+ * @test
+ * @bug     4530538
+ * @summary Basic unit test of RuntimeMXBean.getInputArguments().
+ *
+ * @author  Mandy Chung
+ *
+ * @run main/othervm -XX:+UseFastJNIAccessors -Xlog:gc*=debug InputArgument
+ * -XX:+UseFastJNIAccessors
+ */
+
+/*
+ * @test
+ * @bug     4530538
+ * @summary Basic unit test of RuntimeMXBean.getInputArguments().
+ *
+ * @author  Mandy Chung
+ *
+ * @run main/othervm -Dprops=something InputArgument -Dprops=something
  */
 
 import java.lang.management.*;
