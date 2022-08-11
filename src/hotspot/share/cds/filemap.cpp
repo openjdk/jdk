@@ -462,6 +462,10 @@ bool SharedClassPathEntry::validate(bool is_class_path) const {
     } else {
       FileMapInfo::fail_continue("A jar file is not the one used while building"
                                  " the shared archive file: %s", name);
+      if (!log_is_enabled(Info, cds)) {
+        log_warning(cds)("A jar file is not the one used while building"
+            " the shared archive file: %s", name);
+      }
       if (_timestamp != st.st_mtime) {
         log_warning(cds)("%s timestamp has changed.", name);
       } else {

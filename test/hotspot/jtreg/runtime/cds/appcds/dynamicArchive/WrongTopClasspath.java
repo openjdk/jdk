@@ -95,6 +95,9 @@ public class WrongTopClasspath extends DynamicArchiveTestBase {
                 "-cp", appJar, mainClass,
                 "assertShared:java.lang.Object",  // base archive still useable
                 "assertNotShared:GenericTestApp") // but top archive is not useable
-          .assertNormalExit(topArchiveMsg, "GenericTestApp.jar timestamp has changed.");
+          .assertNormalExit(output -> {
+              output.shouldContain(topArchiveMsg);
+              output.shouldMatch(".warning..cds. A jar file is not the one used while building the shared archive file:.*GenericTestApp.jar");
+              output.shouldMatch(".warning..cds.*GenericTestApp.jar timestamp has changed.");});
     }
 }
