@@ -873,7 +873,7 @@ static bool is_always_within_branch_range(Address entry) {
   }
 
   if (entry.rspec().type() == relocInfo::runtime_call_type && CodeCache::contains(target)) {
-    // Runtime calls are calls of a non-compiled method.
+    // Runtime calls are calls of a non-compiled method (stubs, adapters).
     // Non-compiled methods stay forever in CodeCache.
     // We check whether the longest possible branch is within the branch range.
     assert(CodeCache::find_blob(target) != NULL &&
