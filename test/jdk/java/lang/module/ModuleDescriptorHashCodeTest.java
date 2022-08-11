@@ -68,28 +68,88 @@ public class ModuleDescriptorHashCodeTest {
      * descriptors, have the same hashcode.
      */
     @Test
-    public void testModifiersOrdering() throws Exception {
-        // create a module descriptor
-
+    public void testOpensModifiersOrdering() throws Exception {
         // important to use Set.of() (i.e. backed by immutable set) to reproduce the issue
-        final Set<ModuleDescriptor.Opens.Modifier> mod1 = Set.of(
+        final Set<ModuleDescriptor.Opens.Modifier> mods1 = Set.of(
                 ModuleDescriptor.Opens.Modifier.SYNTHETIC, ModuleDescriptor.Opens.Modifier.MANDATED);
-        final ModuleDescriptor desc1 = ModuleDescriptor.newModule("foobar")
-                .opens(mod1, "a.p1", Set.of("a.m1"))
-                .build();
+        final ModuleDescriptor desc1 = createModuleDescriptor(mods1, null, null);
 
         // create the same module descriptor again and this time just change the order of the
         // "opens" modifiers' Set.
 
         // important to use Set.of() (i.e. backed by immutable set) to reproduce the issue
-        final Set<ModuleDescriptor.Opens.Modifier> mod2 = Set.of(
+        final Set<ModuleDescriptor.Opens.Modifier> mods2 = Set.of(
                 ModuleDescriptor.Opens.Modifier.MANDATED, ModuleDescriptor.Opens.Modifier.SYNTHETIC);
-        final ModuleDescriptor desc2 = ModuleDescriptor.newModule("foobar")
-                .opens(mod2, "a.p1", Set.of("a.m1"))
-                .build();
+        final ModuleDescriptor desc2 = createModuleDescriptor(mods2, null, null);
 
         // basic verification of the modifiers themselves before we check the module descriptors
-        assertEquals(mod1, mod2, "Modifiers were expected to be equal");
+        assertEquals(mods1, mods2, "Modifiers were expected to be equal");
+
+        // now verify the module descriptors
+        assertEquals(desc1, desc2, "Module descriptors were expected to be equal");
+        assertEquals(desc1.compareTo(desc2), 0, "compareTo was expected to return" +
+                " 0 for module descriptors that are equal");
+        System.out.println(desc1 + " hashcode = " + desc1.hashCode());
+        System.out.println(desc2 + " hashcode = " + desc2.hashCode());
+        assertEquals(desc1.hashCode(), desc2.hashCode(), "Module descriptor hashcodes" +
+                " were expected to be equal");
+    }
+
+    /**
+     * Verifies that two "equal" module descriptors which only differ in the order of
+     * {@link ModuleDescriptor.Exports.Modifier exports modifiers}, that were used to construct the
+     * descriptors, have the same hashcode.
+     */
+    @Test
+    public void testExportsModifiersOrdering() throws Exception {
+        // important to use Set.of() (i.e. backed by immutable set) to reproduce the issue
+        final Set<ModuleDescriptor.Exports.Modifier> mods1 = Set.of(
+                ModuleDescriptor.Exports.Modifier.SYNTHETIC, ModuleDescriptor.Exports.Modifier.MANDATED);
+        final ModuleDescriptor desc1 = createModuleDescriptor(null, null, mods1);
+
+        // create the same module descriptor again and this time just change the order of the
+        // "exports" modifiers' Set.
+
+        // important to use Set.of() (i.e. backed by immutable set) to reproduce the issue
+        final Set<ModuleDescriptor.Exports.Modifier> mods2 = Set.of(
+                ModuleDescriptor.Exports.Modifier.MANDATED, ModuleDescriptor.Exports.Modifier.SYNTHETIC);
+        final ModuleDescriptor desc2 = createModuleDescriptor(null, null, mods2);
+
+        // basic verification of the modifiers themselves before we check the module descriptors
+        assertEquals(mods1, mods2, "Modifiers were expected to be equal");
+
+        // now verify the module descriptors
+        assertEquals(desc1, desc2, "Module descriptors were expected to be equal");
+        assertEquals(desc1.compareTo(desc2), 0, "compareTo was expected to return" +
+                " 0 for module descriptors that are equal");
+        System.out.println(desc1 + " hashcode = " + desc1.hashCode());
+        System.out.println(desc2 + " hashcode = " + desc2.hashCode());
+        assertEquals(desc1.hashCode(), desc2.hashCode(), "Module descriptor hashcodes" +
+                " were expected to be equal");
+    }
+
+    /**
+     * Verifies that two "equal" module descriptors which only differ in the order of
+     * {@link ModuleDescriptor.Requires.Modifier requires modifiers}, that were used to construct the
+     * descriptors, have the same hashcode.
+     */
+    @Test
+    public void testRequiresModifiersOrdering() throws Exception {
+        // important to use Set.of() (i.e. backed by immutable set) to reproduce the issue
+        final Set<ModuleDescriptor.Requires.Modifier> mods1 = Set.of(
+                ModuleDescriptor.Requires.Modifier.SYNTHETIC, ModuleDescriptor.Requires.Modifier.MANDATED);
+        final ModuleDescriptor desc1 = createModuleDescriptor(null, mods1, null);
+
+        // create the same module descriptor again and this time just change the order of the
+        // "exports" modifiers' Set.
+
+        // important to use Set.of() (i.e. backed by immutable set) to reproduce the issue
+        final Set<ModuleDescriptor.Requires.Modifier> mods2 = Set.of(
+                ModuleDescriptor.Requires.Modifier.MANDATED, ModuleDescriptor.Requires.Modifier.SYNTHETIC);
+        final ModuleDescriptor desc2 = createModuleDescriptor(null, mods2, null);
+
+        // basic verification of the modifiers themselves before we check the module descriptors
+        assertEquals(mods1, mods2, "Modifiers were expected to be equal");
 
         // now verify the module descriptors
         assertEquals(desc1, desc2, "Module descriptors were expected to be equal");
@@ -110,5 +170,24 @@ public class ModuleDescriptorHashCodeTest {
             // internally calls ModuleDescriptor.Builder
             return ModuleDescriptor.read(moduleInfo);
         }
+    }
+
+    // creates a module descriptor with passed (optional) opens/exports/requires modifiers
+    private static ModuleDescriptor createModuleDescriptor(
+            Set<ModuleDescriptor.Opens.Modifier> opensModifiers,
+            Set<ModuleDescriptor.Requires.Modifier> reqsModifiers,
+            Set<ModuleDescriptor.Exports.Modifier> expsModifiers) {
+
+        final var mdb = ModuleDescriptor.newModule("foobar");
+        if (opensModifiers != null) {
+            mdb.opens(opensModifiers, "a.p1", Set.of("a.m1"));
+        }
+        if (reqsModifiers != null) {
+            mdb.requires(reqsModifiers, "a.m2");
+        }
+        if (expsModifiers != null) {
+            mdb.exports(expsModifiers, "a.b.c", Set.of("a.m3"));
+        }
+        return mdb.build();
     }
 }
