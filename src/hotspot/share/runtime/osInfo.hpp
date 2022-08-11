@@ -38,7 +38,7 @@ public:
   // Returns the byte size of a virtual memory page
   static int vm_page_size() { return _vm_page_size; }
 
-  // Returns the size in bytes of memory blocks which can be allocated.
+  // Returns the size, in bytes, of the granularity with which memory can be reserved using os::reserve_memory().
   static int vm_allocation_granularity() { return _vm_allocation_granularity; }
 
   static void set_vm_page_size(int n) {
