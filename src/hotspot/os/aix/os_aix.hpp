@@ -171,7 +171,7 @@ class os::Aix {
   // Returns true if ok, false if error.
   static bool get_meminfo(meminfo_t* pmi);
 
-  static bool platform_print_native_stack(outputStream* st, void* context, char *buf, int buf_size);
+  static bool platform_print_native_stack(outputStream* st, const void* context, char *buf, int buf_size);
   static void* resolve_function_descriptor(void* p);
 };
 

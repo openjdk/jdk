@@ -63,33 +63,33 @@ class Argument {
 
 #ifdef _WIN64
 
-REGISTER_DECLARATION(Register, c_rarg0, rcx);
-REGISTER_DECLARATION(Register, c_rarg1, rdx);
-REGISTER_DECLARATION(Register, c_rarg2, r8);
-REGISTER_DECLARATION(Register, c_rarg3, r9);
+constexpr Register c_rarg0 = rcx;
+constexpr Register c_rarg1 = rdx;
+constexpr Register c_rarg2 =  r8;
+constexpr Register c_rarg3 =  r9;
 
-REGISTER_DECLARATION(XMMRegister, c_farg0, xmm0);
-REGISTER_DECLARATION(XMMRegister, c_farg1, xmm1);
-REGISTER_DECLARATION(XMMRegister, c_farg2, xmm2);
-REGISTER_DECLARATION(XMMRegister, c_farg3, xmm3);
+constexpr XMMRegister c_farg0 = xmm0;
+constexpr XMMRegister c_farg1 = xmm1;
+constexpr XMMRegister c_farg2 = xmm2;
+constexpr XMMRegister c_farg3 = xmm3;
 
 #else
 
-REGISTER_DECLARATION(Register, c_rarg0, rdi);
-REGISTER_DECLARATION(Register, c_rarg1, rsi);
-REGISTER_DECLARATION(Register, c_rarg2, rdx);
-REGISTER_DECLARATION(Register, c_rarg3, rcx);
-REGISTER_DECLARATION(Register, c_rarg4, r8);
-REGISTER_DECLARATION(Register, c_rarg5, r9);
+constexpr Register c_rarg0 = rdi;
+constexpr Register c_rarg1 = rsi;
+constexpr Register c_rarg2 = rdx;
+constexpr Register c_rarg3 = rcx;
+constexpr Register c_rarg4 =  r8;
+constexpr Register c_rarg5 =  r9;
 
-REGISTER_DECLARATION(XMMRegister, c_farg0, xmm0);
-REGISTER_DECLARATION(XMMRegister, c_farg1, xmm1);
-REGISTER_DECLARATION(XMMRegister, c_farg2, xmm2);
-REGISTER_DECLARATION(XMMRegister, c_farg3, xmm3);
-REGISTER_DECLARATION(XMMRegister, c_farg4, xmm4);
-REGISTER_DECLARATION(XMMRegister, c_farg5, xmm5);
-REGISTER_DECLARATION(XMMRegister, c_farg6, xmm6);
-REGISTER_DECLARATION(XMMRegister, c_farg7, xmm7);
+constexpr XMMRegister c_farg0 = xmm0;
+constexpr XMMRegister c_farg1 = xmm1;
+constexpr XMMRegister c_farg2 = xmm2;
+constexpr XMMRegister c_farg3 = xmm3;
+constexpr XMMRegister c_farg4 = xmm4;
+constexpr XMMRegister c_farg5 = xmm5;
+constexpr XMMRegister c_farg6 = xmm6;
+constexpr XMMRegister c_farg7 = xmm7;
 
 #endif // _WIN64
 
@@ -109,33 +109,33 @@ REGISTER_DECLARATION(XMMRegister, c_farg7, xmm7);
 //        | j_rarg5   j_rarg0  j_rarg1 j_rarg2 j_rarg3 j_rarg4    |
 //        |-------------------------------------------------------|
 
-REGISTER_DECLARATION(Register, j_rarg0, c_rarg1);
-REGISTER_DECLARATION(Register, j_rarg1, c_rarg2);
-REGISTER_DECLARATION(Register, j_rarg2, c_rarg3);
+constexpr Register j_rarg0 = c_rarg1;
+constexpr Register j_rarg1 = c_rarg2;
+constexpr Register j_rarg2 = c_rarg3;
 // Windows runs out of register args here
 #ifdef _WIN64
-REGISTER_DECLARATION(Register, j_rarg3, rdi);
-REGISTER_DECLARATION(Register, j_rarg4, rsi);
+constexpr Register j_rarg3 = rdi;
+constexpr Register j_rarg4 = rsi;
 #else
-REGISTER_DECLARATION(Register, j_rarg3, c_rarg4);
-REGISTER_DECLARATION(Register, j_rarg4, c_rarg5);
+constexpr Register j_rarg3 = c_rarg4;
+constexpr Register j_rarg4 = c_rarg5;
 #endif /* _WIN64 */
-REGISTER_DECLARATION(Register, j_rarg5, c_rarg0);
+constexpr Register j_rarg5 = c_rarg0;
 
-REGISTER_DECLARATION(XMMRegister, j_farg0, xmm0);
-REGISTER_DECLARATION(XMMRegister, j_farg1, xmm1);
-REGISTER_DECLARATION(XMMRegister, j_farg2, xmm2);
-REGISTER_DECLARATION(XMMRegister, j_farg3, xmm3);
-REGISTER_DECLARATION(XMMRegister, j_farg4, xmm4);
-REGISTER_DECLARATION(XMMRegister, j_farg5, xmm5);
-REGISTER_DECLARATION(XMMRegister, j_farg6, xmm6);
-REGISTER_DECLARATION(XMMRegister, j_farg7, xmm7);
+constexpr XMMRegister j_farg0 = xmm0;
+constexpr XMMRegister j_farg1 = xmm1;
+constexpr XMMRegister j_farg2 = xmm2;
+constexpr XMMRegister j_farg3 = xmm3;
+constexpr XMMRegister j_farg4 = xmm4;
+constexpr XMMRegister j_farg5 = xmm5;
+constexpr XMMRegister j_farg6 = xmm6;
+constexpr XMMRegister j_farg7 = xmm7;
 
-REGISTER_DECLARATION(Register, rscratch1, r10);  // volatile
-REGISTER_DECLARATION(Register, rscratch2, r11);  // volatile
+constexpr Register rscratch1 = r10;  // volatile
+constexpr Register rscratch2 = r11;  // volatile
 
-REGISTER_DECLARATION(Register, r12_heapbase, r12); // callee-saved
-REGISTER_DECLARATION(Register, r15_thread, r15); // callee-saved
+constexpr Register r12_heapbase = r12; // callee-saved
+constexpr Register r15_thread   = r15; // callee-saved
 
 #else
 // rscratch1 will appear in 32bit code that is dead but of course must compile
@@ -149,7 +149,7 @@ REGISTER_DECLARATION(Register, r15_thread, r15); // callee-saved
 // JSR 292
 // On x86, the SP does not have to be saved when invoking method handle intrinsics
 // or compiled lambda forms. We indicate that by setting rbp_mh_SP_save to noreg.
-REGISTER_DECLARATION(Register, rbp_mh_SP_save, noreg);
+constexpr Register rbp_mh_SP_save = noreg;
 
 // Address is an abstraction used to represent a memory location
 // using any of the amd64 addressing modes with one object.
@@ -2932,7 +2932,7 @@ public:
 
   // Set embedded opmask register specifier.
   void set_embedded_opmask_register_specifier(KRegister mask) {
-    _embedded_opmask_register_specifier = (*mask).encoding() & 0x7;
+    _embedded_opmask_register_specifier = mask->encoding() & 0x7;
   }
 
 };

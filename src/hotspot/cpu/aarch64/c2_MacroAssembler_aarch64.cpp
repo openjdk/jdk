@@ -26,6 +26,7 @@
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
 #include "opto/c2_MacroAssembler.hpp"
+#include "opto/compile.hpp"
 #include "opto/intrinsicnode.hpp"
 #include "opto/matcher.hpp"
 #include "opto/output.hpp"
@@ -1654,3 +1655,14 @@ void C2_MacroAssembler::vector_round_sve(FloatRegister dst, FloatRegister src, F
   sve_fcvtzs(dst, T, ptrue, dst, T);
   // result in dst
 }
+
+bool C2_MacroAssembler::in_scratch_emit_size() {
+  if (ciEnv::current()->task() != NULL) {
+    PhaseOutput* phase_output = Compile::current()->output();
+    if (phase_output != NULL && phase_output->in_scratch_emit_size()) {
+      return true;
+    }
+  }
+  return MacroAssembler::in_scratch_emit_size();
+}
+

@@ -577,7 +577,8 @@ TRACE_REQUEST_FUNC(CompilerConfiguration) {
 
 TRACE_REQUEST_FUNC(CodeCacheStatistics) {
   // Emit stats for all available code heaps
-  for (int bt = 0; bt < CodeBlobType::NumTypes; ++bt) {
+  for (int bt_index = 0; bt_index < static_cast<int>(CodeBlobType::NumTypes); ++bt_index) {
+    const CodeBlobType bt = static_cast<CodeBlobType>(bt_index);
     if (CodeCache::heap_available(bt)) {
       EventCodeCacheStatistics event;
       event.set_codeBlobType((u1)bt);

@@ -28,23 +28,34 @@
  * @summary Test getting the class file version for java.lang.Class API
  * @modules java.base/java.lang:open
  * @compile classFileVersions.jcod
+ * @compile --enable-preview -source ${jdk.version} ClassFileVersionTest.java
  * @run main/othervm --enable-preview ClassFileVersionTest
  */
 
 import java.lang.reflect.*;
 
 public class ClassFileVersionTest {
-
+    public static final int LOWER_16 = 0x0000_FFFF;
+    /*
+     * Include a use of a preview API so that the minor class file
+     * version of the class file for this class gets set during
+     * compilation. If a particular class becomes non-preview, any
+     * currently preview class can be substituted in.
+     */
+    private static final Class<?> PREVIEW_API = java.lang.foreign.MemoryAddress.class;
     static Method m;
 
     public static void testIt(String className, int expectedResult) throws Exception {
-        Class<?> testClass = Class.forName(className);
+        testIt(Class.forName(className), expectedResult);
+    }
+
+    public static void testIt(Class<?> testClass, int expectedResult) throws Exception {
         int ver = (int)m.invoke(testClass);
         if (ver != expectedResult) {
-            int exp_minor = (expectedResult >> 16) & 0x0000FFFF;
-            int exp_major = expectedResult & 0x0000FFFF;
-            int got_minor = (ver >> 16) & 0x0000FFFF;
-            int got_major = ver & 0x0000FFFF;
+            int exp_minor = (expectedResult >> 16) & LOWER_16;
+            int exp_major = expectedResult & LOWER_16;
+            int got_minor = (ver >> 16) & LOWER_16;
+            int got_major = ver & LOWER_16;
             throw new RuntimeException(
                 "Expected " + exp_minor + ":" + exp_major + " but got " + got_minor + ":" + got_major);
         }
@@ -55,17 +66,21 @@ public class ClassFileVersionTest {
         m = cl.getDeclaredMethod("getClassFileVersion", new Class[0]);
         m.setAccessible(true);
 
+        // Class file version is stored like "64.0".
+        int latestMajor = (int)Double.parseDouble(System.getProperty("java.class.version"));
+
+        testIt(Object.class, latestMajor);
+        // ClassFileVersionTest use preview features so its minor version should be 0xFFFF
+        testIt(ClassFileVersionTest.class, (~LOWER_16) | latestMajor);
         testIt("Version64", 64);
         testIt("Version59", 59);
-        testIt("Version45_3", 0x3002D);  // 3:45
-        // test minor version of 65535.
-        testIt("Version64_65535", 0xFFFF0040);  // 0xFFFF0040 = 65535:64
+        testIt("Version45_3", 0x0003_002D);  // 3:45
 
         // test primitive array.  should return latest version.
         int ver = (int)m.invoke((new int[3]).getClass());
         if (ver != 64) {
-            int got_minor = (ver >> 16) & 0x0000FFFF;
-            int got_major = ver & 0x0000FFFF;
+            int got_minor = (ver >> 16) & LOWER_16;
+            int got_major = ver & LOWER_16;
             throw new RuntimeException(
                 "Expected 0:64, but got " + got_minor + ":" + got_major + " for primitive array");
         }
@@ -73,8 +88,8 @@ public class ClassFileVersionTest {
         // test object array.  should return class file version of component.
         ver = (int)m.invoke((new Version59[2]).getClass());
         if (ver != 59) {
-            int got_minor = (ver >> 16) & 0x0000FFFF;
-            int got_major = ver & 0x0000FFFF;
+            int got_minor = (ver >> 16) & LOWER_16;
+            int got_major = ver & LOWER_16;
             throw new RuntimeException(
                 "Expected 0:59, but got " + got_minor + ":" + got_major + " for object array");
         }
@@ -82,8 +97,8 @@ public class ClassFileVersionTest {
         // test multi-dimensional object array.  should return class file version of component.
         ver = (int)m.invoke((new Version59[3][2]).getClass());
         if (ver != 59) {
-            int got_minor = (ver >> 16) & 0x0000FFFF;
-            int got_major = ver & 0x0000FFFF;
+            int got_minor = (ver >> 16) & LOWER_16;
+            int got_major = ver & LOWER_16;
             throw new RuntimeException(
                 "Expected 0:59, but got " + got_minor + ":" + got_major + " for object array");
         }
