@@ -170,7 +170,7 @@ endif
 
 ifeq ($(call check-jvm-feature, link-time-opt), true)
   ifeq ($(call isCompiler, gcc), true)
-    # NOTE: Disable automatic opimization level and let the explicit cflag control
+    # NOTE: Disable automatic optimization level and let the explicit cflag control
     # optimization level instead. This activates O3 on slowdebug builds, just
     # like the old build, but it's probably not right.
     JVM_OPTIMIZATION :=
