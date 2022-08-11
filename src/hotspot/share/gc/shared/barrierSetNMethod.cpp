@@ -31,7 +31,7 @@
 #include "logging/log.hpp"
 #include "memory/iterator.hpp"
 #include "oops/access.inline.hpp"
-#include "oops/method.hpp"
+#include "oops/method.inline.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/threadWXSetters.inline.hpp"
