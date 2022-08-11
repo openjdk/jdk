@@ -1196,21 +1196,22 @@ public class FilePane extends JPanel implements PropertyChangeListener {
 
             } else if (value instanceof Long len) {
                 if (listViewWindowsStyle) {
+                    updateMessageFormatPattern(kiloByteString, 1);
                     if (len == 0) {
-                        updateMessageFormatPattern(kiloByteString, 0);
+                        objs[0] = Double.valueOf(0.0);
+                    } else if (len > 0 && len < 100L) {
+                        objs[0] = Double.valueOf(0.1);
                     } else {
-                        updateMessageFormatPattern(kiloByteString, 1);
-                        len /= 1000L;
+                        double kbVal = formatToDoubleValue(len);
+                        objs[0] = Double.valueOf(kbVal);
                     }
-                    objs[0] = Long.valueOf(len);
                     text = mf.format(objs);
-                } else if (len < 1000L) {
+                } else if (len < 100L) {
+                    updateMessageFormatPattern(kiloByteString, 1);
                     if (len == 0) {
-                        updateMessageFormatPattern(kiloByteString, 0);
-                        objs[0] = Long.valueOf(0);
+                        objs[0] = Double.valueOf(0.0);
                     } else {
-                        updateMessageFormatPattern(kiloByteString, 1);
-                        objs[0] = Double.valueOf(1.0);
+                        objs[0] = Double.valueOf(0.1);
                     }
                     text = mf.format(objs);
                 } else {

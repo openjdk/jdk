@@ -27,7 +27,7 @@
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @requires (os.family == "linux")
- * @summary To test if the 1-Empty-File size shows 0 KB and other files show correct size.
+ * @summary To test if the 1-Empty-File size shows 0.0 KB and other files show correct size.
  * @run main/manual FileSizeCheck
  */
 
@@ -52,21 +52,25 @@ public class FileSizeCheck {
     private static final String INSTRUCTIONS =
             "Click on the \"Details\" button in right-top corner.\n\n" +
                     "Scroll Down if required. \n\n" +
-                    "Test 1: If the size of 1-Empty-File shows 0 KB\n" +
-                    "Test 2: If the size of 2-File-2047-Byte shows 2.0 KB\n" +
-                    "Test 3: If the size of 3-File-2.5-KB shows 2.5 KB\n" +
-                    "Test 4: If the size of 4-File-999-KB shows 999.0 KB\n" +
-                    "Test 5: If the size of 5-File-1000-KB shows 1.0 MB\n" +
-                    "Test 6: If the size of 6-File-2.8-MB shows 2.8 MB\n\n" +
+                    "Test 1: If the size of 1-Empty-File shows 0.0 KB\n" +
+                    "Test 2: If the size of 2-File-1-Byte shows 0.1 KB\n" +
+                    "Test 3: If the size of 3-File-500-Byte shows 0.5 KB\n" +
+                    "Test 4: If the size of 4-File-1000-Byte shows 1.0 KB\n" +
+                    "Test 5: If the size of 5-File-2047-Byte shows 2.0 KB\n" +
+                    "Test 6: If the size of 6-File-2.5-KB shows 2.5 KB\n" +
+                    "Test 7: If the size of 7-File-999-KB shows 999.0 KB\n" +
+                    "Test 8: If the size of 8-File-1000-KB shows 1.0 MB\n" +
+                    "Test 9: If the size of 9-File-2.8-MB shows 2.8 MB\n\n" +
                            "press PASS.\n\n";
 
     public static void test() {
         frame = new JFrame("JFileChooser File Size test");
         fc = new JFileChooser();
         Path dir = Paths.get(System.getProperty("test.src"));
-        String [] tempFilesName = {"1-Empty-File", "2-File-2047-Byte",
-                "3-File-2.5-KB", "4-File-999-KB", "5-File-1000-KB", "6-File-2.8-MB"};
-        int [] tempFilesSize = {0, 2_047, 2_500, 999_000, 1_000_000, 2_800_000};
+        String [] tempFilesName = {"1-Empty-File", "2-File-1-Byte", "3-File-500-Byte",
+                "4-File-1000-Byte", "5-File-2047-Byte", "6-File-2.5-KB",
+                "7-File-999-KB", "8-File-1000-KB", "9-File-2.8-MB"};
+        int [] tempFilesSize = {0, 1, 500, 1_000, 2_047, 2_500, 999_000, 1_000_000, 2_800_000};
         tempFilePaths = new Path[tempFilesName.length];
         PassFailJFrame.addTestWindow(frame);
         PassFailJFrame.positionTestWindow(frame, PassFailJFrame.Position.HORIZONTAL);
