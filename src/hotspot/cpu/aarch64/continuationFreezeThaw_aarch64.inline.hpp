@@ -216,8 +216,9 @@ template<typename FKind> frame ThawBase::new_stack_frame(const frame& hf, frame&
     intptr_t* heap_sp = hf.unextended_sp();
     const int fsize = ContinuationHelper::InterpretedFrame::frame_bottom(hf) - hf.unextended_sp();
     const int locals = hf.interpreter_frame_method()->max_locals();
-    intptr_t* frame_sp = caller.unextended_sp() - fsize;
-    intptr_t* fp = frame_sp + (hf.fp() - heap_sp);
+    int caller_overlap = caller.is_interpreted_frame() ? ContinuationHelper::InterpretedFrame::stack_argsize(hf) : 0;
+    intptr_t* fp = caller.unextended_sp() + caller_overlap - (locals + frame::sender_sp_offset);
+    intptr_t* frame_sp = fp - (hf.fp() - heap_sp);
     int padding = 0;
     if ((intptr_t)fp % frame::frame_alignment != 0) {
       fp--;
