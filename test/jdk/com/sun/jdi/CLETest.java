@@ -24,7 +24,7 @@
 /**
  * @test
  * @bug 8292217
- * @summary Test co-located events (CLE) for MethodEntry, SingleStep, and Breakpoint events. 
+ * @summary Test co-located events (CLE) for MethodEntry, SingleStep, and Breakpoint events.
  * @run build TestScaffold VMConnection TargetListener TargetAdapter
  * @run compile -g CLETest.java
  * @run driver CLETest
@@ -106,7 +106,7 @@ class CLEDebugee {
     // MethodEntry and Step events are enabled when we hit BREAKPOINT_9 above. When
     // the StepEvent is received, the EventSet should also include the MethodEntryEvent.
     public static void test6() {
-        int x = 1; 
+        int x = 1;
     }
 }
 
@@ -141,7 +141,7 @@ public class CLETest extends TestScaffold {
             this.lineNumber = lineNumber;
         }
     }
-    
+
     // Table of all breakpoints based on method name and sig, plus the line number within the method.
     static MethodBreakpointData[] breakpoints = new MethodBreakpointData[] {
         new MethodBreakpointData("runTests", "()V", 3), // BREAKPOINT_3
@@ -372,14 +372,14 @@ public class CLETest extends TestScaffold {
         if (testcase == 6 && testcaseFailed) {
             testFailed = true;
             System.out.println("TESTCASE #6 FAILED: did not get MethodEntry and Step co-located events");
-        }   
+        }
         if (testcase == 1 || testcase == 2 || testcase == 6) {
             exitRequest.disable();
             if (!testcaseFailed) {  // We already did a println if the test failed.
                 System.out.println("TESTCASE #" + testcase + " PASSED");
             }
         }
-    } 
+    }
 
     public void methodEntered(MethodEntryEvent event) {
         System.out.println("Got MethodEntryEvent: " + getLocationString(event.location()));
@@ -402,7 +402,7 @@ public class CLETest extends TestScaffold {
         mainThread = bpe.thread();
         System.out.println("Got main thread: " + mainThread);
         erm = eventRequestManager();
-        
+
         try {
             // Setup all breakpoints
             for (MethodBreakpointData bpData : breakpoints) {
@@ -412,7 +412,7 @@ public class CLETest extends TestScaffold {
                 req.setSuspendPolicy(EventRequest.SUSPEND_ALL);
                 req.enable();
             }
-            
+
             // Ask for method entry events
             entryRequest = erm.createMethodEntryRequest();
             entryRequest.addThreadFilter(mainThread);
