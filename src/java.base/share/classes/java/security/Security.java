@@ -47,9 +47,8 @@ import sun.security.jca.*;
  * implementation-specific location, which is typically the properties file
  * {@code conf/security/java.security} in the Java installation directory.
  *
- * @implNote If the master security properties file is missing, the JDK
- * implementation will throw an {@code InternalError} when initializing the
- * {@code Security} class.
+ * @implNote If this property file fails to load, the JDK implementation will
+ * throw an unspecified error when initializing the {@code Security} class.
  *
  * @author Benjamin Renaud
  * @since 1.1
