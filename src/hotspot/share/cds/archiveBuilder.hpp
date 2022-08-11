@@ -386,7 +386,7 @@ public:
 
   // + When creating a CDS archive, we first load Java classes and create metadata
   //   objects as usual. These are call "source" objects.
-  // + We then copy the source objects into the output buffer at "dumped addrsses".
+  // + We then copy the source objects into the output buffer at "dumped addresses".
   //
   // The following functions translate between these two (non-overlapping) spaces.
   // (The API should be renamed to be less confusing!)
