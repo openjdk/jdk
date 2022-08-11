@@ -25,6 +25,7 @@
 
 #include "runtime/os.hpp"
 #include "runtime/safefetch.hpp"
+#include "services/mallocHeader.inline.hpp"
 #include "services/mallocSiteTable.hpp"
 #include "services/mallocTracker.hpp"
 #include "services/memTracker.hpp"
@@ -101,125 +102,10 @@ void MallocMemorySnapshot::make_adjustment() {
   _malloc[chunk_idx].record_free(arena_size);
 }
 
-
 void MallocMemorySummary::initialize() {
   assert(sizeof(_snapshot) >= sizeof(MallocMemorySnapshot), "Sanity Check");
   // Uses placement new operator to initialize static area.
   ::new ((void*)_snapshot)MallocMemorySnapshot();
-}
-
-void MallocHeader::mark_block_as_dead() {
-  _canary = _header_canary_dead_mark;
-  NOT_LP64(_alt_canary = _header_alt_canary_dead_mark);
-  set_footer(_footer_canary_dead_mark);
-}
-
-void MallocHeader::print_block_on_error(outputStream* st, address bad_address) const {
-  assert(bad_address >= (address)this, "sanity");
-
-  // This function prints block information, including hex dump, in case of a detected
-  // corruption. The hex dump should show both block header and corruption site
-  // (which may or may not be close together or identical). Plus some surrounding area.
-  //
-  // Note that we use os::print_hex_dump(), which is able to cope with unmapped
-  // memory (it uses SafeFetch).
-
-  st->print_cr("NMT Block at " PTR_FORMAT ", corruption at: " PTR_FORMAT ": ",
-               p2i(this), p2i(bad_address));
-  static const size_t min_dump_length = 256;
-  address from1 = align_down((address)this, sizeof(void*)) - (min_dump_length / 2);
-  address to1 = from1 + min_dump_length;
-  address from2 = align_down(bad_address, sizeof(void*)) - (min_dump_length / 2);
-  address to2 = from2 + min_dump_length;
-  if (from2 > to1) {
-    // Dump gets too large, split up in two sections.
-    os::print_hex_dump(st, from1, to1, 1);
-    st->print_cr("...");
-    os::print_hex_dump(st, from2, to2, 1);
-  } else {
-    // print one hex dump
-    os::print_hex_dump(st, from1, to2, 1);
-  }
-}
-void MallocHeader::assert_block_integrity() const {
-  char msg[256];
-  address corruption = NULL;
-  if (!check_block_integrity(msg, sizeof(msg), &corruption)) {
-    if (corruption != NULL) {
-      print_block_on_error(tty, (address)this);
-    }
-    fatal("NMT corruption: Block at " PTR_FORMAT ": %s", p2i(this), msg);
-  }
-}
-
-bool MallocHeader::check_block_integrity(char* msg, size_t msglen, address* p_corruption) const {
-  // Note: if you modify the error messages here, make sure you
-  // adapt the associated gtests too.
-
-  // Weed out obviously wrong block addresses of NULL or very low
-  // values. Note that we should not call this for ::free(NULL),
-  // which should be handled by os::free() above us.
-  if (((size_t)p2i(this)) < K) {
-    jio_snprintf(msg, msglen, "invalid block address");
-    return false;
-  }
-
-  // From here on we assume the block pointer to be valid. We could
-  // use SafeFetch but since this is a hot path we don't. If we are
-  // wrong, we will crash when accessing the canary, which hopefully
-  // generates distinct crash report.
-
-  // Weed out obviously unaligned addresses. NMT blocks, being the result of
-  // malloc calls, should adhere to malloc() alignment. Malloc alignment is
-  // specified by the standard by this requirement:
-  // "malloc returns a pointer which is suitably aligned for any built-in type"
-  // For us it means that it is *at least* 64-bit on all of our 32-bit and
-  // 64-bit platforms since we have native 64-bit types. It very probably is
-  // larger than that, since there exist scalar types larger than 64bit. Here,
-  // we test the smallest alignment we know.
-  // Should we ever start using std::max_align_t, this would be one place to
-  // fix up.
-  if (!is_aligned(this, sizeof(uint64_t))) {
-    *p_corruption = (address)this;
-    jio_snprintf(msg, msglen, "block address is unaligned");
-    return false;
-  }
-
-  // Check header canary
-  if (_canary != _header_canary_life_mark) {
-    *p_corruption = (address)this;
-    jio_snprintf(msg, msglen, "header canary broken");
-    return false;
-  }
-
-#ifndef _LP64
-  // On 32-bit we have a second canary, check that one too.
-  if (_alt_canary != _header_alt_canary_life_mark) {
-    *p_corruption = (address)this;
-    jio_snprintf(msg, msglen, "header canary broken");
-    return false;
-  }
-#endif
-
-  // Does block size seems reasonable?
-  if (_size >= max_reasonable_malloc_size) {
-    *p_corruption = (address)this;
-    jio_snprintf(msg, msglen, "header looks invalid (weirdly large block size)");
-    return false;
-  }
-
-  // Check footer canary
-  if (get_footer() != _footer_canary_life_mark) {
-    *p_corruption = footer_address();
-    jio_snprintf(msg, msglen, "footer canary broken at " PTR_FORMAT " (buffer overflow?)",
-                p2i(footer_address()));
-    return false;
-  }
-  return true;
-}
-
-bool MallocHeader::get_stack(NativeCallStack& stack) const {
-  return MallocSiteTable::access_stack(stack, _mst_marker);
 }
 
 bool MallocTracker::initialize(NMT_TrackingLevel level) {

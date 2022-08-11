@@ -41,6 +41,7 @@
 #include "nativeInst_aarch64.hpp"
 #include "oops/compiledICHolder.hpp"
 #include "oops/klass.inline.hpp"
+#include "oops/method.inline.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/continuationEntry.inline.hpp"
@@ -1053,7 +1054,7 @@ static void gen_continuation_enter(MacroAssembler* masm,
     __ br(Assembler::NE, call_thaw);
 
     address mark = __ pc();
-    __ trampoline_call(resolve, /*cbuf=*/ NULL, /*check_emit_size=*/ false);
+    __ trampoline_call(resolve);
 
     oop_maps->add_gc_map(__ pc() - start, map);
     __ post_call_nop();
@@ -1079,7 +1080,7 @@ static void gen_continuation_enter(MacroAssembler* masm,
   __ br(Assembler::NE, call_thaw);
 
   address mark = __ pc();
-  __ trampoline_call(resolve, /*cbuf=*/ NULL, /*check_emit_size=*/ false);
+  __ trampoline_call(resolve);
 
   oop_maps->add_gc_map(__ pc() - start, map);
   __ post_call_nop();
