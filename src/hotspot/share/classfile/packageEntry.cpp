@@ -198,7 +198,7 @@ PackageEntryTable::~PackageEntryTable() {
         ResourceMark rm;
         const char* str = name->as_C_string();
         log_info(module, unload)("unloading package %s", str);
-        log_debug(module)("PackageEntry: deleting module: %s", str);
+        log_debug(module)("PackageEntry: deleting package: %s", str);
       }
       delete entry;
       return true;
@@ -280,7 +280,7 @@ Array<PackageEntry*>* PackageEntryTable::allocate_archived_entries() {
   // First count the packages in named modules
   int n = 0;
   auto count = [&] (const Symbol*& key, PackageEntry*& p) {
-    if (p->module()->name() != NULL) {
+    if (p->module()->is_named()) {
       n++;
     }
   };
@@ -290,7 +290,7 @@ Array<PackageEntry*>* PackageEntryTable::allocate_archived_entries() {
   // reset n
   n = 0;
   auto grab = [&] (const Symbol*& key, PackageEntry*& p) {
-    if (p->module()->name() != NULL) {
+    if (p->module()->is_named()) {
       // We don't archive unnamed modules, or packages in unnamed modules. They will be
       // created on-demand at runtime as classes in such packages are loaded.
       archived_packages->at_put(n++, p);
