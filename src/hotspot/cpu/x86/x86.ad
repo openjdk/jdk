@@ -1838,8 +1838,6 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
         return false; // Implementation limitation
       } else if (size_in_bits < 32) {
         return false; // Implementation limitation
-      } else if (size_in_bits == 512 && (VM_Version::supports_avx512bw() == false)) {
-        return false; // Implementation limitation
       }
       break;
     case Op_VectorLoadShuffle:
