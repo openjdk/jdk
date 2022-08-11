@@ -54,6 +54,7 @@ CompiledMethod::CompiledMethod(Method* method, const char* name, CompilerType ty
                                int frame_complete_offset, int frame_size, ImmutableOopMapSet* oop_maps,
                                bool caller_must_gc_arguments, bool compiled)
   : CodeBlob(name, type, layout, frame_complete_offset, frame_size, oop_maps, caller_must_gc_arguments, compiled),
+    _deoptimization_status(not_enqueued),
     _method(method),
     _gc_data(NULL)
 {
@@ -65,6 +66,7 @@ CompiledMethod::CompiledMethod(Method* method, const char* name, CompilerType ty
                                OopMapSet* oop_maps, bool caller_must_gc_arguments, bool compiled)
   : CodeBlob(name, type, CodeBlobLayout((address) this, size, header_size, cb), cb,
              frame_complete_offset, frame_size, oop_maps, caller_must_gc_arguments, compiled),
+    _deoptimization_status(not_enqueued),
     _method(method),
     _gc_data(NULL)
 {

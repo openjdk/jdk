@@ -1059,6 +1059,7 @@ void DeoptimizationContext::deopt_frames() {
 }
 
 void DeoptimizationContext::deoptimize() {
+  _deoptimized = true;
   deopt_compiled_methods();
   deopt_frames();
 }
