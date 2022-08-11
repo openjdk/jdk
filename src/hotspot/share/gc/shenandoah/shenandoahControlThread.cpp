@@ -480,6 +480,7 @@ void ShenandoahControlThread::request_gc(GCCause::Cause cause) {
          GCCause::is_serviceability_requested_gc(cause) ||
          cause == GCCause::_metadata_GC_clear_soft_refs ||
          cause == GCCause::_codecache_GC_aggressive ||
+         cause == GCCause::_codecache_GC_threshold ||
          cause == GCCause::_full_gc_alot ||
          cause == GCCause::_wb_full_gc ||
          cause == GCCause::_wb_breakpoint ||
