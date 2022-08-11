@@ -70,7 +70,7 @@ void DependencyContext::enqueue_deoptimization_dependent_nmethods(DepChange& cha
     nmethod* nm = b->get_nmethod();
     // since dependencies aren't removed until an nmethod becomes a zombie,
     // the dependency list may contain nmethods which aren't alive.
-    if (b->count() > 0 && nm->is_alive() && !nm->has_been_enqueued_for_deoptimization() && nm->check_dependency_on(changes)) {
+    if (b->count() > 0 && nm->is_alive() && !nm->has_enqueued_deoptimization() && nm->check_dependency_on(changes)) {
       if (TraceDependencies) {
         ResourceMark rm;
         tty->print_cr("Enqueued deoptimization");
@@ -222,7 +222,7 @@ void DependencyContext::remove_and_enqueue_deoptimization_all_dependents(Deoptim
   set_dependencies(NULL);
   while (b != NULL) {
     nmethod* nm = b->get_nmethod();
-    if (b->count() > 0 && nm->is_alive() && !nm->has_been_enqueued_for_deoptimization()) {
+    if (b->count() > 0 && nm->is_alive() && !nm->has_enqueued_deoptimization()) {
       deopt->enqueue(nm);
     }
     b = release_and_get_next_not_unloading(b);

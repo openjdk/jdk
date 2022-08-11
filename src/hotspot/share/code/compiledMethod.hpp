@@ -149,9 +149,7 @@ protected:
     not_enqueued,
     enqueued,
     enqueued_noupdate,
-    // TODO: look at deoptimize_done, it is only used for continuations, misleading
-    // see TODO comment in update_recompile_counts().
-    deoptimize_done
+    post_make_deoptimized
   };
 
   DeoptimizationStatus _deoptimization_status; // Used for stack deoptimization
@@ -245,53 +243,22 @@ public:
   bool is_at_poll_return(address pc);
   bool is_at_poll_or_poll_return(address pc);
 
-  bool  has_been_enqueued_for_deoptimization() const { return _deoptimization_status != not_enqueued; }
+  bool  has_enqueued_deoptimization() const { return _deoptimization_status != not_enqueued; }
 
-  // TODO: deoptimize_done is very weird in this new thing
-  // see TODO comment in update_recompile_counts().
-  bool  has_been_deoptimized() const { return _deoptimization_status == deoptimize_done; }
+  bool  is_post_make_deoptimized() const { return _deoptimization_status == post_make_deoptimized; }
 
 private:
   bool  enqueue_deoptimization(bool inc_recompile_counts = true);
 protected:
-  // TODO: bad name for what it does.
-  // see TODO comment in update_recompile_counts().
   void  make_deoptimized_done();
 public:
 
   virtual void  make_deoptimized() { assert(false, "not supported"); };
 
   bool update_recompile_counts() const {
-    // TODO: fix this logic!
-    // Original Text with new enum terminology:
-      // Update recompile counts when either the update is explicitly requested (enqueued)
-      // or the nmethod has not enqueued deoptimization at all (not_enqueued).
-      // The latter happens during uncommon traps when deoptimized nmethod is made not entrant.
-    // Actually behaviour:
-      // The function is only used in when an nmethod is made not entrant (or zombie) and
-      // _deoptimization_status != deoptimize_done is always true, as it is only called in
-      // make_deoptimized which is called right after a call to make_not_entrant. Even if
-      // some other thread comes before that call and makes this nmethod not entrant (or zombie)
-      // that thread will not see _deoptimization_status == deoptimize_done and if some thread
-      // calls make_not_entrant after it will not succeed as it was already made non_entrant.
-      // the unloaded transition will not affect this either. (the try_transition race). And it
-      // is gone when the sweeper is removed. So now it is pretty much just update the recompile
-      // count if not explicitly told not too (enqueued_noupdate).
-    // _deoptimization_status != deoptimize_done sort of makes sense if it meant what it actually says,
-    // but the semantics of deoptimize_done is unclear and need to be defined.
-      // Right now it means nothing if continuations is turned off. And with it on it means that the
-      // nmethod's NativePostCallNop have been patched. Neither truly means that the nmethod has been
-      // deoptimized. As we still need to walk the frame stacks and install deopt return pc's.
-        // frame::deoptimize also have some dead code, NativePostCallNop* inst = nativePostCallNop_at(pc()),
-        // which has no side effects. (inst never used).
-        // frame::patch_pc takes a Thread* and never uses it.
-      // So maybe there should be another status, deoptimize_post_call_installed and deoptimize_done. And
-      // deoptimize_done is only set after the frames has been walked. This does however require finding all
-      // the nmethods again, it seems overly complicated to just have a flag which is never used. Maybe rename
-      // deoptimize_done to deoptimize_post_call_installed is the best and not track if all the steps of the
-      // deoptimization has been completed.
-    return _deoptimization_status != enqueued_noupdate &&
-        _deoptimization_status != deoptimize_done;
+    // Update recompile counts unless explicitly told not too (enqueued_noupdate) or
+    // make_deoptimized_done() has been called.
+    return _deoptimization_status != enqueued_noupdate && _deoptimization_status != post_make_deoptimized;
   }
 
   // tells whether frames described by this nmethod can be deoptimized

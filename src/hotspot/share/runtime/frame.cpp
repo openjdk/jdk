@@ -322,12 +322,12 @@ bool frame::should_be_deoptimized() const {
   assert(_cb != NULL && _cb->is_compiled(), "must be an nmethod");
   CompiledMethod* nm = (CompiledMethod *)_cb;
   if (TraceDependencies) {
-    tty->print("checking (%s) ", nm->has_been_enqueued_for_deoptimization() ? "true" : "false");
+    tty->print("checking (%s) ", nm->has_enqueued_deoptimization() ? "true" : "false");
     nm->print_value_on(tty);
     tty->cr();
   }
 
-  if( !nm->has_been_enqueued_for_deoptimization() )
+  if( !nm->has_enqueued_deoptimization() )
     return false;
 
   // If at the return point, then the frame has already been popped, and

@@ -806,7 +806,7 @@ WB_ENTRY(jboolean, WB_IsMethodCompiled(JNIEnv* env, jobject o, jobject method, j
   if (code == NULL) {
     return JNI_FALSE;
   }
-  return (code->is_alive() && !code->has_been_enqueued_for_deoptimization());
+  return (code->is_alive() && !code->has_enqueued_deoptimization());
 WB_END
 
 static bool is_excluded_for_compiler(AbstractCompiler* comp, methodHandle& mh) {

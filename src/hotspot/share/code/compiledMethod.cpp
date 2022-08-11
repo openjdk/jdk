@@ -120,15 +120,16 @@ const char* CompiledMethod::state() const {
 bool CompiledMethod::enqueue_deoptimization(bool inc_recompile_counts) {
   assert_locked_or_safepoint(Compile_lock);
   DeoptimizationStatus old_status = _deoptimization_status;
-  if (_deoptimization_status != deoptimize_done) { // can't go backwards
-    _deoptimization_status = (inc_recompile_counts ? enqueued : enqueued_noupdate);
+  DeoptimizationStatus new_status = (inc_recompile_counts ? enqueued : enqueued_noupdate);
+  if (old_status < new_status) {
+    _deoptimization_status = new_status;
   }
   return old_status == not_enqueued;
 }
 
 void  CompiledMethod::make_deoptimized_done() {
   assert_locked_or_safepoint(Compile_lock);
-  _deoptimization_status = deoptimize_done;
+  _deoptimization_status = post_make_deoptimized;
 }
 
 //-----------------------------------------------------------------------------

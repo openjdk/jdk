@@ -2362,7 +2362,7 @@ void nmethod::check_all_dependencies(DepChange& changes) {
   while(iter.next()) {
     nmethod* nm = iter.method();
     // Only notify for live nmethods
-    if (!nm->has_been_enqueued_for_deoptimization()) {
+    if (!nm->has_enqueued_deoptimization()) {
       for (Dependencies::DepStream deps(nm); deps.next(); ) {
         // Construct abstraction of a dependency.
         DependencySignature* current_sig = new DependencySignature(deps);

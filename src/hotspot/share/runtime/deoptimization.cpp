@@ -1028,7 +1028,7 @@ void DeoptimizationContext::deopt_compiled_methods() {
   SweeperBlockingCompiledMethodIterator iter(SweeperBlockingCompiledMethodIterator::only_alive_and_not_unloading);
   while(iter.next()) {
     CompiledMethod* nm = iter.method();
-    if (nm->has_been_enqueued_for_deoptimization() && !nm->has_been_deoptimized() && nm->can_be_deoptimized()) {
+    if (nm->has_enqueued_deoptimization() && !nm->is_post_make_deoptimized() && nm->can_be_deoptimized()) {
       nm->make_not_entrant();
       nm->make_deoptimized();
     }
