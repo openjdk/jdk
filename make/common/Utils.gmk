@@ -367,6 +367,9 @@ isBuildCpu = \
 isBuildCpuArch = \
   $(strip $(if $(filter $(OPENJDK_BUILD_CPU_ARCH), $1), true, false))
 
+isCompiler = \
+  $(strip $(if $(filter $(TOOLCHAIN_TYPE), $1), true, false))
+
 ################################################################################
 # Converts a space separated list to a comma separated list.
 #
