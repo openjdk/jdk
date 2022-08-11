@@ -70,8 +70,8 @@ void OSContainer::init() {
     log_info(os, container)("Memory Limit is: " JLONG_FORMAT, mem_limit);
   } else if (mem_limit >= host_memory) {
     log_trace(os, container)("Container memory limit exceeded or equal to physical"
-		             " memory! container mem: " JLONG_FORMAT ", host mem: " JLONG_FORMAT,
-			     mem_limit, host_memory);
+                             " memory! container mem: " JLONG_FORMAT ", host mem: " JLONG_FORMAT,
+                             mem_limit, host_memory);
     log_trace(os, container)("Ignoring container memory limit.");
   }
 

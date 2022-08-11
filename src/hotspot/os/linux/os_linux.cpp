@@ -216,10 +216,11 @@ julong os::Linux::available_memory() {
 }
 
 julong os::physical_memory() {
-  jlong phys_mem = 0;
+  jlong phys_mem = Linux::physical_memory();
+
   if (OSContainer::is_containerized()) {
     jlong mem_limit;
-    if ((mem_limit = OSContainer::memory_limit_in_bytes()) > 0) {
+    if ((mem_limit = OSContainer::memory_limit_in_bytes()) > 0 && mem_limit < phys_mem) {
       log_trace(os)("total container memory: " JLONG_FORMAT, mem_limit);
       return mem_limit;
     }
@@ -227,7 +228,6 @@ julong os::physical_memory() {
                             mem_limit == OSCONTAINER_ERROR ? "failed" : "unlimited", mem_limit);
   }
 
-  phys_mem = Linux::physical_memory();
   log_trace(os)("total system memory: " JLONG_FORMAT, phys_mem);
   return phys_mem;
 }
