@@ -202,4 +202,27 @@ public:
   static int prepare_log_file(const char* pattern, const char* default_pattern, bool overwrite_existing, char* buf, size_t buflen);
 
 };
+
+class VMErrorCallback {
+  friend class VMError;
+  friend class VMErrorCallbackMark;
+
+  // Link through all callbacks active on a thread
+  VMErrorCallback* _next;
+
+  // Called by VMError reporting
+  virtual void call(outputStream* st) = 0;
+
+public:
+  VMErrorCallback() : _next(nullptr) {}
+};
+
+class VMErrorCallbackMark : public StackObj {
+  Thread* _thread;
+
+public:
+  VMErrorCallbackMark(VMErrorCallback* callback);
+  ~VMErrorCallbackMark();
+};
+
 #endif // SHARE_UTILITIES_VMERROR_HPP

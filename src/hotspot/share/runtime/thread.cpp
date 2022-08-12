@@ -107,6 +107,7 @@ Thread::Thread() {
   _jvmti_env_iteration_count = 0;
   set_allocated_bytes(0);
   _current_pending_raw_monitor = nullptr;
+  _vm_error_callbacks = nullptr;
 
   // thread-specific hashCode stream generator state - Marsaglia shift-xor form
   _hashStateX = os::random();
