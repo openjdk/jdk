@@ -1361,7 +1361,7 @@ class G1ReclaimEmptyRegionsTask : public WorkerTask {
 
     bool do_heap_region(HeapRegion *hr) {
       if (hr->used() > 0 && hr->live_bytes() == 0 && !hr->is_young() && !hr->is_closed_archive()) {
-        log_debug(gc)("Reclaimed empty old gen region %u (%s) bot " PTR_FORMAT,
+        log_trace(gc)("Reclaimed empty old gen region %u (%s) bot " PTR_FORMAT,
                       hr->hrm_index(), hr->get_short_type_str(), p2i(hr->bottom()));
         _freed_bytes += hr->used();
         hr->set_containing_set(NULL);

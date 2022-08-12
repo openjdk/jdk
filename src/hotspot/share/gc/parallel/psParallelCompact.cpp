@@ -2619,6 +2619,7 @@ void PSParallelCompact::update_deferred_objects(ParCompactionManager* cm,
   const RegionData* cur_region;
   for (cur_region = beg_region; cur_region < end_region; ++cur_region) {
     HeapWord* const addr = cur_region->deferred_obj_addr();
+    log_debug(gc)("deferred addr " PTR_FORMAT, p2i(addr));
     if (addr != NULL) {
       if (start_array != NULL) {
         start_array->allocate_block(addr);

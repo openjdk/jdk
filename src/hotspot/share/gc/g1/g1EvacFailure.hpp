@@ -36,7 +36,7 @@ class G1EvacFailureRegions;
 
 // Task to fixup self-forwarding pointers installed as a result of an evacuation
 // failure.
-class G1ParRemoveSelfForwardPtrsTask : public WorkerTask {
+class G1RemoveSelfForwardsInChunksTask : public WorkerTask {
   G1CollectedHeap* _g1h;
   G1ConcurrentMark* _cm;
 
@@ -70,7 +70,7 @@ class G1ParRemoveSelfForwardPtrsTask : public WorkerTask {
   void process_chunk(uint worker_id, uint chunk_idx, RegionGarbageWordsCache* cache);
 
 public:
-  explicit G1ParRemoveSelfForwardPtrsTask(G1EvacFailureRegions* evac_failure_regions);
+  explicit G1RemoveSelfForwardsInChunksTask(G1EvacFailureRegions* evac_failure_regions);
 
   void work(uint worker_id);
 

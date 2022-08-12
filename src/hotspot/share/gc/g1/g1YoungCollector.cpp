@@ -1034,9 +1034,7 @@ public:
   VerifyAfterSelfForwardingPtrRemovalTask(G1EvacFailureRegions* evac_failure_regions, uint max_workers) :
     WorkerTask("Verify After Self Forwarding Ptr Removal"),
     _evac_failure_regions(evac_failure_regions),
-    _claimer(max_workers) {
-    assert(VerifyAfterGC && _evac_failure_regions->evacuation_failed(), "precondition");
-  }
+    _claimer(max_workers) { }
 
   void work(uint worker_id) override {
     VerifyRegionClosure closure(_evac_failure_regions);
@@ -1066,7 +1064,7 @@ void G1YoungCollector::post_evacuate_collection_set(G1EvacInfo* evacuation_info,
 
   post_evacuate_cleanup_2(per_thread_states, evacuation_info);
 
-    if (VerifyAfterGC && _evac_failure_regions.evacuation_failed()) {
+    if (_evac_failure_regions.evacuation_failed()) {
       VerifyAfterSelfForwardingPtrRemovalTask cl(&_evac_failure_regions, _g1h->workers()->active_workers());
       _g1h->workers()->run_task(&cl);
     }

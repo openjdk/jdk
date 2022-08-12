@@ -48,7 +48,8 @@ class PhaseTimesStat {
 public:
   PhaseTimesStat(G1GCPhaseTimes* phase_times, uint worker_id) :
     _phase_times(phase_times),
-    _worker_id(worker_id) { }
+    _worker_id(worker_id),
+    _start(Ticks::now()) { }
 
   ~PhaseTimesStat() {
     _phase_times->record_or_add_time_secs(phase_name,
@@ -106,7 +107,7 @@ static void prefetch_obj(HeapWord* obj_addr) {
 
 // Caches the currently accumulated number of garbage words found in this heap region.
 // Avoids direct (frequent) atomic operations on the HeapRegion's garbage counter.
-class G1ParRemoveSelfForwardPtrsTask::RegionGarbageWordsCache {
+class G1RemoveSelfForwardsInChunksTask::RegionGarbageWordsCache {
   G1CollectedHeap* _g1h;
   const uint _uninitialized_idx;
   uint _region_idx;
@@ -147,7 +148,7 @@ public:
   }
 };
 
-void G1ParRemoveSelfForwardPtrsTask::process_chunk(uint worker_id,
+void G1RemoveSelfForwardsInChunksTask::process_chunk(uint worker_id,
                                                    uint chunk_idx,
                                                    RegionGarbageWordsCache* cache) {
   PhaseTimesStat stat(_g1h->phase_times(), worker_id);
@@ -171,15 +172,15 @@ void G1ParRemoveSelfForwardPtrsTask::process_chunk(uint worker_id,
   size_t garbage_words = 0;
 
   if (chunk_start == hr_bottom) {
-    // This is the first chunk in this region; zap [bottom, first_marked_addr).
+    // This is the bottommost chunk in this region; zap [bottom, first_marked_addr).
     garbage_words += zap_dead_objects(hr, hr_bottom, first_marked_addr);
   }
 
-  if (first_marked_addr >= MIN2(chunk_end, hr_top)) {
+  if (first_marked_addr >= chunk_end) {
     stat.register_empty_chunk();
     cache->add(region_idx, garbage_words);
     if (garbage_words > 0) {
-      //log_debug(gc)("chunk %u region %u empty garbage %zu", chunk_idx, region_idx, garbage_words);
+      //FIXME: log_debug(gc)("chunk %u region %u empty garbage %zu", chunk_idx, region_idx, garbage_words);
     }
     return;
   }
@@ -230,10 +231,10 @@ void G1ParRemoveSelfForwardPtrsTask::process_chunk(uint worker_id,
 
   cache->add(region_idx, garbage_words);
 
-  //&/log_debug(gc)("chunk %u region %u num objs %zu obj size %zu garbage %zu", chunk_idx, region_idx, num_marked_objs, marked_words, garbage_words);
+  //FIXME &/log_debug(gc)("chunk %u region %u num objs %zu obj size %zu garbage %zu", chunk_idx, region_idx, num_marked_objs, marked_words, garbage_words);
 }
 
-G1ParRemoveSelfForwardPtrsTask::G1ParRemoveSelfForwardPtrsTask(G1EvacFailureRegions* evac_failure_regions) :
+G1RemoveSelfForwardsInChunksTask::G1RemoveSelfForwardsInChunksTask(G1EvacFailureRegions* evac_failure_regions) :
   WorkerTask("G1 Remove Self-forwarding Pointers"),
   _g1h(G1CollectedHeap::heap()),
   _cm(_g1h->concurrent_mark()),
@@ -241,7 +242,7 @@ G1ParRemoveSelfForwardPtrsTask::G1ParRemoveSelfForwardPtrsTask(G1EvacFailureRegi
   _evac_failure_regions(evac_failure_regions),
   _chunk_bitmap(mtGC) { }
 
-void G1ParRemoveSelfForwardPtrsTask::work(uint worker_id) {
+void G1RemoveSelfForwardsInChunksTask::work(uint worker_id) {
   const uint total_workers = G1CollectedHeap::heap()->workers()->active_workers();
   const uint total_chunks = _num_chunks_per_region * _num_evac_fail_regions;
   const uint start_chunk_idx = worker_id * total_chunks / total_workers;

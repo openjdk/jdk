@@ -68,16 +68,15 @@ void G1EvacFailureRegions::par_iterate(HeapRegionClosure* closure,
                                                      worker_id);
 }
 
-class PrepareEvacFailureRegionTask : public G1AbstractSubTask {
+class ClearRetainedRegionMetadataTask : public G1AbstractSubTask {
   G1EvacFailureRegions* _evac_failure_regions;
-  uint _num_workers;
   HeapRegionClaimer _claimer;
 
-  class PrepareEvacFailureRegionClosure : public HeapRegionClosure {
+  class ClearRetainedRegionClosure : public HeapRegionClosure {
     const G1EvacFailureRegions* _evac_failure_regions;
     uint _worker_id;
 
-    void prepare_region(uint region_idx, uint worker_id) {
+    void clear_metadata(uint region_idx, uint worker_id) {
       G1CollectedHeap* g1h = G1CollectedHeap::heap();
       G1GCPhaseTimes* p = g1h->phase_times();
       HeapRegion* hr = g1h->region_at(region_idx);
@@ -96,36 +95,37 @@ class PrepareEvacFailureRegionTask : public G1AbstractSubTask {
     }
 
   public:
-    PrepareEvacFailureRegionClosure(G1EvacFailureRegions* evac_failure_regions, uint worker_id) :
+    ClearRetainedRegionClosure(G1EvacFailureRegions* evac_failure_regions, uint worker_id) :
       _evac_failure_regions(evac_failure_regions),
       _worker_id(worker_id) { }
 
     bool do_heap_region(HeapRegion* r) override {
       assert(_evac_failure_regions->contains(r->hrm_index()), "precondition");
-      prepare_region(r->hrm_index(), _worker_id);
+      clear_metadata(r->hrm_index(), _worker_id);
       return false;
     }
   };
 
 public:
-  PrepareEvacFailureRegionTask(G1EvacFailureRegions* evac_failure_regions, uint num_workers) :
-    G1AbstractSubTask(G1GCPhaseTimes::PrepareRetainedRegions),
+  ClearRetainedRegionMetadataTask(G1EvacFailureRegions* evac_failure_regions) :
+    G1AbstractSubTask(G1GCPhaseTimes::ClearRetainedRegionMetadata),
     _evac_failure_regions(evac_failure_regions),
-    _num_workers(num_workers),
-    _claimer(_num_workers) { }
+    _claimer(0) { }
 
   double worker_cost() const override {
     return 1.0;
   }
 
+  void set_max_workers(uint max_workers) override {
+    _claimer.set_n_workers(max_workers);
+  }
+
   void do_work(uint worker_id) override {
-    PrepareEvacFailureRegionClosure closure(_evac_failure_regions, worker_id);
+    ClearRetainedRegionClosure closure(_evac_failure_regions, worker_id);
     _evac_failure_regions->par_iterate(&closure, &_claimer, worker_id);
   }
 };
 
 G1AbstractSubTask* G1EvacFailureRegions::create_prepare_regions_task() {
-  WorkerThreads* workers = G1CollectedHeap::heap()->workers();
-  uint num_workers = clamp(_evac_failure_regions_cur_length, 1u, workers->active_workers());
-  return new PrepareEvacFailureRegionTask(this, num_workers);
+  return new ClearRetainedRegionMetadataTask(this);
 }

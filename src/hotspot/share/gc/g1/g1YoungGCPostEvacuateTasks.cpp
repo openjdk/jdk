@@ -97,12 +97,12 @@ public:
   }
 };
 
-class G1PostEvacuateCollectionSetCleanupTask1::RemoveSelfForwardPtrsTask : public G1AbstractSubTask {
-  G1ParRemoveSelfForwardPtrsTask _task;
+class G1PostEvacuateCollectionSetCleanupTask1::RestoreRetainedRegionsTask : public G1AbstractSubTask {
+  G1RemoveSelfForwardsInChunksTask _task;
   G1EvacFailureRegions* _evac_failure_regions;
 
 public:
-  RemoveSelfForwardPtrsTask(G1EvacFailureRegions* evac_failure_regions) :
+  RestoreRetainedRegionsTask(G1EvacFailureRegions* evac_failure_regions) :
     G1AbstractSubTask(G1GCPhaseTimes::RestoreRetainedRegions),
     _task(evac_failure_regions),
     _evac_failure_regions(evac_failure_regions) { }
@@ -136,11 +136,11 @@ G1PostEvacuateCollectionSetCleanupTask1::G1PostEvacuateCollectionSetCleanupTask1
   if (evacuation_failed) {
     add_parallel_task(evac_failure_regions->create_prepare_regions_task());
 
-    RemoveSelfForwardPtrsTask* remove_self_forward_task = new RemoveSelfForwardPtrsTask(evac_failure_regions);
-    add_parallel_task(remove_self_forward_task);
+    RestoreRetainedRegionsTask* restore_retained_regions_task = new RestoreRetainedRegionsTask(evac_failure_regions);
+    add_parallel_task(restore_retained_regions_task);
 
     uint num_workers = clamp(num_workers_estimate(), 1u, G1CollectedHeap::heap()->workers()->active_workers());
-    remove_self_forward_task->initialize(num_workers);
+    restore_retained_regions_task->initialize(num_workers);
   }
 }
 

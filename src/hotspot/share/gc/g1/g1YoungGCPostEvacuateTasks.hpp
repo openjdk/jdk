@@ -40,12 +40,12 @@ class G1ParScanThreadStateSet;
 // - Recalculate Used (s)
 // - Sample Collection Set Candidates (s)
 // - Clear Card Table
-// - Remove Self Forwards (on evacuation failure)
+// - Restore retained regions (on evacuation failure)
 class G1PostEvacuateCollectionSetCleanupTask1 : public G1BatchedTask {
   class MergePssTask;
   class RecalculateUsedTask;
   class SampleCollectionSetCandidatesTask;
-  class RemoveSelfForwardPtrsTask;
+  class RestoreRetainedRegionsTask;
 
 public:
   G1PostEvacuateCollectionSetCleanupTask1(G1ParScanThreadStateSet* per_thread_states,
