@@ -31,24 +31,20 @@
  * @run main/manual FileSizeCheck
  */
 
+import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.lang.reflect.InvocationTargetException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.nio.file.Path;
-import javax.swing.JFileChooser;
-import java.io.RandomAccessFile;
 import javax.swing.WindowConstants;
 
 public class FileSizeCheck {
-
-    private static JFrame frame;
-    private static JFileChooser fc;
-    private static PassFailJFrame passFailJFrame;
-    private static Path [] tempFilePaths;
+    private static Path[] tempFilePaths;
     private static final String INSTRUCTIONS =
             "Click on the \"Details\" button in right-top corner.\n\n" +
                     "Scroll Down if required. \n\n" +
@@ -64,18 +60,19 @@ public class FileSizeCheck {
                            "press PASS.\n\n";
 
     public static void test() {
-        frame = new JFrame("JFileChooser File Size test");
-        fc = new JFileChooser();
+        JFrame frame = new JFrame("JFileChooser File Size test");
+        JFileChooser fc = new JFileChooser();
         Path dir = Paths.get(System.getProperty("test.src"));
-        String [] tempFilesName = {"1-Empty-File", "2-File-1-Byte", "3-File-500-Byte",
+        String[] tempFilesName = {"1-Empty-File", "2-File-1-Byte", "3-File-500-Byte",
                 "4-File-1000-Byte", "5-File-2047-Byte", "6-File-2.5-KB",
                 "7-File-999-KB", "8-File-1000-KB", "9-File-2.8-MB"};
-        int [] tempFilesSize = {0, 1, 500, 1_000, 2_047, 2_500, 999_000, 1_000_000, 2_800_000};
+        int[] tempFilesSize = {0, 1, 500, 1_000, 2_047, 2_500, 999_000, 1_000_000, 2_800_000};
+
         tempFilePaths = new Path[tempFilesName.length];
         PassFailJFrame.addTestWindow(frame);
         PassFailJFrame.positionTestWindow(frame, PassFailJFrame.Position.HORIZONTAL);
-        // create temp files
 
+        // Create temp files
         try {
             for (int i = 0; i < tempFilePaths.length; i++) {
                 tempFilePaths[i] = dir.resolve(tempFilesName[i]);
@@ -95,9 +92,9 @@ public class FileSizeCheck {
         frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
     }
 
-    public static void main(String args[]) throws InterruptedException,
+    public static void main(String[] args) throws InterruptedException,
             InvocationTargetException {
-        passFailJFrame = new PassFailJFrame("JFileChooser Test Instructions",
+        PassFailJFrame passFailJFrame = new PassFailJFrame("JFileChooser Test Instructions",
                 INSTRUCTIONS, 5, 19, 35);
         try {
             SwingUtilities.invokeAndWait(FileSizeCheck::test);
@@ -108,7 +105,7 @@ public class FileSizeCheck {
                     Files.deleteIfExists(tempFilePaths[i]);
                 }
             } catch (IOException ex) {
-                System.out.println(ex);
+                ex.printStackTrace();
             }
         }
     }
