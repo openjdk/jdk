@@ -206,9 +206,9 @@ public class TransPatterns extends TreeTranslator {
             pattern = TreeInfo.skipParens(pattern);
             JCExpression extraConditions = null;
             if (pattern instanceof JCRecordPattern recordPattern) {
-                Pair<JCBindingPattern, JCExpression> unrolledRecordPattern = unrollRecordPattern(recordPattern);
-                pattern = unrolledRecordPattern.fst;
-                extraConditions = unrolledRecordPattern.snd;
+                UnrolledRecordPattern unrolledRecordPattern = unrollRecordPattern(recordPattern);
+                pattern = unrolledRecordPattern.primaryPattern();
+                extraConditions = unrolledRecordPattern.newGuard();
             }
             //$pattern is now always a binding pattern, $extraConditions are possibly additional tests
             //implementing to the record pattern
@@ -297,7 +297,7 @@ public class TransPatterns extends TreeTranslator {
         Assert.error();
     }
 
-    private Pair<JCBindingPattern, JCExpression> unrollRecordPattern(JCRecordPattern recordPattern) {
+    private UnrolledRecordPattern unrollRecordPattern(JCRecordPattern recordPattern) {
         //Convert a record pattern in the basic binding pattern and additional conditions
         //implementing the record pattern:
         //$record($nestedPattern1, $nestedPattern2, ...) $r
@@ -330,15 +330,16 @@ public class TransPatterns extends TreeTranslator {
             JCBindingPattern nestedBinding;
             boolean allowNull;
             if (nestedPattern instanceof JCRecordPattern nestedRecordPattern) {
-                Pair<JCBindingPattern, JCExpression> nestedDesugared = unrollRecordPattern(nestedRecordPattern);
-                if (nestedDesugared.snd != null) {
+                UnrolledRecordPattern nestedDesugared = unrollRecordPattern(nestedRecordPattern);
+                JCExpression newGuard = nestedDesugared.newGuard();
+                if (newGuard != null) {
                     if (secondLevelChecks == null) {
-                        secondLevelChecks = nestedDesugared.snd;
+                        secondLevelChecks = newGuard;
                     } else {
-                        secondLevelChecks = mergeConditions(secondLevelChecks, nestedDesugared.snd);
+                        secondLevelChecks = mergeConditions(secondLevelChecks, newGuard);
                     }
                 }
-                nestedBinding = nestedDesugared.fst;
+                nestedBinding = nestedDesugared.primaryPattern();
                 allowNull = false;
             } else {
                 nestedBinding = (JCBindingPattern) nestedPattern;
@@ -373,8 +374,10 @@ public class TransPatterns extends TreeTranslator {
                 guard = mergeConditions(guard, secondLevelChecks);
             }
         }
-        return Pair.of((JCBindingPattern) make.BindingPattern(recordBindingVar).setType(recordBinding.type), guard);
+        return new UnrolledRecordPattern((JCBindingPattern) make.BindingPattern(recordBindingVar).setType(recordBinding.type), guard);
     }
+
+    record UnrolledRecordPattern(JCBindingPattern primaryPattern, JCExpression newGuard) {}
 
     @Override
     public void visitSwitch(JCSwitch tree) {
@@ -445,15 +448,12 @@ public class TransPatterns extends TreeTranslator {
                     if (l instanceof JCPatternCaseLabel patternLabel) {
                         JCPattern pattern = TreeInfo.skipParens(patternLabel.pat);
                         if (pattern instanceof JCRecordPattern recordPattern) {
-                            Pair<JCBindingPattern, JCExpression> deconstructed = unrollRecordPattern(recordPattern);
-                            JCExpression guard = null;
-                            if (deconstructed.snd != null) {
-                                guard = deconstructed.snd;
-                            }
+                            UnrolledRecordPattern deconstructed = unrollRecordPattern(recordPattern);
+                            JCExpression guard = deconstructed.newGuard();
                             if (patternLabel.guard != null) {
                                 guard = mergeConditions(guard, patternLabel.guard);
                             }
-                            return make.PatternCaseLabel(deconstructed.fst, guard);
+                            return make.PatternCaseLabel(deconstructed.primaryPattern(), guard);
                         }
                     }
                     return l;
