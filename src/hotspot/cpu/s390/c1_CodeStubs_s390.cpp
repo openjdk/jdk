@@ -227,8 +227,8 @@ void NewObjectArrayStub::emit_code(LIR_Assembler* ce) {
   __ z_brul(_continuation);
 }
 
-MonitorEnterStub::MonitorEnterStub(LIR_Opr obj_reg, LIR_Opr lock_reg, CodeEmitInfo* info)
-  : MonitorAccessStub(obj_reg, lock_reg) {
+MonitorEnterStub::MonitorEnterStub(LIR_Opr obj_reg, CodeEmitInfo* info)
+  : MonitorAccessStub(obj_reg) {
   _info = new CodeEmitInfo(info);
 }
 
@@ -241,7 +241,6 @@ void MonitorEnterStub::emit_code(LIR_Assembler* ce) {
     enter_id = Runtime1::monitorenter_nofpu_id;
   }
   __ lgr_if_needed(Z_R1_scratch, _obj_reg->as_register());
-  __ lgr_if_needed(Z_R13, _lock_reg->as_register()); // See LIRGenerator::syncTempOpr().
   ce->emit_call_c(Runtime1::entry_for (enter_id));
   CHECK_BAILOUT();
   ce->add_call_info_here(_info);
@@ -252,12 +251,7 @@ void MonitorEnterStub::emit_code(LIR_Assembler* ce) {
 void MonitorExitStub::emit_code(LIR_Assembler* ce) {
   __ bind(_entry);
   // Move address of the BasicObjectLock into Z_R1_scratch.
-  if (_compute_lock) {
-    // Lock_reg was destroyed by fast unlocking attempt => recompute it.
-    ce->monitor_address(_monitor_ix, FrameMap::as_opr(Z_R1_scratch));
-  } else {
-    __ lgr_if_needed(Z_R1_scratch, _lock_reg->as_register());
-  }
+  __ lgr_if_needed(Z_R1_scratch, _obj_reg->as_register());
   // Note: non-blocking leaf routine => no call info needed.
   Runtime1::StubID exit_id;
   if (ce->compilation()->has_fpu_code()) {
