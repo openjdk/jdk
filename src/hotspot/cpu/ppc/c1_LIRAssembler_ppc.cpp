@@ -136,12 +136,12 @@ void LIR_Assembler::osr_entry() {
   Register OSR_buf = osrBufferPointer()->as_register();
   { assert(frame::interpreter_frame_monitor_size() == BasicObjectLock::size(), "adjust code below");
     int monitor_offset = BytesPerWord * method()->max_locals() +
-      (2 * BytesPerWord) * (number_of_locks - 1);
+      BytesPerWord * (number_of_locks - 1);
     // SharedRuntime::OSR_migration_begin() packs BasicObjectLocks in
     // the OSR buffer using 2 word entries: first the lock and then
     // the oop.
     for (int i = 0; i < number_of_locks; i++) {
-      int slot_offset = monitor_offset - ((i * 2) * BytesPerWord);
+      int slot_offset = monitor_offset - (i * BytesPerWord);
 #ifdef ASSERT
       // Verify the interpreter's monitor has a non-null object.
       {
@@ -154,12 +154,9 @@ void LIR_Assembler::osr_entry() {
       }
 #endif // ASSERT
       // Copy the lock field into the compiled activation.
-      Address ml = frame_map()->address_for_monitor_lock(i),
-              mo = frame_map()->address_for_monitor_object(i);
-      assert(ml.index() == noreg && mo.index() == noreg, "sanity");
+      Address mo = frame_map()->address_for_monitor_object(i);
+      assert(mo.index() == noreg, "sanity");
       __ ld(R0, slot_offset + 0, OSR_buf);
-      __ std(R0, ml.disp(), ml.base());
-      __ ld(R0, slot_offset + 1*BytesPerWord, OSR_buf);
       __ std(R0, mo.disp(), mo.base());
     }
   }
@@ -213,8 +210,9 @@ int LIR_Assembler::emit_unwind_handler() {
   MonitorExitStub* stub = NULL;
   if (method()->is_synchronized()) {
     monitor_address(0, FrameMap::R4_opr);
-    stub = new MonitorExitStub(FrameMap::R4_opr, true, 0);
-    __ unlock_object(R5, R6, R4, *stub->entry());
+    __ ld(R4, BasicObjectLock::obj_offset_in_bytes(), R4);
+    stub = new MonitorExitStub(FrameMap::R4_opr);
+    __ b(*stub->entry());
     __ bind(*stub->continuation());
   }
 
@@ -2662,7 +2660,7 @@ void LIR_Assembler::pop(LIR_Opr opr) {
 
 
 void LIR_Assembler::monitor_address(int monitor_no, LIR_Opr dst_opr) {
-  Address mon_addr = frame_map()->address_for_monitor_lock(monitor_no);
+  Address mon_addr = frame_map()->address_for_monitor_object(monitor_no);
   Register dst = dst_opr->as_register();
   Register reg = mon_addr.base();
   int offset = mon_addr.disp();
@@ -2679,44 +2677,26 @@ void LIR_Assembler::emit_lock(LIR_OpLock* op) {
   // Obj may not be an oop.
   if (op->code() == lir_lock) {
     MonitorEnterStub* stub = (MonitorEnterStub*)op->stub();
-    if (!UseHeavyMonitors) {
-      assert(BasicLock::displaced_header_offset_in_bytes() == 0, "lock_reg must point to the displaced header");
-      // Add debug info for NullPointerException only if one is possible.
-      if (op->info() != NULL) {
-        if (!os::zero_page_read_protected() || !ImplicitNullChecks) {
-          explicit_null_check(obj, op->info());
-        } else {
-          add_debug_info_for_null_check_here(op->info());
-        }
-      }
-      __ lock_object(hdr, obj, lock, op->scratch_opr()->as_register(), *op->stub()->entry());
-    } else {
-      // always do slow locking
-      // note: The slow locking code could be inlined here, however if we use
-      //       slow locking, speed doesn't matter anyway and this solution is
-      //       simpler and requires less duplicated code - additionally, the
-      //       slow locking code is the same in either case which simplifies
-      //       debugging.
-      if (op->info() != NULL) {
-        add_debug_info_for_null_check_here(op->info());
-        __ null_check(obj);
-      }
-      __ b(*op->stub()->entry());
+    // always do slow locking
+    // note: The slow locking code could be inlined here, however if we use
+    //       slow locking, speed doesn't matter anyway and this solution is
+    //       simpler and requires less duplicated code - additionally, the
+    //       slow locking code is the same in either case which simplifies
+    //       debugging.
+    if (op->info() != NULL) {
+      add_debug_info_for_null_check_here(op->info());
+      __ null_check(obj);
     }
+    __ b(*op->stub()->entry());
   } else {
     assert (op->code() == lir_unlock, "Invalid code, expected lir_unlock");
-    if (!UseHeavyMonitors) {
-      assert(BasicLock::displaced_header_offset_in_bytes() == 0, "lock_reg must point to the displaced header");
-      __ unlock_object(hdr, obj, lock, *op->stub()->entry());
-    } else {
-      // always do slow unlocking
-      // note: The slow unlocking code could be inlined here, however if we use
-      //       slow unlocking, speed doesn't matter anyway and this solution is
-      //       simpler and requires less duplicated code - additionally, the
-      //       slow unlocking code is the same in either case which simplifies
-      //       debugging.
-      __ b(*op->stub()->entry());
-    }
+    // always do slow unlocking
+    // note: The slow unlocking code could be inlined here, however if we use
+    //       slow unlocking, speed doesn't matter anyway and this solution is
+    //       simpler and requires less duplicated code - additionally, the
+    //       slow unlocking code is the same in either case which simplifies
+    //       debugging.
+    __ b(*op->stub()->entry());
   }
   __ bind(*op->stub()->continuation());
 }
