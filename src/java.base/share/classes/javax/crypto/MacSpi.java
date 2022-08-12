@@ -101,6 +101,9 @@ public abstract class MacSpi {
      * process ByteBuffers more efficiently than byte arrays.
      *
      * @param input the ByteBuffer
+     *
+     * @exception NullPointerException if {@code input} is null
+     *
      * @since 1.5
      */
     protected void engineUpdate(ByteBuffer input) {
