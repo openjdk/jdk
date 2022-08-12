@@ -34,6 +34,8 @@
 #include "interpreter/interpreter.hpp"
 #include "memory/allocation.inline.hpp"
 #include "nativeInst_ppc.hpp"
+#include "os_linux.hpp"
+#include "os_posix.hpp"
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm_misc.hpp"
 #include "runtime/arguments.hpp"
@@ -43,6 +45,7 @@
 #include "runtime/javaCalls.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
+#include "runtime/os.inline.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -515,7 +518,9 @@ int os::extra_bang_size_in_bytes() {
 }
 
 #ifdef HAVE_FUNCTION_DESCRIPTORS
-void* os::resolve_function_descriptor(void* p) {
+void* os::Linux::resolve_function_descriptor(void* p) {
   return ((const FunctionDescriptor*)p)->entry();
 }
 #endif
+
+void os::setup_fpu() {}

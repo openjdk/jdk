@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -262,21 +262,18 @@ template class Hashtable<nmethod*, mtGC>;
 template class HashtableEntry<nmethod*, mtGC>;
 template class BasicHashtable<mtGC>;
 template class Hashtable<ConstantPool*, mtClass>;
-template class Hashtable<Symbol*, mtSymbol>;
 template class Hashtable<Klass*, mtClass>;
 template class Hashtable<InstanceKlass*, mtClass>;
 template class Hashtable<WeakHandle, mtClass>;
 template class Hashtable<WeakHandle, mtServiceability>;
 template class Hashtable<Symbol*, mtModule>;
 template class Hashtable<Symbol*, mtClass>;
-template class HashtableEntry<Symbol*, mtSymbol>;
 template class HashtableEntry<Symbol*, mtClass>;
 template class HashtableBucket<mtClass>;
 template class BasicHashtableEntry<mtSymbol>;
 template class BasicHashtableEntry<mtCode>;
 template class BasicHashtable<mtClass>;
 template class BasicHashtable<mtClassShared>;
-template class BasicHashtable<mtSymbol>;
 template class BasicHashtable<mtCode>;
 template class BasicHashtable<mtInternal>;
 template class BasicHashtable<mtModule>;
@@ -286,7 +283,6 @@ template class BasicHashtable<mtServiceability>;
 template class BasicHashtable<mtLogging>;
 
 template void BasicHashtable<mtClass>::verify_table<DictionaryEntry>(char const*);
-template void BasicHashtable<mtModule>::verify_table<ModuleEntry>(char const*);
 template void BasicHashtable<mtModule>::verify_table<PackageEntry>(char const*);
 template void BasicHashtable<mtClass>::verify_table<ProtectionDomainCacheEntry>(char const*);
 template void BasicHashtable<mtClass>::verify_table<PlaceholderEntry>(char const*);

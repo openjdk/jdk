@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4313887 6866397 8073445
+ * @bug 4313887 6866397 8073445 8290047
  * @summary Unit test for java.nio.file.PathMatcher
  */
 
@@ -84,6 +84,7 @@ public class Basic {
 
     public static void main(String[] args) {
         // basic
+        assertMatch("", "");
         assertMatch("foo.html", "foo.html");
         assertNotMatch("foo.html", "foo.htm");
         assertNotMatch("foo.html", "bar.html");
@@ -137,6 +138,13 @@ public class Basic {
         assertBadPattern("foo.html", "*{class,java");       // missing }
         assertBadPattern("foo.html", "*.{class,{.java}}");  // nested group
         assertBadPattern("foo.html", "*.html\\");           // nothing to escape
+        try {
+            FileSystems.getDefault().getPathMatcher(":glob");
+            System.err.println("No IllegalArgumentException for \":glob\"");
+            failures++;
+        } catch (IllegalArgumentException iae) {
+            System.out.println("IllegalArgumentException for \":glob\" OKAY");
+        }
 
         // platform specific
         if (System.getProperty("os.name").startsWith("Windows")) {

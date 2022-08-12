@@ -62,6 +62,8 @@
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/oop.hpp"
+#include "oops/oopHandle.hpp"
 #include "oops/oopHandle.inline.hpp"
 #include "oops/symbol.hpp"
 #include "oops/typeArrayKlass.hpp"
@@ -87,7 +89,32 @@
 #include "jfr/jfr.hpp"
 #endif
 
-SymbolPropertyTable*   SystemDictionary::_invoke_method_table = NULL;
+class InvokeMethodKey : public StackObj {
+  private:
+    Symbol* _symbol;
+    intptr_t _iid;
+
+  public:
+    InvokeMethodKey(Symbol* symbol, intptr_t iid) :
+        _symbol(symbol),
+        _iid(iid) {}
+
+    static bool key_comparison(InvokeMethodKey const &k1, InvokeMethodKey const &k2){
+        return k1._symbol == k2._symbol && k1._iid == k2._iid;
+    }
+
+    static unsigned int compute_hash(const InvokeMethodKey &k) {
+        Symbol* sym = k._symbol;
+        intptr_t iid = k._iid;
+        unsigned int hash = (unsigned int) sym -> identity_hash();
+        return (unsigned int) (hash ^ iid);
+    }
+
+};
+
+ResourceHashtable<InvokeMethodKey, Method*, 139, ResourceObj::C_HEAP, mtClass,
+                  InvokeMethodKey::compute_hash, InvokeMethodKey::key_comparison> _invoke_method_intrinsic_table;
+ResourceHashtable<Symbol*, OopHandle, 139, ResourceObj::C_HEAP, mtClass> _invoke_method_type_table;
 ProtectionDomainCacheTable*   SystemDictionary::_pd_cache_table = NULL;
 
 OopHandle   SystemDictionary::_java_system_loader;
@@ -120,23 +147,53 @@ oop SystemDictionary::java_platform_loader() {
 }
 
 void SystemDictionary::compute_java_loaders(TRAPS) {
+  if (_java_system_loader.is_empty()) {
+    oop system_loader = get_system_class_loader_impl(CHECK);
+    _java_system_loader = OopHandle(Universe::vm_global(), system_loader);
+  } else {
+    // It must have been restored from the archived module graph
+    assert(UseSharedSpaces, "must be");
+    assert(MetaspaceShared::use_full_module_graph(), "must be");
+    DEBUG_ONLY(
+      oop system_loader = get_system_class_loader_impl(CHECK);
+      assert(_java_system_loader.resolve() == system_loader, "must be");
+    )
+ }
+
+  if (_java_platform_loader.is_empty()) {
+    oop platform_loader = get_platform_class_loader_impl(CHECK);
+    _java_platform_loader = OopHandle(Universe::vm_global(), platform_loader);
+  } else {
+    // It must have been restored from the archived module graph
+    assert(UseSharedSpaces, "must be");
+    assert(MetaspaceShared::use_full_module_graph(), "must be");
+    DEBUG_ONLY(
+      oop platform_loader = get_platform_class_loader_impl(CHECK);
+      assert(_java_platform_loader.resolve() == platform_loader, "must be");
+    )
+  }
+}
+
+oop SystemDictionary::get_system_class_loader_impl(TRAPS) {
   JavaValue result(T_OBJECT);
   InstanceKlass* class_loader_klass = vmClasses::ClassLoader_klass();
   JavaCalls::call_static(&result,
                          class_loader_klass,
                          vmSymbols::getSystemClassLoader_name(),
                          vmSymbols::void_classloader_signature(),
-                         CHECK);
+                         CHECK_NULL);
+  return result.get_oop();
+}
 
-  _java_system_loader = OopHandle(Universe::vm_global(), result.get_oop());
-
+oop SystemDictionary::get_platform_class_loader_impl(TRAPS) {
+  JavaValue result(T_OBJECT);
+  InstanceKlass* class_loader_klass = vmClasses::ClassLoader_klass();
   JavaCalls::call_static(&result,
                          class_loader_klass,
                          vmSymbols::getPlatformClassLoader_name(),
                          vmSymbols::void_classloader_signature(),
-                         CHECK);
-
-  _java_platform_loader = OopHandle(Universe::vm_global(), result.get_oop());
+                         CHECK_NULL);
+  return result.get_oop();
 }
 
 ClassLoaderData* SystemDictionary::register_loader(Handle class_loader, bool create_mirror_cld) {
@@ -146,6 +203,18 @@ ClassLoaderData* SystemDictionary::register_loader(Handle class_loader, bool cre
   } else {
     return (class_loader() == NULL) ? ClassLoaderData::the_null_class_loader_data() :
                                       ClassLoaderDataGraph::find_or_create(class_loader);
+  }
+}
+
+void SystemDictionary::set_system_loader(ClassLoaderData *cld) {
+  if (_java_system_loader.is_empty()) {
+    _java_system_loader = cld->class_loader_handle();
+  }
+}
+
+void SystemDictionary::set_platform_loader(ClassLoaderData *cld) {
+  if (_java_platform_loader.is_empty()) {
+    _java_platform_loader = cld->class_loader_handle();
   }
 }
 
@@ -1633,10 +1702,21 @@ bool SystemDictionary::do_unloading(GCTimer* gc_timer) {
 
 void SystemDictionary::methods_do(void f(Method*)) {
   // Walk methods in loaded classes
-  MutexLocker ml(ClassLoaderDataGraph_lock);
-  ClassLoaderDataGraph::methods_do(f);
-  // Walk method handle intrinsics
-  invoke_method_table()->methods_do(f);
+
+  {
+    MutexLocker ml(ClassLoaderDataGraph_lock);
+    ClassLoaderDataGraph::methods_do(f);
+  }
+
+  auto doit = [&] (InvokeMethodKey key, Method* method) {
+    f(method);
+  };
+
+  {
+    MutexLocker ml(InvokeMethodTable_lock);
+    _invoke_method_intrinsic_table.iterate_all(doit);
+  }
+
 }
 
 // ----------------------------------------------------------------------------
@@ -1646,7 +1726,6 @@ void SystemDictionary::initialize(TRAPS) {
   // Allocate arrays
   _placeholders        = new PlaceholderTable(_placeholder_table_size);
   _loader_constraints  = new LoaderConstraintTable(_loader_constraint_size);
-  _invoke_method_table = new SymbolPropertyTable(_invoke_method_size);
   _pd_cache_table = new ProtectionDomainCacheTable(defaultProtectionDomainCacheSize);
 
 #if INCLUDE_CDS
@@ -1994,6 +2073,7 @@ Symbol* SystemDictionary::check_signature_loaders(Symbol* signature,
 Method* SystemDictionary::find_method_handle_intrinsic(vmIntrinsicID iid,
                                                        Symbol* signature,
                                                        TRAPS) {
+
   methodHandle empty;
   const int iid_as_int = vmIntrinsics::as_int(iid);
   assert(MethodHandles::is_signature_polymorphic(iid) &&
@@ -2001,16 +2081,19 @@ Method* SystemDictionary::find_method_handle_intrinsic(vmIntrinsicID iid,
          iid != vmIntrinsics::_invokeGeneric,
          "must be a known MH intrinsic iid=%d: %s", iid_as_int, vmIntrinsics::name_at(iid));
 
-  unsigned int hash  = invoke_method_table()->compute_hash(signature, iid_as_int);
-  int          index = invoke_method_table()->hash_to_index(hash);
-  SymbolPropertyEntry* spe = invoke_method_table()->find_entry(index, hash, signature, iid_as_int);
-  methodHandle m;
-  if (spe == NULL || spe->method() == NULL) {
-    spe = NULL;
-    // Must create lots of stuff here, but outside of the SystemDictionary lock.
-    m = Method::make_method_handle_intrinsic(iid, signature, CHECK_NULL);
-    if (!Arguments::is_interpreter_only() || iid == vmIntrinsics::_linkToNative) {
-      // Generate a compiled form of the MH intrinsic.
+  Method** met;
+  InvokeMethodKey key(signature, iid_as_int);
+  {
+    MutexLocker ml(THREAD, InvokeMethodTable_lock);
+    met = _invoke_method_intrinsic_table.get(key);
+    if (met != nullptr) {
+      return *met;
+    }
+  }
+
+  methodHandle m = Method::make_method_handle_intrinsic(iid, signature, CHECK_NULL);
+  if (!Arguments::is_interpreter_only() || iid == vmIntrinsics::_linkToNative) {
+      // Generate a compiled form of the MH intrinsic
       // linkToNative doesn't have interpreter-specific implementation, so always has to go through compiled version.
       AdapterHandlerLibrary::create_native_wrapper(m);
       // Check if have the compiled code.
@@ -2018,24 +2101,20 @@ Method* SystemDictionary::find_method_handle_intrinsic(vmIntrinsicID iid,
         THROW_MSG_NULL(vmSymbols::java_lang_VirtualMachineError(),
                        "Out of space in CodeCache for method handle intrinsic");
       }
-    }
-    // Now grab the lock.  We might have to throw away the new method,
-    // if a racing thread has managed to install one at the same time.
-    {
-      MutexLocker ml(THREAD, SystemDictionary_lock);
-      spe = invoke_method_table()->find_entry(index, hash, signature, iid_as_int);
-      if (spe == NULL)
-        spe = invoke_method_table()->add_entry(index, hash, signature, iid_as_int);
-      if (spe->method() == NULL)
-        spe->set_method(m());
-    }
   }
-
-  assert(spe != NULL && spe->method() != NULL, "");
-  assert(Arguments::is_interpreter_only() || (spe->method()->has_compiled_code() &&
-         spe->method()->code()->entry_point() == spe->method()->from_compiled_entry()),
+  // Now grab the lock.  We might have to throw away the new method,
+  // if a racing thread has managed to install one at the same time.
+  {
+    MutexLocker ml(THREAD, InvokeMethodTable_lock);
+    signature->make_permanent(); // The signature is never unloaded.
+    bool created;
+    met = _invoke_method_intrinsic_table.put_if_absent(key, m(), &created);
+    Method* saved_method = *met;
+    assert(Arguments::is_interpreter_only() || (saved_method->has_compiled_code() &&
+         saved_method->code()->entry_point() == saved_method->from_compiled_entry()),
          "MH intrinsic invariant");
-  return spe->method();
+    return saved_method;
+  }
 }
 
 // Helper for unpacking the return value from linkMethod and linkCallSite.
@@ -2176,13 +2255,16 @@ Handle SystemDictionary::find_method_handle_type(Symbol* signature,
                                                  Klass* accessing_klass,
                                                  TRAPS) {
   Handle empty;
-  int null_iid = vmIntrinsics::as_int(vmIntrinsics::_none);  // distinct from all method handle invoker intrinsics
-  unsigned int hash  = invoke_method_table()->compute_hash(signature, null_iid);
-  int          index = invoke_method_table()->hash_to_index(hash);
-  SymbolPropertyEntry* spe = invoke_method_table()->find_entry(index, hash, signature, null_iid);
-  if (spe != NULL && spe->method_type() != NULL) {
-    assert(java_lang_invoke_MethodType::is_instance(spe->method_type()), "");
-    return Handle(THREAD, spe->method_type());
+  OopHandle* o;
+  {
+    MutexLocker ml(THREAD, InvokeMethodTable_lock);
+    o = _invoke_method_type_table.get(signature);
+  }
+
+  if (o != nullptr) {
+    oop mt = o->resolve();
+    assert(java_lang_invoke_MethodType::is_instance(mt), "");
+    return Handle(THREAD, mt);
   } else if (!THREAD->can_call_java()) {
     warning("SystemDictionary::find_method_handle_type called from compiler thread");  // FIXME
     return Handle();  // do not attempt from within compiler, unless it was cached
@@ -2244,15 +2326,17 @@ Handle SystemDictionary::find_method_handle_type(Symbol* signature,
 
   if (can_be_cached) {
     // We can cache this MethodType inside the JVM.
-    MutexLocker ml(THREAD, SystemDictionary_lock);
-    spe = invoke_method_table()->find_entry(index, hash, signature, null_iid);
-    if (spe == NULL)
-      spe = invoke_method_table()->add_entry(index, hash, signature, null_iid);
-    if (spe->method_type() == NULL) {
-      spe->set_method_type(method_type());
+    MutexLocker ml(THREAD, InvokeMethodTable_lock);
+    bool created = false;
+    assert(method_type != NULL, "unexpected null");
+    OopHandle* h = _invoke_method_type_table.get(signature);
+    if (h == nullptr) {
+      signature->make_permanent(); // The signature is never unloaded.
+      OopHandle elem = OopHandle(Universe::vm_global(), method_type());
+      bool created = _invoke_method_type_table.put(signature, elem);
+      assert(created, "better be created");
     }
   }
-
   // report back to the caller with the MethodType
   return method_type;
 }
@@ -2449,21 +2533,6 @@ void SystemDictionary::dump(outputStream *st, bool verbose) {
     constraints()->print_table_statistics(st, "LoaderConstraints Table");
     pd_cache_table()->print_table_statistics(st, "ProtectionDomainCache Table");
   }
-}
-
-TableStatistics SystemDictionary::placeholders_statistics() {
-  MutexLocker ml(SystemDictionary_lock);
-  return placeholders()->statistics_calculate();
-}
-
-TableStatistics SystemDictionary::loader_constraints_statistics() {
-  MutexLocker ml(SystemDictionary_lock);
-  return constraints()->statistics_calculate();
-}
-
-TableStatistics SystemDictionary::protection_domain_cache_statistics() {
-  MutexLocker ml(SystemDictionary_lock);
-  return pd_cache_table()->statistics_calculate();
 }
 
 // Utility for dumping dictionaries.
