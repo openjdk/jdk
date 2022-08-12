@@ -603,6 +603,20 @@ void PhaseCFG::convert_NeverBranch_to_Goto(Block *b) {
   dead->head()->del_req(j);
   for( int k = 1; dead->get_node(k)->is_Phi(); k++ )
     dead->get_node(k)->del_req(j);
+  // If the fake exit block becomes unreachable, remove it from the block list.
+  if (dead->num_preds() == 1) {
+    for (uint i = 0; i < number_of_blocks(); i++) {
+      Block* block = get_block(i);
+      if (block == dead) {
+        _blocks.remove(i);
+      } else if (block->_pre_order > dead->_pre_order) {
+        // Adjust pre-order indices to avoid holes (whose absence is assumed
+        // e.g. by PhaseBlockLayout).
+        block->_pre_order--;
+      }
+    }
+    _number_of_blocks--;
+  }
 }
 
 // Helper function to move block bx to the slot following b_index. Return
