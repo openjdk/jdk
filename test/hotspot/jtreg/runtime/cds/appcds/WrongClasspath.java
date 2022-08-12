@@ -55,9 +55,7 @@ public class WrongClasspath {
 
     // Run with -Xshare:auto and without CDS logging enabled, the mismatch message
     // should stil be there.
-    OutputAnalyzer output = TestCommon.execAuto(
-        /* "-cp", appJar, */ // <- uncomment this and the execution should succeed
-        "Hello");
+    OutputAnalyzer output = TestCommon.execAuto("Hello");
     output.shouldContain(mismatchMsg);
 
     // Dump CDS archive with 2 jars: -cp hello.jar:jar2.jar

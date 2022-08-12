@@ -460,11 +460,10 @@ bool SharedClassPathEntry::validate(bool is_class_path) const {
                                  "Timestamp mismatch" :
                                  "File size mismatch");
     } else {
-      FileMapInfo::fail_continue("A jar file is not the one used while building"
-                                 " the shared archive file: %s", name);
+      const char* bad_jar_msg = "A jar file is not the one used while building the shared archive file:";
+      FileMapInfo::fail_continue("%s %s", bad_jar_msg, name);
       if (!log_is_enabled(Info, cds)) {
-        log_warning(cds)("A jar file is not the one used while building"
-            " the shared archive file: %s", name);
+        log_warning(cds)("%s %s", bad_jar_msg, name);
       }
       if (_timestamp != st.st_mtime) {
         log_warning(cds)("%s timestamp has changed.", name);
