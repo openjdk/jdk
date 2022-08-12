@@ -32,6 +32,7 @@
 #include "runtime/javaCalls.hpp"
 #include "runtime/monitorDeflationThread.hpp"
 #include "runtime/mutexLocker.hpp"
+#include "runtime/synchronizer.hpp"
 
 void MonitorDeflationThread::initialize() {
   EXCEPTION_MARK;

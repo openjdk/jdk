@@ -57,7 +57,20 @@
 #include "utilities/align.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
+#include "utilities/linkedlist.hpp"
 #include "utilities/preserveException.hpp"
+#include "utilities/resourceHash.hpp"
+
+class ObjectMonitorsHashtable::PtrList :
+  public LinkedListImpl<ObjectMonitor*,
+                        ResourceObj::C_HEAP, mtThread,
+                        AllocFailStrategy::RETURN_NULL> {};
+
+// ResourceHashtable SIZE is specified at compile time so we
+// use 1031 which is the first prime after 1024.
+class ObjectMonitorsHashtable::PtrTable :
+  public ResourceHashtable<void*, PtrList*, 1031, ResourceObj::C_HEAP, mtThread,
+                           &ObjectMonitorsHashtable::ptr_hash> {} ;
 
 class CleanupObjectMonitorsHashtable: StackObj {
  public:
@@ -67,6 +80,13 @@ class CleanupObjectMonitorsHashtable: StackObj {
     return true;
   }
 };
+
+// ResourceHashtable is passed to various functions and populated in
+// different places so we allocate it using C_HEAP to make it immune
+// from any ResourceMarks that happen to be in the code paths.
+ObjectMonitorsHashtable::ObjectMonitorsHashtable() :
+  _ptrs(new (ResourceObj::C_HEAP, mtThread) PtrTable()), _key_count(0), _om_count(0)
+{}
 
 ObjectMonitorsHashtable::~ObjectMonitorsHashtable() {
   CleanupObjectMonitorsHashtable cleanup;
@@ -83,6 +103,21 @@ void ObjectMonitorsHashtable::add_entry(void* key, ObjectMonitor* om) {
   }
   list->add(om);  // Add the ObjectMonitor to the list.
   _om_count++;
+}
+
+void ObjectMonitorsHashtable::add_entry(void* key, ObjectMonitorsHashtable::PtrList* list) {
+  _ptrs->put(key, list);
+  _key_count++;
+}
+
+ObjectMonitorsHashtable::PtrList* ObjectMonitorsHashtable::get_entry(void* key) {
+  PtrList** listpp = _ptrs->get(key);
+  return (listpp == nullptr) ? nullptr : *listpp;
+}
+
+bool ObjectMonitorsHashtable::has_entry(void* key) {
+  PtrList** listpp = _ptrs->get(key);
+  return listpp != nullptr && *listpp != nullptr;
 }
 
 bool ObjectMonitorsHashtable::has_entry(void* key, ObjectMonitor* om) {

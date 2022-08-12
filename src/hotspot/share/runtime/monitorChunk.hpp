@@ -25,7 +25,10 @@
 #ifndef SHARE_RUNTIME_MONITORCHUNK_HPP
 #define SHARE_RUNTIME_MONITORCHUNK_HPP
 
-#include "runtime/synchronizer.hpp"
+#include "memory/allocation.hpp"
+
+class BasicObjectLock;
+class OopClosure;
 
 // Data structure for holding monitors for one activation during
 // deoptimization.
