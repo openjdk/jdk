@@ -540,6 +540,7 @@ public class Mac implements Cloneable {
      *
      * @exception IllegalStateException if this {@code Mac} has not been
      * initialized.
+     * @exception IllegalArgumentException if {@code input} is null
      * @since 1.5
      */
     public final void update(ByteBuffer input) {
