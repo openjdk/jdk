@@ -29,6 +29,7 @@
 #include "oops/markWord.hpp"
 #include "runtime/basicLock.hpp"
 #include "runtime/handles.hpp"
+#include "utilities/resourceHash.hpp"
 
 template <typename T> class GrowableArray;
 class LogStream;
@@ -50,19 +51,39 @@ class ObjectMonitorsHashtable {
   class PtrList;
 
  private:
-  class PtrTable;
+  // ResourceHashtable SIZE is specified at compile time so we
+  // use 1031 which is the first prime after 1024.
+  typedef ResourceHashtable<void*, PtrList*, 1031, ResourceObj::C_HEAP, mtThread,
+                            &ObjectMonitorsHashtable::ptr_hash> PtrTable;
   PtrTable* _ptrs;
   size_t _key_count;
   size_t _om_count;
 
  public:
-  ObjectMonitorsHashtable();
+  // ResourceHashtable is passed to various functions and populated in
+  // different places so we allocate it using C_HEAP to make it immune
+  // from any ResourceMarks that happen to be in the code paths.
+  ObjectMonitorsHashtable() : _ptrs(new (ResourceObj::C_HEAP, mtThread) PtrTable()), _key_count(0), _om_count(0) {}
+
   ~ObjectMonitorsHashtable();
 
   void add_entry(void* key, ObjectMonitor* om);
-  void add_entry(void* key, PtrList* list);
-  PtrList* get_entry(void* key);
-  bool has_entry(void* key);
+
+  void add_entry(void* key, PtrList* list) {
+    _ptrs->put(key, list);
+    _key_count++;
+  }
+
+  PtrList* get_entry(void* key) {
+    PtrList** listpp = _ptrs->get(key);
+    return (listpp == nullptr) ? nullptr : *listpp;
+  }
+
+  bool has_entry(void* key) {
+    PtrList** listpp = _ptrs->get(key);
+    return listpp != nullptr && *listpp != nullptr;
+  }
+
   bool has_entry(void* key, ObjectMonitor* om);
 
   size_t key_count() { return _key_count; }
