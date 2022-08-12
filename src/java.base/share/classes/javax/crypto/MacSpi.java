@@ -102,7 +102,7 @@ public abstract class MacSpi {
      *
      * @param input the ByteBuffer
      *
-     * @exception NullPointerException if {@code input} is null
+     * @throws NullPointerException if {@code input} is null
      *
      * @since 1.5
      */
