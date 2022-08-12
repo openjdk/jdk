@@ -71,11 +71,11 @@ public class ImplicitParameters extends TestRunner {
                     class Inner {
                         public Inner(Inner notMandated) {}
                     }
-                                
+
                     Inner anonymousInner = this.new Inner(null) {};
-                                
+
                     enum MyEnum {}
-                                
+
                     record MyRecord(int a, Object b) {
                         MyRecord {}
                     }
