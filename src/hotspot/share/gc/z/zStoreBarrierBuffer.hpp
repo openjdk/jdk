@@ -70,6 +70,9 @@ private:
 
   void install_base_pointers_inner();
 
+  void on_error(outputStream* st);
+  class OnError;
+
 public:
   ZStoreBarrierBuffer();
 

@@ -29,6 +29,7 @@
 #include "gc/z/zStoreBarrierBuffer.inline.hpp"
 #include "gc/z/zUncoloredRoot.inline.hpp"
 #include "runtime/threadSMR.hpp"
+#include "utilities/vmError.hpp"
 
 ByteSize ZStoreBarrierEntry::p_offset() {
   return byte_offset_of(ZStoreBarrierEntry, _p);
@@ -238,15 +239,48 @@ void ZStoreBarrierBuffer::on_new_phase() {
   assert(_last_installed_color == _last_processed_color, "invariant");
 }
 
+class ZStoreBarrierBuffer::OnError : public VMErrorCallback {
+private:
+  ZStoreBarrierBuffer* _buffer;
+
+public:
+  OnError(ZStoreBarrierBuffer* buffer) :
+    _buffer(buffer) {}
+
+  virtual void call(outputStream* st) {
+    _buffer->on_error(st);
+  }
+};
+
+void ZStoreBarrierBuffer::on_error(outputStream* st) {
+  st->print_cr("ZStoreBarrierBuffer: error when flushing");
+  st->print_cr(" _last_processed_color: " PTR_FORMAT, _last_processed_color);
+  st->print_cr(" _last_installed_color: " PTR_FORMAT, _last_installed_color);
+  for (int i = current(); i < (int)_buffer_length; ++i) {
+    st->print_cr(" [%2d]: base: " PTR_FORMAT " p: " PTR_FORMAT " prev: " PTR_FORMAT,
+        i, untype(_base_pointers[i]), p2i(_buffer[i]._p), untype(_buffer[i]._prev));
+  }
+}
+
 void ZStoreBarrierBuffer::flush() {
   if (!ZBufferStoreBarriers) {
     return;
   }
 
+  OnError on_error(this);
+  VMErrorCallbackMark mark(&on_error);
+
   for (int i = current(); i < (int)_buffer_length; ++i) {
     const ZStoreBarrierEntry& entry = _buffer[i];
     const zaddress addr = ZBarrier::make_load_good(entry._prev);
     ZBarrier::mark_and_remember(entry._p, addr);
+
+#ifdef ASSERT
+    static int count = 1;
+    if (count++ == NewCodeParameter) {
+      VMError::controlled_crash(1);
+    }
+#endif
   }
 
   clear();
