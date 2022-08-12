@@ -353,21 +353,21 @@ ModuleEntry* ModuleEntry::new_unnamed_module_entry(Handle module_handle, ClassLo
 
 ModuleEntryTable::ModuleEntryTable() { }
 
-class ModuleEntryTableDeleter : public StackObj {
- public:
-  bool do_entry(const Symbol*& name, ModuleEntry*& entry) {
-    if (log_is_enabled(Info, module, unload) || log_is_enabled(Debug, module)) {
-      ResourceMark rm;
-      const char* str = name->as_C_string();
-      log_info(module, unload)("unloading module %s", str);
-      log_debug(module)("ModuleEntryTable: deleting module: %s", str);
-    }
-    delete entry;
-    return true;
-  }
-};
-
 ModuleEntryTable::~ModuleEntryTable() {
+  class ModuleEntryTableDeleter : public StackObj {
+   public:
+    bool do_entry(const Symbol*& name, ModuleEntry*& entry) {
+      if (log_is_enabled(Info, module, unload) || log_is_enabled(Debug, module)) {
+        ResourceMark rm;
+        const char* str = name->as_C_string();
+        log_info(module, unload)("unloading module %s", str);
+        log_debug(module)("ModuleEntryTable: deleting module: %s", str);
+      }
+      delete entry;
+      return true;
+    }
+  };
+
   ModuleEntryTableDeleter deleter;
   _table.unlink(&deleter);
   assert(_table.number_of_entries() == 0, "should have removed all entries");
