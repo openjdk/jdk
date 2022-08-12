@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,26 @@
 #include "memory/resourceArea.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "utilities/hashtable.inline.hpp"
+#include "utilities/resourceHash.hpp"
+
+class PlaceholderKey : public StackObj {
+  Symbol* _name;
+  ClassLoaderData* _loader_data;
+ public:
+  PlaceholderKey(Symbol* name, ClassLoaderData* l) : _name(name), _loader_data(l) {}
+
+  static bool equals(PlaceholderKey const& k1, PlaceholderKey const& k2) {
+    return (k1._name == k2._name && k1._loader_data == k2._loader_data);
+  }
+  static unsigned hash(PlaceholderKey const& k) {
+    return (unsigned) k._name->identity_hash();
+  }
+  void print_on(outputStream* st) const;
+};
+
+const int _placeholder_table_size = 503;   // Does this really have to be prime?
+ResourceHashtable<PlaceholderKey, PlaceholderEntry, _placeholder_table_size, ResourceObj::C_HEAP, mtClass,
+                  PlaceholderKey::hash, PlaceholderKey::equals> _placeholders;
 
 // SeenThread objects represent list of threads that are
 // currently performing a load action on a class.
@@ -173,90 +192,41 @@ bool PlaceholderEntry::remove_seen_thread(JavaThread* thread, PlaceholderTable::
 
 // Placeholder methods
 
-PlaceholderEntry* PlaceholderTable::new_entry(int hash, Symbol* name,
-                                              ClassLoaderData* loader_data,
-                                              Symbol* supername) {
-  PlaceholderEntry* entry = (PlaceholderEntry*)Hashtable<Symbol*, mtClass>::new_entry(hash, name);
-  // Hashtable with Symbol* literal must increment and decrement refcount.
-  name->increment_refcount();
-  entry->set_loader_data(loader_data);
-  entry->set_supername(supername);
-  entry->set_superThreadQ(NULL);
-  entry->set_loadInstanceThreadQ(NULL);
-  entry->set_defineThreadQ(NULL);
-  entry->set_definer(NULL);
-  entry->set_instance_klass(NULL);
-  return entry;
-}
-
-void PlaceholderTable::free_entry(PlaceholderEntry* entry) {
-  // decrement Symbol refcount here because Hashtable doesn't.
-  entry->literal()->decrement_refcount();
-  if (entry->supername() != NULL) entry->supername()->decrement_refcount();
-  BasicHashtable<mtClass>::free_entry(entry);
-}
-
-
 // Placeholder objects represent classes currently being loaded.
 // All threads examining the placeholder table must hold the
 // SystemDictionary_lock, so we don't need special precautions
 // on store ordering here.
-PlaceholderEntry* PlaceholderTable::add_entry(unsigned int hash,
-                                              Symbol* class_name, ClassLoaderData* loader_data,
-                                              Symbol* supername){
+PlaceholderEntry* add_entry(Symbol* class_name, ClassLoaderData* loader_data,
+                            Symbol* supername){
   assert_locked_or_safepoint(SystemDictionary_lock);
   assert(class_name != NULL, "adding NULL obj");
 
-  // Both readers and writers are locked so it's safe to just
-  // create the placeholder and insert it in the list without a membar.
-  PlaceholderEntry* entry = new_entry(hash, class_name, loader_data, supername);
-  int index = hash_to_index(hash);
-  Hashtable<Symbol*, mtClass>::add_entry(index, entry);
-  return entry;
+  PlaceholderEntry entry;
+  entry.set_supername(supername);
+  PlaceholderKey key(class_name, loader_data);
+  // Since we're storing this key in the hashtable, we need to increment the refcount.
+  class_name->increment_refcount();
+  bool created;
+  PlaceholderEntry* table_copy = _placeholders.put_if_absent(key, entry, &created);
+  assert(created, "better be absent");
+  return table_copy;
 }
-
 
 // Remove a placeholder object.
-void PlaceholderTable::remove_entry(unsigned int hash,
-                                    Symbol* class_name,
-                                    ClassLoaderData* loader_data) {
-  assert_locked_or_safepoint(SystemDictionary_lock);
-  int index = hash_to_index(hash);
-  PlaceholderEntry** p = bucket_addr(index);
-  while (*p != NULL) {
-    PlaceholderEntry *probe = *p;
-    if (probe->hash() == hash && probe->equals(class_name, loader_data)) {
-      // Delete entry
-      *p = probe->next();
-      free_entry(probe);
-      return;
-    }
-    p = probe->next_addr();
-  }
-}
-
-PlaceholderEntry* PlaceholderTable::get_entry(unsigned int hash,
-                                              Symbol* class_name,
-                                              ClassLoaderData* loader_data) {
+void remove_entry(Symbol* class_name, ClassLoaderData* loader_data) {
   assert_locked_or_safepoint(SystemDictionary_lock);
 
-  int index = hash_to_index(hash);
-  for (PlaceholderEntry *place_probe = bucket(index);
-                         place_probe != NULL;
-                         place_probe = place_probe->next()) {
-    if (place_probe->hash() == hash &&
-        place_probe->equals(class_name, loader_data)) {
-      return place_probe;
-    }
-  }
-  return NULL;
+  PlaceholderKey key(class_name, loader_data);
+  // Decrement refcount in key.
+  class_name->decrement_refcount();
+  _placeholders.remove(key);
 }
 
-Symbol* PlaceholderTable::find_entry(unsigned int hash,
-                                     Symbol* class_name,
-                                     ClassLoaderData* loader_data) {
-  PlaceholderEntry* probe = get_entry(hash, class_name, loader_data);
-  return (probe != NULL ? probe->klassname() : NULL);
+
+PlaceholderEntry* PlaceholderTable::get_entry(Symbol* class_name, ClassLoaderData* loader_data) {
+  assert_locked_or_safepoint(SystemDictionary_lock);
+  PlaceholderKey key(class_name, loader_data);
+  return _placeholders.get(key);
 }
 
 static const char* action_to_string(PlaceholderTable::classloadAction action) {
@@ -274,7 +244,7 @@ inline void log(PlaceholderEntry* entry, const char* function, PlaceholderTable:
     ResourceMark rm;
     LogStream ls(lt);
     ls.print("%s %s ", function, action_to_string(action));
-    entry->print_entry(&ls);
+    entry->print_on(&ls);
   }
 }
 
@@ -283,17 +253,16 @@ inline void log(PlaceholderEntry* entry, const char* function, PlaceholderTable:
 // If entry exists, reuse entry
 // For both, push SeenThread for classloadAction
 // If LOAD_SUPER, this is used for circularity detection for instanceklass loading.
-PlaceholderEntry* PlaceholderTable::find_and_add(unsigned int hash,
-                                                 Symbol* name,
+PlaceholderEntry* PlaceholderTable::find_and_add(Symbol* name,
                                                  ClassLoaderData* loader_data,
                                                  classloadAction action,
                                                  Symbol* supername,
                                                  JavaThread* thread) {
   assert(action != LOAD_SUPER || supername != NULL, "must have a super class name");
-  PlaceholderEntry* probe = get_entry(hash, name, loader_data);
+  PlaceholderEntry* probe = get_entry(name, loader_data);
   if (probe == NULL) {
     // Nothing found, add place holder
-    probe = add_entry(hash, name, loader_data, supername);
+    probe = add_entry(name, loader_data, supername);
   } else {
     if (action == LOAD_SUPER) {
       probe->set_supername(supername);
@@ -318,50 +287,30 @@ PlaceholderEntry* PlaceholderTable::find_and_add(unsigned int hash,
 // Note: you can be in both placeholders and systemDictionary
 // Therefore - must always check SD first
 // Ignores the case where entry is not found
-void PlaceholderTable::find_and_remove(unsigned int hash,
-                                       Symbol* name, ClassLoaderData* loader_data,
+void PlaceholderTable::find_and_remove(Symbol* name, ClassLoaderData* loader_data,
                                        classloadAction action,
                                        JavaThread* thread) {
-    assert_locked_or_safepoint(SystemDictionary_lock);
-    PlaceholderEntry *probe = get_entry(hash, name, loader_data);
-    if (probe != NULL) {
-       log(probe, "find_and_remove", action);
-       probe->remove_seen_thread(thread, action);
-       // If no other threads using this entry, and this thread is not using this entry for other states
-       if ((probe->superThreadQ() == NULL) && (probe->loadInstanceThreadQ() == NULL)
-          && (probe->defineThreadQ() == NULL) && (probe->definer() == NULL)) {
-         remove_entry(hash, name, loader_data);
-       }
+  assert_locked_or_safepoint(SystemDictionary_lock);
+  PlaceholderEntry* probe = get_entry(name, loader_data);
+  if (probe != NULL) {
+    log(probe, "find_and_remove", action);
+    probe->remove_seen_thread(thread, action);
+    // If no other threads using this entry, and this thread is not using this entry for other states
+    if ((probe->superThreadQ() == NULL) && (probe->loadInstanceThreadQ() == NULL)
+        && (probe->defineThreadQ() == NULL) && (probe->definer() == NULL)) {
+      probe->clear_supername();
+      remove_entry(name, loader_data);
     }
   }
-
-PlaceholderTable::PlaceholderTable(int table_size)
-    : Hashtable<Symbol*, mtClass>(table_size, sizeof(PlaceholderEntry)) {
 }
 
-void PlaceholderEntry::verify() const {
-  guarantee(loader_data() != NULL, "Must have been setup.");
-  guarantee(loader_data()->class_loader() == NULL || loader_data()->class_loader()->is_instance(),
-            "checking type of _loader");
-  guarantee(instance_klass() == NULL
-            || instance_klass()->is_instance_klass(),
-            "checking type of instance_klass result");
+void PlaceholderKey::print_on(outputStream* st) const {
+  _name->print_value_on(st);
+  st->print(", loader ");
+  _loader_data->print_value_on(st);
 }
 
-void PlaceholderTable::verify() {
-  verify_table<PlaceholderEntry>("Placeholder Table");
-}
-
-
-// Note, doesn't append a cr
-// Can't call this print_on because HashtableEntry doesn't initialize its vptr
-// and print_on is a virtual function so the vptr call crashes.
-void PlaceholderEntry::print_entry(outputStream* st) const {
-  klassname()->print_value_on(st);
-  if (loader_data() != NULL) {
-    st->print(", loader ");
-    loader_data()->print_value_on(st);
-  }
+void PlaceholderEntry::print_on(outputStream* st) const {
   if (supername() != NULL) {
     st->print(", supername ");
     supername()->print_value_on(st);
@@ -386,17 +335,16 @@ void PlaceholderEntry::print_entry(outputStream* st) const {
   st->cr();
 }
 
-void PlaceholderTable::print_on(outputStream* st) const {
+void PlaceholderTable::print_on(outputStream* st) {
+  auto printer = [&] (PlaceholderKey& key, PlaceholderEntry& entry) {
+      st->print("placeholder ");
+      key.print_on(st);
+      entry.print_on(st);
+      return true;
+  };
   st->print_cr("Placeholder table (table_size=%d, placeholders=%d)",
-                table_size(), number_of_entries());
-  for (int pindex = 0; pindex < table_size(); pindex++) {
-    for (PlaceholderEntry* probe = bucket(pindex);
-                           probe != NULL;
-                           probe = probe->next()) {
-      st->print("%4d: placeholder ", pindex);
-      probe->print_entry(st);
-    }
-  }
+                _placeholders.table_size(), _placeholders.number_of_entries());
+  _placeholders.iterate(printer);
 }
 
-void PlaceholderTable::print() const { return print_on(tty); }
+void PlaceholderTable::print() { return print_on(tty); }

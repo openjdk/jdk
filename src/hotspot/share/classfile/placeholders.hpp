@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,6 @@
 #ifndef SHARE_CLASSFILE_PLACEHOLDERS_HPP
 #define SHARE_CLASSFILE_PLACEHOLDERS_HPP
 
-#include "utilities/hashtable.hpp"
-
 class PlaceholderEntry;
 class Thread;
 class ClassLoaderData;
@@ -36,69 +34,40 @@ class Symbol;
 // being loaded, as well as arrays of primitives.
 //
 
-class PlaceholderTable : public Hashtable<Symbol*, mtClass> {
-
-public:
-  PlaceholderTable(int table_size);
-
-  PlaceholderEntry* new_entry(int hash, Symbol* name, ClassLoaderData* loader_data, Symbol* supername);
-  void free_entry(PlaceholderEntry* entry);
-
-  PlaceholderEntry* bucket(int i) const {
-    return (PlaceholderEntry*)Hashtable<Symbol*, mtClass>::bucket(i);
-  }
-
-  PlaceholderEntry** bucket_addr(int i) {
-    return (PlaceholderEntry**)Hashtable<Symbol*, mtClass>::bucket_addr(i);
-  }
-
-  PlaceholderEntry* add_entry(unsigned int hash, Symbol* name,
-                              ClassLoaderData* loader_data,
-                              Symbol* supername);
-
-  // This returns a Symbol* to match type for SystemDictionary
-  Symbol* find_entry(unsigned int hash,
-                     Symbol* name, ClassLoaderData* loader_data);
-
-  PlaceholderEntry* get_entry(unsigned int hash,
-                              Symbol* name, ClassLoaderData* loader_data);
-
-// caller to create a placeholder entry must enumerate an action
-// caller claims ownership of that action
-// For parallel classloading:
-// multiple LOAD_INSTANCE threads can proceed in parallel
-// multiple LOAD_SUPER threads can proceed in parallel
-// LOAD_SUPER needed to check for class circularity
-// DEFINE_CLASS: ultimately define class must be single threaded
-// on a class/classloader basis
-// so the head of that queue owns the token
-// and the rest of the threads return the result the first thread gets
- enum classloadAction {
+class PlaceholderTable : public AllStatic {
+ public:
+  // caller to create a placeholder entry must enumerate an action
+  // caller claims ownership of that action
+  // For parallel classloading:
+  // multiple LOAD_INSTANCE threads can proceed in parallel
+  // multiple LOAD_SUPER threads can proceed in parallel
+  // LOAD_SUPER needed to check for class circularity
+  // DEFINE_CLASS: ultimately define class must be single threaded
+  // on a class/classloader basis
+  // so the head of that queue owns the token
+  // and the rest of the threads return the result the first thread gets
+  enum classloadAction {
     LOAD_INSTANCE = 1,             // calling load_instance_class
     LOAD_SUPER = 2,                // loading superclass for this class
     DEFINE_CLASS = 3               // find_or_define class
- };
+  };
+
+  static PlaceholderEntry* get_entry(Symbol* name, ClassLoaderData* loader_data);
 
   // find_and_add returns probe pointer - old or new
   // If no entry exists, add a placeholder entry and push SeenThread for classloadAction
   // If entry exists, reuse entry and push SeenThread for classloadAction
-  PlaceholderEntry* find_and_add(unsigned int hash,
-                                 Symbol* name, ClassLoaderData* loader_data,
-                                 classloadAction action, Symbol* supername,
-                                 JavaThread* thread);
-
-  void remove_entry(unsigned int hash,
-                    Symbol* name, ClassLoaderData* loader_data);
+  static PlaceholderEntry* find_and_add(Symbol* name, ClassLoaderData* loader_data,
+                                        classloadAction action, Symbol* supername,
+                                        JavaThread* thread);
 
   // find_and_remove first removes SeenThread for classloadAction
   // If all queues are empty and definer is null, remove the PlacheholderEntry completely
-  void find_and_remove(unsigned int hash,
-                       Symbol* name, ClassLoaderData* loader_data,
+  static void find_and_remove(Symbol* name, ClassLoaderData* loader_data,
                        classloadAction action, JavaThread* thread);
 
-  void print_on(outputStream* st) const;
-  void print() const;
-  void verify();
+  static void print_on(outputStream* st);
+  static void print();
 };
 
 class SeenThread;
@@ -108,13 +77,9 @@ class SeenThread;
 // SystemDictionary_lock, so we don't need special precautions
 // on store ordering here.
 // The system dictionary is the only user of this class.
-
-class PlaceholderEntry : public HashtableEntry<Symbol*, mtClass> {
-
+class PlaceholderEntry {
   friend class PlaceholderTable;
-
  private:
-  ClassLoaderData*  _loader_data;   // initiating loader
   Symbol*           _supername;
   JavaThread*       _definer;       // owner of define token
   InstanceKlass*    _instanceKlass; // InstanceKlass from successful define
@@ -134,16 +99,19 @@ class PlaceholderEntry : public HashtableEntry<Symbol*, mtClass> {
   bool remove_seen_thread(JavaThread* thread, PlaceholderTable::classloadAction action);
 
  public:
-  // Simple accessors, used only by SystemDictionary
-  Symbol*            klassname()           const { return literal(); }
-
-  ClassLoaderData*   loader_data()         const { return _loader_data; }
-  void               set_loader_data(ClassLoaderData* loader_data) { _loader_data = loader_data; }
+  PlaceholderEntry() :
+     _supername(nullptr), _definer(nullptr), _instanceKlass(nullptr),
+     _superThreadQ(nullptr), _loadInstanceThreadQ(nullptr), _defineThreadQ(nullptr) { }
 
   Symbol*            supername()           const { return _supername; }
   void               set_supername(Symbol* supername) {
+    if (_supername != nullptr) _supername->decrement_refcount();
     _supername = supername;
-    if (_supername != NULL) _supername->increment_refcount();
+    if (_supername != nullptr) _supername->increment_refcount();
+  }
+  void               clear_supername() {
+    if (_supername != nullptr) _supername->decrement_refcount();
+    _supername = nullptr;
   }
 
   JavaThread*        definer()             const {return _definer; }
@@ -161,20 +129,6 @@ class PlaceholderEntry : public HashtableEntry<Symbol*, mtClass> {
   SeenThread*        defineThreadQ()       const { return _defineThreadQ; }
   void               set_defineThreadQ(SeenThread* SeenThread) { _defineThreadQ = SeenThread; }
 
-  PlaceholderEntry* next() const {
-    return (PlaceholderEntry*)HashtableEntry<Symbol*, mtClass>::next();
-  }
-
-  PlaceholderEntry** next_addr() {
-    return (PlaceholderEntry**)HashtableEntry<Symbol*, mtClass>::next_addr();
-  }
-
-  // Test for equality
-  // Entries are unique for class/classloader name pair
-  bool equals(Symbol* class_name, ClassLoaderData* loader) const {
-    return (klassname() == class_name && loader_data() == loader);
-  }
-
   bool super_load_in_progress() {
      return (_superThreadQ != NULL);
   }
@@ -190,9 +144,7 @@ class PlaceholderEntry : public HashtableEntry<Symbol*, mtClass> {
   // Used for ClassCircularityError checking
   bool check_seen_thread(JavaThread* thread, PlaceholderTable::classloadAction action);
 
-  // Print method doesn't append a cr
-  void print_entry(outputStream* st) const;
-  void verify() const;
+  void print_on(outputStream* st) const;
 };
 
 #endif // SHARE_CLASSFILE_PLACEHOLDERS_HPP
