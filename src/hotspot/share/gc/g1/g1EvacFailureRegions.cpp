@@ -91,7 +91,7 @@ class ClearRetainedRegionMetadataTask : public G1AbstractSubTask {
 
       HeapRegionRemSet* rem_set = hr->rem_set();
       rem_set->clean_code_roots(hr);
-      rem_set->clear_locked(true);
+      rem_set->clear_locked(true /* only_cardset */);
     }
 
   public:
