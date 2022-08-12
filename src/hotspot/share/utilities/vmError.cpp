@@ -982,6 +982,17 @@ void VMError::report(outputStream* st, bool _verbose) {
         }
      }
 
+  STEP("printing registered callbacks");
+
+     if (_verbose && _thread != nullptr) {
+       for (VMErrorCallback* callback = _thread->_vm_error_callbacks;
+            callback != nullptr;
+            callback = callback->_next) {
+         callback->call(st);
+         st->cr();
+       }
+     }
+
   STEP("printing process")
 
      if (_verbose) {
@@ -1968,3 +1979,14 @@ void VMError::controlled_crash(int how) {
   ShouldNotReachHere();
 }
 #endif // !ASSERT
+
+VMErrorCallbackMark::VMErrorCallbackMark(VMErrorCallback* callback)
+  : _thread(Thread::current()) {
+  callback->_next = _thread->_vm_error_callbacks;
+  _thread->_vm_error_callbacks = callback;
+}
+
+VMErrorCallbackMark::~VMErrorCallbackMark() {
+  assert(_thread->_vm_error_callbacks != nullptr, "Popped too far");
+  _thread->_vm_error_callbacks = _thread->_vm_error_callbacks->_next;
+}
