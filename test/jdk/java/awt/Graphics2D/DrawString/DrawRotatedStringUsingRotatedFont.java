@@ -37,8 +37,7 @@ import static java.lang.Math.toRadians;
 
 /**
  * @test
- * @bug 8065373 8289208
- * @key headful
+ * @bug 8065373
  * @summary Verifies that we get correct direction, when draw rotated string.
  * @author Sergey Bylokhov
  * @run main DrawRotatedStringUsingRotatedFont

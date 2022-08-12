@@ -33,8 +33,8 @@ import java.lang.ref.PhantomReference;
 import java.lang.ref.WeakReference;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.ArrayList;
 import java.util.Hashtable;
-import java.util.concurrent.ConcurrentLinkedDeque;
 
 /**
  * This class is used for registering and disposing the native
@@ -145,12 +145,12 @@ public class Disposer implements Runnable {
                 Reference<?> obj = queue.remove();
                 obj.clear();
                 DisposerRecord rec = records.remove(obj);
-                safeDispose(rec);
+                rec.dispose();
                 obj = null;
                 rec = null;
                 clearDeferredRecords();
             } catch (Exception e) {
-                e.printStackTrace(System.err);
+                System.out.println("Exception while removing reference.");
             }
         }
     }
@@ -164,23 +164,21 @@ public class Disposer implements Runnable {
     public static interface PollDisposable {
     };
 
-    private static ConcurrentLinkedDeque<DisposerRecord> deferredRecords = new ConcurrentLinkedDeque<>();
-
-    private static void safeDispose(DisposerRecord rec) {
-        try {
-            rec.dispose();
-        } catch (final Exception e) {
-            e.printStackTrace(System.err);
-        }
-    }
+    private static ArrayList<DisposerRecord> deferredRecords = null;
 
     private static void clearDeferredRecords() {
-        while (!deferredRecords.isEmpty()) {
-            final DisposerRecord rec = deferredRecords.pollFirst();
-            if (rec != null) {
-                safeDispose(rec);
+        if (deferredRecords == null || deferredRecords.isEmpty()) {
+            return;
+        }
+        for (int i=0;i<deferredRecords.size(); i++) {
+            try {
+                DisposerRecord rec = deferredRecords.get(i);
+                rec.dispose();
+            } catch (Exception e) {
+                System.out.println("Exception while disposing deferred rec.");
             }
         }
+        deferredRecords.clear();
     }
 
     /*
@@ -213,7 +211,7 @@ public class Disposer implements Runnable {
                 obj.clear();
                 DisposerRecord rec = records.remove(obj);
                 if (rec instanceof PollDisposable) {
-                    safeDispose(rec);
+                    rec.dispose();
                     obj = null;
                     rec = null;
                 } else {
@@ -221,11 +219,14 @@ public class Disposer implements Runnable {
                         continue;
                     }
                     deferred++;
-                    deferredRecords.offerLast(rec);
+                    if (deferredRecords == null) {
+                      deferredRecords = new ArrayList<DisposerRecord>(5);
+                    }
+                    deferredRecords.add(rec);
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace(System.err);
+            System.out.println("Exception while removing reference.");
         } finally {
             pollingQueue = false;
         }
