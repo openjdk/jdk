@@ -38,6 +38,7 @@ import javax.management.MBeanRegistrationException;
 import javax.management.MBeanServer;
 import javax.management.MBeanServerFactory;
 import javax.management.ObjectName;
+import javax.management.RuntimeMBeanException;
 import javax.management.ServiceNotFoundException;
 import javax.management.loading.MLet;
 
@@ -65,7 +66,7 @@ public class GetMBeansFromURLTest {
         boolean thrown = false;
         try {
             mbs.registerMBean(mlet, mletObjectName);
-        } catch (MBeanRegistrationException e) {
+        } catch (RuntimeMBeanException e) {
             System.out.println("registerMBean threw expected Exception: " + e);
             thrown = true;
         }

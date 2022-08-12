@@ -751,11 +751,15 @@ public class MLet extends java.net.URLClassLoader
       * @exception java.lang.Exception This exception should be caught by the MBean server and re-thrown
       *as an MBeanRegistrationException.
       */
+     @SuppressWarnings("removal")
      public ObjectName preRegister(MBeanServer server, ObjectName name)
              throws Exception {
 
-         if (System.getProperty("com.sun.jmx.enableMLetRegistration") == null) {
-             throw new Exception("M-Let disabled: com.sun.jmx.enableMLetRegistration not set.");
+         String prop = AccessController.doPrivileged(new PrivilegedAction<String>() {
+                           public String run() { return System.getProperty("com.sun.jmx.enableMLetRegistration"); }
+                       });
+         if (!Boolean.parseBoolean(prop)) {
+             throw new UnsupportedOperationException("M-Let disabled: com.sun.jmx.enableMLetRegistration not set.");
          }
 
          // Initialize local pointer to the MBean server
