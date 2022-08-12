@@ -8100,24 +8100,41 @@ instruct vptest_anytrue_64(rFlagsRegU cr, vec src1, vec src2, kReg ktmp) %{
   ins_pipe( pipe_slow );
 %}
 
-instruct ktest_le8(rFlagsRegU cr, kReg src1, kReg src2, rRegI tmp, kReg ktmp) %{
-  predicate((Matcher::vector_length(n->in(1)) < 8) ||
-            (Matcher::vector_length(n->in(1)) == 8 && !VM_Version::supports_avx512dq()));
+instruct ktest_alltrue_le8(rFlagsRegU cr, kReg src1, kReg src2, rRegI tmp) %{
+  predicate((Matcher::vector_length(n->in(1)) < 8 ||
+             (Matcher::vector_length(n->in(1)) == 8 && !VM_Version::supports_avx512dq())) &&
+            static_cast<const VectorTestNode*>(n)->get_predicate() == BoolTest::overflow);
   match(Set cr (VectorTest src1 src2));
-  effect(TEMP tmp, TEMP ktmp);
-  format %{ "ktest_le8  $src1, $src2\t! using $tmp and $ktmp as TEMP" %}
+  effect(TEMP tmp);
+  format %{ "ktest_alltrue_le8  $src1, $src2\t! using $tmp as TEMP" %}
   ins_encode %{
     uint masklen = Matcher::vector_length(this, $src1);
     __ kmovwl($tmp$$Register, $src1$$KRegister);
     __ andl($tmp$$Register, (1 << masklen) - 1);
-    __ kmovwl($ktmp$$KRegister, $tmp$$Register);
-    __ kortestwl($ktmp$$KRegister, $ktmp$$KRegister);
+    __ xorl($tmp$$Register, (1 << masklen) - 1);
+    __ cmpl($tmp$$Register, 1);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct ktest_anytrue_le8(rFlagsRegU cr, kReg src1, kReg src2, rRegI tmp) %{
+  predicate((Matcher::vector_length(n->in(1)) < 8 ||
+             (Matcher::vector_length(n->in(1)) == 8 && !VM_Version::supports_avx512dq())) &&
+            static_cast<const VectorTestNode*>(n)->get_predicate() == BoolTest::ne);
+  match(Set cr (VectorTest src1 src2));
+  effect(TEMP tmp);
+  format %{ "ktest_anytrue_le8  $src1, $src2\t! using $tmp as TEMP" %}
+  ins_encode %{
+    uint masklen = Matcher::vector_length(this, $src1);
+    __ kmovwl($tmp$$Register, $src1$$KRegister);
+    __ andl($tmp$$Register, (1 << masklen) - 1);
+    __ testl($tmp$$Register, $tmp$$Register);
   %}
   ins_pipe( pipe_slow );
 %}
 
 instruct ktest_ge8(rFlagsRegU cr, kReg src1, kReg src2) %{
-  predicate((Matcher::vector_length(n->in(1)) >= 16) ||
+  predicate(Matcher::vector_length(n->in(1)) >= 16 ||
             (Matcher::vector_length(n->in(1)) == 8 && VM_Version::supports_avx512dq()));
   match(Set cr (VectorTest src1 src2));
   format %{ "ktest_ge8  $src1, $src2\n\t" %}

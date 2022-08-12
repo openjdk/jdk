@@ -167,7 +167,7 @@
   }
 
   // BoolTest mask for vector test intrinsics
-  static constexpr BoolTest::mask vectortest_mask(bool is_alltrue) {
+  static constexpr BoolTest::mask vectortest_mask(bool is_alltrue, bool is_predicate, int vlen) {
     return BoolTest::illegal;
   }
 

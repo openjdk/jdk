@@ -189,8 +189,17 @@
   }
 
   // BoolTest mask for vector test intrinsics
-  static constexpr BoolTest::mask vectortest_mask(bool is_alltrue) {
-    return is_alltrue ? BoolTest::lt : BoolTest::ne;
+  static constexpr BoolTest::mask vectortest_mask(bool is_alltrue, bool is_predicate, int vlen) {
+    if (!is_alltrue) {
+      return BoolTest::ne;
+    }
+    if (!is_predicate) {
+      return BoolTest::lt;
+    }
+    if ((vlen == 8 && VM_Version::supports_avx512dq()) || vlen < 8) {
+      return BoolTest::eq;
+    }
+    return BoolTest::lt;
   }
 
   // Returns pre-selection estimated size of a vector operation.
