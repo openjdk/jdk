@@ -43,8 +43,8 @@ public class MappedMemorySegmentImpl extends NativeMemorySegmentImpl {
 
     static ScopedMemoryAccess SCOPED_MEMORY_ACCESS = ScopedMemoryAccess.getScopedMemoryAccess();
 
-    public MappedMemorySegmentImpl(long min, UnmapperProxy unmapper, long length, int mask, MemorySession session) {
-        super(min, length, mask, session);
+    public MappedMemorySegmentImpl(long min, UnmapperProxy unmapper, long length, boolean readOnly, MemorySession session) {
+        super(min, length, readOnly, session);
         this.unmapper = unmapper;
     }
 
@@ -55,8 +55,8 @@ public class MappedMemorySegmentImpl extends NativeMemorySegmentImpl {
     }
 
     @Override
-    MappedMemorySegmentImpl dup(long offset, long size, int mask, MemorySession session) {
-        return new MappedMemorySegmentImpl(min + offset, unmapper, size, mask, session);
+    MappedMemorySegmentImpl dup(long offset, long size, boolean readOnly, MemorySession session) {
+        return new MappedMemorySegmentImpl(min + offset, unmapper, size, readOnly, session);
     }
 
     // mapped segment methods
@@ -95,8 +95,8 @@ public class MappedMemorySegmentImpl extends NativeMemorySegmentImpl {
 
     public static class EmptyMappedMemorySegmentImpl extends MappedMemorySegmentImpl {
 
-        public EmptyMappedMemorySegmentImpl(int modes, MemorySession session) {
-            super(0, null, 0, modes, session);
+        public EmptyMappedMemorySegmentImpl(boolean readOnly, MemorySessionImpl session) {
+            super(0, null, 0, readOnly, session);
         }
 
         @Override

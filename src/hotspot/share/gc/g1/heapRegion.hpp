@@ -73,7 +73,6 @@ class HeapRegion : public CHeapObj<mtGC> {
   HeapWord* const _end;
 
   HeapWord* volatile _top;
-  HeapWord* _compaction_top;
 
   G1BlockOffsetTablePart _bot_part;
 
@@ -88,9 +87,6 @@ class HeapRegion : public CHeapObj<mtGC> {
 public:
   HeapWord* bottom() const         { return _bottom; }
   HeapWord* end() const            { return _end;    }
-
-  void set_compaction_top(HeapWord* compaction_top) { _compaction_top = compaction_top; }
-  HeapWord* compaction_top() const { return _compaction_top; }
 
   void set_top(HeapWord* value) { _top = value; }
   HeapWord* top() const { return _top; }
@@ -124,7 +120,6 @@ public:
   bool is_empty() const { return used() == 0; }
 
 private:
-  void reset_compaction_top_after_compaction();
 
   void reset_after_full_gc_common();
 
@@ -184,7 +179,7 @@ public:
   void update_bot_for_block(HeapWord* start, HeapWord* end);
 
   // Update heap region that has been compacted to be consistent after Full GC.
-  void reset_compacted_after_full_gc();
+  void reset_compacted_after_full_gc(HeapWord* new_top);
   // Update skip-compacting heap region to be consistent after Full GC.
   void reset_skip_compacting_after_full_gc();
 
@@ -251,15 +246,11 @@ private:
 
   // Amount of dead data in the region.
   size_t _garbage_bytes;
-  // We use concurrent marking to determine the amount of live data
-  // in each heap region.
-  size_t _marked_bytes;    // Bytes known to be live via last completed marking.
 
   void init_top_at_mark_start() {
     set_top_at_mark_start(bottom());
     _parsable_bottom = bottom();
     _garbage_bytes = 0;
-    _marked_bytes = 0;
   }
 
   // Data for young region survivor prediction.
@@ -280,7 +271,7 @@ private:
   inline HeapWord* oops_on_memregion_iterate(MemRegion mr, Closure* cl);
 
   template <class Closure>
-  inline HeapWord* oops_on_memregion_iterate_in_unparsable(MemRegion mr, HeapWord* pb, Closure* cl);
+  inline HeapWord* oops_on_memregion_iterate_in_unparsable(MemRegion mr, HeapWord* block_start, Closure* cl);
 
   // Iterate over the references covered by the given MemRegion in a humongous
   // object and apply the given closure to them.
@@ -344,8 +335,6 @@ public:
   // up once during initialization time.
   static void setup_heap_region_size(size_t max_heap_size);
 
-  // The number of bytes marked live in the region in the last marking phase.
-  size_t marked_bytes() const { return _marked_bytes; }
   // An upper bound on the number of live bytes in the region.
   size_t live_bytes() const {
     return used() - garbage_bytes();
@@ -521,8 +510,7 @@ public:
 
   // Notify the region that we are about to start processing
   // self-forwarded objects during evac failure handling.
-  void note_self_forwarding_removal_start(bool during_concurrent_start,
-                                          bool during_conc_mark);
+  void note_self_forwarding_removal_start(bool during_concurrent_start);
 
   // Notify the region that we have finished processing self-forwarded
   // objects during evac failure handling.

@@ -173,14 +173,16 @@ private:
   jshort _shared_class_path_index;
 
 #if INCLUDE_CDS
-  // Flags of the current shared class.
+  // Various attributes for shared classes. Should be zero for a non-shared class.
   u2     _shared_class_flags;
-  enum {
+  enum CDSSharedClassFlags {
     _archived_lambda_proxy_is_available    = 1 << 1,
     _has_value_based_class_annotation      = 1 << 2,
     _verified_at_dump_time                 = 1 << 3,
     _has_archived_enum_objs                = 1 << 4,
-    _regenerated                           = 1 << 5
+    // This class was not loaded from a classfile in the module image
+    // or classpath.
+    _is_generated_shared_class             = 1 << 5
   };
 #endif
 
@@ -352,11 +354,11 @@ protected:
     NOT_CDS(return false;)
   }
 
-  void set_regenerated() {
-    CDS_ONLY(_shared_class_flags |= _regenerated;)
+  void set_is_generated_shared_class() {
+    CDS_ONLY(_shared_class_flags |= _is_generated_shared_class;)
   }
-  bool is_regenerated() const {
-    CDS_ONLY(return (_shared_class_flags & _regenerated) != 0;)
+  bool is_generated_shared_class() const {
+    CDS_ONLY(return (_shared_class_flags & _is_generated_shared_class) != 0;)
     NOT_CDS(return false;)
   }
 

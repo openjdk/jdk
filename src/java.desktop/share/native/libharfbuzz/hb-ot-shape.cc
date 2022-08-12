@@ -37,7 +37,7 @@
 #include "hb-shaper-impl.hh"
 
 #include "hb-ot-shape.hh"
-#include "hb-ot-shape-complex.hh"
+#include "hb-ot-shaper.hh"
 #include "hb-ot-shape-fallback.hh"
 #include "hb-ot-shape-normalize.hh"
 
@@ -47,6 +47,9 @@
 
 #include "hb-aat-layout.hh"
 
+static inline bool
+_hb_codepoint_is_regional_indicator (hb_codepoint_t u)
+{ return hb_in_range<hb_codepoint_t> (u, 0x1F1E6u, 0x1F1FFu); }
 
 #ifndef HB_NO_AAT_SHAPE
 static inline bool
@@ -83,14 +86,14 @@ hb_ot_shape_planner_t::hb_ot_shape_planner_t (hb_face_t                     *fac
                                                 , apply_morx (_hb_apply_morx (face, props))
 #endif
 {
-  shaper = hb_ot_shape_complex_categorize (this);
+  shaper = hb_ot_shaper_categorize (this);
 
   script_zero_marks = shaper->zero_width_marks != HB_OT_SHAPE_ZERO_WIDTH_MARKS_NONE;
   script_fallback_mark_positioning = shaper->fallback_position;
 
   /* https://github.com/harfbuzz/harfbuzz/issues/1528 */
-  if (apply_morx && shaper != &_hb_ot_complex_shaper_default)
-    shaper = &_hb_ot_complex_shaper_dumber;
+  if (apply_morx && shaper != &_hb_ot_shaper_default)
+    shaper = &_hb_ot_shaper_dumber;
 }
 
 void
@@ -149,20 +152,26 @@ hb_ot_shape_planner_t::compile (hb_ot_shape_plan_t           &plan,
    * Decide who does positioning. GPOS, kerx, kern, or fallback.
    */
 
-  if (0)
+#ifndef HB_NO_AAT_SHAPE
+  bool has_kerx = hb_aat_layout_has_positioning (face);
+  bool has_gsub = !apply_morx && hb_ot_layout_has_substitution (face);
+#endif
+  bool has_gpos = !disable_gpos && hb_ot_layout_has_positioning (face);
+  if (false)
     ;
 #ifndef HB_NO_AAT_SHAPE
-  else if (hb_aat_layout_has_positioning (face))
+  /* Prefer GPOS over kerx if GSUB is present;
+   * https://github.com/harfbuzz/harfbuzz/issues/3008 */
+  else if (has_kerx && !(has_gsub && has_gpos))
     plan.apply_kerx = true;
 #endif
-  else if (!apply_morx && !disable_gpos && hb_ot_layout_has_positioning (face))
+  else if (has_gpos)
     plan.apply_gpos = true;
 
   if (!plan.apply_kerx && (!has_gpos_kern || !plan.apply_gpos))
   {
-    /* Apparently Apple applies kerx if GPOS kern was not applied. */
 #ifndef HB_NO_AAT_SHAPE
-    if (hb_aat_layout_has_positioning (face))
+    if (has_kerx)
       plan.apply_kerx = true;
     else
 #endif
@@ -171,6 +180,8 @@ hb_ot_shape_planner_t::compile (hb_ot_shape_plan_t           &plan,
       plan.apply_kern = true;
 #endif
   }
+
+  plan.apply_fallback_kern = !(plan.apply_gpos || plan.apply_kerx || plan.apply_kern);
 
   plan.zero_marks = script_zero_marks &&
                     !plan.apply_kerx &&
@@ -193,6 +204,12 @@ hb_ot_shape_planner_t::compile (hb_ot_shape_plan_t           &plan,
                                    script_fallback_mark_positioning;
 
 #ifndef HB_NO_AAT_SHAPE
+  /* If we're using morx shaping, we cancel mark position adjustment because
+     Apple Color Emoji assumes this will NOT be done when forming emoji sequences;
+     https://github.com/harfbuzz/harfbuzz/issues/2967. */
+  if (plan.apply_morx)
+    plan.adjust_mark_positioning_when_zeroing = false;
+
   /* Currently we always apply trak. */
   plan.apply_trak = plan.requested_tracking && hb_aat_layout_has_tracking (face);
 #endif
@@ -266,11 +283,12 @@ hb_ot_shape_plan_t::position (hb_font_t   *font,
   else if (this->apply_kerx)
     hb_aat_layout_position (this, font, buffer);
 #endif
+
 #ifndef HB_NO_OT_KERN
-  else if (this->apply_kern)
+  if (this->apply_kern)
     hb_ot_layout_kern (this, font, buffer);
 #endif
-  else
+  else if (this->apply_fallback_kern)
     _hb_ot_shape_fallback_kern (this, font, buffer);
 
 #ifndef HB_NO_AAT_SHAPE
@@ -306,16 +324,17 @@ horizontal_features[] =
 };
 
 static void
-hb_ot_shape_collect_features (hb_ot_shape_planner_t          *planner,
-                              const hb_feature_t             *user_features,
-                              unsigned int                    num_user_features)
+hb_ot_shape_collect_features (hb_ot_shape_planner_t *planner,
+                              const hb_feature_t    *user_features,
+                              unsigned int           num_user_features)
 {
   hb_ot_map_builder_t *map = &planner->map;
 
   map->enable_feature (HB_TAG('r','v','r','n'));
   map->add_gsub_pause (nullptr);
 
-  switch (planner->props.direction) {
+  switch (planner->props.direction)
+  {
     case HB_DIRECTION_LTR:
       map->enable_feature (HB_TAG ('l','t','r','a'));
       map->enable_feature (HB_TAG ('l','t','r','m'));
@@ -348,12 +367,14 @@ hb_ot_shape_collect_features (hb_ot_shape_planner_t          *planner,
   map->enable_feature (HB_TAG ('t','r','a','k'), F_HAS_FALLBACK);
 #endif
 
-  map->enable_feature (HB_TAG ('H','A','R','F'));
+  map->enable_feature (HB_TAG ('H','a','r','f')); /* Considered required. */
+  map->enable_feature (HB_TAG ('H','A','R','F')); /* Considered discretionary. */
 
   if (planner->shaper->collect_features)
     planner->shaper->collect_features (planner);
 
-  map->enable_feature (HB_TAG ('B','U','Z','Z'));
+  map->enable_feature (HB_TAG ('B','u','z','z')); /* Considered required. */
+  map->enable_feature (HB_TAG ('B','U','Z','Z')); /* Considered discretionary. */
 
   for (unsigned int i = 0; i < ARRAY_LENGTH (common_features); i++)
     map->add_feature (common_features[i]);
@@ -363,6 +384,10 @@ hb_ot_shape_collect_features (hb_ot_shape_planner_t          *planner,
       map->add_feature (horizontal_features[i]);
   else
   {
+    /* We only apply `vert` feature. See:
+     * https://github.com/harfbuzz/harfbuzz/commit/d71c0df2d17f4590d5611239577a6cb532c26528
+     * https://lists.freedesktop.org/archives/harfbuzz/2013-August/003490.html */
+
     /* We really want to find a 'vert' feature if there's any in the font, no
      * matter which script/langsys it is listed (or not) under.
      * See various bugs referenced from:
@@ -478,6 +503,14 @@ hb_set_unicode_props (hb_buffer_t *buffer)
     if (unlikely (_hb_glyph_info_get_general_category (&info[i]) == HB_UNICODE_GENERAL_CATEGORY_MODIFIER_SYMBOL &&
                   hb_in_range<hb_codepoint_t> (info[i].codepoint, 0x1F3FBu, 0x1F3FFu)))
     {
+      _hb_glyph_info_set_continuation (&info[i]);
+    }
+    /* Regional_Indicators are hairy as hell...
+     * https://github.com/harfbuzz/harfbuzz/issues/2265 */
+    else if (unlikely (i && _hb_codepoint_is_regional_indicator (info[i].codepoint)))
+    {
+      if (_hb_codepoint_is_regional_indicator (info[i - 1].codepoint) &&
+          !_hb_glyph_info_is_continuation (&info[i - 1]))
         _hb_glyph_info_set_continuation (&info[i]);
     }
 #ifndef HB_NO_EMOJI_SEQUENCES
@@ -535,7 +568,8 @@ hb_insert_dotted_circle (hb_buffer_t *buffer, hb_font_t *font)
   info.cluster = buffer->cur().cluster;
   info.mask = buffer->cur().mask;
   (void) buffer->output_info (info);
-  buffer->swap_buffers ();
+
+  buffer->sync ();
 }
 
 static void
@@ -558,6 +592,45 @@ hb_ensure_native_direction (hb_buffer_t *buffer)
   hb_direction_t direction = buffer->props.direction;
   hb_direction_t horiz_dir = hb_script_get_horizontal_direction (buffer->props.script);
 
+  /* Numeric runs in natively-RTL scripts are actually native-LTR, so we reset
+   * the horiz_dir if the run contains at least one decimal-number char, and no
+   * letter chars (ideally we should be checking for chars with strong
+   * directionality but hb-unicode currently lacks bidi categories).
+   *
+   * This allows digit sequences in Arabic etc to be shaped in "native"
+   * direction, so that features like ligatures will work as intended.
+   *
+   * https://github.com/harfbuzz/harfbuzz/issues/501
+   *
+   * Similar thing about Regional_Indicators; They are bidi=L, but Script=Common.
+   * If they are present in a run of natively-RTL text, they get assigned a script
+   * with natively RTL direction, which would result in wrong shaping if we
+   * assign such native RTL direction to them then. Detect that as well.
+   *
+   * https://github.com/harfbuzz/harfbuzz/issues/3314
+   */
+  if (unlikely (horiz_dir == HB_DIRECTION_RTL && direction == HB_DIRECTION_LTR))
+  {
+    bool found_number = false, found_letter = false, found_ri = false;
+    const auto* info = buffer->info;
+    const auto count = buffer->len;
+    for (unsigned i = 0; i < count; i++)
+    {
+      auto gc = _hb_glyph_info_get_general_category (&info[i]);
+      if (gc == HB_UNICODE_GENERAL_CATEGORY_DECIMAL_NUMBER)
+        found_number = true;
+      else if (HB_UNICODE_GENERAL_CATEGORY_IS_LETTER (gc))
+      {
+        found_letter = true;
+        break;
+      }
+      else if (_hb_codepoint_is_regional_indicator (info[i].codepoint))
+        found_ri = true;
+    }
+    if ((found_number || found_ri) && !found_letter)
+      horiz_dir = HB_DIRECTION_LTR;
+  }
+
   /* TODO vertical:
    * The only BTT vertical script is Ogham, but it's not clear to me whether OpenType
    * Ogham fonts are supposed to be implemented BTT or not.  Need to research that
@@ -567,20 +640,7 @@ hb_ensure_native_direction (hb_buffer_t *buffer)
       (HB_DIRECTION_IS_VERTICAL   (direction) &&
        direction != HB_DIRECTION_TTB))
   {
-
-    if (buffer->cluster_level == HB_BUFFER_CLUSTER_LEVEL_MONOTONE_CHARACTERS)
-      foreach_grapheme (buffer, start, end)
-      {
-        buffer->merge_clusters (start, end);
-        buffer->reverse_range (start, end);
-      }
-    else
-      foreach_grapheme (buffer, start, end)
-        /* form_clusters() merged clusters already, we don't merge. */
-        buffer->reverse_range (start, end);
-
-    buffer->reverse ();
-
+    _hb_ot_layout_reverse_graphemes (buffer);
     buffer->props.direction = HB_DIRECTION_REVERSE (buffer->props.direction);
   }
 }
@@ -590,6 +650,7 @@ hb_ensure_native_direction (hb_buffer_t *buffer)
  * Substitute
  */
 
+#ifndef HB_NO_VERTICAL
 static hb_codepoint_t
 hb_vert_char_for (hb_codepoint_t u)
 {
@@ -640,6 +701,7 @@ hb_vert_char_for (hb_codepoint_t u)
 
   return u;
 }
+#endif
 
 static inline void
 hb_ot_rotate_chars (const hb_ot_shape_context_t *c)
@@ -662,6 +724,7 @@ hb_ot_rotate_chars (const hb_ot_shape_context_t *c)
     }
   }
 
+#ifndef HB_NO_VERTICAL
   if (HB_DIRECTION_IS_VERTICAL (c->target_direction) && !c->plan->has_vert)
   {
     for (unsigned int i = 0; i < count; i++) {
@@ -670,6 +733,7 @@ hb_ot_rotate_chars (const hb_ot_shape_context_t *c)
         info[i].codepoint = codepoint;
     }
   }
+#endif
 }
 
 static inline void
@@ -863,7 +927,7 @@ hb_ot_substitute_default (const hb_ot_shape_context_t *c)
 }
 
 static inline void
-hb_ot_substitute_complex (const hb_ot_shape_context_t *c)
+hb_ot_substitute_plan (const hb_ot_shape_context_t *c)
 {
   hb_buffer_t *buffer = c->buffer;
 
@@ -882,17 +946,23 @@ hb_ot_substitute_pre (const hb_ot_shape_context_t *c)
 
   _hb_buffer_allocate_gsubgpos_vars (c->buffer);
 
-  hb_ot_substitute_complex (c);
+  hb_ot_substitute_plan (c);
+
+#ifndef HB_NO_AAT_SHAPE
+  if (c->plan->apply_morx && c->plan->apply_gpos)
+    hb_aat_layout_remove_deleted_glyphs (c->buffer);
+#endif
 }
 
 static inline void
 hb_ot_substitute_post (const hb_ot_shape_context_t *c)
 {
-  hb_ot_hide_default_ignorables (c->buffer, c->font);
 #ifndef HB_NO_AAT_SHAPE
-  if (c->plan->apply_morx)
+  if (c->plan->apply_morx && !c->plan->apply_gpos)
     hb_aat_layout_remove_deleted_glyphs (c->buffer);
 #endif
+
+  hb_ot_hide_default_ignorables (c->buffer, c->font);
 
   if (c->plan->shaper->postprocess_glyphs &&
     c->buffer->message(c->font, "start postprocess-glyphs")) {
@@ -969,7 +1039,7 @@ hb_ot_position_default (const hb_ot_shape_context_t *c)
 }
 
 static inline void
-hb_ot_position_complex (const hb_ot_shape_context_t *c)
+hb_ot_position_plan (const hb_ot_shape_context_t *c)
 {
   unsigned int count = c->buffer->len;
   hb_glyph_info_t *info = c->buffer->info;
@@ -982,7 +1052,7 @@ hb_ot_position_complex (const hb_ot_shape_context_t *c)
    * hanging over the next glyph after the final reordering.
    *
    * Note: If fallback positinoing happens, we don't care about
-   * this as it will be overriden.
+   * this as it will be overridden.
    */
   bool adjust_offsets_when_zeroing = c->plan->adjust_mark_positioning_when_zeroing &&
                                      HB_DIRECTION_IS_FORWARD (c->buffer->props.direction);
@@ -1054,7 +1124,7 @@ hb_ot_position (const hb_ot_shape_context_t *c)
 
   hb_ot_position_default (c);
 
-  hb_ot_position_complex (c);
+  hb_ot_position_plan (c);
 
   if (HB_DIRECTION_IS_BACKWARD (c->buffer->props.direction))
     hb_buffer_reverse (c->buffer);
@@ -1068,7 +1138,7 @@ hb_propagate_flags (hb_buffer_t *buffer)
   /* Propagate cluster-level glyph flags to be the same on all cluster glyphs.
    * Simplifies using them. */
 
-  if (!(buffer->scratch_flags & HB_BUFFER_SCRATCH_FLAG_HAS_UNSAFE_TO_BREAK))
+  if (!(buffer->scratch_flags & HB_BUFFER_SCRATCH_FLAG_HAS_GLYPH_FLAGS))
     return;
 
   hb_glyph_info_t *info = buffer->info;
@@ -1077,11 +1147,7 @@ hb_propagate_flags (hb_buffer_t *buffer)
   {
     unsigned int mask = 0;
     for (unsigned int i = start; i < end; i++)
-      if (info[i].mask & HB_GLYPH_FLAG_UNSAFE_TO_BREAK)
-      {
-         mask = HB_GLYPH_FLAG_UNSAFE_TO_BREAK;
-         break;
-      }
+      mask |= info[i].mask & HB_GLYPH_FLAG_DEFINED;
     if (mask)
       for (unsigned int i = start; i < end; i++)
         info[i].mask |= mask;
@@ -1093,25 +1159,10 @@ hb_propagate_flags (hb_buffer_t *buffer)
 static void
 hb_ot_shape_internal (hb_ot_shape_context_t *c)
 {
-  c->buffer->deallocate_var_all ();
-  c->buffer->scratch_flags = HB_BUFFER_SCRATCH_FLAG_DEFAULT;
-  if (likely (!hb_unsigned_mul_overflows (c->buffer->len, HB_BUFFER_MAX_LEN_FACTOR)))
-  {
-    c->buffer->max_len = hb_max (c->buffer->len * HB_BUFFER_MAX_LEN_FACTOR,
-                                 (unsigned) HB_BUFFER_MAX_LEN_MIN);
-  }
-  if (likely (!hb_unsigned_mul_overflows (c->buffer->len, HB_BUFFER_MAX_OPS_FACTOR)))
-  {
-    c->buffer->max_ops = hb_max (c->buffer->len * HB_BUFFER_MAX_OPS_FACTOR,
-                                 (unsigned) HB_BUFFER_MAX_OPS_MIN);
-  }
-
   /* Save the original direction, we use it later. */
   c->target_direction = c->buffer->props.direction;
 
   _hb_buffer_allocate_unicode_vars (c->buffer);
-
-  c->buffer->clear_output ();
 
   hb_ot_shape_initialize_masks (c);
   hb_set_unicode_props (c->buffer);
@@ -1122,7 +1173,8 @@ hb_ot_shape_internal (hb_ot_shape_context_t *c)
   hb_ensure_native_direction (c->buffer);
 
   if (c->plan->shaper->preprocess_text &&
-    c->buffer->message(c->font, "start preprocess-text")) {
+      c->buffer->message(c->font, "start preprocess-text"))
+  {
     c->plan->shaper->preprocess_text (c->plan, c->buffer, c->font);
     (void) c->buffer->message(c->font, "end preprocess-text");
   }
@@ -1137,9 +1189,7 @@ hb_ot_shape_internal (hb_ot_shape_context_t *c)
 
   c->buffer->props.direction = c->target_direction;
 
-  c->buffer->max_len = HB_BUFFER_MAX_LEN_DEFAULT;
-  c->buffer->max_ops = HB_BUFFER_MAX_OPS_DEFAULT;
-  c->buffer->deallocate_var_all ();
+  c->buffer->leave ();
 }
 
 

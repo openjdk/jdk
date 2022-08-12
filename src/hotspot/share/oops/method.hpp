@@ -25,7 +25,6 @@
 #ifndef SHARE_OOPS_METHOD_HPP
 #define SHARE_OOPS_METHOD_HPP
 
-#include "classfile/vmSymbols.hpp"
 #include "code/compressedStream.hpp"
 #include "compiler/compilerDefinitions.hpp"
 #include "interpreter/invocationCounter.hpp"
@@ -419,7 +418,7 @@ class Method : public Metadata {
   bool was_executed_more_than(int n);
   bool was_never_executed()                     { return !was_executed_more_than(0);  }
 
-  static void build_interpreter_method_data(const methodHandle& method, TRAPS);
+  static void build_profiling_method_data(const methodHandle& method, TRAPS);
 
   static MethodCounters* build_method_counters(Thread* current, Method* m);
 
@@ -736,9 +735,8 @@ public:
 
 
   // Continuation
-  bool is_continuation_enter_intrinsic() const { return intrinsic_id() == vmIntrinsics::_Continuation_enterSpecial; }
-
-  bool is_special_native_intrinsic() const { return is_method_handle_intrinsic() || is_continuation_enter_intrinsic(); }
+  inline bool is_continuation_enter_intrinsic() const;
+  inline bool is_special_native_intrinsic() const;
 
   static Klass* check_non_bcp_klass(Klass* klass);
 

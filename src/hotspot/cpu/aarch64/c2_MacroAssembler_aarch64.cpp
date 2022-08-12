@@ -26,8 +26,10 @@
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
 #include "opto/c2_MacroAssembler.hpp"
+#include "opto/compile.hpp"
 #include "opto/intrinsicnode.hpp"
 #include "opto/matcher.hpp"
+#include "opto/output.hpp"
 #include "opto/subnode.hpp"
 #include "runtime/stubRoutines.hpp"
 
@@ -42,6 +44,21 @@
 #define BIND(label) bind(label); BLOCK_COMMENT(#label ":")
 
 typedef void (MacroAssembler::* chr_insn)(Register Rt, const Address &adr);
+
+void C2_MacroAssembler::emit_entry_barrier_stub(C2EntryBarrierStub* stub) {
+  bind(stub->slow_path());
+  movptr(rscratch1, (uintptr_t) StubRoutines::aarch64::method_entry_barrier());
+  blr(rscratch1);
+  b(stub->continuation());
+
+  bind(stub->guard());
+  relocate(entry_guard_Relocation::spec());
+  emit_int32(0);   // nmethod guard value
+}
+
+int C2_MacroAssembler::entry_barrier_stub_size() {
+  return 4 * 6;
+}
 
 // Search for str1 in str2 and return index or -1
 void C2_MacroAssembler::string_indexof(Register str2, Register str1,
@@ -1638,3 +1655,14 @@ void C2_MacroAssembler::vector_round_sve(FloatRegister dst, FloatRegister src, F
   sve_fcvtzs(dst, T, ptrue, dst, T);
   // result in dst
 }
+
+bool C2_MacroAssembler::in_scratch_emit_size() {
+  if (ciEnv::current()->task() != NULL) {
+    PhaseOutput* phase_output = Compile::current()->output();
+    if (phase_output != NULL && phase_output->in_scratch_emit_size()) {
+      return true;
+    }
+  }
+  return MacroAssembler::in_scratch_emit_size();
+}
+

@@ -45,7 +45,7 @@
 
 package compiler.codecache.stress;
 
-import sun.hotspot.code.BlobType;
+import jdk.test.whitebox.code.BlobType;
 
 import java.util.ArrayList;
 import java.util.Random;

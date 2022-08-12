@@ -313,11 +313,7 @@ class Direct$Type$Buffer$RW$$BO$
             if (session.ownerThread() == null && session.isCloseable()) {
                 throw new UnsupportedOperationException("ByteBuffer derived from closeable shared sessions not supported");
             }
-            try {
-                session.checkValidState();
-            } catch (ScopedAccessError e) {
-                throw new IllegalStateException("This segment is already closed");
-            }
+            session.checkValidState();
         }
         return address;
     }

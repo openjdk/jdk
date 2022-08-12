@@ -34,6 +34,7 @@
 #include "classfile/systemDictionary.hpp"
 #include "oops/klass.hpp"
 #include "oops/oopHandle.hpp"
+#include "utilities/resourceHash.hpp"
 
 
 /*===============================================================================
@@ -108,6 +109,8 @@
 
 class BootstrapInfo;
 class ClassFileStream;
+class ConstantPoolCache;
+class ConstantPoolCacheEntry;
 class Dictionary;
 class DumpTimeClassInfo;
 class DumpTimeSharedClassTable;
@@ -165,6 +168,15 @@ private:
   static DumpTimeLambdaProxyClassDictionary* _dumptime_lambda_proxy_class_dictionary;
   static DumpTimeLambdaProxyClassDictionary* _cloned_dumptime_lambda_proxy_class_dictionary;
 
+  // Doesn't need to be cloned as it's not modified during dump time.
+  using SavedCpCacheEntriesTable = ResourceHashtable<
+    ConstantPoolCache*,
+    ConstantPoolCacheEntry*,
+    15889, // prime number
+    ResourceObj::C_HEAP,
+    mtClassShared>;
+  static SavedCpCacheEntriesTable* _saved_cpcache_entries_table;
+
   static ArchiveInfo _static_archive;
   static ArchiveInfo _dynamic_archive;
 
@@ -182,8 +194,12 @@ private:
                                  Handle protection_domain,
                                  const ClassFileStream* cfs,
                                  TRAPS);
-  static DumpTimeClassInfo* find_or_allocate_info_for(InstanceKlass* k);
-  static DumpTimeClassInfo* find_or_allocate_info_for_locked(InstanceKlass* k);
+
+  // Guaranteed to return non-NULL value for non-shared classes.
+  // k must not be a shared class.
+  static DumpTimeClassInfo* get_info(InstanceKlass* k);
+  static DumpTimeClassInfo* get_info_locked(InstanceKlass* k);
+
   static void write_dictionary(RunTimeSharedDictionary* dictionary,
                                bool is_builtin);
   static void write_lambda_proxy_class_dictionary(LambdaProxyClassDictionary* dictionary);
@@ -195,8 +211,7 @@ private:
   static void remove_dumptime_info(InstanceKlass* k) NOT_CDS_RETURN;
   static bool has_been_redefined(InstanceKlass* k);
 
-  static bool _dump_in_progress;
-  DEBUG_ONLY(static bool _no_class_loading_should_happen;)
+  DEBUG_ONLY(static bool _class_loading_may_happen;)
 
 public:
   static bool is_hidden_lambda_proxy(InstanceKlass* ik);
@@ -225,12 +240,18 @@ public:
   static InstanceKlass* lookup_super_for_unregistered_class(Symbol* class_name,
                                                             Symbol* super_name,  bool is_superclass);
 
+  static void initialize() NOT_CDS_RETURN;
   static void init_dumptime_info(InstanceKlass* k) NOT_CDS_RETURN;
   static void handle_class_unloading(InstanceKlass* k) NOT_CDS_RETURN;
 
   static Dictionary* boot_loader_dictionary() {
     return ClassLoaderData::the_null_class_loader_data()->dictionary();
   }
+
+  static void set_saved_cpcache_entries(ConstantPoolCache* cpc, ConstantPoolCacheEntry* entries);
+  static ConstantPoolCacheEntry* get_saved_cpcache_entries_locked(ConstantPoolCache* k);
+  static void remove_saved_cpcache_entries(ConstantPoolCache* cpc);
+  static void remove_saved_cpcache_entries_locked(ConstantPoolCache* cpc);
 
   static void update_shared_entry(InstanceKlass* klass, int id);
   static void set_shared_class_misc_info(InstanceKlass* k, ClassFileStream* cfs);
@@ -311,20 +332,21 @@ public:
   static void print_shared_archive(outputStream* st, bool is_static = true) NOT_CDS_RETURN;
   static void print_table_statistics(outputStream* st) NOT_CDS_RETURN;
   static bool is_dumptime_table_empty() NOT_CDS_RETURN_(true);
-  static void start_dumping() NOT_CDS_RETURN;
-  static void stop_dumping() NOT_CDS_RETURN;
   static bool is_supported_invokedynamic(BootstrapInfo* bsi) NOT_CDS_RETURN_(false);
-  DEBUG_ONLY(static bool no_class_loading_should_happen() {return _no_class_loading_should_happen;})
+  DEBUG_ONLY(static bool class_loading_may_happen() {return _class_loading_may_happen;})
 
 #ifdef ASSERT
+  // This object marks a critical period when writing the CDS archive. During this
+  // period, the JVM must not load any new classes, so as to avoid adding new
+  // items in the SystemDictionaryShared::_dumptime_table.
   class NoClassLoadingMark: public StackObj {
   public:
     NoClassLoadingMark() {
-      assert(!_no_class_loading_should_happen, "must not be nested");
-      _no_class_loading_should_happen = true;
+      assert(_class_loading_may_happen, "must not be nested");
+      _class_loading_may_happen = false;
     }
     ~NoClassLoadingMark() {
-      _no_class_loading_should_happen = false;
+      _class_loading_may_happen = true;
     }
   };
 #endif

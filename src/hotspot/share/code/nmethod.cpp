@@ -511,7 +511,7 @@ nmethod* nmethod::new_nmethod(const methodHandle& method,
   ExceptionHandlerTable* handler_table,
   ImplicitExceptionTable* nul_chk_table,
   AbstractCompiler* compiler,
-  int comp_level
+  CompLevel comp_level
 #if INCLUDE_JVMCI
   , char* speculations,
   int speculations_len,
@@ -611,9 +611,9 @@ nmethod::nmethod(
   ByteSize basic_lock_sp_offset,
   OopMapSet* oop_maps )
   : CompiledMethod(method, "native nmethod", type, nmethod_size, sizeof(nmethod), code_buffer, offsets->value(CodeOffsets::Frame_Complete), frame_size, oop_maps, false, true),
-  _is_unloading_state(0),
   _native_receiver_sp_offset(basic_lock_owner_sp_offset),
-  _native_basic_lock_sp_offset(basic_lock_sp_offset)
+  _native_basic_lock_sp_offset(basic_lock_sp_offset),
+  _is_unloading_state(0)
 {
   {
     int scopes_data_offset   = 0;
@@ -624,6 +624,7 @@ nmethod::nmethod(
     assert_locked_or_safepoint(CodeCache_lock);
 
     init_defaults();
+    _comp_level              = CompLevel_none;
     _entry_bci               = InvocationEntryBci;
     // We have no exception handler or deopt handler make the
     // values something that will never match a pc like the nmethod vtable entry
@@ -648,7 +649,6 @@ nmethod::nmethod(
     _nmethod_end_offset      = _nul_chk_table_offset;
 #endif
     _compile_id              = compile_id;
-    _comp_level              = CompLevel_none;
     _entry_point             = code_begin()          + offsets->value(CodeOffsets::Entry);
     _verified_entry_point    = code_begin()          + offsets->value(CodeOffsets::Verified_Entry);
     _osr_entry_point         = NULL;
@@ -738,7 +738,7 @@ nmethod::nmethod(
   ExceptionHandlerTable* handler_table,
   ImplicitExceptionTable* nul_chk_table,
   AbstractCompiler* compiler,
-  int comp_level
+  CompLevel comp_level
 #if INCLUDE_JVMCI
   , char* speculations,
   int speculations_len,
@@ -746,9 +746,9 @@ nmethod::nmethod(
 #endif
   )
   : CompiledMethod(method, "nmethod", type, nmethod_size, sizeof(nmethod), code_buffer, offsets->value(CodeOffsets::Frame_Complete), frame_size, oop_maps, false, true),
-  _is_unloading_state(0),
   _native_receiver_sp_offset(in_ByteSize(-1)),
-  _native_basic_lock_sp_offset(in_ByteSize(-1))
+  _native_basic_lock_sp_offset(in_ByteSize(-1)),
+  _is_unloading_state(0)
 {
   assert(debug_info->oop_recorder() == code_buffer->oop_recorder(), "shared OR");
   {

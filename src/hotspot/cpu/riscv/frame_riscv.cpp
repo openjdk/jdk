@@ -327,6 +327,10 @@ void frame::interpreter_frame_set_last_sp(intptr_t* last_sp) {
   *((intptr_t**)addr_at(interpreter_frame_last_sp_offset)) = last_sp;
 }
 
+void frame::interpreter_frame_set_extended_sp(intptr_t* sp) {
+  *((intptr_t**)addr_at(interpreter_frame_extended_sp_offset)) = sp;
+}
+
 frame frame::sender_for_entry_frame(RegisterMap* map) const {
   assert(map != NULL, "map must be set");
   // Java frame called from C; skip all C frames and return top C
@@ -544,6 +548,7 @@ void frame::describe_pd(FrameValues& values, int frame_no) {
     DESCRIBE_FP_OFFSET(interpreter_frame_last_sp);
     DESCRIBE_FP_OFFSET(interpreter_frame_method);
     DESCRIBE_FP_OFFSET(interpreter_frame_mdp);
+    DESCRIBE_FP_OFFSET(interpreter_frame_extended_sp);
     DESCRIBE_FP_OFFSET(interpreter_frame_mirror);
     DESCRIBE_FP_OFFSET(interpreter_frame_cache);
     DESCRIBE_FP_OFFSET(interpreter_frame_locals);

@@ -166,7 +166,10 @@ address Runtime1::arraycopy_count_address(BasicType type) {
 // entered the VM has been deoptimized
 
 static bool caller_is_deopted(JavaThread* current) {
-  RegisterMap reg_map(current, false);
+  RegisterMap reg_map(current,
+                      RegisterMap::UpdateMap::skip,
+                      RegisterMap::ProcessFrames::include,
+                      RegisterMap::WalkContinuation::skip);
   frame runtime_frame = current->last_frame();
   frame caller_frame = runtime_frame.sender(&reg_map);
   assert(caller_frame.is_compiled_frame(), "must be compiled");
@@ -176,7 +179,10 @@ static bool caller_is_deopted(JavaThread* current) {
 // Stress deoptimization
 static void deopt_caller(JavaThread* current) {
   if (!caller_is_deopted(current)) {
-    RegisterMap reg_map(current, false);
+    RegisterMap reg_map(current,
+                        RegisterMap::UpdateMap::skip,
+                        RegisterMap::ProcessFrames::include,
+                        RegisterMap::WalkContinuation::skip);
     frame runtime_frame = current->last_frame();
     frame caller_frame = runtime_frame.sender(&reg_map);
     Deoptimization::deoptimize_frame(current, caller_frame.id());
@@ -440,7 +446,10 @@ static nmethod* counter_overflow_helper(JavaThread* current, int branch_bci, Met
   nmethod* osr_nm = NULL;
   methodHandle method(current, m);
 
-  RegisterMap map(current, false);
+  RegisterMap map(current,
+                  RegisterMap::UpdateMap::skip,
+                  RegisterMap::ProcessFrames::include,
+                  RegisterMap::WalkContinuation::skip);
   frame fr =  current->last_frame().sender(&map);
   nmethod* nm = (nmethod*) fr.cb();
   assert(nm!= NULL && nm->is_nmethod(), "Sanity check");
@@ -479,7 +488,10 @@ JRT_BLOCK_ENTRY(address, Runtime1::counter_overflow(JavaThread* current, int bci
   JRT_BLOCK
     osr_nm = counter_overflow_helper(current, bci, method);
     if (osr_nm != NULL) {
-      RegisterMap map(current, false);
+      RegisterMap map(current,
+                      RegisterMap::UpdateMap::skip,
+                      RegisterMap::ProcessFrames::include,
+                      RegisterMap::WalkContinuation::skip);
       frame fr =  current->last_frame().sender(&map);
       Deoptimization::deoptimize_frame(current, fr.id());
     }
@@ -525,7 +537,10 @@ JRT_ENTRY_NO_ASYNC(static address, exception_handler_for_pc_helper(JavaThread* c
   assert(nm != NULL, "this is not an nmethod");
   // Adjust the pc as needed/
   if (nm->is_deopt_pc(pc)) {
-    RegisterMap map(current, false);
+    RegisterMap map(current,
+                    RegisterMap::UpdateMap::skip,
+                    RegisterMap::ProcessFrames::include,
+                    RegisterMap::WalkContinuation::skip);
     frame exception_frame = current->last_frame().sender(&map);
     // if the frame isn't deopted then pc must not correspond to the caller of last_frame
     assert(exception_frame.is_deoptimized_frame(), "must be deopted");
@@ -564,7 +579,10 @@ JRT_ENTRY_NO_ASYNC(static address, exception_handler_for_pc_helper(JavaThread* c
     // notifications since the interpreter would also notify about
     // these same catches and throws as it unwound the frame.
 
-    RegisterMap reg_map(current);
+    RegisterMap reg_map(current,
+                        RegisterMap::UpdateMap::include,
+                        RegisterMap::ProcessFrames::include,
+                        RegisterMap::WalkContinuation::skip);
     frame stub_frame = current->last_frame();
     frame caller_frame = stub_frame.sender(&reg_map);
 
@@ -760,7 +778,10 @@ JRT_END
 // Cf. OptoRuntime::deoptimize_caller_frame
 JRT_ENTRY(void, Runtime1::deoptimize(JavaThread* current, jint trap_request))
   // Called from within the owner thread, so no need for safepoint
-  RegisterMap reg_map(current, false);
+  RegisterMap reg_map(current,
+                      RegisterMap::UpdateMap::skip,
+                      RegisterMap::ProcessFrames::include,
+                      RegisterMap::WalkContinuation::skip);
   frame stub_frame = current->last_frame();
   assert(stub_frame.is_runtime_frame(), "Sanity check");
   frame caller_frame = stub_frame.sender(&reg_map);
@@ -909,7 +930,10 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* current, Runtime1::StubID stub_
 #endif
 
   ResourceMark rm(current);
-  RegisterMap reg_map(current, false);
+  RegisterMap reg_map(current,
+                      RegisterMap::UpdateMap::skip,
+                      RegisterMap::ProcessFrames::include,
+                      RegisterMap::WalkContinuation::skip);
   frame runtime_frame = current->last_frame();
   frame caller_frame = runtime_frame.sender(&reg_map);
 
@@ -1274,7 +1298,10 @@ void Runtime1::patch_code(JavaThread* current, Runtime1::StubID stub_id) {
     tty->print_cr("Deoptimizing because patch is needed");
   }
 
-  RegisterMap reg_map(current, false);
+  RegisterMap reg_map(current,
+                      RegisterMap::UpdateMap::skip,
+                      RegisterMap::ProcessFrames::include,
+                      RegisterMap::WalkContinuation::skip);
 
   frame runtime_frame = current->last_frame();
   frame caller_frame = runtime_frame.sender(&reg_map);
@@ -1401,7 +1428,10 @@ JRT_END
 JRT_ENTRY(void, Runtime1::predicate_failed_trap(JavaThread* current))
   ResourceMark rm;
 
-  RegisterMap reg_map(current, false);
+  RegisterMap reg_map(current,
+                      RegisterMap::UpdateMap::skip,
+                      RegisterMap::ProcessFrames::include,
+                      RegisterMap::WalkContinuation::skip);
   frame runtime_frame = current->last_frame();
   frame caller_frame = runtime_frame.sender(&reg_map);
 
@@ -1415,7 +1445,7 @@ JRT_ENTRY(void, Runtime1::predicate_failed_trap(JavaThread* current))
   if (mdo == NULL && !HAS_PENDING_EXCEPTION) {
     // Build an MDO.  Ignore errors like OutOfMemory;
     // that simply means we won't have an MDO to update.
-    Method::build_interpreter_method_data(m, THREAD);
+    Method::build_profiling_method_data(m, THREAD);
     if (HAS_PENDING_EXCEPTION) {
       // Only metaspace OOM is expected. No Java code executed.
       assert((PENDING_EXCEPTION->is_a(vmClasses::OutOfMemoryError_klass())), "we expect only an OOM error here");

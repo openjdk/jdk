@@ -116,7 +116,10 @@ ExceptionBlob* OptoRuntime::_exception_blob;
 #ifdef ASSERT
 static bool check_compiled_frame(JavaThread* thread) {
   assert(thread->last_frame().is_runtime_frame(), "cannot call runtime directly from compiled code");
-  RegisterMap map(thread, false);
+  RegisterMap map(thread,
+                  RegisterMap::UpdateMap::skip,
+                  RegisterMap::ProcessFrames::include,
+                  RegisterMap::WalkContinuation::skip);
   frame caller = thread->last_frame().sender(&map);
   assert(caller.is_compiled_frame(), "not being called from compiled like code");
   return true;
@@ -1399,7 +1402,10 @@ JRT_ENTRY_NO_ASYNC(address, OptoRuntime::handle_exception_C_helper(JavaThread* c
     bool deopting = false;
     if (nm->is_deopt_pc(pc)) {
       deopting = true;
-      RegisterMap map(current, false);
+      RegisterMap map(current,
+                      RegisterMap::UpdateMap::skip,
+                      RegisterMap::ProcessFrames::include,
+                      RegisterMap::WalkContinuation::skip);
       frame deoptee = current->last_frame().sender(&map);
       assert(deoptee.is_deoptimized_frame(), "must be deopted");
       // Adjust the pc back to the original throwing pc
@@ -1480,7 +1486,10 @@ address OptoRuntime::handle_exception_C(JavaThread* current) {
   // deoptimized frame
 
   if (nm != NULL) {
-    RegisterMap map(current, false /* update_map */, false /* process_frames */);
+    RegisterMap map(current,
+                    RegisterMap::UpdateMap::skip,
+                    RegisterMap::ProcessFrames::skip,
+                    RegisterMap::WalkContinuation::skip);
     frame caller = current->last_frame().sender(&map);
 #ifdef ASSERT
     assert(caller.is_compiled_frame(), "must be");
@@ -1567,7 +1576,10 @@ void OptoRuntime::deoptimize_caller_frame(JavaThread *thread, bool doit) {
 
 void OptoRuntime::deoptimize_caller_frame(JavaThread *thread) {
   // Called from within the owner thread, so no need for safepoint
-  RegisterMap reg_map(thread);
+  RegisterMap reg_map(thread,
+                      RegisterMap::UpdateMap::include,
+                      RegisterMap::ProcessFrames::include,
+                      RegisterMap::WalkContinuation::skip);
   frame stub_frame = thread->last_frame();
   assert(stub_frame.is_runtime_frame() || exception_blob()->contains(stub_frame.pc()), "sanity check");
   frame caller_frame = stub_frame.sender(&reg_map);
@@ -1579,7 +1591,10 @@ void OptoRuntime::deoptimize_caller_frame(JavaThread *thread) {
 
 bool OptoRuntime::is_deoptimized_caller_frame(JavaThread *thread) {
   // Called from within the owner thread, so no need for safepoint
-  RegisterMap reg_map(thread);
+  RegisterMap reg_map(thread,
+                      RegisterMap::UpdateMap::include,
+                      RegisterMap::ProcessFrames::include,
+                      RegisterMap::WalkContinuation::skip);
   frame stub_frame = thread->last_frame();
   assert(stub_frame.is_runtime_frame() || exception_blob()->contains(stub_frame.pc()), "sanity check");
   frame caller_frame = stub_frame.sender(&reg_map);

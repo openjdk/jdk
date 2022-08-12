@@ -546,8 +546,6 @@ static errno_t convert_to_unicode(const char* path, const wchar_t* prefix, wchar
  */
 static wchar_t* create_unc_path(const char* path, errno_t* err) {
     wchar_t* wpath = NULL;
-    size_t converted_chars = 0;
-    size_t path_len = strlen(path) + 1; /* includes the terminating NULL */
     if (path[0] == '\\' && path[1] == '\\') {
         if (path[2] == '?' && path[3] == '\\') {
             /* if it already has a \\?\ don't do the prefix */
