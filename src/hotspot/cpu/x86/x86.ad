@@ -8111,8 +8111,7 @@ instruct ktest_alltrue_le8(rFlagsRegU cr, kReg src1, kReg src2, rRegI tmp) %{
     uint masklen = Matcher::vector_length(this, $src1);
     __ kmovwl($tmp$$Register, $src1$$KRegister);
     __ andl($tmp$$Register, (1 << masklen) - 1);
-    __ xorl($tmp$$Register, (1 << masklen) - 1);
-    __ cmpl($tmp$$Register, 1);
+    __ cmpl($tmp$$Register, (1 << masklen) - 1);
   %}
   ins_pipe( pipe_slow );
 %}
