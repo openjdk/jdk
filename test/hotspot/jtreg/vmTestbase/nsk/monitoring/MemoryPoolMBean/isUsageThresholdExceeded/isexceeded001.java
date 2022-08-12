@@ -68,7 +68,6 @@ public class isexceeded001 {
             long used = usage.getUsed();
             long max = usage.getMax();
             long peakUsed = peakUsage.getUsed();
-            long peakMax = peakUsage.getMax();
             long threshold = used + 1;
 
             if ( (max > -1) && (threshold > max) ) {
@@ -104,10 +103,9 @@ public class isexceeded001 {
             used = usage.getUsed();
             max = usage.getMax();
             peakUsed = peakUsage.getUsed();
-            peakMax = peakUsage.getMax();
 
             log.display("     used value is " + used     + "      max is " + max + " isExceeded = " + isExceeded);
-            log.display("peak used value is " + peakUsed + " peak max is " + peakMax);
+            log.display("peak used value is " + peakUsed);
             long thresholdCount = monitor.getUsageThresholdCount(pool);
             log.display("  threshold count  " + thresholdCount);
 
