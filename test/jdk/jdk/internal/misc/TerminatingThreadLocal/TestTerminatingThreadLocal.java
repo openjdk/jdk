@@ -30,11 +30,13 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+
+import org.testng.annotations.DataProvider;
+import org.testng.annotations.Test;
+import static org.testng.Assert.*;
 
 /*
  * @test
@@ -43,34 +45,52 @@ import java.util.function.Consumer;
  * @modules java.base/java.lang:+open java.base/jdk.internal.misc
  * @requires vm.continuations
  * @enablePreview
- * @run main/othervm TestTerminatingThreadLocal
+ * @run testng/othervm TestTerminatingThreadLocal
  */
 public class TestTerminatingThreadLocal {
 
-    public static void main(String[] args) throws Exception {
-        ttlTestSet(42, 112);
-        ttlTestSet(null, 112);
-        ttlTestSet(42, null);
-
-        ttlTestVirtual(666, ThreadLocal::get, 666);
+    @SuppressWarnings("unchecked")
+    static <T> Object[] testCase(T v0, Consumer<? super TerminatingThreadLocal<T>> action, T... v1) {
+        return new Object[] { v0, action, v1 };
     }
 
-    static <T> void ttlTestSet(T v0, T v1) {
-        ttlTestPlatform(v0, ttl -> {                                         }    );
-        ttlTestPlatform(v0, ttl -> { ttl.get();                              }, v0);
-        ttlTestPlatform(v0, ttl -> { ttl.get();   ttl.remove();              }    );
-        ttlTestPlatform(v0, ttl -> { ttl.get();   ttl.set(v1);               }, v1);
-        ttlTestPlatform(v0, ttl -> { ttl.set(v1);                            }, v1);
-        ttlTestPlatform(v0, ttl -> { ttl.set(v1); ttl.remove();              }    );
-        ttlTestPlatform(v0, ttl -> { ttl.set(v1); ttl.remove(); ttl.get();   }, v0);
-        ttlTestPlatform(v0, ttl -> { ttl.get();   ttl.remove(); ttl.set(v1); }, v1);
+    @DataProvider
+    public Object[][] testCases() {
+        Integer NULL = null;
+        return new Object[][] {
+            testCase(42, ttl -> {                                             }     ),
+            testCase(42, ttl -> { ttl.get();                                  }, 42 ),
+            testCase(42, ttl -> { ttl.get();    ttl.remove();                 }     ),
+            testCase(42, ttl -> { ttl.get();    ttl.set(112);                 }, 112),
+            testCase(42, ttl -> { ttl.set(112);                               }, 112),
+            testCase(42, ttl -> { ttl.set(112); ttl.remove();                 }     ),
+            testCase(42, ttl -> { ttl.set(112); ttl.remove(); ttl.get();      }, 42 ),
+            testCase(42, ttl -> { ttl.get();    ttl.remove(); ttl.set(112);   }, 112),
+
+            testCase(NULL, ttl -> {                                           }      ),
+            testCase(NULL, ttl -> { ttl.get();                                }, NULL),
+            testCase(NULL, ttl -> { ttl.get();    ttl.remove();               }      ),
+            testCase(NULL, ttl -> { ttl.get();    ttl.set(112);               }, 112 ),
+            testCase(NULL, ttl -> { ttl.set(112);                             }, 112 ),
+            testCase(NULL, ttl -> { ttl.set(112); ttl.remove();               }      ),
+            testCase(NULL, ttl -> { ttl.set(112); ttl.remove(); ttl.get();    }, NULL),
+            testCase(NULL, ttl -> { ttl.get();    ttl.remove(); ttl.set(112); }, 112 ),
+
+            testCase(42, ttl -> { ttl.get();     ttl.set(NULL);               }, NULL),
+            testCase(42, ttl -> { ttl.set(NULL);                              }, NULL),
+            testCase(42, ttl -> { ttl.set(NULL); ttl.remove();                }      ),
+            testCase(42, ttl -> { ttl.set(NULL); ttl.remove(); ttl.get();     }, 42  ),
+            testCase(42, ttl -> { ttl.get();     ttl.remove(); ttl.set(NULL); }, NULL),
+        };
     }
 
-
-    @SafeVarargs
-    static <T> void ttlTestPlatform(T initialValue,
+    /**
+     * Test TerminatingThreadLocal with a platform thread.
+     */
+    @Test(dataProvider = "testCases")
+    public <T> void ttlTestPlatform(T initialValue,
                                     Consumer<? super TerminatingThreadLocal<T>> ttlOps,
-                                    T... expectedTerminatedValues) {
+                                    T[] expectedTerminatedValues) throws Exception {
         List<T> terminatedValues = new CopyOnWriteArrayList<>();
 
         TerminatingThreadLocal<T> ttl = new TerminatingThreadLocal<>() {
@@ -87,23 +107,20 @@ public class TestTerminatingThreadLocal {
 
         Thread thread = new Thread(() -> ttlOps.accept(ttl), "ttl-test-platform");
         thread.start();
-        try {
-            thread.join();
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
+        thread.join();
 
-        if (!terminatedValues.equals(Arrays.asList(expectedTerminatedValues))) {
-            throw new AssertionError("Expected terminated values: " +
-                                     Arrays.toString(expectedTerminatedValues) +
-                                     " but got: " + terminatedValues);
-        }
+        assertEquals(terminatedValues, Arrays.asList(expectedTerminatedValues));
     }
 
-    @SafeVarargs
-    static <T> void ttlTestVirtual(T initialValue,
+    /**
+     * Test TerminatingThreadLocal with a virtual thread. The thread local should be
+     * carrier thread local but accessible to the virtual thread. The threadTerminated
+     * method should be invoked when the carrier thread terminates.
+     */
+    @Test(dataProvider = "testCases")
+    public <T> void ttlTestVirtual(T initialValue,
                                    Consumer<? super TerminatingThreadLocal<T>> ttlOps,
-                                   T... expectedTerminatedValues) throws Exception {
+                                   T[] expectedTerminatedValues) throws Exception {
         List<T> terminatedValues = new CopyOnWriteArrayList<>();
 
         TerminatingThreadLocal<T> ttl = new TerminatingThreadLocal<>() {
@@ -120,7 +137,7 @@ public class TestTerminatingThreadLocal {
 
         var carrierRef = new AtomicReference<Thread>();
 
-        // use a single worker thread pool as the "scheduler"
+        // use a single worker thread pool for the cheduler
         try (var pool = Executors.newSingleThreadExecutor()) {
 
             // capture carrier Thread
@@ -134,27 +151,21 @@ public class TestTerminatingThreadLocal {
                 executor.submit(() -> ttlOps.accept(ttl)).get();
             }
 
-            if (!terminatedValues.isEmpty()) {
-                throw new AssertionError("Unexpected terminated values after virtual thread terminated: " +
-                                         terminatedValues);
-            }
+            assertTrue(terminatedValues.isEmpty(),
+                       "Unexpected terminated values after virtual thread terminated");
         }
 
         // wait for carrier to terminate
         Thread carrier = carrierRef.get();
         carrier.join();
 
-        if (!terminatedValues.equals(Arrays.asList(expectedTerminatedValues))) {
-            throw new AssertionError("Expected terminated values: " +
-                                     Arrays.toString(expectedTerminatedValues) +
-                                     " but got: " + terminatedValues);
-        }
+        assertEquals(terminatedValues, Arrays.asList(expectedTerminatedValues));
     }
 
     /**
      * Returns a builder to create virtual threads that use the given scheduler.
      */
-    private static Thread.Builder.OfVirtual virtualThreadBuilder(Executor scheduler) {
+    static Thread.Builder.OfVirtual virtualThreadBuilder(Executor scheduler) {
         Thread.Builder.OfVirtual builder = Thread.ofVirtual();
         try {
             Class<?> clazz = Class.forName("java.lang.ThreadBuilders$VirtualThreadBuilder");
