@@ -169,10 +169,10 @@ endif
 ################################################################################
 
 ifeq ($(call check-jvm-feature, link-time-opt), true)
+  # Set JVM_OPTIMIZATION directly so other jvm-feature flags can override it
+  # later on if desired
+  JVM_OPTIMIZATION := HIGHEST_JVM
   ifeq ($(call isCompiler, gcc), true)
-    # Set JVM_OPTIMIZATION directly so other jvm-feature flags can override it
-    # later on if desired
-    JVM_OPTIMIZATION := HIGHEST_JVM
     JVM_CFLAGS_FEATURES += -flto -fuse-linker-plugin
     JVM_LDFLAGS_FEATURES += -flto -fuse-linker-plugin -fno-strict-aliasing
   endif
