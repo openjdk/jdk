@@ -55,6 +55,7 @@ class SafeThreadsListPtr;
 class ThreadClosure;
 class ThreadsList;
 class ThreadsSMRSupport;
+class VMErrorCallback;
 
 class OopClosure;
 class CodeBlobClosure;
@@ -104,6 +105,8 @@ class JavaThread;
 //       - this->entry_point()  // set differently for each kind of JavaThread
 
 class Thread: public ThreadShadow {
+  friend class VMError;
+  friend class VMErrorCallbackMark;
   friend class VMStructs;
   friend class JVMCIVMStructs;
  private:
@@ -631,6 +634,9 @@ protected:
     assert(_wx_state == expected, "wrong state");
   }
 #endif // __APPLE__ && AARCH64
+
+ private:
+  VMErrorCallback* _vm_error_callbacks;
 };
 
 // Inline implementation of Thread::current()
