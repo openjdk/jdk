@@ -210,7 +210,7 @@ public class GetXSpace {
 
         out.format("%s:%n", s.name());
         String fmt = "  %-4s total= %12d free = %12d usable = %12d%n";
-        out.format(fmt, "df", s.total(), 0, s.free());
+        out.format(fmt, "df", s.total(), s.free(), s.free());
         out.format(fmt, "getX", ts, fs, us);
 
         // If the file system can dynamically change size, this check will fail.
@@ -238,7 +238,12 @@ public class GetXSpace {
             // value when the number of blocks is odd.
             if (!Platform.isOSX() || blockSize != 512 || numBlocks % 2 == 0
                 || ts - s.total() != 512) {
-                fail(s.name(), s.total(), "!=", ts);
+                // If Windows user quotas are in effect, then the total space
+                // reported by df might be less that the actual total space in
+                // the store, but the free space should be the same.
+                if (!(Platform.isWindows() && ts > s.total && fs == s.free())) {
+                    fail(s.name(), s.total(), "!=", ts);
+                }
             }
         } else {
             pass();
