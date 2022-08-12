@@ -34,6 +34,7 @@
  * @run main  GetMBeansFromURLTest
  */
 
+import javax.management.MBeanRegistrationException;
 import javax.management.MBeanServer;
 import javax.management.MBeanServerFactory;
 import javax.management.ObjectName;
@@ -56,12 +57,27 @@ public class GetMBeansFromURLTest {
         System.out.println("Create the MLet");
         MLet mlet = new MLet();
 
-        // Register the MLet MBean with the MBeanServer
+        // Register the MLet MBean with the MBeanServer,
+        // first checking that registering fails by default:
         //
-        System.out.println("Register the MLet MBean");
-        // Set Property here, as test is on already in "othervm":
-        System.setProperty("com.sun.jmx.enableMLetRegistration", "true");
+        System.out.println("Register the MLet MBean (failure expected)");
         ObjectName mletObjectName = new ObjectName("Test:type=MLet");
+        boolean thrown = false;
+        try {
+            mbs.registerMBean(mlet, mletObjectName);
+        } catch (MBeanRegistrationException e) {
+            System.out.println("registerMBean threw expected Exception: " + e);
+            thrown = true;
+        }
+        if (!thrown) {
+            System.out.println("TEST FAILED: registerMBean: expected Exception not thrown.");
+            error = true;
+        }
+        // Register the MLet MBean with the MBeanServer,
+        // this time with the required property set:
+        //
+        System.out.println("Register the MLet MBean (with enabling property set)");
+        System.setProperty("com.sun.jmx.enableMLetRegistration", "true");
         mbs.registerMBean(mlet, mletObjectName);
 
         // Call getMBeansFromURL
