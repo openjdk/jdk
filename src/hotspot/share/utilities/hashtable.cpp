@@ -28,7 +28,6 @@
 #include "classfile/moduleEntry.hpp"
 #include "classfile/packageEntry.hpp"
 #include "classfile/placeholders.hpp"
-#include "classfile/protectionDomainCache.hpp"
 #include "classfile/vmClasses.hpp"
 #include "code/nmethod.hpp"
 #include "logging/log.hpp"
@@ -260,8 +259,6 @@ template class BasicHashtable<mtServiceability>;
 
 template class Hashtable<nmethod*, mtGC>;
 template class Hashtable<InstanceKlass*, mtClass>;
-template class Hashtable<WeakHandle, mtClass>;
 template class Hashtable<WeakHandle, mtServiceability>;
 
 template void BasicHashtable<mtClass>::verify_table<DictionaryEntry>(char const*);
-template void BasicHashtable<mtClass>::verify_table<ProtectionDomainCacheEntry>(char const*);

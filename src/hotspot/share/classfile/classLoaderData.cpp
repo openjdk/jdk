@@ -53,6 +53,7 @@
 #include "classfile/javaClasses.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/packageEntry.hpp"
+#include "classfile/protectionDomainCache.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/systemDictionaryShared.hpp"
@@ -145,6 +146,7 @@ ClassLoaderData::ClassLoaderData(Handle h_class_loader, bool has_class_mirror_ho
   _claim(0),
   _handles(),
   _klasses(NULL), _packages(NULL), _modules(NULL), _unnamed_module(NULL), _dictionary(NULL),
+  _protection_domains(NULL),
   _jmethod_ids(NULL),
   _deallocate_list(NULL),
   _next(NULL),
@@ -702,6 +704,16 @@ ClassLoaderData::~ClassLoaderData() {
     _dictionary = NULL;
   }
 
+  if (_protection_domains != NULL) {
+    for (int i = 0; i < _protection_domains->length(); i++) {
+      _protection_domains->at(i).release(Universe::vm_weak());
+      ProtectionDomainCacheTable::inc_removed_entries_count();
+      log_debug(protectiondomain, table)("protection domain unlinked at %d", i);
+    }
+    delete _protection_domains;
+    _protection_domains = NULL;
+  }
+
   if (_unnamed_module != NULL) {
     delete _unnamed_module;
     _unnamed_module = NULL;
@@ -1040,4 +1052,50 @@ bool ClassLoaderData::contains_klass(Klass* klass) {
     if (k == klass) return true;
   }
   return false;
+}
+
+WeakHandle ClassLoaderData::add_protection_domain(Handle protection_domain) {
+  MutexLocker ml(metaspace_lock(),  Mutex::_no_safepoint_check_flag);
+  if (_protection_domains == nullptr) {
+    _protection_domains = new (ResourceObj::C_HEAP, mtClass) GrowableArray<WeakHandle>(100, mtClass);
+  } else {
+    // See if present with linear search
+    for (int i = 0; i < _protection_domains->length(); i++) {
+      if (_protection_domains->at(i).peek() == protection_domain()) {
+        return _protection_domains->at(i);
+      }
+      // Can't just remove null pd because some dictionary klass in this class loader data
+      //  may be pointing to and concurrently traversing this.
+    }
+  }
+  WeakHandle newpd(Universe::vm_weak(), protection_domain);
+  _protection_domains->push(newpd);
+  LogTarget(Debug, protectiondomain, table) lt;
+  if (lt.is_enabled()) {
+    ResourceMark rm;
+    LogStream ls(lt);
+    ls.print("protection domain added at %d", _protection_domains->length());
+    ls.print(" class loader: ");
+    class_loader()->print_value_on(&ls);
+    ls.print(" protection domain: ");
+    protection_domain->print_value_on(&ls);
+    ls.cr();
+  }
+  return newpd;
+}
+
+int ClassLoaderData::remove_weak_protection_domains() {
+  int oops_removed = 0;
+  MutexLocker ml(metaspace_lock(),  Mutex::_no_safepoint_check_flag);
+  if (_protection_domains != nullptr) {
+    for (int i = _protection_domains->length() - 1; i >= 0; i--) {
+      if (_protection_domains->at(i).peek() == nullptr) {
+        _protection_domains->at(i).release(Universe::vm_weak());
+        _protection_domains->remove_at(i);
+        log_debug(protectiondomain, table)("protection domain unlinked at %d", i);
+        oops_removed++;
+      }
+    }
+  }
+  return oops_removed;
 }

@@ -191,9 +191,9 @@ bool DictionaryEntry::contains_protection_domain(oop protection_domain) const {
 void DictionaryEntry::add_protection_domain(ClassLoaderData* loader_data, Handle protection_domain) {
   assert_lock_strong(SystemDictionary_lock);
   if (!contains_protection_domain(protection_domain())) {
-    ProtectionDomainCacheEntry* entry = SystemDictionary::pd_cache_table()->get(protection_domain);
+    WeakHandle pd = loader_data->add_protection_domain(protection_domain);
     // Additions and deletions hold the SystemDictionary_lock, readers are lock-free
-    ProtectionDomainEntry* new_head = new ProtectionDomainEntry(entry, _pd_set);
+    ProtectionDomainEntry* new_head = new ProtectionDomainEntry(pd, _pd_set);
     release_set_pd_set(new_head);
   }
   LogTarget(Trace, protectiondomain) lt;

@@ -142,6 +142,7 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   ModuleEntryTable*  volatile _modules;  // The modules defined by the class loader.
   ModuleEntry* _unnamed_module;          // This class loader's unnamed module.
   Dictionary*  _dictionary;              // The loaded InstanceKlasses, including initiated by this class loader
+  GrowableArray<WeakHandle>* _protection_domains;  // Protection domains shared by classes in this loader
 
   // These method IDs are created for the class loader and set to NULL when the
   // class loader is unloaded.  They are rarely freed, only for redefine classes
@@ -310,6 +311,9 @@ class ClassLoaderData : public CHeapObj<mtClass> {
 
   static ClassLoaderData* class_loader_data(oop loader);
   static ClassLoaderData* class_loader_data_or_null(oop loader);
+
+  WeakHandle add_protection_domain(Handle protection_domain);
+  int remove_weak_protection_domains();
 
   // Returns Klass* of associated class loader, or NULL if associated loader is 'bootstrap'.
   // Also works if unloading.

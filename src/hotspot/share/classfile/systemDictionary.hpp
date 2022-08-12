@@ -189,9 +189,6 @@ class SystemDictionary : AllStatic {
   // loaders.  Returns "true" iff something was unloaded.
   static bool do_unloading(GCTimer* gc_timer);
 
-  // Protection Domain Table
-  static ProtectionDomainCacheTable* pd_cache_table() { return _pd_cache_table; }
-
   // Printing
   static void print();
   static void print_on(outputStream* st);
@@ -299,9 +296,6 @@ public:
 
   // Invoke methods (JSR 292)
   static SymbolPropertyTable*    _invoke_method_table;
-
-  // ProtectionDomain cache
-  static ProtectionDomainCacheTable*   _pd_cache_table;
 
 protected:
   static InstanceKlass* _well_known_klasses[];
