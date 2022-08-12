@@ -62,7 +62,7 @@ instruct compareAndExchangeP_shenandoah(memory mem_ptr,
 
   ins_encode %{
     ShenandoahBarrierSet::assembler()->cmpxchg_oop(&_masm,
-                                                   NULL, $mem_ptr$$Address, $oldval$$Register, $newval$$Register,
+                                                   noreg, $mem_ptr$$Address, $oldval$$Register, $newval$$Register,
                                                    true,  // exchange
                                                    $tmp1$$Register, $tmp2$$Register
                                                    );

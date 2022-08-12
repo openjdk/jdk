@@ -423,6 +423,7 @@ void ConstantPool::remove_unshareable_info() {
     }
   }
   if (cache() != NULL) {
+    // cache() is NULL if this class is not yet linked.
     cache()->remove_unshareable_info();
   }
 }

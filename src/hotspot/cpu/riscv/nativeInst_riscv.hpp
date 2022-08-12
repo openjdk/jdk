@@ -42,7 +42,6 @@
 // - - NativeIllegalInstruction
 // - - NativeCallTrampolineStub
 // - - NativeMembar
-// - - NativeFenceI
 
 // The base class for different kinds of native instruction abstractions.
 // Provides the primitive operations to manipulate code relative to this.
@@ -553,14 +552,6 @@ inline NativeMembar *NativeMembar_at(address addr) {
   assert(nativeInstruction_at(addr)->is_membar(), "no membar found");
   return (NativeMembar*)addr;
 }
-
-class NativeFenceI : public NativeInstruction {
-public:
-  static inline int instruction_size() {
-    // 2 for fence.i + fence
-    return (UseConservativeFence ? 2 : 1) * NativeInstruction::instruction_size;
-  }
-};
 
 class NativePostCallNop: public NativeInstruction {
 public:

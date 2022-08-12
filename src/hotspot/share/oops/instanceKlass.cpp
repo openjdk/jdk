@@ -576,6 +576,7 @@ void InstanceKlass::deallocate_record_components(ClassLoaderData* loader_data,
 // This function deallocates the metadata and C heap pointers that the
 // InstanceKlass points to.
 void InstanceKlass::deallocate_contents(ClassLoaderData* loader_data) {
+  SystemDictionaryShared::handle_class_unloading(this);
 
   // Orphan the mirror first, CMS thinks it's still live.
   if (java_mirror() != NULL) {
@@ -691,8 +692,6 @@ void InstanceKlass::deallocate_contents(ClassLoaderData* loader_data) {
     MetadataFactory::free_metadata(loader_data, annotations());
   }
   set_annotations(NULL);
-
-  SystemDictionaryShared::handle_class_unloading(this);
 }
 
 bool InstanceKlass::is_record() const {
