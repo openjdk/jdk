@@ -24,7 +24,6 @@ package jaxp.library;
 
 
 import java.net.URL;
-import java.nio.file.Path;
 import java.security.CodeSource;
 import java.security.Permission;
 import java.security.PermissionCollection;
