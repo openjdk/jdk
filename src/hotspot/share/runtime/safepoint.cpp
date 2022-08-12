@@ -24,7 +24,6 @@
 
 #include "precompiled.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
-#include "classfile/dictionary.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
 #include "code/codeCache.hpp"
@@ -557,13 +556,6 @@ public:
       if (StringTable::needs_rehashing()) {
         Tracer t("rehashing string table");
         StringTable::rehash_table();
-      }
-    }
-
-    if (_subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_SYSTEM_DICTIONARY_RESIZE)) {
-      if (Dictionary::does_any_dictionary_needs_resizing()) {
-        Tracer t("resizing system dictionaries");
-        ClassLoaderDataGraph::resize_dictionaries();
       }
     }
 

@@ -1133,6 +1133,12 @@ inline intx byte_size(void* from, void* to) {
   return (address)to - (address)from;
 }
 
+// Find log2 value greater than this input
+inline size_t ceil_log2(size_t value) {
+  size_t ret;
+  for (ret = 1; ((size_t)1 << ret) < value; ++ret);
+  return ret;
+}
 
 // Pack and extract shorts to/from ints:
 

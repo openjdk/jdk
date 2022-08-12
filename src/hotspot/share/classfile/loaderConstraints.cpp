@@ -441,8 +441,7 @@ void LoaderConstraintTable::verify() {
         Symbol* name = ik->name();
         ClassLoaderData* loader_data = ik->class_loader_data();
         Dictionary* dictionary = loader_data->dictionary();
-        unsigned int name_hash = dictionary->compute_hash(name);
-        InstanceKlass* k = dictionary->find_class(name_hash, name);
+        InstanceKlass* k = dictionary->find_class(thread, name);
         if (k != NULL) {
           // We found the class in the dictionary, so we should
           // make sure that the Klass* matches what we already have.
