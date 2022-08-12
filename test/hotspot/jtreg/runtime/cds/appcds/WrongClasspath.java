@@ -54,7 +54,7 @@ public class WrongClasspath {
         .assertAbnormalExit(unableToUseMsg, mismatchMsg);
 
     // Run with -Xshare:auto and without CDS logging enabled, the mismatch message
-    // should stil be there.
+    // should still be there.
     OutputAnalyzer output = TestCommon.execAuto("Hello");
     output.shouldContain(mismatchMsg);
 
