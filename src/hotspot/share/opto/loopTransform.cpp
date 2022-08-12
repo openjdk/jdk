@@ -2697,6 +2697,8 @@ bool PhaseIdealLoop::is_iv(Node* exp, Node* iv, BasicType bt) {
 //            | (LShiftX VIV[iv] ConI)
 //            | (ConvI2L SIV[iv])  -- a "short-scale" can occur here; note recursion
 //            | (SubX 0 SIV[iv])  -- same as MulX(iv, -scale); note recursion
+//            | (AddX SIV[iv] SIV[iv])  -- sum of two scaled iv; note recursion
+//            | (SubX SIV[iv] SIV[iv])  -- difference of two scaled iv; note recursion
 //    VIV[iv] = [either iv or its value converted; see is_iv() above]
 // On success, the constant scale value is stored back to *p_scale.
 // The value (*p_short_scale) reports if such a ConvI2L conversion was present.
@@ -2758,24 +2760,69 @@ bool PhaseIdealLoop::is_scaled_iv(Node* exp, Node* iv, BasicType bt, jlong* p_sc
       }
       return true;
     }
-  } else if (opc == Op_Sub(exp_bt) &&
-             exp->in(1)->find_integer_as_long(exp_bt, -1) == 0) {
-    jlong scale = 0;
-    if (depth == 0 && is_scaled_iv(exp->in(2), iv, exp_bt, &scale, p_short_scale, depth + 1)) {
-      // SubX(0, iv*K) => iv*(-K)
-      if (scale == min_signed_integer(exp_bt)) {
-        // This should work even if -K overflows, but let's not.
+  } else if (opc == Op_Add(exp_bt)) {
+    jlong scale_l = 0;
+    jlong scale_r = 0;
+    bool short_scale_l = false;
+    bool short_scale_r = false;
+    if (depth == 0 &&
+        is_scaled_iv(exp->in(1), iv, exp_bt, &scale_l, &short_scale_l, depth + 1) &&
+        is_scaled_iv(exp->in(2), iv, exp_bt, &scale_r, &short_scale_r, depth + 1)) {
+      // AddX(iv*K1, iv*K2) => iv*(K1+K2)
+      jlong scale_sum = java_add(scale_l, scale_r);
+      if (scale_sum > max_signed_integer(exp_bt) || scale_sum < min_signed_integer(exp_bt)) {
+        // Int scales may overflow as we are using jlong to compute.
         return false;
       }
-      scale = java_multiply(scale, (jlong)-1);
       if (p_scale != NULL) {
-        *p_scale = scale;
+        *p_scale = scale_sum;
       }
       if (p_short_scale != NULL) {
-        // (ConvI2L (MulI iv K)) can be 64-bit linear if iv is kept small enough...
-        *p_short_scale = *p_short_scale || (exp_bt != bt && scale != 1);
+        *p_short_scale = short_scale_l || short_scale_r;
       }
       return true;
+    }
+  } else if (opc == Op_Sub(exp_bt)) {
+    if (exp->in(1)->find_integer_as_long(exp_bt, -1) == 0) {
+      jlong scale = 0;
+      if (depth == 0 && is_scaled_iv(exp->in(2), iv, exp_bt, &scale, p_short_scale, depth + 1)) {
+        // SubX(0, iv*K) => iv*(-K)
+        if (scale == min_signed_integer(exp_bt)) {
+          // This should work even if -K overflows, but let's not.
+          return false;
+        }
+        scale = java_multiply(scale, (jlong)-1);
+        if (p_scale != NULL) {
+          *p_scale = scale;
+        }
+        if (p_short_scale != NULL) {
+          // (ConvI2L (MulI iv K)) can be 64-bit linear if iv is kept small enough...
+          *p_short_scale = *p_short_scale || (exp_bt != bt && scale != 1);
+        }
+        return true;
+      }
+    } else {
+      jlong scale_l = 0;
+      jlong scale_r = 0;
+      bool short_scale_l = false;
+      bool short_scale_r = false;
+      if (depth == 0 &&
+          is_scaled_iv(exp->in(1), iv, exp_bt, &scale_l, &short_scale_l, depth + 1) &&
+          is_scaled_iv(exp->in(2), iv, exp_bt, &scale_r, &short_scale_r, depth + 1)) {
+        // SubX(iv*K1, iv*K2) => iv*(K1-K2)
+        jlong scale_diff = java_subtract(scale_l, scale_r);
+        if (scale_diff > max_signed_integer(exp_bt) || scale_diff < min_signed_integer(exp_bt)) {
+          // Int scales may overflow as we are using jlong to compute.
+          return false;
+        }
+        if (p_scale != NULL) {
+          *p_scale = scale_diff;
+        }
+        if (p_short_scale != NULL) {
+          *p_short_scale = short_scale_l || short_scale_r;
+        }
+        return true;
+      }
     }
   }
   // We could also recognize (iv*K1)*K2, even with overflow, but let's not.
