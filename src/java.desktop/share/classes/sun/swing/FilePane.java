@@ -1132,6 +1132,7 @@ public class FilePane extends JPanel implements PropertyChangeListener {
             this.chooser = chooser;
             df = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT,
                                                 chooser.getLocale());
+            nf.setMinimumFractionDigits(1);
         }
 
         public void setBounds(int x, int y, int width, int height) {
@@ -1184,7 +1185,6 @@ public class FilePane extends JPanel implements PropertyChangeListener {
             // TODO: it's rather a temporary trick, to be revised
             String text;
             Object[] objs = new Object[1];
-            nf.setMinimumFractionDigits(1);
 
             if (value == null) {
                 text = "";
