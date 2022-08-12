@@ -71,18 +71,6 @@ class LinuxFileSystem extends UnixFileSystem {
         return SupportedFileFileAttributeViewsHolder.supportedFileAttributeViews;
     }
 
-    private static UnixException catEx(UnixException x, UnixException y) {
-        assert x != null || y != null;
-        UnixException ue = y;
-        if (x != null) {
-            ue = x;
-            if (y != null) {
-                ue.addSuppressed(y);
-            }
-        }
-        return ue;
-    }
-
     /**
      * Clones the file whose path name is {@code src} to that whose path
      * name is {@code dst} using the {@code ioctl} system call with the
@@ -91,16 +79,20 @@ class LinuxFileSystem extends UnixFileSystem {
      * @param src the path of the source file
      * @param dst the path of the destination file (clone)
      * @param followLinks whether to follow links
+     * @param mode the permissions to assign to the destination
      *
      * @return 0 on success, IOStatus.UNSUPPORTED_CASE if the call does not work
      *         with the given parameters, or IOStatus.UNSUPPORTED if cloning is
      *         not supported on this platform
      */
-    protected int clone(UnixPath src, UnixPath dst, boolean followLinks)
-        throws IOException {
+    protected int clone(UnixPath src, UnixPath dst, boolean followLinks,
+                        int mode)
+        throws IOException
+    {
         int srcFD = 0;
         try {
-            srcFD = open(src, O_RDONLY, 0);
+            int flags = O_RDONLY | (followLinks ? 0 : O_NOFOLLOW);
+            srcFD = open(src, flags, 0);
         } catch (UnixException x) {
             x.rethrowAsIOException(src);
             return IOStatus.THROWN;
@@ -108,29 +100,29 @@ class LinuxFileSystem extends UnixFileSystem {
 
         int dstFD = 0;
         try {
-            dstFD = open(dst, O_CREAT | O_WRONLY, 0666);
+            int flags = (O_CREAT | O_WRONLY) | (followLinks ? 0 : O_NOFOLLOW);
+            dstFD = open(dst, flags, mode);
         } catch (UnixException x) {
             try {
                 UnixNativeDispatcher.close(srcFD);
-            } catch (UnixException y) {
-                catEx(x, y).rethrowAsIOException(src, dst);
-                return IOStatus.THROWN;
+            } catch (UnixException ignored) {
             }
             x.rethrowAsIOException(dst);
             return IOStatus.THROWN;
         }
 
-        UnixException ioctlEx = null;
+        UnixException resultEx = null;
         int result;
         try {
             result = ioctl_ficlone(dstFD, srcFD);
+            fchmod(dstFD, mode);
         } catch (UnixException x) {
             switch (x.errno()) {
                 case EINVAL:
                     result = IOStatus.UNSUPPORTED;
                     break;
                 case EPERM:
-                    ioctlEx = x;
+                    resultEx = x;
                     result = IOStatus.THROWN;
                     break;
                 default:
@@ -139,41 +131,28 @@ class LinuxFileSystem extends UnixFileSystem {
             }
         }
 
-        UnixException ue = ioctlEx;
-        UnixPath s = null;
-        UnixPath d = null;
-
         try {
             UnixNativeDispatcher.close(dstFD);
         } catch (UnixException x) {
-            ue = catEx(ue, x);
-            d = dst;
+            if (resultEx == null)
+                resultEx = x;
         }
-
-        // delete dst to avoid later exception in Java layer
+        try {
+            UnixNativeDispatcher.close(srcFD);
+        } catch (UnixException y) {
+            if (resultEx == null)
+                resultEx = y;
+        }
         if (result != 0) {
             try {
                 unlink(dst);
-            } catch (UnixException x) {
-                ue = catEx(ue, x);
-                d = dst;
+            } catch (UnixException z) {
+                if (resultEx == null)
+                    resultEx = z;
             }
         }
-
-        try {
-            UnixNativeDispatcher.close(srcFD);
-        } catch (UnixException x) {
-            ue = catEx(ue, x);
-            s = src;
-        }
-
-        if (ue != null) {
-            if (ioctlEx != null)
-                throw new IOException(ioctlEx.errorString(), ioctlEx);
-            else if (s != null && d != null)
-                ue.rethrowAsIOException(s, d);
-            else
-                ue.rethrowAsIOException(s != null ? s : d);
+        if (resultEx != null) {
+            resultEx.rethrowAsIOException(src, dst);
             return IOStatus.THROWN;
         }
 

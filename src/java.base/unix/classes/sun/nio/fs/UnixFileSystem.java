@@ -134,12 +134,14 @@ abstract class UnixFileSystem
      * @param src the path of the source file
      * @param dst the path of the destination file (clone)
      * @param followLinks whether to follow links
+     * @param mode the permissions to assign to the destination
      *
      * @return 0 on success, IOStatus.UNSUPPORTED_CASE if the call does not work
      *         with the given parameters, or IOStatus.UNSUPPORTED if cloning is
      *         not supported on this platform
      */
-    protected int clone(UnixPath src, UnixPath dst, boolean followLinks)
+    protected int clone(UnixPath src, UnixPath dst, boolean followLinks,
+                        int mode)
         throws IOException {
         return IOStatus.UNSUPPORTED;
     }

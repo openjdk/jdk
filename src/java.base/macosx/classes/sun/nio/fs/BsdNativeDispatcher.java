@@ -68,21 +68,18 @@ class BsdNativeDispatcher extends UnixNativeDispatcher {
      * int clonefile(const char * src, const char * dst, int flags);
      */
     static int clonefile(UnixPath src, UnixPath dst, int flags)
-        throws UnixException {
-        if (src.getFileSystem() == dst.getFileSystem()) {
-            try (NativeBuffer srcBuffer = copyToNativeBuffer(src);
-                NativeBuffer dstBuffer = copyToNativeBuffer(dst)) {
-                long comp = Blocker.begin();
-                try {
-                    return clonefile0(srcBuffer.address(), dstBuffer.address(),
-                                      flags);
-                } finally {
-                    Blocker.end(comp);
-                }
+        throws UnixException
+    {
+        try (NativeBuffer srcBuffer = copyToNativeBuffer(src);
+            NativeBuffer dstBuffer = copyToNativeBuffer(dst)) {
+            long comp = Blocker.begin();
+            try {
+                return clonefile0(srcBuffer.address(), dstBuffer.address(),
+                                  flags);
+            } finally {
+                Blocker.end(comp);
             }
         }
-
-        return -1;
     }
     private static native int clonefile0(long srcAddress, long dstAddress,
                                          int flags);

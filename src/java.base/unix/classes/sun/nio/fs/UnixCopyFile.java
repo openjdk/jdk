@@ -276,12 +276,21 @@ class UnixCopyFile {
                                  long addressToPollForCancel)
         throws IOException
     {
-        boolean copied = false;
         if (addressToPollForCancel == 0 && !cloneFileNotSupported) {
             int res = source.getFileSystem().clone(source, target,
-                                                   flags.followLinks);
+                                                   flags.followLinks,
+                                                   attrs.mode());
             if (res == 0) {
-                copied = true;
+                // copy owner
+                if (flags.copyPosixAttributes) {
+                    try {
+                        chown(target, attrs.uid(), attrs.gid());
+                    } catch (UnixException x) {
+                        if (flags.failIfUnableToCopyPosix)
+                            x.rethrowAsIOException(target);
+                    }
+                }
+                return;
             }
             if (res == IOStatus.UNSUPPORTED) {
                 cloneFileNotSupported = true;
@@ -300,8 +309,6 @@ class UnixCopyFile {
             int fo = -1;
             try {
                 fo = open(target,
-                           copied ? // copied == true => target already exists
-                           O_WRONLY :
                            (O_WRONLY |
                             O_CREAT |
                             O_EXCL),
@@ -313,7 +320,8 @@ class UnixCopyFile {
             // set to true when file and attributes copied
             boolean complete = false;
             try {
-                if (!copied && !directCopyNotSupported) {
+                boolean copied = false;
+                if (!directCopyNotSupported) {
                     // copy bytes to target using platform function
                     long comp = Blocker.begin();
                     try {

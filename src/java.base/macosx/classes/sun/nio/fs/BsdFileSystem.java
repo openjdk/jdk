@@ -77,17 +77,21 @@ class BsdFileSystem extends UnixFileSystem {
      * @param src the path of the source file
      * @param dst the path of the destination file (clone)
      * @param followLinks whether to follow links
+     * @param mode the permissions to assign to the destination
      *
      * @return 0 on success, IOStatus.UNSUPPORTED_CASE if the call does not work
      *         with the given parameters, or IOStatus.UNSUPPORTED if cloning is
      *         not supported on this platform
      */
     @Override
-    protected int clone(UnixPath src, UnixPath dst, boolean followLinks)
-        throws IOException {
+    protected int clone(UnixPath src, UnixPath dst, boolean followLinks,
+                        int mode)
+        throws IOException
+    {
         int flags = followLinks ? 0 : CLONE_NOFOLLOW;
+        int result = 0;
         try {
-            return BsdNativeDispatcher.clonefile(src, dst, flags);
+            result = BsdNativeDispatcher.clonefile(src, dst, flags);
         } catch (UnixException x) {
             switch (x.errno()) {
                 case ENOTSUP: // cloning not supported by filesystem
@@ -100,6 +104,12 @@ class BsdFileSystem extends UnixFileSystem {
                     return IOStatus.THROWN;
             }
         }
+        try {
+            UnixNativeDispatcher.chmod(dst, mode);
+        } catch (UnixException x) {
+            x.rethrowAsIOException(src, dst);
+        }
+        return result;
     }
 
     @Override

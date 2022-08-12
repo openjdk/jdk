@@ -229,7 +229,7 @@ Java_sun_nio_fs_BsdNativeDispatcher_getmntonname0(JNIEnv *env, jclass this,
 
 JNIEXPORT jint JNICALL
 Java_sun_nio_fs_BsdNativeDispatcher_clonefile0(JNIEnv* env, jclass this,
-    jlong srcAddress, jlong dstAddress, int flags)
+    jlong srcAddress, jlong dstAddress, jint flags)
 {
     const char* src = (const char*)jlong_to_ptr(srcAddress);
     const char* dst = (const char*)jlong_to_ptr(dstAddress);
@@ -279,8 +279,7 @@ Java_sun_nio_fs_BsdNativeDispatcher_setattrlist0(JNIEnv* env, jclass this,
     attrList.bitmapcount = ATTR_BIT_MAP_COUNT;
     attrList.commonattr = commonattr;
 
-    if (setattrlist(path, &attrList, (void*)buf,
-        count*attrsize, options) != 0) {
+    if (setattrlist(path, &attrList, (void*)buf, count*attrsize, options) != 0) {
         throwUnixException(env, errno);
     }
 }
