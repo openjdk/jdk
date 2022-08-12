@@ -196,7 +196,7 @@
     if (!is_predicate) {
       return BoolTest::lt;
     }
-    if ((vlen == 8 && VM_Version::supports_avx512dq()) || vlen < 8) {
+    if ((vlen == 8 && !VM_Version::supports_avx512dq()) || vlen < 8) {
       return BoolTest::eq;
     }
     return BoolTest::lt;
