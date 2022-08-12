@@ -610,8 +610,7 @@ void PhaseCFG::convert_NeverBranch_to_Goto(Block *b) {
       if (block == dead) {
         _blocks.remove(i);
       } else if (block->_pre_order > dead->_pre_order) {
-        // Adjust pre-order indices to avoid holes (whose absence is assumed
-        // e.g. by PhaseBlockLayout).
+        // Enforce contiguous pre-order indices (assumed by PhaseBlockLayout).
         block->_pre_order--;
       }
     }
