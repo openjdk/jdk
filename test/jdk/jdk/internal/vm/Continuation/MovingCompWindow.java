@@ -26,6 +26,7 @@
  * @test
  * @bug 8292278
  * @summary Basic tests where jit compilation of test methods is controlled with a compilation policy
+ * @requires vm.continuations
  * @modules java.base/jdk.internal.vm
  * @library /test/lib /test/hotspot/jtreg
  * @build jdk.test.whitebox.WhiteBox
