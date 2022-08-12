@@ -20,6 +20,19 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+/*
+ * @test
+ * @bug 8292275
+ * @summary check that implicit parameter flags are available by default
+ * @library /tools/lib
+ * @modules jdk.compiler/com.sun.tools.javac.api
+ *          jdk.compiler/com.sun.tools.javac.main
+ *          jdk.compiler/com.sun.tools.javac.code
+ *          jdk.jdeps/com.sun.tools.classfile
+ * @run main ImplicitParameters
+ */
+
 import java.io.IOException;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -36,16 +49,6 @@ import toolbox.Task;
 import toolbox.TestRunner;
 import toolbox.ToolBox;
 
-/*
- * @test
- * @summary check that implicit parameter flags are available by default
- * @library /tools/lib
- * @modules jdk.compiler/com.sun.tools.javac.api
- *          jdk.compiler/com.sun.tools.javac.main
- *          jdk.compiler/com.sun.tools.javac.code
- *          jdk.jdeps/com.sun.tools.classfile
- * @run main ImplicitParameters
- */
 public class ImplicitParameters extends TestRunner {
     public ImplicitParameters() {
         super(System.err);
