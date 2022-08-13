@@ -23,7 +23,9 @@
 package jaxp.library;
 
 
+import java.net.URI;
 import java.net.URL;
+import java.nio.file.Path;
 import java.security.CodeSource;
 import java.security.Permission;
 import java.security.PermissionCollection;
@@ -213,8 +215,8 @@ class TestPolicy extends Policy {
     private boolean isTestMachineryDomain(ProtectionDomain domain) {
         CodeSource cs = (domain == null) ? null : domain.getCodeSource();
         URL loc = (cs == null) ? null : cs.getLocation();
-        String path = (loc == null) ? null : loc.getPath();
-        String name = (path == null) ? null : path.substring(path.lastIndexOf('/') + 1);
+        URI uri = (loc == null) ? null : URI.create(loc.toString());
+        String name = (uri == null) ? null : Path.of(uri).getFileName().toString();
         return name != null && TEST_JARS.stream()
                                 .filter(name::matches)
                                 .findAny()
