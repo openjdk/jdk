@@ -204,7 +204,7 @@ void G1BarrierSetAssembler::g1_write_barrier_pre(MacroAssembler* masm,
   }
 
   // Is the previous value null?
-  __ cmpptr(pre_val, (int32_t) NULL_WORD);
+  __ cmpptr(pre_val, NULL_WORD);
   __ jcc(Assembler::equal, done);
 
   // Can we store original value in the thread's buffer?
@@ -293,7 +293,7 @@ void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm,
 
   // crosses regions, storing NULL?
 
-  __ cmpptr(new_val, (int32_t) NULL_WORD);
+  __ cmpptr(new_val, NULL_WORD);
   __ jcc(Assembler::equal, done);
 
   // storing region crossing non-NULL, is card already dirty?
@@ -420,7 +420,7 @@ void G1BarrierSetAssembler::gen_pre_barrier_stub(LIR_Assembler* ce, G1PreBarrier
     ce->mem2reg(stub->addr(), stub->pre_val(), T_OBJECT, stub->patch_code(), stub->info(), false /*wide*/);
   }
 
-  __ cmpptr(pre_val_reg, (int32_t)NULL_WORD);
+  __ cmpptr(pre_val_reg, NULL_WORD);
   __ jcc(Assembler::equal, *stub->continuation());
   ce->store_parameter(stub->pre_val()->as_register(), 0);
   __ call(RuntimeAddress(bs->pre_barrier_c1_runtime_code_blob()->code_begin()));
@@ -434,7 +434,7 @@ void G1BarrierSetAssembler::gen_post_barrier_stub(LIR_Assembler* ce, G1PostBarri
   assert(stub->addr()->is_register(), "Precondition.");
   assert(stub->new_val()->is_register(), "Precondition.");
   Register new_val_reg = stub->new_val()->as_register();
-  __ cmpptr(new_val_reg, (int32_t) NULL_WORD);
+  __ cmpptr(new_val_reg, NULL_WORD);
   __ jcc(Assembler::equal, *stub->continuation());
   ce->store_parameter(stub->addr()->as_pointer_register(), 0);
   __ call(RuntimeAddress(bs->post_barrier_c1_runtime_code_blob()->code_begin()));
