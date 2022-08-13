@@ -94,6 +94,10 @@ void ShenandoahAdaptiveHeuristics::choose_collection_set_from_regiondata(Shenand
   bool is_generational = heap->mode()->is_generational();
   bool is_global = (_generation->generation_mode() == GLOBAL);
   size_t capacity = heap->young_generation()->max_capacity();
+
+  // cur_young_garbage represents the amount of memory to be reclaimed from young-gen.  In the case that live objects
+  // are known to be promoted out of young-gen, we count this as cur_young_garbage because this memory is reclaimed
+  // from young-gen and becomes available to serve future young-gen allocation requests.
   size_t cur_young_garbage = 0;
 
   // Better select garbage-first regions
@@ -123,12 +127,18 @@ void ShenandoahAdaptiveHeuristics::choose_collection_set_from_regiondata(Shenand
             add_region = true;
             old_cur_cset = new_cset;
           }
-        } else if (r->age() >= InitialTenuringThreshold) {
+        } else if (cset->is_preselected(r->index())) {
+          assert(r->age() >= InitialTenuringThreshold, "Preselected regions must have tenure age");
           // Entire region will be promoted, This region does not impact young-gen or old-gen evacuation reserve.
           // This region has been pre-selected and its impact on promotion reserve is already accounted for.
           add_region = true;
-          cur_young_garbage += r->garbage();
-        } else {
+          // r->used() is r->garbage() + r->get_live_data_bytes()
+          // Since all live data in this region is being evacuated from young-gen, it is as if this memory
+          // is garbage insofar as young-gen is concerned.  Counting this as garbage reduces the need to
+          // reclaim highly utilized young-gen regions just for the sake of finding min_garbage to reclaim
+          // within youn-gen memory.
+          cur_young_garbage += r->used();
+        } else if (r->age() < InitialTenuringThreshold) {
           size_t new_cset = young_cur_cset + r->get_live_data_bytes();
           size_t region_garbage = r->garbage();
           size_t new_garbage = cur_young_garbage + region_garbage;
@@ -139,13 +149,16 @@ void ShenandoahAdaptiveHeuristics::choose_collection_set_from_regiondata(Shenand
             cur_young_garbage = new_garbage;
           }
         }
+        // Note that we do not add aged regions if they were not pre-selected.  The reason they were not preselected
+        // is because there is not sufficient room in old-gen to hold their to-be-promoted live objects.
 
         if (add_region) {
           cset->add_region(r);
         }
       }
     } else {
-      // This is young-gen collection.
+      // This is young-gen collection or a mixed evacuation.  If this is mixed evacuation, the old-gen candidate regions
+      // have already been added.
       size_t max_cset    = (size_t) (heap->get_young_evac_reserve() / ShenandoahEvacWaste);
       size_t cur_cset = 0;
       size_t free_target = (capacity * ShenandoahMinFreeThreshold) / 100 + max_cset;
@@ -160,19 +173,37 @@ void ShenandoahAdaptiveHeuristics::choose_collection_set_from_regiondata(Shenand
         size_t new_cset;
         size_t region_garbage = r->garbage();
         size_t new_garbage = cur_young_garbage + region_garbage;
-        if (r->age() >= InitialTenuringThreshold) {
-          // Entire region will be promoted, This region does not impact young-gen evacuation reserve.  Memory has already
-          // been set aside to hold evacuation results as advance_promotion_reserve.
-          new_cset = cur_cset;
-        } else {
-          new_cset = cur_cset + r->get_live_data_bytes();
-        }
-        bool add_regardless = (region_garbage > ignore_threshold) && (new_garbage < min_garbage);
-        if ((new_cset <= max_cset) &&
-            (add_regardless || (region_garbage > garbage_threshold) || (r->age() >= InitialTenuringThreshold))) {
-          cset->add_region(r);
-          cur_cset = new_cset;
-          cur_young_garbage = new_garbage;
+        bool add_region = false;
+
+        if (!r->is_old()) {
+          if (cset->is_preselected(r->index())) {
+            assert(r->age() >= InitialTenuringThreshold, "Preselected regions must have tenure age");
+            // Entire region will be promoted, This region does not impact young-gen evacuation reserve.  Memory has already
+            // been set aside to hold evacuation results as advance_promotion_reserve.
+            add_region = true;
+            new_cset = cur_cset;
+            // Since all live data in this region is being evacuated from young-gen, it is as if this memory
+            // is garbage insofar as young-gen is concerned.  Counting this as garbage reduces the need to
+            // reclaim highly utilized young-gen regions just for the sake of finding min_garbage to reclaim
+            // within youn-gen memory
+            cur_young_garbage += r->get_live_data_bytes();
+          } else if  (r->age() < InitialTenuringThreshold) {
+            new_cset = cur_cset + r->get_live_data_bytes();
+            size_t region_garbage = r->garbage();
+            size_t new_garbage = cur_young_garbage + region_garbage;
+            bool add_regardless = (region_garbage > ignore_threshold) && (new_garbage < min_garbage);
+            if ((new_cset <= max_cset) && (add_regardless || (region_garbage > garbage_threshold))) {
+              add_region = true;
+              cur_cset = new_cset;
+              cur_young_garbage = new_garbage;
+            }
+          }
+          // Note that we do not add aged regions if they were not pre-selected.  The reason they were not preselected
+          // is because there is not sufficient room in old-gen to hold their to-be-promoted live objects.
+
+          if (add_region) {
+            cset->add_region(r);
+          }
         }
       }
     }

@@ -127,9 +127,10 @@ void ShenandoahCollectionSet::clear() {
   _current_index = 0;
 
   _young_region_count = 0;
-  _old_region_count = 0;
   _young_bytes_to_evacuate = 0;
   _young_bytes_to_promote = 0;
+
+  _old_region_count = 0;
   _old_bytes_to_evacuate = 0;
 
   _has_old_regions = false;
