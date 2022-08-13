@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 
 package sun.nio.fs;
 
-import java.nio.file.*;
+import java.nio.file.Path;
 import java.io.IOException;
 
 /**
@@ -41,9 +41,6 @@ public class RegistryFileTypeDetector
 
     @Override
     public String implProbeContentType(Path file) throws IOException {
-        if (!(file instanceof Path))
-            return null;
-
         // get file extension
         Path name = file.getFileName();
         if (name == null)

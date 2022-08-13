@@ -52,6 +52,7 @@
 #include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/objectMonitor.hpp"
+#include "runtime/osInfo.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/perfMemory.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -162,7 +163,6 @@ uintptr_t os::Linux::_initial_thread_stack_size   = 0;
 int (*os::Linux::_pthread_getcpuclockid)(pthread_t, clockid_t *) = NULL;
 int (*os::Linux::_pthread_setname_np)(pthread_t, const char*) = NULL;
 pthread_t os::Linux::_main_thread;
-int os::Linux::_page_size = -1;
 bool os::Linux::_supports_fast_thread_cpu_time = false;
 const char * os::Linux::_libc_version = NULL;
 const char * os::Linux::_libpthread_version = NULL;
@@ -605,8 +605,8 @@ static void NOINLINE _expand_stack_to(address bottom) {
 
   // Adjust bottom to point to the largest address within the same page, it
   // gives us a one-page buffer if alloca() allocates slightly more memory.
-  bottom = (address)align_down((uintptr_t)bottom, os::Linux::page_size());
-  bottom += os::Linux::page_size() - 1;
+  bottom = (address)align_down((uintptr_t)bottom, os::vm_page_size());
+  bottom += os::vm_page_size() - 1;
 
   // sp might be slightly above current stack pointer; if that's the case, we
   // will alloca() a little more space than necessary, which is OK. Don't use
@@ -1078,8 +1078,8 @@ void os::Linux::capture_initial_stack(size_t max_size) {
   //   lower end of primordial stack; reduce ulimit -s value a little bit
   //   so we won't install guard page on ld.so's data section.
   //   But ensure we don't underflow the stack size - allow 1 page spare
-  if (stack_size >= (size_t)(3 * page_size())) {
-    stack_size -= 2 * page_size();
+  if (stack_size >= (size_t)(3 * os::vm_page_size())) {
+    stack_size -= 2 * os::vm_page_size();
   }
 
   // Try to figure out where the stack base (top) is. This is harder.
@@ -1235,11 +1235,11 @@ void os::Linux::capture_initial_stack(size_t max_size) {
     // stack top, use it as stack top, and reduce stack size so we won't put
     // guard page outside stack.
     stack_top = stack_start;
-    stack_size -= 16 * page_size();
+    stack_size -= 16 * os::vm_page_size();
   }
 
   // stack_top could be partially down the page so align it
-  stack_top = align_up(stack_top, page_size());
+  stack_top = align_up(stack_top, os::vm_page_size());
 
   // Allowed stack value is minimum of max_size and what we derived from rlimit
   if (max_size > 0) {
@@ -1249,7 +1249,7 @@ void os::Linux::capture_initial_stack(size_t max_size) {
     // clamp it at 8MB as we do on Solaris
     _initial_thread_stack_size = MIN2(stack_size, 8*M);
   }
-  _initial_thread_stack_size = align_down(_initial_thread_stack_size, page_size());
+  _initial_thread_stack_size = align_down(_initial_thread_stack_size, os::vm_page_size());
   _initial_thread_stack_bottom = (address)stack_top - _initial_thread_stack_size;
 
   assert(_initial_thread_stack_bottom < (address)stack_top, "overflow!");
@@ -2594,18 +2594,6 @@ void os::jvm_path(char *buf, jint buflen) {
 ////////////////////////////////////////////////////////////////////////////////
 // Virtual Memory
 
-int os::vm_page_size() {
-  // Seems redundant as all get out
-  assert(os::Linux::page_size() != -1, "must call os::init");
-  return os::Linux::page_size();
-}
-
-// Solaris allocates memory by pages.
-int os::vm_allocation_granularity() {
-  assert(os::Linux::page_size() != -1, "must call os::init");
-  return os::Linux::page_size();
-}
-
 // Rationale behind this function:
 //  current (Mon Apr 25 20:12:18 MSD 2005) oprofile drops samples without executable
 //  mapping for address (see lookup_dcookie() in the kernel module), thus we cannot get
@@ -3012,7 +3000,7 @@ size_t os::Linux::default_guard_size(os::ThreadType thr_type) {
   // Creating guard page is very expensive. Java thread has HotSpot
   // guard pages, only enable glibc guard page for non-Java threads.
   // (Remember: compiler thread is a Java thread, too!)
-  return ((thr_type == java_thread || thr_type == compiler_thread) ? 0 : page_size());
+  return ((thr_type == java_thread || thr_type == compiler_thread) ? 0 : os::vm_page_size());
 }
 
 void os::Linux::rebuild_nindex_to_node_map() {
@@ -3423,7 +3411,7 @@ extern char* g_assert_poison; // assertion poison page address
 
 static bool linux_mprotect(char* addr, size_t size, int prot) {
   // Linux wants the mprotect address argument to be page aligned.
-  char* bottom = (char*)align_down((intptr_t)addr, os::Linux::page_size());
+  char* bottom = (char*)align_down((intptr_t)addr, os::vm_page_size());
 
   // According to SUSv3, mprotect() should only be used with mappings
   // established by mmap(), and mmap() always maps whole pages. Unaligned
@@ -3432,7 +3420,7 @@ static bool linux_mprotect(char* addr, size_t size, int prot) {
   // caller if you hit this assert.
   assert(addr == bottom, "sanity check");
 
-  size = align_up(pointer_delta(addr, bottom, 1) + size, os::Linux::page_size());
+  size = align_up(pointer_delta(addr, bottom, 1) + size, os::vm_page_size());
   // Don't log anything if we're executing in the poison page signal handling
   // context. It can lead to reentrant use of other parts of the VM code.
 #ifdef CAN_SHOW_REGISTERS_ON_ASSERT
@@ -4315,7 +4303,7 @@ extern void report_error(char* file_name, int line_no, char* title,
 static void check_pax(void) {
   // Zero doesn't generate code dynamically, so no need to perform the PaX check
 #ifndef ZERO
-  size_t size = os::Linux::page_size();
+  size_t size = os::vm_page_size();
 
   void* p = ::mmap(NULL, size, PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
   if (p == MAP_FAILED) {
@@ -4340,12 +4328,14 @@ void os::init(void) {
 
   clock_tics_per_sec = sysconf(_SC_CLK_TCK);
 
-  Linux::set_page_size(sysconf(_SC_PAGESIZE));
-  if (Linux::page_size() == -1) {
+  int page_size = sysconf(_SC_PAGESIZE);
+  OSInfo::set_vm_page_size(page_size);
+  OSInfo::set_vm_allocation_granularity(page_size);
+  if (os::vm_page_size() <= 0) {
     fatal("os_linux.cpp: os::init: sysconf failed (%s)",
           os::strerror(errno));
   }
-  _page_sizes.add(Linux::page_size());
+  _page_sizes.add(os::vm_page_size());
 
   Linux::initialize_system_info();
 

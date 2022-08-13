@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,39 +21,32 @@
  * questions.
  *
  */
-package com.sun.hotspot.igv.view.actions;
 
-import java.awt.event.ActionEvent;
-import javax.swing.AbstractAction;
-import javax.swing.Action;
-import javax.swing.ImageIcon;
-import org.openide.util.ImageUtilities;
-
-public class PanModeAction extends AbstractAction {
-
-    private boolean state;
-
-    public PanModeAction() {
-        putValue(AbstractAction.SMALL_ICON, new ImageIcon(ImageUtilities.loadImage(iconResource())));
-        putValue(SELECTED_KEY, false);
-        putValue(Action.SHORT_DESCRIPTION, "Panning mode");
+// Old class file with a method whose last bytecode is an unreachable
+// conditional branch.
+public class if_icmpleIsLastOpcode version 49:0 {
+    public static Method m1:"()I" stack 1 locals 0 {
+        iconst_0;
+        ireturn;
     }
 
-    public boolean isSelected() {
-        return (Boolean)getValue(SELECTED_KEY);
+    public static Method m2:"(I)V" stack 1 locals 1 {
+        return;
     }
 
-    public void setSelected(boolean b) {
-        if (isSelected() != b) {
-            this.putValue(SELECTED_KEY, b);
-        }
-    }
-
-    protected String iconResource() {
-        return "com/sun/hotspot/igv/view/images/pan_mode.png";
-    }
-
-    @Override
-    public void actionPerformed(ActionEvent e) {
+    public static Method test:"()V" stack 2 locals 1 {
+        iconst_0;
+        istore_0;
+        Loop: stack_frame_type append;
+        locals_map int;
+        iload_0;
+        invokestatic Method if_icmpleIsLastOpcode."m1":"()I";
+        invokestatic Method if_icmpleIsLastOpcode."m2":"(I)V";
+        iinc 0, 1;
+        ldc 100000;
+        if_icmple Loop;
+        return;
+        ldc 100000;
+        if_icmple Loop;
     }
 }
