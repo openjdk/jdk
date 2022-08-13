@@ -194,6 +194,40 @@ static Node *transform_int_divide( PhaseGVN *phase, Node *dividend, jint divisor
   return q;
 }
 
+//--------------------------transform_int_udivide------------------------------
+// Convert an unsigned division by constant divisor into an alternate Ideal graph.
+// Return NULL if no transformation occurs.
+static Node *transform_int_udivide( PhaseGVN *phase, Node *dividend, juint divisor ) {
+  assert(divisor != 0, "invalid constant divisor");
+  const int N = 32;
+
+  // Result
+  Node *q = NULL;
+  if (is_power_of_2(divisor)) {
+    int l = log2i_exact(divisor);
+    q = new URShiftINode(dividend, phase->intcon(l));
+  } else {
+    jlong magic_const;
+    jint shift_const;
+    if (magic_int_divide_constants(divisor, magic_const, shift_const)) {
+      Node *magic = phase->longcon(magic_const);
+
+      // Unsigned extension of dividend
+      Node *dividend_long = phase->transform(new ConvI2LNode(dividend));
+      dividend_long = phase->transform(new AndLNode(dividend_long, phase->longcon(0xFFFFFFFF)));
+
+      // Compute the high half of the dividend x magic multiplication
+      Node *mul_hi = phase->transform(new MulLNode(dividend_long, magic));
+
+      // No add is required, we can merge the shifts together.
+      mul_hi = phase->transform(new URShiftLNode(mul_hi, phase->intcon(N + shift_const)));
+      q = phase->transform(new ConvL2INode(mul_hi));
+    }
+  }
+
+  return q;
+}
+
 //---------------------magic_long_divide_constants-----------------------------
 // Compute magic multiplier and shift constant for converting a 64 bit divide
 // by constant into a multiply/shift/add series. Return false if calculations
@@ -201,13 +235,14 @@ static Node *transform_int_divide( PhaseGVN *phase, Node *dividend, jint divisor
 //
 // Borrowed almost verbatim from Hacker's Delight by Henry S. Warren, Jr. with
 // minor type name and parameter changes.  Adjusted to 64 bit word width.
-static bool magic_long_divide_constants(julong ad, jlong &M, jint &s) {
+static bool magic_long_divide_constants(jlong d, jlong &M, jint &s) {
   int64_t p;
   uint64_t ad, anc, delta, q1, r1, q2, r2, t;
   const uint64_t two63 = UCONST64(0x8000000000000000);     // 2**63.
 
-  if (ad == 0 || ad == 1) return false;
-  t = two63 + (ad >> 63);
+  ad = ABS(d);
+  if (d == 0 || d == 1) return false;
+  t = two63 + ((uint64_t)d >> 63);
   anc = t - 1 - t%ad;     // Absolute value of nc.
   p = 63;                 // Init. p.
   q1 = two63/anc;         // Init. q1 = 2**p/|nc|.
@@ -231,7 +266,8 @@ static bool magic_long_divide_constants(julong ad, jlong &M, jint &s) {
     delta = ad - r2;
   } while (q1 < delta || (q1 == delta && r1 == 0));
 
-  M = jlong(q2 + 1);      // Magic number and
+  M = q2 + 1;
+  if (d < 0) M = -M;      // Magic number and
   s = p - 64;             // shift amount to return.
 
   return true;
@@ -394,7 +430,7 @@ static Node *transform_long_divide( PhaseGVN *phase, Node *dividend, jlong divis
 
     jlong magic_const;
     jint shift_const;
-    if (magic_long_divide_constants(julong(d), magic_const, shift_const)) {
+    if (magic_long_divide_constants(d, magic_const, shift_const)) {
       // Compute the high half of the dividend x magic multiplication
       Node *mul_hi = phase->transform(long_by_long_mulhi(phase, dividend, magic_const));
 
@@ -858,7 +894,29 @@ const Type* UDivINode::Value(PhaseGVN* phase) const {
 Node *UDivINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // Check for dead control input
   if (in(0) && remove_dead_region(phase, can_reshape))  return this;
-  return NULL;
+  // Don't bother trying to transform a dead node
+  if( in(0) && in(0)->is_top() )  return NULL;
+
+  const Type *t = phase->type( in(2) );
+  if( t == TypeInt::ONE )       // Identity?
+    return NULL;                // Skip it
+
+  const TypeInt *ti = t->isa_int();
+  if( !ti ) return NULL;
+
+  // Check for useless control input
+  // Check for excluding div-zero case
+  if (in(0) && (ti->_hi < 0 || ti->_lo > 0)) {
+    set_req(0, NULL);           // Yank control input
+    return this;
+  }
+
+  if( !ti->is_con() ) return NULL;
+  jint i = ti->get_con();       // Get divisor
+
+  if (i == 0) return NULL;      // Dividing by zero constant does not idealize
+
+  return transform_int_udivide( phase, in(1), i );
 }
 
 
