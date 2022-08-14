@@ -601,7 +601,6 @@ class OldRegionsLivenessClosure: public HeapRegionClosure {
 
   bool do_heap_region(HeapRegion* r) {
     if (r->is_old()) {
-      size_t prev_live = r->marked_bytes();
       size_t live = r->live_bytes();
       size_t size = r->used();
       size_t reg_size = HeapRegion::GrainBytes;
@@ -609,9 +608,9 @@ class OldRegionsLivenessClosure: public HeapRegionClosure {
         _total_memory += size;
         ++_total_count;
         if (size == reg_size) {
-        // we don't include non-full regions since they are unlikely included in mixed gc
-        // for testing purposes it's enough to have lowest estimation of total memory that is expected to be freed
-          _total_memory_to_free += size - prev_live;
+          // We don't include non-full regions since they are unlikely included in mixed gc
+          // for testing purposes it's enough to have lowest estimation of total memory that is expected to be freed
+          _total_memory_to_free += size - live;
         }
       }
     }

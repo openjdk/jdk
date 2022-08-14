@@ -30,6 +30,14 @@
 #define __ _masm->
 
 static int icache_flush(address addr, int lines, int magic) {
+  // To make a store to instruction memory visible to all RISC-V harts,
+  // the writing hart has to execute a data FENCE before requesting that
+  // all remote RISC-V harts execute a FENCE.I.
+  //
+  // No sush assurance is defined at the interface level of the builtin
+  // method, and so we should make sure it works.
+  __asm__ volatile("fence rw, rw" : : : "memory");
+
   __builtin___clear_cache(addr, addr + (lines << ICache::log2_line_size));
   return magic;
 }
