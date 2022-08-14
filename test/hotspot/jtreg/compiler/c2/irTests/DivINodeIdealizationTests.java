@@ -40,7 +40,7 @@ public class DivINodeIdealizationTests {
     @Run(test = {"constant", "identity", "identityAgain", "identityThird",
                  "retainDenominator", "divByNegOne", "divByPow2And",
                  "divByPow2And1",  "divByPow2", "divByNegPow2",
-                 "magicDiv"})
+                 "magicDiv13", "magicDiv7"})
     public void runMethod() {
         int a = RunInfo.getRandom().nextInt();
             a = (a == 0) ? 1 : a;
@@ -89,7 +89,8 @@ public class DivINodeIdealizationTests {
         Asserts.assertEQ((a & -2) / 2 , divByPow2And1(a));
         Asserts.assertEQ(a / 8        , divByPow2(a));
         Asserts.assertEQ(a / -8       , divByNegPow2(a));
-        Asserts.assertEQ(a / 13       , magicDiv(a));
+        Asserts.assertEQ(a / 13       , magicDiv13(a));
+        Asserts.assertEQ(a / 7        , magicDiv7(a));
     }
 
     @Test
@@ -196,10 +197,22 @@ public class DivINodeIdealizationTests {
                   IRNode.CONV_L2I, "1",
                  })
     // Checks magic int division occurs in general when dividing by a non power of 2.
-    // More tests can be made to cover the specific cases for differences in the
-    // graph that depend upon different values for the "magic constant" and the
-    // "shift constant"
-    public int magicDiv(int x) {
+    // The constant derived from 13 lies inside the limit of an i32
+    public int magicDiv13(int x) {
         return x / 13;
+    }
+
+    @Test
+    @IR(failOn = {IRNode.DIV})
+    @IR(counts = {IRNode.SUB, "1",
+                  IRNode.MUL, "1",
+                  IRNode.CONV_I2L, "1",
+                  IRNode.CONV_L2I, "1",
+                 })
+    // Checks magic int division occurs in general when dividing by a non power of 2.
+    // The constant derived from 7 lies outside the limit of an i32 but inside the limit
+    // of a u32
+    public int magicDiv7(int x) {
+        return x / 7;
     }
 }
