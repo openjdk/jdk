@@ -118,7 +118,7 @@ JLINK_JRE_TARGETS := $(jlink_jre)
 #
 # Param1 - VM variant (e.g., server, client, zero, ...)
 # Param2 - _nocoops, or empty
-define create_cds_archive
+define CreateCDSArchive
   $1_$2_DUMP_EXTRA_ARG := $(if $(filter _nocoops, $2),-XX:-UseCompressedOops,)
   $1_$2_DUMP_TYPE      := $(if $(filter _nocoops, $2),-NOCOOPS,)
 
@@ -155,12 +155,12 @@ endef
 
 ifeq ($(BUILD_CDS_ARCHIVE), true)
   $(foreach v, $(JVM_VARIANTS), \
-    $(eval $(call create_cds_archive,$v,)) \
+    $(eval $(call CreateCDSArchive,$v,)) \
   )
 
   ifeq ($(call isTargetCpuBits, 64), true)
     $(foreach v, $(JVM_VARIANTS), \
-      $(eval $(call create_cds_archive,$v,_nocoops)) \
+      $(eval $(call CreateCDSArchive,$v,_nocoops)) \
     )
   endif
 endif
