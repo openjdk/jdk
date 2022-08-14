@@ -1828,7 +1828,11 @@ MapArchiveResult FileMapInfo::map_region(int i, intx addr_delta, char* mapped_ba
   }
 
 #ifdef ZERO
-  si->set_read_only(false); // Need to patch aload_0/iload/getfield/putfield bytecodes
+  if (i == MetaspaceShared::ro) {
+    // The "nofast" bytecodes are not supported by ZERO yet, so the bytecodes
+    // (stored in the "ro" region) need to be rewritten at runtime.
+    si->set_read_only(false);
+  }
 #endif
 
   if (MetaspaceShared::use_windows_memory_mapping() && rs.is_reserved()) {

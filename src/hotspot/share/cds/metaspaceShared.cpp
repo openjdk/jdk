@@ -400,8 +400,9 @@ void MetaspaceShared::serialize(SerializeClosure* soc) {
   soc->do_tag(666);
 }
 
-#ifndef ZERO
 static void rewrite_nofast_bytecode(const methodHandle& method) {
+#ifndef ZERO
+  // TODO: these "nofast" bytecodes are not supported by ZERO yet, so we can't rewrite.
   BytecodeStream bcs(method);
   while (!bcs.is_last_bytecode()) {
     Bytecodes::Code opcode = bcs.next();
@@ -418,8 +419,8 @@ static void rewrite_nofast_bytecode(const methodHandle& method) {
     default: break;
     }
   }
-}
 #endif
+}
 
 // [1] Rewrite all bytecodes as needed, so that the ConstMethod* will not be modified
 //     at run time by RewriteBytecodes/RewriteFrequentPairs
@@ -427,11 +428,9 @@ static void rewrite_nofast_bytecode(const methodHandle& method) {
 void MetaspaceShared::rewrite_nofast_bytecodes_and_calculate_fingerprints(Thread* thread, InstanceKlass* ik) {
   for (int i = 0; i < ik->methods()->length(); i++) {
     methodHandle m(thread, ik->methods()->at(i));
-#ifndef ZERO
     if (ik->can_be_verified_at_dumptime() && ik->is_linked()) {
       rewrite_nofast_bytecode(m);
     }
-#endif
     Fingerprinter fp(m);
     // The side effect of this call sets method's fingerprint field.
     fp.fingerprint();
