@@ -2204,9 +2204,9 @@ class StubGenerator: public StubCodeGenerator {
 
   // Utility routine for loading a 128-bit key word in little endian format
   // can optionally specify that the shuffle mask is already in an xmmregister
-  void load_key(XMMRegister xmmdst, Register key, int offset, XMMRegister xmm_shuf_mask=NULL) {
+  void load_key(XMMRegister xmmdst, Register key, int offset, XMMRegister xmm_shuf_mask = xnoreg) {
     __ movdqu(xmmdst, Address(key, offset));
-    if (xmm_shuf_mask != NULL) {
+    if (xmm_shuf_mask != xnoreg) {
       __ pshufb(xmmdst, xmm_shuf_mask);
     } else {
       __ pshufb(xmmdst, ExternalAddress(StubRoutines::x86::key_shuffle_mask_addr()));
@@ -2215,14 +2215,14 @@ class StubGenerator: public StubCodeGenerator {
 
   // aesenc using specified key+offset
   // can optionally specify that the shuffle mask is already in an xmmregister
-  void aes_enc_key(XMMRegister xmmdst, XMMRegister xmmtmp, Register key, int offset, XMMRegister xmm_shuf_mask=NULL) {
+  void aes_enc_key(XMMRegister xmmdst, XMMRegister xmmtmp, Register key, int offset, XMMRegister xmm_shuf_mask = xnoreg) {
     load_key(xmmtmp, key, offset, xmm_shuf_mask);
     __ aesenc(xmmdst, xmmtmp);
   }
 
   // aesdec using specified key+offset
   // can optionally specify that the shuffle mask is already in an xmmregister
-  void aes_dec_key(XMMRegister xmmdst, XMMRegister xmmtmp, Register key, int offset, XMMRegister xmm_shuf_mask=NULL) {
+  void aes_dec_key(XMMRegister xmmdst, XMMRegister xmmtmp, Register key, int offset, XMMRegister xmm_shuf_mask = xnoreg) {
     load_key(xmmtmp, key, offset, xmm_shuf_mask);
     __ aesdec(xmmdst, xmmtmp);
   }
@@ -3506,9 +3506,9 @@ class StubGenerator: public StubCodeGenerator {
     const Register d = rbx;
     const Register g = rsi;
     const Register h = rdi;
-    const Register empty = 0; // will never be used, in order not
-                              // to change a signature for crc32c_IPL_Alg2_Alt2
-                              // between 64/32 I'm just keeping it here
+    const Register empty = noreg; // will never be used, in order not
+                                  // to change a signature for crc32c_IPL_Alg2_Alt2
+                                  // between 64/32 I'm just keeping it here
     assert_different_registers(crc, buf, len, d, g, h);
 
     BLOCK_COMMENT("Entry:");

@@ -86,7 +86,6 @@ class DependencyContext : public StackObj {
   void set_dependencies(nmethodBucket* b);
   nmethodBucket* dependencies();
   nmethodBucket* dependencies_not_unloading();
-  nmethodBucket* release_and_get_next_not_unloading(nmethodBucket* b);
 
   static PerfCounter*            _perf_total_buckets_allocated_count;
   static PerfCounter*            _perf_total_buckets_deallocated_count;
@@ -125,6 +124,7 @@ class DependencyContext : public StackObj {
   void remove_all_dependents();
   void remove_and_enqueue_deoptimization_all_dependents(DeoptimizationContext* deopt);
   void clean_unloading_dependents();
+  static nmethodBucket* release_and_get_next_not_unloading(nmethodBucket* b);
   static void purge_dependency_contexts();
   static void release(nmethodBucket* b);
   static void cleaning_start();

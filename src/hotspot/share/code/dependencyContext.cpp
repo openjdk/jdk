@@ -225,7 +225,9 @@ void DependencyContext::remove_and_enqueue_deoptimization_all_dependents(Deoptim
     if (b->count() > 0 && nm->is_alive() && !nm->has_enqueued_deoptimization()) {
       deopt->enqueue(nm);
     }
-    b = release_and_get_next_not_unloading(b);
+    nmethodBucket* next = b->next_not_unloading();
+    release(b);
+    b = next;
   }
 }
 

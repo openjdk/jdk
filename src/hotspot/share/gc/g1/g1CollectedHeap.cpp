@@ -984,14 +984,6 @@ void G1CollectedHeap::print_heap_after_full_collection() {
 }
 
 bool G1CollectedHeap::abort_concurrent_cycle() {
-  // If we start the compaction before the CM threads finish
-  // scanning the root regions we might trip them over as we'll
-  // be moving objects / updating references. So let's wait until
-  // they are done. By telling them to abort, they should complete
-  // early.
-  _cm->root_regions()->abort();
-  _cm->root_regions()->wait_until_scan_finished();
-
   // Disable discovery and empty the discovered lists
   // for the CM ref processor.
   _ref_processor_cm->disable_discovery();
@@ -3278,7 +3270,7 @@ void G1CollectedHeap::retire_gc_alloc_region(HeapRegion* alloc_region,
 
   bool const during_im = collector_state()->in_concurrent_start_gc();
   if (during_im && allocated_bytes > 0) {
-    _cm->root_regions()->add(alloc_region->top_at_mark_start(), alloc_region->top());
+    _cm->add_root_region(alloc_region);
   }
   _hr_printer.retire(alloc_region);
 }
