@@ -77,8 +77,6 @@ public:
   static ByteSize parent_cont_fastpath_offset()      { return byte_offset_of(ContinuationEntry, _parent_cont_fastpath); }
   static ByteSize parent_held_monitor_count_offset() { return byte_offset_of(ContinuationEntry, _parent_held_monitor_count); }
 
-  static void setup_oopmap(OopMap* map);
-
 public:
   static size_t size() { return align_up((int)sizeof(ContinuationEntry), 2*wordSize); }
 
@@ -123,6 +121,9 @@ public:
   inline oop cont_oop(const JavaThread* thread) const;
   inline oop scope(const JavaThread* thread) const;
   inline static oop cont_oop_or_null(const ContinuationEntry* ce, const JavaThread* thread);
+
+  oop* cont_addr() { return (oop*)&_cont; }
+  oop* chunk_addr() { return (oop*)&_chunk; }
 
   bool is_virtual_thread() const { return _flags != 0; }
 
