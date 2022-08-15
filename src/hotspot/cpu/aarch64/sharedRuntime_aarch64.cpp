@@ -1050,8 +1050,7 @@ static void gen_continuation_enter(MacroAssembler* masm,
 
     fill_continuation_entry(masm);
 
-    __ cmp(c_rarg2, (u1)0);
-    __ br(Assembler::NE, call_thaw);
+    __ cbnz(c_rarg2, call_thaw);
 
     address mark = __ pc();
     __ trampoline_call(resolve);
@@ -1076,8 +1075,7 @@ static void gen_continuation_enter(MacroAssembler* masm,
 
   fill_continuation_entry(masm);
 
-  __ cmp(c_rarg2, (u1)0);
-  __ br(Assembler::NE, call_thaw);
+  __ cbnz(c_rarg2, call_thaw);
 
   address mark = __ pc();
   __ trampoline_call(resolve);
