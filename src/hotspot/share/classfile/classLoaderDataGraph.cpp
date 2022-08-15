@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -391,26 +391,10 @@ void ClassLoaderDataGraph::modules_do(void f(ModuleEntry*)) {
   }
 }
 
-void ClassLoaderDataGraph::modules_unloading_do(void f(ModuleEntry*)) {
-  assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
-  for (ClassLoaderData* cld = _unloading; cld != NULL; cld = cld->next()) {
-    assert(cld->is_unloading(), "invariant");
-    cld->modules_do(f);
-  }
-}
-
 void ClassLoaderDataGraph::packages_do(void f(PackageEntry*)) {
   assert_locked_or_safepoint(Module_lock);
   ClassLoaderDataGraphIterator iter;
   while (ClassLoaderData* cld = iter.get_next()) {
-    cld->packages_do(f);
-  }
-}
-
-void ClassLoaderDataGraph::packages_unloading_do(void f(PackageEntry*)) {
-  assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
-  for (ClassLoaderData* cld = _unloading; cld != NULL; cld = cld->next()) {
-    assert(cld->is_unloading(), "invariant");
     cld->packages_do(f);
   }
 }

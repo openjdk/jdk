@@ -189,7 +189,9 @@ public:
            "out of bounds access to card marking array. p: " PTR_FORMAT
            " _byte_map: " PTR_FORMAT " _byte_map + _byte_map_size: " PTR_FORMAT,
            p2i(p), p2i(_byte_map), p2i(_byte_map + _byte_map_size));
-    size_t delta = pointer_delta(p, _byte_map_base, sizeof(CardValue));
+    // As _byte_map_base may be "negative" (the card table has been allocated before
+    // the heap in memory), do not use pointer_delta() to avoid the assertion failure.
+    size_t delta = p - _byte_map_base;
     HeapWord* result = (HeapWord*) (delta << _card_shift);
     assert(_whole_heap.contains(result),
            "Returning result = " PTR_FORMAT " out of bounds of "

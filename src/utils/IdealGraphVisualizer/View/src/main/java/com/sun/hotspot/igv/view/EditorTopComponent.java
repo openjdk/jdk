@@ -103,7 +103,6 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
     private PredSuccAction predSuccAction;
     private ShowEmptyBlocksAction showEmptyBlocksAction;
     private SelectionModeAction selectionModeAction;
-    private PanModeAction panModeAction;
     private boolean notFirstTime;
     private JComponent satelliteComponent;
     private JPanel centerPanel;
@@ -320,19 +319,9 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
         toolBar.add(redoAction);
 
         toolBar.addSeparator();
-        ButtonGroup interactionButtons = new ButtonGroup();
-
-        panModeAction = new PanModeAction();
-        panModeAction.setSelected(true);
-        button = new JToggleButton(panModeAction);
-        button.setSelected(true);
-        interactionButtons.add(button);
-        toolBar.add(button);
-        panModeAction.addPropertyChangeListener(this);
-
         selectionModeAction = new SelectionModeAction();
         button = new JToggleButton(selectionModeAction);
-        interactionButtons.add(button);
+        button.setSelected(false);
         toolBar.add(button);
         selectionModeAction.addPropertyChangeListener(this);
 
@@ -579,11 +568,12 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
         } else if (evt.getSource() == this.hideDuplicatesAction) {
             boolean b = (Boolean) hideDuplicatesAction.getValue(HideDuplicatesAction.STATE);
             this.getModel().setHideDuplicates(b);
-        } else if (evt.getSource() == this.selectionModeAction || evt.getSource() == this.panModeAction) {
-            if (panModeAction.isSelected()) {
-                scene.setInteractionMode(DiagramViewer.InteractionMode.PANNING);
-            } else if (selectionModeAction.isSelected()) {
+        } else if (evt.getSource() == this.selectionModeAction) {
+            boolean b = (Boolean) selectionModeAction.getValue(SelectionModeAction.STATE);
+            if (b) {
                 scene.setInteractionMode(DiagramViewer.InteractionMode.SELECTION);
+            } else {
+                scene.setInteractionMode(DiagramViewer.InteractionMode.PANNING);
             }
         } else {
             assert false : "Unknown event source";
