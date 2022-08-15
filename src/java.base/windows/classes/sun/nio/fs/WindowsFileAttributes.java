@@ -263,8 +263,7 @@ class WindowsFileAttributes
     static WindowsFileAttributes readAttributes(long handle)
         throws WindowsException
     {
-        try (NativeBuffer buffer = NativeBuffers
-            .getNativeBuffer(SIZEOF_FILE_INFORMATION)) {
+        try (NativeBuffer buffer = NativeBuffers.getNativeBuffer(SIZEOF_FILE_INFORMATION)) {
             long address = buffer.address();
             GetFileInformationByHandle(handle, address);
 
