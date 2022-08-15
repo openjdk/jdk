@@ -8901,11 +8901,13 @@ instruct udivI_rReg(rax_RegI rax, rdx_RegI rdx, no_rax_rdx_RegI div, rFlagsReg c
   effect(KILL rdx, KILL cr);
 
   ins_cost(300);
-  format %{ "udivl $rax,$rax,$div\t# UDivI\n" %}
+  format %{ "xorl    $rdx, $rdx\n\t"
+            "divl    $div" %}
   ins_encode %{
-    __ udivI($rax$$Register, $div$$Register, $rdx$$Register);
+    __ xorl($rdx$$Register, $rdx$$Register);
+    __ divl($div$$Register);
   %}
-  ins_pipe(ialu_reg_reg_alu0);
+  ins_pipe(pipe_slow);
 %}
 
 instruct udivL_rReg(rax_RegL rax, rdx_RegL rdx, no_rax_rdx_RegL div, rFlagsReg cr)
@@ -8914,11 +8916,13 @@ instruct udivL_rReg(rax_RegL rax, rdx_RegL rdx, no_rax_rdx_RegL div, rFlagsReg c
   effect(KILL rdx, KILL cr);
 
   ins_cost(300);
-  format %{ "udivq $rax,$rax,$div\t# UDivL\n" %}
+  format %{ "xorl    $rdx, $rdx\n\t"
+            "divq    $div" %}
   ins_encode %{
-     __ udivL($rax$$Register, $div$$Register, $rdx$$Register);
+    __ xorl($rdx$$Register, $rdx$$Register);
+    __ divq($div$$Register);
   %}
-  ins_pipe(ialu_reg_reg_alu0);
+  ins_pipe(pipe_slow);
 %}
 
 // Integer DIVMOD with Register, both quotient and mod results
@@ -8963,35 +8967,35 @@ instruct divModL_rReg_divmod(rax_RegL rax, rdx_RegL rdx, no_rax_rdx_RegL div,
 %}
 
 // Unsigned integer DIVMOD with Register, both quotient and mod results
-instruct udivModI_rReg_divmod(rax_RegI rax, no_rax_rdx_RegI tmp, rdx_RegI rdx,
+instruct udivModI_rReg_divmod(rax_RegI rax, rdx_RegI rdx,
                               no_rax_rdx_RegI div, rFlagsReg cr)
 %{
   match(UDivModI rax div);
-  effect(TEMP tmp, KILL cr);
+  effect(KILL cr);
 
   ins_cost(300);
-  format %{ "udivl $rax,$rax,$div\t# begin UDivModI\n\t"
-            "umodl $rdx,$rax,$div\t! using $tmp as TEMP # end UDivModI\n"
-          %}
+  format %{ "xorl    $rdx, $rdx\n\t"
+            "divl    $div" %}
   ins_encode %{
-    __ udivmodI($rax$$Register, $div$$Register, $rdx$$Register, $tmp$$Register);
+    __ xorl($rdx$$Register, $rdx$$Register);
+    __ divl($div$$Register);
   %}
   ins_pipe(pipe_slow);
 %}
 
 // Unsigned long DIVMOD with Register, both quotient and mod results
-instruct udivModL_rReg_divmod(rax_RegL rax, no_rax_rdx_RegL tmp, rdx_RegL rdx,
+instruct udivModL_rReg_divmod(rax_RegL rax, rdx_RegL rdx,
                               no_rax_rdx_RegL div, rFlagsReg cr)
 %{
   match(UDivModL rax div);
-  effect(TEMP tmp, KILL cr);
+  effect(KILL cr);
 
   ins_cost(300);
-  format %{ "udivq $rax,$rax,$div\t# begin UDivModL\n\t"
-            "umodq $rdx,$rax,$div\t! using $tmp as TEMP # end UDivModL\n"
-          %}
+  format %{ "xorl    $rdx, $rdx\n\t"
+            "divq    $div" %}
   ins_encode %{
-    __ udivmodL($rax$$Register, $div$$Register, $rdx$$Register, $tmp$$Register);
+    __ xorl($rdx$$Register, $rdx$$Register);
+    __ divq($div$$Register);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -9106,11 +9110,13 @@ instruct umodI_rReg(rdx_RegI rdx, rax_RegI rax, no_rax_rdx_RegI div, rFlagsReg c
   effect(KILL rax, KILL cr);
 
   ins_cost(300);
-  format %{ "umodl $rdx,$rax,$div\t# UModI\n" %}
+  format %{ "xorl    $rdx, $rdx\n\t"
+            "divl    $div" %}
   ins_encode %{
-    __ umodI($rax$$Register, $div$$Register, $rdx$$Register);
+    __ xorl($rdx$$Register, $rdx$$Register);
+    __ divl($div$$Register);
   %}
-  ins_pipe(ialu_reg_reg_alu0);
+  ins_pipe(pipe_slow);
 %}
 
 instruct umodL_rReg(rdx_RegL rdx, rax_RegL rax, no_rax_rdx_RegL div, rFlagsReg cr)
@@ -9119,11 +9125,13 @@ instruct umodL_rReg(rdx_RegL rdx, rax_RegL rax, no_rax_rdx_RegL div, rFlagsReg c
   effect(KILL rax, KILL cr);
 
   ins_cost(300);
-  format %{ "umodq $rdx,$rax,$div\t# UModL\n" %}
+  format %{ "xorl    $rdx, $rdx\n\t"
+            "divq    $div" %}
   ins_encode %{
-    __ umodL($rax$$Register, $div$$Register, $rdx$$Register);
+    __ xorl($rdx$$Register, $rdx$$Register);
+    __ divq($div$$Register);
   %}
-  ins_pipe(ialu_reg_reg_alu0);
+  ins_pipe(pipe_slow);
 %}
 
 // Integer Shift Instructions

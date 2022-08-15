@@ -29,6 +29,7 @@ import compiler.lib.ir_framework.*;
  * @test
  * @bug 8267265
  * @summary Test that Ideal transformations of DivLNode* are being performed as expected.
+ * @requires vm.bits == 64
  * @library /test/lib /
  * @run driver compiler.c2.irTests.DivLNodeIdealizationTests
  */
@@ -39,7 +40,8 @@ public class DivLNodeIdealizationTests {
 
     @Run(test = {"constant", "identity", "identityAgain", "identityThird",
                  "retainDenominator", "divByNegOne", "divByPow2And",
-                 "divByPow2And1",  "divByPow2", "divByNegPow2"})
+                 "divByPow2And1",  "divByPow2", "divByNegPow2",
+                 "magicDiv19", "magicDiv15"})
     public void runMethod() {
         long a = RunInfo.getRandom().nextLong();
              a = (a == 0) ? 1 : a;
@@ -88,6 +90,8 @@ public class DivLNodeIdealizationTests {
         Asserts.assertEQ((a & -2) / 2 , divByPow2And1(a));
         Asserts.assertEQ(a / 8        , divByPow2(a));
         Asserts.assertEQ(a / -8       , divByNegPow2(a));
+        Asserts.assertEQ(a / 19       , magicDiv19(a));
+        Asserts.assertEQ(a / 15       , magicDiv15(a));
     }
 
     @Test
@@ -186,5 +190,31 @@ public class DivLNodeIdealizationTests {
     // to account for the negative.
     public long divByNegPow2(long x) {
         return x / -8L;
+    }
+
+    @Test
+    @IR(failOn = {IRNode.DIV_L})
+    @IR(counts = {IRNode.SUB_L, "1",
+                  IRNode.RSHIFT_L, "1",
+                  IRNode.MUL_L_HI, "1"
+                 })
+    // Checks magic long division occurs in general when dividing by a non power of 2.
+    // The constant derived from 19 lies inside the limit of an i64
+    public long magicDiv19(long x) {
+        return x / 19L;
+    }
+
+    @Test
+    @IR(failOn = {IRNode.DIV_L})
+    @IR(counts = {IRNode.SUB_L, "1",
+                  IRNode.RSHIFT_L, "1",
+                  IRNode.MUL_L_HI, "1",
+                  IRNode.ADD_L, "1"
+                 })
+    // Checks magic long division occurs in general when dividing by a non power of 2.
+    // The constant derived from 15 lies outside the limit of an i64 but inside the limit
+    // of a u64
+    public long magicDiv15(long x) {
+        return x / 15L;
     }
 }
