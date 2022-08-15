@@ -28,19 +28,43 @@ import jdk.jfr.Recording;
 import jdk.jfr.consumer.RecordedEvent;
 import jdk.test.lib.jfr.EventNames;
 import jdk.test.lib.jfr.Events;
+import jdk.test.whitebox.WhiteBox;
 
 /**
- * @test TestGCCpuTimeEvent
+ * @test id=Serial
  * @key jfr
  * @requires vm.hasJFR
- * @requires vm.gc == "G1" | vm.gc == null | vm.gc == "Parallel"
+ * @requires vm.gc.Serial
  * @library /test/lib /test/jdk
- * @run main/othervm -Xmx32m -XX:+UseG1GC jdk.jfr.event.gc.detailed.TestGCCpuTimeEvent
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -Xmx32m -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseSerialGC jdk.jfr.event.gc.detailed.TestGCCpuTimeEvent
  */
-public class TestGCCpuTimeEvent {
-    private final static String EVENT_NAME = EventNames.GCCpuTime;
 
-    public static byte[] bytes;
+/**
+ * @test id=Parallel
+ * @key jfr
+ * @requires vm.hasJFR
+ * @requires vm.gc.Parallel
+ * @library /test/lib /test/jdk
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -Xmx32m -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseParallelGC jdk.jfr.event.gc.detailed.TestGCCpuTimeEvent
+ */
+
+/**
+ * @test id=G1
+ * @key jfr
+ * @requires vm.hasJFR
+ * @requires vm.gc.G1
+ * @library /test/lib /test/jdk
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -Xmx32m -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseG1GC jdk.jfr.event.gc.detailed.TestGCCpuTimeEvent
+ */
+
+public class TestGCCpuTimeEvent {
+    private static final String EVENT_NAME = EventNames.GCCpuTime;
 
     public static void main(String[] args) throws Exception {
 
@@ -50,10 +74,8 @@ public class TestGCCpuTimeEvent {
             recording.enable(EVENT_NAME);
             recording.start();
 
-            // Allocate large objects to run the GC
-            for (int i = 0; i < 100; i++) {
-                bytes  = new byte[1024 * 1024];
-            }
+            // Guarantee one young GC.
+            WhiteBox.getWhiteBox().youngGC();
             recording.stop();
 
             // Verify recording

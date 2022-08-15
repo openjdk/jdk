@@ -90,8 +90,6 @@ GCTraceCPUTime::GCTraceCPUTime(GCTracer* tracer) :
   }
 }
 
-GCTraceCPUTime::GCTraceCPUTime() { GCTraceCPUTime(nullptr); }
-
 GCTraceCPUTime::~GCTraceCPUTime() {
   if (_active) {
     double real_time, user_time, system_time;

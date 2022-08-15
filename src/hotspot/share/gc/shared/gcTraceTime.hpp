@@ -41,7 +41,6 @@ class GCTraceCPUTime : public StackObj {
   double _starting_real_time;   // real time at start of measurement
   GCTracer* _tracer;
 public:
-  GCTraceCPUTime();
   GCTraceCPUTime(GCTracer* tracer);
   ~GCTraceCPUTime();
 };
