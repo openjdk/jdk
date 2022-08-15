@@ -2514,7 +2514,6 @@ void SystemDictionary::dump(outputStream *st, bool verbose) {
   } else {
     CDS_ONLY(SystemDictionaryShared::print_table_statistics(st));
     ClassLoaderDataGraph::print_table_statistics(st);
-    // placeholders()->print_table_statistics(st, "Placeholder Table");
     constraints()->print_table_statistics(st, "LoaderConstraints Table");
     pd_cache_table()->print_table_statistics(st, "ProtectionDomainCache Table");
   }
