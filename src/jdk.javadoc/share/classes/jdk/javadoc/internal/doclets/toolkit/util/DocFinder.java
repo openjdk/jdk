@@ -303,7 +303,16 @@ public class DocFinder {
             Function<? super ExecutableElement, Optional<T>> criteria,
             BaseConfiguration configuration)
     {
-        return methodsOverriddenBy(method, true, configuration)
+        return search(method, true, criteria, configuration);
+    }
+
+    public static <T> Optional<T> search(
+            ExecutableElement method,
+            boolean includeMethod,
+            Function<? super ExecutableElement, Optional<T>> criteria,
+            BaseConfiguration configuration)
+    {
+        return methodsOverriddenBy(method, includeMethod, configuration)
                 .flatMap(m -> criteria.apply(m).stream()).findFirst();
     }
 

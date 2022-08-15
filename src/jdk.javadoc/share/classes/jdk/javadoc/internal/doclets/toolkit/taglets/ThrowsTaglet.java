@@ -31,8 +31,10 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import javax.lang.model.element.Element;
@@ -49,6 +51,7 @@ import com.sun.source.doctree.ThrowsTree;
 import jdk.javadoc.doclet.Taglet.Location;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFinder;
+import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
 /**
  * A taglet that processes {@link ThrowsTree}, which represents
@@ -254,25 +257,30 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
         var utils = writer.configuration().utils;
         Map<ThrowsTree, ExecutableElement> declaredExceptionTags = new LinkedHashMap<>();
         for (TypeMirror declaredExceptionType : declaredExceptionTypes) {
-            var input = new DocFinder.Input(utils, holder, this,
-                    utils.getTypeName(declaredExceptionType, false));
-            DocFinder.Output inheritedDoc = DocFinder.search(writer.configuration(), input);
-            if (inheritedDoc.tagList.isEmpty()) {
-                input = new DocFinder.Input(utils, holder, this,
-                        utils.getTypeName(declaredExceptionType, true));
-                inheritedDoc = DocFinder.search(writer.configuration(), input);
-            }
-            if (!inheritedDoc.tagList.isEmpty()) {
-                if (inheritedDoc.holder == null) {
-                    inheritedDoc.holder = holder;
-                }
-                var h = (ExecutableElement) inheritedDoc.holder;
-                inheritedDoc.tagList.forEach(t -> declaredExceptionTags.put((ThrowsTree) t, h));
-            }
+            var r = DocFinder.search(holder, false, m -> extract(m, declaredExceptionType, utils), writer.configuration());
+            r.ifPresent(value -> value.throwsTrees.forEach(t -> declaredExceptionTags.put(t, value.method())));
         }
         result.add(throwsTagsOutput(declaredExceptionTags, alreadyDocumented, typeSubstitutions,
                 writer));
         return result;
+    }
+
+    private record Result(List<? extends ThrowsTree> throwsTrees, ExecutableElement method) { }
+
+    private static Optional<Result> extract(ExecutableElement method, TypeMirror targetException, Utils utils) {
+        var ch = utils.getCommentHelper(method);
+        List<ThrowsTree> tags = new LinkedList<>();
+        for (ThrowsTree tag : utils.getThrowsTrees(method)) {
+            Element candidate = ch.getException(tag);
+            if (candidate == null)
+                continue;
+            if (utils.typeUtils.isSameType(candidate.asType(), targetException)) {
+                tags.add(tag);
+            } else if (utils.typeUtils.isSubtype(candidate.asType(), targetException)) {
+                tags.add(tag);
+            }
+        }
+        return tags.isEmpty() ? Optional.empty() : Optional.of(new Result(tags, method));
     }
 
     private Content linkToUndocumentedDeclaredExceptions(List<? extends TypeMirror> declaredExceptionTypes,
