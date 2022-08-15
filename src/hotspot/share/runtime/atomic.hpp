@@ -874,11 +874,24 @@ inline T Atomic::CmpxchgByteUsingInt::operator()(T volatile* dest,
 template<typename T>
 struct Atomic::XchgImpl<
   T, T,
-  typename EnableIf<IsIntegral<T>::value || std::is_enum<T>::value>::type>
+  typename EnableIf<IsIntegral<T>::value>::type>
 {
   T operator()(T volatile* dest, T exchange_value, atomic_memory_order order) const {
     // Forward to the platform handler for the size of T.
     return PlatformXchg<sizeof(T)>()(dest, exchange_value, order);
+  }
+};
+
+template<typename T>
+struct Atomic::XchgImpl<
+  T, T,
+  typename EnableIf<std::is_enum<T>::value>::type>
+{
+  T operator()(T volatile* dest, T exchange_value, atomic_memory_order order) const {
+    using Underlying = std::underlying_type_t<T>;
+    return PrimitiveConversions::cast<T>(xchg(reinterpret_cast<Underlying volatile*>(dest),
+                                              PrimitiveConversions::cast<Underlying>(exchange_value),
+                                              order));
   }
 };
 
