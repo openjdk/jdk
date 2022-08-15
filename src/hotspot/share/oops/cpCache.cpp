@@ -26,6 +26,7 @@
 #include "cds/heapShared.hpp"
 #include "classfile/resolutionErrors.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"
 #include "interpreter/bytecodeStream.hpp"
 #include "interpreter/bytecodes.hpp"
@@ -60,24 +61,6 @@ void ConstantPoolCacheEntry::initialize_entry(int index) {
   _f1 = NULL;
   _f2 = _flags = 0;
   assert(constant_pool_index() == index, "");
-}
-
-void ConstantPoolCacheEntry::verify_just_initialized(bool f2_used) {
-  assert((_indices & (~cp_index_mask)) == 0, "sanity");
-  assert(_f1 == NULL, "sanity");
-  assert(_flags == 0, "sanity");
-  if (!f2_used) {
-    assert(_f2 == 0, "sanity");
-  }
-}
-
-void ConstantPoolCacheEntry::reinitialize(bool f2_used) {
-  _indices &= cp_index_mask;
-  _f1 = NULL;
-  _flags = 0;
-  if (!f2_used) {
-    _f2 = 0;
-  }
 }
 
 int ConstantPoolCacheEntry::make_flags(TosState state,
@@ -700,66 +683,31 @@ void ConstantPoolCache::record_gc_epoch() {
   _gc_epoch = Continuations::gc_epoch();
 }
 
-void ConstantPoolCache::verify_just_initialized() {
-  DEBUG_ONLY(walk_entries_for_initialization(/*check_only = */ true));
+void ConstantPoolCache::save_for_archive() {
+#if INCLUDE_CDS
+  ConstantPoolCacheEntry* copy = NEW_C_HEAP_ARRAY(ConstantPoolCacheEntry, length(), mtClassShared);
+  for (int i = 0; i < length(); i++) {
+    copy[i] = *entry_at(i);
+  }
+
+  SystemDictionaryShared::set_saved_cpcache_entries(this, copy);
+#endif
 }
 
 void ConstantPoolCache::remove_unshareable_info() {
-  walk_entries_for_initialization(/*check_only = */ false);
-}
-
-void ConstantPoolCache::walk_entries_for_initialization(bool check_only) {
+#if INCLUDE_CDS
   Arguments::assert_is_dumping_archive();
-  // When dumping the archive, we want to clean up the ConstantPoolCache
-  // to remove any effect of linking due to the execution of Java code --
-  // each ConstantPoolCacheEntry will have the same contents as if
-  // ConstantPoolCache::initialize has just returned:
-  //
-  // - We keep the ConstantPoolCache::constant_pool_index() bits for all entries.
-  // - We keep the "f2" field for entries used by invokedynamic and invokehandle
-  // - All other bits in the entries are cleared to zero.
-  ResourceMark rm;
-
-  InstanceKlass* ik = constant_pool()->pool_holder();
-  bool* f2_used = NEW_RESOURCE_ARRAY(bool, length());
-  memset(f2_used, 0, sizeof(bool) * length());
-
-  Thread* current = Thread::current();
-
-  // Find all the slots that we need to preserve f2
-  for (int i = 0; i < ik->methods()->length(); i++) {
-    Method* m = ik->methods()->at(i);
-    RawBytecodeStream bcs(methodHandle(current, m));
-    while (!bcs.is_last_bytecode()) {
-      Bytecodes::Code opcode = bcs.raw_next();
-      switch (opcode) {
-      case Bytecodes::_invokedynamic: {
-          int index = Bytes::get_native_u4(bcs.bcp() + 1);
-          int cp_cache_index = constant_pool()->invokedynamic_cp_cache_index(index);
-          f2_used[cp_cache_index] = 1;
-        }
-        break;
-      case Bytecodes::_invokehandle: {
-          int cp_cache_index = Bytes::get_native_u2(bcs.bcp() + 1);
-          f2_used[cp_cache_index] = 1;
-        }
-        break;
-      default:
-        break;
-      }
-    }
+  // <this> is the copy to be written into the archive. It's in
+  // the ArchiveBuilder's "buffer space". However, the saved_cpcache_entries
+  // are recorded with the original ConstantPoolCache object.
+  ConstantPoolCache* orig_cpc = ArchiveBuilder::current()->get_src_obj(this);
+  ConstantPoolCacheEntry* saved = SystemDictionaryShared::get_saved_cpcache_entries_locked(orig_cpc);
+  for (int i=0; i<length(); i++) {
+    // Restore each entry to the initial state -- just after Rewriter::make_constant_pool_cache()
+    // has finished.
+    *entry_at(i) = saved[i];
   }
-
-  if (check_only) {
-    DEBUG_ONLY(
-      for (int i=0; i<length(); i++) {
-        entry_at(i)->verify_just_initialized(f2_used[i]);
-      })
-  } else {
-    for (int i=0; i<length(); i++) {
-      entry_at(i)->reinitialize(f2_used[i]);
-    }
-  }
+#endif
 }
 
 void ConstantPoolCache::deallocate_contents(ClassLoaderData* data) {
@@ -768,6 +716,12 @@ void ConstantPoolCache::deallocate_contents(ClassLoaderData* data) {
   set_resolved_references(OopHandle());
   MetadataFactory::free_array<u2>(data, _reference_map);
   set_reference_map(NULL);
+
+#if INCLUDE_CDS
+  if (Arguments::is_dumping_archive()) {
+    SystemDictionaryShared::remove_saved_cpcache_entries(this);
+  }
+#endif
 }
 
 #if INCLUDE_CDS_JAVA_HEAP

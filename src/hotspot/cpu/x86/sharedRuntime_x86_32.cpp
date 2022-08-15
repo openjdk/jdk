@@ -128,11 +128,11 @@ class RegisterSaver {
 
 OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_frame_words,
                                            int* total_frame_words, bool verify_fpu, bool save_vectors) {
-  int num_xmm_regs = XMMRegisterImpl::number_of_registers;
+  int num_xmm_regs = XMMRegister::number_of_registers;
   int ymm_bytes = num_xmm_regs * 16;
   int zmm_bytes = num_xmm_regs * 32;
 #ifdef COMPILER2
-  int opmask_state_bytes = KRegisterImpl::number_of_registers * 8;
+  int opmask_state_bytes = KRegister::number_of_registers * 8;
   if (save_vectors) {
     assert(UseAVX > 0, "Vectors larger than 16 byte long are supported only with AVX");
     assert(MaxVectorSize <= 64, "Only up to 64 byte long vectors are supported");
@@ -199,7 +199,7 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
   int delta = st1_off - off;
 
   // Save the FPU registers in de-opt-able form
-  for (int n = 0; n < FloatRegisterImpl::number_of_registers; n++) {
+  for (int n = 0; n < FloatRegister::number_of_registers; n++) {
     __ fstp_d(Address(rsp, off*wordSize));
     off += delta;
   }
@@ -235,7 +235,7 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
       }
       __ subptr(rsp, opmask_state_bytes);
       // Save opmask registers
-      for (int n = 0; n < KRegisterImpl::number_of_registers; n++) {
+      for (int n = 0; n < KRegister::number_of_registers; n++) {
         __ kmov(Address(rsp, n*8), as_KRegister(n));
       }
     }
@@ -268,7 +268,7 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
   // %%% This is really a waste but we'll keep things as they were for now for the upper component
   off = st0_off;
   delta = st1_off - off;
-  for (int n = 0; n < FloatRegisterImpl::number_of_registers; n++) {
+  for (int n = 0; n < FloatRegister::number_of_registers; n++) {
     FloatRegister freg_name = as_FloatRegister(n);
     map->set_callee_saved(STACK_OFFSET(off), freg_name->as_VMReg());
     map->set_callee_saved(STACK_OFFSET(off+1), NEXTREG(freg_name));
@@ -291,7 +291,7 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
 void RegisterSaver::restore_live_registers(MacroAssembler* masm, bool restore_vectors) {
   int opmask_state_bytes = 0;
   int additional_frame_bytes = 0;
-  int num_xmm_regs = XMMRegisterImpl::number_of_registers;
+  int num_xmm_regs = XMMRegister::number_of_registers;
   int ymm_bytes = num_xmm_regs * 16;
   int zmm_bytes = num_xmm_regs * 32;
   // Recover XMM & FPU state
@@ -304,7 +304,7 @@ void RegisterSaver::restore_live_registers(MacroAssembler* masm, bool restore_ve
     if (UseAVX > 2) {
       // Save upper half of ZMM registers as well
       additional_frame_bytes += zmm_bytes;
-      opmask_state_bytes = KRegisterImpl::number_of_registers * 8;
+      opmask_state_bytes = KRegister::number_of_registers * 8;
       additional_frame_bytes += opmask_state_bytes;
     }
   }
@@ -345,7 +345,7 @@ void RegisterSaver::restore_live_registers(MacroAssembler* masm, bool restore_ve
       for (int n = 0; n < num_xmm_regs; n++) {
         __ vinsertf64x4_high(as_XMMRegister(n), Address(rsp, n*32+off));
       }
-      for (int n = 0; n < KRegisterImpl::number_of_registers; n++) {
+      for (int n = 0; n < KRegister::number_of_registers; n++) {
         __ kmov(as_KRegister(n), Address(rsp, n*8));
       }
     }
@@ -412,8 +412,8 @@ static int reg2offset_out(VMReg r) {
 // refer to 4-byte stack slots.  All stack slots are based off of the stack pointer
 // as framesizes are fixed.
 // VMRegImpl::stack0 refers to the first slot 0(sp).
-// and VMRegImpl::stack0+1 refers to the memory word 4-byes higher.  Register
-// up to RegisterImpl::number_of_registers) are the 32-bit
+// and VMRegImpl::stack0+1 refers to the memory word 4-byes higher.
+// Register up to Register::number_of_registers are the 32-bit
 // integer registers.
 
 // Pass first two oop/int args in registers ECX and EDX.
