@@ -57,7 +57,7 @@ public class GetXSpace {
                                               new DenyRead() };
 
     // FileSystem Total Used Available Use% MountedOn
-    private static final Pattern DF_PATTERN = Pattern.compile("([^\\s]+)\\s+(\\d+)\\s+\\d+\\s+(\\d+)\\s+\\d+%\\s+([^\\s].*)\n");
+    private static final Pattern DF_PATTERN = Pattern.compile("([^\\s]+)\\s+(\\d+)\\s+(\\d+)\\s+(\\d+)\\s+\\d+%\\s+([^\\s].*)\n");
 
     private static int fail = 0;
     private static int pass = 0;
@@ -103,26 +103,30 @@ public class GetXSpace {
         private static final long KSIZE = 1024;
         private final String name;
         private final long total;
-        private final long free;
+        private final long used;
+        private final long available;
 
-        Space(String total, String free, String name) {
+        Space(String name, String total, String used, String available) {
+            this.name = name;
             try {
                 this.total = Long.parseLong(total) * KSIZE;
-                this.free = Long.parseLong(free) * KSIZE;
+                this.used = Long.parseLong(used) * KSIZE;
+                this.available = Long.parseLong(available) * KSIZE;
             } catch (NumberFormatException x) {
                 throw new RuntimeException("the regex should have caught this", x);
             }
-            this.name = name;
         }
 
         String name() { return name; }
         long total() { return total; }
-        long free() { return free; }
+        long used() { return used; }
+        long available() { return available; }
+        long free() { return total - used; }
         boolean woomFree(long freeSpace) {
-            return ((freeSpace >= (free / 10)) && (freeSpace <= (free * 10)));
+            return ((freeSpace >= (available / 10)) && (freeSpace <= (available* 10)));
         }
         public String toString() {
-            return String.format("%s (%d/%d)", name, free, total);
+            return String.format("%s (%d/%d/%d)", name, total, used, available);
         }
     }
 
@@ -152,9 +156,9 @@ public class GetXSpace {
                     String name = f;
                     if (name == null) {
                         // cygwin's df lists windows path as FileSystem (1st group)
-                        name = Platform.isWindows() ? m.group(1) : m.group(4);
+                        name = Platform.isWindows() ? m.group(1) : m.group(5);
                     }
-                    al.add(new Space(m.group(2), m.group(3), name));
+                    al.add(new Space(name, m.group(2), m.group(3), m.group(4)));
                 }
                 j = m.end();
             } else {
@@ -167,7 +171,7 @@ public class GetXSpace {
         if (al.size() == 0) {
             // df did not produce output
             String name = (f == null ? "" : f);
-            al.add(new Space("0", "0", name));
+            al.add(new Space(name, "0", "0", "0"));
         }
         return al;
     }
@@ -209,8 +213,8 @@ public class GetXSpace {
         long us = f.getUsableSpace();
 
         out.format("%s:%n", s.name());
-        String fmt = "  %-4s total= %12d free = %12d usable = %12d%n";
-        out.format(fmt, "df", s.total(), s.free(), s.free());
+        String fmt = "  %-4s total = %12d free = %12d usable = %12d%n";
+        out.format(fmt, "df", s.total(), s.free(), s.available());
         out.format(fmt, "getX", ts, fs, us);
 
         // If the file system can dynamically change size, this check will fail.
@@ -236,13 +240,21 @@ public class GetXSpace {
             // calculated by 'df' using integer division by 2 of the number of
             // 512 byte blocks, resulting in a size smaller than the actual
             // value when the number of blocks is odd.
-            if (!Platform.isOSX() || blockSize != 512 || numBlocks % 2 == 0
-                || ts - s.total() != 512) {
-                // If Windows user quotas are in effect, then the total space
-                // reported by df might be less that the actual total space in
-                // the store, but the free space should be the same.
-                if (!(Platform.isWindows() && ts > s.total && fs == s.free())) {
-                    fail(s.name(), s.total(), "!=", ts);
+            if (!Platform.isOSX() || blockSize != 512 || numBlocks % 2 == 0 ||
+                ts - s.total() != 512) {
+                if (Platform.isWindows()) {
+                    //
+                    // In Cygwin, 'df' has been observed to account for quotas
+                    // when reporting the total disk size, but the total size
+                    // reported by GetDiskFreeSpaceExW() has been observed not
+                    // to account for the quota in which case the latter value
+                    // should be larger.
+                    //
+                    if (s.total() > ts) {
+                        fail(s.name() + " total space", s.total(), ">", ts);
+                    }
+                } else {
+                    fail(s.name() + " total space", s.total(), "!=", ts);
                 }
             }
         } else {
@@ -252,7 +264,7 @@ public class GetXSpace {
         // unix df returns statvfs.f_bavail
         long tsp = (!Platform.isWindows() ? us : fs);
         if (!s.woomFree(tsp)) {
-            fail(s.name(), s.free(), "??", tsp);
+            fail(s.name(), s.available(), "??", tsp);
         } else {
             pass();
         }
