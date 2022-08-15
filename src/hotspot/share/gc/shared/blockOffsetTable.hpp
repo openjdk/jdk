@@ -25,7 +25,9 @@
 #ifndef SHARE_GC_SHARED_BLOCKOFFSETTABLE_HPP
 #define SHARE_GC_SHARED_BLOCKOFFSETTABLE_HPP
 
+#include "gc/shared/gc_globals.hpp"
 #include "memory/allStatic.hpp"
+#include "memory/virtualspace.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class BOTConstants : public AllStatic {
