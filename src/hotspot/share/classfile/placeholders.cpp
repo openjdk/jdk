@@ -33,7 +33,7 @@
 #include "runtime/mutexLocker.hpp"
 #include "utilities/resourceHash.hpp"
 
-class PlaceholderKey : public StackObj {
+class PlaceholderKey {
   Symbol* _name;
   ClassLoaderData* _loader_data;
  public:
@@ -43,7 +43,7 @@ class PlaceholderKey : public StackObj {
     return (k1._name == k2._name && k1._loader_data == k2._loader_data);
   }
   static unsigned hash(PlaceholderKey const& k) {
-    return (unsigned) k._name->identity_hash();
+    return (unsigned) k._name->identity_hash() ^ (int)((intptr_t)k._loader_data >> 3);
   }
   void print_on(outputStream* st) const;
 };
@@ -217,9 +217,9 @@ void remove_entry(Symbol* class_name, ClassLoaderData* loader_data) {
   assert_locked_or_safepoint(SystemDictionary_lock);
 
   PlaceholderKey key(class_name, loader_data);
-  // Decrement refcount in key.
-  class_name->decrement_refcount();
   _placeholders.remove(key);
+  // Decrement the refcount in key, since it's no longer in the table.
+  class_name->decrement_refcount();
 }
 
 
