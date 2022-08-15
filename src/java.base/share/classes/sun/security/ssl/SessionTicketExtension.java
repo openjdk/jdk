@@ -29,7 +29,6 @@ import sun.security.action.GetPropertyAction;
 import sun.security.ssl.SSLExtension.ExtensionConsumer;
 import sun.security.ssl.SSLExtension.SSLExtensionSpec;
 import sun.security.ssl.SSLHandshake.HandshakeMessage;
-import sun.security.ssl.SupportedGroupsExtension.SupportedGroups;
 import sun.security.util.HexDumpEncoder;
 
 import javax.crypto.Cipher;
@@ -381,7 +380,7 @@ final class SessionTicketExtension {
     }
 
     private static final class T12CHSessionTicketProducer
-            extends SupportedGroups implements HandshakeProducer {
+            implements HandshakeProducer {
         T12CHSessionTicketProducer() {
         }
 
@@ -480,7 +479,7 @@ final class SessionTicketExtension {
 
 
     private static final class T12SHSessionTicketProducer
-            extends SupportedGroups implements HandshakeProducer {
+            implements HandshakeProducer {
         T12SHSessionTicketProducer() {
         }
 
