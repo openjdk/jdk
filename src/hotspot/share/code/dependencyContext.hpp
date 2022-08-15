@@ -120,8 +120,10 @@ class DependencyContext : public StackObj {
   int  mark_dependent_nmethods(DepChange& changes);
   void add_dependent_nmethod(nmethod* nm);
   void remove_dependent_nmethod(nmethod* nm);
-  int  remove_all_dependents();
+  void remove_all_dependents();
+  int  remove_and_mark_for_deoptimization_all_dependents();
   void clean_unloading_dependents();
+  static nmethodBucket* release_and_get_next_not_unloading(nmethodBucket* b);
   static void purge_dependency_contexts();
   static void release(nmethodBucket* b);
   static void cleaning_start();
