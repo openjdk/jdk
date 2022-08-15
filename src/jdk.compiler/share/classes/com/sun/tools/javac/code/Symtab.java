@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -673,7 +673,8 @@ public class Symtab {
         if (c == null) {
             c = defineClass(name, owner);
             doEnterClass(msym, c);
-        } else if ((c.name != name || c.owner != owner) && owner.kind == TYP && c.owner.kind == PCK) {
+        } else if ((c.name != name || c.owner != owner) && owner.kind == TYP &&
+                   c.owner.kind == PCK && ((c.flags_field & FROM_SOURCE) == 0)) {
             // reassign fields of classes that might have been loaded with
             // their flat names.
             c.owner.members().remove(c);

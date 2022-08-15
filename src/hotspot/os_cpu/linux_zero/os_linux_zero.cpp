@@ -236,7 +236,7 @@ static void current_stack_region(address *bottom, size_t *size) {
 
   // The block of memory returned by pthread_attr_getstack() includes
   // guard pages where present.  We need to trim these off.
-  size_t page_bytes = os::Linux::page_size();
+  size_t page_bytes = os::vm_page_size();
   assert(((intptr_t) stack_bottom & (page_bytes - 1)) == 0, "unaligned stack");
 
   size_t guard_bytes;

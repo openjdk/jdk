@@ -386,9 +386,6 @@ class ConstantPoolCacheEntry {
     // When shifting flags as a 32-bit int, make sure we don't need an extra mask for tos_state:
     assert((((u4)-1 >> tos_state_shift) & ~tos_state_mask) == 0, "no need for tos_state mask");
   }
-
-  void verify_just_initialized(bool f2_used);
-  void reinitialize(bool f2_used);
 };
 
 
@@ -457,7 +454,7 @@ class ConstantPoolCache: public MetaspaceObj {
 
   // CDS support
   void remove_unshareable_info();
-  void verify_just_initialized();
+  void save_for_archive();
  private:
   void walk_entries_for_initialization(bool check_only);
   void set_length(int length)                    { _length = length; }

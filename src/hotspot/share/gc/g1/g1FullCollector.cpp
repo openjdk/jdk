@@ -301,9 +301,10 @@ void G1FullCollector::phase1_mark_live_objects() {
   // Class unloading and cleanup.
   if (ClassUnloading) {
     GCTraceTime(Debug, gc, phases) debug("Phase 1: Class Unloading and Cleanup", scope()->timer());
+    CodeCache::UnloadingScope unloading_scope(&_is_alive);
     // Unload classes and purge the SystemDictionary.
     bool purged_class = SystemDictionary::do_unloading(scope()->timer());
-    _heap->complete_cleaning(&_is_alive, purged_class);
+    _heap->complete_cleaning(purged_class);
   }
 
   scope()->tracer()->report_object_count_after_gc(&_is_alive);
