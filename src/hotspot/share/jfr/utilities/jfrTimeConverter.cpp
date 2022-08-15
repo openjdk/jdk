@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,7 @@
 #include "precompiled.hpp"
 #include "jfr/utilities/jfrTimeConverter.hpp"
 #include "jfr/utilities/jfrTime.hpp"
-#include "runtime/os.hpp"
-
-#include OS_HEADER_INLINE(os)
+#include "runtime/os.inline.hpp"
 
 static double ft_counter_to_nanos_factor = .0;
 static double nanos_to_ft_counter_factor = .0;

@@ -849,19 +849,21 @@ void MacroAssembler::call_VM_helper(Register oop_result, address entry_point, in
   call_VM_base(oop_result, noreg, noreg, entry_point, number_of_arguments, check_exceptions);
 }
 
-// Maybe emit a call via a trampoline.  If the code cache is small
+// Maybe emit a call via a trampoline. If the code cache is small
 // trampolines won't be emitted.
-address MacroAssembler::trampoline_call1(Address entry, CodeBuffer* cbuf, bool check_emit_size) {
+address MacroAssembler::trampoline_call(Address entry, CodeBuffer* cbuf) {
   assert(entry.rspec().type() == relocInfo::runtime_call_type
          || entry.rspec().type() == relocInfo::opt_virtual_call_type
          || entry.rspec().type() == relocInfo::static_call_type
          || entry.rspec().type() == relocInfo::virtual_call_type, "wrong reloc type");
 
+  address target = entry.target();
+
+  // We might need a trampoline if branches are far.
   bool need_trampoline = far_branches();
-  if (!need_trampoline && entry.rspec().type() == relocInfo::runtime_call_type && !CodeCache::contains(entry.target())) {
+  if (!need_trampoline && entry.rspec().type() == relocInfo::runtime_call_type && !CodeCache::contains(target)) {
     // If it is a runtime call of an address outside small CodeCache,
     // we need to check whether it is in range.
-    address target = entry.target();
     assert(target < CodeCache::low_bound() || target >= CodeCache::high_bound(), "target is inside CodeCache");
     // Case 1: -------T-------L====CodeCache====H-------
     //                ^-------longest branch---|
@@ -872,40 +874,27 @@ address MacroAssembler::trampoline_call1(Address entry, CodeBuffer* cbuf, bool c
     need_trampoline = !reachable_from_branch_at(longest_branch_start, target);
   }
 
-  // We need a trampoline if branches are far.
   if (need_trampoline) {
-    bool in_scratch_emit_size = false;
-#ifdef COMPILER2
-    if (check_emit_size) {
+    if (!in_scratch_emit_size()) {
       // We don't want to emit a trampoline if C2 is generating dummy
       // code during its branch shortening phase.
-      CompileTask* task = ciEnv::current()->task();
-      in_scratch_emit_size =
-        (task != NULL && is_c2_compile(task->comp_level()) &&
-         Compile::current()->output()->in_scratch_emit_size());
-    }
-#endif
-    if (!in_scratch_emit_size) {
-      address stub = emit_trampoline_stub(offset(), entry.target());
+      address stub = emit_trampoline_stub(offset(), target);
       if (stub == NULL) {
         postcond(pc() == badAddress);
         return NULL; // CodeCache is full
       }
     }
+    target = pc();
   }
 
   if (cbuf) cbuf->set_insts_mark();
   relocate(entry.rspec());
-  if (!need_trampoline) {
-    bl(entry.target());
-  } else {
-    bl(pc());
-  }
+  bl(target);
+
   // just need to return a non-null address
   postcond(pc() != badAddress);
   return pc();
 }
-
 
 // Emit a trampoline stub for a call to a target which is too far away.
 //
@@ -1892,8 +1881,7 @@ void MacroAssembler::atomic_incw(Register counter_addr, Register tmp, Register t
     return;
   }
   Label retry_load;
-  if (VM_Version::supports_stxr_prefetch())
-    prfm(Address(counter_addr), PSTL1STRM);
+  prfm(Address(counter_addr), PSTL1STRM);
   bind(retry_load);
   // flush and load exclusive from the memory location
   ldxrw(tmp, counter_addr);
@@ -2627,8 +2615,7 @@ void MacroAssembler::cmpxchgptr(Register oldv, Register newv, Register addr, Reg
     membar(AnyAny);
   } else {
     Label retry_load, nope;
-    if (VM_Version::supports_stxr_prefetch())
-      prfm(Address(addr), PSTL1STRM);
+    prfm(Address(addr), PSTL1STRM);
     bind(retry_load);
     // flush and load exclusive from the memory location
     // and fail if it is not what we expect
@@ -2670,8 +2657,7 @@ void MacroAssembler::cmpxchgw(Register oldv, Register newv, Register addr, Regis
     membar(AnyAny);
   } else {
     Label retry_load, nope;
-    if (VM_Version::supports_stxr_prefetch())
-      prfm(Address(addr), PSTL1STRM);
+    prfm(Address(addr), PSTL1STRM);
     bind(retry_load);
     // flush and load exclusive from the memory location
     // and fail if it is not what we expect
@@ -2712,8 +2698,7 @@ void MacroAssembler::cmpxchg(Register addr, Register expected,
     compare_eq(result, expected, size);
   } else {
     Label retry_load, done;
-    if (VM_Version::supports_stxr_prefetch())
-      prfm(Address(addr), PSTL1STRM);
+    prfm(Address(addr), PSTL1STRM);
     bind(retry_load);
     load_exclusive(result, addr, size, acquire);
     compare_eq(result, expected, size);
@@ -2771,8 +2756,7 @@ void MacroAssembler::atomic_##NAME(Register prev, RegisterOrConstant incr, Regis
     result = different(prev, incr, addr) ? prev : rscratch2;            \
                                                                         \
   Label retry_load;                                                     \
-  if (VM_Version::supports_stxr_prefetch())                             \
-    prfm(Address(addr), PSTL1STRM);                                     \
+  prfm(Address(addr), PSTL1STRM);                                       \
   bind(retry_load);                                                     \
   LDXR(result, addr);                                                   \
   OP(rscratch1, result, incr);                                          \
@@ -2802,8 +2786,7 @@ void MacroAssembler::atomic_##OP(Register prev, Register newv, Register addr) { 
     result = different(prev, newv, addr) ? prev : rscratch2;            \
                                                                         \
   Label retry_load;                                                     \
-  if (VM_Version::supports_stxr_prefetch())                             \
-    prfm(Address(addr), PSTL1STRM);                                     \
+  prfm(Address(addr), PSTL1STRM);                                       \
   bind(retry_load);                                                     \
   LDXR(result, addr);                                                   \
   STXR(rscratch1, newv, addr);                                          \
