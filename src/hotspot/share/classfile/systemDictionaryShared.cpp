@@ -80,7 +80,6 @@ DumpTimeSharedClassTable* SystemDictionaryShared::_dumptime_table = NULL;
 DumpTimeSharedClassTable* SystemDictionaryShared::_cloned_dumptime_table = NULL;
 DumpTimeLambdaProxyClassDictionary* SystemDictionaryShared::_dumptime_lambda_proxy_class_dictionary = NULL;
 DumpTimeLambdaProxyClassDictionary* SystemDictionaryShared::_cloned_dumptime_lambda_proxy_class_dictionary = NULL;
-SystemDictionaryShared::SavedCpCacheEntriesTable* SystemDictionaryShared::_saved_cpcache_entries_table = NULL;
 
 // Used by NoClassLoadingMark
 DEBUG_ONLY(bool SystemDictionaryShared::_class_loading_may_happen = true;)
@@ -505,7 +504,6 @@ void SystemDictionaryShared::initialize() {
     _dumptime_table = new (ResourceObj::C_HEAP, mtClass) DumpTimeSharedClassTable;
     _dumptime_lambda_proxy_class_dictionary =
                       new (ResourceObj::C_HEAP, mtClass) DumpTimeLambdaProxyClassDictionary;
-    _saved_cpcache_entries_table = new (ResourceObj::C_HEAP, mtClass) SavedCpCacheEntriesTable;
   }
 }
 
@@ -518,11 +516,19 @@ void SystemDictionaryShared::init_dumptime_info(InstanceKlass* k) {
 void SystemDictionaryShared::remove_dumptime_info(InstanceKlass* k) {
   MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
   _dumptime_table->remove(k);
+}
 
-  ConstantPoolCache* cpc = k->constants()->cache();
-  if (cpc != NULL) {
-    remove_saved_cpcache_entries_locked(cpc);
-  }
+void SystemDictionaryShared::set_resolution_info(InstanceKlass* k, DumpTimeResolutionInfo* res_info) {
+  MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
+  DumpTimeClassInfo* info = get_info_locked(k);
+  info->set_resolution_info(res_info);
+}
+
+DumpTimeResolutionInfo* SystemDictionaryShared::get_resolution_info_locked(InstanceKlass* k) {
+  assert_lock_strong(DumpTimeTable_lock);
+  assert(!has_been_redefined(k) && !k->is_scratch_class(), "not supported because of CP transfer");
+  DumpTimeClassInfo* info = get_info_locked(k);
+  return info->resolution_info();
 }
 
 void SystemDictionaryShared::handle_class_unloading(InstanceKlass* klass) {
@@ -1334,36 +1340,6 @@ void SystemDictionaryShared::update_shared_entry(InstanceKlass* k, int id) {
   assert(DumpSharedSpaces, "supported only when dumping");
   DumpTimeClassInfo* info = get_info(k);
   info->_id = id;
-}
-
-void SystemDictionaryShared::set_saved_cpcache_entries(ConstantPoolCache* cpc, ConstantPoolCacheEntry* entries) {
-  MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
-  bool is_new = _saved_cpcache_entries_table->put(cpc, entries);
-  assert(is_new, "saved entries must never changed");
-}
-
-ConstantPoolCacheEntry* SystemDictionaryShared::get_saved_cpcache_entries_locked(ConstantPoolCache* cpc) {
-  assert_lock_strong(DumpTimeTable_lock);
-  ConstantPoolCacheEntry** p = _saved_cpcache_entries_table->get(cpc);
-  if (p != nullptr) {
-    return *p;
-  } else {
-    return nullptr;
-  }
-}
-
-void SystemDictionaryShared::remove_saved_cpcache_entries(ConstantPoolCache* cpc) {
-  MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
-  remove_saved_cpcache_entries_locked(cpc);
-}
-
-void SystemDictionaryShared::remove_saved_cpcache_entries_locked(ConstantPoolCache* cpc) {
-  assert_lock_strong(DumpTimeTable_lock);
-  ConstantPoolCacheEntry** p = _saved_cpcache_entries_table->get(cpc);
-  if (p != nullptr) {
-    _saved_cpcache_entries_table->remove(cpc);
-    FREE_C_HEAP_ARRAY(ConstantPoolCacheEntry, *p);
-  }
 }
 
 const char* class_loader_name_for_shared(Klass* k) {

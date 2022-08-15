@@ -35,6 +35,26 @@
 
 class Method;
 class Symbol;
+class ConstantPoolCacheEntry;
+
+// Information used by CDS to correctly store the contents
+// of ConstantPoolCache into the CDS archive. We expect to add
+// more fields here to support dump-time resolution of
+// ConstantPool entries.
+class DumpTimeResolutionInfo : public CHeapObj<mtClass> {
+  int _refcount;
+  // Contents of the cpcache immediately after Rewriter::make_constant_pool_cache()
+  ConstantPoolCacheEntry* _initial_cp_cache_entries;
+public:
+  DumpTimeResolutionInfo(ConstantPoolCacheEntry* init_cpce)
+    : _refcount(0), _initial_cp_cache_entries(init_cpce) {}
+  ~DumpTimeResolutionInfo();
+
+  ConstantPoolCacheEntry* initial_cp_cache_entries() { return _initial_cp_cache_entries; }
+
+  static DumpTimeResolutionInfo* maybe_incr_refcount(DumpTimeResolutionInfo* resinfo);
+  static void maybe_decr_refcount(DumpTimeResolutionInfo* resinfo);
+};
 
 class DumpTimeClassInfo: public CHeapObj<mtClass> {
   bool                         _excluded;
@@ -128,6 +148,7 @@ public:
   GrowableArray<char>*                 _verifier_constraint_flags;
   GrowableArray<DTLoaderConstraint>*   _loader_constraints;
   GrowableArray<int>*                  _enum_klass_static_fields;
+  DumpTimeResolutionInfo*              _resolution_info;
 
   DumpTimeClassInfo() {
     _klass = NULL;
@@ -144,8 +165,14 @@ public:
     _verifier_constraint_flags = NULL;
     _loader_constraints = NULL;
     _enum_klass_static_fields = NULL;
+    _resolution_info = NULL;
   }
+
+  // C++ rule of three.
   DumpTimeClassInfo(const DumpTimeClassInfo& src);
+  // DumpTimeClassInfo are stored inside ResourceHashtable which never uses
+  // operator=. Mark it as deleted so we don't need to worry about
+  // refcounting and deep copying, etc.
   DumpTimeClassInfo& operator=(const DumpTimeClassInfo&) = delete;
   ~DumpTimeClassInfo();
 
@@ -214,6 +241,9 @@ public:
   void set_nest_host(InstanceKlass* nest_host)      { _nest_host = nest_host; }
 
   size_t runtime_info_bytesize() const;
+
+  DumpTimeResolutionInfo* resolution_info()         { return _resolution_info; }
+  void set_resolution_info(DumpTimeResolutionInfo* res_info);
 };
 
 template <typename T>

@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/dumpTimeClassInfo.hpp"
 #include "cds/heapShared.hpp"
 #include "classfile/resolutionErrors.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -690,18 +691,21 @@ void ConstantPoolCache::save_for_archive() {
     copy[i] = *entry_at(i);
   }
 
-  SystemDictionaryShared::set_saved_cpcache_entries(this, copy);
+  DumpTimeResolutionInfo* res_info = new DumpTimeResolutionInfo(copy);
+  SystemDictionaryShared::set_resolution_info(constant_pool()->pool_holder(), res_info);
 #endif
 }
 
 void ConstantPoolCache::remove_unshareable_info() {
 #if INCLUDE_CDS
   Arguments::assert_is_dumping_archive();
-  // <this> is the copy to be written into the archive. It's in
-  // the ArchiveBuilder's "buffer space". However, the saved_cpcache_entries
-  // are recorded with the original ConstantPoolCache object.
-  ConstantPoolCache* orig_cpc = ArchiveBuilder::current()->get_src_obj(this);
-  ConstantPoolCacheEntry* saved = SystemDictionaryShared::get_saved_cpcache_entries_locked(orig_cpc);
+  // constant_pool()->pool_holder() is the copy to be written into the archive. It's in
+  // the ArchiveBuilder's "buffer space". However, the resolution_info was recorded
+  // with the original InstanceKlass object.
+  InstanceKlass* orig_holder = ArchiveBuilder::current()->get_src_obj(constant_pool()->pool_holder());
+  assert(!orig_holder->has_been_redefined() && !orig_holder->is_scratch_class(), "not supported because of CP transfer");
+  DumpTimeResolutionInfo* res_info = SystemDictionaryShared::get_resolution_info_locked(orig_holder);
+  ConstantPoolCacheEntry* saved = res_info->initial_cp_cache_entries();
   for (int i=0; i<length(); i++) {
     // Restore each entry to the initial state -- just after Rewriter::make_constant_pool_cache()
     // has finished.
@@ -716,12 +720,6 @@ void ConstantPoolCache::deallocate_contents(ClassLoaderData* data) {
   set_resolved_references(OopHandle());
   MetadataFactory::free_array<u2>(data, _reference_map);
   set_reference_map(NULL);
-
-#if INCLUDE_CDS
-  if (Arguments::is_dumping_archive()) {
-    SystemDictionaryShared::remove_saved_cpcache_entries(this);
-  }
-#endif
 }
 
 #if INCLUDE_CDS_JAVA_HEAP

@@ -30,9 +30,10 @@
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/cpCache.hpp"
 
 // This constructor is used only by SystemDictionaryShared::clone_dumptime_tables().
-// See comments there about the need for making a deep copy.
+// See comments there about the need for making a deep copy for some of the fields.
 DumpTimeClassInfo::DumpTimeClassInfo(const DumpTimeClassInfo& src) {
   assert(DynamicDumpSharedSpaces, "must be");
 
@@ -74,6 +75,10 @@ DumpTimeClassInfo::DumpTimeClassInfo(const DumpTimeClassInfo& src) {
       }
     }
   }
+
+  // The contents of _resolution_info are never updated, so we don't need to
+  // make a deep copy. The refcount is used to free it when no one uses it anymore.
+  _resolution_info = DumpTimeResolutionInfo::maybe_incr_refcount(src._resolution_info);
 }
 
 DumpTimeClassInfo::~DumpTimeClassInfo() {
@@ -85,6 +90,8 @@ DumpTimeClassInfo::~DumpTimeClassInfo() {
   if (_loader_constraints != NULL) {
     delete _loader_constraints;
   }
+
+  DumpTimeResolutionInfo::maybe_decr_refcount(_resolution_info);
 }
 
 size_t DumpTimeClassInfo::runtime_info_bytesize() const {
@@ -187,6 +194,23 @@ bool DumpTimeClassInfo::is_builtin() {
   return SystemDictionaryShared::is_builtin(_klass);
 }
 
+void DumpTimeClassInfo::set_resolution_info(DumpTimeResolutionInfo* res_info) {
+  // Notes on class redefintion:
+  //
+  // This function is call indirectly from Rewriter::make_constant_pool_cache(), which
+  // must happen no more than once for each InstanceKlass*.
+  //
+  // When an InstanceKlass K is redefined, Rewriter::make_constant_pool_cache() is
+  // called to make a new cpcache. However, the call is made on behalf of
+  // the "scratch class", not K itself. The cpcache is later transferred to K.
+  //
+  // As a result of this transfer, SystemDictionaryShared::get_resolution_info_locked(K)
+  // may not return the up-to-date res_info for a redefined K. This is one of the
+  // reason we don't archive redefined classes or scratch classes.
+  assert(_resolution_info == nullptr, "must be");
+  _resolution_info = DumpTimeResolutionInfo::maybe_incr_refcount(res_info);
+}
+
 DumpTimeClassInfo* DumpTimeSharedClassTable::allocate_info(InstanceKlass* k) {
   assert(!k->is_shared(), "Do not call with shared classes");
   bool created;
@@ -201,7 +225,7 @@ DumpTimeClassInfo* DumpTimeSharedClassTable::get_info(InstanceKlass* k) {
   DumpTimeClassInfo* p = get(k);
   assert(p != NULL, "we must not see any non-shared InstanceKlass* that's "
          "not stored with SystemDictionaryShared::init_dumptime_info");
-  assert(p->_klass == k, "Sanity");
+  assert(k == p->_klass || k == ArchiveBuilder::current()->get_src_obj(p->_klass), "Sanity");
   return p;
 }
 
@@ -225,4 +249,27 @@ void DumpTimeSharedClassTable::update_counts() {
   _unregistered_count = 0;
   CountClassByCategory counter(this);
   iterate_all_live_classes(&counter);
+}
+
+DumpTimeResolutionInfo::~DumpTimeResolutionInfo() {
+  assert(_refcount == 0, "must be");
+  if (_initial_cp_cache_entries != NULL) {
+    FREE_C_HEAP_ARRAY(ConstantPoolCacheEntry, _initial_cp_cache_entries);
+  }
+}
+
+DumpTimeResolutionInfo* DumpTimeResolutionInfo::maybe_incr_refcount(DumpTimeResolutionInfo* resinfo) {
+  if (resinfo != nullptr) {
+    ++ resinfo->_refcount;
+  }
+  return resinfo;
+}
+
+void DumpTimeResolutionInfo::maybe_decr_refcount(DumpTimeResolutionInfo* resinfo) {
+  if (resinfo != nullptr) {
+    -- resinfo->_refcount;
+    if (resinfo->_refcount == 0) {
+      delete resinfo;
+    }
+  }
 }
