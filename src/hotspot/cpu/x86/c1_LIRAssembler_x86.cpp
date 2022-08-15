@@ -1953,7 +1953,7 @@ void LIR_Assembler::emit_compare_and_swap(LIR_OpCompareAndSwap* op) {
     Register newval = op->new_value()->as_register();
     Register cmpval = op->cmp_value()->as_register();
     assert(cmpval == rax, "wrong register");
-    assert(newval != NULL, "new val must be register");
+    assert(newval != noreg, "new val must be register");
     assert(cmpval != newval, "cmp and new values must be in different registers");
     assert(cmpval != addr, "cmp and addr must be in different registers");
     assert(newval != addr, "new value and addr must be in different registers");
@@ -1984,7 +1984,7 @@ void LIR_Assembler::emit_compare_and_swap(LIR_OpCompareAndSwap* op) {
     Register newval = op->new_value()->as_register_lo();
     Register cmpval = op->cmp_value()->as_register_lo();
     assert(cmpval == rax, "wrong register");
-    assert(newval != NULL, "new val must be register");
+    assert(newval != noreg, "new val must be register");
     assert(cmpval != newval, "cmp and new values must be in different registers");
     assert(cmpval != addr, "cmp and addr must be in different registers");
     assert(newval != addr, "new value and addr must be in different registers");
