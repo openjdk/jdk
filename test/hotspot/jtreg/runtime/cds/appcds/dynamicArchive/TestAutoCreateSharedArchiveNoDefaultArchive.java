@@ -147,7 +147,7 @@ public class TestAutoCreateSharedArchiveNoDefaultArchive {
     }
 
     private static void removeDefaultArchive(String java_home_dst, String variant, String suffix) {
-        String fileName = java_home_dst + File.separator + "lib" + File.separator + variant + 
+        String fileName = java_home_dst + File.separator + "lib" + File.separator + variant +
                           File.separator +  "classes" + suffix + ".jsa";
         File f = new File(fileName);
         if (f.delete()) {
