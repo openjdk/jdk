@@ -1495,7 +1495,7 @@ JVM_ENTRY(void, MHN_clearCallSiteContext(JNIEnv* env, jobject igcls, jobject con
       NoSafepointVerifier nsv;
       MutexLocker mu2(THREAD, CodeCache_lock, Mutex::_no_safepoint_check_flag);
       DependencyContext deps = java_lang_invoke_MethodHandleNatives_CallSiteContext::vmdependencies(context());
-      marked = deps.remove_all_dependents();
+      marked = deps.remove_and_mark_for_deoptimization_all_dependents();
     }
     if (marked > 0) {
       // At least one nmethod has been marked for deoptimization
