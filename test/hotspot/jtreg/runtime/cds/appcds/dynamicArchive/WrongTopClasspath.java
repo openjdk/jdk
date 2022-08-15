@@ -27,7 +27,7 @@ import java.io.File;
 /*
  * @test
  * @summary correct classpath for bottom archive, but bad classpath for top archive
- * @requires vm.cds
+ * @requires vm.cds & vm.flagless
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds /test/hotspot/jtreg/runtime/cds/appcds/test-classes
  * @build GenericTestApp jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar WhiteBox.jar jdk.test.whitebox.WhiteBox

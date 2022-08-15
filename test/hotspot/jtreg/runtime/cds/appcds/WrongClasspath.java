@@ -25,7 +25,7 @@
 /*
  * @test
  * @summary classpath mismatch between dump time and execution time
- * @requires vm.cds
+ * @requires vm.cds & vm.flagless
  * @library /test/lib
  * @compile test-classes/Hello.java
  * @compile test-classes/C2.java
