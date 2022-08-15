@@ -1599,9 +1599,8 @@ static inline int prepare_thaw_internal(JavaThread* thread, bool return_barrier)
   ContinuationEntry* ce = thread->last_continuation();
   assert(ce != nullptr, "");
 
-  // At this point the stack watermark has not been processed, therefore we can not
-  // read the continuation oop from the entry. Instead we read it from the thread.
-  oop continuation = get_continuation(thread);
+  oop continuation = ce->cont_oop(thread);
+  assert(continuation == get_continuation(thread), "");
   verify_continuation(continuation);
 
   stackChunkOop chunk = jdk_internal_vm_Continuation::tail(continuation);
@@ -2308,15 +2307,13 @@ static inline intptr_t* thaw_internal(JavaThread* thread, const Continuation::th
 
   ContinuationEntry* entry = thread->last_continuation();
   assert(entry != nullptr, "");
-
-  // At this point the stack watermark has not been processed, therefore we can not
-  // read the continuation oop from the entry. Instead we read it from the thread.
-  oop oopCont = get_continuation(thread);
-  verify_continuation(oopCont);
+  oop oopCont = entry->cont_oop(thread);
 
   assert(!jdk_internal_vm_Continuation::done(oopCont), "");
+  assert(oopCont == get_continuation(thread), "");
+  verify_continuation(oopCont);
 
-  assert(entry->is_virtual_thread() == (Continuation::continuation_scope(oopCont) == java_lang_VirtualThread::vthread_scope()), "");
+  assert(entry->is_virtual_thread() == (entry->scope(thread) == java_lang_VirtualThread::vthread_scope()), "");
 
   ContinuationWrapper cont(thread, oopCont);
   log_develop_debug(continuations)("THAW #" INTPTR_FORMAT " " INTPTR_FORMAT, cont.hash(), p2i((oopDesc*)oopCont));
