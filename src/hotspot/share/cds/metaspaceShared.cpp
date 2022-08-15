@@ -401,8 +401,6 @@ void MetaspaceShared::serialize(SerializeClosure* soc) {
 }
 
 static void rewrite_nofast_bytecode(const methodHandle& method) {
-#ifndef ZERO
-  // TODO: these "nofast" bytecodes are not supported by ZERO yet, so we can't rewrite.
   BytecodeStream bcs(method);
   while (!bcs.is_last_bytecode()) {
     Bytecodes::Code opcode = bcs.next();
@@ -419,7 +417,6 @@ static void rewrite_nofast_bytecode(const methodHandle& method) {
     default: break;
     }
   }
-#endif
 }
 
 // [1] Rewrite all bytecodes as needed, so that the ConstMethod* will not be modified

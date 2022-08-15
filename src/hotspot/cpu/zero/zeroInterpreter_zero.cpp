@@ -37,7 +37,6 @@
 #include "oops/method.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
-#include "runtime/arguments.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
@@ -178,13 +177,6 @@ void ZeroInterpreter::main_loop(int recurse, TRAPS) {
   intptr_t *result = NULL;
   int result_slots = 0;
 
-  // CDS uses Bytecodes::_nofast_xxx to indicate that the bytecode
-  // is in a method that lives in read-only memory and shouldn't be
-  // rewritten. However, _nofast_xxx is not supported by ZERO yet.
-  // Let's disable bytecode rewriting altogether at dump time, and defer
-  // all rewriting to runtime.
-  bool rewrite = RewriteBytecodes && !Arguments::is_dumping_archive();
-
   while (true) {
     // We can set up the frame anchor with everything we want at
     // this point as we are thread_in_Java and no safepoints can
@@ -194,13 +186,13 @@ void ZeroInterpreter::main_loop(int recurse, TRAPS) {
 
     // Call the interpreter
     if (JvmtiExport::can_post_interpreter_events()) {
-      if (rewrite) {
+      if (RewriteBytecodes) {
         BytecodeInterpreter::run<true, true>(istate);
       } else {
         BytecodeInterpreter::run<true, false>(istate);
       }
     } else {
-      if (rewrite) {
+      if (RewriteBytecodes) {
         BytecodeInterpreter::run<false, true>(istate);
       } else {
         BytecodeInterpreter::run<false, false>(istate);

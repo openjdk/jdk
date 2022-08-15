@@ -1827,14 +1827,6 @@ MapArchiveResult FileMapInfo::map_region(int i, intx addr_delta, char* mapped_ba
     si->set_read_only(false); // Need to patch the pointers
   }
 
-#ifdef ZERO
-  if (i == MetaspaceShared::ro) {
-    // The "nofast" bytecodes are not supported by ZERO yet, so the bytecodes
-    // (stored in the "ro" region) need to be rewritten at runtime.
-    si->set_read_only(false);
-  }
-#endif
-
   if (MetaspaceShared::use_windows_memory_mapping() && rs.is_reserved()) {
     // This is the second time we try to map the archive(s). We have already created a ReservedSpace
     // that covers all the FileMapRegions to ensure all regions can be mapped. However, Windows
