@@ -1006,6 +1006,14 @@ void G1ConcurrentMark::scan_root_regions() {
   }
 }
 
+bool G1ConcurrentMark::wait_until_root_region_scan_finished() {
+  return root_regions()->wait_until_scan_finished();
+}
+
+void G1ConcurrentMark::add_root_region(HeapRegion* r) {
+  root_regions()->add(r->top_at_mark_start(), r->top());
+}
+
 void G1ConcurrentMark::concurrent_cycle_start() {
   _gc_timer_cm->register_gc_start();
 
@@ -2018,6 +2026,14 @@ void G1ConcurrentMark::print_stats() {
 }
 
 bool G1ConcurrentMark::concurrent_cycle_abort() {
+  // If we start the compaction before the CM threads finish
+  // scanning the root regions we might trip them over as we'll
+  // be moving objects / updating references. So let's wait until
+  // they are done. By telling them to abort, they should complete
+  // early.
+  root_regions()->abort();
+  root_regions()->wait_until_scan_finished();
+
   // We haven't started a concurrent cycle no need to do anything; we might have
   // aborted the marking because of shutting down though. In this case the marking
   // might have already completed the abort (leading to in_progress() below to

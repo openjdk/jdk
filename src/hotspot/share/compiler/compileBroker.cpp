@@ -2417,7 +2417,7 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
  * This function needs to be called only from CodeCache::allocate(),
  * since we currently handle a full code cache uniformly.
  */
-void CompileBroker::handle_full_code_cache(int code_blob_type) {
+void CompileBroker::handle_full_code_cache(CodeBlobType code_blob_type) {
   UseInterpreter = true;
   if (UseCompiler || AlwaysCompileLoopMethods ) {
     if (xtty != NULL) {
