@@ -38,7 +38,7 @@ import jdk.test.whitebox.WhiteBox;
  * @library /test/lib /test/jdk
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -Xmx32m -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseSerialGC jdk.jfr.event.gc.detailed.TestGCCpuTimeEvent
+ * @run main/othervm -Xbootclasspath/a:. -Xmx32m -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseSerialGC jdk.jfr.event.gc.detailed.TestGCCPUTimeEvent
  */
 
 /**
@@ -49,7 +49,7 @@ import jdk.test.whitebox.WhiteBox;
  * @library /test/lib /test/jdk
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -Xmx32m -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseParallelGC jdk.jfr.event.gc.detailed.TestGCCpuTimeEvent
+ * @run main/othervm -Xbootclasspath/a:. -Xmx32m -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseParallelGC jdk.jfr.event.gc.detailed.TestGCCPUTimeEvent
  */
 
 /**
@@ -60,11 +60,11 @@ import jdk.test.whitebox.WhiteBox;
  * @library /test/lib /test/jdk
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -Xmx32m -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseG1GC jdk.jfr.event.gc.detailed.TestGCCpuTimeEvent
+ * @run main/othervm -Xbootclasspath/a:. -Xmx32m -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseG1GC jdk.jfr.event.gc.detailed.TestGCCPUTimeEvent
  */
 
-public class TestGCCpuTimeEvent {
-    private static final String EVENT_NAME = EventNames.GCCpuTime;
+public class TestGCCPUTimeEvent {
+    private static final String EVENT_NAME = EventNames.GCCPUTime;
 
     public static void main(String[] args) throws Exception {
 
@@ -80,7 +80,7 @@ public class TestGCCpuTimeEvent {
 
             // Verify recording
             List<RecordedEvent> events = Events.fromRecording(recording);
-            Events.hasEvent(events, EventNames.GCCpuTime);
+            Events.hasEvent(events, EVENT_NAME);
 
             recording.close();
         }

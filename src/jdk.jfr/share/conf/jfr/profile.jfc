@@ -143,7 +143,7 @@
     <event name="jdk.ContinuationThawOld">
       <setting name="enabled">false</setting>
     </event>
-    
+
     <event name="jdk.ReservedStackActivation">
       <setting name="enabled">true</setting>
       <setting name="stackTrace">true</setting>
@@ -379,7 +379,7 @@
     <event name="jdk.SystemGC">
       <setting name="enabled">true</setting>
       <setting name="threshold">0 ms</setting>
-      <setting name="stackTrace">true</setting> 
+      <setting name="stackTrace">true</setting>
     </event>
 
     <event name="jdk.ParallelOldGarbageCollection">
@@ -441,7 +441,7 @@
       <setting name="enabled" control="gc-enabled-normal">true</setting>
     </event>
 
-    <event name="jdk.GCCpuTime">
+    <event name="jdk.GCCPUTime">
       <setting name="enabled" control="gc-enabled-normal">true</setting>
     </event>
 
@@ -893,10 +893,10 @@
 
 
 
-  <!--                                                                                                        
-  Contents of the control element is not read by the JVM, it's used                                           
-  by JDK Mission Control and the 'jfr' tool to change settings that                                           
-  carry the control attribute.                                                                                
+  <!--
+  Contents of the control element is not read by the JVM, it's used
+  by JDK Mission Control and the 'jfr' tool to change settings that
+  carry the control attribute.
   -->
     <control>
         <selection name="gc" default="detailed" label="Garbage Collector">

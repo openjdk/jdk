@@ -274,8 +274,8 @@ public class GCEventAll {
                     } else {
                         Asserts.assertGreaterThanOrEqual(event.getStartTime(), batchStartTime, "startTime in event before batch start event, should be sent after GC start");
                     }
-                    // GCCpuTime is generated after GC is completed.
-                    if (!EventNames.GCCpuTime.equals(name)) {
+                    // GCCPUTime is generated after GC is completed.
+                    if (!EventNames.GCCPUTime.equals(name)) {
                         Asserts.assertLessThanOrEqual(event.getEndTime(), batchEndTime, "endTime in event after batch end event, should be sent before GC end");
                     }
                 }

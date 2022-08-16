@@ -441,7 +441,7 @@
       <setting name="enabled" control="gc-enabled-normal">true</setting>
     </event>
 
-    <event name="jdk.GCCpuTime">
+    <event name="jdk.GCCPUTime">
       <setting name="enabled" control="gc-enabled-normal">true</setting>
     </event>
 
