@@ -3473,11 +3473,9 @@ dnl VECTOR_SIGNUM($1,       $2         )
 dnl VECTOR_SIGNUM(datatype, reg_variant)
 define(`VECTOR_SIGNUM', `
 instruct vsignum$1(vReg dst, vReg src, vReg zero, vReg one, vReg vtmp, pRegGov pgtmp) %{
-  predicate(UseSVE > 0 &&
-            !n->as_Vector()->is_predicated_vector() &&
-            n->bottom_type()->is_vect()->element_basic_type() == T_`'TYPE2DATATYPE($1));
+  predicate(UseSVE > 0);
   match(Set dst (SignumV$1 src (Binary zero one)));
-  effect(TEMP_DEF dst, USE src, USE zero, USE one, TEMP vtmp, TEMP pgtmp);
+  effect(TEMP_DEF dst, TEMP vtmp, TEMP pgtmp);
   ins_cost(SVE_COST);
   format %{ "sve_signumV$1 $dst, $src\t# signum vector sve ($1)" %}
   ins_encode %{

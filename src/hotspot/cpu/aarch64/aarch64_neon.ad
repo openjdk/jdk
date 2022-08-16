@@ -6101,10 +6101,9 @@ instruct vreverseBytesX(vecX dst, vecX src) %{
 //---------------------------- Vector Signum --------------------------------
 
 instruct signumV2F(vecD dst, vecD src, vecD zero, vecD one) %{
-  predicate(UseSVE == 0 && n->as_Vector()->length() == 2 &&
-            n->bottom_type()->is_vect()->element_basic_type() == T_FLOAT);
+  predicate(UseSVE == 0);
   match(Set dst (SignumVF src (Binary zero one)));
-  effect(TEMP_DEF dst, USE src, USE zero, USE one);
+  effect(TEMP_DEF dst);
   ins_cost(INSN_COST);
   format %{ "signumVF $dst, T2S, $src\t# signum vector (2F)" %}
   ins_encode %{
@@ -6115,10 +6114,9 @@ instruct signumV2F(vecD dst, vecD src, vecD zero, vecD one) %{
 %}
 
 instruct signumV4F(vecX dst, vecX src, vecX zero, vecX one) %{
-  predicate(UseSVE == 0 && n->as_Vector()->length() == 4 &&
-            n->bottom_type()->is_vect()->element_basic_type() == T_FLOAT);
+  predicate(UseSVE == 0);
   match(Set dst (SignumVF src (Binary zero one)));
-  effect(TEMP_DEF dst, USE src, USE zero, USE one);
+  effect(TEMP_DEF dst);
   ins_cost(INSN_COST);
   format %{ "signumVF $dst, T4S, $src\t# signum vector (4F)" %}
   ins_encode %{
@@ -6129,10 +6127,9 @@ instruct signumV4F(vecX dst, vecX src, vecX zero, vecX one) %{
 %}
 
 instruct signumV2D(vecX dst, vecX src, vecX zero, vecX one) %{
-  predicate(UseSVE == 0 && n->as_Vector()->length() == 2 &&
-            n->bottom_type()->is_vect()->element_basic_type() == T_DOUBLE);
+  predicate(UseSVE == 0);
   match(Set dst (SignumVD src (Binary zero one)));
-  effect(TEMP_DEF dst, USE src, USE zero, USE one);
+  effect(TEMP_DEF dst);
   ins_cost(INSN_COST);
   format %{ "signumVD $dst, T2D, $src\t# signum vector (2D)" %}
   ins_encode %{

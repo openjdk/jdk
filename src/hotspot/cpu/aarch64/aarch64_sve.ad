@@ -5923,11 +5923,9 @@ instruct vreverseBytes_masked(vReg dst_src, pRegGov pg) %{
 //---------------------------- Vector Signum --------------------------------
 
 instruct vsignumF(vReg dst, vReg src, vReg zero, vReg one, vReg vtmp, pRegGov pgtmp) %{
-  predicate(UseSVE > 0 &&
-            !n->as_Vector()->is_predicated_vector() &&
-            n->bottom_type()->is_vect()->element_basic_type() == T_FLOAT);
+  predicate(UseSVE > 0);
   match(Set dst (SignumVF src (Binary zero one)));
-  effect(TEMP_DEF dst, USE src, USE zero, USE one, TEMP vtmp, TEMP pgtmp);
+  effect(TEMP_DEF dst, TEMP vtmp, TEMP pgtmp);
   ins_cost(SVE_COST);
   format %{ "sve_signumVF $dst, $src\t# signum vector sve (F)" %}
   ins_encode %{
@@ -5947,11 +5945,9 @@ instruct vsignumF(vReg dst, vReg src, vReg zero, vReg one, vReg vtmp, pRegGov pg
 %}
 
 instruct vsignumD(vReg dst, vReg src, vReg zero, vReg one, vReg vtmp, pRegGov pgtmp) %{
-  predicate(UseSVE > 0 &&
-            !n->as_Vector()->is_predicated_vector() &&
-            n->bottom_type()->is_vect()->element_basic_type() == T_DOUBLE);
+  predicate(UseSVE > 0);
   match(Set dst (SignumVD src (Binary zero one)));
-  effect(TEMP_DEF dst, USE src, USE zero, USE one, TEMP vtmp, TEMP pgtmp);
+  effect(TEMP_DEF dst, TEMP vtmp, TEMP pgtmp);
   ins_cost(SVE_COST);
   format %{ "sve_signumVD $dst, $src\t# signum vector sve (D)" %}
   ins_encode %{

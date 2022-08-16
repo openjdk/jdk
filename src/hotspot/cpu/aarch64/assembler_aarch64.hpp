@@ -3194,18 +3194,6 @@ public:
   INSN(sve_mls,   0b00000100, 0, 0b011); // multiply-subtract, writing addend: Zda = Zda + -Zn*Zm
 #undef INSN
 
-// SVE floating-point compare abs (predicated)
-#define INSN(NAME, op1, op2)                                                         \
-  void NAME(PRegister Pd, SIMD_RegVariant T, PRegister Pg,                           \
-            FloatRegister Zn, FloatRegister Zm) {                                    \
-    starti;                                                                          \
-    assert(T != B && T != Q, "invalid size");                                        \
-    f(op1, 31, 24), f(T, 23, 22), f(0, 21), rf(Zm, 16), f(0b11, 15, 14), f(op2, 13); \
-    pgrf(Pg, 10), rf(Zn, 5), f(1, 4), prf(Pd, 0);                                    \
-  }
-  INSN(sve_facgt, 0b01100101, 1);
-#undef INSN
-
 // SVE bitwise logical - unpredicated
 #define INSN(NAME, opc)                                              \
   void NAME(FloatRegister Zd, FloatRegister Zn, FloatRegister Zm) {  \
@@ -3525,18 +3513,22 @@ public:
   void NAME(Condition cond, PRegister Pd, SIMD_RegVariant T, PRegister Pg,             \
             FloatRegister Zn, FloatRegister Zm) {                                      \
     starti;                                                                            \
-    if (fp == 0) {                                                                     \
-      assert(T != Q, "invalid size");                                                  \
-    } else {                                                                           \
-      assert(T != B && T != Q, "invalid size");                                        \
-      assert(cond != HI && cond != HS, "invalid condition for fcm");                   \
+    assert(T != Q, "invalid size");                                                    \
+    if (fp == 1) {                                                                     \
+      assert(T != B, "invalid size");                                                  \
+      if (op2 == 0b01) {                                                               \
+        assert(cond != HI && cond != HS, "invalid condition for fcm");                 \
+      }                                                                                \
+      if (op2 == 0b11) {                                                               \
+        assert(cond == GT || cond == GE, "invalid condition for fac");                 \
+      }                                                                                \
     }                                                                                  \
     int cond_op;                                                                       \
     switch(cond) {                                                                     \
       case EQ: cond_op = (op2 << 2) | 0b10; break;                                     \
       case NE: cond_op = (op2 << 2) | 0b11; break;                                     \
-      case GE: cond_op = (op2 << 2) | 0b00; break;                                     \
-      case GT: cond_op = (op2 << 2) | 0b01; break;                                     \
+      case GE: cond_op = (op2 << 2) | ((op2 == 0b11) ? 0b01 : 0b00); break;            \
+      case GT: cond_op = (op2 << 2) | ((op2 == 0b11) ? 0b11 : 0b01); break;            \
       case HI: cond_op = 0b0001; break;                                                \
       case HS: cond_op = 0b0000; break;                                                \
       default:                                                                         \
@@ -3546,8 +3538,9 @@ public:
     pgrf(Pg, 10), rf(Zn, 5), f(cond_op & 1, 4), prf(Pd, 0);                            \
   }
 
-  INSN(sve_cmp, 0b00100100, 0b10, 0);
-  INSN(sve_fcm, 0b01100101, 0b01, 1);
+  INSN(sve_cmp, 0b00100100, 0b10, 0); // Integer compare vectors
+  INSN(sve_fcm, 0b01100101, 0b01, 1); // Floating-point compare vectors
+  INSN(sve_fac, 0b01100101, 0b11, 1); // Floating-point absolute compare vectors
 #undef INSN
 
 // SVE Integer Compare - Signed Immediate
