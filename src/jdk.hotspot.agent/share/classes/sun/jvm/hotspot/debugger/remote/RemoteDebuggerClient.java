@@ -237,41 +237,6 @@ public class RemoteDebuggerClient extends DebuggerBase implements JVMDebugger {
     }
   }
 
-  /** Need to override this to relax alignment checks on x86. */
-  public long readCInteger(long address, long numBytes, boolean isUnsigned)
-    throws UnmappedAddressException, UnalignedAddressException {
-    if (!unalignedAccessesOkay) {
-      utils.checkAlignment(address, numBytes);
-    } else {
-      // Only slightly relaxed semantics -- this is a hack, but is
-      // necessary on x86 where it seems the compiler is
-      // putting some global 64-bit data on 32-bit boundaries
-      if (numBytes == 8) {
-        utils.checkAlignment(address, 4);
-      } else {
-        utils.checkAlignment(address, numBytes);
-      }
-    }
-    byte[] data = readBytes(address, numBytes);
-    return utils.dataToCInteger(data, isUnsigned);
-  }
-
-  // Overridden from DebuggerBase because we need to relax alignment
-  // constraints on x86
-  public long readJLong(long address)
-    throws UnmappedAddressException, UnalignedAddressException {
-    // FIXME: allow this to be configurable. Undesirable to add a
-    // dependency on the runtime package here, though, since this
-    // package should be strictly underneath it.
-    if (unalignedAccessesOkay) {
-      utils.checkAlignment(address, jintSize);
-    } else {
-      utils.checkAlignment(address, jlongSize);
-    }
-    byte[] data = readBytes(address, jlongSize);
-    return utils.dataToJLong(data, jlongSize);
-  }
-
 
   //--------------------------------------------------------------------------------
   // Implementation of JVMDebugger interface

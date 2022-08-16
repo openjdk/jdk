@@ -176,6 +176,8 @@ public abstract class DebuggerBase implements Debugger {
   /** May be called by subclasses if desired to initialize the page
       cache but may not be overridden */
   protected final void initCache(long pageSize, long maxNumPages) {
+      pageSize = pageSize / 512;
+      maxNumPages = maxNumPages * 512;
     cache = new PageCache(pageSize, maxNumPages, new Fetcher());
     if (machDesc != null) {
       bigEndian = machDesc.isBigEndian();
