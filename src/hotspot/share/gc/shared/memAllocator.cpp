@@ -60,6 +60,9 @@ class MemAllocator::Allocation: StackObj {
   void notify_allocation_jfr_sampler();
   void notify_allocation_dtrace_sampler();
   void check_for_bad_heap_word_value() const;
+#ifdef ASSERT
+  void check_for_valid_allocation_state() const;
+#endif
 
   class PreserveObj;
 
@@ -137,11 +140,11 @@ bool MemAllocator::Allocation::check_out_of_memory() {
 }
 
 void MemAllocator::Allocation::verify_before() {
-  // How to choose between a pending exception and a potential
-  // OutOfMemoryError?  Don't allow pending exceptions.
-  // This is a VM policy failure, so how do we exhaustively test it?
-  assert(!_thread->has_pending_exception(),
-         "shouldn't be allocating with pending exception");
+  // Clear unhandled oops for memory allocation.  Memory allocation might
+  // not take out a lock if from tlab, so clear here.
+  JavaThread* THREAD = _thread; // For exception macros.
+  assert(!HAS_PENDING_EXCEPTION, "Should not allocate with exception pending");
+  debug_only(check_for_valid_allocation_state());
   assert(!Universe::heap()->is_gc_active(), "Allocation during gc not allowed");
 }
 
@@ -160,6 +163,18 @@ void MemAllocator::Allocation::check_for_bad_heap_word_value() const {
     }
   }
 }
+
+#ifdef ASSERT
+void MemAllocator::Allocation::check_for_valid_allocation_state() const {
+  // How to choose between a pending exception and a potential
+  // OutOfMemoryError?  Don't allow pending exceptions.
+  // This is a VM policy failure, so how do we exhaustively test it?
+  assert(!_thread->has_pending_exception(),
+         "shouldn't be allocating with pending exception");
+  // Allocation of an oop can always invoke a safepoint.
+  JavaThread::cast(_thread)->check_for_valid_safepoint_state();
+}
+#endif
 
 void MemAllocator::Allocation::notify_allocation_jvmti_sampler() {
   // support for JVMTI VMObjectAlloc event (no-op if not enabled)

@@ -1336,6 +1336,12 @@ stackChunkOop Freeze<ConfigT>::allocate_chunk(size_t stack_size) {
   JavaThread* current = _preempt ? JavaThread::current() : _thread;
   assert(current == JavaThread::current(), "should be current");
 
+  // Allocate the chunk.
+  //
+  // This might safepoint while allocating, but all safepointing due to
+  // instrumentation have been deferred. This property is important for
+  // some GCs, as this ensures that the allocated object is in the young
+  // generation / newly allocated memory.
   StackChunkAllocator allocator(klass, size_in_words, current, stack_size, _cont, _jvmti_event_collector);
   stackChunkOop chunk = allocator.allocate();
 
@@ -1379,11 +1385,13 @@ stackChunkOop Freeze<ConfigT>::allocate_chunk(size_t stack_size) {
     chunk->set_cont_raw<typename ConfigT::OopT>(_cont.continuation());
 
     if (!allocator.took_slow_path()) {
+      // Guaranteed to be in young gen / newly allocated memory
       assert(!chunk->requires_barriers(), "Unfamiliar GC requires barriers on TLAB allocation");
       _barriers = false;
     } else {
+      // Some GCs could put direct allocations in old gen for slow-path
+      // allocations; need to expliticly check if that was the case.
       _barriers = chunk->requires_barriers();
-
     }
   }
 
