@@ -24,10 +24,14 @@
 package org.openjdk.bench.vm.compiler;
 
 import java.util.Random;
+import java.util.concurrent.TimeUnit;
 
 import org.openjdk.jmh.annotations.*;
 
 @State(Scope.Benchmark)
+@Warmup(iterations = 4, time = 2, timeUnit = TimeUnit.SECONDS)
+@Measurement(iterations = 4, time = 2, timeUnit = TimeUnit.SECONDS)
+@Fork(value = 3)
 public class IndexVector {
     @Param({"65536"})
     private int count;

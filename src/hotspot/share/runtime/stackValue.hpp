@@ -28,6 +28,7 @@
 #include "code/location.hpp"
 #include "runtime/handles.hpp"
 
+class frame;
 class RegisterMap;
 class ScopeValue;
 

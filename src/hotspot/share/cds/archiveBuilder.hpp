@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -200,6 +200,7 @@ private:
   SourceObjList _rw_src_objs;                 // objs to put in rw region
   SourceObjList _ro_src_objs;                 // objs to put in ro region
   ResizeableResourceHashtable<address, SourceObjInfo, ResourceObj::C_HEAP, mtClassShared> _src_obj_table;
+  ResizeableResourceHashtable<address, address, ResourceObj::C_HEAP, mtClassShared> _dumped_to_src_obj_table;
   GrowableArray<Klass*>* _klasses;
   GrowableArray<Symbol*>* _symbols;
   GrowableArray<SpecialRefInfo>* _special_refs;
@@ -383,7 +384,17 @@ public:
   void write_region(FileMapInfo* mapinfo, int region_idx, DumpRegion* dump_region,
                     bool read_only,  bool allow_exec);
 
+  // + When creating a CDS archive, we first load Java classes and create metadata
+  //   objects as usual. These are call "source" objects.
+  // + We then copy the source objects into the output buffer at "dumped addresses".
+  //
+  // The following functions translate between these two (non-overlapping) spaces.
+  // (The API should be renamed to be less confusing!)
   address get_dumped_addr(address src_obj) const;
+  address get_src_obj(address dumped_addr) const;
+  template <typename T> T get_src_obj(T dumped_addr) const {
+    return (T)get_src_obj((address)dumped_addr);
+  }
 
   // All klasses and symbols that will be copied into the archive
   GrowableArray<Klass*>*  klasses() const { return _klasses; }

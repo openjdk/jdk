@@ -255,7 +255,8 @@ source %{
 #define __ _masm.
 
 // How to find the high register of a Long pair, given the low register
-#define   HIGH_FROM_LOW(x) ((x)+2)
+#define   HIGH_FROM_LOW(x) (as_Register((x)->encoding()+2))
+#define   HIGH_FROM_LOW_ENC(x) ((x)+2)
 
 // These masks are used to provide 128-bit aligned bitmasks to the XMM
 // instructions, to allow sign-masking or sign-bit flipping.  They allow
@@ -1650,7 +1651,7 @@ encode %{
     int con = (int)($imm$$constant >> 32); // Throw away bottom bits
     emit_opcode(cbuf, ((con >= -128) && (con <= 127)) ? ($primary | 0x02) : $primary);
     // Emit r/m byte with tertiary opcode, after primary opcode.
-    emit_rm(cbuf, 0x3, $tertiary, HIGH_FROM_LOW($dst$$reg));
+    emit_rm(cbuf, 0x3, $tertiary, HIGH_FROM_LOW_ENC($dst$$reg));
     if ((con >= -128) && (con <= 127)) emit_d8 (cbuf,con);
     else                               emit_d32(cbuf,con);
   %}
@@ -1661,7 +1662,7 @@ encode %{
 
   enc_class bswap_long_bytes(eRegL dst) %{ // BSWAP
     int destlo = $dst$$reg;
-    int desthi = HIGH_FROM_LOW(destlo);
+    int desthi = HIGH_FROM_LOW_ENC(destlo);
     // bswap lo
     emit_opcode(cbuf, 0x0F);
     emit_cc(cbuf, 0xC8, destlo);
@@ -1946,7 +1947,7 @@ encode %{
 
   enc_class RegReg_Hi(eRegL dst, eRegL src) %{    // RegReg(Many)
     $$$emit8$secondary;
-    emit_rm(cbuf, 0x3, HIGH_FROM_LOW($dst$$reg), HIGH_FROM_LOW($src$$reg));
+    emit_rm(cbuf, 0x3, HIGH_FROM_LOW_ENC($dst$$reg), HIGH_FROM_LOW_ENC($src$$reg));
   %}
 
   enc_class RegReg_Lo2(eRegL dst, eRegL src) %{    // RegReg(Many)
@@ -1954,11 +1955,11 @@ encode %{
   %}
 
   enc_class RegReg_Hi2(eRegL dst, eRegL src) %{    // RegReg(Many)
-    emit_rm(cbuf, 0x3, HIGH_FROM_LOW($dst$$reg), HIGH_FROM_LOW($src$$reg));
+    emit_rm(cbuf, 0x3, HIGH_FROM_LOW_ENC($dst$$reg), HIGH_FROM_LOW_ENC($src$$reg));
   %}
 
   enc_class RegReg_HiLo( eRegL src, rRegI dst ) %{
-    emit_rm(cbuf, 0x3, $dst$$reg, HIGH_FROM_LOW($src$$reg));
+    emit_rm(cbuf, 0x3, $dst$$reg, HIGH_FROM_LOW_ENC($src$$reg));
   %}
 
   enc_class Con32 (immI src) %{    // Con32(storeImmI)
@@ -2083,7 +2084,7 @@ encode %{
   %}
 
   enc_class RegMem_Hi(eRegL ereg, memory mem) %{    // emit_reg_mem
-    int reg_encoding = HIGH_FROM_LOW($ereg$$reg);  // Hi register of pair, computed from lo
+    int reg_encoding = HIGH_FROM_LOW_ENC($ereg$$reg);  // Hi register of pair, computed from lo
     int base  = $mem$$base;
     int index = $mem$$index;
     int scale = $mem$$scale;
@@ -2094,8 +2095,8 @@ encode %{
 
   enc_class move_long_small_shift( eRegL dst, immI_1_31 cnt ) %{
     int r1, r2;
-    if( $tertiary == 0xA4 ) { r1 = $dst$$reg;  r2 = HIGH_FROM_LOW($dst$$reg); }
-    else                    { r2 = $dst$$reg;  r1 = HIGH_FROM_LOW($dst$$reg); }
+    if( $tertiary == 0xA4 ) { r1 = $dst$$reg;  r2 = HIGH_FROM_LOW_ENC($dst$$reg); }
+    else                    { r2 = $dst$$reg;  r1 = HIGH_FROM_LOW_ENC($dst$$reg); }
     emit_opcode(cbuf,0x0F);
     emit_opcode(cbuf,$tertiary);
     emit_rm(cbuf, 0x3, r1, r2);
@@ -2107,21 +2108,21 @@ encode %{
 
   enc_class move_long_big_shift_sign( eRegL dst, immI_32_63 cnt ) %{
     emit_opcode( cbuf, 0x8B ); // Move
-    emit_rm(cbuf, 0x3, $dst$$reg, HIGH_FROM_LOW($dst$$reg));
+    emit_rm(cbuf, 0x3, $dst$$reg, HIGH_FROM_LOW_ENC($dst$$reg));
     if( $cnt$$constant > 32 ) { // Shift, if not by zero
       emit_d8(cbuf,$primary);
       emit_rm(cbuf, 0x3, $secondary, $dst$$reg);
       emit_d8(cbuf,$cnt$$constant-32);
     }
     emit_d8(cbuf,$primary);
-    emit_rm(cbuf, 0x3, $secondary, HIGH_FROM_LOW($dst$$reg));
+    emit_rm(cbuf, 0x3, $secondary, HIGH_FROM_LOW_ENC($dst$$reg));
     emit_d8(cbuf,31);
   %}
 
   enc_class move_long_big_shift_clr( eRegL dst, immI_32_63 cnt ) %{
     int r1, r2;
-    if( $secondary == 0x5 ) { r1 = $dst$$reg;  r2 = HIGH_FROM_LOW($dst$$reg); }
-    else                    { r2 = $dst$$reg;  r1 = HIGH_FROM_LOW($dst$$reg); }
+    if( $secondary == 0x5 ) { r1 = $dst$$reg;  r2 = HIGH_FROM_LOW_ENC($dst$$reg); }
+    else                    { r2 = $dst$$reg;  r1 = HIGH_FROM_LOW_ENC($dst$$reg); }
 
     emit_opcode( cbuf, 0x8B ); // Move r1,r2
     emit_rm(cbuf, 0x3, r1, r2);
@@ -2265,7 +2266,7 @@ encode %{
     emit_d8(cbuf, 0x04);
     // MOV    $dst.hi,$dst.lo
     emit_opcode( cbuf, 0x8B );
-    emit_rm(cbuf, 0x3, HIGH_FROM_LOW($dst$$reg), $dst$$reg );
+    emit_rm(cbuf, 0x3, HIGH_FROM_LOW_ENC($dst$$reg), $dst$$reg );
     // CLR    $dst.lo
     emit_opcode(cbuf, 0x33);
     emit_rm(cbuf, 0x3, $dst$$reg, $dst$$reg);
@@ -2273,7 +2274,7 @@ encode %{
     // SHLD   $dst.hi,$dst.lo,$shift
     emit_opcode(cbuf,0x0F);
     emit_opcode(cbuf,0xA5);
-    emit_rm(cbuf, 0x3, $dst$$reg, HIGH_FROM_LOW($dst$$reg));
+    emit_rm(cbuf, 0x3, $dst$$reg, HIGH_FROM_LOW_ENC($dst$$reg));
     // SHL    $dst.lo,$shift"
     emit_opcode(cbuf,0xD3);
     emit_rm(cbuf, 0x3, 0x4, $dst$$reg );
@@ -2289,18 +2290,18 @@ encode %{
     emit_d8(cbuf, 0x04);
     // MOV    $dst.lo,$dst.hi
     emit_opcode( cbuf, 0x8B );
-    emit_rm(cbuf, 0x3, $dst$$reg, HIGH_FROM_LOW($dst$$reg) );
+    emit_rm(cbuf, 0x3, $dst$$reg, HIGH_FROM_LOW_ENC($dst$$reg) );
     // CLR    $dst.hi
     emit_opcode(cbuf, 0x33);
-    emit_rm(cbuf, 0x3, HIGH_FROM_LOW($dst$$reg), HIGH_FROM_LOW($dst$$reg));
+    emit_rm(cbuf, 0x3, HIGH_FROM_LOW_ENC($dst$$reg), HIGH_FROM_LOW_ENC($dst$$reg));
 // small:
     // SHRD   $dst.lo,$dst.hi,$shift
     emit_opcode(cbuf,0x0F);
     emit_opcode(cbuf,0xAD);
-    emit_rm(cbuf, 0x3, HIGH_FROM_LOW($dst$$reg), $dst$$reg);
+    emit_rm(cbuf, 0x3, HIGH_FROM_LOW_ENC($dst$$reg), $dst$$reg);
     // SHR    $dst.hi,$shift"
     emit_opcode(cbuf,0xD3);
-    emit_rm(cbuf, 0x3, 0x5, HIGH_FROM_LOW($dst$$reg) );
+    emit_rm(cbuf, 0x3, 0x5, HIGH_FROM_LOW_ENC($dst$$reg) );
   %}
 
   enc_class shift_right_arith_long( eRegL dst, eCXRegI shift ) %{
@@ -2313,19 +2314,19 @@ encode %{
     emit_d8(cbuf, 0x05);
     // MOV    $dst.lo,$dst.hi
     emit_opcode( cbuf, 0x8B );
-    emit_rm(cbuf, 0x3, $dst$$reg, HIGH_FROM_LOW($dst$$reg) );
+    emit_rm(cbuf, 0x3, $dst$$reg, HIGH_FROM_LOW_ENC($dst$$reg) );
     // SAR    $dst.hi,31
     emit_opcode(cbuf, 0xC1);
-    emit_rm(cbuf, 0x3, 7, HIGH_FROM_LOW($dst$$reg) );
+    emit_rm(cbuf, 0x3, 7, HIGH_FROM_LOW_ENC($dst$$reg) );
     emit_d8(cbuf, 0x1F );
 // small:
     // SHRD   $dst.lo,$dst.hi,$shift
     emit_opcode(cbuf,0x0F);
     emit_opcode(cbuf,0xAD);
-    emit_rm(cbuf, 0x3, HIGH_FROM_LOW($dst$$reg), $dst$$reg);
+    emit_rm(cbuf, 0x3, HIGH_FROM_LOW_ENC($dst$$reg), $dst$$reg);
     // SAR    $dst.hi,$shift"
     emit_opcode(cbuf,0xD3);
-    emit_rm(cbuf, 0x3, 0x7, HIGH_FROM_LOW($dst$$reg) );
+    emit_rm(cbuf, 0x3, 0x7, HIGH_FROM_LOW_ENC($dst$$reg) );
   %}
 
 
@@ -2655,7 +2656,7 @@ encode %{
   enc_class cmpl_test( eRegL src1, eRegL src2 ) %{
     // CMP    $src1.hi,$src2.hi
     emit_opcode( cbuf, 0x3B );
-    emit_rm(cbuf, 0x3, HIGH_FROM_LOW($src1$$reg), HIGH_FROM_LOW($src2$$reg) );
+    emit_rm(cbuf, 0x3, HIGH_FROM_LOW_ENC($src1$$reg), HIGH_FROM_LOW_ENC($src2$$reg) );
     // JNE,s  done
     emit_opcode(cbuf,0x75);
     emit_d8(cbuf, 2 );
@@ -2671,16 +2672,16 @@ encode %{
     int src_encoding = $src$$reg;
     encode_Copy( cbuf, dst_encoding  , src_encoding );
     // mov $dst.hi,$src
-    encode_Copy( cbuf, HIGH_FROM_LOW(dst_encoding), src_encoding );
+    encode_Copy( cbuf, HIGH_FROM_LOW_ENC(dst_encoding), src_encoding );
     // sar $dst.hi,31
     emit_opcode( cbuf, 0xC1 );
-    emit_rm(cbuf, 0x3, 7, HIGH_FROM_LOW(dst_encoding) );
+    emit_rm(cbuf, 0x3, 7, HIGH_FROM_LOW_ENC(dst_encoding) );
     emit_d8(cbuf, 0x1F );
   %}
 
   enc_class convert_long_double( eRegL src ) %{
     // push $src.hi
-    emit_opcode(cbuf, 0x50+HIGH_FROM_LOW($src$$reg));
+    emit_opcode(cbuf, 0x50+HIGH_FROM_LOW_ENC($src$$reg));
     // push $src.lo
     emit_opcode(cbuf, 0x50+$src$$reg  );
     // fild 64-bits at [SP]
@@ -2710,7 +2711,7 @@ encode %{
   // this version doesn't have add sp, 8
   enc_class convert_long_double2( eRegL src ) %{
     // push $src.hi
-    emit_opcode(cbuf, 0x50+HIGH_FROM_LOW($src$$reg));
+    emit_opcode(cbuf, 0x50+HIGH_FROM_LOW_ENC($src$$reg));
     // push $src.lo
     emit_opcode(cbuf, 0x50+$src$$reg  );
     // fild 64-bits at [SP]
@@ -2742,22 +2743,22 @@ encode %{
     // IMUL   $tmp,EDX
     emit_opcode( cbuf, 0x0F );
     emit_opcode( cbuf, 0xAF );
-    emit_rm( cbuf, 0x3, $tmp$$reg, HIGH_FROM_LOW($dst$$reg) );
+    emit_rm( cbuf, 0x3, $tmp$$reg, HIGH_FROM_LOW_ENC($dst$$reg) );
     // MOV    EDX,$src.hi
-    encode_Copy( cbuf, HIGH_FROM_LOW($dst$$reg), HIGH_FROM_LOW($src$$reg) );
+    encode_Copy( cbuf, HIGH_FROM_LOW_ENC($dst$$reg), HIGH_FROM_LOW_ENC($src$$reg) );
     // IMUL   EDX,EAX
     emit_opcode( cbuf, 0x0F );
     emit_opcode( cbuf, 0xAF );
-    emit_rm( cbuf, 0x3, HIGH_FROM_LOW($dst$$reg), $dst$$reg );
+    emit_rm( cbuf, 0x3, HIGH_FROM_LOW_ENC($dst$$reg), $dst$$reg );
     // ADD    $tmp,EDX
     emit_opcode( cbuf, 0x03 );
-    emit_rm( cbuf, 0x3, $tmp$$reg, HIGH_FROM_LOW($dst$$reg) );
+    emit_rm( cbuf, 0x3, $tmp$$reg, HIGH_FROM_LOW_ENC($dst$$reg) );
     // MUL   EDX:EAX,$src.lo
     emit_opcode( cbuf, 0xF7 );
     emit_rm( cbuf, 0x3, 0x4, $src$$reg );
     // ADD    EDX,ESI
     emit_opcode( cbuf, 0x03 );
-    emit_rm( cbuf, 0x3, HIGH_FROM_LOW($dst$$reg), $tmp$$reg );
+    emit_rm( cbuf, 0x3, HIGH_FROM_LOW_ENC($dst$$reg), $tmp$$reg );
   %}
 
   enc_class long_multiply_con( eADXRegL dst, immL_127 src, rRegI tmp ) %{
@@ -2765,7 +2766,7 @@ encode %{
     //             hi(result) = hi(src * y_lo) + lo(src * y_hi)
     // IMUL   $tmp,EDX,$src
     emit_opcode( cbuf, 0x6B );
-    emit_rm( cbuf, 0x3, $tmp$$reg, HIGH_FROM_LOW($dst$$reg) );
+    emit_rm( cbuf, 0x3, $tmp$$reg, HIGH_FROM_LOW_ENC($dst$$reg) );
     emit_d8( cbuf, (int)$src$$constant );
     // MOV    EDX,$src
     emit_opcode(cbuf, 0xB8 + EDX_enc);
@@ -2780,11 +2781,11 @@ encode %{
 
   enc_class long_div( eRegL src1, eRegL src2 ) %{
     // PUSH src1.hi
-    emit_opcode(cbuf, HIGH_FROM_LOW(0x50+$src1$$reg) );
+    emit_opcode(cbuf, HIGH_FROM_LOW_ENC(0x50+$src1$$reg) );
     // PUSH src1.lo
     emit_opcode(cbuf,               0x50+$src1$$reg  );
     // PUSH src2.hi
-    emit_opcode(cbuf, HIGH_FROM_LOW(0x50+$src2$$reg) );
+    emit_opcode(cbuf, HIGH_FROM_LOW_ENC(0x50+$src2$$reg) );
     // PUSH src2.lo
     emit_opcode(cbuf,               0x50+$src2$$reg  );
     // CALL directly to the runtime
@@ -2801,11 +2802,11 @@ encode %{
 
   enc_class long_mod( eRegL src1, eRegL src2 ) %{
     // PUSH src1.hi
-    emit_opcode(cbuf, HIGH_FROM_LOW(0x50+$src1$$reg) );
+    emit_opcode(cbuf, HIGH_FROM_LOW_ENC(0x50+$src1$$reg) );
     // PUSH src1.lo
     emit_opcode(cbuf,               0x50+$src1$$reg  );
     // PUSH src2.hi
-    emit_opcode(cbuf, HIGH_FROM_LOW(0x50+$src2$$reg) );
+    emit_opcode(cbuf, HIGH_FROM_LOW_ENC(0x50+$src2$$reg) );
     // PUSH src2.lo
     emit_opcode(cbuf,               0x50+$src2$$reg  );
     // CALL directly to the runtime
@@ -2826,7 +2827,7 @@ encode %{
     emit_rm(cbuf, 0x3, $tmp$$reg, $src$$reg);
     // OR    $tmp,$src.hi
     emit_opcode(cbuf, 0x0B);
-    emit_rm(cbuf, 0x3, $tmp$$reg, HIGH_FROM_LOW($src$$reg));
+    emit_rm(cbuf, 0x3, $tmp$$reg, HIGH_FROM_LOW_ENC($src$$reg));
   %}
 
   enc_class long_cmp_flags1( eRegL src1, eRegL src2 ) %{
@@ -2838,7 +2839,7 @@ encode %{
     emit_d8(cbuf,2);
     // CMP    $src1.hi,$src2.hi
     emit_opcode( cbuf, 0x3B );
-    emit_rm(cbuf, 0x3, HIGH_FROM_LOW($src1$$reg), HIGH_FROM_LOW($src2$$reg) );
+    emit_rm(cbuf, 0x3, HIGH_FROM_LOW_ENC($src1$$reg), HIGH_FROM_LOW_ENC($src2$$reg) );
   %}
 
   enc_class long_cmp_flags2( eRegL src1, eRegL src2, rRegI tmp ) %{
@@ -2847,10 +2848,10 @@ encode %{
     emit_rm(cbuf, 0x3, $src1$$reg, $src2$$reg );
     // MOV    $tmp,$src1.hi
     emit_opcode( cbuf, 0x8B );
-    emit_rm(cbuf, 0x3, $tmp$$reg, HIGH_FROM_LOW($src1$$reg) );
+    emit_rm(cbuf, 0x3, $tmp$$reg, HIGH_FROM_LOW_ENC($src1$$reg) );
     // SBB   $tmp,$src2.hi\t! Compute flags for long compare
     emit_opcode( cbuf, 0x1B );
-    emit_rm(cbuf, 0x3, $tmp$$reg, HIGH_FROM_LOW($src2$$reg) );
+    emit_rm(cbuf, 0x3, $tmp$$reg, HIGH_FROM_LOW_ENC($src2$$reg) );
   %}
 
   enc_class long_cmp_flags3( eRegL src, rRegI tmp ) %{
@@ -2862,17 +2863,17 @@ encode %{
     emit_rm(cbuf, 0x3, $tmp$$reg, $src$$reg );
     // SBB    $tmp,$src.hi
     emit_opcode( cbuf, 0x1B );
-    emit_rm(cbuf, 0x3, $tmp$$reg, HIGH_FROM_LOW($src$$reg) );
+    emit_rm(cbuf, 0x3, $tmp$$reg, HIGH_FROM_LOW_ENC($src$$reg) );
   %}
 
  // Sniff, sniff... smells like Gnu Superoptimizer
   enc_class neg_long( eRegL dst ) %{
     emit_opcode(cbuf,0xF7);    // NEG hi
-    emit_rm    (cbuf,0x3, 0x3, HIGH_FROM_LOW($dst$$reg));
+    emit_rm    (cbuf,0x3, 0x3, HIGH_FROM_LOW_ENC($dst$$reg));
     emit_opcode(cbuf,0xF7);    // NEG lo
     emit_rm    (cbuf,0x3, 0x3,               $dst$$reg );
     emit_opcode(cbuf,0x83);    // SBB hi,0
-    emit_rm    (cbuf,0x3, 0x3, HIGH_FROM_LOW($dst$$reg));
+    emit_rm    (cbuf,0x3, 0x3, HIGH_FROM_LOW_ENC($dst$$reg));
     emit_d8    (cbuf,0 );
   %}
 

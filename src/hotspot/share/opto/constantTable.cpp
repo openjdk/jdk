@@ -36,7 +36,30 @@ bool ConstantTable::Constant::operator==(const Constant& other) {
   if (type()          != other.type()         )  return false;
   if (can_be_reused() != other.can_be_reused())  return false;
   if (is_array() || other.is_array()) {
-    return is_array() && other.is_array() && _v._array == other._v._array;
+    if (is_array() != other.is_array() ||
+        get_array()->length() != other.get_array()->length()) {
+      return false;
+    }
+    for (int i = 0; i < get_array()->length(); i++) {
+      jvalue ele1 = get_array()->at(i);
+      jvalue ele2 = other.get_array()->at(i);
+      bool is_eq;
+      switch (type()) {
+        case T_BOOLEAN: is_eq = ele1.z == ele2.z; break;
+        case T_BYTE:    is_eq = ele1.b == ele2.b; break;
+        case T_CHAR:    is_eq = ele1.c == ele2.c; break;
+        case T_SHORT:   is_eq = ele1.s == ele2.s; break;
+        case T_INT:     is_eq = ele1.i == ele2.i; break;
+        case T_LONG:    is_eq = ele1.j == ele2.j; break;
+        case T_FLOAT:   is_eq = jint_cast(ele1.f)  == jint_cast(ele2.f);  break;
+        case T_DOUBLE:  is_eq = jlong_cast(ele1.d) == jlong_cast(ele2.d); break;
+        default: ShouldNotReachHere(); is_eq = false;
+      }
+      if (!is_eq) {
+        return false;
+      }
+    }
+    return true;
   }
   // For floating point values we compare the bit pattern.
   switch (type()) {
@@ -104,7 +127,7 @@ void ConstantTable::calculate_offsets_and_size() {
     // Align offset for type.
     int typesize = constant_size(con);
     assert(typesize <= 8 || con->is_array(), "sanity");
-    offset = align_up(offset, MIN2(round_up_power_of_2(typesize), 8));
+    offset = align_up(offset, con->alignment());
     con->set_offset(offset);   // set constant's offset
 
     if (con->type() == T_VOID) {
@@ -127,7 +150,7 @@ bool ConstantTable::emit(CodeBuffer& cb) const {
     Constant con = _constants.at(i);
     address constant_addr = NULL;
     if (con.is_array()) {
-      constant_addr = _masm.array_constant(con.type(), con.get_array());
+      constant_addr = _masm.array_constant(con.type(), con.get_array(), con.alignment());
     } else {
       switch (con.type()) {
       case T_INT:    constant_addr = _masm.int_constant(   con.get_jint()   ); break;
@@ -229,10 +252,16 @@ ConstantTable::Constant ConstantTable::add(Metadata* metadata) {
   return con;
 }
 
-ConstantTable::Constant ConstantTable::add(MachConstantNode* n, BasicType bt, GrowableArray<jvalue>* array) {
-  Constant con(bt, array);
+ConstantTable::Constant ConstantTable::add(MachConstantNode* n, BasicType bt,
+                                           GrowableArray<jvalue>* array, int alignment) {
+  Constant con(bt, array, alignment);
   add(con);
   return con;
+}
+
+ConstantTable::Constant ConstantTable::add(MachConstantNode* n, BasicType bt,
+                                           GrowableArray<jvalue>* array) {
+  return add(n, bt, array, array->length() * type2aelembytes(bt));
 }
 
 ConstantTable::Constant ConstantTable::add(MachConstantNode* n, MachOper* oper) {
