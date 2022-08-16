@@ -218,21 +218,25 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
             // nothing to inherit
             return Map.of(tag, e);
         }
-        var input = new DocFinder.Input(writer.configuration().utils, e, this, new DocFinder.DocTreeInfo(tag, e), false, true);
-        var output = DocFinder.search(writer.configuration(), input);
-        if (output.tagList.size() <= 1) {
+        var ch = writer.configuration().utils.getCommentHelper(e);
+        TypeMirror exception = ch.getException(tag).asType();
+        var r = DocFinder.search(e, false, m -> extract(m, exception, writer.configuration().utils), writer.configuration());
+        if (r.isEmpty()) {
+            return Map.of(tag, e);
+        }
+        var output = r.get();
+        if (output.throwsTrees.size() <= 1) {
             // outer code will handle this trivial case of inheritance
             return Map.of(tag, e);
         }
         if (tag.getDescription().size() > 1) {
             // there's more to description than just {@inheritDoc}
             // it's likely a documentation error
-            var ch = writer.configuration().utils.getCommentHelper(e);
             writer.configuration().getMessages().error(ch.getDocTreePath(tag), "doclet.inheritDocWithinInappropriateTag");
             return Map.of();
         }
         Map<ThrowsTree, ExecutableElement> tags = new LinkedHashMap<>();
-        output.tagList.forEach(t -> tags.put((ThrowsTree) t, (ExecutableElement) output.holder));
+        output.throwsTrees.forEach(t -> tags.put(t, output.method));
         return tags;
     }
 
