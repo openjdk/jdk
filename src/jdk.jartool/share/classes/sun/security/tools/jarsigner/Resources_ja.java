@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,6 +117,8 @@ public class Resources_ja extends java.util.ListResourceBundle {
                 "[-providerClass <class>     \u5B8C\u5168\u4FEE\u98FE\u30AF\u30E9\u30B9\u540D\u3067\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u30FB\u30D7\u30ED\u30D0\u30A4\u30C0\u3092\u8FFD\u52A0\u3059\u308B"},
         {".providerArg.option.2",
                 "  [-providerArg <arg>]] ... -providerClass\u306E\u5F15\u6570\u3092\u69CB\u6210\u3059\u308B"},
+        {".providerPath.option",
+                "[-providerPath <list>]      \u30D7\u30ED\u30D0\u30A4\u30C0\u30FB\u30AF\u30E9\u30B9\u30D1\u30B9"},
         {".strict.treat.warnings.as.errors",
                 "[-strict]                   \u8B66\u544A\u3092\u30A8\u30E9\u30FC\u3068\u3057\u3066\u51E6\u7406"},
         {".conf.url.specify.a.pre.configured.options.file",
@@ -172,10 +174,14 @@ public class Resources_ja extends java.util.ListResourceBundle {
         {"history.nobk", "- \u7F72\u540D\u95A2\u9023\u30D5\u30A1\u30A4\u30EBMETA-INF/%s.SF\u306E\u30D6\u30ED\u30C3\u30AF\u30FB\u30D5\u30A1\u30A4\u30EB\u304C\u3042\u308A\u307E\u305B\u3093"},
 
         {"with.weak", "%s (\u5F31)"},
+        {"with.algparams.weak", "%2$s\u3092\u4F7F\u7528\u3057\u305F%1$s (\u5F31)"},
         {"with.disabled", "%s (\u7121\u52B9)"},
+        {"with.algparams.disabled", "%2$s\u3092\u4F7F\u7528\u3057\u305F%1$s (\u7121\u52B9)"},
         {"key.bit", "%d\u30D3\u30C3\u30C8\u30FB\u30AD\u30FC"},
         {"key.bit.weak", "%d\u30D3\u30C3\u30C8\u30FB\u30AD\u30FC(\u5F31)"},
+        {"key.bit.eccurve.weak", "%1$d\u30D3\u30C3\u30C8%2$s\u30AD\u30FC(\u5F31)"},
         {"key.bit.disabled", "%d\u30D3\u30C3\u30C8\u30FB\u30AD\u30FC (\u7121\u52B9)"},
+        {"key.bit.eccurve.disabled", "%1$d\u30D3\u30C3\u30C8%2$s\u30AD\u30FC(\u7121\u52B9)"},
         {"unknown.size", "\u4E0D\u660E\u30B5\u30A4\u30BA"},
         {"extra.attributes.detected", "POSIX\u30D5\u30A1\u30A4\u30EB\u6A29\u9650\u307E\u305F\u306Fsymlink(\u3042\u308B\u3044\u306F\u305D\u306E\u4E21\u65B9)\u306E\u5C5E\u6027\u304C\u691C\u51FA\u3055\u308C\u307E\u3057\u305F\u3002\u7F72\u540D\u4E2D\u306F\u3053\u308C\u3089\u306E\u5C5E\u6027\u306F\u7121\u8996\u3055\u308C\u3001\u7F72\u540D\u306B\u3088\u3063\u3066\u4FDD\u8B77\u3055\u308C\u307E\u305B\u3093\u3002"},
 
