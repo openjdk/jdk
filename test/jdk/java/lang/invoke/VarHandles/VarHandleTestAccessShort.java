@@ -483,6 +483,7 @@ public class VarHandleTestAccessShort extends VarHandleBaseTest {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
                 success = vh.weakCompareAndSetPlain(recv, (short)0x0123, (short)0x4567);
+                if (!success) weakDelay(c);
             }
             assertEquals(success, true, "weakCompareAndSetPlain short");
             short x = (short) vh.get(recv);
@@ -493,6 +494,7 @@ public class VarHandleTestAccessShort extends VarHandleBaseTest {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
                 success = vh.weakCompareAndSetAcquire(recv, (short)0x4567, (short)0x0123);
+                if (!success) weakDelay(c);
             }
             assertEquals(success, true, "weakCompareAndSetAcquire short");
             short x = (short) vh.get(recv);
@@ -503,6 +505,7 @@ public class VarHandleTestAccessShort extends VarHandleBaseTest {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
                 success = vh.weakCompareAndSetRelease(recv, (short)0x0123, (short)0x4567);
+                if (!success) weakDelay(c);
             }
             assertEquals(success, true, "weakCompareAndSetRelease short");
             short x = (short) vh.get(recv);
@@ -513,6 +516,7 @@ public class VarHandleTestAccessShort extends VarHandleBaseTest {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
                 success = vh.weakCompareAndSet(recv, (short)0x4567, (short)0x0123);
+                if (!success) weakDelay(c);
             }
             assertEquals(success, true, "weakCompareAndSet short");
             short x = (short) vh.get(recv);
@@ -759,6 +763,7 @@ public class VarHandleTestAccessShort extends VarHandleBaseTest {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
                 success = vh.weakCompareAndSetPlain((short)0x0123, (short)0x4567);
+                if (!success) weakDelay(c);
             }
             assertEquals(success, true, "weakCompareAndSetPlain short");
             short x = (short) vh.get();
@@ -769,6 +774,7 @@ public class VarHandleTestAccessShort extends VarHandleBaseTest {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
                 success = vh.weakCompareAndSetAcquire((short)0x4567, (short)0x0123);
+                if (!success) weakDelay(c);
             }
             assertEquals(success, true, "weakCompareAndSetAcquire short");
             short x = (short) vh.get();
@@ -779,6 +785,7 @@ public class VarHandleTestAccessShort extends VarHandleBaseTest {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
                 success = vh.weakCompareAndSetRelease((short)0x0123, (short)0x4567);
+                if (!success) weakDelay(c);
             }
             assertEquals(success, true, "weakCompareAndSetRelease short");
             short x = (short) vh.get();
@@ -789,6 +796,7 @@ public class VarHandleTestAccessShort extends VarHandleBaseTest {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
                 success = vh.weakCompareAndSet((short)0x4567, (short)0x0123);
+                if (!success) weakDelay(c);
             }
             assertEquals(success, true, "weakCompareAndSet short");
             short x = (short) vh.get();
@@ -1038,6 +1046,7 @@ public class VarHandleTestAccessShort extends VarHandleBaseTest {
                 boolean success = false;
                 for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
                     success = vh.weakCompareAndSetPlain(array, i, (short)0x0123, (short)0x4567);
+                    if (!success) weakDelay(c);
                 }
                 assertEquals(success, true, "weakCompareAndSetPlain short");
                 short x = (short) vh.get(array, i);
@@ -1048,6 +1057,7 @@ public class VarHandleTestAccessShort extends VarHandleBaseTest {
                 boolean success = false;
                 for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
                     success = vh.weakCompareAndSetAcquire(array, i, (short)0x4567, (short)0x0123);
+                    if (!success) weakDelay(c);
                 }
                 assertEquals(success, true, "weakCompareAndSetAcquire short");
                 short x = (short) vh.get(array, i);
@@ -1058,6 +1068,7 @@ public class VarHandleTestAccessShort extends VarHandleBaseTest {
                 boolean success = false;
                 for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
                     success = vh.weakCompareAndSetRelease(array, i, (short)0x0123, (short)0x4567);
+                    if (!success) weakDelay(c);
                 }
                 assertEquals(success, true, "weakCompareAndSetRelease short");
                 short x = (short) vh.get(array, i);
@@ -1068,6 +1079,7 @@ public class VarHandleTestAccessShort extends VarHandleBaseTest {
                 boolean success = false;
                 for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
                     success = vh.weakCompareAndSet(array, i, (short)0x4567, (short)0x0123);
+                    if (!success) weakDelay(c);
                 }
                 assertEquals(success, true, "weakCompareAndSet short");
                 short x = (short) vh.get(array, i);

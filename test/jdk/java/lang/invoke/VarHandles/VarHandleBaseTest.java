@@ -40,7 +40,15 @@ import static org.testng.Assert.*;
 
 abstract class VarHandleBaseTest {
     static final int ITERS = Integer.getInteger("iters", 1);
-    static final int WEAK_ATTEMPTS = Integer.getInteger("weakAttempts", 10);
+
+    // More resilience for Weak* tests. These operations may spuriously
+    // fail, and so we do several attemps with linear backoff on failure.
+    // Because the backoff grows linearly, and the delays might be granular
+    // to OS limits, the worst-case total time on test would be at least:
+    //    Tfail = delay * attempts * (attempts + 1) / 2 [ms]
+    //
+    static final int WEAK_ATTEMPTS = Integer.getInteger("weakAttempts", 50);
+    static final int WEAK_BASE_DELAY_MS = Integer.getInteger("weakBaseDelay", 10);
 
     interface ThrowingRunnable {
         void run() throws Throwable;
@@ -496,6 +504,14 @@ abstract class VarHandleBaseTest {
             MethodType mt = vh.accessModeType(testAccessMode.toAccessMode());
             assertEquals(mt.returnType(), vh.varType());
             assertEquals(mt.parameterType(mt.parameterCount() - 1), vh.varType());
+        }
+    }
+
+    static void weakDelay(int multiplier) {
+        try {
+            Thread.sleep(WEAK_BASE_DELAY_MS * Math.max(1, multiplier));
+        } catch (InterruptedException ie) {
+            // Do nothing.
         }
     }
 }

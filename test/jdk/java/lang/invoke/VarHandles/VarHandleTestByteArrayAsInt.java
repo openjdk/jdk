@@ -1265,6 +1265,7 @@ public class VarHandleTestByteArrayAsInt extends VarHandleBaseByteArrayTest {
                     boolean success = false;
                     for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
                         success = vh.weakCompareAndSetPlain(array, i, VALUE_1, VALUE_2);
+                        if (!success) weakDelay(c);
                     }
                     assertEquals(success, true, "weakCompareAndSetPlain int");
                     int x = (int) vh.get(array, i);
@@ -1275,6 +1276,7 @@ public class VarHandleTestByteArrayAsInt extends VarHandleBaseByteArrayTest {
                     boolean success = false;
                     for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
                         success = vh.weakCompareAndSetAcquire(array, i, VALUE_2, VALUE_1);
+                        if (!success) weakDelay(c);
                     }
                     assertEquals(success, true, "weakCompareAndSetAcquire int");
                     int x = (int) vh.get(array, i);
@@ -1285,6 +1287,7 @@ public class VarHandleTestByteArrayAsInt extends VarHandleBaseByteArrayTest {
                     boolean success = false;
                     for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
                         success = vh.weakCompareAndSetRelease(array, i, VALUE_1, VALUE_2);
+                        if (!success) weakDelay(c);
                     }
                     assertEquals(success, true, "weakCompareAndSetRelease int");
                     int x = (int) vh.get(array, i);
@@ -1295,6 +1298,7 @@ public class VarHandleTestByteArrayAsInt extends VarHandleBaseByteArrayTest {
                     boolean success = false;
                     for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
                         success = vh.weakCompareAndSet(array, i, VALUE_2, VALUE_1);
+                        if (!success) weakDelay(c);
                     }
                     assertEquals(success, true, "weakCompareAndSet int");
                     int x = (int) vh.get(array, i);
@@ -1548,6 +1552,7 @@ public class VarHandleTestByteArrayAsInt extends VarHandleBaseByteArrayTest {
                     boolean success = false;
                     for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
                         success = vh.weakCompareAndSetPlain(array, i, VALUE_1, VALUE_2);
+                        if (!success) weakDelay(c);
                     }
                     assertEquals(success, true, "weakCompareAndSetPlain int");
                     int x = (int) vh.get(array, i);
@@ -1558,6 +1563,7 @@ public class VarHandleTestByteArrayAsInt extends VarHandleBaseByteArrayTest {
                     boolean success = false;
                     for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
                         success = vh.weakCompareAndSetAcquire(array, i, VALUE_2, VALUE_1);
+                        if (!success) weakDelay(c);
                     }
                     assertEquals(success, true, "weakCompareAndSetAcquire int");
                     int x = (int) vh.get(array, i);
@@ -1568,6 +1574,7 @@ public class VarHandleTestByteArrayAsInt extends VarHandleBaseByteArrayTest {
                     boolean success = false;
                     for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
                         success = vh.weakCompareAndSetRelease(array, i, VALUE_1, VALUE_2);
+                        if (!success) weakDelay(c);
                     }
                     assertEquals(success, true, "weakCompareAndSetRelease int");
                     int x = (int) vh.get(array, i);
@@ -1578,6 +1585,7 @@ public class VarHandleTestByteArrayAsInt extends VarHandleBaseByteArrayTest {
                     boolean success = false;
                     for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
                         success = vh.weakCompareAndSet(array, i, VALUE_2, VALUE_1);
+                        if (!success) weakDelay(c);
                     }
                     assertEquals(success, true, "weakCompareAndSet int");
                     int x = (int) vh.get(array, i);
