@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,32 +21,21 @@
  * questions.
  */
 
-/**
- * @test
- * @bug 8279125
- * @summary fatal error: no reachable node should have no use
- * @requires vm.flavor == "server"
- *
- * @run main/othervm -XX:-BackgroundCompilation -XX:-DoEscapeAnalysis TestAllocArrayAfterAllocNoUse
- *
+import java.awt.Font;
+import javax.swing.DebugGraphics;
+
+/* @test
+ * @bug 6521141
+ * @summary Test to check if NPE does not occur when graphics is not
+ *  initialized and DebugGraphics instance is created with default
+ *  Constructor and used.
+ * @run main DebugGraphicsNPETest
  */
-
-public class TestAllocArrayAfterAllocNoUse {
-    private static Object field;
-
-    public static void main(String[] args) {
-        for (int i = 0; i < 20_000; i++) {
-            test();
-        }
-    }
-
-    private static void test() {
-        try {
-            final TestAllocArrayAfterAllocNoUse o = new TestAllocArrayAfterAllocNoUse();
-        } catch (Exception e) {
-            final int[] array = new int[100];
-            field = array;
-        }
-
+public class DebugGraphicsNPETest {
+    public static void main(String[] args) throws Exception {
+        DebugGraphics dg = new DebugGraphics();
+        Font font = new Font(Font.SERIF, Font.PLAIN, 10);
+        dg.setFont(font);
+        System.out.println("Test Pass!");
     }
 }
