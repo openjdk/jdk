@@ -283,6 +283,4 @@ template class BasicHashtable<mtServiceability>;
 template class BasicHashtable<mtLogging>;
 
 template void BasicHashtable<mtClass>::verify_table<DictionaryEntry>(char const*);
-template void BasicHashtable<mtModule>::verify_table<PackageEntry>(char const*);
 template void BasicHashtable<mtClass>::verify_table<ProtectionDomainCacheEntry>(char const*);
-template void BasicHashtable<mtClass>::verify_table<PlaceholderEntry>(char const*);
