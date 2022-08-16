@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/archiveBuilder.hpp"
 #include "cds/heapShared.hpp"
 #include "classfile/resolutionErrors.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -696,6 +697,11 @@ void ConstantPoolCache::save_for_archive(TRAPS) {
 void ConstantPoolCache::remove_unshareable_info() {
 #if INCLUDE_CDS
   Arguments::assert_is_dumping_archive();
+  // <this> is the copy to be written into the archive. It's in the ArchiveBuilder's "buffer space".
+  // However, this->_initial_entries was not copied/relocated by the ArchiveBuilder, so it's
+  // still pointing to the array allocated inside save_for_archive().
+  assert(_initial_entries != NULL, "archived cpcache must have been initialized");
+  assert(!ArchiveBuilder::current()->is_in_buffer_space(_initial_entries), "must be");
   for (int i=0; i<length(); i++) {
     // Restore each entry to the initial state -- just after Rewriter::make_constant_pool_cache()
     // has finished.
