@@ -274,13 +274,6 @@ void ZStoreBarrierBuffer::flush() {
     const ZStoreBarrierEntry& entry = _buffer[i];
     const zaddress addr = ZBarrier::make_load_good(entry._prev);
     ZBarrier::mark_and_remember(entry._p, addr);
-
-#ifdef ASSERT
-    static int count = 1;
-    if (count++ == NewCodeParameter) {
-      VMError::controlled_crash(1);
-    }
-#endif
   }
 
   clear();
