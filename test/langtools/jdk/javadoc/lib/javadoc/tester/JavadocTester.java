@@ -489,22 +489,20 @@ public abstract class JavadocTester {
             }
         });
 
-        if (Files.exists(outputDir)) {
-            if (automaticCheckNoStacktrace) {
-                // Any stacktrace will have javadoc near the bottom of the stack
-                checkOutput(Output.STDERR, false, "at jdk.javadoc/jdk.javadoc.internal.");
-            }
+        if (automaticCheckNoStacktrace) {
+            // Any stacktrace will have javadoc near the bottom of the stack
+            checkOutput(Output.STDERR, false, "at jdk.javadoc/jdk.javadoc.internal.");
+        }
 
-            if (exitCode == Exit.OK.code) {
-                if (automaticCheckLinks) {
-                    checkLinks();
-                }
-                if (automaticCheckAccessibility) {
-                    checkAccessibility();
-                }
-                if (automaticCheckUniqueOUT) {
-                    checkUnique(Output.OUT, "^[A-Z][a-z]+ing ", true);
-                }
+        if (exitCode == Exit.OK.code && Files.exists(outputDir)) {
+            if (automaticCheckLinks) {
+                checkLinks();
+            }
+            if (automaticCheckAccessibility) {
+                checkAccessibility();
+            }
+            if (automaticCheckUniqueOUT) {
+                checkUnique(Output.OUT, "^[A-Z][a-z]+ing ", true);
             }
         }
     }
