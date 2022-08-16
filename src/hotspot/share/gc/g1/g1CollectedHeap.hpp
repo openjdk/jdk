@@ -1261,7 +1261,7 @@ public:
   void rebuild_code_roots();
 
   // Performs cleaning of data structures after class unloading.
-  void complete_cleaning(BoolObjectClosure* is_alive, bool class_unloading_occurred);
+  void complete_cleaning(bool class_unloading_occurred);
 
   // Verification
 

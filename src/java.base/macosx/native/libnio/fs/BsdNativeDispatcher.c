@@ -38,6 +38,7 @@
 #else
 #define ISREADONLY MNT_RDONLY
 #endif
+#include <sys/attr.h>
 
 #include <stdlib.h>
 #include <string.h>
@@ -222,4 +223,45 @@ Java_sun_nio_fs_BsdNativeDispatcher_getmntonname0(JNIEnv *env, jclass this,
     }
 
     return mntonname;
+}
+
+JNIEXPORT void JNICALL
+Java_sun_nio_fs_BsdNativeDispatcher_setattrlist0(JNIEnv* env, jclass this,
+    jlong pathAddress, int commonattr, jlong modTime, jlong accTime,
+    jlong createTime, jlong options)
+{
+    const char* path = (const char*)jlong_to_ptr(pathAddress);
+    // attributes must align on 4-byte boundaries per the getattrlist(2) spec
+    const int attrsize = ((sizeof(struct timespec) + 3)/4)*4;
+    char buf[3*attrsize];
+
+    int count = 0;
+    // attributes are ordered per the getattrlist(2) spec
+    if ((commonattr & ATTR_CMN_CRTIME) != 0) {
+        struct timespec* t = (struct timespec*)buf;
+        t->tv_sec   = createTime / 1000000000;
+        t->tv_nsec  = createTime % 1000000000;
+        count++;
+    }
+    if ((commonattr & ATTR_CMN_MODTIME) != 0) {
+        struct timespec* t = (struct timespec*)(buf + count*attrsize);
+        t->tv_sec   = modTime / 1000000000;
+        t->tv_nsec  = modTime % 1000000000;
+        count++;
+    }
+    if ((commonattr & ATTR_CMN_ACCTIME) != 0) {
+        struct timespec* t = (struct timespec*)(buf + count*attrsize);
+        t->tv_sec   = accTime / 1000000000;
+        t->tv_nsec  = accTime % 1000000000;
+        count++;
+    }
+
+    struct attrlist attrList;
+    memset(&attrList, 0, sizeof(struct attrlist));
+    attrList.bitmapcount = ATTR_BIT_MAP_COUNT;
+    attrList.commonattr = commonattr;
+
+    if (setattrlist(path, &attrList, (void*)buf, count*attrsize, options) != 0) {
+        throwUnixException(env, errno);
+    }
 }

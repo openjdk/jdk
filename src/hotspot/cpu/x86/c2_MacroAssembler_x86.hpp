@@ -159,6 +159,7 @@ public:
 
   void load_vector(XMMRegister dst, Address src, int vlen_in_bytes);
   void load_vector(XMMRegister dst, AddressLiteral src, int vlen_in_bytes, Register rscratch = rscratch1);
+  void load_constant_vector(BasicType bt, XMMRegister dst, InternalAddress src, int vlen);
   void load_iota_indices(XMMRegister dst, Register scratch, int vlen_in_bytes);
 
   // Reductions for vectors of bytes, shorts, ints, longs, floats, and doubles.
