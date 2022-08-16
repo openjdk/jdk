@@ -1264,15 +1264,18 @@ class StackChunkAllocator : public MemAllocator {
     return finish(mem);
   }
 
-  virtual HeapWord* mem_allocate_slow(Allocation& allocation) const override {
-    _took_slow_path = true;
+  stackChunkOop allocate_fast() const {
+    if (!UseTLAB) {
+      return nullptr;
+    }
 
-    ContinuationWrapper::SafepointOp so(_thread, _continuation_wrapper);
+    HeapWord* const mem = MemAllocator::mem_allocate_inside_tlab_fast();
+    if (mem == nullptr) {
+      return nullptr;
+    }
 
-    // Can safepoint
-    _jvmti_event_collector->start();
-
-    return MemAllocator::mem_allocate_slow(allocation);
+    oop obj = initialize(mem);
+    return stackChunkOopDesc::cast(obj);
   }
 
 public:
@@ -1288,7 +1291,26 @@ public:
       _jvmti_event_collector(jvmti_event_collector),
       _took_slow_path(false) {}
 
+  // Provides it's own, specialized allocation which skips instrumentation
+  // if the memory can be allocated without going to a slow-path.
   stackChunkOop allocate() const {
+    // First try to allocate without any slow-paths or instrumentation.
+    stackChunkOop obj = allocate_fast();
+    if (obj != nullptr) {
+      return obj;
+    }
+
+    // Now try full-blown allocation with all expensive operations,
+    // including potentially safepoint operations.
+    _took_slow_path = true;
+
+    // Protect unhandled Loom oops
+    ContinuationWrapper::SafepointOp so(_thread, _continuation_wrapper);
+
+    // Can safepoint
+    _jvmti_event_collector->start();
+
+    // Can safepoint
     return stackChunkOopDesc::cast(MemAllocator::allocate());
   }
 
