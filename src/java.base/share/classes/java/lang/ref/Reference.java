@@ -511,13 +511,15 @@ public abstract sealed class Reference<T>
     }
 
     /**
-     * Ensures that the object referenced by the given reference remains
+     * Ensures that the given object remains
      * <a href="package-summary.html#reachability"><em>strongly reachable</em></a>,
      * regardless of any prior actions of the program that might otherwise cause
-     * the object to become unreachable; thus, the referenced object is not
+     * the object to become unreachable; thus, the object is not
      * reclaimable by garbage collection at least until after the invocation of
-     * this method.  Invocation of this method does not itself initiate garbage
-     * collection or finalization.
+     * this method. {@link Reference}s referring to the given object will not be
+     * enqueued on a {@link ReferenceQueue} until after invocation of this method.
+     * Invocation of this method does not itself initiate garbage collection or
+     * finalization.
      *
      * <p> This method establishes an ordering for <em>strong reachability</em>
      * with respect to garbage collection.  It controls relations that are
@@ -527,13 +529,15 @@ public abstract sealed class Reference<T>
      * {@code synchronized} blocks or methods, or using other synchronization
      * facilities are not possible or do not provide the desired control.  This
      * method is applicable only when reclamation may have visible effects,
-     * which is possible for objects with finalizers (See Section {@jls 12.6}
-     * of <cite>The Java Language Specification</cite>) that
-     * are implemented in ways that rely on ordering control for
-     * correctness.
+     * which is possible for objects with finalizers or that use Cleaners.
+     *
+     * <p>Memory consistency effects: Actions in a thread prior to calling
+     * reachabilityFence(x) happen-before any Reference to x is enqueued on a
+     * ReferenceQueue (such as happens when running a
+     * {@linkplain Cleaner.register cleaning action} for x).
      *
      * @apiNote
-     * Finalization may occur whenever the virtual machine detects that no
+     * Cleaning actions or finalization may occur whenever the virtual machine detects that no
      * reference to an object will ever be stored in the heap: The garbage
      * collector may reclaim an object even if the fields of that object are
      * still in use, so long as the object has otherwise become unreachable.
