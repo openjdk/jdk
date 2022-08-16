@@ -425,10 +425,10 @@ stringStream::~stringStream() {
 // The "real" tty is implemented by class defaultStream. But that cannot be used pre-VM-init
 // since its behavior depends on VM arguments that are not parsed yet. Therefore we point tty
 // to a simple always functioning stdout fdstream.
-static fdStream g_stdout_stream(os::get_fileno(stderr));
+static fdStream g_stderr_stream(os::get_fileno(stderr));
 
 xmlStream*   xtty;
-outputStream* tty = &g_stdout_stream;
+outputStream* tty = &g_stderr_stream;
 extern Mutex* tty_lock;
 
 #define EXTRACHARLEN   32
@@ -973,7 +973,7 @@ void ostream_exit() {
   if (defaultStream::instance != NULL) {
     delete defaultStream::instance;
   }
-  tty = &g_stdout_stream;
+  tty = &g_stderr_stream;
   xtty = NULL;
   defaultStream::instance = NULL;
 }
