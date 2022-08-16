@@ -77,6 +77,6 @@ public class HtmlDocument {
     private void write(Writer writer, String newline) throws IOException {
         writer.write(docType.text);
         writer.write(newline);
-        docContent.write(writer, newline,true);
+        docContent.write(writer, newline, true);
     }
 }

@@ -48,7 +48,6 @@ public class Text extends Content {
      * @return the object
      */
     public static Text of(CharSequence content) {
-        assert checkNewlines(content);
         return new Text(content);
     }
 
@@ -113,7 +112,7 @@ public class Text extends Content {
             int start = 0;
             int pos;
             while ((pos = s.indexOf('\r', start)) != -1) {
-                sb.append(s.substring(start, pos));
+                sb.append(s, start, pos);
                 sb.append('\n');
                 pos++;
                 if (pos < sLen && s.charAt(pos) == '\n') {
@@ -128,8 +127,8 @@ public class Text extends Content {
 
     /**
      * Check for the absence of {@code \r} characters.
-     * @param cs
-     * @return
+     * @param cs the characters to be checked
+     * @return {@code true} if there are no {@code \r} characters, and {@code false} otherwise
      */
     static boolean checkNewlines(CharSequence cs) {
         return !cs.toString().contains("\r");
