@@ -33,6 +33,8 @@ import javax.security.auth.login.LoginContext;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import javax.security.auth.login.FailedLoginException;
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
 
 public class UnixNTPlatform {
 
@@ -59,12 +61,15 @@ public class UnixNTPlatform {
                     .append(conf[i + 2]).append(";\n");
         }
         sb.append("};\n");
-        System.out.println("Jaya sb:"+sb);
         Files.write(Paths.get(test), sb.toString().getBytes());
 
         // Must be called. Configuration has an internal static field.
         Configuration.setConfiguration(null);
         System.setProperty("java.security.auth.login.config", test);
+
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        PrintStream ps = new PrintStream(stream);
+        System.setErr(ps);
 
         try {
             LoginContext lc = new LoginContext("hello");
@@ -72,11 +77,11 @@ public class UnixNTPlatform {
             System.out.println(lc.getSubject());
             lc.logout();
         } catch (FailedLoginException e) {
-            // This exception can occur in other platform module than the running one.
-            if(e.getMessage().startsWith("Failed in attempt to import")) {
-                System.out.println("Expected Exception found.");
-                e.printStackTrace(System.out);
-            }
+            e.printStackTrace(System.out);
         }
+        System.out.println("retrieving error from byte stream");
+        byte[] byes = stream.toByteArray();
+        String s = new String(byes);
+        System.out.printf("-- error -- %n%s%n", s);
     }
 }
