@@ -52,15 +52,8 @@ ObjectBitSet<F>::~ObjectBitSet() {
     delete current;
     current = next;
   }
-  class Deleter {
-    public:
-    bool do_entry(uintptr_t& key, CHeapBitMap*& fragment) {
-      // fragment is already deleted above, but now delete the table nodes.
-      return true;
-    }
-  };
-  Deleter deleter;
-  _bitmap_fragments.unlink(&deleter);
+  // destructors for ResourceHashtable base deletes nodes, and
+  // ResizeableResourceHashtableStorage deletes the table.
 }
 
 template<MEMFLAGS F>
