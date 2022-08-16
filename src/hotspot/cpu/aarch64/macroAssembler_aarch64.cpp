@@ -852,23 +852,7 @@ void MacroAssembler::call_VM_helper(Register oop_result, address entry_point, in
 // Check the entry target is always reachable from any branch.
 static bool is_always_within_branch_range(Address entry) {
   const address target = entry.target();
-  if (!MacroAssembler::far_branches()) {
-    if (entry.rspec().type() == relocInfo::runtime_call_type &&
-        !CodeCache::contains(target)) {
-      // If it is a runtime call of an address outside small CodeCache,
-      // we need to check whether it is in range.
-      assert(target < CodeCache::low_bound() || target >= CodeCache::high_bound(),
-             "target is inside CodeCache");
-      // Case 1: -------T-------L====CodeCache====H-------
-      //                ^-------longest branch---|
-      // Case 2: -------L====CodeCache====H-------T-------
-      //                |-------longest branch ---^
-      const address longest_branch_start =
-          (target < CodeCache::low_bound())
-              ? CodeCache::high_bound() - NativeInstruction::instruction_size
-              : CodeCache::low_bound();
-      return Assembler::reachable_from_branch_at(longest_branch_start, target);
-    }
+  if (!MacroAssembler::far_branches() && CodeCache::contains(target)) {
     return true;
   }
 
