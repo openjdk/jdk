@@ -395,7 +395,7 @@ public:
 
 // Helper class to keep statistics for the collection set freeing
 class FreeCSetStats {
-  size_t _before_used_bytes;   // Usage in regions successfully evacutate
+  size_t _before_used_bytes;   // Usage in regions successfully evacuate
   size_t _after_used_bytes;    // Usage in regions failing evacuation
   size_t _bytes_allocated_in_old_since_last_gc; // Size of young regions turned into old
   size_t _failure_used_words;  // Live size in failed regions
@@ -438,7 +438,7 @@ public:
   }
 
   void account_failed_region(HeapRegion* r) {
-    size_t used_words = r->marked_bytes() / HeapWordSize;
+    size_t used_words = r->live_bytes() / HeapWordSize;
     _failure_used_words += used_words;
     _failure_waste_words += HeapRegion::GrainWords - used_words;
     _after_used_bytes += r->used();

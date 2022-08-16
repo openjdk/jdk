@@ -140,11 +140,13 @@ public:
   }
 
   static AbstractRegSet range(RegImpl start, RegImpl end) {
-    assert(start <= end, "must be");
+    int start_enc = start->encoding();
+    int   end_enc = end->encoding();
+    assert(start_enc <= end_enc, "must be");
     uint32_t bits = ~0;
-    bits <<= start->encoding();
-    bits <<= 31 - end->encoding();
-    bits >>= 31 - end->encoding();
+    bits <<= start_enc;
+    bits <<= 31 - end_enc;
+    bits >>= 31 - end_enc;
 
     return AbstractRegSet(bits);
   }
