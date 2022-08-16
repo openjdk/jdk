@@ -590,19 +590,24 @@ void PhaseCFG::convert_NeverBranch_to_Goto(Block *b) {
   b->_num_succs = 1;
   // remap successor's predecessors if necessary
   uint j;
-  for( j = 1; j < succ->num_preds(); j++)
-    if( succ->pred(j)->in(0) == bp )
+  for (j = 1; j < succ->num_preds(); j++) {
+    if (succ->pred(j)->in(0) == bp) {
       succ->head()->set_req(j, gto);
+    }
+  }
   // Kill alternate exit path
-  Block *dead = b->_succs[1-idx];
-  for( j = 1; j < dead->num_preds(); j++)
-    if( dead->pred(j)->in(0) == bp )
+  Block* dead = b->_succs[1 - idx];
+  for (j = 1; j < dead->num_preds(); j++) {
+    if (dead->pred(j)->in(0) == bp) {
       break;
+    }
+  }
   // Scan through block, yanking dead path from
   // all regions and phis.
   dead->head()->del_req(j);
-  for( int k = 1; dead->get_node(k)->is_Phi(); k++ )
+  for (int k = 1; dead->get_node(k)->is_Phi(); k++) {
     dead->get_node(k)->del_req(j);
+  }
   // If the fake exit block becomes unreachable, remove it from the block list.
   if (dead->num_preds() == 1) {
     for (uint i = 0; i < number_of_blocks(); i++) {
