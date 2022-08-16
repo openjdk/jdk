@@ -852,11 +852,18 @@ void MacroAssembler::call_VM_helper(Register oop_result, address entry_point, in
 // Check the entry target is always reachable from any branch.
 static bool is_always_within_branch_range(Address entry) {
   const address target = entry.target();
-  if (!MacroAssembler::far_branches() && CodeCache::contains(target)) {
+
+  if (!CodeCache::contains(target)) {
+    // We always use trampolines for callees outside CodeCache.
+    assert(entry.rspec().type() == relocInfo::runtime_call_type, "non-runtime call of an external target");
+    return false;
+  }
+
+  if (!MacroAssembler::far_branches()) {
     return true;
   }
 
-  if (entry.rspec().type() == relocInfo::runtime_call_type && CodeCache::contains(target)) {
+  if (entry.rspec().type() == relocInfo::runtime_call_type) {
     // Runtime calls are calls of a non-compiled method (stubs, adapters).
     // Non-compiled methods stay forever in CodeCache.
     // We check whether the longest possible branch is within the branch range.
