@@ -31,7 +31,6 @@
  */
 
 import java.awt.FlowLayout;
-import java.awt.Font;
 import java.lang.reflect.InvocationTargetException;
 
 import javax.swing.JComboBox;
@@ -65,11 +64,9 @@ public class JComboBoxBorderTest {
             JPanel panel = new JPanel(layout);
             panel.add(label);
             panel.add(comboBox);
-            comboBox.setFont(new Font("Serif", Font.PLAIN, 30));
 
             panel.add(label2);
             panel.add(comboBox2);
-            comboBox2.setFont(new Font("Serif", Font.PLAIN, 30));
 
             frame = new JFrame();
             frame.getContentPane().add(panel);
