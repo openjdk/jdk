@@ -27,6 +27,10 @@
 
 // C2_MacroAssembler contains high-level macros for C2
 
+ private:
+  // Return true if the phase output is in the scratch emit size mode.
+  virtual bool in_scratch_emit_size() override;
+
  public:
   void emit_entry_barrier_stub(C2EntryBarrierStub* stub);
   static int entry_barrier_stub_size();

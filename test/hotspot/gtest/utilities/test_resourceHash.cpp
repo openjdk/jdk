@@ -446,3 +446,46 @@ TEST_VM_F(ResourceHashtableDeleteTest, check_delete_ptr) {
   // Removal should make the refcount be the original refcount.
   ASSERT_EQ(s->refcount(), s_orig_count) << "refcount should be as we started";
 }
+
+class ResourceHashtablePrintTest : public ::testing::Test {
+ public:
+    class TestValue {
+      int _i;
+      int _j;
+      int _k;
+     public:
+      TestValue(int i) : _i(i), _j(i+1), _k(i+2) {}
+    };
+    ResourceHashtable<int, TestValue*, 30, ResourceObj::C_HEAP, mtTest> _test_table;
+
+    class TableDeleter {
+     public:
+      bool do_entry(int& key, TestValue*& val) {
+        delete val;
+        return true;
+      }
+    };
+};
+
+TEST_VM_F(ResourceHashtablePrintTest, print_test) {
+  for (int i = 0; i < 300; i++) {
+    TestValue* tv = new TestValue(i);
+    _test_table.put(i, tv);  // all the entries can be the same.
+  }
+  auto printer = [&] (int& key, TestValue*& val) {
+    return sizeof(*val);
+  };
+  TableStatistics ts = _test_table.statistics_calculate(printer);
+  ResourceMark rm;
+  stringStream st;
+  ts.print(&st, "TestTable");
+  // Verify output in string
+  const char* strings[] = {
+      "Number of buckets", "Number of entries", "300", "Number of literals", "Average bucket size", "Maximum bucket size" };
+  for (const auto& str : strings) {
+    ASSERT_TRUE(strstr(st.as_string(), str) != nullptr) << "string not present " << str;
+  }
+  // Cleanup: need to delete pointers in entries
+  TableDeleter deleter;
+  _test_table.unlink(&deleter);
+}

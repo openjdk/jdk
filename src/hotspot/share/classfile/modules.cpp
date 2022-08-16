@@ -214,8 +214,8 @@ static void define_javabase_module(Handle module_handle, jstring version, jstrin
       // loop through and add any new packages for java.base
       for (int x = 0; x < pkg_list->length(); x++) {
         // Some of java.base's packages were added early in bootstrapping, ignore duplicates.
-        package_table->locked_create_entry_if_not_exist(pkg_list->at(x),
-                                                        ModuleEntryTable::javabase_moduleEntry());
+        package_table->locked_create_entry_if_absent(pkg_list->at(x),
+                                                     ModuleEntryTable::javabase_moduleEntry());
         assert(package_table->locked_lookup_only(pkg_list->at(x)) != NULL,
                "Unable to create a " JAVA_BASE_NAME " package entry");
         // Unable to have a GrowableArray of TempNewSymbol.  Must decrement the refcount of

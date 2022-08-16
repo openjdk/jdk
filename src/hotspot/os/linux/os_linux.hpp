@@ -55,7 +55,6 @@ class os::Linux {
 
   static julong _physical_memory;
   static pthread_t _main_thread;
-  static int _page_size;
 
   static julong available_memory();
   static julong physical_memory() { return _physical_memory; }
@@ -131,9 +130,6 @@ class os::Linux {
 
   static address   initial_thread_stack_bottom(void)                { return _initial_thread_stack_bottom; }
   static uintptr_t initial_thread_stack_size(void)                  { return _initial_thread_stack_size; }
-
-  static int page_size(void)                                        { return _page_size; }
-  static void set_page_size(int val)                                { _page_size = val; }
 
   static intptr_t* ucontext_get_sp(const ucontext_t* uc);
   static intptr_t* ucontext_get_fp(const ucontext_t* uc);
