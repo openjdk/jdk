@@ -105,7 +105,7 @@ public class TestAutoCreateSharedArchiveNoDefaultArchive {
         // Remove all possible default archives
         removeDefaultArchives(java_home_dst, "zero");
         removeDefaultArchives(java_home_dst, "server");
-        removeDefaultArchives(java_home_dst, "zero");
+        removeDefaultArchives(java_home_dst, "client");
         {
             ProcessBuilder pb = CDSTestUtils.makeBuilder(dstJava,
                                                          "-Xlog:cds",
