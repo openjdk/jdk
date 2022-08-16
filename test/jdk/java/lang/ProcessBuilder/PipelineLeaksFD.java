@@ -37,7 +37,7 @@ import java.util.Set;
 
 /*
  * @test
- * @bug 8289643
+ * @bug 8289643 9291760
  * @requires (os.family == "linux" & !vm.musl)
  * @summary file descriptor leak with ProcessBuilder.startPipeline
  * @run testng/othervm PipelineLeaksFD
@@ -68,12 +68,6 @@ public class PipelineLeaksFD {
             Assert.fail("There should be at least 3 pipes before, (0, 1, 2)");
         }
 
-        // Redirect all of the error streams to stdout (except the last)
-        // so those file descriptors are not left open
-        for (int i = 0; i < builders.size() - 1; i++) {
-            builders.get(i).redirectErrorStream(true);
-        }
-
         List<Process> processes = ProcessBuilder.startPipeline(builders);
 
         // Write something through the pipeline
@@ -88,6 +82,11 @@ public class PipelineLeaksFD {
             Assert.assertEquals(bytes.length, 1, "stdout bytes read");
             byte[] errBytes = errorStream.readAllBytes();
             Assert.assertEquals(errBytes.length, 0, "stderr bytes read");
+        }
+
+        // Close all the error streams (except the last)
+        for (int i = 0; i < processes.size() - 1; i++) {
+            processes.get(i).getErrorStream().close();
         }
 
         processes.forEach(p -> waitForQuiet(p));
