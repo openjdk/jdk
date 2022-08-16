@@ -42,6 +42,22 @@ template <typename CONFIG, MEMFLAGS F>
 class ConcurrentHashTable : public CHeapObj<F> {
   typedef typename CONFIG::Value VALUE;
  private:
+  // _stats_rate is null if statistics are not enabled.
+  TableRateStatistics* _stats_rate;
+  void safe_stats_add() {
+    if(_stats_rate != nullptr) {
+      _stats_rate->add();
+    }
+  }
+  void safe_stats_remove() {
+    if(_stats_rate != nullptr) {
+      _stats_rate->remove();
+    }
+  }
+  // Calculate statistics. Item sizes are calculated with VALUE_SIZE_FUNC.
+  template <typename VALUE_SIZE_FUNC>
+  TableStatistics statistics_calculate(Thread* thread, VALUE_SIZE_FUNC& vs_f);
+
   // This is the internal node structure.
   // Only constructed with placement new from memory allocated with MEMFLAGS of
   // the InternalTable or user-defined memory.
@@ -379,14 +395,13 @@ class ConcurrentHashTable : public CHeapObj<F> {
   ConcurrentHashTable(size_t log2size = DEFAULT_START_SIZE_LOG2,
                       size_t log2size_limit = DEFAULT_MAX_SIZE_LOG2,
                       size_t grow_hint = DEFAULT_GROW_HINT,
-                      void* context = NULL);
+                      void* context = NULL,
+                      bool enable_statistics = true);
 
   explicit ConcurrentHashTable(void* context, size_t log2size = DEFAULT_START_SIZE_LOG2) :
     ConcurrentHashTable(log2size, DEFAULT_MAX_SIZE_LOG2, DEFAULT_GROW_HINT, context) {}
 
   ~ConcurrentHashTable();
-
-  TableRateStatistics _stats_rate;
 
   size_t get_mem_size(Thread* thread);
 
@@ -481,10 +496,6 @@ class ConcurrentHashTable : public CHeapObj<F> {
   // DELETE_FUNC is called, when the resize lock is successfully obtained.
   template <typename EVALUATE_FUNC, typename DELETE_FUNC>
   void bulk_delete(Thread* thread, EVALUATE_FUNC& eval_f, DELETE_FUNC& del_f);
-
-  // Calculate statistics. Item sizes are calculated with VALUE_SIZE_FUNC.
-  template <typename VALUE_SIZE_FUNC>
-  TableStatistics statistics_calculate(Thread* thread, VALUE_SIZE_FUNC& vs_f);
 
   // Gets statistics if available, if not return old one. Item sizes are calculated with
   // VALUE_SIZE_FUNC.
