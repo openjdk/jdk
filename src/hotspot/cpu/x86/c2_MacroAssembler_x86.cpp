@@ -4486,6 +4486,10 @@ void C2_MacroAssembler::vector_pack_lower_quadword_from_lanes_avx(XMMRegister ds
   if (VM_Version::supports_avx2()) {
     vpermq(dst, src, 0xD8, vec_enc);
   } else {
+    // Extract lower quadwords from each 128 bit lane and pack them.
+    // We reach here after packing doubleword to word with zero vector
+    // as second operand, hence upper qudword lanes of source will be
+    // zero.
     vextractf128(xtmp, src, 0x1);
     pshufd(xtmp, xtmp, 0x4E);
     por(dst, xtmp);
