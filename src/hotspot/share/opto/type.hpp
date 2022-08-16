@@ -280,9 +280,6 @@ public:
   bool is_ptr_to_narrowoop() const;
   bool is_ptr_to_narrowklass() const;
 
-  bool is_ptr_to_boxing_obj() const;
-
-
   // Convenience access
   float getf() const;
   double getd() const;
@@ -2033,12 +2030,6 @@ inline bool Type::is_floatingpoint() const {
       (_base == DoubleCon) || (_base == DoubleBot) )
     return true;
   return false;
-}
-
-inline bool Type::is_ptr_to_boxing_obj() const {
-  const TypeInstPtr* tp = isa_instptr();
-  return (tp != NULL) && (tp->offset() == 0) &&
-         tp->instance_klass()->is_box_klass();
 }
 
 

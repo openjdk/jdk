@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,34 +19,12 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- */
-
-/**
- * @test
- * @bug 8279125
- * @summary fatal error: no reachable node should have no use
- * @requires vm.flavor == "server"
- *
- * @run main/othervm -XX:-BackgroundCompilation -XX:-DoEscapeAnalysis TestAllocArrayAfterAllocNoUse
  *
  */
 
-public class TestAllocArrayAfterAllocNoUse {
-    private static Object field;
+#include "precompiled.hpp"
+#include "runtime/osInfo.hpp"
 
-    public static void main(String[] args) {
-        for (int i = 0; i < 20_000; i++) {
-            test();
-        }
-    }
+int OSInfo::_vm_page_size = -1;
+int OSInfo::_vm_allocation_granularity = -1;
 
-    private static void test() {
-        try {
-            final TestAllocArrayAfterAllocNoUse o = new TestAllocArrayAfterAllocNoUse();
-        } catch (Exception e) {
-            final int[] array = new int[100];
-            field = array;
-        }
-
-    }
-}
