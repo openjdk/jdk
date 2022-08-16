@@ -160,8 +160,6 @@ public class TestTerminatingThreadLocal {
      * Returns a builder to create virtual threads that use the given scheduler.
      */
     static Thread.Builder.OfVirtual virtualThreadBuilder(Executor scheduler) {
-        // ensure preview features are enabled
-        Thread.ofVirtual();
         try {
             Class<?> clazz = Class.forName("java.lang.ThreadBuilders$VirtualThreadBuilder");
             Constructor<?> ctor = clazz.getDeclaredConstructor(Executor.class);
