@@ -61,19 +61,19 @@ public class InheritDocTaglet extends BaseTaglet {
      * such tag.</p>
      *
      * @param writer the writer that is writing the output.
-     * @param e the {@link Element} that we are documenting.
+     * @param method the method that we are documenting.
      * @param inheritDoc the {@code {@inheritDoc}} tag
      * @param isFirstSentence true if we only want to inherit the first sentence
      */
     private Content retrieveInheritedDocumentation(TagletWriter writer,
-                                                   Element e,
+                                                   ExecutableElement method,
                                                    DocTree inheritDoc,
                                                    boolean isFirstSentence) {
         Content replacement = writer.getOutputInstance();
         BaseConfiguration configuration = writer.configuration();
         Messages messages = configuration.getMessages();
         Utils utils = configuration.utils;
-        CommentHelper ch = utils.getCommentHelper(e);
+        CommentHelper ch = utils.getCommentHelper(method);
         var path = ch.getDocTreePath(inheritDoc).getParentPath();
         DocTree holderTag = path.getLeaf();
         Taglet taglet = holderTag.getKind() == DocTree.Kind.DOC_COMMENT
@@ -84,8 +84,8 @@ public class InheritDocTaglet extends BaseTaglet {
             messages.warning(path, "doclet.inheritDocWithinInappropriateTag");
             return replacement;
         }
-        var input = new DocFinder.Input(utils, e, (InheritableTaglet) taglet,
-                new DocFinder.DocTreeInfo(holderTag, e), isFirstSentence, true);
+        var input = new DocFinder.Input(utils, method, (InheritableTaglet) taglet,
+                new DocFinder.DocTreeInfo(holderTag, method), isFirstSentence, true);
         DocFinder.Output inheritedDoc = DocFinder.search(configuration, input);
         if (inheritedDoc.isValidInheritDocTag) {
             if (!inheritedDoc.inlineTags.isEmpty()) {
@@ -93,11 +93,9 @@ public class InheritDocTaglet extends BaseTaglet {
                         inheritedDoc.inlineTags, isFirstSentence);
             }
         } else {
-            String signature = utils.getSimpleName(e) +
-                    ((utils.isExecutableElement(e))
-                            ? utils.flatSignature((ExecutableElement) e, writer.getCurrentPageElement())
-                            : e.toString());
-            messages.warning(e, "doclet.noInheritedDoc", signature);
+            String signature = utils.getSimpleName(method)
+                    + utils.flatSignature(method, writer.getCurrentPageElement());
+            messages.warning(method, "doclet.noInheritedDoc", signature);
         }
         return replacement;
     }
@@ -107,6 +105,6 @@ public class InheritDocTaglet extends BaseTaglet {
         if (e.getKind() != ElementKind.METHOD) {
             return tagletWriter.getOutputInstance();
         }
-        return retrieveInheritedDocumentation(tagletWriter, e, inheritDoc, tagletWriter.isFirstSentence);
+        return retrieveInheritedDocumentation(tagletWriter, (ExecutableElement) e, inheritDoc, tagletWriter.isFirstSentence);
     }
 }
