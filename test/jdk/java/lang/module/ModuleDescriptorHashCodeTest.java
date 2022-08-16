@@ -24,6 +24,9 @@
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.module.ModuleDescriptor;
+import java.lang.module.ModuleDescriptor.Exports;
+import java.lang.module.ModuleDescriptor.Opens;
+import java.lang.module.ModuleDescriptor.Requires;
 import java.util.Set;
 
 import org.testng.annotations.Test;
@@ -70,16 +73,14 @@ public class ModuleDescriptorHashCodeTest {
     @Test
     public void testOpensModifiersOrdering() throws Exception {
         // important to use Set.of() (i.e. backed by immutable set) to reproduce the issue
-        final Set<ModuleDescriptor.Opens.Modifier> mods1 = Set.of(
-                ModuleDescriptor.Opens.Modifier.SYNTHETIC, ModuleDescriptor.Opens.Modifier.MANDATED);
+        final Set<Opens.Modifier> mods1 = Set.of(Opens.Modifier.SYNTHETIC, Opens.Modifier.MANDATED);
         final ModuleDescriptor desc1 = createModuleDescriptor(mods1, null, null);
 
         // create the same module descriptor again and this time just change the order of the
         // "opens" modifiers' Set.
 
         // important to use Set.of() (i.e. backed by immutable set) to reproduce the issue
-        final Set<ModuleDescriptor.Opens.Modifier> mods2 = Set.of(
-                ModuleDescriptor.Opens.Modifier.MANDATED, ModuleDescriptor.Opens.Modifier.SYNTHETIC);
+        final Set<Opens.Modifier> mods2 = Set.of(Opens.Modifier.MANDATED, Opens.Modifier.SYNTHETIC);
         final ModuleDescriptor desc2 = createModuleDescriptor(mods2, null, null);
 
         // basic verification of the modifiers themselves before we check the module descriptors
@@ -103,16 +104,14 @@ public class ModuleDescriptorHashCodeTest {
     @Test
     public void testExportsModifiersOrdering() throws Exception {
         // important to use Set.of() (i.e. backed by immutable set) to reproduce the issue
-        final Set<ModuleDescriptor.Exports.Modifier> mods1 = Set.of(
-                ModuleDescriptor.Exports.Modifier.SYNTHETIC, ModuleDescriptor.Exports.Modifier.MANDATED);
+        final Set<Exports.Modifier> mods1 = Set.of(Exports.Modifier.SYNTHETIC, Exports.Modifier.MANDATED);
         final ModuleDescriptor desc1 = createModuleDescriptor(null, null, mods1);
 
         // create the same module descriptor again and this time just change the order of the
         // "exports" modifiers' Set.
 
         // important to use Set.of() (i.e. backed by immutable set) to reproduce the issue
-        final Set<ModuleDescriptor.Exports.Modifier> mods2 = Set.of(
-                ModuleDescriptor.Exports.Modifier.MANDATED, ModuleDescriptor.Exports.Modifier.SYNTHETIC);
+        final Set<Exports.Modifier> mods2 = Set.of(Exports.Modifier.MANDATED, Exports.Modifier.SYNTHETIC);
         final ModuleDescriptor desc2 = createModuleDescriptor(null, null, mods2);
 
         // basic verification of the modifiers themselves before we check the module descriptors
@@ -136,16 +135,14 @@ public class ModuleDescriptorHashCodeTest {
     @Test
     public void testRequiresModifiersOrdering() throws Exception {
         // important to use Set.of() (i.e. backed by immutable set) to reproduce the issue
-        final Set<ModuleDescriptor.Requires.Modifier> mods1 = Set.of(
-                ModuleDescriptor.Requires.Modifier.SYNTHETIC, ModuleDescriptor.Requires.Modifier.MANDATED);
+        final Set<Requires.Modifier> mods1 = Set.of(Requires.Modifier.SYNTHETIC, Requires.Modifier.MANDATED);
         final ModuleDescriptor desc1 = createModuleDescriptor(null, mods1, null);
 
         // create the same module descriptor again and this time just change the order of the
         // "exports" modifiers' Set.
 
         // important to use Set.of() (i.e. backed by immutable set) to reproduce the issue
-        final Set<ModuleDescriptor.Requires.Modifier> mods2 = Set.of(
-                ModuleDescriptor.Requires.Modifier.MANDATED, ModuleDescriptor.Requires.Modifier.SYNTHETIC);
+        final Set<Requires.Modifier> mods2 = Set.of(Requires.Modifier.MANDATED, Requires.Modifier.SYNTHETIC);
         final ModuleDescriptor desc2 = createModuleDescriptor(null, mods2, null);
 
         // basic verification of the modifiers themselves before we check the module descriptors
@@ -174,20 +171,20 @@ public class ModuleDescriptorHashCodeTest {
 
     // creates a module descriptor with passed (optional) opens/exports/requires modifiers
     private static ModuleDescriptor createModuleDescriptor(
-            Set<ModuleDescriptor.Opens.Modifier> opensModifiers,
-            Set<ModuleDescriptor.Requires.Modifier> reqsModifiers,
-            Set<ModuleDescriptor.Exports.Modifier> expsModifiers) {
+            Set<Opens.Modifier> opensModifiers,
+            Set<Requires.Modifier> reqsModifiers,
+            Set<Exports.Modifier> expsModifiers) {
 
-        final var mdb = ModuleDescriptor.newModule("foobar");
+        final ModuleDescriptor.Builder builder = ModuleDescriptor.newModule("foobar");
         if (opensModifiers != null) {
-            mdb.opens(opensModifiers, "a.p1", Set.of("a.m1"));
+            builder.opens(opensModifiers, "a.p1", Set.of("a.m1"));
         }
         if (reqsModifiers != null) {
-            mdb.requires(reqsModifiers, "a.m2");
+            builder.requires(reqsModifiers, "a.m2");
         }
         if (expsModifiers != null) {
-            mdb.exports(expsModifiers, "a.b.c", Set.of("a.m3"));
+            builder.exports(expsModifiers, "a.b.c", Set.of("a.m3"));
         }
-        return mdb.build();
+        return builder.build();
     }
 }
