@@ -42,8 +42,9 @@ public class UnixNTPlatform {
     private static final String NT_MODULE = "NTLoginModule";
 
     public static void main(String[] args) throws Exception {
-        login("cross-platform", NT_MODULE, "optional", "debug=true");
-        login("cross-platform", UNIX_MODULE, "optional", "debug=true");
+        login("cross-platform",
+                UNIX_MODULE, "optional", "debug=true",
+                NT_MODULE, "optional", "debug=true");
         login("windows", NT_MODULE, "optional", "debug=true");
         login("unix", UNIX_MODULE, "optional", "debug=true");
     }
@@ -76,7 +77,7 @@ public class UnixNTPlatform {
             System.out.println(lc.getSubject());
             lc.logout();
         } catch (FailedLoginException e) {
-            e.printStackTrace();
+            e.printStackTrace(System.out);
         }
         System.out.println("retrieving error from byte stream");
         byte[] byes = stream.toByteArray();
