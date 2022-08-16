@@ -4044,3 +4044,22 @@ JVM_ENTRY(void, JVM_VirtualThreadUnmountEnd(JNIEnv* env, jobject vthread, jboole
   fatal("Should only be called with JVMTI enabled");
 #endif
 JVM_END
+
+/*
+ * Return the current class's class file version.  The low order 16 bits of the
+ * returned jint contain the class's major version.  The high order 16 bits
+ * contain the class's minor version.
+ */
+JVM_ENTRY(jint, JVM_GetClassFileVersion(JNIEnv* env, jclass current))
+  oop mirror = JNIHandles::resolve_non_null(current);
+  if (java_lang_Class::is_primitive(mirror)) {
+    // return latest major version and minor version of 0.
+    return JVM_CLASSFILE_MAJOR_VERSION;
+  }
+  assert(!java_lang_Class::as_Klass(mirror)->is_array_klass(), "unexpected array class");
+
+  Klass* c = java_lang_Class::as_Klass(mirror);
+  assert(c->is_instance_klass(), "must be");
+  InstanceKlass* ik = InstanceKlass::cast(c);
+  return (ik->minor_version() << 16) | ik->major_version();
+JVM_END

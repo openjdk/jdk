@@ -51,6 +51,9 @@ import javax.net.ssl.TrustManagerFactory;
 @BenchmarkMode(Mode.Throughput)
 @OutputTimeUnit(TimeUnit.SECONDS)
 @State(Scope.Benchmark)
+@Warmup(iterations = 5, time = 5)
+@Measurement(iterations = 5, time = 5)
+@Fork(value = 3)
 public class SSLHandshake {
 
     private SSLContext sslc;
@@ -109,9 +112,6 @@ public class SSLHandshake {
      * The client and the server both operate on the same thread.
      */
     @Benchmark
-    @Warmup(iterations = 5, time = 5, timeUnit = TimeUnit.SECONDS)
-    @Measurement(iterations = 5, time = 5, timeUnit = TimeUnit.SECONDS)
-    @Fork(3)
     public SSLSession doHandshake() throws Exception {
 
         createSSLEngines();

@@ -28,23 +28,17 @@
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
+#include "gc/shared/collectedHeap.hpp"
 #include "logging/log.hpp"
 #include "memory/iterator.hpp"
+#include "memory/universe.hpp"
 #include "oops/access.inline.hpp"
-#include "oops/method.hpp"
+#include "oops/method.inline.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/threadWXSetters.inline.hpp"
 #include "runtime/threads.hpp"
 #include "utilities/debug.hpp"
-
-class LoadPhantomOopClosure : public OopClosure {
-public:
-  virtual void do_oop(oop* p) {
-    NativeAccess<ON_PHANTOM_OOP_REF>::oop_load(p);
-  }
-  virtual void do_oop(narrowOop* p) { ShouldNotReachHere(); }
-};
 
 int BarrierSetNMethod::disarmed_value() const {
   return *disarmed_value_address();
@@ -67,10 +61,26 @@ bool BarrierSetNMethod::supports_entry_barrier(nmethod* nm) {
 }
 
 bool BarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
+  class OopKeepAliveClosure : public OopClosure {
+  public:
+    virtual void do_oop(oop* p) {
+      // Loads on nmethod oops are phantom strength.
+      //
+      // Note that we could have used NativeAccess<ON_PHANTOM_OOP_REF>::oop_load(p),
+      // but that would have *required* us to convert the returned LoadOopProxy to an oop,
+      // or else keep alive load barrier will never be called. It's the LoadOopProxy-to-oop
+      // conversion that performs the load barriers. This is too subtle, so we instead
+      // perform an explicit keep alive call.
+      oop obj = NativeAccess<ON_PHANTOM_OOP_REF | AS_NO_KEEPALIVE>::oop_load(p);
+      Universe::heap()->keep_alive(obj);
+    }
+
+    virtual void do_oop(narrowOop* p) { ShouldNotReachHere(); }
+  };
+
   // If the nmethod is the only thing pointing to the oops, and we are using a
-  // SATB GC, then it is important that this code marks them live. This is done
-  // by the phantom load.
-  LoadPhantomOopClosure cl;
+  // SATB GC, then it is important that this code marks them live.
+  OopKeepAliveClosure cl;
   nm->oops_do(&cl);
 
   // CodeCache sweeper support

@@ -88,8 +88,7 @@ define_pd_global(intx, InlineSmallCode,          1000);
   product(bool, TraceTraps, false, "Trace all traps the signal handler")         \
   /* For now we're going to be safe and add the I/O bits to userspace fences. */ \
   product(bool, UseConservativeFence, true,                                      \
-          "Extend i for r and o for w in the pred/succ flags of fence;"          \
-          "Extend fence.i to fence.i + fence.")                                  \
+          "Extend i for r and o for w in the pred/succ flags of fence")          \
   product(bool, AvoidUnalignedAccesses, true,                                    \
           "Avoid generating unaligned memory accesses")                          \
   product(bool, UseRVV, false, EXPERIMENTAL, "Use RVV instructions")             \

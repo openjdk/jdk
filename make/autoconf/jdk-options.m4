@@ -648,7 +648,7 @@ AC_DEFUN([JDKOPT_ALLOW_ABSOLUTE_PATHS_IN_OUTPUT],
 AC_DEFUN_ONCE([JDKOPT_SETUP_REPRODUCIBLE_BUILD],
 [
   AC_ARG_WITH([source-date], [AS_HELP_STRING([--with-source-date],
-      [how to set SOURCE_DATE_EPOCH ('updated', 'current', 'version' a timestamp or an ISO-8601 date) @<:@updated/value of SOURCE_DATE_EPOCH@:>@])],
+      [how to set SOURCE_DATE_EPOCH ('updated', 'current', 'version' a timestamp or an ISO-8601 date) @<:@current/value of SOURCE_DATE_EPOCH@:>@])],
       [with_source_date_present=true], [with_source_date_present=false])
 
   if test "x$SOURCE_DATE_EPOCH" != x && test "x$with_source_date" != x; then
@@ -665,9 +665,9 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_REPRODUCIBLE_BUILD],
       with_source_date_present=true
       AC_MSG_RESULT([$SOURCE_DATE, from SOURCE_DATE_EPOCH])
     else
-      # Tell the makefiles to update at each build
-      SOURCE_DATE=updated
-      AC_MSG_RESULT([determined at build time (default)])
+      # Tell makefiles to take the time from configure
+      SOURCE_DATE=$($DATE +"%s")
+      AC_MSG_RESULT([$SOURCE_DATE, from 'current' (default)])
     fi
   elif test "x$with_source_date" = xupdated; then
     SOURCE_DATE=updated
