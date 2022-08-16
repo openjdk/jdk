@@ -26,6 +26,8 @@
 package jdk.javadoc.internal.doclets.toolkit.taglets;
 
 import java.util.EnumSet;
+import java.util.List;
+import java.util.Optional;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
@@ -76,14 +78,29 @@ public class InheritDocTaglet extends BaseTaglet {
         CommentHelper ch = utils.getCommentHelper(method);
         var path = ch.getDocTreePath(inheritDoc).getParentPath();
         DocTree holderTag = path.getLeaf();
-        Taglet taglet = holderTag.getKind() == DocTree.Kind.DOC_COMMENT
-                ? null
-                : configuration.tagletManager.getTaglet(ch.getTagName(holderTag));
+        if (holderTag.getKind() == DocTree.Kind.DOC_COMMENT) {
+            try {
+                Optional<Result> r = DocFinder.trySearch(method, false,
+                        m -> extractMainDescription(m, isFirstSentence, utils), configuration);
+                if (r.isPresent()) {
+                    replacement = writer.commentTagsToOutput(r.get().method, null,
+                            r.get().mainDescription, isFirstSentence);
+                }
+            } catch (DocFinder.NoOverriddenMethodsFound e) {
+                String signature = utils.getSimpleName(method)
+                        + utils.flatSignature(method, writer.getCurrentPageElement());
+                messages.warning(method, "doclet.noInheritedDoc", signature);
+            }
+            return replacement;
+        }
+
+        Taglet taglet = configuration.tagletManager.getTaglet(ch.getTagName(holderTag));
         if (taglet != null && !(taglet instanceof InheritableTaglet)) {
             // This tag does not support inheritance.
             messages.warning(path, "doclet.inheritDocWithinInappropriateTag");
             return replacement;
         }
+
         var input = new DocFinder.Input(utils, method, (InheritableTaglet) taglet,
                 new DocFinder.DocTreeInfo(holderTag, method), isFirstSentence, true);
         DocFinder.Output inheritedDoc = DocFinder.search(configuration, input);
@@ -98,6 +115,17 @@ public class InheritDocTaglet extends BaseTaglet {
             messages.warning(method, "doclet.noInheritedDoc", signature);
         }
         return replacement;
+    }
+
+    private record Result(List<? extends DocTree> mainDescription, ExecutableElement method) { }
+
+    private static Optional<Result> extractMainDescription(ExecutableElement m,
+                                                           boolean extractFirstSentenceOnly,
+                                                           Utils utils) {
+        List<? extends DocTree> docTrees = extractFirstSentenceOnly
+                ? utils.getFirstSentenceTrees(m)
+                : utils.getFullBody(m);
+        return docTrees.isEmpty() ? Optional.empty() : Optional.of(new Result(docTrees, m));
     }
 
     @Override

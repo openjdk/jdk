@@ -274,29 +274,10 @@ public class DocFinder {
         return output;
     }
 
-//    static class InvalidInheritDocException extends Exception {
-//        @java.io.Serial
-//        static final long serialVersionUID = 1L;
-//    }
-//
-//    public static Optional<List<? extends DocTree>> expandInheritDoc(
-//            ExecutableElement method,
-//            Function<? super ExecutableElement, Optional<List<? extends DocTree>>> documentationExtractor,
-//            BaseConfiguration configuration) throws InvalidInheritDocException
-//    {
-//        var overriddenMethods = methodsOverriddenBy(method, configuration);
-//        if (!overriddenMethods.hasNext()) {
-//            throw new InvalidInheritDocException();
-//        }
-//        do {
-//            var m = overriddenMethods.next();
-//            var d = documentationExtractor.apply(m);
-//            if (d.isPresent()) {
-//                return d;
-//            }
-//        } while (overriddenMethods.hasNext());
-//        return Optional.empty();
-//    }
+    public static final class NoOverriddenMethodsFound extends Exception {
+        @java.io.Serial
+        private static final long serialVersionUID = 1L;
+    }
 
     public static <T> Optional<T> search(
             ExecutableElement method,
@@ -314,6 +295,22 @@ public class DocFinder {
     {
         return methodsOverriddenBy(method, includeMethod, configuration)
                 .flatMap(m -> criteria.apply(m).stream()).findFirst();
+    }
+
+    public static <T> Optional<T> trySearch(
+            ExecutableElement method,
+            boolean includeMethod,
+            Function<? super ExecutableElement, Optional<T>> criteria,
+            BaseConfiguration configuration) throws NoOverriddenMethodsFound
+    {
+        var found = new boolean[]{false};
+        var first = methodsOverriddenBy(method, includeMethod, configuration)
+                .peek(m -> found[0] = true) // if there are overridden methods, `found` will be true
+                .flatMap(m -> criteria.apply(m).stream()).findFirst();
+        if (!found[0]) {
+            throw new NoOverriddenMethodsFound();
+        }
+        return first;
     }
 
     static Stream<ExecutableElement> methodsOverriddenBy(ExecutableElement method,
