@@ -256,7 +256,10 @@ public enum ClassFileFormatVersion {
      */
     RELEASE_20(64);
 
-    private int major;
+    // Note to maintainers: when adding constants for newer releases,
+    // the implementation of latest() must be updated too.
+
+    private final int major;
 
     private ClassFileFormatVersion(int major) {
         this.major = major;
