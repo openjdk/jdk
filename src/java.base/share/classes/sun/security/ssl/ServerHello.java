@@ -413,15 +413,15 @@ final class ServerHello {
             }
 
             List<CipherSuite> legacySuites = new LinkedList<>();
-
-            // for debugging purpose only
-            List<CipherSuite.KeyExchange> keyExchanges = null;
-
+            boolean CSFound = false;
             for (CipherSuite cs : preferred) {
                 if (!HandshakeContext.isNegotiable(
                         proposed, shc.negotiatedProtocol, cs)) {
                     continue;
                 }
+
+                // only reason for failure now would be key exchange issue
+                CSFound = true;
 
                 if (shc.sslConfig.clientAuthType ==
                         ClientAuthType.CLIENT_AUTH_REQUIRED) {
@@ -436,11 +436,6 @@ final class ServerHello {
 
                 if (ke == null) {
                     continue;
-                }
-
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
-                    keyExchanges = new LinkedList<>();
-                    keyExchanges.add(cs.keyExchange);
                 }
 
                 if (!ServerHandshakeContext.legacyAlgorithmConstraints.permits(
@@ -460,20 +455,11 @@ final class ServerHello {
                 return new KeyExchangeProperties(cs, ke, hcds);
             }
 
-
             for (CipherSuite cs : legacySuites) {
                 SSLKeyExchange ke = SSLKeyExchange.valueOf(
                         cs.keyExchange,  shc.negotiatedProtocol);
 
                 if (ke != null) {
-
-                    if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
-                        if(keyExchanges == null){
-                            keyExchanges = new LinkedList<>();
-                        }
-                        keyExchanges.add(cs.keyExchange);
-                    }
-
                     SSLPossession[] hcds = ke.createPossessions(shc);
                     if ((hcds != null) && (hcds.length != 0)) {
                         if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
@@ -484,25 +470,14 @@ final class ServerHello {
                     }
                 }
             }
-
-
-            String finalErrorMessage = "no cipher suites in common";
-
-            /**
-             *  legacySuites contains element, when arriving here, it is the failure of key exchanging
-             *  if legacySuites has zero element, the key exchange operation will not be executed.
-             */
-
-            if (legacySuites.size() > 0) {
-                finalErrorMessage = "key exchange failed";
-            }
-
+            
             //negotiation failed between client and server, print server enabled cipher suites
             if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
-                printServerSocketConfig(shc, legacySuites, keyExchanges);
+                printServerSocketConfig(shc, legacySuites);
             }
-
-            throw shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,finalErrorMessage);
+            String finalErrorMessage = CSFound ? "key exchange failed" :
+                    "no cipher suites in common";
+            throw shc.conContext.fatal(Alert.HANDSHAKE_FAILURE, finalErrorMessage);
         }
 
         private static final class KeyExchangeProperties {
@@ -779,7 +754,7 @@ final class ServerHello {
 
             // no cipher suites in common
             if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
-                printServerSocketConfig(shc, null, null);
+                printServerSocketConfig(shc, null);
             }
             return null;
         }
@@ -787,34 +762,28 @@ final class ServerHello {
 
     // print out server socket config
     private static void printServerSocketConfig(ServerHandshakeContext shc,
-                                                       List<CipherSuite> legacySuites,
-                                                       List<CipherSuite.KeyExchange> keyExchanges){
+                                                       List<CipherSuite> legacySuites) {
         StringBuilder sb = new StringBuilder();
         sb.append("\"{0}\": '\n{'\n")
-                .append("  \"preferred cipher suites\"     : \"{1}\",\n")
-                .append("  \"client auth type\"            : \"{2}\",\n")
-                .append("  \"enabled server cipher suites\": \"{3}\",\n")
-                .append("  \"legacy algorithms\"           : \"{4}\"");
+                .append("  \"preferred ciphersuites\"     : \"{1}\",\n")
+                .append("  \"client auth type\"           : \"{2}\",\n")
+                .append("  \"enabled server ciphersuites\": \"{3}\",\n")
+                .append("  \"legacy algorithms\"          : \"{4}\"");
 
         LinkedList<String> fieldsList = new LinkedList<>();
 
-        fieldsList.add("Enabled Server Cipher Suites");
-        fieldsList.add(shc.sslConfig.preferLocalCipherSuites ? "using server cipher suites" :
-                "using client cipher suites");
+        fieldsList.add("SSLSeverSocket info");
+        fieldsList.add(shc.sslConfig.preferLocalCipherSuites ? "Server preference" : "Client preference");
         fieldsList.add(shc.sslConfig.clientAuthType.toString());
         fieldsList.add(shc.activeCipherSuites != null ? shc.activeCipherSuites.toString() : "Not Set");
         fieldsList.add(Security.getProperty(LegacyAlgorithmConstraints.PROPERTY_TLS_LEGACY_ALGS));
 
         if (!shc.negotiatedProtocol.name.equalsIgnoreCase(ProtocolVersion.TLS13.name)) {
             sb.append(",\n");
-            sb.append("  \"legacy suites\"               : \"{5}\",\n")
-                    .append("  \"ssl key exchange info\"       : \"{6}\"\n");
+            sb.append("  \"legacy ciphersuites\"        : \"{5}\",\n");
 
             fieldsList.add(legacySuites != null ? legacySuites.stream()
                     .map(n -> n.name())
-                    .collect(Collectors.joining(",", "[", "]")) : "Not Set");
-            fieldsList.add(keyExchanges != null ? keyExchanges.stream()
-                    .map(n -> n.name()).distinct()
                     .collect(Collectors.joining(",", "[", "]")) : "Not Set");
         } else {
             sb.append("\n");

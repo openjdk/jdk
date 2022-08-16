@@ -39,8 +39,8 @@ import javax.net.ssl.SSLSocket;
 public class ServerSocketConfigTest extends SSLSocketTemplate {
     private  String protocol;
 
-    private final static String[] protocols = {"TLSv1.2", "TLSv1.3"};
-    private final static String[] serverCipherSuites = {
+    private final static String[] PROTOCOLS = {"TLSv1.2", "TLSv1.3"};
+    private final static String[] SERVER_CS = {
             "TLS_RSA_WITH_NULL_SHA256",
             "TLS_DH_anon_WITH_AES_128_CBC_SHA",
             "TLS_ECDH_anon_WITH_AES_128_CBC_SHA",
@@ -50,23 +50,22 @@ public class ServerSocketConfigTest extends SSLSocketTemplate {
             "TLS_CHACHA20_POLY1305_SHA256",
             "TLS_AES_256_GCM_SHA384"};
 
-    private final static String[] noCommonCipherSuites = {
+    private final static String[] NO_COMMON_CS = {
             "TLS_DH_anon_WITH_AES_128_CBC_SHA",
             "TLS_ECDH_anon_WITH_AES_128_CBC_SHA",
             "TLS_ECDHE_ECDSA_WITH_RC4_128_SHA",
             "TLS_RSA_WITH_DES_CBC_SHA",
             "TLS_RSA_WITH_3DES_EDE_CBC_SHA"};
 
-    private final static String[] clientTSLV12Ciphersuites = {"TLS_RSA_WITH_NULL_SHA256"};
+    private final static String[] CLIENT_TLSV12_CS = {"TLS_RSA_WITH_NULL_SHA256"};
 
-    private final static String[] clientTLSV13Ciphersuites = {"TLS_AES_128_GCM_SHA256"};
-    private final static String debugMessage = "\"Enabled Server Cipher Suites\":";
-    private final static String keyExchange = "\"[K_RSA]\"";
-    private final static String legacySuites = "\"[TLS_RSA_WITH_NULL_SHA256]\"";
+    private final static String[] CLIENT_TLSV13_CS = {"TLS_AES_128_GCM_SHA256"};
+    private final static String DEBUG_MESSAGE = "\"SSLSeverSocket info\":";
+    private final static String LEGACY_CS = "\"[TLS_RSA_WITH_NULL_SHA256]\"";
 
-    private final static String noCommonInCipherSuiteMsg = "no cipher suites in common";
+    private final static String NO_COMMON_IN_CS_MSG = "no cipher suites in common";
 
-    private final static String keyExchangeFailedMsg = "key exchange failed";
+    private final static String KEY_EXCHANGE_FAILED_MSG = "key exchange failed";
 
     ServerSocketConfigTest(String protocol) {
         serverAddress = InetAddress.getLoopbackAddress();
@@ -75,7 +74,7 @@ public class ServerSocketConfigTest extends SSLSocketTemplate {
 
     @Override
     protected SSLContext createServerSSLContext() throws Exception {
-        if (protocols[0].equalsIgnoreCase(protocol)) {
+        if (PROTOCOLS[0].equalsIgnoreCase(protocol)) {
             return createSSLContext(TRUSTED_CERTS, null,
                     getServerContextParameters());
         } else {
@@ -86,26 +85,26 @@ public class ServerSocketConfigTest extends SSLSocketTemplate {
 
     @Override
     protected void configureServerSocket(SSLServerSocket socket) {
-        if (protocols[0].equalsIgnoreCase(protocol) || protocols[1].equalsIgnoreCase(protocol)) {
-            socket.setEnabledCipherSuites(serverCipherSuites);
+        if (PROTOCOLS[0].equalsIgnoreCase(protocol) || PROTOCOLS[1].equalsIgnoreCase(protocol)) {
+            socket.setEnabledCipherSuites(SERVER_CS);
             socket.setEnabledProtocols(new String[]{protocol});
         } else {
-            socket.setEnabledCipherSuites(noCommonCipherSuites);
-            socket.setEnabledProtocols(new String[]{protocols[0]});
+            socket.setEnabledCipherSuites(NO_COMMON_CS);
+            socket.setEnabledProtocols(new String[]{PROTOCOLS[0]});
         }
     }
 
     @Override
     protected void configureClientSocket(SSLSocket socket) {
-        String[] clientCipherSuites = protocols[1].equalsIgnoreCase(protocol) ?
-                clientTLSV13Ciphersuites : clientTSLV12Ciphersuites;
+        String[] clientCipherSuites = PROTOCOLS[1].equalsIgnoreCase(protocol) ?
+                CLIENT_TLSV13_CS : CLIENT_TLSV12_CS;
 
         socket.setEnabledCipherSuites(clientCipherSuites);
 
-        if (protocols[1].equalsIgnoreCase(protocol)) {
+        if (PROTOCOLS[1].equalsIgnoreCase(protocol)) {
             socket.setEnabledProtocols(new String[]{protocol});
         } else {
-            socket.setEnabledProtocols(new String[]{protocols[0]});
+            socket.setEnabledProtocols(new String[]{PROTOCOLS[0]});
         }
     }
 
@@ -141,31 +140,29 @@ public class ServerSocketConfigTest extends SSLSocketTemplate {
 
             // Testing protocol TSLv1.2,catch log message when no common cipher suite between client and server
             var output0 = ProcessTools.executeTestJvm(testSrc, enabledDebug, "ServerSocketConfigTest",
-                    "NotTLSv1.2OrTLSv1.3"); // Ensuring args.length is greater than 0 when test JVM starts
+                    "NO_COMMON_IN_CIPHERSUITE"); // Ensuring args.length is greater than 0 when test JVM starts
 
-            output0.shouldContain(debugMessage)
-                    .shouldContain(serverCipherSuites[0])
-                    .shouldNotContain(legacySuites)
-                    .shouldNotContain(keyExchange)
-                    .shouldContain(noCommonInCipherSuiteMsg);
+            output0.shouldContain(DEBUG_MESSAGE)
+                    .shouldContain(SERVER_CS[0])
+                    .shouldNotContain(LEGACY_CS)
+                    .shouldContain(NO_COMMON_IN_CS_MSG);
 
             // Testing protocol TSLv1.2,catch log message when key exchange failed between client and server
             var output1 = ProcessTools.executeTestJvm(testSrc, enabledDebug, "ServerSocketConfigTest",
-                    protocols[0]); // Ensuring args.length is greater than 0 when test JVM starts
+                    PROTOCOLS[0]); // Ensuring args.length is greater than 0 when test JVM starts
 
-            output1.shouldContain(debugMessage)
-                    .shouldContain(serverCipherSuites[0])
-                    .shouldContain(legacySuites)
-                    .shouldContain(keyExchange)
-                    .shouldContain(keyExchangeFailedMsg);
+            output1.shouldContain(DEBUG_MESSAGE)
+                    .shouldContain(SERVER_CS[0])
+                    .shouldContain(LEGACY_CS)
+                    .shouldContain(KEY_EXCHANGE_FAILED_MSG);
 
             // Testing protocol TSLv1.3, catch log message when no common cipher suites between client and server
             var output2 = ProcessTools.executeTestJvm(testSrc, enabledDebug, "ServerSocketConfigTest",
-                    protocols[1]); // Ensuring args.length is greater than 0 when test JVM starts
+                    PROTOCOLS[1]); // Ensuring args.length is greater than 0 when test JVM starts
 
-            output2.shouldContain(debugMessage)
-                   .shouldContain(serverCipherSuites[6])
-                   .shouldContain(noCommonInCipherSuiteMsg);
+            output2.shouldContain(DEBUG_MESSAGE)
+                   .shouldContain(SERVER_CS[6])
+                   .shouldContain(NO_COMMON_IN_CS_MSG);
         }
     }
 }
