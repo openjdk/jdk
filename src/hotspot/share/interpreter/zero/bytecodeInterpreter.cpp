@@ -2452,7 +2452,7 @@ run:
             CHECK_NULL(STACK_OBJECT(-(cache->parameter_size())));
             if (cache->is_vfinal()) {
               callee = cache->f2_as_vfinal_method();
-              if (REWRITE_BYTECODES && !UseSharedSpaces && !Arguments::is_dumping_archive()) {
+              if (REWRITE_BYTECODES && !Arguments::is_dumping_archive()) {
                 // Rewrite to _fast_invokevfinal.
                 REWRITE_AT_PC(Bytecodes::_fast_invokevfinal);
               }
