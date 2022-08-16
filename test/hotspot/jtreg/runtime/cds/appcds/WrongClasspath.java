@@ -25,7 +25,7 @@
 /*
  * @test
  * @summary classpath mismatch between dump time and execution time
- * @requires vm.cds & vm.flagless
+ * @requires vm.cds
  * @library /test/lib
  * @compile test-classes/Hello.java
  * @compile test-classes/C2.java
@@ -75,7 +75,7 @@ public class WrongClasspath {
     // message should be there.
     output = TestCommon.execAuto(
         "-cp", jars, "Hello");
-    output.shouldMatch(".warning..cds. A jar file is not the one used while building the shared archive file:.*jar2.jar")
+    output.shouldMatch("A jar file is not the one used while building the shared archive file:.*jar2.jar")
           .shouldMatch(".warning..cds.*jar2.jar timestamp has changed.");
   }
 }
