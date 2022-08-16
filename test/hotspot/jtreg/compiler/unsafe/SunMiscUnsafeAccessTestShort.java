@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,15 @@ import static org.testng.Assert.*;
 
 public class SunMiscUnsafeAccessTestShort {
     static final int ITERS = Integer.getInteger("iters", 1);
-    static final int WEAK_ATTEMPTS = Integer.getInteger("weakAttempts", 10);
+
+    // More resilience for Weak* tests. These operations may spuriously
+    // fail, and so we do several attemps with linear backoff on failure.
+    // Because the backoff grows linearly, and the delays might be granular
+    // to OS limits, the worst-case total time on test would be at least:
+    //    Tfail = delay * attempts * (attempts + 1) / 2 [ms]
+    //
+    static final int WEAK_ATTEMPTS = Integer.getInteger("weakAttempts", 50);
+    static final int WEAK_BASE_DELAY_MS = Integer.getInteger("weakBaseDelay", 10);
 
     static final sun.misc.Unsafe UNSAFE;
 
@@ -84,6 +92,14 @@ public class SunMiscUnsafeAccessTestShort {
         ARRAY_OFFSET = UNSAFE.arrayBaseOffset(short[].class);
         int ascale = UNSAFE.arrayIndexScale(short[].class);
         ARRAY_SHIFT = 31 - Integer.numberOfLeadingZeros(ascale);
+    }
+
+    static void weakDelay(int multiplier) {
+        try {
+            Thread.sleep(WEAK_BASE_DELAY_MS * Math.max(1, multiplier));
+        } catch (InterruptedException ie) {
+            // Do nothing.
+        }
     }
 
     static short static_v;

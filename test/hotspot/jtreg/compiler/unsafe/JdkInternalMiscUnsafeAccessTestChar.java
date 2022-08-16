@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,15 @@ import static org.testng.Assert.*;
 
 public class JdkInternalMiscUnsafeAccessTestChar {
     static final int ITERS = Integer.getInteger("iters", 1);
-    static final int WEAK_ATTEMPTS = Integer.getInteger("weakAttempts", 10);
+
+    // More resilience for Weak* tests. These operations may spuriously
+    // fail, and so we do several attemps with linear backoff on failure.
+    // Because the backoff grows linearly, and the delays might be granular
+    // to OS limits, the worst-case total time on test would be at least:
+    //    Tfail = delay * attempts * (attempts + 1) / 2 [ms]
+    //
+    static final int WEAK_ATTEMPTS = Integer.getInteger("weakAttempts", 50);
+    static final int WEAK_BASE_DELAY_MS = Integer.getInteger("weakBaseDelay", 10);
 
     static final jdk.internal.misc.Unsafe UNSAFE;
 
@@ -84,6 +92,14 @@ public class JdkInternalMiscUnsafeAccessTestChar {
         ARRAY_OFFSET = UNSAFE.arrayBaseOffset(char[].class);
         int ascale = UNSAFE.arrayIndexScale(char[].class);
         ARRAY_SHIFT = 31 - Integer.numberOfLeadingZeros(ascale);
+    }
+
+    static void weakDelay(int multiplier) {
+        try {
+            Thread.sleep(WEAK_BASE_DELAY_MS * Math.max(1, multiplier));
+        } catch (InterruptedException ie) {
+            // Do nothing.
+        }
     }
 
     static char static_v;
@@ -258,6 +274,7 @@ public class JdkInternalMiscUnsafeAccessTestChar {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
                 success = UNSAFE.weakCompareAndSetCharPlain(base, offset, '\u0123', '\u4567');
+                if (!success) weakDelay(c);
             }
             assertEquals(success, true, "weakCompareAndSetPlain char");
             char x = UNSAFE.getChar(base, offset);
@@ -268,6 +285,7 @@ public class JdkInternalMiscUnsafeAccessTestChar {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
                 success = UNSAFE.weakCompareAndSetCharAcquire(base, offset, '\u4567', '\u0123');
+                if (!success) weakDelay(c);
             }
             assertEquals(success, true, "weakCompareAndSetAcquire char");
             char x = UNSAFE.getChar(base, offset);
@@ -278,6 +296,7 @@ public class JdkInternalMiscUnsafeAccessTestChar {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
                 success = UNSAFE.weakCompareAndSetCharRelease(base, offset, '\u0123', '\u4567');
+                if (!success) weakDelay(c);
             }
             assertEquals(success, true, "weakCompareAndSetRelease char");
             char x = UNSAFE.getChar(base, offset);
@@ -288,6 +307,7 @@ public class JdkInternalMiscUnsafeAccessTestChar {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
                 success = UNSAFE.weakCompareAndSetChar(base, offset, '\u4567', '\u0123');
+                if (!success) weakDelay(c);
             }
             assertEquals(success, true, "weakCompareAndSet char");
             char x = UNSAFE.getChar(base, offset);

@@ -47,7 +47,15 @@ import static org.testng.Assert.*;
 
 public class $Qualifier$UnsafeAccessTest$Type$ {
     static final int ITERS = Integer.getInteger("iters", 1);
-    static final int WEAK_ATTEMPTS = Integer.getInteger("weakAttempts", 10);
+
+    // More resilience for Weak* tests. These operations may spuriously
+    // fail, and so we do several attemps with linear backoff on failure.
+    // Because the backoff grows linearly, and the delays might be granular
+    // to OS limits, the worst-case total time on test would be at least:
+    //    Tfail = delay * attempts * (attempts + 1) / 2 [ms]
+    //
+    static final int WEAK_ATTEMPTS = Integer.getInteger("weakAttempts", 50);
+    static final int WEAK_BASE_DELAY_MS = Integer.getInteger("weakBaseDelay", 10);
 
     static final $package$.Unsafe UNSAFE;
 
@@ -88,6 +96,14 @@ public class $Qualifier$UnsafeAccessTest$Type$ {
         ARRAY_OFFSET = UNSAFE.arrayBaseOffset($type$[].class);
         int ascale = UNSAFE.arrayIndexScale($type$[].class);
         ARRAY_SHIFT = 31 - Integer.numberOfLeadingZeros(ascale);
+    }
+
+    static void weakDelay(int multiplier) {
+        try {
+            Thread.sleep(WEAK_BASE_DELAY_MS * Math.max(1, multiplier));
+        } catch (InterruptedException ie) {
+            // Do nothing.
+        }
     }
 
     static $type$ static_v;
@@ -302,6 +318,7 @@ public class $Qualifier$UnsafeAccessTest$Type$ {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
                 success = UNSAFE.weakCompareAndSet$MethodAffix$Plain(base, offset, $value1$, $value2$);
+                if (!success) weakDelay(c);
             }
             assertEquals(success, true, "weakCompareAndSetPlain $type$");
             $type$ x = UNSAFE.get$MethodAffix$(base, offset);
@@ -312,6 +329,7 @@ public class $Qualifier$UnsafeAccessTest$Type$ {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
                 success = UNSAFE.weakCompareAndSet$MethodAffix$Acquire(base, offset, $value2$, $value1$);
+                if (!success) weakDelay(c);
             }
             assertEquals(success, true, "weakCompareAndSetAcquire $type$");
             $type$ x = UNSAFE.get$MethodAffix$(base, offset);
@@ -322,6 +340,7 @@ public class $Qualifier$UnsafeAccessTest$Type$ {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
                 success = UNSAFE.weakCompareAndSet$MethodAffix$Release(base, offset, $value1$, $value2$);
+                if (!success) weakDelay(c);
             }
             assertEquals(success, true, "weakCompareAndSetRelease $type$");
             $type$ x = UNSAFE.get$MethodAffix$(base, offset);
@@ -332,6 +351,7 @@ public class $Qualifier$UnsafeAccessTest$Type$ {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
                 success = UNSAFE.weakCompareAndSet$MethodAffix$(base, offset, $value2$, $value1$);
+                if (!success) weakDelay(c);
             }
             assertEquals(success, true, "weakCompareAndSet $type$");
             $type$ x = UNSAFE.get$MethodAffix$(base, offset);

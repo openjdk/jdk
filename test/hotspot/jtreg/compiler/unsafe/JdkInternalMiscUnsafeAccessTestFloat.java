@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,15 @@ import static org.testng.Assert.*;
 
 public class JdkInternalMiscUnsafeAccessTestFloat {
     static final int ITERS = Integer.getInteger("iters", 1);
-    static final int WEAK_ATTEMPTS = Integer.getInteger("weakAttempts", 10);
+
+    // More resilience for Weak* tests. These operations may spuriously
+    // fail, and so we do several attemps with linear backoff on failure.
+    // Because the backoff grows linearly, and the delays might be granular
+    // to OS limits, the worst-case total time on test would be at least:
+    //    Tfail = delay * attempts * (attempts + 1) / 2 [ms]
+    //
+    static final int WEAK_ATTEMPTS = Integer.getInteger("weakAttempts", 50);
+    static final int WEAK_BASE_DELAY_MS = Integer.getInteger("weakBaseDelay", 10);
 
     static final jdk.internal.misc.Unsafe UNSAFE;
 
@@ -84,6 +92,14 @@ public class JdkInternalMiscUnsafeAccessTestFloat {
         ARRAY_OFFSET = UNSAFE.arrayBaseOffset(float[].class);
         int ascale = UNSAFE.arrayIndexScale(float[].class);
         ARRAY_SHIFT = 31 - Integer.numberOfLeadingZeros(ascale);
+    }
+
+    static void weakDelay(int multiplier) {
+        try {
+            Thread.sleep(WEAK_BASE_DELAY_MS * Math.max(1, multiplier));
+        } catch (InterruptedException ie) {
+            // Do nothing.
+        }
     }
 
     static float static_v;
@@ -240,6 +256,7 @@ public class JdkInternalMiscUnsafeAccessTestFloat {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
                 success = UNSAFE.weakCompareAndSetFloatPlain(base, offset, 1.0f, 2.0f);
+                if (!success) weakDelay(c);
             }
             assertEquals(success, true, "weakCompareAndSetPlain float");
             float x = UNSAFE.getFloat(base, offset);
@@ -250,6 +267,7 @@ public class JdkInternalMiscUnsafeAccessTestFloat {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
                 success = UNSAFE.weakCompareAndSetFloatAcquire(base, offset, 2.0f, 1.0f);
+                if (!success) weakDelay(c);
             }
             assertEquals(success, true, "weakCompareAndSetAcquire float");
             float x = UNSAFE.getFloat(base, offset);
@@ -260,6 +278,7 @@ public class JdkInternalMiscUnsafeAccessTestFloat {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
                 success = UNSAFE.weakCompareAndSetFloatRelease(base, offset, 1.0f, 2.0f);
+                if (!success) weakDelay(c);
             }
             assertEquals(success, true, "weakCompareAndSetRelease float");
             float x = UNSAFE.getFloat(base, offset);
@@ -270,6 +289,7 @@ public class JdkInternalMiscUnsafeAccessTestFloat {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
                 success = UNSAFE.weakCompareAndSetFloat(base, offset, 2.0f, 1.0f);
+                if (!success) weakDelay(c);
             }
             assertEquals(success, true, "weakCompareAndSet float");
             float x = UNSAFE.getFloat(base, offset);
