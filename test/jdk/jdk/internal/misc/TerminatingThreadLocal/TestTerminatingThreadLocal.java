@@ -31,8 +31,9 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.stream.Stream;
 
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -49,39 +50,33 @@ import static org.testng.Assert.*;
  */
 public class TestTerminatingThreadLocal {
 
-    @SuppressWarnings("unchecked")
-    static <T> Object[] testCase(T v0, Consumer<? super TerminatingThreadLocal<T>> action, T... v1) {
-        return new Object[] { v0, action, v1 };
+    @SafeVarargs
+    static <T> Object[] testCase(T initialValue,
+                                 Consumer<? super TerminatingThreadLocal<T>> ttlOps,
+                                 T... expectedTerminatedValues) {
+        return new Object[] {initialValue, ttlOps, Arrays.asList(expectedTerminatedValues)};
+    }
+
+    static <T> Stream<Object[]> testCases(T v0, T v1) {
+        return Stream.of(
+            testCase(v0, ttl -> {                                         }    ),
+            testCase(v0, ttl -> { ttl.get();                              }, v0),
+            testCase(v0, ttl -> { ttl.get();   ttl.remove();              }    ),
+            testCase(v0, ttl -> { ttl.get();   ttl.set(v1);               }, v1),
+            testCase(v0, ttl -> { ttl.set(v1);                            }, v1),
+            testCase(v0, ttl -> { ttl.set(v1); ttl.remove();              }    ),
+            testCase(v0, ttl -> { ttl.set(v1); ttl.remove(); ttl.get();   }, v0),
+            testCase(v0, ttl -> { ttl.get();   ttl.remove(); ttl.set(v1); }, v1)
+        );
     }
 
     @DataProvider
     public Object[][] testCases() {
-        Integer NULL = null;
-        return new Object[][] {
-            testCase(42, ttl -> {                                             }     ),
-            testCase(42, ttl -> { ttl.get();                                  }, 42 ),
-            testCase(42, ttl -> { ttl.get();    ttl.remove();                 }     ),
-            testCase(42, ttl -> { ttl.get();    ttl.set(112);                 }, 112),
-            testCase(42, ttl -> { ttl.set(112);                               }, 112),
-            testCase(42, ttl -> { ttl.set(112); ttl.remove();                 }     ),
-            testCase(42, ttl -> { ttl.set(112); ttl.remove(); ttl.get();      }, 42 ),
-            testCase(42, ttl -> { ttl.get();    ttl.remove(); ttl.set(112);   }, 112),
-
-            testCase(NULL, ttl -> {                                           }      ),
-            testCase(NULL, ttl -> { ttl.get();                                }, NULL),
-            testCase(NULL, ttl -> { ttl.get();    ttl.remove();               }      ),
-            testCase(NULL, ttl -> { ttl.get();    ttl.set(112);               }, 112 ),
-            testCase(NULL, ttl -> { ttl.set(112);                             }, 112 ),
-            testCase(NULL, ttl -> { ttl.set(112); ttl.remove();               }      ),
-            testCase(NULL, ttl -> { ttl.set(112); ttl.remove(); ttl.get();    }, NULL),
-            testCase(NULL, ttl -> { ttl.get();    ttl.remove(); ttl.set(112); }, 112 ),
-
-            testCase(42, ttl -> { ttl.get();     ttl.set(NULL);               }, NULL),
-            testCase(42, ttl -> { ttl.set(NULL);                              }, NULL),
-            testCase(42, ttl -> { ttl.set(NULL); ttl.remove();                }      ),
-            testCase(42, ttl -> { ttl.set(NULL); ttl.remove(); ttl.get();     }, 42  ),
-            testCase(42, ttl -> { ttl.get();     ttl.remove(); ttl.set(NULL); }, NULL),
-        };
+        return Stream.of(
+            testCases(42, 112),
+            testCases(null, new Object()),
+            testCases("abc", null)
+        ).flatMap(Function.identity()).toArray(Object[][]::new);
     }
 
     /**
@@ -90,7 +85,7 @@ public class TestTerminatingThreadLocal {
     @Test(dataProvider = "testCases")
     public <T> void ttlTestPlatform(T initialValue,
                                     Consumer<? super TerminatingThreadLocal<T>> ttlOps,
-                                    T[] expectedTerminatedValues) throws Exception {
+                                    List<T> expectedTerminatedValues) throws Exception {
         List<T> terminatedValues = new CopyOnWriteArrayList<>();
 
         TerminatingThreadLocal<T> ttl = new TerminatingThreadLocal<>() {
@@ -109,7 +104,7 @@ public class TestTerminatingThreadLocal {
         thread.start();
         thread.join();
 
-        assertEquals(terminatedValues, Arrays.asList(expectedTerminatedValues));
+        assertEquals(terminatedValues, expectedTerminatedValues);
     }
 
     /**
@@ -120,7 +115,7 @@ public class TestTerminatingThreadLocal {
     @Test(dataProvider = "testCases")
     public <T> void ttlTestVirtual(T initialValue,
                                    Consumer<? super TerminatingThreadLocal<T>> ttlOps,
-                                   T[] expectedTerminatedValues) throws Exception {
+                                   List<T> expectedTerminatedValues) throws Exception {
         List<T> terminatedValues = new CopyOnWriteArrayList<>();
 
         TerminatingThreadLocal<T> ttl = new TerminatingThreadLocal<>() {
@@ -135,13 +130,13 @@ public class TestTerminatingThreadLocal {
             }
         };
 
-        var carrierRef = new AtomicReference<Thread>();
+        Thread carrier;
 
         // use a single worker thread pool for the cheduler
         try (var pool = Executors.newSingleThreadExecutor()) {
 
             // capture carrier Thread
-            pool.submit(() -> carrierRef.set(Thread.currentThread()));
+            carrier = pool.submit(Thread::currentThread).get();
 
             ThreadFactory factory = virtualThreadBuilder(pool)
                     .name("ttl-test-virtual-", 0)
@@ -156,17 +151,17 @@ public class TestTerminatingThreadLocal {
         }
 
         // wait for carrier to terminate
-        Thread carrier = carrierRef.get();
         carrier.join();
 
-        assertEquals(terminatedValues, Arrays.asList(expectedTerminatedValues));
+        assertEquals(terminatedValues, expectedTerminatedValues);
     }
 
     /**
      * Returns a builder to create virtual threads that use the given scheduler.
      */
     static Thread.Builder.OfVirtual virtualThreadBuilder(Executor scheduler) {
-        Thread.Builder.OfVirtual builder = Thread.ofVirtual();
+        // ensure preview features are enabled
+        Thread.ofVirtual();
         try {
             Class<?> clazz = Class.forName("java.lang.ThreadBuilders$VirtualThreadBuilder");
             Constructor<?> ctor = clazz.getDeclaredConstructor(Executor.class);
