@@ -1754,7 +1754,7 @@ static bool ccp_type_widens(const Type* t, const Type* t0) {
 #endif //ASSERT
 
 // In this analysis, all types are initially set to TOP. We iteratively call Value() on all nodes of the graph until
-// we reach a fix-point (i.e. no types change anymore). We start with a list that only contains the root node. Each time
+// we reach a fixed-point (i.e. no types change anymore). We start with a list that only contains the root node. Each time
 // a new type is set, we push all uses of that node back to the worklist (in some cases, we also push grandchildren
 // or nodes even further down back to the worklist because their type could change as a result of the current type
 // change).
