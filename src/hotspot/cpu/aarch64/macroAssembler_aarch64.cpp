@@ -878,10 +878,15 @@ address MacroAssembler::trampoline_call(Address entry, CodeBuffer* cbuf) {
     if (!in_scratch_emit_size()) {
       // We don't want to emit a trampoline if C2 is generating dummy
       // code during its branch shortening phase.
-      address stub = emit_trampoline_stub(offset(), target);
-      if (stub == NULL) {
-        postcond(pc() == badAddress);
-        return NULL; // CodeCache is full
+      if (entry.rspec().type() == relocInfo::runtime_call_type) {
+        assert(CodeBuffer::supports_shared_stubs(), "must support shared stubs");
+        code()->share_trampoline_for(entry.target(), offset());
+      } else {
+        address stub = emit_trampoline_stub(offset(), target);
+        if (stub == NULL) {
+          postcond(pc() == badAddress);
+          return NULL; // CodeCache is full
+        }
       }
     }
     target = pc();

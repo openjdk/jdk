@@ -49,6 +49,7 @@
 #include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/objectMonitor.hpp"
+#include "runtime/osInfo.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/perfMemory.hpp"
 #include "runtime/semaphore.hpp"
@@ -121,7 +122,6 @@ mach_timebase_info_data_t os::Bsd::_timebase_info = {0, 0};
 volatile uint64_t         os::Bsd::_max_abstime   = 0;
 #endif
 pthread_t os::Bsd::_main_thread;
-int os::Bsd::_page_size = -1;
 
 #if defined(__APPLE__) && defined(__x86_64__)
 static const int processor_id_unassigned = -1;
@@ -1477,18 +1477,6 @@ void os::jvm_path(char *buf, jint buflen) {
 ////////////////////////////////////////////////////////////////////////////////
 // Virtual Memory
 
-int os::vm_page_size() {
-  // Seems redundant as all get out
-  assert(os::Bsd::page_size() != -1, "must call os::init");
-  return os::Bsd::page_size();
-}
-
-// Solaris allocates memory by pages.
-int os::vm_allocation_granularity() {
-  assert(os::Bsd::page_size() != -1, "must call os::init");
-  return os::Bsd::page_size();
-}
-
 static void warn_fail_commit_memory(char* addr, size_t size, bool exec,
                                     int err) {
   warning("INFO: os::commit_memory(" INTPTR_FORMAT ", " SIZE_FORMAT
@@ -1666,7 +1654,7 @@ bool os::pd_release_memory(char* addr, size_t size) {
 
 static bool bsd_mprotect(char* addr, size_t size, int prot) {
   // Bsd wants the mprotect address argument to be page aligned.
-  char* bottom = (char*)align_down((intptr_t)addr, os::Bsd::page_size());
+  char* bottom = (char*)align_down((intptr_t)addr, os::vm_page_size());
 
   // According to SUSv3, mprotect() should only be used with mappings
   // established by mmap(), and mmap() always maps whole pages. Unaligned
@@ -1675,7 +1663,7 @@ static bool bsd_mprotect(char* addr, size_t size, int prot) {
   // caller if you hit this assert.
   assert(addr == bottom, "sanity check");
 
-  size = align_up(pointer_delta(addr, bottom, 1) + size, os::Bsd::page_size());
+  size = align_up(pointer_delta(addr, bottom, 1) + size, os::vm_page_size());
   Events::log(NULL, "Protecting memory [" INTPTR_FORMAT "," INTPTR_FORMAT "] with protection modes %x", p2i(bottom), p2i(bottom+size), prot);
   return ::mprotect(bottom, size, prot) == 0;
 }
@@ -1929,11 +1917,13 @@ extern void report_error(char* file_name, int line_no, char* title,
 void os::init(void) {
   char dummy;   // used to get a guess on initial stack address
 
-  Bsd::set_page_size(getpagesize());
-  if (Bsd::page_size() == -1) {
-    fatal("os_bsd.cpp: os::init: sysconf failed (%s)", os::strerror(errno));
+  int page_size = getpagesize();
+  OSInfo::set_vm_page_size(page_size);
+  OSInfo::set_vm_allocation_granularity(page_size);
+  if (os::vm_page_size() <= 0) {
+    fatal("os_bsd.cpp: os::init: getpagesize() failed (%s)", os::strerror(errno));
   }
-  _page_sizes.add(Bsd::page_size());
+  _page_sizes.add(os::vm_page_size());
 
   Bsd::initialize_system_info();
 

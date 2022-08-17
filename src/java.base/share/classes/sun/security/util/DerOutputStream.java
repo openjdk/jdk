@@ -59,19 +59,19 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 public class DerOutputStream
 extends ByteArrayOutputStream implements DerEncoder {
     /**
-     * Construct an DER output stream.
+     * Construct a DER output stream.
      *
      * @param size how large a buffer to preallocate.
      */
     public DerOutputStream(int size) { super(size); }
 
     /**
-     * Construct an DER output stream.
+     * Construct a DER output stream.
      */
     public DerOutputStream() { }
 
     /**
-     * Writes tagged, pre-marshaled data.  This calcuates and encodes
+     * Writes tagged, pre-marshaled data.  This calculates and encodes
      * the length, so that the output data is the standard triple of
      * { tag, length, data } used by all DER values.
      *
@@ -175,7 +175,7 @@ extends ByteArrayOutputStream implements DerEncoder {
     /**
      * Marshals a DER integer on the output stream.
      *
-     * @param i the integer in bytes, equivalent to BigInteger::toByteArray.
+     * @param buf the integer in bytes, equivalent to BigInteger::toByteArray.
      */
     public void putInteger(byte[] buf) throws IOException {
         write(DerValue.tag_Integer);
@@ -461,8 +461,8 @@ extends ByteArrayOutputStream implements DerEncoder {
      * @param s the string to write
      * @param stringTag one of the DER string tags that indicate which
      * encoding should be used to write the string out.
-     * @param enc the name of the encoder that should be used corresponding
-     * to the above tag.
+     * @param charset the charset that should be used corresponding to
+     * the above tag.
      */
     private void writeString(String s, byte stringTag, Charset charset)
         throws IOException {

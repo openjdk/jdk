@@ -37,7 +37,6 @@ class os::Aix {
 
   static julong _physical_memory;
   static pthread_t _main_thread;
-  static int _page_size;
 
   // -1 = uninitialized, 0 = AIX, 1 = OS/400 (PASE)
   static int _on_pase;
@@ -85,11 +84,6 @@ class os::Aix {
 
   // Given an address, returns the size of the page backing that address
   static size_t query_pagesize(void* p);
-
-  static int page_size(void) {
-    assert(_page_size != -1, "not initialized");
-    return _page_size;
-  }
 
   static intptr_t* ucontext_get_sp(const ucontext_t* uc);
   static intptr_t* ucontext_get_fp(const ucontext_t* uc);
