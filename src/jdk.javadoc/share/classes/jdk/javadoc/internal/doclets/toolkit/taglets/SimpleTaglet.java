@@ -39,7 +39,6 @@ import jdk.javadoc.doclet.Taglet.Location;
 
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
-import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFinder;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
@@ -160,19 +159,6 @@ public class SimpleTaglet extends BaseTaglet implements InheritableTaglet {
 
     private static boolean isEnabled(String locations) {
         return locations.matches("[^Xx]*");
-    }
-
-    @Override
-    public void inherit(DocFinder.Input input, DocFinder.Output output) {
-        List<? extends DocTree> tags = input.utils.getBlockTags(input.element, this);
-        if (!tags.isEmpty()) {
-            output.holder = input.element;
-            output.holderTag = tags.get(0);
-            CommentHelper ch = input.utils.getCommentHelper(output.holder);
-            output.inlineTags = input.isFirstSentence
-                    ? ch.getFirstSentenceTrees(output.holderTag)
-                    : ch.getTags(output.holderTag);
-        }
     }
 
     @Override

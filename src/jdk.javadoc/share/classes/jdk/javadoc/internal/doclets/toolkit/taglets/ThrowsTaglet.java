@@ -66,39 +66,6 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
     }
 
     @Override
-    public void inherit(DocFinder.Input input, DocFinder.Output output) {
-        var utils = input.utils;
-        Element target;
-        var ch = utils.getCommentHelper(input.element);
-        if (input.tagId == null) {
-            var tag = (ThrowsTree) input.docTreeInfo.docTree();
-            target = ch.getException(tag);
-            input.tagId = target == null
-                    ? tag.getExceptionName().getSignature()
-                    : utils.getFullyQualifiedName(target);
-        } else {
-            target = input.utils.findClass(input.element, input.tagId);
-        }
-
-        // TODO warn if target == null as we cannot guarantee type-match, but at most FQN-match.
-
-        for (ThrowsTree tag : input.utils.getThrowsTrees(input.element)) {
-            Element candidate = ch.getException(tag);
-            if (candidate != null && (input.tagId.equals(utils.getSimpleName(candidate)) ||
-                    (input.tagId.equals(utils.getFullyQualifiedName(candidate))))) {
-                output.holder = input.element;
-                output.holderTag = tag;
-                output.inlineTags = ch.getBody(output.holderTag);
-                output.tagList.add(tag);
-            } else if (target != null && candidate != null &&
-                    utils.isTypeElement(candidate) && utils.isTypeElement(target) &&
-                    utils.isSubclassOf((TypeElement) candidate, (TypeElement) target)) {
-                output.tagList.add(tag);
-            }
-        }
-    }
-
-    @Override
     public Output inherit(Element owner, DocTree tag, boolean isFirstSentence, BaseConfiguration configuration) {
         assert tag.getKind() == DocTree.Kind.THROWS || tag.getKind() == DocTree.Kind.EXCEPTION
                 : tag.getKind();
@@ -107,6 +74,7 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
         CommentHelper ch = configuration.utils.getCommentHelper(owner);
         Element exceptionElement = ch.getException(t);
         if (exceptionElement == null) {
+            // TODO warn if target == null as we cannot guarantee type-match, but at most FQN-match.
             throw new Error();
         }
         TypeMirror exception = exceptionElement.asType();

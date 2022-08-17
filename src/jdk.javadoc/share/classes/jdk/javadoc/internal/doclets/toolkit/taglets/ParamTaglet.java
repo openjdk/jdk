@@ -63,52 +63,6 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
     }
 
     @Override
-    public void inherit(DocFinder.Input input, DocFinder.Output output) {
-        Utils utils = input.utils;
-        if (input.tagId == null) {
-            var tag = (ParamTree) input.docTreeInfo.docTree();
-            input.isTypeVariableParamTag = tag.isTypeParameter();
-            ExecutableElement ee = (ExecutableElement) input.docTreeInfo.element();
-            CommentHelper ch = utils.getCommentHelper(ee);
-            List<? extends Element> parameters = input.isTypeVariableParamTag
-                    ? ee.getTypeParameters()
-                    : ee.getParameters();
-            String target = ch.getParameterName(tag);
-            for (int i = 0; i < parameters.size(); i++) {
-                Element e = parameters.get(i);
-                String candidate = input.isTypeVariableParamTag
-                        ? utils.getTypeName(e.asType(), false)
-                        : utils.getSimpleName(e);
-                if (candidate.equals(target)) {
-                    input.tagId = Integer.toString(i);
-                    break;
-                }
-            }
-        }
-        if (input.tagId == null)
-            return;
-        int position = Integer.parseInt(input.tagId);
-        ExecutableElement ee = (ExecutableElement) input.element;
-        CommentHelper ch = utils.getCommentHelper(ee);
-        List<ParamTree> tags = input.isTypeVariableParamTag
-                ? utils.getTypeParamTrees(ee)
-                : utils.getParamTrees(ee);
-        List<? extends Element> parameters = input.isTypeVariableParamTag
-                ? ee.getTypeParameters()
-                : ee.getParameters();
-        Map<String, Integer> positionOfName = mapNameToPosition(utils, parameters);
-        for (ParamTree tag : tags) {
-            String paramName = ch.getParameterName(tag);
-            if (positionOfName.containsKey(paramName) && positionOfName.get(paramName).equals(position)) {
-                output.holder = input.element;
-                output.holderTag = tag;
-                output.inlineTags = ch.getBody(tag);
-                return;
-            }
-        }
-    }
-
-    @Override
     public Output inherit(Element owner, DocTree tag, boolean isFirstSentence, BaseConfiguration configuration) {
         assert owner.getKind() == ElementKind.METHOD;
         assert tag.getKind() == DocTree.Kind.PARAM;

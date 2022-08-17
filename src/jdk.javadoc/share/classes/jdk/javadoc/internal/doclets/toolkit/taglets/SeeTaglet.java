@@ -37,7 +37,6 @@ import com.sun.source.doctree.SeeTree;
 import jdk.javadoc.doclet.Taglet.Location;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
-import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFinder;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
@@ -48,20 +47,6 @@ public class SeeTaglet extends BaseTaglet implements InheritableTaglet {
 
     public SeeTaglet() {
         super(DocTree.Kind.SEE, false, EnumSet.allOf(Location.class));
-    }
-
-    @Override
-    public void inherit(DocFinder.Input input, DocFinder.Output output) {
-        List<? extends SeeTree> tags = input.utils.getSeeTrees(input.element);
-        if (!tags.isEmpty()) {
-            CommentHelper ch = input.utils.getCommentHelper(input.element);
-            output.holder = input.element;
-            // TODO investigate: this seems to inherit the first @see tag only
-            output.holderTag = tags.get(0);
-            output.inlineTags = input.isFirstSentence
-                    ? ch.getFirstSentenceTrees(output.holderTag)
-                    : ch.getReference(output.holderTag);
-        }
     }
 
     @Override

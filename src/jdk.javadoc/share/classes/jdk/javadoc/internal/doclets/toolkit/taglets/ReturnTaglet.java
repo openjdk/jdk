@@ -41,7 +41,6 @@ import jdk.javadoc.doclet.Taglet.Location;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.Messages;
-import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFinder;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
@@ -57,31 +56,6 @@ public class ReturnTaglet extends BaseTaglet implements InheritableTaglet {
     @Override
     public boolean isBlockTag() {
         return true;
-    }
-
-    @Override
-    public void inherit(DocFinder.Input input, DocFinder.Output output) {
-        Utils utils = input.utils;
-        CommentHelper ch = utils.getCommentHelper(input.element);
-
-        ReturnTree tag = null;
-        List<? extends ReturnTree> tags = utils.getReturnTrees(input.element);
-        if (!tags.isEmpty()) {
-            tag = tags.get(0);
-        } else {
-            List<? extends DocTree> firstSentence = utils.getFirstSentenceTrees(input.element);
-            if (firstSentence.size() == 1 && firstSentence.get(0).getKind() == DocTree.Kind.RETURN) {
-                tag = (ReturnTree) firstSentence.get(0);
-            }
-        }
-
-        if (tag != null) {
-            output.holder = input.element;
-            output.holderTag = tag;
-            output.inlineTags = input.isFirstSentence
-                    ? ch.getFirstSentenceTrees(output.holderTag)
-                    : ch.getDescription(output.holderTag);
-        }
     }
 
     @Override

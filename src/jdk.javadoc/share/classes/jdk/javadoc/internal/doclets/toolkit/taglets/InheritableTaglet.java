@@ -27,7 +27,6 @@ package jdk.javadoc.internal.doclets.toolkit.taglets;
 
 import com.sun.source.doctree.DocTree;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
-import jdk.javadoc.internal.doclets.toolkit.util.DocFinder;
 
 import javax.lang.model.element.Element;
 import java.util.List;
@@ -37,16 +36,6 @@ import java.util.List;
  * tag or is automatically inherited if it is missing.
  */
 public interface InheritableTaglet extends Taglet {
-
-    /**
-     * Given an {@link jdk.javadoc.internal.doclets.toolkit.util.DocFinder.Output}
-     * object, set its values with the appropriate information to inherit
-     * documentation.
-     *
-     * @param input  the input for documentation search
-     * @param output the output for documentation search
-     */
-    void inherit(DocFinder.Input input, DocFinder.Output output);
 
     Output inherit(Element owner, DocTree tag, boolean isFirstSentence, BaseConfiguration configuration);
 
