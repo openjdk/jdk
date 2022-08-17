@@ -880,7 +880,9 @@ public class LoginContext {
                     if (debug != null)
                         debug.println(methodName + " OPTIONAL failure");
 
-                    // mark down that an OPTIONAL module failed
+		     le.printStackTrace();
+
+		     // mark down that an OPTIONAL module failed
                     if (firstError == null)
                         firstError = le;
                 }
