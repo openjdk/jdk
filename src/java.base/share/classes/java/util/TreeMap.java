@@ -25,7 +25,6 @@
 
 package java.util;
 
-import java.io.Serializable;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -340,22 +339,13 @@ public class TreeMap<K,V>
      */
     final Entry<K,V> getEntry(Object key) {
         // Offload comparator-based version for sake of performance
+        Comparator<? super K> comparator = this.comparator;
         if (comparator != null)
-            return getEntryUsingComparator(key);
+            return getEntryUsingComparator(key, comparator);
         Objects.requireNonNull(key);
         @SuppressWarnings("unchecked")
-            Comparable<? super K> k = (Comparable<? super K>) key;
-        Entry<K,V> p = root;
-        while (p != null) {
-            int cmp = k.compareTo(p.key);
-            if (cmp < 0)
-                p = p.left;
-            else if (cmp > 0)
-                p = p.right;
-            else
-                return p;
-        }
-        return null;
+        Comparable<? super K> k = (Comparable<? super K>) key;
+        return getEntryUsingComparator(k, natural());
     }
 
     /**
@@ -364,21 +354,18 @@ public class TreeMap<K,V>
      * that are less dependent on comparator performance, but is
      * worthwhile here.)
      */
-    final Entry<K,V> getEntryUsingComparator(Object key) {
+    final Entry<K, V> getEntryUsingComparator(Object key, Comparator<? super K> cpr) {
         @SuppressWarnings("unchecked")
-            K k = (K) key;
-        Comparator<? super K> cpr = comparator;
-        if (cpr != null) {
-            Entry<K,V> p = root;
-            while (p != null) {
-                int cmp = cpr.compare(k, p.key);
-                if (cmp < 0)
-                    p = p.left;
-                else if (cmp > 0)
-                    p = p.right;
-                else
-                    return p;
-            }
+        K k = (K) key;
+        Entry<K, V> p = root;
+        while (p != null) {
+            int cmp = cpr.compare(k, p.key);
+            if (cmp < 0)
+                p = p.left;
+            else if (cmp > 0)
+                p = p.right;
+            else
+                return p;
         }
         return null;
     }
@@ -1074,7 +1061,7 @@ public class TreeMap<K,V>
      * <em>fail-fast</em>, and additionally reports {@link Spliterator#SORTED}
      * and {@link Spliterator#ORDERED} with an encounter order that is ascending
      * key order.  The spliterator's comparator (see
-     * {@link java.util.Spliterator#getComparator()}) is {@code null} if
+     * {@link Spliterator#getComparator()}) is {@code null} if
      * the tree map's comparator (see {@link #comparator()}) is {@code null}.
      * Otherwise, the spliterator's comparator is the same as or imposes the
      * same total ordering as the tree map's comparator.
@@ -2961,6 +2948,11 @@ public class TreeMap<K,V>
         return new DescendingKeySpliterator<>(this, null, null, 0, -2, 0);
     }
 
+    @SuppressWarnings("unchecked")
+    private static <K> Comparator<? super K> natural() {
+        return (Comparator<? super K>) Comparator.naturalOrder();
+    }
+
     /**
      * Base class for spliterators.  Iteration starts at a given
      * origin and continues up to but not including a given fence (or
@@ -3322,16 +3314,8 @@ public class TreeMap<K,V>
         @Override
         public Comparator<Map.Entry<K, V>> getComparator() {
             // Adapt or create a key-based comparator
-            if (tree.comparator != null) {
-                return Map.Entry.comparingByKey(tree.comparator);
-            }
-            else {
-                return (Comparator<Map.Entry<K, V>> & Serializable) (e1, e2) -> {
-                    @SuppressWarnings("unchecked")
-                    Comparable<? super K> k1 = (Comparable<? super K>) e1.getKey();
-                    return k1.compareTo(e2.getKey());
-                };
-            }
+            Comparator<? super K> treeComparator = tree.comparator;
+            return Map.Entry.comparingByKey(treeComparator == null ? natural() : treeComparator);
         }
     }
 }
