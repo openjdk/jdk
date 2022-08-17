@@ -23,12 +23,11 @@
 
 #include "precompiled.hpp"
 #ifndef _WIN32
-#include "memory/allocation.hpp"
-#include "memory/resourceArea.hpp"
 #include "runtime/os.hpp"
-#include "utilities/defaultStream.hpp"
+#include "utilities/ostream.hpp"
 #include "unittest.hpp"
 
+#include <errno.h>
 #include <signal.h>
 #include <stdio.h>
 #include <sys/ucontext.h>
@@ -44,23 +43,22 @@ class PosixSignalTest : public ::testing::Test {
   public:
 
   static void check_handlers() {
-    ResourceMark rm;
     struct sigaction act, old_SIGFPE_act, old_SIGILL_act;
     act.sa_handler = (void (*)(int))sig_handler;
     sigemptyset(&act.sa_mask);
     act.sa_flags = 0;
-    ASSERT_NE(sigaction(SIGFPE, &act, &old_SIGFPE_act), -1) << "Setting SIGFPE handler failed";
-    ASSERT_NE(sigaction(SIGILL, &act, &old_SIGILL_act), -1) << "Setting SIGILL handler failed";
+    ASSERT_NE(sigaction(SIGFPE, &act, &old_SIGFPE_act), -1) << "Setting SIGFPE handler failed (errno)";
+    ASSERT_NE(sigaction(SIGILL, &act, &old_SIGILL_act), -1) << "Setting SIGILL handler failed (errno)";
 
     // Use local stringStream to capture output from run_periodic_checks() calls to
     // print_signal_handlers().
     stringStream st;
     os::run_periodic_checks(&st);
-    char* res = st.as_string();
+    char* res = (char *)st.base(); // res can't be const because some strstr()'s have non-const first args.
 
     // Restore signal handlers.
-    ASSERT_NE(sigaction(SIGFPE, &act, &old_SIGFPE_act), -1) << "Restoring SIGFPE handler failed";
-    ASSERT_NE(sigaction(SIGILL, &act, &old_SIGILL_act), -1) << "Restoring SIGILL handler failed";
+    ASSERT_NE(sigaction(SIGFPE, &act, &old_SIGFPE_act), -1) << "Restoring SIGFPE handler failed (errno)";
+    ASSERT_NE(sigaction(SIGILL, &act, &old_SIGILL_act), -1) << "Restoring SIGILL handler failed (errno)";
 
     // Check that "Handler was modified" occurs exactly twice in the tty output.
     char* modified = strstr(res, "Handler was modified!");
@@ -73,7 +71,7 @@ class PosixSignalTest : public ::testing::Test {
 };
 
 // This tests the fix for JDK-8285792.
-TEST_VM(PosixSignalTest, check_handlers) {
+TEST_OTHER_VM(PosixSignalTest, check_handlers) {
   PosixSignalTest::check_handlers();
 }
 
