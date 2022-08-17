@@ -1196,6 +1196,15 @@ public class FilePane extends JPanel implements PropertyChangeListener {
                 setIcon(icon);
 
             } else if (value instanceof Long len) {
+                
+                /*
+                 * Code block is relevant to linux
+                 * File size display upto 1 decimal precision
+                 * Base-10 number system used for formatting file size
+                 * similar to linux file system
+                 * Empty file size show as 0.0 KB
+                 * 1->100 byte files show as 0.1 KB and so on
+                 */
                 if (listViewWindowsStyle) {
                     updateMessageFormatPattern(kiloByteString);
                     if (len == 0) {
@@ -1205,7 +1214,6 @@ public class FilePane extends JPanel implements PropertyChangeListener {
                     } else {
                         objs[0] = formatToDoubleValue(len);
                     }
-                    text = mf.format(objs);
                 } else if (len < 100L) {
                     updateMessageFormatPattern(kiloByteString);
                     if (len == 0) {
@@ -1213,28 +1221,25 @@ public class FilePane extends JPanel implements PropertyChangeListener {
                     } else {
                         objs[0] = 0.1;
                     }
-                    text = mf.format(objs);
                 } else {
                     double kbVal = formatToDoubleValue(len);
                     len = (long)kbVal;
                     if (kbVal < baseFileSize) {
                         updateMessageFormatPattern(kiloByteString);
                         objs[0] = kbVal;
-                        text = mf.format(objs);
                     } else {
                         double mbVal = formatToDoubleValue(len);
                         len = (long)mbVal;
                         if (mbVal < baseFileSize) {
                             updateMessageFormatPattern(megaByteString);
                             objs[0] = mbVal;
-                            text = mf.format(objs);
                         } else {
                             updateMessageFormatPattern(gigaByteString);
                             objs[0] = formatToDoubleValue(len);
-                            text = mf.format(objs);
                         }
                     }
                 }
+                text = mf.format(objs);
 
             } else if (value instanceof Date) {
                 text = df.format((Date)value);
