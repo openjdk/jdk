@@ -35,6 +35,7 @@ import java.awt.Rectangle;
 import java.awt.Insets;
 import java.awt.Graphics;
 import java.awt.FontMetrics;
+import java.awt.Color;
 import java.beans.PropertyChangeEvent;
 
 /**
@@ -214,6 +215,10 @@ public class SynthLabelUI extends BasicLabelUI implements SynthUI {
         } else {
             g.setColor(context.getStyle().getColor(context,
                     ColorType.TEXT_FOREGROUND));
+            Color col = UIManager.getColor("Label.foreground");
+            if (col != null) {
+                label.setForeground(col);
+            }
         }
 
         g.setFont(style.getFont(context));
