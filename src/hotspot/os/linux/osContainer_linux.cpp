@@ -68,7 +68,7 @@ void OSContainer::init() {
     // determined to be less than the physical host memory.
     os::Linux::set_physical_memory(mem_limit);
     log_info(os, container)("Memory Limit is: " JLONG_FORMAT, mem_limit);
-  } else if (mem_limit >= host_memory) {
+  } else if (log_is_enabled(Trace, os, container) && mem_limit >= host_memory) {
     log_trace(os, container)("Container memory limit exceeded or equal to physical"
                              " memory! container mem: " JLONG_FORMAT ", host mem: " JLONG_FORMAT,
                              mem_limit, host_memory);
