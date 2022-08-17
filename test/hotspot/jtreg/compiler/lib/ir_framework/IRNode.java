@@ -180,8 +180,8 @@ public class IRNode {
     public static final String MUL_I = START + "MulI" + MID + END;
     public static final String MUL_L = START + "MulL" + MID + END;
     public static final String MUL_F = START + "MulF" + MID + END;
-    public static final String MUL_L_HI = START + "MulLHi" + MID + END;
-    public static final String UMUL_L_HI = START + "UMulLHi" + MID + END;
+    public static final String MUL_HI_L = START + "MulHiL" + MID + END;
+    public static final String UMUL_HI_L = START + "UMulHiL" + MID + END;
     public static final String DIV = START + "Div(I|L|F|D)" + MID + END;
     public static final String DIV_L = START + "DivL" + MID + END;
     public static final String UDIV_I = START + "UDivI" + MID + END;

@@ -196,7 +196,7 @@ public class DivLNodeIdealizationTests {
     @IR(failOn = {IRNode.DIV_L})
     @IR(counts = {IRNode.SUB_L, "1",
                   IRNode.RSHIFT_L, "1",
-                  IRNode.MUL_L_HI, "1"
+                  IRNode.MUL_HI_L, "1"
                  })
     // Checks magic long division occurs in general when dividing by a non power of 2.
     // The constant derived from 19 lies inside the limit of an i64
@@ -208,7 +208,7 @@ public class DivLNodeIdealizationTests {
     @IR(failOn = {IRNode.DIV_L})
     @IR(counts = {IRNode.SUB_L, "1",
                   IRNode.RSHIFT_L, "1",
-                  IRNode.MUL_L_HI, "1",
+                  IRNode.MUL_HI_L, "1",
                   IRNode.ADD_L, "1"
                  })
     // Checks magic long division occurs in general when dividing by a non power of 2.

@@ -379,12 +379,12 @@ static void magic_long_unsigned_divide_constants(julong d, jlong &M, jint &s, bo
   jint p;
   julong nc, delta, q1, r1, q2, r2;
 
-  nc = -1 - (-d)%d;       // Unsigned arithmetic here.
-  p = 63;                 // Init. p.
-  q1 = 0x80000000/nc;     // Init. q1 = 2**p/nc.
-  r1 = 0x80000000 - q1*nc;// Init. r1 = rem(2**p, nc).
-  q2 = 0x7FFFFFFF/d;      // Init. q2 = (2**p - 1)/d.
-  r2 = 0x7FFFFFFF - q2*d; // Init. r2 = rem(2**p - 1, d).
+  nc = -1 - (-d)%d;                // Unsigned arithmetic here.
+  p = 63;                          // Init. p.
+  q1 = 0x8000000000000000U/nc;     // Init. q1 = 2**p/nc.
+  r1 = 0x8000000000000000U - q1*nc;// Init. r1 = rem(2**p, nc).
+  q2 = 0x7FFFFFFFFFFFFFFFU/d;      // Init. q2 = (2**p - 1)/d.
+  r2 = 0x7FFFFFFFFFFFFFFFU - q2*d; // Init. r2 = rem(2**p - 1, d).
   magic_const_ovf = false;
   do {
     p = p + 1;
@@ -396,20 +396,20 @@ static void magic_long_unsigned_divide_constants(julong d, jlong &M, jint &s, bo
       r1 = 2*r1;
     }
     if (r2 + 1 >= d - r2) {
-      if (q2 >= 0x7FFFFFFF) {
+      if (q2 >= 0x7FFFFFFFFFFFFFFFU) {
         magic_const_ovf = true;
       }
       q2 = 2*q2 + 1;      // Update q2.
       r2 = 2*r2 + 1 - d;  // Update r2.
     } else {
-      if (q2 >= 0x80000000) {
+      if (q2 >= 0x8000000000000000U) {
         magic_const_ovf = true;
       }
       q2 = 2*q2;
       r2 = 2*r2 + 1;
     }
     delta = d - 1 - r2;
-  } while (p < 64 && (q1 < delta || (q1 == delta && r1 == 0)));
+  } while (p < 128 && (q1 < delta || (q1 == delta && r1 == 0)));
   M = q2 + 1;             // Magic number
   s = p - 64;             // and shift amount to return
 }
@@ -632,7 +632,7 @@ static Node *transform_long_udivide( PhaseGVN *phase, Node *dividend, julong div
     jlong magic_const;
     jint shift_const;
     bool magic_const_ovf;
-    magic_long_unsigned_divide_constants(divisor, magic_const, shift_const, magic_const_ovf)
+    magic_long_unsigned_divide_constants(divisor, magic_const, shift_const, magic_const_ovf);
 
     Node *magic = phase->longcon(magic_const);
     // Compute the high half of the dividend x magic multiplication
@@ -1093,11 +1093,13 @@ const Type* UDivINode::Value(PhaseGVN* phase) const {
     return TypeInt::ONE;
   }
 
-  // Either input is BOTTOM ==> the result is the local BOTTOM
-  const Type *bot = bottom_type();
-  if( (t1 == bot) || (t2 == bot) ||
-      (t1 == Type::BOTTOM) || (t2 == Type::BOTTOM) )
-    return bot;
+  // TODO: Improve Value inference of both signed and unsigned division
+  const TypeInt* i1 = t1->isa_int();
+  const TypeInt* i2 = t2->isa_int();
+  assert(i1 != nullptr && i2 != nullptr, "");
+  if (i1->is_con() && i2->is_con()) {
+    return TypeInt::make(juint(i1->get_con()) / juint(i2->get_con()));
+  }
 
   // Otherwise we give up all hope
   return TypeInt::INT;
@@ -1116,7 +1118,6 @@ Node *UDivINode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   const TypeInt *ti = t->isa_int();
   if( !ti ) return nullptr;
-  if( !phase->type(in(1))->isa_int() ) return nullptr;
 
   // Check for useless control input
   // Check for excluding div-zero case
@@ -1155,11 +1156,13 @@ const Type* UDivLNode::Value(PhaseGVN* phase) const {
     return TypeLong::ONE;
   }
 
-  // Either input is BOTTOM ==> the result is the local BOTTOM
-  const Type *bot = bottom_type();
-  if( (t1 == bot) || (t2 == bot) ||
-      (t1 == Type::BOTTOM) || (t2 == Type::BOTTOM) )
-    return bot;
+  // TODO: Improve Value inference of both signed and unsigned division
+  const TypeLong* i1 = t1->isa_long();
+  const TypeLong* i2 = t2->isa_long();
+  assert(i1 != nullptr && i2 != nullptr, "");
+  if (i1->is_con() && i2->is_con()) {
+    return TypeLong::make(julong(i1->get_con()) / julong(i2->get_con()));
+  }
 
   // Otherwise we give up all hope
   return TypeLong::LONG;
@@ -1178,7 +1181,6 @@ Node *UDivLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   const TypeLong *ti = t->isa_long();
   if( !ti ) return nullptr;
-  if( !phase->type(in(1))->isa_long() ) return nullptr;
 
   // Check for useless control input
   // Check for excluding div-zero case
@@ -1594,7 +1596,7 @@ Node *UModINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   juint con = ti->get_con();
 
   if (is_power_of_2(con)) {
-    return AndINode(in(1), phase->intcon(con - 1));
+    return new AndINode(in(1), phase->intcon(con - 1));
   }
   Node* q = transform_int_udivide(phase, in(1), con);
   if (q == nullptr) {
@@ -1630,7 +1632,7 @@ Node *UModLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   julong con = ti->get_con();
 
   if (is_power_of_2(con)) {
-    return AndLNode(in(1), phase->longcon(con - 1));
+    return new AndLNode(in(1), phase->longcon(con - 1));
   }
   Node* q = transform_long_udivide(phase, in(1), con);
   if (q == nullptr) {

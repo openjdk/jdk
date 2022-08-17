@@ -7802,6 +7802,21 @@ instruct divL_eReg(eADXRegL dst, eRegL src1, eRegL src2) %{
   ins_pipe( pipe_slow );
 %}
 
+// Integer UDIV with Register
+instruct udivI_eReg(eAXRegI rax, eDXRegI rdx, eCXRegI div, eFlagsReg cr) %{
+  match(Set rax (DivI rax div));
+  effect(KILL rdx, KILL cr);
+  size(4);
+  ins_cost(300);
+  format %{ "XOR    $rdx, $rdx\n\t"
+            "DIV    $div" %}
+  ins_encode %{
+    __ xorl($rdx$$Register, $rdx$$Register);
+    __ divl($div$$Register);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
 // Integer DIVMOD with Register, both quotient and mod results
 instruct divModI_eReg_divmod(eAXRegI rax, eDXRegI rdx, eCXRegI div, eFlagsReg cr) %{
   match(DivModI rax div);
@@ -7818,6 +7833,21 @@ instruct divModI_eReg_divmod(eAXRegI rax, eDXRegI rdx, eCXRegI div, eFlagsReg cr
     "done:"        %}
   opcode(0xF7, 0x7);  /* Opcode F7 /7 */
   ins_encode( cdq_enc, OpcP, RegOpc(div) );
+  ins_pipe( pipe_slow );
+%}
+
+// Integer UDIVMOD with Register
+instruct udivModI_eReg(eAXRegI rax, eDXRegI rdx, eCXRegI div, eFlagsReg cr) %{
+  match(UDivModI rax div));
+  effect(KILL cr);
+  size(4);
+  ins_cost(300);
+  format %{ "XOR    $rdx, $rdx\n\t"
+            "DIV    $div" %}
+  ins_encode %{
+    __ xorl($rdx$$Register, $rdx$$Register);
+    __ divl($div$$Register);
+  %}
   ins_pipe( pipe_slow );
 %}
 
@@ -7847,6 +7877,21 @@ instruct modL_eReg(eADXRegL dst, eRegL src1, eRegL src2) %{
             "CALL   SharedRuntime::lrem\n\t"
             "ADD    ESP,16" %}
   ins_encode( long_mod(src1,src2) );
+  ins_pipe( pipe_slow );
+%}
+
+// Integer UMOD with Register
+instruct umodI_eReg(eAXRegI rax, eDXRegI rdx, eCXRegI div, eFlagsReg cr) %{
+  match(Set rdx (UModI rax div));
+  effect(KILL rax, KILL cr);
+  size(4);
+  ins_cost(300);
+  format %{ "XOR    $rdx, $rdx\n\t"
+            "DIV    $div" %}
+  ins_encode %{
+    __ xorl($rdx$$Register, $rdx$$Register);
+    __ divl($div$$Register);
+  %}
   ins_pipe( pipe_slow );
 %}
 
