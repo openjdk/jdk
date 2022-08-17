@@ -470,13 +470,12 @@ final class ServerHello {
                     }
                 }
             }
-            
+
             //negotiation failed between client and server, print server enabled cipher suites
             if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                 printServerSocketConfig(shc, legacySuites);
             }
-            String finalErrorMessage = CSFound ? "key exchange failed" :
-                    "no cipher suites in common";
+            String finalErrorMessage = CSFound ? "key exchange failed" : "no cipher suites in common";
             throw shc.conContext.fatal(Alert.HANDSHAKE_FAILURE, finalErrorMessage);
         }
 
