@@ -1196,7 +1196,6 @@ public class FilePane extends JPanel implements PropertyChangeListener {
                 setIcon(icon);
 
             } else if (value instanceof Long len) {
-                
                 /*
                  * Code block is relevant to linux
                  * File size display upto 1 decimal precision
