@@ -152,8 +152,22 @@ protected:
     post_make_deoptimized
   };
 
-  DeoptimizationStatus _deoptimization_status; // Used for stack deoptimization
+  struct EnqueuedDemoptimizationLink;
 
+  static CompiledMethod* _enqueued_deoptimization_root_method;
+  EnqueuedDemoptimizationLink* _enqueued_deoptimization_link;
+
+  static EnqueuedDemoptimizationLink* make_enqueued_deoptimization_link(CompiledMethod* cm, DeoptimizationStatus status) {
+    assert(((uintptr_t)cm & 0x3) == 0, "cm pointer must have zero lower two LSB");
+    return (EnqueuedDemoptimizationLink*)(((uintptr_t)cm & ~0x3) | static_cast<u1>(status));
+  }
+
+  static DeoptimizationStatus extract_enqueued_deoptimization_status(EnqueuedDemoptimizationLink* link) {
+    return static_cast<DeoptimizationStatus>((uintptr_t)link & 0x3);
+  }
+  static CompiledMethod* extract_enqueued_deoptimization_method(EnqueuedDemoptimizationLink* link) {
+    return (CompiledMethod*)((uintptr_t)link & ~0x3);
+  }
   // set during construction
   unsigned int _has_unsafe_access:1;         // May fault due to unsafe access.
   unsigned int _has_method_handle_invokes:1; // Has this method MethodHandle invokes?
@@ -243,12 +257,18 @@ public:
   bool is_at_poll_return(address pc);
   bool is_at_poll_or_poll_return(address pc);
 
-  bool  has_enqueued_deoptimization() const { return _deoptimization_status != not_enqueued; }
+  bool  has_enqueued_deoptimization() const {
+    return extract_enqueued_deoptimization_status(_enqueued_deoptimization_link) != not_enqueued;
+  }
 
-  bool  is_post_make_deoptimized() const { return _deoptimization_status == post_make_deoptimized; }
+  bool  is_post_make_deoptimized() const {
+    return extract_enqueued_deoptimization_status(_enqueued_deoptimization_link) == post_make_deoptimized;
+  }
 
 private:
   bool  enqueue_deoptimization(bool inc_recompile_counts = true);
+  CompiledMethod* next_enqueued_deoptimization_method() const;
+  static CompiledMethod* take_enqueued_deoptimization_root_method();
 protected:
   void  make_deoptimized_done();
 public:
@@ -258,7 +278,8 @@ public:
   bool update_recompile_counts() const {
     // Update recompile counts unless explicitly told not too (enqueued_noupdate) or
     // make_deoptimized_done() has been called.
-    return _deoptimization_status != enqueued_noupdate && _deoptimization_status != post_make_deoptimized;
+    DeoptimizationStatus deoptimization_status = extract_enqueued_deoptimization_status(_enqueued_deoptimization_link);
+    return deoptimization_status != enqueued_noupdate && deoptimization_status != post_make_deoptimized;
   }
 
   // tells whether frames described by this nmethod can be deoptimized

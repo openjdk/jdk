@@ -1025,14 +1025,20 @@ void DeoptimizationContext::enqueue_no_recompile_count_update(CompiledMethod* cm
 }
 
 void DeoptimizationContext::deopt_compiled_methods() {
-  SweeperBlockingCompiledMethodIterator iter(SweeperBlockingCompiledMethodIterator::only_alive_and_not_unloading);
-  while(iter.next()) {
-    CompiledMethod* nm = iter.method();
-    if (nm->has_enqueued_deoptimization() && !nm->is_post_make_deoptimized() && nm->can_be_deoptimized()) {
+  SweeperBlocker sw;
+  CompiledMethod* nm = CompiledMethod::take_enqueued_deoptimization_root_method();
+  uint links_found = 0;
+  while (nm != nullptr) {
+    _deoptimized = true;
+    ++links_found;
+    assert(nm->has_enqueued_deoptimization(), "All nmethods in list must be enqueued");
+    if (!nm->is_post_make_deoptimized() && nm->can_be_deoptimized()) {
       nm->make_not_entrant();
       nm->make_deoptimized();
     }
+    nm = nm->next_enqueued_deoptimization_method();
   }
+  assert(links_found ==_enqueued, "All enqueued nmethods must have been found");
 }
 
 void DeoptimizationContext::deopt_frames() {
@@ -1059,7 +1065,6 @@ void DeoptimizationContext::deopt_frames() {
 }
 
 void DeoptimizationContext::deoptimize() {
-  _deoptimized = true;
   deopt_compiled_methods();
   deopt_frames();
 }

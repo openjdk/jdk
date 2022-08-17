@@ -50,11 +50,13 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/sharedRuntime.hpp"
 
+CompiledMethod* CompiledMethod::_enqueued_deoptimization_root_method = nullptr;
+
 CompiledMethod::CompiledMethod(Method* method, const char* name, CompilerType type, const CodeBlobLayout& layout,
                                int frame_complete_offset, int frame_size, ImmutableOopMapSet* oop_maps,
                                bool caller_must_gc_arguments, bool compiled)
   : CodeBlob(name, type, layout, frame_complete_offset, frame_size, oop_maps, caller_must_gc_arguments, compiled),
-    _deoptimization_status(not_enqueued),
+    _enqueued_deoptimization_link(nullptr),
     _method(method),
     _gc_data(NULL)
 {
@@ -66,7 +68,7 @@ CompiledMethod::CompiledMethod(Method* method, const char* name, CompilerType ty
                                OopMapSet* oop_maps, bool caller_must_gc_arguments, bool compiled)
   : CodeBlob(name, type, CodeBlobLayout((address) this, size, header_size, cb), cb,
              frame_complete_offset, frame_size, oop_maps, caller_must_gc_arguments, compiled),
-    _deoptimization_status(not_enqueued),
+    _enqueued_deoptimization_link(nullptr),
     _method(method),
     _gc_data(NULL)
 {
@@ -119,17 +121,38 @@ const char* CompiledMethod::state() const {
 //-----------------------------------------------------------------------------
 bool CompiledMethod::enqueue_deoptimization(bool inc_recompile_counts) {
   assert_locked_or_safepoint(Compile_lock);
-  DeoptimizationStatus old_status = _deoptimization_status;
+  DeoptimizationStatus old_status = extract_enqueued_deoptimization_status(_enqueued_deoptimization_link);
   DeoptimizationStatus new_status = (inc_recompile_counts ? enqueued : enqueued_noupdate);
   if (old_status < new_status) {
-    _deoptimization_status = new_status;
+    if (old_status == not_enqueued) {
+      assert(extract_enqueued_deoptimization_method(_enqueued_deoptimization_link) == nullptr, "Compiled Method should not already be linked");
+      _enqueued_deoptimization_link = make_enqueued_deoptimization_link(_enqueued_deoptimization_root_method, new_status);
+      _enqueued_deoptimization_root_method = this;
+      return true;
+    } else {
+      _enqueued_deoptimization_link = make_enqueued_deoptimization_link(
+        extract_enqueued_deoptimization_method(_enqueued_deoptimization_link), new_status);
+    }
   }
-  return old_status == not_enqueued;
+  return false;
+}
+
+CompiledMethod* CompiledMethod::next_enqueued_deoptimization_method() const {
+  assert_locked_or_safepoint(Compile_lock);
+  return extract_enqueued_deoptimization_method(_enqueued_deoptimization_link);
+}
+
+CompiledMethod* CompiledMethod::take_enqueued_deoptimization_root_method() {
+  assert_locked_or_safepoint(Compile_lock);
+  CompiledMethod* root = _enqueued_deoptimization_root_method;
+  _enqueued_deoptimization_root_method = nullptr;
+  return root;
 }
 
 void  CompiledMethod::make_deoptimized_done() {
   assert_locked_or_safepoint(Compile_lock);
-  _deoptimization_status = post_make_deoptimized;
+  _enqueued_deoptimization_link = make_enqueued_deoptimization_link(
+    extract_enqueued_deoptimization_method(_enqueued_deoptimization_link), post_make_deoptimized);
 }
 
 //-----------------------------------------------------------------------------
