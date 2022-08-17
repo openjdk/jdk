@@ -78,7 +78,13 @@ public class CTypeTreeNodeAdapter extends FieldTreeNodeAdapter {
     }
 
     public String getName() {
-      return field.getType().getName() + " " + holder.getName() + "::" + field.getName();
+        String x = "";
+        if (field.isStatic() && field.getSize() == 8) {
+            if (field.getStaticFieldAddress().asLongValue() % 8 != 0) {
+                x = " **UNALIGNED";
+            }
+        }
+        return field.getType().getName() + " " + holder.getName() + "::" + field.getName() + "size: " + field.getSize() + " address:" + (field.isStatic() ? field.getStaticFieldAddress() : field.getOffset()) + x;
     }
   }
 
@@ -220,7 +226,7 @@ public class CTypeTreeNodeAdapter extends FieldTreeNodeAdapter {
 
   public String getValue() {
     if (type != null) {
-      return type.getName() + " @ " + addr;
+        return type.getName() + " @ " + addr + " size:" + type.getSize();
     } else {
       return "<statics>";
     }

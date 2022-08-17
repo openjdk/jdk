@@ -329,12 +329,16 @@ public class CommandProcessor {
             out.print(" ");
             out.print(f.isStatic());
             out.print(" ");
+            out.print("size:" + f.getSize() + " ");
             if (f.isStatic()) {
                 out.print("0 ");
                 out.print(f.getStaticFieldAddress());
             } else {
                 out.print(f.getOffset());
                 out.print(" 0x0");
+                if (f.getOffset() % f.getSize() != 0) {
+                    out.print(" ***UNALIGNED");
+                }
             }
             out.println();
         }
