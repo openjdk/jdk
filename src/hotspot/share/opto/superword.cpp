@@ -2379,7 +2379,7 @@ Node* SuperWord::pick_mem_state(Node_List* pk) {
         // of the last load as the remaining unvectorized stores could interfere since they have a dependency to the loads.
         // Some stores could be executed before the load vector resulting in a wrong result. We need to take the
         // memory state of the first load to prevent this.
-        if(my_pack(current) != NULL && is_dependent) {
+        if (my_pack(current) != NULL && is_dependent) {
           // For vectorized store pack, when the load pack depends on
           // last_mem, we still take the memory state of the last load.
           continue;
