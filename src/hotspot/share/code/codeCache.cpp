@@ -758,9 +758,8 @@ int CodeCache::alignment_offset() {
 }
 
 // Mark nmethods for unloading if they contain otherwise unreachable oops.
-void CodeCache::do_unloading(BoolObjectClosure* is_alive, bool unloading_occurred) {
+void CodeCache::do_unloading(bool unloading_occurred) {
   assert_locked_or_safepoint(CodeCache_lock);
-  UnloadingScope scope(is_alive);
   CompiledMethodIterator iter(CompiledMethodIterator::only_alive);
   while(iter.next()) {
     iter.method()->do_unloading(unloading_occurred);
