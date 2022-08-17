@@ -43,56 +43,38 @@ extern "C" {
 class PosixSignalTest : public ::testing::Test {
   public:
 
-  static const char* check_handlers() {
+  static void check_handlers() {
     ResourceMark rm;
     struct sigaction act, old_SIGFPE_act, old_SIGILL_act;
     act.sa_handler = (void (*)(int))sig_handler;
     sigemptyset(&act.sa_mask);
     act.sa_flags = 0;
-    if (sigaction(SIGFPE, &act, &old_SIGFPE_act) == -1) {
-      perror("SIGFPE: ");
-      return "sigaction(SIGFPE) failed";
-    }
-    if (sigaction(SIGILL, &act, &old_SIGILL_act) == -1) {
-      perror("SIGILL: ");
-      return "sigaction(SIGILL) failed";
-    }
+    ASSERT_NE(sigaction(SIGFPE, &act, &old_SIGFPE_act), -1) << "Setting SIGFPE handler failed";
+    ASSERT_NE(sigaction(SIGILL, &act, &old_SIGILL_act), -1) << "Setting SIGILL handler failed";
 
+    // Use local stringStream to capture output from run_periodic_checks() calls to
+    // print_signal_handlers().
     stringStream st;
-    outputStream* otty = tty; // Save tty so it can be restored.
-
-    // Set tty to local stringStream to capture output from run_periodic_checks()
-    // calls to print_signal_handlers().
-    tty = &st;
-    os::run_periodic_checks();
+    os::run_periodic_checks(&st);
     char* res = st.as_string();
 
-    // Restore tty and signal handlers.
-    tty = otty; // Restore tty.
-    if (sigaction(SIGFPE, &old_SIGFPE_act, 0) == -1) {
-      perror("SIGFPE: ");
-      return "restoring SIGFPE handler failed";
-    }
-    if (sigaction(SIGILL, &old_SIGILL_act, 0)) {
-      perror("SIGILL: ");
-      return "restoring SIGILL handler failed";
-    }
+    // Restore signal handlers.
+    ASSERT_NE(sigaction(SIGFPE, &act, &old_SIGFPE_act), -1) << "Restoring SIGFPE handler failed";
+    ASSERT_NE(sigaction(SIGILL, &act, &old_SIGILL_act), -1) << "Restoring SIGILL handler failed";
 
     // Check that "Handler was modified" occurs exactly twice in the tty output.
     char* modified = strstr(res, "Handler was modified!");
-    if (modified == NULL) return "No message found";
+    ASSERT_NE(modified, nullptr) << "No message found";
+
     modified = strstr(modified + 1, "Handler was modified!");
-    if (modified == NULL) return "Only one message found";
-    if (strstr(modified + 1, "Handler was modified!") != NULL) {
-      return "Too many messages found";
-    }
-    return "Success";
+    ASSERT_NE(modified, nullptr) << "Only one message found";
+    ASSERT_EQ(strstr(modified + 1, "Handler was modified!"), nullptr) << "Too many messages found";
   }
 };
 
 // This tests the fix for JDK-8285792.
 TEST_VM(PosixSignalTest, check_handlers) {
-  ASSERT_STREQ(PosixSignalTest::check_handlers(), "Success");
+  PosixSignalTest::check_handlers();
 }
 
 #endif
