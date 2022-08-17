@@ -99,10 +99,13 @@ public enum AccessFlag {
      */
     PUBLIC(Modifier.PUBLIC, true,
            Location.SET_PUBLIC_1,
-           cffv -> {
-               return (cffv == ClassFileFormatVersion.RELEASE_0) ?
-                   Location.SET_CLASS_FIELD_METHOD:
-                   Location.SET_PUBLIC_1;
+           new Function<ClassFileFormatVersion, Set<Location>>() {
+               @Override
+               public Set<Location> apply(ClassFileFormatVersion cffv) {
+                   return (cffv == ClassFileFormatVersion.RELEASE_0) ?
+                       Location.SET_CLASS_FIELD_METHOD:
+                       Location.SET_PUBLIC_1;
+               }
            }),
 
     /**
@@ -111,10 +114,13 @@ public enum AccessFlag {
      * value of <code>{@value "0x%04x" Modifier#PRIVATE}</code>.
      */
     PRIVATE(Modifier.PRIVATE, true, Location.SET_FIELD_METHOD_INNER_CLASS,
-            cffv -> {
-                return (cffv == ClassFileFormatVersion.RELEASE_0) ?
-                    Location.SET_FIELD_METHOD:
-                    Location.SET_FIELD_METHOD_INNER_CLASS;
+            new Function<ClassFileFormatVersion, Set<Location>>() {
+                @Override
+                    public Set<Location> apply(ClassFileFormatVersion cffv) {
+                    return (cffv == ClassFileFormatVersion.RELEASE_0) ?
+                        Location.SET_FIELD_METHOD:
+                        Location.SET_FIELD_METHOD_INNER_CLASS;
+                }
             }),
 
     /**
@@ -123,9 +129,14 @@ public enum AccessFlag {
      * value of <code>{@value "0x%04x" Modifier#PROTECTED}</code>.
      */
     PROTECTED(Modifier.PROTECTED, true, Location.SET_FIELD_METHOD_INNER_CLASS,
-              cffv -> {return (cffv == ClassFileFormatVersion.RELEASE_0) ?
+              new Function<ClassFileFormatVersion, Set<Location>>() {
+                  @Override
+                  public Set<Location> apply(ClassFileFormatVersion cffv) {
+                  return (cffv == ClassFileFormatVersion.RELEASE_0) ?
                       Location.SET_FIELD_METHOD:
-                      Location.SET_FIELD_METHOD_INNER_CLASS;}),
+                      Location.SET_FIELD_METHOD_INNER_CLASS;
+                  }
+              }),
 
     /**
      * The access flag {@code ACC_STATIC}, corresponding to the source
@@ -133,9 +144,13 @@ public enum AccessFlag {
      * <code>{@value "0x%04x" Modifier#STATIC}</code>.
      */
     STATIC(Modifier.STATIC, true, Location.SET_FIELD_METHOD_INNER_CLASS,
-           cffv -> {return (cffv == ClassFileFormatVersion.RELEASE_0) ?
-                Location.SET_FIELD_METHOD:
-                Location.SET_FIELD_METHOD_INNER_CLASS;}),
+           new Function<ClassFileFormatVersion, Set<Location>>() {
+               @Override
+               public Set<Location> apply(ClassFileFormatVersion cffv) {
+                   return (cffv == ClassFileFormatVersion.RELEASE_0) ?
+                       Location.SET_FIELD_METHOD:
+                       Location.SET_FIELD_METHOD_INNER_CLASS;}
+           }),
 
     /**
      * The access flag {@code ACC_FINAL}, corresponding to the source
@@ -144,13 +159,16 @@ public enum AccessFlag {
      */
     FINAL(Modifier.FINAL, true,
           Location.SET_FINAL_8,
-          cffv -> {
-              if (cffv.compareTo(ClassFileFormatVersion.RELEASE_8) >= 0) {
-                  return Location.SET_FINAL_8;
-              } else {
-                  return (cffv == ClassFileFormatVersion.RELEASE_0) ?
-                      Location.SET_CLASS_FIELD_METHOD :
-                      Location.SET_CLASS_FIELD_METHOD_INNER_CLASS;
+           new Function<ClassFileFormatVersion, Set<Location>>() {
+              @Override
+              public Set<Location> apply(ClassFileFormatVersion cffv) {
+                  if (cffv.compareTo(ClassFileFormatVersion.RELEASE_8) >= 0) {
+                      return Location.SET_FINAL_8;
+                  } else {
+                      return (cffv == ClassFileFormatVersion.RELEASE_0) ?
+                          Location.SET_CLASS_FIELD_METHOD :
+                          Location.SET_CLASS_FIELD_METHOD_INNER_CLASS;
+                  }
               }
           }),
 
@@ -170,9 +188,13 @@ public enum AccessFlag {
      * @see java.lang.module.ModuleDescriptor#isOpen
      */
         OPEN(0x0000_0020, false, Location.SET_MODULE,
-        cffv -> { return (cffv.compareTo(ClassFileFormatVersion.RELEASE_9) >= 0 ) ?
-            Location.SET_MODULE:
-            Location.EMPTY_SET;}),
+             new Function<ClassFileFormatVersion, Set<Location>>() {
+                 @Override
+                 public Set<Location> apply(ClassFileFormatVersion cffv) {
+                     return (cffv.compareTo(ClassFileFormatVersion.RELEASE_9) >= 0 ) ?
+                         Location.SET_MODULE:
+                         Location.EMPTY_SET;}
+             }),
 
     /**
      * The module requires flag {@code ACC_TRANSITIVE} with a mask
@@ -180,9 +202,13 @@ public enum AccessFlag {
      * @see java.lang.module.ModuleDescriptor.Requires.Modifier#TRANSITIVE
      */
     TRANSITIVE(0x0000_0020, false, Location.SET_MODULE_REQUIRES,
-               cffv -> {return (cffv.compareTo(ClassFileFormatVersion.RELEASE_9) >= 0 ) ?
-                       Location.SET_MODULE_REQUIRES:
-                       Location.EMPTY_SET;}),
+               new Function<ClassFileFormatVersion, Set<Location>>() {
+                   @Override
+                   public Set<Location> apply(ClassFileFormatVersion cffv) {
+                       return (cffv.compareTo(ClassFileFormatVersion.RELEASE_9) >= 0 ) ?
+                           Location.SET_MODULE_REQUIRES:
+                           Location.EMPTY_SET;}
+               }),
 
     /**
      * The access flag {@code ACC_SYNCHRONIZED}, corresponding to the
@@ -197,9 +223,13 @@ public enum AccessFlag {
      * @see java.lang.module.ModuleDescriptor.Requires.Modifier#STATIC
      */
     STATIC_PHASE(0x0000_0040, false, Location.SET_MODULE_REQUIRES,
-                 cffv -> {return (cffv.compareTo(ClassFileFormatVersion.RELEASE_9) >= 0 ) ?
-                         Location.SET_MODULE_REQUIRES:
-                         Location.EMPTY_SET;}),
+                 new Function<ClassFileFormatVersion, Set<Location>>() {
+                     @Override
+                     public Set<Location> apply(ClassFileFormatVersion cffv) {
+                         return (cffv.compareTo(ClassFileFormatVersion.RELEASE_9) >= 0 ) ?
+                             Location.SET_MODULE_REQUIRES:
+                             Location.EMPTY_SET;}
+                 }),
 
    /**
      * The access flag {@code ACC_VOLATILE}, corresponding to the
@@ -214,9 +244,13 @@ public enum AccessFlag {
      * @see Method#isBridge()
      */
     BRIDGE(Modifier.BRIDGE, false, Location.SET_METHOD,
-           cffv -> {return (cffv.compareTo(ClassFileFormatVersion.RELEASE_5) >= 0 ) ?
-                Location.SET_METHOD:
-                Location.EMPTY_SET;}),
+           new Function<ClassFileFormatVersion, Set<Location>>() {
+               @Override
+               public Set<Location> apply(ClassFileFormatVersion cffv) {
+                   return (cffv.compareTo(ClassFileFormatVersion.RELEASE_5) >= 0 ) ?
+                       Location.SET_METHOD:
+                       Location.EMPTY_SET;}
+           }),
 
     /**
      * The access flag {@code ACC_TRANSIENT}, corresponding to the
@@ -231,10 +265,13 @@ public enum AccessFlag {
      * @see Executable#isVarArgs()
      */
     VARARGS(Modifier.VARARGS, false, Location.SET_METHOD,
-            cffv -> {return (cffv.compareTo(ClassFileFormatVersion.RELEASE_5) >= 0 ) ?
-                    Location.SET_METHOD:
-                    Location.EMPTY_SET;}),
-
+            new Function<ClassFileFormatVersion, Set<Location>>() {
+                @Override
+                public Set<Location> apply(ClassFileFormatVersion cffv) {
+                    return (cffv.compareTo(ClassFileFormatVersion.RELEASE_5) >= 0 ) ?
+                        Location.SET_METHOD:
+                        Location.EMPTY_SET;}
+            }),
 
     /**
      * The access flag {@code ACC_NATIVE}, corresponding to the source
@@ -249,9 +286,13 @@ public enum AccessFlag {
      * @see Class#isInterface()
      */
     INTERFACE(Modifier.INTERFACE, false, Location.SET_CLASS_INNER_CLASS,
-              cffv -> { return (cffv.compareTo(ClassFileFormatVersion.RELEASE_0) == 0 ) ?
-                      Location.SET_CLASS:
-                      Location.SET_CLASS_INNER_CLASS;}),
+              new Function<ClassFileFormatVersion, Set<Location>>() {
+                  @Override
+                  public Set<Location> apply(ClassFileFormatVersion cffv) {
+                      return (cffv.compareTo(ClassFileFormatVersion.RELEASE_0) == 0 ) ?
+                          Location.SET_CLASS:
+                          Location.SET_CLASS_INNER_CLASS;}
+              }),
 
     /**
      * The access flag {@code ACC_ABSTRACT}, corresponding to the
@@ -260,9 +301,13 @@ public enum AccessFlag {
      */
     ABSTRACT(Modifier.ABSTRACT, true,
              Location.SET_CLASS_METHOD_INNER_CLASS,
-             cffv -> { return (cffv.compareTo(ClassFileFormatVersion.RELEASE_0) == 0 ) ?
-                     Location.SET_CLASS_METHOD:
-                     Location.SET_CLASS_METHOD_INNER_CLASS;}),
+             new Function<ClassFileFormatVersion, Set<Location>>() {
+                 @Override
+                 public Set<Location> apply(ClassFileFormatVersion cffv) {
+                     return (cffv.compareTo(ClassFileFormatVersion.RELEASE_0) == 0 ) ?
+                         Location.SET_CLASS_METHOD:
+                         Location.SET_CLASS_METHOD_INNER_CLASS;}
+             }),
 
     /**
      * The access flag {@code ACC_STRICT}, corresponding to the source
@@ -275,11 +320,14 @@ public enum AccessFlag {
      * corresponding to Java SE 1.2 through 16.
      */
     STRICT(Modifier.STRICT, true, Location.SET_METHOD,
-           cffv -> {return (cffv.compareTo(ClassFileFormatVersion.RELEASE_2)  >= 0 &&
-                            cffv.compareTo(ClassFileFormatVersion.RELEASE_16) <= 0) ?
-                   Location.SET_METHOD:
-                   Location.EMPTY_SET;}),
-
+             new Function<ClassFileFormatVersion, Set<Location>>() {
+               @Override
+               public Set<Location> apply(ClassFileFormatVersion cffv) {
+                   return (cffv.compareTo(ClassFileFormatVersion.RELEASE_2)  >= 0 &&
+                           cffv.compareTo(ClassFileFormatVersion.RELEASE_16) <= 0) ?
+                       Location.SET_METHOD:
+                       Location.EMPTY_SET;}
+           }),
 
     /**
      * The access flag {@code ACC_SYNTHETIC} with a mask value of
@@ -289,16 +337,19 @@ public enum AccessFlag {
      * @see java.lang.module.ModuleDescriptor.Modifier#SYNTHETIC
      */
     SYNTHETIC(Modifier.SYNTHETIC, false, Location.SET_SYNTHETIC_9,
-              cffv -> {
-                  if (cffv.compareTo(ClassFileFormatVersion.RELEASE_9) >= 0 )
-                      return Location.SET_SYNTHETIC_9;
-                  else {
-                      return
-                          switch(cffv) {
-                          case RELEASE_7 -> Location.SET_SYNTHETIC_7;
-                          case RELEASE_8 -> Location.SET_SYNTHETIC_8;
-                          default        -> Location.EMPTY_SET;
-                          };
+              new Function<ClassFileFormatVersion, Set<Location>>() {
+                  @Override
+                  public Set<Location> apply(ClassFileFormatVersion cffv) {
+                      if (cffv.compareTo(ClassFileFormatVersion.RELEASE_9) >= 0 )
+                          return Location.SET_SYNTHETIC_9;
+                      else {
+                          return
+                              switch(cffv) {
+                              case RELEASE_7 -> Location.SET_SYNTHETIC_7;
+                              case RELEASE_8 -> Location.SET_SYNTHETIC_8;
+                              default        -> Location.EMPTY_SET;
+                              };
+                      }
                   }
               }),
 
@@ -308,9 +359,13 @@ public enum AccessFlag {
      * @see Class#isAnnotation()
      */
     ANNOTATION(Modifier.ANNOTATION, false, Location.SET_CLASS_INNER_CLASS,
-               cffv -> {return (cffv.compareTo(ClassFileFormatVersion.RELEASE_5) >= 0 ) ?
-                Location.SET_CLASS_INNER_CLASS:
-                Location.EMPTY_SET;}),
+               new Function<ClassFileFormatVersion, Set<Location>>() {
+                   @Override
+                   public Set<Location> apply(ClassFileFormatVersion cffv) {
+                       return (cffv.compareTo(ClassFileFormatVersion.RELEASE_5) >= 0 ) ?
+                           Location.SET_CLASS_INNER_CLASS:
+                           Location.EMPTY_SET;}
+               }),
 
     /**
      * The access flag {@code ACC_ENUM} with a mask value of
@@ -318,22 +373,29 @@ public enum AccessFlag {
      * @see Class#isEnum()
      */
     ENUM(Modifier.ENUM, false, Location.SET_CLASS_FIELD_INNER_CLASS,
-         cffv -> {return (cffv.compareTo(ClassFileFormatVersion.RELEASE_5) >= 0 ) ?
-                 Location.SET_CLASS_FIELD_INNER_CLASS:
-                 Location.EMPTY_SET;}),
+         new Function<ClassFileFormatVersion, Set<Location>>() {
+             @Override
+             public Set<Location> apply(ClassFileFormatVersion cffv) {
+                 return (cffv.compareTo(ClassFileFormatVersion.RELEASE_5) >= 0 ) ?
+                     Location.SET_CLASS_FIELD_INNER_CLASS:
+                     Location.EMPTY_SET;}
+         }),
 
     /**
      * The access flag {@code ACC_MANDATED} with a mask value of
      * <code>{@value "0x%04x" Modifier#MANDATED}</code>.
      */
     MANDATED(Modifier.MANDATED, false, Location.SET_MANDATED_9,
-             cffv -> {
-                 if (cffv.compareTo(ClassFileFormatVersion.RELEASE_9) >= 0 ) {
-                     return Location.SET_MANDATED_9;
-                 } else {
-                     return (cffv == ClassFileFormatVersion.RELEASE_8) ?
-                         Location.SET_METHOD_PARAM:
-                         Location.EMPTY_SET;
+             new Function<ClassFileFormatVersion, Set<Location>>() {
+                 @Override
+                 public Set<Location> apply(ClassFileFormatVersion cffv) {
+                     if (cffv.compareTo(ClassFileFormatVersion.RELEASE_9) >= 0 ) {
+                         return Location.SET_MANDATED_9;
+                     } else {
+                         return (cffv == ClassFileFormatVersion.RELEASE_8) ?
+                             Location.SET_METHOD_PARAM:
+                             Location.EMPTY_SET;
+                     }
                  }
              }),
 
@@ -342,9 +404,13 @@ public enum AccessFlag {
      * 0x8000}.
      */
     MODULE(0x0000_8000, false, Location.SET_CLASS,
-           cffv -> {return (cffv.compareTo(ClassFileFormatVersion.RELEASE_9) >= 0 ) ?
-                   Location.SET_CLASS:
-                   Location.EMPTY_SET;})
+           new Function<ClassFileFormatVersion, Set<Location>>() {
+               @Override
+               public Set<Location> apply(ClassFileFormatVersion cffv) {
+                   return (cffv.compareTo(ClassFileFormatVersion.RELEASE_9) >= 0 ) ?
+                       Location.SET_CLASS:
+                       Location.EMPTY_SET;}
+           })
     ;
 
     // May want to override toString for a different enum constant ->
