@@ -2064,21 +2064,17 @@ Method* SystemDictionary::find_method_handle_intrinsic(vmIntrinsicID iid,
                                                        Symbol* signature,
                                                        TRAPS) {
 
-  methodHandle empty;
   const int iid_as_int = vmIntrinsics::as_int(iid);
   assert(MethodHandles::is_signature_polymorphic(iid) &&
          MethodHandles::is_signature_polymorphic_intrinsic(iid) &&
          iid != vmIntrinsics::_invokeGeneric,
          "must be a known MH intrinsic iid=%d: %s", iid_as_int, vmIntrinsics::name_at(iid));
 
-  Method** met;
+  MutexLocker ml(THREAD, InvokeMethodTable_lock);
   InvokeMethodKey key(signature, iid_as_int);
-  {
-    MutexLocker ml(THREAD, InvokeMethodTable_lock);
-    met = _invoke_method_intrinsic_table.get(key);
-    if (met != nullptr) {
-      return *met;
-    }
+  Method** met = _invoke_method_intrinsic_table.get(key);
+  if (met != nullptr) {
+   return *met;
   }
 
   methodHandle m = Method::make_method_handle_intrinsic(iid, signature, CHECK_NULL);
@@ -2092,19 +2088,14 @@ Method* SystemDictionary::find_method_handle_intrinsic(vmIntrinsicID iid,
                        "Out of space in CodeCache for method handle intrinsic");
       }
   }
-  // Now grab the lock.  We might have to throw away the new method,
-  // if a racing thread has managed to install one at the same time.
-  {
-    MutexLocker ml(THREAD, InvokeMethodTable_lock);
-    signature->make_permanent(); // The signature is never unloaded.
-    bool created;
-    met = _invoke_method_intrinsic_table.put_if_absent(key, m(), &created);
-    Method* saved_method = *met;
-    assert(Arguments::is_interpreter_only() || (saved_method->has_compiled_code() &&
-         saved_method->code()->entry_point() == saved_method->from_compiled_entry()),
+
+  signature->make_permanent(); // The signature is never unloaded.
+  bool created = _invoke_method_intrinsic_table.put(key, m());
+  assert(created, "must be since we still hold the lock");
+  assert(Arguments::is_interpreter_only() || (m->has_compiled_code() &&
+         m->code()->entry_point() == m->from_compiled_entry()),
          "MH intrinsic invariant");
-    return saved_method;
-  }
+  return m();
 }
 
 // Helper for unpacking the return value from linkMethod and linkCallSite.
