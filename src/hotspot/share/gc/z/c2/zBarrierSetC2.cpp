@@ -123,11 +123,15 @@ class ZBarrierSetC2State : public ResourceObj {
 private:
   GrowableArray<ZBarrierStubC2*>* _stubs;
   Node_Array                      _live;
+  size_t                          _trampoline_stubs_count;
+  int                             _stubs_start_offset;
 
 public:
   ZBarrierSetC2State(Arena* arena) :
     _stubs(new (arena) GrowableArray<ZBarrierStubC2*>(arena, 8,  0, NULL)),
-    _live(arena) {}
+    _live(arena),
+    _trampoline_stubs_count(0),
+    _stubs_start_offset(0) {}
 
   GrowableArray<ZBarrierStubC2*>* stubs() {
     return _stubs;
@@ -153,10 +157,46 @@ public:
 
     return live;
   }
+
+  void inc_trampoline_stubs_count() {
+    ++_trampoline_stubs_count;
+  }
+
+  size_t trampoline_stubs_count() {
+    return _trampoline_stubs_count;
+  }
+
+  void set_stubs_start_offset(int offset) {
+    _stubs_start_offset = offset;
+  }
+
+  int stubs_start_offset() {
+    return _stubs_start_offset;
+  }
 };
 
 static ZBarrierSetC2State* barrier_set_state() {
   return reinterpret_cast<ZBarrierSetC2State*>(Compile::current()->barrier_set_state());
+}
+
+void ZBarrierStubC2::register_stub(ZBarrierStubC2* stub) {
+  if (!Compile::current()->output()->in_scratch_emit_size()) {
+    barrier_set_state()->stubs()->append(stub);
+  }
+}
+
+void ZBarrierStubC2::inc_trampoline_stubs_count() {
+  if (!Compile::current()->output()->in_scratch_emit_size()) {
+    barrier_set_state()->inc_trampoline_stubs_count();
+  }
+}
+
+size_t ZBarrierStubC2::trampoline_stubs_count() {
+  return barrier_set_state()->trampoline_stubs_count();
+}
+
+int ZBarrierStubC2::stubs_start_offset() {
+  return barrier_set_state()->stubs_start_offset();
 }
 
 ZBarrierStubC2::ZBarrierStubC2(const MachNode* node) :
@@ -186,9 +226,7 @@ Label* ZBarrierStubC2::continuation() {
 
 ZLoadBarrierStubC2* ZLoadBarrierStubC2::create(const MachNode* node, Address ref_addr, Register ref) {
   ZLoadBarrierStubC2* const stub = new (Compile::current()->comp_arena()) ZLoadBarrierStubC2(node, ref_addr, ref);
-  if (!Compile::current()->output()->in_scratch_emit_size()) {
-    barrier_set_state()->stubs()->append(stub);
-  }
+  register_stub(stub);
 
   return stub;
 }
@@ -237,9 +275,7 @@ void ZLoadBarrierStubC2::emit_code(MacroAssembler& masm) {
 
 ZStoreBarrierStubC2* ZStoreBarrierStubC2::create(const MachNode* node, Address ref_addr, Register new_zaddress, Register new_zpointer, bool is_native, bool is_atomic) {
   ZStoreBarrierStubC2* const stub = new (Compile::current()->comp_arena()) ZStoreBarrierStubC2(node, ref_addr, new_zaddress, new_zpointer, is_native, is_atomic);
-  if (!Compile::current()->output()->in_scratch_emit_size()) {
-    barrier_set_state()->stubs()->append(stub);
-  }
+  register_stub(stub);
 
   return stub;
 }
@@ -293,6 +329,7 @@ void ZBarrierSetC2::late_barrier_analysis() const {
 void ZBarrierSetC2::emit_stubs(CodeBuffer& cb) const {
   MacroAssembler masm(&cb);
   GrowableArray<ZBarrierStubC2*>* const stubs = barrier_set_state()->stubs();
+  barrier_set_state()->set_stubs_start_offset(masm.offset());
 
   for (int i = 0; i < stubs->length(); i++) {
     // Make sure there is enough space in the code buffer

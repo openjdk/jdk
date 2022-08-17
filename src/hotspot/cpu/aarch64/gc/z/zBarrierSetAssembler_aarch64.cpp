@@ -21,6 +21,7 @@
  * questions.
  */
 
+#include "nativeInst_aarch64.hpp"
 #include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "code/codeBlob.hpp"
@@ -891,7 +892,7 @@ bool ZBarrierSetAssembler::nmethod_code_patching() {
 
 static uint16_t patch_barrier_relocation_value(int format) {
   switch (format) {
-  case ZBarrierRelocationFormatLoadGoodBeforeTbz:
+  case ZBarrierRelocationFormatLoadGoodBeforeTbX:
     return (uint16_t)exact_log2(ZPointerRemapped);
 
   case ZBarrierRelocationFormatMarkBadBeforeMov:
@@ -920,7 +921,7 @@ void ZBarrierSetAssembler::patch_barrier_relocation(address addr, int format) {
   uint32_t* const patch_addr = (uint32_t*)addr;
 
   switch (format) {
-  case ZBarrierRelocationFormatLoadGoodBeforeTbz:
+  case ZBarrierRelocationFormatLoadGoodBeforeTbX:
     change_immediate(*patch_addr, value, 19, 23);
     break;
   case ZBarrierRelocationFormatStoreGoodBeforeMov:
@@ -974,7 +975,7 @@ void ZBarrierSetAssembler::generate_c1_load_barrier(LIR_Assembler* ce,
     z_uncolor(ce, ref);
   } else {
     Label good;
-    __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatLoadGoodBeforeTbz);
+    __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatLoadGoodBeforeTbX);
     __ tbz(ref->as_register(), barrier_Relocation::unpatched, good);
     __ b(*stub->entry());
     __ bind(good);
@@ -1274,7 +1275,9 @@ void ZBarrierSetAssembler::generate_c2_load_barrier_stub(MacroAssembler* masm, Z
   BLOCK_COMMENT("ZLoadBarrierStubC2");
 
   // Stub entry
-  __ bind(*stub->entry());
+  if (!Compile::current()->output()->in_scratch_emit_size()) {
+    __ bind(*stub->entry());
+  }
 
   {
     ZSaveLiveRegisters save_live_registers(masm, stub);
@@ -1323,6 +1326,124 @@ void ZBarrierSetAssembler::generate_c2_store_barrier_stub(MacroAssembler* masm, 
 
   // Stub exit
   __ b(slow_continuation);
+}
+
+// Only handles forward branch jumps, target_offset >= branch_offset
+static bool aarch64_test_and_branch_reachable(int branch_offset, int target_offset) {
+  assert(branch_offset >= 0, "branch to stub offsets must be positive");
+  assert(target_offset >= 0, "offset in stubs section must be positive");
+  assert(target_offset >= branch_offset, "forward branches only, branch_offset -> target_offset");
+
+  const int test_and_branch_delta_limit = 32 * K;
+
+  const int test_and_branch_to_trampoline_delta = target_offset - branch_offset;
+
+  return test_and_branch_to_trampoline_delta < test_and_branch_delta_limit;
+}
+
+ZLoadBarrierStubC2Aarch64::ZLoadBarrierStubC2Aarch64(const MachNode* node, Address ref_addr, Register ref, int offset)
+  : ZLoadBarrierStubC2(node, ref_addr, ref), _test_and_branch_reachable_entry(), _offset(offset), _deferred_emit(false), _test_and_branch_reachable(false) {
+  PhaseOutput* const output = Compile::current()->output();
+  if (output->in_scratch_emit_size()) {
+    return;
+  }
+  const int code_size = output->buffer_sizing_data()->_code;
+  const int offset_code = _offset;
+  // Assumption that the stub can always be reached from a branch immediate. (128 M Product, 2 M Debug)
+  // Same assumption is made in z_aarch64.ad
+  const int trampoline_offset = trampoline_stubs_count() * NativeInstruction::instruction_size;
+  _test_and_branch_reachable = aarch64_test_and_branch_reachable(offset_code, code_size + trampoline_offset);
+  if (_test_and_branch_reachable) {
+    inc_trampoline_stubs_count();
+  }
+}
+
+int ZLoadBarrierStubC2Aarch64::get_stub_size() {
+  PhaseOutput* const output = Compile::current()->output();
+  assert(!output->in_scratch_emit_size(), "only used when emitting stubs");
+  BufferBlob* const blob = output->scratch_buffer_blob();
+  CodeBuffer cb(blob->content_begin(), (address)output->scratch_locs_memory() - blob->content_begin());
+  MacroAssembler masm(&cb);
+  output->set_in_scratch_emit_size(true);
+  ZLoadBarrierStubC2::emit_code(masm);
+  output->set_in_scratch_emit_size(false);
+  return cb.insts_size();
+}
+
+ZLoadBarrierStubC2Aarch64* ZLoadBarrierStubC2Aarch64::create(const MachNode* node, Address ref_addr, Register ref, int offset) {
+  ZLoadBarrierStubC2Aarch64* const stub = new (Compile::current()->comp_arena()) ZLoadBarrierStubC2Aarch64(node, ref_addr, ref, offset);
+  register_stub(stub);
+  return stub;
+}
+
+#undef __
+#define __ masm.
+
+void ZLoadBarrierStubC2Aarch64::emit_code(MacroAssembler& masm) {
+  PhaseOutput* const output = Compile::current()->output();
+  const int branch_offset = _offset;
+  const int target_offset = __ offset();
+
+  // Deferred emission, emit actual stub
+  if (_deferred_emit) {
+    ZLoadBarrierStubC2::emit_code(masm);
+    return;
+  }
+  _deferred_emit = true;
+
+  // No trampoline used, defer emission to after trampolines
+  if (!_test_and_branch_reachable) {
+    register_stub(this);
+    return;
+  }
+
+  // Current assumption is that the barrier stubs are the first stubs emitted after the actual code
+  assert(stubs_start_offset() <= output->buffer_sizing_data()->_code, "stubs are assumed to be emitted directly after code and code_size is a hard limit on where it can start");
+
+  __ bind(_test_and_branch_reachable_entry);
+
+  // Next branch's offset is unknown, but is > branch_offset
+  const int next_branch_offset = branch_offset + NativeInstruction::instruction_size;
+  // If emitting the stub directly does not interfere with emission of the next trampoline then do it to avoid a double jump.
+  if (aarch64_test_and_branch_reachable(next_branch_offset, target_offset + get_stub_size())) {
+    // The next potential trampoline will still be reachable even if we emit the whole stub
+    ZLoadBarrierStubC2::emit_code(masm);
+  } else {
+    // Emit trampoline and defer actual stub to the end
+    assert(aarch64_test_and_branch_reachable(branch_offset, target_offset), "trampoline should be reachable");
+    __ b(*ZLoadBarrierStubC2::entry());
+    register_stub(this);
+  }
+}
+
+bool ZLoadBarrierStubC2Aarch64::is_test_and_branch_reachable() {
+  return _test_and_branch_reachable;
+}
+
+Label* ZLoadBarrierStubC2Aarch64::entry() {
+  if (_test_and_branch_reachable) {
+    return &_test_and_branch_reachable_entry;
+  }
+  return ZBarrierStubC2::entry();
+}
+
+ZStoreBarrierStubC2Aarch64::ZStoreBarrierStubC2Aarch64(const MachNode* node, Address ref_addr, Register new_zaddress, Register new_zpointer, bool is_native, bool is_atomic)
+  : ZStoreBarrierStubC2(node, ref_addr, new_zaddress, new_zpointer, is_native, is_atomic), _deferred_emit(false) {}
+
+ZStoreBarrierStubC2Aarch64* ZStoreBarrierStubC2Aarch64::create(const MachNode* node, Address ref_addr, Register new_zaddress, Register new_zpointer, bool is_native, bool is_atomic) {
+  ZStoreBarrierStubC2Aarch64* const stub = new (Compile::current()->comp_arena()) ZStoreBarrierStubC2Aarch64(node, ref_addr, new_zaddress, new_zpointer, is_native, is_atomic);
+  register_stub(stub);
+  return stub;
+}
+
+void ZStoreBarrierStubC2Aarch64::emit_code(MacroAssembler& masm) {
+  if (_deferred_emit) {
+    ZStoreBarrierStubC2::emit_code(masm);
+    return;
+  }
+  // Defer emission of store barriers so that trampolines are emitted first
+  _deferred_emit = true;
+  register_stub(this);
 }
 
 #undef __

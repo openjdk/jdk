@@ -47,6 +47,11 @@ protected:
   Label           _entry;
   Label           _continuation;
 
+static void register_stub(ZBarrierStubC2* stub);
+static void inc_trampoline_stubs_count();
+static size_t trampoline_stubs_count();
+static int stubs_start_offset();
+
 public:
   ZBarrierStubC2(const MachNode* node);
 
@@ -63,6 +68,7 @@ private:
   const Address  _ref_addr;
   const Register _ref;
 
+protected:
   ZLoadBarrierStubC2(const MachNode* node, Address ref_addr, Register ref);
 
 public:
@@ -84,6 +90,7 @@ private:
   const bool     _is_native;
   const bool     _is_atomic;
 
+protected:
   ZStoreBarrierStubC2(const MachNode* node, Address ref_addr, Register new_zaddress, Register new_zpointer, bool is_native, bool is_atomic);
 
 public:

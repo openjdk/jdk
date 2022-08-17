@@ -68,12 +68,17 @@ static void z_load_barrier(MacroAssembler& _masm, const MachNode* node, Address 
     return;
   }
 
-  ZLoadBarrierStubC2* const stub = ZLoadBarrierStubC2::create(node, ref_addr, ref);
-  Label good;
-  __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatLoadGoodBeforeTbz);
-  __ tbz(ref, barrier_Relocation::unpatched, good);
-  __ b(*stub->entry());
-  __ bind(good);
+  ZLoadBarrierStubC2Aarch64* const stub = ZLoadBarrierStubC2Aarch64::create(node, ref_addr, ref, __ offset());
+  if (stub->is_test_and_branch_reachable()) {
+    __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatLoadGoodBeforeTbX);
+    __ tbnz(ref, barrier_Relocation::unpatched, *stub->entry());
+  } else {
+    Label good;
+    __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatLoadGoodBeforeTbX);
+    __ tbz(ref, barrier_Relocation::unpatched, good);
+    __ b(*stub->entry());
+    __ bind(good);
+  }
   z_uncolor(_masm, node, ref);
   __ bind(*stub->continuation());
 }
@@ -83,7 +88,7 @@ static void z_store_barrier(MacroAssembler& _masm, const MachNode* node, Address
     z_color(_masm, node, rnew_zpointer, rnew_zaddress, rnew_zpointer);
   } else {
     bool is_native = (node->barrier_data() & ZBarrierNative) != 0;
-    ZStoreBarrierStubC2* const stub = ZStoreBarrierStubC2::create(node, ref_addr, rnew_zaddress, rnew_zpointer, is_native, is_atomic);
+    ZStoreBarrierStubC2Aarch64* const stub = ZStoreBarrierStubC2Aarch64::create(node, ref_addr, rnew_zaddress, rnew_zpointer, is_native, is_atomic);
     ZBarrierSetAssembler* bs_asm = ZBarrierSet::assembler();
     bs_asm->store_barrier_fast(&_masm, ref_addr, rnew_zaddress, rnew_zpointer, tmp, true /* in_nmethod */, is_atomic, *stub->entry(), *stub->continuation());
   }
