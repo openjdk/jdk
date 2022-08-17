@@ -30,11 +30,8 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.NoSuchElementException;
 import java.util.Optional;
-import java.util.Spliterator;
-import java.util.Spliterators;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import java.util.stream.StreamSupport;
 
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
@@ -79,23 +76,33 @@ public class DocFinder {
     }
 
     private <T> Optional<T> search0(ExecutableElement method,
-                                    boolean includeMethod,
-                                    boolean throwExceptionIfNoOverriddenMethods,
+                                    boolean includeMethodInSearch,
+                                    boolean throwExceptionIfDoesNotOverride,
                                     Function<? super ExecutableElement, Optional<T>> criteria)
             throws NoOverriddenMethodsFound
     {
-        Iterator<ExecutableElement> iterator = new HierarchyTraversingIterator(method, includeMethod);
-        if (throwExceptionIfNoOverriddenMethods && !iterator.hasNext()) {
+        // if required, first check if the method overrides anything, so that
+        // the result would not depend on whether the method itself is included
+        // in the search
+        Iterator<ExecutableElement> overriddenMethods = new OverriddenMethodsHierarchy(method);
+        if (throwExceptionIfDoesNotOverride && !overriddenMethods.hasNext()) {
             throw new NoOverriddenMethodsFound();
         }
-        var spliterator = Spliterators.spliteratorUnknownSize(iterator, Spliterator.ORDERED
-                | Spliterator.NONNULL | Spliterator.IMMUTABLE | Spliterator.DISTINCT);
-        return StreamSupport.stream(spliterator, false)
-                .flatMap(m -> criteria.apply(m).stream())
-                .findFirst();
+        if (includeMethodInSearch) {
+            Optional<T> r = criteria.apply(method);
+            if (r.isPresent())
+                return r;
+        }
+        while (overriddenMethods.hasNext()) {
+            ExecutableElement m = overriddenMethods.next();
+            Optional<T> r = criteria.apply(m);
+            if (r.isPresent())
+                return r;
+        }
+        return Optional.empty();
     }
 
-    private class HierarchyTraversingIterator implements Iterator<ExecutableElement> {
+    private class OverriddenMethodsHierarchy implements Iterator<ExecutableElement> {
 
         final Deque<LazilyAccessedImplementedMethods> path = new LinkedList<>();
         ExecutableElement next;
@@ -104,17 +111,12 @@ public class DocFinder {
          * Constructs an iterator over methods overridden by the given method.
          *
          * The iteration order is as defined in the Documentation Comment
-         * Specification for the Standard Doclet. Whether the iteration
-         * sequence includes the given method itself is controlled by
-         * the includeMethod flag.
+         * Specification for the Standard Doclet.
          */
-        public HierarchyTraversingIterator(ExecutableElement method,
-                                           boolean includeMethod) {
+        public OverriddenMethodsHierarchy(ExecutableElement method) {
             assert method.getKind() == ElementKind.METHOD : method.getKind();
             next = method;
-            if (!includeMethod) {
-                updateNext();
-            }
+            updateNext();
         }
 
         @Override
