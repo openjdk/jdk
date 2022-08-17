@@ -172,6 +172,8 @@ public class HtmlDocletWriter {
 
     protected final HtmlIds htmlIds;
 
+    private final Set<String> headingIds = new HashSet<>();
+
     /**
      * To check whether the repeated annotations is documented or not.
      */
@@ -1203,10 +1205,6 @@ public class HtmlDocletWriter {
                     return (tag instanceof StartElementTree st) && equalsIgnoreCase(st.getName(), "a");
                 }
 
-                private boolean equalsIgnoreCase(Name name, String s) {
-                    return name != null && name.toString().equalsIgnoreCase(s);
-                }
-
                 @Override
                 public Boolean visitAttribute(AttributeTree node, Content content) {
                     if (!content.isEmpty()) {
@@ -1367,6 +1365,9 @@ public class HtmlDocletWriter {
                 @Override
                 public Boolean visitStartElement(StartElementTree node, Content content) {
                     Content attrs = new ContentBuilder();
+                    if (node.getName().toString().matches("(?i)h[1-6]") && !hasIdAttribute(node)) {
+                        generateHeadingId(node, trees, attrs);
+                    }
                     for (DocTree dt : node.getAttributes()) {
                         dt.accept(this, attrs);
                     }
@@ -1434,6 +1435,39 @@ public class HtmlDocletWriter {
                 break;
         }
         return result;
+    }
+
+    private boolean equalsIgnoreCase(Name name, String s) {
+        return name != null && name.toString().equalsIgnoreCase(s);
+    }
+
+    private boolean hasIdAttribute(StartElementTree node) {
+        return node.getAttributes().stream().anyMatch(
+                dt -> dt instanceof AttributeTree at && equalsIgnoreCase(at.getName(), "id"));
+    }
+
+    private void generateHeadingId(StartElementTree node, List<? extends DocTree> trees, Content content) {
+        StringBuilder sb = new StringBuilder();
+        String tagName = node.getName().toString().toLowerCase(Locale.ROOT);
+        for (DocTree docTree : trees.subList(trees.indexOf(node) + 1, trees.size())) {
+            if (docTree instanceof TextTree text) {
+                sb.append(text.getBody());
+            } else if (docTree instanceof LiteralTree literal) {
+                sb.append(literal.getBody().getBody());
+            } else if (docTree instanceof LinkTree link) {
+                var label = link.getLabel();
+                sb.append(label.isEmpty() ? link.getReference().getSignature() : label.toString());
+            } else if (docTree instanceof EndElementTree endElement
+                    && equalsIgnoreCase(endElement.getName(), tagName)) {
+                break;
+            } else if (docTree instanceof StartElementTree nested
+                    && equalsIgnoreCase(nested.getName(), "a")
+                    && hasIdAttribute(nested)) {
+                return; // Avoid generating id if embedded <a id=...> is present
+            }
+        }
+        HtmlId htmlId = htmlIds.forHeading(sb, headingIds);
+        content.add("id=\"").add(htmlId.name()).add("\"");
     }
 
     /**

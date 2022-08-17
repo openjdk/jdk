@@ -276,9 +276,16 @@ public class JdkInternalMiscUnsafeAccessTestLong {
                 success = UNSAFE.weakCompareAndSetLongPlain(base, offset, 0x0123456789ABCDEFL, 0xCAFEBABECAFEBABEL);
                 if (!success) weakDelay(c);
             }
-            assertEquals(success, true, "weakCompareAndSetPlain long");
+            assertEquals(success, true, "success weakCompareAndSetPlain long");
             long x = UNSAFE.getLong(base, offset);
-            assertEquals(x, 0xCAFEBABECAFEBABEL, "weakCompareAndSetPlain long value");
+            assertEquals(x, 0xCAFEBABECAFEBABEL, "success weakCompareAndSetPlain long value");
+        }
+
+        {
+            boolean success = UNSAFE.weakCompareAndSetLongPlain(base, offset, 0x0123456789ABCDEFL, 0xDEADBEEFDEADBEEFL);
+            assertEquals(success, false, "failing weakCompareAndSetPlain long");
+            long x = UNSAFE.getLong(base, offset);
+            assertEquals(x, 0xCAFEBABECAFEBABEL, "failing weakCompareAndSetPlain long value");
         }
 
         {
@@ -287,9 +294,16 @@ public class JdkInternalMiscUnsafeAccessTestLong {
                 success = UNSAFE.weakCompareAndSetLongAcquire(base, offset, 0xCAFEBABECAFEBABEL, 0x0123456789ABCDEFL);
                 if (!success) weakDelay(c);
             }
-            assertEquals(success, true, "weakCompareAndSetAcquire long");
+            assertEquals(success, true, "success weakCompareAndSetAcquire long");
             long x = UNSAFE.getLong(base, offset);
-            assertEquals(x, 0x0123456789ABCDEFL, "weakCompareAndSetAcquire long");
+            assertEquals(x, 0x0123456789ABCDEFL, "success weakCompareAndSetAcquire long");
+        }
+
+        {
+            boolean success = UNSAFE.weakCompareAndSetLongAcquire(base, offset, 0xCAFEBABECAFEBABEL, 0xDEADBEEFDEADBEEFL);
+            assertEquals(success, false, "failing weakCompareAndSetAcquire long");
+            long x = UNSAFE.getLong(base, offset);
+            assertEquals(x, 0x0123456789ABCDEFL, "failing weakCompareAndSetAcquire long value");
         }
 
         {
@@ -298,9 +312,16 @@ public class JdkInternalMiscUnsafeAccessTestLong {
                 success = UNSAFE.weakCompareAndSetLongRelease(base, offset, 0x0123456789ABCDEFL, 0xCAFEBABECAFEBABEL);
                 if (!success) weakDelay(c);
             }
-            assertEquals(success, true, "weakCompareAndSetRelease long");
+            assertEquals(success, true, "success weakCompareAndSetRelease long");
             long x = UNSAFE.getLong(base, offset);
-            assertEquals(x, 0xCAFEBABECAFEBABEL, "weakCompareAndSetRelease long");
+            assertEquals(x, 0xCAFEBABECAFEBABEL, "success weakCompareAndSetRelease long");
+        }
+
+        {
+            boolean success = UNSAFE.weakCompareAndSetLongRelease(base, offset, 0x0123456789ABCDEFL, 0xDEADBEEFDEADBEEFL);
+            assertEquals(success, false, "failing weakCompareAndSetRelease long");
+            long x = UNSAFE.getLong(base, offset);
+            assertEquals(x, 0xCAFEBABECAFEBABEL, "failing weakCompareAndSetRelease long value");
         }
 
         {
@@ -309,9 +330,16 @@ public class JdkInternalMiscUnsafeAccessTestLong {
                 success = UNSAFE.weakCompareAndSetLong(base, offset, 0xCAFEBABECAFEBABEL, 0x0123456789ABCDEFL);
                 if (!success) weakDelay(c);
             }
-            assertEquals(success, true, "weakCompareAndSet long");
+            assertEquals(success, true, "success weakCompareAndSet long");
             long x = UNSAFE.getLong(base, offset);
-            assertEquals(x, 0x0123456789ABCDEFL, "weakCompareAndSet long");
+            assertEquals(x, 0x0123456789ABCDEFL, "success weakCompareAndSet long");
+        }
+
+        {
+            boolean success = UNSAFE.weakCompareAndSetLong(base, offset, 0xCAFEBABECAFEBABEL, 0xDEADBEEFDEADBEEFL);
+            assertEquals(success, false, "failing weakCompareAndSet long");
+            long x = UNSAFE.getLong(base, offset);
+            assertEquals(x, 0x0123456789ABCDEFL, "failing weakCompareAndSet long value");
         }
 
         UNSAFE.putLong(base, offset, 0xCAFEBABECAFEBABEL);

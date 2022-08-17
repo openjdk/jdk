@@ -276,9 +276,16 @@ public class JdkInternalMiscUnsafeAccessTestInt {
                 success = UNSAFE.weakCompareAndSetIntPlain(base, offset, 0x01234567, 0x89ABCDEF);
                 if (!success) weakDelay(c);
             }
-            assertEquals(success, true, "weakCompareAndSetPlain int");
+            assertEquals(success, true, "success weakCompareAndSetPlain int");
             int x = UNSAFE.getInt(base, offset);
-            assertEquals(x, 0x89ABCDEF, "weakCompareAndSetPlain int value");
+            assertEquals(x, 0x89ABCDEF, "success weakCompareAndSetPlain int value");
+        }
+
+        {
+            boolean success = UNSAFE.weakCompareAndSetIntPlain(base, offset, 0x01234567, 0xCAFEBABE);
+            assertEquals(success, false, "failing weakCompareAndSetPlain int");
+            int x = UNSAFE.getInt(base, offset);
+            assertEquals(x, 0x89ABCDEF, "failing weakCompareAndSetPlain int value");
         }
 
         {
@@ -287,9 +294,16 @@ public class JdkInternalMiscUnsafeAccessTestInt {
                 success = UNSAFE.weakCompareAndSetIntAcquire(base, offset, 0x89ABCDEF, 0x01234567);
                 if (!success) weakDelay(c);
             }
-            assertEquals(success, true, "weakCompareAndSetAcquire int");
+            assertEquals(success, true, "success weakCompareAndSetAcquire int");
             int x = UNSAFE.getInt(base, offset);
-            assertEquals(x, 0x01234567, "weakCompareAndSetAcquire int");
+            assertEquals(x, 0x01234567, "success weakCompareAndSetAcquire int");
+        }
+
+        {
+            boolean success = UNSAFE.weakCompareAndSetIntAcquire(base, offset, 0x89ABCDEF, 0xCAFEBABE);
+            assertEquals(success, false, "failing weakCompareAndSetAcquire int");
+            int x = UNSAFE.getInt(base, offset);
+            assertEquals(x, 0x01234567, "failing weakCompareAndSetAcquire int value");
         }
 
         {
@@ -298,9 +312,16 @@ public class JdkInternalMiscUnsafeAccessTestInt {
                 success = UNSAFE.weakCompareAndSetIntRelease(base, offset, 0x01234567, 0x89ABCDEF);
                 if (!success) weakDelay(c);
             }
-            assertEquals(success, true, "weakCompareAndSetRelease int");
+            assertEquals(success, true, "success weakCompareAndSetRelease int");
             int x = UNSAFE.getInt(base, offset);
-            assertEquals(x, 0x89ABCDEF, "weakCompareAndSetRelease int");
+            assertEquals(x, 0x89ABCDEF, "success weakCompareAndSetRelease int");
+        }
+
+        {
+            boolean success = UNSAFE.weakCompareAndSetIntRelease(base, offset, 0x01234567, 0xCAFEBABE);
+            assertEquals(success, false, "failing weakCompareAndSetRelease int");
+            int x = UNSAFE.getInt(base, offset);
+            assertEquals(x, 0x89ABCDEF, "failing weakCompareAndSetRelease int value");
         }
 
         {
@@ -309,9 +330,16 @@ public class JdkInternalMiscUnsafeAccessTestInt {
                 success = UNSAFE.weakCompareAndSetInt(base, offset, 0x89ABCDEF, 0x01234567);
                 if (!success) weakDelay(c);
             }
-            assertEquals(success, true, "weakCompareAndSet int");
+            assertEquals(success, true, "success weakCompareAndSet int");
             int x = UNSAFE.getInt(base, offset);
-            assertEquals(x, 0x01234567, "weakCompareAndSet int");
+            assertEquals(x, 0x01234567, "success weakCompareAndSet int");
+        }
+
+        {
+            boolean success = UNSAFE.weakCompareAndSetInt(base, offset, 0x89ABCDEF, 0xCAFEBABE);
+            assertEquals(success, false, "failing weakCompareAndSet int");
+            int x = UNSAFE.getInt(base, offset);
+            assertEquals(x, 0x01234567, "failing weakCompareAndSet int value");
         }
 
         UNSAFE.putInt(base, offset, 0x89ABCDEF);

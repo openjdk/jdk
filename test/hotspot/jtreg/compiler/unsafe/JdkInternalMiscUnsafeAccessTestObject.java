@@ -229,9 +229,16 @@ public class JdkInternalMiscUnsafeAccessTestObject {
                 success = UNSAFE.weakCompareAndSetReferencePlain(base, offset, "foo", "bar");
                 if (!success) weakDelay(c);
             }
-            assertEquals(success, true, "weakCompareAndSetPlain Object");
+            assertEquals(success, true, "success weakCompareAndSetPlain Object");
             Object x = UNSAFE.getReference(base, offset);
-            assertEquals(x, "bar", "weakCompareAndSetPlain Object value");
+            assertEquals(x, "bar", "success weakCompareAndSetPlain Object value");
+        }
+
+        {
+            boolean success = UNSAFE.weakCompareAndSetReferencePlain(base, offset, "foo", "baz");
+            assertEquals(success, false, "failing weakCompareAndSetPlain Object");
+            Object x = UNSAFE.getReference(base, offset);
+            assertEquals(x, "bar", "failing weakCompareAndSetPlain Object value");
         }
 
         {
@@ -240,9 +247,16 @@ public class JdkInternalMiscUnsafeAccessTestObject {
                 success = UNSAFE.weakCompareAndSetReferenceAcquire(base, offset, "bar", "foo");
                 if (!success) weakDelay(c);
             }
-            assertEquals(success, true, "weakCompareAndSetAcquire Object");
+            assertEquals(success, true, "success weakCompareAndSetAcquire Object");
             Object x = UNSAFE.getReference(base, offset);
-            assertEquals(x, "foo", "weakCompareAndSetAcquire Object");
+            assertEquals(x, "foo", "success weakCompareAndSetAcquire Object");
+        }
+
+        {
+            boolean success = UNSAFE.weakCompareAndSetReferenceAcquire(base, offset, "bar", "baz");
+            assertEquals(success, false, "failing weakCompareAndSetAcquire Object");
+            Object x = UNSAFE.getReference(base, offset);
+            assertEquals(x, "foo", "failing weakCompareAndSetAcquire Object value");
         }
 
         {
@@ -251,9 +265,16 @@ public class JdkInternalMiscUnsafeAccessTestObject {
                 success = UNSAFE.weakCompareAndSetReferenceRelease(base, offset, "foo", "bar");
                 if (!success) weakDelay(c);
             }
-            assertEquals(success, true, "weakCompareAndSetRelease Object");
+            assertEquals(success, true, "success weakCompareAndSetRelease Object");
             Object x = UNSAFE.getReference(base, offset);
-            assertEquals(x, "bar", "weakCompareAndSetRelease Object");
+            assertEquals(x, "bar", "success weakCompareAndSetRelease Object");
+        }
+
+        {
+            boolean success = UNSAFE.weakCompareAndSetReferenceRelease(base, offset, "foo", "baz");
+            assertEquals(success, false, "failing weakCompareAndSetRelease Object");
+            Object x = UNSAFE.getReference(base, offset);
+            assertEquals(x, "bar", "failing weakCompareAndSetRelease Object value");
         }
 
         {
@@ -262,9 +283,16 @@ public class JdkInternalMiscUnsafeAccessTestObject {
                 success = UNSAFE.weakCompareAndSetReference(base, offset, "bar", "foo");
                 if (!success) weakDelay(c);
             }
-            assertEquals(success, true, "weakCompareAndSet Object");
+            assertEquals(success, true, "success weakCompareAndSet Object");
             Object x = UNSAFE.getReference(base, offset);
-            assertEquals(x, "foo", "weakCompareAndSet Object");
+            assertEquals(x, "foo", "success weakCompareAndSet Object");
+        }
+
+        {
+            boolean success = UNSAFE.weakCompareAndSetReference(base, offset, "bar", "baz");
+            assertEquals(success, false, "failing weakCompareAndSet Object");
+            Object x = UNSAFE.getReference(base, offset);
+            assertEquals(x, "foo", "failing weakCompareAndSet Object value");
         }
 
         UNSAFE.putReference(base, offset, "bar");

@@ -213,9 +213,16 @@ public class VarHandleTestMethodHandleAccessFloat extends VarHandleBaseTest {
                 success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_PLAIN).invokeExact(recv, 1.0f, 2.0f);
                 if (!success) weakDelay(c);
             }
-            assertEquals(success, true, "weakCompareAndSetPlain float");
+            assertEquals(success, true, "success weakCompareAndSetPlain float");
             float x = (float) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, 2.0f, "weakCompareAndSetPlain float value");
+            assertEquals(x, 2.0f, "success weakCompareAndSetPlain float value");
+        }
+
+        {
+            boolean success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_PLAIN).invokeExact(recv, 1.0f, 3.0f);
+            assertEquals(success, false, "failing weakCompareAndSetPlain float");
+            float x = (float) hs.get(TestAccessMode.GET).invokeExact(recv);
+            assertEquals(x, 2.0f, "failing weakCompareAndSetPlain float value");
         }
 
         {
@@ -224,9 +231,16 @@ public class VarHandleTestMethodHandleAccessFloat extends VarHandleBaseTest {
                 success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_ACQUIRE).invokeExact(recv, 2.0f, 1.0f);
                 if (!success) weakDelay(c);
             }
-            assertEquals(success, true, "weakCompareAndSetAcquire float");
+            assertEquals(success, true, "success weakCompareAndSetAcquire float");
             float x = (float) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, 1.0f, "weakCompareAndSetAcquire float");
+            assertEquals(x, 1.0f, "success weakCompareAndSetAcquire float");
+        }
+
+        {
+            boolean success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_ACQUIRE).invokeExact(recv, 2.0f, 3.0f);
+            assertEquals(success, false, "failing weakCompareAndSetAcquire float");
+            float x = (float) hs.get(TestAccessMode.GET).invokeExact(recv);
+            assertEquals(x, 1.0f, "failing weakCompareAndSetAcquire float value");
         }
 
         {
@@ -235,9 +249,16 @@ public class VarHandleTestMethodHandleAccessFloat extends VarHandleBaseTest {
                 success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_RELEASE).invokeExact(recv, 1.0f, 2.0f);
                 if (!success) weakDelay(c);
             }
-            assertEquals(success, true, "weakCompareAndSetRelease float");
+            assertEquals(success, true, "success weakCompareAndSetRelease float");
             float x = (float) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, 2.0f, "weakCompareAndSetRelease float");
+            assertEquals(x, 2.0f, "success weakCompareAndSetRelease float");
+        }
+
+        {
+            boolean success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_RELEASE).invokeExact(recv, 1.0f, 3.0f);
+            assertEquals(success, false, "failing weakCompareAndSetRelease float");
+            float x = (float) hs.get(TestAccessMode.GET).invokeExact(recv);
+            assertEquals(x, 2.0f, "failing weakCompareAndSetRelease float value");
         }
 
         {
@@ -246,9 +267,16 @@ public class VarHandleTestMethodHandleAccessFloat extends VarHandleBaseTest {
                 success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET).invokeExact(recv, 2.0f, 1.0f);
                 if (!success) weakDelay(c);
             }
-            assertEquals(success, true, "weakCompareAndSet float");
+            assertEquals(success, true, "success weakCompareAndSet float");
             float x = (float) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, 1.0f, "weakCompareAndSet float");
+            assertEquals(x, 1.0f, "success weakCompareAndSet float");
+        }
+
+        {
+            boolean success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET).invokeExact(recv, 2.0f, 3.0f);
+            assertEquals(success, false, "failing weakCompareAndSet float");
+            float x = (float) hs.get(TestAccessMode.GET).invokeExact(recv);
+            assertEquals(x, 1.0f, "failing weakCompareAndSet float value");
         }
 
         // Compare set and get
@@ -395,9 +423,16 @@ public class VarHandleTestMethodHandleAccessFloat extends VarHandleBaseTest {
                 success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_PLAIN).invokeExact(1.0f, 2.0f);
                 if (!success) weakDelay(c);
             }
-            assertEquals(success, true, "weakCompareAndSetPlain float");
+            assertEquals(success, true, "success weakCompareAndSetPlain float");
             float x = (float) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, 2.0f, "weakCompareAndSetPlain float value");
+            assertEquals(x, 2.0f, "success weakCompareAndSetPlain float value");
+        }
+
+        {
+            boolean success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_PLAIN).invokeExact(1.0f, 3.0f);
+            assertEquals(success, false, "failing weakCompareAndSetPlain float");
+            float x = (float) hs.get(TestAccessMode.GET).invokeExact();
+            assertEquals(x, 2.0f, "failing weakCompareAndSetPlain float value");
         }
 
         {
@@ -406,9 +441,16 @@ public class VarHandleTestMethodHandleAccessFloat extends VarHandleBaseTest {
                 success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_ACQUIRE).invokeExact(2.0f, 1.0f);
                 if (!success) weakDelay(c);
             }
-            assertEquals(success, true, "weakCompareAndSetAcquire float");
+            assertEquals(success, true, "success weakCompareAndSetAcquire float");
             float x = (float) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, 1.0f, "weakCompareAndSetAcquire float");
+            assertEquals(x, 1.0f, "success weakCompareAndSetAcquire float");
+        }
+
+        {
+            boolean success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_ACQUIRE).invokeExact(2.0f, 3.0f);
+            assertEquals(success, false, "failing weakCompareAndSetAcquire float");
+            float x = (float) hs.get(TestAccessMode.GET).invokeExact();
+            assertEquals(x, 1.0f, "failing weakCompareAndSetAcquire float value");
         }
 
         {
@@ -417,9 +459,16 @@ public class VarHandleTestMethodHandleAccessFloat extends VarHandleBaseTest {
                 success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_RELEASE).invokeExact(1.0f, 2.0f);
                 if (!success) weakDelay(c);
             }
-            assertEquals(success, true, "weakCompareAndSetRelease float");
+            assertEquals(success, true, "success weakCompareAndSetRelease float");
             float x = (float) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, 2.0f, "weakCompareAndSetRelease float");
+            assertEquals(x, 2.0f, "success weakCompareAndSetRelease float");
+        }
+
+        {
+            boolean success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_RELEASE).invokeExact(1.0f, 3.0f);
+            assertEquals(success, false, "failing weakCompareAndSetRelease float");
+            float x = (float) hs.get(TestAccessMode.GET).invokeExact();
+            assertEquals(x, 2.0f, "failing weakCompareAndSetRelease float value");
         }
 
         {
@@ -428,9 +477,16 @@ public class VarHandleTestMethodHandleAccessFloat extends VarHandleBaseTest {
                 success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET).invokeExact(2.0f, 1.0f);
                 if (!success) weakDelay(c);
             }
-            assertEquals(success, true, "weakCompareAndSet float");
+            assertEquals(success, true, "success weakCompareAndSet float");
             float x = (float) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, 1.0f, "weakCompareAndSet float");
+            assertEquals(x, 1.0f, "success weakCompareAndSet float");
+        }
+
+        {
+            boolean success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET).invokeExact(2.0f, 3.0f);
+            assertEquals(success, false, "failing weakCompareAndSet float");
+            float x = (float) hs.get(TestAccessMode.GET).invokeExact();
+            assertEquals(x, 1.0f, "failing weakCompareAndSetRe float value");
         }
 
         // Compare set and get
@@ -602,9 +658,16 @@ public class VarHandleTestMethodHandleAccessFloat extends VarHandleBaseTest {
                     success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_PLAIN).invokeExact(array, i, 1.0f, 2.0f);
                     if (!success) weakDelay(c);
                 }
-                assertEquals(success, true, "weakCompareAndSetPlain float");
+                assertEquals(success, true, "success weakCompareAndSetPlain float");
                 float x = (float) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(x, 2.0f, "weakCompareAndSetPlain float value");
+                assertEquals(x, 2.0f, "success weakCompareAndSetPlain float value");
+            }
+
+            {
+                boolean success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_PLAIN).invokeExact(array, i, 1.0f, 3.0f);
+                assertEquals(success, false, "failing weakCompareAndSetPlain float");
+                float x = (float) hs.get(TestAccessMode.GET).invokeExact(array, i);
+                assertEquals(x, 2.0f, "failing weakCompareAndSetPlain float value");
             }
 
             {
@@ -613,9 +676,16 @@ public class VarHandleTestMethodHandleAccessFloat extends VarHandleBaseTest {
                     success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_ACQUIRE).invokeExact(array, i, 2.0f, 1.0f);
                     if (!success) weakDelay(c);
                 }
-                assertEquals(success, true, "weakCompareAndSetAcquire float");
+                assertEquals(success, true, "success weakCompareAndSetAcquire float");
                 float x = (float) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(x, 1.0f, "weakCompareAndSetAcquire float");
+                assertEquals(x, 1.0f, "success weakCompareAndSetAcquire float");
+            }
+
+            {
+                boolean success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_ACQUIRE).invokeExact(array, i, 2.0f, 3.0f);
+                assertEquals(success, false, "failing weakCompareAndSetAcquire float");
+                float x = (float) hs.get(TestAccessMode.GET).invokeExact(array, i);
+                assertEquals(x, 1.0f, "failing weakCompareAndSetAcquire float value");
             }
 
             {
@@ -624,9 +694,16 @@ public class VarHandleTestMethodHandleAccessFloat extends VarHandleBaseTest {
                     success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_RELEASE).invokeExact(array, i, 1.0f, 2.0f);
                     if (!success) weakDelay(c);
                 }
-                assertEquals(success, true, "weakCompareAndSetRelease float");
+                assertEquals(success, true, "success weakCompareAndSetRelease float");
                 float x = (float) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(x, 2.0f, "weakCompareAndSetRelease float");
+                assertEquals(x, 2.0f, "success weakCompareAndSetRelease float");
+            }
+
+            {
+                boolean success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_ACQUIRE).invokeExact(array, i, 1.0f, 3.0f);
+                assertEquals(success, false, "failing weakCompareAndSetAcquire float");
+                float x = (float) hs.get(TestAccessMode.GET).invokeExact(array, i);
+                assertEquals(x, 2.0f, "failing weakCompareAndSetAcquire float value");
             }
 
             {
@@ -635,9 +712,16 @@ public class VarHandleTestMethodHandleAccessFloat extends VarHandleBaseTest {
                     success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET).invokeExact(array, i, 2.0f, 1.0f);
                     if (!success) weakDelay(c);
                 }
-                assertEquals(success, true, "weakCompareAndSet float");
+                assertEquals(success, true, "success weakCompareAndSet float");
                 float x = (float) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(x, 1.0f, "weakCompareAndSet float");
+                assertEquals(x, 1.0f, "success weakCompareAndSet float");
+            }
+
+            {
+                boolean success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET).invokeExact(array, i, 2.0f, 3.0f);
+                assertEquals(success, false, "failing weakCompareAndSet float");
+                float x = (float) hs.get(TestAccessMode.GET).invokeExact(array, i);
+                assertEquals(x, 1.0f, "failing weakCompareAndSet float value");
             }
 
             // Compare set and get

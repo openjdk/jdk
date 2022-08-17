@@ -258,9 +258,16 @@ public class JdkInternalMiscUnsafeAccessTestDouble {
                 success = UNSAFE.weakCompareAndSetDoublePlain(base, offset, 1.0d, 2.0d);
                 if (!success) weakDelay(c);
             }
-            assertEquals(success, true, "weakCompareAndSetPlain double");
+            assertEquals(success, true, "success weakCompareAndSetPlain double");
             double x = UNSAFE.getDouble(base, offset);
-            assertEquals(x, 2.0d, "weakCompareAndSetPlain double value");
+            assertEquals(x, 2.0d, "success weakCompareAndSetPlain double value");
+        }
+
+        {
+            boolean success = UNSAFE.weakCompareAndSetDoublePlain(base, offset, 1.0d, 3.0d);
+            assertEquals(success, false, "failing weakCompareAndSetPlain double");
+            double x = UNSAFE.getDouble(base, offset);
+            assertEquals(x, 2.0d, "failing weakCompareAndSetPlain double value");
         }
 
         {
@@ -269,9 +276,16 @@ public class JdkInternalMiscUnsafeAccessTestDouble {
                 success = UNSAFE.weakCompareAndSetDoubleAcquire(base, offset, 2.0d, 1.0d);
                 if (!success) weakDelay(c);
             }
-            assertEquals(success, true, "weakCompareAndSetAcquire double");
+            assertEquals(success, true, "success weakCompareAndSetAcquire double");
             double x = UNSAFE.getDouble(base, offset);
-            assertEquals(x, 1.0d, "weakCompareAndSetAcquire double");
+            assertEquals(x, 1.0d, "success weakCompareAndSetAcquire double");
+        }
+
+        {
+            boolean success = UNSAFE.weakCompareAndSetDoubleAcquire(base, offset, 2.0d, 3.0d);
+            assertEquals(success, false, "failing weakCompareAndSetAcquire double");
+            double x = UNSAFE.getDouble(base, offset);
+            assertEquals(x, 1.0d, "failing weakCompareAndSetAcquire double value");
         }
 
         {
@@ -280,9 +294,16 @@ public class JdkInternalMiscUnsafeAccessTestDouble {
                 success = UNSAFE.weakCompareAndSetDoubleRelease(base, offset, 1.0d, 2.0d);
                 if (!success) weakDelay(c);
             }
-            assertEquals(success, true, "weakCompareAndSetRelease double");
+            assertEquals(success, true, "success weakCompareAndSetRelease double");
             double x = UNSAFE.getDouble(base, offset);
-            assertEquals(x, 2.0d, "weakCompareAndSetRelease double");
+            assertEquals(x, 2.0d, "success weakCompareAndSetRelease double");
+        }
+
+        {
+            boolean success = UNSAFE.weakCompareAndSetDoubleRelease(base, offset, 1.0d, 3.0d);
+            assertEquals(success, false, "failing weakCompareAndSetRelease double");
+            double x = UNSAFE.getDouble(base, offset);
+            assertEquals(x, 2.0d, "failing weakCompareAndSetRelease double value");
         }
 
         {
@@ -291,9 +312,16 @@ public class JdkInternalMiscUnsafeAccessTestDouble {
                 success = UNSAFE.weakCompareAndSetDouble(base, offset, 2.0d, 1.0d);
                 if (!success) weakDelay(c);
             }
-            assertEquals(success, true, "weakCompareAndSet double");
+            assertEquals(success, true, "success weakCompareAndSet double");
             double x = UNSAFE.getDouble(base, offset);
-            assertEquals(x, 1.0d, "weakCompareAndSet double");
+            assertEquals(x, 1.0d, "success weakCompareAndSet double");
+        }
+
+        {
+            boolean success = UNSAFE.weakCompareAndSetDouble(base, offset, 2.0d, 3.0d);
+            assertEquals(success, false, "failing weakCompareAndSet double");
+            double x = UNSAFE.getDouble(base, offset);
+            assertEquals(x, 1.0d, "failing weakCompareAndSet double value");
         }
 
         UNSAFE.putDouble(base, offset, 2.0d);

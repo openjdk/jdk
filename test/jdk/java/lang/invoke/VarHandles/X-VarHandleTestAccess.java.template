@@ -727,9 +727,16 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
                 success = vh.weakCompareAndSetPlain(recv, $value1$, $value2$);
                 if (!success) weakDelay(c);
             }
-            assertEquals(success, true, "weakCompareAndSetPlain $type$");
+            assertEquals(success, true, "success weakCompareAndSetPlain $type$");
             $type$ x = ($type$) vh.get(recv);
-            assertEquals(x, $value2$, "weakCompareAndSetPlain $type$ value");
+            assertEquals(x, $value2$, "success weakCompareAndSetPlain $type$ value");
+        }
+
+        {
+            boolean success = vh.weakCompareAndSetPlain(recv, $value1$, $value3$);
+            assertEquals(success, false, "failing weakCompareAndSetPlain $type$");
+            $type$ x = ($type$) vh.get(recv);
+            assertEquals(x, $value2$, "failing weakCompareAndSetPlain $type$ value");
         }
 
         {
@@ -738,9 +745,16 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
                 success = vh.weakCompareAndSetAcquire(recv, $value2$, $value1$);
                 if (!success) weakDelay(c);
             }
-            assertEquals(success, true, "weakCompareAndSetAcquire $type$");
+            assertEquals(success, true, "success weakCompareAndSetAcquire $type$");
             $type$ x = ($type$) vh.get(recv);
-            assertEquals(x, $value1$, "weakCompareAndSetAcquire $type$");
+            assertEquals(x, $value1$, "success weakCompareAndSetAcquire $type$");
+        }
+
+        {
+            boolean success = vh.weakCompareAndSetAcquire(recv, $value2$, $value3$);
+            assertEquals(success, false, "failing weakCompareAndSetAcquire $type$");
+            $type$ x = ($type$) vh.get(recv);
+            assertEquals(x, $value1$, "failing weakCompareAndSetAcquire $type$ value");
         }
 
         {
@@ -749,9 +763,16 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
                 success = vh.weakCompareAndSetRelease(recv, $value1$, $value2$);
                 if (!success) weakDelay(c);
             }
-            assertEquals(success, true, "weakCompareAndSetRelease $type$");
+            assertEquals(success, true, "success weakCompareAndSetRelease $type$");
             $type$ x = ($type$) vh.get(recv);
-            assertEquals(x, $value2$, "weakCompareAndSetRelease $type$");
+            assertEquals(x, $value2$, "success weakCompareAndSetRelease $type$");
+        }
+
+        {
+            boolean success = vh.weakCompareAndSetRelease(recv, $value1$, $value3$);
+            assertEquals(success, false, "failing weakCompareAndSetRelease $type$");
+            $type$ x = ($type$) vh.get(recv);
+            assertEquals(x, $value2$, "failing weakCompareAndSetRelease $type$ value");
         }
 
         {
@@ -760,9 +781,16 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
                 success = vh.weakCompareAndSet(recv, $value2$, $value1$);
                 if (!success) weakDelay(c);
             }
-            assertEquals(success, true, "weakCompareAndSet $type$");
+            assertEquals(success, true, "success weakCompareAndSet $type$");
             $type$ x = ($type$) vh.get(recv);
-            assertEquals(x, $value1$, "weakCompareAndSet $type$ value");
+            assertEquals(x, $value1$, "success weakCompareAndSet $type$ value");
+        }
+
+        {
+            boolean success = vh.weakCompareAndSet(recv, $value2$, $value3$);
+            assertEquals(success, false, "failing weakCompareAndSet $type$");
+            $type$ x = ($type$) vh.get(recv);
+            assertEquals(x, $value1$, "failing weakCompareAndSet $type$ value");
         }
 
         // Compare set and get
@@ -1108,9 +1136,16 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
                 success = vh.weakCompareAndSetPlain($value1$, $value2$);
                 if (!success) weakDelay(c);
             }
-            assertEquals(success, true, "weakCompareAndSetPlain $type$");
+            assertEquals(success, true, "success weakCompareAndSetPlain $type$");
             $type$ x = ($type$) vh.get();
-            assertEquals(x, $value2$, "weakCompareAndSetPlain $type$ value");
+            assertEquals(x, $value2$, "success weakCompareAndSetPlain $type$ value");
+        }
+
+        {
+            boolean success = vh.weakCompareAndSetPlain($value1$, $value3$);
+            assertEquals(success, false, "failing weakCompareAndSetPlain $type$");
+            $type$ x = ($type$) vh.get();
+            assertEquals(x, $value2$, "failing weakCompareAndSetPlain $type$ value");
         }
 
         {
@@ -1119,9 +1154,16 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
                 success = vh.weakCompareAndSetAcquire($value2$, $value1$);
                 if (!success) weakDelay(c);
             }
-            assertEquals(success, true, "weakCompareAndSetAcquire $type$");
+            assertEquals(success, true, "success weakCompareAndSetAcquire $type$");
             $type$ x = ($type$) vh.get();
-            assertEquals(x, $value1$, "weakCompareAndSetAcquire $type$");
+            assertEquals(x, $value1$, "success weakCompareAndSetAcquire $type$");
+        }
+
+        {
+            boolean success = vh.weakCompareAndSetAcquire($value2$, $value3$);
+            assertEquals(success, false, "failing weakCompareAndSetAcquire $type$");
+            $type$ x = ($type$) vh.get();
+            assertEquals(x, $value1$, "failing weakCompareAndSetAcquire $type$ value");
         }
 
         {
@@ -1130,9 +1172,16 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
                 success = vh.weakCompareAndSetRelease($value1$, $value2$);
                 if (!success) weakDelay(c);
             }
-            assertEquals(success, true, "weakCompareAndSetRelease $type$");
+            assertEquals(success, true, "success weakCompareAndSetRelease $type$");
             $type$ x = ($type$) vh.get();
-            assertEquals(x, $value2$, "weakCompareAndSetRelease $type$");
+            assertEquals(x, $value2$, "success weakCompareAndSetRelease $type$");
+        }
+
+        {
+            boolean success = vh.weakCompareAndSetRelease($value1$, $value3$);
+            assertEquals(success, false, "failing weakCompareAndSetRelease $type$");
+            $type$ x = ($type$) vh.get();
+            assertEquals(x, $value2$, "failing weakCompareAndSetRelease $type$ value");
         }
 
         {
@@ -1141,9 +1190,16 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
                 success = vh.weakCompareAndSet($value2$, $value1$);
                 if (!success) weakDelay(c);
             }
-            assertEquals(success, true, "weakCompareAndSet $type$");
+            assertEquals(success, true, "success weakCompareAndSet $type$");
             $type$ x = ($type$) vh.get();
-            assertEquals(x, $value1$, "weakCompareAndSet $type$");
+            assertEquals(x, $value1$, "success weakCompareAndSet $type$");
+        }
+
+        {
+            boolean success = vh.weakCompareAndSet($value2$, $value3$);
+            assertEquals(success, false, "failing weakCompareAndSet $type$");
+            $type$ x = ($type$) vh.get();
+            assertEquals(x, $value1$, "failing weakCompareAndSet $type$ value");
         }
 
         // Compare set and get
@@ -1492,9 +1548,16 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
                     success = vh.weakCompareAndSetPlain(array, i, $value1$, $value2$);
                     if (!success) weakDelay(c);
                 }
-                assertEquals(success, true, "weakCompareAndSetPlain $type$");
+                assertEquals(success, true, "success weakCompareAndSetPlain $type$");
                 $type$ x = ($type$) vh.get(array, i);
-                assertEquals(x, $value2$, "weakCompareAndSetPlain $type$ value");
+                assertEquals(x, $value2$, "success weakCompareAndSetPlain $type$ value");
+            }
+
+            {
+                boolean success = vh.weakCompareAndSetPlain(array, i, $value1$, $value3$);
+                assertEquals(success, false, "failing weakCompareAndSetPlain $type$");
+                $type$ x = ($type$) vh.get(array, i);
+                assertEquals(x, $value2$, "failing weakCompareAndSetPlain $type$ value");
             }
 
             {
@@ -1503,9 +1566,16 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
                     success = vh.weakCompareAndSetAcquire(array, i, $value2$, $value1$);
                     if (!success) weakDelay(c);
                 }
-                assertEquals(success, true, "weakCompareAndSetAcquire $type$");
+                assertEquals(success, true, "success weakCompareAndSetAcquire $type$");
                 $type$ x = ($type$) vh.get(array, i);
-                assertEquals(x, $value1$, "weakCompareAndSetAcquire $type$");
+                assertEquals(x, $value1$, "success weakCompareAndSetAcquire $type$");
+            }
+
+            {
+                boolean success = vh.weakCompareAndSetAcquire(array, i, $value2$, $value3$);
+                assertEquals(success, false, "failing weakCompareAndSetAcquire $type$");
+                $type$ x = ($type$) vh.get(array, i);
+                assertEquals(x, $value1$, "failing weakCompareAndSetAcquire $type$ value");
             }
 
             {
@@ -1514,9 +1584,16 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
                     success = vh.weakCompareAndSetRelease(array, i, $value1$, $value2$);
                     if (!success) weakDelay(c);
                 }
-                assertEquals(success, true, "weakCompareAndSetRelease $type$");
+                assertEquals(success, true, "success weakCompareAndSetRelease $type$");
                 $type$ x = ($type$) vh.get(array, i);
-                assertEquals(x, $value2$, "weakCompareAndSetRelease $type$");
+                assertEquals(x, $value2$, "success weakCompareAndSetRelease $type$");
+            }
+
+            {
+                boolean success = vh.weakCompareAndSetRelease(array, i, $value1$, $value3$);
+                assertEquals(success, false, "failing weakCompareAndSetRelease $type$");
+                $type$ x = ($type$) vh.get(array, i);
+                assertEquals(x, $value2$, "failing weakCompareAndSetRelease $type$ value");
             }
 
             {
@@ -1525,9 +1602,16 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
                     success = vh.weakCompareAndSet(array, i, $value2$, $value1$);
                     if (!success) weakDelay(c);
                 }
-                assertEquals(success, true, "weakCompareAndSet $type$");
+                assertEquals(success, true, "success weakCompareAndSet $type$");
                 $type$ x = ($type$) vh.get(array, i);
-                assertEquals(x, $value1$, "weakCompareAndSet $type$");
+                assertEquals(x, $value1$, "success weakCompareAndSet $type$");
+            }
+
+            {
+                boolean success = vh.weakCompareAndSet(array, i, $value2$, $value3$);
+                assertEquals(success, false, "failing weakCompareAndSet $type$");
+                $type$ x = ($type$) vh.get(array, i);
+                assertEquals(x, $value1$, "failing weakCompareAndSet $type$ value");
             }
 
             // Compare set and get

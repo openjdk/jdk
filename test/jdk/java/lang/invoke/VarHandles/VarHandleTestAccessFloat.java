@@ -555,9 +555,16 @@ public class VarHandleTestAccessFloat extends VarHandleBaseTest {
                 success = vh.weakCompareAndSetPlain(recv, 1.0f, 2.0f);
                 if (!success) weakDelay(c);
             }
-            assertEquals(success, true, "weakCompareAndSetPlain float");
+            assertEquals(success, true, "success weakCompareAndSetPlain float");
             float x = (float) vh.get(recv);
-            assertEquals(x, 2.0f, "weakCompareAndSetPlain float value");
+            assertEquals(x, 2.0f, "success weakCompareAndSetPlain float value");
+        }
+
+        {
+            boolean success = vh.weakCompareAndSetPlain(recv, 1.0f, 3.0f);
+            assertEquals(success, false, "failing weakCompareAndSetPlain float");
+            float x = (float) vh.get(recv);
+            assertEquals(x, 2.0f, "failing weakCompareAndSetPlain float value");
         }
 
         {
@@ -566,9 +573,16 @@ public class VarHandleTestAccessFloat extends VarHandleBaseTest {
                 success = vh.weakCompareAndSetAcquire(recv, 2.0f, 1.0f);
                 if (!success) weakDelay(c);
             }
-            assertEquals(success, true, "weakCompareAndSetAcquire float");
+            assertEquals(success, true, "success weakCompareAndSetAcquire float");
             float x = (float) vh.get(recv);
-            assertEquals(x, 1.0f, "weakCompareAndSetAcquire float");
+            assertEquals(x, 1.0f, "success weakCompareAndSetAcquire float");
+        }
+
+        {
+            boolean success = vh.weakCompareAndSetAcquire(recv, 2.0f, 3.0f);
+            assertEquals(success, false, "failing weakCompareAndSetAcquire float");
+            float x = (float) vh.get(recv);
+            assertEquals(x, 1.0f, "failing weakCompareAndSetAcquire float value");
         }
 
         {
@@ -577,9 +591,16 @@ public class VarHandleTestAccessFloat extends VarHandleBaseTest {
                 success = vh.weakCompareAndSetRelease(recv, 1.0f, 2.0f);
                 if (!success) weakDelay(c);
             }
-            assertEquals(success, true, "weakCompareAndSetRelease float");
+            assertEquals(success, true, "success weakCompareAndSetRelease float");
             float x = (float) vh.get(recv);
-            assertEquals(x, 2.0f, "weakCompareAndSetRelease float");
+            assertEquals(x, 2.0f, "success weakCompareAndSetRelease float");
+        }
+
+        {
+            boolean success = vh.weakCompareAndSetRelease(recv, 1.0f, 3.0f);
+            assertEquals(success, false, "failing weakCompareAndSetRelease float");
+            float x = (float) vh.get(recv);
+            assertEquals(x, 2.0f, "failing weakCompareAndSetRelease float value");
         }
 
         {
@@ -588,9 +609,16 @@ public class VarHandleTestAccessFloat extends VarHandleBaseTest {
                 success = vh.weakCompareAndSet(recv, 2.0f, 1.0f);
                 if (!success) weakDelay(c);
             }
-            assertEquals(success, true, "weakCompareAndSet float");
+            assertEquals(success, true, "success weakCompareAndSet float");
             float x = (float) vh.get(recv);
-            assertEquals(x, 1.0f, "weakCompareAndSet float value");
+            assertEquals(x, 1.0f, "success weakCompareAndSet float value");
+        }
+
+        {
+            boolean success = vh.weakCompareAndSet(recv, 2.0f, 3.0f);
+            assertEquals(success, false, "failing weakCompareAndSet float");
+            float x = (float) vh.get(recv);
+            assertEquals(x, 1.0f, "failing weakCompareAndSet float value");
         }
 
         // Compare set and get
@@ -787,9 +815,16 @@ public class VarHandleTestAccessFloat extends VarHandleBaseTest {
                 success = vh.weakCompareAndSetPlain(1.0f, 2.0f);
                 if (!success) weakDelay(c);
             }
-            assertEquals(success, true, "weakCompareAndSetPlain float");
+            assertEquals(success, true, "success weakCompareAndSetPlain float");
             float x = (float) vh.get();
-            assertEquals(x, 2.0f, "weakCompareAndSetPlain float value");
+            assertEquals(x, 2.0f, "success weakCompareAndSetPlain float value");
+        }
+
+        {
+            boolean success = vh.weakCompareAndSetPlain(1.0f, 3.0f);
+            assertEquals(success, false, "failing weakCompareAndSetPlain float");
+            float x = (float) vh.get();
+            assertEquals(x, 2.0f, "failing weakCompareAndSetPlain float value");
         }
 
         {
@@ -798,9 +833,16 @@ public class VarHandleTestAccessFloat extends VarHandleBaseTest {
                 success = vh.weakCompareAndSetAcquire(2.0f, 1.0f);
                 if (!success) weakDelay(c);
             }
-            assertEquals(success, true, "weakCompareAndSetAcquire float");
+            assertEquals(success, true, "success weakCompareAndSetAcquire float");
             float x = (float) vh.get();
-            assertEquals(x, 1.0f, "weakCompareAndSetAcquire float");
+            assertEquals(x, 1.0f, "success weakCompareAndSetAcquire float");
+        }
+
+        {
+            boolean success = vh.weakCompareAndSetAcquire(2.0f, 3.0f);
+            assertEquals(success, false, "failing weakCompareAndSetAcquire float");
+            float x = (float) vh.get();
+            assertEquals(x, 1.0f, "failing weakCompareAndSetAcquire float value");
         }
 
         {
@@ -809,9 +851,16 @@ public class VarHandleTestAccessFloat extends VarHandleBaseTest {
                 success = vh.weakCompareAndSetRelease(1.0f, 2.0f);
                 if (!success) weakDelay(c);
             }
-            assertEquals(success, true, "weakCompareAndSetRelease float");
+            assertEquals(success, true, "success weakCompareAndSetRelease float");
             float x = (float) vh.get();
-            assertEquals(x, 2.0f, "weakCompareAndSetRelease float");
+            assertEquals(x, 2.0f, "success weakCompareAndSetRelease float");
+        }
+
+        {
+            boolean success = vh.weakCompareAndSetRelease(1.0f, 3.0f);
+            assertEquals(success, false, "failing weakCompareAndSetRelease float");
+            float x = (float) vh.get();
+            assertEquals(x, 2.0f, "failing weakCompareAndSetRelease float value");
         }
 
         {
@@ -820,9 +869,16 @@ public class VarHandleTestAccessFloat extends VarHandleBaseTest {
                 success = vh.weakCompareAndSet(2.0f, 1.0f);
                 if (!success) weakDelay(c);
             }
-            assertEquals(success, true, "weakCompareAndSet float");
+            assertEquals(success, true, "success weakCompareAndSet float");
             float x = (float) vh.get();
-            assertEquals(x, 1.0f, "weakCompareAndSet float");
+            assertEquals(x, 1.0f, "success weakCompareAndSet float");
+        }
+
+        {
+            boolean success = vh.weakCompareAndSet(2.0f, 3.0f);
+            assertEquals(success, false, "failing weakCompareAndSet float");
+            float x = (float) vh.get();
+            assertEquals(x, 1.0f, "failing weakCompareAndSet float value");
         }
 
         // Compare set and get
@@ -1022,9 +1078,16 @@ public class VarHandleTestAccessFloat extends VarHandleBaseTest {
                     success = vh.weakCompareAndSetPlain(array, i, 1.0f, 2.0f);
                     if (!success) weakDelay(c);
                 }
-                assertEquals(success, true, "weakCompareAndSetPlain float");
+                assertEquals(success, true, "success weakCompareAndSetPlain float");
                 float x = (float) vh.get(array, i);
-                assertEquals(x, 2.0f, "weakCompareAndSetPlain float value");
+                assertEquals(x, 2.0f, "success weakCompareAndSetPlain float value");
+            }
+
+            {
+                boolean success = vh.weakCompareAndSetPlain(array, i, 1.0f, 3.0f);
+                assertEquals(success, false, "failing weakCompareAndSetPlain float");
+                float x = (float) vh.get(array, i);
+                assertEquals(x, 2.0f, "failing weakCompareAndSetPlain float value");
             }
 
             {
@@ -1033,9 +1096,16 @@ public class VarHandleTestAccessFloat extends VarHandleBaseTest {
                     success = vh.weakCompareAndSetAcquire(array, i, 2.0f, 1.0f);
                     if (!success) weakDelay(c);
                 }
-                assertEquals(success, true, "weakCompareAndSetAcquire float");
+                assertEquals(success, true, "success weakCompareAndSetAcquire float");
                 float x = (float) vh.get(array, i);
-                assertEquals(x, 1.0f, "weakCompareAndSetAcquire float");
+                assertEquals(x, 1.0f, "success weakCompareAndSetAcquire float");
+            }
+
+            {
+                boolean success = vh.weakCompareAndSetAcquire(array, i, 2.0f, 3.0f);
+                assertEquals(success, false, "failing weakCompareAndSetAcquire float");
+                float x = (float) vh.get(array, i);
+                assertEquals(x, 1.0f, "failing weakCompareAndSetAcquire float value");
             }
 
             {
@@ -1044,9 +1114,16 @@ public class VarHandleTestAccessFloat extends VarHandleBaseTest {
                     success = vh.weakCompareAndSetRelease(array, i, 1.0f, 2.0f);
                     if (!success) weakDelay(c);
                 }
-                assertEquals(success, true, "weakCompareAndSetRelease float");
+                assertEquals(success, true, "success weakCompareAndSetRelease float");
                 float x = (float) vh.get(array, i);
-                assertEquals(x, 2.0f, "weakCompareAndSetRelease float");
+                assertEquals(x, 2.0f, "success weakCompareAndSetRelease float");
+            }
+
+            {
+                boolean success = vh.weakCompareAndSetRelease(array, i, 1.0f, 3.0f);
+                assertEquals(success, false, "failing weakCompareAndSetRelease float");
+                float x = (float) vh.get(array, i);
+                assertEquals(x, 2.0f, "failing weakCompareAndSetRelease float value");
             }
 
             {
@@ -1055,9 +1132,16 @@ public class VarHandleTestAccessFloat extends VarHandleBaseTest {
                     success = vh.weakCompareAndSet(array, i, 2.0f, 1.0f);
                     if (!success) weakDelay(c);
                 }
-                assertEquals(success, true, "weakCompareAndSet float");
+                assertEquals(success, true, "success weakCompareAndSet float");
                 float x = (float) vh.get(array, i);
-                assertEquals(x, 1.0f, "weakCompareAndSet float");
+                assertEquals(x, 1.0f, "success weakCompareAndSet float");
+            }
+
+            {
+                boolean success = vh.weakCompareAndSet(array, i, 2.0f, 3.0f);
+                assertEquals(success, false, "failing weakCompareAndSet float");
+                float x = (float) vh.get(array, i);
+                assertEquals(x, 1.0f, "failing weakCompareAndSet float value");
             }
 
             // Compare set and get

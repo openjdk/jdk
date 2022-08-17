@@ -555,9 +555,16 @@ public class VarHandleTestAccessDouble extends VarHandleBaseTest {
                 success = vh.weakCompareAndSetPlain(recv, 1.0d, 2.0d);
                 if (!success) weakDelay(c);
             }
-            assertEquals(success, true, "weakCompareAndSetPlain double");
+            assertEquals(success, true, "success weakCompareAndSetPlain double");
             double x = (double) vh.get(recv);
-            assertEquals(x, 2.0d, "weakCompareAndSetPlain double value");
+            assertEquals(x, 2.0d, "success weakCompareAndSetPlain double value");
+        }
+
+        {
+            boolean success = vh.weakCompareAndSetPlain(recv, 1.0d, 3.0d);
+            assertEquals(success, false, "failing weakCompareAndSetPlain double");
+            double x = (double) vh.get(recv);
+            assertEquals(x, 2.0d, "failing weakCompareAndSetPlain double value");
         }
 
         {
@@ -566,9 +573,16 @@ public class VarHandleTestAccessDouble extends VarHandleBaseTest {
                 success = vh.weakCompareAndSetAcquire(recv, 2.0d, 1.0d);
                 if (!success) weakDelay(c);
             }
-            assertEquals(success, true, "weakCompareAndSetAcquire double");
+            assertEquals(success, true, "success weakCompareAndSetAcquire double");
             double x = (double) vh.get(recv);
-            assertEquals(x, 1.0d, "weakCompareAndSetAcquire double");
+            assertEquals(x, 1.0d, "success weakCompareAndSetAcquire double");
+        }
+
+        {
+            boolean success = vh.weakCompareAndSetAcquire(recv, 2.0d, 3.0d);
+            assertEquals(success, false, "failing weakCompareAndSetAcquire double");
+            double x = (double) vh.get(recv);
+            assertEquals(x, 1.0d, "failing weakCompareAndSetAcquire double value");
         }
 
         {
@@ -577,9 +591,16 @@ public class VarHandleTestAccessDouble extends VarHandleBaseTest {
                 success = vh.weakCompareAndSetRelease(recv, 1.0d, 2.0d);
                 if (!success) weakDelay(c);
             }
-            assertEquals(success, true, "weakCompareAndSetRelease double");
+            assertEquals(success, true, "success weakCompareAndSetRelease double");
             double x = (double) vh.get(recv);
-            assertEquals(x, 2.0d, "weakCompareAndSetRelease double");
+            assertEquals(x, 2.0d, "success weakCompareAndSetRelease double");
+        }
+
+        {
+            boolean success = vh.weakCompareAndSetRelease(recv, 1.0d, 3.0d);
+            assertEquals(success, false, "failing weakCompareAndSetRelease double");
+            double x = (double) vh.get(recv);
+            assertEquals(x, 2.0d, "failing weakCompareAndSetRelease double value");
         }
 
         {
@@ -588,9 +609,16 @@ public class VarHandleTestAccessDouble extends VarHandleBaseTest {
                 success = vh.weakCompareAndSet(recv, 2.0d, 1.0d);
                 if (!success) weakDelay(c);
             }
-            assertEquals(success, true, "weakCompareAndSet double");
+            assertEquals(success, true, "success weakCompareAndSet double");
             double x = (double) vh.get(recv);
-            assertEquals(x, 1.0d, "weakCompareAndSet double value");
+            assertEquals(x, 1.0d, "success weakCompareAndSet double value");
+        }
+
+        {
+            boolean success = vh.weakCompareAndSet(recv, 2.0d, 3.0d);
+            assertEquals(success, false, "failing weakCompareAndSet double");
+            double x = (double) vh.get(recv);
+            assertEquals(x, 1.0d, "failing weakCompareAndSet double value");
         }
 
         // Compare set and get
@@ -787,9 +815,16 @@ public class VarHandleTestAccessDouble extends VarHandleBaseTest {
                 success = vh.weakCompareAndSetPlain(1.0d, 2.0d);
                 if (!success) weakDelay(c);
             }
-            assertEquals(success, true, "weakCompareAndSetPlain double");
+            assertEquals(success, true, "success weakCompareAndSetPlain double");
             double x = (double) vh.get();
-            assertEquals(x, 2.0d, "weakCompareAndSetPlain double value");
+            assertEquals(x, 2.0d, "success weakCompareAndSetPlain double value");
+        }
+
+        {
+            boolean success = vh.weakCompareAndSetPlain(1.0d, 3.0d);
+            assertEquals(success, false, "failing weakCompareAndSetPlain double");
+            double x = (double) vh.get();
+            assertEquals(x, 2.0d, "failing weakCompareAndSetPlain double value");
         }
 
         {
@@ -798,9 +833,16 @@ public class VarHandleTestAccessDouble extends VarHandleBaseTest {
                 success = vh.weakCompareAndSetAcquire(2.0d, 1.0d);
                 if (!success) weakDelay(c);
             }
-            assertEquals(success, true, "weakCompareAndSetAcquire double");
+            assertEquals(success, true, "success weakCompareAndSetAcquire double");
             double x = (double) vh.get();
-            assertEquals(x, 1.0d, "weakCompareAndSetAcquire double");
+            assertEquals(x, 1.0d, "success weakCompareAndSetAcquire double");
+        }
+
+        {
+            boolean success = vh.weakCompareAndSetAcquire(2.0d, 3.0d);
+            assertEquals(success, false, "failing weakCompareAndSetAcquire double");
+            double x = (double) vh.get();
+            assertEquals(x, 1.0d, "failing weakCompareAndSetAcquire double value");
         }
 
         {
@@ -809,9 +851,16 @@ public class VarHandleTestAccessDouble extends VarHandleBaseTest {
                 success = vh.weakCompareAndSetRelease(1.0d, 2.0d);
                 if (!success) weakDelay(c);
             }
-            assertEquals(success, true, "weakCompareAndSetRelease double");
+            assertEquals(success, true, "success weakCompareAndSetRelease double");
             double x = (double) vh.get();
-            assertEquals(x, 2.0d, "weakCompareAndSetRelease double");
+            assertEquals(x, 2.0d, "success weakCompareAndSetRelease double");
+        }
+
+        {
+            boolean success = vh.weakCompareAndSetRelease(1.0d, 3.0d);
+            assertEquals(success, false, "failing weakCompareAndSetRelease double");
+            double x = (double) vh.get();
+            assertEquals(x, 2.0d, "failing weakCompareAndSetRelease double value");
         }
 
         {
@@ -820,9 +869,16 @@ public class VarHandleTestAccessDouble extends VarHandleBaseTest {
                 success = vh.weakCompareAndSet(2.0d, 1.0d);
                 if (!success) weakDelay(c);
             }
-            assertEquals(success, true, "weakCompareAndSet double");
+            assertEquals(success, true, "success weakCompareAndSet double");
             double x = (double) vh.get();
-            assertEquals(x, 1.0d, "weakCompareAndSet double");
+            assertEquals(x, 1.0d, "success weakCompareAndSet double");
+        }
+
+        {
+            boolean success = vh.weakCompareAndSet(2.0d, 3.0d);
+            assertEquals(success, false, "failing weakCompareAndSet double");
+            double x = (double) vh.get();
+            assertEquals(x, 1.0d, "failing weakCompareAndSet double value");
         }
 
         // Compare set and get
@@ -1022,9 +1078,16 @@ public class VarHandleTestAccessDouble extends VarHandleBaseTest {
                     success = vh.weakCompareAndSetPlain(array, i, 1.0d, 2.0d);
                     if (!success) weakDelay(c);
                 }
-                assertEquals(success, true, "weakCompareAndSetPlain double");
+                assertEquals(success, true, "success weakCompareAndSetPlain double");
                 double x = (double) vh.get(array, i);
-                assertEquals(x, 2.0d, "weakCompareAndSetPlain double value");
+                assertEquals(x, 2.0d, "success weakCompareAndSetPlain double value");
+            }
+
+            {
+                boolean success = vh.weakCompareAndSetPlain(array, i, 1.0d, 3.0d);
+                assertEquals(success, false, "failing weakCompareAndSetPlain double");
+                double x = (double) vh.get(array, i);
+                assertEquals(x, 2.0d, "failing weakCompareAndSetPlain double value");
             }
 
             {
@@ -1033,9 +1096,16 @@ public class VarHandleTestAccessDouble extends VarHandleBaseTest {
                     success = vh.weakCompareAndSetAcquire(array, i, 2.0d, 1.0d);
                     if (!success) weakDelay(c);
                 }
-                assertEquals(success, true, "weakCompareAndSetAcquire double");
+                assertEquals(success, true, "success weakCompareAndSetAcquire double");
                 double x = (double) vh.get(array, i);
-                assertEquals(x, 1.0d, "weakCompareAndSetAcquire double");
+                assertEquals(x, 1.0d, "success weakCompareAndSetAcquire double");
+            }
+
+            {
+                boolean success = vh.weakCompareAndSetAcquire(array, i, 2.0d, 3.0d);
+                assertEquals(success, false, "failing weakCompareAndSetAcquire double");
+                double x = (double) vh.get(array, i);
+                assertEquals(x, 1.0d, "failing weakCompareAndSetAcquire double value");
             }
 
             {
@@ -1044,9 +1114,16 @@ public class VarHandleTestAccessDouble extends VarHandleBaseTest {
                     success = vh.weakCompareAndSetRelease(array, i, 1.0d, 2.0d);
                     if (!success) weakDelay(c);
                 }
-                assertEquals(success, true, "weakCompareAndSetRelease double");
+                assertEquals(success, true, "success weakCompareAndSetRelease double");
                 double x = (double) vh.get(array, i);
-                assertEquals(x, 2.0d, "weakCompareAndSetRelease double");
+                assertEquals(x, 2.0d, "success weakCompareAndSetRelease double");
+            }
+
+            {
+                boolean success = vh.weakCompareAndSetRelease(array, i, 1.0d, 3.0d);
+                assertEquals(success, false, "failing weakCompareAndSetRelease double");
+                double x = (double) vh.get(array, i);
+                assertEquals(x, 2.0d, "failing weakCompareAndSetRelease double value");
             }
 
             {
@@ -1055,9 +1132,16 @@ public class VarHandleTestAccessDouble extends VarHandleBaseTest {
                     success = vh.weakCompareAndSet(array, i, 2.0d, 1.0d);
                     if (!success) weakDelay(c);
                 }
-                assertEquals(success, true, "weakCompareAndSet double");
+                assertEquals(success, true, "success weakCompareAndSet double");
                 double x = (double) vh.get(array, i);
-                assertEquals(x, 1.0d, "weakCompareAndSet double");
+                assertEquals(x, 1.0d, "success weakCompareAndSet double");
+            }
+
+            {
+                boolean success = vh.weakCompareAndSet(array, i, 2.0d, 3.0d);
+                assertEquals(success, false, "failing weakCompareAndSet double");
+                double x = (double) vh.get(array, i);
+                assertEquals(x, 1.0d, "failing weakCompareAndSet double value");
             }
 
             // Compare set and get

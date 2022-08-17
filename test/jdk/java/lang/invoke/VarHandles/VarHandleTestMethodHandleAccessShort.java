@@ -213,9 +213,16 @@ public class VarHandleTestMethodHandleAccessShort extends VarHandleBaseTest {
                 success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_PLAIN).invokeExact(recv, (short)0x0123, (short)0x4567);
                 if (!success) weakDelay(c);
             }
-            assertEquals(success, true, "weakCompareAndSetPlain short");
+            assertEquals(success, true, "success weakCompareAndSetPlain short");
             short x = (short) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, (short)0x4567, "weakCompareAndSetPlain short value");
+            assertEquals(x, (short)0x4567, "success weakCompareAndSetPlain short value");
+        }
+
+        {
+            boolean success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_PLAIN).invokeExact(recv, (short)0x0123, (short)0x89AB);
+            assertEquals(success, false, "failing weakCompareAndSetPlain short");
+            short x = (short) hs.get(TestAccessMode.GET).invokeExact(recv);
+            assertEquals(x, (short)0x4567, "failing weakCompareAndSetPlain short value");
         }
 
         {
@@ -224,9 +231,16 @@ public class VarHandleTestMethodHandleAccessShort extends VarHandleBaseTest {
                 success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_ACQUIRE).invokeExact(recv, (short)0x4567, (short)0x0123);
                 if (!success) weakDelay(c);
             }
-            assertEquals(success, true, "weakCompareAndSetAcquire short");
+            assertEquals(success, true, "success weakCompareAndSetAcquire short");
             short x = (short) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, (short)0x0123, "weakCompareAndSetAcquire short");
+            assertEquals(x, (short)0x0123, "success weakCompareAndSetAcquire short");
+        }
+
+        {
+            boolean success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_ACQUIRE).invokeExact(recv, (short)0x4567, (short)0x89AB);
+            assertEquals(success, false, "failing weakCompareAndSetAcquire short");
+            short x = (short) hs.get(TestAccessMode.GET).invokeExact(recv);
+            assertEquals(x, (short)0x0123, "failing weakCompareAndSetAcquire short value");
         }
 
         {
@@ -235,9 +249,16 @@ public class VarHandleTestMethodHandleAccessShort extends VarHandleBaseTest {
                 success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_RELEASE).invokeExact(recv, (short)0x0123, (short)0x4567);
                 if (!success) weakDelay(c);
             }
-            assertEquals(success, true, "weakCompareAndSetRelease short");
+            assertEquals(success, true, "success weakCompareAndSetRelease short");
             short x = (short) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, (short)0x4567, "weakCompareAndSetRelease short");
+            assertEquals(x, (short)0x4567, "success weakCompareAndSetRelease short");
+        }
+
+        {
+            boolean success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_RELEASE).invokeExact(recv, (short)0x0123, (short)0x89AB);
+            assertEquals(success, false, "failing weakCompareAndSetRelease short");
+            short x = (short) hs.get(TestAccessMode.GET).invokeExact(recv);
+            assertEquals(x, (short)0x4567, "failing weakCompareAndSetRelease short value");
         }
 
         {
@@ -246,9 +267,16 @@ public class VarHandleTestMethodHandleAccessShort extends VarHandleBaseTest {
                 success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET).invokeExact(recv, (short)0x4567, (short)0x0123);
                 if (!success) weakDelay(c);
             }
-            assertEquals(success, true, "weakCompareAndSet short");
+            assertEquals(success, true, "success weakCompareAndSet short");
             short x = (short) hs.get(TestAccessMode.GET).invokeExact(recv);
-            assertEquals(x, (short)0x0123, "weakCompareAndSet short");
+            assertEquals(x, (short)0x0123, "success weakCompareAndSet short");
+        }
+
+        {
+            boolean success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET).invokeExact(recv, (short)0x4567, (short)0x89AB);
+            assertEquals(success, false, "failing weakCompareAndSet short");
+            short x = (short) hs.get(TestAccessMode.GET).invokeExact(recv);
+            assertEquals(x, (short)0x0123, "failing weakCompareAndSet short value");
         }
 
         // Compare set and get
@@ -473,9 +501,16 @@ public class VarHandleTestMethodHandleAccessShort extends VarHandleBaseTest {
                 success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_PLAIN).invokeExact((short)0x0123, (short)0x4567);
                 if (!success) weakDelay(c);
             }
-            assertEquals(success, true, "weakCompareAndSetPlain short");
+            assertEquals(success, true, "success weakCompareAndSetPlain short");
             short x = (short) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, (short)0x4567, "weakCompareAndSetPlain short value");
+            assertEquals(x, (short)0x4567, "success weakCompareAndSetPlain short value");
+        }
+
+        {
+            boolean success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_PLAIN).invokeExact((short)0x0123, (short)0x89AB);
+            assertEquals(success, false, "failing weakCompareAndSetPlain short");
+            short x = (short) hs.get(TestAccessMode.GET).invokeExact();
+            assertEquals(x, (short)0x4567, "failing weakCompareAndSetPlain short value");
         }
 
         {
@@ -484,9 +519,16 @@ public class VarHandleTestMethodHandleAccessShort extends VarHandleBaseTest {
                 success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_ACQUIRE).invokeExact((short)0x4567, (short)0x0123);
                 if (!success) weakDelay(c);
             }
-            assertEquals(success, true, "weakCompareAndSetAcquire short");
+            assertEquals(success, true, "success weakCompareAndSetAcquire short");
             short x = (short) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, (short)0x0123, "weakCompareAndSetAcquire short");
+            assertEquals(x, (short)0x0123, "success weakCompareAndSetAcquire short");
+        }
+
+        {
+            boolean success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_ACQUIRE).invokeExact((short)0x4567, (short)0x89AB);
+            assertEquals(success, false, "failing weakCompareAndSetAcquire short");
+            short x = (short) hs.get(TestAccessMode.GET).invokeExact();
+            assertEquals(x, (short)0x0123, "failing weakCompareAndSetAcquire short value");
         }
 
         {
@@ -495,9 +537,16 @@ public class VarHandleTestMethodHandleAccessShort extends VarHandleBaseTest {
                 success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_RELEASE).invokeExact((short)0x0123, (short)0x4567);
                 if (!success) weakDelay(c);
             }
-            assertEquals(success, true, "weakCompareAndSetRelease short");
+            assertEquals(success, true, "success weakCompareAndSetRelease short");
             short x = (short) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, (short)0x4567, "weakCompareAndSetRelease short");
+            assertEquals(x, (short)0x4567, "success weakCompareAndSetRelease short");
+        }
+
+        {
+            boolean success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_RELEASE).invokeExact((short)0x0123, (short)0x89AB);
+            assertEquals(success, false, "failing weakCompareAndSetRelease short");
+            short x = (short) hs.get(TestAccessMode.GET).invokeExact();
+            assertEquals(x, (short)0x4567, "failing weakCompareAndSetRelease short value");
         }
 
         {
@@ -506,9 +555,16 @@ public class VarHandleTestMethodHandleAccessShort extends VarHandleBaseTest {
                 success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET).invokeExact((short)0x4567, (short)0x0123);
                 if (!success) weakDelay(c);
             }
-            assertEquals(success, true, "weakCompareAndSet short");
+            assertEquals(success, true, "success weakCompareAndSet short");
             short x = (short) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(x, (short)0x0123, "weakCompareAndSet short");
+            assertEquals(x, (short)0x0123, "success weakCompareAndSet short");
+        }
+
+        {
+            boolean success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET).invokeExact((short)0x4567, (short)0x89AB);
+            assertEquals(success, false, "failing weakCompareAndSet short");
+            short x = (short) hs.get(TestAccessMode.GET).invokeExact();
+            assertEquals(x, (short)0x0123, "failing weakCompareAndSetRe short value");
         }
 
         // Compare set and get
@@ -758,9 +814,16 @@ public class VarHandleTestMethodHandleAccessShort extends VarHandleBaseTest {
                     success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_PLAIN).invokeExact(array, i, (short)0x0123, (short)0x4567);
                     if (!success) weakDelay(c);
                 }
-                assertEquals(success, true, "weakCompareAndSetPlain short");
+                assertEquals(success, true, "success weakCompareAndSetPlain short");
                 short x = (short) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(x, (short)0x4567, "weakCompareAndSetPlain short value");
+                assertEquals(x, (short)0x4567, "success weakCompareAndSetPlain short value");
+            }
+
+            {
+                boolean success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_PLAIN).invokeExact(array, i, (short)0x0123, (short)0x89AB);
+                assertEquals(success, false, "failing weakCompareAndSetPlain short");
+                short x = (short) hs.get(TestAccessMode.GET).invokeExact(array, i);
+                assertEquals(x, (short)0x4567, "failing weakCompareAndSetPlain short value");
             }
 
             {
@@ -769,9 +832,16 @@ public class VarHandleTestMethodHandleAccessShort extends VarHandleBaseTest {
                     success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_ACQUIRE).invokeExact(array, i, (short)0x4567, (short)0x0123);
                     if (!success) weakDelay(c);
                 }
-                assertEquals(success, true, "weakCompareAndSetAcquire short");
+                assertEquals(success, true, "success weakCompareAndSetAcquire short");
                 short x = (short) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(x, (short)0x0123, "weakCompareAndSetAcquire short");
+                assertEquals(x, (short)0x0123, "success weakCompareAndSetAcquire short");
+            }
+
+            {
+                boolean success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_ACQUIRE).invokeExact(array, i, (short)0x4567, (short)0x89AB);
+                assertEquals(success, false, "failing weakCompareAndSetAcquire short");
+                short x = (short) hs.get(TestAccessMode.GET).invokeExact(array, i);
+                assertEquals(x, (short)0x0123, "failing weakCompareAndSetAcquire short value");
             }
 
             {
@@ -780,9 +850,16 @@ public class VarHandleTestMethodHandleAccessShort extends VarHandleBaseTest {
                     success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_RELEASE).invokeExact(array, i, (short)0x0123, (short)0x4567);
                     if (!success) weakDelay(c);
                 }
-                assertEquals(success, true, "weakCompareAndSetRelease short");
+                assertEquals(success, true, "success weakCompareAndSetRelease short");
                 short x = (short) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(x, (short)0x4567, "weakCompareAndSetRelease short");
+                assertEquals(x, (short)0x4567, "success weakCompareAndSetRelease short");
+            }
+
+            {
+                boolean success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_ACQUIRE).invokeExact(array, i, (short)0x0123, (short)0x89AB);
+                assertEquals(success, false, "failing weakCompareAndSetAcquire short");
+                short x = (short) hs.get(TestAccessMode.GET).invokeExact(array, i);
+                assertEquals(x, (short)0x4567, "failing weakCompareAndSetAcquire short value");
             }
 
             {
@@ -791,9 +868,16 @@ public class VarHandleTestMethodHandleAccessShort extends VarHandleBaseTest {
                     success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET).invokeExact(array, i, (short)0x4567, (short)0x0123);
                     if (!success) weakDelay(c);
                 }
-                assertEquals(success, true, "weakCompareAndSet short");
+                assertEquals(success, true, "success weakCompareAndSet short");
                 short x = (short) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(x, (short)0x0123, "weakCompareAndSet short");
+                assertEquals(x, (short)0x0123, "success weakCompareAndSet short");
+            }
+
+            {
+                boolean success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET).invokeExact(array, i, (short)0x4567, (short)0x89AB);
+                assertEquals(success, false, "failing weakCompareAndSet short");
+                short x = (short) hs.get(TestAccessMode.GET).invokeExact(array, i);
+                assertEquals(x, (short)0x0123, "failing weakCompareAndSet short value");
             }
 
             // Compare set and get
