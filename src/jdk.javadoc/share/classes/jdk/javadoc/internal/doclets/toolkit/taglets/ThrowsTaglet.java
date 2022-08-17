@@ -49,7 +49,9 @@ import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.ThrowsTree;
 
 import jdk.javadoc.doclet.Taglet.Location;
+import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFinder;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
@@ -93,6 +95,28 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
                     utils.isSubclassOf((TypeElement) candidate, (TypeElement) target)) {
                 output.tagList.add(tag);
             }
+        }
+    }
+
+    @Override
+    public Output inherit(Element owner, DocTree tag, boolean isFirstSentence, BaseConfiguration configuration) {
+        assert tag.getKind() == DocTree.Kind.THROWS || tag.getKind() == DocTree.Kind.EXCEPTION
+                : tag.getKind();
+        assert owner.getKind() == ElementKind.METHOD;
+        var t = (ThrowsTree) tag;
+        CommentHelper ch = configuration.utils.getCommentHelper(owner);
+        Element exceptionElement = ch.getException(t);
+        if (exceptionElement == null) {
+            throw new Error();
+        }
+        TypeMirror exception = exceptionElement.asType();
+        try {
+            var r = DocFinder.trySearch((ExecutableElement) owner, false, m -> extract(m, exception, configuration.utils), configuration);
+            // Take care of one-to-many
+            return r.map(result -> new Output(result.throwsTrees.get(0), result.method, result.throwsTrees.get(0).getDescription(), true))
+                    .orElseGet(() -> new Output(null, null, List.of(), true));
+        } catch (DocFinder.NoOverriddenMethodsFound e) {
+            return new Output(null, null, List.of(), false);
         }
     }
 

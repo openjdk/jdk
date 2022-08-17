@@ -28,12 +28,14 @@ package jdk.javadoc.internal.doclets.toolkit.taglets;
 import java.util.*;
 
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 
 import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.ParamTree;
 import jdk.javadoc.doclet.Taglet.Location;
+import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.Messages;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
@@ -103,6 +105,35 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
                 output.inlineTags = ch.getBody(tag);
                 return;
             }
+        }
+    }
+
+    @Override
+    public Output inherit(Element owner, DocTree tag, boolean isFirstSentence, BaseConfiguration configuration) {
+        assert owner.getKind() == ElementKind.METHOD;
+        assert tag.getKind() == DocTree.Kind.PARAM;
+        var method = (ExecutableElement) owner;
+        var param = (ParamTree) tag;
+        // find the position of an owner parameter described by the given tag
+        List<? extends Element> parameterElements;
+        if (param.isTypeParameter()) {
+            parameterElements = method.getTypeParameters();
+        } else {
+            parameterElements = method.getParameters();
+        }
+        Map<String, Integer> stringIntegerMap = mapNameToPosition(configuration.utils, parameterElements);
+        CommentHelper ch = configuration.utils.getCommentHelper(owner);
+        Integer position = stringIntegerMap.get(ch.getParameterName(param));
+        if (position == null) {
+            return new Output(null, null, List.of(), true); // remodel, because it's an error
+        }
+        // try to inherit description of the respective parameter in an overridden method
+        try {
+            var r = DocFinder.trySearch(method, false, m -> extract(configuration.utils, m, position, param.isTypeParameter()), configuration);
+            return r.map(result -> new Output(result.paramTree, result.method, result.paramTree.getDescription(), true))
+                    .orElseGet(() -> new Output(null, null, List.of(), true));
+        } catch (DocFinder.NoOverriddenMethodsFound e) {
+            return new Output(null, null, List.of(), false);
         }
     }
 

@@ -38,6 +38,7 @@ import javax.lang.model.type.TypeMirror;
 import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.ReturnTree;
 import jdk.javadoc.doclet.Taglet.Location;
+import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.Messages;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
@@ -80,6 +81,17 @@ public class ReturnTaglet extends BaseTaglet implements InheritableTaglet {
             output.inlineTags = input.isFirstSentence
                     ? ch.getFirstSentenceTrees(output.holderTag)
                     : ch.getDescription(output.holderTag);
+        }
+    }
+
+    @Override
+    public Output inherit(Element owner, DocTree tag, boolean isFirstSentence, BaseConfiguration configuration) {
+        try {
+            var r = DocFinder.trySearch((ExecutableElement) owner, false, m -> extract(configuration.utils, m), configuration);
+            return r.map(result -> new Output(result.returnTree, result.method, result.returnTree.getDescription(), true))
+                    .orElseGet(() -> new Output(null, null, List.of(), true));
+        } catch (DocFinder.NoOverriddenMethodsFound e) {
+            return new Output(null, null, List.of(), false);
         }
     }
 

@@ -35,6 +35,7 @@ import javax.lang.model.element.ExecutableElement;
 import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.SeeTree;
 import jdk.javadoc.doclet.Taglet.Location;
+import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFinder;
@@ -61,6 +62,11 @@ public class SeeTaglet extends BaseTaglet implements InheritableTaglet {
                     ? ch.getFirstSentenceTrees(output.holderTag)
                     : ch.getReference(output.holderTag);
         }
+    }
+
+    @Override
+    public Output inherit(Element owner, DocTree tag, boolean isFirstSentence, BaseConfiguration configuration) {
+        throw new UnsupportedOperationException("Not yet implemented");
     }
 
     @Override

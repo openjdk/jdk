@@ -27,13 +27,17 @@ package jdk.javadoc.internal.doclets.toolkit.taglets;
 
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ElementKind;
+import javax.lang.model.element.ExecutableElement;
 
 import com.sun.source.doctree.DocTree;
 import jdk.javadoc.doclet.Taglet.Location;
 
+import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFinder;
@@ -169,6 +173,31 @@ public class SimpleTaglet extends BaseTaglet implements InheritableTaglet {
                     ? ch.getFirstSentenceTrees(output.holderTag)
                     : ch.getTags(output.holderTag);
         }
+    }
+
+    @Override
+    public Output inherit(Element owner, DocTree tag, boolean isFirstSentence, BaseConfiguration configuration) {
+        assert owner.getKind() == ElementKind.METHOD;
+        assert !isFirstSentence;
+        try {
+            var r = DocFinder.trySearch((ExecutableElement) owner, false,
+                    m -> extractFirst(m, configuration.utils), configuration);
+            return r.map(result -> new Output(result.tag, result.method, result.description, true))
+                    .orElseGet(()->new Output(null, null, List.of(), true));
+        } catch (DocFinder.NoOverriddenMethodsFound e) {
+            return new Output(null, null, List.of(), false);
+        }
+    }
+
+    record Result(DocTree tag, List<? extends DocTree> description, ExecutableElement method) { }
+
+    private Optional<Result> extractFirst(ExecutableElement m, Utils utils) {
+        List<? extends DocTree> tags = utils.getBlockTags(m, this);
+        if (tags.isEmpty()) {
+            return Optional.empty();
+        }
+        DocTree t = tags.get(0);
+        return Optional.of(new Result(t, utils.getCommentHelper(m).getDescription(t), m));
     }
 
     @Override

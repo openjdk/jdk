@@ -25,7 +25,12 @@
 
 package jdk.javadoc.internal.doclets.toolkit.taglets;
 
+import com.sun.source.doctree.DocTree;
+import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFinder;
+
+import javax.lang.model.element.Element;
+import java.util.List;
 
 /**
  * A taglet should implement this interface if it supports an {@code {@inheritDoc}}
@@ -42,4 +47,12 @@ public interface InheritableTaglet extends Taglet {
      * @param output the output for documentation search
      */
     void inherit(DocFinder.Input input, DocFinder.Output output);
+
+    Output inherit(Element owner, DocTree tag, boolean isFirstSentence, BaseConfiguration configuration);
+
+    record Output(DocTree holderTag,
+                  Element holder,
+                  List<? extends DocTree> inlineTags,
+                  boolean isValidInheritDocTag) {
+    }
 }

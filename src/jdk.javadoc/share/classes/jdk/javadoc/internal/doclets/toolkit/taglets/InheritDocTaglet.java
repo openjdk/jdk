@@ -101,13 +101,11 @@ public class InheritDocTaglet extends BaseTaglet {
             return replacement;
         }
 
-        var input = new DocFinder.Input(utils, method, (InheritableTaglet) taglet,
-                new DocFinder.DocTreeInfo(holderTag, method), isFirstSentence, true);
-        DocFinder.Output inheritedDoc = DocFinder.search(configuration, input);
-        if (inheritedDoc.isValidInheritDocTag) {
-            if (!inheritedDoc.inlineTags.isEmpty()) {
-                replacement = writer.commentTagsToOutput(inheritedDoc.holder, inheritedDoc.holderTag,
-                        inheritedDoc.inlineTags, isFirstSentence);
+        InheritableTaglet.Output inheritedDoc = ((InheritableTaglet) taglet).inherit(method, holderTag, isFirstSentence, configuration);
+        if (inheritedDoc.isValidInheritDocTag()) {
+            if (!inheritedDoc.inlineTags().isEmpty()) {
+                replacement = writer.commentTagsToOutput(inheritedDoc.holder(), inheritedDoc.holderTag(),
+                        inheritedDoc.inlineTags(), isFirstSentence);
             }
         } else {
             String signature = utils.getSimpleName(method)
