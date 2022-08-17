@@ -120,13 +120,11 @@ public:
 
 // Enum types translate to/from their underlying type.
 template<typename T>
-struct PrimitiveConversions::Translate<
-  T,
-  typename std::enable_if<std::is_enum<T>::value>::type>
+struct PrimitiveConversions::Translate<T, std::enable_if_t<std::is_enum<T>::value>>
   : public std::true_type
 {
   using Value = T;
-  using Decayed = typename std::underlying_type<T>::type;
+  using Decayed = std::underlying_type_t<T>;
 
   static constexpr Decayed decay(Value x) { return static_cast<Decayed>(x); }
   static constexpr Value recover(Decayed x) { return static_cast<Value>(x); }
