@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -212,9 +212,16 @@ public class JdkInternalMiscUnsafeAccessTestBoolean {
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
                 success = UNSAFE.weakCompareAndSetBooleanPlain(base, offset, true, false);
             }
-            assertEquals(success, true, "weakCompareAndSetPlain boolean");
+            assertEquals(success, true, "success weakCompareAndSetPlain boolean");
             boolean x = UNSAFE.getBoolean(base, offset);
-            assertEquals(x, false, "weakCompareAndSetPlain boolean value");
+            assertEquals(x, false, "success weakCompareAndSetPlain boolean value");
+        }
+
+        {
+            boolean success = UNSAFE.weakCompareAndSetBooleanPlain(base, offset, true, false);
+            assertEquals(success, false, "failing weakCompareAndSetPlain boolean");
+            boolean x = UNSAFE.getBoolean(base, offset);
+            assertEquals(x, false, "failing weakCompareAndSetPlain boolean value");
         }
 
         {
@@ -222,9 +229,16 @@ public class JdkInternalMiscUnsafeAccessTestBoolean {
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
                 success = UNSAFE.weakCompareAndSetBooleanAcquire(base, offset, false, true);
             }
-            assertEquals(success, true, "weakCompareAndSetAcquire boolean");
+            assertEquals(success, true, "success weakCompareAndSetAcquire boolean");
             boolean x = UNSAFE.getBoolean(base, offset);
-            assertEquals(x, true, "weakCompareAndSetAcquire boolean");
+            assertEquals(x, true, "success weakCompareAndSetAcquire boolean");
+        }
+
+        {
+            boolean success = UNSAFE.weakCompareAndSetBooleanAcquire(base, offset, false, false);
+            assertEquals(success, false, "failing weakCompareAndSetAcquire boolean");
+            boolean x = UNSAFE.getBoolean(base, offset);
+            assertEquals(x, true, "failing weakCompareAndSetAcquire boolean value");
         }
 
         {
@@ -232,9 +246,16 @@ public class JdkInternalMiscUnsafeAccessTestBoolean {
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
                 success = UNSAFE.weakCompareAndSetBooleanRelease(base, offset, true, false);
             }
-            assertEquals(success, true, "weakCompareAndSetRelease boolean");
+            assertEquals(success, true, "success weakCompareAndSetRelease boolean");
             boolean x = UNSAFE.getBoolean(base, offset);
-            assertEquals(x, false, "weakCompareAndSetRelease boolean");
+            assertEquals(x, false, "success weakCompareAndSetRelease boolean");
+        }
+
+        {
+            boolean success = UNSAFE.weakCompareAndSetBooleanRelease(base, offset, true, false);
+            assertEquals(success, false, "failing weakCompareAndSetRelease boolean");
+            boolean x = UNSAFE.getBoolean(base, offset);
+            assertEquals(x, false, "failing weakCompareAndSetRelease boolean value");
         }
 
         {
@@ -242,9 +263,16 @@ public class JdkInternalMiscUnsafeAccessTestBoolean {
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
                 success = UNSAFE.weakCompareAndSetBoolean(base, offset, false, true);
             }
-            assertEquals(success, true, "weakCompareAndSet boolean");
+            assertEquals(success, true, "success weakCompareAndSet boolean");
             boolean x = UNSAFE.getBoolean(base, offset);
-            assertEquals(x, true, "weakCompareAndSet boolean");
+            assertEquals(x, true, "success weakCompareAndSet boolean");
+        }
+
+        {
+            boolean success = UNSAFE.weakCompareAndSetBoolean(base, offset, false, false);
+            assertEquals(success, false, "failing weakCompareAndSet boolean");
+            boolean x = UNSAFE.getBoolean(base, offset);
+            assertEquals(x, true, "failing weakCompareAndSet boolean value");
         }
 
         UNSAFE.putBoolean(base, offset, false);
