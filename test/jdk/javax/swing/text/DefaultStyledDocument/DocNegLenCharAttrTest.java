@@ -41,9 +41,9 @@ import javax.swing.text.StyleConstants;
  * @summary Test to check if negative length check is implemented in
  * setCharacterAttributes(). Test should not throw any exception on
  * negative length.
- * @run main DefaultStyledDocumentTest
+ * @run main DocNegLenCharAttrTest
  */
-public class DefaultStyledDocumentTest {
+public class DocNegLenCharAttrTest {
     private static DefaultStyledDocument doc;
     private static JFrame frame;
     public static void main(String[] args) throws InterruptedException, InvocationTargetException {
