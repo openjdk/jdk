@@ -2073,18 +2073,8 @@ public class SwingUtilities implements SwingConstants
             return -1;
         }
 
-        if ((KeyEvent.getKeyText(mnemonic).equals("F1")) ||
-           (KeyEvent.getKeyText(mnemonic).equals("F2")) ||
-           (KeyEvent.getKeyText(mnemonic).equals("F3")) ||
-           (KeyEvent.getKeyText(mnemonic).equals("F4")) ||
-           (KeyEvent.getKeyText(mnemonic).equals("F5")) ||
-           (KeyEvent.getKeyText(mnemonic).equals("F6")) ||
-           (KeyEvent.getKeyText(mnemonic).equals("F7")) ||
-           (KeyEvent.getKeyText(mnemonic).equals("F8")) ||
-           (KeyEvent.getKeyText(mnemonic).equals("F9")) ||
-           (KeyEvent.getKeyText(mnemonic).equals("F10")) ||
-           (KeyEvent.getKeyText(mnemonic).equals("F11"))) {
-           return -1;
+        if (mnemonic >= 'a' && mnemonic <= 'z') {
+            return -1;
         }
 
         char uc = Character.toUpperCase((char)mnemonic);
