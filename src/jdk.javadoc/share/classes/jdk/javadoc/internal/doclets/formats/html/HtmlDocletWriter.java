@@ -172,7 +172,7 @@ public class HtmlDocletWriter {
 
     protected final HtmlIds htmlIds;
 
-    private final Set<String> headerIds = new HashSet<>();
+    private final Set<String> headingIds = new HashSet<>();
 
     /**
      * To check whether the repeated annotations is documented or not.
@@ -1682,7 +1682,7 @@ public class HtmlDocletWriter {
                 public Boolean visitStartElement(StartElementTree node, Content content) {
                     Content attrs = new ContentBuilder();
                     if (node.getName().toString().matches("(?i)h[1-6]") && !hasIdAttribute(node)) {
-                        generateHeaderId(node, trees, attrs);
+                        generateHeadingId(node, trees, attrs);
                     }
                     for (DocTree dt : node.getAttributes()) {
                         dt.accept(this, attrs);
@@ -1759,10 +1759,10 @@ public class HtmlDocletWriter {
 
     private boolean hasIdAttribute(StartElementTree node) {
         return node.getAttributes().stream().anyMatch(
-                dt -> equalsIgnoreCase(((AttributeTree)dt).getName(), "id"));
+                dt -> dt instanceof AttributeTree at && equalsIgnoreCase(at.getName(), "id"));
     }
 
-    private void generateHeaderId(StartElementTree node, List<? extends DocTree> trees, Content content) {
+    private void generateHeadingId(StartElementTree node, List<? extends DocTree> trees, Content content) {
         StringBuilder sb = new StringBuilder();
         String tagName = node.getName().toString().toLowerCase(Locale.ROOT);
         for (DocTree docTree : trees.subList(trees.indexOf(node) + 1, trees.size())) {
@@ -1782,22 +1782,8 @@ public class HtmlDocletWriter {
                 return; // Avoid generating id if embedded <a id=...> is present
             }
         }
-        String idValue = sb.toString()
-                .toLowerCase(Locale.ROOT)
-                .trim()
-                .replaceAll("[^\\w_-]+", "-");
-        if (!idValue.isEmpty()) {
-            // Make id unique
-            idValue = idValue + "-hdr";
-            if (!headerIds.add(idValue)) {
-                int counter = 1;
-                while (!headerIds.add(idValue + counter)) {
-                    counter++;
-                }
-                idValue = idValue + counter;
-            }
-            content.add("id=\"").add(idValue).add("\"");
-        }
+        HtmlId htmlId = htmlIds.forHeading(sb, headingIds);
+        content.add("id=\"").add(htmlId.name()).add("\"");
     }
 
     /**

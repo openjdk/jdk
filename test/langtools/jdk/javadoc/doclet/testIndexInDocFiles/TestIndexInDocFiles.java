@@ -100,13 +100,13 @@ public class TestIndexInDocFiles extends JavadocTester {
 
         checkOutput("doc-files/top-level-file.html", true,
                 """
-                    <h1 id="package-html-file-hdr">Package HTML file</h1>
+                    <h1 id="package-html-file-heading">Package HTML file</h1>
                     <span id="top-level-index" class="search-tag-result">top-level-index</span>
                     <code><span id="top.level.property" class="search-tag-result">top.level.property</span></code>
                     """);
         checkOutput("p/q/doc-files/package-file.html", true,
                 """
-                    <h1 id="package-html-file-hdr">Package HTML file</h1>
+                    <h1 id="package-html-file-heading">Package HTML file</h1>
                     <span id="package-index" class="search-tag-result">package-index</span>
                     <code><span id="package.property" class="search-tag-result">package.property</span></code>
                     """);
@@ -170,13 +170,13 @@ public class TestIndexInDocFiles extends JavadocTester {
 
         checkOutput("m.n/doc-files/module-file.html", true,
                 """
-                    <h1 id="module-html-file-hdr">Module HTML file</h1>
+                    <h1 id="module-html-file-heading">Module HTML file</h1>
                     <span id="module-index" class="search-tag-result">module-index</span>
                     <code><span id="module.property" class="search-tag-result">module.property</span></code>
                     """);
         checkOutput("m.n/p/q/doc-files/package-file.html", true,
                 """
-                    <h1 id="package-html-file-hdr">Package HTML file</h1>
+                    <h1 id="package-html-file-heading">Package HTML file</h1>
                     <span id="package-index" class="search-tag-result">package-index</span>
                     <code><span id="package.property" class="search-tag-result">package.property</span></code>
                     """);

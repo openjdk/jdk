@@ -77,6 +77,8 @@ public class TestAutoHeaderId extends JavadocTester {
                          *
                          * <h3 style="color: red;" class="some-class">Other attributes</h3>
                          *
+                         * <h4></h4>
+                         *
                          * Last sentence.
                          */
                         public class C {
@@ -91,7 +93,7 @@ public class TestAutoHeaderId extends JavadocTester {
 
         checkOutput("p/C.html", true,
                 """
-                    <h2 id="first-header-hdr">First Header</h2>
+                    <h2 id="first-header-heading">First Header</h2>
                     """,
                 """
                     <h3 id="fixed-id-1">Header with ID</h3>
@@ -100,22 +102,25 @@ public class TestAutoHeaderId extends JavadocTester {
                     <h4><a id="fixed-id-2">Embedded A-Tag with ID</a></h4>
                     """,
                 """
-                    <h5 id="embedded-code-tag-hdr"><code>Embedded Code Tag</code></h5>
+                    <h5 id="embedded-code-tag-heading"><code>Embedded Code Tag</code></h5>
                     """,
                 """
-                    <h6 id="embedded-link-tag-hdr"><a href="C.html" title="class in p">Embedded Link Tag</a></h6>
+                    <h6 id="embedded-link-tag-heading"><a href="C.html" title="class in p">Embedded Link Tag</a></h6>
                     """,
                 """
-                    <h3 id="duplicate-text-hdr">Duplicate Text</h3>
+                    <h3 id="duplicate-text-heading">Duplicate Text</h3>
                     """,
                 """
-                    <h4 id="duplicate-text-hdr1">Duplicate Text</h4>
+                    <h4 id="duplicate-text-heading1">Duplicate Text</h4>
                     """,
                 """
-                    <h2 id="extra-chars-hdr">Extra (#*!. chars</h2>
+                    <h2 id="extra-chars-heading">Extra (#*!. chars</h2>
                     """,
                 """
-                    <h3 id="other-attributes-hdr" style="color: red;" class="some-class">Other attributes</h3>
+                    <h3 id="other-attributes-heading" style="color: red;" class="some-class">Other attributes</h3>
+                    """,
+                """    
+                    <h4 id="-heading"></h4>
                     """);
     }
 }
