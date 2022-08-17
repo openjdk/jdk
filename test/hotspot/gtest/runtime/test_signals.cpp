@@ -47,8 +47,8 @@ class PosixSignalTest : public ::testing::Test {
     act.sa_handler = (void (*)(int))sig_handler;
     sigemptyset(&act.sa_mask);
     act.sa_flags = 0;
-    ASSERT_NE(sigaction(SIGFPE, &act, &old_SIGFPE_act), -1) << "Setting SIGFPE handler failed (errno)";
-    ASSERT_NE(sigaction(SIGILL, &act, &old_SIGILL_act), -1) << "Setting SIGILL handler failed (errno)";
+    ASSERT_NE(sigaction(SIGFPE, &act, &old_SIGFPE_act), -1) << "Setting SIGFPE handler failed: " << os::strerror(errno) << " (" << errno << ")";
+    ASSERT_NE(sigaction(SIGILL, &act, &old_SIGILL_act), -1) << "Setting SIGILL handler failed: " <<  os::strerror(errno) << " (" << errno << ")";
 
     // Use local stringStream to capture output from run_periodic_checks() calls to
     // print_signal_handlers().
@@ -57,8 +57,8 @@ class PosixSignalTest : public ::testing::Test {
     char* res = (char *)st.base(); // res can't be const because some strstr()'s have non-const first args.
 
     // Restore signal handlers.
-    ASSERT_NE(sigaction(SIGFPE, &act, &old_SIGFPE_act), -1) << "Restoring SIGFPE handler failed (errno)";
-    ASSERT_NE(sigaction(SIGILL, &act, &old_SIGILL_act), -1) << "Restoring SIGILL handler failed (errno)";
+    ASSERT_NE(sigaction(SIGFPE, &act, &old_SIGFPE_act), -1) << "Restoring SIGFPE handler failed: " << os::strerror(errno) << " (" << errno << ")";
+    ASSERT_NE(sigaction(SIGILL, &act, &old_SIGILL_act), -1) << "Restoring SIGILL handler failed: " << os::strerror(errno) << " (" << errno << ")";
 
     // Check that "Handler was modified" occurs exactly twice in the tty output.
     char* modified = strstr(res, "Handler was modified!");
