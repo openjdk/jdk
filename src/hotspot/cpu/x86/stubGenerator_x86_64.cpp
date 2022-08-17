@@ -7394,9 +7394,6 @@ address generate_avx_ghash_processBlocks() {
     const XMMRegister x7 = xmm7;
 
     const Register tmp1 = r8;
-    const Register tmp2 = r9;
-    const Register tmp3 = r10;
-    const Register tmp4 = r11;
 
     BLOCK_COMMENT("Entry:");
     __ enter(); // required for proper stackwalking of RuntimeStub frame
@@ -7405,7 +7402,7 @@ address generate_avx_ghash_processBlocks() {
     __ push(rsi);
     __ push(rdi);
 #endif
-    __ fast_sin(x0, x1, x2, x3, x4, x5, x6, x7, rax, rbx, rcx, rdx, tmp1, tmp2, tmp3, tmp4);
+    __ fast_sin(x0, x1, x2, x3, x4, x5, x6, x7, rax, rbx, rcx, rdx, tmp1);
 
 #ifdef _WIN64
     __ pop(rdi);
@@ -7933,24 +7930,6 @@ address generate_avx_ghash_processBlocks() {
     }
 
     if (UseLibmIntrinsic && InlineIntrinsics) {
-      if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dsin) ||
-          vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dcos) ||
-          vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dtan)) {
-        StubRoutines::x86::_ONEHALF_adr = (address)StubRoutines::x86::_ONEHALF;
-        StubRoutines::x86::_P_2_adr = (address)StubRoutines::x86::_P_2;
-        StubRoutines::x86::_SC_4_adr = (address)StubRoutines::x86::_SC_4;
-        StubRoutines::x86::_Ctable_adr = (address)StubRoutines::x86::_Ctable;
-        StubRoutines::x86::_SC_2_adr = (address)StubRoutines::x86::_SC_2;
-        StubRoutines::x86::_SC_3_adr = (address)StubRoutines::x86::_SC_3;
-        StubRoutines::x86::_SC_1_adr = (address)StubRoutines::x86::_SC_1;
-        StubRoutines::x86::_PI_INV_TABLE_adr = (address)StubRoutines::x86::_PI_INV_TABLE;
-        StubRoutines::x86::_PI_4_adr = (address)StubRoutines::x86::_PI_4;
-        StubRoutines::x86::_PI32INV_adr = (address)StubRoutines::x86::_PI32INV;
-        StubRoutines::x86::_SIGN_MASK_adr = (address)StubRoutines::x86::_SIGN_MASK;
-        StubRoutines::x86::_P_1_adr = (address)StubRoutines::x86::_P_1;
-        StubRoutines::x86::_P_3_adr = (address)StubRoutines::x86::_P_3;
-        StubRoutines::x86::_NEG_ZERO_adr = (address)StubRoutines::x86::_NEG_ZERO;
-      }
       if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dexp)) {
         StubRoutines::_dexp = generate_libmExp();
       }

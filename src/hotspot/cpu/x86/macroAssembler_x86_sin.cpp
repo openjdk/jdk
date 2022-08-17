@@ -178,234 +178,24 @@
 
 #ifdef _LP64
 // The 64 bit code is at most SSE2 compliant
-ATTRIBUTE_ALIGNED(16) juint StubRoutines::x86::_ONEHALF[] =
-{
-    0x00000000UL, 0x3fe00000UL, 0x00000000UL, 0x3fe00000UL
-};
-
-ATTRIBUTE_ALIGNED(16) juint StubRoutines::x86::_P_2[] =
-{
-    0x1a600000UL, 0x3d90b461UL, 0x1a600000UL, 0x3d90b461UL
-};
-
-ATTRIBUTE_ALIGNED(16) juint StubRoutines::x86::_SC_4[] =
-{
-    0xa556c734UL, 0x3ec71de3UL, 0x1a01a01aUL, 0x3efa01a0UL
-};
-
-ATTRIBUTE_ALIGNED(16) juint StubRoutines::x86::_Ctable[] =
-{
-    0x00000000UL, 0x00000000UL, 0x00000000UL, 0x00000000UL, 0x00000000UL,
-    0x00000000UL, 0x00000000UL, 0x3ff00000UL, 0x176d6d31UL, 0xbf73b92eUL,
-    0xbc29b42cUL, 0x3fb917a6UL, 0xe0000000UL, 0xbc3e2718UL, 0x00000000UL,
-    0x3ff00000UL, 0x011469fbUL, 0xbf93ad06UL, 0x3c69a60bUL, 0x3fc8f8b8UL,
-    0xc0000000UL, 0xbc626d19UL, 0x00000000UL, 0x3ff00000UL, 0x939d225aUL,
-    0xbfa60beaUL, 0x2ed59f06UL, 0x3fd29406UL, 0xa0000000UL, 0xbc75d28dUL,
-    0x00000000UL, 0x3ff00000UL, 0x866b95cfUL, 0xbfb37ca1UL, 0xa6aea963UL,
-    0x3fd87de2UL, 0xe0000000UL, 0xbc672cedUL, 0x00000000UL, 0x3ff00000UL,
-    0x73fa1279UL, 0xbfbe3a68UL, 0x3806f63bUL, 0x3fde2b5dUL, 0x20000000UL,
-    0x3c5e0d89UL, 0x00000000UL, 0x3ff00000UL, 0x5bc57974UL, 0xbfc59267UL,
-    0x39ae68c8UL, 0x3fe1c73bUL, 0x20000000UL, 0x3c8b25ddUL, 0x00000000UL,
-    0x3ff00000UL, 0x53aba2fdUL, 0xbfcd0dfeUL, 0x25091dd6UL, 0x3fe44cf3UL,
-    0x20000000UL, 0x3c68076aUL, 0x00000000UL, 0x3ff00000UL, 0x99fcef32UL,
-    0x3fca8279UL, 0x667f3bcdUL, 0x3fe6a09eUL, 0x20000000UL, 0xbc8bdd34UL,
-    0x00000000UL, 0x3fe00000UL, 0x94247758UL, 0x3fc133ccUL, 0x6b151741UL,
-    0x3fe8bc80UL, 0x20000000UL, 0xbc82c5e1UL, 0x00000000UL, 0x3fe00000UL,
-    0x9ae68c87UL, 0x3fac73b3UL, 0x290ea1a3UL, 0x3fea9b66UL, 0xe0000000UL,
-    0x3c39f630UL, 0x00000000UL, 0x3fe00000UL, 0x7f909c4eUL, 0xbf9d4a2cUL,
-    0xf180bdb1UL, 0x3fec38b2UL, 0x80000000UL, 0xbc76e0b1UL, 0x00000000UL,
-    0x3fe00000UL, 0x65455a75UL, 0xbfbe0875UL, 0xcf328d46UL, 0x3fed906bUL,
-    0x20000000UL, 0x3c7457e6UL, 0x00000000UL, 0x3fe00000UL, 0x76acf82dUL,
-    0x3fa4a031UL, 0x56c62ddaUL, 0x3fee9f41UL, 0xe0000000UL, 0x3c8760b1UL,
-    0x00000000UL, 0x3fd00000UL, 0x0e5967d5UL, 0xbfac1d1fUL, 0xcff75cb0UL,
-    0x3fef6297UL, 0x20000000UL, 0x3c756217UL, 0x00000000UL, 0x3fd00000UL,
-    0x0f592f50UL, 0xbf9ba165UL, 0xa3d12526UL, 0x3fefd88dUL, 0x40000000UL,
-    0xbc887df6UL, 0x00000000UL, 0x3fc00000UL, 0x00000000UL, 0x00000000UL,
-    0x00000000UL, 0x3ff00000UL, 0x00000000UL, 0x00000000UL, 0x00000000UL,
-    0x00000000UL, 0x0f592f50UL, 0x3f9ba165UL, 0xa3d12526UL, 0x3fefd88dUL,
-    0x40000000UL, 0xbc887df6UL, 0x00000000UL, 0xbfc00000UL, 0x0e5967d5UL,
-    0x3fac1d1fUL, 0xcff75cb0UL, 0x3fef6297UL, 0x20000000UL, 0x3c756217UL,
-    0x00000000UL, 0xbfd00000UL, 0x76acf82dUL, 0xbfa4a031UL, 0x56c62ddaUL,
-    0x3fee9f41UL, 0xe0000000UL, 0x3c8760b1UL, 0x00000000UL, 0xbfd00000UL,
-    0x65455a75UL, 0x3fbe0875UL, 0xcf328d46UL, 0x3fed906bUL, 0x20000000UL,
-    0x3c7457e6UL, 0x00000000UL, 0xbfe00000UL, 0x7f909c4eUL, 0x3f9d4a2cUL,
-    0xf180bdb1UL, 0x3fec38b2UL, 0x80000000UL, 0xbc76e0b1UL, 0x00000000UL,
-    0xbfe00000UL, 0x9ae68c87UL, 0xbfac73b3UL, 0x290ea1a3UL, 0x3fea9b66UL,
-    0xe0000000UL, 0x3c39f630UL, 0x00000000UL, 0xbfe00000UL, 0x94247758UL,
-    0xbfc133ccUL, 0x6b151741UL, 0x3fe8bc80UL, 0x20000000UL, 0xbc82c5e1UL,
-    0x00000000UL, 0xbfe00000UL, 0x99fcef32UL, 0xbfca8279UL, 0x667f3bcdUL,
-    0x3fe6a09eUL, 0x20000000UL, 0xbc8bdd34UL, 0x00000000UL, 0xbfe00000UL,
-    0x53aba2fdUL, 0x3fcd0dfeUL, 0x25091dd6UL, 0x3fe44cf3UL, 0x20000000UL,
-    0x3c68076aUL, 0x00000000UL, 0xbff00000UL, 0x5bc57974UL, 0x3fc59267UL,
-    0x39ae68c8UL, 0x3fe1c73bUL, 0x20000000UL, 0x3c8b25ddUL, 0x00000000UL,
-    0xbff00000UL, 0x73fa1279UL, 0x3fbe3a68UL, 0x3806f63bUL, 0x3fde2b5dUL,
-    0x20000000UL, 0x3c5e0d89UL, 0x00000000UL, 0xbff00000UL, 0x866b95cfUL,
-    0x3fb37ca1UL, 0xa6aea963UL, 0x3fd87de2UL, 0xe0000000UL, 0xbc672cedUL,
-    0x00000000UL, 0xbff00000UL, 0x939d225aUL, 0x3fa60beaUL, 0x2ed59f06UL,
-    0x3fd29406UL, 0xa0000000UL, 0xbc75d28dUL, 0x00000000UL, 0xbff00000UL,
-    0x011469fbUL, 0x3f93ad06UL, 0x3c69a60bUL, 0x3fc8f8b8UL, 0xc0000000UL,
-    0xbc626d19UL, 0x00000000UL, 0xbff00000UL, 0x176d6d31UL, 0x3f73b92eUL,
-    0xbc29b42cUL, 0x3fb917a6UL, 0xe0000000UL, 0xbc3e2718UL, 0x00000000UL,
-    0xbff00000UL, 0x00000000UL, 0x00000000UL, 0x00000000UL, 0x00000000UL,
-    0x00000000UL, 0x00000000UL, 0x00000000UL, 0xbff00000UL, 0x176d6d31UL,
-    0x3f73b92eUL, 0xbc29b42cUL, 0xbfb917a6UL, 0xe0000000UL, 0x3c3e2718UL,
-    0x00000000UL, 0xbff00000UL, 0x011469fbUL, 0x3f93ad06UL, 0x3c69a60bUL,
-    0xbfc8f8b8UL, 0xc0000000UL, 0x3c626d19UL, 0x00000000UL, 0xbff00000UL,
-    0x939d225aUL, 0x3fa60beaUL, 0x2ed59f06UL, 0xbfd29406UL, 0xa0000000UL,
-    0x3c75d28dUL, 0x00000000UL, 0xbff00000UL, 0x866b95cfUL, 0x3fb37ca1UL,
-    0xa6aea963UL, 0xbfd87de2UL, 0xe0000000UL, 0x3c672cedUL, 0x00000000UL,
-    0xbff00000UL, 0x73fa1279UL, 0x3fbe3a68UL, 0x3806f63bUL, 0xbfde2b5dUL,
-    0x20000000UL, 0xbc5e0d89UL, 0x00000000UL, 0xbff00000UL, 0x5bc57974UL,
-    0x3fc59267UL, 0x39ae68c8UL, 0xbfe1c73bUL, 0x20000000UL, 0xbc8b25ddUL,
-    0x00000000UL, 0xbff00000UL, 0x53aba2fdUL, 0x3fcd0dfeUL, 0x25091dd6UL,
-    0xbfe44cf3UL, 0x20000000UL, 0xbc68076aUL, 0x00000000UL, 0xbff00000UL,
-    0x99fcef32UL, 0xbfca8279UL, 0x667f3bcdUL, 0xbfe6a09eUL, 0x20000000UL,
-    0x3c8bdd34UL, 0x00000000UL, 0xbfe00000UL, 0x94247758UL, 0xbfc133ccUL,
-    0x6b151741UL, 0xbfe8bc80UL, 0x20000000UL, 0x3c82c5e1UL, 0x00000000UL,
-    0xbfe00000UL, 0x9ae68c87UL, 0xbfac73b3UL, 0x290ea1a3UL, 0xbfea9b66UL,
-    0xe0000000UL, 0xbc39f630UL, 0x00000000UL, 0xbfe00000UL, 0x7f909c4eUL,
-    0x3f9d4a2cUL, 0xf180bdb1UL, 0xbfec38b2UL, 0x80000000UL, 0x3c76e0b1UL,
-    0x00000000UL, 0xbfe00000UL, 0x65455a75UL, 0x3fbe0875UL, 0xcf328d46UL,
-    0xbfed906bUL, 0x20000000UL, 0xbc7457e6UL, 0x00000000UL, 0xbfe00000UL,
-    0x76acf82dUL, 0xbfa4a031UL, 0x56c62ddaUL, 0xbfee9f41UL, 0xe0000000UL,
-    0xbc8760b1UL, 0x00000000UL, 0xbfd00000UL, 0x0e5967d5UL, 0x3fac1d1fUL,
-    0xcff75cb0UL, 0xbfef6297UL, 0x20000000UL, 0xbc756217UL, 0x00000000UL,
-    0xbfd00000UL, 0x0f592f50UL, 0x3f9ba165UL, 0xa3d12526UL, 0xbfefd88dUL,
-    0x40000000UL, 0x3c887df6UL, 0x00000000UL, 0xbfc00000UL, 0x00000000UL,
-    0x00000000UL, 0x00000000UL, 0xbff00000UL, 0x00000000UL, 0x00000000UL,
-    0x00000000UL, 0x00000000UL, 0x0f592f50UL, 0xbf9ba165UL, 0xa3d12526UL,
-    0xbfefd88dUL, 0x40000000UL, 0x3c887df6UL, 0x00000000UL, 0x3fc00000UL,
-    0x0e5967d5UL, 0xbfac1d1fUL, 0xcff75cb0UL, 0xbfef6297UL, 0x20000000UL,
-    0xbc756217UL, 0x00000000UL, 0x3fd00000UL, 0x76acf82dUL, 0x3fa4a031UL,
-    0x56c62ddaUL, 0xbfee9f41UL, 0xe0000000UL, 0xbc8760b1UL, 0x00000000UL,
-    0x3fd00000UL, 0x65455a75UL, 0xbfbe0875UL, 0xcf328d46UL, 0xbfed906bUL,
-    0x20000000UL, 0xbc7457e6UL, 0x00000000UL, 0x3fe00000UL, 0x7f909c4eUL,
-    0xbf9d4a2cUL, 0xf180bdb1UL, 0xbfec38b2UL, 0x80000000UL, 0x3c76e0b1UL,
-    0x00000000UL, 0x3fe00000UL, 0x9ae68c87UL, 0x3fac73b3UL, 0x290ea1a3UL,
-    0xbfea9b66UL, 0xe0000000UL, 0xbc39f630UL, 0x00000000UL, 0x3fe00000UL,
-    0x94247758UL, 0x3fc133ccUL, 0x6b151741UL, 0xbfe8bc80UL, 0x20000000UL,
-    0x3c82c5e1UL, 0x00000000UL, 0x3fe00000UL, 0x99fcef32UL, 0x3fca8279UL,
-    0x667f3bcdUL, 0xbfe6a09eUL, 0x20000000UL, 0x3c8bdd34UL, 0x00000000UL,
-    0x3fe00000UL, 0x53aba2fdUL, 0xbfcd0dfeUL, 0x25091dd6UL, 0xbfe44cf3UL,
-    0x20000000UL, 0xbc68076aUL, 0x00000000UL, 0x3ff00000UL, 0x5bc57974UL,
-    0xbfc59267UL, 0x39ae68c8UL, 0xbfe1c73bUL, 0x20000000UL, 0xbc8b25ddUL,
-    0x00000000UL, 0x3ff00000UL, 0x73fa1279UL, 0xbfbe3a68UL, 0x3806f63bUL,
-    0xbfde2b5dUL, 0x20000000UL, 0xbc5e0d89UL, 0x00000000UL, 0x3ff00000UL,
-    0x866b95cfUL, 0xbfb37ca1UL, 0xa6aea963UL, 0xbfd87de2UL, 0xe0000000UL,
-    0x3c672cedUL, 0x00000000UL, 0x3ff00000UL, 0x939d225aUL, 0xbfa60beaUL,
-    0x2ed59f06UL, 0xbfd29406UL, 0xa0000000UL, 0x3c75d28dUL, 0x00000000UL,
-    0x3ff00000UL, 0x011469fbUL, 0xbf93ad06UL, 0x3c69a60bUL, 0xbfc8f8b8UL,
-    0xc0000000UL, 0x3c626d19UL, 0x00000000UL, 0x3ff00000UL, 0x176d6d31UL,
-    0xbf73b92eUL, 0xbc29b42cUL, 0xbfb917a6UL, 0xe0000000UL, 0x3c3e2718UL,
-    0x00000000UL, 0x3ff00000UL
-};
-
-ATTRIBUTE_ALIGNED(16) juint StubRoutines::x86::_SC_2[] =
-{
-    0x11111111UL, 0x3f811111UL, 0x55555555UL, 0x3fa55555UL
-};
-
-ATTRIBUTE_ALIGNED(16) juint StubRoutines::x86::_SC_3[] =
-{
-    0x1a01a01aUL, 0xbf2a01a0UL, 0x16c16c17UL, 0xbf56c16cUL
-};
-
-ATTRIBUTE_ALIGNED(16) juint StubRoutines::x86::_SC_1[] =
-{
-    0x55555555UL, 0xbfc55555UL, 0x00000000UL, 0xbfe00000UL
-};
-
-ATTRIBUTE_ALIGNED(16) juint StubRoutines::x86::_PI_INV_TABLE[] =
-{
-    0x00000000UL, 0x00000000UL, 0xa2f9836eUL, 0x4e441529UL, 0xfc2757d1UL,
-    0xf534ddc0UL, 0xdb629599UL, 0x3c439041UL, 0xfe5163abUL, 0xdebbc561UL,
-    0xb7246e3aUL, 0x424dd2e0UL, 0x06492eeaUL, 0x09d1921cUL, 0xfe1deb1cUL,
-    0xb129a73eUL, 0xe88235f5UL, 0x2ebb4484UL, 0xe99c7026UL, 0xb45f7e41UL,
-    0x3991d639UL, 0x835339f4UL, 0x9c845f8bUL, 0xbdf9283bUL, 0x1ff897ffUL,
-    0xde05980fUL, 0xef2f118bUL, 0x5a0a6d1fUL, 0x6d367ecfUL, 0x27cb09b7UL,
-    0x4f463f66UL, 0x9e5fea2dUL, 0x7527bac7UL, 0xebe5f17bUL, 0x3d0739f7UL,
-    0x8a5292eaUL, 0x6bfb5fb1UL, 0x1f8d5d08UL, 0x56033046UL, 0xfc7b6babUL,
-    0xf0cfbc21UL
-};
-
-ATTRIBUTE_ALIGNED(8) juint StubRoutines::x86::_PI_4[] =
-{
-    0x40000000UL, 0x3fe921fbUL, 0x18469899UL, 0x3e64442dUL
-};
-
-ATTRIBUTE_ALIGNED(8) juint StubRoutines::x86::_PI32INV[] =
-{
-    0x6dc9c883UL, 0x40245f30UL
-};
-
-ATTRIBUTE_ALIGNED(8) juint _SHIFTER[] =
-{
-    0x00000000UL, 0x43380000UL
-};
-
-ATTRIBUTE_ALIGNED(8) juint StubRoutines::x86::_SIGN_MASK[] =
-{
-    0x00000000UL, 0x80000000UL
-};
-
-ATTRIBUTE_ALIGNED(8) juint StubRoutines::x86::_P_3[] =
-{
-    0x2e037073UL, 0x3b63198aUL
-};
-
 ATTRIBUTE_ALIGNED(8) juint _ALL_ONES[] =
 {
     0xffffffffUL, 0x3fefffffUL
 };
 
-ATTRIBUTE_ALIGNED(8) juint _TWO_POW_55[] =
-{
-    0x00000000UL, 0x43600000UL
-};
-
-ATTRIBUTE_ALIGNED(8) juint _TWO_POW_M55[] =
-{
-    0x00000000UL, 0x3c800000UL
-};
-
-ATTRIBUTE_ALIGNED(8) juint StubRoutines::x86::_P_1[] =
-{
-    0x54400000UL, 0x3fb921fbUL
-};
-
-ATTRIBUTE_ALIGNED(8) juint StubRoutines::x86::_NEG_ZERO[] =
-{
-    0x00000000UL, 0x80000000UL
-};
-
-void MacroAssembler::fast_sin(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3, XMMRegister xmm4, XMMRegister xmm5, XMMRegister xmm6, XMMRegister xmm7, Register eax, Register ebx, Register ecx, Register edx, Register tmp1, Register tmp2, Register tmp3, Register tmp4) {
+void MacroAssembler::fast_sin(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3,
+                              XMMRegister xmm4, XMMRegister xmm5, XMMRegister xmm6, XMMRegister xmm7,
+                              Register eax, Register ebx, Register ecx, Register edx, Register tmp1) {
   Label L_2TAG_PACKET_0_0_1, L_2TAG_PACKET_1_0_1, L_2TAG_PACKET_2_0_1, L_2TAG_PACKET_3_0_1;
   Label L_2TAG_PACKET_4_0_1, L_2TAG_PACKET_5_0_1, L_2TAG_PACKET_6_0_1, L_2TAG_PACKET_7_0_1;
   Label L_2TAG_PACKET_8_0_1, L_2TAG_PACKET_9_0_1, L_2TAG_PACKET_10_0_1, L_2TAG_PACKET_11_0_1;
   Label L_2TAG_PACKET_13_0_1, L_2TAG_PACKET_14_0_1;
-  Label L_2TAG_PACKET_12_0_1, B1_4, start;
+  Label L_2TAG_PACKET_12_0_1, B1_4;
 
-  assert_different_registers(tmp1, tmp2, tmp3, tmp4, eax, ebx, ecx, edx);
-  address ONEHALF = StubRoutines::x86::_ONEHALF_addr();
-  address P_2 = StubRoutines::x86::_P_2_addr();
-  address SC_4 = StubRoutines::x86::_SC_4_addr();
-  address Ctable = StubRoutines::x86::_Ctable_addr();
-  address SC_2 = StubRoutines::x86::_SC_2_addr();
-  address SC_3 = StubRoutines::x86::_SC_3_addr();
-  address SC_1 = StubRoutines::x86::_SC_1_addr();
-  address PI_INV_TABLE = StubRoutines::x86::_PI_INV_TABLE_addr();
-  address PI_4 = (address)StubRoutines::x86::_PI_4_addr();
-  address PI32INV = (address)StubRoutines::x86::_PI32INV_addr();
-  address SHIFTER = (address)_SHIFTER;
-  address SIGN_MASK = (address)StubRoutines::x86::_SIGN_MASK_addr();
-  address P_3 = (address)StubRoutines::x86::_P_3_addr();
+  assert_different_registers(tmp1, eax, ebx, ecx, edx);
+
   address ALL_ONES = (address)_ALL_ONES;
-  address TWO_POW_55 = (address)_TWO_POW_55;
-  address TWO_POW_M55 = (address)_TWO_POW_M55;
-  address P_1 = (address)StubRoutines::x86::_P_1_addr();
-  address NEG_ZERO = (address)StubRoutines::x86::_NEG_ZERO_addr();
 
-  bind(start);
   push(rbx);
   subq(rsp, 16);
   movsd(Address(rsp, 8), xmm0);
@@ -1624,27 +1414,6 @@ void MacroAssembler::libm_reduce_pi04l(Register eax, Register ecx, Register edx,
   ret(0);
 }
 
-ATTRIBUTE_ALIGNED(16) juint StubRoutines::x86::_L_2il0floatpacket_0[] =
-{
-    0xffffffffUL, 0x7fffffffUL, 0x00000000UL, 0x00000000UL
-};
-
-ATTRIBUTE_ALIGNED(16) juint StubRoutines::x86::_Pi4Inv[] =
-{
-    0x6dc9c883UL, 0x3ff45f30UL
-};
-
-ATTRIBUTE_ALIGNED(16) juint StubRoutines::x86::_Pi4x3[] =
-{
-    0x54443000UL, 0xbfe921fbUL, 0x3b39a000UL, 0x3d373dcbUL, 0xe0e68948UL,
-    0xba845c06UL
-};
-
-ATTRIBUTE_ALIGNED(16) juint StubRoutines::x86::_Pi4x4[] =
-{
-    0x54400000UL, 0xbfe921fbUL, 0x1a600000UL, 0xbdc0b461UL, 0x2e000000UL,
-    0xbb93198aUL, 0x252049c1UL, 0xb96b839aUL
-};
 
 ATTRIBUTE_ALIGNED(16) jushort _SP[] =
 {
@@ -1662,11 +1431,6 @@ ATTRIBUTE_ALIGNED(16) jushort _CP[] =
     0x00d0, 0xd00d, 0x3fef, 0x0000, 0x03fe, 0x3f65, 0x7dbb, 0x93f2, 0xbfe9, 0x0000,
     0xd84d, 0xadee, 0xc698, 0x8f76, 0x3fe2, 0x0000, 0xdaba, 0xfe79, 0xea36, 0xc9c9,
     0xbfda, 0x0000, 0x3ac6, 0x0ba0, 0x07ce, 0xd585, 0x3fd2, 0x0000
-};
-
-ATTRIBUTE_ALIGNED(16) juint StubRoutines::x86::_ones[] =
-{
-    0x00000000UL, 0x3ff00000UL, 0x00000000UL, 0xbff00000UL
 };
 
 void MacroAssembler::libm_sincos_huge(XMMRegister xmm0, XMMRegister xmm1, Register eax, Register ecx, Register edx, Register ebx, Register esi, Register edi, Register ebp, Register esp) {
@@ -1706,7 +1470,7 @@ void MacroAssembler::libm_sincos_huge(XMMRegister xmm0, XMMRegister xmm1, Regist
   movl(esi, Address(ebp, 12));
   movl(eax, esi);
   andl(eax, 2147483647);
-  andps(xmm1, ExternalAddress(L_2il0floatpacket_0));    //0xffffffffUL, 0x7fffffffUL, 0x00000000UL, 0x00000000UL
+  andps(xmm1, ExternalAddress(L_2IL0FLOATPACKET_0));    //0xffffffffUL, 0x7fffffffUL, 0x00000000UL, 0x00000000UL
   shrl(esi, 31);
   movl(Address(esp, 40), eax);
   cmpl(eax, 1104150528);
@@ -1714,7 +1478,7 @@ void MacroAssembler::libm_sincos_huge(XMMRegister xmm0, XMMRegister xmm1, Regist
   jcc(Assembler::aboveEqual, B1_11);
 
   bind(B1_4);
-  movsd(xmm0, ExternalAddress(Pi4Inv));    //0x6dc9c883UL, 0x3ff45f30UL
+  movsd(xmm0, ExternalAddress(PI4_INV));    //0x6dc9c883UL, 0x3ff45f30UL
   mulsd(xmm0, xmm1);
   movzwl(edx, Address(esp, 30));
   movl(eax, edx);
@@ -1771,28 +1535,28 @@ void MacroAssembler::libm_sincos_huge(XMMRegister xmm0, XMMRegister xmm1, Regist
   jcc(Assembler::aboveEqual, B1_10);
 
   bind(B1_9);
-  fld_d(ExternalAddress(Pi4x3));    //0x54443000UL, 0xbfe921fbUL
+  fld_d(ExternalAddress(PI4X3));    //0x54443000UL, 0xbfe921fbUL
   fmul(1);
   faddp(2);
-  fld_d(ExternalAddress(8 + Pi4x3));    //0x3b39a000UL, 0x3d373dcbUL
+  fld_d(ExternalAddress(PI4X3 + 8));    //0x3b39a000UL, 0x3d373dcbUL
   fmul(1);
   faddp(2);
-  fld_d(ExternalAddress(16 + Pi4x3));    //0xe0e68948UL, 0xba845c06UL
+  fld_d(ExternalAddress(PI4X3 + 16));    //0xe0e68948UL, 0xba845c06UL
   fmulp(1);
   faddp(1);
   jmp(B1_17);
 
   bind(B1_10);
-  fld_d(ExternalAddress(Pi4x4));    //0x54400000UL, 0xbfe921fbUL
+  fld_d(ExternalAddress(PI4X4));    //0x54400000UL, 0xbfe921fbUL
   fmul(1);
   faddp(2);
-  fld_d(ExternalAddress(8 + Pi4x4));    //0x1a600000UL, 0xbdc0b461UL
+  fld_d(ExternalAddress(PI4X4 + 8));    //0x1a600000UL, 0xbdc0b461UL
   fmul(1);
   faddp(2);
-  fld_d(ExternalAddress(16 + Pi4x4));    //0x2e000000UL, 0xbb93198aUL
+  fld_d(ExternalAddress(PI4X4 + 16));    //0x2e000000UL, 0xbb93198aUL
   fmul(1);
   faddp(2);
-  fld_d(ExternalAddress(24 + Pi4x4));    //0x252049c1UL, 0xb96b839aUL
+  fld_d(ExternalAddress(PI4X4 + 24));    //0x252049c1UL, 0xb96b839aUL
   fmulp(1);
   faddp(1);
   jmp(B1_17);
@@ -1896,8 +1660,8 @@ void MacroAssembler::libm_sincos_huge(XMMRegister xmm0, XMMRegister xmm1, Regist
   fld_x(ExternalAddress(CP));    //0x0000, 0x0000, 0x00
   faddp(1);
   fmulp(1);
-  fld_d(Address(ones, RelocationHolder::none).plus_disp(esi, Address::times_8));
-  fld_d(Address(ones, RelocationHolder::none).plus_disp(eax, Address::times_8));
+  fld_d(Address(ONES, RelocationHolder::none).plus_disp(esi, Address::times_8));
+  fld_d(Address(ONES, RelocationHolder::none).plus_disp(eax, Address::times_8));
   jcc(Assembler::equal, B1_22);
 
   bind(B1_19);
@@ -1997,7 +1761,7 @@ void MacroAssembler::libm_sincos_huge(XMMRegister xmm0, XMMRegister xmm1, Regist
   faddp(1);
   fmulp(1);
   faddp(1);
-  fld_d(Address(ones, RelocationHolder::none).plus_disp(rsi, Address::times_8));
+  fld_d(Address(ONES, RelocationHolder::none).plus_disp(rsi, Address::times_8));
   fmula(1);
   faddp(1);
   fstp_d(Address(eax, 8));
@@ -2046,7 +1810,7 @@ void MacroAssembler::libm_sincos_huge(XMMRegister xmm0, XMMRegister xmm1, Regist
   faddp(1);
   fmulp(2);
   faddp(1);
-  fld_d(Address(ones, RelocationHolder::none).plus_disp(rsi, Address::times_8));
+  fld_d(Address(ONES, RelocationHolder::none).plus_disp(rsi, Address::times_8));
   fmulp(2);
   fmul(1);
   faddp(1);
@@ -2107,7 +1871,7 @@ void MacroAssembler::libm_sincos_huge(XMMRegister xmm0, XMMRegister xmm1, Regist
   faddp(1);
   fmulp(2);
   faddp(1);
-  fld_d(Address(ones, RelocationHolder::none).plus_disp(eax, Address::times_8));
+  fld_d(Address(ONES, RelocationHolder::none).plus_disp(eax, Address::times_8));
   fmulp(2);
   fmul(1);
   movl(eax, Address(esp, 32));
@@ -2158,7 +1922,7 @@ void MacroAssembler::libm_sincos_huge(XMMRegister xmm0, XMMRegister xmm1, Regist
   faddp(1);
   fmulp(1);
   faddp(1);
-  fld_d(Address(ones, RelocationHolder::none).plus_disp(eax, Address::times_8));
+  fld_d(Address(ONES, RelocationHolder::none).plus_disp(eax, Address::times_8));
   fmula(1);
   movl(eax, Address(esp, 32));
   faddp(1);
@@ -2311,14 +2075,17 @@ ATTRIBUTE_ALIGNED(16) juint _static_const_table_sin[] =
     0x00000000UL, 0x3fe00000UL
 };
 
-void MacroAssembler::fast_sin(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3, XMMRegister xmm4, XMMRegister xmm5, XMMRegister xmm6, XMMRegister xmm7, Register eax, Register ebx, Register edx) {
+void MacroAssembler::fast_sin(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3,
+		              XMMRegister xmm4, XMMRegister xmm5, XMMRegister xmm6, XMMRegister xmm7,
+			      Register eax, Register ebx, Register edx) {
 
   Label L_2TAG_PACKET_0_0_2, L_2TAG_PACKET_1_0_2, L_2TAG_PACKET_2_0_2, L_2TAG_PACKET_3_0_2;
-  Label L_2TAG_PACKET_4_0_2, start;
+  Label L_2TAG_PACKET_4_0_2;
+
   assert_different_registers(eax, ebx, edx);
+
   address static_const_table_sin = (address)_static_const_table_sin;
 
-  bind(start);
   subl(rsp, 120);
   movl(Address(rsp, 56), ebx);
   lea(ebx, ExternalAddress(static_const_table_sin));
@@ -2440,4 +2207,4 @@ void MacroAssembler::fast_sin(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xm
   bind(L_2TAG_PACKET_1_0_2);
   movl(ebx, Address(rsp, 56));
 }
-#endif
+#endif // _LP64
