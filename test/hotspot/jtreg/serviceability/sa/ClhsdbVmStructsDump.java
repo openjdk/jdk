@@ -59,7 +59,7 @@ public class ClhsdbVmStructsDump {
                 "field JavaThread _osthread OSThread*",
                 "type TenuredGeneration Generation",
                 "type Universe null",
-                "type ConstantPoolCache MetaspaceObj"));
+                "type xConstantPoolCache MetaspaceObj"));
             test.run(theApp.getPid(), cmds, expStrMap, null);
         } catch (SkippedException se) {
             throw se;
