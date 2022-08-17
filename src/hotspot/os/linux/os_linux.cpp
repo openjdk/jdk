@@ -224,8 +224,16 @@ julong os::physical_memory() {
       log_trace(os)("total container memory: " JLONG_FORMAT, mem_limit);
       return mem_limit;
     }
-    log_debug(os, container)("container memory limit %s: " JLONG_FORMAT ", using host value",
-                            mem_limit == OSCONTAINER_ERROR ? "failed" : "unlimited", mem_limit);
+    if (mem_limit >= phys_mem) {
+      log_debug(os, container)("container memory limit ignored: " JLONG_FORMAT ", using host value "
+                               JLONG_FORMAT, mem_limit, phys_mem);
+    } else if (OSCONTAINER_ERROR == mem_limit) {
+      log_debug(os, container)("container memory limit failed: " JLONG_FORMAT ", using host value "
+                               JLONG_FORMAT, mem_limit, phys_mem);
+    } else {
+      log_debug(os, container)("container memory limit unlimited: " JLONG_FORMAT ", using host value "
+                               JLONG_FORMAT, mem_limit, phys_mem);
+    }
   }
 
   log_trace(os)("total system memory: " JLONG_FORMAT, phys_mem);
