@@ -28,15 +28,11 @@ package jdk.javadoc.internal.doclets.toolkit.util;
 import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 
-/**
- * Search for the requested documentation.  Inherit documentation if necessary.
- */
 public class DocFinder {
 
     private final Function<ExecutableElement, ExecutableElement> overriddenMethodLookup;
@@ -65,8 +61,12 @@ public class DocFinder {
             boolean includeMethod,
             Function<? super ExecutableElement, Optional<T>> criteria)
     {
-        return methodsOverriddenBy(method, includeMethod)
-                .flatMap(m -> criteria.apply(m).stream()).findFirst();
+        try {
+            return search0(method, includeMethod, false, criteria);
+        } catch (NoOverriddenMethodsFound e) {
+            // should never happen because throwExceptionIfNoOverriddenMethods == false
+            throw new AssertionError(e);
+        }
     }
 
     public <T> Optional<T> trySearch(
@@ -74,22 +74,24 @@ public class DocFinder {
             Function<? super ExecutableElement, Optional<T>> criteria)
             throws NoOverriddenMethodsFound
     {
-        var found = new boolean[]{false};
-        var first = methodsOverriddenBy(method, false)
-                .peek(m -> found[0] = true) // if there are overridden methods, `found` will be true
-                .flatMap(m -> criteria.apply(m).stream()).findFirst();
-        if (!found[0]) {
-            throw new NoOverriddenMethodsFound();
-        }
-        return first;
+        return search0(method, false, true, criteria);
     }
 
-    private Stream<ExecutableElement> methodsOverriddenBy(ExecutableElement method,
-                                                          boolean includeMethod) {
-        var iterator = new HierarchyTraversingIterator(method, includeMethod);
+    private <T> Optional<T> search0(
+            ExecutableElement method,
+            boolean includeMethod,
+            boolean throwExceptionIfNoOverriddenMethods,
+            Function<? super ExecutableElement, Optional<T>> criteria)
+            throws NoOverriddenMethodsFound
+    {
+        Iterator<ExecutableElement> iterator = new HierarchyTraversingIterator(method, includeMethod);
+        if (throwExceptionIfNoOverriddenMethods && !iterator.hasNext()) {
+            throw new NoOverriddenMethodsFound();
+        }
         var spliterator = Spliterators.spliteratorUnknownSize(iterator, Spliterator.ORDERED
                 | Spliterator.NONNULL | Spliterator.IMMUTABLE | Spliterator.DISTINCT);
-        return StreamSupport.stream(spliterator, false);
+        return StreamSupport.stream(spliterator, false)
+                .flatMap(m -> criteria.apply(m).stream()).findFirst();
     }
 
     private class HierarchyTraversingIterator implements Iterator<ExecutableElement> {
