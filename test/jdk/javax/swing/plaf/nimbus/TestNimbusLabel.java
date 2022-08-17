@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,10 +71,10 @@ public class TestNimbusLabel
 
             SwingUtilities.invokeAndWait(() -> {
                 frame = new JFrame();
-                UIManager.getDefaults().put("Label.foreground", 
-				             java.awt.Color.red);
-                label = 
-		    new JLabel("<html><body>Can You Read This?</body></html>");
+                UIManager.getDefaults().put("Label.foreground",
+                                            java.awt.Color.red);
+                label =
+                    new JLabel("<html><body>Can You Read This?</body></html>");
 
                 frame.getContentPane().add(label);
                 frame.setUndecorated(true);
@@ -87,13 +87,13 @@ public class TestNimbusLabel
 
             Point p = frame.getLocationOnScreen();
             Dimension d = frame.getSize();
-            System.out.println("width " + d.getWidth() + 
-			        " height " + d.getHeight());
+            System.out.println("width " + d.getWidth() +
+                                " height " + d.getHeight());
             int y = p.y + d.height/2;
 
             for (int x = p.x; x < p.x + d.width; x++) {
                     System.out.println("color(" + x + "," + y + ")=" +
-				    robot.getPixelColor(x, y));
+                                        robot.getPixelColor(x, y));
                     Color color = robot.getPixelColor(x, y);
                     if (checkPixel(color)) {
                         passed = true;
@@ -108,12 +108,12 @@ public class TestNimbusLabel
                 ImageIO.write(img, "png", new File("label.png"));
                 throw new RuntimeException("Label.foreground color not honoured");
             }
-	} finally {
+        } finally {
             SwingUtilities.invokeAndWait(() -> {
                 if (frame != null) {
                     frame.dispose();
                 }
-            });		
-	}
+            });
+        }
     }
 }
