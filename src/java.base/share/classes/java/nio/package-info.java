@@ -54,9 +54,10 @@
  *
  * <p> The {@code java.nio} package defines the buffer classes, which
  * are used throughout the NIO APIs.  The charset API is defined in
- * the {@link java.nio.charset} package, and the channel and selector
- * APIs are defined in the {@link java.nio.channels} package.  Each of
- * these subpackages has its own service-provider (SPI) subpackage,
+ * the {@link java.nio.charset} package, the channel and selector APIs
+ * in the {@link java.nio.channels} package, and the file, file attribute,
+ * and file system APIs in the {@link java.nio.file} package.  Each of
+ * these subpackages has its own service-provider interface (SPI) subpackage,
  * the contents of which can be used to extend the platform's default
  * implementations or to construct alternative implementations.
  *
