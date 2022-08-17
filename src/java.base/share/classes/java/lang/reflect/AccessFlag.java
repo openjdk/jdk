@@ -92,6 +92,11 @@ import static java.util.Map.entry;
  */
 @SuppressWarnings("doclint:reference") // cross-module link
 public enum AccessFlag {
+    // Note to maintainers: anonymous class instances are used rather
+    // than lambdas to initialize the functions used for the
+    // cffvToLocations field to avoid using lambdas too early in JDK
+    // initialization.
+
     /**
      * The access flag {@code ACC_PUBLIC}, corresponding to the source
      * modifier {@link Modifier#PUBLIC public} with a mask value of
