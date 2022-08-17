@@ -37,6 +37,7 @@ import javax.lang.model.type.TypeMirror;
 import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.SpecTree;
 import com.sun.source.doctree.IndexTree;
+import com.sun.source.doctree.LinkTree;
 import com.sun.source.doctree.LiteralTree;
 import com.sun.source.doctree.ParamTree;
 import com.sun.source.doctree.ReturnTree;
@@ -107,6 +108,16 @@ public abstract class TagletWriter {
      * @return the output
      */
     protected abstract Content deprecatedTagOutput(Element element);
+
+    /**
+     * Returns the output for a {@code {@link ...}} or {@code {@linkplain ...}} tag.
+     *
+     * @param element The element that owns the doc comment
+     * @param tag     the tag
+     *
+     * @return the output
+     */
+    protected abstract Content linkTagOutput(Element element, LinkTree tag);
 
     /**
      * Returns the output for a {@code {@literal ...}} tag.

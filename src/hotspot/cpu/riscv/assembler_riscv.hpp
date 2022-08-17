@@ -339,7 +339,6 @@ public:
   void movptr(Register Rd, address addr);
   void movptr_with_offset(Register Rd, address addr, int32_t &offset);
   void movptr(Register Rd, uintptr_t imm64);
-  void ifence();
   void j(const address &dest, Register temp = t0);
   void j(const Address &adr, Register temp = t0);
   void j(Label &l, Register temp = t0);
@@ -961,7 +960,6 @@ public:
     emit(insn);                                             \
   }
 
-  INSN(fence_i, 0b0001111, 0b001, 0b000000000000);
   INSN(ecall,   0b1110011, 0b000, 0b000000000000);
   INSN(_ebreak, 0b1110011, 0b000, 0b000000000001);
 

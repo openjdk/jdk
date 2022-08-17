@@ -2732,6 +2732,15 @@ void MacroAssembler::movss(XMMRegister dst, AddressLiteral src) {
   }
 }
 
+void MacroAssembler::movddup(XMMRegister dst, AddressLiteral src, Register rscratch) {
+  if (reachable(src)) {
+    Assembler::movddup(dst, as_Address(src));
+  } else {
+    lea(rscratch, src);
+    Assembler::movddup(dst, Address(rscratch, 0));
+  }
+}
+
 void MacroAssembler::vmovddup(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch) {
   if (reachable(src)) {
     Assembler::vmovddup(dst, as_Address(src), vector_len);
@@ -3288,9 +3297,13 @@ void MacroAssembler::vpand(XMMRegister dst, XMMRegister nds, AddressLiteral src,
   }
 }
 
-void MacroAssembler::vpbroadcastw(XMMRegister dst, XMMRegister src, int vector_len) {
-  assert(((dst->encoding() < 16 && src->encoding() < 16) || VM_Version::supports_avx512vlbw()),"XMM register should be 0-15");
-  Assembler::vpbroadcastw(dst, src, vector_len);
+void MacroAssembler::vpbroadcastd(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch) {
+  if (reachable(src)) {
+    Assembler::vpbroadcastd(dst, as_Address(src), vector_len);
+  } else {
+    lea(rscratch, src);
+    Assembler::vpbroadcastd(dst, Address(rscratch, 0), vector_len);
+  }
 }
 
 void MacroAssembler::vpbroadcastq(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch) {
@@ -3308,6 +3321,15 @@ void MacroAssembler::vbroadcastsd(XMMRegister dst, AddressLiteral src, int vecto
   } else {
     lea(rscratch, src);
     Assembler::vbroadcastsd(dst, Address(rscratch, 0), vector_len);
+  }
+}
+
+void MacroAssembler::vbroadcastss(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch) {
+  if (reachable(src)) {
+    Assembler::vbroadcastss(dst, as_Address(src), vector_len);
+  } else {
+    lea(rscratch, src);
+    Assembler::vbroadcastss(dst, Address(rscratch, 0), vector_len);
   }
 }
 
@@ -3750,7 +3772,7 @@ RegSet MacroAssembler::call_clobbered_gp_registers() {
 }
 
 XMMRegSet MacroAssembler::call_clobbered_xmm_registers() {
-  int num_xmm_registers = XMMRegisterImpl::available_xmm_registers();
+  int num_xmm_registers = XMMRegister::available_xmm_registers();
 #if defined(WINDOWS) && defined(_LP64)
   XMMRegSet result = XMMRegSet::range(xmm0, xmm5);
   if (num_xmm_registers > 16) {
@@ -3791,7 +3813,7 @@ static void restore_xmm_register(MacroAssembler* masm, int offset, XMMRegister r
 int register_section_sizes(RegSet gp_registers, XMMRegSet xmm_registers, bool save_fpu,
                            int& gp_area_size, int& fp_area_size, int& xmm_area_size) {
 
-  gp_area_size = align_up(gp_registers.size() * RegisterImpl::max_slots_per_register * VMRegImpl::stack_slot_size,
+  gp_area_size = align_up(gp_registers.size() * Register::max_slots_per_register * VMRegImpl::stack_slot_size,
                          StackAlignmentInBytes);
 #ifdef _LP64
   fp_area_size = 0;
@@ -3884,7 +3906,7 @@ void MacroAssembler::pop_set(XMMRegSet set, int offset) {
 void MacroAssembler::push_set(RegSet set, int offset) {
   int spill_offset;
   if (offset == -1) {
-    int register_push_size = set.size() * RegisterImpl::max_slots_per_register * VMRegImpl::stack_slot_size;
+    int register_push_size = set.size() * Register::max_slots_per_register * VMRegImpl::stack_slot_size;
     int aligned_size = align_up(register_push_size, StackAlignmentInBytes);
     subptr(rsp, aligned_size);
     spill_offset = 0;
@@ -3894,13 +3916,13 @@ void MacroAssembler::push_set(RegSet set, int offset) {
 
   for (RegSetIterator<Register> it = set.begin(); *it != noreg; ++it) {
     movptr(Address(rsp, spill_offset), *it);
-    spill_offset += RegisterImpl::max_slots_per_register * VMRegImpl::stack_slot_size;
+    spill_offset += Register::max_slots_per_register * VMRegImpl::stack_slot_size;
   }
 }
 
 void MacroAssembler::pop_set(RegSet set, int offset) {
 
-  int gp_reg_size = RegisterImpl::max_slots_per_register * VMRegImpl::stack_slot_size;
+  int gp_reg_size = Register::max_slots_per_register * VMRegImpl::stack_slot_size;
   int restore_size = set.size() * gp_reg_size;
   int aligned_size = align_up(restore_size, StackAlignmentInBytes);
 
@@ -4354,10 +4376,14 @@ void MacroAssembler::_verify_oop(Register reg, const char* s, const char* file, 
 
 void MacroAssembler::vallones(XMMRegister dst, int vector_len) {
   if (UseAVX > 2 && (vector_len == Assembler::AVX_512bit || VM_Version::supports_avx512vl())) {
+    // Only pcmpeq has dependency breaking treatment (i.e the execution can begin without
+    // waiting for the previous result on dst), not vpcmpeqd, so just use vpternlog
     vpternlogd(dst, 0xFF, dst, dst, vector_len);
+  } else if (VM_Version::supports_avx()) {
+    vpcmpeqd(dst, dst, dst, vector_len);
   } else {
-    assert(UseAVX > 0, "");
-    vpcmpeqb(dst, dst, dst, vector_len);
+    assert(VM_Version::supports_sse2(), "");
+    pcmpeqd(dst, dst);
   }
 }
 

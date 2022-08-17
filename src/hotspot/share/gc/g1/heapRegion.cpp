@@ -223,7 +223,6 @@ HeapRegion::HeapRegion(uint hrm_index,
   _bottom(mr.start()),
   _end(mr.end()),
   _top(NULL),
-  _compaction_top(NULL),
   _bot_part(bot, this),
   _pre_dummy_top(NULL),
   _rem_set(NULL),
@@ -238,7 +237,6 @@ HeapRegion::HeapRegion(uint hrm_index,
   _top_at_mark_start(NULL),
   _parsable_bottom(NULL),
   _garbage_bytes(0),
-  _marked_bytes(0),
   _young_index_in_cset(-1),
   _surv_rate_group(NULL), _age_index(G1SurvRateGroup::InvalidAgeIndex), _gc_efficiency(-1.0),
   _node_index(G1NUMA::UnknownNodeIndex)
@@ -258,7 +256,6 @@ void HeapRegion::initialize(bool clear_space, bool mangle_space) {
   }
 
   set_top(bottom());
-  set_compaction_top(bottom());
 
   hr_clear(false /*clear_space*/);
 }
@@ -273,9 +270,7 @@ void HeapRegion::report_region_type_change(G1HeapRegionTraceType::Type to) {
 
 void HeapRegion::note_self_forwarding_removal_start(bool during_concurrent_start) {
   // We always scrub the region to make sure the entire region is
-  // parsable after the self-forwarding point removal, and update _marked_bytes
-  // at the end.
-  _marked_bytes = 0;
+  // parsable after the self-forwarding point removal.
   _garbage_bytes = 0;
 
   if (during_concurrent_start) {
@@ -293,7 +288,6 @@ void HeapRegion::note_self_forwarding_removal_start(bool during_concurrent_start
 void HeapRegion::note_self_forwarding_removal_end(size_t marked_bytes) {
   assert(marked_bytes <= used(),
          "marked: " SIZE_FORMAT " used: " SIZE_FORMAT, marked_bytes, used());
-  _marked_bytes = marked_bytes;
   _garbage_bytes = used() - marked_bytes;
 }
 
@@ -768,7 +762,6 @@ void HeapRegion::verify_rem_set() const {
 
 void HeapRegion::clear(bool mangle_space) {
   set_top(bottom());
-  set_compaction_top(bottom());
 
   if (ZapUnusedHeapArea && mangle_space) {
     mangle_unused_area();

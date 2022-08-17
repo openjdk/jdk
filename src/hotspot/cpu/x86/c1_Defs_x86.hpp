@@ -39,9 +39,9 @@ enum {
 
 // registers
 enum {
-  pd_nof_cpu_regs_frame_map = RegisterImpl::number_of_registers,       // number of registers used during code emission
-  pd_nof_fpu_regs_frame_map = FloatRegisterImpl::number_of_registers,  // number of registers used during code emission
-  pd_nof_xmm_regs_frame_map = XMMRegisterImpl::number_of_registers,    // number of registers used during code emission
+  pd_nof_cpu_regs_frame_map = Register::number_of_registers,       // number of registers used during code emission
+  pd_nof_fpu_regs_frame_map = FloatRegister::number_of_registers,  // number of registers used during code emission
+  pd_nof_xmm_regs_frame_map = XMMRegister::number_of_registers,    // number of registers used during code emission
 
 #ifdef _LP64
   #define UNALLOCATED 4    // rsp, rbp, r15, r10

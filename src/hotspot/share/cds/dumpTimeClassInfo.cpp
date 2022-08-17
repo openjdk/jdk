@@ -31,40 +31,60 @@
 #include "classfile/systemDictionaryShared.hpp"
 #include "memory/resourceArea.hpp"
 
-DumpTimeClassInfo DumpTimeClassInfo::clone() {
-  DumpTimeClassInfo clone;
-  clone._klass = _klass;
-  clone._nest_host = _nest_host;
-  clone._failed_verification = _failed_verification;
-  clone._is_archived_lambda_proxy = _is_archived_lambda_proxy;
-  clone._has_checked_exclusion = _has_checked_exclusion;
-  clone._id = _id;
-  clone._clsfile_size = _clsfile_size;
-  clone._clsfile_crc32 = _clsfile_crc32;
-  clone._excluded = _excluded;
-  clone._is_early_klass = _is_early_klass;
-  clone._verifier_constraints = NULL;
-  clone._verifier_constraint_flags = NULL;
-  clone._loader_constraints = NULL;
-  clone._enum_klass_static_fields = NULL;
-  int clone_num_verifier_constraints = num_verifier_constraints();
-  if (clone_num_verifier_constraints > 0) {
-    clone._verifier_constraints = new (ResourceObj::C_HEAP, mtClass) GrowableArray<DTVerifierConstraint>(clone_num_verifier_constraints, mtClass);
-    clone._verifier_constraint_flags = new (ResourceObj::C_HEAP, mtClass) GrowableArray<char>(clone_num_verifier_constraints, mtClass);
-    for (int i = 0; i < clone_num_verifier_constraints; i++) {
-      clone._verifier_constraints->append(_verifier_constraints->at(i));
-      clone._verifier_constraint_flags->append(_verifier_constraint_flags->at(i));
+// This constructor is used only by SystemDictionaryShared::clone_dumptime_tables().
+// See comments there about the need for making a deep copy.
+DumpTimeClassInfo::DumpTimeClassInfo(const DumpTimeClassInfo& src) {
+  assert(DynamicDumpSharedSpaces, "must be");
+
+  _klass = src._klass;
+  _nest_host = src._nest_host;
+  _failed_verification = src._failed_verification;
+  _is_archived_lambda_proxy = src._is_archived_lambda_proxy;
+  _has_checked_exclusion = src._has_checked_exclusion;
+  _id = src._id;
+  _clsfile_size = src._clsfile_size;
+  _clsfile_crc32 = src._clsfile_crc32;
+  _excluded = src._excluded;
+  _is_early_klass = src._is_early_klass;
+  _verifier_constraints = NULL;
+  _verifier_constraint_flags = NULL;
+  _loader_constraints = NULL;
+
+  assert(src._enum_klass_static_fields == NULL, "This should not happen with dynamic dump.");
+  _enum_klass_static_fields = NULL;
+
+  {
+    int n = src.num_verifier_constraints();
+    if (n > 0) {
+      _verifier_constraints = new (ResourceObj::C_HEAP, mtClass) GrowableArray<DTVerifierConstraint>(n, mtClass);
+      _verifier_constraint_flags = new (ResourceObj::C_HEAP, mtClass) GrowableArray<char>(n, mtClass);
+      for (int i = 0; i < n; i++) {
+        _verifier_constraints->append(src._verifier_constraints->at(i));
+        _verifier_constraint_flags->append(src._verifier_constraint_flags->at(i));
+      }
     }
   }
-  int clone_num_loader_constraints = num_loader_constraints();
-  if (clone_num_loader_constraints > 0) {
-    clone._loader_constraints = new (ResourceObj::C_HEAP, mtClass) GrowableArray<DTLoaderConstraint>(clone_num_loader_constraints, mtClass);
-    for (int i = 0; i < clone_num_loader_constraints; i++) {
-      clone._loader_constraints->append(_loader_constraints->at(i));
+
+  {
+    int n = src.num_loader_constraints();
+    if (n > 0) {
+      _loader_constraints = new (ResourceObj::C_HEAP, mtClass) GrowableArray<DTLoaderConstraint>(n, mtClass);
+      for (int i = 0; i < n; i++) {
+        _loader_constraints->append(src._loader_constraints->at(i));
+      }
     }
   }
-  assert(_enum_klass_static_fields == NULL, "This should not happen with jcmd VM.cds dumping");
-  return clone;
+}
+
+DumpTimeClassInfo::~DumpTimeClassInfo() {
+  if (_verifier_constraints != NULL) {
+    assert(_verifier_constraint_flags != NULL, "must be");
+    delete _verifier_constraints;
+    delete _verifier_constraint_flags;
+  }
+  if (_loader_constraints != NULL) {
+    delete _loader_constraints;
+  }
 }
 
 size_t DumpTimeClassInfo::runtime_info_bytesize() const {
@@ -83,8 +103,7 @@ void DumpTimeClassInfo::add_verification_constraint(InstanceKlass* k, Symbol* na
   }
   GrowableArray<DTVerifierConstraint>* vc_array = _verifier_constraints;
   for (int i = 0; i < vc_array->length(); i++) {
-    DTVerifierConstraint* p = vc_array->adr_at(i);
-    if (name == p->_name && from_name == p->_from_name) {
+    if (vc_array->at(i).equals(name, from_name)) {
       return;
     }
   }
@@ -128,8 +147,7 @@ void DumpTimeClassInfo::record_linking_constraint(Symbol* name, Handle loader1, 
   char lt2 = get_loader_type_by(loader2());
   DTLoaderConstraint lc(name, lt1, lt2);
   for (int i = 0; i < _loader_constraints->length(); i++) {
-    DTLoaderConstraint dt = _loader_constraints->at(i);
-    if (lc.equals(dt)) {
+    if (lc.equals(_loader_constraints->at(i))) {
       if (log.is_enabled()) {
         ResourceMark rm;
         // Use loader[0]/loader[1] to be consistent with the logs in loaderConstraints.cpp
