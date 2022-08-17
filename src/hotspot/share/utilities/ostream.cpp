@@ -424,7 +424,7 @@ stringStream::~stringStream() {
 // "tty" neeeds to be always valid since it may get used pre-VM-init and post-VM-cleanup.
 // The "real" tty is implemented by class defaultStream. But that cannot be used pre-VM-init
 // since its behavior depends on VM arguments that are not parsed yet. Therefore we point tty
-// to a simple always functioning stdout fdstream.
+// to a simple always functioning fdstream pointing to stderr.
 static fdStream g_stderr_stream(os::get_fileno(stderr));
 
 xmlStream*   xtty;
