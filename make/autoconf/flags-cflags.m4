@@ -167,7 +167,7 @@ AC_DEFUN([FLAGS_SETUP_WARNINGS],
       CFLAGS_WARNINGS_ARE_ERRORS="-WX"
 
       WARNINGS_ENABLE_ALL="-W3"
-      DISABLED_WARNINGS="4800"
+      DISABLED_WARNINGS="4800 5105"
       if test "x$TOOLCHAIN_VERSION" = x2017; then
         # VS2017 incorrectly triggers this warning for constexpr
         DISABLED_WARNINGS="$DISABLED_WARNINGS 4307"
@@ -539,20 +539,17 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
   fi
 
   # CFLAGS C language level for JDK sources (hotspot only uses C++)
-  # Ideally we would have a common level across all toolchains so that all sources
-  # are sure to conform to the same standard. Unfortunately neither our sources nor
-  # our toolchains are in a condition to support that. But what we loosely aim for is
-  # C99 level.
   if test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang || test "x$TOOLCHAIN_TYPE" = xxlc; then
-    # Explicitly set C99. clang and xlclang support the same flag.
-    LANGSTD_CFLAGS="-std=c99"
+    LANGSTD_CFLAGS="-std=c11"
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
-    # MSVC doesn't support C99/C11 explicitly, unless you compile as C++:
-    # LANGSTD_CFLAGS="-TP"
-    # but that requires numerous changes to the sources files. So we are limited
-    # to C89/C90 plus whatever extensions Visual Studio has decided to implement.
-    # This is the lowest bar for shared code.
-    LANGSTD_CFLAGS=""
+    if test "x$TOOLCHAIN_VERSION" != x2017; then
+      LANGSTD_CFLAGS="-std:c11"
+    else
+      # Visual Studio 2017 does not support the full C11, nor any other well-defined C standard.
+      # We use the default, which is roughly C89 + certain chosen extensions. CS2017 will need to
+      # be retired if we get a C11 construct in the source code that it cannot handle.
+      LANGSTD_CFLAGS=""
+    fi
   fi
   TOOLCHAIN_CFLAGS_JDK_CONLY="$LANGSTD_CFLAGS $TOOLCHAIN_CFLAGS_JDK_CONLY"
 
