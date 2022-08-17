@@ -1845,23 +1845,14 @@ public:
   void mov_metadata(Register dst, Metadata* obj);
   void mov_metadata(Address dst, Metadata* obj);
 
-  void movptr(ArrayAddress dst, Register src);
-  // can this do an lea?
-  void movptr(Register dst, ArrayAddress src);
-
-  void movptr(Register dst, Address src);
-
-#ifdef _LP64
-  void movptr(Register dst, AddressLiteral src, Register scratch=rscratch1);
-#else
-  void movptr(Register dst, AddressLiteral src, Register scratch=noreg); // Scratch reg is ignored in 32-bit
-#endif
-
-  void movptr(Register dst, intptr_t src);
-  void movptr(Register dst, Register src);
-  void movptr(Address dst, intptr_t src);
-
-  void movptr(Address dst, Register src);
+  void movptr(Register     dst, Register       src);
+  void movptr(Register     dst, Address        src);
+  void movptr(Register     dst, AddressLiteral src);
+  void movptr(Register     dst, ArrayAddress   src);
+  void movptr(Register     dst, intptr_t       src);
+  void movptr(Address      dst, Register       src);
+  void movptr(Address      dst, intptr_t       src);
+  void movptr(ArrayAddress dst, Register       src);
 
   void movptr(Register dst, RegisterOrConstant src) {
     if (src.is_constant()) movptr(dst, src.as_constant());

@@ -310,9 +310,7 @@ void MacroAssembler::mov_metadata(Address dst, Metadata* obj) {
   mov_literal32(dst, (int32_t)obj, metadata_Relocation::spec_for_immediate());
 }
 
-void MacroAssembler::movptr(Register dst, AddressLiteral src, Register scratch) {
-  // scratch register is not used,
-  // it is defined to match parameters of 64-bit version of this method.
+void MacroAssembler::movptr(Register dst, AddressLiteral src) {
   if (src.is_lval()) {
     mov_literal32(dst, (intptr_t)src.target(), src.rspec());
   } else {
@@ -662,15 +660,15 @@ void MacroAssembler::mov_metadata(Address dst, Metadata* obj) {
   movq(dst, rscratch1);
 }
 
-void MacroAssembler::movptr(Register dst, AddressLiteral src, Register scratch) {
+void MacroAssembler::movptr(Register dst, AddressLiteral src) {
   if (src.is_lval()) {
     mov_literal64(dst, (intptr_t)src.target(), src.rspec());
   } else {
     if (reachable(src)) {
       movq(dst, as_Address(src));
     } else {
-      lea(scratch, src);
-      movq(dst, Address(scratch, 0));
+      lea(dst, src);
+      movq(dst, Address(dst, 0));
     }
   }
 }

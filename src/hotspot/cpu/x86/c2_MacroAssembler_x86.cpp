@@ -217,7 +217,7 @@ void C2_MacroAssembler::rtm_abort_ratio_calculation(Register tmpReg,
 
   if (RTMLockingCalculationDelay > 0) {
     // Delay calculation
-    movptr(tmpReg, ExternalAddress((address) RTMLockingCounters::rtm_calculation_flag_addr()), tmpReg);
+    movptr(tmpReg, ExternalAddress((address) RTMLockingCounters::rtm_calculation_flag_addr()));
     testptr(tmpReg, tmpReg);
     jccb(Assembler::equal, L_done);
   }
