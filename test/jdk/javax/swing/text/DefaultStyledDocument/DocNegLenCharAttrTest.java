@@ -44,7 +44,6 @@ import javax.swing.text.StyleConstants;
  * @run main DocNegLenCharAttrTest
  */
 public class DocNegLenCharAttrTest {
-    private static DefaultStyledDocument doc;
     private static JFrame frame;
     public static void main(String[] args) throws InterruptedException, InvocationTargetException {
         try {
@@ -60,6 +59,7 @@ public class DocNegLenCharAttrTest {
     }
 
     public static void test() {
+        DefaultStyledDocument doc;
         frame = new JFrame();
         doc = new DefaultStyledDocument();
         JTextPane text = new JTextPane();

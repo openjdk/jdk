@@ -491,7 +491,7 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
      * in Swing</A> for more information.
      *
      * @param offset the offset in the document &gt;= 0
-     * @param length the length &gt;= 0
+     * @param length the length &gt; 0
      * @param s the attributes
      * @param replace true if the previous attributes should be replaced
      *  before setting the new attributes
