@@ -935,7 +935,6 @@ public class JSpinner extends JComponent implements Accessible
          * Returns an enum indicating how the baseline of the component
          * changes as the size changes.
          *
-         * @throws NullPointerException {@inheritDoc}
          * @see javax.swing.JComponent#getBaseline(int, int)
          * @since 1.6
          */

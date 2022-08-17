@@ -587,7 +587,7 @@ public class TitledBorder extends AbstractBorder
     /**
      * Returns the baseline.
      *
-     * @throws NullPointerException {@inheritDoc}
+     * @throws NullPointerException if passed in {@code Component} is {@code null}
      * @throws IllegalArgumentException {@inheritDoc}
      * @see javax.swing.JComponent#getBaseline(int, int)
      * @since 1.6
