@@ -119,7 +119,7 @@ public class TestAutoHeaderId extends JavadocTester {
                 """
                     <h3 id="other-attributes-heading" style="color: red;" class="some-class">Other attributes</h3>
                     """,
-                """    
+                """
                     <h4 id="-heading"></h4>
                     """);
     }
