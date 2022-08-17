@@ -25,7 +25,13 @@
 
 package jdk.javadoc.internal.doclets.toolkit.util;
 
-import java.util.*;
+import java.util.Deque;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.NoSuchElementException;
+import java.util.Optional;
+import java.util.Spliterator;
+import java.util.Spliterators;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.StreamSupport;
@@ -49,39 +55,33 @@ public class DocFinder {
         private static final long serialVersionUID = 1L;
     }
 
-    public <T> Optional<T> search(
-            ExecutableElement method,
-            Function<? super ExecutableElement, Optional<T>> criteria)
-    {
+    public <T> Optional<T> search(ExecutableElement method,
+                                  Function<? super ExecutableElement, Optional<T>> criteria) {
         return search(method, true, criteria);
     }
 
-    public <T> Optional<T> search(
-            ExecutableElement method,
-            boolean includeMethod,
-            Function<? super ExecutableElement, Optional<T>> criteria)
-    {
+    public <T> Optional<T> search(ExecutableElement method,
+                                  boolean includeMethod,
+                                  Function<? super ExecutableElement, Optional<T>> criteria) {
         try {
             return search0(method, includeMethod, false, criteria);
         } catch (NoOverriddenMethodsFound e) {
-            // should never happen because throwExceptionIfNoOverriddenMethods == false
+            // should not happen because the exception flag is unset
             throw new AssertionError(e);
         }
     }
 
-    public <T> Optional<T> trySearch(
-            ExecutableElement method,
-            Function<? super ExecutableElement, Optional<T>> criteria)
+    public <T> Optional<T> trySearch(ExecutableElement method,
+                                     Function<? super ExecutableElement, Optional<T>> criteria)
             throws NoOverriddenMethodsFound
     {
         return search0(method, false, true, criteria);
     }
 
-    private <T> Optional<T> search0(
-            ExecutableElement method,
-            boolean includeMethod,
-            boolean throwExceptionIfNoOverriddenMethods,
-            Function<? super ExecutableElement, Optional<T>> criteria)
+    private <T> Optional<T> search0(ExecutableElement method,
+                                    boolean includeMethod,
+                                    boolean throwExceptionIfNoOverriddenMethods,
+                                    Function<? super ExecutableElement, Optional<T>> criteria)
             throws NoOverriddenMethodsFound
     {
         Iterator<ExecutableElement> iterator = new HierarchyTraversingIterator(method, includeMethod);
@@ -91,7 +91,8 @@ public class DocFinder {
         var spliterator = Spliterators.spliteratorUnknownSize(iterator, Spliterator.ORDERED
                 | Spliterator.NONNULL | Spliterator.IMMUTABLE | Spliterator.DISTINCT);
         return StreamSupport.stream(spliterator, false)
-                .flatMap(m -> criteria.apply(m).stream()).findFirst();
+                .flatMap(m -> criteria.apply(m).stream())
+                .findFirst();
     }
 
     private class HierarchyTraversingIterator implements Iterator<ExecutableElement> {
