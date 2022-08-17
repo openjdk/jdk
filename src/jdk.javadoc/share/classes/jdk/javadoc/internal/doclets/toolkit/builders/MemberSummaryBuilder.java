@@ -262,10 +262,11 @@ public abstract class MemberSummaryBuilder extends AbstractMemberBuilder {
                     configuration.cmtUtils.updatePropertyMethodComment(ee, property);
                 }
                 if (utils.isMethod(member)) {
-                    Optional<List<? extends DocTree>> r = DocFinder.search((ExecutableElement) member, (m -> {
+                    var docFinder = utils.docFinder();
+                    Optional<List<? extends DocTree>> r = docFinder.search((ExecutableElement) member, (m -> {
                         var firstSentenceTrees = utils.getFirstSentenceTrees(m);
                         return firstSentenceTrees.isEmpty() ? Optional.empty() : Optional.of(firstSentenceTrees);
-                    }), configuration);
+                    }));
                     writer.addMemberSummary(typeElement, member, r.orElse(List.of()));
                 } else {
                     writer.addMemberSummary(typeElement, member, utils.getFirstSentenceTrees(member));

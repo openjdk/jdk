@@ -83,7 +83,8 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
         }
         // try to inherit description of the respective parameter in an overridden method
         try {
-            var r = DocFinder.trySearch(method, m -> extract(configuration.utils, m, position, param.isTypeParameter()), configuration);
+            var docFinder = configuration.utils.docFinder();
+            var r = docFinder.trySearch(method, m -> extract(configuration.utils, m, position, param.isTypeParameter()));
             return r.map(result -> new Output(result.paramTree, result.method, result.paramTree.getDescription(), true))
                     .orElseGet(() -> new Output(null, null, List.of(), true));
         } catch (DocFinder.NoOverriddenMethodsFound e) {
@@ -223,9 +224,8 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
                                              boolean isFirst) {
         Utils utils = writer.configuration().utils;
         Content result = writer.getOutputInstance();
-        var r = DocFinder.search((ExecutableElement) holder,
-                m -> extract(utils, m, position, kind == ParamKind.TYPE_PARAMETER),
-                writer.configuration());
+        var r = utils.docFinder().search((ExecutableElement) holder,
+                m -> extract(utils, m, position, kind == ParamKind.TYPE_PARAMETER));
         if (r.isPresent()) {
             String name = kind != ParamKind.TYPE_PARAMETER
                     ? utils.getSimpleName(param)

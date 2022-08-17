@@ -79,7 +79,8 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
         }
         TypeMirror exception = exceptionElement.asType();
         try {
-            var r = DocFinder.trySearch((ExecutableElement) owner, m -> extract(m, exception, configuration.utils), configuration);
+            var docFinder = configuration.utils.docFinder();
+            var r = docFinder.trySearch((ExecutableElement) owner, m -> extract(m, exception, configuration.utils));
             // Take care of one-to-many
             return r.map(result -> new Output(result.throwsTrees.get(0), result.method, result.throwsTrees.get(0).getDescription(), true))
                     .orElseGet(() -> new Output(null, null, List.of(), true));
@@ -210,9 +211,11 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
             // nothing to inherit
             return Map.of(tag, e);
         }
-        var ch = writer.configuration().utils.getCommentHelper(e);
+        Utils utils = writer.configuration().utils;
+        var ch = utils.getCommentHelper(e);
+        var docFinder = utils.docFinder();
         TypeMirror exception = ch.getException(tag).asType();
-        var r = DocFinder.search(e, false, m -> extract(m, exception, writer.configuration().utils), writer.configuration());
+        var r = docFinder.search(e, false, m -> extract(m, exception, utils));
         if (r.isEmpty()) {
             return Map.of(tag, e);
         }
@@ -251,9 +254,10 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
             return result;
         }
         var utils = writer.configuration().utils;
+        var docFinder = utils.docFinder();
         Map<ThrowsTree, ExecutableElement> declaredExceptionTags = new LinkedHashMap<>();
         for (TypeMirror declaredExceptionType : declaredExceptionTypes) {
-            var r = DocFinder.search(holder, false, m -> extract(m, declaredExceptionType, utils), writer.configuration());
+            var r = docFinder.search(holder, false, m -> extract(m, declaredExceptionType, utils));
             r.ifPresent(value -> value.throwsTrees.forEach(t -> declaredExceptionTags.put(t, value.method())));
         }
         result.add(throwsTagsOutput(declaredExceptionTags, alreadyDocumented, typeSubstitutions,

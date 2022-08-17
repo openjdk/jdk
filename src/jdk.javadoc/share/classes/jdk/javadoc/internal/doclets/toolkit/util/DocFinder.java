@@ -26,6 +26,7 @@
 package jdk.javadoc.internal.doclets.toolkit.util;
 
 import java.util.*;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -33,43 +34,48 @@ import java.util.stream.StreamSupport;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 
-import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
-
 /**
  * Search for the requested documentation.  Inherit documentation if necessary.
  */
 public class DocFinder {
+
+    private final Function<ExecutableElement, ExecutableElement> overriddenMethodLookup;
+    private final BiFunction<ExecutableElement, ExecutableElement, Iterable<ExecutableElement>> implementedMethodsLookup;
+
+    DocFinder(Function<ExecutableElement, ExecutableElement> overriddenMethodLookup,
+              BiFunction<ExecutableElement, ExecutableElement, Iterable<ExecutableElement>> implementedMethodsLookup) {
+        this.overriddenMethodLookup = overriddenMethodLookup;
+        this.implementedMethodsLookup = implementedMethodsLookup;
+    }
 
     public static final class NoOverriddenMethodsFound extends Exception {
         @java.io.Serial
         private static final long serialVersionUID = 1L;
     }
 
-    public static <T> Optional<T> search(
+    public <T> Optional<T> search(
             ExecutableElement method,
-            Function<? super ExecutableElement, Optional<T>> criteria,
-            BaseConfiguration configuration)
+            Function<? super ExecutableElement, Optional<T>> criteria)
     {
-        return search(method, true, criteria, configuration);
+        return search(method, true, criteria);
     }
 
-    public static <T> Optional<T> search(
+    public <T> Optional<T> search(
             ExecutableElement method,
             boolean includeMethod,
-            Function<? super ExecutableElement, Optional<T>> criteria,
-            BaseConfiguration configuration)
+            Function<? super ExecutableElement, Optional<T>> criteria)
     {
-        return methodsOverriddenBy(method, includeMethod, configuration)
+        return methodsOverriddenBy(method, includeMethod)
                 .flatMap(m -> criteria.apply(m).stream()).findFirst();
     }
 
-    public static <T> Optional<T> trySearch(
+    public <T> Optional<T> trySearch(
             ExecutableElement method,
-            Function<? super ExecutableElement, Optional<T>> criteria,
-            BaseConfiguration configuration) throws NoOverriddenMethodsFound
+            Function<? super ExecutableElement, Optional<T>> criteria)
+            throws NoOverriddenMethodsFound
     {
         var found = new boolean[]{false};
-        var first = methodsOverriddenBy(method, false, configuration)
+        var first = methodsOverriddenBy(method, false)
                 .peek(m -> found[0] = true) // if there are overridden methods, `found` will be true
                 .flatMap(m -> criteria.apply(m).stream()).findFirst();
         if (!found[0]) {
@@ -78,18 +84,16 @@ public class DocFinder {
         return first;
     }
 
-    static Stream<ExecutableElement> methodsOverriddenBy(ExecutableElement method,
-                                                         boolean includeMethod,
-                                                         BaseConfiguration configuration) {
-        var iterator = new HierarchyTraversingIterator(method, includeMethod, configuration);
+    private Stream<ExecutableElement> methodsOverriddenBy(ExecutableElement method,
+                                                          boolean includeMethod) {
+        var iterator = new HierarchyTraversingIterator(method, includeMethod);
         var spliterator = Spliterators.spliteratorUnknownSize(iterator, Spliterator.ORDERED
                 | Spliterator.NONNULL | Spliterator.IMMUTABLE | Spliterator.DISTINCT);
         return StreamSupport.stream(spliterator, false);
     }
 
-    private static class HierarchyTraversingIterator implements Iterator<ExecutableElement> {
+    private class HierarchyTraversingIterator implements Iterator<ExecutableElement> {
 
-        final BaseConfiguration configuration;
         final Deque<LazilyAccessedImplementedMethods> path = new LinkedList<>();
         ExecutableElement next;
 
@@ -102,10 +106,8 @@ public class DocFinder {
          * the includeMethod flag.
          */
         public HierarchyTraversingIterator(ExecutableElement method,
-                                           boolean includeMethod,
-                                           BaseConfiguration configuration) {
+                                           boolean includeMethod) {
             assert method.getKind() == ElementKind.METHOD : method.getKind();
-            this.configuration = configuration;
             next = method;
             if (!includeMethod) {
                 updateNext();
@@ -129,7 +131,7 @@ public class DocFinder {
 
         private void updateNext() {
             assert next != null;
-            var superClassMethod = configuration.utils.overriddenMethod(next);
+            var superClassMethod = overriddenMethodLookup.apply(next);
             path.push(new LazilyAccessedImplementedMethods(next));
             if (superClassMethod != null) {
                 next = superClassMethod;
@@ -170,9 +172,7 @@ public class DocFinder {
                 if (iterator != null) {
                     return iterator;
                 }
-                var type = configuration.utils.getEnclosingTypeElement(next);
-                var table = configuration.getVisibleMemberTable(type);
-                return iterator = table.getImplementedMethods(method).iterator();
+                return iterator = implementedMethodsLookup.apply(method, next).iterator();
             }
         }
     }

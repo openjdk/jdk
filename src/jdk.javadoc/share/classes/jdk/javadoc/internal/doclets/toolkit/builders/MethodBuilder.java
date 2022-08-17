@@ -166,8 +166,9 @@ public class MethodBuilder extends AbstractMemberBuilder {
     protected void buildMethodComments(Content methodContent) {
         if (!options.noComment()) {
             assert utils.isMethod(currentMethod); // not all executables are methods
-            Optional<ExecutableElement> r = DocFinder.search(currentMethod,
-                    m -> utils.getFullBody(m).isEmpty() ? Optional.empty() : Optional.of(m), configuration);
+            var docFinder = utils.docFinder();
+            Optional<ExecutableElement> r = docFinder.search(currentMethod,
+                    m -> utils.getFullBody(m).isEmpty() ? Optional.empty() : Optional.of(m));
             ExecutableElement method = r.orElse(currentMethod);
             TypeMirror containingType = method.getEnclosingElement().asType();
             writer.addComments(containingType, method, methodContent);

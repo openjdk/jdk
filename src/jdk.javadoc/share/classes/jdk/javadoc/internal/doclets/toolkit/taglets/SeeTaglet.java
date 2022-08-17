@@ -37,7 +37,6 @@ import com.sun.source.doctree.SeeTree;
 import jdk.javadoc.doclet.Taglet.Location;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
-import jdk.javadoc.internal.doclets.toolkit.util.DocFinder;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
 /**
@@ -60,8 +59,9 @@ public class SeeTaglet extends BaseTaglet implements InheritableTaglet {
         List<? extends SeeTree> tags = utils.getSeeTrees(holder);
         Element e = holder;
         if (utils.isMethod(holder)) {
-            Optional<Result> result = DocFinder.search(
-                    (ExecutableElement) holder, m -> extract(utils, m), writer.configuration());
+            var docFinder = utils.docFinder();
+            Optional<Result> result = docFinder.search((ExecutableElement) holder,
+                    m -> extract(utils, m));
             if (result.isPresent()) {
                 ExecutableElement m = result.get().method();
                 tags = utils.getSeeTrees(m);

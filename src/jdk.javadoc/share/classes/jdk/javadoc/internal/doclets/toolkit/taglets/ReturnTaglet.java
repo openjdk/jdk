@@ -61,7 +61,8 @@ public class ReturnTaglet extends BaseTaglet implements InheritableTaglet {
     @Override
     public Output inherit(Element owner, DocTree tag, boolean isFirstSentence, BaseConfiguration configuration) {
         try {
-            var r = DocFinder.trySearch((ExecutableElement) owner, m -> extract(configuration.utils, m), configuration);
+            var docFinder = configuration.utils.docFinder();
+            var r = docFinder.trySearch((ExecutableElement) owner, m -> extract(configuration.utils, m));
             return r.map(result -> new Output(result.returnTree, result.method, result.returnTree.getDescription(), true))
                     .orElseGet(() -> new Output(null, null, List.of(), true));
         } catch (DocFinder.NoOverriddenMethodsFound e) {
@@ -93,7 +94,8 @@ public class ReturnTaglet extends BaseTaglet implements InheritableTaglet {
 
         // TODO check for more than one @return
 
-        return DocFinder.search(method, m -> extract(utils, m), writer.configuration())
+        var docFinder = utils.docFinder();
+        return docFinder.search(method, m -> extract(utils, m))
                 .map(r -> writer.returnTagOutput(r.method, r.returnTree, false))
                 .orElse(null);
     }

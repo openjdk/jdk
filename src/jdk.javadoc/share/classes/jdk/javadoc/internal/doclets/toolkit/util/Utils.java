@@ -137,6 +137,7 @@ public class Utils {
     public final Types typeUtils;
     public final Comparators comparators;
     private final JavaScriptScanner javaScriptScanner;
+    private final DocFinder docFinder = newDocFinder();
 
     public Utils(BaseConfiguration c) {
         configuration = c;
@@ -2781,4 +2782,16 @@ public class Utils {
         boolean isPreview(Element el);
     }
 
+    public DocFinder docFinder() {
+        return docFinder;
+    }
+
+    private DocFinder newDocFinder() {
+        return new DocFinder(this::overriddenMethod, this::implementedMethods);
+    }
+
+    private Iterable<ExecutableElement> implementedMethods(ExecutableElement originalMethod, ExecutableElement m) {
+        var type = configuration.utils.getEnclosingTypeElement(m);
+        return configuration.getVisibleMemberTable(type).getImplementedMethods(originalMethod);
+    }
 }
