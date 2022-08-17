@@ -36,7 +36,7 @@ class Register {
  private:
   int _encoding;
 
-  constexpr Register(int encoding, bool unused) : _encoding(encoding) {}
+  constexpr explicit Register(int encoding) : _encoding(encoding) {}
 
  public:
   enum {
@@ -84,7 +84,7 @@ constexpr Register noreg = Register();
 
 inline constexpr Register as_Register(int encoding) {
   if (0 <= encoding && encoding < Register::number_of_declared_registers) {
-    return Register(encoding, false);
+    return Register(encoding);
   }
   return noreg;
 }
@@ -155,7 +155,7 @@ class FloatRegister {
  private:
   int _encoding;
 
-  constexpr FloatRegister(int encoding, bool unused) : _encoding(encoding) {}
+  constexpr explicit FloatRegister(int encoding) : _encoding(encoding) {}
 
  public:
   inline friend constexpr FloatRegister as_FloatRegister(int encoding);
@@ -205,7 +205,7 @@ constexpr FloatRegister fnoreg = FloatRegister();
 
 inline constexpr FloatRegister as_FloatRegister(int encoding) {
   if (0 <= encoding && encoding < FloatRegister::number_of_registers) {
-    return FloatRegister(encoding, false);
+    return FloatRegister(encoding);
   }
   return fnoreg;
 }
@@ -288,7 +288,7 @@ constexpr FloatRegister z31 = v31;
 class PRegister {
   int _encoding;
 
-  constexpr PRegister(int encoding, bool unused) : _encoding(encoding) {}
+  constexpr explicit PRegister(int encoding) : _encoding(encoding) {}
 
 public:
   inline friend constexpr PRegister as_PRegister(int encoding);
@@ -342,7 +342,7 @@ constexpr PRegister pnoreg = PRegister();
 
 inline constexpr PRegister as_PRegister(int encoding) {
   if (0 <= encoding && encoding < PRegister::number_of_registers) {
-    return PRegister(encoding, false);
+    return PRegister(encoding);
   }
   return pnoreg;
 }
