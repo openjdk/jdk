@@ -65,12 +65,11 @@ public class DocFinder {
 
     public static <T> Optional<T> trySearch(
             ExecutableElement method,
-            boolean includeMethod,
             Function<? super ExecutableElement, Optional<T>> criteria,
             BaseConfiguration configuration) throws NoOverriddenMethodsFound
     {
         var found = new boolean[]{false};
-        var first = methodsOverriddenBy(method, includeMethod, configuration)
+        var first = methodsOverriddenBy(method, false, configuration)
                 .peek(m -> found[0] = true) // if there are overridden methods, `found` will be true
                 .flatMap(m -> criteria.apply(m).stream()).findFirst();
         if (!found[0]) {

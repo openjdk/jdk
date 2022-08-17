@@ -166,7 +166,7 @@ public class SimpleTaglet extends BaseTaglet implements InheritableTaglet {
         assert owner.getKind() == ElementKind.METHOD;
         assert !isFirstSentence;
         try {
-            var r = DocFinder.trySearch((ExecutableElement) owner, false,
+            var r = DocFinder.trySearch((ExecutableElement) owner,
                     m -> extractFirst(m, configuration.utils), configuration);
             return r.map(result -> new Output(result.tag, result.method, result.description, true))
                     .orElseGet(()->new Output(null, null, List.of(), true));

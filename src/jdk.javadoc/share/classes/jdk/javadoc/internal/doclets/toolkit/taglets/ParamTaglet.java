@@ -83,7 +83,7 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
         }
         // try to inherit description of the respective parameter in an overridden method
         try {
-            var r = DocFinder.trySearch(method, false, m -> extract(configuration.utils, m, position, param.isTypeParameter()), configuration);
+            var r = DocFinder.trySearch(method, m -> extract(configuration.utils, m, position, param.isTypeParameter()), configuration);
             return r.map(result -> new Output(result.paramTree, result.method, result.paramTree.getDescription(), true))
                     .orElseGet(() -> new Output(null, null, List.of(), true));
         } catch (DocFinder.NoOverriddenMethodsFound e) {

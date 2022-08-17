@@ -79,7 +79,7 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
         }
         TypeMirror exception = exceptionElement.asType();
         try {
-            var r = DocFinder.trySearch((ExecutableElement) owner, false, m -> extract(m, exception, configuration.utils), configuration);
+            var r = DocFinder.trySearch((ExecutableElement) owner, m -> extract(m, exception, configuration.utils), configuration);
             // Take care of one-to-many
             return r.map(result -> new Output(result.throwsTrees.get(0), result.method, result.throwsTrees.get(0).getDescription(), true))
                     .orElseGet(() -> new Output(null, null, List.of(), true));

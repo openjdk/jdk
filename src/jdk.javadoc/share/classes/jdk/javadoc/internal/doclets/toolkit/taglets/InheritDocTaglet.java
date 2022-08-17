@@ -80,7 +80,7 @@ public class InheritDocTaglet extends BaseTaglet {
         DocTree holderTag = path.getLeaf();
         if (holderTag.getKind() == DocTree.Kind.DOC_COMMENT) {
             try {
-                Optional<Result> r = DocFinder.trySearch(method, false,
+                Optional<Result> r = DocFinder.trySearch(method,
                         m -> extractMainDescription(m, isFirstSentence, utils), configuration);
                 if (r.isPresent()) {
                     replacement = writer.commentTagsToOutput(r.get().method, null,
