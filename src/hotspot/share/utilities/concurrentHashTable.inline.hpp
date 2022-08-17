@@ -1030,6 +1030,7 @@ inline ConcurrentHashTable<CONFIG, F>::
   delete _resize_lock;
   free_nodes();
   delete _table;
+  delete _stats_rate;
 }
 
 template <typename CONFIG, MEMFLAGS F>
