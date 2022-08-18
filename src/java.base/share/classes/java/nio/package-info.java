@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,14 +50,31 @@
  *   href="channels/package-summary.html#multiplex">multiplexed,
  *   non-blocking <br> I/O</a> facility.  </p></li>
  *
+ *   <li><p> <a
+ *   href="file/FileSystem.html"><i>Filesystems</i></a>,
+ *   which provide an interface to a file system <br> hierarchy and a
+ *   factory for objects to access files and <br> other objects in the
+ *   file system.  </p></li>
+ *
+ *   <li><p> <a
+ *   href="file/Path.html"><i>Paths</i></a>,
+ *   which represent a hierarchical sequence of <br> name elements
+ *   used to locate a file in a file system.  </p></li>
+ *
+ *   <li><p> <a
+ *   href="file/attribute/package-summary.html"><i>Attributes</i></a>,
+ *   which represent <i>metadata</i> associated with <br> objects in a
+ *   file system.  </p></li>
+ *
  *  </ul>
  *
  * <p> The {@code java.nio} package defines the buffer classes, which
  * are used throughout the NIO APIs.  The charset API is defined in
  * the {@link java.nio.charset} package, the channel and selector APIs
- * in the {@link java.nio.channels} package, and the file, file attribute,
- * and file system APIs in the {@link java.nio.file} package.  Each of
- * these subpackages has its own service-provider interface (SPI) subpackage,
+ * in the {@link java.nio.channels} package, the file system and path APIs
+ * in the {@link java.nio.file} package, and the file attribute APIs in
+ * the {@link java.nio.file.attribute} package.  Each of these subpackages
+ * except the last has its own service-provider interface (SPI) subpackage,
  * the contents of which can be used to extend the platform's default
  * implementations or to construct alternative implementations.
  *
