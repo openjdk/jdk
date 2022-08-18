@@ -31,19 +31,13 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PrivilegedAction;
 import java.security.Provider;
 import java.security.ProviderException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 
-import sun.security.ec.ed.EdDSAAlgorithmParameters;
 import sun.security.ec.ed.EdDSAKeyFactory;
 import sun.security.ec.ed.EdDSAKeyPairGenerator;
 import sun.security.ec.ed.EdDSASignature;
 import sun.security.util.CurveDB;
-import sun.security.util.KnownOIDs;
 import sun.security.util.NamedCurve;
 
 import static sun.security.util.SecurityConstants.PROVIDER_VER;

@@ -80,6 +80,7 @@ DumpTimeSharedClassTable* SystemDictionaryShared::_dumptime_table = NULL;
 DumpTimeSharedClassTable* SystemDictionaryShared::_cloned_dumptime_table = NULL;
 DumpTimeLambdaProxyClassDictionary* SystemDictionaryShared::_dumptime_lambda_proxy_class_dictionary = NULL;
 DumpTimeLambdaProxyClassDictionary* SystemDictionaryShared::_cloned_dumptime_lambda_proxy_class_dictionary = NULL;
+SystemDictionaryShared::SavedCpCacheEntriesTable* SystemDictionaryShared::_saved_cpcache_entries_table = NULL;
 
 // Used by NoClassLoadingMark
 DEBUG_ONLY(bool SystemDictionaryShared::_class_loading_may_happen = true;)
@@ -504,6 +505,7 @@ void SystemDictionaryShared::initialize() {
     _dumptime_table = new (ResourceObj::C_HEAP, mtClass) DumpTimeSharedClassTable;
     _dumptime_lambda_proxy_class_dictionary =
                       new (ResourceObj::C_HEAP, mtClass) DumpTimeLambdaProxyClassDictionary;
+    _saved_cpcache_entries_table = new (ResourceObj::C_HEAP, mtClass) SavedCpCacheEntriesTable;
   }
 }
 
@@ -515,36 +517,12 @@ void SystemDictionaryShared::init_dumptime_info(InstanceKlass* k) {
 
 void SystemDictionaryShared::remove_dumptime_info(InstanceKlass* k) {
   MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
-  DumpTimeClassInfo* p = _dumptime_table->get(k);
-  if (p == NULL) {
-    return;
-  }
-  if (p->_verifier_constraints != NULL) {
-    for (int i = 0; i < p->_verifier_constraints->length(); i++) {
-      DumpTimeClassInfo::DTVerifierConstraint constraint = p->_verifier_constraints->at(i);
-      if (constraint._name != NULL ) {
-        constraint._name->decrement_refcount();
-      }
-      if (constraint._from_name != NULL ) {
-        constraint._from_name->decrement_refcount();
-      }
-    }
-    FREE_C_HEAP_ARRAY(DumpTimeClassInfo::DTVerifierConstraint, p->_verifier_constraints);
-    p->_verifier_constraints = NULL;
-    FREE_C_HEAP_ARRAY(char, p->_verifier_constraint_flags);
-    p->_verifier_constraint_flags = NULL;
-  }
-  if (p->_loader_constraints != NULL) {
-    for (int i = 0; i < p->_loader_constraints->length(); i++) {
-      DumpTimeClassInfo::DTLoaderConstraint ld =  p->_loader_constraints->at(i);
-      if (ld._name != NULL) {
-        ld._name->decrement_refcount();
-      }
-    }
-    FREE_C_HEAP_ARRAY(DumpTimeClassInfo::DTLoaderConstraint, p->_loader_constraints);
-    p->_loader_constraints = NULL;
-  }
   _dumptime_table->remove(k);
+
+  ConstantPoolCache* cpc = k->constants()->cache();
+  if (cpc != NULL) {
+    remove_saved_cpcache_entries_locked(cpc);
+  }
 }
 
 void SystemDictionaryShared::handle_class_unloading(InstanceKlass* klass) {
@@ -759,16 +737,11 @@ void SystemDictionaryShared::add_to_dump_time_lambda_proxy_class_dictionary(Lamb
                                                            InstanceKlass* proxy_klass) {
   assert_lock_strong(DumpTimeTable_lock);
 
-  DumpTimeLambdaProxyClassInfo* lambda_info = _dumptime_lambda_proxy_class_dictionary->get(key);
-  if (lambda_info == NULL) {
-    DumpTimeLambdaProxyClassInfo info;
-    info.add_proxy_klass(proxy_klass);
-    _dumptime_lambda_proxy_class_dictionary->put(key, info);
-    //lambda_info = _dumptime_lambda_proxy_class_dictionary->get(key);
-    //assert(lambda_info->_proxy_klass == proxy_klass, "must be"); // debug only -- remove
+  bool created;
+  DumpTimeLambdaProxyClassInfo* info = _dumptime_lambda_proxy_class_dictionary->put_if_absent(key, &created);
+  info->add_proxy_klass(proxy_klass);
+  if (created) {
     ++_dumptime_lambda_proxy_class_dictionary->_count;
-  } else {
-    lambda_info->add_proxy_klass(proxy_klass);
   }
 }
 
@@ -1363,6 +1336,36 @@ void SystemDictionaryShared::update_shared_entry(InstanceKlass* k, int id) {
   info->_id = id;
 }
 
+void SystemDictionaryShared::set_saved_cpcache_entries(ConstantPoolCache* cpc, ConstantPoolCacheEntry* entries) {
+  MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
+  bool is_new = _saved_cpcache_entries_table->put(cpc, entries);
+  assert(is_new, "saved entries must never changed");
+}
+
+ConstantPoolCacheEntry* SystemDictionaryShared::get_saved_cpcache_entries_locked(ConstantPoolCache* cpc) {
+  assert_lock_strong(DumpTimeTable_lock);
+  ConstantPoolCacheEntry** p = _saved_cpcache_entries_table->get(cpc);
+  if (p != nullptr) {
+    return *p;
+  } else {
+    return nullptr;
+  }
+}
+
+void SystemDictionaryShared::remove_saved_cpcache_entries(ConstantPoolCache* cpc) {
+  MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
+  remove_saved_cpcache_entries_locked(cpc);
+}
+
+void SystemDictionaryShared::remove_saved_cpcache_entries_locked(ConstantPoolCache* cpc) {
+  assert_lock_strong(DumpTimeTable_lock);
+  ConstantPoolCacheEntry** p = _saved_cpcache_entries_table->get(cpc);
+  if (p != nullptr) {
+    _saved_cpcache_entries_table->remove(cpc);
+    FREE_C_HEAP_ARRAY(ConstantPoolCacheEntry, *p);
+  }
+}
+
 const char* class_loader_name_for_shared(Klass* k) {
   assert(k != nullptr, "Sanity");
   assert(k->is_shared(), "Must be");
@@ -1484,7 +1487,8 @@ class CloneDumpTimeClassTable: public StackObj {
   void do_entry(InstanceKlass* k, DumpTimeClassInfo& info) {
     if (!info.is_excluded()) {
       bool created;
-      _cloned_table->put_if_absent(k, info.clone(), &created);
+      _cloned_table->put_if_absent(k, info, &created);
+      assert(created, "must be");
     }
   }
 };
@@ -1505,11 +1509,24 @@ class CloneDumpTimeLambdaProxyClassTable: StackObj {
     bool created;
     // make copies then store in _clone_table
     LambdaProxyClassKey keyCopy = key;
-    _cloned_table->put_if_absent(keyCopy, info.clone(), &created);
+    _cloned_table->put_if_absent(keyCopy, info, &created);
+    assert(created, "must be");
     ++ _cloned_table->_count;
     return true; // keep on iterating
   }
 };
+
+// When dumping the CDS archive, the ArchiveBuilder will irrecoverably modify the
+// _dumptime_table and _dumptime_lambda_proxy_class_dictionary (e.g., metaspace
+// pointers are changed to use "buffer" addresses.)
+//
+// We save a copy of these tables and restore them after the dumping is finished.
+// This makes it possible to repeat the dumping operation (e.g., use
+// "jcmd VM.cds dynamic_dump" multiple times on the same JVM process).
+//
+// We use the copy constructors to clone the values in these tables. The copy constructors
+// must make a deep copy, as internal data structures such as the contents of
+// DumpTimeClassInfo::_loader_constraints are also modified by the ArchiveBuilder.
 
 void SystemDictionaryShared::clone_dumptime_tables() {
   Arguments::assert_is_dumping_archive();
