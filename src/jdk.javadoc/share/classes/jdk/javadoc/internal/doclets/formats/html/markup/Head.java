@@ -328,9 +328,7 @@ public class Head extends Content {
         }
 
         if (index) {
-            // The order of the addStylesheet(...) calls is important
             addStylesheet(head, DocPaths.SCRIPT_DIR.resolve(DocPaths.JQUERY_UI_CSS));
-            addStylesheet(head, DocPaths.JQUERY_OVERRIDES_CSS);
         }
     }
 
