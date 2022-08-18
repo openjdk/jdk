@@ -915,9 +915,6 @@ class ConstantPool : public Metadata {
 };
 
 class SymbolHashMap: public CHeapObj<mtSymbol> {
-
- private:
-  // Default number of entries in the table
   ResourceHashtable<const Symbol*, u2, 256, ResourceObj::C_HEAP, mtSymbol, Symbol::compute_hash> _table;
 
  public:
