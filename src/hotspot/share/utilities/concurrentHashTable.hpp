@@ -44,12 +44,12 @@ class ConcurrentHashTable : public CHeapObj<F> {
  private:
   // _stats_rate is null if statistics are not enabled.
   TableRateStatistics* _stats_rate;
-  void safe_stats_add() {
+  inline void safe_stats_add() {
     if (_stats_rate != nullptr) {
       _stats_rate->add();
     }
   }
-  void safe_stats_remove() {
+  inline void safe_stats_remove() {
     if (_stats_rate != nullptr) {
       _stats_rate->remove();
     }
