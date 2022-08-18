@@ -117,11 +117,14 @@ source %{
 
   const bool Matcher::match_rule_supported_superword(int opcode, int vlen, BasicType bt) {
     if (UseSVE == 0) {
-      // ConvD2I and ConvL2F are not profitable to be vectorized on NEON, because no direct
+      // These operations are not profitable to be vectorized on NEON, because no direct
       // NEON instructions support them. But the match rule support for them is profitable for
       // Vector API intrinsics.
       if ((opcode == Op_VectorCastD2X && bt == T_INT) ||
-          (opcode == Op_VectorCastL2X && bt == T_FLOAT)) {
+          (opcode == Op_VectorCastL2X && bt == T_FLOAT) ||
+          opcode == Op_AddReductionVD || opcode == Op_AddReductionVF ||
+          opcode == Op_MulReductionVD || opcode == Op_MulReductionVF ||
+          opcode == Op_MulVL) {
         return false;
       }
     }
@@ -143,7 +146,6 @@ source %{
     // Check whether specific Op is supported.
     // Fail fast, otherwise fall through to common vector_size_supported() check.
     switch (opcode) {
-      case Op_MulVL:
       case Op_AndVMask:
       case Op_OrVMask:
       case Op_XorVMask:
