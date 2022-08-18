@@ -477,7 +477,7 @@ Address MacroAssembler::as_Address(AddressLiteral adr) {
   // jmp/call are displacements others are absolute
   assert(!adr.is_lval(), "must be rval");
   assert(reachable(adr), "must be");
-  return Address(static_cast<int32_t>(adr.target() - pc()), adr.target(), adr.reloc());
+  return Address(checked_cast<int32_t>(adr.target() - pc()), adr.target(), adr.reloc());
 
 }
 

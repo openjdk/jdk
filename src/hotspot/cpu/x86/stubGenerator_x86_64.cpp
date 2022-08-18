@@ -8367,7 +8367,7 @@ void continuation_enter_cleanup(MacroAssembler* masm) {
 
   __ movptr(rbx, Address(rsp, ContinuationEntry::parent_offset()));
   __ movptr(Address(r15_thread, JavaThread::cont_entry_offset()), rbx);
-  __ addptr(rsp, static_cast<int32_t>(ContinuationEntry::size()));
+  __ addptr(rsp, checked_cast<int32_t>(ContinuationEntry::size()));
 }
 
 #undef __

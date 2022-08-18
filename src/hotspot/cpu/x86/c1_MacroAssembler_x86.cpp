@@ -146,7 +146,7 @@ void C1_MacroAssembler::try_allocate(Register obj, Register var_size_in_bytes, i
 void C1_MacroAssembler::initialize_header(Register obj, Register klass, Register len, Register t1, Register t2) {
   assert_different_registers(obj, klass, len);
   Register tmp_encode_klass = LP64_ONLY(rscratch1) NOT_LP64(noreg);
-  movptr(Address(obj, oopDesc::mark_offset_in_bytes()), static_cast<int32_t>(markWord::prototype().value()));
+  movptr(Address(obj, oopDesc::mark_offset_in_bytes()), checked_cast<int32_t>(markWord::prototype().value()));
 #ifdef _LP64
   if (UseCompressedClassPointers) { // Take care not to kill klass
     movptr(t1, klass);
@@ -252,7 +252,7 @@ void C1_MacroAssembler::allocate_array(Register obj, Register len, Register t1, 
   assert(!(BytesPerWord & 1), "must be a multiple of 2 for masking code to work");
 
   // check for negative or excessive length
-  cmpptr(len, static_cast<int32_t>(max_array_allocation_length));
+  cmpptr(len, checked_cast<int32_t>(max_array_allocation_length));
   jcc(Assembler::above, slow_case);
 
   const Register arr_size = t2; // okay to be the same
