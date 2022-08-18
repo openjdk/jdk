@@ -42,8 +42,6 @@ import jdk.test.lib.containers.docker.DockerRunOptions;
 import jdk.test.lib.containers.docker.DockerTestUtils;
 import jdk.test.lib.process.OutputAnalyzer;
 
-import java.lang.management.ManagementFactory;
-
 public class TestMemoryAwareness {
     private static final String imageName = Common.imageName("memory");
 
@@ -102,28 +100,23 @@ public class TestMemoryAwareness {
 
     // JDK-8292083
     // Ensure that Java ignores container memory limit values above the host's physical memory.
-    //
-    // let the host's physical memory be P; request 2P memory in the container.
-    // set java's InitialRAMPercentage to 25%, and check the calculated InitialHeapSize
-    // to see if that was calculated relative to P (P/4) or 2P (P/2).
     private static void testContainerMemExceedsPhysical()
             throws Exception {
 
-        com.sun.management.OperatingSystemMXBean os = (com.sun.management.OperatingSystemMXBean) ManagementFactory.getOperatingSystemMXBean();
-        long realMem = os.getTotalMemorySize();
-        long badMem = 2 * realMem;
-
-        Common.logNewTestCase("bad memory limit: " + badMem);
+        Common.logNewTestCase("container memory limit exceeds physical memory");
 
         DockerRunOptions opts = Common.newOpts(imageName);
-        opts.addDockerOpts("--memory", Long.toString(badMem));
-        opts.addJavaOpts("-XX:InitialRAMPercentage=25.0");
-        opts.addJavaOpts("-XX:+PrintFlagsFinal");
 
-        // one significant digit, to avoid precision/rounding issues
-        String goodDigit = Long.toString(realMem/4).substring(0,1);
+        // first run: establish physical memory in test environment and derive
+        // a bad value one power of ten larger
+        String goodMem = Common.run(opts).firstMatch("total physical memory: (\\d+)", 1);
+        String badMem = goodMem + "0";
+
+        // second run: set a container memory limit to the bad value
+        opts = Common.newOpts(imageName)
+            .addDockerOpts("--memory", badMem);
         Common.run(opts)
-            .shouldMatch("size_t InitialHeapSize.*= "+goodDigit);
+            .shouldMatch("container memory limit ignored: "+badMem+", using host value "+goodMem);
     }
 
 
