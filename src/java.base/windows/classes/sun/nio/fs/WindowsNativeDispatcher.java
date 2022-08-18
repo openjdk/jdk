@@ -495,13 +495,10 @@ class WindowsNativeDispatcher {
     static VolumeInformation GetVolumeInformation(String root)
         throws WindowsException
     {
-        NativeBuffer buffer = asNativeBuffer(root);
-        try {
+        try (NativeBuffer buffer = asNativeBuffer(root)) {
             VolumeInformation info = new VolumeInformation();
             GetVolumeInformation0(buffer.address(), info);
             return info;
-        } finally {
-            buffer.release();
         }
     }
     static class VolumeInformation {
@@ -526,11 +523,8 @@ class WindowsNativeDispatcher {
      * )
      */
     static int GetDriveType(String root) throws WindowsException {
-        NativeBuffer buffer = asNativeBuffer(root);
-        try {
+        try (NativeBuffer buffer = asNativeBuffer(root)) {
             return GetDriveType0(buffer.address());
-        } finally {
-            buffer.release();
         }
     }
     private static native int GetDriveType0(long lpRoot) throws WindowsException;
@@ -546,13 +540,10 @@ class WindowsNativeDispatcher {
     static DiskFreeSpace GetDiskFreeSpaceEx(String path)
         throws WindowsException
     {
-        NativeBuffer buffer = asNativeBuffer(path);
-        try {
+        try (NativeBuffer buffer = asNativeBuffer(path)) {
             DiskFreeSpace space = new DiskFreeSpace();
             GetDiskFreeSpaceEx0(buffer.address(), space);
             return space;
-        } finally {
-            buffer.release();
         }
     }
 
@@ -568,13 +559,10 @@ class WindowsNativeDispatcher {
     static DiskFreeSpace GetDiskFreeSpace(String path)
         throws WindowsException
     {
-        NativeBuffer buffer = asNativeBuffer(path);
-        try {
+        try (NativeBuffer buffer = asNativeBuffer(path)) {
             DiskFreeSpace space = new DiskFreeSpace();
             GetDiskFreeSpace0(buffer.address(), space);
             return space;
-        } finally {
-            buffer.release();
         }
     }
 
@@ -609,11 +597,8 @@ class WindowsNativeDispatcher {
      * @return  lpFileName
      */
     static String GetVolumePathName(String path) throws WindowsException {
-        NativeBuffer buffer = asNativeBuffer(path);
-        try {
+        try (NativeBuffer buffer = asNativeBuffer(path)) {
             return GetVolumePathName0(buffer.address());
-        } finally {
-            buffer.release();
         }
     }
     private static native String GetVolumePathName0(long lpFileName)
@@ -653,12 +638,9 @@ class WindowsNativeDispatcher {
                                long pSecurityDescriptor,
                                int nLength) throws WindowsException
     {
-        NativeBuffer buffer = asNativeBuffer(path);
-        try {
+        try (NativeBuffer buffer = asNativeBuffer(path)) {
             return GetFileSecurity0(buffer.address(), requestedInformation,
                 pSecurityDescriptor, nLength);
-        } finally {
-            buffer.release();
         }
     }
     private static native int GetFileSecurity0(long lpFileName,
@@ -678,12 +660,9 @@ class WindowsNativeDispatcher {
                                 long pSecurityDescriptor)
         throws WindowsException
     {
-        NativeBuffer buffer = asNativeBuffer(path);
-        try {
+        try (NativeBuffer buffer = asNativeBuffer(path)) {
             // may be called with elevated privileges so always run on current thread
             SetFileSecurity0(buffer.address(), securityInformation, pSecurityDescriptor);
-        } finally {
-            buffer.release();
         }
     }
     static native void SetFileSecurity0(long lpFileName, int securityInformation,
@@ -835,11 +814,8 @@ class WindowsNativeDispatcher {
                                  long pSid,
                                  int cbSid) throws WindowsException
     {
-        NativeBuffer buffer = asNativeBuffer(accountName);
-        try {
+        try (NativeBuffer buffer = asNativeBuffer(accountName)) {
             return LookupAccountName0(buffer.address(), pSid, cbSid);
-        } finally {
-            buffer.release();
         }
     }
     private static native int LookupAccountName0(long lpAccountName, long pSid,
@@ -874,11 +850,8 @@ class WindowsNativeDispatcher {
     static long ConvertStringSidToSid(String sidString)
         throws WindowsException
     {
-        NativeBuffer buffer = asNativeBuffer(sidString);
-        try {
+        try (NativeBuffer buffer = asNativeBuffer(sidString)) {
             return ConvertStringSidToSid0(buffer.address());
-        } finally {
-            buffer.release();
         }
     }
     private static native long ConvertStringSidToSid0(long lpStringSid)
@@ -974,11 +947,8 @@ class WindowsNativeDispatcher {
     /**
      */
     static long LookupPrivilegeValue(String name) throws WindowsException {
-        NativeBuffer buffer = asNativeBuffer(name);
-        try {
+        try (NativeBuffer buffer = asNativeBuffer(name)) {
             return LookupPrivilegeValue0(buffer.address());
-        } finally {
-            buffer.release();
         }
     }
     private static native long LookupPrivilegeValue0(long lpName)
@@ -1036,13 +1006,9 @@ class WindowsNativeDispatcher {
     static void CreateHardLink(String newFile, String existingFile)
         throws WindowsException
     {
-        NativeBuffer newFileBuffer = asNativeBuffer(newFile);
-        NativeBuffer existingFileBuffer = asNativeBuffer(existingFile);
-        try {
+        try (NativeBuffer newFileBuffer = asNativeBuffer(newFile);
+             NativeBuffer existingFileBuffer = asNativeBuffer(existingFile)) {
             CreateHardLink0(newFileBuffer.address(), existingFileBuffer.address());
-        } finally {
-            existingFileBuffer.release();
-            newFileBuffer.release();
         }
     }
     private static native void CreateHardLink0(long newFileBuffer,
@@ -1057,11 +1023,8 @@ class WindowsNativeDispatcher {
      * )
      */
     static String GetFullPathName(String path) throws WindowsException {
-        NativeBuffer buffer = asNativeBuffer(path);
-        try {
+        try (NativeBuffer buffer = asNativeBuffer(path)) {
             return GetFullPathName0(buffer.address());
-        } finally {
-            buffer.release();
         }
     }
     private static native String GetFullPathName0(long pathAddress)

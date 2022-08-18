@@ -529,7 +529,7 @@ class StubGenerator: public StubCodeGenerator {
     // make sure this code is only executed if there is a pending exception
     {
       Label L;
-      __ cmpptr(Address(r15_thread, Thread::pending_exception_offset()), (int32_t) NULL);
+      __ cmpptr(Address(r15_thread, Thread::pending_exception_offset()), (int32_t) NULL_WORD);
       __ jcc(Assembler::notEqual, L);
       __ stop("StubRoutines::forward exception: no pending exception (1)");
       __ bind(L);
@@ -3566,9 +3566,9 @@ class StubGenerator: public StubCodeGenerator {
 
   // Utility routine for loading a 128-bit key word in little endian format
   // can optionally specify that the shuffle mask is already in an xmmregister
-  void load_key(XMMRegister xmmdst, Register key, int offset, XMMRegister xmm_shuf_mask=NULL) {
+  void load_key(XMMRegister xmmdst, Register key, int offset, XMMRegister xmm_shuf_mask = xnoreg) {
     __ movdqu(xmmdst, Address(key, offset));
-    if (xmm_shuf_mask != NULL) {
+    if (xmm_shuf_mask != xnoreg) {
       __ pshufb(xmmdst, xmm_shuf_mask);
     } else {
       __ pshufb(xmmdst, ExternalAddress(StubRoutines::x86::key_shuffle_mask_addr()));
@@ -4974,16 +4974,16 @@ void roundDeclast(XMMRegister xmm_reg) {
   __ vaesdeclast(xmm8, xmm8, xmm_reg, Assembler::AVX_512bit);
 }
 
-  void ev_load_key(XMMRegister xmmdst, Register key, int offset, XMMRegister xmm_shuf_mask = NULL) {
-    __ movdqu(xmmdst, Address(key, offset));
-    if (xmm_shuf_mask != NULL) {
-      __ pshufb(xmmdst, xmm_shuf_mask);
-    } else {
-      __ pshufb(xmmdst, ExternalAddress(StubRoutines::x86::key_shuffle_mask_addr()));
-    }
-    __ evshufi64x2(xmmdst, xmmdst, xmmdst, 0x0, Assembler::AVX_512bit);
-
+void ev_load_key(XMMRegister xmmdst, Register key, int offset, XMMRegister xmm_shuf_mask = xnoreg) {
+  __ movdqu(xmmdst, Address(key, offset));
+  if (xmm_shuf_mask != xnoreg) {
+    __ pshufb(xmmdst, xmm_shuf_mask);
+  } else {
+    __ pshufb(xmmdst, ExternalAddress(StubRoutines::x86::key_shuffle_mask_addr()));
   }
+  __ evshufi64x2(xmmdst, xmmdst, xmmdst, 0x0, Assembler::AVX_512bit);
+
+}
 
 address generate_cipherBlockChaining_decryptVectorAESCrypt() {
     assert(VM_Version::supports_avx512_vaes(), "need AES instructions and misaligned SSE support");
@@ -8334,11 +8334,11 @@ void fill_continuation_entry(MacroAssembler* masm, Register reg_cont_obj, Regist
 
   __ movptr(rax, Address(r15_thread, JavaThread::cont_fastpath_offset()));
   __ movptr(Address(rsp, ContinuationEntry::parent_cont_fastpath_offset()), rax);
-  __ movl(rax, Address(r15_thread, JavaThread::held_monitor_count_offset()));
-  __ movl(Address(rsp, ContinuationEntry::parent_held_monitor_count_offset()), rax);
+  __ movq(rax, Address(r15_thread, JavaThread::held_monitor_count_offset()));
+  __ movq(Address(rsp, ContinuationEntry::parent_held_monitor_count_offset()), rax);
 
   __ movptr(Address(r15_thread, JavaThread::cont_fastpath_offset()), 0);
-  __ reset_held_monitor_count();
+  __ movq(Address(r15_thread, JavaThread::held_monitor_count_offset()), 0);
 }
 
 //---------------------------- continuation_enter_cleanup ---------------------------
@@ -8363,8 +8363,8 @@ void continuation_enter_cleanup(MacroAssembler* masm) {
 
   __ movptr(rbx, Address(rsp, ContinuationEntry::parent_cont_fastpath_offset()));
   __ movptr(Address(r15_thread, JavaThread::cont_fastpath_offset()), rbx);
-  __ movl(rbx, Address(rsp, ContinuationEntry::parent_held_monitor_count_offset()));
-  __ movl(Address(r15_thread, JavaThread::held_monitor_count_offset()), rbx);
+  __ movq(rbx, Address(rsp, ContinuationEntry::parent_held_monitor_count_offset()));
+  __ movq(Address(r15_thread, JavaThread::held_monitor_count_offset()), rbx);
 
   __ movptr(rbx, Address(rsp, ContinuationEntry::parent_offset()));
   __ movptr(Address(r15_thread, JavaThread::cont_entry_offset()), rbx);

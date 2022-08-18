@@ -55,10 +55,6 @@
 #include "utilities/powerOfTwo.hpp"
 #include <sys/types.h>
 
-#ifndef PRODUCT
-#include "oops/method.hpp"
-#endif // !PRODUCT
-
 // Size of interpreter code.  Increase if too small.  Interpreter will
 // fail with a guarantee ("not enough space for interpreter generation");
 // if too small.
@@ -777,7 +773,6 @@ void TemplateInterpreterGenerator::lock_method() {
   __ str(r0, Address(esp, BasicObjectLock::obj_offset_in_bytes()));
   __ mov(c_rarg1, esp); // object address
   __ lock_object(c_rarg1);
-  __ inc_held_monitor_count(rthread);
 }
 
 // Generate a fixed interpreter frame. This is identical setup for
@@ -1496,7 +1491,6 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
       __ bind(unlock);
       __ unlock_object(c_rarg1);
-      __ dec_held_monitor_count(rthread);
     }
     __ bind(L);
   }

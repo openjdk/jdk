@@ -29,8 +29,8 @@
  *          java.base/jdk.internal.vm.annotation
  * @library /test/lib /
  * @compile Utils.java
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *
  * @run main/othervm -Xbootclasspath/a:. -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+PrintCompilation -XX:+PrintInlining -XX:+TraceDependencies -verbose:class -XX:CompileCommand=quiet
@@ -63,7 +63,7 @@ public class DefaultRootMethod {
         run(InheritedDefault.class);
 
         // Implementation limitation: CHA is not performed by C1 during inlining through MH linkers.
-        if (!sun.hotspot.code.Compiler.isC1Enabled()) {
+        if (!jdk.test.whitebox.code.Compiler.isC1Enabled()) {
             run(DefaultRoot.TestMH.class, DefaultRoot.class);
             run(InheritedDefault.TestMH.class, InheritedDefault.class);
         }

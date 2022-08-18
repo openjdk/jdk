@@ -402,17 +402,17 @@
                                 FT_Long    *result_offset );
 
 
-  CONST_FT_RFORK_RULE_ARRAY_BEGIN(ft_raccess_guess_table,
-                                  ft_raccess_guess_rec)
-  CONST_FT_RFORK_RULE_ARRAY_ENTRY(apple_double,      apple_double)
-  CONST_FT_RFORK_RULE_ARRAY_ENTRY(apple_single,      apple_single)
-  CONST_FT_RFORK_RULE_ARRAY_ENTRY(darwin_ufs_export, darwin_ufs_export)
-  CONST_FT_RFORK_RULE_ARRAY_ENTRY(darwin_newvfs,     darwin_newvfs)
-  CONST_FT_RFORK_RULE_ARRAY_ENTRY(darwin_hfsplus,    darwin_hfsplus)
-  CONST_FT_RFORK_RULE_ARRAY_ENTRY(vfat,              vfat)
-  CONST_FT_RFORK_RULE_ARRAY_ENTRY(linux_cap,         linux_cap)
-  CONST_FT_RFORK_RULE_ARRAY_ENTRY(linux_double,      linux_double)
-  CONST_FT_RFORK_RULE_ARRAY_ENTRY(linux_netatalk,    linux_netatalk)
+  CONST_FT_RFORK_RULE_ARRAY_BEGIN( ft_raccess_guess_table,
+                                                      ft_raccess_guess_rec )
+  CONST_FT_RFORK_RULE_ARRAY_ENTRY( apple_double,      apple_double )
+  CONST_FT_RFORK_RULE_ARRAY_ENTRY( apple_single,      apple_single )
+  CONST_FT_RFORK_RULE_ARRAY_ENTRY( darwin_ufs_export, darwin_ufs_export )
+  CONST_FT_RFORK_RULE_ARRAY_ENTRY( darwin_newvfs,     darwin_newvfs )
+  CONST_FT_RFORK_RULE_ARRAY_ENTRY( darwin_hfsplus,    darwin_hfsplus )
+  CONST_FT_RFORK_RULE_ARRAY_ENTRY( vfat,              vfat )
+  CONST_FT_RFORK_RULE_ARRAY_ENTRY( linux_cap,         linux_cap )
+  CONST_FT_RFORK_RULE_ARRAY_ENTRY( linux_double,      linux_double )
+  CONST_FT_RFORK_RULE_ARRAY_ENTRY( linux_netatalk,    linux_netatalk )
   CONST_FT_RFORK_RULE_ARRAY_END
 
 
