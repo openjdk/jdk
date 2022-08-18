@@ -49,7 +49,6 @@ public class CDSStreamTestDriver extends DynamicArchiveTestBase {
 
     private static final String classDir = System.getProperty("test.classes");
     private static final String mainClass = "TestStreamApp";
-    private static final String javaClassPath = System.getProperty("java.class.path");
     private static final String ps = System.getProperty("path.separator");
     private static final String skippedException = "jtreg.SkippedException: Unable to map shared archive: test did not complete";
 
@@ -57,14 +56,7 @@ public class CDSStreamTestDriver extends DynamicArchiveTestBase {
         String topArchiveName = getNewArchiveName();
         String appJar = JarBuilder.build("streamapp", new File(classDir), null);
 
-        String[] classPaths = javaClassPath.split(File.pathSeparator);
-        String testngJar = null;
-        for (String path : classPaths) {
-            if (path.endsWith("testng.jar")) {
-                testngJar = path;
-                break;
-            }
-        }
+        String testngJar = Path.of(Test.class.getProtectionDomain().getCodeSource().getLocation().toURI()).toString();
 
         String[] testClassNames = { "CustomFJPoolTest" };
 
