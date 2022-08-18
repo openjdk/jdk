@@ -79,7 +79,7 @@ public class TestMemoryAwareness {
                 "1G", Integer.toString(((int) Math.pow(2, 20)) * 1024),
                 "1500M", Integer.toString(((int) Math.pow(2, 20)) * (1500 - 1024))
             );
-            testBadMemoryLimit();
+            testContainerMemExceedsPhysical();
         } finally {
             if (!DockerTestUtils.RETAIN_IMAGE_AFTER_TEST) {
                 DockerTestUtils.removeDockerImage(imageName);
@@ -106,7 +106,7 @@ public class TestMemoryAwareness {
     // let the host's physical memory be P; request 2P memory in the container.
     // set java's InitialRAMPercentage to 25%, and check the calculated InitialHeapSize
     // to see if that was calculated relative to P (P/4) or 2P (P/2).
-    private static void testBadMemoryLimit()
+    private static void testContainerMemExceedsPhysical()
             throws Exception {
 
         com.sun.management.OperatingSystemMXBean os = (com.sun.management.OperatingSystemMXBean) ManagementFactory.getOperatingSystemMXBean();
