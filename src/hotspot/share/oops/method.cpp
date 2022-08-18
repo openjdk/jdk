@@ -2451,80 +2451,60 @@ void Method::print_value_on(outputStream* st) const {
 // LogTouchedMethods and PrintTouchedMethods
 
 // TouchedMethodRecord -- we can't use a HashtableEntry<Method*> because
-// the Method may be garbage collected. Let's roll our own hash table.
-class TouchedMethodRecord : CHeapObj<mtTracing> {
-public:
+// the Method may be garbage collected.
+struct TouchedMethodRecord {
   // It's OK to store Symbols here because they will NOT be GC'ed if
   // LogTouchedMethods is enabled.
-  TouchedMethodRecord* _next;
   Symbol* _class_name;
   Symbol* _method_name;
   Symbol* _method_signature;
+  TouchedMethodRecord(Method* method) : _class_name(method->klass_name()), _method_name(method->name()),
+                                        _method_signature(method->signature()) {
+    _class_name->increment_refcount();
+    _method_name->increment_refcount();
+    _method_signature->increment_refcount();
+  }
+  static unsigned int compute_hash(const TouchedMethodRecord& record) {
+    return record._class_name->identity_hash() +
+           record._method_name->identity_hash() +
+           record._method_signature->identity_hash();
+  }
+  static bool compare_entries(const TouchedMethodRecord& record, const TouchedMethodRecord& rhs) {
+    return (record._class_name       == rhs._class_name &&
+            record._method_name      == rhs._method_name &&
+            record._method_signature == rhs._method_signature);
+  }
 };
 
-static const int TOUCHED_METHOD_TABLE_SIZE = 20011;
-static TouchedMethodRecord** _touched_method_table = NULL;
+using TouchedMethodTable = ResourceHashtable<const TouchedMethodRecord, int, 20011, ResourceObj::C_HEAP, mtClassShared,
+                                             TouchedMethodRecord::compute_hash, TouchedMethodRecord::compare_entries>;
+static TouchedMethodTable* _touched_method_table = nullptr;
 
 void Method::log_touched(Thread* current) {
 
-  const int table_size = TOUCHED_METHOD_TABLE_SIZE;
-  Symbol* my_class = klass_name();
-  Symbol* my_name  = name();
-  Symbol* my_sig   = signature();
-
-  unsigned int hash = my_class->identity_hash() +
-                      my_name->identity_hash() +
-                      my_sig->identity_hash();
-  juint index = juint(hash) % table_size;
-
   MutexLocker ml(current, TouchedMethodLog_lock);
   if (_touched_method_table == NULL) {
-    _touched_method_table = NEW_C_HEAP_ARRAY2(TouchedMethodRecord*, table_size,
-                                              mtTracing, CURRENT_PC);
-    memset(_touched_method_table, 0, sizeof(TouchedMethodRecord*)*table_size);
+    _touched_method_table = new (ResourceObj::C_HEAP, mtClassShared) TouchedMethodTable();
   }
 
-  TouchedMethodRecord* ptr = _touched_method_table[index];
-  while (ptr) {
-    if (ptr->_class_name       == my_class &&
-        ptr->_method_name      == my_name &&
-        ptr->_method_signature == my_sig) {
-      return;
-    }
-    if (ptr->_next == NULL) break;
-    ptr = ptr->_next;
-  }
-  TouchedMethodRecord* nptr = NEW_C_HEAP_OBJ(TouchedMethodRecord, mtTracing);
-  my_class->increment_refcount();
-  my_name->increment_refcount();
-  my_sig->increment_refcount();
-  nptr->_class_name         = my_class;
-  nptr->_method_name        = my_name;
-  nptr->_method_signature   = my_sig;
-  nptr->_next               = NULL;
-
-  if (ptr == NULL) {
-    // first
-    _touched_method_table[index] = nptr;
-  } else {
-    ptr->_next = nptr;
-  }
+  TouchedMethodRecord record(this);
+  bool created;
+  _touched_method_table->put_if_absent(record, &created);
+  // Could keep a count in value.
 }
 
 void Method::print_touched_methods(outputStream* out) {
   MutexLocker ml(Thread::current()->is_VM_thread() ? NULL : TouchedMethodLog_lock);
   out->print_cr("# Method::print_touched_methods version 1");
-  if (_touched_method_table) {
-    for (int i = 0; i < TOUCHED_METHOD_TABLE_SIZE; i++) {
-      TouchedMethodRecord* ptr = _touched_method_table[i];
-      while(ptr) {
-        ptr->_class_name->print_symbol_on(out);       out->print(".");
-        ptr->_method_name->print_symbol_on(out);      out->print(":");
-        ptr->_method_signature->print_symbol_on(out); out->cr();
-        ptr = ptr->_next;
-      }
-    }
-  }
+  assert(_touched_method_table != nullptr, "shouldn't call this");
+  ResourceMark rm;
+
+  auto print = [&] (const TouchedMethodRecord& record, int& value) {
+        record._class_name->print_symbol_on(out);       out->print(".");
+        record._method_name->print_symbol_on(out);      out->print(":");
+        record._method_signature->print_symbol_on(out); out->cr();
+  };
+  _touched_method_table->iterate_all(print);
 }
 
 // Verification
