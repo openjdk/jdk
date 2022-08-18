@@ -34,7 +34,6 @@
 #include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"
 #include "utilities/bitMap.inline.hpp"
-#include "utilities/concurrentHashTable.hpp"
 #include "utilities/concurrentHashTable.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
 

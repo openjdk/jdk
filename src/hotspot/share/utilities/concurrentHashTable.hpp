@@ -43,7 +43,7 @@ class ConcurrentHashTable : public CHeapObj<F> {
   typedef typename CONFIG::Value VALUE;
  private:
   // _stats_rate is null if statistics are not enabled.
-  TableRateStatistics* _stats_rate  = nullptr;
+  TableRateStatistics* _stats_rate;
   void safe_stats_add() {
     if (_stats_rate != nullptr) {
       _stats_rate->add();
@@ -395,11 +395,11 @@ class ConcurrentHashTable : public CHeapObj<F> {
   ConcurrentHashTable(size_t log2size = DEFAULT_START_SIZE_LOG2,
                       size_t log2size_limit = DEFAULT_MAX_SIZE_LOG2,
                       size_t grow_hint = DEFAULT_GROW_HINT,
-                      void* context = nullptr,
-                      bool enable_statistics = DEFAULT_ENABLE_STATISTICS);
+                      bool enable_statistics = DEFAULT_ENABLE_STATISTICS,
+                      void* context = nullptr);
 
   explicit ConcurrentHashTable(void* context, size_t log2size = DEFAULT_START_SIZE_LOG2, bool enable_statistics = DEFAULT_ENABLE_STATISTICS) :
-    ConcurrentHashTable(log2size, DEFAULT_MAX_SIZE_LOG2, DEFAULT_GROW_HINT, context, enable_statistics) {}
+    ConcurrentHashTable(log2size, DEFAULT_MAX_SIZE_LOG2, DEFAULT_GROW_HINT, enable_statistics, context) {}
 
   ~ConcurrentHashTable();
 

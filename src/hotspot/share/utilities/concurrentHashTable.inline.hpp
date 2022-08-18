@@ -1007,7 +1007,7 @@ inline size_t ConcurrentHashTable<CONFIG, F>::
 // Constructor
 template <typename CONFIG, MEMFLAGS F>
 inline ConcurrentHashTable<CONFIG, F>::
-ConcurrentHashTable(size_t log2size, size_t log2size_limit, size_t grow_hint, void* context, bool enable_statistics)
+ConcurrentHashTable(size_t log2size, size_t log2size_limit, size_t grow_hint, bool enable_statistics, void* context)
     : _context(context), _new_table(NULL), _log2_size_limit(log2size_limit),
       _log2_start_size(log2size), _grow_hint(grow_hint),
       _size_limit_reached(false), _resize_lock_owner(NULL),
@@ -1015,6 +1015,8 @@ ConcurrentHashTable(size_t log2size, size_t log2size_limit, size_t grow_hint, vo
 {
   if (enable_statistics) {
     _stats_rate = new TableRateStatistics();
+  } else {
+    _stats_rate = nullptr;
   }
   _resize_lock =
     new Mutex(Mutex::nosafepoint-2, "ConcurrentHashTableResize_lock");
