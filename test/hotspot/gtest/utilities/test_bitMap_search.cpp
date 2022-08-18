@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "memory/resourceArea.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -255,4 +256,208 @@ TEST(BitMap, search) {
       }
     }
   }
+}
+
+struct BitMapTestSetter {
+  ResourceBitMap* _bm;
+  idx_t           _bit;
+  bool            _already_set;
+
+  BitMapTestSetter(ResourceBitMap* bm, idx_t bit) : _bm(bm), _bit(bit), _already_set(_bm->at(_bit)) {
+    if (!_already_set) {
+      _bm->set_bit(_bit);
+    }
+  }
+  ~BitMapTestSetter() {
+    if (!_already_set) {
+      _bm->clear_bit(_bit);
+    }
+  }
+};
+
+struct BitMapTestClearer {
+  ResourceBitMap* _bm;
+  idx_t           _bit;
+  bool            _already_cleared;
+
+  BitMapTestClearer(ResourceBitMap* bm, idx_t bit) : _bm(bm), _bit(bit), _already_cleared(!_bm->at(_bit)) {
+    if (!_already_cleared) {
+      _bm->clear_bit(_bit);
+    }
+  }
+  ~BitMapTestClearer() {
+    if (!_already_cleared) {
+      _bm->set_bit(_bit);
+    }
+  }
+};
+
+TEST_VM(BitMap, get_prev_one_offset) {
+  ResourceMark rm;
+  const size_t word_size = sizeof(bm_word_t) * BitsPerByte;
+  const idx_t size = 4 * word_size;
+  ResourceBitMap bm(size, true /* clear */);
+
+#define ASSERT_MSG "l_index: " << l_index << " r_index: " << r_index << " l_bit: " << l_bit << " r_bit: " << r_bit
+
+  // Using "size" takes too long time. Change this if you want more extensive testing
+  idx_t test_size = word_size * 2;
+
+  for (idx_t l_index = 0; l_index < test_size - 1; l_index++) {
+    for (idx_t r_index = l_index; r_index < test_size; r_index++) {
+      for (idx_t l_bit = 0; l_bit < test_size - 1; l_bit++) {
+        BitMapTestSetter l_bit_setter(&bm, l_bit);
+        for (idx_t r_bit = l_bit; r_bit < test_size; r_bit++) {
+          BitMapTestSetter r_bit_setter(&bm, r_bit);
+          if (l_index <= r_bit && r_bit < r_index) {
+            // r_bit is within range; expect to find it
+            ASSERT_EQ(bm.get_prev_one_offset(l_index, r_index), r_bit) << ASSERT_MSG;
+            ASSERT_EQ(bm.get_prev_one_offset(r_index), r_bit) << ASSERT_MSG;
+          } else if (l_index <= l_bit && l_bit < r_index) {
+            // r_bit is out-of-range while l_bit is within range; expect to find it
+            ASSERT_EQ(bm.get_prev_one_offset(l_index, r_index), l_bit) << ASSERT_MSG;
+            ASSERT_EQ(bm.get_prev_one_offset(r_index), l_bit) << ASSERT_MSG;
+          } else {
+            // No bit in range; expect to find nothing
+            ASSERT_EQ(bm.get_prev_one_offset(l_index, r_index), idx_t(-1)) << ASSERT_MSG;
+          }
+        }
+      }
+    }
+  }
+
+  bm.at_put_range(0, test_size, true);
+  for (idx_t l_index = 0; l_index < test_size - 1; l_index++) {
+    for (idx_t r_index = l_index + 1; r_index < word_size; r_index++) {
+      ASSERT_EQ(bm.get_prev_one_offset(l_index, r_index), r_index - 1);
+    }
+  }
+}
+
+TEST_VM(BitMap, get_prev_one_offset_aligned_left) {
+  ResourceMark rm;
+  const size_t word_size = sizeof(bm_word_t) * BitsPerByte;
+  const size_t size = 4 * word_size;
+  ResourceBitMap bm(size, true /* clear */);
+
+#define ASSERT_MSG "l_index: " << l_index << " r_index: " << r_index << " l_bit: " << l_bit << " r_bit: " << r_bit
+
+  // Using "size" takes too long time. Change this if you want more extensive testing
+  idx_t test_size = word_size * 2;
+
+  for (idx_t l_index = 0; l_index < test_size - 1; l_index += BitsPerWord) {
+    for (idx_t r_index = l_index; r_index < test_size - 1; r_index++) {
+      for (idx_t l_bit = 0; l_bit < test_size - 1; l_bit++) {
+        BitMapTestSetter l_bit_setter(&bm, l_bit);
+        for (idx_t r_bit = l_bit; r_bit < test_size - 1; r_bit++) {
+          BitMapTestSetter r_bit_setter(&bm, r_bit);
+          if (l_index <= r_bit && r_bit < r_index) {
+            // r_bit is within range; expect to find it
+            ASSERT_EQ(bm.get_prev_one_offset_aligned_left(l_index, r_index), r_bit) << ASSERT_MSG;
+          } else if (l_index <= l_bit && l_bit < r_index) {
+            // r_bit is out-of-range while l_bit is within range; expect to find it
+            ASSERT_EQ(bm.get_prev_one_offset_aligned_left(l_index, r_index), l_bit) << ASSERT_MSG;
+          } else {
+            // No bit in range; expect to find nothing
+            ASSERT_EQ(bm.get_prev_one_offset_aligned_left(l_index, r_index), size_t(-1)) << ASSERT_MSG;
+          }
+        }
+      }
+    }
+  }
+
+  bm.at_put_range(0, test_size, true);
+  for (idx_t l_index = 0; l_index < test_size - 1; l_index++) {
+    for (idx_t r_index = l_index + 1; r_index <= test_size; r_index++) {
+      ASSERT_EQ(bm.get_prev_one_offset(l_index, r_index), r_index - 1);
+    }
+  }
+}
+
+TEST_VM(BitMap, get_prev_zero_offset) {
+  ResourceMark rm;
+  const size_t word_size = sizeof(BitMap::bm_word_t) * BitsPerByte;
+  const idx_t size = 4 * word_size;
+  ResourceBitMap bm(size, true /* clear */);
+
+  bm.set_range(0, bm.size());
+
+#define ASSERT_MSG "l_index: " << l_index << " r_index: " << r_index << " l_bit: " << l_bit << " r_bit: " << r_bit
+
+  // Using "size" takes too long time. Change this if you want more extensive testing
+  idx_t test_size = word_size * 2;
+
+  for (idx_t l_index = 0; l_index < test_size - 1; l_index++) {
+    for (idx_t r_index = l_index; r_index < test_size - 1; r_index++) {
+      for (idx_t l_bit = 0; l_bit < test_size - 1; l_bit++) {
+        BitMapTestClearer l_bit_clearer(&bm, l_bit);
+        for (idx_t r_bit = l_bit; r_bit < test_size - 1; r_bit++) {
+          BitMapTestClearer r_bit_clearer(&bm, r_bit);
+          if (l_index <= r_bit && r_bit < r_index) {
+            // r_bit is within range; expect to find it
+            ASSERT_EQ(bm.get_prev_zero_offset(l_index, r_index), r_bit) << ASSERT_MSG;
+            ASSERT_EQ(bm.get_prev_zero_offset(r_index), r_bit) << ASSERT_MSG;
+          } else if (l_index <= l_bit && l_bit < r_index) {
+            // r_bit is out-of-range while l_bit is within range; expect to find it
+            ASSERT_EQ(bm.get_prev_zero_offset(l_index, r_index), l_bit) << ASSERT_MSG;
+            ASSERT_EQ(bm.get_prev_zero_offset(r_index), l_bit) << ASSERT_MSG;
+          } else {
+            // No bit in range; expect to find nothing
+            ASSERT_EQ(bm.get_prev_zero_offset(l_index, r_index), size_t(-1)) << ASSERT_MSG;
+          }
+        }
+      }
+    }
+  }
+
+  bm.at_put_range(0, test_size, false);
+  for (idx_t l_index = 0; l_index < test_size - 1; l_index++) {
+    for (idx_t r_index = l_index + 1; r_index <= test_size; r_index++) {
+      ASSERT_EQ(bm.get_prev_zero_offset(l_index, r_index), r_index - 1) << "l_index: " << l_index << " r_index: " << r_index;
+    }
+  }
+
+#undef ASSERT_MSG
+}
+
+TEST_VM(BitMap, get_prev_one_offset_empty) {
+  ResourceMark rm;
+  const size_t word_size = sizeof(BitMap::bm_word_t) * BitsPerByte;
+  const idx_t size = 4 * word_size;
+  ResourceBitMap bm(size, true /* clear */);
+
+#define ASSERT_MSG "l_index: " << l_index << " r_index: " << r_index
+
+  // Using "size" takes too long time. Change this if you want more extensive testing
+  size_t test_size = word_size * 2;
+
+  for (idx_t l_index = 0; l_index < test_size - 1; l_index++) {
+    for (idx_t r_index = l_index; r_index < test_size; r_index++) {
+      ASSERT_EQ(bm.get_prev_one_offset(l_index, r_index), idx_t(-1)) << ASSERT_MSG;
+    }
+  }
+
+#undef ASSERT_MSG
+}
+
+TEST_VM(BitMap, get_prev_zero_offset_empty) {
+  ResourceMark rm;
+  const size_t word_size = sizeof(BitMap::bm_word_t) * BitsPerByte;
+  const idx_t size = 4 * word_size;
+  ResourceBitMap bm(size, true /* clear */);
+
+  bm.set_range(0, bm.size());
+
+#define ASSERT_MSG "l_index: " << l_index << " r_index: " << r_index
+
+  // Using "size" takes too long time. Change this if you want more extensive testing
+  idx_t test_size = word_size * 2;
+
+  for (idx_t l_index = 0; l_index < test_size - 1; l_index++) {
+    for (idx_t r_index = l_index; r_index < test_size - 1; r_index++) {
+      ASSERT_EQ(bm.get_prev_zero_offset(l_index, r_index), idx_t(-1)) << ASSERT_MSG;
+    }
+  }
+
+#undef ASSERT_MSG
 }
