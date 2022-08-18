@@ -59,7 +59,6 @@ class os::Linux {
 
   static julong available_memory();
   static julong physical_memory() { return _physical_memory; }
-  static void set_physical_memory(julong phys_mem) { _physical_memory = phys_mem; }
   static int active_processor_count();
 
   static void initialize_system_info();
