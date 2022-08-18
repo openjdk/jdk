@@ -219,8 +219,8 @@ julong os::physical_memory() {
   jlong phys_mem = Linux::physical_memory();
 
   if (OSContainer::is_containerized()) {
-    jlong mem_limit;
-    if ((mem_limit = OSContainer::memory_limit_in_bytes()) > 0 && mem_limit < phys_mem) {
+    jlong mem_limit = OSContainer::memory_limit_in_bytes();
+    if (mem_limit > 0 && mem_limit < phys_mem) {
       log_trace(os)("total container memory: " JLONG_FORMAT, mem_limit);
       return mem_limit;
     }
