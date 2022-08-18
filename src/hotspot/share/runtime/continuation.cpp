@@ -62,22 +62,12 @@ ContinuationEntry* Continuation::get_continuation_entry_for_continuation(JavaThr
     return nullptr;
   }
 
-  // Can't read the continuation oop in the entry, unless we know that the stack watermark processing has fixed the oop.
-  // serviceability/jvmti/stress/StackTrace/NotSuspended/GetStackTraceNotSuspendedStressTest.java provokes this error
-#if 0
   for (ContinuationEntry* entry = thread->last_continuation(); entry != nullptr; entry = entry->parent()) {
     if (continuation == entry->cont_oop(thread)) {
       return entry;
     }
   }
   return nullptr;
-#endif
-
-  // For now, only support one continuation entry:
-  ContinuationEntry* entry = thread->last_continuation();
-  assert(entry == nullptr || entry->parent() == nullptr, "Not yet implemented");
-  return entry;
-
 }
 
 static bool is_on_stack(JavaThread* thread, const ContinuationEntry* entry) {
@@ -173,10 +163,6 @@ frame Continuation::top_frame(const frame& callee, RegisterMap* map) {
   assert(map != nullptr, "");
   ContinuationEntry* ce = get_continuation_entry_for_sp(map->thread(), callee.sp());
   assert(ce != nullptr, "");
-
-  // Needed to update ContinuationEntry oops.
-  ce->flush_stack_processing(map->thread());
-
   oop continuation = ce->cont_oop(map->thread());
   ContinuationWrapper cont(continuation);
   return continuation_top_frame(cont, map);

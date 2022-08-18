@@ -94,8 +94,6 @@ LiveFrameStream::LiveFrameStream(JavaThread* thread, RegisterMap* rm, Handle con
     if (cont.is_null()) {
       _jvf  = thread->last_java_vframe(rm);
       _cont_entry = thread->last_continuation();
-          // Make sure oops in entry are accessible
-      _cont_entry->flush_stack_processing(thread);
     } else {
       _jvf  = Continuation::last_java_vframe(cont, rm);
       _cont_entry = NULL;

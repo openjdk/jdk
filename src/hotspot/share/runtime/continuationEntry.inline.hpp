@@ -34,7 +34,7 @@
 
 #include CPU_HEADER_INLINE(continuationEntry)
 
-inline bool is_stack_watermark_processed(const JavaThread* thread, const void* addr) {
+inline bool is_stack_watermark_processing_started(const JavaThread* thread, const void* addr) {
   StackWatermark* sw = StackWatermarkSet::get(const_cast<JavaThread*>(thread), StackWatermarkKind::gc);
 
   if (sw == nullptr) {
@@ -42,22 +42,12 @@ inline bool is_stack_watermark_processed(const JavaThread* thread, const void* a
     return true;
   }
 
-  if (!sw->processing_started()) {
-    return false;
-  }
-
-  uintptr_t watermark = sw->watermark();
-  if (watermark == 0) {
-    // completed
-    return true;
-  }
-
-  return uintptr_t(addr) <= watermark;
+  return sw->processing_started();
 }
 
 inline oop ContinuationEntry::cont_oop(const JavaThread* thread) const {
   assert(!Universe::heap()->is_in((void*)&_cont), "Should not be in the heap");
-  assert(is_stack_watermark_processed(thread != nullptr ? thread : JavaThread::current(), &_cont), "Not processed");
+  assert(is_stack_watermark_processing_started(thread != nullptr ? thread : JavaThread::current(), &_cont), "Not processed");
   return *(oop*)&_cont;
 }
 
