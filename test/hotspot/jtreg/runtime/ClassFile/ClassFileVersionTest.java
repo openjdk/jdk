@@ -66,8 +66,7 @@ public class ClassFileVersionTest {
         m = cl.getDeclaredMethod("getClassFileVersion", new Class[0]);
         m.setAccessible(true);
 
-        // Class file version is stored like "64.0".
-        int latestMajor = (int)Double.parseDouble(System.getProperty("java.class.version"));
+        int latestMajor = ClassFileFormatVersion.latest().major();
 
         testIt(Object.class, latestMajor);
         // ClassFileVersionTest use preview features so its minor version should be 0xFFFF

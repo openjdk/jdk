@@ -327,7 +327,7 @@ final class SupportedGroupsExtension {
      * the ClientHello handshake message.
      */
     private static final class CHSupportedGroupsProducer
-            extends SupportedGroups implements HandshakeProducer {
+            implements HandshakeProducer {
         // Prevent instantiation of this class.
         private CHSupportedGroupsProducer() {
             // blank
@@ -472,7 +472,7 @@ final class SupportedGroupsExtension {
      * the EncryptedExtensions handshake message.
      */
     private static final class EESupportedGroupsProducer
-            extends SupportedGroups implements HandshakeProducer {
+            implements HandshakeProducer {
 
         // Prevent instantiation of this class.
         private EESupportedGroupsProducer() {
