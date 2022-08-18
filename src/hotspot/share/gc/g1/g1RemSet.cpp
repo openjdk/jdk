@@ -1657,7 +1657,7 @@ bool G1RemSet::clean_card_before_refine(CardValue** const card_ptr_addr) {
   //   * a pointer to a "hot" card that was evicted from the "hot" cache.
   //
 
-  if (_hot_card_cache->use_cache()) {
+  if (G1HotCardCache::default_use_cache()) {
     assert(!SafepointSynchronize::is_at_safepoint(), "sanity");
 
     const CardValue* orig_card_ptr = card_ptr;

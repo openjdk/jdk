@@ -58,8 +58,6 @@ public:
 private:
   G1CollectedHeap*  _g1h;
 
-  bool              _use_cache;
-
   G1CardCounts      _card_counts;
 
 
@@ -98,12 +96,6 @@ private:
   ~G1HotCardCache();
 
   void initialize(G1RegionToSpaceMapper* card_counts_storage);
-
-  bool use_cache() { return _use_cache; }
-
-  void set_use_cache(bool b) {
-    _use_cache = (b ? default_use_cache() : false);
-  }
 
   // Returns the card to be refined or NULL.
   //
