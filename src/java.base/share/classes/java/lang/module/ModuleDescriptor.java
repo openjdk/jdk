@@ -214,7 +214,7 @@ public class ModuleDescriptor
 
         /**
          * {@return an unmodifiable set of the module {@linkplain AccessFlag
-         * requires flags, possibly empty}}
+         * requires flags}, possibly empty}
          * @see #modifiers()
          * @jvms 4.7.25 The Module Attribute
          * @since 20
