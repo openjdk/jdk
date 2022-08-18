@@ -31,6 +31,8 @@
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/growableArray.hpp"
+#include "utilities/linkedlist.hpp"
+#include "utilities/resizeableResourceHash.hpp"
 #include "utilities/macros.hpp"
 
 class PhaseCFG;
@@ -398,6 +400,9 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
     SECT_LIMIT, SECT_NONE = -1
   };
 
+  typedef LinkedListImpl<int> Offsets;
+  typedef ResizeableResourceHashtable<address, Offsets> SharedTrampolineRequests;
+
  private:
   enum {
     sect_bits = 2,      // assert (SECT_LIMIT <= (1<<sect_bits))
@@ -424,6 +429,7 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
   address      _last_insn;      // used to merge consecutive memory barriers, loads or stores.
 
   SharedStubToInterpRequests* _shared_stub_to_interp_requests; // used to collect requests for shared iterpreter stubs
+  SharedTrampolineRequests*   _shared_trampoline_requests;     // used to collect requests for shared trampolines
   bool         _finalize_stubs; // Indicate if we need to finalize stubs to make CodeBuffer final.
 
 #ifndef PRODUCT
@@ -445,6 +451,7 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
     _last_insn       = NULL;
     _finalize_stubs  = false;
     _shared_stub_to_interp_requests = NULL;
+    _shared_trampoline_requests = NULL;
 
 #ifndef PRODUCT
     _decode_begin    = NULL;
