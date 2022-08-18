@@ -191,7 +191,6 @@ private:
     if (o == NULL) {
       return NULL;
     } else {
-#ifndef PRODUCT
       if (ReplayCompiles && o->is_klass()) {
         Klass* k = (Klass*)o;
         if (k->is_instance_klass() && ciReplay::is_klass_unresolved((InstanceKlass*)k)) {
@@ -199,7 +198,6 @@ private:
           return ciEnv::_unloaded_ciinstance_klass;
         }
       }
-#endif
       return _factory->get_metadata(o);
     }
   }

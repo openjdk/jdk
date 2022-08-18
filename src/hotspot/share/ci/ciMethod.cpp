@@ -155,11 +155,9 @@ ciMethod::ciMethod(const methodHandle& h_m, ciInstanceKlass* holder) :
   if (_interpreter_invocation_count == 0)
     _interpreter_invocation_count = 1;
   _instructions_size = -1;
-#ifdef ASSERT
   if (ReplayCompiles) {
     ciReplay::initialize(this);
   }
-#endif
 }
 
 
