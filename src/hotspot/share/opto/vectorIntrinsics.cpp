@@ -1807,8 +1807,7 @@ bool LibraryCallKit::inline_vector_test() {
                                                  opd1->bottom_type()->isa_vectmask())) {
     opd2 = opd1;
   }
-  Node* cmp = new VectorTestNode(opd1, opd2, booltest);
-  cmp = gvn().transform(cmp);
+  Node* cmp = gvn.transform(new VectorTestNode(opd1, opd2, booltest));
   BoolTest::mask test = Matcher::vectortest_mask(booltest == BoolTest::overflow,
                                                  opd1->bottom_type()->isa_vectmask(), num_elem);
   Node* bol = gvn().transform(new BoolNode(cmp, test));
