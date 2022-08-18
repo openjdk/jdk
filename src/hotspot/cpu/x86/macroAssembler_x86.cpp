@@ -1155,8 +1155,8 @@ void MacroAssembler::addpd(XMMRegister dst, AddressLiteral src, Register rscratc
   if (reachable(src)) {
     Assembler::addpd(dst, as_Address(src));
   } else {
-    lea(rscratch1, src);
-    Assembler::addpd(dst, Address(rscratch1, 0));
+    lea(rscratch, src);
+    Assembler::addpd(dst, Address(rscratch, 0));
   }
 }
 
@@ -2140,8 +2140,8 @@ void MacroAssembler::mulpd(XMMRegister dst, AddressLiteral src, Register rscratc
   if (reachable(src)) {
     Assembler::mulpd(dst, as_Address(src));
   } else {
-    lea(rscratch1, src);
-    Assembler::mulpd(dst, Address(rscratch1, 0));
+    lea(rscratch, src);
+    Assembler::mulpd(dst, Address(rscratch, 0));
   }
 }
 
@@ -2486,8 +2486,8 @@ void MacroAssembler::movdl(XMMRegister dst, AddressLiteral src, Register rscratc
   if (reachable(src)) {
     movdl(dst, as_Address(src));
   } else {
-    lea(rscratch1, src);
-    movdl(dst, Address(rscratch1, 0));
+    lea(rscratch, src);
+    movdl(dst, Address(rscratch, 0));
   }
 }
 
@@ -2496,8 +2496,8 @@ void MacroAssembler::movq(XMMRegister dst, AddressLiteral src, Register rscratch
   if (reachable(src)) {
     movq(dst, as_Address(src));
   } else {
-    lea(rscratch1, src);
-    movq(dst, Address(rscratch1, 0));
+    lea(rscratch, src);
+    movq(dst, Address(rscratch, 0));
   }
 }
 
@@ -2772,8 +2772,8 @@ void MacroAssembler::mulsd(XMMRegister dst, AddressLiteral src, Register rscratc
   if (reachable(src)) {
     Assembler::mulsd(dst, as_Address(src));
   } else {
-    lea(rscratch1, src);
-    Assembler::mulsd(dst, Address(rscratch1, 0));
+    lea(rscratch, src);
+    Assembler::mulsd(dst, Address(rscratch, 0));
   }
 }
 
