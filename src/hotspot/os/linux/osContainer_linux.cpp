@@ -43,8 +43,6 @@ CgroupSubsystem* cgroup_subsystem;
  * we are running under cgroup control.
  */
 void OSContainer::init() {
-  jlong host_memory = os::Linux::physical_memory();
-
   assert(!_is_initialized, "Initializing OSContainer more than once");
 
   _is_initialized = true;
