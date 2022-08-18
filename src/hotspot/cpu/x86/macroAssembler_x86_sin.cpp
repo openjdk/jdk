@@ -2076,8 +2076,8 @@ ATTRIBUTE_ALIGNED(16) juint _static_const_table_sin[] =
 };
 
 void MacroAssembler::fast_sin(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3,
-		              XMMRegister xmm4, XMMRegister xmm5, XMMRegister xmm6, XMMRegister xmm7,
-			      Register eax, Register ebx, Register edx) {
+                              XMMRegister xmm4, XMMRegister xmm5, XMMRegister xmm6, XMMRegister xmm7,
+                              Register eax, Register ebx, Register edx) {
 
   Label L_2TAG_PACKET_0_0_2, L_2TAG_PACKET_1_0_2, L_2TAG_PACKET_2_0_2, L_2TAG_PACKET_3_0_2;
   Label L_2TAG_PACKET_4_0_2;
