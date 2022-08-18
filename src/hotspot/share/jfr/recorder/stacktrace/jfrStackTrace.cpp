@@ -149,15 +149,19 @@ class JfrVframeStream : public vframeStreamCommon {
 };
 
 JfrVframeStream::JfrVframeStream(JavaThread* jt, const frame& fr, bool stop_at_java_call_stub, bool async_mode) :
-  // NOTE: walk_cont is false, because of interactions with ZGC relocation and
-  //       load barriers. This code is run while generating stack traces for
+  // NOTE: WalkContinuation::skip, because of interactions with ZGC relocation
+  //       and load barriers. This code is run while generating stack traces for
   //       the ZPage allocation event, even when ZGC is relocating  objects.
-  //       When ZGC is relocating, it is forbidden to run code that performes
-  //       load barriers. With walk_cont == true, we visit heap stack cunks
-  //       and could be using load barriers.
+  //       When ZGC is relocating, it is forbidden to run code that performs
+  //       load barriers. With WalkContinuation::include, we visit heap stack
+  //       chunks and could be using load barriers.
   //
-  // There might be an opportunity here to only set walk_cont == false, when we execute within ZGC relocation.
-  vframeStreamCommon(RegisterMap(jt, false, false, false /* walk_cont */)), _cont_entry(JfrThreadLocal::is_vthread(jt) ? jt->last_continuation() : nullptr),
+  // There might be an opportunity here to only have WalkContinuation::skip, when we execute within ZGC relocation.
+  vframeStreamCommon(RegisterMap(jt,
+                                 RegisterMap::UpdateMap::skip,
+                                 RegisterMap::ProcessFrames::skip,
+                                 RegisterMap::WalkContinuation::skip)),
+    _cont_entry(JfrThreadLocal::is_vthread(jt) ? jt->last_continuation() : nullptr),
     _async_mode(async_mode), _vthread(JfrThreadLocal::is_vthread(jt)) {
   assert(!_vthread || _cont_entry != nullptr, "invariant");
   _reg_map.set_async(async_mode);

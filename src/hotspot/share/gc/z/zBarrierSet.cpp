@@ -108,7 +108,9 @@ void ZBarrierSet::on_thread_detach(Thread* thread) {
 
 void ZBarrierSet::on_slowpath_allocation_exit(JavaThread* thread, oop new_obj) {
   if (ZHeap::heap()->is_old(to_zaddress(new_obj))) {
-    RegisterMap reg_map(thread, false);
+    RegisterMap reg_map(thread, RegisterMap::UpdateMap::skip,
+                                RegisterMap::ProcessFrames::include,
+                                RegisterMap::WalkContinuation::skip);
     frame runtime_frame = thread->last_frame();
     assert(runtime_frame.is_runtime_frame(), "must be runtime frame");
     frame caller_frame = runtime_frame.sender(&reg_map);
