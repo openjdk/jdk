@@ -31,7 +31,6 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
@@ -254,8 +253,8 @@ public class Head extends Content {
     }
 
     @Override
-    public boolean write(Writer out, boolean atNewline) throws IOException {
-        return toContent().write(out, atNewline);
+    public boolean write(Writer out, String newline, boolean atNewline) throws IOException {
+        return toContent().write(out, newline, atNewline);
     }
 
     /**

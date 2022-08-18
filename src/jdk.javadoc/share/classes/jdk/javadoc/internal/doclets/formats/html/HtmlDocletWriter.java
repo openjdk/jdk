@@ -104,7 +104,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocLink;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
-import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils.DeclarationPreviewLanguageFeatures;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils.ElementFlag;
@@ -1169,7 +1168,7 @@ public class HtmlDocletWriter {
         final Content result = new ContentBuilder() {
             @Override
             public ContentBuilder add(CharSequence text) {
-                return super.add(utils.normalizeNewlines(text));
+                return super.add(Text.normalizeNewlines(text));
             }
         };
         CommentHelper ch = utils.getCommentHelper(element);
@@ -1357,7 +1356,7 @@ public class HtmlDocletWriter {
                 @Override
                 public Boolean visitLiteral(LiteralTree node, Content content) {
                     String s = node.getBody().getBody();
-                    Content t = Text.of(utils.normalizeNewlines(s));
+                    Content t = Text.of(Text.normalizeNewlines(s));
                     content.add(node.getKind() == CODE ? HtmlTree.CODE(t) : t);
                     return false;
                 }
@@ -1405,7 +1404,7 @@ public class HtmlDocletWriter {
                         text = text.stripTrailing();
                     }
                     text = utils.replaceTabs(text);
-                    return utils.normalizeNewlines(text);
+                    return Text.normalizeNewlines(text);
                 }
 
                 @Override
@@ -1732,7 +1731,7 @@ public class HtmlDocletWriter {
             else {
                 addAnnotations(annotationElement, linkInfo, annotation, pairs, lineBreak);
             }
-            annotation.add(lineBreak ? DocletConstants.NL : "");
+            annotation.add(lineBreak ? Text.NL : "");
             results.add(annotation);
         }
         return results;
@@ -1764,7 +1763,7 @@ public class HtmlDocletWriter {
                 } else {
                     annotation.add(",");
                     if (linkBreak) {
-                        annotation.add(DocletConstants.NL);
+                        annotation.add(Text.NL);
                         int spaces = annotationDoc.getSimpleName().length() + 2;
                         for (int k = 0; k < (spaces); k++) {
                             annotation.add(" ");
