@@ -527,8 +527,8 @@ void MacroAssembler::cmp64(Register src1, AddressLiteral src2, Register rscratch
   if (reachable(src2)) {
     cmpq(src1, as_Address(src2));
   } else {
-    lea(rscratch1, src2);
-    Assembler::cmpq(src1, Address(rscratch1, 0));
+    lea(rscratch, src2);
+    Assembler::cmpq(src1, Address(rscratch, 0));
   }
 }
 
