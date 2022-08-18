@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -303,9 +303,16 @@ public class $Qualifier$UnsafeAccessTest$Type$ {
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
                 success = UNSAFE.weakCompareAndSet$MethodAffix$Plain(base, offset, $value1$, $value2$);
             }
-            assertEquals(success, true, "weakCompareAndSetPlain $type$");
+            assertEquals(success, true, "success weakCompareAndSetPlain $type$");
             $type$ x = UNSAFE.get$MethodAffix$(base, offset);
-            assertEquals(x, $value2$, "weakCompareAndSetPlain $type$ value");
+            assertEquals(x, $value2$, "success weakCompareAndSetPlain $type$ value");
+        }
+
+        {
+            boolean success = UNSAFE.weakCompareAndSet$MethodAffix$Plain(base, offset, $value1$, $value3$);
+            assertEquals(success, false, "failing weakCompareAndSetPlain $type$");
+            $type$ x = UNSAFE.get$MethodAffix$(base, offset);
+            assertEquals(x, $value2$, "failing weakCompareAndSetPlain $type$ value");
         }
 
         {
@@ -313,9 +320,16 @@ public class $Qualifier$UnsafeAccessTest$Type$ {
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
                 success = UNSAFE.weakCompareAndSet$MethodAffix$Acquire(base, offset, $value2$, $value1$);
             }
-            assertEquals(success, true, "weakCompareAndSetAcquire $type$");
+            assertEquals(success, true, "success weakCompareAndSetAcquire $type$");
             $type$ x = UNSAFE.get$MethodAffix$(base, offset);
-            assertEquals(x, $value1$, "weakCompareAndSetAcquire $type$");
+            assertEquals(x, $value1$, "success weakCompareAndSetAcquire $type$");
+        }
+
+        {
+            boolean success = UNSAFE.weakCompareAndSet$MethodAffix$Acquire(base, offset, $value2$, $value3$);
+            assertEquals(success, false, "failing weakCompareAndSetAcquire $type$");
+            $type$ x = UNSAFE.get$MethodAffix$(base, offset);
+            assertEquals(x, $value1$, "failing weakCompareAndSetAcquire $type$ value");
         }
 
         {
@@ -323,9 +337,16 @@ public class $Qualifier$UnsafeAccessTest$Type$ {
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
                 success = UNSAFE.weakCompareAndSet$MethodAffix$Release(base, offset, $value1$, $value2$);
             }
-            assertEquals(success, true, "weakCompareAndSetRelease $type$");
+            assertEquals(success, true, "success weakCompareAndSetRelease $type$");
             $type$ x = UNSAFE.get$MethodAffix$(base, offset);
-            assertEquals(x, $value2$, "weakCompareAndSetRelease $type$");
+            assertEquals(x, $value2$, "success weakCompareAndSetRelease $type$");
+        }
+
+        {
+            boolean success = UNSAFE.weakCompareAndSet$MethodAffix$Release(base, offset, $value1$, $value3$);
+            assertEquals(success, false, "failing weakCompareAndSetRelease $type$");
+            $type$ x = UNSAFE.get$MethodAffix$(base, offset);
+            assertEquals(x, $value2$, "failing weakCompareAndSetRelease $type$ value");
         }
 
         {
@@ -333,9 +354,16 @@ public class $Qualifier$UnsafeAccessTest$Type$ {
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
                 success = UNSAFE.weakCompareAndSet$MethodAffix$(base, offset, $value2$, $value1$);
             }
-            assertEquals(success, true, "weakCompareAndSet $type$");
+            assertEquals(success, true, "success weakCompareAndSet $type$");
             $type$ x = UNSAFE.get$MethodAffix$(base, offset);
-            assertEquals(x, $value1$, "weakCompareAndSet $type$");
+            assertEquals(x, $value1$, "success weakCompareAndSet $type$");
+        }
+
+        {
+            boolean success = UNSAFE.weakCompareAndSet$MethodAffix$(base, offset, $value2$, $value3$);
+            assertEquals(success, false, "failing weakCompareAndSet $type$");
+            $type$ x = UNSAFE.get$MethodAffix$(base, offset);
+            assertEquals(x, $value1$, "failing weakCompareAndSet $type$ value");
         }
 
 #end[JdkInternalMisc]
