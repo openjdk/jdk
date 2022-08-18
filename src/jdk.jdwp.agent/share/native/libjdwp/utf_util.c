@@ -343,6 +343,7 @@ static WCHAR* getWideString(UINT codePage, char* str, int len, int *pwlen) {
     }
     if (MultiByteToWideChar(codePage, 0, str, len, wstr, wlen) == 0) {
         UTF_ERROR(("Can't get WIDE string"));
+        free(wstr);
         return NULL;
     }
     return wstr;
