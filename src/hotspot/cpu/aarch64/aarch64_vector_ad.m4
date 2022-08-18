@@ -4122,18 +4122,18 @@ instruct vroundD(vReg dst, vReg src, immI rmode) %{
 
 // anytrue
 
-instruct vtest_anytrue_neon(rFlagsReg cr, vReg src1, vReg src2, vReg vtmp) %{
+instruct vtest_anytrue_neon(rFlagsReg cr, vReg src1, vReg src2, vReg tmp) %{
   predicate(UseSVE == 0 &&
             static_cast<const VectorTestNode*>(n)->get_predicate() == BoolTest::ne);
   match(Set cr (VectorTest src1 src2));
-  effect(TEMP vtmp);
-  format %{ "vtest_anytrue_neon $src1\t# KILL $vtmp" %}
+  effect(TEMP tmp);
+  format %{ "vtest_anytrue_neon $src1\t# KILL $tmp" %}
   ins_encode %{
     // No need to use src2.
     uint length_in_bytes = Matcher::vector_length_in_bytes(this, $src1);
     assert(length_in_bytes == 8 || length_in_bytes == 16, "must be");
-    __ addv($vtmp$$FloatRegister, length_in_bytes == 16 ? __ T16B : __ T8B, $src1$$FloatRegister);
-    __ umov(rscratch1, $vtmp$$FloatRegister, __ B, 0);
+    __ addv($tmp$$FloatRegister, length_in_bytes == 16 ? __ T16B : __ T8B, $src1$$FloatRegister);
+    __ umov(rscratch1, $tmp$$FloatRegister, __ B, 0);
     __ cmpw(rscratch1, zr);
   %}
   ins_pipe(pipe_slow);
@@ -4153,18 +4153,18 @@ instruct vtest_anytrue_sve(rFlagsReg cr, pRegGov src1, pRegGov src2) %{
 
 // alltrue
 
-instruct vtest_alltrue_neon(rFlagsReg cr, vReg src1, vReg src2, vReg vtmp) %{
+instruct vtest_alltrue_neon(rFlagsReg cr, vReg src1, vReg src2, vReg tmp) %{
   predicate(UseSVE == 0 &&
             static_cast<const VectorTestNode*>(n)->get_predicate() == BoolTest::overflow);
   match(Set cr (VectorTest src1 src2));
-  effect(TEMP vtmp);
-  format %{ "vtest_alltrue_neon $src1\t# KILL $vtmp" %}
+  effect(TEMP tmp);
+  format %{ "vtest_alltrue_neon $src1\t# KILL $tmp" %}
   ins_encode %{
     // No need to use src2.
     uint length_in_bytes = Matcher::vector_length_in_bytes(this, $src1);
     assert(length_in_bytes == 8 || length_in_bytes == 16, "must be");
-    __ uminv($vtmp$$FloatRegister, length_in_bytes == 16 ? __ T16B : __ T8B, $src1$$FloatRegister);
-    __ umov(rscratch1, $vtmp$$FloatRegister, __ B, 0);
+    __ uminv($tmp$$FloatRegister, length_in_bytes == 16 ? __ T16B : __ T8B, $src1$$FloatRegister);
+    __ umov(rscratch1, $tmp$$FloatRegister, __ B, 0);
     __ cmpw(rscratch1, 0xff);
   %}
   ins_pipe(pipe_slow);
