@@ -21,7 +21,7 @@
  * questions.
  */
 
-package jdk.jfr.event.sampling;
+package jdk.jfr.event.profiling;
 
 import java.time.Duration;
 import java.util.List;
@@ -33,6 +33,7 @@ import jdk.jfr.consumer.RecordedFrame;
 import jdk.jfr.consumer.RecordingStream;
 import jdk.jfr.internal.JVM;
 import jdk.test.lib.jfr.EventNames;
+import jdk.test.lib.jfr.RecurseThread;
 
 /*
  * @test
@@ -40,35 +41,25 @@ import jdk.test.lib.jfr.EventNames;
  * @requires vm.hasJFR
  * @library /test/lib
  * @modules jdk.jfr/jdk.jfr.internal
- * @run main jdk.jfr.event.sampling.TestNative
+ * @run main jdk.jfr.event.profiling.TestSamplingLongPeriod
  */
-public class TestNative {
+public class TestSamplingLongPeriod {
 
-    final static String NATIVE_EVENT = EventNames.NativeMethodSample;
+    final static String SAMPLE_EVENT = EventNames.ExecutionSample;
 
-    static volatile boolean alive = true;
-
-    // Please resist the temptation to speed up the test by decreasing
-    // the period. It is explicity set to 1100 ms to provoke the 1000 ms
+    // The period is set to 1100 ms to provoke the 1000 ms
     // threshold in the JVM for os::naked_short_sleep().
     public static void main(String[] args) throws Exception {
+        RecurseThread t = new RecurseThread(50);
+        t.setDaemon(true);
         try (RecordingStream rs = new RecordingStream()) {
-            rs.enable(NATIVE_EVENT).withPeriod(Duration.ofMillis(1100));
-            rs.onEvent(NATIVE_EVENT, e -> {
-                alive = false;
+            rs.enable(SAMPLE_EVENT).withPeriod(Duration.ofMillis(1100));
+            rs.onEvent(SAMPLE_EVENT, e -> {
+                t.quit();
                 rs.close();
             });
-            Thread t = new Thread(TestNative::nativeMethod);
-            t.setDaemon(true);
             t.start();
             rs.start();
-        }
-
-    }
-
-    public static void nativeMethod() {
-        while (alive) {
-            JVM.getJVM().getPid();
         }
     }
 }
