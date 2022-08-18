@@ -280,12 +280,13 @@ inline bool G1CMTask::deal_with_reference(T* p) {
   return make_reference_grey(obj);
 }
 
-inline void G1ConcurrentMark::raw_mark_in_bitmap(oop p) {
-  _mark_bitmap.par_mark(p);
+inline void G1ConcurrentMark::raw_mark_in_bitmap(oop obj) {
+  _mark_bitmap.par_mark(obj);
 }
 
-inline void G1ConcurrentMark::notify_evac_failed_object(uint worker_id, oop obj, size_t size) {
-  add_to_liveness(worker_id, obj, size);
+inline void G1ConcurrentMark::raw_mark_in_bitmap(uint worker_id, oop obj, size_t obj_size) {
+  raw_mark_in_bitmap(obj);
+  add_to_liveness(worker_id, obj, obj_size);
 }
 
 bool G1ConcurrentMark::is_marked_in_bitmap(oop p) const {

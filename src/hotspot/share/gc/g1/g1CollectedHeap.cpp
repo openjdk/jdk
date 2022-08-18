@@ -3293,6 +3293,10 @@ void G1CollectedHeap::mark_evac_failure_object(const oop obj) const {
   _cm->raw_mark_in_bitmap(obj);
 }
 
+void G1CollectedHeap::mark_evac_failure_object(uint worker_id, const oop obj, size_t obj_size) const {
+  _cm->raw_mark_in_bitmap(worker_id, obj, obj_size);
+}
+
 // Optimized nmethod scanning
 class RegisterNMethodOopClosure: public OopClosure {
   G1CollectedHeap* _g1h;

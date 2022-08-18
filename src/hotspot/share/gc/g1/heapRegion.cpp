@@ -103,6 +103,7 @@ void HeapRegion::setup_heap_region_size(size_t max_heap_size) {
 void HeapRegion::handle_evacuation_failure() {
   uninstall_surv_rate_group();
   clear_young_index_in_cset();
+  clear_index_in_opt_cset();
   move_to_old();
 }
 
@@ -269,7 +270,6 @@ void HeapRegion::report_region_type_change(G1HeapRegionTraceType::Type to) {
 }
 
 void HeapRegion::note_self_forwarding_removal_start(bool during_concurrent_start) {
-  clear_index_in_opt_cset();
   // We always scrub the region to make sure the entire region is
   // parsable after the self-forwarding pointer removal.
   reset_parsable_bottom();

@@ -1225,6 +1225,7 @@ public:
 
   // Mark the live object that failed evacuation in the bitmap.
   void mark_evac_failure_object(oop obj) const;
+  void mark_evac_failure_object(uint worker_id, oop obj, size_t obj_size) const;
 
   G1ConcurrentMark* concurrent_mark() const { return _cm; }
 

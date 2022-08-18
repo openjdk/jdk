@@ -96,6 +96,10 @@ static size_t zap_dead_objects(HeapRegion* hr, HeapWord* start, HeapWord* end) {
     return 0;
   }
 
+  // FIXME: remove
+  MemRegion mr(start, end);
+  Copy::fill_to_words(mr.start(), mr.word_size(), badHeapWord);
+
   hr->fill_range_with_dead_objects(start, end);
 
   return pointer_delta(end, start);
@@ -172,7 +176,7 @@ void G1RemoveSelfForwardsInChunksTask::process_chunk(uint worker_id,
   size_t garbage_words = 0;
 
   if (chunk_start == hr_bottom) {
-    // This is the bottommost chunk in this region; zap [bottom, first_marked_addr).
+    // This is the bottom-most chunk in this region; zap [bottom, first_marked_addr).
     garbage_words += zap_dead_objects(hr, hr_bottom, first_marked_addr);
   }
 
@@ -205,9 +209,6 @@ void G1RemoveSelfForwardsInChunksTask::process_chunk(uint worker_id,
     {
       // Process marked object.
       assert(obj->is_forwarded() && obj->forwardee() == obj, "must be self-forwarded");
-      if (_during_concurrent_start) {
-        _cm->notify_evac_failed_object(worker_id, obj, obj_size);
-      }
       obj->init_mark();
       hr->update_bot_for_block(obj_addr, obj_end_addr);
 
