@@ -30,9 +30,9 @@
  */
 import javax.security.auth.login.Configuration;
 import javax.security.auth.login.LoginContext;
+import javax.security.auth.login.LoginException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import javax.security.auth.login.FailedLoginException;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 
@@ -76,12 +76,14 @@ public class UnixNTPlatform {
             lc.login();
             System.out.println(lc.getSubject());
             lc.logout();
-        } catch (FailedLoginException e) {
-            e.printStackTrace(System.out);
-        }
-        System.out.println("retrieving error from byte stream");
+	} catch (LoginException e) {
+	    System.out.println("Retrieving exception information");
+	}
+
         byte[] byes = stream.toByteArray();
         String s = new String(byes);
-        System.out.printf("-- error -- %n%s%n", s);
+        if (s.contains("Failed in attempt to import the underlying")) {
+           System.out.printf("-- call stack is -- %n%s%n", s);
+	}
     }
 }

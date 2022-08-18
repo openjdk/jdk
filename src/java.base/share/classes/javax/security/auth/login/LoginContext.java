@@ -877,10 +877,10 @@ public class LoginContext {
 
                 } else {
 
-                    if (debug != null)
+                    if (debug != null){
                         debug.println(methodName + " OPTIONAL failure");
-
-                    le.printStackTrace();
+                        le.printStackTrace();
+                    }
 
                     // mark down that an OPTIONAL module failed
                     if (firstError == null)
