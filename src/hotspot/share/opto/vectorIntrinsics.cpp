@@ -1799,14 +1799,17 @@ bool LibraryCallKit::inline_vector_test() {
   }
 
   Node* opd1 = unbox_vector(argument(4), vbox_type, elem_bt, num_elem);
-  Node* opd2 = unbox_vector(argument(5), vbox_type, elem_bt, num_elem);
+  Node* opd2;
+  if (Matcher::vectortest_needs_second_argument(booltest == BoolTest::overflow,
+                                                opd1->bottom_type()->isa_vectmask())) {
+    opd2 = unbox_vector(argument(5), vbox_type, elem_bt, num_elem);
+  } else {
+    opd2 = opd1;
+  }
   if (opd1 == NULL || opd2 == NULL) {
     return false; // operand unboxing failed
   }
-  if (!Matcher::vectortest_needs_second_argument(booltest == BoolTest::overflow,
-                                                 opd1->bottom_type()->isa_vectmask())) {
-    opd2 = opd1;
-  }
+
   Node* cmp = gvn().transform(new VectorTestNode(opd1, opd2, booltest));
   BoolTest::mask test = Matcher::vectortest_mask(booltest == BoolTest::overflow,
                                                  opd1->bottom_type()->isa_vectmask(), num_elem);

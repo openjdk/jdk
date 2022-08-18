@@ -1434,7 +1434,7 @@ class VectorTestNode : public CmpNode {
   virtual int Opcode() const;
   virtual uint hash() const { return Node::hash() + _predicate; }
   virtual const Type* Value(PhaseGVN* phase) const { return TypeInt::CC; }
-  virtual const Type *sub( const Type *, const Type * ) const { return TypeInt::CC; }
+  virtual const Type* sub(const Type*, const Type*) const { return TypeInt::CC; }
   BoolTest::mask get_predicate() const { return _predicate; }
 
   virtual bool cmp( const Node &n ) const {
