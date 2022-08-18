@@ -877,7 +877,7 @@ public class LoginContext {
 
                 } else {
 
-                    if (debug != null){
+                    if (debug != null) {
                         debug.println(methodName + " OPTIONAL failure");
                         le.printStackTrace();
                     }

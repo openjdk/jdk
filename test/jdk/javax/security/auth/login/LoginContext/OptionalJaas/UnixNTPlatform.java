@@ -76,14 +76,14 @@ public class UnixNTPlatform {
             lc.login();
             System.out.println(lc.getSubject());
             lc.logout();
-	} catch (LoginException e) {
-	    System.out.println("Retrieving exception information");
-	}
+        } catch (LoginException e) {
+            System.out.println("Retrieving exception information");
+        }
 
         byte[] byes = stream.toByteArray();
         String s = new String(byes);
         if (s.contains("Failed in attempt to import the underlying")) {
            System.out.printf("-- call stack is -- %n%s%n", s);
-	}
+        }
     }
 }
