@@ -361,7 +361,6 @@ class LibraryCallKit : public GraphKit {
 
   bool arch_supports_vector(int op, int num_elem, BasicType type, VectorMaskUseType mask_use_type, bool has_scalar_args = false);
   bool arch_supports_vector_rotate(int opc, int num_elem, BasicType elem_bt, VectorMaskUseType mask_use_type, bool has_scalar_args = false);
-  bool arch_supports_vectormask_cast(const TypeVect* src_type, const TypeVect* dst_type, VectorMaskUseType mask_use_type);
 
   void clear_upper_avx() {
 #ifdef X86

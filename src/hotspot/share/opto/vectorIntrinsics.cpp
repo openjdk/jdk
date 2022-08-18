@@ -142,46 +142,6 @@ bool LibraryCallKit::arch_supports_vector_rotate(int opc, int num_elem, BasicTyp
   return is_supported;
 }
 
-bool LibraryCallKit::arch_supports_vectormask_cast(const TypeVect* src_type, const TypeVect* dst_type, VectorMaskUseType mask_use_type) {
-  BasicType elem_bt_from = src_type->element_basic_type();
-  BasicType elem_bt_to = dst_type->element_basic_type();
-  int num_elem = dst_type->length();
-
-  // We need the VectorMaskCast op if:
-  // 1) the current platform supports predicated feature, or
-  // 2) the element size (in bytes) of the src and dst type is equal to each other
-  if ((src_type->isa_vectmask() && dst_type->isa_vectmask()) ||
-      type2aelembytes(elem_bt_from) == type2aelembytes(elem_bt_to)) {
-    return arch_supports_vector(Op_VectorMaskCast, num_elem, elem_bt_to, mask_use_type);
-  }
-
-  BasicType new_elem_bt_from = elem_bt_from;
-  BasicType new_elem_bt_to = elem_bt_to;
-  if (is_floating_point_type(elem_bt_from)) {
-    new_elem_bt_from = elem_bt_from == T_FLOAT ? T_INT : T_LONG;
-  }
-  if (is_floating_point_type(elem_bt_to)) {
-    new_elem_bt_to = elem_bt_to == T_FLOAT ? T_INT : T_LONG;
-  }
-
-  // For other cases, we need the VectorCast op instead. Besides, if the casting operation
-  // involves floating point types, we also need the VectorMaskCast op to do conversions
-  // between the floating point type and the integral type that has the same type size.
-  //
-  // The casting operation patterns involving floating point type F and integral type X are:
-  // Case A) F -> X :=  VectorMaskCast (F->I/L) + VectorCast[I/L]2X
-  // Case B) X -> F :=  VectorCastX2[I/L] + VectorMaskCast ([I/L]->F)
-  // Case C) F -> F :=  VectorMaskCast (F->I/L) + VectorCast[I/L]2[L/I] + VectorMaskCast (L/I->F)
-  if ((new_elem_bt_from != elem_bt_from &&
-       !arch_supports_vector(Op_VectorMaskCast, num_elem, new_elem_bt_from, mask_use_type)) ||
-      !arch_supports_vector(VectorCastNode::opcode(new_elem_bt_from), num_elem, new_elem_bt_to, mask_use_type) ||
-      (new_elem_bt_to != elem_bt_to &&
-       !arch_supports_vector(Op_VectorMaskCast, num_elem, elem_bt_to, mask_use_type))) {
-    return false;
-  }
-  return true;
-}
-
 Node* GraphKit::box_vector(Node* vector, const TypeInstPtr* vbox_type, BasicType elem_bt, int num_elem, bool deoptimize_on_exception) {
   assert(EnableVectorSupport, "");
 
@@ -2584,14 +2544,14 @@ bool LibraryCallKit::inline_vector_convert() {
     } else { // num_elem_from == num_elem_to
       if (is_mask) {
         // Make sure that cast for vector mask is implemented to particular type/size combination.
-        if (!arch_supports_vectormask_cast(src_type, dst_type, VecMaskNotUsed)) {
+        if (!arch_supports_vector(Op_VectorMaskCast, num_elem_to, elem_bt_to, VecMaskNotUsed)) {
           if (C->print_intrinsics()) {
             tty->print_cr("  ** not supported: arity=1 op=maskcast vlen2=%d etype2=%s ismask=%d",
                           num_elem_to, type2name(elem_bt_to), is_mask);
           }
           return false;
         }
-        op = gvn().transform(VectorMaskCastNode::make(&gvn(), op, dst_type));
+        op = gvn().transform(new VectorMaskCastNode(op, dst_type));
       } else {
         // Since input and output number of elements match, and since we know this vector size is
         // supported, simply do a cast with no resize needed.

@@ -332,6 +332,11 @@ public:
   void vector_unsigned_cast(XMMRegister dst, XMMRegister src, int vlen_enc,
                             BasicType from_elem_bt, BasicType to_elem_bt);
 
+  void vector_mask_cast(XMMRegister dst, XMMRegister src, BasicType dst_bt, BasicType src_bt, int vlen);
+
+  void vector_mask_cast_with_tmp(XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
+                                 XMMRegister xtmp2, BasicType dst_bt, BasicType src_bt, int vlen);
+
   void vector_cast_double_special_cases_evex(XMMRegister dst, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2,
                                              KRegister ktmp1, KRegister ktmp2, Register scratch, AddressLiteral double_sign_flip,
                                              int vec_enc);
