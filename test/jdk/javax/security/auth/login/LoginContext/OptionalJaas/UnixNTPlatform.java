@@ -45,8 +45,6 @@ public class UnixNTPlatform {
         login("cross-platform",
                 UNIX_MODULE, "optional", "debug=true",
                 NT_MODULE, "optional", "debug=true");
-        login("windows", NT_MODULE, "optional", "debug=true");
-        login("unix", UNIX_MODULE, "optional", "debug=true");
     }
 
     static void login(String test, String... conf) throws Exception {
@@ -82,7 +80,9 @@ public class UnixNTPlatform {
 
         byte[] byes = stream.toByteArray();
         String s = new String(byes);
-        if (s.contains("Failed in attempt to import the underlying")) {
+        if (!s.contains("Failed in attempt to import the underlying"))
+           throw new RuntimeException();
+        else
            System.out.printf("-- call stack is -- %n%s%n", s);
         }
     }
