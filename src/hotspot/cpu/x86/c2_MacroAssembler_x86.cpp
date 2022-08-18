@@ -1759,7 +1759,7 @@ void C2_MacroAssembler::reduce_operation_128(BasicType typ, int opcode, XMMRegis
       }
       break;
     case Op_MulReductionVL: assert(UseAVX > 2, "required");
-                            vpmullq(dst, dst, src, vector_len); break;
+                            evpmullq(dst, dst, src, vector_len); break;
     default:                assert(false, "wrong opcode");
   }
 }
@@ -1807,7 +1807,7 @@ void C2_MacroAssembler::reduce_operation_256(BasicType typ, int opcode, XMMRegis
         default:            assert(false, "wrong type");
       }
       break;
-    case Op_MulReductionVL: vpmullq(dst, src1, src2, vector_len); break;
+    case Op_MulReductionVL: evpmullq(dst, src1, src2, vector_len); break;
     default:                assert(false, "wrong opcode");
   }
 }
