@@ -1441,11 +1441,6 @@ void MacroAssembler::libm_sincos_huge(XMMRegister xmm0, XMMRegister xmm1, Regist
 
   assert_different_registers(ebx, eax, ecx, edx, esi, edi, ebp, esp);
 
-  address L_2il0floatpacket_0 = StubRoutines::x86::_L_2il0floatpacket_0_addr();
-  address Pi4Inv = StubRoutines::x86::_Pi4Inv_addr();
-  address Pi4x3 = StubRoutines::x86::_Pi4x3_addr();
-  address Pi4x4 = StubRoutines::x86::_Pi4x4_addr();
-  address ones = StubRoutines::x86::_ones_addr();
   address CP = (address)_CP;
   address SP = (address)_SP;
 
