@@ -173,7 +173,6 @@ public:
 
   virtual void invalidate(MemRegion mr);
   void clear(MemRegion mr);
-  void dirty(MemRegion mr);
 
   // Provide read-only access to the card table array.
   const CardValue* byte_for_const(const void* p) const {
@@ -219,13 +218,6 @@ public:
   // *** Card-table-RemSet-specific things.
 
   static uintx ct_max_alignment_constraint();
-
-  // Return the MemRegion corresponding to the first maximal run
-  // of dirty cards lying completely within MemRegion mr.
-  // If reset is "true", then sets those card table entries to the given
-  // value.
-  MemRegion dirty_card_range_after_reset(MemRegion mr, bool reset,
-                                         int reset_val);
 
   static uint card_shift() {
     return _card_shift;
