@@ -19,36 +19,39 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-#include <stdio.h>
-#include <jni.h>
-#include <signal.h>
-#include <sys/ucontext.h>
-#include <errno.h>
-#include <string.h>
+#ifndef SHARE_RUNTIME_OSINFO_HPP
+#define SHARE_RUNTIME_OSINFO_HPP
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include "memory/allStatic.hpp"
+#include "utilities/debug.hpp"
 
-void sig_handler(int sig, siginfo_t *info, ucontext_t *context) {
+// Static information about the operating system. Initialized exactly once
+// at VM start-up and never changes again.
+class OSInfo : AllStatic {
+  static int    _vm_page_size;
+  static int    _vm_allocation_granularity;
 
-    printf( " HANDLER (1) " );
-}
+public:
+  // Returns the byte size of a virtual memory page
+  static int vm_page_size() { return _vm_page_size; }
 
-JNIEXPORT void JNICALL Java_TestPosixSig_changeSigActionFor(JNIEnv *env, jclass klass, jint val) {
-    struct sigaction act;
-    act.sa_handler = (void (*)())sig_handler;
-    sigemptyset(&act.sa_mask);
-    act.sa_flags = 0;
-    int retval = sigaction(val, &act, 0);
-    if (retval != 0) {
-        printf("ERROR: failed to set %d signal handler error=%s\n", val, strerror(errno));
-    }
-}
+  // Returns the size, in bytes, of the granularity with which memory can be reserved using os::reserve_memory().
+  static int vm_allocation_granularity() { return _vm_allocation_granularity; }
 
-#ifdef __cplusplus
-}
-#endif
+  static void set_vm_page_size(int n) {
+    assert(_vm_page_size < 0, "init only once");
+    assert(n > 0, "sanity");
+    _vm_page_size = n;
+  }
 
+  static void set_vm_allocation_granularity(int n) {
+    assert(_vm_allocation_granularity < 0, "init only once");
+    assert(n > 0, "sanity");
+    _vm_allocation_granularity = n;
+  }
+};
+
+#endif // SHARE_RUNTIME_OSINFO_HPP

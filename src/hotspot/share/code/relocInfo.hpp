@@ -25,8 +25,11 @@
 #ifndef SHARE_CODE_RELOCINFO_HPP
 #define SHARE_CODE_RELOCINFO_HPP
 
-#include "runtime/os.hpp"
+#include "memory/allocation.hpp"
+#include "oops/oopsHierarchy.hpp"
+#include "runtime/osInfo.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 class nmethod;
 class CodeBlob;
@@ -1261,7 +1264,7 @@ class external_word_Relocation : public DataRelocation {
   // Some address looking values aren't safe to treat as relocations
   // and should just be treated as constants.
   static bool can_be_relocated(address target) {
-    assert(target == NULL || (uintptr_t)target >= (uintptr_t)os::vm_page_size(), INTPTR_FORMAT, (intptr_t)target);
+    assert(target == NULL || (uintptr_t)target >= (uintptr_t)OSInfo::vm_page_size(), INTPTR_FORMAT, (intptr_t)target);
     return target != NULL;
   }
 

@@ -25,10 +25,10 @@
 
 package javax.security.auth.spi;
 
-import javax.security.auth.Subject;
-import javax.security.auth.callback.*;
-import javax.security.auth.login.*;
 import java.util.Map;
+import javax.security.auth.Subject;
+import javax.security.auth.callback.CallbackHandler;
+import javax.security.auth.login.LoginException;
 
 /**
  * <p> Service-provider interface for authentication technology providers.
@@ -39,7 +39,7 @@ import java.util.Map;
  * authentication technology providers implement the
  * {@code LoginModule} interface.
  * A {@code Configuration} specifies the LoginModule(s)
- * to be used with a particular login application.  Therefore different
+ * to be used with a particular login application.  Therefore, different
  * LoginModules can be plugged in under the application without
  * requiring any modifications to the application itself.
  *
