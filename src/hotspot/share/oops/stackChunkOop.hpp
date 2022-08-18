@@ -190,6 +190,9 @@ public:
               int* out_frames = NULL, int* out_interpreted_frames = NULL) NOT_DEBUG({ return true; });
 
 private:
+  template<typename T, BarrierType barrier>
+  void do_barriers_for_header();
+
   template <BarrierType barrier, ChunkFrames frames = ChunkFrames::Mixed, typename RegisterMapT>
   void do_barriers0(const StackChunkFrameStream<frames>& f, const RegisterMapT* map);
 

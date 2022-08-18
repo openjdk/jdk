@@ -119,7 +119,41 @@ public:
 };
 
 template <stackChunkOopDesc::BarrierType barrier>
+class HeaderBarrierClosure: public OopClosure {
+public:
+  virtual void do_oop(oop* p)       override { do_oop_work(p); }
+  virtual void do_oop(narrowOop* p) override { do_oop_work(p); }
+
+  template <class T> inline void do_oop_work(T* p) {
+    oop value = (oop)HeapAccess<>::oop_load(p);
+    if (barrier == stackChunkOopDesc::BarrierType::Store) {
+      HeapAccess<>::oop_store(p, value);
+    }
+  }
+};
+
+template <typename T, stackChunkOopDesc::BarrierType barrier>
+void stackChunkOopDesc::do_barriers_for_header() {
+  T* parent_addr = field_addr<T>(jdk_internal_vm_StackChunk::parent_offset());
+  T* cont_addr = field_addr<T>(jdk_internal_vm_StackChunk::cont_offset());
+  HeaderBarrierClosure<barrier> closure;
+  Devirtualizer::do_oop(&closure, parent_addr);
+  Devirtualizer::do_oop(&closure, cont_addr);
+}
+
+template void stackChunkOopDesc::do_barriers_for_header<narrowOop, stackChunkOopDesc::BarrierType::Load> ();
+template void stackChunkOopDesc::do_barriers_for_header<narrowOop, stackChunkOopDesc::BarrierType::Store>();
+template void stackChunkOopDesc::do_barriers_for_header<oop, stackChunkOopDesc::BarrierType::Load> ();
+template void stackChunkOopDesc::do_barriers_for_header<oop, stackChunkOopDesc::BarrierType::Store>();
+
+template <stackChunkOopDesc::BarrierType barrier>
 void stackChunkOopDesc::do_barriers() {
+  if (UseCompressedOops) {
+    do_barriers_for_header<narrowOop, barrier>();
+  } else {
+    do_barriers_for_header<oop, barrier>();
+  }
+
   DoBarriersStackClosure<barrier> closure(this);
   iterate_stack(&closure);
 }
