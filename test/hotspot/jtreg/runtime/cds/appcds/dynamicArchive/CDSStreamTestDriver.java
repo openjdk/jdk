@@ -37,6 +37,7 @@
 
 import org.testng.annotations.Test;
 import java.io.File;
+import java.nio.file.Path;
 import jtreg.SkippedException;
 import jdk.test.whitebox.gc.GC;
 
