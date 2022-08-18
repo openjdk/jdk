@@ -40,7 +40,6 @@ import java.util.Set;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
-import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.ExecutableType;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Types;
@@ -96,14 +95,14 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
         ExecutableType instantiatedType = utils.asInstantiatedMethodType(
                 writer.getCurrentPageElement(), executable);
         List<? extends TypeMirror> thrownTypes = instantiatedType.getThrownTypes();
-        Map<String, TypeMirror> typeSubstitutions = getSubstitutedThrownTypes(
+        Map<TypeMirror, TypeMirror> typeSubstitutions = getSubstitutedThrownTypes(
                 utils.typeUtils,
                 executable.getThrownTypes(),
                 thrownTypes);
         Map<ThrowsTree, ExecutableElement> tagsMap = new LinkedHashMap<>();
         utils.getThrowsTrees(executable).forEach(t -> tagsMap.put(t, executable));
         Content result = writer.getOutputInstance();
-        Set<String> alreadyDocumented = new HashSet<>();
+        Set<TypeMirror> alreadyDocumented = new HashSet<>();
         result.add(throwsTagsOutput(tagsMap, alreadyDocumented, typeSubstitutions, writer));
         result.add(inheritThrowsDocumentation(executable, thrownTypes, alreadyDocumented, typeSubstitutions, writer));
         result.add(linkToUndocumentedDeclaredExceptions(thrownTypes, alreadyDocumented, writer));
@@ -112,24 +111,24 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
 
     /**
      * Returns a map of substitutions for a list of thrown types with the original type-variable
-     * name as a key and the instantiated type as a value. If no types need to be substituted
+     * as a key and the instantiated type as a value. If no types need to be substituted
      * an empty map is returned.
      * @param declaredThrownTypes the originally declared thrown types.
      * @param instantiatedThrownTypes the thrown types in the context of the current type.
      * @return map of declared to instantiated thrown types or an empty map.
      */
-    private Map<String, TypeMirror> getSubstitutedThrownTypes(Types types,
+    private Map<TypeMirror, TypeMirror> getSubstitutedThrownTypes(Types types,
                                                               List<? extends TypeMirror> declaredThrownTypes,
                                                               List<? extends TypeMirror> instantiatedThrownTypes) {
         if (!declaredThrownTypes.equals(instantiatedThrownTypes)) {
-            Map<String, TypeMirror> map = new HashMap<>();
+            Map<TypeMirror, TypeMirror> map = new HashMap<>();
             Iterator<? extends TypeMirror> i1 = declaredThrownTypes.iterator();
             Iterator<? extends TypeMirror> i2 = instantiatedThrownTypes.iterator();
             while (i1.hasNext() && i2.hasNext()) {
                 TypeMirror t1 = i1.next();
                 TypeMirror t2 = i2.next();
                 if (!types.isSameType(t1, t2))
-                    map.put(t1.toString(), t2);
+                    map.put(t1, t2);
             }
             return map;
         }
@@ -150,21 +149,23 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
      * @return the generated content for the tags
      */
     private Content throwsTagsOutput(Map<ThrowsTree, ExecutableElement> throwsTags,
-                                     Set<String> alreadyDocumented,
-                                     Map<String, TypeMirror> typeSubstitutions,
+                                     Set<TypeMirror> alreadyDocumented,
+                                     Map<TypeMirror, TypeMirror> typeSubstitutions,
                                      TagletWriter writer) {
         var utils = writer.configuration().utils;
         Content result = writer.getOutputInstance();
-        var documentedInThisCall = new HashSet<String>();
+        var documentedInThisCall = new HashSet<TypeMirror>();
         Map<ThrowsTree, ExecutableElement> flattenedExceptions = flatten(throwsTags, writer);
         flattenedExceptions.forEach((ThrowsTree t, ExecutableElement e) -> {
             var ch = utils.getCommentHelper(e);
-            Element te = ch.getException(t);
-            String excName = t.getExceptionName().toString();
-            TypeMirror substituteType = typeSubstitutions.get(excName);
-            if (alreadyDocumented.contains(excName)
-                    || (te != null && alreadyDocumented.contains(utils.getFullyQualifiedName(te, false)))
-                    || (substituteType != null && alreadyDocumented.contains(substituteType.toString()))) {
+            Element exception = ch.getException(t);
+            if (exception == null) {
+                return; // couldn't find and thus cannot reliably process
+            }
+            TypeMirror tm = exception.asType();
+            TypeMirror substituteType = typeSubstitutions.get(tm);
+            if ((substituteType != null && alreadyDocumented.contains(substituteType))
+                || alreadyDocumented.contains(tm)) {
                 return;
             }
             if (alreadyDocumented.isEmpty() && documentedInThisCall.isEmpty()) {
@@ -172,11 +173,9 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
             }
             result.add(writer.throwsTagOutput(e, t, substituteType));
             if (substituteType != null) {
-                documentedInThisCall.add(substituteType.toString());
+                documentedInThisCall.add(substituteType);
             } else {
-                documentedInThisCall.add(te != null
-                        ? utils.getFullyQualifiedName(te, false)
-                        : excName);
+                documentedInThisCall.add(tm);
             }
         });
         alreadyDocumented.addAll(documentedInThisCall);
@@ -241,8 +240,8 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
      */
     private Content inheritThrowsDocumentation(ExecutableElement holder,
                                                List<? extends TypeMirror> declaredExceptionTypes,
-                                               Set<String> alreadyDocumented,
-                                               Map<String, TypeMirror> typeSubstitutions,
+                                               Set<TypeMirror> alreadyDocumented,
+                                               Map<TypeMirror, TypeMirror> typeSubstitutions,
                                                TagletWriter writer) {
         Content result = writer.getOutputInstance();
         if (holder.getKind() != ElementKind.METHOD) {
@@ -284,21 +283,18 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
     }
 
     private Content linkToUndocumentedDeclaredExceptions(List<? extends TypeMirror> declaredExceptionTypes,
-                                                         Set<String> alreadyDocumented,
+                                                         Set<TypeMirror> alreadyDocumented,
                                                          TagletWriter writer) {
         // TODO: assert declaredExceptionTypes are instantiated
         var utils = writer.configuration().utils;
         Content result = writer.getOutputInstance();
         for (TypeMirror declaredExceptionType : declaredExceptionTypes) {
-            TypeElement te = utils.asTypeElement(declaredExceptionType);
-            if (te != null &&
-                    !alreadyDocumented.contains(declaredExceptionType.toString()) &&
-                    !alreadyDocumented.contains(utils.getFullyQualifiedName(te, false))) {
+            if (!alreadyDocumented.contains(declaredExceptionType)) {
                 if (alreadyDocumented.isEmpty()) {
                     result.add(writer.getThrowsHeader());
                 }
                 result.add(writer.throwsTagOutput(declaredExceptionType));
-                alreadyDocumented.add(utils.getSimpleName(te));
+                alreadyDocumented.add(declaredExceptionType);
             }
         }
         return result;
