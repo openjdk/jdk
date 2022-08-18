@@ -81,21 +81,9 @@ public sealed interface StackMapTableAttribute
             this.tag = tag;
         }
 
+        @Override
         public int tag() {
             return tag;
-        }
-
-        @Override
-        public String toString() {
-            return switch (this) {
-                case ITEM_DOUBLE -> "D";
-                case ITEM_FLOAT -> "F";
-                case ITEM_INTEGER -> "I";
-                case ITEM_LONG -> "J";
-                case ITEM_NULL -> "null";
-                case ITEM_TOP -> "?";
-                case ITEM_UNINITIALIZED_THIS -> "THIS";
-            };
         }
     }
 
