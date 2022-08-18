@@ -536,6 +536,8 @@ class ArrayAllocator : public AllStatic {
   static void free_malloc(E* addr, size_t length);
   static void free_mmap(E* addr, size_t length);
 
+  static E* reallocate_malloc(E* addr, size_t new_length, MEMFLAGS flags);
+
  public:
   static E* allocate(size_t length, MEMFLAGS flags);
   static E* reallocate(E* old_addr, size_t old_length, size_t new_length, MEMFLAGS flags);
@@ -563,6 +565,7 @@ class MallocArrayAllocator : public AllStatic {
 
   static E* allocate(size_t length, MEMFLAGS flags);
   static void free(E* addr);
+  static E* reallocate(E* addr, size_t new_length, MEMFLAGS flags);
 };
 
 #endif // SHARE_MEMORY_ALLOCATION_HPP
