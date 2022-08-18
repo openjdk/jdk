@@ -448,17 +448,18 @@ final class ServerHello {
                 if ((hcds == null) || (hcds.length == 0)) {
                     continue;
                 }
+
                 // The cipher suite has been negotiated.
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine("use cipher suite " + cs.name);
                 }
+
                 return new KeyExchangeProperties(cs, ke, hcds);
             }
 
             for (CipherSuite cs : legacySuites) {
                 SSLKeyExchange ke = SSLKeyExchange.valueOf(
                         cs.keyExchange,  shc.negotiatedProtocol);
-
                 if (ke != null) {
                     SSLPossession[] hcds = ke.createPossessions(shc);
                     if ((hcds != null) && (hcds.length != 0)) {
