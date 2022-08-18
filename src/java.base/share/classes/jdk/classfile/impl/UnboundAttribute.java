@@ -85,6 +85,8 @@ import jdk.classfile.attribute.SignatureAttribute;
 import jdk.classfile.attribute.SourceDebugExtensionAttribute;
 import jdk.classfile.attribute.SourceFileAttribute;
 import jdk.classfile.attribute.SourceIDAttribute;
+import jdk.classfile.attribute.StackMapTableAttribute;
+import jdk.classfile.attribute.StackMapTableAttribute.StackMapFrameInfo;
 import jdk.classfile.attribute.SyntheticAttribute;
 import jdk.classfile.constantpool.ConstantValueEntry;
 import jdk.classfile.constantpool.ModuleEntry;
@@ -240,6 +242,36 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
             return sourceFile;
         }
 
+    }
+
+    public static final class UnboundStackMapTableAttribute extends UnboundAttribute<StackMapTableAttribute>
+            implements StackMapTableAttribute {
+        private final List<StackMapFrameInfo> entries;
+
+        public UnboundStackMapTableAttribute(List<StackMapFrameInfo> entries) {
+            super(Attributes.STACK_MAP_TABLE);
+            this.entries = List.copyOf(entries);
+        }
+
+        @Override
+        public List<StackMapFrameInfo> entries() {
+            return entries;
+        }
+
+        @Override
+        public Kind codeKind() {
+            return Kind.STACK_MAP;
+        }
+
+        @Override
+        public Opcode opcode() {
+            return Opcode.STACK_MAP;
+        }
+
+        @Override
+        public int sizeInBytes() {
+            return 0;
+        }
     }
 
     public static final class UnboundInnerClassesAttribute

@@ -117,7 +117,7 @@ public class Transforms {
             return bs;
         }),
         BUILD_FROM_SCRATCH(bytes -> {
-            return RebuildingTransformation.transform(Classfile.parse(bytes));
+            return RebuildingTransformation.transform(Classfile.parse(bytes, Classfile.Option.generateStackmap(false)));
         }),
         SHARED_1(true, oneLevelNoop),
         SHARED_2(true, twoLevelNoop),

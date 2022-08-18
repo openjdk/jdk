@@ -60,7 +60,7 @@ public class AttributeHolder {
             a.writeTo(buf);
     }
 
-    private boolean isPresent(AttributeMapper<?> am) {
+    boolean isPresent(AttributeMapper<?> am) {
         for (Attribute<?> a : attributes)
             if (a.attributeMapper() == am)
                 return true;

@@ -26,6 +26,7 @@ package jdk.classfile;
 
 import jdk.classfile.attribute.RuntimeInvisibleTypeAnnotationsAttribute;
 import jdk.classfile.attribute.RuntimeVisibleTypeAnnotationsAttribute;
+import jdk.classfile.attribute.StackMapTableAttribute;
 import jdk.classfile.impl.AbstractInstruction;
 
 /**
@@ -38,7 +39,8 @@ import jdk.classfile.impl.AbstractInstruction;
  */
 public sealed interface CodeElement extends ClassfileElement
         permits Instruction, PseudoInstruction, AbstractInstruction,
-                CustomAttribute, RuntimeVisibleTypeAnnotationsAttribute, RuntimeInvisibleTypeAnnotationsAttribute {
+                CustomAttribute, RuntimeVisibleTypeAnnotationsAttribute, RuntimeInvisibleTypeAnnotationsAttribute,
+                StackMapTableAttribute {
     /**
      * {@return the kind of this instruction}
      */
@@ -64,7 +66,7 @@ public sealed interface CodeElement extends ClassfileElement
         TYPE_CHECK, ARRAY_LOAD, ARRAY_STORE, STACK, CONVERT, OPERATOR, CONSTANT,
         MONITOR, NOP, UNSUPPORTED,
         LABEL_TARGET, EXCEPTION_CATCH, CHARACTER_RANGE, LOCAL_VARIABLE, LOCAL_VARIABLE_TYPE, LINE_NUMBER,
-        PARAMETER_ANNOTATION, TYPE_ANNOTATION, END;
+        PARAMETER_ANNOTATION, STACK_MAP, TYPE_ANNOTATION, END;
     }
 
 }

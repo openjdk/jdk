@@ -26,51 +26,54 @@
 package jdk.classfile.impl;
 
 import java.lang.constant.ConstantDescs;
+import java.lang.constant.MethodTypeDesc;
+import java.lang.reflect.AccessFlag;
 import java.util.List;
+import java.util.TreeMap;
+import jdk.classfile.BufWriter;
 
 import jdk.classfile.constantpool.ClassEntry;
-import java.lang.reflect.AccessFlag;
 import jdk.classfile.attribute.StackMapTableAttribute.*;
 import jdk.classfile.ClassReader;
 
 import static jdk.classfile.Classfile.*;
+import jdk.classfile.Label;
 import jdk.classfile.MethodModel;
-import static jdk.classfile.attribute.StackMapTableAttribute.VerificationType.*;
 
 public class StackMapDecoder {
-    static final VerificationTypeInfo soleTopVerificationTypeInfo = new SimpleVerificationTypeInfoImpl(ITEM_TOP);
-    static final VerificationTypeInfo soleIntegerVerificationTypeInfo = new SimpleVerificationTypeInfoImpl(ITEM_INTEGER);
-    static final VerificationTypeInfo soleFloatVerificationTypeInfo = new SimpleVerificationTypeInfoImpl(ITEM_FLOAT);
-    static final VerificationTypeInfo soleDoubleVerificationTypeInfo = new SimpleVerificationTypeInfoImpl(ITEM_DOUBLE);
-    static final VerificationTypeInfo soleLongVerificationTypeInfo = new SimpleVerificationTypeInfoImpl(ITEM_LONG);
-    static final VerificationTypeInfo soleNullVerificationTypeInfo = new SimpleVerificationTypeInfoImpl(ITEM_NULL);
-    static final VerificationTypeInfo soleUninitializedThisVerificationTypeInfo = new SimpleVerificationTypeInfoImpl(ITEM_UNINITIALIZED_THIS);
 
     private static final int
                     SAME_LOCALS_1_STACK_ITEM_EXTENDED = 247,
-                    SAME_EXTENDED = 251,
-                    FULL = 255;
+                    SAME_EXTENDED = 251;
 
     private final ClassReader classReader;
     private final int pos;
-    private final StackMapFrame.Full initFrame;
+    private final LabelContext ctx;
+    private final List<VerificationTypeInfo> initFrameLocals;
     private int p;
 
-    StackMapDecoder(ClassReader classReader, int pos, StackMapFrame.Full initFrame) {
+    StackMapDecoder(ClassReader classReader, int pos, LabelContext ctx, List<VerificationTypeInfo> initFrameLocals) {
         this.classReader = classReader;
         this.pos = pos;
-        this.initFrame = initFrame;
+        this.ctx = ctx;
+        this.initFrameLocals = initFrameLocals;
     }
 
-    static StackMapFrame.Full initFrame(MethodModel method) {
+    static List<VerificationTypeInfo> initFrameLocals(MethodModel method) {
+        return initFrameLocals(method.parent().orElseThrow().thisClass(),
+                method.methodName().stringValue(),
+                method.methodType().stringValue(),
+                method.flags().has(AccessFlag.STATIC));
+    }
+
+    public static List<VerificationTypeInfo> initFrameLocals(ClassEntry thisClass, String methodName, String methodType, boolean isStatic) {
+        var mdesc = MethodTypeDesc.ofDescriptor(methodType);
         VerificationTypeInfo vtis[];
-        var mdesc = method.methodTypeSymbol();
         int i = 0;
-        if (!method.flags().has(AccessFlag.STATIC)) {
+        if (!isStatic) {
             vtis = new VerificationTypeInfo[mdesc.parameterCount() + 1];
-            var thisClass = method.parent().orElseThrow().thisClass();
-            if ("<init>".equals(method.methodName().stringValue()) && !ConstantDescs.CD_Object.equals(thisClass.asSymbol())) {
-                vtis[i++] = StackMapDecoder.soleUninitializedThisVerificationTypeInfo;
+            if ("<init>".equals(methodName) && !ConstantDescs.CD_Object.equals(thisClass.asSymbol())) {
+                vtis[i++] = SimpleVerificationTypeInfo.ITEM_UNINITIALIZED_THIS;
             } else {
                 vtis[i++] = new StackMapDecoder.ObjectVerificationTypeInfoImpl(thisClass);
             }
@@ -79,123 +82,165 @@ public class StackMapDecoder {
         }
         for(var arg : mdesc.parameterList()) {
             vtis[i++] = switch (arg.descriptorString()) {
-                case "I", "S", "C" ,"B", "Z" ->  StackMapDecoder.soleIntegerVerificationTypeInfo;
-                case "J" -> StackMapDecoder.soleLongVerificationTypeInfo;
-                case "F" -> StackMapDecoder.soleFloatVerificationTypeInfo;
-                case "D" -> StackMapDecoder.soleDoubleVerificationTypeInfo;
+                case "I", "S", "C" ,"B", "Z" ->  SimpleVerificationTypeInfo.ITEM_INTEGER;
+                case "J" -> SimpleVerificationTypeInfo.ITEM_LONG;
+                case "F" -> SimpleVerificationTypeInfo.ITEM_FLOAT;
+                case "D" -> SimpleVerificationTypeInfo.ITEM_DOUBLE;
                 case "V" -> throw new IllegalArgumentException("Illegal method argument type: " + arg);
                 default -> new StackMapDecoder.ObjectVerificationTypeInfoImpl(TemporaryConstantPool.INSTANCE.classEntry(arg));
             };
         }
-        return new StackMapFrameFullImpl(FULL, FrameKind.FULL_FRAME, -1, -1, List.of(vtis), List.of());
+        return List.of(vtis);
     }
 
-    List<StackMapFrame> entries() {
+    public static void writeFrames(BufWriter b, List<StackMapFrameInfo> entries) {
+        var buf = (BufWriterImpl)b;
+        var dcb = (DirectCodeBuilder)buf.labelResolver();
+        var mi = dcb.methodInfo();
+        var prevLocals = StackMapDecoder.initFrameLocals(buf.thisClass(),
+                mi.methodName().stringValue(),
+                mi.methodType().stringValue(),
+                (mi.methodFlags() & ACC_STATIC) != 0);
+        int prevOffset = -1;
+        var map = new TreeMap<Integer, StackMapFrameInfo>();
+        //sort by resolved label offsets first to allow unordered entries
+        for (var fr : entries) {
+            map.put(dcb.labelToBci(fr.target()), fr);
+        }
+        b.writeU2(map.size());
+        for (var me : map.entrySet()) {
+            int offset = me.getKey();
+            var fr = me.getValue();
+            writeFrame(buf, offset - prevOffset - 1, prevLocals, fr);
+            prevOffset = offset;
+            prevLocals = fr.locals();
+        }
+    }
+
+    private static void writeFrame(BufWriterImpl out, int offsetDelta, List<VerificationTypeInfo> prevLocals, StackMapFrameInfo fr) {
+        if (offsetDelta < 0) throw new IllegalArgumentException("Invalid stack map frames order");
+        if (fr.stack().isEmpty()) {
+            int commonLocalsSize = Math.min(prevLocals.size(), fr.locals().size());
+            int diffLocalsSize = fr.locals().size() - prevLocals.size();
+            if (-3 <= diffLocalsSize && diffLocalsSize <= 3 && equals(fr.locals(), prevLocals, commonLocalsSize)) {
+                if (diffLocalsSize == 0 && offsetDelta < 64) { //same frame
+                    out.writeU1(offsetDelta);
+                } else {   //chop, same extended or append frame
+                    out.writeU1(251 + diffLocalsSize);
+                    out.writeU2(offsetDelta);
+                    for (int i=commonLocalsSize; i<fr.locals().size(); i++) writeTypeInfo(out, fr.locals().get(i));
+                }
+                return;
+            }
+        } else if (fr.stack().size() == 1 && fr.locals().equals(prevLocals)) {
+            if (offsetDelta < 64) {  //same locals 1 stack item frame
+                out.writeU1(64 + offsetDelta);
+            } else {  //same locals 1 stack item extended frame
+                out.writeU1(247);
+                out.writeU2(offsetDelta);
+            }
+            writeTypeInfo(out, fr.stack().get(0));
+            return;
+        }
+        //full frame
+        out.writeU1(255);
+        out.writeU2(offsetDelta);
+        out.writeU2(fr.locals().size());
+        for (var l : fr.locals()) writeTypeInfo(out, l);
+        out.writeU2(fr.stack().size());
+        for (var s : fr.stack()) writeTypeInfo(out, s);
+    }
+
+    private static boolean equals(List<VerificationTypeInfo> l1, List<VerificationTypeInfo> l2, int compareSize) {
+        for (int i = 0; i < compareSize; i++) {
+            if (!l1.get(i).equals(l2.get(i))) return false;
+        }
+        return true;
+    }
+
+    private static void writeTypeInfo(BufWriterImpl bw, VerificationTypeInfo vti) {
+        bw.writeU1(vti.tag());
+        switch (vti) {
+            case SimpleVerificationTypeInfo svti ->
+                {}
+            case ObjectVerificationTypeInfo ovti ->
+                bw.writeIndex(ovti.className());
+            case UninitializedVerificationTypeInfo uvti ->
+                bw.writeU2(bw.labelResolver().labelToBci(uvti.newTarget()));
+        }
+    }
+
+    List<StackMapFrameInfo> entries() {
         p = pos;
-        StackMapFrame frame = initFrame;
-        var entries = new StackMapFrame[u2()];
+        List<VerificationTypeInfo> locals = initFrameLocals, stack = List.of();
+        int bci = -1;
+        var entries = new StackMapFrameInfo[u2()];
         for (int ei = 0; ei < entries.length; ei++) {
             int frameType = classReader.readU1(p++);
             if (frameType < 64) {
-                frame = new StackMapFrameSameImpl(frameType, FrameKind.SAME,
-                        frameType, frame.absoluteOffset() + frameType + 1,
-                        false,
-                        frame.effectiveLocals(), List.of());
+                bci += frameType + 1;
+                stack = List.of();
             } else if (frameType < 128) {
-                var stack = readVerificationTypeInfo();
-                frame = new StackMapFrameSame1Impl(frameType, FrameKind.SAME_LOCALS_1_STACK_ITEM,
-                        frameType - 64, frame.absoluteOffset() + frameType - 63,
-                        false,
-                        stack,
-                        frame.effectiveLocals(), List.of(stack));
+                bci += frameType - 63;
+                stack = List.of(readVerificationTypeInfo(bci));
             } else {
                 if (frameType < SAME_LOCALS_1_STACK_ITEM_EXTENDED)
                     throw new IllegalArgumentException("Invalid stackmap frame type: " + frameType);
-                int offsetDelta = u2();
+                bci += u2() + 1;
                 if (frameType == SAME_LOCALS_1_STACK_ITEM_EXTENDED) {
-                    var stack = readVerificationTypeInfo();
-                    frame = new StackMapFrameSame1Impl(frameType, FrameKind.SAME_LOCALS_1_STACK_ITEM_EXTENDED,
-                            offsetDelta, frame.absoluteOffset() + offsetDelta + 1,
-                            true,
-                            stack,
-                            frame.effectiveLocals(), List.of(stack));
+                    stack = List.of(readVerificationTypeInfo(bci));
                 } else if (frameType < SAME_EXTENDED) {
-                    frame = new StackMapFrameChopImpl(frameType, FrameKind.CHOP,
-                            offsetDelta, frame.absoluteOffset() + offsetDelta + 1,
-                            frame.effectiveLocals().subList(frame.effectiveLocals().size() + frameType - SAME_EXTENDED, frame.effectiveLocals().size()),
-                            frame.effectiveLocals().subList(0, frame.effectiveLocals().size() + frameType - SAME_EXTENDED), List.of());
+                    locals = locals.subList(0, locals.size() + frameType - SAME_EXTENDED);
+                    stack = List.of();
                 } else if (frameType == SAME_EXTENDED) {
-                    frame = new StackMapFrameSameImpl(frameType, FrameKind.SAME_FRAME_EXTENDED,
-                            offsetDelta, frame.absoluteOffset() + offsetDelta + 1,
-                            true,
-                            frame.effectiveLocals(), List.of());
+                    stack = List.of();
                 } else if (frameType < SAME_EXTENDED + 4) {
-                    int actSize = frame.effectiveLocals().size();
-                    var locals = frame.effectiveLocals().toArray(new VerificationTypeInfo[actSize + frameType - SAME_EXTENDED]);
-                    for (int i = actSize; i < locals.length; i++)
-                        locals[i] = readVerificationTypeInfo();
-                    var locList = List.of(locals);
-                    frame = new StackMapFrameAppendImpl(frameType, FrameKind.APPEND,
-                            offsetDelta, frame.absoluteOffset() + offsetDelta + 1,
-                            locList.subList(actSize, locList.size()),
-                            locList, List.of());
+                    int actSize = locals.size();
+                    var newLocals = locals.toArray(new VerificationTypeInfo[actSize + frameType - SAME_EXTENDED]);
+                    for (int i = actSize; i < newLocals.length; i++)
+                        newLocals[i] = readVerificationTypeInfo(bci);
+                    locals = List.of(newLocals);
+                    stack = List.of();
                 } else {
-                    var locals = new VerificationTypeInfo[u2()];
-                    for (int i=0; i<locals.length; i++)
-                        locals[i] = readVerificationTypeInfo();
-                    var stack = new VerificationTypeInfo[u2()];
-                    for (int i=0; i<stack.length; i++)
-                        stack[i] = readVerificationTypeInfo();
-                    var locList = List.of(locals);
-                    var stackList = List.of(stack);
-                    frame = new StackMapFrameFullImpl(frameType, FrameKind.FULL_FRAME,
-                            offsetDelta, frame.absoluteOffset() + offsetDelta + 1,
-                            locList, stackList);
+                    var newLocals = new VerificationTypeInfo[u2()];
+                    for (int i=0; i<newLocals.length; i++)
+                        newLocals[i] = readVerificationTypeInfo(bci);
+                    var newStack = new VerificationTypeInfo[u2()];
+                    for (int i=0; i<newStack.length; i++)
+                        newStack[i] = readVerificationTypeInfo(bci);
+                    locals = List.of(newLocals);
+                    stack = List.of(newStack);
                 }
             }
-            entries[ei] = frame;
+            entries[ei] = new StackMapFrameImpl(frameType,
+                        ctx.getLabel(bci),
+                        locals,
+                        stack);
         }
         return List.of(entries);
     }
 
-    private VerificationTypeInfo readVerificationTypeInfo() {
+    private VerificationTypeInfo readVerificationTypeInfo(int bci) {
         int tag = classReader.readU1(p++);
         return switch (tag) {
-            case VT_TOP -> soleTopVerificationTypeInfo;
-            case VT_INTEGER -> soleIntegerVerificationTypeInfo;
-            case VT_FLOAT -> soleFloatVerificationTypeInfo;
-            case VT_DOUBLE -> soleDoubleVerificationTypeInfo;
-            case VT_LONG -> soleLongVerificationTypeInfo;
-            case VT_NULL -> soleNullVerificationTypeInfo;
-            case VT_UNINITIALIZED_THIS -> soleUninitializedThisVerificationTypeInfo;
+            case VT_TOP -> SimpleVerificationTypeInfo.ITEM_TOP;
+            case VT_INTEGER -> SimpleVerificationTypeInfo.ITEM_INTEGER;
+            case VT_FLOAT -> SimpleVerificationTypeInfo.ITEM_FLOAT;
+            case VT_DOUBLE -> SimpleVerificationTypeInfo.ITEM_DOUBLE;
+            case VT_LONG -> SimpleVerificationTypeInfo.ITEM_LONG;
+            case VT_NULL -> SimpleVerificationTypeInfo.ITEM_NULL;
+            case VT_UNINITIALIZED_THIS -> SimpleVerificationTypeInfo.ITEM_UNINITIALIZED_THIS;
             case VT_OBJECT -> new ObjectVerificationTypeInfoImpl((ClassEntry)classReader.entryByIndex(u2()));
-            case VT_UNINITIALIZED -> new UninitializedVerificationTypeInfoImpl(u2());
+            case VT_UNINITIALIZED -> new UninitializedVerificationTypeInfoImpl(ctx.getLabel(u2()));
             default -> throw new IllegalArgumentException("Invalid verification type tag: " + tag);
         };
-    }
-
-    public static record SimpleVerificationTypeInfoImpl(VerificationType type) implements SimpleVerificationTypeInfo {
-
-        @Override
-        public String toString() {
-            return switch (type) {
-                case ITEM_DOUBLE -> "D";
-                case ITEM_FLOAT -> "F";
-                case ITEM_INTEGER -> "I";
-                case ITEM_LONG -> "J";
-                case ITEM_NULL -> "null";
-                case ITEM_TOP -> "?";
-                case ITEM_UNINITIALIZED_THIS -> "THIS";
-                default -> throw new AssertionError("should never happen");
-            };
-        }
     }
 
     public static record ObjectVerificationTypeInfoImpl(
             ClassEntry className) implements ObjectVerificationTypeInfo {
 
         @Override
-        public VerificationType type() { return VerificationType.ITEM_OBJECT; }
+        public int tag() { return VT_OBJECT; }
 
         @Override
         public String toString() {
@@ -203,14 +248,14 @@ public class StackMapDecoder {
         }
     }
 
-    public static record UninitializedVerificationTypeInfoImpl(int offset) implements UninitializedVerificationTypeInfo {
+    public static record UninitializedVerificationTypeInfoImpl(Label newTarget) implements UninitializedVerificationTypeInfo {
 
         @Override
-        public VerificationType type() { return VerificationType.ITEM_UNINITIALIZED; }
+        public int tag() { return VT_UNINITIALIZED; }
 
         @Override
         public String toString() {
-            return "UNINIT(" + offset +")";
+            return "UNINIT(" + newTarget +")";
         }
     }
 
@@ -220,53 +265,10 @@ public class StackMapDecoder {
         return v;
     }
 
-    public static record StackMapFrameSameImpl(int frameType,
-        FrameKind frameKind,
-        int offsetDelta,
-        int absoluteOffset,
-        boolean extended,
-        List<VerificationTypeInfo> effectiveLocals,
-        List<VerificationTypeInfo> effectiveStack)
-            implements StackMapFrame.Same {
-    }
-
-    public static record StackMapFrameSame1Impl(int frameType,
-                                               FrameKind frameKind,
-                                               int offsetDelta,
-                                               int absoluteOffset,
-                                               boolean extended,
-                                               VerificationTypeInfo declaredStack,
-                                               List<VerificationTypeInfo> effectiveLocals,
-                                               List<VerificationTypeInfo> effectiveStack)
-            implements StackMapFrame.Same1 {
-    }
-
-    public static record StackMapFrameAppendImpl(int frameType,
-                                                 FrameKind frameKind,
-                                                 int offsetDelta,
-                                                 int absoluteOffset,
-                                                 List<VerificationTypeInfo> declaredLocals,
-                                                 List<VerificationTypeInfo> effectiveLocals,
-                                                 List<VerificationTypeInfo> effectiveStack)
-            implements StackMapFrame.Append {
-    }
-
-    public static record StackMapFrameChopImpl(int frameType,
-                                                 FrameKind frameKind,
-                                                 int offsetDelta,
-                                                 int absoluteOffset,
-                                                 List<VerificationTypeInfo> choppedLocals,
-                                                 List<VerificationTypeInfo> effectiveLocals,
-                                                 List<VerificationTypeInfo> effectiveStack)
-            implements StackMapFrame.Chop {
-    }
-
-    public static record StackMapFrameFullImpl(int frameType,
-                                               FrameKind frameKind,
-                                               int offsetDelta,
-                                               int absoluteOffset,
-                                               List<VerificationTypeInfo> effectiveLocals,
-                                               List<VerificationTypeInfo> effectiveStack)
-            implements StackMapFrame.Full {
+    public static record StackMapFrameImpl(int frameType,
+                                           Label target,
+                                           List<VerificationTypeInfo> locals,
+                                           List<VerificationTypeInfo> stack)
+            implements StackMapFrameInfo {
     }
 }

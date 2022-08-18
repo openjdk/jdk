@@ -182,6 +182,10 @@ public final class DirectCodeBuilder
         return bytecodesBufWriter.size();
     }
 
+    public MethodInfo methodInfo() {
+        return methodInfo;
+    }
+
     private Attribute<CodeAttribute> content = null;
 
     private void writeExceptionHandlers(BufWriter buf) {

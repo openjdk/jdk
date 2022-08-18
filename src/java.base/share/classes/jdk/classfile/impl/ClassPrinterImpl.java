@@ -512,11 +512,11 @@ public final class ClassPrinterImpl {
                 new MapNodeImpl(FLOW, "value").with(elementValueToTree(evp.value())))));
     }
 
-    private static Stream<ConstantDesc> convertVTIs(int bci, List<StackMapTableAttribute.VerificationTypeInfo> vtis) {
+    private static Stream<ConstantDesc> convertVTIs(LabelResolver lr, List<StackMapTableAttribute.VerificationTypeInfo> vtis) {
         return vtis.stream().mapMulti((vti, ret) -> {
             switch (vti) {
                 case SimpleVerificationTypeInfo s -> {
-                    switch (s.type()) {
+                    switch (s) {
                         case ITEM_DOUBLE -> {
                             ret.accept("double");
                             ret.accept("double2");
@@ -537,7 +537,7 @@ public final class ClassPrinterImpl {
                 case ObjectVerificationTypeInfo o ->
                     ret.accept(o.className().name().stringValue());
                 case UninitializedVerificationTypeInfo u ->
-                    ret.accept("UNITIALIZED @" + (bci + u.offset()));
+                    ret.accept("UNITIALIZED @" + lr.labelToBci(u.newTarget()));
             }
         });
     }
@@ -549,7 +549,7 @@ public final class ClassPrinterImpl {
             case ClassModel cm -> classToTree(cm, verbosity);
             case FieldModel fm -> fieldToTree(fm, verbosity);
             case MethodModel mm -> methodToTree(mm, verbosity);
-            case CodeModel com -> codeToTree(com, verbosity);
+            case CodeModel com -> codeToTree((CodeImpl)com, verbosity);
         };
     }
 
@@ -647,10 +647,10 @@ public final class ClassPrinterImpl {
         }
     }
 
-    private static Node frameToTree(ConstantDesc name, StackMapFrame f) {
+    private static Node frameToTree(ConstantDesc name, LabelResolver lr, StackMapFrameInfo f) {
         return new MapNodeImpl(FLOW, name).with(
-                list("locals", "item", convertVTIs(f.absoluteOffset(), f.effectiveLocals())),
-                list("stack", "item", convertVTIs(f.absoluteOffset(), f.effectiveStack())));
+                list("locals", "item", convertVTIs(lr, f.locals())),
+                list("stack", "item", convertVTIs(lr, f.stack())));
     }
 
     private static MapNode fieldToTree(FieldModel f, Verbosity verbosity) {
@@ -669,10 +669,10 @@ public final class ClassPrinterImpl {
                       leaf("method type", m.methodType().stringValue()),
                       list("attributes", "attribute", m.attributes().stream().map(Attribute::attributeName)))
                 .with(attributesToTree(m.attributes(), verbosity))
-                .with(codeToTree(m.code().orElse(null), verbosity));
+                .with(codeToTree((CodeImpl)m.code().orElse(null), verbosity));
     }
 
-    private static MapNode codeToTree(CodeModel com, Verbosity verbosity) {
+    private static MapNode codeToTree(CodeImpl com, Verbosity verbosity) {
         if (verbosity != Verbosity.MEMBERS_ONLY && com != null) {
             var codeNode = new MapNodeImpl(BLOCK, "code");
             codeNode.with(leaf("max stack", ((CodeAttribute)com).maxStack()));
@@ -686,7 +686,7 @@ public final class ClassPrinterImpl {
                 if (attr instanceof StackMapTableAttribute smta) {
                     codeNode.with(stackMap);
                     for (var smf : smta.entries()) {
-                        stackMap.with(frameToTree(smf.absoluteOffset(), smf));
+                        stackMap.with(frameToTree(com.labelToBci(smf.target()), com, smf));
                     }
                 } else if (verbosity == Verbosity.TRACE_ALL) switch (attr) {
                     case LocalVariableTableAttribute lvta -> {
@@ -740,7 +740,9 @@ public final class ClassPrinterImpl {
             }
             codeNode.with(attributesToTree(com.attributes(), verbosity));
             if (!stackMap.containsKey(0)) {
-                codeNode.with(frameToTree("//stack map frame @0", StackMapDecoder.initFrame(com.parent().get())));
+                codeNode.with(new MapNodeImpl(FLOW, "//stack map frame @0").with(
+                    list("locals", "item", convertVTIs(com, StackMapDecoder.initFrameLocals(com.parent().get()))),
+                    list("stack", "item", Stream.of())));
             }
             var excHandlers = com.exceptionHandlers().stream().map(exc -> new ExceptionHandler(com.labelToBci(exc.tryStart()), com.labelToBci(exc.tryEnd()), com.labelToBci(exc.handler()), exc.catchType().map(ct -> ct.name().stringValue()).orElse(null))).toList();
             int bci = 0;

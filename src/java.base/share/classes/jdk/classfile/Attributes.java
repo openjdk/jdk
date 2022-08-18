@@ -87,6 +87,7 @@ import static jdk.classfile.AttributedElement.Kind.CODE_ONLY;
 import static jdk.classfile.AttributedElement.Kind.EVERYWHERE;
 import static jdk.classfile.AttributedElement.Kind.FIELD_ONLY;
 import static jdk.classfile.AttributedElement.Kind.METHOD_ONLY;
+import jdk.classfile.impl.StackMapDecoder;
 
 /**
  * Attribute mappers for standard classfile attributes.
@@ -740,12 +741,12 @@ public class Attributes {
             STACK_MAP_TABLE = new AbstractAttributeMapper<>(NAME_STACK_MAP_TABLE, CODE_ONLY, Classfile.JAVA_6_VERSION) {
                 @Override
                 public StackMapTableAttribute readAttribute(AttributedElement e, ClassReader cf, int p) {
-                    return new BoundAttribute.BoundStackMapTableAttribute((CodeModel)e, cf, this, p);
+                    return new BoundAttribute.BoundStackMapTableAttribute((CodeImpl)e, cf, this, p);
                 }
 
                 @Override
-                protected void writeBody(BufWriter buf, StackMapTableAttribute attr) {
-                    throw new AssertionError("should never reach here");
+                protected void writeBody(BufWriter b, StackMapTableAttribute attr) {
+                    StackMapDecoder.writeFrames(b, attr.entries());
                 }
             };
 

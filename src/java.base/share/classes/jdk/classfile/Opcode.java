@@ -257,7 +257,8 @@ public enum Opcode {
     PARAMETER_ANNO(0xFF06, 0, CodeElement.Kind.PARAMETER_ANNOTATION),
     TYPE_ANNO(0xFF07, 0, CodeElement.Kind.TYPE_ANNOTATION),
     LOCAL_VARIABLE_TYPE(0xFF08, 0, CodeElement.Kind.LOCAL_VARIABLE_TYPE),
-    END(0xFF09, 0, CodeElement.Kind.END),
+    STACK_MAP(0xFF09, 0, CodeElement.Kind.STACK_MAP),
+    END(0xFF0A, 0, CodeElement.Kind.END),
     ;
 
     private final int bytecode;

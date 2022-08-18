@@ -248,8 +248,11 @@ public final class CodeImpl
                && classReader.compare(buf, offset, codeStart, codeLength);
     }
 
-    private static int adjustForLongDouble(int vt, int v) {
-        return (vt == 7 || vt == 8) ? v + 2 : v;
+    private int adjustForObjectOrUninitialized(int bci) {
+        int vt = classReader.readU1(bci);
+        //inflate newTarget labels from Uninitialized VTIs
+        if (vt == 8) inflateLabel(classReader.readU2(bci + 1));
+        return (vt == 7 || vt == 8) ? bci + 3 : bci + 1;
     }
 
     private void inflateLabel(int bci) {
@@ -295,13 +298,13 @@ public final class CodeImpl
             }
             else if (frameType < 128) {
                 offsetDelta = frameType & 0x3f;
-                p += adjustForLongDouble(classReader.readU1(p + 1), 2);
+                p = adjustForObjectOrUninitialized(p + 1);
             }
             else
                 switch (frameType) {
                     case 247 -> {
                         offsetDelta = classReader.readU2(p + 1);
-                        p += adjustForLongDouble(classReader.readU1(p + 3), 4);
+                        p = adjustForObjectOrUninitialized(p + 3);
                     }
                     case 248, 249, 250, 251 -> {
                         offsetDelta = classReader.readU2(p + 1);
@@ -312,7 +315,7 @@ public final class CodeImpl
                         int k = frameType - 251;
                         p += 3;
                         for (int c = 0; c < k; ++c) {
-                            p += adjustForLongDouble(classReader.readU1(p), 1);
+                            p = adjustForObjectOrUninitialized(p);
                         }
                     }
                     case 255 -> {
@@ -321,12 +324,12 @@ public final class CodeImpl
                         int k = classReader.readU2(p);
                         p += 2;
                         for (int c = 0; c < k; ++c) {
-                            p += adjustForLongDouble(classReader.readU1(p), 1);
+                            p = adjustForObjectOrUninitialized(p);
                         }
                         k = classReader.readU2(p);
                         p += 2;
                         for (int c = 0; c < k; ++c) {
-                            p += adjustForLongDouble(classReader.readU1(p), 1);
+                            p = adjustForObjectOrUninitialized(p);
                         }
                     }
                     default -> throw new IllegalArgumentException("Bad frame type: " + frameType);
@@ -369,7 +372,7 @@ public final class CodeImpl
                     consumer.accept(instruction);
                 }
             }
-            if (a.attributeMapper() == Attributes.LOCAL_VARIABLE_TABLE) {
+            else if (a.attributeMapper() == Attributes.LOCAL_VARIABLE_TABLE) {
                 var attr = (BoundLocalVariableTableAttribute) a;
                 int cnt = classReader.readU2(attr.payloadStart);
                 int p = attr.payloadStart + 2;
