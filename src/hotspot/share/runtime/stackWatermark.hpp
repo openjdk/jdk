@@ -25,7 +25,6 @@
 #ifndef SHARE_RUNTIME_STACKWATERMARK_HPP
 #define SHARE_RUNTIME_STACKWATERMARK_HPP
 
-#include "gc/z/zBarrierSetNMethod.hpp"
 #include "memory/allStatic.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/stackWatermarkKind.hpp"

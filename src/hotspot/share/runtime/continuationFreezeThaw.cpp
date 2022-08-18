@@ -1628,7 +1628,6 @@ static inline int prepare_thaw_internal(JavaThread* thread, bool return_barrier)
 
   ContinuationEntry* ce = thread->last_continuation();
   assert(ce != nullptr, "");
-
   oop continuation = ce->cont_oop(thread);
   assert(continuation == get_continuation(thread), "");
   verify_continuation(continuation);

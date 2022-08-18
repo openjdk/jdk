@@ -385,6 +385,7 @@ void metadata_Relocation::unpack_data() {
   unpack_2_ints(_metadata_index, _offset);
 }
 
+
 void virtual_call_Relocation::pack_data_to(CodeSection* dest) {
   short*  p     = (short*) dest->locs_end();
   address point =          dest->locs_point();

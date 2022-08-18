@@ -195,16 +195,16 @@ jobjectRefType JNIHandles::handle_type(JavaThread* thread, jobject handle) {
     }
   } else if (is_global(handle)) {
     switch (global_handles()->allocation_status(global_ptr(handle))) {
-        case OopStorage::ALLOCATED_ENTRY:
-          result = JNIGlobalRefType;
-          break;
+    case OopStorage::ALLOCATED_ENTRY:
+      result = JNIGlobalRefType;
+      break;
 
-        case OopStorage::UNALLOCATED_ENTRY:
-          break;                    // Invalid global handle
+    case OopStorage::UNALLOCATED_ENTRY:
+      break;                    // Invalid global handle
 
-        default:
-          ShouldNotReachHere();
-        }
+    default:
+      ShouldNotReachHere();
+    }
   } else {
     // Not in global storage.  Might be a local handle.
     if (is_local_handle(thread, handle) || is_frame_handle(thread, handle)) {
@@ -212,7 +212,6 @@ jobjectRefType JNIHandles::handle_type(JavaThread* thread, jobject handle) {
     } else {
       ShouldNotReachHere();
     }
-
   }
   return result;
 }

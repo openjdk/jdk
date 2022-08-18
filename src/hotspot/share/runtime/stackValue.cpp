@@ -51,7 +51,7 @@ StackValue* StackValue::create_stack_value(const frame* fr, const RegisterMapT* 
 
 static oop oop_from_oop_location(stackChunkOop chunk, void* addr) {
   if (addr == nullptr) {
-    return (oop)NULL;
+    return nullptr;
   }
 
   if (UseCompressedOops) {
@@ -69,7 +69,7 @@ static oop oop_from_oop_location(stackChunkOop chunk, void* addr) {
       // when a narrow oop implicit null check is used.
       // The narrow_oop_base could be NULL or be the address
       // of the page below heap. Use NULL value for both cases.
-      return (oop)NULL;
+      return nullptr;
     }
 #endif
   }
