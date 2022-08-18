@@ -1469,8 +1469,7 @@ bool nmethod::make_not_entrant_or_zombie(int state) {
     }
 
     if (is_in_use() && update_recompile_counts()) {
-      // TODO: Fix terminology
-      // It's a true state change, so mark the method as decompiled.
+      // Increment the decompile count
       // Do it only for transition from alive.
       inc_decompile_count();
     }
