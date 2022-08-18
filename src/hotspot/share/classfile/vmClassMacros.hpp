@@ -105,8 +105,6 @@
   do_klass(Continuation_klass,                          jdk_internal_vm_Continuation                          ) \
   do_klass(StackChunk_klass,                            jdk_internal_vm_StackChunk                            ) \
                                                                                                                 \
-  /* NOTE: needed too early in bootstrapping process to have checks based on JDK version */                     \
-  /* It's okay if this turns out to be NULL in non-1.4 JDKs. */                                                 \
   do_klass(reflect_MagicAccessorImpl_klass,             reflect_MagicAccessorImpl                             ) \
   do_klass(reflect_MethodAccessorImpl_klass,            reflect_MethodAccessorImpl                            ) \
   do_klass(reflect_ConstructorAccessorImpl_klass,       reflect_ConstructorAccessorImpl                       ) \
@@ -116,7 +114,7 @@
   do_klass(reflect_CallerSensitive_klass,               reflect_CallerSensitive                               ) \
   do_klass(reflect_NativeConstructorAccessorImpl_klass, reflect_NativeConstructorAccessorImpl                 ) \
                                                                                                                 \
-  /* support for dynamic typing; it's OK if these are NULL in earlier JDKs */                                   \
+  /* support for dynamic typing */                                                                              \
   do_klass(DirectMethodHandle_klass,                    java_lang_invoke_DirectMethodHandle                   ) \
   do_klass(MethodHandle_klass,                          java_lang_invoke_MethodHandle                         ) \
   do_klass(VarHandle_klass,                             java_lang_invoke_VarHandle                            ) \
@@ -135,7 +133,6 @@
   do_klass(ConstantCallSite_klass,                      java_lang_invoke_ConstantCallSite                     ) \
   do_klass(MutableCallSite_klass,                       java_lang_invoke_MutableCallSite                      ) \
   do_klass(VolatileCallSite_klass,                      java_lang_invoke_VolatileCallSite                     ) \
-  /* Note: MethodHandle must be first, and VolatileCallSite last in group */                                    \
                                                                                                                 \
   do_klass(AssertionStatusDirectives_klass,             java_lang_AssertionStatusDirectives                   ) \
   do_klass(StringBuffer_klass,                          java_lang_StringBuffer                                ) \
@@ -160,7 +157,6 @@
                                                                                                                 \
   do_klass(StackTraceElement_klass,                     java_lang_StackTraceElement                           ) \
                                                                                                                 \
-  /* It's okay if this turns out to be NULL in non-1.4 JDKs. */                                                 \
   do_klass(nio_Buffer_klass,                            java_nio_Buffer                                       ) \
                                                                                                                 \
   /* Stack Walking */                                                                                           \

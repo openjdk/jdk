@@ -43,6 +43,7 @@
 #include "runtime/continuation.hpp"
 #include "runtime/flags/flagSetting.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/os.hpp"
@@ -50,7 +51,6 @@
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "runtime/thread.hpp"
 #include "utilities/macros.hpp"
 #include "crc32c.h"
 
@@ -1326,6 +1326,13 @@ void MacroAssembler::ic_call(address entry, jint method_index) {
   RelocationHolder rh = virtual_call_Relocation::spec(pc(), method_index);
   movptr(rax, (intptr_t)Universe::non_oop_word());
   call(AddressLiteral(entry, rh));
+}
+
+void MacroAssembler::emit_static_call_stub() {
+  // Static stub relocation also tags the Method* in the code-stream.
+  mov_metadata(rbx, (Metadata*) NULL);  // Method is zapped till fixup time.
+  // This is recognized as unresolved by relocs/nativeinst/ic code.
+  jump(RuntimeAddress(pc()));
 }
 
 // Implementation of call_VM versions
@@ -2725,6 +2732,15 @@ void MacroAssembler::movss(XMMRegister dst, AddressLiteral src) {
   }
 }
 
+void MacroAssembler::movddup(XMMRegister dst, AddressLiteral src, Register rscratch) {
+  if (reachable(src)) {
+    Assembler::movddup(dst, as_Address(src));
+  } else {
+    lea(rscratch, src);
+    Assembler::movddup(dst, Address(rscratch, 0));
+  }
+}
+
 void MacroAssembler::vmovddup(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch) {
   if (reachable(src)) {
     Assembler::vmovddup(dst, as_Address(src), vector_len);
@@ -2898,56 +2914,26 @@ void MacroAssembler::pop_cont_fastpath() {
 }
 
 void MacroAssembler::inc_held_monitor_count() {
-  if (!Continuations::enabled()) return;
-
 #ifndef _LP64
   Register thread = rax;
   push(thread);
   get_thread(thread);
-#else
-  Register thread = r15_thread;
-#endif
-
   incrementl(Address(thread, JavaThread::held_monitor_count_offset()));
-
-#ifndef _LP64
   pop(thread);
+#else // LP64
+  incrementq(Address(r15_thread, JavaThread::held_monitor_count_offset()));
 #endif
 }
 
 void MacroAssembler::dec_held_monitor_count() {
-  if (!Continuations::enabled()) return;
-
 #ifndef _LP64
   Register thread = rax;
   push(thread);
   get_thread(thread);
-#else
-  Register thread = r15_thread;
-#endif
-
   decrementl(Address(thread, JavaThread::held_monitor_count_offset()));
-
-#ifndef _LP64
   pop(thread);
-#endif
-}
-
-void MacroAssembler::reset_held_monitor_count() {
-  if (!Continuations::enabled()) return;
-
-#ifndef _LP64
-  Register thread = rax;
-  push(thread);
-  get_thread(thread);
-#else
-  Register thread = r15_thread;
-#endif
-
-  movl(Address(thread, JavaThread::held_monitor_count_offset()), (int32_t)0);
-
-#ifndef _LP64
-  pop(thread);
+#else // LP64
+  decrementq(Address(r15_thread, JavaThread::held_monitor_count_offset()));
 #endif
 }
 
@@ -3311,9 +3297,13 @@ void MacroAssembler::vpand(XMMRegister dst, XMMRegister nds, AddressLiteral src,
   }
 }
 
-void MacroAssembler::vpbroadcastw(XMMRegister dst, XMMRegister src, int vector_len) {
-  assert(((dst->encoding() < 16 && src->encoding() < 16) || VM_Version::supports_avx512vlbw()),"XMM register should be 0-15");
-  Assembler::vpbroadcastw(dst, src, vector_len);
+void MacroAssembler::vpbroadcastd(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch) {
+  if (reachable(src)) {
+    Assembler::vpbroadcastd(dst, as_Address(src), vector_len);
+  } else {
+    lea(rscratch, src);
+    Assembler::vpbroadcastd(dst, Address(rscratch, 0), vector_len);
+  }
 }
 
 void MacroAssembler::vpbroadcastq(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch) {
@@ -3331,6 +3321,15 @@ void MacroAssembler::vbroadcastsd(XMMRegister dst, AddressLiteral src, int vecto
   } else {
     lea(rscratch, src);
     Assembler::vbroadcastsd(dst, Address(rscratch, 0), vector_len);
+  }
+}
+
+void MacroAssembler::vbroadcastss(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch) {
+  if (reachable(src)) {
+    Assembler::vbroadcastss(dst, as_Address(src), vector_len);
+  } else {
+    lea(rscratch, src);
+    Assembler::vbroadcastss(dst, Address(rscratch, 0), vector_len);
   }
 }
 
@@ -3773,7 +3772,7 @@ RegSet MacroAssembler::call_clobbered_gp_registers() {
 }
 
 XMMRegSet MacroAssembler::call_clobbered_xmm_registers() {
-  int num_xmm_registers = XMMRegisterImpl::available_xmm_registers();
+  int num_xmm_registers = XMMRegister::available_xmm_registers();
 #if defined(WINDOWS) && defined(_LP64)
   XMMRegSet result = XMMRegSet::range(xmm0, xmm5);
   if (num_xmm_registers > 16) {
@@ -3814,7 +3813,7 @@ static void restore_xmm_register(MacroAssembler* masm, int offset, XMMRegister r
 int register_section_sizes(RegSet gp_registers, XMMRegSet xmm_registers, bool save_fpu,
                            int& gp_area_size, int& fp_area_size, int& xmm_area_size) {
 
-  gp_area_size = align_up(gp_registers.size() * RegisterImpl::max_slots_per_register * VMRegImpl::stack_slot_size,
+  gp_area_size = align_up(gp_registers.size() * Register::max_slots_per_register * VMRegImpl::stack_slot_size,
                          StackAlignmentInBytes);
 #ifdef _LP64
   fp_area_size = 0;
@@ -3907,7 +3906,7 @@ void MacroAssembler::pop_set(XMMRegSet set, int offset) {
 void MacroAssembler::push_set(RegSet set, int offset) {
   int spill_offset;
   if (offset == -1) {
-    int register_push_size = set.size() * RegisterImpl::max_slots_per_register * VMRegImpl::stack_slot_size;
+    int register_push_size = set.size() * Register::max_slots_per_register * VMRegImpl::stack_slot_size;
     int aligned_size = align_up(register_push_size, StackAlignmentInBytes);
     subptr(rsp, aligned_size);
     spill_offset = 0;
@@ -3917,13 +3916,13 @@ void MacroAssembler::push_set(RegSet set, int offset) {
 
   for (RegSetIterator<Register> it = set.begin(); *it != noreg; ++it) {
     movptr(Address(rsp, spill_offset), *it);
-    spill_offset += RegisterImpl::max_slots_per_register * VMRegImpl::stack_slot_size;
+    spill_offset += Register::max_slots_per_register * VMRegImpl::stack_slot_size;
   }
 }
 
 void MacroAssembler::pop_set(RegSet set, int offset) {
 
-  int gp_reg_size = RegisterImpl::max_slots_per_register * VMRegImpl::stack_slot_size;
+  int gp_reg_size = Register::max_slots_per_register * VMRegImpl::stack_slot_size;
   int restore_size = set.size() * gp_reg_size;
   int aligned_size = align_up(restore_size, StackAlignmentInBytes);
 
@@ -3941,16 +3940,6 @@ void MacroAssembler::pop_set(RegSet set, int offset) {
   if (offset == -1) {
     addptr(rsp, aligned_size);
   }
-}
-
-// Defines obj, preserves var_size_in_bytes
-void MacroAssembler::eden_allocate(Register thread, Register obj,
-                                   Register var_size_in_bytes,
-                                   int con_size_in_bytes,
-                                   Register t1,
-                                   Label& slow_case) {
-  BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  bs->eden_allocate(this, thread, obj, var_size_in_bytes, con_size_in_bytes, t1, slow_case);
 }
 
 // Preserves the contents of address, destroys the contents length_in_bytes and temp.
@@ -4387,10 +4376,14 @@ void MacroAssembler::_verify_oop(Register reg, const char* s, const char* file, 
 
 void MacroAssembler::vallones(XMMRegister dst, int vector_len) {
   if (UseAVX > 2 && (vector_len == Assembler::AVX_512bit || VM_Version::supports_avx512vl())) {
+    // Only pcmpeq has dependency breaking treatment (i.e the execution can begin without
+    // waiting for the previous result on dst), not vpcmpeqd, so just use vpternlog
     vpternlogd(dst, 0xFF, dst, dst, vector_len);
+  } else if (VM_Version::supports_avx()) {
+    vpcmpeqd(dst, dst, dst, vector_len);
   } else {
-    assert(UseAVX > 0, "");
-    vpcmpeqb(dst, dst, dst, vector_len);
+    assert(VM_Version::supports_sse2(), "");
+    pcmpeqd(dst, dst);
   }
 }
 
@@ -5292,95 +5285,6 @@ void MacroAssembler::reinit_heapbase() {
 }
 
 #endif // _LP64
-
-// C2 compiled method's prolog code.
-void MacroAssembler::verified_entry(int framesize, int stack_bang_size, bool fp_mode_24b, bool is_stub) {
-
-  // WARNING: Initial instruction MUST be 5 bytes or longer so that
-  // NativeJump::patch_verified_entry will be able to patch out the entry
-  // code safely. The push to verify stack depth is ok at 5 bytes,
-  // the frame allocation can be either 3 or 6 bytes. So if we don't do
-  // stack bang then we must use the 6 byte frame allocation even if
-  // we have no frame. :-(
-  assert(stack_bang_size >= framesize || stack_bang_size <= 0, "stack bang size incorrect");
-
-  assert((framesize & (StackAlignmentInBytes-1)) == 0, "frame size not aligned");
-  // Remove word for return addr
-  framesize -= wordSize;
-  stack_bang_size -= wordSize;
-
-  // Calls to C2R adapters often do not accept exceptional returns.
-  // We require that their callers must bang for them.  But be careful, because
-  // some VM calls (such as call site linkage) can use several kilobytes of
-  // stack.  But the stack safety zone should account for that.
-  // See bugs 4446381, 4468289, 4497237.
-  if (stack_bang_size > 0) {
-    generate_stack_overflow_check(stack_bang_size);
-
-    // We always push rbp, so that on return to interpreter rbp, will be
-    // restored correctly and we can correct the stack.
-    push(rbp);
-    // Save caller's stack pointer into RBP if the frame pointer is preserved.
-    if (PreserveFramePointer) {
-      mov(rbp, rsp);
-    }
-    // Remove word for ebp
-    framesize -= wordSize;
-
-    // Create frame
-    if (framesize) {
-      subptr(rsp, framesize);
-    }
-  } else {
-    // Create frame (force generation of a 4 byte immediate value)
-    subptr_imm32(rsp, framesize);
-
-    // Save RBP register now.
-    framesize -= wordSize;
-    movptr(Address(rsp, framesize), rbp);
-    // Save caller's stack pointer into RBP if the frame pointer is preserved.
-    if (PreserveFramePointer) {
-      movptr(rbp, rsp);
-      if (framesize > 0) {
-        addptr(rbp, framesize);
-      }
-    }
-  }
-
-  if (VerifyStackAtCalls) { // Majik cookie to verify stack depth
-    framesize -= wordSize;
-    movptr(Address(rsp, framesize), (int32_t)0xbadb100d);
-  }
-
-#ifndef _LP64
-  // If method sets FPU control word do it now
-  if (fp_mode_24b) {
-    fldcw(ExternalAddress(StubRoutines::x86::addr_fpu_cntrl_wrd_24()));
-  }
-  if (UseSSE >= 2 && VerifyFPU) {
-    verify_FPU(0, "FPU stack must be clean on entry");
-  }
-#endif
-
-#ifdef ASSERT
-  if (VerifyStackAtCalls) {
-    Label L;
-    push(rax);
-    mov(rax, rsp);
-    andptr(rax, StackAlignmentInBytes-1);
-    cmpptr(rax, StackAlignmentInBytes-wordSize);
-    pop(rax);
-    jcc(Assembler::equal, L);
-    STOP("Stack is not properly aligned!");
-    bind(L);
-  }
-#endif
-
-  if (!is_stub) {
-    BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-    bs->nmethod_entry_barrier(this);
-  }
-}
 
 #if COMPILER2_OR_JVMCI
 

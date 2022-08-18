@@ -57,8 +57,8 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/signature.hpp"
-#include "runtime/thread.inline.hpp"
 #include "runtime/vframe.inline.hpp"
 #include "utilities/copy.hpp"
 
@@ -423,6 +423,7 @@ void ConstantPool::remove_unshareable_info() {
     }
   }
   if (cache() != NULL) {
+    // cache() is NULL if this class is not yet linked.
     cache()->remove_unshareable_info();
   }
 }

@@ -1257,14 +1257,14 @@ shmemBase_getlasterror(char *msg, jint size) {
 
 void
 exitTransportWithError(char *message, char *fileName,
-                       char *date, int lineNumber)
+                       int lineNumber)
 {
     JNIEnv *env;
     jint error;
     char buffer[500];
 
-    sprintf(buffer, "Shared Memory Transport \"%s\" (%s), line %d: %s\n",
-            fileName, date, lineNumber, message);
+    sprintf(buffer, "Shared Memory Transport \"%s\", line %d: %s\n",
+            fileName, lineNumber, message);
     error = (*jvm)->GetEnv(jvm, (void **)&env, JNI_VERSION_1_2);
     if (error != JNI_OK) {
         /*

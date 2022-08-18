@@ -127,7 +127,7 @@ public:
   virtual uint ideal_reg() const { return NotAMachineReg; }
   virtual uint match_edge(uint idx) const;
 #ifndef PRODUCT
-  virtual void dump_req(outputStream *st = tty) const;
+  virtual void dump_req(outputStream *st = tty, DumpConfig* dc = nullptr) const;
 #endif
 };
 
@@ -148,7 +148,7 @@ class RethrowNode : public Node {
   virtual uint match_edge(uint idx) const;
   virtual uint ideal_reg() const { return NotAMachineReg; }
 #ifndef PRODUCT
-  virtual void dump_req(outputStream *st = tty) const;
+  virtual void dump_req(outputStream *st = tty, DumpConfig* dc = nullptr) const;
 #endif
 };
 
@@ -416,6 +416,8 @@ public:
   void pop_monitor ();
   Node *peek_monitor_box() const;
   Node *peek_monitor_obj() const;
+  // Peek Operand Stacks, JVMS 2.6.2
+  Node* peek_operand(uint off = 0) const;
 
   // Access functions for the JVM
   Node *control  () const { return in(TypeFunc::Control  ); }
@@ -655,7 +657,7 @@ public:
   virtual void copy_call_debug_info(PhaseIterGVN* phase, SafePointNode* sfpt) {}
 
 #ifndef PRODUCT
-  virtual void        dump_req(outputStream* st = tty) const;
+  virtual void        dump_req(outputStream* st = tty, DumpConfig* dc = nullptr) const;
   virtual void        dump_spec(outputStream* st) const;
 #endif
 };
@@ -874,7 +876,6 @@ public:
     KlassNode,                        // type (maybe dynamic) of the obj.
     InitialTest,                      // slow-path test (may be constant)
     ALength,                          // array length (or TOP if none)
-    ValidLengthTest,
     ParmLimit
   };
 
@@ -884,7 +885,6 @@ public:
     fields[KlassNode]   = TypeInstPtr::NOTNULL;
     fields[InitialTest] = TypeInt::BOOL;
     fields[ALength]     = t;  // length (can be a bad length)
-    fields[ValidLengthTest] = TypeInt::BOOL;
 
     const TypeTuple *domain = TypeTuple::make(ParmLimit, fields);
 
@@ -979,16 +979,18 @@ public:
 //
 class AllocateArrayNode : public AllocateNode {
 public:
-  AllocateArrayNode(Compile* C, const TypeFunc* atype, Node* ctrl, Node* mem, Node* abio, Node* size, Node* klass_node,
-                    Node* initial_test, Node* count_val, Node* valid_length_test)
+  AllocateArrayNode(Compile* C, const TypeFunc *atype, Node *ctrl, Node *mem, Node *abio,
+                    Node* size, Node* klass_node, Node* initial_test,
+                    Node* count_val
+                    )
     : AllocateNode(C, atype, ctrl, mem, abio, size, klass_node,
                    initial_test)
   {
     init_class_id(Class_AllocateArray);
     set_req(AllocateNode::ALength,        count_val);
-    set_req(AllocateNode::ValidLengthTest, valid_length_test);
   }
   virtual int Opcode() const;
+  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
 
   // Dig the length operand out of a array allocation site.
   Node* Ideal_length() {

@@ -263,6 +263,12 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method, bool is_virt
   case vmIntrinsics::_numberOfTrailingZeros_l:
     if (!Matcher::match_rule_supported(Op_CountTrailingZerosL)) return false;
     break;
+  case vmIntrinsics::_reverse_i:
+    if (!Matcher::match_rule_supported(Op_ReverseI)) return false;
+    break;
+  case vmIntrinsics::_reverse_l:
+    if (!Matcher::match_rule_supported(Op_ReverseL)) return false;
+    break;
   case vmIntrinsics::_reverseBytes_c:
     if (!Matcher::match_rule_supported(Op_ReverseBytesUS)) return false;
     break;
@@ -274,6 +280,12 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method, bool is_virt
     break;
   case vmIntrinsics::_reverseBytes_l:
     if (!Matcher::match_rule_supported(Op_ReverseBytesL)) return false;
+    break;
+  case vmIntrinsics::_compareUnsigned_i:
+    if (!Matcher::match_rule_supported(Op_CmpU3)) return false;
+    break;
+  case vmIntrinsics::_compareUnsigned_l:
+    if (!Matcher::match_rule_supported(Op_CmpUL3)) return false;
     break;
   case vmIntrinsics::_divideUnsigned_i:
     if (!Matcher::match_rule_supported(Op_UDivI)) return false;

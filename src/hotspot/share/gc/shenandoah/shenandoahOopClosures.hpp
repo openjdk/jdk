@@ -31,7 +31,7 @@
 #include "gc/shenandoah/shenandoahTaskqueue.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "memory/iterator.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/javaThread.hpp"
 
 enum StringDedupMode {
   NO_DEDUP,      // Do not do anything for String deduplication

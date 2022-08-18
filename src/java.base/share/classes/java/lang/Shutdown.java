@@ -159,12 +159,6 @@ class Shutdown {
      * which should pass a nonzero status code.
      */
     static void exit(int status) {
-        synchronized (lock) {
-            if (status != 0 && VM.isShutdown()) {
-                /* Halt immediately on nonzero status */
-                halt(status);
-            }
-        }
         synchronized (Shutdown.class) {
             /* Synchronize on the class object, causing any other thread
              * that attempts to initiate shutdown to stall indefinitely

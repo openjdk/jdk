@@ -23,20 +23,21 @@
  */
 
 #include "precompiled.hpp"
-#include "classfile/javaClasses.inline.hpp"
 #include "classfile/vmClasses.hpp"
 #include "compiler/oopMap.inline.hpp"
-#include "memory/iterator.inline.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/instanceStackChunkKlass.inline.hpp"
 #include "oops/stackChunkOop.inline.hpp"
 #include "runtime/continuation.hpp"
+#include "runtime/continuationJavaClasses.inline.hpp"
 #include "runtime/frame.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/registerMap.hpp"
 #include "runtime/smallRegisterMap.inline.hpp"
 #include "runtime/stackChunkFrameStream.inline.hpp"
+#include "utilities/devirtualizer.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
@@ -166,7 +167,12 @@ class DescribeStackChunkClosure {
 
 public:
   DescribeStackChunkClosure(stackChunkOop chunk)
-    : _chunk(chunk), _map((JavaThread*)nullptr, true, false, true), _frame_no(0) {
+    : _chunk(chunk),
+      _map((JavaThread*)nullptr,
+           RegisterMap::UpdateMap::include,
+           RegisterMap::ProcessFrames::skip,
+           RegisterMap::WalkContinuation::include),
+      _frame_no(0) {
     _map.set_include_argument_oops(false);
   }
 

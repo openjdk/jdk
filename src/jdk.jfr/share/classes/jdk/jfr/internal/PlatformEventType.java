@@ -206,7 +206,7 @@ public final class PlatformEventType extends Type {
         if (isJVM) {
             if (isMethodSampling) {
                 long p = enabled ? period : 0;
-                JVM.getJVM().setMethodSamplingInterval(getId(), p);
+                JVM.getJVM().setMethodSamplingPeriod(getId(), p);
             } else {
                 JVM.getJVM().setEnabled(getId(), enabled);
             }
@@ -216,7 +216,7 @@ public final class PlatformEventType extends Type {
     public void setPeriod(long periodMillis, boolean beginChunk, boolean endChunk) {
         if (isMethodSampling) {
             long p = enabled ? periodMillis : 0;
-            JVM.getJVM().setMethodSamplingInterval(getId(), p);
+            JVM.getJVM().setMethodSamplingPeriod(getId(), p);
         }
         this.beginChunk = beginChunk;
         this.endChunk = endChunk;

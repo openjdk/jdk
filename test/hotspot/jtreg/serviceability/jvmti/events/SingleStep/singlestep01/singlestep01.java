@@ -52,14 +52,7 @@ import java.io.*;
 
 public class singlestep01 {
     static {
-        try {
-            System.loadLibrary("singlestep01");
-        } catch (UnsatisfiedLinkError ule) {
-            System.err.println("Could not load \"singlestep01\" library");
-            System.err.println("java.library.path:"
-                + System.getProperty("java.library.path"));
-            throw ule;
-        }
+        System.loadLibrary("singlestep01");
     }
 
     static volatile int result;

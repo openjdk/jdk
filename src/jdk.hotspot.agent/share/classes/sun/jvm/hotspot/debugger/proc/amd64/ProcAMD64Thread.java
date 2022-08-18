@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,11 +73,11 @@ public class ProcAMD64Thread implements ThreadProxy {
     }
 
     public boolean equals(Object obj) {
-        if ((obj == null) || !(obj instanceof ProcAMD64Thread)) {
+        if (!(obj instanceof ProcAMD64Thread other)) {
             return false;
         }
 
-        return (((ProcAMD64Thread) obj).id == id);
+        return (other.id == id);
     }
 
     public int hashCode() {

@@ -264,6 +264,11 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
         // Note: The following one is not used (see InitTimer.ENABLED). It is added here
         // so that -XX:+JVMCIPrintProperties shows the option.
         InitTimer(Boolean.class, false, "Specifies if initialization timing is enabled."),
+        CodeSerializationTypeInfo(Boolean.class, false, "Prepend the size and label of each element to the stream when " +
+                "serializing HotSpotCompiledCode to verify both ends of the protocol agree on the format. " +
+                "Defaults to true in non-product builds."),
+        DumpSerializedCode(String.class, null, "Dump serialized code during code installation for code whose simple " +
+                "name (a stub) or fully qualified name (an nmethod) contains this option's value as a substring."),
         ForceTranslateFailure(String.class, null, "Forces HotSpotJVMCIRuntime.translate to throw an exception in the context " +
                 "of the peer runtime. The value is a filter that can restrict the forced failure to matching translated " +
                 "objects. See HotSpotJVMCIRuntime.postTranslation for more details. This option exists soley to test " +
@@ -291,7 +296,7 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
         private final Class<?> type;
         @NativeImageReinitialize private Object value;
         private final Object defaultValue;
-        private boolean isDefault = true;
+        boolean isDefault = true;
         private final String[] helpLines;
 
         Option(Class<?> type, Object defaultValue, String... helpLines) {
@@ -701,7 +706,7 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
         return fromClass0(javaClass);
     }
 
-    synchronized HotSpotResolvedObjectTypeImpl fromMetaspace(long klassPointer, String signature) {
+    synchronized HotSpotResolvedObjectTypeImpl fromMetaspace(long klassPointer) {
         if (resolvedJavaTypes == null) {
             resolvedJavaTypes = new HashMap<>();
         }
@@ -712,7 +717,8 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
             javaType = (HotSpotResolvedObjectTypeImpl) klassReference.get();
         }
         if (javaType == null) {
-            javaType = new HotSpotResolvedObjectTypeImpl(klassPointer, signature);
+            String name = compilerToVm.getSignatureName(klassPointer);
+            javaType = new HotSpotResolvedObjectTypeImpl(klassPointer, name);
             resolvedJavaTypes.put(klassPointer, new WeakReference<>(javaType));
         }
         return javaType;

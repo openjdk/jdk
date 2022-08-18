@@ -50,6 +50,7 @@ class CompactibleSpace;
 class BlockOffsetTable;
 class CardTableRS;
 class DirtyCardToOopClosure;
+class FilteringClosure;
 
 // A Space describes a heap area. Class Space is an abstract
 // base class.

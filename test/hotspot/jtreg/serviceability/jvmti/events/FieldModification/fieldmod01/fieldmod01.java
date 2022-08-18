@@ -21,8 +21,6 @@
  * questions.
  */
 
-import java.io.PrintStream;
-
 /*
  * @test
  *
@@ -47,17 +45,8 @@ import java.io.PrintStream;
 
 public class fieldmod01 {
 
-    final static int JCK_STATUS_BASE = 95;
-
     static {
-        try {
-            System.loadLibrary("fieldmod01");
-        } catch (UnsatisfiedLinkError ule) {
-            System.err.println("Could not load fieldmod01 library");
-            System.err.println("java.library.path:"
-                + System.getProperty("java.library.path"));
-            throw ule;
-        }
+        System.loadLibrary("fieldmod01");
     }
 
     static volatile int result;

@@ -31,7 +31,7 @@
 #include "interpreter/bytecodes.hpp"
 #include "oops/method.hpp"
 #include "runtime/frame.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/vmThread.hpp"
 
 // This file contains the platform-independent parts

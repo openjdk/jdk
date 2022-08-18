@@ -169,6 +169,22 @@ FORBID_C_FUNCTION(char* strtok(char*, const char*), "use strtok_r");
 FORBID_C_FUNCTION(int vsprintf(char*, const char*, va_list), "use os::vsnprintf");
 FORBID_C_FUNCTION(int vsnprintf(char*, size_t, const char*, va_list), "use os::vsnprintf");
 
+// All of the following functions return raw C-heap pointers (sometimes as an option, e.g. realpath or getwd)
+// or, in case of free(), take raw C-heap pointers. Don't use them unless you are really sure you must.
+FORBID_C_FUNCTION(void* malloc(size_t size), "use os::malloc");
+FORBID_C_FUNCTION(void* calloc(size_t nmemb, size_t size), "use os::malloc and zero out manually");
+FORBID_C_FUNCTION(void free(void *ptr), "use os::free");
+FORBID_C_FUNCTION(void* realloc(void *ptr, size_t size), "use os::realloc");
+FORBID_C_FUNCTION(char* strdup(const char *s), "use os::strdup");
+FORBID_C_FUNCTION(char* strndup(const char *s, size_t n), "don't use");
+FORBID_C_FUNCTION(int posix_memalign(void **memptr, size_t alignment, size_t size), "don't use");
+FORBID_C_FUNCTION(void* aligned_alloc(size_t alignment, size_t size), "don't use");
+FORBID_C_FUNCTION(char* realpath(const char* path, char* resolved_path), "use os::Posix::realpath");
+FORBID_C_FUNCTION(char* get_current_dir_name(void), "use os::get_current_directory()");
+FORBID_C_FUNCTION(char* getwd(char *buf), "use os::get_current_directory()");
+FORBID_C_FUNCTION(wchar_t* wcsdup(const wchar_t *s), "don't use");
+FORBID_C_FUNCTION(void* reallocf(void *ptr, size_t size), "don't use");
+
 //----------------------------------------------------------------------------------------------------
 // Constants
 
@@ -720,6 +736,10 @@ inline bool is_subword_type(BasicType t) {
 
 inline bool is_signed_subword_type(BasicType t) {
   return (t == T_BYTE || t == T_SHORT);
+}
+
+inline bool is_unsigned_subword_type(BasicType t) {
+  return (t == T_BOOLEAN || t == T_CHAR);
 }
 
 inline bool is_double_word_type(BasicType t) {
