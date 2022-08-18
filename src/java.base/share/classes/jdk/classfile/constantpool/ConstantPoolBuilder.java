@@ -346,7 +346,13 @@ public sealed interface ConstantPoolBuilder
      * @param descriptor the symbolic descriptor of the method handle
      */
     default MethodHandleEntry methodHandleEntry(DirectMethodHandleDesc descriptor) {
-        return methodHandleEntry(descriptor.refKind(), methodRefEntry(descriptor.owner(), descriptor.methodName(), descriptor.invocationType()));
+        var owner = classEntry(descriptor.owner());
+        var nat = natEntry(utf8Entry(descriptor.methodName()), utf8Entry(descriptor.lookupDescriptor()));
+        return methodHandleEntry(descriptor.refKind(), switch (descriptor.kind()) {
+            case GETTER, SETTER, STATIC_GETTER, STATIC_SETTER -> fieldRefEntry(owner, nat);
+            case INTERFACE_STATIC, INTERFACE_VIRTUAL, INTERFACE_SPECIAL -> interfaceMethodRefEntry(owner, nat);
+            case STATIC, VIRTUAL, SPECIAL, CONSTRUCTOR -> methodRefEntry(owner, nat);
+        });
     }
 
     /**
