@@ -80,6 +80,19 @@ class BitMap {
     return bit >> LogBitsPerWord;
   }
 
+  // Assumes relevant validity checking for bit has already been done.
+  static idx_t raw_to_words_aligned(idx_t bit) {
+    return bit >> LogBitsPerWord;
+  }
+
+  // Converts word-aligned bit it to a word offset.
+  // precondition: bit <= size()
+  idx_t to_words_aligned(idx_t bit) const {
+    verify_limit(bit);
+    assert(is_aligned(bit, BitsPerWord), "Incorrect alignment");
+    return raw_to_words_aligned(bit);
+  }
+
   // Word-aligns bit and converts it to a word offset.
   // precondition: bit <= size()
   idx_t to_words_align_up(idx_t bit) const {
@@ -98,8 +111,17 @@ class BitMap {
   // - flip designates whether searching for 1s or 0s.  Must be one of
   //   find_{zeros,ones}_flip.
   // - aligned_right is true if end is a priori on a bm_word_t boundary.
+  // - returns end if bit not found
   template<bm_word_t flip, bool aligned_right>
   inline idx_t find_first_bit_impl(idx_t beg, idx_t end) const;
+
+  // Helper for get_prev_{zero,one}_bit variants.
+  // - flip designates whether searching for 1s or 0s.  Must be one of
+  //   find_{zeros,ones}_flip.
+  // - aligned_left is true if beg is a priori on a bm_word_t boundary.
+  // - returns idx_t(-1) if bit not found
+  template<bm_word_t flip, bool aligned_left>
+  inline idx_t get_prev_bit_impl(idx_t beg, idx_t end) const;
 
   // Values for find_first_bit_impl flip parameter.
   static const bm_word_t find_ones_flip = 0;
@@ -287,6 +309,26 @@ class BitMap {
     return iterate(cl, 0, size());
   }
 
+  // Reverse version of "iterate".
+  //  beg - inclusive
+  //  end - exclusive
+  //  beg <= end
+  template <typename Function>
+  bool iterate_reverse(Function function, idx_t beg, idx_t end);
+
+  template <typename Function>
+  bool iterate_reverse(Function function) {
+    return iterate_reverse(function, 0, _size);
+  }
+
+  template <typename BitMapClosureType>
+  bool iterate_reverse(BitMapClosureType* cl, idx_t beg, idx_t end);
+
+  template <typename BitMapClosureType>
+  bool iterate_reverse(BitMapClosureType* cl) {
+    return iterate_reverse(cl, 0, _size);
+  }
+
   // Looking for 1's and 0's at indices equal to or greater than "beg",
   // stopping if none has been found before "end", and returning
   // "end" (which must be at most "size") in that case.
@@ -303,6 +345,23 @@ class BitMap {
   // Like "find_first_set_bit", except requires that "end" is
   // aligned to bitsizeof(bm_word_t).
   idx_t find_first_set_bit_aligned_right(idx_t beg, idx_t end) const;
+
+  // Looking for 1's and 0's at indices lower than "r_index",
+  // stopping if none has been found before or at "l_index", and returning
+  // idx_t(-1) in that case.
+  idx_t get_prev_one_offset (idx_t l_index, idx_t r_index) const;
+  idx_t get_prev_zero_offset(idx_t l_index, idx_t r_index) const;
+
+  idx_t get_prev_one_offset(idx_t offset) const {
+    return get_prev_one_offset(0, offset);
+  }
+  idx_t get_prev_zero_offset(idx_t offset) const {
+    return get_prev_zero_offset(0, offset);
+  }
+
+  // Like "get_prev_one_offset", except requires that "l_index" is
+  // aligned to bitsizeof(bm_word_t).
+  idx_t get_prev_one_offset_aligned_left(idx_t l_index, idx_t r_index) const;
 
   // Returns the number of bits set in the bitmap.
   idx_t count_one_bits() const;
@@ -478,6 +537,37 @@ class BitMapClosure {
   // Callback when bit in map is set.  Should normally return "true";
   // return of false indicates that the bitmap iteration should terminate.
   virtual bool do_bit(BitMap::idx_t index) = 0;
+};
+
+// Stand-alone iterators
+
+class BitMapIterator {
+private:
+  BitMap* const _bitmap;
+  BitMap::idx_t _pos;
+  BitMap::idx_t _end;
+
+public:
+  BitMapIterator(BitMap* bitmap);
+  BitMapIterator(BitMap* bitmap, BitMap::idx_t start, BitMap::idx_t end);
+
+  bool next(BitMap::idx_t* index);
+};
+
+class BitMapReverseIterator {
+private:
+  BitMap* const _bitmap;
+  BitMap::idx_t _start;
+  BitMap::idx_t _pos;
+
+public:
+  BitMapReverseIterator(BitMap* bitmap);
+  BitMapReverseIterator(BitMap* bitmap, BitMap::idx_t start, BitMap::idx_t end);
+
+  void reset(BitMap::idx_t start, BitMap::idx_t end);
+  void reset(BitMap::idx_t end);
+
+  bool next(BitMap::idx_t* index);
 };
 
 #endif // SHARE_UTILITIES_BITMAP_HPP
