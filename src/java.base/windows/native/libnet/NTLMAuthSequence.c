@@ -141,7 +141,7 @@ cleanup:
     if (pDomain != NULL)
         JNU_ReleaseStringPlatformChars(env, domain, pDomain);
 
-    if (ss == 0) {
+    if (ss == SEC_E_OK) {
         return (jlong) pCred;
     } else {
         return 0;
