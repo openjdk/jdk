@@ -5852,7 +5852,9 @@ void PhaseIdealLoop::build_loop_late_post_work(Node *n, bool pinned) {
 #ifdef ASSERT
     if (legal->is_Start() && !early->is_Root()) {
       // Bad graph. Print idom path and fail.
-      dump_bad_graph("Bad graph detected in build_loop_late", n, early, LCA);
+      //dump_bad_graph("Bad graph detected in build_loop_late", n, early, LCA);
+      n->dump(-4);
+      n->dump(4);
       assert(false, "Bad graph detected in build_loop_late");
     }
 #endif

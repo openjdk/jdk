@@ -2208,18 +2208,6 @@ void Compile::Optimize() {
       if (failing())  return;
     }
 
-    // TODO: Perform reduce_allocation_merges as part of 'compute_escape'
-    if (do_reduce_allocation_merges() && ReduceAllocationMerges) {
-      ConnectionGraph::do_analysis(this, &igvn, /*only_analysis=*/true);
-      if (failing())  return;
-      igvn.optimize();
-      if (congraph() != NULL) {
-        print_method(PHASE_BEFORE_REDUCE_ALLOCATION, 2);
-        congraph()->reduce_allocation_merges();
-        print_method(PHASE_AFTER_REDUCE_ALLOCATION, 2);
-      }
-    }
-
     bool progress;
     do {
       ConnectionGraph::do_analysis(this, &igvn);
@@ -2238,8 +2226,9 @@ void Compile::Optimize() {
         TracePhase tp("macroEliminate", &timers[_t_macroEliminate]);
         PhaseMacroExpand mexp(igvn);
         mexp.eliminate_macro_nodes();
-        igvn.set_delay_transform(false);
+        if (failing())  return;
 
+        igvn.set_delay_transform(false);
         igvn.optimize();
         print_method(PHASE_ITER_GVN_AFTER_ELIMINATION, 2);
 

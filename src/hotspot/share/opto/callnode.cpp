@@ -1619,7 +1619,7 @@ Node *AllocateArrayNode::make_ideal_length(const TypeOopPtr* oop_type, PhaseTran
 }
 
 //=============================================================================
-ReducedAllocationMergeNode::ReducedAllocationMergeNode(Compile* C, PhaseIterGVN* igvn, const PhiNode* phi)
+ReducedAllocationMergeNode::ReducedAllocationMergeNode(Compile* C, PhaseIterGVN* igvn, const ConnectionGraph* cg, const PhiNode* phi)
     : TypeNode(phi->type(), phi->req()) {
 
   init_class_id(Class_ReducedAllocationMerge);
@@ -1627,14 +1627,26 @@ ReducedAllocationMergeNode::ReducedAllocationMergeNode(Compile* C, PhaseIterGVN*
 
   const Type* ram_t       = igvn->type(phi);
 
-  _num_orig_inputs        = phi->req();
-  _needs_all_fields       = false;
-  _memories_indexes_start = -1;
-  _fields_and_values      = new (C->comp_arena()) Dict(cmpkey, hashkey);
+  _number_of_bases        = phi->req()-1;
+  _fields_and_memories    = new (C->comp_arena()) Dict(cmpkey, hashkey, C->comp_arena());
   _klass                  = ram_t->make_oopptr()->is_instptr()->instance_klass();
 
-  for (uint i=0; i<phi->req(); i++) {
-    init_req(i, phi->in(i));
+  init_req(0, phi->in(0));
+  for (uint i = 1; i < phi->req(); i++) {
+    Node* input = phi->in(i);
+    PointsToNode* ptn = cg->unique_java_object(input);
+
+    // Source of allocation is not in CG or points to multiple Java objects
+    if (ptn != NULL) {
+      Node* may_be_allocate = ptn->ideal_node();
+      // The source might be a node that is not scalar replaceable
+      if (may_be_allocate->is_Allocate() && may_be_allocate->as_Allocate()->_is_scalar_replaceable) {
+        input = may_be_allocate->as_Allocate()->result_cast();
+        assert(input->is_CheckCastPP(), "input to phi is not checkcastpp");
+      }
+    }
+
+    init_req(i, input);
   }
 
   // Try to find a memory Phi coming from same region
@@ -1642,13 +1654,10 @@ ReducedAllocationMergeNode::ReducedAllocationMergeNode(Compile* C, PhaseIterGVN*
   for (DUIterator_Fast imax, i = reg->fast_outs(imax); i < imax; i++) {
     Node* n = reg->fast_out(i);
     if (n->is_Phi() && n->bottom_type() == Type::MEMORY) {
-      _memories_indexes_start = req();
-
-      for (uint j=1; j<n->req(); j++) {
-        add_req(n->in(j));
+      if (C->get_alias_index(n->adr_type()) == Compile::AliasIdxBot) {
+        register_offset_of_all_fields(n);
+        break;
       }
-
-      break;
     }
   }
 
@@ -1658,126 +1667,95 @@ ReducedAllocationMergeNode::ReducedAllocationMergeNode(Compile* C, PhaseIterGVN*
   C->add_macro_node(this);
 }
 
-bool ReducedAllocationMergeNode::register_addp(Node* n) {
-  jlong field = n->in(AddPNode::Offset)->find_long_con(-1);
+void ReducedAllocationMergeNode::register_offset_of_all_fields(Node* memory) {
+  ciInstanceKlass* iklass = _klass->as_instance_klass();
+  int nfields             = iklass->nof_nonstatic_fields();
 
-  assert(field != -1, "Didn't find constant for AddP.");
+  for (int j = 0; j < nfields; j++) {
+    ciField* field = iklass->nonstatic_field_at(j);
+    jlong offset = field->offset();
 
-  if ((*_fields_and_values)[(void*)field] == NULL) {
-    _fields_and_values->Insert((void*)field, (void*)new Node_Array(Compile::current()->node_arena(), _num_orig_inputs));
+    register_offset(offset, memory);
   }
+}
 
-  // If we didn't find memory edges to use so far then try to
-  // figure out which Memory edge subsequent Loads of this field use
-  if (_memories_indexes_start == -1) {
-    for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
-      Node* addp_use = n->fast_out(i);
+void ReducedAllocationMergeNode::register_offset(jlong offset, Node* memory, bool override) {
+  assert(offset != -1, "Offset of use should be >= 0.");
 
-      if (addp_use->is_Load()) {
-        Node* load_mem = addp_use->in(LoadNode::Memory);
+  if ((*_fields_and_memories)[(void*)offset] == NULL) {
+    _fields_and_memories->Insert((void*)offset, (void*)(long)req());
 
-        // Save the index where we are storing the memory edge
-        _memories_indexes_start = req();
-
-        if (load_mem->is_Phi()) {
-          for (uint j=1; j<_num_orig_inputs; j++) {
-            add_req(load_mem->in(j));
-          }
-        }
-        else {
-          for (uint j=1; j<_num_orig_inputs; j++) {
-            add_req(load_mem);
-          }
-        }
-
-        break;
-      }
-      else {
-        assert(false, "User of AddP in RAM is not a Load.");
-      }
+    for (uint b_idx = 1; b_idx <= _number_of_bases; ++b_idx) {
+      add_req(memory->is_Phi() && memory->in(0) == in(0) ? memory->in(b_idx) : memory);
     }
   }
+  else if (override) {
+    long fidx = field_idx(offset);
 
-  return true;
+    for (uint b_idx = 1; b_idx <= _number_of_bases; ++b_idx) {
+      set_req(fidx, memory->is_Phi() && memory->in(0) == in(0) ? memory->in(b_idx) : memory);
+      fidx++;
+    }
+  }
 }
 
 bool ReducedAllocationMergeNode::register_use(Node* n) {
   if (n->is_AddP()) {
-    return register_addp(n);
+    assert(n->outcnt() > 0 && n->raw_out(0)->is_Load(), "AddP output is not load.");
+    assert(n->in(AddPNode::Address) == n->in(AddPNode::Base), "AddP base and address aren't the same.'");
+    jlong offset = n->in(AddPNode::Offset)->find_long_con(-1);
+    Node* memory = n->raw_out(0)->in(LoadNode::Memory);
+    register_offset(offset, memory, /*override*/true);
   }
   else if (n->Opcode() == Op_SafePoint || (n->is_CallStaticJava() && n->as_CallStaticJava()->is_uncommon_trap())) {
-    _needs_all_fields = true;
-    return true;
+    Node* memory = n->in(TypeFunc::Memory);
+    register_offset_of_all_fields(memory);
   }
   else if (n->is_DecodeN()) {
     for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
-      Node* dec_use = n->fast_out(i);
-
-      if (register_addp(dec_use) == false) {
-        return false;
-      }
+      Node* addp = n->fast_out(i);
+      assert(addp->is_AddP(), "DecodeN user is not an AddP");
+      assert(addp->outcnt() > 0 && addp->raw_out(0)->is_Load(), "DecodeN->AddP->X is not load.");
+      assert(addp->in(AddPNode::Address) == addp->in(AddPNode::Base), "AddP node and base aren't equal.'");
+      jlong offset = addp->in(AddPNode::Offset)->find_long_con(-1);
+      Node* memory = addp->raw_out(0)->in(LoadNode::Memory);
+      register_offset(offset, memory, /*override*/true);
     }
-
-    return true;
   }
   else {
     assert(false, "Trying to register unsupported use in RAM -> %d : %s", n->_idx, n->Name());
     return false;
   }
-}
-
-Node* ReducedAllocationMergeNode::memory_for(jlong field, Node* base) const {
-  assert(_memories_indexes_start != -1, "Didn't find memory edges yet?");
-
-  for (uint i=1; i<_num_orig_inputs; i++) {
-    if (base == in(i)) {
-      return in(_memories_indexes_start + i - 1);
-    }
-  }
-
-  assert(false, "Did not find a matching base when searching for memory.");
-  return NULL;
-}
-
-bool ReducedAllocationMergeNode::register_value_for_field(jlong field, Node* base, Node* value) {
-  // It's possible that the entry for this field is null because we didn't
-  // see a load to it, just a Safepoint using it all fields.
-  if ((*_fields_and_values)[(void*)field] == NULL) {
-    _fields_and_values->Insert((void*)field, (void*)new Node_Array(Compile::current()->node_arena(), _num_orig_inputs));
-  }
-
-  Node_Array* values = (Node_Array*) ((*_fields_and_values)[(void*)field]);
-
-  if (_num_orig_inputs == 3) {
-    if (base == in(1)) {
-      values->map(1, value);
-    }
-    else if (base == in(2)) {
-      values->map(2, value);
-    }
-    else {
-      return false;
-    }
-  }
-  else {
-    uint i = 1;
-    for (; i<_num_orig_inputs; i++) {
-      if (base == in(i)) {
-        values->map(i, value);
-        break;
-      }
-    }
-    if (i == _num_orig_inputs) {
-      return false;
-    }
-  }
-
-  this->add_req(value);
 
   return true;
 }
 
+Node* ReducedAllocationMergeNode::memory_for(jlong offset, Node* base, uint previous_matches) const {
+  int field_start_offset = field_idx(offset);
+  int base_offset = base_idx(base, previous_matches);
+
+  // Didn't find repeated occurrence of same base?
+  if (base_offset == -1) {
+    assert(previous_matches > 0, "Didn't find any occurrence of base in RAM.");
+    return NULL;
+  }
+
+  Node* memory = in(field_start_offset + base_offset);
+  assert(memory->bottom_type()->base() == Type::Memory, "memory_for isn't returning a Memory reference.");
+
+  return memory;
+}
+
+void ReducedAllocationMergeNode::register_value_for_field(jlong offset, Node* base, Node* value, uint previous_matches) {
+  assert(value != NULL, "trying to register null pointer as value.");
+  int field_start_offset = field_idx(offset);
+  int base_offset = base_idx(base, previous_matches);
+
+  set_req(field_start_offset + base_offset, value);
+}
+
 Node* ReducedAllocationMergeNode::make_load(Node* ctrl, Node* base, Node* mem, jlong offset, PhaseIterGVN* igvn) {
+  base                       = base->is_EncodeP() ? base->in(1) : base;
   Node* off                  = igvn->transform((Node*)ConLNode::make(offset));
   Node* addp                 = igvn->transform(new AddPNode(base, base, off));
 
@@ -1785,6 +1763,8 @@ Node* ReducedAllocationMergeNode::make_load(Node* ctrl, Node* base, Node* mem, j
   const TypeInstPtr* res_type = igvn->type(base)->is_instptr();
   ciInstanceKlass* iklass     = res_type->instance_klass();
   ciField* field              = iklass->get_field_by_offset(offset, /*is_static=*/false);
+  field                       = field != NULL ? field : iklass->get_field_by_offset(offset, /*is_static=*/true);
+  assert(field != NULL, "didn't find instance or static field at offset @ %lx", offset);
   ciType* elem_type           = field->type();
   BasicType basic_elem_type   = field->layout_type();
   const Type* field_type      = NULL;
@@ -1812,27 +1792,44 @@ Node* ReducedAllocationMergeNode::make_load(Node* ctrl, Node* base, Node* mem, j
 
 Node* ReducedAllocationMergeNode::value_phi_for_field(jlong field, PhaseIterGVN* igvn) {
   PhiNode* phi       = new PhiNode(this->in(0), Type::BOTTOM);
-  Node_Array* values = (Node_Array*) ((*_fields_and_values)[(void*)field]);
+  long field_index   = field_idx(field);
   const Type *t      = Type::TOP;
 
-  for (uint i=1; i<_num_orig_inputs; i++) {
-    if (values->at(i) == NULL) {
-      Node* load = make_load(this->in(0)->in(i), in(i), in(_memories_indexes_start + i - 1), field, igvn);
-      values->map(i, load);
+  for (uint i = 1; i <= _number_of_bases; i++) {
+    Node* input = in(field_index);
+
+    // If the entry corresponding to the base is not TOP it means the allocation
+    // wasn't scalarized. If the allocation wasn't scalarized we still have a
+    // memory reference that we can use to find the value to be used in the value phi.
+    if (!in(i)->is_top()) {
+      Node* memory = input;
+      memory = (memory->is_Phi() && memory->in(0) == in(0)) ? memory->in(i) : memory;
+      input = make_load(this->in(0)->in(i), in(i), memory, field, igvn);
     }
-    phi->set_req(i, values->at(i));
-    const Type* input_type = igvn->type(values->at(i));
+    // Somehow the base was eliminated and we still have a memory reference left
+    else if (input->is_top() || input->bottom_type()->base() == Type::Memory) {
+      return NULL;
+    }
+
+    // Simplification for a pattern that showed up often during RAM elimination
+    if (input->is_Phi() && input->in(0) == in(0)) {
+      input = input->in(i);
+    }
+
+    phi->set_req(i, input);
+    const Type* input_type = igvn->type(input);
     t = t->meet_speculative(input_type);
+    field_index++;
   }
 
-  igvn->set_type(phi, t);
   phi->raise_bottom_type(t);
+  igvn->register_new_node_with_optimizer(phi);
 
   return phi;
 }
 
-ReducedAllocationMergeNode* ReducedAllocationMergeNode::make(Compile* C, PhaseIterGVN* igvn, PhiNode* phi) {
-  ReducedAllocationMergeNode* ram = new ReducedAllocationMergeNode(C, igvn, phi);
+ReducedAllocationMergeNode* ReducedAllocationMergeNode::make(Compile* C, PhaseIterGVN* igvn, const ConnectionGraph* cg, PhiNode* phi) {
+  ReducedAllocationMergeNode* ram = new ReducedAllocationMergeNode(C, igvn, cg, phi);
 
   for (DUIterator_Fast imax, i = phi->fast_outs(imax); i < imax; i++) {
     Node* n = phi->fast_out(i);

@@ -459,7 +459,6 @@ Node *PhaseMacroExpand::value_from_mem(Node *sfpt_mem, Node *sfpt_ctl, BasicType
   int alias_idx = C->get_alias_index(adr_t);
   int offset = adr_t->offset();
   Node *start_mem = C->start()->proj_out_or_null(TypeFunc::Memory);
-  Node *alloc_ctrl = alloc->in(TypeFunc::Control);
   Node *alloc_mem = alloc->in(TypeFunc::Memory);
   VectorSet visited;
 
@@ -760,33 +759,25 @@ bool PhaseMacroExpand::scalar_replacement(AllocateNode *alloc, GrowableArray <Sa
         field_type = Type::get_const_basic_type(basic_elem_type);
       }
 
-      const TypeOopPtr *field_addr_type = res_type->add_offset(offset)->isa_oopptr();
-      Node *memory = ram->memory_for(offset, res);
+      // Because the same base might be registered multiple times in the Phi / RAM, we
+      // need to iterate on the different memory inputs that each base might be registered
+      // to use.
+      uint previous_matches = 0;
+      while (true) {
+        Node *memory = ram->memory_for(offset, res, previous_matches);
 
-      // If we can't actually find the memory to be used for this base we won't be able to remove the
-      // RAM node and in that situation the only way out is to recompile the method with
-      // ReduceAllocations disabled.
-      //
-      // Same is true if we don't find a value that was computed for the field or if we aren't
-      // able to register the value for the field in the RAM
-      if (memory == NULL) {
-        assert(false, "Didn't find a matching base for this field!!!");
-        C->record_failure(C2Compiler::retry_no_reduce_allocation_merges());
-        return false;
-      }
+        if (memory == NULL) {
+          break;
+        }
 
-      Node *field_val = value_from_mem(memory, NULL, basic_elem_type, field_type, field_addr_type, alloc);
+        const TypeOopPtr *field_addr_type = res_type->add_offset(offset)->isa_oopptr();
+        Node *field_val = value_from_mem(memory, NULL, basic_elem_type, field_type, field_addr_type, alloc);
 
-      if (field_val == NULL) {
-        assert(false, "Didn't find value for field!!!");
-        C->record_failure(C2Compiler::retry_no_reduce_allocation_merges());
-        return false;
-      }
+        assert(field_val != NULL, "Didn't find value for field!!!");
 
-      if (!ram->register_value_for_field(offset, res, field_val)) {
-        assert(false, "Didn't find a matching base for this field!!!");
-        C->record_failure(C2Compiler::retry_no_reduce_allocation_merges());
-        return false;
+        ram->register_value_for_field(offset, res, field_val, previous_matches);
+
+        previous_matches++;
       }
     }
 
@@ -1223,7 +1214,7 @@ bool PhaseMacroExpand::eliminate_reduced_allocation_merge(ReducedAllocationMerge
       Node* value_phi = ram->value_phi_for_field(offset, &_igvn);
 
       if (value_phi == NULL) {
-        assert(false, "At RAM node %d can't find value for a field.", ram->_idx);
+        C->record_failure(C2Compiler::retry_no_reduce_allocation_merges());
         return false;
       }
 
@@ -1235,13 +1226,16 @@ bool PhaseMacroExpand::eliminate_reduced_allocation_merge(ReducedAllocationMerge
         if (addp_use->is_Load()) {
           Node* load = addp_use; // just for readability
 
-          for (DUIterator_Last kmin, k = load->last_outs(kmin); k >= kmin; --k) {
+          for (DUIterator_Last kmin, k = load->last_outs(kmin); k >= kmin;) {
             Node* load_use = load->last_out(k);
 
             _igvn.hash_delete(load_use);
-            load_use->replace_edge(load, value_phi, &_igvn);
+            int removed = load_use->replace_edge(load, value_phi, &_igvn);
             _igvn.hash_insert(load_use);
             _igvn._worklist.push(load_use);
+
+            assert(removed > 0, "should be at least 1.");
+            k -= removed;
           }
         }
         else {
@@ -1299,7 +1293,7 @@ bool PhaseMacroExpand::eliminate_reduced_allocation_merge(ReducedAllocationMerge
         Node* field_val = ram->value_phi_for_field(offset, &_igvn);
 
         if (field_val == NULL) {
-          assert(false, "At RAM node %d can't find value for a field.", sfpt->_idx);
+          C->record_failure(C2Compiler::retry_no_reduce_allocation_merges());
           return false;
         }
 
@@ -1316,12 +1310,14 @@ bool PhaseMacroExpand::eliminate_reduced_allocation_merge(ReducedAllocationMerge
       jvms->set_endoff(sfpt->req());
       // Now make a pass over the debug information replacing any references
       // to the allocated object with "sobj"
-      int start = jvms->debug_start();
-      int end   = jvms->debug_end();
-      sfpt->replace_edges_in_range(ram, sobj, start, end, &_igvn);
+      int start    = jvms->debug_start();
+      int end      = jvms->debug_end();
+      int replaced = sfpt->replace_edges_in_range(ram, sobj, start, end, &_igvn);
       _igvn._worklist.push(sfpt);
 
-      --i; --imax;
+      assert(replaced > 0, "should be at least 1.");
+      --i;
+      imax -= replaced;
     }
     else if (use->is_DecodeN()) {
       for (DUIterator_Fast jmax, j = use->fast_outs(jmax); j < jmax; j++) {
@@ -1334,7 +1330,7 @@ bool PhaseMacroExpand::eliminate_reduced_allocation_merge(ReducedAllocationMerge
         Node* value_phi = ram->value_phi_for_field(offset, &_igvn);
 
         if (value_phi == NULL) {
-          assert(false, "At RAM node %d can't find value for a field.", ram->_idx);
+          C->record_failure(C2Compiler::retry_no_reduce_allocation_merges());
           return false;
         }
 
@@ -1346,13 +1342,16 @@ bool PhaseMacroExpand::eliminate_reduced_allocation_merge(ReducedAllocationMerge
           if (addp_use->is_Load()) {
             Node* load = addp_use; // just for readability
 
-            for (DUIterator_Last lmin, l = load->last_outs(lmin); l >= lmin; --l) {
+            for (DUIterator_Last lmin, l = load->last_outs(lmin); l >= lmin;) {
               Node* load_use = load->last_out(l);
 
               _igvn.hash_delete(load_use);
-              load_use->replace_edge(load, value_phi, &_igvn);
+              int removed = load_use->replace_edge(load, value_phi, &_igvn);
               _igvn.hash_insert(load_use);
               _igvn._worklist.push(load_use);
+
+              assert(removed > 0, "should be at least 1.");
+              l -= removed;
             }
           }
           else {
@@ -2690,9 +2689,15 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
   for (int i = C->macro_count(); i > 0; i--) {
     Node* n = C->macro_node(i - 1);
     if (n->is_ReducedAllocationMerge()) {
+      // In some cases the region controlling the RAM might go away due to some simplification
+      // of the IR graph. For now, we'll just bail out if this happens.
+      if (n->in(0) == NULL || !n->in(0)->is_Region()) {
+        C->record_failure(C2Compiler::retry_no_reduce_allocation_merges());
+        return;
+      }
+
       bool success = eliminate_reduced_allocation_merge(n->as_ReducedAllocationMerge());
       if (!success) {
-        assert(false, "Failed to eliminate reduced allocation merge!!!");
         C->record_failure(C2Compiler::retry_no_reduce_allocation_merges());
         return;
       }

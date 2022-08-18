@@ -1032,39 +1032,54 @@ class ReducedAllocationMergeNode : public TypeNode {
 private:
   ciKlass* _klass;                  // Which Klass is the merge for
 
-  uint _num_orig_inputs;            // Number of inputs to the original Phi
+  uint _number_of_bases;            // Number of bases to the original Phi
 
-  bool _needs_all_fields;           // This is set to true when there was a Safepoint or uncommon_trap
-                                    // using the original Phi. In that situation we need information of
-                                    // all fields reaching the Safepoint/trap so that we can construct
-                                    // a SafepoingScalarObjectNode
-
-  Dict* _fields_and_values;
-
-  int _memories_indexes_start;
+  Dict* _fields_and_memories;
 
 public:
-  ReducedAllocationMergeNode(Compile* C, PhaseIterGVN* igvn, const PhiNode* phi) ;
+  ReducedAllocationMergeNode(Compile* C, PhaseIterGVN* igvn, const ConnectionGraph* cg, const PhiNode* phi) ;
 
   virtual int Opcode() const;
 
   ciKlass* klass() const { return _klass; }
 
-  bool needs_field(intptr_t field) const {
-    return _needs_all_fields || ((*_fields_and_values)[(void*)field] != NULL);
+  uint number_of_bases() const { return _number_of_bases; }
+
+  const DictI needed_offsets() const { return DictI(_fields_and_memories); }
+
+  long field_idx(jlong offset) const {
+    return (long) (*_fields_and_memories)[(void*)offset];
   }
 
-  bool register_addp(Node* n);
+  int base_idx(Node* base, uint previous_matches) const {
+    for (uint i = 1, matches = 0; i <= _number_of_bases; i++) {
+      if (base == in(i)) {
+        matches++;
+        if (matches > previous_matches) {
+          return i-1;
+        }
+      }
+    }
+
+    return -1;
+  }
+
+  bool needs_field(intptr_t offset) const {
+    return (*_fields_and_memories)[(void*)offset] != NULL;
+  }
+
+  void register_offset_of_all_fields(Node* memory);
+  void register_offset(jlong offset, Node* memory, bool override = false);
   bool register_use(Node* n);
 
-  Node* memory_for(jlong field, Node* base) const ;
+  Node* memory_for(jlong field, Node* base, uint previous_matches) const;
 
-  bool register_value_for_field(jlong field, Node* base, Node* value) ;
+  void register_value_for_field(jlong field, Node* base, Node* value, uint previous_matches) ;
 
   Node* make_load(Node* ctrl, Node* base, Node* mem, jlong offset, PhaseIterGVN* igvn);
   Node* value_phi_for_field(jlong field, PhaseIterGVN* igvn) ;
 
-  static ReducedAllocationMergeNode* make(Compile* C, PhaseIterGVN* igvn, PhiNode* phi) ;
+  static ReducedAllocationMergeNode* make(Compile* C, PhaseIterGVN* igvn, const ConnectionGraph* cg, PhiNode* phi) ;
 };
 
 
