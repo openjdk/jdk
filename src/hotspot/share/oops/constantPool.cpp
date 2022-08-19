@@ -2021,7 +2021,7 @@ jint ConstantPool::hash_entries_to(SymbolHashMap *symmap,
     switch(tag) {
       case JVM_CONSTANT_Utf8: {
         Symbol* sym = symbol_at(idx);
-        symmap->add_entry(sym, idx);
+        symmap->add_if_absent(sym, idx);
         DBG(printf("adding symbol entry %s = %d\n", sym->as_utf8(), idx));
         break;
       }
@@ -2029,7 +2029,7 @@ jint ConstantPool::hash_entries_to(SymbolHashMap *symmap,
       case JVM_CONSTANT_UnresolvedClass:
       case JVM_CONSTANT_UnresolvedClassInError: {
         Symbol* sym = klass_name_at(idx);
-        classmap->add_entry(sym, idx);
+        classmap->add_if_absent(sym, idx);
         DBG(printf("adding class entry %s = %d\n", sym->as_utf8(), idx));
         break;
       }

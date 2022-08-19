@@ -918,7 +918,7 @@ class SymbolHashMap: public CHeapObj<mtSymbol> {
   ResourceHashtable<const Symbol*, u2, 256, ResourceObj::C_HEAP, mtSymbol, Symbol::compute_hash> _table;
 
  public:
-  void add_entry(const Symbol* sym, u2 value) {
+  void add_if_absent(const Symbol* sym, u2 value) {
     bool created;
     _table.put_if_absent(sym, value, &created);
   }
