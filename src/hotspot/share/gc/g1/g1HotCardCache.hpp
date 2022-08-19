@@ -88,7 +88,7 @@ private:
   static const int ClaimChunkSize = 32;
 
  public:
-  static bool default_use_cache() {
+  static bool use_cache() {
     return (G1ConcRSLogCacheSize > 0);
   }
 
@@ -120,7 +120,7 @@ private:
   // Resets the hot card cache and discards the entries.
   void reset_hot_cache() {
     assert(SafepointSynchronize::is_at_safepoint(), "Should be at a safepoint");
-    if (default_use_cache()) {
+    if (use_cache()) {
       reset_hot_cache_internal();
     }
   }

@@ -36,7 +36,7 @@ G1HotCardCache::G1HotCardCache(G1CollectedHeap *g1h):
 {}
 
 void G1HotCardCache::initialize(G1RegionToSpaceMapper* card_counts_storage) {
-  if (default_use_cache()) {
+  if (use_cache()) {
     _hot_cache_size = (size_t)1 << G1ConcRSLogCacheSize;
     _hot_cache = ArrayAllocator<CardValue*>::allocate(_hot_cache_size, mtGC);
 
@@ -53,7 +53,7 @@ void G1HotCardCache::initialize(G1RegionToSpaceMapper* card_counts_storage) {
 }
 
 G1HotCardCache::~G1HotCardCache() {
-  if (default_use_cache()) {
+  if (use_cache()) {
     assert(_hot_cache != NULL, "Logic");
     ArrayAllocator<CardValue*>::free(_hot_cache, _hot_cache_size);
     _hot_cache = NULL;
@@ -90,7 +90,7 @@ CardTable::CardValue* G1HotCardCache::insert(CardValue* card_ptr) {
 }
 
 void G1HotCardCache::drain(G1CardTableEntryClosure* cl, uint worker_id) {
-  assert(default_use_cache(), "Drain only necessary if we use the hot card cache.");
+  assert(use_cache(), "Drain only necessary if we use the hot card cache.");
 
   assert(_hot_cache != NULL, "Logic");
 
