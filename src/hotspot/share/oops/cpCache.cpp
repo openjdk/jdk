@@ -718,8 +718,11 @@ void ConstantPoolCache::deallocate_contents(ClassLoaderData* data) {
   MetadataFactory::free_array<u2>(data, _reference_map);
   set_reference_map(NULL);
 #if INCLUDE_CDS
-  MetadataFactory::free_array<ConstantPoolCacheEntry>(data, _initial_entries);
-  _initial_entries = NULL;
+  if (_initial_entries != NULL) {
+    Arguments::assert_is_dumping_archive();
+    MetadataFactory::free_array<ConstantPoolCacheEntry>(data, _initial_entries);
+    _initial_entries = NULL;
+  }
 #endif
 }
 
