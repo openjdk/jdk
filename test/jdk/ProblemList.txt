@@ -222,7 +222,6 @@ java/awt/Window/LocationAtScreenCorner/LocationAtScreenCorner.java 8203371 linux
 java/awt/font/TextLayout/TextLayoutBounds.java 8169188 generic-all
 java/awt/image/BufferedImage/ICMColorDataTest/ICMColorDataTest.java 8233028 generic-all
 java/awt/image/DrawImage/IncorrectAlphaSurface2SW.java 8056077 linux-all
-java/awt/image/multiresolution/MultiresolutionIconTest.java 8169187,8252812 macosx-all,windows-all,linux-x64
 java/awt/print/Headless/HeadlessPrinterJob.java 8196088 windows-all
 sun/awt/datatransfer/SuplementaryCharactersTransferTest.java 8011371 generic-all
 sun/awt/shell/ShellFolderMemoryLeak.java 8197794 windows-all
@@ -469,6 +468,7 @@ java/awt/Dialog/MakeWindowAlwaysOnTop/MakeWindowAlwaysOnTop.java 8266243 macosx-
 java/awt/dnd/BadSerializationTest/BadSerializationTest.java 8277817 linux-x64,windows-x64
 java/awt/GraphicsDevice/CheckDisplayModes.java 8266242 macosx-aarch64
 java/awt/GraphicsDevice/DisplayModes/UnknownRefrshRateTest.java 8286436 macosx-aarch64
+java/awt/image/multiresolution/MultiresolutionIconTest.java 8291979 linux-x64,windows-all
 
 ############################################################################
 
@@ -495,6 +495,7 @@ java/lang/invoke/LFCaching/LFMultiThreadCachingTest.java        8151492 generic-
 java/lang/invoke/LFCaching/LFGarbageCollectedTest.java          8078602 generic-all
 java/lang/invoke/lambda/LambdaFileEncodingSerialization.java    8249079 linux-x64
 java/lang/invoke/RicochetTest.java                              8251969 generic-all
+java/lang/ProcessBuilder/PipelineLeaksFD.java                   8291760 linux-all
 
 ############################################################################
 
@@ -509,6 +510,7 @@ java/lang/instrument/RetransformBigClass.sh                     8065756 generic-
 
 java/io/pathNames/GeneralWin32.java                             8180264 windows-all
 java/io/File/createTempFile/SpecialTempFile.java                8274122 windows11
+java/io/File/GetXSpace.java                                     8291911 windows-all
 
 ############################################################################
 
@@ -595,7 +597,6 @@ sun/security/tools/keytool/ListKeychainStore.sh                 8156889 macosx-a
 
 sun/security/tools/jarsigner/warnings/BadKeyUsageTest.java      8026393 generic-all
 
-javax/net/ssl/ServerName/SSLEngineExplorerMatchedSNI.java       8212096 generic-all
 javax/net/ssl/DTLS/CipherSuite.java                             8202059 macosx-x64
 
 sun/security/provider/KeyStore/DKSTest.sh                       8180266 windows-all

@@ -81,6 +81,7 @@ JVM_GetClassDeclaredConstructors
 JVM_GetClassDeclaredFields
 JVM_GetClassDeclaredMethods
 JVM_GetClassFieldsCount
+JVM_GetClassFileVersion
 JVM_GetClassInterfaces
 JVM_GetClassMethodsCount
 JVM_GetClassModifiers

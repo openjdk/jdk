@@ -39,6 +39,7 @@ public:
   private:
     BasicType _type;
     bool _is_array;
+    int _alignment;
     union {
       jvalue    _value;
       Metadata* _metadata;
@@ -49,7 +50,7 @@ public:
     bool      _can_be_reused;  // true (default) if the value can be shared with other users.
 
   public:
-    Constant() : _type(T_ILLEGAL), _is_array(false), _offset(-1), _freq(0.0f), _can_be_reused(true) { _v._value.l = 0; }
+    Constant() : _type(T_ILLEGAL), _is_array(false), _alignment(-1), _offset(-1), _freq(0.0f), _can_be_reused(true) { _v._value.l = 0; }
     Constant(BasicType type, jvalue value, float freq = 0.0f, bool can_be_reused = true) :
       _type(type),
       _is_array(false),
@@ -59,24 +60,28 @@ public:
     {
       assert(type != T_METADATA, "wrong constructor");
       _v._value = value;
+      _alignment = type == T_VOID ? sizeof(jobject) : type2aelembytes(type);
     }
     Constant(Metadata* metadata, bool can_be_reused = true) :
       _type(T_METADATA),
       _is_array(false),
+      _alignment(sizeof(Metadata*)),
       _offset(-1),
       _freq(0.0f),
       _can_be_reused(can_be_reused)
     {
       _v._metadata = metadata;
     }
-    Constant(BasicType type, GrowableArray<jvalue>* array) :
+    Constant(BasicType type, GrowableArray<jvalue>* array, int alignment, bool can_be_reused = true) :
       _type(type),
       _is_array(true),
+      _alignment(alignment),
       _offset(-1),
       _freq(0.0f),
-      _can_be_reused(false)
+      _can_be_reused(can_be_reused)
     {
       assert(is_java_primitive(type), "not applicable for %s", type2name(type));
+      assert(is_power_of_2(alignment), "invalid alignment %d", alignment);
       _v._array = new GrowableArray<jvalue>(array->length());
       for (jvalue ele : *array) {
         _v._array->append(ele);
@@ -87,6 +92,7 @@ public:
 
     BasicType type()      const    { return _type; }
     bool is_array()       const    { return _is_array; }
+    int alignment()       const    { return _alignment; }
 
     jint    get_jint()    const    { return _v._value.i; }
     jlong   get_jlong()   const    { return _v._value.j; }
@@ -145,6 +151,7 @@ public:
   Constant add(MachConstantNode* n, BasicType type, jvalue value);
   Constant add(Metadata* metadata);
   Constant add(MachConstantNode* n, BasicType bt, GrowableArray<jvalue>* array);
+  Constant add(MachConstantNode* n, BasicType bt, GrowableArray<jvalue>* array, int alignment);
   Constant add(MachConstantNode* n, MachOper* oper);
   Constant add(MachConstantNode* n, jint i) {
     jvalue value; value.i = i;

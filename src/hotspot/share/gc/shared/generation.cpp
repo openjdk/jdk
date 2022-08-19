@@ -184,13 +184,6 @@ oop Generation::promote(oop obj, size_t obj_size) {
   return new_obj;
 }
 
-oop Generation::par_promote(int thread_num,
-                            oop obj, markWord m, size_t word_sz) {
-  // Could do a bad general impl here that gets a lock.  But no.
-  ShouldNotCallThis();
-  return NULL;
-}
-
 Space* Generation::space_containing(const void* p) const {
   GenerationIsInReservedClosure blk(p);
   // Cast away const

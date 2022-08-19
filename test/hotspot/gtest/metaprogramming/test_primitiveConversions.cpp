@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -171,3 +171,20 @@ TEST(PrimitiveConversionsTest, round_trip_ptr) {
   EXPECT_EQ(cpfive, PrimitiveConversions::cast<const int*>(PrimitiveConversions::cast<SIP>(cpfive)));
   EXPECT_EQ(cpfive, PrimitiveConversions::cast<const int*>(PrimitiveConversions::cast<UIP>(cpfive)));
 }
+
+TEST(PrimitiveConversionsTranslateTest, unscoped_enum) {
+  enum TestEnum : int { A, B, C };
+
+  EXPECT_TRUE(PrimitiveConversions::Translate<TestEnum>::value);
+  EXPECT_EQ(PrimitiveConversions::Translate<TestEnum>::decay(B), 1);
+  EXPECT_EQ(PrimitiveConversions::Translate<TestEnum>::recover(1), B);
+}
+
+TEST(PrimitiveConversionsTranslateTest, scoped_enum) {
+  enum class TestEnum { A, B, C };
+
+  EXPECT_TRUE(PrimitiveConversions::Translate<TestEnum>::value);
+  EXPECT_EQ(PrimitiveConversions::Translate<TestEnum>::decay(TestEnum::B), 1);
+  EXPECT_EQ(PrimitiveConversions::Translate<TestEnum>::recover(1), TestEnum::B);
+}
+

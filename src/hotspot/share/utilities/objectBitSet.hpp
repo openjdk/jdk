@@ -29,7 +29,7 @@
 #include "oops/oop.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "utilities/bitMap.hpp"
-#include "utilities/hashtable.hpp"
+#include "utilities/resizeableResourceHash.hpp"
 
 class MemRegion;
 
@@ -47,37 +47,13 @@ class ObjectBitSet : public CHeapObj<F> {
 
   class BitMapFragment;
 
-  class BitMapFragmentTable : public BasicHashtable<F> {
-    class Entry : public BasicHashtableEntry<F> {
-    public:
-      uintptr_t _key;
-      CHeapBitMap* _value;
+  static unsigned hash_segment(const uintptr_t& key) {
+    unsigned hash = (unsigned)key;
+    return hash ^ (hash >> 3);
+  }
 
-      Entry* next() {
-        return (Entry*)BasicHashtableEntry<F>::next();
-      }
-    };
-
-  protected:
-    Entry* bucket(int i) const;
-
-    Entry* new_entry(unsigned int hashValue, uintptr_t key, CHeapBitMap* value);
-
-    unsigned hash_segment(uintptr_t key) {
-      unsigned hash = (unsigned)key;
-      return hash ^ (hash >> 3);
-    }
-
-    unsigned hash_to_index(unsigned hash) {
-      return hash & (BasicHashtable<F>::table_size() - 1);
-    }
-
-  public:
-    BitMapFragmentTable(int table_size) : BasicHashtable<F>(table_size, sizeof(Entry)) {}
-    ~BitMapFragmentTable();
-    void add(uintptr_t key, CHeapBitMap* value);
-    CHeapBitMap** lookup(uintptr_t key);
-  };
+  typedef ResizeableResourceHashtable<uintptr_t, CHeapBitMap*, ResourceObj::C_HEAP, F,
+                                      hash_segment> BitMapFragmentTable;
 
   CHeapBitMap* get_fragment_bits(uintptr_t addr);
 
