@@ -665,7 +665,7 @@ static Node *transform_long_udivide( PhaseGVN *phase, Node *dividend, julong div
         q = new URShiftLNode(mul_hi, phase->intcon(shift_const));
       } else {
         // q = floor((x * c) / 2**(64 + m)) = floor(((x * (c - 2**64)) / 2**64 + x) / 2**m)
-        // 
+        //
         // Given: floor((x / m + y) / n) = floor((floor(x / m) + y) / n), we have
         // q = floor((floor((x * (c - 2**64)) / 2**64) + x) / 2**m)
         //   = floor((mul_hi + x) / 2**m)
