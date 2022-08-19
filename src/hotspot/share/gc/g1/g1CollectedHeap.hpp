@@ -523,6 +523,17 @@ public:
   // Run the given batch task using the workers.
   void run_batch_task(G1BatchedTask* cl);
 
+  // Return "optimal" number of chunks per region we want to use for claiming areas
+  // within a region to claim.
+  static uint get_chunks_per_region(uint log_region_size) {
+    // Limit the expected input values to current known possible values of the
+    // (log) region size. Adjust as necessary after testing if changing the permissible
+    // values for region size.
+    assert(log_region_size >= 20 && log_region_size <= 29,
+           "expected value in [20,29], but got %u", log_region_size);
+    return 1u << (log_region_size / 2 - 4);
+  }
+
   G1Allocator* allocator() {
     return _allocator;
   }
@@ -1210,6 +1221,7 @@ public:
 
   bool is_marked(oop obj) const;
 
+  inline static bool is_obj_filler(const oop obj);
   // Determine if an object is dead, given the object and also
   // the region to which the object belongs.
   inline bool is_obj_dead(const oop obj, const HeapRegion* hr) const;

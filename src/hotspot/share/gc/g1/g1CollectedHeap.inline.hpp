@@ -213,6 +213,11 @@ inline bool G1CollectedHeap::requires_barriers(stackChunkOop obj) const {
   return !heap_region_containing(obj)->is_young(); // is_in_young does an unnecessary NULL check
 }
 
+inline bool G1CollectedHeap::is_obj_filler(const oop obj) {
+  Klass* k = obj->klass();
+  return k == Universe::fillerArrayKlassObj() || k == vmClasses::FillerObject_klass();
+}
+
 inline bool G1CollectedHeap::is_obj_dead(const oop obj, const HeapRegion* hr) const {
   return hr->is_obj_dead(obj, hr->parsable_bottom());
 }

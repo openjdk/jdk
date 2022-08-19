@@ -1001,7 +1001,7 @@ class VerifyAfterSelfForwardingPtrRemovalTask : public WorkerTask {
           _garbage_words(0) { }
 
         void do_object(oop obj) override {
-          if (HeapRegion::obj_is_filler(obj)) {
+          if (G1CollectedHeap::is_obj_filler(obj)) {
             _garbage_words += obj->size();
             assert(!G1CollectedHeap::heap()->is_marked(obj), "filler object " PTR_FORMAT " is marked", p2i(obj));
           } else {
@@ -1064,10 +1064,10 @@ void G1YoungCollector::post_evacuate_collection_set(G1EvacInfo* evacuation_info,
 
   post_evacuate_cleanup_2(per_thread_states, evacuation_info);
 
-    if (_evac_failure_regions.evacuation_failed()) {
-      VerifyAfterSelfForwardingPtrRemovalTask cl(&_evac_failure_regions, _g1h->workers()->active_workers());
-      _g1h->workers()->run_task(&cl);
-    }
+  if (VerifyDuringGC && _evac_failure_regions.evacuation_failed()) {
+    VerifyAfterSelfForwardingPtrRemovalTask cl(&_evac_failure_regions, _g1h->workers()->active_workers());
+    _g1h->workers()->run_task(&cl);
+  }
 
   _evac_failure_regions.post_collection();
 

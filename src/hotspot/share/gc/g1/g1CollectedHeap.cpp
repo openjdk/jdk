@@ -3290,10 +3290,12 @@ HeapRegion* G1CollectedHeap::alloc_highest_free_region() {
 }
 
 void G1CollectedHeap::mark_evac_failure_object(const oop obj) const {
+  assert(!collector_state()->in_concurrent_start_gc(), "must be");
   _cm->raw_mark_in_bitmap(obj);
 }
 
 void G1CollectedHeap::mark_evac_failure_object(uint worker_id, const oop obj, size_t obj_size) const {
+  assert(collector_state()->in_concurrent_start_gc(), "must be");
   _cm->raw_mark_in_bitmap(worker_id, obj, obj_size);
 }
 

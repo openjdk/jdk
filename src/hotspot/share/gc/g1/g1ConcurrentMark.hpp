@@ -580,6 +580,7 @@ public:
   // Mark in the marking bitmap. Used during evacuation failure to
   // remember what objects need handling. Not for use during marking.
   inline void raw_mark_in_bitmap(oop obj);
+  // Same as above, but also updates liveness information.
   inline void raw_mark_in_bitmap(uint worker_id, oop obj, size_t obj_size);
 
   // Clears marks for all objects in the given region in the marking

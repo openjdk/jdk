@@ -96,13 +96,7 @@ static size_t zap_dead_objects(HeapRegion* hr, HeapWord* start, HeapWord* end) {
     return 0;
   }
 
-#ifdef ASSERT // FIXME: remove
-  MemRegion mr(start, end);
-  Copy::fill_to_words(mr.start(), mr.word_size(), badHeapWord);
-#endif
-
   hr->fill_range_with_dead_objects(start, end);
-
   return pointer_delta(end, start);
 }
 
@@ -221,7 +215,7 @@ void G1RemoveSelfForwardsInChunksTask::process_chunk(uint worker_id,
     HeapWord* next_marked_obj_addr = bitmap->get_next_marked_addr(obj_end_addr, hr_top);
     garbage_words += zap_dead_objects(hr, obj_end_addr, next_marked_obj_addr);
     obj_addr = next_marked_obj_addr;
-  } while (obj_addr < MIN2(hr_top, chunk_end));
+  } while (obj_addr < chunk_end);
 
   assert(marked_words > 0 && num_marked_objs > 0, "inv");
 
@@ -235,7 +229,6 @@ G1RemoveSelfForwardsInChunksTask::G1RemoveSelfForwardsInChunksTask(G1EvacFailure
   WorkerTask("G1 Remove Self-forwarding Pointers"),
   _g1h(G1CollectedHeap::heap()),
   _cm(_g1h->concurrent_mark()),
-  _during_concurrent_start(_g1h->collector_state()->in_concurrent_start_gc()),
   _evac_failure_regions(evac_failure_regions),
   _chunk_bitmap(mtGC) { }
 

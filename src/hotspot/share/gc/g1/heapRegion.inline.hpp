@@ -139,11 +139,6 @@ inline bool HeapRegion::block_is_obj(const HeapWord* const p, HeapWord* const pb
   return is_marked_in_bitmap(cast_to_oop(p));
 }
 
-inline bool HeapRegion::obj_is_filler(const oop obj) {
-  Klass* k = obj->klass();
-  return k == Universe::fillerArrayKlassObj() || k == vmClasses::FillerObject_klass();
-}
-
 inline bool HeapRegion::is_obj_dead(const oop obj, HeapWord* const pb) const {
   assert(is_in_reserved(obj), "Object " PTR_FORMAT " must be in region", p2i(obj));
 
@@ -159,7 +154,7 @@ inline bool HeapRegion::is_obj_dead(const oop obj, HeapWord* const pb) const {
   }
 
   // This object is in the parsable part of the heap, live unless scrubbed.
-  return obj_is_filler(obj);
+  return G1CollectedHeap::is_obj_filler(obj);
 }
 
 inline HeapWord* HeapRegion::next_live_in_unparsable(G1CMBitMap* const bitmap, const HeapWord* p, HeapWord* const limit) const {
