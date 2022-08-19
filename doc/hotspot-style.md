@@ -1070,6 +1070,8 @@ and other supported compilers may not have anything similar.
 * Unrestricted Unions
 ([n2544](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2544.pdf))
 
+* Covariant return types
+
 ### Excluded Features
 
 * New string and character literals
@@ -1119,8 +1121,6 @@ normal expected behavior of the operation.
 * Avoid most implicit conversion constructors and (implicit or explicit)
 conversion operators.  (Note that conversion to `bool` isn't needed
 in HotSpot code because of the "no implicit boolean" guideline.)
-
-* Avoid covariant return types.
 
 * Avoid `goto` statements.
 
