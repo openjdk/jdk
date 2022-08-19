@@ -3514,21 +3514,21 @@ public:
             FloatRegister Zn, FloatRegister Zm) {                                      \
     starti;                                                                            \
     assert(T != Q, "invalid size");                                                    \
+    bool is_absolute = op2 == 0b11;                                                    \
     if (fp == 1) {                                                                     \
       assert(T != B, "invalid size");                                                  \
-      if (op2 == 0b01) {                                                               \
-        assert(cond != HI && cond != HS, "invalid condition for fcm");                 \
-      }                                                                                \
-      if (op2 == 0b11) {                                                               \
+      if (is_absolute) {                                                               \
         assert(cond == GT || cond == GE, "invalid condition for fac");                 \
+      } else {                                                                         \
+        assert(cond != HI && cond != HS, "invalid condition for fcm");                 \
       }                                                                                \
     }                                                                                  \
     int cond_op;                                                                       \
     switch(cond) {                                                                     \
       case EQ: cond_op = (op2 << 2) | 0b10; break;                                     \
       case NE: cond_op = (op2 << 2) | 0b11; break;                                     \
-      case GE: cond_op = (op2 << 2) | ((op2 == 0b11) ? 0b01 : 0b00); break;            \
-      case GT: cond_op = (op2 << 2) | ((op2 == 0b11) ? 0b11 : 0b01); break;            \
+      case GE: cond_op = (op2 << 2) | is_absolute ? 0b01 : 0b00; break;                \
+      case GT: cond_op = (op2 << 2) | is_absolute ? 0b11 : 0b01; break;                \
       case HI: cond_op = 0b0001; break;                                                \
       case HS: cond_op = 0b0000; break;                                                \
       default:                                                                         \

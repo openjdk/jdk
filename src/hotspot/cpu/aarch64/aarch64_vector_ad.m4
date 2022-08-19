@@ -4699,3 +4699,36 @@ instruct vexpand(vReg dst, vReg src, pRegGov pg) %{
   %}
   ins_pipe(pipe_slow);
 %}
+
+// ------------------------------ Vector signum --------------------------------
+
+// Vector Math.signum
+
+instruct vsignum_le128b(vReg dst, vReg src, vReg zero, vReg one) %{
+  predicate(Matcher::vector_length_in_bytes(n) <= 16);
+  match(Set dst (SignumVF src (Binary zero one)));
+  match(Set dst (SignumVD src (Binary zero one)));
+  effect(TEMP_DEF dst);
+  format %{ "vsignum_le128b $dst, $src\t# vector <= 128 bits" %}
+  ins_encode %{
+    __ vector_signum_neon($dst$$FloatRegister, $src$$FloatRegister, $zero$$FloatRegister,
+                          $one$$FloatRegister, get_arrangement(this));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vsignum_gt128b(vReg dst, vReg src, vReg zero, vReg one, vReg tmp, pRegGov pgtmp) %{
+  predicate(Matcher::vector_length_in_bytes(n) > 16);
+  match(Set dst (SignumVF src (Binary zero one)));
+  match(Set dst (SignumVD src (Binary zero one)));
+  effect(TEMP_DEF dst, TEMP tmp, TEMP pgtmp);
+  format %{ "vsignum_gt128b $dst, $src\t# vector > 128 bits. KILL $tmp, $pgtmp" %}
+  ins_encode %{
+    assert(UseSVE > 0, "must be sve");
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ vector_signum_sve($dst$$FloatRegister, $src$$FloatRegister, $zero$$FloatRegister,
+                         $one$$FloatRegister, $tmp$$FloatRegister, $pgtmp$$PRegister,
+                         __ elemType_to_regVariant(bt));
+  %}
+  ins_pipe(pipe_slow);
+%}
