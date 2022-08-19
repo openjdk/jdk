@@ -3527,8 +3527,8 @@ public:
     switch(cond) {                                                                     \
       case EQ: cond_op = (op2 << 2) | 0b10; break;                                     \
       case NE: cond_op = (op2 << 2) | 0b11; break;                                     \
-      case GE: cond_op = (op2 << 2) | is_absolute ? 0b01 : 0b00; break;                \
-      case GT: cond_op = (op2 << 2) | is_absolute ? 0b11 : 0b01; break;                \
+      case GE: cond_op = (op2 << 2) | (is_absolute ? 0b01 : 0b00); break;              \
+      case GT: cond_op = (op2 << 2) | (is_absolute ? 0b11 : 0b01); break;              \
       case HI: cond_op = 0b0001; break;                                                \
       case HS: cond_op = 0b0000; break;                                                \
       default:                                                                         \
