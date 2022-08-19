@@ -43,7 +43,7 @@ import jdk.test.lib.Platform;
 import jdk.test.lib.cds.CDSTestUtils;
 
 import jtreg.SkippedException;
-import sun.hotspot.code.Compiler;
+import jdk.test.whitebox.code.Compiler;
 
 public class MainModuleOnly extends DynamicArchiveTestBase {
 

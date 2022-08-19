@@ -218,11 +218,6 @@ class ParallelScavengeHeap : public CollectedHeap {
   // Perform a full collection
   virtual void do_full_collection(bool clear_all_soft_refs);
 
-  bool supports_inline_contig_alloc() const { return !UseNUMA; }
-
-  HeapWord* volatile* top_addr() const { return !UseNUMA ? young_gen()->top_addr() : (HeapWord* volatile*)-1; }
-  HeapWord** end_addr() const { return !UseNUMA ? young_gen()->end_addr() : (HeapWord**)-1; }
-
   void ensure_parsability(bool retire_tlabs);
   void resize_all_tlabs();
 

@@ -48,8 +48,8 @@ package compiler.codecache;
 
 import jdk.test.lib.Asserts;
 import jdk.test.whitebox.WhiteBox;
-import sun.hotspot.code.BlobType;
-import sun.hotspot.code.CodeBlob;
+import jdk.test.whitebox.code.BlobType;
+import jdk.test.whitebox.code.CodeBlob;
 
 import java.lang.management.MemoryPoolMXBean;
 import java.lang.reflect.Method;

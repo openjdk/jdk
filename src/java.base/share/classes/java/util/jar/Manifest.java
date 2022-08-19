@@ -336,7 +336,7 @@ public class Manifest implements Cloneable {
                     lastline = buf;
                     continue;
                 }
-                name = new String(buf, 0, buf.length, UTF_8.INSTANCE);
+                name = new String(buf, UTF_8.INSTANCE);
                 lastline = null;
             }
             Attributes attr = getAttributes(name);

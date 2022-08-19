@@ -57,7 +57,7 @@ import java.util.function.BiFunction;
  *     {@link MemorySegment#ofAddress(MemoryAddress, long, MemorySession) resizing} the segment first).</li>
  * </ul>
  *
- * <h2>Obtaining a symbol lookup</h2>
+ * <h2 id="obtaining">Obtaining a symbol lookup</h2>
  *
  * The factory methods {@link #libraryLookup(String, MemorySession)} and {@link #libraryLookup(Path, MemorySession)}
  * create a symbol lookup for a library known to the operating system. The library is specified by either its name or a path.

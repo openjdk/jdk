@@ -29,6 +29,8 @@
 #include "asm/macroAssembler.inline.hpp"
 #include "utilities/macros.hpp"
 
+class C2EntryBarrierStub;
+
 class C2_MacroAssembler: public MacroAssembler {
  public:
   // creation

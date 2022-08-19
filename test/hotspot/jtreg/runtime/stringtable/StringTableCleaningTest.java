@@ -50,7 +50,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
-import sun.hotspot.gc.GC;
+import jdk.test.whitebox.gc.GC;
 
 public class StringTableCleaningTest {
     public static void main(String[] args) throws Exception {

@@ -41,6 +41,7 @@
 #include "nativeInst_aarch64.hpp"
 #include "oops/compiledICHolder.hpp"
 #include "oops/klass.inline.hpp"
+#include "oops/method.inline.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/continuationEntry.inline.hpp"
@@ -1049,11 +1050,10 @@ static void gen_continuation_enter(MacroAssembler* masm,
 
     fill_continuation_entry(masm);
 
-    __ cmp(c_rarg2, (u1)0);
-    __ br(Assembler::NE, call_thaw);
+    __ cbnz(c_rarg2, call_thaw);
 
     address mark = __ pc();
-    __ trampoline_call1(resolve, NULL, false);
+    __ trampoline_call(resolve);
 
     oop_maps->add_gc_map(__ pc() - start, map);
     __ post_call_nop();
@@ -1075,11 +1075,10 @@ static void gen_continuation_enter(MacroAssembler* masm,
 
   fill_continuation_entry(masm);
 
-  __ cmp(c_rarg2, (u1)0);
-  __ br(Assembler::NE, call_thaw);
+  __ cbnz(c_rarg2, call_thaw);
 
   address mark = __ pc();
-  __ trampoline_call1(resolve, NULL, false);
+  __ trampoline_call(resolve);
 
   oop_maps->add_gc_map(__ pc() - start, map);
   __ post_call_nop();
@@ -1424,7 +1423,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   __ sub(sp, sp, stack_size - 2*wordSize);
 
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  bs->nmethod_entry_barrier(masm);
+  bs->nmethod_entry_barrier(masm, NULL /* slow_path */, NULL /* continuation */, NULL /* guard */);
 
   // Frame is now completed as far as size and linkage.
   int frame_complete = ((intptr_t)__ pc()) - start;
