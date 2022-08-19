@@ -75,21 +75,22 @@ class LoaderConstraint : public CHeapObj<mtClass> {
   }
 };
 
-class LoaderConstraintEntry {                        // copied into hashtable as value
+// For this class name, these are the LoaderConstraints for classes loaded with this name.
+class ClassNameEntry {                               // copied into hashtable as value
  private:
   GrowableArray<LoaderConstraint*>*  _constraints;   // loader constraints for this class name.
 
  public:
-  LoaderConstraintEntry() : _constraints(nullptr) {}
-  LoaderConstraintEntry(const LoaderConstraintEntry&) = delete;
-  LoaderConstraintEntry& operator=(const LoaderConstraintEntry&) = delete;
+  ClassNameEntry() : _constraints(nullptr) {}
+  ClassNameEntry(const ClassNameEntry&) = delete;
+  ClassNameEntry& operator=(const ClassNameEntry&) = delete;
 
   void initialize(LoaderConstraint* constraint) {
     _constraints = new (ResourceObj::C_HEAP, mtClass) GrowableArray<LoaderConstraint*>(5, mtClass);
     _constraints->push(constraint);
   }
 
-  ~LoaderConstraintEntry() {
+  ~ClassNameEntry() {
     delete _constraints;
   }
 
@@ -107,7 +108,7 @@ class LoaderConstraintEntry {                        // copied into hashtable as
 };
 
 
-ResourceHashtable<Symbol*, LoaderConstraintEntry, 107, ResourceObj::C_HEAP, mtClass> _loader_constraint_table;
+ResourceHashtable<Symbol*, ClassNameEntry, 107, ResourceObj::C_HEAP, mtClass> _loader_constraint_table;
 
 void LoaderConstraint::extend_loader_constraint(Symbol* class_name,
                                                 Handle loader,
@@ -136,7 +137,7 @@ LoaderConstraint* LoaderConstraintTable::find_loader_constraint(
                                     Symbol* name, Handle loader) {
 
   assert_lock_strong(SystemDictionary_lock);
-  LoaderConstraintEntry* entry = _loader_constraint_table.get(name);
+  ClassNameEntry* entry = _loader_constraint_table.get(name);
   if (entry == nullptr) {
     return nullptr;
   }
@@ -166,7 +167,7 @@ void LoaderConstraintTable::add_loader_constraint(Symbol* name, InstanceKlass* k
   // a parameter name to a method call.  We impose this constraint that the
   // class that is eventually loaded must match between these two loaders.
   bool created;
-  LoaderConstraintEntry* entry = _loader_constraint_table.put_if_absent(name, &created);
+  ClassNameEntry* entry = _loader_constraint_table.put_if_absent(name, &created);
   if (created) {
     // Increment the key refcount when putting in the table.
     name->increment_refcount();
@@ -178,7 +179,7 @@ void LoaderConstraintTable::add_loader_constraint(Symbol* name, InstanceKlass* k
 
 class PurgeUnloadedConstraints : public StackObj {
  public:
-  bool do_entry(Symbol*& name, LoaderConstraintEntry& entry) {
+  bool do_entry(Symbol*& name, ClassNameEntry& entry) {
     LogTarget(Info, class, loader, constraints) lt;
     int len = entry.num_constraints();
     for (int i = len - 1; i >= 0; i--) {
@@ -446,12 +447,12 @@ void LoaderConstraintTable::merge_loader_constraints(Symbol* class_name,
   }
 
   // Remove src from entry
-  LoaderConstraintEntry* entry = _loader_constraint_table.get(class_name);
+  ClassNameEntry* entry = _loader_constraint_table.get(class_name);
   entry->remove_constraint(src);
 }
 
 void LoaderConstraintTable::verify() {
-  auto check = [&] (Symbol*& key, LoaderConstraintEntry& entry) {
+  auto check = [&] (Symbol*& key, ClassNameEntry& entry) {
     // foreach constraint in entry, check the klass is in the dictionary or placeholder table.
     int len = entry.num_constraints();
     for (int i = 0; i < len; i++) {
@@ -489,7 +490,7 @@ void LoaderConstraintTable::verify() {
 }
 
 void LoaderConstraintTable::print_table_statistics(outputStream* st) {
-  auto size = [&] (Symbol*& key, LoaderConstraintEntry& entry) {
+  auto size = [&] (Symbol*& key, ClassNameEntry& entry) {
     // sizeof entry is included in the size of the hashtable node
     int sum = 0;
     int len = entry.num_constraints();
@@ -505,7 +506,7 @@ void LoaderConstraintTable::print_table_statistics(outputStream* st) {
 
 // Called with the system dictionary lock held
 void LoaderConstraintTable::print_on(outputStream* st) {
-  auto printer = [&] (Symbol*& key, LoaderConstraintEntry& entry) {
+  auto printer = [&] (Symbol*& key, ClassNameEntry& entry) {
     int len = entry.num_constraints();
     for (int i = 0; i < len; i++) {
       LoaderConstraint* probe = entry.constraint_at(i);
