@@ -24,14 +24,8 @@
 package jdk.jfr.event.profiling;
 
 import java.time.Duration;
-import java.util.List;
-import java.util.concurrent.Semaphore;
-import java.util.concurrent.atomic.AtomicInteger;
 
-import jdk.jfr.Recording;
-import jdk.jfr.consumer.RecordedFrame;
 import jdk.jfr.consumer.RecordingStream;
-import jdk.jfr.internal.JVM;
 import jdk.test.lib.jfr.EventNames;
 import jdk.test.lib.jfr.RecurseThread;
 
