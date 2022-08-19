@@ -38,7 +38,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocFile;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
-import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 import jdk.javadoc.internal.doclint.HtmlTag;
 
@@ -232,7 +231,7 @@ public class DocFilesHandlerImpl implements DocFilesHandler {
                         default:
                             if (inHead) {
                                 localTags.add(startElem);
-                                localTags.add(docTreeFactory.newTextTree(DocletConstants.NL));
+                                localTags.add(docTreeFactory.newTextTree("\n"));
                             }
                     }
                     break;
@@ -248,7 +247,7 @@ public class DocFilesHandlerImpl implements DocFilesHandler {
                         default:
                             if (inHead) {
                                 localTags.add(endElem);
-                                localTags.add(docTreeFactory.newTextTree(DocletConstants.NL));
+                                localTags.add(docTreeFactory.newTextTree("\n"));
                             }
                     }
                     break;

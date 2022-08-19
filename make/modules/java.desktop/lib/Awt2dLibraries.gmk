@@ -103,7 +103,6 @@ LIBAWT_EXTRA_HEADER_DIRS := \
     libmlib_image \
     include \
     java.base:libjava \
-    java.base:include \
     #
 
 LIBAWT_CFLAGS += -D__MEDIALIB_OLD_NAMES -D__USE_J2D_NAMES $(X_CFLAGS)
@@ -565,7 +564,6 @@ ifeq ($(call isTargetOs, windows), true)
       libawt/java2d \
       libawt/java2d/windows \
       libawt/windows \
-      java.base:include \
       java.base:libjava \
       #
 
@@ -732,7 +730,6 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
 
   LIBSPLASHSCREEN_HEADER_DIRS += \
       libosxapp \
-      java.base:include \
       java.base:libjava \
       #
 

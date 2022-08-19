@@ -66,25 +66,6 @@ size_t MemoryCounter::peak_size() const {
 }
 #endif
 
-// Total malloc invocation count
-size_t MallocMemorySnapshot::total_count() const {
-  size_t amount = 0;
-  for (int index = 0; index < mt_number_of_types; index ++) {
-    amount += _malloc[index].malloc_count();
-  }
-  return amount;
-}
-
-// Total malloc'd memory amount
-size_t MallocMemorySnapshot::total() const {
-  size_t amount = 0;
-  for (int index = 0; index < mt_number_of_types; index ++) {
-    amount += _malloc[index].malloc_size();
-  }
-  amount += _tracking_header.size() + total_arena();
-  return amount;
-}
-
 // Total malloc'd memory used by arenas
 size_t MallocMemorySnapshot::total_arena() const {
   size_t amount = 0;
@@ -100,6 +81,7 @@ void MallocMemorySnapshot::make_adjustment() {
   size_t arena_size = total_arena();
   int chunk_idx = NMTUtil::flag_to_index(mtChunk);
   _malloc[chunk_idx].record_free(arena_size);
+  _all_mallocs.deallocate(arena_size);
 }
 
 void MallocMemorySummary::initialize() {
@@ -127,7 +109,6 @@ void* MallocTracker::record_malloc(void* malloc_base, size_t size, MEMFLAGS flag
   assert(malloc_base != NULL, "precondition");
 
   MallocMemorySummary::record_malloc(size, flags);
-  MallocMemorySummary::record_new_malloc_header(sizeof(MallocHeader));
   uint32_t mst_marker = 0;
   if (MemTracker::tracking_level() == NMT_detail) {
     MallocSiteTable::allocation_at(stack, size, &mst_marker, flags);
@@ -162,7 +143,6 @@ void* MallocTracker::record_free(void* memblock) {
   header->assert_block_integrity();
 
   MallocMemorySummary::record_free(header->size(), header->flags());
-  MallocMemorySummary::record_free_malloc_header(sizeof(MallocHeader));
   if (MemTracker::tracking_level() == NMT_detail) {
     MallocSiteTable::deallocation_at(header->size(), header->mst_marker());
   }

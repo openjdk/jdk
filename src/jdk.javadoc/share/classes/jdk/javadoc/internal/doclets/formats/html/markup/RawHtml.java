@@ -29,7 +29,6 @@ import java.io.IOException;
 import java.io.Writer;
 
 import jdk.javadoc.internal.doclets.toolkit.Content;
-import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
 
 /**
  * Class for generating raw HTML content to be added to HTML pages of javadoc output.
@@ -121,6 +120,7 @@ public class RawHtml extends Content {
      * @param rawHtml raw HTML text to be added
      */
     private RawHtml(CharSequence rawHtml) {
+        assert Text.checkNewlines(rawHtml);
         rawHtmlContent = rawHtml.toString();
     }
 
@@ -149,14 +149,6 @@ public class RawHtml extends Content {
                             break;
                         case '&':
                             state = State.ENTITY;
-                            count++;
-                            break;
-                        case '\r':
-                            // Windows uses "\r\n" as line separator while UNIX uses "\n".
-                            // Skip the "\r" to get consistent results across platforms.
-                            if (i + 1 < htmlText.length() && htmlText.charAt(i + 1) == '\n') {
-                                i++;
-                            }
                             count++;
                             break;
                         default:
@@ -192,8 +184,8 @@ public class RawHtml extends Content {
     }
 
     @Override
-    public boolean write(Writer out, boolean atNewline) throws IOException {
-        out.write(rawHtmlContent);
-        return rawHtmlContent.endsWith(DocletConstants.NL);
+    public boolean write(Writer out, String newline, boolean atNewline) throws IOException {
+        out.write(rawHtmlContent.replace("\n", newline));
+        return rawHtmlContent.endsWith("\n");
     }
 }
