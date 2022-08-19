@@ -5682,8 +5682,8 @@ void C2_MacroAssembler::udivmodL(Register rax, Register divisor, Register rdx, R
 #endif
 
 void C2_MacroAssembler::rearrange_bytes(XMMRegister dst, XMMRegister shuffle, XMMRegister src, XMMRegister xtmp1,
-                                        XMMRegister xtmp2, XMMRegister xtmp3, XMMRegister xtmp4, XMMRegister xtmp5,
-                                        Register rtmp, KRegister ktmp1, KRegister ktmp2, int vlen_enc) {
+                                        XMMRegister xtmp2, XMMRegister xtmp3, Register rtmp, KRegister ktmp1,
+                                        KRegister ktmp2, int vlen_enc) {
   assert(VM_Version::supports_avx512bw(), "");
   // Byte shuffles are inlane operations and indices are determined using
   // lower 4 bit of each shuffle lane, thus all shuffle indices are
@@ -5692,54 +5692,41 @@ void C2_MacroAssembler::rearrange_bytes(XMMRegister dst, XMMRegister shuffle, XM
   // lane i.e. elements corresponding to shuffle indices 16, 32 and 64
   // will be 16th element in their respective 128 bit lanes.
   movl(rtmp, 16);
-  evpbroadcastb(xtmp2, rtmp, vlen_enc);
+  evpbroadcastb(xtmp1, rtmp, vlen_enc);
 
   // Compute a mask for shuffle vector by comparing indices with expression INDEX < 16,
   // Broadcast first 128 bit lane across entire vector, shuffle the vector lanes using
   // original shuffle indices and move the shuffled lanes corresponding to true
   // mask to destination vector.
-  evpcmpb(ktmp2, k0, shuffle, xtmp2, Assembler::lt, true, vlen_enc);
-  vpermq(xtmp3, src, 0x44, vlen_enc);
-  vinserti64x4(xtmp3, xtmp3, xtmp3, 0x1);
-  vpshufb(xtmp3, xtmp3, shuffle, vlen_enc);
-  evmovdqub(dst, ktmp2, xtmp3, false, vlen_enc);
+  evpcmpb(ktmp2, k0, shuffle, xtmp1, Assembler::lt, true, vlen_enc);
+  evshufi64x2(xtmp2, src, src, 0x0, vlen_enc);
+  evpshufb(dst, ktmp2, xtmp2, shuffle, false, vlen_enc);
 
   // Perform above steps with lane comparison expression as INDEX >= 16 && INDEX < 32
   // and broadcasting second 128 bit lane.
-  evpcmpb(ktmp1, k0, shuffle,  xtmp2, Assembler::nlt, true, vlen_enc);
-  vpsllq(xtmp5, xtmp2, 0x1, vlen_enc);
-  evpcmpb(ktmp2, k0, shuffle, xtmp5, Assembler::lt, true, vlen_enc);
+  evpcmpb(ktmp1, k0, shuffle,  xtmp1, Assembler::nlt, true, vlen_enc);
+  vpsllq(xtmp2, xtmp1, 0x1, vlen_enc);
+  evpcmpb(ktmp2, k0, shuffle, xtmp2, Assembler::lt, true, vlen_enc);
   kandql(ktmp2, ktmp1, ktmp2);
-  vpermq(xtmp3, src,  0xEE, vlen_enc);
-  vinserti64x4(xtmp3, xtmp3, xtmp3, 0x1);
-  vpshufb(xtmp3, xtmp3, shuffle, vlen_enc);
-  evmovdqub(xtmp4, ktmp2, xtmp3, false, vlen_enc);
-  vporq(dst, dst, xtmp4, vlen_enc);
+  evshufi64x2(xtmp3, src, src, 0x55, vlen_enc);
+  evpshufb(dst, ktmp2, xtmp3, shuffle, true, vlen_enc);
 
   // Perform above steps with lane comparison expression as INDEX >= 32 && INDEX < 48
   // and broadcasting third 128 bit lane.
-  evpcmpb(ktmp1, k0, shuffle,  xtmp5, Assembler::nlt, true, vlen_enc);
-  vpaddb(xtmp5, xtmp2, xtmp5, vlen_enc);
-  evpcmpb(ktmp2, k0, shuffle,  xtmp5, Assembler::lt, true, vlen_enc);
+  evpcmpb(ktmp1, k0, shuffle,  xtmp2, Assembler::nlt, true, vlen_enc);
+  vpaddb(xtmp1, xtmp1, xtmp2, vlen_enc);
+  evpcmpb(ktmp2, k0, shuffle,  xtmp1, Assembler::lt, true, vlen_enc);
   kandql(ktmp2, ktmp1 , ktmp2);
-  vpermq(xtmp3, src,  0x44, vlen_enc);
-  vextracti64x4_high(xtmp3, xtmp3);
-  vinserti64x4(xtmp3, xtmp3, xtmp3, 0x1);
-  vpshufb(xtmp3, xtmp3, shuffle, vlen_enc);
-  evmovdqub(xtmp4, ktmp2, xtmp3, false, vlen_enc);
-  vporq(dst, dst, xtmp4, vlen_enc);
+  evshufi64x2(xtmp3, src, src, 0xAA, vlen_enc);
+  evpshufb(dst, ktmp2, xtmp3, shuffle, true, vlen_enc);
 
   // Perform above steps with lane comparison expression as INDEX >= 48 && INDEX < 64
   // and broadcasting third 128 bit lane.
-  evpcmpb(ktmp1, k0, shuffle,  xtmp5, Assembler::nlt, true, vlen_enc);
-  vpsllq(xtmp5, xtmp2, 0x2, vlen_enc);
-  evpcmpb(ktmp2, k0, shuffle,  xtmp5, Assembler::lt, true, vlen_enc);
+  evpcmpb(ktmp1, k0, shuffle,  xtmp1, Assembler::nlt, true, vlen_enc);
+  vpsllq(xtmp2, xtmp2, 0x1, vlen_enc);
+  evpcmpb(ktmp2, k0, shuffle,  xtmp2, Assembler::lt, true, vlen_enc);
   kandql(ktmp2, ktmp1 , ktmp2);
-  vpermq(xtmp3, src,  0xEE, vlen_enc);
-  vextracti64x4_high(xtmp3, xtmp3);
-  vinserti64x4(xtmp3, xtmp3, xtmp3, 0x1);
-  vpshufb(xtmp3, xtmp3, shuffle, vlen_enc);
-  evmovdqub(xtmp4, ktmp2, xtmp3, false, vlen_enc);
-  vporq(dst, dst, xtmp4, vlen_enc);
+  evshufi64x2(xtmp3, src, src, 0xFF, vlen_enc);
+  evpshufb(dst, ktmp2, xtmp3, shuffle, true, vlen_enc);
 }
 
