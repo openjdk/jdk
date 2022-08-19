@@ -783,7 +783,7 @@ bool SymbolTable::do_rehash() {
 
   // We use current size
   size_t new_size = _local_table->get_size_log2(Thread::current());
-  SymbolTableHash* new_table = new SymbolTableHash(new_size, END_SIZE, REHASH_LEN);
+  SymbolTableHash* new_table = new SymbolTableHash(new_size, END_SIZE, REHASH_LEN, true);
   // Use alt hash from now on
   _alt_hash = true;
   if (!_local_table->try_move_nodes_to(Thread::current(), new_table)) {
