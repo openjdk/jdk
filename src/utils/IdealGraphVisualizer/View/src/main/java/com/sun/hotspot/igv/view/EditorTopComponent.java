@@ -23,13 +23,14 @@
  */
 package com.sun.hotspot.igv.view;
 
-import com.sun.hotspot.igv.data.ChangedEvent;
-import com.sun.hotspot.igv.data.ChangedListener;
-import com.sun.hotspot.igv.data.GraphDocument;
-import com.sun.hotspot.igv.data.Group;
-import com.sun.hotspot.igv.data.InputNode;
-import com.sun.hotspot.igv.data.InputBlock;
+import com.lowagie.text.Document;
+import com.lowagie.text.Rectangle;
+import com.lowagie.text.pdf.PdfContentByte;
+import com.lowagie.text.pdf.PdfGraphics2D;
+import com.lowagie.text.pdf.PdfTemplate;
+import com.lowagie.text.pdf.PdfWriter;
 import com.sun.hotspot.igv.data.Properties;
+import com.sun.hotspot.igv.data.*;
 import com.sun.hotspot.igv.data.Properties.PropertyMatcher;
 import com.sun.hotspot.igv.data.services.InputGraphProvider;
 import com.sun.hotspot.igv.filter.FilterChain;
@@ -37,34 +38,13 @@ import com.sun.hotspot.igv.filter.FilterChainProvider;
 import com.sun.hotspot.igv.graph.Diagram;
 import com.sun.hotspot.igv.graph.Figure;
 import com.sun.hotspot.igv.graph.services.DiagramProvider;
+import com.sun.hotspot.igv.settings.Settings;
 import com.sun.hotspot.igv.util.LookupHistory;
 import com.sun.hotspot.igv.util.RangeSlider;
-import com.sun.hotspot.igv.settings.Settings;
 import com.sun.hotspot.igv.view.actions.*;
-import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.HierarchyBoundsListener;
-import java.awt.event.HierarchyEvent;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
-import java.io.*;
-import java.nio.charset.StandardCharsets;
-import java.util.List;
-import java.util.*;
-import javax.swing.*;
-import javax.swing.border.Border;
 import org.apache.batik.dom.GenericDOMImplementation;
 import org.apache.batik.svggen.SVGGeneratorContext;
 import org.apache.batik.svggen.SVGGraphics2D;
-import com.lowagie.text.Document;
-import com.lowagie.text.Rectangle;
-import com.lowagie.text.pdf.PdfWriter;
-import com.lowagie.text.pdf.PdfContentByte;
-import com.lowagie.text.pdf.PdfTemplate;
-import com.lowagie.text.pdf.PdfGraphics2D;
-import org.w3c.dom.DOMImplementation;
 import org.openide.DialogDisplayer;
 import org.openide.NotifyDescriptor;
 import org.openide.actions.RedoAction;
@@ -79,11 +59,20 @@ import org.openide.util.actions.Presenter;
 import org.openide.util.lookup.AbstractLookup;
 import org.openide.util.lookup.InstanceContent;
 import org.openide.util.lookup.ProxyLookup;
-import org.openide.windows.Mode;
 import org.openide.windows.TopComponent;
-import org.openide.windows.WindowManager;
+import org.w3c.dom.DOMImplementation;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
+import javax.swing.*;
+import javax.swing.border.Border;
+import java.awt.*;
+import java.awt.event.*;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.*;
+
 
 /**
  *
@@ -92,7 +81,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 public final class EditorTopComponent extends TopComponent implements PropertyChangeListener {
 
     private DiagramViewer scene;
-    private Toolbar toolBar;
     private InstanceContent content;
     private InstanceContent graphContent;
     private EnableSeaLayoutAction seaLayoutAction;
@@ -110,16 +98,10 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
     private RangeSlider rangeSlider;
     private JToggleButton overviewButton;
     private JToggleButton hideDuplicatesButton;
+    private JPanel topPanel;
+    private Toolbar quickSearchToolbar;
+    private static final Component quickSearchPresenter = ((Presenter.Toolbar) Utilities.actionsForPath("Actions/Search").get(0)).getToolbarPresenter();
 
-    private static final Component quicksearch;
-    static {
-        Action searchAction = Utilities.actionsForPath("Actions/Search").get(0);
-        quicksearch = ((Presenter.Toolbar) searchAction).getToolbarPresenter();
-        Dimension preferredSize = quicksearch.getPreferredSize();
-        preferredSize = new Dimension((int) preferredSize.getWidth() * 2, (int) preferredSize.getHeight());
-        quicksearch.setMinimumSize(preferredSize); // necessary for GTK LAF
-        quicksearch.setPreferredSize(preferredSize);
-    }
     private static final String PREFERRED_ID = "EditorTopComponent";
     private static final String SATELLITE_STRING = "satellite";
     private static final String SCENE_STRING = "scene";
@@ -208,9 +190,10 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
         initComponents();
 
         ToolbarPool.getDefault().setPreferredIconSize(16);
-        toolBar = new Toolbar();
-        Border b = (Border) UIManager.get("Nb.Editor.Toolbar.border"); //NOI18N
-        toolBar.setBorder(b);
+        Toolbar toolBar = new Toolbar();
+        toolBar.setBorder((Border) UIManager.get("Nb.Editor.Toolbar.border")); //NOI18N
+        toolBar.setMinimumSize(new Dimension(0,0)); // MacOS BUG with ToolbarWithOverflow
+
         JPanel container = new JPanel();
         this.add(container, BorderLayout.NORTH);
         container.setLayout(new BorderLayout());
@@ -324,9 +307,22 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
         button.setSelected(false);
         toolBar.add(button);
         selectionModeAction.addPropertyChangeListener(this);
-
         toolBar.add(Box.createHorizontalGlue());
-        toolBar.add(quicksearch);
+        toolBar.setDisplayOverflowOnHover(false);
+
+        quickSearchToolbar = new Toolbar();
+        quickSearchToolbar.setBorder((Border) UIManager.get("Nb.Editor.Toolbar.border")); //NOI18N
+        quickSearchToolbar.add(quickSearchPresenter);
+
+        // Needed to for toolBar to use maximal available width
+        JPanel toolBarPanel = new JPanel(new GridLayout(0, 1));
+        toolBarPanel.add(toolBar);
+
+        topPanel = new JPanel();
+        topPanel.setLayout(new BoxLayout(topPanel, BoxLayout.X_AXIS));
+        topPanel.add(toolBarPanel);
+        topPanel.add(quickSearchToolbar);
+        container.add(BorderLayout.NORTH, topPanel);
 
         centerPanel = new JPanel();
         centerPanel.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(
@@ -658,15 +654,16 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
 
     @Override
     protected void componentShowing() {
-        toolBar.add(quicksearch);
         super.componentShowing();
         scene.componentShowing();
+        quickSearchToolbar.add(quickSearchPresenter);
     }
 
     @Override
     public void requestActive() {
         super.requestActive();
         scene.getComponent().requestFocus();
+        quickSearchToolbar.add(quickSearchPresenter);
     }
 
     @Override

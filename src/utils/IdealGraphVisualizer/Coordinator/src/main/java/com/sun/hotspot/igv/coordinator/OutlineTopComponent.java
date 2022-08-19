@@ -32,13 +32,6 @@ import com.sun.hotspot.igv.data.services.GroupCallback;
 import com.sun.hotspot.igv.data.services.InputGraphProvider;
 import com.sun.hotspot.igv.util.LookupHistory;
 import com.sun.hotspot.igv.view.EditorTopComponent;
-import java.awt.BorderLayout;
-import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
-import java.io.Serializable;
-import javax.swing.*;
-import javax.swing.border.Border;
 import org.openide.ErrorManager;
 import org.openide.actions.GarbageCollectAction;
 import org.openide.awt.Toolbar;
@@ -46,15 +39,18 @@ import org.openide.awt.ToolbarPool;
 import org.openide.explorer.ExplorerManager;
 import org.openide.explorer.ExplorerUtils;
 import org.openide.explorer.view.BeanTreeView;
-import org.openide.util.Exceptions;
-import org.openide.util.Lookup;
-import org.openide.util.LookupEvent;
-import org.openide.util.LookupListener;
-import org.openide.util.NbBundle;
-import org.openide.util.Utilities;
+import org.openide.util.*;
 import org.openide.util.actions.NodeAction;
 import org.openide.windows.TopComponent;
 import org.openide.windows.WindowManager;
+
+import javax.swing.*;
+import javax.swing.border.Border;
+import java.awt.*;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
+import java.io.Serializable;
 
 /**
  *
@@ -97,8 +93,9 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
 
     private void initToolbar() {
         Toolbar toolbar = new Toolbar();
-        Border b = (Border) UIManager.get("Nb.Editor.Toolbar.border"); //NOI18N
-        toolbar.setBorder(b);
+        toolbar.setBorder((Border) UIManager.get("Nb.Editor.Toolbar.border")); //NOI18N
+        toolbar.setMinimumSize(new Dimension(0,0)); // MacOS BUG with ToolbarWithOverflow
+
         this.add(toolbar, BorderLayout.NORTH);
 
         toolbar.add(ImportAction.get(ImportAction.class));

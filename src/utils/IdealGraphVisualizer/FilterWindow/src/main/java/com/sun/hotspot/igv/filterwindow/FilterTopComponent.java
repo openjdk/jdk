@@ -30,17 +30,6 @@ import com.sun.hotspot.igv.filter.Filter;
 import com.sun.hotspot.igv.filter.FilterChain;
 import com.sun.hotspot.igv.filter.FilterSetting;
 import com.sun.hotspot.igv.filterwindow.actions.*;
-import java.awt.BorderLayout;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.io.*;
-import java.util.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import javax.script.*;
-import javax.swing.JComboBox;
-import javax.swing.UIManager;
-import javax.swing.border.Border;
 import org.openide.DialogDisplayer;
 import org.openide.ErrorManager;
 import org.openide.NotifyDescriptor;
@@ -58,6 +47,21 @@ import org.openide.util.*;
 import org.openide.util.actions.SystemAction;
 import org.openide.windows.TopComponent;
 import org.openide.windows.WindowManager;
+
+import javax.script.ScriptContext;
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+import javax.script.ScriptException;
+import javax.swing.*;
+import javax.swing.border.Border;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.*;
+import java.util.List;
+import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -360,8 +364,9 @@ public final class FilterTopComponent extends TopComponent implements LookupList
 
         ToolbarPool.getDefault().setPreferredIconSize(16);
         Toolbar toolBar = new Toolbar();
-        Border b = (Border) UIManager.get("Nb.Editor.Toolbar.border"); //NOI18N
-        toolBar.setBorder(b);
+        toolBar.setBorder((Border) UIManager.get("Nb.Editor.Toolbar.border")); //NOI18N
+        toolBar.setMinimumSize(new Dimension(0,0)); // MacOS BUG with ToolbarWithOverflow
+
         comboBox = new JComboBox();
         toolBar.add(comboBox);
         this.add(toolBar, BorderLayout.NORTH);
