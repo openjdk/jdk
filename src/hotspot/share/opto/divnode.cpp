@@ -1131,6 +1131,13 @@ Node* UDivINode::Ideal(PhaseGVN* phase, bool can_reshape) {
     return this;
   }
 
+  // Divisor very large, constant 2**31 can be transform to a shift
+  if (ti->_hi <= 0 && ti->_hi > min_jint) {
+    Node* cmp = phase->transform(new CmpUNode(in(1), in(2)));
+    Node* bol = phase->transform(new BoolNode(cmp, BoolTest::ge));
+    return new CMoveINode(bol, phase->intcon(0), phase->intcon(1), TypeInt::BOOL);
+  }
+
   if( !ti->is_con() ) return nullptr;
   juint i = ti->get_con();       // Get divisor
 
@@ -1198,6 +1205,13 @@ Node* UDivLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   if (in(0) && (ti->_hi < 0 || ti->_lo > 0)) {
     set_req(0, nullptr);           // Yank control input
     return this;
+  }
+
+  // Divisor very large, constant 2**63 can be transform to a shift
+  if (ti->_hi <= 0 && ti->_hi > min_jlong) {
+    Node* cmp = phase->transform(new CmpULNode(in(1), in(2)));
+    Node* bol = phase->transform(new BoolNode(cmp, BoolTest::ge));
+    return new CMoveLNode(bol, phase->longcon(0), phase->longcon(1), TypeLong::make(0, 1, Type::WidenMin));
   }
 
   if( !ti->is_con() ) return nullptr;

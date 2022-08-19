@@ -40,7 +40,7 @@ public class UDivINodeIdealizationTests {
     }
 
     @Run(test = {"constantDiv", "identity", "identityAgain", "identityThird",
-                 "retainDenominator", "divByPow2",
+                 "retainDenominator", "divByPow2", "largeDivisor",
                  "magicDiv13", "magicDiv7",
                 "constantMod", "constantModAgain", "modByPow2", "magicMod13"})
     public void runMethod() {
@@ -105,6 +105,7 @@ public class UDivINodeIdealizationTests {
         Asserts.assertEQ(a           , identity(a));
         Asserts.assertEQ(a           , identityAgain(a));
         Asserts.assertEQ(udiv(a, 8) , divByPow2(a));
+        Asserts.assertEQ(udiv(a, -7) , largeDivisor(a));
         Asserts.assertEQ(udiv(a, 13), magicDiv13(a));
         Asserts.assertEQ(udiv(a, 7) , magicDiv7(a));
         Asserts.assertEQ(umod(a, 1) , constantModAgain(a));
@@ -158,6 +159,16 @@ public class UDivINodeIdealizationTests {
     // Checks x / 2^c0 => x >>> c0
     public int divByPow2(int x) {
         return Integer.divideUnsigned(x, 8);
+    }
+
+    @Test
+    @IR(failOn = {IRNode.UDIV_I})
+    @IR(counts = {IRNode.CMP_U, "1",
+                  IRNode.CMOVEI, "1"
+                 })
+    // Checks x / d => x u>= d ? 1 : 0 for large d
+    public int largeDivisor(int x) {
+        return Integer.divideUnsigned(x, -7);
     }
 
     @Test

@@ -41,7 +41,7 @@ public class UDivLNodeIdealizationTests {
     }
 
     @Run(test = {"constantDiv", "identity", "identityAgain", "identityThird",
-                 "retainDenominator", "divByPow2",
+                 "retainDenominator", "divByPow2", "largeDivisor",
                  "magicDiv19", "magicDiv7",
                  "constantMod", "constantModAgain", "modByPow2", "magicMod19"})
     public void runMethod() {
@@ -103,14 +103,15 @@ public class UDivLNodeIdealizationTests {
             Asserts.assertTrue(shouldThrow, "Did not expected an exception to be thrown.");
         }
 
-        Asserts.assertEQ(a          , identity(a));
-        Asserts.assertEQ(a          , identityAgain(a));
+        Asserts.assertEQ(a           , identity(a));
+        Asserts.assertEQ(a           , identityAgain(a));
         Asserts.assertEQ(udiv(a, 8) , divByPow2(a));
+        Asserts.assertEQ(udiv(a, -7) , largeDivisor(a));
         Asserts.assertEQ(udiv(a, 19), magicDiv19(a));
         Asserts.assertEQ(udiv(a, 7) , magicDiv7(a));
         Asserts.assertEQ(umod(a, 1) , constantModAgain(a));
-        Asserts.assertEQ(umod(a, 8)             , modByPow2(a));
-        Asserts.assertEQ(umod(a, 19)            , magicMod19(a));
+        Asserts.assertEQ(umod(a, 8) , modByPow2(a));
+        Asserts.assertEQ(umod(a, 19), magicMod19(a));
     }
 
     @Test
@@ -159,6 +160,16 @@ public class UDivLNodeIdealizationTests {
     // Checks x / 2^c0 => x >>> c0
     public long divByPow2(long x) {
         return Long.divideUnsigned(x, 8);
+    }
+
+    @Test
+    @IR(failOn = {IRNode.UDIV_L})
+    @IR(counts = {IRNode.CMP_UL, "1",
+                  IRNode.CMOVEL, "1"
+                 })
+    // Checks x / d => x u>= d ? 1 : 0 for large d
+    public long largeDivisor(long x) {
+        return Long.divideUnsigned(x, -7);
     }
 
     @Test
