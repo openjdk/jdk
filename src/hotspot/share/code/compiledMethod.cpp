@@ -121,6 +121,7 @@ const char* CompiledMethod::state() const {
 //-----------------------------------------------------------------------------
 bool CompiledMethod::enqueue_deoptimization(bool inc_recompile_counts) {
   assert_locked_or_safepoint(Compile_lock);
+  assert(DeoptimizationContext::is_context_active(), "should only be called in an active DeoptimizationContext");
   DeoptimizationStatus old_status = extract_enqueued_deoptimization_status(_enqueued_deoptimization_link);
   DeoptimizationStatus new_status = (inc_recompile_counts ? enqueued : enqueued_noupdate);
   if (old_status < new_status) {
@@ -139,11 +140,13 @@ bool CompiledMethod::enqueue_deoptimization(bool inc_recompile_counts) {
 
 CompiledMethod* CompiledMethod::next_enqueued_deoptimization_method() const {
   assert_locked_or_safepoint(Compile_lock);
+  assert(DeoptimizationContext::is_context_active(), "should only be called in an active DeoptimizationContext");
   return extract_enqueued_deoptimization_method(_enqueued_deoptimization_link);
 }
 
 CompiledMethod* CompiledMethod::take_enqueued_deoptimization_root_method() {
   assert_locked_or_safepoint(Compile_lock);
+  assert(DeoptimizationContext::is_context_active(), "should only be called in an active DeoptimizationContext");
   CompiledMethod* root = _enqueued_deoptimization_root_method;
   _enqueued_deoptimization_root_method = nullptr;
   return root;
@@ -151,6 +154,7 @@ CompiledMethod* CompiledMethod::take_enqueued_deoptimization_root_method() {
 
 void  CompiledMethod::make_deoptimized_done() {
   assert_locked_or_safepoint(Compile_lock);
+  assert(DeoptimizationContext::is_context_active(), "should only be called in an active DeoptimizationContext");
   _enqueued_deoptimization_link = make_enqueued_deoptimization_link(
     extract_enqueued_deoptimization_method(_enqueued_deoptimization_link), post_make_deoptimized);
 }

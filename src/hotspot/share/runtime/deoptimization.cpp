@@ -1069,6 +1069,10 @@ void DeoptimizationContext::deoptimize() {
   deopt_frames();
 }
 
+bool DeoptimizationContext::is_context_active() {
+  return Atomic::load(&_context_active);
+}
+
 void Deoptimization::deoptimize_dependents(const methodHandle& m_h) {
   assert_locked_or_safepoint(Compile_lock);
   Deoptimization::deoptimize_dependents(m_h());

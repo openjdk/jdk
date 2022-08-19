@@ -504,6 +504,8 @@ public:
   void deoptimize();
 
   uint enqueued() { return _enqueued; }
+
+  static bool is_context_active();
 };
 
 #endif // SHARE_RUNTIME_DEOPTIMIZATION_HPP
