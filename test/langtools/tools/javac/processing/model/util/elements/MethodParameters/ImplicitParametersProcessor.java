@@ -31,6 +31,7 @@
  * @build   JavacTestingAbstractProcessor ImplicitParametersProcessor
  * @compile -processor ImplicitParametersProcessor -proc:only ClassContainer.java
  */
+
 import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
@@ -54,7 +55,8 @@ public class ImplicitParametersProcessor extends JavacTestingAbstractProcessor {
         boolean hasError = false;
         for (TypeElement typeElement : typesIn(roundEnv.getRootElements())) {
             for (TypeElement innerType : typesIn(typeElement.getEnclosedElements())) {
-                System.out.println("Visiting " + innerType);if ("MyRecord".contentEquals(innerType.getSimpleName())) {
+                System.out.println("Visiting " + innerType);
+                if ("MyRecord".contentEquals(innerType.getSimpleName())) {
                     hasError |= checkAllExecutables(innerType, Map.of(
                             "<init>", List.of(Elements.Origin.MANDATED, Elements.Origin.MANDATED)
                     ));
@@ -90,13 +92,12 @@ public class ImplicitParametersProcessor extends JavacTestingAbstractProcessor {
             return false;
         }
         List<? extends VariableElement> parameters = executable.getParameters();
-        System.out.println("found " + parameters);
         boolean hasError = false;
         for (int i = 0; i < parameters.size(); i++) {
             VariableElement parameter = parameters.get(i);
             Elements.Origin origin = eltUtils.getOrigin(parameter);
             if (origin != list.get(i)) {
-                System.out.println("ERROR: Wrong origin. Expected: " + list.get(i) + " but got " + origin);
+                System.err.println("ERROR: Wrong origin for " + executable + ". Expected: " + list.get(i) + " but got " + origin + " at index " + i);
                 hasError = true;
             }
         }

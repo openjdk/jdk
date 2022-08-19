@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,12 +33,6 @@
  * @run main ImplicitParameters
  */
 
-import java.io.IOException;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.reflect.Method;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import com.sun.tools.classfile.ClassFile;
 import com.sun.tools.classfile.ConstantPoolException;
 import com.sun.tools.classfile.MethodParameters_attribute;
@@ -48,6 +42,13 @@ import toolbox.JavacTask;
 import toolbox.Task;
 import toolbox.TestRunner;
 import toolbox.ToolBox;
+
+import java.io.IOException;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.reflect.Method;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 public class ImplicitParameters extends TestRunner {
     public ImplicitParameters() {
@@ -61,11 +62,11 @@ public class ImplicitParameters extends TestRunner {
     @Override
     protected void runTests() throws Exception {
         Path base = Path.of(".").toAbsolutePath();
-        compileCLasses(base);
+        compileClasses(base);
         runTests(method -> new Object[]{ readClassFile(base.resolve("classes"), method) });
     }
 
-    private void compileCLasses(Path base) throws IOException {
+    private void compileClasses(Path base) throws IOException {
         String outer = """
                 class Outer {
                     class Inner {
