@@ -47,8 +47,6 @@
 // entry is read without a lock, only the resolved state guarantees that
 // the entry in the constant pool is a klass object and not a Symbol*.
 
-class SymbolHashMap;
-
 // This represents a JVM_CONSTANT_Class, JVM_CONSTANT_UnresolvedClass, or
 // JVM_CONSTANT_UnresolvedClassInError slot in the constant pool.
 class CPKlassSlot {
@@ -890,8 +888,23 @@ class ConstantPool : public Metadata {
   friend class JvmtiConstantPoolReconstituter;
 
  private:
+  class SymbolHash: public CHeapObj<mtSymbol> {
+    ResourceHashtable<const Symbol*, u2, 256, ResourceObj::C_HEAP, mtSymbol, Symbol::compute_hash> _table;
+
+   public:
+    void add_if_absent(const Symbol* sym, u2 value) {
+      bool created;
+      _table.put_if_absent(sym, value, &created);
+    }
+
+    u2 symbol_to_value(const Symbol* sym) {
+      u2* value = _table.get(sym);
+      return (value == nullptr) ? 0 : *value;
+    }
+  }; // End SymbolHash class
+
   jint cpool_entry_size(jint idx);
-  jint hash_entries_to(SymbolHashMap *symmap, SymbolHashMap *classmap);
+  jint hash_entries_to(SymbolHash *symmap, SymbolHash *classmap);
 
   // Copy cpool bytes into byte array.
   // Returns:
@@ -899,7 +912,7 @@ class ConstantPool : public Metadata {
   //        0, OutOfMemory error
   //       -1, Internal error
   int  copy_cpool_bytes(int cpool_size,
-                        SymbolHashMap* tbl,
+                        SymbolHash* tbl,
                         unsigned char *bytes);
 
  public:
@@ -913,20 +926,5 @@ class ConstantPool : public Metadata {
 
   const char* internal_name() const { return "{constant pool}"; }
 };
-
-class SymbolHashMap: public CHeapObj<mtSymbol> {
-  ResourceHashtable<const Symbol*, u2, 256, ResourceObj::C_HEAP, mtSymbol, Symbol::compute_hash> _table;
-
- public:
-  void add_if_absent(const Symbol* sym, u2 value) {
-    bool created;
-    _table.put_if_absent(sym, value, &created);
-  }
-
-  u2 symbol_to_value(const Symbol* sym) {
-    u2* value = _table.get(sym);
-    return (value == nullptr) ? 0 : *value;
-  }
-}; // End SymbolHashMap class
 
 #endif // SHARE_OOPS_CONSTANTPOOL_HPP

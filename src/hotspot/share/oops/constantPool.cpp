@@ -2007,11 +2007,11 @@ jint ConstantPool::cpool_entry_size(jint idx) {
 } /* end cpool_entry_size */
 
 
-// SymbolHashMap is used to find a constant pool index from a string.
-// This function fills in SymbolHashMaps, one for utf8s and one for
+// SymbolHash is used to find a constant pool index from a string.
+// This function fills in SymbolHashs, one for utf8s and one for
 // class names, returns size of the cpool raw bytes.
-jint ConstantPool::hash_entries_to(SymbolHashMap *symmap,
-                                   SymbolHashMap *classmap) {
+jint ConstantPool::hash_entries_to(SymbolHash *symmap,
+                                   SymbolHash *classmap) {
   jint size = 0;
 
   for (u2 idx = 1; idx < length(); idx++) {
@@ -2050,7 +2050,7 @@ jint ConstantPool::hash_entries_to(SymbolHashMap *symmap,
 //   -1, in case of internal error
 //  > 0, count of the raw cpool bytes that have been copied
 int ConstantPool::copy_cpool_bytes(int cpool_size,
-                                   SymbolHashMap* tbl,
+                                   SymbolHash* tbl,
                                    unsigned char *bytes) {
   u2   idx1, idx2;
   jint size  = 0;
