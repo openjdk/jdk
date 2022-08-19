@@ -51,32 +51,20 @@
  *   non-blocking <br> I/O</a> facility.  </p></li>
  *
  *   <li><p> <a
- *   href="file/FileSystem.html"><i>Filesystems</i></a>,
- *   which provide an interface to a file system <br> hierarchy and a
- *   factory for objects to access files and <br> other objects in the
- *   file system.  </p></li>
- *
- *   <li><p> <a
- *   href="file/Path.html"><i>Paths</i></a>,
- *   which represent a hierarchical sequence of <br> name elements
- *   used to locate a file in a file system.  </p></li>
- *
- *   <li><p> <a
- *   href="file/attribute/package-summary.html"><i>Attributes</i></a>,
- *   which represent <i>metadata</i> associated with <br> objects in a
- *   file system.  </p></li>
+ *   href="file/Path.html"><i>Path</i></a>,
+ *   which together with the <a href="file/Files.html"><i>Files</i></a>
+ *   class provides access to files.  </p></li>
  *
  *  </ul>
  *
  * <p> The {@code java.nio} package defines the buffer classes, which
  * are used throughout the NIO APIs.  The charset API is defined in
  * the {@link java.nio.charset} package, the channel and selector APIs
- * in the {@link java.nio.channels} package, the file system and path APIs
- * in the {@link java.nio.file} package, and the file attribute APIs in
- * the {@link java.nio.file.attribute} package.  Each of these subpackages
- * except the last has its own service-provider interface (SPI) subpackage,
- * the contents of which can be used to extend the platform's default
- * implementations or to construct alternative implementations.
+ * in the {@link java.nio.channels} package, and the files and path APIs
+ * in the {@link java.nio.file} package.  Each of these subpackages has
+ * its own service-provider interface (SPI) subpackage, the contents of
+ * which can be used to extend the platform's default implementations or
+ * to construct alternative implementations.
  *
  * <a id="buffers"> </a>
  *
