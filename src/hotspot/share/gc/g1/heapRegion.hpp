@@ -143,7 +143,7 @@ private:
                                                     HeapWord* const pb,
                                                     HeapWord* first_block) const;
 
-public:
+public: // FIXME
   static bool obj_is_filler(oop obj);
 
   // Returns the address of the block reaching into or starting at addr.

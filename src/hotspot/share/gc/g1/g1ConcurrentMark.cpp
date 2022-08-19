@@ -1226,7 +1226,6 @@ public:
 void G1ConcurrentMark::remark() {
   assert_at_safepoint_on_vm_thread();
 
-  //_g1h->print_heap_regions();
   // If a full collection has happened, we should not continue. However we might
   // have ended up here as the Remark VM operation has been scheduled already.
   if (has_aborted()) {
@@ -1328,8 +1327,6 @@ void G1ConcurrentMark::remark() {
   _remark_mark_times.add((mark_work_end - start) * 1000.0);
   _remark_weak_ref_times.add((now - mark_work_end) * 1000.0);
   _remark_times.add((now - start) * 1000.0);
-
-  //  _g1h->print_heap_regions();
 
   policy->record_concurrent_mark_remark_end();
 }
@@ -1921,7 +1918,6 @@ HeapRegion* G1ConcurrentMark::claim_region(uint worker_id) {
       // someone else might have moved the finger even further
       assert(_finger >= end, "the finger should have moved forward");
 
-//      log_debug(gc)("claimed region %u " PTR_FORMAT " " PTR_FORMAT " has marks %u", curr_region->hrm_index(), p2i(bottom), p2i(limit), mark_bitmap()->get_next_marked_addr(bottom, limit) < limit);
       if (limit > bottom) {
         assert(!curr_region->is_closed_archive(), "CA regions should be skipped");
         return curr_region;

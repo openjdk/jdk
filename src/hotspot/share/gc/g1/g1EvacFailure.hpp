@@ -47,6 +47,7 @@ class G1RemoveSelfForwardsInChunksTask : public WorkerTask {
   // Return "optimal" number of chunks per region we want to use for claiming areas
   // within a region to claim. See G1RemSetScanState::get_chunks_per_region() for more
   // information.
+  // FIXME: remove code duplication
   static uint get_chunks_per_region(uint log_region_size) {
     // Limit the expected input values to current known possible values of the
     // (log) region size. Adjust as necessary after testing if changing the permissible

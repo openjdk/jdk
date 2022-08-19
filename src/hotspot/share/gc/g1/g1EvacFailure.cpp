@@ -96,9 +96,10 @@ static size_t zap_dead_objects(HeapRegion* hr, HeapWord* start, HeapWord* end) {
     return 0;
   }
 
-  // FIXME: remove
+#ifdef ASSERT // FIXME: remove
   MemRegion mr(start, end);
   Copy::fill_to_words(mr.start(), mr.word_size(), badHeapWord);
+#endif
 
   hr->fill_range_with_dead_objects(start, end);
 
@@ -153,8 +154,8 @@ public:
 };
 
 void G1RemoveSelfForwardsInChunksTask::process_chunk(uint worker_id,
-                                                   uint chunk_idx,
-                                                   RegionGarbageWordsCache* cache) {
+                                                     uint chunk_idx,
+                                                     RegionGarbageWordsCache* cache) {
   PhaseTimesStat stat(_g1h->phase_times(), worker_id);
 
   G1CMBitMap* bitmap = _cm->mark_bitmap();
@@ -183,9 +184,6 @@ void G1RemoveSelfForwardsInChunksTask::process_chunk(uint worker_id,
   if (first_marked_addr >= chunk_end) {
     stat.register_empty_chunk();
     cache->add(region_idx, garbage_words);
-    if (garbage_words > 0) {
-      //FIXME: log_debug(gc)("chunk %u region %u empty garbage %zu", chunk_idx, region_idx, garbage_words);
-    }
     return;
   }
 
@@ -231,8 +229,6 @@ void G1RemoveSelfForwardsInChunksTask::process_chunk(uint worker_id,
   stat.register_objects_size(marked_words);
 
   cache->add(region_idx, garbage_words);
-
-  //FIXME &/log_debug(gc)("chunk %u region %u num objs %zu obj size %zu garbage %zu", chunk_idx, region_idx, num_marked_objs, marked_words, garbage_words);
 }
 
 G1RemoveSelfForwardsInChunksTask::G1RemoveSelfForwardsInChunksTask(G1EvacFailureRegions* evac_failure_regions) :

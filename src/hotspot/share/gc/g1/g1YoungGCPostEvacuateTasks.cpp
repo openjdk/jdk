@@ -371,7 +371,6 @@ class G1PostEvacuateCollectionSetCleanupTask2::ClearRetainedRegionBitmaps : publ
   public:
 
     bool do_heap_region(HeapRegion* r) override {
-//      log_debug(gc)("clear bitmap region %u", r->hrm_index());
       G1CollectedHeap::heap()->clear_bitmap_for_region(r, false /* update_tams */);
       return false;
     }

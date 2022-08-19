@@ -1295,7 +1295,7 @@ public:
   G1EvacSummary create_g1_evac_summary(G1EvacStats* stats);
 
   // Printing
-public:
+private:
   void print_heap_regions() const;
   void print_regions_on(outputStream* st) const;
 
