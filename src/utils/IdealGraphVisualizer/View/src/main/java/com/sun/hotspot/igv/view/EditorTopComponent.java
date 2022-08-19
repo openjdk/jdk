@@ -100,8 +100,7 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
     private JToggleButton hideDuplicatesButton;
     private JPanel topPanel;
     private Toolbar quickSearchToolbar;
-    private static final Component quickSearchPresenter = ((Presenter.Toolbar) Utilities.actionsForPath("Actions/Search").get(0)).getToolbarPresenter();
-
+    private static final JPanel quickSearchPresenter = (JPanel) ((Presenter.Toolbar) Utilities.actionsForPath("Actions/Search").get(0)).getToolbarPresenter();
     private static final String PREFERRED_ID = "EditorTopComponent";
     private static final String SATELLITE_STRING = "satellite";
     private static final String SCENE_STRING = "scene";
@@ -308,19 +307,21 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
         toolBar.add(button);
         selectionModeAction.addPropertyChangeListener(this);
         toolBar.add(Box.createHorizontalGlue());
-        toolBar.setDisplayOverflowOnHover(false);
 
         quickSearchToolbar = new Toolbar();
+        quickSearchToolbar.setLayout(new BoxLayout(quickSearchToolbar, BoxLayout.LINE_AXIS));
         quickSearchToolbar.setBorder((Border) UIManager.get("Nb.Editor.Toolbar.border")); //NOI18N
+        quickSearchPresenter.setMinimumSize(quickSearchPresenter.getPreferredSize());
+        quickSearchPresenter.setAlignmentX(Component.RIGHT_ALIGNMENT);
         quickSearchToolbar.add(quickSearchPresenter);
 
         // Needed to for toolBar to use maximal available width
-        JPanel toolBarPanel = new JPanel(new GridLayout(0, 1));
-        toolBarPanel.add(toolBar);
+        JPanel toolbarPanel = new JPanel(new GridLayout(1, 0));
+        toolbarPanel.add(toolBar);
 
         topPanel = new JPanel();
-        topPanel.setLayout(new BoxLayout(topPanel, BoxLayout.X_AXIS));
-        topPanel.add(toolBarPanel);
+        topPanel.setLayout(new BoxLayout(topPanel, BoxLayout.LINE_AXIS));
+        topPanel.add(toolbarPanel);
         topPanel.add(quickSearchToolbar);
         container.add(BorderLayout.NORTH, topPanel);
 
