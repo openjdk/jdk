@@ -19,36 +19,38 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-#include <stdio.h>
-#include <jni.h>
-#include <signal.h>
-#include <sys/ucontext.h>
-#include <errno.h>
-#include <string.h>
+/**
+ * Simple application that checks that shutdown does not commence until
+ * after the last non-daemon thread has terminated. Reporting failure is
+ * tricky because we can't uses exceptions (as they are ignored from Shutdown
+ * hooks) and we can't call System.exit. So we rely on System.out being checked
+ * in the TestDaemonDestroy application.
+ */
+public class Main {
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+    static volatile Thread t1;
 
-void sig_handler(int sig, siginfo_t *info, ucontext_t *context) {
+    public static void main() {
+        t1 = new Thread(() -> {
+                System.out.println("T1 started");
+                try {
+                    Thread.sleep(5000);
+                } catch (InterruptedException ignore) { }
+                System.out.println("T1 finished");
+            }, "T1");
 
-    printf( " HANDLER (1) " );
-}
+        t1.setDaemon(false);
 
-JNIEXPORT void JNICALL Java_TestPosixSig_changeSigActionFor(JNIEnv *env, jclass klass, jint val) {
-    struct sigaction act;
-    act.sa_handler = (void (*)())sig_handler;
-    sigemptyset(&act.sa_mask);
-    act.sa_flags = 0;
-    int retval = sigaction(val, &act, 0);
-    if (retval != 0) {
-        printf("ERROR: failed to set %d signal handler error=%s\n", val, strerror(errno));
+        Thread hook = new Thread(() -> {
+                System.out.println("HOOK started");
+                if (t1.isAlive()) {
+                    System.out.println("Error: T1 isAlive");
+                }
+            }, "HOOK");
+        Runtime.getRuntime().addShutdownHook(hook);
+        t1.start();
     }
 }
-
-#ifdef __cplusplus
-}
-#endif
-
