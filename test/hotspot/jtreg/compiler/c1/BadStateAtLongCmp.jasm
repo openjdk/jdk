@@ -33,6 +33,17 @@ super public class BadStateAtLongCmp
 		invokespecial	Method java/lang/Object."<init>":"()V";
 		return;
   }
+
+  /* Same as:
+     public static void test() {
+        long l = 0;
+        do {
+            l++;
+            field++;
+        } while (l < 1000);
+     }
+     but with field++ between the lcmp and iflt bytecodes.
+   */
   public static Method test:"()V"
 	stack 4 locals 2
   {
