@@ -721,8 +721,8 @@ public:
   void addptr(Register dst, int32_t src);
   void addptr(Register dst, Register src);
   void addptr(Register dst, RegisterOrConstant src) {
-    if (src.is_constant()) addptr(dst, (int) src.as_constant());
-    else                   addptr(dst,       src.as_register());
+    if (src.is_constant()) addptr(dst, src.as_constant());
+    else                   addptr(dst, src.as_register());
   }
 
   void andptr(Register dst, int32_t src);
@@ -1844,7 +1844,6 @@ public:
   // and we have ambiguous declarations.
 
   void movptr(Address dst, int32_t imm32);
-  void movptr(Register dst, int32_t imm32);
 #endif // _LP64
 
   // to avoid hiding movl
