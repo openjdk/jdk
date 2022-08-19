@@ -21,34 +21,21 @@
  * questions.
  */
 
-#include <stdio.h>
-#include <jni.h>
-#include <signal.h>
-#include <sys/ucontext.h>
-#include <errno.h>
-#include <string.h>
+import java.awt.Font;
+import javax.swing.DebugGraphics;
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-void sig_handler(int sig, siginfo_t *info, ucontext_t *context) {
-
-    printf( " HANDLER (1) " );
-}
-
-JNIEXPORT void JNICALL Java_TestPosixSig_changeSigActionFor(JNIEnv *env, jclass klass, jint val) {
-    struct sigaction act;
-    act.sa_handler = (void (*)())sig_handler;
-    sigemptyset(&act.sa_mask);
-    act.sa_flags = 0;
-    int retval = sigaction(val, &act, 0);
-    if (retval != 0) {
-        printf("ERROR: failed to set %d signal handler error=%s\n", val, strerror(errno));
+/* @test
+ * @bug 6521141
+ * @summary Test to check if NPE does not occur when graphics is not
+ *  initialized and DebugGraphics instance is created with default
+ *  Constructor and used.
+ * @run main DebugGraphicsNPETest
+ */
+public class DebugGraphicsNPETest {
+    public static void main(String[] args) throws Exception {
+        DebugGraphics dg = new DebugGraphics();
+        Font font = new Font(Font.SERIF, Font.PLAIN, 10);
+        dg.setFont(font);
+        System.out.println("Test Pass!");
     }
 }
-
-#ifdef __cplusplus
-}
-#endif
-
