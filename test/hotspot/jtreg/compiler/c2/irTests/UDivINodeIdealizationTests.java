@@ -30,7 +30,7 @@ import compiler.lib.ir_framework.*;
  * @bug 8282365
  * @summary Test that Ideal transformations of UDivINode and UModINode are
  * being performed as expected.
- * 
+ *
  * @library /test/lib /
  * @run driver compiler.c2.irTests.UDivINodeIdealizationTests
  */
