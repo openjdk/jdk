@@ -660,7 +660,7 @@ static Node *transform_long_udivide( PhaseGVN *phase, Node *dividend, julong div
       // Just do the minimum for now
       if (max_dividend <= julong(min_jlong) || shift_const == 0) {
         // Add back the dividend
-        Node* mul_hi = phase->transform(new AddLNode(mul_hi, dividend));
+        mul_hi = phase->transform(new AddLNode(mul_hi, dividend));
         // Shift the result
         q = new URShiftLNode(mul_hi, phase->intcon(shift_const));
       } else {
