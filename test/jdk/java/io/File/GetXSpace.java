@@ -130,6 +130,24 @@ public class GetXSpace {
         }
     }
 
+    private static void diskFree() throws IOException {
+        ArrayList<Space> al = new ArrayList<>();
+
+        String cmd = "fsutil volume diskFree C:\\";
+        StringBuilder sb = new StringBuilder();
+        Process p = Runtime.getRuntime().exec(cmd);
+        try (BufferedReader in = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
+            String s;
+            int i = 0;
+            while ((s = in.readLine()) != null) {
+                // skip header
+                if (i++ == 0) continue;
+                sb.append(s).append("\n");
+            }
+        }
+        out.println(sb);
+    }
+
     private static ArrayList<Space> space(String f) throws IOException {
         ArrayList<Space> al = new ArrayList<>();
 
@@ -397,6 +415,9 @@ public class GetXSpace {
         ArrayList<Space> l;
         try {
             l = space(null);
+            if (Platform.isWindows()) {
+                diskFree();
+            }
         } catch (IOException x) {
             throw new RuntimeException("can't get file system information", x);
         }
