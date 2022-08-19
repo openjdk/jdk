@@ -172,7 +172,7 @@ void SymbolTable::create_table ()  {
   _current_size = ((size_t)1) << start_size_log_2;
   log_trace(symboltable)("Start size: " SIZE_FORMAT " (" SIZE_FORMAT ")",
                          _current_size, start_size_log_2);
-  _local_table = new SymbolTableHash(start_size_log_2, END_SIZE, REHASH_LEN);
+  _local_table = new SymbolTableHash(start_size_log_2, END_SIZE, REHASH_LEN, true);
 
   // Initialize the arena for global symbols, size passed in depends on CDS.
   if (symbol_alloc_arena_size == 0) {
