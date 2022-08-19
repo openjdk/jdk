@@ -50,16 +50,15 @@ public class UnixNTPlatform {
     static void login(String test, String... conf) throws Exception {
         System.out.println("Testing " + test + "...");
 
-        StringBuilder sb = new StringBuilder();
-        sb.append("hello {\n");
-        for (int i = 0; i < conf.length; i += 3) {
-            sb.append("    com.sun.security.auth.module.")
-                    .append(conf[i]).append(" ")
-                    .append(conf[i + 1]).append(" ")
-                    .append(conf[i + 2]).append(";\n");
-        }
-        sb.append("};\n");
-        Files.write(Paths.get(test), sb.toString().getBytes());
+        String config = """
+                        hello {
+                        com.sun.security.auth.module.UnixLoginModule optional debug=true;
+                        com.sun.security.auth.module.NTLoginModule optional debug=true;
+                        };
+                        """;
+
+        System.out.println("config is : \n"+config);
+        Files.write(java.nio.file.Path.of(test), config.toString().getBytes());
 
         // Must be called. Configuration has an internal static field.
         Configuration.setConfiguration(null);
@@ -80,9 +79,9 @@ public class UnixNTPlatform {
 
         byte[] byes = stream.toByteArray();
         String s = new String(byes);
-        if (!s.contains("Failed in attempt to import the underlying"))
+        if (!s.contains("Failed in attempt to import the underlying")) {
            throw new RuntimeException();
-        else
+        } else {
            System.out.printf("-- call stack is -- %n%s%n", s);
         }
     }
