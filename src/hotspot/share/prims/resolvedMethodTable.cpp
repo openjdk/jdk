@@ -101,7 +101,7 @@ OopStorage*              ResolvedMethodTable::_oop_storage;
 volatile size_t          _items_count           = 0;
 
 void ResolvedMethodTable::create_table() {
-  _local_table  = new ResolvedMethodTableHash(ResolvedMethodTableSizeLog, END_SIZE, GROW_HINT, false);
+  _local_table  = new ResolvedMethodTableHash(ResolvedMethodTableSizeLog, END_SIZE, GROW_HINT);
   log_trace(membername, table)("Start size: " SIZE_FORMAT " (" SIZE_FORMAT ")",
                                _current_size, ResolvedMethodTableSizeLog);
   _oop_storage = OopStorageSet::create_weak("ResolvedMethodTable Weak", mtClass);

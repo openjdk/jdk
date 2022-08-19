@@ -391,7 +391,7 @@ class ConcurrentHashTable : public CHeapObj<F> {
   static const size_t DEFAULT_MAX_SIZE_LOG2 = 21;
   static const size_t DEFAULT_START_SIZE_LOG2 = 13;
   static const size_t DEFAULT_GROW_HINT = 4; // Chain length
-  static const bool DEFAULT_ENABLE_STATISTICS = true;
+  static const bool DEFAULT_ENABLE_STATISTICS = false;
   ConcurrentHashTable(size_t log2size = DEFAULT_START_SIZE_LOG2,
                       size_t log2size_limit = DEFAULT_MAX_SIZE_LOG2,
                       size_t grow_hint = DEFAULT_GROW_HINT,
