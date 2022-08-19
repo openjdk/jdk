@@ -7804,7 +7804,7 @@ instruct divL_eReg(eADXRegL dst, eRegL src1, eRegL src2) %{
 
 // Integer UDIV with Register
 instruct udivI_eReg(eAXRegI rax, eDXRegI rdx, eCXRegI div, eFlagsReg cr) %{
-  match(Set rax (DivI rax div));
+  match(Set rax (UDivI rax div));
   effect(KILL rdx, KILL cr);
   size(4);
   ins_cost(300);
@@ -7838,7 +7838,7 @@ instruct divModI_eReg_divmod(eAXRegI rax, eDXRegI rdx, eCXRegI div, eFlagsReg cr
 
 // Integer UDIVMOD with Register
 instruct udivModI_eReg(eAXRegI rax, eDXRegI rdx, eCXRegI div, eFlagsReg cr) %{
-  match(UDivModI rax div));
+  match(UDivModI rax div);
   effect(KILL cr);
   size(4);
   ins_cost(300);
