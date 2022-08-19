@@ -70,9 +70,4 @@ public abstract sealed class NonterminalCodeBuilder implements CodeBuilder
     public Label newLabel() {
         return terminal.newLabel();
     }
-
-    @Override
-    public int labelToBci(Label label) {
-        return terminal.labelToBci(label);
-    }
 }

@@ -69,7 +69,6 @@ import jdk.classfile.constantpool.PackageEntry;
 import jdk.classfile.constantpool.PoolEntry;
 import jdk.classfile.constantpool.StringEntry;
 import jdk.classfile.constantpool.Utf8Entry;
-import jdk.classfile.impl.LabelResolver;
 import jdk.classfile.instruction.*;
 
 import static java.util.stream.Collectors.toMap;
@@ -301,7 +300,7 @@ public record ClassRecord(
             return new AttributesRecord(
                     mapAttr(attrs, ANNOTATION_DEFAULT, a -> ElementValueRecord.ofElementValue(a.defaultValue())),
                     cp == null ? null : IntStream.range(0, cp.bootstrapMethodCount()).mapToObj(i -> BootstrapMethodRecord.ofBootstrapMethodEntry(cp.bootstrapMethodEntry(i))).collect(toSetOrNull()),
-                    mapAttr(attrs, CODE, a -> CodeRecord.ofStreamingElements(a.maxStack(), a.maxLocals(), a.codeLength(), ((CodeModel)a)::elementStream, (LabelResolver)a, new CodeNormalizerHelper(a.codeArray()), cf)),
+                    mapAttr(attrs, CODE, a -> CodeRecord.ofStreamingElements(a.maxStack(), a.maxLocals(), a.codeLength(), a::elementStream, a, new CodeNormalizerHelper(a.codeArray()), cf)),
                     mapAttr(attrs, COMPILATION_ID, a -> a.compilationId().stringValue()),
                     mapAttr(attrs, CONSTANT_VALUE, a -> ConstantPoolEntryRecord.ofCPEntry(a.constant())),
                     mapAttr(attrs, DEPRECATED, a -> DefinedValue.DEFINED),
@@ -427,7 +426,7 @@ public record ClassRecord(
             Set<TypeAnnotationRecord> runtimeVisibleTypeAnnotationsAttribute,
             Set<TypeAnnotationRecord> runtimeInvisibleTypeAnnotationsAttribute) {
 
-        static CodeAttributesRecord ofStreamingElements(Supplier<Stream<? extends ClassfileElement>> elements, LabelResolver lc, CodeNormalizerHelper code, CompatibilityFilter... cf) {
+        static CodeAttributesRecord ofStreamingElements(Supplier<Stream<? extends ClassfileElement>> elements, CodeAttribute lc, CodeNormalizerHelper code, CompatibilityFilter... cf) {
             int[] p = {0};
             var characterRanges = new HashSet<CharacterRangeRecord>();
             var lineNumbers = new HashSet<LineNumberRecord>();
@@ -455,7 +454,7 @@ public record ClassRecord(
                     invisibleTypeAnnos.isEmpty() ? null : invisibleTypeAnnos);
         }
 
-        static CodeAttributesRecord ofAttributes(AttributeFinder af, CodeNormalizerHelper code, LabelResolver lr, CompatibilityFilter... cf) {
+        static CodeAttributesRecord ofAttributes(AttributeFinder af, CodeNormalizerHelper code, CodeAttribute lr, CompatibilityFilter... cf) {
             return new CodeAttributesRecord(
                     af.findAll(Attributes.CHARACTER_RANGE_TABLE).flatMap(a -> a.characterRangeTable().stream()).map(cr -> CharacterRangeRecord.ofCharacterRange(cr, code)).collect(toSetOrNull()),
                     af.findAll(Attributes.LINE_NUMBER_TABLE).flatMap(a -> a.lineNumbers().stream()).map(ln -> new LineNumberRecord(ln.lineNumber(), code.targetIndex(ln.startPc()))).collect(toSetOrNull()),
@@ -523,7 +522,7 @@ public record ClassRecord(
             int characterRangeEnd,
             int flags) {
 
-        public static CharacterRangeRecord ofCharacterRange(CharacterRange cr, LabelResolver lc, CodeNormalizerHelper code) {
+        public static CharacterRangeRecord ofCharacterRange(CharacterRange cr, CodeAttribute lc, CodeNormalizerHelper code) {
             return new CharacterRangeRecord(code.targetIndex(lc.labelToBci(cr.startScope())), code.targetIndex(lc.labelToBci(cr.endScope())), cr.characterRangeStart(), cr.characterRangeEnd(), cr.flags());
         }
 
@@ -637,7 +636,7 @@ public record ClassRecord(
             Set<ExceptionHandlerRecord> exceptionHandlers,
             CodeAttributesRecord codeAttributes) {
 
-        private static List<String> instructions(Supplier<Stream<? extends ClassfileElement>> elements, CodeNormalizerHelper code, LabelResolver lr) {
+        private static List<String> instructions(Supplier<Stream<? extends ClassfileElement>> elements, CodeNormalizerHelper code, CodeAttribute lr) {
             int[] p = {0};
             return elements.get().filter(e -> e instanceof Instruction).map(e -> {
                 var ins = (Instruction)e;
@@ -702,7 +701,7 @@ public record ClassRecord(
             }).toList();
         }
 
-        public static CodeRecord ofStreamingElements(int maxStack, int maxLocals, int codeLength, Supplier<Stream<? extends ClassfileElement>> elements, LabelResolver lc, CodeNormalizerHelper codeHelper, CompatibilityFilter... cf) {
+        public static CodeRecord ofStreamingElements(int maxStack, int maxLocals, int codeLength, Supplier<Stream<? extends ClassfileElement>> elements, CodeAttribute lc, CodeNormalizerHelper codeHelper, CompatibilityFilter... cf) {
             return new CodeRecord(
                     By_ClassBuilder.isNotDirectlyComparable(cf, maxStack),
                     By_ClassBuilder.isNotDirectlyComparable(cf, maxLocals),
@@ -718,9 +717,9 @@ public record ClassRecord(
                     By_ClassBuilder.isNotDirectlyComparable(cf, a.maxStack()),
                     By_ClassBuilder.isNotDirectlyComparable(cf, a.maxLocals()),
                     By_ClassBuilder.isNotDirectlyComparable(cf, a.codeLength()),
-                    instructions(((CodeModel)a)::elementStream, codeHelper, a),
-                    a.exceptionHandlers().stream().map(eh -> ExceptionHandlerRecord.ofExceptionCatch(eh, codeHelper, (LabelResolver)a)).collect(toSet()),
-                    CodeAttributesRecord.ofAttributes(((CodeModel) a)::attributes, codeHelper, a, cf));
+                    instructions(a::elementStream, codeHelper, a),
+                    a.exceptionHandlers().stream().map(eh -> ExceptionHandlerRecord.ofExceptionCatch(eh, codeHelper, a)).collect(toSet()),
+                    CodeAttributesRecord.ofAttributes(a::attributes, codeHelper, a, cf));
         }
 
         public static CodeRecord ofClassFileCodeAttribute(com.sun.tools.classfile.Code_attribute a, com.sun.tools.classfile.ConstantPool p, CompatibilityFilter... cf) {
@@ -819,7 +818,7 @@ public record ClassRecord(
                 int handlerIndex,
                 ConstantPoolEntryRecord catchType) {
 
-            public static ExceptionHandlerRecord ofExceptionCatch(ExceptionCatch et, CodeNormalizerHelper code, LabelResolver labelContext) {
+            public static ExceptionHandlerRecord ofExceptionCatch(ExceptionCatch et, CodeNormalizerHelper code, CodeAttribute labelContext) {
                 return new ExceptionHandlerRecord(
                         code.targetIndex(labelContext.labelToBci(et.tryStart())),
                         code.targetIndex(labelContext.labelToBci(et.tryEnd())),
@@ -888,7 +887,7 @@ public record ClassRecord(
             String descriptor,
             int slot) {
 
-        public static LocalVariableRecord ofLocalVariable(LocalVariable lv, LabelResolver lc, CodeNormalizerHelper code) {
+        public static LocalVariableRecord ofLocalVariable(LocalVariable lv, CodeAttribute lc, CodeNormalizerHelper code) {
             return new LocalVariableRecord(
                     code.targetIndex(lc.labelToBci(lv.startScope())),
                     code.targetIndex(lc.labelToBci(lv.endScope())),
@@ -923,7 +922,7 @@ public record ClassRecord(
             String signature,
             int index) {
 
-        public static LocalVariableTypeRecord ofLocalVariableType(LocalVariableType lvt, LabelResolver lc, CodeNormalizerHelper code) {
+        public static LocalVariableTypeRecord ofLocalVariableType(LocalVariableType lvt, CodeAttribute lc, CodeNormalizerHelper code) {
             return new LocalVariableTypeRecord(
                     code.targetIndex(lc.labelToBci(lvt.startScope())),
                     code.targetIndex(lc.labelToBci(lvt.endScope())),
@@ -1147,7 +1146,7 @@ public record ClassRecord(
             return ofTypeAnnotation(ann, null, null);
         }
 
-        public static TypeAnnotationRecord ofTypeAnnotation(TypeAnnotation ann, LabelResolver lr, CodeNormalizerHelper code) {
+        public static TypeAnnotationRecord ofTypeAnnotation(TypeAnnotation ann, CodeAttribute lr, CodeNormalizerHelper code) {
             return new TypeAnnotationRecord(
                     ann.targetInfo().targetType().targetTypeValue(),
                     TargetInfoRecord.ofTargetInfo(ann.targetInfo(), lr, code),
@@ -1165,7 +1164,7 @@ public record ClassRecord(
 
         public interface TargetInfoRecord {
 
-            public static TargetInfoRecord ofTargetInfo(TypeAnnotation.TargetInfo tiu, LabelResolver lr, CodeNormalizerHelper code) {
+            public static TargetInfoRecord ofTargetInfo(TypeAnnotation.TargetInfo tiu, CodeAttribute lr, CodeNormalizerHelper code) {
                 if (tiu instanceof TypeAnnotation.CatchTarget ct) {
                     return new CatchTargetRecord(ct.exceptionTableIndex());
                 } else if (tiu instanceof TypeAnnotation.EmptyTarget et) {

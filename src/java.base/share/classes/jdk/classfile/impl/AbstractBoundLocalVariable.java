@@ -93,9 +93,10 @@ public class AbstractBoundLocalVariable
         return code.classReader.readU2(offset + 8);
     }
 
-    public void writeTo(BufWriter b, CodeBuilder builder) {
-        int startBci = builder.labelToBci(startScope());
-        int endBci = builder.labelToBci(endScope());
+    public void writeTo(BufWriter b) {
+        var lc = ((BufWriterImpl)b).labelContext();
+        int startBci = lc.labelToBci(startScope());
+        int endBci = lc.labelToBci(endScope());
         int length = endBci - startBci;
         b.writeU2(startBci);
         b.writeU2(length);

@@ -29,9 +29,10 @@ import jdk.classfile.Label;
 /**
  * LabelContext
  */
-public sealed interface LabelContext extends LabelResolver
+public sealed interface LabelContext
         permits BufferedCodeBuilder, CodeImpl, DirectCodeBuilder {
     Label newLabel();
     Label getLabel(int bci);
     void setLabelTarget(Label label, int bci);
+    int labelToBci(Label label);
 }

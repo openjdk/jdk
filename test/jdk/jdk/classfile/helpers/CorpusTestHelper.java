@@ -69,14 +69,14 @@ public class CorpusTestHelper  {
                     @Override
                     public void writeBody(BufWriter b) {
                         b.writeU2(1);
-                        lv.writeTo(b, dcob);
+                        lv.writeTo(b);
                     }
                 });
                 case LocalVariableType lvt -> dcob.writeAttribute(new UnboundAttribute.AdHocAttribute<>(Attributes.LOCAL_VARIABLE_TYPE_TABLE) {
                     @Override
                     public void writeBody(BufWriter b) {
                         b.writeU2(1);
-                        lvt.writeTo(b, dcob);
+                        lvt.writeTo(b);
                     }
                 });
                 default -> cob.with(coe);

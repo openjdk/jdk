@@ -197,11 +197,6 @@ public final class BufferedCodeBuilder
         }
 
         @Override
-        public int labelToBci(Label label) {
-            throw new UnsupportedOperationException("nyi");
-        }
-
-        @Override
         public void writeTo(DirectMethodBuilder builder) {
             builder.withCode(new Consumer<>() {
                 @Override

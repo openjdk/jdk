@@ -77,5 +77,5 @@ sealed public interface LocalVariableType extends PseudoInstruction
      */
     Label endScope();
 
-    void writeTo(BufWriter buf, CodeBuilder labelContext);
+    void writeTo(BufWriter buf);
 }

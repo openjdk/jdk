@@ -27,6 +27,7 @@ package jdk.classfile.attribute;
 
 import jdk.classfile.Attribute;
 import jdk.classfile.CodeModel;
+import jdk.classfile.Label;
 import jdk.classfile.impl.BoundAttribute;
 
 /**
@@ -47,4 +48,6 @@ public sealed interface CodeAttribute extends Attribute<CodeAttribute>, CodeMode
      * {@return the bytes (bytecode) of the code array}
      */
     byte[] codeArray();
+
+    int labelToBci(Label label);
 }

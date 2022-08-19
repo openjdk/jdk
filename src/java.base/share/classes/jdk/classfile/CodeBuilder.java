@@ -119,9 +119,6 @@ public sealed interface CodeBuilder
      * the current block will be the entire method body. */
     Label endLabel();
 
-    /** {@return the bytecode offset associated with the specified label} */
-    int labelToBci(Label label);
-
     /**
      * {@return the local variable slot associated with the receiver}.
      *

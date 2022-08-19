@@ -42,7 +42,7 @@ import jdk.classfile.constantpool.Utf8Entry;
 public final class BufWriterImpl implements BufWriter {
 
     private final ConstantPoolBuilder constantPool;
-    private LabelResolver labelResolver;
+    private LabelContext labelContext;
     private ClassEntry thisClass;
     byte[] elems;
     int offset = 0;
@@ -61,12 +61,12 @@ public final class BufWriterImpl implements BufWriter {
         return constantPool;
     }
 
-    public LabelResolver labelResolver() {
-        return labelResolver;
+    public LabelContext labelContext() {
+        return labelContext;
     }
 
-    public void setLabelResolver(LabelResolver labelResolver) {
-        this.labelResolver = labelResolver;
+    public void setLabelContext(LabelContext labelContext) {
+        this.labelContext = labelContext;
     }
     @Override
     public boolean canWriteDirect(ConstantPool other) {

@@ -95,7 +95,7 @@ public class StackMapDecoder {
 
     public static void writeFrames(BufWriter b, List<StackMapFrameInfo> entries) {
         var buf = (BufWriterImpl)b;
-        var dcb = (DirectCodeBuilder)buf.labelResolver();
+        var dcb = (DirectCodeBuilder)buf.labelContext();
         var mi = dcb.methodInfo();
         var prevLocals = StackMapDecoder.initFrameLocals(buf.thisClass(),
                 mi.methodName().stringValue(),
@@ -166,7 +166,7 @@ public class StackMapDecoder {
             case ObjectVerificationTypeInfo ovti ->
                 bw.writeIndex(ovti.className());
             case UninitializedVerificationTypeInfo uvti ->
-                bw.writeU2(bw.labelResolver().labelToBci(uvti.newTarget()));
+                bw.writeU2(bw.labelContext().labelToBci(uvti.newTarget()));
         }
     }
 

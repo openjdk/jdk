@@ -811,7 +811,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
             this.elements = List.copyOf(elements);
         }
 
-        private int labelToBci(LabelResolver lr, Label label) {
+        private int labelToBci(LabelContext lr, Label label) {
             //helper method to avoid NPE
             if (lr == null) throw new IllegalArgumentException("Illegal targetType '%s' in TypeAnnotation outside of Code attribute".formatted(targetInfo.targetType()));
             return lr.labelToBci(label);
@@ -819,7 +819,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
 
         @Override
         public void writeTo(BufWriter buf) {
-            LabelResolver lr = ((BufWriterImpl) buf).labelResolver();
+            LabelContext lr = ((BufWriterImpl) buf).labelContext();
             // target_type
             buf.writeU1(targetInfo.targetType().targetTypeValue());
 

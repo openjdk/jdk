@@ -31,7 +31,6 @@ import java.util.Optional;
 import jdk.classfile.attribute.CodeAttribute;
 import jdk.classfile.impl.BufferedCodeBuilder;
 import jdk.classfile.impl.CodeImpl;
-import jdk.classfile.impl.LabelResolver;
 import jdk.classfile.instruction.ExceptionCatch;
 
 /**
@@ -40,7 +39,7 @@ import jdk.classfile.instruction.ExceptionCatch;
  * #elements()}).
  */
 public sealed interface CodeModel
-        extends CompoundElement<CodeElement>, AttributedElement, MethodElement, LabelResolver
+        extends CompoundElement<CodeElement>, AttributedElement, MethodElement
         permits CodeAttribute, BufferedCodeBuilder.Model, CodeImpl {
 
     /**
