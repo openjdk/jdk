@@ -109,8 +109,8 @@ public interface HttpServerAdapters {
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
-            if (!(o instanceof HttpTestRequestHeaders headers)) return false;
-            return Objects.equals(entrySet(), headers.entrySet());
+            if (!(o instanceof HttpTestRequestHeaders other)) return false;
+            return Objects.equals(entrySet(), other.entrySet());
         }
         @Override
         public int hashCode() {
