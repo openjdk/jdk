@@ -178,11 +178,16 @@ Java_sun_nio_ch_FileChannelImpl_transferTo0(JNIEnv *env, jobject this,
     off64_t offset = (off64_t)position;
 
     jlong n;
-    if (my_copy_file_range_func != NULL) {
-        n = my_copy_file_range_func(srcFD, &offset, dstFD, NULL, count, 0);
+    int dstFlags;
+    if (my_copy_file_range_func != NULL &&
+        (dstFlags = fcntl(dstFD, F_GETFL)) != -1 &&
+        (dstFlags & O_APPEND) == 0) { // don't use copy_file_range if appending
+        size_t len = (size_t)count;
+        n = my_copy_file_range_func(srcFD, &offset, dstFD, NULL, len, 0);
         if (n < 0) {
             switch (errno) {
                 case EINTR:
+                    return IOS_INTERRUPTED;
                 case EINVAL:
                 case EXDEV:
                     // ignore and try sendfile()
@@ -292,7 +297,8 @@ Java_sun_nio_ch_FileChannelImpl_transferFrom0(JNIEnv *env, jobject this,
     jint dstFD = fdval(env, dstFDO);
 
     off64_t offset = (off64_t)position;
-    jlong n = my_copy_file_range_func(srcFD, NULL, dstFD, &offset, count, 0);
+    size_t len = (size_t)count;
+    jlong n = my_copy_file_range_func(srcFD, NULL, dstFD, &offset, len, 0);
     if (n < 0) {
         if (errno == EAGAIN)
             return IOS_UNAVAILABLE;
