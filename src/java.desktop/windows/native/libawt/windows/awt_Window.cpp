@@ -1406,11 +1406,12 @@ BOOL AwtWindow::UpdateInsets(jobject insets)
     } else {
         m_insets.top = -1;
     }
+
+    jobject target = GetTarget(env);
     if (m_insets.left < 0 || m_insets.top < 0 ||
-        m_insets.right < 0 || m_insets.bottom < 0)
-    {
+        m_insets.right < 0 || m_insets.bottom < 0 ||
+        JNU_IsInstanceOfByName(env, target, "java/awt/Frame") > 0) {
         /* This window hasn't been sized yet -- use system metrics. */
-        jobject target = GetTarget(env);
         if (IsUndecorated() == FALSE) {
             /* Get outer frame sizes. */
             LONG style = GetStyle();
@@ -1421,9 +1422,9 @@ BOOL AwtWindow::UpdateInsets(jobject insets)
                     ::GetSystemMetrics(SM_CYSIZEFRAME) + extraPaddedBorderInsets;
             } else {
                 m_insets.left = m_insets.right =
-                    ::GetSystemMetrics(SM_CXDLGFRAME) + extraPaddedBorderInsets;
+                    ::GetSystemMetrics(SM_CXFIXEDFRAME) + extraPaddedBorderInsets;
                 m_insets.top = m_insets.bottom =
-                    ::GetSystemMetrics(SM_CYDLGFRAME) + extraPaddedBorderInsets;
+                    ::GetSystemMetrics(SM_CYFIXEDFRAME) + extraPaddedBorderInsets;
             }
             /* Add in title. */
             m_insets.top += ::GetSystemMetrics(SM_CYCAPTION);
@@ -1446,8 +1447,8 @@ BOOL AwtWindow::UpdateInsets(jobject insets)
             return FALSE;
         }
         m_insets.bottom += extraBottomInsets;
-        env->DeleteLocalRef(target);
     }
+    env->DeleteLocalRef(target);
 
     BOOL insetsChanged = FALSE;
 
@@ -1479,7 +1480,6 @@ BOOL AwtWindow::UpdateInsets(jobject insets)
         // to reflect that change
         env->CallVoidMethod(peer, AwtComponent::replaceSurfaceDataLaterMID);
     }
-
     return insetsChanged;
 }
 
