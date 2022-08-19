@@ -49,11 +49,11 @@ class LoaderConstraint : public CHeapObj<mtClass> {
   LoaderConstraint(InstanceKlass* klass, oop class_loader1, oop class_loader2) :
      _klass(klass) {
     _loaders = new (ResourceObj::C_HEAP, mtClass) GrowableArray<ClassLoaderData*>(10, mtClass);
-    set_loader(class_loader1);
-    set_loader(class_loader2);
+    add_loader(class_loader1);
+    add_loader(class_loader2);
   }
 
-  LoaderConstraint() { delete _loaders; }
+  ~LoaderConstraint() { delete _loaders; }
 
   InstanceKlass* klass() const     { return _klass; }
   void set_klass(InstanceKlass* k) { _klass = k; }
@@ -62,7 +62,7 @@ class LoaderConstraint : public CHeapObj<mtClass> {
 
   int num_loaders() const { return _loaders->length(); }
   ClassLoaderData* loader_data(int i) { return _loaders->at(i); }
-  void set_loader_data(ClassLoaderData* p) { _loaders->push(p); }
+  void add_loader_data(ClassLoaderData* p) { _loaders->push(p); }
 
   void remove_loader_at(int n) {
     assert(_loaders->at(n)->is_unloading(), "should be unloading");
@@ -70,22 +70,26 @@ class LoaderConstraint : public CHeapObj<mtClass> {
   }
 
   // convenience
-  void set_loader(oop p) {
+  void add_loader(oop p) {
     _loaders->push(ClassLoaderData::class_loader_data(p));
   }
 };
 
-class LoaderConstraintEntry : public StackObj {      // copied into hashtable as value
+class LoaderConstraintEntry {                        // copied into hashtable as value
  private:
   GrowableArray<LoaderConstraint*>*  _constraints;   // loader constraints for this class name.
- public:
 
-  LoaderConstraintEntry(LoaderConstraint* constraint) {
+ public:
+  LoaderConstraintEntry() : _constraints(nullptr) {}
+  LoaderConstraintEntry(const LoaderConstraintEntry&) = delete;
+  LoaderConstraintEntry& operator=(const LoaderConstraintEntry&) = delete;
+
+  void initialize(LoaderConstraint* constraint) {
     _constraints = new (ResourceObj::C_HEAP, mtClass) GrowableArray<LoaderConstraint*>(5, mtClass);
     _constraints->push(constraint);
   }
 
-  void clean_up() {  // No dtor, dtors are dangerous
+  ~LoaderConstraintEntry() {
     delete _constraints;
   }
 
@@ -108,7 +112,7 @@ ResourceHashtable<Symbol*, LoaderConstraintEntry, 107, ResourceObj::C_HEAP, mtCl
 void LoaderConstraint::extend_loader_constraint(Symbol* class_name,
                                                 Handle loader,
                                                 InstanceKlass* klass) {
-  set_loader(loader());
+  add_loader(loader());
   LogTarget(Info, class, loader, constraints) lt;
   if (lt.is_enabled()) {
     ResourceMark rm;
@@ -159,14 +163,14 @@ void LoaderConstraintTable::add_loader_constraint(Symbol* name, InstanceKlass* k
   LoaderConstraint* constraint = new LoaderConstraint(klass, class_loader1, class_loader2);
 
   // The klass may be null if it hasn't been loaded yet, for instance while checking
-  // an parameter name to a method call.  We impose this constraint that the
-  // class that is eventually loaded much match between these two loaders.
-  LoaderConstraintEntry* entry = _loader_constraint_table.get(name);
-  if (entry == nullptr) {
-    LoaderConstraintEntry entry(constraint);
+  // a parameter name to a method call.  We impose this constraint that the
+  // class that is eventually loaded must match between these two loaders.
+  bool created;
+  LoaderConstraintEntry* entry = _loader_constraint_table.put_if_absent(name, &created);
+  if (created) {
     // Increment the key refcount when putting in the table.
     name->increment_refcount();
-    _loader_constraint_table.put(name, entry);
+    entry->initialize(constraint);
   } else {
     entry->add_constraint(constraint);
   }
@@ -237,7 +241,6 @@ class PurgeUnloadedConstraints : public StackObj {
     if (entry.num_constraints() == 0) {
       // decrement name refcount before freeing
       name->decrement_refcount();
-      entry.clean_up();
       return true;
     }
     // Don't unlink this entry
@@ -412,7 +415,7 @@ void LoaderConstraintTable::merge_loader_constraints(Symbol* class_name,
 
   for (int i = 0; i < src->num_loaders(); i++) {
     // do we care about duplicates???
-    dest->set_loader_data(src->loader_data(i));
+    dest->add_loader_data(src->loader_data(i));
   }
 
   LogTarget(Info, class, loader, constraints) lt;
