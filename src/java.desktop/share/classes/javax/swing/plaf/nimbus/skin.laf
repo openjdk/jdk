@@ -21330,7 +21330,7 @@
                <uiProperty name="centerOneTouchButtons" type="BOOLEAN" value="true"/>
                <uiProperty name="oneTouchButtonOffset" type="INT" value="30"/>
                <uiProperty name="oneTouchExpandable" type="BOOLEAN" value="false"/>
-               <uiProperty name="continuousLayout" type="BOOLEAN" value="true"/>
+               <uiProperty name="continuousLayout" type="BOOLEAN" value="false"/>
             </uiproperties>
          </style>
          <backgroundStates>
