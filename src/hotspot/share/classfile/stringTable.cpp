@@ -503,7 +503,7 @@ bool StringTable::do_rehash() {
 
   // We use current size, not max size.
   size_t new_size = _local_table->get_size_log2(Thread::current());
-  StringTableHash* new_table = new StringTableHash(new_size, END_SIZE, REHASH_LEN);
+  StringTableHash* new_table = new StringTableHash(new_size, END_SIZE, REHASH_LEN, true);
   // Use alt hash from now on
   _alt_hash = true;
   if (!_local_table->try_move_nodes_to(Thread::current(), new_table)) {
