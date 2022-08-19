@@ -29,10 +29,9 @@
 #include "oops/markWord.hpp"
 #include "runtime/basicLock.hpp"
 #include "runtime/handles.hpp"
-#include "utilities/growableArray.hpp"
-#include "utilities/linkedlist.hpp"
 #include "utilities/resourceHash.hpp"
 
+template <typename T> class GrowableArray;
 class LogStream;
 class ObjectMonitor;
 class ThreadsList;
@@ -49,15 +48,13 @@ class ObjectMonitorsHashtable {
   }
 
  public:
-  typedef LinkedListImpl<ObjectMonitor*,
-                         ResourceObj::C_HEAP, mtThread,
-                         AllocFailStrategy::RETURN_NULL> PtrList;
+  class PtrList;
 
+ private:
   // ResourceHashtable SIZE is specified at compile time so we
   // use 1031 which is the first prime after 1024.
   typedef ResourceHashtable<void*, PtrList*, 1031, ResourceObj::C_HEAP, mtThread,
                             &ObjectMonitorsHashtable::ptr_hash> PtrTable;
- private:
   PtrTable* _ptrs;
   size_t _key_count;
   size_t _om_count;
