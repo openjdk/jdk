@@ -166,10 +166,11 @@ public:
 // Unsigned integer modulus
 class UModINode : public Node {
 public:
-  UModINode( Node *c, Node *in1, Node *in2 ) : Node(c,in1, in2) {}
+  UModINode( Node* c, Node* in1, Node* in2 ) : Node(c, in1, in2) {}
   virtual int Opcode() const;
-  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
-  virtual const Type *bottom_type() const { return TypeInt::INT; }
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+  virtual const Type* Value(PhaseGVN* phase) const;
+  virtual const Type* bottom_type() const { return TypeInt::INT; }
   virtual uint ideal_reg() const { return Op_RegI; }
 };
 
@@ -177,10 +178,11 @@ public:
 // Unsigned long modulus
 class UModLNode : public Node {
 public:
-  UModLNode( Node *c, Node *in1, Node *in2 ) : Node(c,in1, in2) {}
+  UModLNode( Node* c, Node* in1, Node* in2 ) : Node(c, in1, in2) {}
   virtual int Opcode() const;
-  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
-  virtual const Type *bottom_type() const { return TypeLong::LONG; }
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+  virtual const Type* Value(PhaseGVN* phase) const;
+  virtual const Type* bottom_type() const { return TypeLong::LONG; }
   virtual uint ideal_reg() const { return Op_RegL; }
 };
 

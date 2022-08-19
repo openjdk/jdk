@@ -207,7 +207,7 @@ public class DivLNodeIdealizationTests {
     @Test
     @IR(failOn = {IRNode.DIV_L})
     @IR(counts = {IRNode.SUB_L, "1",
-                  IRNode.RSHIFT_L, "1",
+                  IRNode.RSHIFT_L, "2",
                   IRNode.MUL_HI_L, "1",
                   IRNode.ADD_L, "1"
                  })

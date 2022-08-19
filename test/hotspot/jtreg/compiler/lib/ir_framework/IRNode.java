@@ -186,6 +186,8 @@ public class IRNode {
     public static final String DIV_L = START + "DivL" + MID + END;
     public static final String UDIV_I = START + "UDivI" + MID + END;
     public static final String UDIV_L = START + "UDivL" + MID + END;
+    public static final String UMOD_I = START + "UModI" + MID + END;
+    public static final String UMOD_L = START + "UModL" + MID + END;
     public static final String CON_I = START + "ConI" + MID + END;
     public static final String CON_L = START + "ConL" + MID + END;
     public static final String CONV_I2L = START + "ConvI2L" + MID + END;

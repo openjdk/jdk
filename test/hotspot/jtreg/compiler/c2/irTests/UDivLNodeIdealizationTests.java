@@ -28,7 +28,9 @@ import compiler.lib.ir_framework.*;
 /*
  * @test
  * @bug 8282365
- * @summary Test that Ideal transformations of UDivLNode* are being performed as expected.
+ * @summary Test that Ideal transformations of UDivLNode and UModLNode are
+ * being performed as expected.
+ * 
  * @requires vm.bits == 64
  * @library /test/lib /
  * @run driver compiler.c2.irTests.UDivLNodeIdealizationTests
@@ -38,9 +40,10 @@ public class UDivLNodeIdealizationTests {
         TestFramework.run();
     }
 
-    @Run(test = {"constant", "identity", "identityAgain", "identityThird",
+    @Run(test = {"constantDiv", "identity", "identityAgain", "identityThird",
                  "retainDenominator", "divByPow2",
-                 "magicDiv19", "magicDiv7", "magicDiv7Bounded"})
+                 "magicDiv19", "magicDiv7",
+                 "constantMod", "constantModAgain", "modByPow2", "magicMod19"})
     public void runMethod() {
         long a = RunInfo.getRandom().nextLong();
              a = (a == 0) ? 1 : a;
@@ -62,9 +65,14 @@ public class UDivLNodeIdealizationTests {
     }
 
     @DontCompile
+    public long umod(long a, long b) {
+        return Long.remainderUnsigned(a, b);
+    }
+
+    @DontCompile
     public void assertResult(long a, long b, boolean shouldThrow) {
         try {
-            Asserts.assertEQ(udiv(a, a), constant(a));
+            Asserts.assertEQ(udiv(a, a), constantDiv(a));
             Asserts.assertFalse(shouldThrow, "Expected an exception to be thrown.");
         }
         catch (ArithmeticException e) {
@@ -87,19 +95,29 @@ public class UDivLNodeIdealizationTests {
             Asserts.assertTrue(shouldThrow, "Did not expected an exception to be thrown.");
         }
 
-        Asserts.assertEQ(udiv(a, 1)             , identity(a));
-        Asserts.assertEQ(udiv(a, udiv(13, 13))  , identityAgain(a));
-        Asserts.assertEQ(udiv(a, 8)             , divByPow2(a));
-        Asserts.assertEQ(udiv(a, 19)            , magicDiv19(a));
-        Asserts.assertEQ(udiv(a, 7)             , magicDiv7(a));
-        Asserts.assertEQ(a < 0 ? 0 : udiv(a, 7) , magicDiv7Bounded(a));
+        try {
+            Asserts.assertEQ(umod(a, a), constantMod(a));
+            Asserts.assertFalse(shouldThrow, "Expected an exception to be thrown.");
+        }
+        catch (ArithmeticException e) {
+            Asserts.assertTrue(shouldThrow, "Did not expected an exception to be thrown.");
+        }
+
+        Asserts.assertEQ(a          , identity(a));
+        Asserts.assertEQ(a          , identityAgain(a));
+        Asserts.assertEQ(udiv(a, 8) , divByPow2(a));
+        Asserts.assertEQ(udiv(a, 19), magicDiv19(a));
+        Asserts.assertEQ(udiv(a, 7) , magicDiv7(a));
+        Asserts.assertEQ(umod(a, 1) , constantModAgain(a));
+        Asserts.assertEQ(umod(a, 8)             , modByPow2(a));
+        Asserts.assertEQ(umod(a, 19)            , magicMod19(a));
     }
 
     @Test
     @IR(failOn = {IRNode.UDIV_L})
     @IR(counts = {IRNode.DIV_BY_ZERO_TRAP, "1"})
     // Checks x / x => 1
-    public long constant(long x) {
+    public long constantDiv(long x) {
         return Long.divideUnsigned(x, x);
     }
 
@@ -137,7 +155,7 @@ public class UDivLNodeIdealizationTests {
 
     @Test
     @IR(failOn = {IRNode.UDIV_L})
-    @IR(counts = {IRNode.URSHIFT, "1"})
+    @IR(counts = {IRNode.URSHIFT_L, "1"})
     // Checks x / 2^c0 => x >>> c0
     public long divByPow2(long x) {
         return Long.divideUnsigned(x, 8);
@@ -169,15 +187,38 @@ public class UDivLNodeIdealizationTests {
     }
 
     @Test
-    @IR(failOn = {IRNode.UDIV_L})
+    @IR(failOn = {IRNode.UMOD_L})
+    @IR(counts = {IRNode.DIV_BY_ZERO_TRAP, "1"})
+    // Checks x % x => 0
+    public long constantMod(long x) {
+        return Long.remainderUnsigned(x, x);
+    }
+
+    @Test
+    @IR(failOn = {IRNode.UMOD_L})
+    // Checks x % 1 => 0
+    public long constantModAgain(long x) {
+        return Long.remainderUnsigned(x, 1);
+    }
+
+    @Test
+    @IR(failOn = {IRNode.UMOD_L})
+    @IR(counts = {IRNode.AND_L, "1"})
+    // Checks x % 2^c0 => x & (2^c0 - 1)
+    public long modByPow2(long x) {
+        return Long.remainderUnsigned(x, 8);
+    }
+
+    @Test
+    @IR(failOn = {IRNode.UMOD_L})
     @IR(counts = {IRNode.URSHIFT_L, "1",
                   IRNode.UMUL_HI_L, "1",
-                  IRNode.ADD_L, "1"
+                  IRNode.MUL_L, "1",
+                  IRNode.SUB_L, "1"
                  })
     // Checks magic long division occurs in general when dividing by a non power of 2.
-    // The constant derived from 7 lies outside the limit of an u64 but inside the limit
-    // of a u65, if the dividend is bounded then the multiplication does not overflow
-    public long magicDiv7Bounded(long x) {
-        return x < 0 ? 0 : Long.divideUnsigned(x, 7);
+    // The constant derived from 19 lies inside the limit of an u64
+    public long magicMod19(long x) {
+        return Long.remainderUnsigned(x, 19);
     }
 }

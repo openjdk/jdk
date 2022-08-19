@@ -93,16 +93,19 @@ static void magic_int_divide_constants(jint d, jlong &M, jint &s) {
 // minor type name and parameter changes.
 static void magic_int_unsigned_divide_constants_down(juint d, jlong &M, jint &s) {
   assert(d > 1, "sanity");
+  jlong two31 = jlong(juint(min_jint));
+  jlong two31m1 = jlong(juint(max_jint));
+
   jint p;
   jlong nc, delta, q1, r1, q2, r2;
 
   jlong ad = jlong(d);
-  nc = 0xFFFFFFFF - (0x100000000 - ad)%ad;
+  nc = jlong(max_juint) - (two31 * 2 - ad)%ad;
   p = 31;                  // Init. p.
-  q1 = 0x80000000/nc;      // Init. q1 = 2**p/nc.
-  r1 = 0x80000000 - q1*nc; // Init. r1 = rem(2**p, nc).
-  q2 = 0x7FFFFFFF/ad;      // Init. q2 = (2**p - 1)/d.
-  r2 = 0x7FFFFFFF - q2*ad; // Init. r2 = rem(2**p - 1, d).
+  q1 = two31/nc;           // Init. q1 = 2**p/nc.
+  r1 = two31 - q1*nc;      // Init. r1 = rem(2**p, nc).
+  q2 = two31m1/ad;         // Init. q2 = (2**p - 1)/d.
+  r2 = two31m1 - q2*ad;    // Init. r2 = rem(2**p - 1, d).
   do {
     p = p + 1;
     if (r1 >= nc - r1) {
@@ -141,8 +144,8 @@ static void magic_int_unsigned_divide_constants_up(juint d, jlong &M, jint &s) {
   julong t = (julong(1) << (s + N)) / julong(d);
   M = t;
 #ifdef ASSERT
-  julong r = ((t + 1) * julong(d)) >> 32;
-  assert((r >> s) > 0, "Should call down first since it is more efficient");
+  julong r = ((t + 1) * julong(d)) & julong(max_juint);
+  assert(r > (julong(1) << s), "Should call down first since it is more efficient");
 #endif
 }
 
@@ -278,7 +281,7 @@ static Node *transform_int_udivide( PhaseGVN *phase, Node *dividend, juint divis
 
     // Unsigned extension of dividend
     Node *dividend_long = phase->transform(new ConvI2LNode(dividend));
-    dividend_long = phase->transform(new AndLNode(dividend_long, phase->longcon(0xFFFFFFFF)));
+    dividend_long = phase->transform(new AndLNode(dividend_long, phase->longcon(max_juint)));
 
     jlong magic_const;
     jint shift_const;
@@ -291,7 +294,7 @@ static Node *transform_int_udivide( PhaseGVN *phase, Node *dividend, juint divis
     if (dividend_type->_hi < 0 || dividend_type->_lo >= 0) {
       max_dividend = julong(juint(dividend_type->_hi));
     } else {
-      max_dividend = julong(0xFFFFFFFFL);
+      max_dividend = max_juint;
     }
     if (julong(magic_const) <= max_julong / max_dividend) {
       // No overflow here, just do the transformation
@@ -308,7 +311,7 @@ static Node *transform_int_udivide( PhaseGVN *phase, Node *dividend, juint divis
       // to rounding up, now it is guaranteed to not overflow, according to
       // N-Bit Unsigned Division Via N-Bit Multiply-Add by Arch D. Robison
       magic_int_unsigned_divide_constants_up(divisor, magic_const, shift_const);
-      assert(magic_const >= 0 && magic_const <= 0xFFFFFFFFL, "sanity");
+      assert(magic_const >= 0 && magic_const <= jlong(max_juint), "sanity");
       Node* magic = phase->longcon(magic_const);
 
       // Compute the high half of the dividend x magic multiplication
@@ -375,16 +378,18 @@ static void magic_long_divide_constants(jlong d, jlong &M, jint &s) {
 // minor type name and parameter changes.  Adjusted to 64 bit word width.
 static void magic_long_unsigned_divide_constants(julong d, jlong &M, jint &s, bool& magic_const_ovf) {
   assert(d > 1, "sanity");
+  julong two63 = julong(min_jlong);
+  julong two63m1 = julong(max_jlong);
 
   jint p;
   julong nc, delta, q1, r1, q2, r2;
 
-  nc = -1 - (-d)%d;                // Unsigned arithmetic here.
-  p = 63;                          // Init. p.
-  q1 = 0x8000000000000000U/nc;     // Init. q1 = 2**p/nc.
-  r1 = 0x8000000000000000U - q1*nc;// Init. r1 = rem(2**p, nc).
-  q2 = 0x7FFFFFFFFFFFFFFFU/d;      // Init. q2 = (2**p - 1)/d.
-  r2 = 0x7FFFFFFFFFFFFFFFU - q2*d; // Init. r2 = rem(2**p - 1, d).
+  nc = -1 - (-d)%d;       // Unsigned arithmetic here.
+  p = 63;                 // Init. p.
+  q1 = two63/nc;          // Init. q1 = 2**p/nc.
+  r1 = two63 - q1*nc;     // Init. r1 = rem(2**p, nc).
+  q2 = two63m1/d;         // Init. q2 = (2**p - 1)/d.
+  r2 = two63m1 - q2*d;    // Init. r2 = rem(2**p - 1, d).
   magic_const_ovf = false;
   do {
     p = p + 1;
@@ -396,13 +401,13 @@ static void magic_long_unsigned_divide_constants(julong d, jlong &M, jint &s, bo
       r1 = 2*r1;
     }
     if (r2 + 1 >= d - r2) {
-      if (q2 >= 0x7FFFFFFFFFFFFFFFU) {
+      if (q2 >= two63m1) {
         magic_const_ovf = true;
       }
       q2 = 2*q2 + 1;      // Update q2.
       r2 = 2*r2 + 1 - d;  // Update r2.
     } else {
-      if (q2 >= 0x8000000000000000U) {
+      if (q2 >= two63) {
         magic_const_ovf = true;
       }
       q2 = 2*q2;
@@ -649,11 +654,11 @@ static Node *transform_long_udivide( PhaseGVN *phase, Node *dividend, julong div
       if (dividend_type->_hi < 0 || dividend_type->_lo >= 0) {
         max_dividend = julong(dividend_type->_hi);
       } else {
-        max_dividend = julong(0xFFFFFFFFFFFFFFFFUL);
+        max_dividend = max_julong;
       }
 
       // Just do the minimum for now
-      if (max_dividend <= 0x8000000000000000UL || shift_const == 0) {
+      if (max_dividend <= julong(min_jlong) || shift_const == 0) {
         // Add back the dividend
         Node* mul_hi = phase->transform(new AddLNode(mul_hi, dividend));
         // Shift the result
@@ -1083,8 +1088,8 @@ Node* UDivINode::Identity(PhaseGVN* phase) {
 // prevent hoisting the divide above an unsafe test.
 const Type* UDivINode::Value(PhaseGVN* phase) const {
   // Either input is TOP ==> the result is TOP
-  const Type *t1 = phase->type( in(1) );
-  const Type *t2 = phase->type( in(2) );
+  const Type* t1 = phase->type( in(1) );
+  const Type* t2 = phase->type( in(2) );
   if( t1 == Type::TOP ) return Type::TOP;
   if( t2 == Type::TOP ) return Type::TOP;
 
@@ -1106,13 +1111,13 @@ const Type* UDivINode::Value(PhaseGVN* phase) const {
 }
 
 //------------------------------Idealize---------------------------------------
-Node *UDivINode::Ideal(PhaseGVN *phase, bool can_reshape) {
+Node* UDivINode::Ideal(PhaseGVN* phase, bool can_reshape) {
   // Check for dead control input
   if (in(0) && remove_dead_region(phase, can_reshape))  return this;
   // Don't bother trying to transform a dead node
   if( in(0) && in(0)->is_top() )  return nullptr;
 
-  const Type *t = phase->type( in(2) );
+  const Type* t = phase->type( in(2) );
   if( t == TypeInt::ONE )       // Identity?
     return nullptr;             // Skip it
 
@@ -1131,6 +1136,12 @@ Node *UDivINode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   if (i == 0) return nullptr;   // Dividing by zero constant does not idealize
 
+  // Don't transform a constant-foldable
+  const Type* u = phase->type(in(1));
+  if (!u->isa_int() || u->is_int()->is_con()) {
+    return nullptr;
+  }
+
   return transform_int_udivide( phase, in(1), i );
 }
 
@@ -1146,8 +1157,8 @@ Node* UDivLNode::Identity(PhaseGVN* phase) {
 // prevent hoisting the divide above an unsafe test.
 const Type* UDivLNode::Value(PhaseGVN* phase) const {
   // Either input is TOP ==> the result is TOP
-  const Type *t1 = phase->type( in(1) );
-  const Type *t2 = phase->type( in(2) );
+  const Type* t1 = phase->type( in(1) );
+  const Type* t2 = phase->type( in(2) );
   if( t1 == Type::TOP ) return Type::TOP;
   if( t2 == Type::TOP ) return Type::TOP;
 
@@ -1169,17 +1180,17 @@ const Type* UDivLNode::Value(PhaseGVN* phase) const {
 }
 
 //------------------------------Idealize---------------------------------------
-Node *UDivLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
+Node* UDivLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   // Check for dead control input
   if (in(0) && remove_dead_region(phase, can_reshape))  return this;
   // Don't bother trying to transform a dead node
   if( in(0) && in(0)->is_top() )  return nullptr;
 
-  const Type *t = phase->type( in(2) );
+  const Type* t = phase->type( in(2) );
   if( t == TypeLong::ONE )       // Identity?
     return nullptr;             // Skip it
 
-  const TypeLong *ti = t->isa_long();
+  const TypeLong* ti = t->isa_long();
   if( !ti ) return nullptr;
 
   // Check for useless control input
@@ -1193,6 +1204,12 @@ Node *UDivLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   julong i = ti->get_con();       // Get divisor
 
   if (i == 0) return nullptr;   // Dividing by zero constant does not idealize
+
+  // Don't transform a constant-foldable
+  const Type* u = phase->type(in(1));
+  if (!u->isa_long() || u->is_long()->is_con()) {
+    return nullptr;
+  }
 
   return transform_long_udivide( phase, in(1), i );
 }
@@ -1527,6 +1544,133 @@ const Type* ModLNode::Value(PhaseGVN* phase) const {
   return TypeLong::make( i1->get_con() % i2->get_con() );
 }
 
+//=============================================================================
+//------------------------------Idealize---------------------------------------
+Node* UModINode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  // Check for dead control input
+  if( in(0) && remove_dead_region(phase, can_reshape) )  return this;
+  // Don't bother trying to transform a dead node
+  if( in(0) && in(0)->is_top() )  return nullptr;
+
+  // Get the modulus
+  const Type* t = phase->type( in(2) );
+  if( t == Type::TOP ) return nullptr;
+  const TypeInt* ti = t->is_int();
+
+  // Check for useless control input
+  // Check for excluding mod-zero case
+  if (in(0) && (ti->_hi < 0 || ti->_lo > 0)) {
+    set_req(0, nullptr);        // Yank control input
+    return this;
+  }
+
+  if( !ti->is_con() ) return nullptr;
+  juint con = ti->get_con();
+  const Type* u = phase->type(in(1));
+  if (!u->isa_int() || u->is_int()->is_con()) {
+    return nullptr;
+  }
+
+  // See if we are MOD'ing by 2^k
+  if (is_power_of_2(con)) {
+    return new AndINode(in(1), phase->intcon(con - 1));
+  }
+  Node* q = transform_int_udivide(phase, in(1), con);
+  if (q == nullptr) {
+    return nullptr;
+  }
+  q = phase->transform(q);
+  Node* mul = phase->transform(new MulINode(q, phase->intcon(con)));
+  return new SubINode(in(1), mul);
+}
+
+//------------------------------Value------------------------------------------
+const Type* UModINode::Value(PhaseGVN* phase) const {
+  // Either input is TOP ==> the result is TOP
+  const Type* t1 = phase->type( in(1) );
+  const Type* t2 = phase->type( in(2) );
+  if( t1 == Type::TOP ) return Type::TOP;
+  if( t2 == Type::TOP ) return Type::TOP;
+
+  // x % x = 0, x % 1 = 0
+  if (in(1) == in(2) || t2 == TypeInt::ONE) {
+    return TypeInt::ZERO;
+  }
+
+  const TypeInt* i1 = t1->is_int();
+  const TypeInt* i2 = t2->is_int();
+
+  // constant fold
+  if (i1->is_con() && i2->is_con()) {
+    return TypeInt::make(juint(i1->get_con()) % juint(i2->get_con()));
+  }
+
+  return TypeInt::INT;
+}
+
+//=============================================================================
+//------------------------------Idealize---------------------------------------
+Node *UModLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
+  // Check for dead control input
+  if( in(0) && remove_dead_region(phase, can_reshape) )  return this;
+  // Don't bother trying to transform a dead node
+  if( in(0) && in(0)->is_top() )  return nullptr;
+
+  // Get the modulus
+  const Type *t = phase->type( in(2) );
+  if( t == Type::TOP ) return nullptr;
+  const TypeLong *ti = t->is_long();
+
+  // Check for useless control input
+  // Check for excluding mod-zero case
+  if (in(0) && (ti->_hi < 0 || ti->_lo > 0)) {
+    set_req(0, nullptr);        // Yank control input
+    return this;
+  }
+
+  if( !ti->is_con() ) return nullptr;
+  julong con = ti->get_con();
+  const Type* u = phase->type(in(1));
+  if (!u->isa_long() || u->is_long()->is_con()) {
+    return nullptr;
+  }
+
+  // See if we are MOD'ing by 2^k
+  if (is_power_of_2(con)) {
+    return new AndLNode(in(1), phase->longcon(con - 1));
+  }
+  Node* q = transform_long_udivide(phase, in(1), con);
+  if (q == nullptr) {
+    return nullptr;
+  }
+  q = phase->transform(q);
+  Node* mul = phase->transform(new MulLNode(q, phase->longcon(con)));
+  return new SubLNode(in(1), mul);
+}
+
+//------------------------------Value------------------------------------------
+const Type* UModLNode::Value(PhaseGVN* phase) const {
+  // Either input is TOP ==> the result is TOP
+  const Type* t1 = phase->type( in(1) );
+  const Type* t2 = phase->type( in(2) );
+  if( t1 == Type::TOP ) return Type::TOP;
+  if( t2 == Type::TOP ) return Type::TOP;
+
+  // x % x = 0, x % 1 = 0
+  if (in(1) == in(2) || t2 == TypeLong::ONE) {
+    return TypeLong::ZERO;
+  }
+
+  const TypeLong* i1 = t1->is_long();
+  const TypeLong* i2 = t2->is_long();
+
+  // constant fold
+  if (i1->is_con() && i2->is_con()) {
+    return TypeLong::make(julong(i1->get_con()) % julong(i2->get_con()));
+  }
+
+  return TypeLong::LONG;
+}
 
 //=============================================================================
 //------------------------------Value------------------------------------------
@@ -1570,79 +1714,6 @@ const Type* ModFNode::Value(PhaseGVN* phase) const {
 
   return TypeF::make(jfloat_cast(xr));
 }
-
-//=============================================================================
-//------------------------------Idealize---------------------------------------
-Node *UModINode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  // Check for dead control input
-  if( in(0) && remove_dead_region(phase, can_reshape) )  return this;
-  // Don't bother trying to transform a dead node
-  if( in(0) && in(0)->is_top() )  return nullptr;
-
-  // Get the modulus
-  const Type *t = phase->type( in(2) );
-  if( t == Type::TOP ) return nullptr;
-  const TypeInt *ti = t->is_int();
-
-  // Check for useless control input
-  // Check for excluding mod-zero case
-  if (in(0) && (ti->_hi < 0 || ti->_lo > 0)) {
-    set_req(0, nullptr);        // Yank control input
-    return this;
-  }
-
-  // See if we are MOD'ing by 2^k
-  if( !ti->is_con() ) return nullptr;
-  juint con = ti->get_con();
-
-  if (is_power_of_2(con)) {
-    return new AndINode(in(1), phase->intcon(con - 1));
-  }
-  Node* q = transform_int_udivide(phase, in(1), con);
-  if (q == nullptr) {
-    return nullptr;
-  }
-  q = phase->transform(q);
-  Node* mul = phase->transform(new MulINode(q, phase->intcon(con)));
-  return new SubINode(in(1), mul);
-}
-
-//=============================================================================
-//------------------------------Idealize---------------------------------------
-Node *UModLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  // Check for dead control input
-  if( in(0) && remove_dead_region(phase, can_reshape) )  return this;
-  // Don't bother trying to transform a dead node
-  if( in(0) && in(0)->is_top() )  return nullptr;
-
-  // Get the modulus
-  const Type *t = phase->type( in(2) );
-  if( t == Type::TOP ) return nullptr;
-  const TypeLong *ti = t->is_long();
-
-  // Check for useless control input
-  // Check for excluding mod-zero case
-  if (in(0) && (ti->_hi < 0 || ti->_lo > 0)) {
-    set_req(0, nullptr);        // Yank control input
-    return this;
-  }
-
-  // See if we are MOD'ing by 2^k
-  if( !ti->is_con() ) return nullptr;
-  julong con = ti->get_con();
-
-  if (is_power_of_2(con)) {
-    return new AndLNode(in(1), phase->longcon(con - 1));
-  }
-  Node* q = transform_long_udivide(phase, in(1), con);
-  if (q == nullptr) {
-    return nullptr;
-  }
-  q = phase->transform(q);
-  Node* mul = phase->transform(new MulLNode(q, phase->longcon(con)));
-  return new SubLNode(in(1), mul);
-}
-
 
 //=============================================================================
 //------------------------------Value------------------------------------------

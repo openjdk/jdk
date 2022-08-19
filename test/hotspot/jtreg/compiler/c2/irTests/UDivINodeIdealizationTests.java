@@ -28,7 +28,9 @@ import compiler.lib.ir_framework.*;
 /*
  * @test
  * @bug 8282365
- * @summary Test that Ideal transformations of UDivINode* are being performed as expected.
+ * @summary Test that Ideal transformations of UDivINode and UModINode are
+ * being performed as expected.
+ * 
  * @library /test/lib /
  * @run driver compiler.c2.irTests.UDivINodeIdealizationTests
  */
@@ -37,9 +39,10 @@ public class UDivINodeIdealizationTests {
         TestFramework.run();
     }
 
-    @Run(test = {"constant", "identity", "identityAgain", "identityThird",
+    @Run(test = {"constantDiv", "identity", "identityAgain", "identityThird",
                  "retainDenominator", "divByPow2",
-                 "magicDiv13", "magicDiv7"})
+                 "magicDiv13", "magicDiv7",
+                "constantMod", "constantModAgain", "modByPow2", "magicMod13"})
     public void runMethod() {
         int a = RunInfo.getRandom().nextInt();
             a = (a == 0) ? 1 : a;
@@ -61,9 +64,14 @@ public class UDivINodeIdealizationTests {
     }
 
     @DontCompile
+    public int umod(int a, int b) {
+        return Integer.remainderUnsigned(a, b);
+    }
+
+    @DontCompile
     public void assertResult(int a, int b, boolean shouldThrow) {
         try {
-            Asserts.assertEQ(1, constant(a));
+            Asserts.assertEQ(1, constantDiv(a));
             Asserts.assertFalse(shouldThrow, "Expected an exception to be thrown.");
         }
         catch (ArithmeticException e) {
@@ -86,18 +94,29 @@ public class UDivINodeIdealizationTests {
             Asserts.assertTrue(shouldThrow, "Did not expected an exception to be thrown.");
         }
 
-        Asserts.assertEQ(a            , identity(a));
-        Asserts.assertEQ(a            , identityAgain(a));
-        Asserts.assertEQ(udiv(a, 8)   , divByPow2(a));
-        Asserts.assertEQ(udiv(a, 13)  , magicDiv13(a));
-        Asserts.assertEQ(udiv(a, 7)   , magicDiv7(a));
+        try {
+            Asserts.assertEQ(0, constantMod(a));
+            Asserts.assertFalse(shouldThrow, "Expected an exception to be thrown.");
+        }
+        catch (ArithmeticException e) {
+            Asserts.assertTrue(shouldThrow, "Did not expected an exception to be thrown.");
+        }
+
+        Asserts.assertEQ(a           , identity(a));
+        Asserts.assertEQ(a           , identityAgain(a));
+        Asserts.assertEQ(udiv(a, 8) , divByPow2(a));
+        Asserts.assertEQ(udiv(a, 13), magicDiv13(a));
+        Asserts.assertEQ(udiv(a, 7) , magicDiv7(a));
+        Asserts.assertEQ(umod(a, 1) , constantModAgain(a));
+        Asserts.assertEQ(umod(a, 8) , modByPow2(a));
+        Asserts.assertEQ(umod(a, 13), magicMod13(a));
     }
 
     @Test
     @IR(failOn = {IRNode.UDIV_I})
     @IR(counts = {IRNode.DIV_BY_ZERO_TRAP, "1"})
     // Checks x / x => 1
-    public int constant(int x) {
+    public int constantDiv(int x) {
         return Integer.divideUnsigned(x, x);
     }
 
@@ -124,7 +143,7 @@ public class UDivINodeIdealizationTests {
     }
 
     @Test
-    @IR(counts = {IRNode.MUL, "1",
+    @IR(counts = {IRNode.MUL_I, "1",
                   IRNode.UDIV_I, "1",
                   IRNode.DIV_BY_ZERO_TRAP, "1"
                  })
@@ -135,7 +154,7 @@ public class UDivINodeIdealizationTests {
 
     @Test
     @IR(failOn = {IRNode.UDIV_I})
-    @IR(counts = {IRNode.URSHIFT, "1"})
+    @IR(counts = {IRNode.URSHIFT_I, "1"})
     // Checks x / 2^c0 => x >>> c0
     public int divByPow2(int x) {
         return Integer.divideUnsigned(x, 8);
@@ -143,8 +162,8 @@ public class UDivINodeIdealizationTests {
 
     @Test
     @IR(failOn = {IRNode.UDIV_I})
-    @IR(counts = {IRNode.MUL, "1",
-                  IRNode.URSHIFT, "1",
+    @IR(counts = {IRNode.MUL_L, "1",
+                  IRNode.URSHIFT_L, "1",
                   IRNode.CONV_I2L, "1",
                   IRNode.CONV_L2I, "1",
                  })
@@ -156,9 +175,9 @@ public class UDivINodeIdealizationTests {
 
     @Test
     @IR(failOn = {IRNode.UDIV_I})
-    @IR(counts = {IRNode.MUL, "1",
+    @IR(counts = {IRNode.MUL_L, "1",
                   IRNode.ADD_L, "1",
-                  IRNode.URSHIFT, "1",
+                  IRNode.URSHIFT_L, "1",
                   IRNode.CONV_I2L, "1",
                   IRNode.CONV_L2I, "1",
                  })
@@ -167,5 +186,43 @@ public class UDivINodeIdealizationTests {
     // of a u33
     public int magicDiv7(int x) {
         return Integer.divideUnsigned(x, 7);
+    }
+
+    @Test
+    @IR(failOn = {IRNode.UMOD_I})
+    @IR(counts = {IRNode.DIV_BY_ZERO_TRAP, "1"})
+    // Checks x % x => 0
+    public int constantMod(int x) {
+        return Integer.remainderUnsigned(x, x);
+    }
+
+    @Test
+    @IR(failOn = {IRNode.UMOD_I})
+    // Checks x % 1 => 0
+    public int constantModAgain(int x) {
+        return Integer.remainderUnsigned(x, 1);
+    }
+
+    @Test
+    @IR(failOn = {IRNode.UMOD_I})
+    @IR(counts = {IRNode.AND_I, "1"})
+    // Checks x % 2^c0 => x & (2^c0 - 1)
+    public int modByPow2(int x) {
+        return Integer.remainderUnsigned(x, 8);
+    }
+
+    @Test
+    @IR(failOn = {IRNode.UMOD_I})
+    @IR(counts = {IRNode.MUL_L, "1",
+                  IRNode.URSHIFT_L, "1",
+                  IRNode.CONV_I2L, "1",
+                  IRNode.CONV_L2I, "1",
+                  IRNode.MUL_I, "1",
+                  IRNode.SUB_I, "1"
+                 })
+    // Checks magic int division occurs in general when dividing by a non power of 2.
+    // The constant derived from 13 lies inside the limit of an u32
+    public int magicMod13(int x) {
+        return Integer.remainderUnsigned(x, 13);
     }
 }
