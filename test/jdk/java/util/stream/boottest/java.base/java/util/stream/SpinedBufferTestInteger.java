@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,35 +26,12 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import java.util.*;
-//import java.util.function.DoubleConsumer;
-import java.util.function.IntConsumer;
-//import java.util.function.LongConsumer;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 
 @Test
-public class SpinedBufferTest1 {
-
-    // Create sizes around the boundary of spines
-    static List<Integer> sizes;
-    static {
-        try {
-            sizes = IntStream.range(0, 15)
-                             .map(i -> 1 << i)
-                             .flatMap(i -> Arrays.stream(new int[] { i-2, i-1, i, i+1, i+2 }))
-                             .filter(i -> i >= 0)
-                             .boxed()
-                             .distinct()
-                             .collect(Collectors.toList());
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    private static final int TEST_SIZE = 5000;
-
+public class SpinedBufferTestInteger extends SpinedBufferTestCommon {
     // SpinedBuffer
 
     @DataProvider(name = "SpinedBuffer")
@@ -138,81 +115,6 @@ public class SpinedBufferTest1 {
         Integer[] array = sb.asArray(LambdaTestHelpers.integerArrayGenerator);
         list2.clear();
         for (Integer i : array)
-            list2.add(i);
-        assertEquals(list1, list2);
-    }
-
-    // IntSpinedBuffer
-
-    @DataProvider(name = "IntSpinedBuffer")
-    public Object[][] createIntSpinedBuffer() {
-        List<Object[]> params = new ArrayList<>();
-
-        for (int size : sizes) {
-            int[] array = IntStream.range(0, size).toArray();
-            SpinedBuffer.OfInt sb = new SpinedBuffer.OfInt();
-            Arrays.stream(array).forEach(sb);
-
-            params.add(new Object[]{array, sb});
-        }
-
-        return params.toArray(new Object[0][]);
-    }
-
-    @Test(dataProvider = "IntSpinedBuffer")
-    public void testIntSpliterator(int[] array, SpinedBuffer.OfInt sb) {
-        assertEquals(sb.count(), array.length);
-        assertEquals(sb.count(), sb.spliterator().getExactSizeIfKnown());
-
-        SpliteratorTestHelper.testIntSpliterator(sb::spliterator);
-    }
-
-    @Test(dataProvider = "IntSpinedBuffer", groups = { "serialization-hostile" })
-    public void testIntLastSplit(int[] array, SpinedBuffer.OfInt sb) {
-        Spliterator.OfInt spliterator = sb.spliterator();
-        Spliterator.OfInt split = spliterator.trySplit();
-        long splitSizes = (split == null) ? 0 : split.getExactSizeIfKnown();
-        long lastSplitSize = spliterator.getExactSizeIfKnown();
-        splitSizes += lastSplitSize;
-
-        assertEquals(splitSizes, array.length);
-
-        List<Integer> contentOfLastSplit = new ArrayList<>();
-        spliterator.forEachRemaining((IntConsumer) contentOfLastSplit::add);
-
-        assertEquals(contentOfLastSplit.size(), lastSplitSize);
-
-        List<Integer> end = Arrays.stream(array)
-                .boxed()
-                .skip(array.length - lastSplitSize)
-                .collect(Collectors.toList());
-        assertEquals(contentOfLastSplit, end);
-    }
-
-    @Test(groups = { "serialization-hostile" })
-    public void testIntSpinedBuffer() {
-        List<Integer> list1 = new ArrayList<>();
-        List<Integer> list2 = new ArrayList<>();
-        SpinedBuffer.OfInt sb = new SpinedBuffer.OfInt();
-        for (int i = 0; i < TEST_SIZE; i++) {
-            list1.add(i);
-            sb.accept(i);
-        }
-        PrimitiveIterator.OfInt it = sb.iterator();
-        for (int i = 0; i < TEST_SIZE; i++)
-            list2.add(it.nextInt());
-        assertFalse(it.hasNext());
-        assertEquals(list1, list2);
-
-        for (int i = 0; i < TEST_SIZE; i++)
-            assertEquals(sb.get(i), i, Integer.toString(i));
-
-        list2.clear();
-        sb.forEach((int i) -> list2.add(i));
-        assertEquals(list1, list2);
-        int[] array = sb.asPrimitiveArray();
-        list2.clear();
-        for (int i : array)
             list2.add(i);
         assertEquals(list1, list2);
     }
