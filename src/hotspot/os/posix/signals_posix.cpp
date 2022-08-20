@@ -563,11 +563,6 @@ int JVM_HANDLE_XXX_SIGNAL(int sig, siginfo_t* info,
 {
   assert(info != NULL && ucVoid != NULL, "sanity");
 
-  if (sig == BREAK_SIGNAL) {
-    assert(!ReduceSignalUsage, "Should not happen with -Xrs/-XX:+ReduceSignalUsage");
-    return true; // ignore it
-  }
-
   // Note: it's not uncommon that JNI code uses signal/sigset to install,
   // then restore certain signal handler (e.g. to temporarily block SIGPIPE,
   // or have a SIGILL handler when detecting CPU type). When that happens,
@@ -686,6 +681,12 @@ static void javaSignalHandler(int sig, siginfo_t* info, void* ucVoid) {
   // Do not add any code here!
   // Only add code to either JVM_HANDLE_XXX_SIGNAL or PosixSignals::pd_hotspot_signal_handler.
   (void)JVM_HANDLE_XXX_SIGNAL(sig, info, ucVoid, true);
+}
+
+// Signal handler for BREAK_SIGNAL during early initialization phase.
+// Late initialization will overwrite BREAK_SIGNAL's handler to UserHandler.
+static void DummySIGBREAKHandler(int sig, void *siginfo, void *context) {
+  assert(!ReduceSignalUsage, "Should not happen with -Xrs/-XX:+ReduceSignalUsage");
 }
 
 static void UserHandler(int sig, void *siginfo, void *context) {
@@ -1225,7 +1226,7 @@ int os::get_signal_number(const char* signal_name) {
   return -1;
 }
 
-void set_signal_handler(int sig, bool do_check = true) {
+void set_signal_handler(int sig) {
   // Check for overwrite.
   struct sigaction oldAct;
   sigaction(sig, (struct sigaction*)NULL, &oldAct);
@@ -1268,10 +1269,9 @@ void set_signal_handler(int sig, bool do_check = true) {
 #endif
 
   // Save handler setup for possible later checking
-  if (do_check) {
-    vm_handlers.set(sig, &sigAct);
-  }
-  do_check_signal_periodically[sig] = do_check;
+  vm_handlers.set(sig, &sigAct);
+
+  do_check_signal_periodically[sig] = true;
 
   int ret = sigaction(sig, &sigAct, &oldAct);
   assert(ret == 0, "check");
@@ -1309,12 +1309,6 @@ void install_signal_handlers() {
   set_signal_handler(SIGFPE);
   PPC64_ONLY(set_signal_handler(SIGTRAP);)
   set_signal_handler(SIGXFSZ);
-  if (!ReduceSignalUsage) {
-    // This is just for early initialization phase. Intercepting the signal here reduces the risk
-    // that an attach client accidentally forces HotSpot to quit prematurely. We skip the periodic
-    // check because late initialization will overwrite it to UserHandler.
-    set_signal_handler(BREAK_SIGNAL, false);
-  }
 #if defined(__APPLE__)
   // lldb (gdb) installs both standard BSD signal handlers, and mach exception
   // handlers. By replacing the existing task exception handler, we disable lldb's mach
@@ -1337,6 +1331,21 @@ void install_signal_handlers() {
   if (libjsig_is_loaded) {
     // Tell libjsig jvm finishes setting signal handlers
     (*end_signal_setting)();
+  }
+
+  if (!ReduceSignalUsage) {
+    // This is just for early initialization phase. Intercepting the signal here
+    // reduces the risk that an attach client accidentally forces HotSpot to quit
+    // prematurely. Late initialization will overwrite BREAK_SIGNAL's handler to
+    // UserHandler.
+    // Note that HotSpot does NOT support signal chaining for BREAK_SIGNAL.
+    // We have to set it outside the window bounded by libjsig's
+    // JVM_begin_signal_setting and JVM_end_signal_setting above, because the
+    // window is intended for signals that support chaining. Otherwise libjsig
+    // would prevent us from overwriting BREAK_SIGNAL's handler to UserHandler.
+    // We also use os::signal() and a dummy handler to avoid special-casing
+    // set_signal_handler() and JVM_HANDLE_XXX_SIGNAL().
+    os::signal(BREAK_SIGNAL, CAST_FROM_FN_PTR(void*, DummySIGBREAKHandler));
   }
 
   // We don't activate signal checker if libjsig is in place, we trust ourselves
