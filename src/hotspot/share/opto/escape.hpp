@@ -590,7 +590,7 @@ private:
   // 'base' as Base.
   bool is_read_only(Node* merge_phi_region, Node* base) const;
 
-  bool come_from_allocate(const Node* n) const;
+  const Node* come_from_allocate(const Node* n) const;
 
   // Performs several checks to see if the Phi pointed by 'n'
   // can be reduced into a ReducedAllocationMergeNode. The

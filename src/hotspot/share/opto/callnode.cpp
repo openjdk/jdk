@@ -1699,13 +1699,18 @@ void ReducedAllocationMergeNode::register_offset(jlong offset, Node* memory, boo
   }
 }
 
+void ReducedAllocationMergeNode::register_addp(AddPNode* n) {
+  assert(n->outcnt() > 0 && n->raw_out(0)->is_Load(), "AddP output is not load.");
+  assert(n->in(AddPNode::Address) == n->in(AddPNode::Base), "AddP base and address aren't the same.'");
+
+  jlong offset = n->in(AddPNode::Offset)->find_long_con(-1);
+  Node* memory = n->raw_out(0)->in(LoadNode::Memory);
+  register_offset(offset, memory, /*override*/true);
+}
+
 bool ReducedAllocationMergeNode::register_use(Node* n) {
   if (n->is_AddP()) {
-    assert(n->outcnt() > 0 && n->raw_out(0)->is_Load(), "AddP output is not load.");
-    assert(n->in(AddPNode::Address) == n->in(AddPNode::Base), "AddP base and address aren't the same.'");
-    jlong offset = n->in(AddPNode::Offset)->find_long_con(-1);
-    Node* memory = n->raw_out(0)->in(LoadNode::Memory);
-    register_offset(offset, memory, /*override*/true);
+    register_addp(n->as_AddP());
   }
   else if (n->Opcode() == Op_SafePoint || (n->is_CallStaticJava() && n->as_CallStaticJava()->is_uncommon_trap())) {
     Node* memory = n->in(TypeFunc::Memory);
@@ -1715,11 +1720,7 @@ bool ReducedAllocationMergeNode::register_use(Node* n) {
     for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
       Node* addp = n->fast_out(i);
       assert(addp->is_AddP(), "DecodeN user is not an AddP");
-      assert(addp->outcnt() > 0 && addp->raw_out(0)->is_Load(), "DecodeN->AddP->X is not load.");
-      assert(addp->in(AddPNode::Address) == addp->in(AddPNode::Base), "AddP node and base aren't equal.'");
-      jlong offset = addp->in(AddPNode::Offset)->find_long_con(-1);
-      Node* memory = addp->raw_out(0)->in(LoadNode::Memory);
-      register_offset(offset, memory, /*override*/true);
+      register_addp(addp->as_AddP());
     }
   }
   else {
@@ -1764,7 +1765,9 @@ Node* ReducedAllocationMergeNode::make_load(Node* ctrl, Node* base, Node* mem, j
   ciInstanceKlass* iklass     = res_type->instance_klass();
   ciField* field              = iklass->get_field_by_offset(offset, /*is_static=*/false);
   field                       = field != NULL ? field : iklass->get_field_by_offset(offset, /*is_static=*/true);
-  assert(field != NULL, "didn't find instance or static field at offset @ %lx", offset);
+  // If for some reason we didn't find the field then bail out.
+  if (field == NULL) return NULL;
+
   ciType* elem_type           = field->type();
   BasicType basic_elem_type   = field->layout_type();
   const Type* field_type      = NULL;
@@ -1805,6 +1808,7 @@ Node* ReducedAllocationMergeNode::value_phi_for_field(jlong field, PhaseIterGVN*
       Node* memory = input;
       memory = (memory->is_Phi() && memory->in(0) == in(0)) ? memory->in(i) : memory;
       input = make_load(this->in(0)->in(i), in(i), memory, field, igvn);
+      if (input == NULL) return NULL;
     }
     // Somehow the base was eliminated and we still have a memory reference left
     else if (input->is_top() || input->bottom_type()->base() == Type::Memory) {

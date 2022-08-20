@@ -458,7 +458,7 @@ int ConnectionGraph::reduce_allocation_merges() {
   return number_of_reductions;
 }
 
-bool ConnectionGraph::come_from_allocate(const Node* n) const {
+const Node* ConnectionGraph::come_from_allocate(const Node* n) const {
   int max_iterations = 100;
   while (--max_iterations > 0) {
     switch (n->Opcode()) {
@@ -487,19 +487,19 @@ bool ConnectionGraph::come_from_allocate(const Node* n) const {
       case Op_CreateEx:
       case Op_AllocateArray:
       case Op_Phi:
-        return false;
+        return NULL;
       case Op_Allocate:
-        return true;
+        return n;
       default:
         if (n->is_Call()) {
-          return false;
+          return NULL;
         }
         assert(false, "Should not reach here. Unmatched %d %s", n->_idx, n->Name());
-        return false;
+        return NULL;
     }
   }
 
-  return false;
+  return NULL;
 }
 
 bool ConnectionGraph::is_read_only(Node* merge_phi_region, Node* base) const {
@@ -547,7 +547,8 @@ bool ConnectionGraph::can_reduce_this_phi(const Node* phi) const {
 
   const Type* phi_t  = _igvn->type(phi);
 
-  if (phi_t == NULL || phi_t->make_oopptr() == NULL) {
+  // If not an InstPtr bail out
+  if (phi_t == NULL || phi_t->make_oopptr() == NULL || phi_t->make_oopptr()->isa_instptr() == NULL) {
     return false;
   }
 
@@ -556,29 +557,37 @@ bool ConnectionGraph::can_reduce_this_phi(const Node* phi) const {
   //    of the same Klass and that they can be scalar replaced. Also
   //    checks that there is no write to any of the inputs after the
   //    merge occurs.
-  bool has_any_allocate = false;
+  bool has_noescape_allocate = false;
+  ciInstanceKlass* klass = phi_t->make_oopptr()->is_instptr()->instance_klass();
   for (uint in_idx = 1; in_idx < phi->req(); in_idx++) {
-    Node* input = phi->in(in_idx);
-
-    PointsToNode* input_ptn = ptnode_adr(input->_idx);
-    if (input_ptn == NULL) {
-      continue;
-    }
+    const Node* input = come_from_allocate(phi->in(in_idx));
+    PointsToNode* input_ptn = input != NULL ? ptnode_adr(input->_idx) : NULL;
 
     // Check if input comes from Allocate and does not escape
-    has_any_allocate |= (input_ptn->escape_state() == PointsToNode::EscapeState::NoEscape && come_from_allocate(input));
+    has_noescape_allocate |= (input_ptn != NULL && input_ptn->escape_state() == PointsToNode::NoEscape && input_ptn->scalar_replaceable());
 
     // Check if there is no write to the input after it is merged.
     // If there is a write to any input after the merge we need to bail out.
-    if (!is_read_only(phi->in(0), input)) {
+    if (!is_read_only(phi->in(0), phi->in(in_idx))) {
       NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Will NOT try to reduce Phi %d. The %dth input has a store after the merge.", phi->_idx, in_idx);)
+      return false;
+    }
+
+    const Type* input_t = _igvn->type(phi->in(in_idx))->make_oopptr();
+    if (input_t == NULL || input_t->isa_instptr() == NULL) {
+      NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Will NOT try to reduce Phi %d. The %dth input is not an InstPtr.", phi->_idx, in_idx);)
+      return false;
+    }
+
+    if (klass != input_t->is_instptr()->instance_klass()) {
+      NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Will NOT try to reduce Phi %d. Inputs aren't of the same instance klass.", phi->_idx);)
       return false;
     }
   }
 
   // If there was no input that can be removed then there is
   // no profit doing the reduction of inputs.
-  if (!has_any_allocate) {
+  if (!has_noescape_allocate) {
     NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Will NOT try to reduce Phi %d. There is not any NoEscape Allocate as input.", phi->_idx);)
     return false;
   }

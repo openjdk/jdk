@@ -114,7 +114,7 @@ private:
   // The method will iterate over the users of 'ram' and replace the nodes
   // that use the _value_ of field 'x' by a value Phi merging nodes that
   // produce value for field 'x' in different control branches. Safepoints
-  // and traps are special since they require they have a reference to the
+  // and traps are special since they require a reference to the
   // 'ram' itself. For those cases we create an SafePointScalarObjectNode,
   // similar to what is done to regular scalar replacement.
   bool eliminate_reduced_allocation_merge(ReducedAllocationMergeNode *ram);

@@ -1048,10 +1048,12 @@ public:
   const DictI needed_offsets() const { return DictI(_fields_and_memories); }
 
   long field_idx(jlong offset) const {
+    assert(offset > 0, "Offset should be positive.");
     return (long) (*_fields_and_memories)[(void*)offset];
   }
 
   int base_idx(Node* base, uint previous_matches) const {
+    assert(base != NULL, "Base shouldn't be NULL.");
     for (uint i = 1, matches = 0; i <= _number_of_bases; i++) {
       if (base == in(i)) {
         matches++;
@@ -1068,6 +1070,7 @@ public:
     return (*_fields_and_memories)[(void*)offset] != NULL;
   }
 
+  void register_addp(AddPNode* n);
   void register_offset_of_all_fields(Node* memory);
   void register_offset(jlong offset, Node* memory, bool override = false);
   bool register_use(Node* n);

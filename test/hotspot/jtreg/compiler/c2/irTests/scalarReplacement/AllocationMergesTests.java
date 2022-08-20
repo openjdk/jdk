@@ -34,7 +34,8 @@ import compiler.lib.ir_framework.*;
 public class AllocationMergesTests {
 
     public static void main(String[] args) {
-        TestFramework.runWithFlags("-XX:+ReduceAllocationMerges", "-XX:CompileCommand=exclude,*::dummy*");
+        TestFramework.runWithFlags("-XX:+ReduceAllocationMerges",
+                                   "-XX:CompileCommand=exclude,*::dummy*");
     }
 
     // ------------------ No Scalar Replacement Should Happen in The Tests Below ------------------- //
@@ -280,8 +281,78 @@ public class AllocationMergesTests {
 
     @Test
     @Arguments({ Argument.RANDOM_EACH, Argument.RANDOM_EACH, Argument.RANDOM_EACH })
+    @IR(counts = { IRNode.ALLOC, "1" })
+    int testCmpMergeWithNull_Second(boolean cond, int x, int y) {
+        Point p = null;
+
+        if (cond)
+            p = new Point(x*x, y*y);
+
+        dummy(x);
+
+        if (p != null)
+            return p.x * p.y;
+        else
+            return 1984;
+    }
+
+
+    // ------------------ Some Objects Will be Scalar Replaced in These Tests ------------------- //
+
+
+    @Test
+    @Arguments({ Argument.RANDOM_EACH, Argument.RANDOM_EACH, Argument.RANDOM_EACH, Argument.RANDOM_EACH, Argument.RANDOM_EACH, Argument.RANDOM_EACH })
     @IR(counts = { IRNode.ALLOC, "2" })
-    // "p" is not being reduced because the merge phi is being touched by the second Allocate
+    int testSubclasses(boolean c1, boolean c2, int x, int y, int w, int z) {
+        new A();
+        Root s = new Home(x, y);
+        new B();
+
+        if (c1) {
+            new C();
+            s = new Etc("Hello");
+            new D();
+        }
+        else {
+            new E();
+            s = new Usr(y, x, z);
+            new F();
+        }
+
+        new G();
+
+        return s.a;
+    }
+
+    @Test
+    @Arguments({ Argument.RANDOM_EACH, Argument.RANDOM_EACH, Argument.RANDOM_EACH })
+    @IR(counts = { IRNode.ALLOC, "2" })
+    Point testNestedObjectsObject(boolean cond, int x, int y) {
+        Picture p = new Picture(x, x, y);
+
+        if (cond)
+            p = new Picture(y, y, x);
+
+        return p.position;
+    }
+
+    @Test
+    @Arguments({ Argument.RANDOM_EACH, Argument.RANDOM_EACH, Argument.RANDOM_EACH })
+    @IR(counts = { IRNode.ALLOC_ARRAY, "2" })
+    Point[] testNestedObjectsArray(boolean cond, int x, int y) {
+        PicturePositions p = new PicturePositions(x, y, x+y);
+
+        if (cond)
+            p = new PicturePositions(x+1, y+1, x+y+1);
+
+        return p.positions;
+    }
+
+    @Test
+    @Arguments({ Argument.RANDOM_EACH, Argument.RANDOM_EACH, Argument.RANDOM_EACH })
+    @IR(failOn = { IRNode.ALLOC })
+    // The merge for "p" will be removed during iterative EA; after the allocation
+    // inside the last if is removed in a previous EA iteration.
     int testTrappingAfterMerge(boolean cond, int x, int y) {
         Point p = new Point(x, y);
         int res = 0;
@@ -299,10 +370,6 @@ public class AllocationMergesTests {
 
         return res;
     }
-
-
-    // ------------------ Some Objects Will be Scalar Replaced in These Tests ------------------- //
-
 
     @Test
     @Arguments({ Argument.RANDOM_EACH, Argument.RANDOM_EACH, Argument.RANDOM_EACH })
@@ -423,24 +490,22 @@ public class AllocationMergesTests {
         return p1.x * p2.y;
     }
 
-/// is asserting
-/////    @Test
-/////    @Arguments({ Argument.RANDOM_EACH, Argument.RANDOM_EACH, Argument.RANDOM_EACH })
-/////    @IR(failOn = { IRNode.ALLOC })
-/////    int testNoEscapeWithLoadInLoop(boolean cond, int x, int y) {
-/////        Point p = new Point(x, y);
-/////        int res = 0;
-/////
-/////        if (cond)
-/////            p = new Point(y, x);
-/////
-/////        for (int i=x; i<y; i++) {
-/////            res += p.x + p.y + i;
-/////        }
-/////
-/////        return res + p.x + p.y;
-/////    }
+    @Test
+    @Arguments({ Argument.RANDOM_EACH, Argument.RANDOM_EACH, Argument.RANDOM_EACH })
+    @IR(failOn = { IRNode.ALLOC })
+    int testNoEscapeWithLoadInLoop(boolean cond, int x, int y) {
+        Point p = new Point(x, y);
+        int res = 0;
 
+        if (cond)
+            p = new Point(y, x);
+
+        for (int i=3342; i<4234; i++) {
+            res += p.x + p.y + i;
+        }
+
+        return res + p.x + p.y;
+    }
 
     @Test
     @Arguments({ Argument.RANDOM_EACH, Argument.RANDOM_EACH, Argument.RANDOM_EACH, Argument.RANDOM_EACH })
@@ -675,6 +740,18 @@ public class AllocationMergesTests {
         return p.x + x;
     }
 
+    @Test
+    @Arguments({ Argument.RANDOM_EACH, Argument.RANDOM_EACH })
+    @IR(failOn = { IRNode.ALLOC })
+    int testMergedWithDeadCode(boolean cond, int x) {
+        ADefaults obj1 = new ADefaults(x);
+        ADefaults obj2 = new ADefaults();
+        ADefaults obj = cond ? obj1 : obj2;
+
+        return obj1.i + obj.ble + 1082;
+    }
+
+
     // ------------------ Utility for Testing ------------------- //
 
     @DontCompile
@@ -687,8 +764,14 @@ public class AllocationMergesTests {
         return x;
     }
 
+    @DontCompile
     static Point dummy(int x, int y) {
         return new Point(x, y);
+    }
+
+    @DontCompile
+    static ADefaults dummy_defaults() {
+        return new ADefaults();
     }
 
     private static Point global_escape;
@@ -716,4 +799,93 @@ public class AllocationMergesTests {
             this.l = l;
         }
     }
+
+   static class ADefaults {
+        static int ble;
+        int i;
+        ADefaults(int i) { this.i = i; }
+        ADefaults() { }
+    }
+
+    static class Picture {
+        public int id;
+        public Point position;
+
+        public Picture(int id, int x, int y) {
+            this.id = id;
+            this.position = new Point(x, y);
+        }
+    }
+
+    static class PicturePositions {
+        public int id;
+        public Point[] positions;
+
+        public PicturePositions(int id, int x, int y) {
+            this.id = id;
+            this.positions = new Point[] { new Point(x, y), new Point(y, x) };
+        }
+    }
+
+    class Root {
+        public int a;
+        public int b;
+        public int c;
+        public int d;
+        public int e;
+
+        public Root(int a, int b, int c, int d, int e) {
+            this.a = a;
+            this.b = b;
+            this.c = c;
+            this.d = d;
+            this.e = e;
+        }
+    }
+
+    class Usr extends Root {
+        public float flt;
+
+        public Usr(float a, float b, float c) {
+            super((int)a, (int)b, (int)c, 0, 0);
+            this.flt = a;
+        }
+    }
+
+    class Home extends Root {
+        public double[] arr;
+
+        public Home(double a, double b) {
+            super((int)a, (int)b, 0, 0, 0);
+            this.arr = new double[] {a, b};
+        }
+
+    }
+
+    class Tmp extends Root {
+        public String s;
+
+        public Tmp(String s) {
+            super((int)s.length(), 0, 0, 0, 0);
+            this.s = s;
+        }
+    }
+
+    class Etc extends Root {
+        public String a;
+
+        public Etc(String s) {
+            super((int)s.length(), 0, 0, 0, 0);
+            this.a = s;
+        }
+    }
+
+    class A { }
+    class B { }
+    class C { }
+    class D { }
+    class E { }
+    class F { }
+    class G { }
 }
+
