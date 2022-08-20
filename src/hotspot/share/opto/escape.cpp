@@ -91,7 +91,7 @@ bool ConnectionGraph::has_candidates(Compile *C) {
   return false;
 }
 
-void ConnectionGraph::do_analysis(Compile *C, PhaseIterGVN *igvn, bool only_analysis) {
+void ConnectionGraph::do_analysis(Compile *C, PhaseIterGVN *igvn) {
   Compile::TracePhase tp("escapeAnalysis", &Phase::timers[Phase::_t_escapeAnalysis]);
   ResourceMark rm;
 
@@ -100,12 +100,12 @@ void ConnectionGraph::do_analysis(Compile *C, PhaseIterGVN *igvn, bool only_anal
   Node* oop_null = igvn->zerocon(T_OBJECT);
   Node* noop_null = igvn->zerocon(T_NARROWOOP);
   int invocation = 0;
-  if (C->congraph() != NULL && !only_analysis) {
+  if (C->congraph() != NULL) {
     invocation = C->congraph()->_invocation + 1;
   }
   ConnectionGraph* congraph = new(C->comp_arena()) ConnectionGraph(C, igvn, invocation);
   // Perform escape analysis
-  if (congraph->compute_escape(only_analysis)) {
+  if (congraph->compute_escape()) {
     // There are non escaping objects.
     C->set_congraph(congraph);
   }
@@ -118,7 +118,7 @@ void ConnectionGraph::do_analysis(Compile *C, PhaseIterGVN *igvn, bool only_anal
   }
 }
 
-bool ConnectionGraph::compute_escape(bool only_analysis) {
+bool ConnectionGraph::compute_escape() {
   Compile* C = _compile;
   PhaseGVN* igvn = _igvn;
 
@@ -219,9 +219,9 @@ bool ConnectionGraph::compute_escape(bool only_analysis) {
   }
 
 #ifndef PRODUCT
-  if (C->directive()->TraceEscapeAnalysisOption) {
+  if (_compile->directive()->TraceEscapeAnalysisOption) {
     tty->print("+++++ Initial worklist for ");
-    C->method()->print_name();
+    _compile->method()->print_name();
     tty->print_cr(" (ea_inv=%d)", _invocation);
     for (int i = 0; i < ptnodes_worklist.length(); i++) {
       PointsToNode* ptn = ptnodes_worklist.at(i);
@@ -785,8 +785,7 @@ void ConnectionGraph::add_node_to_connection_graph(Node *n, Unique_Node_List *de
     } else if (n->is_Allocate()) {
       add_call_node(n->as_Call());
       record_for_optimizer(n);
-    }
-    else {
+    } else {
       if (n->is_CallStaticJava()) {
         const char* name = n->as_CallStaticJava()->_name;
         if (name != NULL && strcmp(name, "uncommon_trap") == 0) {
@@ -2345,7 +2344,7 @@ void ConnectionGraph::verify_connection_graph(
           }
         }
       }
-      // Verify that all fields have initializing values
+      // Verify that all fields have initializing values.
       if (field->edge_count() == 0) {
         tty->print_cr("----------field does not have references----------");
         field->dump();
@@ -3104,7 +3103,7 @@ PhiNode *ConnectionGraph::split_memory_phi(PhiNode *orig_phi, int alias_idx, Gro
       if (mem != NULL && mem->is_Phi()) {
         PhiNode *newphi = create_split_phi(mem->as_Phi(), alias_idx, orig_phi_worklist, new_phi_created);
         if (new_phi_created) {
-          // found a phi for which we created a new split, push current one on worklist and begin
+          // found an phi for which we created a new split, push current one on worklist and begin
           // processing new one
           phi_list.push(phi);
           cur_input.push(idx);
@@ -3213,8 +3212,7 @@ void ConnectionGraph::move_inst_mem(Node* n, GrowableArray<PhiNode *>  *orig_phi
       record_for_optimizer(use);
       --i;
 #ifdef ASSERT
-    }
-    else if (use->is_ReducedAllocationMerge()) {
+    } else if (use->is_ReducedAllocationMerge()) {
       continue;
     } else if (use->is_Mem()) {
       if (use->Opcode() == Op_StoreCM && use->in(MemNode::OopStore) == n) {
@@ -3294,7 +3292,7 @@ Node* ConnectionGraph::find_inst_mem(Node *orig_mem, int alias_idx, GrowableArra
       } else if (proj_in->is_Initialize()) {
         AllocateNode* alloc = proj_in->as_Initialize()->allocation();
         // Stop if this is the initialization for the object instance which
-        // contains this memory slice, otherwise skip over it.
+        // which contains this memory slice, otherwise skip over it.
         if (alloc == NULL || alloc->_idx != (uint)toop->instance_id()) {
           result = proj_in->in(TypeFunc::Memory);
         }
@@ -3586,13 +3584,11 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
       n->raise_bottom_type(tinst);
       igvn->hash_insert(n);
       record_for_optimizer(n);
-
       // Allocate an alias index for the header fields. Accesses to
       // the header emitted during macro expansion wouldn't have
       // correct memory state otherwise.
       _compile->get_alias_index(tinst->add_offset(oopDesc::mark_offset_in_bytes()));
       _compile->get_alias_index(tinst->add_offset(oopDesc::klass_offset_in_bytes()));
-
       if (alloc->is_Allocate() && (t->isa_instptr() || t->isa_aryptr())) {
         // First, put on the worklist all Field edges from Connection Graph
         // which is more accurate than putting immediate users from Ideal Graph.
@@ -3633,8 +3629,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
           }
         }
       }
-    }
-    else if (n->is_AddP()) {
+    } else if (n->is_AddP()) {
       JavaObjectNode* jobj = unique_java_object(get_addp_base(n));
       if (jobj == NULL || jobj == phantom_obj) {
 #ifdef ASSERT
@@ -3701,7 +3696,6 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
       assert(false, "EA: unexpected node");
       continue;
     }
-
     // push allocation's users on appropriate worklist
     for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
       Node *use = n->fast_out(i);
@@ -3763,6 +3757,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
 #endif
       }
     }
+
   }
 
   // Go over all ArrayCopy nodes and if one of the inputs has a unique
@@ -4249,6 +4244,7 @@ const char* ConnectionGraph::trace_merged_message(PointsToNode* other) const {
     return nullptr;
   }
 }
+
 #endif
 
 void ConnectionGraph::record_for_optimizer(Node *n) {

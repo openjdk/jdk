@@ -460,6 +460,7 @@ Node *PhaseMacroExpand::value_from_mem(Node *sfpt_mem, Node *sfpt_ctl, BasicType
   int offset = adr_t->offset();
   Node *start_mem = C->start()->proj_out_or_null(TypeFunc::Memory);
   Node *alloc_mem = alloc->in(TypeFunc::Memory);
+  Node *alloc_ctrl = alloc->in(TypeFunc::Control);
   VectorSet visited;
 
   bool done = sfpt_mem == alloc_mem;
@@ -2633,7 +2634,6 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
       progress = progress || success;
     }
   }
-
   // Next, attempt to eliminate allocations
   _has_locks = false;
   progress = true;
@@ -2686,20 +2686,22 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
   }
 
   // Next, try to eliminate reduced allocation merges
-  for (int i = C->macro_count(); i > 0; i--) {
-    Node* n = C->macro_node(i - 1);
-    if (n->is_ReducedAllocationMerge()) {
-      // In some cases the region controlling the RAM might go away due to some simplification
-      // of the IR graph. For now, we'll just bail out if this happens.
-      if (n->in(0) == NULL || !n->in(0)->is_Region()) {
-        C->record_failure(C2Compiler::retry_no_reduce_allocation_merges());
-        return;
-      }
+  if (ReduceAllocationMerges) {
+    for (int i = C->macro_count(); i > 0; i--) {
+      Node* n = C->macro_node(i - 1);
+      if (n->is_ReducedAllocationMerge()) {
+        // In some cases the region controlling the RAM might go away due to some simplification
+        // of the IR graph. For now, we'll just bail out if this happens.
+        if (n->in(0) == NULL || !n->in(0)->is_Region()) {
+          C->record_failure(C2Compiler::retry_no_reduce_allocation_merges());
+          return;
+        }
 
-      bool success = eliminate_reduced_allocation_merge(n->as_ReducedAllocationMerge());
-      if (!success) {
-        C->record_failure(C2Compiler::retry_no_reduce_allocation_merges());
-        return;
+        bool success = eliminate_reduced_allocation_merge(n->as_ReducedAllocationMerge());
+        if (!success) {
+          C->record_failure(C2Compiler::retry_no_reduce_allocation_merges());
+          return;
+        }
       }
     }
   }
@@ -2711,7 +2713,6 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
   }
 #endif
 }
-
 
 //------------------------------expand_macro_nodes----------------------
 //  Returns true if a failure occurred.

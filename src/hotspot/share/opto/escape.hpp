@@ -580,7 +580,7 @@ private:
   void record_for_optimizer(Node *n);
 
   // Compute the escape information
-  bool compute_escape(bool only_analysis);
+  bool compute_escape();
 
   // -------------------------------------------
   // Methods related to Reduce Allocation Merges
@@ -632,7 +632,7 @@ public:
   static bool has_candidates(Compile *C);
 
   // Perform escape analysis
-  static void do_analysis(Compile *C, PhaseIterGVN *igvn, bool only_analysis = false);
+  static void do_analysis(Compile *C, PhaseIterGVN *igvn);
 
   // Perform simplification of allocation merges by reducing Phi
   // nodes that merge scalar replaceable object allocations into
