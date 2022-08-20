@@ -248,12 +248,14 @@ ATTRIBUTE_ALIGNED(16) juint _PI4_INV[] = {
 address MacroAssembler::PI4_INV = (address)_PI4_INV;
 
 ATTRIBUTE_ALIGNED(16) juint _PI4X3[] = {
-    0x54443000UL, 0xbfe921fbUL, 0x3b39a000UL, 0x3d373dcbUL, 0xe0e68948UL, 0xba845c06UL
+    0x54443000UL, 0xbfe921fbUL, 0x3b39a000UL, 0x3d373dcbUL, 0xe0e68948UL,
+    0xba845c06UL
 };
 address MacroAssembler::PI4X3 = (address)_PI4X3;
 
 ATTRIBUTE_ALIGNED(16) juint _PI4X4[] = {
-    0x54400000UL, 0xbfe921fbUL, 0x1a600000UL, 0xbdc0b461UL, 0x2e000000UL, 0xbb93198aUL, 0x252049c1UL, 0xb96b839aUL
+    0x54400000UL, 0xbfe921fbUL, 0x1a600000UL, 0xbdc0b461UL, 0x2e000000UL,
+    0xbb93198aUL, 0x252049c1UL, 0xb96b839aUL
 };
 address MacroAssembler::PI4X4 = (address)_PI4X4;
 

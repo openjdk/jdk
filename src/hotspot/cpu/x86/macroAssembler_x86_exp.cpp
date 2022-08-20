@@ -201,9 +201,9 @@ void MacroAssembler::fast_exp(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xm
   movsd(Address(rsp, 8), xmm0);
   unpcklpd(xmm0, xmm0);
   movdqu(xmm1, ExternalAddress(cv),      tmp /*rscratch*/); // 0x652b82feUL, 0x40571547UL, 0x652b82feUL, 0x40571547UL
-  movdqu(xmm6, ExternalAddress(SHIFTER), tmp /*rscratch*/); // 0x00000000UL, 0x43380000UL, 0x00000000UL, 0x43380000UL
   movdqu(xmm2, ExternalAddress(cv + 16), tmp /*rscratch*/); // 0xfefa0000UL, 0x3f862e42UL, 0xfefa0000UL, 0x3f862e42UL
   movdqu(xmm3, ExternalAddress(cv + 32), tmp /*rscratch*/); // 0xbc9e3b3aUL, 0x3d1cf79aUL, 0xbc9e3b3aUL, 0x3d1cf79aUL
+  movdqu(xmm6, ExternalAddress(SHIFTER), tmp /*rscratch*/); // 0x00000000UL, 0x43380000UL, 0x00000000UL, 0x43380000UL
   pextrw(eax, xmm0, 3);
   andl(eax, 32767);
   movl(edx, 16527);

@@ -110,7 +110,7 @@ int StubAssembler::call_RT(Register oop_result1, Register metadata_result, addre
 
   // check for pending exceptions
   { Label L;
-    cmpptr(Address(thread, Thread::pending_exception_offset()), (int32_t)NULL_WORD);
+    cmpptr(Address(thread, Thread::pending_exception_offset()), NULL_WORD);
     jcc(Assembler::equal, L);
     // exception pending => remove activation and forward to exception handler
     movptr(rax, Address(thread, Thread::pending_exception_offset()));
@@ -729,7 +729,7 @@ OopMapSet* Runtime1::generate_handle_exception(StubID id, StubAssembler *sasm) {
   // check that fields in JavaThread for exception oop and issuing pc are
   // empty before writing to them
   Label oop_empty;
-  __ cmpptr(Address(thread, JavaThread::exception_oop_offset()), (int32_t) NULL_WORD);
+  __ cmpptr(Address(thread, JavaThread::exception_oop_offset()), NULL_WORD);
   __ jcc(Assembler::equal, oop_empty);
   __ stop("exception oop already set");
   __ bind(oop_empty);
@@ -911,7 +911,7 @@ OopMapSet* Runtime1::generate_patching(StubAssembler* sasm, address target) {
 
   // check for pending exceptions
   { Label L;
-    __ cmpptr(Address(thread, Thread::pending_exception_offset()), (int32_t)NULL_WORD);
+    __ cmpptr(Address(thread, Thread::pending_exception_offset()), NULL_WORD);
     __ jcc(Assembler::equal, L);
     // exception pending => remove activation and forward to exception handler
 
@@ -935,13 +935,13 @@ OopMapSet* Runtime1::generate_patching(StubAssembler* sasm, address target) {
 #ifdef ASSERT
     // check that fields in JavaThread for exception oop and issuing pc are empty
     Label oop_empty;
-    __ cmpptr(Address(thread, JavaThread::exception_oop_offset()), (int32_t)NULL_WORD);
+    __ cmpptr(Address(thread, JavaThread::exception_oop_offset()), NULL_WORD);
     __ jcc(Assembler::equal, oop_empty);
     __ stop("exception oop must be empty");
     __ bind(oop_empty);
 
     Label pc_empty;
-    __ cmpptr(Address(thread, JavaThread::exception_pc_offset()), (int32_t)NULL_WORD);
+    __ cmpptr(Address(thread, JavaThread::exception_pc_offset()), NULL_WORD);
     __ jcc(Assembler::equal, pc_empty);
     __ stop("exception pc must be empty");
     __ bind(pc_empty);
