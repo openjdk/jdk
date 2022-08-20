@@ -3871,7 +3871,7 @@ bool Arguments::handle_deprecated_print_gc_flags() {
 }
 
 static void apply_debugger_ergo() {
-#ifdef ASSERT
+#ifndef PRODUCT
   // UseDebuggerErgo is notproduct
   if (ReplayCompiles) {
     FLAG_SET_ERGO_IF_DEFAULT(UseDebuggerErgo, true);
