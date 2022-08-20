@@ -136,9 +136,9 @@ public:
   constexpr static bool has_jvmci()  { return JVMCI_ONLY(true) NOT_JVMCI(false);            }
   constexpr static bool has_tiered() { return has_c1() && (has_c2() || has_jvmci());        }
 
-  static bool is_jvmci_compiler();
-  static bool is_jvmci();
-  static bool is_interpreter_only();
+  inline static bool is_jvmci_compiler();
+  inline static bool is_jvmci();
+  inline static bool is_interpreter_only();
 
   // is_*_only() functions describe situations in which the JVM is in one way or another
   // forced to use a particular compiler or their combination. The constraint functions
@@ -146,22 +146,22 @@ public:
   // through JVMCI (where the JVMCI compiler was invoked not through the broker). Be sure
   // to check for those (using is_jvmci()) in situations where it matters.
 
-  static bool is_tiered();
+  inline static bool is_tiered();
 
-  static bool is_c1_enabled();
-  static bool is_c1_only();
-  static bool is_c1_simple_only();
-  static bool is_c1_or_interpreter_only_no_jvmci();
-  static bool is_c1_only_no_jvmci();
-  static bool is_c1_profiling();
+  inline static bool is_c1_enabled();
+  inline static bool is_c1_only();
+  inline static bool is_c1_simple_only();
+  inline static bool is_c1_or_interpreter_only_no_jvmci();
+  inline static bool is_c1_only_no_jvmci();
+  inline static bool is_c1_profiling();
 
-  static bool is_jvmci_compiler_enabled();
-  static bool is_jvmci_compiler_only();
+  inline static bool is_jvmci_compiler_enabled();
+  inline static bool is_jvmci_compiler_only();
 
-  static bool is_c2_only();
-  static bool is_c2_enabled();
-  static bool is_c2_or_jvmci_compiler_only();
-  static bool is_c2_or_jvmci_compiler_enabled();
+  inline static bool is_c2_only();
+  inline static bool is_c2_enabled();
+  inline static bool is_c2_or_jvmci_compiler_only();
+  inline static bool is_c2_or_jvmci_compiler_enabled();
 
 private:
   static bool is_compilation_mode_selected();
