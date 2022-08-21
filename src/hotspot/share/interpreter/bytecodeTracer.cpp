@@ -425,7 +425,8 @@ void BytecodePrinter::print_field_or_method(int orig_i, int i, outputStream* st)
       Method* m = cpce->method_if_resolved(cph);
       oop appendix = cpce->appendix_if_resolved(cph);
       if (m != NULL) {
-        st->print_cr("  Method: %s.%s%s", m->method_holder()->name()->as_C_string(),
+        st->print_cr("  Method: " INTPTR_FORMAT " %s.%s%s", p2i(m),
+                     m->method_holder()->name()->as_C_string(),
                      m->name()->as_C_string(), m->signature()->as_C_string());
       }
       if (appendix != NULL) {
