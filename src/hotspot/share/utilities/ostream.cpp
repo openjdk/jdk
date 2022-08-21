@@ -421,14 +421,19 @@ stringStream::~stringStream() {
   }
 }
 
-// "tty" neeeds to be always valid since it may get used pre-VM-init and post-VM-cleanup.
-// The "real" tty is implemented by class defaultStream. But that cannot be used pre-VM-init
-// since its behavior depends on VM arguments that are not parsed yet. Therefore we point tty
-// to a simple always functioning fdstream pointing to stderr.
-static fdStream g_stderr_stream(os::get_fileno(stderr));
+// tty needs to be always accessible since there are code paths that may write to it
+// outside of the VM lifespan.
+// Examples for pre-VM-init accesses: Early NMT init, Early UL init
+// Examples for post-VM-exit accesses: many, e.g. NMT C-heap bounds checker, signal handling, AGCT, ...
+// During lifetime tty is served by an instance of defaultStream. That instance's deletion cannot
+// be (easily) postponed or omitted since it has ties to the JVM infrastructure.
+// The policy followed here is a compromise reached during review of JDK-8292351:
+// - pre-init: we silently swallow all output. We won't see anything, but at least won't crash
+// - post-exit: we write to a simple fdStream, but somewhat mimik the behavior of the real defaultStream
+static nullStream tty_preinit_stream;
+outputStream* tty = &tty_preinit_stream;
 
 xmlStream*   xtty;
-outputStream* tty = &g_stderr_stream;
 extern Mutex* tty_lock;
 
 #define EXTRACHARLEN   32
@@ -620,6 +625,9 @@ void fileStream::flush() {
     fflush(_file);
   }
 }
+
+fdStream fdStream::_stdout_stream(1);
+fdStream fdStream::_stderr_stream(2);
 
 void fdStream::write(const char* s, size_t len) {
   if (_fd != -1) {
@@ -967,13 +975,12 @@ void ostream_exit() {
   if (ostream_exit_called)  return;
   ostream_exit_called = true;
   ClassListWriter::delete_classlist();
-  if (tty != defaultStream::instance) {
+  // Make sure tty works after VM exit by assigning an always-on functioning fdStream.
+  if (tty != &tty_preinit_stream && tty != defaultStream::instance) {
     delete tty;
   }
-  if (defaultStream::instance != NULL) {
-    delete defaultStream::instance;
-  }
-  tty = &g_stderr_stream;
+  tty = DisplayVMOutputToStderr ? fdStream::stdout_stream() : fdStream::stderr_stream();
+  delete defaultStream::instance;
   xtty = NULL;
   defaultStream::instance = NULL;
 }
