@@ -28,6 +28,7 @@
 #include "memory/allStatic.hpp"
 #include "utilities/globalDefinitions.hpp"
 
+class InstanceKlass;
 class Symbol;
 
 // ClassPrinter is intended to be called from findclass/findmethod/findmethod2
@@ -44,6 +45,7 @@ class ClassPrinter : public AllStatic {
 
   static bool matches(const char *pattern, const char *candidate, int p, int c);
   static bool matches(const char* pattern, Symbol* symbol);
+  static bool matches_klass(const char* pattern, InstanceKlass* ik);
 
 public:
 

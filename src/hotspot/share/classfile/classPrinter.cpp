@@ -57,14 +57,13 @@ public:
     }
 
     InstanceKlass* ik = InstanceKlass::cast(k);
-
-    if (ik->is_loaded() && matches(_class_name_pattern, k->name())) {
+    if (ik->is_loaded() && matches_klass(_class_name_pattern, ik)) {
       ResourceMark rm;
       if (_last_printed_methods) {
         _st->cr();
       }
       _last_printed_methods = false;
-      _st->print("[%d] " INTPTR_FORMAT " %s, ", _num++, p2i(k), ik->external_name());
+      _st->print("[%3d] " INTPTR_FORMAT " %s ", _num++, p2i(k), ik->external_name());
       ik->class_loader_data()->print_value_on(_st);
       _st->cr();
 
@@ -123,6 +122,16 @@ bool ClassPrinter::matches(const char* pattern, Symbol* symbol) {
     return matches(pattern, buf, 0, 0);
   }
 }
+
+bool ClassPrinter::matches_klass(const char* pattern, InstanceKlass* ik) {
+  if (ik->is_hidden()) {
+    ResourceMark rm;
+    return matches(pattern, ik->external_name(), 0, 0);
+  } else {
+    return matches(pattern, ik->name());
+  }
+}
+
 
 void ClassPrinter::print_classes_unlocked(const char* class_name_pattern, int flags) {
   KlassPrintClosure closure(class_name_pattern, NULL, NULL, flags, tty);
