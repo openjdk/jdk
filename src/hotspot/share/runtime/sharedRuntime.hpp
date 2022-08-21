@@ -27,7 +27,6 @@
 
 #include "code/codeBlob.hpp"
 #include "code/vmreg.hpp"
-#include "interpreter/bytecodeTracer.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "memory/allStatic.hpp"
 #include "memory/resourceArea.hpp"

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -135,9 +135,6 @@ void interpreter_init_stub() {
 
 void interpreter_init_code() {
   Interpreter::initialize_code();
-#ifndef PRODUCT
-  if (TraceBytecodes) BytecodeTracer::set_closure(BytecodeTracer::std_closure());
-#endif // PRODUCT
   // need to hit every safepoint in order to call zapping routine
   // register the interpreter
   Forte::register_stub(

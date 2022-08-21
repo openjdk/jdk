@@ -23,8 +23,10 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/classPrinter.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
+#include "interpreter/bytecodeStream.hpp"
 #include "interpreter/bytecodeTracer.hpp"
 #include "interpreter/bytecodes.hpp"
 #include "interpreter/interpreter.hpp"
@@ -38,11 +40,9 @@
 #include "runtime/timer.hpp"
 #include "utilities/align.hpp"
 
+// Prints the current bytecode and its attributes using bytecode-specific information.
 
-// Standard closure for BytecodeTracer: prints the current bytecode
-// and its attributes using bytecode-specific information.
-
-class BytecodePrinter: public BytecodeClosure {
+class BytecodePrinter {
  private:
   // %%% This field is not GC-ed, and so can contain garbage
   // between critical sections.  Use only pointer-comparison
@@ -52,6 +52,7 @@ class BytecodePrinter: public BytecodeClosure {
   bool      _is_wide;
   Bytecodes::Code _code;
   address   _next_pc;                // current decoding position
+  int       _flags;
 
   void      align()                  { _next_pc = align_up(_next_pc, sizeof(jint)); }
   int       get_byte()               { return *(jbyte*) _next_pc++; }  // signed
@@ -80,9 +81,10 @@ class BytecodePrinter: public BytecodeClosure {
   void      bytecode_epilog(int bci, outputStream* st = tty);
 
  public:
-  BytecodePrinter() {
+  BytecodePrinter(int flags = 0) {
     _is_wide = false;
     _code = Bytecodes::_illegal;
+    _flags = flags;
   }
 
   // This method is called while executing the raw bytecodes, so none of
@@ -141,10 +143,13 @@ class BytecodePrinter: public BytecodeClosure {
     _code = code;
     int bci = bcp - method->code_base();
     // Print bytecode index and name
+    if (ClassPrinter::has_mode(_flags, ClassPrinter::PRINT_BYTECODE_ADDR)) {
+      st->print(INTPTR_FORMAT " ", p2i(bcp));
+    }
     if (is_wide()) {
-      st->print("%d %s_w", bci, Bytecodes::name(code));
+      st->print("%4d %s_w", bci, Bytecodes::name(code));
     } else {
-      st->print("%d %s", bci, Bytecodes::name(code));
+      st->print("%4d %s", bci, Bytecodes::name(code));
     }
     _next_pc = is_wide() ? bcp+2 : bcp+1;
     print_attributes(bci, st);
@@ -152,53 +157,31 @@ class BytecodePrinter: public BytecodeClosure {
   }
 };
 
+// We need a global instance to keep track of the states when the bytecodes
+// are executed. Access by multiple threads are controlled by ttyLocker.
+static BytecodePrinter _interpreter_printer;
 
-// Implementation of BytecodeTracer
-
-// %%% This set_closure thing seems overly general, given that
-// nobody uses it.  Also, if BytecodePrinter weren't hidden
-// then Method* could use instances of it directly and it
-// would be easier to remove races on _current_method and bcp.
-// Since this is not product functionality, we can defer cleanup.
-
-BytecodeClosure* BytecodeTracer::_closure = NULL;
-
-static BytecodePrinter std_closure;
-BytecodeClosure* BytecodeTracer::std_closure() {
-  return &::std_closure;
-}
-
-
-void BytecodeTracer::trace(const methodHandle& method, address bcp, uintptr_t tos, uintptr_t tos2, outputStream* st) {
-  if (_closure == NULL) {
-    return;
-  }
-
+void BytecodeTracer::trace_interpreter(const methodHandle& method, address bcp, uintptr_t tos, uintptr_t tos2, outputStream* st) {
   if (TraceBytecodes && BytecodeCounter::counter_value() >= TraceBytecodesAt) {
     ttyLocker ttyl;  // 5065316: keep the following output coherent
     // The ttyLocker also prevents races between two threads
     // trying to use the single instance of BytecodePrinter.
-    // Using the ttyLocker prevents the system from coming to
-    // a safepoint within this code, which is sensitive to Method*
-    // movement.
     //
     // There used to be a leaf mutex here, but the ttyLocker will
     // work just as well, as long as the printing operations never block.
-    //
-    // We put the locker on the static trace method, not the
-    // virtual one, because the clients of this module go through
-    // the static method.
-    _closure->trace(method, bcp, tos, tos2, st);
+    _interpreter_printer.trace(method, bcp, tos, tos2, st);
   }
 }
 
-void BytecodeTracer::trace(const methodHandle& method, address bcp, outputStream* st) {
-  if (_closure == NULL) {
-    return;
-  }
+void BytecodeTracer::print_method_codes(const methodHandle& method, int from, int to, outputStream* st, int flags) {
+  BytecodePrinter method_printer(flags);
+  BytecodeStream s(method);
+  s.set_interval(from, to);
 
-  ttyLocker ttyl;  // 5065316: keep the following output coherent
-  _closure->trace(method, bcp, st);
+  ttyLocker ttyl;  // keep the following output coherent
+  while (s.next() >= 0) {
+    method_printer.trace(method, s.bcp(), st);
+  }
 }
 
 void print_symbol(Symbol* sym, outputStream* st) {
