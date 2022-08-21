@@ -53,6 +53,7 @@ public:
     PRINT_METHOD_NAME       = 1 << 0,
     PRINT_BYTECODE          = 1 << 1,
     PRINT_BYTECODE_ADDR     = 1 << 2,
+    PRINT_DYNAMIC           = 1 << 3, // extra information for invokedynamic (and dynamic constant ...)
   };
 
   // flags must be OR'ed from ClassPrinter::Mode for the next 3 functions

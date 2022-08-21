@@ -35,6 +35,7 @@
 #include "oops/constantPool.inline.hpp"
 #include "oops/methodData.hpp"
 #include "oops/method.hpp"
+#include "runtime/handles.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/timer.hpp"
@@ -75,6 +76,7 @@ class BytecodePrinter {
   bool      check_obj_index(int i, int& cp_index, outputStream* st = tty);
   bool      check_invokedynamic_index(int i, int& cp_index, outputStream* st = tty);
   void      print_constant(int i, outputStream* st = tty);
+  void      print_constant_nocheck(int i, outputStream* st = tty);
   void      print_field_or_method(int i, outputStream* st = tty);
   void      print_field_or_method(int orig_i, int i, outputStream* st = tty);
   void      print_attributes(int bci, outputStream* st = tty);
@@ -307,6 +309,10 @@ void BytecodePrinter::print_constant(int i, outputStream* st) {
   int orig_i = i;
   if (!check_index(orig_i, i, st))  return;
 
+  print_constant_nocheck(i, st);
+}
+
+void BytecodePrinter::print_constant_nocheck(int i, outputStream* st) {
   ConstantPool* constants = method()->constants();
   constantTag tag = constants->tag_at(i);
 
@@ -379,8 +385,58 @@ void BytecodePrinter::print_field_or_method(int orig_i, int i, outputStream* st)
     }
     st->print_cr(" %d <%s%s%s>", i, name->as_C_string(), sep, signature->as_C_string());
   }
-}
 
+  if (ClassPrinter::has_mode(_flags, ClassPrinter::PRINT_DYNAMIC) &&
+      (tag.is_dynamic_constant() || tag.is_invoke_dynamic())) {
+    int bsm = constants->bootstrap_method_ref_index_at(i);
+    const char* ref_kind = "";
+    switch (constants->method_handle_ref_kind_at(bsm)) {
+    case JVM_REF_getField         : ref_kind = "REF_getField"; break;
+    case JVM_REF_getStatic        : ref_kind = "REF_getStatic"; break;
+    case JVM_REF_putField         : ref_kind = "REF_putField"; break;
+    case JVM_REF_putStatic        : ref_kind = "REF_putStatic"; break;
+    case JVM_REF_invokeVirtual    : ref_kind = "REF_invokeVirtual"; break;
+    case JVM_REF_invokeStatic     : ref_kind = "REF_invokeStatic"; break;
+    case JVM_REF_invokeSpecial    : ref_kind = "REF_invokeSpecial"; break;
+    case JVM_REF_newInvokeSpecial : ref_kind = "REF_newInvokeSpecial"; break;
+    case JVM_REF_invokeInterface  : ref_kind = "REF_invokeInterface"; break;
+    default                       : ShouldNotReachHere();
+    }
+    st->print("  BSM: %s", ref_kind);
+    print_field_or_method(-i, constants->method_handle_index_at(bsm), st);
+    int argc = constants->bootstrap_argument_count_at(i);
+    st->print("  arguments[%d] = {", argc);
+    if (argc > 0) {
+      st->cr();
+      for (int arg_i = 0; arg_i < argc; arg_i++) {
+        int arg = constants->bootstrap_argument_index_at(i, arg_i);
+        st->print("    ");
+        print_constant_nocheck(arg);
+      }
+    }
+    st->print_cr("  }");
+    if (tag.is_invoke_dynamic()) {
+      int indy_index = orig_i;
+      ConstantPoolCacheEntry* cpce = constants->invokedynamic_cp_cache_entry_at(indy_index);
+      int cp_cache_index = constants->invokedynamic_cp_cache_index(indy_index);
+      st->print("  ConstantPoolCacheEntry: ");
+      cpce->print(st, cp_cache_index);
+      constantPoolHandle cph(Thread::current(), constants);
+      Method* m = cpce->method_if_resolved(cph);
+      oop appendix = cpce->appendix_if_resolved(cph);
+      if (m != NULL) {
+        st->print_cr("  Method: %s.%s%s", m->method_holder()->name()->as_C_string(),
+                     m->name()->as_C_string(), m->signature()->as_C_string());
+      }
+      if (appendix != NULL) {
+        st->print("  appendix: ");
+        appendix->print_on(st);
+      }
+    } else {
+      // TODO: print info for tag.is_dynamic_constant()
+    }
+  }
+}
 
 void BytecodePrinter::print_attributes(int bci, outputStream* st) {
   // Show attributes of pre-rewritten codes
