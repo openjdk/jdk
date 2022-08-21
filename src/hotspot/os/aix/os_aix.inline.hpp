@@ -26,10 +26,15 @@
 #ifndef OS_AIX_OS_AIX_INLINE_HPP
 #define OS_AIX_OS_AIX_INLINE_HPP
 
-// os_aix.hpp included by os.hpp
+#include "os_aix.hpp"
 
 #include "runtime/os.hpp"
 #include "os_posix.inline.hpp"
+
+// Information about the protection of the page at address '0' on this os.
+inline bool os::zero_page_read_protected() {
+  return false;
+}
 
 inline bool os::uses_stack_guard_pages() {
   return true;

@@ -211,6 +211,8 @@ public class IRNode {
     public static final String VECTOR_BLEND = START + "VectorBlend" + MID + END;
     public static final String REVERSE_BYTES_V = START + "ReverseBytesV" + MID + END;
 
+    public static final String Min_I = START + "MinI" + MID + END;
+    public static final String Max_I = START + "MaxI" + MID + END;
     public static final String Min_V = START + "MinV" + MID + END;
     public static final String Max_V = START + "MaxV" + MID + END;
 

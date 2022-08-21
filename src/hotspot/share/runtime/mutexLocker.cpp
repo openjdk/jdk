@@ -42,6 +42,7 @@
 Mutex*   Patching_lock                = NULL;
 Mutex*   CompiledMethod_lock          = NULL;
 Monitor* SystemDictionary_lock        = NULL;
+Mutex*   InvokeMethodTable_lock       = NULL;
 Mutex*   SharedDictionary_lock        = NULL;
 Monitor* ClassInitError_lock          = NULL;
 Mutex*   Module_lock                  = NULL;
@@ -261,7 +262,7 @@ void mutex_init() {
   }
 
   def(JmethodIdCreation_lock       , PaddedMutex  , nosafepoint-2); // used for creating jmethodIDs.
-
+  def(InvokeMethodTable_lock       , PaddedMutex  , safepoint);
   def(SharedDictionary_lock        , PaddedMutex  , safepoint);
   def(VMStatistic_lock             , PaddedMutex  , safepoint);
   def(SignatureHandlerLibrary_lock , PaddedMutex  , safepoint);
@@ -279,7 +280,6 @@ void mutex_init() {
   def(Terminator_lock              , PaddedMonitor, safepoint, true);
   def(InitCompleted_lock           , PaddedMonitor, nosafepoint);
   def(Notify_lock                  , PaddedMonitor, safepoint, true);
-  def(AdapterHandlerLibrary_lock   , PaddedMutex  , safepoint);
 
   def(Heap_lock                    , PaddedMonitor, safepoint); // Doesn't safepoint check during termination.
   def(JfieldIdCreation_lock        , PaddedMutex  , safepoint);
@@ -320,7 +320,6 @@ void mutex_init() {
 #endif
 
   def(ContinuationRelativize_lock  , PaddedMonitor, nosafepoint-3);
-
   def(CodeHeapStateAnalytics_lock  , PaddedMutex  , safepoint);
   def(NMethodSweeperStats_lock     , PaddedMutex  , nosafepoint);
   def(ThreadsSMRDelete_lock        , PaddedMonitor, nosafepoint-3); // Holds ConcurrentHashTableResize_lock
@@ -355,7 +354,8 @@ void mutex_init() {
 
   defl(Threads_lock                , PaddedMonitor, CompileThread_lock, true);
   defl(Heap_lock                   , PaddedMonitor, MultiArray_lock);
-  defl(Compile_lock                , PaddedMutex ,  MethodCompileQueue_lock);
+  defl(Compile_lock                , PaddedMutex  , MethodCompileQueue_lock);
+  defl(AdapterHandlerLibrary_lock  , PaddedMutex  , InvokeMethodTable_lock);
 
   defl(PerfDataMemAlloc_lock       , PaddedMutex  , Heap_lock);
   defl(PerfDataManager_lock        , PaddedMutex  , Heap_lock);

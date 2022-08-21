@@ -36,6 +36,8 @@
 #include "interpreter/interpreter.hpp"
 #include "memory/allocation.inline.hpp"
 #include "nativeInst_s390.hpp"
+#include "os_linux.hpp"
+#include "os_posix.hpp"
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm_misc.hpp"
 #include "runtime/arguments.hpp"
@@ -477,3 +479,5 @@ int os::extra_bang_size_in_bytes() {
   // z/Architecture does not require the additional stack bang.
   return 0;
 }
+
+void os::setup_fpu() {}
