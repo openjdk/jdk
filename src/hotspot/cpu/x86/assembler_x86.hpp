@@ -949,10 +949,6 @@ private:
 
   void pop(Register dst);
 
-  // These are dummies to prevent surprise implicit conversions to Register
-  void push(void* v);
-  void pop(void* v);
-
   // These do register sized moves/scans
   void rep_mov();
   void rep_stos();
@@ -1107,10 +1103,6 @@ private:
   void cmpq(Register dst, int32_t imm32);
   void cmpq(Register dst, Register src);
   void cmpq(Register dst, Address src);
-
-  // these are dummies used to catch attempting to convert NULL to Register
-  void cmpl(Register dst, void* junk); // dummy
-  void cmpq(Register dst, void* junk); // dummy
 
   void cmpw(Address dst, int imm16);
 
@@ -1613,24 +1605,12 @@ private:
   void movl(Register dst, Address src);
   void movl(Address dst, Register src);
 
-  // These dummies prevent using movl from converting a zero (like NULL) into Register
-  // by giving the compiler two choices it can't resolve
-
-  void movl(Address  dst, void* junk);
-  void movl(Register dst, void* junk);
-
 #ifdef _LP64
   void movq(Register dst, Register src);
   void movq(Register dst, Address src);
   void movq(Address  dst, Register src);
   void movq(Address  dst, int32_t imm32);
   void movq(Register  dst, int32_t imm32);
-
-  // These dummies prevent using movq from converting a zero (like NULL) into Register
-  // by giving the compiler two choices it can't resolve
-
-  void movq(Address  dst, void* dummy);
-  void movq(Register dst, void* dummy);
 #endif
 
   // Move Quadword
@@ -1653,7 +1633,6 @@ private:
 
   void movslq(Register dst, Address src);
   void movslq(Register dst, Register src);
-  void movslq(Register dst, void* src); // Dummy declaration to cause NULL to be ambiguous
 #endif
 
   void movswl(Register dst, Address src);
