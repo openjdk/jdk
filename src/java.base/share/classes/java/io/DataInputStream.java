@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,8 +57,8 @@ public class DataInputStream extends FilterInputStream implements DataInput {
     /**
      * working arrays initialized on demand by readUTF
      */
-    private byte bytearr[] = new byte[80];
-    private char chararr[] = new char[80];
+    private byte[] bytearr = new byte[80];
+    private char[] chararr = new char[80];
 
     /**
      * Reads some number of bytes from the contained input stream and
@@ -197,6 +197,7 @@ public class DataInputStream extends FilterInputStream implements DataInput {
     public final void readFully(byte[] b, int off, int len) throws IOException {
         Objects.checkFromIndexSize(off, len, b.length);
         int n = 0;
+        InputStream in = this.in;
         while (n < len) {
             int count = in.read(b, off + n, len - n);
             if (count < 0)
@@ -223,6 +224,7 @@ public class DataInputStream extends FilterInputStream implements DataInput {
         int total = 0;
         int cur = 0;
 
+        InputStream in = this.in;
         while ((total<n) && ((cur = (int) in.skip(n-total)) > 0)) {
             total += cur;
         }
@@ -315,6 +317,7 @@ public class DataInputStream extends FilterInputStream implements DataInput {
      * @see        java.io.FilterInputStream#in
      */
     public final short readShort() throws IOException {
+        InputStream in = this.in;
         int ch1 = in.read();
         int ch2 = in.read();
         if ((ch1 | ch2) < 0)
@@ -340,6 +343,7 @@ public class DataInputStream extends FilterInputStream implements DataInput {
      * @see        java.io.FilterInputStream#in
      */
     public final int readUnsignedShort() throws IOException {
+        InputStream in = this.in;
         int ch1 = in.read();
         int ch2 = in.read();
         if ((ch1 | ch2) < 0)
@@ -365,6 +369,7 @@ public class DataInputStream extends FilterInputStream implements DataInput {
      * @see        java.io.FilterInputStream#in
      */
     public final char readChar() throws IOException {
+        InputStream in = this.in;
         int ch1 = in.read();
         int ch2 = in.read();
         if ((ch1 | ch2) < 0)
@@ -390,6 +395,7 @@ public class DataInputStream extends FilterInputStream implements DataInput {
      * @see        java.io.FilterInputStream#in
      */
     public final int readInt() throws IOException {
+        InputStream in = this.in;
         int ch1 = in.read();
         int ch2 = in.read();
         int ch3 = in.read();
@@ -399,7 +405,7 @@ public class DataInputStream extends FilterInputStream implements DataInput {
         return ((ch1 << 24) + (ch2 << 16) + (ch3 << 8) + (ch4 << 0));
     }
 
-    private byte readBuffer[] = new byte[8];
+    private final byte[] readBuffer = new byte[8];
 
     /**
      * See the general contract of the {@code readLong}
@@ -474,7 +480,7 @@ public class DataInputStream extends FilterInputStream implements DataInput {
         return Double.longBitsToDouble(readLong());
     }
 
-    private char lineBuffer[];
+    private char[] lineBuffer;
 
     /**
      * See the general contract of the {@code readLine}
@@ -505,7 +511,7 @@ public class DataInputStream extends FilterInputStream implements DataInput {
      */
     @Deprecated
     public final String readLine() throws IOException {
-        char buf[] = lineBuffer;
+        char[] buf = lineBuffer;
 
         if (buf == null) {
             buf = lineBuffer = new char[128];
@@ -514,6 +520,7 @@ public class DataInputStream extends FilterInputStream implements DataInput {
         int room = buf.length;
         int offset = 0;
         int c;
+        InputStream in = this.in;
 
 loop:   while (true) {
             switch (c = in.read()) {
@@ -634,7 +641,7 @@ loop:   while (true) {
                     if (count > utflen)
                         throw new UTFDataFormatException(
                             "malformed input: partial character at end");
-                    char2 = (int) bytearr[count-1];
+                    char2 = bytearr[count-1];
                     if ((char2 & 0xC0) != 0x80)
                         throw new UTFDataFormatException(
                             "malformed input around byte " + count);
@@ -647,8 +654,8 @@ loop:   while (true) {
                     if (count > utflen)
                         throw new UTFDataFormatException(
                             "malformed input: partial character at end");
-                    char2 = (int) bytearr[count-2];
-                    char3 = (int) bytearr[count-1];
+                    char2 = bytearr[count-2];
+                    char3 = bytearr[count-1];
                     if (((char2 & 0xC0) != 0x80) || ((char3 & 0xC0) != 0x80))
                         throw new UTFDataFormatException(
                             "malformed input around byte " + (count-1));
