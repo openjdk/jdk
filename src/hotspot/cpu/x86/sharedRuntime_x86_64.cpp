@@ -559,7 +559,7 @@ int SharedRuntime::java_calling_convention(const BasicType *sig_bt,
 // Patch the callers callsite with entry to compiled code if it exists.
 static void patch_callers_callsite(MacroAssembler *masm) {
   Label L;
-  __ cmpptr(Address(rbx, in_bytes(Method::code_offset())), (int32_t)NULL_WORD);
+  __ cmpptr(Address(rbx, in_bytes(Method::code_offset())), NULL_WORD);
   __ jcc(Assembler::equal, L);
 
   // Save the current stack pointer
@@ -997,7 +997,7 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
     // Method might have been compiled since the call site was patched to
     // interpreted if that is the case treat it as a miss so we can get
     // the call site corrected.
-    __ cmpptr(Address(rbx, in_bytes(Method::code_offset())), (int32_t)NULL_WORD);
+    __ cmpptr(Address(rbx, in_bytes(Method::code_offset())), NULL_WORD);
     __ jcc(Assembler::equal, skip_fixup);
     __ jump(RuntimeAddress(SharedRuntime::get_ic_miss_stub()));
   }
@@ -2113,7 +2113,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     if (!UseHeavyMonitors) {
       Label not_recur;
       // Simple recursive lock?
-      __ cmpptr(Address(rsp, lock_slot_offset * VMRegImpl::stack_slot_size), (int32_t)NULL_WORD);
+      __ cmpptr(Address(rsp, lock_slot_offset * VMRegImpl::stack_slot_size), NULL_WORD);
       __ jcc(Assembler::notEqual, not_recur);
       __ dec_held_monitor_count();
       __ jmpb(fast_done);
@@ -2174,14 +2174,14 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   // reset handle block
   __ movptr(rcx, Address(r15_thread, JavaThread::active_handles_offset()));
-  __ movl(Address(rcx, JNIHandleBlock::top_offset_in_bytes()), (int32_t)NULL_WORD);
+  __ movl(Address(rcx, JNIHandleBlock::top_offset_in_bytes()), NULL_WORD);
 
   // pop our frame
 
   __ leave();
 
   // Any exception pending?
-  __ cmpptr(Address(r15_thread, in_bytes(Thread::pending_exception_offset())), (int32_t)NULL_WORD);
+  __ cmpptr(Address(r15_thread, in_bytes(Thread::pending_exception_offset())), NULL_WORD);
   __ jcc(Assembler::notEqual, exception_pending);
 
   // Return
@@ -2218,7 +2218,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
 #ifdef ASSERT
     { Label L;
-    __ cmpptr(Address(r15_thread, in_bytes(Thread::pending_exception_offset())), (int32_t)NULL_WORD);
+    __ cmpptr(Address(r15_thread, in_bytes(Thread::pending_exception_offset())), NULL_WORD);
     __ jcc(Assembler::equal, L);
     __ stop("no pending exception allowed on exit from monitorenter");
     __ bind(L);
@@ -2249,7 +2249,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     // Save pending exception around call to VM (which contains an EXCEPTION_MARK)
     // NOTE that obj_reg == rbx currently
     __ movptr(rbx, Address(r15_thread, in_bytes(Thread::pending_exception_offset())));
-    __ movptr(Address(r15_thread, in_bytes(Thread::pending_exception_offset())), (int32_t)NULL_WORD);
+    __ movptr(Address(r15_thread, in_bytes(Thread::pending_exception_offset())), NULL_WORD);
 
     // args are (oop obj, BasicLock* lock, JavaThread* thread)
     __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, SharedRuntime::complete_monitor_unlocking_C)));
@@ -2258,7 +2258,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 #ifdef ASSERT
     {
       Label L;
-      __ cmpptr(Address(r15_thread, in_bytes(Thread::pending_exception_offset())), (int)NULL_WORD);
+      __ cmpptr(Address(r15_thread, in_bytes(Thread::pending_exception_offset())), NULL_WORD);
       __ jcc(Assembler::equal, L);
       __ stop("no pending exception allowed on exit complete_monitor_unlocking_C");
       __ bind(L);
@@ -2416,7 +2416,7 @@ void SharedRuntime::generate_deopt_blob() {
     implicit_exception_uncommon_trap_offset = __ pc() - start;
 
     __ pushptr(Address(r15_thread, in_bytes(JavaThread::jvmci_implicit_exception_pc_offset())));
-    __ movptr(Address(r15_thread, in_bytes(JavaThread::jvmci_implicit_exception_pc_offset())), (int32_t)NULL_WORD);
+    __ movptr(Address(r15_thread, in_bytes(JavaThread::jvmci_implicit_exception_pc_offset())), NULL_WORD);
 
     uncommon_trap_offset = __ pc() - start;
 
@@ -2428,7 +2428,7 @@ void SharedRuntime::generate_deopt_blob() {
     __ movl(c_rarg1, Address(r15_thread, in_bytes(JavaThread::pending_deoptimization_offset())));
     __ movl(Address(r15_thread, in_bytes(JavaThread::pending_deoptimization_offset())), -1);
 
-    __ movl(r14, (int32_t)Deoptimization::Unpack_reexecute);
+    __ movl(r14, Deoptimization::Unpack_reexecute);
     __ mov(c_rarg0, r15_thread);
     __ movl(c_rarg2, r14); // exec mode
     __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, Deoptimization::uncommon_trap)));
@@ -2480,7 +2480,7 @@ void SharedRuntime::generate_deopt_blob() {
 
   __ movptr(rdx, Address(r15_thread, JavaThread::exception_pc_offset()));
   __ movptr(Address(rbp, wordSize), rdx);
-  __ movptr(Address(r15_thread, JavaThread::exception_pc_offset()), (int32_t)NULL_WORD);
+  __ movptr(Address(r15_thread, JavaThread::exception_pc_offset()), NULL_WORD);
 
 #ifdef ASSERT
   // verify that there is really an exception oop in JavaThread
@@ -2508,9 +2508,7 @@ void SharedRuntime::generate_deopt_blob() {
   __ set_last_Java_frame(noreg, noreg, NULL);
 #ifdef ASSERT
   { Label L;
-    __ cmpptr(Address(r15_thread,
-                    JavaThread::last_Java_fp_offset()),
-            (int32_t)0);
+    __ cmpptr(Address(r15_thread, JavaThread::last_Java_fp_offset()), NULL_WORD);
     __ jcc(Assembler::equal, L);
     __ stop("SharedRuntime::generate_deopt_blob: last_Java_fp not cleared");
     __ bind(L);
@@ -2542,8 +2540,8 @@ void SharedRuntime::generate_deopt_blob() {
   __ movptr(rax, Address(r15_thread, JavaThread::exception_oop_offset()));
   // QQQ this is useless it was NULL above
   __ movptr(rdx, Address(r15_thread, JavaThread::exception_pc_offset()));
-  __ movptr(Address(r15_thread, JavaThread::exception_oop_offset()), (int32_t)NULL_WORD);
-  __ movptr(Address(r15_thread, JavaThread::exception_pc_offset()), (int32_t)NULL_WORD);
+  __ movptr(Address(r15_thread, JavaThread::exception_oop_offset()), NULL_WORD);
+  __ movptr(Address(r15_thread, JavaThread::exception_pc_offset()), NULL_WORD);
 
   __ verify_oop(rax);
 
@@ -2625,7 +2623,7 @@ void SharedRuntime::generate_deopt_blob() {
   __ enter();                           // Save old & set new ebp
   __ subptr(rsp, rbx);                  // Prolog
   // This value is corrected by layout_activation_impl
-  __ movptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), (int32_t)NULL_WORD );
+  __ movptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), NULL_WORD);
   __ movptr(Address(rbp, frame::interpreter_frame_sender_sp_offset * wordSize), sender_sp); // Make it walkable
   __ mov(sender_sp, rsp);               // Pass sender_sp to next frame
   __ addptr(rsi, wordSize);             // Bump array pointer (sizes)
@@ -2755,7 +2753,7 @@ void SharedRuntime::generate_uncommon_trap_blob() {
 #ifdef ASSERT
   { Label L;
     __ cmpptr(Address(rdi, Deoptimization::UnrollBlock::unpack_kind_offset_in_bytes()),
-            (int32_t)Deoptimization::Unpack_uncommon_trap);
+              Deoptimization::Unpack_uncommon_trap);
     __ jcc(Assembler::equal, L);
     __ stop("SharedRuntime::generate_deopt_blob: expected Unpack_uncommon_trap");
     __ bind(L);
@@ -2826,7 +2824,7 @@ void SharedRuntime::generate_uncommon_trap_blob() {
   __ movptr(Address(rbp, frame::interpreter_frame_sender_sp_offset * wordSize),
             sender_sp);            // Make it walkable
   // This value is corrected by layout_activation_impl
-  __ movptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), (int32_t)NULL_WORD );
+  __ movptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), NULL_WORD);
   __ mov(sender_sp, rsp);          // Pass sender_sp to next frame
   __ addptr(rsi, wordSize);        // Bump array pointer (sizes)
   __ addptr(rcx, wordSize);        // Bump array pointer (pcs)
@@ -2948,7 +2946,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
 
   __ reset_last_Java_frame(false);
 
-  __ cmpptr(Address(r15_thread, Thread::pending_exception_offset()), (int32_t)NULL_WORD);
+  __ cmpptr(Address(r15_thread, Thread::pending_exception_offset()), NULL_WORD);
   __ jcc(Assembler::equal, noException);
 
   // Exception pending
@@ -3089,7 +3087,7 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(address destination, const cha
   __ reset_last_Java_frame(false);
   // check for pending exceptions
   Label pending;
-  __ cmpptr(Address(r15_thread, Thread::pending_exception_offset()), (int32_t)NULL_WORD);
+  __ cmpptr(Address(r15_thread, Thread::pending_exception_offset()), NULL_WORD);
   __ jcc(Assembler::notEqual, pending);
 
   // get the returned Method*
@@ -3112,7 +3110,7 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(address destination, const cha
 
   // exception pending => remove activation and forward to exception handler
 
-  __ movptr(Address(r15_thread, JavaThread::vm_result_offset()), (int)NULL_WORD);
+  __ movptr(Address(r15_thread, JavaThread::vm_result_offset()), NULL_WORD);
 
   __ movptr(rax, Address(r15_thread, Thread::pending_exception_offset()));
   __ jump(RuntimeAddress(StubRoutines::forward_exception_entry()));
@@ -3504,11 +3502,11 @@ void OptoRuntime::generate_exception_blob() {
   // Get the exception pc in case we are deoptimized
   __ movptr(rdx, Address(r15_thread, JavaThread::exception_pc_offset()));
 #ifdef ASSERT
-  __ movptr(Address(r15_thread, JavaThread::exception_handler_pc_offset()), (int)NULL_WORD);
-  __ movptr(Address(r15_thread, JavaThread::exception_pc_offset()), (int)NULL_WORD);
+  __ movptr(Address(r15_thread, JavaThread::exception_handler_pc_offset()), NULL_WORD);
+  __ movptr(Address(r15_thread, JavaThread::exception_pc_offset()), NULL_WORD);
 #endif
   // Clear the exception oop so GC no longer processes it as a root.
-  __ movptr(Address(r15_thread, JavaThread::exception_oop_offset()), (int)NULL_WORD);
+  __ movptr(Address(r15_thread, JavaThread::exception_oop_offset()), NULL_WORD);
 
   // rax: exception oop
   // r8:  exception handler

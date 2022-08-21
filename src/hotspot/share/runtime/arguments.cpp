@@ -53,6 +53,7 @@
 #include "runtime/os.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/safepointMechanism.hpp"
+#include "runtime/synchronizer.hpp"
 #include "runtime/vm_version.hpp"
 #include "services/management.hpp"
 #include "services/nmtCommon.hpp"
@@ -3871,9 +3872,12 @@ bool Arguments::handle_deprecated_print_gc_flags() {
 }
 
 static void apply_debugger_ergo() {
+#ifndef PRODUCT
+  // UseDebuggerErgo is notproduct
   if (ReplayCompiles) {
     FLAG_SET_ERGO_IF_DEFAULT(UseDebuggerErgo, true);
   }
+#endif
 
   if (UseDebuggerErgo) {
     // Turn on sub-flags
