@@ -197,7 +197,6 @@ public class DataInputStream extends FilterInputStream implements DataInput {
     public final void readFully(byte[] b, int off, int len) throws IOException {
         Objects.checkFromIndexSize(off, len, b.length);
         int n = 0;
-        InputStream in = this.in;
         while (n < len) {
             int count = in.read(b, off + n, len - n);
             if (count < 0)
@@ -224,7 +223,6 @@ public class DataInputStream extends FilterInputStream implements DataInput {
         int total = 0;
         int cur = 0;
 
-        InputStream in = this.in;
         while ((total<n) && ((cur = (int) in.skip(n-total)) > 0)) {
             total += cur;
         }
@@ -520,7 +518,6 @@ public class DataInputStream extends FilterInputStream implements DataInput {
         int room = buf.length;
         int offset = 0;
         int c;
-        InputStream in = this.in;
 
 loop:   while (true) {
             switch (c = in.read()) {
