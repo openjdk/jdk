@@ -261,11 +261,11 @@ public class PassFailJFrame {
     }
 
     /**
-     * Positions the instruction frame relative to the test window as
-     * specified by the {@code position} parameter. If testWindow is null,
-     * only the instruction frame is positioned according {@code position}
-     * parameter. This method should be called before making the test
-     * window visible.
+     * Approximately positions the instruction frame relative to the test
+     * window as specified by the {@code position} parameter. If testWindow
+     * is null, only the instruction frame is positioned according to
+     * {@code position} parameter. This method should be called before making
+     * the test window visible.
      *
      * @param testWindow test window that the test is created.
      *                   May be {@code null}.
