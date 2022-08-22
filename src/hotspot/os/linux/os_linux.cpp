@@ -155,6 +155,7 @@ enum CoredumpFilterBit {
 ////////////////////////////////////////////////////////////////////////////////
 // global variables
 julong os::Linux::_physical_memory = 0;
+julong os::Linux::_host_swap = 0;
 
 address   os::Linux::_initial_thread_stack_bottom = NULL;
 uintptr_t os::Linux::_initial_thread_stack_size   = 0;
@@ -355,6 +356,7 @@ static const char *unstable_chroot_error = "/proc file system not found.\n"
                      "environment on Linux when /proc filesystem is not mounted.";
 
 void os::Linux::initialize_system_info() {
+  struct sysinfo si;
   set_processor_count(sysconf(_SC_NPROCESSORS_CONF));
   if (processor_count() == 1) {
     pid_t pid = os::Linux::gettid();
@@ -368,6 +370,9 @@ void os::Linux::initialize_system_info() {
     }
   }
   _physical_memory = (julong)sysconf(_SC_PHYS_PAGES) * (julong)sysconf(_SC_PAGESIZE);
+  sysinfo(&si);
+  _host_swap= (julong)si.totalswap;
+
   assert(processor_count() > 0, "linux error");
 }
 
