@@ -1773,6 +1773,7 @@ void PhaseCCP::analyze() {
   while (worklist.size() != 0) {
     Node* n = fetch_next_node(worklist);
     if (n->is_SafePoint()) {
+      // Keep track of SafePoint nodes for PhaseCCP::transform()
       _safepoints.push(n);
     }
     const Type* new_type = n->Value(this);
@@ -1959,6 +1960,11 @@ Node *PhaseCCP::transform( Node *n ) {
 
   trstack.push(new_node);           // Process children of cloned node
 
+  // This CCP pass may prove that no exit test for a loop ever succeeds (i.e. the loop is infinite). In that case,
+  // the logic below doesn't follow any path from Root to the loop body (they are proven never taken). If CCP only works
+  // through the graph from Root, this causes the loop body to never be processed here even when it's not dead (that
+  // it's reachable from Root following its uses). To prevent that issue, transform() starts walking the graph from Root
+  // and all safepoints.
   for (uint i = 0; i < _safepoints.size(); ++i) {
     Node *nn = _safepoints.at(i);
     Node *new_node = _nodes[nn->_idx];
