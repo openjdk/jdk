@@ -2424,7 +2424,7 @@ class FusedPatternMatcher {
 static bool check_all_uses(Node* n, bool (*predicate)(Node*)) {
   for (DUIterator i = n->outs(); n->has_out(i); i++) {
     Node* use = n->out(i);
-    if (!predicate(n)) {
+    if (!predicate(use)) {
       return false;
     }
   }
@@ -2442,7 +2442,9 @@ static bool is_base_pattern(Node* n, Node* m) {
       return true;
     }
     if (VM_Version::supports_fast_3op_lea() && m->Opcode() == Op_AddI &&
-        check_all_uses(m, [](Node* n){ return n->in(2)->Opcode() == Op_ConI; })) {
+        check_all_uses(m, [](Node* n){
+          return n->Opcode() == Op_AddI && n->in(2)->Opcode() == Op_ConI;
+        })) {
       return true;
     }
   }
@@ -2454,7 +2456,7 @@ static bool is_base_pattern(Node* n, Node* m) {
     }
     if (VM_Version::supports_fast_3op_lea() && m->Opcode() == Op_AddL &&
         check_all_uses(m, [](Node* n){
-          return n->in(2)->Opcode() == Op_ConL &&
+          return n->Opcode() == Op_AddL && n->in(2)->Opcode() == Op_ConL &&
                  AbstractAssembler::is_simm32(n->in(2)->get_long());
         })) {
       return true;
