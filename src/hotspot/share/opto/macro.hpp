@@ -58,7 +58,6 @@ public:
     _igvn.register_new_node_with_optimizer(n);
     return n;
   }
-  void set_eden_pointers(Node* &eden_top_adr, Node* &eden_end_adr);
   Node* make_load( Node* ctl, Node* mem, Node* base, int offset,
                    const Type* value_type, BasicType bt);
   Node* make_store(Node* ctl, Node* mem, Node* base, int offset,
@@ -92,8 +91,8 @@ private:
   void expand_allocate_common(AllocateNode* alloc,
                               Node* length,
                               const TypeFunc* slow_call_type,
-                              address slow_call_address,
-                              Node* valid_length_test);
+                              address slow_call_address);
+  void yank_initalize_node(InitializeNode* node);
   void yank_alloc_node(AllocateNode* alloc);
   Node *value_from_mem(Node *mem, Node *ctl, BasicType ft, const Type *ftype, const TypeOopPtr *adr_t, AllocateNode *alloc);
   Node *value_from_mem_phi(Node *mem, BasicType ft, const Type *ftype, const TypeOopPtr *adr_t, AllocateNode *alloc, Node_Stack *value_phis, int level);
@@ -207,6 +206,15 @@ public:
   bool expand_macro_nodes();
 
   PhaseIterGVN &igvn() const { return _igvn; }
+
+#ifndef PRODUCT
+    static int _objs_scalar_replaced_counter;
+    static int _monitor_objects_removed_counter;
+    static int _GC_barriers_removed_counter;
+    static int _memory_barriers_removed_counter;
+    static void print_statistics();
+    static int count_MemBar(Compile *C);
+#endif
 
   // Members accessed from BarrierSetC2
   void replace_node(Node* source, Node* target) { _igvn.replace_node(source, target); }

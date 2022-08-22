@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "classfile/javaClasses.inline.hpp"
+#include "code/codeCache.hpp"
 #include "code/vmreg.hpp"
 #include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"

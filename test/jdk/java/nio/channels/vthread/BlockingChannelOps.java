@@ -22,12 +22,28 @@
  */
 
 /**
- * @test
+ * @test id=default
+ * @bug 8284161
  * @summary Basic tests of virtual threads doing blocking I/O with NIO channels
+ * @enablePreview
  * @library /test/lib
- * @compile --enable-preview -source ${jdk.version} BlockingChannelOps.java
- * @run testng/othervm/timeout=300 --enable-preview BlockingChannelOps
- * @run testng/othervm/timeout=300 --enable-preview -Djdk.useDirectRegister BlockingChannelOps
+ * @run testng/othervm/timeout=300 BlockingChannelOps
+ */
+
+/**
+ * @test id=indirect-register
+ * @summary Basic tests of virtual threads doing blocking I/O with NIO channels
+ * @enablePreview
+ * @library /test/lib
+ * @run testng/othervm/timeout=300 -Djdk.useDirectRegister BlockingChannelOps
+ */
+
+/**
+ * @test id=no-vmcontinuations
+ * @requires vm.continuations
+ * @enablePreview
+ * @library /test/lib
+ * @run testng/othervm/timeout=300 -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations BlockingChannelOps
  */
 
 import java.io.Closeable;

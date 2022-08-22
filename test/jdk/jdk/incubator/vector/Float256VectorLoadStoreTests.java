@@ -31,6 +31,9 @@
 
 // -- This file was mechanically generated: Do not edit! -- //
 
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.MemorySession;
+import java.lang.foreign.ValueLayout;
 import jdk.incubator.vector.FloatVector;
 import jdk.incubator.vector.VectorMask;
 import jdk.incubator.vector.VectorSpecies;
@@ -40,10 +43,7 @@ import org.testng.Assert;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
-import java.nio.ByteBuffer;
-import java.nio.FloatBuffer;
 import java.nio.ByteOrder;
-import java.nio.ReadOnlyBufferException;
 import java.util.List;
 import java.util.function.*;
 
@@ -53,6 +53,8 @@ public class Float256VectorLoadStoreTests extends AbstractVectorLoadStoreTest {
                 FloatVector.SPECIES_256;
 
     static final int INVOC_COUNT = Integer.getInteger("jdk.incubator.vector.test.loop-iterations", 100);
+
+    static final ValueLayout.OfFloat ELEMENT_LAYOUT = ValueLayout.JAVA_FLOAT.withBitAlignment(8);
 
 
     static final int BUFFER_REPS = Integer.getInteger("jdk.incubator.vector.test.buffer-vectors", 25000 / 256);
@@ -65,17 +67,6 @@ public class Float256VectorLoadStoreTests extends AbstractVectorLoadStoreTest {
             }
         } catch (AssertionError e) {
             Assert.assertEquals(r[i], mask[i % SPECIES.length()] ? a[i] : (float) 0, "at index #" + i);
-        }
-    }
-
-    static void assertArraysEquals(byte[] r, byte[] a, boolean[] mask) {
-        int i = 0;
-        try {
-            for (; i < a.length; i++) {
-                Assert.assertEquals(r[i], mask[(i*8/SPECIES.elementSize()) % SPECIES.length()] ? a[i] : (byte) 0);
-            }
-        } catch (AssertionError e) {
-            Assert.assertEquals(r[i], mask[(i*8/SPECIES.elementSize()) % SPECIES.length()] ? a[i] : (byte) 0, "at index #" + i);
         }
     }
 
@@ -118,7 +109,7 @@ public class Float256VectorLoadStoreTests extends AbstractVectorLoadStoreTest {
             })
     );
 
-    // Relative to byte[] array.length or ByteBuffer.limit()
+    // Relative to byte[] array.length or MemorySegment.byteSize()
     static final List<IntFunction<Integer>> BYTE_INDEX_GENERATORS = List.of(
             withToString("-1", (int l) -> {
                 return -1;
@@ -189,9 +180,9 @@ public class Float256VectorLoadStoreTests extends AbstractVectorLoadStoreTest {
     }
 
     @DataProvider
-    public Object[][] floatByteBufferProvider() {
+    public Object[][] floatMemorySegmentProvider() {
         return FLOAT_GENERATORS.stream().
-                flatMap(fa -> BYTE_BUFFER_GENERATORS.stream().
+                flatMap(fa -> MEMORY_SEGMENT_GENERATORS.stream().
                         flatMap(fb -> BYTE_ORDER_VALUES.stream().map(bo -> {
                             return new Object[]{fa, fb, bo};
                         }))).
@@ -199,32 +190,13 @@ public class Float256VectorLoadStoreTests extends AbstractVectorLoadStoreTest {
     }
 
     @DataProvider
-    public Object[][] floatByteBufferMaskProvider() {
+    public Object[][] floatMemorySegmentMaskProvider() {
         return BOOLEAN_MASK_GENERATORS.stream().
                 flatMap(fm -> FLOAT_GENERATORS.stream().
-                        flatMap(fa -> BYTE_BUFFER_GENERATORS.stream().
+                        flatMap(fa -> MEMORY_SEGMENT_GENERATORS.stream().
                                 flatMap(fb -> BYTE_ORDER_VALUES.stream().map(bo -> {
                             return new Object[]{fa, fb, fm, bo};
                         })))).
-                toArray(Object[][]::new);
-    }
-
-    @DataProvider
-    public Object[][] floatByteArrayProvider() {
-        return FLOAT_GENERATORS.stream().
-                flatMap(fa -> BYTE_ORDER_VALUES.stream().map(bo -> {
-                    return new Object[]{fa, bo};
-                })).
-                toArray(Object[][]::new);
-    }
-
-    @DataProvider
-    public Object[][] floatByteArrayMaskProvider() {
-        return BOOLEAN_MASK_GENERATORS.stream().
-                flatMap(fm -> FLOAT_GENERATORS.stream().
-                    flatMap(fa -> BYTE_ORDER_VALUES.stream().map(bo -> {
-                        return new Object[]{fa, fm, bo};
-                    }))).
                 toArray(Object[][]::new);
     }
 
@@ -247,28 +219,16 @@ public class Float256VectorLoadStoreTests extends AbstractVectorLoadStoreTest {
                 toArray(Object[][]::new);
     }
 
-    static ByteBuffer toBuffer(float[] a, IntFunction<ByteBuffer> fb) {
-        ByteBuffer bb = fb.apply(a.length * SPECIES.elementSize() / 8);
-        for (float v : a) {
-            bb.putFloat(v);
+    static MemorySegment toSegment(float[] a, IntFunction<MemorySegment> fb) {
+        MemorySegment ms = fb.apply(a.length * SPECIES.elementSize() / 8);
+        for (int i = 0; i < a.length; i++) {
+            ms.set(ELEMENT_LAYOUT, i * SPECIES.elementSize() / 8 , a[i]);
         }
-        return bb.clear();
+        return ms;
     }
 
-    static float[] bufferToArray(ByteBuffer bb) {
-        FloatBuffer db = bb.asFloatBuffer();
-        float[] d = new float[db.capacity()];
-        db.get(0, d);
-        return d;
-    }
-
-    static byte[] toByteArray(float[] a, IntFunction<byte[]> fb, ByteOrder bo) {
-        byte[] b = fb.apply(a.length * SPECIES.elementSize() / 8);
-        FloatBuffer bb = ByteBuffer.wrap(b, 0, b.length).order(bo).asFloatBuffer();
-        for (float v : a) {
-            bb.put(v);
-        }
-        return b;
+    static float[] segmentToArray(MemorySegment ms) {
+        return ms.toArray(ELEMENT_LAYOUT);
     }
 
 
@@ -308,45 +268,24 @@ public class Float256VectorLoadStoreTests extends AbstractVectorLoadStoreTest {
     }
 
     @DontInline
-    static FloatVector fromByteArray(byte[] a, int i, ByteOrder bo) {
-        return FloatVector.fromByteArray(SPECIES, a, i, bo);
+    static FloatVector fromMemorySegment(MemorySegment a, int i, ByteOrder bo) {
+        return FloatVector.fromMemorySegment(SPECIES, a, i, bo);
     }
 
     @DontInline
-    static FloatVector fromByteArray(byte[] a, int i, ByteOrder bo, VectorMask<Float> m) {
-        return FloatVector.fromByteArray(SPECIES, a, i, bo, m);
+    static FloatVector fromMemorySegment(MemorySegment a, int i, ByteOrder bo, VectorMask<Float> m) {
+        return FloatVector.fromMemorySegment(SPECIES, a, i, bo, m);
     }
 
     @DontInline
-    static void intoByteArray(FloatVector v, byte[] a, int i, ByteOrder bo) {
-        v.intoByteArray(a, i, bo);
+    static void intoMemorySegment(FloatVector v, MemorySegment a, int i, ByteOrder bo) {
+        v.intoMemorySegment(a, i, bo);
     }
 
     @DontInline
-    static void intoByteArray(FloatVector v, byte[] a, int i, ByteOrder bo, VectorMask<Float> m) {
-        v.intoByteArray(a, i, bo, m);
+    static void intoMemorySegment(FloatVector v, MemorySegment a, int i, ByteOrder bo, VectorMask<Float> m) {
+        v.intoMemorySegment(a, i, bo, m);
     }
-
-    @DontInline
-    static FloatVector fromByteBuffer(ByteBuffer a, int i, ByteOrder bo) {
-        return FloatVector.fromByteBuffer(SPECIES, a, i, bo);
-    }
-
-    @DontInline
-    static FloatVector fromByteBuffer(ByteBuffer a, int i, ByteOrder bo, VectorMask<Float> m) {
-        return FloatVector.fromByteBuffer(SPECIES, a, i, bo, m);
-    }
-
-    @DontInline
-    static void intoByteBuffer(FloatVector v, ByteBuffer a, int i, ByteOrder bo) {
-        v.intoByteBuffer(a, i, bo);
-    }
-
-    @DontInline
-    static void intoByteBuffer(FloatVector v, ByteBuffer a, int i, ByteOrder bo, VectorMask<Float> m) {
-        v.intoByteBuffer(a, i, bo, m);
-    }
-
 
     @Test(dataProvider = "floatProvider")
     static void loadStoreArray(IntFunction<float[]> fa) {
@@ -518,48 +457,45 @@ public class Float256VectorLoadStoreTests extends AbstractVectorLoadStoreTest {
     }
 
 
-    @Test(dataProvider = "floatByteBufferProvider")
-    static void loadStoreByteBuffer(IntFunction<float[]> fa,
-                                    IntFunction<ByteBuffer> fb,
-                                    ByteOrder bo) {
-        ByteBuffer a = toBuffer(fa.apply(SPECIES.length()), fb);
-        ByteBuffer r = fb.apply(a.limit());
+    @Test(dataProvider = "floatMemorySegmentProvider")
+    static void loadStoreMemorySegment(IntFunction<float[]> fa,
+                                       IntFunction<MemorySegment> fb,
+                                       ByteOrder bo) {
+        MemorySegment a = toSegment(fa.apply(SPECIES.length()), fb);
+        MemorySegment r = fb.apply((int) a.byteSize());
 
-        int l = a.limit();
+        int l = (int) a.byteSize();
         int s = SPECIES.vectorByteSize();
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < l; i += s) {
-                FloatVector av = FloatVector.fromByteBuffer(SPECIES, a, i, bo);
-                av.intoByteBuffer(r, i, bo);
+                FloatVector av = FloatVector.fromMemorySegment(SPECIES, a, i, bo);
+                av.intoMemorySegment(r, i, bo);
             }
         }
-        Assert.assertEquals(a.position(), 0, "Input buffer position changed");
-        Assert.assertEquals(a.limit(), l, "Input buffer limit changed");
-        Assert.assertEquals(r.position(), 0, "Result buffer position changed");
-        Assert.assertEquals(r.limit(), l, "Result buffer limit changed");
-        Assert.assertEquals(r, a, "Buffers not equal");
+        long m = r.mismatch(a);
+        Assert.assertEquals(m, -1, "Segments not equal");
     }
 
     @Test(dataProvider = "floatByteProviderForIOOBE")
-    static void loadByteBufferIOOBE(IntFunction<float[]> fa, IntFunction<Integer> fi) {
-        ByteBuffer a = toBuffer(fa.apply(SPECIES.length()), ByteBuffer::allocateDirect);
-        ByteBuffer r = ByteBuffer.allocateDirect(a.limit());
+    static void loadMemorySegmentIOOBE(IntFunction<float[]> fa, IntFunction<Integer> fi) {
+        MemorySegment a = toSegment(fa.apply(SPECIES.length()), i -> MemorySegment.allocateNative(i, Float.SIZE, MemorySession.openImplicit()));
+        MemorySegment r = MemorySegment.allocateNative(a.byteSize(), Float.SIZE, MemorySession.openImplicit());
 
-        int l = a.limit();
+        int l = (int) a.byteSize();
         int s = SPECIES.vectorByteSize();
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < l; i += s) {
-                FloatVector av = fromByteBuffer(a, i, ByteOrder.nativeOrder());
-                av.intoByteBuffer(r, i, ByteOrder.nativeOrder());
+                FloatVector av = fromMemorySegment(a, i, ByteOrder.nativeOrder());
+                av.intoMemorySegment(r, i, ByteOrder.nativeOrder());
             }
         }
 
-        int index = fi.apply(a.limit());
-        boolean shouldFail = isIndexOutOfBounds(SPECIES.vectorByteSize(), index, a.limit());
+        int index = fi.apply((int) a.byteSize());
+        boolean shouldFail = isIndexOutOfBounds(SPECIES.vectorByteSize(), index, (int) a.byteSize());
         try {
-            fromByteBuffer(a, index, ByteOrder.nativeOrder());
+            fromMemorySegment(a, index, ByteOrder.nativeOrder());
             if (shouldFail) {
                 Assert.fail("Failed to throw IndexOutOfBoundsException");
             }
@@ -571,25 +507,25 @@ public class Float256VectorLoadStoreTests extends AbstractVectorLoadStoreTest {
     }
 
     @Test(dataProvider = "floatByteProviderForIOOBE")
-    static void storeByteBufferIOOBE(IntFunction<float[]> fa, IntFunction<Integer> fi) {
-        ByteBuffer a = toBuffer(fa.apply(SPECIES.length()), ByteBuffer::allocateDirect);
-        ByteBuffer r = ByteBuffer.allocateDirect(a.limit());
+    static void storeMemorySegmentIOOBE(IntFunction<float[]> fa, IntFunction<Integer> fi) {
+        MemorySegment a = toSegment(fa.apply(SPECIES.length()), i -> MemorySegment.allocateNative(i, Float.SIZE, MemorySession.openImplicit()));
+        MemorySegment r = MemorySegment.allocateNative(a.byteSize(), Float.SIZE, MemorySession.openImplicit());
 
-        int l = a.limit();
+        int l = (int) a.byteSize();
         int s = SPECIES.vectorByteSize();
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < l; i += s) {
-                FloatVector av = FloatVector.fromByteBuffer(SPECIES, a, i, ByteOrder.nativeOrder());
-                intoByteBuffer(av, r, i, ByteOrder.nativeOrder());
+                FloatVector av = FloatVector.fromMemorySegment(SPECIES, a, i, ByteOrder.nativeOrder());
+                intoMemorySegment(av, r, i, ByteOrder.nativeOrder());
             }
         }
 
-        int index = fi.apply(a.limit());
-        boolean shouldFail = isIndexOutOfBounds(SPECIES.vectorByteSize(), index, a.limit());
+        int index = fi.apply((int) a.byteSize());
+        boolean shouldFail = isIndexOutOfBounds(SPECIES.vectorByteSize(), index, (int) a.byteSize());
         try {
-            FloatVector av = FloatVector.fromByteBuffer(SPECIES, a, 0, ByteOrder.nativeOrder());
-            intoByteBuffer(av, r, index, ByteOrder.nativeOrder());
+            FloatVector av = FloatVector.fromMemorySegment(SPECIES, a, 0, ByteOrder.nativeOrder());
+            intoMemorySegment(av, r, index, ByteOrder.nativeOrder());
             if (shouldFail) {
                 Assert.fail("Failed to throw IndexOutOfBoundsException");
             }
@@ -600,70 +536,61 @@ public class Float256VectorLoadStoreTests extends AbstractVectorLoadStoreTest {
         }
     }
 
-
-    @Test(dataProvider = "floatByteBufferMaskProvider")
-    static void loadStoreByteBufferMask(IntFunction<float[]> fa,
-                                        IntFunction<ByteBuffer> fb,
-                                        IntFunction<boolean[]> fm,
-                                        ByteOrder bo) {
+    @Test(dataProvider = "floatMemorySegmentMaskProvider")
+    static void loadStoreMemorySegmentMask(IntFunction<float[]> fa,
+                                           IntFunction<MemorySegment> fb,
+                                           IntFunction<boolean[]> fm,
+                                           ByteOrder bo) {
         float[] _a = fa.apply(SPECIES.length());
-        ByteBuffer a = toBuffer(_a, fb);
-        ByteBuffer r = fb.apply(a.limit());
+        MemorySegment a = toSegment(_a, fb);
+        MemorySegment r = fb.apply((int) a.byteSize());
         boolean[] mask = fm.apply(SPECIES.length());
         VectorMask<Float> vmask = VectorMask.fromValues(SPECIES, mask);
 
-        int l = a.limit();
+        int l = (int) a.byteSize();
         int s = SPECIES.vectorByteSize();
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < l; i += s) {
-                FloatVector av = FloatVector.fromByteBuffer(SPECIES, a, i, bo, vmask);
-                av.intoByteBuffer(r, i, bo);
+                FloatVector av = FloatVector.fromMemorySegment(SPECIES, a, i, bo, vmask);
+                av.intoMemorySegment(r, i, bo);
             }
         }
-        Assert.assertEquals(a.position(), 0, "Input buffer position changed");
-        Assert.assertEquals(a.limit(), l, "Input buffer limit changed");
-        Assert.assertEquals(r.position(), 0, "Result buffer position changed");
-        Assert.assertEquals(r.limit(), l, "Result buffer limit changed");
-        assertArraysEquals(bufferToArray(r), _a, mask);
+        assertArraysEquals(segmentToArray(r), _a, mask);
 
 
-        r = fb.apply(a.limit());
+        r = fb.apply((int) a.byteSize());
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < l; i += s) {
-                FloatVector av = FloatVector.fromByteBuffer(SPECIES, a, i, bo);
-                av.intoByteBuffer(r, i, bo, vmask);
+                FloatVector av = FloatVector.fromMemorySegment(SPECIES, a, i, bo);
+                av.intoMemorySegment(r, i, bo, vmask);
             }
         }
-        Assert.assertEquals(a.position(), 0, "Input buffer position changed");
-        Assert.assertEquals(a.limit(), l, "Input buffer limit changed");
-        Assert.assertEquals(r.position(), 0, "Result buffer position changed");
-        Assert.assertEquals(r.limit(), l, "Result buffer limit changed");
-        assertArraysEquals(bufferToArray(r), _a, mask);
+        assertArraysEquals(segmentToArray(r), _a, mask);
     }
 
     @Test(dataProvider = "floatByteMaskProviderForIOOBE")
-    static void loadByteBufferMaskIOOBE(IntFunction<float[]> fa, IntFunction<Integer> fi, IntFunction<boolean[]> fm) {
-        ByteBuffer a = toBuffer(fa.apply(SPECIES.length()), ByteBuffer::allocateDirect);
-        ByteBuffer r = ByteBuffer.allocateDirect(a.limit());
+    static void loadMemorySegmentMaskIOOBE(IntFunction<float[]> fa, IntFunction<Integer> fi, IntFunction<boolean[]> fm) {
+        MemorySegment a = toSegment(fa.apply(SPECIES.length()), i -> MemorySegment.allocateNative(i, Float.SIZE, MemorySession.openImplicit()));
+        MemorySegment r = MemorySegment.allocateNative(a.byteSize(), Float.SIZE, MemorySession.openImplicit());
         boolean[] mask = fm.apply(SPECIES.length());
         VectorMask<Float> vmask = VectorMask.fromValues(SPECIES, mask);
 
-        int l = a.limit();
+        int l = (int) a.byteSize();
         int s = SPECIES.vectorByteSize();
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < l; i += s) {
-                FloatVector av = fromByteBuffer(a, i, ByteOrder.nativeOrder(), vmask);
-                av.intoByteBuffer(r, i, ByteOrder.nativeOrder());
+                FloatVector av = fromMemorySegment(a, i, ByteOrder.nativeOrder(), vmask);
+                av.intoMemorySegment(r, i, ByteOrder.nativeOrder());
             }
         }
 
-        int index = fi.apply(a.limit());
-        boolean shouldFail = isIndexOutOfBoundsForMask(mask, index, a.limit(), SPECIES.elementSize() / 8);
+        int index = fi.apply((int) a.byteSize());
+        boolean shouldFail = isIndexOutOfBoundsForMask(mask, index, (int) a.byteSize(), SPECIES.elementSize() / 8);
         try {
-            fromByteBuffer(a, index, ByteOrder.nativeOrder(), vmask);
+            fromMemorySegment(a, index, ByteOrder.nativeOrder(), vmask);
             if (shouldFail) {
                 Assert.fail("Failed to throw IndexOutOfBoundsException");
             }
@@ -675,27 +602,27 @@ public class Float256VectorLoadStoreTests extends AbstractVectorLoadStoreTest {
     }
 
     @Test(dataProvider = "floatByteMaskProviderForIOOBE")
-    static void storeByteBufferMaskIOOBE(IntFunction<float[]> fa, IntFunction<Integer> fi, IntFunction<boolean[]> fm) {
-        ByteBuffer a = toBuffer(fa.apply(SPECIES.length()), ByteBuffer::allocateDirect);
-        ByteBuffer r = ByteBuffer.allocateDirect(a.limit());
+    static void storeMemorySegmentMaskIOOBE(IntFunction<float[]> fa, IntFunction<Integer> fi, IntFunction<boolean[]> fm) {
+        MemorySegment a = toSegment(fa.apply(SPECIES.length()), i -> MemorySegment.allocateNative(i, Float.SIZE, MemorySession.openImplicit()));
+        MemorySegment r = MemorySegment.allocateNative(a.byteSize(), Float.SIZE, MemorySession.openImplicit());
         boolean[] mask = fm.apply(SPECIES.length());
         VectorMask<Float> vmask = VectorMask.fromValues(SPECIES, mask);
 
-        int l = a.limit();
+        int l = (int) a.byteSize();
         int s = SPECIES.vectorByteSize();
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < l; i += s) {
-                FloatVector av = FloatVector.fromByteBuffer(SPECIES, a, i, ByteOrder.nativeOrder());
-                intoByteBuffer(av, r, i, ByteOrder.nativeOrder(), vmask);
+                FloatVector av = FloatVector.fromMemorySegment(SPECIES, a, i, ByteOrder.nativeOrder());
+                intoMemorySegment(av, r, i, ByteOrder.nativeOrder(), vmask);
             }
         }
 
-        int index = fi.apply(a.limit());
-        boolean shouldFail = isIndexOutOfBoundsForMask(mask, index, a.limit(), SPECIES.elementSize() / 8);
+        int index = fi.apply((int) a.byteSize());
+        boolean shouldFail = isIndexOutOfBoundsForMask(mask, index, (int) a.byteSize(), SPECIES.elementSize() / 8);
         try {
-            FloatVector av = FloatVector.fromByteBuffer(SPECIES, a, 0, ByteOrder.nativeOrder());
-            intoByteBuffer(av, a, index, ByteOrder.nativeOrder(), vmask);
+            FloatVector av = FloatVector.fromMemorySegment(SPECIES, a, 0, ByteOrder.nativeOrder());
+            intoMemorySegment(av, a, index, ByteOrder.nativeOrder(), vmask);
             if (shouldFail) {
                 Assert.fail("Failed to throw IndexOutOfBoundsException");
             }
@@ -706,213 +633,35 @@ public class Float256VectorLoadStoreTests extends AbstractVectorLoadStoreTest {
         }
     }
 
+    @Test(dataProvider = "floatMemorySegmentProvider")
+    static void loadStoreReadonlyMemorySegment(IntFunction<float[]> fa,
+                                               IntFunction<MemorySegment> fb,
+                                               ByteOrder bo) {
+        MemorySegment a = toSegment(fa.apply(SPECIES.length()), fb).asReadOnly();
 
-    @Test(dataProvider = "floatByteBufferProvider")
-    static void loadStoreReadonlyByteBuffer(IntFunction<float[]> fa,
-                                    IntFunction<ByteBuffer> fb,
-                                    ByteOrder bo) {
-        ByteBuffer a = toBuffer(fa.apply(SPECIES.length()), fb).asReadOnlyBuffer();
+        Assert.assertThrows(
+                UnsupportedOperationException.class,
+                () -> SPECIES.zero().intoMemorySegment(a, 0, bo)
+        );
 
-        try {
-            SPECIES.zero().intoByteBuffer(a, 0, bo);
-            Assert.fail("ReadOnlyBufferException expected");
-        } catch (ReadOnlyBufferException e) {
-        }
+        Assert.assertThrows(
+                UnsupportedOperationException.class,
+                () -> SPECIES.zero().intoMemorySegment(a, 0, bo, SPECIES.maskAll(true))
+        );
 
-        try {
-            SPECIES.zero().intoByteBuffer(a, 0, bo, SPECIES.maskAll(true));
-            Assert.fail("ReadOnlyBufferException expected");
-        } catch (ReadOnlyBufferException e) {
-        }
+        Assert.assertThrows(
+                UnsupportedOperationException.class,
+                () -> SPECIES.zero().intoMemorySegment(a, 0, bo, SPECIES.maskAll(false))
+        );
 
-        try {
-            SPECIES.zero().intoByteBuffer(a, 0, bo, SPECIES.maskAll(false));
-            Assert.fail("ReadOnlyBufferException expected");
-        } catch (ReadOnlyBufferException e) {
-        }
-
-        try {
-            VectorMask<Float> m = SPECIES.shuffleFromOp(i -> i % 2 == 0 ? 1 : -1)
-                    .laneIsValid();
-            SPECIES.zero().intoByteBuffer(a, 0, bo, m);
-            Assert.fail("ReadOnlyBufferException expected");
-        } catch (ReadOnlyBufferException e) {
-        }
+        VectorMask<Float> m = SPECIES.shuffleFromOp(i -> i % 2 == 0 ? 1 : -1)
+                .laneIsValid();
+        Assert.assertThrows(
+                UnsupportedOperationException.class,
+                () -> SPECIES.zero().intoMemorySegment(a, 0, bo, m)
+        );
     }
 
-
-    @Test(dataProvider = "floatByteArrayProvider")
-    static void loadStoreByteArray(IntFunction<float[]> fa,
-                                    ByteOrder bo) {
-        byte[] a = toByteArray(fa.apply(SPECIES.length()), byte[]::new, bo);
-        byte[] r = new byte[a.length];
-
-        int s = SPECIES.vectorByteSize();
-        int l = a.length;
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            for (int i = 0; i < l; i += s) {
-                FloatVector av = FloatVector.fromByteArray(SPECIES, a, i, bo);
-                av.intoByteArray(r, i, bo);
-            }
-        }
-        Assert.assertEquals(r, a, "Byte arrays not equal");
-    }
-
-    @Test(dataProvider = "floatByteProviderForIOOBE")
-    static void loadByteArrayIOOBE(IntFunction<float[]> fa, IntFunction<Integer> fi) {
-        byte[] a = toByteArray(fa.apply(SPECIES.length()), byte[]::new, ByteOrder.nativeOrder());
-        byte[] r = new byte[a.length];
-
-        int s = SPECIES.vectorByteSize();
-        int l = a.length;
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            for (int i = 0; i < l; i += s) {
-                FloatVector av = fromByteArray(a, i, ByteOrder.nativeOrder());
-                av.intoByteArray(r, i, ByteOrder.nativeOrder());
-            }
-        }
-
-        int index = fi.apply(a.length);
-        boolean shouldFail = isIndexOutOfBounds(SPECIES.vectorByteSize(), index, a.length);
-        try {
-            fromByteArray(a, index, ByteOrder.nativeOrder());
-            if (shouldFail) {
-                Assert.fail("Failed to throw IndexOutOfBoundsException");
-            }
-        } catch (IndexOutOfBoundsException e) {
-            if (!shouldFail) {
-                Assert.fail("Unexpected IndexOutOfBoundsException");
-            }
-        }
-    }
-
-    @Test(dataProvider = "floatByteProviderForIOOBE")
-    static void storeByteArrayIOOBE(IntFunction<float[]> fa, IntFunction<Integer> fi) {
-        byte[] a = toByteArray(fa.apply(SPECIES.length()), byte[]::new, ByteOrder.nativeOrder());
-        byte[] r = new byte[a.length];
-
-        int s = SPECIES.vectorByteSize();
-        int l = a.length;
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            for (int i = 0; i < l; i += s) {
-                FloatVector av = FloatVector.fromByteArray(SPECIES, a, i, ByteOrder.nativeOrder());
-                intoByteArray(av, r, i, ByteOrder.nativeOrder());
-            }
-        }
-
-        int index = fi.apply(a.length);
-        boolean shouldFail = isIndexOutOfBounds(SPECIES.vectorByteSize(), index, a.length);
-        try {
-            FloatVector av = FloatVector.fromByteArray(SPECIES, a, 0, ByteOrder.nativeOrder());
-            intoByteArray(av, r, index, ByteOrder.nativeOrder());
-            if (shouldFail) {
-                Assert.fail("Failed to throw IndexOutOfBoundsException");
-            }
-        } catch (IndexOutOfBoundsException e) {
-            if (!shouldFail) {
-                Assert.fail("Unexpected IndexOutOfBoundsException");
-            }
-        }
-    }
-
-
-    @Test(dataProvider = "floatByteArrayMaskProvider")
-    static void loadStoreByteArrayMask(IntFunction<float[]> fa,
-                                  IntFunction<boolean[]> fm,
-                                  ByteOrder bo) {
-        byte[] a = toByteArray(fa.apply(SPECIES.length()), byte[]::new, bo);
-        byte[] r = new byte[a.length];
-        boolean[] mask = fm.apply(SPECIES.length());
-        VectorMask<Float> vmask = VectorMask.fromValues(SPECIES, mask);
-
-        int s = SPECIES.vectorByteSize();
-        int l = a.length;
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-          for (int i = 0; i < l; i += s) {
-              FloatVector av = FloatVector.fromByteArray(SPECIES, a, i, bo, vmask);
-              av.intoByteArray(r, i, bo);
-          }
-        }
-        assertArraysEquals(r, a, mask);
-
-
-        r = new byte[a.length];
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            for (int i = 0; i < l; i += s) {
-                FloatVector av = FloatVector.fromByteArray(SPECIES, a, i, bo);
-                av.intoByteArray(r, i, bo, vmask);
-            }
-        }
-        assertArraysEquals(r, a, mask);
-    }
-
-    @Test(dataProvider = "floatByteMaskProviderForIOOBE")
-    static void loadByteArrayMaskIOOBE(IntFunction<float[]> fa, IntFunction<Integer> fi, IntFunction<boolean[]> fm) {
-        byte[] a = toByteArray(fa.apply(SPECIES.length()), byte[]::new, ByteOrder.nativeOrder());
-        byte[] r = new byte[a.length];
-        boolean[] mask = fm.apply(SPECIES.length());
-        VectorMask<Float> vmask = VectorMask.fromValues(SPECIES, mask);
-
-        int s = SPECIES.vectorByteSize();
-        int l = a.length;
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            for (int i = 0; i < l; i += s) {
-                FloatVector av = fromByteArray(a, i, ByteOrder.nativeOrder(), vmask);
-                av.intoByteArray(r, i, ByteOrder.nativeOrder());
-            }
-        }
-
-        int index = fi.apply(a.length);
-        boolean shouldFail = isIndexOutOfBoundsForMask(mask, index, a.length, SPECIES.elementSize() / 8);
-        try {
-            fromByteArray(a, index, ByteOrder.nativeOrder(), vmask);
-            if (shouldFail) {
-                Assert.fail("Failed to throw IndexOutOfBoundsException");
-            }
-        } catch (IndexOutOfBoundsException e) {
-            if (!shouldFail) {
-                Assert.fail("Unexpected IndexOutOfBoundsException");
-            }
-        }
-    }
-
-    @Test(dataProvider = "floatByteMaskProviderForIOOBE")
-    static void storeByteArrayMaskIOOBE(IntFunction<float[]> fa, IntFunction<Integer> fi, IntFunction<boolean[]> fm) {
-        byte[] a = toByteArray(fa.apply(SPECIES.length()), byte[]::new, ByteOrder.nativeOrder());
-        byte[] r = new byte[a.length];
-        boolean[] mask = fm.apply(SPECIES.length());
-        VectorMask<Float> vmask = VectorMask.fromValues(SPECIES, mask);
-
-        int s = SPECIES.vectorByteSize();
-        int l = a.length;
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            for (int i = 0; i < l; i += s) {
-                FloatVector av = FloatVector.fromByteArray(SPECIES, a, i, ByteOrder.nativeOrder());
-                intoByteArray(av, r, i, ByteOrder.nativeOrder(), vmask);
-            }
-        }
-
-        int index = fi.apply(a.length);
-        boolean shouldFail = isIndexOutOfBoundsForMask(mask, index, a.length, SPECIES.elementSize() / 8);
-        try {
-            FloatVector av = FloatVector.fromByteArray(SPECIES, a, 0, ByteOrder.nativeOrder());
-            intoByteArray(av, a, index, ByteOrder.nativeOrder(), vmask);
-            if (shouldFail) {
-                Assert.fail("Failed to throw IndexOutOfBoundsException");
-            }
-        } catch (IndexOutOfBoundsException e) {
-            if (!shouldFail) {
-                Assert.fail("Unexpected IndexOutOfBoundsException");
-            }
-        }
-    }
 
     @Test(dataProvider = "maskProvider")
     static void loadStoreMask(IntFunction<boolean[]> fm) {
@@ -927,6 +676,7 @@ public class Float256VectorLoadStoreTests extends AbstractVectorLoadStoreTest {
         }
         Assert.assertEquals(r, a);
     }
+
 
     @Test
     static void loadStoreShuffle() {

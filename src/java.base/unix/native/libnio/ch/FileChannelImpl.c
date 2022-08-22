@@ -255,7 +255,7 @@ Java_sun_nio_ch_FileChannelImpl_transferTo0(JNIEnv *env, jobject this,
 
     return IOS_UNSUPPORTED_CASE;
 #else
-    return IOS_UNSUPPORTED_CASE;
+    return IOS_UNSUPPORTED;
 #endif
 }
 

@@ -21,8 +21,6 @@
  * questions.
  */
 
-import java.io.PrintStream;
-
 import jdk.test.lib.jvmti.DebugeeClass;
 
 /*
@@ -42,6 +40,7 @@ import jdk.test.lib.jvmti.DebugeeClass;
  *     - change signature of agentProc function
  *       and save JNIEnv pointer now passed as argument.
  *
+ * @requires vm.continuations
  * @library /test/lib
  * @compile --enable-preview -source ${jdk.version} monitorwait01.java
  * @run main/othervm/native --enable-preview -agentlib:monitorwait01 monitorwait01 platform

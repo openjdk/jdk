@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@ package sun.nio.fs;
 
 import java.nio.file.*;
 import java.nio.file.attribute.*;
-import java.nio.file.spi.*;
+import java.nio.file.spi.FileSystemProvider;
 import java.io.IOException;
 import java.util.*;
 import java.util.regex.Pattern;
@@ -144,8 +144,7 @@ abstract class UnixFileSystem
      */
     @Override
     public final Iterable<Path> getRootDirectories() {
-        final List<Path> allowedList =
-           Collections.unmodifiableList(Arrays.asList((Path)rootDirectory));
+        final List<Path> allowedList = List.of(rootDirectory);
         return new Iterable<>() {
             public Iterator<Path> iterator() {
                 try {
@@ -282,7 +281,7 @@ abstract class UnixFileSystem
     @Override
     public PathMatcher getPathMatcher(String syntaxAndInput) {
         int pos = syntaxAndInput.indexOf(':');
-        if (pos <= 0 || pos == syntaxAndInput.length())
+        if (pos <= 0)
             throw new IllegalArgumentException();
         String syntax = syntaxAndInput.substring(0, pos);
         String input = syntaxAndInput.substring(pos+1);

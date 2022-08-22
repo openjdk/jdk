@@ -32,8 +32,8 @@
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "interpreter/interpreter.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/sharedRuntime.hpp"
-#include "runtime/thread.hpp"
 #include "utilities/macros.hpp"
 #ifdef COMPILER1
 #include "c1/c1_LIRAssembler.hpp"
@@ -233,7 +233,7 @@ void ShenandoahBarrierSetAssembler::satb_write_barrier_pre(MacroAssembler* masm,
   }
 
   // Is the previous value null?
-  __ cmpptr(pre_val, (int32_t) NULL_WORD);
+  __ cmpptr(pre_val, NULL_WORD);
   __ jcc(Assembler::equal, done);
 
   // Can we store original value in the thread's buffer?
@@ -814,7 +814,7 @@ void ShenandoahBarrierSetAssembler::cmpxchg_oop(MacroAssembler* masm,
     __ bind(L_failure);
     __ bind(L_success);
   } else {
-    assert(res != NULL, "need result register");
+    assert(res != noreg, "need result register");
 
     Label exit;
     __ bind(L_failure);
@@ -849,7 +849,7 @@ void ShenandoahBarrierSetAssembler::gen_pre_barrier_stub(LIR_Assembler* ce, Shen
     ce->mem2reg(stub->addr(), stub->pre_val(), T_OBJECT, stub->patch_code(), stub->info(), false /*wide*/);
   }
 
-  __ cmpptr(pre_val_reg, (int32_t)NULL_WORD);
+  __ cmpptr(pre_val_reg, NULL_WORD);
   __ jcc(Assembler::equal, *stub->continuation());
   ce->store_parameter(stub->pre_val()->as_register(), 0);
   __ call(RuntimeAddress(bs->pre_barrier_c1_runtime_code_blob()->code_begin()));

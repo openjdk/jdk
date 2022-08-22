@@ -38,6 +38,7 @@ class elapsedTimer {
  public:
   elapsedTimer()             { _active = false; reset(); }
   void add(elapsedTimer t);
+  void add_nanoseconds(jlong ns);
   void start();
   void stop();
   void reset()               { _counter = 0; }

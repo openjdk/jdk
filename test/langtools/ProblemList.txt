@@ -34,7 +34,7 @@
 jdk/jshell/UserJdiUserRemoteTest.java                                           8173079    linux-all
 jdk/jshell/UserInputTest.java                                                   8169536    generic-all
 jdk/jshell/ToolBasicTest.java                                                   8265357    macosx-aarch64
-jdk/jshell/HighlightUITest.java                                                 8284144    generic-aarch64,macosx-x64,linux-x64
+jdk/jshell/HighlightUITest.java                                                 8284144    generic-all
 
 ###########################################################################
 #
@@ -71,20 +71,3 @@ tools/sjavac/ClasspathDependencies.java                                         
 ###########################################################################
 #
 # jdeps
-
-# Loom is not implemented on x86_32 yet
-
-jdk/jshell/ToolEnablePreviewTest.java                                           8286642 generic-i586
-tools/javac/launcher/SourceLauncherTest.java                                    8286642 generic-i586
-tools/javac/patterns/CaseDefault.java                                           8286642 generic-i586
-tools/javac/patterns/DisambiguatePatterns.java                                  8286642 generic-i586
-tools/javac/patterns/EnumTypeChanges.java                                       8286642 generic-i586
-tools/javac/patterns/Guards.java                                                8286642 generic-i586
-tools/javac/patterns/InstanceofTotalPattern.java                                8286642 generic-i586
-tools/javac/patterns/LambdaCannotCapturePatternVariables.java                   8286642 generic-i586
-tools/javac/patterns/NullSwitch.java                                            8286642 generic-i586
-tools/javac/patterns/Parenthesized.java                                         8286642 generic-i586
-tools/javac/patterns/SealedTypeChanges.java                                     8286642 generic-i586
-tools/javac/patterns/SimpleAndGuardPattern.java                                 8286642 generic-i586
-tools/javac/patterns/Switches.java                                              8286642 generic-i586
-tools/javac/switchnull/SwitchNull.java                                          8286642 generic-i586

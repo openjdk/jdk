@@ -112,6 +112,9 @@ public class SimpleDeconstructionPattern {
         if (!testGen3(new GenRecord1<>(3, ""))) {
             throw new IllegalStateException();
         }
+        if (!I.testInInterface(new P2(new P(0), ""))) {
+            throw new IllegalStateException();
+        }
     }
 
     private static void exp(Object o) throws Throwable {
@@ -188,6 +191,11 @@ public class SimpleDeconstructionPattern {
         return o instanceof GenRecord1<Integer, String>(var i, var s) && i.intValue() == 3 && s.length() == 0;
     }
 
+    interface I {
+        public static boolean testInInterface(Object o) {
+            return o instanceof P2(P(int i), var s) && i == 0;
+        }
+    }
     public record P(int i) {
     }
 

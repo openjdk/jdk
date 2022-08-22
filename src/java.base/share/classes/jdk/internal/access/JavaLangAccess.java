@@ -27,7 +27,6 @@ package jdk.internal.access;
 
 import java.lang.annotation.Annotation;
 import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.module.ModuleDescriptor;
 import java.lang.reflect.Executable;
@@ -45,6 +44,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.stream.Stream;
 
+import jdk.internal.misc.CarrierThreadLocal;
 import jdk.internal.module.ServicesCatalog;
 import jdk.internal.reflect.ConstantPool;
 import jdk.internal.vm.Continuation;
@@ -456,12 +456,23 @@ public interface JavaLangAccess {
     /**
      * Returns the value of the current carrier thread's copy of a thread-local.
      */
-    <T> T getCarrierThreadLocal(ThreadLocal<T> local);
+    <T> T getCarrierThreadLocal(CarrierThreadLocal<T> local);
 
     /**
      * Sets the value of the current carrier thread's copy of a thread-local.
      */
-    <T> void setCarrierThreadLocal(ThreadLocal<T> local, T value);
+    <T> void setCarrierThreadLocal(CarrierThreadLocal<T> local, T value);
+
+    /**
+     * Removes the value of the current carrier thread's copy of a thread-local.
+     */
+    void removeCarrierThreadLocal(CarrierThreadLocal<?> local);
+
+    /**
+     * Returns {@code true} if there is a value in the current carrier thread's copy of
+     * thread-local, even if that values is {@code null}.
+     */
+    boolean isCarrierThreadLocalPresent(CarrierThreadLocal<?> local);
 
     /**
      * Returns the current thread's extent locals cache

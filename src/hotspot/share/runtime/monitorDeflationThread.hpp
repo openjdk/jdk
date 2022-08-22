@@ -25,7 +25,7 @@
 #ifndef SHARE_RUNTIME_MONITORDEFLATIONTHREAD_HPP
 #define SHARE_RUNTIME_MONITORDEFLATIONTHREAD_HPP
 
-#include "runtime/thread.hpp"
+#include "runtime/javaThread.hpp"
 
 // A hidden from external view JavaThread for deflating idle monitors.
 

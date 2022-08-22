@@ -277,11 +277,8 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
         Path finalDMG = outdir.resolve(MAC_INSTALLER_NAME.fetchFrom(params)
                 + INSTALLER_SUFFIX.fetchFrom(params) + ".dmg");
 
-        Path srcFolder = APP_IMAGE_TEMP_ROOT.fetchFrom(params);
-        Path predefinedImage = StandardBundlerParam.getPredefinedAppImage(params);
-        if (predefinedImage != null) {
-            srcFolder = predefinedImage;
-        } else if (StandardBundlerParam.isRuntimeInstaller(params)) {
+        Path srcFolder = appLocation.getParent();
+        if (StandardBundlerParam.isRuntimeInstaller(params)) {
             Path newRoot = Files.createTempDirectory(TEMP_ROOT.fetchFrom(params),
                     "root-");
 

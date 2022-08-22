@@ -24,6 +24,7 @@
 /*
  * @test
  * @summary Test SuspendAllVirtualThreads/ResumeAllVirtualThreads
+ * @requires vm.continuations
  * @library /test/lib
  * @compile --enable-preview -source ${jdk.version} SuspendResumeAll.java
  * @run driver jdk.test.lib.FileInstaller . .

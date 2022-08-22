@@ -93,6 +93,9 @@ public sealed class ValueLayout extends AbstractLayout implements MemoryLayout {
         return new ValueLayout(carrier, Objects.requireNonNull(order), bitSize(), alignment, name());
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String toString() {
         char descriptor = carrier == MemoryAddress.class ? 'A' : carrier.descriptorString().charAt(0);
@@ -102,6 +105,9 @@ public sealed class ValueLayout extends AbstractLayout implements MemoryLayout {
         return decorateLayoutString(String.format("%s%d", descriptor, bitSize()));
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean equals(Object other) {
         if (this == other) {
@@ -110,13 +116,9 @@ public sealed class ValueLayout extends AbstractLayout implements MemoryLayout {
         if (!super.equals(other)) {
             return false;
         }
-        if (!(other instanceof ValueLayout v)) {
-            return false;
-        }
-        return carrier.equals(v.carrier) &&
-            order.equals(v.order) &&
-            bitSize() == v.bitSize() &&
-            alignment == v.alignment;
+        return other instanceof ValueLayout otherValue &&
+                carrier.equals(otherValue.carrier) &&
+                order.equals(otherValue.order);
     }
 
     /**
@@ -171,7 +173,7 @@ public sealed class ValueLayout extends AbstractLayout implements MemoryLayout {
      * @return a var handle which can be used to dereference a multi-dimensional array, featuring {@code shape.length + 1}
      * {@code long} coordinates.
      * @throws IllegalArgumentException if {@code shape[i] < 0}, for at least one index {@code i}.
-     * @throws UnsupportedOperationException if the layout path has one or more elements with incompatible alignment constraints.
+     * @throws UnsupportedOperationException if {@code bitAlignment() > bitSize()}.
      * @see MethodHandles#memorySegmentViewVarHandle
      * @see MemoryLayout#varHandle(PathElement...)
      * @see SequenceLayout
@@ -198,9 +200,12 @@ public sealed class ValueLayout extends AbstractLayout implements MemoryLayout {
         return carrier;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), order, bitSize(), alignment);
+        return Objects.hash(super.hashCode(), order, carrier);
     }
 
     @Override

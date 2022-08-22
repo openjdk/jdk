@@ -206,7 +206,7 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
   // Restore stack bottom in case i2c adjusted stack
   __ movptr(rsp, Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize));
   // and NULL it as marker that esp is now tos until next java call
-  __ movptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), (int32_t)NULL_WORD);
+  __ movptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), NULL_WORD);
 
   __ restore_bcp();
   __ restore_locals();
@@ -254,7 +254,7 @@ address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state, i
 #endif // _LP64
 
   // NULL last_sp until next java call
-  __ movptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), (int32_t)NULL_WORD);
+  __ movptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), NULL_WORD);
   __ restore_bcp();
   __ restore_locals();
   const Register thread = NOT_LP64(rcx) LP64_ONLY(r15_thread);
@@ -288,7 +288,7 @@ address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state, i
   // handle exceptions
   {
     Label L;
-    __ cmpptr(Address(thread, Thread::pending_exception_offset()), (int32_t) NULL_WORD);
+    __ cmpptr(Address(thread, Thread::pending_exception_offset()), NULL_WORD);
     __ jcc(Assembler::zero, L);
     __ call_VM(noreg,
                CAST_FROM_FN_PTR(address,
@@ -367,14 +367,10 @@ address TemplateInterpreterGenerator::generate_safept_entry_for(
         address runtime_entry) {
   address entry = __ pc();
 
-  const Register rthread = NOT_LP64(rcx) LP64_ONLY(r15_thread);
-
   __ push(state);
-  NOT_LP64(__ get_thread(rthread);)
-  __ push_cont_fastpath(rthread);
+  __ push_cont_fastpath();
   __ call_VM(noreg, runtime_entry);
-  NOT_LP64(__ get_thread(rthread);)
-  __ pop_cont_fastpath(rthread);
+  __ pop_cont_fastpath();
 
   __ dispatch_via(vtos, Interpreter::_normal_table.table_for(vtos));
   return entry;
@@ -513,7 +509,7 @@ void TemplateInterpreterGenerator::generate_stack_overflow_check(void) {
 #ifdef ASSERT
   Label limit_okay;
   // Verify that thread stack overflow limit is non-zero.
-  __ cmpptr(stack_limit, (int32_t)NULL_WORD);
+  __ cmpptr(stack_limit, NULL_WORD);
   __ jcc(Assembler::notEqual, limit_okay);
   __ stop("stack overflow limit is zero");
   __ bind(limit_okay);
@@ -608,10 +604,6 @@ void TemplateInterpreterGenerator::lock_method() {
   const Register lockreg = NOT_LP64(rdx) LP64_ONLY(c_rarg1);
   __ movptr(lockreg, rsp); // object address
   __ lock_object(lockreg);
-
-  Register rthread = NOT_LP64(rax) LP64_ONLY(r15_thread);
-  NOT_LP64(__ get_thread(rthread);)
-  __ inc_held_monitor_count(rthread);
 }
 
 // Generate a fixed interpreter frame. This is identical setup for
@@ -628,7 +620,7 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   __ push(rax);        // save return address
   __ enter();          // save old & set new rbp
   __ push(rbcp);        // set sender sp
-  __ push((int)NULL_WORD); // leave last_sp as null
+  __ push(NULL_WORD); // leave last_sp as null
   __ movptr(rbcp, Address(rbx, Method::const_offset()));      // get ConstMethod*
   __ lea(rbcp, Address(rbcp, ConstMethod::codes_offset())); // get codebase
   __ push(rbx);        // save Method*
@@ -666,24 +658,15 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
 address TemplateInterpreterGenerator::generate_Continuation_doYield_entry(void) {
   if (!Continuations::enabled()) return nullptr;
 
-#ifdef _LP64
   address entry = __ pc();
   assert(StubRoutines::cont_doYield() != NULL, "stub not yet generated");
 
-  // __ movl(c_rarg1, Address(rsp, wordSize)); // scopes
-  const Register thread1 = NOT_LP64(rdi) LP64_ONLY(r15_thread);
-  NOT_LP64(__ get_thread(thread1));
-  __ push_cont_fastpath(thread1);
+  __ push_cont_fastpath();
 
   __ jump(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::cont_doYield())));
   // return value is in rax
 
   return entry;
-#else
-  // Not implemented. Allow startup of legacy Java code that does not touch
-  // Continuation.doYield yet. Throw AbstractMethodError on access.
-  return generate_abstract_entry();
-#endif
 }
 
 // Method entry for java.lang.ref.Reference.get.
@@ -768,13 +751,13 @@ void TemplateInterpreterGenerator::bang_stack_shadow_pages(bool native_call) {
 
 #ifdef ASSERT
   Label L_good_limit;
-  __ cmpptr(Address(thread, JavaThread::shadow_zone_safe_limit()), (int32_t)NULL_WORD);
+  __ cmpptr(Address(thread, JavaThread::shadow_zone_safe_limit()), NULL_WORD);
   __ jcc(Assembler::notEqual, L_good_limit);
   __ stop("shadow zone safe limit is not initialized");
   __ bind(L_good_limit);
 
   Label L_good_watermark;
-  __ cmpptr(Address(thread, JavaThread::shadow_zone_growth_watermark()), (int32_t)NULL_WORD);
+  __ cmpptr(Address(thread, JavaThread::shadow_zone_growth_watermark()), NULL_WORD);
   __ jcc(Assembler::notEqual, L_good_watermark);
   __ stop("shadow zone growth watermark is not initialized");
   __ bind(L_good_watermark);
@@ -840,10 +823,10 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
   // add 2 zero-initialized slots for native calls
   // initialize result_handler slot
-  __ push((int) NULL_WORD);
+  __ push(NULL_WORD);
   // slot for oop temp
   // (static native method holder mirror/jni oop result)
-  __ push((int) NULL_WORD);
+  __ push(NULL_WORD);
 
   // initialize fixed part of activation frame
   generate_fixed_frame(true);
@@ -922,7 +905,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     __ movptr(rax, monitor_block_top);
     __ cmpptr(rax, rsp);
     __ jcc(Assembler::equal, L);
-    __ stop("broken stack frame setup in interpreter");
+    __ stop("broken stack frame setup in interpreter 5");
     __ bind(L);
   }
 #endif
@@ -1173,7 +1156,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
   // reset handle block
   __ movptr(t, Address(thread, JavaThread::active_handles_offset()));
-  __ movl(Address(t, JNIHandleBlock::top_offset_in_bytes()), (int32_t)NULL_WORD);
+  __ movl(Address(t, JNIHandleBlock::top_offset_in_bytes()), NULL_WORD);
 
   // If result is an oop unbox and store it in frame where gc will see it
   // and result handler will pick it up
@@ -1232,7 +1215,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // handle exceptions (exception handling will handle unlocking!)
   {
     Label L;
-    __ cmpptr(Address(thread, Thread::pending_exception_offset()), (int32_t) NULL_WORD);
+    __ cmpptr(Address(thread, Thread::pending_exception_offset()), NULL_WORD);
     __ jcc(Assembler::zero, L);
     // Note: At some point we may want to unify this with the code
     // used in call_VM_base(); i.e., we should use the
@@ -1279,8 +1262,6 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
       __ bind(unlock);
       __ unlock_object(regmon);
-      NOT_LP64(__ get_thread(thread);)
-      __ dec_held_monitor_count(thread);
     }
     __ bind(L);
   }
@@ -1391,7 +1372,7 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
     __ testl(rdx, rdx);
     __ jcc(Assembler::lessEqual, exit); // do nothing if rdx <= 0
     __ bind(loop);
-    __ push((int) NULL_WORD); // initialize local variables
+    __ push(NULL_WORD); // initialize local variables
     __ decrementl(rdx); // until everything initialized
     __ jcc(Assembler::greater, loop);
     __ bind(exit);
@@ -1477,7 +1458,7 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
     __ movptr(rax, monitor_block_top);
     __ cmpptr(rax, rsp);
     __ jcc(Assembler::equal, L);
-    __ stop("broken stack frame setup in interpreter");
+    __ stop("broken stack frame setup in interpreter 6");
     __ bind(L);
   }
 #endif
@@ -1506,7 +1487,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
   Interpreter::_rethrow_exception_entry = __ pc();
   // Restore sp to interpreter_frame_last_sp even though we are going
   // to empty the expression stack for the exception processing.
-  __ movptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), (int32_t)NULL_WORD);
+  __ movptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), NULL_WORD);
   // rax: exception
   // rdx: return address/pc that threw exception
   __ restore_bcp();    // r13/rsi points to call/send
@@ -1652,7 +1633,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
 
   // Restore the last_sp and null it out
   __ movptr(rsp, Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize));
-  __ movptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), (int32_t)NULL_WORD);
+  __ movptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), NULL_WORD);
 
   __ restore_bcp();
   __ restore_locals();

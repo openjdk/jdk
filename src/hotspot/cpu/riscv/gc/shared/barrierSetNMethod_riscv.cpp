@@ -30,9 +30,9 @@
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/registerMap.hpp"
-#include "runtime/thread.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 
@@ -73,7 +73,7 @@ static const struct CheckInsn barrierInsn[] = {
   { 0x000fffff, 0x00028293, "addi   t0, t0, imm1    "},
   { 0xffffffff, 0x00b29293, "slli   t0, t0, 11      "},
   { 0x000fffff, 0x00028293, "addi   t0, t0, imm2    "},
-  { 0xffffffff, 0x00529293, "slli   t0, t0, 5       "},
+  { 0xffffffff, 0x00629293, "slli   t0, t0, 6       "},
   { 0x000fffff, 0x000280e7, "jalr   ra, imm3(t0)    "},
   { 0x00000fff, 0x0000006f, "j      skip            "}
   /* guard: */
@@ -111,7 +111,10 @@ void BarrierSetNMethod::deoptimize(nmethod* nm, address* return_address_ptr) {
   frame_pointers_t *new_frame = (frame_pointers_t *)(return_address_ptr - 5);
 
   JavaThread *thread = JavaThread::current();
-  RegisterMap reg_map(thread, false);
+  RegisterMap reg_map(thread,
+                      RegisterMap::UpdateMap::skip,
+                      RegisterMap::ProcessFrames::include,
+                      RegisterMap::WalkContinuation::skip);
   frame frame = thread->last_frame();
 
   assert(frame.is_compiled_frame() || frame.is_native_frame(), "must be");

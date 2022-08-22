@@ -176,8 +176,6 @@
 
 import jdk.test.lib.jvmti.DebugeeClass;
 
-import java.io.PrintStream;
-
 public class suspendthrd03 extends DebugeeClass {
 
     final static int N_THREADS = 10;
@@ -187,14 +185,11 @@ public class suspendthrd03 extends DebugeeClass {
         System.loadLibrary("suspendthrd03");
     }
 
-    // run test from command line
     public static void main(String argv[]) {
-        System.exit(run(argv, System.out) + 95);
-    }
-
-    // run test from JCK-compatible environment
-    public static int run(String argv[], PrintStream out) {
-        return new suspendthrd03().runIt(argv, out);
+        int result =  new suspendthrd03().runIt();
+        if (result != 0) {
+            throw new RuntimeException("check failed with result " + result);
+        }
     }
 
     /* =================================================================== */
@@ -205,7 +200,7 @@ public class suspendthrd03 extends DebugeeClass {
     suspendthrd03Thread thread = null;
 
     // run debuggee
-    public int runIt(String argv[], PrintStream out) {
+    public int runIt() {
         timeout = 60 * 1000; // milliseconds
 
         for (int i = 0; i < N_THREADS; i++) {

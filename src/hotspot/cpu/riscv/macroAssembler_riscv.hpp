@@ -46,9 +46,6 @@ class MacroAssembler: public Assembler {
 
   void safepoint_poll(Label& slow_path, bool at_return, bool acquire, bool in_nmethod);
 
-  // Place a fence.i after code may have been modified due to a safepoint.
-  void safepoint_ifence();
-
   // Alignment
   void align(int modulus, int extra_offset = 0);
 
@@ -269,15 +266,6 @@ class MacroAssembler: public Assembler {
     Register tmp1,                  // temp register
     Register tmp2,                  // temp register
     Label&   slow_case,             // continuation point of fast allocation fails
-    bool is_far = false
-  );
-
-  void eden_allocate(
-    Register obj,                   // result: pointer to object after successful allocation
-    Register var_size_in_bytes,     // object size in bytes if unknown at compile time; invalid otherwise
-    int      con_size_in_bytes,     // object size in bytes if   known at compile time
-    Register tmp,                   // temp register
-    Label&   slow_case,             // continuation point if fast allocation fails
     bool is_far = false
   );
 
@@ -642,8 +630,19 @@ class MacroAssembler: public Assembler {
   address trampoline_call(Address entry, CodeBuffer* cbuf = NULL);
   address ic_call(address entry, jint method_index = 0);
 
-  void add_memory_int64(const Address dst, int64_t imm);
-  void add_memory_int32(const Address dst, int32_t imm);
+  // Support for memory inc/dec
+  // n.b. increment/decrement calls with an Address destination will
+  // need to use a scratch register to load the value to be
+  // incremented. increment/decrement calls which add or subtract a
+  // constant value other than sign-extended 12-bit immediate will need
+  // to use a 2nd scratch register to hold the constant. so, an address
+  // increment/decrement may trash both t0 and t1.
+
+  void increment(const Address dst, int64_t value = 1);
+  void incrementw(const Address dst, int32_t value = 1);
+
+  void decrement(const Address dst, int64_t value = 1);
+  void decrementw(const Address dst, int32_t value = 1);
 
   void cmpptr(Register src1, Address src2, Label& equal);
 
@@ -815,7 +814,8 @@ private:
 
   // Return true if an address is within the 48-bit RISCV64 address space.
   bool is_valid_riscv64_address(address addr) {
-    return ((uintptr_t)addr >> 48) == 0;
+    // sv48: must have bits 63–48 all equal to bit 47
+    return ((uintptr_t)addr >> 47) == 0;
   }
 
   void ld_constant(Register dest, const Address &const_addr) {
@@ -833,9 +833,6 @@ private:
 
   void load_reserved(Register addr, enum operand_size size, Assembler::Aqrl acquire);
   void store_conditional(Register addr, Register new_val, enum operand_size size, Assembler::Aqrl release);
-
-  // Check the current thread doesn't need a cross modify fence.
-  void verify_cross_modify_fence_not_required() PRODUCT_RETURN;
 };
 
 #ifdef ASSERT

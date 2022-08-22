@@ -280,9 +280,6 @@ public:
   bool is_ptr_to_narrowoop() const;
   bool is_ptr_to_narrowklass() const;
 
-  bool is_ptr_to_boxing_obj() const;
-
-
   // Convenience access
   float getf() const;
   double getd() const;
@@ -552,13 +549,16 @@ public:
 
 class TypeInteger : public Type {
 protected:
-  TypeInteger(TYPES t) : Type(t) {}
+  TypeInteger(TYPES t, int w) : Type(t), _widen(w) {}
 
 public:
+  const short _widen;           // Limit on times we widen this sucker
+
   virtual jlong hi_as_long() const = 0;
   virtual jlong lo_as_long() const = 0;
   jlong get_con_as_long(BasicType bt) const;
   bool is_con() const { return lo_as_long() == hi_as_long(); }
+  virtual short widen_limit() const { return _widen; }
 
   static const TypeInteger* make(jlong lo, jlong hi, int w, BasicType bt);
 
@@ -585,7 +585,6 @@ public:
   virtual bool singleton(void) const;    // TRUE if type is a singleton
   virtual bool empty(void) const;        // TRUE if type is vacuous
   const jint _lo, _hi;          // Lower bound, upper bound
-  const short _widen;           // Limit on times we widen this sucker
 
   static const TypeInt *make(jint lo);
   // must always specify w
@@ -653,7 +652,6 @@ public:
   virtual bool empty(void) const;        // TRUE if type is vacuous
 public:
   const jlong _lo, _hi;         // Lower bound, upper bound
-  const short _widen;           // Limit on times we widen this sucker
 
   static const TypeLong *make(jlong lo);
   // must always specify w
@@ -2032,12 +2030,6 @@ inline bool Type::is_floatingpoint() const {
       (_base == DoubleCon) || (_base == DoubleBot) )
     return true;
   return false;
-}
-
-inline bool Type::is_ptr_to_boxing_obj() const {
-  const TypeInstPtr* tp = isa_instptr();
-  return (tp != NULL) && (tp->offset() == 0) &&
-         tp->instance_klass()->is_box_klass();
 }
 
 

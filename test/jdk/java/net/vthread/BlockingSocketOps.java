@@ -22,12 +22,28 @@
  */
 
 /**
- * @test
+ * @test id=default
+ * @bug 8284161
  * @summary Basic tests of virtual threads doing blocking I/O with java.net sockets
+ * @enablePreview
  * @library /test/lib
- * @compile --enable-preview -source ${jdk.version} BlockingSocketOps.java
- * @run testng/othervm/timeout=300 --enable-preview BlockingSocketOps
- * @run testng/othervm/timeout=300 --enable-preview -Djdk.useDirectRegister BlockingSocketOps
+ * @run testng/othervm/timeout=300 BlockingSocketOps
+ */
+
+/**
+ * @test id=indirect-register
+ * @summary Basic tests of virtual threads doing blocking I/O with java.net sockets
+ * @enablePreview
+ * @library /test/lib
+ * @run testng/othervm/timeout=300 -Djdk.useDirectRegister BlockingSocketOps
+ */
+
+/**
+ * @test id=no-vmcontinuations
+ * @requires vm.continuations
+ * @enablePreview
+ * @library /test/lib
+ * @run testng/othervm/timeout=300 -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations BlockingSocketOps
  */
 
 import java.io.Closeable;

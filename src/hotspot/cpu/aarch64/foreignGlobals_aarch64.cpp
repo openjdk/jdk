@@ -28,7 +28,6 @@
 #include "runtime/jniHandles.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "oops/oopCast.inline.hpp"
-#include "opto/matcher.hpp"
 #include "prims/foreignGlobals.hpp"
 #include "prims/foreignGlobals.inline.hpp"
 #include "utilities/formatBuffer.hpp"
@@ -91,11 +90,7 @@ int RegSpiller::pd_reg_size(VMReg reg) {
   if (reg->is_Register()) {
     return 8;
   } else if (reg->is_FloatRegister()) {
-    bool use_sve = Matcher::supports_scalable_vector();
-    if (use_sve) {
-      return Matcher::scalable_vector_reg_size(T_BYTE);
-    }
-    return 16;
+    return 16;   // Always spill/unspill Q registers
   }
   return 0; // stack and BAD
 }
@@ -104,12 +99,7 @@ void RegSpiller::pd_store_reg(MacroAssembler* masm, int offset, VMReg reg) {
   if (reg->is_Register()) {
     masm->spill(reg->as_Register(), true, offset);
   } else if (reg->is_FloatRegister()) {
-    bool use_sve = Matcher::supports_scalable_vector();
-    if (use_sve) {
-      masm->spill_sve_vector(reg->as_FloatRegister(), offset, Matcher::scalable_vector_reg_size(T_BYTE));
-    } else {
-      masm->spill(reg->as_FloatRegister(), masm->Q, offset);
-    }
+    masm->spill(reg->as_FloatRegister(), masm->Q, offset);
   } else {
     // stack and BAD
   }
@@ -119,12 +109,7 @@ void RegSpiller::pd_load_reg(MacroAssembler* masm, int offset, VMReg reg) {
   if (reg->is_Register()) {
     masm->unspill(reg->as_Register(), true, offset);
   } else if (reg->is_FloatRegister()) {
-    bool use_sve = Matcher::supports_scalable_vector();
-    if (use_sve) {
-      masm->unspill_sve_vector(reg->as_FloatRegister(), offset, Matcher::scalable_vector_reg_size(T_BYTE));
-    } else {
-      masm->unspill(reg->as_FloatRegister(), masm->Q, offset);
-    }
+    masm->unspill(reg->as_FloatRegister(), masm->Q, offset);
   } else {
     // stack and BAD
   }

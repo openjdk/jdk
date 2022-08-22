@@ -41,7 +41,6 @@
 #include "oops/methodData.hpp"
 #include "oops/method.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "prims/forte.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/handles.inline.hpp"
@@ -151,7 +150,11 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(const methodHan
       case vmIntrinsics::_dsqrt:             return java_lang_math_sqrt;
       case vmIntrinsics::_dsqrt_strict:      return native;
       case vmIntrinsics::_Reference_get:     return java_lang_ref_reference_get;
-      case vmIntrinsics::_Continuation_doYield: return java_lang_continuation_doYield;
+      case vmIntrinsics::_Continuation_doYield:
+        if (VMContinuations) {
+          return java_lang_continuation_doYield;
+        }
+        break;
       case vmIntrinsics::_Object_init:
         if (RegisterFinalizersAtInit && m->code_size() == 1) {
           // We need to execute the special return bytecode to check for

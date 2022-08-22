@@ -33,9 +33,12 @@
 
 // Inline functions for ppc64 frames:
 
-// Initialize frame members (_pc and _sp must be given)
+// Initialize frame members (_sp must be given)
 inline void frame::setup() {
-  assert(_pc != nullptr, "precondition: must have PC");
+  if (_pc == nullptr) {
+    _pc = (address)own_abi()->lr;
+    assert(_pc != nullptr, "must have PC");
+  }
 
   if (_cb == nullptr) {
     _cb = CodeCache::find_blob(_pc);
@@ -43,6 +46,10 @@ inline void frame::setup() {
 
   if (_fp == nullptr) {
     _fp = (intptr_t*)own_abi()->callers_sp;
+  }
+
+  if (_unextended_sp == nullptr) {
+    _unextended_sp = _sp;
   }
 
   // When thawing continuation frames the _unextended_sp passed to the constructor is not aligend
@@ -68,27 +75,17 @@ inline void frame::setup() {
 
 // Constructors
 
-// Initialize all fields, _unextended_sp will be adjusted in find_codeblob_and_set_pc_and_deopt_state.
+// Initialize all fields
 inline frame::frame() : _sp(nullptr), _pc(nullptr), _cb(nullptr), _oop_map(nullptr), _deopt_state(unknown),
                         _on_heap(false), DEBUG_ONLY(_frame_index(-1) COMMA) _unextended_sp(nullptr), _fp(nullptr) {}
 
-inline frame::frame(intptr_t* sp)
-  : _sp(sp), _pc((address)own_abi()->lr), _cb(nullptr), _oop_map(nullptr),
-    _on_heap(false), DEBUG_ONLY(_frame_index(-1) COMMA) _unextended_sp(sp), _fp(nullptr) {
-  setup();
-}
-
-inline frame::frame(intptr_t* sp, address pc)
-  : _sp(sp), _pc(pc), _cb(nullptr), _oop_map(nullptr),
-    _on_heap(false), DEBUG_ONLY(_frame_index(-1) COMMA) _unextended_sp(sp), _fp(nullptr) {
-  setup();
-}
-
 inline frame::frame(intptr_t* sp, address pc, intptr_t* unextended_sp, intptr_t* fp, CodeBlob* cb)
-  : _sp(sp), _pc(pc), _cb(nullptr), _oop_map(nullptr),
+  : _sp(sp), _pc(pc), _cb(cb), _oop_map(nullptr),
     _on_heap(false), DEBUG_ONLY(_frame_index(-1) COMMA) _unextended_sp(unextended_sp), _fp(fp) {
   setup();
 }
+
+inline frame::frame(intptr_t* sp) : frame(sp, nullptr) {}
 
 // Accessors
 
@@ -305,7 +302,7 @@ inline frame frame::sender_raw(RegisterMap* map) const {
   if (is_interpreted_frame()) return sender_for_interpreter_frame(map);
   assert(_cb == CodeCache::find_blob(pc()),"Must be the same");
 
-  if (_cb != NULL) return sender_for_compiled_frame(map);
+  if (_cb != nullptr) return sender_for_compiled_frame(map);
 
   // Must be native-compiled frame, i.e. the marshaling code for native
   // methods that exists in the core system.
@@ -313,24 +310,21 @@ inline frame frame::sender_raw(RegisterMap* map) const {
 }
 
 inline frame frame::sender_for_compiled_frame(RegisterMap *map) const {
-  assert(map != NULL, "map must be set");
+  assert(map != nullptr, "map must be set");
 
-  // Frame owned by compiler.
-  address pc = *compiled_sender_pc_addr(_cb);
-  frame caller(compiled_sender_sp(_cb), pc);
+  intptr_t* sender_sp = this->sender_sp();
+  address   sender_pc = this->sender_pc();
 
   // Now adjust the map.
-
-  // Get the rest.
   if (map->update_map()) {
     // Tell GC to use argument oopmaps for some runtime stubs that need it.
     map->set_include_argument_oops(_cb->caller_must_gc_arguments(map->thread()));
-    if (_cb->oop_maps() != NULL) {
+    if (_cb->oop_maps() != nullptr) {
       OopMapSet::update_register_map(this, map);
     }
   }
 
-  return caller;
+  return frame(sender_sp, sender_pc);
 }
 
 template <typename RegisterMapT>

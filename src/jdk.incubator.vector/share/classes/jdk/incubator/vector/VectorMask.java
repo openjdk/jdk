@@ -210,7 +210,7 @@ public abstract class VectorMask<E> extends jdk.internal.vm.vector.VectorSupport
                 bits, (long) offset + Unsafe.ARRAY_BOOLEAN_BASE_OFFSET,
                 bits, offset, vsp,
                 (c, idx, s)
-                  -> s.opm(n -> c[idx + n]));
+                  -> s.opm(n -> c[((int )idx) + n]));
     }
 
     /**
@@ -472,6 +472,39 @@ public abstract class VectorMask<E> extends jdk.internal.vm.vector.VectorSupport
     public abstract VectorMask<E> indexInRange(int offset, int limit);
 
     /**
+     * Removes lanes numbered {@code N} from this mask where the
+     * adjusted index {@code N+offset}, is not in the range
+     * {@code [0..limit-1]}.
+     *
+     * <p> In all cases the series of set and unset lanes is assigned
+     * as if by using infinite precision or {@code VLENGTH-}saturating
+     * additions or subtractions, without overflow or wrap-around.
+     *
+     * @apiNote
+     *
+     * This method performs a SIMD emulation of the check performed by
+     * {@link Objects#checkIndex(long,long)}, on the index numbers in
+     * the range {@code [offset..offset+VLENGTH-1]}.  If an exception
+     * is desired, the resulting mask can be compared with the
+     * original mask; if they are not equal, then at least one lane
+     * was out of range, and exception processing can be performed.
+     *
+     * <p> A mask which is a series of {@code N} set lanes followed by
+     * a series of unset lanes can be obtained by calling
+     * {@code allTrue.indexInRange(0, N)}, where {@code allTrue} is a
+     * mask of all true bits.  A mask of {@code N1} unset lanes
+     * followed by {@code N2} set lanes can be obtained by calling
+     * {@code allTrue.indexInRange(-N1, N2)}.
+     *
+     * @param offset the starting index
+     * @param limit the upper-bound (exclusive) of index range
+     * @return the original mask, with out-of-range lanes unset
+     * @see VectorSpecies#indexInRange(long, long)
+     * @since 19
+     */
+    public abstract VectorMask<E> indexInRange(long offset, long limit);
+
+    /**
      * Returns a vector representation of this mask, the
      * lane bits of which are set or unset in correspondence
      * to the mask bits.
@@ -620,6 +653,18 @@ public abstract class VectorMask<E> extends jdk.internal.vm.vector.VectorSupport
     public final int hashCode() {
         return Objects.hash(vectorSpecies(), Arrays.hashCode(toArray()));
     }
+
+    /**
+     * Compresses set lanes from this mask.
+     *
+     * Returns a mask which is a series of {@code N} set lanes
+     * followed by a series of unset lanes, where {@code N} is
+     * the true count of this mask.
+     *
+     * @return the compressed mask of this mask
+     * @since 19
+     */
+    public abstract VectorMask<E> compress();
 
     // ==== JROSE NAME CHANGES ====
 

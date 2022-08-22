@@ -60,6 +60,7 @@ requires.properties= \
     vm.compiler1.enabled \
     vm.compiler2.enabled \
     vm.cds \
+    vm.continuations \
     vm.musl \
     vm.debug \
     vm.hasSA \

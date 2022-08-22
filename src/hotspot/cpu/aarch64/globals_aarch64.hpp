@@ -53,6 +53,8 @@ define_pd_global(intx, OptoLoopAlignment,        16);
 #define MIN_STACK_SHADOW_PAGES DEFAULT_STACK_SHADOW_PAGES
 #define MIN_STACK_RESERVED_PAGES (0)
 
+define_pd_global(bool, VMContinuations, true);
+
 define_pd_global(intx, StackYellowPages, DEFAULT_STACK_YELLOW_PAGES);
 define_pd_global(intx, StackRedPages, DEFAULT_STACK_RED_PAGES);
 define_pd_global(intx, StackShadowPages, DEFAULT_STACK_SHADOW_PAGES);

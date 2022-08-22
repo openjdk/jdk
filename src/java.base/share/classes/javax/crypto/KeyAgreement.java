@@ -105,7 +105,7 @@ public class KeyAgreement {
     private final Object lock;
 
     /**
-     * Creates a KeyAgreement object.
+     * Creates a {@code KeyAgreement} object.
      *
      * @param keyAgreeSpi the delegate
      * @param provider the provider
@@ -143,11 +143,11 @@ public class KeyAgreement {
      * Returns a {@code KeyAgreement} object that implements the
      * specified key agreement algorithm.
      *
-     * <p> This method traverses the list of registered security Providers,
-     * starting with the most preferred Provider.
-     * A new KeyAgreement object encapsulating the
-     * KeyAgreementSpi implementation from the first
-     * Provider that supports the specified algorithm is returned.
+     * <p> This method traverses the list of registered security providers,
+     * starting with the most preferred provider.
+     * A new {@code KeyAgreement} object encapsulating the
+     * {@code KeyAgreementSpi} implementation from the first
+     * provider that supports the specified algorithm is returned.
      *
      * <p> Note that the list of registered providers may be retrieved via
      * the {@link Security#getProviders() Security.getProviders()} method.
@@ -199,8 +199,8 @@ public class KeyAgreement {
      * Returns a {@code KeyAgreement} object that implements the
      * specified key agreement algorithm.
      *
-     * <p> A new KeyAgreement object encapsulating the
-     * KeyAgreementSpi implementation from the specified provider
+     * <p> A new {@code KeyAgreement} object encapsulating the
+     * {@code KeyAgreementSpi} implementation from the specified provider
      * is returned.  The specified provider must be registered
      * in the security provider list.
      *
@@ -246,9 +246,9 @@ public class KeyAgreement {
      * Returns a {@code KeyAgreement} object that implements the
      * specified key agreement algorithm.
      *
-     * <p> A new KeyAgreement object encapsulating the
-     * KeyAgreementSpi implementation from the specified Provider
-     * object is returned.  Note that the specified Provider object
+     * <p> A new {@code KeyAgreement} object encapsulating the
+     * {@code KeyAgreementSpi} implementation from the specified
+     * provider is returned.  Note that the specified provider
      * does not have to be registered in the provider list.
      *
      * @param algorithm the standard name of the requested key agreement
@@ -267,7 +267,7 @@ public class KeyAgreement {
      *
      * @throws NoSuchAlgorithmException if a {@code KeyAgreementSpi}
      *         implementation for the specified algorithm is not available
-     *         from the specified Provider object
+     *         from the specified {@code Provider} object
      *
      * @throws NullPointerException if {@code algorithm} is {@code null}
      *
@@ -437,7 +437,8 @@ public class KeyAgreement {
      * implementation of the highest-priority
      * installed provider as the source of randomness.
      * (If none of the installed providers supply an implementation of
-     * SecureRandom, a system-provided source of randomness will be used.)
+     * {@code SecureRandom}, a system-provided source of randomness
+     * will be used.)
      *
      * @param key the party's private information. For example, in the case
      * of the Diffie-Hellman key agreement, this would be the party's own
@@ -500,7 +501,8 @@ public class KeyAgreement {
      * implementation of the highest-priority
      * installed provider as the source of randomness.
      * (If none of the installed providers supply an implementation of
-     * SecureRandom, a system-provided source of randomness will be used.)
+     * {@code SecureRandom}, a system-provided source of randomness
+     * will be used.)
      *
      * @param key the party's private information. For example, in the case
      * of the Diffie-Hellman key agreement, this would be the party's own
@@ -566,7 +568,7 @@ public class KeyAgreement {
      * @param lastPhase flag which indicates whether this is the last
      * phase of this key agreement.
      *
-     * @return the (intermediate) key resulting from this phase, or null
+     * @return the (intermediate) key resulting from this phase, or {@code null}
      * if this phase does not yield a key
      *
      * @exception InvalidKeyException if the given key is inappropriate for

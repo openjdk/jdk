@@ -42,6 +42,7 @@ import java.io.*;
  * COMMENTS
  *     Fixed the 5031200 bug.
  *
+ * @requires vm.continuations
  * @library /test/lib
  * @compile --enable-preview -source ${jdk.version} classload01.java
  * @run main/othervm/native --enable-preview -agentlib:classload01 classload01
@@ -60,14 +61,7 @@ import java.io.*;
  */
 public class classload01 {
     static {
-        try {
-            System.loadLibrary("classload01");
-        } catch (UnsatisfiedLinkError ule) {
-            System.err.println("Could not load \"classload01\" library");
-            System.err.println("java.library.path:"
-                + System.getProperty("java.library.path"));
-            throw ule;
-        }
+        System.loadLibrary("classload01");
     }
 
     native int check();

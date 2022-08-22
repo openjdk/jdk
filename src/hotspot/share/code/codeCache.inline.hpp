@@ -41,6 +41,7 @@ inline CodeBlob* CodeCache::find_blob_and_oopmap(void* pc, int& slot) {
     int offset = (nop->displacement() & 0xffffff);
     cb = (CodeBlob*) ((address) pc - offset);
     slot = ((nop->displacement() >> 24) & 0xff);
+    assert(cb == CodeCache::find_blob(pc), "must be");
   } else {
     cb = CodeCache::find_blob(pc);
     slot = -1;

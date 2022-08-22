@@ -169,7 +169,10 @@ JNIEXPORT jobjectArray JNICALL
 JVM_GetVmArguments(JNIEnv *env);
 
 JNIEXPORT jboolean JNICALL
-JVM_IsPreviewEnabled(JNIEnv* env);
+JVM_IsPreviewEnabled(void);
+
+JNIEXPORT jboolean JNICALL
+JVM_IsContinuationsSupported(void);
 
 JNIEXPORT void JNICALL
 JVM_InitializeFromArchive(JNIEnv* env, jclass cls);
@@ -1155,6 +1158,12 @@ JVM_VirtualThreadUnmountBegin(JNIEnv* env, jobject vthread, jboolean last_unmoun
 
 JNIEXPORT void JNICALL
 JVM_VirtualThreadUnmountEnd(JNIEnv* env, jobject vthread, jboolean last_unmount);
+
+/*
+ * Core reflection support.
+ */
+JNIEXPORT jint JNICALL
+JVM_GetClassFileVersion(JNIEnv *env, jclass current);
 
 /*
  * This structure is used by the launcher to get the default thread

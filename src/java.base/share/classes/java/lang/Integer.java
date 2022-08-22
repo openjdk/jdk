@@ -1500,6 +1500,7 @@ public final class Integer extends Number
      *         unsigned values
      * @since 1.8
      */
+    @IntrinsicCandidate
     public static int compareUnsigned(int x, int y) {
         return compare(x + MIN_VALUE, y + MIN_VALUE);
     }
@@ -1761,6 +1762,7 @@ public final class Integer extends Number
      *     specified {@code int} value.
      * @since 1.5
      */
+    @IntrinsicCandidate
     public static int reverse(int i) {
         // HD, Figure 7-1
         i = (i & 0x55555555) << 1 | (i >>> 1) & 0x55555555;
@@ -1839,7 +1841,7 @@ public final class Integer extends Number
      * @see #expand
      * @since 19
      */
-    // @IntrinsicCandidate
+    @IntrinsicCandidate
     public static int compress(int i, int mask) {
         // See Hacker's Delight (2nd ed) section 7.4 Compress, or Generalized Extract
 
@@ -1927,7 +1929,7 @@ public final class Integer extends Number
      * @see #compress
      * @since 19
      */
-    // @IntrinsicCandidate
+    @IntrinsicCandidate
     public static int expand(int i, int mask) {
         // Save original mask
         int originalMask = mask;

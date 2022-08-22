@@ -73,18 +73,21 @@
 #include "prims/jvm_misc.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/javaThread.inline.hpp"
 #include "runtime/jfieldIDWorkaround.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/reflection.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/signature.hpp"
+#include "runtime/synchronizer.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/vmOperations.hpp"
 #include "services/memTracker.hpp"
@@ -98,7 +101,7 @@
 #include "jvmci/jvmciCompiler.hpp"
 #endif
 
-static jint CurrentVersion = JNI_VERSION_10;
+static jint CurrentVersion = JNI_VERSION_19;
 
 #if defined(_WIN32) && !defined(USE_VECTORED_EXCEPTION_HANDLING)
 extern LONG WINAPI topLevelExceptionFilter(_EXCEPTION_POINTERS* );
@@ -2717,12 +2720,7 @@ JNI_ENTRY(jint, jni_MonitorEnter(JNIEnv *env, jobject jobj))
 
   Handle obj(thread, JNIHandles::resolve_non_null(jobj));
   ObjectSynchronizer::jni_enter(obj, thread);
-  if (!Continuation::pin(thread)) {
-    ObjectSynchronizer::jni_exit(obj(), CHECK_(JNI_ERR));
-    THROW_(vmSymbols::java_lang_VirtualMachineError(), JNI_ERR);
-  }
-  ret = JNI_OK;
-  return ret;
+  return JNI_OK;
 JNI_END
 
 DT_RETURN_MARK_DECL(MonitorExit, jint
@@ -2740,11 +2738,7 @@ JNI_ENTRY(jint, jni_MonitorExit(JNIEnv *env, jobject jobj))
 
   Handle obj(THREAD, JNIHandles::resolve_non_null(jobj));
   ObjectSynchronizer::jni_exit(obj(), CHECK_(JNI_ERR));
-  if (!Continuation::unpin(thread)) {
-    ShouldNotReachHere();
-  }
-  ret = JNI_OK;
-  return ret;
+  return JNI_OK;
 JNI_END
 
 //
@@ -3143,7 +3137,11 @@ JNI_END
 
 JNI_ENTRY(jboolean, jni_IsVirtualThread(JNIEnv* env, jobject obj))
   oop thread_obj = JNIHandles::resolve_external_guard(obj);
-  return java_lang_VirtualThread::is_instance(thread_obj) ? JNI_TRUE : JNI_FALSE;
+  if (thread_obj != NULL && thread_obj->is_a(vmClasses::BasicVirtualThread_klass())) {
+    return JNI_TRUE;
+  } else {
+    return JNI_FALSE;
+  }
 JNI_END
 
 
@@ -3659,9 +3657,7 @@ static jint JNI_CreateJavaVM_inner(JavaVM **vm, void **penv, void *args) {
 
     post_thread_start_event(thread);
 
-#ifndef PRODUCT
     if (ReplayCompiles) ciReplay::replay(thread);
-#endif
 
 #ifdef ASSERT
     // Some platforms (like Win*) need a wrapper around these test
@@ -3984,6 +3980,13 @@ jint JNICALL jni_GetEnv(JavaVM *vm, void **penv, jint version) {
   if (vm_created == 0) {
     *penv = NULL;
     ret = JNI_EDETACHED;
+    return ret;
+  }
+
+  // No JVM TI with --enable-preview and no continuations support.
+  if (!VMContinuations && Arguments::enable_preview() && JvmtiExport::is_jvmti_version(version)) {
+    *penv = NULL;
+    ret = JNI_EVERSION;
     return ret;
   }
 

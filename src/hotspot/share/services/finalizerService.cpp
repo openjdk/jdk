@@ -34,9 +34,9 @@
 #include "runtime/atomic.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/synchronizer.hpp"
-#include "runtime/thread.inline.hpp"
 #include "services/finalizerService.hpp"
 #include "utilities/concurrentHashTableTasks.inline.hpp"
 #include "utilities/debug.hpp"
@@ -270,7 +270,7 @@ void FinalizerService::do_concurrent_work(JavaThread* service_thread) {
 void FinalizerService::init() {
   assert(_table == nullptr, "invariant");
   const size_t start_size_log_2 = ceil_log2(DEFAULT_TABLE_SIZE);
-  _table = new FinalizerHashtable(start_size_log_2, MAX_SIZE);
+  _table = new FinalizerHashtable(start_size_log_2, MAX_SIZE, FinalizerHashtable::DEFAULT_GROW_HINT);
 }
 
 static FinalizerEntry* lookup_entry(const InstanceKlass* ik, Thread* thread) {

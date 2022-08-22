@@ -42,8 +42,8 @@ import java.util.concurrent.TimeUnit;
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @State(Scope.Benchmark)
-@Warmup(iterations = 10, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
-@Measurement(iterations = 5, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
+@Warmup(iterations = 10, time = 1, timeUnit = TimeUnit.SECONDS)
+@Measurement(iterations = 5, time = 1, timeUnit = TimeUnit.SECONDS)
 @Fork(3)
 public class MethodTypeAcquire {
 
@@ -55,11 +55,6 @@ public class MethodTypeAcquire {
     @Setup
     public void setup() {
         pTypes = MethodType.methodType(A.class, B.class);
-    }
-
-    @Benchmark
-    public MethodType baselineRaw() {
-        return pTypes;
     }
 
     @Benchmark

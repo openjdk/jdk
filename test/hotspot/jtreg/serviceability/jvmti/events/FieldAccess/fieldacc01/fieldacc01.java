@@ -35,6 +35,7 @@
  *     Fixed according to 4669812 bug.
  *     Ported from JVMDI.
  *
+ * @requires vm.continuations
  * @library /test/lib
  * @compile fieldacc01a.jasm
  * @compile --enable-preview -source ${jdk.version} fieldacc01.java
@@ -45,17 +46,8 @@
 
 public class fieldacc01 {
 
-    final static int JCK_STATUS_BASE = 95;
-
     static {
-        try {
-            System.loadLibrary("fieldacc01");
-        } catch (UnsatisfiedLinkError ule) {
-            System.err.println("Could not load fieldacc01 library");
-            System.err.println("java.library.path:"
-                + System.getProperty("java.library.path"));
-            throw ule;
-        }
+        System.loadLibrary("fieldacc01");
     }
 
     static volatile int result;

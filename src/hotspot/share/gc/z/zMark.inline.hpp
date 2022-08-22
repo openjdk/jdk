@@ -31,7 +31,7 @@
 #include "gc/z/zPage.inline.hpp"
 #include "gc/z/zPageTable.inline.hpp"
 #include "gc/z/zThreadLocalData.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/javaThread.hpp"
 #include "utilities/debug.hpp"
 
 // Marking before pushing helps reduce mark stack memory usage. However,
