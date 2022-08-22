@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -321,6 +321,9 @@ public:
   // Check whether the node is in the block.
   bool contains (const Node *n) const;
 
+  // Whether the block is not "root"-like and does not have any predecessors.
+  bool is_trivially_unreachable() const;
+
   // Return the empty status of a block
   enum { not_empty, empty_with_goto, completely_empty };
   int is_Empty() const;
@@ -502,7 +505,8 @@ class PhaseCFG : public Phase {
   // goes the same direction for most of the optimizer and are used to give a
   // fake exit path to infinite loops.  At this late stage they need to turn
   // into Goto's so that when you enter the infinite loop you indeed hang.
-  void convert_NeverBranch_to_Goto(Block *b);
+  // Return the target block of the fake exit path.
+  Block* convert_NeverBranch_to_Goto(Block* b);
 
   CFGLoop* create_loop_tree();
   bool is_dominator(Node* dom_node, Node* node);
