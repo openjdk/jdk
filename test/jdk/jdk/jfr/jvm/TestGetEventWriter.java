@@ -110,7 +110,7 @@ public class TestGetEventWriter {
             throw new RuntimeException("Should not reach here");
         } catch (IllegalAccessError iae) {
             // OK, as expected
-            maybeCheckJVMCI(e.getClass());
+            maybeCheckJVMCI(e.getClass(), "commit");
             return;
         }
     }
@@ -125,7 +125,7 @@ public class TestGetEventWriter {
             throw new RuntimeException("Should not reach here");
         } catch (IllegalAccessError iae) {
             // OK, as expected
-            maybeCheckJVMCI(e.getClass());
+            maybeCheckJVMCI(e.getClass(), "commit");
             return;
         }
     }
@@ -145,7 +145,7 @@ public class TestGetEventWriter {
             throw new RuntimeException("Should not reach here");
         } catch (IllegalAccessError iae) {
             // OK, as expected
-            maybeCheckJVMCI(e.getClass());
+            maybeCheckJVMCI(e.getClass(), "commit");
         }
         try {
             FlightRecorder.register(e.getClass());
@@ -166,7 +166,7 @@ public class TestGetEventWriter {
             throw new RuntimeException("Should not reach here");
         } catch (IllegalAccessError iae) {
             // OK, as expected
-            maybeCheckJVMCI(e.getClass());
+            maybeCheckJVMCI(e.getClass(), "myCommit");
             return;
         }
     }
@@ -183,7 +183,7 @@ public class TestGetEventWriter {
             throw new RuntimeException("Should not reach here");
         } catch (IllegalAccessError iae) {
             // OK, as expected
-            maybeCheckJVMCI(e.getClass());
+            maybeCheckJVMCI(e.getClass(), "myCommit");
         }
         // Instrumentation added.
         FlightRecorder.register(e.getClass().asSubclass(Event.class));
@@ -201,7 +201,7 @@ public class TestGetEventWriter {
             throw new RuntimeException("Should not reach here");
         } catch (IllegalAccessError iae) {
             // OK, as expected
-            maybeCheckJVMCI(e.getClass());
+            maybeCheckJVMCI(e.getClass(), "commit");
         }
     }
 
@@ -333,29 +333,29 @@ public class TestGetEventWriter {
         return (T) constructor.newInstance();
     }
 
-    private static ResolvedJavaMethod findCommitMethod(MetaAccessProvider metaAccess, Class<?> eventClass) {
+    private static ResolvedJavaMethod findCommitMethod(MetaAccessProvider metaAccess, Class<?> eventClass, String commitName) {
         for (Method m : eventClass.getMethods()) {
-            if (m.getName().toLowerCase().contains("commit")) {
+            if (m.getName().equals(commitName)) {
                 return metaAccess.lookupJavaMethod(m);
             }
         }
-        throw new AssertionError("could not find commit method in " + eventClass);
+        throw new AssertionError("could not find " + commitName + " method in " + eventClass);
     }
 
     // Factor out test.jvmci system property check to reduce unecessary work in -Xcomp.
-    private static void maybeCheckJVMCI(Class<?> eventClass) throws Throwable {
+    private static void maybeCheckJVMCI(Class<?> eventClass, String commitName) throws Throwable {
         if (!Boolean.getBoolean("test.jvmci")) {
             return;
         }
-        checkJVMCI(eventClass);
+        checkJVMCI(eventClass, commitName);
     }
 
     /**
      * Checks that JVMCI prevents unblessed access to {@code EventWriterFactory.getEventWriter(long)}.
      */
-    private static void checkJVMCI(Class<?> eventClass) throws Throwable {
+    private static void checkJVMCI(Class<?> eventClass, String commitName) throws Throwable {
         MetaAccessProvider metaAccess = JVMCI.getRuntime().getHostJVMCIBackend().getMetaAccess();
-        ResolvedJavaMethod commit = findCommitMethod(metaAccess, eventClass);
+        ResolvedJavaMethod commit = findCommitMethod(metaAccess, eventClass, commitName);
         ConstantPool cp = commit.getConstantPool();
 
         // Search for first INVOKESTATIC instruction in commit method which is expected
@@ -376,6 +376,6 @@ public class TestGetEventWriter {
                 return;
             }
         }
-        throw new AssertionError("did not find INVOKESTATIC in " + commit.format("%H.%n(%p)"));
+        throw new AssertionError(eventClass + ": did not find INVOKESTATIC in " + commit.format("%H.%n(%p)"));
     }
 }
