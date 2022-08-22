@@ -261,23 +261,23 @@ public class PassFailJFrame {
     }
 
     /**
-     * Position the instruction frame with testWindow (testcase created
-     * window) by the specified position. If testWindow is null, only
-     * the instruction frame is positioned according to the Position
-     * parameter.
-     * Note: This method should be invoked from the method that creates
-     * testWindow. At test-level, the testWindow must be made visible
-     * only after calling this method.
+     * Positions the instruction frame relative to the test window as
+     * specified by the {@code position} parameter. If testWindow is null,
+     * only the instruction frame is positioned according {@code position}
+     * parameter. This method should be called before making the test
+     * window visible.
      *
-     * @param testWindow test window that the test is created. It can be null.
-     * @param position  position can either be:
+     * @param testWindow test window that the test is created.
+     *                   May be {@code null}.
+     *
+     * @param position  position must be one of:
      *                  HORIZONTAL - the test instruction frame is positioned
-     *                  such that its right edge aligns with screen's vertical
+     *                  such that its right edge aligns with screen's horizontal
      *                  center and the test window (if not null) is placed to
      *                  the right of the instruction frame.
      *
      *                  VERTICAL - the test instruction frame is positioned such
-     *                  that its bottom edge aligns with the screen's horizontal
+     *                  that its bottom edge aligns with the screen's vertical
      *                  center and the test window (if not null) is placed below
      *                  the instruction frame.
      *
