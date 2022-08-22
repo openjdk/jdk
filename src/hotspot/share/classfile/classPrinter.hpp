@@ -54,6 +54,7 @@ public:
     PRINT_BYTECODE          = 1 << 1,
     PRINT_BYTECODE_ADDR     = 1 << 2,
     PRINT_DYNAMIC           = 1 << 3, // extra information for invokedynamic (and dynamic constant ...)
+    PRINT_METHOD_HANDLE     = 1 << 4, // extra information for invokehandle
   };
 
   // flags must be OR'ed from ClassPrinter::Mode for the next 3 functions
