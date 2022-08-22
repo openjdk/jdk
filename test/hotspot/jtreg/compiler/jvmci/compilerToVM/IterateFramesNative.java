@@ -37,8 +37,8 @@
  *          jdk.internal.vm.ci/jdk.vm.ci.code.stack
  *          jdk.internal.vm.ci/jdk.vm.ci.meta
  *
- * @build jdk.internal.vm.ci/jdk.vm.ci.hotspot.CompilerToVMHelper sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.internal.vm.ci/jdk.vm.ci.hotspot.CompilerToVMHelper jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbatch -Xbootclasspath/a:.
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *                   -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
@@ -61,7 +61,7 @@ import jdk.vm.ci.code.stack.InspectedFrameVisitor;
 import jdk.vm.ci.hotspot.CompilerToVMHelper;
 import jdk.vm.ci.hotspot.HotSpotStackFrameReference;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 import java.lang.reflect.Method;
 import java.util.concurrent.atomic.AtomicInteger;

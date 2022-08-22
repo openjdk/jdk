@@ -356,7 +356,7 @@ final public class FloatToDecimal {
          *     10^(H-1) <= f < 10^H
          *     fp 10^ep = f 10^(e-H) = 0.f 10^e
          */
-        f *= pow10(H - len);
+        f *= (int)pow10(H - len);
         e += len;
 
         /*

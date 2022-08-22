@@ -383,6 +383,7 @@ class VM_RedefineClasses: public VM_Operation {
   // the heavy lifting.
   elapsedTimer  _timer_rsc_phase1;
   elapsedTimer  _timer_rsc_phase2;
+  elapsedTimer  _timer_vm_op_doit;
   elapsedTimer  _timer_vm_op_prologue;
 
   // Redefinition id used by JFR

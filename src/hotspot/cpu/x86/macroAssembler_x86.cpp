@@ -43,6 +43,7 @@
 #include "runtime/continuation.hpp"
 #include "runtime/flags/flagSetting.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/os.hpp"
@@ -50,7 +51,6 @@
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "runtime/thread.hpp"
 #include "utilities/macros.hpp"
 #include "crc32c.h"
 
@@ -192,13 +192,13 @@ void MacroAssembler::lcmp2int(Register x_hi, Register x_lo, Register y_hi, Regis
 }
 
 void MacroAssembler::lea(Register dst, AddressLiteral src) {
-    mov_literal32(dst, (int32_t)src.target(), src.rspec());
+  mov_literal32(dst, (int32_t)src.target(), src.rspec());
 }
 
 void MacroAssembler::lea(Address dst, AddressLiteral adr) {
   // leal(dst, as_Address(adr));
   // see note in movl as to why we must use a move
-  mov_literal32(dst, (int32_t) adr.target(), adr.rspec());
+  mov_literal32(dst, (int32_t)adr.target(), adr.rspec());
 }
 
 void MacroAssembler::leave() {
@@ -477,7 +477,7 @@ Address MacroAssembler::as_Address(AddressLiteral adr) {
   // jmp/call are displacements others are absolute
   assert(!adr.is_lval(), "must be rval");
   assert(reachable(adr), "must be");
-  return Address((int32_t)(intptr_t)(adr.target() - pc()), adr.target(), adr.reloc());
+  return Address(checked_cast<int32_t>(adr.target() - pc()), adr.target(), adr.reloc());
 
 }
 
@@ -695,10 +695,6 @@ void MacroAssembler::movptr(Address dst, intptr_t src) {
 // These are mostly for initializing NULL
 void MacroAssembler::movptr(Address dst, int32_t src) {
   movslq(dst, src);
-}
-
-void MacroAssembler::movptr(Register dst, int32_t src) {
-  mov64(dst, (intptr_t)src);
 }
 
 void MacroAssembler::pushoop(jobject obj) {
@@ -1062,7 +1058,7 @@ void MacroAssembler::object_move(OopMap* map,
       *receiver_offset = (offset_in_older_frame + framesize_in_slots) * VMRegImpl::stack_slot_size;
     }
 
-    cmpptr(Address(rbp, reg2offset_in(src.first())), (int32_t)NULL_WORD);
+    cmpptr(Address(rbp, reg2offset_in(src.first())), NULL_WORD);
     lea(rHandle, Address(rbp, reg2offset_in(src.first())));
     // conditionally move a NULL
     cmovptr(Assembler::equal, rHandle, Address(rbp, reg2offset_in(src.first())));
@@ -1098,7 +1094,7 @@ void MacroAssembler::object_move(OopMap* map,
       *receiver_offset = offset;
     }
 
-    cmpptr(rOop, (int32_t)NULL_WORD);
+    cmpptr(rOop, NULL_WORD);
     lea(rHandle, Address(rsp, offset));
     // conditionally move a NULL from the handle area where it was just stored
     cmovptr(Assembler::equal, rHandle, Address(rsp, offset));
@@ -1326,6 +1322,13 @@ void MacroAssembler::ic_call(address entry, jint method_index) {
   RelocationHolder rh = virtual_call_Relocation::spec(pc(), method_index);
   movptr(rax, (intptr_t)Universe::non_oop_word());
   call(AddressLiteral(entry, rh));
+}
+
+void MacroAssembler::emit_static_call_stub() {
+  // Static stub relocation also tags the Method* in the code-stream.
+  mov_metadata(rbx, (Metadata*) NULL);  // Method is zapped till fixup time.
+  // This is recognized as unresolved by relocs/nativeinst/ic code.
+  jump(RuntimeAddress(pc()));
 }
 
 // Implementation of call_VM versions
@@ -1576,7 +1579,7 @@ void MacroAssembler::call_VM_base(Register oop_result,
 
   if (check_exceptions) {
     // check for pending exceptions (java_thread is set upon return)
-    cmpptr(Address(java_thread, Thread::pending_exception_offset()), (int32_t) NULL_WORD);
+    cmpptr(Address(java_thread, Thread::pending_exception_offset()), NULL_WORD);
 #ifndef _LP64
     jump_cc(Assembler::notEqual,
             RuntimeAddress(StubRoutines::forward_exception_entry()));
@@ -1815,7 +1818,7 @@ void MacroAssembler::cmpptr(Register src1, AddressLiteral src2) {
   }
 #else
   if (src2.is_lval()) {
-    cmp_literal32(src1, (int32_t) src2.target(), src2.rspec());
+    cmp_literal32(src1, (int32_t)src2.target(), src2.rspec());
   } else {
     cmpl(src1, as_Address(src2));
   }
@@ -1829,7 +1832,7 @@ void MacroAssembler::cmpptr(Address src1, AddressLiteral src2) {
   movptr(rscratch1, src2);
   Assembler::cmpq(src1, rscratch1);
 #else
-  cmp_literal32(src1, (int32_t) src2.target(), src2.rspec());
+  cmp_literal32(src1, (int32_t)src2.target(), src2.rspec());
 #endif // _LP64
 }
 
@@ -2725,6 +2728,15 @@ void MacroAssembler::movss(XMMRegister dst, AddressLiteral src) {
   }
 }
 
+void MacroAssembler::movddup(XMMRegister dst, AddressLiteral src, Register rscratch) {
+  if (reachable(src)) {
+    Assembler::movddup(dst, as_Address(src));
+  } else {
+    lea(rscratch, src);
+    Assembler::movddup(dst, Address(rscratch, 0));
+  }
+}
+
 void MacroAssembler::vmovddup(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch) {
   if (reachable(src)) {
     Assembler::vmovddup(dst, as_Address(src), vector_len);
@@ -2833,36 +2845,92 @@ void MacroAssembler::push_IU_state() {
   pusha();
 }
 
-void MacroAssembler::push_cont_fastpath(Register java_thread) {
+void MacroAssembler::push_cont_fastpath() {
   if (!Continuations::enabled()) return;
+
+#ifndef _LP64
+  Register rthread = rax;
+  Register rrealsp = rbx;
+  push(rthread);
+  push(rrealsp);
+
+  get_thread(rthread);
+
+  // The code below wants the original RSP.
+  // Move it back after the pushes above.
+  movptr(rrealsp, rsp);
+  addptr(rrealsp, 2*wordSize);
+#else
+  Register rthread = r15_thread;
+  Register rrealsp = rsp;
+#endif
+
   Label done;
-  cmpptr(rsp, Address(java_thread, JavaThread::cont_fastpath_offset()));
+  cmpptr(rrealsp, Address(rthread, JavaThread::cont_fastpath_offset()));
   jccb(Assembler::belowEqual, done);
-  movptr(Address(java_thread, JavaThread::cont_fastpath_offset()), rsp);
+  movptr(Address(rthread, JavaThread::cont_fastpath_offset()), rrealsp);
   bind(done);
+
+#ifndef _LP64
+  pop(rrealsp);
+  pop(rthread);
+#endif
 }
 
-void MacroAssembler::pop_cont_fastpath(Register java_thread) {
+void MacroAssembler::pop_cont_fastpath() {
   if (!Continuations::enabled()) return;
+
+#ifndef _LP64
+  Register rthread = rax;
+  Register rrealsp = rbx;
+  push(rthread);
+  push(rrealsp);
+
+  get_thread(rthread);
+
+  // The code below wants the original RSP.
+  // Move it back after the pushes above.
+  movptr(rrealsp, rsp);
+  addptr(rrealsp, 2*wordSize);
+#else
+  Register rthread = r15_thread;
+  Register rrealsp = rsp;
+#endif
+
   Label done;
-  cmpptr(rsp, Address(java_thread, JavaThread::cont_fastpath_offset()));
+  cmpptr(rrealsp, Address(rthread, JavaThread::cont_fastpath_offset()));
   jccb(Assembler::below, done);
-  movptr(Address(java_thread, JavaThread::cont_fastpath_offset()), 0);
+  movptr(Address(rthread, JavaThread::cont_fastpath_offset()), 0);
   bind(done);
+
+#ifndef _LP64
+  pop(rrealsp);
+  pop(rthread);
+#endif
 }
 
-void MacroAssembler::inc_held_monitor_count(Register java_thread) {
-  if (!Continuations::enabled()) return;
-  incrementl(Address(java_thread, JavaThread::held_monitor_count_offset()));
+void MacroAssembler::inc_held_monitor_count() {
+#ifndef _LP64
+  Register thread = rax;
+  push(thread);
+  get_thread(thread);
+  incrementl(Address(thread, JavaThread::held_monitor_count_offset()));
+  pop(thread);
+#else // LP64
+  incrementq(Address(r15_thread, JavaThread::held_monitor_count_offset()));
+#endif
 }
 
-void MacroAssembler::dec_held_monitor_count(Register java_thread) {
-  if (!Continuations::enabled()) return;
-  decrementl(Address(java_thread, JavaThread::held_monitor_count_offset()));
-}
-
-void MacroAssembler::reset_held_monitor_count(Register java_thread) {
-  movl(Address(java_thread, JavaThread::held_monitor_count_offset()), (int32_t)0);
+void MacroAssembler::dec_held_monitor_count() {
+#ifndef _LP64
+  Register thread = rax;
+  push(thread);
+  get_thread(thread);
+  decrementl(Address(thread, JavaThread::held_monitor_count_offset()));
+  pop(thread);
+#else // LP64
+  decrementq(Address(r15_thread, JavaThread::held_monitor_count_offset()));
+#endif
 }
 
 #ifdef ASSERT
@@ -3225,9 +3293,13 @@ void MacroAssembler::vpand(XMMRegister dst, XMMRegister nds, AddressLiteral src,
   }
 }
 
-void MacroAssembler::vpbroadcastw(XMMRegister dst, XMMRegister src, int vector_len) {
-  assert(((dst->encoding() < 16 && src->encoding() < 16) || VM_Version::supports_avx512vlbw()),"XMM register should be 0-15");
-  Assembler::vpbroadcastw(dst, src, vector_len);
+void MacroAssembler::vpbroadcastd(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch) {
+  if (reachable(src)) {
+    Assembler::vpbroadcastd(dst, as_Address(src), vector_len);
+  } else {
+    lea(rscratch, src);
+    Assembler::vpbroadcastd(dst, Address(rscratch, 0), vector_len);
+  }
 }
 
 void MacroAssembler::vpbroadcastq(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch) {
@@ -3245,6 +3317,15 @@ void MacroAssembler::vbroadcastsd(XMMRegister dst, AddressLiteral src, int vecto
   } else {
     lea(rscratch, src);
     Assembler::vbroadcastsd(dst, Address(rscratch, 0), vector_len);
+  }
+}
+
+void MacroAssembler::vbroadcastss(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch) {
+  if (reachable(src)) {
+    Assembler::vbroadcastss(dst, as_Address(src), vector_len);
+  } else {
+    lea(rscratch, src);
+    Assembler::vbroadcastss(dst, Address(rscratch, 0), vector_len);
   }
 }
 
@@ -3687,7 +3768,7 @@ RegSet MacroAssembler::call_clobbered_gp_registers() {
 }
 
 XMMRegSet MacroAssembler::call_clobbered_xmm_registers() {
-  int num_xmm_registers = XMMRegisterImpl::available_xmm_registers();
+  int num_xmm_registers = XMMRegister::available_xmm_registers();
 #if defined(WINDOWS) && defined(_LP64)
   XMMRegSet result = XMMRegSet::range(xmm0, xmm5);
   if (num_xmm_registers > 16) {
@@ -3728,7 +3809,7 @@ static void restore_xmm_register(MacroAssembler* masm, int offset, XMMRegister r
 int register_section_sizes(RegSet gp_registers, XMMRegSet xmm_registers, bool save_fpu,
                            int& gp_area_size, int& fp_area_size, int& xmm_area_size) {
 
-  gp_area_size = align_up(gp_registers.size() * RegisterImpl::max_slots_per_register * VMRegImpl::stack_slot_size,
+  gp_area_size = align_up(gp_registers.size() * Register::max_slots_per_register * VMRegImpl::stack_slot_size,
                          StackAlignmentInBytes);
 #ifdef _LP64
   fp_area_size = 0;
@@ -3821,7 +3902,7 @@ void MacroAssembler::pop_set(XMMRegSet set, int offset) {
 void MacroAssembler::push_set(RegSet set, int offset) {
   int spill_offset;
   if (offset == -1) {
-    int register_push_size = set.size() * RegisterImpl::max_slots_per_register * VMRegImpl::stack_slot_size;
+    int register_push_size = set.size() * Register::max_slots_per_register * VMRegImpl::stack_slot_size;
     int aligned_size = align_up(register_push_size, StackAlignmentInBytes);
     subptr(rsp, aligned_size);
     spill_offset = 0;
@@ -3831,13 +3912,13 @@ void MacroAssembler::push_set(RegSet set, int offset) {
 
   for (RegSetIterator<Register> it = set.begin(); *it != noreg; ++it) {
     movptr(Address(rsp, spill_offset), *it);
-    spill_offset += RegisterImpl::max_slots_per_register * VMRegImpl::stack_slot_size;
+    spill_offset += Register::max_slots_per_register * VMRegImpl::stack_slot_size;
   }
 }
 
 void MacroAssembler::pop_set(RegSet set, int offset) {
 
-  int gp_reg_size = RegisterImpl::max_slots_per_register * VMRegImpl::stack_slot_size;
+  int gp_reg_size = Register::max_slots_per_register * VMRegImpl::stack_slot_size;
   int restore_size = set.size() * gp_reg_size;
   int aligned_size = align_up(restore_size, StackAlignmentInBytes);
 
@@ -3855,16 +3936,6 @@ void MacroAssembler::pop_set(RegSet set, int offset) {
   if (offset == -1) {
     addptr(rsp, aligned_size);
   }
-}
-
-// Defines obj, preserves var_size_in_bytes
-void MacroAssembler::eden_allocate(Register thread, Register obj,
-                                   Register var_size_in_bytes,
-                                   int con_size_in_bytes,
-                                   Register t1,
-                                   Label& slow_case) {
-  BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  bs->eden_allocate(this, thread, obj, var_size_in_bytes, con_size_in_bytes, t1, slow_case);
 }
 
 // Preserves the contents of address, destroys the contents length_in_bytes and temp.
@@ -4301,10 +4372,14 @@ void MacroAssembler::_verify_oop(Register reg, const char* s, const char* file, 
 
 void MacroAssembler::vallones(XMMRegister dst, int vector_len) {
   if (UseAVX > 2 && (vector_len == Assembler::AVX_512bit || VM_Version::supports_avx512vl())) {
+    // Only pcmpeq has dependency breaking treatment (i.e the execution can begin without
+    // waiting for the previous result on dst), not vpcmpeqd, so just use vpternlog
     vpternlogd(dst, 0xFF, dst, dst, vector_len);
+  } else if (VM_Version::supports_avx()) {
+    vpcmpeqd(dst, dst, dst, vector_len);
   } else {
-    assert(UseAVX > 0, "");
-    vpcmpeqb(dst, dst, dst, vector_len);
+    assert(VM_Version::supports_sse2(), "");
+    pcmpeqd(dst, dst);
   }
 }
 
@@ -5206,95 +5281,6 @@ void MacroAssembler::reinit_heapbase() {
 }
 
 #endif // _LP64
-
-// C2 compiled method's prolog code.
-void MacroAssembler::verified_entry(int framesize, int stack_bang_size, bool fp_mode_24b, bool is_stub) {
-
-  // WARNING: Initial instruction MUST be 5 bytes or longer so that
-  // NativeJump::patch_verified_entry will be able to patch out the entry
-  // code safely. The push to verify stack depth is ok at 5 bytes,
-  // the frame allocation can be either 3 or 6 bytes. So if we don't do
-  // stack bang then we must use the 6 byte frame allocation even if
-  // we have no frame. :-(
-  assert(stack_bang_size >= framesize || stack_bang_size <= 0, "stack bang size incorrect");
-
-  assert((framesize & (StackAlignmentInBytes-1)) == 0, "frame size not aligned");
-  // Remove word for return addr
-  framesize -= wordSize;
-  stack_bang_size -= wordSize;
-
-  // Calls to C2R adapters often do not accept exceptional returns.
-  // We require that their callers must bang for them.  But be careful, because
-  // some VM calls (such as call site linkage) can use several kilobytes of
-  // stack.  But the stack safety zone should account for that.
-  // See bugs 4446381, 4468289, 4497237.
-  if (stack_bang_size > 0) {
-    generate_stack_overflow_check(stack_bang_size);
-
-    // We always push rbp, so that on return to interpreter rbp, will be
-    // restored correctly and we can correct the stack.
-    push(rbp);
-    // Save caller's stack pointer into RBP if the frame pointer is preserved.
-    if (PreserveFramePointer) {
-      mov(rbp, rsp);
-    }
-    // Remove word for ebp
-    framesize -= wordSize;
-
-    // Create frame
-    if (framesize) {
-      subptr(rsp, framesize);
-    }
-  } else {
-    // Create frame (force generation of a 4 byte immediate value)
-    subptr_imm32(rsp, framesize);
-
-    // Save RBP register now.
-    framesize -= wordSize;
-    movptr(Address(rsp, framesize), rbp);
-    // Save caller's stack pointer into RBP if the frame pointer is preserved.
-    if (PreserveFramePointer) {
-      movptr(rbp, rsp);
-      if (framesize > 0) {
-        addptr(rbp, framesize);
-      }
-    }
-  }
-
-  if (VerifyStackAtCalls) { // Majik cookie to verify stack depth
-    framesize -= wordSize;
-    movptr(Address(rsp, framesize), (int32_t)0xbadb100d);
-  }
-
-#ifndef _LP64
-  // If method sets FPU control word do it now
-  if (fp_mode_24b) {
-    fldcw(ExternalAddress(StubRoutines::x86::addr_fpu_cntrl_wrd_24()));
-  }
-  if (UseSSE >= 2 && VerifyFPU) {
-    verify_FPU(0, "FPU stack must be clean on entry");
-  }
-#endif
-
-#ifdef ASSERT
-  if (VerifyStackAtCalls) {
-    Label L;
-    push(rax);
-    mov(rax, rsp);
-    andptr(rax, StackAlignmentInBytes-1);
-    cmpptr(rax, StackAlignmentInBytes-wordSize);
-    pop(rax);
-    jcc(Assembler::equal, L);
-    STOP("Stack is not properly aligned!");
-    bind(L);
-  }
-#endif
-
-  if (!is_stub) {
-    BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-    bs->nmethod_entry_barrier(this);
-  }
-}
 
 #if COMPILER2_OR_JVMCI
 

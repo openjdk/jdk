@@ -549,14 +549,14 @@ void NativePostCallNop::make_deopt() {
   NativeDeoptInstruction::insert(addr_at(0));
 }
 
-#ifndef PRODUCT
+#ifdef ASSERT
 static bool is_movk_to_zr(uint32_t insn) {
   return ((insn & 0xffe0001f) == 0xf280001f);
 }
 #endif
 
 void NativePostCallNop::patch(jint diff) {
-#ifndef PRODUCT
+#ifdef ASSERT
   assert(diff != 0, "must be");
   uint32_t insn1 = uint_at(4);
   uint32_t insn2 = uint_at(8);

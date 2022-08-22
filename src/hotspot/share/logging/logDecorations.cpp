@@ -26,8 +26,8 @@
 #include "logging/logConfiguration.hpp"
 #include "logging/logDecorations.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/os.hpp"
-#include "runtime/thread.inline.hpp"
 #include "services/management.hpp"
 
 const char* volatile LogDecorations::_host_name = NULL;

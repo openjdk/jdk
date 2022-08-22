@@ -83,7 +83,7 @@ G1GCPhaseTimes::G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads) :
   }
 
   _gc_par_phases[MergeLB] = new WorkerDataArray<double>("MergeLB", "Log Buffers (ms):", max_gc_threads);
-  if (G1HotCardCache::default_use_cache()) {
+  if (G1HotCardCache::use_cache()) {
     _gc_par_phases[MergeHCC] = new WorkerDataArray<double>("MergeHCC", "Hot Card Cache (ms):", max_gc_threads);
     _gc_par_phases[MergeHCC]->create_thread_work_items("Dirty Cards:", MergeHCCDirtyCards);
     _gc_par_phases[MergeHCC]->create_thread_work_items("Skipped Cards:", MergeHCCSkippedCards);
@@ -434,7 +434,7 @@ double G1GCPhaseTimes::print_evacuate_initial_collection_set() const {
   debug_time("Prepare Merge Heap Roots", _cur_prepare_merge_heap_roots_time_ms);
   debug_phase(_gc_par_phases[MergeER]);
   debug_phase(_gc_par_phases[MergeRS]);
-  if (G1HotCardCache::default_use_cache()) {
+  if (G1HotCardCache::use_cache()) {
     debug_phase(_gc_par_phases[MergeHCC]);
   }
   debug_phase(_gc_par_phases[MergeLB]);
@@ -496,9 +496,8 @@ double G1GCPhaseTimes::print_post_evacuate_collection_set(bool evacuation_failed
 #if COMPILER2_OR_JVMCI
   debug_phase(_gc_par_phases[UpdateDerivedPointers], 1);
 #endif
-  if (G1CollectedHeap::heap()->should_do_eager_reclaim()) {
-    debug_phase(_gc_par_phases[EagerlyReclaimHumongousObjects], 1);
-  }
+  debug_phase(_gc_par_phases[EagerlyReclaimHumongousObjects], 1);
+
   if (G1CollectedHeap::heap()->should_sample_collection_set_candidates()) {
     debug_phase(_gc_par_phases[SampleCollectionSetCandidates], 1);
   }

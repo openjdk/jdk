@@ -33,8 +33,8 @@
 #include "gc/g1/heapRegion.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "interpreter/interp_masm.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/sharedRuntime.hpp"
-#include "runtime/thread.hpp"
 #ifdef COMPILER1
 #include "c1/c1_LIRAssembler.hpp"
 #include "c1/c1_MacroAssembler.hpp"
@@ -378,15 +378,6 @@ void G1BarrierSetAssembler::generate_c1_pre_barrier_runtime_stub(StubAssembler* 
 
   Label done;
   Label runtime;
-
-  // Is marking still active?
-  if (in_bytes(SATBMarkQueue::byte_width_of_active()) == 4) {  // 4-byte width
-    __ lwu(tmp, in_progress);
-  } else {
-    assert(in_bytes(SATBMarkQueue::byte_width_of_active()) == 1, "Assumption");
-    __ lbu(tmp, in_progress);
-  }
-  __ beqz(tmp, done);
 
   // Can we store original value in the thread's buffer?
   __ ld(tmp, queue_index);

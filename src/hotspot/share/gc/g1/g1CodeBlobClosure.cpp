@@ -59,7 +59,7 @@ void G1CodeBlobClosure::MarkingOopClosure::do_oop_work(T* p) {
   T oop_or_narrowoop = RawAccess<>::oop_load(p);
   if (!CompressedOops::is_null(oop_or_narrowoop)) {
     oop o = CompressedOops::decode_not_null(oop_or_narrowoop);
-    _cm->mark_in_next_bitmap(_worker_id, o);
+    _cm->mark_in_bitmap(_worker_id, o);
   }
 }
 

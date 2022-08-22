@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2015, Red Hat Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -74,11 +74,11 @@ public class ProcAARCH64Thread implements ThreadProxy {
     }
 
     public boolean equals(Object obj) {
-        if ((obj == null) || !(obj instanceof ProcAARCH64Thread)) {
+        if (!(obj instanceof ProcAARCH64Thread other)) {
             return false;
         }
 
-        return (((ProcAARCH64Thread) obj).id == id);
+        return (other.id == id);
     }
 
     public int hashCode() {

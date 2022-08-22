@@ -838,7 +838,9 @@ bool IfNode::has_only_uncommon_traps(ProjNode* proj, ProjNode*& success, ProjNod
       ciMethod* dom_method = dom_unc->jvms()->method();
       int dom_bci = dom_unc->jvms()->bci();
       if (!igvn->C->too_many_traps(dom_method, dom_bci, Deoptimization::Reason_unstable_fused_if) &&
-          !igvn->C->too_many_traps(dom_method, dom_bci, Deoptimization::Reason_range_check)) {
+          !igvn->C->too_many_traps(dom_method, dom_bci, Deoptimization::Reason_range_check) &&
+          // Return true if c2 manages to reconcile with UnstableIf optimization. See the comments for it.
+          igvn->C->remove_unstable_if_trap(dom_unc, true/*yield*/)) {
         success = unc_proj;
         fail = unc_proj->other_if_proj();
         return true;

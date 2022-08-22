@@ -32,6 +32,7 @@
 #include "gc/z/zPhysicalMemoryBacking_linux.hpp"
 #include "gc/z/zSyscall_linux.hpp"
 #include "logging/log.hpp"
+#include "os_linux.hpp"
 #include "runtime/init.hpp"
 #include "runtime/os.hpp"
 #include "runtime/safefetch.hpp"

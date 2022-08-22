@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,6 +72,19 @@ class UnixFileAttributes
             UnixNativeDispatcher.lstat(path, attrs);
         }
         return attrs;
+    }
+
+    // get the UnixFileAttributes for a given file. Returns null if the file does not exist.
+    static UnixFileAttributes getIfExists(UnixPath path) throws UnixException {
+        UnixFileAttributes attrs = new UnixFileAttributes();
+        int errno = UnixNativeDispatcher.stat2(path, attrs);
+        if (errno == 0) {
+            return attrs;
+        } else if (errno == UnixConstants.ENOENT) {
+            return null;
+        } else {
+            throw new UnixException(errno);
+        }
     }
 
     // get the UnixFileAttributes for an open file
@@ -251,16 +264,6 @@ class UnixFileAttributes
         return UnixAsBasicFileAttributes.wrap(this);
     }
 
-    // unwrap BasicFileAttributes to get the underlying UnixFileAttributes
-    // object. Returns null is not wrapped.
-    static UnixFileAttributes toUnixFileAttributes(BasicFileAttributes attrs) {
-        if (attrs instanceof UnixFileAttributes)
-            return (UnixFileAttributes)attrs;
-        if (attrs instanceof UnixAsBasicFileAttributes) {
-            return ((UnixAsBasicFileAttributes)attrs).unwrap();
-        }
-        return null;
-    }
 
     // wrap a UnixFileAttributes object as a BasicFileAttributes
     private static class UnixAsBasicFileAttributes implements BasicFileAttributes {
@@ -274,9 +277,6 @@ class UnixFileAttributes
             return new UnixAsBasicFileAttributes(attrs);
         }
 
-        UnixFileAttributes unwrap() {
-            return attrs;
-        }
 
         @Override
         public FileTime lastModifiedTime() {

@@ -26,8 +26,6 @@
 #ifndef CPU_PPC_FRAME_PPC_HPP
 #define CPU_PPC_FRAME_PPC_HPP
 
-#include "runtime/synchronizer.hpp"
-
   //  C frame layout on PPC-64.
   //
   //  In this figure the stack grows upwards, while memory grows
@@ -382,13 +380,9 @@
   const ImmutableOopMap* get_oop_map() const;
 
   // Constructors
-  inline frame(intptr_t* sp, address pc);
-  inline frame(intptr_t* sp, address pc, intptr_t* unextended_sp, intptr_t* fp = nullptr, CodeBlob* cb = nullptr);
+  inline frame(intptr_t* sp, address pc, intptr_t* unextended_sp = nullptr, intptr_t* fp = nullptr, CodeBlob* cb = nullptr);
 
  private:
-
-  intptr_t* compiled_sender_sp(CodeBlob* cb) const;
-  address*  compiled_sender_pc_addr(CodeBlob* cb) const;
   address*  sender_pc_addr(void) const;
 
  public:

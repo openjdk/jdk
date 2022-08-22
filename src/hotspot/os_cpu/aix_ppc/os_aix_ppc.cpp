@@ -34,7 +34,8 @@
 #include "interpreter/interpreter.hpp"
 #include "memory/allocation.inline.hpp"
 #include "nativeInst_ppc.hpp"
-#include "os_share_aix.hpp"
+#include "os_aix.hpp"
+#include "os_posix.hpp"
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm_misc.hpp"
 #include "porting_aix.hpp"
@@ -43,12 +44,12 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "runtime/thread.inline.hpp"
 #include "runtime/timer.hpp"
 #include "signals_posix.hpp"
 #include "utilities/events.hpp"
@@ -509,12 +510,14 @@ int os::extra_bang_size_in_bytes() {
   return 0;
 }
 
-bool os::platform_print_native_stack(outputStream* st, void* context, char *buf, int buf_size) {
+bool os::Aix::platform_print_native_stack(outputStream* st, const void* context, char *buf, int buf_size) {
   AixNativeCallstack::print_callstack_for_context(st, (const ucontext_t*)context, true, buf, (size_t) buf_size);
   return true;
 }
 
 // HAVE_FUNCTION_DESCRIPTORS
-void* os::resolve_function_descriptor(void* p) {
+void* os::Aix::resolve_function_descriptor(void* p) {
   return ((const FunctionDescriptor*)p)->entry();
 }
+
+void os::setup_fpu() {}

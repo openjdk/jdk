@@ -1371,24 +1371,6 @@ bool PhaseMacroExpand::eliminate_reduced_allocation_merge(ReducedAllocationMerge
   return true;
 }
 
-//---------------------------set_eden_pointers-------------------------
-void PhaseMacroExpand::set_eden_pointers(Node* &eden_top_adr, Node* &eden_end_adr) {
-  if (UseTLAB) {                // Private allocation: load from TLS
-    Node* thread = transform_later(new ThreadLocalNode());
-    int tlab_top_offset = in_bytes(JavaThread::tlab_top_offset());
-    int tlab_end_offset = in_bytes(JavaThread::tlab_end_offset());
-    eden_top_adr = basic_plus_adr(top()/*not oop*/, thread, tlab_top_offset);
-    eden_end_adr = basic_plus_adr(top()/*not oop*/, thread, tlab_end_offset);
-  } else {                      // Shared allocation: load from globals
-    CollectedHeap* ch = Universe::heap();
-    address top_adr = (address)ch->top_addr();
-    address end_adr = (address)ch->end_addr();
-    eden_top_adr = makecon(TypeRawPtr::make(top_adr));
-    eden_end_adr = basic_plus_adr(eden_top_adr, end_adr - top_adr);
-  }
-}
-
-
 Node* PhaseMacroExpand::make_load(Node* ctl, Node* mem, Node* base, int offset, const Type* value_type, BasicType bt) {
   Node* adr = basic_plus_adr(base, offset);
   const TypePtr* adr_type = adr->bottom_type()->is_ptr();
@@ -1463,8 +1445,7 @@ void PhaseMacroExpand::expand_allocate_common(
             AllocateNode* alloc, // allocation node to be expanded
             Node* length,  // array length for an array allocation
             const TypeFunc* slow_call_type, // Type of slow call
-            address slow_call_address,  // Address of slow call
-            Node* valid_length_test // whether length is valid or not
+            address slow_call_address  // Address of slow call
     )
 {
   Node* ctrl = alloc->in(TypeFunc::Control);
@@ -1498,7 +1479,7 @@ void PhaseMacroExpand::expand_allocate_common(
     initial_slow_test = BoolNode::make_predicate(initial_slow_test, &_igvn);
   }
 
-  if (!UseTLAB && !Universe::heap()->supports_inline_contig_alloc()) {
+  if (!UseTLAB) {
     // Force slow-path allocation
     expand_fast_path = false;
     initial_slow_test = NULL;
@@ -1649,12 +1630,6 @@ void PhaseMacroExpand::expand_allocate_common(
   // Copy debug information and adjust JVMState information, then replace
   // allocate node with the call
   call->copy_call_debug_info(&_igvn, alloc);
-  // For array allocations, copy the valid length check to the call node so Compile::final_graph_reshaping() can verify
-  // that the call has the expected number of CatchProj nodes (in case the allocation always fails and the fallthrough
-  // path dies).
-  if (valid_length_test != NULL) {
-    call->add_req(valid_length_test);
-  }
   if (expand_fast_path) {
     call->set_cnt(PROB_UNLIKELY_MAG(4));  // Same effect as RC_UNCOMMON.
   } else {
@@ -2141,12 +2116,11 @@ Node* PhaseMacroExpand::prefetch_allocation(Node* i_o, Node*& needgc_false,
 void PhaseMacroExpand::expand_allocate(AllocateNode *alloc) {
   expand_allocate_common(alloc, NULL,
                          OptoRuntime::new_instance_Type(),
-                         OptoRuntime::new_instance_Java(), NULL);
+                         OptoRuntime::new_instance_Java());
 }
 
 void PhaseMacroExpand::expand_allocate_array(AllocateArrayNode *alloc) {
   Node* length = alloc->in(AllocateNode::ALength);
-  Node* valid_length_test = alloc->in(AllocateNode::ValidLengthTest);
   InitializeNode* init = alloc->initialization();
   Node* klass_node = alloc->in(AllocateNode::KlassNode);
   const TypeAryKlassPtr* ary_klass_t = _igvn.type(klass_node)->isa_aryklassptr();
@@ -2161,7 +2135,7 @@ void PhaseMacroExpand::expand_allocate_array(AllocateArrayNode *alloc) {
   }
   expand_allocate_common(alloc, length,
                          OptoRuntime::new_array_Type(),
-                         slow_call_address, valid_length_test);
+                         slow_call_address);
 }
 
 //-------------------mark_eliminated_box----------------------------------
@@ -2468,29 +2442,11 @@ void PhaseMacroExpand::expand_lock_node(LockNode *lock) {
 
   Node *memproj = transform_later(new ProjNode(call, TypeFunc::Memory));
 
-  Node* thread = transform_later(new ThreadLocalNode());
-  if (Continuations::enabled()) {
-    // held_monitor_count increased in slowpath (complete_monitor_locking_C_inc_held_monitor_count), need compensate a decreament here
-    // this minimizes control flow changes here and add redundant count updates only in slowpath
-    Node* dec_count = make_load(slow_ctrl, memproj, thread, in_bytes(JavaThread::held_monitor_count_offset()), TypeInt::INT, TypeInt::INT->basic_type());
-    Node* new_dec_count = transform_later(new SubINode(dec_count, intcon(1)));
-    Node *compensate_dec = make_store(slow_ctrl, memproj, thread, in_bytes(JavaThread::held_monitor_count_offset()), new_dec_count, T_INT);
-    mem_phi->init_req(1, compensate_dec);
-  } else {
-    mem_phi->init_req(1, memproj);
-  }
+  mem_phi->init_req(1, memproj);
+
   transform_later(mem_phi);
 
-  if (Continuations::enabled()) {
-    // held_monitor_count increases in all path's post-dominate
-    Node* inc_count = make_load(region, mem_phi, thread, in_bytes(JavaThread::held_monitor_count_offset()), TypeInt::INT, TypeInt::INT->basic_type());
-    Node* new_inc_count = transform_later(new AddINode(inc_count, intcon(1)));
-    Node *store = make_store(region, mem_phi, thread, in_bytes(JavaThread::held_monitor_count_offset()), new_inc_count, T_INT);
-
-    _igvn.replace_node(_callprojs.fallthrough_memproj, store);
-  } else {
-    _igvn.replace_node(_callprojs.fallthrough_memproj, mem_phi);
-  }
+  _igvn.replace_node(_callprojs.fallthrough_memproj, mem_phi);
 }
 
 //------------------------------expand_unlock_node----------------------
@@ -2545,15 +2501,7 @@ void PhaseMacroExpand::expand_unlock_node(UnlockNode *unlock) {
   mem_phi->init_req(2, mem);
   transform_later(mem_phi);
 
-  if (Continuations::enabled()) {
-    Node* count = make_load(region, mem_phi, thread, in_bytes(JavaThread::held_monitor_count_offset()), TypeInt::INT, TypeInt::INT->basic_type());
-    Node* newcount = transform_later(new SubINode(count, intcon(1)));
-    Node *store = make_store(region, mem_phi, thread, in_bytes(JavaThread::held_monitor_count_offset()), newcount, T_INT);
-
-    _igvn.replace_node(_callprojs.fallthrough_memproj, store);
-  } else {
-    _igvn.replace_node(_callprojs.fallthrough_memproj, mem_phi);
-  }
+  _igvn.replace_node(_callprojs.fallthrough_memproj, mem_phi);
 }
 
 void PhaseMacroExpand::expand_subtypecheck_node(SubTypeCheckNode *check) {

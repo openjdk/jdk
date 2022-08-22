@@ -25,13 +25,13 @@
 #ifndef SHARE_OOPS_INSTANCESTACKCHUNKKLASS_HPP
 #define SHARE_OOPS_INSTANCESTACKCHUNKKLASS_HPP
 
-#include "memory/memRegion.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
 
 class ClassFileParser;
+class MemRegion;
 
 // An InstanceStackChunkKlass is a specialization of the InstanceKlass.
 //

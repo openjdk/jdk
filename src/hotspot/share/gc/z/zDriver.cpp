@@ -37,6 +37,7 @@
 #include "gc/z/zVerify.hpp"
 #include "logging/log.hpp"
 #include "memory/universe.hpp"
+#include "runtime/threads.hpp"
 #include "runtime/vmOperations.hpp"
 #include "runtime/vmThread.hpp"
 

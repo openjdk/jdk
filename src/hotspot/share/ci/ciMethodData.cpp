@@ -248,20 +248,25 @@ bool ciMethodData::load_data() {
 
   // Note:  Extra data are all BitData, and do not need translation.
   _invocation_counter = mdo->invocation_count();
-  _state = mdo->is_mature()? mature_state: immature_state;
+  if (_invocation_counter == 0 && mdo->backedge_count() > 0) {
+    // Avoid skewing counter data during OSR compilation.
+    // Sometimes, MDO is allocated during the very first invocation and OSR compilation is triggered
+    // solely by backedge counter while invocation counter stays zero. In such case, it's important
+    // to observe non-zero invocation count to properly scale profile counts (see ciMethod::scale_count()).
+    _invocation_counter = 1;
+  }
 
+  _state = mdo->is_mature() ? mature_state : immature_state;
   _eflags = mdo->eflags();
   _arg_local = mdo->arg_local();
   _arg_stack = mdo->arg_stack();
   _arg_returned  = mdo->arg_returned();
-#ifndef PRODUCT
   if (ReplayCompiles) {
     ciReplay::initialize(this);
     if (is_empty()) {
       return false;
     }
   }
-#endif
   return true;
 }
 

@@ -31,6 +31,7 @@
 #include "memory/memRegion.hpp"
 #include "memory/universe.hpp"
 #include "oops/instanceStackChunkKlass.inline.hpp"
+#include "runtime/continuationJavaClasses.inline.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/registerMap.hpp"
@@ -197,7 +198,10 @@ inline void stackChunkOopDesc::iterate_stack(StackChunkFrameClosureType* closure
   bool should_continue = true;
 
   if (f.is_stub()) {
-    RegisterMap full_map((JavaThread*)nullptr, true, false, true);
+    RegisterMap full_map((JavaThread*)nullptr,
+                         RegisterMap::UpdateMap::include,
+                         RegisterMap::ProcessFrames::skip,
+                         RegisterMap::WalkContinuation::include);
     full_map.set_include_argument_oops(false);
 
     f.next(&full_map);
@@ -316,6 +320,12 @@ inline void stackChunkOopDesc::copy_from_stack_to_chunk(intptr_t* from, intptr_t
   assert(to >= start_address(), "Chunk underflow");
   assert(to + size <= end_address(), "Chunk overflow");
 
+#if !defined(AMD64) || !defined(AARCH64) || defined(ZERO)
+  // Suppress compilation warning-as-error on unimplemented architectures
+  // that stub out arch-specific methods. Some compilers are smart enough
+  // to figure out the argument is always null and then warn about it.
+  if (to != nullptr)
+#endif
   memcpy(to, from, size << LogBytesPerWord);
 }
 
@@ -330,7 +340,9 @@ inline void stackChunkOopDesc::copy_from_chunk_to_stack(intptr_t* from, intptr_t
   assert(from + size <= end_address(), "");
 
 #if !defined(AMD64) || !defined(AARCH64) || defined(ZERO)
-  // Suppress compilation error from dummy function (somewhere).
+  // Suppress compilation warning-as-error on unimplemented architectures
+  // that stub out arch-specific methods. Some compilers are smart enough
+  // to figure out the argument is always null and then warn about it.
   if (to != nullptr)
 #endif
   memcpy(to, from, size << LogBytesPerWord);

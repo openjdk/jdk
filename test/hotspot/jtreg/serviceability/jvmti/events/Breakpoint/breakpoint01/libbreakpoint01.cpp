@@ -55,7 +55,7 @@ static volatile jint result = PASSED;
 static jvmtiEnv *jvmti = NULL;
 static jvmtiEventCallbacks callbacks;
 
-static volatile int callbacksEnabled = NSK_TRUE;
+static volatile int callbacksEnabled = JNI_TRUE;
 static jrawMonitorID agent_lock;
 
 static void initCounters() {
@@ -196,13 +196,13 @@ Breakpoint(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread, jmethodID method, jloca
 void JNICALL
 VMStart(jvmtiEnv *jvmti, JNIEnv *jni) {
   RawMonitorLocker rml(jvmti, jni, agent_lock);
-  callbacksEnabled = NSK_TRUE;
+  callbacksEnabled = JNI_TRUE;
 }
 
 void JNICALL
 VMDeath(jvmtiEnv *jvmti, JNIEnv *jni) {
   RawMonitorLocker rml(jvmti, jni, agent_lock);
-  callbacksEnabled = NSK_FALSE;
+  callbacksEnabled = JNI_FALSE;
 }
 
 JNIEXPORT jint JNICALL

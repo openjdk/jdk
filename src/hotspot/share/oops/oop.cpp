@@ -34,7 +34,8 @@
 #include "oops/oop.inline.hpp"
 #include "oops/verifyOopClosure.hpp"
 #include "runtime/handles.inline.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/javaThread.hpp"
+#include "runtime/synchronizer.hpp"
 #include "utilities/macros.hpp"
 
 void oopDesc::print_on(outputStream* st) const {

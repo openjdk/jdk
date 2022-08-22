@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2021, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -29,8 +29,15 @@
 
 private:
   void pd_initialize() {}
+  bool pd_finalize_stubs() {
+    if (_finalize_stubs) {
+      Unimplemented();
+    }
+    return true;
+  }
 
 public:
   void flush_bundle(bool start_new_bundle) {}
+  static constexpr bool supports_shared_stubs() { return false; }
 
 #endif // CPU_RISCV_CODEBUFFER_RISCV_HPP

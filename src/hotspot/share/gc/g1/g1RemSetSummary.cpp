@@ -35,7 +35,7 @@
 #include "gc/g1/heapRegionRemSet.inline.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/iterator.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/javaThread.hpp"
 
 void G1RemSetSummary::update() {
   class CollectData : public ThreadClosure {
@@ -321,15 +321,17 @@ public:
   }
 };
 
-void G1RemSetSummary::print_on(outputStream* out) {
-  out->print_cr("  Concurrent refinement threads times (s)");
-  out->print("     ");
-  for (uint i = 0; i < _num_vtimes; i++) {
-    out->print("    %5.2f", rs_thread_vtime(i));
+void G1RemSetSummary::print_on(outputStream* out, bool show_thread_times) {
+  if (show_thread_times) {
+    out->print_cr(" Concurrent refinement threads times (s)");
+    out->print("     ");
+    for (uint i = 0; i < _num_vtimes; i++) {
+      out->print("    %5.2f", rs_thread_vtime(i));
+    }
+    out->cr();
+    out->print_cr(" Sampling task time (ms)");
+    out->print_cr("         %5.3f", sampling_task_vtime() * MILLIUNITS);
   }
-  out->cr();
-  out->print_cr("  Sampling task time (ms)");
-  out->print_cr("         %5.3f", sampling_task_vtime() * MILLIUNITS);
 
   HRRSStatsIter blk;
   G1CollectedHeap::heap()->heap_region_iterate(&blk);

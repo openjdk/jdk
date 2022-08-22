@@ -27,8 +27,8 @@
 
 #include "classfile/vmSymbols.hpp"
 #include "memory/allocation.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/os.hpp"
-#include "runtime/thread.hpp"
 #include "utilities/exceptions.hpp"
 
 class StringArrayArgument : public CHeapObj<mtInternal> {

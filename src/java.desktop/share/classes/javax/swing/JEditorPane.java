@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -693,11 +693,7 @@ public class JEditorPane extends JTextComponent {
                                 setDocument(doc);
                             }
                         });
-                    } catch (InvocationTargetException ex) {
-                        UIManager.getLookAndFeel().provideErrorFeedback(
-                                                            JEditorPane.this);
-                        return old;
-                    } catch (InterruptedException ex) {
+                    } catch (InvocationTargetException | InterruptedException ex) {
                         UIManager.getLookAndFeel().provideErrorFeedback(
                                                             JEditorPane.this);
                         return old;
@@ -818,9 +814,7 @@ public class JEditorPane extends JTextComponent {
                         handleConnectionProperties(conn);
                     }
                 });
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            } catch (InvocationTargetException e) {
+            } catch (InterruptedException | InvocationTargetException e) {
                 throw new RuntimeException(e);
             }
         }
@@ -1061,14 +1055,9 @@ public class JEditorPane extends JTextComponent {
                     putClientProperty("charset", charset);
                 }
             }
-        }
-        catch (IndexOutOfBoundsException e) {
+        } catch (IndexOutOfBoundsException | NullPointerException e) {
             // malformed parameter list, use charset we have
-        }
-        catch (NullPointerException e) {
-            // malformed parameter list, use charset we have
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             // malformed parameter list, use charset we have; but complain
             System.err.println("JEditorPane.getCharsetFromContentTypeParameters failed on: " + paramlist);
             e.printStackTrace();
@@ -1479,9 +1468,7 @@ public class JEditorPane extends JTextComponent {
             Reader r = new StringReader(t);
             EditorKit kit = getEditorKit();
             kit.read(r, doc, 0);
-        } catch (IOException ioe) {
-            UIManager.getLookAndFeel().provideErrorFeedback(JEditorPane.this);
-        } catch (BadLocationException ble) {
+        } catch (IOException | BadLocationException e) {
             UIManager.getLookAndFeel().provideErrorFeedback(JEditorPane.this);
         }
     }
