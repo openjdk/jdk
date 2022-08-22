@@ -261,7 +261,6 @@ public class KeepAliveTest {
     private static final String H = C + NEW_LINE + KEEP_ALIVE_TIMEOUT_NEG;
     private static final String I = C + NEW_LINE + KEEP_ALIVE_TIMEOUT_ZERO;
     private static final Logger logger = Logger.getLogger("sun.net.www.protocol.http.HttpURLConnection");
-    
    /*
     * There are 160 scenarios run by this program.
     * For every scenario there is mapping between serverScenarios[int],clientScenarios[int] and expectedOutput[int]
@@ -280,7 +279,6 @@ public class KeepAliveTest {
     * expectedOutput[int] is retrieved using expectedOuput[int] directly.
     *
     */
-   
    /*serverScenarios[int] will be retreived using method getServerScenario(int)*/
    /* private static final String[] serverScenarios = {
         A, A, A, A, A, A, A, A, A, A, A, A, A, A, A, A,
@@ -321,7 +319,6 @@ public class KeepAliveTest {
     private static final String[] clientScenarios = {
         a[0] , a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8], a[9], a[10], a[11], a[12], a[13], a[14], a[15]
     };
-    
     private static final int[] expectedValues = {
         5,  100,    5, 100,  5,  5,  5,  0,  5,   0,   0,   5,  100,    0,   100,    5,
         20,   20 ,  20,  20, 20, 20, 20, 20, 20,  20 , 20,  20,   20,   20,    20,   20,
@@ -334,15 +331,11 @@ public class KeepAliveTest {
         60,  60,  200, 200, 60, 60, 60, 60,  0,   0,  60,   0,    0,  200,    60,  200,
         0,    0,    0,   0,  0,  0,  0,  0,  0,   0,   0,   0,    0,    0,     0,    0,
     };
-    
     private final CountDownLatch countDownLatch = new CountDownLatch(1);
-
     private final CountDownLatch serverCountDownLatch = new CountDownLatch(1);
-    
     private int getClientScenarioNumber(int scenarioNumber) {
         return scenarioNumber % 16 ;
     }
-
     private String getServerScenario(int scenarioNumber) {
         if(scenarioNumber >= 0 && scenarioNumber <= 15) {
             return A;
@@ -368,7 +361,6 @@ public class KeepAliveTest {
         /*Invalid Case*/
         return null;
     }
-    
     private void startScenario(int scenarioNumber) throws Exception {
         //test scenarios are skipped because of JDK-8291638
         if((scenarioNumber >= 112 && scenarioNumber <= 127) || (scenarioNumber >= 144 && scenarioNumber <= 159)) {
@@ -388,10 +380,8 @@ public class KeepAliveTest {
         runClient(scenarioNumber);
         //serverReady = false;
     }
-    
     private void startServer(int scenarioNumber) {
         Thread server = new Thread(new Runnable() {
-
             @Override
             public void run() {
                 try {
@@ -403,7 +393,6 @@ public class KeepAliveTest {
         }, "SERVER");
         server.start();
     }
-
     private void readAll(Socket s) throws IOException {
         byte[] buf = new byte[128];
         int c;
@@ -419,7 +408,6 @@ public class KeepAliveTest {
             throw new IOException("Socket closed");
         }
     }
-
     private void createServer(int scenarioNumber) throws IOException {
         String serverScenarioContent = null;
         if (!getServerScenario(scenarioNumber).equalsIgnoreCase(NI)) {
@@ -484,7 +472,6 @@ public class KeepAliveTest {
             }
         }
     }
-
     private void runClient(int scenarioNumber) throws Exception {
         try {
             connectToServerURL(scenarioNumber);
@@ -495,7 +482,6 @@ public class KeepAliveTest {
             System.out.println();
         }
     }
-
     private void connectToServerURL(int scenarioNumber) throws Exception {
 
         //    System.setProperty("java.net.useSystemProxies", "false");
@@ -540,7 +526,6 @@ public class KeepAliveTest {
         } else {
             httpUrlConnection = (sun.net.www.protocol.http.HttpURLConnection) url.openConnection();
         }
-
         InputStreamReader inputStreamReader = new InputStreamReader(httpUrlConnection.getInputStream());
         BufferedReader bufferedReader = null;
         try {
@@ -558,7 +543,6 @@ public class KeepAliveTest {
                 bufferedReader.close();
             }
         }
-
         //    System.out.println("ResponseCode:" + httpUrlConnection.getResponseCode());
         //    System.out.println("ResponseMessage:" + httpUrlConnection.getResponseMessage());
         //    System.out.println("Content:" + httpUrlConnection.getContent());
@@ -568,7 +552,6 @@ public class KeepAliveTest {
         }
         fetchInfo(scenarioNumber, httpUrlConnection);
     }
-
     private void fetchInfo(int scenarioNumber, sun.net.www.protocol.http.HttpURLConnection httpUrlConnection)
         throws Exception {
             Field field = Class.forName("sun.net.www.protocol.http.HttpURLConnection").getDeclaredField("http");
@@ -629,7 +612,6 @@ public class KeepAliveTest {
                 }
             }
     }
-    
     public static void main(String[] args) throws Exception {
         if (args.length != 1) {
             throw new IllegalArgumentException("Usage:java KeepAliveTest.java <scenarioNumber>");
