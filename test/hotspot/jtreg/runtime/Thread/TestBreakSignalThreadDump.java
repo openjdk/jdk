@@ -53,37 +53,37 @@ import vm.share.ProcessUtils;
 public class TestBreakSignalThreadDump {
 
     static class TestProcess {
-	static {
-	    System.loadLibrary("ProcessUtils");
-	}
+        static {
+            System.loadLibrary("ProcessUtils");
+        }
 
-	public static void main(String[] argv) throws Exception {
-	    ProcessUtils.sendCtrlBreak();
-	    System.out.println("Done!");
-	}
+        public static void main(String[] argv) throws Exception {
+            ProcessUtils.sendCtrlBreak();
+            System.out.println("Done!");
+        }
     }
 
     public static void main(String[] argv) throws Exception {
-	String main = "TestBreakSignalThreadDump$TestProcess";
-	ProcessBuilder pb = ProcessTools.createTestJvm("-Djava.library.path=" + Utils.TEST_NATIVE_PATH, main);
+        String main = "TestBreakSignalThreadDump$TestProcess";
+        ProcessBuilder pb = ProcessTools.createTestJvm("-Djava.library.path=" + Utils.TEST_NATIVE_PATH, main);
 
-	if (argv.length > 0 && argv[0].equals("load_libjsig")) {
-	    prepend_jsig_lib(pb.environment());
-	}
+        if (argv.length > 0 && argv[0].equals("load_libjsig")) {
+            prepend_jsig_lib(pb.environment());
+        }
 
-	OutputAnalyzer output = new OutputAnalyzer(pb.start());
-	output.shouldHaveExitValue(0);
-	output.shouldContain("Full thread dump ");
-	output.shouldContain("java.lang.Thread.State: RUNNABLE");
-	output.shouldContain("Done!");
+        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        output.shouldHaveExitValue(0);
+        output.shouldContain("Full thread dump ");
+        output.shouldContain("java.lang.Thread.State: RUNNABLE");
+        output.shouldContain("Done!");
     }
 
     private static void prepend_jsig_lib(Map<String, String> env) {
-	Path libjsig = Platform.jvmLibDir().resolve("libjsig." + Platform.sharedLibraryExt());
-	if (!Files.exists(libjsig)) {
-	    throw new RuntimeException("File libjsig not found, path: " + libjsig);
-	}
-	String env_var = Platform.isOSX() ? "DYLD_INSERT_LIBRARIES" : "LD_PRELOAD";
-	env.put(env_var, libjsig.toString());
+        Path libjsig = Platform.jvmLibDir().resolve("libjsig." + Platform.sharedLibraryExt());
+        if (!Files.exists(libjsig)) {
+            throw new RuntimeException("File libjsig not found, path: " + libjsig);
+        }
+        String env_var = Platform.isOSX() ? "DYLD_INSERT_LIBRARIES" : "LD_PRELOAD";
+        env.put(env_var, libjsig.toString());
     }
 }
