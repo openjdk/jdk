@@ -117,9 +117,9 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
 #ifndef PRODUCT
   if (DebugVtables) {
     Label L;
-    __ cmpptr(method, (int32_t)NULL_WORD);
+    __ cmpptr(method, NULL_WORD);
     __ jcc(Assembler::equal, L);
-    __ cmpptr(Address(method, Method::from_compiled_offset()), (int32_t)NULL_WORD);
+    __ cmpptr(Address(method, Method::from_compiled_offset()), NULL_WORD);
     __ jcc(Assembler::notZero, L);
     __ stop("Vtable entry is NULL");
     __ bind(L);
@@ -235,9 +235,9 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
 #ifdef ASSERT
   if (DebugVtables) {
     Label L2;
-    __ cmpptr(method, (int32_t)NULL_WORD);
+    __ cmpptr(method, NULL_WORD);
     __ jcc(Assembler::equal, L2);
-    __ cmpptr(Address(method, Method::from_compiled_offset()), (int32_t)NULL_WORD);
+    __ cmpptr(Address(method, Method::from_compiled_offset()), NULL_WORD);
     __ jcc(Assembler::notZero, L2);
     __ stop("compiler entrypoint is null");
     __ bind(L2);
