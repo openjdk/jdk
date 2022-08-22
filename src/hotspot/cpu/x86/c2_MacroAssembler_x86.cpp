@@ -4606,7 +4606,7 @@ void C2_MacroAssembler::vector_mask_cast(XMMRegister dst, XMMRegister src,
     switch (dst_bt_size / src_bt_size) {
       case 2: {
         if (vlen_enc == AVX_512bit && !VM_Version::supports_avx512bw()) {
-          vpmovsxdq(dst, src, vlen_enc);
+          vpmovsxwd(dst, src, vlen_enc);
         } else {
           vpmovsxbw(dst, src, vlen_enc);
         }
@@ -4624,7 +4624,7 @@ void C2_MacroAssembler::vector_mask_cast(XMMRegister dst, XMMRegister src,
           if (VM_Version::supports_avx512bw()) {
             evpmovwb(dst, src, vlen_enc);
           } else {
-            evpmovqd(dst, src, vlen_enc);
+            evpmovdw(dst, src, vlen_enc);
           }
         } else if (VM_Version::supports_avx512vl()) {
           if (VM_Version::supports_avx512bw()) {
