@@ -54,7 +54,6 @@ class os::Linux {
  protected:
 
   static julong _physical_memory;
-  static julong _host_swap;
   static pthread_t _main_thread;
 
   static julong available_memory();
@@ -131,7 +130,7 @@ class os::Linux {
   static uintptr_t initial_thread_stack_size(void)                  { return _initial_thread_stack_size; }
 
   static julong physical_memory() { return _physical_memory; }
-  static julong host_swap() { return _host_swap; }
+  static julong host_swap();
 
   static intptr_t* ucontext_get_sp(const ucontext_t* uc);
   static intptr_t* ucontext_get_fp(const ucontext_t* uc);
