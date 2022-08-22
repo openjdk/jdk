@@ -12168,10 +12168,9 @@ static bool is_reachable_from(address target, address pc) {
   // Because rip-relative is a disp + address_of_next_instruction and we
   // don't know the value of address_of_next_instruction we apply a fudge factor
   // to make sure we will be ok no matter the size of the instruction we get placed into.
-  // We don't have to fudge the checks above here because they are already worst case.
 
-  // 12 == override/rex byte, opcode byte, rm byte, sib byte, a 4-byte disp, 4-byte literal.
-  // Plus 4, because better safe than sorry.
+  // 12 == override/rex byte, opcode byte, rm byte, sib byte, a 4-byte disp, 4-byte literal
+  // + 4 because better safe than sorry.
   const int fudge = 12 + 4;
 
   int64_t disp = (int64_t)target - ((int64_t)pc + sizeof(int));
@@ -12229,19 +12228,20 @@ static bool is_reachable_from(address target, address pc, relocInfo::relocType r
     case relocInfo::poll_return_type: // these are really external_word but need special
     case relocInfo::poll_type: {      // relocs to identify them
       assert(!CodeCache::contains(target), "always reachable");
+      if (ForceUnreachable) {
+        return false; // stress the correction code
+      }
       // For external_word_type/runtime_call_type if it is reachable from where we
       // are now (possibly a temp buffer) and where we might end up
       // anywhere in the codeCache then we are always reachable.
       // This would have to change if we ever save/restore shared code
       // to be more pessimistic.
-      if (ForceUnreachable) {
-        return false; // stress the correction code
+      if (is_reachable_from(target, CodeCache::low_bound())  &&
+          is_reachable_from(target, CodeCache::high_bound()) &&
+          is_reachable_from(target, pc)) {
+        return true;
       }
-      if (!is_reachable_from(target, CodeCache::low_bound()) ||
-          !is_reachable_from(target, CodeCache::high_bound())) {
-        return false;
-      }
-      return is_reachable_from(target, pc);
+      return false;
     }
     default: {
       return false;
