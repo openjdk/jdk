@@ -245,7 +245,7 @@ void G1YoungCollector::wait_for_root_region_scanning() {
   // root regions as it's the only way to ensure that all the
   // objects on them have been correctly scanned before we start
   // moving them during the GC.
-  bool waited = concurrent_mark()->root_regions()->wait_until_scan_finished();
+  bool waited = concurrent_mark()->wait_until_root_region_scan_finished();
   Tickspan wait_time;
   if (waited) {
     wait_time = (Ticks::now() - start);
@@ -492,9 +492,7 @@ void G1YoungCollector::pre_evacuate_collection_set(G1EvacInfo* evacuation_info, 
     phase_times()->record_concatenate_dirty_card_logs_time_ms(dt.seconds() * MILLIUNITS);
   }
 
-  // Disable the hot card cache.
   hot_card_cache()->reset_hot_cache_claimed_index();
-  hot_card_cache()->set_use_cache(false);
 
   // Initialize the GC alloc regions.
   allocator()->init_gc_alloc_regions(evacuation_info);

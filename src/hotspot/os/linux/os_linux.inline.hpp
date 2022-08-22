@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,14 @@
 #ifndef OS_LINUX_OS_LINUX_INLINE_HPP
 #define OS_LINUX_OS_LINUX_INLINE_HPP
 
-// os_linux.hpp included by os.hpp
+#include "os_linux.hpp"
 
 #include "runtime/os.hpp"
 #include "os_posix.inline.hpp"
+
+inline bool os::zero_page_read_protected() {
+  return true;
+}
 
 inline bool os::uses_stack_guard_pages() {
   return true;

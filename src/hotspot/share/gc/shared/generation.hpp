@@ -225,24 +225,6 @@ class Generation: public CHeapObj<mtGC> {
   // Like "allocate", but performs any necessary locking internally.
   virtual HeapWord* par_allocate(size_t word_size, bool is_tlab) = 0;
 
-  // Some generation may offer a region for shared, contiguous allocation,
-  // via inlined code (by exporting the address of the top and end fields
-  // defining the extent of the contiguous allocation region.)
-
-  // This function returns "true" iff the heap supports this kind of
-  // allocation.  (More precisely, this means the style of allocation that
-  // increments *top_addr()" with a CAS.) (Default is "no".)
-  // A generation that supports this allocation style must use lock-free
-  // allocation for *all* allocation, since there are times when lock free
-  // allocation will be concurrent with plain "allocate" calls.
-  virtual bool supports_inline_contig_alloc() const { return false; }
-
-  // These functions return the addresses of the fields that define the
-  // boundaries of the contiguous allocation area.  (These fields should be
-  // physically near to one another.)
-  virtual HeapWord* volatile* top_addr() const { return NULL; }
-  virtual HeapWord** end_addr() const { return NULL; }
-
   // Thread-local allocation buffers
   virtual bool supports_tlab_allocation() const { return false; }
   virtual size_t tlab_capacity() const {
@@ -266,20 +248,6 @@ class Generation: public CHeapObj<mtGC> {
   // The "obj_size" argument is just obj->size(), passed along so the caller can
   // avoid repeating the virtual call to retrieve it.
   virtual oop promote(oop obj, size_t obj_size);
-
-  // Thread "thread_num" (0 <= i < ParalleGCThreads) wants to promote
-  // object "obj", whose original mark word was "m", and whose size is
-  // "word_sz".  If possible, allocate space for "obj", copy obj into it
-  // (taking care to copy "m" into the mark word when done, since the mark
-  // word of "obj" may have been overwritten with a forwarding pointer, and
-  // also taking care to copy the klass pointer *last*.  Returns the new
-  // object if successful, or else NULL.
-  virtual oop par_promote(int thread_num, oop obj, markWord m, size_t word_sz);
-
-  // Informs the current generation that all par_promote_alloc's in the
-  // collection have been completed; any supporting data structures can be
-  // reset.  Default is to do nothing.
-  virtual void par_promote_alloc_done(int thread_num) {}
 
   // Informs the current generation that all oop_since_save_marks_iterates
   // performed by "thread_num" in the current collection, if any, have been

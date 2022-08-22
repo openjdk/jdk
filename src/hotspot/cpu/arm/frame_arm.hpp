@@ -25,8 +25,6 @@
 #ifndef CPU_ARM_FRAME_ARM_HPP
 #define CPU_ARM_FRAME_ARM_HPP
 
-#include "runtime/synchronizer.hpp"
-
  public:
   enum {
     pc_return_offset                                 =  0,

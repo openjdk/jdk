@@ -560,6 +560,12 @@ public:
 
   // Determines PLAB size for a given destination.
   inline size_t desired_plab_sz(G1HeapRegionAttr dest);
+  // Clamp the given PLAB word size to allowed values. Prevents humongous PLAB sizes
+  // for two reasons:
+  // * PLABs are allocated using a similar paths as oops, but should
+  //   never be in a humongous region
+  // * Allowing humongous PLABs needlessly churns the region free lists
+  inline size_t clamp_plab_size(size_t value) const;
 
   // Do anything common to GC's.
   void gc_prologue(bool full);
@@ -1077,7 +1083,7 @@ public:
 
   // Calculate the region index of the given address. Given address must be
   // within the heap.
-  inline uint addr_to_region(HeapWord* addr) const;
+  inline uint addr_to_region(const void* addr) const;
 
   inline HeapWord* bottom_addr_for_region(uint index) const;
 
@@ -1121,14 +1127,12 @@ public:
                                  size_t length,
                                  uint worker_id) const;
 
-  // Returns the HeapRegion that contains addr. addr must not be NULL.
-  template <class T>
-  inline HeapRegion* heap_region_containing(const T addr) const;
+  // Returns the HeapRegion that contains addr. addr must not be nullptr.
+  inline HeapRegion* heap_region_containing(const void* addr) const;
 
-  // Returns the HeapRegion that contains addr, or NULL if that is an uncommitted
-  // region. addr must not be NULL.
-  template <class T>
-  inline HeapRegion* heap_region_containing_or_null(const T addr) const;
+  // Returns the HeapRegion that contains addr, or nullptr if that is an uncommitted
+  // region. addr must not be nullptr.
+  inline HeapRegion* heap_region_containing_or_null(const void* addr) const;
 
   // A CollectedHeap is divided into a dense sequence of "blocks"; that is,
   // each address in the (reserved) heap is a member of exactly
@@ -1263,7 +1267,7 @@ public:
   void rebuild_code_roots();
 
   // Performs cleaning of data structures after class unloading.
-  void complete_cleaning(BoolObjectClosure* is_alive, bool class_unloading_occurred);
+  void complete_cleaning(bool class_unloading_occurred);
 
   // Verification
 

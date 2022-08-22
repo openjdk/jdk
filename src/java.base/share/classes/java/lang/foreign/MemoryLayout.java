@@ -77,7 +77,7 @@ import jdk.internal.javac.PreviewFeature;
  * ).withName("TaggedValues");
  * }
  *
- * <h2><a id = "layout-align">Size, alignment and byte order</a></h2>
+ * <h2 id="layout-align">Size, alignment and byte order</h2>
  *
  * All layouts have a size; layout size for value and padding layouts is always explicitly denoted; this means that a layout description
  * always has the same size in bits, regardless of the platform in which it is used. For derived layouts, the size is computed
@@ -105,7 +105,7 @@ import jdk.internal.javac.PreviewFeature;
  * <p>
  * All value layouts have an <em>explicit</em> byte order (see {@link java.nio.ByteOrder}) which is set when the layout is created.
  *
- * <h2><a id = "layout-paths">Layout paths</a></h2>
+ * <h2 id="layout-paths">Layout paths</h2>
  *
  * A <em>layout path</em> originates from a <em>root</em> layout (typically a group or a sequence layout) and terminates
  * at a layout nested within the root layout - this is the layout <em>selected</em> by the layout path.

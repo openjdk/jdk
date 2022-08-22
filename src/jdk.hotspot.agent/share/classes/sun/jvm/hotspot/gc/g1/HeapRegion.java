@@ -48,7 +48,6 @@ public class HeapRegion extends CompactibleSpace implements LiveRegionsProvider 
     private static AddressField bottomField;
     private static AddressField topField;
     private static AddressField endField;
-    private static AddressField compactionTopField;
 
     private static CIntegerField grainBytesField;
     private static long typeFieldOffset;
@@ -70,7 +69,6 @@ public class HeapRegion extends CompactibleSpace implements LiveRegionsProvider 
         bottomField = type.getAddressField("_bottom");
         topField = type.getAddressField("_top");
         endField = type.getAddressField("_end");
-        compactionTopField = type.getAddressField("_compaction_top");
 
         grainBytesField = type.getCIntegerField("GrainBytes");
         typeFieldOffset = type.getField("_type").getOffset();
@@ -92,8 +90,6 @@ public class HeapRegion extends CompactibleSpace implements LiveRegionsProvider 
     public Address bottom()        { return bottomField.getValue(addr); }
     public Address top()           { return topField.getValue(addr); }
     public Address end()           { return endField.getValue(addr); }
-
-    public Address compactionTop() { return compactionTopField.getValue(addr); }
 
     @Override
     public List<MemRegion> getLiveRegions() {
