@@ -148,7 +148,7 @@ class BitMap {
   bm_word_t* map()                 { return _map; }
   const bm_word_t* map() const     { return _map; }
 
-  bm_word_t  word(idx_t word_index, bm_word_t flip) const { return _map[word_index] ^ flip; }
+  bm_word_t word(idx_t word_index, bm_word_t flip) const { return _map[word_index] ^ flip; }
 
   // Return a pointer to the word containing the specified bit.
   bm_word_t* word_addr(idx_t bit) {
@@ -327,6 +327,7 @@ class BitMap {
   // the function returned false.
   template <typename Function>
   bool iterate(Function function, idx_t beg, idx_t end);
+
   template <typename Function>
   bool iterate(Function function) {
     return iterate(function, 0, _size);
@@ -343,8 +344,10 @@ class BitMap {
   // Reverse version of "iterate".
   //  beg - inclusive
   //  end - exclusive
+  //  beg <= end
   template <typename Function>
   bool iterate_reverse(Function function, idx_t beg, idx_t end);
+
   template <typename Function>
   bool iterate_reverse(Function function) {
     return iterate_reverse(function, 0, _size);
@@ -352,6 +355,7 @@ class BitMap {
 
   template <typename BitMapClosureType>
   bool iterate_reverse(BitMapClosureType* cl, idx_t beg, idx_t end);
+
   template <typename BitMapClosureType>
   bool iterate_reverse(BitMapClosureType* cl) {
     return iterate_reverse(cl, 0, _size);

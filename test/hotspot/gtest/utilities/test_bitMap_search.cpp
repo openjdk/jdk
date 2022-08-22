@@ -258,7 +258,6 @@ TEST(BitMap, search) {
   }
 }
 
-
 struct BitMapTestSetter {
   ResourceBitMap* _bm;
   idx_t           _bit;
