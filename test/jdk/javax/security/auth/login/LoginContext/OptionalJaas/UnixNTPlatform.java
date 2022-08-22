@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,8 @@
 /*
  * @test
  * @bug 8215916
- * @summary This Sample application attempts to authenticate a user
- * and reports whether or not the authentication was successful.
+ * @summary This test case attempts to verify whether call stack trace is
+ * printed when JAAS optional login fails when debug is true.
  * @run main/othervm -Djava.security.debug=logincontext UnixNTPlatform
  */
 import javax.security.auth.login.Configuration;
@@ -42,13 +42,7 @@ public class UnixNTPlatform {
     private static final String NT_MODULE = "NTLoginModule";
 
     public static void main(String[] args) throws Exception {
-        login("cross-platform",
-                UNIX_MODULE, "optional", "debug=true",
-                NT_MODULE, "optional", "debug=true");
-    }
-
-    static void login(String test, String... conf) throws Exception {
-        System.out.println("Testing " + test + "...");
+	System.out.println("Testing cross-platform");
 
         String config = """
                         hello {
@@ -58,15 +52,13 @@ public class UnixNTPlatform {
                         """;
 
         System.out.println("config is : \n"+config);
-        Files.write(java.nio.file.Path.of(test), config.toString().getBytes());
+        Files.writeString(java.nio.file.Path.of("cross-platform"), config.toString());
 
-        // Must be called. Configuration has an internal static field.
-        Configuration.setConfiguration(null);
-        System.setProperty("java.security.auth.login.config", test);
+        System.setProperty("java.security.auth.login.config", "cross-platform");
 
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        PrintStream ps = new PrintStream(stream);
-        System.setErr(ps);
+        PrintStream ps = System.err;
+        System.setErr(new PrintStream(new PrintStream(stream)));
 
         try {
             LoginContext lc = new LoginContext("hello");
@@ -75,6 +67,8 @@ public class UnixNTPlatform {
             lc.logout();
         } catch (LoginException e) {
             System.out.println("Retrieving exception information");
+        } finally {
+            System.setErr(ps);
         }
 
         byte[] byes = stream.toByteArray();
