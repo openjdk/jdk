@@ -172,7 +172,7 @@ public final class ResponderId {
     }
 
     /**
-     * Return the type of {@code @ResponderId}
+     * Return the type of {@code ResponderId}
      *
      * @return a number corresponding to the context-specific tag number
      *      used in the DER-encoding for a {@code ResponderId}

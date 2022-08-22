@@ -399,7 +399,8 @@ final class ClientHello {
             ClientHandshakeContext chc = (ClientHandshakeContext)context;
 
             // clean up this producer
-            Objects.requireNonNull(chc.handshakeProducers).remove(SSLHandshake.CLIENT_HELLO.id);
+            Objects.requireNonNull(chc.handshakeProducers).
+                    remove(SSLHandshake.CLIENT_HELLO.id);
 
             // session ID of the ClientHello message
             SessionId sessionId = new SessionId(new byte[0]);
@@ -470,8 +471,9 @@ final class ClientHello {
                 !sessionVersion.useTLS13PlusSpec() &&
                 SSLConfiguration.useExtendedMasterSecret) {
 
-                boolean isEmsAvailable = Objects.requireNonNull(chc.sslConfig).isAvailable(
-                    SSLExtension.CH_EXTENDED_MASTER_SECRET, sessionVersion);
+                boolean isEmsAvailable = Objects.requireNonNull(chc.sslConfig).
+                        isAvailable(SSLExtension.CH_EXTENDED_MASTER_SECRET,
+                        sessionVersion);
                 if (isEmsAvailable && !session.useExtendedMasterSecret &&
                         !SSLConfiguration.allowLegacyResumption) {
                     // perform full handshake instead
@@ -510,7 +512,8 @@ final class ClientHello {
 
             // ensure that the endpoint identification algorithm matches the
             // one in the session
-            String identityAlg = Objects.requireNonNull(chc.sslConfig).identificationProtocol;
+            String identityAlg = Objects.requireNonNull(chc.sslConfig).
+                    identificationProtocol;
             if (session != null && identityAlg != null) {
                 String sessionIdentityAlg =
                     session.getIdentificationProtocol();
@@ -569,7 +572,8 @@ final class ClientHello {
                 }
             }
             if (sessionId.length() == 0 &&
-                    Objects.requireNonNull(chc.maximumActiveProtocol).useTLS13PlusSpec() &&
+                    Objects.requireNonNull(chc.maximumActiveProtocol).
+                    useTLS13PlusSpec() &&
                     SSLConfiguration.useCompatibilityMode) {
                 // In compatibility mode, the TLS 1.3 legacy_session_id
                 // field MUST be non-empty, so a client not offering a
@@ -717,7 +721,8 @@ final class ClientHello {
                             SSLHandshake.SERVER_HELLO);
 
                     ProtocolVersion minimumVersion = ProtocolVersion.NONE;
-                    for (ProtocolVersion pv : Objects.requireNonNull(chc.activeProtocols)) {
+                    for (ProtocolVersion pv :
+                            Objects.requireNonNull(chc.activeProtocols)) {
                         if (minimumVersion == ProtocolVersion.NONE ||
                                 pv.compare(minimumVersion) < 0) {
                             minimumVersion = pv;
@@ -885,7 +890,8 @@ final class ClientHello {
             // The client supported protocol versions are present in client
             // preference order.  This implementation chooses to use the server
             // preference of protocol versions instead.
-            for (ProtocolVersion spv : Objects.requireNonNull(context.activeProtocols)) {
+            for (ProtocolVersion spv :
+                    Objects.requireNonNull(context.activeProtocols)) {
                 if (spv == ProtocolVersion.SSL20Hello) {
                     continue;
                 }
@@ -1001,7 +1007,8 @@ final class ClientHello {
 
                 // Validate the required client authentication.
                 if (resumingSession &&
-                    (Objects.requireNonNull(shc.sslConfig).clientAuthType == CLIENT_AUTH_REQUIRED)) {
+                        (Objects.requireNonNull(shc.sslConfig).clientAuthType ==
+                        CLIENT_AUTH_REQUIRED)) {
                     try {
                         previous.getPeerPrincipal();
                     } catch (SSLPeerUnverifiedException e) {
@@ -1032,7 +1039,8 @@ final class ClientHello {
 
                 // ensure that the endpoint identification algorithm matches the
                 // one in the session
-                String identityAlg = Objects.requireNonNull(shc.sslConfig).identificationProtocol;
+                String identityAlg = Objects.requireNonNull(shc.sslConfig).
+                        identificationProtocol;
                 if (resumingSession && identityAlg != null) {
                     String sessionIdentityAlg =
                         previous.getIdentificationProtocol();
@@ -1062,7 +1070,8 @@ final class ClientHello {
             shc.clientHelloRandom = clientHello.clientRandom;
 
             // Check and launch ClientHello extensions.
-            SSLExtension[] extTypes = Objects.requireNonNull(shc.sslConfig).getExclusiveExtensions(
+            SSLExtension[] extTypes = Objects.requireNonNull(shc.sslConfig).
+                    getExclusiveExtensions(
                     SSLHandshake.CLIENT_HELLO,
                     List.of(SSLExtension.CH_SESSION_TICKET));
             clientHello.extensions.consumeOnLoad(shc, extTypes);
@@ -1081,7 +1090,8 @@ final class ClientHello {
             // Note that ServerHello and HelloRetryRequest share the same
             // handshake type/id.  The ServerHello producer may be replaced
             // by HelloRetryRequest producer if needed.
-            Objects.requireNonNull(shc.handshakeProducers).put(SSLHandshake.SERVER_HELLO.id,
+            Objects.requireNonNull(shc.handshakeProducers).
+                    put(SSLHandshake.SERVER_HELLO.id,
                     SSLHandshake.SERVER_HELLO);
 
             //
@@ -1166,8 +1176,8 @@ final class ClientHello {
             //
             // These extensions may discard session resumption, or ask for
             // hello retry.
-            extTypes = Objects.requireNonNull(shc.sslConfig).getExclusiveExtensions(
-                    SSLHandshake.CLIENT_HELLO,
+            extTypes = Objects.requireNonNull(shc.sslConfig).
+                    getExclusiveExtensions(SSLHandshake.CLIENT_HELLO,
                     Arrays.asList(
                             SSLExtension.PSK_KEY_EXCHANGE_MODES,
                             SSLExtension.CH_PRE_SHARED_KEY,
@@ -1221,8 +1231,8 @@ final class ClientHello {
             //
             // Only ServerHello/HelloRetryRequest producer, which adds
             // more responders later.
-            Objects.requireNonNull(shc.handshakeProducers).put(SSLHandshake.SERVER_HELLO.id,
-                SSLHandshake.SERVER_HELLO);
+            Objects.requireNonNull(shc.handshakeProducers).
+                    put(SSLHandshake.SERVER_HELLO.id, SSLHandshake.SERVER_HELLO);
 
             SSLHandshake[] probableHandshakeMessages = new SSLHandshake[] {
                 SSLHandshake.SERVER_HELLO,
@@ -1341,8 +1351,8 @@ final class ClientHello {
                 }
 
                 // Validate the required client authentication.
-                if (resumingSession &&
-                    (Objects.requireNonNull(shc.sslConfig).clientAuthType == CLIENT_AUTH_REQUIRED)) {
+                if (resumingSession && (Objects.requireNonNull(shc.sslConfig).
+                        clientAuthType == CLIENT_AUTH_REQUIRED)) {
 
                     try {
                         previous.getPeerPrincipal();
@@ -1403,7 +1413,8 @@ final class ClientHello {
             shc.clientHelloRandom = clientHello.clientRandom;
 
             // Check and launch ClientHello extensions.
-            SSLExtension[] extTypes = Objects.requireNonNull(shc.sslConfig).getEnabledExtensions(
+            SSLExtension[] extTypes = Objects.requireNonNull(shc.sslConfig).
+                    getEnabledExtensions(
                     SSLHandshake.CLIENT_HELLO);
             clientHello.extensions.consumeOnLoad(shc, extTypes);
 
@@ -1418,8 +1429,8 @@ final class ClientHello {
             // update the responders
             //
             // Only need to ServerHello, which may add more responders later.
-            Objects.requireNonNull(shc.handshakeProducers).put(SSLHandshake.SERVER_HELLO.id,
-                    SSLHandshake.SERVER_HELLO);
+            Objects.requireNonNull(shc.handshakeProducers).
+                    put(SSLHandshake.SERVER_HELLO.id, SSLHandshake.SERVER_HELLO);
 
             //
             // produce

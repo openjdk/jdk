@@ -154,7 +154,8 @@ final class RSAClientKeyExchange {
 
             EphemeralRSACredentials rsaCredentials = null;
             X509Credentials x509Credentials = null;
-            for (SSLCredentials credential : Objects.requireNonNull(chc.handshakeCredentials)) {
+            for (SSLCredentials credential :
+                    Objects.requireNonNull(chc.handshakeCredentials)) {
                 if (credential instanceof EphemeralRSACredentials) {
                     rsaCredentials = (EphemeralRSACredentials)credential;
                     if (x509Credentials != null) {
@@ -249,7 +250,8 @@ final class RSAClientKeyExchange {
 
             EphemeralRSAPossession rsaPossession = null;
             X509Possession x509Possession = null;
-            for (SSLPossession possession : Objects.requireNonNull(shc.handshakePossessions)) {
+            for (SSLPossession possession :
+                    Objects.requireNonNull(shc.handshakePossessions)) {
                 if (possession instanceof EphemeralRSAPossession) {
                     rsaPossession = (EphemeralRSAPossession)possession;
                     break;

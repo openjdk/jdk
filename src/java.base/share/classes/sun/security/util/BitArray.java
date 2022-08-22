@@ -25,9 +25,9 @@
 
 package sun.security.util;
 
-import jdk.internal.util.Preconditions;
-
 import java.io.ByteArrayOutputStream;
+
+import jdk.internal.util.Preconditions;
 
 /**
  * A packed array of booleans.

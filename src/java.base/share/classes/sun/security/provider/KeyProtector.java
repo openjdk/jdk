@@ -25,16 +25,16 @@
 
 package sun.security.provider;
 
+import java.io.IOException;
+import java.security.SecureRandom;
+import java.security.*;
+import java.util.Arrays;
+
 import sun.security.pkcs.EncryptedPrivateKeyInfo;
 import sun.security.pkcs.PKCS8Key;
 import sun.security.util.KnownOIDs;
 import sun.security.util.ObjectIdentifier;
 import sun.security.x509.AlgorithmId;
-
-import java.io.IOException;
-import java.security.SecureRandom;
-import java.security.*;
-import java.util.Arrays;
 
 /**
  * This is an implementation of a Sun proprietary, exportable algorithm

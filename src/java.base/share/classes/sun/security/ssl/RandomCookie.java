@@ -25,11 +25,10 @@
 
 package sun.security.ssl;
 
-import sun.security.util.ByteArrays;
-
 import java.nio.ByteBuffer;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
+import sun.security.util.ByteArrays;
 
 /*
  * RandomCookie ... SSL hands standard format random cookies (nonces)

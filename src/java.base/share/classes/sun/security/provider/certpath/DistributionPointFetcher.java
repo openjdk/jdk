@@ -25,11 +25,6 @@
 
 package sun.security.provider.certpath;
 
-import sun.security.util.Debug;
-import sun.security.util.Event;
-import sun.security.x509.*;
-
-import javax.security.auth.x500.X500Principal;
 import java.io.IOException;
 import java.net.URI;
 import java.security.GeneralSecurityException;
@@ -38,6 +33,11 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 import java.security.cert.*;
 import java.util.*;
+import javax.security.auth.x500.X500Principal;
+
+import sun.security.util.Debug;
+import sun.security.util.Event;
+import sun.security.x509.*;
 
 import static sun.security.x509.PKIXExtensions.IssuingDistributionPoint_Id;
 
@@ -479,8 +479,9 @@ public class DistributionPointFetcher {
                     // verify that one of the names in the IDP matches one of
                     // the names in the cRLIssuer of the cert's DP
                     boolean match = false;
-                    for (Iterator<GeneralName> t = Objects.requireNonNull(pointCrlIssuers).iterator();
-                         !match && t.hasNext(); ) {
+                    for (Iterator<GeneralName> t = Objects.requireNonNull(
+                            pointCrlIssuers).iterator();
+                                !match && t.hasNext(); ) {
                         GeneralNameInterface crlIssuerName = t.next().getName();
                         for (Iterator<GeneralName> i = idpNames.iterator();
                              !match && i.hasNext(); ) {
@@ -568,7 +569,8 @@ public class DistributionPointFetcher {
         boolean oneOrMore = false;
         for (int i = 0; i < interimReasonsMask.length; i++) {
             if (interimReasonsMask[i] &&
-                    !(i < reasonsMask.length && reasonsMask[i])) {
+                    !(i < reasonsMask.length && reasonsMask[i]))
+            {
                 oneOrMore = true;
                 break;
             }

@@ -161,7 +161,8 @@ final class AlpnExtension {
             ClientHandshakeContext chc = (ClientHandshakeContext)context;
 
             // Is it a supported and enabled extension?
-            if (!Objects.requireNonNull(chc.sslConfig).isAvailable(SSLExtension.CH_ALPN)) {
+            if (!Objects.requireNonNull(chc.sslConfig).
+                    isAvailable(SSLExtension.CH_ALPN)) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.info(
                             "Ignore client unavailable extension: " +
@@ -268,7 +269,8 @@ final class AlpnExtension {
             ServerHandshakeContext shc = (ServerHandshakeContext)context;
 
             // Is it a supported and enabled extension?
-            if (!Objects.requireNonNull(shc.sslConfig).isAvailable(SSLExtension.CH_ALPN)) {
+            if (!Objects.requireNonNull(shc.sslConfig).
+                    isAvailable(SSLExtension.CH_ALPN)) {
                 shc.applicationProtocol = "";
                 shc.conContext.applicationProtocol = "";
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
@@ -389,7 +391,8 @@ final class AlpnExtension {
 
             List<String> alps = requestedAlps.applicationProtocols;
             if (shc.conContext.transport instanceof SSLEngine) {
-                if (Objects.requireNonNull(shc.sslConfig).engineAPSelector != null) {
+                if (Objects.requireNonNull(shc.sslConfig).
+                        engineAPSelector != null) {
                     SSLEngine engine = (SSLEngine)shc.conContext.transport;
                     shc.applicationProtocol =
                         shc.sslConfig.engineAPSelector.apply(engine, alps);
@@ -402,7 +405,8 @@ final class AlpnExtension {
                     }
                 }
             } else {
-                if (Objects.requireNonNull(shc.sslConfig).socketAPSelector != null) {
+                if (Objects.requireNonNull(shc.sslConfig).
+                        socketAPSelector != null) {
                     SSLSocket socket = (SSLSocket)shc.conContext.transport;
                     shc.applicationProtocol =
                         shc.sslConfig.socketAPSelector.apply(socket, alps);
@@ -444,7 +448,7 @@ final class AlpnExtension {
 
             // Clean or register the extension
             //
-            // No further use of the request and respond extension anymore.
+            // No further use of the request and respond extension.
             shc.handshakeExtensions.remove(SSLExtension.CH_ALPN);
 
             return extData;
@@ -470,7 +474,8 @@ final class AlpnExtension {
             // In response to ALPN request only
             AlpnSpec requestedAlps =
                     (AlpnSpec)chc.handshakeExtensions.get(SSLExtension.CH_ALPN);
-            if (requestedAlps == null || requestedAlps.applicationProtocols.isEmpty()) {
+            if (requestedAlps == null ||
+                    requestedAlps.applicationProtocols.isEmpty()) {
                 throw chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
                     "Unexpected " + SSLExtension.CH_ALPN.name + " extension");
             }
@@ -501,7 +506,7 @@ final class AlpnExtension {
 
             // Clean or register the extension
             //
-            // No further use of the request and respond extension anymore.
+            // No further use of the request and respond extension.
             chc.handshakeExtensions.remove(SSLExtension.CH_ALPN);
         }
     }

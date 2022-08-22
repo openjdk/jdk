@@ -52,7 +52,7 @@ import java.util.Properties;
 
 public class GetPropertyAction implements PrivilegedAction<String> {
     private final String theProp;
-    private String defaultVal;
+    private final String defaultVal;
 
     /**
      * Constructor that takes the name of the system property whose
@@ -62,6 +62,7 @@ public class GetPropertyAction implements PrivilegedAction<String> {
      */
     public GetPropertyAction(String theProp) {
         this.theProp = theProp;
+        this.defaultVal = null;
     }
 
     /**

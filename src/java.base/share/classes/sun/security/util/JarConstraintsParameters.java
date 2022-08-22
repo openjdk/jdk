@@ -25,8 +25,6 @@
 
 package sun.security.util;
 
-import sun.security.validator.Validator;
-
 import java.security.CodeSigner;
 import java.security.Key;
 import java.security.Timestamp;
@@ -36,6 +34,7 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import sun.security.validator.Validator;
 
 /**
  * This class contains parameters for checking signed JARs against

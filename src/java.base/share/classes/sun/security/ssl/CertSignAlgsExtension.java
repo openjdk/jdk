@@ -204,7 +204,8 @@ final class CertSignAlgsExtension {
                             SSLHandshake.CERTIFICATE_REQUEST.id,
                             SSLHandshake.CERTIFICATE_REQUEST);
                 }
-                Objects.requireNonNull(shc.handshakeProducers).put(SSLHandshake.CERTIFICATE.id,
+                Objects.requireNonNull(shc.handshakeProducers).
+                        put(SSLHandshake.CERTIFICATE.id,
                         SSLHandshake.CERTIFICATE);
                 shc.handshakeProducers.putIfAbsent(
                         SSLHandshake.CERTIFICATE_VERIFY.id,

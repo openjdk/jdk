@@ -83,7 +83,7 @@ public class CertException extends SecurityException {
 
     // Private data members
     private final int         verfCode;
-    private String      moreData;
+    private final String      moreData;
 
 
     /**
@@ -104,6 +104,7 @@ public class CertException extends SecurityException {
     public CertException(int code)
     {
         verfCode = code;
+        moreData = null;;
     }
 
     /**

@@ -36,7 +36,7 @@ import sun.security.x509.PKIXExtensions;
 
 /**
  * This class can be used to generate an OCSP request and send it over
- * an output stream. Currently, we do not support signing requests.
+ * an output stream. Currently we do not support signing requests.
  * The OCSP Request is specified in RFC 2560 and
  * the ASN.1 definition is as follows:
  * <pre>

@@ -582,7 +582,8 @@ final class TransportContext implements ConnectionContext {
 
     // Initiate a close by sending a close_notify alert.
     private void initiateOutboundClose() throws IOException {
-        boolean useUserCanceled = !isNegotiated && (handshakeContext != null) && !peerUserCanceled;
+        boolean useUserCanceled = !isNegotiated &&
+                (handshakeContext != null) && !peerUserCanceled;
         // initial handshake
 
         closeNotify(useUserCanceled);

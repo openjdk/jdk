@@ -489,7 +489,7 @@ class RevocationChecker extends PKIXRevocationChecker {
         case "SSLServer":
         case "URI":
             result = (t instanceof IOException);
-                break;
+            break;
         default:
             // we don't know about any other remote CertStore types
             return false;
@@ -780,7 +780,7 @@ class RevocationChecker extends PKIXRevocationChecker {
                 response = OCSP.check(Collections.singletonList(certId),
                         responderURI, issuerInfo, responderCert, null,
                         rp.ocspNonce ? Objects.requireNonNull(tmpExtensions) :
-                        ocspExtensions, params.variant());
+                            ocspExtensions, params.variant());
             }
         } catch (IOException e) {
             throw new CertPathValidatorException(

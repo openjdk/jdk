@@ -83,7 +83,7 @@ public class PKCS7 {
     }
 
     /**
-     * Unmarshal a PKCS7 block from its encoded form, parsing the
+     * Unmarshals a PKCS7 block from its encoded form, parsing the
      * encoded bytes from the InputStream.
      *
      * @param in an input stream holding at least one PKCS7 block.
@@ -99,7 +99,7 @@ public class PKCS7 {
     }
 
     /**
-     * Unmarshal a PKCS7 block from its encoded form, parsing the
+     * Unmarshals a PKCS7 block from its encoded form, parsing the
      * encoded bytes from the DerInputStream.
      *
      * @param derin a DerInputStream holding at least one PKCS7 block.
@@ -110,7 +110,7 @@ public class PKCS7 {
     }
 
     /**
-     * Unmarshal a PKCS7 block from its encoded form, parsing the
+     * Unmarshals a PKCS7 block from its encoded form, parsing the
      * encoded bytes.
      *
      * @param bytes the encoded bytes.

@@ -953,7 +953,7 @@ public class PolicyParser {
             ge.signedBy = this.signedBy;
             ge.principals = new LinkedList<>(this.principals);
             ge.permissionEntries =
-                    new Vector<>(this.permissionEntries);
+                        new Vector<>(this.permissionEntries);
             return ge;
         }
     }

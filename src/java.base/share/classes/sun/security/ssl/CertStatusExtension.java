@@ -557,7 +557,8 @@ final class CertStatusExtension {
                 return null;
             }
 
-            if (!Objects.requireNonNull(chc.sslConfig).isAvailable(SSLExtension.CH_STATUS_REQUEST)) {
+            if (!Objects.requireNonNull(chc.sslConfig).
+                    isAvailable(SSLExtension.CH_STATUS_REQUEST)) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
                         "Ignore unavailable extension: " +
@@ -598,7 +599,8 @@ final class CertStatusExtension {
             // The consuming happens in server side only.
             ServerHandshakeContext shc = (ServerHandshakeContext)context;
 
-            if (!Objects.requireNonNull(shc.sslConfig).isAvailable(SSLExtension.CH_STATUS_REQUEST)) {
+            if (!Objects.requireNonNull(shc.sslConfig).
+                    isAvailable(SSLExtension.CH_STATUS_REQUEST)) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine("Ignore unavailable extension: " +
                         SSLExtension.CH_STATUS_REQUEST.name);
@@ -613,7 +615,8 @@ final class CertStatusExtension {
             shc.handshakeExtensions.put(SSLExtension.CH_STATUS_REQUEST, spec);
             if (!shc.isResumption &&
                     !shc.negotiatedProtocol.useTLS13PlusSpec()) {
-                Objects.requireNonNull(shc.handshakeProducers).put(SSLHandshake.CERTIFICATE_STATUS.id,
+                Objects.requireNonNull(shc.handshakeProducers).
+                        put(SSLHandshake.CERTIFICATE_STATUS.id,
                     SSLHandshake.CERTIFICATE_STATUS);
             }   // Otherwise, the certificate status presents in server cert.
 
@@ -915,7 +918,8 @@ final class CertStatusExtension {
                 return null;
             }
 
-            if (!Objects.requireNonNull(chc.sslConfig).isAvailable(SSLExtension.CH_STATUS_REQUEST_V2)) {
+            if (!Objects.requireNonNull(chc.sslConfig).
+                    isAvailable(SSLExtension.CH_STATUS_REQUEST_V2)) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.finest(
                         "Ignore unavailable status_request_v2 extension");
@@ -957,7 +961,8 @@ final class CertStatusExtension {
             // The consuming happens in server side only.
             ServerHandshakeContext shc = (ServerHandshakeContext)context;
 
-            if (!Objects.requireNonNull(shc.sslConfig).isAvailable(SSLExtension.CH_STATUS_REQUEST_V2)) {
+            if (!Objects.requireNonNull(shc.sslConfig).
+                    isAvailable(SSLExtension.CH_STATUS_REQUEST_V2)) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.finest(
                         "Ignore unavailable status_request_v2 extension");

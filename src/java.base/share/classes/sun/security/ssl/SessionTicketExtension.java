@@ -25,13 +25,13 @@
 
 package sun.security.ssl;
 
-import sun.security.action.GetPropertyAction;
-import sun.security.ssl.SSLExtension.ExtensionConsumer;
-import sun.security.ssl.SSLExtension.SSLExtensionSpec;
-import sun.security.ssl.SSLHandshake.HandshakeMessage;
-import sun.security.ssl.SupportedGroupsExtension.SupportedGroups;
-import sun.security.util.HexDumpEncoder;
-
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.text.MessageFormat;
+import java.util.Locale;
+import java.util.Objects;
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
@@ -41,13 +41,12 @@ import javax.net.ssl.SSLProtocolException;
 import static sun.security.ssl.SSLExtension.CH_SESSION_TICKET;
 import static sun.security.ssl.SSLExtension.SH_SESSION_TICKET;
 
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
-import java.text.MessageFormat;
-import java.util.Locale;
-import java.util.Objects;
+import sun.security.action.GetPropertyAction;
+import sun.security.ssl.SSLExtension.ExtensionConsumer;
+import sun.security.ssl.SSLExtension.SSLExtensionSpec;
+import sun.security.ssl.SSLHandshake.HandshakeMessage;
+import sun.security.ssl.SupportedGroupsExtension.SupportedGroups;
+import sun.security.util.HexDumpEncoder;
 
 /**
  * SessionTicketExtension is an implementation of RFC 5077 with some internals
@@ -438,7 +437,8 @@ final class SessionTicketExtension {
             ServerHandshakeContext shc = (ServerHandshakeContext) context;
 
             // Skip if extension is not provided
-            if (!Objects.requireNonNull(shc.sslConfig).isAvailable(CH_SESSION_TICKET)) {
+            if (!Objects.requireNonNull(shc.sslConfig).
+                    isAvailable(CH_SESSION_TICKET)) {
                 return;
             }
 
@@ -522,7 +522,8 @@ final class SessionTicketExtension {
             ClientHandshakeContext chc = (ClientHandshakeContext) context;
 
             // Skip if extension is not provided
-            if (!Objects.requireNonNull(chc.sslConfig).isAvailable(SH_SESSION_TICKET)) {
+            if (!Objects.requireNonNull(chc.sslConfig).
+                    isAvailable(SH_SESSION_TICKET)) {
                 chc.statelessResumption = false;
                 return;
             }

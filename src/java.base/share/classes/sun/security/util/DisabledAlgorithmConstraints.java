@@ -831,8 +831,8 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
      */
     private static class KeySizeConstraint extends Constraint {
 
-        private final int minSize;            // the minimal available key size
-        private final int maxSize;            // the maximal available key size
+        private final int minSize;          // the minimal available key size
+        private final int maxSize;          // the maximal available key size
         private int prohibitedSize = -1;    // unavailable key sizes
 
         public KeySizeConstraint(String algo, Operator operator, int length) {

@@ -25,9 +25,6 @@
 
 package sun.security.provider;
 
-import jdk.internal.util.StaticProperty;
-import sun.security.action.GetBooleanAction;
-
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -40,6 +37,9 @@ import java.security.Security;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
+
+import jdk.internal.util.StaticProperty;
+import sun.security.action.GetBooleanAction;
 
 import static sun.security.util.SecurityProviderConstants.getAliases;
 

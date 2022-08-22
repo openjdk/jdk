@@ -162,7 +162,8 @@ final class ServerHelloDone {
             //
             // update
             //
-            Objects.requireNonNull(chc.handshakeProducers).put(SSLHandshake.CLIENT_KEY_EXCHANGE.id,
+            Objects.requireNonNull(chc.handshakeProducers).
+                    put(SSLHandshake.CLIENT_KEY_EXCHANGE.id,
                     SSLHandshake.CLIENT_KEY_EXCHANGE);
             chc.handshakeProducers.put(SSLHandshake.FINISHED.id,
                     SSLHandshake.FINISHED);

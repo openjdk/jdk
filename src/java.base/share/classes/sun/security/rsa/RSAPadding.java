@@ -392,9 +392,10 @@ public final class RSAPadding {
 
         // start and length of seed (as index into EM)
         int seedStart = 1;
+        int seedLen = hLen;
 
         // copy seed into EM
-        System.arraycopy(seed, 0, EM, seedStart, hLen);
+        System.arraycopy(seed, 0, EM, seedStart, seedLen);
 
         // start and length of data block DB in EM
         // we place it inside of EM to reduce copying
@@ -414,10 +415,10 @@ public final class RSAPadding {
         System.arraycopy(M, ofs, EM, mStart, len);
 
         // produce maskedDB
-        mgf.generateAndXor(EM, seedStart, hLen, dbLen, EM, dbStart);
+        mgf.generateAndXor(EM, seedStart, seedLen, dbLen, EM, dbStart);
 
         // produce maskSeed
-        mgf.generateAndXor(EM, dbStart, dbLen, hLen, EM, seedStart);
+        mgf.generateAndXor(EM, dbStart, dbLen, seedLen, EM, seedStart);
 
         return EM;
     }
@@ -435,12 +436,13 @@ public final class RSAPadding {
         }
 
         int seedStart = 1;
+        int seedLen = hLen;
 
         int dbStart = hLen + 1;
         int dbLen = EM.length - dbStart;
 
-        mgf.generateAndXor(EM, dbStart, dbLen, hLen, EM, seedStart);
-        mgf.generateAndXor(EM, seedStart, hLen, dbLen, EM, dbStart);
+        mgf.generateAndXor(EM, dbStart, dbLen, seedLen, EM, seedStart);
+        mgf.generateAndXor(EM, seedStart, seedLen, dbLen, EM, dbStart);
 
         // verify lHash == lHash'
         for (int i = 0; i < hLen; i++) {

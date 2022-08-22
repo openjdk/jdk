@@ -25,17 +25,17 @@
 
 package sun.security.x509;
 
-import sun.security.util.DerOutputStream;
-import sun.security.util.DerValue;
-import sun.security.util.KnownOIDs;
-import sun.security.util.ObjectIdentifier;
-
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Vector;
+
+import sun.security.util.DerOutputStream;
+import sun.security.util.DerValue;
+import sun.security.util.KnownOIDs;
+import sun.security.util.ObjectIdentifier;
 
 /**
  * This class defines the Extended Key Usage Extension, which

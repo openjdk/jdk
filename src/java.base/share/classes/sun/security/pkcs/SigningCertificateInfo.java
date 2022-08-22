@@ -25,12 +25,12 @@
 
 package sun.security.pkcs;
 
+import java.io.IOException;
+
 import sun.security.util.DerValue;
 import sun.security.util.HexDumpEncoder;
 import sun.security.x509.GeneralNames;
 import sun.security.x509.SerialNumber;
-
-import java.io.IOException;
 
 /**
  * This class represents a signing certificate attribute.

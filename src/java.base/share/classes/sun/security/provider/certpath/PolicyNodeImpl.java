@@ -25,11 +25,10 @@
 
 package sun.security.provider.certpath;
 
-import sun.security.util.KnownOIDs;
-
 import java.util.*;
-
 import java.security.cert.*;
+
+import sun.security.util.KnownOIDs;
 
 /**
  * Implements the <code>PolicyNode</code> interface.

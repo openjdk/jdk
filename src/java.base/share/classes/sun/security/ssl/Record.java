@@ -39,13 +39,13 @@ import javax.net.ssl.SSLException;
  */
 interface Record {
     int    maxMacSize = 48;        // the max supported MAC or
-                                                // AEAD tag size
-                                                int    maxDataSize = 16384;    // 2^14 bytes of data
+                                   // AEAD tag size
+    int    maxDataSize = 16384;    // 2^14 bytes of data
     int    maxPadding = 256;       // block cipher padding
     int    maxIVLength = 16;       // the max supported IV length
 
     int    maxFragmentSize = 18432;    // the max fragment size
-                                                    // 2^14 + 2048
+                                       // 2^14 + 2048
 
     /*
      * System property to enable/disable CBC protection in SSL3/TLS1.

@@ -138,7 +138,8 @@ final class RenegoInfoExtension {
             ClientHandshakeContext chc = (ClientHandshakeContext)context;
 
             // Is it a supported and enabled extension?
-            if (!Objects.requireNonNull(chc.sslConfig).isAvailable(CH_RENEGOTIATION_INFO)) {
+            if (!Objects.requireNonNull(chc.sslConfig).
+                    isAvailable(CH_RENEGOTIATION_INFO)) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
                             "Ignore unavailable renegotiation_info extension");
@@ -216,7 +217,8 @@ final class RenegoInfoExtension {
             ServerHandshakeContext shc = (ServerHandshakeContext)context;
 
             // Is it a supported and enabled extension?
-            if (!Objects.requireNonNull(shc.sslConfig).isAvailable(CH_RENEGOTIATION_INFO)) {
+            if (!Objects.requireNonNull(shc.sslConfig).
+                    isAvailable(CH_RENEGOTIATION_INFO)) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine("Ignore unavailable extension: " +
                             CH_RENEGOTIATION_INFO.name);
@@ -425,7 +427,7 @@ final class RenegoInfoExtension {
                     chc.handshakeExtensions.get(CH_RENEGOTIATION_INFO);
             if (requestedSpec == null &&
                     !Objects.requireNonNull(chc.activeCipherSuites).contains(
-                            CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV)) {
+                    CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV)) {
                 throw chc.conContext.fatal(Alert.INTERNAL_ERROR,
                     "Missing renegotiation_info and SCSV detected in " +
                     "ClientHello");
@@ -503,7 +505,7 @@ final class RenegoInfoExtension {
                     chc.handshakeExtensions.get(CH_RENEGOTIATION_INFO);
             if (requestedSpec == null &&
                     !Objects.requireNonNull(chc.activeCipherSuites).contains(
-                            CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV)) {
+                    CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV)) {
                 throw chc.conContext.fatal(Alert.INTERNAL_ERROR,
                     "Missing renegotiation_info and SCSV detected in " +
                     "ClientHello");

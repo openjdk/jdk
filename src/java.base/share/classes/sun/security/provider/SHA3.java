@@ -25,11 +25,11 @@
 
 package sun.security.provider;
 
-import jdk.internal.vm.annotation.IntrinsicCandidate;
-
 import java.security.ProviderException;
 import java.util.Arrays;
 import java.util.Objects;
+
+import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 import static sun.security.provider.ByteArrayAccess.b2lLittle;
 import static sun.security.provider.ByteArrayAccess.l2bLittle;

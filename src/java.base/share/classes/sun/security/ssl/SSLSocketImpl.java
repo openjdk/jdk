@@ -770,8 +770,8 @@ public final class SSLSocketImpl
      */
     private void duplexCloseInput() throws IOException {
         boolean hasCloseReceipt = conContext.isNegotiated &&
-                                  !conContext.protocolVersion.useTLS13PlusSpec();
-        // No close receipt if handshake has no completed.
+                !conContext.protocolVersion.useTLS13PlusSpec();
+        // No close receipt if handshake has not completed.
 
         bruteForceCloseInput(hasCloseReceipt);
     }
@@ -1207,7 +1207,8 @@ public final class SSLSocketImpl
                 return;
             }
 
-            if (!(conContext.inputRecord instanceof SSLSocketInputRecord socketInputRecord)) {
+            if (!(conContext.inputRecord instanceof SSLSocketInputRecord
+                    socketInputRecord)) {
                 return;
             }
 
@@ -1640,7 +1641,7 @@ public final class SSLSocketImpl
         }
     }
 
-    // ONLY used by HttpsClient to set up the URI specified hostname
+    // ONLY used by HttpsClient to setup the URI specified hostname
     //
     // Please NOTE that this method MUST be called before calling to
     // SSLSocket.setSSLParameters(). Otherwise, the {@code host} parameter
@@ -1661,7 +1662,7 @@ public final class SSLSocketImpl
      * Handle an exception.
      *
      * This method is called by top level exception handlers (in read(),
-     * write()) to make sure we always shut down the connection correctly
+     * write()) to make sure we always shutdown the connection correctly
      * and do not pass runtime exception to the application.
      *
      * This method never returns normally, it always throws an IOException.

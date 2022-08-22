@@ -138,7 +138,8 @@ final class HelloVerifyRequest {
             ServerHandshakeContext shc = (ServerHandshakeContext)context;
 
             // clean up this producer
-            Objects.requireNonNull(shc.handshakeProducers).remove(SSLHandshake.HELLO_VERIFY_REQUEST.id);
+            Objects.requireNonNull(shc.handshakeProducers).
+                    remove(SSLHandshake.HELLO_VERIFY_REQUEST.id);
 
             HelloVerifyRequestMessage hvrm =
                     new HelloVerifyRequestMessage(shc, message);
@@ -154,7 +155,8 @@ final class HelloVerifyRequest {
             // update the context
 
             // Stateless, clean up the handshake context as well?
-            Objects.requireNonNull(shc.handshakeHash).finish();     // forgot about the handshake hash
+            Objects.requireNonNull(shc.handshakeHash).finish();
+                    // forgot about the handshake hash
             shc.handshakeExtensions.clear();
 
             // What's the expected response?
@@ -195,7 +197,8 @@ final class HelloVerifyRequest {
             }
 
             // Refresh handshake hash.
-            Objects.requireNonNull(chc.handshakeHash).finish();     // forgot about the handshake hash
+            Objects.requireNonNull(chc.handshakeHash).finish();
+                    // forgot about the handshake hash
 
             HelloVerifyRequestMessage hvrm =
                     new HelloVerifyRequestMessage(chc, message);

@@ -1627,7 +1627,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
         byte[] friendlyName = null;
         byte[] trustedKeyUsage = null;
 
-        // return null if all three attributes are null
+        // return null if both attributes are null
         if (alias == null && keyId == null) {
             return null;
         }
@@ -1719,7 +1719,8 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
             Certificate[] certs;
 
             if (entry instanceof PrivateKeyEntry keyEntry) {
-                certs = Objects.requireNonNullElseGet(keyEntry.chain, () -> new Certificate[0]);
+                certs = Objects.requireNonNullElseGet(keyEntry.chain, () ->
+                    new Certificate[0]);
             } else if (entry instanceof CertEntry) {
                 certs = new Certificate[]{((CertEntry) entry).cert};
             } else {

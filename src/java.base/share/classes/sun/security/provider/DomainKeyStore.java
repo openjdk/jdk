@@ -407,7 +407,7 @@ abstract class DomainKeyStore extends KeyStoreSpi {
                         if (iterator.hasNext()) {
                             keystoresEntry = iterator.next();
                             prefix = keystoresEntry.getKey() +
-                                    entryNameSeparator;
+                                entryNameSeparator;
                             aliases = keystoresEntry.getValue().aliases();
                         } else {
                             return false;
@@ -424,6 +424,7 @@ abstract class DomainKeyStore extends KeyStoreSpi {
                             if (aliases.hasMoreElements()) {
                                 return true;
                             } else {
+                                continue;
                             }
                         }
                         return false;

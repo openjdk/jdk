@@ -358,7 +358,7 @@ public class PKCS9Attribute implements DerEncoder {
     /**
      * Construct an attribute object from the attribute's OID and
      * value.  If the attribute is single-valued, provide only one
-     * value.  If the attribute is multivalued, provide an array
+     * value.  If the attribute is multi-valued, provide an array
      * containing all the values.
      * Arrays of length zero are accepted, though probably useless.
      *
@@ -509,12 +509,11 @@ public class PKCS9Attribute implements DerEncoder {
             break;
 
         case 17:     // SignatureTimestampToken attribute
-
-            case 18:    // CMSAlgorithmProtection
-                value = elems[0].toByteArray();
+        case 18:     // CMSAlgorithmProtection
+            value = elems[0].toByteArray();
             break;
 
-            default: // can't happen
+        default: // can't happen
         }
     }
 
@@ -638,12 +637,11 @@ public class PKCS9Attribute implements DerEncoder {
             // break unnecessary
 
         case 17:    // SignatureTimestampToken
-
-            case 18:    // CMSAlgorithmProtection
-                temp.write(DerValue.tag_Set, (byte[])value);
+        case 18:    // CMSAlgorithmProtection
+            temp.write(DerValue.tag_Set, (byte[])value);
             break;
 
-            default: // can't happen
+        default: // can't happen
         }
 
         DerOutputStream derOut = new DerOutputStream();
@@ -664,7 +662,7 @@ public class PKCS9Attribute implements DerEncoder {
     /**
      * Get the value of this attribute.  If the attribute is
      * single-valued, return just the one value.  If the attribute is
-     * multivalued, return an array containing all the values.
+     * multi-valued, return an array containing all the values.
      * It is possible for this array to be of length 0.
      *
      * <P> The

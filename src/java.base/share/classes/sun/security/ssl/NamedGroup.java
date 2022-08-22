@@ -36,7 +36,6 @@ import java.util.List;
 import java.util.Set;
 import javax.crypto.KeyAgreement;
 import javax.crypto.spec.DHParameterSpec;
-
 import sun.security.ssl.ECDHKeyExchange.ECDHEPossession;
 import sun.security.util.CurveDB;
 

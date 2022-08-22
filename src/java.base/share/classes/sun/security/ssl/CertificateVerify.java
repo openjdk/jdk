@@ -240,7 +240,8 @@ final class CertificateVerify {
             ClientHandshakeContext chc = (ClientHandshakeContext)context;
 
             X509Possession x509Possession = null;
-            for (SSLPossession possession : Objects.requireNonNull(chc.handshakePossessions)) {
+            for (SSLPossession possession :
+                    Objects.requireNonNull(chc.handshakePossessions)) {
                 if (possession instanceof X509Possession) {
                     x509Possession = (X509Possession)possession;
                     break;
@@ -495,7 +496,8 @@ final class CertificateVerify {
             // The producing happens in client side only.
             ClientHandshakeContext chc = (ClientHandshakeContext)context;
             X509Possession x509Possession = null;
-            for (SSLPossession possession : Objects.requireNonNull(chc.handshakePossessions)) {
+            for (SSLPossession possession :
+                    Objects.requireNonNull(chc.handshakePossessions)) {
                 if (possession instanceof X509Possession) {
                     x509Possession = (X509Possession)possession;
                     break;
@@ -671,7 +673,8 @@ final class CertificateVerify {
             try {
                 Signature signer =
                     signatureScheme.getVerifier(x509Credentials.popPublicKey);
-                Objects.requireNonNull(signer).update(shc.handshakeHash.archived());
+                Objects.requireNonNull(signer).
+                        update(shc.handshakeHash.archived());
                 if (!signer.verify(signature)) {
                     throw shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                         "Invalid CertificateVerify signature");
@@ -745,7 +748,8 @@ final class CertificateVerify {
             ClientHandshakeContext chc = (ClientHandshakeContext)context;
 
             X509Possession x509Possession = null;
-            for (SSLPossession possession : Objects.requireNonNull(chc.handshakePossessions)) {
+            for (SSLPossession possession :
+                    Objects.requireNonNull(chc.handshakePossessions)) {
                 if (possession instanceof X509Possession) {
                     x509Possession = (X509Possession)possession;
                     break;
@@ -1082,7 +1086,8 @@ final class CertificateVerify {
             HandshakeContext hc = (HandshakeContext)context;
 
             X509Possession x509Possession = null;
-            for (SSLPossession possession : Objects.requireNonNull(hc.handshakePossessions)) {
+            for (SSLPossession possession :
+                    Objects.requireNonNull(hc.handshakePossessions)) {
                 if (possession instanceof X509Possession) {
                     x509Possession = (X509Possession)possession;
                     break;

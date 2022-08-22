@@ -214,6 +214,7 @@ public class SignatureUtil {
      * @param privateKey key tells you EdDSA params
      * @param directsign Ed448 uses different digest algs depending on this
      * @return the digest algId
+     * @throws NoSuchAlgorithmException
      */
     public static AlgorithmId getDigestAlgInPkcs7SignerInfo(
             Signature signer, String sigalg, PrivateKey privateKey, boolean directsign)

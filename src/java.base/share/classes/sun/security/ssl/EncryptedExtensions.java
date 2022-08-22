@@ -178,8 +178,8 @@ final class EncryptedExtensions {
             //
             // validate
             //
-            SSLExtension[] extTypes = Objects.requireNonNull(chc.sslConfig).getEnabledExtensions(
-                    SSLHandshake.ENCRYPTED_EXTENSIONS);
+            SSLExtension[] extTypes = Objects.requireNonNull(chc.sslConfig).
+                    getEnabledExtensions( SSLHandshake.ENCRYPTED_EXTENSIONS);
             eem.extensions.consumeOnLoad(chc, extTypes);
 
             //

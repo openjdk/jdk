@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -320,7 +320,8 @@ final class KeyUpdate {
             // The KeyUpdate handshake message SHALL be delivered in the
             // changeWriteCiphers() implementation.
             wc.baseSecret = nplus1;
-            hc.conContext.outputRecord.changeWriteCiphers(wc, Objects.requireNonNull(km.status).id);
+            hc.conContext.outputRecord.changeWriteCiphers(wc,
+                    Objects.requireNonNull(km.status).id);
             if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
                 SSLLogger.fine("KeyUpdate: write key updated");
             }

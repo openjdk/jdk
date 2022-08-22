@@ -25,13 +25,6 @@
 
 package sun.security.provider;
 
-import sun.security.util.BitArray;
-import sun.security.util.Debug;
-import sun.security.util.DerInputStream;
-import sun.security.util.DerValue;
-import sun.security.x509.AlgIdDSA;
-import sun.security.x509.X509Key;
-
 import java.io.IOException;
 import java.io.Serializable;
 import java.math.BigInteger;
@@ -40,6 +33,13 @@ import java.security.InvalidKeyException;
 import java.security.interfaces.DSAParams;
 import java.security.spec.DSAParameterSpec;
 import java.security.spec.InvalidParameterSpecException;
+
+import sun.security.util.BitArray;
+import sun.security.util.Debug;
+import sun.security.util.DerInputStream;
+import sun.security.util.DerValue;
+import sun.security.x509.AlgIdDSA;
+import sun.security.x509.X509Key;
 
 /**
  * An X.509 public key for the Digital Signature Algorithm.

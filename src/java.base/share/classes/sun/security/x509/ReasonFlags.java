@@ -25,13 +25,13 @@
 
 package sun.security.x509;
 
+import java.io.IOException;
+import java.util.Enumeration;
+
 import sun.security.util.BitArray;
 import sun.security.util.DerInputStream;
 import sun.security.util.DerOutputStream;
 import sun.security.util.DerValue;
-
-import java.io.IOException;
-import java.util.Enumeration;
 
 /**
  * Represent the CRL Reason Flags.

@@ -301,7 +301,7 @@ final class SSLExtensions {
                     }
                 } else {
                     extMap.put(extension, encoded);
-                    // extension_type (2)
+                                                    // extension_type (2)
                                                     // extension_data length(2)
                 }
                 encodedLength += encoded.length + 4;

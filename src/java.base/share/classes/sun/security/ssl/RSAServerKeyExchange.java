@@ -41,7 +41,6 @@ import java.text.MessageFormat;
 import java.util.EnumSet;
 import java.util.Locale;
 import java.util.Objects;
-
 import sun.security.ssl.RSAKeyExchange.EphemeralRSACredentials;
 import sun.security.ssl.RSAKeyExchange.EphemeralRSAPossession;
 import sun.security.ssl.SSLHandshake.HandshakeMessage;
@@ -232,7 +231,8 @@ final class RSAServerKeyExchange {
 
             EphemeralRSAPossession rsaPossession = null;
             X509Possession x509Possession = null;
-            for (SSLPossession possession : Objects.requireNonNull(shc.handshakePossessions)) {
+            for (SSLPossession possession :
+                    Objects.requireNonNull(shc.handshakePossessions)) {
                 if (possession instanceof EphemeralRSAPossession) {
                     rsaPossession = (EphemeralRSAPossession)possession;
                     if (x509Possession != null) {

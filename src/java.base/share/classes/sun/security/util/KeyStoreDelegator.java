@@ -51,9 +51,9 @@ public class KeyStoreDelegator extends KeyStoreSpi {
     private final String primaryType;   // the primary keystore's type
     private final String secondaryType; // the secondary keystore's type
     private final Class<? extends KeyStoreSpi> primaryKeyStore;
-                                  // the primary keystore's class
+                                        // the primary keystore's class
     private final Class<? extends KeyStoreSpi> secondaryKeyStore;
-                                  // the secondary keystore's class
+                                        // the secondary keystore's class
     private String type; // the delegate's type
     private KeyStoreSpi keystore; // the delegate
     private final boolean compatModeEnabled;
@@ -226,7 +226,8 @@ public class KeyStoreDelegator extends KeyStoreSpi {
             try {
                 @SuppressWarnings("deprecation")
                 KeyStoreSpi tmp = primaryKeyStore.newInstance();
-                Objects.requireNonNull(tmp).engineLoad(bufferedStream, password);
+                Objects.requireNonNull(tmp).
+                        engineLoad(bufferedStream, password);
                 keystore = tmp;
                 type = primaryType;
 
@@ -247,7 +248,8 @@ public class KeyStoreDelegator extends KeyStoreSpi {
                     @SuppressWarnings("deprecation")
                     KeyStoreSpi tmp = secondaryKeyStore.newInstance();
                     bufferedStream.reset();
-                    Objects.requireNonNull(tmp).engineLoad(bufferedStream, password);
+                    Objects.requireNonNull(tmp).
+                            engineLoad(bufferedStream, password);
                     keystore = tmp;
                     type = secondaryType;
 

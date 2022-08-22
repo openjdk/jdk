@@ -176,7 +176,8 @@ final class MaxFragExtension {
             ClientHandshakeContext chc = (ClientHandshakeContext)context;
 
             // Is it a supported and enabled extension?
-            if (!Objects.requireNonNull(chc.sslConfig).isAvailable(CH_MAX_FRAGMENT_LENGTH)) {
+            if (!Objects.requireNonNull(chc.sslConfig).
+                    isAvailable(CH_MAX_FRAGMENT_LENGTH)) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
                         "Ignore unavailable max_fragment_length extension");
@@ -243,7 +244,8 @@ final class MaxFragExtension {
             // The consuming happens in server side only.
             ServerHandshakeContext shc = (ServerHandshakeContext)context;
 
-            if (!Objects.requireNonNull(shc.sslConfig).isAvailable(CH_MAX_FRAGMENT_LENGTH)) {
+            if (!Objects.requireNonNull(shc.sslConfig).
+                    isAvailable(CH_MAX_FRAGMENT_LENGTH)) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
                         "Ignore unavailable max_fragment_length extension");
@@ -297,7 +299,8 @@ final class MaxFragExtension {
             }
 
             if ((shc.maxFragmentLength > 0) &&
-                    (Objects.requireNonNull(shc.sslConfig).maximumPacketSize != 0)) {
+                    (Objects.requireNonNull(shc.sslConfig).
+                    maximumPacketSize != 0)) {
                 int estimatedMaxFragSize =
                         shc.negotiatedCipherSuite.calculatePacketSize(
                                 shc.maxFragmentLength, shc.negotiatedProtocol,
@@ -405,7 +408,8 @@ final class MaxFragExtension {
             }
 
             if ((chc.maxFragmentLength > 0) &&
-                    (Objects.requireNonNull(chc.sslConfig).maximumPacketSize != 0)) {
+                    (Objects.requireNonNull(chc.sslConfig).
+                    maximumPacketSize != 0)) {
                 int estimatedMaxFragSize =
                         chc.negotiatedCipherSuite.calculatePacketSize(
                                 chc.maxFragmentLength, chc.negotiatedProtocol,
@@ -464,7 +468,8 @@ final class MaxFragExtension {
             }
 
             if ((shc.maxFragmentLength > 0) &&
-                    (Objects.requireNonNull(shc.sslConfig).maximumPacketSize != 0)) {
+                    (Objects.requireNonNull(shc.sslConfig).
+                    maximumPacketSize != 0)) {
                 int estimatedMaxFragSize =
                         shc.negotiatedCipherSuite.calculatePacketSize(
                                 shc.maxFragmentLength, shc.negotiatedProtocol,
@@ -570,7 +575,8 @@ final class MaxFragExtension {
             }
 
             if ((chc.maxFragmentLength > 0) &&
-                    (Objects.requireNonNull(chc.sslConfig).maximumPacketSize != 0)) {
+                    (Objects.requireNonNull(chc.sslConfig).
+                    maximumPacketSize != 0)) {
                 int estimatedMaxFragSize =
                         chc.negotiatedCipherSuite.calculatePacketSize(
                                 chc.maxFragmentLength, chc.negotiatedProtocol,

@@ -264,7 +264,8 @@ final class ServerHello {
             // new one and choose its cipher suite and compression options,
             // unless new session creation is disabled for this connection!
             if (!shc.isResumption || shc.resumingSession == null) {
-                if (!Objects.requireNonNull(shc.sslConfig).enableSessionCreation) {
+                if (!Objects.requireNonNull(shc.sslConfig).
+                        enableSessionCreation) {
                     throw new SSLException(
                         "Not resumption, and no new session is allowed");
                 }
@@ -332,7 +333,8 @@ final class ServerHello {
                         }
                     }
                 }
-                Objects.requireNonNull(shc.handshakeProducers).put(SSLHandshake.SERVER_HELLO_DONE.id,
+                Objects.requireNonNull(shc.handshakeProducers).
+                        put(SSLHandshake.SERVER_HELLO_DONE.id,
                         SSLHandshake.SERVER_HELLO_DONE);
             } else {
                 // stateless and use the client session id (RFC 5077 3.4)
@@ -388,8 +390,8 @@ final class ServerHello {
                 }
 
                 // update the responders
-                Objects.requireNonNull(shc.handshakeProducers).put(SSLHandshake.FINISHED.id,
-                        SSLHandshake.FINISHED);
+                Objects.requireNonNull(shc.handshakeProducers).
+                        put(SSLHandshake.FINISHED.id, SSLHandshake.FINISHED);
             }
 
             // The handshake message has been delivered.
@@ -505,7 +507,8 @@ final class ServerHello {
             // new one and choose its cipher suite and compression options,
             // unless new session creation is disabled for this connection!
             if (!shc.isResumption || shc.resumingSession == null) {
-                if (!Objects.requireNonNull(shc.sslConfig).enableSessionCreation) {
+                if (!Objects.requireNonNull(shc.sslConfig).
+                        enableSessionCreation) {
                     throw new SSLException(
                         "Not resumption, and no new session is allowed");
                 }
@@ -558,7 +561,8 @@ final class ServerHello {
             }
 
             // update the responders
-            Objects.requireNonNull(shc.handshakeProducers).put(SSLHandshake.ENCRYPTED_EXTENSIONS.id,
+            Objects.requireNonNull(shc.handshakeProducers).
+                    put(SSLHandshake.ENCRYPTED_EXTENSIONS.id,
                     SSLHandshake.ENCRYPTED_EXTENSIONS);
             shc.handshakeProducers.put(SSLHandshake.FINISHED.id,
                     SSLHandshake.FINISHED);
@@ -782,7 +786,7 @@ final class ServerHello {
 
             // Produce extensions for HelloRetryRequest handshake message.
             SSLExtension[] serverHelloExtensions =
-                Objects.requireNonNull(shc.sslConfig).getEnabledExtensions(
+                    Objects.requireNonNull(shc.sslConfig).getEnabledExtensions(
                     SSLHandshake.HELLO_RETRY_REQUEST, shc.negotiatedProtocol);
             hhrm.extensions.produce(shc, serverHelloExtensions);
             if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
@@ -835,7 +839,7 @@ final class ServerHello {
 
             // Produce extensions for HelloRetryRequest handshake message.
             SSLExtension[] serverHelloExtensions =
-                Objects.requireNonNull(shc.sslConfig).getEnabledExtensions(
+                    Objects.requireNonNull(shc.sslConfig).getEnabledExtensions(
                     SSLHandshake.MESSAGE_HASH, shc.negotiatedProtocol);
             hhrm.extensions.produce(shc, serverHelloExtensions);
             if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
@@ -911,7 +915,8 @@ final class ServerHello {
                 serverVersion = helloRetryRequest.serverVersion;
             }
 
-            if (!Objects.requireNonNull(chc.activeProtocols).contains(serverVersion)) {
+            if (!Objects.requireNonNull(chc.activeProtocols).
+                    contains(serverVersion)) {
                 throw chc.conContext.fatal(Alert.PROTOCOL_VERSION,
                     "The server selected protocol version " + serverVersion +
                     " is not accepted by client preferences " +
@@ -963,7 +968,8 @@ final class ServerHello {
                 serverVersion = serverHello.serverVersion;
             }
 
-            if (!Objects.requireNonNull(chc.activeProtocols).contains(serverVersion)) {
+            if (!Objects.requireNonNull(chc.activeProtocols).
+                    contains(serverVersion)) {
                 throw chc.conContext.fatal(Alert.PROTOCOL_VERSION,
                     "The server selected protocol version " + serverVersion +
                     " is not accepted by client preferences " +
@@ -977,7 +983,8 @@ final class ServerHello {
             }
             if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine(
-                    "Negotiated protocol version: " + Objects.requireNonNull(serverVersion).name);
+                    "Negotiated protocol version: " +
+                    Objects.requireNonNull(serverVersion).name);
             }
 
             if (serverHello.serverRandom.isVersionDowngrade(chc)) {
@@ -1086,7 +1093,8 @@ final class ServerHello {
                     chc.resumingSession.invalidate();
                     chc.resumingSession = null;
                     chc.isResumption = false;
-                    if (!Objects.requireNonNull(chc.sslConfig).enableSessionCreation) {
+                    if (!Objects.requireNonNull(chc.sslConfig).
+                            enableSessionCreation) {
                         throw chc.conContext.fatal(Alert.PROTOCOL_VERSION,
                             "New session creation is disabled");
                     }
@@ -1094,7 +1102,8 @@ final class ServerHello {
             }
 
             // Check and launch ClientHello extensions.
-            extTypes = Objects.requireNonNull(chc.sslConfig).getEnabledExtensions(
+            extTypes = Objects.requireNonNull(chc.sslConfig).
+                    getEnabledExtensions(
                     SSLHandshake.SERVER_HELLO);
             serverHello.extensions.consumeOnLoad(chc, extTypes);
 
@@ -1230,8 +1239,8 @@ final class ServerHello {
             //
 
             // Check and launch ServerHello extensions.
-            SSLExtension[] extTypes = Objects.requireNonNull(chc.sslConfig).getEnabledExtensions(
-                    SSLHandshake.SERVER_HELLO);
+            SSLExtension[] extTypes = Objects.requireNonNull(chc.sslConfig).
+                    getEnabledExtensions(SSLHandshake.SERVER_HELLO);
             serverHello.extensions.consumeOnLoad(chc, extTypes);
             if (!chc.isResumption) {
                 if (chc.resumingSession != null) {
@@ -1430,8 +1439,8 @@ final class ServerHello {
             //
 
             // Check and launch ClientHello extensions.
-            SSLExtension[] extTypes = Objects.requireNonNull(chc.sslConfig).getEnabledExtensions(
-                    SSLHandshake.HELLO_RETRY_REQUEST);
+            SSLExtension[] extTypes = Objects.requireNonNull(chc.sslConfig).
+                    getEnabledExtensions(SSLHandshake.HELLO_RETRY_REQUEST);
             helloRetryRequest.extensions.consumeOnLoad(chc, extTypes);
 
             //
@@ -1441,7 +1450,8 @@ final class ServerHello {
 
             // Change client/server handshake traffic secrets.
             // Refresh handshake hash
-            Objects.requireNonNull(chc.handshakeHash).finish();     // reset the handshake hash
+            // reset the handshake hash
+            Objects.requireNonNull(chc.handshakeHash).finish();
 
             // calculate the transcript hash of the 1st ClientHello message
             HandshakeOutStream hos = new HandshakeOutStream(null);
@@ -1476,7 +1486,8 @@ final class ServerHello {
             chc.handshakeHash.finish();     // reset the handshake hash
             chc.handshakeHash.deliver(hashedClientHello);
 
-            int hrrBodyLen = Objects.requireNonNull(helloRetryRequest.handshakeRecord).remaining();
+            int hrrBodyLen = Objects.requireNonNull(
+                   helloRetryRequest.handshakeRecord).remaining();
             byte[] hrrMessage = new byte[4 + hrrBodyLen];
             hrrMessage[0] = SSLHandshake.HELLO_RETRY_REQUEST.id;
             hrrMessage[1] = (byte)((hrrBodyLen >> 16) & 0xFF);

@@ -117,7 +117,8 @@ public class CookieExtension {
             ClientHandshakeContext chc = (ClientHandshakeContext) context;
 
             // Is it a supported and enabled extension?
-            if (!Objects.requireNonNull(chc.sslConfig).isAvailable(SSLExtension.CH_COOKIE)) {
+            if (!Objects.requireNonNull(chc.sslConfig).
+                    isAvailable(SSLExtension.CH_COOKIE)) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
                             "Ignore unavailable cookie extension");
@@ -154,7 +155,8 @@ public class CookieExtension {
             ServerHandshakeContext shc = (ServerHandshakeContext)context;
 
             // Is it a supported and enabled extension?
-            if (!Objects.requireNonNull(shc.sslConfig).isAvailable(SSLExtension.CH_COOKIE)) {
+            if (!Objects.requireNonNull(shc.sslConfig).
+                    isAvailable(SSLExtension.CH_COOKIE)) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
                             "Ignore unavailable cookie extension");
@@ -218,7 +220,8 @@ public class CookieExtension {
             ServerHelloMessage hrrm = (ServerHelloMessage)message;
 
             // Is it a supported and enabled extension?
-            if (!Objects.requireNonNull(shc.sslConfig).isAvailable(SSLExtension.HRR_COOKIE)) {
+            if (!Objects.requireNonNull(shc.sslConfig).
+                    isAvailable(SSLExtension.HRR_COOKIE)) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
                             "Ignore unavailable cookie extension");
@@ -253,7 +256,8 @@ public class CookieExtension {
             ClientHandshakeContext chc = (ClientHandshakeContext)context;
 
             // Is it a supported and enabled extension?
-            if (!Objects.requireNonNull(chc.sslConfig).isAvailable(SSLExtension.HRR_COOKIE)) {
+            if (!Objects.requireNonNull(chc.sslConfig).
+                    isAvailable(SSLExtension.HRR_COOKIE)) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
                             "Ignore unavailable cookie extension");
@@ -280,7 +284,8 @@ public class CookieExtension {
             ServerHandshakeContext shc = (ServerHandshakeContext) context;
 
             // Is it a supported and enabled extension?
-            if (!Objects.requireNonNull(shc.sslConfig).isAvailable(SSLExtension.HRR_COOKIE)) {
+            if (!Objects.requireNonNull(shc.sslConfig).
+                    isAvailable(SSLExtension.HRR_COOKIE)) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
                             "Ignore unavailable cookie extension");

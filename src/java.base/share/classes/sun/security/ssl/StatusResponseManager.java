@@ -24,6 +24,14 @@
  */
 package sun.security.ssl;
 
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.security.AccessController;
+import java.security.cert.Extension;
+import java.security.cert.X509Certificate;
+import java.util.*;
+import java.util.concurrent.*;
 import sun.security.action.GetBooleanAction;
 import sun.security.action.GetIntegerAction;
 import sun.security.action.GetPropertyAction;
@@ -35,16 +43,6 @@ import sun.security.ssl.X509Authentication.X509Possession;
 import sun.security.util.Cache;
 import sun.security.x509.PKIXExtensions;
 import sun.security.x509.SerialNumber;
-
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.security.AccessController;
-import java.security.cert.Extension;
-import java.security.cert.X509Certificate;
-import java.util.*;
-import java.util.concurrent.*;
-
 import static sun.security.ssl.CertStatusExtension.*;
 
 final class StatusResponseManager {

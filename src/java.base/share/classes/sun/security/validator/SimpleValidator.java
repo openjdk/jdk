@@ -106,9 +106,13 @@ public final class SimpleValidator extends Validator {
                 new HashMap<>();
         for (X509Certificate cert : trustedCerts) {
             X500Principal principal = cert.getSubjectX500Principal();
-            List<X509Certificate> list = trustedX500Principals.computeIfAbsent(principal, k -> new ArrayList<>(2));
-            // this actually should be a set, but duplicate entries
-            // are not a problem, and we can avoid the Set overhead
+            List<X509Certificate> list = trustedX500Principals.get(principal);
+            if (list == null) {
+                // this actually should be a set, but duplicate entries
+                // are not a problem, and we can avoid the Set overhead
+                list = new ArrayList<X509Certificate>(2);
+                trustedX500Principals.put(principal, list);
+            }
             list.add(cert);
         }
     }
@@ -288,7 +292,8 @@ public final class SimpleValidator extends Validator {
         try {
             NetscapeCertTypeExtension ext;
             if (cert instanceof X509CertImpl certImpl) {
-                ext = (NetscapeCertTypeExtension)certImpl.getExtension(OBJID_NETSCAPE_CERT_TYPE);
+                ext = (NetscapeCertTypeExtension)certImpl.
+                        getExtension(OBJID_NETSCAPE_CERT_TYPE);
                 if (ext == null) {
                     return true;
                 }

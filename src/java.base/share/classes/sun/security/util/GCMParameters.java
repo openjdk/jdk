@@ -25,11 +25,11 @@
 
 package sun.security.util;
 
-import javax.crypto.spec.GCMParameterSpec;
 import java.io.IOException;
 import java.security.AlgorithmParametersSpi;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.InvalidParameterSpecException;
+import javax.crypto.spec.GCMParameterSpec;
 
 /**
  * This class implements the parameter set used with
@@ -142,6 +142,7 @@ public final class GCMParameters extends AlgorithmParametersSpi {
         HexDumpEncoder encoder = new HexDumpEncoder();
 
         return LINE_SEP + "    iv:" + LINE_SEP + "["
-                + encoder.encodeBuffer(iv) + "]" + LINE_SEP + "tLen(bits):" + LINE_SEP + tLen * 8 + LINE_SEP;
+                + encoder.encodeBuffer(iv) + "]" + LINE_SEP + "tLen(bits):"
+                + LINE_SEP + tLen * 8 + LINE_SEP;
     }
 }

@@ -117,7 +117,8 @@ final class ExtendedMasterSecretExtension {
             ClientHandshakeContext chc = (ClientHandshakeContext)context;
 
             // Is it a supported and enabled extension?
-            if (!Objects.requireNonNull(chc.sslConfig).isAvailable(CH_EXTENDED_MASTER_SECRET) ||
+            if (!Objects.requireNonNull(chc.sslConfig).
+                    isAvailable(CH_EXTENDED_MASTER_SECRET) ||
                     !SSLConfiguration.useExtendedMasterSecret ||
                     !chc.conContext.protocolVersion.useTLS10PlusSpec()) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
@@ -160,7 +161,8 @@ final class ExtendedMasterSecretExtension {
             ServerHandshakeContext shc = (ServerHandshakeContext)context;
 
             // Is it a supported and enabled extension?
-            if (!Objects.requireNonNull(shc.sslConfig).isAvailable(CH_EXTENDED_MASTER_SECRET) ||
+            if (!Objects.requireNonNull(shc.sslConfig).
+                    isAvailable(CH_EXTENDED_MASTER_SECRET) ||
                     !SSLConfiguration.useExtendedMasterSecret ||
                     !shc.negotiatedProtocol.useTLS10PlusSpec()) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
@@ -212,7 +214,8 @@ final class ExtendedMasterSecretExtension {
             ServerHandshakeContext shc = (ServerHandshakeContext)context;
 
             // Is it a supported and enabled extension?
-            if (!Objects.requireNonNull(shc.sslConfig).isAvailable(CH_EXTENDED_MASTER_SECRET) ||
+            if (!Objects.requireNonNull(shc.sslConfig).
+                    isAvailable(CH_EXTENDED_MASTER_SECRET) ||
                     !SSLConfiguration.useExtendedMasterSecret) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine("Ignore unavailable extension: " +

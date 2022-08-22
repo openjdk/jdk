@@ -362,7 +362,7 @@ public final class CertAndKeyGen {
     }
 
     private SecureRandom        prng;
-    private final String              keyType;
+    private final String        keyType;
     private String              sigAlg;
     private KeyPairGenerator    keyGen;
     private PublicKey           publicKey;

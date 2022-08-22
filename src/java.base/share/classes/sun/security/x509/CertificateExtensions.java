@@ -262,7 +262,8 @@ public class CertificateExtensions implements CertAttrSet<Extension> {
     }
 
     public Map<String,Extension> getUnparseableExtensions() {
-        return Objects.requireNonNullElse(unparseableExtensions, Collections.emptyMap());
+        return Objects.requireNonNullElse(unparseableExtensions,
+                Collections.emptyMap());
     }
 
     /**

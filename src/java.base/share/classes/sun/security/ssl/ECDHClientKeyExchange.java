@@ -152,7 +152,8 @@ final class ECDHClientKeyExchange {
             ClientHandshakeContext chc = (ClientHandshakeContext)context;
 
             X509Credentials x509Credentials = null;
-            for (SSLCredentials credential : Objects.requireNonNull(chc.handshakeCredentials)) {
+            for (SSLCredentials credential :
+                    Objects.requireNonNull(chc.handshakeCredentials)) {
                 if (credential instanceof X509Credentials) {
                     x509Credentials = (X509Credentials)credential;
                     break;
@@ -258,7 +259,8 @@ final class ECDHClientKeyExchange {
             ServerHandshakeContext shc = (ServerHandshakeContext)context;
 
             X509Possession x509Possession = null;
-            for (SSLPossession possession : Objects.requireNonNull(shc.handshakePossessions)) {
+            for (SSLPossession possession :
+                    Objects.requireNonNull(shc.handshakePossessions)) {
                 if (possession instanceof X509Possession) {
                     x509Possession = (X509Possession)possession;
                     break;
@@ -285,10 +287,9 @@ final class ECDHClientKeyExchange {
             // Wasn't EC, try XEC.
             if (ecParams == null) {
                 namedParams = x509Possession.getXECParameterSpec();
-                namedGroup = NamedGroup.nameOf(Objects.requireNonNull(namedParams).getName());
+                namedGroup = NamedGroup.nameOf(Objects.requireNonNull(
+                        namedParams).getName());
             }
-
-            // Can't figure this out, bail.
 
             // unlikely, have been checked during cipher suite negotiation.
             if (namedGroup == null) {
@@ -330,7 +331,8 @@ final class ECDHClientKeyExchange {
                     }
                 }
 
-                Objects.requireNonNull(shc.handshakeCredentials).add(sslCredentials);
+                Objects.requireNonNull(shc.handshakeCredentials).
+                        add(sslCredentials);
             } catch (GeneralSecurityException e) {
                 throw shc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
                         "Cannot decode ECDH PublicKey: " + namedGroup);
@@ -376,7 +378,8 @@ final class ECDHClientKeyExchange {
 
             // Find a good EC/XEC credential to use, determine the
             // NamedGroup to use for creating Possessions/Credentials/Keys.
-            for (SSLCredentials cd : Objects.requireNonNull(chc.handshakeCredentials)) {
+            for (SSLCredentials cd :
+                    Objects.requireNonNull(chc.handshakeCredentials)) {
                 if (cd instanceof NamedGroupCredentials creds) {
                     ng = creds.getNamedGroup();
                     sslCredentials = cd;
@@ -461,7 +464,8 @@ final class ECDHClientKeyExchange {
 
            // Find a good EC/XEC credential to use, determine the
            // NamedGroup to use for creating Possessions/Credentials/Keys.
-            for (SSLPossession possession : Objects.requireNonNull(shc.handshakePossessions)) {
+            for (SSLPossession possession :
+                    Objects.requireNonNull(shc.handshakePossessions)) {
                 if (possession instanceof NamedGroupPossession poss) {
                     namedGroup = poss.getNamedGroup();
                     sslPossession = poss;
@@ -514,7 +518,8 @@ final class ECDHClientKeyExchange {
                     }
                 }
 
-                Objects.requireNonNull(shc.handshakeCredentials).add(sslCredentials);
+                Objects.requireNonNull(shc.handshakeCredentials).
+                        add(sslCredentials);
             } catch (GeneralSecurityException e) {
                 throw shc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
                         "Cannot decode named group: " + namedGroup);

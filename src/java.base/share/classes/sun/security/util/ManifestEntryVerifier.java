@@ -25,12 +25,12 @@
 
 package sun.security.util;
 
-import sun.security.jca.Providers;
-
 import java.io.IOException;
 import java.security.*;
 import java.util.*;
 import java.util.jar.*;
+
+import sun.security.jca.Providers;
 
 /**
  * This class is used to verify each entry in a jar file with its

@@ -157,9 +157,9 @@ abstract class Builder {
         case GeneralNameInterface.NAME_MATCH:
             return 0;
         case GeneralNameInterface.NAME_WIDENS:
-            case GeneralNameInterface.NAME_NARROWS:
-                break;
-            default: // should never occur
+        case GeneralNameInterface.NAME_NARROWS:
+            break;
+        default: // should never occur
             return incomparable;
         }
 
@@ -201,11 +201,11 @@ abstract class Builder {
             /* base matches test */
             return 0;
         case GeneralNameInterface.NAME_WIDENS:
-            case GeneralNameInterface.NAME_NARROWS:
-                /* base is descendant of test */
-                /* base is ancestor of test */
+            /* base is ancestor of test */
+        case GeneralNameInterface.NAME_NARROWS:
+            /* base is descendant of test */
             return (test.subtreeDepth()-base.subtreeDepth());
-            default: // should never occur
+        default: // should never occur
             return incomparable;
         }
 

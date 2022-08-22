@@ -268,7 +268,8 @@ public class PKCS9Attributes {
      * Get an attribute from this set.
      */
     public PKCS9Attribute getAttribute(String name) {
-        return attributes.get(Objects.requireNonNull(PKCS9Attribute.getOID(name)));
+        return attributes.get(Objects.requireNonNull(
+            PKCS9Attribute.getOID(name)));
     }
 
 

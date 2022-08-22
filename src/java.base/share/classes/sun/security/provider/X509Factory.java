@@ -25,8 +25,14 @@
 
 package sun.security.provider;
 
+import java.io.*;
+import java.security.PublicKey;
+import java.security.cert.*;
+import java.util.*;
+
 import jdk.internal.event.EventHelper;
 import jdk.internal.event.X509CertificateEvent;
+
 import sun.security.pkcs.PKCS7;
 import sun.security.pkcs.ParsingException;
 import sun.security.provider.certpath.X509CertPath;
@@ -36,11 +42,6 @@ import sun.security.util.DerValue;
 import sun.security.util.KeyUtil;
 import sun.security.x509.X509CRLImpl;
 import sun.security.x509.X509CertImpl;
-
-import java.io.*;
-import java.security.PublicKey;
-import java.security.cert.*;
-import java.util.*;
 
 /**
  * This class defines a certificate factory for X.509 v3 certificates {@literal &}

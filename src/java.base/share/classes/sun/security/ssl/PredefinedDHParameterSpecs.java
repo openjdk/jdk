@@ -266,7 +266,8 @@ final class PredefinedDHParameterSpecs {
                 Matcher paramsFinder = paramsPattern.matcher(property);
                 while(paramsFinder.find()) {
                     String primeModulus = paramsFinder.group(1);
-                    BigInteger p = new BigInteger(Objects.requireNonNull(primeModulus), 16);
+                    BigInteger p = new BigInteger(
+                            Objects.requireNonNull(primeModulus), 16);
                     if (!p.isProbablePrime(PRIME_CERTAINTY)) {
                         if (SSLLogger.isOn && SSLLogger.isOn("sslctx")) {
                             SSLLogger.fine(
@@ -279,7 +280,8 @@ final class PredefinedDHParameterSpecs {
                     }
 
                     String baseGenerator = paramsFinder.group(2);
-                    BigInteger g = new BigInteger(Objects.requireNonNull(baseGenerator), 16);
+                    BigInteger g = new BigInteger(
+                            Objects.requireNonNull(baseGenerator), 16);
 
                     DHParameterSpec spec = new DHParameterSpec(p, g);
                     int primeLen = p.bitLength();

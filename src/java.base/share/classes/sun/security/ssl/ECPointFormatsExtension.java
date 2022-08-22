@@ -171,7 +171,8 @@ final class ECPointFormatsExtension {
             ClientHandshakeContext chc = (ClientHandshakeContext)context;
 
             // Is it a supported and enabled extension?
-            if (!Objects.requireNonNull(chc.sslConfig).isAvailable(CH_EC_POINT_FORMATS)) {
+            if (!Objects.requireNonNull(chc.sslConfig).
+                    isAvailable(CH_EC_POINT_FORMATS)) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
                         "Ignore unavailable ec_point_formats extension");
@@ -221,7 +222,8 @@ final class ECPointFormatsExtension {
             ServerHandshakeContext shc = (ServerHandshakeContext)context;
 
             // Is it a supported and enabled extension?
-            if (!Objects.requireNonNull(shc.sslConfig).isAvailable(CH_EC_POINT_FORMATS)) {
+            if (!Objects.requireNonNull(shc.sslConfig).
+                    isAvailable(CH_EC_POINT_FORMATS)) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
                         "Ignore unavailable ec_point_formats extension");

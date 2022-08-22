@@ -25,7 +25,6 @@
 
 package sun.security.provider.certpath.ssl;
 
-import javax.net.ssl.*;
 import java.io.IOException;
 import java.net.Socket;
 import java.net.URI;
@@ -35,6 +34,7 @@ import java.security.InvalidAlgorithmParameterException;
 import java.security.Provider;
 import java.security.cert.*;
 import java.util.*;
+import javax.net.ssl.*;
 
 /**
  * A CertStore that retrieves an SSL server's certificate chain.

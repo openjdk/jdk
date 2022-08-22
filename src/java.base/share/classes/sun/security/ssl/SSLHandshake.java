@@ -85,7 +85,8 @@ enum SSLHandshake implements SSLConsumer, HandshakeProducer {
     HELLO_RETRY_REQUEST ((byte)0x02, "hello_retry_request",
             new Map.Entry[] {
                     new SimpleImmutableEntry<>(
-                            ServerHello.handshakeConsumer,      // Use ServerHello consumer
+                            // Use ServerHello consumer
+                            ServerHello.handshakeConsumer,
                             ProtocolVersion.PROTOCOLS_TO_13
                     )
             },

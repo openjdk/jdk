@@ -25,10 +25,6 @@
 
 package sun.security.util;
 
-import sun.security.jca.Providers;
-import sun.security.pkcs.PKCS7;
-import sun.security.pkcs.SignerInfo;
-
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.security.*;
@@ -39,6 +35,10 @@ import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
+
+import sun.security.jca.Providers;
+import sun.security.pkcs.PKCS7;
+import sun.security.pkcs.SignerInfo;
 
 public class SignatureFileVerifier {
 

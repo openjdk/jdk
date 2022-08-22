@@ -894,17 +894,17 @@ enum CipherSuite {
 
     // TLS 1.3 cipher suite
     CipherSuite(int id, boolean isDefaultEnabled,
-                String name, ProtocolVersion[] supportedProtocols,
-                SSLCipher bulkCipher, HashAlg hashAlg) {
+            String name, ProtocolVersion[] supportedProtocols,
+            SSLCipher bulkCipher, HashAlg hashAlg) {
         this(id, isDefaultEnabled, name, "",
                 supportedProtocols, null, bulkCipher, M_NULL, hashAlg);
     }
 
     CipherSuite(int id, boolean isDefaultEnabled,
-                String name, String aliases,
-                ProtocolVersion[] supportedProtocols,
-                KeyExchange keyExchange, SSLCipher cipher,
-                MacAlg macAlg, HashAlg hashAlg) {
+            String name, String aliases,
+            ProtocolVersion[] supportedProtocols,
+            KeyExchange keyExchange, SSLCipher cipher,
+            MacAlg macAlg, HashAlg hashAlg) {
         this.id = id;
         this.isDefaultEnabled = isDefaultEnabled;
         this.name = name;

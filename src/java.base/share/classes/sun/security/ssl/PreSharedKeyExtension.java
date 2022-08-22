@@ -337,7 +337,8 @@ final class PreSharedKeyExtension {
             ClientHelloMessage clientHello = (ClientHelloMessage) message;
             ServerHandshakeContext shc = (ServerHandshakeContext)context;
             // Is it a supported and enabled extension?
-            if (!Objects.requireNonNull(shc.sslConfig).isAvailable(SSLExtension.CH_PRE_SHARED_KEY)) {
+            if (!Objects.requireNonNull(shc.sslConfig).
+                    isAvailable(SSLExtension.CH_PRE_SHARED_KEY)) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
                             "Ignore unavailable pre_shared_key extension");

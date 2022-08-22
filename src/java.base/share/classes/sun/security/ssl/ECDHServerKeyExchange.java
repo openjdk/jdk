@@ -532,7 +532,8 @@ final class ECDHServerKeyExchange {
             //
             // update
             //
-            Objects.requireNonNull(chc.handshakeCredentials).add(skem.sslCredentials);
+            Objects.requireNonNull(chc.handshakeCredentials).
+                    add(skem.sslCredentials);
 
             //
             // produce

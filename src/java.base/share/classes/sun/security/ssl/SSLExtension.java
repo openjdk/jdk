@@ -544,11 +544,11 @@ enum SSLExtension implements SSLStringizer {
 
     // supported extension
     SSLExtension(int id, String name, SSLHandshake handshakeType,
-                 ProtocolVersion[] supportedProtocols,
-                 HandshakeProducer producer,
-                 ExtensionConsumer onLoadConsumer, HandshakeAbsence onLoadAbsence,
-                 HandshakeConsumer onTradeConsumer, HandshakeAbsence onTradeAbsence,
-                 SSLStringizer stringize) {
+            ProtocolVersion[] supportedProtocols,
+            HandshakeProducer producer,
+            ExtensionConsumer onLoadConsumer, HandshakeAbsence onLoadAbsence,
+            HandshakeConsumer onTradeConsumer, HandshakeAbsence onTradeAbsence,
+            SSLStringizer stringize) {
         this.id = id;
         this.handshakeType = handshakeType;
         this.name = name;

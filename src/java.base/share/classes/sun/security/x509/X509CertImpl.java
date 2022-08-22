@@ -1507,8 +1507,8 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
             if (certExt == null)
                 return -1;
 
-            if (((Boolean) certExt.get(BasicConstraintsExtension.IS_CA)
-            ).booleanValue())
+            if (((Boolean) certExt.get(BasicConstraintsExtension.IS_CA)).
+                    booleanValue())
                 return ((Integer)certExt.get(
                         BasicConstraintsExtension.PATH_LEN)).intValue();
             else

@@ -142,7 +142,8 @@ public class DSAParameterGenerator extends AlgorithmParameterGeneratorSpi {
                 new DSAParameterSpec(paramP, paramQ, paramG);
             algParams = AlgorithmParameters.getInstance("DSA", "SUN");
             algParams.init(dsaParamSpec);
-        } catch (InvalidParameterSpecException | NoSuchAlgorithmException | NoSuchProviderException e) {
+        } catch (InvalidParameterSpecException | NoSuchAlgorithmException |
+                NoSuchProviderException e) {
             // this should never happen
             throw new RuntimeException(e.getMessage());
         }

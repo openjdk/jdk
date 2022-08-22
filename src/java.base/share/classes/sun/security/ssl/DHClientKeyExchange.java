@@ -170,7 +170,8 @@ final class DHClientKeyExchange {
             ClientHandshakeContext chc = (ClientHandshakeContext)context;
 
             DHECredentials dheCredentials = null;
-            for (SSLCredentials cd : Objects.requireNonNull(chc.handshakeCredentials)) {
+            for (SSLCredentials cd :
+                    Objects.requireNonNull(chc.handshakeCredentials)) {
                 if (cd instanceof DHECredentials) {
                     dheCredentials = (DHECredentials)cd;
                     break;
@@ -246,7 +247,8 @@ final class DHClientKeyExchange {
             ServerHandshakeContext shc = (ServerHandshakeContext)context;
 
             DHEPossession dhePossession = null;
-            for (SSLPossession possession : Objects.requireNonNull(shc.handshakePossessions)) {
+            for (SSLPossession possession :
+                    Objects.requireNonNull(shc.handshakePossessions)) {
                 if (possession instanceof DHEPossession) {
                     dhePossession = (DHEPossession)possession;
                     break;

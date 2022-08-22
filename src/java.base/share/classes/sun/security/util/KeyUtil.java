@@ -25,13 +25,6 @@
 
 package sun.security.util;
 
-import sun.security.jca.JCAUtil;
-
-import javax.crypto.SecretKey;
-import javax.crypto.interfaces.DHKey;
-import javax.crypto.interfaces.DHPublicKey;
-import javax.crypto.spec.DHParameterSpec;
-import javax.crypto.spec.DHPublicKeySpec;
 import java.math.BigInteger;
 import java.security.AlgorithmParameters;
 import java.security.InvalidKeyException;
@@ -40,6 +33,13 @@ import java.security.SecureRandom;
 import java.security.interfaces.*;
 import java.security.spec.*;
 import java.util.Arrays;
+import javax.crypto.SecretKey;
+import javax.crypto.interfaces.DHKey;
+import javax.crypto.interfaces.DHPublicKey;
+import javax.crypto.spec.DHParameterSpec;
+import javax.crypto.spec.DHPublicKeySpec;
+
+import sun.security.jca.JCAUtil;
 
 /**
  * A utility class to get key length, validate keys, etc.

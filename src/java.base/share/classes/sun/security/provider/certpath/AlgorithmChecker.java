@@ -25,12 +25,6 @@
 
 package sun.security.provider.certpath;
 
-import sun.security.util.Debug;
-import sun.security.util.DisabledAlgorithmConstraints;
-import sun.security.validator.Validator;
-import sun.security.x509.AlgorithmId;
-import sun.security.x509.X509CertImpl;
-
 import java.math.BigInteger;
 import java.security.*;
 import java.security.cert.*;
@@ -40,6 +34,12 @@ import java.security.interfaces.DSAParams;
 import java.security.interfaces.DSAPublicKey;
 import java.security.spec.DSAPublicKeySpec;
 import java.util.*;
+
+import sun.security.util.Debug;
+import sun.security.util.DisabledAlgorithmConstraints;
+import sun.security.validator.Validator;
+import sun.security.x509.AlgorithmId;
+import sun.security.x509.X509CertImpl;
 
 /**
  * A {@code PKIXCertPathChecker} implementation to check whether a

@@ -136,9 +136,9 @@ final class SSLEngineInputRecord extends InputRecord implements SSLRecord {
                 /*
                  * Client or Server Hello
                  */
-                int mask = 0x7F;
+                int mask = (isShort ? 0x7F : 0x3F);
                 len = ((byteZero & mask) << 8) +
-                        (packet.get(pos + 1) & 0xFF) + 2;
+                        (packet.get(pos + 1) & 0xFF) + (isShort ? 2 : 3);
 
             } else {
                 // Gobbledygook!

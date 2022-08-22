@@ -538,8 +538,8 @@ final class SSLEngineOutputRecord extends OutputRecord implements SSLRecord {
                     memo.encodeCipher,
                     memo.contentType, dstBuf,
                     dstPos, dstLim, headerSize,
-                    Objects.requireNonNull(ProtocolVersion.valueOf(memo.majorVersion,
-                            memo.minorVersion)));
+                    Objects.requireNonNull(ProtocolVersion.
+                            valueOf(memo.majorVersion, memo.minorVersion)));
             if (memo.disposeCipher) {
                 memo.encodeCipher.dispose();
             }

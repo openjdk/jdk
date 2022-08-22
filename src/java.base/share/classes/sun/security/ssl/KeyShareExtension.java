@@ -222,7 +222,8 @@ final class KeyShareExtension {
             ClientHandshakeContext chc = (ClientHandshakeContext)context;
 
             // Is it a supported and enabled extension?
-            if (!Objects.requireNonNull(chc.sslConfig).isAvailable(SSLExtension.CH_KEY_SHARE)) {
+            if (!Objects.requireNonNull(chc.sslConfig).
+                    isAvailable(SSLExtension.CH_KEY_SHARE)) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
                         "Ignore unavailable key_share extension");
@@ -332,7 +333,8 @@ final class KeyShareExtension {
             }
 
             // Is it a supported and enabled extension?
-            if (!Objects.requireNonNull(shc.sslConfig).isAvailable(SSLExtension.CH_KEY_SHARE)) {
+            if (!Objects.requireNonNull(shc.sslConfig).
+                    isAvailable(SSLExtension.CH_KEY_SHARE)) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
                             "Ignore unavailable key_share extension");
@@ -531,7 +533,8 @@ final class KeyShareExtension {
             }
 
             // Is it a supported and enabled extension?
-            if (!Objects.requireNonNull(shc.sslConfig).isAvailable(SSLExtension.SH_KEY_SHARE)) {
+            if (!Objects.requireNonNull(shc.sslConfig).
+                    isAvailable(SSLExtension.SH_KEY_SHARE)) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.warning(
                             "Ignore, no available server key_share extension");
@@ -638,7 +641,8 @@ final class KeyShareExtension {
             }
 
             // Is it a supported and enabled extension?
-            if (!Objects.requireNonNull(chc.sslConfig).isAvailable(SSLExtension.SH_KEY_SHARE)) {
+            if (!Objects.requireNonNull(chc.sslConfig).
+                    isAvailable(SSLExtension.SH_KEY_SHARE)) {
                 throw chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
                         "Unsupported key_share extension in ServerHello");
             }
@@ -786,7 +790,8 @@ final class KeyShareExtension {
             ServerHandshakeContext shc = (ServerHandshakeContext) context;
 
             // Is it a supported and enabled extension?
-            if (!Objects.requireNonNull(shc.sslConfig).isAvailable(SSLExtension.HRR_KEY_SHARE)) {
+            if (!Objects.requireNonNull(shc.sslConfig).
+                    isAvailable(SSLExtension.HRR_KEY_SHARE)) {
                 throw shc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
                         "Unsupported key_share extension in HelloRetryRequest");
             }
@@ -850,7 +855,8 @@ final class KeyShareExtension {
             ServerHandshakeContext shc = (ServerHandshakeContext) context;
 
             // Is it a supported and enabled extension?
-            if (!Objects.requireNonNull(shc.sslConfig).isAvailable(SSLExtension.HRR_KEY_SHARE)) {
+            if (!Objects.requireNonNull(shc.sslConfig).
+                    isAvailable(SSLExtension.HRR_KEY_SHARE)) {
                 throw shc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
                         "Unsupported key_share extension in HelloRetryRequest");
             }
@@ -889,7 +895,8 @@ final class KeyShareExtension {
             ClientHandshakeContext chc = (ClientHandshakeContext)context;
 
             // Is it a supported and enabled extension?
-            if (!Objects.requireNonNull(chc.sslConfig).isAvailable(SSLExtension.HRR_KEY_SHARE)) {
+            if (!Objects.requireNonNull(chc.sslConfig).
+                    isAvailable(SSLExtension.HRR_KEY_SHARE)) {
                 throw chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
                         "Unsupported key_share extension in HelloRetryRequest");
             }

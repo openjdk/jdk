@@ -82,7 +82,8 @@ final class Finished {
 
             byte[] vd;
             try {
-                vd = Objects.requireNonNull(vds).createVerifyData(context, false);
+                vd = Objects.requireNonNull(vds).
+                        createVerifyData(context, false);
             } catch (IOException ioe) {
                 throw context.conContext.fatal(Alert.ILLEGAL_PARAMETER,
                         "Failed to generate verify_data", ioe);
@@ -115,7 +116,8 @@ final class Finished {
                     VerifyDataScheme.valueOf(context.negotiatedProtocol);
             byte[] myVerifyData;
             try {
-                myVerifyData = Objects.requireNonNull(vd).createVerifyData(context, true);
+                myVerifyData = Objects.requireNonNull(vd).
+                        createVerifyData(context, true);
             } catch (IOException ioe) {
                 throw context.conContext.fatal(Alert.ILLEGAL_PARAMETER,
                         "Failed to generate verify_data", ioe);
@@ -217,10 +219,11 @@ final class Finished {
             SecretKey masterSecretKey =
                     context.handshakeSession.getMasterSecret();
 
-            boolean useClientLabel =
-                    (Objects.requireNonNull(context.sslConfig).isClientMode && !isValidation) ||
+            boolean useClientLabel = (Objects.requireNonNull(context.sslConfig).
+                    isClientMode && !isValidation) ||
                     (!context.sslConfig.isClientMode && isValidation);
-            return Objects.requireNonNull(handshakeHash).digest(useClientLabel, masterSecretKey);
+            return Objects.requireNonNull(handshakeHash).
+                    digest(useClientLabel, masterSecretKey);
         }
     }
 
@@ -234,8 +237,8 @@ final class Finished {
             SecretKey masterSecretKey =
                     context.handshakeSession.getMasterSecret();
 
-            boolean useClientLabel =
-                    (Objects.requireNonNull(context.sslConfig).isClientMode && !isValidation) ||
+            boolean useClientLabel = (Objects.requireNonNull(context.sslConfig).
+                    isClientMode && !isValidation) ||
                     (!context.sslConfig.isClientMode && isValidation);
             String tlsLabel;
             if (useClientLabel) {
@@ -285,8 +288,8 @@ final class Finished {
             SecretKey masterSecretKey =
                     context.handshakeSession.getMasterSecret();
 
-            boolean useClientLabel =
-                    (Objects.requireNonNull(context.sslConfig).isClientMode && !isValidation) ||
+            boolean useClientLabel = (Objects.requireNonNull(context.sslConfig).
+                    isClientMode && !isValidation) ||
                     (!context.sslConfig.isClientMode && isValidation);
             String tlsLabel;
             if (useClientLabel) {
@@ -352,7 +355,8 @@ final class Finished {
             try {
                 Mac hmac = Mac.getInstance(hmacAlg);
                 hmac.init(finishedSecret);
-                return hmac.doFinal(Objects.requireNonNull(context.handshakeHash).digest());
+                return hmac.doFinal(Objects.requireNonNull(
+                        context.handshakeHash).digest());
             } catch (NoSuchAlgorithmException |InvalidKeyException ex) {
                 throw new ProviderException(
                         "Failed to generate verify_data", ex);
@@ -573,8 +577,8 @@ final class Finished {
                     chc.conContext.finishHandshake();
                 }
             } else {
-                Objects.requireNonNull(chc.handshakeProducers).put(SSLHandshake.FINISHED.id,
-                        SSLHandshake.FINISHED);
+                Objects.requireNonNull(chc.handshakeProducers).
+                        put(SSLHandshake.FINISHED.id, SSLHandshake.FINISHED);
             }
 
             //
@@ -634,8 +638,8 @@ final class Finished {
                     shc.conContext.finishHandshake();
                 }
             } else {
-                Objects.requireNonNull(shc.handshakeProducers).put(SSLHandshake.FINISHED.id,
-                        SSLHandshake.FINISHED);
+                Objects.requireNonNull(shc.handshakeProducers).
+                        put(SSLHandshake.FINISHED.id, SSLHandshake.FINISHED);
             }
 
             //
@@ -1016,8 +1020,8 @@ final class Finished {
             //
             // produce
             //
-            Objects.requireNonNull(chc.handshakeProducers).put(SSLHandshake.FINISHED.id,
-                        SSLHandshake.FINISHED);
+            Objects.requireNonNull(chc.handshakeProducers).
+                    put(SSLHandshake.FINISHED.id, SSLHandshake.FINISHED);
             SSLHandshake[] probableHandshakeMessages = new SSLHandshake[] {
                 // full handshake messages
                 SSLHandshake.CERTIFICATE,

@@ -25,10 +25,10 @@
 
 package sun.security.provider;
 
+import java.util.Objects;
+
 import jdk.internal.util.Preconditions;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
-
-import java.util.Objects;
 
 import static sun.security.provider.ByteArrayAccess.*;
 

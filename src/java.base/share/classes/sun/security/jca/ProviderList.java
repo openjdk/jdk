@@ -691,7 +691,7 @@ public final class ProviderList {
             provider = p;
             // Group definitions
             if (type != null && type.compareToIgnoreCase("Group") == 0) {
-                // Currently, intrinsic algorithm groups
+                // Currently intrinsic algorithm groups
                 if (algorithm.compareToIgnoreCase("SHA2") == 0) {
                     alternateNames = SHA2Group;
                 } else if (algorithm.compareToIgnoreCase("HmacSHA2") == 0) {

@@ -68,8 +68,8 @@ import java.security.AccessController;
 public class GetIntegerAction
         implements java.security.PrivilegedAction<Integer> {
     private final String theProp;
-    private int defaultVal;
-    private boolean defaultSet;
+    private final int defaultVal;
+    private final boolean defaultSet;
 
     /**
      * Constructor that takes the name of the system property whose integer
@@ -79,6 +79,8 @@ public class GetIntegerAction
      */
     public GetIntegerAction(String theProp) {
         this.theProp = theProp;
+        this.defaultVal = 0;
+        this.defaultSet = false;
     }
 
     /**

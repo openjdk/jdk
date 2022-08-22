@@ -98,7 +98,7 @@ final class CertificateRequest {
         }
 
         ClientCertificateType(byte id, String name,
-                              List<String> keyAlgorithm, boolean isAvailable) {
+                List<String> keyAlgorithm, boolean isAvailable) {
             this.id = id;
             this.name = name;
             this.keyAlgorithm = keyAlgorithm;
@@ -365,8 +365,8 @@ final class CertificateRequest {
             //
 
             // An empty client Certificate handshake message may be allowed.
-            Objects.requireNonNull(chc.handshakeProducers).put(SSLHandshake.CERTIFICATE.id,
-                    SSLHandshake.CERTIFICATE);
+            Objects.requireNonNull(chc.handshakeProducers).
+                    put(SSLHandshake.CERTIFICATE.id, SSLHandshake.CERTIFICATE);
 
             X509ExtendedKeyManager km = chc.sslContext.getX509KeyManager();
             String clientAlias = null;
@@ -701,8 +701,8 @@ final class CertificateRequest {
             //
 
             // An empty client Certificate handshake message may be allowed.
-            Objects.requireNonNull(chc.handshakeProducers).put(SSLHandshake.CERTIFICATE.id,
-                    SSLHandshake.CERTIFICATE);
+            Objects.requireNonNull(chc.handshakeProducers).
+                    put(SSLHandshake.CERTIFICATE.id, SSLHandshake.CERTIFICATE);
 
             List<SignatureScheme> sss =
                     SignatureScheme.getSupportedAlgorithms(
@@ -884,7 +884,8 @@ final class CertificateRequest {
             T13CertificateRequestMessage crm =
                     new T13CertificateRequestMessage(shc);
             // Produce extensions for CertificateRequest handshake message.
-            SSLExtension[] extTypes = Objects.requireNonNull(shc.sslConfig).getEnabledExtensions(
+            SSLExtension[] extTypes = Objects.requireNonNull(shc.sslConfig).
+                    getEnabledExtensions(
                     SSLHandshake.CERTIFICATE_REQUEST, shc.negotiatedProtocol);
             crm.extensions.produce(shc, extTypes);
             if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
@@ -947,8 +948,8 @@ final class CertificateRequest {
             //
             // validate
             //
-            SSLExtension[] extTypes = Objects.requireNonNull(chc.sslConfig).getEnabledExtensions(
-                    SSLHandshake.CERTIFICATE_REQUEST);
+            SSLExtension[] extTypes = Objects.requireNonNull(chc.sslConfig).
+                    getEnabledExtensions(SSLHandshake.CERTIFICATE_REQUEST);
             crm.extensions.consumeOnLoad(chc, extTypes);
 
             //
@@ -960,8 +961,8 @@ final class CertificateRequest {
             // produce
             //
             chc.certRequestContext = crm.requestContext.clone();
-            Objects.requireNonNull(chc.handshakeProducers).put(SSLHandshake.CERTIFICATE.id,
-                    SSLHandshake.CERTIFICATE);
+            Objects.requireNonNull(chc.handshakeProducers).
+                    put(SSLHandshake.CERTIFICATE.id, SSLHandshake.CERTIFICATE);
             chc.handshakeProducers.put(SSLHandshake.CERTIFICATE_VERIFY.id,
                     SSLHandshake.CERTIFICATE_VERIFY);
         }

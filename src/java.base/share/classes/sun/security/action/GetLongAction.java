@@ -65,8 +65,8 @@ package sun.security.action;
 
 public class GetLongAction implements java.security.PrivilegedAction<Long> {
     private final String theProp;
-    private long defaultVal;
-    private boolean defaultSet = false;
+    private final long defaultVal;
+    private final boolean defaultSet;
 
     /**
      * Constructor that takes the name of the system property whose
@@ -76,6 +76,8 @@ public class GetLongAction implements java.security.PrivilegedAction<Long> {
      */
     public GetLongAction(String theProp) {
         this.theProp = theProp;
+        this.defaultVal = 0;
+        this.defaultSet = false;
     }
 
     /**

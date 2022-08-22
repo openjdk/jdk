@@ -416,12 +416,14 @@ final class DHKeyExchange {
                 HandshakeContext context) throws IOException {
             DHEPossession dhePossession = null;
             DHECredentials dheCredentials = null;
-            for (SSLPossession poss : Objects.requireNonNull(context.handshakePossessions)) {
+            for (SSLPossession poss :
+                    Objects.requireNonNull(context.handshakePossessions)) {
                 if (!(poss instanceof DHEPossession dhep)) {
                     continue;
                 }
 
-                for (SSLCredentials cred : Objects.requireNonNull(context.handshakeCredentials)) {
+                for (SSLCredentials cred :
+                        Objects.requireNonNull(context.handshakeCredentials)) {
                     if (!(cred instanceof DHECredentials dhec)) {
                         continue;
                     }

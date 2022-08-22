@@ -302,7 +302,7 @@ public final class ConfigFile extends Configuration {
                 n++;
             }
 
-            if (!initialized) {
+            if (!initialized && n == 1) {
 
                 // get the config from the user's home directory
                 if (debugConfig != null) {

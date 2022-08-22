@@ -199,7 +199,7 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
 
         X509Certificate[] trustedChain;
         if ((socket != null) && socket.isConnected() &&
-                                        (socket instanceof SSLSocket sslSocket)) {
+                (socket instanceof SSLSocket sslSocket)) {
 
             SSLSession session = sslSocket.getHandshakeSession();
             if (session == null) {

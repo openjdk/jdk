@@ -95,7 +95,8 @@ public class X509CRLImpl extends X509CRL implements DerEncoder {
     private X500Principal    issuerPrincipal = null;
     private Date             thisUpdate = null;
     private Date             nextUpdate = null;
-    private final Map<X509IssuerSerial,X509CRLEntry> revokedMap = new TreeMap<>();
+    private final Map<X509IssuerSerial,X509CRLEntry> revokedMap =
+            new TreeMap<>();
     private final List<X509CRLEntry> revokedList = new LinkedList<>();
     private CRLExtensions    extensions = null;
     private static final boolean isExplicit = true;
@@ -612,7 +613,8 @@ public class X509CRLImpl extends X509CRL implements DerEncoder {
      * false otherwise.
      */
     public boolean isRevoked(Certificate cert) {
-        if (revokedMap.isEmpty() || (!(cert instanceof X509Certificate xcert))) {
+        if (revokedMap.isEmpty() ||
+                (!(cert instanceof X509Certificate xcert))) {
             return false;
         }
         X509IssuerSerial issuerSerial = new X509IssuerSerial(xcert);

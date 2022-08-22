@@ -82,7 +82,7 @@ public final class PKIXValidator extends Validator {
     PKIXValidator(String variant, Collection<X509Certificate> trustedCerts) {
         super(TYPE_PKIX, variant);
         this.trustedCerts = (trustedCerts instanceof Set) ?
-                            (Set<X509Certificate>)trustedCerts :
+                (Set<X509Certificate>)trustedCerts :
                 new HashSet<>(trustedCerts);
 
         Set<TrustAnchor> trustAnchors = new HashSet<>();

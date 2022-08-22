@@ -25,8 +25,6 @@
 
 package sun.security.provider;
 
-import sun.security.jca.JCAUtil;
-
 import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.security.*;
@@ -34,6 +32,7 @@ import java.security.interfaces.DSAParams;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.DSAParameterSpec;
 
+import sun.security.jca.JCAUtil;
 import static sun.security.util.SecurityProviderConstants.DEF_DSA_KEY_SIZE;
 import static sun.security.util.SecurityProviderConstants.getDefDSASubprimeSize;
 

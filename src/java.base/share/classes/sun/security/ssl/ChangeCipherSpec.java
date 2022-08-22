@@ -78,8 +78,9 @@ final class ChangeCipherSpec {
                 try {
                     writeAuthenticator = Authenticator.valueOf(
                             hc.negotiatedProtocol, ncs.macAlg,
-                            tkd.getTrafficKey(Objects.requireNonNull(hc.sslConfig).isClientMode ?
-                                    "clientMacKey" : "serverMacKey"));
+                            tkd.getTrafficKey(Objects.requireNonNull(
+                            hc.sslConfig).isClientMode ?  "clientMacKey" :
+                            "serverMacKey"));
                 } catch (NoSuchAlgorithmException | InvalidKeyException e) {
                     // unlikely
                     throw new SSLException("Algorithm missing:  ", e);
@@ -87,7 +88,8 @@ final class ChangeCipherSpec {
             }
 
             SecretKey writeKey =
-                    tkd.getTrafficKey(Objects.requireNonNull(hc.sslConfig).isClientMode ?
+                    tkd.getTrafficKey(Objects.requireNonNull(hc.sslConfig).
+                            isClientMode ?
                                     "clientWriteKey" : "serverWriteKey");
             SecretKey writeIv =
                     tkd.getTrafficKey(hc.sslConfig.isClientMode ?
@@ -174,7 +176,9 @@ final class ChangeCipherSpec {
                     try {
                         readAuthenticator = Authenticator.valueOf(
                                 hc.negotiatedProtocol, ncs.macAlg,
-                                tkd.getTrafficKey(Objects.requireNonNull(hc.sslConfig).isClientMode ?
+                                tkd.getTrafficKey(Objects.
+                                        requireNonNull(hc.sslConfig).
+                                        isClientMode ?
                                         "serverMacKey" : "clientMacKey"));
                     } catch (NoSuchAlgorithmException | InvalidKeyException e) {
                         // unlikely
@@ -183,7 +187,8 @@ final class ChangeCipherSpec {
                 }
 
                 SecretKey readKey =
-                        tkd.getTrafficKey(Objects.requireNonNull(hc.sslConfig).isClientMode ?
+                        tkd.getTrafficKey(Objects.requireNonNull(hc.sslConfig).
+                                isClientMode ?
                                         "serverWriteKey" : "clientWriteKey");
                 SecretKey readIv =
                         tkd.getTrafficKey(hc.sslConfig.isClientMode ?

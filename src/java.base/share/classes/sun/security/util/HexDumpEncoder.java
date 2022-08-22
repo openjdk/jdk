@@ -95,7 +95,8 @@ public class HexDumpEncoder {
         thisLineLength = len;
     }
 
-    protected void encodeAtom(OutputStream o, byte[] buf, int off, int len) throws IOException {
+    protected void encodeAtom(OutputStream o, byte[] buf, int off, int len)
+            throws IOException {
         thisLine[currentByte] = buf[off];
         hexDigit(pStream, buf[off]);
         pStream.print(" ");

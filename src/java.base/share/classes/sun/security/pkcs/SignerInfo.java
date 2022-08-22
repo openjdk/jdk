@@ -25,13 +25,6 @@
 
 package sun.security.pkcs;
 
-import sun.security.provider.SHAKE256;
-import sun.security.timestamp.TimestampToken;
-import sun.security.util.*;
-import sun.security.x509.AlgorithmId;
-import sun.security.x509.KeyUsageExtension;
-import sun.security.x509.X500Name;
-
 import java.io.IOException;
 import java.io.OutputStream;
 import java.math.BigInteger;
@@ -39,6 +32,13 @@ import java.security.*;
 import java.security.cert.*;
 import java.security.spec.PSSParameterSpec;
 import java.util.*;
+
+import sun.security.provider.SHAKE256;
+import sun.security.timestamp.TimestampToken;
+import sun.security.util.*;
+import sun.security.x509.AlgorithmId;
+import sun.security.x509.KeyUsageExtension;
+import sun.security.x509.X500Name;
 
 /**
  * A SignerInfo, as defined in PKCS#7's signedData type.

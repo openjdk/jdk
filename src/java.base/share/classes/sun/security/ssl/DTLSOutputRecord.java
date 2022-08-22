@@ -508,8 +508,8 @@ final class DTLSOutputRecord extends OutputRecord implements DTLSRecord {
             long recordSN = encrypt(memo.encodeCipher,
                     memo.contentType, dstBuf,
                     dstPos, dstLim, headerSize,
-                    Objects.requireNonNull(ProtocolVersion.valueOf(memo.majorVersion,
-                            memo.minorVersion)));
+                    Objects.requireNonNull(ProtocolVersion.
+                            valueOf(memo.majorVersion, memo.minorVersion)));
 
             if (SSLLogger.isOn && SSLLogger.isOn("packet")) {
                 ByteBuffer temporary = dstBuf.duplicate();

@@ -258,14 +258,16 @@ final class RSAKeyExchange {
                 HandshakeContext context) throws IOException {
             RSAPremasterSecret premaster = null;
             if (context instanceof ClientHandshakeContext) {
-                for (SSLPossession possession : Objects.requireNonNull(context.handshakePossessions)) {
+                for (SSLPossession possession :
+                        Objects.requireNonNull(context.handshakePossessions)) {
                     if (possession instanceof RSAPremasterSecret) {
                         premaster = (RSAPremasterSecret)possession;
                         break;
                     }
                 }
             } else {
-                for (SSLCredentials credential : Objects.requireNonNull(context.handshakeCredentials)) {
+                for (SSLCredentials credential :
+                        Objects.requireNonNull(context.handshakeCredentials)) {
                     if (credential instanceof RSAPremasterSecret) {
                         premaster = (RSAPremasterSecret)credential;
                         break;

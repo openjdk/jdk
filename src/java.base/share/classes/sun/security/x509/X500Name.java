@@ -887,9 +887,11 @@ public class X500Name implements GeneralNameInterface, Principal {
         String rdnString;
         int quoteCount = 0;
 
+        String dnString = input;
+
         int searchOffset = 0;
-        int nextComma = input.indexOf(',');
-        int nextSemiColon = input.indexOf(';');
+        int nextComma = dnString.indexOf(',');
+        int nextSemiColon = dnString.indexOf(';');
         while (nextComma >=0 || nextSemiColon >=0) {
 
             if (nextSemiColon < 0) {
@@ -899,7 +901,7 @@ public class X500Name implements GeneralNameInterface, Principal {
             } else {
                 rdnEnd = Math.min(nextComma, nextSemiColon);
             }
-            quoteCount += countQuotes(input, searchOffset, rdnEnd);
+            quoteCount += countQuotes(dnString, searchOffset, rdnEnd);
 
             /*
              * We have encountered an RDN delimiter (comma or a semicolon).
@@ -908,12 +910,13 @@ public class X500Name implements GeneralNameInterface, Principal {
              * is part of the RDN. Otherwise, it is used as a separator, to
              * delimit the RDN under consideration from any subsequent RDNs.
              */
-            if (quoteCount != 1 && !escaped(rdnEnd, searchOffset, input)) {
+            if (rdnEnd >= 0 && quoteCount != 1 &&
+                !escaped(rdnEnd, searchOffset, dnString)) {
 
                 /*
                  * Comma/semicolon is a separator
                  */
-                rdnString = input.substring(dnOffset, rdnEnd);
+                rdnString = dnString.substring(dnOffset, rdnEnd);
 
                 // Parse RDN, and store it in vector
                 RDN rdn = new RDN(rdnString, keywordMap);
@@ -927,12 +930,12 @@ public class X500Name implements GeneralNameInterface, Principal {
             }
 
             searchOffset = rdnEnd + 1;
-            nextComma = input.indexOf(',', searchOffset);
-            nextSemiColon = input.indexOf(';', searchOffset);
+            nextComma = dnString.indexOf(',', searchOffset);
+            nextSemiColon = dnString.indexOf(';', searchOffset);
         }
 
         // Parse last or only RDN, and store it in vector
-        rdnString = input.substring(dnOffset);
+        rdnString = dnString.substring(dnOffset);
         RDN rdn = new RDN(rdnString, keywordMap);
         dnVector.add(rdn);
 
@@ -1329,7 +1332,8 @@ public class X500Name implements GeneralNameInterface, Principal {
                 () -> {
                     Class<X500Principal> pClass = X500Principal.class;
                     Class<?>[] args = new Class<?>[] { X500Name.class };
-                    Constructor<X500Principal> cons = pClass.getDeclaredConstructor(args);
+                    Constructor<X500Principal> cons =
+                        pClass.getDeclaredConstructor(args);
                     cons.setAccessible(true);
                     Field field = pClass.getDeclaredField("thisX500Name");
                     field.setAccessible(true);
