@@ -1269,7 +1269,7 @@ public:
 
   void movsd(Address     dst, XMMRegister    src) { Assembler::movsd(dst, src); }
   void movsd(XMMRegister dst, XMMRegister    src) { Assembler::movsd(dst, src); }
-  void movsd(XMMRegister dst, Address        src)     { Assembler::movsd(dst, src); }
+  void movsd(XMMRegister dst, Address        src) { Assembler::movsd(dst, src); }
   void movsd(XMMRegister dst, AddressLiteral src, Register rscratch = rscratch1);
 
   void mulpd(XMMRegister dst, XMMRegister    src) { Assembler::mulpd(dst, src); }
