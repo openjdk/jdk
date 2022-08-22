@@ -21,9 +21,6 @@
 # questions.
 #
 
-cesar = \
-  compiler/c2/irTests/scalarReplacement/AllocationMergesTests.java
-
 hotspot_all = \
   /
 
@@ -32,8 +29,7 @@ hotspot_all_no_apps = \
   -applications
 
 hotspot_compiler = \
-  compiler/c2/irTests/scalarReplacement/AllocationMergesTests.java \
-  compiler/c2/irTests/blackhole/BlackholeSyncEATest.java
+  compiler
 
 hotspot_compiler_xcomp = \
   :hotspot_compiler \
