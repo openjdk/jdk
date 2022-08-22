@@ -309,9 +309,9 @@ G1PLABAllocator::G1PLABAllocator(G1Allocator* allocator) :
     double const PadFactor = 1.5;
     _tolerated_refills = MAX2(ExpectedNumberOfRefills, 1.0) * PadFactor;
   } else {
-    // Make the tolerated refills a huge number; -2 because we add one to this
+    // Make the tolerated refills a huge number; -1 because we add one to this
     // value later and it would overflow otherwise.
-    _tolerated_refills = (size_t)-2;
+    _tolerated_refills = SIZE_MAX - 1;
   }
 
   for (region_type_t state = 0; state < G1HeapRegionAttr::Num; state++) {
