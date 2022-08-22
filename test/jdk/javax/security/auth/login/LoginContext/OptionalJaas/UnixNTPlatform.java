@@ -39,7 +39,7 @@ import java.io.PrintStream;
 public class UnixNTPlatform {
 
     public static void main(String[] args) throws Exception {
-	System.out.println("Testing cross-platform");
+        System.out.println("Testing cross-platform");
 
         String config = """
                         hello {
@@ -71,9 +71,8 @@ public class UnixNTPlatform {
         byte[] byes = stream.toByteArray();
         String s = new String(byes);
         if (!s.contains("Failed in attempt to import the underlying")) {
-           throw new RuntimeException();
-        } else {
-           System.out.printf("-- call stack is -- %n%s%n", s);
+	   throw new RuntimeException();
         }
+        System.out.printf("-- call stack is -- %n%s%n", s);
     }
 }
