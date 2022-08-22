@@ -139,15 +139,15 @@ LoaderConstraint* LoaderConstraintTable::find_loader_constraint(
                                     Symbol* name, Handle loader) {
 
   assert_lock_strong(SystemDictionary_lock);
-  ConstraintSet* entry = _loader_constraint_table.get(name);
-  if (entry == nullptr) {
+  ConstraintSet* set = _loader_constraint_table.get(name);
+  if (set == nullptr) {
     return nullptr;
   }
 
   ClassLoaderData* loader_data = ClassLoaderData::class_loader_data(loader());
 
-  for (int i = 0; i < entry->num_constraints(); i++) {
-    LoaderConstraint* p = entry->constraint_at(i);
+  for (int i = 0; i < set->num_constraints(); i++) {
+    LoaderConstraint* p = set->constraint_at(i);
     for (int i = p->num_loaders() - 1; i >= 0; i--) {
         if (p->loader_data(i) == loader_data &&
             // skip unloaded klasses
@@ -169,23 +169,23 @@ void LoaderConstraintTable::add_loader_constraint(Symbol* name, InstanceKlass* k
   // a parameter name to a method call.  We impose this constraint that the
   // class that is eventually loaded must match between these two loaders.
   bool created;
-  ConstraintSet* entry = _loader_constraint_table.put_if_absent(name, &created);
+  ConstraintSet* set = _loader_constraint_table.put_if_absent(name, &created);
   if (created) {
     // Increment the key refcount when putting in the table.
     name->increment_refcount();
-    entry->initialize(constraint);
+    set->initialize(constraint);
   } else {
-    entry->add_constraint(constraint);
+    set->add_constraint(constraint);
   }
 }
 
 class PurgeUnloadedConstraints : public StackObj {
  public:
-  bool do_entry(Symbol*& name, ConstraintSet& entry) {
+  bool do_entry(Symbol*& name, ConstraintSet& set) {
     LogTarget(Info, class, loader, constraints) lt;
-    int len = entry.num_constraints();
+    int len = set.num_constraints();
     for (int i = len - 1; i >= 0; i--) {
-      LoaderConstraint* probe = entry.constraint_at(i);
+      LoaderConstraint* probe = set.constraint_at(i);
       InstanceKlass* klass = probe->klass();
       // Remove klass that is no longer alive
       if (klass != NULL &&
@@ -224,7 +224,7 @@ class PurgeUnloadedConstraints : public StackObj {
           }
         }
       }
-      // Check whether entry should be purged
+      // Check whether the set should be purged
       if (probe->num_loaders() < 2) {
         if (lt.is_enabled()) {
           ResourceMark rm;
@@ -232,7 +232,7 @@ class PurgeUnloadedConstraints : public StackObj {
                    name->as_C_string());
         }
 
-        entry.remove_constraint(probe);
+        set.remove_constraint(probe);
       } else {
 #ifdef ASSERT
         if (probe->klass() != NULL) {
@@ -241,12 +241,12 @@ class PurgeUnloadedConstraints : public StackObj {
 #endif
       }
     }
-    if (entry.num_constraints() == 0) {
+    if (set.num_constraints() == 0) {
       // decrement name refcount before freeing
       name->decrement_refcount();
       return true;
     }
-    // Don't unlink this entry
+    // Don't unlink this set
     return false;
   }
 };
@@ -417,7 +417,7 @@ void LoaderConstraintTable::merge_loader_constraints(Symbol* class_name,
   LoaderConstraint* src = dest == p1 ? p2 : p1;
 
   for (int i = 0; i < src->num_loaders(); i++) {
-    // do we care about duplicates???
+    // We don't seem to care about duplicates.
     dest->add_loader_data(src->loader_data(i));
   }
 
@@ -448,17 +448,17 @@ void LoaderConstraintTable::merge_loader_constraints(Symbol* class_name,
     assert(dest->klass() == klass, "constraints corrupted");
   }
 
-  // Remove src from entry
-  ConstraintSet* entry = _loader_constraint_table.get(class_name);
-  entry->remove_constraint(src);
+  // Remove src from set
+  ConstraintSet* set = _loader_constraint_table.get(class_name);
+  set->remove_constraint(src);
 }
 
 void LoaderConstraintTable::verify() {
-  auto check = [&] (Symbol*& key, ConstraintSet& entry) {
-    // foreach constraint in entry, check the klass is in the dictionary or placeholder table.
-    int len = entry.num_constraints();
+  auto check = [&] (Symbol*& key, ConstraintSet& set) {
+    // foreach constraint in the set, check the klass is in the dictionary or placeholder table.
+    int len = set.num_constraints();
     for (int i = 0; i < len; i++) {
-      LoaderConstraint* probe = entry.constraint_at(i);
+      LoaderConstraint* probe = set.constraint_at(i);
       if (probe->klass() != NULL) {
         InstanceKlass* ik = probe->klass();
         guarantee(ik->name() == key, "name should match");
@@ -492,12 +492,12 @@ void LoaderConstraintTable::verify() {
 }
 
 void LoaderConstraintTable::print_table_statistics(outputStream* st) {
-  auto size = [&] (Symbol*& key, ConstraintSet& entry) {
-    // sizeof entry is included in the size of the hashtable node
+  auto size = [&] (Symbol*& key, ConstraintSet& set) {
+    // sizeof set is included in the size of the hashtable node
     int sum = 0;
-    int len = entry.num_constraints();
+    int len = set.num_constraints();
     for (int i = 0; i < len; i++) {
-      LoaderConstraint* probe = entry.constraint_at(i);
+      LoaderConstraint* probe = set.constraint_at(i);
       sum += sizeof(*probe) + (probe->num_loaders() * sizeof(ClassLoaderData*));
     }
     return sum;
@@ -508,10 +508,10 @@ void LoaderConstraintTable::print_table_statistics(outputStream* st) {
 
 // Called with the system dictionary lock held
 void LoaderConstraintTable::print_on(outputStream* st) {
-  auto printer = [&] (Symbol*& key, ConstraintSet& entry) {
-    int len = entry.num_constraints();
+  auto printer = [&] (Symbol*& key, ConstraintSet& set) {
+    int len = set.num_constraints();
     for (int i = 0; i < len; i++) {
-      LoaderConstraint* probe = entry.constraint_at(i);
+      LoaderConstraint* probe = set.constraint_at(i);
       st->print("Symbol: %s loaders:", key->as_C_string());
       for (int n = 0; n < probe->num_loaders(); n++) {
         st->cr();
