@@ -25,10 +25,9 @@
 #ifndef SHARE_GC_G1_G1EVACFAILURE_HPP
 #define SHARE_GC_G1_G1EVACFAILURE_HPP
 
-#include "gc/g1/g1OopClosures.hpp"
-#include "gc/g1/heapRegionManager.hpp"
 #include "gc/shared/workerThread.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/bitMap.hpp"
 
 class G1CollectedHeap;
 class G1ConcurrentMark;
@@ -61,17 +60,7 @@ public:
 
   void work(uint worker_id);
 
-  void initialize(uint num_workers) {
-    _num_evac_fail_regions = _evac_failure_regions->num_regions_failed_evacuation();
-    _num_chunks_per_region = G1CollectedHeap::get_chunks_per_region(HeapRegion::LogOfHRGrainBytes);
-
-    _chunk_size = static_cast<uint>(HeapRegion::GrainWords / _num_chunks_per_region);
-
-    log_debug(gc, ergo)("Initializing removing self forwards with %u chunks per region given %u workers",
-                        _num_chunks_per_region, num_workers);
-
-    _chunk_bitmap.resize(_num_chunks_per_region * _num_evac_fail_regions);
-  }
+  void initialize(uint num_workers);
 };
 
 #endif // SHARE_GC_G1_G1EVACFAILURE_HPP

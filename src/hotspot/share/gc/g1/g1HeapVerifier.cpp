@@ -570,7 +570,7 @@ void G1HeapVerifier::verify_region_sets() {
 }
 
 void G1HeapVerifier::prepare_for_verify() {
-  if (SafepointSynchronize::is_at_safepoint() || !UseTLAB) {
+  if (SafepointSynchronize::is_at_safepoint() || ! UseTLAB) {
     _g1h->ensure_parsability(false);
   }
 }

@@ -525,14 +525,7 @@ public:
 
   // Return "optimal" number of chunks per region we want to use for claiming areas
   // within a region to claim.
-  static uint get_chunks_per_region(uint log_region_size) {
-    // Limit the expected input values to current known possible values of the
-    // (log) region size. Adjust as necessary after testing if changing the permissible
-    // values for region size.
-    assert(log_region_size >= 20 && log_region_size <= 29,
-           "expected value in [20,29], but got %u", log_region_size);
-    return 1u << (log_region_size / 2 - 4);
-  }
+  static uint get_chunks_per_region();
 
   G1Allocator* allocator() {
     return _allocator;
@@ -1236,7 +1229,6 @@ public:
   inline bool is_obj_dead_full(const oop obj) const;
 
   // Mark the live object that failed evacuation in the bitmap.
-  void mark_evac_failure_object(oop obj) const;
   void mark_evac_failure_object(uint worker_id, oop obj, size_t obj_size) const;
 
   G1ConcurrentMark* concurrent_mark() const { return _cm; }

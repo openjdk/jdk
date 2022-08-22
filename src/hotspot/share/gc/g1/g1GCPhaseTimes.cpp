@@ -102,7 +102,6 @@ G1GCPhaseTimes::G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads) :
   _gc_par_phases[GCWorkerEnd] = new WorkerDataArray<double>("GCWorkerEnd", "GC Worker End (ms):", max_gc_threads);
   _gc_par_phases[Other] = new WorkerDataArray<double>("Other", "GC Worker Other (ms):", max_gc_threads);
   _gc_par_phases[MergePSS] = new WorkerDataArray<double>("MergePSS", "Merge Per-Thread State (ms):", max_gc_threads);
-  _gc_par_phases[ClearRetainedRegionMetadata] = new WorkerDataArray<double>("ClearRetainedRegionsMetadata", "Clear Retained Regions (ms):", max_gc_threads);
   _gc_par_phases[RestoreRetainedRegions] = new WorkerDataArray<double>("RestoreRetainedRegions", "Restore Retained Regions (ms):", max_gc_threads);
   _gc_par_phases[RemoveSelfForwardsInChunks] = new WorkerDataArray<double>("RemoveSelfForwardsInChunks", "Remove Self Forwards In Chunks (ms):", max_gc_threads);
   _gc_par_phases[ClearCardTable] = new WorkerDataArray<double>("ClearLoggedCards", "Clear Logged Cards (ms):", max_gc_threads);
@@ -490,7 +489,6 @@ double G1GCPhaseTimes::print_post_evacuate_collection_set(bool evacuation_failed
   debug_phase(_gc_par_phases[ClearCardTable], 1);
   debug_phase(_gc_par_phases[RecalculateUsed], 1);
   if (evacuation_failed) {
-    debug_phase(_gc_par_phases[ClearRetainedRegionMetadata], 1);
     debug_phase(_gc_par_phases[RestoreRetainedRegions], 1);
     debug_phase(_gc_par_phases[RemoveSelfForwardsInChunks], 2);
   }

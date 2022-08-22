@@ -134,8 +134,6 @@ G1PostEvacuateCollectionSetCleanupTask1::G1PostEvacuateCollectionSetCleanupTask1
   }
   add_parallel_task(G1CollectedHeap::heap()->rem_set()->create_cleanup_after_scan_heap_roots_task());
   if (evacuation_failed) {
-    add_parallel_task(evac_failure_regions->create_prepare_regions_task());
-
     RestoreRetainedRegionsTask* restore_retained_regions_task = new RestoreRetainedRegionsTask(evac_failure_regions);
     add_parallel_task(restore_retained_regions_task);
 
@@ -571,6 +569,15 @@ class FreeCSetClosure : public HeapRegionClosure {
     // are always made old, so there is no need to update anything in the young
     // gen statistics, but we need to update old gen statistics.
     stats()->account_failed_region(r);
+
+    G1GCPhaseTimes* p = _g1h->phase_times();
+    assert(!r->is_pinned(), "Unexpected pinned region at index %u", r->hrm_index());
+    assert(r->in_collection_set(), "bad CS");
+
+    p->record_or_add_thread_work_item(G1GCPhaseTimes::RestoreRetainedRegions,
+                                      _worker_id,
+                                      1,
+                                      G1GCPhaseTimes::RestoreRetainedRegionsNum);
 
     // Update the region state due to the failed evacuation.
     r->handle_evacuation_failure();

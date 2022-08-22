@@ -604,7 +604,8 @@ private:
       // live_words data are current wrt to the _mark_bitmap. We use this information
       // to only clear ranges of the bitmap that require clearing.
       if (is_clear_concurrent_undo()) {
-        // No need to clear bitmaps for empty regions.
+        // No need to clear bitmaps for empty regions (which includes regions we
+        // did not mark through).
         if (_cm->live_words(r->hrm_index()) == 0) {
           assert(_bitmap->get_next_marked_addr(r->bottom(), r->end()) == r->end(), "Should not have marked bits");
           return r->bottom();

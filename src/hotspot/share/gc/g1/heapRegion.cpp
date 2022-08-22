@@ -105,6 +105,9 @@ void HeapRegion::handle_evacuation_failure() {
   clear_young_index_in_cset();
   clear_index_in_opt_cset();
   move_to_old();
+
+  _rem_set->clean_code_roots(this);
+  _rem_set->clear_locked(true /* only_cardset */);
 }
 
 void HeapRegion::unlink_from_list() {

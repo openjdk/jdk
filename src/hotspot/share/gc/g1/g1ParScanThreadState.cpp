@@ -627,14 +627,9 @@ oop G1ParScanThreadState::handle_evacuation_failure_par(oop old, markWord m, siz
       _g1h->hr_printer()->evac_failure(r);
     }
 
-    // Objects failing evacuation will turn into old objects since the regions
-    // are relabeled as such. We mark the failing objects in the marking bitmap
-    // and later use it to handle all failed objects.
-    if (_g1h->collector_state()->in_concurrent_start_gc()) {
-      _g1h->mark_evac_failure_object(_worker_id, old, word_sz);
-    } else {
-      _g1h->mark_evac_failure_object(old);
-    }
+    // Mark the failing object in the marking bitmap and later use the bitmap to handle
+    // evacuation failure recovery.
+    _g1h->mark_evac_failure_object(_worker_id, old, word_sz);
 
     _preserved_marks->push_if_necessary(old, m);
 

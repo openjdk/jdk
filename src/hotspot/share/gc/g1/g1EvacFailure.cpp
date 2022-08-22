@@ -29,13 +29,15 @@
 #include "gc/g1/g1EvacFailure.hpp"
 #include "gc/g1/g1EvacFailureRegions.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
-#include "gc/g1/g1HeapVerifier.hpp"
 #include "gc/g1/g1OopClosures.inline.hpp"
-#include "gc/g1/heapRegion.hpp"
+#include "gc/g1/heapRegion.inline.hpp"
 #include "gc/g1/heapRegionRemSet.inline.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/prefetch.hpp"
+#include "utilities/bitMap.inline.hpp"
+
 
 class PhaseTimesStat {
   static constexpr G1GCPhaseTimes::GCParPhases phase_name =
@@ -71,19 +73,17 @@ public:
                                                  G1GCPhaseTimes::RemoveSelfForwardChunksNum);
   }
 
-  void register_objects_size(size_t marked_words) {
+  void register_objects_count_and_size(size_t num_marked_obj, size_t marked_words) {
+    _phase_times->record_or_add_thread_work_item(phase_name,
+                                                 _worker_id,
+                                                 num_marked_obj,
+                                                 G1GCPhaseTimes::RemoveSelfForwardObjectsNum);
+
     size_t marked_bytes = marked_words * HeapWordSize;
     _phase_times->record_or_add_thread_work_item(phase_name,
                                                  _worker_id,
                                                  marked_bytes,
                                                  G1GCPhaseTimes::RemoveSelfForwardObjectsBytes);
-  }
-
-  void register_objects_count(size_t num_marked_obj) {
-    _phase_times->record_or_add_thread_work_item(phase_name,
-                                                 _worker_id,
-                                                 num_marked_obj,
-                                                 G1GCPhaseTimes::RemoveSelfForwardObjectsNum);
   }
 };
 
@@ -219,9 +219,7 @@ void G1RemoveSelfForwardsInChunksTask::process_chunk(uint worker_id,
 
   assert(marked_words > 0 && num_marked_objs > 0, "inv");
 
-  stat.register_objects_count(num_marked_objs);
-  stat.register_objects_size(marked_words);
-
+  stat.register_objects_count_and_size(num_marked_objs, marked_words);
   cache->add(region_idx, garbage_words);
 }
 
@@ -245,4 +243,16 @@ void G1RemoveSelfForwardsInChunksTask::work(uint worker_id) {
       process_chunk(worker_id, chunk_idx, &region_marked_words_cache);
     }
   }
+}
+
+void G1RemoveSelfForwardsInChunksTask::initialize(uint num_workers) {
+  _num_evac_fail_regions = _evac_failure_regions->num_regions_failed_evacuation();
+  _num_chunks_per_region = G1CollectedHeap::get_chunks_per_region();
+
+  _chunk_size = static_cast<uint>(HeapRegion::GrainWords / _num_chunks_per_region);
+
+  log_debug(gc, ergo)("Initializing removing self forwards with %u chunks per region given %u workers",
+                      _num_chunks_per_region, num_workers);
+
+  _chunk_bitmap.resize(_num_chunks_per_region * _num_evac_fail_regions);
 }
