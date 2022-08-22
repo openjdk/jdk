@@ -32,14 +32,12 @@ import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 
 @Test
-public class SpinedBufferTestLong extends SpinedBufferTestCommon {
-    // LongSpinedBuffer
-
+public class SpinedBufferLongTest extends AbstractSpinedBufferTest {
     @DataProvider(name = "LongSpinedBuffer")
     public Object[][] createLongSpinedBuffer() {
         List<Object[]> params = new ArrayList<>();
 
-        for (int size : sizes) {
+        for (int size : SIZES) {
             long[] array = LongStream.range(0, size).toArray();
             SpinedBuffer.OfLong sb = new SpinedBuffer.OfLong();
             Arrays.stream(array).forEach(sb);
@@ -90,21 +88,24 @@ public class SpinedBufferTestLong extends SpinedBufferTestCommon {
             sb.accept(i);
         }
         PrimitiveIterator.OfLong it = sb.iterator();
-        for (int i = 0; i < TEST_SIZE; i++)
+        for (int i = 0; i < TEST_SIZE; i++) {
             list2.add(it.nextLong());
+        }
         assertFalse(it.hasNext());
         assertEquals(list1, list2);
 
-        for (int i = 0; i < TEST_SIZE; i++)
+        for (int i = 0; i < TEST_SIZE; i++) {
             assertEquals(sb.get(i), i, Long.toString(i));
+        }
 
         list2.clear();
         sb.forEach((long i) -> list2.add(i));
         assertEquals(list1, list2);
         long[] array = sb.asPrimitiveArray();
         list2.clear();
-        for (long i : array)
+        for (long i : array) {
             list2.add(i);
+        }
         assertEquals(list1, list2);
     }
 }

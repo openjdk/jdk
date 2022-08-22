@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,55 +26,63 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import java.util.*;
-import java.util.function.DoubleConsumer;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 
 @Test
-public class SpinedBufferTestDouble extends SpinedBufferTestCommon {
-    // DoubleSpinedBuffer
-
-    @DataProvider(name = "DoubleSpinedBuffer")
-    public Object[][] createDoubleSpinedBuffer() {
+public class SpinedBufferIntegerTest extends AbstractSpinedBufferTest {
+    @DataProvider(name = "SpinedBuffer")
+    public Object[][] createSpinedBuffer() {
         List<Object[]> params = new ArrayList<>();
 
-        for (int size : sizes) {
-            // @@@ replace with double range when implemented
-            double[] array = LongStream.range(0, size).asDoubleStream().toArray();
-            SpinedBuffer.OfDouble sb = new SpinedBuffer.OfDouble();
-            Arrays.stream(array).forEach(sb);
+        for (int size : SIZES) {
+            int[] array = IntStream.range(0, size).toArray();
 
+            SpinedBuffer<Integer> sb = new SpinedBuffer<>();
+            Arrays.stream(array).boxed().forEach(sb);
+            params.add(new Object[]{array, sb});
+
+            sb = new SpinedBuffer<>(size / 2);
+            Arrays.stream(array).boxed().forEach(sb);
+            params.add(new Object[]{array, sb});
+
+            sb = new SpinedBuffer<>(size);
+            Arrays.stream(array).boxed().forEach(sb);
+            params.add(new Object[]{array, sb});
+
+            sb = new SpinedBuffer<>(size * 2);
+            Arrays.stream(array).boxed().forEach(sb);
             params.add(new Object[]{array, sb});
         }
 
         return params.toArray(new Object[0][]);
     }
 
-    @Test(dataProvider = "DoubleSpinedBuffer")
-    public void testDoubleSpliterator(double[] array, SpinedBuffer.OfDouble sb) {
+    @Test(dataProvider = "SpinedBuffer")
+    public void testSpliterator(int[] array, SpinedBuffer<Integer> sb) {
         assertEquals(sb.count(), array.length);
         assertEquals(sb.count(), sb.spliterator().getExactSizeIfKnown());
 
-        SpliteratorTestHelper.testDoubleSpliterator(sb::spliterator);
+        SpliteratorTestHelper.testSpliterator(sb::spliterator);
     }
 
-    @Test(dataProvider = "DoubleSpinedBuffer", groups = { "serialization-hostile" })
-    public void testLongLastSplit(double[] array, SpinedBuffer.OfDouble sb) {
-        Spliterator.OfDouble spliterator = sb.spliterator();
-        Spliterator.OfDouble split = spliterator.trySplit();
+    @Test(dataProvider = "SpinedBuffer", groups = { "serialization-hostile" })
+    public void testLastSplit(int[] array, SpinedBuffer<Integer> sb) {
+        Spliterator<Integer> spliterator = sb.spliterator();
+        Spliterator<Integer> split = spliterator.trySplit();
         long splitSizes = (split == null) ? 0 : split.getExactSizeIfKnown();
         long lastSplitSize = spliterator.getExactSizeIfKnown();
         splitSizes += lastSplitSize;
 
         assertEquals(splitSizes, array.length);
 
-        List<Double> contentOfLastSplit = new ArrayList<>();
-        spliterator.forEachRemaining((DoubleConsumer) contentOfLastSplit::add);
+        List<Integer> contentOfLastSplit = new ArrayList<>();
+        spliterator.forEachRemaining(contentOfLastSplit::add);
 
         assertEquals(contentOfLastSplit.size(), lastSplitSize);
 
-        List<Double> end = Arrays.stream(array)
+        List<Integer> end = Arrays.stream(array)
                 .boxed()
                 .skip(array.length - lastSplitSize)
                 .collect(Collectors.toList());
@@ -82,30 +90,33 @@ public class SpinedBufferTestDouble extends SpinedBufferTestCommon {
     }
 
     @Test(groups = { "serialization-hostile" })
-    public void testDoubleSpinedBuffer() {
-        List<Double> list1 = new ArrayList<>();
-        List<Double> list2 = new ArrayList<>();
-        SpinedBuffer.OfDouble sb = new SpinedBuffer.OfDouble();
-        for (long i = 0; i < TEST_SIZE; i++) {
-            list1.add((double) i);
-            sb.accept((double) i);
+    public void testSpinedBuffer() {
+        List<Integer> list1 = new ArrayList<>();
+        List<Integer> list2 = new ArrayList<>();
+        SpinedBuffer<Integer> sb = new SpinedBuffer<>();
+        for (int i = 0; i < TEST_SIZE; i++) {
+            list1.add(i);
+            sb.accept(i);
         }
-        PrimitiveIterator.OfDouble it = sb.iterator();
-        for (int i = 0; i < TEST_SIZE; i++)
-            list2.add(it.nextDouble());
+        Iterator<Integer> it = sb.iterator();
+        for (int i = 0; i < TEST_SIZE; i++) {
+            list2.add(it.next());
+        }
         assertFalse(it.hasNext());
         assertEquals(list1, list2);
 
-        for (int i = 0; i < TEST_SIZE; i++)
-            assertEquals(sb.get(i), (double) i, Double.toString(i));
+        for (int i = 0; i < TEST_SIZE; i++) {
+            assertEquals(sb.get(i), (Integer) i, Integer.toString(i));
+        }
 
         list2.clear();
-        sb.forEach((double i) -> list2.add(i));
+        sb.forEach(list2::add);
         assertEquals(list1, list2);
-        double[] array = sb.asPrimitiveArray();
+        Integer[] array = sb.asArray(LambdaTestHelpers.integerArrayGenerator);
         list2.clear();
-        for (double i : array)
+        for (Integer i : array) {
             list2.add(i);
+        }
         assertEquals(list1, list2);
     }
 }

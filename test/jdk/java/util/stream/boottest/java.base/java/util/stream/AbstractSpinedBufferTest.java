@@ -24,13 +24,13 @@ package java.util.stream;
 
 import java.util.*;
 
-public class SpinedBufferTestCommon {
+public abstract class AbstractSpinedBufferTest {
 
     // Create sizes around the boundary of spines
-    static List<Integer> sizes;
+    static final List<Integer> SIZES;
     static {
         try {
-            sizes = IntStream.range(0, 15)
+            SIZES = IntStream.range(0, 15)
                              .map(i -> 1 << i)
                              .flatMap(i -> Arrays.stream(new int[] { i-2, i-1, i, i+1, i+2 }))
                              .filter(i -> i >= 0)
@@ -39,7 +39,7 @@ public class SpinedBufferTestCommon {
                              .collect(Collectors.toList());
         }
         catch (Exception e) {
-            e.printStackTrace();
+            throw new IllegalStateException(e);
         }
     }
 

@@ -26,22 +26,21 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import java.util.*;
-import java.util.function.IntConsumer;
+import java.util.function.DoubleConsumer;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 
 @Test
-public class SpinedBufferTestInt extends SpinedBufferTestCommon {
-    // IntSpinedBuffer
-
-    @DataProvider(name = "IntSpinedBuffer")
-    public Object[][] createIntSpinedBuffer() {
+public class SpinedBufferDoubleTest extends AbstractSpinedBufferTest {
+    @DataProvider(name = "DoubleSpinedBuffer")
+    public Object[][] createDoubleSpinedBuffer() {
         List<Object[]> params = new ArrayList<>();
 
-        for (int size : sizes) {
-            int[] array = IntStream.range(0, size).toArray();
-            SpinedBuffer.OfInt sb = new SpinedBuffer.OfInt();
+        for (int size : SIZES) {
+            // @@@ replace with double range when implemented
+            double[] array = LongStream.range(0, size).asDoubleStream().toArray();
+            SpinedBuffer.OfDouble sb = new SpinedBuffer.OfDouble();
             Arrays.stream(array).forEach(sb);
 
             params.add(new Object[]{array, sb});
@@ -50,30 +49,30 @@ public class SpinedBufferTestInt extends SpinedBufferTestCommon {
         return params.toArray(new Object[0][]);
     }
 
-    @Test(dataProvider = "IntSpinedBuffer")
-    public void testIntSpliterator(int[] array, SpinedBuffer.OfInt sb) {
+    @Test(dataProvider = "DoubleSpinedBuffer")
+    public void testDoubleSpliterator(double[] array, SpinedBuffer.OfDouble sb) {
         assertEquals(sb.count(), array.length);
         assertEquals(sb.count(), sb.spliterator().getExactSizeIfKnown());
 
-        SpliteratorTestHelper.testIntSpliterator(sb::spliterator);
+        SpliteratorTestHelper.testDoubleSpliterator(sb::spliterator);
     }
 
-    @Test(dataProvider = "IntSpinedBuffer", groups = { "serialization-hostile" })
-    public void testIntLastSplit(int[] array, SpinedBuffer.OfInt sb) {
-        Spliterator.OfInt spliterator = sb.spliterator();
-        Spliterator.OfInt split = spliterator.trySplit();
+    @Test(dataProvider = "DoubleSpinedBuffer", groups = { "serialization-hostile" })
+    public void testLongLastSplit(double[] array, SpinedBuffer.OfDouble sb) {
+        Spliterator.OfDouble spliterator = sb.spliterator();
+        Spliterator.OfDouble split = spliterator.trySplit();
         long splitSizes = (split == null) ? 0 : split.getExactSizeIfKnown();
         long lastSplitSize = spliterator.getExactSizeIfKnown();
         splitSizes += lastSplitSize;
 
         assertEquals(splitSizes, array.length);
 
-        List<Integer> contentOfLastSplit = new ArrayList<>();
-        spliterator.forEachRemaining((IntConsumer) contentOfLastSplit::add);
+        List<Double> contentOfLastSplit = new ArrayList<>();
+        spliterator.forEachRemaining((DoubleConsumer) contentOfLastSplit::add);
 
         assertEquals(contentOfLastSplit.size(), lastSplitSize);
 
-        List<Integer> end = Arrays.stream(array)
+        List<Double> end = Arrays.stream(array)
                 .boxed()
                 .skip(array.length - lastSplitSize)
                 .collect(Collectors.toList());
@@ -81,30 +80,33 @@ public class SpinedBufferTestInt extends SpinedBufferTestCommon {
     }
 
     @Test(groups = { "serialization-hostile" })
-    public void testIntSpinedBuffer() {
-        List<Integer> list1 = new ArrayList<>();
-        List<Integer> list2 = new ArrayList<>();
-        SpinedBuffer.OfInt sb = new SpinedBuffer.OfInt();
-        for (int i = 0; i < TEST_SIZE; i++) {
-            list1.add(i);
-            sb.accept(i);
+    public void testDoubleSpinedBuffer() {
+        List<Double> list1 = new ArrayList<>();
+        List<Double> list2 = new ArrayList<>();
+        SpinedBuffer.OfDouble sb = new SpinedBuffer.OfDouble();
+        for (long i = 0; i < TEST_SIZE; i++) {
+            list1.add((double) i);
+            sb.accept((double) i);
         }
-        PrimitiveIterator.OfInt it = sb.iterator();
-        for (int i = 0; i < TEST_SIZE; i++)
-            list2.add(it.nextInt());
+        PrimitiveIterator.OfDouble it = sb.iterator();
+        for (int i = 0; i < TEST_SIZE; i++) {
+            list2.add(it.nextDouble());
+        }
         assertFalse(it.hasNext());
         assertEquals(list1, list2);
 
-        for (int i = 0; i < TEST_SIZE; i++)
-            assertEquals(sb.get(i), i, Integer.toString(i));
+        for (int i = 0; i < TEST_SIZE; i++) {
+            assertEquals(sb.get(i), (double) i, Double.toString(i));
+        }
 
         list2.clear();
-        sb.forEach((int i) -> list2.add(i));
+        sb.forEach((double i) -> list2.add(i));
         assertEquals(list1, list2);
-        int[] array = sb.asPrimitiveArray();
+        double[] array = sb.asPrimitiveArray();
         list2.clear();
-        for (int i : array)
+        for (double i : array) {
             list2.add(i);
+        }
         assertEquals(list1, list2);
     }
 }
