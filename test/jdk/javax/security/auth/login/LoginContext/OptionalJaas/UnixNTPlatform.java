@@ -38,9 +38,6 @@ import java.io.PrintStream;
 
 public class UnixNTPlatform {
 
-    private static final String UNIX_MODULE = "UnixLoginModule";
-    private static final String NT_MODULE = "NTLoginModule";
-
     public static void main(String[] args) throws Exception {
 	System.out.println("Testing cross-platform");
 
