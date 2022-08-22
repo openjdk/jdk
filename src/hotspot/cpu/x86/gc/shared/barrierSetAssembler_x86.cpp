@@ -117,12 +117,12 @@ void BarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators
         assert(!is_not_null, "inconsistent access");
 #ifdef _LP64
         if (UseCompressedOops) {
-          __ movl(dst, (int32_t)NULL_WORD);
+          __ movl(dst, NULL_WORD);
         } else {
-          __ movslq(dst, (int32_t)NULL_WORD);
+          __ movslq(dst, NULL_WORD);
         }
 #else
-        __ movl(dst, (int32_t)NULL_WORD);
+        __ movl(dst, NULL_WORD);
 #endif
       } else {
 #ifdef _LP64
