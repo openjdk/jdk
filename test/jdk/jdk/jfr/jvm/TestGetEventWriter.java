@@ -99,52 +99,6 @@ public class TestGetEventWriter {
         testNonEvent();
     }
 
-    private static ResolvedJavaMethod findCommitMethod(MetaAccessProvider metaAccess, Class<?> eventClass) {
-        for (Method m : eventClass.getMethods()) {
-            if (m.getName().toLowerCase().contains("commit")) {
-                return metaAccess.lookupJavaMethod(m);
-            }
-        }
-        throw new AssertionError("could not find commit method in " + eventClass);
-    }
-
-    // Factor out test.jvmci system property check to reduce unecessary work in -Xcomp.
-    private static void maybeCheckJVMCI(Class<?> eventClass) throws Throwable {
-        if (!Boolean.getBoolean("test.jvmci")) {
-            return;
-        }
-        checkJVMCI(eventClass);
-    }
-
-    /**
-     * Checks that JVMCI prevents unblessed access to {@code EventWriterFactory.getEventWriter(long)}.
-     */
-    private static void checkJVMCI(Class<?> eventClass) throws Throwable {
-        MetaAccessProvider metaAccess = JVMCI.getRuntime().getHostJVMCIBackend().getMetaAccess();
-        ResolvedJavaMethod commit = findCommitMethod(metaAccess, eventClass);
-        ConstantPool cp = commit.getConstantPool();
-
-        // Search for first INVOKESTATIC instruction in commit method which is expected
-        // to be the call to jdk.jfr.internal.event.EventWriterFactory.getEventWriter(long).
-        final int INVOKESTATIC = 184;
-        byte[] code = commit.getCode();
-        for (int bci = 0; bci < code.length; bci++) {
-            int b = code[bci] & 0xff;
-            if (b == INVOKESTATIC) {
-                int cpi = ((code[bci + 1] & 0xff) << 8) | (code[bci + 2] & 0xff);
-                try {
-                    cp.lookupMethod(cpi, 184, commit);
-                    throw new AssertionError("Expected IllegalAccessError");
-                } catch (IllegalAccessError e) {
-                }
-
-                // Ignore all subsequent instructions
-                return;
-            }
-        }
-        throw new AssertionError("did not find INVOKESTATIC in " + commit.format("%H.%n(%p)"));
-    }
-
     // The class does not inherit jdk.jfr.Event and, as such, does not implement the
     // API. It has its own stand-alone "commit()V", which is not an override, that
     // attempts to resolve and link against EventWriterFactory. This user implementation
@@ -377,5 +331,51 @@ public class TestGetEventWriter {
         Constructor<?> constructor = clazz.getConstructor(new Class[0]);
         System.out.println("About to invoke " + fullName + ".commit()");
         return (T) constructor.newInstance();
+    }
+
+    private static ResolvedJavaMethod findCommitMethod(MetaAccessProvider metaAccess, Class<?> eventClass) {
+        for (Method m : eventClass.getMethods()) {
+            if (m.getName().toLowerCase().contains("commit")) {
+                return metaAccess.lookupJavaMethod(m);
+            }
+        }
+        throw new AssertionError("could not find commit method in " + eventClass);
+    }
+
+    // Factor out test.jvmci system property check to reduce unecessary work in -Xcomp.
+    private static void maybeCheckJVMCI(Class<?> eventClass) throws Throwable {
+        if (!Boolean.getBoolean("test.jvmci")) {
+            return;
+        }
+        checkJVMCI(eventClass);
+    }
+
+    /**
+     * Checks that JVMCI prevents unblessed access to {@code EventWriterFactory.getEventWriter(long)}.
+     */
+    private static void checkJVMCI(Class<?> eventClass) throws Throwable {
+        MetaAccessProvider metaAccess = JVMCI.getRuntime().getHostJVMCIBackend().getMetaAccess();
+        ResolvedJavaMethod commit = findCommitMethod(metaAccess, eventClass);
+        ConstantPool cp = commit.getConstantPool();
+
+        // Search for first INVOKESTATIC instruction in commit method which is expected
+        // to be the call to jdk.jfr.internal.event.EventWriterFactory.getEventWriter(long).
+        final int INVOKESTATIC = 184;
+        byte[] code = commit.getCode();
+        for (int bci = 0; bci < code.length; bci++) {
+            int b = code[bci] & 0xff;
+            if (b == INVOKESTATIC) {
+                int cpi = ((code[bci + 1] & 0xff) << 8) | (code[bci + 2] & 0xff);
+                try {
+                    cp.lookupMethod(cpi, 184, commit);
+                    throw new AssertionError("Expected IllegalAccessError");
+                } catch (IllegalAccessError e) {
+                }
+
+                // Ignore all subsequent instructions
+                return;
+            }
+        }
+        throw new AssertionError("did not find INVOKESTATIC in " + commit.format("%H.%n(%p)"));
     }
 }
