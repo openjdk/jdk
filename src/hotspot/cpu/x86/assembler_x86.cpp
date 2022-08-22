@@ -12235,9 +12235,7 @@ static bool is_reachable_from(address pc, address target, relocInfo::relocType r
 
 bool Assembler::reachable(AddressLiteral adr) {
   bool is_reachable = is_reachable_from(pc(), adr.target(), adr.reloc());
-  if (!is_reachable) {
-    assert(!always_reachable(adr), "sanity");
-  }
+  assert(is_reachable || !always_reachable(adr), "sanity");
   return is_reachable;
 }
 
