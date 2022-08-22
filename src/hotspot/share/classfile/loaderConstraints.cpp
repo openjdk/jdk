@@ -52,6 +52,8 @@ class LoaderConstraint : public CHeapObj<mtClass> {
     add_loader(class_loader1);
     add_loader(class_loader2);
   }
+  LoaderConstraint(const LoaderConstraint& src) = delete;
+  LoaderConstraint& operator=(const LoaderConstraint&) = delete;
 
   ~LoaderConstraint() { delete _loaders; }
 
@@ -410,8 +412,8 @@ void LoaderConstraintTable::merge_loader_constraints(Symbol* class_name,
                                                      LoaderConstraint* p2,
                                                      InstanceKlass* klass) {
 
-  // Copy into the shorter of the constraints.
-  LoaderConstraint* dest = p1->num_loaders() <= p2->num_loaders() ? p1 : p2;
+  // Copy into the longer of the constraints.
+  LoaderConstraint* dest = p1->num_loaders() <= p2->num_loaders() ? p2 : p1;
   LoaderConstraint* src = dest == p1 ? p2 : p1;
 
   for (int i = 0; i < src->num_loaders(); i++) {
