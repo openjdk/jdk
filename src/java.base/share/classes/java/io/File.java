@@ -2158,10 +2158,6 @@ public class File
         File tmpdir = (directory != null) ? directory
                                           : TempDirectory.location();
 
-        if(!tmpdir.exists()) {
-            throw new IOException("The specified directory does no exist! Please contact system administrator!");
-        }
-
         @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         File f;
@@ -2179,6 +2175,11 @@ public class File
                 }
             }
         } while (fs.hasBooleanAttributes(f, FileSystem.BA_EXISTS));
+
+
+        if(!tmpdir.exists()) {
+            throw new IOException("The specified directory does no exist! Please contact system administrator!");
+        }
 
         if (!fs.createFileExclusively(f.getPath()))
             throw new IOException("Unable to create temporary file");

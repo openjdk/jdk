@@ -31,7 +31,7 @@ import java.io.IOException;
 
 public class DirectoryNotExistingErrorMessage {
 
-    public static void main(String ... args) {
+    public static void main(String ... args) throws Exception{
 
         String errorMsg = "The specified directory does no exist! Please contact system administrator!";
         try {
@@ -41,8 +41,9 @@ public class DirectoryNotExistingErrorMessage {
             File tmpFile = File.createTempFile("prefix", ".suffix",tmpDir);
 
         } catch (IOException ioe) {
-            System.out.println("errorMessage:" + ioe.getMessage());
-            System.out.println(errorMsg.contains(ioe.getMessage()));
+            if(!errorMsg.equalsIgnoreCase(ioe.getMessage())){
+                throw new IOException("Directory testing failed");
+            }
         }
     }
 }
