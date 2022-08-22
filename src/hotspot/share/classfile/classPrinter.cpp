@@ -34,7 +34,7 @@
 #include "oops/symbol.hpp"
 #include "utilities/ostream.hpp"
 
-class ClassPrinter::KlassPrintClosure : public KlassClosure {
+class ClassPrinter::KlassPrintClosure : public LockedClassesDo {
   const char* _class_name_pattern;
   const char* _method_name_pattern;
   const char* _method_signature_pattern;
@@ -124,22 +124,22 @@ bool ClassPrinter::matches(const char* pattern, Symbol* symbol) {
   }
 }
 
-void ClassPrinter::print_classes_unlocked(const char* class_name_pattern, int flags) {
+void ClassPrinter::print_classes(const char* class_name_pattern, int flags) {
   KlassPrintClosure closure(class_name_pattern, NULL, NULL, flags, tty);
   ClassLoaderDataGraph::classes_do(&closure);
 }
 
-void ClassPrinter::print_methods_unlocked(const char* class_name_pattern,
-                                          const char* method_name_pattern, int flags) {
+void ClassPrinter::print_methods(const char* class_name_pattern,
+                                 const char* method_name_pattern, int flags) {
   KlassPrintClosure closure(class_name_pattern, method_name_pattern, NULL,
                             flags | PRINT_METHOD_NAME, tty);
   ClassLoaderDataGraph::classes_do(&closure);
 
 }
 
-void ClassPrinter::print_methods_unlocked(const char* class_name_pattern,
-                                          const char* method_name_pattern,
-                                          const char* method_signature_pattern, int flags) {
+void ClassPrinter::print_methods(const char* class_name_pattern,
+                                 const char* method_name_pattern,
+                                 const char* method_signature_pattern, int flags) {
   KlassPrintClosure closure(class_name_pattern, method_name_pattern, method_signature_pattern,
                             flags | PRINT_METHOD_NAME, tty);
   ClassLoaderDataGraph::classes_do(&closure);

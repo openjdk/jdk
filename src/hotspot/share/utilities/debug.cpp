@@ -644,21 +644,21 @@ extern "C" JNIEXPORT void findpc(intptr_t x) {
 //   call findmethod2("*ang/Object*", "wait", "(J*", 0x1)
 extern "C" JNIEXPORT void findclass(const char* class_name_pattern, int flags) {
   Command c("findclass");
-  ClassPrinter::print_classes_unlocked(class_name_pattern, flags);
+  ClassPrinter::print_classes(class_name_pattern, flags);
 }
 
 extern "C" JNIEXPORT void findmethod(const char* class_name_pattern,
                                      const char* method_name_pattern, int flags) {
   Command c("findmethod");
-  ClassPrinter::print_methods_unlocked(class_name_pattern, method_name_pattern, flags);
+  ClassPrinter::print_methods(class_name_pattern, method_name_pattern, flags);
 }
 
 extern "C" JNIEXPORT void findmethod2(const char* class_name_pattern,
                                       const char* method_name_pattern,
                                       const char* method_signature_pattern, int flags) {
   Command c("findmethod2");
-  ClassPrinter::print_methods_unlocked(class_name_pattern, method_name_pattern,
-                                       method_signature_pattern, flags);
+  ClassPrinter::print_methods(class_name_pattern, method_name_pattern,
+                              method_signature_pattern, flags);
 }
 
 // Need method pointer to find bcp

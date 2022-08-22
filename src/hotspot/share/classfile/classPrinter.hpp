@@ -32,14 +32,13 @@ class InstanceKlass;
 class Symbol;
 
 // ClassPrinter is intended to be called from findclass/findmethod/findmethod2
-// in debug.cpp (inside a debugger, such as gdb). To avoid deadlocks (as the JVM
-// may be at an arbitrary native breakpoint), ClassPrinter calls
-// ClassLoaderDataGraph::classes_do without holding any locks. The down side is
-// that the printing may proceed while other threads are running, so race conditions
-// are possible. Use with care.
+// in debug.cpp (inside a debugger, such as gdb).
 //
-// If you want to call these functions programmatically, make sure the caller
-// holds the appropriate locks.
+// The ClassPrinter::print_xxx() functions hold the ClassLoaderDataGraph_lock
+// (and the ttyLocker if ClassPrinter::PRINT_BYTECODE is selected). A deadlock
+// may happen if these functions are called in a context where these locks
+// are already held. Use with caution.
+
 class ClassPrinter : public AllStatic {
   class KlassPrintClosure;
 
@@ -58,12 +57,12 @@ public:
   };
 
   // flags must be OR'ed from ClassPrinter::Mode for the next 3 functions
-  static void print_classes_unlocked(const char* class_name_pattern, int flags);
-  static void print_methods_unlocked(const char* class_name_pattern,
-                                     const char* method_name_pattern, int flags);
-  static void print_methods_unlocked(const char* class_name_pattern,
-                                     const char* method_name_pattern,
-                                     const char* method_signature_pattern, int flags);
+  static void print_classes(const char* class_name_pattern, int flags);
+  static void print_methods(const char* class_name_pattern,
+                            const char* method_name_pattern, int flags);
+  static void print_methods(const char* class_name_pattern,
+                            const char* method_name_pattern,
+                            const char* method_signature_pattern, int flags);
 
   static bool has_mode(int flags, Mode mode) {
     return (flags & static_cast<int>(mode)) != 0;
