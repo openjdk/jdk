@@ -463,28 +463,19 @@ void CgroupSubsystemFactory::cleanup(CgroupInfo* cg_infos) {
  * If user specified a quota (quota != -1), calculate the number of
  * required CPUs by dividing quota by period.
  *
- * If shares are in effect (shares != -1), calculate the number
- * of CPUs required for the shares by dividing the share value
- * by PER_CPU_SHARES.
- *
  * All results of division are rounded up to the next whole number.
  *
- * If neither shares or quotas have been specified, return the
+ * If quotas have not been specified, return the
  * number of active processors in the system.
  *
- * If both shares and quotas have been specified, the results are
- * based on the flag PreferContainerQuotaForCPUCount.  If true,
- * return the quota value.  If false return the smallest value
- * between shares or quotas.
- *
- * If shares and/or quotas have been specified, the resulting number
+ * If quotas have been specified, the resulting number
  * returned will never exceed the number of active processors.
  *
  * return:
  *    number of CPUs
  */
 int CgroupSubsystem::active_processor_count() {
-  int quota_count = 0, share_count = 0;
+  int quota_count = 0;
   int cpu_count, limit_count;
   int result;
 
@@ -503,35 +494,14 @@ int CgroupSubsystem::active_processor_count() {
   int quota  = cpu_quota();
   int period = cpu_period();
 
-  // It's not a good idea to use cpu_shares() to limit the number
-  // of CPUs used by the JVM. See JDK-8281181.
-  // UseContainerCpuShares and PreferContainerQuotaForCPUCount are
-  // deprecated and will be removed in the next JDK release.
-  int share  = UseContainerCpuShares ? cpu_shares() : -1;
-
   if (quota > -1 && period > 0) {
     quota_count = ceilf((float)quota / (float)period);
     log_trace(os, container)("CPU Quota count based on quota/period: %d", quota_count);
   }
-  if (share > -1) {
-    share_count = ceilf((float)share / (float)PER_CPU_SHARES);
-    log_trace(os, container)("CPU Share count based on shares: %d", share_count);
-  }
 
-  // If both shares and quotas are setup results depend
-  // on flag PreferContainerQuotaForCPUCount.
-  // If true, limit CPU count to quota
-  // If false, use minimum of shares and quotas
-  if (quota_count !=0 && share_count != 0) {
-    if (PreferContainerQuotaForCPUCount) {
-      limit_count = quota_count;
-    } else {
-      limit_count = MIN2(quota_count, share_count);
-    }
-  } else if (quota_count != 0) {
+  // Use quotas
+  if (quota_count != 0) {
     limit_count = quota_count;
-  } else if (share_count != 0) {
-    limit_count = share_count;
   }
 
   result = MIN2(cpu_count, limit_count);
