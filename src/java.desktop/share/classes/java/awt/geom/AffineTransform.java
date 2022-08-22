@@ -3913,7 +3913,7 @@ public class AffineTransform implements Cloneable, java.io.Serializable {
 
     /**
      * Returns a hash code for the given value, with negative zero
-     * collapsed into to the single positive zero.
+     * collapsed to the single positive zero.
      */
     private static long hash(double m) {
         long h = Double.doubleToLongBits(m);
