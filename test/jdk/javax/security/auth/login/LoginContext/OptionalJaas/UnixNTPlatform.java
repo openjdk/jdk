@@ -70,9 +70,9 @@ public class UnixNTPlatform {
 
         byte[] byes = stream.toByteArray();
         String s = new String(byes);
+        System.out.printf("-- call stack is -- %n%s%n", s);
         if (!s.contains("Failed in attempt to import the underlying")) {
            throw new RuntimeException();
         }
-        System.out.printf("-- call stack is -- %n%s%n", s);
     }
 }
