@@ -1222,7 +1222,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="length-mile-scandinavian">
 				<displayName>milla escandinava</displayName>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>toneladas métricas</displayName>
 				<unitPattern count="one">{0} tonelada métrica</unitPattern>
 				<unitPattern count="other">{0} toneladas métricas</unitPattern>
@@ -1321,7 +1321,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="length-point">
 				<displayName>pto.</displayName>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>t</displayName>
 				<unitPattern count="one">{0} t</unitPattern>
 				<unitPattern count="other">{0} t</unitPattern>
@@ -1447,7 +1447,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0}mi esc.</unitPattern>
 				<unitPattern count="other">{0}mi esc.</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>t</displayName>
 			</unit>
 			<unit type="mass-milligram">
@@ -1570,7 +1570,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<styleName type="wght" subtype="950" alt="ultraheavy">ultrapesada</styleName>
 	</typographicNames>
 	<personNames>
-		<nameOrderLocales order="surnameFirst">hu ja ko vi yue zh</nameOrderLocales>
 		<initialPattern type="initial">{0}.</initialPattern>
 		<initialPattern type="initialSequence">{0} {1}</initialPattern>
 		<personName order="givenFirst" length="medium" usage="referring" formality="formal">

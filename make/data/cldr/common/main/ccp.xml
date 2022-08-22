@@ -6630,7 +6630,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} 𑄣𑄇𑄳𑄥𑄴</unitPattern>
 				<unitPattern count="other">{0} 𑄣𑄇𑄳𑄥𑄴</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>𑄟𑄬𑄑𑄳𑄢𑄨𑄇𑄴 𑄑𑄧𑄚𑄴</displayName>
 				<unitPattern count="one">{0} 𑄟𑄬𑄑𑄳𑄢𑄨𑄇𑄴 𑄑𑄧𑄚𑄴</unitPattern>
 				<unitPattern count="other">{0} 𑄟𑄬𑄑𑄳𑄢𑄨𑄇𑄴 𑄑𑄧𑄚𑄴</unitPattern>
@@ -7317,7 +7317,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} lx</unitPattern>
 				<unitPattern count="other">{0} lx</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>t</displayName>
 				<unitPattern count="one">{0} t</unitPattern>
 				<unitPattern count="other">{0} t</unitPattern>

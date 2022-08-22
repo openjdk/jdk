@@ -76,6 +76,16 @@
 			<pluralRange start="other" end="other" result="other"/>
 		</pluralRanges>
 
+<!-- one, two, other -->
+		<pluralRanges locales="he">
+			<pluralRange start="one"   end="two"   result="other"/>
+			<pluralRange start="one"   end="other" result="other"/>
+			<pluralRange start="two"   end="other" result="other"/>
+			<pluralRange start="other" end="one"   result="other"/>
+			<pluralRange start="other" end="two"   result="other"/>
+			<pluralRange start="other" end="other" result="other"/>
+		</pluralRanges>
+
 <!-- one, few, other -->
 		<pluralRanges locales="ro">
 			<pluralRange start="one"   end="few"   result="few"/>
@@ -132,21 +142,6 @@
 			<pluralRange start="other" end="one"   result="few"/>
 			<pluralRange start="other" end="two"   result="two"/>
 			<pluralRange start="other" end="few"   result="few"/>
-			<pluralRange start="other" end="other" result="other"/>
-		</pluralRanges>
-
-<!-- one, two, many, other -->
-		<pluralRanges locales="he">
-			<pluralRange start="one"   end="two"   result="other"/>
-			<pluralRange start="one"   end="many"  result="many"/>
-			<pluralRange start="one"   end="other" result="other"/>
-			<pluralRange start="two"   end="many"  result="other"/>
-			<pluralRange start="two"   end="other" result="other"/>
-			<pluralRange start="many"  end="many"  result="many"/>
-			<pluralRange start="many"  end="other" result="many"/>
-			<pluralRange start="other" end="one"   result="other"/>
-			<pluralRange start="other" end="two"   result="other"/>
-			<pluralRange start="other" end="many"  result="many"/>
 			<pluralRange start="other" end="other" result="other"/>
 		</pluralRanges>
 

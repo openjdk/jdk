@@ -268,7 +268,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="many">{0} ضياءً شمسيًا</unitPattern>
 				<unitPattern count="other">{0} ضياء شمسي</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<unitPattern count="zero">{0} طن متري</unitPattern>
 				<unitPattern count="one">{0} طن متري</unitPattern>
 				<unitPattern count="two">طنان متريان</unitPattern>

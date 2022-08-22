@@ -24,6 +24,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</scripts>
 		<territories>
 			<territory type="001">World</territory>
+			<territory type="BL">St. Barthélemy</territory>
+			<territory type="KN">St. Kitts &amp; Nevis</territory>
+			<territory type="LC">St. Lucia</territory>
+			<territory type="MF">St. Martin</territory>
+			<territory type="VC">St. Vincent &amp; Grenadines</territory>
 		</territories>
 		<variants>
 			<variant type="SIMPLE">SIMPLE</variant>
@@ -752,16 +757,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<field type="weekOfMonth-short">
 				<displayName>wk of mo.</displayName>
 			</field>
-			<field type="day-narrow">
-				<relativeTime type="future">
-					<relativeTimePattern count="one">in {0}d</relativeTimePattern>
-					<relativeTimePattern count="other">in {0} days</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} day ago</relativeTimePattern>
-					<relativeTimePattern count="other">{0} days ago</relativeTimePattern>
-				</relativeTime>
-			</field>
 			<field type="weekdayOfMonth-short">
 				<displayName>wkday of mo.</displayName>
 			</field>
@@ -902,12 +897,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</fields>
 		<timeZoneNames>
 			<gmtZeroFormat>GMT</gmtZeroFormat>
-			<zone type="Australia/Currie">
-				<exemplarCity>Currie</exemplarCity>
-			</zone>
-			<zone type="Pacific/Enderbury">
-				<exemplarCity>Enderbury</exemplarCity>
-			</zone>
 			<zone type="Pacific/Johnston">
 				<exemplarCity>Johnston</exemplarCity>
 			</zone>
@@ -1554,7 +1543,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="length-micrometer">
 				<displayName>micrometres</displayName>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<unitPattern count="one">tonne</unitPattern>
 				<unitPattern count="other">{0} tonnes</unitPattern>
 			</unit>
@@ -1572,6 +1561,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>fluid ounces</displayName>
 				<unitPattern count="one">{0} fluid ounce</unitPattern>
 				<unitPattern count="other">{0} fluid ounces</unitPattern>
+			</unit>
+			<unit type="volume-fluid-ounce-imperial">
+				<displayName>Imp. fluid ounces</displayName>
+				<unitPattern count="one">{0} Imp. fluid ounce</unitPattern>
+				<unitPattern count="other">{0} Imp. fluid ounces</unitPattern>
 			</unit>
 		</unitLength>
 		<unitLength type="short">
@@ -1739,6 +1733,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} fl oz</unitPattern>
 				<unitPattern count="other">{0} fl oz</unitPattern>
 			</unit>
+			<unit type="volume-fluid-ounce-imperial">
+				<displayName>Imp. fl oz</displayName>
+				<unitPattern count="one">{0} fl oz Imp.</unitPattern>
+				<unitPattern count="other">{0} fl oz Imp.</unitPattern>
+			</unit>
 		</unitLength>
 		<unitLength type="narrow">
 			<compoundUnit type="per">
@@ -1846,8 +1845,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0}qt US</unitPattern>
 				<unitPattern count="other">{0}qt US</unitPattern>
 			</unit>
+			<unit type="volume-fluid-ounce">
+				<displayName>fl oz</displayName>
+				<unitPattern count="one">{0}fl oz</unitPattern>
+				<unitPattern count="other">{0}fl oz</unitPattern>
+			</unit>
 			<unit type="volume-fluid-ounce-imperial">
-				<displayName>Imp. fl oz</displayName>
+				<displayName>Imp fl oz</displayName>
+				<unitPattern count="one">{0}fl oz Im</unitPattern>
+				<unitPattern count="other">{0}fl oz Im</unitPattern>
 			</unit>
 			<unit type="volume-dessert-spoon">
 				<displayName>dsp US</displayName>

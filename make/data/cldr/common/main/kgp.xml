@@ -7505,7 +7505,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} rã jẽngrẽ</unitPattern>
 				<unitPattern count="other">{0} rã jẽngrẽ ag</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>tãnẽrada mẽtirika ag</displayName>
 				<unitPattern count="one">{0} tãnẽrada mẽtirika</unitPattern>
 				<unitPattern count="other">{0} tãnẽrada mẽtirika ag</unitPattern>
@@ -8163,7 +8163,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="light-solar-luminosity">
 				<displayName>rã jẽngrẽ ag</displayName>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>t</displayName>
 				<unitPattern count="one">{0} t</unitPattern>
 				<unitPattern count="other">{0} t</unitPattern>
@@ -8810,4 +8810,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<featureName type="tnum">nĩkrén ki ve tãpér</featureName>
 		<featureName type="zero">rá tũ kym</featureName>
 	</typographicNames>
+	<personNames>
+		<nameOrderLocales order="givenFirst">und kgp</nameOrderLocales>
+		<nameOrderLocales order="surnameFirst">ko vi yue zh</nameOrderLocales>
+	</personNames>
 </ldml>

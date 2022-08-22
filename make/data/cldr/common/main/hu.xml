@@ -8604,7 +8604,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} Nap-fényerő</unitPattern>
 				<unitPattern count="other">{0} Nap-fényerő</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>metrikus tonna</displayName>
 				<unitPattern count="one">{0} metrikus tonna</unitPattern>
 				<unitPattern count="one" case="accusative">{0} metrikus tonnát</unitPattern>
@@ -9788,7 +9788,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} lx</unitPattern>
 				<unitPattern count="other">{0} lx</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>t</displayName>
 				<unitPattern count="one">{0} t</unitPattern>
 				<unitPattern count="other">{0} t</unitPattern>
@@ -10709,6 +10709,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<featureName type="zero">áthúzott nulla</featureName>
 	</typographicNames>
 	<personNames>
+		<nameOrderLocales order="surnameFirst">hu ja ko vi yue zh</nameOrderLocales>
 		<personName order="givenFirst" length="long" usage="referring" formality="formal">
 			<namePattern>{given} {given2} {surname} {suffix}</namePattern>
 		</personName>

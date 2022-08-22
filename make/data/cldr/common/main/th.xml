@@ -8952,7 +8952,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ความสว่างดวงอาทิตย์</displayName>
 				<unitPattern count="other">{0} ความสว่างดวงอาทิตย์</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>เมตริกตัน</displayName>
 				<unitPattern count="other">{0} เมตริกตัน</unitPattern>
 			</unit>
@@ -9762,7 +9762,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="light-solar-luminosity">
 				<displayName>ความสว่างดวงอาทิตย์</displayName>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>ต.</displayName>
 				<unitPattern count="other">{0} ต.</unitPattern>
 			</unit>
@@ -10489,7 +10489,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>L☉</displayName>
 				<unitPattern count="other">{0}L☉</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<unitPattern count="other">{0}ต.</unitPattern>
 			</unit>
 			<unit type="mass-kilogram">
@@ -10973,6 +10973,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	</typographicNames>
 	<personNames>
 		<nameOrderLocales order="givenFirst">und th</nameOrderLocales>
+		<nameOrderLocales order="surnameFirst">ko vi yue zh</nameOrderLocales>
 		<personName order="givenFirst" length="long" usage="referring" formality="informal">
 			<namePattern>{given} {given2} {surname} {surname2} {suffix}</namePattern>
 		</personName>

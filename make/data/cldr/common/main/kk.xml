@@ -6843,7 +6843,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} Күн жарықтығы</unitPattern>
 				<unitPattern count="other">{0} Күн жарықтығы</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>метрлік тонна</displayName>
 				<unitPattern count="one">{0} метрлік тонна</unitPattern>
 				<unitPattern count="other">{0} метрлік тонна</unitPattern>
@@ -7873,7 +7873,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} L☉</unitPattern>
 				<unitPattern count="other">{0} L☉</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>т</displayName>
 				<unitPattern count="one">{0} т</unitPattern>
 				<unitPattern count="other">{0} т</unitPattern>
@@ -8980,6 +8980,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	</typographicNames>
 	<personNames>
 		<nameOrderLocales order="givenFirst">und kk</nameOrderLocales>
+		<nameOrderLocales order="surnameFirst" draft="contributed">ko vi yue zh</nameOrderLocales>
 		<foreignSpaceReplacement xml:space="preserve" draft="contributed"> </foreignSpaceReplacement>
 		<personName order="givenFirst" length="long" usage="referring" formality="formal">
 			<namePattern draft="contributed">{given} {surname}</namePattern>

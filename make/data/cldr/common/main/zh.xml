@@ -8611,7 +8611,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="BGN">
 				<displayName>保加利亚列弗</displayName>
-				<displayName count="other">保加利亚新列弗</displayName>
+				<displayName count="other">保加利亚列弗</displayName>
 				<symbol>BGN</symbol>
 			</currency>
 			<currency type="BGO">
@@ -10727,7 +10727,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>太阳光度</displayName>
 				<unitPattern count="other">{0}太阳光度</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>公吨</displayName>
 				<unitPattern count="other">{0}公吨</unitPattern>
 			</unit>
@@ -11890,7 +11890,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="light-solar-luminosity">
 				<unitPattern count="other">{0}L☉</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<unitPattern count="other">{0}t</unitPattern>
 			</unit>
 			<unit type="mass-kilogram">
@@ -12390,7 +12390,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<featureName type="zero">带斜杠的零</featureName>
 	</typographicNames>
 	<personNames>
-		<nameOrderLocales order="surnameFirst">ja ko zh</nameOrderLocales>
+		<nameOrderLocales order="surnameFirst">hu ja ko vi yue zh</nameOrderLocales>
 		<foreignSpaceReplacement xml:space="preserve">·</foreignSpaceReplacement>
 		<initialPattern type="initial">{0}</initialPattern>
 		<personName order="givenFirst" length="long" usage="referring" formality="formal">

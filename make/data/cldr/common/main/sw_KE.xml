@@ -179,8 +179,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<script type="Hanb">Kihan chenye Kibopomofo</script>
 			<script type="Hans">Kilichorahisishwa</script>
 			<script type="Hans" alt="stand-alone">Kihan Kilichorahisishwa</script>
-			<script type="Hant">Kawaida</script>
-			<script type="Hant" alt="stand-alone">Kihan cha Kawaida</script>
 			<script type="Hira">Kihiragana</script>
 			<script type="Hrkt">Silabi za Kijapani</script>
 			<script type="Jamo">Kijamo</script>
@@ -201,7 +199,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="011">Afrika Magharibi</territory>
 			<territory type="014">Afrika Mashariki</territory>
 			<territory type="015">Afrika Kaskazini</territory>
-			<territory type="018">Afrika Kusini</territory>
 			<territory type="030">Asia Mashariki</territory>
 			<territory type="034">Asia Kusini</territory>
 			<territory type="035">Kusini Mashariki mwa Asia</territory>
@@ -213,7 +210,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="154">Ulaya Kaskazini</territory>
 			<territory type="155">Ulaya Magharibi</territory>
 			<territory type="202">Kusini mwa Jangwa la Sahara</territory>
-			<territory type="419">Amerika Kusini</territory>
 			<territory type="AF">Afghanistani</territory>
 			<territory type="AG">Antigua na Babuda</territory>
 			<territory type="AI">Anguila</territory>

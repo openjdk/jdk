@@ -7364,7 +7364,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} сонечных свяцільнасцей</unitPattern>
 				<unitPattern count="other">{0} сонечнай свяцільнасці</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>тоны</displayName>
 				<unitPattern count="one">{0} тона</unitPattern>
 				<unitPattern count="few">{0} тоны</unitPattern>
@@ -8778,7 +8778,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} L☉</unitPattern>
 				<unitPattern count="other">{0} L☉</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>т</displayName>
 				<unitPattern count="one">{0} т</unitPattern>
 				<unitPattern count="few">{0} т</unitPattern>
@@ -9816,7 +9816,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	</typographicNames>
 	<personNames>
 		<nameOrderLocales order="givenFirst">und be</nameOrderLocales>
-		<nameOrderLocales order="surnameFirst">ja ko zh</nameOrderLocales>
+		<nameOrderLocales order="surnameFirst">ko vi yue zh</nameOrderLocales>
 		<personName order="givenFirst" length="long" usage="referring" formality="formal">
 			<namePattern>{given} {given2} {surname} {suffix}</namePattern>
 		</personName>

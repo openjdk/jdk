@@ -6086,7 +6086,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>លូមែន</displayName>
 				<unitPattern count="other">{0} លូមែន</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>តោនម៉ែត្រ</displayName>
 				<unitPattern count="other">{0} តោនម៉ែត្រ</unitPattern>
 			</unit>
@@ -6805,7 +6805,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>lux</displayName>
 				<unitPattern count="other">{0} lx</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>t</displayName>
 				<unitPattern count="other">{0} t</unitPattern>
 			</unit>
@@ -7562,7 +7562,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	</typographicNames>
 	<personNames>
 		<nameOrderLocales order="givenFirst">und</nameOrderLocales>
-		<nameOrderLocales order="surnameFirst">km</nameOrderLocales>
+		<nameOrderLocales order="surnameFirst">km ko vi yue zh</nameOrderLocales>
 		<sampleName item="givenOnly">
 			<nameField type="given">សុខា</nameField>
 		</sampleName>

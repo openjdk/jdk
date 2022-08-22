@@ -19,12 +19,12 @@ annotations.
 	<localeDisplayNames>
 		<languages>
 			<language type="af">Afreeki</language>
-			<language type="bla">Siksika</language>
 			<language type="bn">Bangla</language>
 			<language type="bo">Tibbati</language>
 			<language type="ckb">Kurdish, Sorani</language>
 			<language type="crh">Crimean Turkish</language>
 			<language type="fa">Faarsi</language>
+			<language type="ff">Fulah</language>
 			<language type="lah">Lahnda</language>
 			<language type="mus">Muscogee</language>
 			<language type="nan">Min Nan</language>
@@ -46,11 +46,17 @@ annotations.
 			<territory type="BL">St. Barthelemy</territory>
 			<territory type="CI">Cote d’Ivoire</territory>
 			<territory type="CW">Curacao</territory>
+			<territory type="KN">St. Kitts &amp; Nevis</territory>
+			<territory type="LC">St. Lucia</territory>
+			<territory type="MF">St. Martin</territory>
+			<territory type="PM">St. Pierre &amp; Miquelon</territory>
 			<territory type="RE">Reunion</territory>
+			<territory type="SH">St. Helena</territory>
 			<territory type="ST">Sao Tome &amp; Principe</territory>
 			<territory type="TR" alt="variant">Turkiye</territory>
 			<territory type="UM">U.S. Outlying Islands</territory>
 			<territory type="US" alt="short">America</territory>
+			<territory type="VC">St. Vincent &amp; Grenadines</territory>
 			<territory type="VI">U.S. Virgin Islands</territory>
 			<territory type="XB">Pseudo-Bidirectional</territory>
 		</territories>
@@ -1281,9 +1287,6 @@ annotations.
 			<zone type="Australia/Melbourne">
 				<exemplarCity>Melbourne</exemplarCity>
 			</zone>
-			<zone type="Australia/Currie">
-				<exemplarCity>Currie</exemplarCity>
-			</zone>
 			<zone type="Australia/Hobart">
 				<exemplarCity>Hobart</exemplarCity>
 			</zone>
@@ -1775,9 +1778,6 @@ annotations.
 			</zone>
 			<zone type="Asia/Phnom_Penh">
 				<exemplarCity>Phnom Penh</exemplarCity>
-			</zone>
-			<zone type="Pacific/Enderbury">
-				<exemplarCity>Enderbury</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kiritimati">
 				<exemplarCity>Kiritimati</exemplarCity>
@@ -2670,11 +2670,6 @@ annotations.
 				<unitPattern count="other">{0} Imp. gallons</unitPattern>
 				<perUnitPattern>{0} per Imp. gallon</perUnitPattern>
 			</unit>
-			<unit type="volume-fluid-ounce">
-				<displayName>fluid ounces</displayName>
-				<unitPattern count="one">{0} fluid ounce</unitPattern>
-				<unitPattern count="other">{0} fluid ounces</unitPattern>
-			</unit>
 			<unit type="volume-dessert-spoon">
 				<displayName>dessert spoons</displayName>
 				<unitPattern count="one">{0} dessert spoon</unitPattern>
@@ -2750,6 +2745,11 @@ annotations.
 			<unit type="volume-gallon-imperial">
 				<unitPattern count="one">{0} gal</unitPattern>
 				<unitPattern count="other">{0} gal Imp.</unitPattern>
+			</unit>
+			<unit type="volume-fluid-ounce-imperial">
+				<displayName>Imp. fl oz</displayName>
+				<unitPattern count="one">{0} fl oz Imp.</unitPattern>
+				<unitPattern count="other">{0} fl oz Imp.</unitPattern>
 			</unit>
 			<unit type="volume-dessert-spoon">
 				<displayName>dstspn</displayName>
@@ -2829,6 +2829,11 @@ annotations.
 				<unitPattern count="one">{0}galIm</unitPattern>
 				<unitPattern count="other">{0}galIm</unitPattern>
 			</unit>
+			<unit type="volume-fluid-ounce">
+				<displayName>fl oz</displayName>
+				<unitPattern count="one">{0}fl oz</unitPattern>
+				<unitPattern count="other">{0}fl oz</unitPattern>
+			</unit>
 			<unit type="volume-fluid-ounce-imperial">
 				<displayName>Imp fl oz</displayName>
 				<unitPattern count="one">{0}fl oz Im</unitPattern>
@@ -2906,5 +2911,6 @@ annotations.
 	</typographicNames>
 	<personNames>
 		<nameOrderLocales order="givenFirst">und hi</nameOrderLocales>
+		<nameOrderLocales order="surnameFirst">ko si ta te vi yue zh</nameOrderLocales>
 	</personNames>
 </ldml>

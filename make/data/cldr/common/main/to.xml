@@ -8114,7 +8114,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>huhulu fakalaʻā</displayName>
 				<unitPattern count="other">huhulu fakalaʻā ʻe {0}</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>toni</displayName>
 				<unitPattern count="other">toni ʻe {0}</unitPattern>
 			</unit>
@@ -8893,7 +8893,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>H☉</displayName>
 				<unitPattern count="other">H☉ ʻe {0}</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>to</displayName>
 				<unitPattern count="other">to ʻe {0}</unitPattern>
 			</unit>
@@ -9663,7 +9663,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>H☉</displayName>
 				<unitPattern count="other">{0} H☉</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>to</displayName>
 				<unitPattern count="other">{0} to</unitPattern>
 			</unit>
@@ -10201,7 +10201,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</typographicNames>
 	<personNames>
 		<nameOrderLocales order="givenFirst">und to</nameOrderLocales>
-		<nameOrderLocales order="surnameFirst">zxx</nameOrderLocales>
+		<nameOrderLocales order="surnameFirst">ja ko vi yue zh</nameOrderLocales>
 		<personName order="givenFirst" length="long" usage="referring" formality="formal">
 			<namePattern>{given} {given2} {surname} {suffix}</namePattern>
 		</personName>
@@ -10346,7 +10346,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<nameField type="given-informal">Siana</nameField>
 			<nameField type="given2">Lātū</nameField>
 			<nameField type="surname-core">Fīnau</nameField>
-			<nameField type="surname2">∅∅∅</nameField>
 			<nameField type="suffix">O.T.K.</nameField>
 		</sampleName>
 	</personNames>

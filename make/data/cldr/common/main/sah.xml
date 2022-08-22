@@ -1882,7 +1882,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>люкс</displayName>
 				<unitPattern count="other">{0} лк</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>т</displayName>
 				<unitPattern count="other">{0} т</unitPattern>
 			</unit>

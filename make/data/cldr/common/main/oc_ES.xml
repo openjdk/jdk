@@ -2489,6 +2489,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="EGP">
 				<displayName draft="unconfirmed">libra egipcia</displayName>
 				<displayName count="other" draft="unconfirmed">libres egipcies</displayName>
+				<symbol draft="unconfirmed">EGP</symbol>
 				<symbol alt="narrow" draft="unconfirmed">EGP</symbol>
 			</currency>
 			<currency type="ERN">
@@ -2783,6 +2784,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="RON">
 				<displayName draft="unconfirmed">leu ruman</displayName>
 				<displayName count="other" draft="unconfirmed">leus rumans</displayName>
+				<symbol draft="unconfirmed">RON</symbol>
 				<symbol alt="narrow" draft="unconfirmed">L</symbol>
 			</currency>
 			<currency type="RSD">

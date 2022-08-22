@@ -6619,7 +6619,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">ung'avu wa jua {0}</unitPattern>
 				<unitPattern count="other">ung'avu wa jua {0}</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>tani mita</displayName>
 				<unitPattern count="one">tani mita {0}</unitPattern>
 				<unitPattern count="other">tani mita {0}</unitPattern>
@@ -7646,7 +7646,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">L☉ {0}</unitPattern>
 				<unitPattern count="other">L☉ {0}</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>tani mita</displayName>
 				<unitPattern count="one">tani mita {0}</unitPattern>
 				<unitPattern count="other">tani mita {0}</unitPattern>
@@ -8630,7 +8630,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	</typographicNames>
 	<personNames>
 		<nameOrderLocales order="givenFirst">und sw</nameOrderLocales>
-		<nameOrderLocales order="surnameFirst">ja ko zh</nameOrderLocales>
+		<nameOrderLocales order="surnameFirst">ko vi yue zh</nameOrderLocales>
 		<personName order="givenFirst" length="long" usage="referring" formality="formal">
 			<namePattern>{given} {given2} {surname} {suffix}</namePattern>
 		</personName>

@@ -905,7 +905,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="ML">মালি</territory>
 			<territory type="MM">মায়ানমার (বার্মা)</territory>
 			<territory type="MN">মঙ্গোলিয়া</territory>
-			<territory type="MO">ম্যাকাও এসএআর চীনা চীনা (ম্যাকাও এসএআর চীনা) চীনা (ঐতিহ্যবাহী, ম্যাকাও এসএআর চীনা) অঞ্চল: ম্যাকাও এসএআর চীন</territory>
+			<territory type="MO">ম্যাকাও এসএআর চীন</territory>
 			<territory type="MO" alt="short">ম্যাকাও</territory>
 			<territory type="MP">উত্তরাঞ্চলীয় মারিয়ানা দ্বীপপুঞ্জ</territory>
 			<territory type="MQ">মার্টিনিক</territory>
@@ -8099,7 +8099,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} সৌর ঔজ্জ্বল্য</unitPattern>
 				<unitPattern count="other">{0} সৌর ঔজ্জ্বল্যতাগুলি</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>মেট্রিক টন</displayName>
 				<unitPattern count="one">{0} মেট্রিক টন</unitPattern>
 				<unitPattern count="other">{0} মেট্রিক টন</unitPattern>
@@ -9057,7 +9057,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="light-solar-luminosity">
 				<displayName>সৌর ঔজ্জ্বল্য</displayName>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>t</displayName>
 				<unitPattern count="one">{0} t</unitPattern>
 				<unitPattern count="other">{0} t</unitPattern>
@@ -9747,7 +9747,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="length-solar-radius">
 				<displayName>R☉</displayName>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>টন</displayName>
 				<unitPattern count="one">{0} টন</unitPattern>
 				<unitPattern count="other">{0} টন</unitPattern>
@@ -10181,6 +10181,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	</typographicNames>
 	<personNames>
 		<nameOrderLocales order="givenFirst">und bn</nameOrderLocales>
+		<nameOrderLocales order="surnameFirst">ko vi yue zh</nameOrderLocales>
 		<foreignSpaceReplacement xml:space="preserve"> </foreignSpaceReplacement>
 		<initialPattern type="initial">{0}.</initialPattern>
 		<initialPattern type="initialSequence">{0} {1}</initialPattern>

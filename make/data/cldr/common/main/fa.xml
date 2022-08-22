@@ -8148,7 +8148,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} تابندگی خورشید</unitPattern>
 				<unitPattern count="other">{0} تابندگی خورشید</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>تن متریک</displayName>
 				<unitPattern count="one">{0} تن متریک</unitPattern>
 				<unitPattern count="other">{0} تن متریک</unitPattern>
@@ -9147,7 +9147,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ☉L</unitPattern>
 				<unitPattern count="other">{0} ☉L</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<unitPattern count="one">{0} t</unitPattern>
 				<unitPattern count="other">{0} t</unitPattern>
 			</unit>
@@ -9923,7 +9923,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0}شعاع خورشید</unitPattern>
 				<unitPattern count="other">{0}شعاع خورشید</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>تن متریک</displayName>
 				<unitPattern count="one">{0} تن</unitPattern>
 				<unitPattern count="other">{0} تن</unitPattern>
@@ -10439,6 +10439,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	</typographicNames>
 	<personNames>
 		<nameOrderLocales order="givenFirst">und fa</nameOrderLocales>
+		<nameOrderLocales order="surnameFirst" draft="contributed">ko vi yue zh</nameOrderLocales>
 		<personName order="givenFirst" length="long" usage="referring" formality="formal">
 			<namePattern>{given} {given2} {surname} {suffix}</namePattern>
 		</personName>

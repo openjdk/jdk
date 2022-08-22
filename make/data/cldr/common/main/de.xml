@@ -9167,7 +9167,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="dative">{0} Sonnenleuchtkräften</unitPattern>
 				<unitPattern count="other" case="genitive">{0} Sonnenleuchtkräfte</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<gender draft="contributed">feminine</gender>
 				<displayName>Tonnen</displayName>
 				<unitPattern count="one">{0} Tonne</unitPattern>
@@ -11003,7 +11003,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0}L☉</unitPattern>
 				<unitPattern count="other">{0}L☉</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName draft="contributed">t</displayName>
 				<unitPattern count="one" draft="contributed">{0} t</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} t</unitPattern>

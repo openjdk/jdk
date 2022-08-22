@@ -6211,7 +6211,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="few">{0} swěćenske mocy słónca</unitPattern>
 				<unitPattern count="other">{0} swěćenskich mocow słónca</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>tony</displayName>
 				<unitPattern count="one">{0} tona</unitPattern>
 				<unitPattern count="two">{0} tonje</unitPattern>
@@ -7608,7 +7608,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="few">{0} L☉</unitPattern>
 				<unitPattern count="other">{0} L☉</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>t</displayName>
 				<unitPattern count="one">{0} t</unitPattern>
 				<unitPattern count="two">{0} t</unitPattern>

@@ -3159,8 +3159,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
     <!--@METADATA-->
 
 <!ELEMENT personNames ( alias | ( nameOrderLocales*, foreignSpaceReplacement*, initialPattern*, personName*, sampleName*, special* ) ) >
+    <!--@TECHPREVIEW-->
 
 <!ELEMENT nameOrderLocales ( #PCDATA ) >
+    <!--@TECHPREVIEW-->
 <!ATTLIST nameOrderLocales order (givenFirst | surnameFirst) #REQUIRED >
 <!ATTLIST nameOrderLocales alt NMTOKENS #IMPLIED >
     <!--@MATCH:literal/variant-->
@@ -3170,6 +3172,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
     <!--@METADATA-->
 
 <!ELEMENT foreignSpaceReplacement ( #PCDATA ) >
+    <!--@TECHPREVIEW-->
 <!ATTLIST foreignSpaceReplacement xml:space (default | preserve) "preserve" >
     <!--@METADATA-->
 <!ATTLIST foreignSpaceReplacement alt NMTOKENS #IMPLIED >
@@ -3180,6 +3183,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
     <!--@METADATA-->
 
 <!ELEMENT initialPattern ( #PCDATA ) >
+    <!--@TECHPREVIEW-->
 <!ATTLIST initialPattern type (initial | initialSequence) #REQUIRED >
 <!ATTLIST initialPattern alt NMTOKENS #IMPLIED >
     <!--@MATCH:literal/variant-->
@@ -3189,6 +3193,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
     <!--@METADATA-->
 
 <!ELEMENT personName ( alias | ( namePattern+, special* ) ) >
+    <!--@TECHPREVIEW-->
 <!ATTLIST personName order NMTOKENS #IMPLIED >
     <!--@MATCH:set/literal/givenFirst, surnameFirst, sorting-->
 <!ATTLIST personName length NMTOKENS #IMPLIED >
@@ -3199,6 +3204,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
     <!--@MATCH:set/literal/formal, informal-->
 
 <!ELEMENT namePattern ( #PCDATA ) >
+    <!--@TECHPREVIEW-->
 <!ATTLIST namePattern alt (1 | 2) #IMPLIED >
 <!ATTLIST namePattern draft (approved | contributed | provisional | unconfirmed) #IMPLIED >
     <!--@METADATA-->
@@ -3206,10 +3212,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
     <!--@METADATA-->
 
 <!ELEMENT sampleName ( alias | ( nameField+, special* ) ) >
+    <!--@TECHPREVIEW-->
 <!ATTLIST sampleName item NMTOKENS #REQUIRED >
     <!--@MATCH:literal/givenOnly, givenSurnameOnly, given12Surname, full-->
 
 <!ELEMENT nameField ( #PCDATA ) >
+    <!--@TECHPREVIEW-->
 <!ATTLIST nameField type CDATA #REQUIRED >
     <!--@MATCH:literal/prefix, given, given-informal, given2, surname, surname-prefix, surname-core, surname2, suffix-->
 <!ATTLIST nameField alt NMTOKENS #IMPLIED >

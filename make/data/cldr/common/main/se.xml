@@ -1610,7 +1610,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="two" draft="unconfirmed">{0} miila</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0} miila</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName draft="unconfirmed">tonna</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0} tonna</unitPattern>
 				<unitPattern count="two" draft="unconfirmed">{0} tonna</unitPattern>
@@ -1974,7 +1974,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="two" draft="unconfirmed">{0} miila</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0} miila</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName draft="unconfirmed">tonna</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0} t</unitPattern>
 				<unitPattern count="two" draft="unconfirmed">{0} t</unitPattern>
@@ -2355,7 +2355,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="two">{0} ly</unitPattern>
 				<unitPattern count="other">{0} ly</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName draft="unconfirmed">tonna</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0}t</unitPattern>
 				<unitPattern count="two" draft="unconfirmed">{0}t</unitPattern>

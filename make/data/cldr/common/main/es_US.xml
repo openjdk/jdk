@@ -976,7 +976,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<styleName type="wght" subtype="950" alt="ultrablack">ultranegra</styleName>
 	</typographicNames>
 	<personNames>
-		<nameOrderLocales order="surnameFirst">ja ko zh</nameOrderLocales>
 		<personName order="sorting" length="long" usage="referring" formality="formal">
 			<namePattern alt="1">{surname} {surname2}, {given} {given2}</namePattern>
 		</personName>

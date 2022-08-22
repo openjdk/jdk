@@ -7617,7 +7617,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>độ sáng của mặt trời</displayName>
 				<unitPattern count="other">{0} độ sáng của mặt trời</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>tấn hệ mét</displayName>
 				<unitPattern count="other">{0} tấn hệ mét</unitPattern>
 			</unit>
@@ -8176,7 +8176,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>độ sáng của mặt trời</displayName>
 				<unitPattern count="other">{0} L☉</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>t</displayName>
 			</unit>
 			<unit type="mass-kilogram">
@@ -8968,11 +8968,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<sampleName item="full">
 			<nameField type="prefix">Giáo sư, Tiến sĩ</nameField>
 			<nameField type="given">Anh</nameField>
-			<nameField type="given-informal">∅∅∅</nameField>
 			<nameField type="given2">Văn</nameField>
-			<nameField type="surname-prefix">∅∅∅</nameField>
-			<nameField type="surname-core">∅∅∅</nameField>
-			<nameField type="surname2">∅∅∅</nameField>
 		</sampleName>
 	</personNames>
 </ldml>

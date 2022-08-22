@@ -6347,7 +6347,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} күндүн жарык күчү</unitPattern>
 				<unitPattern count="other">{0} күндүн жарык күчү</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>метр тонна</displayName>
 				<unitPattern count="one">{0} метр тонна</unitPattern>
 				<unitPattern count="other">{0} метр тонна</unitPattern>
@@ -7268,7 +7268,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} L☉</unitPattern>
 				<unitPattern count="other">{0} L☉</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>т</displayName>
 				<unitPattern count="one">{0} т</unitPattern>
 				<unitPattern count="other">{0} т</unitPattern>
@@ -8218,8 +8218,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<featureName type="zero">чийилген нөл</featureName>
 	</typographicNames>
 	<personNames>
-		<nameOrderLocales order="givenFirst">zxx</nameOrderLocales>
-		<nameOrderLocales order="surnameFirst">und ky</nameOrderLocales>
+		<nameOrderLocales order="givenFirst">und ky</nameOrderLocales>
+		<nameOrderLocales order="surnameFirst">ja ko vi yue zh</nameOrderLocales>
 		<personName order="givenFirst" length="long" usage="addressing" formality="formal">
 			<namePattern>{prefix} {surname}</namePattern>
 		</personName>
@@ -8233,7 +8233,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<namePattern>{given-informal}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="short" usage="referring" formality="formal">
-			<namePattern draft="provisional">{given-initial} {given2-initial} {surname}</namePattern>
+			<namePattern draft="contributed">{given-initial} {given2-initial} {surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="short" usage="referring" formality="informal">
 			<namePattern>{given-informal} {surname-initial}</namePattern>

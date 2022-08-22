@@ -4577,4 +4577,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<nostr draft="unconfirmed">hayi:h</nostr>
 		</messages>
 	</posix>
+	<personNames>
+		<nameOrderLocales order="givenFirst">und xh</nameOrderLocales>
+		<nameOrderLocales order="surnameFirst">ko vi yue zh</nameOrderLocales>
+	</personNames>
 </ldml>

@@ -6555,7 +6555,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} gün ýagtylygy</unitPattern>
 				<unitPattern count="other">{0} gün ýagtylygy</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>metrik tonna</displayName>
 				<unitPattern count="one">{0} metrik tonna</unitPattern>
 				<unitPattern count="other">{0} metrik tonna</unitPattern>
@@ -7524,7 +7524,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} L☉</unitPattern>
 				<unitPattern count="other">{0} L☉</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>t</displayName>
 				<unitPattern count="one">{0} t</unitPattern>
 				<unitPattern count="other">{0} t</unitPattern>
@@ -8346,7 +8346,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</typographicNames>
 	<personNames>
 		<nameOrderLocales order="givenFirst" draft="contributed">und tk</nameOrderLocales>
-		<nameOrderLocales order="surnameFirst" draft="contributed">zxx</nameOrderLocales>
+		<nameOrderLocales order="surnameFirst" draft="contributed"/>
 		<personName order="givenFirst" length="short" usage="referring" formality="formal">
 			<namePattern draft="contributed">{given-initial} {given2-initial} {surname}</namePattern>
 		</personName>

@@ -6310,7 +6310,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} لمريز ځلښت</unitPattern>
 				<unitPattern count="other">{0} لمريز ځلښتونه</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>ميټرک ټنز</displayName>
 				<unitPattern count="one">{0} ميټرک ټن</unitPattern>
 				<unitPattern count="other">{0} ميټرک ټنز</unitPattern>
@@ -7209,7 +7209,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="light-solar-luminosity">
 				<displayName>لمريز ځلښتونه</displayName>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>t</displayName>
 				<unitPattern count="one">{0} t</unitPattern>
 				<unitPattern count="other">{0} t</unitPattern>
@@ -7977,7 +7977,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</typographicNames>
 	<personNames>
 		<nameOrderLocales order="givenFirst">und ps</nameOrderLocales>
-		<nameOrderLocales order="surnameFirst">ja ko zh</nameOrderLocales>
+		<nameOrderLocales order="surnameFirst">ko vi yue zh</nameOrderLocales>
 		<sampleName item="givenOnly">
 			<nameField type="given">سنباد</nameField>
 		</sampleName>

@@ -6090,7 +6090,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>सौर ल्युमिनोसायटिस</displayName>
 				<unitPattern count="other">{0} सौर ल्युमिनोसायटिस</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>मॅट्रिक टन</displayName>
 				<unitPattern count="other">{0} मॅट्रिक टन</unitPattern>
 			</unit>
@@ -6940,7 +6940,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>सौर ल्युमिनोसायटिस</displayName>
 				<unitPattern count="other">{0} L☉</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>t</displayName>
 				<unitPattern count="other">{0} t</unitPattern>
 			</unit>
@@ -7796,7 +7796,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>L☉</displayName>
 				<unitPattern count="other">{0}L☉</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>t</displayName>
 				<unitPattern count="other">{0}t</unitPattern>
 			</unit>
@@ -8356,6 +8356,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</typographicNames>
 	<personNames>
 		<nameOrderLocales order="givenFirst">und kok</nameOrderLocales>
+		<nameOrderLocales order="surnameFirst">ko si ta te vi yue zh</nameOrderLocales>
 		<initialPattern type="initial">{0}.</initialPattern>
 		<initialPattern type="initialSequence">{0} {1}</initialPattern>
 		<sampleName item="givenOnly">

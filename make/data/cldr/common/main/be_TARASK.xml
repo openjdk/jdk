@@ -3269,7 +3269,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many" draft="provisional">{0} сонечных сьвяцільнасьцяў</unitPattern>
 				<unitPattern count="other" draft="provisional">{0} сонечнай сьвяцільнасьці</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<unitPattern count="one" draft="provisional">{0} тона</unitPattern>
 				<unitPattern count="few" draft="provisional">{0} тоны</unitPattern>
 				<unitPattern count="many" draft="provisional">{0} тонаў</unitPattern>

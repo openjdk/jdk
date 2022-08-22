@@ -674,4 +674,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<nostr>নো:n</nostr>
 		</messages>
 	</posix>
+	<personNames>
+		<nameOrderLocales order="givenFirst">und mni</nameOrderLocales>
+		<nameOrderLocales order="surnameFirst">ko si ta te vi yue zh</nameOrderLocales>
+	</personNames>
 </ldml>

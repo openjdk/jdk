@@ -1005,4 +1005,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<nostr>न</nostr>
 		</messages>
 	</posix>
+	<personNames>
+		<nameOrderLocales order="givenFirst">und sa</nameOrderLocales>
+		<nameOrderLocales order="surnameFirst">ko si ta te vi yue zh</nameOrderLocales>
+	</personNames>
 </ldml>

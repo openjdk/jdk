@@ -6552,7 +6552,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} iftiinka qorraxda</unitPattern>
 				<unitPattern count="other">{0} iftiinada qorraxda</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>metrik tan</displayName>
 				<unitPattern count="one">{0} metrik tan</unitPattern>
 				<unitPattern count="other">{0} metrik tan</unitPattern>
@@ -7899,7 +7899,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</typographicNames>
 	<personNames>
 		<nameOrderLocales order="givenFirst">und so</nameOrderLocales>
-		<nameOrderLocales order="surnameFirst">zxx</nameOrderLocales>
+		<nameOrderLocales order="surnameFirst">ko vi yue zh</nameOrderLocales>
 		<foreignSpaceReplacement xml:space="preserve"> </foreignSpaceReplacement>
 		<initialPattern type="initial">{0}.</initialPattern>
 		<initialPattern type="initialSequence">{0} {1}</initialPattern>

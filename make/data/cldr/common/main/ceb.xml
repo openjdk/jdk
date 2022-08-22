@@ -3576,7 +3576,7 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<unitPattern count="one">{0} ka solar luminosity</unitPattern>
 				<unitPattern count="other">{0}ka mga solar luminosity</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>mga metrikong tonelada</displayName>
 				<unitPattern count="one">{0} ka metrikong tonelada</unitPattern>
 				<unitPattern count="other">{0} ka mga metrikong tonelada</unitPattern>
@@ -4506,4 +4506,8 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			<nostr>dili:d</nostr>
 		</messages>
 	</posix>
+	<personNames>
+		<nameOrderLocales order="givenFirst">und ceb</nameOrderLocales>
+		<nameOrderLocales order="surnameFirst">ko vi yue zh</nameOrderLocales>
+	</personNames>
 </ldml>

@@ -306,8 +306,7 @@
 			<dayPeriodRule type="morning1" from="04:00" before="06:00"/>	<!-- पहाट -->
 			<dayPeriodRule type="morning2" from="06:00" before="12:00"/>	<!-- सकाळ -->
 			<dayPeriodRule type="afternoon1" from="12:00" before="16:00"/>	<!-- दुपार -->
-			<dayPeriodRule type="evening1" from="16:00" before="18:00"/>	<!-- संध्याकाळ -->
-			<dayPeriodRule type="evening2" from="18:00" before="21:00"/>	<!-- सायंकाळ -->
+			<dayPeriodRule type="evening1" from="16:00" before="21:00"/>	<!-- संध्याकाळ -->
 			<dayPeriodRule type="night1" from="21:00" before="04:00"/>	<!-- रात्र -->
 		</dayPeriodRules>
 		<dayPeriodRules locales="ne">
@@ -950,8 +949,7 @@
 			<dayPeriodRule type="morning1" from="04:00" before="06:00"/>	<!-- पहाट -->
 			<dayPeriodRule type="morning2" from="06:00" before="12:00"/>	<!-- सकाळ -->
 			<dayPeriodRule type="afternoon1" from="12:00" before="16:00"/>	<!-- दुपार -->
-			<dayPeriodRule type="evening1" from="16:00" before="18:00"/>	<!-- संध्याकाळ -->
-			<dayPeriodRule type="evening2" from="18:00" before="21:00"/>	<!-- सायंकाळ -->
+			<dayPeriodRule type="evening1" from="16:00" before="21:00"/>	<!-- संध्याकाळ -->
 			<dayPeriodRule type="night1" from="21:00" before="04:00"/>	<!-- रात्र -->
 		</dayPeriodRules>
 		<dayPeriodRules locales="ne">

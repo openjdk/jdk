@@ -1884,7 +1884,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<dayPeriod type="morning2">सकाळ</dayPeriod>
 							<dayPeriod type="afternoon1">दुपार</dayPeriod>
 							<dayPeriod type="evening1">संध्याकाळ</dayPeriod>
-							<dayPeriod type="evening2">सायंकाळ</dayPeriod>
 							<dayPeriod type="night1">रात्र</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="narrow">
@@ -1896,7 +1895,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<dayPeriod type="morning2">स</dayPeriod>
 							<dayPeriod type="afternoon1">दु</dayPeriod>
 							<dayPeriod type="evening1">सं</dayPeriod>
-							<dayPeriod type="evening2">सा</dayPeriod>
 							<dayPeriod type="night1">रा</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
@@ -1908,7 +1906,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<dayPeriod type="morning2">सकाळ</dayPeriod>
 							<dayPeriod type="afternoon1">दुपार</dayPeriod>
 							<dayPeriod type="evening1">संध्याकाळ</dayPeriod>
-							<dayPeriod type="evening2">सायंकाळ</dayPeriod>
 							<dayPeriod type="night1">रात्र</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
@@ -1922,7 +1919,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<dayPeriod type="morning2">सकाळ</dayPeriod>
 							<dayPeriod type="afternoon1">दुपार</dayPeriod>
 							<dayPeriod type="evening1">संध्याकाळ</dayPeriod>
-							<dayPeriod type="evening2">सायंकाळ</dayPeriod>
 							<dayPeriod type="night1">रात्र</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="narrow">
@@ -1934,7 +1930,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<dayPeriod type="morning2">स</dayPeriod>
 							<dayPeriod type="afternoon1">दु</dayPeriod>
 							<dayPeriod type="evening1">सं</dayPeriod>
-							<dayPeriod type="evening2">सा</dayPeriod>
 							<dayPeriod type="night1">रात्र</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
@@ -1946,7 +1941,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<dayPeriod type="morning2">सकाळ</dayPeriod>
 							<dayPeriod type="afternoon1">दुपार</dayPeriod>
 							<dayPeriod type="evening1">संध्याकाळ</dayPeriod>
-							<dayPeriod type="evening2">सायंकाळ</dayPeriod>
 							<dayPeriod type="night1">रात्र</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
@@ -8592,7 +8586,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} सौर प्रकाश</unitPattern>
 				<unitPattern count="other">{0} सौर प्रकाश</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<gender>neuter</gender>
 				<displayName>मेट्रिक टन</displayName>
 				<unitPattern count="one">{0} मेट्रिक टन</unitPattern>
@@ -10043,7 +10037,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="light-solar-luminosity">
 				<displayName>सौर प्रकाश</displayName>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>t</displayName>
 				<unitPattern count="one">{0} t</unitPattern>
 				<unitPattern count="other">{0} t</unitPattern>
@@ -11171,7 +11165,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	</typographicNames>
 	<personNames>
 		<nameOrderLocales order="givenFirst">und mr</nameOrderLocales>
-		<nameOrderLocales order="surnameFirst">ja ko zh</nameOrderLocales>
+		<nameOrderLocales order="surnameFirst">ko si ta te vi yue zh</nameOrderLocales>
 		<personName order="givenFirst" length="long" usage="referring" formality="formal">
 			<namePattern>{given} {given2} {surname} {suffix}</namePattern>
 		</personName>

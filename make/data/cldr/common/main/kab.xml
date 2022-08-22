@@ -6802,7 +6802,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" draft="unconfirmed">{0} lks</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0} lks</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName draft="unconfirmed">Iṭunen imitranen</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0} n uṭun amitran</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0} n iṭunen imitranen</unitPattern>
@@ -7404,7 +7404,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" draft="unconfirmed">{0} ks</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0} ks</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName draft="unconfirmed">t</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0} t</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0} t</unitPattern>

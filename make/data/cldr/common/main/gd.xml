@@ -10418,6 +10418,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<pluralMinimalPairs count="two">{0} bhròig</pluralMinimalPairs>
 			<pluralMinimalPairs count="few">{0} brògan</pluralMinimalPairs>
 			<pluralMinimalPairs count="other">{0} bròg</pluralMinimalPairs>
+			<ordinalMinimalPairs ordinal="few">Tionndaidh ris an làimh dheas aig an {0}s gobhal.</ordinalMinimalPairs>
+			<ordinalMinimalPairs ordinal="one">Tionndaidh ris an làimh dheas aig a’ {0}d ghobhal.</ordinalMinimalPairs>
+			<ordinalMinimalPairs ordinal="other">Tionndaidh ris an làimh dheas aig a’ {0}mh gobhal.</ordinalMinimalPairs>
+			<ordinalMinimalPairs ordinal="two">Tionndaidh ris an làimh dheas aig an {0}na gobhal.</ordinalMinimalPairs>
 		</minimalPairs>
 	</numbers>
 	<units>
@@ -11293,7 +11297,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="few">{0} boillsgeachdan-grèine</unitPattern>
 				<unitPattern count="other">{0} boillsgeachd-ghrèine</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>tunna meatrach</displayName>
 				<unitPattern count="one">{0} tunna meatrach</unitPattern>
 				<unitPattern count="two">{0} thunna meatrach</unitPattern>
@@ -12557,7 +12561,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="light-solar-luminosity">
 				<displayName>boillsgeachd-ghrèine</displayName>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>t</displayName>
 				<unitPattern count="one">{0} t</unitPattern>
 				<unitPattern count="two">{0} t</unitPattern>
@@ -13865,7 +13869,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="few">{0}L☉</unitPattern>
 				<unitPattern count="other">{0}L☉</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>t</displayName>
 				<unitPattern count="one">{0}t</unitPattern>
 				<unitPattern count="two">{0}t</unitPattern>
@@ -14641,6 +14645,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</typographicNames>
 	<personNames>
 		<nameOrderLocales order="givenFirst">und gd</nameOrderLocales>
+		<nameOrderLocales order="surnameFirst">ko vi yue zh</nameOrderLocales>
 		<initialPattern type="initial">{0}.</initialPattern>
 		<initialPattern type="initialSequence">{0} {1}</initialPattern>
 		<personName order="givenFirst" length="long" usage="referring" formality="formal">
@@ -14761,7 +14766,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</personName>
 		<personName order="sorting" length="medium" usage="referring" formality="formal">
 			<namePattern>{surname} {surname2-initial}, {prefix} {given} {given2-initial}</namePattern>
-			<namePattern alt="1">{surname} {surname2-initial}, {prefix} {given} {given2-initial}</namePattern>
+			<namePattern alt="1">{surname}, {prefix} {given} {given2-initial}</namePattern>
 		</personName>
 		<personName order="sorting" length="medium" usage="referring" formality="informal">
 			<namePattern>{given-informal} {given2} {suffix}</namePattern>
@@ -14769,7 +14774,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</personName>
 		<personName order="sorting" length="short" usage="referring" formality="formal">
 			<namePattern>{surname} {surname2-initial}, {given-initial} {given2-initial}</namePattern>
-			<namePattern alt="1">{surname} {surname2-initial}, {given-initial} {given2-initial}</namePattern>
+			<namePattern alt="1">{surname}, {given-initial} {given2-initial}</namePattern>
 		</personName>
 		<personName order="sorting" length="short" usage="referring" formality="informal">
 			<namePattern>{given-informal} {given2-initial}</namePattern>

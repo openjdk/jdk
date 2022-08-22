@@ -7567,7 +7567,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} సోలార్ ల్యూమినోసిటీ</unitPattern>
 				<unitPattern count="other">{0} సోలార్ ల్యూమినోసైటైస్</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>మెట్రిక్ టన్నులు</displayName>
 				<unitPattern count="one">{0} మెట్రిక్ టన్ను</unitPattern>
 				<unitPattern count="other">{0} మెట్రిక్ టన్నులు</unitPattern>
@@ -8578,7 +8578,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="light-solar-luminosity">
 				<displayName>సోలార్ ల్యూమినోసైటైస్</displayName>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>ట</displayName>
 				<unitPattern count="one">{0} ట</unitPattern>
 				<unitPattern count="other">{0} ట</unitPattern>
@@ -9660,8 +9660,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<featureName type="zero">కత్తిరించబడిన సున్నా</featureName>
 	</typographicNames>
 	<personNames>
-		<nameOrderLocales order="givenFirst">und te</nameOrderLocales>
-		<nameOrderLocales order="surnameFirst">ja ko zh</nameOrderLocales>
+		<nameOrderLocales order="givenFirst">und</nameOrderLocales>
+		<nameOrderLocales order="surnameFirst">ko si ta te vi yue zh</nameOrderLocales>
 		<foreignSpaceReplacement xml:space="preserve"> </foreignSpaceReplacement>
 		<initialPattern type="initial">{0}.</initialPattern>
 		<initialPattern type="initialSequence">{0} {1}</initialPattern>

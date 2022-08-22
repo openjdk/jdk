@@ -12112,7 +12112,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="light-solar-luminosity">
 				<displayName>saulės šviesis</displayName>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<gender>feminine</gender>
 				<displayName>metrinės tonos</displayName>
 				<unitPattern count="one">{0} metrinė tona</unitPattern>
@@ -14104,7 +14104,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} lm</unitPattern>
 				<unitPattern count="other">{0} lm</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>mt</displayName>
 				<unitPattern count="one">{0} mt</unitPattern>
 				<unitPattern count="few">{0} mt</unitPattern>
@@ -15333,7 +15333,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	</typographicNames>
 	<personNames>
 		<nameOrderLocales order="givenFirst">und lt</nameOrderLocales>
-		<nameOrderLocales order="surnameFirst">hu ja ko vi yue zh</nameOrderLocales>
+		<nameOrderLocales order="surnameFirst">ko vi yue zh</nameOrderLocales>
 		<personName order="givenFirst" length="long" usage="referring" formality="formal">
 			<namePattern>{suffix} {prefix} {given} {given2} {surname} {surname2}</namePattern>
 		</personName>

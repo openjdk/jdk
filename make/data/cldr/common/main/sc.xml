@@ -7038,7 +7038,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} luminosidade solare</unitPattern>
 				<unitPattern count="other">{0} luminosidades solares</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>tonnelladas mètricas</displayName>
 				<unitPattern count="one">{0} tonnellada mètrica</unitPattern>
 				<unitPattern count="other">{0} tonnelladas mètricas</unitPattern>
@@ -8211,7 +8211,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0}L☉</unitPattern>
 				<unitPattern count="other">{0}L☉</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<unitPattern count="one">{0}t</unitPattern>
 				<unitPattern count="other">{0}t</unitPattern>
 			</unit>
@@ -8738,6 +8738,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</typographicNames>
 	<personNames>
 		<nameOrderLocales order="givenFirst">und sc</nameOrderLocales>
+		<nameOrderLocales order="surnameFirst">ko vi yue zh</nameOrderLocales>
 		<personName order="givenFirst" length="long" usage="referring" formality="formal">
 			<namePattern>{prefix} {given} {given2} {surname} {surname2}</namePattern>
 		</personName>

@@ -3361,8 +3361,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<featureName type="tnum">表格式數字</featureName>
 	</typographicNames>
 	<personNames>
-		<nameOrderLocales order="givenFirst">und en</nameOrderLocales>
-		<nameOrderLocales order="surnameFirst">ja ko zh</nameOrderLocales>
+		<nameOrderLocales order="givenFirst">und</nameOrderLocales>
 		<personName order="givenFirst" length="long" usage="referring" formality="formal">
 			<namePattern>{given} {given2} {surname} {suffix}</namePattern>
 		</personName>

@@ -8247,7 +8247,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ಸೌರ ಪ್ರಕಾಶಗಳು</unitPattern>
 				<unitPattern count="other">{0} ಸೌರ ಪ್ರಕಾಶಗಳು</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<gender>neuter</gender>
 				<displayName>ಮೆಟ್ರಿಕ್‌‌ ಟನ್‌ಗಳು</displayName>
 				<unitPattern count="one">{0} ಮೆಟ್ರಿಕ್‌ ಟನ್‌</unitPattern>
@@ -9608,7 +9608,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="light-solar-luminosity">
 				<displayName>ಸೌರ ಪ್ರಕಾಶಗಳು</displayName>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>ಟ</displayName>
 				<unitPattern count="one">{0} ಟ</unitPattern>
 				<unitPattern count="other">{0} ಟ</unitPattern>
@@ -10539,7 +10539,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="light-solar-luminosity">
 				<displayName>L☉</displayName>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<unitPattern count="one">{0}ಟ</unitPattern>
 				<unitPattern count="other">{0}ಟ</unitPattern>
 			</unit>
@@ -11074,7 +11074,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	</typographicNames>
 	<personNames>
 		<nameOrderLocales order="givenFirst">und kn</nameOrderLocales>
-		<nameOrderLocales order="surnameFirst">ja ko zh</nameOrderLocales>
+		<nameOrderLocales order="surnameFirst">ko si ta te vi yue zh</nameOrderLocales>
 		<sampleName item="givenOnly">
 			<nameField type="given">ಸಿನ್‌ಬಾದ್</nameField>
 		</sampleName>

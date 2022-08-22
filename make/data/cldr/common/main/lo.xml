@@ -7858,7 +7858,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ຄວາມ​ແຈ້ງດວງ​ຕາ​ເວັນ</displayName>
 				<unitPattern count="other">{0} ຄວາມ​ແຈ້ງດວງ​ຕາ​ເວັນ</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>t</displayName>
 				<unitPattern count="other">{0} t</unitPattern>
 			</unit>
@@ -8573,7 +8573,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>lux</displayName>
 				<unitPattern count="other">{0} lx</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>t</displayName>
 				<unitPattern count="other">{0} t</unitPattern>
 			</unit>
@@ -9299,8 +9299,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<featureName type="zero">ເລກສູນມີຂີດຂ້າ</featureName>
 	</typographicNames>
 	<personNames>
-		<nameOrderLocales order="givenFirst">und en lo</nameOrderLocales>
-		<nameOrderLocales order="surnameFirst">ja ko zh</nameOrderLocales>
+		<nameOrderLocales order="givenFirst">und lo</nameOrderLocales>
+		<nameOrderLocales order="surnameFirst">ko vi yue zh</nameOrderLocales>
 		<personName order="givenFirst" length="long" usage="referring" formality="formal">
 			<namePattern>{suffix} {given} {given2} {surname}</namePattern>
 		</personName>

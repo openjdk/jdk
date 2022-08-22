@@ -2359,4 +2359,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<styleName type="slnt" subtype="24" draft="unconfirmed">ᱰᱷᱮᱨ ᱛᱤᱨᱪᱷᱟᱹ</styleName>
 		<styleName type="wght" subtype="380" draft="unconfirmed">ᱯᱚᱛᱚᱵ</styleName>
 	</typographicNames>
+	<personNames>
+		<nameOrderLocales order="givenFirst">und sat</nameOrderLocales>
+		<nameOrderLocales order="surnameFirst">ko vi yue zh</nameOrderLocales>
+	</personNames>
 </ldml>

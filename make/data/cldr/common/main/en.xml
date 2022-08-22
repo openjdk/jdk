@@ -205,7 +205,7 @@ annotations.
 			<language type="fa_AF">Dari</language>
 			<language type="fan">Fang</language>
 			<language type="fat">Fanti</language>
-			<language type="ff">Fulah</language>
+			<language type="ff">Fula</language>
 			<language type="fi">Finnish</language>
 			<language type="fil">Filipino</language>
 			<language type="fit">Tornedalen Finnish</language>
@@ -530,7 +530,7 @@ annotations.
 			<language type="rwk">Rwa</language>
 			<language type="sa">Sanskrit</language>
 			<language type="sad">Sandawe</language>
-			<language type="sah">Sakha</language>
+			<language type="sah">Yakut</language>
 			<language type="sam">Samaritan Aramaic</language>
 			<language type="saq">Samburu</language>
 			<language type="sas">Sasak</language>
@@ -1310,6 +1310,7 @@ annotations.
 			<key type="lw">Line Breaks In Words Setting</key>
 			<key type="m0">Transform Rules</key>
 			<key type="ms">Measurement System</key>
+			<key type="mu">Measurement Unit</key>
 			<key type="numbers">Numbers</key>
 			<key type="rg">Region For Supplemental Data</key>
 			<key type="s0">Transform Source</key>
@@ -1501,6 +1502,9 @@ annotations.
 			<type key="ms" type="metric">Metric System</type>
 			<type key="ms" type="uksystem">Imperial Measurement System</type>
 			<type key="ms" type="ussystem">US Measurement System</type>
+			<type key="mu" type="celsius">Celsius</type>
+			<type key="mu" type="fahrenhe">Fahrenheit</type>
+			<type key="mu" type="kelvin">Kelvin</type>
 			<type key="numbers" type="adlm">Adlam Digits</type>
 			<type key="numbers" type="ahom">Ahom Digits</type>
 			<type key="numbers" type="arab">Arabic-Indic Digits</type>
@@ -6866,7 +6870,7 @@ annotations.
 				<unitPattern count="one">{0} solar luminosity</unitPattern>
 				<unitPattern count="other">{0} solar luminosities</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>metric tons</displayName>
 				<unitPattern count="one">{0} metric ton</unitPattern>
 				<unitPattern count="other">{0} metric tons</unitPattern>
@@ -7799,7 +7803,7 @@ annotations.
 				<unitPattern count="one">{0} L☉</unitPattern>
 				<unitPattern count="other">{0} L☉</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>t</displayName>
 				<unitPattern count="one">{0} t</unitPattern>
 				<unitPattern count="other">{0} t</unitPattern>
@@ -8686,7 +8690,7 @@ annotations.
 				<unitPattern count="one">{0}L☉</unitPattern>
 				<unitPattern count="other">{0}L☉</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>t</displayName>
 				<unitPattern count="one">{0}t</unitPattern>
 				<unitPattern count="other">{0}t</unitPattern>
@@ -9290,7 +9294,7 @@ annotations.
 	</typographicNames>
 	<personNames>
 		<nameOrderLocales order="givenFirst">und en</nameOrderLocales>
-		<nameOrderLocales order="surnameFirst">ja ko zh</nameOrderLocales>
+		<nameOrderLocales order="surnameFirst">ja ko vi yue zh</nameOrderLocales>
 		<initialPattern type="initial">{0}.</initialPattern>
 		<initialPattern type="initialSequence">{0} {1}</initialPattern>
 		<personName order="givenFirst" length="long" usage="referring" formality="formal">

@@ -9080,7 +9080,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>太阳光度</displayName>
 				<unitPattern count="other">{0} 太阳光度</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>公吨</displayName>
 				<unitPattern count="other">{0} 公吨</unitPattern>
 			</unit>
@@ -9939,7 +9939,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>太阳光度</displayName>
 				<unitPattern count="other">{0} 太阳光度</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>公吨</displayName>
 				<unitPattern count="other">{0} 公吨</unitPattern>
 			</unit>

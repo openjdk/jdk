@@ -1743,7 +1743,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName draft="unconfirmed">luminositats solaras</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} luminositats solaras</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName draft="unconfirmed">tonas metricas</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} tonas metricas</unitPattern>
 			</unit>

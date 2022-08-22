@@ -8607,7 +8607,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ηλιακή φωτεινότητα</unitPattern>
 				<unitPattern count="other">{0} ηλιακές φωτεινότητες</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<gender>masculine</gender>
 				<displayName>τόνοι</displayName>
 				<unitPattern count="one">{0} τόνος</unitPattern>
@@ -9798,7 +9798,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} L☉</unitPattern>
 				<unitPattern count="other">{0} L☉</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>τ.</displayName>
 				<unitPattern count="one">{0} τ.</unitPattern>
 				<unitPattern count="other">{0} τ.</unitPattern>
@@ -10910,8 +10910,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<featureName type="zero">μηδέν με γραμμή</featureName>
 	</typographicNames>
 	<personNames>
-		<nameOrderLocales order="givenFirst">und en</nameOrderLocales>
-		<nameOrderLocales order="surnameFirst">hu ja ko vi yue zh el</nameOrderLocales>
+		<nameOrderLocales order="givenFirst">und el</nameOrderLocales>
+		<nameOrderLocales order="surnameFirst">ko vi yue zh</nameOrderLocales>
 		<personName order="givenFirst" length="long" usage="referring" formality="informal">
 			<namePattern>{given-informal} {surname}</namePattern>
 		</personName>

@@ -5632,7 +5632,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>luminositas srengenge</displayName>
 				<unitPattern count="other">{0} luminositas srengenge</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>metrik ton</displayName>
 				<unitPattern count="other">{0} metrik ton</unitPattern>
 			</unit>
@@ -6342,7 +6342,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="light-solar-luminosity">
 				<displayName>luminositas srengenge</displayName>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>metrik ton</displayName>
 				<unitPattern count="other">{0} metrik ton</unitPattern>
 			</unit>
@@ -6725,7 +6725,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>mm</displayName>
 				<unitPattern count="other">{0} mm</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<unitPattern count="other">{0}t</unitPattern>
 			</unit>
 			<unit type="mass-kilogram">
@@ -7018,6 +7018,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</typographicNames>
 	<personNames>
 		<nameOrderLocales order="givenFirst">und jv</nameOrderLocales>
+		<nameOrderLocales order="surnameFirst">ko vi yue zh</nameOrderLocales>
 		<initialPattern type="initial">{0}.</initialPattern>
 		<initialPattern type="initialSequence">{0} {1}</initialPattern>
 		<personName order="givenFirst" length="long" usage="referring" formality="formal">

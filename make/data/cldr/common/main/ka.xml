@@ -7203,7 +7203,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} მზის სხივიერობა</unitPattern>
 				<unitPattern count="other">{0} მზის სხივიერობა</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>მეტრული ტონა</displayName>
 				<unitPattern count="one">{0} მეტრული ტონა</unitPattern>
 				<unitPattern count="other">{0} მეტრული ტონა</unitPattern>
@@ -8231,7 +8231,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ☉ სხივიერობა</unitPattern>
 				<unitPattern count="other">{0} ☉ სხივიერობა</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>მტ</displayName>
 				<unitPattern count="one">{0} მტ</unitPattern>
 				<unitPattern count="other">{0} მტ</unitPattern>
@@ -9172,5 +9172,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	</typographicNames>
 	<personNames>
 		<nameOrderLocales order="givenFirst">und ka</nameOrderLocales>
+		<nameOrderLocales order="surnameFirst">ko vi yue zh</nameOrderLocales>
 	</personNames>
 </ldml>

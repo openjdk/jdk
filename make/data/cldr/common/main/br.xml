@@ -12819,7 +12819,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="many">{0} a lumenoù</unitPattern>
 				<unitPattern count="other">{0} lumen</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>tonennoù metrek</displayName>
 				<unitPattern count="one">{0} donenn vetrek</unitPattern>
 				<unitPattern count="two">{0} donenn vetrek</unitPattern>
@@ -14163,7 +14163,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="many">{0} lx</unitPattern>
 				<unitPattern count="other">{0} lx</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>t</displayName>
 				<unitPattern count="one">{0} t</unitPattern>
 				<unitPattern count="two">{0} t</unitPattern>
@@ -15491,7 +15491,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="many">{0}L☉</unitPattern>
 				<unitPattern count="other">{0}L☉</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>t</displayName>
 				<unitPattern count="one">{0}t</unitPattern>
 				<unitPattern count="two">{0}t</unitPattern>
@@ -16252,6 +16252,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<featureName type="zero">teskad goullo</featureName>
 	</typographicNames>
 	<personNames>
+		<nameOrderLocales order="givenFirst">und br</nameOrderLocales>
+		<nameOrderLocales order="surnameFirst">ko vi yue zh</nameOrderLocales>
 		<sampleName item="givenOnly">
 			<nameField type="given">Yann</nameField>
 		</sampleName>

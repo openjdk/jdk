@@ -1887,4 +1887,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<nostr>юк:юк</nostr>
 		</messages>
 	</posix>
+	<personNames>
+		<nameOrderLocales order="givenFirst">und tt</nameOrderLocales>
+		<nameOrderLocales order="surnameFirst">ja ko vi yue zh</nameOrderLocales>
+	</personNames>
 </ldml>

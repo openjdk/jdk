@@ -6655,7 +6655,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ସୋଲର ଲ୍ୟୁମିନୋସିଟି</unitPattern>
 				<unitPattern count="other">{0} ସୋଲର ଲ୍ୟୁମିନୋସିଟିସ</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>ମେଟ୍ରିକ୍ ଟନ୍</displayName>
 				<unitPattern count="one">{0} ମେଟ୍ରିକ୍ ଟନ୍</unitPattern>
 				<unitPattern count="other">{0} ମେଟ୍ରିକ୍ ଟନ୍</unitPattern>
@@ -7548,7 +7548,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="light-solar-luminosity">
 				<displayName>ସୋଲର ଲ୍ୟୁମିନୋସିଟିସ</displayName>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>ଟ</displayName>
 				<unitPattern count="one">{0} ଟ</unitPattern>
 				<unitPattern count="other">{0} ଟ</unitPattern>
@@ -8185,7 +8185,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="length-fathom">
 				<displayName>ଫେଦମ୍</displayName>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>ମେଟ୍ରିକଟନ</displayName>
 				<unitPattern count="one">{0} ମେଟ୍ରିକଟନ</unitPattern>
 				<unitPattern count="other">{0} ମେଟ୍ରିକଟନ</unitPattern>
@@ -8574,7 +8574,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	</typographicNames>
 	<personNames>
 		<nameOrderLocales order="givenFirst">und or</nameOrderLocales>
-		<nameOrderLocales order="surnameFirst">ja ko zh</nameOrderLocales>
+		<nameOrderLocales order="surnameFirst">ko si ta te vi yue zh</nameOrderLocales>
 		<personName order="givenFirst" length="long" usage="referring" formality="formal">
 			<namePattern>{given} {given2} {surname} {suffix}</namePattern>
 		</personName>

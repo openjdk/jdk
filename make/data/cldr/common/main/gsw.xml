@@ -2819,9 +2819,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="other">Maurizius-Rupie</displayName>
 			</currency>
 			<currency type="MVR">
-				<displayName>Rufiyaa</displayName>
-				<displayName count="one">Rufiyaa</displayName>
-				<displayName count="other">Rufiyaa</displayName>
+				<displayName>Malediven-Rufiyaa</displayName>
+				<displayName count="one">Malediven-Rufiyaa</displayName>
+				<displayName count="other">Malediven-Rupien</displayName>
 			</currency>
 			<currency type="MWK">
 				<displayName>Malawi-Kwacha</displayName>

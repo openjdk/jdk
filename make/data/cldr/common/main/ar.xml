@@ -6190,7 +6190,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<currencyFormats numberSystem="arab">
 			<currencyFormatLength>
 				<currencyFormat type="standard">
-					<pattern>#,##0.00 ¤</pattern>
+					<pattern>‏#,##0.00 ¤</pattern>
 					<pattern alt="noCurrency">#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
@@ -6204,12 +6204,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<currencyFormats numberSystem="latn">
 			<currencyFormatLength>
 				<currencyFormat type="standard">
-					<pattern>¤ #,##0.00</pattern>
+					<pattern>‏¤ #,##0.00;‏-‏¤ #,##0.00</pattern>
 					<pattern alt="noCurrency" draft="provisional">#,##0.00</pattern>
 				</currencyFormat>
 				<currencyFormat type="accounting">
-					<pattern>¤#,##0.00;(¤#,##0.00)</pattern>
-					<pattern alt="alphaNextToNumber">#,##0.00 ¤;(#,##0.00 ¤)</pattern>
+					<pattern>؜¤#,##0.00;(؜¤#,##0.00)</pattern>
+					<pattern alt="alphaNextToNumber">؜#,##0.00 ¤;(؜#,##0.00 ¤)</pattern>
 					<pattern alt="noCurrency">#,##0.00;(#,##0.00)</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
@@ -9768,7 +9768,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} ضياء شمسي</unitPattern>
 				<unitPattern count="other">{0} ضياء شمسي</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<gender>masculine</gender>
 				<displayName>طن متري</displayName>
 				<unitPattern count="zero">{0} طن متري</unitPattern>
@@ -11567,7 +11567,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} ضياء شمسي</unitPattern>
 				<unitPattern count="other">{0} ضياء شمسي</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>ط.م</displayName>
 				<unitPattern count="zero">{0} ط.م</unitPattern>
 				<unitPattern count="one">{0} ط.م</unitPattern>
@@ -13180,6 +13180,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	</typographicNames>
 	<personNames>
 		<nameOrderLocales order="givenFirst">und ar</nameOrderLocales>
+		<nameOrderLocales order="surnameFirst">ko vi yue zh</nameOrderLocales>
 		<foreignSpaceReplacement xml:space="preserve"> </foreignSpaceReplacement>
 		<initialPattern type="initial">{0}</initialPattern>
 		<initialPattern type="initialSequence">{0}. {1}.</initialPattern>

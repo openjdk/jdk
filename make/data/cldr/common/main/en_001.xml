@@ -15,12 +15,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	</identity>
 	<localeDisplayNames>
 		<languages>
+			<language type="bla">Siksika</language>
 			<language type="mus" draft="contributed">Creek</language>
 			<language type="nds_NL">West Low German</language>
-			<language type="sah">Yakut</language>
 		</languages>
 		<territories>
+			<territory type="BL">St Barthélemy</territory>
+			<territory type="KN">St Kitts &amp; Nevis</territory>
+			<territory type="LC">St Lucia</territory>
+			<territory type="MF">St Martin</territory>
+			<territory type="PM">St Pierre &amp; Miquelon</territory>
+			<territory type="SH">St Helena</territory>
 			<territory type="UM">US Outlying Islands</territory>
+			<territory type="VC">St Vincent &amp; the Grenadines</territory>
 			<territory type="VI">US Virgin Islands</territory>
 		</territories>
 		<keys>
@@ -545,6 +552,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<field type="weekOfMonth-narrow">
 				<displayName>wk of mo</displayName>
 			</field>
+			<field type="day-narrow">
+				<relativeTime type="future">
+					<relativeTimePattern count="one">in {0} day</relativeTimePattern>
+					<relativeTimePattern count="other">in {0} days</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} day ago</relativeTimePattern>
+					<relativeTimePattern count="other">{0} days ago</relativeTimePattern>
+				</relativeTime>
+			</field>
 			<field type="dayOfYear-short">
 				<displayName>day of yr</displayName>
 			</field>
@@ -728,11 +745,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</field>
 		</fields>
 		<timeZoneNames>
+			<zone type="Australia/Currie">
+				<exemplarCity>Currie</exemplarCity>
+			</zone>
 			<zone type="America/St_Barthelemy">
 				<exemplarCity>St Barthélemy</exemplarCity>
 			</zone>
 			<zone type="America/St_Johns">
 				<exemplarCity>St John’s</exemplarCity>
+			</zone>
+			<zone type="Pacific/Enderbury">
+				<exemplarCity>Enderbury</exemplarCity>
 			</zone>
 			<zone type="America/St_Kitts">
 				<exemplarCity>St Kitts</exemplarCity>
@@ -920,7 +943,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<perUnitPattern>{0} per square centimetre</perUnitPattern>
 			</unit>
 			<unit type="concentr-karat">
-				<displayName>carat</displayName>
+				<displayName>carats</displayName>
 				<unitPattern count="one">{0} carat</unitPattern>
 				<unitPattern count="other">{0} carats</unitPattern>
 			</unit>
@@ -1039,7 +1062,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="light-lumen">
 				<unitPattern count="other">{0} lumens</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>tonnes</displayName>
 				<unitPattern count="one">{0} tonne</unitPattern>
 				<unitPattern count="other">{0} tonnes</unitPattern>
@@ -1146,6 +1169,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>US fluid ounces</displayName>
 				<unitPattern count="one">{0} US fluid ounce</unitPattern>
 				<unitPattern count="other">{0} US fluid ounces</unitPattern>
+			</unit>
+			<unit type="volume-fluid-ounce-imperial">
+				<displayName>fluid ounces</displayName>
+				<unitPattern count="one">{0} fluid ounce</unitPattern>
+				<unitPattern count="other">{0} fluid ounces</unitPattern>
 			</unit>
 			<unit type="volume-dessert-spoon">
 				<displayName>US dessertspoon</displayName>
@@ -1303,6 +1331,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} US fl oz</unitPattern>
 				<unitPattern count="other">{0} US fl oz</unitPattern>
 			</unit>
+			<unit type="volume-fluid-ounce-imperial">
+				<displayName>fl oz</displayName>
+				<unitPattern count="one">{0} fl oz</unitPattern>
+				<unitPattern count="other">{0} fl oz</unitPattern>
+			</unit>
 			<unit type="volume-dessert-spoon">
 				<displayName>US dstspn</displayName>
 				<unitPattern count="one">{0} US dstspn</unitPattern>
@@ -1323,6 +1356,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} drams</unitPattern>
 			</unit>
 			<unit type="volume-jigger">
+				<unitPattern count="one">{0} jigger</unitPattern>
 				<unitPattern count="other">{0} jiggers</unitPattern>
 			</unit>
 			<unit type="volume-pinch">
@@ -1438,6 +1472,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}gal</unitPattern>
 				<perUnitPattern>{0}/gal</perUnitPattern>
 			</unit>
+			<unit type="volume-fluid-ounce">
+				<displayName>US fl oz</displayName>
+				<unitPattern count="one">{0}US fl oz</unitPattern>
+				<unitPattern count="other">{0}US fl oz</unitPattern>
+			</unit>
 			<unit type="volume-fluid-ounce-imperial">
 				<displayName>fl oz</displayName>
 				<unitPattern count="one">{0}fl oz</unitPattern>
@@ -1492,4 +1531,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<characterLabelPattern type="scripts">scripts – {0}</characterLabelPattern>
 		<characterLabel type="math_symbols">maths symbol</characterLabel>
 	</characterLabels>
+	<personNames>
+		<sampleName item="full">
+			<nameField type="prefix">Prof. Dr</nameField>
+		</sampleName>
+	</personNames>
 </ldml>

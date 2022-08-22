@@ -6196,7 +6196,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ဆိုလာ လူမီနိုစီတီးစ်</displayName>
 				<unitPattern count="other">{0} ဆိုလာ လူမီနိုစီးတီးစ်</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>မက်ထရစ်တန်</displayName>
 				<unitPattern count="other">{0} မက်ထရစ်တန်</unitPattern>
 			</unit>
@@ -6955,7 +6955,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="light-solar-luminosity">
 				<displayName>ဆိုလာ လူမီနိုစီးတီးစ်</displayName>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>မက်ထရစ်တန်</displayName>
 				<unitPattern count="other">{0} t</unitPattern>
 			</unit>
@@ -7773,7 +7773,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	</typographicNames>
 	<personNames>
 		<nameOrderLocales order="givenFirst">und my</nameOrderLocales>
-		<nameOrderLocales order="surnameFirst">ja ko zh</nameOrderLocales>
+		<nameOrderLocales order="surnameFirst">ko si ta te vi yue zh</nameOrderLocales>
 		<foreignSpaceReplacement xml:space="preserve"> </foreignSpaceReplacement>
 		<personName order="surnameFirst" length="long" usage="referring" formality="formal">
 			<namePattern>{surname} {given} {given2} {suffix}</namePattern>

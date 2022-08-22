@@ -5908,7 +5908,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</listPattern>
 	</listPatterns>
 	<personNames>
-		<nameOrderLocales order="givenFirst">qu und</nameOrderLocales>
+		<nameOrderLocales order="givenFirst">und qu</nameOrderLocales>
+		<nameOrderLocales order="surnameFirst">ko vi yue zh</nameOrderLocales>
 		<personName order="givenFirst" length="long" usage="referring" formality="formal">
 			<namePattern>{prefix} {given} {given2} {surname} {surname2}</namePattern>
 		</personName>

@@ -8254,7 +8254,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<compoundUnitPattern1 count="two">{0} בריבוע</compoundUnitPattern1>
 				<compoundUnitPattern1 count="two" gender="feminine">{0} בריבוע</compoundUnitPattern1>
 				<compoundUnitPattern1 count="many">{0} בריבוע</compoundUnitPattern1>
-				<compoundUnitPattern1 count="many" gender="feminine">{0} בריבוע</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other">{0} בריבוע</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other" gender="feminine">{0} בריבוע</compoundUnitPattern1>
 			</compoundUnit>
@@ -8264,7 +8263,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<compoundUnitPattern1 count="two">{0} מעוקב</compoundUnitPattern1>
 				<compoundUnitPattern1 count="two" gender="feminine">{0} מעוקב</compoundUnitPattern1>
 				<compoundUnitPattern1 count="many">{0} מעוקב</compoundUnitPattern1>
-				<compoundUnitPattern1 count="many" gender="feminine">{0} מעוקב</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other">{0} מעוקב</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other" gender="feminine">{0} מעוקב</compoundUnitPattern1>
 			</compoundUnit>
@@ -9111,7 +9109,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="light-solar-luminosity">
 				<displayName>אנרגיה סולארית ביחידת זמן</displayName>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<gender>masculine</gender>
 				<displayName>טון מטרי</displayName>
 				<unitPattern count="one">טון מטרי אחד</unitPattern>
@@ -10425,7 +10423,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} lx</unitPattern>
 				<unitPattern count="other">{0} lx</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>t</displayName>
 				<unitPattern count="one">{0} t</unitPattern>
 				<unitPattern count="two">{0} t</unitPattern>
@@ -11277,7 +11275,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} נק׳</unitPattern>
 				<unitPattern count="other">{0} נק'</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>t</displayName>
 				<unitPattern count="one">{0} t</unitPattern>
 				<unitPattern count="two">{0} t</unitPattern>
@@ -11727,7 +11725,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<featureName type="zero">אפס עם קו חוצה</featureName>
 	</typographicNames>
 	<personNames>
-		<nameOrderLocales order="givenFirst">he und</nameOrderLocales>
+		<nameOrderLocales order="givenFirst">und he</nameOrderLocales>
+		<nameOrderLocales order="surnameFirst">ko vi yue zh</nameOrderLocales>
 		<personName order="givenFirst" length="long" usage="referring" formality="informal">
 			<namePattern>{given-informal} {surname}</namePattern>
 		</personName>

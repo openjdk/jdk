@@ -20,7 +20,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="my" alt="variant">Myanmar language</language>
 			<language type="nds_NL">West Low German</language>
 			<language type="ro_MD">Moldovan</language>
-			<language type="sah">Yakut</language>
 			<language type="und">unknown language</language>
 			<language type="zh_Hans">simplified Chinese</language>
 			<language type="zh_Hans" alt="long">simplified Mandarin Chinese</language>
@@ -1806,7 +1805,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} lumen</unitPattern>
 				<unitPattern count="other">{0} lumens</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>tonnes</displayName>
 				<unitPattern count="one">{0} tonne</unitPattern>
 				<unitPattern count="other">{0} tonnes</unitPattern>

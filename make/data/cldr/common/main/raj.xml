@@ -19,6 +19,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<script type="Deva">देवनागरी</script>
 		</scripts>
 		<territories>
+			<territory type="IN">भारत</territory>
 			<territory type="ZZ">अज्ञात</territory>
 		</territories>
 		<measurementSystemNames>

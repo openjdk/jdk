@@ -7978,7 +7978,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} lluminositat solar</unitPattern>
 				<unitPattern count="other">{0} lluminositats solars</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<gender>feminine</gender>
 				<displayName>tones mètriques</displayName>
 				<unitPattern count="one">{0} tona mètrica</unitPattern>
@@ -8949,7 +8949,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="light-solar-luminosity">
 				<displayName>lluminositats solars</displayName>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>t mètriques</displayName>
 				<unitPattern count="one">{0} t mètr.</unitPattern>
 				<unitPattern count="other">{0} t mètr.</unitPattern>
@@ -9549,7 +9549,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="light-solar-luminosity">
 				<displayName>L☉</displayName>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>t mètriques</displayName>
 				<unitPattern count="one">{0} t mètr.</unitPattern>
 				<unitPattern count="other">{0} t mètr.</unitPattern>
@@ -9868,6 +9868,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	</typographicNames>
 	<personNames>
 		<nameOrderLocales order="givenFirst">und ca</nameOrderLocales>
+		<nameOrderLocales order="surnameFirst">ko vi yue zh</nameOrderLocales>
 		<personName order="givenFirst" length="long" usage="referring" formality="formal">
 			<namePattern>{given} {given2} {surname} {surname2} {suffix}</namePattern>
 		</personName>

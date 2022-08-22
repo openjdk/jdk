@@ -11444,7 +11444,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="genitive">{0} солнечной светимости</unitPattern>
 				<unitPattern count="other" case="instrumental">{0} солнечной светимости</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<gender>feminine</gender>
 				<displayName>тонны</displayName>
 				<unitPattern count="one">{0} тонна</unitPattern>
@@ -14310,7 +14310,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} лм</unitPattern>
 				<unitPattern count="other">{0} лм</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>т</displayName>
 				<unitPattern count="one">{0} т</unitPattern>
 				<unitPattern count="few">{0} т</unitPattern>
@@ -15246,7 +15246,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} пкт</unitPattern>
 				<unitPattern count="other">{0} пкт</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>т</displayName>
 				<unitPattern count="one">{0} т</unitPattern>
 				<unitPattern count="few">{0} т</unitPattern>

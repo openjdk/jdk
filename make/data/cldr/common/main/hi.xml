@@ -7682,7 +7682,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} सौर ज्योति</unitPattern>
 				<unitPattern count="other" case="oblique">{0} सौर ज्योति</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<gender>masculine</gender>
 				<displayName>मीट्रिक टन</displayName>
 				<unitPattern count="one">{0} मीट्रिक टन</unitPattern>
@@ -8829,7 +8829,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} lx</unitPattern>
 				<unitPattern count="other">{0} lx</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>मीट्रिक टन</displayName>
 				<unitPattern count="one">{0} मीट्रिक टन</unitPattern>
 				<unitPattern count="other">{0} मी टन</unitPattern>
@@ -9536,7 +9536,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} nmi</unitPattern>
 				<unitPattern count="other">{0} nmi</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<unitPattern count="one">{0} ट</unitPattern>
 				<unitPattern count="other">{0} ट</unitPattern>
 			</unit>
@@ -9966,7 +9966,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	</typographicNames>
 	<personNames>
 		<nameOrderLocales order="givenFirst">und hi</nameOrderLocales>
-		<nameOrderLocales order="surnameFirst">ja ko zh</nameOrderLocales>
+		<nameOrderLocales order="surnameFirst">ko si ta te vi yue zh</nameOrderLocales>
 		<initialPattern type="initial">{0}॰</initialPattern>
 		<personName order="givenFirst" length="long" usage="referring" formality="formal">
 			<namePattern>{prefix} {given} {given2} {surname} {surname2}, {suffix}</namePattern>

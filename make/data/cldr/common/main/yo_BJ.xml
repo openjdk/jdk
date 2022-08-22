@@ -1863,6 +1863,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<featureName type="dlig">ligasɔ̀ ti o fɛ́</featureName>
 	</typographicNames>
 	<personNames>
+		<nameOrderLocales order="surnameFirst"/>
 		<sampleName item="full">
 			<nameField type="prefix">ɔ̀jɔ̀gbɔ́n. omɔ́wé</nameField>
 			<nameField type="surname-prefix">fanú dɛ́ni</nameField>
