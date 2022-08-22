@@ -22,12 +22,16 @@
  *
  */
 
+#include "precompiled.hpp"
+#include "asm/macroAssembler.hpp"
+#include "jvmci/jvmci.hpp"
 #include "jvmci/jvmciCodeInstaller.hpp"
 #include "jvmci/jvmciRuntime.hpp"
 #include "jvmci/jvmciCompilerToVM.hpp"
 #include "jvmci/jvmciJavaClasses.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/jniHandles.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "vmreg_riscv.inline.hpp"
 
@@ -38,15 +42,7 @@ jint CodeInstaller::pd_next_offset(NativeInstruction* inst, jint pc_offset, JVMC
   } else if (inst->is_jump()) {
     return pc_offset + NativeJump::instruction_size;
   } else if (inst->is_movptr()) {
-    return pc_offset + NativeMovConstReg::instruction_size;
-  } else if (NativeInstruction::is_lui_at((address)inst)) {
-    NativeInstruction* nextInst;
-    unsigned offset = 0;
-    do {
-      offset += 1;
-      nextInst = nativeInstruction_at(pc + NativeInstruction::instruction_size * offset);
-    } while (!nextInst->is_call());
-    return pc_offset + NativeInstruction::instruction_size * (offset + 1);
+    return pc_offset + NativeMovConstReg::movptr_instruction_size;
   } else {
     JVMCI_ERROR_0("unsupported type of instruction for call site");
   }
@@ -55,6 +51,7 @@ jint CodeInstaller::pd_next_offset(NativeInstruction* inst, jint pc_offset, JVMC
 void CodeInstaller::pd_patch_OopConstant(int pc_offset, Handle& obj, bool compressed, JVMCI_TRAPS) {
   address pc = _instructions->start() + pc_offset;
   jobject value = JNIHandles::make_local(obj());
+  MacroAssembler::patch_oop(pc, cast_from_oop<address>(obj()));
   int oop_index = _oop_recorder->find_index(value);
   RelocationHolder rspec = oop_Relocation::spec(oop_index);
   _instructions->relocate(pc, rspec);
@@ -64,6 +61,7 @@ void CodeInstaller::pd_patch_MetaspaceConstant(int pc_offset, HotSpotCompiledCod
   address pc = _instructions->start() + pc_offset;
   if (tag == PATCH_NARROW_KLASS) {
     narrowKlass narrowOop = record_narrow_metadata_reference(_instructions, pc, stream, tag, JVMCI_CHECK);
+    MacroAssembler::pd_patch_instruction_size(pc, (address) (long) narrowOop);
     JVMCI_event_3("relocating (narrow metaspace constant) at " PTR_FORMAT "/0x%x", p2i(pc), narrowOop);
   } else {
     NativeMovConstReg* move = nativeMovConstReg_at(pc);
@@ -90,10 +88,10 @@ void CodeInstaller::pd_relocate_ForeignCall(NativeInstruction* inst, jlong forei
     NativeJump* jump = nativeJump_at(pc);
     jump->set_jump_destination((address) foreign_call_destination);
     _instructions->relocate(jump->instruction_address(), runtime_call_Relocation::spec());
-  } else if (inst->is_call() || NativeInstruction::is_lui_at((address)inst)) {
-    // jalr, lui + jalr;
-    MacroAssembler::pd_patch_instruction_size((address)inst,
-                                              (address)foreign_call_destination);
+  } else if (inst->is_movptr()) {
+    NativeMovConstReg* movptr = nativeMovConstReg_at(pc);
+    movptr->set_data((intptr_t) foreign_call_destination);
+    _instructions->relocate(movptr->instruction_address(), runtime_call_Relocation::spec());
   } else {
     JVMCI_ERROR("unknown call or jump instruction at " PTR_FORMAT, p2i(pc));
   }
@@ -117,10 +115,14 @@ VMReg CodeInstaller::get_hotspot_reg(jint jvmci_reg, JVMCI_TRAPS) {
     if (floatRegisterNumber >= 0 && floatRegisterNumber < FloatRegisterImpl::number_of_registers) {
       return as_FloatRegister(floatRegisterNumber)->as_VMReg();
     }
+    jint vectorRegisterNumber = floatRegisterNumber - FloatRegisterImpl::number_of_registers;
+    if (vectorRegisterNumber >= 0 && vectorRegisterNumber - VectorRegisterImpl::number_of_registers) {
+      return as_VectorRegister(vectorRegisterNumber)->as_VMReg();
+    }
     JVMCI_ERROR_NULL("invalid register number: %d", jvmci_reg);
   }
 }
 
 bool CodeInstaller::is_general_purpose_reg(VMReg hotspotRegister) {
-  return !hotspotRegister->is_FloatRegister();
+  return !(hotspotRegister->is_FloatRegister() || hotspotRegister->is_VectorRegister());
 }

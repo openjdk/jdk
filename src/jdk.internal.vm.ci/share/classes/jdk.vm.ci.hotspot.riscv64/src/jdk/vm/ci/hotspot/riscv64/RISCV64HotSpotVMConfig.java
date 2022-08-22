@@ -26,7 +26,12 @@ import jdk.vm.ci.hotspot.HotSpotVMConfigAccess;
 import jdk.vm.ci.hotspot.HotSpotVMConfigStore;
 import jdk.vm.ci.services.Services;
 
-public class RISCV64HotSpotVMConfig extends HotSpotVMConfigAccess {
+/**
+ * Used to access native configuration details.
+ *
+ * All non-static, public fields in this class are so that they can be compiled as constants.
+ */
+class RISCV64HotSpotVMConfig extends HotSpotVMConfigAccess {
 
     RISCV64HotSpotVMConfig(HotSpotVMConfigStore config) {
         super(config);

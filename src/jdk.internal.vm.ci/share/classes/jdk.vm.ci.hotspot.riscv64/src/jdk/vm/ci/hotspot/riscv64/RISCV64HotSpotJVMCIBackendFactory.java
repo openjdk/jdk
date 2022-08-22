@@ -99,8 +99,7 @@ public class RISCV64HotSpotJVMCIBackendFactory implements HotSpotJVMCIBackendFac
     }
 
     private static RegisterConfig createRegisterConfig(RISCV64HotSpotVMConfig config, TargetDescription target) {
-        boolean canUsePlatformRegister = config.linuxOs;
-        return new RISCV64HotSpotRegisterConfig(target, config.useCompressedOops, canUsePlatformRegister);
+        return new RISCV64HotSpotRegisterConfig(target, config.useCompressedOops, config.linuxOs);
     }
 
     protected HotSpotCodeCacheProvider createCodeCache(HotSpotJVMCIRuntime runtime, TargetDescription target, RegisterConfig regConfig) {

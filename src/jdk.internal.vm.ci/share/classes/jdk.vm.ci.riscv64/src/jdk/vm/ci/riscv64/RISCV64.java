@@ -33,6 +33,9 @@ import jdk.vm.ci.code.RegisterArray;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.PlatformKind;
 
+/**
+ * Represents the RISCV64 architecture.
+ */
 public class RISCV64 extends Architecture {
 
     public static final RegisterCategory CPU = new RegisterCategory("CPU");
@@ -280,7 +283,7 @@ public class RISCV64 extends Architecture {
         } else if (category.equals(FP)) {
             return RISCV64Kind.DOUBLE;
         } else if (category.equals(SIMD)) {
-            return RISCV64Kind.V128_QWORD;
+            return RISCV64Kind.V256_QWORD;
         } else {
             return null;
         }

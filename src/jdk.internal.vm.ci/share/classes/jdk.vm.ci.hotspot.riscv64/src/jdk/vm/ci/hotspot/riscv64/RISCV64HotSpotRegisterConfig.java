@@ -27,6 +27,9 @@ import static jdk.vm.ci.riscv64.RISCV64.x1;
 import static jdk.vm.ci.riscv64.RISCV64.x2;
 import static jdk.vm.ci.riscv64.RISCV64.x3;
 import static jdk.vm.ci.riscv64.RISCV64.x4;
+import static jdk.vm.ci.riscv64.RISCV64.x5;
+import static jdk.vm.ci.riscv64.RISCV64.x6;
+import static jdk.vm.ci.riscv64.RISCV64.x7;
 import static jdk.vm.ci.riscv64.RISCV64.x8;
 import static jdk.vm.ci.riscv64.RISCV64.x10;
 import static jdk.vm.ci.riscv64.RISCV64.x11;
@@ -36,6 +39,7 @@ import static jdk.vm.ci.riscv64.RISCV64.x14;
 import static jdk.vm.ci.riscv64.RISCV64.x15;
 import static jdk.vm.ci.riscv64.RISCV64.x16;
 import static jdk.vm.ci.riscv64.RISCV64.x17;
+import static jdk.vm.ci.riscv64.RISCV64.x23;
 import static jdk.vm.ci.riscv64.RISCV64.x27;
 import static jdk.vm.ci.riscv64.RISCV64.f10;
 import static jdk.vm.ci.riscv64.RISCV64.f11;
@@ -52,7 +56,6 @@ import java.util.List;
 import java.util.Set;
 
 import jdk.vm.ci.riscv64.RISCV64;
-import jdk.vm.ci.riscv64.RISCV64.CPUFeature;
 import jdk.vm.ci.code.Architecture;
 import jdk.vm.ci.code.CallingConvention;
 import jdk.vm.ci.code.CallingConvention.Type;
@@ -109,7 +112,7 @@ public class RISCV64HotSpotRegisterConfig implements RegisterConfig {
         return attributesMap.clone();
     }
 
-    private final RegisterArray javaGeneralParameterRegisters = new RegisterArray(x10, x11, x12, x13, x14, x15, x16, x17);
+    private final RegisterArray javaGeneralParameterRegisters = new RegisterArray(x11, x12, x13, x14, x15, x16, x17, x10);
     private final RegisterArray nativeGeneralParameterRegisters = new RegisterArray(x10, x11, x12, x13, x14, x15, x16, x17);
     private final RegisterArray fpParameterRegisters = new RegisterArray(f10, f11, f12, f13, f14, f15, f16, f17);
 
@@ -118,9 +121,14 @@ public class RISCV64HotSpotRegisterConfig implements RegisterConfig {
     public static final Register sp = x2;
     public static final Register gp = x3;
     public static final Register tp = x4;
+    public static final Register t0 = x5;
+    public static final Register t1 = x6;
+    public static final Register t2 = x7;
     public static final Register fp = x8;
+    public static final Register threadRegister = x23;
+    public static final Register heapBaseRegister = x27;
 
-    private static final RegisterArray reservedRegisters = new RegisterArray(zero, ra, sp, gp, tp, fp);
+    private static final RegisterArray reservedRegisters = new RegisterArray(zero, ra, sp, gp, tp, t0, t1, t2, fp);
 
     private static RegisterArray initAllocatable(Architecture arch, boolean reserveForHeapBase) {
         RegisterArray allRegisters = arch.getAvailableValueRegisters();
@@ -133,8 +141,9 @@ public class RISCV64HotSpotRegisterConfig implements RegisterConfig {
                 // skip reserved registers
                 continue;
             }
-            assert !(reg.equals(zero) || reg.equals(ra) || reg.equals(sp) || reg.equals(gp) || reg.equals(tp) || reg.equals(fp));
-            if (reserveForHeapBase && reg.equals(x27)) {
+            assert !(reg.equals(zero) || reg.equals(ra) || reg.equals(sp) || reg.equals(gp) || reg.equals(tp) ||
+                     reg.equals(t0) || reg.equals(t1) || reg.equals(t2) || reg.equals(fp));
+            if (reserveForHeapBase && reg.equals(heapBaseRegister)) {
                 // skip heap base register
                 continue;
             }
@@ -148,6 +157,7 @@ public class RISCV64HotSpotRegisterConfig implements RegisterConfig {
 
     public RISCV64HotSpotRegisterConfig(TargetDescription target, boolean useCompressedOops, boolean linuxOs) {
         this(target, initAllocatable(target.arch, useCompressedOops));
+        assert callerSaved.size() >= allocatable.size();
     }
 
     public RISCV64HotSpotRegisterConfig(TargetDescription target, RegisterArray allocatable) {
@@ -238,6 +248,9 @@ public class RISCV64HotSpotRegisterConfig implements RegisterConfig {
                     if (currentFP < fpParameterRegisters.size()) {
                         Register register = fpParameterRegisters.get(currentFP++);
                         locations[i] = register.asValue(valueKindFactory.getValueKind(kind));
+                    } else if (currentGeneral < generalParameterRegisters.size()) {
+                        Register register = generalParameterRegisters.get(currentGeneral++);
+                        locations[i] = register.asValue(valueKindFactory.getValueKind(kind));
                     }
                     break;
                 default:
@@ -280,7 +293,7 @@ public class RISCV64HotSpotRegisterConfig implements RegisterConfig {
 
     @Override
     public Register getFrameRegister() {
-        return x8;
+        return x2;
     }
 
     @Override
