@@ -34,6 +34,7 @@
 #include "classfile/systemDictionary.hpp"
 #include "oops/klass.hpp"
 #include "oops/oopHandle.hpp"
+#include "utilities/resourceHash.hpp"
 
 
 /*===============================================================================
@@ -108,6 +109,8 @@
 
 class BootstrapInfo;
 class ClassFileStream;
+class ConstantPoolCache;
+class ConstantPoolCacheEntry;
 class Dictionary;
 class DumpTimeClassInfo;
 class DumpTimeSharedClassTable;

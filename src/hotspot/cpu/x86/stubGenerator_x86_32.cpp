@@ -176,7 +176,7 @@ class StubGenerator: public StubCodeGenerator {
     // make sure we have no pending exceptions
     { Label L;
       __ movptr(rcx, thread);
-      __ cmpptr(Address(rcx, Thread::pending_exception_offset()), (int32_t)NULL_WORD);
+      __ cmpptr(Address(rcx, Thread::pending_exception_offset()), NULL_WORD);
       __ jcc(Assembler::equal, L);
       __ stop("StubRoutines::call_stub: entered with pending exception");
       __ bind(L);
@@ -388,7 +388,7 @@ class StubGenerator: public StubCodeGenerator {
     // make sure this code is only executed if there is a pending exception
     { Label L;
       __ get_thread(thread);
-      __ cmpptr(Address(thread, Thread::pending_exception_offset()), (int32_t)NULL_WORD);
+      __ cmpptr(Address(thread, Thread::pending_exception_offset()), NULL_WORD);
       __ jcc(Assembler::notEqual, L);
       __ stop("StubRoutines::forward exception: no pending exception (1)");
       __ bind(L);
@@ -1854,7 +1854,7 @@ class StubGenerator: public StubCodeGenerator {
       __ bind(L1);
       __ stop("broken null klass");
       __ bind(L2);
-      __ cmpptr(dst_klass_addr, (int32_t)NULL_WORD);
+      __ cmpptr(dst_klass_addr, NULL_WORD);
       __ jccb(Assembler::equal, L1);      // this would be broken also
       BLOCK_COMMENT("assert done");
     }
@@ -2204,9 +2204,9 @@ class StubGenerator: public StubCodeGenerator {
 
   // Utility routine for loading a 128-bit key word in little endian format
   // can optionally specify that the shuffle mask is already in an xmmregister
-  void load_key(XMMRegister xmmdst, Register key, int offset, XMMRegister xmm_shuf_mask=NULL) {
+  void load_key(XMMRegister xmmdst, Register key, int offset, XMMRegister xmm_shuf_mask = xnoreg) {
     __ movdqu(xmmdst, Address(key, offset));
-    if (xmm_shuf_mask != NULL) {
+    if (xmm_shuf_mask != xnoreg) {
       __ pshufb(xmmdst, xmm_shuf_mask);
     } else {
       __ pshufb(xmmdst, ExternalAddress(StubRoutines::x86::key_shuffle_mask_addr()));
@@ -2215,14 +2215,14 @@ class StubGenerator: public StubCodeGenerator {
 
   // aesenc using specified key+offset
   // can optionally specify that the shuffle mask is already in an xmmregister
-  void aes_enc_key(XMMRegister xmmdst, XMMRegister xmmtmp, Register key, int offset, XMMRegister xmm_shuf_mask=NULL) {
+  void aes_enc_key(XMMRegister xmmdst, XMMRegister xmmtmp, Register key, int offset, XMMRegister xmm_shuf_mask = xnoreg) {
     load_key(xmmtmp, key, offset, xmm_shuf_mask);
     __ aesenc(xmmdst, xmmtmp);
   }
 
   // aesdec using specified key+offset
   // can optionally specify that the shuffle mask is already in an xmmregister
-  void aes_dec_key(XMMRegister xmmdst, XMMRegister xmmtmp, Register key, int offset, XMMRegister xmm_shuf_mask=NULL) {
+  void aes_dec_key(XMMRegister xmmdst, XMMRegister xmmtmp, Register key, int offset, XMMRegister xmm_shuf_mask = xnoreg) {
     load_key(xmmtmp, key, offset, xmm_shuf_mask);
     __ aesdec(xmmdst, xmmtmp);
   }
@@ -3506,9 +3506,9 @@ class StubGenerator: public StubCodeGenerator {
     const Register d = rbx;
     const Register g = rsi;
     const Register h = rdi;
-    const Register empty = 0; // will never be used, in order not
-                              // to change a signature for crc32c_IPL_Alg2_Alt2
-                              // between 64/32 I'm just keeping it here
+    const Register empty = noreg; // will never be used, in order not
+                                  // to change a signature for crc32c_IPL_Alg2_Alt2
+                                  // between 64/32 I'm just keeping it here
     assert_different_registers(crc, buf, len, d, g, h);
 
     BLOCK_COMMENT("Entry:");
@@ -3948,7 +3948,7 @@ class StubGenerator: public StubCodeGenerator {
     // check for pending exceptions
 #ifdef ASSERT
     Label L;
-    __ cmpptr(Address(java_thread, Thread::pending_exception_offset()), (int32_t)NULL_WORD);
+    __ cmpptr(Address(java_thread, Thread::pending_exception_offset()), NULL_WORD);
     __ jcc(Assembler::notEqual, L);
     __ should_not_reach_here();
     __ bind(L);
@@ -4118,15 +4118,6 @@ class StubGenerator: public StubCodeGenerator {
       StubRoutines::_updateBytesCRC32C = generate_updateBytesCRC32C(supports_clmul);
     }
     if (VM_Version::supports_sse2() && UseLibmIntrinsic && InlineIntrinsics) {
-      if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dsin) ||
-          vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dcos) ||
-          vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dtan)) {
-        StubRoutines::x86::_L_2il0floatpacket_0_adr = (address)StubRoutines::x86::_L_2il0floatpacket_0;
-        StubRoutines::x86::_Pi4Inv_adr = (address)StubRoutines::x86::_Pi4Inv;
-        StubRoutines::x86::_Pi4x3_adr = (address)StubRoutines::x86::_Pi4x3;
-        StubRoutines::x86::_Pi4x4_adr = (address)StubRoutines::x86::_Pi4x4;
-        StubRoutines::x86::_ones_adr = (address)StubRoutines::x86::_ones;
-      }
       if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dexp)) {
         StubRoutines::_dexp = generate_libmExp();
       }

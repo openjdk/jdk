@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -429,7 +429,7 @@ void LoaderConstraintTable::merge_loader_constraints(
 }
 
 
-void LoaderConstraintTable::verify(PlaceholderTable* placeholders) {
+void LoaderConstraintTable::verify() {
   Thread *thread = Thread::current();
   for (int cindex = 0; cindex < table_size(); cindex++) {
     for (LoaderConstraintEntry* probe = bucket(cindex);
@@ -450,7 +450,7 @@ void LoaderConstraintTable::verify(PlaceholderTable* placeholders) {
         } else {
           // If we don't find the class in the dictionary, it
           // has to be in the placeholders table.
-          PlaceholderEntry* entry = placeholders->get_entry(name_hash, name, loader_data);
+          PlaceholderEntry* entry = PlaceholderTable::get_entry(name, loader_data);
 
           // The InstanceKlass might not be on the entry, so the only
           // thing we can check here is whether we were successful in

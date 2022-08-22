@@ -1048,7 +1048,7 @@ void G1CollectedHeap::prepare_heap_for_mutators() {
 }
 
 void G1CollectedHeap::abort_refinement() {
-  if (_hot_card_cache->use_cache()) {
+  if (G1HotCardCache::use_cache()) {
     _hot_card_cache->reset_hot_cache();
   }
 
@@ -2882,10 +2882,9 @@ void G1CollectedHeap::do_collection_pause_at_safepoint_helper(double target_paus
   }
 }
 
-void G1CollectedHeap::complete_cleaning(BoolObjectClosure* is_alive,
-                                        bool class_unloading_occurred) {
+void G1CollectedHeap::complete_cleaning(bool class_unloading_occurred) {
   uint num_workers = workers()->active_workers();
-  G1ParallelCleaningTask unlink_task(is_alive, num_workers, class_unloading_occurred);
+  G1ParallelCleaningTask unlink_task(num_workers, class_unloading_occurred);
   workers()->run_task(&unlink_task);
 }
 
@@ -3378,7 +3377,6 @@ void G1CollectedHeap::update_used_after_gc(bool evacuation_failed) {
 
 void G1CollectedHeap::reset_hot_card_cache() {
   _hot_card_cache->reset_hot_cache();
-  _hot_card_cache->set_use_cache(true);
 }
 
 void G1CollectedHeap::purge_code_root_memory() {

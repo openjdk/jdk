@@ -45,7 +45,13 @@ public class ImplicitAttach {
         }
         latch = new CountDownLatch(threadCount);
 
-        Linker abi = Linker.nativeLinker();
+        Linker abi;
+        try {
+            abi = Linker.nativeLinker();
+        } catch (UnsupportedOperationException e) {
+            System.out.println("Test skipped, no native linker on this platform");
+            return;
+        }
 
         // stub to invoke callback
         MethodHandle callback = MethodHandles.lookup()

@@ -56,7 +56,6 @@ class os::Linux {
   static julong _physical_memory;
   static julong _host_swap;
   static pthread_t _main_thread;
-  static int _page_size;
 
   static julong available_memory();
   static int active_processor_count();
@@ -130,9 +129,6 @@ class os::Linux {
 
   static address   initial_thread_stack_bottom(void)                { return _initial_thread_stack_bottom; }
   static uintptr_t initial_thread_stack_size(void)                  { return _initial_thread_stack_size; }
-
-  static int page_size(void)                                        { return _page_size; }
-  static void set_page_size(int val)                                { _page_size = val; }
 
   static julong physical_memory() { return _physical_memory; }
   static julong host_swap() { return _host_swap; }
@@ -430,7 +426,7 @@ class os::Linux {
     return _nindex_to_node;
   }
 
-  void* resolve_function_descriptor(void* p);
+  static void* resolve_function_descriptor(void* p);
 };
 
 #endif // OS_LINUX_OS_LINUX_HPP

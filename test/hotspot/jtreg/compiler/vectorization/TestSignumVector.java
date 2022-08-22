@@ -23,11 +23,10 @@
 
 /**
  * @test
- * @bug 8282711
- * @summary Accelerate Math.signum function for AVX and AVX512.
+ * @bug 8282711 8290249
+ * @summary Accelerate Math.signum function for AVX, AVX512 and aarch64 (Neon and SVE)
  * @requires vm.compiler2.enabled
- * @requires vm.cpu.features ~= ".*avx.*"
- * @requires os.simpleArch == "x64"
+ * @requires (os.simpleArch == "x64" & vm.cpu.features ~= ".*avx.*") | os.arch == "aarch64"
  * @library /test/lib /
  * @run driver compiler.vectorization.TestSignumVector
  */
@@ -46,8 +45,8 @@ public class TestSignumVector {
   private static float  [] fout;
 
   public static void main(String args[]) {
-      TestFramework.runWithFlags("-XX:-TieredCompilation",
-                                  "-XX:CompileThresholdScaling=0.3");
+      TestFramework.runWithFlags("-XX:-TieredCompilation", "-XX:+UnlockDiagnosticVMOptions",
+                                 "-XX:+UseSignumIntrinsic", "-XX:CompileThresholdScaling=0.3");
       System.out.println("PASSED");
   }
 
