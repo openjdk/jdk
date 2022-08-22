@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,7 +68,6 @@ class AArch64HotSpotVMConfig extends HotSpotVMConfigAccess {
     final long aarch64SHA2 = getConstant("VM_Version::CPU_SHA2", Long.class);
     final long aarch64CRC32 = getConstant("VM_Version::CPU_CRC32", Long.class);
     final long aarch64LSE = getConstant("VM_Version::CPU_LSE", Long.class);
-    final long aarch64STXR_PREFETCH = getConstant("VM_Version::CPU_STXR_PREFETCH", Long.class);
     final long aarch64A53MAC = getConstant("VM_Version::CPU_A53MAC", Long.class);
     // Checkstyle: resume
 }

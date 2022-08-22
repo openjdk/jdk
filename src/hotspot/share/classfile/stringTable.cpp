@@ -223,7 +223,7 @@ void StringTable::create_table() {
   _current_size = ((size_t)1) << start_size_log_2;
   log_trace(stringtable)("Start size: " SIZE_FORMAT " (" SIZE_FORMAT ")",
                          _current_size, start_size_log_2);
-  _local_table = new StringTableHash(start_size_log_2, END_SIZE, REHASH_LEN);
+  _local_table = new StringTableHash(start_size_log_2, END_SIZE, REHASH_LEN, true);
   _oop_storage = OopStorageSet::create_weak("StringTable Weak", mtSymbol);
   _oop_storage->register_num_dead_callback(&gc_notification);
 }
@@ -503,7 +503,7 @@ bool StringTable::do_rehash() {
 
   // We use current size, not max size.
   size_t new_size = _local_table->get_size_log2(Thread::current());
-  StringTableHash* new_table = new StringTableHash(new_size, END_SIZE, REHASH_LEN);
+  StringTableHash* new_table = new StringTableHash(new_size, END_SIZE, REHASH_LEN, true);
   // Use alt hash from now on
   _alt_hash = true;
   if (!_local_table->try_move_nodes_to(Thread::current(), new_table)) {

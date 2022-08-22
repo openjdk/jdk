@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,10 +76,6 @@ template <MEMFLAGS F> void BasicHashtable<F>::free_buckets() {
 
 // Default overload, for types that are uninteresting.
 template<typename T> static size_t literal_size(T) { return 0; }
-
-static size_t literal_size(Symbol *symbol) {
-  return symbol->size() * HeapWordSize;
-}
 
 static size_t literal_size(oop obj) {
   if (obj == NULL) {
@@ -258,35 +254,14 @@ template <class T> void BasicHashtable<F>::verify_table(const char* table_name) 
 #endif // PRODUCT
 
 // Explicitly instantiate these types
-template class Hashtable<nmethod*, mtGC>;
-template class HashtableEntry<nmethod*, mtGC>;
 template class BasicHashtable<mtGC>;
-template class Hashtable<ConstantPool*, mtClass>;
-template class Hashtable<Symbol*, mtSymbol>;
-template class Hashtable<Klass*, mtClass>;
+template class BasicHashtable<mtClass>;
+template class BasicHashtable<mtServiceability>;
+
+template class Hashtable<nmethod*, mtGC>;
 template class Hashtable<InstanceKlass*, mtClass>;
 template class Hashtable<WeakHandle, mtClass>;
 template class Hashtable<WeakHandle, mtServiceability>;
-template class Hashtable<Symbol*, mtModule>;
-template class Hashtable<Symbol*, mtClass>;
-template class HashtableEntry<Symbol*, mtSymbol>;
-template class HashtableEntry<Symbol*, mtClass>;
-template class HashtableBucket<mtClass>;
-template class BasicHashtableEntry<mtSymbol>;
-template class BasicHashtableEntry<mtCode>;
-template class BasicHashtable<mtClass>;
-template class BasicHashtable<mtClassShared>;
-template class BasicHashtable<mtSymbol>;
-template class BasicHashtable<mtCode>;
-template class BasicHashtable<mtInternal>;
-template class BasicHashtable<mtModule>;
-template class BasicHashtable<mtCompiler>;
-template class BasicHashtable<mtTracing>;
-template class BasicHashtable<mtServiceability>;
-template class BasicHashtable<mtLogging>;
 
 template void BasicHashtable<mtClass>::verify_table<DictionaryEntry>(char const*);
-template void BasicHashtable<mtModule>::verify_table<ModuleEntry>(char const*);
-template void BasicHashtable<mtModule>::verify_table<PackageEntry>(char const*);
 template void BasicHashtable<mtClass>::verify_table<ProtectionDomainCacheEntry>(char const*);
-template void BasicHashtable<mtClass>::verify_table<PlaceholderEntry>(char const*);

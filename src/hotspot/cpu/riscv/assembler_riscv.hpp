@@ -141,8 +141,10 @@ REGISTER_DECLARATION(Register, xthread,   x23);
 REGISTER_DECLARATION(Register, xbcp,      x22);
 // Dispatch table base
 REGISTER_DECLARATION(Register, xdispatch, x21);
-// Java stack pointer
+// Java expression stack pointer
 REGISTER_DECLARATION(Register, esp,       x20);
+// Sender's SP while in interpreter
+REGISTER_DECLARATION(Register, x19_sender_sp, x19);
 
 // temporary register(caller-save registers)
 REGISTER_DECLARATION(Register, t0, x5);
@@ -337,7 +339,6 @@ public:
   void movptr(Register Rd, address addr);
   void movptr_with_offset(Register Rd, address addr, int32_t &offset);
   void movptr(Register Rd, uintptr_t imm64);
-  void ifence();
   void j(const address &dest, Register temp = t0);
   void j(const Address &adr, Register temp = t0);
   void j(Label &l, Register temp = t0);
@@ -959,7 +960,6 @@ public:
     emit(insn);                                             \
   }
 
-  INSN(fence_i, 0b0001111, 0b001, 0b000000000000);
   INSN(ecall,   0b1110011, 0b000, 0b000000000000);
   INSN(_ebreak, 0b1110011, 0b000, 0b000000000001);
 
@@ -3064,11 +3064,12 @@ public:
   void wrap_label(Register r, Label &L, Register t, load_insn_by_temp insn);
   void wrap_label(Register r, Label &L, jal_jalr_insn insn);
 
-  // calculate pseudoinstruction
+  // Computational pseudo instructions
   void add(Register Rd, Register Rn, int64_t increment, Register temp = t0);
-  void addw(Register Rd, Register Rn, int64_t increment, Register temp = t0);
+  void addw(Register Rd, Register Rn, int32_t increment, Register temp = t0);
+
   void sub(Register Rd, Register Rn, int64_t decrement, Register temp = t0);
-  void subw(Register Rd, Register Rn, int64_t decrement, Register temp = t0);
+  void subw(Register Rd, Register Rn, int32_t decrement, Register temp = t0);
 
   // RVB pseudo instructions
   // zero extend word

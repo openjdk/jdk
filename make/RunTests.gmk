@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -349,13 +349,24 @@ ExpandJtregPath = \
     )) \
   )
 
+# with test id: dir/Test.java#selection -> Test.java#selection -> .java#selection -> #selection
+#      without: dir/Test.java           -> Test.java           -> .java           -> <<empty string>>
+TestID = \
+    $(subst .java,,$(suffix $(notdir $1)))
+
+# The test id starting with a hash (#testid) will be stripped by all
+# evals in ParseJtregTestSelectionInner and will be reinserted by calling
+# TestID (if it is present).
+ParseJtregTestSelection = \
+    $(call IfAppend, $(call ParseJtregTestSelectionInner, $1), $(call TestID, $1))
+
 # Helper function to determine if a test specification is a Jtreg test
 #
 # It is a Jtreg test if it optionally begins with jtreg:, and then is either
 # an unspecified group name (possibly prefixed by :), or a group in a
 # specified test root, or a path to a test or test directory,
 # either absolute or relative to any of the TEST_BASEDIRS or test roots.
-define ParseJtregTestSelection
+define ParseJtregTestSelectionInner
   $(eval TEST_NAME := $(strip $(patsubst jtreg:%, %, $1))) \
   $(if $(or $(findstring :, $(TEST_NAME)), $(findstring /, $(TEST_NAME))), , \
     $(eval TEST_NAME := :$(TEST_NAME)) \
@@ -419,37 +430,25 @@ ifeq ($(TEST), )
   $(error Cannot continue)
 endif
 
+ParseTestSelection = \
+    $(strip $(or \
+      $(call ParseCustomTestSelection, $1) \
+      $(call ParseGtestTestSelection, $1) \
+      $(call ParseMicroTestSelection, $1) \
+      $(call ParseJtregTestSelection, $1) \
+      $(call ParseSpecialTestSelection, $1) \
+    ))
+
 # Now intelligently convert the test selection given by the user in TEST
 # into a list of fully qualified test descriptors of the tests to run.
-TESTS_TO_RUN :=
-$(foreach test, $(TEST), \
-  $(eval PARSED_TESTS := $(call ParseCustomTestSelection, $(test))) \
-  $(if $(strip $(PARSED_TESTS)), , \
-    $(eval PARSED_TESTS += $(call ParseGtestTestSelection, $(test))) \
-  ) \
-  $(if $(strip $(PARSED_TESTS)), , \
-    $(eval PARSED_TESTS += $(call ParseMicroTestSelection, $(test))) \
-  ) \
-  $(if $(strip $(PARSED_TESTS)), , \
-    $(eval PARSED_TESTS += $(call ParseJtregTestSelection, $(test))) \
-  ) \
-  $(if $(strip $(PARSED_TESTS)), , \
-    $(eval PARSED_TESTS += $(call ParseSpecialTestSelection, $(test))) \
-  ) \
-  $(if $(strip $(PARSED_TESTS)), , \
-    $(eval UNKNOWN_TEST := $(test)) \
-  ) \
-  $(eval TESTS_TO_RUN += $(PARSED_TESTS)) \
-)
+TESTS_TO_RUN := $(strip $(foreach test, $(TEST), $(call ParseTestSelection, $(test))))
+UNKNOWN_TEST := $(strip $(foreach test, $(TEST), $(if $(call ParseTestSelection, $(test)), , $(test))))
 
 ifneq ($(UNKNOWN_TEST), )
   $(info Unknown test selection: '$(UNKNOWN_TEST)')
   $(info See doc/testing.[md|html] for help)
   $(error Cannot continue)
 endif
-
-TESTS_TO_RUN := $(strip $(TESTS_TO_RUN))
-
 
 # Present the result of our parsing to the user
 $(info Test selection '$(TEST)', will run:)

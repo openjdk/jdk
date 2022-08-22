@@ -26,6 +26,7 @@
 #include "code/scopeDesc.hpp"
 #include "compiler/compilationPolicy.hpp"
 #include "compiler/compileBroker.hpp"
+#include "compiler/compilerDefinitions.inline.hpp"
 #include "compiler/compilerOracle.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/methodData.hpp"
@@ -758,7 +759,10 @@ void CompilationPolicy::compile(const methodHandle& mh, int bci, CompLevel level
       }
       // Deoptimize immediately (we don't have to wait for a compile).
       JavaThread* jt = THREAD;
-      RegisterMap map(jt, false);
+      RegisterMap map(jt,
+                      RegisterMap::UpdateMap::skip,
+                      RegisterMap::ProcessFrames::include,
+                      RegisterMap::WalkContinuation::skip);
       frame fr = jt->last_frame().sender(&map);
       Deoptimization::deoptimize_frame(jt, fr.id());
     }
@@ -950,7 +954,7 @@ void CompilationPolicy::create_mdo(const methodHandle& mh, JavaThread* THREAD) {
     return;
   }
   if (mh->method_data() == NULL) {
-    Method::build_interpreter_method_data(mh, CHECK_AND_CLEAR);
+    Method::build_profiling_method_data(mh, CHECK_AND_CLEAR);
   }
   if (ProfileInterpreter) {
     MethodData* mdo = mh->method_data();
