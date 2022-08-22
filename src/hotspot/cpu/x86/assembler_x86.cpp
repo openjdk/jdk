@@ -12183,15 +12183,10 @@ static bool is_reachable_from(address target, address pc) {
   return Assembler::is_simm32(disp);
 }
 
-// Determine whether target address is reachable from pc address in rip-relative addressing mode.
-static bool is_reachable_from(address target, address pc, relocInfo::relocType relocType) {
-  switch (relocType) {
-    // None will force a 64bit literal to the code stream. Likely a placeholder
-    // for something that will be patched later and we need to certain it will
-    // always be reachable.
-    case relocInfo::none: {
-      return false;
-    }
+// Determine whether an address is always reachable in rip-relative addressing mode
+// when accessed from the code cache.
+static bool is_always_reachable(address target, relocInfo::relocType reloc_type) {
+  switch (reloc_type) {
     // This should be rip-relative and easily reachable.
     case relocInfo::internal_word_type: {
       return true;
@@ -12209,15 +12204,39 @@ static bool is_reachable_from(address target, address pc, relocInfo::relocType r
     case relocInfo::external_word_type:
     case relocInfo::poll_return_type: // these are really external_word but need special
     case relocInfo::poll_type: {      // relocs to identify them
-      // Stress the correction code.
-      if (ForceUnreachable && !CodeCache::contains(adr._target)) {
-        return false;
-      }
+      return CodeCache::contains(target);
+    }
+    default: {
+      return false;
+    }
+  }
+}
+
+// Determine whether target address is reachable from pc address in rip-relative addressing mode.
+static bool is_reachable_from(address target, address pc, relocInfo::relocType reloc_type) {
+  if (is_always_reachable(target, reloc_type)) {
+    return true;
+  }
+  switch (reloc_type) {
+    // None will force a 64bit literal to the code stream. Likely a placeholder
+    // for something that will be patched later and we need to certain it will
+    // always be reachable.
+    case relocInfo::none: {
+      return false;
+    }
+    case relocInfo::runtime_call_type:
+    case relocInfo::external_word_type:
+    case relocInfo::poll_return_type: // these are really external_word but need special
+    case relocInfo::poll_type: {      // relocs to identify them
+      assert(!CodeCache::contains(target), "always reachable");
       // For external_word_type/runtime_call_type if it is reachable from where we
       // are now (possibly a temp buffer) and where we might end up
       // anywhere in the codeCache then we are always reachable.
       // This would have to change if we ever save/restore shared code
       // to be more pessimistic.
+      if (ForceUnreachable) {
+        return false; // stress the correction code
+      }
       if (!is_reachable_from(target, CodeCache::low_bound()) ||
           !is_reachable_from(target, CodeCache::high_bound())) {
         return false;
@@ -12230,37 +12249,12 @@ static bool is_reachable_from(address target, address pc, relocInfo::relocType r
   }
 }
 
-bool Assembler::always_reachable(AddressLiteral adr) {
-  switch (adr.reloc()) {
-    // This should be rip-relative and easily reachable.
-    case relocInfo::internal_word_type: {
-      return true;
-    }
-    // This should be rip-relative within the code cache and easily
-    // reachable until we get huge code caches. (At which point
-    // IC code is going to have issues).
-    case relocInfo::virtual_call_type:
-    case relocInfo::opt_virtual_call_type:
-    case relocInfo::static_call_type:
-    case relocInfo::static_stub_type: {
-      return true;
-    }
-    case relocInfo::runtime_call_type:
-    case relocInfo::external_word_type:
-    case relocInfo::poll_return_type: // these are really external_word but need special
-    case relocInfo::poll_type: {      // relocs to identify them
-      return CodeCache::contains(adr._target);
-    }
-    default: {
-      return false;
-    }
-  }
+bool Assembler::reachable(AddressLiteral adr) {
+  return is_reachable_from(adr.target(), pc(), adr.reloc());
 }
 
-bool Assembler::reachable(AddressLiteral adr) {
-  bool is_reachable = is_reachable_from(adr.target(), pc(), adr.reloc());
-  assert(is_reachable || !always_reachable(adr), "sanity");
-  return is_reachable;
+bool Assembler::always_reachable(AddressLiteral adr) {
+  return is_always_reachable(adr.target(), adr.reloc());
 }
 
 void Assembler::emit_data64(jlong data,
