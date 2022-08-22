@@ -221,15 +221,15 @@ public class KeepAliveTest {
     private static final String NOT_CACHED = "NotCached";
     private static final String CLIENT_SEPARATOR = ";";
     private static final String NEW_LINE = "\r\n";
-    private static final int TIMEOUT = 200;
-    public volatile int SERVER_PORT = 0;
+    //private static final int TIMEOUT = 200;
+    private volatile int SERVER_PORT = 0;
     /*
-     * isProxySet and serverReady are shared variables between server thread and client thread(main) and it should be set and reset to false for each and
+     * isProxySet are shared variables between server thread and client thread(main) and it should be set and reset to false for each and
      * every scenario.
      * isProxySet and serverReady variables should be set by server thread before proceeding to client thread(main).
      */
     private volatile boolean isProxySet = false;
-    private volatile boolean serverReady = false;
+    //private volatile boolean serverReady = false;
     private static final String NI = "NO_INPUT";
     private static final String CONNECTION_KEEP_ALIVE_ONLY = "Connection: keep-alive";
     private static final String PROXY_CONNECTION_KEEP_ALIVE_ONLY = "Proxy-Connection: keep-alive";
@@ -260,8 +260,29 @@ public class KeepAliveTest {
     private static final String G = A + NEW_LINE + KEEP_ALIVE_TIMEOUT_ZERO;
     private static final String H = C + NEW_LINE + KEEP_ALIVE_TIMEOUT_NEG;
     private static final String I = C + NEW_LINE + KEEP_ALIVE_TIMEOUT_ZERO;
-    private static Logger logger = Logger.getLogger("sun.net.www.protocol.http.HttpURLConnection");
-    private String[] serverScenarios = {
+    private static final Logger logger = Logger.getLogger("sun.net.www.protocol.http.HttpURLConnection");
+    
+   /*
+    * There are 160 scenarios run by this program.
+    * For every scenario there is mapping between serverScenarios[int],clientScenarios[int] and expectedOutput[int]
+    *
+    * serverScenarios[0] clientScenarios[0] expectedOutput[0]
+    * serverScenarios[1] clientScenarios[1] expectedOutput[1]
+    * serverScenarios[2] clientScenarios[2] expectedOutput[2]
+    *
+    * ...
+    *
+    * serverScenarios[159] cientScenarios[159] expectedOutput[159]
+    *
+    * whereas serverScenarios[int] is retrieved using getServerScenario(int)
+    * whereas clientScenarios[int] is retrieved using clientScenario[getClientScenarioNumber[int]]
+    * and
+    * expectedOutput[int] is retrieved using expectedOuput[int] directly.
+    *
+    */
+   
+   /*serverScenarios[int] will be retreived using method getServerScenario(int)*/
+   /* private static final String[] serverScenarios = {
         A, A, A, A, A, A, A, A, A, A, A, A, A, A, A, A,
         B, B, B, B, B, B, B, B, B, B,B, B, B, B, B, B,
         C, C, C, C, C, C, C, C, C, C, C, C, C, C, C, C,
@@ -272,11 +293,11 @@ public class KeepAliveTest {
         G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G,
         H, H, H, H, H, H, H, H, H, H, H, H, H, H, H, H,
         I, I, I, I, I, I, I, I, I, I, I, I, I, I, I, I
-    };
+    }; */
     /*
      * following are client scenarios which are repeated.
      */
-    private String[] a = {
+    private static final String[] a = {
         NI, SERVER_100,     PROXY_200, SERVER_100 + CLIENT_SEPARATOR + PROXY_200,    SERVER_100_NEGATIVE,
         PROXY_200_NEGATIVE, SERVER_100_NEGATIVE + CLIENT_SEPARATOR + PROXY_200_NEGATIVE,
         SERVER_ZERO,         PROXY_ZERO, SERVER_ZERO + CLIENT_SEPARATOR + PROXY_ZERO,
@@ -284,7 +305,7 @@ public class KeepAliveTest {
         SERVER_100 + CLIENT_SEPARATOR + PROXY_ZERO, SERVER_ZERO + CLIENT_SEPARATOR + PROXY_200,
         SERVER_100 + CLIENT_SEPARATOR + PROXY_200_NEGATIVE, SERVER_100_NEGATIVE + CLIENT_SEPARATOR + PROXY_200
     };
-    private String[] clientScenarios = {
+   /* private String[] clientScenarios = {
         a[0] , a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8], a[9], a[10], a[11], a[12], a[13], a[14], a[15],
         a[0] , a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8], a[9], a[10], a[11], a[12], a[13], a[14], a[15],
         a[0] , a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8], a[9], a[10], a[11], a[12], a[13], a[14], a[15],
@@ -295,8 +316,13 @@ public class KeepAliveTest {
         a[0] , a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8], a[9], a[10], a[11], a[12], a[13], a[14], a[15],
         a[0] , a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8], a[9], a[10], a[11], a[12], a[13], a[14], a[15],
         a[0] , a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8], a[9], a[10], a[11], a[12], a[13], a[14], a[15],
+    }; */
+
+    private static final String[] clientScenarios = {
+        a[0] , a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8], a[9], a[10], a[11], a[12], a[13], a[14], a[15]
     };
-    private int[] expectedValues = {
+    
+    private static final int[] expectedValues = {
         5,  100,    5, 100,  5,  5,  5,  0,  5,   0,   0,   5,  100,    0,   100,    5,
         20,   20 ,  20,  20, 20, 20, 20, 20, 20,  20 , 20,  20,   20,   20,    20,   20,
         60,   60,  200, 200, 60, 60, 60, 60,  0,   0,  60,   0,    0,  200,    60,  200,
@@ -308,28 +334,62 @@ public class KeepAliveTest {
         60,  60,  200, 200, 60, 60, 60, 60,  0,   0,  60,   0,    0,  200,    60,  200,
         0,    0,    0,   0,  0,  0,  0,  0,  0,   0,   0,   0,    0,    0,     0,    0,
     };
-    private CountDownLatch countDownLatch = null;
-    private void myinit(int scenarioNumber) throws Exception {
+    
+    private final CountDownLatch countDownLatch = new CountDownLatch(1);
+
+    private final CountDownLatch serverCountDownLatch = new CountDownLatch(1);
+    
+    private int getClientScenarioNumber(int scenarioNumber) {
+        return scenarioNumber % 16 ;
+    }
+
+    private String getServerScenario(int scenarioNumber) {
+        if(scenarioNumber >= 0 && scenarioNumber <= 15) {
+            return A;
+        } else if (scenarioNumber >= 16 && scenarioNumber <= 31){
+            return B;
+        } else if (scenarioNumber >= 32 && scenarioNumber <= 47){
+            return C;
+        } else if (scenarioNumber >= 48 && scenarioNumber <= 63){
+            return D;
+        } else if (scenarioNumber >= 64 && scenarioNumber <= 79){
+            return E;
+        } else if (scenarioNumber >= 80 && scenarioNumber <= 95){
+            return NI;
+        } else if (scenarioNumber >= 96 && scenarioNumber <= 111){
+            return F;
+        } else if (scenarioNumber >= 112 && scenarioNumber <= 127){
+            return G;
+        } else if (scenarioNumber >= 128 && scenarioNumber <= 143){
+            return H;
+        } else if (scenarioNumber >= 144 && scenarioNumber <= 159) {
+            return I;
+        }
+        /*Invalid Case*/
+        return null;
+    }
+    
+    private void startScenario(int scenarioNumber) throws Exception {
         //test scenarios are skipped because of JDK-8291638
-        countDownLatch = new CountDownLatch(1);
         if((scenarioNumber >= 112 && scenarioNumber <= 127) || (scenarioNumber >= 144 && scenarioNumber <= 159)) {
             System.out.println("Scenario Skipped:"+scenarioNumber);
-            countDownLatch = new CountDownLatch(0);
+            this.countDownLatch.countDown();
             return;
         }
-        System.out.println("serverScenarios[" + scenarioNumber + "]=" + serverScenarios[scenarioNumber]);
-        System.out.println("clientScenarios[" + scenarioNumber + "]=" + clientScenarios[scenarioNumber]);
+        System.out.println("serverScenarios[" + scenarioNumber + "]=" + getServerScenario(scenarioNumber));
+        System.out.println("clientScenarios[" + scenarioNumber + "]=" + clientScenarios[getClientScenarioNumber(scenarioNumber)]);
         if(expectedValues[scenarioNumber] == 0) {
             System.out.println("ExpectedOutput=" + NOT_CACHED);
         } else {
             System.out.println("ExpectedOutput=" + expectedValues[scenarioNumber]);
         }
         System.out.println();
-        serverInit(scenarioNumber);
-        clientInit(scenarioNumber);
-        serverReady = false;
+        startServer(scenarioNumber);
+        runClient(scenarioNumber);
+        //serverReady = false;
     }
-    private void serverInit(int scenarioNumber) {
+    
+    private void startServer(int scenarioNumber) {
         Thread server = new Thread(new Runnable() {
 
             @Override
@@ -362,8 +422,8 @@ public class KeepAliveTest {
 
     private void createServer(int scenarioNumber) throws IOException {
         String serverScenarioContent = null;
-        if (!serverScenarios[scenarioNumber].equalsIgnoreCase(NI)) {
-            serverScenarioContent = serverScenarios[scenarioNumber] + NEW_LINE;
+        if (!getServerScenario(scenarioNumber).equalsIgnoreCase(NI)) {
+            serverScenarioContent = getServerScenario(scenarioNumber) + NEW_LINE;
             /*
              * isProxySet should be set before Server is moved to Listen State.
              */
@@ -381,9 +441,10 @@ public class KeepAliveTest {
             serverSocket = new ServerSocket();
             serverSocket.bind(new InetSocketAddress(loopback, 0));
             SERVER_PORT = serverSocket.getLocalPort();
-            serverReady = true;
+            //serverReady = true;
+            this.serverCountDownLatch.countDown();
             System.out
-                .println("SERVER_PORT= " + SERVER_PORT + " ServerReady=" + serverReady + " isProxySet=" + isProxySet);
+                .println("SERVER_PORT= " + SERVER_PORT +" isProxySet=" + isProxySet);
             /*
              * Server will be waiting for clients to connect.
              */
@@ -424,9 +485,9 @@ public class KeepAliveTest {
         }
     }
 
-    private void clientInit(int scenarioNumber) throws Exception {
+    private void runClient(int scenarioNumber) throws Exception {
         try {
-            createURLClient(scenarioNumber);
+            connectToServerURL(scenarioNumber);
         } finally {
             System.out.println("client count down latch:" + scenarioNumber);
             this.countDownLatch.countDown();
@@ -435,7 +496,7 @@ public class KeepAliveTest {
         }
     }
 
-    private void createURLClient(int scenarioNumber) throws Exception {
+    private void connectToServerURL(int scenarioNumber) throws Exception {
 
         //    System.setProperty("java.net.useSystemProxies", "false");
         //    System.setProperty("http.nonProxyHosts", "");
@@ -452,20 +513,20 @@ public class KeepAliveTest {
 
         // fetch clientScenearios for each scenarioNumber from array and set it to
         // System property.
-        if (!clientScenarios[scenarioNumber].equalsIgnoreCase(NI)) {
+        if (!clientScenarios[getClientScenarioNumber(scenarioNumber)].equalsIgnoreCase(NI)) {
             System.out.println("Client Input Parsing");
-            for (String clientScenarioString : clientScenarios[scenarioNumber].split(CLIENT_SEPARATOR)) {
+            for (String clientScenarioString : clientScenarios[getClientScenarioNumber(scenarioNumber)].split(CLIENT_SEPARATOR)) {
                 System.out.println(clientScenarioString);
                 String key = clientScenarioString.split("=")[0];
                 String value = clientScenarioString.split("=")[1];
                 System.setProperty(key, value);
             }
         }
-
         // wait until ServerSocket moves to listening state.
-        while (!serverReady) {
-            Thread.sleep(TIMEOUT);
-        }
+        //while (!serverReady) {
+        //    Thread.sleep(TIMEOUT);
+        //}
+        this.serverCountDownLatch.await();
         System.out.println("client started");
         URL url = URIBuilder.newBuilder().scheme("http").loopback().port(SERVER_PORT).toURL();
         System.out.println("connecting from client to SERVER URL:" + url);
@@ -506,7 +567,6 @@ public class KeepAliveTest {
             System.out.println(header.getKey() + "=" + header.getValue());
         }
         fetchInfo(scenarioNumber, httpUrlConnection);
-
     }
 
     private void fetchInfo(int scenarioNumber, sun.net.www.protocol.http.HttpURLConnection httpUrlConnection)
@@ -568,12 +628,11 @@ public class KeepAliveTest {
                     throw new RuntimeException("ExpectedOutput:" + expected + " ActualOutput:" + NOT_CACHED);
                 }
             }
-        }
+    }
+    
     public static void main(String[] args) throws Exception {
         if (args.length != 1) {
-            System.out.println("Usage:java KeepAliveTest.java <scenarioNumber>");
-            System.out.println("e.g.:java KeepAliveTest.java 1");
-            System.exit(1);
+            throw new IllegalArgumentException("Usage:java KeepAliveTest.java <scenarioNumber>");
         }
         logger.setLevel(Level.FINEST);
         ConsoleHandler h = new ConsoleHandler();
@@ -581,10 +640,9 @@ public class KeepAliveTest {
         logger.addHandler(h);
         KeepAliveTest keepAliveTest = new KeepAliveTest();
         if (args.length != 0) {
-            keepAliveTest.myinit(Integer.valueOf(args[0]));
+            keepAliveTest.startScenario(Integer.valueOf(args[0]));
         }
         // make main thread wait until server and client is completed.
         keepAliveTest.countDownLatch.await();
     }
 }
-
