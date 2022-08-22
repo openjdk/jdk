@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,7 +91,7 @@ TableStatistics::TableStatistics() :
   _add_rate(0), _remove_rate(0) {
 }
 
-TableStatistics::TableStatistics(TableRateStatistics& rate_stats, NumberSeq summary, size_t literal_bytes, size_t bucket_bytes, size_t node_bytes) :
+TableStatistics::TableStatistics(NumberSeq summary, size_t literal_bytes, size_t bucket_bytes, size_t node_bytes) :
   _literal_bytes(literal_bytes),
   _number_of_buckets(0), _number_of_entries(0),
   _maximum_bucket_size(0), _average_bucket_size(0),
@@ -114,7 +114,12 @@ TableStatistics::TableStatistics(TableRateStatistics& rate_stats, NumberSeq summ
 
   _bucket_size = (_number_of_buckets <= 0) ? 0 : (_bucket_bytes / _number_of_buckets);
   _entry_size = (_number_of_entries <= 0) ? 0 : (_entry_bytes / _number_of_entries);
+}
 
+TableStatistics::TableStatistics(TableRateStatistics& rate_stats,
+                                  NumberSeq summary, size_t literal_bytes,
+                                  size_t bucket_bytes, size_t node_bytes) :
+  TableStatistics(summary, literal_bytes, bucket_bytes, node_bytes) {
 #if INCLUDE_JFR
   if (Jfr::is_recording()) {
     rate_stats.stamp();

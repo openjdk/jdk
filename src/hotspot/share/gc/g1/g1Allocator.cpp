@@ -350,7 +350,7 @@ G1PLABAllocator::G1PLABAllocator(G1Allocator* allocator) :
     _tolerated_refills = MAX2(ExpectedNumberOfRefills, 1.0) * PadFactor;
   } else {
     // Make the tolerated refills a huge number.
-    _tolerated_refills = ~(size_t)0;
+    _tolerated_refills = SIZE_MAX;
   }
   // The initial PLAB refill should not count, hence the +1 for the first boost.
   size_t initial_tolerated_refills = ResizePLAB ? _tolerated_refills + 1 : _tolerated_refills;

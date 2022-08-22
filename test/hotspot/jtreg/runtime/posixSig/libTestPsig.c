@@ -28,12 +28,7 @@
 #include <errno.h>
 #include <string.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-void sig_handler(int sig, siginfo_t *info, ucontext_t *context) {
-
+static void sig_handler(int sig, siginfo_t *info, ucontext_t *context) {
     printf( " HANDLER (1) " );
 }
 
@@ -47,8 +42,3 @@ JNIEXPORT void JNICALL Java_TestPosixSig_changeSigActionFor(JNIEnv *env, jclass 
         printf("ERROR: failed to set %d signal handler error=%s\n", val, strerror(errno));
     }
 }
-
-#ifdef __cplusplus
-}
-#endif
-

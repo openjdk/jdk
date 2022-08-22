@@ -44,7 +44,6 @@ class os::Bsd {
 
   static julong _physical_memory;
   static pthread_t _main_thread;
-  static int _page_size;
 
   static julong available_memory();
   static julong physical_memory() { return _physical_memory; }
@@ -61,9 +60,6 @@ class os::Bsd {
   static pthread_t main_thread(void)                                { return _main_thread; }
 
   static pid_t gettid();
-
-  static int page_size(void)                                        { return _page_size; }
-  static void set_page_size(int val)                                { _page_size = val; }
 
   static intptr_t* ucontext_get_sp(const ucontext_t* uc);
   static intptr_t* ucontext_get_fp(const ucontext_t* uc);

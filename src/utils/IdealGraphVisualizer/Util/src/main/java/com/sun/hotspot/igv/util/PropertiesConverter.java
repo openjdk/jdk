@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,14 +22,27 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package com.sun.hotspot.igv.util;
 
-.ui-state-active,
-.ui-widget-content .ui-state-active,
-.ui-widget-header .ui-state-active,
-a.ui-button:active,
-.ui-button:active,
-.ui-button.ui-state-active:hover {
-    /* Overrides the color of selection used in jQuery UI */
-    background: #F8981D;
-    border: 1px solid #F8981D;
+import com.sun.hotspot.igv.data.Properties;
+import com.sun.hotspot.igv.data.Property;
+import com.sun.hotspot.igv.util.StringUtils;
+
+/**
+ *
+ * @author ksakata
+ */
+public class PropertiesConverter {
+    public static String convertToHTML(final Properties properties) {
+        StringBuilder sb = new StringBuilder("<html><body><table cellpadding=\"0\" cellspacing=\"0\">");
+        for (Property p : properties) {
+            sb.append("<tr><td>")
+              .append(StringUtils.escapeHTML(p.getName()))
+              .append("</td><td width=\"10\"></td><td>")
+              .append(StringUtils.escapeHTML(p.getValue()))
+              .append("</td></tr>");
+        }
+        sb.append("</table></body></html>");
+        return sb.toString();
+    }
 }
