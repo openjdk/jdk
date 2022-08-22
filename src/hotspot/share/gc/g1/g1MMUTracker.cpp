@@ -111,55 +111,61 @@ void G1MMUTracker::add_pause(double start, double end) {
   }
 }
 
-//                                          current_timestamp
-//                   GC events             /  pause_time
-//                 /     |     \          | /  /
-// -------------[----]-[---]--[--]--------|[--]-----> Time
-//              |         |                   |
-//              |         |                   |
-//              |<- limit |                   |
-//              |         |<- deficit         |
-//              |         ^                   |
-//              |                             |
-//              |<------- _time_slice   ----->|
+//                                                current_timestamp
+//                   GC events                   /  pause_time
+//                 /     |     \                | /  /
+// -------------[----]-[---]--[--]---[---]------|[--]-----> Time
+//              |         |                     |
+//              |         |                     |
+//              |<- limit |                     |
+//              |         |<- balance_timestamp |
+//              |         ^                     |
+//              |                               |
+//              |<--------  _time_slice  ------>|
+//
+// The MMU constraint requires that we can spend up to `max_gc_time()` on GC
+// pauses inside a window of `_time_slice` length. Therefore, we have a GC
+// budget of `max_gc_time() - pause_time`, which is to be accounted for by past
+// GC events.
 //
 // Focusing on GC events that are inside [limit, current_timestamp], we iterate
 // over them from the newest to the oldest (right-to-left in the diagram) and
 // try to locate the timestamp annotated with ^, so that the accumulated GC
-// time inside [deficit, current_timestamp], is equal to gc_budget. Next,
-// return `deficit - limit`.
+// time inside [balance_timestamp, current_timestamp] is equal to the budget.
+// Next, return `balance_timestamp - limit`.
 //
-// When there are no enough GC events, i.e. gc_budget has a surplus, return 0.
+// When there are no enough GC events, i.e. we have a surplus buget, a new GC
+// pause can start right away, so return 0.
 double G1MMUTracker::when_sec(double current_timestamp, double pause_time) {
   assert(pause_time > 0.0, "precondition");
 
-  // Clamp it by max
+  // If the pause is over the maximum, just assume that it's the maximum.
   pause_time = MIN2(pause_time, max_gc_time());
 
   double gc_budget = max_gc_time() - pause_time;
 
   double limit = current_timestamp + pause_time - _time_slice;
-  // Iterate from newest to oldest
+  // Iterate from newest to oldest.
   for (int i = 0; i < _no_entries; ++i) {
     int index = trim_index(_head_index + i);
     G1MMUTrackerElem *elem = &_array[index];
-    // Outside the window
+    // Outside the window.
     if (elem->end_time() <= limit) {
       break;
     }
 
     double duration = (elem->end_time() - MAX2(elem->start_time(), limit));
-    // Would exceed the budget; strictly greater than
+    // This duration would exceed (strictly greater than) the budget.
     if (duration > gc_budget) {
-      // The timestamp where a budget deficit occurs.
-      double deficit_timestamp = elem->end_time() - gc_budget;
-      assert(deficit_timestamp >= limit, "inv");
-      return deficit_timestamp - limit;
+      // This timestamp captures the instant the budget is balanced (or used up).
+      double balance_timesstamp = elem->end_time() - gc_budget;
+      assert(balance_timesstamp >= limit, "inv");
+      return balance_timesstamp - limit;
     }
 
     gc_budget -= duration;
   }
 
-  // No enough gc time inside the window; a budget surplus
+  // Not enough gc time spent inside the window, we have a budget surplus.
   return 0;
 }
