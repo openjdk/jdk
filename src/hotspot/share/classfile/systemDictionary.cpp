@@ -76,6 +76,7 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/signature.hpp"
+#include "runtime/synchronizer.hpp"
 #include "services/classLoadingService.hpp"
 #include "services/diagnosticCommand.hpp"
 #include "services/finalizerService.hpp"
@@ -126,11 +127,6 @@ const int defaultProtectionDomainCacheSize = 1009;
 const int _resolution_error_size  = 107;                     // number of entries in resolution error table
 const int _invoke_method_size     = 139;                     // number of entries in invoke method table
 
-// Hashtable holding placeholders for classes being loaded.
-const int _placeholder_table_size = 1009;
-static PlaceholderTable* _placeholders   = NULL;
-static PlaceholderTable*   placeholders() { return _placeholders; }
-
 // Constraints on class loaders
 const int _loader_constraint_size = 107;                     // number of entries in constraint table
 static LoaderConstraintTable*  _loader_constraints;
@@ -147,23 +143,53 @@ oop SystemDictionary::java_platform_loader() {
 }
 
 void SystemDictionary::compute_java_loaders(TRAPS) {
+  if (_java_system_loader.is_empty()) {
+    oop system_loader = get_system_class_loader_impl(CHECK);
+    _java_system_loader = OopHandle(Universe::vm_global(), system_loader);
+  } else {
+    // It must have been restored from the archived module graph
+    assert(UseSharedSpaces, "must be");
+    assert(MetaspaceShared::use_full_module_graph(), "must be");
+    DEBUG_ONLY(
+      oop system_loader = get_system_class_loader_impl(CHECK);
+      assert(_java_system_loader.resolve() == system_loader, "must be");
+    )
+ }
+
+  if (_java_platform_loader.is_empty()) {
+    oop platform_loader = get_platform_class_loader_impl(CHECK);
+    _java_platform_loader = OopHandle(Universe::vm_global(), platform_loader);
+  } else {
+    // It must have been restored from the archived module graph
+    assert(UseSharedSpaces, "must be");
+    assert(MetaspaceShared::use_full_module_graph(), "must be");
+    DEBUG_ONLY(
+      oop platform_loader = get_platform_class_loader_impl(CHECK);
+      assert(_java_platform_loader.resolve() == platform_loader, "must be");
+    )
+  }
+}
+
+oop SystemDictionary::get_system_class_loader_impl(TRAPS) {
   JavaValue result(T_OBJECT);
   InstanceKlass* class_loader_klass = vmClasses::ClassLoader_klass();
   JavaCalls::call_static(&result,
                          class_loader_klass,
                          vmSymbols::getSystemClassLoader_name(),
                          vmSymbols::void_classloader_signature(),
-                         CHECK);
+                         CHECK_NULL);
+  return result.get_oop();
+}
 
-  _java_system_loader = OopHandle(Universe::vm_global(), result.get_oop());
-
+oop SystemDictionary::get_platform_class_loader_impl(TRAPS) {
+  JavaValue result(T_OBJECT);
+  InstanceKlass* class_loader_klass = vmClasses::ClassLoader_klass();
   JavaCalls::call_static(&result,
                          class_loader_klass,
                          vmSymbols::getPlatformClassLoader_name(),
                          vmSymbols::void_classloader_signature(),
-                         CHECK);
-
-  _java_platform_loader = OopHandle(Universe::vm_global(), result.get_oop());
+                         CHECK_NULL);
+  return result.get_oop();
 }
 
 ClassLoaderData* SystemDictionary::register_loader(Handle class_loader, bool create_mirror_cld) {
@@ -173,6 +199,18 @@ ClassLoaderData* SystemDictionary::register_loader(Handle class_loader, bool cre
   } else {
     return (class_loader() == NULL) ? ClassLoaderData::the_null_class_loader_data() :
                                       ClassLoaderDataGraph::find_or_create(class_loader);
+  }
+}
+
+void SystemDictionary::set_system_loader(ClassLoaderData *cld) {
+  if (_java_system_loader.is_empty()) {
+    _java_system_loader = cld->class_loader_handle();
+  }
+}
+
+void SystemDictionary::set_platform_loader(ClassLoaderData *cld) {
+  if (_java_platform_loader.is_empty()) {
+    _java_platform_loader = cld->class_loader_handle();
   }
 }
 
@@ -347,7 +385,7 @@ static inline void log_circularity_error(Thread* thread, PlaceholderEntry* probe
     ResourceMark rm(thread);
     LogStream ls(lt);
     ls.print("ClassCircularityError detected for placeholder ");
-    probe->print_entry(&ls);
+    probe->print_on(&ls);
     ls.cr();
   }
 }
@@ -400,7 +438,6 @@ InstanceKlass* SystemDictionary::resolve_super_or_fail(Symbol* class_name,
   ClassLoaderData* loader_data = class_loader_data(class_loader);
   Dictionary* dictionary = loader_data->dictionary();
   unsigned int name_hash = dictionary->compute_hash(class_name);
-  assert(placeholders()->compute_hash(class_name) == name_hash, "they're the same hashcode");
 
   // can't throw error holding a lock
   bool throw_circularity_error = false;
@@ -418,7 +455,7 @@ InstanceKlass* SystemDictionary::resolve_super_or_fail(Symbol* class_name,
            return quicksuperk;
     } else {
       // Must check ClassCircularity before checking if superclass is already loaded.
-      PlaceholderEntry* probe = placeholders()->get_entry(name_hash, class_name, loader_data);
+      PlaceholderEntry* probe = PlaceholderTable::get_entry(class_name, loader_data);
       if (probe && probe->check_seen_thread(THREAD, PlaceholderTable::LOAD_SUPER)) {
           log_circularity_error(THREAD, probe);
           throw_circularity_error = true;
@@ -427,11 +464,10 @@ InstanceKlass* SystemDictionary::resolve_super_or_fail(Symbol* class_name,
 
     if (!throw_circularity_error) {
       // Be careful not to exit resolve_super without removing this placeholder.
-      PlaceholderEntry* newprobe = placeholders()->find_and_add(name_hash,
-                                                                class_name,
-                                                                loader_data,
-                                                                PlaceholderTable::LOAD_SUPER,
-                                                                super_name, THREAD);
+      PlaceholderEntry* newprobe = PlaceholderTable::find_and_add(class_name,
+                                                                  loader_data,
+                                                                  PlaceholderTable::LOAD_SUPER,
+                                                                  super_name, THREAD);
     }
   }
 
@@ -450,7 +486,7 @@ InstanceKlass* SystemDictionary::resolve_super_or_fail(Symbol* class_name,
   // Clean up placeholder entry.
   {
     MutexLocker mu(THREAD, SystemDictionary_lock);
-    placeholders()->find_and_remove(name_hash, class_name, loader_data, PlaceholderTable::LOAD_SUPER, THREAD);
+    PlaceholderTable::find_and_remove(class_name, loader_data, PlaceholderTable::LOAD_SUPER, THREAD);
     SystemDictionary_lock->notify_all();
   }
 
@@ -537,7 +573,7 @@ InstanceKlass* SystemDictionary::handle_parallel_loading(JavaThread* current,
                                                          ClassLoaderData* loader_data,
                                                          Handle lockObject,
                                                          bool* throw_circularity_error) {
-  PlaceholderEntry* oldprobe = placeholders()->get_entry(name_hash, name, loader_data);
+  PlaceholderEntry* oldprobe = PlaceholderTable::get_entry(name, loader_data);
   if (oldprobe != NULL) {
     // only need check_seen_thread once, not on each loop
     // 6341374 java/lang/Instrument with -Xcomp
@@ -578,7 +614,7 @@ InstanceKlass* SystemDictionary::handle_parallel_loading(JavaThread* current,
           return check;
         }
         // check if other thread failed to load and cleaned up
-        oldprobe = placeholders()->get_entry(name_hash, name, loader_data);
+        oldprobe = PlaceholderTable::get_entry(name, loader_data);
       }
     }
   }
@@ -647,8 +683,6 @@ InstanceKlass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
          name->as_C_string(),
          class_loader.is_null() ? "null" : class_loader->klass()->name()->as_C_string());
 
-  assert(placeholders()->compute_hash(name) == name_hash, "they're the same hashcode");
-
   // Check again (after locking) if the class already exists in SystemDictionary
   {
     MutexLocker mu(THREAD, SystemDictionary_lock);
@@ -657,7 +691,7 @@ InstanceKlass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
       // InstanceKlass is already loaded, but we still need to check protection domain below.
       loaded_class = check;
     } else {
-      PlaceholderEntry* placeholder = placeholders()->get_entry(name_hash, name, loader_data);
+      PlaceholderEntry* placeholder = PlaceholderTable::get_entry(name, loader_data);
       if (placeholder != NULL && placeholder->super_load_in_progress()) {
          super_load_in_progress = true;
          superclassname = placeholder->supername();
@@ -715,10 +749,10 @@ InstanceKlass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
           loaded_class = check;
         } else if (should_wait_for_loading(class_loader)) {
           // Add the LOAD_INSTANCE token. Threads will wait on loading to complete for this thread.
-          PlaceholderEntry* newprobe = placeholders()->find_and_add(name_hash, name, loader_data,
-                                                                    PlaceholderTable::LOAD_INSTANCE,
-                                                                    NULL,
-                                                                    THREAD);
+          PlaceholderEntry* newprobe = PlaceholderTable::find_and_add(name, loader_data,
+                                                                      PlaceholderTable::LOAD_INSTANCE,
+                                                                      NULL,
+                                                                      THREAD);
           load_placeholder_added = true;
         }
       }
@@ -732,7 +766,7 @@ InstanceKlass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
     }
 
     // Be careful when modifying this code: once you have run
-    // placeholders()->find_and_add(PlaceholderTable::LOAD_INSTANCE),
+    // PlaceholderTable::find_and_add(PlaceholderTable::LOAD_INSTANCE),
     // you need to find_and_remove it before returning.
     // So be careful to not exit with a CHECK_ macro between these calls.
 
@@ -746,7 +780,7 @@ InstanceKlass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
       // This brackets the SystemDictionary updates for both defining
       // and initiating loaders
       MutexLocker mu(THREAD, SystemDictionary_lock);
-      placeholders()->find_and_remove(name_hash, name, loader_data, PlaceholderTable::LOAD_INSTANCE, THREAD);
+      PlaceholderTable::find_and_remove(name, loader_data, PlaceholderTable::LOAD_INSTANCE, THREAD);
       SystemDictionary_lock->notify_all();
     }
   }
@@ -1496,7 +1530,7 @@ void SystemDictionary::define_instance_class(InstanceKlass* k, Handle class_load
 // potentially waste time reading and parsing the bytestream.
 // Note: VM callers should ensure consistency of k/class_name,class_loader
 // Be careful when modifying this code: once you have run
-// placeholders()->find_and_add(PlaceholderTable::DEFINE_CLASS),
+// PlaceholderTable::find_and_add(PlaceholderTable::DEFINE_CLASS),
 // you need to find_and_remove it before returning.
 // So be careful to not exit with a CHECK_ macro between these calls.
 InstanceKlass* SystemDictionary::find_or_define_helper(Symbol* class_name, Handle class_loader,
@@ -1520,9 +1554,8 @@ InstanceKlass* SystemDictionary::find_or_define_helper(Symbol* class_name, Handl
     }
 
     // Acquire define token for this class/classloader
-    assert(placeholders()->compute_hash(name_h) == name_hash, "they're the same hashcode");
-    PlaceholderEntry* probe = placeholders()->find_and_add(name_hash, name_h, loader_data,
-                                                           PlaceholderTable::DEFINE_CLASS, NULL, THREAD);
+    PlaceholderEntry* probe = PlaceholderTable::find_and_add(name_h, loader_data,
+                                                             PlaceholderTable::DEFINE_CLASS, NULL, THREAD);
     // Wait if another thread defining in parallel
     // All threads wait - even those that will throw duplicate class: otherwise
     // caller is surprised by LinkageError: duplicate, but findLoadedClass fails
@@ -1535,7 +1568,7 @@ InstanceKlass* SystemDictionary::find_or_define_helper(Symbol* class_name, Handl
     // caught by finding an entry in the SystemDictionary
     if (is_parallelDefine(class_loader) && (probe->instance_klass() != NULL)) {
       InstanceKlass* ik = probe->instance_klass();
-      placeholders()->find_and_remove(name_hash, name_h, loader_data, PlaceholderTable::DEFINE_CLASS, THREAD);
+      PlaceholderTable::find_and_remove(name_h, loader_data, PlaceholderTable::DEFINE_CLASS, THREAD);
       SystemDictionary_lock->notify_all();
 #ifdef ASSERT
       InstanceKlass* check = dictionary->find_class(name_hash, name_h);
@@ -1553,13 +1586,13 @@ InstanceKlass* SystemDictionary::find_or_define_helper(Symbol* class_name, Handl
   // definer must notify any waiting threads
   {
     MutexLocker mu(THREAD, SystemDictionary_lock);
-    PlaceholderEntry* probe = placeholders()->get_entry(name_hash, name_h, loader_data);
+    PlaceholderEntry* probe = PlaceholderTable::get_entry(name_h, loader_data);
     assert(probe != NULL, "DEFINE_CLASS placeholder lost?");
     if (!HAS_PENDING_EXCEPTION) {
       probe->set_instance_klass(k);
     }
     probe->set_definer(NULL);
-    placeholders()->find_and_remove(name_hash, name_h, loader_data, PlaceholderTable::DEFINE_CLASS, THREAD);
+    PlaceholderTable::find_and_remove(name_h, loader_data, PlaceholderTable::DEFINE_CLASS, THREAD);
     SystemDictionary_lock->notify_all();
   }
 
@@ -1682,7 +1715,6 @@ void SystemDictionary::methods_do(void f(Method*)) {
 
 void SystemDictionary::initialize(TRAPS) {
   // Allocate arrays
-  _placeholders        = new PlaceholderTable(_placeholder_table_size);
   _loader_constraints  = new LoaderConstraintTable(_loader_constraint_size);
   _pd_cache_table = new ProtectionDomainCacheTable(defaultProtectionDomainCacheSize);
 
@@ -2447,7 +2479,7 @@ void SystemDictionary::print_on(outputStream *st) {
   ClassLoaderDataGraph::print_dictionary(st);
 
   // Placeholders
-  placeholders()->print_on(st);
+  PlaceholderTable::print_on(st);
   st->cr();
 
   // loader constraints - print under SD_lock
@@ -2463,19 +2495,15 @@ void SystemDictionary::print() { print_on(tty); }
 void SystemDictionary::verify() {
   guarantee(constraints() != NULL,
             "Verify of loader constraints failed");
-  guarantee(placeholders()->number_of_entries() >= 0,
-            "Verify of placeholders failed");
 
   GCMutexLocker mu(SystemDictionary_lock);
 
   // Verify dictionary
   ClassLoaderDataGraph::verify_dictionary();
 
-  placeholders()->verify();
-
   // Verify constraint table
   guarantee(constraints() != NULL, "Verify of loader constraints failed");
-  constraints()->verify(placeholders());
+  constraints()->verify();
 
   _pd_cache_table->verify();
 }
@@ -2487,7 +2515,6 @@ void SystemDictionary::dump(outputStream *st, bool verbose) {
   } else {
     CDS_ONLY(SystemDictionaryShared::print_table_statistics(st));
     ClassLoaderDataGraph::print_table_statistics(st);
-    placeholders()->print_table_statistics(st, "Placeholder Table");
     constraints()->print_table_statistics(st, "LoaderConstraints Table");
     pd_cache_table()->print_table_statistics(st, "ProtectionDomainCache Table");
   }

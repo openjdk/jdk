@@ -890,7 +890,7 @@ int os::sigexitnum_pd() {
 
 // This method is a periodic task to check for misbehaving JNI applications
 // under CheckJNI, we can add any periodic checks here
-void os::run_periodic_checks() {
+void os::run_periodic_checks(outputStream* st) {
 
   if (check_signals == false) return;
 
@@ -924,8 +924,8 @@ void os::run_periodic_checks() {
     // - print all signal handlers. As part of that printout, details will be printed
     //   about any modified handlers.
     char buf[O_BUFLEN];
-    os::print_signal_handlers(tty, buf, O_BUFLEN);
-    tty->print_cr("Consider using jsig library.");
+    os::print_signal_handlers(st, buf, O_BUFLEN);
+    st->print_cr("Consider using jsig library.");
   }
 }
 

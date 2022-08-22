@@ -31,6 +31,7 @@
 #include "memory/oopFactory.hpp"
 #include "memory/universe.hpp"
 #include "oops/klass.inline.hpp"
+#include "oops/method.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "prims/stackwalk.hpp"

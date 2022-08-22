@@ -40,32 +40,83 @@ class DumpTimeClassInfo: public CHeapObj<mtClass> {
   bool                         _excluded;
   bool                         _is_early_klass;
   bool                         _has_checked_exclusion;
-public:
-  struct DTLoaderConstraint {
+
+  class DTLoaderConstraint {
     Symbol* _name;
     char _loader_type1;
     char _loader_type2;
-    DTLoaderConstraint(Symbol* name, char l1, char l2) : _name(name), _loader_type1(l1), _loader_type2(l2) {
-      _name->increment_refcount();
-    }
+  public:
     DTLoaderConstraint() : _name(NULL), _loader_type1('0'), _loader_type2('0') {}
+    DTLoaderConstraint(Symbol* name, char l1, char l2) : _name(name), _loader_type1(l1), _loader_type2(l2) {
+      Symbol::maybe_increment_refcount(_name);
+    }
+    DTLoaderConstraint(const DTLoaderConstraint& src) {
+      _name = src._name;
+      _loader_type1 = src._loader_type1;
+      _loader_type2 = src._loader_type2;
+      Symbol::maybe_increment_refcount(_name);
+    }
+    DTLoaderConstraint& operator=(DTLoaderConstraint src) {
+      swap(_name, src._name); // c++ copy-and-swap idiom
+      _loader_type1 = src._loader_type1;
+      _loader_type2 = src._loader_type2;
+      return *this;
+    }
+    ~DTLoaderConstraint() {
+      Symbol::maybe_decrement_refcount(_name);
+    }
+
     bool equals(const DTLoaderConstraint& t) {
       return t._name == _name &&
              ((t._loader_type1 == _loader_type1 && t._loader_type2 == _loader_type2) ||
               (t._loader_type2 == _loader_type1 && t._loader_type1 == _loader_type2));
     }
+    void metaspace_pointers_do(MetaspaceClosure* it) {
+      it->push(&_name);
+    }
+
+    Symbol* name()      { return _name;         }
+    char loader_type1() { return _loader_type1; }
+    char loader_type2() { return _loader_type2; }
   };
 
-  struct DTVerifierConstraint {
+  class DTVerifierConstraint {
     Symbol* _name;
     Symbol* _from_name;
+  public:
     DTVerifierConstraint() : _name(NULL), _from_name(NULL) {}
     DTVerifierConstraint(Symbol* n, Symbol* fn) : _name(n), _from_name(fn) {
-      _name->increment_refcount();
-      _from_name->increment_refcount();
+      Symbol::maybe_increment_refcount(_name);
+      Symbol::maybe_increment_refcount(_from_name);
     }
+    DTVerifierConstraint(const DTVerifierConstraint& src) {
+      _name = src._name;
+      _from_name = src._from_name;
+      Symbol::maybe_increment_refcount(_name);
+      Symbol::maybe_increment_refcount(_from_name);
+    }
+    DTVerifierConstraint& operator=(DTVerifierConstraint src) {
+      swap(_name, src._name); // c++ copy-and-swap idiom
+      swap(_from_name, src._from_name); // c++ copy-and-swap idiom
+      return *this;
+    }
+    ~DTVerifierConstraint() {
+      Symbol::maybe_decrement_refcount(_name);
+      Symbol::maybe_decrement_refcount(_from_name);
+    }
+    bool equals(Symbol* n, Symbol* fn) {
+      return (_name == n) && (_from_name == fn);
+    }
+    void metaspace_pointers_do(MetaspaceClosure* it) {
+      it->push(&_name);
+      it->push(&_from_name);
+    }
+
+    Symbol* name()      { return _name;      }
+    Symbol* from_name() { return _from_name; }
   };
 
+public:
   InstanceKlass*               _klass;
   InstanceKlass*               _nest_host;
   bool                         _failed_verification;
@@ -94,6 +145,9 @@ public:
     _loader_constraints = NULL;
     _enum_klass_static_fields = NULL;
   }
+  DumpTimeClassInfo(const DumpTimeClassInfo& src);
+  DumpTimeClassInfo& operator=(const DumpTimeClassInfo&) = delete;
+  ~DumpTimeClassInfo();
 
   void add_verification_constraint(InstanceKlass* k, Symbol* name,
          Symbol* from_name, bool from_field_is_protected, bool from_is_array, bool from_is_object);
@@ -131,15 +185,12 @@ public:
     it->push(&_nest_host);
     if (_verifier_constraints != NULL) {
       for (int i = 0; i < _verifier_constraints->length(); i++) {
-        DTVerifierConstraint* cons = _verifier_constraints->adr_at(i);
-        it->push(&cons->_name);
-        it->push(&cons->_from_name);
+        _verifier_constraints->adr_at(i)->metaspace_pointers_do(it);
       }
     }
     if (_loader_constraints != NULL) {
       for (int i = 0; i < _loader_constraints->length(); i++) {
-        DTLoaderConstraint* lc = _loader_constraints->adr_at(i);
-        it->push(&lc->_name);
+        _loader_constraints->adr_at(i)->metaspace_pointers_do(it);
       }
     }
   }
@@ -162,7 +213,6 @@ public:
   InstanceKlass* nest_host() const                  { return _nest_host; }
   void set_nest_host(InstanceKlass* nest_host)      { _nest_host = nest_host; }
 
-  DumpTimeClassInfo clone();
   size_t runtime_info_bytesize() const;
 };
 
