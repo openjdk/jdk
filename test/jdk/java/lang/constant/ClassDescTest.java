@@ -265,7 +265,7 @@ public class ClassDescTest extends SymbolicDescTest {
             }
         }
 
-        List<String> badInternalNames = List.of("I;", "[]",
+        List<String> badInternalNames = List.of("I;", "[]", "[Ljava/lang/String;",
                 "Ljava.lang.String;", "java.lang.String");
         for (String d : badInternalNames) {
             try {
