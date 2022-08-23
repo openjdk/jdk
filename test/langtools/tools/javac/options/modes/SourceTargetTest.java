@@ -71,7 +71,7 @@ public class SourceTargetTest extends OptionModesTester {
 
         writeFile("C.java", "class C { }");
 
-        String[] opts = { "--release", "8"};
+        String[] opts = { "-source", "8", "-target", "8" };
         String[] files = { "C.java" };
 
         runMain(opts, files)
