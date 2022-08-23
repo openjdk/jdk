@@ -183,18 +183,19 @@ ATTRIBUTE_ALIGNED(16) juint _coeff[] =
 // scratch: xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7
 //          rax, rdx, rcx, r8, r11
 
-void MacroAssembler::fast_log(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3, XMMRegister xmm4, XMMRegister xmm5, XMMRegister xmm6, XMMRegister xmm7, Register eax, Register ecx, Register edx, Register tmp1, Register tmp2) {
+void MacroAssembler::fast_log(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3,
+                              XMMRegister xmm4, XMMRegister xmm5, XMMRegister xmm6, XMMRegister xmm7,
+                              Register eax, Register ecx, Register edx, Register tmp1, Register tmp2) {
   Label L_2TAG_PACKET_0_0_2, L_2TAG_PACKET_1_0_2, L_2TAG_PACKET_2_0_2, L_2TAG_PACKET_3_0_2;
   Label L_2TAG_PACKET_4_0_2, L_2TAG_PACKET_5_0_2, L_2TAG_PACKET_6_0_2, L_2TAG_PACKET_7_0_2;
   Label L_2TAG_PACKET_8_0_2;
-  Label B1_3, B1_5, start;
+  Label B1_3, B1_5;
 
   assert_different_registers(tmp1, tmp2, eax, ecx, edx);
   address L_tbl = (address)_L_tbl;
-  address log2 = (address)_log2;
+  address log2  = (address)_log2;
   address coeff = (address)_coeff;
 
-  bind(start);
   subq(rsp, 24);
   movsd(Address(rsp, 0), xmm0);
   mov64(rax, 0x3ff0000000000000);
@@ -478,16 +479,17 @@ ATTRIBUTE_ALIGNED(16) juint _static_const_table_log[] =
 // scratch: xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7
 //          rax, rdx, rcx, rbx (tmp)
 
-void MacroAssembler::fast_log(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3, XMMRegister xmm4, XMMRegister xmm5, XMMRegister xmm6, XMMRegister xmm7, Register eax, Register ecx, Register edx, Register tmp) {
+void MacroAssembler::fast_log(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3,
+                              XMMRegister xmm4, XMMRegister xmm5, XMMRegister xmm6, XMMRegister xmm7,
+                              Register eax, Register ecx, Register edx, Register tmp) {
   Label L_2TAG_PACKET_0_0_2, L_2TAG_PACKET_1_0_2, L_2TAG_PACKET_2_0_2, L_2TAG_PACKET_3_0_2;
   Label L_2TAG_PACKET_4_0_2, L_2TAG_PACKET_5_0_2, L_2TAG_PACKET_6_0_2, L_2TAG_PACKET_7_0_2;
   Label L_2TAG_PACKET_8_0_2, L_2TAG_PACKET_9_0_2;
-  Label L_2TAG_PACKET_10_0_2, start;
+  Label L_2TAG_PACKET_10_0_2;
 
   assert_different_registers(tmp, eax, ecx, edx);
   address static_const_table = (address)_static_const_table_log;
 
-  bind(start);
   subl(rsp, 104);
   movl(Address(rsp, 40), tmp);
   lea(tmp, ExternalAddress(static_const_table));

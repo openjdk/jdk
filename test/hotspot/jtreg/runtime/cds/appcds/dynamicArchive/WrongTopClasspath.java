@@ -83,7 +83,7 @@ public class WrongTopClasspath extends DynamicArchiveTestBase {
                 "assertShared:java.lang.Object",  // base archive still useable
                 "assertNotShared:GenericTestApp") // but top archive is not useable
           .assertNormalExit(topArchiveMsg,
-                            "[warning][cds] shared class paths mismatch (hint: enable -Xlog:class+path=info to diagnose the failure)");
+                            "shared class paths mismatch (hint: enable -Xlog:class+path=info to diagnose the failure)");
 
         // modify the timestamp of appJar
         (new File(appJar.toString())).setLastModified(System.currentTimeMillis() + 2000);
@@ -97,7 +97,7 @@ public class WrongTopClasspath extends DynamicArchiveTestBase {
                 "assertNotShared:GenericTestApp") // but top archive is not useable
           .assertNormalExit(output -> {
               output.shouldContain(topArchiveMsg);
-              output.shouldMatch(".warning..cds. A jar file is not the one used while building the shared archive file:.*GenericTestApp.jar");
+              output.shouldMatch("A jar file is not the one used while building the shared archive file:.*GenericTestApp.jar");
               output.shouldMatch(".warning..cds.*GenericTestApp.jar timestamp has changed.");});
     }
 }

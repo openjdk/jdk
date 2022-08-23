@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,11 +20,28 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package java.util.stream;
 
-/*
- * @test
- * @summary jpackage unit tests
- * @library ${jtreg.home}/lib/junit.jar ${jtreg.home}/lib/hamcrest.jar
- * @modules jdk.jpackage
- * @run shell run_junit.sh
- */
+import java.util.*;
+
+public abstract class AbstractSpinedBufferTest {
+
+    // Create sizes around the boundary of spines
+    static final List<Integer> SIZES;
+    static {
+        try {
+            SIZES = IntStream.range(0, 15)
+                             .map(i -> 1 << i)
+                             .flatMap(i -> Arrays.stream(new int[] { i-2, i-1, i, i+1, i+2 }))
+                             .filter(i -> i >= 0)
+                             .boxed()
+                             .distinct()
+                             .collect(Collectors.toList());
+        }
+        catch (Exception e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    static final int TEST_SIZE = 5000;
+}
