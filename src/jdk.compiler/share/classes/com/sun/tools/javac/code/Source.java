@@ -163,7 +163,7 @@ public enum Source {
         this.name = name;
     }
 
-    public static final Source MIN = Source.JDK7;
+    public static final Source MIN = Source.JDK8;
 
     private static final Source MAX = values()[values().length - 1];
 

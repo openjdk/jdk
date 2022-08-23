@@ -31,8 +31,6 @@
  *          jdk.compiler
  * @build   JavacTestingAbstractProcessor
  * @compile TestSourceVersion.java
- * @compile -processor TestSourceVersion -proc:only -source 1.7 -AExpectedVersion=RELEASE_7 HelloWorld.java
- * @compile -processor TestSourceVersion -proc:only -source   7 -AExpectedVersion=RELEASE_7 HelloWorld.java
  * @compile -processor TestSourceVersion -proc:only -source 1.8 -AExpectedVersion=RELEASE_8 HelloWorld.java
  * @compile -processor TestSourceVersion -proc:only -source   8 -AExpectedVersion=RELEASE_8 HelloWorld.java
  * @compile -processor TestSourceVersion -proc:only -source 1.9 -AExpectedVersion=RELEASE_9 HelloWorld.java
