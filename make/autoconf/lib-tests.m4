@@ -218,19 +218,20 @@ AC_DEFUN_ONCE([LIB_TESTS_SETUP_JTREG],
   AC_SUBST(JT_HOME)
 
   # Verify jtreg version
+  if test "x$JT_HOME" != x; then
+    AC_MSG_CHECKING([jtreg version number])
+    # jtreg -version looks like this: "jtreg 6.1+1-19"
+    # Extract actual version part ("6.1" in this case)
+    jtreg_version_full=`$JAVA -jar $JT_HOME/lib/jtreg.jar -version | $HEAD -n 1 | $CUT -d ' ' -f 2`
+    jtreg_version=${jtreg_version_full/%+*}
+    AC_MSG_RESULT([$jtreg_version])
 
-  AC_MSG_CHECKING([jtreg version number])
-  # jtreg -version looks like this: "jtreg 6.1+1-19"
-  # Extract actual version part ("6.1" in this case)
-  jtreg_version_full=`$JAVA -jar $JT_HOME/lib/jtreg.jar -version | $HEAD -n 1 | $CUT -d ' ' -f 2`
-  jtreg_version=${jtreg_version_full/%+*}
-  AC_MSG_RESULT([$jtreg_version])
-
-  # This is a simplified version of TOOLCHAIN_CHECK_COMPILER_VERSION
-  comparable_actual_version=`$AWK -F. '{ printf("%05d%05d%05d%05d\n", [$]1, [$]2, [$]3, [$]4) }' <<< "$jtreg_version"`
-  comparable_minimum_version=`$AWK -F. '{ printf("%05d%05d%05d%05d\n", [$]1, [$]2, [$]3, [$]4) }' <<< "$JTREG_MINIMUM_VERSION"`
-  if test $comparable_actual_version -lt $comparable_minimum_version ; then
-    AC_MSG_ERROR([jtreg version is too old, at least version $JTREG_MINIMUM_VERSION is required])
+    # This is a simplified version of TOOLCHAIN_CHECK_COMPILER_VERSION
+    comparable_actual_version=`$AWK -F. '{ printf("%05d%05d%05d%05d\n", [$]1, [$]2, [$]3, [$]4) }' <<< "$jtreg_version"`
+    comparable_minimum_version=`$AWK -F. '{ printf("%05d%05d%05d%05d\n", [$]1, [$]2, [$]3, [$]4) }' <<< "$JTREG_MINIMUM_VERSION"`
+    if test $comparable_actual_version -lt $comparable_minimum_version ; then
+      AC_MSG_ERROR([jtreg version is too old, at least version $JTREG_MINIMUM_VERSION is required])
+    fi
   fi
 ])
 
