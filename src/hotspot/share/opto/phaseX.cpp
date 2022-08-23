@@ -1970,7 +1970,7 @@ Node *PhaseCCP::transform( Node *n ) {
     Node* new_node = _nodes[nn->_idx];
     assert(new_node == NULL, "");
     new_node = transform_once(nn);
-    _nodes.map( nn->_idx, new_node );
+    _nodes.map(nn->_idx, new_node);
     trstack.push(new_node);
   }
 
