@@ -311,16 +311,15 @@ public class TagletManager {
         if (tagName == null || locations == null) {
             return;
         }
-        Taglet tag = allTaglets.get(tagName);
+        // remove + put in both branches below move the tag to the back of the map's ordering
+        Taglet tag = allTaglets.remove(tagName);
         if (tag == null || header != null) {
-            allTaglets.remove(tagName);
             allTaglets.put(tagName, new SimpleTaglet(tagName, header, locations));
             if (Utils.toLowerCase(locations).indexOf('x') == -1) {
                 checkTagName(tagName);
             }
         } else {
-            //Move to back
-            allTaglets.remove(tagName);
+            // Move existing tag to the back
             allTaglets.put(tagName, tag);
         }
     }
