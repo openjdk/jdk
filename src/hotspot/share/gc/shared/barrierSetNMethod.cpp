@@ -72,7 +72,9 @@ bool BarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
       // conversion that performs the load barriers. This is too subtle, so we instead
       // perform an explicit keep alive call.
       oop obj = NativeAccess<ON_PHANTOM_OOP_REF | AS_NO_KEEPALIVE>::oop_load(p);
-      Universe::heap()->keep_alive(obj);
+      if (obj != nullptr) {
+        Universe::heap()->keep_alive(obj);
+      }
     }
 
     virtual void do_oop(narrowOop* p) { ShouldNotReachHere(); }
