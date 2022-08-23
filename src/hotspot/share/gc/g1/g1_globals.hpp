@@ -47,7 +47,7 @@
                                        range,                               \
                                        constraint)                          \
                                                                             \
-  product(bool, G1EvacuationFailureALot, true,                             \
+  product(bool, G1EvacuationFailureALot, false,                             \
           "Force use of evacuation failure handling during certain "        \
           "evacuation pauses")                                              \
                                                                             \
