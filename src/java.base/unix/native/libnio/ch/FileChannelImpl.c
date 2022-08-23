@@ -169,25 +169,20 @@ JNIEXPORT jlong JNICALL
 Java_sun_nio_ch_FileChannelImpl_transferTo0(JNIEnv *env, jobject this,
                                             jobject srcFDO,
                                             jlong position, jlong count,
-                                            jobject dstFDO)
+                                            jobject dstFDO, jboolean append)
 {
     jint srcFD = fdval(env, srcFDO);
     jint dstFD = fdval(env, dstFDO);
 
 #if defined(__linux__)
-    // Check whether the destination is in append mode: copy_file_range fails
-    // with EBADF in this case and sendfile fails with EINVAL.
-    int dstFlags = fcntl(dstFD, F_GETFL);
-    if (dstFlags < 0) {
-        JNU_ThrowIOExceptionWithLastError(env, "Destination flags");
-        return IOS_THROWN;
-    }
-    if ((dstFlags & O_APPEND) != 0)
+    // copy_file_range fails with EBADF when appending, and sendfile
+    // fails with EINVAL
+    if (append == JNI_TRUE)
         return IOS_UNSUPPORTED_CASE;
 
     off64_t offset = (off64_t)position;
     jlong n;
-    if (my_copy_file_range_func) {
+    if (my_copy_file_range_func != NULL) {
         size_t len = (size_t)count;
         n = my_copy_file_range_func(srcFD, &offset, dstFD, NULL, len, 0);
         if (n < 0) {
@@ -293,11 +288,15 @@ Java_sun_nio_ch_FileChannelImpl_transferTo0(JNIEnv *env, jobject this,
 JNIEXPORT jlong JNICALL
 Java_sun_nio_ch_FileChannelImpl_transferFrom0(JNIEnv *env, jobject this,
                                               jobject srcFDO, jobject dstFDO,
-                                              jlong position, jlong count)
+                                              jlong position, jlong count,
+                                              jboolean append)
 {
 #if defined(__linux__)
     if (my_copy_file_range_func == NULL)
         return IOS_UNSUPPORTED;
+    // copy_file_range fails with EBADF when appending
+    if (append == JNI_TRUE)
+        return IOS_UNSUPPORTED_CASE;
 
     jint srcFD = fdval(env, srcFDO);
     jint dstFD = fdval(env, dstFDO);

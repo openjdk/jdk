@@ -23,7 +23,7 @@
 
 /* @test
  * @bug 8292562
- * @summary Test transferTo when target is appending
+ * @summary Test transferTo and transferFrom when target is appending
  * @library /test/lib
  * @build jdk.test.lib.RandomFactory
  * @run main TransferToAppending
@@ -46,49 +46,53 @@ public class TransferToAppending {
     private static final Random RND = RandomFactory.getRandom();
 
     public static void main(String... args) throws IOException {
-        // Create files of size in [MIN_SIZE,MAX_SIZE) filled with random bytes
-        Path source = createFile("src");
-        Path target = createFile("tgt");
+        for (boolean to : new boolean[] {true, false}) {
+            System.err.println("Test " + (to ? "transferTo" : "transferFrom"));
+            // Create files in size range [MIN_SIZE,MAX_SIZE)
+            // filled with random bytes
+            Path source = createFile("src");
+            Path target = createFile("tgt");
 
-        try (FileChannel src = FileChannel.open(source, READ, WRITE);
-             FileChannel tgt = FileChannel.open(target, WRITE, APPEND);) {
-            // Set source range to a subset of the source
-            long srcSize = Files.size(source);
-            long position = RND.nextInt((int)srcSize);
-            long count = RND.nextInt((int)(srcSize - position));
-            long tgtSize = Files.size(target);
+            try (FileChannel src = FileChannel.open(source, READ, WRITE);
+                 FileChannel tgt = FileChannel.open(target, WRITE, APPEND);) {
+                // Set source range to a subset of the source
+                long size = to ? Files.size(source) : Files.size(target);
+                long position = RND.nextInt((int)size);
+                long count = RND.nextInt((int)(size - position));
+                long tgtSize = Files.size(target);
 
-            // Transfer subrange to target
-            src.transferTo(position, count, tgt);
+                // Transfer subrange to target
+                long nbytes = to ? src.transferTo(position, count, tgt) :
+                                   tgt.transferFrom(src, position, count);
 
-            // Target size should be increased by 'count'.
-            if (Files.size(target) != tgtSize + count) {
-                String msg = String.format("Bad size: expected %d, actual %d%n",
-                                           tgtSize + count, Files.size(target));
-                throw new RuntimeException(msg);
-            }
-
-            tgt.close();
-
-            // Load subrange of source
-            ByteBuffer bufSrc = ByteBuffer.allocate((int)count);
-            src.position(position);
-            src.read(bufSrc);
-
-            try (FileChannel result = FileChannel.open(target, READ, WRITE)) {
-                // Load appended range of target
-                ByteBuffer bufTgt = ByteBuffer.allocate((int)count);
-                result.position(tgtSize);
-                result.read(bufTgt);
-
-                // Subranges of values should be equal
-                if (bufSrc.mismatch(bufTgt) != -1) {
-                    throw new RuntimeException("Range of values unequal");
+                // Target size should be increased by 'count'.
+                if (Files.size(target) != tgtSize + nbytes) {
+                    String msg =
+                        String.format("Bad size: expected %d, actual %d%n",
+                                      tgtSize + nbytes, Files.size(target));
+                    throw new RuntimeException(msg);
                 }
+
+                tgt.close();
+
+                // Load subrange of source
+                ByteBuffer bufSrc = ByteBuffer.allocate((int)count);
+                src.read(bufSrc, to ? position : 0);
+
+                try (FileChannel res = FileChannel.open(target, READ, WRITE)) {
+                    // Load appended range of target
+                    ByteBuffer bufTgt = ByteBuffer.allocate((int)count);
+                    res.read(bufTgt, tgtSize);
+
+                    // Subranges of values should be equal
+                    if (bufSrc.mismatch(bufTgt) != -1) {
+                        throw new RuntimeException("Range of values unequal");
+                    }
+                }
+            } finally {
+                Files.delete(source);
+                Files.delete(target);
             }
-        } finally {
-            Files.delete(source);
-            Files.delete(target);
         }
     }
 
