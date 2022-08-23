@@ -12193,7 +12193,7 @@ static bool is_always_reachable(address target, relocInfo::relocType reloc_type)
 }
 
 // Determine whether an address is reachable in rip-relative addressing mode from the code cache.
-static bool is_reachable_from(address target, relocInfo::relocType reloc_type) {
+static bool is_reachable(address target, relocInfo::relocType reloc_type) {
   if (is_always_reachable(target, reloc_type)) {
     return true;
   }
@@ -12234,7 +12234,7 @@ static bool is_reachable_from(address target, relocInfo::relocType reloc_type) {
 
 bool Assembler::reachable(AddressLiteral adr) {
   assert(CodeCache::contains(pc()), "required");
-  return is_reachable_from(adr.target(), adr.reloc());
+  return is_reachable(adr.target(), adr.reloc());
 }
 
 bool Assembler::always_reachable(AddressLiteral adr) {
