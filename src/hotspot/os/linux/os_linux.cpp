@@ -194,15 +194,21 @@ julong os::Linux::available_memory() {
   julong avail_mem;
 
   if (OSContainer::is_containerized()) {
-    jlong mem_limit, mem_usage;
-    mem_limit = os::physical_memory();
-    if (mem_limit > 0 && (mem_usage = OSContainer::memory_usage_in_bytes()) < 1) {
-      log_debug(os, container)("container memory usage failed: " JLONG_FORMAT ", using host value", mem_usage);
+    jlong mem_limit, mem_usage, host_mem;
+    host_mem = Linux::physical_memory();
+    mem_limit = OSContainer::memory_limit_in_bytes();
+    if (mem_limit > host_mem) {
+      mem_limit = -1; // bail out of container code
     }
-    if (mem_limit > 0 && mem_usage > 0 ) {
-      avail_mem = mem_limit > mem_usage ? (julong)mem_limit - (julong)mem_usage : 0;
-      log_trace(os)("available container memory: " JULONG_FORMAT, avail_mem);
-      return avail_mem;
+    if (mem_limit > 0) {
+      if (mem_usage = OSContainer::memory_usage_in_bytes() < 1) {
+        log_debug(os, container)("container memory usage failed: " JLONG_FORMAT ", using host value", mem_usage);
+      }
+      if (mem_usage > 0) {
+        avail_mem = mem_limit > mem_usage ? (julong)mem_limit - (julong)mem_usage : 0;
+        log_trace(os)("available container memory: " JULONG_FORMAT, avail_mem);
+        return avail_mem;
+      }
     }
   }
 
