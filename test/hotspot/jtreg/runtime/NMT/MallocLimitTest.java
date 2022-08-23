@@ -83,15 +83,15 @@ import java.util.stream.Stream;
 public class MallocLimitTest {
 
     private static ProcessBuilder processBuilderWithSetting(String... extra_settings) {
-        String[] vmargs = new String[] {
-            "-XX:+UnlockDiagnosticVMOptions", // MallocLimit is diagnostic
-            "-Xmx64m", "-XX:-CreateCoredumpOnCrash", "-Xlog:nmt",
-            "-XX:NativeMemoryTracking=summary"
-        };
-        String[] vmargs2 = new String[] { "-version" };
-        String[] both = Stream.concat(Stream.concat(Arrays.stream(vmargs), Arrays.stream(extra_settings)), Arrays.stream(vmargs2))
-                .toArray(String[]::new);
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(both);
+        List<String> args = new ArrayList<>();
+        args.add("-XX:+UnlockDiagnosticVMOptions"); // MallocLimit is diagnostic
+        args.add("-Xmx64m");
+        args.add("-XX:-CreateCoredumpOnCrash");
+        args.add("-Xlog:nmt");
+        args.add("-XX:NativeMemoryTracking=summary");
+        args.addAll(Arrays.asList(extra_settings));
+        args.add("-version");
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(args);
         return pb;
     }
 
