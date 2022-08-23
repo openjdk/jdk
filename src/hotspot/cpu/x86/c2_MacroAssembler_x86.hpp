@@ -458,4 +458,7 @@ public:
 
   void vmovmask(BasicType elem_bt, Address dst, XMMRegister src, XMMRegister mask, int vec_enc);
 
+  void rearrange_bytes(XMMRegister dst, XMMRegister shuffle, XMMRegister src, XMMRegister xtmp1,
+                       XMMRegister xtmp2, XMMRegister xtmp3, Register rtmp, KRegister ktmp, int vlen_enc);
+
 #endif // CPU_X86_C2_MACROASSEMBLER_X86_HPP

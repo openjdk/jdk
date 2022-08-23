@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,28 +19,29 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
+package java.util.stream;
 
-#ifndef SHARE_JFR_INSTRUMENTATION_JFRRESOLUTION_HPP
-#define SHARE_JFR_INSTRUMENTATION_JFRRESOLUTION_HPP
+import java.util.*;
 
-#include "memory/allocation.hpp"
-#include "utilities/exceptions.hpp"
+public abstract class AbstractSpinedBufferTest {
 
-class CallInfo;
-class ciKlass;
-class ciMethod;
-class GraphBuilder;
-class Parse;
+    // Create sizes around the boundary of spines
+    static final List<Integer> SIZES;
+    static {
+        try {
+            SIZES = IntStream.range(0, 15)
+                             .map(i -> 1 << i)
+                             .flatMap(i -> Arrays.stream(new int[] { i-2, i-1, i, i+1, i+2 }))
+                             .filter(i -> i >= 0)
+                             .boxed()
+                             .distinct()
+                             .collect(Collectors.toList());
+        }
+        catch (Exception e) {
+            throw new IllegalStateException(e);
+        }
+    }
 
-class JfrResolution : AllStatic {
- public:
-  static void on_runtime_resolution(const CallInfo & info, TRAPS);
-  static void on_c1_resolution(const GraphBuilder * builder, const ciKlass * holder, const ciMethod * target);
-  static void on_c2_resolution(const Parse * parse, const ciKlass * holder, const ciMethod * target);
-  static void on_jvmci_resolution(const Method* caller, const Method* target, TRAPS);
-};
-
-#endif // SHARE_JFR_INSTRUMENTATION_JFRRESOLUTION_HPP
-
+    static final int TEST_SIZE = 5000;
+}
