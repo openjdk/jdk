@@ -24,12 +24,12 @@
 /*
  * @test
  * @bug 8292275
- * @summary Check origin of implicit parameters
+ * @summary Verify specific executables in enums and records have mandated parameters
  * @library /tools/javac/lib
  * @modules java.compiler
  *          jdk.compiler
  * @build   JavacTestingAbstractProcessor ImplicitParametersProcessor
- * @compile -processor ImplicitParametersProcessor -proc:only ClassContainer.java
+ * @compile -processor ImplicitParametersProcessor -proc:only ImplicitParametersProcessor.java
  */
 
 import javax.annotation.processing.RoundEnvironment;
@@ -37,9 +37,11 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.util.Elements;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static javax.lang.model.util.ElementFilter.constructorsIn;
 import static javax.lang.model.util.ElementFilter.methodsIn;
@@ -56,15 +58,9 @@ public class ImplicitParametersProcessor extends JavacTestingAbstractProcessor {
         for (TypeElement typeElement : typesIn(roundEnv.getRootElements())) {
             for (TypeElement innerType : typesIn(typeElement.getEnclosedElements())) {
                 System.out.println("Visiting " + innerType);
-                if ("MyRecord".contentEquals(innerType.getSimpleName())) {
-                    hasError |= checkAllExecutables(innerType, Map.of(
-                            "<init>", List.of(Elements.Origin.MANDATED, Elements.Origin.MANDATED)
-                    ));
-                } else if ("MyEnum".contentEquals(innerType.getSimpleName())) {
-                    hasError |= checkAllExecutables(innerType, Map.of(
-                            "valueOf", List.of(Elements.Origin.MANDATED)
-                    ));
-                }
+                ExpectedOrigin[] expectedOrigins = innerType.getAnnotationsByType(ExpectedOrigin.class);
+                    hasError |= checkAllExecutables(innerType, Arrays.stream(expectedOrigins)
+                            .collect(Collectors.toMap(ExpectedOrigin::method, ExpectedOrigin::origins)));
             }
         }
         if (hasError) {
@@ -73,7 +69,7 @@ public class ImplicitParametersProcessor extends JavacTestingAbstractProcessor {
         return true;
     }
 
-    boolean checkAllExecutables(TypeElement element, Map<String, List<Elements.Origin>> expectations) {
+    boolean checkAllExecutables(TypeElement element, Map<String, Elements.Origin[]> expectations) {
         boolean hasError = false;
         for (ExecutableElement executable : constructorsIn(element.getEnclosedElements())) {
             hasError |= checkExecutable(expectations, executable);
@@ -84,10 +80,10 @@ public class ImplicitParametersProcessor extends JavacTestingAbstractProcessor {
         return hasError;
     }
 
-    private boolean checkExecutable(Map<String, List<Elements.Origin>> expectations, ExecutableElement executable) {
+    private boolean checkExecutable(Map<String, Elements.Origin[]> expectations, ExecutableElement executable) {
         System.out.println("Looking at executable " + executable);
-        List<Elements.Origin> list = expectations.get(executable.getSimpleName().toString());
-        if (list == null) {
+        Elements.Origin[] origins = expectations.get(executable.getSimpleName().toString());
+        if (origins == null) {
             System.out.println("ignoring this executable due to missing expectations");
             return false;
         }
@@ -96,11 +92,26 @@ public class ImplicitParametersProcessor extends JavacTestingAbstractProcessor {
         for (int i = 0; i < parameters.size(); i++) {
             VariableElement parameter = parameters.get(i);
             Elements.Origin origin = eltUtils.getOrigin(parameter);
-            if (origin != list.get(i)) {
-                System.err.println("ERROR: Wrong origin for " + executable + ". Expected: " + list.get(i) + " but got " + origin + " at index " + i);
+            if (origin != origins[i]) {
+                System.err.println("ERROR: Wrong origin for " + executable + ". Expected: " + origins[i] + " but got " + origin + " at index " + i);
                 hasError = true;
             }
         }
         return hasError;
+    }
+
+    // the valueOf(String) method has one mandated parameter
+    @ExpectedOrigin(method = "valueOf", origins = {Elements.Origin.MANDATED})
+    enum MyEnum {}
+
+    // the parameters of a compact record constructor are mandated
+    @ExpectedOrigin(method = "<init>", origins = {Elements.Origin.MANDATED, Elements.Origin.MANDATED})
+    record MyRecord(int a, Object b) {
+        MyRecord {}
+    }
+
+    @interface ExpectedOrigin {
+        String method();
+        Elements.Origin[] origins();
     }
 }
