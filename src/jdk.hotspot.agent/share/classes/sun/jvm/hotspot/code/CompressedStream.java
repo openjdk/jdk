@@ -54,11 +54,16 @@ public class CompressedStream {
   public static final int LogBitsPerByte = 3;
   public static final int BitsPerByte = 1 << 3;
 
+  // Note: In the C++ code, the implementation of UNSIGNED5 has been
+  // moved to its own header file, <unsigned5.hpp>.
+
   // Constants for UNSIGNED5 coding of Pack200
   public static final int lg_H = 6;
   public static final int H = 1<<lg_H;  // number of high codes (64)
-  public static final int L = (1<<BitsPerByte) - H; // number of low codes (192)
-  public static final int MAX_i = 4;      // bytes are numbered in (0..4)
+  public static final int X = 1;        // there is one excluded byte ('\0')
+  public static final int MAX_b = (1<<BitsPerByte)-1;  // largest byte value
+  public static final int L = (MAX_b+1)-X-H;  // number of low codes (191)
+  public static final int MAX_LENGTH = 5;  // lengths are in [1..5]
 
   // Positioning
   public int getPosition() {
@@ -67,6 +72,9 @@ public class CompressedStream {
   public void setPosition(int position) {
     this.position = position;
   }
+
+  // Note: In the C++ code, the following little algorithms
+  // have been moved elsewhere.
 
   // 32-bit one-to-one sign encoding taken from Pack200
   // converts leading sign bits into leading zeros with trailing sign bit

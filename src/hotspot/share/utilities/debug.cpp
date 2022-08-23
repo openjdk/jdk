@@ -61,6 +61,7 @@
 #include "utilities/formatBuffer.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/unsigned5.hpp"
 #include "utilities/vmError.hpp"
 
 #include <stdio.h>
@@ -647,6 +648,49 @@ extern "C" JNIEXPORT void findbcp(intptr_t method, intptr_t bcp) {
     mh->print_codes_on(tty);
   }
 }
+
+// check and decode a single u5 value
+extern "C" JNIEXPORT u4 u5decode(intptr_t addr) {
+  Command c("u5decode");
+  u1* arr = (u1*)addr;
+  size_t off = 0, lim = 5;
+  if (!UNSIGNED5::check_length(arr, off, lim)) {
+    return 0;
+  }
+  return UNSIGNED5::read_u4(arr, off, lim);
+}
+
+// check and decode a series of u5 values
+// return the address after the last decoded byte
+// if limit is non-zero stop before limit
+// if count is non-negative stop when count is reached
+// if count is negative stop on null (works kind of like strlen)
+extern "C" JNIEXPORT intptr_t u5p(intptr_t addr, intptr_t limit, int count) {
+  Command c("u5p");
+  u1* arr = (u1*)addr;
+  if (limit && limit < addr)  limit = addr;
+  size_t off = 0, lim = (size_t)(limit - addr);
+  int printed = 0;
+  tty->print("U5: [");
+  for (;;) {
+    if (count >= 0 && printed >= count)  break;
+    if (count < 0 && arr[off] == 0) {
+      tty->print(" null");
+      ++off;
+      ++printed;
+      continue;
+    } else if (!UNSIGNED5::check_length(arr, off, lim)) {
+      break;
+    }
+    u4 value = UNSIGNED5::read_u4(arr, off, lim);
+    tty->print(" %d", value);
+    ++printed;
+  }
+  tty->print_cr(" ] (values=%d/length=%d)",
+                printed, (int)off);
+  return addr + off;
+}
+
 
 // int versions of all methods to avoid having to type type casts in the debugger
 

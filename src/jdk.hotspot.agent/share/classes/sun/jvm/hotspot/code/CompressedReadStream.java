@@ -56,16 +56,6 @@ public class CompressedReadStream extends CompressedStream {
     return decodeSign(readInt());
   }
 
-  public int readInt() {
-    int b0 = read();
-    if (b0 < L) {
-      return b0;
-    } else {
-      return readIntMb(b0);
-    }
-  }
-
-
   public float readFloat() {
     return Float.intBitsToFloat(reverseInt(readInt()));
   }
@@ -85,36 +75,30 @@ public class CompressedReadStream extends CompressedStream {
   }
 
   //--------------------------------------------------------------------------------
-  // Internals only below this point
-  //
+  // Note: In the C++ code, the implementation of UNSIGNED5 has been
+  // moved to its own header file, <unsigned5.hpp>.
 
-
-  // This encoding, called UNSIGNED5, is taken from J2SE Pack200.
-  // It assumes that most values have lots of leading zeroes.
-  // Very small values, in the range [0..191], code in one byte.
-  // Any 32-bit value (including negatives) can be coded, in
-  // up to five bytes.  The grammar is:
-  //    low_byte  = [0..191]
-  //    high_byte = [192..255]
-  //    any_byte  = low_byte | high_byte
-  //    coding = low_byte
-  //           | high_byte low_byte
-  //           | high_byte high_byte low_byte
-  //           | high_byte high_byte high_byte low_byte
-  //           | high_byte high_byte high_byte high_byte any_byte
-  // Each high_byte contributes six bits of payload.
-  // The encoding is one-to-one (except for integer overflow)
-  // and easy to parse and unparse.
-
-  private int readIntMb(int b0) {
-    int pos = position - 1;
-    int sum = b0;
-    // must collect more bytes: b[1]...b[4]
-    int lg_H_i = lg_H;
-    for (int i = 0; ;) {
-      int b_i = read(pos + (++i));
-      sum += b_i << lg_H_i; // sum += b[i]*(64**i)
-      if (b_i < L || i == MAX_i) {
+  public int readInt() {
+    // UNSIGNED5::read_u4(_buffer, &_position, limit=0)
+    int pos = position;
+    int b_0 = read(pos);
+    int sum = b_0 - X;
+    // VM throws assert if b0<X; we just return -1 here instead
+    if (sum < L) {  // common case
+      setPosition(pos+1);
+      return sum;
+    }
+    // must collect more bytes:  b[1]...b[4]
+    int lg_H_i = lg_H;  // lg(H)*i == lg(H^^i)
+    for (int i = 1; ; i++) {  // for i in [1..4]
+      int b_i = read(pos + i);
+      if (b_i < X) {  // avoid excluded bytes
+        // VM throws assert here; should not happen
+        setPosition(pos+i);  // do not consume the bad byte
+        return sum;  // return whatever we have parsed so far
+      }
+      sum += (b_i - X) << lg_H_i;  // sum += (b[i]-X)*(64^^i)
+      if (b_i < X+L || i == MAX_LENGTH-1) {
         setPosition(pos+i+1);
         return sum;
       }
