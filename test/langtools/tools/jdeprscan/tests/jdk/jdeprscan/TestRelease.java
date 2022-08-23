@@ -60,5 +60,7 @@ public class TestRelease {
     @Test
     public void testFailure() {
         assertFalse(invoke("5"));
+        assertFalse(invoke("6"));
+        assertFalse(invoke("7"));
     }
 }
