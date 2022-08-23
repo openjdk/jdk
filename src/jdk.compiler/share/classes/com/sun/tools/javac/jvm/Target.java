@@ -114,6 +114,8 @@ public enum Target {
 
     private static final Target MAX = values()[values().length - 1];
 
+    public static final Target DEFAULT = MAX;
+
     private static final Map<String,Target> tab = new HashMap<>();
     static {
         for (Target t : values()) {
@@ -135,8 +137,6 @@ public enum Target {
         this.majorVersion = majorVersion;
         this.minorVersion = minorVersion;
     }
-
-    public static final Target DEFAULT = values()[values().length - 1];
 
     public static Target lookup(String name) {
         return tab.get(name);

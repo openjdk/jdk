@@ -55,8 +55,6 @@ public class TestMetafactoryBridges {
 
     enum ClasspathKind {
         NONE(),
-        B7(7, ClassKind.B),
-        A7(7, ClassKind.A),
         B8(8, ClassKind.B),
         A8(8, ClassKind.A);
 
@@ -292,10 +290,7 @@ public class TestMetafactoryBridges {
             throw new AssertionError("Unexpected compilation failure");
         }
 
-        boolean altMetafactory =
-                cpKind == ClasspathKind.B7 &&
-                !sources.contains(ClassKind.B) &&
-                (pp == PreferPolicy.NEWER || !spKind.sources.contains(ClassKind.B));
+        boolean altMetafactory = false;
 
         if (altMetafactory != diagChecker.altMetafactory) {
             throw new AssertionError("Bad metafactory detected - expected altMetafactory: " + altMetafactory +
