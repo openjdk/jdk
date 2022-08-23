@@ -2177,8 +2177,9 @@ public class File
         } while (fs.hasBooleanAttributes(f, FileSystem.BA_EXISTS));
 
 
-        if(!tmpdir.exists()) {
-            throw new IOException("The specified directory does no exist! Please contact system administrator!");
+        if(!tmpdir.exists() || !tmpdir.canWrite()) {
+            throw new IOException("The specified directory does no exist or is not accessible! " +
+                    "Please contact system administrator!");
         }
 
         if (!fs.createFileExclusively(f.getPath()))

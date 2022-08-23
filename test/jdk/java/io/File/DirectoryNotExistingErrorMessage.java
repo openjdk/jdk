@@ -33,15 +33,16 @@ public class DirectoryNotExistingErrorMessage {
 
     public static void main(String ... args) throws Exception{
 
-        String errorMsg = "The specified directory does no exist! Please contact system administrator!";
+        String errorMsg = "The specified directory does no exist or is not accessible!";
         try {
             File tmpDir = new File(System.getProperty("java.io.tmpdir")+"/not-existing");
             System.out.println("Does " + tmpDir + " exists? " + tmpDir.exists());
+            System.out.println("Is " + tmpDir + " accessible? " + tmpDir.canWrite());
 
             File tmpFile = File.createTempFile("prefix", ".suffix",tmpDir);
 
         } catch (IOException ioe) {
-            if(!errorMsg.equalsIgnoreCase(ioe.getMessage())){
+            if(!ioe.getMessage().contains(errorMsg)){
                 throw new IOException("Directory testing failed");
             }
         }
