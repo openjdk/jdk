@@ -4419,7 +4419,6 @@ bool Arguments::parse_malloc_limit_size(const char* s, size_t* out) {
     vm_exit_during_initialization("MallocLimit: limit must be > 0");
     break;
   default:
-    // fall through
     break;
   }
   return false;
