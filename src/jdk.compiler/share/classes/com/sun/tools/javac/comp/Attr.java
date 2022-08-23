@@ -169,7 +169,6 @@ public class Attr extends JCTree.Visitor {
         allowPoly = Feature.POLY.allowedInSource(source);
         allowTypeAnnos = Feature.TYPE_ANNOTATIONS.allowedInSource(source);
         allowLambda = Feature.LAMBDA.allowedInSource(source);
-        allowDefaultMethods = Feature.DEFAULT_METHODS.allowedInSource(source);
         allowStaticInterfaceMethods = Feature.STATIC_INTERFACE_METHODS.allowedInSource(source);
         allowReifiableTypesInInstanceof = Feature.REIFIABLE_TYPES_INSTANCEOF.allowedInSource(source);
         allowRecords = Feature.RECORDS.allowedInSource(source);
@@ -200,10 +199,6 @@ public class Attr extends JCTree.Visitor {
     /** Switch: support lambda expressions ?
      */
     boolean allowLambda;
-
-    /** Switch: support default methods ?
-     */
-    boolean allowDefaultMethods;
 
     /** Switch: static interface methods enabled?
      */
@@ -5573,9 +5568,7 @@ public class Attr extends JCTree.Visitor {
             // are compatible (i.e. no two define methods with same arguments
             // yet different return types).  (JLS 8.4.8.3)
             chk.checkCompatibleSupertypes(tree.pos(), c.type);
-            if (allowDefaultMethods) {
-                chk.checkDefaultMethodClashes(tree.pos(), c.type);
-            }
+            chk.checkDefaultMethodClashes(tree.pos(), c.type);
         }
 
         // Check that class does not import the same parameterized interface

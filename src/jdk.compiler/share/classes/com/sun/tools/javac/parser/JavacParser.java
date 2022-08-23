@@ -1222,7 +1222,6 @@ public class JavacParser implements Parser {
                        int pos1 = pos;
                        List<JCExpression> targets = List.of(t = parseType());
                        while (token.kind == AMP) {
-                           checkSourceLevel(Feature.INTERSECTION_TYPES_IN_CAST);
                            accept(AMP);
                            targets = targets.prepend(parseType());
                        }
@@ -3304,7 +3303,7 @@ public class JavacParser implements Parser {
             case SYNCHRONIZED: flag = Flags.SYNCHRONIZED; break;
             case STRICTFP    : flag = Flags.STRICTFP; break;
             case MONKEYS_AT  : flag = Flags.ANNOTATION; break;
-            case DEFAULT     : checkSourceLevel(Feature.DEFAULT_METHODS); flag = Flags.DEFAULT; break;
+            case DEFAULT     : flag = Flags.DEFAULT; break;
             case ERROR       : flag = 0; nextToken(); break;
             case IDENTIFIER  : {
                 if (isNonSealedClassStart(false)) {
@@ -4356,7 +4355,7 @@ public class JavacParser implements Parser {
                 List<JCAnnotation> annosAfterParams = annotationsOpt(Tag.ANNOTATION);
 
                 if (annosAfterParams.nonEmpty()) {
-                    checkSourceLevel(annosAfterParams.head.pos, Feature.ANNOTATIONS_AFTER_TYPE_PARAMS);
+                    // checkSourceLevel(annosAfterParams.head.pos, Feature.ANNOTATIONS_AFTER_TYPE_PARAMS);
                     mods.annotations = mods.annotations.appendList(annosAfterParams);
                     if (mods.pos == Position.NOPOS)
                         mods.pos = mods.annotations.head.pos;

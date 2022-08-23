@@ -92,7 +92,6 @@ public class Types {
     final Symtab syms;
     final JavacMessages messages;
     final Names names;
-    final boolean allowDefaultMethods;
     final Check chk;
     final Enter enter;
     JCDiagnostic.Factory diags;
@@ -114,7 +113,6 @@ public class Types {
         syms = Symtab.instance(context);
         names = Names.instance(context);
         Source source = Source.instance(context);
-        allowDefaultMethods = Feature.DEFAULT_METHODS.allowedInSource(source);
         chk = Check.instance(context);
         enter = Enter.instance(context);
         capturedName = names.fromString("<captured wildcard>");
@@ -3124,11 +3122,9 @@ public class Types {
                         MethodSymbol implmeth = absmeth.implementation(impl, this, true);
                         if (implmeth == null || implmeth == absmeth) {
                             //look for default implementations
-                            if (allowDefaultMethods) {
-                                MethodSymbol prov = interfaceCandidates(impl.type, absmeth).head;
-                                if (prov != null && prov.overrides(absmeth, impl, this, true)) {
-                                    implmeth = prov;
-                                }
+                            MethodSymbol prov = interfaceCandidates(impl.type, absmeth).head;
+                            if (prov != null && prov.overrides(absmeth, impl, this, true)) {
+                                implmeth = prov;
                             }
                         }
                         if (implmeth == null || implmeth == absmeth) {

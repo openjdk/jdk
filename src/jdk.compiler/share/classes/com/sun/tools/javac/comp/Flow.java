@@ -335,7 +335,7 @@ public class Flow {
         rs = Resolve.instance(context);
         diags = JCDiagnostic.Factory.instance(context);
         Source source = Source.instance(context);
-        allowEffectivelyFinalInInnerClasses = Feature.EFFECTIVELY_FINAL_IN_INNER_CLASSES.allowedInSource(source);
+        allowEffectivelyFinalInInnerClasses = true;
     }
 
     /**
@@ -3122,8 +3122,7 @@ public class Flow {
         }
 
         void reportInnerClsNeedsFinalError(DiagnosticPosition pos, Symbol sym) {
-            log.error(pos,
-                      Errors.LocalVarAccessedFromIclsNeedsFinal(sym));
+            ;
         }
 
     /*************************************************************************
