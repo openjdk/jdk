@@ -152,7 +152,7 @@ public:
 
   // Pass locally gathered statistics to global state. Returns the total number of
   // HeapWords copied.
-  size_t flush(size_t* surviving_young_words);
+  size_t flush(size_t* surviving_young_words, uint num_workers);
 
 private:
   void do_partial_array(PartialArrayScanTask task);

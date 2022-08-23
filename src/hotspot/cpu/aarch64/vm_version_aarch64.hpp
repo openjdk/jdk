@@ -104,7 +104,7 @@ public:
 
 #define CPU_FEATURE_FLAGS(decl)               \
     decl(FP,            fp,            0)     \
-    decl(ASIMD,         simd,          1)     \
+    decl(ASIMD,         asimd,         1)     \
     decl(EVTSTRM,       evtstrm,       2)     \
     decl(AES,           aes,           3)     \
     decl(PMULL,         pmull,         4)     \

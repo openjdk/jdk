@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,13 +21,24 @@
  * questions.
  */
 
-.ui-state-active,
-.ui-widget-content .ui-state-active,
-.ui-widget-header .ui-state-active,
-a.ui-button:active,
-.ui-button:active,
-.ui-button.ui-state-active:hover {
-    /* Overrides the color of selection used in jQuery UI */
-    background: #F8981D;
-    border: 1px solid #F8981D;
+#include <stdio.h>
+#include <jni.h>
+#include <signal.h>
+#include <sys/ucontext.h>
+#include <errno.h>
+#include <string.h>
+
+static void sig_handler(int sig, siginfo_t *info, ucontext_t *context) {
+    printf( " HANDLER (1) " );
+}
+
+JNIEXPORT void JNICALL Java_TestPosixSig_changeSigActionFor(JNIEnv *env, jclass klass, jint val) {
+    struct sigaction act;
+    act.sa_handler = (void (*)())sig_handler;
+    sigemptyset(&act.sa_mask);
+    act.sa_flags = 0;
+    int retval = sigaction(val, &act, 0);
+    if (retval != 0) {
+        printf("ERROR: failed to set %d signal handler error=%s\n", val, strerror(errno));
+    }
 }

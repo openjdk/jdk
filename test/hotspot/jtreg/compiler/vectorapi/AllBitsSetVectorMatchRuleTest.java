@@ -42,7 +42,7 @@ import jdk.test.lib.Utils;
  * @key randomness
  * @library /test/lib /
  * @requires vm.compiler2.enabled
- * @requires vm.cpu.features ~= ".*simd.*"
+ * @requires vm.cpu.features ~= ".*asimd.*"
  * @summary AArch64: [vector] Make all bits set vector sharable for match rules
  * @modules jdk.incubator.vector
  *
