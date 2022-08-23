@@ -28,11 +28,10 @@
  * printed when JAAS optional login fails when debug is true.
  * @run main/othervm -Djava.security.debug=logincontext UnixNTPlatform
  */
-import javax.security.auth.login.Configuration;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
 import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.nio.file.Path;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 
