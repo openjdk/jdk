@@ -261,14 +261,12 @@ bool ciMethodData::load_data() {
   _arg_local = mdo->arg_local();
   _arg_stack = mdo->arg_stack();
   _arg_returned  = mdo->arg_returned();
-#ifndef PRODUCT
   if (ReplayCompiles) {
     ciReplay::initialize(this);
     if (is_empty()) {
       return false;
     }
   }
-#endif
   return true;
 }
 
