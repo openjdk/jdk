@@ -87,9 +87,6 @@ NMT_TrackingLevel NMTUtil::parse_tracking_level(const char* s) {
   return NMT_unknown;
 }
 
-// Given a string, return associated flag. mtNone if name is invalid.
-// String can be either the human readable name or the
-// stringified enum (with or without leading "mt"). In all cases, case is ignored.
 MEMFLAGS NMTUtil::string_to_flag(const char* s) {
   for (int i = 0; i < mt_number_of_types; i ++) {
     assert(::strlen(_strings[i].enum_s) > 2, "Sanity"); // should always start with "mt"

@@ -102,12 +102,17 @@ void MallocMemorySummary::initialize_limit_handling() {
   Arguments::parse_malloc_limits(&_total_limit, _limits_per_category);
 
   if (_total_limit > 0) {
-    log_info(nmt)("MallocLimit: total limit: " SIZE_FORMAT, _total_limit);
+    log_info(nmt)("MallocLimit: total limit: " SIZE_FORMAT "%s",
+                  byte_size_in_proper_unit(_total_limit),
+                  proper_unit_for_byte_size(_total_limit));
   } else {
     for (int i = 0; i < mt_number_of_types; i ++) {
-      if (_limits_per_category[i] > 0) {
-        log_info(nmt)("MallocLimit: category \"%s\" limit: " SIZE_FORMAT,
-                      NMTUtil::flag_to_name((MEMFLAGS)i), _limits_per_category[i]);
+      size_t catlim = _limits_per_category[i];
+      if (catlim > 0) {
+        log_info(nmt)("MallocLimit: category \"%s\" limit: " SIZE_FORMAT "%s",
+                      NMTUtil::flag_to_name((MEMFLAGS)i),
+                      byte_size_in_proper_unit(catlim),
+                      proper_unit_for_byte_size(catlim));
       }
     }
   }
@@ -116,18 +121,16 @@ void MallocMemorySummary::initialize_limit_handling() {
 void MallocMemorySummary::total_limit_reached(size_t size, size_t limit) {
   // Assert in both debug and release, but allow error reporting to malloc beyond limits.
   if (!VMError::is_error_reported()) {
-    guarantee(false,
-              "MallocLimit: reached limit (size: " SIZE_FORMAT ", limit: " SIZE_FORMAT ") ",
-              size, limit);
+    fatal("MallocLimit: reached limit (size: " SIZE_FORMAT ", limit: " SIZE_FORMAT ") ",
+          size, limit);
   }
 }
 
 void MallocMemorySummary::category_limit_reached(size_t size, size_t limit, MEMFLAGS flag) {
   // Assert in both debug and release, but allow error reporting to malloc beyond limits.
   if (!VMError::is_error_reported()) {
-    guarantee(false,
-              "MallocLimit: category \"%s\" reached limit (size: " SIZE_FORMAT ", limit: " SIZE_FORMAT ") ",
-              NMTUtil::flag_to_name(flag), size, limit);
+    fatal("MallocLimit: category \"%s\" reached limit (size: " SIZE_FORMAT ", limit: " SIZE_FORMAT ") ",
+          NMTUtil::flag_to_name(flag), size, limit);
   }
 }
 

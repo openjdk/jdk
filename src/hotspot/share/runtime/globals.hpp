@@ -1366,11 +1366,12 @@ const int ObjectAlignmentInBytes = 8;
           range(0, max_uintx)                                               \
                                                                             \
   product(ccstr, MallocLimit, nullptr, DIAGNOSTIC,                          \
-          "Limit malloc allocation size from hotspot (requires NMT). "      \
-          "Reaching the limit will trigger a fatal error."                  \
+          "Limit malloc allocation size from VM. Reaching the limit will "  \
+          "trigger a fatal error. This feature requires "                   \
+          "NativeMemoryTracking=summary or NativeMemoryTracking=detail."    \
           "Usage:"                                                          \
           "- MallocLimit=<size> to set a total limit. "                     \
-          "- MallocLimit=<NMT category>:<size>[,<NMT category>:<size>...] "  \
+          "- MallocLimit=<NMT category>:<size>[,<NMT category>:<size>...] " \
           "  to set one or more category-specific limits."                  \
           "Example: -XX:MallocLimit=compiler:500m")                         \
                                                                             \
