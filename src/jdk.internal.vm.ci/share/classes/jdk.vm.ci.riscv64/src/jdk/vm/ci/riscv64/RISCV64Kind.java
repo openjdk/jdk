@@ -32,29 +32,7 @@ public enum RISCV64Kind implements PlatformKind {
     DWORD(4),
     QWORD(8),
     SINGLE(4),
-    DOUBLE(8),
-
-    // SIMD
-    V32_BYTE(4, BYTE),
-    V32_WORD(4, WORD),
-    V64_BYTE(8, BYTE),
-    V64_WORD(8, WORD),
-    V64_DWORD(8, DWORD),
-    V128_BYTE(16, BYTE),
-    V128_WORD(16, WORD),
-    V128_DWORD(16, DWORD),
-    V128_QWORD(16, QWORD),
-    V128_SINGLE(16, SINGLE),
-    V128_DOUBLE(16, DOUBLE),
-    V256_BYTE(32, BYTE),
-    V256_WORD(32, WORD),
-    V256_DWORD(32, DWORD),
-    V256_QWORD(32, QWORD),
-    V256_SINGLE(32, SINGLE),
-    V256_DOUBLE(32, DOUBLE);
-
-    // The maximum value of VLEN (the length of the vector registers) is 65536 according to the ISA.
-    // Thus those types are not enough to define all the possibilites.
+    DOUBLE(8);
 
     private final int size;
     private final int vectorLength;
@@ -117,25 +95,6 @@ public enum RISCV64Kind implements PlatformKind {
         }
     }
 
-    public boolean isSIMD() {
-        switch (this) {
-            case V32_BYTE:
-            case V32_WORD:
-            case V64_BYTE:
-            case V64_WORD:
-            case V64_DWORD:
-            case V128_BYTE:
-            case V128_WORD:
-            case V128_DWORD:
-            case V128_QWORD:
-            case V128_SINGLE:
-            case V128_DOUBLE:
-                return true;
-            default:
-                return false;
-        }
-    }
-
     @Override
     public char getTypeChar() {
         switch (this) {
@@ -151,18 +110,6 @@ public enum RISCV64Kind implements PlatformKind {
                 return 'S';
             case DOUBLE:
                 return 'D';
-            case V32_BYTE:
-            case V32_WORD:
-            case V64_BYTE:
-            case V64_WORD:
-            case V64_DWORD:
-            case V128_BYTE:
-            case V128_WORD:
-            case V128_DWORD:
-            case V128_QWORD:
-            case V128_SINGLE:
-            case V128_DOUBLE:
-                return 'v';
             default:
                 return '-';
         }

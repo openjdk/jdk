@@ -137,7 +137,7 @@ public class RISCV64TestAssembler extends TestAssembler {
         lower = (lower << 52) >> 52;
         upper -= lower;
         upper = (int) upper;
-        emitLui(Rd, (int) (upper >> 12));
+        emitLui(Rd, ((int) (upper >> 12)) & 0xfffff);
         emitAddW(Rd, Rd, (int) lower);
     }
 
@@ -283,7 +283,7 @@ public class RISCV64TestAssembler extends TestAssembler {
         lower = (lower << 52) >> 52;
         upper -= lower;
         upper = (int) upper;
-        emitLui(ret, (int) (upper >> 12));
+        emitLui(ret, ((int) (upper >> 12)) & 0xfffff);
         emitAdd(ret, ret, (int) lower);
     }
 

@@ -128,51 +128,6 @@ public class RISCV64 extends Architecture {
     );
     // @formatter:on
 
-    public static final RegisterCategory SIMD = new RegisterCategory("SIMD");
-
-    // Simd registers
-    public static final Register v0 = new Register(64, 0, "v0", SIMD);
-    public static final Register v1 = new Register(65, 1, "v1", SIMD);
-    public static final Register v2 = new Register(66, 2, "v2", SIMD);
-    public static final Register v3 = new Register(67, 3, "v3", SIMD);
-    public static final Register v4 = new Register(68, 4, "v4", SIMD);
-    public static final Register v5 = new Register(69, 5, "v5", SIMD);
-    public static final Register v6 = new Register(70, 6, "v6", SIMD);
-    public static final Register v7 = new Register(71, 7, "v7", SIMD);
-    public static final Register v8 = new Register(72, 8, "v8", SIMD);
-    public static final Register v9 = new Register(73, 9, "v9", SIMD);
-    public static final Register v10 = new Register(74, 10, "v10", SIMD);
-    public static final Register v11 = new Register(75, 11, "v11", SIMD);
-    public static final Register v12 = new Register(76, 12, "v12", SIMD);
-    public static final Register v13 = new Register(77, 13, "v13", SIMD);
-    public static final Register v14 = new Register(78, 14, "v14", SIMD);
-    public static final Register v15 = new Register(79, 15, "v15", SIMD);
-    public static final Register v16 = new Register(80, 16, "v16", SIMD);
-    public static final Register v17 = new Register(81, 17, "v17", SIMD);
-    public static final Register v18 = new Register(82, 18, "v18", SIMD);
-    public static final Register v19 = new Register(83, 19, "v19", SIMD);
-    public static final Register v20 = new Register(84, 20, "v20", SIMD);
-    public static final Register v21 = new Register(85, 21, "v21", SIMD);
-    public static final Register v22 = new Register(86, 22, "v22", SIMD);
-    public static final Register v23 = new Register(87, 23, "v23", SIMD);
-    public static final Register v24 = new Register(88, 24, "v24", SIMD);
-    public static final Register v25 = new Register(89, 25, "v25", SIMD);
-    public static final Register v26 = new Register(90, 26, "v26", SIMD);
-    public static final Register v27 = new Register(91, 27, "v27", SIMD);
-    public static final Register v28 = new Register(92, 28, "v28", SIMD);
-    public static final Register v29 = new Register(93, 29, "v29", SIMD);
-    public static final Register v30 = new Register(94, 30, "v30", SIMD);
-    public static final Register v31 = new Register(95, 31, "v31", SIMD);
-
-    // @formatter:off
-    public static final RegisterArray simdRegisters = new RegisterArray(
-        v0,  v1,  v2,  v3,  v4,  v5,  v6,  v7,
-        v8,  v9,  v10, v11, v12, v13, v14, v15,
-        v16, v17, v18, v19, v20, v21, v22, v23,
-        v24, v25, v26, v27, v28, v29, v30, v31
-    );
-    // @formatter:on
-
     // @formatter:off
     public static final RegisterArray allRegisters = new RegisterArray(
         x0,  x1,  x2,  x3,  x4,  x5,  x6,  x7,
@@ -183,12 +138,7 @@ public class RISCV64 extends Architecture {
         f0,  f1,  f2,  f3,  f4,  f5,  f6,  f7,
         f8,  f9,  f10, f11, f12, f13, f14, f15,
         f16, f17, f18, f19, f20, f21, f22, f23,
-        f24, f25, f26, f27, f28, f29, f30, f31,
-
-        v0,  v1,  v2,  v3,  v4,  v5,  v6,  v7,
-        v8,  v9,  v10, v11, v12, v13, v14, v15,
-        v16, v17, v18, v19, v20, v21, v22, v23,
-        v24, v25, v26, v27, v28, v29, v30, v31
+        f24, f25, f26, f27, f28, f29, f30, f31
     );
     // @formatter:on
 
@@ -270,8 +220,6 @@ public class RISCV64 extends Architecture {
             return category.equals(CPU);
         } else if (kind.isFP()) {
             return category.equals(FP);
-        } else if (kind.isSIMD()) {
-            return category.equals(SIMD);
         }
         return false;
     }
@@ -282,8 +230,6 @@ public class RISCV64 extends Architecture {
             return RISCV64Kind.QWORD;
         } else if (category.equals(FP)) {
             return RISCV64Kind.DOUBLE;
-        } else if (category.equals(SIMD)) {
-            return RISCV64Kind.V256_QWORD;
         } else {
             return null;
         }
