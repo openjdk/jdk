@@ -496,7 +496,6 @@ java/lang/invoke/LFCaching/LFGarbageCollectedTest.java          8078602 generic-
 java/lang/invoke/lambda/LambdaFileEncodingSerialization.java    8249079 linux-x64
 java/lang/invoke/RicochetTest.java                              8251969 generic-all
 java/lang/ProcessBuilder/PipelineLeaksFD.java                   8291760 linux-all
-java/lang/invoke/lambda/LogGeneratedClassesTest.java            8292498 windows-x64
 
 ############################################################################
 
@@ -557,7 +556,7 @@ java/net/ServerSocket/AcceptInheritHandle.java                  8211854 aix-ppc6
 
 # jdk_nio
 
-java/nio/channels/DatagramChannel/Unref.java                    8233519 generic-all
+java/nio/channels/DatagramChannel/Unref.java                    8233437 generic-all
 
 java/nio/channels/AsynchronousSocketChannel/StressLoopback.java 8211851 aix-ppc64
 
@@ -596,8 +595,6 @@ sun/security/pkcs11/sslecc/ClientJSSEServerJSSE.java            8161536 generic-
 
 sun/security/tools/keytool/ListKeychainStore.sh                 8156889 macosx-all
 
-sun/security/tools/jarsigner/warnings/BadKeyUsageTest.java      8026393 generic-all
-
 javax/net/ssl/DTLS/CipherSuite.java                             8202059 macosx-x64
 
 sun/security/provider/KeyStore/DKSTest.sh                       8180266 windows-all
@@ -618,8 +615,6 @@ com/sun/security/auth/callback/TextCallbackHandler/Password.java 8039280 generic
 com/sun/security/sasl/gsskerb/AuthOnly.java                     8039280 generic-all
 com/sun/security/sasl/gsskerb/ConfSecurityLayer.java            8039280 generic-all
 com/sun/security/sasl/gsskerb/NoSecurityLayer.java              8039280 generic-all
-javax/security/auth/kerberos/KerberosHashEqualsTest.java        8039280 generic-all
-javax/security/auth/kerberos/KerberosTixDateTest.java           8039280 generic-all
 sun/security/provider/PolicyFile/GrantAllPermToExtWhenNoPolicy.java 8039280 generic-all
 sun/security/provider/PolicyParser/ExtDirsChange.java           8039280 generic-all
 sun/security/provider/PolicyParser/PrincipalExpansionError.java 8039280 generic-all

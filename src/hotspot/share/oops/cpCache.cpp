@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/archiveBuilder.hpp"
 #include "cds/heapShared.hpp"
 #include "classfile/resolutionErrors.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -683,30 +684,30 @@ void ConstantPoolCache::record_gc_epoch() {
   _gc_epoch = Continuations::gc_epoch();
 }
 
-void ConstantPoolCache::save_for_archive() {
+void ConstantPoolCache::save_for_archive(TRAPS) {
 #if INCLUDE_CDS
-  ConstantPoolCacheEntry* copy = NEW_C_HEAP_ARRAY(ConstantPoolCacheEntry, length(), mtClassShared);
+  ClassLoaderData* loader_data = constant_pool()->pool_holder()->class_loader_data();
+  _initial_entries = MetadataFactory::new_array<ConstantPoolCacheEntry>(loader_data, length(), CHECK);
   for (int i = 0; i < length(); i++) {
-    copy[i] = *entry_at(i);
+    _initial_entries->at_put(i, *entry_at(i));
   }
-
-  SystemDictionaryShared::set_saved_cpcache_entries(this, copy);
 #endif
 }
 
 void ConstantPoolCache::remove_unshareable_info() {
 #if INCLUDE_CDS
   Arguments::assert_is_dumping_archive();
-  // <this> is the copy to be written into the archive. It's in
-  // the ArchiveBuilder's "buffer space". However, the saved_cpcache_entries
-  // are recorded with the original ConstantPoolCache object.
-  ConstantPoolCache* orig_cpc = ArchiveBuilder::current()->get_src_obj(this);
-  ConstantPoolCacheEntry* saved = SystemDictionaryShared::get_saved_cpcache_entries_locked(orig_cpc);
+  // <this> is the copy to be written into the archive. It's in the ArchiveBuilder's "buffer space".
+  // However, this->_initial_entries was not copied/relocated by the ArchiveBuilder, so it's
+  // still pointing to the array allocated inside save_for_archive().
+  assert(_initial_entries != NULL, "archived cpcache must have been initialized");
+  assert(!ArchiveBuilder::current()->is_in_buffer_space(_initial_entries), "must be");
   for (int i=0; i<length(); i++) {
     // Restore each entry to the initial state -- just after Rewriter::make_constant_pool_cache()
     // has finished.
-    *entry_at(i) = saved[i];
+    *entry_at(i) = _initial_entries->at(i);
   }
+  _initial_entries = NULL;
 #endif
 }
 
@@ -716,10 +717,11 @@ void ConstantPoolCache::deallocate_contents(ClassLoaderData* data) {
   set_resolved_references(OopHandle());
   MetadataFactory::free_array<u2>(data, _reference_map);
   set_reference_map(NULL);
-
 #if INCLUDE_CDS
-  if (Arguments::is_dumping_archive()) {
-    SystemDictionaryShared::remove_saved_cpcache_entries(this);
+  if (_initial_entries != NULL) {
+    Arguments::assert_is_dumping_archive();
+    MetadataFactory::free_array<ConstantPoolCacheEntry>(data, _initial_entries);
+    _initial_entries = NULL;
   }
 #endif
 }

@@ -2566,6 +2566,7 @@ public:
   INSN(fcmeq, 0, 0, 0b111001);
   INSN(fcmgt, 1, 1, 0b111001);
   INSN(fcmge, 1, 0, 0b111001);
+  INSN(facgt, 1, 1, 0b111011);
 
 #undef INSN
 
@@ -3512,18 +3513,22 @@ public:
   void NAME(Condition cond, PRegister Pd, SIMD_RegVariant T, PRegister Pg,             \
             FloatRegister Zn, FloatRegister Zm) {                                      \
     starti;                                                                            \
-    if (fp == 0) {                                                                     \
-      assert(T != Q, "invalid size");                                                  \
-    } else {                                                                           \
-      assert(T != B && T != Q, "invalid size");                                        \
-      assert(cond != HI && cond != HS, "invalid condition for fcm");                   \
+    assert(T != Q, "invalid size");                                                    \
+    bool is_absolute = op2 == 0b11;                                                    \
+    if (fp == 1) {                                                                     \
+      assert(T != B, "invalid size");                                                  \
+      if (is_absolute) {                                                               \
+        assert(cond == GT || cond == GE, "invalid condition for fac");                 \
+      } else {                                                                         \
+        assert(cond != HI && cond != HS, "invalid condition for fcm");                 \
+      }                                                                                \
     }                                                                                  \
     int cond_op;                                                                       \
     switch(cond) {                                                                     \
       case EQ: cond_op = (op2 << 2) | 0b10; break;                                     \
       case NE: cond_op = (op2 << 2) | 0b11; break;                                     \
-      case GE: cond_op = (op2 << 2) | 0b00; break;                                     \
-      case GT: cond_op = (op2 << 2) | 0b01; break;                                     \
+      case GE: cond_op = (op2 << 2) | (is_absolute ? 0b01 : 0b00); break;              \
+      case GT: cond_op = (op2 << 2) | (is_absolute ? 0b11 : 0b01); break;              \
       case HI: cond_op = 0b0001; break;                                                \
       case HS: cond_op = 0b0000; break;                                                \
       default:                                                                         \
@@ -3533,8 +3538,9 @@ public:
     pgrf(Pg, 10), rf(Zn, 5), f(cond_op & 1, 4), prf(Pd, 0);                            \
   }
 
-  INSN(sve_cmp, 0b00100100, 0b10, 0);
-  INSN(sve_fcm, 0b01100101, 0b01, 1);
+  INSN(sve_cmp, 0b00100100, 0b10, 0); // Integer compare vectors
+  INSN(sve_fcm, 0b01100101, 0b01, 1); // Floating-point compare vectors
+  INSN(sve_fac, 0b01100101, 0b11, 1); // Floating-point absolute compare vectors
 #undef INSN
 
 // SVE Integer Compare - Signed Immediate

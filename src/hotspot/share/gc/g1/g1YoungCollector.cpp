@@ -492,9 +492,7 @@ void G1YoungCollector::pre_evacuate_collection_set(G1EvacInfo* evacuation_info, 
     phase_times()->record_concatenate_dirty_card_logs_time_ms(dt.seconds() * MILLIUNITS);
   }
 
-  // Disable the hot card cache.
   hot_card_cache()->reset_hot_cache_claimed_index();
-  hot_card_cache()->set_use_cache(false);
 
   // Initialize the GC alloc regions.
   allocator()->init_gc_alloc_regions(evacuation_info);
