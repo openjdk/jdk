@@ -2142,6 +2142,7 @@ public class JavacParser implements Parser {
         if (token.kind == LT) {
             nextToken();
             if (token.kind == GT && diamondAllowed) {
+                checkSourceLevel(Feature.DIAMOND);
                 mode |= DIAMOND;
                 nextToken();
                 return List.nil();

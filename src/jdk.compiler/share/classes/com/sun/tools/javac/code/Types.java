@@ -93,7 +93,6 @@ public class Types {
     final JavacMessages messages;
     final Names names;
     final boolean allowDefaultMethods;
-    final boolean mapCapturesToBounds;
     final Check chk;
     final Enter enter;
     JCDiagnostic.Factory diags;
@@ -116,7 +115,6 @@ public class Types {
         names = Names.instance(context);
         Source source = Source.instance(context);
         allowDefaultMethods = Feature.DEFAULT_METHODS.allowedInSource(source);
-        mapCapturesToBounds = false;
         chk = Check.instance(context);
         enter = Enter.instance(context);
         capturedName = names.fromString("<captured wildcard>");
