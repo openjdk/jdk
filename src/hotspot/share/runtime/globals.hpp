@@ -1370,7 +1370,7 @@ const int ObjectAlignmentInBytes = 8;
           "Reaching the limit will trigger a fatal error."                  \
           "Usage:"                                                          \
           "- MallocLimit=<size> to set a total limit. "                     \
-          "- MallocLimit=<NMT category>:<size>[,<NMT category>:<size>..] "  \
+          "- MallocLimit=<NMT category>:<size>[,<NMT category>:<size>...] "  \
           "  to set one or more category-specific limits."                  \
           "Example: -XX:MallocLimit=compiler:500m")                         \
                                                                             \
