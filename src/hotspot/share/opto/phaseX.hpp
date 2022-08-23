@@ -566,6 +566,7 @@ protected:
 // Phase for performing global Conditional Constant Propagation.
 // Should be replaced with combined CCP & GVN someday.
 class PhaseCCP : public PhaseIterGVN {
+  Unique_Node_List _safepoints;
   // Non-recursive.  Use analysis to transform single Node.
   virtual Node* transform_once(Node* n);
 
@@ -582,7 +583,6 @@ class PhaseCCP : public PhaseIterGVN {
   void push_loadp(Unique_Node_List& worklist, const Node* use) const;
   static void push_load_barrier(Unique_Node_List& worklist, const BarrierSetC2* barrier_set, const Node* use);
   void push_and(Unique_Node_List& worklist, const Node* parent, const Node* use) const;
-  Unique_Node_List _safepoints;
 
  public:
   PhaseCCP( PhaseIterGVN *igvn ); // Compute conditional constants
