@@ -22,6 +22,9 @@
  */
 
 // key: compiler.err.not.in.profile
+// key: compiler.warn.option.obsolete.source
+// key: compiler.warn.option.obsolete.target
+// key: compiler.warn.option.obsolete.suppression
 // options: --release 8 -profile compact1
 
 class NotInProfile {

@@ -25,7 +25,7 @@
 // key: compiler.warn.option.obsolete.target
 // key: compiler.warn.option.obsolete.suppression
 // key: compiler.warn.source.no.bootclasspath
-// options: -source 1.7 -target 1.7
+// options: -source 1.8 -target 1.8
 
 class ObsoleteSourceAndTarget {
     public static void foo() {;}

@@ -110,7 +110,7 @@ public enum Target {
         return instance;
     }
 
-    public static final Target MIN = Target.JDK1_7;
+    public static final Target MIN = Target.JDK1_8;
 
     private static final Target MAX = values()[values().length - 1];
 
