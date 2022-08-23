@@ -266,32 +266,34 @@ public class PassFailJFrame {
      * is {@code null}, only the instruction frame is positioned according to
      * {@code position} parameter.
      * <p>This method should be called before making the test window visible
-     * to avoid flickering.
+     * to avoid flickering.</p>
      *
      * @param testWindow test window that the test created.
      *                   May be {@code null}.
      *
      * @param position  position must be one of:
-     *                  HORIZONTAL - the test instruction frame is positioned
-     *                  such that its right edge aligns with screen's horizontal
-     *                  center and the test window (if not null) is placed to
-     *                  the right of the instruction frame.
+     *                  <ul>
+     *                  <li>{@code HORIZONTAL} - the test instruction frame is positioned
+     *                  such that its right edge aligns with screen's horizontal center
+     *                  and the test window (if not {@code null}) is placed to the right
+     *                  of the instruction frame.</li>
      *
-     *                  VERTICAL - the test instruction frame is positioned such
-     *                  that its bottom edge aligns with the screen's vertical
-     *                  center and the test window (if not null) is placed below
-     *                  the instruction frame.
+     *                  <li>{@code VERTICAL} - the test instruction frame is positioned
+     *                  such that its bottom edge aligns with the screen's vertical center
+     *                  and the test window (if not {@code null}) is placed below the
+     *                  instruction frame.</li>
      *
-     *                  TOP_LEFT_CORNER - the test instruction frame is positioned
-     *                  such that its top left corner is at the top left corner of
-     *                  the screen and the test window (if not null) is placed to
-     *                  the right of the instruction frame.
+     *                  <li>{@code TOP_LEFT_CORNER} - the test instruction frame is positioned
+     *                  such that its top left corner is at the top left corner of the screen
+     *                  and the test window (if not {@code null}) is placed to the right of
+     *                  the instruction frame.</li>
+     *                  </ul>
      */
     public static void positionTestWindow(Window testWindow, Position position) {
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
 
-        // to get the screen insets inorder to position the frame by taking into
-        // account the location of taskbar/menubars on screen
+        // Get the screen insets to position the frame by taking into
+        // account the location of taskbar/menubars on screen.
         GraphicsConfiguration gc = GraphicsEnvironment.getLocalGraphicsEnvironment()
                 .getDefaultScreenDevice().getDefaultConfiguration();
         Insets screenInsets = Toolkit.getDefaultToolkit().getScreenInsets(gc);
@@ -328,8 +330,8 @@ public class PassFailJFrame {
     }
 
     /**
-     * To ensure the frame location is updated by the window manager
-     * if it adjusts the frame location after {@code setLocation}
+     * Ensures the frame location is updated by the window manager
+     * if it adjusts the frame location after {@code setLocation}.
      *
      * @see #positionTestWindow
      */
