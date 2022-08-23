@@ -385,7 +385,7 @@ public class KeepAliveTest {
             @Override
             public void run() {
                 try {
-                   createServer(scenarioNumber);
+                   executeServer(scenarioNumber);
                 } catch (IOException e) {
                    e.printStackTrace();
                 }
@@ -408,7 +408,7 @@ public class KeepAliveTest {
             throw new IOException("Socket closed");
         }
     }
-    private void createServer(int scenarioNumber) throws IOException {
+    private void executeServer(int scenarioNumber) throws IOException {
         String serverScenarioContent = null;
         if (!getServerScenario(scenarioNumber).equalsIgnoreCase(NI)) {
             serverScenarioContent = getServerScenario(scenarioNumber) + NEW_LINE;
