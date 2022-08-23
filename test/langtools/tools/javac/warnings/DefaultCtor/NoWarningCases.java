@@ -24,8 +24,8 @@
 /*
  * @test
  * @bug 8071961
- * @compile -Xlint:missing-explicit-ctor -Werror --release 8 NoWarningCases.java
- * @compile -Xlint:missing-explicit-ctor -Werror             NoWarningCases.java
+ * @compile -Xlint:missing-explicit-ctor,-options -Werror --release 8 NoWarningCases.java
+ * @compile -Xlint:missing-explicit-ctor          -Werror             NoWarningCases.java
  */
 
 public class NoWarningCases {

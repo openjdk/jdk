@@ -45,7 +45,6 @@ import combo.ComboTestHelper;
 public class GenericOverrideTest extends ComboInstance<GenericOverrideTest> {
 
     enum SourceLevel {
-        SOURCE_7("-source", "7"),
         SOURCE_DEFAULT();
 
         String[] opts;

@@ -244,30 +244,6 @@ public class TestCopyFiles extends JavadocTester {
     }
 
     @Test
-    public void testDocFilesInPackagesSource7() {
-        javadoc("-d", "packages-out-src7",
-                "-source", "7",
-                "-sourcepath", testSrc("packages"),
-                "p1");
-        checkExit(Exit.OK);
-        checkOutput("p1/doc-files/inpackage.html", true,
-                "A named package in an unnamed module"
-        );
-    }
-
-    @Test
-    public void testDocFilesInPackagesSource7UsingClassPath() {
-        javadoc("-d", "packages-out-src7-cp",
-                "-source", "7",
-                "-classpath", testSrc("packages"),
-                "p1");
-        checkExit(Exit.OK);
-        checkOutput("p1/doc-files/inpackage.html", true,
-                "A named package in an unnamed module"
-        );
-    }
-
-    @Test
     public void testCopyThrough() {
         javadoc("-d", "copy",
                 "-sourcepath", testSrc("packages"),

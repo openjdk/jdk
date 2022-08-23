@@ -47,7 +47,7 @@ public class SourceTargetTest extends OptionModesTester {
         String v = System.getProperty("java.specification.version");
         String[] va = v.split("\\.");
         int major = Integer.parseInt(va[0]);
-        boolean newVersion = major > 8;
+        boolean newVersion = major > 9;
         String latest = (newVersion) ? va[0] : va[1];
         String prev = String.valueOf(Integer.valueOf(latest) - 1);
 
@@ -71,7 +71,7 @@ public class SourceTargetTest extends OptionModesTester {
 
         writeFile("C.java", "class C { }");
 
-        String[] opts = { "-source", "1.7", "-target", "1.7" };
+        String[] opts = { "--release", "8"};
         String[] files = { "C.java" };
 
         runMain(opts, files)

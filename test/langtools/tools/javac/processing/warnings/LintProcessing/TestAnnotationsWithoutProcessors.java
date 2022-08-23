@@ -28,7 +28,7 @@
  * @library /tools/javac/lib
  * @modules java.compiler
  * @build JavacTestingAbstractProcessor TestAnnotationsWithoutProcessors
- * @compile/ref=empty.out -XDrawDiagnostics -Xlint:processing -processor TestAnnotationsWithoutProcessors --release 8 TestAnnotationsWithoutProcessors.java
+ * @compile/ref=empty.out -XDrawDiagnostics -Xlint:processing,-options -processor TestAnnotationsWithoutProcessors --release 8 TestAnnotationsWithoutProcessors.java
  * @compile/ref=empty.out -XDrawDiagnostics -Xlint:processing -processor TestAnnotationsWithoutProcessors TestAnnotationsWithoutProcessors.java
  */
 

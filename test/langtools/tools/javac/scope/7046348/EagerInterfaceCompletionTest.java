@@ -123,8 +123,7 @@ public class EagerInterfaceCompletionTest {
     //global declarations
 
     enum VersionKind {
-        PRE_LAMBDA("-source", "7"),
-        LAMBDA("-source", "8");
+        LAMBDA("--release", "8");
 
         String[] optsArr;
 
