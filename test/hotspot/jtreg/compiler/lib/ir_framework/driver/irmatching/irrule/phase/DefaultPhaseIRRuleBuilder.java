@@ -65,7 +65,8 @@ import java.util.stream.Collectors;
  */
 class DefaultPhaseIRRuleBuilder extends CompilePhaseIRRuleBuilder {
 
-    public DefaultPhaseIRRuleBuilder(List<RawConstraint> rawFailOnConstraints, List<RawCountsConstraint> rawCountsConstraints, IRMethod irMethod) {
+    public DefaultPhaseIRRuleBuilder(List<RawConstraint> rawFailOnConstraints,
+                                     List<RawCountsConstraint> rawCountsConstraints, IRMethod irMethod) {
         super(rawFailOnConstraints, rawCountsConstraints, irMethod);
     }
 
@@ -82,10 +83,10 @@ class DefaultPhaseIRRuleBuilder extends CompilePhaseIRRuleBuilder {
      * Filter for PrintIdeal and PrintOptoAssembly and add to {@code compilePhaseIRRules} list.
      */
     private void addCompilePhaseIRRule(CompilePhase compilePhase, List<CompilePhaseIRRule> compilePhaseIRRules) {
-        FailOn failOn = createFailOn(getFilteredFailOnConstraints(compilePhase), compilePhase);
-        Counts counts = createCounts(getFilteredCountsConstraints(compilePhase), compilePhase);
+        FailOn failOn = createFailOn(getFilteredFailOnConstraints(compilePhase));
+        Counts counts = createCounts(getFilteredCountsConstraints(compilePhase));
         if (failOn != null || counts != null) {
-            compilePhaseIRRules.add(new CompilePhaseIRRule(compilePhase, failOn, counts));
+            compilePhaseIRRules.add(new CompilePhaseIRRule(compilePhase, failOn, counts, irMethod.getOutput(compilePhase)));
         }
     }
 
@@ -113,23 +114,26 @@ class DefaultPhaseIRRuleBuilder extends CompilePhaseIRRuleBuilder {
     private void addDefaultPhaseIRRule(List<CompilePhaseIRRule> compilePhaseIRRules) {
         List<Constraint> failOnConstraints = getFilteredFailOnConstraints(CompilePhase.DEFAULT);
         List<CountsConstraint> countsConstraints = getFilteredCountsConstraints(CompilePhase.DEFAULT);
-        FailOn failOn = createFailOn(failOnConstraints, CompilePhase.DEFAULT);
-        Counts counts = createCounts(countsConstraints, CompilePhase.DEFAULT);
+        FailOn failOn = createFailOn(failOnConstraints);
+        Counts counts = createCounts(countsConstraints);
         if (failOn != null || counts != null) {
             compilePhaseIRRules.add(addDefaultPhaseIRRule(failOnConstraints, countsConstraints, failOn, counts));
         }
     }
 
-    private DefaultPhaseIRRule addDefaultPhaseIRRule(List<Constraint> failOnConstraints, List<CountsConstraint> countsConstraints, FailOn failOn, Counts counts) {
+    private DefaultPhaseIRRule addDefaultPhaseIRRule(List<Constraint> failOnConstraints,
+                                                     List<CountsConstraint> countsConstraints,
+                                                     FailOn failOn, Counts counts) {
         CompilePhaseIRRule idealIRRule = createCompilePhaseIRRule(CompilePhase.PRINT_IDEAL, failOnConstraints, countsConstraints);
         CompilePhaseIRRule optoAssemblyIRRule = createCompilePhaseIRRule(CompilePhase.PRINT_OPTO_ASSEMBLY, failOnConstraints, countsConstraints);
-        return new DefaultPhaseIRRule(failOn, counts, idealIRRule, optoAssemblyIRRule);
+        return new DefaultPhaseIRRule(failOn, counts, idealIRRule, optoAssemblyIRRule,
+                                      irMethod.getOutput(CompilePhase.DEFAULT));
     }
 
     private CompilePhaseIRRule createCompilePhaseIRRule(CompilePhase compilePhase, List<Constraint> failOnConstraints,
                                                         List<CountsConstraint> countsConstraints) {
-        FailOn failOn = createFailOn(failOnConstraints, compilePhase);
-        Counts counts = createCounts(countsConstraints, compilePhase);
-        return new CompilePhaseIRRule(CompilePhase.DEFAULT, failOn, counts);
+        FailOn failOn = createFailOn(failOnConstraints);
+        Counts counts = createCounts(countsConstraints);
+        return new CompilePhaseIRRule(compilePhase, failOn, counts, irMethod.getOutput(compilePhase));
     }
 }

@@ -44,16 +44,26 @@ public class CompilePhaseIRRule implements Matching {
     protected final CompilePhase compilePhase;
     protected final FailOn failOn;
     protected final Counts counts;
+    private final String phaseCompilationOutput;
 
-    public CompilePhaseIRRule(CompilePhase compilePhase, FailOn failOn, Counts counts) {
+    public CompilePhaseIRRule(CompilePhase compilePhase, FailOn failOn, Counts counts, String phaseCompilationOutput) {
         this.compilePhase = compilePhase;
         this.failOn = failOn;
         this.counts = counts;
+        this.phaseCompilationOutput = phaseCompilationOutput;
     }
 
     @Override
     public CompilePhaseMatchResult match() {
-        CompilePhaseMatchResult compilePhaseMatchResult = new CompilePhaseMatchResult(compilePhase);
+        if (phaseCompilationOutput.isEmpty()) {
+            return CompilePhaseMatchResult.createNoCompilationOutput(compilePhase);
+        } else {
+            return matchWithCompilationOutput();
+        }
+    }
+
+    private CompilePhaseMatchResult matchWithCompilationOutput() {
+        CompilePhaseMatchResult compilePhaseMatchResult = CompilePhaseMatchResult.create(compilePhase);
         applyCheckAttribute(failOn, compilePhaseMatchResult::setFailOnMatchResult);
         applyCheckAttribute(counts, compilePhaseMatchResult::setCountsMatchResult);
         return compilePhaseMatchResult;
@@ -61,7 +71,7 @@ public class CompilePhaseIRRule implements Matching {
 
     private void applyCheckAttribute(CheckAttribute<?, ?> checkAttribute, Consumer<CheckAttributeMatchResult> consumer) {
         if (checkAttribute != null) {
-            CheckAttributeMatchResult matchResult = checkAttribute.match();
+            CheckAttributeMatchResult matchResult = checkAttribute.check(phaseCompilationOutput);
             if (matchResult.fail()) {
                 consumer.accept(matchResult);
             }

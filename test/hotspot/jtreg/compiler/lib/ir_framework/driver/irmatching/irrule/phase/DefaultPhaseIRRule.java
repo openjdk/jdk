@@ -25,6 +25,7 @@ package compiler.lib.ir_framework.driver.irmatching.irrule.phase;
 
 import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.IRNode;
+import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethod;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.Counts;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.FailOn;
 
@@ -42,8 +43,9 @@ public class DefaultPhaseIRRule extends CompilePhaseIRRule {
     private final CompilePhaseIRRule idealIRRule;
     private final CompilePhaseIRRule optoAssemblyIRRule;
 
-    public DefaultPhaseIRRule(FailOn failOn, Counts counts, CompilePhaseIRRule idealIRRule, CompilePhaseIRRule optoAssemblyIRRule) {
-        super(CompilePhase.DEFAULT, failOn, counts);
+    public DefaultPhaseIRRule(FailOn failOn, Counts counts, CompilePhaseIRRule idealIRRule,
+                              CompilePhaseIRRule optoAssemblyIRRule, String compilationOutput) {
+        super(CompilePhase.DEFAULT, failOn, counts, compilationOutput);
         this.idealIRRule = idealIRRule;
         this.optoAssemblyIRRule = optoAssemblyIRRule;
     }

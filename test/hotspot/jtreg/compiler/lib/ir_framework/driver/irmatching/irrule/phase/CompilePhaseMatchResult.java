@@ -35,16 +35,26 @@ import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.CheckAttrib
  */
 public class CompilePhaseMatchResult implements MatchResult {
     private final CompilePhase compilePhase;
+    private final boolean compilationOutput;
     private CheckAttributeMatchResult failOnFailures = null;
     private CheckAttributeMatchResult countsFailures = null;
 
-    public CompilePhaseMatchResult(CompilePhase compilePhase) {
+    private CompilePhaseMatchResult(CompilePhase compilePhase, boolean compilationOutput) {
         this.compilePhase = compilePhase;
+        this.compilationOutput = compilationOutput;
+    }
+
+    public static CompilePhaseMatchResult create(CompilePhase compilePhase) {
+        return new CompilePhaseMatchResult(compilePhase, true);
+    }
+
+    public static CompilePhaseMatchResult createNoCompilationOutput(CompilePhase compilePhase) {
+        return new CompilePhaseMatchResult(compilePhase, false);
     }
 
     @Override
     public boolean fail() {
-        return failOnFailures != null || countsFailures != null;
+        return failOnFailures != null || countsFailures != null || !compilationOutput;
     }
 
     public CompilePhase getCompilePhase() {
@@ -86,13 +96,36 @@ public class CompilePhaseMatchResult implements MatchResult {
     public String buildFailureMessage(int indentationSize) {
         StringBuilder failMsg = new StringBuilder();
         failMsg.append(buildPhaseHeader(indentationSize));
-        if (hasFailOnFailures()) {
-            failMsg.append(failOnFailures.buildFailureMessage(indentationSize + 2));
-        }
-        if (hasCountsFailures()) {
-            failMsg.append(countsFailures.buildFailureMessage(indentationSize + 2));
+        indentationSize += 2;
+        if (!compilationOutput) {
+            failMsg.append(buildNoCompilationOutputMessage(indentationSize));
+        } else {
+            failMsg.append(buildFailOnFailureMessage(indentationSize));
+            failMsg.append(buildCountsFailureMessage(indentationSize));
         }
         return failMsg.toString();
+    }
+
+
+    private String buildNoCompilationOutputMessage(int indentationSize) {
+        return getIndentation(indentationSize) + "- NO compilation output found for this phase! Make sure this phase " +
+               "is emitted or remove it from the list of compile phases to match on in the @IR rule.";
+    }
+
+    private String buildFailOnFailureMessage(int indentationSize) {
+        if (hasFailOnFailures()) {
+            return failOnFailures.buildFailureMessage(indentationSize);
+        } else {
+            return "";
+        }
+    }
+
+    private String buildCountsFailureMessage(int indentationSize) {
+        if (hasCountsFailures()) {
+            return countsFailures.buildFailureMessage(indentationSize);
+        } else {
+            return "";
+        }
     }
 
     private String buildPhaseHeader(int indentation) {

@@ -37,8 +37,9 @@ import java.util.List;
 class CountsConstraintFailure extends ConstraintFailure {
     private final String failedComparison;
 
-    public CountsConstraintFailure(String nodeRegex, int constraintIndex, Comparison<Integer> comparison, List<String> matches) {
-        super(nodeRegex, constraintIndex, matches);
+    public CountsConstraintFailure(CountsConstraint constraint, List<String> matches) {
+        super(constraint, matches);
+        Comparison<Integer> comparison = constraint.getComparison();
         this.failedComparison = "[found] " + matches.size() + " " + comparison.getComparator() + " "
                                 + comparison.getGivenValue() + " [given]";
     }

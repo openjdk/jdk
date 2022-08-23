@@ -36,8 +36,8 @@ import java.util.List;
  */
 class FailOnConstraintFailure extends ConstraintFailure {
 
-    public FailOnConstraintFailure(String nodeRegex, int constraintIndex, List<String> matchedNodes) {
-        super(nodeRegex, constraintIndex, matchedNodes);
+    public FailOnConstraintFailure(Constraint constraint, List<String> matchedNodes) {
+        super(constraint, matchedNodes);
         TestFramework.check(!matchedNodes.isEmpty(), "must have at least one matched node");
     }
 

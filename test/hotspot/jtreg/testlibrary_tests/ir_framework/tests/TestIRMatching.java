@@ -1246,6 +1246,7 @@ class CheckCastArray {
 }
 
 class CompilationOutputOfFails {
+    private Object obj;
 
     @Test
     @IR(failOn = IdealDefaultRegexes.COUNTED_LOOP + "[\\s\\S]*" + "call")
@@ -1368,64 +1369,52 @@ class CompilationOutputOfFails {
     }
 
     @Test
-    @IR(failOn = "call")
+    @IR(failOn = IRNode.ALLOC)
     public void opto1() {
-        for (int i = 0; i < 100; i++) {
-            dontInline();
-        }
+        obj = new Object();
     }
 
     @Test
-    @IR(failOn = "call")
-    @IR(failOn = IRNode.STORE) // not fail
+    @IR(failOn = IRNode.ALLOC)
+    @IR(failOn = IRNode.STORE_F) // not fail
     public void opto2() {
-        for (int i = 0; i < 100; i++) {
-            dontInline();
-        }
+        obj = new Object();
     }
 
     @Test
-    @IR(failOn = "call")
+    @IR(failOn = IRNode.ALLOC)
     @IR(counts = {IRNode.COUNTED_LOOP, "1"}) // not fail
     public void opto3() {
         for (int i = 0; i < 100; i++) {
-            dontInline();
+            obj = new Object();
         }
     }
 
     @Test
-    @IR(counts = {"call", "0"})
+    @IR(counts = {IRNode.ALLOC, "0"})
     public void opto4() {
-        for (int i = 0; i < 100; i++) {
-            dontInline();
-        }
+        obj = new Object();
     }
 
     @Test
-    @IR(failOn = IRNode.STORE) // not fail
-    @IR(counts = {"call", "0"})
+    @IR(failOn = IRNode.STORE_F) // not fail
+    @IR(counts = {IRNode.ALLOC, "0"})
     public void opto5() {
-        for (int i = 0; i < 100; i++) {
-            dontInline();
-        }
+        obj = new Object();
     }
 
     @Test
-    @IR(counts = {IRNode.STORE, "0"}) // not fail
-    @IR(counts = {"call", "0"})
+    @IR(counts = {IRNode.STORE_F, "0"}) // not fail
+    @IR(counts = {IRNode.ALLOC, "0"})
     public void opto6() {
-        for (int i = 0; i < 100; i++) {
-            dontInline();
-        }
+        obj = new Object();
     }
 
     @Test
-    @IR(counts = {"call", "10"})
-    @IR(counts = {"call", "0"})
+    @IR(counts = {IRNode.ALLOC, "10"})
+    @IR(counts = {IRNode.ALLOC, "0"})
     public void opto7() {
-        for (int i = 0; i < 100; i++) {
-            dontInline();
-        }
+        obj = new Object();
     }
 
     @DontInline

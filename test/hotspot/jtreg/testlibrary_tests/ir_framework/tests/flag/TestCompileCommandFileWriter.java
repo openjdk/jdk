@@ -42,8 +42,8 @@ import static compiler.lib.ir_framework.CompilePhase.*;
  * @requires vm.debug == true & vm.flagless
  * @summary Test compile command file writer.
  * @library /test/lib /testlibrary_tests /
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run junit/othervm -Xbootclasspath/a:. -DSkipWhiteBoxInstall=true -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions
  *                    -XX:+WhiteBoxAPI compiler.lib.ir_framework.flag.TestCompilePhaseCollector
  */

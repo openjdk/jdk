@@ -40,8 +40,8 @@ import java.util.stream.Collectors;
 public class FailOn extends CheckAttribute<Constraint, FailOnMatchResult> {
     private final Pattern quickPattern;
 
-    public FailOn(List<Constraint> constraints, String compilationOutput) {
-        super(constraints, compilationOutput);
+    public FailOn(List<Constraint> constraints) {
+        super(constraints);
         String patternString = constraints.stream().map(Constraint::getRegex).collect(Collectors.joining("|"));
         this.quickPattern = Pattern.compile(String.join("|", patternString));
     }
@@ -52,10 +52,10 @@ public class FailOn extends CheckAttribute<Constraint, FailOnMatchResult> {
     }
 
     @Override
-    public FailOnMatchResult match() {
-        Matcher matcher = quickPattern.matcher(compilationOutput);
+    public FailOnMatchResult check(String phaseCompilationOutput) {
+        Matcher matcher = quickPattern.matcher(phaseCompilationOutput);
         if (matcher.find()) {
-            FailOnMatchResult failOnMatchResult = super.match();
+            FailOnMatchResult failOnMatchResult = super.check(phaseCompilationOutput);
             TestFramework.check(failOnMatchResult.fail(), "must fail (i.e. find at least one match)");
             return failOnMatchResult;
         }
@@ -63,10 +63,11 @@ public class FailOn extends CheckAttribute<Constraint, FailOnMatchResult> {
     }
 
     @Override
-    protected void checkConstraint(List<ConstraintFailure> constraintFailures, Constraint constraint) {
-        List<String> matches = getMatchedNodes(constraint);
+    protected void checkConstraint(List<ConstraintFailure> constraintFailures, Constraint constraint,
+                                   String phaseCompilationOutput) {
+        List<String> matches = getMatchedNodes(constraint, phaseCompilationOutput);
         if (!matches.isEmpty()) {
-            constraintFailures.add(new FailOnConstraintFailure(constraint.getRegex(), constraint.getIndex(), matches));
+            constraintFailures.add(new FailOnConstraintFailure(constraint, matches));
         }
     }
 }

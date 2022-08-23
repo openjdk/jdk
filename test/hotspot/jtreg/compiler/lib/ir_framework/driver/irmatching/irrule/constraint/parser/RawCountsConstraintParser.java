@@ -72,20 +72,20 @@ public class RawCountsConstraintParser extends RawConstraintParser<CountsConstra
         String rawNodeString = constraintResultList.getRawNodeString();
         String parsedNodeString = parseRawNodeString(compilePhase, constraintResultList, rawNodeString);
         String countString = constraintResultList.getCountString();
-        Comparison<Long> comparison = parseComparison(rawNodeString, countString);
+        Comparison<Integer> comparison = parseComparison(rawNodeString, countString);
         return new CountsConstraint(parsedNodeString, comparison, constraintResultList.getConstraintIndex());
     }
 
-    private static Comparison<Long> parseComparison(String rawNodeString, String countString) {
+    private static Comparison<Integer> parseComparison(String rawNodeString, String countString) {
         try {
-            return ComparisonConstraintParser.parse(countString, RawCountsConstraintParser::parsePositiveLong);
+            return ComparisonConstraintParser.parse(countString, RawCountsConstraintParser::parsePositiveInt);
         } catch (TestFormatException e) {
             throw new TestFormatException(e.getMessage() + ", node \"" + rawNodeString + "\", in count string");
         }
     }
 
-    public static long parsePositiveLong(String s) {
-        long result = Long.parseLong(s);
+    public static int parsePositiveInt(String s) {
+        int result = Integer.parseInt(s);
         if (result < 0) {
             throw new NumberFormatException("cannot be negative");
         }

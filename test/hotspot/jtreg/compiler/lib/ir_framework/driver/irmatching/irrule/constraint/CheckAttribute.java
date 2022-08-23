@@ -25,12 +25,13 @@ package compiler.lib.ir_framework.driver.irmatching.irrule.constraint;
 
 import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.IRNode;
-import compiler.lib.ir_framework.driver.irmatching.Matching;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.MatchResult;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * Base class representing a parsed check attribute of an IR rule for a compile phase.
@@ -41,21 +42,18 @@ import java.util.regex.Pattern;
  *
  * @see IR
  */
-abstract public class CheckAttribute<C extends Constraint, R extends CheckAttributeMatchResult> implements Matching {
+abstract public class CheckAttribute<C extends Constraint, R extends CheckAttributeMatchResult> {
     private final List<C> constraints;
-    protected String compilationOutput;
 
-    public CheckAttribute(List<C> constraints, String compilationOutput) {
+    public CheckAttribute(List<C> constraints) {
         this.constraints = constraints;
-        this.compilationOutput = compilationOutput;
     }
 
-    @Override
-    public R match() {
+    public R check(String phaseCompilationOutput) {
         R matchResult = createMatchResult();
         List<ConstraintFailure> constraintFailures = new ArrayList<>();
         for (C constraint : constraints) {
-            checkConstraint(constraintFailures, constraint);
+            checkConstraint(constraintFailures, constraint, phaseCompilationOutput);
         }
         if (!constraintFailures.isEmpty()) {
             matchResult.setFailures(constraintFailures);
@@ -65,18 +63,11 @@ abstract public class CheckAttribute<C extends Constraint, R extends CheckAttrib
 
     abstract protected R createMatchResult();
 
-    abstract void checkConstraint(List<ConstraintFailure> constraintFailures, C constraint);
+    abstract void checkConstraint(List<ConstraintFailure> constraintFailures, C constraint, String phaseCompilationOutput);
 
-    protected List<String> getMatchedNodes(Constraint constraint) {
-        String regex = constraint.getRegex();
-        Pattern p = Pattern.compile(regex);
-        Matcher m = p.matcher(compilationOutput);
-        List<String> matches = new ArrayList<>();
-        if (m.find()) {
-            do {
-                matches.add(m.group());
-            } while (m.find());
-        }
-        return matches;
+    protected List<String> getMatchedNodes(Constraint constraint, String phaseCompilationOutput) {
+        Pattern pattern = Pattern.compile(constraint.getRegex());
+        Matcher matcher = pattern.matcher(phaseCompilationOutput);
+        return matcher.results().map(MatchResult::group).collect(Collectors.toList());
     }
 }

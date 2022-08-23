@@ -44,7 +44,8 @@ import java.util.List;
  */
 class NormalPhaseIRRuleBuilder extends CompilePhaseIRRuleBuilder {
 
-    public NormalPhaseIRRuleBuilder(List<RawConstraint> rawFailOnConstraints, List<RawCountsConstraint> rawCountsConstraints, IRMethod irMethod) {
+    public NormalPhaseIRRuleBuilder(List<RawConstraint> rawFailOnConstraints,
+                                    List<RawCountsConstraint> rawCountsConstraints, IRMethod irMethod) {
         super(rawFailOnConstraints, rawCountsConstraints, irMethod);
     }
 
@@ -55,8 +56,8 @@ class NormalPhaseIRRuleBuilder extends CompilePhaseIRRuleBuilder {
     }
     private CompilePhaseIRRule createCompilePhaseIRRule(CompilePhase compilePhase, List<Constraint> failOnConstraints,
                                                           List<CountsConstraint> countsConstraints) {
-        FailOn failOn = createFailOn(failOnConstraints, compilePhase);
-        Counts counts = createCounts(countsConstraints, compilePhase);
-        return new CompilePhaseIRRule(compilePhase, failOn, counts);
+        FailOn failOn = createFailOn(failOnConstraints);
+        Counts counts = createCounts(countsConstraints);
+        return new CompilePhaseIRRule(compilePhase, failOn, counts, irMethod.getOutput(compilePhase));
     }
 }

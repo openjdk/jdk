@@ -78,6 +78,9 @@ public class DefaultRegexes {
      * is returned.
      */
     public static CompilePhase getCompilePhaseForIRNode(String rawNodeString) {
+        if (rawNodeString.equals(IRNode.LOOP)) {
+            System.out.println("asdf");
+        }
         return DEFAULT_TO_PHASE_MAP.getOrDefault(rawNodeString, CompilePhase.DEFAULT);
     }
 

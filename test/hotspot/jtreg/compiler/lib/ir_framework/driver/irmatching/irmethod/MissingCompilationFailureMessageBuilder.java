@@ -41,8 +41,8 @@ class MissingCompilationFailureMessageBuilder extends FailureMessageBuilder {
 
     @Override
     protected String buildIRRulesFailureMessage(int indentationSize) {
-        return getIndentation(indentationSize) + "* Method was not compiled. Did you specify any compiler directives preventing a compilation "
-               + "or used a @Run method in STANDALONE mode? In the latter case, make sure to always trigger a C2 "
-               + "compilation by " + "invoking the test enough times.";
+        return getIndentation(indentationSize) + "* Method was not compiled. Did you specify any compiler directives " +
+               "preventing a compilation or used a @Run method in STANDALONE mode? In the latter case, make sure to always" +
+               " trigger a C2 compilation by " + "invoking the test enough times.";
     }
 }

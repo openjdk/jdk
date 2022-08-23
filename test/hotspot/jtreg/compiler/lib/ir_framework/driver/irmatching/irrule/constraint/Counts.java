@@ -24,14 +24,9 @@
 package compiler.lib.ir_framework.driver.irmatching.irrule.constraint;
 
 import compiler.lib.ir_framework.IR;
-import compiler.lib.ir_framework.TestFramework;
 import compiler.lib.ir_framework.shared.Comparison;
 
 import java.util.List;
-import java.util.regex.MatchResult;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 /**
  * This class represents a fully parsed {@link IR#counts()} attribute of an IR rule for a compile phase.
@@ -41,8 +36,8 @@ import java.util.stream.Collectors;
  */
 public class Counts extends CheckAttribute<CountsConstraint, CountsMatchResult> {
 
-    public Counts(List<CountsConstraint> constraints, String compilationOutput) {
-        super(constraints, compilationOutput);
+    public Counts(List<CountsConstraint> constraints) {
+        super(constraints);
     }
 
     @Override
@@ -51,8 +46,9 @@ public class Counts extends CheckAttribute<CountsConstraint, CountsMatchResult> 
     }
 
     @Override
-    protected void checkConstraint(List<ConstraintFailure> constraintFailures, CountsConstraint constraint) {
-        List<String> countsMatches = getMatchedNodes(constraint);
+    protected void checkConstraint(List<ConstraintFailure> constraintFailures, CountsConstraint constraint,
+                                   String phaseCompilationOutput) {
+        List<String> countsMatches = getMatchedNodes(constraint, phaseCompilationOutput);
         Comparison<Integer> comparison = constraint.getComparison();
         if (!comparison.compare(countsMatches.size())) {
             constraintFailures.add(createRegexFailure(countsMatches, constraint));
@@ -61,6 +57,6 @@ public class Counts extends CheckAttribute<CountsConstraint, CountsMatchResult> 
 
 
     private CountsConstraintFailure createRegexFailure(List<String> countsMatches, CountsConstraint constraint) {
-        return new CountsConstraintFailure(constraint.getRegex(), constraint.getIndex(), constraint.getComparison(), countsMatches);
+        return new CountsConstraintFailure(constraint, countsMatches);
     }
 }

@@ -40,17 +40,16 @@ abstract class ConstraintFailure implements FailureMessage {
     private final int constraintIndex;
     protected final List<String> matchedNodes;
 
-    public ConstraintFailure(String nodeRegex, int constraintIndex, List<String> matchedNodes) {
-        this.nodeRegex = nodeRegex;
-        this.constraintIndex = constraintIndex;
+    public ConstraintFailure(Constraint constraint, List<String> matchedNodes) {
+        this.nodeRegex = constraint.getRegex();
+        this.constraintIndex = constraint.getIndex();
         this.matchedNodes = matchedNodes;
     }
 
     private List<String> addWhiteSpacePrefixForEachLine(List<String> matches, String indentation) {
         return matches
                 .stream()
-                .map(s -> s.replaceAll(System.lineSeparator(), System.lineSeparator()
-                                                               + indentation))
+                .map(s -> s.replaceAll(System.lineSeparator(), System.lineSeparator() + indentation))
                 .collect(Collectors.toList());
     }
 

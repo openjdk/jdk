@@ -37,14 +37,14 @@ import compiler.lib.ir_framework.shared.Comparison;
  * @see Counts
  */
 public class CountsConstraint extends Constraint {
-    private final Comparison<Long> comparison;
+    private final Comparison<Integer> comparison;
 
-    public CountsConstraint(String regex, Comparison<Long> comparison, int index) {
+    public CountsConstraint(String regex, Comparison<Integer> comparison, int index) {
         super(regex, index);
         this.comparison = comparison;
     }
 
-    public Comparison<Long> getComparison() {
+    public Comparison<Integer> getComparison() {
         return comparison;
     }
 }

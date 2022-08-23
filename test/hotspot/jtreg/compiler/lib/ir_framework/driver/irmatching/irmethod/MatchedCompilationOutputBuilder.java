@@ -58,7 +58,7 @@ class MatchedCompilationOutputBuilder {
     }
 
     /**
-     * Return list of compile phases which resultet in an IR matching failure.
+     * Return list of compile phases which resulted in an IR matching failure.
      */
     private static Set<CompilePhase> collectCompilePhases(List<IRRuleMatchResult> irRulesMatchResults) {
         return irRulesMatchResults

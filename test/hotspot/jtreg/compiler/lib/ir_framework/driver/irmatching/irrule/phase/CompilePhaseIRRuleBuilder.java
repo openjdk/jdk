@@ -48,7 +48,7 @@ import java.util.List;
 abstract public class CompilePhaseIRRuleBuilder {
     protected final List<RawConstraint> rawFailOnConstraints;
     protected final List<RawCountsConstraint> rawCountsConstraints;
-    private final IRMethod irMethod;
+    protected final IRMethod irMethod;
 
     public CompilePhaseIRRuleBuilder(List<RawConstraint> rawFailOnConstraints, List<RawCountsConstraint> rawCountsConstraints, IRMethod irMethod) {
         this.rawFailOnConstraints = rawFailOnConstraints;
@@ -63,8 +63,10 @@ abstract public class CompilePhaseIRRuleBuilder {
     public static List<CompilePhaseIRRule> create(IR irAnno, IRMethod irMethod) {
         List<RawConstraint> rawFailOnConstraints = FailOnAttributeParser.parse(irAnno.failOn());
         List<RawCountsConstraint> rawCountsConstraints = CountsAttributeParser.parse(irAnno.counts());
-        NormalPhaseIRRuleBuilder normalPhaseIRRuleBuilder = new NormalPhaseIRRuleBuilder(rawFailOnConstraints, rawCountsConstraints, irMethod);
-        DefaultPhaseIRRuleBuilder defaultPhaseIRRuleBuilder = new DefaultPhaseIRRuleBuilder(rawFailOnConstraints, rawCountsConstraints, irMethod);
+        NormalPhaseIRRuleBuilder normalPhaseIRRuleBuilder =
+                new NormalPhaseIRRuleBuilder(rawFailOnConstraints, rawCountsConstraints, irMethod);
+        DefaultPhaseIRRuleBuilder defaultPhaseIRRuleBuilder =
+                new DefaultPhaseIRRuleBuilder(rawFailOnConstraints, rawCountsConstraints, irMethod);
         List<CompilePhaseIRRule> compilePhaseIRRules = new ArrayList<>();
         for (CompilePhase compilePhase : irAnno.phase()) {
             if (compilePhase != CompilePhase.DEFAULT) {
@@ -76,26 +78,17 @@ abstract public class CompilePhaseIRRuleBuilder {
         return compilePhaseIRRules;
     }
 
-    protected FailOn createFailOn(List<Constraint> constraintsList, CompilePhase compilePhase) {
+    protected FailOn createFailOn(List<Constraint> constraintsList) {
         if (constraintsList != null) {
-            checkNotEmpty(compilePhase);
-            return new FailOn(constraintsList, irMethod.getOutput(compilePhase));
+            return new FailOn(constraintsList);
         } else {
             return null;
         }
     }
 
-    protected void checkNotEmpty(CompilePhase compilePhase) {
-        TestFormat.checkNoThrow(!irMethod.getOutput(compilePhase).isEmpty(),
-                                "No compilation output found for compile phase " + compilePhase + " for " +
-                                "method \"" + irMethod.getMethod() + "\". Make sure that " + compilePhase + " is always " +
-                                "emitted by a C2 compilation.");
-    }
-
-    protected Counts createCounts(List<CountsConstraint> constraintList, CompilePhase compilePhase) {
+    protected Counts createCounts(List<CountsConstraint> constraintList) {
         if (constraintList != null) {
-            checkNotEmpty(compilePhase);
-            return new Counts(constraintList, irMethod.getOutput(compilePhase));
+            return new Counts(constraintList);
         } else {
             return null;
         }

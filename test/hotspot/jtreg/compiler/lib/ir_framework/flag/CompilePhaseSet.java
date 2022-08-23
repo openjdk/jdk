@@ -109,6 +109,10 @@ class CompilePhaseSet {
     }
 
     private static <T extends RawConstraint> boolean hasConstraintsForPhase(List<T> rawConstraints, CompilePhase compilePhase) {
+        for (T r : rawConstraints) {
+            CompilePhase phase = DefaultRegexes.getCompilePhaseForIRNode(r.getRawNodeString());
+            phase = null;
+        }
         return rawConstraints.stream().anyMatch(r -> DefaultRegexes.getCompilePhaseForIRNode(r.getRawNodeString()) == compilePhase);
     }
 }

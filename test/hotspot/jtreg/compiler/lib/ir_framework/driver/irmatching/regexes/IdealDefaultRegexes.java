@@ -408,6 +408,7 @@ public class IdealDefaultRegexes {
     }
 
     private static void initRequireLoops(String defaultRegexString, String idealString) {
+        DEFAULT_TO_PHASE_MAP.put(defaultRegexString, CompilePhase.PRINT_IDEAL);
         initPlaceholderMap(defaultRegexString, idealString, CompilePhase.getIdealPhasesWithLoops());
     }
 
