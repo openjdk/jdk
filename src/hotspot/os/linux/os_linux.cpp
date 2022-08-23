@@ -195,8 +195,8 @@ julong os::Linux::available_memory() {
 
   if (OSContainer::is_containerized()) {
     jlong mem_limit = OSContainer::memory_limit_in_bytes();
-    jlong mem_usage = OSContainer::memory_usage_in_bytes();
-    if (mem_limit > 0 && mem_usage < 1) {
+    jlong mem_usage;
+    if (mem_limit > 0 && (mem_usage = OSContainer::memory_usage_in_bytes()) < 1) {
       log_debug(os, container)("container memory usage failed: " JLONG_FORMAT ", using host value", mem_usage);
     }
     if (mem_limit > 0 && mem_usage > 0) {
