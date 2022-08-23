@@ -45,6 +45,7 @@ import sun.security.ssl.SSLCipher.SSLReadCipher;
 import sun.security.ssl.SSLCipher.SSLWriteCipher;
 import sun.security.ssl.SSLHandshake.HandshakeMessage;
 import sun.security.ssl.SupportedVersionsExtension.SHSupportedVersionsSpec;
+import sun.security.util.DisabledAlgorithmConstraints;
 import sun.security.util.LegacyAlgorithmConstraints;
 
 /**
@@ -413,15 +414,12 @@ final class ServerHello {
             }
 
             List<CipherSuite> legacySuites = new LinkedList<>();
-            boolean CSFound = false;
+
             for (CipherSuite cs : preferred) {
                 if (!HandshakeContext.isNegotiable(
                         proposed, shc.negotiatedProtocol, cs)) {
                     continue;
                 }
-
-                // only reason for failure now would be key exchange issue
-                CSFound = true;
 
                 if (shc.sslConfig.clientAuthType ==
                         ClientAuthType.CLIENT_AUTH_REQUIRED) {
@@ -472,12 +470,13 @@ final class ServerHello {
                 }
             }
 
-            //negotiation failed between client and server, print server enabled cipher suites
+            // negotiation failed between client and server, print server enabled cipher suites
             if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                 printServerSocketConfig(shc, legacySuites);
             }
-            String finalErrorMessage = CSFound ? "key exchange failed" : "no cipher suites in common";
-            throw shc.conContext.fatal(Alert.HANDSHAKE_FAILURE, finalErrorMessage);
+
+            throw shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                    "no cipher suites in common / key exchange failed");
         }
 
         private static final class KeyExchangeProperties {
@@ -754,7 +753,7 @@ final class ServerHello {
 
             // no cipher suites in common
             if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
-                printServerSocketConfig(shc, null);
+                printServerSocketConfig(shc, legacySuite != null ? List.of(legacySuite) : null);
             }
             return null;
         }
@@ -767,31 +766,26 @@ final class ServerHello {
         sb.append("\"{0}\": '\n{'\n")
                 .append("  \"preferred ciphersuites\"     : \"{1}\",\n")
                 .append("  \"client auth type\"           : \"{2}\",\n")
-                .append("  \"enabled server ciphersuites\": \"{3}\",\n")
-                .append("  \"legacy algorithms\"          : \"{4}\"");
+                .append("  \"enabled server ciphersuites\": \"{3}\"");
 
         LinkedList<String> fieldsList = new LinkedList<>();
 
-        fieldsList.add("SSLSeverSocket info");
-        fieldsList.add(shc.sslConfig.preferLocalCipherSuites ? "Server preference" : "Client preference");
+        fieldsList.add("SSLServerSocket info");
+        fieldsList.add(shc.sslConfig.preferLocalCipherSuites ? "server preference" : "client preference");
         fieldsList.add(shc.sslConfig.clientAuthType.toString());
-        fieldsList.add(shc.activeCipherSuites != null ? shc.activeCipherSuites.toString() : "Not Set");
-        fieldsList.add(Security.getProperty(LegacyAlgorithmConstraints.PROPERTY_TLS_LEGACY_ALGS));
+        fieldsList.add(shc.activeCipherSuites != null ? shc.activeCipherSuites.toString() : "not set");
 
-        if (!shc.negotiatedProtocol.name.equalsIgnoreCase(ProtocolVersion.TLS13.name)) {
-            sb.append(",\n");
-            sb.append("  \"legacy ciphersuites\"        : \"{5}\",\n");
+        if (legacySuites != null && legacySuites.size() > 0) {
+            sb.append(",\n")
+                    .append("  \"legacy ciphersuites\"        : \"{4}\",\n");
 
-            fieldsList.add(legacySuites != null ? legacySuites.stream()
+            fieldsList.add(legacySuites.stream()
                     .map(n -> n.name())
-                    .collect(Collectors.joining(",", "[", "]")) : "Not Set");
-        } else {
-            sb.append("\n");
+                    .collect(Collectors.joining(",", "[", "]")));
         }
-        sb.append("'}'");
+        sb.append("'\n}'");
 
         MessageFormat messageFormat = new MessageFormat(sb.toString(), Locale.ENGLISH);
-
         Object[] messageFields = new Object[fieldsList.size()];
         messageFields = fieldsList.toArray(messageFields);
 

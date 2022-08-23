@@ -60,7 +60,7 @@ public class ServerSocketConfigTest extends SSLSocketTemplate {
     private final static String[] CLIENT_TLSV12_CS = {"TLS_RSA_WITH_NULL_SHA256"};
 
     private final static String[] CLIENT_TLSV13_CS = {"TLS_AES_128_GCM_SHA256"};
-    private final static String DEBUG_MESSAGE = "\"SSLSeverSocket info\":";
+    private final static String DEBUG_MESSAGE = "\"SSLServerSocket info\":";
     private final static String LEGACY_CS = "\"[TLS_RSA_WITH_NULL_SHA256]\"";
 
     private final static String NO_COMMON_IN_CS_MSG = "no cipher suites in common";
@@ -166,4 +166,3 @@ public class ServerSocketConfigTest extends SSLSocketTemplate {
         }
     }
 }
-
