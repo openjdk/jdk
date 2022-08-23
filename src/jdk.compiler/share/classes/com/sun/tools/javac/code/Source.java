@@ -207,7 +207,7 @@ public enum Source {
      */
     public enum Feature {
 
-        DIAMOND(JDK7, Fragments.FeatureDiamond, DiagKind.NORMAL),
+        DIAMOND(MIN, Fragments.FeatureDiamond, DiagKind.NORMAL), // Used in Analyzer
         MODULES(JDK9, Fragments.FeatureModules, DiagKind.PLURAL),
         EFFECTIVELY_FINAL_VARIABLES_IN_TRY_WITH_RESOURCES(JDK9, Fragments.FeatureVarInTryWithResources, DiagKind.PLURAL),
         DEPRECATION_ON_IMPORT(MIN, JDK8),
@@ -226,7 +226,6 @@ public enum Source {
         GRAPH_INFERENCE(JDK8),
         FUNCTIONAL_INTERFACE_MOST_SPECIFIC(JDK8),
         POST_APPLICABILITY_VARARGS_ACCESS_CHECK(JDK8),
-        MAP_CAPTURES_TO_BOUNDS(MIN, JDK7),
         PRIVATE_SAFE_VARARGS(JDK9),
         DIAMOND_WITH_ANONYMOUS_CLASS_CREATION(JDK9, Fragments.FeatureDiamondAndAnonClass, DiagKind.NORMAL),
         UNDERSCORE_IDENTIFIER(MIN, JDK8),

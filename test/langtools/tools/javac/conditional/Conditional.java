@@ -4,8 +4,7 @@
  * @summary Conditional operator applies assignment conversion
  * @author Tim Hanson, BEA
  *
- *
- * @compile/fail/ref=Conditional.out -XDrawDiagnostics --release 7 -Xlint:-options Conditional.java
+ * @compile Conditional.java
  */
 
 import java.util.*;

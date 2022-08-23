@@ -50,12 +50,10 @@ public class ReleaseOptionThroughAPI {
              PrintWriter outWriter = new PrintWriter(out)) {
             Iterable<? extends JavaFileObject> input =
                     fm.getJavaFileObjects(System.getProperty("test.src") + "/ReleaseOption.java");
-            List<String> options = Arrays.asList("--release", "7", "-XDrawDiagnostics", "-Xlint:-options");
+            List<String> options = Arrays.asList("--release", "8", "-XDrawDiagnostics", "-Xlint:-options");
 
             compiler.getTask(outWriter, fm, null, options, null, input).call();
-            String expected =
-                    "ReleaseOption.java:9:49: compiler.err.doesnt.exist: java.util.stream" + lineSep +
-                    "1 error" + lineSep;
+            String expected ="";
             if (!expected.equals(out.toString())) {
                 throw new AssertionError("Unexpected output: " + out.toString());
             }

@@ -116,7 +116,7 @@ public class Types {
         names = Names.instance(context);
         Source source = Source.instance(context);
         allowDefaultMethods = Feature.DEFAULT_METHODS.allowedInSource(source);
-        mapCapturesToBounds = Feature.MAP_CAPTURES_TO_BOUNDS.allowedInSource(source);
+        mapCapturesToBounds = false;
         chk = Check.instance(context);
         enter = Enter.instance(context);
         capturedName = names.fromString("<captured wildcard>");
