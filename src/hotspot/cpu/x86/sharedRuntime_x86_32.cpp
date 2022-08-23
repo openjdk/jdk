@@ -128,11 +128,11 @@ class RegisterSaver {
 
 OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_frame_words,
                                            int* total_frame_words, bool verify_fpu, bool save_vectors) {
-  int num_xmm_regs = XMMRegisterImpl::number_of_registers;
+  int num_xmm_regs = XMMRegister::number_of_registers;
   int ymm_bytes = num_xmm_regs * 16;
   int zmm_bytes = num_xmm_regs * 32;
 #ifdef COMPILER2
-  int opmask_state_bytes = KRegisterImpl::number_of_registers * 8;
+  int opmask_state_bytes = KRegister::number_of_registers * 8;
   if (save_vectors) {
     assert(UseAVX > 0, "Vectors larger than 16 byte long are supported only with AVX");
     assert(MaxVectorSize <= 64, "Only up to 64 byte long vectors are supported");
@@ -199,7 +199,7 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
   int delta = st1_off - off;
 
   // Save the FPU registers in de-opt-able form
-  for (int n = 0; n < FloatRegisterImpl::number_of_registers; n++) {
+  for (int n = 0; n < FloatRegister::number_of_registers; n++) {
     __ fstp_d(Address(rsp, off*wordSize));
     off += delta;
   }
@@ -235,7 +235,7 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
       }
       __ subptr(rsp, opmask_state_bytes);
       // Save opmask registers
-      for (int n = 0; n < KRegisterImpl::number_of_registers; n++) {
+      for (int n = 0; n < KRegister::number_of_registers; n++) {
         __ kmov(Address(rsp, n*8), as_KRegister(n));
       }
     }
@@ -268,7 +268,7 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
   // %%% This is really a waste but we'll keep things as they were for now for the upper component
   off = st0_off;
   delta = st1_off - off;
-  for (int n = 0; n < FloatRegisterImpl::number_of_registers; n++) {
+  for (int n = 0; n < FloatRegister::number_of_registers; n++) {
     FloatRegister freg_name = as_FloatRegister(n);
     map->set_callee_saved(STACK_OFFSET(off), freg_name->as_VMReg());
     map->set_callee_saved(STACK_OFFSET(off+1), NEXTREG(freg_name));
@@ -291,7 +291,7 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
 void RegisterSaver::restore_live_registers(MacroAssembler* masm, bool restore_vectors) {
   int opmask_state_bytes = 0;
   int additional_frame_bytes = 0;
-  int num_xmm_regs = XMMRegisterImpl::number_of_registers;
+  int num_xmm_regs = XMMRegister::number_of_registers;
   int ymm_bytes = num_xmm_regs * 16;
   int zmm_bytes = num_xmm_regs * 32;
   // Recover XMM & FPU state
@@ -304,7 +304,7 @@ void RegisterSaver::restore_live_registers(MacroAssembler* masm, bool restore_ve
     if (UseAVX > 2) {
       // Save upper half of ZMM registers as well
       additional_frame_bytes += zmm_bytes;
-      opmask_state_bytes = KRegisterImpl::number_of_registers * 8;
+      opmask_state_bytes = KRegister::number_of_registers * 8;
       additional_frame_bytes += opmask_state_bytes;
     }
   }
@@ -345,7 +345,7 @@ void RegisterSaver::restore_live_registers(MacroAssembler* masm, bool restore_ve
       for (int n = 0; n < num_xmm_regs; n++) {
         __ vinsertf64x4_high(as_XMMRegister(n), Address(rsp, n*32+off));
       }
-      for (int n = 0; n < KRegisterImpl::number_of_registers; n++) {
+      for (int n = 0; n < KRegister::number_of_registers; n++) {
         __ kmov(as_KRegister(n), Address(rsp, n*8));
       }
     }
@@ -412,8 +412,8 @@ static int reg2offset_out(VMReg r) {
 // refer to 4-byte stack slots.  All stack slots are based off of the stack pointer
 // as framesizes are fixed.
 // VMRegImpl::stack0 refers to the first slot 0(sp).
-// and VMRegImpl::stack0+1 refers to the memory word 4-byes higher.  Register
-// up to RegisterImpl::number_of_registers) are the 32-bit
+// and VMRegImpl::stack0+1 refers to the memory word 4-byes higher.
+// Register up to Register::number_of_registers are the 32-bit
 // integer registers.
 
 // Pass first two oop/int args in registers ECX and EDX.
@@ -535,7 +535,7 @@ int SharedRuntime::java_calling_convention(const BasicType *sig_bt,
 // Patch the callers callsite with entry to compiled code if it exists.
 static void patch_callers_callsite(MacroAssembler *masm) {
   Label L;
-  __ cmpptr(Address(rbx, in_bytes(Method::code_offset())), (int32_t)NULL_WORD);
+  __ cmpptr(Address(rbx, in_bytes(Method::code_offset())), NULL_WORD);
   __ jcc(Assembler::equal, L);
   // Schedule the branch target address early.
   // Call into the VM to patch the caller, then jump to compiled callee
@@ -984,7 +984,7 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
     // Method might have been compiled since the call site was patched to
     // interpreted if that is the case treat it as a miss so we can get
     // the call site corrected.
-    __ cmpptr(Address(rbx, in_bytes(Method::code_offset())), (int32_t)NULL_WORD);
+    __ cmpptr(Address(rbx, in_bytes(Method::code_offset())), NULL_WORD);
     __ jcc(Assembler::equal, skip_fixup);
 
     __ bind(missed);
@@ -1096,7 +1096,7 @@ static void object_move(MacroAssembler* masm,
     Register rHandle = rax;
     Label nil;
     __ xorptr(rHandle, rHandle);
-    __ cmpptr(Address(rbp, reg2offset_in(src.first())), (int32_t)NULL_WORD);
+    __ cmpptr(Address(rbp, reg2offset_in(src.first())), NULL_WORD);
     __ jcc(Assembler::equal, nil);
     __ lea(rHandle, Address(rbp, reg2offset_in(src.first())));
     __ bind(nil);
@@ -1118,7 +1118,7 @@ static void object_move(MacroAssembler* masm,
     __ movptr(Address(rsp, offset), rOop);
     map->set_oop(VMRegImpl::stack2reg(oop_slot));
     __ xorptr(rHandle, rHandle);
-    __ cmpptr(rOop, (int32_t)NULL_WORD);
+    __ cmpptr(rOop, NULL_WORD);
     __ jcc(Assembler::equal, skip);
     __ lea(rHandle, Address(rsp, offset));
     __ bind(skip);
@@ -1863,7 +1863,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     if (!UseHeavyMonitors) {
       Label not_recur;
       // Simple recursive lock?
-      __ cmpptr(Address(rbp, lock_slot_rbp_offset), (int32_t)NULL_WORD);
+      __ cmpptr(Address(rbp, lock_slot_rbp_offset), NULL_WORD);
       __ jcc(Assembler::notEqual, not_recur);
       __ dec_held_monitor_count();
       __ jmpb(fast_done);
@@ -1934,7 +1934,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   __ movl(Address(rcx, JNIHandleBlock::top_offset_in_bytes()), NULL_WORD);
 
   // Any exception pending?
-  __ cmpptr(Address(thread, in_bytes(Thread::pending_exception_offset())), (int32_t)NULL_WORD);
+  __ cmpptr(Address(thread, in_bytes(Thread::pending_exception_offset())), NULL_WORD);
   __ jcc(Assembler::notEqual, exception_pending);
 
   // no exception, we're almost done
@@ -1981,7 +1981,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
 #ifdef ASSERT
     { Label L;
-    __ cmpptr(Address(thread, in_bytes(Thread::pending_exception_offset())), (int)NULL_WORD);
+    __ cmpptr(Address(thread, in_bytes(Thread::pending_exception_offset())), NULL_WORD);
     __ jcc(Assembler::equal, L);
     __ stop("no pending exception allowed on exit from monitorenter");
     __ bind(L);
@@ -2018,7 +2018,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 #ifdef ASSERT
     {
       Label L;
-      __ cmpptr(Address(thread, in_bytes(Thread::pending_exception_offset())), (int32_t)NULL_WORD);
+      __ cmpptr(Address(thread, in_bytes(Thread::pending_exception_offset())), NULL_WORD);
       __ jcc(Assembler::equal, L);
       __ stop("no pending exception allowed on exit complete_monitor_unlocking_C");
       __ bind(L);
@@ -2702,7 +2702,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
   __ get_thread(java_thread);
   __ reset_last_Java_frame(java_thread, false);
 
-  __ cmpptr(Address(java_thread, Thread::pending_exception_offset()), (int32_t)NULL_WORD);
+  __ cmpptr(Address(java_thread, Thread::pending_exception_offset()), NULL_WORD);
   __ jcc(Assembler::equal, noException);
 
   // Exception pending
@@ -2830,7 +2830,7 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(address destination, const cha
   __ reset_last_Java_frame(thread, true);
   // check for pending exceptions
   Label pending;
-  __ cmpptr(Address(thread, Thread::pending_exception_offset()), (int32_t)NULL_WORD);
+  __ cmpptr(Address(thread, Thread::pending_exception_offset()), NULL_WORD);
   __ jcc(Assembler::notEqual, pending);
 
   // get the returned Method*

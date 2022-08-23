@@ -411,8 +411,7 @@ void C2_MacroAssembler::rtm_inflated_locking(Register objReg, Register boxReg, R
   Label L_rtm_retry, L_decrement_retry, L_on_abort;
   int owner_offset = OM_OFFSET_NO_MONITOR_VALUE_TAG(owner);
 
-  // Without cast to int32_t this style of movptr will destroy r10 which is typically obj.
-  movptr(Address(boxReg, 0), (int32_t)intptr_t(markWord::unused_mark().value()));
+  movptr(Address(boxReg, 0), checked_cast<int32_t>(markWord::unused_mark().value()));
   movptr(boxReg, tmpReg); // Save ObjectMonitor address
 
   if (RTMRetryCount > 0) {
@@ -693,7 +692,7 @@ void C2_MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmp
   cmpxchgptr(r15_thread, Address(scrReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
   // Unconditionally set box->_displaced_header = markWord::unused_mark().
   // Without cast to int32_t this style of movptr will destroy r10 which is typically obj.
-  movptr(Address(boxReg, 0), (int32_t)intptr_t(markWord::unused_mark().value()));
+  movptr(Address(boxReg, 0), checked_cast<int32_t>(markWord::unused_mark().value()));
   // Propagate ICC.ZF from CAS above into DONE_LABEL.
   jccb(Assembler::equal, COUNT);          // CAS above succeeded; propagate ZF = 1 (success)
 
@@ -788,7 +787,7 @@ void C2_MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register t
 #endif
 
   if (!UseHeavyMonitors) {
-    cmpptr(Address(boxReg, 0), (int32_t)NULL_WORD);                   // Examine the displaced header
+    cmpptr(Address(boxReg, 0), NULL_WORD);                            // Examine the displaced header
     jcc   (Assembler::zero, COUNT);                                   // 0 indicates recursive stack-lock
   }
   movptr(tmpReg, Address(objReg, oopDesc::mark_offset_in_bytes()));   // Examine the object's markword
@@ -878,7 +877,7 @@ void C2_MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register t
   orptr(boxReg, Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(EntryList)));
   jccb  (Assembler::notZero, CheckSucc);
   // Without cast to int32_t this style of movptr will destroy r10 which is typically obj.
-  movptr(Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)), (int32_t)NULL_WORD);
+  movptr(Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)), NULL_WORD);
   jmpb  (DONE_LABEL);
 
   // Try to avoid passing control into the slow_path ...
@@ -888,12 +887,12 @@ void C2_MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register t
   // Effectively: if (succ == null) goto slow path
   // The code reduces the window for a race, however,
   // and thus benefits performance.
-  cmpptr(Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(succ)), (int32_t)NULL_WORD);
+  cmpptr(Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(succ)), NULL_WORD);
   jccb  (Assembler::zero, LGoSlowPath);
 
   xorptr(boxReg, boxReg);
   // Without cast to int32_t this style of movptr will destroy r10 which is typically obj.
-  movptr(Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)), (int32_t)NULL_WORD);
+  movptr(Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)), NULL_WORD);
 
   // Memory barrier/fence
   // Dekker pivot point -- fulcrum : ST Owner; MEMBAR; LD Succ
@@ -904,7 +903,7 @@ void C2_MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register t
   // (mov box,0; xchgq box, &m->Owner; LD _succ) .
   lock(); addl(Address(rsp, 0), 0);
 
-  cmpptr(Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(succ)), (int32_t)NULL_WORD);
+  cmpptr(Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(succ)), NULL_WORD);
   jccb  (Assembler::notZero, LSuccess);
 
   // Rare inopportune interleaving - race.
@@ -1643,12 +1642,12 @@ void C2_MacroAssembler::load_vector_mask(KRegister dst, XMMRegister src, XMMRegi
 
 void C2_MacroAssembler::load_vector(XMMRegister dst, Address src, int vlen_in_bytes) {
   switch (vlen_in_bytes) {
-  case 4:  movdl(dst, src);   break;
-  case 8:  movq(dst, src);    break;
-  case 16: movdqu(dst, src);  break;
-  case 32: vmovdqu(dst, src); break;
-  case 64: evmovdquq(dst, src, Assembler::AVX_512bit); break;
-  default: ShouldNotReachHere();
+    case 4:  movdl(dst, src);   break;
+    case 8:  movq(dst, src);    break;
+    case 16: movdqu(dst, src);  break;
+    case 32: vmovdqu(dst, src); break;
+    case 64: evmovdqul(dst, src, Assembler::AVX_512bit); break;
+    default: ShouldNotReachHere();
   }
 }
 
@@ -1658,6 +1657,38 @@ void C2_MacroAssembler::load_vector(XMMRegister dst, AddressLiteral src, int vle
   } else {
     lea(rscratch, src);
     load_vector(dst, Address(rscratch, 0), vlen_in_bytes);
+  }
+}
+
+void C2_MacroAssembler::load_constant_vector(BasicType bt, XMMRegister dst, InternalAddress src, int vlen) {
+  int vlen_enc = vector_length_encoding(vlen);
+  if (VM_Version::supports_avx()) {
+    if (bt == T_LONG) {
+      if (VM_Version::supports_avx2()) {
+        vpbroadcastq(dst, src, vlen_enc, noreg);
+      } else {
+        vmovddup(dst, src, vlen_enc, noreg);
+      }
+    } else if (bt == T_DOUBLE) {
+      if (vlen_enc != Assembler::AVX_128bit) {
+        vbroadcastsd(dst, src, vlen_enc, noreg);
+      } else {
+        vmovddup(dst, src, vlen_enc, noreg);
+      }
+    } else {
+      if (VM_Version::supports_avx2() && is_integral_type(bt)) {
+        vpbroadcastd(dst, src, vlen_enc, noreg);
+      } else {
+        vbroadcastss(dst, src, vlen_enc, noreg);
+      }
+    }
+  } else if (VM_Version::supports_sse3()) {
+    movddup(dst, src);
+  } else {
+    movq(dst, src);
+    if (vlen == 16) {
+      punpcklqdq(dst, dst);
+    }
   }
 }
 
@@ -2317,9 +2348,9 @@ void C2_MacroAssembler::get_elem(BasicType typ, XMMRegister dst, XMMRegister src
     if (typ == T_FLOAT) {
       if (UseAVX == 0) {
         movdqu(dst, src);
-        pshufps(dst, dst, eindex);
+        shufps(dst, dst, eindex);
       } else {
-        vpshufps(dst, src, src, eindex, Assembler::AVX_128bit);
+        vshufps(dst, src, src, eindex, Assembler::AVX_128bit);
       }
     } else {
       if (UseAVX == 0) {

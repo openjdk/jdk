@@ -25,7 +25,7 @@
 #ifndef OS_POSIX_OS_POSIX_INLINE_HPP
 #define OS_POSIX_OS_POSIX_INLINE_HPP
 
-// os_posix.hpp included by os.hpp
+#include "os_posix.hpp"
 
 #include "runtime/mutex.hpp"
 #include "runtime/os.hpp"
@@ -33,18 +33,6 @@
 #include <unistd.h>
 #include <sys/socket.h>
 #include <netdb.h>
-
-// macros for restartable system calls
-
-#define RESTARTABLE(_cmd, _result) do { \
-    _result = _cmd; \
-  } while(((int)_result == OS_ERR) && (errno == EINTR))
-
-#define RESTARTABLE_RETURN_INT(_cmd) do { \
-  int _result; \
-  RESTARTABLE(_cmd, _result); \
-  return _result; \
-} while(false)
 
 // Aix does not have NUMA support but need these for compilation.
 inline bool os::numa_has_static_binding()   { AIX_ONLY(ShouldNotReachHere();) return true; }

@@ -761,6 +761,51 @@ public interface Elements {
     }
 
     /**
+     * {@return {@code true} if the executable element can be
+     * determined to be a canonical constructor of a record, {@code
+     * false} otherwise}
+     * Note that in some cases there may be insufficient information
+     * to determine if a constructor is a canonical constructor, such
+     * as if the executable element is built backed by a class
+     * file. In such cases, {@code false} is returned.
+     *
+     * @implSpec
+     * The default implementation of this method unconditionally
+     * returns {@code false}.
+     *
+     * @param e  the executable being examined
+     * @jls 8.10.4.1 Normal Canonical Constructors
+     * @since 20
+     */
+    default boolean isCanonicalConstructor(ExecutableElement e) {
+        return false;
+    }
+
+    /**
+     * {@return {@code true} if the executable element can be
+     * determined to be a compact constructor of a record, {@code
+     * false} otherwise}
+     * By definition, a compact constructor is also a {@linkplain
+     * #isCanonicalConstructor(ExecutableElement) canonical
+     * constructor}.
+     * Note that in some cases there may be insufficient information
+     * to determine if a constructor is a compact constructor, such as
+     * if the executable element is built backed by a class file. In
+     * such cases, {@code false} is returned.
+     *
+     * @implSpec
+     * The default implementation of this method unconditionally
+     * returns {@code false}.
+     *
+     * @param e  the executable being examined
+     * @jls 8.10.4.2 Compact Canonical Constructors
+     * @since 20
+     */
+    default boolean isCompactConstructor(ExecutableElement e) {
+        return false;
+    }
+
+    /**
      * {@return the file object for this element or {@code null} if
      * there is no such file object}
      *
