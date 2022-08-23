@@ -2316,7 +2316,6 @@ public class JavacParser implements Parser {
     }
 
     JCExpression memberReferenceSuffix(int pos1, JCExpression t) {
-        checkSourceLevel(Feature.METHOD_REFERENCES);
         selectExprMode();
         List<JCExpression> typeArgs = null;
         if (token.kind == LT) {
