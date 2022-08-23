@@ -210,14 +210,11 @@ import java.util.concurrent.CountDownLatch;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import jdk.test.lib.net.URIBuilder;
 import sun.net.www.http.HttpClient;
 import sun.net.www.http.KeepAliveCache;
 import sun.net.www.protocol.http.HttpURLConnection;
-
+import jdk.test.lib.net.URIBuilder;
 public class KeepAliveTest {
-
     private static final String NOT_CACHED = "NotCached";
     private static final String CLIENT_SEPARATOR = ";";
     private static final String NEW_LINE = "\r\n";
