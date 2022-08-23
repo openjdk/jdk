@@ -77,7 +77,7 @@ public class PipelineLeaksFD {
         }
 
         // Read, check, and close all streams
-        for (int i = 0; i < processes.size() - 1; i++) {
+        for (int i = 0; i < processes.size(); i++) {
             final Process p = processes.get(i);
             String expectedOut = (i == processes.size() - 1) ? text : null;
             String expectedErr = null;      // EOF
