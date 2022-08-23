@@ -550,10 +550,12 @@ void ClassLoaderDataGraph::purge(bool at_safepoint) {
     delete purge_me;
     classes_unloaded = true;
   }
+
+  Metaspace::purge(classes_unloaded);
   if (classes_unloaded) {
-    Metaspace::purge();
     set_metaspace_oom(false);
   }
+
   DependencyContext::purge_dependency_contexts();
 
   // If we're purging metadata at a safepoint, clean remaining
