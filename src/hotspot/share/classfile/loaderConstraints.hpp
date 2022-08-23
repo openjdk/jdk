@@ -30,8 +30,6 @@
 
 class ClassLoaderData;
 class LoaderConstraint;
-class LoaderConstraintEntry;
-class PlaceholderTable;
 class Symbol;
 
 class LoaderConstraintTable : public AllStatic {
