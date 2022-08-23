@@ -1321,7 +1321,13 @@ public abstract class Provider extends Properties {
                 set.addAll(serviceMap.values());
             }
             if (!legacyMap.isEmpty()) {
-                set.addAll(legacyMap.values());
+                legacyMap.entrySet().forEach(entry -> {
+                    if (!entry.getValue().isValid()) {
+                        legacyMap.remove(entry.getKey(), entry.getValue());
+                    } else {
+                        set.add(entry.getValue());
+                    }
+                });
             }
             serviceSet = Collections.unmodifiableSet(set);
             servicesChanged = false;
