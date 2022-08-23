@@ -511,7 +511,11 @@ void Dictionary::print_on(outputStream* st) const {
     return true;
   };
 
-  _table->do_scan(Thread::current(), printer);
+  if (SafepointSynchronize::is_at_safepoint()) {
+    _table->do_safepoint_scan(printer);
+  } else {
+    _table->do_scan(Thread::current(), printer);
+  }
   tty->cr();
 }
 
