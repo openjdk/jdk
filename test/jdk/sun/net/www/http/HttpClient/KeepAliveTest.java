@@ -315,7 +315,6 @@ public class KeepAliveTest {
         a[0] , a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8], a[9], a[10], a[11], a[12], a[13], a[14], a[15],
         a[0] , a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8], a[9], a[10], a[11], a[12], a[13], a[14], a[15],
     }; */
-
     private static final String[] clientScenarios = {
         a[0] , a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8], a[9], a[10], a[11], a[12], a[13], a[14], a[15]
     };
@@ -355,7 +354,7 @@ public class KeepAliveTest {
             return G;
         } else if (scenarioNumber >= 128 && scenarioNumber <= 143){
             return H;
-        } else if (scenarioNumber >= 144 && scenarioNumber <= 159) {
+        } else if (scenarioNumber >= 144 && scenarioNumber <= 159){
             return I;
         }
         /*Invalid Case*/
@@ -439,14 +438,11 @@ public class KeepAliveTest {
             socket = serverSocket.accept();
             readAll(socket);
             out = new OutputStreamWriter(socket.getOutputStream());
-
             String BODY = "SERVER REPLY: Hello world";
             String CLEN = "Content-Length: " + BODY.length() + NEW_LINE;
-
             /* send the header */
             out.write("HTTP/1.1 200 OK\r\n");
             out.write("Content-Type: text/plain; charset=iso-8859-1\r\n");
-
             /*
              * append each scenario content from array.
              */
@@ -483,7 +479,6 @@ public class KeepAliveTest {
         }
     }
     private void connectToServerURL(int scenarioNumber) throws Exception {
-
         //    System.setProperty("java.net.useSystemProxies", "false");
         //    System.setProperty("http.nonProxyHosts", "");
         //    System.setProperty("http.proxyHost", "localhost");
@@ -496,7 +491,6 @@ public class KeepAliveTest {
         System.out.println("http.proxyHost:"+System.getProperty("http.proxyHost"));
         System.clearProperty("http.keepAlive.time.server");
         System.clearProperty("http.keepAlive.time.proxy");
-
         // fetch clientScenearios for each scenarioNumber from array and set it to
         // System property.
         if (!clientScenarios[getClientScenarioNumber(scenarioNumber)].equalsIgnoreCase(NI)) {
@@ -530,7 +524,6 @@ public class KeepAliveTest {
         BufferedReader bufferedReader = null;
         try {
             bufferedReader = new BufferedReader(inputStreamReader);
-
             while (true) {
                 String eachLine = bufferedReader.readLine();
                 if (eachLine == null) {
@@ -563,12 +556,10 @@ public class KeepAliveTest {
             KeepAliveCache keepAliveCache = (KeepAliveCache) keepAliveField.get(httpClient);
             System.out.println("keepAliveCache" + keepAliveCache);
             System.out.println("SERVER URL:" + httpUrlConnection.getURL());
-
             /*
              * create KeepAliveKey(URL,Object) object and compare created KeepAliveKey and
              * existing using equals() method: KeepAliveKey.equals()
              */
-
             Class keepAliveKeyClass = Class.forName("sun.net.www.http.KeepAliveKey");
             //    System.out.println("keepAliveKeyClass=" + keepAliveKeyClass);
             Constructor keepAliveKeyClassconstructor = keepAliveKeyClass.getDeclaredConstructors()[0];
@@ -588,7 +579,6 @@ public class KeepAliveTest {
                 System.out.println("ProxyHostUsingSystemProperty:" + System.getProperty("http.proxyHost"));
                 System.out.println("http.keepAlive.time.server=" + System.getProperty("http.keepAlive.time.server"));
                 System.out.println("http.keepAlive.time.proxy=" + System.getProperty("http.keepAlive.time.proxy"));
-
                 Class clientVectorClass = Class.forName("sun.net.www.http.ClientVector");
                 //      System.out.println("clientVectorClass=" + clientVectorClass);
                 Field napField = clientVectorClass.getDeclaredField("nap");
