@@ -194,21 +194,18 @@ julong os::Linux::available_memory() {
   julong avail_mem;
 
   if (OSContainer::is_containerized()) {
-    jlong mem_limit, mem_usage, host_mem;
-    host_mem = Linux::physical_memory();
-    mem_limit = OSContainer::memory_limit_in_bytes();
-    if (mem_limit > host_mem) {
-      mem_limit = -1; // bail out of container code
+    jlong mem_limit, mem_usage;
+    if ((mem_limit = OSContainer::memory_limit_in_bytes()) < 1) {
+      log_debug(os, container)("container memory limit %s: " JLONG_FORMAT ", using host value",
+                             mem_limit == OSCONTAINER_ERROR ? "failed" : "unlimited", mem_limit);
     }
-    if (mem_limit > 0) {
-      if (mem_usage = OSContainer::memory_usage_in_bytes() < 1) {
-        log_debug(os, container)("container memory usage failed: " JLONG_FORMAT ", using host value", mem_usage);
-      }
-      if (mem_usage > 0) {
-        avail_mem = mem_limit > mem_usage ? (julong)mem_limit - (julong)mem_usage : 0;
-        log_trace(os)("available container memory: " JULONG_FORMAT, avail_mem);
-        return avail_mem;
-      }
+    if (mem_limit > 0 && (mem_usage = OSContainer::memory_usage_in_bytes()) < 1) {
+      log_debug(os, container)("container memory usage failed: " JLONG_FORMAT ", using host value", mem_usage);
+    }
+    if (mem_limit > 0 && mem_usage > 0 ) {
+      avail_mem = mem_limit > mem_usage ? (julong)mem_limit - (julong)mem_usage : 0;
+      log_trace(os)("available container memory: " JULONG_FORMAT, avail_mem);
+      return avail_mem;
     }
   }
 
@@ -219,27 +216,16 @@ julong os::Linux::available_memory() {
 }
 
 julong os::physical_memory() {
-  jlong phys_mem = Linux::physical_memory();
-  log_debug(os, container)("total physical memory: " JLONG_FORMAT, phys_mem);
-
+  jlong phys_mem = 0;
   if (OSContainer::is_containerized()) {
-    const char *reason;
-    jlong mem_limit = OSContainer::memory_limit_in_bytes();
-    if (mem_limit > 0 && mem_limit < phys_mem) {
+    jlong mem_limit;
+    if ((mem_limit = OSContainer::memory_limit_in_bytes()) > 0) {
       log_trace(os)("total container memory: " JLONG_FORMAT, mem_limit);
       return mem_limit;
     }
-    if (mem_limit >= phys_mem) {
-      reason = "ignored";
-    } else if (OSCONTAINER_ERROR == mem_limit) {
-      reason = "failed";
-    } else {
-      reason = "unlimited";
-    }
-    log_debug(os, container)("container memory limit %s: " JLONG_FORMAT ", using host value " JLONG_FORMAT,
-                             reason, mem_limit, phys_mem);
   }
 
+  phys_mem = Linux::physical_memory();
   log_trace(os)("total system memory: " JLONG_FORMAT, phys_mem);
   return phys_mem;
 }
