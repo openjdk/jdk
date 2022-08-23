@@ -1966,8 +1966,8 @@ Node *PhaseCCP::transform( Node *n ) {
   // it's reachable from Root following its uses). To prevent that issue, transform() starts walking the graph from Root
   // and all safepoints.
   for (uint i = 0; i < _safepoints.size(); ++i) {
-    Node *nn = _safepoints.at(i);
-    Node *new_node = _nodes[nn->_idx];
+    Node* nn = _safepoints.at(i);
+    Node* new_node = _nodes[nn->_idx];
     assert(new_node == NULL, "");
     new_node = transform_once(nn);
     _nodes.map( nn->_idx, new_node );
