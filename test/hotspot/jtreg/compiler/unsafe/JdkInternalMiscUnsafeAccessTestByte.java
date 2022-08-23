@@ -45,12 +45,12 @@ public class JdkInternalMiscUnsafeAccessTestByte {
     static final int ITERS = Integer.getInteger("iters", 1);
 
     // More resilience for Weak* tests. These operations may spuriously
-    // fail, and so we do several attempts with random delay on failure.
+    // fail, and so we do several attempts with delay on failure.
     // Be mindful of worst-case total time on test, which would be at
     // roughly (delay*attempts) milliseconds.
     //
     static final int WEAK_ATTEMPTS = Integer.getInteger("weakAttempts", 200);
-    static final int WEAK_AVG_DELAY_MS = Integer.getInteger("weakDelay", 100);
+    static final int WEAK_DELAY_MS = Math.max(1, Integer.getInteger("weakDelay", 1));
 
     static final jdk.internal.misc.Unsafe UNSAFE;
 
@@ -95,8 +95,9 @@ public class JdkInternalMiscUnsafeAccessTestByte {
 
     static void weakDelay() {
         try {
-            int delay = Math.max(1, (int)(Math.random() * WEAK_AVG_DELAY_MS));
-            Thread.sleep(delay);
+            if (WEAK_DELAY_MS > 0) {
+                Thread.sleep(WEAK_DELAY_MS);
+            }
         } catch (InterruptedException ie) {
             // Do nothing.
         }
