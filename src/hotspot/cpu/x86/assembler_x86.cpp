@@ -1255,12 +1255,12 @@ void Assembler::emit_operand(Register reg, Address adr,
 }
 
 void Assembler::emit_operand(XMMRegister reg, Address adr) {
-    if (adr.isxmmindex()) {
-       emit_operand(reg, adr._base, adr._xmmindex, adr._scale, adr._disp, adr._rspec);
-    } else {
-       emit_operand(reg, adr._base, adr._index, adr._scale, adr._disp,
-       adr._rspec);
-    }
+  if (adr.isxmmindex()) {
+     emit_operand(reg, adr._base, adr._xmmindex, adr._scale, adr._disp, adr._rspec);
+  } else {
+     emit_operand(reg, adr._base, adr._index, adr._scale, adr._disp,
+     adr._rspec);
+  }
 }
 
 // Now the Assembler instructions (identical for 32/64 bits)
