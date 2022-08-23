@@ -119,7 +119,7 @@ public class TestMemoryAwareness {
         opts = Common.newOpts(imageName)
             .addDockerOpts("--memory", badMem);
         Common.run(opts)
-            .shouldMatch("container memory limit ignored: "+badMem+", using host value "+goodMem);
+            .shouldMatch("container memory limit (ignored: "+badMem+"|unlimited: -1), using host value " + goodMem);
     }
 
 
