@@ -268,7 +268,7 @@ public class PassFailJFrame {
      * <p>This method should be called before making the test window visible
      * to avoid flickering.
      *
-     * @param testWindow test window that the test is created.
+     * @param testWindow test window that the test created.
      *                   May be {@code null}.
      *
      * @param position  position must be one of:
