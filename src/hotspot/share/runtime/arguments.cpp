@@ -4409,7 +4409,9 @@ bool Arguments::parse_malloc_limit_size(const char* s, size_t* out) {
   julong limit = 0;
   Arguments::ArgsRange range = parse_memory_size(s, &limit, 1, SIZE_MAX);
   switch (range) {
-  case ArgsRange::arg_in_range: *out = (size_t)limit; return true;
+  case ArgsRange::arg_in_range:
+    *out = (size_t)limit;
+    return true;
   case ArgsRange::arg_too_big: // only possible on 32-bit
     vm_exit_during_initialization("MallocLimit: too large", s);
     break;
