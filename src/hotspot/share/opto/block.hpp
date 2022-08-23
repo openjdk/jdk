@@ -321,7 +321,7 @@ public:
   // Check whether the node is in the block.
   bool contains (const Node *n) const;
 
-  // Whether the block is not "root"-like and does not have any predecessors.
+  // Whether the block is not root-like and does not have any predecessors.
   bool is_trivially_unreachable() const;
 
   // Return the empty status of a block
