@@ -52,6 +52,6 @@ public class TestNewArrayBadSize {
 
     public static void main(String[] strArr) {
         TestNewArrayBadSize _instance = new TestNewArrayBadSize();
-        for (int i = 0; i < 100; ++i) _instance.mainTest(strArr);
+        for (int i = 0; i < 10_000; ++i) _instance.mainTest(strArr);
     }
 }
