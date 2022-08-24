@@ -227,7 +227,7 @@ public class Warn4 extends ComboInstance<Warn4> {
     public void doWork() throws IOException {
         newCompilationTask()
                 .withOption("-Xlint:unchecked")
-                .withOption("-release")
+                .withOption("--release")
                 .withOption(sourceLevel.sourceKey)
                 .withSourceFromTemplate(template)
                 .analyze(this::check);

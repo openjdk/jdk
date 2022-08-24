@@ -188,7 +188,6 @@ class TrialParser extends JavacParser {
                     List<JCAnnotation> annosAfterParams = annotationsOpt(Tag.ANNOTATION);
 
                     if (annosAfterParams.nonEmpty()) {
-                        checkSourceLevel(annosAfterParams.head.pos, Feature.ANNOTATIONS_AFTER_TYPE_PARAMS);
                         mods.annotations = mods.annotations.appendList(annosAfterParams);
                         if (mods.pos == Position.NOPOS) {
                             mods.pos = mods.annotations.head.pos;
