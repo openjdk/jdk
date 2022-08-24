@@ -182,10 +182,6 @@ public:
   }
 
   virtual bool do_heap_region(HeapRegion* r) {
-    if (!r->is_starts_humongous()) {
-      return false;
-    }
-
     uint region_idx = r->hrm_index();
     if (!is_reclaimable(region_idx)) {
       return false;
