@@ -609,10 +609,6 @@ public class Arguments {
                 Option.LIMIT_MODULES,
                 Option.PATCH_MODULE);
 
-        if (lintOptions && options.isSet(Option.PARAMETERS) && !target.hasMethodParameters()) {
-            log.warning(Warnings.OptionParametersUnsupported(target, Target.JDK1_8));
-        }
-
         if (fm.hasLocation(StandardLocation.MODULE_SOURCE_PATH)) {
             if (!options.isSet(Option.PROC, "only")
                     && !fm.hasLocation(StandardLocation.CLASS_OUTPUT)) {
