@@ -246,11 +246,6 @@ const Type* ConvHF2FNode::Value(PhaseGVN* phase) const {
   return bottom_type();
 }
 
-//------------------------------Identity---------------------------------------
-Node* ConvHF2FNode::Identity(PhaseGVN* phase) {
-  return (in(1)->Opcode() == Op_ConvF2HF) ? in(1)->in(1) : this;
-}
-
 //=============================================================================
 //------------------------------Value------------------------------------------
 const Type* ConvI2DNode::Value(PhaseGVN* phase) const {

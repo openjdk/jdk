@@ -147,7 +147,6 @@ class ConvHF2FNode : public Node {
   virtual int Opcode() const;
   virtual const Type *bottom_type() const { return Type::FLOAT; }
   virtual const Type* Value(PhaseGVN* phase) const;
-  virtual Node* Identity(PhaseGVN* phase);
   virtual uint  ideal_reg() const { return Op_RegF; }
 };
 

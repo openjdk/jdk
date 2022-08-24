@@ -26,6 +26,7 @@ package org.openjdk.bench.java.math;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import org.openjdk.jmh.annotations.*;
+import org.openjdk.jmh.infra.Blackhole;
 
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Thread)
@@ -35,62 +36,48 @@ import org.openjdk.jmh.annotations.*;
 public class Fp16ConversionBenchmark {
 
   @Param({"2048"})
-  public int TESTSIZE;
+  public int size;
 
-  public short[] HFargV1;
-  public short[] ResHF;
-  public float[] FargV1;
-  public float[] ResF;
-
-  public final short[] HFspecialVals = {
-      0, (short)0xffff, (short)0xfc00, 0x7c00, 0x7bff, 0x400
-  };
-
-  public final float[] FspecialVals = {
-      0.0f, Float.NaN, Float.NEGATIVE_INFINITY, Float.POSITIVE_INFINITY,
-      Float.MAX_VALUE, Float.MIN_VALUE
-  };
+  public short[] f16in;
+  public short[] f16out;
+  public float[] fin;
+  public float[] fout;
 
   @Setup(Level.Trial)
   public void BmSetup() {
       int i = 0;
       Random r = new Random(1024);
 
-      HFargV1 = new short[TESTSIZE];
-      ResHF = new short[TESTSIZE];
+      f16in  = new short[size];
+      f16out = new short[size];
 
-      for (; i < HFspecialVals.length; i++) {
-          HFargV1[i] = HFspecialVals[i];
+      for (; i < size; i++) {
+          f16in[i] = Float.floatToFloat16(r.nextFloat());;
       }
 
-      for (; i < TESTSIZE; i++) {
-          HFargV1[i] = Float.floatToFloat16(r.nextFloat());;
-      }
-
-      FargV1 = new float[TESTSIZE];
-      ResF = new float[TESTSIZE];
+      fin  = new float[size];
+      fout = new float[size];
 
       i = 0;
-      for (; i < FspecialVals.length; i++) {
-          FargV1[i] = FspecialVals[i];
-      }
 
-      for (; i < TESTSIZE; i++) {
-          FargV1[i] = Float.float16ToFloat((short)r.nextInt());
+      for (; i < size; i++) {
+          fin[i] = Float.float16ToFloat((short)r.nextInt());
       }
   }
 
   @Benchmark
-  public void floatToFloat16() {
-      for (int i = 0; i < TESTSIZE; i++) {
-          ResHF[i] = Float.floatToFloat16(FargV1[i]);
+  public void floatToFloat16(Blackhole bh) {
+      for (int i = 0; i < fin.length; i++) {
+          f16out[i] = Float.floatToFloat16(fin[i]);
       }
+      bh.consume(f16out);
   }
 
   @Benchmark
-  public void float16ToFloat() {
-      for (int i = 0; i < TESTSIZE; i++) {
-          ResF[i] = Float.float16ToFloat(HFargV1[i]);
+  public void float16ToFloat(Blackhole bh) {
+      for (int i = 0; i < f16in.length; i++) {
+          fout[i] = Float.float16ToFloat(f16in[i]);
       }
+      bh.consume(fout);
   }
 }

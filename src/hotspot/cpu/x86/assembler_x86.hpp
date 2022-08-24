@@ -1158,8 +1158,8 @@ private:
   void vcvtdq2pd(XMMRegister dst, XMMRegister src, int vector_len);
 
   // Convert Halffloat to Single Precision Floating-Point value
-  void evcvtps2ph(XMMRegister dst, XMMRegister src, int imm8, int vector_len);
-  void evcvtph2ps(XMMRegister dst, XMMRegister src, int vector_len);
+  void vcvtps2ph(XMMRegister dst, XMMRegister src, int imm8, int vector_len);
+  void vcvtph2ps(XMMRegister dst, XMMRegister src, int vector_len);
 
   // Convert Packed Signed Doubleword Integers to Packed Single-Precision Floating-Point Value
   void cvtdq2ps(XMMRegister dst, XMMRegister src);

@@ -89,7 +89,8 @@ class VM_Version : public Abstract_VM_Version {
                         : 1,
                osxsave  : 1,
                avx      : 1,
-                        : 2,
+               f16c     : 1,
+                        : 1,
                hv       : 1;
     } bits;
   };
@@ -374,7 +375,8 @@ protected:
     decl(RDPID,             "rdpid",             49) /* RDPID instruction */ \
     decl(FSRM,              "fsrm",              50) /* Fast Short REP MOV */ \
     decl(GFNI,              "gfni",              51) /* Vector GFNI instructions */ \
-    decl(AVX512_BITALG,     "avx512_bitalg",     52) /* Vector sub-word popcount and bit gather instructions */
+    decl(AVX512_BITALG,     "avx512_bitalg",     52) /* Vector sub-word popcount and bit gather instructions */\
+    decl(F16C,              "f16c",              53) /* Half-precision and single precision FP conversion instructions*/
 
 #define DECLARE_CPU_FEATURE_FLAG(id, name, bit) CPU_##id = (1ULL << bit),
     CPU_FEATURE_FLAGS(DECLARE_CPU_FEATURE_FLAG)
@@ -681,6 +683,7 @@ public:
   static bool supports_avx512_vbmi2() { return (_features & CPU_AVX512_VBMI2) != 0; }
   static bool supports_hv()           { return (_features & CPU_HV) != 0; }
   static bool supports_serialize()    { return (_features & CPU_SERIALIZE) != 0; }
+  static bool supports_f16c()         { return (_features & CPU_F16C) != 0; }
 
   // Intel features
   static bool is_intel_family_core() { return is_intel() &&
