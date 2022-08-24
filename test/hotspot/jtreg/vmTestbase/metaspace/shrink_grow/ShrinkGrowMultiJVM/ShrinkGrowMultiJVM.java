@@ -58,7 +58,7 @@ public class ShrinkGrowMultiJVM {
                  .resolve("java")
                  .toAbsolutePath()
                  .toString(),
-            "-Xlog:gc*:gc_$i.log", // LOG_GC_ARG_INDEX
+            "UNSET_LOG_GC_ARG", // LOG_GC_ARG_INDEX
             "-XX:MetaspaceSize=10m",
             "-XX:MaxMetaspaceSize=20m",
             "-cp",
