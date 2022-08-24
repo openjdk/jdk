@@ -30,13 +30,11 @@
 
 import jdk.test.lib.Utils;
 
-import javax.crypto.Mac;
 import javax.crypto.MacSpi;
 import java.nio.ByteBuffer;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.Key;
-import java.security.Provider;
 import java.security.spec.AlgorithmParameterSpec;
 
 public class Test6205692 {
@@ -76,7 +74,8 @@ public class Test6205692 {
         }
 
         @Override
-        protected void engineInit(Key key, AlgorithmParameterSpec params) throws InvalidKeyException, InvalidAlgorithmParameterException {
+        protected void engineInit(Key key, AlgorithmParameterSpec params)
+                throws InvalidKeyException, InvalidAlgorithmParameterException {
         }
 
         @Override
