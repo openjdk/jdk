@@ -58,10 +58,12 @@ TEST_VM(GlobalCounter, critical_section) {
     }
   };
 
-  TestThreadGroup<decltype(rcu_reader), volatile TestData**, number_of_readers> ttg(rcu_reader,
-                                                                                    [&]() {
-                                                                                      return &test;
-                                                                                    });
+  TestThreadGroup<decltype(rcu_reader), volatile TestData**>
+    ttg(rcu_reader,
+        [&]() {
+          return &test;
+        },
+        number_of_readers);
 
   TestData* tmp = new TestData();
   tmp->test_value = good_value;

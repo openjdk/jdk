@@ -114,8 +114,8 @@ TEST_VM(SymbolTable, test_symbol_refcount_parallel) {
       EXPECT_TRUE(sym->refcount() != 0) << "Symbol refcount unexpectedly zeroed";
     }
   };
-  TestThreadGroup<decltype(symbolThread), int, symTestThreadCount>
-    ttg(symbolThread, []() { return 0; });
+  TestThreadGroup<decltype(symbolThread), int>
+    ttg(symbolThread, []() { return 0; }, symTestThreadCount);
   ttg.doit();
   ttg.join();
 }
