@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_RUNTIME_MRSWMUTEX_HPP
-#define SHARE_RUNTIME_MRSWMUTEX_HPP
+#ifndef SHARE_RUNTIME_READWRITELOCK_HPP
+#define SHARE_RUNTIME_READWRITELOCK_HPP
 
 #include "memory/allocation.hpp"
 #include "runtime/atomic.hpp"
@@ -42,11 +42,6 @@
 class ReadWriteLock : public CHeapObj<mtSynchronizer> {
 private:
   NONCOPYABLE(ReadWriteLock);
-  class NoTransition : public StackObj {
-  public:
-    NoTransition(Thread* thread) {
-    }
-  };
 
   class Locker : public StackObj {
   private:
@@ -90,4 +85,4 @@ public:
   void read_lock(Thread* current = Thread::current());
   void read_unlock();
 };
-#endif // SHARE_RUNTIME_MRSWMUTEX_HPP
+#endif // SHARE_RUNTIME_READWRITELOCK_HPP
