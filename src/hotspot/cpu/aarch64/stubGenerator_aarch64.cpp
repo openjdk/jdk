@@ -1853,7 +1853,7 @@ class StubGenerator: public StubCodeGenerator {
     __ align(OptoLoopAlignment);
 
     __ BIND(L_store_element);
-    __ store_heap_oop(__ post(to, UseCompressedOops ? 4 : 8), copied_oop, noreg, noreg, AS_RAW);  // store the oop
+    __ store_heap_oop(__ post(to, UseCompressedOops ? 4 : 8), copied_oop, noreg, noreg, noreg, AS_RAW);  // store the oop
     __ sub(count, count, 1);
     __ cbz(count, L_do_card_marks);
 
