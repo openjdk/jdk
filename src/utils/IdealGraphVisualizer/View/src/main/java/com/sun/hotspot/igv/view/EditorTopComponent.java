@@ -315,7 +315,7 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
         quickSearchPresenter.setAlignmentX(Component.RIGHT_ALIGNMENT);
         quickSearchToolbar.add(quickSearchPresenter);
 
-        // Needed to for toolBar to use maximal available width
+        // Needed for toolBar to use maximal available width
         JPanel toolbarPanel = new JPanel(new GridLayout(1, 0));
         toolbarPanel.add(toolBar);
 
