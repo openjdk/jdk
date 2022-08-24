@@ -132,9 +132,9 @@ public class CLETest extends TestScaffold {
     }
 
     static class MethodBreakpointData {
-        String method;
-        String signature;
-        int lineNumber;
+        final String method;
+        final String signature;
+        final int lineNumber;
         public MethodBreakpointData(String method, String signature, int lineNumber) {
             this.method     = method;
             this.signature  = signature;
@@ -157,10 +157,10 @@ public class CLETest extends TestScaffold {
 
     public static void printStack(ThreadReference thread) {
         try {
-            List frames = thread.frames();
-            Iterator iter = frames.iterator();
+            List<StackFrame> frames = thread.frames();
+            Iterator<StackFrame> iter = frames.iterator();
             while (iter.hasNext()) {
-                StackFrame frame = (StackFrame) iter.next();
+                StackFrame frame = iter.next();
                 System.out.println(getLocationString(frame.location()));
             }
         } catch (Exception e) {
@@ -228,24 +228,28 @@ public class CLETest extends TestScaffold {
             if (isColocated(set, true, true, true)) {
                 testcaseFailed = false;
             }
+            break;
         }
         case 4: {
             // At some point during test4 we should receive co-located MethodEntry and Breakpoint events.
             if (isColocated(set, true, false, true)) {
                 testcaseFailed = false;
             }
+            break;
         }
         case 5: {
             // At some point during test5 we should receive co-located Step and Breakpoint events.
             if (isColocated(set, false, true, true)) {
                 testcaseFailed = false;
             }
+            break;
         }
         case 6: {
             // At some point during test6 we should receive co-located MethodEntry and Step events.
             if (isColocated(set, true, true, false)) {
                 testcaseFailed = false;
             }
+            break;
         }
         }
     }
