@@ -173,6 +173,9 @@ class PatternEntry {
                     toAddTo.append('\'');
                     break;
                 default:
+                    if (inQuote) {
+                        inQuote = false; toAddTo.append('\'');
+                    }
                     break;
                 }
            }
