@@ -40,7 +40,7 @@ public class CompilerOptionsTest extends KullaTesting {
     @BeforeMethod
     @Override
     public void setUp() {
-        setUp(b -> b.compilerOptions("-source", "7", "-Xlint:cast,-options"));
+        setUp(b -> b.compilerOptions("-source", "8", "-Xlint:cast,-options"));
     }
 
     public void testLint() {
@@ -49,8 +49,9 @@ public class CompilerOptionsTest extends KullaTesting {
     }
 
     public void testSourceVersion() {
-        assertEval("import java.util.function.*;", added(VALID));
-        assertDeclareFail("Function<Integer,Integer> f = x -> x*2;",
-                new ExpectedDiagnostic("compiler.err.feature.not.supported.in.source.plural", 32, 32, 32, -1, -1, Diagnostic.Kind.ERROR));
+        assertEval("import java.util.ArrayList;", added(VALID));
+        // Diamond with anonymous classes allowed in 9
+        assertDeclareFail("ArrayList<Integer> list = new ArrayList<>(){};",
+                new ExpectedDiagnostic("compiler.err.cant.apply.diamond.1", 30, 41, 39, -1, -1, Diagnostic.Kind.ERROR));
     }
 }
