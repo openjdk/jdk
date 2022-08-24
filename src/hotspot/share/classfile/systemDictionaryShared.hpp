@@ -34,7 +34,6 @@
 #include "classfile/systemDictionary.hpp"
 #include "oops/klass.hpp"
 #include "oops/oopHandle.hpp"
-#include "utilities/resourceHash.hpp"
 
 
 /*===============================================================================
