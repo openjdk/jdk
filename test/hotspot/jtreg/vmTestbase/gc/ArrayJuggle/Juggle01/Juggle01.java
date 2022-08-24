@@ -76,7 +76,7 @@ public class Juggle01 extends ThreadedGCTest implements GarbageProducerAware, Me
                 log.debug("Memory strategy: " + memoryStrategy);
                 long memory = runParams.getTestMemory();
                 int objectCount = memoryStrategy.getCount(memory);
-                objectSize = memoryStrategy.getSize(memory);
+                objectSize = memoryStrategy.getSize(memory) / runParams.getNumberOfThreads();
                 log.debug("Object count: " + objectCount);
                 log.debug("Object size: " + objectSize);
                 array = new Object[objectCount - 1];
