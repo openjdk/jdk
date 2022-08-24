@@ -112,8 +112,8 @@ void G1MMUTracker::add_pause(double start, double end) {
 }
 
 //                                                current_timestamp
-//                   GC events                   /  pause_time
-//                 /     |     \                | /  /
+//                       GC events               /  pause_time
+//                 /     |     \     \          | /  /
 // -------------[----]-[---]--[--]---[---]------|[--]-----> Time
 //              |         |                     |
 //              |         |                     |
@@ -158,9 +158,9 @@ double G1MMUTracker::when_sec(double current_timestamp, double pause_time) {
     // This duration would exceed (strictly greater than) the budget.
     if (duration > gc_budget) {
       // This timestamp captures the instant the budget is balanced (or used up).
-      double balance_timesstamp = elem->end_time() - gc_budget;
-      assert(balance_timesstamp >= limit, "inv");
-      return balance_timesstamp - limit;
+      double balance_timestamp = elem->end_time() - gc_budget;
+      assert(balance_timestamp >= limit, "inv");
+      return balance_timestamp - limit;
     }
 
     gc_budget -= duration;
