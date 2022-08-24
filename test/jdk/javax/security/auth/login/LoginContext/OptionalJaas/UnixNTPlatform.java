@@ -48,7 +48,7 @@ public class UnixNTPlatform {
                         """;
 
         System.out.println("config is : \n"+config);
-        Files.writeString(java.nio.file.Path.of("cross-platform"), config.toString());
+        Files.writeString(Path.of("cross-platform"), config.toString());
 
         System.setProperty("java.security.auth.login.config", "cross-platform");
 
