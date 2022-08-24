@@ -107,15 +107,14 @@ TEST_VM(SymbolTable, test_symbol_refcount_parallel) {
   }
 
   constexpr int symTestThreadCount = 5;
-  auto symbolThread= [&](Thread* _current, int _ig) {
+  auto symbolThread= [&](Thread* _current, int _id) {
     for (int i = 0; i < 1000; i++) {
       TempNewSymbol sym = SymbolTable::new_symbol(symbol_name);
       // Create and destroy new symbol
       EXPECT_TRUE(sym->refcount() != 0) << "Symbol refcount unexpectedly zeroed";
     }
   };
-  TestThreadGroup<decltype(symbolThread), int>
-    ttg(symbolThread, []() { return 0; }, symTestThreadCount);
+  TestThreadGroup<decltype(symbolThread)> ttg(symbolThread, symTestThreadCount);
   ttg.doit();
   ttg.join();
 }

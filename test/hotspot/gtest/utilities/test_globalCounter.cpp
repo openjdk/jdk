@@ -41,7 +41,8 @@ TEST_VM(GlobalCounter, critical_section) {
   Semaphore wrt_start;
   volatile TestData* test = nullptr;
 
-  auto rcu_reader = [&](Thread* current, volatile TestData** _test) {
+  auto rcu_reader = [&](Thread* current, int _id) {
+    volatile TestData** _test = &test;
     wrt_start.signal();
     while (!rt_exit) {
       GlobalCounter::CSContext cs_context = GlobalCounter::critical_section_begin(current);
@@ -58,12 +59,7 @@ TEST_VM(GlobalCounter, critical_section) {
     }
   };
 
-  TestThreadGroup<decltype(rcu_reader), volatile TestData**>
-    ttg(rcu_reader,
-        [&]() {
-          return &test;
-        },
-        number_of_readers);
+  TestThreadGroup<decltype(rcu_reader)> ttg(rcu_reader, number_of_readers);
 
   TestData* tmp = new TestData();
   tmp->test_value = good_value;

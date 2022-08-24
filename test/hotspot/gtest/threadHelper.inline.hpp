@@ -147,29 +147,27 @@ public:
 };
 
 // A TestThreadGroup tracks multiple threads running the same function.
-template<typename F, typename S>
+template<typename F>
 class TestThreadGroup {
 private:
   VMThreadBlocker* _blocker;
-  BasicTestThread<F, S>** _threads;
+  BasicTestThread<F, int>** _threads;
   const int _length;
   Semaphore _sem;
 
   // We have this  local typedef because NEW_C_HEAP_ARRAY will
   // fail to expand because of the comma in <F, S>
-  using ThreadPointer = BasicTestThread<F, S>*;
+  using ThreadPointer = BasicTestThread<F, int>*;
 public:
   NONCOPYABLE(TestThreadGroup);
 
-  // Use state_fun to generate varying state of type S for each function F.
-  template<typename StateGenerator>
-  TestThreadGroup(F fun, StateGenerator state_fun, const int number_of_threads)
+  TestThreadGroup(F fun, const int number_of_threads)
     :
     _threads(NEW_C_HEAP_ARRAY(ThreadPointer, number_of_threads, mtTest)),
     _length(number_of_threads),
     _sem() {
     for (int i = 0; i < _length; i++) {
-      _threads[i] = new BasicTestThread<F, S>(fun, state_fun(), &_sem);
+      _threads[i] = new BasicTestThread<F, int>(fun, i, &_sem);
     }
   }
   ~TestThreadGroup() {}
