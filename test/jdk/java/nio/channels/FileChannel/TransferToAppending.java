@@ -25,6 +25,7 @@
  * @bug 8292562
  * @summary Test transferTo and transferFrom when target is appending
  * @library /test/lib
+ * @build jdk.test.lib.Platform
  * @build jdk.test.lib.RandomFactory
  * @run main TransferToAppending
  * @key randomness
@@ -36,6 +37,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.channels.FileChannel;
 import java.util.Random;
+import jdk.test.lib.Platform;
 import jdk.test.lib.RandomFactory;
 
 import static java.nio.file.StandardOpenOption.*;
@@ -65,24 +67,36 @@ public class TransferToAppending {
                 long nbytes = to ? src.transferTo(position, count, tgt) :
                                    tgt.transferFrom(src, position, count);
 
-                // Target size should be increased by 'count'.
-                if (Files.size(target) != tgtSize + nbytes) {
+                long expectedSize;
+                if (to || Platform.isLinux()) {
+                    // Target size should be increased by 'nbytes'
+                    // If 4950302 is fixed, the expected size for Linux
+                    // should be the same as for the other platforms
+                    expectedSize = tgtSize + nbytes;
+                } else {
+                    expectedSize = Math.max(tgtSize, position + nbytes);
+                }
+
+                if (Files.size(target) != expectedSize) {
                     String msg =
                         String.format("Bad size: expected %d, actual %d%n",
-                                      tgtSize + nbytes, Files.size(target));
+                                      expectedSize, Files.size(target));
                     throw new RuntimeException(msg);
                 }
 
                 tgt.close();
 
                 // Load subrange of source
-                ByteBuffer bufSrc = ByteBuffer.allocate((int)count);
+                ByteBuffer bufSrc = ByteBuffer.allocate((int)nbytes);
                 src.read(bufSrc, to ? position : 0);
 
                 try (FileChannel res = FileChannel.open(target, READ, WRITE)) {
                     // Load appended range of target
-                    ByteBuffer bufTgt = ByteBuffer.allocate((int)count);
-                    res.read(bufTgt, tgtSize);
+                    ByteBuffer bufTgt = ByteBuffer.allocate((int)nbytes);
+                    // If 4950302 is fixed, the file position to read from
+                    // should be the same for Linux as for the other platforms
+                    res.read(bufTgt,
+                             (to || Platform.isLinux()) ? tgtSize : position);
 
                     // Subranges of values should be equal
                     if (bufSrc.mismatch(bufTgt) != -1) {
