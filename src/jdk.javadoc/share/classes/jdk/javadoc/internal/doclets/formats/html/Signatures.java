@@ -33,7 +33,6 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.toolkit.Content;
-import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
 import javax.lang.model.element.Element;
@@ -150,7 +149,7 @@ public class Signatures {
                 if (!utils.isPlainInterface(typeElement)) {
                     TypeMirror superclass = utils.getFirstVisibleSuperClass(typeElement);
                     if (superclass != null) {
-                        content.add(DocletConstants.NL);
+                        content.add(Text.NL);
                         extendsImplements.add("extends ");
                         Content link = writer.getLink(new HtmlLinkInfo(configuration,
                                 HtmlLinkInfo.Kind.CLASS_SIGNATURE_PARENT_NAME,
@@ -167,7 +166,7 @@ public class Signatures {
                             continue;
                         }
                         if (isFirst) {
-                            extendsImplements.add(DocletConstants.NL);
+                            extendsImplements.add(Text.NL);
                             extendsImplements.add(utils.isPlainInterface(typeElement) ? "extends " : "implements ");
                             isFirst = false;
                         } else {
@@ -192,7 +191,7 @@ public class Signatures {
                 boolean isFirst = true;
                 for (TypeMirror type : linkablePermits) {
                     if (isFirst) {
-                        content.add(DocletConstants.NL);
+                        content.add(Text.NL);
                         permitsSpan.add("permits");
                         permitsSpan.add(" ");
                         isFirst = false;
@@ -221,7 +220,7 @@ public class Signatures {
             for (RecordComponentElement e : typeElement.getRecordComponents()) {
                 content.add(sep);
                 writer.getAnnotations(e.getAnnotationMirrors(), false)
-                        .forEach(a -> { content.add(a).add(" "); });
+                        .forEach(a -> content.add(a).add(" "));
                 Content link = writer.getLink(new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.RECORD_COMPONENT,
                         e.asType()));
                 content.add(link);
@@ -544,7 +543,7 @@ public class Signatures {
 
             // sum below includes length of modifiers plus type params added above
             if (lineLength + returnType.charCount() > RETURN_TYPE_MAX_LINE_LENGTH) {
-                target.add(DocletConstants.NL);
+                target.add(Text.NL);
                 newLastLineSeparator = target.charCount();
             } else {
                 target.add(Entity.NO_BREAK_SPACE);
@@ -574,7 +573,7 @@ public class Signatures {
             // Exceptions
             if (exceptions != null && !exceptions.isEmpty()) {
                 CharSequence indent = " ".repeat(Math.max(0, indentSize + 1 - 7));
-                target.add(DocletConstants.NL)
+                target.add(Text.NL)
                         .add(indent)
                         .add("throws ")
                         .add(HtmlTree.SPAN(HtmlStyle.exceptions, exceptions));
