@@ -95,7 +95,7 @@ TEST_VM(SymbolTable, temp_new_symbol) {
 
 TEST_VM(SymbolTable, test_symbol_refcount_parallel) {
   constexpr int symbol_name_length = 30;
-  char symbol_name[30];
+  char symbol_name[symbol_name_length];
   // Find a symbol where there will probably be only one instance.
   for (int i = 0; i < 100; i++) {
     os::snprintf(symbol_name, symbol_name_length, "some_symbol%d", i);
