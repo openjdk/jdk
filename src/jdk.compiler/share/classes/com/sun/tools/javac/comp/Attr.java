@@ -169,7 +169,6 @@ public class Attr extends JCTree.Visitor {
         allowPoly = Feature.POLY.allowedInSource(source);
         allowTypeAnnos = Feature.TYPE_ANNOTATIONS.allowedInSource(source);
         allowLambda = Feature.LAMBDA.allowedInSource(source);
-        allowStaticInterfaceMethods = Feature.STATIC_INTERFACE_METHODS.allowedInSource(source);
         allowReifiableTypesInInstanceof = Feature.REIFIABLE_TYPES_INSTANCEOF.allowedInSource(source);
         allowRecords = Feature.RECORDS.allowedInSource(source);
         allowPatternSwitch = (preview.isEnabled() || !preview.isPreview(Feature.PATTERN_SWITCH)) &&
@@ -199,10 +198,6 @@ public class Attr extends JCTree.Visitor {
     /** Switch: support lambda expressions ?
      */
     boolean allowLambda;
-
-    /** Switch: static interface methods enabled?
-     */
-    boolean allowStaticInterfaceMethods;
 
     /** Switch: reifiable types in instanceof enabled?
      */
@@ -4458,10 +4453,6 @@ public class Attr extends JCTree.Visitor {
                     rs.accessBase(rs.new StaticError(sym),
                               tree.pos(), site, sym.name, true);
                 }
-            }
-            if (!allowStaticInterfaceMethods && sitesym.isInterface() &&
-                    sym.isStatic() && sym.kind == MTH) {
-                log.error(DiagnosticFlag.SOURCE_LEVEL, tree.pos(), Feature.STATIC_INTERFACE_METHODS_INVOKE.error(sourceName));
             }
         } else if (sym.kind != ERR &&
                    (sym.flags() & STATIC) != 0 &&

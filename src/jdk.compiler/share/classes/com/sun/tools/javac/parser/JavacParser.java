@@ -4517,9 +4517,6 @@ public class JavacParser implements Parser {
                               boolean isRecord,
                               Comment dc) {
         if (isInterface) {
-            if ((mods.flags & Flags.STATIC) != 0) {
-                checkSourceLevel(Feature.STATIC_INTERFACE_METHODS);
-            }
             if ((mods.flags & Flags.PRIVATE) != 0) {
                 checkSourceLevel(Feature.PRIVATE_INTERFACE_METHODS);
             }
