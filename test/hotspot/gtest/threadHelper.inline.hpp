@@ -124,25 +124,24 @@ public:
   }
 };
 
-// Calls a single-argument function of type F with state of type S as its input
+// Calls a single-argument function of type F with the current thread (this) and a self-assigned thread id as its input
 // in a new thread when doit() is run.
-template<typename F, typename S>
+template<typename F>
 class BasicTestThread : public JavaTestThread {
 private:
   F _fun;
-  S _state;
-
+  const int _id;
 public:
-  BasicTestThread(F fun, S state, Semaphore* sem)
+  BasicTestThread(F fun, int id, Semaphore* sem)
     : JavaTestThread(sem),
       _fun(fun),
-      _state(state) {
+      _id(id) {
   }
 
   virtual ~BasicTestThread(){};
 
   void main_run() override {
-    _fun(this, _state);
+    _fun(this, _id);
   }
 };
 
@@ -151,23 +150,20 @@ template<typename F>
 class TestThreadGroup {
 private:
   VMThreadBlocker* _blocker;
-  BasicTestThread<F, int>** _threads;
+  BasicTestThread<F>** _threads;
   const int _length;
   Semaphore _sem;
 
-  // We have this  local typedef because NEW_C_HEAP_ARRAY will
-  // fail to expand because of the comma in <F, S>
-  using ThreadPointer = BasicTestThread<F, int>*;
 public:
   NONCOPYABLE(TestThreadGroup);
 
   TestThreadGroup(F fun, const int number_of_threads)
     :
-    _threads(NEW_C_HEAP_ARRAY(ThreadPointer, number_of_threads, mtTest)),
+    _threads(NEW_C_HEAP_ARRAY(BasicTestThread<F>*, number_of_threads, mtTest)),
     _length(number_of_threads),
     _sem() {
     for (int i = 0; i < _length; i++) {
-      _threads[i] = new BasicTestThread<F, int>(fun, i, &_sem);
+      _threads[i] = new BasicTestThread<F>(fun, i, &_sem);
     }
   }
   ~TestThreadGroup() {}
