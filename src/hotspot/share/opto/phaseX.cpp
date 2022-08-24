@@ -1961,9 +1961,11 @@ Node *PhaseCCP::transform( Node *n ) {
   trstack.push(new_node);           // Process children of cloned node
 
   // This CCP pass may prove that no exit test for a loop ever succeeds (i.e. the loop is infinite). In that case,
-  // the logic below doesn't follow any path from Root to the loop body (they are proven never taken). If CCP only works
+  // the logic below doesn't follow any path from Root to the loop body: there's at least one such path but it's proven
+  // never taken (its type is TOP). As a consequence the node on the exit path that's input to Root (let's call it n) is
+  // replaced by the top node and the inputs of that node n are not enqueued for further processing. If CCP only works
   // through the graph from Root, this causes the loop body to never be processed here even when it's not dead (that
-  // it's reachable from Root following its uses). To prevent that issue, transform() starts walking the graph from Root
+  // is reachable from Root following its uses). To prevent that issue, transform() starts walking the graph from Root
   // and all safepoints.
   for (uint i = 0; i < _safepoints.size(); ++i) {
     Node* nn = _safepoints.at(i);
