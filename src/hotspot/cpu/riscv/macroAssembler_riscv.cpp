@@ -2847,6 +2847,7 @@ address MacroAssembler::trampoline_call(Address entry) {
   }
 
   address call_pc = pc();
+  assert(entry.rspec().type() == relocInfo::runtime_call_type || is_aligned(call_pc, 4), "bad alignment for patchable calls");
   relocate(entry.rspec());
   if (!far_branches()) {
     jal(entry.target());

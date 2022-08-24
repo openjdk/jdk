@@ -1140,6 +1140,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     int vep_offset = ((intptr_t)__ pc()) - start;
 
     // First instruction must be a nop as it may need to be patched on deoptimisation
+    __ assert_alignment();
     __ nop();
     gen_special_dispatch(masm,
                          method,
@@ -1291,6 +1292,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   // If we have to make this method not-entrant we'll overwrite its
   // first instruction with a jump.
+  __ assert_alignment();
   __ nop();
 
   if (VM_Version::supports_fast_class_init_checks() && method->needs_clinit_barrier()) {
