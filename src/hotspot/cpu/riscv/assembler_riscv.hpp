@@ -488,7 +488,7 @@ public:
   result_type header {                                                      \
     guarantee(rtype == relocInfo::internal_word_type,                       \
               "only internal_word_type relocs make sense here");            \
-    code_section()->relocate(pc(), InternalAddress(dest).rspec());
+    relocate(InternalAddress(dest).rspec());
 
   // Load/store register (all modes)
 #define INSN(NAME, op, funct3)                                                                     \
@@ -533,7 +533,7 @@ public:
   void NAME(Register Rd, const Address &adr, Register temp = t0) {                                 \
     switch (adr.getMode()) {                                                                       \
       case Address::literal: {                                                                     \
-        code_section()->relocate(pc(), adr.rspec());                                               \
+        relocate(adr.rspec());                                                                     \
         NAME(Rd, adr.target());                                                                    \
         break;                                                                                     \
       }                                                                                            \
@@ -607,7 +607,7 @@ public:
   void NAME(FloatRegister Rd, const Address &adr, Register temp = t0) {                            \
     switch (adr.getMode()) {                                                                       \
       case Address::literal: {                                                                     \
-        code_section()->relocate(pc(), adr.rspec());                                               \
+        relocate(adr.rspec());                                                                     \
         NAME(Rd, adr.target(), temp);                                                              \
         break;                                                                                     \
       }                                                                                            \
@@ -750,7 +750,7 @@ public:
     switch (adr.getMode()) {                                                                       \
       case Address::literal: {                                                                     \
         assert_different_registers(Rs, temp);                                                      \
-        code_section()->relocate(pc(), adr.rspec());                                               \
+        relocate(adr.rspec());                                                                     \
         NAME(Rs, adr.target(), temp);                                                              \
         break;                                                                                     \
       }                                                                                            \
@@ -793,7 +793,7 @@ public:
   void NAME(FloatRegister Rs, const Address &adr, Register temp = t0) {                            \
     switch (adr.getMode()) {                                                                       \
       case Address::literal: {                                                                     \
-        code_section()->relocate(pc(), adr.rspec());                                               \
+        relocate(adr.rspec());                                                                     \
         NAME(Rs, adr.target(), temp);                                                              \
         break;                                                                                     \
       }                                                                                            \
@@ -2126,6 +2126,21 @@ public:
       _masm->set_in_compressible_region(_saved_in_compressible_region);
     }
   };
+
+public:
+  // Emit a relocation.
+  void relocate(address at, RelocationHolder const& rspec, int format = 0) {
+    code_section()->relocate(at, rspec, format);
+  }
+  void relocate(address at, relocInfo::relocType rtype, int format = 0, jint method_index = 0) {
+    code_section()->relocate(at, rtype, format, method_index);
+  }
+  void relocate(RelocationHolder const& rspec, int format = 0) {
+    AbstractAssembler::relocate(rspec, format);
+  }
+  void relocate(relocInfo::relocType rtype, int format = 0) {
+    AbstractAssembler::relocate(rtype, format);
+  }
 
   // patch a 16-bit instruction.
   static void c_patch(address a, unsigned msb, unsigned lsb, uint16_t val) {
