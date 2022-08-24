@@ -456,6 +456,7 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
 
     @Override
     public void componentOpened() {
+        super.componentOpened();
     }
 
     @Override
@@ -657,14 +658,19 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
     protected void componentShowing() {
         super.componentShowing();
         scene.componentShowing();
-        quickSearchToolbar.add(quickSearchPresenter);
     }
 
     @Override
     public void requestActive() {
         super.requestActive();
         scene.getComponent().requestFocus();
+    }
+
+    @Override
+    protected void componentActivated() {
+        super.componentActivated();
         quickSearchToolbar.add(quickSearchPresenter);
+        quickSearchPresenter.revalidate();
     }
 
     @Override
