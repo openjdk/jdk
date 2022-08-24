@@ -342,6 +342,9 @@ class Deoptimization : AllStatic {
       return 0;
     }
   }
+  // In RISC-V, when this method is inlined, the condition behaves
+  // incorrectly if the nmethod is compiled by JVMCI, causing the
+  // method to return a negative index which is not -1
   static int RISCV64_ONLY(__attribute__ ((noinline))) trap_request_index(int trap_request) {
     if (trap_request < 0)
       return -1;
