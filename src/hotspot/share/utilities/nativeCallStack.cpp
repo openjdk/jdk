@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,7 +96,7 @@ void NativeCallStack::print_on(outputStream* out, int indent) const {
         out->print("[" PTR_FORMAT "]", p2i(pc));
       }
 
-      if (Decoder::get_source_info(pc, buf, sizeof(buf), &line_no)) {
+      if (Decoder::get_source_info(pc, buf, sizeof(buf), &line_no, frame != 0)) {
         out->print("  (%s:%d)", buf, line_no);
       }
       out->cr();
