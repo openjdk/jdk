@@ -133,7 +133,7 @@ bool MetaspaceCriticalAllocation::try_allocate_critical(MetadataAllocationReques
   // therefore filter them out when we determine if the current 'request'
   // needs to trigger a GC, or if there are earlier requests that will
   // trigger a GC.
-  
+
   {
     MutexLocker ml(MetaspaceCritical_lock, Mutex::_no_safepoint_check_flag);
     auto is_first_unprocessed = [&]() {
@@ -149,7 +149,7 @@ bool MetaspaceCriticalAllocation::try_allocate_critical(MetadataAllocationReques
 
     if (is_first_unprocessed()) {
       // The first non-processed request takes ownership of triggering the GC
-      // on behalf of itself, and all trailing requests in the list. 
+      // on behalf of itself, and all trailing requests in the list.
       return false;
     }
   }
