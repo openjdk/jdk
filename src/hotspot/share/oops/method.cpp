@@ -639,10 +639,6 @@ MethodCounters* Method::build_method_counters(Thread* current, Method* m) {
     MetadataFactory::free_metadata(mh->method_holder()->class_loader_data(), counters);
   }
 
-  if (LogTouchedMethods) {
-    mh->log_touched(current);
-  }
-
   return mh->method_counters();
 }
 
@@ -2446,65 +2442,6 @@ void Method::print_value_on(outputStream* st) const {
   if (WizardMode) st->print("#%d", _vtable_index);
   if (WizardMode) st->print("[%d,%d]", size_of_parameters(), max_locals());
   if (WizardMode && code() != NULL) st->print(" ((nmethod*)%p)", code());
-}
-
-// LogTouchedMethods and PrintTouchedMethods
-
-// TouchedMethodRecord -- we can't use a HashtableEntry<Method*> because
-// the Method may be garbage collected.
-struct TouchedMethodRecord {
-  // It's OK to store Symbols here because they will NOT be GC'ed if
-  // LogTouchedMethods is enabled.
-  Symbol* _class_name;
-  Symbol* _method_name;
-  Symbol* _method_signature;
-  TouchedMethodRecord(Method* method) : _class_name(method->klass_name()), _method_name(method->name()),
-                                        _method_signature(method->signature()) {
-    _class_name->increment_refcount();
-    _method_name->increment_refcount();
-    _method_signature->increment_refcount();
-  }
-  static unsigned int compute_hash(const TouchedMethodRecord& record) {
-    return record._class_name->identity_hash() +
-           record._method_name->identity_hash() +
-           record._method_signature->identity_hash();
-  }
-  static bool compare_entries(const TouchedMethodRecord& record, const TouchedMethodRecord& rhs) {
-    return (record._class_name       == rhs._class_name &&
-            record._method_name      == rhs._method_name &&
-            record._method_signature == rhs._method_signature);
-  }
-};
-
-using TouchedMethodTable = ResourceHashtable<const TouchedMethodRecord, int, 20011, ResourceObj::C_HEAP, mtClassShared,
-                                             TouchedMethodRecord::compute_hash, TouchedMethodRecord::compare_entries>;
-static TouchedMethodTable* _touched_method_table = nullptr;
-
-void Method::log_touched(Thread* current) {
-
-  MutexLocker ml(current, TouchedMethodLog_lock);
-  if (_touched_method_table == NULL) {
-    _touched_method_table = new (ResourceObj::C_HEAP, mtClassShared) TouchedMethodTable();
-  }
-
-  TouchedMethodRecord record(this);
-  bool created;
-  _touched_method_table->put_if_absent(record, &created);
-  // Could keep a count in value.
-}
-
-void Method::print_touched_methods(outputStream* out) {
-  MutexLocker ml(Thread::current()->is_VM_thread() ? NULL : TouchedMethodLog_lock);
-  out->print_cr("# Method::print_touched_methods version 1");
-  assert(_touched_method_table != nullptr, "shouldn't call this");
-  ResourceMark rm;
-
-  auto print = [&] (const TouchedMethodRecord& record, int& value) {
-        record._class_name->print_symbol_on(out);       out->print(".");
-        record._method_name->print_symbol_on(out);      out->print(":");
-        record._method_signature->print_symbol_on(out); out->cr();
-  };
-  _touched_method_table->iterate_all(print);
 }
 
 // Verification
