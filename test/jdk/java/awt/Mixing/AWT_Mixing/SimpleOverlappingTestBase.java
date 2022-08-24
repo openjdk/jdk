@@ -171,7 +171,6 @@ public abstract class SimpleOverlappingTestBase extends OverlappingTestBase {
             }
         }
         return false;
-
     }
 
 }

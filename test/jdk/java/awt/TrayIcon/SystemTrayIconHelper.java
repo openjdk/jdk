@@ -33,7 +33,6 @@ import java.security.PrivilegedExceptionAction;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-
 /*
  * @summary This is a helper class to find the location of a system tray icon,
  *          and skip some OS specific cases in tests.
