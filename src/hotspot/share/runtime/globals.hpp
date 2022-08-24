@@ -511,6 +511,10 @@ const int ObjectAlignmentInBytes = 8;
           "error log in case of a crash.")                                  \
           range(0, (uint64_t)max_jlong/1000)                                \
                                                                             \
+  develop(intx, TraceDwarfLevel, 0,                                         \
+          "Debug levels for the dwarf parser")                              \
+          range(0, 4)                                                       \
+                                                                            \
   product(bool, SuppressFatalErrorMessage, false,                           \
           "Report NO fatal error message (avoid deadlock)")                 \
                                                                             \

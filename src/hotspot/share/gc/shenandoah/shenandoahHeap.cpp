@@ -73,6 +73,7 @@
 #endif
 
 #include "classfile/systemDictionary.hpp"
+#include "code/codeCache.hpp"
 #include "memory/classLoaderMetaspace.hpp"
 #include "memory/metaspaceUtils.hpp"
 #include "oops/compressedOops.inline.hpp"
@@ -1790,13 +1791,14 @@ void ShenandoahHeap::stw_unload_classes(bool full_gc) {
     ShenandoahPhaseTimings::Phase phase = full_gc ?
                                           ShenandoahPhaseTimings::full_gc_purge_class_unload :
                                           ShenandoahPhaseTimings::degen_gc_purge_class_unload;
+    ShenandoahIsAliveSelector is_alive;
+    CodeCache::UnloadingScope scope(is_alive.is_alive_closure());
     ShenandoahGCPhase gc_phase(phase);
     ShenandoahGCWorkerPhase worker_phase(phase);
     bool purged_class = SystemDictionary::do_unloading(gc_timer());
 
-    ShenandoahIsAliveSelector is_alive;
     uint num_workers = _workers->active_workers();
-    ShenandoahClassUnloadingTask unlink_task(phase, is_alive.is_alive_closure(), num_workers, purged_class);
+    ShenandoahClassUnloadingTask unlink_task(phase, num_workers, purged_class);
     _workers->run_task(&unlink_task);
   }
 

@@ -2007,11 +2007,11 @@ jint ConstantPool::cpool_entry_size(jint idx) {
 } /* end cpool_entry_size */
 
 
-// SymbolHashMap is used to find a constant pool index from a string.
-// This function fills in SymbolHashMaps, one for utf8s and one for
+// SymbolHash is used to find a constant pool index from a string.
+// This function fills in SymbolHashs, one for utf8s and one for
 // class names, returns size of the cpool raw bytes.
-jint ConstantPool::hash_entries_to(SymbolHashMap *symmap,
-                                          SymbolHashMap *classmap) {
+jint ConstantPool::hash_entries_to(SymbolHash *symmap,
+                                   SymbolHash *classmap) {
   jint size = 0;
 
   for (u2 idx = 1; idx < length(); idx++) {
@@ -2021,7 +2021,7 @@ jint ConstantPool::hash_entries_to(SymbolHashMap *symmap,
     switch(tag) {
       case JVM_CONSTANT_Utf8: {
         Symbol* sym = symbol_at(idx);
-        symmap->add_entry(sym, idx);
+        symmap->add_if_absent(sym, idx);
         DBG(printf("adding symbol entry %s = %d\n", sym->as_utf8(), idx));
         break;
       }
@@ -2029,7 +2029,7 @@ jint ConstantPool::hash_entries_to(SymbolHashMap *symmap,
       case JVM_CONSTANT_UnresolvedClass:
       case JVM_CONSTANT_UnresolvedClassInError: {
         Symbol* sym = klass_name_at(idx);
-        classmap->add_entry(sym, idx);
+        classmap->add_if_absent(sym, idx);
         DBG(printf("adding class entry %s = %d\n", sym->as_utf8(), idx));
         break;
       }
@@ -2050,8 +2050,8 @@ jint ConstantPool::hash_entries_to(SymbolHashMap *symmap,
 //   -1, in case of internal error
 //  > 0, count of the raw cpool bytes that have been copied
 int ConstantPool::copy_cpool_bytes(int cpool_size,
-                                          SymbolHashMap* tbl,
-                                          unsigned char *bytes) {
+                                   SymbolHash* tbl,
+                                   unsigned char *bytes) {
   u2   idx1, idx2;
   jint size  = 0;
   jint cnt   = length();
@@ -2426,61 +2426,5 @@ void ConstantPool::verify_on(outputStream* st) {
     // Note: pool_holder() can be NULL in temporary constant pools
     // used during constant pool merging
     guarantee(pool_holder()->is_klass(),    "should be klass");
-  }
-}
-
-
-SymbolHashMap::~SymbolHashMap() {
-  SymbolHashMapEntry* next;
-  for (int i = 0; i < _table_size; i++) {
-    for (SymbolHashMapEntry* cur = bucket(i); cur != NULL; cur = next) {
-      next = cur->next();
-      delete(cur);
-    }
-  }
-  FREE_C_HEAP_ARRAY(SymbolHashMapBucket, _buckets);
-}
-
-void SymbolHashMap::add_entry(Symbol* sym, u2 value) {
-  char *str = sym->as_utf8();
-  unsigned int hash = compute_hash(str, sym->utf8_length());
-  unsigned int index = hash % table_size();
-
-  // check if already in map
-  // we prefer the first entry since it is more likely to be what was used in
-  // the class file
-  for (SymbolHashMapEntry *en = bucket(index); en != NULL; en = en->next()) {
-    assert(en->symbol() != NULL, "SymbolHashMapEntry symbol is NULL");
-    if (en->hash() == hash && en->symbol() == sym) {
-        return;  // already there
-    }
-  }
-
-  SymbolHashMapEntry* entry = new SymbolHashMapEntry(hash, sym, value);
-  entry->set_next(bucket(index));
-  _buckets[index].set_entry(entry);
-  assert(entry->symbol() != NULL, "SymbolHashMapEntry symbol is NULL");
-}
-
-SymbolHashMapEntry* SymbolHashMap::find_entry(Symbol* sym) {
-  assert(sym != NULL, "SymbolHashMap::find_entry - symbol is NULL");
-  char *str = sym->as_utf8();
-  int   len = sym->utf8_length();
-  unsigned int hash = SymbolHashMap::compute_hash(str, len);
-  unsigned int index = hash % table_size();
-  for (SymbolHashMapEntry *en = bucket(index); en != NULL; en = en->next()) {
-    assert(en->symbol() != NULL, "SymbolHashMapEntry symbol is NULL");
-    if (en->hash() == hash && en->symbol() == sym) {
-      return en;
-    }
-  }
-  return NULL;
-}
-
-void SymbolHashMap::initialize_table(int table_size) {
-  _table_size = table_size;
-  _buckets = NEW_C_HEAP_ARRAY(SymbolHashMapBucket, table_size, mtSymbol);
-  for (int index = 0; index < table_size; index++) {
-    _buckets[index].clear();
   }
 }

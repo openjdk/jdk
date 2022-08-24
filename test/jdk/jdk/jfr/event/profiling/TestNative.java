@@ -21,15 +21,11 @@
  * questions.
  */
 
-package jdk.jfr.event.sampling;
+package jdk.jfr.event.profiling;
 
 import java.time.Duration;
-import java.util.List;
-import java.util.concurrent.Semaphore;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import jdk.jfr.Recording;
-import jdk.jfr.consumer.RecordedFrame;
 import jdk.jfr.consumer.RecordingStream;
 import jdk.jfr.internal.JVM;
 import jdk.test.lib.jfr.EventNames;
@@ -40,7 +36,7 @@ import jdk.test.lib.jfr.EventNames;
  * @requires vm.hasJFR
  * @library /test/lib
  * @modules jdk.jfr/jdk.jfr.internal
- * @run main jdk.jfr.event.sampling.TestNative
+ * @run main jdk.jfr.event.profiling.TestNative
  */
 public class TestNative {
 
@@ -48,12 +44,9 @@ public class TestNative {
 
     static volatile boolean alive = true;
 
-    // Please resist the temptation to speed up the test by decreasing
-    // the period. It is explicity set to 1100 ms to provoke the 1000 ms
-    // threshold in the JVM for os::naked_short_sleep().
     public static void main(String[] args) throws Exception {
         try (RecordingStream rs = new RecordingStream()) {
-            rs.enable(NATIVE_EVENT).withPeriod(Duration.ofMillis(1100));
+            rs.enable(NATIVE_EVENT).withPeriod(Duration.ofMillis(1));
             rs.onEvent(NATIVE_EVENT, e -> {
                 alive = false;
                 rs.close();

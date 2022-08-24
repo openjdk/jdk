@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,32 +21,25 @@
  * questions.
  */
 
-/**
- * @test
- * @bug 8279125
- * @summary fatal error: no reachable node should have no use
- * @requires vm.flavor == "server"
- *
- * @run main/othervm -XX:-BackgroundCompilation -XX:-DoEscapeAnalysis TestAllocArrayAfterAllocNoUse
- *
- */
+#include "jni.h"
+#include <stdio.h>
 
-public class TestAllocArrayAfterAllocNoUse {
-    private static Object field;
+void unused1() {
+}
 
-    public static void main(String[] args) {
-        for (int i = 0; i < 20_000; i++) {
-            test();
-        }
-    }
+void unused2() {
+}
 
-    private static void test() {
-        try {
-            final TestAllocArrayAfterAllocNoUse o = new TestAllocArrayAfterAllocNoUse();
-        } catch (Exception e) {
-            final int[] array = new int[100];
-            field = array;
-        }
+void unused3() {
+}
 
-    }
+void unused4() {
+}
+
+void unused5() {
+}
+
+void dereference_null() {
+  int* x = (int*)0;
+  *x = 34; // Crash
 }

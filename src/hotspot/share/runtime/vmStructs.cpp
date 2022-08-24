@@ -107,7 +107,6 @@
 #include "runtime/vmStructs.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/hashtable.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/vmError.hpp"
 

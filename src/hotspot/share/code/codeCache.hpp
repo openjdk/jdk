@@ -207,7 +207,7 @@ class CodeCache : AllStatic {
 
   static void flush_unlinked_nmethods();
   static void register_unlinked(nmethod* nm);
-  static void do_unloading(BoolObjectClosure* is_alive, bool unloading_occurred);
+  static void do_unloading(bool unloading_occurred);
   static uint8_t unloading_cycle() { return _unloading_cycle; }
 
   static void increment_unloading_cycle();
