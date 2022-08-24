@@ -570,10 +570,10 @@ public class FileChannelImpl
             ti = threads.add();
             if (!isOpen())
                 return -1;
+            boolean append = fdAccess.getAppend(targetFD);
             do {
                 long comp = Blocker.begin();
                 try {
-                    boolean append = fdAccess.getAppend(targetFD);
                     n = transferTo0(fd, position, icount, targetFD, append);
                 } finally {
                     Blocker.end(comp);
