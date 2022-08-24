@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,32 +19,27 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#include "precompiled.hpp"
-#include "utilities/decoder.hpp"
-#include "symbolengine.hpp"
-#include "windbghelp.hpp"
+#include "jni.h"
+#include <stdio.h>
 
-bool Decoder::decode(address addr, char* buf, int buflen, int* offset, const char* modulepath, bool demangle) {
-  return SymbolEngine::decode(addr, buf, buflen, offset, demangle);
+void unused1() {
 }
 
-bool Decoder::decode(address addr, char* buf, int buflen, int* offset, const void* base) {
-  return SymbolEngine::decode(addr, buf, buflen, offset, true);
+void unused2() {
 }
 
-bool Decoder::get_source_info(address pc, char* buf, size_t buflen, int* line, bool is_pc_after_call) {
-  return SymbolEngine::get_source_info(pc, buf, buflen, line);
+void unused3() {
 }
 
-bool Decoder::demangle(const char* symbol, char* buf, int buflen) {
-  return SymbolEngine::demangle(symbol, buf, buflen);
+void unused4() {
 }
 
-void Decoder::print_state_on(outputStream* st) {
-  WindowsDbgHelp::print_state_on(st);
-  SymbolEngine::print_state_on(st);
+void unused5() {
 }
 
+void dereference_null() {
+  int* x = (int*)0;
+  *x = 34; // Crash
+}

@@ -69,7 +69,6 @@
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "utilities/hashtable.inline.hpp"
 #include "utilities/resourceHash.hpp"
 #include "utilities/stringUtils.hpp"
 
