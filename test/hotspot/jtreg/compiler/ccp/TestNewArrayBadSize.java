@@ -29,29 +29,29 @@
  */
 
 public class TestNewArrayBadSize {
-  long instanceCount;
-  int iFld;
+    long instanceCount;
+    int iFld;
 
-  void vMeth(int i, long l) {
-    int i1, i19 = -845;
-    for (i1 = 5; i1 > 1; i1 -= 2)
-      try {
-        int ax$0 = i19;
-        try {
-          for (Object temp = new byte[i19]; ; i19 = "1".equals("0") ? 2 : 1) {}
-        } finally {
-          i19 = ax$0;
-        }
-      } catch (Throwable ax$3) {
-      }
-  }
+    void vMeth(int i, long l) {
+        int i1, i19 = -845;
+        for (i1 = 5; i1 > 1; i1 -= 2)
+            try {
+                int ax$0 = i19;
+                try {
+                    for (Object temp = new byte[i19]; ; i19 = "1".equals("0") ? 2 : 1) {}
+                } finally {
+                    i19 = ax$0;
+                }
+            } catch (Throwable ax$3) {
+            }
+    }
 
-  void mainTest(String[] strArr1) {
-    vMeth(iFld, instanceCount);
-  }
+    void mainTest(String[] strArr1) {
+        vMeth(iFld, instanceCount);
+    }
 
-  public static void main(String[] strArr) {
-    TestNewArrayBadSize _instance = new TestNewArrayBadSize();
-    for (; ; ) _instance.mainTest(strArr);
-  }
+    public static void main(String[] strArr) {
+        TestNewArrayBadSize _instance = new TestNewArrayBadSize();
+        for (int i = 0; i < 100; ++i) _instance.mainTest(strArr);
+    }
 }
