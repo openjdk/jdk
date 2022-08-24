@@ -167,7 +167,6 @@ public class Attr extends JCTree.Visitor {
 
         Source source = Source.instance(context);
         allowPoly = Feature.POLY.allowedInSource(source);
-        allowTypeAnnos = Feature.TYPE_ANNOTATIONS.allowedInSource(source);
         allowLambda = Feature.LAMBDA.allowedInSource(source);
         allowReifiableTypesInInstanceof = Feature.REIFIABLE_TYPES_INSTANCEOF.allowedInSource(source);
         allowRecords = Feature.RECORDS.allowedInSource(source);
@@ -190,10 +189,6 @@ public class Attr extends JCTree.Visitor {
     /** Switch: support target-typing inference
      */
     boolean allowPoly;
-
-    /** Switch: support type annotations.
-     */
-    boolean allowTypeAnnos;
 
     /** Switch: support lambda expressions ?
      */
@@ -5615,13 +5610,11 @@ public class Attr extends JCTree.Visitor {
                 && !c.isAnonymous()) {
             chk.checkSerialStructure(tree, c);
         }
-        if (allowTypeAnnos) {
-            // Correctly organize the positions of the type annotations
-            typeAnnotations.organizeTypeAnnotationsBodies(tree);
+        // Correctly organize the positions of the type annotations
+        typeAnnotations.organizeTypeAnnotationsBodies(tree);
 
-            // Check type annotations applicability rules
-            validateTypeAnnotations(tree, false);
-        }
+        // Check type annotations applicability rules
+        validateTypeAnnotations(tree, false);
     }
         // where
         /** get a diagnostic position for an attribute of Type t, or null if attribute missing */

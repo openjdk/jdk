@@ -214,7 +214,6 @@ public enum Source {
         POLY(JDK8),
         LAMBDA(JDK8, Fragments.FeatureLambda, DiagKind.PLURAL),
         STRICT_METHOD_CLASH_CHECK(JDK8),
-        TYPE_ANNOTATIONS(JDK8, Fragments.FeatureTypeAnnotations, DiagKind.PLURAL),
         GRAPH_INFERENCE(JDK8),
         FUNCTIONAL_INTERFACE_MOST_SPECIFIC(JDK8),
         POST_APPLICABILITY_VARARGS_ACCESS_CHECK(JDK8),

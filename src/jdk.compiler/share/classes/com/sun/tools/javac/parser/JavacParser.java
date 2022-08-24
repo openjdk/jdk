@@ -586,8 +586,6 @@ public class JavacParser implements Parser {
             return names.error;
         } else if (token.kind == THIS) {
             if (allowThisIdent) {
-                // Make sure we're using a supported source version.
-                checkSourceLevel(Feature.TYPE_ANNOTATIONS);
                 Name name = token.name();
                 nextToken();
                 return name;
@@ -1019,7 +1017,6 @@ public class JavacParser implements Parser {
                     } else {
                         checkNoMods(typePos, mods.flags & ~Flags.DEPRECATED);
                         if (mods.annotations.nonEmpty()) {
-                            checkSourceLevel(mods.annotations.head.pos, Feature.TYPE_ANNOTATIONS);
                             List<JCAnnotation> typeAnnos =
                                     mods.annotations
                                         .map(decl -> {
@@ -3359,9 +3356,6 @@ public class JavacParser implements Parser {
      */
     JCAnnotation annotation(int pos, Tag kind) {
         // accept(AT); // AT consumed by caller
-        if (kind == Tag.TYPE_ANNOTATION) {
-            checkSourceLevel(Feature.TYPE_ANNOTATIONS);
-        }
         JCTree ident = qualident(false);
         List<JCExpression> fieldValues = annotationFieldValuesOpt();
         JCAnnotation ann;
