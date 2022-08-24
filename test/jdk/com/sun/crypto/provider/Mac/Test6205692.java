@@ -25,7 +25,7 @@
  * @test
  * @library /test/lib
  * @bug 6205692
- * @summary Verify MacSpi
+ * @summary verify MacSpi NPE on engineUpdate(ByteBuffer)
  */
 
 import jdk.test.lib.Utils;
@@ -45,9 +45,9 @@ public class Test6205692 {
 
         ByteBuffer byteBuffer = null;
 
-        MyMac mm = new MyMac(new MyMacSpi(), null, null);
+        MyMacSpi myMacSpi = new MyMacSpi();
 
-        Utils.runAndCheckException(() -> mm.updateSpi(byteBuffer),
+        Utils.runAndCheckException(() -> myMacSpi.engineUpdate(byteBuffer),
                 NullPointerException.class);
 
         return true;
@@ -94,19 +94,6 @@ public class Test6205692 {
 
         @Override
         protected void engineReset() {
-        }
-    }
-
-    private static class MyMac extends Mac {
-        private MyMacSpi spi;
-
-        public MyMac(MyMacSpi macSpi, Provider provider, String algorithm) {
-            super(macSpi, provider, algorithm);
-            spi = macSpi;
-        }
-
-        public void updateSpi(ByteBuffer input) {
-            spi.engineUpdate(input);
         }
     }
 }
