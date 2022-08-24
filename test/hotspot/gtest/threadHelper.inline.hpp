@@ -168,7 +168,9 @@ public:
       _threads[i] = new BasicTestThread<F>(fun, i, &_sem);
     }
   }
-  ~TestThreadGroup() {}
+  ~TestThreadGroup() {
+    FREE_C_HEAP_ARRAY(BasicTestThread<F>*, _threads);
+  }
 
   void doit() {
     _blocker = VMThreadBlocker::start();
