@@ -124,8 +124,8 @@ public:
   }
 };
 
-// Calls a single-argument function of type F with the current thread (this) and a self-assigned thread id as its input
-// in a new thread when doit() is run.
+// Calls a single-argument function of type F with the current thread (this)
+// and a self-assigned thread id as its input in a new thread when doit() is run.
 template<typename F>
 class BasicTestThread : public JavaTestThread {
 private:
@@ -145,7 +145,9 @@ public:
   }
 };
 
-// A TestThreadGroup tracks multiple threads running the same function.
+// A TestThreadGroup starts and tracks N threads running the same callable F.
+// The callable F should have the signature void(Thread*,int) where Thread*
+// is the current thread and int is an id in the range [0,N).
 template<typename F>
 class TestThreadGroup {
 private:
