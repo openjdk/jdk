@@ -74,7 +74,7 @@ public class TestNimbusLabel
                 UIManager.getDefaults().put("Label.foreground",
                                             java.awt.Color.red);
                 label =
-                    new JLabel("<html><body>Can You Read This?</body></html>");
+                    new JLabel("<html><body>This text should be in red</body></html>");
 
                 frame.getContentPane().add(label);
                 frame.setUndecorated(true);
