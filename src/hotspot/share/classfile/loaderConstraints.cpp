@@ -103,7 +103,13 @@ class ConstraintSet {                               // copied into hashtable as 
     _constraints->push(new_constraint);
   }
 
-  void remove_constraint(LoaderConstraint* constraint) {
+  void remove_constraint(Symbol* name, LoaderConstraint* constraint) {
+    LogTarget(Info, class, loader, constraints) lt;
+    if (lt.is_enabled()) {
+      ResourceMark rm;
+      lt.print("purging complete constraint for name %s",
+               name->as_C_string());
+    }
     _constraints->remove(constraint);
     delete constraint;
   }
@@ -185,62 +191,54 @@ class PurgeUnloadedConstraints : public StackObj {
     LogTarget(Info, class, loader, constraints) lt;
     int len = set.num_constraints();
     for (int i = len - 1; i >= 0; i--) {
-      LoaderConstraint* probe = set.constraint_at(i);
-      InstanceKlass* klass = probe->klass();
-      // Remove klass that is no longer alive
-      if (klass != NULL &&
-          !klass->is_loader_alive()) {
-        probe->set_klass(NULL);
+      LoaderConstraint* constraint = set.constraint_at(i);
+      InstanceKlass* klass = constraint->klass();
+
+      // Remove klass and constraint that is no longer alive
+      if (klass != NULL && !klass->is_loader_alive()) {
         if (lt.is_enabled()) {
           ResourceMark rm;
           lt.print("purging class object from constraint for name %s,"
                      " loader list:",
                      name->as_C_string());
-          for (int i = 0; i < probe->num_loaders(); i++) {
+          for (int i = 0; i < constraint->num_loaders(); i++) {
             lt.print("    [%d]: %s", i,
-                          probe->loader_data(i)->loader_name_and_id());
+                          constraint->loader_data(i)->loader_name_and_id());
           }
         }
-      }
+        set.remove_constraint(name, constraint);
+      } else {
+        // The class is alive or null but some of of the loaders may not be.
+        // Remove entries no longer alive from loader array
+        for (int n = constraint->num_loaders() - 1; n >= 0; n--) {
+          if (constraint->loader_data(n)->is_unloading()) {
+            if (lt.is_enabled()) {
+              ResourceMark rm;
+              lt.print("purging loader %s from constraint for name %s",
+                       constraint->loader_data(n)->loader_name_and_id(),
+                       name->as_C_string());
+            }
+            constraint->remove_loader_at(n);
 
-      // Remove entries no longer alive from loader array
-      for (int n = probe->num_loaders() - 1; n >= 0; n--) {
-        if (probe->loader_data(n)->is_unloading()) {
-          if (lt.is_enabled()) {
-            ResourceMark rm;
-            lt.print("purging loader %s from constraint for name %s",
-                     probe->loader_data(n)->loader_name_and_id(),
-                     name->as_C_string());
-          }
-          probe->remove_loader_at(n);
-
-          if (lt.is_enabled()) {
-            ResourceMark rm;
-            lt.print("new loader list:");
-            for (int i = 0; i < probe->num_loaders(); i++) {
-              lt.print("    [%d]: %s", i,
-                            probe->loader_data(i)->loader_name_and_id());
+            if (lt.is_enabled()) {
+              ResourceMark rm;
+              lt.print("new loader list:");
+              for (int i = 0; i < constraint->num_loaders(); i++) {
+                lt.print("    [%d]: %s", i,
+                              constraint->loader_data(i)->loader_name_and_id());
+              }
             }
           }
         }
-      }
-      // Check whether the set should be purged
-      if (probe->num_loaders() < 2) {
-        if (lt.is_enabled()) {
-          ResourceMark rm;
-          lt.print("purging complete constraint for name %s",
-                   name->as_C_string());
+        // Check whether the set should be purged
+        // Only one loader doesn't enforce a constraint.
+        if (constraint->num_loaders() < 2) {
+          set.remove_constraint(name, constraint);
         }
-
-        set.remove_constraint(probe);
-      } else {
-#ifdef ASSERT
-        if (probe->klass() != NULL) {
-          assert(probe->klass()->is_loader_alive(), "klass should be live");
-        }
-#endif
       }
     }
+
+    // If all the constraints are gone, then let unlink purge this set.
     if (set.num_constraints() == 0) {
       // decrement name refcount before freeing
       name->decrement_refcount();
@@ -450,7 +448,7 @@ void LoaderConstraintTable::merge_loader_constraints(Symbol* class_name,
 
   // Remove src from set
   ConstraintSet* set = _loader_constraint_table.get(class_name);
-  set->remove_constraint(src);
+  set->remove_constraint(class_name, src);
 }
 
 void LoaderConstraintTable::verify() {
