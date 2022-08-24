@@ -26,7 +26,6 @@ package org.openjdk.bench.java.math;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import org.openjdk.jmh.annotations.*;
-import org.openjdk.jmh.infra.Blackhole;
 
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Thread)
@@ -66,18 +65,18 @@ public class Fp16ConversionBenchmark {
   }
 
   @Benchmark
-  public void floatToFloat16(Blackhole bh) {
+  public short[] floatToFloat16() {
       for (int i = 0; i < fin.length; i++) {
           f16out[i] = Float.floatToFloat16(fin[i]);
       }
-      bh.consume(f16out);
+      return f16out;
   }
 
   @Benchmark
-  public void float16ToFloat(Blackhole bh) {
+  public float[] float16ToFloat() {
       for (int i = 0; i < f16in.length; i++) {
           fout[i] = Float.float16ToFloat(f16in[i]);
       }
-      bh.consume(fout);
+      return fout;
   }
 }

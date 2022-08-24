@@ -26,7 +26,7 @@
  * @bug 8289551
  * @summary Verify NaN sign and significand bits are preserved across conversions
  * @run main Binary16ConversionNaN
- * @run main/othervm/timeout=600 -XX:+UnlockDiagnosticVMOptions
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions
  * -XX:DisableIntrinsic=_float16ToFloat,_floatToFloat16 Binary16ConversionNaN
  */
 

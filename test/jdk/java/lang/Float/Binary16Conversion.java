@@ -28,7 +28,7 @@
  * @library ../Math
  * @build FloatConsts
  * @run main Binary16Conversion
- * @run main/othervm/timeout=600 -XX:+UnlockDiagnosticVMOptions
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions
  * -XX:DisableIntrinsic=_float16ToFloat,_floatToFloat16 Binary16Conversion
  */
 
