@@ -401,6 +401,7 @@ void Method::metaspace_pointers_do(MetaspaceClosure* it) {
   NOT_PRODUCT(it->push(&_name);)
 }
 
+#if INCLUDE_CDS
 // Attempt to return method to original state.  Clear any pointers
 // (to objects outside the shared spaces).  We won't be able to predict
 // where they should point in a new JVM.  Further initialize some
@@ -410,6 +411,7 @@ void Method::remove_unshareable_info() {
   unlink_method();
   JFR_ONLY(REMOVE_METHOD_ID(this);)
 }
+#endif
 
 void Method::set_vtable_index(int index) {
   if (is_shared() && !MetaspaceShared::remapped_readwrite() && method_holder()->verified_at_dump_time()) {
