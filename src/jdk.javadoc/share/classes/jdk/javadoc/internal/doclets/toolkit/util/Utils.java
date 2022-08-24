@@ -1904,6 +1904,9 @@ public class Utils {
 
     private SimpleElementVisitor14<String, Void> snvisitor = null;
 
+    // If `e` is a static nested class, this method will return e's simple name
+    // preceded by `.` and an outer type; this is not how JLS defines "simple
+    // name". See "Simple Name", "Qualified Name", "Fully Qualified Name".
     private String getSimpleName0(Element e) {
         if (snvisitor == null) {
             snvisitor = new SimpleElementVisitor14<>() {
@@ -1917,7 +1920,7 @@ public class Utils {
                     StringBuilder sb = new StringBuilder(e.getSimpleName().toString());
                     Element enclosed = e.getEnclosingElement();
                     while (enclosed != null
-                            && (enclosed.getKind().isClass() || enclosed.getKind().isInterface())) {
+                            && (enclosed.getKind().isDeclaredType())) {
                         sb.insert(0, enclosed.getSimpleName() + ".");
                         enclosed = enclosed.getEnclosingElement();
                     }
