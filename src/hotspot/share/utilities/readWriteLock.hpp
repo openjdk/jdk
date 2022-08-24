@@ -32,13 +32,23 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
-// Multi-reader single-writer lock implementation.
+//  This is a multiple-reader single-writer lock implementation.
+//
 // * This lock is unfair, high contention of readers may starve some of them.
+//   This is because registering a reader requires CASing a counter.
+//
 // * Writers take precedence, blocking new readers from entering and allowing
-//   current readers to proceed.
-// * A writer cannot downgrade to a read-lock
-// * A reader cannot upgrade to a write-lock
-
+//   current readers to proceed until none are left, at which point it will
+//   unblock itself and proceed to execute its critical region.
+//
+// * A writer cannot downgrade to a read-lock.
+//
+// * A reader cannot upgrade to a write-lock.
+//
+// * This lock is not recursive. It is not even safe for readers to lock recursively,
+//   as this will deadlock if there is an interleaving writer.
+//
+// * This lock allows safe points to take place when being blocked.
 class ReadWriteLock : public CHeapObj<mtSynchronizer> {
 private:
   NONCOPYABLE(ReadWriteLock);
