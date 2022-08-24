@@ -57,12 +57,7 @@ public class Juggle01 extends ThreadedGCTest implements GarbageProducerAware, Me
                 public void run() {
                         synchronized (this) {
                                 int index = LocalRandom.nextInt(array.length);
-                                try {
-                                    array[index] = garbageProducer.create(objectSize);
-                                } catch (OutOfMemoryError e) {
-                                    // Do some cleanup for further juggling
-                                    WhiteBox.getWhiteBox().youngGC();
-                                }
+                                array[index] = garbageProducer.create(objectSize);
                         }
                 }
         }
