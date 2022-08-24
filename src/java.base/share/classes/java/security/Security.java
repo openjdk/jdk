@@ -521,10 +521,11 @@ public final class Security {
         String value;
         int index = filter.indexOf(':');
 
-        if (index == -1) {
+        if (index == -1) { // <crypto_service>.<algo_or_type> only
             key = filter;
             value = "";
         } else {
+            // <crypto_service>.<algo_or_type> <attr_name>:<attr_value>
             key = filter.substring(0, index);
             value = filter.substring(index + 1);
         }
@@ -592,7 +593,6 @@ public final class Security {
         // Then only return those providers who satisfy the selection criteria.
         Provider[] allProviders = Security.getProviders();
         Set<String> keySet = filter.keySet();
-        LinkedHashSet<Provider> candidates = new LinkedHashSet<>(5);
 
         // Returns all installed providers
         // if the selection criteria is null.
@@ -600,32 +600,21 @@ public final class Security {
             return allProviders;
         }
 
-        boolean firstSearch = true;
+        LinkedList<Provider> candidates =
+                new LinkedList<>(Arrays.asList(allProviders));
 
         // For each selection criterion, remove providers
         // which don't satisfy the criterion from the candidate set.
         for (String key : keySet) {
-            String value = filter.get(key);
-
-            LinkedHashSet<Provider> newCandidates = getAllQualifyingCandidates(key, value,
-                                                               allProviders);
-            if (firstSearch) {
-                candidates = newCandidates;
-                firstSearch = false;
-            }
-
-            if (!newCandidates.isEmpty()) {
-                // For each provider in the candidates set, if it
-                // isn't in the newCandidate set, we should remove
-                // it from the candidate set.
-                candidates.removeIf(prov -> !newCandidates.contains(prov));
-            } else {
-                candidates = null;
+            String value = filter.get(key).trim();
+            applyFilterOnCandidates(key, value, candidates);
+            if (candidates.isEmpty()) {
+                // bail; no further filtering needed
                 break;
             }
         }
 
-        if (candidates == null || candidates.isEmpty())
+        if (candidates.isEmpty())
             return null;
 
         return candidates.toArray(new Provider[0]);
@@ -823,13 +812,12 @@ public final class Security {
     }
 
     /*
-     * Returns all providers who satisfy the specified
-     * criterion.
+     * Apply the specified filter on the specified Provider candidates
+     * and remove those which do not contain a match.
      */
-    private static LinkedHashSet<Provider> getAllQualifyingCandidates(
-                                                String filterKey,
-                                                String filterValue,
-                                                Provider[] allProviders) {
+    private static void applyFilterOnCandidates(String filterKey,
+            String filterValue, LinkedList<Provider> candidates) {
+
         String[] filterComponents = getFilterComponents(filterKey,
                                                         filterValue);
 
@@ -840,25 +828,14 @@ public final class Security {
         String algName = filterComponents[1];
         String attrName = filterComponents[2];
 
-        return getProvidersNotUsingCache(serviceName, algName, attrName,
-                                         filterValue, allProviders);
-    }
-
-    private static LinkedHashSet<Provider> getProvidersNotUsingCache(
-                                                String serviceName,
-                                                String algName,
-                                                String attrName,
-                                                String filterValue,
-                                                Provider[] allProviders) {
-        LinkedHashSet<Provider> candidates = new LinkedHashSet<>(5);
-        for (int i = 0; i < allProviders.length; i++) {
-            if (isCriterionSatisfied(allProviders[i], serviceName,
-                                     algName,
-                                     attrName, filterValue)) {
-                candidates.add(allProviders[i]);
+        Iterator<Provider> provs = candidates.iterator();
+        while (provs.hasNext()) {
+            Provider p = provs.next();
+            if (!isCriterionSatisfied(p, serviceName, algName, attrName,
+                    filterValue)) {
+                provs.remove();
             }
         }
-        return candidates;
     }
 
     /*
@@ -875,6 +852,7 @@ public final class Security {
         if (attrName != null) {
             key += ' ' + attrName;
         }
+
         // Check whether the provider has a property
         // whose key is the same as the given key.
         String propValue = getProviderProperty(key, prov);
@@ -906,31 +884,20 @@ public final class Security {
         // If the key is in the format of:
         // <crypto_service>.<algorithm_or_type>,
         // there is no need to check the value.
-
         if (attrName == null) {
             return true;
         }
 
         // If we get here, the key must be in the
-        // format of <crypto_service>.<algorithm_or_provider> <attribute_name>.
-        if (isStandardAttr(attrName)) {
-            return isConstraintSatisfied(attrName, filterValue, propValue);
-        } else {
-            return filterValue.equalsIgnoreCase(propValue);
-        }
+        // format of <crypto_service>.<algorithm_or_type> <attribute_name>.
+        return isConstraintSatisfied(attrName, filterValue, propValue);
     }
 
-    /*
-     * Returns {@code true} if the attribute is a standard attribute;
-     * otherwise, returns {@code false}.
-     */
-    private static boolean isStandardAttr(String attribute) {
-        // For now, we just have two standard attributes:
-        // KeySize and ImplementedIn.
-        if (attribute.equalsIgnoreCase("KeySize"))
-            return true;
-
-        return attribute.equalsIgnoreCase("ImplementedIn");
+    private static boolean isKnownComposite(String attribute) {
+        return (attribute.equalsIgnoreCase("SupportedKeyClasses") ||
+                attribute.equalsIgnoreCase("SupportedPaddings") ||
+                attribute.equalsIgnoreCase("SupportedModes") ||
+                attribute.equalsIgnoreCase("SupportedKeyFormats"));
     }
 
     /*
@@ -940,24 +907,42 @@ public final class Security {
     private static boolean isConstraintSatisfied(String attribute,
                                                  String value,
                                                  String prop) {
-        // For KeySize, prop is the max key size the
-        // provider supports for a specific <crypto_service>.<algorithm>.
+        // Check the "Java Security Standard Algorithm Names" guide for the
+        // name and value format of the supported Service Attributes
+
+        // For KeySize, prop is the max key size the provider supports
+        // for a specific <crypto_service>.<algorithm>.
         if (attribute.equalsIgnoreCase("KeySize")) {
             int requestedSize = Integer.parseInt(value);
             int maxSize = Integer.parseInt(prop);
             return requestedSize <= maxSize;
         }
 
-        // For Type, prop is the type of the implementation
-        // for a specific <crypto service>.<algorithm>.
-        if (attribute.equalsIgnoreCase("ImplementedIn")) {
+        // Handle attributes with composite values
+        if (isKnownComposite(attribute)) {
+            value = value.toUpperCase();
+            prop = prop.toUpperCase();
+
+            if (value.indexOf('|') != -1) {
+                StringTokenizer st = new StringTokenizer(value, "| ");
+                while (st.hasMoreTokens()) {
+                    // check individual component for match and bail if no match
+                    if (prop.indexOf(st.nextToken()) == -1) {
+                        return false;
+                    };
+                }
+                return true;
+            } else {
+                return (prop.indexOf(value) != -1);
+            }
+        } else {
+            // direct string compare (ignore case)
             return value.equalsIgnoreCase(prop);
         }
-
-        return false;
     }
 
     static String[] getFilterComponents(String filterKey, String filterValue) {
+
         int algIndex = filterKey.indexOf('.');
 
         if (algIndex < 0) {
@@ -982,7 +967,7 @@ public final class Security {
             // The filterValue is a non-empty string. So the filterKey must be
             // in the format of
             // <crypto_service>.<algorithm_or_type> <attribute_name>
-            int attrIndex = filterKey.indexOf(' ');
+            int attrIndex = filterKey.indexOf(' ', algIndex + 1);
 
             if (attrIndex == -1) {
                 // There is no attribute name in the filter.
