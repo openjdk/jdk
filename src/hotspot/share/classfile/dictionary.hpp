@@ -46,7 +46,7 @@ class Dictionary : public CHeapObj<mtClass> {
 
   class Config {
    public:
-    typedef DictionaryEntry* Value;
+    using Value = DictionaryEntry*;
     static uintx get_hash(Value const& value, bool* is_dead);
     static void* allocate_node(void* context, size_t size, Value const& value);
     static void free_node(void* context, void* memory, Value const& value);
@@ -63,7 +63,7 @@ class Dictionary : public CHeapObj<mtClass> {
   int table_size() const;
 
 public:
-  Dictionary(ClassLoaderData* loader_data, int table_size, bool resizable = false);
+  Dictionary(ClassLoaderData* loader_data, size_t table_size, bool resizable = false);
   ~Dictionary();
 
   void add_klass(JavaThread* current, Symbol* class_name, InstanceKlass* obj);

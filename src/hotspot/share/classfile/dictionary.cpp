@@ -53,7 +53,7 @@ const size_t END_SIZE = 24;
 // If a chain gets to 100 something might be wrong
 const size_t REHASH_LEN = 100;
 
-Dictionary::Dictionary(ClassLoaderData* loader_data, int table_size, bool resizable)
+Dictionary::Dictionary(ClassLoaderData* loader_data, size_t table_size, bool resizable)
   : _resizable(resizable), _number_of_entries(0), _loader_data(loader_data) {
 
   size_t start_size_log_2 = MAX2(ceil_log2(table_size), (size_t)2); // 2 is minimum size even though some dictionaries only have one entry
@@ -409,7 +409,7 @@ void Dictionary::validate_protection_domain(InstanceKlass* klass,
 // During class loading we may have cached a protection domain that has
 // since been unreferenced, so this entry should be cleared.
 void Dictionary::clean_cached_protection_domains(GrowableArray<ProtectionDomainEntry*>* delete_list) {
-  assert(JavaThread::current()->is_Java_thread(), "only called by JavaThread");
+  assert(Thread::current()->is_Java_thread(), "only called by JavaThread");
   assert_lock_strong(SystemDictionary_lock);
   assert(!loader_data()->has_class_mirror_holder(), "cld should have a ClassLoader holder not a Class holder");
 
