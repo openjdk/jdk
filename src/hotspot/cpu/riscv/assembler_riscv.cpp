@@ -191,8 +191,9 @@ void Assembler::li32(Register Rd, int32_t imm) {
   void Assembler::NAME(const Address &adr, Register temp) {    \
     switch (adr.getMode()) {                                   \
       case Address::literal: {                                 \
-        relocate(adr.rspec());                                 \
-        NAME(adr.target(), temp);                              \
+        relocate(adr.rspec(), [&] {                            \
+          NAME(adr.target(), temp);                            \
+        });                                                    \
         break;                                                 \
       }                                                        \
       case Address::base_plus_offset: {                        \

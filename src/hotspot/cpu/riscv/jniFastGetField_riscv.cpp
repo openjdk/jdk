@@ -73,11 +73,11 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
   MacroAssembler* masm = new MacroAssembler(&cbuf);
   address fast_entry = __ pc();
 
-  Label slow;
-  int32_t offset = 0;
-  __ la_patchable(rcounter_addr, SafepointSynchronize::safepoint_counter_addr(), offset);
-  __ addi(rcounter_addr, rcounter_addr, offset);
+  __ la_patchable(rcounter_addr, SafepointSynchronize::safepoint_counter_addr(), [&] (int32_t off) {
+    __ addi(rcounter_addr, rcounter_addr, off);
+  });
 
+  Label slow;
   Address safepoint_counter_addr(rcounter_addr, 0);
   __ lwu(rcounter, safepoint_counter_addr);
   // An even value means there are no ongoing safepoint operations
@@ -90,11 +90,11 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
 
     // Check to see if a field access watch has been set before we
     // take the fast path.
-    int32_t offset2;
     __ la_patchable(result,
                     ExternalAddress((address) JvmtiExport::get_field_access_count_addr()),
-                    offset2);
-    __ lwu(result, Address(result, offset2));
+                    [&] (int32_t off) {
+      __ lwu(result, Address(result, off));
+    });
     __ bnez(result, slow);
 
     __ mv(robj, c_rarg1);
@@ -169,9 +169,8 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
 
   {
     __ enter();
-    int32_t tmp_offset = 0;
-    __ la_patchable(t0, ExternalAddress(slow_case_addr), tmp_offset);
-    __ jalr(x1, t0, tmp_offset);
+    __ la_patchable(t0, ExternalAddress(slow_case_addr), [&] (int32_t off) {
+    __ jalr(x1, t0, off);});
     __ leave();
     __ ret();
   }
