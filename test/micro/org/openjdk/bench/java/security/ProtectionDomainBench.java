@@ -44,15 +44,15 @@ import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.bench.util.InMemoryJavaCompiler;
 
 @State(Scope.Thread)
-@OutputTimeUnit(TimeUnit.MILLISECONDS)
-@Warmup(iterations = 15)
-@Measurement(iterations = 15)
-@BenchmarkMode(Mode.SingleShotTime)
+@OutputTimeUnit(TimeUnit.SECONDS)
+@Warmup(iterations = 5, time = 2)
+@Measurement(iterations = 5, time = 2)
+@BenchmarkMode(Mode.Throughput)
 @Fork(value = 3, jvmArgsAppend={"-Djava.security.manager=allow"})
 public class ProtectionDomainBench {
 
-    @Param({"10", "100"})
-    public int numberOfClasses = 50;
+    @Param({"100"})
+    public int numberOfClasses;
 
     URL u;
 
@@ -65,15 +65,15 @@ public class ProtectionDomainBench {
     Permissions p;
 
     static String B(int count) {
-        return new String("public class B" + count + " {"
+        return "public class B" + count + " {"
                 + "   static int intField;"
                 + "   public static void compiledMethod() { "
                 + "       intField++;"
                 + "   }"
-                + "}");
+                + "}";
     }
 
-    @Setup(Level.Iteration)
+    @Setup(Level.Trial)
     public void setupClasses() throws Exception {
         compiledClasses = new byte[numberOfClasses][];
         loadedClasses = new Class[numberOfClasses];
