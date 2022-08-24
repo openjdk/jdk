@@ -50,10 +50,10 @@ public class FileSizeCheck {
                     "Scroll Down if required. \n\n" +
                     "Test 1: If the size of 1st-Empty-File shows 0.0 KB\n" +
                     "Test 2: If the size of 2nd-File-1-Byte shows 0.1 KB\n" +
-                    "Test 3: If the size of 3rd-File-500-Byte shows 0.5 KB\n" +
-                    "Test 4: If the size of 4th-File-1000-Byte shows 1.0 KB\n" +
-                    "Test 5: If the size of 5th-File-2047-Byte shows 2.0 KB\n" +
-                    "Test 6: If the size of 6th-File-2.5-KB shows 2.5 KB\n" +
+                    "Test 3: If the size of 3rd-File-160-Byte shows 0.1 KB\n" +
+                    "Test 4: If the size of 4th-File-500-Byte shows 0.5 KB\n" +
+                    "Test 5: If the size of 5th-File-1000-Byte shows 1.0 KB\n" +
+                    "Test 6: If the size of 6th-File-2047-Byte shows 2.0 KB\n" +
                     "Test 7: If the size of 7th-File-999-KB shows 999.0 KB\n" +
                     "Test 8: If the size of 8th-File-1000-KB shows 1.0 MB\n" +
                     "Test 9: If the size of 9th-File-2.8-MB shows 2.8 MB\n\n" +
@@ -62,11 +62,12 @@ public class FileSizeCheck {
     public static void test() {
         JFrame frame = new JFrame("JFileChooser File Size test");
         JFileChooser fc = new JFileChooser();
-        Path dir = Paths.get(System.getProperty("test.src"));
-        String[] tempFilesName = {"1-Empty-File", "2-File-1-Byte", "3-File-500-Byte",
-                "4-File-1000-Byte", "5-File-2047-Byte", "6-File-2.5-KB",
-                "7-File-999-KB", "8-File-1000-KB", "9-File-2.8-MB"};
-        int[] tempFilesSize = {0, 1, 500, 1_000, 2_047, 2_500, 999_000, 1_000_000, 2_800_000};
+        Path dir = Paths.get(".");
+        String[] tempFilesName = {"1st-Empty-File", "2nd-File-1-Byte", "3rd-File-160-Byte",
+                "4th-File-500-Byte", "5th-File-1000-Byte", "6th-File-2047-Byte",
+                "7th-File-999-KB", "8th-File-1000-KB", "9th-File-2.8-MB"};
+
+        int[] tempFilesSize = {0, 1, 160, 500, 1_000, 2_047, 999_000, 1_000_000, 2_800_000};
 
         tempFilePaths = new Path[tempFilesName.length];
         PassFailJFrame.addTestWindow(frame);

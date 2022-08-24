@@ -1184,7 +1184,6 @@ public class FilePane extends JPanel implements PropertyChangeListener {
             // formatting cell text
             // TODO: it's rather a temporary trick, to be revised
             String text;
-            Object[] objs = new Object[1];
 
             if (value == null) {
                 text = "";
@@ -1197,48 +1196,53 @@ public class FilePane extends JPanel implements PropertyChangeListener {
 
             } else if (value instanceof Long len) {
                 /*
-                 * Code block is relevant to linux
-                 * File size display upto 1 decimal precision
+                 * Code block is relevant to Linux.
+                 * File size is display up to 1 decimal precision.
                  * Base-10 number system used for formatting file size
-                 * similar to linux file system
-                 * Empty file size show as 0.0 KB
-                 * 1->100 byte files show as 0.1 KB and so on
+                 * similar to how it's formatted in file managers on Linux.
+                 * Empty file size is shown as 0.0 KB,
+                 * 1-199-byte files are shown as 0.1 KB,
+                 * 200-299-byte files are shown as 0.2 KB and so on.
                  */
+                Object[] displayedFileSize = new Object[1];
+
                 if (listViewWindowsStyle) {
                     updateMessageFormatPattern(kiloByteString);
                     if (len == 0) {
-                        objs[0] = 0.0;
+                        displayedFileSize[0] = 0.0;
                     } else if (len > 0 && len < 100L) {
-                        objs[0] = 0.1;
+                        displayedFileSize[0] = 0.1;
                     } else {
-                        objs[0] = formatToDoubleValue(len);
-                    }
-                } else if (len < 100L) {
-                    updateMessageFormatPattern(kiloByteString);
-                    if (len == 0) {
-                        objs[0] = 0.0;
-                    } else {
-                        objs[0] = 0.1;
+                        displayedFileSize[0] = formatToDoubleValue(len);
                     }
                 } else {
-                    double kbVal = formatToDoubleValue(len);
-                    len = (long)kbVal;
-                    if (kbVal < baseFileSize) {
+                    if (len < 100L) {
                         updateMessageFormatPattern(kiloByteString);
-                        objs[0] = kbVal;
-                    } else {
-                        double mbVal = formatToDoubleValue(len);
-                        len = (long)mbVal;
-                        if (mbVal < baseFileSize) {
-                            updateMessageFormatPattern(megaByteString);
-                            objs[0] = mbVal;
+                        if (len == 0) {
+                            displayedFileSize[0] = 0.0;
                         } else {
-                            updateMessageFormatPattern(gigaByteString);
-                            objs[0] = formatToDoubleValue(len);
+                            displayedFileSize[0] = 0.1;
+                        }
+                    } else {
+                        double kbVal = formatToDoubleValue(len);
+                        len = (long)kbVal;
+                        if (kbVal < baseFileSize) {
+                            updateMessageFormatPattern(kiloByteString);
+                            displayedFileSize[0] = kbVal;
+                        } else {
+                            double mbVal = formatToDoubleValue(len);
+                            len = (long)mbVal;
+                            if (mbVal < baseFileSize) {
+                                updateMessageFormatPattern(megaByteString);
+                                displayedFileSize[0] = mbVal;
+                            } else {
+                                updateMessageFormatPattern(gigaByteString);
+                                displayedFileSize[0] = formatToDoubleValue(len);
+                            }
                         }
                     }
                 }
-                text = mf.format(objs);
+                text = mf.format(displayedFileSize);
 
             } else if (value instanceof Date) {
                 text = df.format((Date)value);
@@ -1257,8 +1261,13 @@ public class FilePane extends JPanel implements PropertyChangeListener {
             mf.setFormat(0, nf);
         }
 
-        private static double formatToDoubleValue(long len) {
-            return (len / 100L) / 10.0d;
+        /*
+         * File size is converted to single decimal precision to keep
+         * it similar to how it's formatted in file managers on Linux.
+         * Returns the file size in one decimal precision.
+         */
+        private static double formatToDoubleValue(long fileSize) {
+            return (fileSize / 100L) / 10.0d;
         }
     }
 
