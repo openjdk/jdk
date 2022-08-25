@@ -1353,7 +1353,7 @@ void MacroAssembler::reinit_heapbase() {
       mv(xheapbase, CompressedOops::ptrs_base());
     } else {
       int32_t offset = 0;
-      la_patchable(xheapbase, ExternalAddress((address)CompressedOops::ptrs_base_addr()), offset);
+      la_patchable(xheapbase, ExternalAddress(CompressedOops::ptrs_base_addr()), offset);
       ld(xheapbase, Address(xheapbase, offset));
     }
   }

@@ -2453,7 +2453,7 @@ void MacroAssembler::verify_heapbase(const char* msg) {
   if (CheckCompressedOops) {
     Label ok;
     push(1 << rscratch1->encoding(), sp); // cmpptr trashes rscratch1
-    cmpptr(rheapbase, ExternalAddress((address)CompressedOops::ptrs_base_addr()));
+    cmpptr(rheapbase, ExternalAddress(CompressedOops::ptrs_base_addr()));
     br(Assembler::EQ, ok);
     stop(msg);
     bind(ok);
@@ -2587,7 +2587,7 @@ void MacroAssembler::reinit_heapbase()
     if (Universe::is_fully_initialized()) {
       mov(rheapbase, CompressedOops::ptrs_base());
     } else {
-      lea(rheapbase, ExternalAddress((address)CompressedOops::ptrs_base_addr()));
+      lea(rheapbase, ExternalAddress(CompressedOops::ptrs_base_addr()));
       ldr(rheapbase, Address(rheapbase));
     }
   }
