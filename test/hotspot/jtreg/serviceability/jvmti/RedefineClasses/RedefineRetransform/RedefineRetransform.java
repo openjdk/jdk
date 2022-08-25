@@ -55,7 +55,7 @@ public class RedefineRetransform {
         System.loadLibrary("RedefineRetransform");
     }
 
-	@Retention(RetentionPolicy.RUNTIME)
+    @Retention(RetentionPolicy.RUNTIME)
     @interface ClassVersion {
         int value();
     }
