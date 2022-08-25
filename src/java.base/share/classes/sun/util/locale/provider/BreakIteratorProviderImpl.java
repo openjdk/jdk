@@ -35,7 +35,6 @@ import java.util.Locale;
 import java.util.MissingResourceException;
 import java.util.Objects;
 import java.util.Set;
-import java.util.stream.IntStream;
 
 import jdk.internal.util.regex.Grapheme;
 import sun.text.DictionaryBasedBreakIterator;
@@ -248,14 +247,15 @@ public class BreakIteratorProviderImpl extends BreakIteratorProvider
 
         @Override
         public int following(int offset) {
-            if (offset >= this.offset && this.offset == boundaries.get(boundaries.size() - 1)) {
+            var lastBoundary = boundaries.get(boundaries.size() - 1);
+            if (offset >= this.offset && this.offset == lastBoundary) {
                 return DONE;
             }
 
-            boundaryIndex = IntStream.range(0, boundaries.size())
-                    .filter(i -> boundaries.get(i) > offset)
-                    .findFirst()
-                    .orElse(boundaries.size() - 1);
+            boundaryIndex = Collections.binarySearch(boundaries, Math.min(offset + 1, lastBoundary));
+            if (boundaryIndex < 0) {
+                boundaryIndex = -boundaryIndex - 1;
+            }
 
             return current();
         }

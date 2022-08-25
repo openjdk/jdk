@@ -26,8 +26,8 @@
  * @bug 7071819 8221431 8239383 8273430 8291660
  * @summary tests Unicode Extended Grapheme support
  * @library /lib/testlibrary/java/lang
- * @compile --add-exports java.base/jdk.internal.util.regex=ALL-UNNAMED GraphemeTest.java
- * @run testng/othervm --add-exports java.base/jdk.internal.util.regex=ALL-UNNAMED --add-opens java.base/jdk.internal.util.regex=ALL-UNNAMED GraphemeTest
+ * @modules java.base/jdk.internal.util.regex:+open
+ * @run testng GraphemeTest
  */
 
 import java.lang.invoke.MethodHandles;
