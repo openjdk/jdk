@@ -91,7 +91,9 @@ class TemplateInterpreterGenerator: public AbstractInterpreterGenerator {
   address generate_abstract_entry(void);
   address generate_math_entry(AbstractInterpreter::MethodKind kind);
   address generate_Reference_get_entry();
+#if 0
   address generate_Continuation_doYield_entry();
+#endif
   address generate_CRC32_update_entry();
   address generate_CRC32_updateBytes_entry(AbstractInterpreter::MethodKind kind);
   address generate_CRC32C_updateBytes_entry(AbstractInterpreter::MethodKind kind);

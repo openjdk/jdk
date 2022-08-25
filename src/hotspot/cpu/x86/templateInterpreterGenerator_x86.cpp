@@ -655,31 +655,6 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
 
 // End of helpers
 
-address TemplateInterpreterGenerator::generate_Continuation_doYield_entry(void) {
-  if (!Continuations::enabled()) return nullptr;
-
-  address entry = __ pc();
-  assert(StubRoutines::cont_doYield() != NULL, "stub not yet generated");
-
-#ifdef _LP64
-  const Register sender_sp = r13;
-  const Register return_addr = rax;
-  // This frame needs to be walkable as a compiled frame, so
-  // undo any c2i adapter adjustment by reseting sp to
-  // sender sp.  Luckily there are no arguments to worry about,
-  // just stack padding because of alignment.
-  __ pop(return_addr);
-  __ mov(rsp, sender_sp);
-  __ push(return_addr);
-#endif
-  __ push_cont_fastpath();
-
-  __ jump(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::cont_doYield())));
-  // return value is in rax
-
-  return entry;
-}
-
 // Method entry for java.lang.ref.Reference.get.
 address TemplateInterpreterGenerator::generate_Reference_get_entry(void) {
   // Code: _aload_0, _getfield, _areturn

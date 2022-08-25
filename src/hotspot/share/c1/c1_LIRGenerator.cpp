@@ -3019,10 +3019,6 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
     do_vectorizedMismatch(x);
     break;
 
-  case vmIntrinsics::_Continuation_doYield:
-    do_continuation_doYield(x);
-    break;
-
   case vmIntrinsics::_blackhole:
     do_blackhole(x);
     break;

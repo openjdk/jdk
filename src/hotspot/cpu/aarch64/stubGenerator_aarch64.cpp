@@ -6612,69 +6612,6 @@ class StubGenerator: public StubCodeGenerator {
   }
 #endif // LINUX
 
-  RuntimeStub* generate_cont_doYield() {
-    if (!Continuations::enabled()) return nullptr;
-
-    const char *name = "cont_doYield";
-
-    enum layout {
-      rfp_off1,
-      rfp_off2,
-      lr_off,
-      lr_off2,
-      framesize // inclusive of return address
-    };
-    // assert(is_even(framesize/2), "sp not 16-byte aligned");
-
-    int insts_size = 512;
-    int locs_size  = 64;
-    CodeBuffer code(name, insts_size, locs_size);
-    OopMapSet* oop_maps  = new OopMapSet();
-    MacroAssembler* masm = new MacroAssembler(&code);
-    MacroAssembler* _masm = masm;
-
-    address start = __ pc();
-
-    __ enter();
-
-    __ mov(c_rarg1, sp);
-
-    int frame_complete = __ pc() - start;
-    address the_pc = __ pc();
-
-    __ post_call_nop(); // this must be exactly after the pc value that is pushed into the frame info, we use this nop for fast CodeBlob lookup
-
-    __ mov(c_rarg0, rthread);
-    __ set_last_Java_frame(sp, rfp, the_pc, rscratch1);
-    __ call_VM_leaf(Continuation::freeze_entry(), 2);
-    __ reset_last_Java_frame(true);
-
-    Label pinned;
-
-    __ cbnz(r0, pinned);
-
-    // We've succeeded, set sp to the ContinuationEntry
-    __ ldr(rscratch1, Address(rthread, JavaThread::cont_entry_offset()));
-    __ mov(sp, rscratch1);
-    continuation_enter_cleanup(masm);
-
-    __ bind(pinned); // pinned -- return to caller
-
-    __ leave();
-    __ ret(lr);
-
-    OopMap* map = new OopMap(framesize, 1);
-    oop_maps->add_gc_map(the_pc - start, map);
-
-    RuntimeStub* stub = // codeBlob framesize is in words (not VMRegImpl::slot_size)
-    RuntimeStub::new_runtime_stub(name,
-                                  &code,
-                                  frame_complete,
-                                  (framesize >> (LogBytesPerWord - LogBytesPerInt)),
-                                  oop_maps, false);
-    return stub;
-  }
-
   address generate_cont_thaw(Continuation::thaw_kind kind) {
     bool return_barrier = Continuation::is_thaw_return_barrier(kind);
     bool return_barrier_exception = Continuation::is_thaw_return_barrier_exception(kind);
@@ -7848,9 +7785,6 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_cont_thaw          = generate_cont_thaw();
     StubRoutines::_cont_returnBarrier = generate_cont_returnBarrier();
     StubRoutines::_cont_returnBarrierExc = generate_cont_returnBarrier_exception();
-    StubRoutines::_cont_doYield_stub = generate_cont_doYield();
-    StubRoutines::_cont_doYield      = StubRoutines::_cont_doYield_stub == nullptr ? nullptr
-                                        : StubRoutines::_cont_doYield_stub->entry_point();
 
     JFR_ONLY(StubRoutines::_jfr_write_checkpoint_stub = generate_jfr_write_checkpoint();)
     JFR_ONLY(StubRoutines::_jfr_write_checkpoint = StubRoutines::_jfr_write_checkpoint_stub->entry_point();)

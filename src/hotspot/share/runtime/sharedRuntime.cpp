@@ -97,6 +97,7 @@ SafepointBlob*      SharedRuntime::_polling_page_return_handler_blob;
 UncommonTrapBlob*   SharedRuntime::_uncommon_trap_blob;
 #endif // COMPILER2
 
+nmethod*            SharedRuntime::_cont_doYield_stub;
 
 //----------------------------generate_stubs-----------------------------------
 void SharedRuntime::generate_stubs() {
