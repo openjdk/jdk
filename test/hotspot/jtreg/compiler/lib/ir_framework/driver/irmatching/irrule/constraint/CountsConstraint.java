@@ -23,7 +23,7 @@
 
 package compiler.lib.ir_framework.driver.irmatching.irrule.constraint;
 
-import compiler.lib.ir_framework.IR;
+import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.IRNode;
 import compiler.lib.ir_framework.shared.Comparison;
 
@@ -39,8 +39,8 @@ import compiler.lib.ir_framework.shared.Comparison;
 public class CountsConstraint extends Constraint {
     private final Comparison<Integer> comparison;
 
-    public CountsConstraint(String regex, Comparison<Integer> comparison, int index) {
-        super(regex, index);
+    public CountsConstraint(String regex, int index, CompilePhase compilePhase, Comparison<Integer> comparison) {
+        super(regex, index, compilePhase);
         this.comparison = comparison;
     }
 

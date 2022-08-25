@@ -23,6 +23,7 @@
 
 package compiler.lib.ir_framework.driver.irmatching.irrule.constraint;
 
+import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.IRNode;
 
 /**
@@ -40,10 +41,12 @@ import compiler.lib.ir_framework.IRNode;
 public class Constraint {
     private final String regex;
     private final int index; // constraint indices start at 1.
+    private final CompilePhase compilePhase;
 
-    public Constraint(String regex, int index) {
+    public Constraint(String regex, int index, CompilePhase compilePhase) {
         this.regex = regex;
         this.index = index;
+        this.compilePhase = compilePhase;
     }
 
     public String getRegex() {
@@ -52,5 +55,9 @@ public class Constraint {
 
     public int getIndex() {
         return index;
+    }
+
+    public CompilePhase getCompilePhase() {
+        return compilePhase;
     }
 }

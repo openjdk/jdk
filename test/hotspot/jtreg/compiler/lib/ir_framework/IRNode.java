@@ -23,32 +23,38 @@
 
 package compiler.lib.ir_framework;
 
+import compiler.lib.ir_framework.driver.irmatching.mapping.IRNodeMappings;
 import compiler.lib.ir_framework.driver.irmatching.regexes.DefaultRegexes;
 import compiler.lib.ir_framework.driver.irmatching.regexes.IdealDefaultRegexes;
+import compiler.lib.ir_framework.driver.irmatching.regexes.MachDefaultRegexes;
 import compiler.lib.ir_framework.driver.irmatching.regexes.OptoAssemblyDefaultRegexes;
 import compiler.lib.ir_framework.shared.CheckedTestFrameworkException;
 import jdk.test.lib.Platform;
 import jdk.test.whitebox.WhiteBox;
 
 /**
- * This class specifies placeholder strings for IR nodes that can be used in {@link IR#failOn()} and {@link IR#counts()}
- * attributes to define IR constraints. These placeholder strings are replaced with default regexes (defined in
- * {@link IdealDefaultRegexes} and {@link OptoAssemblyDefaultRegexes}) by the IR framework depending on the specified
- * compile phases in {@link IR#phase()}. If a compile phase does not provide a default string for placeholder string,
- * a test format violation is reported.
+ * This class specifies IR node placeholder strings that can be used in {@link IR#failOn()} and/or {@link IR#counts()}
+ * attributes to define IR constraints. These placeholder strings are replaced with default regexes (defined in package
+ * {@link compiler.lib.ir_framework.driver.irmatching.regexes}) by the IR framework depending on the specified
+ * compile phases in {@link IR#phase()} and the provided mapping in {@link IRNodeMappings}.
+ * <p>
+ * If an IR node is either missing a mapping in {@link IRNodeMappings} or does not provide a default regex for a
+ * specified compile phase in {@link IR#phase}, a test format violation is reported.
  *
  * @see DefaultRegexes
  * @see IdealDefaultRegexes
+ * @see MachDefaultRegexes
  * @see OptoAssemblyDefaultRegexes
  */
 public class IRNode {
     private static final String PREFIX = "_#";
     private static final String POSTFIX = "#_";
-    private static final String COMPOSITE_PREFIX = "P#";
-    private static final String COMPOSITE_PREFIX_NODE = PREFIX + COMPOSITE_PREFIX;
+    private static final String COMPOSITE_PREFIX = PREFIX + "C#";
 
     /*
-     * List of placeholder strings for which at least one default regex exists.
+     * List of IR node placeholder strings for which at least one default regex exists. Such an IR node must start with
+     * PREFIX (normal IR nodes) or COMPOSITE_PREFIX (for composite IR nodes) and end with POSTFIX.
+     * The mappings from these placeholder strings to regexes are defined in IRNodeMappings.
      */
     public static final String ABS_D = PREFIX + "ABS_D" + POSTFIX;
     public static final String ABS_F = PREFIX + "ABS_F" + POSTFIX;
@@ -61,21 +67,21 @@ public class IRNode {
     public static final String ADD_VI = PREFIX + "ADD_VI" + POSTFIX;
     public static final String ALLOC = PREFIX + "ALLOC" + POSTFIX;
     public static final String ALLOC_ARRAY = PREFIX + "ALLOC_ARRAY" + POSTFIX;
-    public static final String ALLOC_ARRAY_OF = PREFIX + COMPOSITE_PREFIX + "ALLOC_ARRAY_OF" + POSTFIX;
-    public static final String ALLOC_OF = PREFIX + COMPOSITE_PREFIX + "ALLOC_OF" + POSTFIX;
+    public static final String ALLOC_ARRAY_OF = COMPOSITE_PREFIX + "ALLOC_ARRAY_OF" + POSTFIX;
+    public static final String ALLOC_OF = COMPOSITE_PREFIX + "ALLOC_OF" + POSTFIX;
     public static final String AND = PREFIX + "AND" + POSTFIX;
     public static final String AND_I = PREFIX + "AND_I" + POSTFIX;
     public static final String AND_L = PREFIX + "AND_L" + POSTFIX;
     public static final String AND_V = PREFIX + "AND_V" + POSTFIX;
     public static final String AND_V_MASK = PREFIX + "AND_V_MASK" + POSTFIX;
     public static final String CALL = PREFIX + "CALL" + POSTFIX;
-    public static final String CALL_OF_METHOD = PREFIX + COMPOSITE_PREFIX + "CALL_OF_METHOD" + POSTFIX;
+    public static final String CALL_OF_METHOD = COMPOSITE_PREFIX + "CALL_OF_METHOD" + POSTFIX;
     public static final String CAST_II = PREFIX + "CAST_II" + POSTFIX;
     public static final String CAST_LL = PREFIX + "CAST_LL" + POSTFIX;
     public static final String CHECKCAST_ARRAY = PREFIX + "CHECKCAST_ARRAY" + POSTFIX;
     // Does not work on s390 (a rule containing this regex will be skipped on s390).
     public static final String CHECKCAST_ARRAYCOPY = PREFIX + "CHECKCAST_ARRAYCOPY" + POSTFIX;
-    public static final String CHECKCAST_ARRAY_OF = PREFIX + COMPOSITE_PREFIX + "CHECKCAST_ARRAY_OF" + POSTFIX;
+    public static final String CHECKCAST_ARRAY_OF = COMPOSITE_PREFIX + "CHECKCAST_ARRAY_OF" + POSTFIX;
     public static final String CLASS_CHECK_TRAP = PREFIX + "CLASS_CHECK_TRAP" + POSTFIX;
     public static final String CMOVEI = PREFIX + "CMOVEI" + POSTFIX;
     public static final String CMP_U = PREFIX + "CMP_U" + POSTFIX;
@@ -91,7 +97,7 @@ public class IRNode {
     public static final String DIV = PREFIX + "DIV" + POSTFIX;
     public static final String DIV_BY_ZERO_TRAP = PREFIX + "DIV_BY_ZERO_TRAP" + POSTFIX;
     public static final String DIV_L = PREFIX + "DIV_L" + POSTFIX;
-    public static final String DYNAMIC_CALL_OF_METHOD = PREFIX + COMPOSITE_PREFIX + "DYNAMIC_CALL_OF_METHOD" + POSTFIX;
+    public static final String DYNAMIC_CALL_OF_METHOD = COMPOSITE_PREFIX + "DYNAMIC_CALL_OF_METHOD" + POSTFIX;
     public static final String FAST_LOCK = PREFIX + "FAST_LOCK" + POSTFIX;
     public static final String FAST_UNLOCK = PREFIX + "FAST_UNLOCK" + POSTFIX;
     public static final String FIELD_ACCESS = PREFIX + "FIELD_ACCESS" + POSTFIX;
@@ -101,28 +107,28 @@ public class IRNode {
     public static final String INTRINSIC_TRAP = PREFIX + "INTRINSIC_TRAP" + POSTFIX;
     public static final String LOAD = PREFIX + "LOAD" + POSTFIX;
     public static final String LOAD_B = PREFIX + "LOAD_B" + POSTFIX;
-    public static final String LOAD_B_OF_CLASS = PREFIX + COMPOSITE_PREFIX + "LOAD_B_OF_CLASS" + POSTFIX;
+    public static final String LOAD_B_OF_CLASS = COMPOSITE_PREFIX + "LOAD_B_OF_CLASS" + POSTFIX;
     public static final String LOAD_D = PREFIX + "LOAD_D" + POSTFIX;
-    public static final String LOAD_D_OF_CLASS = PREFIX + COMPOSITE_PREFIX + "LOAD_D_OF_CLASS" + POSTFIX;
+    public static final String LOAD_D_OF_CLASS = COMPOSITE_PREFIX + "LOAD_D_OF_CLASS" + POSTFIX;
     public static final String LOAD_F = PREFIX + "LOAD_F" + POSTFIX;
-    public static final String LOAD_F_OF_CLASS = PREFIX + COMPOSITE_PREFIX + "LOAD_F_OF_CLASS" + POSTFIX;
+    public static final String LOAD_F_OF_CLASS = COMPOSITE_PREFIX + "LOAD_F_OF_CLASS" + POSTFIX;
     public static final String LOAD_I = PREFIX + "LOAD_I" + POSTFIX;
-    public static final String LOAD_I_OF_CLASS = PREFIX + COMPOSITE_PREFIX + "LOAD_I_OF_CLASS" + POSTFIX;
+    public static final String LOAD_I_OF_CLASS = COMPOSITE_PREFIX + "LOAD_I_OF_CLASS" + POSTFIX;
     public static final String LOAD_KLASS = PREFIX + "LOAD_KLASS" + POSTFIX;
     public static final String LOAD_L = PREFIX + "LOAD_L" + POSTFIX;
-    public static final String LOAD_L_OF_CLASS = PREFIX + COMPOSITE_PREFIX + "LOAD_L_OF_CLASS" + POSTFIX;
+    public static final String LOAD_L_OF_CLASS = COMPOSITE_PREFIX + "LOAD_L_OF_CLASS" + POSTFIX;
     public static final String LOAD_N = PREFIX + "LOAD_N" + POSTFIX;
-    public static final String LOAD_N_OF_CLASS = PREFIX + COMPOSITE_PREFIX + "LOAD_N_OF_CLASS" + POSTFIX;
-    public static final String LOAD_OF_CLASS = PREFIX + COMPOSITE_PREFIX + "LOAD_OF_CLASS" + POSTFIX;
-    public static final String LOAD_OF_FIELD = PREFIX + COMPOSITE_PREFIX + "LOAD_OF_FIELD" + POSTFIX;
+    public static final String LOAD_N_OF_CLASS = COMPOSITE_PREFIX + "LOAD_N_OF_CLASS" + POSTFIX;
+    public static final String LOAD_OF_CLASS = COMPOSITE_PREFIX + "LOAD_OF_CLASS" + POSTFIX;
+    public static final String LOAD_OF_FIELD = COMPOSITE_PREFIX + "LOAD_OF_FIELD" + POSTFIX;
     public static final String LOAD_P = PREFIX + "LOAD_P" + POSTFIX;
-    public static final String LOAD_P_OF_CLASS = PREFIX + COMPOSITE_PREFIX + "LOAD_P_OF_CLASS" + POSTFIX;
+    public static final String LOAD_P_OF_CLASS = COMPOSITE_PREFIX + "LOAD_P_OF_CLASS" + POSTFIX;
     public static final String LOAD_S = PREFIX + "LOAD_S" + POSTFIX;
-    public static final String LOAD_S_OF_CLASS = PREFIX + COMPOSITE_PREFIX + "LOAD_S_OF_CLASS" + POSTFIX;
+    public static final String LOAD_S_OF_CLASS = COMPOSITE_PREFIX + "LOAD_S_OF_CLASS" + POSTFIX;
     public static final String LOAD_UB = PREFIX + "LOAD_UB" + POSTFIX;
-    public static final String LOAD_UB_OF_CLASS = PREFIX + COMPOSITE_PREFIX + "LOAD_UB_OF_CLASS" + POSTFIX;
+    public static final String LOAD_UB_OF_CLASS = COMPOSITE_PREFIX + "LOAD_UB_OF_CLASS" + POSTFIX;
     public static final String LOAD_US = PREFIX + "LOAD_US" + POSTFIX;
-    public static final String LOAD_US_OF_CLASS = PREFIX + COMPOSITE_PREFIX + "LOAD_US_OF_CLASS" + POSTFIX;
+    public static final String LOAD_US_OF_CLASS = COMPOSITE_PREFIX + "LOAD_US_OF_CLASS" + POSTFIX;
     public static final String LOAD_VECTOR = PREFIX + "LOAD_VECTOR" + POSTFIX;
     public static final String LONG_COUNTED_LOOP = PREFIX + "LONG_COUNTED_LOOP" + POSTFIX;
     public static final String LOOP = PREFIX + "LOOP" + POSTFIX;
@@ -157,26 +163,26 @@ public class IRNode {
     public static final String RSHIFT_VS = PREFIX + "RSHIFT_VS" + POSTFIX;
     public static final String SAFEPOINT = PREFIX + "SAFEPOINT" + POSTFIX;
     public static final String SCOPE_OBJECT = PREFIX + "SCOPE_OBJECT" + POSTFIX;
-    public static final String STATIC_CALL_OF_METHOD = PREFIX + COMPOSITE_PREFIX + "STATIC_CALL_OF_METHOD" + POSTFIX;
+    public static final String STATIC_CALL_OF_METHOD = COMPOSITE_PREFIX + "STATIC_CALL_OF_METHOD" + POSTFIX;
     public static final String STORE = PREFIX + "STORE" + POSTFIX;
     public static final String STORE_B = PREFIX + "STORE_B" + POSTFIX;
-    public static final String STORE_B_OF_CLASS = PREFIX + COMPOSITE_PREFIX + "STORE_B_OF_CLASS" + POSTFIX;
+    public static final String STORE_B_OF_CLASS = COMPOSITE_PREFIX + "STORE_B_OF_CLASS" + POSTFIX;
     public static final String STORE_C = PREFIX + "STORE_C" + POSTFIX;
-    public static final String STORE_C_OF_CLASS = PREFIX + COMPOSITE_PREFIX + "STORE_C_OF_CLASS" + POSTFIX;
+    public static final String STORE_C_OF_CLASS = COMPOSITE_PREFIX + "STORE_C_OF_CLASS" + POSTFIX;
     public static final String STORE_D = PREFIX + "STORE_D" + POSTFIX;
-    public static final String STORE_D_OF_CLASS = PREFIX + COMPOSITE_PREFIX + "STORE_D_OF_CLASS" + POSTFIX;
+    public static final String STORE_D_OF_CLASS = COMPOSITE_PREFIX + "STORE_D_OF_CLASS" + POSTFIX;
     public static final String STORE_F = PREFIX + "STORE_F" + POSTFIX;
-    public static final String STORE_F_OF_CLASS = PREFIX + COMPOSITE_PREFIX + "STORE_F_OF_CLASS" + POSTFIX;
+    public static final String STORE_F_OF_CLASS = COMPOSITE_PREFIX + "STORE_F_OF_CLASS" + POSTFIX;
     public static final String STORE_I = PREFIX + "STORE_I" + POSTFIX;
-    public static final String STORE_I_OF_CLASS = PREFIX + COMPOSITE_PREFIX + "STORE_I_OF_CLASS" + POSTFIX;
+    public static final String STORE_I_OF_CLASS = COMPOSITE_PREFIX + "STORE_I_OF_CLASS" + POSTFIX;
     public static final String STORE_L = PREFIX + "STORE_L" + POSTFIX;
-    public static final String STORE_L_OF_CLASS = PREFIX + COMPOSITE_PREFIX + "STORE_L_OF_CLASS" + POSTFIX;
+    public static final String STORE_L_OF_CLASS = COMPOSITE_PREFIX + "STORE_L_OF_CLASS" + POSTFIX;
     public static final String STORE_N = PREFIX + "STORE_N" + POSTFIX;
-    public static final String STORE_N_OF_CLASS = PREFIX + COMPOSITE_PREFIX + "STORE_N_OF_CLASS" + POSTFIX;
-    public static final String STORE_OF_CLASS = PREFIX + COMPOSITE_PREFIX + "STORE_OF_CLASS" + POSTFIX;
-    public static final String STORE_OF_FIELD = PREFIX + COMPOSITE_PREFIX + "STORE_OF_FIELD" + POSTFIX;
+    public static final String STORE_N_OF_CLASS = COMPOSITE_PREFIX + "STORE_N_OF_CLASS" + POSTFIX;
+    public static final String STORE_OF_CLASS = COMPOSITE_PREFIX + "STORE_OF_CLASS" + POSTFIX;
+    public static final String STORE_OF_FIELD = COMPOSITE_PREFIX + "STORE_OF_FIELD" + POSTFIX;
     public static final String STORE_P = PREFIX + "STORE_P" + POSTFIX;
-    public static final String STORE_P_OF_CLASS = PREFIX + COMPOSITE_PREFIX + "STORE_P_OF_CLASS" + POSTFIX;
+    public static final String STORE_P_OF_CLASS = COMPOSITE_PREFIX + "STORE_P_OF_CLASS" + POSTFIX;
     public static final String STORE_VECTOR = PREFIX + "STORE_VECTOR" + POSTFIX;
     public static final String SUB = PREFIX + "SUB" + POSTFIX;
     public static final String SUB_D = PREFIX + "SUB_D" + POSTFIX;
@@ -207,7 +213,7 @@ public class IRNode {
 
 
     public static boolean isCompositeIRNode(String node) {
-        return node.startsWith(COMPOSITE_PREFIX_NODE);
+        return node.startsWith(COMPOSITE_PREFIX);
     }
 
     public static boolean isDefaultIRNode(String node) {
@@ -216,9 +222,9 @@ public class IRNode {
 
     public static String getCompositeNodeName(String irNodeString) {
 
-        TestFramework.check(irNodeString.length() > PREFIX.length() + COMPOSITE_PREFIX.length() + POSTFIX.length(),
+        TestFramework.check(irNodeString.length() > COMPOSITE_PREFIX.length() + POSTFIX.length(),
                             "Invalid composite node placeholder: " + irNodeString);
-        return irNodeString.substring(PREFIX.length() + COMPOSITE_PREFIX.length(), irNodeString.length() - POSTFIX.length());
+        return irNodeString.substring(COMPOSITE_PREFIX.length(), irNodeString.length() - POSTFIX.length());
     }
 
     /**

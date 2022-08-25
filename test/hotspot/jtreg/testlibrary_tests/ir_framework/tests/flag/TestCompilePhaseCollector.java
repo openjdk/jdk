@@ -120,12 +120,12 @@ public class TestCompilePhaseCollector {
                            FINAL_CODE, OPTIMIZE_FINISHED);
         assertContainsOnly(methodToCompilePhases, testClass, "mix12", PHASEIDEALLOOP1, PHASEIDEALLOOP2, PRINT_OPTO_ASSEMBLY,
                            FINAL_CODE, OPTIMIZE_FINISHED, PRINT_IDEAL);
-        assertContainsOnly(methodToCompilePhases, testClass, "mix13", PHASEIDEALLOOP1, PHASEIDEALLOOP2, PRINT_OPTO_ASSEMBLY,
-                           FINAL_CODE, OPTIMIZE_FINISHED, PRINT_IDEAL);
-        assertContainsOnly(methodToCompilePhases, testClass, "mix14", PHASEIDEALLOOP1, PHASEIDEALLOOP2, PRINT_OPTO_ASSEMBLY,
-                           FINAL_CODE, OPTIMIZE_FINISHED, PRINT_IDEAL);
-        assertContainsOnly(methodToCompilePhases, testClass, "mix15", PHASEIDEALLOOP1, PHASEIDEALLOOP2, PRINT_OPTO_ASSEMBLY,
-                           FINAL_CODE, OPTIMIZE_FINISHED, PRINT_IDEAL);
+        assertContainsOnly(methodToCompilePhases, testClass, "mix13", PHASEIDEALLOOP1, PHASEIDEALLOOP2, PRINT_IDEAL,
+                           FINAL_CODE, OPTIMIZE_FINISHED);
+        assertContainsOnly(methodToCompilePhases, testClass, "mix14", PHASEIDEALLOOP1, PHASEIDEALLOOP2, PRINT_IDEAL,
+                           FINAL_CODE, OPTIMIZE_FINISHED);
+        assertContainsOnly(methodToCompilePhases, testClass, "mix15", PHASEIDEALLOOP1, PHASEIDEALLOOP2,
+                           FINAL_CODE, OPTIMIZE_FINISHED);
         assertContainsOnly(methodToCompilePhases, testClass, "mix16", PHASEIDEALLOOP1, PHASEIDEALLOOP2, FINAL_CODE,
                            OPTIMIZE_FINISHED, PRINT_IDEAL);
         assertContainsOnly(methodToCompilePhases, testClass, "mix17", PHASEIDEALLOOP1, PHASEIDEALLOOP2, FINAL_CODE,
@@ -437,17 +437,17 @@ public class TestCompilePhaseCollector {
 
         @Test
         @IR(failOn = "foo", phase = {PHASEIDEALLOOP1, PRINT_IDEAL, PHASEIDEALLOOP2})
-        @IR(counts = {"foo", "3"}, phase = {FINAL_CODE, OPTIMIZE_FINISHED, DEFAULT})
+        @IR(counts = {"foo", "3"}, phase = {FINAL_CODE, OPTIMIZE_FINISHED})
         public void mix13() {}
 
         @Test
         @IR(failOn = "foo", phase = {PHASEIDEALLOOP1, PHASEIDEALLOOP2})
-        @IR(counts = {"foo", "3"}, phase = {FINAL_CODE, OPTIMIZE_FINISHED, DEFAULT})
+        @IR(counts = {"foo", "3"}, phase = {FINAL_CODE, OPTIMIZE_FINISHED, PRINT_IDEAL})
         public void mix14() {}
 
         @Test
         @IR(counts = {"foo", "3"}, phase = {PHASEIDEALLOOP1, PHASEIDEALLOOP2})
-        @IR(failOn = "foo", phase = {FINAL_CODE, OPTIMIZE_FINISHED, DEFAULT})
+        @IR(failOn = "foo", phase = {FINAL_CODE, OPTIMIZE_FINISHED})
         public void mix15() {}
 
         @Test

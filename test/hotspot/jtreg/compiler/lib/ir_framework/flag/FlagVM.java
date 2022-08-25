@@ -114,14 +114,14 @@ public class FlagVM {
     private static ArrayList<String> setupIrVerificationFlags(Class<?> testClass) {
         ArrayList<String> cmds = new ArrayList<>();
         if (VERIFY_IR) {
-            addIRVerificationflags(cmds, testClass);
+            addIRVerificationFlags(cmds, testClass);
         } else {
             cmds.add("-DShouldDoIRVerification=false");
         }
         return cmds;
     }
 
-    private static void addIRVerificationflags(ArrayList<String> cmds, Class<?> testClass) {
+    private static void addIRVerificationFlags(ArrayList<String> cmds, Class<?> testClass) {
         cmds.addAll(Arrays.asList(getPrintFlags()));
         cmds.add("-XX:+LogCompilation");
         CompileCommandFileWriter.createFile(testClass);

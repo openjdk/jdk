@@ -1249,7 +1249,9 @@ class CompilationOutputOfFails {
     private Object obj;
 
     @Test
-    @IR(failOn = IdealDefaultRegexes.COUNTED_LOOP + "[\\s\\S]*" + "call")
+    @IR(failOn = IRNode.COUNTED_LOOP)
+    @IR(failOn = {"call"},
+        phase = CompilePhase.PRINT_OPTO_ASSEMBLY)
     public void both1() {
         for (int i = 0; i < 100; i++) {
             dontInline();
@@ -1257,7 +1259,8 @@ class CompilationOutputOfFails {
     }
 
     @Test
-    @IR(failOn = IdealDefaultRegexes.COUNTED_LOOP + "|" + "call")
+    @IR(failOn = IdealDefaultRegexes.COUNTED_LOOP + "|" + "call",
+        phase = {CompilePhase.PRINT_IDEAL, CompilePhase.PRINT_OPTO_ASSEMBLY})
     public void both2() {
         for (int i = 0; i < 100; i++) {
             dontInline();
@@ -1266,7 +1269,7 @@ class CompilationOutputOfFails {
 
     @Test
     @IR(failOn = IRNode.COUNTED_LOOP)
-    @IR(failOn = "call")
+    @IR(failOn = "call", phase = CompilePhase.PRINT_OPTO_ASSEMBLY)
     public void both3() {
         for (int i = 0; i < 100; i++) {
             dontInline();
@@ -1274,7 +1277,9 @@ class CompilationOutputOfFails {
     }
 
     @Test
-    @IR(counts = {IdealDefaultRegexes.COUNTED_LOOP + "[\\s\\S]*" + "call", "0"})
+    @IR(counts = {IRNode.COUNTED_LOOP, "0"})
+    @IR(counts = {"call", "0"},
+        phase = {CompilePhase.PRINT_OPTO_ASSEMBLY})
     public void both4() {
         for (int i = 0; i < 100; i++) {
             dontInline();
@@ -1282,7 +1287,8 @@ class CompilationOutputOfFails {
     }
 
     @Test
-    @IR(counts = {IdealDefaultRegexes.COUNTED_LOOP + "|" + "call", "1"})
+    @IR(counts = {IdealDefaultRegexes.COUNTED_LOOP + "|" + "call", "10"},
+        phase = {CompilePhase.PRINT_IDEAL, CompilePhase.PRINT_OPTO_ASSEMBLY})
     public void both5() {
         for (int i = 0; i < 100; i++) {
             dontInline();
@@ -1291,7 +1297,7 @@ class CompilationOutputOfFails {
 
     @Test
     @IR(counts = {IRNode.COUNTED_LOOP, "0"})
-    @IR(counts = {"call", "0"})
+    @IR(counts = {"call", "0"}, phase = CompilePhase.PRINT_OPTO_ASSEMBLY)
     public void both6() {
         for (int i = 0; i < 100; i++) {
             dontInline();
@@ -1300,7 +1306,7 @@ class CompilationOutputOfFails {
 
     @Test
     @IR(failOn = IRNode.COUNTED_LOOP)
-    @IR(counts = {"call", "0"})
+    @IR(counts = {"call", "0"}, phase = CompilePhase.PRINT_OPTO_ASSEMBLY)
     public void both7() {
         for (int i = 0; i < 100; i++) {
             dontInline();

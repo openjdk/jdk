@@ -24,6 +24,8 @@
 package compiler.lib.ir_framework;
 
 import compiler.lib.ir_framework.driver.irmatching.IRViolationException;
+import compiler.lib.ir_framework.driver.irmatching.mapping.IRNodeMappings;
+import compiler.lib.ir_framework.shared.TestFormatException;
 
 import java.lang.annotation.Repeatable;
 import java.lang.annotation.Retention;
@@ -85,7 +87,9 @@ public @interface IR {
     String[] counts() default {};
 
     /**
-     * Define a list of {@link CompilePhase} enums to apply the IR rule constraints on.
+     * Define a list of {@link CompilePhase} enums to apply the IR rule constraints on. By default, matching is done
+     * on the predefined default phase of an {@link IRNode} as defined in {@link IRNodeMappings}. For non-{@link IRNode}
+     * constraints, a compile phase must explicitly be set. Otherwise, a {@link TestFormatException} is thrown.
      */
     CompilePhase[] phase() default { CompilePhase.DEFAULT };
 

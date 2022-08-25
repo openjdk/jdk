@@ -47,7 +47,7 @@ public class IRRule implements Matching {
     public IRRule(IRMethod irMethod, int ruleId, IR irAnno) {
         this.ruleId = ruleId;
         this.irAnno = irAnno;
-        this.compilePhaseIRRules = CompilePhaseIRRuleBuilder.create(irAnno, irMethod);
+        this.compilePhaseIRRules = CompilePhaseIRRuleBuilder.build(irMethod, irAnno);
     }
 
     public int getRuleId() {

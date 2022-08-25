@@ -23,16 +23,11 @@
 
 package compiler.lib.ir_framework;
 
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 public enum CompilePhase {
-    DEFAULT("PrintIdeal and PrintOptoAssembly", OutputType.DEFAULT),
-    PRINT_IDEAL("PrintIdeal"),
-    PRINT_OPTO_ASSEMBLY("PrintOptoAssembly", OutputType.OPTO_ASSEMBLY),
+    DEFAULT("For default IR Nodes as defined in class IRNode only"),
 
     // All available phases found in phasetype.hpp with the corresponding levels found throughout the C2 code
     BEFORE_STRINGOPTS("Before StringOpts"),
@@ -68,18 +63,17 @@ public enum CompilePhase {
     MACRO_EXPANSION("Macro expand"),
     BARRIER_EXPANSION("Barrier expand"),
     OPTIMIZE_FINISHED("Optimize finished"),
+    PRINT_IDEAL("PrintIdeal"),
     BEFORE_MATCHING("Before matching"),
     MATCHING("After matching", OutputType.MACH),
     GLOBAL_CODE_MOTION("Global code motion", OutputType.MACH),
     FINAL_CODE("Final Code", OutputType.MACH),
     END("End"),
+
+    PRINT_OPTO_ASSEMBLY("PrintOptoAssembly", OutputType.OPTO_ASSEMBLY),
     ;
 
     private static final Map<String, CompilePhase> PHASES_BY_PARSED_NAME = new HashMap<>();
-    private static final List<CompilePhase> IDEAL_PHASES;
-    private static final List<CompilePhase> MACH_PHASES;
-    private static final List<CompilePhase> IDEAL_PHASES_WITH_LOOPS;
-    private static final List<CompilePhase> IDEAL_PHASES_BEFORE_MACRO_EXPANSION;
 
     static {
         for (CompilePhase phase : CompilePhase.values()) {
@@ -89,99 +83,6 @@ public enum CompilePhase {
                 PHASES_BY_PARSED_NAME.put(phase.name(), phase);
             }
         }
-        IDEAL_PHASES = initIdealPhases();
-        MACH_PHASES = initMachPhases();
-        IDEAL_PHASES_WITH_LOOPS = initIdealPhasesWithLoops();
-        IDEAL_PHASES_BEFORE_MACRO_EXPANSION = initIdealPhasesBeforeMacroExpansion();
-    }
-
-    private static List<CompilePhase> initIdealPhases() {
-        return Arrays.stream(CompilePhase.values())
-                     .filter(phase -> phase.outputType == OutputType.IDEAL)
-                     .collect(Collectors.toList());
-    }
-
-    private static List<CompilePhase> initMachPhases() {
-        return Arrays.stream(CompilePhase.values())
-                     .filter(phase -> phase.outputType == OutputType.MACH)
-                     .collect(Collectors.toList());
-    }
-
-    private static List<CompilePhase> initIdealPhasesWithLoops() {
-        return List.of(
-                AFTER_BEAUTIFY_LOOPS,
-                BEFORE_CLOOPS,
-                AFTER_CLOOPS,
-                PHASEIDEAL_BEFORE_EA,
-                AFTER_EA,
-                ITER_GVN_AFTER_EA,
-                ITER_GVN_AFTER_ELIMINATION,
-                PHASEIDEALLOOP1,
-                PHASEIDEALLOOP2,
-                PHASEIDEALLOOP3,
-                CCP1,
-                ITER_GVN2,
-                PHASEIDEALLOOP_ITERATIONS,
-                MACRO_EXPANSION,
-                BARRIER_EXPANSION,
-                OPTIMIZE_FINISHED,
-                BEFORE_MATCHING
-        );
-    }
-
-    private static List<CompilePhase> initIdealPhasesBeforeMacroExpansion() {
-        return List.of(
-                BEFORE_STRINGOPTS,
-                AFTER_STRINGOPTS,
-                BEFORE_REMOVEUSELESS,
-                AFTER_PARSING,
-                ITER_GVN1,
-                INCREMENTAL_INLINE_STEP,
-                INCREMENTAL_INLINE_CLEANUP,
-                INCREMENTAL_INLINE,
-                INCREMENTAL_BOXING_INLINE,
-                EXPAND_VUNBOX,
-                SCALARIZE_VBOX,
-                INLINE_VECTOR_REBOX,
-                EXPAND_VBOX,
-                ELIMINATE_VBOX_ALLOC,
-                ITER_GVN_BEFORE_EA,
-                ITER_GVN_AFTER_VECTOR,
-                BEFORE_BEAUTIFY_LOOPS,
-                AFTER_BEAUTIFY_LOOPS,
-                BEFORE_CLOOPS,
-                AFTER_CLOOPS,
-                PHASEIDEAL_BEFORE_EA,
-                AFTER_EA,
-                ITER_GVN_AFTER_EA,
-                ITER_GVN_AFTER_ELIMINATION,
-                PHASEIDEALLOOP1,
-                PHASEIDEALLOOP2,
-                PHASEIDEALLOOP3,
-                CCP1,
-                ITER_GVN2,
-                PHASEIDEALLOOP_ITERATIONS
-        );
-    }
-
-    public static List<CompilePhase> getIdealPhases() {
-        return IDEAL_PHASES;
-    }
-
-    public static List<CompilePhase> getMachPhases() {
-        return MACH_PHASES;
-    }
-
-    public static List<CompilePhase> getIdealPhasesWithLoops() {
-        return IDEAL_PHASES_WITH_LOOPS;
-    }
-
-    public static List<CompilePhase> getIdealPhasesBeforeMacroExpansion() {
-        return IDEAL_PHASES_BEFORE_MACRO_EXPANSION;
-    }
-
-    private enum OutputType {
-        IDEAL, MACH, OPTO_ASSEMBLY, DEFAULT
     }
 
     private final String name;
@@ -201,9 +102,14 @@ public enum CompilePhase {
         return name;
     }
 
+    public OutputType getOutputType() {
+        return outputType;
+    }
+
     public static CompilePhase forName(String phaseName) {
         CompilePhase phase = PHASES_BY_PARSED_NAME.get(phaseName);
         TestFramework.check(phase != null, "Could not find phase with name \"" + phaseName + "\"");
         return phase;
     }
 }
+

@@ -49,9 +49,15 @@ import java.util.List;
  * @see RawCountsConstraint
  * @see Counts
  */
-public class RawCountsConstraintParser extends RawConstraintParser<CountsConstraint, RawCountsConstraint> {
+public class RawCountsConstraintParser extends RawConstraintParser<RawCountsConstraint> {
+    private final List<CountsConstraint> constraintResultList = new ArrayList<>();
 
     private RawCountsConstraintParser() {}
+
+    public List<CountsConstraint> getConstraints() {
+        TestFramework.check(!constraintResultList.isEmpty(), "must be non-empty");
+        return constraintResultList;
+    }
 
     /**
      * Returns a new {@link Counts} object by parsing the provided {@code rawCountsConstraints} list or null if this
@@ -59,28 +65,28 @@ public class RawCountsConstraintParser extends RawConstraintParser<CountsConstra
      */
     public static List<CountsConstraint> parse(List<RawCountsConstraint> rawCountsConstraints, CompilePhase compilePhase) {
         if (!rawCountsConstraints.isEmpty()) {
-            List<CountsConstraint> constraintResultList = new ArrayList<>();
-            new RawCountsConstraintParser().parseNonEmptyConstraints(constraintResultList, rawCountsConstraints, compilePhase);
-            TestFramework.check(!constraintResultList.isEmpty(), "must be non-empty");
-            return constraintResultList;
+            RawCountsConstraintParser constraintParser = new RawCountsConstraintParser();
+            constraintParser.parseNonEmptyConstraints(rawCountsConstraints, compilePhase);
+            return constraintParser.getConstraints();
         }
         return null;
     }
 
     @Override
-    protected CountsConstraint parseRawConstraint(RawCountsConstraint constraintResultList, CompilePhase compilePhase) {
-        String rawNodeString = constraintResultList.getRawNodeString();
-        String parsedNodeString = parseRawNodeString(compilePhase, constraintResultList, rawNodeString);
-        String countString = constraintResultList.getCountString();
-        Comparison<Integer> comparison = parseComparison(rawNodeString, countString);
-        return new CountsConstraint(parsedNodeString, comparison, constraintResultList.getConstraintIndex());
+    protected void parseRawConstraint(RawCountsConstraint rawConstraint, CompilePhase compilePhase) {
+        ParsedIRNodeInfo parsedIRNodeInfo = parseIRNodeInfo(rawConstraint, compilePhase);
+        Comparison<Integer> comparison = parseComparison(rawConstraint);
+        constraintResultList.add(new CountsConstraint(parsedIRNodeInfo.regex(), rawConstraint.getConstraintIndex(),
+                                                      parsedIRNodeInfo.compilePhase(), comparison));
     }
 
-    private static Comparison<Integer> parseComparison(String rawNodeString, String countString) {
+    private static Comparison<Integer> parseComparison(RawCountsConstraint rawConstraint) {
         try {
-            return ComparisonConstraintParser.parse(countString, RawCountsConstraintParser::parsePositiveInt);
+            return ComparisonConstraintParser.parse(rawConstraint.getCountString(),
+                                                    RawCountsConstraintParser::parsePositiveInt);
         } catch (TestFormatException e) {
-            throw new TestFormatException(e.getMessage() + ", node \"" + rawNodeString + "\", in count string");
+            throw new TestFormatException(e.getMessage() + ", node \"" + rawConstraint.getRawNodeString()
+                                          + "\", in count string");
         }
     }
 

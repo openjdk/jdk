@@ -43,24 +43,25 @@ import java.util.*;
 class CompilePhaseCollector {
 
     /**
-     * Returns a map method_name -> compile_phases_set that can be used by {@link CompileCommandFileWriter}.
+     * Returns a map "method name -> compile phases set" that can be used by {@link CompileCommandFileWriter}.
      */
     public static Map<String, Set<CompilePhase>> collect(Class<?> testClass) {
-        Map<String, Set<CompilePhase>> methodToPhases = new HashMap<>();
+        Map<String, Set<CompilePhase>> methodNameToCompilePhasesMap = new HashMap<>();
         List<Method> irAnnotatedMethods = getIRAnnotatedMethods(testClass);
         try {
             for (Method method : irAnnotatedMethods) {
-                methodToPhases.put(testClass.getCanonicalName() + "::" + method.getName(), processIRAnnotations(method));
+                methodNameToCompilePhasesMap.put(testClass.getCanonicalName() + "::" + method.getName(),
+                                                 collectCompilePhases(method));
             }
         } catch (TestFormatException e) {
             // Create default map and let the IR matcher report the format failures later in the driver VM.
             return createDefaultMap(testClass);
         }
-        return methodToPhases;
+        return methodNameToCompilePhasesMap;
     }
 
     /**
-     * Creates a default map that just contains PrintIdeal and PrintOptoAssembly
+     * Creates a default map that just contains PrintIdeal and PrintOptoAssembly.
      */
     private static Map<String, Set<CompilePhase>> createDefaultMap(Class<?> testClass) {
         Map<String, Set<CompilePhase>> defaultMap = new HashMap<>();
@@ -69,29 +70,10 @@ class CompilePhaseCollector {
         defaultSet.add(CompilePhase.PRINT_OPTO_ASSEMBLY);
         defaultMap.put(testClass.getCanonicalName() + "::*", defaultSet);
         return defaultMap;
-
     }
 
-    private static Set<CompilePhase> processIRAnnotations(Method method) {
-        CompilePhaseSet compilePhaseCollector = new CompilePhaseSet();
-        IR[] irAnnos = method.getAnnotationsByType(IR.class);
-        int ruleId = 1;
-        for (IR irAnno : irAnnos) {
-            processCompilePhases(compilePhaseCollector, irAnno, method);
-            ruleId++;
-        }
-        return compilePhaseCollector.getPhases();
-    }
-
-    private static void processCompilePhases(CompilePhaseSet compilePhaseCollector, IR irAnno, Method method) {
-        CompilePhase[] compilePhases = irAnno.phase();
-        for (CompilePhase compilePhase : compilePhases) {
-            if (compilePhase == CompilePhase.DEFAULT) {
-                compilePhaseCollector.addForDefault(irAnno);
-            } else {
-                compilePhaseCollector.addCompilePhase(compilePhase);
-            }
-        }
+    private static Set<CompilePhase> collectCompilePhases(Method method) {
+        return new MethodCompilePhaseCollector(method).getCompilePhases();
     }
 
     private static List<Method> getIRAnnotatedMethods(Class<?> testClass) {

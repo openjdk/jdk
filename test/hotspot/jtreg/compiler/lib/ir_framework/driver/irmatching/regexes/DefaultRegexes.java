@@ -23,12 +23,8 @@
 
 package compiler.lib.ir_framework.driver.irmatching.regexes;
 
-import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.IRNode;
-import compiler.lib.ir_framework.shared.TestFormat;
-
-import java.util.*;
 
 /**
  * This class contains shared parts of default regexes and provides maps from placeholder strings to default regex and
@@ -50,59 +46,4 @@ public class DefaultRegexes {
     public static final String IS_REPLACED = "#IS_REPLACED#"; // Is replaced by an additional user-defined string.
     public static final String STORE_OF_CLASS_POSTFIX = "(:|\\+)\\S* \\*" + END;
     public static final String LOAD_OF_CLASS_POSTFIX = "(:|\\+)\\S* \\*" + END;
-
-    /**
-     * Mapping of {@link IRNode} to either {@link IdealDefaultRegexes}, {@link MachDefaultRegexes} or
-     * {@link OptoAssemblyDefaultRegexes}.
-     */
-    public static final Map<String, Map<CompilePhase, String>> PLACEHOLDER_TO_REGEX_MAP = new HashMap<>();
-
-    /**
-     * Mapping of {@link IRNode} to either {@link CompilePhase#PRINT_IDEAL} or {@link CompilePhase#PRINT_OPTO_ASSEMBLY}
-     * depending on the output of {@link CompilePhase#getIdealPhases()} and {@link CompilePhase#getMachPhases()} ()},
-     * respectively. Could also be queried with user defined strings (i.e. not defined in {@link IRNode}).
-     */
-    public static final Map<String, CompilePhase> DEFAULT_TO_PHASE_MAP = new HashMap<>();
-
-    static {
-        // Initialization of PLACEHOLDER_TO_REGEX and DEFAULT_TO_PHASE_MAP
-        IdealDefaultRegexes.initMaps();
-        MachDefaultRegexes.initMaps();
-        OptoAssemblyDefaultRegexes.initMaps();
-        IdealDefaultRegexes.initAdditionalSharedMappings();
-    }
-
-    /**
-     * What's the default phase for this raw node string? If it matches a {@link IRNode} entry, we can map it to
-     * {@link CompilePhase#PRINT_IDEAL} or {@link CompilePhase#PRINT_OPTO_ASSEMBLY}. Otherwise, {@link CompilePhase#DEFAULT}
-     * is returned.
-     */
-    public static CompilePhase getCompilePhaseForIRNode(String rawNodeString) {
-        if (rawNodeString.equals(IRNode.LOOP)) {
-            System.out.println("asdf");
-        }
-        return DEFAULT_TO_PHASE_MAP.getOrDefault(rawNodeString, CompilePhase.DEFAULT);
-    }
-
-    /**
-     * Return the default node regex of the specified {@code compilePhase} for the provided {@code rawNodeString}.
-     * If there is no entry for the war node string or if there is no mapping for the provided compile phase,
-     * a format violation is reported.
-     */
-    public static String getDefaultRegexForIRNode(String rawNodeString, CompilePhase compilePhase) {
-        var phaseToRegexMap = DefaultRegexes.PLACEHOLDER_TO_REGEX_MAP.get(rawNodeString);
-        TestFormat.checkNoReport(phaseToRegexMap != null,
-                                 "Did you mix an IRNode string with an additional string? " +
-                                 "Must use a unique IRNode: \"" + rawNodeString + "\". Violation");
-        String regex = phaseToRegexMap.get(compilePhase);
-        TestFormat.checkNoReport(regex != null,
-                                 "IR Node \"" + rawNodeString + "\" defined in class IRNode has no regex " +
-                                 "defined for compile phase " + compilePhase + ". If you think it should be supported, " +
-                                 "add a mapping to DefaultRegexes.PLACEHOLDER_TO_REGEX_MAP. Violation");
-        return regex;
-    }
-
-    public static void updatePlaceholderMap(String idealString, List<CompilePhase> compilePhases, Map<CompilePhase, String> enumMap) {
-        compilePhases.forEach(phase -> enumMap.put(phase, idealString));
-    }
 }

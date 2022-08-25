@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,23 +21,10 @@
  * questions.
  */
 
-package ir_framework.tests;
+package compiler.lib.ir_framework.driver.irmatching.mapping;
 
-import compiler.lib.ir_framework.driver.irmatching.IRMatcher;
-import jdk.test.lib.Asserts;
-
-public class Utils {
-    public static void shouldHaveThrownException(String output) {
-        // Do not throw an exception if we hit a safepoint while printing which could possibly let the IR matching fail.
-        // This happens very rarely. If there is a problem with the test, then we will catch that on the next test invocation.
-        if (!output.contains(IRMatcher.SAFEPOINT_WHILE_PRINTING_MESSAGE)) {
-            Asserts.fail("Should have thrown exception");
-        }
-    }
-
-    public static void throwIfNoSafepointPrinting(String output, RuntimeException e) {
-        if (!output.contains(IRMatcher.SAFEPOINT_WHILE_PRINTING_MESSAGE)) {
-            throw e;
-        }
+class OverlappingPhaseRangesException extends RuntimeException {
+    OverlappingPhaseRangesException(PhaseInterval entry, PhaseInterval entry2) {
+        super("The following two PhaseRangeEntry objects overlap which is forbidden:" + System.lineSeparator() + "- " + entry + System.lineSeparator() + "- " + entry2);
     }
 }

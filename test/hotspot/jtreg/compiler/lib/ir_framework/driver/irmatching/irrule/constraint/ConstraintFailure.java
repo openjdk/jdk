@@ -53,10 +53,6 @@ abstract class ConstraintFailure implements FailureMessage {
                 .collect(Collectors.toList());
     }
 
-    public int getMatchedNodesCount() {
-        return matchedNodes.size();
-    }
-
     protected String buildConstraintHeader(int indentation) {
         return getIndentation(indentation) + "* Constraint " + constraintIndex + ": \"" + nodeRegex + "\"" + System.lineSeparator();
     }

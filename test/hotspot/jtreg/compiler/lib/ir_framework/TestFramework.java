@@ -105,6 +105,7 @@ public class TestFramework {
      * performed when all these additional JTreg flags (does not include additionally added framework and scenario flags
      * by user code) are whitelisted.
      *
+     * <p>
      * A flag is whitelisted if it is a property flag (starting with -D), -ea, -esa, or if the flag name contains any of
      * the entries of this list as a substring (partial match).
      */
@@ -352,25 +353,9 @@ public class TestFramework {
                 TestFormat.checkNoThrow(irAnno.phase().length > 0,
                                         "@IR rule " + irAnno + " must specify a non-empty list of compile " +
                                         "phases \"phase\" at " + m);
-                TestFormat.checkNoThrow(hasNotDefaultAndIdealOrOpto(irAnno),
-                                        "Cannot use CompilePhase.DEFAULT together with CompilePhase.PRINT_IDEAL " +
-                                        "and/or CompilePhase.PRINT_OPTO_ASSEMBLY in @IR rule " + irAnno + " at " + m);
             }
         }
         TestFormat.throwIfAnyFailures();
-    }
-
-    private boolean hasNotDefaultAndIdealOrOpto(IR irAnno) {
-        boolean hasDefault = false;
-        boolean hasOptoOrIdeal = false;
-        for (CompilePhase phase : irAnno.phase()) {
-            if (phase == CompilePhase.DEFAULT) {
-                hasDefault = true;
-            } else if (phase == CompilePhase.PRINT_IDEAL || phase == CompilePhase.PRINT_OPTO_ASSEMBLY) {
-                hasOptoOrIdeal = true;
-            }
-        }
-        return !(hasDefault && hasOptoOrIdeal);
     }
 
     /**

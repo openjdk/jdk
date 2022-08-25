@@ -77,18 +77,6 @@ public class CompilePhaseMatchResult implements MatchResult {
         this.countsFailures = countsFailures;
     }
 
-    public int getTotalMatchedNodesCount() {
-        return getFailOnMatchedNodesCount() + getCountsMatchedNodesCount();
-    }
-
-    private int getFailOnMatchedNodesCount() {
-        return hasFailOnFailures() ? failOnFailures.getMatchedNodesCount() : 0;
-    }
-
-    private int getCountsMatchedNodesCount() {
-        return hasCountsFailures() ? countsFailures.getMatchedNodesCount() : 0;
-    }
-
     /**
      * Build a failure message based on the collected failures of this object.
      */
@@ -109,7 +97,8 @@ public class CompilePhaseMatchResult implements MatchResult {
 
     private String buildNoCompilationOutputMessage(int indentationSize) {
         return getIndentation(indentationSize) + "- NO compilation output found for this phase! Make sure this phase " +
-               "is emitted or remove it from the list of compile phases to match on in the @IR rule.";
+               "is emitted or remove it from the list of compile phases in the @IR rule to match on." +
+               System.lineSeparator();
     }
 
     private String buildFailOnFailureMessage(int indentationSize) {

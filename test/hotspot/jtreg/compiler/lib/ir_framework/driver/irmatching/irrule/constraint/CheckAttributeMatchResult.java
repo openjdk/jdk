@@ -44,14 +44,6 @@ abstract public class CheckAttributeMatchResult implements MatchResult {
         this.constraintFailures = constraintFailures;
     }
 
-    public int getMatchedNodesCount() {
-        if (fail()) {
-            return constraintFailures.stream().map(ConstraintFailure::getMatchedNodesCount).reduce(0, Integer::sum);
-        } else {
-            return 0;
-        }
-    }
-
     @Override
     public String buildFailureMessage(int indentationSize) {
         return getIndentation(indentationSize) + "- " + getCheckAttributeMessage() + ":" + System.lineSeparator()

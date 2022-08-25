@@ -41,9 +41,15 @@ import java.util.List;
  * @see RawConstraint
  * @see FailOn
  */
-public class RawFailOnConstraintParser extends RawConstraintParser<Constraint, RawConstraint> {
+public class RawFailOnConstraintParser extends RawConstraintParser<RawConstraint> {
+    private final List<Constraint> constraintResultList = new ArrayList<>();
 
     private RawFailOnConstraintParser() {}
+
+    public List<Constraint> getConstraints() {
+        TestFramework.check(!constraintResultList.isEmpty(), "must be non-empty");
+        return constraintResultList;
+    }
 
     /**
      * Returns a new {@link FailOn} object by parsing the provided {@code rawFailOnConstraints} list or null if this
@@ -51,18 +57,17 @@ public class RawFailOnConstraintParser extends RawConstraintParser<Constraint, R
      */
     public static List<Constraint> parse(List<RawConstraint> rawFailOnConstraints, CompilePhase compilePhase) {
         if (!rawFailOnConstraints.isEmpty()) {
-            List<Constraint> constraintResultList = new ArrayList<>();
-            new RawFailOnConstraintParser().parseNonEmptyConstraints(constraintResultList, rawFailOnConstraints, compilePhase);
-            TestFramework.check(!constraintResultList.isEmpty(), "must be non-empty");
-            return constraintResultList;
+            RawFailOnConstraintParser constraintParser = new RawFailOnConstraintParser();
+            constraintParser.parseNonEmptyConstraints(rawFailOnConstraints, compilePhase);
+            return constraintParser.getConstraints();
         }
         return null;
     }
 
     @Override
-    protected Constraint parseRawConstraint(RawConstraint constraintResultList, CompilePhase compilePhase) {
-        String rawNodeString = constraintResultList.getRawNodeString();
-        String parsedNodeString = parseRawNodeString(compilePhase, constraintResultList, rawNodeString);
-        return new Constraint(parsedNodeString, constraintResultList.getConstraintIndex());
+    protected void parseRawConstraint(RawConstraint rawConstraint, CompilePhase compilePhase) {
+        ParsedIRNodeInfo parsedIRNodeInfo = parseIRNodeInfo(rawConstraint, compilePhase);
+        constraintResultList.add(new Constraint(parsedIRNodeInfo.regex(), rawConstraint.getConstraintIndex(),
+                                                parsedIRNodeInfo.compilePhase()));
     }
 }

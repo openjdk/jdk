@@ -88,7 +88,8 @@ public class IRExample {
     @Test
     @IR(failOn = IRNode.LOAD) // 1 default regex
     @IR(failOn = {IRNode.LOAD, IRNode.LOOP}) // 2 default regexes
-    @IR(failOn = {IRNode.LOAD, "some regex that does not occur"}) // 1 default regex and a user-defined regex
+    @IR(failOn = {IRNode.LOAD, "some regex that does not occur"}, // 1 default regex and a user-defined regex
+        phase = CompilePhase.PRINT_IDEAL)
     // Rule with special configurable default regexes. All regexes with a "_OF" postfix in IR node expect a
     // second string specifying an additional required information.
     @IR(failOn = {IRNode.STORE_OF_FIELD, "iFld2", IRNode.LOAD, IRNode.STORE_OF_CLASS, "Foo"})
@@ -108,7 +109,8 @@ public class IRExample {
     @IR(counts = {IRNode.STORE, "2",
                   IRNode.LOAD, "0"}) // 2 default regexes
     @IR(counts = {IRNode.STORE, "2",
-                  "some regex that does not occur", "0"}) // 1 default regex and a user-defined regex
+                  "some regex that does not occur", "0"}, // 1 default regex and a user-defined regex
+        phase = CompilePhase.PRINT_IDEAL)
     // Rule with special configurable default regexes. All regexes with a "_OF" postfix in IR node expect a
     // second string specifying an additional required information.
     @IR(counts = {IRNode.STORE_OF_FIELD, "iFld", "1",
@@ -142,7 +144,7 @@ class FailingExamples {
     @IR(failOn = {IRNode.STORE, IRNode.LOOP}) // LOOP regex not found but STORE regex, letting the rule fail
     @IR(failOn = {IRNode.LOOP, IRNode.STORE}) // Order does not matter
     @IR(failOn = {IRNode.STORE, IRNode.LOAD}) // STORE and LOAD regex found, letting the rule fail
-    @IR(failOn = {"LoadI"}) // LoadI can be found in PrintIdeal letting the rule fail
+    @IR(failOn = {"LoadI"}, phase = CompilePhase.PRINT_IDEAL) // LoadI can be found in PrintIdeal letting the rule fail
     // Store to iFld, store, and store to class IRExample, all 3 regexes found letting the rule fail
     @IR(failOn = {IRNode.STORE_OF_FIELD, "iFld", IRNode.STORE, IRNode.STORE_OF_CLASS, "IRExample"})
     public void badFailOn() {
@@ -158,7 +160,8 @@ class FailingExamples {
                   IRNode.LOAD, "1"}) // first constraint holds (there is 1 load) but 2 stores, letting this rule fail
     @IR(counts = {IRNode.LOAD, "1",
                   IRNode.STORE, "1"}) // order does not matter
-    @IR(counts = {"some regex that does not occur", "1"}) // user-defined regex does not occur once
+    @IR(counts = {"some regex that does not occur", "1"},
+        phase = CompilePhase.PRINT_IDEAL) // user-defined regex does not occur once in PrintIdeal output
     // Rule with special configurable default regexes. All regexes with a "_OF" postfix in IR node expect a
     // second string specifying an additional required information.
     @IR(counts = {IRNode.STORE_OF_FIELD, "iFld", "2", // Only one store to iFld
