@@ -4501,7 +4501,7 @@ void MacroAssembler::_verify_oop(Register reg, const char* s, const char* file, 
     b = code_string(ss.as_string());
   }
   ExternalAddress buffer((address) b);
-  pushptr(buffer.addr(), rax /*rscratch*/);
+  pushptr(buffer.addr(), rscratch1);
 
   // call indirectly to solve generation ordering problem
   movptr(rax, ExternalAddress(StubRoutines::verify_oop_subroutine_entry_address()));
@@ -4571,7 +4571,7 @@ void MacroAssembler::_verify_oop_addr(Address addr, const char* s, const char* f
     b = code_string(ss.as_string());
   }
   ExternalAddress buffer((address) b);
-  pushptr(buffer.addr(), rax /*rscratch*/);
+  pushptr(buffer.addr(), rscratch1);
 
   // call indirectly to solve generation ordering problem
   movptr(rax, ExternalAddress(StubRoutines::verify_oop_subroutine_entry_address()));
