@@ -118,7 +118,6 @@ public class CLETest extends TestScaffold {
     MethodExitRequest exitRequest;
     int methodEntryCount = 0;
     int breakpointCount = 0;
-    boolean testFailed = false;
     boolean testcaseFailed = false;
     int testcase = 0;
 
@@ -262,18 +261,6 @@ public class CLETest extends TestScaffold {
      * when a Step or MethodEntry event arrives.
      */
     public void breakpointReached(BreakpointEvent event) {
-        // Make sure this breakpoint is at the expected location.
-        MethodBreakpointData bpData = breakpoints[breakpointCount];
-        try {
-            Location loc = findMethodLocation(targetClass, bpData.method,
-                                              bpData.signature, bpData.lineNumber);
-            if (!loc.equals(event.location())) {
-                throw new RuntimeException("Unexpected Breakpoint reached");
-            }
-        } catch (AbsentInformationException e) {
-            throw new RuntimeException(e);
-        }
-
         breakpointCount++;
         if (breakpointCount != 4 && breakpointCount != 6 && breakpointCount != 8) {
             testcase++;
