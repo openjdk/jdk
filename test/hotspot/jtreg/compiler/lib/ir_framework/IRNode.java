@@ -24,11 +24,12 @@
 package compiler.lib.ir_framework;
 
 import compiler.lib.ir_framework.driver.irmatching.mapping.IRNodeMappings;
-import compiler.lib.ir_framework.driver.irmatching.regexes.DefaultRegexes;
+import compiler.lib.ir_framework.driver.irmatching.regexes.DefaultRegexConstants;
 import compiler.lib.ir_framework.driver.irmatching.regexes.IdealDefaultRegexes;
 import compiler.lib.ir_framework.driver.irmatching.regexes.MachDefaultRegexes;
 import compiler.lib.ir_framework.driver.irmatching.regexes.OptoAssemblyDefaultRegexes;
 import compiler.lib.ir_framework.shared.CheckedTestFrameworkException;
+import compiler.lib.ir_framework.shared.TestFormatException;
 import jdk.test.lib.Platform;
 import jdk.test.whitebox.WhiteBox;
 
@@ -37,11 +38,23 @@ import jdk.test.whitebox.WhiteBox;
  * attributes to define IR constraints. These placeholder strings are replaced with default regexes (defined in package
  * {@link compiler.lib.ir_framework.driver.irmatching.regexes}) by the IR framework depending on the specified
  * compile phases in {@link IR#phase()} and the provided mapping in {@link IRNodeMappings}.
+ *
  * <p>
  * If an IR node is either missing a mapping in {@link IRNodeMappings} or does not provide a default regex for a
- * specified compile phase in {@link IR#phase}, a test format violation is reported.
+ * specified compile phase in {@link IR#phase}, a {@link TestFormatException} is reported.
  *
- * @see DefaultRegexes
+ * <p>
+ * There are two types of IR nodes:
+ * <ul>
+ *     <li><p>Standalone IR nodes: The IR node placeholder string is directly replaced by a default regex.</li>
+ *     <li><p>Composite IR nodes:  The IR node placeholder string contains an additional {@link #COMPOSITE_PREFIX}.
+ *                                 Using this IR node expects another user provided string in the constraint list of
+ *                                 {@link IR#failOn()} and {@link IR#counts()}. They cannot be use as standalone IR nodes.
+ *                                 Trying to do so will result in a format violation error.</li>
+ * </ul>
+ *
+ * @see IRNodeMappings
+ * @see DefaultRegexConstants
  * @see IdealDefaultRegexes
  * @see MachDefaultRegexes
  * @see OptoAssemblyDefaultRegexes
@@ -54,7 +67,8 @@ public class IRNode {
     /*
      * List of IR node placeholder strings for which at least one default regex exists. Such an IR node must start with
      * PREFIX (normal IR nodes) or COMPOSITE_PREFIX (for composite IR nodes) and end with POSTFIX.
-     * The mappings from these placeholder strings to regexes are defined in IRNodeMappings.
+     * The mappings from these placeholder strings to regexes are defined in class
+     * compiler.lib.ir_framework.driver.irmatching.mapping.IRNodeMappings.
      */
     public static final String ABS_D = PREFIX + "ABS_D" + POSTFIX;
     public static final String ABS_F = PREFIX + "ABS_F" + POSTFIX;
@@ -221,7 +235,6 @@ public class IRNode {
     }
 
     public static String getCompositeNodeName(String irNodeString) {
-
         TestFramework.check(irNodeString.length() > COMPOSITE_PREFIX.length() + POSTFIX.length(),
                             "Invalid composite node placeholder: " + irNodeString);
         return irNodeString.substring(COMPOSITE_PREFIX.length(), irNodeString.length() - POSTFIX.length());

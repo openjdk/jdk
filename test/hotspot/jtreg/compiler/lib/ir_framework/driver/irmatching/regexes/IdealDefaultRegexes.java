@@ -27,39 +27,18 @@ import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.IRNode;
 
-import static compiler.lib.ir_framework.driver.irmatching.regexes.DefaultRegexes.*;
+import static compiler.lib.ir_framework.driver.irmatching.regexes.DefaultRegexConstants.*;
 
 /**
- * This class provides default regex strings for matches on PrintIdeal and all compile phases on the ideal graph (i.e.
- * before matching and code generation). These default regexes replace any usages of placeholder strings from {@link IRNode}
- * in check attributes {@link IR#failOn()} and {@link IR#counts()} depending on the specified compile phases in
- * {@link IR#phase()} and if the compile phase is returned in the list {@link CompilePhase#getIdealPhases}.
- * <p>
- *
- * Each new default regex for any node that needs to be matched on the ideal graph should be defined here together with
- * a mapping for which compile phase it can be used (defined with an entry in {@link DefaultRegexes#PLACEHOLDER_TO_REGEX_MAP}).
- * If a default regex can also be matched on the normal PrintIdeal output then a mapping for {@link CompilePhase#PRINT_IDEAL}
- * and {@link CompilePhase#DEFAULT} needs to be added as entry to {@link DefaultRegexes#PLACEHOLDER_TO_REGEX_MAP}.
- * <p>
- *
- * Not all regexes can be applied for all phases. For example, {@link IdealDefaultRegexes#LOOP} is not available in
- * {@link CompilePhase#AFTER_PARSING}. If such an unsupported mapping is used for a compile phase, a format violation is
- * reported.
- * <p>
- *
- * There are two types of default regexes:
- * <ul>
- *     <li><p>Standalone regexes: Replace the placeholder string from {@link IRNode} directly.</li>
- *     <li><p>Composite regexes: The placeholder string from {@link IRNode} contain an additional "{@code P#}" prefix.
- *                               This placeholder strings expect another user provided string in the constraint list of
- *                               {@link IR#failOn()} and {@link IR#counts()}. They cannot be use as standalone regex.
- *                               Trying to do so will result in a format violation error.</li>
- * </ul>
+ * This class provides default regex strings for matches on the ideal graph including PrintIdeal (i.e. {@link CompilePhase
+ * compile phases} after before matching andcode generation). These default regexes are used to replace IR node placeholder
+ * strings (defined in {@link IRNode}) found in check attributes {@link IR#failOn()} and {@link IR#counts()}. The mappings
+ * in {@link compiler.lib.ir_framework.driver.irmatching.mapping.IRNodeMappings} specify on which compile phases
+ * a default regex is applied.
  *
  * @see IR
  * @see IRNode
- * @see CompilePhase
- * @see DefaultRegexes
+ * @see compiler.lib.ir_framework.driver.irmatching.mapping.IRNodeMappings
  */
 public class IdealDefaultRegexes {
     public static final String ABS_D = START + "AbsD" + MID + END;

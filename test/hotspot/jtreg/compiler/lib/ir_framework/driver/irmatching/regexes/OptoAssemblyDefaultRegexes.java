@@ -27,36 +27,19 @@ import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.IRNode;
 
-import static compiler.lib.ir_framework.driver.irmatching.regexes.DefaultRegexes.END;
-import static compiler.lib.ir_framework.driver.irmatching.regexes.DefaultRegexes.IS_REPLACED;
+import static compiler.lib.ir_framework.driver.irmatching.regexes.DefaultRegexConstants.END;
+import static compiler.lib.ir_framework.driver.irmatching.regexes.DefaultRegexConstants.IS_REPLACED;
 
 /**
- * This class provides default regex strings for matches on PrintOptoAssembly. These default regexes replace any usages
- * of placeholder strings from {@link IRNode} in check attributes {@link IR#failOn()} and {@link IR#counts()} if the
- * compile phase {@link CompilePhase#PRINT_OPTO_ASSEMBLY} or {@link CompilePhase#DEFAULT} is found in {@link IR#phase()}.
- * <p>
- *
- * Each new default regex for any node that needs to be matched on PrintOptoAssembly should be defined here together with
- * a mapping for {@link CompilePhase#PRINT_OPTO_ASSEMBLY} and {@link CompilePhase#DEFAULT} added as entry to
- * {@link DefaultRegexes#PLACEHOLDER_TO_REGEX_MAP}.
- * <p>
- *
- * The usage of these regexes for other compile phases is forbidden and will result in a format violation.
- * <p>
- *
- * There are two types of default regexes:
- * <ul>
- *     <li><p>Standalone regexes: Replace the placeholder string from {@link IRNode} directly.</li>
- *     <li><p>Composite regexes: The placeholder string from {@link IRNode} contain an additional "{@code P#}" prefix.
- *                               This placeholder strings expect another user provided string in the constraint list of
- *                               {@link IR#failOn()} and {@link IR#counts()}. They cannot be use as standalone regex.
- *                               Trying to do so will result in a format violation error.</li>
- * </ul>
+ * This class provides default regex strings for matches on the PrintOptoAssembly output (i.e. for
+ * {@link CompilePhase#PRINT_OPTO_ASSEMBLY}). These default regexes are used to replace IR node placeholder strings
+ * (defined in {@link IRNode}) found in check attributes {@link IR#failOn()} and {@link IR#counts()}. The mappings in
+ * {@link compiler.lib.ir_framework.driver.irmatching.mapping.IRNodeMappings} specify on which compile phases a default
+ * regex is applied.
  *
  * @see IR
  * @see IRNode
- * @see CompilePhase
- * @see DefaultRegexes
+ * @see compiler.lib.ir_framework.driver.irmatching.mapping.IRNodeMappings
  */
 public class OptoAssemblyDefaultRegexes {
     public static final String ALLOC = "(.*precise .*\\R((.*(?i:mov|xorl|nop|spill).*|\\s*|.*LGHI.*)\\R)*.*(?i:call,static).*wrapper for: _new_instance_Java" + END;

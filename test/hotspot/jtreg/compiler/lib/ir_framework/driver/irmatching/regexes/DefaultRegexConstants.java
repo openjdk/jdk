@@ -23,23 +23,10 @@
 
 package compiler.lib.ir_framework.driver.irmatching.regexes;
 
-import compiler.lib.ir_framework.IR;
-import compiler.lib.ir_framework.IRNode;
-
 /**
- * This class contains shared parts of default regexes and provides maps from placeholder strings to default regex and
- * from default phase to PrintIdeal/PrintOptoAssembly. The placeholder strings can be found in {@link IRNode} while
- * the actual default regexes which replace these placeholders can be found in {@link IdealDefaultRegexes},
- * {@link MachDefaultRegexes}, and {@link OptoAssemblyDefaultRegexes}.
- * <p>
- *
- * @see IR
- * @see IRNode
- * @see IdealDefaultRegexes
- * @see MachDefaultRegexes
- * @see OptoAssemblyDefaultRegexes
+ * This class provides constants for defining default regexes.
  */
-public class DefaultRegexes {
+public class DefaultRegexConstants {
     public static final String START = "(\\d+(\\s){2}(";
     public static final String MID = ".*)+(\\s){2}===.*";
     public static final String END = ")";

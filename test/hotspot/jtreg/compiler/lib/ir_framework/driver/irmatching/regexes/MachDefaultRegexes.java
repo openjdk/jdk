@@ -27,40 +27,19 @@ import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.IRNode;
 
-import static compiler.lib.ir_framework.driver.irmatching.regexes.DefaultRegexes.*;
+import static compiler.lib.ir_framework.driver.irmatching.regexes.DefaultRegexConstants.*;
 
 /**
- * This class provides default regex strings for matches on all compile phases on the Mach graph after matching (i.e.
- * after the application of optimization on the ideal graph). These default regexes replace any usages of placeholder s
- * trings from {@link IRNode} in check attributes {@link IR#failOn()} and {@link IR#counts()} depending on the specified
- * compile phases in {@link IR#phase()} and if the compile phase is returned in the list {@link CompilePhase#getMachPhases()}.
- * <p>
- *
- * Each new default regex for any node that needs to be matched on the ideal graph should be defined here together with
- * a mapping for which compile phase it can be used (defined with an entry in {@link DefaultRegexes#PLACEHOLDER_TO_REGEX_MAP}).
- * A mach default regexes can never be matched on the PrintIdeal or PrintOptoAssembly flag output.
- * <p>
- *
- * Not all regexes can be applied for all phases. If such an unsupported mapping is used for a compile phase, a format
- * violation is reported.
- * <p>
- *
- * There are two types of default regexes:
- * <ul>
- *     <li><p>Standalone regexes: Replace the placeholder string from {@link IRNode} directly.</li>
- *     <li><p>Composite regexes: The placeholder string from {@link IRNode} contain an additional "{@code P#}" prefix.
- *                               This placeholder strings expect another user provided string in the constraint list of
- *                               {@link IR#failOn()} and {@link IR#counts()}. They cannot be use as standalone regex.
- *                               Trying to do so will result in a format violation error.</li>
- * </ul>
+ * This class provides default regex strings for matches on the mach graph (i.e. {@link CompilePhase compile phases}
+ * after the application of optimizations on the ideal graph when matching is done). These default regexes are used
+ * to replace IR node placeholder strings (defined in {@link IRNode}) found in check attributes {@link IR#failOn()} and
+ * {@link IR#counts()}. The mappings in {@link compiler.lib.ir_framework.driver.irmatching.mapping.IRNodeMappings}
+ * specify on which compile phases a default regex is applied.
  *
  * @see IR
  * @see IRNode
- * @see CompilePhase
- * @see DefaultRegexes
+ * @see compiler.lib.ir_framework.driver.irmatching.mapping.IRNodeMappings
  */
 public class MachDefaultRegexes {
     public static final String STORE = START + "Store(B|C|S|I|L|F|D|P|N)" + MID + END;
-
-
 }
