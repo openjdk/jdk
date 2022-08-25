@@ -213,6 +213,7 @@ public enum Source {
         DEPRECATION_ON_IMPORT(MIN, JDK8),
         POLY(JDK8),
         LAMBDA(JDK8, Fragments.FeatureLambda, DiagKind.PLURAL),
+        DEFAULT_METHODS(JDK8, Fragments.FeatureDefaultMethods, DiagKind.PLURAL),
         STRICT_METHOD_CLASH_CHECK(JDK8),
         GRAPH_INFERENCE(JDK8),
         FUNCTIONAL_INTERFACE_MOST_SPECIFIC(JDK8),
