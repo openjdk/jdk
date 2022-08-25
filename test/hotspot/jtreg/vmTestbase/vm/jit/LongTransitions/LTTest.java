@@ -6218,6 +6218,15 @@ public class LTTest
             fisJava.read(javaData);
             for ( int cnt=0;cnt<byteCount;++cnt)
             {
+                // Special handling for a decimal point.
+                // Decimal point differs based on locale, could be '.' or ','.
+                // Due to settings on a test host environment locale may differ between
+                // the native side vs Java side thus causing mismatch and test failure.
+                if ( cData[cnt] == '.' || cData[cnt] == ',' ) {
+                    if (javaData[cnt] == '.' || javaData[cnt] == ',') {
+                        continue;
+                    }
+                }
                 if ( cData[cnt]!=javaData[cnt] )
                 {
                     System.out.println("FAIL:Test failed! "+cnt+" byte are wrong! C file - " + cData[cnt] + " Java file - "+javaData[cnt] );
