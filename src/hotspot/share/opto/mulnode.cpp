@@ -247,7 +247,8 @@ Node *MulINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   }
 
   // Now we have a constant Node on the right and the constant in con.
-  // We can't find ZERO constant but it's handled by Value call.
+  // As the if block above tests the result of find_int_con(0), which
+  // is zero if no constant is found, we cannot have "con == 0" here.
   if (con == 1) return NULL;   // By one is handled by Identity call
 
   // Check for negative constant; if so negate the final result
@@ -341,7 +342,8 @@ Node *MulLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   }
 
   // Now we have a constant Node on the right and the constant in con.
-  // We can't find ZERO constant but it's handled by Value call.
+  // As the if block above tests the result of find_int_con(0), which
+  // is zero if no constant is found, we cannot have "con == 0" here.
   if (con == CONST64(1)) return NULL;  // By one is handled by Identity call
 
   // Check for negative constant; if so negate the final result
