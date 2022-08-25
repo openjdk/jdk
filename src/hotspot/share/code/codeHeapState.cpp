@@ -1398,14 +1398,14 @@ void CodeHeapState::print_usedSpace(outputStream* out, CodeHeap* heap) {
           ast->print(INTPTR_FORMAT, p2i(this_blob));
           ast->fill_to(19);
           //---<  blob offset from CodeHeap begin  >---
-          ast->print("(+" PTR32_FORMAT ")", (unsigned int)((char*)this_blob-low_bound));
+          ast->print("(+" UINT32_FORMAT_X_0 ")", (unsigned int)((char*)this_blob-low_bound));
           ast->fill_to(33);
         } else {
           //---<  block address  >---
           ast->print(INTPTR_FORMAT, p2i(TopSizeArray[i].start));
           ast->fill_to(19);
           //---<  block offset from CodeHeap begin  >---
-          ast->print("(+" PTR32_FORMAT ")", (unsigned int)((char*)TopSizeArray[i].start-low_bound));
+          ast->print("(+" UINT32_FORMAT_X_0 ")", (unsigned int)((char*)TopSizeArray[i].start-low_bound));
           ast->fill_to(33);
         }
 
@@ -1413,7 +1413,7 @@ void CodeHeapState::print_usedSpace(outputStream* out, CodeHeap* heap) {
         bool is_nmethod = TopSizeArray[i].nm_size > 0;
         if (is_nmethod) {
           //---<  nMethod size in hex  >---
-          ast->print(PTR32_FORMAT, TopSizeArray[i].nm_size);
+          ast->print(UINT32_FORMAT_X_0, TopSizeArray[i].nm_size);
           ast->print("(" SIZE_FORMAT_W(4) "K)", TopSizeArray[i].nm_size/K);
           ast->fill_to(51);
           ast->print("  %c", blobTypeChar[TopSizeArray[i].type]);
@@ -1431,7 +1431,7 @@ void CodeHeapState::print_usedSpace(outputStream* out, CodeHeap* heap) {
           ast->print("%s", TopSizeArray[i].blob_name);
         } else {
           //---<  block size in hex  >---
-          ast->print(PTR32_FORMAT, (unsigned int)(TopSizeArray[i].len<<log2_seg_size));
+          ast->print(UINT32_FORMAT_X_0, (unsigned int)(TopSizeArray[i].len<<log2_seg_size));
           ast->print("(" SIZE_FORMAT_W(4) "K)", (TopSizeArray[i].len<<log2_seg_size)/K);
           //---<  no compiler information  >---
           ast->fill_to(56);
@@ -2300,7 +2300,7 @@ void CodeHeapState::print_names(outputStream* out, CodeHeap* heap) {
         //---<  print line prefix (address and offset from CodeHeap start)  >---
         ast->print(INTPTR_FORMAT, p2i(this_blob));
         ast->fill_to(19);
-        ast->print("(+" PTR32_FORMAT ")", (unsigned int)((char*)this_blob-low_bound));
+        ast->print("(+" UINT32_FORMAT_X_0 ")", (unsigned int)((char*)this_blob-low_bound));
         ast->fill_to(33);
 
         // access nmethod and Method fields only if we own the CodeCache_lock.
@@ -2313,7 +2313,7 @@ void CodeHeapState::print_names(outputStream* out, CodeHeap* heap) {
           int          hotness    = nm->hotness_counter();
           bool         get_name   = (cbType == nMethod_inuse) || (cbType == nMethod_notused);
           //---<  nMethod size in hex  >---
-          ast->print(PTR32_FORMAT, total_size);
+          ast->print(UINT32_FORMAT_X_0, total_size);
           ast->print("(" SIZE_FORMAT_W(4) "K)", total_size/K);
           //---<  compiler information  >---
           ast->fill_to(51);
@@ -2488,7 +2488,7 @@ void CodeHeapState::print_line_delim(outputStream* out, outputStream* ast, char*
 
     ast->print(INTPTR_FORMAT, p2i(low_bound + ix*granule_size));
     ast->fill_to(19);
-    ast->print("(+" PTR32_FORMAT "): |", (unsigned int)(ix*granule_size));
+    ast->print("(+" UINT32_FORMAT_X_0 "): |", (unsigned int)(ix*granule_size));
   }
 }
 
@@ -2512,7 +2512,7 @@ void CodeHeapState::print_line_delim(outputStream* out, bufferedStream* ast, cha
 
     ast->print(INTPTR_FORMAT, p2i(low_bound + ix*granule_size));
     ast->fill_to(19);
-    ast->print("(+" PTR32_FORMAT "): |", (unsigned int)(ix*granule_size));
+    ast->print("(+" UINT32_FORMAT_X_0 "): |", (unsigned int)(ix*granule_size));
   }
 }
 

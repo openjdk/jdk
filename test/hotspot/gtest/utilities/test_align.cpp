@@ -117,7 +117,7 @@ static void test_alignments() {
       // Test align up
       const uint64_t up = align_up(values[i], alignment);
       if (0 < up && up <= (uint64_t)std::numeric_limits<T>::max()) {
-        log("Testing align_up:   alignment: 0x" UINT64_FORMAT_X " value: 0x" UINT64_FORMAT_X " expected: 0x" UINT64_FORMAT_X "\n", (uint64_t)alignment, values[i], up);
+        log("Testing align_up:   alignment: " UINT64_FORMAT_X " value: " UINT64_FORMAT_X " expected: " UINT64_FORMAT_X "\n", (uint64_t)alignment, values[i], up);
 
         T value = T(values[i]);
 
@@ -130,7 +130,7 @@ static void test_alignments() {
       // Test align down
       const uint64_t down = align_down(values[i], alignment);
       if (down <= (uint64_t)std::numeric_limits<T>::max()) {
-        log("Testing align_down: alignment: 0x" UINT64_FORMAT_X " value: 0x" UINT64_FORMAT_X " expected: 0x" UINT64_FORMAT_X "\n", (uint64_t)alignment, values[i], down);
+        log("Testing align_down: alignment: " UINT64_FORMAT_X " value: " UINT64_FORMAT_X " expected: " UINT64_FORMAT_X "\n", (uint64_t)alignment, values[i], down);
 
         T value = T(values[i]);
 

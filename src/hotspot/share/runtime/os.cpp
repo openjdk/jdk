@@ -1904,17 +1904,17 @@ void os::naked_sleep(jlong millis) {
 ////// Implementation of PageSizes
 
 void os::PageSizes::add(size_t page_size) {
-  assert(is_power_of_2(page_size), "page_size must be a power of 2: " SIZE_FORMAT_HEX, page_size);
+  assert(is_power_of_2(page_size), "page_size must be a power of 2: " SIZE_FORMAT_X, page_size);
   _v |= page_size;
 }
 
 bool os::PageSizes::contains(size_t page_size) const {
-  assert(is_power_of_2(page_size), "page_size must be a power of 2: " SIZE_FORMAT_HEX, page_size);
+  assert(is_power_of_2(page_size), "page_size must be a power of 2: " SIZE_FORMAT_X, page_size);
   return (_v & page_size) != 0;
 }
 
 size_t os::PageSizes::next_smaller(size_t page_size) const {
-  assert(is_power_of_2(page_size), "page_size must be a power of 2: " SIZE_FORMAT_HEX, page_size);
+  assert(is_power_of_2(page_size), "page_size must be a power of 2: " SIZE_FORMAT_X, page_size);
   size_t v2 = _v & (page_size - 1);
   if (v2 == 0) {
     return 0;
@@ -1923,7 +1923,7 @@ size_t os::PageSizes::next_smaller(size_t page_size) const {
 }
 
 size_t os::PageSizes::next_larger(size_t page_size) const {
-  assert(is_power_of_2(page_size), "page_size must be a power of 2: " SIZE_FORMAT_HEX, page_size);
+  assert(is_power_of_2(page_size), "page_size must be a power of 2: " SIZE_FORMAT_X, page_size);
   if (page_size == max_power_of_2<size_t>()) { // Shift by 32/64 would be UB
     return 0;
   }
