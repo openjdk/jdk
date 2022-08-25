@@ -320,10 +320,6 @@ void print_statistics() {
     ClassLoaderDataGraph::print();
   }
 
-  if (LogTouchedMethods && PrintTouchedMethodsAtExit) {
-    Method::print_touched_methods(tty);
-  }
-
   // Native memory tracking data
   if (PrintNMTStatistics) {
     MemTracker::final_report(tty);
@@ -379,10 +375,6 @@ void print_statistics() {
 
   if (PrintMetaspaceStatisticsAtExit) {
     MetaspaceUtils::print_basic_report(tty, 0);
-  }
-
-  if (LogTouchedMethods && PrintTouchedMethodsAtExit) {
-    Method::print_touched_methods(tty);
   }
 
   ThreadsSMRSupport::log_statistics();
