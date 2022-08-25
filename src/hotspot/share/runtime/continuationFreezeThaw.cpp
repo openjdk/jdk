@@ -381,6 +381,10 @@ public:
 
   inline int size_if_fast_freeze_available();
 
+#ifdef ASSERT
+  bool interpreted_native_or_deoptimized_on_stack();
+#endif
+
 protected:
   inline void init_rest();
   void freeze_fast_init_cont_data(intptr_t* frame_sp);
@@ -745,7 +749,6 @@ NOINLINE freeze_result FreezeBase::freeze_slow() {
 frame FreezeBase::freeze_start_frame() {
   frame f = _thread->last_frame();
   if (LIKELY(!_preempt)) {
-    assert(SharedRuntime::cont_doYield_stub()->contains(f.pc()), "");
     return freeze_start_frame_yield_stub(f);
   } else {
     return freeze_start_frame_safepoint_stub(f);
@@ -755,6 +758,7 @@ frame FreezeBase::freeze_start_frame() {
 frame FreezeBase::freeze_start_frame_yield_stub(frame f) {
   assert(SharedRuntime::cont_doYield_stub()->contains(f.pc()), "must be");
   f = sender<ContinuationHelper::NonInterpretedUnknownFrame>(f);
+  assert(Continuation::is_frame_in_continuation(_thread->last_continuation(), f), "");
   return f;
 }
 
@@ -772,6 +776,7 @@ frame FreezeBase::freeze_start_frame_safepoint_stub(frame f) {
       f = sender<ContinuationHelper::StubFrame>(f); // Safepoint stub in interpreter
     }
   }
+  assert(Continuation::is_frame_in_continuation(_thread->last_continuation(), f), "");
   return f;
 }
 
@@ -1356,14 +1361,14 @@ static bool monitors_on_stack(JavaThread* thread) {
   return false;
 }
 
-static bool interpreted_native_or_deoptimized_on_stack(JavaThread* thread) {
-  ContinuationEntry* ce = thread->last_continuation();
-  RegisterMap map(thread,
+bool FreezeBase::interpreted_native_or_deoptimized_on_stack() {
+  ContinuationEntry* ce = _thread->last_continuation();
+  RegisterMap map(_thread,
                   RegisterMap::UpdateMap::skip,
                   RegisterMap::ProcessFrames::skip,
                   RegisterMap::WalkContinuation::skip);
   map.set_include_argument_oops(false);
-  for (frame f = thread->last_frame(); Continuation::is_frame_in_continuation(ce, f); f = f.sender(&map)) {
+  for (frame f = freeze_start_frame(); Continuation::is_frame_in_continuation(ce, f); f = f.sender(&map)) {
     if (f.is_interpreted_frame() || f.is_native_frame() || f.is_deoptimized_frame()) {
       return true;
     }
@@ -1434,7 +1439,7 @@ static inline int freeze_internal(JavaThread* current, intptr_t* const sp) {
   // adapter or called Deoptimization::unpack_frames. Calls from native frames also go through the interpreter
   // (see JavaCalls::call_helper).
   assert(!current->cont_fastpath()
-         || (current->cont_fastpath_thread_state() && !interpreted_native_or_deoptimized_on_stack(current)), "");
+         || (current->cont_fastpath_thread_state() && !freeze.interpreted_native_or_deoptimized_on_stack()), "");
   bool fast = UseContinuationFastPath && current->cont_fastpath();
   if (fast && freeze.size_if_fast_freeze_available() > 0) {
     freeze.freeze_fast_existing_chunk();
