@@ -295,7 +295,6 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
                                                          Set<TypeMirror> alreadyDocumented,
                                                          TagletWriter writer) {
         // TODO: assert declaredExceptionTypes are instantiated
-        var utils = writer.configuration().utils;
         Content result = writer.getOutputInstance();
         for (TypeMirror declaredExceptionType : declaredExceptionTypes) {
             if (!alreadyDocumented.contains(declaredExceptionType)) {
