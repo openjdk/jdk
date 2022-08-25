@@ -125,7 +125,7 @@ public class CgroupMetrics implements Metrics {
         // Catch the cgroup memory limit exceeding host physical memory.
         // Treat this as unlimited.
         if (subsMem >= getTotalMemorySize0()) {
-            return -1;
+            return CgroupSubsystem.LONG_RETVAL_UNLIMITED;
         }
         return subsMem;
     }
