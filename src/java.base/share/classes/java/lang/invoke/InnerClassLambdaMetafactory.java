@@ -43,6 +43,7 @@ import java.util.LinkedHashSet;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.PropertyPermission;
 import java.util.Set;
+import java.util.StringJoiner;
 
 import static java.lang.invoke.MethodHandleStatics.CLASSFILE_VERSION;
 import static java.lang.invoke.MethodHandles.Lookup.ClassOption.NESTMATE;
@@ -93,6 +94,12 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
 
     private static final boolean disableEagerInitialization;
 
+    private static final boolean generateStableLambdaNames;
+    private static final char paddingCharacter = 'a';
+
+    // Length of a single hash contained in the stable lambda name
+    private static final int stableLambdaNameHashLength;
+
     // condy to load implMethod from class data
     private static final ConstantDynamic implMethodCondy;
 
@@ -103,6 +110,11 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
 
         final String disableEagerInitializationKey = "jdk.internal.lambda.disableEagerInitialization";
         disableEagerInitialization = GetBooleanAction.privilegedGetProperty(disableEagerInitializationKey);
+
+        final String generateStableLambdaNameKey = "jdk.internal.lambda.generateStableLambdaNames";
+        generateStableLambdaNames = GetBooleanAction.privilegedGetProperty(generateStableLambdaNameKey);
+
+        stableLambdaNameHashLength = hashValueString(Long.MAX_VALUE).length();
 
         // condy to load implMethod from class data
         MethodType classDataMType = methodType(Object.class, MethodHandles.Lookup.class, String.class, Class.class);
@@ -179,7 +191,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
         implMethodName = implInfo.getName();
         implMethodDesc = implInfo.getMethodType().toMethodDescriptorString();
         constructorType = factoryType.changeReturnType(Void.TYPE);
-        lambdaClassName = lambdaClassName(targetClass);
+        lambdaClassName = generateStableLambdaNames ? stableLambdaClassName(targetClass) : lambdaClassName(targetClass);
         // If the target class invokes a protected method inherited from a
         // superclass in a different package, or does 'invokespecial', the
         // lambda class has no access to the resolved method. Instead, we need
@@ -204,12 +216,106 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
     }
 
     private static String lambdaClassName(Class<?> targetClass) {
+        return createNameFromTargetClass(targetClass) + counter.incrementAndGet();
+    }
+
+    private static String createNameFromTargetClass(Class<?> targetClass) {
         String name = targetClass.getName();
         if (targetClass.isHidden()) {
             // use the original class name
             name = name.replace('/', '_');
         }
-        return name.replace('.', '/') + "$$Lambda$" + counter.incrementAndGet();
+        return name.replace('.', '/') + "$$Lambda$";
+    }
+
+    private static String hashValueString(long hashValue) {
+        return Long.toString(hashValue, Character.MAX_RADIX);
+    }
+    /**
+     * Calculate hash value of the given String in the same manner as the
+     * java.lang.StringUTF16#hashCode does, except that hash value
+     * is long instead of int.
+     *
+     * @param name String for which method calculates hash value for
+     *
+     * @return a hash value for the given String
+     * */
+    private String fixedSizeStringHash(String name) {
+        long h = 0;
+        int length = name.length();
+        for (int i = 0; i < length; i++) {
+            h = 31 * h + name.charAt(i);
+        }
+
+        StringBuilder hash = new StringBuilder(hashValueString(Math.abs(h)));
+        int hashLength = hash.length();
+
+        // As all the hashes contained in the stable lambda names should
+        // be of the same length, we pad some of them with the special
+        // character '#' which is never part of the hash value.
+        while (hashLength != stableLambdaNameHashLength) {
+            hash.append(paddingCharacter);
+            hashLength++;
+        }
+
+        return hash.toString();
+    }
+
+    private String stableLambdaNameHash(String name) {
+        StringBuilder[] hashFragments = new StringBuilder[]{new StringBuilder(), new StringBuilder()};
+        int n = name.length();
+
+        for (int i = 0; i < n; i++) {
+            hashFragments[i % hashFragments.length].append(name.charAt(i));
+        }
+
+        StringBuilder stableNameHash = new StringBuilder();
+        for (StringBuilder sb : hashFragments) {
+            stableNameHash.append(fixedSizeStringHash(sb.toString()));
+        }
+
+        return stableNameHash.toString();
+    }
+
+    /**
+     * Creating stable name for lambda class.
+     * Parameters that are used to create stable name
+     * are a superset of the parameters that are used in
+     * {@link java.lang.invoke.LambdaProxyClassArchive#addToArchive}
+     * to store lambdas.
+     *
+     * @return a stable name for the created lambda class.
+     */
+    private String stableLambdaClassName(Class<?> targetClass) {
+        String name = createNameFromTargetClass(targetClass);
+
+        StringBuilder hashData = new StringBuilder().append(interfaceMethodName);
+        hashData.append(getQualifiedSignature(factoryType));
+        hashData.append(getQualifiedSignature(interfaceMethodType));
+        hashData.append(implementation.internalMemberName().toString());
+        hashData.append(getQualifiedSignature(dynamicMethodType));
+
+        for (Class<?> clazz : altInterfaces) {
+            hashData.append(clazz.getName());
+        }
+
+        for (MethodType method : altMethods) {
+            hashData.append(getQualifiedSignature(method));
+        }
+
+        name += stableLambdaNameHash(hashData.toString());
+
+        return name;
+    }
+
+    private String getQualifiedSignature(MethodType type) {
+        StringJoiner sj = new StringJoiner(",", "(",
+                ")" + type.returnType().getName());
+        Class<?>[] ptypes = type.ptypes();
+        for (int i = 0; i < ptypes.length; i++) {
+            sj.add(ptypes[i].getName());
+        }
+        return sj.toString();
     }
 
     /**
