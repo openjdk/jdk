@@ -1196,9 +1196,9 @@ public class FilePane extends JPanel implements PropertyChangeListener {
 
             } else if (value instanceof Long len) {
                 /*
-                 * Code block is relevant to Linux.
-                 * File size is display up to 1 decimal precision.
-                 * Base-10 number system used for formatting file size
+                 * This code block is relevant to Linux.
+                 * File size is displayd up to 1 decimal precision.
+                 * Base-10 number system is used for formatting file size
                  * similar to how it's formatted in file managers on Linux.
                  * Empty file size is shown as 0.0 KB,
                  * 1-199-byte files are shown as 0.1 KB,
@@ -1261,12 +1261,14 @@ public class FilePane extends JPanel implements PropertyChangeListener {
             mf.setFormat(0, nf);
         }
 
-        /*
-         * File size is converted to single decimal precision to keep
-         * it similar to how it's formatted in file managers on Linux.
-         * Returns the file size in one decimal precision.
+        /**
+         * Rounds a value to one decimal place. It's used to format
+         * file size similar to how it's formatted in file managers on Linux.
+         *
+         * @param fileSize the file size to round to one decimal place
+         * @return file size rounded to one decimal place
          */
-        private static double formatToDoubleValue(long fileSize) {
+        private static double roundToOneDecimalPlace(long fileSize) {
             return (fileSize / 100L) / 10.0d;
         }
     }
