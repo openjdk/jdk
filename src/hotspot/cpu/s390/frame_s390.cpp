@@ -122,13 +122,8 @@ bool frame::safe_for_sender(JavaThread *thread) {
     address   sender_pc = (address)   sender_abi->return_pc;
 
     // We must always be able to find a recognizable pc.
-    CodeBlob* sender_blob = CodeCache::find_blob_unsafe(sender_pc);
+    CodeBlob* sender_blob = CodeCache::find_blob(sender_pc);
     if (sender_blob == NULL) {
-      return false;
-    }
-
-    // Could be a zombie method
-    if (sender_blob->is_zombie() || sender_blob->is_unloaded()) {
       return false;
     }
 
@@ -424,7 +419,7 @@ void frame::back_trace(outputStream* st, intptr_t* start_sp, intptr_t* top_pc, u
         }
       }
     } else if (CodeCache::contains(current_pc)) {
-      blob = CodeCache::find_blob_unsafe(current_pc);
+      blob = CodeCache::find_blob(current_pc);
       if (blob) {
         if (blob->is_nmethod()) {
           frame_type = 3;
