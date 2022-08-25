@@ -127,7 +127,7 @@ public class CgroupMetrics implements Metrics {
         if (subs_mem >= getTotalMemorySize0()) {
             return -1;
         }
-        return subsystem.getMemoryLimit();
+        return subs_mem;
     }
 
     @Override
