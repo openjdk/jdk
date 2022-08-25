@@ -4615,6 +4615,139 @@ void C2_MacroAssembler::vector_unsigned_cast(XMMRegister dst, XMMRegister src, i
   }
 }
 
+void C2_MacroAssembler::vector_mask_cast(XMMRegister dst, XMMRegister src,
+                                         BasicType dst_bt, BasicType src_bt, int vlen) {
+  int vlen_enc = vector_length_encoding(MAX2(type2aelembytes(src_bt), type2aelembytes(dst_bt)) * vlen);
+  int dst_bt_size = type2aelembytes(dst_bt);
+  int src_bt_size = type2aelembytes(src_bt);
+  if (dst_bt_size > src_bt_size) {
+    switch (dst_bt_size / src_bt_size) {
+      case 2: {
+        if (vlen_enc == AVX_512bit && !VM_Version::supports_avx512bw()) {
+          vpmovsxwd(dst, src, vlen_enc);
+        } else {
+          vpmovsxbw(dst, src, vlen_enc);
+        }
+        break;
+      }
+      case 4: vpmovsxbd(dst, src, vlen_enc); break;
+      case 8: vpmovsxbq(dst, src, vlen_enc); break;
+      default: ShouldNotReachHere();
+    }
+  } else {
+    assert(dst_bt_size < src_bt_size, "");
+    switch (src_bt_size / dst_bt_size) {
+      case 2: {
+        if (vlen_enc == AVX_512bit) {
+          if (VM_Version::supports_avx512bw()) {
+            evpmovwb(dst, src, vlen_enc);
+          } else {
+            evpmovdw(dst, src, vlen_enc);
+          }
+        } else if (VM_Version::supports_avx512vl()) {
+          if (VM_Version::supports_avx512bw()) {
+            evpmovwb(dst, src, vlen_enc);
+          } else if (dst_bt != T_BYTE) {
+            evpmovdw(dst, src, vlen_enc);
+          } else if (vlen_enc == AVX_128bit) {
+            vpacksswb(dst, src, src, vlen_enc);
+          } else {
+            vpacksswb(dst, src, src, vlen_enc);
+            vpermq(dst, dst, 0x08, vlen_enc);
+          }
+        } else {
+          if (vlen_enc == AVX_128bit) {
+            vpacksswb(dst, src, src, vlen_enc);
+          } else {
+            vpacksswb(dst, src, src, vlen_enc);
+            vpermq(dst, dst, 0x08, vlen_enc);
+          }
+        }
+        break;
+      }
+      case 4: {
+        if (vlen_enc == AVX_512bit || VM_Version::supports_avx512vl()) {
+          evpmovdb(dst, src, vlen_enc);
+        } else if (vlen_enc == AVX_128bit) {
+          vpackssdw(dst, src, src, vlen_enc);
+          vpacksswb(dst, dst, dst, vlen_enc);
+        } else {
+          vpackssdw(dst, src, src, vlen_enc);
+          vpermq(dst, dst, 0x08, vlen_enc);
+          vpacksswb(dst, dst, dst, AVX_128bit);
+        }
+        break;
+      }
+      case 8: {
+        if (vlen_enc == AVX_512bit || VM_Version::supports_avx512vl()) {
+          evpmovqb(dst, src, vlen_enc);
+        } else if (vlen_enc == AVX_128bit) {
+          vpshufd(dst, src, 0x08, vlen_enc);
+          vpackssdw(dst, dst, dst, vlen_enc);
+          vpacksswb(dst, dst, dst, vlen_enc);
+        } else {
+          vpshufd(dst, src, 0x08, vlen_enc);
+          vpermq(dst, dst, 0x08, vlen_enc);
+          vpackssdw(dst, dst, dst, AVX_128bit);
+          vpacksswb(dst, dst, dst, AVX_128bit);
+        }
+        break;
+      }
+      default: ShouldNotReachHere();
+    }
+  }
+}
+
+void C2_MacroAssembler::vector_mask_cast(XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
+                                         XMMRegister xtmp2, BasicType dst_bt, BasicType src_bt, int vlen) {
+  int dst_bt_size = type2aelembytes(dst_bt);
+  int src_bt_size = type2aelembytes(src_bt);
+  if (dst_bt_size > src_bt_size) {
+    switch (dst_bt_size / src_bt_size) {
+      case 2:
+        vpmovsxbw(xtmp1, src, AVX_128bit);
+        vpshufd(xtmp2, src, 0x0E, AVX_128bit);
+        vpmovsxbw(xtmp2, xtmp2, AVX_128bit);
+        vinsertf128(dst, xtmp1, xtmp2, 0x01);
+        break;
+      case 4:
+        vpmovsxbd(xtmp1, src, AVX_128bit);
+        vpshufd(xtmp2, src, 0x01, AVX_128bit);
+        vpmovsxbd(xtmp2, xtmp2, AVX_128bit);
+        vinsertf128(dst, xtmp1, xtmp2, 0x01);
+        break;
+      case 8:
+        vpmovsxbq(xtmp1, src, AVX_128bit);
+        pshuflw(xtmp2, src, 0x01);
+        vpmovsxbq(xtmp2, xtmp2, AVX_128bit);
+        vinsertf128(dst, xtmp1, xtmp2, 0x01);
+        break;
+      default: ShouldNotReachHere();
+    }
+  } else {
+    assert(dst_bt_size < src_bt_size, "");
+    assert(xtmp2 == xnoreg, "");
+    switch (src_bt_size / dst_bt_size) {
+      case 2:
+        vextractf128(xtmp1, src, 0x01);
+        vpacksswb(dst, src, xtmp1, AVX_128bit);
+        break;
+      case 4:
+        vextractf128(xtmp1, src, 0x01);
+        vpackssdw(dst, src, xtmp1, AVX_128bit);
+        vpacksswb(dst, dst, dst, AVX_128bit);
+        break;
+      case 8:
+        vpermilps(dst, src, 0x08, AVX_256bit);
+        vpermpd(dst, dst, 0x08, AVX_256bit);
+        vpackssdw(dst, dst, dst, AVX_128bit);
+        vpacksswb(dst, dst, dst, AVX_128bit);
+        break;
+      default: ShouldNotReachHere();
+    }
+  }
+}
+
 void C2_MacroAssembler::evpternlog(XMMRegister dst, int func, KRegister mask, XMMRegister src2, XMMRegister src3,
                                    bool merge, BasicType bt, int vlen_enc) {
   if (bt == T_INT) {
