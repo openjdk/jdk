@@ -99,11 +99,16 @@ public interface MatchResult {
      *          If there is no capturing group in the pattern
      *          with the given name
      *
-     * @implNote The default implementation of this method makes use of the
-     *          map returned by {@link #namedGroups()}.
-     *          It is thus sufficient to override {@link #namedGroups()} for
-     *          this method to work. However, overriding this method directly
-     *          might be preferable for other reasons.
+     * @implNote
+     * The default implementation of this method makes use of the map returned
+     * by {@link #namedGroups()}. It is thus sufficient to override
+     * {@link #namedGroups()} for this method to work. However, overriding this
+     * method directly might be preferable for performance or for other reasons.
+     *
+     * @implSpec
+     * The default implementation of this method throws
+     * {@link UnsupportedOperationException} if {@link #namedGroups()} is not
+     * overridden.
      *
      * @since 20
      */
@@ -168,11 +173,16 @@ public interface MatchResult {
      *          If there is no capturing group in the pattern
      *          with the given name
      *
-     * @implNote The default implementation of this method makes use of the
-     *          map returned by {@link #namedGroups()}.
-     *          It is thus sufficient to override {@link #namedGroups()} for
-     *          this method to work. However, overriding this method directly
-     *          might be preferable for other reasons.
+     * @implNote
+     * The default implementation of this method makes use of the map returned
+     * by {@link #namedGroups()}. It is thus sufficient to override
+     * {@link #namedGroups()} for this method to work. However, overriding this
+     * method directly might be preferable for performance or for other reasons.
+     *
+     * @implSpec
+     * The default implementation of this method throws
+     * {@link UnsupportedOperationException} if {@link #namedGroups()} is not
+     * overridden.
      *
      * @since 20
      */
@@ -265,11 +275,16 @@ public interface MatchResult {
      *          If there is no capturing group in the pattern
      *          with the given name
      *
-     * @implNote The default implementation of this method makes use of the
-     *          map returned by {@link #namedGroups()}.
-     *          It is thus sufficient to override {@link #namedGroups()} for
-     *          this method to work. However, overriding this method directly
-     *          might be preferable for other reasons.
+     * @implNote
+     * The default implementation of this method makes use of the map returned
+     * by {@link #namedGroups()}. It is thus sufficient to override
+     * {@link #namedGroups()} for this method to work. However, overriding this
+     * method directly might be preferable for performance or for other reasons.
+     *
+     * @implSpec
+     * The default implementation of this method throws
+     * {@link UnsupportedOperationException} if {@link #namedGroups()} is not
+     * overridden.
      *
      * @since 20
      */
