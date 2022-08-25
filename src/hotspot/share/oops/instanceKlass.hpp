@@ -940,7 +940,6 @@ public:
   inline DependencyContext dependencies();
   void enqueue_deoptimization_dependent_nmethods(KlassDepChange& changes, DeoptimizationContext* deopt);
   void add_dependent_nmethod(nmethod* nm);
-  void remove_dependent_nmethod(nmethod* nm);
   void clean_dependency_context();
 
   // On-stack replacement support

@@ -424,7 +424,7 @@ class os::Linux {
     return _nindex_to_node;
   }
 
-  void* resolve_function_descriptor(void* p);
+  static void* resolve_function_descriptor(void* p);
 };
 
 #endif // OS_LINUX_OS_LINUX_HPP

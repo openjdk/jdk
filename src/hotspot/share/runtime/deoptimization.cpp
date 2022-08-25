@@ -35,6 +35,7 @@
 #include "code/pcDesc.hpp"
 #include "code/scopeDesc.hpp"
 #include "compiler/compilationPolicy.hpp"
+#include "compiler/compilerDefinitions.inline.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "interpreter/bytecode.hpp"
 #include "interpreter/interpreter.hpp"
@@ -618,7 +619,7 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
     ContinuationEntry::from_frame(deopt_sender)->set_argsize(0);
   }
 
-  assert(CodeCache::find_blob_unsafe(frame_pcs[0]) != NULL, "bad pc");
+  assert(CodeCache::find_blob(frame_pcs[0]) != NULL, "bad pc");
 
 #if INCLUDE_JVMCI
   if (exceptionObject() != NULL) {
@@ -933,7 +934,7 @@ void Deoptimization::deoptimize_all_whitebox() {
   DeoptimizationContext deopt;
   {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    CompiledMethodIterator iter(CompiledMethodIterator::only_alive_and_not_unloading);
+    CompiledMethodIterator iter(CompiledMethodIterator::only_not_unloading);
     while(iter.next()) {
       CompiledMethod* nm = iter.method();
       if (!nm->is_native_method()) {
@@ -1025,7 +1026,6 @@ void DeoptimizationContext::enqueue_no_recompile_count_update(CompiledMethod* cm
 }
 
 void DeoptimizationContext::deopt_compiled_methods() {
-  SweeperBlocker sw;
   CompiledMethod* nm = CompiledMethod::take_enqueued_deoptimization_root_method();
   uint links_found = 0;
   while (nm != nullptr) {
@@ -1080,7 +1080,7 @@ void Deoptimization::deoptimize_dependents(const methodHandle& m_h) {
 
 void Deoptimization::enqueue_dependents(Method* dependee, DeoptimizationContext* deopt) {
   MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-  CompiledMethodIterator iter(CompiledMethodIterator::only_alive_and_not_unloading);
+  CompiledMethodIterator iter(CompiledMethodIterator::only_not_unloading);
   while(iter.next()) {
     CompiledMethod* nm = iter.method();
     if (nm->is_dependent_on_method(dependee)) {
@@ -2046,9 +2046,6 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* current, jint tr
 #endif
   frame stub_frame = current->last_frame();
   frame fr = stub_frame.sender(&reg_map);
-  // Make sure the calling nmethod is not getting deoptimized and removed
-  // before we are done with it.
-  nmethodLocker nl(fr.pc());
 
   // Log a message
   Events::log_deopt_message(current, "Uncommon trap: trap_request=" PTR32_FORMAT " fr.pc=" INTPTR_FORMAT " relative=" INTPTR_FORMAT,
@@ -2105,7 +2102,7 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* current, jint tr
 
     // Ensure that we can record deopt. history:
     // Need MDO to record RTM code generation state.
-    bool create_if_missing = ProfileTraps || UseCodeAging RTM_OPT_ONLY( || UseRTMLocking );
+    bool create_if_missing = ProfileTraps RTM_OPT_ONLY( || UseRTMLocking );
 
     methodHandle profiled_method;
 #if INCLUDE_JVMCI

@@ -35,7 +35,6 @@
 #include "runtime/deoptimization.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "utilities/growableArray.hpp"
-#include "utilities/hashtable.hpp"
 
 //** Dependencies represent assertions (approximate invariants) within
 // the runtime system, e.g. class hierarchy changes.  An example is an

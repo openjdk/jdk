@@ -893,7 +893,7 @@ private:
   void oops_do_frames(OopClosure* f, CodeBlobClosure* cf);
   void oops_do_no_frames(OopClosure* f, CodeBlobClosure* cf);
 
-  // Sweeper operations
+  // GC operations
   virtual void nmethods_do(CodeBlobClosure* cf);
 
   // RedefineClasses Support

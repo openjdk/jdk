@@ -62,7 +62,6 @@
 #include "runtime/stackWatermarkSet.inline.hpp"
 #include "runtime/stubCodeGenerator.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "runtime/sweeper.hpp"
 #include "runtime/synchronizer.hpp"
 #include "runtime/threads.hpp"
 #include "runtime/threadSMR.hpp"

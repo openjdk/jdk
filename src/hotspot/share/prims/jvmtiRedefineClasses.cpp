@@ -4111,8 +4111,8 @@ void VM_RedefineClasses::old_nmethods_do(MetadataClosure* f) {
     length = old_compiled_method_table->length();
     for (int i = 0; i < length; i++) {
       CompiledMethod* cm = old_compiled_method_table->at(i);
-      // Only walk alive nmethods, the dead ones will get removed by the sweeper or GC.
-      if (cm->is_alive() && !cm->is_unloading()) {
+      // Only walk !is_unloading nmethods, the other ones will get removed by the GC.
+      if (!cm->is_unloading()) {
         old_compiled_method_table->at(i)->metadata_do(f);
       }
     }
@@ -4141,7 +4141,7 @@ void VM_RedefineClasses::flush_dependent_code() {
   DeoptimizationContext deopt;
   const bool first_call = !JvmtiExport::all_dependencies_are_recorded();
   assert(SafepointSynchronize::is_at_safepoint(), "Can only do this at a safepoint!");
-  CompiledMethodIterator iter(CompiledMethodIterator::only_alive);
+  CompiledMethodIterator iter(CompiledMethodIterator::all_blobs);
   if (first_call) {
     while(iter.next()) {
       CompiledMethod* nm = iter.method();
