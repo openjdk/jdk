@@ -53,70 +53,71 @@ readSingle(JNIEnv *env, jobject this, jfieldID fid) {
     return ret & 0xFF;
 }
 
-/*
- * Returns true if the array slice defined by the given offset and length
- * is out of bounds.
- */
-static int
-outOfBounds(JNIEnv *env, jint off, jint len, jbyteArray array) {
-    return ((off < 0) ||
-            (len < 0) ||
-            // We are very careful to avoid signed integer overflow,
-            // the result of which is undefined in C.
-            ((*env)->GetArrayLength(env, array) - off < len));
-}
+// The size of a stack-allocated buffer.
+#define STACK_BUF_SIZE 8192
 
+// The maximum size of a dynamically allocated buffer.
+#define MAX_MALLOC_SIZE 65536
+
+//
+// The caller should ensure that bytes != NULL, len > 0, and off and len
+// specify a valid sub-range of bytes
+//
 jint
 readBytes(JNIEnv *env, jobject this, jbyteArray bytes,
-          jint off, jint len, jlong bufAddr, jint bufSize, jfieldID fid)
+          jint off, jint len, jfieldID fid)
 {
-    jint remaining;
-    void* buf = (void*)jlong_to_ptr(bufAddr);
-    jint readSize;
-    jint n;
+    char stackBuf[STACK_BUF_SIZE];
+    char *buf = NULL;
+    jint buf_size, read_size;
+    jint n, nread;
     FD fd;
 
-    if (IS_NULL(bytes)) {
-        JNU_ThrowNullPointerException(env, NULL);
-        return -1;
+    if (len > STACK_BUF_SIZE) {
+        buf_size = len < MAX_MALLOC_SIZE ? len : MAX_MALLOC_SIZE;
+        buf = malloc(buf_size);
+        if (buf == NULL) {
+            JNU_ThrowOutOfMemoryError(env, NULL);
+            return 0;
+        }
+    } else {
+        buf = stackBuf;
+        buf_size = STACK_BUF_SIZE;
     }
 
-    if (outOfBounds(env, off, len, bytes)) {
-        JNU_ThrowByName(env, "java/lang/IndexOutOfBoundsException", NULL);
-        return -1;
-    }
-
-    if (len == 0) {
-        return 0;
-    }
-
-    fd = getFD(env, this, fid);
-    if (fd == -1) {
-        JNU_ThrowIOException(env, "Stream Closed");
-        return -1;
-    }
-
-    remaining = len;
-    while (remaining > 0) {
-        readSize = remaining < bufSize ? remaining : bufSize;
-        n = IO_Read(fd, buf, readSize);
+    nread = 0;
+    while (nread < len) {
+        read_size = len - nread;
+        if (read_size > buf_size)
+            read_size = buf_size;
+        fd = getFD(env, this, fid);
+        if (fd == -1) {
+            JNU_ThrowIOException(env, "Stream Closed");
+            nread = -1;
+            break;
+        }
+        n = IO_Read(fd, buf, read_size);
         if (n > 0) {
             (*env)->SetByteArrayRegion(env, bytes, off, n, (jbyte*)buf);
-            remaining -= n;
+            nread += n;
             // Exit loop on short read
-            if (n < readSize)
+            if (n < read_size)
                 break;
             off += n;
-        } else if (n == 0) { // EOF
-            if (remaining == len)
-                return -1;
-        } else {
+        } else if (n == -1) {
             JNU_ThrowIOExceptionWithLastError(env, "Read error");
-            return -1;
+            break;
+        } else { // EOF
+            if (nread == 0)
+                nread = -1;
+            break;
         }
     }
 
-    return len - remaining;
+    if (buf != stackBuf) {
+        free(buf);
+    }
+    return nread;
 }
 
 void
@@ -139,57 +140,60 @@ writeSingle(JNIEnv *env, jobject this, jint byte, jboolean append, jfieldID fid)
     }
 }
 
+//
+// The caller should ensure that bytes != NULL, len > 0, and off and len
+// specify a valid sub-range of bytes
+//
 void
 writeBytes(JNIEnv *env, jobject this, jbyteArray bytes,
-           jint off, jint len, jboolean append,
-           jlong bufAddr, jint bufSize, jfieldID fid)
+           jint off, jint len, jboolean append, jfieldID fid)
 {
-    jint remaining;
-    void* buf = (void*)jlong_to_ptr(bufAddr);
-    jint writeSize;
+    char stackBuf[STACK_BUF_SIZE];
+    char *buf = NULL;
+    jint buf_size, write_size;
     jint n;
     FD fd;
 
-    if (IS_NULL(bytes)) {
-        JNU_ThrowNullPointerException(env, NULL);
-        return;
+    if (len > STACK_BUF_SIZE) {
+        buf_size = len < MAX_MALLOC_SIZE ? len : MAX_MALLOC_SIZE;
+        buf = malloc(buf_size);
+        if (buf == NULL) {
+            JNU_ThrowOutOfMemoryError(env, NULL);
+            return;
+        }
+    } else {
+        buf = stackBuf;
+        buf_size = STACK_BUF_SIZE;
     }
 
-    if (outOfBounds(env, off, len, bytes)) {
-        JNU_ThrowByName(env, "java/lang/IndexOutOfBoundsException", NULL);
-        return;
-    }
-
-    if (len == 0) {
-        return;
-    }
-
-    fd = getFD(env, this, fid);
-    if (fd == -1) {
-        JNU_ThrowIOException(env, "Stream Closed");
-        return;
-    }
-
-    remaining = len;
-    while (remaining > 0) {
-        writeSize = remaining < bufSize ? remaining : bufSize;
-        (*env)->GetByteArrayRegion(env, bytes, off, writeSize, (jbyte*)buf);
+    while (len > 0) {
+        write_size = len < buf_size ? len : buf_size;
+        (*env)->GetByteArrayRegion(env, bytes, off, write_size, (jbyte*)buf);
         if (!(*env)->ExceptionOccurred(env)) {
+            fd = getFD(env, this, fid);
+            if (fd == -1) {
+                JNU_ThrowIOException(env, "Stream Closed");
+                break;
+            }
             if (append == JNI_TRUE) {
-                n = IO_Append(fd, buf, writeSize);
+                n = IO_Append(fd, buf, write_size);
             } else {
-                n = IO_Write(fd, buf, writeSize);
+                n = IO_Write(fd, buf, write_size);
             }
             if (n == -1) {
                 JNU_ThrowIOExceptionWithLastError(env, "Write error");
                 break;
             }
             off += n;
-            remaining -= n;
+            len -= n;
         } else { // ArrayIndexOutOfBoundsException
             (*env)->ExceptionClear(env);
             break;
         }
+    }
+
+    if (buf != stackBuf) {
+        free(buf);
     }
 }
 

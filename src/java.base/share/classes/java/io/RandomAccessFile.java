@@ -25,15 +25,14 @@
 
 package java.io;
 
-import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.util.Objects;
 
 import jdk.internal.access.JavaIORandomAccessFileAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.Blocker;
-import sun.nio.ch.DirectBuffer;
 import sun.nio.ch.FileChannelImpl;
-import sun.nio.ch.Util;
+
 
 /**
  * Instances of this class support both reading and writing to a
@@ -63,13 +62,7 @@ import sun.nio.ch.Util;
 
 public class RandomAccessFile implements DataOutput, DataInput, Closeable {
 
-    // minimum capacity of temporary direct buffers
-    private static final int MIN_BUFFER_SIZE = 8192;
-
-    // maximim capacity of temporary direct buffers
-    private static final int MAX_BUFFER_SIZE = 65536;
-
-    private final FileDescriptor fd;
+    private FileDescriptor fd;
     private volatile FileChannel channel;
     private boolean rw;
 
@@ -88,31 +81,6 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
     private static final int O_SYNC =   4;
     private static final int O_DSYNC =  8;
     private static final int O_TEMPORARY =  16;
-
-    /**
-     * Calculate the size of a temporary direct buffer.
-     *
-     * @param the number of bytes in question
-     * @return the size of buffer to use
-     */
-    // package scope
-    static final int bufferSize(int len) {
-        if (len <= 0) {
-            return 0;
-        }
-
-        if (len >= MAX_BUFFER_SIZE) {
-            return MAX_BUFFER_SIZE;
-        }
-
-        if (len % MIN_BUFFER_SIZE == 0) {
-            return len;
-        }
-
-        // len is positive and not a multiple of MIN_BUFFER_SIZE; return
-        // the smallest multiple of MIN_BUFFER_SIZE greater than len.
-        return (1 + len/MIN_BUFFER_SIZE)*MIN_BUFFER_SIZE;
-    }
 
     /**
      * Creates a random access file stream to read from, and optionally
@@ -411,44 +379,25 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
     private native int read0() throws IOException;
 
     /**
-     * Reads a sub array as a sequence of bytes.
+     * Reads a sub-array as a sequence of bytes.
      * @param     b the buffer into which the data is read.
      * @param     off the start offset of the data.
      * @param     len the number of bytes to read.
      * @throws    IOException If an I/O error has occurred.
      */
     private int readBytes(byte[] b, int off, int len) throws IOException {
-        int bufSize = bufferSize(len);
-        ByteBuffer buf = Util.getTemporaryDirectBuffer(bufSize);
+        Objects.checkFromIndexSize(off, len, b.length);
+        if (len == 0)
+            return 0;
+        long comp = Blocker.begin();
         try {
-            long comp = Blocker.begin();
-            try {
-                long bufAddr = ((DirectBuffer)buf).address();
-                return readBytes0(b, off, len, bufAddr, bufSize);
-            } finally {
-                Blocker.end(comp);
-            }
+            return readBytes0(b, off, len);
         } finally {
-            Util.releaseTemporaryDirectBuffer(buf);
+            Blocker.end(comp);
         }
     }
 
-    /**
-     * Reads a subarray as a sequence of bytes via a temporary direct
-     * buffer.
-     *
-     * @param     b the data to be read
-     * @param     off the start offset in the data
-     * @param     len the number of bytes to be read
-     * @param     bufAddr the address of the temporary direct buffer's array
-     * @param     bufSize the size of the temporary direct buffer's array
-     * @return    the total number of bytes read into the buffer, or -1
-     *            if there is no more data because the end of the stream
-     *            has been reached.
-     * @throws    IOException If an I/O error has occurred.
-     */
-    private native int readBytes0(byte[] b, int off, int len, long bufAddr,
-                                  int bufSize) throws IOException;
+    private native int readBytes0(byte[] b, int off, int len) throws IOException;
 
     /**
      * Reads up to {@code len} bytes of data from this file into an
@@ -604,7 +553,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
     private native void write0(int b) throws IOException;
 
     /**
-     * Writes a sub array as a sequence of bytes.
+     * Writes a sub-array as a sequence of bytes.
      *
      * @param     b the data to be written
      * @param     off the start offset in the data
@@ -612,34 +561,18 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @throws    IOException If an I/O error has occurred.
      */
     private void writeBytes(byte[] b, int off, int len) throws IOException {
-        int bufSize = bufferSize(len);
-        ByteBuffer buf = Util.getTemporaryDirectBuffer(bufSize);
+        Objects.checkFromIndexSize(off, len, b.length);
+        if (len == 0)
+            return;
+        long comp = Blocker.begin();
         try {
-            long comp = Blocker.begin();
-            try {
-                long bufAddr = ((DirectBuffer)buf).address();
-                writeBytes0(b, off, len, bufAddr, bufSize);
-            } finally {
-                Blocker.end(comp);
-            }
+            writeBytes0(b, off, len);
         } finally {
-            Util.releaseTemporaryDirectBuffer(buf);
+            Blocker.end(comp);
         }
     }
 
-    /**
-     * Writes a subarray as a sequence of bytes via a temporary direct buffer.
-     *
-     * @param     b the data to be written
-     * @param     off the start offset in the data
-     * @param     len the number of bytes to be written
-     * @param     bufAddr the address of the temporary direct buffer's array
-     * @param     bufSize the size of the temporary direct buffer's array
-     * @throws    IOException If an I/O error has occurred.
-     */
-    private native void writeBytes0(byte[] b, int off, int len,
-                                    long bufAddr, int bufSize)
-        throws IOException;
+    private native void writeBytes0(byte[] b, int off, int len) throws IOException;
 
     /**
      * Writes {@code b.length} bytes from the specified byte array

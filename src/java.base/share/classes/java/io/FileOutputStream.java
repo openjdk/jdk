@@ -25,14 +25,13 @@
 
 package java.io;
 
-import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.util.Objects;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.access.JavaIOFileDescriptorAccess;
 import jdk.internal.misc.Blocker;
-import sun.nio.ch.DirectBuffer;
 import sun.nio.ch.FileChannelImpl;
-import sun.nio.ch.Util;
+
 
 /**
  * A file output stream is an output stream for writing data to a
@@ -307,7 +306,7 @@ public class FileOutputStream extends OutputStream
      * @param   append   {@code true} if the write operation first
      *     advances the position to the end of file
      */
-    private native void write(int b, boolean append) throws IOException;
+    private native void write0(int b, boolean append) throws IOException;
 
     /**
      * Writes the specified byte to this file output stream. Implements
@@ -321,24 +320,36 @@ public class FileOutputStream extends OutputStream
         boolean append = fdAccess.getAppend(fd);
         long comp = Blocker.begin();
         try {
-            write(b, append);
+            write0(b, append);
         } finally {
             Blocker.end(comp);
         }
     }
 
     /**
-     * Writes a subarray as a sequence of bytes via a temporary direct buffer.
+     * Writes a sub-array as a sequence of bytes.
      *
      * @param     b the data to be written
      * @param     off the start offset in the data
-     * @param     len the number of bytes to be written
-     * @param     bufAddr the address of the temporary direct buffer's array
-     * @param     bufSize the size of the temporary direct buffer's array
+     * @param     len the number of bytes that are written
+     * @param     append {@code true} to first advance the position to the
+     *            end of file
      * @throws    IOException If an I/O error has occurred.
      */
-    private native void writeBytes0(byte[] b, int off, int len, boolean append,
-                                    long bufAddr, int bufSize)
+    private void writeBytes(byte[] b, int off, int len, boolean append)
+        throws IOException {
+        Objects.checkFromIndexSize(off, len, b.length);
+        if (len == 0)
+            return;
+        long comp = Blocker.begin();
+        try {
+            writeBytes0(b, off, len, append);
+        } finally {
+            Blocker.end(comp);
+        }
+    }
+
+    private native void writeBytes0(byte[] b, int off, int len, boolean append)
         throws IOException;
 
     /**
@@ -351,19 +362,7 @@ public class FileOutputStream extends OutputStream
     @Override
     public void write(byte[] b) throws IOException {
         boolean append = fdAccess.getAppend(fd);
-        int bufSize = RandomAccessFile.bufferSize(b.length);
-        ByteBuffer buf = Util.getTemporaryDirectBuffer(bufSize);
-        try {
-            long comp = Blocker.begin();
-            try {
-                long bufAddr = ((DirectBuffer)buf).address();
-                writeBytes0(b, 0, b.length, append, bufAddr, bufSize);
-            } finally {
-                Blocker.end(comp);
-            }
-        } finally {
-            Util.releaseTemporaryDirectBuffer(buf);
-        }
+        writeBytes(b, 0, b.length, append);
     }
 
     /**
@@ -378,19 +377,7 @@ public class FileOutputStream extends OutputStream
     @Override
     public void write(byte[] b, int off, int len) throws IOException {
         boolean append = fdAccess.getAppend(fd);
-        int size = RandomAccessFile.bufferSize(len);
-        ByteBuffer buf = Util.getTemporaryDirectBuffer(size);
-        try {
-            long comp = Blocker.begin();
-            try {
-                long address = ((DirectBuffer)buf).address();
-                writeBytes0(b, off, len, append, address, size);
-            } finally {
-                Blocker.end(comp);
-            }
-        } finally {
-            Util.releaseTemporaryDirectBuffer(buf);
-        }
+        writeBytes(b, off, len, append);
     }
 
     /**

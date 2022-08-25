@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,14 +60,13 @@ Java_java_io_FileOutputStream_open0(JNIEnv *env, jobject this,
 }
 
 JNIEXPORT void JNICALL
-Java_java_io_FileOutputStream_write(JNIEnv *env, jobject this, jint byte, jboolean append) {
+Java_java_io_FileOutputStream_write0(JNIEnv *env, jobject this, jint byte, jboolean append) {
     writeSingle(env, this, byte, append, fos_fd);
 }
 
 JNIEXPORT void JNICALL
 Java_java_io_FileOutputStream_writeBytes0(JNIEnv *env,
-    jobject this, jbyteArray bytes, jint off, jint len, jboolean append,
-    jlong bufAddr, jint bufSize) {
-    writeBytes(env, this, bytes, off, len, append, bufAddr, bufSize, fos_fd);
+    jobject this, jbyteArray bytes, jint off, jint len, jboolean append) {
+    writeBytes(env, this, bytes, off, len, append, fos_fd);
 }
 
