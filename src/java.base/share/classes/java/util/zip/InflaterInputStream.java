@@ -155,7 +155,12 @@ public class InflaterInputStream extends FilterInputStream {
                     reachEOF = true;
                     return -1;
                 }
-                if (inf.needsInput()) {
+                if (inf.needsInput() && !inf.hasPendingOutput()) {
+                    // Even if needsInput() is true, the native inflater may have some
+                    // buffered data which couldn't fit in to the output buffer during the
+                    // last call to inflate. Consume that buffered data first before calling
+                    // fill() to avoid an EOF error if no more input is available and the
+                    // next call to inflate will finish the inflation.
                     fill();
                 }
             } while ((n = inf.inflate(b, off, len)) == 0);

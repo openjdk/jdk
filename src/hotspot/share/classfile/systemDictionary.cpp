@@ -76,6 +76,7 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/signature.hpp"
+#include "runtime/synchronizer.hpp"
 #include "services/classLoadingService.hpp"
 #include "services/diagnosticCommand.hpp"
 #include "services/finalizerService.hpp"
@@ -125,11 +126,6 @@ const int defaultProtectionDomainCacheSize = 1009;
 
 const int _resolution_error_size  = 107;                     // number of entries in resolution error table
 const int _invoke_method_size     = 139;                     // number of entries in invoke method table
-
-// Constraints on class loaders
-const int _loader_constraint_size = 107;                     // number of entries in constraint table
-static LoaderConstraintTable*  _loader_constraints;
-static LoaderConstraintTable* constraints() { return _loader_constraints; }
 
 // ----------------------------------------------------------------------------
 // Java-level SystemLoader and PlatformLoader
@@ -1662,7 +1658,7 @@ bool SystemDictionary::do_unloading(GCTimer* gc_timer) {
       MANAGEMENT_ONLY(FinalizerService::purge_unloaded();)
       MutexLocker ml1(is_concurrent ? SystemDictionary_lock : NULL);
       ClassLoaderDataGraph::clean_module_and_package_info();
-      constraints()->purge_loader_constraints();
+      LoaderConstraintTable::purge_loader_constraints();
       ResolutionErrorTable::purge_resolution_errors();
     }
   }
@@ -1714,7 +1710,6 @@ void SystemDictionary::methods_do(void f(Method*)) {
 
 void SystemDictionary::initialize(TRAPS) {
   // Allocate arrays
-  _loader_constraints  = new LoaderConstraintTable(_loader_constraint_size);
   _pd_cache_table = new ProtectionDomainCacheTable(defaultProtectionDomainCacheSize);
 
 #if INCLUDE_CDS
@@ -1769,12 +1764,12 @@ void SystemDictionary::check_constraints(unsigned int name_hash,
     }
 
     if (throwException == false) {
-      if (constraints()->check_or_update(k, class_loader, name) == false) {
+      if (LoaderConstraintTable::check_or_update(k, class_loader, name) == false) {
         throwException = true;
         ss.print("loader constraint violation: loader %s", loader_data->loader_name_and_id());
         ss.print(" wants to load %s %s.",
                  k->external_kind(), k->external_name());
-        Klass *existing_klass = constraints()->find_constrained_klass(name, class_loader);
+        Klass *existing_klass = LoaderConstraintTable::find_constrained_klass(name, class_loader);
         if (existing_klass != NULL && existing_klass->class_loader() != class_loader()) {
           ss.print(" A different %s with the same name was previously loaded by %s. (%s)",
                    existing_klass->external_kind(),
@@ -1845,7 +1840,7 @@ Klass* SystemDictionary::find_constrained_instance_or_array_klass(
       klass = Universe::typeArrayKlassObj(t);
     } else {
       MutexLocker mu(current, SystemDictionary_lock);
-      klass = constraints()->find_constrained_klass(ss.as_symbol(), class_loader);
+      klass = LoaderConstraintTable::find_constrained_klass(ss.as_symbol(), class_loader);
     }
     // If element class already loaded, allocate array klass
     if (klass != NULL) {
@@ -1854,7 +1849,7 @@ Klass* SystemDictionary::find_constrained_instance_or_array_klass(
   } else {
     MutexLocker mu(current, SystemDictionary_lock);
     // Non-array classes are easy: simply check the constraint table.
-    klass = constraints()->find_constrained_klass(class_name, class_loader);
+    klass = LoaderConstraintTable::find_constrained_klass(class_name, class_loader);
   }
 
   return klass;
@@ -1896,7 +1891,7 @@ bool SystemDictionary::add_loader_constraint(Symbol* class_name,
     MutexLocker mu_s(SystemDictionary_lock);
     InstanceKlass* klass1 = dictionary1->find_class(name_hash1, constraint_name);
     InstanceKlass* klass2 = dictionary2->find_class(name_hash2, constraint_name);
-    bool result = constraints()->add_entry(constraint_name, klass1, class_loader1,
+    bool result = LoaderConstraintTable::add_entry(constraint_name, klass1, class_loader1,
                                            klass2, class_loader2);
 #if INCLUDE_CDS
     if (Arguments::is_dumping_archive() && klass_being_linked != NULL &&
@@ -2482,7 +2477,7 @@ void SystemDictionary::print_on(outputStream *st) {
   st->cr();
 
   // loader constraints - print under SD_lock
-  constraints()->print_on(st);
+  LoaderConstraintTable::print_on(st);
   st->cr();
 
   _pd_cache_table->print_on(st);
@@ -2492,8 +2487,6 @@ void SystemDictionary::print_on(outputStream *st) {
 void SystemDictionary::print() { print_on(tty); }
 
 void SystemDictionary::verify() {
-  guarantee(constraints() != NULL,
-            "Verify of loader constraints failed");
 
   GCMutexLocker mu(SystemDictionary_lock);
 
@@ -2501,8 +2494,7 @@ void SystemDictionary::verify() {
   ClassLoaderDataGraph::verify_dictionary();
 
   // Verify constraint table
-  guarantee(constraints() != NULL, "Verify of loader constraints failed");
-  constraints()->verify();
+  LoaderConstraintTable::verify();
 
   _pd_cache_table->verify();
 }
@@ -2514,7 +2506,7 @@ void SystemDictionary::dump(outputStream *st, bool verbose) {
   } else {
     CDS_ONLY(SystemDictionaryShared::print_table_statistics(st));
     ClassLoaderDataGraph::print_table_statistics(st);
-    constraints()->print_table_statistics(st, "LoaderConstraints Table");
+    LoaderConstraintTable::print_table_statistics(st);
     pd_cache_table()->print_table_statistics(st, "ProtectionDomainCache Table");
   }
 }

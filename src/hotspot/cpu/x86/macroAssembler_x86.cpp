@@ -192,13 +192,13 @@ void MacroAssembler::lcmp2int(Register x_hi, Register x_lo, Register y_hi, Regis
 }
 
 void MacroAssembler::lea(Register dst, AddressLiteral src) {
-    mov_literal32(dst, (int32_t)src.target(), src.rspec());
+  mov_literal32(dst, (int32_t)src.target(), src.rspec());
 }
 
 void MacroAssembler::lea(Address dst, AddressLiteral adr) {
   // leal(dst, as_Address(adr));
   // see note in movl as to why we must use a move
-  mov_literal32(dst, (int32_t) adr.target(), adr.rspec());
+  mov_literal32(dst, (int32_t)adr.target(), adr.rspec());
 }
 
 void MacroAssembler::leave() {
@@ -310,9 +310,7 @@ void MacroAssembler::mov_metadata(Address dst, Metadata* obj) {
   mov_literal32(dst, (int32_t)obj, metadata_Relocation::spec_for_immediate());
 }
 
-void MacroAssembler::movptr(Register dst, AddressLiteral src, Register scratch) {
-  // scratch register is not used,
-  // it is defined to match parameters of 64-bit version of this method.
+void MacroAssembler::movptr(Register dst, AddressLiteral src) {
   if (src.is_lval()) {
     mov_literal32(dst, (intptr_t)src.target(), src.rspec());
   } else {
@@ -477,7 +475,7 @@ Address MacroAssembler::as_Address(AddressLiteral adr) {
   // jmp/call are displacements others are absolute
   assert(!adr.is_lval(), "must be rval");
   assert(reachable(adr), "must be");
-  return Address((int32_t)(intptr_t)(adr.target() - pc()), adr.target(), adr.reloc());
+  return Address(checked_cast<int32_t>(adr.target() - pc()), adr.target(), adr.reloc());
 
 }
 
@@ -520,14 +518,15 @@ void MacroAssembler::call_VM_leaf_base(address entry_point, int num_args) {
 
 }
 
-void MacroAssembler::cmp64(Register src1, AddressLiteral src2) {
+void MacroAssembler::cmp64(Register src1, AddressLiteral src2, Register rscratch) {
   assert(!src2.is_lval(), "should use cmpptr");
+  assert(rscratch != noreg || always_reachable(src2), "missing");
 
   if (reachable(src2)) {
     cmpq(src1, as_Address(src2));
   } else {
-    lea(rscratch1, src2);
-    Assembler::cmpq(src1, Address(rscratch1, 0));
+    lea(rscratch, src2);
+    Assembler::cmpq(src1, Address(rscratch, 0));
   }
 }
 
@@ -661,15 +660,15 @@ void MacroAssembler::mov_metadata(Address dst, Metadata* obj) {
   movq(dst, rscratch1);
 }
 
-void MacroAssembler::movptr(Register dst, AddressLiteral src, Register scratch) {
+void MacroAssembler::movptr(Register dst, AddressLiteral src) {
   if (src.is_lval()) {
     mov_literal64(dst, (intptr_t)src.target(), src.rspec());
   } else {
     if (reachable(src)) {
       movq(dst, as_Address(src));
     } else {
-      lea(scratch, src);
-      movq(dst, Address(scratch, 0));
+      lea(dst, src);
+      movq(dst, Address(dst, 0));
     }
   }
 }
@@ -695,10 +694,6 @@ void MacroAssembler::movptr(Address dst, intptr_t src) {
 // These are mostly for initializing NULL
 void MacroAssembler::movptr(Address dst, int32_t src) {
   movslq(dst, src);
-}
-
-void MacroAssembler::movptr(Register dst, int32_t src) {
-  mov64(dst, (intptr_t)src);
 }
 
 void MacroAssembler::pushoop(jobject obj) {
@@ -1062,7 +1057,7 @@ void MacroAssembler::object_move(OopMap* map,
       *receiver_offset = (offset_in_older_frame + framesize_in_slots) * VMRegImpl::stack_slot_size;
     }
 
-    cmpptr(Address(rbp, reg2offset_in(src.first())), (int32_t)NULL_WORD);
+    cmpptr(Address(rbp, reg2offset_in(src.first())), NULL_WORD);
     lea(rHandle, Address(rbp, reg2offset_in(src.first())));
     // conditionally move a NULL
     cmovptr(Assembler::equal, rHandle, Address(rbp, reg2offset_in(src.first())));
@@ -1098,7 +1093,7 @@ void MacroAssembler::object_move(OopMap* map,
       *receiver_offset = offset;
     }
 
-    cmpptr(rOop, (int32_t)NULL_WORD);
+    cmpptr(rOop, NULL_WORD);
     lea(rHandle, Address(rsp, offset));
     // conditionally move a NULL from the handle area where it was just stored
     cmovptr(Assembler::equal, rHandle, Address(rsp, offset));
@@ -1126,30 +1121,36 @@ void MacroAssembler::addptr(Address dst, Register src) {
   LP64_ONLY(addq(dst, src)) NOT_LP64(addl(dst, src));
 }
 
-void MacroAssembler::addsd(XMMRegister dst, AddressLiteral src) {
+void MacroAssembler::addsd(XMMRegister dst, AddressLiteral src, Register rscratch) {
+  assert(rscratch != noreg || always_reachable(src), "missing");
+
   if (reachable(src)) {
     Assembler::addsd(dst, as_Address(src));
   } else {
-    lea(rscratch1, src);
-    Assembler::addsd(dst, Address(rscratch1, 0));
+    lea(rscratch, src);
+    Assembler::addsd(dst, Address(rscratch, 0));
   }
 }
 
-void MacroAssembler::addss(XMMRegister dst, AddressLiteral src) {
+void MacroAssembler::addss(XMMRegister dst, AddressLiteral src, Register rscratch) {
+  assert(rscratch != noreg || always_reachable(src), "missing");
+
   if (reachable(src)) {
     addss(dst, as_Address(src));
   } else {
-    lea(rscratch1, src);
-    addss(dst, Address(rscratch1, 0));
+    lea(rscratch, src);
+    addss(dst, Address(rscratch, 0));
   }
 }
 
-void MacroAssembler::addpd(XMMRegister dst, AddressLiteral src) {
+void MacroAssembler::addpd(XMMRegister dst, AddressLiteral src, Register rscratch) {
+  assert(rscratch != noreg || always_reachable(src), "missing");
+
   if (reachable(src)) {
     Assembler::addpd(dst, as_Address(src));
   } else {
-    lea(rscratch1, src);
-    Assembler::addpd(dst, Address(rscratch1, 0));
+    lea(rscratch, src);
+    Assembler::addpd(dst, Address(rscratch, 0));
   }
 }
 
@@ -1583,7 +1584,7 @@ void MacroAssembler::call_VM_base(Register oop_result,
 
   if (check_exceptions) {
     // check for pending exceptions (java_thread is set upon return)
-    cmpptr(Address(java_thread, Thread::pending_exception_offset()), (int32_t) NULL_WORD);
+    cmpptr(Address(java_thread, Thread::pending_exception_offset()), NULL_WORD);
 #ifndef _LP64
     jump_cc(Assembler::notEqual,
             RuntimeAddress(StubRoutines::forward_exception_entry()));
@@ -1822,7 +1823,7 @@ void MacroAssembler::cmpptr(Register src1, AddressLiteral src2) {
   }
 #else
   if (src2.is_lval()) {
-    cmp_literal32(src1, (int32_t) src2.target(), src2.rspec());
+    cmp_literal32(src1, (int32_t)src2.target(), src2.rspec());
   } else {
     cmpl(src1, as_Address(src2));
   }
@@ -1836,7 +1837,7 @@ void MacroAssembler::cmpptr(Address src1, AddressLiteral src2) {
   movptr(rscratch1, src2);
   Assembler::cmpq(src1, rscratch1);
 #else
-  cmp_literal32(src1, (int32_t) src2.target(), src2.rspec());
+  cmp_literal32(src1, (int32_t)src2.target(), src2.rspec());
 #endif // _LP64
 }
 
@@ -2128,12 +2129,13 @@ void MacroAssembler::empty_FPU_stack() {
 }
 #endif // !LP64
 
-void MacroAssembler::mulpd(XMMRegister dst, AddressLiteral src) {
+void MacroAssembler::mulpd(XMMRegister dst, AddressLiteral src, Register rscratch) {
+  assert(rscratch != noreg || always_reachable(src), "missing");
   if (reachable(src)) {
     Assembler::mulpd(dst, as_Address(src));
   } else {
-    lea(rscratch1, src);
-    Assembler::mulpd(dst, Address(rscratch1, 0));
+    lea(rscratch, src);
+    Assembler::mulpd(dst, Address(rscratch, 0));
   }
 }
 
@@ -2473,21 +2475,23 @@ void MacroAssembler::movbyte(ArrayAddress dst, int src) {
   movb(as_Address(dst), src);
 }
 
-void MacroAssembler::movdl(XMMRegister dst, AddressLiteral src) {
+void MacroAssembler::movdl(XMMRegister dst, AddressLiteral src, Register rscratch) {
+  assert(rscratch != noreg || always_reachable(src), "missing");
   if (reachable(src)) {
     movdl(dst, as_Address(src));
   } else {
-    lea(rscratch1, src);
-    movdl(dst, Address(rscratch1, 0));
+    lea(rscratch, src);
+    movdl(dst, Address(rscratch, 0));
   }
 }
 
-void MacroAssembler::movq(XMMRegister dst, AddressLiteral src) {
+void MacroAssembler::movq(XMMRegister dst, AddressLiteral src, Register rscratch) {
+  assert(rscratch != noreg || always_reachable(src), "missing");
   if (reachable(src)) {
     movq(dst, as_Address(src));
   } else {
-    lea(rscratch1, src);
-    movq(dst, Address(rscratch1, 0));
+    lea(rscratch, src);
+    movq(dst, Address(rscratch, 0));
   }
 }
 
@@ -2535,61 +2539,67 @@ void MacroAssembler::movptr(Address dst, Register src) {
 }
 
 void MacroAssembler::movdqu(Address dst, XMMRegister src) {
-    assert(((src->encoding() < 16) || VM_Version::supports_avx512vl()),"XMM register should be 0-15");
-    Assembler::movdqu(dst, src);
+  assert(((src->encoding() < 16) || VM_Version::supports_avx512vl()),"XMM register should be 0-15");
+  Assembler::movdqu(dst, src);
 }
 
 void MacroAssembler::movdqu(XMMRegister dst, Address src) {
-    assert(((dst->encoding() < 16) || VM_Version::supports_avx512vl()),"XMM register should be 0-15");
-    Assembler::movdqu(dst, src);
+  assert(((dst->encoding() < 16) || VM_Version::supports_avx512vl()),"XMM register should be 0-15");
+  Assembler::movdqu(dst, src);
 }
 
 void MacroAssembler::movdqu(XMMRegister dst, XMMRegister src) {
-    assert(((dst->encoding() < 16  && src->encoding() < 16) || VM_Version::supports_avx512vl()),"XMM register should be 0-15");
-    Assembler::movdqu(dst, src);
+  assert(((dst->encoding() < 16  && src->encoding() < 16) || VM_Version::supports_avx512vl()),"XMM register should be 0-15");
+  Assembler::movdqu(dst, src);
 }
 
-void MacroAssembler::movdqu(XMMRegister dst, AddressLiteral src, Register scratchReg) {
+void MacroAssembler::movdqu(XMMRegister dst, AddressLiteral src, Register rscratch) {
+  assert(rscratch != noreg || always_reachable(src), "missing");
+
   if (reachable(src)) {
     movdqu(dst, as_Address(src));
   } else {
-    lea(scratchReg, src);
-    movdqu(dst, Address(scratchReg, 0));
+    lea(rscratch, src);
+    movdqu(dst, Address(rscratch, 0));
   }
 }
 
 void MacroAssembler::vmovdqu(Address dst, XMMRegister src) {
-    assert(((src->encoding() < 16) || VM_Version::supports_avx512vl()),"XMM register should be 0-15");
-    Assembler::vmovdqu(dst, src);
+  assert(((src->encoding() < 16) || VM_Version::supports_avx512vl()),"XMM register should be 0-15");
+  Assembler::vmovdqu(dst, src);
 }
 
 void MacroAssembler::vmovdqu(XMMRegister dst, Address src) {
-    assert(((dst->encoding() < 16) || VM_Version::supports_avx512vl()),"XMM register should be 0-15");
-    Assembler::vmovdqu(dst, src);
+  assert(((dst->encoding() < 16) || VM_Version::supports_avx512vl()),"XMM register should be 0-15");
+  Assembler::vmovdqu(dst, src);
 }
 
 void MacroAssembler::vmovdqu(XMMRegister dst, XMMRegister src) {
-    assert(((dst->encoding() < 16  && src->encoding() < 16) || VM_Version::supports_avx512vl()),"XMM register should be 0-15");
-    Assembler::vmovdqu(dst, src);
+  assert(((dst->encoding() < 16  && src->encoding() < 16) || VM_Version::supports_avx512vl()),"XMM register should be 0-15");
+  Assembler::vmovdqu(dst, src);
 }
 
-void MacroAssembler::vmovdqu(XMMRegister dst, AddressLiteral src, Register scratch_reg) {
+void MacroAssembler::vmovdqu(XMMRegister dst, AddressLiteral src, Register rscratch) {
+  assert(rscratch != noreg || always_reachable(src),  "missing");
+
   if (reachable(src)) {
     vmovdqu(dst, as_Address(src));
   }
   else {
-    lea(scratch_reg, src);
-    vmovdqu(dst, Address(scratch_reg, 0));
+    lea(rscratch, src);
+    vmovdqu(dst, Address(rscratch, 0));
   }
 }
 
-void MacroAssembler::vmovdqu(XMMRegister dst, AddressLiteral src, Register scratch_reg, int vector_len) {
+void MacroAssembler::vmovdqu(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch) {
+  assert(rscratch != noreg || always_reachable(src),  "missing");
+
   if (vector_len == AVX_512bit) {
-    evmovdquq(dst, src, AVX_512bit, scratch_reg);
+    evmovdquq(dst, src, AVX_512bit, rscratch);
   } else if (vector_len == AVX_256bit) {
-    vmovdqu(dst, src, scratch_reg);
+    vmovdqu(dst, src, rscratch);
   } else {
-    movdqu(dst, src, scratch_reg);
+    movdqu(dst, src, rscratch);
   }
 }
 
@@ -2647,12 +2657,14 @@ void MacroAssembler::kmovql(KRegister dst, AddressLiteral src, Register scratch_
   }
 }
 
-void MacroAssembler::kmovwl(KRegister dst, AddressLiteral src, Register scratch_reg) {
+void MacroAssembler::kmovwl(KRegister dst, AddressLiteral src, Register rscratch) {
+  assert(rscratch != noreg || always_reachable(src), "missing");
+
   if (reachable(src)) {
     kmovwl(dst, as_Address(src));
   } else {
-    lea(scratch_reg, src);
-    kmovwl(dst, Address(scratch_reg, 0));
+    lea(rscratch, src);
+    kmovwl(dst, Address(rscratch, 0));
   }
 }
 
@@ -2676,27 +2688,32 @@ void MacroAssembler::evmovdquw(XMMRegister dst, KRegister mask, AddressLiteral s
   }
 }
 
-void MacroAssembler::evmovdqul(XMMRegister dst, KRegister mask, AddressLiteral src, bool merge,
-                               int vector_len, Register scratch_reg) {
+void MacroAssembler::evmovdqul(XMMRegister dst, KRegister mask, AddressLiteral src, bool merge, int vector_len, Register rscratch) {
+  assert(rscratch != noreg || always_reachable(src), "missing");
+
   if (reachable(src)) {
     Assembler::evmovdqul(dst, mask, as_Address(src), merge, vector_len);
   } else {
-    lea(scratch_reg, src);
-    Assembler::evmovdqul(dst, mask, Address(scratch_reg, 0), merge, vector_len);
+    lea(rscratch, src);
+    Assembler::evmovdqul(dst, mask, Address(rscratch, 0), merge, vector_len);
   }
 }
 
 void MacroAssembler::evmovdquq(XMMRegister dst, KRegister mask, AddressLiteral src, bool merge,
-                               int vector_len, Register scratch_reg) {
+                               int vector_len, Register rscratch) {
+  assert(rscratch != noreg || always_reachable(src), "missing");
+
   if (reachable(src)) {
     Assembler::evmovdquq(dst, mask, as_Address(src), merge, vector_len);
   } else {
-    lea(scratch_reg, src);
-    Assembler::evmovdquq(dst, mask, Address(scratch_reg, 0), merge, vector_len);
+    lea(rscratch, src);
+    Assembler::evmovdquq(dst, mask, Address(rscratch, 0), merge, vector_len);
   }
 }
 
 void MacroAssembler::evmovdquq(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch) {
+  assert(rscratch != noreg || always_reachable(src), "missing");
+
   if (reachable(src)) {
     Assembler::evmovdquq(dst, as_Address(src), vector_len);
   } else {
@@ -2714,12 +2731,14 @@ void MacroAssembler::movdqa(XMMRegister dst, AddressLiteral src) {
   }
 }
 
-void MacroAssembler::movsd(XMMRegister dst, AddressLiteral src) {
+void MacroAssembler::movsd(XMMRegister dst, AddressLiteral src, Register rscratch) {
+  assert(rscratch != noreg || always_reachable(src), "missing");
+
   if (reachable(src)) {
     Assembler::movsd(dst, as_Address(src));
   } else {
-    lea(rscratch1, src);
-    Assembler::movsd(dst, Address(rscratch1, 0));
+    lea(rscratch, src);
+    Assembler::movsd(dst, Address(rscratch, 0));
   }
 }
 
@@ -2750,12 +2769,14 @@ void MacroAssembler::vmovddup(XMMRegister dst, AddressLiteral src, int vector_le
   }
 }
 
-void MacroAssembler::mulsd(XMMRegister dst, AddressLiteral src) {
+void MacroAssembler::mulsd(XMMRegister dst, AddressLiteral src, Register rscratch) {
+  assert(rscratch != noreg || always_reachable(src), "missing");
+
   if (reachable(src)) {
     Assembler::mulsd(dst, as_Address(src));
   } else {
-    lea(rscratch1, src);
-    Assembler::mulsd(dst, Address(rscratch1, 0));
+    lea(rscratch, src);
+    Assembler::mulsd(dst, Address(rscratch, 0));
   }
 }
 
@@ -3131,12 +3152,14 @@ void MacroAssembler::subsd(XMMRegister dst, AddressLiteral src) {
   }
 }
 
-void MacroAssembler::roundsd(XMMRegister dst, AddressLiteral src, int32_t rmode, Register scratch_reg) {
+void MacroAssembler::roundsd(XMMRegister dst, AddressLiteral src, int32_t rmode, Register rscratch) {
+  assert(rscratch != noreg || always_reachable(src), "missing");
+
   if (reachable(src)) {
     Assembler::roundsd(dst, as_Address(src), rmode);
   } else {
-    lea(scratch_reg, src);
-    Assembler::roundsd(dst, Address(scratch_reg, 0), rmode);
+    lea(rscratch, src);
+    Assembler::roundsd(dst, Address(rscratch, 0), rmode);
   }
 }
 
@@ -3167,14 +3190,16 @@ void MacroAssembler::ucomiss(XMMRegister dst, AddressLiteral src) {
   }
 }
 
-void MacroAssembler::xorpd(XMMRegister dst, AddressLiteral src, Register scratch_reg) {
+void MacroAssembler::xorpd(XMMRegister dst, AddressLiteral src, Register rscratch) {
+  assert(rscratch != noreg || always_reachable(src), "missing");
+
   // Used in sign-bit flipping with aligned address.
   assert((UseAVX > 0) || (((intptr_t)src.target() & 15) == 0), "SSE mode requires address alignment 16 bytes");
   if (reachable(src)) {
     Assembler::xorpd(dst, as_Address(src));
   } else {
-    lea(scratch_reg, src);
-    Assembler::xorpd(dst, Address(scratch_reg, 0));
+    lea(rscratch, src);
+    Assembler::xorpd(dst, Address(rscratch, 0));
   }
 }
 
@@ -3195,14 +3220,16 @@ void MacroAssembler::xorps(XMMRegister dst, XMMRegister src) {
   }
 }
 
-void MacroAssembler::xorps(XMMRegister dst, AddressLiteral src, Register scratch_reg) {
+void MacroAssembler::xorps(XMMRegister dst, AddressLiteral src, Register rscratch) {
+  assert(rscratch != noreg || always_reachable(src), "missing");
+
   // Used in sign-bit flipping with aligned address.
   assert((UseAVX > 0) || (((intptr_t)src.target() & 15) == 0), "SSE mode requires address alignment 16 bytes");
   if (reachable(src)) {
     Assembler::xorps(dst, as_Address(src));
   } else {
-    lea(scratch_reg, src);
-    Assembler::xorps(dst, Address(scratch_reg, 0));
+    lea(rscratch, src);
+    Assembler::xorps(dst, Address(rscratch, 0));
   }
 }
 
@@ -3240,6 +3267,8 @@ void MacroAssembler::vaddss(XMMRegister dst, XMMRegister nds, AddressLiteral src
 
 void MacroAssembler::vpaddb(XMMRegister dst, XMMRegister nds, AddressLiteral src, int vector_len, Register rscratch) {
   assert(UseAVX > 0, "requires some form of AVX");
+  assert(rscratch != noreg || always_reachable(src), "missing");
+
   if (reachable(src)) {
     Assembler::vpaddb(dst, nds, as_Address(src), vector_len);
   } else {
@@ -3250,6 +3279,8 @@ void MacroAssembler::vpaddb(XMMRegister dst, XMMRegister nds, AddressLiteral src
 
 void MacroAssembler::vpaddd(XMMRegister dst, XMMRegister nds, AddressLiteral src, int vector_len, Register rscratch) {
   assert(UseAVX > 0, "requires some form of AVX");
+  assert(rscratch != noreg || always_reachable(src), "missing");
+
   if (reachable(src)) {
     Assembler::vpaddd(dst, nds, as_Address(src), vector_len);
   } else {
@@ -3288,12 +3319,14 @@ void MacroAssembler::vpaddw(XMMRegister dst, XMMRegister nds, Address src, int v
   Assembler::vpaddw(dst, nds, src, vector_len);
 }
 
-void MacroAssembler::vpand(XMMRegister dst, XMMRegister nds, AddressLiteral src, int vector_len, Register scratch_reg) {
+void MacroAssembler::vpand(XMMRegister dst, XMMRegister nds, AddressLiteral src, int vector_len, Register rscratch) {
+  assert(rscratch != noreg || always_reachable(src),  "missing");
+
   if (reachable(src)) {
     Assembler::vpand(dst, nds, as_Address(src), vector_len);
   } else {
-    lea(scratch_reg, src);
-    Assembler::vpand(dst, nds, Address(scratch_reg, 0), vector_len);
+    lea(rscratch, src);
+    Assembler::vpand(dst, nds, Address(rscratch, 0), vector_len);
   }
 }
 

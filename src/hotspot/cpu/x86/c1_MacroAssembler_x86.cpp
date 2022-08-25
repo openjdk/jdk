@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "c1/c1_MacroAssembler.hpp"
 #include "c1/c1_Runtime1.hpp"
+#include "compiler/compilerDefinitions.inline.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/collectedHeap.hpp"
@@ -146,8 +147,7 @@ void C1_MacroAssembler::try_allocate(Register obj, Register var_size_in_bytes, i
 void C1_MacroAssembler::initialize_header(Register obj, Register klass, Register len, Register t1, Register t2) {
   assert_different_registers(obj, klass, len);
   Register tmp_encode_klass = LP64_ONLY(rscratch1) NOT_LP64(noreg);
-  // This assumes that all prototype bits fit in an int32_t
-  movptr(Address(obj, oopDesc::mark_offset_in_bytes ()), (int32_t)(intptr_t)markWord::prototype().value());
+  movptr(Address(obj, oopDesc::mark_offset_in_bytes()), checked_cast<int32_t>(markWord::prototype().value()));
 #ifdef _LP64
   if (UseCompressedClassPointers) { // Take care not to kill klass
     movptr(t1, klass);
@@ -253,12 +253,12 @@ void C1_MacroAssembler::allocate_array(Register obj, Register len, Register t1, 
   assert(!(BytesPerWord & 1), "must be a multiple of 2 for masking code to work");
 
   // check for negative or excessive length
-  cmpptr(len, (int32_t)max_array_allocation_length);
+  cmpptr(len, checked_cast<int32_t>(max_array_allocation_length));
   jcc(Assembler::above, slow_case);
 
   const Register arr_size = t2; // okay to be the same
   // align object end
-  movptr(arr_size, (int32_t)header_size * BytesPerWord + MinObjAlignmentInBytesMask);
+  movptr(arr_size, header_size * BytesPerWord + MinObjAlignmentInBytesMask);
   lea(arr_size, Address(arr_size, len, f));
   andptr(arr_size, ~MinObjAlignmentInBytesMask);
 

@@ -1048,7 +1048,7 @@ void G1CollectedHeap::prepare_heap_for_mutators() {
 }
 
 void G1CollectedHeap::abort_refinement() {
-  if (_hot_card_cache->use_cache()) {
+  if (G1HotCardCache::use_cache()) {
     _hot_card_cache->reset_hot_cache();
   }
 
@@ -3377,7 +3377,6 @@ void G1CollectedHeap::update_used_after_gc(bool evacuation_failed) {
 
 void G1CollectedHeap::reset_hot_card_cache() {
   _hot_card_cache->reset_hot_cache();
-  _hot_card_cache->set_use_cache(true);
 }
 
 void G1CollectedHeap::purge_code_root_memory() {
