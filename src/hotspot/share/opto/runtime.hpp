@@ -243,9 +243,6 @@ private:
   static const TypeFunc* l2f_Type();
   static const TypeFunc* void_long_Type();
   static const TypeFunc* void_void_Type();
-#if 0
-  static const TypeFunc* continuation_jump_Type();
-#endif
 
   static const TypeFunc* jfr_write_checkpoint_Type();
 

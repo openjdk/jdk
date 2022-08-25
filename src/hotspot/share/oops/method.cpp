@@ -1242,9 +1242,7 @@ void Method::link_method(const methodHandle& h_method, TRAPS) {
     // the entry points to this method will be set in set_code, called when first resolving this method
     _from_interpreted_entry = NULL;
     _from_compiled_entry = NULL;
-#if 1
     _i2i_entry = NULL;
-#endif
   }
 }
 
@@ -1336,9 +1334,6 @@ void Method::set_code(const methodHandle& mh, CompiledMethod *code) {
       mh->_i2i_entry = ContinuationEntry::interpreted_entry();
     } else if (mh->is_continuation_yield_intrinsic()) {
       mh->_i2i_entry = mh->get_i2c_entry();
-#if 0
-      mh->_i2i_entry = code->verified_entry_point() - 0x10 /*v2i*/;
-#endif
     } else {
       guarantee(false, "Unknown Continuation native intrinsic");
     }

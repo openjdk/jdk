@@ -729,26 +729,6 @@ const TypeFunc* OptoRuntime::void_void_Type() {
    return TypeFunc::make(domain, range);
  }
 
-#if 0
- const TypeFunc* OptoRuntime::continuation_jump_Type() {
-  // create input type (domain)
-  const Type **fields = TypeTuple::fields(6);
-  fields[TypeFunc::Parms+0] = TypeLong::LONG;
-  fields[TypeFunc::Parms+1] = Type::HALF;
-  fields[TypeFunc::Parms+2] = TypeLong::LONG;
-  fields[TypeFunc::Parms+3] = Type::HALF;
-  fields[TypeFunc::Parms+4] = TypeLong::LONG;
-  fields[TypeFunc::Parms+5] = Type::HALF;
-  const TypeTuple *domain = TypeTuple::make(TypeFunc::Parms+6, fields);
-
-  // create result type (range)
-  fields = TypeTuple::fields(0);
-  const TypeTuple *range = TypeTuple::make(TypeFunc::Parms+0, fields);
-  return TypeFunc::make(domain, range);
- }
-#endif
-
-
  const TypeFunc* OptoRuntime::jfr_write_checkpoint_Type() {
    // create input type (domain)
    const Type **fields = TypeTuple::fields(0);

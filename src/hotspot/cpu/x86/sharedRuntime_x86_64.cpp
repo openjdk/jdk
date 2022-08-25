@@ -1314,17 +1314,6 @@ static void gen_continuation_enter(MacroAssembler* masm,
     __ bind(is_interp_only);
 #endif
 
-#if 1
-    Label stack_ok;
-    __ warn("XXX enterSpecial interpreter entry");
-    __ os_breakpoint();
-    __ nop();
-    __ lea(rax, Address(rsp, wordSize));
-    __ cmpptr(rax, r13);
-    __ jcc(Assembler::equal, stack_ok);
-    __ stop("enterSpecial interpreter entry called through c2i adapter?");
-    __ bind(stack_ok);
-#endif
     __ pop(rax); // return address
     // Read interpreter arguments into registers (this is an ad-hoc i2c adapter)
     __ movptr(c_rarg1, Address(rsp, Interpreter::stackElementSize*2));
