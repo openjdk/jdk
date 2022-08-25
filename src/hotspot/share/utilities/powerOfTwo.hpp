@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,7 +103,8 @@ inline T round_down_power_of_2(T value) {
 template<typename T, ENABLE_IF(std::is_integral<T>::value)>
 inline T round_up_power_of_2(T value) {
   assert(value > 0, "Invalid value");
-  assert(value <= max_power_of_2<T>(), "Overflow");
+  assert(value <= max_power_of_2<T>(), "Overflowing maximum allowed power of two with " UINT64_FORMAT_X,
+         static_cast<uint64_t>(value));
   if (is_power_of_2(value)) {
     return value;
   }
