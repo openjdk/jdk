@@ -411,6 +411,10 @@ void Method::remove_unshareable_info() {
   unlink_method();
   JFR_ONLY(REMOVE_METHOD_ID(this);)
 }
+
+void Method::restore_unshareable_info(TRAPS) {
+  assert(is_method() && is_valid_method(this), "ensure C++ vtable is restored");
+}
 #endif
 
 void Method::set_vtable_index(int index) {
@@ -1266,10 +1270,6 @@ address Method::make_adapters(const methodHandle& mh, TRAPS) {
   mh->set_adapter_entry(adapter);
   mh->_from_compiled_entry = adapter->get_c2i_entry();
   return adapter->get_c2i_entry();
-}
-
-void Method::restore_unshareable_info(TRAPS) {
-  assert(is_method() && is_valid_method(this), "ensure C++ vtable is restored");
 }
 
 address Method::from_compiled_entry_no_trampoline() const {
