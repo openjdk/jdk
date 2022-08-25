@@ -73,7 +73,7 @@ public class ProviderFiltering {
     public static void main(String[] args)
                 throws NoSuchAlgorithmException {
         String p = "SUN";
-        String key = "Signature.SHA1withDSA SupportedKeyClasses";
+        String key = "Signature.SHA256withDSA SupportedKeyClasses";
         String valComp1 = "java.security.interfaces.DSAPublicKey";
         String valComp2 = "java.security.interfaces.DSAPrivateKey";
         String valComp2CN = valComp2.substring(valComp2.lastIndexOf('.') + 1);
@@ -111,17 +111,17 @@ public class ProviderFiltering {
 
         // test against a custom provider and attribute
         filters.clear();
-        String service = "Signature.SHA1withRSA";
+        String service = "Signature.SHA256withDSA";
         String customKey = "customAttr";
         String customValue = "customValue";
         String pName = "TestProv";
         Provider testProv = new TestProvider(pName, service, customKey,
                 customValue);
         Security.insertProviderAt(testProv, 1);
-        // should find both TestProv and SunRsaSign and in this order
-        doit(service, pName, "SunRsaSign");
+        // should find both TestProv and SUN and in this order
+        doit(service, pName, "SUN");
         filters.put(service, "");
-        doit(filters, pName, "SunRsaSign");
+        doit(filters, pName, "SUN");
 
         String specAttr = service + " " + customKey + ":" + customValue;
         // should find only TestProv
