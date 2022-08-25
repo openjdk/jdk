@@ -120,9 +120,9 @@ class RegisterSaver {
                 // setting for it. We must therefore force the layout
                 // so that it agrees with the frame sender code.
                 r0_off = fpu_state_off + FPUStateSizeInWords,
-                rfp_off = r0_off + (RegisterImpl::number_of_registers - 2) * RegisterImpl::max_slots_per_register,
-                return_off = rfp_off + RegisterImpl::max_slots_per_register,      // slot for return address
-                reg_save_size = return_off + RegisterImpl::max_slots_per_register};
+                rfp_off = r0_off + (Register::number_of_registers - 2) * Register::max_slots_per_register,
+                return_off = rfp_off + Register::max_slots_per_register,      // slot for return address
+                reg_save_size = return_off + Register::max_slots_per_register};
 
 };
 
@@ -132,11 +132,11 @@ int RegisterSaver::reg_offset_in_bytes(Register r) {
   // offset depends on whether we are saving full vectors, and whether
   // those vectors are NEON or SVE.
 
-  int slots_per_vect = FloatRegisterImpl::save_slots_per_register;
+  int slots_per_vect = FloatRegister::save_slots_per_register;
 
 #if COMPILER2_OR_JVMCI
   if (_save_vectors) {
-    slots_per_vect = FloatRegisterImpl::slots_per_neon_register;
+    slots_per_vect = FloatRegister::slots_per_neon_register;
 
 #ifdef COMPILER2
     if (Matcher::supports_scalable_vector()) {
@@ -146,7 +146,7 @@ int RegisterSaver::reg_offset_in_bytes(Register r) {
   }
 #endif
 
-  int r0_offset = v0_offset_in_bytes() + (slots_per_vect * FloatRegisterImpl::number_of_registers) * BytesPerInt;
+  int r0_offset = v0_offset_in_bytes() + (slots_per_vect * FloatRegister::number_of_registers) * BytesPerInt;
   return r0_offset + r->encoding() * wordSize;
 }
 
@@ -164,7 +164,7 @@ int RegisterSaver::total_sve_predicate_in_bytes() {
     // of 16 bytes so we manually align it up.
     return align_up(Matcher::scalable_predicate_reg_slots() *
                     VMRegImpl::stack_slot_size *
-                    PRegisterImpl::number_of_saved_registers, 16);
+                    PRegister::number_of_saved_registers, 16);
   }
 #endif
   return 0;
@@ -192,13 +192,13 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
     int extra_save_slots_per_register = 0;
     // Save upper half of vector registers
     if (use_sve) {
-      extra_save_slots_per_register = sve_vector_size_in_slots - FloatRegisterImpl::save_slots_per_register;
+      extra_save_slots_per_register = sve_vector_size_in_slots - FloatRegister::save_slots_per_register;
     } else {
-      extra_save_slots_per_register = FloatRegisterImpl::extra_save_slots_per_neon_register;
+      extra_save_slots_per_register = FloatRegister::extra_save_slots_per_neon_register;
     }
     int extra_vector_bytes = extra_save_slots_per_register *
                              VMRegImpl::stack_slot_size *
-                             FloatRegisterImpl::number_of_registers;
+                             FloatRegister::number_of_registers;
     additional_frame_words += ((extra_vector_bytes + total_predicate_in_bytes) / wordSize);
   }
 #else
@@ -227,31 +227,31 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
   OopMapSet *oop_maps = new OopMapSet();
   OopMap* oop_map = new OopMap(frame_size_in_slots, 0);
 
-  for (int i = 0; i < RegisterImpl::number_of_registers; i++) {
+  for (int i = 0; i < Register::number_of_registers; i++) {
     Register r = as_Register(i);
-    if (r <= rfp && r != rscratch1 && r != rscratch2) {
+    if (i <= rfp->encoding() && r != rscratch1 && r != rscratch2) {
       // SP offsets are in 4-byte words.
       // Register slots are 8 bytes wide, 32 floating-point registers.
-      int sp_offset = RegisterImpl::max_slots_per_register * i +
-                      FloatRegisterImpl::save_slots_per_register * FloatRegisterImpl::number_of_registers;
+      int sp_offset = Register::max_slots_per_register * i +
+                      FloatRegister::save_slots_per_register * FloatRegister::number_of_registers;
       oop_map->set_callee_saved(VMRegImpl::stack2reg(sp_offset + additional_frame_slots), r->as_VMReg());
     }
   }
 
-  for (int i = 0; i < FloatRegisterImpl::number_of_registers; i++) {
+  for (int i = 0; i < FloatRegister::number_of_registers; i++) {
     FloatRegister r = as_FloatRegister(i);
     int sp_offset = 0;
     if (_save_vectors) {
       sp_offset = use_sve ? (total_predicate_in_slots + sve_vector_size_in_slots * i) :
-                            (FloatRegisterImpl::slots_per_neon_register * i);
+                            (FloatRegister::slots_per_neon_register * i);
     } else {
-      sp_offset = FloatRegisterImpl::save_slots_per_register * i;
+      sp_offset = FloatRegister::save_slots_per_register * i;
     }
     oop_map->set_callee_saved(VMRegImpl::stack2reg(sp_offset), r->as_VMReg());
   }
 
   if (_save_vectors && use_sve) {
-    for (int i = 0; i < PRegisterImpl::number_of_saved_registers; i++) {
+    for (int i = 0; i < PRegister::number_of_saved_registers; i++) {
       PRegister r = as_PRegister(i);
       int sp_offset = sve_predicate_size_in_slots * i;
       oop_map->set_callee_saved(VMRegImpl::stack2reg(sp_offset), r->as_VMReg());
@@ -290,8 +290,8 @@ bool SharedRuntime::is_wide_vector(int size) {
 // refer to 4-byte stack slots.  All stack slots are based off of the stack pointer
 // as framesizes are fixed.
 // VMRegImpl::stack0 refers to the first slot 0(sp).
-// and VMRegImpl::stack0+1 refers to the memory word 4-byes higher.  Register
-// up to RegisterImpl::number_of_registers) are the 64-bit
+// and VMRegImpl::stack0+1 refers to the memory word 4-byes higher.
+// Register up to Register::number_of_registers are the 64-bit
 // integer registers.
 
 // Note: the INPUTS in sig_bt are in units of Java argument words,
@@ -1469,12 +1469,12 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   int int_args = 0;
 
 #ifdef ASSERT
-  bool reg_destroyed[RegisterImpl::number_of_registers];
-  bool freg_destroyed[FloatRegisterImpl::number_of_registers];
-  for ( int r = 0 ; r < RegisterImpl::number_of_registers ; r++ ) {
+  bool reg_destroyed[Register::number_of_registers];
+  bool freg_destroyed[FloatRegister::number_of_registers];
+  for ( int r = 0 ; r < Register::number_of_registers ; r++ ) {
     reg_destroyed[r] = false;
   }
-  for ( int f = 0 ; f < FloatRegisterImpl::number_of_registers ; f++ ) {
+  for ( int f = 0 ; f < FloatRegister::number_of_registers ; f++ ) {
     freg_destroyed[f] = false;
   }
 
