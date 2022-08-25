@@ -839,17 +839,9 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
 
         if (opKind(op, VO_SPECIAL {#if[!FP]? | VO_SHIFT})) {
             if (op == FIRST_NONZERO) {
-                // FIXME: Support this in the JIT.
-                VectorMask<$Boxbitstype$> thisNZ
-                    = this.viewAsIntegralLanes().compare(NE, ($bitstype$) 0);
-                that = that.blend(($type$) 0, thisNZ.cast(vspecies()));
-                op = OR_UNCHECKED;
-#if[FP]
-                // FIXME: Support OR_UNCHECKED on float/double also!
-                return this.viewAsIntegralLanes()
-                    .lanewise(op, that.viewAsIntegralLanes())
-                    .viewAsFloatingLanes();
-#end[FP]
+                VectorMask<$Boxbitstype$> mask
+                    = this{#if[FP]?.viewAsIntegralLanes()}.compare(EQ, ($bitstype$) 0);
+                return this.blend(that, mask{#if[FP]?.cast(vspecies())});
             }
 #if[BITWISE]
 #if[!FP]
@@ -900,13 +892,14 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         if (opKind(op, VO_SPECIAL {#if[!FP]? | VO_SHIFT})) {
             if (op == FIRST_NONZERO) {
 #if[FP]
-                return blend(lanewise(op, v), m);
+                $Bitstype$Vector bits = this.viewAsIntegralLanes();
+                VectorMask<$Boxbitstype$> mask
+                    = bits.compare(EQ, ($bitstype$) 0, m.cast(bits.vspecies()));
+                return this.blend(that, mask.cast(vspecies()));
 #else[FP]
-                // FIXME: Support this in the JIT.
-                VectorMask<$Boxbitstype$> thisNZ
-                    = this.viewAsIntegralLanes().compare(NE, ($bitstype$) 0);
-                that = that.blend(($type$) 0, thisNZ.cast(vspecies()));
-                op = OR_UNCHECKED;
+                VectorMask<$Boxtype$> mask
+                    = this.compare(EQ, ($type$) 0, m);
+                return this.blend(that, mask);
 #end[FP]
             }
 #if[BITWISE]
