@@ -28,33 +28,42 @@
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-inline uint64_t bit_reverse(uint64_t x) {
-  x = (x & 0x5555555555555555L) << 1 | (x & 0xAAAAAAAAAAAAAAAAL) >> 1;
-  x = (x & 0x3333333333333333L) << 2 | (x & 0xCCCCCCCCCCCCCCCCL) >> 2;
-  x = (x & 0x0F0F0F0F0F0F0F0FL) << 4 | (x & 0xF0F0F0F0F0F0F0F0L) >> 4;
+inline uint32_t reverse_bits_in_bytes_int(uint32_t x) {
+  // Based on Hacker's Delight Section 7-1
+  x = (x & 0x55555555) << 1 | (x & 0xAAAAAAAA) >> 1;
+  x = (x & 0x33333333) << 2 | (x & 0xCCCCCCCC) >> 2;
+  x = (x & 0x0F0F0F0F) << 4 | (x & 0xF0F0F0F0) >> 4;
   return x;
 }
 
-inline uint64_t byte_reverse(uint64_t x, uint8_t bw) {
-  switch(bw) {
-    case 64:
-      x = (x & 0x00000000FFFFFFFFL) << 32 | (x & 0xFFFFFFFF00000000L) >> 32;
-    case 32:
-      x = (x & 0x0000FFFF0000FFFFL) << 16 | (x & 0xFFFF0000FFFF0000L) >> 16;
-    case 16:
-      x = (x & 0x00FF00FF00FF00FFL) << 8 | (x & 0xFF00FF00FF00FF00L) >> 8;
-    default:
-      break;
+inline uint32_t reverse_bytes_int(uint32_t x, size_t bw) {
+  assert(bw == 16 || bw == 32, "");
+  if (bw == 32) {
+    // Based on Hacker's Delight Section 7-1
+    return (x << 24) | ((x & 0xFF00) << 8) | ((x >> 8) & 0xFF00) | (x >> 24);
+  } else {
+    return (x & 0x00FF00FF) << 8 | (x & 0xFF00FF00) >> 8;
   }
+}
+
+inline uint64_t reverse_bits_in_bytes_long(uint64_t x) {
+  // Based on Hacker's Delight Section 7-1
+  x = (x & CONST64(0x5555555555555555)) << 1 | (x & CONST64(0xAAAAAAAAAAAAAAAA)) >> 1;
+  x = (x & CONST64(0x3333333333333333)) << 2 | (x & CONST64(0xCCCCCCCCCCCCCCCC)) >> 2;
+  x = (x & CONST64(0x0F0F0F0F0F0F0F0F)) << 4 | (x & CONST64(0xF0F0F0F0F0F0F0F0)) >> 4;
   return x;
 }
 
-template <typename T, uint8_t S> struct ReverseBitsImpl {};
+inline uint64_t reverse_bytes_long(uint64_t x) {
+  x = (x & CONST64(0x00FF00FF00FF00FF)) << 8 | (x >> 8) & CONST64(0x00FF00FF00FF00FF);
+  return (x << 48) | ((x & 0xFFFF0000) << 16) | ((x >> 16) & 0xFFFF0000) | (x >> 48);
+}
 
+template <typename T, size_t S> struct ReverseBitsImpl {};
 
 template <typename T> struct ReverseBitsImpl<T, 1> {
   static T doit(T v) {
-    return bit_reverse((uint64_t)v);
+    return reverse_bits_in_bytes_int(v);
   }
 };
 
@@ -64,22 +73,22 @@ template <typename T> struct ReverseBitsImpl<T, 1> {
 #if defined(TARGET_COMPILER_gcc)
 template <typename T> struct ReverseBitsImpl<T, 2> {
   static T doit(T v) {
-    uint64_t r = bit_reverse((uint64_t)v);
-    return __builtin_bswap16((uint16_t)r);
+    v = reverse_bits_in_bytes_int(v);
+    return __builtin_bswap16(v);
   }
 };
 
 template <typename T> struct ReverseBitsImpl<T, 4> {
   static T doit(T v) {
-    uint64_t r = bit_reverse((uint64_t)v);
-    return __builtin_bswap32((uint32_t)r);
+    v = reverse_bits_in_bytes_int(v);
+    return __builtin_bswap32(v);
   }
 };
 
 template <typename T> struct ReverseBitsImpl<T, 8> {
   static T doit(T v) {
-    uint64_t r = bit_reverse((uint64_t)v);
-    return __builtin_bswap64(r);
+    v = reverse_bits_in_bytes_long(v);
+    return __builtin_bswap64(v);
   }
 };
 
@@ -89,29 +98,29 @@ template <typename T> struct ReverseBitsImpl<T, 8> {
 #else
 template <typename T> struct ReverseBitsImpl<T, 2> {
   static T doit(T v) {
-    uint64_t r = bit_reverse((uint64_t)v);
-    return byte_reverse(r, 16);
+    v = reverse_bits_in_bytes_int(v);
+    return reverse_bytes_int(r, 16);
   }
 };
 
 template <typename T> struct ReverseBitsImpl<T, 4> {
   static T doit(T v) {
-    uint64_t r = bit_reverse((uint64_t)v);
-    return byte_reverse(r, 32);
+    v = reverse_bits_in_bytes(v);
+    return reverse_bytes_int(v, 32);
   }
 };
 
 template <typename T> struct ReverseBitsImpl<T, 8> {
   static T doit(T v) {
-    uint64_t r = bit_reverse((uint64_t)v);
-    return byte_reverse(r, 64);
+    v = reverse_bits_in_bytes(v);
+    return reverse_bytes_long(r);
   }
 };
 #endif
 
 // Performs bit reversal of a multi-byte type, we implement and support
 // variants for 8, 16, 32 and 64 bit integral types.
-template <typename T> inline T reverse_bits(T v) {
+template <typename T, ENABLE_IF(std::is_integral<T>::value)> inline T reverse_bits(T v) {
   return ReverseBitsImpl<T, sizeof(T)>::doit(v);
 }
 

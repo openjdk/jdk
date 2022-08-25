@@ -1911,7 +1911,7 @@ const Type* ReverseINode::Value(PhaseGVN* phase) const {
     jint res = reverse_bits(t1int->get_con());
     return TypeInt::make(res);
   }
-  return t1int;
+  return bottom_type();
 }
 
 const Type* ReverseLNode::Value(PhaseGVN* phase) const {
@@ -1924,7 +1924,7 @@ const Type* ReverseLNode::Value(PhaseGVN* phase) const {
     jlong res = reverse_bits(t1long->get_con());
     return TypeLong::make(res);
   }
-  return t1long;
+  return bottom_type();
 }
 
 Node* ReverseINode::Identity(PhaseGVN* phase) {
