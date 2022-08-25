@@ -1246,9 +1246,6 @@ public:
   // Unregister the given nmethod from the G1 heap.
   void unregister_nmethod(nmethod* nm) override;
 
-  // No nmethod flushing needed.
-  void flush_nmethod(nmethod* nm) override {}
-
   // No nmethod verification implemented.
   void verify_nmethod(nmethod* nm) override {}
 

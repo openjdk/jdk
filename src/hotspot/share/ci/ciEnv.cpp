@@ -42,6 +42,7 @@
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
 #include "code/scopeDesc.hpp"
+#include "compiler/compilationLog.hpp"
 #include "compiler/compilationPolicy.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compilerEvent.hpp"
@@ -1067,6 +1068,9 @@ void ciEnv::register_method(ciMethod* target,
       return;
     }
 
+    // Check if memory should be freed before allocation
+    CodeCache::gc_on_allocation();
+
     // To prevent compile queue updates.
     MutexLocker locker(THREAD, MethodCompileQueue_lock);
 
@@ -1158,12 +1162,6 @@ void ciEnv::register_method(ciMethod* target,
       nm->set_rtm_state(rtm_state);
 #endif
 
-      // Record successful registration.
-      // (Put nm into the task handle *before* publishing to the Java heap.)
-      if (task() != NULL) {
-        task()->set_code(nm);
-      }
-
       if (entry_bci == InvocationEntryBci) {
         if (TieredCompilation) {
           // If there is an old version we're done with it
@@ -1204,15 +1202,19 @@ void ciEnv::register_method(ciMethod* target,
         }
       }
     }
-  }  // safepoints are allowed again
+  }
 
+  NoSafepointVerifier nsv;
   if (nm != NULL) {
-    // JVMTI -- compiled method notification (must be done outside lock)
-    nm->post_compiled_method_load_event();
+    // Compilation succeeded, post what we know about it
+    nm->post_compiled_method(task());
+    task()->set_num_inlined_bytecodes(num_inlined_bytecodes());
   } else {
     // The CodeCache is full.
     record_failure("code cache is full");
   }
+
+  // safepoints are allowed again
 }
 
 // ------------------------------------------------------------------

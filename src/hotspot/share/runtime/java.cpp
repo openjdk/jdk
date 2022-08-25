@@ -68,7 +68,6 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/statSampler.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "runtime/sweeper.hpp"
 #include "runtime/task.hpp"
 #include "runtime/threads.hpp"
 #include "runtime/timer.hpp"
@@ -294,11 +293,8 @@ void print_statistics() {
   }
 
   // CodeHeap State Analytics.
-  // Does also call NMethodSweeper::print(tty)
   if (PrintCodeHeapAnalytics) {
     CompileBroker::print_heapinfo(NULL, "all", 4096); // details
-  } else if (PrintMethodFlushingStatistics) {
-    NMethodSweeper::print(tty);
   }
 
   if (PrintCodeCache2) {
@@ -366,11 +362,8 @@ void print_statistics() {
   }
 
   // CodeHeap State Analytics.
-  // Does also call NMethodSweeper::print(tty)
   if (PrintCodeHeapAnalytics) {
     CompileBroker::print_heapinfo(NULL, "all", 4096); // details
-  } else if (PrintMethodFlushingStatistics) {
-    NMethodSweeper::print(tty);
   }
 
 #ifdef COMPILER2

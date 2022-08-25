@@ -422,50 +422,8 @@ void Continuations::init() {
 }
 
 // While virtual threads are in Preview, there are some VM mechanisms we disable if continuations aren't used
-// See NMethodSweeper::do_stack_scanning and nmethod::is_not_on_continuation_stack
 bool Continuations::enabled() {
   return VMContinuations && Arguments::enable_preview();
-}
-
-// We initialize the _gc_epoch to 2, because previous_completed_gc_marking_cycle
-// subtracts the value by 2, and the type is unsigned. We don't want underflow.
-//
-// Odd values mean that marking is in progress, and even values mean that no
-// marking is currently active.
-uint64_t Continuations::_gc_epoch = 2;
-
-uint64_t Continuations::gc_epoch() {
-  return _gc_epoch;
-}
-
-bool Continuations::is_gc_marking_cycle_active() {
-  // Odd means that marking is active
-  return (_gc_epoch % 2) == 1;
-}
-
-uint64_t Continuations::previous_completed_gc_marking_cycle() {
-  if (is_gc_marking_cycle_active()) {
-    return _gc_epoch - 2;
-  } else {
-    return _gc_epoch - 1;
-  }
-}
-
-void Continuations::on_gc_marking_cycle_start() {
-  assert(!is_gc_marking_cycle_active(), "Previous marking cycle never ended");
-  ++_gc_epoch;
-}
-
-void Continuations::on_gc_marking_cycle_finish() {
-  assert(is_gc_marking_cycle_active(), "Marking cycle started before last one finished");
-  ++_gc_epoch;
-}
-
-void Continuations::arm_all_nmethods() {
-  BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
-  if (bs_nm != NULL) {
-    bs_nm->arm_all_nmethods();
-  }
 }
 
 #define CC (char*)  /*cast a literal from (const char*)*/

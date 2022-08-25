@@ -1165,9 +1165,6 @@ void Method::unlink_code(CompiledMethod *compare) {
   // We need to check if either the _code or _from_compiled_code_entry_point
   // refer to this nmethod because there is a race in setting these two fields
   // in Method* as seen in bugid 4947125.
-  // If the vep() points to the zombie nmethod, the memory for the nmethod
-  // could be flushed and the compiler and vtable stubs could still call
-  // through it.
   if (code() == compare ||
       from_compiled_entry() == compare->verified_entry_point()) {
     clear_code();

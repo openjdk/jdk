@@ -33,6 +33,7 @@
 #include "oops/instanceKlass.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "runtime/mutexLocker.hpp"
+#include "utilities/numberSeq.hpp"
 
 // The CodeCache implements the code cache for various pieces of generated
 // code, e.g., compiled java methods, runtime stubs, transition frames, etc.
@@ -95,7 +96,16 @@ class CodeCache : AllStatic {
   static address _low_bound;                            // Lower bound of CodeHeap addresses
   static address _high_bound;                           // Upper bound of CodeHeap addresses
   static int _number_of_nmethods_with_dependencies;     // Total number of nmethods with dependencies
-  static uint8_t _unloading_cycle;                      // Global state for recognizing old nmethods that need to be unloaded
+
+  static uint8_t           _unloading_cycle;          // Global state for recognizing old nmethods that need to be unloaded
+  static uint64_t          _gc_epoch;                 // Global state for tracking when nmethods were found to be on-stack
+  static uint64_t          _cold_gc_count;            // Global state for determining how many GCs are needed before an nmethod is cold
+  static size_t            _last_unloading_used;
+  static double            _last_unloading_time;
+  static TruncatedSeq      _unloading_gc_intervals;
+  static TruncatedSeq      _unloading_allocation_rates;
+  static volatile bool     _unloading_threshold_gc_requested;
+  static nmethod* volatile _unlinked_head;
 
   static ExceptionCache* volatile _exception_cache_purge_list;
 
@@ -116,21 +126,6 @@ class CodeCache : AllStatic {
   static CodeBlob* first_blob(CodeHeap* heap);                // Returns the first CodeBlob on the given CodeHeap
   static CodeBlob* first_blob(CodeBlobType code_blob_type);            // Returns the first CodeBlob of the given type
   static CodeBlob* next_blob(CodeHeap* heap, CodeBlob* cb);   // Returns the next CodeBlob on the given CodeHeap
- public:
-
-  class Sweep {
-    friend class CodeCache;
-    template <class T, class Filter, bool is_compiled_method> friend class CodeBlobIterator;
-  private:
-    static int _compiled_method_iterators;
-    static bool _pending_sweep;
-  public:
-    static void begin();
-    static void end();
-  private:
-    static void begin_compiled_method_iteration();
-    static void end_compiled_method_iteration();
-  };
 
  private:
   static size_t bytes_allocated_in_freelists();
@@ -168,7 +163,6 @@ class CodeCache : AllStatic {
 
   // Lookup
   static CodeBlob* find_blob(void* start);              // Returns the CodeBlob containing the given address
-  static CodeBlob* find_blob_unsafe(void* start);       // Same as find_blob but does not fail if looking up a zombie method
   static CodeBlob* find_blob_fast(void* start);         // Returns the CodeBlob containing the given address
   static CodeBlob* find_blob_and_oopmap(void* start, int& slot);         // Returns the CodeBlob containing the given address
   static int find_oopmap_slot_fast(void* start);        // Returns a fast oopmap slot if there is any; -1 otherwise
@@ -197,6 +191,22 @@ class CodeCache : AllStatic {
     ~UnloadingScope();
   };
 
+  // Code cache unloading heuristics
+  static uint64_t cold_gc_count();
+  static void update_cold_gc_count();
+  static void gc_on_allocation();
+
+  // The GC epoch and marking_cycle code below is there to support sweeping
+  // nmethods in loom stack chunks.
+  static uint64_t gc_epoch();
+  static bool is_gc_marking_cycle_active();
+  static uint64_t previous_completed_gc_marking_cycle();
+  static void on_gc_marking_cycle_start();
+  static void on_gc_marking_cycle_finish();
+  static void arm_all_nmethods();
+
+  static void flush_unlinked_nmethods();
+  static void register_unlinked(nmethod* nm);
   static void do_unloading(bool unloading_occurred);
   static uint8_t unloading_cycle() { return _unloading_cycle; }
 
@@ -239,7 +249,7 @@ class CodeCache : AllStatic {
   static bool is_non_nmethod(address addr);
 
   static void clear_inline_caches();                  // clear all inline caches
-  static void cleanup_inline_caches();                // clean unloaded/zombie nmethods from inline caches
+  static void cleanup_inline_caches_whitebox();       // clean bad nmethods from inline caches
 
   // Returns true if an own CodeHeap for the given CodeBlobType is available
   static bool heap_available(CodeBlobType code_blob_type);
@@ -328,31 +338,18 @@ class CodeCache : AllStatic {
 
 
 // Iterator to iterate over code blobs in the CodeCache.
-template <class T, class Filter, bool is_compiled_method> class CodeBlobIterator : public StackObj {
+// The relaxed iterators only hold the CodeCache_lock across next calls
+template <class T, class Filter, bool is_relaxed> class CodeBlobIterator : public StackObj {
  public:
-  enum LivenessFilter { all_blobs, only_alive, only_alive_and_not_unloading };
+  enum LivenessFilter { all_blobs, only_not_unloading };
 
  private:
   CodeBlob* _code_blob;   // Current CodeBlob
   GrowableArrayIterator<CodeHeap*> _heap;
   GrowableArrayIterator<CodeHeap*> _end;
-  bool _only_alive;
   bool _only_not_unloading;
 
   void initialize_iteration(T* nm) {
-    if (Filter::heaps() == NULL) {
-      return;
-    }
-    _heap = Filter::heaps()->begin();
-    _end = Filter::heaps()->end();
-    // If set to NULL, initialized by first call to next()
-    _code_blob = (CodeBlob*)nm;
-    if (nm != NULL) {
-      while(!(*_heap)->contains_blob(_code_blob)) {
-        ++_heap;
-      }
-      assert((*_heap)->contains_blob(_code_blob), "match not found");
-    }
   }
 
   bool next_impl() {
@@ -363,11 +360,6 @@ template <class T, class Filter, bool is_compiled_method> class CodeBlobIterator
           return false;
         }
         ++_heap;
-        continue;
-      }
-
-      // Filter is_alive as required
-      if (_only_alive && !_code_blob->is_alive()) {
         continue;
       }
 
@@ -385,26 +377,26 @@ template <class T, class Filter, bool is_compiled_method> class CodeBlobIterator
 
  public:
   CodeBlobIterator(LivenessFilter filter, T* nm = NULL)
-    : _only_alive(filter == only_alive || filter == only_alive_and_not_unloading),
-      _only_not_unloading(filter == only_alive_and_not_unloading)
+    : _only_not_unloading(filter == only_not_unloading)
   {
-    if (is_compiled_method) {
-      CodeCache::Sweep::begin_compiled_method_iteration();
-      initialize_iteration(nm);
-    } else {
-      initialize_iteration(nm);
+    if (Filter::heaps() == NULL) {
+      return;
     }
-  }
-
-  ~CodeBlobIterator() {
-    if (is_compiled_method) {
-      CodeCache::Sweep::end_compiled_method_iteration();
+    _heap = Filter::heaps()->begin();
+    _end = Filter::heaps()->end();
+    // If set to NULL, initialized by first call to next()
+    _code_blob = nm;
+    if (nm != NULL) {
+      while(!(*_heap)->contains_blob(_code_blob)) {
+        ++_heap;
+      }
+      assert((*_heap)->contains_blob(_code_blob), "match not found");
     }
   }
 
   // Advance iterator to next blob
   bool next() {
-    if (is_compiled_method) {
+    if (is_relaxed) {
       MutexLocker ml(CodeCache_lock, Mutex::_no_safepoint_check_flag);
       return next_impl();
     } else {
@@ -458,10 +450,9 @@ struct AllCodeBlobsFilter {
   static const GrowableArray<CodeHeap*>* heaps() { return CodeCache::heaps(); }
 };
 
-typedef CodeBlobIterator<CompiledMethod, CompiledMethodFilter, false /* is_compiled_method */> CompiledMethodIterator;
-typedef CodeBlobIterator<nmethod, NMethodFilter, false /* is_compiled_method */> NMethodIterator;
-typedef CodeBlobIterator<CodeBlob, AllCodeBlobsFilter, false /* is_compiled_method */> AllCodeBlobsIterator;
-
-typedef CodeBlobIterator<CompiledMethod, CompiledMethodFilter, true /* is_compiled_method */> SweeperBlockingCompiledMethodIterator;
+typedef CodeBlobIterator<CompiledMethod, CompiledMethodFilter, false /* is_relaxed */> CompiledMethodIterator;
+typedef CodeBlobIterator<CompiledMethod, CompiledMethodFilter, true /* is_relaxed */> RelaxedCompiledMethodIterator;
+typedef CodeBlobIterator<nmethod, NMethodFilter, false /* is_relaxed */> NMethodIterator;
+typedef CodeBlobIterator<CodeBlob, AllCodeBlobsFilter, false /* is_relaxed */> AllCodeBlobsIterator;
 
 #endif // SHARE_CODE_CODECACHE_HPP
