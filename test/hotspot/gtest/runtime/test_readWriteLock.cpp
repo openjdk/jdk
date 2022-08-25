@@ -39,7 +39,7 @@ TEST_VM_F(ReadWriteLockTest, WriterLockPreventsReadersFromEnteringCriticalRegion
   volatile bool reader_in_critical_region = false;
   volatile bool reader_exited_critical_region = false;
 
-  auto reader = [&](int _ignored) {
+  auto reader = [&](Thread* _current, int _id) {
     Atomic::release_store(&reader_started, true);
     mut->read_lock(Thread::current());
     Atomic::release_store(&reader_in_critical_region, true);
@@ -48,8 +48,8 @@ TEST_VM_F(ReadWriteLockTest, WriterLockPreventsReadersFromEnteringCriticalRegion
   };
 
   Semaphore rp{};
-  BasicTestThread<decltype(reader), int>* rt =
-      new BasicTestThread<decltype(reader), int>(reader, 0, &rp);
+  BasicTestThread<decltype(reader)>* rt =
+      new BasicTestThread<decltype(reader)>(reader, 0, &rp);
 
   // 1. Hold write lock
   mut->write_lock(Thread::current());
@@ -91,15 +91,13 @@ TEST_VM_F(ReadWriteLockTest, MultipleReadersAtSameTime) {
   constexpr const int num_readers = 5;
   volatile int concurrent_readers = 0;
 
-  auto r = [&](int _ignored) {
+  auto r = [&](Thread* _current, int _id) {
     mut->read_lock(Thread::current());
     // Increment counter
     Atomic::add(&concurrent_readers, 1);
     // Don't let go of the lock, exit thread
   };
-  TestThreadGroup<decltype(r), int, num_readers> ttg(r, []() {
-    return 0;
-  });
+  TestThreadGroup<decltype(r)> ttg(r, num_readers);
   ttg.doit();
   ttg.join();
   EXPECT_EQ(Atomic::load(&concurrent_readers), num_readers);
