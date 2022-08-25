@@ -165,7 +165,7 @@ public class JMXInterfaceBindingTest {
             if (testFailed) {
                 int exitValue = output.getExitValue();
                 if (needRetry) {
-                    System.err.println("Test FAILURE on " + name + " reason: run out of retries to to pick free ports");
+                    System.err.println("Test FAILURE on " + name + " reason: run out of retries to pick free ports");
                 } else if (exitValue == COMMUNICATION_ERROR_EXIT_VAL) {
                     // Failure case since the java processes should still be
                     // running.

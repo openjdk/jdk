@@ -647,7 +647,7 @@
  <xs:complexType name="element" abstract="true">
   <xs:annotation>
    <xs:documentation>
-   The element element can be used either
+   The element can be used either
    at the top level to define an element-type binding globally,
    or within a content model to either reference a globally-defined
    element or type or declare an element-type binding locally.

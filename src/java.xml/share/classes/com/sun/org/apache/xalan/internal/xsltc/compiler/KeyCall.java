@@ -68,7 +68,7 @@ final class KeyCall extends FunctionCall {
      * "##id" for id() calls).
      *
      * @param fname The function name (should be 'key' or 'id')
-     * @param arguments A vector containing the arguments the the function
+     * @param arguments A vector containing the arguments to the function
      */
     public KeyCall(QName fname, List<Expression> arguments) {
         super(fname, arguments);

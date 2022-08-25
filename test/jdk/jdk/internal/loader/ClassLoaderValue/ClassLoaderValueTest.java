@@ -141,7 +141,7 @@ public class ClassLoaderValueTest {
                 } catch (IllegalStateException e) {
                     // expected
                 }
-                // nested remove for for same key and any value (even null)
+                // nested remove for same key and any value (even null)
                 // should return false
                 assertEquals(clv_k.remove(_ld, null), false);
                 assertEquals(clv_k.remove(_ld, v1), false);

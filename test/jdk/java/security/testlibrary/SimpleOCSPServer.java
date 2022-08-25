@@ -442,7 +442,7 @@ public class SimpleOCSPServer {
     }
 
     /**
-     * Check the status database for revocation information one one or more
+     * Check the status database for revocation information on one or more
      * certificates.
      *
      * @param reqList the list of {@code LocalSingleRequest} objects taken

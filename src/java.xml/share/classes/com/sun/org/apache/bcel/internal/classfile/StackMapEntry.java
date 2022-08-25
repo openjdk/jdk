@@ -28,7 +28,7 @@ import com.sun.org.apache.bcel.internal.Const;
 
 /**
  * This class represents a stack map entry recording the types of
- * local variables and the the of stack items at a given byte code offset.
+ * local variables and the of stack items at a given byte code offset.
  * See CLDC specification 5.3.1.2
  *
  * @see     StackMap
@@ -323,7 +323,7 @@ public final class StackMapEntry implements Node, Cloneable
 
     /**
      * Update the distance (as an offset delta) from this StackMap
-     * entry to the next.  Note that this might cause the the
+     * entry to the next.  Note that this might cause the
      * frame type to change.  Note also that delta may be negative.
      *
      * @param delta offset delta

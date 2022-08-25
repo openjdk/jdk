@@ -819,7 +819,7 @@ public class TransformerFactoryImpl
 
     /**
      * javax.xml.transform.sax.TransformerFactory implementation.
-     * Process the Source into a Templates object, which is a a compiled
+     * Process the Source into a Templates object, which is a compiled
      * representation of the source. Note that this method should not be
      * used with XSLTC, as the time-consuming compilation is done for each
      * and every transformation.
@@ -884,7 +884,7 @@ public class TransformerFactoryImpl
 
     /**
      * javax.xml.transform.sax.TransformerFactory implementation.
-     * Process the Source into a Templates object, which is a a compiled
+     * Process the Source into a Templates object, which is a compiled
      * representation of the source.
      *
      * @param source The input stylesheet - DOMSource not supported!!!

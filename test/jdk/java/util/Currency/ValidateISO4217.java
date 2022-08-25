@@ -34,7 +34,7 @@
  * ############################################################################
  *
  *  ValidateISO4217 is a tool to detect differences between the latest ISO 4217
- *  data and and Java's currency data which is based on ISO 4217.
+ *  data and Java's currency data which is based on ISO 4217.
  *  If there is a difference, the following file which includes currency data
  *  may need to be updated.
  *      src/share/classes/java/util/CurrencyData.properties

@@ -52,7 +52,7 @@ import com.sun.swingset3.demos.editorpane.EditorPaneDemo;
 /*
  * @test
  * @key headful screenshots
- * @summary Verifies SwingSet3 EditorPaneDemo by navigating and and validating
+ * @summary Verifies SwingSet3 EditorPaneDemo by navigating and validating
  *  the page contents in all pages
  *
  * @library /sanity/client/lib/jemmy/src

@@ -656,7 +656,7 @@ public class DOM2DTMdefaultNamespaceDeclarationNode implements Attr,TypeInfo
      * element if any, and the value of the <code>documentURI</code>
      * attribute from the <code>Document</code> interface otherwise.
      * <br> When the node is an <code>Element</code>, a <code>Document</code>
-     * or a a <code>ProcessingInstruction</code>, this attribute represents
+     * or a <code>ProcessingInstruction</code>, this attribute represents
      * the properties [base URI] defined in . When the node is a
      * <code>Notation</code>, an <code>Entity</code>, or an
      * <code>EntityReference</code>, this attribute represents the

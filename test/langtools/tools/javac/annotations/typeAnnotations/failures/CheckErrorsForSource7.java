@@ -60,7 +60,7 @@ import com.sun.tools.javac.file.JavacFileManager;
  * -source 7, this test verifies that an error is correctly emitted from the parser for
  * the annotation for -source 7. This test first gathers the occurrences of @TA from
  * the CheckErrorsForSource7Data class below, and then repeatedly removes all these annotations
- * except one and checks the parser reports an expected error. This is needed as as the parser
+ * except one and checks the parser reports an expected error. This is needed as the parser
  * typically produces only one 'insufficient source level' error for each new feature used.
  */
 public class CheckErrorsForSource7 {

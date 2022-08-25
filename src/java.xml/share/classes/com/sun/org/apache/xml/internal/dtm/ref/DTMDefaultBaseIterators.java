@@ -684,7 +684,7 @@ public abstract class DTMDefaultBaseIterators extends DTMDefaultBaseTraversers
   }  // end of TypedNamespaceIterator
 
   /**
-   * Iterator that returns the the root node as defined by the XPath data model
+   * Iterator that returns the root node as defined by the XPath data model
    * for a given node.
    */
   public class RootIterator

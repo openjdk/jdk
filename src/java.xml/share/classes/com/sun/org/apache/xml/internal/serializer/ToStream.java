@@ -144,7 +144,7 @@ abstract public class ToStream extends SerializerBase {
     protected char[] m_lineSep = System.lineSeparator().toCharArray();
 
     /**
-     * True if the the system line separator is to be used.
+     * True if the system line separator is to be used.
      */
     protected boolean m_lineSepUse = true;
 

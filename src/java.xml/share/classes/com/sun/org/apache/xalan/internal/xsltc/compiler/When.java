@@ -96,7 +96,7 @@ final class When extends Instruction {
 
     /**
      * This method should never be called. An Otherwise object will explicitly
-     * translate the "test" expression and and contents of this element.
+     * translate the "test" expression and contents of this element.
      */
     public void translate(ClassGenerator classGen, MethodGenerator methodGen) {
         final ErrorMsg msg = new ErrorMsg(ErrorMsg.STRAY_WHEN_ERR, this);

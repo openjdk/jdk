@@ -513,7 +513,7 @@ public class XSDFACM
         //
         //  This is a relatively complex scenario. What is happening is that
         //  we create a top level binary node of which the special EOC value
-        //  is set as the right side node. The the left side is set to the
+        //  is set as the right side node. The left side is set to the
         //  rewritten syntax tree. The source is the original content model
         //  info from the decl pool. The rewrite is done by buildSyntaxTree()
         //  which recurses the decl pool's content of the element and builds

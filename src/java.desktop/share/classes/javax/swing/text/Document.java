@@ -278,7 +278,7 @@ import javax.swing.event.UndoableEditListener;
  * <p>Removing text from a DefaultStyledDocument is similar to removing text from
  * a PlainDocument. The only difference is the extra level of Elements.
  * Consider what would happen if you deleted two characters at Offset 1
- * from Figure 10, above. Since the the second Element of Paragraph 1 is
+ * from Figure 10, above. Since the second Element of Paragraph 1 is
  * completely contained in the deleted region, it would be removed.
  * Assuming the attributes of Paragraph 1's first child matched those of
  * Paragraph2's first child, the results would be those shown in <u>Figure 11</u>.

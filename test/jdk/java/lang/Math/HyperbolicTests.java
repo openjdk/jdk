@@ -284,7 +284,7 @@ public class HyperbolicTests {
 
         // For values of x larger than 22, the e^(-x) term is
         // insignificant to the floating-point result.  Util exp(x)
-        // overflows around 709.8, sinh(x) ~= exp(x)/2; will will test
+        // overflows around 709.8, sinh(x) ~= exp(x)/2; will test
         // 10000 values in this range.
 
         long trans22 = Double.doubleToLongBits(22.0);
@@ -625,7 +625,7 @@ public class HyperbolicTests {
 
         // For values of x larger than 22, the e^(-x) term is
         // insignificant to the floating-point result.  Util exp(x)
-        // overflows around 709.8, cosh(x) ~= exp(x)/2; will will test
+        // overflows around 709.8, cosh(x) ~= exp(x)/2; will test
         // 10000 values in this range.
 
         long trans22 = Double.doubleToLongBits(22.0);

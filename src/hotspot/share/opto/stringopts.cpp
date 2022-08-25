@@ -42,7 +42,7 @@ class StringConcat : public ResourceObj {
   PhaseStringOpts*    _stringopts;
   AllocateNode*       _begin;          // The allocation the begins the pattern
   CallStaticJavaNode* _end;            // The final call of the pattern.  Will either be
-                                       // SB.toString or or String.<init>(SB.toString)
+                                       // SB.toString or String.<init>(SB.toString)
   bool                _multiple;       // indicates this is a fusion of two or more
                                        // separate StringBuilders
 

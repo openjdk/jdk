@@ -290,7 +290,7 @@ public interface Document extends Node {
      * to a future release of the DOM.On import, the <code>publicId</code>,
      * <code>systemId</code>, and <code>notationName</code> attributes are
      * copied. If a <code>deep</code> import is requested, the descendants
-     * of the the source <code>Entity</code> are recursively imported and
+     * of the source <code>Entity</code> are recursively imported and
      * the resulting nodes reassembled to form the corresponding subtree.</dd>
      * <dt>
      * ENTITY_REFERENCE_NODE</dt>

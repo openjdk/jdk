@@ -72,7 +72,7 @@ public class DisconnectAfterEOF {
                     }
                     if (n <= 0) {
                         if (inBody) {
-                            System.err.println("ERROR: Client closed before before " +
+                            System.err.println("ERROR: Client closed before " +
                                 "entire request received.");
                         }
                         return;

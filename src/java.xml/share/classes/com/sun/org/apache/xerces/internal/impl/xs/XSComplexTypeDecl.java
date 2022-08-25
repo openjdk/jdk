@@ -268,7 +268,7 @@ public class XSComplexTypeDecl implements XSComplexTypeDefinition, TypeInfo {
     }
 
     /**
-     * Checks if a type is derived from another given the the name, namespace
+     * Checks if a type is derived from another given the name, namespace
      * and derivation method. See:
      * http://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407/core.html#TypeInfo-isDerivedFrom
      *
