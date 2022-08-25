@@ -528,6 +528,8 @@ jlong CgroupSubsystem::memory_limit_in_bytes() {
   if (!memory_limit->should_check_metric()) {
     return memory_limit->value();
   }
+  jlong phys_mem = os::Linux::physical_memory();
+  log_trace(os, container)("total physical memory: " JLONG_FORMAT, phys_mem);
   jlong mem_limit = read_memory_limit_in_bytes();
   // Update cached metric to avoid re-reading container settings too often
   memory_limit->set_value(mem_limit, OSCONTAINER_CACHE_TIMEOUT);
