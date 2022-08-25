@@ -44,7 +44,7 @@ public final class Grapheme {
      * @return the next grapheme boundary
      */
     public static int nextBoundary(CharSequence src, int off, int limit) {
-        Objects.checkFromToIndex(off, limit, src.length());
+        Objects.checkFromToIndex(0, limit - off, src.length());
 
         int ch0 = Character.codePointAt(src, off);
         int ret = off + Character.charCount(ch0);

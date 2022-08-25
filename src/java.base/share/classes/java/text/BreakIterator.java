@@ -374,22 +374,19 @@ public abstract class BreakIterator implements Cloneable
      * @since 1.2
      */
     public boolean isBoundary(int offset) {
-        // NOTE: This implementation probably is wrong for most situations
-        // because it fails to take into account the possibility that a
-        // CharacterIterator passed to setText() may not have a begin offset
-        // of 0.  But since the abstract BreakIterator doesn't have that
-        // knowledge, it assumes the begin offset is 0.  If you subclass
-        // BreakIterator, copy the SimpleTextBoundary implementation of this
-        // function into your subclass.  [This should have been abstract at
-        // this level, but it's too late to fix that now.]
-        if (offset == 0) {
+        var ci = getText();
+        var begin = ci.getBeginIndex();
+        if (offset < begin || offset > ci.getEndIndex()) {
+            throw new IllegalArgumentException("offset is out of bounds: " + offset);
+        } else if (offset == begin) {
             return true;
+        } else {
+            int boundary = following(offset - 1);
+            if (boundary == DONE) {
+                throw new IllegalArgumentException();
+            }
+            return boundary == offset;
         }
-        int boundary = following(offset - 1);
-        if (boundary == DONE) {
-            throw new IllegalArgumentException();
-        }
-        return boundary == offset;
     }
 
     /**

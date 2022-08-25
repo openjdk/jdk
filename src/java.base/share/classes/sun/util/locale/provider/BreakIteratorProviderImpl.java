@@ -196,15 +196,13 @@ public class BreakIteratorProviderImpl extends BreakIteratorProvider
     }
 
     static final class GraphemeBreakIterator extends BreakIterator {
-        private CharacterIterator ci;
-        private int offset;
-        private List<Integer> boundaries;
-        private int boundaryIndex;
+        CharacterIterator ci;
+        int offset;
+        List<Integer> boundaries;
+        int boundaryIndex;
 
         GraphemeBreakIterator() {
-            boundaries = Collections.emptyList();
-            boundaryIndex = 0;
-            offset = 0;
+            setText("");
         }
 
         @Override
@@ -225,10 +223,14 @@ public class BreakIteratorProviderImpl extends BreakIteratorProvider
                 return offset;
             }
 
-            var oldIndex = boundaryIndex;
-            boundaryIndex = boundaryIndex + n <= 0 ? 0 : Math.min(boundaryIndex + n, boundaries.size() - 1);
-
-            if (oldIndex == boundaryIndex && offset == boundaries.get(boundaryIndex)) {
+            boundaryIndex = boundaryIndex + n;
+            if (boundaryIndex < 0) {
+                boundaryIndex = 0;
+                current();
+                return DONE;
+            } else if (boundaryIndex >= boundaries.size()) {
+                boundaryIndex = boundaries.size() - 1;
+                current();
                 return DONE;
             } else {
                 return current();
@@ -248,7 +250,10 @@ public class BreakIteratorProviderImpl extends BreakIteratorProvider
         @Override
         public int following(int offset) {
             var lastBoundary = boundaries.get(boundaries.size() - 1);
-            if (offset >= this.offset && this.offset == lastBoundary) {
+
+            if (offset < boundaries.get(0) || offset > lastBoundary) {
+                throw new IllegalArgumentException("offset is out of bounds: " + offset);
+            } else if (offset == this.offset && this.offset == lastBoundary) {
                 return DONE;
             }
 
@@ -275,16 +280,30 @@ public class BreakIteratorProviderImpl extends BreakIteratorProvider
         public void setText(CharacterIterator newText) {
             ci = newText;
             var text = new CharacterIteratorCharSequence(ci);
-            var limit = text.length();
+            var end = ci.getEndIndex();
             boundaries = new ArrayList<>();
 
-            for (int b = 0; b < limit;) {
-                boundaries.add(b + ci.getBeginIndex());
-                b = Grapheme.nextBoundary(text, b - ci.getBeginIndex(), text.length());
+            for (int b = ci.getBeginIndex(); b < end;) {
+                boundaries.add(b);
+                b = Grapheme.nextBoundary(text, b, end);
             }
-            boundaries.add(ci.getEndIndex());
+            boundaries.add(end);
             boundaryIndex = 0;
-            offset = ci.getBeginIndex();
+            offset = ci.getIndex();
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(ci, offset, boundaries, boundaryIndex);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            return o instanceof GraphemeBreakIterator that &&
+                    ci.equals(that.ci) &&
+                    offset == that.offset &&
+                    boundaries.equals(that.boundaries) &&
+                    boundaryIndex == that.boundaryIndex;
         }
     }
 
