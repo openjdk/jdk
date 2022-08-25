@@ -145,7 +145,7 @@ public class ShrinkGrowTest {
         // step 2: try to load one more class
         // it should be impossible
         try {
-            log("just a tiny mint");
+            log("and finally, a wafer-thin mint");
             eatALittleMemory();
             throwFault("We haven't cleaned metaspace yet!");
         } catch (OutOfMemoryError error) {
