@@ -323,7 +323,8 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
         actionMap.put("aquaSelectPageDown", highlightPageDownAction);
 
         actionMap.put("aquaHidePopup", hideAction);
-        actionMap.put("togglePopup", toggleAction);
+        actionMap.put("aquaOpenPopupOrhighlightLast", openPopupOrhighlightLast);
+        actionMap.put("aquaOpenPopupOrhighlightFirst", openPopupOrhighlightFirst);
 
         SwingUtilities.replaceUIActionMap(comboBox, actionMap);
     }
@@ -583,11 +584,31 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
     };
 
     @SuppressWarnings("serial") // anonymous class
-    private final Action toggleAction = new AbstractAction() {
+    private final Action openPopupOrhighlightLast = new AbstractAction() {
         @Override
         public void actionPerformed(final ActionEvent e) {
             final JComboBox<?> comboBox = (JComboBox<?>) e.getSource();
-            comboBox.setPopupVisible(!comboBox.isPopupVisible());
+            if (!comboBox.isPopupVisible()) {
+                comboBox.setPopupVisible(true);
+            } else {
+                final int size = listBox.getModel().getSize();
+                listBox.setSelectedIndex(size - 1);
+                listBox.ensureIndexIsVisible(size - 1);
+            }
+        }
+    };
+
+    @SuppressWarnings("serial") // anonymous class
+    private final Action openPopupOrhighlightFirst = new AbstractAction() {
+        @Override
+        public void actionPerformed(final ActionEvent e) {
+            final JComboBox<?> comboBox = (JComboBox<?>) e.getSource();
+            if (!comboBox.isPopupVisible()) {
+                comboBox.setPopupVisible(true);
+            } else {
+                listBox.setSelectedIndex(0);
+                listBox.ensureIndexIsVisible(0);
+            }
         }
     };
 
