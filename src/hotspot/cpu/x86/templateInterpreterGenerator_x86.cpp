@@ -999,7 +999,8 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   {
     Label L;
     __ movptr(rax, Address(method, Method::native_function_offset()));
-    __ cmpptr(rax, ExternalAddress(SharedRuntime::native_method_throw_unsatisfied_link_error_entry()), rscratch1);
+    ExternalAddress unsatisfied(SharedRuntime::native_method_throw_unsatisfied_link_error_entry());
+    __ cmpptr(rax, unsatisfied.addr(), rscratch1);
     __ jcc(Assembler::notEqual, L);
     __ call_VM(noreg,
                CAST_FROM_FN_PTR(address,
@@ -1071,11 +1072,13 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
   { Label L;
     Label push_double;
+    ExternalAddress float_handler(AbstractInterpreter::result_handler(T_FLOAT));
+    ExternalAddress double_handler(AbstractInterpreter::result_handler(T_DOUBLE));
     __ cmpptr(Address(rbp, (frame::interpreter_frame_oop_temp_offset + 1)*wordSize),
-              ExternalAddress(AbstractInterpreter::result_handler(T_FLOAT)));
+              float_handler.addr(), noreg);
     __ jcc(Assembler::equal, push_double);
     __ cmpptr(Address(rbp, (frame::interpreter_frame_oop_temp_offset + 1)*wordSize),
-              ExternalAddress(AbstractInterpreter::result_handler(T_DOUBLE)));
+              double_handler.addr(), noreg);
     __ jcc(Assembler::notEqual, L);
     __ bind(push_double);
     __ push_d(); // FP values are returned using the FPU, so push FPU contents (even if UseSSE > 0).

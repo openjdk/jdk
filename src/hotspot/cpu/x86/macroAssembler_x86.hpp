@@ -752,7 +752,7 @@ public:
   void cmpoop(Register dst, jobject obj, Register rscratch);
 
   // NOTE src2 must be the lval. This is NOT an mem-mem compare
-  void cmpptr(Address src1, AddressLiteral src2, Register rscratch = noreg);
+  void cmpptr(Address src1, AddressLiteral src2, Register rscratch);
 
   void cmpptr(Register src1, AddressLiteral src2, Register rscratch = noreg);
 

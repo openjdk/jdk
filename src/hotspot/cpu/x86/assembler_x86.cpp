@@ -12246,11 +12246,17 @@ static bool is_reachable(address target, relocInfo::relocType reloc_type) {
 
 bool Assembler::reachable(AddressLiteral adr) {
   assert(CodeCache::contains(pc()), "required");
+  if (adr.is_lval()) {
+    return false;
+  }
   return is_reachable(adr.target(), adr.reloc());
 }
 
 bool Assembler::always_reachable(AddressLiteral adr) {
   assert(CodeCache::contains(pc()), "required");
+  if (adr.is_lval()) {
+    return false;
+  }
   return is_always_reachable(adr.target(), adr.reloc());
 }
 
