@@ -120,4 +120,12 @@ inline T next_power_of_2(T value)  {
   return round_up_power_of_2(value + 1);
 }
 
+// Find log2 value greater than this input
+template <typename T, ENABLE_IF(std::is_integral<T>::value)>
+inline T ceil_log2(T value) {
+  T ret;
+  for (ret = 1; ((T)1 << ret) < value; ++ret);
+  return ret;
+}
+
 #endif // SHARE_UTILITIES_POWEROFTWO_HPP

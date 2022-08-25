@@ -516,7 +516,7 @@ C2V_VMENTRY_NULL(jobject, lookupType, (JNIEnv* env, jobject, jstring jname, ARGU
       // This is a name from a signature.  Strip off the trimmings.
       // Call recursive to keep scope of strippedsym.
       TempNewSymbol strippedsym = Signature::strip_envelope(class_name);
-      resolved_klass = SystemDictionary::find_instance_klass(strippedsym,
+      resolved_klass = SystemDictionary::find_instance_klass(THREAD, strippedsym,
                                                              class_loader,
                                                              protection_domain);
     } else if (Signature::is_array(class_name)) {
@@ -524,7 +524,7 @@ C2V_VMENTRY_NULL(jobject, lookupType, (JNIEnv* env, jobject, jstring jname, ARGU
       int ndim = ss.skip_array_prefix();
       if (ss.type() == T_OBJECT) {
         Symbol* strippedsym = ss.as_symbol();
-        resolved_klass = SystemDictionary::find_instance_klass(strippedsym,
+        resolved_klass = SystemDictionary::find_instance_klass(THREAD, strippedsym,
                                                                class_loader,
                                                                protection_domain);
         if (!resolved_klass.is_null()) {
@@ -534,7 +534,7 @@ C2V_VMENTRY_NULL(jobject, lookupType, (JNIEnv* env, jobject, jstring jname, ARGU
         resolved_klass = TypeArrayKlass::cast(Universe::typeArrayKlassObj(ss.type()))->array_klass(ndim, CHECK_NULL);
       }
     } else {
-      resolved_klass = SystemDictionary::find_instance_klass(class_name,
+      resolved_klass = SystemDictionary::find_instance_klass(THREAD, class_name,
                                                              class_loader,
                                                              protection_domain);
     }

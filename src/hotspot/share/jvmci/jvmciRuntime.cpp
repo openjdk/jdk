@@ -1656,7 +1656,7 @@ Klass* JVMCIRuntime::get_klass_by_name_impl(Klass*& accessing_klass,
     if (!require_local) {
       found_klass = SystemDictionary::find_constrained_instance_or_array_klass(THREAD, sym, loader);
     } else {
-      found_klass = SystemDictionary::find_instance_or_array_klass(sym, loader, domain);
+      found_klass = SystemDictionary::find_instance_or_array_klass(THREAD, sym, loader, domain);
     }
   }
 
