@@ -73,8 +73,9 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
         CommentHelper ch = configuration.utils.getCommentHelper(owner);
         Element exceptionElement = ch.getException(t);
         if (exceptionElement == null) {
-            // TODO warn if target == null as we cannot guarantee type-match, but at most FQN-match.
-            throw new Error();
+            // we cannot type-match; at most FQN-match (if we were to implement it)
+            errorUnknownException(configuration, ch, t);
+            return new Output(null, null, List.of(), true);
         }
         TypeMirror exception = exceptionElement.asType();
         try {
@@ -160,6 +161,7 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
             var ch = utils.getCommentHelper(e);
             Element exception = ch.getException(t);
             if (exception == null) {
+                errorUnknownException(writer.configuration(), ch, t);
                 return; // couldn't find and thus cannot reliably process
             }
             TypeMirror tm = exception.asType();
@@ -213,7 +215,12 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
         Utils utils = writer.configuration().utils;
         var ch = utils.getCommentHelper(e);
         var docFinder = utils.docFinder();
-        TypeMirror exception = ch.getException(tag).asType();
+        Element exceptionElement = ch.getException(tag);
+        if (exceptionElement == null) {
+            errorUnknownException(writer.configuration(), ch, tag);
+            return Map.of(tag, e);
+        }
+        TypeMirror exception = exceptionElement.asType();
         var r = docFinder.search(e, false, m -> extract(m, exception, utils));
         if (r.isEmpty()) {
             return Map.of(tag, e);
@@ -271,8 +278,10 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
         List<ThrowsTree> tags = new LinkedList<>();
         for (ThrowsTree tag : utils.getThrowsTrees(method)) {
             Element candidate = ch.getException(tag);
-            if (candidate == null)
+            if (candidate == null) {
+                errorUnknownException(utils.configuration, ch, tag);
                 continue;
+            }
             if (utils.typeUtils.isSameType(candidate.asType(), targetException)) {
                 tags.add(tag);
             } else if (utils.typeUtils.isSubtype(candidate.asType(), targetException)) {
@@ -298,5 +307,12 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
             }
         }
         return result;
+    }
+
+    private static void errorUnknownException(BaseConfiguration configuration,
+                                              CommentHelper ch,
+                                              ThrowsTree tag) {
+        configuration.getMessages().error(ch.getDocTreePath(tag),
+                "doclet.throws.reference_not_found", tag.getExceptionName());
     }
 }
