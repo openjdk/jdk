@@ -121,13 +121,13 @@ public class CgroupMetrics implements Metrics {
 
     @Override
     public long getMemoryLimit() {
-        long subs_mem = subsystem.getMemoryLimit();
+        long subsMem = subsystem.getMemoryLimit();
         // Catch the cgroup memory limit exceeding host physical memory.
-        // treat this as unlimited.
-        if (subs_mem >= getTotalMemorySize0()) {
+        // Treat this as unlimited.
+        if (subsMem >= getTotalMemorySize0()) {
             return -1;
         }
-        return subs_mem;
+        return subsMem;
     }
 
     @Override
