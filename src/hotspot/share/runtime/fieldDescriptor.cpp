@@ -214,7 +214,7 @@ void fieldDescriptor::print_on_for(outputStream* st, oop obj) {
     if (UseCompressedOops) {
       st->print(" (" PTR32_FORMAT ")", obj->int_field(offset()));
     } else {
-      st->print(" (" PTR64_FORMAT ")", obj->long_field(offset()));
+      st->print(" (" PTR_FORMAT ")", obj->long_field(offset()));
     }
 #else
     st->print(" (" PTR32_FORMAT ")", obj->int_field(offset()));
