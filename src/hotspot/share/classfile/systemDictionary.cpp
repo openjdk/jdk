@@ -2074,7 +2074,7 @@ Method* SystemDictionary::find_method_handle_intrinsic(vmIntrinsicID iid,
   InvokeMethodKey key(signature, iid_as_int);
   Method** met = _invoke_method_intrinsic_table.get(key);
   if (met != nullptr) {
-   return *met;
+    return *met;
   }
 
   methodHandle m = Method::make_method_handle_intrinsic(iid, signature, CHECK_NULL);
