@@ -214,28 +214,26 @@ void fieldDescriptor::print_on_for(outputStream* st, oop obj) {
     if (UseCompressedOops) {
       st->print(" (" PTR32_FORMAT ")", obj->int_field(offset()));
     } else {
-      st->print(" (" PTR_FORMAT ")", obj->long_field(offset()));
+      st->print(" (" PTR64_FORMAT ")", obj->long_field(offset()));
     }
 #else
-    st->print(" (" PTR_FORMAT ")", obj->int_field(offset()));
+    st->print(" (" PTR32_FORMAT ")", obj->int_field(offset()));
 #endif
   } else { // Primitives
     if (ft == T_LONG || ft == T_DOUBLE) {
       st->print(" (" PTR64_FORMAT ")", obj->long_field(offset()));
     } else {
-      jint as_int = 0;
       switch (ft) {
-        case T_BYTE:    as_int = (jint)obj->byte_field(offset()); break;
-        case T_CHAR:    as_int = (jint)obj->char_field(offset()); break;
-        case T_FLOAT:   as_int = obj->int_field(offset());        break;
-        case T_INT:     as_int = obj->int_field(offset());        break;
-        case T_SHORT:   as_int = obj->short_field(offset());      break;
-        case T_BOOLEAN: as_int = obj->bool_field(offset());       break;
+        case T_BYTE:    st->print(" (" PTR8_FORMAT  ")", obj->byte_field(offset()));  break;
+        case T_CHAR:    st->print(" (" PTR16_FORMAT ")", obj->char_field(offset()));  break;
+        case T_FLOAT:   st->print(" (" PTR32_FORMAT ")", obj->int_field(offset()));   break;
+        case T_INT:     st->print(" (" PTR32_FORMAT ")", obj->int_field(offset()));   break;
+        case T_SHORT:   st->print(" (" PTR16_FORMAT ")", obj->short_field(offset())); break;
+        case T_BOOLEAN: st->print(" (" PTR8_FORMAT  ")", obj->bool_field(offset()));  break;
       default:
         ShouldNotReachHere();
         break;
       }
-      st->print(" (" PTR32_FORMAT ")", as_int);
     }
   }
 }

@@ -92,6 +92,12 @@ class oopDesc;
 
 #define BOOL_TO_STR(_b_) ((_b_) ? "true" : "false")
 
+// Format 8-bit quantities.
+#define PTR8_FORMAT            "0x%02" PRIx8
+
+// Format 16-bit quantities.
+#define PTR16_FORMAT           "0x%04" PRIx16
+
 // Format 32-bit quantities.
 #define INT32_FORMAT           "%" PRId32
 #define UINT32_FORMAT          "%" PRIu32
