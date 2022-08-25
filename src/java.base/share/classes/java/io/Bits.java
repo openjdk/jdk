@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,10 @@ class Bits {
     static short getShort(byte[] b, int off) {
         return (short) ((b[off + 1] & 0xFF) +
                         (b[off] << 8));
+    }
+
+    static int getUnsignedShort(byte[] b, int off) {
+        return ((b[off] & 0xFF) << 8) + (b[off + 1] & 0xFF);
     }
 
     static int getInt(byte[] b, int off) {
