@@ -96,34 +96,50 @@ public class XPathExpNamespaceTest extends XPathTestBase {
             + "    </VendCustomer>"
             + "</Customers>";
 
+    /*
+     * DataProvider: provides XPath namespace expressions and expected local name, expected namespace prefix, expected
+     * namespace node name, and expected namespace Uri.
+     */
     @DataProvider(name = "namespaceXpath")
     public Object[][] getNamespaceXpathExpression() {
         return new Object[][] {
                 {"/Customers/namespace::foo", "foo", "xmlns", "xmlns:foo","www.foo.com"},
                 {"/Customers/namespace::xml", "xml", "xml", "xmlns:xml", "http://www.w3.org/XML/1998/namespace"},
+                {"//Customer/Name/namespace::foo", "foo", "xmlns", "xmlns:foo","www.foo.com"},
                 {"/Customers/Customer/Name/namespace::foo", "foo", "xmlns", "xmlns:foo","www.foo.com"},
+                {"//Customer/Name/namespace::xml", "xml", "xml", "xmlns:xml","http://www.w3.org/XML/1998/namespace"},
                 {"/Customers/Customer/Name/namespace::xml", "xml", "xml", "xmlns:xml","http://www.w3.org/XML/1998/namespace"},
+                {"//Customer/Name/namespace::dog", "dog", "xmlns", "xmlns:dog","www.pets.com"},
                 {"/Customers/Customer/Name/namespace::dog", "dog", "xmlns", "xmlns:dog","www.pets.com"}
         };
     }
 
+    /*
+     * DataProvider: provides XPath namespace expressions which should provide no namespace nodes.
+     */
     @DataProvider(name = "namespaceXpathEmpty")
     public Object[][] getNamespaceXpathExpressionEmpty() {
         return new Object[][] {
+                {"//VendCustomer/Name/namespace::dog"},
                 {"/Customers/VendCustomer/Name/namespace::dog"},
+                {"//Customer/Name/namespace::cat"},
                 {"/Customers/Customer/Name/namespace::cat"},
+                {"//Customer/Address/namespace::street"},
                 {"/Customers/Customer/Address/namespace::street"},
+                {"//VendCustomer/Address/namespace::street"},
                 {"/Customers/VendCustomer/Address/namespace::street"}
         };
 
     }
 
+    /*
+     * DataProvider: provides XPath namespace expressions and expected total number of namespace nodes count.
+     */
     @DataProvider(name = "namespaceXpathNodeCount")
     public Object[][] getNamespaceXpathExpressionNodeCount() {
         return new Object[][] {
                 {"/Customers/namespace::*", 2},
                 {"/Customers/Customer/namespace::*", 3},
-                {"/Customers/Customer/Address/namespace::*", 2},
                 {"/Customers/Customer/Address/namespace::*", 2},
                 {"/Customers/Customer/Address/Street/namespace::*", 4},
                 {"/Customers/Customer/Address/City/namespace::*", 2},
@@ -134,6 +150,29 @@ public class XPathExpNamespaceTest extends XPathTestBase {
         };
     }
 
+    /*
+     * DataProvider: provides node functions and expected return of different node functions.
+     */
+    @DataProvider(name = "namespaceUsingNodeFunctions")
+    public Object[][] getNamespaceNodeNameAndUri() {
+        return new Object[][] {
+                {"namespace-uri(//www.foo.com:Customer)","www.foo.com" },
+                {"namespace-uri(//www.pets.com:Address)","www.pets.com" },
+                {"namespace-uri(/Customers/www.foo.com:Customer)","www.foo.com" },
+                {"namespace-uri(/Customers/Customer/www.pets.com:Address)","www.pets.com" },
+                {"namespace-uri(/Customers/VendCustomer/Email)","" }
+        };
+    }
+
+    /**
+     * Verifies namespace expression retrieves different namespace nodes.
+     * @param  exp        XPath expression.
+     * @param  localName  expected local name of namespace node.
+     * @param  nsPrefix   expected namespace prefix of namespace node.
+     * @param  nsNodeName expected name of namespace node.
+     * @param  nsUri      expected namespace Uri.
+     * @throws XPathExpressionException
+     */
     @Test(dataProvider = "namespaceXpath")
     public void namespaceExpTests(String exp, String localName, String nsPrefix, String nsNodeName, String nsUri) throws XPathExpressionException {
         Document doc = documentOf(DECLARATION + RAW_XML);
@@ -145,6 +184,11 @@ public class XPathExpNamespaceTest extends XPathTestBase {
         Assert.assertEquals(node.getNodeValue(),nsUri);
     }
 
+    /**
+     * Verifies namespace path expression return no nodes if namespace expression context nodes don't have namespace
+     * @param  exp     XPath expression.
+     * @throws XPathExpressionException
+     */
     @Test(dataProvider = "namespaceXpathEmpty")
     public void NamespaceScopeTests(String exp) throws XPathExpressionException {
         Document doc = documentOf(DECLARATION + RAW_XML);
@@ -153,6 +197,12 @@ public class XPathExpNamespaceTest extends XPathTestBase {
         Assert.assertNull(node);
     }
 
+    /**
+     * Verifies namespace path expression return namespace nodes list with correct number of nodes.
+     * @param  exp       XPath expression.
+     * @param  nodeCount number of namespace nodes in nodelist.
+     * @throws XPathExpressionException
+     */
     @Test(dataProvider = "namespaceXpathNodeCount")
     public void NamespaceNodesCountTests(String exp, int nodeCount) throws XPathExpressionException {
         Document doc = documentOf(DECLARATION + RAW_XML);
@@ -160,4 +210,21 @@ public class XPathExpNamespaceTest extends XPathTestBase {
         NodeList nodeList = (NodeList) xPath.evaluate(exp, doc, XPathConstants.NODESET);
         Assert.assertEquals(nodeList.getLength(), nodeCount);
     }
+
+    /**
+     * Verifies namespace-uri functions returns the correct namespace uri.
+     * @param  exp          XPath expression.
+     * @param  expectedName number of namespace nodes in nodelist.
+     * @throws XPathExpressionException
+     */
+    @Test(dataProvider = "namespaceUsingNodeFunctions")
+    public void NamespaceNodeFunctionsTests(String exp, String expectedName) throws XPathExpressionException {
+        Document doc = documentOf(DECLARATION + RAW_XML);
+        XPath xPath = XPathFactory.newInstance().newXPath();
+        String s = xPath.evaluateExpression(exp, doc, String.class);
+        String s2 = (String) xPath.evaluate(exp, doc, XPathConstants.STRING);
+        Assert.assertEquals(s, expectedName);
+        Assert.assertEquals(s2, s);
+    }
+
 }
