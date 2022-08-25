@@ -323,6 +323,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
         actionMap.put("aquaSelectPageDown", highlightPageDownAction);
 
         actionMap.put("aquaHidePopup", hideAction);
+        actionMap.put("togglePopup", toggleAction);
 
         SwingUtilities.replaceUIActionMap(comboBox, actionMap);
     }
@@ -578,6 +579,15 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
         @Override
         public boolean isEnabled() {
             return comboBox.isPopupVisible() && super.isEnabled();
+        }
+    };
+
+    @SuppressWarnings("serial") // anonymous class
+    private final Action toggleAction = new AbstractAction() {
+        @Override
+        public void actionPerformed(final ActionEvent e) {
+            final JComboBox<?> comboBox = (JComboBox<?>) e.getSource();
+            comboBox.setPopupVisible(!comboBox.isPopupVisible());
         }
     };
 
