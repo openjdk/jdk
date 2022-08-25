@@ -43,6 +43,17 @@ containing the core JMH and transitive dependencies. The recommended
 dependencies can be retrieved by running `sh make/devkit/createJMHBundle.sh`,
 after which `--with-jmh=build/jmh/jars` should work.
 
+When tests fail or timeout, jtreg runs its failure handler to capture necessary
+data from the system where the test was run. This data can then be used to
+analyze the test failures. Collecting this data involves running various commands
+(which are listed in files residing in `test/failure_handler/src/share/conf`)
+and some of these commands use `sudo`. If the system's `sudoers` file isn't
+configured to allow running these commands, then it can result in password being
+prompted during the failure handler execution. Typically, when running locally,
+collecting this additional data isn't always necessary. To be able to disable
+running the failure handler, use `--enable-jtreg-failure-handler=no` when running
+`configure`.
+
 ## Test selection
 
 All functionality is available using the `test` make target. In this use case,
