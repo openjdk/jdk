@@ -255,12 +255,7 @@ template <class T> void BasicHashtable<F>::verify_table(const char* table_name) 
 
 // Explicitly instantiate these types
 template class BasicHashtable<mtGC>;
-template class BasicHashtable<mtClass>;
 template class BasicHashtable<mtServiceability>;
 
 template class Hashtable<nmethod*, mtGC>;
-template class Hashtable<InstanceKlass*, mtClass>;
-template class Hashtable<WeakHandle, mtClass>;
 template class Hashtable<WeakHandle, mtServiceability>;
-
-template void BasicHashtable<mtClass>::verify_table<ProtectionDomainCacheEntry>(char const*);
