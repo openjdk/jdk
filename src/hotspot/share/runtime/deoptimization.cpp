@@ -959,7 +959,7 @@ template<typename CacheType>
 class BoxCacheBase : public CHeapObj<mtCompiler> {
 protected:
   static InstanceKlass* find_cache_klass(Thread* thread, Symbol* klass_name) {
-    ResourceMark rm;
+    ResourceMark rm(thread);
     char* klass_name_str = klass_name->as_C_string();
     InstanceKlass* ik = SystemDictionary::find_instance_klass(thread, klass_name, Handle(), Handle());
     guarantee(ik != NULL, "%s must be loaded", klass_name_str);
