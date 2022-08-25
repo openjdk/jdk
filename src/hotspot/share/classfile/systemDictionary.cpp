@@ -198,15 +198,14 @@ ClassLoaderData* SystemDictionary::register_loader(Handle class_loader, bool cre
 }
 
 void SystemDictionary::set_system_loader(ClassLoaderData *cld) {
-  if (_java_system_loader.is_empty()) {
-    _java_system_loader = cld->class_loader_handle();
-  }
+  assert(_java_system_loader.is_empty(), "already set!");
+  _java_system_loader = cld->class_loader_handle();
+
 }
 
 void SystemDictionary::set_platform_loader(ClassLoaderData *cld) {
-  if (_java_platform_loader.is_empty()) {
-    _java_platform_loader = cld->class_loader_handle();
-  }
+  assert(_java_platform_loader.is_empty(), "already set!");
+  _java_platform_loader = cld->class_loader_handle();
 }
 
 // ----------------------------------------------------------------------------
