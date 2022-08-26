@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,14 @@ import static java.util.zip.ZipUtils.*;
  * This class implements an input stream filter for reading files in the
  * ZIP file format. Includes support for both compressed and uncompressed
  * entries.
+ *<p>
+ *     {@code ZipInputStream}  will stream the Zip file entries within
+ *     the Zip file by sequentially reading the Local file (LOC) header for each
+ *     entry. {@code ZipInputStream} does not access the Central directory
+ *     (CEN) header for each entry and therefore will not have access to
+ *     CEN header fields such as the external file attributes. {@linkplain ZipFile}
+ *     may be used when the information stored within the CEN header is required.
+ *</p>
  *
  * @author      David Connelly
  * @since 1.1
