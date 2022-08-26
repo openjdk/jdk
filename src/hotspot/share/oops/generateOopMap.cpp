@@ -2337,6 +2337,9 @@ bool GenerateOopMap::rewrite_refval_conflict_inst(BytecodeStream *itr, int from,
   int index;
   int bci = itr->bci();
 
+  if (RunPreverifier) {
+    ShouldNotReachHere();
+  }
   if (is_aload(itr, &index) && index == from) {
     if (TraceOopMapRewrites) {
       tty->print_cr("Rewriting aload at bci: %d", bci);

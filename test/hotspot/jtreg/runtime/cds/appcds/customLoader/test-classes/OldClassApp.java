@@ -79,7 +79,7 @@ public class OldClassApp {
                 WhiteBox wb = WhiteBox.getWhiteBox();
                 if (wb.isSharedClass(OldClassApp.class)) {
                     if (!wb.isSharedClass(c)) {
-                        throw new RuntimeException("wb.isSharedClass(c) should be true");
+                        throw new RuntimeException("wb.isSharedClass(c) should be true, c: " + c);
                     }
                 }
             }

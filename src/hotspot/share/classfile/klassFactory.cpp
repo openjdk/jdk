@@ -31,12 +31,19 @@
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoadInfo.hpp"
 #include "classfile/klassFactory.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "classfile/vmSymbols.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/access.hpp"
+#include "oops/oopsHierarchy.hpp"
 #include "prims/jvmtiEnvBase.hpp"
 #include "prims/jvmtiRedefineClasses.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/javaCalls.hpp"
+#include "runtime/jniHandles.inline.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/utf8.hpp"
 #if INCLUDE_JFR
 #include "jfr/support/jfrKlassExtension.hpp"
 #endif
@@ -85,6 +92,7 @@ InstanceKlass* KlassFactory::check_shared_class_file_load_hook(
                              loader_data,
                              &cl_info,
                              ClassFileParser::BROADCAST, // publicity level
+                             JVM_CLASSFILE_MAJOR_VERSION,
                              CHECK_NULL);
       const ClassInstanceInfo* cl_inst_info = cl_info.class_hidden_info_ptr();
       InstanceKlass* new_ik = parser.create_instance_klass(true, // changed_by_loadhook
@@ -162,6 +170,99 @@ static ClassFileStream* check_class_file_load_hook(ClassFileStream* stream,
   return stream;
 }
 
+int get_stream_major_version(ClassFileStream* stream) {
+  // Magic value
+  const u4 magic = stream->get_u4_fast();
+
+  // Version numbers
+  int minor_version = stream->get_u2_fast();
+  int major_version = stream->get_u2_fast();
+  stream->set_current(stream->buffer());
+  return major_version;
+}
+
+bool is_old_stream(int major_version) {
+  return (major_version < JAVA_7_VERSION);
+}
+
+ClassFileStream* process_old_stream(ClassFileStream* stream, Symbol* name, TRAPS) {
+  ClassFileStream* newStream;
+
+  assert(is_old_stream(get_stream_major_version(stream)), "sanity check");
+
+  // Send class to tmp for debugging
+  if (0) {
+    stringStream fn0;
+    fn0.print("/tmp/preverifier/%s_old.class", name->as_klass_external_name());
+    fileStream fds0(fn0.as_string());
+    fds0.write((const char*)stream->buffer(), stream->length());
+  }
+
+  typeArrayOop bytecode = oopFactory::new_byteArray(stream->length(), CHECK_NULL);
+
+  // Copy Classfile from stream to a java byte array
+  ArrayAccess<>::arraycopy_from_native(reinterpret_cast<const jbyte*>(stream->buffer()),
+        bytecode,
+        typeArrayOopDesc::element_offset<jbyte>(0),
+        (size_t)stream->length());
+
+  typeArrayHandle bufhandle(THREAD, bytecode);
+  JavaValue result(T_ARRAY);
+  JavaCallArguments args;
+  args.push_oop(bufhandle); // Push class byte array as argument
+  args.push_int(PreverifierVerbose);
+  Klass* k = SystemDictionary::resolve_or_fail(vmSymbols::jdk_internal_vm_Preverifier(), false, CHECK_NULL);
+
+  // Call Preverifier.patch()
+  JavaCalls::call_static(&result,
+        k,
+        vmSymbols::preverifier_patch(),
+        vmSymbols::byte_array_bool_byte_array_signature(),
+        &args,
+        THREAD);
+  if (HAS_PENDING_EXCEPTION) {
+    Handle ex(THREAD, PENDING_EXCEPTION);
+    CLEAR_PENDING_EXCEPTION;
+
+    stringStream fn1;
+    static int unknown_count = 0;
+    if (name == NULL) {
+      fn1.print("/tmp/preverifier/%s%d_error", "unknown", unknown_count);
+      unknown_count++;
+    }
+    else {
+      fn1.print("/tmp/preverifier/%s_error", name->as_klass_external_name());
+    }
+    fileStream fds1(fn1.as_string());
+    fds1.print_cr("Exception thrown: %s", ex->klass()->name()->as_C_string());
+    java_lang_Throwable::print_stack_trace(ex, &fds1);
+
+    // If there is an error, return the original classfile
+    stream->set_current(stream->buffer());
+    return stream;
+  }
+
+  oop result_oop = result.get_oop();
+  assert(result_oop != NULL, "Result should be non-null");
+  assert(result_oop->is_typeArray(), "Result must be a byte array");
+  typeArrayOop result_array = typeArrayOop(result_oop);
+  int length = result_array->length();
+  assert(length >= 0, "class_bytes_length must not be negative: %d", length);
+
+  u1* class_bytes = NEW_RESOURCE_ARRAY_RETURN_NULL(u1, length);
+  if (class_bytes == NULL) {
+    THROW_0(vmSymbols::java_lang_OutOfMemoryError());
+  }
+
+  // Copy output back to stream
+  ArrayAccess<>::arraycopy_to_native(result_array,
+        typeArrayOopDesc::element_offset<jbyte>(0),
+        reinterpret_cast<jbyte*>(class_bytes), length);
+
+  newStream = new ClassFileStream(class_bytes, length, stream->source(), stream->need_verify());
+  newStream->set_current(newStream->buffer());
+  return newStream;
+}
 
 InstanceKlass* KlassFactory::create_from_stream(ClassFileStream* stream,
                                                 Symbol* name,
@@ -178,6 +279,9 @@ InstanceKlass* KlassFactory::create_from_stream(ClassFileStream* stream,
 
   ClassFileStream* old_stream = stream;
 
+  // Upgrade old class file versions
+  // stream = process_old_stream(stream, name, CHECK_NULL);
+
   // increment counter
   THREAD->statistical_info().incr_define_class_count();
 
@@ -191,23 +295,53 @@ InstanceKlass* KlassFactory::create_from_stream(ClassFileStream* stream,
                                         CHECK_NULL);
   }
 
+  int major_version = get_stream_major_version(stream);
+  InstanceKlass* result;
+
   ClassFileParser parser(stream,
                          name,
                          loader_data,
                          &cl_info,
                          ClassFileParser::BROADCAST, // publicity level
+                         major_version,
                          CHECK_NULL);
 
-  const ClassInstanceInfo* cl_inst_info = cl_info.class_hidden_info_ptr();
-  InstanceKlass* result = parser.create_instance_klass(old_stream != stream, *cl_inst_info, CHECK_NULL);
-  assert(result != NULL, "result cannot be null with no pending exception");
+  if (RunPreverifier && is_old_stream(major_version)) {
+    // Upgrade old class file versions
+    stream->set_current(stream->buffer());
+    stream = process_old_stream(stream, name, CHECK_NULL);
+    ClassFileParser new_parser(stream,
+                               name,
+                               loader_data,
+                               &cl_info,
+                               ClassFileParser::BROADCAST, // publicity level
+                               major_version,
+                               CHECK_NULL);
 
-  if (cached_class_file != NULL) {
-    // JVMTI: we have an InstanceKlass now, tell it about the cached bytes
-    result->set_cached_class_file(cached_class_file);
+    const ClassInstanceInfo* cl_inst_info = cl_info.class_hidden_info_ptr();
+    result = new_parser.create_instance_klass(old_stream != stream, *cl_inst_info, CHECK_NULL);
+    assert(result != NULL, "result cannot be null with no pending exception");
+
+    if (cached_class_file != NULL) {
+      // JVMTI: we have an InstanceKlass now, tell it about the cached bytes
+      result->set_cached_class_file(cached_class_file);
+    }
+
+    JFR_ONLY(ON_KLASS_CREATION(result, new_parser, THREAD);)
+
+  } else {
+
+    const ClassInstanceInfo* cl_inst_info = cl_info.class_hidden_info_ptr();
+    result = parser.create_instance_klass(old_stream != stream, *cl_inst_info, CHECK_NULL);
+    assert(result != NULL, "result cannot be null with no pending exception");
+
+    if (cached_class_file != NULL) {
+      // JVMTI: we have an InstanceKlass now, tell it about the cached bytes
+      result->set_cached_class_file(cached_class_file);
+    }
+
+    JFR_ONLY(ON_KLASS_CREATION(result, parser, THREAD);)
   }
-
-  JFR_ONLY(ON_KLASS_CREATION(result, parser, THREAD);)
 
 #if INCLUDE_CDS
   if (Arguments::is_dumping_archive()) {

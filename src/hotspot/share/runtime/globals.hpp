@@ -2043,6 +2043,12 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   develop(bool, TraceOptimizedUpcallStubs, false,                           \
                 "Trace optimized upcall stub generation")                   \
+                                                                            \
+  develop(bool, RunPreverifier, true,                                       \
+                "Turn the preverifier on or off")                           \
+                                                                            \
+  develop(bool, PreverifierVerbose, false,                                  \
+                "Enable logging when running the preverifer")               \
 
 // end of RUNTIME_FLAGS
 
