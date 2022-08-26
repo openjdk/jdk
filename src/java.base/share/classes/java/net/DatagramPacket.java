@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -394,8 +394,9 @@ class DatagramPacket {
      * Set the length for this packet. The length of the packet is
      * the number of bytes from the packet's data buffer that will be
      * sent, or the number of bytes of the packet's data buffer that
-     * will be used for receiving data. The length must be lesser or
-     * equal to the offset plus the length of the packet's buffer.
+     * will be used for receiving data. The {@code length} plus the
+     * {@link #getOffset() offset} must be lesser or equal to the
+     * length of the packet's data buffer.
      *
      * @param   length      the length to set for this packet.
      *
