@@ -1253,11 +1253,6 @@ static void verify_oop_args(MacroAssembler* masm,
   }
 }
 
-// defined in stubGenerator_x86_64.cpp
-OopMap* continuation_enter_setup(MacroAssembler* masm, int& stack_slots);
-void fill_continuation_entry(MacroAssembler* masm, Register reg_cont_obj, Register reg_flags);
-void continuation_enter_cleanup(MacroAssembler* masm);
-
 static void check_continuation_enter_argument(VMReg actual_vmreg,
                                               Register expected_reg,
                                               const char* name) {
@@ -1326,13 +1321,13 @@ static void gen_continuation_enter(MacroAssembler* masm,
     __ enter();
 
     stack_slots = 2; // will be adjusted in setup
-    OopMap* map = continuation_enter_setup(masm, stack_slots);
+    OopMap* map = __ continuation_enter_setup(masm, stack_slots);
     // The frame is complete here, but we only record it for the compiled entry, so the frame would appear unsafe,
     // but that's okay because at the very worst we'll miss an async sample, but we're in interp_only_mode anyway.
 
     __ verify_oop(reg_cont_obj);
 
-    fill_continuation_entry(masm, reg_cont_obj, reg_is_virtual);
+    __ fill_continuation_entry(masm, reg_cont_obj, reg_is_virtual);
 
     // If continuation, call to thaw. Otherwise, resolve the call and exit.
     __ testptr(reg_is_cont, reg_is_cont);
@@ -1361,14 +1356,14 @@ static void gen_continuation_enter(MacroAssembler* masm,
   __ enter();
 
   stack_slots = 2; // will be adjusted in setup
-  OopMap* map = continuation_enter_setup(masm, stack_slots);
+  OopMap* map = __ continuation_enter_setup(masm, stack_slots);
 
   // Frame is now completed as far as size and linkage.
   frame_complete = __ pc() - start;
 
   __ verify_oop(reg_cont_obj);
 
-  fill_continuation_entry(masm, reg_cont_obj, reg_is_virtual);
+  __ fill_continuation_entry(masm, reg_cont_obj, reg_is_virtual);
 
   // If isContinue, call to thaw. Otherwise, call Continuation.enter(Continuation c, boolean isContinue)
   __ testptr(reg_is_cont, reg_is_cont);
@@ -1411,7 +1406,7 @@ static void gen_continuation_enter(MacroAssembler* masm,
 
   __ bind(L_exit);
 
-  continuation_enter_cleanup(masm);
+  __ continuation_enter_cleanup(masm);
   __ pop(rbp);
   __ ret(0);
 
@@ -1419,7 +1414,7 @@ static void gen_continuation_enter(MacroAssembler* masm,
 
   exception_offset = __ pc() - start;
 
-  continuation_enter_cleanup(masm);
+  __ continuation_enter_cleanup(masm);
   __ pop(rbp);
 
   __ movptr(c_rarg0, r15_thread);

@@ -2091,6 +2091,10 @@ public:
 
 #endif // COMPILER2_OR_JVMCI
 
+  OopMap* continuation_enter_setup(int& stack_slots);
+  void fill_continuation_entry(Register reg_cont_obj, Register reg_flags);
+  void continuation_enter_cleanup();
+
 #endif // _LP64
 
   void vallones(XMMRegister dst, int vector_len);

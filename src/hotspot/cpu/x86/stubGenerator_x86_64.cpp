@@ -79,10 +79,6 @@
 #define BIND(label) bind(label); BLOCK_COMMENT(#label ":")
 const int MXCSR_MASK = 0xFFC0;  // Mask out any pending exceptions
 
-OopMap* continuation_enter_setup(MacroAssembler* masm, int& stack_slots);
-void fill_continuation_entry(MacroAssembler* masm);
-void continuation_enter_cleanup(MacroAssembler* masm);
-
 // Stub Code definitions
 
 class StubGenerator: public StubCodeGenerator {
@@ -7450,7 +7446,7 @@ address generate_avx_ghash_processBlocks() {
     __ jcc(Assembler::notZero, L_pinned);
 
     __ movptr(rsp, Address(r15_thread, JavaThread::cont_entry_offset()));
-    continuation_enter_cleanup(_masm);
+    __ continuation_enter_cleanup(_masm);
     __ pop(rbp);
     __ ret(0);
 
@@ -8163,102 +8159,6 @@ void StubGenerator_generate(CodeBuffer* code, int phase) {
     UnsafeCopyMemory::create_table(UCM_TABLE_MAX_ENTRIES);
   }
   StubGenerator g(code, phase);
-}
-
-#undef __
-#define __ masm->
-
-//---------------------------- continuation_enter_setup ---------------------------
-//
-// Arguments:
-//   None.
-//
-// Results:
-//   rsp: pointer to blank ContinuationEntry
-//
-// Kills:
-//   rax
-//
-OopMap* continuation_enter_setup(MacroAssembler* masm, int& stack_slots) {
-  assert(ContinuationEntry::size() % VMRegImpl::stack_slot_size == 0, "");
-  assert(in_bytes(ContinuationEntry::cont_offset())  % VMRegImpl::stack_slot_size == 0, "");
-  assert(in_bytes(ContinuationEntry::chunk_offset()) % VMRegImpl::stack_slot_size == 0, "");
-
-  stack_slots += checked_cast<int>(ContinuationEntry::size()) / wordSize;
-  __ subptr(rsp, checked_cast<int32_t>(ContinuationEntry::size()));
-
-  int frame_size = (checked_cast<int>(ContinuationEntry::size()) + wordSize) / VMRegImpl::stack_slot_size;
-  OopMap* map = new OopMap(frame_size, 0);
-  ContinuationEntry::setup_oopmap(map);
-
-  __ movptr(rax, Address(r15_thread, JavaThread::cont_entry_offset()));
-  __ movptr(Address(rsp, ContinuationEntry::parent_offset()), rax);
-  __ movptr(Address(r15_thread, JavaThread::cont_entry_offset()), rsp);
-
-  return map;
-}
-
-//---------------------------- fill_continuation_entry ---------------------------
-//
-// Arguments:
-//   rsp: pointer to blank Continuation entry
-//   reg_cont_obj: pointer to the continuation
-//   reg_flags: flags
-//
-// Results:
-//   rsp: pointer to filled out ContinuationEntry
-//
-// Kills:
-//   rax
-//
-void fill_continuation_entry(MacroAssembler* masm, Register reg_cont_obj, Register reg_flags) {
-  assert_different_registers(rax, reg_cont_obj, reg_flags);
-
-  DEBUG_ONLY(__ movl(Address(rsp, ContinuationEntry::cookie_offset()), ContinuationEntry::cookie_value());)
-
-  __ movptr(Address(rsp, ContinuationEntry::cont_offset()), reg_cont_obj);
-  __ movl  (Address(rsp, ContinuationEntry::flags_offset()), reg_flags);
-  __ movptr(Address(rsp, ContinuationEntry::chunk_offset()), 0);
-  __ movl(Address(rsp, ContinuationEntry::argsize_offset()), 0);
-  __ movl(Address(rsp, ContinuationEntry::pin_count_offset()), 0);
-
-  __ movptr(rax, Address(r15_thread, JavaThread::cont_fastpath_offset()));
-  __ movptr(Address(rsp, ContinuationEntry::parent_cont_fastpath_offset()), rax);
-  __ movq(rax, Address(r15_thread, JavaThread::held_monitor_count_offset()));
-  __ movq(Address(rsp, ContinuationEntry::parent_held_monitor_count_offset()), rax);
-
-  __ movptr(Address(r15_thread, JavaThread::cont_fastpath_offset()), 0);
-  __ movq(Address(r15_thread, JavaThread::held_monitor_count_offset()), 0);
-}
-
-//---------------------------- continuation_enter_cleanup ---------------------------
-//
-// Arguments:
-//   rsp: pointer to the ContinuationEntry
-//
-// Results:
-//   rsp: pointer to the spilled rbp in the entry frame
-//
-// Kills:
-//   rbx
-//
-void continuation_enter_cleanup(MacroAssembler* masm) {
-#ifdef ASSERT
-  Label L_good_sp;
-  __ cmpptr(rsp, Address(r15_thread, JavaThread::cont_entry_offset()));
-  __ jcc(Assembler::equal, L_good_sp);
-  __ stop("Incorrect rsp at continuation_enter_cleanup");
-  __ bind(L_good_sp);
-#endif
-
-  __ movptr(rbx, Address(rsp, ContinuationEntry::parent_cont_fastpath_offset()));
-  __ movptr(Address(r15_thread, JavaThread::cont_fastpath_offset()), rbx);
-  __ movq(rbx, Address(rsp, ContinuationEntry::parent_held_monitor_count_offset()));
-  __ movq(Address(r15_thread, JavaThread::held_monitor_count_offset()), rbx);
-
-  __ movptr(rbx, Address(rsp, ContinuationEntry::parent_offset()));
-  __ movptr(Address(r15_thread, JavaThread::cont_entry_offset()), rbx);
-  __ addptr(rsp, checked_cast<int32_t>(ContinuationEntry::size()));
 }
 
 #undef __
