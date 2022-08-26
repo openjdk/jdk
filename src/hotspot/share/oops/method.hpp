@@ -25,7 +25,6 @@
 #ifndef SHARE_OOPS_METHOD_HPP
 #define SHARE_OOPS_METHOD_HPP
 
-#include "classfile/vmSymbols.hpp"
 #include "code/compressedStream.hpp"
 #include "compiler/compilerDefinitions.hpp"
 #include "interpreter/invocationCounter.hpp"
@@ -405,14 +404,6 @@ class Method : public Metadata {
     }
   }
 
-  int nmethod_age() const {
-    if (method_counters() == NULL) {
-      return INT_MAX;
-    } else {
-      return method_counters()->nmethod_age();
-    }
-  }
-
   int invocation_count() const;
   int backedge_count() const;
 
@@ -736,9 +727,8 @@ public:
 
 
   // Continuation
-  bool is_continuation_enter_intrinsic() const { return intrinsic_id() == vmIntrinsics::_Continuation_enterSpecial; }
-
-  bool is_special_native_intrinsic() const { return is_method_handle_intrinsic() || is_continuation_enter_intrinsic(); }
+  inline bool is_continuation_enter_intrinsic() const;
+  inline bool is_special_native_intrinsic() const;
 
   static Klass* check_non_bcp_klass(Klass* klass);
 

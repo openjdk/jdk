@@ -56,9 +56,9 @@ void MacroAssembler::lastroundDec(XMMRegister key, int rnum) {
 }
 
 // Load key and shuffle operation
-void MacroAssembler::ev_load_key(XMMRegister xmmdst, Register key, int offset, XMMRegister xmm_shuf_mask=NULL) {
+void MacroAssembler::ev_load_key(XMMRegister xmmdst, Register key, int offset, XMMRegister xmm_shuf_mask) {
     movdqu(xmmdst, Address(key, offset));
-    if (xmm_shuf_mask != NULL) {
+    if (xmm_shuf_mask != xnoreg) {
         pshufb(xmmdst, xmm_shuf_mask);
     } else {
        pshufb(xmmdst, ExternalAddress(StubRoutines::x86::key_shuffle_mask_addr()));

@@ -144,12 +144,13 @@ class SystemDictionary : AllStatic {
                                             TRAPS);
 
   // Lookup an already loaded class. If not found NULL is returned.
-  static InstanceKlass* find_instance_klass(Symbol* class_name, Handle class_loader, Handle protection_domain);
+  static InstanceKlass* find_instance_klass(Thread* current, Symbol* class_name,
+                                            Handle class_loader, Handle protection_domain);
 
   // Lookup an already loaded instance or array class.
   // Do not make any queries to class loaders; consult only the cache.
   // If not found NULL is returned.
-  static Klass* find_instance_or_array_klass(Symbol* class_name,
+  static Klass* find_instance_or_array_klass(Thread* current, Symbol* class_name,
                                              Handle class_loader,
                                              Handle protection_domain);
 
@@ -324,7 +325,6 @@ private:
                                             Handle class_loader,
                                             Handle protection_domain, TRAPS);
   static InstanceKlass* handle_parallel_loading(JavaThread* current,
-                                                unsigned int name_hash,
                                                 Symbol* name,
                                                 ClassLoaderData* loader_data,
                                                 Handle lockObject,
@@ -335,8 +335,7 @@ private:
                                               Handle class_loader,
                                               InstanceKlass* k, TRAPS);
   static InstanceKlass* load_instance_class_impl(Symbol* class_name, Handle class_loader, TRAPS);
-  static InstanceKlass* load_instance_class(unsigned int name_hash,
-                                            Symbol* class_name,
+  static InstanceKlass* load_instance_class(Symbol* class_name,
                                             Handle class_loader, TRAPS);
 
   static bool is_shared_class_visible(Symbol* class_name, InstanceKlass* ik,
@@ -400,11 +399,9 @@ protected:
   static Symbol* find_placeholder(Symbol* name, ClassLoaderData* loader_data);
 
   // Class loader constraints
-  static void check_constraints(unsigned int hash,
-                                InstanceKlass* k, Handle loader,
+  static void check_constraints(InstanceKlass* k, Handle loader,
                                 bool defining, TRAPS);
-  static void update_dictionary(unsigned int hash,
-                                InstanceKlass* k, Handle loader);
+  static void update_dictionary(JavaThread* current, InstanceKlass* k, Handle loader);
 };
 
 #endif // SHARE_CLASSFILE_SYSTEMDICTIONARY_HPP

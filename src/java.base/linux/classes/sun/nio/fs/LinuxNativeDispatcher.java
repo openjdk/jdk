@@ -38,13 +38,9 @@ class LinuxNativeDispatcher extends UnixNativeDispatcher {
     * FILE *setmntent(const char *filename, const char *type);
     */
     static long setmntent(byte[] filename, byte[] type) throws UnixException {
-        NativeBuffer pathBuffer = NativeBuffers.asNativeBuffer(filename);
-        NativeBuffer typeBuffer = NativeBuffers.asNativeBuffer(type);
-        try {
+        try (NativeBuffer pathBuffer = NativeBuffers.asNativeBuffer(filename);
+             NativeBuffer typeBuffer = NativeBuffers.asNativeBuffer(type)) {
             return setmntent0(pathBuffer.address(), typeBuffer.address());
-        } finally {
-            typeBuffer.release();
-            pathBuffer.release();
         }
     }
     private static native long setmntent0(long pathAddress, long typeAddress)
@@ -55,11 +51,8 @@ class LinuxNativeDispatcher extends UnixNativeDispatcher {
      */
 
     static int getmntent(long fp, UnixMountEntry entry, int buflen) throws UnixException {
-        NativeBuffer buffer = NativeBuffers.getNativeBuffer(buflen);
-        try {
+        try (NativeBuffer buffer = NativeBuffers.getNativeBuffer(buflen)) {
             return getmntent0(fp, entry, buffer.address(), buflen);
-        } finally {
-            buffer.release();
         }
     }
 

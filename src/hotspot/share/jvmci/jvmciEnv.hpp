@@ -36,7 +36,6 @@ class JVMCIObjectArray;
 class JVMCIPrimitiveArray;
 class JVMCICompiler;
 class JVMCIRuntime;
-class nmethodLocker;
 
 #define JVMCI_EXCEPTION_CONTEXT \
   JavaThread* thread = JavaThread::current(); \
@@ -296,6 +295,8 @@ public:
   JVMCIPrimitiveArray wrap(jbyteArray obj)    { return (JVMCIPrimitiveArray) wrap((jobject) obj); }
   JVMCIPrimitiveArray wrap(jlongArray obj)    { return (JVMCIPrimitiveArray) wrap((jobject) obj); }
 
+  nmethod* lookup_nmethod(address code, jlong compile_id_snapshot);
+
  private:
   JVMCIObject wrap(oop obj)                  { assert(is_hotspot(), "must be"); return wrap(JNIHandles::make_local(obj)); }
   JVMCIObjectArray wrap(objArrayOop obj)     { assert(is_hotspot(), "must be"); return (JVMCIObjectArray) wrap(JNIHandles::make_local(obj)); }
@@ -344,13 +345,11 @@ public:
 
   void fthrow_error(const char* file, int line, const char* format, ...) ATTRIBUTE_PRINTF(4, 5);
 
-  // Given an instance of HotSpotInstalledCode return the corresponding CodeBlob*.  The
-  // nmethodLocker is required to keep the CodeBlob alive in the case where it's an nmethod.
-  CodeBlob* get_code_blob(JVMCIObject code, nmethodLocker& locker);
+  // Given an instance of HotSpotInstalledCode return the corresponding CodeBlob*.
+  CodeBlob* get_code_blob(JVMCIObject code);
 
-  // Given an instance of HotSpotInstalledCode return the corresponding nmethod.  The
-  // nmethodLocker is required to keep the nmethod alive.
-  nmethod* get_nmethod(JVMCIObject code, nmethodLocker& locker);
+  // Given an instance of HotSpotInstalledCode return the corresponding nmethod.
+  nmethod* get_nmethod(JVMCIObject code);
 
   const char* klass_name(JVMCIObject object);
 

@@ -67,7 +67,6 @@
 #include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/continuation.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
@@ -1319,8 +1318,8 @@ void G1ConcurrentMark::remark() {
     report_object_count(mark_finished);
   }
 
-  Continuations::on_gc_marking_cycle_finish();
-  Continuations::arm_all_nmethods();
+  CodeCache::on_gc_marking_cycle_finish();
+  CodeCache::arm_all_nmethods();
 
   // Statistics
   double now = os::elapsedTime();
@@ -1689,8 +1688,9 @@ void G1ConcurrentMark::weak_refs_work() {
   // Unload Klasses, String, Code Cache, etc.
   if (ClassUnloadingWithConcurrentMark) {
     GCTraceTime(Debug, gc, phases) debug("Class Unloading", _gc_timer_cm);
+    CodeCache::UnloadingScope scope(&g1_is_alive);
     bool purged_classes = SystemDictionary::do_unloading(_gc_timer_cm);
-    _g1h->complete_cleaning(&g1_is_alive, purged_classes);
+    _g1h->complete_cleaning(purged_classes);
   }
 }
 
