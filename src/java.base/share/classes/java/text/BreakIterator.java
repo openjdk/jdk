@@ -99,7 +99,7 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  * and a diacritical mark. What users consider to be a character can
  * differ between languages.
  *
- * @implNote The default implementation of the character boundary analysis
+ * @implSpec The default implementation of the character boundary analysis
  * conforms to the Unicode Consortium's Extended Grapheme Cluster breaks.
  * For more detail, refer to
  * <a href="https://www.unicode.org/reports/tr29/#Grapheme_Cluster_Boundaries">
