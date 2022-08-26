@@ -35,13 +35,6 @@ class ZStatCycle;
 class ZStatWorkers;
 class ZTask;
 
-struct ZWorkerResizeStats {
-  bool   _is_active;
-  double _serial_gc_time_passed;
-  double _parallel_gc_time_passed;
-  uint   _nworkers_current;
-};
-
 class ZWorkers {
 private:
   WorkerThreads       _workers;
@@ -54,6 +47,7 @@ private:
 public:
   ZWorkers(ZGenerationId id, ZStatWorkers* stats);
 
+  bool is_active() const;
   uint active_workers() const;
   void set_active_workers(uint nworkers);
   void set_active();
@@ -66,7 +60,7 @@ public:
   void threads_do(ThreadClosure* tc) const;
 
   // Worker resizing
-  ZWorkerResizeStats resize_stats(ZStatCycle* stat_cycle);
+  ZLock* resizing_lock();
   void request_resize_workers(uint nworkers);
 
   bool should_worker_resize();

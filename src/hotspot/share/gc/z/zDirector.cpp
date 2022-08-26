@@ -37,6 +37,45 @@ ZDirector* ZDirector::_director;
 
 constexpr double one_in_1000 = 3.290527;
 
+struct ZWorkerResizeInfo {
+  bool _is_active;
+  uint _current_nworkers;
+  uint _desired_nworkers;
+};
+
+struct ZWorkerResizeStats {
+  bool   _is_active;
+  double _serial_gc_time_passed;
+  double _parallel_gc_time_passed;
+  uint   _nworkers_current;
+};
+
+struct ZDirectorHeapStats {
+  size_t _soft_max_heap_size;
+  size_t _used;
+  uint _total_collections;
+};
+
+struct ZDirectorGenerationGeneralStats {
+  size_t _used;
+  uint _total_collections_at_end;
+};
+
+struct ZDirectorGenerationStats {
+  ZStatCycleStats _cycle;
+  ZStatWorkersStats _workers;
+  ZWorkerResizeStats _resize;
+  ZStatHeapStats _stat_heap;
+  ZDirectorGenerationGeneralStats _general;
+};
+
+struct ZDirectorStats {
+  ZStatMutatorAllocRateStats _mutator_alloc_rate;
+  ZDirectorHeapStats _heap;
+  ZDirectorGenerationStats _young_stats;
+  ZDirectorGenerationStats _old_stats;
+};
+
 ZDirector::ZDirector() :
     _monitor(),
     _stopped(false) {
@@ -47,14 +86,14 @@ ZDirector::ZDirector() :
 
 // Minor GC rules
 
-static bool rule_minor_timer() {
+static bool rule_minor_timer(ZDirectorStats& stats) {
   if (ZCollectionIntervalMinor <= 0) {
     // Rule disabled
     return false;
   }
 
   // Perform GC if timer has expired.
-  const double time_since_last_gc = ZGeneration::young()->stat_cycle()->time_since_last();
+  const double time_since_last_gc = stats._young_stats._cycle._time_since_last;
   const double time_until_gc = ZCollectionIntervalMinor - time_since_last_gc;
 
   log_debug(gc, director)("Rule Minor: Timer, Interval: %.3fs, TimeUntilGC: %.3fs",
@@ -73,9 +112,9 @@ static uint discrete_young_gc_workers(double gc_workers) {
   return clamp<uint>(ceil(gc_workers), 1, max_young_nworkers);
 }
 
-static double select_young_gc_workers(double serial_gc_time, double parallelizable_gc_time, double alloc_rate_sd_percent, double time_until_oom) {
+static double select_young_gc_workers(ZDirectorStats& stats, double serial_gc_time, double parallelizable_gc_time, double alloc_rate_sd_percent, double time_until_oom) {
   // Use all workers until we're warm
-  if (!ZGeneration::old()->stat_cycle()->is_warm()) {
+  if (!stats._old_stats._cycle._is_warm) {
     const double not_warm_gc_workers = ConcGCThreads;
     log_debug(gc, director)("Select Minor GC Workers (Not Warm), GCWorkers: %.3f", not_warm_gc_workers);
     return not_warm_gc_workers;
@@ -84,14 +123,14 @@ static double select_young_gc_workers(double serial_gc_time, double parallelizab
   // Calculate number of GC workers needed to avoid OOM.
   const double gc_workers = estimated_gc_workers(serial_gc_time, parallelizable_gc_time, time_until_oom);
   const uint actual_gc_workers = discrete_young_gc_workers(gc_workers);
-  const double last_gc_workers = ZGeneration::young()->stat_cycle()->last_active_workers();
+  const double last_gc_workers = stats._young_stats._cycle._last_active_workers;
 
   if ((double)actual_gc_workers < last_gc_workers) {
     // Before decreasing number of GC workers compared to the previous GC cycle, check if the
     // next GC cycle will need to increase it again. If so, use the same number of GC workers
     // that will be needed in the next cycle.
     const double gc_duration_delta = (parallelizable_gc_time / actual_gc_workers) - (parallelizable_gc_time / last_gc_workers);
-    const double additional_time_for_allocations = ZGeneration::young()->stat_cycle()->time_since_last() - gc_duration_delta;
+    const double additional_time_for_allocations = stats._young_stats._cycle._time_since_last - gc_duration_delta;
     const double next_time_until_oom = time_until_oom + additional_time_for_allocations;
     const double next_avoid_oom_gc_workers = estimated_gc_workers(serial_gc_time, parallelizable_gc_time, next_time_until_oom);
 
@@ -111,19 +150,16 @@ static double select_young_gc_workers(double serial_gc_time, double parallelizab
   return gc_workers;
 }
 
-ZDriverRequest rule_minor_allocation_rate_dynamic(double serial_gc_time_passed, double parallel_gc_time_passed) {
-  if (!ZGeneration::old()->stat_cycle()->is_time_trustable()) {
+ZDriverRequest rule_minor_allocation_rate_dynamic(ZDirectorStats& stats, double serial_gc_time_passed, double parallel_gc_time_passed) {
+  if (!stats._old_stats._cycle._is_time_trustable) {
     // Rule disabled
     return ZDriverRequest(GCCause::_no_gc, ConcGCThreads, 0);
   }
 
-  ZGenerationYoung* const young = ZGeneration::young();
-  ZGenerationOld* const old = ZGeneration::old();
-
   // Calculate amount of free memory available. Note that we take the
   // relocation headroom into account to avoid in-place relocation.
-  const size_t soft_max_capacity = ZHeap::heap()->soft_max_capacity();
-  const size_t used = ZHeap::heap()->used();
+  const size_t soft_max_capacity = stats._heap._soft_max_heap_size;
+  const size_t used = stats._heap._used;
   const size_t free_including_headroom = soft_max_capacity - MIN2(soft_max_capacity, used);
   const size_t free = free_including_headroom - MIN2(free_including_headroom, ZHeuristics::relocation_headroom());
 
@@ -133,7 +169,7 @@ ZDriverRequest rule_minor_allocation_rate_dynamic(double serial_gc_time_passed, 
   // phase changes in the allocate rate. We then add ~3.3 sigma to account for
   // the allocation rate variance, which means the probability is 1 in 1000
   // that a sample is outside of the confidence interval.
-  const ZStatMutatorAllocRateStats alloc_rate_stats = ZStatMutatorAllocRate::stats();
+  const ZStatMutatorAllocRateStats alloc_rate_stats = stats._mutator_alloc_rate;
   const double alloc_rate_predict = alloc_rate_stats._predict;
   const double alloc_rate_avg = alloc_rate_stats._avg;
   const double alloc_rate_sd = alloc_rate_stats._sd;
@@ -143,11 +179,11 @@ ZDriverRequest rule_minor_allocation_rate_dynamic(double serial_gc_time_passed, 
 
   // Calculate max serial/parallel times of a GC cycle. The times are
   // moving averages, we add ~3.3 sigma to account for the variance.
-  const double serial_gc_time = fabsd(young->stat_cycle()->serial_time().davg() + (young->stat_cycle()->serial_time().dsd() * one_in_1000) - serial_gc_time_passed);
-  const double parallelizable_gc_time = fabsd(young->stat_cycle()->parallelizable_time().davg() + (young->stat_cycle()->parallelizable_time().dsd() * one_in_1000) - parallel_gc_time_passed);
+  const double serial_gc_time = fabsd(stats._young_stats._cycle._avg_serial_time + (stats._young_stats._cycle._sd_serial_time * one_in_1000) - serial_gc_time_passed);
+  const double parallelizable_gc_time = fabsd(stats._young_stats._cycle._avg_parallelizable_time + (stats._young_stats._cycle._sd_parallelizable_time * one_in_1000) - parallel_gc_time_passed);
 
   // Calculate number of GC workers needed to avoid OOM.
-  const double gc_workers = select_young_gc_workers(serial_gc_time, parallelizable_gc_time, alloc_rate_sd_percent, time_until_oom);
+  const double gc_workers = select_young_gc_workers(stats, serial_gc_time, parallelizable_gc_time, alloc_rate_sd_percent, time_until_oom);
 
   // Convert to a discrete number of GC workers within limits.
   const uint actual_gc_workers = discrete_young_gc_workers(gc_workers);
@@ -181,8 +217,8 @@ ZDriverRequest rule_minor_allocation_rate_dynamic(double serial_gc_time_passed, 
   return ZDriverRequest(GCCause::_z_allocation_rate, actual_gc_workers, 0);
 }
 
-static bool rule_minor_allocation_rate_static() {
-  if (!ZGeneration::old()->stat_cycle()->is_time_trustable()) {
+static bool rule_minor_allocation_rate_static(ZDirectorStats& stats) {
+  if (!stats._old_stats._cycle._is_time_trustable) {
     // Rule disabled
     return false;
   }
@@ -193,13 +229,10 @@ static bool rule_minor_allocation_rate_static() {
   // margin based on variations in the allocation rate and unforeseen
   // allocation spikes.
 
-  ZGenerationYoung* const young = ZGeneration::young();
-  ZGenerationOld* const old = ZGeneration::old();
-
   // Calculate amount of free memory available. Note that we take the
   // relocation headroom into account to avoid in-place relocation.
-  const size_t soft_max_capacity = ZHeap::heap()->soft_max_capacity();
-  const size_t used = ZHeap::heap()->used();
+  const size_t soft_max_capacity = stats._heap._soft_max_heap_size;
+  const size_t used = stats._heap._used;
   const size_t free_including_headroom = soft_max_capacity - MIN2(soft_max_capacity, used);
   const size_t free = free_including_headroom - MIN2(free_including_headroom, ZHeuristics::relocation_headroom());
 
@@ -209,14 +242,14 @@ static bool rule_minor_allocation_rate_static() {
   // phase changes in the allocate rate. We then add ~3.3 sigma to account for
   // the allocation rate variance, which means the probability is 1 in 1000
   // that a sample is outside of the confidence interval.
-  const ZStatMutatorAllocRateStats alloc_rate_stats = ZStatMutatorAllocRate::stats();
+  const ZStatMutatorAllocRateStats alloc_rate_stats = stats._mutator_alloc_rate;
   const double max_alloc_rate = (alloc_rate_stats._avg * ZAllocationSpikeTolerance) + (alloc_rate_stats._sd * one_in_1000);
   const double time_until_oom = free / (max_alloc_rate + 1.0); // Plus 1.0B/s to avoid division by zero
 
   // Calculate max serial/parallel times of a GC cycle. The times are
   // moving averages, we add ~3.3 sigma to account for the variance.
-  const double serial_gc_time = young->stat_cycle()->serial_time().davg() + (young->stat_cycle()->serial_time().dsd() * one_in_1000);
-  const double parallelizable_gc_time = young->stat_cycle()->parallelizable_time().davg() + (young->stat_cycle()->parallelizable_time().dsd() * one_in_1000);
+  const double serial_gc_time = stats._young_stats._cycle._avg_serial_time + (stats._young_stats._cycle._sd_serial_time * one_in_1000);
+  const double parallelizable_gc_time = stats._young_stats._cycle._avg_parallelizable_time + (stats._young_stats._cycle._sd_parallelizable_time * one_in_1000);
 
   // Calculate GC duration given number of GC workers needed.
   const double gc_duration = serial_gc_time + (parallelizable_gc_time / ConcGCThreads);
@@ -232,7 +265,7 @@ static bool rule_minor_allocation_rate_static() {
   return time_until_gc <= 0;
 }
 
-static bool rule_minor_allocation_rate() {
+static bool rule_minor_allocation_rate(ZDirectorStats& stats) {
   if (ZCollectionIntervalOnly) {
     // Rule disabled
     return false;
@@ -244,14 +277,14 @@ static bool rule_minor_allocation_rate() {
   }
 
   if (UseDynamicNumberOfGCThreads) {
-    const ZDriverRequest request = rule_minor_allocation_rate_dynamic(0.0 /* serial_gc_time_passed */, 0.0 /* parallel_gc_time_passed */);
+    const ZDriverRequest request = rule_minor_allocation_rate_dynamic(stats, 0.0 /* serial_gc_time_passed */, 0.0 /* parallel_gc_time_passed */);
     return request.cause() != GCCause::_no_gc;
   } else {
-    return rule_minor_allocation_rate_static();
+    return rule_minor_allocation_rate_static(stats);
   }
 }
 
-static bool rule_minor_high_usage() {
+static bool rule_minor_high_usage(ZDirectorStats& stats) {
   if (ZCollectionIntervalOnly) {
     // Rule disabled
     return false;
@@ -265,8 +298,8 @@ static bool rule_minor_high_usage() {
 
   // Calculate amount of free memory available. Note that we take the
   // relocation headroom into account to avoid in-place relocation.
-  const size_t soft_max_capacity = ZHeap::heap()->soft_max_capacity();
-  const size_t used = ZHeap::heap()->used();
+  const size_t soft_max_capacity = stats._heap._soft_max_heap_size;
+  const size_t used = stats._heap._used;
   const size_t free_including_headroom = soft_max_capacity - MIN2(soft_max_capacity, used);
   const size_t free = free_including_headroom - MIN2(free_including_headroom, ZHeuristics::relocation_headroom());
   const double free_percent = percent_of(free, soft_max_capacity);
@@ -279,14 +312,14 @@ static bool rule_minor_high_usage() {
 
 // Major GC rules
 
-static bool rule_major_timer() {
+static bool rule_major_timer(ZDirectorStats& stats) {
   if (ZCollectionIntervalMajor <= 0) {
     // Rule disabled
     return false;
   }
 
   // Perform GC if timer has expired.
-  const double time_since_last_gc = ZGeneration::old()->stat_cycle()->time_since_last();
+  const double time_since_last_gc = stats._old_stats._cycle._time_since_last;
   const double time_until_gc = ZCollectionIntervalMajor - time_since_last_gc;
 
   log_debug(gc, director)("Rule Major: Timer, Interval: %.3fs, TimeUntilGC: %.3fs",
@@ -295,13 +328,13 @@ static bool rule_major_timer() {
   return time_until_gc <= 0;
 }
 
-static bool rule_major_warmup() {
+static bool rule_major_warmup(ZDirectorStats& stats) {
   if (ZCollectionIntervalOnly) {
     // Rule disabled
     return false;
   }
 
-  if (ZGeneration::old()->stat_cycle()->is_warm()) {
+  if (stats._old_stats._cycle._is_warm) {
     // Rule disabled
     return false;
   }
@@ -309,9 +342,9 @@ static bool rule_major_warmup() {
   // Perform GC if heap usage passes 10/20/30% and no other GC has been
   // performed yet. This allows us to get some early samples of the GC
   // duration, which is needed by the other rules.
-  const size_t soft_max_capacity = ZHeap::heap()->soft_max_capacity();
-  const size_t used = ZHeap::heap()->used();
-  const double used_threshold_percent = (ZGeneration::old()->stat_cycle()->nwarmup_cycles() + 1) * 0.1;
+  const size_t soft_max_capacity = stats._heap._soft_max_heap_size;
+  const size_t used = stats._heap._used;
+  const double used_threshold_percent = (stats._old_stats._cycle._nwarmup_cycles + 1) * 0.1;
   const size_t used_threshold = soft_max_capacity * used_threshold_percent;
 
   log_debug(gc, director)("Rule Major: Warmup %.0f%%, Used: " SIZE_FORMAT "MB, UsedThreshold: " SIZE_FORMAT "MB",
@@ -320,29 +353,27 @@ static bool rule_major_warmup() {
   return used >= used_threshold;
 }
 
-static double calculate_extra_young_gc_time() {
-  if (!ZGeneration::old()->stat_cycle()->is_time_trustable()) {
+static double calculate_extra_young_gc_time(ZDirectorStats& stats) {
+  if (!stats._old_stats._cycle._is_time_trustable) {
     return 0.0;
   }
 
   // Calculate amount of free memory available. Note that we take the
   // relocation headroom into account to avoid in-place relocation.
-  ZGenerationYoung* const young = ZGeneration::young();
-  ZGenerationOld* const old = ZGeneration::old();
-  const size_t old_used = ZHeap::heap()->used_old();
-  const size_t old_live = old->stat_heap()->live_at_mark_end();
+  const size_t old_used = stats._old_stats._general._used;
+  const size_t old_live = stats._old_stats._stat_heap._live_at_mark_end;
   const size_t old_garbage = old_used - old_live;
 
   // Calculate max serial/parallel times of a young GC cycle. The times are
   // moving averages, we add ~3.3 sigma to account for the variance.
-  const double young_serial_gc_time = young->stat_cycle()->serial_time().davg() + (young->stat_cycle()->parallelizable_time().dsd() * one_in_1000);
-  const double young_parallelizable_gc_time = young->stat_cycle()->parallelizable_time().davg() + (young->stat_cycle()->parallelizable_time().dsd() * one_in_1000);
+  const double young_serial_gc_time = stats._young_stats._cycle._avg_serial_time + (stats._young_stats._cycle._sd_serial_time * one_in_1000);
+  const double young_parallelizable_gc_time = stats._young_stats._cycle._avg_parallelizable_time + (stats._young_stats._cycle._sd_parallelizable_time * one_in_1000);
 
   // Calculate young GC time and duration given number of GC workers needed.
   const double young_gc_time = young_serial_gc_time + young_parallelizable_gc_time;
 
   // Calculate how much memory young collections are predicted to free.
-  size_t reclaimed_per_young_gc = young->stat_heap()->reclaimed_avg();
+  size_t reclaimed_per_young_gc = stats._young_stats._stat_heap._reclaimed_avg;
 
   // Calculate current YC time and predicted YC time after an old collection.
   const double current_young_gc_time_per_bytes_freed = double(young_gc_time) / double(reclaimed_per_young_gc);
@@ -356,30 +387,28 @@ static double calculate_extra_young_gc_time() {
   return extra_young_gc_time;
 }
 
-static bool rule_major_allocation_rate() {
-  if (!ZGeneration::old()->stat_cycle()->is_time_trustable()) {
+static bool rule_major_allocation_rate(ZDirectorStats& stats) {
+  if (!stats._old_stats._cycle._is_time_trustable) {
     // Rule disabled
     return false;
   }
 
-  ZGenerationOld* const old = ZGeneration::old();
-
   // Calculate max serial/parallel times of an old GC cycle. The times are
   // moving averages, we add ~3.3 sigma to account for the variance.
-  const double old_serial_gc_time = old->stat_cycle()->serial_time().davg() + (old->stat_cycle()->serial_time().dsd() * one_in_1000);
-  const double old_parallelizable_gc_time = old->stat_cycle()->parallelizable_time().davg() + (old->stat_cycle()->parallelizable_time().dsd() * one_in_1000);
+  const double old_serial_gc_time = stats._old_stats._cycle._avg_serial_time + (stats._old_stats._cycle._sd_serial_time * one_in_1000);
+  const double old_parallelizable_gc_time = stats._old_stats._cycle._avg_parallelizable_time + (stats._old_stats._cycle._sd_parallelizable_time * one_in_1000);
 
   // Calculate old GC time.
   const double old_gc_time = old_serial_gc_time + old_parallelizable_gc_time;
 
   // Calculate extra time per young collection inflicted by *not* doing an
   // old collection that frees up memory in the old generation.
-  const double extra_young_gc_time = calculate_extra_young_gc_time();
+  const double extra_young_gc_time = calculate_extra_young_gc_time(stats);
 
   // Doing an old collection makes subsequent young collections more efficient.
   // Calculate the number of young collections ahead that we will try to amortize
   // the cost of doing an old collection for.
-  const int lookahead = ZCollectedHeap::heap()->total_collections() - old->total_collections_at_end();
+  const int lookahead = stats._heap._total_collections - stats._old_stats._general._total_collections_at_end;
 
   // Calculate extra young collection overhead predicted for a number of future
   // young collections, due to not freeing up memory in the old generation.
@@ -399,24 +428,21 @@ static bool rule_major_allocation_rate() {
   return extra_young_gc_time_for_lookahead > old_gc_time;
 }
 
-static uint calculate_old_workers() {
-  ZGenerationYoung* const young = ZGeneration::young();
-  ZGenerationOld* const old = ZGeneration::old();
-
+static uint calculate_old_workers(ZDirectorStats& stats) {
   // Calculate max serial/parallel times of an old collection. The times
   // are moving averages, we add ~3.3 sigma to account for the variance.
-  const double old_serial_gc_time = old->stat_cycle()->serial_time().davg() + (old->stat_cycle()->serial_time().dsd() * one_in_1000);
-  const double old_parallelizable_gc_time = old->stat_cycle()->parallelizable_time().davg() + (old->stat_cycle()->parallelizable_time().dsd() * one_in_1000);
+  const double old_serial_gc_time = stats._old_stats._cycle._avg_serial_time + (stats._old_stats._cycle._sd_serial_time * one_in_1000);
+  const double old_parallelizable_gc_time = stats._old_stats._cycle._avg_parallelizable_time + (stats._old_stats._cycle._sd_parallelizable_time * one_in_1000);
 
-  const double old_last_gc_workers = old->stat_cycle()->last_active_workers();
+  const double old_last_gc_workers = stats._old_stats._cycle._last_active_workers;
   const double old_parallelizable_gc_duration = old_parallelizable_gc_time / old_last_gc_workers;
 
   // Get the average time interval between young collections
-  const double young_gc_interval = young->stat_cycle()->avg_cycle_interval();
+  const double young_gc_interval = stats._young_stats._cycle._avg_cycle_interval;
 
   // Get the inflated GC time per young collection, due to old generation
   // not being collected yet.
-  const double extra_young_gc_time = calculate_extra_young_gc_time();
+  const double extra_young_gc_time = calculate_extra_young_gc_time(stats);
 
   // Calculate how much amortized extra young GC time can be reduced by
   // putting an equal amount of GC time towards finishing old faster instead.
@@ -438,7 +464,7 @@ static uint calculate_old_workers() {
   return gc_workers;
 }
 
-static bool rule_major_proactive() {
+static bool rule_major_proactive(ZDirectorStats& stats) {
   if (ZCollectionIntervalOnly) {
     // Rule disabled
     return false;
@@ -449,10 +475,7 @@ static bool rule_major_proactive() {
     return false;
   }
 
-  ZStatCycle* old_cycle = ZGeneration::old()->stat_cycle();
-  ZStatCycle* young_cycle = ZGeneration::young()->stat_cycle();
-
-  if (!old_cycle->is_warm()) {
+  if (!stats._old_stats._cycle._is_warm) {
     // Rule disabled
     return false;
   }
@@ -466,11 +489,11 @@ static bool rule_major_proactive() {
   // 10% of the max capacity since the previous GC, or more than 5 minutes has
   // passed since the previous GC. This helps avoid superfluous GCs when running
   // applications with very low allocation rate.
-  const size_t used_after_last_gc = ZGeneration::old()->stat_heap()->used_at_relocate_end();
-  const size_t used_increase_threshold = ZHeap::heap()->soft_max_capacity() * 0.10; // 10%
+  const size_t used_after_last_gc = stats._old_stats._stat_heap._used_at_relocate_end;
+  const size_t used_increase_threshold = stats._heap._soft_max_heap_size * 0.10; // 10%
   const size_t used_threshold = used_after_last_gc + used_increase_threshold;
-  const size_t used = ZHeap::heap()->used();
-  const double time_since_last_gc = old_cycle->time_since_last();
+  const size_t used = stats._heap._used;
+  const double time_since_last_gc = stats._old_stats._cycle._time_since_last;
   const double time_since_last_gc_threshold = 5 * 60; // 5 minutes
   if (used < used_threshold && time_since_last_gc < time_since_last_gc_threshold) {
     // Don't even consider doing a proactive GC
@@ -482,10 +505,10 @@ static bool rule_major_proactive() {
 
   const double assumed_throughput_drop_during_gc = 0.50; // 50%
   const double acceptable_throughput_drop = 0.01;        // 1%
-  const double serial_old_gc_time = old_cycle->serial_time().davg() + (old_cycle->serial_time().dsd() * one_in_1000);
-  const double parallelizable_old_gc_time = old_cycle->parallelizable_time().davg() + (old_cycle->parallelizable_time().dsd() * one_in_1000);
-  const double serial_young_gc_time = young_cycle->serial_time().davg() + (young_cycle->serial_time().dsd() * one_in_1000);
-  const double parallelizable_young_gc_time = young_cycle->parallelizable_time().davg() + (young_cycle->parallelizable_time().dsd() * one_in_1000);
+  const double serial_old_gc_time = stats._old_stats._cycle._avg_serial_time + (stats._old_stats._cycle._sd_serial_time * one_in_1000);
+  const double parallelizable_old_gc_time = stats._old_stats._cycle._avg_parallelizable_time + (stats._old_stats._cycle._sd_parallelizable_time * one_in_1000);
+  const double serial_young_gc_time = stats._young_stats._cycle._avg_serial_time + (stats._young_stats._cycle._sd_serial_time * one_in_1000);
+  const double parallelizable_young_gc_time = stats._young_stats._cycle._avg_parallelizable_time + (stats._young_stats._cycle._sd_parallelizable_time * one_in_1000);
   const double serial_gc_time = serial_old_gc_time + serial_young_gc_time;
   const double parallelizable_gc_time = parallelizable_old_gc_time + parallelizable_young_gc_time;
   const double gc_duration = serial_gc_time + (parallelizable_gc_time / ConcGCThreads);
@@ -498,108 +521,127 @@ static bool rule_major_proactive() {
   return time_until_gc <= 0;
 }
 
-static GCCause::Cause make_minor_gc_decision() {
+static GCCause::Cause make_minor_gc_decision(ZDirectorStats& stats) {
   if (ZDriver::minor()->is_busy()) {
     return GCCause::_no_gc;
   }
 
-  if (rule_minor_timer()) {
+  if (rule_minor_timer(stats)) {
     return GCCause::_z_timer;
   }
 
-  if (rule_minor_allocation_rate()) {
+  if (rule_minor_allocation_rate(stats)) {
     return GCCause::_z_allocation_rate;
   }
 
-  if (rule_minor_high_usage()) {
+  if (rule_minor_high_usage(stats)) {
     return GCCause::_z_high_usage;
   }
 
   return GCCause::_no_gc;
 }
 
-static GCCause::Cause make_major_gc_decision() {
+static GCCause::Cause make_major_gc_decision(ZDirectorStats& stats) {
   if (ZDriver::major()->is_busy()) {
     return GCCause::_no_gc;
   }
 
-  if (rule_major_timer()) {
+  if (rule_major_timer(stats)) {
     return GCCause::_z_timer;
   }
 
-  if (rule_major_warmup()) {
+  if (rule_major_warmup(stats)) {
     return GCCause::_z_warmup;
   }
 
-  if (rule_major_proactive()) {
+  if (rule_major_proactive(stats)) {
     return GCCause::_z_proactive;
   }
 
   return GCCause::_no_gc;
 }
 
-struct ZWorkerResizeInfo {
-  bool _is_active;
-  uint _current_nworkers;
-  uint _desired_nworkers;
-};
+static ZWorkerResizeStats sample_worker_resize_stats(ZStatCycleStats& cycle_stats, ZStatWorkersStats& worker_stats, ZWorkers* workers) {
+  ZLocker<ZLock> locker(workers->resizing_lock());
 
-static ZWorkerResizeInfo wanted_young_nworkers() {
-  ZGenerationYoung* const generation = ZGeneration::young();
-  const ZWorkerResizeStats stats = generation->workers()->resize_stats(generation->stat_cycle());
-
-  if (!stats._is_active) {
-    // Collection is not running
+  if (!workers->is_active()) {
+    // If the workers are not active, it isn't safe to read stats
+    // from the stat_cycle, so return early.
     return {
-      stats._is_active,        // _is_active
-      stats._nworkers_current, // _current_nworkers
-      0                        // _desired_nworkers
+      false, // _is_active
+      0.0,   // _serial_gc_time_passed
+      0.0,   // _parallel_gc_time_passed
+      0      // _nworkers_current
     };
   }
 
-  const ZDriverRequest request = rule_minor_allocation_rate_dynamic(stats._serial_gc_time_passed, stats._parallel_gc_time_passed);
-  if (request.cause() == GCCause::_no_gc) {
-    // No urgency
-    return {
-      stats._is_active,        // _is_active
-      stats._nworkers_current, // _current_nworkers
-      0                        // _desired_nworkers
-    };
-  }
+  const double parallel_gc_duration_passed = worker_stats._accumulated_duration;
+  const double parallel_gc_time_passed = worker_stats._accumulated_time;
+  const double serial_gc_time_passed = cycle_stats._duration_since_start - parallel_gc_duration_passed;
+  const uint active_nworkers = workers->active_workers();
 
   return {
-    stats._is_active,        // _is_active
-    stats._nworkers_current, // _current_nworkers
-    request.young_nworkers() // _desired_nworkers
+    true,                    // _is_active
+    serial_gc_time_passed,   // _serial_gc_time_passed
+    parallel_gc_time_passed, // _parallel_gc_time_passed
+    active_nworkers          // _nworkers_current
   };
 }
 
-static ZWorkerResizeInfo wanted_old_nworkers() {
-  ZGenerationOld* const generation = ZGeneration::old();
-  const ZWorkerResizeStats stats = generation->workers()->resize_stats(generation->stat_cycle());
+static ZWorkerResizeInfo wanted_young_nworkers(ZDirectorStats& stats) {
+  const ZWorkerResizeStats resize_stats = stats._young_stats._resize;
 
-  if (!stats._is_active) {
+  if (!resize_stats._is_active) {
     // Collection is not running
     return {
-       stats._is_active,        // _is_active
-       stats._nworkers_current, // _current_nworkers
-       0                        // _desired_nworkers
+      resize_stats._is_active,        // _is_active
+      resize_stats._nworkers_current, // _current_nworkers
+      0                               // _desired_nworkers
     };
   }
 
-  if (!rule_major_allocation_rate()) {
+  const ZDriverRequest request = rule_minor_allocation_rate_dynamic(stats, resize_stats._serial_gc_time_passed, resize_stats._parallel_gc_time_passed);
+  if (request.cause() == GCCause::_no_gc) {
     // No urgency
     return {
-      stats._is_active,        // _is_active
-      stats._nworkers_current, // _current_nworkers
-      0                        // _desired_nworkers
+      resize_stats._is_active,        // _is_active
+      resize_stats._nworkers_current, // _current_nworkers
+      0                               // _desired_nworkers
     };
   }
 
   return {
-    stats._is_active,        // _is_active
-    stats._nworkers_current, // _current_nworkers
-    calculate_old_workers()  // _desired_nworkers
+    resize_stats._is_active,        // _is_active
+    resize_stats._nworkers_current, // _current_nworkers
+    request.young_nworkers()        // _desired_nworkers
+  };
+}
+
+static ZWorkerResizeInfo wanted_old_nworkers(ZDirectorStats& stats) {
+  const ZWorkerResizeStats resize_stats = stats._old_stats._resize;
+
+  if (!resize_stats._is_active) {
+    // Collection is not running
+    return {
+       resize_stats._is_active,        // _is_active
+       resize_stats._nworkers_current, // _current_nworkers
+       0                               // _desired_nworkers
+    };
+  }
+
+  if (!rule_major_allocation_rate(stats)) {
+    // No urgency
+    return {
+      resize_stats._is_active,        // _is_active
+      resize_stats._nworkers_current, // _current_nworkers
+      0                               // _desired_nworkers
+    };
+  }
+
+  return {
+    resize_stats._is_active,        // _is_active
+    resize_stats._nworkers_current, // _current_nworkers
+    calculate_old_workers(stats)    // _desired_nworkers
   };
 }
 
@@ -633,28 +675,28 @@ static void adjust_gc(ZWorkerResizeInfo young_info, ZWorkerResizeInfo old_info) 
   }
 }
 
-static void adjust_gc() {
+static void adjust_gc(ZDirectorStats& stats) {
   if (!UseDynamicNumberOfGCThreads) {
     return;
   }
 
-  adjust_gc(wanted_young_nworkers(), wanted_old_nworkers());
+  adjust_gc(wanted_young_nworkers(stats), wanted_old_nworkers(stats));
 }
 
-static uint initial_old_workers() {
+static uint initial_old_workers(ZDirectorStats& stats) {
   if (!UseDynamicNumberOfGCThreads) {
     return MAX2(ConcGCThreads / 2, 1u);
   }
 
-  return calculate_old_workers();
+  return calculate_old_workers(stats);
 }
 
-static uint initial_young_workers() {
+static uint initial_young_workers(ZDirectorStats& stats) {
   if (!UseDynamicNumberOfGCThreads) {
-    return MAX2(ConcGCThreads - initial_old_workers(), 1u);
+    return MAX2(ConcGCThreads - initial_old_workers(stats), 1u);
   }
 
-  const ZDriverRequest request = rule_minor_allocation_rate_dynamic(0.0 /* serial_gc_time_passed */, 0.0 /* parallel_gc_time_passed */);
+  const ZDriverRequest request = rule_minor_allocation_rate_dynamic(stats, 0.0 /* serial_gc_time_passed */, 0.0 /* parallel_gc_time_passed */);
   if (!ZDriver::major()->is_busy()) {
     return request.young_nworkers();
   }
@@ -666,28 +708,28 @@ static uint initial_young_workers() {
     request.young_nworkers()  // _desired_nworkers
   };
 
-  adjust_gc(young_info, wanted_old_nworkers());
+  adjust_gc(young_info, wanted_old_nworkers(stats));
 
   return request.young_nworkers();
 }
 
-static bool start_gc() {
+static bool start_gc(ZDirectorStats& stats) {
   // Try start major collections first as they include a minor collection
-  const GCCause::Cause major_cause = make_major_gc_decision();
+  const GCCause::Cause major_cause = make_major_gc_decision(stats);
   if (major_cause != GCCause::_no_gc) {
-    const ZDriverRequest request(major_cause, initial_young_workers(), initial_old_workers());
+    const ZDriverRequest request(major_cause, initial_young_workers(stats), initial_old_workers(stats));
     ZDriver::major()->collect(request);
     return true;
   }
 
-  const GCCause::Cause minor_cause = make_minor_gc_decision();
+  const GCCause::Cause minor_cause = make_minor_gc_decision(stats);
   if (minor_cause != GCCause::_no_gc) {
-    if (!ZDriver::major()->is_busy() && rule_major_allocation_rate()) {
+    if (!ZDriver::major()->is_busy() && rule_major_allocation_rate(stats)) {
       // Merge minor GC into major GC
-      const ZDriverRequest request(GCCause::_z_allocation_rate, initial_young_workers(), initial_old_workers());
+      const ZDriverRequest request(GCCause::_z_allocation_rate, initial_young_workers(stats), initial_old_workers(stats));
       ZDriver::major()->collect(request);
     } else {
-      const ZDriverRequest request(minor_cause, initial_young_workers(), 0);
+      const ZDriverRequest request(minor_cause, initial_young_workers(stats), 0);
       ZDriver::minor()->collect(request);
     }
 
@@ -717,11 +759,65 @@ bool ZDirector::wait_for_tick() {
   return true;
 }
 
+static ZDirectorHeapStats sample_heap_stats() {
+  ZHeap* heap = ZHeap::heap();
+  ZCollectedHeap* collected_heap = ZCollectedHeap::heap();
+  return {
+    heap->soft_max_capacity(),
+    heap->used(),
+    collected_heap->total_collections()
+  };
+}
+
+// This function samples all the stat values used by the heuristics to compute what to do.
+// This is where synchronization code goes to ensure that the values we read are valid.
+static ZDirectorStats sample_stats() {
+  ZGenerationYoung* young = ZGeneration::young();
+  ZGenerationOld* old = ZGeneration::old();
+  ZStatMutatorAllocRateStats mutator_alloc_rate = ZStatMutatorAllocRate::stats();
+  ZDirectorHeapStats heap = sample_heap_stats();
+
+  ZStatCycleStats young_cycle = young->stat_cycle()->stats();
+  ZStatCycleStats old_cycle = old->stat_cycle()->stats();
+
+  ZStatWorkersStats young_workers = young->stat_workers()->stats();
+  ZStatWorkersStats old_workers = old->stat_workers()->stats();
+
+  ZWorkerResizeStats young_resize = sample_worker_resize_stats(young_cycle, young_workers, young->workers());
+  ZWorkerResizeStats old_resize = sample_worker_resize_stats(old_cycle, old_workers, old->workers());
+
+  ZStatHeapStats young_stat_heap = young->stat_heap()->stats();
+  ZStatHeapStats old_stat_heap = old->stat_heap()->stats();
+
+  ZDirectorGenerationGeneralStats young_generation = { ZHeap::heap()->used_young(), 0 };
+  ZDirectorGenerationGeneralStats old_generation = { ZHeap::heap()->used_old(), old->total_collections_at_end() };
+
+  return {
+    mutator_alloc_rate,
+    heap,
+    {
+      young_cycle,
+      young_workers,
+      young_resize,
+      young_stat_heap,
+      young_generation
+    },
+    {
+      old_cycle,
+      old_workers,
+      old_resize,
+      old_stat_heap,
+      old_generation
+    }
+  };
+}
+
 void ZDirector::run_service() {
   // Main loop
   while (wait_for_tick()) {
-    if (!start_gc()) {
-      adjust_gc();
+    ZDirectorStats stats = sample_stats();
+    if (!start_gc(stats)) {
+      adjust_gc(stats);
     }
   }
 }

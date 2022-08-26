@@ -61,6 +61,10 @@ ZWorkers::ZWorkers(ZGenerationId id, ZStatWorkers* stats) :
   }
 }
 
+bool ZWorkers::is_active() const {
+  return _is_active;
+}
+
 uint ZWorkers::active_workers() const {
   return _workers.active_workers();
 }
@@ -133,31 +137,8 @@ void ZWorkers::threads_do(ThreadClosure* tc) const {
   _workers.threads_do(tc);
 }
 
-ZWorkerResizeStats ZWorkers::resize_stats(ZStatCycle* stat_cycle) {
-  ZLocker<ZLock> locker(&_resize_lock);
-
-  if (!_is_active) {
-    // If the workers are not active, it isn't safe to read stats
-    // from the stat_cycle, so return early.
-    return {
-      false, // _is_active
-      0.0,   // _serial_gc_time_passed
-      0.0,   // _parallel_gc_time_passed
-      0      // _nworkers_current
-    };
-  }
-
-  const double parallel_gc_duration_passed = _stats->accumulated_duration();
-  const double parallel_gc_time_passed = _stats->accumulated_time();
-  const double serial_gc_time_passed = stat_cycle->duration_since_start() - parallel_gc_duration_passed;
-  const uint active_nworkers = active_workers();
-
-  return {
-    true,                    // _is_active
-    serial_gc_time_passed,   // _serial_gc_time_passed
-    parallel_gc_time_passed, // _parallel_gc_time_passed
-    active_nworkers          // _nworkers_current
-  };
+ZLock* ZWorkers::resizing_lock() {
+  return &_resize_lock;
 }
 
 void ZWorkers::request_resize_workers(uint nworkers) {

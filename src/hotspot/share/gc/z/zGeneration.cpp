@@ -856,12 +856,12 @@ void ZGenerationYoung::scan_remembered_sets() {
 }
 
 ZGenerationOld::ZGenerationOld(ZPageTable* page_table, ZPageAllocator* page_allocator) :
-  ZGeneration(ZGenerationId::old, page_table, page_allocator),
-  _reference_processor(&_workers),
-  _weak_roots_processor(&_workers),
-  _unload(&_workers),
-  _total_collections_at_end(0),
-  _young_seqnum_at_reloc_start(0) {
+    ZGeneration(ZGenerationId::old, page_table, page_allocator),
+    _reference_processor(&_workers),
+    _weak_roots_processor(&_workers),
+    _unload(&_workers),
+    _total_collections_at_end(0),
+    _young_seqnum_at_reloc_start(0) {
   ZGeneration::_old = this;
 }
 
@@ -1381,6 +1381,6 @@ void ZGenerationOld::remap_roots() {
   workers()->run(&task);
 }
 
-int ZGenerationOld::total_collections_at_end() const {
+uint ZGenerationOld::total_collections_at_end() const {
   return _total_collections_at_end;
 }

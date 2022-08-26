@@ -28,6 +28,7 @@
 #include "gc/shared/gcCause.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/z/zGenerationId.hpp"
+#include "gc/z/zLock.hpp"
 #include "gc/z/zMetronome.hpp"
 #include "gc/z/zRelocationSetSelector.hpp"
 #include "logging/logHandle.hpp"
@@ -395,19 +396,42 @@ public:
   ZStat();
 };
 
+struct ZStatCycleStats {
+  bool _is_warm;
+  uint64_t _nwarmup_cycles;
+  bool _is_time_trustable;
+  double _time_since_last;
+  double _last_active_workers;
+  double _duration_since_start;
+  double _avg_cycle_interval;
+  double _avg_serial_time;
+  double _sd_serial_time;
+  double _avg_parallelizable_time;
+  double _sd_parallelizable_time;
+  double _avg_parallelizable_duration;
+  double _sd_parallelizable_duration;
+};
+
 //
 // Stat cycle
 //
 class ZStatCycle {
 private:
-  uint64_t     _nwarmup_cycles;
-  Ticks        _start_of_last;
-  Ticks        _end_of_last;
-  NumberSeq    _cycle_intervals;
-  NumberSeq    _serial_time;
-  NumberSeq    _parallelizable_time;
-  NumberSeq    _parallelizable_duration;
-  double       _last_active_workers;
+  ZLock     _stat_lock;
+  uint64_t  _nwarmup_cycles;
+  Ticks     _start_of_last;
+  Ticks     _end_of_last;
+  NumberSeq _cycle_intervals;
+  NumberSeq _serial_time;
+  NumberSeq _parallelizable_time;
+  NumberSeq _parallelizable_duration;
+  double    _last_active_workers;
+
+  bool is_warm();
+  bool is_time_trustable();
+  double last_active_workers();
+  double duration_since_start();
+  double time_since_last();
 
 public:
   ZStatCycle();
@@ -415,20 +439,13 @@ public:
   void at_start();
   void at_end(ZStatWorkers* stats_workers, bool record_stats);
 
-  bool is_warm();
-  uint64_t nwarmup_cycles();
+  ZStatCycleStats stats();
+};
 
-  bool is_time_trustable();
-  const AbsSeq& serial_time();
-  const AbsSeq& parallelizable_time();
-  const AbsSeq& parallelizable_duration();
-
-  double last_active_workers();
-
-  double duration_since_start();
-  double time_since_last();
-
-  double avg_cycle_interval();
+struct ZStatWorkersStats {
+  double _accumulated_time;
+  double _accumulated_duration;
+  uint _active_workers;
 };
 
 //
@@ -436,10 +453,15 @@ public:
 //
 class ZStatWorkers {
 private:
+  ZLock    _stat_lock;
   uint     _active_workers;
   Ticks    _start_of_last;
   Tickspan _accumulated_duration;
   Tickspan _accumulated_time;
+
+  double accumulated_duration();
+  double accumulated_time();
+  uint active_workers();
 
 public:
   ZStatWorkers();
@@ -449,9 +471,8 @@ public:
 
   double get_and_reset_duration();
   double get_and_reset_time();
-  double accumulated_duration();
-  double accumulated_time();
-  uint active_workers();
+
+  ZStatWorkersStats stats();
 };
 
 //
@@ -558,11 +579,19 @@ public:
   static void print();
 };
 
+struct ZStatHeapStats {
+  size_t _live_at_mark_end;
+  size_t _used_at_relocate_end;
+  size_t _reclaimed_avg;
+};
+
 //
 // Stat heap
 //
 class ZStatHeap {
 private:
+  ZLock _stat_lock;
+
   static struct ZAtInitialize {
     size_t min_capacity;
     size_t max_capacity;
@@ -654,6 +683,8 @@ public:
   size_t used_at_collection_end() const;
 
   size_t reclaimed_avg();
+
+  ZStatHeapStats stats();
 
   void print(const ZGeneration* generation) const;
 };

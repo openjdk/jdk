@@ -1193,6 +1193,7 @@ public:
 // Stat cycle
 //
 ZStatCycle::ZStatCycle() :
+    _stat_lock(),
     _nwarmup_cycles(0),
     _start_of_last(),
     _end_of_last(),
@@ -1204,10 +1205,12 @@ ZStatCycle::ZStatCycle() :
 }
 
 void ZStatCycle::at_start() {
+  ZLocker<ZLock> locker(&_stat_lock);
   _start_of_last = Ticks::now();
 }
 
 void ZStatCycle::at_end(ZStatWorkers* stat_workers, bool record_stats) {
+  ZLocker<ZLock> locker(&_stat_lock);
   Ticks end_of_last = _end_of_last;
   _end_of_last = Ticks::now();
 
@@ -1238,30 +1241,10 @@ bool ZStatCycle::is_warm() {
   return _nwarmup_cycles >= 3;
 }
 
-uint64_t ZStatCycle::nwarmup_cycles() {
-  return _nwarmup_cycles;
-}
-
 bool ZStatCycle::is_time_trustable() {
   // The times are considered trustable if we
   // have completed at least one warmup cycle.
   return _nwarmup_cycles > 0;
-}
-
-double ZStatCycle::avg_cycle_interval() {
-  return _cycle_intervals.davg();
-}
-
-const AbsSeq& ZStatCycle::serial_time() {
-  return _serial_time;
-}
-
-const AbsSeq& ZStatCycle::parallelizable_time() {
-  return _parallelizable_time;
-}
-
-const AbsSeq& ZStatCycle::parallelizable_duration() {
-  return _parallelizable_duration;
 }
 
 double ZStatCycle::last_active_workers() {
@@ -1291,21 +1274,44 @@ double ZStatCycle::time_since_last() {
   return time_since_last.seconds();
 }
 
+ZStatCycleStats ZStatCycle::stats() {
+  ZLocker<ZLock> locker(&_stat_lock);
+
+  return {
+    is_warm(),
+    _nwarmup_cycles,
+    is_time_trustable(),
+    time_since_last(),
+    last_active_workers(),
+    duration_since_start(),
+    _cycle_intervals.davg(),
+    _serial_time.davg(),
+    _serial_time.dsd(),
+    _parallelizable_time.davg(),
+    _parallelizable_time.dsd(),
+    _parallelizable_duration.davg(),
+    _parallelizable_duration.dsd()
+  };
+}
+
 //
 // Stat workers
 //
 ZStatWorkers::ZStatWorkers() :
+    _stat_lock(),
     _active_workers(0),
     _start_of_last(),
     _accumulated_duration(),
     _accumulated_time() {}
 
 void ZStatWorkers::at_start(uint active_workers) {
+  ZLocker<ZLock> locker(&_stat_lock);
   _start_of_last = Ticks::now();
   _active_workers = active_workers;
 }
 
 void ZStatWorkers::at_end() {
+  ZLocker<ZLock> locker(&_stat_lock);
   const Ticks now = Ticks::now();
   const Tickspan duration = now - _start_of_last;
   Tickspan time = duration;
@@ -1340,7 +1346,12 @@ double ZStatWorkers::accumulated_duration() {
   return duration.seconds();
 }
 
+uint ZStatWorkers::active_workers() {
+  return _active_workers;
+}
+
 double ZStatWorkers::get_and_reset_duration() {
+  ZLocker<ZLock> locker(&_stat_lock);
   const double duration = _accumulated_duration.seconds();
   const Ticks now = Ticks::now();
   _accumulated_duration = now - now;
@@ -1348,14 +1359,19 @@ double ZStatWorkers::get_and_reset_duration() {
 }
 
 double ZStatWorkers::get_and_reset_time() {
+  ZLocker<ZLock> locker(&_stat_lock);
   const double time = _accumulated_time.seconds();
   const Ticks now = Ticks::now();
   _accumulated_time = now - now;
   return time;
 }
 
-uint ZStatWorkers::active_workers() {
-  return _active_workers;
+ZStatWorkersStats ZStatWorkers::stats() {
+  ZLocker<ZLock> locker(&_stat_lock);
+  return {
+    accumulated_time(),
+    accumulated_duration()
+  };
 }
 
 //
@@ -1587,6 +1603,7 @@ void ZStatReferences::print() {
 //
 
 ZStatHeap::ZStatHeap() :
+    _stat_lock(),
     _at_collection_start(),
     _at_mark_start(),
     _at_mark_end(),
@@ -1634,11 +1651,15 @@ size_t ZStatHeap::reclaimed(size_t freed, size_t relocated, size_t promoted) con
 }
 
 void ZStatHeap::at_initialize(size_t min_capacity, size_t max_capacity) {
+  ZLocker<ZLock> locker(&_stat_lock);
+
   _at_initialize.min_capacity = min_capacity;
   _at_initialize.max_capacity = max_capacity;
 }
 
 void ZStatHeap::at_collection_start(const ZPageAllocatorStats& stats) {
+  ZLocker<ZLock> locker(&_stat_lock);
+
   _at_collection_start.soft_max_capacity = stats.soft_max_capacity();
   _at_collection_start.capacity = stats.capacity();
   _at_collection_start.free = free(stats.used());
@@ -1647,6 +1668,8 @@ void ZStatHeap::at_collection_start(const ZPageAllocatorStats& stats) {
 }
 
 void ZStatHeap::at_mark_start(const ZPageAllocatorStats& stats) {
+  ZLocker<ZLock> locker(&_stat_lock);
+
   _at_mark_start.soft_max_capacity = stats.soft_max_capacity();
   _at_mark_start.capacity = stats.capacity();
   _at_mark_start.free = free(stats.used());
@@ -1655,6 +1678,8 @@ void ZStatHeap::at_mark_start(const ZPageAllocatorStats& stats) {
 }
 
 void ZStatHeap::at_mark_end(const ZPageAllocatorStats& stats) {
+  ZLocker<ZLock> locker(&_stat_lock);
+
   _at_mark_end.capacity = stats.capacity();
   _at_mark_end.free = free(stats.used());
   _at_mark_end.used = stats.used();
@@ -1663,6 +1688,8 @@ void ZStatHeap::at_mark_end(const ZPageAllocatorStats& stats) {
 }
 
 void ZStatHeap::at_select_relocation_set(const ZRelocationSetSelectorStats& stats) {
+  ZLocker<ZLock> locker(&_stat_lock);
+
   size_t live = 0;
   for (uint i = 0; i <= ZPageAgeMax; ++i) {
     ZPageAge age = static_cast<ZPageAge>(i);
@@ -1673,6 +1700,8 @@ void ZStatHeap::at_select_relocation_set(const ZRelocationSetSelectorStats& stat
 }
 
 void ZStatHeap::at_relocate_start(const ZPageAllocatorStats& stats) {
+  ZLocker<ZLock> locker(&_stat_lock);
+
   assert(stats.compacted() == 0, "Nothing should have been compacted");
 
   _at_relocate_start.capacity = stats.capacity();
@@ -1688,6 +1717,8 @@ void ZStatHeap::at_relocate_start(const ZPageAllocatorStats& stats) {
 }
 
 void ZStatHeap::at_relocate_end(const ZPageAllocatorStats& stats, bool record_stats) {
+  ZLocker<ZLock> locker(&_stat_lock);
+
   _at_relocate_end.capacity = stats.capacity();
   _at_relocate_end.capacity_high = capacity_high();
   _at_relocate_end.capacity_low = capacity_low();
@@ -1736,6 +1767,16 @@ size_t ZStatHeap::used_at_relocate_end() const {
 
 size_t ZStatHeap::used_at_collection_end() const {
   return used_at_relocate_end();
+}
+
+ZStatHeapStats ZStatHeap::stats() {
+  ZLocker<ZLock> locker(&_stat_lock);
+
+  return {
+    live_at_mark_end(),
+    used_at_relocate_end(),
+    reclaimed_avg()
+  };
 }
 
 void ZStatHeap::print(const ZGeneration* generation) const {
