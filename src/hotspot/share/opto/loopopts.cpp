@@ -2165,7 +2165,7 @@ static void clone_outer_loop_helper(Node* n, const IdealLoopTree *loop, const Id
       } else {
       // nodes pinned with control in the outer loop but not referenced from the safepoint must be moved out of
       // the outer loop too
-        Node *u_c = u->in(0);
+        Node* u_c = u->in(0);
         if (u_c != NULL) {
           IdealLoopTree *u_c_loop = phase->get_loop(u_c);
           if (outer_loop->is_member(u_c_loop) && !loop->is_member(u_c_loop)) {
