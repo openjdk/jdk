@@ -215,9 +215,7 @@ public enum Source {
         LAMBDA(JDK8, Fragments.FeatureLambda, DiagKind.PLURAL),
         DEFAULT_METHODS(JDK8, Fragments.FeatureDefaultMethods, DiagKind.PLURAL),
         STRICT_METHOD_CLASH_CHECK(JDK8),
-        GRAPH_INFERENCE(JDK8),
-        FUNCTIONAL_INTERFACE_MOST_SPECIFIC(JDK8),
-        POST_APPLICABILITY_VARARGS_ACCESS_CHECK(JDK8),
+        GRAPH_INFERENCE(JDK8), // Used in Analyzer
         PRIVATE_SAFE_VARARGS(JDK9),
         DIAMOND_WITH_ANONYMOUS_CLASS_CREATION(JDK9, Fragments.FeatureDiamondAndAnonClass, DiagKind.NORMAL),
         UNDERSCORE_IDENTIFIER(MIN, JDK8),
