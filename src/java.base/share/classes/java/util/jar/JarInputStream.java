@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,50 @@ import jdk.internal.util.jar.JarIndex;
  * {@code java.util.zip.ZipInputStream} with support for reading
  * an optional {@code Manifest} entry. The {@code Manifest}
  * can be used to store meta-information about the JAR file and its entries.
+ *
+ *  <h2>Accessing the Manifest</h2>
+ * The {@linkplain #getManifest()} method will return the {@code Manifest} if:
+ * <ul>
+ *     <li>
+ *         The {@code Manifest} is the first Jar entry or the
+ *         {@code META-INF/} is the first jar entry and {@code Manifest}
+ *         is the second jar entry
+ *     </li>
+ * </ul>
+ *
+ * <p>
+ *     The methods {@linkplain #getNextEntry()} and {@linkplain #getNextJarEntry()}
+ *     will not return the {@code META-INF/} or {@code Manifest} entries if:
+ * </p>
+ * <ul>
+ *     <li>
+ *         The {@code META-INF/} or {@code Manifest} is the first Jar entry
+ *     </li>
+ *     <li>
+ *         The {@code META-INF/} is the first jar entry and {@code Manifest}
+ *         is the second jar entry
+ *      </li>
+ * </ul>
+ *
+ *  <h2>Verifying a JarInputStream</h2>
+ *  {@linkplain #JarInputStream(InputStream, boolean)} may be used to
+ *  verify the signatures of a signed {@code JarInputStream} assuming the
+ *  following requirements are met:
+ *  <ul>
+ *      <li>
+ *         The {@code Manifest} is the first Jar entry or
+ *         the {@code META-INF/} is the first jar entry and {@code Manifest}
+ *         is the second jar entry
+ *      </li>
+ *      <li>
+ *         All signature entries must immediately follow the {@code manifest}
+ *      </li>
+ *  </ul>
+ *  Once the {@code JarEntry} has been completely verified, which is done by
+ *  reading until the end of the entrie's input stream,
+ *  {@linkplain  JarEntry#getCertificates()} may be called to obtain the certificates
+ *  for this entry and {@linkplain JarEntry#getCodeSigners()} may be called to obtain
+ *  the verified signers.
  *
  * @author  David Connelly
  * @see     Manifest
