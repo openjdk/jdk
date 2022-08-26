@@ -36,6 +36,15 @@ import java.util.Objects;
  * groups and group boundaries can be seen but not modified through
  * a {@code MatchResult}.
  *
+ * @implNote
+ * Support for named groups is implemented by the default methods
+ * {@link #start(String)}, {@link #end(String)} and {@link #group(String)}.
+ * They all make use of the map returned by {@link #namedGroups()}, whose
+ * default implementation simply throws {@link UnsupportedOperationException}.
+ * It is thus sufficient to override {@link #namedGroups()} for these methods
+ * to work. However, overriding them directly might be preferable for
+ * performance or other reasons.
+ *
  * @author  Michael McCloskey
  * @see Matcher
  * @since 1.5
@@ -99,21 +108,14 @@ public interface MatchResult {
      *          If there is no capturing group in the pattern
      *          with the given name
      *
-     * @implNote
-     * The default implementation of this method makes use of the map returned
-     * by {@link #namedGroups()}. It is thus sufficient to override
-     * {@link #namedGroups()} for this method to work. However, overriding this
-     * method directly might be preferable for performance or for other reasons.
-     *
-     * @implSpec
-     * The default implementation of this method throws
-     * {@link UnsupportedOperationException} if {@link #namedGroups()} is not
-     * overridden.
+     * @throws UnsupportedOperationException
+     *          If the default implementation of {@link #namedGroups()}
+     *          is not overridden.
      *
      * @since 20
      */
     default int start(String name) {
-        return start(groupIndex(name));
+        return start(groupNumber(name));
     }
 
     /**
@@ -173,21 +175,14 @@ public interface MatchResult {
      *          If there is no capturing group in the pattern
      *          with the given name
      *
-     * @implNote
-     * The default implementation of this method makes use of the map returned
-     * by {@link #namedGroups()}. It is thus sufficient to override
-     * {@link #namedGroups()} for this method to work. However, overriding this
-     * method directly might be preferable for performance or for other reasons.
-     *
-     * @implSpec
-     * The default implementation of this method throws
-     * {@link UnsupportedOperationException} if {@link #namedGroups()} is not
-     * overridden.
+     * @throws UnsupportedOperationException
+     *          If the default implementation of {@link #namedGroups()}
+     *          is not overridden.
      *
      * @since 20
      */
     default int end(String name) {
-        return end(groupIndex(name));
+        return end(groupNumber(name));
     }
 
     /**
@@ -275,21 +270,14 @@ public interface MatchResult {
      *          If there is no capturing group in the pattern
      *          with the given name
      *
-     * @implNote
-     * The default implementation of this method makes use of the map returned
-     * by {@link #namedGroups()}. It is thus sufficient to override
-     * {@link #namedGroups()} for this method to work. However, overriding this
-     * method directly might be preferable for performance or for other reasons.
-     *
-     * @implSpec
-     * The default implementation of this method throws
-     * {@link UnsupportedOperationException} if {@link #namedGroups()} is not
-     * overridden.
+     * @throws UnsupportedOperationException
+     *          If the default implementation of {@link #namedGroups()}
+     *          is not overridden.
      *
      * @since 20
      */
     default String group(String name) {
-        return group(groupIndex(name));
+        return group(groupNumber(name));
     }
 
     /**
@@ -312,12 +300,12 @@ public interface MatchResult {
      *
      * @return an unmodifiable map from capturing group names to group numbers
      *
-     * @implSpec
-     * The default implementation of this method throws
-     * {@link UnsupportedOperationException}.
+     * @throws UnsupportedOperationException
+     *          The default implementation of this method always throws
      *
      * @apiNote
-     * This method must be overridden by an implementation that supports named groups.
+     * This method must be overridden by an implementation that supports
+     * named groups.
      *
      * @since 20
      */
@@ -325,11 +313,11 @@ public interface MatchResult {
         throw new UnsupportedOperationException("namedGroups()");
     }
 
-    private int groupIndex(String name) {
+    private int groupNumber(String name) {
         Objects.requireNonNull(name, "Group name");
-        Integer index = namedGroups().get(name);
-        if (index != null) {
-            return index;
+        Integer number = namedGroups().get(name);
+        if (number != null) {
+            return number;
         }
         throw new IllegalArgumentException("No group with name <" + name + ">");
     }
@@ -340,12 +328,8 @@ public interface MatchResult {
      *
      * @return whether {@code this} contains a valid match
      *
-     * @implSpec
-     * The default implementation of this method throws
-     * {@link UnsupportedOperationException}.
-     *
-     * @apiNote
-     * This method must be overridden by an implementation.
+     * @throws UnsupportedOperationException
+     *          The default implementation of this method always throws
      *
      * @since 20
      */
