@@ -134,8 +134,10 @@ class Method : public Metadata {
 
   virtual bool is_method() const { return true; }
 
-  void remove_unshareable_info()        NOT_CDS_RETURN;
-  void restore_unshareable_info(TRAPS)  NOT_CDS_RETURN;
+#if INCLUDE_CDS
+  void remove_unshareable_info();
+  void restore_unshareable_info(TRAPS);
+#endif
 
   // accessors for instance variables
 

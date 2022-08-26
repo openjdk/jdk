@@ -572,7 +572,7 @@ protected:
       return true;
     }
   }
-#endif
+#endif // INCLUDE
 
  public:
   // ALL FUNCTIONS BELOW THIS POINT ARE DISPATCHED FROM AN OOP
