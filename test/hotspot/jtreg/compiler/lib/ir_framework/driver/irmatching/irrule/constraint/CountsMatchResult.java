@@ -28,10 +28,15 @@ import compiler.lib.ir_framework.IR;
 /**
  * This class represents a result of an applied {@link Counts} attribute of an IR rule on a compile phase.
  *
+ * TODO: eventually remove
  * @see Counts
  * @see IR#counts()
  */
 public class CountsMatchResult extends CheckAttributeMatchResult {
+
+    CountsMatchResult() {
+        super(CheckAttributeKind.COUNTS);
+    }
 
     @Override
     protected String getCheckAttributeMessage() {

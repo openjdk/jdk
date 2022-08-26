@@ -21,17 +21,16 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.driver.irmatching;
+package compiler.lib.ir_framework.driver.irmatching.irrule.constraint;
+
+import compiler.lib.ir_framework.IR;
 
 /**
- * Interface used by all classes which represent an IR match result. A match result class must be able to report
- * found matching failures in a pretty format.
+ * This class represents a result of an applied {@link Counts} attribute of an IR rule on a compile phase.
+ *
+ * @see Counts
+ * @see IR#counts()
  */
-public interface MatchResult {
-    /**
-     * Does this match result represent a failure?
-     */
-    boolean fail();
-
-    void accept(MatchResultVisitor visitor);
+public enum CheckAttributeKind {
+    FAIL_ON, COUNTS
 }

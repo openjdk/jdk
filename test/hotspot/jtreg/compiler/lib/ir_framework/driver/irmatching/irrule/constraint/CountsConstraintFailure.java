@@ -23,6 +23,7 @@
 
 package compiler.lib.ir_framework.driver.irmatching.irrule.constraint;
 
+import compiler.lib.ir_framework.driver.irmatching.MatchResultVisitor;
 import compiler.lib.ir_framework.shared.Comparison;
 
 import java.util.List;
@@ -30,18 +31,24 @@ import java.util.List;
 /**
  * This class represents a failure when applying a {@link CountsConstraint} on a compile phase output.
  *
+ * TODO: Eventually remove
  * @see CountsConstraint
  * @see Counts
  * @see CountsMatchResult
  */
-class CountsConstraintFailure extends ConstraintFailure {
+public class CountsConstraintFailure extends ConstraintFailure {
     private final String failedComparison;
+    private final Comparison<Integer> comparison;
 
     public CountsConstraintFailure(CountsConstraint constraint, List<String> matches) {
-        super(constraint, matches);
-        Comparison<Integer> comparison = constraint.getComparison();
+        super(constraint, matches, CheckAttributeKind.COUNTS);
+        this.comparison = constraint.getComparison();
         this.failedComparison = "[found] " + matches.size() + " " + comparison.getComparator() + " "
                                 + comparison.getGivenValue() + " [given]";
+    }
+
+    public Comparison<Integer> getComparison() {
+        return comparison;
     }
 
     @Override
@@ -71,5 +78,10 @@ class CountsConstraintFailure extends ConstraintFailure {
     @Override
     protected String getMatchedPrefix() {
         return "Matched";
+    }
+
+    @Override
+    public void accept(MatchResultVisitor visitor) {
+        visitor.visit(this);
     }
 }

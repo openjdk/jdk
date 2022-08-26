@@ -25,6 +25,7 @@ package compiler.lib.ir_framework.driver.irmatching.irrule.constraint;
 
 import compiler.lib.ir_framework.driver.irmatching.FailureMessage;
 import compiler.lib.ir_framework.driver.irmatching.MatchResult;
+import compiler.lib.ir_framework.driver.irmatching.MatchResultVisitor;
 
 import java.util.List;
 
@@ -35,6 +36,15 @@ import java.util.List;
  */
 abstract public class CheckAttributeMatchResult implements MatchResult, FailureMessage {
     private List<ConstraintFailure> constraintFailures = null;
+    private final CheckAttributeKind checkAttributeKind;
+
+    CheckAttributeMatchResult(CheckAttributeKind checkAttributeKind) {
+        this.checkAttributeKind = checkAttributeKind;
+    }
+
+    public CheckAttributeKind getCheckAttributeKind() {
+        return checkAttributeKind;
+    }
 
     @Override
     public boolean fail() {
@@ -59,5 +69,10 @@ abstract public class CheckAttributeMatchResult implements MatchResult, FailureM
             failMsg.append(constraintFailure.buildFailureMessage(indentation + 2));
         }
         return failMsg.toString();
+    }
+
+    public void accept(MatchResultVisitor visitor) {
+        visitor.visit(this);
+        constraintFailures.forEach(f -> f.accept(visitor));
     }
 }

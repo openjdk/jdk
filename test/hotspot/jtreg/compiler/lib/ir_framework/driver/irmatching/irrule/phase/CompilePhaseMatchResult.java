@@ -26,6 +26,7 @@ package compiler.lib.ir_framework.driver.irmatching.irrule.phase;
 import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.driver.irmatching.FailureMessage;
 import compiler.lib.ir_framework.driver.irmatching.MatchResult;
+import compiler.lib.ir_framework.driver.irmatching.MatchResultVisitor;
 import compiler.lib.ir_framework.driver.irmatching.irrule.IRRule;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.CheckAttributeMatchResult;
 
@@ -53,9 +54,13 @@ public class CompilePhaseMatchResult implements MatchResult, FailureMessage {
         return new CompilePhaseMatchResult(compilePhase, false);
     }
 
+    public boolean hasNoCompilationOutput() {
+        return !compilationOutput;
+    }
+
     @Override
     public boolean fail() {
-        return failOnFailures != null || countsFailures != null || !compilationOutput;
+        return failOnFailures != null || countsFailures != null || hasNoCompilationOutput();
     }
 
     public CompilePhase getCompilePhase() {
@@ -93,6 +98,17 @@ public class CompilePhaseMatchResult implements MatchResult, FailureMessage {
             failMsg.append(buildCountsFailureMessage(indentationSize));
         }
         return failMsg.toString();
+    }
+
+    @Override
+    public void accept(MatchResultVisitor visitor) {
+        visitor.visit(this);
+        if (failOnFailures != null) {
+            failOnFailures.accept(visitor);
+        }
+        if (countsFailures != null) {
+            countsFailures.accept(visitor);
+        }
     }
 
 

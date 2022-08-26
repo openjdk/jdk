@@ -107,7 +107,7 @@ public class IRMethod implements Matching {
         TestFramework.check(!irRules.isEmpty(), "IRMethod cannot be created if there are no IR rules to apply");
         List<IRRuleMatchResult> results = new ArrayList<>();
         if (!compiled) {
-            return new NotCompiledResultAbstract(this, irRules.size());
+            return new NotCompiledResult(this, irRules.size());
         } else {
             return getMatchResult(results);
         }

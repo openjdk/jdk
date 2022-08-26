@@ -30,6 +30,7 @@ import java.util.List;
 /**
  * This class represents a failure when applying a {@link Constraint} on a compile phase output.
  *
+ * TODO: Eventually remove
  * @see Constraint
  * @see FailOn
  * @see FailOnMatchResult
@@ -37,7 +38,7 @@ import java.util.List;
 class FailOnConstraintFailure extends ConstraintFailure {
 
     public FailOnConstraintFailure(Constraint constraint, List<String> matchedNodes) {
-        super(constraint, matchedNodes);
+        super(constraint, matchedNodes, CheckAttributeKind.FAIL_ON);
         TestFramework.check(!matchedNodes.isEmpty(), "must have at least one matched node");
     }
 

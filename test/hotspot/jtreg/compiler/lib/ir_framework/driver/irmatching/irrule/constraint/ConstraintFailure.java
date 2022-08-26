@@ -24,6 +24,8 @@
 package compiler.lib.ir_framework.driver.irmatching.irrule.constraint;
 
 import compiler.lib.ir_framework.driver.irmatching.FailureMessage;
+import compiler.lib.ir_framework.driver.irmatching.MatchResult;
+import compiler.lib.ir_framework.driver.irmatching.MatchResultVisitor;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -35,15 +37,37 @@ import java.util.stream.Collectors;
  * @see CheckAttribute
  * @see CheckAttributeMatchResult
  */
-abstract class ConstraintFailure implements FailureMessage {
+public abstract class ConstraintFailure implements MatchResult, FailureMessage {
+    private final CheckAttributeKind checkAttributeKind;
     private final String nodeRegex;
     private final int constraintIndex;
     protected final List<String> matchedNodes;
 
-    public ConstraintFailure(Constraint constraint, List<String> matchedNodes) {
+    public ConstraintFailure(Constraint constraint, List<String> matchedNodes, CheckAttributeKind checkAttributeKind) {
         this.nodeRegex = constraint.getRegex();
         this.constraintIndex = constraint.getIndex();
         this.matchedNodes = matchedNodes;
+        this.checkAttributeKind = checkAttributeKind;
+    }
+
+    public CheckAttributeKind getCheckAttributeKind() {
+        return checkAttributeKind;
+    }
+
+    public String getNodeRegex() {
+        return nodeRegex;
+    }
+
+    public int getConstraintIndex() {
+        return constraintIndex;
+    }
+
+    public List<String> getMatchedNodes() {
+        return matchedNodes;
+    }
+
+    public boolean fail() {
+        return true;
     }
 
     private List<String> addWhiteSpacePrefixForEachLine(List<String> matches, String indentation) {
@@ -75,5 +99,9 @@ abstract class ConstraintFailure implements FailureMessage {
         List<String> matches = addWhiteSpacePrefixForEachLine(this.matchedNodes, indentationString + "  ");
         matches.forEach(match -> builder.append(indentationString).append("* ").append(match).append(System.lineSeparator()));
         return builder.toString();
+    }
+
+    public void accept(MatchResultVisitor visitor) {
+        visitor.visit(this);
     }
 }

@@ -83,7 +83,7 @@ public class IRMatcher {
      * can be read and reported to the stdout separately. The exception message only includes the summary of the
      * failures.
      */
-    private void reportFailures(List<AbstractIRMethodMatchResult> results) {
+    private void reportFailures(List<AbstractIRMethodMatchResult> results) { // TODO: Introduce TestClassMatchResult implements MatchResult
         Collections.sort(results); // Alphabetically
         throwIfNoSafepointWhilePrinting(IRMatcherFailureMessageBuilder.build(results),
                                         CompilationOutputBuilder.build(results));

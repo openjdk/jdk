@@ -25,6 +25,7 @@ package compiler.lib.ir_framework.driver.irmatching.irrule;
 
 import compiler.lib.ir_framework.driver.irmatching.FailureMessage;
 import compiler.lib.ir_framework.driver.irmatching.MatchResult;
+import compiler.lib.ir_framework.driver.irmatching.MatchResultVisitor;
 import compiler.lib.ir_framework.driver.irmatching.irrule.phase.CompilePhaseMatchResult;
 
 import java.util.ArrayList;
@@ -42,6 +43,10 @@ public class IRRuleMatchResult implements MatchResult, FailureMessage {
     public IRRuleMatchResult(IRRule irRule) {
         this.irRule = irRule;
         this.compilePhaseMatchResults = new ArrayList<>();
+    }
+
+    public IRRule getIRRule() {
+        return irRule;
     }
 
     public List<CompilePhaseMatchResult> getCompilePhaseMatchResults() {
@@ -70,6 +75,16 @@ public class IRRuleMatchResult implements MatchResult, FailureMessage {
             }
         }
         return failMsg.toString();
+    }
+
+    @Override
+    public void accept(MatchResultVisitor visitor) {
+        visitor.visit(this);
+        for (var result : compilePhaseMatchResults) {
+            if (visitor.shouldVisit(result)) {
+                result.accept(visitor);
+            }
+        }
     }
 
     private String buildIRRuleHeader(int indentation) {

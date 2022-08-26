@@ -23,6 +23,7 @@
 
 package compiler.lib.ir_framework.driver.irmatching.irmethod;
 
+import compiler.lib.ir_framework.driver.irmatching.MatchResultVisitor;
 import compiler.lib.ir_framework.driver.irmatching.irrule.IRRuleMatchResult;
 
 /**
@@ -31,10 +32,10 @@ import compiler.lib.ir_framework.driver.irmatching.irrule.IRRuleMatchResult;
  * @see IRRuleMatchResult
  * @see IRMethod
  */
-public class NotCompiledResultAbstract extends AbstractIRMethodMatchResult {
+public class NotCompiledResult extends AbstractIRMethodMatchResult {
     private final int failedIRRules;
 
-    NotCompiledResultAbstract(IRMethod irMethod, int failedIRRules) {
+    NotCompiledResult(IRMethod irMethod, int failedIRRules) {
         super(irMethod);
         this.failedIRRules = failedIRRules;
     }
@@ -60,5 +61,8 @@ public class NotCompiledResultAbstract extends AbstractIRMethodMatchResult {
         return builder.buildFailureMessage(indentationSize);
     }
 
-
+    @Override
+    public void accept(MatchResultVisitor visitor) {
+        visitor.visit(this);
+    }
 }

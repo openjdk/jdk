@@ -48,6 +48,10 @@ abstract public class AbstractIRMethodMatchResult implements Comparable<Abstract
 
     abstract public int getFailedIRRuleCount();
 
+    public IRMethod getIRMethod() {
+        return irMethod;
+    }
+
     /**
      * Used to sort the failed IR methods alphabetically.
      */

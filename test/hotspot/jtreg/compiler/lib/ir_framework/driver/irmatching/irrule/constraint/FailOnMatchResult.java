@@ -28,10 +28,15 @@ import compiler.lib.ir_framework.IR;
 /**
  * This class represents a result of an applied {@link FailOn} attribute of an IR rule on a compile phase.
  *
+ * TODO: eventually remove
  * @see FailOn
  * @see IR#failOn()
  */
 public class FailOnMatchResult extends CheckAttributeMatchResult {
+
+    FailOnMatchResult() {
+        super(CheckAttributeKind.FAIL_ON);
+    }
 
     @Override
     protected String getCheckAttributeMessage() {

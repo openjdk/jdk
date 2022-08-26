@@ -23,6 +23,7 @@
 
 package compiler.lib.ir_framework.driver.irmatching.irmethod;
 
+import compiler.lib.ir_framework.driver.irmatching.MatchResultVisitor;
 import compiler.lib.ir_framework.driver.irmatching.irrule.IRRuleMatchResult;
 
 import java.util.List;
@@ -33,7 +34,7 @@ import java.util.List;
  * @see IRRuleMatchResult
  * @see IRMethod
  */
-class IRMethodMatchResult extends AbstractIRMethodMatchResult {
+public class IRMethodMatchResult extends AbstractIRMethodMatchResult {
     private final List<IRRuleMatchResult> irRulesMatchResults;
 
     IRMethodMatchResult(IRMethod irMethod, List<IRRuleMatchResult> irRulesMatchResults) {
@@ -55,6 +56,16 @@ class IRMethodMatchResult extends AbstractIRMethodMatchResult {
     public String buildFailureMessage(int indentationSize) {
         IRMethodFailureMessageBuilder builder = new IRMethodFailureMessageBuilder(irMethod, irRulesMatchResults);
         return builder.buildFailureMessage(indentationSize);
+    }
+
+    @Override
+    public void accept(MatchResultVisitor visitor) {
+        visitor.visit(this);
+        for (var result : irRulesMatchResults) {
+            if (visitor.shouldVisit(result)) {
+                result.accept(visitor);
+            }
+        }
     }
 
     @Override
