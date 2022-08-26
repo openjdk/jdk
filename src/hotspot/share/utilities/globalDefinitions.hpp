@@ -93,29 +93,36 @@ class oopDesc;
 #define BOOL_TO_STR(_b_) ((_b_) ? "true" : "false")
 
 // Format 8-bit quantities.
-#define PTR8_FORMAT            "0x%02" PRIx8
+#define INT8_FORMAT_X_0          "0x%02"      PRIx8
+#define UINT8_FORMAT_X_0         "0x%02"      PRIx8
 
 // Format 16-bit quantities.
-#define PTR16_FORMAT           "0x%04" PRIx16
+#define INT16_FORMAT_X_0         "0x%04"      PRIx16
+#define UINT16_FORMAT_X_0        "0x%04"      PRIx16
 
 // Format 32-bit quantities.
-#define INT32_FORMAT           "%" PRId32
-#define UINT32_FORMAT          "%" PRIu32
-#define INT32_FORMAT_W(width)  "%" #width PRId32
-#define UINT32_FORMAT_W(width) "%" #width PRIu32
+#define INT32_FORMAT             "%"          PRId32
+#define INT32_FORMAT_X_0         "0x%08"      PRIx32
+#define INT32_FORMAT_W(width)    "%"   #width PRId32
+#define UINT32_FORMAT            "%"          PRIu32
+#define UINT32_FORMAT_X_0        "0x%08"      PRIx32
+#define UINT32_FORMAT_W(width)   "%"   #width PRIu32
 
-#define PTR32_FORMAT           "0x%08" PRIx32
-#define PTR32_FORMAT_W(width)  "0x%" #width PRIx32
+#define PTR32_FORMAT             "0x%08"      PRIx32
+#define PTR32_FORMAT_W(width)    "0x%" #width PRIx32
 
 // Format 64-bit quantities.
-#define INT64_FORMAT           "%" PRId64
-#define UINT64_FORMAT          "%" PRIu64
-#define UINT64_FORMAT_X        "%" PRIx64
-#define INT64_FORMAT_W(width)  "%" #width PRId64
-#define UINT64_FORMAT_W(width) "%" #width PRIu64
-#define UINT64_FORMAT_X_W(width) "%" #width PRIx64
+#define INT64_FORMAT             "%"          PRId64
+#define INT64_FORMAT_X           "%"          PRIx64
+#define INT64_FORMAT_X_0         "0x%016"     PRIx64
+#define INT64_FORMAT_W(width)    "%"   #width PRId64
+#define UINT64_FORMAT            "%"          PRIu64
+#define UINT64_FORMAT_X          "%"          PRIx64
+#define UINT64_FORMAT_X_0        "0x%016"     PRIx64
+#define UINT64_FORMAT_W(width)   "%"   #width PRIu64
+#define UINT64_FORMAT_X_W(width) "%"   #width PRIx64
 
-#define PTR64_FORMAT           "0x%016" PRIx64
+#define PTR64_FORMAT             "0x%016"     PRIx64
 
 // Format jlong, if necessary
 #ifndef JLONG_FORMAT

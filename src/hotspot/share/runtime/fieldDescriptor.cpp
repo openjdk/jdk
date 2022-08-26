@@ -210,23 +210,23 @@ void fieldDescriptor::print_on_for(outputStream* st, oop obj) {
   if (is_reference_type(ft)) {
 #ifdef _LP64
     if (UseCompressedOops) {
-      st->print(" (" PTR32_FORMAT ")", obj->int_field(offset()));
+      st->print(" (" INT32_FORMAT_X_0 ")", obj->int_field(offset()));
     } else {
-      st->print(" (" PTR_FORMAT ")", obj->long_field(offset()));
+      st->print(" (" INT64_FORMAT_X_0 ")", obj->long_field(offset()));
     }
 #else
-    st->print(" (" PTR32_FORMAT ")", obj->int_field(offset()));
+    st->print(" (" INT32_FORMAT_X_0 ")", obj->int_field(offset()));
 #endif
   } else { // Primitives
     switch (ft) {
-      case T_LONG:    st->print(" (" PTR_FORMAT   ")", obj->long_field(offset()));  break;
-      case T_DOUBLE:  st->print(" (" PTR_FORMAT   ")", obj->long_field(offset()));  break;
-      case T_BYTE:    st->print(" (" PTR8_FORMAT  ")", obj->byte_field(offset()));  break;
-      case T_CHAR:    st->print(" (" PTR16_FORMAT ")", obj->char_field(offset()));  break;
-      case T_FLOAT:   st->print(" (" PTR32_FORMAT ")", obj->int_field(offset()));   break;
-      case T_INT:     st->print(" (" PTR32_FORMAT ")", obj->int_field(offset()));   break;
-      case T_SHORT:   st->print(" (" PTR16_FORMAT ")", obj->short_field(offset())); break;
-      case T_BOOLEAN: st->print(" (" PTR8_FORMAT  ")", obj->bool_field(offset()));  break;
+      case T_LONG:    st->print(" (" INT64_FORMAT_X_0 ")", obj->long_field(offset()));  break;
+      case T_DOUBLE:  st->print(" (" INT64_FORMAT_X_0 ")", obj->long_field(offset()));  break;
+      case T_BYTE:    st->print(" (" INT8_FORMAT_X_0  ")", obj->byte_field(offset()));  break;
+      case T_CHAR:    st->print(" (" INT16_FORMAT_X_0 ")", obj->char_field(offset()));  break;
+      case T_FLOAT:   st->print(" (" INT32_FORMAT_X_0 ")", obj->int_field(offset()));   break;
+      case T_INT:     st->print(" (" INT32_FORMAT_X_0 ")", obj->int_field(offset()));   break;
+      case T_SHORT:   st->print(" (" INT16_FORMAT_X_0 ")", obj->short_field(offset())); break;
+      case T_BOOLEAN: st->print(" (" INT8_FORMAT_X_0  ")", obj->bool_field(offset()));  break;
     default:
       ShouldNotReachHere();
       break;
