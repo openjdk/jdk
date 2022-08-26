@@ -285,7 +285,7 @@ public class KeepAliveTest {
     *---------------------------------------------------------------------------------------------------------------------------
     *    2  |  Connection: keep-alive                         | -Dhttp.keepAlive.time.proxy=200     | Default Timeout set to 5
     *---------------------------------------------------------------------------------------------------------------------------
-    *    3  |  Connection: keep-alive                         | -Dhttp.keepAlive.time.server=100 && | 
+    *    3  |  Connection: keep-alive                         | -Dhttp.keepAlive.time.server=100 && |
     *       |                                                   -Dhttp.keepAlive.time.proxy=200     | Timeout set to 100
     *---------------------------------------------------------------------------------------------------------------------------
     *    4  |  Connection: keep-alive                         | -Dhttp.keepAlive.time.server=-100   | Default Timeout set to 5
@@ -531,7 +531,7 @@ public class KeepAliveTest {
     *--------------------------------------------------------------------------------------------------------------------------------
     *   98  |Connection: keep-alive\r\nKeep-alive: timeout=-20    |-Dhttp.keepAlive.time.proxy=200      | default timeout set to 5
     *-------------------------------------------------------------------------------------------------------------------------------------
-    *   99  |Connection: keep-alive\r\nKeep-alive: timeout=-20    |-Dhttp.keepAlive.time.server=100 && 
+    *   99  |Connection: keep-alive\r\nKeep-alive: timeout=-20    |-Dhttp.keepAlive.time.server=100 &&
     *       |                                                     |-Dhttp.keepAlive.time.proxy=200      | Timeout set to 100
     *-------------------------------------------------------------------------------------------------------------------------------------
     *  100  |Connection: keep-alive\r\nKeep-alive: timeout=-20    |-Dhttp.keepAlive.time.server=-100    | default timeout set to 5
@@ -545,10 +545,10 @@ public class KeepAliveTest {
     *-------------------------------------------------------------------------------------------------------------------------------------
     *  104  |Connection: keep-alive\r\nKeep-alive: timeout=-20    |-Dhttp.keepAlive.time.proxy=0        | default timeout set to 5
     *-------------------------------------------------------------------------------------------------------------------------------------
-    *  105  |Connection: keep-alive\r\nKeep-alive: timeout=-20    |-Dhttp.keepAlive.time.server=0 && 
+    *  105  |Connection: keep-alive\r\nKeep-alive: timeout=-20    |-Dhttp.keepAlive.time.server=0 &&
     *       |                                                     | -Dhttp.keepAlive.time.proxy=0       | close connection immediately
     *-------------------------------------------------------------------------------------------------------------------------------------
-    *  106  |Connection: keep-alive\r\nKeep-alive: timeout=-20    |-Dhttp.keepAlive.time.server=0 && 
+    *  106  |Connection: keep-alive\r\nKeep-alive: timeout=-20    |-Dhttp.keepAlive.time.server=0 &&
     *       |                                                     |-Dhttp.keepAlive.time.proxy=-200     | close connection immediately
     *-------------------------------------------------------------------------------------------------------------------------------------
     *  107  |Connection: keep-alive\r\nKeep-alive: timeout=-20    |-Dhttp.keepAlive.time.server=-100 &&
