@@ -25,7 +25,6 @@
  * @bug 8292562
  * @summary Test transferTo and transferFrom when target is appending
  * @library /test/lib
- * @build jdk.test.lib.Platform
  * @build jdk.test.lib.RandomFactory
  * @run main TransferToAppending
  * @key randomness
@@ -37,7 +36,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.channels.FileChannel;
 import java.util.Random;
-import jdk.test.lib.Platform;
 import jdk.test.lib.RandomFactory;
 
 import static java.nio.file.StandardOpenOption.*;
