@@ -22,106 +22,81 @@
  *
  */
 
-#ifndef SHARE_UTILITIES_MOVE_BITS_HPP
-#define SHARE_UTILITIES_MOVE_BITS_HPP
+#ifndef SHARE_UTILITIES_MOVEBITS_HPP
+#define SHARE_UTILITIES_MOVEBITS_HPP
 
+#include "metaprogramming/conditional.hpp"
+#include "metaprogramming/enableIf.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include <type_traits>
 
-inline uint32_t reverse_bits_in_bytes_int(uint32_t x) {
-  // Based on Hacker's Delight Section 7-1
-  x = (x & 0x55555555) << 1 | (x & 0xAAAAAAAA) >> 1;
-  x = (x & 0x33333333) << 2 | (x & 0xCCCCCCCC) >> 2;
-  x = (x & 0x0F0F0F0F) << 4 | (x & 0xF0F0F0F0) >> 4;
-  return x;
-}
+template <typename T>
+class ReverseBitsImpl {
+  static const size_t S = sizeof(T);
 
-inline uint32_t reverse_bytes_int(uint32_t x, size_t bw) {
-  assert(bw == 16 || bw == 32, "");
-  if (bw == 32) {
+  static_assert((S == 1) || (S == 2) || (S == 4) || (S == 8), "unsupported size");
+
+  static const uint64_t rep_5555 = UCONST64(0x5555555555555555);
+  static const uint64_t rep_3333 = UCONST64(0x3333333333333333);
+  static const uint64_t rep_0F0F = UCONST64(0x0F0F0F0F0F0F0F0F);
+  static const uint64_t rep_00FF = UCONST64(0x00FF00FF00FF00FF);
+  static const uint64_t rep_FFFF = UCONST64(0x0000FFFF0000FFFF);
+
+  using I = typename Conditional<S <= 4, uint32_t, uint64_t>::type;
+
+  // Avoid 32bit shift of uint32_t that some compilers might warn about even
+  // though the relevant code will never be executed.  For example, gcc warns
+  // about -Wshift-count-overflow.
+  static constexpr uint32_t swap64(uint32_t x) { ShouldNotReachHere(); return x; }
+  static constexpr uint64_t swap64(uint64_t x) { return (x << 32) | (x >> 32); }
+
+public:
+
+  static constexpr T reverse_bits_in_bytes(T v) {
     // Based on Hacker's Delight Section 7-1
-    return (x << 24) | ((x & 0xFF00) << 8) | ((x >> 8) & 0xFF00) | (x >> 24);
-  } else {
-    return (x & 0x00FF00FF) << 8 | (x & 0xFF00FF00) >> 8;
+    auto x = static_cast<I>(v);
+    x = ((x & (I)rep_5555) << 1) | ((x >> 1) & (I)rep_5555);
+    x = ((x & (I)rep_3333) << 2) | ((x >> 2) & (I)rep_3333);
+    x = ((x & (I)rep_0F0F) << 4) | ((x >> 4) & (I)rep_0F0F);
+    return x;
   }
+
+  static constexpr T reverse_bytes(T v) {
+    // Based on Hacker's Delight Section 7-1
+    // NB: Compilers are good at recognizing byte-swap code and transforming
+    // it into platform-specific instructions like x86 bswap.
+    auto x = static_cast<I>(v);
+    switch (S) {
+    case 8:
+      x = swap64(x);
+    case 4:                     // fallthrough
+      x = ((x & (I)rep_FFFF) << 16) | ((x >> 16) & (I)rep_FFFF);
+    case 2:                     // fallthrough
+      x = ((x & (I)rep_00FF) << 8)  | ((x >> 8)  & (I)rep_00FF);
+    default:                    // fallthrough
+      return x;
+    }
+  }
+};
+
+// Performs byte reversal of an integral type up to 64 bits.
+template <typename T, ENABLE_IF(std::is_integral<T>::value)>
+constexpr T reverse_bytes(T x) {
+  return ReverseBitsImpl<T>::reverse_bytes(x);
 }
 
-inline uint64_t reverse_bits_in_bytes_long(uint64_t x) {
-  // Based on Hacker's Delight Section 7-1
-  x = (x & CONST64(0x5555555555555555)) << 1 | (x & CONST64(0xAAAAAAAAAAAAAAAA)) >> 1;
-  x = (x & CONST64(0x3333333333333333)) << 2 | (x & CONST64(0xCCCCCCCCCCCCCCCC)) >> 2;
-  x = (x & CONST64(0x0F0F0F0F0F0F0F0F)) << 4 | (x & CONST64(0xF0F0F0F0F0F0F0F0)) >> 4;
-  return x;
+// Performs bytewise bit reversal of each byte of an integral
+// type up to 64 bits.
+template <typename T, ENABLE_IF(std::is_integral<T>::value)>
+constexpr T reverse_bits_in_bytes(T x) {
+  return ReverseBitsImpl<T>::reverse_bits_in_bytes(x);
 }
 
-inline uint64_t reverse_bytes_long(uint64_t x) {
-  x = (x & CONST64(0x00FF00FF00FF00FF)) << 8 | (x >> 8) & CONST64(0x00FF00FF00FF00FF);
-  return (x << 48) | ((x & 0xFFFF0000) << 16) | ((x >> 16) & 0xFFFF0000) | (x >> 48);
+// Performs full bit reversal an integral type up to 64 bits.
+template <typename T, ENABLE_IF(std::is_integral<T>::value)>
+constexpr T reverse_bits(T x) {
+  return reverse_bytes(reverse_bits_in_bytes(x));
 }
 
-template <typename T, size_t S> struct ReverseBitsImpl {};
-
-template <typename T> struct ReverseBitsImpl<T, 1> {
-  static T doit(T v) {
-    return reverse_bits_in_bytes_int(v);
-  }
-};
-
-/*****************************************************************************
- * GCC and compatible (including Clang)
- *****************************************************************************/
-#if defined(TARGET_COMPILER_gcc)
-template <typename T> struct ReverseBitsImpl<T, 2> {
-  static T doit(T v) {
-    v = reverse_bits_in_bytes_int(v);
-    return __builtin_bswap16(v);
-  }
-};
-
-template <typename T> struct ReverseBitsImpl<T, 4> {
-  static T doit(T v) {
-    v = reverse_bits_in_bytes_int(v);
-    return __builtin_bswap32(v);
-  }
-};
-
-template <typename T> struct ReverseBitsImpl<T, 8> {
-  static T doit(T v) {
-    v = reverse_bits_in_bytes_long(v);
-    return __builtin_bswap64(v);
-  }
-};
-
-/*****************************************************************************
- * Fallback
- *****************************************************************************/
-#else
-template <typename T> struct ReverseBitsImpl<T, 2> {
-  static T doit(T v) {
-    v = reverse_bits_in_bytes_int(v);
-    return reverse_bytes_int(r, 16);
-  }
-};
-
-template <typename T> struct ReverseBitsImpl<T, 4> {
-  static T doit(T v) {
-    v = reverse_bits_in_bytes(v);
-    return reverse_bytes_int(v, 32);
-  }
-};
-
-template <typename T> struct ReverseBitsImpl<T, 8> {
-  static T doit(T v) {
-    v = reverse_bits_in_bytes(v);
-    return reverse_bytes_long(r);
-  }
-};
-#endif
-
-// Performs bit reversal of a multi-byte type, we implement and support
-// variants for 8, 16, 32 and 64 bit integral types.
-template <typename T, ENABLE_IF(std::is_integral<T>::value)> inline T reverse_bits(T v) {
-  return ReverseBitsImpl<T, sizeof(T)>::doit(v);
-}
-
-#endif // SHARE_UTILITIES_MOVE_BITS_HPP
+#endif // SHARE_UTILITIES_MOVEBITS_HPP
