@@ -44,14 +44,17 @@ public class PasswordFieldTest {
     }
 
     public static void main(String[] args) throws Exception {
-        for (UIManager.LookAndFeelInfo laf : UIManager.getInstalledLookAndFeels()) {
+        for (UIManager.LookAndFeelInfo laf :
+			UIManager.getInstalledLookAndFeels()) {
             System.out.println("Testing L&F: " + laf.getClassName());
             SwingUtilities.invokeAndWait(() -> setLookAndFeel(laf));
 
-            System.out.println("Echo char: " + UIManager.get("PasswordField.echoChar"));
+            System.out.println("Echo char: " +
+			    UIManager.get("PasswordField.echoChar"));
             if (UIManager.get("PasswordField.echoChar") == null) {
-                throw new RuntimeException("PasswordField.echoChar returns null for NimbusL&F");
-            }		
+                throw new RuntimeException(
+                    "PasswordField.echoChar returns null for NimbusL&F");
+            }
         }
     }
 }
