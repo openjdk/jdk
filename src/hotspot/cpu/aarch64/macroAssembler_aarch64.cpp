@@ -2198,7 +2198,7 @@ int MacroAssembler::push(unsigned int bitset, Register stack) {
       regs[count++] = reg;
     bitset >>= 1;
   }
-  regs[count++] = zr->encoding_nocheck();
+  regs[count++] = zr->raw_encoding();
   count &= ~1;  // Only push an even number of regs
 
   if (count) {
@@ -2228,7 +2228,7 @@ int MacroAssembler::pop(unsigned int bitset, Register stack) {
       regs[count++] = reg;
     bitset >>= 1;
   }
-  regs[count++] = zr->encoding_nocheck();
+  regs[count++] = zr->raw_encoding();
   count &= ~1;
 
   for (int i = 2; i < count; i += 2) {
@@ -2383,9 +2383,9 @@ int MacroAssembler::push_p(unsigned int bitset, Register stack) {
     return 0;
   }
 
-  unsigned char regs[PRegisterImpl::number_of_saved_registers];
+  unsigned char regs[PRegister::number_of_saved_registers];
   int count = 0;
-  for (int reg = 0; reg < PRegisterImpl::number_of_saved_registers; reg++) {
+  for (int reg = 0; reg < PRegister::number_of_saved_registers; reg++) {
     if (1 & bitset)
       regs[count++] = reg;
     bitset >>= 1;
@@ -2420,9 +2420,9 @@ int MacroAssembler::pop_p(unsigned int bitset, Register stack) {
     return 0;
   }
 
-  unsigned char regs[PRegisterImpl::number_of_saved_registers];
+  unsigned char regs[PRegister::number_of_saved_registers];
   int count = 0;
-  for (int reg = 0; reg < PRegisterImpl::number_of_saved_registers; reg++) {
+  for (int reg = 0; reg < PRegister::number_of_saved_registers; reg++) {
     if (1 & bitset)
       regs[count++] = reg;
     bitset >>= 1;
@@ -2910,8 +2910,8 @@ void MacroAssembler::push_CPU_state(bool save_vectors, bool use_sve,
                                     int sve_vector_size_in_bytes, int total_predicate_in_bytes) {
   push(RegSet::range(r0, r29), sp); // integer registers except lr & sp
   if (save_vectors && use_sve && sve_vector_size_in_bytes > 16) {
-    sub(sp, sp, sve_vector_size_in_bytes * FloatRegisterImpl::number_of_registers);
-    for (int i = 0; i < FloatRegisterImpl::number_of_registers; i++) {
+    sub(sp, sp, sve_vector_size_in_bytes * FloatRegister::number_of_registers);
+    for (int i = 0; i < FloatRegister::number_of_registers; i++) {
       sve_str(as_FloatRegister(i), Address(sp, i));
     }
   } else {
@@ -2926,7 +2926,7 @@ void MacroAssembler::push_CPU_state(bool save_vectors, bool use_sve,
   }
   if (save_vectors && use_sve && total_predicate_in_bytes > 0) {
     sub(sp, sp, total_predicate_in_bytes);
-    for (int i = 0; i < PRegisterImpl::number_of_saved_registers; i++) {
+    for (int i = 0; i < PRegister::number_of_saved_registers; i++) {
       sve_str(as_PRegister(i), Address(sp, i));
     }
   }
@@ -2935,16 +2935,16 @@ void MacroAssembler::push_CPU_state(bool save_vectors, bool use_sve,
 void MacroAssembler::pop_CPU_state(bool restore_vectors, bool use_sve,
                                    int sve_vector_size_in_bytes, int total_predicate_in_bytes) {
   if (restore_vectors && use_sve && total_predicate_in_bytes > 0) {
-    for (int i = PRegisterImpl::number_of_saved_registers - 1; i >= 0; i--) {
+    for (int i = PRegister::number_of_saved_registers - 1; i >= 0; i--) {
       sve_ldr(as_PRegister(i), Address(sp, i));
     }
     add(sp, sp, total_predicate_in_bytes);
   }
   if (restore_vectors && use_sve && sve_vector_size_in_bytes > 16) {
-    for (int i = FloatRegisterImpl::number_of_registers - 1; i >= 0; i--) {
+    for (int i = FloatRegister::number_of_registers - 1; i >= 0; i--) {
       sve_ldr(as_FloatRegister(i), Address(sp, i));
     }
-    add(sp, sp, sve_vector_size_in_bytes * FloatRegisterImpl::number_of_registers);
+    add(sp, sp, sve_vector_size_in_bytes * FloatRegister::number_of_registers);
   } else {
     int step = (restore_vectors ? 8 : 4) * wordSize;
     for (int i = 0; i <= 28; i += 4)
@@ -4402,14 +4402,14 @@ void MacroAssembler::access_load_at(BasicType type, DecoratorSet decorators,
 
 void MacroAssembler::access_store_at(BasicType type, DecoratorSet decorators,
                                      Address dst, Register src,
-                                     Register tmp1, Register thread_tmp) {
+                                     Register tmp1, Register tmp2, Register tmp3) {
   BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
   decorators = AccessInternal::decorator_fixup(decorators);
   bool as_raw = (decorators & AS_RAW) != 0;
   if (as_raw) {
-    bs->BarrierSetAssembler::store_at(this, decorators, type, dst, src, tmp1, thread_tmp);
+    bs->BarrierSetAssembler::store_at(this, decorators, type, dst, src, tmp1, tmp2, tmp3);
   } else {
-    bs->store_at(this, decorators, type, dst, src, tmp1, thread_tmp);
+    bs->store_at(this, decorators, type, dst, src, tmp1, tmp2, tmp3);
   }
 }
 
@@ -4424,13 +4424,13 @@ void MacroAssembler::load_heap_oop_not_null(Register dst, Address src, Register 
 }
 
 void MacroAssembler::store_heap_oop(Address dst, Register src, Register tmp1,
-                                    Register thread_tmp, DecoratorSet decorators) {
-  access_store_at(T_OBJECT, IN_HEAP | decorators, dst, src, tmp1, thread_tmp);
+                                    Register tmp2, Register tmp3, DecoratorSet decorators) {
+  access_store_at(T_OBJECT, IN_HEAP | decorators, dst, src, tmp1, tmp2, tmp3);
 }
 
 // Used for storing NULLs.
 void MacroAssembler::store_heap_oop_null(Address dst) {
-  access_store_at(T_OBJECT, IN_HEAP, dst, noreg, noreg, noreg);
+  access_store_at(T_OBJECT, IN_HEAP, dst, noreg, noreg, noreg, noreg);
 }
 
 Address MacroAssembler::allocate_metadata_address(Metadata* obj) {

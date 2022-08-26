@@ -790,7 +790,7 @@ void TemplateInterpreterGenerator::bang_stack_shadow_pages(bool native_call) {
 // native method than the typical interpreter frame setup.
 address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // determine code generation flags
-  bool inc_counter  = UseCompiler || CountCompiledCalls || LogTouchedMethods;
+  bool inc_counter  = UseCompiler || CountCompiledCalls;
 
   // rbx: Method*
   // rbcp: sender sp
@@ -1327,7 +1327,7 @@ address TemplateInterpreterGenerator::generate_abstract_entry(void) {
 //
 address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
   // determine code generation flags
-  bool inc_counter  = UseCompiler || CountCompiledCalls || LogTouchedMethods;
+  bool inc_counter  = UseCompiler || CountCompiledCalls;
 
   // ebx: Method*
   // rbcp: sender sp (set in InterpreterMacroAssembler::prepare_to_jump_from_interpreted / generate_call_stub)

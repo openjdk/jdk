@@ -1497,9 +1497,6 @@ void JVMCIEnv::initialize_installed_code(JVMCIObject installed_code, CodeBlob* c
   // Ignore the version which can stay at 0
   if (cb->is_nmethod()) {
     nmethod* nm = cb->as_nmethod_or_null();
-    if (!nm->is_alive()) {
-      JVMCI_THROW_MSG(InternalError, "nmethod has been reclaimed");
-    }
     if (nm->is_in_use()) {
       set_InstalledCode_entryPoint(installed_code, (jlong) nm->verified_entry_point());
     }
@@ -1518,8 +1515,7 @@ void JVMCIEnv::invalidate_nmethod_mirror(JVMCIObject mirror, JVMCI_TRAPS) {
     JVMCI_THROW(NullPointerException);
   }
 
-  nmethodLocker locker;
-  nmethod* nm = JVMCIENV->get_nmethod(mirror, locker);
+  nmethod* nm = JVMCIENV->get_nmethod(mirror);
   if (nm == NULL) {
     // Nothing to do
     return;
@@ -1533,11 +1529,8 @@ void JVMCIEnv::invalidate_nmethod_mirror(JVMCIObject mirror, JVMCI_TRAPS) {
                     "Cannot invalidate HotSpotNmethod object in shared library VM heap from non-JavaThread");
   }
 
-  nmethodLocker nml(nm);
-  if (nm->is_alive()) {
-    // Invalidating the HotSpotNmethod means we want the nmethod to be deoptimized.
-    Deoptimization::deoptimize_all_marked(nm);
-  }
+  // Invalidating the HotSpotNmethod means we want the nmethod to be deoptimized.
+  Deoptimization::deoptimize_all_marked(nm);
 
   // A HotSpotNmethod instance can only reference a single nmethod
   // during its lifetime so simply clear it here.
@@ -1558,57 +1551,39 @@ ConstantPool* JVMCIEnv::asConstantPool(JVMCIObject obj) {
   return *constantPoolHandle;
 }
 
-CodeBlob* JVMCIEnv::get_code_blob(JVMCIObject obj, nmethodLocker& locker) {
+
+// Lookup an nmethod with a matching base and compile id
+nmethod* JVMCIEnv::lookup_nmethod(address code, jlong compile_id_snapshot) {
+  if (code == NULL) {
+    return NULL;
+  }
+
+  CodeBlob* cb = CodeCache::find_blob(code);
+  if (cb == (CodeBlob*) code) {
+    nmethod* nm = cb->as_nmethod_or_null();
+    if (nm != NULL && (compile_id_snapshot == 0 || nm->compile_id() == compile_id_snapshot)) {
+      return nm;
+    }
+  }
+  return NULL;
+}
+
+
+CodeBlob* JVMCIEnv::get_code_blob(JVMCIObject obj) {
   address code = (address) get_InstalledCode_address(obj);
   if (code == NULL) {
     return NULL;
   }
   if (isa_HotSpotNmethod(obj)) {
-    nmethod* nm = NULL;
-    {
-      // Lookup the CodeBlob while holding the CodeCache_lock to ensure the nmethod can't be freed
-      // by nmethod::flush while we're interrogating it.
-      MutexLocker cm_lock(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-      CodeBlob* cb = CodeCache::find_blob_unsafe(code);
-      if (cb == (CodeBlob*) code) {
-        nmethod* the_nm = cb->as_nmethod_or_null();
-        if (the_nm != NULL && the_nm->is_alive()) {
-          // Lock the nmethod to stop any further transitions by the sweeper.  It's still possible
-          // for this code to execute in the middle of the sweeping of the nmethod but that will be
-          // handled below.
-          locker.set_code(nm, true);
-          nm = the_nm;
-        }
-      }
-    }
-
-    if (nm != NULL) {
-      // We found the nmethod but it could be in the process of being freed.  Check the state of the
-      // nmethod while holding the CompiledMethod_lock.  This ensures that any transitions by other
-      // threads have seen the is_locked_by_vm() update above.
-      MutexLocker cm_lock(CompiledMethod_lock, Mutex::_no_safepoint_check_flag);
-      if (!nm->is_alive()) {
-        //  It was alive when we looked it up but it's no longer alive so release it.
-        locker.set_code(NULL);
-        nm = NULL;
-      }
-    }
-
     jlong compile_id_snapshot = get_HotSpotNmethod_compileIdSnapshot(obj);
-    if (compile_id_snapshot != 0L) {
-      // Found a live nmethod with the same address, make sure it's the same nmethod
-      if (nm == (nmethod*) code && nm->compile_id() == compile_id_snapshot && nm->is_alive()) {
-        if (nm->is_not_entrant()) {
-          // Zero the entry point so that the nmethod
-          // cannot be invoked by the mirror but can
-          // still be deoptimized.
-          set_InstalledCode_entryPoint(obj, 0);
-        }
-        return nm;
-      }
-      // The HotSpotNmethod no longer refers to a valid nmethod so clear the state
-      locker.set_code(NULL);
-      nm = NULL;
+    nmethod* nm = lookup_nmethod(code, compile_id_snapshot);
+    if (nm != NULL && compile_id_snapshot != 0L && nm->is_not_entrant()) {
+      // Zero the entry point so that the nmethod
+      // cannot be invoked by the mirror but can
+      // still be deoptimized.
+      set_InstalledCode_entryPoint(obj, 0);
+      // Refetch the nmethod since the previous call will be a safepoint in libjvmci
+      nm = lookup_nmethod(code, compile_id_snapshot);
     }
 
     if (nm == NULL) {
@@ -1626,8 +1601,8 @@ CodeBlob* JVMCIEnv::get_code_blob(JVMCIObject obj, nmethodLocker& locker) {
   return cb;
 }
 
-nmethod* JVMCIEnv::get_nmethod(JVMCIObject obj, nmethodLocker& locker) {
-  CodeBlob* cb = get_code_blob(obj, locker);
+nmethod* JVMCIEnv::get_nmethod(JVMCIObject obj) {
+  CodeBlob* cb = get_code_blob(obj);
   if (cb != NULL) {
     return cb->as_nmethod_or_null();
   }

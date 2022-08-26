@@ -3657,9 +3657,7 @@ static jint JNI_CreateJavaVM_inner(JavaVM **vm, void **penv, void *args) {
 
     post_thread_start_event(thread);
 
-#ifndef PRODUCT
     if (ReplayCompiles) ciReplay::replay(thread);
-#endif
 
 #ifdef ASSERT
     // Some platforms (like Win*) need a wrapper around these test

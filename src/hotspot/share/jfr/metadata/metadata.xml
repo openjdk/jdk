@@ -561,7 +561,7 @@
   </Event>
 
   <Event name="JitRestart" category="Java Virtual Machine, Compiler" label="JIT Restart" stackTrace="false" startTime="false" thread="true">
-    <Field type="int" contentType="bytes" name="freedMemory" label="Freed Memory" />
+    <Field type="ulong" contentType="bytes" name="freedMemory" label="Freed Memory" />
     <Field type="ulong" contentType="bytes" name="codeCacheMaxCapacity" label="Code Cache Maximum Capacity" />
   </Event>
 
@@ -600,13 +600,6 @@
     <Field type="boolean" name="succeeded" label="Succeeded" />
     <Field type="string" name="message" label="Message" />
     <Field type="int" name="bci" label="Bytecode Index" />
-  </Event>
-
-  <Event name="SweepCodeCache" category="Java Virtual Machine, Code Sweeper" label="Sweep Code Cache" thread="true" >
-    <Field type="int" name="sweepId" label="Sweep Identifier" relation="SweepId" />
-    <Field type="uint" name="sweptCount" label="Methods Swept" />
-    <Field type="uint" name="flushedCount" label="Methods Flushed" />
-    <Field type="uint" name="zombifiedCount" label="Methods Zombified" />
   </Event>
 
   <Event name="CodeCacheFull" category="Java Virtual Machine, Code Cache" label="Code Cache Full" thread="true" startTime="false">
@@ -928,20 +921,6 @@
     <Field type="ulong" contentType="bytes" name="minBlockLength" label="Minimum Block Length" />
     <Field type="ulong" contentType="address" name="startAddress" label="Start Address" />
     <Field type="ulong" contentType="address" name="reservedTopAddress" label="Reserved Top" />
-  </Event>
-
-  <Event name="CodeSweeperStatistics" category="Java Virtual Machine, Code Sweeper" label="Code Sweeper Statistics" thread="false" period="everyChunk" startTime="false">
-    <Field type="int" name="sweepCount" label="Sweeps" />
-    <Field type="int" name="methodReclaimedCount" label="Methods Reclaimed" />
-    <Field type="Tickspan" name="totalSweepTime" label="Time Spent Sweeping" />
-    <Field type="Tickspan" name="peakFractionTime" label="Peak Time Fraction Sweep" />
-    <Field type="Tickspan" name="peakSweepTime" label="Peak Time Full Sweep" />
-  </Event>
-
-  <Event name="CodeSweeperConfiguration" category="Java Virtual Machine, Code Sweeper" label="Code Sweeper Configuration" thread="false" period="endChunk" startTime="false">
-    <Field type="boolean" name="sweeperEnabled" label="Code Sweeper Enabled" />
-    <Field type="boolean" name="flushingEnabled" label="Code Cache Flushing Enabled" />
-    <Field type="ulong" contentType="bytes" name="sweepThreshold" label="Sweep Threshold" />
   </Event>
 
   <Event name="IntFlag" category="Java Virtual Machine, Flag" period="endChunk" label="Int Flag">

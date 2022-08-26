@@ -69,7 +69,6 @@
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "utilities/hashtable.inline.hpp"
 #include "utilities/resourceHash.hpp"
 #include "utilities/stringUtils.hpp"
 
@@ -80,7 +79,6 @@ DumpTimeSharedClassTable* SystemDictionaryShared::_dumptime_table = NULL;
 DumpTimeSharedClassTable* SystemDictionaryShared::_cloned_dumptime_table = NULL;
 DumpTimeLambdaProxyClassDictionary* SystemDictionaryShared::_dumptime_lambda_proxy_class_dictionary = NULL;
 DumpTimeLambdaProxyClassDictionary* SystemDictionaryShared::_cloned_dumptime_lambda_proxy_class_dictionary = NULL;
-SystemDictionaryShared::SavedCpCacheEntriesTable* SystemDictionaryShared::_saved_cpcache_entries_table = NULL;
 
 // Used by NoClassLoadingMark
 DEBUG_ONLY(bool SystemDictionaryShared::_class_loading_may_happen = true;)
@@ -403,7 +401,6 @@ InstanceKlass* SystemDictionaryShared::find_or_load_shared_class(
         THREAD, java_lang_ClassLoader::non_reflection_class_loader(class_loader()));
       ClassLoaderData *loader_data = register_loader(class_loader);
       Dictionary* dictionary = loader_data->dictionary();
-      unsigned int d_hash = dictionary->compute_hash(name);
 
       // Note: currently, find_or_load_shared_class is called only from
       // JVM_FindLoadedClass and used for PlatformClassLoader and AppClassLoader,
@@ -411,7 +408,7 @@ InstanceKlass* SystemDictionaryShared::find_or_load_shared_class(
       assert(get_loader_lock_or_null(class_loader) == NULL, "ObjectLocker not required");
       {
         MutexLocker mu(THREAD, SystemDictionary_lock);
-        InstanceKlass* check = dictionary->find_class(d_hash, name);
+        InstanceKlass* check = dictionary->find_class(THREAD, name);
         if (check != NULL) {
           return check;
         }
@@ -505,7 +502,6 @@ void SystemDictionaryShared::initialize() {
     _dumptime_table = new (ResourceObj::C_HEAP, mtClass) DumpTimeSharedClassTable;
     _dumptime_lambda_proxy_class_dictionary =
                       new (ResourceObj::C_HEAP, mtClass) DumpTimeLambdaProxyClassDictionary;
-    _saved_cpcache_entries_table = new (ResourceObj::C_HEAP, mtClass) SavedCpCacheEntriesTable;
   }
 }
 
@@ -518,11 +514,6 @@ void SystemDictionaryShared::init_dumptime_info(InstanceKlass* k) {
 void SystemDictionaryShared::remove_dumptime_info(InstanceKlass* k) {
   MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
   _dumptime_table->remove(k);
-
-  ConstantPoolCache* cpc = k->constants()->cache();
-  if (cpc != NULL) {
-    remove_saved_cpcache_entries_locked(cpc);
-  }
 }
 
 void SystemDictionaryShared::handle_class_unloading(InstanceKlass* klass) {
@@ -1334,36 +1325,6 @@ void SystemDictionaryShared::update_shared_entry(InstanceKlass* k, int id) {
   assert(DumpSharedSpaces, "supported only when dumping");
   DumpTimeClassInfo* info = get_info(k);
   info->_id = id;
-}
-
-void SystemDictionaryShared::set_saved_cpcache_entries(ConstantPoolCache* cpc, ConstantPoolCacheEntry* entries) {
-  MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
-  bool is_new = _saved_cpcache_entries_table->put(cpc, entries);
-  assert(is_new, "saved entries must never changed");
-}
-
-ConstantPoolCacheEntry* SystemDictionaryShared::get_saved_cpcache_entries_locked(ConstantPoolCache* cpc) {
-  assert_lock_strong(DumpTimeTable_lock);
-  ConstantPoolCacheEntry** p = _saved_cpcache_entries_table->get(cpc);
-  if (p != nullptr) {
-    return *p;
-  } else {
-    return nullptr;
-  }
-}
-
-void SystemDictionaryShared::remove_saved_cpcache_entries(ConstantPoolCache* cpc) {
-  MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
-  remove_saved_cpcache_entries_locked(cpc);
-}
-
-void SystemDictionaryShared::remove_saved_cpcache_entries_locked(ConstantPoolCache* cpc) {
-  assert_lock_strong(DumpTimeTable_lock);
-  ConstantPoolCacheEntry** p = _saved_cpcache_entries_table->get(cpc);
-  if (p != nullptr) {
-    _saved_cpcache_entries_table->remove(cpc);
-    FREE_C_HEAP_ARRAY(ConstantPoolCacheEntry, *p);
-  }
 }
 
 const char* class_loader_name_for_shared(Klass* k) {

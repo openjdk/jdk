@@ -65,25 +65,21 @@ public class PrintAllPagesTest {
 
         SwingUtilities.invokeAndWait(() -> {
             printAllPagesTest();
-        });
+            // add the test frame to dispose
+            PassFailJFrame.addTestWindow(f);
 
-        // add the test frame to dispose
-        PassFailJFrame.addTestWindow(f);
-
-        // Arrange the test instruction frame and test frame side by side
-        PassFailJFrame.positionTestWindow(f, PassFailJFrame.Position.HORIZONTAL);
-
-        SwingUtilities.invokeAndWait(() -> {
+            // Arrange the test instruction frame and test frame side by side
+            PassFailJFrame.positionTestWindow(f, PassFailJFrame.Position.HORIZONTAL);
+            f.setVisible(true);
             try {
                 ret = table.print();
             } catch (PrinterException ex) {
                 ret = false;
             }
+            if (!ret) {
+                throw new RuntimeException("Printing cancelled/failed");
+            }
         });
-
-        if (!ret) {
-            throw new RuntimeException("Printing cancelled/failed");
-        }
         passFailJFrame.awaitAndCheck();
     }
 
@@ -107,11 +103,11 @@ public class PrintAllPagesTest {
         };
         table = new JTable(dataModel);
         JScrollPane scrollpane = new JScrollPane(table);
-        table.scrollRectToVisible(table.getCellRect(table.getRowCount() - 1, 0, false));
+        table.scrollRectToVisible(table.getCellRect(table.getRowCount() - 1,
+                0, false));
 
         f = new JFrame("Table test");
         f.add(scrollpane);
         f.setSize(1000, 800);
-        f.setVisible(true);
     }
 }
