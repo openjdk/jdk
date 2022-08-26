@@ -64,8 +64,7 @@ public class ModuleReferenceImpl extends ModuleReference {
 
     // Single-slot cache of this module's hash to avoid needing to compute
     // it many times. For correctness under concurrent updates, we need to
-    // wrap the fields updated at the same time with a record, which carries
-    // the implicit final-field semantics for its members.
+    // wrap the fields updated at the same time with a record.
     private record CachedHash(byte[] hash, String algorithm) {}
     private CachedHash cachedHash;
 
