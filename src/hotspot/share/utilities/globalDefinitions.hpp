@@ -90,6 +90,16 @@ class oopDesc;
 // doesn't provide appropriate definitions, they should be provided in
 // the compiler-specific definitions file (e.g., globalDefinitions_gcc.hpp)
 
+// Guide to the suffixes used in the format specifiers for integers:
+//        - print the decimal value:                   745565
+//  _X    - print as hexadecimal, without leading 0s: 0x12345
+//  _X_0  - print as hexadecimal, with leading 0s: 0x00012345
+//  _W(w) - prints w sized string with the given value right
+//          adjusted. Use -w to print left adjusted.
+//
+// Note that the PTR format specifiers print using 0x with leading zeros,
+// just like the _X_0 version for integers.
+
 #define BOOL_TO_STR(_b_) ((_b_) ? "true" : "false")
 
 // Format 8-bit quantities.
