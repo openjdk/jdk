@@ -53,13 +53,28 @@ readSingle(JNIEnv *env, jobject this, jfieldID fid) {
     return ret & 0xFF;
 }
 
+#define SHORT_SIZE 2
+#define INT_SIZE   4
+#define LONG_SIZE  8
+
 jlong
 readN(JNIEnv *env, jobject this, jfieldID fid, jint len) {
     if (len == 1) {
         return readSingle(env, this, fid);
     }
-    char stackBuf[len];
-    char *buf = stackBuf;
+    char *buf = NULL;
+    if (len == SHORT_SIZE) {
+      char stackBuf[SHORT_SIZE];
+      buf = stackBuf;
+    }
+    if (len == INT_SIZE) {
+      char stackBuf[INT_SIZE];
+      buf = stackBuf;
+    }
+    if (len == LONG_SIZE) {
+      char stackBuf[LONG_SIZE];
+      buf = stackBuf;
+    }
 
     FD fd = getFD(env, this, fid);
     if (fd == -1) {
@@ -72,16 +87,16 @@ readN(JNIEnv *env, jobject this, jfieldID fid, jint len) {
         return -1;
     }
 
-    if (len == 2) {
+    if (len == SHORT_SIZE) {
         return ((*buf) << 8) + (*(buf + 1) & 0xFF);
     }
-    if (len == 4) {
+    if (len == INT_SIZE) {
         return ((*buf) << 24) +
                ((*(buf + 1) & 0xFF) << 16) +
                ((*(buf + 2) & 0xFF) << 8) +
                ((*(buf + 3) & 0xFF));
     }
-    if (len == 8) {
+    if (len == LONG_SIZE) {
         return ((((jlong) *(buf)) << 56) +
                 (((jlong) (*(buf + 1)) & 0xFF) << 48) +
                 (((jlong) (*(buf + 2)) & 0xFF) << 40) +
