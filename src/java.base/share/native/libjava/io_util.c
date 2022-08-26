@@ -82,11 +82,11 @@ readN(JNIEnv *env, jobject this, jfieldID fid, jint len) {
                ((*(buf + 3) & 0xFF));
     }
     if (len == 8) {
-        return (((long) *(buf) << 56) +
-                ((long) (*(buf + 1) & 0xFF) << 48) +
-                ((long) (*(buf + 2) & 0xFF) << 40) +
-                ((long) (*(buf + 3) & 0xFF) << 32) +
-                ((long) (*(buf + 4) & 0xFF) << 24) +
+        return ((((long) *(buf)) << 56) +
+                (((long) (*(buf + 1)) & 0xFF) << 48) +
+                (((long) (*(buf + 2)) & 0xFF) << 40) +
+                (((long) (*(buf + 3)) & 0xFF) << 32) +
+                (((long) (*(buf + 4)) & 0xFF) << 24) +
                 ((*(buf + 5) & 0xFF) << 16) +
                 ((*(buf + 6) & 0xFF) << 8) +
                 ((*(buf + 7) & 0xFF)));
