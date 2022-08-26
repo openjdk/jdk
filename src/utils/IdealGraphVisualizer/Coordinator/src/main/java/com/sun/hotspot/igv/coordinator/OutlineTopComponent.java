@@ -32,6 +32,13 @@ import com.sun.hotspot.igv.data.services.GroupCallback;
 import com.sun.hotspot.igv.data.services.InputGraphProvider;
 import com.sun.hotspot.igv.util.LookupHistory;
 import com.sun.hotspot.igv.view.EditorTopComponent;
+import java.awt.*;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
+import java.io.Serializable;
+import javax.swing.*;
+import javax.swing.border.Border;
 import org.openide.ErrorManager;
 import org.openide.actions.GarbageCollectAction;
 import org.openide.awt.Toolbar;
@@ -43,14 +50,6 @@ import org.openide.util.*;
 import org.openide.util.actions.NodeAction;
 import org.openide.windows.TopComponent;
 import org.openide.windows.WindowManager;
-
-import javax.swing.*;
-import javax.swing.border.Border;
-import java.awt.*;
-import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
-import java.io.Serializable;
 
 /**
  *
