@@ -156,39 +156,38 @@ void fieldDescriptor::print() const { print_on(tty); }
 
 void fieldDescriptor::print_on_for(outputStream* st, oop obj) {
   print_on(st);
+  st->print(" ");
 
   BasicType ft = field_type();
   switch (ft) {
     case T_BYTE:
-      st->print(" %d", obj->byte_field(offset()));
+      st->print("%d", obj->byte_field(offset()));
       break;
     case T_CHAR:
       {
         jchar c = obj->char_field(offset());
-        st->print(" %c %d", isprint(c) ? c : ' ', c);
+        st->print("%c %d", isprint(c) ? c : ' ', c);
       }
       break;
     case T_DOUBLE:
-      st->print(" %lf", obj->double_field(offset()));
+      st->print("%lf", obj->double_field(offset()));
       break;
     case T_FLOAT:
-      st->print(" %f", obj->float_field(offset()));
+      st->print("%f", obj->float_field(offset()));
       break;
     case T_INT:
-      st->print(" %d", obj->int_field(offset()));
+      st->print("%d", obj->int_field(offset()));
       break;
     case T_LONG:
-      st->print(" ");
       st->print_jlong(obj->long_field(offset()));
       break;
     case T_SHORT:
-      st->print(" %d", obj->short_field(offset()));
+      st->print("%d", obj->short_field(offset()));
       break;
     case T_BOOLEAN:
-      st->print(" %s", obj->bool_field(offset()) ? "true" : "false");
+      st->print("%s", obj->bool_field(offset()) ? "true" : "false");
       break;
     case T_ARRAY:
-      st->print(" ");
       if (obj->obj_field(offset()) != NULL) {
         obj->obj_field(offset())->print_value_on(st);
       } else {
@@ -196,7 +195,6 @@ void fieldDescriptor::print_on_for(outputStream* st, oop obj) {
       }
       break;
     case T_OBJECT:
-      st->print(" ");
       if (obj->obj_field(offset()) != NULL) {
         obj->obj_field(offset())->print_value_on(st);
       } else {
