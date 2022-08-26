@@ -2167,7 +2167,7 @@ static void clone_outer_loop_helper(Node* n, const IdealLoopTree *loop, const Id
       // the outer loop too
         Node* u_c = u->in(0);
         if (u_c != NULL) {
-          IdealLoopTree *u_c_loop = phase->get_loop(u_c);
+          IdealLoopTree* u_c_loop = phase->get_loop(u_c);
           if (outer_loop->is_member(u_c_loop) && !loop->is_member(u_c_loop)) {
             wq.push(u);
           }
