@@ -76,7 +76,7 @@ public:
                               OopIterateClosure* cl,
                               CardTableRS* ct);
 
-  virtual bool is_in_young(oop obj) const;
+  bool is_in_young(const void* p) const override;
 };
 
 class ClearNoncleanCardWrapper: public MemRegionClosure {

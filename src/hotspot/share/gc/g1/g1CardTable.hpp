@@ -122,7 +122,7 @@ public:
 
   virtual void resize_covered_region(MemRegion new_region) { ShouldNotReachHere(); }
 
-  virtual bool is_in_young(oop obj) const;
+  bool is_in_young(const void* p) const override;
 };
 
 #endif // SHARE_GC_G1_G1CARDTABLE_HPP
