@@ -63,21 +63,11 @@ public class ModuleReferenceImpl extends ModuleReference {
     private final ModuleResolution moduleResolution;
 
     // Single-slot cache of this module's hash to avoid needing to compute
-    // it many times. If there is a significant number of hash algorithms
-    // used in the future, consider extending this cache to full
-    // ConcurrentMap<String,byte[]>.
-    //
-    // For correctness under concurrent updates, we need to wrap the fields
-    // updated at the same time with the final wrapper.
+    // it many times. For correctness under concurrent updates, we need to
+    // wrap the fields updated at the same time with a record, which carries
+    // the implicit final-field semantics for its members.
+    private record CachedHash(byte[] hash, String algorithm) {}
     private CachedHash cachedHash;
-    private final class CachedHash {
-        public CachedHash(byte[] hash, String algorithm) {
-            this.hash = hash;
-            this.algorithm = algorithm;
-        }
-        final byte[] hash;
-        final String algorithm;
-    }
 
     /**
      * Constructs a new instance of this class.
@@ -154,8 +144,8 @@ public class ModuleReferenceImpl extends ModuleReference {
      */
     public byte[] computeHash(String algorithm) {
         CachedHash ch = cachedHash;
-        if (ch != null && ch.algorithm.equals(algorithm)) {
-            return ch.hash;
+        if (ch != null && ch.algorithm().equals(algorithm)) {
+            return ch.hash();
         }
 
         if (hasher == null) {
