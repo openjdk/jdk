@@ -169,7 +169,7 @@ void ProtectionDomainCacheTable::print_on(outputStream* st) {
   auto printer = [&] (WeakHandle& key, WeakHandle& value) {
       st->print_cr("  protection_domain: " PTR_FORMAT, p2i(value.peek()));
   };
-  st->print_cr("Protection domain cache table (table_size=%d, classes=%d)",
+  st->print_cr("Protection domain cache table (table_size=%d, protection domains=%d)",
                 _pd_cache_table.table_size(), _pd_cache_table.number_of_entries());
   _pd_cache_table.iterate_all(printer);
 }
