@@ -46,7 +46,6 @@ import static jdk.test.lib.Asserts.assertNotNull;
 
 public class TestMemoryAwareness {
     private static final String imageName = Common.imageName("memory");
-    private static String hostMaxMem;
 
     private static String getHostMaxMemory() throws Exception {
         DockerRunOptions opts = Common.newOpts(imageName);
@@ -87,10 +86,10 @@ public class TestMemoryAwareness {
                 "1G", Integer.toString(((int) Math.pow(2, 20)) * 1024),
                 "1500M", Integer.toString(((int) Math.pow(2, 20)) * (1500 - 1024))
             );
-            hostMaxMem = getHostMaxMemory();
-            testOperatingSystemMXBeanIgnoresMemLimitExceedingPhysicalMemory();
-            testMetricsIgnoresMemLimitExceedingPhysicalMemory();
-            testContainerMemExceedsPhysical();
+            final String hostMaxMem = getHostMaxMemory();
+            testOperatingSystemMXBeanIgnoresMemLimitExceedingPhysicalMemory(hostMaxMem);
+            testMetricsIgnoresMemLimitExceedingPhysicalMemory(hostMaxMem);
+            testContainerMemExceedsPhysical(hostMaxMem);
         } finally {
             if (!DockerTestUtils.RETAIN_IMAGE_AFTER_TEST) {
                 DockerTestUtils.removeDockerImage(imageName);
@@ -113,7 +112,7 @@ public class TestMemoryAwareness {
 
     // JDK-8292083
     // Ensure that Java ignores container memory limit values above the host's physical memory.
-    private static void testContainerMemExceedsPhysical()
+    private static void testContainerMemExceedsPhysical(final String hostMaxMem)
             throws Exception {
         Common.logNewTestCase("container memory limit exceeds physical memory");
         String badMem = hostMaxMem + "0";
@@ -205,14 +204,14 @@ public class TestMemoryAwareness {
 
 
     // JDK-8292541: Ensure OperatingSystemMXBean ignores container memory limits above the host's physical memory.
-    private static void testOperatingSystemMXBeanIgnoresMemLimitExceedingPhysicalMemory()
+    private static void testOperatingSystemMXBeanIgnoresMemLimitExceedingPhysicalMemory(final String hostMaxMem)
             throws Exception {
         String badMem = hostMaxMem + "0";
         testOperatingSystemMXBeanAwareness(badMem, hostMaxMem, badMem, hostMaxMem);
     }
 
     // JDK-8292541: Ensure Metrics ignores container memory limits above the host's physical memory.
-    private static void testMetricsIgnoresMemLimitExceedingPhysicalMemory()
+    private static void testMetricsIgnoresMemLimitExceedingPhysicalMemory(final String hostMaxMem)
             throws Exception {
         Common.logNewTestCase("Metrics ignore container memory limit exceeding physical memory");
         String badMem = hostMaxMem + "0";
