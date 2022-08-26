@@ -7446,7 +7446,7 @@ address generate_avx_ghash_processBlocks() {
     __ jcc(Assembler::notZero, L_pinned);
 
     __ movptr(rsp, Address(r15_thread, JavaThread::cont_entry_offset()));
-    __ continuation_enter_cleanup(_masm);
+    __ continuation_enter_cleanup();
     __ pop(rbp);
     __ ret(0);
 

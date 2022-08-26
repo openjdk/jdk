@@ -23,6 +23,8 @@
  */
 
 #include "precompiled.hpp"
+#include "runtime/continuation.hpp"
+#include "runtime/continuationEntry.hpp"
 #include "macroAssembler_x86.hpp"
 
 //---------------------------- continuation_enter_setup ---------------------------
@@ -99,7 +101,7 @@ void MacroAssembler::fill_continuation_entry(Register reg_cont_obj, Register reg
 // Kills:
 //   rbx
 //
-void MacroAssembler::continuation_enter_cleanup(MacroAssembler* masm) {
+void MacroAssembler::continuation_enter_cleanup() {
 #ifdef ASSERT
   Label L_good_sp;
   cmpptr(rsp, Address(r15_thread, JavaThread::cont_entry_offset()));
