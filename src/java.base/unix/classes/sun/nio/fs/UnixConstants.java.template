@@ -138,10 +138,6 @@ class UnixConstants {
     static final int PREFIX_ENOTSUP = ENOTSUP;
 #endif
 
-#ifdef __linux__
-    static final int PREFIX_EPERM = EPERM;
-#endif
-
     // flags used with openat/unlinkat/etc.
 #if defined(AT_SYMLINK_NOFOLLOW) && defined(AT_REMOVEDIR)
     static final int PREFIX_AT_SYMLINK_NOFOLLOW = AT_SYMLINK_NOFOLLOW;
@@ -168,5 +164,12 @@ class UnixConstants {
     static final int PREFIX_ATTR_CMN_MODTIME = 00;
     static final int PREFIX_ATTR_CMN_ACCTIME = 00;
     static final int PREFIX_FSOPT_NOFOLLOW = 00;
+#endif
+
+#ifdef __linux__
+    // advice flags used with posix_fadvise(2)
+    static final int PREFIX_POSIX_FADV_SEQUENTIAL = POSIX_FADV_SEQUENTIAL;
+    static final int PREFIX_POSIX_FADV_NOREUSE    = POSIX_FADV_NOREUSE;
+    static final int PREFIX_POSIX_FADV_WILLNEED   = POSIX_FADV_WILLNEED;
 #endif
 }

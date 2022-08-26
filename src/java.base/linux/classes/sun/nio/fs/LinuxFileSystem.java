@@ -28,11 +28,8 @@ package sun.nio.fs;
 import java.nio.file.*;
 import java.io.IOException;
 import java.util.*;
-import sun.nio.ch.IOStatus;
-
 import static sun.nio.fs.LinuxNativeDispatcher.*;
 import static sun.nio.fs.UnixConstants.*;
-import static sun.nio.fs.UnixNativeDispatcher.*;
 
 /**
  * Linux implementation of FileSystem
@@ -69,94 +66,6 @@ class LinuxFileSystem extends UnixFileSystem {
     @Override
     public Set<String> supportedFileAttributeViews() {
         return SupportedFileFileAttributeViewsHolder.supportedFileAttributeViews;
-    }
-
-    /**
-     * Clones the file whose path name is {@code src} to that whose path
-     * name is {@code dst} using the {@code ioctl} system call with the
-     * {@code FICLONE} request code.
-     *
-     * @param src the path of the source file
-     * @param dst the path of the destination file (clone)
-     * @param followLinks whether to follow links
-     * @param mode the permissions to assign to the destination
-     *
-     * @return 0 on success, IOStatus.UNSUPPORTED_CASE if the call does not work
-     *         with the given parameters, or IOStatus.UNSUPPORTED if cloning is
-     *         not supported on this platform
-     */
-    protected int clone(UnixPath src, UnixPath dst, boolean followLinks,
-                        int mode)
-        throws IOException
-    {
-        int srcFD = 0;
-        try {
-            int flags = O_RDONLY | (followLinks ? 0 : O_NOFOLLOW);
-            srcFD = open(src, flags, 0);
-        } catch (UnixException x) {
-            x.rethrowAsIOException(src);
-            return IOStatus.THROWN;
-        }
-
-        int dstFD = 0;
-        try {
-            int flags = (O_CREAT | O_WRONLY) | (followLinks ? 0 : O_NOFOLLOW);
-            dstFD = open(dst, flags, mode);
-        } catch (UnixException x) {
-            try {
-                UnixNativeDispatcher.close(srcFD);
-            } catch (UnixException ignored) {
-            }
-            x.rethrowAsIOException(dst);
-            return IOStatus.THROWN;
-        }
-
-        UnixException resultEx = null;
-        int result;
-        try {
-            result = ioctl_ficlone(dstFD, srcFD);
-            fchmod(dstFD, mode);
-        } catch (UnixException x) {
-            switch (x.errno()) {
-                case EINVAL:
-                    result = IOStatus.UNSUPPORTED;
-                    break;
-                case EPERM:
-                    resultEx = x;
-                    result = IOStatus.THROWN;
-                    break;
-                default:
-                    result = IOStatus.UNSUPPORTED_CASE;
-                    break;
-            }
-        }
-
-        try {
-            UnixNativeDispatcher.close(dstFD);
-        } catch (UnixException x) {
-            if (resultEx == null)
-                resultEx = x;
-        }
-        try {
-            UnixNativeDispatcher.close(srcFD);
-        } catch (UnixException y) {
-            if (resultEx == null)
-                resultEx = y;
-        }
-        if (result != 0) {
-            try {
-                unlink(dst);
-            } catch (UnixException z) {
-                if (resultEx == null)
-                    resultEx = z;
-            }
-        }
-        if (resultEx != null) {
-            resultEx.rethrowAsIOException(src, dst);
-            return IOStatus.THROWN;
-        }
-
-        return result;
     }
 
     @Override
@@ -213,10 +122,61 @@ class LinuxFileSystem extends UnixFileSystem {
         return getMountEntries("/etc/mtab");
     }
 
-
-
     @Override
     FileStore getFileStore(UnixMountEntry entry) throws IOException {
         return new LinuxFileStore(this, entry);
     }
+
+    @Override
+    protected void bufferedCopy(int dst, int src, long address,
+                                int size, long addressToPollForCancel)
+        throws UnixException
+    {
+        int advice = POSIX_FADV_SEQUENTIAL | // sequential data access
+                     POSIX_FADV_NOREUSE    | // will access only once
+                     POSIX_FADV_WILLNEED;    // will access in near future
+        posix_fadvise(src, 0, 0, advice);
+
+        super.bufferedCopy(dst, src, address, size, addressToPollForCancel);
+    }
+
+    @Override
+    protected int directCopy(int dst, int src, long addressToPollForCancel)
+        throws UnixException
+    {
+        int advice = POSIX_FADV_SEQUENTIAL | // sequential data access
+                     POSIX_FADV_NOREUSE    | // will access only once
+                     POSIX_FADV_WILLNEED;    // will access in near future
+        posix_fadvise(src, 0, 0, advice);
+
+        return directCopy0(dst, src, addressToPollForCancel);
+    }
+
+    // -- native methods --
+
+    private static native void init();
+
+    static {
+        jdk.internal.loader.BootLoader.loadLibrary("nio");
+        init();
+    }
+
+    /**
+     * Copies data between file descriptors {@code src} and {@code dst} using
+     * a platform-specific function or system call possibly having kernel
+     * support.
+     *
+     * @param dst destination file descriptor
+     * @param src source file descriptor
+     * @param addressToPollForCancel address to check for cancellation
+     *        (a non-zero value written to this address indicates cancel)
+     *
+     * @return 0 on success, UNAVAILABLE if the platform function would block,
+     *         UNSUPPORTED_CASE if the call does not work with the given
+     *         parameters, or UNSUPPORTED if direct copying is not supported
+     *         on this platform
+     */
+    private static native int directCopy0(int dst, int src,
+                                          long addressToPollForCancel)
+        throws UnixException;
 }

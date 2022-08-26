@@ -36,10 +36,6 @@ import java.nio.file.LinkPermission;
 import java.nio.file.StandardCopyOption;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import jdk.internal.misc.Blocker;
-import sun.nio.ch.DirectBuffer;
-import sun.nio.ch.IOStatus;
-import sun.nio.ch.Util;
 import static sun.nio.fs.UnixNativeDispatcher.*;
 import static sun.nio.fs.UnixConstants.*;
 
@@ -48,13 +44,10 @@ import static sun.nio.fs.UnixConstants.*;
  */
 
 class UnixCopyFile {
-    // minimum size of a temporary direct buffer
-    private static final int MIN_BUFFER_SIZE = 16384;
-
     private UnixCopyFile() {  }
 
     // The flags that control how a file is copied or moved
-    private static class Flags {
+    static class Flags {
         boolean replaceExisting;
         boolean atomicMove;
         boolean followLinks;
@@ -221,186 +214,6 @@ class UnixCopyFile {
                 // rollback
                 try { rmdir(target); } catch (UnixException ignore) { }
             }
-        }
-    }
-
-    // calculate the least common multiple of two values;
-    // the parameters in general will be powers of two likely in the
-    // range [4096, 65536] so this algorithm is expected to converge
-    // when it is rarely called
-    private static long lcm(long x, long y) {
-        assert x > 0 && y > 0 : "Non-positive parameter";
-
-        long u = x;
-        long v = y;
-
-        while (u != v) {
-            if (u < v)
-                u += x;
-            else // u > v
-                v += y;
-        }
-
-        return u;
-    }
-
-    // calculate temporary direct buffer size
-    private static int temporaryBufferSize(UnixPath source, UnixPath target) {
-        int bufferSize = MIN_BUFFER_SIZE;
-        try {
-            long bss = UnixFileStoreAttributes.get(source).blockSize();
-            long bst = UnixFileStoreAttributes.get(target).blockSize();
-            if (bss > 0 && bst > 0) {
-                bufferSize = (int)(bss == bst ? bss : lcm(bss, bst));
-            }
-            if (bufferSize < MIN_BUFFER_SIZE) {
-                int factor = (MIN_BUFFER_SIZE + bufferSize - 1)/bufferSize;
-                bufferSize *= factor;
-            }
-        } catch (UnixException ignored) {
-        }
-        return bufferSize;
-    }
-
-    // whether file cloning is supported on this platform
-    private static volatile boolean cloneFileNotSupported;
-
-    // whether direct copying is supported on this platform
-    private static volatile boolean directCopyNotSupported;
-
-    // copy regular file from source to target
-    private static void copyFile(UnixPath source,
-                                 UnixFileAttributes attrs,
-                                 UnixPath  target,
-                                 Flags flags,
-                                 long addressToPollForCancel)
-        throws IOException
-    {
-        if (addressToPollForCancel == 0 && !cloneFileNotSupported) {
-            int res = source.getFileSystem().clone(source, target,
-                                                   flags.followLinks,
-                                                   attrs.mode());
-            if (res == 0) {
-                // copy owner
-                if (flags.copyPosixAttributes) {
-                    try {
-                        chown(target, attrs.uid(), attrs.gid());
-                    } catch (UnixException x) {
-                        if (flags.failIfUnableToCopyPosix)
-                            x.rethrowAsIOException(target);
-                    }
-                }
-                return;
-            }
-            if (res == IOStatus.UNSUPPORTED) {
-                cloneFileNotSupported = true;
-            }
-        }
-
-        int fi = -1;
-        try {
-            fi = open(source, O_RDONLY, 0);
-        } catch (UnixException x) {
-            x.rethrowAsIOException(source);
-        }
-
-        try {
-            // open new file
-            int fo = -1;
-            try {
-                fo = open(target,
-                           (O_WRONLY |
-                            O_CREAT |
-                            O_EXCL),
-                           attrs.mode());
-            } catch (UnixException x) {
-                x.rethrowAsIOException(target);
-            }
-
-            // set to true when file and attributes copied
-            boolean complete = false;
-            try {
-                boolean copied = false;
-                if (!directCopyNotSupported) {
-                    // copy bytes to target using platform function
-                    long comp = Blocker.begin();
-                    try {
-                        int res = directCopy0(fo, fi, addressToPollForCancel);
-                        if (res == 0) {
-                            copied = true;
-                        } else if (res == IOStatus.UNSUPPORTED) {
-                            directCopyNotSupported = true;
-                        }
-                    } catch (UnixException x) {
-                        x.rethrowAsIOException(source, target);
-                    } finally {
-                        Blocker.end(comp);
-                    }
-                }
-
-                if (!copied) {
-                    // copy bytes to target via a temporary direct buffer
-                    int bufferSize = temporaryBufferSize(source, target);
-                    ByteBuffer buf = Util.getTemporaryDirectBuffer(bufferSize);
-                    try {
-                        long comp = Blocker.begin();
-                        try {
-                            bufferedCopy0(fo, fi, ((DirectBuffer)buf).address(),
-                                          bufferSize, addressToPollForCancel);
-                        } catch (UnixException x) {
-                            x.rethrowAsIOException(source, target);
-                        } finally {
-                            Blocker.end(comp);
-                        }
-                    } finally {
-                        Util.releaseTemporaryDirectBuffer(buf);
-                    }
-                }
-
-                // copy owner/permissions
-                if (flags.copyPosixAttributes) {
-                    try {
-                        fchown(fo, attrs.uid(), attrs.gid());
-                        fchmod(fo, attrs.mode());
-                    } catch (UnixException x) {
-                        if (flags.failIfUnableToCopyPosix)
-                            x.rethrowAsIOException(target);
-                    }
-                }
-                // copy non POSIX attributes (depends on file system)
-                if (flags.copyNonPosixAttributes) {
-                    source.getFileSystem().copyNonPosixAttributes(fi, fo);
-                }
-                // copy time attributes
-                if (flags.copyBasicAttributes) {
-                    try {
-                        if (futimesSupported()) {
-                            futimes(fo,
-                                    attrs.lastAccessTime().to(TimeUnit.MICROSECONDS),
-                                    attrs.lastModifiedTime().to(TimeUnit.MICROSECONDS));
-                        } else {
-                            utimes(target,
-                                   attrs.lastAccessTime().to(TimeUnit.MICROSECONDS),
-                                   attrs.lastModifiedTime().to(TimeUnit.MICROSECONDS));
-                        }
-                    } catch (UnixException x) {
-                        if (flags.failIfUnableToCopyBasic)
-                            x.rethrowAsIOException(target);
-                    }
-                }
-                complete = true;
-            } finally {
-                close(fo, e -> null);
-
-                // copy of file or attributes failed so rollback
-                if (!complete) {
-                    try {
-                        unlink(target);
-                    } catch (UnixException ignore) { }
-                }
-            }
-        } finally {
-            close(fi, e -> null);
         }
     }
 
@@ -591,7 +404,8 @@ class UnixCopyFile {
                 if (sourceAttrs.isDevice()) {
                     copySpecial(source, sourceAttrs, target, flags);
                 } else {
-                    copyFile(source, sourceAttrs, target, flags, 0L);
+                    source.getFileSystem().copyFile(source, sourceAttrs,
+                                                    target, flags, 0L);
                 }
             }
         }
@@ -702,7 +516,7 @@ class UnixCopyFile {
         }
         if (!flags.interruptible) {
             // non-interruptible file copy
-            copyFile(source, sourceAttrs, target, flags, 0L);
+            source.getFileSystem().copyFile(source, sourceAttrs, target, flags, 0L);
             return;
         }
 
@@ -710,8 +524,8 @@ class UnixCopyFile {
         final UnixFileAttributes attrsToCopy = sourceAttrs;
         Cancellable copyTask = new Cancellable() {
             @Override public void implRun() throws IOException {
-                copyFile(source, attrsToCopy, target, flags,
-                    addressToPollForCancel());
+                source.getFileSystem().copyFile(source, attrsToCopy, target,
+                                                flags, addressToPollForCancel());
             }
         };
         try {
@@ -723,48 +537,4 @@ class UnixCopyFile {
             throw new IOException(t);
         }
     }
-
-    // -- native methods --
-
-    /**
-     * Copies data between file descriptors {@code src} and {@code dst} using
-     * a platform-specific function or system call possibly having kernel
-     * support.
-     *
-     * @param dst destination file descriptor
-     * @param src source file descriptor
-     * @param addressToPollForCancel address to check for cancellation
-     *        (a non-zero value written to this address indicates cancel)
-     *
-     * @return 0 on success, IOStatus.UNAVAILABLE if the platform function
-     *         would block, IOStatus.UNSUPPORTED_CASE if the call does not
-     *         work with the given parameters, or IOStatus.UNSUPPORTED if
-     *         direct copying is not supported on this platform
-     */
-    private static native int directCopy0(int dst, int src,
-                                          long addressToPollForCancel)
-        throws UnixException;
-
-    /**
-     * Copies data between file descriptors {@code src} and {@code dst} using
-     * an intermediate temporary direct buffer.
-     *
-     * @param dst destination file descriptor
-     * @param src source file descriptor
-     * @param address the address of the temporary direct buffer's array
-     * @param size the size of the temporary direct buffer's array
-     * @param addressToPollForCancel address to check for cancellation
-     *        (a non-zero value written to this address indicates cancel)
-     */
-    private static native void bufferedCopy0(int dst, int src, long address,
-                                             int size, long addressToPollForCancel)
-        throws UnixException;
-
-    private static native void init();
-
-    static {
-        jdk.internal.loader.BootLoader.loadLibrary("nio");
-        init();
-    }
-
 }

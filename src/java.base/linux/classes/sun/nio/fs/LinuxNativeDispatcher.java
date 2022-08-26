@@ -25,8 +25,6 @@
 
 package sun.nio.fs;
 
-import jdk.internal.misc.Blocker;
-
 /**
  * Linux specific system calls.
  */
@@ -65,17 +63,9 @@ class LinuxNativeDispatcher extends UnixNativeDispatcher {
     static native void endmntent(long stream) throws UnixException;
 
     /**
-     * int ioctl(int dest_fd, FICLONE, int src_fd);
+     * int posix_fadvise(int fd, off_t offset, off_t len, int advice);
      */
-    static int ioctl_ficlone(int dst, int src) throws UnixException {
-        long comp = Blocker.begin();
-        try {
-            return ioctl_ficlone0(dst, src);
-        } finally {
-            Blocker.end(comp);
-        }
-    }
-    private static native int ioctl_ficlone0(int dst, int src)
+    static native int posix_fadvise(int fd, long offset, long len, int advice)
         throws UnixException;
 
     // initialize

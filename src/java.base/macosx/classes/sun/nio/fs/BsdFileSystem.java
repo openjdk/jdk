@@ -33,6 +33,7 @@ import sun.nio.ch.IOStatus;
 import sun.security.action.GetPropertyAction;
 
 import static sun.nio.fs.UnixConstants.*;
+import static sun.nio.fs.UnixNativeDispatcher.*;
 
 /**
  * Bsd implementation of FileSystem
@@ -70,6 +71,9 @@ class BsdFileSystem extends UnixFileSystem {
         return SupportedFileFileAttributeViewsHolder.supportedFileAttributeViews;
     }
 
+    // whether file cloning is supported on this platform
+    private static volatile boolean cloneFileNotSupported;
+
     /**
      * Clones the file whose path name is {@code src} to that whose path
      * name is {@code dst} using the {@code clonefile} system call.
@@ -83,11 +87,14 @@ class BsdFileSystem extends UnixFileSystem {
      *         with the given parameters, or IOStatus.UNSUPPORTED if cloning is
      *         not supported on this platform
      */
-    @Override
-    protected int clone(UnixPath src, UnixPath dst, boolean followLinks,
-                        int mode)
+    private int clone(UnixPath src, UnixPath dst, boolean followLinks, int mode)
         throws IOException
     {
+        BsdFileStore bfs = (BsdFileStore)provider().getFileStore(src);
+        if (!bfs.equals(provider().getFileStore(dst.getParent())) ||
+            !bfs.supportsCloning())
+            return IOStatus.UNSUPPORTED_CASE;
+
         int flags = followLinks ? 0 : CLONE_NOFOLLOW;
         int result = 0;
         try {
@@ -110,6 +117,43 @@ class BsdFileSystem extends UnixFileSystem {
             x.rethrowAsIOException(src, dst);
         }
         return result;
+    }
+
+    @Override
+    protected int directCopy(int dst, int src, long addressToPollForCancel)
+        throws UnixException
+    {
+        return directCopy0(dst, src, addressToPollForCancel);
+    }
+
+    @Override
+    protected void copyFile(UnixPath source,
+                            UnixFileAttributes attrs,
+                            UnixPath  target,
+                            UnixCopyFile.Flags flags,
+                            long addressToPollForCancel)
+        throws IOException
+    {
+        if (addressToPollForCancel == 0 && flags.copyPosixAttributes &&
+            !cloneFileNotSupported) {
+            int res = clone(source, target, flags.followLinks, attrs.mode());
+            if (res == 0) {
+                // copy owner
+                try {
+                    chown(target, attrs.uid(), attrs.gid());
+                } catch (UnixException x) {
+                    if (flags.failIfUnableToCopyPosix)
+                        x.rethrowAsIOException(target);
+                }
+                return;
+            }
+            if (res == IOStatus.UNSUPPORTED) {
+                cloneFileNotSupported = true;
+            }
+            // fall through to superclass method
+        }
+
+        super.copyFile(source, attrs, target, flags, addressToPollForCancel);
     }
 
     @Override
@@ -149,4 +193,10 @@ class BsdFileSystem extends UnixFileSystem {
     FileStore getFileStore(UnixMountEntry entry) throws IOException {
         return new BsdFileStore(this, entry);
     }
+
+    // -- native methods --
+
+    private static native int directCopy0(int dst, int src,
+                                          long addressToPollForCancel)
+        throws UnixException;
 }

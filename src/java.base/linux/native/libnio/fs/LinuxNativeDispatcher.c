@@ -27,20 +27,15 @@
 #include "jni_util.h"
 #include "jvm.h"
 #include "jlong.h"
-#include <linux/fs.h>
-#include <sys/ioctl.h>
 
 #include <stdio.h>
 #include <string.h>
 #include <dlfcn.h>
 #include <errno.h>
 #include <mntent.h>
+#include <fcntl.h>
 
 #include "sun_nio_fs_LinuxNativeDispatcher.h"
-
-#ifndef FICLONE
-#define FICLONE      1074041865
-#endif
 
 static jfieldID entry_name;
 static jfieldID entry_dir;
@@ -145,20 +140,13 @@ JNIEXPORT void JNICALL
 Java_sun_nio_fs_LinuxNativeDispatcher_endmntent(JNIEnv* env, jclass this, jlong stream)
 {
     FILE* fp = jlong_to_ptr(stream);
-    /* FIXME - man page doesn't explain how errors are returned */
+    // The endmntent() function always returns 1.
     endmntent(fp);
 }
 
 JNIEXPORT jint JNICALL
-Java_sun_nio_fs_LinuxNativeDispatcher_ioctl_1ficlone0(JNIEnv* env, jclass this,
-    jint dst, jint src)
+Java_sun_nio_fs_LinuxNativeDispatcher_posix_1fadvise(JNIEnv* env, jclass this,
+    jint fd, jlong offset, jlong len, jint advice)
 {
-    int ret = ioctl(dst, FICLONE, src);
-    if (ret != 0) {
-        throwUnixException(env, errno);
-        return ret;
-    }
-
-    return 0;
+    return posix_fadvise((int)fd, (off_t)offset, (off_t)len, (int)advice);
 }
-

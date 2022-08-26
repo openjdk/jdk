@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,9 @@ import java.nio.file.attribute.FileAttributeView;
 import java.nio.file.attribute.UserDefinedFileAttributeView;
 import java.io.IOException;
 import java.util.Arrays;
+import jdk.internal.misc.Blocker;
 import sun.security.action.GetPropertyAction;
+import static sun.nio.fs.UnixNativeDispatcher.copyToNativeBuffer;
 
 /**
  * Bsd implementation of FileStore
@@ -113,6 +115,20 @@ class BsdFileStore
             return supportsFileAttributeView(UserDefinedFileAttributeView.class);
         return super.supportsFileAttributeView(name);
     }
+
+    boolean supportsCloning() throws IOException {
+        try (NativeBuffer fileBuffer = copyToNativeBuffer(file())) {
+            long comp = Blocker.begin();
+            try {
+                return supportsCloning0(fileBuffer.address());
+            } finally {
+                Blocker.end(comp);
+            }
+        }
+
+    }
+
+    private static native boolean supportsCloning0(long fileAddress);
 
     /**
      * Returns true if the OS major/minor version is greater than, or equal, to the
