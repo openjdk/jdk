@@ -102,12 +102,58 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
                 thrownTypes);
         Map<ThrowsTree, ExecutableElement> tagsMap = new LinkedHashMap<>();
         utils.getThrowsTrees(executable).forEach(t -> tagsMap.put(t, executable));
-        Content result = writer.getOutputInstance();
+        var section = new ThrowsSection(writer);
         Set<TypeMirror> alreadyDocumented = new HashSet<>();
-        result.add(throwsTagsOutput(tagsMap, alreadyDocumented, typeSubstitutions, writer));
-        result.add(inheritThrowsDocumentation(executable, thrownTypes, alreadyDocumented, typeSubstitutions, writer));
-        result.add(linkToUndocumentedDeclaredExceptions(thrownTypes, alreadyDocumented, writer));
-        return result;
+        throwsTagsOutput(tagsMap, alreadyDocumented, typeSubstitutions, writer.configuration(), section);
+        inheritThrowsDocumentation(executable, thrownTypes, alreadyDocumented, typeSubstitutions, writer.configuration(), section);
+        linkToUndocumentedDeclaredExceptions(thrownTypes, alreadyDocumented, section);
+        return section.getContent();
+    }
+
+    /*
+     * A stateful exception section (i.e. "Throws:") being written sequentially
+     * from top to bottom; extracted to ensure structure (e.g. the header is
+     * written iff the section has entries).
+     *
+     * Call addXYZEntry methods, then finally call getContent() to get
+     * the resulting section.
+     */
+    private static class ThrowsSection {
+
+        private final TagletWriter writer;
+        private final Content result;
+        private boolean isHeaderAdded;
+
+        ThrowsSection(TagletWriter writer) {
+            this.writer = writer;
+            this.result = writer.getOutputInstance();
+        }
+
+        void addEntry(ExecutableElement element, ThrowsTree throwsTag, TypeMirror substituteType) {
+            ensureHeaderAdded();
+            result.add(writer.throwsTagOutput(element, throwsTag, substituteType));
+        }
+
+        void addEntry(TypeMirror throwsType) {
+            ensureHeaderAdded();
+            result.add(writer.throwsTagOutput(throwsType));
+        }
+
+        void addInvalidEntry(String summary, String detail) {
+            ensureHeaderAdded();
+            result.add(writer.invalidTagOutput(summary, Optional.of(detail)));
+        }
+
+        private void ensureHeaderAdded() {
+            if (!isHeaderAdded) {
+                isHeaderAdded = true;
+                result.add(writer.getThrowsHeader());
+            }
+        }
+
+        Content getContent() {
+            return result;
+        }
     }
 
     /**
@@ -137,7 +183,7 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
     }
 
     /**
-     * Returns the generated content for a collection of {@code @throws} tags.
+     * Adds entries for the given {@code @throws} tags to the exception section.
      *
      * @param throwsTags        the tags to be converted; each tag is mapped to
      *                          a method it appears on
@@ -146,22 +192,22 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
      *                          this method. All exceptions documented by this
      *                          method will be added to this set upon the
      *                          method's return.
-     * @param writer            the taglet-writer used by the doclet
-     * @return the generated content for the tags
+     * @param configuration     doclet configuration
+     * @param section           the exception section being written
      */
-    private Content throwsTagsOutput(Map<ThrowsTree, ExecutableElement> throwsTags,
-                                     Set<TypeMirror> alreadyDocumented,
-                                     Map<TypeMirror, TypeMirror> typeSubstitutions,
-                                     TagletWriter writer) {
-        var utils = writer.configuration().utils;
-        Content result = writer.getOutputInstance();
+    private void throwsTagsOutput(Map<ThrowsTree, ExecutableElement> throwsTags,
+                                  Set<TypeMirror> alreadyDocumented,
+                                  Map<TypeMirror, TypeMirror> typeSubstitutions,
+                                  BaseConfiguration configuration,
+                                  ThrowsSection section) {
+        var utils = configuration.utils;
         var documentedInThisCall = new HashSet<TypeMirror>();
-        Map<ThrowsTree, ExecutableElement> flattenedExceptions = flatten(throwsTags, writer);
+        Map<ThrowsTree, ExecutableElement> flattenedExceptions = flatten(throwsTags, configuration);
         flattenedExceptions.forEach((ThrowsTree t, ExecutableElement e) -> {
             var ch = utils.getCommentHelper(e);
             Element exception = ch.getException(t);
             if (exception == null) {
-                errorUnknownException(writer.configuration(), ch, t);
+                errorUnknownException(configuration, ch, t);
                 return; // couldn't find and thus cannot reliably process
             }
             TypeMirror tm = exception.asType();
@@ -170,10 +216,7 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
                 || alreadyDocumented.contains(tm)) {
                 return;
             }
-            if (alreadyDocumented.isEmpty() && documentedInThisCall.isEmpty()) {
-                result.add(writer.getThrowsHeader());
-            }
-            result.add(writer.throwsTagOutput(e, t, substituteType));
+            section.addEntry(e, t, substituteType);
             if (substituteType != null) {
                 documentedInThisCall.add(substituteType);
             } else {
@@ -181,7 +224,6 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
             }
         });
         alreadyDocumented.addAll(documentedInThisCall);
-        return result;
     }
 
     /*
@@ -189,10 +231,10 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
      * @throws tags from an overridden method.
      */
     private Map<ThrowsTree, ExecutableElement> flatten(Map<ThrowsTree, ExecutableElement> throwsTags,
-                                                       TagletWriter writer) {
+                                                       BaseConfiguration configuration) {
         Map<ThrowsTree, ExecutableElement> result = new LinkedHashMap<>();
         throwsTags.forEach((tag, taggedElement) -> {
-            var expandedTags = expand(tag, taggedElement, writer);
+            var expandedTags = expand(tag, taggedElement, configuration);
             assert Collections.disjoint(result.entrySet(), expandedTags.entrySet());
             result.putAll(expandedTags);
         });
@@ -201,23 +243,23 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
 
     private Map<ThrowsTree, ExecutableElement> expand(ThrowsTree tag,
                                                       ExecutableElement e,
-                                                      TagletWriter writer) {
+                                                      BaseConfiguration configuration) {
 
         // This method uses Map.of() to create maps of size zero and one.
-        // While such maps are effectively ordered, the syntax is more
-        // compact than that of LinkedHashMap.
+        // While such maps are also ordered (effectively), the syntax is
+        // more compact than that of LinkedHashMap.
 
         // peek into @throws description
         if (tag.getDescription().stream().noneMatch(d -> d.getKind() == DocTree.Kind.INHERIT_DOC)) {
             // nothing to inherit
             return Map.of(tag, e);
         }
-        Utils utils = writer.configuration().utils;
+        Utils utils = configuration.utils;
         var ch = utils.getCommentHelper(e);
         var docFinder = utils.docFinder();
         Element exceptionElement = ch.getException(tag);
         if (exceptionElement == null) {
-            errorUnknownException(writer.configuration(), ch, tag);
+            errorUnknownException(configuration, ch, tag);
             return Map.of(tag, e);
         }
         TypeMirror exception = exceptionElement.asType();
@@ -233,7 +275,7 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
         if (tag.getDescription().size() > 1) {
             // there's more to description than just {@inheritDoc}
             // it's likely a documentation error
-            writer.configuration().getMessages().error(ch.getDocTreePath(tag), "doclet.inheritDocWithinInappropriateTag");
+            configuration.getMessages().error(ch.getDocTreePath(tag), "doclet.inheritDocWithinInappropriateTag");
             return Map.of();
         }
         Map<ThrowsTree, ExecutableElement> tags = new LinkedHashMap<>();
@@ -242,33 +284,35 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
     }
 
     /**
-     * Inherit throws documentation for exceptions that were declared but not
-     * documented.
+     * Adds entries for the exceptions listed in the {@code throws} clause to
+     * the exception section.
+     *
+     * Inherits throws documentation for exceptions that were declared but
+     * not documented.
      */
-    private Content inheritThrowsDocumentation(ExecutableElement holder,
-                                               List<? extends TypeMirror> declaredExceptionTypes,
-                                               Set<TypeMirror> alreadyDocumented,
-                                               Map<TypeMirror, TypeMirror> typeSubstitutions,
-                                               TagletWriter writer) {
-        Content result = writer.getOutputInstance();
+    private void inheritThrowsDocumentation(ExecutableElement holder,
+                                            List<? extends TypeMirror> declaredExceptionTypes,
+                                            Set<TypeMirror> alreadyDocumented,
+                                            Map<TypeMirror, TypeMirror> typeSubstitutions,
+                                            BaseConfiguration configuration,
+                                            ThrowsSection section) {
         if (holder.getKind() != ElementKind.METHOD) {
             // (Optimization.)
             // Of all executable elements, only methods and constructors are documented.
             // Of these two, only methods inherit documentation.
             // Don't waste time on constructors.
             assert holder.getKind() == ElementKind.CONSTRUCTOR : holder.getKind();
-            return result;
+            return;
         }
-        var utils = writer.configuration().utils;
+        var utils = configuration.utils;
         var docFinder = utils.docFinder();
         Map<ThrowsTree, ExecutableElement> declaredExceptionTags = new LinkedHashMap<>();
         for (TypeMirror declaredExceptionType : declaredExceptionTypes) {
             var r = docFinder.search(holder, false, m -> extract(m, declaredExceptionType, utils));
             r.ifPresent(value -> value.throwsTrees.forEach(t -> declaredExceptionTags.put(t, value.method())));
         }
-        result.add(throwsTagsOutput(declaredExceptionTags, alreadyDocumented, typeSubstitutions,
-                writer));
-        return result;
+        throwsTagsOutput(declaredExceptionTags, alreadyDocumented, typeSubstitutions, configuration,
+                section);
     }
 
     private record Result(List<? extends ThrowsTree> throwsTrees, ExecutableElement method) { }
@@ -291,21 +335,16 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
         return tags.isEmpty() ? Optional.empty() : Optional.of(new Result(tags, method));
     }
 
-    private Content linkToUndocumentedDeclaredExceptions(List<? extends TypeMirror> declaredExceptionTypes,
-                                                         Set<TypeMirror> alreadyDocumented,
-                                                         TagletWriter writer) {
+    private void linkToUndocumentedDeclaredExceptions(List<? extends TypeMirror> declaredExceptionTypes,
+                                                      Set<TypeMirror> alreadyDocumented,
+                                                      ThrowsSection section) {
         // TODO: assert declaredExceptionTypes are instantiated
-        Content result = writer.getOutputInstance();
         for (TypeMirror declaredExceptionType : declaredExceptionTypes) {
             if (!alreadyDocumented.contains(declaredExceptionType)) {
-                if (alreadyDocumented.isEmpty()) {
-                    result.add(writer.getThrowsHeader());
-                }
-                result.add(writer.throwsTagOutput(declaredExceptionType));
                 alreadyDocumented.add(declaredExceptionType);
+                section.addEntry(declaredExceptionType);
             }
         }
-        return result;
     }
 
     private static void errorUnknownException(BaseConfiguration configuration,
