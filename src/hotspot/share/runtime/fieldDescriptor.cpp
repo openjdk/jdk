@@ -208,7 +208,7 @@ void fieldDescriptor::print_on_for(outputStream* st, oop obj) {
       break;
   }
 
-  // Print  a hint as to the underlying integer representation.
+  // Print a hint as to the underlying integer representation.
   if (is_reference_type(ft)) {
 #ifdef _LP64
     if (UseCompressedOops) {
@@ -220,20 +220,18 @@ void fieldDescriptor::print_on_for(outputStream* st, oop obj) {
     st->print(" (" PTR32_FORMAT ")", obj->int_field(offset()));
 #endif
   } else { // Primitives
-    if (ft == T_LONG || ft == T_DOUBLE) {
-      st->print(" (" PTR64_FORMAT ")", obj->long_field(offset()));
-    } else {
-      switch (ft) {
-        case T_BYTE:    st->print(" (" PTR8_FORMAT  ")", obj->byte_field(offset()));  break;
-        case T_CHAR:    st->print(" (" PTR16_FORMAT ")", obj->char_field(offset()));  break;
-        case T_FLOAT:   st->print(" (" PTR32_FORMAT ")", obj->int_field(offset()));   break;
-        case T_INT:     st->print(" (" PTR32_FORMAT ")", obj->int_field(offset()));   break;
-        case T_SHORT:   st->print(" (" PTR16_FORMAT ")", obj->short_field(offset())); break;
-        case T_BOOLEAN: st->print(" (" PTR8_FORMAT  ")", obj->bool_field(offset()));  break;
-      default:
-        ShouldNotReachHere();
-        break;
-      }
+    switch (ft) {
+      case T_LONG:    st->print(" (" PTR_FORMAT   ")", obj->long_field(offset()));  break;
+      case T_DOUBLE:  st->print(" (" PTR_FORMAT   ")", obj->long_field(offset()));  break;
+      case T_BYTE:    st->print(" (" PTR8_FORMAT  ")", obj->byte_field(offset()));  break;
+      case T_CHAR:    st->print(" (" PTR16_FORMAT ")", obj->char_field(offset()));  break;
+      case T_FLOAT:   st->print(" (" PTR32_FORMAT ")", obj->int_field(offset()));   break;
+      case T_INT:     st->print(" (" PTR32_FORMAT ")", obj->int_field(offset()));   break;
+      case T_SHORT:   st->print(" (" PTR16_FORMAT ")", obj->short_field(offset())); break;
+      case T_BOOLEAN: st->print(" (" PTR8_FORMAT  ")", obj->bool_field(offset()));  break;
+    default:
+      ShouldNotReachHere();
+      break;
     }
   }
 }
