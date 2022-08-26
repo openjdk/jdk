@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,48 @@ readSingle(JNIEnv *env, jobject this, jfieldID fid) {
         JNU_ThrowIOExceptionWithLastError(env, "Read error");
     }
     return ret & 0xFF;
+}
+
+jlong
+readN(JNIEnv *env, jobject this, jfieldID fid, jint len) {
+    if (len == 1) {
+        return readSingle(env, this, fid);
+    }
+    char stackBuf[len];
+    char *buf = stackBuf;
+
+    FD fd = getFD(env, this, fid);
+    if (fd == -1) {
+        JNU_ThrowIOException(env, "Stream Closed");
+        return -1;
+    }
+    jint nread = IO_Read(fd, buf, len);
+    if (nread == -1) {
+        JNU_ThrowIOExceptionWithLastError(env, "Read error");
+        return -1;
+    }
+
+    if (len == 2) {
+        return ((*buf) << 8) + (*(buf + 1) & 0xFF);
+    }
+    if (len == 4) {
+        return ((*buf) << 24) +
+               ((*(buf + 1) & 0xFF) << 16) +
+               ((*(buf + 2) & 0xFF) << 8) +
+               ((*(buf + 3) & 0xFF));
+    }
+    if (len == 8) {
+        return (((long) *(buf) << 56) +
+                ((long) (*(buf + 1) & 0xFF) << 48) +
+                ((long) (*(buf + 2) & 0xFF) << 40) +
+                ((long) (*(buf + 3) & 0xFF) << 32) +
+                ((long) (*(buf + 4) & 0xFF) << 24) +
+                ((*(buf + 5) & 0xFF) << 16) +
+                ((*(buf + 6) & 0xFF) << 8) +
+                ((*(buf + 7) & 0xFF)));
+    }
+    JNU_ThrowByName(env, "java/lang/IllegalArgumentException", NULL);
+    return -1;
 }
 
 /* The maximum size of a stack-allocated buffer.
