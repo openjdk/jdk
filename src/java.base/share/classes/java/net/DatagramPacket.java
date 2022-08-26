@@ -25,6 +25,8 @@
 
 package java.net;
 
+import jdk.internal.util.Preconditions;
+
 /**
  * This class represents a datagram packet.
  * <p>
@@ -410,10 +412,8 @@ class DatagramPacket {
      * @since   1.1
      */
     public synchronized void setLength(int length) {
-        if ((length + offset) > buf.length || length < 0 ||
-            (length + offset) < 0) {
-            throw new IllegalArgumentException("illegal length");
-        }
+        Preconditions.checkFromIndexSize(offset, length, buf.length,
+                Preconditions.outOfBoundsExceptionFormatter(IllegalArgumentException::new));
         this.length = length;
         this.bufLength = this.length;
     }
