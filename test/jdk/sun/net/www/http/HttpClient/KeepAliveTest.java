@@ -275,10 +275,8 @@ public class KeepAliveTest {
     *
     */
    /*serverScenarios[int] will be retreived using method getServerScenario(int)*/
-   
    /* here is the complete table of server_response, client system properties input and expected cached timeout at client side */
-   
-    //ScNo=ScenarioNumber 
+    //ScNo=ScenarioNumber
    /* ScNo  |SERVER RESPONSE                                  | CLIENT SYSTEM PROPERTIES INPUT                                     | EXPECTED CACHED TIMEOUT AT CLIENT SIDE
     ************************************************************************************************************************************************************************
     *    0  |  Connection: keep-alive                         | No Input Provided                                                  |  Default Timeout set to 5
@@ -453,11 +451,11 @@ public class KeepAliveTest {
     *----------------------------------------------------------------------------------------------------------------------------------------------------------
     *   85  |No Input                                             | -Dhttp.keepAlive.time.proxy=-200                                   | default timeout set to 5
     *---------------------------------------------------------------------------------------------------------------------------------------------------------
-    *   86  |No Input                                             |-Dhttp.keepAlive.time.server=-100&&-Dhttp.keepAlive.time.proxy=-200 | default timeout set to 5 
+    *   86  |No Input                                             |-Dhttp.keepAlive.time.server=-100&&-Dhttp.keepAlive.time.proxy=-200 | default timeout set to 5
     *----------------------------------------------------------------------------------------------------------------------------------------------------------
     *   87  |No Input                                             | -Dhttp.keepAlive.time.server=0                                     | close connection immediately
     *----------------------------------------------------------------------------------------------------------------------------------------------------------------
-    *   88  |No Input                                             | -Dhttp.keepAlive.time.proxy=0                                      | default timeout set to 5 
+    *   88  |No Input                                             | -Dhttp.keepAlive.time.proxy=0                                      | default timeout set to 5
     *----------------------------------------------------------------------------------------------------------------------------------------------------------------
     *   89  |No Input                                             | -Dhttp.keepAlive.time.server=0 && -Dhttp.keepAlive.time.proxy=0    | close connection immediately
     *----------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -569,11 +567,11 @@ public class KeepAliveTest {
     *------------------------------------------------------------------------------------------------------------------------------------------------------------------
     *  143  |Proxy-Connection:keep-alive\r\nKeep-alive:timeout=-20|-Dhttp.keepAlive.time.server=-100 && -Dhttp.keepAlive.time.proxy=200| client timeout set to 200
     *------------------------------------------------------------------------------------------------------------------------------------------------------------------
-    *  144  |Proxy-Connection:keep-alive\r\nKeep-alive:timeout=0  | No Input Provided                                                  | close connection immediately 
+    *  144  |Proxy-Connection:keep-alive\r\nKeep-alive:timeout=0  | No Input Provided                                                  | close connection immediately
     *-------------------------------------------------------------------------------------------------------------------------------------------------------------------
     *  145  |Proxy-Connection:keep-alive\r\nKeep-alive:timeout=0  | -Dhttp.keepAlive.time.server=100                                   | close connection immediately
     *-------------------------------------------------------------------------------------------------------------------------------------------------------------------
-    *  146  |Proxy-Connection:keep-alive\r\nKeep-alive:timeout=0  | -Dhttp.keepAlive.time.proxy=200                                    | close connection immediately 
+    *  146  |Proxy-Connection:keep-alive\r\nKeep-alive:timeout=0  | -Dhttp.keepAlive.time.proxy=200                                    | close connection immediately
     *-------------------------------------------------------------------------------------------------------------------------------------------------------------------
     *  147  |Proxy-Connection:keep-alive\r\nKeep-alive:timeout=0  | -Dhttp.keepAlive.time.server=100 && -Dhttp.keepAlive.time.proxy=200| close connection immediately
     *-------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -705,7 +703,7 @@ public class KeepAliveTest {
         } 
         /*
          * ServerResponse from 96 to 111
-         * SERVER_RESPONSE=Connection: keep-alive\r\nKeep-alive: timeout=-20 
+         * SERVER_RESPONSE=Connection: keep-alive\r\nKeep-alive: timeout=-20
          */   
         else if (scenarioNumber >= 96 && scenarioNumber <= 111){
             return F;
