@@ -1532,7 +1532,7 @@ void JVMCIEnv::invalidate_nmethod_mirror(JVMCIObject mirror, bool deoptimize, JV
   if (!deoptimize) {
     // Prevent future executions of the nmethod but let current executions complete.
     nm->make_not_entrant();
-  } else if (nm->is_alive()) {
+} else {
     // We want the nmethod to be deoptimized immediately.
     Deoptimization::deoptimize_all_marked(nm);
   }
