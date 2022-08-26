@@ -204,7 +204,7 @@ void G1BarrierSetAssembler::g1_write_barrier_pre(MacroAssembler* masm,
   }
 
   // Is the previous value null?
-  __ cmpptr(pre_val, (int32_t) NULL_WORD);
+  __ cmpptr(pre_val, NULL_WORD);
   __ jcc(Assembler::equal, done);
 
   // Can we store original value in the thread's buffer?
@@ -293,7 +293,7 @@ void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm,
 
   // crosses regions, storing NULL?
 
-  __ cmpptr(new_val, (int32_t) NULL_WORD);
+  __ cmpptr(new_val, NULL_WORD);
   __ jcc(Assembler::equal, done);
 
   // storing region crossing non-NULL, is card already dirty?
@@ -308,18 +308,18 @@ void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm,
   __ movptr(cardtable, (intptr_t)ct->card_table()->byte_map_base());
   __ addptr(card_addr, cardtable);
 
-  __ cmpb(Address(card_addr, 0), (int)G1CardTable::g1_young_card_val());
+  __ cmpb(Address(card_addr, 0), G1CardTable::g1_young_card_val());
   __ jcc(Assembler::equal, done);
 
   __ membar(Assembler::Membar_mask_bits(Assembler::StoreLoad));
-  __ cmpb(Address(card_addr, 0), (int)G1CardTable::dirty_card_val());
+  __ cmpb(Address(card_addr, 0), G1CardTable::dirty_card_val());
   __ jcc(Assembler::equal, done);
 
 
   // storing a region crossing, non-NULL oop, card is clean.
   // dirty card and log.
 
-  __ movb(Address(card_addr, 0), (int)G1CardTable::dirty_card_val());
+  __ movb(Address(card_addr, 0), G1CardTable::dirty_card_val());
 
   __ movptr(tmp2, queue_index);
   __ testptr(tmp2, tmp2);
@@ -420,7 +420,7 @@ void G1BarrierSetAssembler::gen_pre_barrier_stub(LIR_Assembler* ce, G1PreBarrier
     ce->mem2reg(stub->addr(), stub->pre_val(), T_OBJECT, stub->patch_code(), stub->info(), false /*wide*/);
   }
 
-  __ cmpptr(pre_val_reg, (int32_t)NULL_WORD);
+  __ cmpptr(pre_val_reg, NULL_WORD);
   __ jcc(Assembler::equal, *stub->continuation());
   ce->store_parameter(stub->pre_val()->as_register(), 0);
   __ call(RuntimeAddress(bs->pre_barrier_c1_runtime_code_blob()->code_begin()));
@@ -434,7 +434,7 @@ void G1BarrierSetAssembler::gen_post_barrier_stub(LIR_Assembler* ce, G1PostBarri
   assert(stub->addr()->is_register(), "Precondition.");
   assert(stub->new_val()->is_register(), "Precondition.");
   Register new_val_reg = stub->new_val()->as_register();
-  __ cmpptr(new_val_reg, (int32_t) NULL_WORD);
+  __ cmpptr(new_val_reg, NULL_WORD);
   __ jcc(Assembler::equal, *stub->continuation());
   ce->store_parameter(stub->addr()->as_pointer_register(), 0);
   __ call(RuntimeAddress(bs->post_barrier_c1_runtime_code_blob()->code_begin()));
@@ -533,17 +533,17 @@ void G1BarrierSetAssembler::generate_c1_post_barrier_runtime_stub(StubAssembler*
 
   NOT_LP64(__ get_thread(thread);)
 
-  __ cmpb(Address(card_addr, 0), (int)G1CardTable::g1_young_card_val());
+  __ cmpb(Address(card_addr, 0), G1CardTable::g1_young_card_val());
   __ jcc(Assembler::equal, done);
 
   __ membar(Assembler::Membar_mask_bits(Assembler::StoreLoad));
-  __ cmpb(Address(card_addr, 0), (int)CardTable::dirty_card_val());
+  __ cmpb(Address(card_addr, 0), CardTable::dirty_card_val());
   __ jcc(Assembler::equal, done);
 
   // storing region crossing non-NULL, card is clean.
   // dirty card and log.
 
-  __ movb(Address(card_addr, 0), (int)CardTable::dirty_card_val());
+  __ movb(Address(card_addr, 0), CardTable::dirty_card_val());
 
   const Register tmp = rdx;
   __ push(rdx);

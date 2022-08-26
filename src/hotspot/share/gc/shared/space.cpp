@@ -25,7 +25,6 @@
 #include "precompiled.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
-#include "gc/shared/blockOffsetTable.inline.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
 #include "gc/shared/genOopClosures.inline.hpp"
@@ -44,6 +43,7 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_SERIALGC
+#include "gc/serial/serialBlockOffsetTable.inline.hpp"
 #include "gc/serial/defNewGeneration.hpp"
 #endif
 
@@ -289,6 +289,7 @@ bool ContiguousSpace::is_free_block(const HeapWord* p) const {
   return p >= _top;
 }
 
+#if INCLUDE_SERIALGC
 void OffsetTableContigSpace::clear(bool mangle_space) {
   ContiguousSpace::clear(mangle_space);
   _offsets.initialize_threshold();
@@ -305,6 +306,7 @@ void OffsetTableContigSpace::set_end(HeapWord* new_end) {
   _offsets.resize(pointer_delta(new_end, bottom()));
   Space::set_end(new_end);
 }
+#endif // INCLUDE_SERIALGC
 
 #ifndef PRODUCT
 
@@ -593,12 +595,14 @@ void ContiguousSpace::print_on(outputStream* st) const {
                 p2i(bottom()), p2i(top()), p2i(end()));
 }
 
+#if INCLUDE_SERIALGC
 void OffsetTableContigSpace::print_on(outputStream* st) const {
   print_short_on(st);
   st->print_cr(" [" INTPTR_FORMAT ", " INTPTR_FORMAT ", "
                 INTPTR_FORMAT ", " INTPTR_FORMAT ")",
               p2i(bottom()), p2i(top()), p2i(_offsets.threshold()), p2i(end()));
 }
+#endif
 
 void ContiguousSpace::verify() const {
   HeapWord* p = bottom();
@@ -734,6 +738,7 @@ HeapWord* ContiguousSpace::par_allocate(size_t size) {
   return par_allocate_impl(size);
 }
 
+#if INCLUDE_SERIALGC
 void OffsetTableContigSpace::initialize_threshold() {
   _offsets.initialize_threshold();
 }
@@ -792,3 +797,4 @@ void OffsetTableContigSpace::verify() const {
 size_t TenuredSpace::allowed_dead_ratio() const {
   return MarkSweepDeadRatio;
 }
+#endif // INCLUDE_SERIALGC

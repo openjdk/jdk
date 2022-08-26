@@ -397,6 +397,13 @@ public final class AppContext {
      */
     @SuppressWarnings({"deprecation", "removal"})
     public void dispose() throws IllegalThreadStateException {
+        System.err.println(
+            """
+            WARNING: sun.awt.AppContext.dispose() no longer stops threads.
+            Additionally AppContext will be removed in a future release.
+            Remove all uses of this internal class as soon as possible.
+            There is no replacement.
+            """);
         // Check to be sure that the current Thread isn't in this AppContext
         if (this.threadGroup.parentOf(Thread.currentThread().getThreadGroup())) {
             throw new IllegalThreadStateException(
@@ -502,33 +509,6 @@ public final class AppContext {
             } catch (InterruptedException e) { }
         }
 
-        // Then, we stop any remaining Threads
-        AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
-            Thread[] threads;
-            int len, threadCount;
-            do {
-                len = threadGroup.activeCount() + 4;
-                threads = new Thread[len];
-                threadCount = threadGroup.enumerate(threads);
-            } while (threadCount == len);
-            for (int i = 0; i < threadCount; i++) {
-                threads[i].stop();
-            }
-            return null;
-        });
-
-        // Next, we sleep 10ms at a time, waiting for all of the active
-        // Threads in the ThreadGroup to die.
-
-        startTime = System.currentTimeMillis();
-        endTime = startTime + THREAD_INTERRUPT_TIMEOUT;
-        while ((this.threadGroup.activeCount() > 0) &&
-               (System.currentTimeMillis() < endTime)) {
-            try {
-                Thread.sleep(10);
-            } catch (InterruptedException e) { }
-        }
-
         // Next, we remove this and all subThreadGroups from threadGroup2appContext
         int numSubGroups = this.threadGroup.activeGroupCount();
         if (numSubGroups > 0) {
@@ -541,13 +521,6 @@ public final class AppContext {
         threadGroup2appContext.remove(this.threadGroup);
 
         threadAppContext.set(null);
-
-        // Finally, we destroy the ThreadGroup entirely.
-        try {
-            this.threadGroup.destroy();
-        } catch (IllegalThreadStateException e) {
-            // Fired if not all the Threads died, ignore it and proceed
-        }
 
         synchronized (table) {
             this.table.clear(); // Clear out the Hashtable to ease garbage collection

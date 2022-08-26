@@ -104,7 +104,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocLink;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
-import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils.DeclarationPreviewLanguageFeatures;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils.ElementFlag;
@@ -171,6 +170,8 @@ public class HtmlDocletWriter {
     protected final Comparators comparators;
 
     protected final HtmlIds htmlIds;
+
+    private final Set<String> headingIds = new HashSet<>();
 
     /**
      * To check whether the repeated annotations is documented or not.
@@ -386,7 +387,7 @@ public class HtmlDocletWriter {
      * @param context  the enclosing context
      * @return a TagletWriter
      */
-    public TagletWriter getTagletWriterInstance(TagletWriterImpl.Context context) {
+    public TagletWriterImpl getTagletWriterInstance(TagletWriterImpl.Context context) {
         return new TagletWriterImpl(this, context);
     }
 
@@ -971,316 +972,6 @@ public class HtmlDocletWriter {
         return label;
     }
 
-    public Content seeTagToContent(Element element, DocTree see, TagletWriterImpl.Context context) {
-        Kind kind = see.getKind();
-        CommentHelper ch = utils.getCommentHelper(element);
-        String tagName = ch.getTagName(see);
-
-        String refText;
-        List<? extends DocTree> label;
-        switch (kind) {
-            case LINK, LINK_PLAIN -> {
-                // {@link[plain] reference label...}
-                LinkTree lt = (LinkTree) see;
-                var linkRef = lt.getReference();
-                if (linkRef == null) {
-                    messages.warning(ch.getDocTreePath(see),"doclet.link.no_reference");
-                    return invalidTagOutput(resources.getText("doclet.tag.invalid_input", lt.toString()),
-                        Optional.empty());
-                }
-                refText = linkRef.toString();
-                label = lt.getLabel();
-            }
-
-            case SEE -> {
-                List<? extends DocTree> ref = ((SeeTree) see).getReference();
-                assert !ref.isEmpty();
-                DocTree ref0 = ref.get(0);
-                switch (ref0.getKind()) {
-                    case TEXT, START_ELEMENT -> {
-                        // @see "Reference"
-                        // @see <a href="...">...</a>
-                        return commentTagsToContent(element, ref, false, false);
-                    }
-                    case REFERENCE -> {
-                        // @see reference label...
-                        refText = ref0.toString();
-                        label = ref.subList(1, ref.size());
-                    }
-                    case ERRONEOUS -> {
-                        return invalidTagOutput(resources.getText("doclet.tag.invalid_input",
-                                        ref0.toString()),
-                                Optional.empty());
-                    }
-                    default ->
-                        throw new IllegalStateException(ref0.getKind().toString());
-                }
-            }
-
-            default ->
-                throw new IllegalStateException(kind.toString());
-        }
-
-        boolean isLinkPlain = kind == LINK_PLAIN;
-        Content labelContent = plainOrCode(isLinkPlain,
-                commentTagsToContent(element, label, context));
-
-        // The signature from the @see tag. We will output this text when a label is not specified.
-        Content text = plainOrCode(isLinkPlain,
-                Text.of(Objects.requireNonNullElse(ch.getReferencedSignature(see), "")));
-
-        TypeElement refClass = ch.getReferencedClass(see);
-        Element refMem =       ch.getReferencedMember(see);
-        String refMemName =    ch.getReferencedMemberName(see);
-
-        if (refMemName == null && refMem != null) {
-            refMemName = refMem.toString();
-        }
-        if (refClass == null) {
-            ModuleElement refModule = ch.getReferencedModule(see);
-            if (refModule != null && utils.isIncluded(refModule)) {
-                return getModuleLink(refModule, labelContent.isEmpty() ? text : labelContent);
-            }
-            //@see is not referencing an included class
-            PackageElement refPackage = ch.getReferencedPackage(see);
-            if (refPackage != null && utils.isIncluded(refPackage)) {
-                //@see is referencing an included package
-                if (labelContent.isEmpty())
-                    labelContent = plainOrCode(isLinkPlain,
-                            Text.of(refPackage.getQualifiedName()));
-                return getPackageLink(refPackage, labelContent);
-            } else {
-                // @see is not referencing an included class, module or package. Check for cross links.
-                String refModuleName =  ch.getReferencedModuleName(see);
-                DocLink elementCrossLink = (refPackage != null) ? getCrossPackageLink(refPackage) :
-                        (configuration.extern.isModule(refModuleName))
-                                ? getCrossModuleLink(utils.elementUtils.getModuleElement(refModuleName))
-                                : null;
-                if (elementCrossLink != null) {
-                    // Element cross link found
-                    return links.createExternalLink(elementCrossLink,
-                            (labelContent.isEmpty() ? text : labelContent));
-                } else {
-                    // No cross link found so print warning
-                    if (!configuration.isDocLintReferenceGroupEnabled()) {
-                        messages.warning(ch.getDocTreePath(see),
-                                "doclet.see.class_or_package_not_found",
-                                "@" + tagName,
-                                refText);
-                    }
-                    return invalidTagOutput(resources.getText("doclet.tag.invalid", tagName),
-                            Optional.of(labelContent.isEmpty() ? text: labelContent));
-                }
-            }
-        } else if (refMemName == null) {
-            // Must be a class reference since refClass is not null and refMemName is null.
-            if (labelContent.isEmpty()) {
-                TypeMirror referencedType = ch.getReferencedType(see);
-                if (utils.isGenericType(referencedType)) {
-                    // This is a generic type link, use the TypeMirror representation.
-                    return plainOrCode(isLinkPlain, getLink(
-                            new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.DEFAULT, referencedType)));
-                }
-                labelContent = plainOrCode(isLinkPlain, Text.of(utils.getSimpleName(refClass)));
-            }
-            return getLink(new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.DEFAULT, refClass)
-                    .label(labelContent));
-        } else if (refMem == null) {
-            // Must be a member reference since refClass is not null and refMemName is not null.
-            // However, refMem is null, so this referenced member does not exist.
-            return (labelContent.isEmpty() ? text: labelContent);
-        } else {
-            // Must be a member reference since refClass is not null and refMemName is not null.
-            // refMem is not null, so this @see tag must be referencing a valid member.
-            TypeElement containing = utils.getEnclosingTypeElement(refMem);
-
-            // Find the enclosing type where the method is actually visible
-            // in the inheritance hierarchy.
-            ExecutableElement overriddenMethod = null;
-            if (refMem.getKind() == ElementKind.METHOD) {
-                VisibleMemberTable vmt = configuration.getVisibleMemberTable(containing);
-                overriddenMethod = vmt.getOverriddenMethod((ExecutableElement)refMem);
-
-                if (overriddenMethod != null)
-                    containing = utils.getEnclosingTypeElement(overriddenMethod);
-            }
-            if (refText.trim().startsWith("#") &&
-                ! (utils.isPublic(containing) || utils.isLinkable(containing))) {
-                // Since the link is relative and the holder is not even being
-                // documented, this must be an inherited link.  Redirect it.
-                // The current class either overrides the referenced member or
-                // inherits it automatically.
-                if (this instanceof ClassWriterImpl writer) {
-                    containing = writer.getTypeElement();
-                } else if (!utils.isPublic(containing)) {
-                    messages.warning(
-                        ch.getDocTreePath(see), "doclet.see.class_or_package_not_accessible",
-                        tagName, utils.getFullyQualifiedName(containing));
-                } else {
-                    if (!configuration.isDocLintReferenceGroupEnabled()) {
-                        messages.warning(
-                                ch.getDocTreePath(see), "doclet.see.class_or_package_not_found",
-                                tagName, refText);
-                    }
-                }
-            }
-            if (configuration.currentTypeElement != containing) {
-                refMemName = (utils.isConstructor(refMem))
-                        ? refMemName
-                        : utils.getSimpleName(containing) + "." + refMemName;
-            }
-            if (utils.isExecutableElement(refMem)) {
-                if (refMemName.indexOf('(') < 0) {
-                    refMemName += utils.makeSignature((ExecutableElement) refMem, null, true);
-                }
-                if (overriddenMethod != null) {
-                    // The method to actually link.
-                    refMem = overriddenMethod;
-                }
-            }
-
-            return getDocLink(HtmlLinkInfo.Kind.SEE_TAG, containing,
-                    refMem, (labelContent.isEmpty()
-                            ? plainOrCode(isLinkPlain, Text.of(refMemName))
-                            : labelContent), null, false);
-        }
-    }
-
-    // TODO: this method and seeTagToContent share much of the code; consider factoring common pieces out
-    public Content linkToContent(Element referrer, Element target, String targetSignature, String text) {
-        CommentHelper ch = utils.getCommentHelper(referrer);
-
-        boolean isLinkPlain = false; // TODO: for now
-        Content labelContent = plainOrCode(isLinkPlain, Text.of(text));
-
-        TypeElement refClass = ch.getReferencedClass(target);
-        Element refMem =       ch.getReferencedMember(target);
-        String refMemName =    ch.getReferencedMemberName(targetSignature);
-
-        if (refMemName == null && refMem != null) {
-            refMemName = refMem.toString();
-        }
-        if (refClass == null) {
-            ModuleElement refModule = ch.getReferencedModule(target);
-            if (refModule != null && utils.isIncluded(refModule)) {
-                return getModuleLink(refModule, labelContent);
-            }
-            //@see is not referencing an included class
-            PackageElement refPackage = ch.getReferencedPackage(target);
-            if (refPackage != null && utils.isIncluded(refPackage)) {
-                //@see is referencing an included package
-                if (labelContent.isEmpty())
-                    labelContent = plainOrCode(isLinkPlain,
-                                               Text.of(refPackage.getQualifiedName()));
-                return getPackageLink(refPackage, labelContent);
-            } else {
-                // @see is not referencing an included class, module or package. Check for cross links.
-                String refModuleName =  ch.getReferencedModuleName(targetSignature);
-                DocLink elementCrossLink = (refPackage != null) ? getCrossPackageLink(refPackage) :
-                        (configuration.extern.isModule(refModuleName))
-                                ? getCrossModuleLink(utils.elementUtils.getModuleElement(refModuleName))
-                                : null;
-                if (elementCrossLink != null) {
-                    // Element cross link found
-                    return links.createExternalLink(elementCrossLink, labelContent);
-                } else {
-                    // No cross link found so print warning
-// TODO:
-//                    messages.warning(ch.getDocTreePath(see),
-//                                     "doclet.see.class_or_package_not_found",
-//                                     "@" + tagName,
-//                                     seeText);
-                    return labelContent;
-                }
-            }
-        } else if (refMemName == null) {
-            // Must be a class reference since refClass is not null and refMemName is null.
-            if (labelContent.isEmpty()) {
-                if (!refClass.getTypeParameters().isEmpty() && targetSignature.contains("<")) {
-                    // If this is a generic type link try to use the TypeMirror representation.
-
-// TODO:
-//                  TypeMirror refType = ch.getReferencedType(target);
-                    TypeMirror refType = target.asType();
-
-                    if (refType != null) {
-                        return plainOrCode(isLinkPlain, getLink(
-                                new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.DEFAULT, refType)));
-                    }
-                }
-                labelContent = plainOrCode(isLinkPlain, Text.of(utils.getSimpleName(refClass)));
-            }
-            return getLink(new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.DEFAULT, refClass)
-                                   .label(labelContent));
-        } else if (refMem == null) {
-            // Must be a member reference since refClass is not null and refMemName is not null.
-            // However, refMem is null, so this referenced member does not exist.
-            return labelContent;
-        } else {
-            // Must be a member reference since refClass is not null and refMemName is not null.
-            // refMem is not null, so this @see tag must be referencing a valid member.
-            TypeElement containing = utils.getEnclosingTypeElement(refMem);
-
-            // Find the enclosing type where the method is actually visible
-            // in the inheritance hierarchy.
-            ExecutableElement overriddenMethod = null;
-            if (refMem.getKind() == ElementKind.METHOD) {
-                VisibleMemberTable vmt = configuration.getVisibleMemberTable(containing);
-                overriddenMethod = vmt.getOverriddenMethod((ExecutableElement)refMem);
-
-                if (overriddenMethod != null)
-                    containing = utils.getEnclosingTypeElement(overriddenMethod);
-            }
-            if (targetSignature.trim().startsWith("#") &&
-                    ! (utils.isPublic(containing) || utils.isLinkable(containing))) {
-                // Since the link is relative and the holder is not even being
-                // documented, this must be an inherited link.  Redirect it.
-                // The current class either overrides the referenced member or
-                // inherits it automatically.
-                if (this instanceof ClassWriterImpl writer) {
-                    containing = writer.getTypeElement();
-                } else if (!utils.isPublic(containing)) {
-// TODO:
-//                    messages.warning(
-//                            ch.getDocTreePath(see), "doclet.see.class_or_package_not_accessible",
-//                            tagName, utils.getFullyQualifiedName(containing));
-                } else {
-// TODO:
-//                    messages.warning(
-//                            ch.getDocTreePath(see), "doclet.see.class_or_package_not_found",
-//                            tagName, seeText);
-                }
-            }
-            if (configuration.currentTypeElement != containing) {
-                refMemName = (utils.isConstructor(refMem))
-                        ? refMemName
-                        : utils.getSimpleName(containing) + "." + refMemName;
-            }
-            if (utils.isExecutableElement(refMem)) {
-                if (refMemName.indexOf('(') < 0) {
-                    refMemName += utils.makeSignature((ExecutableElement) refMem, null, true);
-                }
-                if (overriddenMethod != null) {
-                    // The method to actually link.
-                    refMem = overriddenMethod;
-                }
-            }
-
-            return getDocLink(HtmlLinkInfo.Kind.SEE_TAG, containing,
-                              refMem, (labelContent.isEmpty()
-                            ? plainOrCode(isLinkPlain, Text.of(text))
-                            : labelContent), null, false);
-        }
-    }
-
-    private String removeTrailingSlash(String s) {
-        return s.endsWith("/") ? s.substring(0, s.length() -1) : s;
-    }
-
-    private Content plainOrCode(boolean plain, Content body) {
-        return (plain || body.isEmpty()) ? body : HtmlTree.CODE(body);
-    }
-
     /**
      * Add the inline comment.
      *
@@ -1477,7 +1168,7 @@ public class HtmlDocletWriter {
         final Content result = new ContentBuilder() {
             @Override
             public ContentBuilder add(CharSequence text) {
-                return super.add(utils.normalizeNewlines(text));
+                return super.add(Text.normalizeNewlines(text));
             }
         };
         CommentHelper ch = utils.getCommentHelper(element);
@@ -1511,10 +1202,6 @@ public class HtmlDocletWriter {
 
                 private boolean inAnAtag() {
                     return (tag instanceof StartElementTree st) && equalsIgnoreCase(st.getName(), "a");
-                }
-
-                private boolean equalsIgnoreCase(Name name, String s) {
-                    return name != null && name.toString().equalsIgnoreCase(s);
                 }
 
                 @Override
@@ -1660,8 +1347,8 @@ public class HtmlDocletWriter {
                         }
                         content.add(label);
                     } else {
-                        Content c = seeTagToContent(element, node, context.within(node));
-                        content.add(c);
+                        TagletWriterImpl t = getTagletWriterInstance(context.within(node));
+                        content.add(t.linkTagOutput(element, node));
                     }
                     return false;
                 }
@@ -1669,20 +1356,17 @@ public class HtmlDocletWriter {
                 @Override
                 public Boolean visitLiteral(LiteralTree node, Content content) {
                     String s = node.getBody().getBody();
-                    Content t = Text.of(utils.normalizeNewlines(s));
+                    Content t = Text.of(Text.normalizeNewlines(s));
                     content.add(node.getKind() == CODE ? HtmlTree.CODE(t) : t);
-                    return false;
-                }
-
-                @Override
-                public Boolean visitSee(SeeTree node, Content content) {
-                    content.add(seeTagToContent(element, node, context));
                     return false;
                 }
 
                 @Override
                 public Boolean visitStartElement(StartElementTree node, Content content) {
                     Content attrs = new ContentBuilder();
+                    if (node.getName().toString().matches("(?i)h[1-6]") && !hasIdAttribute(node)) {
+                        generateHeadingId(node, trees, attrs);
+                    }
                     for (DocTree dt : node.getAttributes()) {
                         dt.accept(this, attrs);
                     }
@@ -1720,7 +1404,7 @@ public class HtmlDocletWriter {
                         text = text.stripTrailing();
                     }
                     text = utils.replaceTabs(text);
-                    return utils.normalizeNewlines(text);
+                    return Text.normalizeNewlines(text);
                 }
 
                 @Override
@@ -1750,6 +1434,39 @@ public class HtmlDocletWriter {
                 break;
         }
         return result;
+    }
+
+    private boolean equalsIgnoreCase(Name name, String s) {
+        return name != null && name.toString().equalsIgnoreCase(s);
+    }
+
+    private boolean hasIdAttribute(StartElementTree node) {
+        return node.getAttributes().stream().anyMatch(
+                dt -> dt instanceof AttributeTree at && equalsIgnoreCase(at.getName(), "id"));
+    }
+
+    private void generateHeadingId(StartElementTree node, List<? extends DocTree> trees, Content content) {
+        StringBuilder sb = new StringBuilder();
+        String tagName = node.getName().toString().toLowerCase(Locale.ROOT);
+        for (DocTree docTree : trees.subList(trees.indexOf(node) + 1, trees.size())) {
+            if (docTree instanceof TextTree text) {
+                sb.append(text.getBody());
+            } else if (docTree instanceof LiteralTree literal) {
+                sb.append(literal.getBody().getBody());
+            } else if (docTree instanceof LinkTree link) {
+                var label = link.getLabel();
+                sb.append(label.isEmpty() ? link.getReference().getSignature() : label.toString());
+            } else if (docTree instanceof EndElementTree endElement
+                    && equalsIgnoreCase(endElement.getName(), tagName)) {
+                break;
+            } else if (docTree instanceof StartElementTree nested
+                    && equalsIgnoreCase(nested.getName(), "a")
+                    && hasIdAttribute(nested)) {
+                return; // Avoid generating id if embedded <a id=...> is present
+            }
+        }
+        HtmlId htmlId = htmlIds.forHeading(sb, headingIds);
+        content.add("id=\"").add(htmlId.name()).add("\"");
     }
 
     /**
@@ -2014,7 +1731,7 @@ public class HtmlDocletWriter {
             else {
                 addAnnotations(annotationElement, linkInfo, annotation, pairs, lineBreak);
             }
-            annotation.add(lineBreak ? DocletConstants.NL : "");
+            annotation.add(lineBreak ? Text.NL : "");
             results.add(annotation);
         }
         return results;
@@ -2046,7 +1763,7 @@ public class HtmlDocletWriter {
                 } else {
                     annotation.add(",");
                     if (linkBreak) {
-                        annotation.add(DocletConstants.NL);
+                        annotation.add(Text.NL);
                         int spaces = annotationDoc.getSimpleName().length() + 2;
                         for (int k = 0; k < (spaces); k++) {
                             annotation.add(" ");

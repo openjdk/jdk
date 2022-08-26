@@ -101,6 +101,10 @@ CDSHeapVerifier::CDSHeapVerifier() : _archived_objs(0), _problems(0)
                                                          "ALL_UNNAMED_MODULE_SET", // A
                                                          "EVERYONE_MODULE",        // A
                                                          "EVERYONE_SET");          // A
+
+  // This is the same as java/util/ImmutableCollections::EMPTY_SET, which is archived
+  ADD_EXCL("java/lang/reflect/AccessFlag$Location",      "EMPTY_SET");             // E
+
   ADD_EXCL("java/lang/System",                           "bootLayer");             // A
   ADD_EXCL("java/lang/VersionProps",                     "VENDOR_URL_BUG",         // C
                                                          "VENDOR_URL_VM_BUG",      // C

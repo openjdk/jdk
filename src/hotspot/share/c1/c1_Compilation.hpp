@@ -29,6 +29,7 @@
 #include "ci/ciMethodData.hpp"
 #include "code/exceptionHandlerTable.hpp"
 #include "compiler/compiler_globals.hpp"
+#include "compiler/compilerDefinitions.inline.hpp"
 #include "compiler/compilerDirectives.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/deoptimization.hpp"
@@ -262,9 +263,6 @@ class Compilation: public StackObj {
     return env()->comp_level() == CompLevel_full_profile &&
       C1UpdateMethodData && MethodData::profile_return();
   }
-  bool age_code() const {
-    return _method->profile_aging();
-  }
 
   // will compilation make optimistic assumptions that might lead to
   // deoptimization and that the runtime will account for?
@@ -326,13 +324,19 @@ class InstructionMark: public StackObj {
 
 //----------------------------------------------------------------------
 // Base class for objects allocated by the compiler in the compilation arena
-class CompilationResourceObj ALLOCATION_SUPER_CLASS_SPEC {
+class CompilationResourceObj {
  public:
   void* operator new(size_t size) throw() { return Compilation::current()->arena()->Amalloc(size); }
   void* operator new(size_t size, Arena* arena) throw() {
     return arena->Amalloc(size);
   }
   void  operator delete(void* p) {} // nothing to do
+
+#ifndef PRODUCT
+  // Printing support
+  void print() const;
+  virtual void print_on(outputStream* st) const;
+#endif
 };
 
 
