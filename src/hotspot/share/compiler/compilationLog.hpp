@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,23 +22,31 @@
  *
  */
 
-package sun.jvm.hotspot.debugger.proc.x86;
+#ifndef SHARE_COMPILER_COMPILATIONLOG_HPP
+#define SHARE_COMPILER_COMPILATIONLOG_HPP
 
-import sun.jvm.hotspot.debugger.*;
-import sun.jvm.hotspot.debugger.proc.*;
+#include "utilities/events.hpp"
 
-public class ProcX86ThreadFactory implements ProcThreadFactory {
-  private ProcDebugger debugger;
+class CompileTask;
+class JavaThread;
+class nmethod;
 
-  public ProcX86ThreadFactory(ProcDebugger debugger) {
-    this.debugger = debugger;
-  }
+class CompilationLog : public StringEventLog {
+private:
+  static CompilationLog* _log;
 
-  public ThreadProxy createThreadWrapper(Address threadIdentifierAddr) {
-    return new ProcX86Thread(debugger, threadIdentifierAddr);
-  }
+  CompilationLog();
 
-  public ThreadProxy createThreadWrapper(long id) {
-    return new ProcX86Thread(debugger, id);
-  }
-}
+public:
+
+  void log_compile(JavaThread* thread, CompileTask* task);
+  void log_nmethod(JavaThread* thread, nmethod* nm);
+  void log_failure(JavaThread* thread, CompileTask* task, const char* reason, const char* retry_message);
+  void log_metaspace_failure(const char* reason);
+
+  static void init();
+  static CompilationLog* log() { return _log; }
+  using StringEventLog::log;
+};
+
+#endif // SHARE_COMPILER_COMPILATIONLOG_HPP

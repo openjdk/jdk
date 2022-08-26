@@ -572,18 +572,6 @@ void ClassLoaderDataGraph::purge(bool at_safepoint) {
   }
 }
 
-int ClassLoaderDataGraph::resize_dictionaries() {
-  assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint!");
-  int resized = 0;
-  assert (Dictionary::does_any_dictionary_needs_resizing(), "some dictionary should need resizing");
-  FOR_ALL_DICTIONARY(cld) {
-    if (cld->dictionary()->resize_if_needed()) {
-      resized++;
-    }
-  }
-  return resized;
-}
-
 ClassLoaderDataGraphKlassIteratorAtomic::ClassLoaderDataGraphKlassIteratorAtomic()
     : _next_klass(NULL) {
   assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint!");
