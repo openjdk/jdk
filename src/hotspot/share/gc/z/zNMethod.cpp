@@ -172,22 +172,12 @@ void ZNMethod::register_nmethod(nmethod* nm) {
 }
 
 void ZNMethod::unregister_nmethod(nmethod* nm) {
-  assert(CodeCache_lock->owned_by_self(), "Lock must be held");
-
-  if (Thread::current()->is_Code_cache_sweeper_thread()) {
-    // The sweeper must wait for any ongoing iteration to complete
-    // before it can unregister an nmethod.
-    ZNMethodTable::wait_until_iteration_done();
-  }
-
   ResourceMark rm;
 
   log_unregister(nm);
 
   ZNMethodTable::unregister_nmethod(nm);
-}
 
-void ZNMethod::flush_nmethod(nmethod* nm) {
   // Destroy GC data
   delete gc_data(nm);
 }
@@ -216,10 +206,6 @@ void ZNMethod::arm(nmethod* nm, int arm_value) {
 
 void ZNMethod::nmethod_oops_do(nmethod* nm, OopClosure* cl) {
   ZLocker<ZReentrantLock> locker(ZNMethod::lock_for_nmethod(nm));
-  if (!nm->is_alive()) {
-    return;
-  }
-
   ZNMethod::nmethod_oops_do_inner(nm, cl);
 }
 
@@ -295,25 +281,6 @@ private:
     Atomic::store(&_failed, true);
   }
 
-  void unlink(nmethod* nm) {
-    // Unlinking of the dependencies must happen before the
-    // handshake separating unlink and purge.
-    nm->flush_dependencies(false /* delete_immediately */);
-
-    // unlink_from_method will take the CompiledMethod_lock.
-    // In this case we don't strictly need it when unlinking nmethods from
-    // the Method, because it is only concurrently unlinked by
-    // the entry barrier, which acquires the per nmethod lock.
-    nm->unlink_from_method();
-
-    if (nm->is_osr_method()) {
-      // Invalidate the osr nmethod before the handshake. The nmethod
-      // will be made unloaded after the handshake. Then invalidate_osr_method()
-      // will be called again, which will be a no-op.
-      nm->invalidate_osr_method();
-    }
-  }
-
 public:
   ZNMethodUnlinkClosure(bool unloading_occurred) :
       _unloading_occurred(unloading_occurred),
@@ -324,13 +291,9 @@ public:
       return;
     }
 
-    if (!nm->is_alive()) {
-      return;
-    }
-
     if (nm->is_unloading()) {
       ZLocker<ZReentrantLock> locker(ZNMethod::lock_for_nmethod(nm));
-      unlink(nm);
+      nm->unlink();
       return;
     }
 
@@ -339,14 +302,7 @@ public:
     if (ZNMethod::is_armed(nm)) {
       // Heal oops and disarm
       ZNMethod::nmethod_oops_barrier(nm);
-
-      if (Continuations::enabled()) {
-        // Loom needs to know about visited nmethods. Arm the nmethods to get
-        // mark_as_maybe_on_continuation() callbacks when they are used again.
-        ZNMethod::arm(nm, 0);
-      } else {
-        ZNMethod::disarm(nm);
-      }
+      ZNMethod::arm(nm, 0);
     }
 
     // Clear compiled ICs and exception caches
@@ -407,36 +363,6 @@ void ZNMethod::unlink(ZWorkers* workers, bool unloading_occurred) {
   }
 }
 
-class ZNMethodPurgeClosure : public NMethodClosure {
-public:
-  virtual void do_nmethod(nmethod* nm) {
-    if (nm->is_alive() && nm->is_unloading()) {
-      nm->make_unloaded();
-    }
-  }
-};
-
-class ZNMethodPurgeTask : public ZTask {
-private:
-  ZNMethodPurgeClosure _cl;
-
-public:
-  ZNMethodPurgeTask() :
-      ZTask("ZNMethodPurgeTask"),
-      _cl() {
-    ZNMethodTable::nmethods_do_begin();
-  }
-
-  ~ZNMethodPurgeTask() {
-    ZNMethodTable::nmethods_do_end();
-  }
-
-  virtual void work() {
-    ZNMethodTable::nmethods_do(&_cl);
-  }
-};
-
-void ZNMethod::purge(ZWorkers* workers) {
-  ZNMethodPurgeTask task;
-  workers->run(&task);
+void ZNMethod::purge() {
+  CodeCache::flush_unlinked_nmethods();
 }

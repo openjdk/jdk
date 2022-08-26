@@ -1290,7 +1290,6 @@ bool SharedRuntime::resolve_sub_helper_internal(methodHandle callee_method, cons
     // Patch call site to C2I adapter if callee nmethod is deoptimized or unloaded.
     callee = NULL;
   }
-  nmethodLocker nl_callee(callee);
 #ifdef ASSERT
   address dest_entry_point = callee == NULL ? 0 : callee->entry_point(); // used below
 #endif
@@ -1386,7 +1385,7 @@ methodHandle SharedRuntime::resolve_sub_helper(bool is_virtual, bool is_optimize
          (!is_virtual && invoke_code == Bytecodes::_invokedynamic) ||
          ( is_virtual && invoke_code != Bytecodes::_invokestatic ), "inconsistent bytecode");
 
-  assert(caller_nm->is_alive() && !caller_nm->is_unloading(), "It should be alive");
+  assert(!caller_nm->is_unloading(), "It should not be unloading");
 
 #ifndef PRODUCT
   // tracing/debugging/statistics
@@ -2294,7 +2293,7 @@ class MethodArityHistogram {
 
   static void add_method_to_histogram(nmethod* nm) {
     Method* method = (nm == NULL) ? NULL : nm->method();
-    if ((method != NULL) && nm->is_alive()) {
+    if (method != NULL) {
       ArgumentCount args(method->signature());
       int arity   = args.size() + (method->is_static() ? 0 : 1);
       int argsize = method->size_of_parameters();
@@ -3004,6 +3003,9 @@ bool AdapterHandlerEntry::compare_code(AdapterHandlerEntry* other) {
 void AdapterHandlerLibrary::create_native_wrapper(const methodHandle& method) {
   ResourceMark rm;
   nmethod* nm = NULL;
+
+  // Check if memory should be freed before allocation
+  CodeCache::gc_on_allocation();
 
   assert(method->is_native(), "must be native");
   assert(method->is_special_native_intrinsic() ||

@@ -247,8 +247,7 @@ void vmClasses::resolve_shared_class(InstanceKlass* klass, ClassLoaderData* load
   klass->restore_unshareable_info(loader_data, domain, NULL, THREAD);
   SystemDictionary::load_shared_class_misc(klass, loader_data);
   Dictionary* dictionary = loader_data->dictionary();
-  unsigned int hash = dictionary->compute_hash(klass->name());
-  dictionary->add_klass(hash, klass->name(), klass);
+  dictionary->add_klass(THREAD, klass->name(), klass);
   SystemDictionary::add_to_hierarchy(klass);
   assert(klass->is_loaded(), "Must be in at least loaded state");
 }

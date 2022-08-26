@@ -266,7 +266,7 @@ void InterpreterMacroAssembler::call_VM_leaf_base(address entry_point,
 #ifdef ASSERT
   {
     Label L;
-    cmpptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), (int32_t)NULL_WORD);
+    cmpptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), NULL_WORD);
     jcc(Assembler::equal, L);
     stop("InterpreterMacroAssembler::call_VM_leaf_base:"
          " last_sp != NULL");
@@ -298,7 +298,7 @@ void InterpreterMacroAssembler::call_VM_base(Register oop_result,
 #ifdef ASSERT
   {
     Label L;
-    cmpptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), (int32_t)NULL_WORD);
+    cmpptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), NULL_WORD);
     jcc(Assembler::equal, L);
     stop("InterpreterMacroAssembler::call_VM_base:"
          " last_sp != NULL");
@@ -349,7 +349,7 @@ void InterpreterMacroAssembler::load_earlyret_value(TosState state) {
 #ifdef _LP64
   switch (state) {
     case atos: movptr(rax, oop_addr);
-               movptr(oop_addr, (int32_t)NULL_WORD);
+               movptr(oop_addr, NULL_WORD);
                interp_verify_oop(rax, state);         break;
     case ltos: movptr(rax, val_addr);                 break;
     case btos:                                   // fall through
@@ -363,8 +363,8 @@ void InterpreterMacroAssembler::load_earlyret_value(TosState state) {
     default  : ShouldNotReachHere();
   }
   // Clean up tos value in the thread object
-  movl(tos_addr,  (int) ilgl);
-  movl(val_addr,  (int32_t) NULL_WORD);
+  movl(tos_addr, ilgl);
+  movl(val_addr, NULL_WORD);
 #else
   const Address val_addr1(rcx, JvmtiThreadState::earlyret_value_offset()
                              + in_ByteSize(wordSize));
@@ -386,8 +386,8 @@ void InterpreterMacroAssembler::load_earlyret_value(TosState state) {
   }
 #endif // _LP64
   // Clean up tos value in the thread object
-  movl(tos_addr,  (int32_t) ilgl);
-  movptr(val_addr,  NULL_WORD);
+  movl(tos_addr, ilgl);
+  movptr(val_addr, NULL_WORD);
   NOT_LP64(movptr(val_addr1, NULL_WORD);)
 }
 
@@ -843,7 +843,7 @@ void InterpreterMacroAssembler::dispatch_base(TosState state,
     int32_t min_frame_size =
       (frame::link_offset - frame::interpreter_frame_initial_sp_offset) *
       wordSize;
-    cmpptr(rcx, (int32_t)min_frame_size);
+    cmpptr(rcx, min_frame_size);
     jcc(Assembler::greaterEqual, L);
     stop("broken stack frame");
     bind(L);
@@ -1122,7 +1122,7 @@ void InterpreterMacroAssembler::remove_activation(
 
     bind(loop);
     // check if current entry is used
-    cmpptr(Address(rmon, BasicObjectLock::obj_offset_in_bytes()), (int32_t) NULL_WORD);
+    cmpptr(Address(rmon, BasicObjectLock::obj_offset_in_bytes()), NULL_WORD);
     jcc(Assembler::notEqual, exception);
 
     addptr(rmon, entry_size); // otherwise advance to next entry
@@ -1225,7 +1225,7 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg) {
     }
 
     // Load immediate 1 into swap_reg %rax
-    movl(swap_reg, (int32_t)1);
+    movl(swap_reg, 1);
 
     // Load (object->mark() | 1) into swap_reg %rax
     orptr(swap_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
@@ -1327,7 +1327,7 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg) {
     movptr(obj_reg, Address(lock_reg, BasicObjectLock::obj_offset_in_bytes()));
 
     // Free entry
-    movptr(Address(lock_reg, BasicObjectLock::obj_offset_in_bytes()), (int32_t)NULL_WORD);
+    movptr(Address(lock_reg, BasicObjectLock::obj_offset_in_bytes()), NULL_WORD);
 
     // Load the old header from BasicLock structure
     movptr(header_reg, Address(swap_reg,
@@ -1457,11 +1457,11 @@ void InterpreterMacroAssembler::increment_mdp_data_at(Address data,
 
   if (decrement) {
     // Decrement the register.  Set condition codes.
-    addptr(data, (int32_t) -DataLayout::counter_increment);
+    addptr(data, -DataLayout::counter_increment);
     // If the decrement causes the counter to overflow, stay negative
     Label L;
     jcc(Assembler::negative, L);
-    addptr(data, (int32_t) DataLayout::counter_increment);
+    addptr(data, DataLayout::counter_increment);
     bind(L);
   } else {
     assert(DataLayout::counter_increment == 1,
@@ -1469,7 +1469,7 @@ void InterpreterMacroAssembler::increment_mdp_data_at(Address data,
     // Increment the register.  Set carry flag.
     addptr(data, DataLayout::counter_increment);
     // If the increment causes the counter to overflow, pull back by 1.
-    sbbptr(data, (int32_t)0);
+    sbbptr(data, 0);
   }
 }
 

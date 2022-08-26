@@ -932,7 +932,7 @@ void TemplateInterpreterGenerator::bang_stack_shadow_pages(bool native_call) {
 // native method than the typical interpreter frame setup.
 address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // determine code generation flags
-  bool inc_counter = UseCompiler || CountCompiledCalls || LogTouchedMethods;
+  bool inc_counter = UseCompiler || CountCompiledCalls;
 
   // x11: Method*
   // x30: sender sp
@@ -1326,7 +1326,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
 
   // determine code generation flags
-  const bool inc_counter  = UseCompiler || CountCompiledCalls || LogTouchedMethods;
+  const bool inc_counter  = UseCompiler || CountCompiledCalls;
 
   // t0: sender sp
   address entry_point = __ pc();

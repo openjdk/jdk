@@ -25,6 +25,8 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHPADDING_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHPADDING_HPP
 
+#include "memory/padded.hpp"
+
 // 64 bytes is enough to cover all existing architectures. If we have some
 // other platforms, we would need to provide the architecture-specific
 // versions here. Shared code provides DEFAULT_CACHE_LINE_SIZE, which is

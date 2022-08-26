@@ -34,7 +34,6 @@
 #include "oops/instanceKlass.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "utilities/growableArray.hpp"
-#include "utilities/resourceHash.hpp"
 
 class DumpTimeClassInfo;
 class Method;
