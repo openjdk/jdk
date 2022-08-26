@@ -62,9 +62,13 @@ public class ModuleReferenceImpl extends ModuleReference {
     // ModuleResolution flags
     private final ModuleResolution moduleResolution;
 
-    // cached hash of this module to avoid needing to compute it many times.
-    // For safety reasons under concurrent updates, we need to wrap the
-    // hash/algo pair into the final wrapper.
+    // Single-slot cache of this module's hash to avoid needing to compute
+    // it many times. If there is a significant number of hash algorithms
+    // used in the future, consider extending this cache to full
+    // ConcurrentMap<String,byte[]>.
+    //
+    // For correctness under concurrent updates, we need to wrap the fields
+    // updated at the same time with the final wrapper.
     private CachedHash cachedHash;
     private final class CachedHash {
         public CachedHash(byte[] hash, String algorithm) {
@@ -150,10 +154,8 @@ public class ModuleReferenceImpl extends ModuleReference {
      */
     public byte[] computeHash(String algorithm) {
         CachedHash ch = cachedHash;
-        if (ch != null) {
-            if (ch.algorithm.equals(algorithm)) {
-                return ch.hash;
-            }
+        if (ch != null && ch.algorithm.equals(algorithm)) {
+            return ch.hash;
         }
 
         if (hasher == null) {
