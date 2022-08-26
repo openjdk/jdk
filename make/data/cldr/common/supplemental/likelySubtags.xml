@@ -713,9 +713,9 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="fan" to="fan_Latn_GQ"/>
 		<!--{ Fang; ?; ? } => { Fang; Latin; Equatorial Guinea }-->
 		<likelySubtag from="ff" to="ff_Latn_SN"/>
-		<!--{ Fulah; ?; ? } => { Fulah; Latin; Senegal }-->
+		<!--{ Fula; ?; ? } => { Fula; Latin; Senegal }-->
 		<likelySubtag from="ff_Adlm" to="ff_Adlm_GN"/>
-		<!--{ Fulah; Adlam; ? } => { Fulah; Adlam; Guinea }-->
+		<!--{ Fula; Adlam; ? } => { Fula; Adlam; Guinea }-->
 		<likelySubtag from="ffi" to="ffi_Latn_ZZ"/>
 		<!--{ Foia Foia; ?; ? } => { Foia Foia; Latin; Unknown Region }-->
 		<likelySubtag from="ffm" to="ffm_Latn_ML"/>
@@ -2139,7 +2139,7 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="saf" to="saf_Latn_GH"/>
 		<!--{ Safaliba; ?; ? } => { Safaliba; Latin; Ghana }-->
 		<likelySubtag from="sah" to="sah_Cyrl_RU"/>
-		<!--{ Sakha; ?; ? } => { Sakha; Cyrillic; Russia }-->
+		<!--{ Yakut; ?; ? } => { Yakut; Cyrillic; Russia }-->
 		<likelySubtag from="saq" to="saq_Latn_KE"/>
 		<!--{ Samburu; ?; ? } => { Samburu; Latin; Kenya }-->
 		<likelySubtag from="sas" to="sas_Latn_ID"/>
@@ -3335,7 +3335,7 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="und_ZW" to="sn_Latn_ZW"/>
 		<!--{ ?; ?; Zimbabwe } => { Shona; Latin; Zimbabwe }-->
 		<likelySubtag from="und_Adlm" to="ff_Adlm_GN"/>
-		<!--{ ?; Adlam; ? } => { Fulah; Adlam; Guinea }-->
+		<!--{ ?; Adlam; ? } => { Fula; Adlam; Guinea }-->
 		<likelySubtag from="und_Aghb" to="udi_Aghb_RU"/>
 		<!--{ ?; Caucasian Albanian; ? } => { Udi; Caucasian Albanian; Russia }-->
 		<likelySubtag from="und_Ahom" to="aho_Ahom_IN"/>

@@ -5412,8 +5412,8 @@ XXX Code for transations where no currency is involved
 	</parentLocales>
 
 	<personNamesDefaults>
-		<nameOrderLocalesDefault order="givenFirst">en und</nameOrderLocalesDefault>
-		<nameOrderLocalesDefault order="surnameFirst">hu ja ko vi yue zh</nameOrderLocalesDefault>
+		<nameOrderLocalesDefault order="givenFirst">und</nameOrderLocalesDefault>
+		<nameOrderLocalesDefault order="surnameFirst">hu ja km ko mn si ta te vi yue zh</nameOrderLocalesDefault>
 	</personNamesDefaults>
 
 	<references>
