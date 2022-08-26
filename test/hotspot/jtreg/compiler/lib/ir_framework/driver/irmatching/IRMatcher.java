@@ -24,7 +24,7 @@
 package compiler.lib.ir_framework.driver.irmatching;
 
 import compiler.lib.ir_framework.*;
-import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethodMatchResult;
+import compiler.lib.ir_framework.driver.irmatching.irmethod.AbstractIRMethodMatchResult;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethod;
 import compiler.lib.ir_framework.driver.irmatching.parser.MethodCompilationParser;
 
@@ -35,31 +35,37 @@ import java.util.*;
  */
 public class IRMatcher {
     public static final String SAFEPOINT_WHILE_PRINTING_MESSAGE = "<!-- safepoint while printing -->";
+    private final List<IRMethod> irMethods;
 
     public IRMatcher(String hotspotPidFileName, String irEncoding, Class<?> testClass) {
+        System.out.println(irEncoding);
         MethodCompilationParser methodCompilationParser = new MethodCompilationParser(testClass);
-        List<IRMethod> irMethods = methodCompilationParser.parse(hotspotPidFileName, irEncoding);
+        irMethods = methodCompilationParser.parse(hotspotPidFileName, irEncoding);
+    }
+
+    public void match() {
         if (irMethods != null) {
-            applyIRRules(irMethods);
+            List<AbstractIRMethodMatchResult> results = applyIRRules();
+            if (!results.isEmpty()) {
+                reportFailures(results);
+            }
         }
     }
 
     /**
      * Do an IR matching of all methods with applicable @IR rules prepared with by the {@link MethodCompilationParser}.
      */
-    private void applyIRRules(List<IRMethod> irMethods) {
-        List<IRMethodMatchResult> results = new ArrayList<>();
+    public List<AbstractIRMethodMatchResult> applyIRRules() {
+        List<AbstractIRMethodMatchResult> results = new ArrayList<>();
         irMethods.forEach(irMethod -> applyIRRule(irMethod, results));
-        if (!results.isEmpty()) {
-            reportFailures(results);
-        }
+        return results;
     }
 
-    private void applyIRRule(IRMethod irMethod, List<IRMethodMatchResult> results) {
+    private void applyIRRule(IRMethod irMethod, List<AbstractIRMethodMatchResult> results) {
         if (TestFramework.VERBOSE) {
             printMethodOutput(irMethod);
         }
-        IRMethodMatchResult result = irMethod.match();
+        AbstractIRMethodMatchResult result = irMethod.match();
         if (result.fail()) {
             results.add(result);
         }
@@ -77,7 +83,7 @@ public class IRMatcher {
      * can be read and reported to the stdout separately. The exception message only includes the summary of the
      * failures.
      */
-    private void reportFailures(List<IRMethodMatchResult> results) {
+    private void reportFailures(List<AbstractIRMethodMatchResult> results) {
         Collections.sort(results); // Alphabetically
         throwIfNoSafepointWhilePrinting(IRMatcherFailureMessageBuilder.build(results),
                                         CompilationOutputBuilder.build(results));

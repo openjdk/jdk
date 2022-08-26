@@ -23,34 +23,42 @@
 
 package compiler.lib.ir_framework.driver.irmatching.irmethod;
 
-import compiler.lib.ir_framework.driver.irmatching.MatchResult;
 import compiler.lib.ir_framework.driver.irmatching.irrule.IRRuleMatchResult;
 
+import java.util.List;
+
 /**
- * This base class represents an IR matching result of all specified compile phases of all IR rules of an IR method.
+ * This class represents an IR matching result of a normal (non-empty compilation output) IR method.
  *
  * @see IRRuleMatchResult
  * @see IRMethod
  */
-abstract public class IRMethodMatchResult implements Comparable<IRMethodMatchResult>, MatchResult {
-    protected final IRMethod irMethod;
+class IRMethodMatchResult extends AbstractIRMethodMatchResult {
+    private final List<IRRuleMatchResult> irRulesMatchResults;
 
-    public IRMethodMatchResult(IRMethod irMethod) {
-        this.irMethod = irMethod;
+    IRMethodMatchResult(IRMethod irMethod, List<IRRuleMatchResult> irRulesMatchResults) {
+        super(irMethod);
+        this.irRulesMatchResults = irRulesMatchResults;
     }
 
-    /**
-     * Return the combined compilation output on which any regex in any IR rule was matched.
-     */
-    abstract public String getMatchedCompilationOutput();
-
-    abstract public int getFailedIRRuleCount();
-
-    /**
-     * Used to sort the failed IR methods alphabetically.
-     */
     @Override
-    public int compareTo(IRMethodMatchResult other) {
-        return this.irMethod.getMethod().getName().compareTo(other.irMethod.getMethod().getName());
+    public boolean fail() {
+        return !irRulesMatchResults.isEmpty();
+    }
+
+    @Override
+    public int getFailedIRRuleCount() {
+        return irRulesMatchResults.size();
+    }
+
+    @Override
+    public String buildFailureMessage(int indentationSize) {
+        IRMethodFailureMessageBuilder builder = new IRMethodFailureMessageBuilder(irMethod, irRulesMatchResults);
+        return builder.buildFailureMessage(indentationSize);
+    }
+
+    @Override
+    public String getMatchedCompilationOutput() {
+        return MatchedCompilationOutputBuilder.build(irMethod, irRulesMatchResults);
     }
 }

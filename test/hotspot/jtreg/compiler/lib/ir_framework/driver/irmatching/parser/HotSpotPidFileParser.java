@@ -103,7 +103,9 @@ class HotSpotPidFileParser {
         String methodName = parseMethodName(line);
         if (isTestAnnotatedMethod(methodName)) {
             int compileId = getCompileId(line);
-            compileIdMap.put(compileId, getIrMethod(methodName));
+            TestMethod testMethod = getTestMethod(methodName);
+            testMethod.setCompiled();
+            compileIdMap.put(compileId, testMethod);
         }
     }
 
@@ -120,7 +122,7 @@ class HotSpotPidFileParser {
         return testCompilationsMap.containsKey(testMethodName);
     }
 
-    private TestMethod getIrMethod(String testMethodName) {
+    private TestMethod getTestMethod(String testMethodName) {
         return testCompilationsMap.get(testMethodName);
     }
 

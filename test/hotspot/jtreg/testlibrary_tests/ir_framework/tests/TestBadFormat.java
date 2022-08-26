@@ -1028,12 +1028,14 @@ class BadIRAnnotationsAfterTestVM {
 
 class BadIRNodeForPhase {
     @Test
-    @FailCount(4)
+    @FailCount(5)
     @IR(failOn = IRNode.CHECKCAST_ARRAY, phase = CompilePhase.AFTER_PARSING)
     @IR(failOn = IRNode.CHECKCAST_ARRAY, phase = CompilePhase.OPTIMIZE_FINISHED)
     @IR(failOn = IRNode.CHECKCAST_ARRAY, phase = CompilePhase.PRINT_IDEAL)
     @IR(failOn = IRNode.CHECKCAST_ARRAY, phase = CompilePhase.PRINT_OPTO_ASSEMBLY) // works
     @IR(failOn = IRNode.FIELD_ACCESS, phase = CompilePhase.FINAL_CODE)
+    @IR(failOn = IRNode.FIELD_ACCESS, phase = {CompilePhase.PRINT_OPTO_ASSEMBLY, CompilePhase.DEFAULT}) // works
+    @IR(failOn = IRNode.FIELD_ACCESS, phase = {CompilePhase.PRINT_OPTO_ASSEMBLY, CompilePhase.DEFAULT, CompilePhase.PRINT_IDEAL})
     public void machNode() {}
 
     @Test

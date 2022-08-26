@@ -45,18 +45,24 @@ public class TestMethod {
     private final Method method;
     private final int[] irRuleIds;
     private final Map<CompilePhase, String> compilationOutputMap;
+    private boolean compiled; // Was this method compiled (i.e. found in hotspot_pid* file?)
 
     public TestMethod(Method m, int[] irRuleIds) {
         this.method = m;
         this.irRuleIds = irRuleIds;
         this.compilationOutputMap = new LinkedHashMap<>(); // Keep order of insertion
+        this.compiled = false;
+    }
+
+    public void setCompiled() {
+        this.compiled = true;
     }
 
     public IRMethod createIRMethod() {
         IR[] irAnnos = method.getAnnotationsByType(IR.class);
         TestFramework.check(irAnnos.length > 0, "must have at least one IR rule");
         TestFramework.check(irRuleIds.length > 0, "must have at least one IR rule");
-        return new IRMethod(method, irRuleIds, irAnnos, compilationOutputMap);
+        return new IRMethod(method, irRuleIds, irAnnos, compilationOutputMap, compiled);
     }
 
     /**

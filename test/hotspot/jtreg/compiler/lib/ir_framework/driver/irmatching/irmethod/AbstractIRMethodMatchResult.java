@@ -24,25 +24,35 @@
 package compiler.lib.ir_framework.driver.irmatching.irmethod;
 
 import compiler.lib.ir_framework.driver.irmatching.FailureMessage;
+import compiler.lib.ir_framework.driver.irmatching.MatchResult;
+import compiler.lib.ir_framework.driver.irmatching.irrule.IRRuleMatchResult;
 
 /**
- * Base class to build the failure message output for an IR method with failed IR rules.
+ * This base class represents an IR matching result of all specified compile phases of all IR rules of an IR method.
  *
- * @see IRMethodMatchResult
+ * @see IRRuleMatchResult
+ * @see IRMethod
  */
-abstract class FailureMessageBuilder implements FailureMessage {
+abstract public class AbstractIRMethodMatchResult implements Comparable<AbstractIRMethodMatchResult>, MatchResult,
+        FailureMessage {
     protected final IRMethod irMethod;
 
-    public FailureMessageBuilder(IRMethod irMethod) {
+    public AbstractIRMethodMatchResult(IRMethod irMethod) {
         this.irMethod = irMethod;
     }
 
+    /**
+     * Return the combined compilation output on which any regex in any IR rule was matched.
+     */
+    abstract public String getMatchedCompilationOutput();
+
+    abstract public int getFailedIRRuleCount();
+
+    /**
+     * Used to sort the failed IR methods alphabetically.
+     */
     @Override
-    public String buildFailureMessage(int indentationSize) {
-        return buildMethodHeaderLine() + buildIRRulesFailureMessage(indentationSize);
+    public int compareTo(AbstractIRMethodMatchResult other) {
+        return this.irMethod.getMethod().getName().compareTo(other.irMethod.getMethod().getName());
     }
-
-    abstract protected String buildMethodHeaderLine();
-
-    abstract protected String buildIRRulesFailureMessage(int initialIndentation);
 }

@@ -29,10 +29,13 @@ package compiler.lib.ir_framework.driver.irmatching;
  */
 public interface FailureMessage {
     /**
-     * Builds a failure message in a pretty format to be used by the IR matching failure reporting.
+     * Builds a failure message in a pretty format to be used by {@link IRMatcher} to report IR matching failures.
      */
     String buildFailureMessage(int indentationSize);
 
+    /**
+     * Return a string of {@code indentationSize} many whitespaces.
+     */
     default String getIndentation(int indentationSize) {
         return " ".repeat(indentationSize);
     }

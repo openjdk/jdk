@@ -25,40 +25,36 @@ package compiler.lib.ir_framework.driver.irmatching.irmethod;
 
 import compiler.lib.ir_framework.driver.irmatching.irrule.IRRuleMatchResult;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 /**
- * This class represents an IR matching result where the compilation output of a method was empty.
+ * Class to build the failure message output for an IR method for failed IR rules.
  *
- * @see IRRuleMatchResult
- * @see IRMethod
+ * @see AbstractIRMethodMatchResult
  */
-public class MissingCompilationResult extends IRMethodMatchResult {
-    private final int failedIRRules;
+class IRMethodFailureMessageBuilder extends AbstractFailureMessageBuilder {
+    private final List<IRRuleMatchResult> irRulesMatchResults;
 
-    MissingCompilationResult(IRMethod irMethod, int failedIRRules) {
+    public IRMethodFailureMessageBuilder(IRMethod irMethod, List<IRRuleMatchResult> irRulesMatchResults) {
         super(irMethod);
-        this.failedIRRules = failedIRRules;
+        this.irRulesMatchResults = irRulesMatchResults.stream()
+                                                      .filter(IRRuleMatchResult::fail)
+                                                      .collect(Collectors.toList());
     }
 
     @Override
-    public boolean fail() {
-        return true;
+    protected String buildMethodHeaderLine() {
+        int failures = irRulesMatchResults.size();
+        return " Method \"" + irMethod.getMethod() + "\" - [Failed IR rules: " + failures + "]:" + System.lineSeparator();
     }
 
     @Override
-    public String getMatchedCompilationOutput() {
-        return "<empty>";
+    protected String buildIRRulesFailureMessage(int initialIndentation) {
+        StringBuilder failMsg = new StringBuilder();
+        for (IRRuleMatchResult irRuleResult : irRulesMatchResults) {
+            failMsg.append(irRuleResult.buildFailureMessage(initialIndentation));
+        }
+        return failMsg.toString();
     }
-
-    @Override
-    public int getFailedIRRuleCount() {
-        return failedIRRules;
-    }
-
-    @Override
-    public String buildFailureMessage(int indentationSize) {
-        MissingCompilationFailureMessageBuilder builder = new MissingCompilationFailureMessageBuilder(irMethod);
-        return builder.buildFailureMessage(indentationSize);
-    }
-
-
 }

@@ -23,38 +23,26 @@
 
 package compiler.lib.ir_framework.driver.irmatching.irmethod;
 
-import compiler.lib.ir_framework.driver.irmatching.irrule.IRRuleMatchResult;
-
-import java.util.List;
-import java.util.stream.Collectors;
-
 /**
- * Class to build the failure message output for an IR method for failed IR rules.
+ * Class to build the failure message of an IR method with a missing compilation output.
  *
- * @see IRMethodMatchResult
+ * @see AbstractIRMethodMatchResult
  */
-class NormalFailureMessageBuilder extends FailureMessageBuilder {
-    private final List<IRRuleMatchResult> irRulesMatchResults;
+class NotCompiledFailureMessageBuilder extends AbstractFailureMessageBuilder {
 
-    public NormalFailureMessageBuilder(IRMethod irMethod, List<IRRuleMatchResult> irRulesMatchResults) {
+    public NotCompiledFailureMessageBuilder(IRMethod irMethod) {
         super(irMethod);
-        this.irRulesMatchResults = irRulesMatchResults.stream()
-                                                      .filter(IRRuleMatchResult::fail)
-                                                      .collect(Collectors.toList());
     }
 
     @Override
     protected String buildMethodHeaderLine() {
-        int failures = irRulesMatchResults.size();
-        return " Method \"" + irMethod.getMethod() + "\" - [Failed IR rules: " + failures + "]:" + System.lineSeparator();
+        return " Method \"" + irMethod.getMethod() + "\":" + System.lineSeparator();
     }
 
     @Override
-    protected String buildIRRulesFailureMessage(int initialIndentation) {
-        StringBuilder failMsg = new StringBuilder();
-        for (IRRuleMatchResult irRuleResult : irRulesMatchResults) {
-            failMsg.append(irRuleResult.buildFailureMessage(initialIndentation));
-        }
-        return failMsg.toString();
+    protected String buildIRRulesFailureMessage(int indentationSize) {
+        return getIndentation(indentationSize) + "* Method was not compiled. Did you use a @Run method in STANDALONE " +
+               "mode that was compiled? In this case, make sure to always trigger a C2 compilation by invoking the " +
+               "test enough times.";
     }
 }

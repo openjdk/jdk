@@ -743,7 +743,9 @@ public class TestFramework {
         TestVMProcess testVMProcess = new TestVMProcess(additionalFlags, testClass, helperClasses, defaultWarmup);
         if (shouldVerifyIR) {
             try {
-                new IRMatcher(testVMProcess.getHotspotPidFileName(), testVMProcess.getIrEncoding(), testClass);
+                IRMatcher matcher = new IRMatcher(testVMProcess.getHotspotPidFileName(), testVMProcess.getIrEncoding(),
+                                                  testClass);
+                matcher.match();
             } catch (IRViolationException e) {
                 e.addCommandLine(testVMProcess.getCommandLine());
                 throw e;

@@ -35,7 +35,7 @@ import java.util.stream.Collectors;
 /**
  * Class to build the combined compilation output of all compile phases on which an IR rule failed.
  *
- * @see IRMethodMatchResult
+ * @see AbstractIRMethodMatchResult
  */
 class MatchedCompilationOutputBuilder {
 

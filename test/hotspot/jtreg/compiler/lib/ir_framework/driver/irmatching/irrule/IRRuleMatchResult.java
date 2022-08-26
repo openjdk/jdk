@@ -23,7 +23,7 @@
 
 package compiler.lib.ir_framework.driver.irmatching.irrule;
 
-import compiler.lib.ir_framework.CompilePhase;
+import compiler.lib.ir_framework.driver.irmatching.FailureMessage;
 import compiler.lib.ir_framework.driver.irmatching.MatchResult;
 import compiler.lib.ir_framework.driver.irmatching.irrule.phase.CompilePhaseMatchResult;
 
@@ -35,7 +35,7 @@ import java.util.List;
  *
  * @see IRRule
  */
-public class IRRuleMatchResult implements MatchResult {
+public class IRRuleMatchResult implements MatchResult, FailureMessage {
     private final IRRule irRule;
     private final List<CompilePhaseMatchResult> compilePhaseMatchResults;
 

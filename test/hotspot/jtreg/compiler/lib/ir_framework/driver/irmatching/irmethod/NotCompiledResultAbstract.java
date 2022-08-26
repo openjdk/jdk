@@ -23,26 +23,42 @@
 
 package compiler.lib.ir_framework.driver.irmatching.irmethod;
 
+import compiler.lib.ir_framework.driver.irmatching.irrule.IRRuleMatchResult;
+
 /**
- * Class to build the failure message of an IR method with a missing compilation output.
+ * This class represents an IR matching result where the compilation output of a method was empty.
  *
- * @see IRMethodMatchResult
+ * @see IRRuleMatchResult
+ * @see IRMethod
  */
-class MissingCompilationFailureMessageBuilder extends FailureMessageBuilder {
+public class NotCompiledResultAbstract extends AbstractIRMethodMatchResult {
+    private final int failedIRRules;
 
-    public MissingCompilationFailureMessageBuilder(IRMethod irMethod) {
+    NotCompiledResultAbstract(IRMethod irMethod, int failedIRRules) {
         super(irMethod);
+        this.failedIRRules = failedIRRules;
     }
 
     @Override
-    protected String buildMethodHeaderLine() {
-        return " Method \"" + irMethod.getMethod() + "\":" + System.lineSeparator();
+    public boolean fail() {
+        return true;
     }
 
     @Override
-    protected String buildIRRulesFailureMessage(int indentationSize) {
-        return getIndentation(indentationSize) + "* Method was not compiled. Did you specify any compiler directives " +
-               "preventing a compilation or used a @Run method in STANDALONE mode? In the latter case, make sure to always" +
-               " trigger a C2 compilation by " + "invoking the test enough times.";
+    public String getMatchedCompilationOutput() {
+        return "<empty>";
     }
+
+    @Override
+    public int getFailedIRRuleCount() {
+        return failedIRRules;
+    }
+
+    @Override
+    public String buildFailureMessage(int indentationSize) {
+        NotCompiledFailureMessageBuilder builder = new NotCompiledFailureMessageBuilder(irMethod);
+        return builder.buildFailureMessage(indentationSize);
+    }
+
+
 }

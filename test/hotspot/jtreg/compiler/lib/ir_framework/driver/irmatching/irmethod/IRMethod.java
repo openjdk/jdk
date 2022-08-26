@@ -46,13 +46,16 @@ import java.util.stream.Collectors;
 public class IRMethod implements Matching {
     private final Method method;
     private final Map<CompilePhase, String> compilationOutputMap;
+    private final boolean compiled;
     private String completeOutput;
     private final List<IRRule> irRules;
 
-    public IRMethod(Method method, int[] ruleIds, IR[] irAnnos, Map<CompilePhase, String> compilationOutputMap) {
+    public IRMethod(Method method, int[] ruleIds, IR[] irAnnos, Map<CompilePhase, String> compilationOutputMap,
+                    boolean compiled) {
         this.method = method;
         this.irRules = new ArrayList<>();
         this.compilationOutputMap = compilationOutputMap;
+        this.compiled = compiled;
         this.completeOutput = "";
         for (int ruleId : ruleIds) {
             try {
@@ -100,23 +103,23 @@ public class IRMethod implements Matching {
      * Apply all IR rules of this IR method on their specified compile phases.
      */
     @Override
-    public IRMethodMatchResult match() {
+    public AbstractIRMethodMatchResult match() {
         TestFramework.check(!irRules.isEmpty(), "IRMethod cannot be created if there are no IR rules to apply");
         List<IRRuleMatchResult> results = new ArrayList<>();
-        if (getCompleteOutput().isEmpty()) {
-            return new MissingCompilationResult(this, irRules.size());
+        if (!compiled) {
+            return new NotCompiledResultAbstract(this, irRules.size());
         } else {
-            return getNormalMatchResult(results);
+            return getMatchResult(results);
         }
     }
 
-    private NormalMatchResult getNormalMatchResult(List<IRRuleMatchResult> results) {
+    private IRMethodMatchResult getMatchResult(List<IRRuleMatchResult> results) {
         for (IRRule irRule : irRules) {
             IRRuleMatchResult result = irRule.match();
             if (result.fail()) {
                 results.add(result);
             }
         }
-        return new NormalMatchResult(this, results);
+        return new IRMethodMatchResult(this, results);
     }
 }

@@ -24,6 +24,7 @@
 package compiler.lib.ir_framework.driver.irmatching.irrule.phase;
 
 import compiler.lib.ir_framework.CompilePhase;
+import compiler.lib.ir_framework.driver.irmatching.FailureMessage;
 import compiler.lib.ir_framework.driver.irmatching.MatchResult;
 import compiler.lib.ir_framework.driver.irmatching.irrule.IRRule;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.CheckAttributeMatchResult;
@@ -33,7 +34,7 @@ import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.CheckAttrib
  *
  * @see IRRule
  */
-public class CompilePhaseMatchResult implements MatchResult {
+public class CompilePhaseMatchResult implements MatchResult, FailureMessage {
     private final CompilePhase compilePhase;
     private final boolean compilationOutput;
     private CheckAttributeMatchResult failOnFailures = null;

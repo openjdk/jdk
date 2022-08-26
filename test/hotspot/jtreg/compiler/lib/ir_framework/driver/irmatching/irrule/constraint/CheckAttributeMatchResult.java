@@ -23,6 +23,7 @@
 
 package compiler.lib.ir_framework.driver.irmatching.irrule.constraint;
 
+import compiler.lib.ir_framework.driver.irmatching.FailureMessage;
 import compiler.lib.ir_framework.driver.irmatching.MatchResult;
 
 import java.util.List;
@@ -32,7 +33,7 @@ import java.util.List;
  *
  * @see CheckAttribute
  */
-abstract public class CheckAttributeMatchResult implements MatchResult {
+abstract public class CheckAttributeMatchResult implements MatchResult, FailureMessage {
     private List<ConstraintFailure> constraintFailures = null;
 
     @Override
