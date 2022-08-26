@@ -486,6 +486,18 @@ public:
   static void update_method_data_from_interpreter(MethodData* trap_mdo, int trap_bci, int reason);
 };
 
+// A DeoptimizationContext provides an API for deoptimizing CompileMethods
+// The contract for using a DeoptimizationContext is as follows
+// The context is active from the DeoptimizationContext objects creating
+// until deoptimize() is called on the object.
+// While the context is active,
+//   * no safepoint may be taken
+//   * any interaction with the context object must be done under
+//     the Compile_lock
+//   * deoptimize() must be called
+// While the context is inactive
+//   * only interaction with the DeoptimizationContext object may
+//     calls to enqueued() and its destruction
 class DeoptimizationContext : StackObj {
   NoSafepointVerifier _nsv;
   uint _enqueued;

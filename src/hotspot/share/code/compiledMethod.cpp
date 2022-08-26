@@ -118,6 +118,10 @@ const char* CompiledMethod::state() const {
 bool CompiledMethod::enqueue_deoptimization(bool inc_recompile_counts) {
   assert_locked_or_safepoint(Compile_lock);
   assert(DeoptimizationContext::is_context_active(), "should only be called in an active DeoptimizationContext");
+  // If a compiled method is not is_unloading it is safe to keep the compiled method in a separate list as long
+  // as all work is done within an active DeoptimizationContext. If the compiled method is_unloading then it may
+  // not be safe, so we do not enqueue deoptimization. However deoptimization is superfluous here as the
+  // compiled method is about to be unloaded.
   if (is_unloading()) {
     return false;
   }
@@ -140,6 +144,8 @@ bool CompiledMethod::enqueue_deoptimization(bool inc_recompile_counts) {
 CompiledMethod* CompiledMethod::next_enqueued_deoptimization_method() const {
   assert_locked_or_safepoint(Compile_lock);
   assert(DeoptimizationContext::is_context_active(), "should only be called in an active DeoptimizationContext");
+  assert(extract_enqueued_deoptimization_status(_enqueued_deoptimization_link) > not_enqueued,
+          "Should only be called on compiled method in enqueued deoptimization list");
   return extract_enqueued_deoptimization_method(_enqueued_deoptimization_link);
 }
 

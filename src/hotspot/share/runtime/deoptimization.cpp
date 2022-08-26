@@ -1008,7 +1008,8 @@ DeoptimizationContext::DeoptimizationContext()
 }
 
 DeoptimizationContext::~DeoptimizationContext() {
-  assert(_enqueued == 0 || _deoptimized, "If something got enqueued, you have to call deoptimize");
+  assert(!Atomic::load(&_context_active), "deoptimize() must be called to deactivate the context");
+  assert(_enqueued == 0 || _deoptimized, "Something got enqueued, but not deoptimized");
 }
 
 void DeoptimizationContext::enqueue(CompiledMethod* cm) {
