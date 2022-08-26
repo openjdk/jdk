@@ -555,7 +555,6 @@ void MacroAssembler::emit_static_call_stub() {
   // CompiledDirectStaticCall::set_to_interpreted knows the
   // exact layout of this stub.
 
-  ifence();
   mov_metadata(xmethod, (Metadata*)NULL);
 
   // Jump to the entry point of the i2c stub.
@@ -1668,7 +1667,6 @@ void MacroAssembler::movoop(Register dst, jobject obj, bool immediate) {
 
   // nmethod entry barrier necessitate using the constant pool. They have to be
   // ordered with respected to oop access.
-  // Using immediate literals would necessitate fence.i.
   if (BarrierSet::barrier_set()->barrier_set_nmethod() != NULL || !immediate) {
     address dummy = address(uintptr_t(pc()) & -wordSize); // A nearby aligned address
     ld_constant(dst, Address(dummy, rspec));
@@ -2302,7 +2300,7 @@ void MacroAssembler::cmpxchg_narrow_value(Register addr, Register expected,
   bnez(tmp, retry);
 
   if (result_as_bool) {
-    addi(result, zr, 1);
+    li(result, 1);
     j(done);
 
     bind(fail);
@@ -2337,7 +2335,7 @@ void MacroAssembler::weak_cmpxchg_narrow_value(Register addr, Register expected,
   assert_different_registers(addr, old, mask, not_mask, new_val, expected, shift, tmp);
   cmpxchg_narrow_value_helper(addr, expected, new_val, size, tmp1, tmp2, tmp3);
 
-  Label succ, fail, done;
+  Label fail, done;
 
   lr_w(old, aligned_addr, acquire);
   andr(tmp, old, mask);
@@ -2346,13 +2344,14 @@ void MacroAssembler::weak_cmpxchg_narrow_value(Register addr, Register expected,
   andr(tmp, old, not_mask);
   orr(tmp, tmp, new_val);
   sc_w(tmp, tmp, aligned_addr, release);
-  beqz(tmp, succ);
+  bnez(tmp, fail);
 
-  bind(fail);
-  addi(result, zr, 1);
+  // Success
+  li(result, 1);
   j(done);
 
-  bind(succ);
+  // Fail
+  bind(fail);
   mv(result, zr);
 
   bind(done);
@@ -2396,20 +2395,20 @@ void MacroAssembler::cmpxchg_weak(Register addr, Register expected,
                                   enum operand_size size,
                                   Assembler::Aqrl acquire, Assembler::Aqrl release,
                                   Register result) {
-  Label fail, done, sc_done;
+  Label fail, done;
   load_reserved(addr, size, acquire);
   bne(t0, expected, fail);
   store_conditional(addr, new_val, size, release);
-  beqz(t0, sc_done);
+  bnez(t0, fail);
 
-  // fail
-  bind(fail);
+  // Success
   li(result, 1);
   j(done);
 
-  // sc_done
-  bind(sc_done);
-  mv(result, 0);
+  // Fail
+  bind(fail);
+  mv(result, zr);
+
   bind(done);
 }
 
@@ -2687,18 +2686,6 @@ void MacroAssembler::tlab_allocate(Register obj,
   bs->tlab_allocate(this, obj, var_size_in_bytes, con_size_in_bytes, tmp1, tmp2, slow_case, is_far);
 }
 
-// Defines obj, preserves var_size_in_bytes
-void MacroAssembler::eden_allocate(Register obj,
-                                   Register var_size_in_bytes,
-                                   int con_size_in_bytes,
-                                   Register tmp,
-                                   Label& slow_case,
-                                   bool is_far) {
-  BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  bs->eden_allocate(this, obj, var_size_in_bytes, con_size_in_bytes, tmp, slow_case, is_far);
-}
-
-
 // get_thread() can be called anywhere inside generated code so we
 // need to save whatever non-callee save context might get clobbered
 // by the call to Thread::current() or, indeed, the call setup code.
@@ -2758,7 +2745,6 @@ void MacroAssembler::build_frame(int framesize) {
   sd(fp, Address(sp, framesize - 2 * wordSize));
   sd(ra, Address(sp, framesize - wordSize));
   if (PreserveFramePointer) { add(fp, sp, framesize); }
-  verify_cross_modify_fence_not_required();
 }
 
 void MacroAssembler::remove_frame(int framesize) {
@@ -2809,7 +2795,6 @@ address MacroAssembler::read_polling_page(Register r, int32_t offset, relocInfo:
     lwu(zr, Address(r, offset));
     mark = inst_mark();
   }
-  verify_cross_modify_fence_not_required();
   return mark;
 }
 
@@ -2955,19 +2940,47 @@ Address MacroAssembler::add_memory_helper(const Address dst) {
   }
 }
 
-void MacroAssembler::add_memory_int64(const Address dst, int64_t imm) {
+void MacroAssembler::increment(const Address dst, int64_t value) {
+  assert(((dst.getMode() == Address::base_plus_offset &&
+           is_offset_in_range(dst.offset(), 12)) || is_imm_in_range(value, 12, 0)),
+          "invalid value and address mode combination");
   Address adr = add_memory_helper(dst);
-  assert_different_registers(adr.base(), t0);
+  assert(!adr.uses(t0), "invalid dst for address increment");
   ld(t0, adr);
-  addi(t0, t0, imm);
+  add(t0, t0, value, t1);
   sd(t0, adr);
 }
 
-void MacroAssembler::add_memory_int32(const Address dst, int32_t imm) {
+void MacroAssembler::incrementw(const Address dst, int32_t value) {
+  assert(((dst.getMode() == Address::base_plus_offset &&
+           is_offset_in_range(dst.offset(), 12)) || is_imm_in_range(value, 12, 0)),
+          "invalid value and address mode combination");
   Address adr = add_memory_helper(dst);
-  assert_different_registers(adr.base(), t0);
+  assert(!adr.uses(t0), "invalid dst for address increment");
   lwu(t0, adr);
-  addiw(t0, t0, imm);
+  addw(t0, t0, value, t1);
+  sw(t0, adr);
+}
+
+void MacroAssembler::decrement(const Address dst, int64_t value) {
+  assert(((dst.getMode() == Address::base_plus_offset &&
+           is_offset_in_range(dst.offset(), 12)) || is_imm_in_range(value, 12, 0)),
+          "invalid value and address mode combination");
+  Address adr = add_memory_helper(dst);
+  assert(!adr.uses(t0), "invalid dst for address decrement");
+  ld(t0, adr);
+  sub(t0, t0, value, t1);
+  sd(t0, adr);
+}
+
+void MacroAssembler::decrementw(const Address dst, int32_t value) {
+  assert(((dst.getMode() == Address::base_plus_offset &&
+           is_offset_in_range(dst.offset(), 12)) || is_imm_in_range(value, 12, 0)),
+          "invalid value and address mode combination");
+  Address adr = add_memory_helper(dst);
+  assert(!adr.uses(t0), "invalid dst for address decrement");
+  lwu(t0, adr);
+  subw(t0, t0, value, t1);
   sw(t0, adr);
 }
 
@@ -3965,29 +3978,3 @@ void MacroAssembler::cmp_l2i(Register dst, Register src1, Register src2, Registe
   neg(dst, dst);
   bind(done);
 }
-
-void MacroAssembler::safepoint_ifence() {
-  ifence();
-#ifndef PRODUCT
-  if (VerifyCrossModifyFence) {
-    // Clear the thread state.
-    sb(zr, Address(xthread, in_bytes(JavaThread::requires_cross_modify_fence_offset())));
-  }
-#endif
-}
-
-#ifndef PRODUCT
-void MacroAssembler::verify_cross_modify_fence_not_required() {
-  if (VerifyCrossModifyFence) {
-    // Check if thread needs a cross modify fence.
-    lbu(t0, Address(xthread, in_bytes(JavaThread::requires_cross_modify_fence_offset())));
-    Label fence_not_required;
-    beqz(t0, fence_not_required);
-    // If it does then fail.
-    la(t0, RuntimeAddress(CAST_FROM_FN_PTR(address, JavaThread::verify_cross_modify_fence_failure)));
-    mv(c_rarg0, xthread);
-    jalr(t0);
-    bind(fence_not_required);
-  }
-}
-#endif

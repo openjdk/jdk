@@ -165,25 +165,3 @@ vmTestbase/nsk/jdi/ObjectReference/waitingThreads/waitingthreads002/TestDescript
 # of this no vthreads can complete their reads, and the test times out as a result.
 
 vmTestbase/nsk/jdi/VMOutOfMemoryException/VMOutOfMemoryException001/VMOutOfMemoryException001.java 8285417 windows-all
-
-####
-## NSK JMX Tests
-
-####
-## Unsupported functionality
-
-vmTestbase/nsk/monitoring/ThreadMXBean/GetThreadAllocatedBytes/baseBehaviorTest_server_default/TestDescription.java 8285419 generic-all
-vmTestbase/nsk/monitoring/ThreadMXBean/GetThreadAllocatedBytes/baseBehaviorTest_server_custom/TestDescription.java 8285419 generic-all
-vmTestbase/nsk/monitoring/ThreadMXBean/GetThreadAllocatedBytes/baseBehaviorTest_directly/TestDescription.java 8285419 generic-all
-vmTestbase/nsk/monitoring/ThreadMXBean/GetThreadAllocatedBytes/baseBehaviorTest_proxy_custom/TestDescription.java 8285419 generic-all
-vmTestbase/nsk/monitoring/ThreadMXBean/GetThreadAllocatedBytes/baseBehaviorTest_proxy_default/TestDescription.java 8285419 generic-all
-
-
-####
-## No ThreadInfo for vthreads
-
-vmTestbase/nsk/monitoring/ThreadInfo/isInNative/isinnative001/TestDescription.java 8285420 generic-all
-vmTestbase/nsk/monitoring/ThreadInfo/getLockOwnerName/getlockownername001/TestDescription.java 8285420 generic-all
-vmTestbase/nsk/monitoring/ThreadInfo/getLockName/getlockname001/TestDescription.java 8285420 generic-all
-vmTestbase/nsk/monitoring/ThreadInfo/from_c/from_c001/TestDescription.java 8285420 generic-all
-vmTestbase/nsk/monitoring/MemoryUsage/from/from001/TestDescription.java 8285420 generic-all

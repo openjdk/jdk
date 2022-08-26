@@ -344,13 +344,21 @@ final class CompilerToVM {
      *            {@code -1}. If non-negative, then resolution checks specific to the bytecode it
      *            denotes are performed if the method is already resolved. Should any of these
      *            checks fail, 0 is returned.
+     * @param caller if non-null, do access checks in the context of {@code caller} calling the
+     *            looked up method
      * @return the resolved method entry, 0 otherwise
      */
-    HotSpotResolvedJavaMethodImpl lookupMethodInPool(HotSpotConstantPool constantPool, int cpi, byte opcode) {
-        return lookupMethodInPool(constantPool, constantPool.getConstantPoolPointer(), cpi, opcode);
+    HotSpotResolvedJavaMethodImpl lookupMethodInPool(HotSpotConstantPool constantPool, int cpi, byte opcode, HotSpotResolvedJavaMethodImpl caller) {
+        long callerMethodPointer = caller == null ? 0L : caller.getMethodPointer();
+        return lookupMethodInPool(constantPool, constantPool.getConstantPoolPointer(), cpi, opcode, caller, callerMethodPointer);
     }
 
-    private native HotSpotResolvedJavaMethodImpl lookupMethodInPool(HotSpotConstantPool constantPool, long constantPoolPointer, int cpi, byte opcode);
+    private native HotSpotResolvedJavaMethodImpl lookupMethodInPool(HotSpotConstantPool constantPool,
+                    long constantPoolPointer,
+                    int cpi,
+                    byte opcode,
+                    HotSpotResolvedJavaMethodImpl caller,
+                    long callerMethodPointer);
 
     /**
      * Ensures that the type referenced by the specified {@code JVM_CONSTANT_InvokeDynamic} entry at
@@ -513,7 +521,7 @@ final class CompilerToVM {
         try (HotSpotCompiledCodeStream stream = new HotSpotCompiledCodeStream(compiledCode, withTypeInfo, withComments, withMethods)) {
             return installCode0(stream.headChunk, stream.timeNS, withTypeInfo, compiledCode, stream.objectPool, code, failedSpeculationsAddress, speculations);
         }
-     }
+    }
 
     native int installCode0(long compiledCodeBuffer,
                     long serializationNS,
@@ -880,8 +888,15 @@ final class CompilerToVM {
         return getResolvedJavaType0(base, displacement, compressed);
     }
 
-    HotSpotResolvedObjectTypeImpl getResolvedJavaType(long displacement, boolean compressed) {
-        return getResolvedJavaType0(null, displacement, compressed);
+    /**
+     * Reads a {@code Klass*} from {@code address} (i.e., {@code address} is a {@code Klass**}
+     * value) and wraps it in a {@link HotSpotResolvedObjectTypeImpl}. This VM call must be used for
+     * any {@code Klass*} value not known to be already wrapped in a
+     * {@link HotSpotResolvedObjectTypeImpl}. The VM call is necessary so that the {@code Klass*} is
+     * wrapped in a {@code JVMCIKlassHandle} to protect it from the concurrent scanning done by G1.
+     */
+    HotSpotResolvedObjectTypeImpl getResolvedJavaType(long address) {
+        return getResolvedJavaType0(null, address, false);
     }
 
     /**

@@ -915,9 +915,8 @@ final class P11KeyStore extends KeyStoreSpi {
 
         token.ensureValid();
 
-        if (protParam != null &&
-            protParam instanceof KeyStore.PasswordProtection &&
-            ((KeyStore.PasswordProtection)protParam).getPassword() != null &&
+        if (protParam instanceof PasswordProtection pp &&
+            pp.getPassword() != null &&
             !token.config.getKeyStoreCompatibilityMode()) {
             throw new KeyStoreException("ProtectionParameter must be null");
         }
@@ -1018,9 +1017,8 @@ final class P11KeyStore extends KeyStoreSpi {
         token.ensureValid();
         checkWrite();
 
-        if (protParam != null &&
-            protParam instanceof KeyStore.PasswordProtection &&
-            ((KeyStore.PasswordProtection)protParam).getPassword() != null &&
+        if (protParam instanceof PasswordProtection pp &&
+            pp.getPassword() != null &&
             !token.config.getKeyStoreCompatibilityMode()) {
             throw new KeyStoreException(new UnsupportedOperationException
                                 ("ProtectionParameter must be null"));

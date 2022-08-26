@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ import static java.util.stream.IntStream.range;
 import static jdk.test.lib.Asserts.assertEquals;
 import static jdk.test.lib.Asserts.assertTrue;
 import static jdk.test.lib.jfr.Events.fromRecording;
-import static sun.hotspot.WhiteBox.getWhiteBox;
+import static jdk.test.whitebox.WhiteBox.getWhiteBox;
 
 import java.io.IOException;
 import java.lang.ref.WeakReference;
@@ -47,7 +47,7 @@ import gc.testlibrary.g1.MixedGCProvoker;
 import jdk.jfr.Recording;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.jfr.EventNames;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 /**
  * @test
@@ -55,8 +55,8 @@ import sun.hotspot.WhiteBox;
  * @requires vm.hasJFR
  * @requires vm.gc == "G1" | vm.gc == null
  * @library /test/lib /test/jdk /test/hotspot/jtreg
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+AlwaysTenure
  *      -Xms20M -Xmx20M -Xlog:gc=debug,gc+heap*=debug,gc+ergo*=debug,gc+start=debug
  *      -XX:G1MixedGCLiveThresholdPercent=100 -XX:G1HeapWastePercent=0 -XX:G1HeapRegionSize=1m

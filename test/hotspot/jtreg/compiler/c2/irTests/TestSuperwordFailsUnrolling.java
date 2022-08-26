@@ -24,16 +24,16 @@
 package compiler.c2.irTests;
 
 import compiler.lib.ir_framework.*;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 /*
  * @test
  * @bug 8283187
  * @summary C2: loop candidate for superword not always unrolled fully if superword fails
  * @library /test/lib /
- * @build sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
  * @requires vm.compiler2.enabled
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI compiler.c2.irTests.TestSuperwordFailsUnrolling
  */
 

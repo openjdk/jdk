@@ -570,10 +570,11 @@ public class FileChannelImpl
             ti = threads.add();
             if (!isOpen())
                 return -1;
+            boolean append = fdAccess.getAppend(targetFD);
             do {
                 long comp = Blocker.begin();
                 try {
-                    n = transferTo0(fd, position, icount, targetFD);
+                    n = transferTo0(fd, position, icount, targetFD, append);
                 } finally {
                     Blocker.end(comp);
                 }
@@ -801,7 +802,8 @@ public class FileChannelImpl
             do {
                 long comp = Blocker.begin();
                 try {
-                    n = transferFrom0(srcFD, fd, position, count);
+                    boolean append = fdAccess.getAppend(fd);
+                    n = transferFrom0(srcFD, fd, position, count, append);
                 } finally {
                     Blocker.end(comp);
                 }
@@ -1199,9 +1201,6 @@ public class FileChannelImpl
         }
     }
 
-    private static final int MAP_MEM_SEG_DEFAULT_MODES = 0;
-    private static final int MAP_MEM_SEG_READ_ONLY = 1;
-
     @Override
     public MemorySegment map(MapMode mode, long offset, long size,
                              MemorySession session)
@@ -1210,7 +1209,7 @@ public class FileChannelImpl
         Objects.requireNonNull(mode,"Mode is null");
         Objects.requireNonNull(session, "Session is null");
         MemorySessionImpl sessionImpl = MemorySessionImpl.toSessionImpl(session);
-        sessionImpl.checkValidStateSlow();
+        sessionImpl.checkValidState();
         if (offset < 0)
             throw new IllegalArgumentException("Requested bytes offset must be >= 0.");
         if (size < 0)
@@ -1219,14 +1218,14 @@ public class FileChannelImpl
         boolean isSync = isSync(mode);
         int prot = toProt(mode);
         Unmapper unmapper = mapInternal(mode, offset, size, prot, isSync);
-        int modes = MAP_MEM_SEG_DEFAULT_MODES;
+        boolean readOnly = false;
         if (mode == MapMode.READ_ONLY) {
-            modes |= MAP_MEM_SEG_READ_ONLY;
+            readOnly = true;
         }
         if (unmapper != null) {
             AbstractMemorySegmentImpl segment =
                 new MappedMemorySegmentImpl(unmapper.address(), unmapper, size,
-                                            modes, session);
+                                            readOnly, session);
             MemorySessionImpl.ResourceList.ResourceCleanup resource =
                 new MemorySessionImpl.ResourceList.ResourceCleanup() {
                     @Override
@@ -1237,7 +1236,7 @@ public class FileChannelImpl
             sessionImpl.addOrCleanupIfFail(resource);
             return segment;
         } else {
-            return new MappedMemorySegmentImpl.EmptyMappedMemorySegmentImpl(modes, session);
+            return new MappedMemorySegmentImpl.EmptyMappedMemorySegmentImpl(readOnly, sessionImpl);
         }
     }
 
@@ -1576,11 +1575,13 @@ public class FileChannelImpl
     // Transfers from src to dst, or returns IOStatus.UNSUPPORTED (-4) or
     // IOStatus.UNSUPPORTED_CASE (-6) if the kernel does not support it
     private static native long transferTo0(FileDescriptor src, long position,
-                                           long count, FileDescriptor dst);
+                                           long count, FileDescriptor dst,
+                                           boolean append);
 
     private static native long transferFrom0(FileDescriptor src,
                                              FileDescriptor dst,
-                                             long position, long count);
+                                             long position, long count,
+                                             boolean append);
 
     // Retrieves the maximum size of a transfer
     private static native int maxDirectTransferSize0();

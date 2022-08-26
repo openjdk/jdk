@@ -574,9 +574,9 @@ void Method::print_invocation_count() {
 #endif
 }
 
-// Build a MethodData* object to hold information about this method
-// collected in the interpreter.
-void Method::build_interpreter_method_data(const methodHandle& method, TRAPS) {
+// Build a MethodData* object to hold profiling information collected on this
+// method when requested.
+void Method::build_profiling_method_data(const methodHandle& method, TRAPS) {
   // Do not profile the method if metaspace has hit an OOM previously
   // allocating profiling data. Callers clear pending exception so don't
   // add one here.
@@ -599,7 +599,7 @@ void Method::build_interpreter_method_data(const methodHandle& method, TRAPS) {
     method->set_method_data(method_data);
     if (PrintMethodData && (Verbose || WizardMode)) {
       ResourceMark rm(THREAD);
-      tty->print("build_interpreter_method_data for ");
+      tty->print("build_profiling_method_data for ");
       method->print_name(tty);
       tty->cr();
       // At the end of the run, the MDO, full of data, will be dumped.
@@ -637,10 +637,6 @@ MethodCounters* Method::build_method_counters(Thread* current, Method* m) {
 
   if (!mh->init_method_counters(counters)) {
     MetadataFactory::free_metadata(mh->method_holder()->class_loader_data(), counters);
-  }
-
-  if (LogTouchedMethods) {
-    mh->log_touched(current);
   }
 
   return mh->method_counters();
@@ -805,9 +801,9 @@ bool Method::is_default_method() const {
 bool Method::can_be_statically_bound(AccessFlags class_access_flags) const {
   if (is_final_method(class_access_flags))  return true;
 #ifdef ASSERT
-  ResourceMark rm;
   bool is_nonv = (vtable_index() == nonvirtual_vtable_index);
   if (class_access_flags.is_interface()) {
+      ResourceMark rm;
       assert(is_nonv == is_static() || is_nonv == is_private(),
              "nonvirtual unexpected for non-static, non-private: %s",
              name_and_sig_as_C_string());
@@ -971,7 +967,7 @@ bool Method::is_klass_loaded_by_klass_index(int klass_index) const {
     Symbol* klass_name = constants()->klass_name_at(klass_index);
     Handle loader(thread, method_holder()->class_loader());
     Handle prot  (thread, method_holder()->protection_domain());
-    return SystemDictionary::find_instance_klass(klass_name, loader, prot) != NULL;
+    return SystemDictionary::find_instance_klass(thread, klass_name, loader, prot) != NULL;
   } else {
     return true;
   }
@@ -1165,9 +1161,6 @@ void Method::unlink_code(CompiledMethod *compare) {
   // We need to check if either the _code or _from_compiled_code_entry_point
   // refer to this nmethod because there is a race in setting these two fields
   // in Method* as seen in bugid 4947125.
-  // If the vep() points to the zombie nmethod, the memory for the nmethod
-  // could be flushed and the compiler and vtable stubs could still call
-  // through it.
   if (code() == compare ||
       from_compiled_entry() == compare->verified_entry_point()) {
     clear_code();
@@ -1495,8 +1488,8 @@ methodHandle Method::make_method_handle_intrinsic(vmIntrinsics::ID iid,
   if (iid == vmIntrinsics::_linkToNative) {
     m->set_interpreter_entry(m->adapter()->get_i2c_entry());
   }
-  if (log_is_enabled(Info, methodhandles) && (Verbose || WizardMode)) {
-    LogTarget(Info, methodhandles) lt;
+  if (log_is_enabled(Debug, methodhandles)) {
+    LogTarget(Debug, methodhandles) lt;
     LogStream ls(lt);
     m->print_on(&ls);
   }
@@ -2446,85 +2439,6 @@ void Method::print_value_on(outputStream* st) const {
   if (WizardMode) st->print("#%d", _vtable_index);
   if (WizardMode) st->print("[%d,%d]", size_of_parameters(), max_locals());
   if (WizardMode && code() != NULL) st->print(" ((nmethod*)%p)", code());
-}
-
-// LogTouchedMethods and PrintTouchedMethods
-
-// TouchedMethodRecord -- we can't use a HashtableEntry<Method*> because
-// the Method may be garbage collected. Let's roll our own hash table.
-class TouchedMethodRecord : CHeapObj<mtTracing> {
-public:
-  // It's OK to store Symbols here because they will NOT be GC'ed if
-  // LogTouchedMethods is enabled.
-  TouchedMethodRecord* _next;
-  Symbol* _class_name;
-  Symbol* _method_name;
-  Symbol* _method_signature;
-};
-
-static const int TOUCHED_METHOD_TABLE_SIZE = 20011;
-static TouchedMethodRecord** _touched_method_table = NULL;
-
-void Method::log_touched(Thread* current) {
-
-  const int table_size = TOUCHED_METHOD_TABLE_SIZE;
-  Symbol* my_class = klass_name();
-  Symbol* my_name  = name();
-  Symbol* my_sig   = signature();
-
-  unsigned int hash = my_class->identity_hash() +
-                      my_name->identity_hash() +
-                      my_sig->identity_hash();
-  juint index = juint(hash) % table_size;
-
-  MutexLocker ml(current, TouchedMethodLog_lock);
-  if (_touched_method_table == NULL) {
-    _touched_method_table = NEW_C_HEAP_ARRAY2(TouchedMethodRecord*, table_size,
-                                              mtTracing, CURRENT_PC);
-    memset(_touched_method_table, 0, sizeof(TouchedMethodRecord*)*table_size);
-  }
-
-  TouchedMethodRecord* ptr = _touched_method_table[index];
-  while (ptr) {
-    if (ptr->_class_name       == my_class &&
-        ptr->_method_name      == my_name &&
-        ptr->_method_signature == my_sig) {
-      return;
-    }
-    if (ptr->_next == NULL) break;
-    ptr = ptr->_next;
-  }
-  TouchedMethodRecord* nptr = NEW_C_HEAP_OBJ(TouchedMethodRecord, mtTracing);
-  my_class->increment_refcount();
-  my_name->increment_refcount();
-  my_sig->increment_refcount();
-  nptr->_class_name         = my_class;
-  nptr->_method_name        = my_name;
-  nptr->_method_signature   = my_sig;
-  nptr->_next               = NULL;
-
-  if (ptr == NULL) {
-    // first
-    _touched_method_table[index] = nptr;
-  } else {
-    ptr->_next = nptr;
-  }
-}
-
-void Method::print_touched_methods(outputStream* out) {
-  MutexLocker ml(Thread::current()->is_VM_thread() ? NULL : TouchedMethodLog_lock);
-  out->print_cr("# Method::print_touched_methods version 1");
-  if (_touched_method_table) {
-    for (int i = 0; i < TOUCHED_METHOD_TABLE_SIZE; i++) {
-      TouchedMethodRecord* ptr = _touched_method_table[i];
-      while(ptr) {
-        ptr->_class_name->print_symbol_on(out);       out->print(".");
-        ptr->_method_name->print_symbol_on(out);      out->print(":");
-        ptr->_method_signature->print_symbol_on(out); out->cr();
-        ptr = ptr->_next;
-      }
-    }
-  }
 }
 
 // Verification

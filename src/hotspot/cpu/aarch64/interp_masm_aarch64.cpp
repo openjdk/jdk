@@ -170,7 +170,12 @@ void InterpreterMacroAssembler::get_unsigned_2_byte_index_at_bcp(
 void InterpreterMacroAssembler::get_dispatch() {
   uint64_t offset;
   adrp(rdispatch, ExternalAddress((address)Interpreter::dispatch_table()), offset);
-  lea(rdispatch, Address(rdispatch, offset));
+  // Use add() here after ARDP, rather than lea().
+  // lea() does not generate anything if its offset is zero.
+  // However, relocs expect to find either an ADD or a load/store
+  // insn after an ADRP.  add() always generates an ADD insn, even
+  // for add(Rn, Rn, 0).
+  add(rdispatch, rdispatch, offset);
 }
 
 void InterpreterMacroAssembler::get_cache_index_at_bcp(Register index,

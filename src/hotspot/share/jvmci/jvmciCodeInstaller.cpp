@@ -651,7 +651,6 @@ JVMCI::CodeInstallResult CodeInstaller::install(JVMCICompiler* compiler,
     JVMCIObject compiled_code,
     objArrayHandle object_pool,
     CodeBlob*& cb,
-    nmethodLocker& nmethod_handle,
     JVMCIObject installed_code,
     FailedSpeculation** failed_speculations,
     char* speculations,
@@ -692,7 +691,7 @@ JVMCI::CodeInstallResult CodeInstaller::install(JVMCICompiler* compiler,
   JVMCI::CodeInstallResult result = initialize_buffer(compiled_code, buffer, stream, code_flags, JVMCI_CHECK_OK);
 
   u4 available = stream->available();
-  if (available != 0) {
+  if (result == JVMCI::ok && available != 0) {
     JVMCI_ERROR_OK("%d bytes remaining in stream%s", available, stream->context());
   }
 
@@ -729,9 +728,10 @@ JVMCI::CodeInstallResult CodeInstaller::install(JVMCICompiler* compiler,
     }
 
     JVMCIObject mirror = installed_code;
+    nmethod* nm = NULL; // nm is an out parameter of register_method
     result = runtime()->register_method(jvmci_env(),
                                         method,
-                                        nmethod_handle,
+                                        nm,
                                         entry_bci,
                                         &_offsets,
                                         _orig_pc_offset,
@@ -753,7 +753,6 @@ JVMCI::CodeInstallResult CodeInstaller::install(JVMCICompiler* compiler,
                                         speculations,
                                         speculations_len);
     if (result == JVMCI::ok) {
-      nmethod* nm = nmethod_handle.code()->as_nmethod_or_null();
       cb = nm;
       if (compile_state == NULL) {
         // This compile didn't come through the CompileBroker so perform the printing here

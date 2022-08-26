@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "gc/serial/cSpaceCounters.hpp"
 #include "gc/shared/ageTable.hpp"
 #include "gc/shared/copyFailedInfo.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/generation.hpp"
 #include "gc/shared/generationCounters.hpp"
 #include "gc/shared/preservedMarks.hpp"
@@ -222,10 +223,6 @@ protected:
 
   size_t max_eden_size() const              { return _max_eden_size; }
   size_t max_survivor_size() const          { return _max_survivor_size; }
-
-  bool supports_inline_contig_alloc() const { return true; }
-  HeapWord* volatile* top_addr() const;
-  HeapWord** end_addr() const;
 
   // Thread-local allocation buffers
   bool supports_tlab_allocation() const { return true; }

@@ -44,7 +44,6 @@
 #include "gc/shared/weakProcessor.inline.hpp"
 #include "gc/shared/workerPolicy.hpp"
 #include "logging/log.hpp"
-#include "runtime/continuation.hpp"
 #include "runtime/handles.inline.hpp"
 #include "utilities/debug.hpp"
 
@@ -119,7 +118,7 @@ G1FullCollector::G1FullCollector(G1CollectedHeap* heap,
     _oop_queue_set(_num_workers),
     _array_queue_set(_num_workers),
     _preserved_marks_set(true),
-    _serial_compaction_point(),
+    _serial_compaction_point(this),
     _is_alive(this, heap->concurrent_mark()->mark_bitmap()),
     _is_alive_mutator(heap->ref_processor_stw(), &_is_alive),
     _always_subject_to_discovery(),
@@ -132,13 +131,15 @@ G1FullCollector::G1FullCollector(G1CollectedHeap* heap,
   _compaction_points = NEW_C_HEAP_ARRAY(G1FullGCCompactionPoint*, _num_workers, mtGC);
 
   _live_stats = NEW_C_HEAP_ARRAY(G1RegionMarkStats, _heap->max_regions(), mtGC);
+  _compaction_tops = NEW_C_HEAP_ARRAY(HeapWord*, _heap->max_regions(), mtGC);
   for (uint j = 0; j < heap->max_regions(); j++) {
     _live_stats[j].clear();
+    _compaction_tops[j] = nullptr;
   }
 
   for (uint i = 0; i < _num_workers; i++) {
     _markers[i] = new G1FullGCMarker(this, i, _preserved_marks_set.get(i), _live_stats);
-    _compaction_points[i] = new G1FullGCCompactionPoint();
+    _compaction_points[i] = new G1FullGCCompactionPoint(this);
     _oop_queue_set.register_queue(i, marker(i)->oop_stack());
     _array_queue_set.register_queue(i, marker(i)->objarray_stack());
   }
@@ -152,6 +153,7 @@ G1FullCollector::~G1FullCollector() {
   }
   FREE_C_HEAP_ARRAY(G1FullGCMarker*, _markers);
   FREE_C_HEAP_ARRAY(G1FullGCCompactionPoint*, _compaction_points);
+  FREE_C_HEAP_ARRAY(HeapWord*, _compaction_tops);
   FREE_C_HEAP_ARRAY(G1RegionMarkStats, _live_stats);
 }
 
@@ -207,8 +209,8 @@ void G1FullCollector::collect() {
 
   phase4_do_compaction();
 
-  Continuations::on_gc_marking_cycle_finish();
-  Continuations::arm_all_nmethods();
+  CodeCache::on_gc_marking_cycle_finish();
+  CodeCache::arm_all_nmethods();
 }
 
 void G1FullCollector::complete_collection() {
@@ -298,9 +300,10 @@ void G1FullCollector::phase1_mark_live_objects() {
   // Class unloading and cleanup.
   if (ClassUnloading) {
     GCTraceTime(Debug, gc, phases) debug("Phase 1: Class Unloading and Cleanup", scope()->timer());
+    CodeCache::UnloadingScope unloading_scope(&_is_alive);
     // Unload classes and purge the SystemDictionary.
     bool purged_class = SystemDictionary::do_unloading(scope()->timer());
-    _heap->complete_cleaning(&_is_alive, purged_class);
+    _heap->complete_cleaning(purged_class);
   }
 
   scope()->tracer()->report_object_count_after_gc(&_is_alive);
@@ -367,7 +370,7 @@ void G1FullCollector::phase2c_prepare_serial_compaction() {
     } else {
       assert(!current->is_humongous(), "Should be no humongous regions in compaction queue");
       G1SerialRePrepareClosure re_prepare(cp, current);
-      current->set_compaction_top(current->bottom());
+      set_compaction_top(current, current->bottom());
       current->apply_to_marked_objects(mark_bitmap(), &re_prepare);
     }
   }

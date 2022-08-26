@@ -2269,7 +2269,7 @@
         /* This is due to the fact that, in the vast majority of cases,  */
         /* the span length in bytes is relatively small.                 */
         while ( --c2 > 0 )
-          *(++target) = 0xFF;
+          *( ++target ) = 0xFF;
 
         target[1] |= f2;
       }
