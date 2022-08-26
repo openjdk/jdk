@@ -312,8 +312,6 @@ static void
 test_GetSetLocal(jvmtiEnv *jvmti, JNIEnv* jni, jthread vthread, int depth, int frame_count, bool at_event) {
   Values values0 = { NULL, NULL, 1, 2L, (jfloat)3.2F, (jdouble)4.500000047683716 };
   Values values1 = { NULL, NULL, 2, 3L, (jfloat)4.2F, (jdouble)5.500000047683716 };
-  // jthread cthread = at_event ? get_carrier_thread(jvmti, jni, get_current_thread(jvmti, jni))
-  //                            : get_carrier_thread(jvmti, jni, vthread);
   jthread cthread = get_carrier_thread(jvmti, jni, vthread);
 
   values0.tt = vthread;
