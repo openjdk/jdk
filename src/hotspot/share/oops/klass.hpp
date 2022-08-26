@@ -572,7 +572,7 @@ protected:
       return true;
     }
   }
-#endif // INCLUDE
+#endif // INCLUDE_CDS
 
  public:
   // ALL FUNCTIONS BELOW THIS POINT ARE DISPATCHED FROM AN OOP
