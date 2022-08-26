@@ -67,12 +67,12 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
  * schedules it to execute concurrently with the thread that caused it to start.
  * The newly started thread invokes the task's {@link Runnable#run() run} method.
  *
- * <p> A thread <i>terminates</i> if either its {@code run} method completes normally,
- * or if its {@code run} method completes abruptly and the appropriate
+ * <p> A platform thread <i>terminates</i> if either its {@code run} method completes
+ * normally, or if its {@code run} method completes abruptly and the appropriate
  * {@linkplain Thread.UncaughtExceptionHandler uncaught exception handler} completes
  * normally or abruptly. With no code left to run, the thread has completed execution.
- *
- * <p> The {@link #join() join} method waits for a thread to terminate.
+ * Another thread can call this thread's {@link #join() join} method to wait for this
+ * thread to terminate.
  *
  * <p> Threads have a unique {@linkplain #threadId() identifier} and a {@linkplain
  * #getName() name}. The identifier is generated when a {@code Thread} is created

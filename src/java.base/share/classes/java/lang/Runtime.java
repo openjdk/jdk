@@ -60,6 +60,10 @@ import jdk.internal.reflect.Reflection;
  * the operating system.</li>
  * </ol>
  *
+ * <p>In contrast to {@link #exit exit}, the {@link #halt halt} method does not initiate the
+ * shutdown sequence. See the <a href="#termination">Java Virtual Machine Termination</a> section
+ * below.
+ *
  * <p>At the beginning of the shutdown sequence, the registered shutdown hooks are
  * {@linkplain Thread#start started} in some unspecified order. They run concurrently
  * with any daemon or non-daemon threads that were {@linkplain Thread#isAlive() alive}
