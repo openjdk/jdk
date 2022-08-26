@@ -166,7 +166,7 @@ class oopDesc;
 #define INTPTR_FORMAT            "0x%08"      PRIxPTR
 #define PTR_FORMAT               "0x%08"      PRIxPTR
 #endif  // _LP64
-#define INTPTR_FORMAT_H_W         "%"  #width PRIxPTR
+#define INTPTR_FORMAT_H_W(width) "%"   #width PRIxPTR
 
 // Convert pointer to intptr_t, for use in printing pointers.
 inline intptr_t p2i(const volatile void* p) {
