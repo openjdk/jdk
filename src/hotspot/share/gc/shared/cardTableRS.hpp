@@ -61,7 +61,7 @@ public:
   }
 
   void verify();
-  void initialize();
+  void initialize() override;
 
   void clear_into_younger(Generation* old_gen);
 
@@ -95,7 +95,7 @@ private:
 
 public:
   ClearNoncleanCardWrapper(DirtyCardToOopClosure* dirty_card_closure, CardTableRS* ct);
-  void do_MemRegion(MemRegion mr);
+  void do_MemRegion(MemRegion mr) override;
 };
 
 #endif // SHARE_GC_SHARED_CARDTABLERS_HPP
