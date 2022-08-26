@@ -115,22 +115,14 @@ public class TestMemoryAwareness {
     // Ensure that Java ignores container memory limit values above the host's physical memory.
     private static void testContainerMemExceedsPhysical()
             throws Exception {
-
         Common.logNewTestCase("container memory limit exceeds physical memory");
-
-        DockerRunOptions opts = Common.newOpts(imageName);
-
-        // first run: establish physical memory in test environment and derive
-        // a bad value one power of ten larger
-        String goodMem = Common.run(opts).firstMatch("total physical memory: (\\d+)", 1);
-        assertNotNull(goodMem, "no match for 'total physical memory' in trace output");
-        String badMem = goodMem + "0";
-
-        // second run: set a container memory limit to the bad value
-        opts = Common.newOpts(imageName)
+        String badMem = hostMaxMem + "0";
+        // set a container memory limit to the bad value
+        DockerRunOptions opts = Common.newOpts(imageName)
             .addDockerOpts("--memory", badMem);
+
         Common.run(opts)
-            .shouldMatch("container memory limit (ignored: " + badMem + "|unlimited: -1), using host value " + goodMem);
+            .shouldMatch("container memory limit (ignored: " + badMem + "|unlimited: -1), using host value " + hostMaxMem);
     }
 
 
