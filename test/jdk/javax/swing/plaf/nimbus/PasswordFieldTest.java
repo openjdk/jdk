@@ -49,7 +49,7 @@ public class PasswordFieldTest {
             SwingUtilities.invokeAndWait(() -> setLookAndFeel(laf));
 
             System.out.println("Echo char: " + UIManager.get("PasswordField.echoChar"));
-	    if (UIManager.get("PasswordField.echoChar") == null) {
+            if (UIManager.get("PasswordField.echoChar") == null) {
                 throw new RuntimeException("PasswordField.echoChar returns null for NimbusL&F");
             }		
         }
