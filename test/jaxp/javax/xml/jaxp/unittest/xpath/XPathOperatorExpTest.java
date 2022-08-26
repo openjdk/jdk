@@ -48,16 +48,16 @@ public class XPathOperatorExpTest extends XPathTestBase {
     @DataProvider(name = "operatorExpTestCases")
     public Object[][] getOperatorExp() {
         return new Object[][]{
-                // boolean operators: or, and, =, !=, <, <=, >, >=
+                // boolean and relational operators: or, and, =, !=, <, <=, >, >=
                 {"string(//Customer[Age > 0]/Name)", "name2"},
                 {"string(//Customer[Age < 0]/Name)", "name3"},
                 {"string(//Customer[Age = 0]/Name)", "name1"},
-                {"count(//Customer[Age >= 0 and Age <= 0])", 1.0},
-                {"count(//Customer[Age >= 0][Age <= 0])", 1.0},
-                {"count(//Customer[Age > 0 or Age < 0])", 2.0},
-                {"count(//Customer[Age != 0])", 2.0},
+                {"count(//Customer[Age >= 0 and Age <= 0])", 1},
+                {"count(//Customer[Age >= 0][Age <= 0])", 1},
+                {"count(//Customer[Age > 0 or Age < 0])", 2},
+                {"count(//Customer[Age != 0])", 2},
 
-                // number operators: +, -, *, div, mod
+                // arithmetic operators: +, -, *, div, mod
                 {"string(//Customer[last() div 2]/Name)", "name1"},
                 {"string(//Customer[position() * 2 > last()]/Name)", "name2"},
                 {"string(//Customer[position() + 1 < last()]/Name)", "name1"},
@@ -66,14 +66,14 @@ public class XPathOperatorExpTest extends XPathTestBase {
 
                 // union operator: |
                 {"count(//Customer[Name='name1'] | //Customer[Name='name2'])",
-                        2.0},
+                        2},
                 {"count(//Customer[Name='name1'] | //Customer[Name='name2'] |" +
-                        " //Customer[Name='name3'])", 3.0},
+                        " //Customer[Name='name3'])", 3},
 
                 // operator precedence
                 {"1 + 2 * 3 + 3", 10.0},
                 {"1 + 1 div 2 + 2", 3.5},
-                {"1 + 1 mod 2 + 2", 4},
+                {"1 + 1 mod 2 + 2", 4.0},
                 {"1 * 1 mod 2 div 2", 0},
                 {"1 * (1 mod 2) div 2", 0.5},
                 {"(1 + 2) * (3 + 3)", 18.0},
