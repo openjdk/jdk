@@ -42,23 +42,46 @@ class AsyncLogWriter::AsyncLogLocker : public StackObj {
   }
 };
 
+bool AsyncLogBuffer::push_back(const AsyncLogMessage& msg) {
+  size_t sz = msg.size();
+  if (_pos + sz <= _capacity) {
+    memcpy(_buf + _pos, &msg, sizeof(AsyncLogMessage));
+    char* dest = _buf + _pos + sizeof(AsyncLogMessage);
+    if (msg.message() != nullptr) {
+      strcpy(dest, msg.message());
+    } else {
+      dest = nullptr;
+    }
+    auto p = reinterpret_cast<AsyncLogMessage*>(_buf + _pos);
+    p->set_message(dest);
+    _pos += sz;
+    return true;
+  }
+  return false;
+}
+
+AsyncLogMessage* AsyncLogBuffer::Iterator::next() {
+  auto msg = static_cast<AsyncLogMessage*>(raw_ptr());
+  _curr += msg->size();
+  _curr = MIN2(_curr, _buf._pos);
+  return msg;
+}
+
 void AsyncLogWriter::enqueue_locked(const AsyncLogMessage& msg) {
-  if (_buffer.size() >= _buffer_max_size) {
+  if (!_buffer->push_back(msg)) {
     bool p_created;
     uint32_t* counter = _stats.put_if_absent(msg.output(), 0, &p_created);
     *counter = *counter + 1;
-    // drop the enqueueing message.
-    os::free(msg.message());
     return;
   }
 
-  _buffer.push_back(msg);
   _data_available = true;
   _lock.notify();
 }
 
 void AsyncLogWriter::enqueue(LogFileStreamOutput& output, const LogDecorations& decorations, const char* msg) {
-  AsyncLogMessage m(&output, decorations, os::strdup(msg));
+  AsyncLogMessage m(&output, decorations, msg);
+
 
   { // critical area
     AsyncLogLocker locker;
@@ -72,7 +95,7 @@ void AsyncLogWriter::enqueue(LogFileStreamOutput& output, LogMessageBuffer::Iter
   AsyncLogLocker locker;
 
   for (; !msg_iterator.is_at_end(); msg_iterator++) {
-    AsyncLogMessage m(&output, msg_iterator.decorations(), os::strdup(msg_iterator.message()));
+    AsyncLogMessage m(&output, msg_iterator.decorations(), msg_iterator.message());
     enqueue_locked(m);
   }
 }
@@ -81,14 +104,37 @@ AsyncLogWriter::AsyncLogWriter()
   : _flush_sem(0), _lock(), _data_available(false),
     _initialized(false),
     _stats() {
+
+  size_t page_size = os::vm_page_size();
+  size_t size = align_up(AsyncLogBufferSize / 2, page_size);
+
+  char* buf0 = static_cast<char* >(os::malloc(size, mtLogging));
+  char* buf1 = static_cast<char* >(os::malloc(size, mtLogging));
+  if (buf0 != nullptr && buf1 != nullptr) {
+    _buffer = new AsyncLogBuffer(buf0, size);
+    _buffer_staging = new AsyncLogBuffer(buf1, size);
+    if (_buffer != nullptr && _buffer_staging != nullptr) {
+      log_info(logging)("AsyncLogBuffer estimates memory use: " SIZE_FORMAT " bytes", size * 2);
+    } else {
+	delete _buffer;
+	delete _buffer_staging;
+	os::free(buf0);
+	os::free(buf1);
+    }
+  } else {
+    log_warning(logging)("AsyncLogging failed to create buffer. Falling back to synchronous logging.");
+
+    if (buf0 != nullptr) {
+      os::free(buf0);
+    }
+    return;
+  }
+
   if (os::create_thread(this, os::asynclog_thread)) {
     _initialized = true;
   } else {
     log_warning(logging, thread)("AsyncLogging failed to create thread. Falling back to synchronous logging.");
   }
-
-  log_info(logging)("The maximum entries of AsyncLogBuffer: " SIZE_FORMAT ", estimated memory use: " SIZE_FORMAT " bytes",
-                    _buffer_max_size, AsyncLogBufferSize);
 }
 
 class AsyncLogMapIterator {
@@ -103,7 +149,7 @@ class AsyncLogMapIterator {
       LogDecorations decorations(LogLevel::Warning, none::tagset(), LogDecorators::All);
       stringStream ss;
       ss.print(UINT32_FORMAT_W(6) " messages dropped due to async logging", counter);
-      AsyncLogMessage msg(output, decorations, ss.as_string(true /*c_heap*/));
+      AsyncLogMessage msg(output, decorations, ss.as_string(true/*c_heap*/));
       _logs.push_back(msg);
       counter = 0;
     }
@@ -119,28 +165,24 @@ void AsyncLogWriter::write() {
   //
   // The operation 'pop_all()' is done in O(1). All I/O jobs are then performed without
   // lock protection. This guarantees I/O jobs don't block logsites.
-  AsyncLogBuffer logs;
-
   { // critical region
     AsyncLogLocker locker;
-
-    _buffer.pop_all(&logs);
+    _buffer_staging->reset();
+    swap(_buffer, _buffer_staging);
     // append meta-messages of dropped counters
-    AsyncLogMapIterator dropped_counters_iter(logs);
+    AsyncLogMapIterator dropped_counters_iter(*_buffer_staging);
     _stats.iterate(&dropped_counters_iter);
     _data_available = false;
   }
 
-  LinkedListIterator<AsyncLogMessage> it(logs.head());
-
+  auto it = _buffer_staging->iterator();
   int req = 0;
   while (!it.is_empty()) {
     AsyncLogMessage* e = it.next();
-    char* msg = e->message();
+    const char* msg = e->message();
 
     if (msg != nullptr) {
       e->output()->write_blocking(e->decorations(), msg);
-      os::free(msg);
     } else if (e->output() == nullptr) {
       // This is a flush token. Record that we found it and then
       // signal the flushing thread after the loop.
@@ -206,7 +248,7 @@ void AsyncLogWriter::flush() {
       AsyncLogMessage token(nullptr, d, nullptr);
 
       // Push directly in-case we are at logical max capacity, as this must not get dropped.
-      _instance->_buffer.push_back(token);
+      _instance->_buffer->push_back(token);
       _instance->_data_available = true;
       _instance->_lock.notify();
     }

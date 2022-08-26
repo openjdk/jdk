@@ -26,92 +26,75 @@
 #include "logging/log.hpp"
 #include "logging/logDecorations.hpp"
 #include "logging/logMessageBuffer.hpp"
-#include "memory/resourceArea.hpp"
+#include "memory/allocation.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/nonJavaThread.hpp"
 #include "runtime/semaphore.hpp"
 #include "utilities/resourceHash.hpp"
-#include "utilities/linkedlist.hpp"
-
-template <typename E, MEMFLAGS F>
-class LinkedListDeque : private LinkedListImpl<E, ResourceObj::C_HEAP, F> {
- private:
-  LinkedListNode<E>* _tail;
-  size_t _size;
-
- public:
-  LinkedListDeque() : _tail(NULL), _size(0) {}
-  void push_back(const E& e) {
-    if (!_tail) {
-      _tail = this->add(e);
-    } else {
-      _tail = this->insert_after(e, _tail);
-    }
-
-    ++_size;
-  }
-
-  // pop all elements to logs.
-  void pop_all(LinkedList<E>* logs) {
-    logs->move(static_cast<LinkedList<E>* >(this));
-    _tail = NULL;
-    _size = 0;
-  }
-
-  void pop_all(LinkedListDeque<E, F>* logs) {
-    logs->_size = _size;
-    logs->_tail = _tail;
-    pop_all(static_cast<LinkedList<E>* >(logs));
-  }
-
-  void pop_front() {
-    LinkedListNode<E>* h = this->unlink_head();
-    if (h == _tail) {
-      _tail = NULL;
-    }
-
-    if (h != NULL) {
-      --_size;
-      this->delete_node(h);
-    }
-  }
-
-  size_t size() const { return _size; }
-
-  const E* front() const {
-    return this->_head == NULL ? NULL : this->_head->peek();
-  }
-
-  const E* back() const {
-    return _tail == NULL ? NULL : _tail->peek();
-  }
-
-  LinkedListNode<E>* head() const {
-    return this->_head;
-  }
-};
 
 // Forward declaration
 class LogFileStreamOutput;
 
 class AsyncLogMessage {
   LogFileStreamOutput* _output;
+  const char* _message;
   const LogDecorations _decorations;
-  char* _message;
 
 public:
-  AsyncLogMessage(LogFileStreamOutput* output, const LogDecorations& decorations, char* msg)
-    : _output(output), _decorations(decorations), _message(msg) {}
+  AsyncLogMessage(LogFileStreamOutput* output, const LogDecorations& decorations, const char* msg)
+    : _output(output), _message(msg), _decorations(decorations) {}
 
-  // placeholder for LinkedListImpl.
-  bool equals(const AsyncLogMessage& o) const { return false; }
+  size_t size() const {
+    constexpr size_t size = align_up(sizeof(*this), sizeof(void*));
+    return _message != nullptr ? align_up(size + strlen(_message) + 1, sizeof(void*)): size;
+  }
 
   LogFileStreamOutput* output() const { return _output; }
   const LogDecorations& decorations() const { return _decorations; }
-  char* message() const { return _message; }
+  void set_message(const char* msg) { _message = msg; }
+  const char* message() const { return _message; }
 };
 
-typedef LinkedListDeque<AsyncLogMessage, mtLogging> AsyncLogBuffer;
+class AsyncLogBuffer : public CHeapObj<mtLogging> {
+  size_t _pos;
+  char* const _buf;
+  const size_t _capacity;
+
+ public:
+  AsyncLogBuffer(char* buffer, size_t capacity) : _pos(0), _buf(buffer), _capacity(capacity) {}
+
+  bool push_back(const AsyncLogMessage& msg);
+
+  size_t space() const {
+    return _capacity - _pos;
+  }
+
+  void reset() { _pos = 0; }
+
+  class Iterator {
+    const AsyncLogBuffer& _buf;
+    size_t _curr;
+
+    void* raw_ptr() const {
+      assert(_curr < _buf._pos, "sanity check");
+      return _buf._buf + _curr;
+    }
+
+   public:
+    Iterator(const AsyncLogBuffer& buffer): _buf(buffer), _curr(0) {}
+
+    bool is_empty() const {
+      return _curr >= _buf._pos;
+    }
+
+    AsyncLogMessage* next();
+  };
+
+  Iterator iterator() {
+    return Iterator(*this);
+  }
+};
+
 typedef ResourceHashtable<LogFileStreamOutput*,
                           uint32_t,
                           17, /*table_size*/
@@ -149,11 +132,14 @@ class AsyncLogWriter : public NonJavaThread {
   bool _data_available;
   volatile bool _initialized;
   AsyncLogMap _stats; // statistics for dropped messages
-  AsyncLogBuffer _buffer;
+
+  // ping-pang buffers
+  AsyncLogBuffer* _buffer;
+  AsyncLogBuffer* _buffer_staging;
 
   // The memory use of each AsyncLogMessage (payload) consists of itself and a variable-length c-str message.
   // A regular logging message is smaller than vwrite_buffer_size, which is defined in logtagset.cpp
-  const size_t _buffer_max_size = {AsyncLogBufferSize / (sizeof(AsyncLogMessage) + vwrite_buffer_size)};
+  //const size_t _buffer_max_size = {AsyncLogBufferSize / (sizeof(AsyncLogMessage) + vwrite_buffer_size)};
 
   AsyncLogWriter();
   void enqueue_locked(const AsyncLogMessage& msg);
