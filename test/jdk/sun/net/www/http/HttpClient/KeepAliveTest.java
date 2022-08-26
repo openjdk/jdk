@@ -666,21 +666,21 @@ public class KeepAliveTest {
          */
         if(scenarioNumber >= 0 && scenarioNumber <= 15) {
             return A;
-        } 
+        }
         /*
          * ServerResponse from scenario 16 to 31
          * SERVER_RESPONSE=Connection: keep-alive\r\nKeep-alive: timeout=20
          */
         else if (scenarioNumber >= 16 && scenarioNumber <= 31){
             return B;
-        } 
+        }
         /*
          * ServerResponse from scenario 32 to 47
          * SERVER_RESPONSE=Proxy-Connection: keep-alive
          */
         else if (scenarioNumber >= 32 && scenarioNumber <= 47){
             return C;
-        } 
+        }
         /*
          * ServerResponse from 48 to 63
          * SERVER_RESPONSE=Connection:keep-alive\r\nProxy-connection:keep-alive
@@ -693,35 +693,35 @@ public class KeepAliveTest {
          */
         } else if (scenarioNumber >= 64 && scenarioNumber <= 79){
             return E;
-        } 
+        }
         /*
          * ServerResponse from 80 to 95
          * SERVER_RESPONSE=No Input
          */
         else if (scenarioNumber >= 80 && scenarioNumber <= 95){
             return NI;
-        } 
+        }
         /*
          * ServerResponse from 96 to 111
          * SERVER_RESPONSE=Connection: keep-alive\r\nKeep-alive: timeout=-20
-         */   
+         */
         else if (scenarioNumber >= 96 && scenarioNumber <= 111){
             return F;
-        } 
+        }
         /*
          * ServerResponse from 112 to 127
          * SERVER_RESPONSE=Connection: keep-alive\r\nKeep-alive: timeout=0
          */
         else if (scenarioNumber >= 112 && scenarioNumber <= 127){
             return G;
-        } 
+        }
         /*
          * ServerResponse from 128 to 143
          * SERVER_RESPONSE=Proxy-connection:keep-alive\r\nKeep-alive:timeout=-20
          */
         else if (scenarioNumber >= 128 && scenarioNumber <= 143){
             return H;
-        } 
+        }
         /*
          * ServerResponse from 144 to 159
          * SERVER_RESPONSE=Proxy-connection:keep-alive\r\nKeep-alive:timeout=0
