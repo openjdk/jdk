@@ -939,7 +939,6 @@ public:
   inline DependencyContext dependencies();
   int  mark_dependent_nmethods(KlassDepChange& changes);
   void add_dependent_nmethod(nmethod* nm);
-  void remove_dependent_nmethod(nmethod* nm);
   void clean_dependency_context();
 
   // On-stack replacement support
