@@ -39,9 +39,9 @@ TEST_VM_F(ReadWriteLockTest, WriterLockPreventsReadersFromEnteringCriticalRegion
   volatile bool reader_in_critical_region = false;
   volatile bool reader_exited_critical_region = false;
 
-  auto reader = [&](Thread* _current, int _id) {
+  auto reader = [&](Thread* current, int _id) {
     Atomic::release_store(&reader_started, true);
-    mut->read_lock(Thread::current());
+    mut->read_lock(current);
     Atomic::release_store(&reader_in_critical_region, true);
     mut->read_unlock();
     Atomic::release_store(&reader_exited_critical_region, true);
@@ -91,8 +91,8 @@ TEST_VM_F(ReadWriteLockTest, MultipleReadersAtSameTime) {
   constexpr const int num_readers = 5;
   volatile int concurrent_readers = 0;
 
-  auto r = [&](Thread* _current, int _id) {
-    mut->read_lock(Thread::current());
+  auto r = [&](Thread* current, int _id) {
+    mut->read_lock(current);
     // Increment counter
     Atomic::add(&concurrent_readers, 1);
     // Don't let go of the lock, exit thread

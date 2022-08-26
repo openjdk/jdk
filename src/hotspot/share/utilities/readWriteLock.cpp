@@ -26,25 +26,37 @@
 #include "runtime/atomic.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/mutex.hpp"
+#include "runtime/thread.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/readWriteLock.hpp"
 
-void ReadWriteLock::read_lock(Thread *current) {
+inline void ReadWriteLock::await_write_unlock() {
+  Locker locker(&_mon);
+  while (Atomic::load_acquire(&_count) < 0) {
+    _mon.wait(0);
+  }
+}
+
+inline void ReadWriteLock::await_write_lock() {
+  Locker locker(&_mon);
+  while (Atomic::load_acquire(&_count) != -1) {
+    _mon.wait(0);
+  }
+}
+
+void ReadWriteLock::read_lock(Thread* current) {
+  assert(current == nullptr || current == Thread::current(), "invariant");
+
   for (;;) {
     const int32_t count = Atomic::load_acquire(&_count);
     if (count < 0) {
       // Wait until unlocked by writer
-      auto await = [&]() {
-        Locker locker(&_mon);
-        while (Atomic::load_acquire(&_count) < 0) {
-          _mon.wait(0);
-        }
-      };
-      if (current->is_Java_thread()) {
+
+      if (current != nullptr && current->is_Java_thread()) {
         ThreadBlockInVM tbivm(JavaThread::cast(current));
-        await();
+        await_write_unlock();
       } else {
-        await();
+        await_write_unlock();
       }
       continue;
     }
@@ -62,6 +74,7 @@ void ReadWriteLock::read_lock(Thread *current) {
 void ReadWriteLock::read_unlock() {
   for (;;) {
     const int32_t count = Atomic::load_acquire(&_count);
+    assert(count != 0 && count != -1, "invariant");
 
     if (count > 0) {
       // No writer in progress, try to decrement reader count.
@@ -86,25 +99,20 @@ void ReadWriteLock::read_unlock() {
   }
 }
 
-void ReadWriteLock::write_lock(Thread *current) {
+void ReadWriteLock::write_lock(Thread* current) {
+  assert(current == nullptr || current == Thread::current(), "invariant");
+
   for (;;) {
     const int32_t count = Atomic::load_acquire(&_count);
 
     if (count < 0) {
       // Already has a writer, wait until unlocked
 
-      auto await_writers_exit = [&]() {
-        Locker locker(&_mon);
-        while (Atomic::load_acquire(&_count) < 0) {
-          _mon.wait(0);
-        }
-      };
-
-      if (current->is_Java_thread()) {
+      if (current != nullptr && current->is_Java_thread()) {
         ThreadBlockInVM tbivm(JavaThread::cast(current));
-        await_writers_exit();
+        await_write_unlock();
       } else {
-        await_writers_exit();
+        await_write_unlock();
       }
       continue;
     }
@@ -118,18 +126,12 @@ void ReadWriteLock::write_lock(Thread *current) {
     // it to -1 and have now blocked readers. Otherwise we wait until all reader
     // threads have exited the critical region.
     if (count != 0) {
-      auto await_writer_entry = [&]() {
-        // Wait until all readers exit.
-        Locker locker(&_mon);
-        while (Atomic::load_acquire(&_count) != -1) {
-          _mon.wait(0);
-        }
-      };
-      if (current->is_Java_thread()) {
+      // Wait until all readers exit.
+      if (current != nullptr && current->is_Java_thread()) {
         ThreadBlockInVM tbivm(JavaThread::cast(current));
-        await_writer_entry();
+        await_write_lock();
       } else {
-        await_writer_entry();
+        await_write_lock();
       }
     }
 

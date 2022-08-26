@@ -26,11 +26,9 @@
 #define SHARE_RUNTIME_READWRITELOCK_HPP
 
 #include "memory/allocation.hpp"
-#include "runtime/atomic.hpp"
-#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/mutex.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/macros.hpp"
+#include "runtime/thread.hpp"
 
 //  This is a multiple-reader single-writer lock implementation.
 //
@@ -80,19 +78,20 @@ private:
   //
   volatile int32_t _count;
 
+  void await_write_unlock();
+  void await_write_lock();
 public:
   ReadWriteLock()
     : _mon(),
       _count(0) {
   }
 
-  ~ReadWriteLock() {
-  }
+  ~ReadWriteLock() = default;
 
-  void write_lock(Thread* current = Thread::current());
+  void write_lock(Thread* current = Thread::current_or_null());
   void write_unlock();
 
-  void read_lock(Thread* current = Thread::current());
+  void read_lock(Thread* current = Thread::current_or_null());
   void read_unlock();
 };
 #endif // SHARE_RUNTIME_READWRITELOCK_HPP
