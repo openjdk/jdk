@@ -31,15 +31,18 @@
 #include "utf_util.h"
 
 
-/* Error and assert macros */
-#define UTF_ERROR(m) utfError(__FILE__, __LINE__,  m)
+/* Error, warning and assert macros */
+#define UTF_ERROR(m) utfError(__FILE__, __LINE__, m, 1)
+#define UTF_WARNING(m) utfError(__FILE__, __LINE__, m, 0)
 #define UTF_ASSERT(x) ( (x)==0 ? UTF_ERROR("ASSERT ERROR " #x) : (void)0 )
 
 // Platform independent part
 
-static void utfError(char *file, int line, char *message) {
+static void utfError(char *file, int line, char *message, int abrt) {
     (void)fprintf(stderr, "UTF ERROR [\"%s\":%d]: %s\n", file, line, message);
-    abort();
+    if (abrt) {
+        abort();
+    }
 }
 
 /* Determine length of this Standard UTF-8 in Modified UTF-8.
@@ -333,7 +336,7 @@ static WCHAR* getWideString(UINT codePage, char* str, int len, int *pwlen) {
     wlen = MultiByteToWideChar(codePage, 0, str, len, NULL, 0);
     *pwlen = wlen;
     if (wlen <= 0) {
-        UTF_ERROR(("Can't get WIDE string length"));
+        UTF_WARNING(("Can't get WIDE string length"));
         return NULL;
     }
     wstr = (WCHAR*)malloc(wlen * sizeof(WCHAR));
@@ -342,7 +345,7 @@ static WCHAR* getWideString(UINT codePage, char* str, int len, int *pwlen) {
         return NULL;
     }
     if (MultiByteToWideChar(codePage, 0, str, len, wstr, wlen) == 0) {
-        UTF_ERROR(("Can't get WIDE string"));
+        UTF_WARNING(("Can't get WIDE string"));
         free(wstr);
         return NULL;
     }
