@@ -292,6 +292,16 @@ public class BreakIteratorProviderImpl extends BreakIteratorProvider
             offset = ci.getIndex();
         }
 
+        // Had to override to suppress the bug in the BreakIterator's default impl.
+        // See the comments in the default impl.
+        @Override
+        public boolean isBoundary(int offset) {
+            if (offset < boundaries.get(0) || offset > boundaries.get(boundaries.size() - 1)) {
+                throw new IllegalArgumentException("offset is out of bounds: " + offset);
+            }
+            return Collections.binarySearch(boundaries, offset) >= 0;
+        }
+
         @Override
         public int hashCode() {
             return Objects.hash(ci, offset, boundaries, boundaryIndex);
