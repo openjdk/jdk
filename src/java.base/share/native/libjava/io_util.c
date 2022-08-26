@@ -68,7 +68,7 @@ readN(JNIEnv *env, jobject this, jfieldID fid, jint len) {
     }
     jint nread = IO_Read(fd, buf, len);
     if (nread == -1) {
-        JNU_ThrowIOExceptionWithLastError(env, "Read error");
+        JNU_ThrowByName(env, "java/io/EOFException", NULL);
         return -1;
     }
 
