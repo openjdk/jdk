@@ -218,15 +218,13 @@ public class KeepAliveTest {
     private static final String NOT_CACHED = "NotCached";
     private static final String CLIENT_SEPARATOR = ";";
     private static final String NEW_LINE = "\r\n";
-    //private static final int TIMEOUT = 200;
     private volatile int SERVER_PORT = 0;
     /*
      * isProxySet are shared variables between server thread and client thread(main) and it should be set and reset to false for each and
      * every scenario.
-     * isProxySet and serverReady variables should be set by server thread before proceeding to client thread(main).
+     * isProxySet variable should be set by server thread before proceeding to client thread(main).
      */
     private volatile boolean isProxySet = false;
-    //private volatile boolean serverReady = false;
     private static final String NI = "NO_INPUT";
     private static final String CONNECTION_KEEP_ALIVE_ONLY = "Connection: keep-alive";
     private static final String PROXY_CONNECTION_KEEP_ALIVE_ONLY = "Proxy-Connection: keep-alive";
@@ -277,6 +275,334 @@ public class KeepAliveTest {
     *
     */
    /*serverScenarios[int] will be retreived using method getServerScenario(int)*/
+   
+   /* here is the complete table of server_response, client system properties input and expected cached timeout at client side */
+   
+    //ScNo=ScenarioNumber 
+   /* ScNo  |SERVER RESPONSE                                  | CLIENT SYSTEM PROPERTIES INPUT                                     | EXPECTED CACHED TIMEOUT AT CLIENT SIDE
+    ************************************************************************************************************************************************************************
+    *    0  |  Connection: keep-alive                         | No Input Provided                                                  |  Default Timeout set to 5
+    *----------------------------------------------------------------------------------------------------------------------------------------------------------
+    *    1  |  Connection: keep-alive                         | -Dhttp.keepAlive.time.server=100                                   |  Client Timeout set to 100
+    *----------------------------------------------------------------------------------------------------------------------------------------------------------
+    *    2  |  Connection: keep-alive                         | -Dhttp.keepAlive.time.proxy=200                                    |  Default Timeout set to 5
+    *----------------------------------------------------------------------------------------------------------------------------------------------------------
+    *    3  |  Connection: keep-alive                         | -Dhttp.keepAlive.time.server=100 && -Dhttp.keepAlive.time.proxy=200|  Client Timeout set to 100
+    *----------------------------------------------------------------------------------------------------------------------------------------------------------
+    *    4  |  Connection: keep-alive                         | -Dhttp.keepAlive.time.server=-100                                  |  Default Timeout set to 5
+    *----------------------------------------------------------------------------------------------------------------------------------------------------------
+    *    5  |  Connection: keep-alive                         | -Dhttp.keepAlive.time.proxy=-200                                   |  Default Timeout set to 5
+    *----------------------------------------------------------------------------------------------------------------------------------------------------------
+    *    6  |  Connection: keep-alive                         |-Dhttp.keepAlive.time.server=-100&&-Dhttp.keepAlive.time.proxy=-200 |  Default Timeout set to 5
+    *----------------------------------------------------------------------------------------------------------------------------------------------------------
+    *    7  |  Connection: keep-alive                         | -Dhttp.keepAlive.time.server=0                                     |  Connection Closed Immediately
+    *----------------------------------------------------------------------------------------------------------------------------------------------------------
+    *    8  |  Connection: keep-alive                         | -Dhttp.keepAlive.time.proxy=0                                      |  Default Timeout set to 5
+    *----------------------------------------------------------------------------------------------------------------------------------------------------------
+    *    9  |  Connection: keep-alive                         | -Dhttp.keepAlive.time.server=0 && -Dhttp.keepAlive.time.proxy=0    |  Connection Closed Immediately
+    *----------------------------------------------------------------------------------------------------------------------------------------------------------
+    *   10  |  Connection: keep-alive                         | -Dhttp.keepAlive.time.server=0 && -Dhttp.keepAlive.time.proxy=-100 |  Connection Closed Immediately
+    *----------------------------------------------------------------------------------------------------------------------------------------------------------
+    *   11  |  Connection: keep-alive                         | -Dhttp.keepAlive.time.server=-100 && -Dhttp.keepAlive.time.proxy=0 |  Default Timeout set to 5
+    *----------------------------------------------------------------------------------------------------------------------------------------------------------
+    *   12  |  Connection: keep-alive                         | -Dhttp.keepAlive.time.server=100 && -Dhttp.keepAlive.time.proxy=0  |  Timeout set to 100
+    *----------------------------------------------------------------------------------------------------------------------------------------------------------
+    *   13  |  Connection: keep-alive                         | -Dhttp.keepAlive.time.server=0 && -Dhttp.keepAlive.time.proxy=100  |  Connection Closed Immediately
+    *----------------------------------------------------------------------------------------------------------------------------------------------------------
+    *   14  |  Connection: keep-alive                         |-Dhttp.keepAlive.time.server=100 && -Dhttp.keepAlive.time.proxy=-200|  Timeout set to 100
+    *----------------------------------------------------------------------------------------------------------------------------------------------------------
+    *   15  |  Connection: keep-alive                         |-Dhttp.keepAlive.time.server=-100 && -Dhttp.keepAlive.time.proxy=200|  Default Timeout set to 5
+    *----------------------------------------------------------------------------------------------------------------------------------------------------------
+    *   16  |Connection: keep-alive\r\nKeep-alive: timeout=20 | No Input Provided                                                  |  Timeout set to 20
+    *-------------------------------------------------------------------------------------------------------------------------------------------------------
+    *   17  |Connection: keep-alive\r\nKeep-alive: timeout=20 | -Dhttp.keepAlive.time.server=100                                   |  Timeout set to 20
+    *----------------------------------------------------------------------------------------------------------------------------------------------------------
+    *   18  |Connection: keep-alive\r\nKeep-alive: timeout=20 | -Dhttp.keepAlive.time.proxy=100                                    |  Timeout set to 20
+    *----------------------------------------------------------------------------------------------------------------------------------------------------------
+    *   19  |Connection: keep-alive\r\nKeep-alive: timeout=20 | -Dhttp.keepAlive.time.server=100 && -Dhttp.keepAlive.time.proxy=200|  Timeout set to 20
+    *----------------------------------------------------------------------------------------------------------------------------------------------------------
+    *   20  |Connection: keep-alive\r\nKeep-alive: timeout=20 | -Dhttp.keepAlive.time.server=-100                                  |  Timeout set to 20
+    *----------------------------------------------------------------------------------------------------------------------------------------------------------
+    *   21  |Connection: keep-alive\r\nKeep-alive: timeout=20 | -Dhttp.keepAlive.time.proxy=-200                                   |  Timeout set to 20
+    *----------------------------------------------------------------------------------------------------------------------------------------------------------
+    *   22  |Connection: keep-alive\r\nKeep-alive: timeout=20 |-Dhttp.keepAlive.time.server=-100&&-Dhttp.keepAlive.time.proxy=-200 |  Timeout set to 20
+    *----------------------------------------------------------------------------------------------------------------------------------------------------------
+    *   23  |Connection: keep-alive\r\nKeep-alive: timeout=20 | -Dhttp.keepAlive.time.server=0                                     |  Timeout set to 20
+    *----------------------------------------------------------------------------------------------------------------------------------------------------------
+    *   24  |Connection: keep-alive\r\nKeep-alive: timeout=20 | -Dhttp.keepAlive.time.proxy=0                                      |  Timeout set to 20
+    *----------------------------------------------------------------------------------------------------------------------------------------------------------
+    *   25  |Connection: keep-alive\r\nKeep-alive: timeout=20 | -Dhttp.keepAlive.time.server=0 && -Dhttp.keepAlive.time.proxy=0    |  Timeout set to 20
+    *----------------------------------------------------------------------------------------------------------------------------------------------------------
+    *   26  |Connection: keep-alive\r\nKeep-alive: timeout=20 | -Dhttp.keepAlive.time.server=0 && -Dhttp.keepAlive.time.proxy=-100 |  Timeout set to 20
+    *----------------------------------------------------------------------------------------------------------------------------------------------------------
+    *   27  |Connection: keep-alive\r\nKeep-alive: timeout=20 | -Dhttp.keepAlive.time.server=-100 && -Dhttp.keepAlive.time.proxy=0 |  Timeout set to 20
+    *----------------------------------------------------------------------------------------------------------------------------------------------------------
+    *   28  |Connection: keep-alive\r\nKeep-alive: timeout=20 | -Dhttp.keepAlive.time.server=100 && -Dhttp.keepAlive.time.proxy=0  |  Timeout set to 20
+    *----------------------------------------------------------------------------------------------------------------------------------------------------------
+    *   29  |Connection: keep-alive\r\nKeep-alive: timeout=20 | -Dhttp.keepAlive.time.server=0 && -Dhttp.keepAlive.time.proxy=100  |  Timeout set to 20
+    *----------------------------------------------------------------------------------------------------------------------------------------------------------
+    *   30  |Connection: keep-alive\r\nKeep-alive: timeout=20 |-Dhttp.keepAlive.time.server=100 && -Dhttp.keepAlive.time.proxy=-200|  Timeout set to 20
+    *----------------------------------------------------------------------------------------------------------------------------------------------------------
+    *   31  |Connection: keep-alive\r\nKeep-alive: timeout=20 |-Dhttp.keepAlive.time.server=-100 && -Dhttp.keepAlive.time.proxy=200|  Timeout set to 20
+    *----------------------------------------------------------------------------------------------------------------------------------------------------------
+    *   32  |Proxy-Connection: keep-alive                     | No Input Provided                                                  | Default timeout set to 60
+    *----------------------------------------------------------------------------------------------------------------------------------------------------------
+    *   33  |Proxy-Connection: keep-alive                     | -Dhttp.keepAlive.time.server=100                                   | Default timeout set to 60
+    *----------------------------------------------------------------------------------------------------------------------------------------------------------
+    *   34  |Proxy-Connection: keep-alive                     | -Dhttp.keepAlive.time.proxy=100                                    | Client timeout set to 200
+    *---------------------------------------------------------------------------------------------------------------------------------------------------------
+    *   35  |Proxy-Connection: keep-alive                     | -Dhttp.keepAlive.time.server=100 && -Dhttp.keepAlive.time.proxy=200| Client timeout set to 200
+    *---------------------------------------------------------------------------------------------------------------------------------------------------------
+    *   36  |Proxy-Connection: keep-alive                     | -Dhttp.keepAlive.time.server=-100                                  | Default timeout set to 60
+    *----------------------------------------------------------------------------------------------------------------------------------------------------------
+    *   37  |Proxy-Connection: keep-alive                     | -Dhttp.keepAlive.time.proxy=-200                                   | Default timeout set to 60
+    *----------------------------------------------------------------------------------------------------------------------------------------------------------
+    *   38  |Proxy-Connection: keep-alive                     |-Dhttp.keepAlive.time.server=-100&&-Dhttp.keepAlive.time.proxy=-200 | Default timeout set to 60
+    *----------------------------------------------------------------------------------------------------------------------------------------------------------
+    *   39  |Proxy-Connection: keep-alive                     | -Dhttp.keepAlive.time.server=0                                     | Default timeout set to 60
+    *----------------------------------------------------------------------------------------------------------------------------------------------------------
+    *   40  |Proxy-Connection: keep-alive                     | -Dhttp.keepAlive.time.proxy=0                                      | close connection immediately
+    *----------------------------------------------------------------------------------------------------------------------------------------------------------
+    *   41  |Proxy-Connection: keep-alive                     | -Dhttp.keepAlive.time.server=0 && -Dhttp.keepAlive.time.proxy=0    | close connection immediately
+    *----------------------------------------------------------------------------------------------------------------------------------------------------------
+    *   42  |Proxy-Connection: keep-alive                     | -Dhttp.keepAlive.time.server=0 && -Dhttp.keepAlive.time.proxy=-200 | Default timeout set to 60
+    *----------------------------------------------------------------------------------------------------------------------------------------------------------
+    *   43  |Proxy-Connection: keep-alive                     | -Dhttp.keepAlive.time.server=-100 && -Dhttp.keepAlive.time.proxy=0 | close connection immediately
+    *----------------------------------------------------------------------------------------------------------------------------------------------------------
+    *   44  |Proxy-Connection: keep-alive                     | -Dhttp.keepAlive.time.server=100 && -Dhttp.keepAlive.time.proxy=0  | close connection immediately
+    *----------------------------------------------------------------------------------------------------------------------------------------------------------
+    *   45  |Proxy-Connection: keep-alive                     | -Dhttp.keepAlive.time.server=0 && -Dhttp.keepAlive.time.proxy=200  | Timeout set to 200
+    *----------------------------------------------------------------------------------------------------------------------------------------------------------
+    *   46  |Proxy-Connection: keep-alive                     |-Dhttp.keepAlive.time.server=100 && -Dhttp.keepAlive.time.proxy=-200| Default timeout set to 60
+    *----------------------------------------------------------------------------------------------------------------------------------------------------------
+    *   47  |Proxy-Connection: keep-alive                     |-Dhttp.keepAlive.time.server=-100 && -Dhttp.keepAlive.time.proxy=200| Timeout set to 200
+    *----------------------------------------------------------------------------------------------------------------------------------------------------------
+    *   48  |Connection:keep-alive\r\nProxy-connection:keep-alive| No Input Provided                                                  | Default timeout set to 60
+    *------------------------------------------------------------------------------------------------------------------------------------------------------------
+    *   49  |Connection:keep-alive\r\nProxy-connection:keep-alive| -Dhttp.keepAlive.time.server=100                                   | Default timeout set to 60
+    *----------------------------------------------------------------------------------------------------------------------------------------------------------
+    *   50  |Connection:keep-alive\r\nProxy-connection:keep-alive| -Dhttp.keepAlive.time.proxy=200                                    | client timeout set to 200
+    *----------------------------------------------------------------------------------------------------------------------------------------------------------
+    *   51  |Connection:keep-alive\r\nProxy-connection:keep-alive| -Dhttp.keepAlive.time.server=100 && -Dhttp.keepAlive.time.proxy=200| client timeout set to 200
+    *------------------------------------------------------------------------------------------------------------------------------------------------------------
+    *   52  |Connection:keep-alive\r\nProxy-connection:keep-alive| -Dhttp.keepAlive.time.server=-100                                  | default timeout set to 60
+    *----------------------------------------------------------------------------------------------------------------------------------------------------------
+    *   53  |Connection:keep-alive\r\nProxy-connection:keep-alive| -Dhttp.keepAlive.time.proxy=-200                                   | default timeout set to 60
+    *----------------------------------------------------------------------------------------------------------------------------------------------------------
+    *   54  |Connection:keep-alive\r\nProxy-connection:keep-alive|-Dhttp.keepAlive.time.server=-100&&-Dhttp.keepAlive.time.proxy=-200 | default timeout set to 60
+    *------------------------------------------------------------------------------------------------------------------------------------------------------------
+    *   55  |Connection:keep-alive\r\nProxy-connection:keep-alive| -Dhttp.keepAlive.time.server=0                                     | default timeout set to 60
+    *----------------------------------------------------------------------------------------------------------------------------------------------------------
+    *   56  |Connection:keep-alive\r\nProxy-connection:keep-alive| -Dhttp.keepAlive.time.proxy=0                                      | close connection immediately
+    *--------------------------------------------------------------------------------------------------------------------------------------------------------------
+    *   57  |Connection:keep-alive\r\nProxy-connection:keep-alive| -Dhttp.keepAlive.time.server=0 && -Dhttp.keepAlive.time.proxy=0    | close connection immediately
+    *--------------------------------------------------------------------------------------------------------------------------------------------------------------
+    *   58  |Connection:keep-alive\r\nProxy-connection:keep-alive| -Dhttp.keepAlive.time.server=0 && -Dhttp.keepAlive.time.proxy=-200 | default timeout set to 60
+    *--------------------------------------------------------------------------------------------------------------------------------------------------------------
+    *   59  |Connection:keep-alive\r\nProxy-connection:keep-alive| -Dhttp.keepAlive.time.server=-100 && -Dhttp.keepAlive.time.proxy=0 | close connection immediately
+    *---------------------------------------------------------------------------------------------------------------------------------------------------------------
+    *   60  |Connection:keep-alive\r\nProxy-connection:keep-alive| -Dhttp.keepAlive.time.server=100 && -Dhttp.keepAlive.time.proxy=0  | close connection immediately
+    *---------------------------------------------------------------------------------------------------------------------------------------------------------------
+    *   61  |Connection:keep-alive\r\nProxy-connection:keep-alive| -Dhttp.keepAlive.time.server=0 && -Dhttp.keepAlive.time.proxy=200  | client timeout set to 200
+    *---------------------------------------------------------------------------------------------------------------------------------------------------------------
+    *   62  |Connection:keep-alive\r\nProxy-connection:keep-alive|-Dhttp.keepAlive.time.server=100 && -Dhttp.keepAlive.time.proxy=-200| default timeout set to 60
+    *---------------------------------------------------------------------------------------------------------------------------------------------------------------
+    *   63  |Connection:keep-alive\r\nProxy-connection:keep-alive|-Dhttp.keepAlive.time.server=-100 && -Dhttp.keepAlive.time.proxy=200| client timeout set to 200
+    *--------------------------------------------------------------------------------------------------------------------------------------------------------------
+    *   64  |Proxy-connection:keep-alive\r\nKeep-alive:timeout=120| No Input Provided                                                  | client timeout set to 120
+    *-------------------------------------------------------------------------------------------------------------------------------------------------------------
+    *   65  |Proxy-connection:keep-alive\r\nKeep-alive:timeout=120| -Dhttp.keepAlive.time.server=100                                   | client timeout set to 120
+    *----------------------------------------------------------------------------------------------------------------------------------------------------------
+    *   66  |Proxy-connection:keep-alive\r\nKeep-alive:timeout=120| -Dhttp.keepAlive.time.proxy=100                                    | client timeout set to 120
+    *----------------------------------------------------------------------------------------------------------------------------------------------------------
+    *   67  |Proxy-connection:keep-alive\r\nKeep-alive:timeout=120| -Dhttp.keepAlive.time.server=100 && -Dhttp.keepAlive.time.proxy=200| client timeout set to 120
+    *----------------------------------------------------------------------------------------------------------------------------------------------------------
+    *   68  |Proxy-connection:keep-alive\r\nKeep-alive:timeout=120| -Dhttp.keepAlive.time.server=-100                                  | client timeout set to 120
+    *----------------------------------------------------------------------------------------------------------------------------------------------------------
+    *   69  |Proxy-connection:keep-alive\r\nKeep-alive:timeout=120| -Dhttp.keepAlive.time.proxy=-200                                   | client timeout set to 120
+    *----------------------------------------------------------------------------------------------------------------------------------------------------------
+    *   70  |Proxy-connection:keep-alive\r\nKeep-alive:timeout=120|-Dhttp.keepAlive.time.server=-100&&-Dhttp.keepAlive.time.proxy=-200 | client timeout set to 120
+    *----------------------------------------------------------------------------------------------------------------------------------------------------------
+    *   71  |Proxy-connection:keep-alive\r\nKeep-alive:timeout=120| -Dhttp.keepAlive.time.server=0                                     | client timeout set to 120
+    *----------------------------------------------------------------------------------------------------------------------------------------------------------
+    *   72  |Proxy-connection:keep-alive\r\nKeep-alive:timeout=120| -Dhttp.keepAlive.time.proxy=0                                      | client timeout set to 120
+    *----------------------------------------------------------------------------------------------------------------------------------------------------------
+    *   73  |Proxy-connection:keep-alive\r\nKeep-alive:timeout=120| -Dhttp.keepAlive.time.server=0 && -Dhttp.keepAlive.time.proxy=0    | client timeout set to 120
+    *----------------------------------------------------------------------------------------------------------------------------------------------------------
+    *   74  |Proxy-connection:keep-alive\r\nKeep-alive:timeout=120| -Dhttp.keepAlive.time.server=0 && -Dhttp.keepAlive.time.proxy=-200 | client timeout set to 120
+    *----------------------------------------------------------------------------------------------------------------------------------------------------------
+    *   75  |Proxy-connection:keep-alive\r\nKeep-alive:timeout=120| -Dhttp.keepAlive.time.server=-100 && -Dhttp.keepAlive.time.proxy=0 | client timeout set to 120
+    *----------------------------------------------------------------------------------------------------------------------------------------------------------
+    *   76  |Proxy-connection:keep-alive\r\nKeep-alive:timeout=120| -Dhttp.keepAlive.time.server=100 && -Dhttp.keepAlive.time.proxy=0  | client timeout set to 120
+    *----------------------------------------------------------------------------------------------------------------------------------------------------------
+    *   77  |Proxy-connection:keep-alive\r\nKeep-alive:timeout=120| -Dhttp.keepAlive.time.server=0 && -Dhttp.keepAlive.time.proxy=200  | client timeout set to 120
+    *----------------------------------------------------------------------------------------------------------------------------------------------------------
+    *   78  |Proxy-connection:keep-alive\r\nKeep-alive:timeout=120|-Dhttp.keepAlive.time.server=100 && -Dhttp.keepAlive.time.proxy=-200| client timeout set to 120
+    *----------------------------------------------------------------------------------------------------------------------------------------------------------
+    *   79  |Proxy-connection:keep-alive\r\nKeep-alive:timeout=120|-Dhttp.keepAlive.time.server=-100 && -Dhttp.keepAlive.time.proxy=200| client timeout set to 120
+    *----------------------------------------------------------------------------------------------------------------------------------------------------------
+    *   80  |No Input                                             | No Input Provided                                                  | default timeout set to 5
+    *----------------------------------------------------------------------------------------------------------------------------------------------------------
+    *   81  |No Input                                             | -Dhttp.keepAlive.time.server=100                                   | client timeout set to 100
+    *----------------------------------------------------------------------------------------------------------------------------------------------------------
+    *   82  |No Input                                             | -Dhttp.keepAlive.time.proxy=200                                    | default timeout set to 5
+    *----------------------------------------------------------------------------------------------------------------------------------------------------------
+    *   83  |No Input                                             | -Dhttp.keepAlive.time.server=100 && -Dhttp.keepAlive.time.proxy=200| client timeot set to 100
+    *----------------------------------------------------------------------------------------------------------------------------------------------------------
+    *   84  |No Input                                             | -Dhttp.keepAlive.time.server=-100                                  | default timeout set to 5
+    *----------------------------------------------------------------------------------------------------------------------------------------------------------
+    *   85  |No Input                                             | -Dhttp.keepAlive.time.proxy=-200                                   | default timeout set to 5
+    *---------------------------------------------------------------------------------------------------------------------------------------------------------
+    *   86  |No Input                                             |-Dhttp.keepAlive.time.server=-100&&-Dhttp.keepAlive.time.proxy=-200 | default timeout set to 5 
+    *----------------------------------------------------------------------------------------------------------------------------------------------------------
+    *   87  |No Input                                             | -Dhttp.keepAlive.time.server=0                                     | close connection immediately
+    *----------------------------------------------------------------------------------------------------------------------------------------------------------------
+    *   88  |No Input                                             | -Dhttp.keepAlive.time.proxy=0                                      | default timeout set to 5 
+    *----------------------------------------------------------------------------------------------------------------------------------------------------------------
+    *   89  |No Input                                             | -Dhttp.keepAlive.time.server=0 && -Dhttp.keepAlive.time.proxy=0    | close connection immediately
+    *----------------------------------------------------------------------------------------------------------------------------------------------------------------
+    *   90  |No Input                                             | -Dhttp.keepAlive.time.server=0 && -Dhttp.keepAlive.time.proxy=-200 | close connection immediately
+    *----------------------------------------------------------------------------------------------------------------------------------------------------------------
+    *   91  |No Input                                             | -Dhttp.keepAlive.time.server=-100 && -Dhttp.keepAlive.time.proxy=0 | default timeout set to 5
+    *---------------------------------------------------------------------------------------------------------------------------------------------------------------
+    *   92  |No Input                                             | -Dhttp.keepAlive.time.server=100 && -Dhttp.keepAlive.time.proxy=0  | client timeout set to 100
+    *---------------------------------------------------------------------------------------------------------------------------------------------------------------
+    *   93  |No Input                                             | -Dhttp.keepAlive.time.server=0 && -Dhttp.keepAlive.time.proxy=200  | close connection immediately
+    *---------------------------------------------------------------------------------------------------------------------------------------------------------------
+    *   94  |No Input                                             |-Dhttp.keepAlive.time.server=100 && -Dhttp.keepAlive.time.proxy=-200| client timeout set to 100
+    *----------------------------------------------------------------------------------------------------------------------------------------------------------------
+    *   95  |No Input                                             |-Dhttp.keepAlive.time.server=-100 && -Dhttp.keepAlive.time.proxy=200| default timeout set to 5
+    *---------------------------------------------------------------------------------------------------------------------------------------------------------------
+    *   96  |Connection: keep-alive\r\nKeep-alive: timeout=-20    | No Input Provided                                                  | default timeout set to 5
+    *---------------------------------------------------------------------------------------------------------------------------------------------------------------
+    *   97  |Connection: keep-alive\r\nKeep-alive: timeout=-20    | -Dhttp.keepAlive.time.server=100                                   | client timeout set to 100
+    *---------------------------------------------------------------------------------------------------------------------------------------------------------------
+    *   98  |Connection: keep-alive\r\nKeep-alive: timeout=-20    | -Dhttp.keepAlive.time.proxy=200                                    | default timeout set to 5
+    *-------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    *   99  |Connection: keep-alive\r\nKeep-alive: timeout=-20    | -Dhttp.keepAlive.time.server=100 && -Dhttp.keepAlive.time.proxy=200| client timeout set to 100
+    *----------------------------------------------------------------------------------------------------------------------------------------------------------------
+    *  100  |Connection: keep-alive\r\nKeep-alive: timeout=-20    | -Dhttp.keepAlive.time.server=-100                                  | default timeout set to 5
+    *---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    *  101  |Connection: keep-alive\r\nKeep-alive: timeout=-20    | -Dhttp.keepAlive.time.proxy=-200                                   | default timeout set to 5
+    *----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    *  102  |Connection: keep-alive\r\nKeep-alive: timeout=-20    |-Dhttp.keepAlive.time.server=-100&&-Dhttp.keepAlive.time.proxy=-200 | default timeout set to 5
+    *----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    *  103  |Connection: keep-alive\r\nKeep-alive: timeout=-20    | -Dhttp.keepAlive.time.server=0                                     | close connection immediately
+    *----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    *  104  |Connection: keep-alive\r\nKeep-alive: timeout=-20    | -Dhttp.keepAlive.time.proxy=0                                      | default timeout set to 5
+    *----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    *  105  |Connection: keep-alive\r\nKeep-alive: timeout=-20    | -Dhttp.keepAlive.time.server=0 && -Dhttp.keepAlive.time.proxy=0    | close connection immediately
+    *----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    *  106  |Connection: keep-alive\r\nKeep-alive: timeout=-20    | -Dhttp.keepAlive.time.server=0 && -Dhttp.keepAlive.time.proxy=-200 | close connection immediately
+    *----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    *  107  |Connection: keep-alive\r\nKeep-alive: timeout=-20    | -Dhttp.keepAlive.time.server=-100 && -Dhttp.keepAlive.time.proxy=0 | default timeout set to 5
+    *----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    *  108  |Connection: keep-alive\r\nKeep-alive: timeout=-20    | -Dhttp.keepAlive.time.server=100 && -Dhttp.keepAlive.time.proxy=0  | client timeout set to 100
+    *----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    *  109  |Connection: keep-alive\r\nKeep-alive: timeout=-20    | -Dhttp.keepAlive.time.server=0 && -Dhttp.keepAlive.time.proxy=200  | close connection immediately
+    *----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    *  110  |Connection: keep-alive\r\nKeep-alive: timeout=-20    |-Dhttp.keepAlive.time.server=100 && -Dhttp.keepAlive.time.proxy=-200| client timeout set to 100
+    *----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    *  111  |Connection: keep-alive\r\nKeep-alive: timeout=-20    |-Dhttp.keepAlive.time.server=-100 && -Dhttp.keepAlive.time.proxy=200| default timeout set to 5
+    *----------------------------------------------------------------------------------------------------------------------------------------------------------------
+    *  112  |Connection: keep-alive\r\nKeep-alive: timeout=0      | No Input Provided                                                  | close connection immediately
+    *-------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    *  113  |Connection: keep-alive\r\nKeep-alive: timeout=0      | -Dhttp.keepAlive.time.server=100                                   | close connection immediately
+    *-------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    *  114  |Connection: keep-alive\r\nKeep-alive: timeout=0      | -Dhttp.keepAlive.time.proxy=200                                    | close connection immediately
+    *-------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    *  115  |Connection: keep-alive\r\nKeep-alive: timeout=0      | -Dhttp.keepAlive.time.server=100 && -Dhttp.keepAlive.time.proxy=200| close connection immediately
+    *-------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    *  116  |Connection: keep-alive\r\nKeep-alive: timeout=0      | -Dhttp.keepAlive.time.server=-100                                  | close connection immediately
+    *------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    *  117  |Connection: keep-alive\r\nKeep-alive: timeout=0      | -Dhttp.keepAlive.time.proxy=-200                                   | close connection immediately
+    *-------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    *  118  |Connection: keep-alive\r\nKeep-alive: timeout=0      |-Dhttp.keepAlive.time.server=-100&&-Dhttp.keepAlive.time.proxy=-200 | close connection immediately
+    *-------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    *  119  |Connection: keep-alive\r\nKeep-alive: timeout=0      | -Dhttp.keepAlive.time.server=0                                     | close connection immediately
+    *-------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    *  120  |Connection: keep-alive\r\nKeep-alive: timeout=0      | -Dhttp.keepAlive.time.proxy=0                                      | close connection immediately
+    *------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    *  121  |Connection: keep-alive\r\nKeep-alive: timeout=0      | -Dhttp.keepAlive.time.server=0 && -Dhttp.keepAlive.time.proxy=0    | close connection immediately
+    *-------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    *  122  |Connection: keep-alive\r\nKeep-alive: timeout=0      | -Dhttp.keepAlive.time.server=0 && -Dhttp.keepAlive.time.proxy=-200 | close connection immediately
+    *-------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    *  123  |Connection: keep-alive\r\nKeep-alive: timeout=0      | -Dhttp.keepAlive.time.server=-100 && -Dhttp.keepAlive.time.proxy=0 | close connection immediately
+    *-------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    *  124  |Connection: keep-alive\r\nKeep-alive: timeout=0      | -Dhttp.keepAlive.time.server=100 && -Dhttp.keepAlive.time.proxy=0  | close connection immediately
+    *-------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    *  125  |Connection: keep-alive\r\nKeep-alive: timeout=0      | -Dhttp.keepAlive.time.server=0 && -Dhttp.keepAlive.time.proxy=200  | close connection immediately
+    *-------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    *  126  |Connection: keep-alive\r\nKeep-alive: timeout=0      |-Dhttp.keepAlive.time.server=100 && -Dhttp.keepAlive.time.proxy=-200| close connection immediately
+    *-------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    *  127  |Connection: keep-alive\r\nKeep-alive: timeout=0      |-Dhttp.keepAlive.time.server=-100 && -Dhttp.keepAlive.time.proxy=200| close connection immediately
+    *-------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    *  128  |Proxy-Connection:keep-alive\r\nKeep-alive:timeout=-20| No Input Provided                                                  | default timeout set to 60
+    --------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    *  129  |Proxy-Connection:keep-alive\r\nKeep-alive:timeout=-20| -Dhttp.keepAlive.time.server=100                                   | default timeout set to 60
+    *-------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    *  130  |Proxy-Connection:keep-alive\r\nKeep-alive:timeout=-20| -Dhttp.keepAlive.time.proxy=200                                    | client timeout set to 200
+    *-------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    *  131  |Proxy-Connection:keep-alive\r\nKeep-alive:timeout=-20| -Dhttp.keepAlive.time.server=100 && -Dhttp.keepAlive.time.proxy=200| client timeout set to 200
+    *-------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    *  132  |Proxy-Connection:keep-alive\r\nKeep-alive:timeout=-20| -Dhttp.keepAlive.time.server=-100                                  | default timeout set to 60
+    *-------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    *  133  |Proxy-Connection:keep-alive\r\nKeep-alive:timeout=-20| -Dhttp.keepAlive.time.proxy=-200                                   | default timeout set to 60
+    *-------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    *  134  |Proxy-Connection:keep-alive\r\nKeep-alive:timeout=-20|-Dhttp.keepAlive.time.server=-100&&-Dhttp.keepAlive.time.proxy=-200 | default timeout set to 60
+    *--------------------------------------------------------------------------------------------------------------------------------------------------------------
+    *  135  |Proxy-Connection:keep-alive\r\nKeep-alive:timeout=-20| -Dhttp.keepAlive.time.server=0                                     | default timeout set to 60
+    *-------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    *  136  |Proxy-Connection:keep-alive\r\nKeep-alive:timeout=-20| -Dhttp.keepAlive.time.proxy=0                                      | close connection immediately
+    *---------------------------------------------------------------------------------------------------------------------------------------------------------------
+    *  137  |Proxy-Connection:keep-alive\r\nKeep-alive:timeout=-20| -Dhttp.keepAlive.time.server=0 && -Dhttp.keepAlive.time.proxy=0    | close connection immediately
+    *------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    *  138  |Proxy-Connection:keep-alive\r\nKeep-alive:timeout=-20| -Dhttp.keepAlive.time.server=0 && -Dhttp.keepAlive.time.proxy=-200 | default timeout set to 60
+    *-----------------------------------------------------------------------------------------------------------------------------------------------------------
+    *  139  |Proxy-Connection:keep-alive\r\nKeep-alive:timeout=-20| -Dhttp.keepAlive.time.server=-100 && -Dhttp.keepAlive.time.proxy=0 | close connection immediately
+    *-------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    *  140  |Proxy-Connection:keep-alive\r\nKeep-alive:timeout=-20| -Dhttp.keepAlive.time.server=100 && -Dhttp.keepAlive.time.proxy=0  | close connection immediately
+    *------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    *  141  |Proxy-Connection:keep-alive\r\nKeep-alive:timeout=-20| -Dhttp.keepAlive.time.server=0 && -Dhttp.keepAlive.time.proxy=200  | client timeout set to 20
+    *-------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    *  142  |Proxy-Connection:keep-alive\r\nKeep-alive:timeout=-20|-Dhttp.keepAlive.time.server=100 && -Dhttp.keepAlive.time.proxy=-200| default timeout set to 60
+    *------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    *  143  |Proxy-Connection:keep-alive\r\nKeep-alive:timeout=-20|-Dhttp.keepAlive.time.server=-100 && -Dhttp.keepAlive.time.proxy=200| client timeout set to 200
+    *------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    *  144  |Proxy-Connection:keep-alive\r\nKeep-alive:timeout=0  | No Input Provided                                                  | close connection immediately 
+    *-------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    *  145  |Proxy-Connection:keep-alive\r\nKeep-alive:timeout=0  | -Dhttp.keepAlive.time.server=100                                   | close connection immediately
+    *-------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    *  146  |Proxy-Connection:keep-alive\r\nKeep-alive:timeout=0  | -Dhttp.keepAlive.time.proxy=200                                    | close connection immediately 
+    *-------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    *  147  |Proxy-Connection:keep-alive\r\nKeep-alive:timeout=0  | -Dhttp.keepAlive.time.server=100 && -Dhttp.keepAlive.time.proxy=200| close connection immediately
+    *-------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    *  148  |Proxy-Connection:keep-alive\r\nKeep-alive:timeout=0  | -Dhttp.keepAlive.time.server=-100                                  | close connection immediately
+    *------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    *  149  |Proxy-Connection:keep-alive\r\nKeep-alive:timeout=0  | -Dhttp.keepAlive.time.proxy=-200                                   | close connection immediately
+    *------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    *  150  |Proxy-Connection:keep-alive\r\nKeep-alive:timeout=0  |-Dhttp.keepAlive.time.server=-100&&-Dhttp.keepAlive.time.proxy=-200 | close connection immediately
+    *-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+    *  151  |Proxy-Connection:keep-alive\r\nKeep-alive:timeout=0  | -Dhttp.keepAlive.time.server=0                                     | close connection immediately
+    *----------------------------------------------------------------------------------------------------------------------------------------------------------------
+    *  152  |Proxy-Connection:keep-alive\r\nKeep-alive:timeout=0  | -Dhttp.keepAlive.time.proxy=0                                      | close connection immediately
+    *--------------------------------------------------------------------------------------------------------------------------------------------------------------
+    *  153  |Proxy-Connection:keep-alive\r\nKeep-alive:timeout=0  | -Dhttp.keepAlive.time.server=0 && -Dhttp.keepAlive.time.proxy=0    | close connection immediately
+    *-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+    *  154  |Proxy-Connection:keep-alive\r\nKeep-alive:timeout=0  | -Dhttp.keepAlive.time.server=0 && -Dhttp.keepAlive.time.proxy=-200 | close connection immediately
+    *-------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    *  155  |Proxy-Connection:keep-alive\r\nKeep-alive:timeout=0  | -Dhttp.keepAlive.time.server=-100 && -Dhttp.keepAlive.time.proxy=0 | close connection immediately
+    *------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    *  156  |Proxy-Connection:keep-alive\r\nKeep-alive:timeout=0  | -Dhttp.keepAlive.time.server=100 && -Dhttp.keepAlive.time.proxy=0  | close connection immediately
+    *-------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    *  157  |Proxy-Connection:keep-alive\r\nKeep-alive:timeout=0  | -Dhttp.keepAlive.time.server=0 && -Dhttp.keepAlive.time.proxy=200  | close connection immediately
+    *-------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    *  158  |Proxy-Connection:keep-alive\r\nKeep-alive:timeout=0  |-Dhttp.keepAlive.time.server=100 && -Dhttp.keepAlive.time.proxy=-200| close connection immediately
+    *-------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    *  159  |Proxy-Connection:keep-alive\r\nKeep-alive:timeout=0  |-Dhttp.keepAlive.time.server=-100 && -Dhttp.keepAlive.time.proxy=200| close connection immediately
+    *-------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    */
+
    /* private static final String[] serverScenarios = {
         A, A, A, A, A, A, A, A, A, A, A, A, A, A, A, A,
         B, B, B, B, B, B, B, B, B, B,B, B, B, B, B, B,
@@ -332,26 +658,77 @@ public class KeepAliveTest {
     private int getClientScenarioNumber(int scenarioNumber) {
         return scenarioNumber % 16 ;
     }
+    /*
+     * Returns SERVER_RESPONSE based on scenarioNumber
+     */
     private String getServerScenario(int scenarioNumber) {
+        /*
+         *  ServerResponse from scenario 0 to 15
+         *  SERVER_RESPONSE:Connection:keep-alive
+         */
         if(scenarioNumber >= 0 && scenarioNumber <= 15) {
             return A;
-        } else if (scenarioNumber >= 16 && scenarioNumber <= 31){
+        } 
+        /*
+         * ServerResponse from scenario 16 to 31
+         * SERVER_RESPONSE=Connection: keep-alive\r\nKeep-alive: timeout=20
+         */
+        else if (scenarioNumber >= 16 && scenarioNumber <= 31){
             return B;
-        } else if (scenarioNumber >= 32 && scenarioNumber <= 47){
+        } 
+        /*
+         * ServerResponse from scenario 32 to 47
+         * SERVER_RESPONSE=Proxy-Connection: keep-alive
+         */
+        else if (scenarioNumber >= 32 && scenarioNumber <= 47){
             return C;
-        } else if (scenarioNumber >= 48 && scenarioNumber <= 63){
+        } 
+        /*
+         * ServerResponse from 48 to 63
+         * SERVER_RESPONSE=Connection:keep-alive\r\nProxy-connection:keep-alive
+         */
+        else if (scenarioNumber >= 48 && scenarioNumber <= 63){
             return D;
+        /*
+         * ServerResponse from 64 to 79
+         * SERVER_RESPONSE=Proxy-connection:keep-alive\r\nKeep-alive:timeout=120
+         */
         } else if (scenarioNumber >= 64 && scenarioNumber <= 79){
             return E;
-        } else if (scenarioNumber >= 80 && scenarioNumber <= 95){
+        } 
+        /*
+         * ServerResponse from 80 to 95
+         * SERVER_RESPONSE=No Input
+         */
+        else if (scenarioNumber >= 80 && scenarioNumber <= 95){
             return NI;
-        } else if (scenarioNumber >= 96 && scenarioNumber <= 111){
+        } 
+        /*
+         * ServerResponse from 96 to 111
+         * SERVER_RESPONSE=Connection: keep-alive\r\nKeep-alive: timeout=-20 
+         */   
+        else if (scenarioNumber >= 96 && scenarioNumber <= 111){
             return F;
-        } else if (scenarioNumber >= 112 && scenarioNumber <= 127){
+        } 
+        /*
+         * ServerResponse from 112 to 127
+         * SERVER_RESPONSE=Connection: keep-alive\r\nKeep-alive: timeout=0
+         */
+        else if (scenarioNumber >= 112 && scenarioNumber <= 127){
             return G;
-        } else if (scenarioNumber >= 128 && scenarioNumber <= 143){
+        } 
+        /*
+         * ServerResponse from 128 to 143
+         * SERVER_RESPONSE=Proxy-connection:keep-alive\r\nKeep-alive:timeout=-20
+         */
+        else if (scenarioNumber >= 128 && scenarioNumber <= 143){
             return H;
-        } else if (scenarioNumber >= 144 && scenarioNumber <= 159){
+        } 
+        /*
+         * ServerResponse from 144 to 159
+         * SERVER_RESPONSE=Proxy-connection:keep-alive\r\nKeep-alive:timeout=0
+         */
+        else if (scenarioNumber >= 144 && scenarioNumber <= 159){
             return I;
         }
         /*Invalid Case*/
@@ -374,7 +751,6 @@ public class KeepAliveTest {
         System.out.println();
         startServer(scenarioNumber);
         runClient(scenarioNumber);
-        //serverReady = false;
     }
     private void startServer(int scenarioNumber) {
         Thread server = new Thread(new Runnable() {
@@ -500,9 +876,6 @@ public class KeepAliveTest {
             }
         }
         // wait until ServerSocket moves to listening state.
-        //while (!serverReady) {
-        //    Thread.sleep(TIMEOUT);
-        //}
         this.serverCountDownLatch.await();
         System.out.println("client started");
         URL url = URIBuilder.newBuilder().scheme("http").loopback().port(SERVER_PORT).toURL();
@@ -544,60 +917,60 @@ public class KeepAliveTest {
     }
     private void fetchInfo(int scenarioNumber, sun.net.www.protocol.http.HttpURLConnection httpUrlConnection)
         throws Exception {
-            Field field = Class.forName("sun.net.www.protocol.http.HttpURLConnection").getDeclaredField("http");
-            field.setAccessible(true);
-            HttpClient httpClient = (HttpClient) field.get(httpUrlConnection);
-            //    System.out.println("httpclient=" + httpClient);
-            Field keepAliveField = Class.forName("sun.net.www.http.HttpClient").getDeclaredField("kac");
-            keepAliveField.setAccessible(true);
-            KeepAliveCache keepAliveCache = (KeepAliveCache) keepAliveField.get(httpClient);
-            System.out.println("keepAliveCache" + keepAliveCache);
-            System.out.println("SERVER URL:" + httpUrlConnection.getURL());
-            /*
-             * create KeepAliveKey(URL,Object) object and compare created KeepAliveKey and
-             * existing using equals() method: KeepAliveKey.equals()
-             */
-            Class keepAliveKeyClass = Class.forName("sun.net.www.http.KeepAliveKey");
-            //    System.out.println("keepAliveKeyClass=" + keepAliveKeyClass);
-            Constructor keepAliveKeyClassconstructor = keepAliveKeyClass.getDeclaredConstructors()[0];
-            keepAliveKeyClassconstructor.setAccessible(true);
-            Object expectedKeepAliveKey = keepAliveKeyClassconstructor.newInstance(httpUrlConnection.getURL(), null);
-            System.out.println("ExpectedKeepAliveKey=" + expectedKeepAliveKey);
-            Object clientVectorObjectInMap = keepAliveCache.get(expectedKeepAliveKey);
-            System.out.println("ClientVector=" + clientVectorObjectInMap);
-            HttpClient httpClientCached = keepAliveCache.get(httpUrlConnection.getURL(), null);
-            System.out.println("HttpClient in Cache:" + httpClientCached);
-            if(httpClientCached != null) {
-                System.out.println("KeepingAlive:" + httpClientCached.isKeepingAlive());
-                System.out.println("UsingProxy:" + httpClientCached.getUsingProxy());
-                System.out.println("ProxiedHost:" + httpClientCached.getProxyHostUsed());
-                System.out.println("ProxiedPort:" + httpClientCached.getProxyPortUsed());
-                System.out.println("ProxyPortUsingSystemProperty:" + System.getProperty("http.proxyPort"));
-                System.out.println("ProxyHostUsingSystemProperty:" + System.getProperty("http.proxyHost"));
-                System.out.println("http.keepAlive.time.server=" + System.getProperty("http.keepAlive.time.server"));
-                System.out.println("http.keepAlive.time.proxy=" + System.getProperty("http.keepAlive.time.proxy"));
-                Class clientVectorClass = Class.forName("sun.net.www.http.ClientVector");
-                //      System.out.println("clientVectorClass=" + clientVectorClass);
-                Field napField = clientVectorClass.getDeclaredField("nap");
-                napField.setAccessible(true);
-                int napValue = (int) napField.get(clientVectorObjectInMap);
-                int actualValue = napValue / 1000;
-                //      System.out.println("nap=" + napValue / 1000);
-                System.out.printf("ExpectedOutput:%d ActualOutput:%d ", expectedValues[scenarioNumber], actualValue);
-                System.out.println();
-                if (expectedValues[scenarioNumber] != actualValue) {
-                    throw new RuntimeException(
+       Field field = Class.forName("sun.net.www.protocol.http.HttpURLConnection").getDeclaredField("http");
+       field.setAccessible(true);
+       HttpClient httpClient = (HttpClient) field.get(httpUrlConnection);
+       //    System.out.println("httpclient=" + httpClient);
+       Field keepAliveField = Class.forName("sun.net.www.http.HttpClient").getDeclaredField("kac");
+       keepAliveField.setAccessible(true);
+       KeepAliveCache keepAliveCache = (KeepAliveCache) keepAliveField.get(httpClient);
+       System.out.println("keepAliveCache" + keepAliveCache);
+       System.out.println("SERVER URL:" + httpUrlConnection.getURL());
+       /*
+        * create KeepAliveKey(URL,Object) object and compare created KeepAliveKey and
+        * existing using equals() method: KeepAliveKey.equals()
+        */
+       Class keepAliveKeyClass = Class.forName("sun.net.www.http.KeepAliveKey");
+       //    System.out.println("keepAliveKeyClass=" + keepAliveKeyClass);
+       Constructor keepAliveKeyClassconstructor = keepAliveKeyClass.getDeclaredConstructors()[0];
+       keepAliveKeyClassconstructor.setAccessible(true);
+       Object expectedKeepAliveKey = keepAliveKeyClassconstructor.newInstance(httpUrlConnection.getURL(), null);
+       System.out.println("ExpectedKeepAliveKey=" + expectedKeepAliveKey);
+       Object clientVectorObjectInMap = keepAliveCache.get(expectedKeepAliveKey);
+       System.out.println("ClientVector=" + clientVectorObjectInMap);
+       HttpClient httpClientCached = keepAliveCache.get(httpUrlConnection.getURL(), null);
+       System.out.println("HttpClient in Cache:" + httpClientCached);
+       if(httpClientCached != null) {
+            System.out.println("KeepingAlive:" + httpClientCached.isKeepingAlive());
+            System.out.println("UsingProxy:" + httpClientCached.getUsingProxy());
+            System.out.println("ProxiedHost:" + httpClientCached.getProxyHostUsed());
+            System.out.println("ProxiedPort:" + httpClientCached.getProxyPortUsed());
+            System.out.println("ProxyPortUsingSystemProperty:" + System.getProperty("http.proxyPort"));
+            System.out.println("ProxyHostUsingSystemProperty:" + System.getProperty("http.proxyHost"));
+            System.out.println("http.keepAlive.time.server=" + System.getProperty("http.keepAlive.time.server"));
+            System.out.println("http.keepAlive.time.proxy=" + System.getProperty("http.keepAlive.time.proxy"));
+            Class clientVectorClass = Class.forName("sun.net.www.http.ClientVector");
+            //      System.out.println("clientVectorClass=" + clientVectorClass);
+            Field napField = clientVectorClass.getDeclaredField("nap");
+            napField.setAccessible(true);
+            int napValue = (int) napField.get(clientVectorObjectInMap);
+            int actualValue = napValue / 1000;
+            //      System.out.println("nap=" + napValue / 1000);
+            System.out.printf("ExpectedOutput:%d ActualOutput:%d ", expectedValues[scenarioNumber], actualValue);
+            System.out.println();
+            if (expectedValues[scenarioNumber] != actualValue) {
+                throw new RuntimeException(
                             "ExpectedOutput:" + expectedValues[scenarioNumber] + " ActualOutput: " + actualValue);
-                }
-            } else {
-                //executed when value is not cached.
-                String expected = expectedValues[scenarioNumber] == 0 ? NOT_CACHED
-                    : String.valueOf(expectedValues[scenarioNumber]);
-                System.out.println("ExpectedOutput:" + expected + " ActualOutput:" + NOT_CACHED);
-                if (!expected.equalsIgnoreCase(NOT_CACHED)) {
-                    throw new RuntimeException("ExpectedOutput:" + expected + " ActualOutput:" + NOT_CACHED);
-                }
             }
+        } else {
+            //executed when value is not cached.
+            String expected = expectedValues[scenarioNumber] == 0 ? NOT_CACHED
+                    : String.valueOf(expectedValues[scenarioNumber]);
+            System.out.println("ExpectedOutput:" + expected + " ActualOutput:" + NOT_CACHED);
+            if (!expected.equalsIgnoreCase(NOT_CACHED)) {
+                    throw new RuntimeException("ExpectedOutput:" + expected + " ActualOutput:" + NOT_CACHED);
+            }
+       }
     }
     public static void main(String[] args) throws Exception {
         if (args.length != 1) {
