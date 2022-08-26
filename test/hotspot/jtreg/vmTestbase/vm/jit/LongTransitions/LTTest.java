@@ -6222,10 +6222,9 @@ public class LTTest
                 // Decimal point differs based on locale, could be '.' or ','.
                 // Due to settings on a test host environment locale may differ between
                 // the native side vs Java side thus causing mismatch and test failure.
-                if ( cData[cnt] == '.' || cData[cnt] == ',' ) {
-                    if (javaData[cnt] == '.' || javaData[cnt] == ',') {
-                        continue;
-                    }
+                if ((cData[cnt] == '.' || cData[cnt] == ',') &&
+                    (javaData[cnt] == '.' || javaData[cnt] == ',')) {
+                    continue;
                 }
                 if ( cData[cnt]!=javaData[cnt] )
                 {
