@@ -412,9 +412,11 @@ public:
   // Destroys a JNI global handle created by JVMCIEnv::make_global.
   void destroy_global(JVMCIObject object);
 
-  // Deoptimizes the nmethod (if any) in the HotSpotNmethod.address
-  // field of mirror. The field is subsequently zeroed.
-  void invalidate_nmethod_mirror(JVMCIObject mirror, JVMCI_TRAPS);
+  // Updates the nmethod (if any) in the HotSpotNmethod.address
+  // field of `mirror` to prevent it from being called.
+  // If `deoptimize` is true, the nmethod is immediately deoptimized.
+  // The HotSpotNmethod.address field is zero upon returning.
+  void invalidate_nmethod_mirror(JVMCIObject mirror, bool deoptimze, JVMCI_TRAPS);
 
   void initialize_installed_code(JVMCIObject installed_code, CodeBlob* cb, JVMCI_TRAPS);
 
