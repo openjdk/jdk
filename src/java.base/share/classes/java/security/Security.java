@@ -519,15 +519,20 @@ public final class Security {
     public static Provider[] getProviders(String filter) {
         String key;
         String value;
+
         int index = filter.indexOf(':');
 
         if (index == -1) { // <crypto_service>.<algo_or_type> only
-            key = filter;
+            key = filter.trim();
             value = "";
         } else {
             // <crypto_service>.<algo_or_type> <attr_name>:<attr_value>
-            key = filter.substring(0, index);
-            value = filter.substring(index + 1);
+            key = filter.substring(0, index).trim();
+            value = filter.substring(index + 1).trim();
+            // ensure value is not empty here; rest will be checked in Criteria
+            if (value.isEmpty()) {
+                throw new InvalidParameterException("Invalid filter");
+            }
         }
 
         Hashtable<String, String> hashtableFilter = new Hashtable<>(1);
@@ -592,11 +597,11 @@ public final class Security {
         // Get all installed providers first.
         // Then only return those providers who satisfy the selection criteria.
         Provider[] allProviders = Security.getProviders();
-        Set<String> keySet = filter.keySet();
+        Set<Map.Entry<String, String>> entries = filter.entrySet();
 
         // Returns all installed providers
         // if the selection criteria is null.
-        if ((keySet == null) || (allProviders == null)) {
+        if (entries == null || entries.isEmpty() || allProviders == null) {
             return allProviders;
         }
 
@@ -605,14 +610,16 @@ public final class Security {
 
         // For each selection criterion, remove providers
         // which don't satisfy the criterion from the candidate set.
-        for (String key : keySet) {
-            String value = filter.get(key).trim();
-            applyFilterOnCandidates(key, value, candidates);
+        Iterator<Map.Entry<String, String>> iter = entries.iterator();
+        while (iter.hasNext()) {
+            Map.Entry<String, String> e = iter.next();
+            applyFilterOnCandidates(new Criteria(e.getKey(), e.getValue()),
+                    candidates);
             if (candidates.isEmpty()) {
                 // bail; no further filtering needed
                 break;
             }
-        }
+        };
 
         if (candidates.isEmpty())
             return null;
@@ -811,28 +818,64 @@ public final class Security {
         }
     }
 
+    private static class Criteria {
+        private String serviceName;
+        private String algName;
+        private String attrName = null;
+        private String attrValue;
+
+        Criteria(String key, String value) throws InvalidParameterException {
+            int snEndIndex = key.indexOf('.');
+            System.out.println("applying " + key + ", " + value);
+
+            if (snEndIndex <= 0) {
+                // There must be a dot in the filter, and the dot
+                // shouldn't be at the beginning of this string.
+                throw new InvalidParameterException("Invalid filter");
+            }
+
+            serviceName = key.substring(0, snEndIndex);
+            attrValue = value;
+
+            if (value.isEmpty()) {
+                // value is empty. So the key should be in the format of
+                // <crypto_service>.<algorithm_or_type>.
+                algName = key.substring(snEndIndex + 1);
+            } else {
+                // value is non-empty. So the key must be in the format
+                // of <crypto_service>.<algorithm_or_type>(one or more
+                // spaces)<attribute_name>
+                int algEndIndex = key.indexOf(' ', snEndIndex);
+
+                if (algEndIndex == -1) {
+                    throw new InvalidParameterException("Invalid filter");
+                }
+                algName = key.substring(snEndIndex + 1, algEndIndex);
+                attrName = key.substring(algEndIndex + 1).trim();
+                if (isKnownComposite(attrName) &&
+                        attrValue.indexOf('|') != -1) {
+                    throw new InvalidParameterException
+                        ("composite values unsupported for filtering");
+                }
+            }
+            // check required values
+            if (serviceName.isEmpty() || algName.isEmpty() ||
+                    (!attrValue.isEmpty() && attrName.isEmpty())) {
+                throw new InvalidParameterException("Invalid filter");
+            }
+        }
+    }
+
     /*
      * Apply the specified filter on the specified Provider candidates
      * and remove those which do not contain a match.
      */
-    private static void applyFilterOnCandidates(String filterKey,
-            String filterValue, LinkedList<Provider> candidates) {
-
-        String[] filterComponents = getFilterComponents(filterKey,
-                                                        filterValue);
-
-        // The first component is the service name.
-        // The second is the algorithm name.
-        // If the third isn't null, that is the attribute name.
-        String serviceName = filterComponents[0];
-        String algName = filterComponents[1];
-        String attrName = filterComponents[2];
-
+    private static void applyFilterOnCandidates(Criteria cr,
+            LinkedList<Provider> candidates) {
         Iterator<Provider> provs = candidates.iterator();
         while (provs.hasNext()) {
             Provider p = provs.next();
-            if (!isCriterionSatisfied(p, serviceName, algName, attrName,
-                    filterValue)) {
+            if (!isCriterionSatisfied(p, cr)) {
                 provs.remove();
             }
         }
@@ -842,16 +885,10 @@ public final class Security {
      * Returns {@code true} if the given provider satisfies
      * the selection criterion key:value.
      */
-    private static boolean isCriterionSatisfied(Provider prov,
-                                                String serviceName,
-                                                String algName,
-                                                String attrName,
-                                                String filterValue) {
-        String key = serviceName + '.' + algName;
-
-        if (attrName != null) {
-            key += ' ' + attrName;
-        }
+    private static boolean isCriterionSatisfied(Provider prov, Criteria cr) {
+        // Constructed key have ONLY 1 space between algName and attrName
+        String key = cr.serviceName + '.' + cr.algName +
+                (cr.attrName != null ? ' ' + cr.attrName : "");
 
         // Check whether the provider has a property
         // whose key is the same as the given key.
@@ -861,16 +898,12 @@ public final class Security {
             // Check whether we have an alias instead
             // of a standard name in the key.
             String standardName = getProviderProperty("Alg.Alias." +
-                                                      serviceName + "." +
-                                                      algName,
+                                                      cr.serviceName + "." +
+                                                      cr.algName,
                                                       prov);
             if (standardName != null) {
-                key = serviceName + "." + standardName;
-
-                if (attrName != null) {
-                    key += ' ' + attrName;
-                }
-
+                key = cr.serviceName + "." + cr.algName +
+                        (cr.attrName != null ? ' ' + cr.attrName : "");
                 propValue = getProviderProperty(key, prov);
             }
 
@@ -884,20 +917,20 @@ public final class Security {
         // If the key is in the format of:
         // <crypto_service>.<algorithm_or_type>,
         // there is no need to check the value.
-        if (attrName == null) {
+        if (cr.attrName == null) {
             return true;
         }
 
         // If we get here, the key must be in the
         // format of <crypto_service>.<algorithm_or_type> <attribute_name>.
-        return isConstraintSatisfied(attrName, filterValue, propValue);
+        return isConstraintSatisfied(cr.attrName, cr.attrValue, propValue);
     }
 
-    private static boolean isKnownComposite(String attribute) {
-        return (attribute.equalsIgnoreCase("SupportedKeyClasses") ||
-                attribute.equalsIgnoreCase("SupportedPaddings") ||
-                attribute.equalsIgnoreCase("SupportedModes") ||
-                attribute.equalsIgnoreCase("SupportedKeyFormats"));
+    private static boolean isKnownComposite(String attr) {
+        return (attr.equalsIgnoreCase("SupportedKeyClasses") ||
+                attr.equalsIgnoreCase("SupportedPaddings") ||
+                attr.equalsIgnoreCase("SupportedModes") ||
+                attr.equalsIgnoreCase("SupportedKeyFormats"));
     }
 
     /*
@@ -923,78 +956,16 @@ public final class Security {
             value = value.toUpperCase();
             prop = prop.toUpperCase();
 
-            if (value.indexOf('|') != -1) {
-                StringTokenizer st = new StringTokenizer(value, "| ");
-                while (st.hasMoreTokens()) {
-                    // check individual component for match and bail if no match
-                    if (prop.indexOf(st.nextToken()) == -1) {
-                        return false;
-                    };
-                }
-                return true;
-            } else {
-                return (prop.indexOf(value) != -1);
+            // match value to the property components
+            String[] propComponents = prop.split("\\|");
+            for (String pc : propComponents) {
+                if (value.equals(pc)) return true;
             }
+            return false;
         } else {
             // direct string compare (ignore case)
             return value.equalsIgnoreCase(prop);
         }
-    }
-
-    static String[] getFilterComponents(String filterKey, String filterValue) {
-
-        int algIndex = filterKey.indexOf('.');
-
-        if (algIndex < 0) {
-            // There must be a dot in the filter, and the dot
-            // shouldn't be at the beginning of this string.
-            throw new InvalidParameterException("Invalid filter");
-        }
-
-        String serviceName = filterKey.substring(0, algIndex);
-        String algName;
-        String attrName = null;
-
-        if (filterValue.isEmpty()) {
-            // The filterValue is an empty string. So the filterKey
-            // should be in the format of <crypto_service>.<algorithm_or_type>.
-            algName = filterKey.substring(algIndex + 1).trim();
-            if (algName.isEmpty()) {
-                // There must be an algorithm or type name.
-                throw new InvalidParameterException("Invalid filter");
-            }
-        } else {
-            // The filterValue is a non-empty string. So the filterKey must be
-            // in the format of
-            // <crypto_service>.<algorithm_or_type> <attribute_name>
-            int attrIndex = filterKey.indexOf(' ', algIndex + 1);
-
-            if (attrIndex == -1) {
-                // There is no attribute name in the filter.
-                throw new InvalidParameterException("Invalid filter");
-            } else {
-                attrName = filterKey.substring(attrIndex + 1).trim();
-                if (attrName.isEmpty()) {
-                    // There is no attribute name in the filter.
-                    throw new InvalidParameterException("Invalid filter");
-                }
-            }
-
-            // There must be an algorithm name in the filter.
-            if ((attrIndex < algIndex) ||
-                (algIndex == attrIndex - 1)) {
-                throw new InvalidParameterException("Invalid filter");
-            } else {
-                algName = filterKey.substring(algIndex + 1, attrIndex);
-            }
-        }
-
-        String[] result = new String[3];
-        result[0] = serviceName;
-        result[1] = algName;
-        result[2] = attrName;
-
-        return result;
     }
 
     /**

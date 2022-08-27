@@ -33,6 +33,16 @@ import java.security.*;
 
 public class ProviderFiltering {
 
+    private static void testIPE(String s) {
+        // check against invalid filter for InvalidParameterException
+        try {
+            Security.getProviders(s);
+            throw new RuntimeException("Expected IPE not thrown: " + s);
+        } catch (InvalidParameterException ipe) {
+            System.out.println("Expected IPE thrown for " + s);
+        }
+    }
+
     private static void doit(Object filter, String... expectedPNs) {
         System.out.println("Filter: " + filter);
         System.out.println("Expected Provider(s): " +
@@ -72,67 +82,65 @@ public class ProviderFiltering {
 
     public static void main(String[] args)
                 throws NoSuchAlgorithmException {
+        testIPE("");
+        testIPE("Cipher.");
+        testIPE(".RC2 ");
+        testIPE("Cipher.RC2 :");
+        testIPE("Cipher.RC2 a: ");
+        testIPE("Cipher.RC2 :b");
+        testIPE("Cipher.RC2 SupportedKeyClasses:a|b");
+
         String p = "SUN";
-        String key = "Signature.SHA256withDSA SupportedKeyClasses";
+        String sigService = "Signature.SHA256withDSA";
+        // javadoc allows extra spaces in between
+        String key = sigService + "   SupportedKeyClasses";
         String valComp1 = "java.security.interfaces.DSAPublicKey";
         String valComp2 = "java.security.interfaces.DSAPrivateKey";
         String valComp2CN = valComp2.substring(valComp2.lastIndexOf('.') + 1);
 
         // test using String filter
-        // 1. exact match
-        doit(key + ":" + valComp1 + "|" + valComp2, p);
-        // 2. value w/ space prefix
-        doit(key + ": " + valComp1, p);
-        // 3. value w/ space suffix
-        doit(key + ":" + valComp2 + " ", p);
-        // 4. partial value, e.g. class name only
-        doit(key + ":" + valComp2CN, p);
-        // 5. different values ordering
-        doit(key + ":" + valComp2 + "|" + valComp1, p);
+        doit(key + ":" + valComp1, p);
+        doit(key + ":" + valComp2, p);
+        doit(key + ":" + valComp2CN);
 
         // repeat above tests using filter Map
         Map<String,String> filters = new HashMap<>();
-        filters.put(key, valComp1 + "|" + valComp2);
+        filters.put(key, valComp1);
         doit(filters, p);
-        filters.put(key, " " + valComp1);
-        doit(filters, p);
-        filters.put(key, valComp2 + " ");
+        filters.put(key, valComp2);
         doit(filters, p);
         filters.put(key, valComp2CN);
-        doit(filters, p);
-        filters.put(key, valComp2 + " | " + valComp1);
-        doit(filters, p);
+        doit(filters);
 
-        // add more filters to the map
-        filters.put("Signature.SHA256withDSA", "");
+        // try non-attribute filters
+        filters.clear();
+        filters.put(sigService, "");
         doit(filters, p);
-        filters.put("Cipher.Nonexisting", "");
+        filters.put("Cipher.RC2", "");
         doit(filters);
 
         // test against a custom provider and attribute
         filters.clear();
-        String service = "Signature.SHA256withDSA";
         String customKey = "customAttr";
         String customValue = "customValue";
         String pName = "TestProv";
-        Provider testProv = new TestProvider(pName, service, customKey,
+        Provider testProv = new TestProvider(pName, sigService, customKey,
                 customValue);
         Security.insertProviderAt(testProv, 1);
         // should find both TestProv and SUN and in this order
-        doit(service, pName, "SUN");
-        filters.put(service, "");
+        doit(sigService, pName, "SUN");
+        filters.put(sigService, "");
         doit(filters, pName, "SUN");
 
-        String specAttr = service + " " + customKey + ":" + customValue;
+        String specAttr = sigService + "  " + customKey + ":" + customValue;
         // should find only TestProv
         doit(specAttr, pName);
-        filters.put(service + " " + customKey, " " + customValue + " ");
+        filters.put(sigService + "  " + customKey, customValue);
         doit(filters, pName);
 
         // should find no proviser now that TestProv is removed
         Security.removeProvider(pName);
         doit(specAttr);
-        doit(filters);
     }
 
     private static class TestProvider extends Provider {
