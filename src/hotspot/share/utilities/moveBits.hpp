@@ -27,39 +27,34 @@
 
 #include "metaprogramming/conditional.hpp"
 #include "metaprogramming/enableIf.hpp"
-#include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include <type_traits>
 
 template <typename T>
 class ReverseBitsImpl {
-  static const size_t S = sizeof(T);
+  static const size_t NB = sizeof(T) * BitsPerByte;
 
-  static_assert((S == 1) || (S == 2) || (S == 4) || (S == 8), "unsupported size");
+  static_assert((NB == 8) || (NB == 16) || (NB == 32) || (NB == 64),
+                "unsupported size");
 
-  static const uint64_t rep_5555 = UCONST64(0x5555555555555555);
-  static const uint64_t rep_3333 = UCONST64(0x3333333333333333);
-  static const uint64_t rep_0F0F = UCONST64(0x0F0F0F0F0F0F0F0F);
-  static const uint64_t rep_00FF = UCONST64(0x00FF00FF00FF00FF);
-  static const uint64_t rep_FFFF = UCONST64(0x0000FFFF0000FFFF);
+  // The unsigned integral type for calculations.
+  using I = typename Conditional<NB <= 32, uint32_t, uint64_t>::type;
 
-  using I = typename Conditional<S <= 4, uint32_t, uint64_t>::type;
-
-  // Avoid 32bit shift of uint32_t that some compilers might warn about even
-  // though the relevant code will never be executed.  For example, gcc warns
-  // about -Wshift-count-overflow.
-  static constexpr uint32_t swap64(uint32_t x) { ShouldNotReachHere(); return x; }
-  static constexpr uint64_t swap64(uint64_t x) { return (x << 32) | (x >> 32); }
+  static const I rep_5555 = static_cast<I>(UCONST64(0x5555555555555555));
+  static const I rep_3333 = static_cast<I>(UCONST64(0x3333333333333333));
+  static const I rep_0F0F = static_cast<I>(UCONST64(0x0F0F0F0F0F0F0F0F));
+  static const I rep_00FF = static_cast<I>(UCONST64(0x00FF00FF00FF00FF));
+  static const I rep_FFFF = static_cast<I>(UCONST64(0x0000FFFF0000FFFF));
 
 public:
 
   static constexpr T reverse_bits_in_bytes(T v) {
     // Based on Hacker's Delight Section 7-1
     auto x = static_cast<I>(v);
-    x = ((x & (I)rep_5555) << 1) | ((x >> 1) & (I)rep_5555);
-    x = ((x & (I)rep_3333) << 2) | ((x >> 2) & (I)rep_3333);
-    x = ((x & (I)rep_0F0F) << 4) | ((x >> 4) & (I)rep_0F0F);
-    return x;
+    x = ((x & rep_5555) << 1) | ((x >> 1) & rep_5555);
+    x = ((x & rep_3333) << 2) | ((x >> 2) & rep_3333);
+    x = ((x & rep_0F0F) << 4) | ((x >> 4) & rep_0F0F);
+    return static_cast<T>(x);
   }
 
   static constexpr T reverse_bytes(T v) {
@@ -67,15 +62,17 @@ public:
     // NB: Compilers are good at recognizing byte-swap code and transforming
     // it into platform-specific instructions like x86 bswap.
     auto x = static_cast<I>(v);
-    switch (S) {
-    case 8:
-      x = swap64(x);
-    case 4:                     // fallthrough
-      x = ((x & (I)rep_FFFF) << 16) | ((x >> 16) & (I)rep_FFFF);
-    case 2:                     // fallthrough
-      x = ((x & (I)rep_00FF) << 8)  | ((x >> 8)  & (I)rep_00FF);
+    switch (NB) {
+    case 64:
+      // The use of NB/2 rather than 32 avoids a warning in dead code when
+      // I is uint32_t, because shifting a 32bit type by 32 is UB.
+      x = (x << (NB/2)) | (x >> (NB/2));
+    case 32:                    // fallthrough
+      x = ((x & rep_FFFF) << 16) | ((x >> 16) & rep_FFFF);
+    case 16:                    // fallthrough
+      x = ((x & rep_00FF) << 8)  | ((x >> 8)  & rep_00FF);
     default:                    // fallthrough
-      return x;
+      return static_cast<T>(x);
     }
   }
 };

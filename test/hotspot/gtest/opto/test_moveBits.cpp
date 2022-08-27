@@ -74,7 +74,19 @@ TEST_VM(opto, moveBits) {
   test_moveBits<uint8_t>();
 }
 
-// here is some object code to look at:
+// Here is some object code to look at if we want to do a manual
+// study.  One could find the build file named test_moveBits.o.cmdline
+// and hand-edit the command line to produce assembly code in
+// test_moveBits.s.
+//
+// Or, given the two empty "fence functions", one could do a
+// quick scan like this:
+//
+// $ objdump -D $(find build/*release -name test_moveBits.o) \
+//   | sed -n '/start_code_quality/,$p;/end_code_quality/q' \
+//   | egrep -B10 bswap  # or grep -B20 cfi_endproc
+
+void start_code_quality_moveBits() { }
 
 int32_t code_quality_reverse_bits_32(int32_t x) {
   return reverse_bits(x);
