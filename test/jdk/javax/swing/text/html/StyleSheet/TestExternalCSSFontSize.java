@@ -41,7 +41,7 @@ import javax.swing.text.View;
 /*
  * @test
  * @bug 8292948
- * @summary  Tests font-size declarations from external style sheet.
+ * @summary Tests font-size declarations from an external style sheet.
  * @run main TestExternalCSSFontSize
  */
 public class TestExternalCSSFontSize {
