@@ -29,7 +29,6 @@ import java.util.Arrays;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import java.awt.Component;
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 import javax.imageio.ImageIO;
@@ -143,7 +142,7 @@ public class TestExternalCSSFontSize {
                     System.err.println("Can't save image (test.editor is null)");
                 } else {
                     String suffix = success ? "-success" : "-failure";
-                    SwingUtilities.invokeAndWait(() -> captureImage(test.editor, suffix));
+                    SwingUtilities.invokeAndWait(() -> test.captureImage(suffix));
                 }
             }
         }
@@ -153,18 +152,17 @@ public class TestExternalCSSFontSize {
         return Arrays.asList(args).contains(opt);
     }
 
-    static void captureImage(Component comp, String suffix) {
+    private void captureImage(String suffix) {
         try {
             BufferedImage capture =
-                    new BufferedImage(comp.getWidth(), comp.getHeight(),
+                    new BufferedImage(editor.getWidth(), editor.getHeight(),
                                       BufferedImage.TYPE_INT_ARGB);
             Graphics g = capture.getGraphics();
-            comp.paint(g);
+            editor.paint(g);
             g.dispose();
 
             ImageIO.write(capture, "png",
-                    new File(TestExternalCSSFontSize.class
-                                .getSimpleName() + suffix + ".png"));
+                    new File(getClass().getSimpleName() + suffix + ".png"));
         } catch (IOException e) {
             e.printStackTrace();
         }
