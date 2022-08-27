@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/continuationEntry.hpp"
+#include "runtime/javaThread.hpp"
 #include "macroAssembler_x86.hpp"
 
 //---------------------------- continuation_enter_setup ---------------------------
