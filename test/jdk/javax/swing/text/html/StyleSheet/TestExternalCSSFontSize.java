@@ -66,7 +66,7 @@ public class TestExternalCSSFontSize {
         editor = new JEditorPane();
         editor.setContentType("text/html");
         editor.addPropertyChangeListener("page", evt -> {
-            System.out.append("loaded: ").println(evt.getNewValue());
+            System.out.append("Loaded: ").println(evt.getNewValue());
             try {
                 run();
             } catch (Throwable e) {
@@ -105,13 +105,13 @@ public class TestExternalCSSFontSize {
     private void assertFontSize(GlyphView child, int index) {
         printSource(child);
         if (index >= expectedFontSizes.length) {
-            throw new AssertionError("unexpected text run #"
+            throw new AssertionError("Unexpected text run #"
                     + index + " (>= " + expectedFontSizes.length + ")");
         }
 
         int actualFontSize = child.getFont().getSize();
         if (actualFontSize != expectedFontSizes[index]) {
-            throw new AssertionError("font size expected ["
+            throw new AssertionError("Font size expected ["
                     + expectedFontSizes[index] + "] but found [" + actualFontSize +"]");
         }
     }
@@ -139,7 +139,7 @@ public class TestExternalCSSFontSize {
         if (finishLatch.get() != null
                 && !finishLatch.get().await(5, TimeUnit.SECONDS)
                 && failure == null) {
-            throw new IllegalStateException("page loading timed out");
+            throw new IllegalStateException("Page loading timed out");
         }
 
         if (failure != null) {
