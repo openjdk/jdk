@@ -72,9 +72,9 @@ class NativeNMethodBarrier: public NativeInstruction {
       RelocIterator iter(nm);
       while (iter.next()) {
         if (iter.type() == relocInfo::entry_guard_type) {
-	  entry_guard_Relocation* const reloc = iter.entry_guard_reloc();
-	  return reinterpret_cast<int*>(reloc->addr());
-	}
+          entry_guard_Relocation* const reloc = iter.entry_guard_reloc();
+          return reinterpret_cast<int*>(reloc->addr());
+        }
       }
       ShouldNotReachHere();
     }
