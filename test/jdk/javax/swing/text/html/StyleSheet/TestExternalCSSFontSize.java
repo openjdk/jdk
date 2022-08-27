@@ -24,6 +24,7 @@
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.net.URL;
 import java.util.Arrays;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -55,9 +56,10 @@ public class TestExternalCSSFontSize {
     TestExternalCSSFontSize() {}
 
     CountDownLatch setUp() throws Exception {
-        File htmlFile = new File("TestExternalCSSFontSize.html");
-        if (!htmlFile.exists()) {
-            throw new FileNotFoundException(htmlFile.getAbsolutePath());
+        String fileName = getClass().getName().replace('.', '/') + ".html";
+        URL htmlFile = getClass().getClassLoader().getResource(fileName);
+        if (htmlFile == null) {
+            throw new FileNotFoundException("Resource not found: " + fileName);
         }
 
         CountDownLatch finishLatch = new CountDownLatch(1);
@@ -73,7 +75,7 @@ public class TestExternalCSSFontSize {
                 finishLatch.countDown();
             }
         });
-        editor.setPage(htmlFile.toURI().toURL());
+        editor.setPage(htmlFile);
         return finishLatch;
     }
 
