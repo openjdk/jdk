@@ -55,46 +55,6 @@ public:
   const char* message() const { return _message; }
 };
 
-class AsyncLogBuffer : public CHeapObj<mtLogging> {
-  size_t _pos;
-  char* const _buf;
-  const size_t _capacity;
-
- public:
-  AsyncLogBuffer(char* buffer, size_t capacity) : _pos(0), _buf(buffer), _capacity(capacity) {}
-
-  bool push_back(const AsyncLogMessage& msg);
-
-  size_t space() const {
-    return _capacity - _pos;
-  }
-
-  void reset() { _pos = 0; }
-
-  class Iterator {
-    const AsyncLogBuffer& _buf;
-    size_t _curr;
-
-    void* raw_ptr() const {
-      assert(_curr < _buf._pos, "sanity check");
-      return _buf._buf + _curr;
-    }
-
-   public:
-    Iterator(const AsyncLogBuffer& buffer): _buf(buffer), _curr(0) {}
-
-    bool is_empty() const {
-      return _curr >= _buf._pos;
-    }
-
-    AsyncLogMessage* next();
-  };
-
-  Iterator iterator() {
-    return Iterator(*this);
-  }
-};
-
 typedef ResourceHashtable<LogFileStreamOutput*,
                           uint32_t,
                           17, /*table_size*/
@@ -125,6 +85,49 @@ typedef ResourceHashtable<LogFileStreamOutput*,
 class AsyncLogWriter : public NonJavaThread {
   class AsyncLogLocker;
 
+  class Buffer : public CHeapObj<mtLogging> {
+    size_t _pos;
+    char* const _buf;
+    size_t _capacity;
+
+   public:
+    Buffer(char* buffer, size_t capacity);
+
+    bool push_back(const AsyncLogMessage& msg);
+
+    // for testing-only!
+    size_t set_capacity(size_t value) {
+      size_t old = _capacity;
+      _capacity = value;
+      return old;
+    }
+
+    void reset() { _pos = 0; }
+
+    class Iterator {
+      const Buffer& _buf;
+      size_t _curr;
+
+      void* raw_ptr() const {
+        assert(_curr < _buf._pos, "sanity check");
+        return _buf._buf + _curr;
+      }
+
+    public:
+      Iterator(const Buffer& buffer): _buf(buffer), _curr(0) {}
+
+      bool is_empty() const {
+        return _curr >= _buf._pos;
+      }
+
+      AsyncLogMessage* next();
+    };
+
+    Iterator iterator() {
+      return Iterator(*this);
+    }
+  };
+
   static AsyncLogWriter* _instance;
   Semaphore _flush_sem;
   // Can't use a Monitor here as we need a low-level API that can be used without Thread::current().
@@ -133,13 +136,12 @@ class AsyncLogWriter : public NonJavaThread {
   volatile bool _initialized;
   AsyncLogMap _stats; // statistics for dropped messages
 
-  // ping-pang buffers
-  AsyncLogBuffer* _buffer;
-  AsyncLogBuffer* _buffer_staging;
+  // ping-pong buffers
+  Buffer* _buffer;
+  Buffer* _buffer_staging;
 
-  // The memory use of each AsyncLogMessage (payload) consists of itself and a variable-length c-str message.
-  // A regular logging message is smaller than vwrite_buffer_size, which is defined in logtagset.cpp
-  //const size_t _buffer_max_size = {AsyncLogBufferSize / (sizeof(AsyncLogMessage) + vwrite_buffer_size)};
+  static const LogDecorations& None;
+  static const AsyncLogMessage& Token;
 
   AsyncLogWriter();
   void enqueue_locked(const AsyncLogMessage& msg);
@@ -164,6 +166,9 @@ class AsyncLogWriter : public NonJavaThread {
   static AsyncLogWriter* instance();
   static void initialize();
   static void flush();
+
+  // for testing-only
+  size_t throttle_buffers(size_t newsize);
 };
 
 #endif // SHARE_LOGGING_LOGASYNCWRITER_HPP

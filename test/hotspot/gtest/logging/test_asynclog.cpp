@@ -69,18 +69,20 @@ LOG_LEVEL_LIST
   }
 
   void test_asynclog_drop_messages() {
-    if (AsyncLogWriter::instance() != nullptr) {
-      const size_t sz = 100;
+    auto writer = AsyncLogWriter::instance();
+    if (writer != nullptr) {
+      const size_t sz = 2000;
 
       // shrink async buffer.
-      AutoModifyRestore<size_t> saver(AsyncLogBufferSize, sz * 1024 /*in byte*/);
+      size_t saved = writer->throttle_buffers(1024/*bytes*/);
       LogMessage(logging) lm;
 
-      // write 100x more messages than its capacity in burst
-      for (size_t i = 0; i < sz * 100; ++i) {
+      // write more messages than its capacity in burst
+      for (size_t i = 0; i < sz; ++i) {
         lm.debug("a lot of log...");
       }
       lm.flush();
+      writer->throttle_buffers(saved);
     }
   }
 

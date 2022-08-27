@@ -27,6 +27,7 @@
 #include "logging/logFileOutput.hpp"
 #include "logging/logFileStreamOutput.hpp"
 #include "logging/logHandle.hpp"
+#include "memory/resourceArea.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/os.inline.hpp"
 
@@ -42,9 +43,16 @@ class AsyncLogWriter::AsyncLogLocker : public StackObj {
   }
 };
 
-bool AsyncLogBuffer::push_back(const AsyncLogMessage& msg) {
+// reserve space for flush token, so 'push_back(Token)' always succeeds.
+AsyncLogWriter::Buffer::Buffer(char* buffer, size_t capacity) : _pos(0), _buf(buffer) {
+  assert(capacity >= (AsyncLogWriter::Token.size()), "AsyncLogBuffer is too small!");
+  _capacity = capacity - (Token.size());
+}
+
+bool AsyncLogWriter::Buffer::push_back(const AsyncLogMessage& msg) {
   size_t sz = msg.size();
-  if (_pos + sz <= _capacity) {
+
+  if (_pos + sz <= _capacity || (&msg == &AsyncLogWriter::Token)) {
     memcpy(_buf + _pos, &msg, sizeof(AsyncLogMessage));
     char* dest = _buf + _pos + sizeof(AsyncLogMessage);
     if (msg.message() != nullptr) {
@@ -57,15 +65,20 @@ bool AsyncLogBuffer::push_back(const AsyncLogMessage& msg) {
     _pos += sz;
     return true;
   }
+
   return false;
 }
 
-AsyncLogMessage* AsyncLogBuffer::Iterator::next() {
+AsyncLogMessage* AsyncLogWriter::Buffer::Iterator::next() {
   auto msg = static_cast<AsyncLogMessage*>(raw_ptr());
   _curr += msg->size();
   _curr = MIN2(_curr, _buf._pos);
   return msg;
 }
+
+const LogDecorations& AsyncLogWriter::None = LogDecorations(LogLevel::Warning, LogTagSetMapping<LogTag::__NO_TAG>::tagset(),
+                                      LogDecorators::None);
+const AsyncLogMessage& AsyncLogWriter::Token = AsyncLogMessage(nullptr, None, nullptr);
 
 void AsyncLogWriter::enqueue_locked(const AsyncLogMessage& msg) {
   if (!_buffer->push_back(msg)) {
@@ -81,7 +94,6 @@ void AsyncLogWriter::enqueue_locked(const AsyncLogMessage& msg) {
 
 void AsyncLogWriter::enqueue(LogFileStreamOutput& output, const LogDecorations& decorations, const char* msg) {
   AsyncLogMessage m(&output, decorations, msg);
-
 
   { // critical area
     AsyncLogLocker locker;
@@ -111,8 +123,8 @@ AsyncLogWriter::AsyncLogWriter()
   char* buf0 = static_cast<char* >(os::malloc(size, mtLogging));
   char* buf1 = static_cast<char* >(os::malloc(size, mtLogging));
   if (buf0 != nullptr && buf1 != nullptr) {
-    _buffer = new AsyncLogBuffer(buf0, size);
-    _buffer_staging = new AsyncLogBuffer(buf1, size);
+    _buffer = new Buffer(buf0, size);
+    _buffer_staging = new Buffer(buf1, size);
     if (_buffer != nullptr && _buffer_staging != nullptr) {
       log_info(logging)("AsyncLogBuffer estimates memory use: " SIZE_FORMAT " bytes", size * 2);
     } else {
@@ -137,41 +149,29 @@ AsyncLogWriter::AsyncLogWriter()
   }
 }
 
-class AsyncLogMapIterator {
-  AsyncLogBuffer& _logs;
-
- public:
-  AsyncLogMapIterator(AsyncLogBuffer& logs) :_logs(logs) {}
-  bool do_entry(LogFileStreamOutput* output, uint32_t& counter) {
-    using none = LogTagSetMapping<LogTag::__NO_TAG>;
-
-    if (counter > 0) {
-      LogDecorations decorations(LogLevel::Warning, none::tagset(), LogDecorators::All);
-      stringStream ss;
-      ss.print(UINT32_FORMAT_W(6) " messages dropped due to async logging", counter);
-      AsyncLogMessage msg(output, decorations, ss.as_string(true/*c_heap*/));
-      _logs.push_back(msg);
-      counter = 0;
-    }
-
-    return true;
-  }
-};
-
 void AsyncLogWriter::write() {
-  // Use kind of copy-and-swap idiom here.
-  // Empty 'logs' swaps the content with _buffer.
-  // Along with logs destruction, all processed messages are deleted.
-  //
-  // The operation 'pop_all()' is done in O(1). All I/O jobs are then performed without
+  ResourceMark rm;
+  using Map = ResourceHashtable<LogFileStreamOutput*, uint32_t,
+                          17/*table_size*/, ResourceObj::RESOURCE_AREA,
+                          mtLogging>;
+  Map snapshot;
+
   // lock protection. This guarantees I/O jobs don't block logsites.
   { // critical region
     AsyncLogLocker locker;
+
     _buffer_staging->reset();
     swap(_buffer, _buffer_staging);
-    // append meta-messages of dropped counters
-    AsyncLogMapIterator dropped_counters_iter(*_buffer_staging);
-    _stats.iterate(&dropped_counters_iter);
+
+    // move counters to snapshot, and reset them.
+    _stats.iterate([&] (LogFileStreamOutput* output, uint32_t& counter) {
+      if (counter > 0) {
+        bool created = snapshot.put(output, counter);
+        assert(created == true, "sanity check");
+        counter = 0;
+      }
+      return true;
+    });
     _data_available = false;
   }
 
@@ -189,6 +189,17 @@ void AsyncLogWriter::write() {
       req++;
     }
   }
+
+  LogDecorations decorations(LogLevel::Warning, LogTagSetMapping<LogTag::__NO_TAG>::tagset(),
+                             LogDecorators::All);
+  snapshot.iterate([&](LogFileStreamOutput* output, uint32_t& counter) {
+    if (counter > 0) {
+      stringStream ss;
+      ss.print(UINT32_FORMAT_W(6) " messages dropped due to async logging", counter);
+      output->write_blocking(decorations, ss.as_string(false));
+    }
+    return true;
+  });
 
   if (req > 0) {
     assert(req == 1, "AsyncLogWriter::flush() is NOT MT-safe!");
@@ -242,17 +253,22 @@ AsyncLogWriter* AsyncLogWriter::instance() {
 void AsyncLogWriter::flush() {
   if (_instance != nullptr) {
     {
-      using none = LogTagSetMapping<LogTag::__NO_TAG>;
       AsyncLogLocker locker;
-      LogDecorations d(LogLevel::Off, none::tagset(), LogDecorators::None);
-      AsyncLogMessage token(nullptr, d, nullptr);
-
       // Push directly in-case we are at logical max capacity, as this must not get dropped.
-      _instance->_buffer->push_back(token);
+      bool result = _instance->_buffer->push_back(Token);
+      assert(result, "fail to enqueue the flush token!");
       _instance->_data_available = true;
       _instance->_lock.notify();
     }
 
     _instance->_flush_sem.wait();
   }
+}
+
+size_t AsyncLogWriter::throttle_buffers(size_t newsize) {
+  AsyncLogLocker locker;
+
+  size_t oldsize = _buffer->set_capacity(newsize);
+  _buffer_staging->set_capacity(newsize);
+  return oldsize;
 }
