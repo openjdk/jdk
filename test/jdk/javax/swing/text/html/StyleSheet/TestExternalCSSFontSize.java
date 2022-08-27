@@ -154,10 +154,13 @@ public class TestExternalCSSFontSize {
             test.start();
             success = true;
         } finally {
-            if (!success && test.editor != null) {
-                SwingUtilities.invokeAndWait(() -> captureImage(test.editor, "-failure"));
-            } else if (hasOpt(args, "-capture")) {
-                SwingUtilities.invokeAndWait(() -> captureImage(test.editor, "-success"));
+            if (!success || hasOpt(args, "-capture")) {
+                if (test.editor == null) {
+                    System.err.println("Can't save image (test.editor is null)");
+                } else {
+                    String suffix = success ? "-success" : "-failure";
+                    SwingUtilities.invokeAndWait(() -> captureImage(test.editor, suffix));
+                }
             }
         }
     }
@@ -168,8 +171,9 @@ public class TestExternalCSSFontSize {
 
     static void captureImage(Component comp, String suffix) {
         try {
-            BufferedImage capture = new BufferedImage(comp.getWidth(),
-                                comp.getHeight(), BufferedImage.TYPE_INT_ARGB);
+            BufferedImage capture =
+                    new BufferedImage(comp.getWidth(), comp.getHeight(),
+                                      BufferedImage.TYPE_INT_ARGB);
             Graphics g = capture.getGraphics();
             comp.paint(g);
             g.dispose();
