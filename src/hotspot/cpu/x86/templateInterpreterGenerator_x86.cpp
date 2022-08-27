@@ -661,13 +661,6 @@ address TemplateInterpreterGenerator::generate_Continuation_doYield_entry(void) 
   address entry = __ pc();
   assert(StubRoutines::cont_doYield() != NULL, "stub not yet generated");
 
-#ifdef _LP64
-  const Register sender_sp = r13;
-  // This frame needs to be walkable as a compiled frame, so
-  // undo any c2i adapter adjustment by reseting sp to
-  // sender sp.  Luckily there are no arguments to worry about.
-  __ lea(rsp, Address(sender_sp, -wordSize)); // sender_sp with return address pushed
-#endif
   __ push_cont_fastpath();
 
   __ jump(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::cont_doYield())));
