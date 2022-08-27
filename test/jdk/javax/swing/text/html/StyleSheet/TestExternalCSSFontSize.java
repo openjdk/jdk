@@ -46,7 +46,7 @@ import javax.swing.text.View;
  */
 public class TestExternalCSSFontSize {
 
-    private static final int[] expectedFontSizes = { 21, 14, 12 };
+    private static final int[] expectedFontSizes = { 24, 16, 12 };
 
     private volatile JEditorPane editor;
 

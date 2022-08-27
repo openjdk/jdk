@@ -1,6 +1,6 @@
 .base {
-  font: 14px sans-serif;
-  font-size: 14;
+  font: 16px sans-serif;
+  font-size: 16;
 }
 
 .bigger {
@@ -10,5 +10,5 @@
 
 .smaller {
   font-style: italic;
-  font-size: 85%;
+  font-size: 75%;
 }
