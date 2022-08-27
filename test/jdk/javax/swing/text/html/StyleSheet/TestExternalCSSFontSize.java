@@ -22,13 +22,12 @@
  */
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 
 import java.awt.Component;
 import java.awt.Graphics;
@@ -49,37 +48,34 @@ public class TestExternalCSSFontSize {
 
     private static final int[] expectedFontSizes = { 21, 14, 12 };
 
-    private JEditorPane editor;
+    private volatile JEditorPane editor;
 
-    private volatile Throwable failure;
+    private volatile CountDownLatch loadLatch;
 
     TestExternalCSSFontSize() {}
 
-    CountDownLatch setUp() throws Exception {
+    void setUp() {
         String fileName = getClass().getName().replace('.', '/') + ".html";
         URL htmlFile = getClass().getClassLoader().getResource(fileName);
         if (htmlFile == null) {
-            throw new FileNotFoundException("Resource not found: " + fileName);
+            throw new IllegalStateException("Resource not found: " + fileName);
         }
 
-        CountDownLatch finishLatch = new CountDownLatch(1);
+        loadLatch = new CountDownLatch(1);
         editor = new JEditorPane();
         editor.setContentType("text/html");
         editor.addPropertyChangeListener("page", evt -> {
             System.out.append("Loaded: ").println(evt.getNewValue());
-            try {
-                run();
-            } catch (Throwable e) {
-                failure = e;
-            } finally {
-                finishLatch.countDown();
-            }
+            loadLatch.countDown();
         });
-        editor.setPage(htmlFile);
-        return finishLatch;
+        try {
+            editor.setPage(htmlFile);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
-    void run() {
+    void verify() {
         editor.setSize(editor.getPreferredSize()); // Do lay out text
 
         scanFontSizes(editor.getUI().getRootView(editor), 0);
@@ -126,24 +122,12 @@ public class TestExternalCSSFontSize {
         }
     }
 
-    void start() throws Throwable {
-        AtomicReference<CountDownLatch> finishLatch = new AtomicReference<>();
-        SwingUtilities.invokeAndWait(() -> {
-            try {
-                finishLatch.set(setUp());
-            } catch (Throwable e) {
-                failure = e;
-            }
-        });
-
-        if (finishLatch.get() != null
-                && !finishLatch.get().await(5, TimeUnit.SECONDS)
-                && failure == null) {
+    void run() throws Throwable {
+        SwingUtilities.invokeAndWait(this::setUp);
+        if (loadLatch.await(5, TimeUnit.SECONDS)) {
+            SwingUtilities.invokeAndWait(this::verify);
+        } else {
             throw new IllegalStateException("Page loading timed out");
-        }
-
-        if (failure != null) {
-            throw failure;
         }
     }
 
@@ -151,7 +135,7 @@ public class TestExternalCSSFontSize {
         TestExternalCSSFontSize test = new TestExternalCSSFontSize();
         boolean success = false;
         try {
-            test.start();
+            test.run();
             success = true;
         } finally {
             if (!success || hasOpt(args, "-capture")) {
