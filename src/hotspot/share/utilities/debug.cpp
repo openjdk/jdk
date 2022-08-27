@@ -657,7 +657,7 @@ extern "C" JNIEXPORT u4 u5decode(intptr_t addr) {
   if (!UNSIGNED5::check_length(arr, off, lim)) {
     return 0;
   }
-  return UNSIGNED5::read_u4(arr, off, lim);
+  return UNSIGNED5::read_uint(arr, off, lim);
 }
 
 // check and decode a series of u5 values
@@ -682,7 +682,7 @@ extern "C" JNIEXPORT intptr_t u5p(intptr_t addr, intptr_t limit, int count) {
     } else if (!UNSIGNED5::check_length(arr, off, lim)) {
       break;
     }
-    u4 value = UNSIGNED5::read_u4(arr, off, lim);
+    u4 value = UNSIGNED5::read_uint(arr, off, lim);
     tty->print(" %d", value);
     ++printed;
   }

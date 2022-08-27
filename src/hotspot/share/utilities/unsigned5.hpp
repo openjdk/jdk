@@ -37,19 +37,19 @@
 // to be complicated (uses all five bytes when necessary).
 
 // Notable features:
-//  - represents all 32-bit u4 values
+//  - represents all 32-bit uint32_t values
 //  - never reads or writes beyond 5 bytes
 //  - values up to 0xBE (0x307E/0xC207E/0x308207F) code in 1 byte (2/3/4 bytes)
 //  - longer encodings are always of larger values (length grows monotonically)
 //  - encodings are little-endian numerals in a modifed base-64 system
-//  - "negatives" like (u4)-1 need 5 bytes (but see also UNSIGNED5::encode_sign)
+//  - "negatives" ((u4)-1) need 5 bytes (but see also UNSIGNED5::encode_sign)
 //  - different encodings decode to different values (excepting overflow)
 //  - zero bytes are *never* used, so it interoperates with null termination
 //  - the algorithms are templates and cooperate well with your own types
 //  - one writer algorithm can grow your resizable buffer on the fly
 
 // The encoding, taken from J2SE Pack200, is called UNSIGNED5.
-// It expects the u4 values you give it will have many leading zeroes.
+// It expects the uint32_t values you give it will have many leading zeroes.
 //
 // More details:
 // Very small values, in the range [0..190], code in one byte.
@@ -91,9 +91,7 @@ class UNSIGNED5 : AllStatic {
 
  public:
   static const int MAX_LENGTH = 5;   // lengths are in [1..5]
-  static const u4  MAX_VALUE = (u4)-1;  // 2^^32-1
-  //typedef juint uint_t; -- using u4 instead
-  //typedef u_char byte_t; -- using u1 instead
+  static const uint32_t MAX_VALUE = (uint32_t)-1;  // 2^^32-1
 
   // decode a single unsigned 32-bit int from an array-like base address
   // returns the decoded value, updates offset_rw
@@ -101,12 +99,13 @@ class UNSIGNED5 : AllStatic {
   // warning:  caller must ensure there is at least one byte available
   // the limit is either zero meaning no limit check, or an exclusive offset
   // in PRODUCT builds, limit is ignored
-  template<typename ARR, typename OFF>
-  static u4 read_u4(ARR array, OFF& offset_rw, OFF limit) {
+  template<typename ARR, typename OFF, typename GET>
+  static uint32_t read_uint(ARR array, OFF& offset_rw, OFF limit, GET get) {
     const OFF pos = offset_rw;
-    const u4 b_0 = (u1) array[pos];
+    STATIC_ASSERT(sizeof(get(array, pos)) == 1);  // must be a byte-getter
+    const uint32_t b_0 = (uint8_t) get(array, pos);  //b_0 = a[0]
     assert(b_0 >= X, "avoid excluded bytes");
-    u4 sum = b_0 - X;
+    uint32_t sum = b_0 - X;
     if (sum < L) {  // common case
       offset_rw = pos + 1;
       return sum;
@@ -115,7 +114,7 @@ class UNSIGNED5 : AllStatic {
     int lg_H_i = lg_H;  // lg(H)*i == lg(H^^i)
     for (int i = 1; ; i++) {  // for i in [1..4]
       assert(limit == 0 || pos + i < limit, "oob");
-      const u4 b_i = (u1) array[pos + i];
+      const uint32_t b_i = (uint8_t) get(array, pos + i);  //b_i = a[i]
       assert(b_i >= X, "avoid excluded bytes");
       sum += (b_i - X) << lg_H_i;  // sum += (b[i]-X)*(64^^i)
       if (b_i < X+L || i == MAX_LENGTH-1) {
@@ -130,40 +129,42 @@ class UNSIGNED5 : AllStatic {
   // offset_rw is both read and written
   // the limit is either zero meaning no limit check, or an exclusive offset
   // warning:  caller must ensure there is available space
-  template<typename ARR, typename OFF>
-  static void write_u4(u4 value, ARR array, OFF& offset_rw, OFF limit) {
+  template<typename ARR, typename OFF, typename SET>
+  static void write_uint(uint32_t value, ARR array, OFF& offset_rw, OFF limit, SET set) {
     const OFF pos = offset_rw;
     if (value < L) {
-      const u4 b_0 = X + value;
-      assert(b_0 == (u1)b_0, "valid byte");
-      array[pos] = (u1)b_0;
+      const uint32_t b_0 = X + value;
+      assert(b_0 == (uint8_t)b_0, "valid byte");
+      set(array, pos, (uint8_t)b_0);  //a[0] = b_0
       offset_rw = pos + 1;
       return;
     }
-    u4 sum = value;
+    uint32_t sum = value;
     for (int i = 0; ; i++) {  // for i in [0..4]
       if (sum < L || i == MAX_LENGTH-1) {
         // remainder is either a "low code" or the 5th byte
-        u4 b_i = X + sum;
-        assert(b_i == (u1)b_i, "valid byte");
-        array[pos + i] = (u1)b_i;
+        uint32_t b_i = X + sum;
+        assert(b_i == (uint8_t)b_i, "valid byte");
+        set(array, pos + i, (uint8_t)b_i);  //a[i] = b_i
         offset_rw = pos + i + 1;
         return;
       }
       sum -= L;
-      u4 b_i = X + L + (sum % H);  // this is a "high code"
-      assert(b_i == (u1)b_i, "valid byte");
-      array[pos + i] = (u1)b_i;
+      uint32_t b_i = X + L + (sum % H);  // this is a "high code"
+      assert(b_i == (uint8_t)b_i, "valid byte");
+      set(array, pos + i, (uint8_t)b_i);  //a[i] = b_i
       sum >>= lg_H;                 // extracted 6 bits
     }
   }
 
   // returns the encoded byte length of an unsigned 32-bit int
-  static constexpr int encoded_length(u4 value) {
+  static constexpr int encoded_length(uint32_t value) {
     // model the reading of [0..5] high-bytes, followed possibly by a low-byte
-    u4 sum = 0;
-    int lg_H_i = 0;
-    for (int i = 0; ; i++) {  // for i in [1..4]
+    // Be careful:  the constexpr magic evaporates if undefined behavior
+    // results from any of these expressions.  Beware of signed overflow!
+    uint32_t sum = 0;
+    uint32_t lg_H_i = 0;
+    for (uint32_t i = 0; ; i++) {  // for i in [1..4]
       if (value <= sum + ((L-1) << lg_H_i) || i == MAX_LENGTH-1) {
         return i + 1;  // stopping at byte i implies length is i+1
       }
@@ -172,24 +173,26 @@ class UNSIGNED5 : AllStatic {
     }
   }
 
-  // reports the largest u4 value that can be encoded using len bytes
+  // reports the largest uint32_t value that can be encoded using len bytes
   // len must be in the range [1..5]
-  static constexpr u4 max_encoded_in_length(int len) {
+  static constexpr uint32_t max_encoded_in_length(uint32_t len) {
     assert(len >= 1 && len <= MAX_LENGTH, "invalid length");
-    if (len >= MAX_LENGTH)  return MAX_VALUE;  // the largest possible u4 value
-    u4 all_combinations = 0;
-      int combinations_i = L;  // L * H^i
-      for (int i = 0; i < len; i++) {
-        // count combinations of <H*L> that end at byte i
-        all_combinations += combinations_i;
-        combinations_i <<= lg_H;
-      }
+    if (len >= MAX_LENGTH)  return MAX_VALUE;  // largest non-overflow value
+    // Be careful:  the constexpr magic evaporates if undefined behavior
+    // results from any of these expressions.  Beware of signed overflow!
+    uint32_t all_combinations = 0;
+    uint32_t combinations_i = L;  // L * H^i
+    for (uint32_t i = 0; i < len; i++) {
+      // count combinations of <H*L> that end at byte i
+      all_combinations += combinations_i;
+      combinations_i <<= lg_H;
+    }
     return all_combinations - 1;
   }
 
   // tells if a value, when encoded, would fit between the offset and limit
   template<typename OFF>
-  static constexpr bool fits_in_limit(u4 value, OFF offset, OFF limit) {
+  static constexpr bool fits_in_limit(uint32_t value, OFF offset, OFF limit) {
     assert(limit != 0, "");
     return (offset + MAX_LENGTH <= limit ||
             offset + encoded_length(value) <= limit);
@@ -198,17 +201,18 @@ class UNSIGNED5 : AllStatic {
   // parses one encoded value for correctness and returns the size,
   // or else returns zero if there is a problem (bad limit or excluded byte)
   // the limit is either zero meaning no limit check, or an exclusive offset
-  template<typename ARR, typename OFF>
-  static int check_length(ARR array, OFF offset, OFF limit = 0) {
+  template<typename ARR, typename OFF, typename GET>
+  static int check_length(ARR array, OFF offset, OFF limit, GET get) {
     const OFF pos = offset;
-    const u4 b_0 = (u1) array[pos];
+    STATIC_ASSERT(sizeof(get(array, pos)) == 1);  // must be a byte-getter
+    const uint32_t b_0 = (uint8_t) get(array, pos);  //b_0 = a[0]
     if (b_0 < X+L) {
       return (b_0 < X) ? 0 : 1;
     }
     // parse more bytes:  b[1]...b[4]
     for (int i = 1; ; i++) {  // for i in [1..4]
       if (limit != 0 && pos + i >= limit)  return 0;  // limit failure
-      const u4 b_i = (u1) array[pos + i];
+      const uint32_t b_i = (uint8_t) get(array, pos + i);  //b_i = a[i]
       if (b_i < X)  return 0;  // excluded byte found
       if (b_i < X+L || i == MAX_LENGTH-1) {
         return i + 1;
@@ -216,29 +220,80 @@ class UNSIGNED5 : AllStatic {
     }
   }
 
-  template<typename ARR, typename OFF, typename XFN>
-  static void write_u4_expand(u4 value,
+  template<typename ARR, typename OFF, typename SET, typename GFN>
+  static void write_uint_grow(uint32_t value,
                               ARR& array, OFF& offset, OFF& limit,
-                              XFN expand) {
+                              SET set, GFN grow) {
     assert(limit != 0, "limit required");
     const OFF pos = offset;
     if (!fits_in_limit(value, pos, limit)) {
-      expand();  // caller must ensure it somehow fixes array/limit span
-      assert(pos + MAX_LENGTH <= limit, "should have expanded");
+      grow();  // caller must ensure it somehow fixes array/limit span
+      assert(pos + MAX_LENGTH <= limit, "should have grown");
     }
-    write_u4(value, array, offset, limit);
+    write_uint(value, array, offset, limit, set);
   }
+
+  // convenience overloadings for when array[offset] works
+  template<typename ARR, typename OFF>
+  static uint32_t read_uint(ARR array, OFF& offset_rw, OFF limit) {
+    auto get = [&](ARR a, OFF i){ return a[i]; };
+    return read_uint(array, offset_rw, limit, get);
+  }
+  template<typename ARR, typename OFF>
+  static void write_uint(uint32_t value, ARR array, OFF& offset_rw, OFF limit) {
+    auto set = [&](ARR a, OFF i, uint8_t x){ a[i] = x; };
+    return write_uint(value, array, offset_rw, limit, set);
+  }
+  template<typename ARR, typename OFF>
+  static int check_length(ARR array, OFF offset, OFF limit = 0) {
+    auto get = [&](ARR a, OFF i){ return a[i]; };
+    return check_length(array, offset, limit, get);
+  }
+  template<typename ARR, typename OFF, typename GFN>
+  static void write_uint_grow(uint32_t value,
+                              ARR& array, OFF& offset_rw, OFF& limit,
+                              GFN grow) {
+    auto set = [&](ARR a, OFF i, uint8_t x){ a[i] = x; };
+    return write_uint_grow(value, array, offset_rw, limit, set, grow);
+  }
+
+  // handy state machine
+  // example use:
+  //  struct MyReaderHelper {
+  //    char operator()(char* a, int i) const { return a[i]; }
+  //  };
+  //  using MyReader = UNSIGNED5::Reader<char*, int, MyReaderHelper>;
+  template<typename ARR, typename OFF, typename GET>
+  class Reader {
+    const ARR _array;
+    const OFF _limit;
+    OFF _position;
+  public:
+    Reader(ARR array, OFF limit = 0)
+      : _array(array), _limit(limit) { _position = 0; }
+    u4 next() {
+      return UNSIGNED5::read_uint(_array, _position, _limit, GET());
+    }
+    bool has_next() {
+      return UNSIGNED5::check_length(_array, _position, _limit, GET());
+    }
+    ARR array() { return _array; }
+    OFF limit() { return _limit; }
+    OFF position() { return _position; }
+    void set_position(OFF position) { _position = position; }
+  };
 
   // 32-bit one-to-one sign encoding taken from Pack200
   // converts leading sign bits into leading zeroes with trailing sign bit
   // use this to better compress 32-bit values that might be negative
-  static u4 encode_sign(s4 value) { return (value << 1) ^ (value >> 31); }
-  static s4 decode_sign(u4 value) { return (value >> 1) ^ -(s4)(value & 1); }
+  static uint32_t encode_sign(int32_t value) { return ((uint32_t)value << 1) ^ (value >> 31); }
+  static int32_t decode_sign(uint32_t value) { return (value >> 1) ^ -(int32_t)(value & 1); }
 
   // 32-bit self-inverse encoding of float bits
   // converts trailing zeroes (common in floats) to leading zeroes
   // use this to better compress 32-bit values with many *trailing* zeroes
-  static u4 reverse_int(u4 i) {
+  static uint32_t reverse_int(uint32_t i) {
+    // %%% should return reverse_bits(i); caller should be edited to use that
     // Hacker's Delight, Figure 7-1
     i = (i & 0x55555555) << 1 | ((i >> 1) & 0x55555555);
     i = (i & 0x33333333) << 2 | ((i >> 2) & 0x33333333);

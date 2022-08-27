@@ -34,12 +34,12 @@ TEST_VM(unsigned5, max_encoded_in_length) {
   int maxlen = UNSIGNED5::MAX_LENGTH;
   EXPECT_EQ(maxlen, 5);
   for (int i = 0; i <= 190; i++) {
-    u4 interesting = i;
+    uint32_t interesting = i;
     EXPECT_EQ(UNSIGNED5::encoded_length(interesting), 1);
     EXPECT_EQ(UNSIGNED5::encoded_length(~interesting), maxlen);
   }
   for (int len = 1; len <= maxlen; len++) {
-    u4 interesting = UNSIGNED5::max_encoded_in_length(len);
+    uint32_t interesting = UNSIGNED5::max_encoded_in_length(len);
     EXPECT_EQ(UNSIGNED5::encoded_length(interesting-1), len);
     EXPECT_EQ(UNSIGNED5::encoded_length(interesting), len);
     if (len < 5) {
@@ -54,10 +54,10 @@ TEST_VM(unsigned5, max_encoded_in_length) {
   }
 }
 
-// Call FN on a nice list of "interesting" u4 values to encode/decode.
+// Call FN on a nice list of "interesting" uint32_t values to encode/decode.
 // For each length in [1..5], the maximum encodable value of that
 // length is "interesting", as are one more and one less than that
-// value.  For each nybble (aligned 4-bit field) of a u4, each
+// value.  For each nybble (aligned 4-bit field) of a uint32_t, each
 // possible value (in [0..15]) stored in that nybble is "interesting".
 // Also "interesting" are some other values created by perturbing
 // lower bits of that nybble-bearing number, by subtracting a power
@@ -70,25 +70,25 @@ template<typename FN>
 inline int enumerate_cases(FN fn) {
   // boundary values around the maximum encoded in each byte-length
   for (int len = 1; len <= 5; len++) {
-    u4 interesting = UNSIGNED5::max_encoded_in_length(len);
+    uint32_t interesting = UNSIGNED5::max_encoded_in_length(len);
     int res = fn(interesting-1);
     if (res)  return res;
     res = fn(interesting);
     if (res)  return res;
-    if (interesting < (u4)-1) {
+    if (interesting < (uint32_t)-1) {
       res = fn(interesting+1);
       if (res)  return res;
     }
   }
   // for each nybble, for each value in the nybble
-  for (u4 npos = 0; npos < 32; npos += 4) {
-    for (u4 nval = 0; nval <= 15; nval++) {
-      u4 interesting = nval << npos;
+  for (uint32_t npos = 0; npos < 32; npos += 4) {
+    for (uint32_t nval = 0; nval <= 15; nval++) {
+      uint32_t interesting = nval << npos;
       int res = fn(interesting);
       if (res)  return res;
       // mix in some crazy-looking values: powers of -7 to -7^7
       for (int pon7 = 1; pon7 < 1000000; pon7 *= -7) {
-        u4 interesting2 = interesting - pon7; 
+        uint32_t interesting2 = interesting - pon7; 
         res = fn(interesting2);
         if (res)  return res;
       }
@@ -100,16 +100,16 @@ inline int enumerate_cases(FN fn) {
 TEST_VM(unsigned5, transcode_single) {
   const int limit = UNSIGNED5::MAX_LENGTH;
   u_char buffer[limit + 1];
-  auto each_case = [&](u4 value) -> u4 {
+  auto each_case = [&](uint32_t value) -> uint32_t {
     //printf("case %08X len=%d\n", value, UNSIGNED5::encoded_length(value));
     int offset = 0;
-    UNSIGNED5::write_u4(value, buffer, offset, limit);
+    UNSIGNED5::write_uint(value, buffer, offset, limit);
     int length = offset;
     EXPECT_TRUE(length <= UNSIGNED5::MAX_LENGTH);
     EXPECT_EQ(length, UNSIGNED5::encoded_length(value)) << "for value=" << value;
     buffer[length] = 0;
     offset = 0;
-    u4 check = UNSIGNED5::read_u4(buffer, offset, limit);
+    uint32_t check = UNSIGNED5::read_uint(buffer, offset, limit);
     EXPECT_EQ(offset, length) << "for value=" << value;
     EXPECT_EQ(value, check);
     return 0;
@@ -120,7 +120,7 @@ TEST_VM(unsigned5, transcode_single) {
 
 static int count_cases() {
   int case_count = 0;
-  auto inc_case_count = [&](u4){ ++case_count; return 0; };
+  auto inc_case_count = [&](uint32_t){ ++case_count; return 0; };
   enumerate_cases(inc_case_count);
   return case_count;
 }
@@ -138,10 +138,10 @@ TEST_VM(unsigned5, transcode_multiple) {
     int offset = 0;
     int count = 0;
     // write each number into an array
-    auto write_case = [&](u4 value) -> u4 {
+    auto write_case = [&](uint32_t value) -> uint32_t {
       if (!UNSIGNED5::fits_in_limit(value, offset, sublimit))
         return value|1;
-      UNSIGNED5::write_u4(value, buffer, offset, sublimit);
+      UNSIGNED5::write_uint(value, buffer, offset, sublimit);
       count++;
       return 0;
     };
@@ -161,12 +161,12 @@ TEST_VM(unsigned5, transcode_multiple) {
     // now read it all back
     offset = 0;
     int count2 = 0;
-    auto read_back_case = [&](u4 value) -> u4 {
+    auto read_back_case = [&](uint32_t value) -> uint32_t {
       int clen = UNSIGNED5::check_length(buffer, offset, sublimit);
       if (clen == 0)  return value|1;
       EXPECT_EQ(clen, UNSIGNED5::encoded_length(value));
       int begin = offset;
-      u4 check = UNSIGNED5::read_u4(buffer, offset, sublimit);
+      uint32_t check = UNSIGNED5::read_uint(buffer, offset, sublimit);
       EXPECT_EQ(offset, begin + clen);
       EXPECT_EQ(value, check);
       count2++;
@@ -178,3 +178,83 @@ TEST_VM(unsigned5, transcode_multiple) {
     EXPECT_EQ(offset, length);
   }
 }
+
+struct MyReaderHelper {
+  uint8_t operator()(char* a, int i) const { return a[i]; }
+};
+using MyReader = UNSIGNED5::Reader<char*, int, MyReaderHelper>;
+
+TEST_VM(unsigned5, reader) {
+  const int LEN = 100;
+  int ints[LEN];
+  int i;
+  for (i = 0; i < LEN; i++) {
+    ints[i] = 1001 * i;
+  }
+  char buf[LEN * UNSIGNED5::MAX_LENGTH + 1];
+  int buflen;
+  {
+    int pos = 0;
+    for (int i = 0; i < LEN; i++) {
+      UNSIGNED5::write_uint(ints[i], buf, pos, 0);
+    }
+    EXPECT_TRUE(pos+1 < (int)sizeof(buf)) << pos;
+    buflen = pos;
+    buf[buflen] = 0;
+  }
+  MyReader r1(buf);
+  i = 0;
+  while (r1.has_next()) {
+    int x = r1.next();
+    int y = ints[i++];
+    ASSERT_EQ(x, y) << i;
+  }
+  ASSERT_EQ(i, LEN);
+  MyReader r2(buf, buflen / 2);
+  i = 0;
+  while (r2.has_next()) {
+    int x = r2.next();
+    int y = ints[i++];
+    ASSERT_EQ(x, y) << i;
+  }
+  ASSERT_TRUE(i < LEN);
+}
+
+// Here is some object code to look at if we want to do a manual
+// study.  One could find the build file named test_unsigned5.o.cmdline
+// and hand-edit the command line to produce assembly code in
+// test_unsigned5.s.
+//
+// Or, given the two empty "fence functions", one could do a
+// quick scan like this:
+//
+// $ objdump -D $(find build/*release -name test_unsigned5.o) \
+//   | sed -n /start_code_quality/,/end_code_quality/p \
+//   | egrep -B10 bswap  # or grep -B20 cfi_endproc
+
+void start_code_quality_unsigned5() { }
+
+uint32_t code_quality_max_encoded_in_length(int i) {
+  return UNSIGNED5::max_encoded_in_length(i);  // should compile like 5-switch
+}
+
+int code_quality_encoded_length(uint32_t x) {
+  return UNSIGNED5::encoded_length(x);  // should compile to 4-way comparison
+}
+
+int code_quality_check_length(char* a) {
+  return UNSIGNED5::check_length(a, 0);  // should compile with fast-path
+}
+
+int code_quality_read_int(char* a) {
+  int i = 0;
+  return UNSIGNED5::read_uint(a, i, 0);  // should compile with fast-path
+}
+
+int code_quality_int_reader(char* a) {
+  MyReader r1(a);
+  if (!r1.has_next())  return -1;
+  return r1.next();
+}
+
+void end_code_quality_unsigned5() { }

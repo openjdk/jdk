@@ -69,7 +69,7 @@ class CompressedReadStream : public CompressedStream {
   jlong    read_long();                // jlong_from(2*read_signed_int())
 
   jint     read_int() {
-    return UNSIGNED5::read_u4(_buffer, _position, 0);
+    return UNSIGNED5::read_uint(_buffer, _position, 0);
   }
 };
 
@@ -106,7 +106,7 @@ class CompressedWriteStream : public CompressedStream {
   void write_long(jlong value);        // write_signed_int(<low,high>)
 
   void write_int(juint value) {
-    UNSIGNED5::write_u4_expand(value, _buffer, _position, _size,
+    UNSIGNED5::write_uint_grow(value, _buffer, _position, _size,
                                [&](){ grow(); });
   }
 };
