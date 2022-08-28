@@ -31,14 +31,16 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @build jdk.test.whitebox.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xlog:gc=debug:gc.log gc.ArrayJuggle.Juggle01.Juggle01 -gp byteArr -ms low
+ * @run main/othervm
+ *      -XX:+HeapDumpOnOutOfMemoryError
+ *      -Xlog:gc=debug:gc.log
+ *      gc.ArrayJuggle.Juggle01.Juggle01
+ *      -gp byteArr
+ *      -ms low
  */
 
 package gc.ArrayJuggle.Juggle01;
 
-import jdk.test.whitebox.WhiteBox;
 import nsk.share.test.*;
 import nsk.share.gc.*;
 import nsk.share.gc.gp.*;
@@ -48,6 +50,9 @@ import nsk.share.gc.gp.*;
  * objects using given garbage producer and memory strategy.
  */
 public class Juggle01 extends ThreadedGCTest implements GarbageProducerAware, MemoryStrategyAware {
+        // Keep thread count to 4, intention is to juggle
+        // with multiple threads, not to overwhelm gc
+        private static int NUM_JUGGLE_THREADS = 4;
         private GarbageProducer garbageProducer;
         private MemoryStrategy memoryStrategy;
         private Object[] array;
@@ -70,8 +75,9 @@ public class Juggle01 extends ThreadedGCTest implements GarbageProducerAware, Me
                 log.debug("Garbage producer: " + garbageProducer);
                 log.debug("Memory strategy: " + memoryStrategy);
                 long memory = runParams.getTestMemory();
+                runParams.setNumberOfThreads(NUM_JUGGLE_THREADS);
                 int objectCount = memoryStrategy.getCount(memory);
-                objectSize = memoryStrategy.getSize(memory) / runParams.getNumberOfThreads();
+                objectSize = memoryStrategy.getSize(memory);
                 log.debug("Object count: " + objectCount);
                 log.debug("Object size: " + objectSize);
                 array = new Object[objectCount - 1];
