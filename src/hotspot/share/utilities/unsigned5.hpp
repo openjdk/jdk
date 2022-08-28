@@ -28,9 +28,9 @@
 #include "memory/allStatic.hpp"
 #include "utilities/debug.hpp"
 
-// Low-level interface for [de-]coding compressed u4 values.
+// Low-level interface for [de-]coding compressed uint32_t (u4) values.
 
-// A u4 value (32-bit unsigned int) can be encoded very quickly into
+// A uint32_t value (32-bit unsigned int) can be encoded very quickly into
 // one to five bytes, and decoded back again, again very quickly.
 // This is useful for storing data, like offsets or access flags, that
 // is usually simple (fits in fewer bytes usually) but sometimes has
@@ -93,14 +93,25 @@ class UNSIGNED5 : AllStatic {
   static const int MAX_LENGTH = 5;   // lengths are in [1..5]
   static const uint32_t MAX_VALUE = (uint32_t)-1;  // 2^^32-1
 
+  // The default method for reading and writing bytes is simply
+  // b=a[i] and a[i]=b, as defined by this helpful functor.
+  template<typename ARR, typename OFF>
+  struct ArrayGetSet {
+    uint8_t operator()(ARR a, OFF i) const { return a[i]; };
+    void operator()(ARR a, OFF i, uint8_t b) const { a[i] = b; };
+    // So, an expression ArrayGetSet() acts like these lambdas:
+    //auto get = [&](ARR a, OFF i){ return a[i]; };
+    //auto set = [&](ARR a, OFF i, uint8_t x){ a[i] = x; };
+  };
+
   // decode a single unsigned 32-bit int from an array-like base address
   // returns the decoded value, updates offset_rw
   // that is, offset_rw is both read and written
   // warning:  caller must ensure there is at least one byte available
   // the limit is either zero meaning no limit check, or an exclusive offset
   // in PRODUCT builds, limit is ignored
-  template<typename ARR, typename OFF, typename GET>
-  static uint32_t read_uint(ARR array, OFF& offset_rw, OFF limit, GET get) {
+  template<typename ARR, typename OFF, typename GET = ArrayGetSet<ARR,OFF>>
+  static uint32_t read_uint(ARR array, OFF& offset_rw, OFF limit, GET get = GET()) {
     const OFF pos = offset_rw;
     STATIC_ASSERT(sizeof(get(array, pos)) == 1);  // must be a byte-getter
     const uint32_t b_0 = (uint8_t) get(array, pos);  //b_0 = a[0]
@@ -129,8 +140,8 @@ class UNSIGNED5 : AllStatic {
   // offset_rw is both read and written
   // the limit is either zero meaning no limit check, or an exclusive offset
   // warning:  caller must ensure there is available space
-  template<typename ARR, typename OFF, typename SET>
-  static void write_uint(uint32_t value, ARR array, OFF& offset_rw, OFF limit, SET set) {
+  template<typename ARR, typename OFF, typename SET = ArrayGetSet<ARR,OFF>>
+  static void write_uint(uint32_t value, ARR array, OFF& offset_rw, OFF limit, SET set = SET()) {
     const OFF pos = offset_rw;
     if (value < L) {
       const uint32_t b_0 = X + value;
@@ -201,8 +212,9 @@ class UNSIGNED5 : AllStatic {
   // parses one encoded value for correctness and returns the size,
   // or else returns zero if there is a problem (bad limit or excluded byte)
   // the limit is either zero meaning no limit check, or an exclusive offset
-  template<typename ARR, typename OFF, typename GET>
-  static int check_length(ARR array, OFF offset, OFF limit, GET get) {
+  template<typename ARR, typename OFF, typename GET = ArrayGetSet<ARR,OFF>>
+  static int check_length(ARR array, OFF offset, OFF limit = 0,
+                          GET get = GET()) {
     const OFF pos = offset;
     STATIC_ASSERT(sizeof(get(array, pos)) == 1);  // must be a byte-getter
     const uint32_t b_0 = (uint8_t) get(array, pos);  //b_0 = a[0]
@@ -220,67 +232,143 @@ class UNSIGNED5 : AllStatic {
     }
   }
 
-  template<typename ARR, typename OFF, typename SET, typename GFN>
+  template<typename ARR, typename OFF, typename GFN,
+           typename SET = ArrayGetSet<ARR,OFF>>
   static void write_uint_grow(uint32_t value,
                               ARR& array, OFF& offset, OFF& limit,
-                              SET set, GFN grow) {
+                              GFN grow, SET set = SET()) {
     assert(limit != 0, "limit required");
     const OFF pos = offset;
     if (!fits_in_limit(value, pos, limit)) {
-      grow();  // caller must ensure it somehow fixes array/limit span
+      grow(MAX_LENGTH);  // caller must ensure it somehow fixes array/limit span
       assert(pos + MAX_LENGTH <= limit, "should have grown");
     }
     write_uint(value, array, offset, limit, set);
   }
 
-  // convenience overloadings for when array[offset] works
-  template<typename ARR, typename OFF>
-  static uint32_t read_uint(ARR array, OFF& offset_rw, OFF limit) {
-    auto get = [&](ARR a, OFF i){ return a[i]; };
-    return read_uint(array, offset_rw, limit, get);
-  }
-  template<typename ARR, typename OFF>
-  static void write_uint(uint32_t value, ARR array, OFF& offset_rw, OFF limit) {
-    auto set = [&](ARR a, OFF i, uint8_t x){ a[i] = x; };
-    return write_uint(value, array, offset_rw, limit, set);
-  }
-  template<typename ARR, typename OFF>
-  static int check_length(ARR array, OFF offset, OFF limit = 0) {
-    auto get = [&](ARR a, OFF i){ return a[i]; };
-    return check_length(array, offset, limit, get);
-  }
-  template<typename ARR, typename OFF, typename GFN>
-  static void write_uint_grow(uint32_t value,
-                              ARR& array, OFF& offset_rw, OFF& limit,
-                              GFN grow) {
-    auto set = [&](ARR a, OFF i, uint8_t x){ a[i] = x; };
-    return write_uint_grow(value, array, offset_rw, limit, set, grow);
-  }
+  /// Handy state machines for that will help you with reading,
+  /// sizing, and writing (with optional growth).
 
-  // handy state machine
-  // example use:
+  // Reader example use:
   //  struct MyReaderHelper {
   //    char operator()(char* a, int i) const { return a[i]; }
   //  };
   //  using MyReader = UNSIGNED5::Reader<char*, int, MyReaderHelper>;
-  template<typename ARR, typename OFF, typename GET>
+  //  MyReader r(array); while (r.has_next())  print(r.next_uint());
+  template<typename ARR, typename OFF, typename GET = ArrayGetSet<ARR,OFF>>
   class Reader {
     const ARR _array;
     const OFF _limit;
     OFF _position;
+    int next_length() {
+      return UNSIGNED5::check_length(_array, _position, _limit, GET());
+    }
   public:
     Reader(ARR array, OFF limit = 0)
       : _array(array), _limit(limit) { _position = 0; }
-    u4 next() {
+    uint32_t next_uint() {
       return UNSIGNED5::read_uint(_array, _position, _limit, GET());
     }
     bool has_next() {
-      return UNSIGNED5::check_length(_array, _position, _limit, GET());
+      return next_length() != 0;
+    }
+    // tries to skip count logical entries; returns actual number skipped
+    int try_skip(int count) {
+      int actual = 0;
+      while (actual < count && has_next()) {
+        int len = next_length();  // 0 or length in [1..5]
+        if (len == 0)  break;
+        _position += len;
+      }
+      return actual;
     }
     ARR array() { return _array; }
     OFF limit() { return _limit; }
     OFF position() { return _position; }
     void set_position(OFF position) { _position = position; }
+  };
+
+  // Writer example use
+  //  struct MyWriterHelper {
+  //    char operator()(char* a, int i, char b) const { a[i] = b; }
+  //  };
+  //  using MyWriter = UNSIGNED5::Writer<char*, int, MyWriterHelper>;
+  //  MyWriter w(array);
+  //  for (auto i = ...)  w.accept_uint(i);
+  template<typename ARR, typename OFF, typename SET = ArrayGetSet<ARR,OFF>>
+  class Writer {
+    ARR& _array;
+    OFF* const _limit_ptr;
+    OFF _position;
+    void limit_init() {
+      assert(_limit_ptr == NULL || *_limit_ptr != 0, "limit required");
+    }
+  public:
+    Writer(const ARR& array)
+      : _array(const_cast<ARR&>(array)), _limit_ptr(NULL)
+        // note:  if _limit_ptr is NULL, the ARR& is never reassigned
+    { limit_init(); _position = 0; }
+    Writer(ARR& array, OFF& limit)
+      : _array(array), _limit_ptr(&limit)
+    { limit_init(); _position = 0; }
+    void accept_uint(uint32_t value) {
+      const OFF lim = has_limit() ? limit() : 0;
+      UNSIGNED5::write_uint(value, _array, _position, lim, SET());
+    }
+    template<typename GFN>
+    void accept_grow(uint32_t value, GFN grow) {
+      assert(has_limit(), "must track growing limit");
+      UNSIGNED5::write_uint_grow(value, _array, _position, *_limit_ptr,
+                                 grow, SET());
+    }
+    // Ensure that remaining() >= r, grow if needed.  Suggested
+    // expression for r is (n*MAX_LENGTH)+1, where n is the number of
+    // values you are about to write.
+    template<typename GFN>
+    void ensure_remaining_grow(int request_remaining, GFN grow) {
+      const OFF have = remaining();
+      if (have < request_remaining) {
+        grow(have - request_remaining);  // caller must fix array/limit span
+        assert(remaining() >= request_remaining, "should have grown");
+      }
+    }
+    // use to add a terminating null or other data
+    void end_byte(uint8_t extra_byte = 0) {
+      SET()(_array, _position++, extra_byte);
+    }
+    ARR array() { return _array; }
+    OFF position() { return _position; }
+    void set_position(OFF position) { _position = position; }
+    bool has_limit() { return _limit_ptr != NULL; }
+    OFF limit() { assert(has_limit(), "needs limit"); return *_limit_ptr; }
+    OFF remaining() { return limit() - position(); }
+  };
+
+  // Sizer example use
+  //  UNSIGNED5::Sizer s;
+  //  for (auto i = ...)  s.accept_uint(i);
+  //  printf("%d items occupying %d bytes", s.count(), s.position());
+  //  auto buf = new char[s.position() + 1];
+  //  UNSIGNED5::Writer<char*, int> w(buf);
+  //  for (auto i = ...)  w.accept_uint(i);
+  //  w.add_byte();
+  //  assert(w.position() == s.position(), "s and w agree");
+  template<typename OFF = int>
+  class Sizer {
+    OFF _position;
+    int _count;
+  public:
+    Sizer() { _position = 0; _count = 0; }
+    // The accept_uint() API is the same as for Writer, which allows
+    // templated code to work equally well on sizers and writers.
+    // This in turn makes it easier to write code which runs a
+    // sizing preflight pass before actually storing the data.
+    void accept_uint(uint32_t value) {
+      _position += encoded_length(value);
+      _count++;
+    }
+    OFF position() { return _position; }
+    int count() { return _count; }
   };
 
   // 32-bit one-to-one sign encoding taken from Pack200

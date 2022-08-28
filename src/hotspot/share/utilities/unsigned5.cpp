@@ -28,10 +28,12 @@
 
 // Explicit instantiation for supported types.
 
-template u4 UNSIGNED5::read_uint(u_char* array, int& offset_rw, int limit);
-template void UNSIGNED5::write_uint(uint32_t value, u_char* array, int& offset_rw, int limit);
-template int UNSIGNED5::check_length(u_char* array, int offset, int limit);
+using AGS = UNSIGNED5::ArrayGetSet<u_char*,int>;
 
-//template uint32_t UNSIGNED5::read_uint(address array, size_t& offset_rw, size_t limit);
-//template void UNSIGNED5::write_uint(uint32_t value, address array, size_t& offset_rw, size_t limit);
-//template int UNSIGNED5::check_length(address array, size_t offset, size_t limit);
+template u4 UNSIGNED5::read_uint(u_char* array, int& offset_rw, int limit, AGS);
+template void UNSIGNED5::write_uint(uint32_t value, u_char* array, int& offset_rw, int limit, AGS);
+template int UNSIGNED5::check_length(u_char* array, int offset, int limit, AGS);
+
+//template uint32_t UNSIGNED5::read_uint(address array, size_t& offset_rw, size_t limit, AGS);
+//template void UNSIGNED5::write_uint(uint32_t value, address array, size_t& offset_rw, size_t limit, AGS);
+//template int UNSIGNED5::check_length(address array, size_t offset, size_t limit, AGS);

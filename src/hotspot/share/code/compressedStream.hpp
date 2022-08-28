@@ -107,7 +107,7 @@ class CompressedWriteStream : public CompressedStream {
 
   void write_int(juint value) {
     UNSIGNED5::write_uint_grow(value, _buffer, _position, _size,
-                               [&](){ grow(); });
+                               [&](int){ grow(); });
   }
 };
 

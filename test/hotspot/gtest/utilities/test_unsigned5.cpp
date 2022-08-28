@@ -179,6 +179,12 @@ TEST_VM(unsigned5, transcode_multiple) {
   }
 }
 
+inline void init_ints(int len, int* ints) {
+  for (int i = 0; i < len; i++) {
+    ints[i] = (i * ((i&2) ? i : 1001)) ^ -(i & 1);
+  }
+}
+
 struct MyReaderHelper {
   uint8_t operator()(char* a, int i) const { return a[i]; }
 };
@@ -187,10 +193,13 @@ using MyReader = UNSIGNED5::Reader<char*, int, MyReaderHelper>;
 TEST_VM(unsigned5, reader) {
   const int LEN = 100;
   int ints[LEN];
+  init_ints(LEN, ints);
   int i;
+  UNSIGNED5::Sizer<> szr;
   for (i = 0; i < LEN; i++) {
-    ints[i] = 1001 * i;
+    szr.accept_uint(ints[i]);
   }
+  //printf("count=%d, size=%d\n", szr.count(), szr.position());
   char buf[LEN * UNSIGNED5::MAX_LENGTH + 1];
   int buflen;
   {
@@ -202,10 +211,11 @@ TEST_VM(unsigned5, reader) {
     buflen = pos;
     buf[buflen] = 0;
   }
+  EXPECT_EQ(szr.position(), buflen);
   MyReader r1(buf);
   i = 0;
   while (r1.has_next()) {
-    int x = r1.next();
+    int x = r1.next_uint();
     int y = ints[i++];
     ASSERT_EQ(x, y) << i;
   }
@@ -213,11 +223,32 @@ TEST_VM(unsigned5, reader) {
   MyReader r2(buf, buflen / 2);
   i = 0;
   while (r2.has_next()) {
-    int x = r2.next();
+    int x = r2.next_uint();
     int y = ints[i++];
     ASSERT_EQ(x, y) << i;
   }
   ASSERT_TRUE(i < LEN);
+  // copy from reader to writer
+  UNSIGNED5::Reader<char*,int> r3(buf);
+  int array_limit = 1;
+  char* array = new char[array_limit + 1];
+  auto array_grow = [&](int){
+    array[array_limit] = 0;
+    auto oal = array_limit;
+    array_limit += 10;
+    //printf("growing array from %d to %d\n", oal, array_limit);
+    auto na = new char[array_limit + 1];
+    strcpy(na, array);
+    array = na;
+  };
+  UNSIGNED5::Writer<char*,int> w3(array, array_limit);
+  while (r3.has_next()) {
+    w3.accept_grow(r3.next_uint(), array_grow);
+  }
+  w3.end_byte();  // we always allocated one more than the limit!
+  std::string buf_s(buf, buflen);
+  std::string arr_s(array, strlen(array));
+  ASSERT_EQ(buf_s, arr_s);
 }
 
 // Here is some object code to look at if we want to do a manual
@@ -254,7 +285,13 @@ int code_quality_read_int(char* a) {
 int code_quality_int_reader(char* a) {
   MyReader r1(a);
   if (!r1.has_next())  return -1;
-  return r1.next();
+  return r1.next_uint();
+}
+
+int code_quality_int_sizer(int* a, int n) {
+  UNSIGNED5::Sizer<> s;
+  for (int i = 0; i < n; i++)  s.accept_uint(a[i]);
+  return s.position();
 }
 
 void end_code_quality_unsigned5() { }
