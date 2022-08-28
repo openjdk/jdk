@@ -31,8 +31,12 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @build jdk.test.whitebox.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xlog:gc=debug:gc.log -Djava.security.manager=allow gc.ArrayJuggle.Juggle01.Juggle01 -gp charArr -ms medium
+ * @run main/othervm
+ *      -XX:+HeapDumpOnOutOfMemoryError
+ *      -Xlog:gc=debug:gc.log
+ *      -Djava.security.manager=allow
+ *      gc.ArrayJuggle.Juggle01.Juggle01
+ *      -gp charArr
+ *      -ms medium
  */
 
