@@ -2543,15 +2543,12 @@ bool LibraryCallKit::inline_vector_convert() {
       op = gvn().transform(VectorCastNode::make(cast_vopc, op, elem_bt_to, num_elem_to));
     } else { // num_elem_from == num_elem_to
       if (is_mask) {
-        // Make sure that cast for vector mask is implemented to particular type/size combination.
-        if (!arch_supports_vector(Op_VectorMaskCast, num_elem_to, elem_bt_to, VecMaskNotUsed)) {
-          if (C->print_intrinsics()) {
-            tty->print_cr("  ** not supported: arity=1 op=maskcast vlen2=%d etype2=%s ismask=%d",
-                          num_elem_to, type2name(elem_bt_to), is_mask);
-          }
-          return false;
+        if ((dst_type->isa_vectmask() && src_type->isa_vectmask()) ||
+            (type2aelembytes(elem_bt_from) == type2aelembytes(elem_bt_to))) {
+          op = gvn().transform(new VectorMaskCastNode(op, dst_type));
+        } else {
+          op = VectorMaskCastNode::makeCastNode(&gvn(), op, dst_type);
         }
-        op = gvn().transform(new VectorMaskCastNode(op, dst_type));
       } else {
         // Since input and output number of elements match, and since we know this vector size is
         // supported, simply do a cast with no resize needed.
