@@ -329,6 +329,7 @@ void ConstantPool::add_dumped_interned_strings() {
 }
 #endif
 
+#if INCLUDE_CDS
 // CDS support. Create a new resolved_references array.
 void ConstantPool::restore_unshareable_info(TRAPS) {
   if (!_pool_holder->is_linked() && !_pool_holder->is_rewritten()) {
@@ -341,9 +342,6 @@ void ConstantPool::restore_unshareable_info(TRAPS) {
 
   // Only create the new resolved references array if it hasn't been attempted before
   if (resolved_references() != NULL) return;
-
-  // restore the C++ vtable from the shared archive
-  restore_vtable();
 
   if (vmClasses::Object_klass_loaded()) {
     ClassLoaderData* loader_data = pool_holder()->class_loader_data();
@@ -427,6 +425,7 @@ void ConstantPool::remove_unshareable_info() {
     cache()->remove_unshareable_info();
   }
 }
+#endif // INCLUDE_CDS
 
 int ConstantPool::cp_to_object_index(int cp_index) {
   // this is harder don't do this so much.
