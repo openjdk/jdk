@@ -220,7 +220,7 @@ public class KeepAliveTest {
     private static final String NEW_LINE = "\r\n";
     private volatile int SERVER_PORT = 0;
     /*
-     * isProxySet are shared variables between server thread and client thread(main) and it should be set and reset to false for each and
+     * isProxySet is shared variable between server thread and client thread(main) and it should be set and reset to false for each and
      * every scenario.
      * isProxySet variable should be set by server thread before proceeding to client thread(main).
      */
@@ -275,9 +275,9 @@ public class KeepAliveTest {
     *
     */
    /*serverScenarios[int] will be retreived using method getServerScenario(int)*/
-   /* here is the complete table of server_response, client system properties input and expected cached timeout at client side */
-    //ScNo=ScenarioNumber
-   /* ScNo  |SERVER RESPONSE                                  | CLIENT SYSTEM PROPERTIES INPUT      | EXPECTED CACHED TIMEOUT AT CLIENT SIDE
+   /* Here is the complete table of server_response, client system properties input and expected cached timeout at client side */
+   //ScNo=ScenarioNumber
+   /* ScNo  |   SERVER RESPONSE                               | CLIENT SYSTEM PROPERTIES INPUT      | EXPECTED CACHED TIMEOUT AT CLIENT SIDE
     *****************************************************************************************************************************************
     *    0  |  Connection: keep-alive                         | No Input Provided                   | Default Timeout set to 5
     *---------------------------------------------------------------------------------------------------------------------------
@@ -743,77 +743,102 @@ public class KeepAliveTest {
     };
     private final CountDownLatch countDownLatch = new CountDownLatch(1);
     private final CountDownLatch serverCountDownLatch = new CountDownLatch(1);
+    /*
+     * setting of client properties -Dhttp.keepAlive.time.server and -Dhttp.keepAlive.time.proxy is handled through this method.
+     * There are 16 client scenarios in total starting with scenarioNumber 0(zero) and ending with 15.
+     * Server Scenarios are grouped into batch of 16 scenarios.
+     * There are 10 batches in total and each batch contains 16 scenarios so 10 * 16 = 160 scenarios in total.
+     * 16 Client Scenarios are used repeatedly for every server scenario batch.
+     * for serverscenario[0],serverscenario[16],serverscenario[32] ... serverscenario[144] is mapped to clientscenario[0]
+     * for serverscenario[1],serverscenario[17],serverscenario[33] ... serverscenario[145] is mapped to clientscenario[1]
+     * for serverscenario[2],serverscenario[18],serverscenario[34] ... serverscenario[146] is mapped to clientscenario[2]
+     * ...
+     * for serverscenario[15],serverscenario[31],serverscenario[47] ... serverscenario[159] is mapped to clientscenario[15]
+     */
     private int getClientScenarioNumber(int scenarioNumber) {
         return scenarioNumber % 16 ;
     }
     /*
-     * Returns SERVER_RESPONSE based on scenarioNumber
+     * Returns SERVER_RESPONSE as String based on integer inputParameter scenarioNumber.
+     * Server Scenarios are grouped into batch of 16 scenarios starting with scenarioNumber 0 (zero)
+     * so there are 10 batches in total and each batch contains 16 scenarios so 10 * 16 = 160 scenarios in total.
+     * For each batch of 16 scenarios, there will be common SERVER_RESPONSE for all 16 scenarios in batch.
+     * for scenario numbers from 0 to 15 server  response is: Connection:keep-alive
+     * for scenario numbers from 16 to 31 server response is: SERVER_RESPONSE=Connection: keep-alive\r\nKeep-alive: timeout=20
+     * for scenario numbers from 32 to 47 server response is: SERVER_RESPONSE=Proxy-Connection: keep-alive
+     * for scenario numbers from 48 to 63 server response is: SERVER_RESPONSE=Connection:keep-alive\r\nProxy-connection:keep-alive
+     * for scenario numbers from 64 to 79 server response is: SERVER_RESPONSE=Proxy-connection:keep-alive\r\nKeep-alive:timeout=120
+     * for scenario numbers from 80 to 95 server response is: SERVER_RESPONSE=No Input
+     * for scenario numbers from 96 to 111 server response is: SERVER_RESPONSE=Connection: keep-alive\r\nKeep-alive: timeout=-20
+     * for scenario numbers from 112 to 127 server resonse is: Connection: keep-alive\r\nKeep-alive: timeout=0
+     * for scenario numbers from 128 to 143 server response is: Proxy-connection:keep-alive\r\nKeep-alive:timeout=-20
+     * for scenario numbers from 144 to 159 server response is: Proxy-connection:keep-alive\r\nKeep-alive:timeout=0
      */
     private String getServerScenario(int scenarioNumber) {
         /*
-         *  ServerResponse from scenario 0 to 15
+         *  ServerResponse for scenarios from 0 to 15
          *  SERVER_RESPONSE:Connection:keep-alive
          */
         if(scenarioNumber >= 0 && scenarioNumber <= 15) {
             return A;
         }
         /*
-         * ServerResponse from scenario 16 to 31
+         * ServerResponse for scenarios from 16 to 31
          * SERVER_RESPONSE=Connection: keep-alive\r\nKeep-alive: timeout=20
          */
         else if (scenarioNumber >= 16 && scenarioNumber <= 31){
             return B;
         }
         /*
-         * ServerResponse from scenario 32 to 47
+         * ServerResponse for scenarios from 32 to 47
          * SERVER_RESPONSE=Proxy-Connection: keep-alive
          */
         else if (scenarioNumber >= 32 && scenarioNumber <= 47){
             return C;
         }
         /*
-         * ServerResponse from 48 to 63
+         * ServerResponse for scenarios from 48 to 63
          * SERVER_RESPONSE=Connection:keep-alive\r\nProxy-connection:keep-alive
          */
         else if (scenarioNumber >= 48 && scenarioNumber <= 63){
             return D;
         /*
-         * ServerResponse from 64 to 79
+         * ServerResponse for scenarios from 64 to 79
          * SERVER_RESPONSE=Proxy-connection:keep-alive\r\nKeep-alive:timeout=120
          */
         } else if (scenarioNumber >= 64 && scenarioNumber <= 79){
             return E;
         }
         /*
-         * ServerResponse from 80 to 95
+         * ServerResponse for scenarios from 80 to 95
          * SERVER_RESPONSE=No Input
          */
         else if (scenarioNumber >= 80 && scenarioNumber <= 95){
             return NI;
         }
         /*
-         * ServerResponse from 96 to 111
+         * ServerResponse for scenarios from 96 to 111
          * SERVER_RESPONSE=Connection: keep-alive\r\nKeep-alive: timeout=-20
          */
         else if (scenarioNumber >= 96 && scenarioNumber <= 111){
             return F;
         }
         /*
-         * ServerResponse from 112 to 127
+         * ServerResponse for scenarios from 112 to 127
          * SERVER_RESPONSE=Connection: keep-alive\r\nKeep-alive: timeout=0
          */
         else if (scenarioNumber >= 112 && scenarioNumber <= 127){
             return G;
         }
         /*
-         * ServerResponse from 128 to 143
+         * ServerResponse for scenarios from 128 to 143
          * SERVER_RESPONSE=Proxy-connection:keep-alive\r\nKeep-alive:timeout=-20
          */
         else if (scenarioNumber >= 128 && scenarioNumber <= 143){
             return H;
         }
         /*
-         * ServerResponse from 144 to 159
+         * ServerResponse for scenarios from 144 to 159
          * SERVER_RESPONSE=Proxy-connection:keep-alive\r\nKeep-alive:timeout=0
          */
         else if (scenarioNumber >= 144 && scenarioNumber <= 159){
