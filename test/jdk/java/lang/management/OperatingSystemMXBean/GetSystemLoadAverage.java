@@ -62,6 +62,7 @@ public class GetSystemLoadAverage {
 
     private static final int MAX_RETRIES = 5;
     private static final int WAIT_TIME_MS = 5000;
+
     @Test(timeOut = (300 + WAIT_TIME_MS) * MAX_RETRIES)
     void testSystemLoadAvg() throws Exception {
         for (int i = 1; i <= MAX_RETRIES; i++) {
