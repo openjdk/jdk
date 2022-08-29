@@ -50,7 +50,6 @@
 #include "utilities/align.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/formatBuffer.hpp"
-#include "utilities/hashtable.inline.hpp"
 
 ArchiveBuilder* ArchiveBuilder::_current = NULL;
 
@@ -159,6 +158,7 @@ ArchiveBuilder::ArchiveBuilder() :
   _rw_src_objs(),
   _ro_src_objs(),
   _src_obj_table(INITIAL_TABLE_SIZE, MAX_TABLE_SIZE),
+  _dumped_to_src_obj_table(INITIAL_TABLE_SIZE, MAX_TABLE_SIZE),
   _total_closed_heap_region_size(0),
   _total_open_heap_region_size(0),
   _estimated_metaspaceobj_bytes(0),
@@ -630,6 +630,14 @@ void ArchiveBuilder::make_shallow_copy(DumpRegion *dump_region, SourceObjInfo* s
   newtop = dump_region->top();
 
   memcpy(dest, src, bytes);
+  {
+    bool created;
+    _dumped_to_src_obj_table.put_if_absent((address)dest, src, &created);
+    assert(created, "must be");
+    if (_dumped_to_src_obj_table.maybe_grow()) {
+      log_info(cds, hashtables)("Expanded _dumped_to_src_obj_table table to %d", _dumped_to_src_obj_table.table_size());
+    }
+  }
 
   intptr_t* archived_vtable = CppVtables::get_archived_vtable(ref->msotype(), (address)dest);
   if (archived_vtable != NULL) {
@@ -648,6 +656,13 @@ address ArchiveBuilder::get_dumped_addr(address src_obj) const {
   assert(p != NULL, "must be");
 
   return p->dumped_addr();
+}
+
+address ArchiveBuilder::get_src_obj(address dumped_addr) const {
+  assert(is_in_buffer_space(dumped_addr), "must be");
+  address* src_obj = _dumped_to_src_obj_table.get(dumped_addr);
+  assert(src_obj != NULL && *src_obj != NULL, "must be");
+  return *src_obj;
 }
 
 void ArchiveBuilder::relocate_embedded_pointers(ArchiveBuilder::SourceObjList* src_objs) {

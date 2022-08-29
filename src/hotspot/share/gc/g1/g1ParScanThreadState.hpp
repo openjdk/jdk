@@ -152,7 +152,7 @@ public:
 
   // Pass locally gathered statistics to global state. Returns the total number of
   // HeapWords copied.
-  size_t flush(size_t* surviving_young_words);
+  size_t flush_stats(size_t* surviving_young_words, uint num_workers);
 
 private:
   void do_partial_array(PartialArrayScanTask task);
@@ -252,7 +252,7 @@ class G1ParScanThreadStateSet : public StackObj {
   G1RedirtyCardsQueueSet* rdcqs() { return _rdcqs; }
   PreservedMarksSet* preserved_marks_set() { return _preserved_marks_set; }
 
-  void flush();
+  void flush_stats();
   void record_unused_optional_region(HeapRegion* hr);
 
   G1ParScanThreadState* state_for_worker(uint worker_id);

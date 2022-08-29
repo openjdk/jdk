@@ -34,6 +34,7 @@
 #include "classfile/systemDictionary.hpp"
 #include "compiler/compilationPolicy.hpp"
 #include "compiler/compileBroker.hpp"
+#include "compiler/compilerDefinitions.inline.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/oopFactory.hpp"
@@ -55,8 +56,6 @@
 #include "utilities/copy.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/utf8.hpp"
-
-#ifndef PRODUCT
 
 // ciReplay
 
@@ -1584,7 +1583,6 @@ bool ciReplay::is_klass_unresolved(const InstanceKlass* klass) {
   ciInstanceKlassRecord* rec = replay_state->find_ciInstanceKlass(klass);
   return rec == NULL;
 }
-#endif // PRODUCT
 
 oop ciReplay::obj_field(oop obj, Symbol* name) {
   InstanceKlass* ik = InstanceKlass::cast(obj->klass());

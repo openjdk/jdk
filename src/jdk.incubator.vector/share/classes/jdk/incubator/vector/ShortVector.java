@@ -759,11 +759,9 @@ public abstract class ShortVector extends AbstractVector<Short> {
 
         if (opKind(op, VO_SPECIAL  | VO_SHIFT)) {
             if (op == FIRST_NONZERO) {
-                // FIXME: Support this in the JIT.
-                VectorMask<Short> thisNZ
-                    = this.viewAsIntegralLanes().compare(NE, (short) 0);
-                that = that.blend((short) 0, thisNZ.cast(vspecies()));
-                op = OR_UNCHECKED;
+                VectorMask<Short> mask
+                    = this.compare(EQ, (short) 0);
+                return this.blend(that, mask);
             }
             if (opKind(op, VO_SHIFT)) {
                 // As per shift specification for Java, mask the shift count.
@@ -809,11 +807,9 @@ public abstract class ShortVector extends AbstractVector<Short> {
 
         if (opKind(op, VO_SPECIAL  | VO_SHIFT)) {
             if (op == FIRST_NONZERO) {
-                // FIXME: Support this in the JIT.
-                VectorMask<Short> thisNZ
-                    = this.viewAsIntegralLanes().compare(NE, (short) 0);
-                that = that.blend((short) 0, thisNZ.cast(vspecies()));
-                op = OR_UNCHECKED;
+                VectorMask<Short> mask
+                    = this.compare(EQ, (short) 0, m);
+                return this.blend(that, mask);
             }
             if (opKind(op, VO_SHIFT)) {
                 // As per shift specification for Java, mask the shift count.

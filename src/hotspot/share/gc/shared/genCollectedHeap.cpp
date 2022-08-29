@@ -24,13 +24,14 @@
 
 #include "precompiled.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
-#include "classfile/symbolTable.hpp"
 #include "classfile/stringTable.hpp"
+#include "classfile/symbolTable.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
 #include "code/icBuffer.hpp"
 #include "compiler/oopMap.hpp"
 #include "gc/serial/defNewGeneration.hpp"
+#include "gc/serial/markSweep.hpp"
 #include "gc/shared/adaptiveSizePolicy.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
 #include "gc/shared/cardTableRS.hpp"
@@ -38,20 +39,20 @@
 #include "gc/shared/collectorCounters.hpp"
 #include "gc/shared/continuationGCSupport.inline.hpp"
 #include "gc/shared/gcId.hpp"
+#include "gc/shared/gcInitLogger.hpp"
 #include "gc/shared/gcLocker.hpp"
 #include "gc/shared/gcPolicyCounters.hpp"
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
-#include "gc/shared/genArguments.hpp"
 #include "gc/shared/gcVMOperations.hpp"
+#include "gc/shared/genArguments.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
-#include "gc/shared/genOopClosures.inline.hpp"
 #include "gc/shared/generationSpec.hpp"
-#include "gc/shared/gcInitLogger.hpp"
+#include "gc/shared/genOopClosures.inline.hpp"
 #include "gc/shared/locationPrinter.inline.hpp"
 #include "gc/shared/oopStorage.inline.hpp"
-#include "gc/shared/oopStorageSet.inline.hpp"
 #include "gc/shared/oopStorageParState.inline.hpp"
+#include "gc/shared/oopStorageSet.inline.hpp"
 #include "gc/shared/scavengableNMethods.hpp"
 #include "gc/shared/space.hpp"
 #include "gc/shared/strongRootsScope.hpp"
@@ -63,7 +64,6 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/continuation.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
@@ -607,8 +607,8 @@ void GenCollectedHeap::do_collection(bool           full,
       increment_total_full_collections();
     }
 
-    Continuations::on_gc_marking_cycle_start();
-    Continuations::arm_all_nmethods();
+    CodeCache::on_gc_marking_cycle_start();
+    CodeCache::arm_all_nmethods();
 
     collect_generation(_old_gen,
                        full,
@@ -617,8 +617,8 @@ void GenCollectedHeap::do_collection(bool           full,
                        run_verification && VerifyGCLevel <= 1,
                        do_clear_all_soft_refs);
 
-    Continuations::on_gc_marking_cycle_finish();
-    Continuations::arm_all_nmethods();
+    CodeCache::on_gc_marking_cycle_finish();
+    CodeCache::arm_all_nmethods();
 
     // Adjust generation sizes.
     _old_gen->compute_new_size();
@@ -659,10 +659,6 @@ void GenCollectedHeap::unregister_nmethod(nmethod* nm) {
 
 void GenCollectedHeap::verify_nmethod(nmethod* nm) {
   ScavengableNMethods::verify_nmethod(nm);
-}
-
-void GenCollectedHeap::flush_nmethod(nmethod* nm) {
-  // Do nothing.
 }
 
 void GenCollectedHeap::prune_scavengable_nmethods() {

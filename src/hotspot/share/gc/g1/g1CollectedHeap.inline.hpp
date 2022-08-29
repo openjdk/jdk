@@ -67,11 +67,11 @@ G1EvacStats* G1CollectedHeap::alloc_buffer_stats(G1HeapRegionAttr dest) {
 
 size_t G1CollectedHeap::desired_plab_sz(G1HeapRegionAttr dest) {
   size_t gclab_word_size = alloc_buffer_stats(dest)->desired_plab_size(workers()->active_workers());
-  // Prevent humongous PLAB sizes for two reasons:
-  // * PLABs are allocated using a similar paths as oops, but should
-  //   never be in a humongous region
-  // * Allowing humongous PLABs needlessly churns the region free lists
-  return MIN2(_humongous_object_threshold_in_words, gclab_word_size);
+  return clamp_plab_size(gclab_word_size);
+}
+
+inline size_t G1CollectedHeap::clamp_plab_size(size_t value) const {
+  return clamp(value, PLAB::min_size(), _humongous_object_threshold_in_words);
 }
 
 // Inline functions for G1CollectedHeap

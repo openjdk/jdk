@@ -6158,7 +6158,7 @@ instruct storeImmN(memory mem, immN src)
   ins_encode %{
     address con = (address)$src$$constant;
     if (con == NULL) {
-      __ movl($mem$$Address, (int32_t)0);
+      __ movl($mem$$Address, 0);
     } else {
       __ set_narrow_oop($mem$$Address, (jobject)$src$$constant);
     }

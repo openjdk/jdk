@@ -633,6 +633,10 @@ public:
   static int patch_oop(address insn_addr, address o);
   static int patch_narrow_klass(address insn_addr, narrowKlass n);
 
+  // Return whether code is emitted to a scratch blob.
+  virtual bool in_scratch_emit_size() {
+    return false;
+  }
   address emit_trampoline_stub(int insts_call_instruction_offset, address target);
   void emit_static_call_stub();
 
@@ -847,7 +851,7 @@ public:
                       Register tmp1, Register tmp_thread);
 
   void access_store_at(BasicType type, DecoratorSet decorators, Address dst, Register src,
-                       Register tmp1, Register tmp_thread);
+                       Register tmp1, Register tmp2, Register tmp3);
 
   void load_heap_oop(Register dst, Address src, Register tmp1 = noreg,
                      Register thread_tmp = noreg, DecoratorSet decorators = 0);
@@ -855,7 +859,7 @@ public:
   void load_heap_oop_not_null(Register dst, Address src, Register tmp1 = noreg,
                               Register thread_tmp = noreg, DecoratorSet decorators = 0);
   void store_heap_oop(Address dst, Register src, Register tmp1 = noreg,
-                      Register tmp_thread = noreg, DecoratorSet decorators = 0);
+                      Register tmp2 = noreg, Register tmp3 = noreg, DecoratorSet decorators = 0);
 
   // currently unimplemented
   // Used for storing NULL. All other oop constants should be
@@ -1175,7 +1179,7 @@ public:
   // - relocInfo::virtual_call_type
   //
   // Return: NULL if CodeCache is full.
-  address trampoline_call(Address entry, CodeBuffer* cbuf = NULL, bool check_emit_size = true);
+  address trampoline_call(Address entry, CodeBuffer* cbuf = NULL);
 
   static bool far_branches() {
     return ReservedCodeCacheSize > branch_range;
