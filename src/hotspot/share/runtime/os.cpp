@@ -1079,7 +1079,7 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
   }
 
   // Check if addr points into a code blob.
-  CodeBlob* b = CodeCache::find_blob_unsafe(addr);
+  CodeBlob* b = CodeCache::find_blob(addr);
   if (b != NULL) {
     b->dump_for_addr(addr, st, verbose);
     return;

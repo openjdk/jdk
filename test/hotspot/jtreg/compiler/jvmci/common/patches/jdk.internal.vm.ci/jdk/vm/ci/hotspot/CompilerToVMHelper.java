@@ -244,7 +244,7 @@ public class CompilerToVMHelper {
     }
 
     public static void invalidateHotSpotNmethod(HotSpotNmethod nmethodMirror) {
-        CTVM.invalidateHotSpotNmethod(nmethodMirror);
+        CTVM.invalidateHotSpotNmethod(nmethodMirror, true);
     }
 
     public static long[] collectCounters() {

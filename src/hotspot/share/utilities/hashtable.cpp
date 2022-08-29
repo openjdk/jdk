@@ -263,5 +263,4 @@ template class Hashtable<InstanceKlass*, mtClass>;
 template class Hashtable<WeakHandle, mtClass>;
 template class Hashtable<WeakHandle, mtServiceability>;
 
-template void BasicHashtable<mtClass>::verify_table<DictionaryEntry>(char const*);
 template void BasicHashtable<mtClass>::verify_table<ProtectionDomainCacheEntry>(char const*);

@@ -104,8 +104,6 @@ class ClassLoaderDataGraph : public AllStatic {
   static void print_dictionary(outputStream* st);
   static void print_table_statistics(outputStream* st);
 
-  static int resize_dictionaries();
-
   static bool has_metaspace_oom()           { return _metaspace_oom; }
   static void set_metaspace_oom(bool value) { _metaspace_oom = value; }
 

@@ -540,21 +540,6 @@
       <setting name="enabled" control="compiler-enabled">true</setting>
     </event>
 
-    <event name="jdk.CodeSweeperConfiguration">
-      <setting name="enabled" control="compiler-enabled">true</setting>
-      <setting name="period">beginChunk</setting>
-    </event>
-
-    <event name="jdk.CodeSweeperStatistics">
-      <setting name="enabled" control="compiler-enabled">true</setting>
-      <setting name="period">everyChunk</setting>
-    </event>
-
-    <event name="jdk.SweepCodeCache">
-      <setting name="enabled" control="compiler-enabled">true</setting>
-      <setting name="threshold" control="compiler-sweeper-threshold">100 ms</setting>
-    </event>
-
     <event name="jdk.CodeCacheConfiguration">
       <setting name="enabled" control="compiler-enabled">true</setting>
       <setting name="period">beginChunk</setting>

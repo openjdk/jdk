@@ -1915,10 +1915,6 @@ void ShenandoahHeap::unregister_nmethod(nmethod* nm) {
   ShenandoahCodeRoots::unregister_nmethod(nm);
 }
 
-void ShenandoahHeap::flush_nmethod(nmethod* nm) {
-  ShenandoahCodeRoots::flush_nmethod(nm);
-}
-
 oop ShenandoahHeap::pin_object(JavaThread* thr, oop o) {
   heap_region_containing(o)->record_pin();
   return o;
