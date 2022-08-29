@@ -826,7 +826,6 @@ public final class Security {
 
         Criteria(String key, String value) throws InvalidParameterException {
             int snEndIndex = key.indexOf('.');
-            System.out.println("applying " + key + ", " + value);
 
             if (snEndIndex <= 0) {
                 // There must be a dot in the filter, and the dot
