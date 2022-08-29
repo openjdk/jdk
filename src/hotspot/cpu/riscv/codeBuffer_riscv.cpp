@@ -1,7 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2014, Red Hat Inc. All rights reserved.
- * Copyright (c) 2020, 2021, Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,15 +22,10 @@
  *
  */
 
-#ifndef CPU_RISCV_CODEBUFFER_RISCV_HPP
-#define CPU_RISCV_CODEBUFFER_RISCV_HPP
+#include "precompiled.hpp"
+#include "asm/codeBuffer.inline.hpp"
+#include "asm/macroAssembler.hpp"
 
-private:
-  void pd_initialize() {}
-  bool pd_finalize_stubs();
-
-public:
-  void flush_bundle(bool start_new_bundle) {}
-  static constexpr bool supports_shared_stubs() { return true; }
-
-#endif // CPU_RISCV_CODEBUFFER_RISCV_HPP
+bool CodeBuffer::pd_finalize_stubs() {
+  return emit_shared_stubs_to_interp<MacroAssembler>(this, _shared_stub_to_interp_requests);
+}
