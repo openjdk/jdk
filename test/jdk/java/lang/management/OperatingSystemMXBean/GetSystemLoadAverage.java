@@ -27,6 +27,8 @@
  * @summary Basic unit test of OperatingSystemMXBean.getSystemLoadAverage()
  * @author  Mandy Chung
  *
+ * @library /test/lib
+ *
  * @run testng GetSystemLoadAverage
  */
 
@@ -43,7 +45,7 @@
  *     running on Windows.
  */
 
-import org.testng.annotations.BeforeMethod;
+import jdk.test.lib.Platform;
 import org.testng.annotations.Test;
 
 import java.lang.management.*;
@@ -56,31 +58,47 @@ public class GetSystemLoadAverage {
 
     // The system load average may be changing due to other jobs running.
     // Allow some delta.
-    private static double DELTA = 0.05;
+    private static final double DELTA = 0.05;
 
-    private static final String OS = System.getProperty("os.name");
-
-    @BeforeMethod
-    void beforeMethod() throws InterruptedException {
-        System.out.println("Wait for 5 seconds.");
-        Thread.sleep(5000);
-    }
-
-    @Test(invocationCount = 5, timeOut = 300)
+    private static final int MAX_RETRIES = 5;
+    private static final int WAIT_TIME_MS = 5000;
+    @Test(timeOut = (300 + WAIT_TIME_MS) * MAX_RETRIES)
     void testSystemLoadAvg() throws Exception {
-        if (!OS.contains("Win")) {
-            // On Linux or Solaris
-            checkLoadAvg();
-        } else {
-            // On Windows, the system load average is expected to be -1.0
-            double loadavg = mbean.getSystemLoadAverage();
-            if (loadavg != -1.0) {
-                throw new RuntimeException("Expected load average : -1.0" +
-                    " but getSystemLoadAverage returned: " + loadavg);
+        for (int i = 1; i <= MAX_RETRIES; i++) {
+            try {
+                System.out.println(
+                        String.format("Run %d: TestSystemLoadAvg", i));
+                if (!Platform.isWindows()) {
+                    // On Linux or Solaris
+                    checkLoadAvg();
+                } else {
+                    // On Windows, the system load average is expected to be -1.0
+                    double loadavg = mbean.getSystemLoadAverage();
+                    if (loadavg != -1.0) {
+                        throw new RuntimeException(
+                                "Expected load average : -1.0" +
+                                        " but getSystemLoadAverage returned: " +
+                                        loadavg);
+                    }
+                }
+                System.out.println(
+                        String.format("Run %d: TestSystemLoadAvg test passed",
+                                i));
+                return;
+            } catch (Exception e) {
+                System.out.println(
+                        String.format("TEST FAILED: TestSystemLoadAvg test " +
+                                        "failed %d runs",
+                                i));
+                if (i == MAX_RETRIES)
+                {
+                    throw e;
+                }
+
+                System.out.println("Wait for 5 seconds");
+                Thread.sleep(WAIT_TIME_MS);
             }
         }
-
-        System.out.println("Test passed.");
     }
 
     private static String LOAD_AVERAGE_TEXT
