@@ -26,7 +26,7 @@ package compiler.lib.ir_framework.driver.irmatching.irmethod;
 /**
  * Class to build the failure message of an IR method with a missing compilation output.
  *
- * @see AbstractIRMethodMatchResult
+ * @see IRMethodMatchResult
  */
 class NotCompiledFailureMessageBuilder extends AbstractFailureMessageBuilder {
 

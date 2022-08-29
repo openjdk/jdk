@@ -1,6 +1,5 @@
 package compiler.lib.ir_framework.driver.irmatching;
 
-import compiler.lib.ir_framework.driver.irmatching.irmethod.AbstractIRMethodMatchResult;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethodMatchResult;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.NotCompiledResult;
 import compiler.lib.ir_framework.driver.irmatching.irrule.IRRule;
@@ -22,7 +21,7 @@ public class FailureMessageBuilder implements MatchResultVisitor {
 
     @Override
     public void visit(TestClassResult testClassResult) {
-        msg.insert(0, buildTestClassMessage(testClassResult));
+        msg.append(buildTestClassMessage(testClassResult));
     }
 
     private static String buildTestClassMessage(TestClassResult testClassResult) {
@@ -37,13 +36,13 @@ public class FailureMessageBuilder implements MatchResultVisitor {
 
     private static int getFailedIRRulesCount(TestClassResult testClassResult) {
         return testClassResult.getResults().stream()
-                              .map(AbstractIRMethodMatchResult::getFailedIRRuleCount)
+                              .map(IRMethodMatchResult::getFailedIRRuleCount)
                               .reduce(0, Integer::sum);
     }
 
     private static long getFailedMethodCount(TestClassResult testClassResult) {
         return testClassResult.getResults().stream()
-                              .filter(AbstractIRMethodMatchResult::fail)
+                              .filter(IRMethodMatchResult::fail)
                               .count();
     }
 
@@ -54,6 +53,9 @@ public class FailureMessageBuilder implements MatchResultVisitor {
     @Override
     public void visit(IRMethodMatchResult irMethodMatchResult) {
         reportedMethodCount++;
+        if (reportedMethodCount > 1) {
+            msg.append(System.lineSeparator());
+        }
         int reportedMethodCountDigitCount = String.valueOf(reportedMethodCount).length();
         // Format: "X) Method..." -> Initial indentation = digitsCount(X) + ) + " "
 //        return failureNumber + ")" + result.buildFailureMessage(failureNumberDigitCount + 2) + System.lineSeparator();
@@ -65,6 +67,9 @@ public class FailureMessageBuilder implements MatchResultVisitor {
 
     @Override
     public void visit(NotCompiledResult notCompiledResult) {
+        msg.append(getIndentation(indentation))
+           .append("* Method was not compiled. Did you specify a @Run method in STANDALONE mode? In this case, make " +
+                   "sure to always trigger a C2 compilation by invoking the test enough times.");
     }
 
     @Override
@@ -189,6 +194,9 @@ public class FailureMessageBuilder implements MatchResultVisitor {
 
     public String build(TestClassResult testClassResult) {
         testClassResult.accept(this);
+        msg.append(System.lineSeparator())
+           .append(">>> Check stdout for compilation output of the failed methods")
+           .append(System.lineSeparator()).append(System.lineSeparator());
         return msg.toString();
     }
 }

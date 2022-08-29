@@ -103,7 +103,7 @@ public class IRMethod implements Matching {
      * Apply all IR rules of this IR method on their specified compile phases.
      */
     @Override
-    public AbstractIRMethodMatchResult match() {
+    public IRMethodMatchResult match() {
         TestFramework.check(!irRules.isEmpty(), "IRMethod cannot be created if there are no IR rules to apply");
         List<IRRuleMatchResult> results = new ArrayList<>();
         if (!compiled) {

@@ -32,11 +32,11 @@ import compiler.lib.ir_framework.driver.irmatching.irrule.IRRuleMatchResult;
  * @see IRRuleMatchResult
  * @see IRMethod
  */
-public class NotCompiledResult extends AbstractIRMethodMatchResult {
+public class NotCompiledResult extends IRMethodMatchResult {
     private final int failedIRRules;
 
     NotCompiledResult(IRMethod irMethod, int failedIRRules) {
-        super(irMethod);
+        super(irMethod, null);
         this.failedIRRules = failedIRRules;
     }
 
@@ -63,6 +63,7 @@ public class NotCompiledResult extends AbstractIRMethodMatchResult {
 
     @Override
     public void accept(MatchResultVisitor visitor) {
+        // Directly report that all IR rules failed to missing any compilation output.
         visitor.visit(this);
     }
 }

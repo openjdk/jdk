@@ -28,7 +28,7 @@ import compiler.lib.ir_framework.driver.irmatching.FailureMessage;
 /**
  * Base class to build the failure message output for an IR method with failed IR rules.
  *
- * @see AbstractIRMethodMatchResult
+ * @see IRMethodMatchResult
  */
 abstract class AbstractFailureMessageBuilder implements FailureMessage {
     protected final IRMethod irMethod;

@@ -31,7 +31,7 @@ import java.util.stream.Collectors;
 /**
  * Class to build the failure message output for an IR method for failed IR rules.
  *
- * @see AbstractIRMethodMatchResult
+ * @see IRMethodMatchResult
  */
 class IRMethodFailureMessageBuilder extends AbstractFailureMessageBuilder {
     private final List<IRRuleMatchResult> irRulesMatchResults;

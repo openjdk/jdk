@@ -23,12 +23,7 @@
 
 package compiler.lib.ir_framework.driver.irmatching;
 
-import compiler.lib.ir_framework.*;
-import compiler.lib.ir_framework.driver.irmatching.irmethod.AbstractIRMethodMatchResult;
-import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethod;
 import compiler.lib.ir_framework.driver.irmatching.parser.MethodCompilationParser;
-
-import java.util.*;
 
 /**
  * This class parses the hotspot_pid* file of the test VM to match all applicable @IR rules afterwards.

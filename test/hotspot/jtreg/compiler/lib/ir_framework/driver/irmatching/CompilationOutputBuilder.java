@@ -23,20 +23,18 @@
 
 package compiler.lib.ir_framework.driver.irmatching;
 
-import compiler.lib.ir_framework.driver.irmatching.irmethod.AbstractIRMethodMatchResult;
-
-import java.util.List;
+import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethodMatchResult;
 
 /**
  * Class to build the compilation output of IR matching failures.
  *
- * @see AbstractIRMethodMatchResult
+ * @see IRMethodMatchResult
  */
 class CompilationOutputBuilder {
 
     public static String build(TestClassResult testClassResult) {
         StringBuilder compilationsBuilder = new StringBuilder();
-        for (AbstractIRMethodMatchResult result : testClassResult.getResults()) {
+        for (IRMethodMatchResult result : testClassResult.getResults()) {
             if (result.fail()) {
                 compilationsBuilder.append(buildMatchedCompilationMessage(result));
             }
@@ -44,7 +42,7 @@ class CompilationOutputBuilder {
         return compilationsBuilder.toString();
     }
 
-    private static String buildMatchedCompilationMessage(AbstractIRMethodMatchResult result) {
+    private static String buildMatchedCompilationMessage(IRMethodMatchResult result) {
         return result.getMatchedCompilationOutput() + System.lineSeparator() + System.lineSeparator();
     }
 }

@@ -23,23 +23,42 @@
 
 package compiler.lib.ir_framework.driver.irmatching.irmethod;
 
+import compiler.lib.ir_framework.driver.irmatching.FailureMessage;
+import compiler.lib.ir_framework.driver.irmatching.MatchResult;
 import compiler.lib.ir_framework.driver.irmatching.MatchResultVisitor;
 import compiler.lib.ir_framework.driver.irmatching.irrule.IRRuleMatchResult;
 
 import java.util.List;
 
 /**
- * This class represents an IR matching result of a normal (non-empty compilation output) IR method.
+ * This base class represents an IR matching result of all specified compile phases of all IR rules of an IR method.
  *
  * @see IRRuleMatchResult
  * @see IRMethod
  */
-public class IRMethodMatchResult extends AbstractIRMethodMatchResult {
+public class IRMethodMatchResult implements Comparable<IRMethodMatchResult>, MatchResult,
+        FailureMessage {
+    protected final IRMethod irMethod;
     private final List<IRRuleMatchResult> irRulesMatchResults;
 
-    IRMethodMatchResult(IRMethod irMethod, List<IRRuleMatchResult> irRulesMatchResults) {
-        super(irMethod);
+    public IRMethodMatchResult(IRMethod irMethod, List<IRRuleMatchResult> irRulesMatchResults) {
+        this.irMethod = irMethod;
         this.irRulesMatchResults = irRulesMatchResults;
+    }
+
+    /**
+     * Return the combined compilation output on which any regex in any IR rule was matched.
+     */
+    public String getMatchedCompilationOutput() {
+        return MatchedCompilationOutputBuilder.build(irMethod, irRulesMatchResults);
+    }
+
+    public int getFailedIRRuleCount() {
+        return irRulesMatchResults.size();
+    }
+
+    public IRMethod getIRMethod() {
+        return irMethod;
     }
 
     @Override
@@ -47,15 +66,17 @@ public class IRMethodMatchResult extends AbstractIRMethodMatchResult {
         return !irRulesMatchResults.isEmpty();
     }
 
-    @Override
-    public int getFailedIRRuleCount() {
-        return irRulesMatchResults.size();
-    }
-
-    @Override
     public String buildFailureMessage(int indentationSize) {
         IRMethodFailureMessageBuilder builder = new IRMethodFailureMessageBuilder(irMethod, irRulesMatchResults);
         return builder.buildFailureMessage(indentationSize);
+    }
+
+    /**
+     * Used to sort the failed IR methods alphabetically.
+     */
+    @Override
+    public int compareTo(IRMethodMatchResult other) {
+        return this.irMethod.getMethod().getName().compareTo(other.irMethod.getMethod().getName());
     }
 
     @Override
@@ -66,10 +87,5 @@ public class IRMethodMatchResult extends AbstractIRMethodMatchResult {
                 result.accept(visitor);
             }
         }
-    }
-
-    @Override
-    public String getMatchedCompilationOutput() {
-        return MatchedCompilationOutputBuilder.build(irMethod, irRulesMatchResults);
     }
 }

@@ -23,15 +23,13 @@
 
 package compiler.lib.ir_framework.driver.irmatching;
 
-import compiler.lib.ir_framework.driver.irmatching.irmethod.AbstractIRMethodMatchResult;
-
-import java.util.List;
+import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethodMatchResult;
 
 /**
  * Class to build the failure message output of IR matching failures.
  *
  * TODO: Remove
- * @see AbstractIRMethodMatchResult
+ * @see IRMethodMatchResult
  */
 class IRMatcherFailureMessageBuilder {
 
@@ -39,7 +37,7 @@ class IRMatcherFailureMessageBuilder {
         StringBuilder failuresBuilder = new StringBuilder();
         failuresBuilder.append(buildHeaderMessage(testClassResult));
         int failureNumber = 1;
-        for (AbstractIRMethodMatchResult irMethodResult : testClassResult.getResults()) {
+        for (IRMethodMatchResult irMethodResult : testClassResult.getResults()) {
             if (irMethodResult.fail()) {
                 failuresBuilder.append(buildIRMethodFailureMessage(failureNumber, irMethodResult));
                 failureNumber++;
@@ -61,13 +59,13 @@ class IRMatcherFailureMessageBuilder {
 
     private static int getFailedIRRulesCount(TestClassResult testClassResult) {
         return testClassResult.getResults().stream()
-                              .map(AbstractIRMethodMatchResult::getFailedIRRuleCount)
+                              .map(IRMethodMatchResult::getFailedIRRuleCount)
                               .reduce(0, Integer::sum);
     }
 
     private static long getFailedMethodCount(TestClassResult testClassResult) {
         return testClassResult.getResults().stream()
-                              .filter(AbstractIRMethodMatchResult::fail)
+                              .filter(IRMethodMatchResult::fail)
                               .count();
     }
 
@@ -75,7 +73,7 @@ class IRMatcherFailureMessageBuilder {
         return String.valueOf(digit).length();
     }
 
-    private static String buildIRMethodFailureMessage(int failureNumber, AbstractIRMethodMatchResult result) {
+    private static String buildIRMethodFailureMessage(int failureNumber, IRMethodMatchResult result) {
         int failureNumberDigitCount = String.valueOf(failureNumber).length();
         // Format: "X) Method..." -> Initial indentation = digitsCount(X) + ) + " "
         return failureNumber + ")" + result.buildFailureMessage(failureNumberDigitCount + 2) + System.lineSeparator();
