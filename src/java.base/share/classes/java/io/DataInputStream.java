@@ -245,10 +245,7 @@ public class DataInputStream extends FilterInputStream implements DataInput {
      * @see        java.io.FilterInputStream#in
      */
     public final boolean readBoolean() throws IOException {
-        int ch = in.read();
-        if (ch < 0)
-            throw new EOFException();
-        return (ch != 0);
+        return readUnsignedByte() != 0;
     }
 
     /**
@@ -268,10 +265,7 @@ public class DataInputStream extends FilterInputStream implements DataInput {
      * @see        java.io.FilterInputStream#in
      */
     public final byte readByte() throws IOException {
-        int ch = in.read();
-        if (ch < 0)
-            throw new EOFException();
-        return (byte)(ch);
+        return (byte) readUnsignedByte();
     }
 
     /**
@@ -315,12 +309,7 @@ public class DataInputStream extends FilterInputStream implements DataInput {
      * @see        java.io.FilterInputStream#in
      */
     public final short readShort() throws IOException {
-        InputStream in = this.in;
-        int ch1 = in.read();
-        int ch2 = in.read();
-        if ((ch1 | ch2) < 0)
-            throw new EOFException();
-        return (short)((ch1 << 8) + (ch2 << 0));
+        return (short) readUnsignedShort();
     }
 
     /**
@@ -367,12 +356,7 @@ public class DataInputStream extends FilterInputStream implements DataInput {
      * @see        java.io.FilterInputStream#in
      */
     public final char readChar() throws IOException {
-        InputStream in = this.in;
-        int ch1 = in.read();
-        int ch2 = in.read();
-        if ((ch1 | ch2) < 0)
-            throw new EOFException();
-        return (char)((ch1 << 8) + (ch2 << 0));
+        return (char) readUnsignedShort();
     }
 
     /**
