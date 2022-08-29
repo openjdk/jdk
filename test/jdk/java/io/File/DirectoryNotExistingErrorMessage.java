@@ -33,7 +33,7 @@ public class DirectoryNotExistingErrorMessage {
 
     public static void main(String ... args) throws Exception{
 
-        String errorMsg = "The specified directory does no exist or is not accessible!";
+        String errorMsg = "The specified directory does not exist or is not accessible!";
         try {
             File tmpDir = new File(System.getProperty("java.io.tmpdir")+"/not-existing");
             System.out.println("Does " + tmpDir + " exists? " + tmpDir.exists());
