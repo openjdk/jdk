@@ -58,9 +58,10 @@ class fileStream;
           "Use JVMCI as the default compiler. Defaults to true if "         \
           "EnableJVMCIProduct is true.")                                    \
                                                                             \
-  product(uint, JVMCIThreadsPerNativeLibraryRuntime, 0, EXPERIMENTAL,       \
+  product(uint, JVMCIThreadsPerNativeLibraryRuntime, 1, EXPERIMENTAL,       \
           "Max number of threads per JVMCI native runtime. "                \
-          "Specify 0 to force use of a single JVMCI native runtime. ")      \
+          "Specify 0 to force use of a single JVMCI native runtime. "       \
+          "Specify 1 to force a single JVMCI native runtime per thread. ")  \
           range(0, max_jint)                                                \
                                                                             \
   product(uint, JVMCICompilerIdleDelay, DEFAULT_COMPILER_IDLE_DELAY, EXPERIMENTAL, \
