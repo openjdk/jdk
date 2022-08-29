@@ -340,8 +340,7 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
                                                       ThrowsSection section) {
         // TODO: assert declaredExceptionTypes are instantiated
         for (TypeMirror declaredExceptionType : declaredExceptionTypes) {
-            if (!alreadyDocumented.contains(declaredExceptionType)) {
-                alreadyDocumented.add(declaredExceptionType);
+            if (alreadyDocumented.add(declaredExceptionType)) {
                 section.addEntry(declaredExceptionType);
             }
         }
