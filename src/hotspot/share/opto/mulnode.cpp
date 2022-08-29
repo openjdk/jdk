@@ -239,17 +239,18 @@ MulNode* MulNode::make(Node* in1, Node* in2, BasicType bt) {
 //------------------------------Ideal------------------------------------------
 // Check for power-of-2 multiply, then try the regular MulNode::Ideal
 Node *MulINode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  jint con;
-  if ((con = in(2)->find_int_con(0)) == 0) {
-    // Call MulNode::Ideal() for common transformations. After that,
-    // the constant input should be on the right side.
+  const jint con = in(2)->find_int_con(0);
+  if (con == 0) {
+    // If in(2) is not a constant, call Ideal() of the parent class to
+    // try to move constant to the right side.
     return MulNode::Ideal(phase, can_reshape);
   }
 
   // Now we have a constant Node on the right and the constant in con.
-  // As the if block above tests the result of find_int_con(0), which
-  // is zero if no constant is found, we cannot have "con == 0" here.
-  if (con == 1) return NULL;   // By one is handled by Identity call
+  if (con == 1) {
+    // By one is handled by Identity call
+    return NULL;
+  }
 
   // Check for negative constant; if so negate the final result
   bool sign_flip = false;
@@ -334,17 +335,18 @@ const Type *MulINode::mul_ring(const Type *t0, const Type *t1) const {
 // Check for power-of-2 multiply, then try the regular MulNode::Ideal
 Node *MulLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // Swap constant to right
-  jlong con;
-  if ((con = in(2)->find_long_con(0)) == 0) {
-    // Call MulNode::Ideal() for common transformations. After that,
-    // the constant input should be on the right side.
+  jlong con = in(2)->find_long_con(0);
+  if (con == 0) {
+    // If in(2) is not a constant, call Ideal() of the parent class to
+    // try to move constant to the right side.
     return MulNode::Ideal(phase, can_reshape);
   }
 
   // Now we have a constant Node on the right and the constant in con.
-  // As the if block above tests the result of find_int_con(0), which
-  // is zero if no constant is found, we cannot have "con == 0" here.
-  if (con == CONST64(1)) return NULL;  // By one is handled by Identity call
+  if (con == CONST64(1)) {
+    // By one is handled by Identity call
+    return NULL;
+  }
 
   // Check for negative constant; if so negate the final result
   bool sign_flip = false;
