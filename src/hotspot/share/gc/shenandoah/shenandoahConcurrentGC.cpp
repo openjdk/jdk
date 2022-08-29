@@ -121,10 +121,9 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
     TASKQUEUE_STATS_ONLY(_mark.task_queues()->reset_taskqueue_stats());
 
     // Concurrent remembered set scanning
-    if (_generation->generation_mode() == YOUNG) {
-      ShenandoahConcurrentPhase gc_phase("Concurrent remembered set scanning", ShenandoahPhaseTimings::init_scan_rset);
-      _generation->scan_remembered_set(true /* is_concurrent */);
-    }
+    entry_scan_remembered_set();
+    // When RS scanning yields, we will need a check_cancellation_and_abort()
+    // degeneration point here.
 
     // Concurrent mark roots
     entry_mark_roots();
@@ -371,6 +370,23 @@ void ShenandoahConcurrentGC::entry_reset() {
 
   heap->try_inject_alloc_failure();
   op_reset();
+}
+
+void ShenandoahConcurrentGC::entry_scan_remembered_set() {
+  if (_generation->generation_mode() == YOUNG) {
+    ShenandoahHeap* const heap = ShenandoahHeap::heap();
+    TraceCollectorStats tcs(heap->monitoring_support()->concurrent_collection_counters());
+    const char* msg = "Concurrent remembered set scanning";
+    ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::init_scan_rset);
+    EventMark em("%s", msg);
+
+    ShenandoahWorkerScope scope(heap->workers(),
+                                ShenandoahWorkerPolicy::calc_workers_for_rs_scanning(),
+                                msg);
+
+    heap->try_inject_alloc_failure();
+    _generation->scan_remembered_set(true /* is_concurrent */);
+  }
 }
 
 void ShenandoahConcurrentGC::entry_mark_roots() {

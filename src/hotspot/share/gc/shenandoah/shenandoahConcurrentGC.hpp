@@ -86,6 +86,7 @@ private:
   // for concurrent operation.
   void entry_reset();
   void entry_mark_roots();
+  void entry_scan_remembered_set();
 
 protected:
   void entry_mark();

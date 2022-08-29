@@ -31,6 +31,7 @@ class ShenandoahWorkerPolicy : AllStatic {
 private:
   static uint _prev_par_marking;
   static uint _prev_conc_marking;
+  static uint _prev_conc_rs_scanning;
   static uint _prev_conc_root_proc;
   static uint _prev_conc_refs_proc;
   static uint _prev_conc_evac;
@@ -47,6 +48,9 @@ public:
 
   // Calculate the number of workers for concurrent marking
   static uint calc_workers_for_conc_marking();
+
+  // Calculate the number of workers for remembered set scanning
+  static uint calc_workers_for_rs_scanning();
 
   // Calculate the number of workers for final marking
   static uint calc_workers_for_final_marking();
