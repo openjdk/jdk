@@ -613,8 +613,7 @@ public final class Security {
         Iterator<Map.Entry<String, String>> iter = entries.iterator();
         while (iter.hasNext()) {
             Map.Entry<String, String> e = iter.next();
-            applyFilterOnCandidates(new Criteria(e.getKey(), e.getValue()),
-                    candidates);
+            new Criteria(e.getKey(), e.getValue()).apply(candidates);
             if (candidates.isEmpty()) {
                 // bail; no further filtering needed
                 break;
@@ -863,66 +862,58 @@ public final class Security {
                 throw new InvalidParameterException("Invalid filter");
             }
         }
-    }
-
-    /*
-     * Apply the specified filter on the specified Provider candidates
-     * and remove those which do not contain a match.
-     */
-    private static void applyFilterOnCandidates(Criteria cr,
-            LinkedList<Provider> candidates) {
-        Iterator<Provider> provs = candidates.iterator();
-        while (provs.hasNext()) {
-            Provider p = provs.next();
-            if (!isCriterionSatisfied(p, cr)) {
-                provs.remove();
+        void apply(LinkedList<Provider> candidates) {
+            Iterator<Provider> provs = candidates.iterator();
+            while (provs.hasNext()) {
+                Provider p = provs.next();
+                if (!isCriterionSatisfied(p)) {
+                    provs.remove();
+                }
             }
         }
-    }
 
-    /*
-     * Returns {@code true} if the given provider satisfies
-     * the selection criterion key:value.
-     */
-    private static boolean isCriterionSatisfied(Provider prov, Criteria cr) {
-        // Constructed key have ONLY 1 space between algName and attrName
-        String key = cr.serviceName + '.' + cr.algName +
-                (cr.attrName != null ? ' ' + cr.attrName : "");
+        /*
+         * Returns {@code true} if the given provider satisfies
+         * the selection criterion key:value.
+         */
+        private boolean isCriterionSatisfied(Provider prov) {
+            // Constructed key have ONLY 1 space between algName and attrName
+            String key = serviceName + '.' + algName +
+                    (attrName != null ? ' ' + attrName : "");
 
-        // Check whether the provider has a property
-        // whose key is the same as the given key.
-        String propValue = getProviderProperty(key, prov);
-
-        if (propValue == null) {
-            // Check whether we have an alias instead
-            // of a standard name in the key.
-            String standardName = getProviderProperty("Alg.Alias." +
-                                                      cr.serviceName + "." +
-                                                      cr.algName,
-                                                      prov);
-            if (standardName != null) {
-                key = cr.serviceName + "." + cr.algName +
-                        (cr.attrName != null ? ' ' + cr.attrName : "");
-                propValue = getProviderProperty(key, prov);
-            }
+            // Check whether the provider has a property
+            // whose key is the same as the given key.
+            String propValue = getProviderProperty(key, prov);
 
             if (propValue == null) {
-                // The provider doesn't have the given
-                // key in its property list.
-                return false;
+                // Check whether we have an alias instead
+                // of a standard name in the key.
+                String standardName = getProviderProperty("Alg.Alias." +
+                        serviceName + "." + algName, prov);
+                if (standardName != null) {
+                    key = serviceName + "." + standardName +
+                            (attrName != null ? ' ' + attrName : "");
+                    propValue = getProviderProperty(key, prov);
+                }
+
+                if (propValue == null) {
+                    // The provider doesn't have the given
+                    // key in its property list.
+                    return false;
+                }
             }
-        }
 
-        // If the key is in the format of:
-        // <crypto_service>.<algorithm_or_type>,
-        // there is no need to check the value.
-        if (cr.attrName == null) {
-            return true;
-        }
+            // If the key is in the format of:
+            // <crypto_service>.<algorithm_or_type>,
+            // there is no need to check the value.
+            if (attrName == null) {
+                return true;
+            }
 
-        // If we get here, the key must be in the
-        // format of <crypto_service>.<algorithm_or_type> <attribute_name>.
-        return isConstraintSatisfied(cr.attrName, cr.attrValue, propValue);
+            // If we get here, the key must be in the
+            // format of <crypto_service>.<algorithm_or_type> <attribute_name>.
+            return isConstraintSatisfied(attrName, attrValue, propValue);
+        }
     }
 
     private static boolean isKnownComposite(String attr) {

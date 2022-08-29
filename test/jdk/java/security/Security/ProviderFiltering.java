@@ -91,6 +91,10 @@ public class ProviderFiltering {
         testIPE("Cipher.RC2 SupportedKeyClasses:a|b");
 
         String p = "SUN";
+
+        // test alias
+        doit("Signature.NONEwithDSA", p);
+
         String sigService = "Signature.SHA256withDSA";
         // javadoc allows extra spaces in between
         String key = sigService + "   SupportedKeyClasses";
