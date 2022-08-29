@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -241,9 +241,16 @@ public class JdkInternalMiscUnsafeAccessTestByte {
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
                 success = UNSAFE.weakCompareAndSetBytePlain(base, offset, (byte)0x01, (byte)0x23);
             }
-            assertEquals(success, true, "weakCompareAndSetPlain byte");
+            assertEquals(success, true, "success weakCompareAndSetPlain byte");
             byte x = UNSAFE.getByte(base, offset);
-            assertEquals(x, (byte)0x23, "weakCompareAndSetPlain byte value");
+            assertEquals(x, (byte)0x23, "success weakCompareAndSetPlain byte value");
+        }
+
+        {
+            boolean success = UNSAFE.weakCompareAndSetBytePlain(base, offset, (byte)0x01, (byte)0x45);
+            assertEquals(success, false, "failing weakCompareAndSetPlain byte");
+            byte x = UNSAFE.getByte(base, offset);
+            assertEquals(x, (byte)0x23, "failing weakCompareAndSetPlain byte value");
         }
 
         {
@@ -251,9 +258,16 @@ public class JdkInternalMiscUnsafeAccessTestByte {
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
                 success = UNSAFE.weakCompareAndSetByteAcquire(base, offset, (byte)0x23, (byte)0x01);
             }
-            assertEquals(success, true, "weakCompareAndSetAcquire byte");
+            assertEquals(success, true, "success weakCompareAndSetAcquire byte");
             byte x = UNSAFE.getByte(base, offset);
-            assertEquals(x, (byte)0x01, "weakCompareAndSetAcquire byte");
+            assertEquals(x, (byte)0x01, "success weakCompareAndSetAcquire byte");
+        }
+
+        {
+            boolean success = UNSAFE.weakCompareAndSetByteAcquire(base, offset, (byte)0x23, (byte)0x45);
+            assertEquals(success, false, "failing weakCompareAndSetAcquire byte");
+            byte x = UNSAFE.getByte(base, offset);
+            assertEquals(x, (byte)0x01, "failing weakCompareAndSetAcquire byte value");
         }
 
         {
@@ -261,9 +275,16 @@ public class JdkInternalMiscUnsafeAccessTestByte {
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
                 success = UNSAFE.weakCompareAndSetByteRelease(base, offset, (byte)0x01, (byte)0x23);
             }
-            assertEquals(success, true, "weakCompareAndSetRelease byte");
+            assertEquals(success, true, "success weakCompareAndSetRelease byte");
             byte x = UNSAFE.getByte(base, offset);
-            assertEquals(x, (byte)0x23, "weakCompareAndSetRelease byte");
+            assertEquals(x, (byte)0x23, "success weakCompareAndSetRelease byte");
+        }
+
+        {
+            boolean success = UNSAFE.weakCompareAndSetByteRelease(base, offset, (byte)0x01, (byte)0x45);
+            assertEquals(success, false, "failing weakCompareAndSetRelease byte");
+            byte x = UNSAFE.getByte(base, offset);
+            assertEquals(x, (byte)0x23, "failing weakCompareAndSetRelease byte value");
         }
 
         {
@@ -271,9 +292,16 @@ public class JdkInternalMiscUnsafeAccessTestByte {
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
                 success = UNSAFE.weakCompareAndSetByte(base, offset, (byte)0x23, (byte)0x01);
             }
-            assertEquals(success, true, "weakCompareAndSet byte");
+            assertEquals(success, true, "success weakCompareAndSet byte");
             byte x = UNSAFE.getByte(base, offset);
-            assertEquals(x, (byte)0x01, "weakCompareAndSet byte");
+            assertEquals(x, (byte)0x01, "success weakCompareAndSet byte");
+        }
+
+        {
+            boolean success = UNSAFE.weakCompareAndSetByte(base, offset, (byte)0x23, (byte)0x45);
+            assertEquals(success, false, "failing weakCompareAndSet byte");
+            byte x = UNSAFE.getByte(base, offset);
+            assertEquals(x, (byte)0x01, "failing weakCompareAndSet byte value");
         }
 
         UNSAFE.putByte(base, offset, (byte)0x23);

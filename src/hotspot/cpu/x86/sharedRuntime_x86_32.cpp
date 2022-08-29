@@ -535,7 +535,7 @@ int SharedRuntime::java_calling_convention(const BasicType *sig_bt,
 // Patch the callers callsite with entry to compiled code if it exists.
 static void patch_callers_callsite(MacroAssembler *masm) {
   Label L;
-  __ cmpptr(Address(rbx, in_bytes(Method::code_offset())), (int32_t)NULL_WORD);
+  __ cmpptr(Address(rbx, in_bytes(Method::code_offset())), NULL_WORD);
   __ jcc(Assembler::equal, L);
   // Schedule the branch target address early.
   // Call into the VM to patch the caller, then jump to compiled callee
@@ -984,7 +984,7 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
     // Method might have been compiled since the call site was patched to
     // interpreted if that is the case treat it as a miss so we can get
     // the call site corrected.
-    __ cmpptr(Address(rbx, in_bytes(Method::code_offset())), (int32_t)NULL_WORD);
+    __ cmpptr(Address(rbx, in_bytes(Method::code_offset())), NULL_WORD);
     __ jcc(Assembler::equal, skip_fixup);
 
     __ bind(missed);
@@ -1096,7 +1096,7 @@ static void object_move(MacroAssembler* masm,
     Register rHandle = rax;
     Label nil;
     __ xorptr(rHandle, rHandle);
-    __ cmpptr(Address(rbp, reg2offset_in(src.first())), (int32_t)NULL_WORD);
+    __ cmpptr(Address(rbp, reg2offset_in(src.first())), NULL_WORD);
     __ jcc(Assembler::equal, nil);
     __ lea(rHandle, Address(rbp, reg2offset_in(src.first())));
     __ bind(nil);
@@ -1118,7 +1118,7 @@ static void object_move(MacroAssembler* masm,
     __ movptr(Address(rsp, offset), rOop);
     map->set_oop(VMRegImpl::stack2reg(oop_slot));
     __ xorptr(rHandle, rHandle);
-    __ cmpptr(rOop, (int32_t)NULL_WORD);
+    __ cmpptr(rOop, NULL_WORD);
     __ jcc(Assembler::equal, skip);
     __ lea(rHandle, Address(rsp, offset));
     __ bind(skip);
@@ -1863,7 +1863,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     if (!UseHeavyMonitors) {
       Label not_recur;
       // Simple recursive lock?
-      __ cmpptr(Address(rbp, lock_slot_rbp_offset), (int32_t)NULL_WORD);
+      __ cmpptr(Address(rbp, lock_slot_rbp_offset), NULL_WORD);
       __ jcc(Assembler::notEqual, not_recur);
       __ dec_held_monitor_count();
       __ jmpb(fast_done);
@@ -1934,7 +1934,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   __ movl(Address(rcx, JNIHandleBlock::top_offset_in_bytes()), NULL_WORD);
 
   // Any exception pending?
-  __ cmpptr(Address(thread, in_bytes(Thread::pending_exception_offset())), (int32_t)NULL_WORD);
+  __ cmpptr(Address(thread, in_bytes(Thread::pending_exception_offset())), NULL_WORD);
   __ jcc(Assembler::notEqual, exception_pending);
 
   // no exception, we're almost done
@@ -1981,7 +1981,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
 #ifdef ASSERT
     { Label L;
-    __ cmpptr(Address(thread, in_bytes(Thread::pending_exception_offset())), (int)NULL_WORD);
+    __ cmpptr(Address(thread, in_bytes(Thread::pending_exception_offset())), NULL_WORD);
     __ jcc(Assembler::equal, L);
     __ stop("no pending exception allowed on exit from monitorenter");
     __ bind(L);
@@ -2018,7 +2018,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 #ifdef ASSERT
     {
       Label L;
-      __ cmpptr(Address(thread, in_bytes(Thread::pending_exception_offset())), (int32_t)NULL_WORD);
+      __ cmpptr(Address(thread, in_bytes(Thread::pending_exception_offset())), NULL_WORD);
       __ jcc(Assembler::equal, L);
       __ stop("no pending exception allowed on exit complete_monitor_unlocking_C");
       __ bind(L);
@@ -2702,7 +2702,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
   __ get_thread(java_thread);
   __ reset_last_Java_frame(java_thread, false);
 
-  __ cmpptr(Address(java_thread, Thread::pending_exception_offset()), (int32_t)NULL_WORD);
+  __ cmpptr(Address(java_thread, Thread::pending_exception_offset()), NULL_WORD);
   __ jcc(Assembler::equal, noException);
 
   // Exception pending
@@ -2830,7 +2830,7 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(address destination, const cha
   __ reset_last_Java_frame(thread, true);
   // check for pending exceptions
   Label pending;
-  __ cmpptr(Address(thread, Thread::pending_exception_offset()), (int32_t)NULL_WORD);
+  __ cmpptr(Address(thread, Thread::pending_exception_offset()), NULL_WORD);
   __ jcc(Assembler::notEqual, pending);
 
   // get the returned Method*
