@@ -101,7 +101,7 @@ struct CheckInsn {
 };
 
 static const struct CheckInsn barrierInsn[] = {
-  { 0x00000fff, 0x00000297, "auipc  t0, 0           "},
+  { 0x00000fff, 0x00000297, "auipc  t0, 0                     "},
   { 0x000fffff, 0x0002e283, "lwu    t0, guard_offset(t0)      "},
   /* ...... */
   /* ...... */
@@ -201,7 +201,7 @@ void BarrierSetNMethod::arm(nmethod* nm, int arm_value) {
     // is performed with a release store. In the nmethod entry barrier, the values
     // are read in the opposite order, such that the load of the nmethod guard
     // acquires the patching epoch. This way, the guard is guaranteed to block
-    // entries to the nmethod, util it has safely published the requirement for
+    // entries to the nmethod, until it has safely published the requirement for
     // further fencing by mutators, before they are allowed to enter.
     BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
     bs_asm->increment_patching_epoch();

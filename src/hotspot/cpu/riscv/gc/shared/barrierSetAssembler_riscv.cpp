@@ -221,7 +221,7 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label* slo
         // With STW patching, no data or instructions are updated concurrently,
         // which means there isn't really any need for any fencing for neither
         // data nor instruction modification happening concurrently. The
-        // instruction patching is synchronized with glocal icache_flush() by
+        // instruction patching is synchronized with global icache_flush() by
         // the write hart on riscv. So here we can do a plain conditional
         // branch with no fencing.
         Address thread_disarmed_addr(xthread, in_bytes(bs_nm->thread_disarmed_offset()));
