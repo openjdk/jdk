@@ -472,7 +472,6 @@ final class ClientHello {
 
                 boolean isEmsAvailable = chc.sslConfig.isAvailable(
                         SSLExtension.CH_EXTENDED_MASTER_SECRET, sessionVersion);
-                    
                 if (isEmsAvailable && !session.useExtendedMasterSecret &&
                         !SSLConfiguration.allowLegacyResumption) {
                     // perform full handshake instead
