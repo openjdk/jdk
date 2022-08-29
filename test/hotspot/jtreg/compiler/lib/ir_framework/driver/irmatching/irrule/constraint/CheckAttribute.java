@@ -42,15 +42,15 @@ import java.util.stream.Collectors;
  *
  * @see IR
  */
-abstract public class CheckAttribute<C extends Constraint, R extends CheckAttributeMatchResult> {
+abstract public class CheckAttribute<C extends Constraint> {
     private final List<C> constraints;
 
     public CheckAttribute(List<C> constraints) {
         this.constraints = constraints;
     }
 
-    public R check(String phaseCompilationOutput) {
-        R matchResult = createMatchResult();
+    public CheckAttributeMatchResult check(String phaseCompilationOutput) {
+        CheckAttributeMatchResult matchResult = createMatchResult();
         List<ConstraintFailure> constraintFailures = new ArrayList<>();
         for (C constraint : constraints) {
             checkConstraint(constraintFailures, constraint, phaseCompilationOutput);
@@ -61,7 +61,7 @@ abstract public class CheckAttribute<C extends Constraint, R extends CheckAttrib
         return matchResult;
     }
 
-    abstract protected R createMatchResult();
+    abstract protected CheckAttributeMatchResult createMatchResult();
 
     abstract void checkConstraint(List<ConstraintFailure> constraintFailures, C constraint, String phaseCompilationOutput);
 

@@ -37,7 +37,7 @@ import java.util.stream.Collectors;
  * @see IR#failOn()
  * @see CheckAttribute
  */
-public class FailOn extends CheckAttribute<Constraint, FailOnMatchResult> {
+public class FailOn extends CheckAttribute<Constraint> {
     private final Pattern quickPattern;
 
     public FailOn(List<Constraint> constraints) {
@@ -47,19 +47,19 @@ public class FailOn extends CheckAttribute<Constraint, FailOnMatchResult> {
     }
 
     @Override
-    protected FailOnMatchResult createMatchResult() {
-        return new FailOnMatchResult();
+    protected CheckAttributeMatchResult createMatchResult() {
+        return new CheckAttributeMatchResult(CheckAttributeKind.FAIL_ON);
     }
 
     @Override
-    public FailOnMatchResult check(String phaseCompilationOutput) {
+    public CheckAttributeMatchResult check(String phaseCompilationOutput) {
         Matcher matcher = quickPattern.matcher(phaseCompilationOutput);
         if (matcher.find()) {
-            FailOnMatchResult failOnMatchResult = super.check(phaseCompilationOutput);
+            CheckAttributeMatchResult failOnMatchResult = super.check(phaseCompilationOutput);
             TestFramework.check(failOnMatchResult.fail(), "must fail (i.e. find at least one match)");
             return failOnMatchResult;
         }
-        return new FailOnMatchResult();
+        return new CheckAttributeMatchResult(CheckAttributeKind.FAIL_ON);
     }
 
     @Override

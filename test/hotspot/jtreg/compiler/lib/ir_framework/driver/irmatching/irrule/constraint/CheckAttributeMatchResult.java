@@ -23,7 +23,6 @@
 
 package compiler.lib.ir_framework.driver.irmatching.irrule.constraint;
 
-import compiler.lib.ir_framework.driver.irmatching.FailureMessage;
 import compiler.lib.ir_framework.driver.irmatching.MatchResult;
 import compiler.lib.ir_framework.driver.irmatching.MatchResultVisitor;
 
@@ -34,7 +33,7 @@ import java.util.List;
  *
  * @see CheckAttribute
  */
-abstract public class CheckAttributeMatchResult implements MatchResult, FailureMessage {
+public class CheckAttributeMatchResult implements MatchResult {
     private List<ConstraintFailure> constraintFailures = null;
     private final CheckAttributeKind checkAttributeKind;
 
@@ -55,24 +54,8 @@ abstract public class CheckAttributeMatchResult implements MatchResult, FailureM
         this.constraintFailures = constraintFailures;
     }
 
-    @Override
-    public String buildFailureMessage(int indentationSize) {
-        return getIndentation(indentationSize) + "- " + getCheckAttributeMessage() + ":" + System.lineSeparator()
-               + buildConstraintFailuresMessage(indentationSize);
-    }
-
-    abstract protected String getCheckAttributeMessage();
-
-    private String buildConstraintFailuresMessage(int indentation) {
-        StringBuilder failMsg = new StringBuilder();
-        for (ConstraintFailure constraintFailure : constraintFailures) {
-            failMsg.append(constraintFailure.buildFailureMessage(indentation + 2));
-        }
-        return failMsg.toString();
-    }
-
     public void accept(MatchResultVisitor visitor) {
         visitor.visit(this);
-        constraintFailures.forEach(f -> f.accept(visitor));
+        acceptChildren(visitor, constraintFailures);
     }
 }

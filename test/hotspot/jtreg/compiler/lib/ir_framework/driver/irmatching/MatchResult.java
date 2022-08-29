@@ -23,6 +23,8 @@
 
 package compiler.lib.ir_framework.driver.irmatching;
 
+import java.util.Collection;
+
 /**
  * Interface used by all classes which represent an IR match result. A match result class must be able to report
  * found matching failures in a pretty format.
@@ -34,4 +36,12 @@ public interface MatchResult {
     boolean fail();
 
     void accept(MatchResultVisitor visitor);
+
+    default void acceptChildren(MatchResultVisitor visitor, Collection<? extends MatchResult> children) {
+        for (var result : children) {
+            if (visitor.shouldVisit(result)) {
+                result.accept(visitor);
+            }
+        }
+    }
 }

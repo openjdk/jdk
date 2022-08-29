@@ -23,7 +23,6 @@
 
 package compiler.lib.ir_framework.driver.irmatching.irmethod;
 
-import compiler.lib.ir_framework.driver.irmatching.FailureMessage;
 import compiler.lib.ir_framework.driver.irmatching.MatchResult;
 import compiler.lib.ir_framework.driver.irmatching.MatchResultVisitor;
 import compiler.lib.ir_framework.driver.irmatching.irrule.IRRuleMatchResult;
@@ -36,8 +35,7 @@ import java.util.List;
  * @see IRRuleMatchResult
  * @see IRMethod
  */
-public class IRMethodMatchResult implements Comparable<IRMethodMatchResult>, MatchResult,
-        FailureMessage {
+public class IRMethodMatchResult implements Comparable<IRMethodMatchResult>, MatchResult {
     protected final IRMethod irMethod;
     private final List<IRRuleMatchResult> irRulesMatchResults;
 
@@ -66,11 +64,6 @@ public class IRMethodMatchResult implements Comparable<IRMethodMatchResult>, Mat
         return !irRulesMatchResults.isEmpty();
     }
 
-    public String buildFailureMessage(int indentationSize) {
-        IRMethodFailureMessageBuilder builder = new IRMethodFailureMessageBuilder(irMethod, irRulesMatchResults);
-        return builder.buildFailureMessage(indentationSize);
-    }
-
     /**
      * Used to sort the failed IR methods alphabetically.
      */
@@ -82,10 +75,6 @@ public class IRMethodMatchResult implements Comparable<IRMethodMatchResult>, Mat
     @Override
     public void accept(MatchResultVisitor visitor) {
         visitor.visit(this);
-        for (var result : irRulesMatchResults) {
-            if (visitor.shouldVisit(result)) {
-                result.accept(visitor);
-            }
-        }
+        acceptChildren(visitor, irRulesMatchResults);
     }
 }

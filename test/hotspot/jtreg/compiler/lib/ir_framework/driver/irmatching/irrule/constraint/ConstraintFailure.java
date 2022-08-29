@@ -23,12 +23,9 @@
 
 package compiler.lib.ir_framework.driver.irmatching.irrule.constraint;
 
-import compiler.lib.ir_framework.driver.irmatching.FailureMessage;
 import compiler.lib.ir_framework.driver.irmatching.MatchResult;
-import compiler.lib.ir_framework.driver.irmatching.MatchResultVisitor;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Base class representing a failure when applying a constraint (i.e. regex matching) on a compile phase output.
@@ -37,21 +34,15 @@ import java.util.stream.Collectors;
  * @see CheckAttribute
  * @see CheckAttributeMatchResult
  */
-public abstract class ConstraintFailure implements MatchResult, FailureMessage {
-    private final CheckAttributeKind checkAttributeKind;
+abstract public class ConstraintFailure implements MatchResult {
     private final String nodeRegex;
     private final int constraintIndex;
     protected final List<String> matchedNodes;
 
-    public ConstraintFailure(Constraint constraint, List<String> matchedNodes, CheckAttributeKind checkAttributeKind) {
+    public ConstraintFailure(Constraint constraint, List<String> matchedNodes) {
         this.nodeRegex = constraint.getRegex();
         this.constraintIndex = constraint.getIndex();
         this.matchedNodes = matchedNodes;
-        this.checkAttributeKind = checkAttributeKind;
-    }
-
-    public CheckAttributeKind getCheckAttributeKind() {
-        return checkAttributeKind;
     }
 
     public String getNodeRegex() {
@@ -68,40 +59,5 @@ public abstract class ConstraintFailure implements MatchResult, FailureMessage {
 
     public boolean fail() {
         return true;
-    }
-
-    private List<String> addWhiteSpacePrefixForEachLine(List<String> matches, String indentation) {
-        return matches
-                .stream()
-                .map(s -> s.replaceAll(System.lineSeparator(), System.lineSeparator() + indentation))
-                .collect(Collectors.toList());
-    }
-
-    protected String buildConstraintHeader(int indentation) {
-        return getIndentation(indentation) + "* Constraint " + constraintIndex + ": \"" + nodeRegex + "\"" + System.lineSeparator();
-    }
-
-    protected String buildMatchedNodesMessage(int indentation) {
-        return buildMatchedNodesHeader(indentation) + buildMatchedNodesBody(indentation + 2);
-    }
-
-    private String buildMatchedNodesHeader(int indentation) {
-        int matchCount = matchedNodes.size();
-        return getIndentation(indentation) + "- " + getMatchedPrefix() + " node"
-               + (matchCount > 1 ? "s (" + matchCount + ")" : "") + ":" + System.lineSeparator();
-    }
-
-    abstract protected String getMatchedPrefix();
-
-    private String buildMatchedNodesBody(int indentation) {
-        StringBuilder builder = new StringBuilder();
-        String indentationString = getIndentation(indentation);
-        List<String> matches = addWhiteSpacePrefixForEachLine(this.matchedNodes, indentationString + "  ");
-        matches.forEach(match -> builder.append(indentationString).append("* ").append(match).append(System.lineSeparator()));
-        return builder.toString();
-    }
-
-    public void accept(MatchResultVisitor visitor) {
-        visitor.visit(this);
     }
 }

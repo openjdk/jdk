@@ -21,28 +21,31 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.driver.irmatching.irmethod;
+package compiler.lib.ir_framework.driver.irmatching.reporting;
 
-import compiler.lib.ir_framework.driver.irmatching.FailureMessage;
+import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.*;
 
 /**
- * Base class to build the failure message output for an IR method with failed IR rules.
+ * Base class representing a failure when applying a constraint (i.e. regex matching) on a compile phase output.
  *
- * @see IRMethodMatchResult
+ * @see Constraint
+ * @see CheckAttribute
+ * @see CheckAttributeMatchResult
  */
-abstract class AbstractFailureMessageBuilder implements FailureMessage {
-    protected final IRMethod irMethod;
+public class FailOnConstraintFailureMessageBuilder extends ConstraintFailureMessageBuilder {
+    private final FailOnConstraintFailure failOnConstraintFailure;
 
-    public AbstractFailureMessageBuilder(IRMethod irMethod) {
-        this.irMethod = irMethod;
+    public FailOnConstraintFailureMessageBuilder(FailOnConstraintFailure failOnConstraintFailure, int indentation) {
+        super(indentation);
+        this.failOnConstraintFailure = failOnConstraintFailure;
     }
 
     @Override
-    public String buildFailureMessage(int indentationSize) {
-        return buildMethodHeaderLine() + buildIRRulesFailureMessage(indentationSize);
+    protected String getMatchedPrefix(ConstraintFailure constraintFailure) {
+        return "Matched forbidden";
     }
 
-    abstract protected String buildMethodHeaderLine();
-
-    abstract protected String buildIRRulesFailureMessage(int initialIndentation);
+    public String build() {
+        return buildConstraintHeader(failOnConstraintFailure) + (buildMatchedNodesMessage(failOnConstraintFailure));
+    }
 }

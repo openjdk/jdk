@@ -21,33 +21,30 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.driver.irmatching;
+package compiler.lib.ir_framework.driver.irmatching.reporting;
 
+import compiler.lib.ir_framework.driver.irmatching.TestClassResult;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethodMatchResult;
+import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.CheckAttribute;
+import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.CheckAttributeMatchResult;
+import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.Constraint;
 
 /**
- * Class to build the failure message output of IR matching failures.
+ * Base class representing a failure when applying a constraint (i.e. regex matching) on a compile phase output.
  *
- * TODO: Remove
- * @see IRMethodMatchResult
+ * @see Constraint
+ * @see CheckAttribute
+ * @see CheckAttributeMatchResult
  */
-class IRMatcherFailureMessageBuilder {
+public class TestClassFailureMessageBuilder implements FailureMessage {
+    private final TestClassResult testClassResult;
 
-    public static String build(TestClassResult testClassResult) {
-        StringBuilder failuresBuilder = new StringBuilder();
-        failuresBuilder.append(buildHeaderMessage(testClassResult));
-        int failureNumber = 1;
-        for (IRMethodMatchResult irMethodResult : testClassResult.getResults()) {
-            if (irMethodResult.fail()) {
-                failuresBuilder.append(buildIRMethodFailureMessage(failureNumber, irMethodResult));
-                failureNumber++;
-            }
-        }
-        failuresBuilder.append(buildFooterMessage());
-        return failuresBuilder.toString();
+    public TestClassFailureMessageBuilder(TestClassResult testClassResult) {
+        this.testClassResult = testClassResult;
     }
 
-    private static String buildHeaderMessage(TestClassResult testClassResult) {
+    @Override
+    public String build() {
         int failedIRRulesCount = getFailedIRRulesCount(testClassResult);
         long failedMethodCount = getFailedMethodCount(testClassResult);
         return "One or more @IR rules failed:" + System.lineSeparator() + System.lineSeparator()
@@ -71,16 +68,6 @@ class IRMatcherFailureMessageBuilder {
 
     private static int digitCount(long digit) {
         return String.valueOf(digit).length();
-    }
-
-    private static String buildIRMethodFailureMessage(int failureNumber, IRMethodMatchResult result) {
-        int failureNumberDigitCount = String.valueOf(failureNumber).length();
-        // Format: "X) Method..." -> Initial indentation = digitsCount(X) + ) + " "
-        return failureNumber + ")" + result.buildFailureMessage(failureNumberDigitCount + 2) + System.lineSeparator();
-    }
-
-    private static String buildFooterMessage() {
-        return ">>> Check stdout for compilation output of the failed methods" + System.lineSeparator() + System.lineSeparator();
     }
 
 }

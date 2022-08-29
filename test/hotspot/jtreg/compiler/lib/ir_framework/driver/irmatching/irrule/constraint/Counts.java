@@ -34,15 +34,15 @@ import java.util.List;
  * @see IR#counts()
  * @see CheckAttribute
  */
-public class Counts extends CheckAttribute<CountsConstraint, CountsMatchResult> {
+public class Counts extends CheckAttribute<CountsConstraint> {
 
     public Counts(List<CountsConstraint> constraints) {
         super(constraints);
     }
 
     @Override
-    protected CountsMatchResult createMatchResult() {
-        return new CountsMatchResult();
+    protected CheckAttributeMatchResult createMatchResult() {
+        return new CheckAttributeMatchResult(CheckAttributeKind.COUNTS);
     }
 
     @Override

@@ -69,7 +69,7 @@ public class CompilePhaseIRRule implements Matching {
         return compilePhaseMatchResult;
     }
 
-    private void applyCheckAttribute(CheckAttribute<?, ?> checkAttribute, Consumer<CheckAttributeMatchResult> consumer) {
+    private void applyCheckAttribute(CheckAttribute<?> checkAttribute, Consumer<CheckAttributeMatchResult> consumer) {
         if (checkAttribute != null) {
             CheckAttributeMatchResult matchResult = checkAttribute.check(phaseCompilationOutput);
             if (matchResult.fail()) {

@@ -24,7 +24,6 @@
 package compiler.lib.ir_framework.driver.irmatching.irrule.phase;
 
 import compiler.lib.ir_framework.CompilePhase;
-import compiler.lib.ir_framework.driver.irmatching.FailureMessage;
 import compiler.lib.ir_framework.driver.irmatching.MatchResult;
 import compiler.lib.ir_framework.driver.irmatching.MatchResultVisitor;
 import compiler.lib.ir_framework.driver.irmatching.irrule.IRRule;
@@ -35,7 +34,7 @@ import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.CheckAttrib
  *
  * @see IRRule
  */
-public class CompilePhaseMatchResult implements MatchResult, FailureMessage {
+public class CompilePhaseMatchResult implements MatchResult {
     private final CompilePhase compilePhase;
     private final boolean compilationOutput;
     private CheckAttributeMatchResult failOnFailures = null;
@@ -67,37 +66,12 @@ public class CompilePhaseMatchResult implements MatchResult, FailureMessage {
         return compilePhase;
     }
 
-    private boolean hasFailOnFailures() {
-        return failOnFailures != null;
-    }
-
     public void setFailOnMatchResult(CheckAttributeMatchResult failOnFailures) {
         this.failOnFailures = failOnFailures;
     }
 
-    private boolean hasCountsFailures() {
-        return countsFailures != null;
-    }
-
     public void setCountsMatchResult(CheckAttributeMatchResult countsFailures) {
         this.countsFailures = countsFailures;
-    }
-
-    /**
-     * Build a failure message based on the collected failures of this object.
-     */
-    @Override
-    public String buildFailureMessage(int indentationSize) {
-        StringBuilder failMsg = new StringBuilder();
-        failMsg.append(buildPhaseHeader(indentationSize));
-        indentationSize += 2;
-        if (!compilationOutput) {
-            failMsg.append(buildNoCompilationOutputMessage(indentationSize));
-        } else {
-            failMsg.append(buildFailOnFailureMessage(indentationSize));
-            failMsg.append(buildCountsFailureMessage(indentationSize));
-        }
-        return failMsg.toString();
     }
 
     @Override
@@ -111,30 +85,4 @@ public class CompilePhaseMatchResult implements MatchResult, FailureMessage {
         }
     }
 
-
-    private String buildNoCompilationOutputMessage(int indentationSize) {
-        return getIndentation(indentationSize) + "- NO compilation output found for this phase! Make sure this phase " +
-               "is emitted or remove it from the list of compile phases in the @IR rule to match on." +
-               System.lineSeparator();
-    }
-
-    private String buildFailOnFailureMessage(int indentationSize) {
-        if (hasFailOnFailures()) {
-            return failOnFailures.buildFailureMessage(indentationSize);
-        } else {
-            return "";
-        }
-    }
-
-    private String buildCountsFailureMessage(int indentationSize) {
-        if (hasCountsFailures()) {
-            return countsFailures.buildFailureMessage(indentationSize);
-        } else {
-            return "";
-        }
-    }
-
-    private String buildPhaseHeader(int indentation) {
-        return getIndentation(indentation) + "> Phase \"" + compilePhase.getName() + "\":" + System.lineSeparator();
-    }
 }

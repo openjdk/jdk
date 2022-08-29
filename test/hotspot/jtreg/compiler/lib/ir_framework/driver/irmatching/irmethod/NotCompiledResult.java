@@ -56,14 +56,8 @@ public class NotCompiledResult extends IRMethodMatchResult {
     }
 
     @Override
-    public String buildFailureMessage(int indentationSize) {
-        NotCompiledFailureMessageBuilder builder = new NotCompiledFailureMessageBuilder(irMethod);
-        return builder.buildFailureMessage(indentationSize);
-    }
-
-    @Override
     public void accept(MatchResultVisitor visitor) {
-        // Directly report that all IR rules failed to missing any compilation output.
+        // Directly report that all IR rules failed due to missing any compilation output.
         visitor.visit(this);
     }
 }

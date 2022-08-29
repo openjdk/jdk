@@ -24,32 +24,25 @@
 package compiler.lib.ir_framework.driver.irmatching.irrule.constraint;
 
 import compiler.lib.ir_framework.TestFramework;
+import compiler.lib.ir_framework.driver.irmatching.MatchResultVisitor;
 
 import java.util.List;
 
 /**
  * This class represents a failure when applying a {@link Constraint} on a compile phase output.
  *
- * TODO: Eventually remove
  * @see Constraint
  * @see FailOn
- * @see FailOnMatchResult
  */
-class FailOnConstraintFailure extends ConstraintFailure {
+public class FailOnConstraintFailure extends ConstraintFailure {
 
     public FailOnConstraintFailure(Constraint constraint, List<String> matchedNodes) {
-        super(constraint, matchedNodes, CheckAttributeKind.FAIL_ON);
+        super(constraint, matchedNodes);
         TestFramework.check(!matchedNodes.isEmpty(), "must have at least one matched node");
     }
 
     @Override
-    public String buildFailureMessage(int indentationSize) {
-        return buildConstraintHeader(indentationSize)
-               + buildMatchedNodesMessage(indentationSize + 2);
-    }
-
-    @Override
-    protected String getMatchedPrefix() {
-        return "Matched forbidden";
+    public void accept(MatchResultVisitor visitor) {
+        visitor.visit(this);
     }
 }

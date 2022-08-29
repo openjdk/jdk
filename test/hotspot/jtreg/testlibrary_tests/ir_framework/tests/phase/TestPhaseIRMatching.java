@@ -90,6 +90,13 @@ class Asdf {
         i = 34;
         l = 34;
     }
+
+    @Test
+    @IR(failOn = IRNode.STORE, phase = CompilePhase.DEFAULT)
+    public void bad2() {
+        i = 34;
+        l = 34;
+    }
 }
 class NoCompilationOutputForPhase {
 

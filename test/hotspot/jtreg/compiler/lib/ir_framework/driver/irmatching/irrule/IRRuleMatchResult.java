@@ -23,7 +23,6 @@
 
 package compiler.lib.ir_framework.driver.irmatching.irrule;
 
-import compiler.lib.ir_framework.driver.irmatching.FailureMessage;
 import compiler.lib.ir_framework.driver.irmatching.MatchResult;
 import compiler.lib.ir_framework.driver.irmatching.MatchResultVisitor;
 import compiler.lib.ir_framework.driver.irmatching.irrule.phase.CompilePhaseMatchResult;
@@ -36,7 +35,7 @@ import java.util.List;
  *
  * @see IRRule
  */
-public class IRRuleMatchResult implements MatchResult, FailureMessage {
+public class IRRuleMatchResult implements MatchResult {
     private final IRRule irRule;
     private final List<CompilePhaseMatchResult> compilePhaseMatchResults;
 
@@ -62,32 +61,9 @@ public class IRRuleMatchResult implements MatchResult, FailureMessage {
         return !compilePhaseMatchResults.isEmpty();
     }
 
-    /**
-     * Build a failure message based on the collected failures of this object.
-     */
-    @Override
-    public String buildFailureMessage(int indentationSize) {
-        StringBuilder failMsg = new StringBuilder();
-        failMsg.append(buildIRRuleHeader(indentationSize));
-        for (CompilePhaseMatchResult phaseMatchResult : compilePhaseMatchResults) {
-            if (phaseMatchResult.fail()) {
-                failMsg.append(phaseMatchResult.buildFailureMessage(indentationSize + 2));
-            }
-        }
-        return failMsg.toString();
-    }
-
     @Override
     public void accept(MatchResultVisitor visitor) {
         visitor.visit(this);
-        for (var result : compilePhaseMatchResults) {
-            if (visitor.shouldVisit(result)) {
-                result.accept(visitor);
-            }
-        }
-    }
-
-    private String buildIRRuleHeader(int indentation) {
-        return getIndentation(indentation) + "* @IR rule " + irRule.getRuleId() + ": \"" + irRule.getIRAnno() + "\"" + System.lineSeparator();
+        acceptChildren(visitor, compilePhaseMatchResults);
     }
 }

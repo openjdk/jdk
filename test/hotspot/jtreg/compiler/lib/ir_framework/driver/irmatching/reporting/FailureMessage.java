@@ -21,28 +21,24 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.driver.irmatching.irmethod;
+package compiler.lib.ir_framework.driver.irmatching.reporting;
+
+import compiler.lib.ir_framework.driver.irmatching.IRMatcher;
 
 /**
- * Class to build the failure message of an IR method with a missing compilation output.
- *
- * @see IRMethodMatchResult
+ * Interface used by all classes which represent a IR match result. A result should also provide a failure message
+ * in a pretty format to be used by the {@link IRMatcher}.
  */
-class NotCompiledFailureMessageBuilder extends AbstractFailureMessageBuilder {
+public interface FailureMessage {
+    /**
+     * Builds a failure message in a pretty format to be used by {@link IRMatcher} to report IR matching failures.
+     */
+    String build();
 
-    public NotCompiledFailureMessageBuilder(IRMethod irMethod) {
-        super(irMethod);
-    }
-
-    @Override
-    protected String buildMethodHeaderLine() {
-        return " Method \"" + irMethod.getMethod() + "\":" + System.lineSeparator();
-    }
-
-    @Override
-    protected String buildIRRulesFailureMessage(int indentationSize) {
-        return getIndentation(indentationSize) + "* Method was not compiled. Did you use a @Run method in STANDALONE " +
-               "mode that was compiled? In this case, make sure to always trigger a C2 compilation by invoking the " +
-               "test enough times.";
+    /**
+     * Return a string of {@code indentationSize} many whitespaces.
+     */
+    default String getIndentation(int indentationSize) {
+        return " ".repeat(indentationSize);
     }
 }

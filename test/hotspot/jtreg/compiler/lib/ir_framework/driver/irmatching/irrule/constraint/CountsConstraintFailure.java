@@ -31,53 +31,19 @@ import java.util.List;
 /**
  * This class represents a failure when applying a {@link CountsConstraint} on a compile phase output.
  *
- * TODO: Eventually remove
  * @see CountsConstraint
  * @see Counts
- * @see CountsMatchResult
  */
 public class CountsConstraintFailure extends ConstraintFailure {
-    private final String failedComparison;
     private final Comparison<Integer> comparison;
 
     public CountsConstraintFailure(CountsConstraint constraint, List<String> matches) {
-        super(constraint, matches, CheckAttributeKind.COUNTS);
+        super(constraint, matches);
         this.comparison = constraint.getComparison();
-        this.failedComparison = "[found] " + matches.size() + " " + comparison.getComparator() + " "
-                                + comparison.getGivenValue() + " [given]";
     }
 
     public Comparison<Integer> getComparison() {
         return comparison;
-    }
-
-    @Override
-    public String buildFailureMessage(int indentationSize) {
-        return buildConstraintHeader(indentationSize)
-               + buildFailedComparisonMessage(indentationSize + 2)
-               + buildMatchedNodesMessage(indentationSize + 2);
-    }
-
-    private String buildFailedComparisonMessage(int indentation) {
-        return getIndentation(indentation) + "- Failed comparison: " + failedComparison + System.lineSeparator();
-    }
-
-    @Override
-    protected String buildMatchedNodesMessage(int indentation) {
-        if (matchedNodes.isEmpty()) {
-            return buildEmptyNodeMatchesMessage(indentation);
-        } else {
-            return super.buildMatchedNodesMessage(indentation);
-        }
-    }
-
-    private String buildEmptyNodeMatchesMessage(int indentation) {
-        return getIndentation(indentation) + "- No nodes matched!" + System.lineSeparator();
-    }
-
-    @Override
-    protected String getMatchedPrefix() {
-        return "Matched";
     }
 
     @Override

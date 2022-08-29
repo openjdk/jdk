@@ -24,6 +24,7 @@
 package compiler.lib.ir_framework.driver.irmatching;
 
 import compiler.lib.ir_framework.driver.irmatching.parser.MethodCompilationParser;
+import compiler.lib.ir_framework.driver.irmatching.reporting.FailureMessageBuilder;
 
 /**
  * This class parses the hotspot_pid* file of the test VM to match all applicable @IR rules afterwards.
@@ -59,8 +60,7 @@ public class IRMatcher {
      * failures.
      */
     private void reportFailures(TestClassResult result) { // TODO: Introduce TestClassMatchResult implements MatchResult
-        FailureMessageBuilder failureMessageBuilder = new FailureMessageBuilder();
-        String failureMsg = failureMessageBuilder.build(result);
+        String failureMsg = new FailureMessageBuilder(result).build();
 //        String failureMsg = IRMatcherFailureMessageBuilder.build(result);
         throwIfNoSafepointWhilePrinting(failureMsg,
                                         CompilationOutputBuilder.build(result));

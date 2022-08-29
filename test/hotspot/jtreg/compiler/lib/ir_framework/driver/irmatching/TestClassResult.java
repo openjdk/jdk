@@ -24,10 +24,6 @@ public class TestClassResult implements MatchResult {
     @Override
     public void accept(MatchResultVisitor visitor) {
         visitor.visit(this);
-        for (var result : results) {
-            if (visitor.shouldVisit(result)) {
-                result.accept(visitor);
-            }
-        }
+        acceptChildren(visitor, results);
     }
 }
