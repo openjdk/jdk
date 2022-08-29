@@ -176,7 +176,7 @@ void BarrierSetNMethod::disarm(nmethod* nm) {
     return;
   }
 
-  // The patching code is incremented before the nmethod is disarmed. Disarming
+  // The patching epoch is incremented before the nmethod is disarmed. Disarming
   // is performed with a release store. In the nmethod entry barrier, the values
   // are read in the opposite order, such that the load of the nmethod guard
   // acquires the patching epoch. This way, the guard is guaranteed to block
@@ -197,7 +197,7 @@ void BarrierSetNMethod::arm(nmethod* nm, int arm_value) {
   }
 
   if (arm_value == disarmed_value()) {
-    // The patching code is incremented before the nmethod is disarmed. Disarming
+    // The patching epoch is incremented before the nmethod is disarmed. Disarming
     // is performed with a release store. In the nmethod entry barrier, the values
     // are read in the opposite order, such that the load of the nmethod guard
     // acquires the patching epoch. This way, the guard is guaranteed to block
