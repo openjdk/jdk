@@ -334,8 +334,7 @@ const Type *MulINode::mul_ring(const Type *t0, const Type *t1) const {
 //------------------------------Ideal------------------------------------------
 // Check for power-of-2 multiply, then try the regular MulNode::Ideal
 Node *MulLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  // Swap constant to right
-  jlong con = in(2)->find_long_con(0);
+  const jlong con = in(2)->find_long_con(0);
   if (con == 0) {
     // If in(2) is not a constant, call Ideal() of the parent class to
     // try to move constant to the right side.
@@ -343,7 +342,7 @@ Node *MulLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   }
 
   // Now we have a constant Node on the right and the constant in con.
-  if (con == CONST64(1)) {
+  if (con == 1) {
     // By one is handled by Identity call
     return NULL;
   }
