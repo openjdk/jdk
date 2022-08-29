@@ -715,12 +715,12 @@ final class CompilerToVM {
     private native void reprofile(HotSpotResolvedJavaMethodImpl method, long methodPointer);
 
     /**
-     * Invalidates {@code nmethodMirror} such that {@link InvalidInstalledCodeException} will be
-     * raised the next time {@code nmethodMirror} is {@linkplain #executeHotSpotNmethod executed}.
-     * The {@code nmethod} associated with {@code nmethodMirror} is also made non-entrant and any
-     * current activations of the {@code nmethod} are deoptimized.
+     * Updates {@code nmethodMirror} such that {@link InvalidInstalledCodeException} will be raised
+     * the next time {@code nmethodMirror} is {@linkplain #executeHotSpotNmethod executed}. The
+     * {@code nmethod} associated with {@code nmethodMirror} is also made non-entrant and if
+     * {@code deoptimize == true} any current activations of the {@code nmethod} are deoptimized.
      */
-    native void invalidateHotSpotNmethod(HotSpotNmethod nmethodMirror);
+    native void invalidateHotSpotNmethod(HotSpotNmethod nmethodMirror, boolean deoptimize);
 
     /**
      * Collects the current values of all JVMCI benchmark counters, summed up over all threads.

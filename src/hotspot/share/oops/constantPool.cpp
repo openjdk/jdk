@@ -584,7 +584,7 @@ Klass* ConstantPool::klass_at_if_loaded(const constantPoolHandle& this_cp, int w
     oop protection_domain = this_cp->pool_holder()->protection_domain();
     Handle h_prot (current, protection_domain);
     Handle h_loader (current, loader);
-    Klass* k = SystemDictionary::find_instance_klass(name, h_loader, h_prot);
+    Klass* k = SystemDictionary::find_instance_klass(current, name, h_loader, h_prot);
 
     // Avoid constant pool verification at a safepoint, as it takes the Module_lock.
     if (k != NULL && current->is_Java_thread()) {

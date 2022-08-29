@@ -147,7 +147,7 @@ JNIEXPORT jlong JNICALL
 Java_sun_nio_ch_FileChannelImpl_transferTo0(JNIEnv *env, jobject this,
                                             jobject srcFD,
                                             jlong position, jlong count,
-                                            jobject dstFD)
+                                            jobject dstFD, jboolean append)
 {
     const int PACKET_SIZE = 524288;
 
@@ -191,7 +191,8 @@ Java_sun_nio_ch_FileChannelImpl_transferTo0(JNIEnv *env, jobject this,
 JNIEXPORT jlong JNICALL
 Java_sun_nio_ch_FileChannelImpl_transferFrom0(JNIEnv *env, jobject this,
                                               jobject srcFDO, jobject dstFDO,
-                                              jlong position, jlong count)
+                                              jlong position, jlong count,
+                                              jboolean append)
 {
     return IOS_UNSUPPORTED;
 }

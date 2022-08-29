@@ -1133,7 +1133,6 @@ inline intx byte_size(void* from, void* to) {
   return (address)to - (address)from;
 }
 
-
 // Pack and extract shorts to/from ints:
 
 inline int extract_low_short_from_int(jint x) {

@@ -977,12 +977,6 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, UsePopCountInstruction, false,                              \
           "Use population count instruction")                               \
                                                                             \
-  product(bool, LogTouchedMethods, false, DIAGNOSTIC,                       \
-          "Log methods which have been ever touched in runtime")            \
-                                                                            \
-  product(bool, PrintTouchedMethodsAtExit, false, DIAGNOSTIC,               \
-          "Print all methods that have been ever touched in runtime")       \
-                                                                            \
   develop(bool, TraceMethodReplacement, false,                              \
           "Print when methods are replaced do to recompilation")            \
                                                                             \
