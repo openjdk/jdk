@@ -553,18 +553,19 @@ bool ConnectionGraph::can_reduce_this_phi(const Node* phi) const {
   }
 
   // Validate inputs:
-  //    Check whether this Phi node actually point to Allocate nodes
-  //    of the same Klass and that they can be scalar replaced. Also
-  //    checks that there is no write to any of the inputs after the
+  //    Check whether this Phi node actually point to any scalar replaceable
+  //    Allocate node of the same Klass as the Phi.
+  //    Also checks that there is no write to any of the inputs after the
   //    merge occurs.
   bool has_noescape_allocate = false;
   ciInstanceKlass* klass = phi_t->make_oopptr()->is_instptr()->instance_klass();
   for (uint in_idx = 1; in_idx < phi->req(); in_idx++) {
+    // come_from_allocate returns NULL if it the sources isn't an Allocate
     const Node* input = come_from_allocate(phi->in(in_idx));
     PointsToNode* input_ptn = input != NULL ? ptnode_adr(input->_idx) : NULL;
 
-    // Check if input comes from Allocate and does not escape
-    has_noescape_allocate |= (input_ptn != NULL && input_ptn->escape_state() == PointsToNode::NoEscape && input_ptn->scalar_replaceable());
+    // Check if input comes from scalar replaceable Allocate
+    has_noescape_allocate |= (input_ptn != NULL && input_ptn->scalar_replaceable());
 
     // Check if there is no write to the input after it is merged.
     // If there is a write to any input after the merge we need to bail out.
@@ -4020,9 +4021,9 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
 
       while (needed_offsets.test()) {
         jlong offset = (jlong)needed_offsets._key;
-        int ram_field_input_idx = (long)needed_offsets._value;
+        int ram_field_input_idx = (intptr_t)needed_offsets._value;
 
-        for (uint b_idx=1; b_idx<=number_of_bases; ++b_idx) {
+        for (uint b_idx = 1; b_idx <= number_of_bases; ++b_idx) {
           Node* base    = ram->in(b_idx);
           Node* cur_mem = ram->in(ram_field_input_idx);
           assert(base != NULL, "Shouldn't be NULL!");

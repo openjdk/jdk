@@ -1707,11 +1707,11 @@ ReducedAllocationMergeNode::ReducedAllocationMergeNode(Compile* C, PhaseIterGVN*
     Node* input = phi->in(i);
     PointsToNode* ptn = cg->unique_java_object(input);
 
-    // Source of allocation is not in CG or points to multiple Java objects
+    // Source of allocation may not be in CG or may point to multiple Java objects
     if (ptn != NULL) {
       Node* may_be_allocate = ptn->ideal_node();
       // The source might be a node that is not scalar replaceable
-      if (may_be_allocate->is_Allocate() && may_be_allocate->as_Allocate()->_is_scalar_replaceable) {
+      if (may_be_allocate->Opcode() == Op_Allocate && ptn->scalar_replaceable()) {
         input = may_be_allocate->as_Allocate()->result_cast();
         assert(input->is_CheckCastPP(), "input to phi is not checkcastpp");
       }
@@ -1720,7 +1720,7 @@ ReducedAllocationMergeNode::ReducedAllocationMergeNode(Compile* C, PhaseIterGVN*
     init_req(i, input);
   }
 
-  // Try to find a memory Phi coming from same region
+  // Try to find a BOT memory Phi coming from same region
   Node* reg = phi->region();
   for (DUIterator_Fast imax, i = reg->fast_outs(imax); i < imax; i++) {
     Node* n = reg->fast_out(i);
@@ -1751,7 +1751,7 @@ void ReducedAllocationMergeNode::register_offset_of_all_fields(Node* memory) {
 }
 
 void ReducedAllocationMergeNode::register_offset(jlong offset, Node* memory, bool override) {
-  assert(offset != -1, "Offset of use should be >= 0.");
+  assert(offset > 0, "Offset of use should be >= 0.");
 
   if ((*_fields_and_memories)[(void*)offset] == NULL) {
     _fields_and_memories->Insert((void*)offset, (void*)(intptr_t)req());
@@ -1770,12 +1770,12 @@ void ReducedAllocationMergeNode::register_offset(jlong offset, Node* memory, boo
   }
 }
 
-void ReducedAllocationMergeNode::register_addp(AddPNode* n) {
-  assert(n->outcnt() > 0 && n->raw_out(0)->is_Load(), "AddP output is not load.");
-  assert(n->in(AddPNode::Address) == n->in(AddPNode::Base), "AddP base and address aren't the same.'");
+void ReducedAllocationMergeNode::register_addp(AddPNode* addp) {
+  assert(addp->outcnt() > 0 && addp->raw_out(0)->is_Load(), "AddP output is not load.");
+  assert(addp->in(AddPNode::Address) == addp->in(AddPNode::Base), "AddP base and address aren't the same.");
 
-  jlong offset = n->in(AddPNode::Offset)->find_long_con(-1);
-  Node* memory = n->raw_out(0)->in(LoadNode::Memory);
+  jlong offset = addp->in(AddPNode::Offset)->find_long_con(-1);
+  Node* memory = addp->raw_out(0)->in(LoadNode::Memory);
   register_offset(offset, memory, /*override*/true);
 }
 
@@ -1865,9 +1865,9 @@ Node* ReducedAllocationMergeNode::make_load(Node* ctrl, Node* base, Node* mem, j
 }
 
 Node* ReducedAllocationMergeNode::value_phi_for_field(jlong field, PhaseIterGVN* igvn) {
-  PhiNode* phi       = new PhiNode(this->in(0), Type::BOTTOM);
-  int field_index   = field_idx(field);
-  const Type *t      = Type::TOP;
+  PhiNode* phi     = new PhiNode(this->in(0), Type::BOTTOM);
+  int field_index  = field_idx(field);
+  const Type *t    = Type::TOP;
 
   for (uint i = 1; i <= _number_of_bases; i++) {
     Node* input = in(field_index);
@@ -1882,7 +1882,7 @@ Node* ReducedAllocationMergeNode::value_phi_for_field(jlong field, PhaseIterGVN*
       if (input == NULL) return NULL;
     }
     // Somehow the base was eliminated and we still have a memory reference left
-    else if (input->is_top() || input->bottom_type()->base() == Type::Memory) {
+    else if (input->bottom_type()->base() == Type::Memory) {
       return NULL;
     }
 

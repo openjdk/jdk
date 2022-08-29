@@ -117,6 +117,7 @@ private:
   // 'ram' itself. For those cases we create an SafePointScalarObjectNode,
   // similar to what is done to regular scalar replacement.
   bool eliminate_reduced_allocation_merge(ReducedAllocationMergeNode *ram);
+  bool eliminate_ram_addp_use(ReducedAllocationMergeNode *ram, AddPNode* addp);
 
   void eliminate_gc_barrier(Node *p2x);
   void mark_eliminated_box(Node* box, Node* obj);

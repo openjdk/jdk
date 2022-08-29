@@ -1016,20 +1016,88 @@ public:
 // This node is used during SR to simplify allocation merges.
 // It's in this file just because it's closely related to allocation.
 //
-// Before elimination of macro nodes start, some Phi nodes that merge
-// object allocations are replaced by a ReducedAllocationMergeNode (aka RAM).
-// The users (mostly fields) of the merged allocation are _registered_ in
-// the RAM node. During allocation node removal (macro node expansion /
-// scalar replacement), if an allocation is used by a RAM node, the
-// nodes producing value for fields registered in the
-// RAM, are also registered in the RAM node (in association with
-// corresponding allocation base).
-// After the inputs to the RAM node are scalar replaced the RAM node
-// itself is scalar replaced. This consist basically in replacing the
-// use(s) of the merged allocation field(s) value by a new Phi node
-// merging the value produced in the different inputs to the RAM node.
-// In some cases a reference to the whole merged object is needed and
-// we handle that by creating an SafePointScalarObjectNode.
+// Before elimination of macro nodes start, *some* Phi nodes that merge object
+// allocations and match certain criteria (see escape.cpp::can_reduce_this_phi)
+// are replaced by a ReducedAllocationMergeNode (aka RAM). The users of the
+// merged allocation are registered_in the RAM node. During macro node expansion
+// / scalar replacement, if an allocation is used by a RAM node, the nodes
+// producing value for fields registered in the RAM are also registered in the
+// RAM node (in association with corresponding allocation base).
+//
+// After the inputs to the RAM node are scalar replaced the RAM node itself is
+// scalar replaced. This consist basically in replacing the use(s) of the merged
+// allocations field(s) value by a new Phi node merging the value produced in
+// the different inputs to the RAM node.  In some cases a reference to the whole
+// merged object is needed and we handle that by creating an
+// SafePointScalarObjectNode.
+//
+// Please see below for an illustration of how the implementation operates.
+//
+// When a RAM node is created the offset of fields accessed through the RAM is
+// used to index into `_fields_and_memories` to store the RAM->in index where
+// a memory edge can be used to retrieve the field's value. Note that there
+// needs to be one memory edge for each base. Below is an illustration of a
+// RAM node that merge two inputs and is used to access fields `f1` and `f2`.
+//
+//     0     1      2      3        4        5        6
+// RAM(ctrl, base1, base2, f1_b1_m, f1_b2_m, f2_b1_m, f2_b2_m)
+//           |----------|   |        |       |        |
+//           |          |   |        |       |        \-------------------> Memory edge used to search for value of b2.f2
+//           |          |   |        |       \----------------------------> Memory edge used to search for value of b1.f2
+//           |          |   |        |
+//           |          |   |        \------------------------------------> Memory edge used to search for value of b2.f1
+//           |          |   \---------------------------------------------> Memory edge used to search for value of b1.f1
+//           |          |
+//           \\\\\\\\\\\\-------------------------------------------------> Bases pointing to a possible scalar replaceable object
+//
+// This would be how the `_fields_and_memories` would look like when the RAM
+// is created:
+//
+//  _fields_and_memories[f1.offset] -> 3
+//  _fields_and_memories[f2.offset] -> 5
+//
+// Which means that RAM->in[3 + i] we have the memory edges to search for the
+// value of field f1 for base i. In RAM->in[5 + i] we have the memory edges
+// to search for the value of field f2 for base i.
+//
+// After an allocation is scalar replaced the memory edges references are
+// replaced by the actual value of the field found during scalar replacement.
+// Suppose only the first base was scalar replaced, the inputs to RAM would
+// look like this:
+//
+//     0     1    2      3        4        5        6
+// RAM(ctrl, TOP, base2, f1_b1_V, f1_b2_m, f2_b1_V, f2_b2_m)
+//           |    |      |        |        |        |
+//           |    |      |        |        |        \-------------------> Memory edge used to search for value of b2.f2
+//           |    |      |        |        \----------------------------> VALUE for b1.f2
+//           |    |      |        |
+//           |    |      |        \-------------------------------------> Memory edge used to search for value of b2.f1
+//           |    |      \----------------------------------------------> VALUE for b1.f1
+//           |    |
+//           |    \-----------------------------------------------------> This base wasn't scalar replaced.
+//           |
+//           \----------------------------------------------------------> This base was scalar replaced.
+//
+// During RAM node removal (see macro.cpp) "value" Phis are used to merge
+// the possible values for each field. If a field reference is still pointing
+// to a Memory edge then a Load is created to load the value from there.
+// The illustration above would produce the following resulting graph.
+//
+//  f1_b1_V              AddP       f2_b1_V              AddP
+//   \          f1_b2_m  /           \          f2_b2_m  /
+//    \           |     /             \           |     /
+//     \          |    /               \          |    /
+//      \         Load                  \         Load
+//       \       /                       \       /
+//        \     /                         \     /
+//          Phi                             Phi
+//           |                               |
+//           v                               v
+//     {use1, use2, ...}               {use1, use2, ...}
+//
+//
+// There should be no RAM node in the graph after macro nodes are eliminated.
+//
 class ReducedAllocationMergeNode : public TypeNode {
 private:
   ciKlass* _klass;                  // Which Klass is the merge for
@@ -1072,7 +1140,7 @@ public:
     return (*_fields_and_memories)[(void*)offset] != NULL;
   }
 
-  void register_addp(AddPNode* n);
+  void register_addp(AddPNode* addp);
   void register_offset_of_all_fields(Node* memory);
   void register_offset(jlong offset, Node* memory, bool override = false);
   bool register_use(Node* n);

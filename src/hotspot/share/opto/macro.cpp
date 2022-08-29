@@ -1197,6 +1197,45 @@ bool PhaseMacroExpand::eliminate_boxing_node(CallStaticJavaNode *boxing) {
   return true;
 }
 
+bool PhaseMacroExpand::eliminate_ram_addp_use(ReducedAllocationMergeNode *ram, AddPNode* addp) {
+  jlong offset = addp->in(AddPNode::Offset)->find_long_con(-1);
+  assert(offset != -1, "Didn't find constant offset for AddP.");
+
+  Node* value_phi = ram->value_phi_for_field(offset, &_igvn);
+  if (value_phi == NULL) {
+    C->record_failure(C2Compiler::retry_no_reduce_allocation_merges());
+    return false;
+  }
+
+  _igvn._worklist.push(value_phi);
+
+  for (DUIterator_Fast jmax, j = addp->fast_outs(jmax); j < jmax; j++) {
+    Node* addp_use = addp->fast_out(j);
+
+    if (addp_use->is_Load()) {
+      Node* load = addp_use; // just for readability
+
+      for (DUIterator_Last kmin, k = load->last_outs(kmin); k >= kmin;) {
+        Node* load_use = load->last_out(k);
+
+        _igvn.hash_delete(load_use);
+        int removed = load_use->replace_edge(load, value_phi, &_igvn);
+        _igvn.hash_insert(load_use);
+        _igvn._worklist.push(load_use);
+
+        assert(removed > 0, "should be at least 1.");
+        k -= removed;
+      }
+    }
+    else {
+      assert(false, "Unexpected use of AddP.");
+      return false;
+    }
+  }
+
+  return true;
+}
+
 bool PhaseMacroExpand::eliminate_reduced_allocation_merge(ReducedAllocationMergeNode *ram) {
   ciKlass* klass             = ram->klass();
   ciInstanceKlass* iklass    = klass->as_instance_klass();
@@ -1207,42 +1246,8 @@ bool PhaseMacroExpand::eliminate_reduced_allocation_merge(ReducedAllocationMerge
     Node* use = ram->fast_out(i);
 
     if (use->is_AddP()) {
-      Node* addp = use; // just for readability
-      jlong offset = addp->in(AddPNode::Offset)->find_long_con(-1);
-
-      assert(offset != -1, "Didn't find constant offset for AddP.");
-
-      Node* value_phi = ram->value_phi_for_field(offset, &_igvn);
-
-      if (value_phi == NULL) {
-        C->record_failure(C2Compiler::retry_no_reduce_allocation_merges());
+      if (eliminate_ram_addp_use(ram, use->as_AddP()) == false) {
         return false;
-      }
-
-      _igvn._worklist.push(value_phi);
-
-      for (DUIterator_Fast jmax, j = addp->fast_outs(jmax); j < jmax; j++) {
-        Node* addp_use = addp->fast_out(j);
-
-        if (addp_use->is_Load()) {
-          Node* load = addp_use; // just for readability
-
-          for (DUIterator_Last kmin, k = load->last_outs(kmin); k >= kmin;) {
-            Node* load_use = load->last_out(k);
-
-            _igvn.hash_delete(load_use);
-            int removed = load_use->replace_edge(load, value_phi, &_igvn);
-            _igvn.hash_insert(load_use);
-            _igvn._worklist.push(load_use);
-
-            assert(removed > 0, "should be at least 1.");
-            k -= removed;
-          }
-        }
-        else {
-          assert(false, "Unexpected use of AddP.");
-          return false;
-        }
       }
     }
     else if (use->Opcode() == Op_SafePoint || use->is_CallStaticJava()) {
@@ -1322,43 +1327,8 @@ bool PhaseMacroExpand::eliminate_reduced_allocation_merge(ReducedAllocationMerge
     }
     else if (use->is_DecodeN()) {
       for (DUIterator_Fast jmax, j = use->fast_outs(jmax); j < jmax; j++) {
-        Node* addp = use->fast_out(j);
-
-        jlong offset = addp->in(AddPNode::Offset)->find_long_con(-1);
-
-        assert(offset != -1, "Didn't find constant offset for AddP.");
-
-        Node* value_phi = ram->value_phi_for_field(offset, &_igvn);
-
-        if (value_phi == NULL) {
-          C->record_failure(C2Compiler::retry_no_reduce_allocation_merges());
+        if (eliminate_ram_addp_use(ram, use->fast_out(j)->as_AddP()) == false) {
           return false;
-        }
-
-        _igvn._worklist.push(value_phi);
-
-        for (DUIterator_Fast kmax, k = addp->fast_outs(kmax); k < kmax; k++) {
-          Node* addp_use = addp->fast_out(k);
-
-          if (addp_use->is_Load()) {
-            Node* load = addp_use; // just for readability
-
-            for (DUIterator_Last lmin, l = load->last_outs(lmin); l >= lmin;) {
-              Node* load_use = load->last_out(l);
-
-              _igvn.hash_delete(load_use);
-              int removed = load_use->replace_edge(load, value_phi, &_igvn);
-              _igvn.hash_insert(load_use);
-              _igvn._worklist.push(load_use);
-
-              assert(removed > 0, "should be at least 1.");
-              l -= removed;
-            }
-          }
-          else {
-            assert(false, "Unexpected use of AddP.");
-            return false;
-          }
         }
       }
     }
