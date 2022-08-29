@@ -22,7 +22,7 @@
  */
 
 super public class BadStateAtLongCmp
-	version 61:0
+	version 52:0
 {
   public static Field field:I;
 
