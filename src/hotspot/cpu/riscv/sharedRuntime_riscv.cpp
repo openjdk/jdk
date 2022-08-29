@@ -1455,8 +1455,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
     //  load oop into a register
     __ movoop(c_rarg1,
-              JNIHandles::make_local(method->method_holder()->java_mirror()),
-              /*immediate*/true);
+              JNIHandles::make_local(method->method_holder()->java_mirror()));
 
     // Now handlize the static class mirror it's known not-null.
     __ sd(c_rarg1, Address(sp, klass_offset));

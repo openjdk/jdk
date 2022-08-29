@@ -1646,11 +1646,8 @@ void MacroAssembler::cmp_klass(Register oop, Register trial_klass, Register tmp,
   beq(trial_klass, tmp, L);
 }
 
-// Move an oop into a register. immediate is true if we want
-// immediate instructions and nmethod entry barriers are not enabled.
-// i.e. we are not going to patch this instruction while the code is being
-// executed by another thread.
-void MacroAssembler::movoop(Register dst, jobject obj, bool immediate) {
+// Move an oop into a register.
+void MacroAssembler::movoop(Register dst, jobject obj) {
   int oop_index;
   if (obj == NULL) {
     oop_index = oop_recorder()->allocate_oop_index(obj);
@@ -1667,7 +1664,7 @@ void MacroAssembler::movoop(Register dst, jobject obj, bool immediate) {
 
   // nmethod entry barrier necessitate using the constant pool. They have to be
   // ordered with respected to oop access.
-  if (BarrierSet::barrier_set()->barrier_set_nmethod() != NULL || !immediate) {
+  if (BarrierSet::barrier_set()->barrier_set_nmethod() != NULL) {
     address dummy = address(uintptr_t(pc()) & -wordSize); // A nearby aligned address
     ld_constant(dst, Address(dummy, rspec));
   } else

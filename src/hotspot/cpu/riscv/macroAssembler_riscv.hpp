@@ -175,7 +175,7 @@ class MacroAssembler: public Assembler {
   void resolve_oop_handle(Register result, Register tmp = x15);
   void resolve_jobject(Register value, Register thread, Register tmp);
 
-  void movoop(Register dst, jobject obj, bool immediate = false);
+  void movoop(Register dst, jobject obj);
   void mov_metadata(Register dst, Metadata* obj);
   void bang_stack_size(Register size, Register tmp);
   void set_narrow_oop(Register dst, jobject obj);
