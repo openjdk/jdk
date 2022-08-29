@@ -227,7 +227,7 @@ else
 endif
 
 # Unless we are creating a very large module, use the small tool JVM options
-JMOD_SMALL_FLAGS=
+JMOD_SMALL_FLAGS :=
 ifeq ($(findstring $(MODULE), java.base java.desktop jdk.localedata), )
   JMOD_SMALL_FLAGS += $(JAVA_TOOL_FLAGS_SMALL)
 endif
