@@ -505,8 +505,7 @@ class PhaseCFG : public Phase {
   // goes the same direction for most of the optimizer and are used to give a
   // fake exit path to infinite loops.  At this late stage they need to turn
   // into Goto's so that when you enter the infinite loop you indeed hang.
-  // Return the target block of the fake exit path.
-  Block* convert_NeverBranch_to_Goto(Block* b);
+  void convert_NeverBranch_to_Goto(Block *b);
 
   CFGLoop* create_loop_tree();
   bool is_dominator(Node* dom_node, Node* node);
@@ -614,6 +613,10 @@ class PhaseCFG : public Phase {
   void remove_empty_blocks();
   Block *fixup_trap_based_check(Node *branch, Block *block, int block_pos, Block *bnext);
   void fixup_flow();
+  // Remove all blocks that are transitively unreachable. Such blocks can be
+  // found e.g. after PhaseCFG::convert_NeverBranch_to_Goto(). This function
+  // assumes post-fixup_flow() block indices (Block::_pre_order, Block::_rpo).
+  void remove_unreachable_blocks();
 
   // Insert a node into a block at index and map the node to the block
   void insert(Block *b, uint idx, Node *n) {

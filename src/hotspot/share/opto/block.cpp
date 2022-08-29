@@ -572,7 +572,12 @@ static bool no_flip_branch(Block *b) {
   return false;
 }
 
-Block* PhaseCFG::convert_NeverBranch_to_Goto(Block* b) {
+// Check for NeverBranch at block end.  This needs to become a GOTO to the
+// true target.  NeverBranch are treated as a conditional branch that always
+// goes the same direction for most of the optimizer and are used to give a
+// fake exit path to infinite loops.  At this late stage they need to turn
+// into Goto's so that when you enter the infinite loop you indeed hang.
+void PhaseCFG::convert_NeverBranch_to_Goto(Block *b) {
   // Find true target
   int end_idx = b->end_idx();
   int idx = b->get_node(end_idx+1)->as_Proj()->_con;
@@ -607,7 +612,6 @@ Block* PhaseCFG::convert_NeverBranch_to_Goto(Block* b) {
   for (int k = 1; dead->get_node(k)->is_Phi(); k++) {
     dead->get_node(k)->del_req(j);
   }
-  return dead;
 }
 
 // Helper function to move block bx to the slot following b_index. Return
@@ -682,7 +686,6 @@ void PhaseCFG::remove_empty_blocks() {
   uint last = number_of_blocks();
   assert(get_block(0) == get_root_block(), "");
 
-  Block_List unreachable; // Worklist of unreachable blocks to be removed.
   for (uint i = 1; i < last; i++) {
     Block* block = get_block(i);
     if (block->is_connector()) {
@@ -696,11 +699,7 @@ void PhaseCFG::remove_empty_blocks() {
     // need to turn into Goto's so that when you enter the infinite loop you
     // indeed hang.
     if (block->get_node(block->end_idx())->Opcode() == Op_NeverBranch) {
-      Block* dead = convert_NeverBranch_to_Goto(block);
-      // If the fake exit block becomes unreachable, save it for later removal.
-      if (dead->is_trivially_unreachable()) {
-        unreachable.push(dead);
-      }
+      convert_NeverBranch_to_Goto(block);
     }
 
     // Look for uncommon blocks and move to end.
@@ -730,41 +729,6 @@ void PhaseCFG::remove_empty_blocks() {
       i--;
     }
   } // End of for all blocks
-
-  // Remove all blocks that are transitively unreachable after the
-  // NeverBranch-to-Goto conversion.
-  while (unreachable.size() > 0) {
-    Block* dead = unreachable.pop();
-    for (uint i = 0; i < number_of_blocks(); i++) {
-      Block* block = get_block(i);
-      if (block == dead) {
-        _blocks.remove(i);
-        _number_of_blocks--;
-        i--; // Ensure that we visit the block following the removed one.
-      }
-      if (block->_pre_order > dead->_pre_order) {
-        // Enforce contiguous pre-order indices (assumed by PhaseBlockLayout).
-        block->_pre_order--;
-      }
-      if (block->_rpo > dead->_rpo) {
-        // Enforce contiguous reverse post-order indices as well, for sanity.
-        block->_rpo--;
-      }
-    }
-    // Update the successors' predecessor list and push new unreachable blocks.
-    for (uint i = 0; i < dead->_num_succs; i++) {
-      Block* succ = dead->_succs[i];
-      Node* head = succ->head();
-      for (int j = head->req() - 1; j >= 1; j--) {
-        if (get_block_for_node(head->in(j)) == dead) {
-          head->del_req(j);
-        }
-      }
-      if (succ->is_trivially_unreachable()) {
-        unreachable.push(succ);
-      }
-    }
-  }
 }
 
 Block *PhaseCFG::fixup_trap_based_check(Node *branch, Block *block, int block_pos, Block *bnext) {
@@ -981,6 +945,52 @@ void PhaseCFG::fixup_flow() {
   } // End of for all blocks
 }
 
+void PhaseCFG::remove_unreachable_blocks() {
+  ResourceMark rm;
+  Block_List unreachable;
+  // Initialize worklist of unreachable blocks to be removed.
+  for (uint i = 0; i < number_of_blocks(); i++) {
+    Block* block = get_block(i);
+    if (block->is_trivially_unreachable()) {
+      unreachable.push(block);
+    }
+  }
+  // Now remove all blocks that are transitively unreachable.
+  while (unreachable.size() > 0) {
+    Block* dead = unreachable.pop();
+    for (uint i = 0; i < _number_of_blocks; i++) {
+      Block* block = get_block(i);
+      if (block == dead) {
+        _blocks.remove(i);
+        _number_of_blocks--;
+        i--; // Ensure that we visit the block following the removed one.
+        continue;
+      }
+      if (block->_pre_order > dead->_pre_order) {
+        // When this code runs (after PhaseCFG::fixup_flow()), Block::_pre_order
+        // does not contain pre-order indices but simple block list indices.
+        // Ensure they stay contiguous.
+        // Block::_rpo does not contain valid reverse post-order indices anymore
+        // (they are invalidated by block insertions in PhaseCFG::fixup_flow()),
+        // so there is no need to update them.
+        block->_pre_order--;
+      }
+    }
+    // Update the successors' predecessor list and push new unreachable blocks.
+    for (uint i = 0; i < dead->_num_succs; i++) {
+      Block* succ = dead->_succs[i];
+      Node* head = succ->head();
+      for (int j = head->req() - 1; j >= 1; j--) {
+        if (get_block_for_node(head->in(j)) == dead) {
+          head->del_req(j);
+        }
+      }
+      if (succ->is_trivially_unreachable()) {
+        unreachable.push(succ);
+      }
+    }
+  }
+}
 
 // postalloc_expand: Expand nodes after register allocation.
 //
