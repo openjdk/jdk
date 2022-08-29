@@ -75,7 +75,7 @@ public final class LabelsRemapper {
                             remap(map, lt.label(), cob));
                 case ExceptionCatch ec ->
                     cob.exceptionCatch(
-                            remap(map, ec.tryEnd(), cob),
+                            remap(map, ec.tryStart(), cob),
                             remap(map, ec.tryEnd(), cob),
                             remap(map, ec.handler(), cob),
                             ec.catchType());
