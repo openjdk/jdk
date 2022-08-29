@@ -49,33 +49,19 @@ inline ConstantPool* fieldDescriptor::constants() const {
   return _cp();
 }
 
-inline FieldInfo* fieldDescriptor::field() const {
-  InstanceKlass* ik = field_holder();
-  return ik->field(_index);
-}
-
-inline int fieldDescriptor::offset()                    const    { return field()->offset(); }
-inline bool fieldDescriptor::has_initial_value()        const    { return field()->initval_index() != 0; }
-inline int fieldDescriptor::initial_value_index()       const    { return field()->initval_index(); }
-
-inline void fieldDescriptor::update_klass_field_access_flag() {
-  InstanceKlass* ik = field_holder();
-  ik->field(index())->set_access_flags(_access_flags.as_short());
-}
-
 inline void fieldDescriptor::set_is_field_access_watched(const bool value) {
-  _access_flags.set_is_field_access_watched(value);
-  update_klass_field_access_flag();
+  FieldInfo::FieldStatus& status = field_holder()->find_field_status(index());
+  status.update_access_watched(true);
 }
 
 inline void fieldDescriptor::set_is_field_modification_watched(const bool value) {
-  _access_flags.set_is_field_modification_watched(value);
-  update_klass_field_access_flag();
+  FieldInfo::FieldStatus& status = field_holder()->find_field_status(index());
+  status.update_modification_watched(true);
 }
 
 inline void fieldDescriptor::set_has_initialized_final_update(const bool value) {
-  _access_flags.set_has_field_initialized_final_update(value);
-  update_klass_field_access_flag();
+  FieldInfo::FieldStatus& status = field_holder()->find_field_status(index());
+  status.update_unstable(true);
 }
 
 inline BasicType fieldDescriptor::field_type() const {

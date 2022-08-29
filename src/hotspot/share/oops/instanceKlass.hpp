@@ -40,6 +40,7 @@
 
 class klassItable;
 class RecordComponent;
+class FieldInfoStream;
 
 // An InstanceKlass is the VM level representation of a Java class.
 // It contains all information needed for at class at execution runtime.
@@ -288,24 +289,17 @@ class InstanceKlass: public Klass {
   // offset matches _default_methods offset
   Array<int>*     _default_vtable_indices;
 
-  // Instance and static variable information, starts with 6-tuples of shorts
-  // [access, name index, sig index, initval index, low_offset, high_offset]
-  // for all fields, followed by the generic signature data at the end of
-  // the array. Only fields with generic signature attributes have the generic
-  // signature data set in the array. The fields array looks like following:
-  //
-  // f1: [access, name index, sig index, initial value index, low_offset, high_offset]
-  // f2: [access, name index, sig index, initial value index, low_offset, high_offset]
-  //      ...
-  // fn: [access, name index, sig index, initial value index, low_offset, high_offset]
-  //     [generic signature index]
-  //     [generic signature index]
-  //     ...
-  Array<u2>*      _fields;
+  // Instance and static field information are stored here as a
+  // compressed stream, possibly indexed for random access.  The
+  // format is documented and implemented in the class FieldInfo.
+  FieldInfoStream* _fields;
+
+  // A side table of per-field state which can change over time.
+  // Used for infrequent chores by JVMTI, etc.
+  Array<u1>*       _field_status;  // array of FieldStatus
 
   // embedded Java vtable follows here
   // embedded Java itables follows here
-  // embedded static fields follows here
   // embedded nonstatic oop-map blocks follows here
   // embedded implementor of this interface follows here
   //   The embedded implementor only exists if the current klass is an

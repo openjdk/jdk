@@ -39,12 +39,16 @@
 // cases.
 class FieldStreamBase : public StackObj {
  protected:
-  Array<u2>*          _fields;
+  FieldInfo*          _fields;  // compressed stream of fields
+  FieldInfo::Reader   _reader;  // pointer into the stream
   constantPoolHandle  _constants;
   int                 _index;
   int                 _limit;
   int                 _generic_signature_slot;
-  fieldDescriptor     _fd_buf;
+
+  // %%% FIXME: put FieldInfo inside of fieldDescriptor:
+  fieldDescriptor     _fd_buf;  // higher-level service
+  FieldInfo           _fi_buf;  // low-level information content
 
   FieldInfo* field() const { return FieldInfo::from_field_array(_fields, _index); }
 

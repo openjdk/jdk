@@ -38,40 +38,37 @@
 
 class fieldDescriptor {
  private:
-  AccessFlags         _access_flags;
-  int                 _index; // the field index
+  FieldInfo _field;          // unpacked bitwise logical contents
   constantPoolHandle  _cp;
-
-  // update the access_flags for the field in the klass
-  inline void update_klass_field_access_flag();
-
-  inline FieldInfo* field() const;
 
  public:
   fieldDescriptor() {
     DEBUG_ONLY(_index = badInt);
   }
-  fieldDescriptor(InstanceKlass* ik, int index) {
+  fieldDescriptor(InstanceKlass* ik, FieldInfo::Reader& reader, int index) {
     DEBUG_ONLY(_index = badInt);
-    reinitialize(ik, index);
+    reinitialize(ik, reader, index);
   }
+
+  FieldInfo* field() { return &_field(); }
   inline Symbol* name() const;
   inline Symbol* signature() const;
   inline InstanceKlass* field_holder() const;
   inline ConstantPool* constants() const;
 
-  AccessFlags access_flags()      const    { return _access_flags; }
+  AccessFlags access_flags()      const    { return _field._access_flags; }
+  FieldFlags internal_flags       const    { return _field._internal_flags; }
   oop loader()                    const;
-  // Offset (in words) of field from start of instanceOop / Klass*
+  // Offset (in bytes) of field from start of instanceOop / Klass*
   inline int offset()             const;
   Symbol* generic_signature()     const;
-  int index()                     const    { return _index; }
+  int index()                     const    { return _field._index; }
   AnnotationArray* annotations()  const;
   AnnotationArray* type_annotations()  const;
 
   // Initial field value
-  inline bool has_initial_value()        const;
-  inline int initial_value_index()       const;
+  inline bool has_initial_value() const    { return _field._initializer_index != 0; }
+  inline int initial_value_index() const   { return _field._initializer_index; }
   constantTag initial_value_tag() const;  // The tag will return true on one of is_int(), is_long(), is_single(), is_double()
   jint int_initial_value()        const;
   jlong long_initial_value()      const;
@@ -96,10 +93,11 @@ class fieldDescriptor {
 
   bool is_synthetic()             const    { return access_flags().is_synthetic(); }
 
-  bool is_field_access_watched()  const    { return access_flags().is_field_access_watched(); }
-  bool is_field_modification_watched() const
-                                           { return access_flags().is_field_modification_watched(); }
-  bool has_initialized_final_update() const { return access_flags().has_field_initialized_final_update(); }
+  bool is_value_unstable() const           { return status_flag(FieldInfo::STATUS_VALUE_UNSTABLE); }
+  bool is_access_watched()  const          { return status_flag(FieldInfo::STATUS_ACCESS_WATCHED); }
+  bool is_modification_watched() const
+                                           { return status_flag(FieldInfo::STATUS_MODIFICATION_WATCHED); }
+
   bool has_generic_signature()    const    { return access_flags().field_has_generic_signature(); }
 
   bool is_trusted_final()         const;
@@ -109,7 +107,7 @@ class fieldDescriptor {
   inline void set_has_initialized_final_update(const bool value);
 
   // Initialization
-  void reinitialize(InstanceKlass* ik, int index);
+  void reinitialize(InstanceKlass* ik, FieldInfo::Reader& reader, int index);
 
   // Print
   void print() const;

@@ -110,6 +110,10 @@ protected:
       reinterpret_cast<const char*>(this) + base_offset_in_bytes());
   }
 
+  const T* limit() const  {
+    return data() + length();
+  }
+
   bool is_empty() const               { return length() == 0; }
 
   int index_of(const T& x) const {

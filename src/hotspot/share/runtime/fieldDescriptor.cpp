@@ -103,15 +103,33 @@ oop fieldDescriptor::string_initial_value(TRAPS) const {
   return constants()->uncached_string_at(initial_value_index(), THREAD);
 }
 
-void fieldDescriptor::reinitialize(InstanceKlass* ik, int index) {
+void fieldDescriptor::reinitialize(InstanceKlass* ik,
+                                   FieldInfo::Reader& reader,
+                                   int index) {
   if (_cp.is_null() || field_holder() != ik) {
     _cp = constantPoolHandle(Thread::current(), ik->constants());
     // _cp should now reference ik's constant pool; i.e., ik is now field_holder.
     assert(field_holder() == ik, "must be already initialized to this class");
+    reader = ik->fields()->skip_header();
   }
-  FieldInfo* f = ik->field(index);
-  _access_flags = accessFlags_from(f->access_flags());
-  guarantee(f->name_index() != 0 && f->signature_index() != 0, "bad constant pool index for fieldDescriptor");
+  if (index > reader.next_index() || reader.position() == 0) {
+    reader.rewind();
+  }
+  reader.skip_to_field_info(index);
+  int index2;
+  bool more = reader.read_required_field_info(index2,
+                                              _name_index,
+                                              _signature_index,
+                                              _access_flags,
+                                              _offset);
+  assert(index == index2, "");
+  if (more) {
+    reader.read_optional_field_info(_internal_flags,
+                                    _initializer_index,
+                                    _generic_signature_index,
+                                    _contention_group);
+  }
+  guarantee(name_index() != 0 && signature_index() != 0, "bad constant pool index for fieldDescriptor");
   _index = index;
   verify();
 }
