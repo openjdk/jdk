@@ -232,7 +232,7 @@ final class CertificateMessage {
                 HandshakeMessage message) throws IOException {
             // The producing happens in handshake context only.
             HandshakeContext hc = (HandshakeContext)context;
-            if (Objects.requireNonNull(hc.sslConfig).isClientMode) {
+            if (hc.sslConfig.isClientMode) {
                 return onProduceCertificate(
                         (ClientHandshakeContext)context, message);
             } else {
@@ -244,8 +244,7 @@ final class CertificateMessage {
         private byte[] onProduceCertificate(ServerHandshakeContext shc,
                 SSLHandshake.HandshakeMessage message) throws IOException {
             X509Possession x509Possession = null;
-            for (SSLPossession possession :
-                    Objects.requireNonNull(shc.handshakePossessions)) {
+            for (SSLPossession possession : shc.handshakePossessions) {
                 if (possession instanceof X509Possession) {
                     x509Possession = (X509Possession)possession;
                     break;
@@ -278,8 +277,7 @@ final class CertificateMessage {
         private byte[] onProduceCertificate(ClientHandshakeContext chc,
                 SSLHandshake.HandshakeMessage message) throws IOException {
             X509Possession x509Possession = null;
-            for (SSLPossession possession :
-                    Objects.requireNonNull(chc.handshakePossessions)) {
+            for (SSLPossession possession : chc.handshakePossessions) {
                 if (possession instanceof X509Possession) {
                     x509Possession = (X509Possession)possession;
                     break;
@@ -321,8 +319,7 @@ final class CertificateMessage {
                 chc.handshakeSession.setLocalCertificates(null);
             }
             T12CertificateMessage cm =
-                    new T12CertificateMessage(chc,
-                    Objects.requireNonNull(x509Possession.popCerts));
+                    new T12CertificateMessage(chc, x509Possession.popCerts);
             if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine(
                     "Produced client Certificate handshake message", cm);
@@ -358,7 +355,7 @@ final class CertificateMessage {
             hc.handshakeConsumers.remove(SSLHandshake.CERTIFICATE.id);
 
             T12CertificateMessage cm = new T12CertificateMessage(hc, message);
-            if (Objects.requireNonNull(hc.sslConfig).isClientMode) {
+            if (hc.sslConfig.isClientMode) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
                         "Consuming server Certificate handshake message", cm);
@@ -381,7 +378,7 @@ final class CertificateMessage {
                 // a CertificateVerify message to follow
                 shc.handshakeConsumers.remove(
                         SSLHandshake.CERTIFICATE_VERIFY.id);
-                if (Objects.requireNonNull(shc.sslConfig).clientAuthType !=
+                if (shc.sslConfig.clientAuthType !=
                         ClientAuthType.CLIENT_AUTH_REQUESTED) {
                     // unexpected or require client authentication
                     throw shc.conContext.fatal(Alert.BAD_CERTIFICATE,
@@ -410,7 +407,7 @@ final class CertificateMessage {
             //
             // update
             //
-            Objects.requireNonNull(shc.handshakeCredentials).add(
+            shc.handshakeCredentials.add(
                 new X509Credentials(x509Certs[0].getPublicKey(), x509Certs));
             shc.handshakeSession.setPeerCertificates(x509Certs);
         }
@@ -448,8 +445,7 @@ final class CertificateMessage {
                     !chc.handshakeSession.useExtendedMasterSecret) {
                 // It is not necessary to check the certificate update if
                 // endpoint identification is enabled.
-                String identityAlg = Objects.requireNonNull(chc.sslConfig).
-                        identificationProtocol;
+                String identityAlg = chc.sslConfig.identificationProtocol;
                 if ((identityAlg == null || identityAlg.isEmpty()) &&
                         !isIdentityEquivalent(x509Certs[0],
                                 chc.reservedServerCerts[0])) {
@@ -474,7 +470,7 @@ final class CertificateMessage {
             //
             // update
             //
-            Objects.requireNonNull(chc.handshakeCredentials).add(
+            chc.handshakeCredentials.add(
                 new X509Credentials(x509Certs[0].getPublicKey(), x509Certs));
             chc.handshakeSession.setPeerCertificates(x509Certs);
         }
@@ -953,7 +949,7 @@ final class CertificateMessage {
                 HandshakeMessage message) throws IOException {
             // The producing happens in handshake context only.
             HandshakeContext hc = (HandshakeContext)context;
-            if (Objects.requireNonNull(hc.sslConfig).isClientMode) {
+            if (hc.sslConfig.isClientMode) {
                 return onProduceCertificate(
                         (ClientHandshakeContext)context, message);
             } else {
@@ -984,7 +980,7 @@ final class CertificateMessage {
             }
 
             // update the context
-            Objects.requireNonNull(shc.handshakePossessions).add(x509Possession);
+            shc.handshakePossessions.add(x509Possession);
             shc.handshakeSession.setLocalPrivateKey(
                     x509Possession.popPrivateKey);
             shc.handshakeSession.setLocalCertificates(localCerts);
@@ -1008,8 +1004,7 @@ final class CertificateMessage {
             // into the ServerHandshakeContext so individual extension
             // producers know which X509Certificate it is processing in
             // each call.
-            SSLExtension[] enabledCTExts =
-                    Objects.requireNonNull(shc.sslConfig).getEnabledExtensions(
+            SSLExtension[] enabledCTExts = shc.sslConfig.getEnabledExtensions(
                     SSLHandshake.CERTIFICATE,
                     Arrays.asList(ProtocolVersion.PROTOCOLS_OF_13));
             for (CertificateEntry certEnt : cm.certEntries) {
@@ -1076,7 +1071,7 @@ final class CertificateMessage {
                 }
                 localCerts = new X509Certificate[0];
             } else {
-                Objects.requireNonNull(chc.handshakePossessions).add(pos);
+                chc.handshakePossessions.add(pos);
                 if (!(pos instanceof X509Possession x509Possession)) {
                     if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                         SSLLogger.fine(
@@ -1099,8 +1094,7 @@ final class CertificateMessage {
             T13CertificateMessage cm;
             try {
                 cm = new T13CertificateMessage(
-                        chc, chc.certRequestContext,
-                        Objects.requireNonNull(localCerts));
+                        chc, chc.certRequestContext, localCerts);
             } catch (SSLException | CertificateException ce) {
                 throw chc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                         "Failed to produce client Certificate message", ce);
@@ -1136,7 +1130,7 @@ final class CertificateMessage {
             // clean up this consumer
             hc.handshakeConsumers.remove(SSLHandshake.CERTIFICATE.id);
             T13CertificateMessage cm = new T13CertificateMessage(hc, message);
-            if (Objects.requireNonNull(hc.sslConfig).isClientMode) {
+            if (hc.sslConfig.isClientMode) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
                         "Consuming server Certificate handshake message", cm);
@@ -1159,8 +1153,7 @@ final class CertificateMessage {
                 // a CertificateVerify message to follow
                 shc.handshakeConsumers.remove(
                         SSLHandshake.CERTIFICATE_VERIFY.id);
-                if (Objects.requireNonNull(shc.sslConfig).
-                        clientAuthType == CLIENT_AUTH_REQUIRED) {
+                if (shc.sslConfig.clientAuthType == CLIENT_AUTH_REQUIRED) {
                     throw shc.conContext.fatal(Alert.BAD_CERTIFICATE,
                         "Empty client certificate chain");
                 } else {
@@ -1176,7 +1169,7 @@ final class CertificateMessage {
             //
             // update
             //
-            Objects.requireNonNull(shc.handshakeCredentials).add(
+            shc.handshakeCredentials.add(
                 new X509Credentials(cliCerts[0].getPublicKey(), cliCerts));
             shc.handshakeSession.setPeerCertificates(cliCerts);
         }
@@ -1192,8 +1185,7 @@ final class CertificateMessage {
             // Each CertificateEntry will have its own set of extensions
             // which must be consumed.
             SSLExtension[] enabledExtensions =
-                    Objects.requireNonNull(chc.sslConfig).
-                    getEnabledExtensions(SSLHandshake.CERTIFICATE);
+                    chc.sslConfig.getEnabledExtensions(SSLHandshake.CERTIFICATE);
             for (CertificateEntry certEnt : certificateMessage.certEntries) {
                 certEnt.extensions.consumeOnLoad(chc, enabledExtensions);
             }
@@ -1205,7 +1197,7 @@ final class CertificateMessage {
             //
             // update
             //
-            Objects.requireNonNull(chc.handshakeCredentials).add(
+            chc.handshakeCredentials.add(
                 new X509Credentials(srvCerts[0].getPublicKey(), srvCerts));
             chc.handshakeSession.setPeerCertificates(srvCerts);
         }

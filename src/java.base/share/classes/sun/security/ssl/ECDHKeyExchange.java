@@ -40,7 +40,6 @@ import java.security.spec.ECParameterSpec;
 import java.security.spec.ECPoint;
 import java.security.spec.ECPublicKeySpec;
 import java.util.EnumSet;
-import java.util.Objects;
 import javax.crypto.KeyAgreement;
 import javax.crypto.SecretKey;
 import javax.net.ssl.SSLHandshakeException;
@@ -287,8 +286,7 @@ final class ECDHKeyExchange {
                 ServerHandshakeContext shc) throws IOException {
             X509Possession x509Possession = null;
             ECDHECredentials ecdheCredentials = null;
-            for (SSLPossession poss :
-                    Objects.requireNonNull(shc.handshakePossessions)) {
+            for (SSLPossession poss : shc.handshakePossessions) {
                 if (!(poss instanceof X509Possession)) {
                     continue;
                 }
@@ -307,8 +305,7 @@ final class ECDHKeyExchange {
                         "Unsupported EC server cert for ECDH key exchange");
                 }
 
-                for (SSLCredentials cred :
-                        Objects.requireNonNull(shc.handshakeCredentials)) {
+                for (SSLCredentials cred : shc.handshakeCredentials) {
                     if (!(cred instanceof ECDHECredentials)) {
                         continue;
                     }
@@ -337,15 +334,13 @@ final class ECDHKeyExchange {
                 ClientHandshakeContext chc) throws IOException {
             ECDHEPossession ecdhePossession = null;
             X509Credentials x509Credentials = null;
-            for (SSLPossession poss :
-                    Objects.requireNonNull(chc.handshakePossessions)) {
+            for (SSLPossession poss : chc.handshakePossessions) {
                 if (!(poss instanceof ECDHEPossession)) {
                     continue;
                 }
 
                 NamedGroup ng = ((ECDHEPossession)poss).namedGroup;
-                for (SSLCredentials cred :
-                        Objects.requireNonNull(chc.handshakeCredentials)) {
+                for (SSLCredentials cred : chc.handshakeCredentials) {
                     if (!(cred instanceof X509Credentials)) {
                         continue;
                     }
@@ -397,15 +392,13 @@ final class ECDHKeyExchange {
                 HandshakeContext context) throws IOException {
             ECDHEPossession ecdhePossession = null;
             ECDHECredentials ecdheCredentials = null;
-            for (SSLPossession poss :
-                    Objects.requireNonNull(context.handshakePossessions)) {
+            for (SSLPossession poss : context.handshakePossessions) {
                 if (!(poss instanceof ECDHEPossession)) {
                     continue;
                 }
 
                 NamedGroup ng = ((ECDHEPossession)poss).namedGroup;
-                for (SSLCredentials cred :
-                        Objects.requireNonNull(context.handshakeCredentials)) {
+                for (SSLCredentials cred : context.handshakeCredentials) {
                     if (!(cred instanceof ECDHECredentials)) {
                         continue;
                     }
@@ -452,10 +445,8 @@ final class ECDHKeyExchange {
 
             // Find a possession/credential combo using the same named group
             search:
-            for (SSLPossession poss :
-                    Objects.requireNonNull(context.handshakePossessions)) {
-                for (SSLCredentials cred :
-                        Objects.requireNonNull(context.handshakeCredentials)) {
+            for (SSLPossession poss : context.handshakePossessions) {
+                for (SSLCredentials cred : context.handshakeCredentials) {
                     if (((poss instanceof ECDHEPossession) &&
                             (cred instanceof ECDHECredentials)) ||
                             (((poss instanceof XDHEPossession) &&

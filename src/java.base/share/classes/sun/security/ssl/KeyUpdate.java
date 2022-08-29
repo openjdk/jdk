@@ -30,7 +30,6 @@ import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
 import java.text.MessageFormat;
 import java.util.Locale;
-import java.util.Objects;
 
 import sun.security.ssl.SSLHandshake.HandshakeMessage;
 import sun.security.ssl.SSLCipher.SSLReadCipher;
@@ -320,8 +319,7 @@ final class KeyUpdate {
             // The KeyUpdate handshake message SHALL be delivered in the
             // changeWriteCiphers() implementation.
             wc.baseSecret = nplus1;
-            hc.conContext.outputRecord.changeWriteCiphers(wc,
-                    Objects.requireNonNull(km.status).id);
+            hc.conContext.outputRecord.changeWriteCiphers(wc, km.status.id);
             if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
                 SSLLogger.fine("KeyUpdate: write key updated");
             }

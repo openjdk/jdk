@@ -40,7 +40,6 @@ import java.security.spec.RSAPublicKeySpec;
 import java.text.MessageFormat;
 import java.util.EnumSet;
 import java.util.Locale;
-import java.util.Objects;
 import sun.security.ssl.RSAKeyExchange.EphemeralRSACredentials;
 import sun.security.ssl.RSAKeyExchange.EphemeralRSAPossession;
 import sun.security.ssl.SSLHandshake.HandshakeMessage;
@@ -231,8 +230,7 @@ final class RSAServerKeyExchange {
 
             EphemeralRSAPossession rsaPossession = null;
             X509Possession x509Possession = null;
-            for (SSLPossession possession :
-                    Objects.requireNonNull(shc.handshakePossessions)) {
+            for (SSLPossession possession : shc.handshakePossessions) {
                 if (possession instanceof EphemeralRSAPossession) {
                     rsaPossession = (EphemeralRSAPossession)possession;
                     if (x509Possession != null) {
@@ -319,7 +317,7 @@ final class RSAServerKeyExchange {
                         "Could not generate RSAPublicKey", gse);
             }
 
-            if (!Objects.requireNonNull(chc.algorithmConstraints).permits(
+            if (!chc.algorithmConstraints.permits(
                     EnumSet.of(CryptoPrimitive.KEY_AGREEMENT), publicKey)) {
                 throw chc.conContext.fatal(Alert.INSUFFICIENT_SECURITY,
                         "RSA ServerKeyExchange does not comply to " +
@@ -329,7 +327,7 @@ final class RSAServerKeyExchange {
             //
             // update
             //
-            Objects.requireNonNull(chc.handshakeCredentials).add(
+            chc.handshakeCredentials.add(
                     new EphemeralRSACredentials(publicKey));
 
             //

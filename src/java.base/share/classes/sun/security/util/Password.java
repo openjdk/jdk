@@ -29,7 +29,6 @@ import java.io.*;
 import java.nio.*;
 import java.nio.charset.*;
 import java.util.Arrays;
-import java.util.Objects;
 
 /**
  * A utility class for reading passwords
@@ -79,7 +78,7 @@ public class Password {
 
             boolean done = false;
             while (!done) {
-                switch (c = Objects.requireNonNull(in).read()) {
+                switch (c = in.read()) {
                   case -1:
                   case '\n':
                       done = true;

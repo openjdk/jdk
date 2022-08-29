@@ -28,7 +28,6 @@ package sun.security.pkcs;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Hashtable;
-import java.util.Objects;
 
 import sun.security.util.DerEncoder;
 import sun.security.util.DerValue;
@@ -268,8 +267,7 @@ public class PKCS9Attributes {
      * Get an attribute from this set.
      */
     public PKCS9Attribute getAttribute(String name) {
-        return attributes.get(Objects.requireNonNull(
-            PKCS9Attribute.getOID(name)));
+        return attributes.get(PKCS9Attribute.getOID(name));
     }
 
 

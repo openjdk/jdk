@@ -1150,8 +1150,7 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
             // beginning of the next flight) message.  Need not to check
             // any ChangeCipherSpec message.
             if (rFrag.contentType == ContentType.HANDSHAKE.id) {
-                while (Objects.requireNonNull(plaintextFragment).
-                         remaining() > 0) {
+                while (plaintextFragment.remaining() > 0) {
                     HandshakeFragment hsFrag = parseHandshakeMessage(
                             rFrag.contentType,
                             rFrag.majorVersion, rFrag.minorVersion,
@@ -1575,8 +1574,7 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
             }
 
             // calculate the DTLS header and reserve the handshake message
-            Objects.requireNonNull(plaintext.fragment).position(4);
-                                                // ignore the TLS header
+            plaintext.fragment.position(4);     // ignore the TLS header
             byte[] temporary = new byte[plaintext.fragment.remaining() + 12];
                                                 // 12: handshake header size
 

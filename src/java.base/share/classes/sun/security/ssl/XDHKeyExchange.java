@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,6 @@ import java.math.BigInteger;
 import java.security.*;
 import java.security.interfaces.XECPublicKey;
 import java.security.spec.*;
-import java.util.Objects;
-
 import sun.security.ssl.NamedGroup.NamedGroupSpec;
 import sun.security.util.*;
 
@@ -176,15 +174,13 @@ final class XDHKeyExchange {
                 HandshakeContext context) throws IOException {
             XDHEPossession xdhePossession = null;
             XDHECredentials xdheCredentials = null;
-            for (SSLPossession poss :
-                    Objects.requireNonNull(context.handshakePossessions)) {
+            for (SSLPossession poss : context.handshakePossessions) {
                 if (!(poss instanceof XDHEPossession)) {
                     continue;
                 }
 
                 NamedGroup ng = ((XDHEPossession) poss).namedGroup;
-                for (SSLCredentials cred :
-                        Objects.requireNonNull(context.handshakeCredentials)) {
+                for (SSLCredentials cred : context.handshakeCredentials) {
                     if (!(cred instanceof XDHECredentials)) {
                         continue;
                     }
@@ -207,8 +203,7 @@ final class XDHKeyExchange {
             }
 
             return new KAKeyDerivation("XDH", context,
-                    Objects.requireNonNull(xdhePossession).privateKey,
-                    xdheCredentials.popPublicKey);
+                    xdhePossession.privateKey, xdheCredentials.popPublicKey);
         }
     }
 }

@@ -183,7 +183,7 @@ final class CertificateAuthoritiesExtension {
             ClientHandshakeContext chc = (ClientHandshakeContext)context;
 
             // Is it a supported and enabled extension?
-            if (!Objects.requireNonNull(chc.sslConfig).isAvailable(
+            if (!chc.sslConfig.isAvailable(
                     SSLExtension.CH_CERTIFICATE_AUTHORITIES)) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
@@ -261,7 +261,7 @@ final class CertificateAuthoritiesExtension {
             ServerHandshakeContext shc = (ServerHandshakeContext)context;
 
             // Is it a supported and enabled extension?
-            if (!Objects.requireNonNull(shc.sslConfig).isAvailable(
+            if (!shc.sslConfig.isAvailable(
                     SSLExtension.CH_CERTIFICATE_AUTHORITIES)) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
@@ -304,7 +304,7 @@ final class CertificateAuthoritiesExtension {
             ServerHandshakeContext shc = (ServerHandshakeContext)context;
 
             // Is it a supported and enabled extension?
-            if (!Objects.requireNonNull(shc.sslConfig).isAvailable(
+            if (!shc.sslConfig.isAvailable(
                     SSLExtension.CR_CERTIFICATE_AUTHORITIES)) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
@@ -382,7 +382,7 @@ final class CertificateAuthoritiesExtension {
             ClientHandshakeContext chc = (ClientHandshakeContext)context;
 
             // Is it a supported and enabled extension?
-            if (!Objects.requireNonNull(chc.sslConfig).isAvailable(
+            if (!chc.sslConfig.isAvailable(
                     SSLExtension.CR_CERTIFICATE_AUTHORITIES)) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(

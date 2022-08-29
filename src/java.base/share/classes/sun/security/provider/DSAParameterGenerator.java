@@ -39,7 +39,6 @@ import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.InvalidParameterSpecException;
 import java.security.spec.DSAParameterSpec;
 import java.security.spec.DSAGenParameterSpec;
-import java.util.Objects;
 
 import static sun.security.util.SecurityProviderConstants.DEF_DSA_KEY_SIZE;
 import static sun.security.util.SecurityProviderConstants.getDefDSASubprimeSize;
@@ -186,7 +185,7 @@ public class DSAParameterGenerator extends AlgorithmParameterGeneratorSpi {
         }
 
         /* Step 3, 4: Useful variables */
-        int outLen = Objects.requireNonNull(hashObj).getDigestLength()*8;
+        int outLen = hashObj.getDigestLength()*8;
         int n = (valueL - 1) / outLen;
         int b = (valueL - 1) % outLen;
         byte[] seedBytes = new byte[seedLen/8];

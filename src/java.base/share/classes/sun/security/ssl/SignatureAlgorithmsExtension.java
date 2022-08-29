@@ -31,7 +31,6 @@ import java.text.MessageFormat;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
-import java.util.Objects;
 import javax.net.ssl.SSLProtocolException;
 import sun.security.ssl.SSLExtension.ExtensionConsumer;
 import sun.security.ssl.SSLExtension.SSLExtensionSpec;
@@ -176,7 +175,7 @@ final class SignatureAlgorithmsExtension {
             ClientHandshakeContext chc = (ClientHandshakeContext)context;
 
             // Is it a supported and enabled extension?
-            if (!Objects.requireNonNull(chc.sslConfig).isAvailable(
+            if (!chc.sslConfig.isAvailable(
                     SSLExtension.CH_SIGNATURE_ALGORITHMS)) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
@@ -229,7 +228,7 @@ final class SignatureAlgorithmsExtension {
             ServerHandshakeContext shc = (ServerHandshakeContext)context;
 
             // Is it a supported and enabled extension?
-            if (!Objects.requireNonNull(shc.sslConfig).isAvailable(
+            if (!shc.sslConfig.isAvailable(
                     SSLExtension.CH_SIGNATURE_ALGORITHMS)) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
@@ -299,13 +298,13 @@ final class SignatureAlgorithmsExtension {
 
             if (!shc.isResumption &&
                     shc.negotiatedProtocol.useTLS13PlusSpec()) {
-                if (Objects.requireNonNull(shc.sslConfig).clientAuthType !=
+                if (shc.sslConfig.clientAuthType !=
                         ClientAuthType.CLIENT_AUTH_NONE) {
-                    Objects.requireNonNull(shc.handshakeProducers).putIfAbsent(
+                    shc.handshakeProducers.putIfAbsent(
                             SSLHandshake.CERTIFICATE_REQUEST.id,
                             SSLHandshake.CERTIFICATE_REQUEST);
                 }
-                Objects.requireNonNull(shc.handshakeProducers).put(
+                shc.handshakeProducers.put(
                         SSLHandshake.CERTIFICATE.id,
                         SSLHandshake.CERTIFICATE);
                 shc.handshakeProducers.putIfAbsent(
@@ -405,7 +404,7 @@ final class SignatureAlgorithmsExtension {
             //
             // Note that this is a mandatory extension for CertificateRequest
             // handshake message in TLS 1.3.
-            if (!Objects.requireNonNull(shc.sslConfig).isAvailable(
+            if (!shc.sslConfig.isAvailable(
                     SSLExtension.CR_SIGNATURE_ALGORITHMS)) {
                 throw shc.conContext.fatal(Alert.MISSING_EXTENSION,
                         "No available signature_algorithms extension " +
@@ -456,7 +455,7 @@ final class SignatureAlgorithmsExtension {
             //
             // Note that this is a mandatory extension for CertificateRequest
             // handshake message in TLS 1.3.
-            if (!Objects.requireNonNull(chc.sslConfig).isAvailable(
+            if (!chc.sslConfig.isAvailable(
                     SSLExtension.CR_SIGNATURE_ALGORITHMS)) {
                 throw chc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                         "No available signature_algorithms extension " +

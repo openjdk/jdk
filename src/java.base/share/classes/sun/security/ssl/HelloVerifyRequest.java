@@ -29,8 +29,6 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.text.MessageFormat;
 import java.util.Locale;
-import java.util.Objects;
-
 import sun.security.ssl.ClientHello.ClientHelloMessage;
 import sun.security.ssl.SSLHandshake.HandshakeMessage;
 
@@ -138,8 +136,7 @@ final class HelloVerifyRequest {
             ServerHandshakeContext shc = (ServerHandshakeContext)context;
 
             // clean up this producer
-            Objects.requireNonNull(shc.handshakeProducers).
-                    remove(SSLHandshake.HELLO_VERIFY_REQUEST.id);
+            shc.handshakeProducers.remove(SSLHandshake.HELLO_VERIFY_REQUEST.id);
 
             HelloVerifyRequestMessage hvrm =
                     new HelloVerifyRequestMessage(shc, message);
@@ -155,8 +152,7 @@ final class HelloVerifyRequest {
             // update the context
 
             // Stateless, clean up the handshake context as well?
-            Objects.requireNonNull(shc.handshakeHash).finish();
-                    // forgot about the handshake hash
+            shc.handshakeHash.finish();     // forgot about the handshake hash
             shc.handshakeExtensions.clear();
 
             // What's the expected response?
@@ -197,8 +193,7 @@ final class HelloVerifyRequest {
             }
 
             // Refresh handshake hash.
-            Objects.requireNonNull(chc.handshakeHash).finish();
-                    // forgot about the handshake hash
+            chc.handshakeHash.finish();     // forgot about the handshake hash
 
             HelloVerifyRequestMessage hvrm =
                     new HelloVerifyRequestMessage(chc, message);

@@ -34,7 +34,6 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.util.Date;
 import java.util.Enumeration;
-import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -216,7 +215,7 @@ public class KeyStoreDelegator extends KeyStoreSpi {
             if (debug != null) {
                 debug.println("Creating a new keystore in " + type + " format");
             }
-            Objects.requireNonNull(keystore).engineLoad(null, password);
+            keystore.engineLoad(stream, password);
 
         } else {
             // First try the primary keystore then try the secondary keystore
@@ -226,8 +225,7 @@ public class KeyStoreDelegator extends KeyStoreSpi {
             try {
                 @SuppressWarnings("deprecation")
                 KeyStoreSpi tmp = primaryKeyStore.newInstance();
-                Objects.requireNonNull(tmp).
-                        engineLoad(bufferedStream, password);
+                tmp.engineLoad(bufferedStream, password);
                 keystore = tmp;
                 type = primaryType;
 
@@ -248,8 +246,7 @@ public class KeyStoreDelegator extends KeyStoreSpi {
                     @SuppressWarnings("deprecation")
                     KeyStoreSpi tmp = secondaryKeyStore.newInstance();
                     bufferedStream.reset();
-                    Objects.requireNonNull(tmp).
-                            engineLoad(bufferedStream, password);
+                    tmp.engineLoad(bufferedStream, password);
                     keystore = tmp;
                     type = secondaryType;
 
@@ -306,7 +303,7 @@ public class KeyStoreDelegator extends KeyStoreSpi {
             KeyStoreSpi tmp = primaryKeyStore.newInstance();
             keystore = tmp;
             type = primaryType;
-            result = Objects.requireNonNull(keystore).engineProbe(stream);
+            result = keystore.engineProbe(stream);
 
         } catch (Exception e) {
             throw new IOException(e);

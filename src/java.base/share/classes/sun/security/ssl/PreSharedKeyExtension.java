@@ -337,8 +337,7 @@ final class PreSharedKeyExtension {
             ClientHelloMessage clientHello = (ClientHelloMessage) message;
             ServerHandshakeContext shc = (ServerHandshakeContext)context;
             // Is it a supported and enabled extension?
-            if (!Objects.requireNonNull(shc.sslConfig).
-                    isAvailable(SSLExtension.CH_PRE_SHARED_KEY)) {
+            if (!shc.sslConfig.isAvailable(SSLExtension.CH_PRE_SHARED_KEY)) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
                             "Ignore unavailable pre_shared_key extension");
@@ -540,7 +539,7 @@ final class PreSharedKeyExtension {
             byte[] binder = chPsk.binders.get(shPsk.selectedIdentity);
 
             // set up PSK binder hash
-            HandshakeHash pskBinderHash = Objects.requireNonNull(shc.handshakeHash).copy();
+            HandshakeHash pskBinderHash = shc.handshakeHash.copy();
             byte[] lastMessage = pskBinderHash.removeLastReceived();
             ByteBuffer messageBuf = ByteBuffer.wrap(lastMessage);
             // skip the type and length
@@ -719,7 +718,7 @@ final class PreSharedKeyExtension {
             ClientHelloMessage clientHello = (ClientHelloMessage)message;
             CHPreSharedKeySpec pskPrototype = createPskPrototype(
                 chc.resumingSession.getSuite().hashAlg.hashLength, identities);
-            HandshakeHash pskBinderHash = Objects.requireNonNull(chc.handshakeHash).copy();
+            HandshakeHash pskBinderHash = chc.handshakeHash.copy();
 
             byte[] binder = computeBinder(chc, binderKey, pskBinderHash,
                     chc.resumingSession, chc, clientHello, pskPrototype);

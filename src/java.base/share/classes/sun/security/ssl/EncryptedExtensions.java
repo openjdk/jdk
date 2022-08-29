@@ -29,8 +29,6 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.text.MessageFormat;
 import java.util.Locale;
-import java.util.Objects;
-
 import sun.security.ssl.SSLHandshake.HandshakeMessage;
 
 /**
@@ -132,7 +130,7 @@ final class EncryptedExtensions {
             EncryptedExtensionsMessage eem =
                     new EncryptedExtensionsMessage(shc);
             SSLExtension[] extTypes =
-                    Objects.requireNonNull(shc.sslConfig).getEnabledExtensions(
+                    shc.sslConfig.getEnabledExtensions(
                             SSLHandshake.ENCRYPTED_EXTENSIONS,
                             shc.negotiatedProtocol);
             eem.extensions.produce(shc, extTypes);
@@ -178,8 +176,8 @@ final class EncryptedExtensions {
             //
             // validate
             //
-            SSLExtension[] extTypes = Objects.requireNonNull(chc.sslConfig).
-                    getEnabledExtensions( SSLHandshake.ENCRYPTED_EXTENSIONS);
+            SSLExtension[] extTypes = chc.sslConfig.getEnabledExtensions(
+                    SSLHandshake.ENCRYPTED_EXTENSIONS);
             eem.extensions.consumeOnLoad(chc, extTypes);
 
             //

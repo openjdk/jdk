@@ -31,7 +31,6 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.text.MessageFormat;
 import java.util.Locale;
-import java.util.Objects;
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
@@ -415,7 +414,7 @@ final class SessionTicketExtension {
             if (chc.localSupportedSignAlgs == null) {
                 chc.localSupportedSignAlgs =
                         SignatureScheme.getSupportedAlgorithms(
-                                Objects.requireNonNull(chc.sslConfig),
+                                chc.sslConfig,
                                 chc.algorithmConstraints, chc.activeProtocols);
             }
 
@@ -436,8 +435,7 @@ final class SessionTicketExtension {
             ServerHandshakeContext shc = (ServerHandshakeContext) context;
 
             // Skip if extension is not provided
-            if (!Objects.requireNonNull(shc.sslConfig).
-                    isAvailable(CH_SESSION_TICKET)) {
+            if (!shc.sslConfig.isAvailable(CH_SESSION_TICKET)) {
                 return;
             }
 
@@ -521,8 +519,7 @@ final class SessionTicketExtension {
             ClientHandshakeContext chc = (ClientHandshakeContext) context;
 
             // Skip if extension is not provided
-            if (!Objects.requireNonNull(chc.sslConfig).
-                    isAvailable(SH_SESSION_TICKET)) {
+            if (!chc.sslConfig.isAvailable(SH_SESSION_TICKET)) {
                 chc.statelessResumption = false;
                 return;
             }

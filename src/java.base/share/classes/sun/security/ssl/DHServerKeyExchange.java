@@ -43,7 +43,6 @@ import java.text.MessageFormat;
 import java.util.EnumSet;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
 import javax.crypto.interfaces.DHPublicKey;
 import javax.crypto.spec.DHParameterSpec;
 import javax.crypto.spec.DHPublicKeySpec;
@@ -133,7 +132,7 @@ final class DHServerKeyExchange {
                                     x509Possession,
                                     shc.negotiatedProtocol);
                     if (schemeAndSigner == null) {
-                        // Unlikely, the credential's generator should have
+                        // Unlikely, the credentials generator should have
                         // selected the preferable signature algorithm properly.
                         throw shc.conContext.fatal(Alert.INTERNAL_ERROR,
                                 "No supported signature algorithm for " +
@@ -261,7 +260,7 @@ final class DHServerKeyExchange {
             }
 
             try {
-                updateSignature(Objects.requireNonNull(signer),
+                updateSignature(signer,
                         chc.clientHelloRandom.randomBytes,
                         chc.serverHelloRandom.randomBytes);
 
@@ -534,7 +533,7 @@ final class DHServerKeyExchange {
                     "Could not generate DHPublicKey", gse);
             }
 
-            if (!Objects.requireNonNull(chc.algorithmConstraints).permits(
+            if (!chc.algorithmConstraints.permits(
                     EnumSet.of(CryptoPrimitive.KEY_AGREEMENT), publicKey)) {
                 throw chc.conContext.fatal(Alert.INSUFFICIENT_SECURITY,
                         "DH ServerKeyExchange does not comply to " +
@@ -545,7 +544,7 @@ final class DHServerKeyExchange {
             // update
             //
             NamedGroup namedGroup = NamedGroup.valueOf(publicKey.getParams());
-            Objects.requireNonNull(chc.handshakeCredentials).add(
+            chc.handshakeCredentials.add(
                     new DHECredentials(publicKey, namedGroup));
 
             //

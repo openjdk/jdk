@@ -128,7 +128,7 @@ final class CertificateRequest {
             ArrayList<String> keyTypes = new ArrayList<>(3);
             for (byte id : ids) {
                 ClientCertificateType cct = ClientCertificateType.valueOf(id);
-                if (Objects.requireNonNull(cct).isAvailable) {
+                if (cct.isAvailable) {
                     cct.keyAlgorithm.forEach(key -> {
                         if (!keyTypes.contains(key)) {
                             keyTypes.add(key);
@@ -365,8 +365,8 @@ final class CertificateRequest {
             //
 
             // An empty client Certificate handshake message may be allowed.
-            Objects.requireNonNull(chc.handshakeProducers).
-                    put(SSLHandshake.CERTIFICATE.id, SSLHandshake.CERTIFICATE);
+            chc.handshakeProducers.put(SSLHandshake.CERTIFICATE.id,
+                    SSLHandshake.CERTIFICATE);
 
             X509ExtendedKeyManager km = chc.sslContext.getX509KeyManager();
             String clientAlias = null;
@@ -402,7 +402,7 @@ final class CertificateRequest {
                 return;
             }
 
-            Objects.requireNonNull(chc.handshakePossessions).add(
+            chc.handshakePossessions.add(
                     new X509Possession(clientPrivateKey, clientCerts));
             chc.handshakeProducers.put(SSLHandshake.CERTIFICATE_VERIFY.id,
                     SSLHandshake.CERTIFICATE_VERIFY);
@@ -610,7 +610,7 @@ final class CertificateRequest {
             if (shc.localSupportedSignAlgs == null) {
                 shc.localSupportedSignAlgs =
                     SignatureScheme.getSupportedAlgorithms(
-                            Objects.requireNonNull(shc.sslConfig),
+                            shc.sslConfig,
                             shc.algorithmConstraints, shc.activeProtocols);
             }
 
@@ -701,8 +701,8 @@ final class CertificateRequest {
             //
 
             // An empty client Certificate handshake message may be allowed.
-            Objects.requireNonNull(chc.handshakeProducers).
-                    put(SSLHandshake.CERTIFICATE.id, SSLHandshake.CERTIFICATE);
+            chc.handshakeProducers.put(SSLHandshake.CERTIFICATE.id,
+                    SSLHandshake.CERTIFICATE);
 
             List<SignatureScheme> sss =
                     SignatureScheme.getSupportedAlgorithms(
@@ -729,7 +729,7 @@ final class CertificateRequest {
                 return;
             }
 
-            Objects.requireNonNull(chc.handshakePossessions).add(pos);
+            chc.handshakePossessions.add(pos);
             chc.handshakeProducers.put(SSLHandshake.CERTIFICATE_VERIFY.id,
                     SSLHandshake.CERTIFICATE_VERIFY);
         }
@@ -884,8 +884,7 @@ final class CertificateRequest {
             T13CertificateRequestMessage crm =
                     new T13CertificateRequestMessage(shc);
             // Produce extensions for CertificateRequest handshake message.
-            SSLExtension[] extTypes = Objects.requireNonNull(shc.sslConfig).
-                    getEnabledExtensions(
+            SSLExtension[] extTypes = shc.sslConfig.getEnabledExtensions(
                     SSLHandshake.CERTIFICATE_REQUEST, shc.negotiatedProtocol);
             crm.extensions.produce(shc, extTypes);
             if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
@@ -948,8 +947,8 @@ final class CertificateRequest {
             //
             // validate
             //
-            SSLExtension[] extTypes = Objects.requireNonNull(chc.sslConfig).
-                    getEnabledExtensions(SSLHandshake.CERTIFICATE_REQUEST);
+            SSLExtension[] extTypes = chc.sslConfig.getEnabledExtensions(
+                    SSLHandshake.CERTIFICATE_REQUEST);
             crm.extensions.consumeOnLoad(chc, extTypes);
 
             //
@@ -961,8 +960,8 @@ final class CertificateRequest {
             // produce
             //
             chc.certRequestContext = crm.requestContext.clone();
-            Objects.requireNonNull(chc.handshakeProducers).
-                    put(SSLHandshake.CERTIFICATE.id, SSLHandshake.CERTIFICATE);
+            chc.handshakeProducers.put(SSLHandshake.CERTIFICATE.id,
+                    SSLHandshake.CERTIFICATE);
             chc.handshakeProducers.put(SSLHandshake.CERTIFICATE_VERIFY.id,
                     SSLHandshake.CERTIFICATE_VERIFY);
         }

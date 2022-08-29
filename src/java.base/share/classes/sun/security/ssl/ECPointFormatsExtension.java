@@ -29,7 +29,6 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.text.MessageFormat;
 import java.util.Locale;
-import java.util.Objects;
 import javax.net.ssl.SSLProtocolException;
 import static sun.security.ssl.SSLExtension.CH_EC_POINT_FORMATS;
 import sun.security.ssl.SSLExtension.ExtensionConsumer;
@@ -171,8 +170,7 @@ final class ECPointFormatsExtension {
             ClientHandshakeContext chc = (ClientHandshakeContext)context;
 
             // Is it a supported and enabled extension?
-            if (!Objects.requireNonNull(chc.sslConfig).
-                    isAvailable(CH_EC_POINT_FORMATS)) {
+            if (!chc.sslConfig.isAvailable(CH_EC_POINT_FORMATS)) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
                         "Ignore unavailable ec_point_formats extension");
@@ -184,7 +182,7 @@ final class ECPointFormatsExtension {
             //
             // produce the extension only if EC cipher suite is activated.
             if (NamedGroupSpec.NAMED_GROUP_ECDHE.isSupported(
-                    Objects.requireNonNull(chc.activeCipherSuites))) {
+                    chc.activeCipherSuites)) {
                 // We are using uncompressed ECPointFormat only at present.
                 byte[] extData = new byte[] {0x01, 0x00};
 
@@ -222,8 +220,7 @@ final class ECPointFormatsExtension {
             ServerHandshakeContext shc = (ServerHandshakeContext)context;
 
             // Is it a supported and enabled extension?
-            if (!Objects.requireNonNull(shc.sslConfig).
-                    isAvailable(CH_EC_POINT_FORMATS)) {
+            if (!shc.sslConfig.isAvailable(CH_EC_POINT_FORMATS)) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
                         "Ignore unavailable ec_point_formats extension");

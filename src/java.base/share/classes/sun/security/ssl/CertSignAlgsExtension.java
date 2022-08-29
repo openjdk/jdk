@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,6 @@ package sun.security.ssl;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.List;
-import java.util.Objects;
-
 import sun.security.ssl.SSLExtension.ExtensionConsumer;
 import sun.security.ssl.SSLHandshake.HandshakeMessage;
 import sun.security.ssl.SignatureAlgorithmsExtension.SignatureSchemesSpec;
@@ -87,7 +85,7 @@ final class CertSignAlgsExtension {
             ClientHandshakeContext chc = (ClientHandshakeContext)context;
 
             // Is it a supported and enabled extension?
-            if (!Objects.requireNonNull(chc.sslConfig).isAvailable(
+            if (!chc.sslConfig.isAvailable(
                     SSLExtension.CH_SIGNATURE_ALGORITHMS_CERT)) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
@@ -142,7 +140,7 @@ final class CertSignAlgsExtension {
             ServerHandshakeContext shc = (ServerHandshakeContext)context;
 
             // Is it a supported and enabled extension?
-            if (!Objects.requireNonNull(shc.sslConfig).isAvailable(
+            if (!shc.sslConfig.isAvailable(
                     SSLExtension.CH_SIGNATURE_ALGORITHMS_CERT)) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
@@ -198,14 +196,13 @@ final class CertSignAlgsExtension {
             shc.handshakeSession.setPeerSupportedSignatureAlgorithms(schemes);
 
             if (!shc.isResumption && shc.negotiatedProtocol.useTLS13PlusSpec()) {
-                if (Objects.requireNonNull(shc.sslConfig).clientAuthType !=
+                if (shc.sslConfig.clientAuthType !=
                         ClientAuthType.CLIENT_AUTH_NONE) {
-                    Objects.requireNonNull(shc.handshakeProducers).putIfAbsent(
+                    shc.handshakeProducers.putIfAbsent(
                             SSLHandshake.CERTIFICATE_REQUEST.id,
                             SSLHandshake.CERTIFICATE_REQUEST);
                 }
-                Objects.requireNonNull(shc.handshakeProducers).
-                        put(SSLHandshake.CERTIFICATE.id,
+                shc.handshakeProducers.put(SSLHandshake.CERTIFICATE.id,
                         SSLHandshake.CERTIFICATE);
                 shc.handshakeProducers.putIfAbsent(
                         SSLHandshake.CERTIFICATE_VERIFY.id,
@@ -232,7 +229,7 @@ final class CertSignAlgsExtension {
             ServerHandshakeContext shc = (ServerHandshakeContext)context;
 
             // Is it a supported and enabled extension?
-            if (!Objects.requireNonNull(shc.sslConfig).isAvailable(
+            if (!shc.sslConfig.isAvailable(
                     SSLExtension.CH_SIGNATURE_ALGORITHMS_CERT)) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
@@ -283,7 +280,7 @@ final class CertSignAlgsExtension {
             ClientHandshakeContext chc = (ClientHandshakeContext)context;
 
             // Is it a supported and enabled extension?
-            if (!Objects.requireNonNull(chc.sslConfig).isAvailable(
+            if (!chc.sslConfig.isAvailable(
                     SSLExtension.CH_SIGNATURE_ALGORITHMS_CERT)) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(

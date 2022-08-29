@@ -209,7 +209,7 @@ public class Providers {
     }
 
     // Change the thread local provider list. Use only if the current thread
-    // is already using a thread local list, and you want to change it in place.
+    // is already using a thread local list and you want to change it in place.
     // In other cases, use the begin/endThreadProviderList() methods.
     private static void changeThreadProviderList(ProviderList list) {
         threadLists.set(list);

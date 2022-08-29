@@ -161,8 +161,7 @@ final class AlpnExtension {
             ClientHandshakeContext chc = (ClientHandshakeContext)context;
 
             // Is it a supported and enabled extension?
-            if (!Objects.requireNonNull(chc.sslConfig).
-                    isAvailable(SSLExtension.CH_ALPN)) {
+            if (!chc.sslConfig.isAvailable(SSLExtension.CH_ALPN)) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.info(
                             "Ignore client unavailable extension: " +
@@ -269,8 +268,7 @@ final class AlpnExtension {
             ServerHandshakeContext shc = (ServerHandshakeContext)context;
 
             // Is it a supported and enabled extension?
-            if (!Objects.requireNonNull(shc.sslConfig).
-                    isAvailable(SSLExtension.CH_ALPN)) {
+            if (!shc.sslConfig.isAvailable(SSLExtension.CH_ALPN)) {
                 shc.applicationProtocol = "";
                 shc.conContext.applicationProtocol = "";
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
@@ -391,8 +389,7 @@ final class AlpnExtension {
 
             List<String> alps = requestedAlps.applicationProtocols;
             if (shc.conContext.transport instanceof SSLEngine) {
-                if (Objects.requireNonNull(shc.sslConfig).
-                        engineAPSelector != null) {
+                if (shc.sslConfig.engineAPSelector != null) {
                     SSLEngine engine = (SSLEngine)shc.conContext.transport;
                     shc.applicationProtocol =
                         shc.sslConfig.engineAPSelector.apply(engine, alps);
@@ -405,8 +402,7 @@ final class AlpnExtension {
                     }
                 }
             } else {
-                if (Objects.requireNonNull(shc.sslConfig).
-                        socketAPSelector != null) {
+                if (shc.sslConfig.socketAPSelector != null) {
                     SSLSocket socket = (SSLSocket)shc.conContext.transport;
                     shc.applicationProtocol =
                         shc.sslConfig.socketAPSelector.apply(socket, alps);

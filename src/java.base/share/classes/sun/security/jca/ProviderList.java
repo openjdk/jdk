@@ -126,7 +126,7 @@ public final class ProviderList {
         ProviderConfig[] configs = new ProviderConfig[providerList.size() - 1];
         int j = 0;
         for (ProviderConfig config : providerList.configs) {
-            if (!Objects.requireNonNull(config.getProvider()).getName().equals(name)) {
+            if (!config.getProvider().getName().equals(name)) {
                 configs[j++] = config;
             }
         }
@@ -373,7 +373,7 @@ public final class ProviderList {
                 (pList = preferredPropList.getAll(type, name)) != null) {
             for (i = 0; i < pList.size(); i++) {
                 Provider p = getProvider(pList.get(i).provider);
-                Service s = Objects.requireNonNull(p).getService(type, name);
+                Service s = p.getService(type, name);
                 if (s != null) {
                     return s;
                 }
@@ -524,7 +524,7 @@ public final class ProviderList {
                     }
                 } else {
                     // parallel lookup
-                    for (ServiceId id : Objects.requireNonNull(ids)) {
+                    for (ServiceId id : ids) {
                         Service s = p.getService(id.type, id.algorithm);
                         if (s != null) {
                             addService(s);
@@ -673,10 +673,10 @@ public final class ProviderList {
 
     // Individual preferred property entry from jdk.security.provider.preferred
     private static class PreferredEntry {
-        private String type = null;
+        private final String type;
         private final String algorithm;
         private final String provider;
-        private String[] alternateNames = null;
+        private final String[] alternateNames;
         private boolean group = false;
 
         PreferredEntry(String t, String p) {
@@ -685,6 +685,7 @@ public final class ProviderList {
                 type = t.substring(0, i);
                 algorithm = t.substring(i + 1);
             } else {
+                type = null;
                 algorithm = t;
             }
 
@@ -706,6 +707,8 @@ public final class ProviderList {
                     alternateNames = SHA3Group;
                 } else if (algorithm.compareToIgnoreCase("HmacSHA3") == 0) {
                     alternateNames = HmacSHA3Group;
+                } else {
+                    alternateNames = null;
                 }
                 if (alternateNames != null) {
                     group = true;
@@ -716,6 +719,8 @@ public final class ProviderList {
                 alternateNames = new String[] { "SHA-1" };
             } else if (algorithm.compareToIgnoreCase("SHA-1") == 0) {
                 alternateNames = new String[] { "SHA1" };
+            } else {
+                alternateNames = null;
             }
         }
 

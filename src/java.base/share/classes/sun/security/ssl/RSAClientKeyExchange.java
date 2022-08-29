@@ -32,7 +32,6 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.text.MessageFormat;
 import java.util.Locale;
-import java.util.Objects;
 import javax.crypto.SecretKey;
 import sun.security.ssl.RSAKeyExchange.EphemeralRSACredentials;
 import sun.security.ssl.RSAKeyExchange.EphemeralRSAPossession;
@@ -154,8 +153,7 @@ final class RSAClientKeyExchange {
 
             EphemeralRSACredentials rsaCredentials = null;
             X509Credentials x509Credentials = null;
-            for (SSLCredentials credential :
-                    Objects.requireNonNull(chc.handshakeCredentials)) {
+            for (SSLCredentials credential : chc.handshakeCredentials) {
                 if (credential instanceof EphemeralRSACredentials) {
                     rsaCredentials = (EphemeralRSACredentials)credential;
                     if (x509Credentials != null) {
@@ -185,7 +183,7 @@ final class RSAClientKeyExchange {
             RSAClientKeyExchangeMessage ckem;
             try {
                 premaster = RSAPremasterSecret.createPremasterSecret(chc);
-                Objects.requireNonNull(chc.handshakePossessions).add(premaster);
+                chc.handshakePossessions.add(premaster);
                 ckem = new RSAClientKeyExchangeMessage(
                         chc, premaster, publicKey);
             } catch (GeneralSecurityException gse) {
@@ -250,8 +248,7 @@ final class RSAClientKeyExchange {
 
             EphemeralRSAPossession rsaPossession = null;
             X509Possession x509Possession = null;
-            for (SSLPossession possession :
-                    Objects.requireNonNull(shc.handshakePossessions)) {
+            for (SSLPossession possession : shc.handshakePossessions) {
                 if (possession instanceof EphemeralRSAPossession) {
                     rsaPossession = (EphemeralRSAPossession)possession;
                     break;
@@ -284,7 +281,7 @@ final class RSAClientKeyExchange {
             try {
                 premaster =
                     RSAPremasterSecret.decode(shc, privateKey, ckem.encrypted);
-                Objects.requireNonNull(shc.handshakeCredentials).add(premaster);
+                shc.handshakeCredentials.add(premaster);
             } catch (GeneralSecurityException gse) {
                 throw shc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
                     "Cannot decode RSA premaster secret", gse);

@@ -28,7 +28,6 @@ package sun.security.ssl;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.Objects;
 import javax.net.ssl.SSLProtocolException;
 import static sun.security.ssl.SSLExtension.CH_EXTENDED_MASTER_SECRET;
 import sun.security.ssl.SSLExtension.ExtensionConsumer;
@@ -117,8 +116,7 @@ final class ExtendedMasterSecretExtension {
             ClientHandshakeContext chc = (ClientHandshakeContext)context;
 
             // Is it a supported and enabled extension?
-            if (!Objects.requireNonNull(chc.sslConfig).
-                    isAvailable(CH_EXTENDED_MASTER_SECRET) ||
+            if (!chc.sslConfig.isAvailable(CH_EXTENDED_MASTER_SECRET) ||
                     !SSLConfiguration.useExtendedMasterSecret ||
                     !chc.conContext.protocolVersion.useTLS10PlusSpec()) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
@@ -161,8 +159,7 @@ final class ExtendedMasterSecretExtension {
             ServerHandshakeContext shc = (ServerHandshakeContext)context;
 
             // Is it a supported and enabled extension?
-            if (!Objects.requireNonNull(shc.sslConfig).
-                    isAvailable(CH_EXTENDED_MASTER_SECRET) ||
+            if (!shc.sslConfig.isAvailable(CH_EXTENDED_MASTER_SECRET) ||
                     !SSLConfiguration.useExtendedMasterSecret ||
                     !shc.negotiatedProtocol.useTLS10PlusSpec()) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
@@ -214,8 +211,7 @@ final class ExtendedMasterSecretExtension {
             ServerHandshakeContext shc = (ServerHandshakeContext)context;
 
             // Is it a supported and enabled extension?
-            if (!Objects.requireNonNull(shc.sslConfig).
-                    isAvailable(CH_EXTENDED_MASTER_SECRET) ||
+            if (!shc.sslConfig.isAvailable(CH_EXTENDED_MASTER_SECRET) ||
                     !SSLConfiguration.useExtendedMasterSecret) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine("Ignore unavailable extension: " +

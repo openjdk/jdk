@@ -216,13 +216,13 @@ public final class PKIXValidator extends Validator {
 
         // add new algorithm constraints checker
         if (constraints != null) {
-            Objects.requireNonNull(pkixParameters).addCertPathChecker(
+            pkixParameters.addCertPathChecker(
                     new AlgorithmChecker(constraints, variant));
         }
 
         // attach it to the PKIXBuilderParameters.
         if (!responseList.isEmpty()) {
-            addResponses(Objects.requireNonNull(pkixParameters), chain, responseList);
+            addResponses(pkixParameters, chain, responseList);
         }
 
         // check that chain is in correct order and check if chain contains

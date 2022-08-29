@@ -434,7 +434,7 @@ public class DistributionPointFetcher {
                             debug.println("DP relativeName:" + relativeName);
                         }
                         if (indirectCRL) {
-                            if (Objects.requireNonNull(pointCrlIssuers).size() != 1) {
+                            if (pointCrlIssuers.size() != 1) {
                                 // RFC 5280: there must be only 1 CRL issuer
                                 // name when relativeName is present
                                 if (debug != null) {
@@ -444,7 +444,7 @@ public class DistributionPointFetcher {
                                 return false;
                             }
                             pointNames = getFullNames
-                                (Objects.requireNonNull(pointCrlIssuer), relativeName);
+                                (pointCrlIssuer, relativeName);
                         } else {
                             pointNames = getFullNames(certIssuer, relativeName);
                         }
@@ -479,12 +479,11 @@ public class DistributionPointFetcher {
                     // verify that one of the names in the IDP matches one of
                     // the names in the cRLIssuer of the cert's DP
                     boolean match = false;
-                    for (Iterator<GeneralName> t = Objects.requireNonNull(
-                            pointCrlIssuers).iterator();
-                                !match && t.hasNext(); ) {
+                    for (Iterator<GeneralName> t = pointCrlIssuers.iterator();
+                            !match && t.hasNext(); ) {
                         GeneralNameInterface crlIssuerName = t.next().getName();
                         for (Iterator<GeneralName> i = idpNames.iterator();
-                             !match && i.hasNext(); ) {
+                                !match && i.hasNext(); ) {
                             GeneralNameInterface idpName = i.next().getName();
                             match = crlIssuerName.equals(idpName);
                         }

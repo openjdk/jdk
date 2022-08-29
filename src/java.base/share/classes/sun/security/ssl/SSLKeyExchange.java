@@ -400,8 +400,7 @@ final class SSLKeyExchange implements SSLKeyAgreementGenerator,
                 return (Map.Entry<Byte, HandshakeProducer>[])(new Map.Entry[0]);
             }
 
-            if (Objects.requireNonNull(handshakeContext.sslConfig).
-                    isClientMode) {
+            if (handshakeContext.sslConfig.isClientMode) {
                 switch (this) {
                     case RSA:
                     case RSA_EXPORT:
@@ -484,8 +483,7 @@ final class SSLKeyExchange implements SSLKeyAgreementGenerator,
                 return (Map.Entry<Byte, SSLConsumer>[])(new Map.Entry[0]);
             }
 
-            if (Objects.requireNonNull(handshakeContext.sslConfig).
-                    isClientMode) {
+            if (handshakeContext.sslConfig.isClientMode) {
                 switch (this) {
                     case RSA_EXPORT:
                         return (Map.Entry<Byte,

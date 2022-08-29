@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,6 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.spec.InvalidKeySpecException;
-import java.util.Objects;
 import javax.crypto.interfaces.DHPublicKey;
 import javax.crypto.spec.DHParameterSpec;
 import javax.crypto.spec.DHPublicKeySpec;
@@ -416,14 +415,12 @@ final class DHKeyExchange {
                 HandshakeContext context) throws IOException {
             DHEPossession dhePossession = null;
             DHECredentials dheCredentials = null;
-            for (SSLPossession poss :
-                    Objects.requireNonNull(context.handshakePossessions)) {
+            for (SSLPossession poss : context.handshakePossessions) {
                 if (!(poss instanceof DHEPossession dhep)) {
                     continue;
                 }
 
-                for (SSLCredentials cred :
-                        Objects.requireNonNull(context.handshakeCredentials)) {
+                for (SSLCredentials cred : context.handshakeCredentials) {
                     if (!(cred instanceof DHECredentials dhec)) {
                         continue;
                     }

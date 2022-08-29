@@ -32,7 +32,6 @@ import java.text.MessageFormat;
 import java.util.Arrays;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
 
 import sun.security.ssl.SSLHandshake.HandshakeMessage;
 import sun.security.ssl.X509Authentication.X509Credentials;
@@ -240,8 +239,7 @@ final class CertificateVerify {
             ClientHandshakeContext chc = (ClientHandshakeContext)context;
 
             X509Possession x509Possession = null;
-            for (SSLPossession possession :
-                    Objects.requireNonNull(chc.handshakePossessions)) {
+            for (SSLPossession possession : chc.handshakePossessions) {
                 if (possession instanceof X509Possession) {
                     x509Possession = (X509Possession)possession;
                     break;
@@ -496,8 +494,7 @@ final class CertificateVerify {
             // The producing happens in client side only.
             ClientHandshakeContext chc = (ClientHandshakeContext)context;
             X509Possession x509Possession = null;
-            for (SSLPossession possession :
-                    Objects.requireNonNull(chc.handshakePossessions)) {
+            for (SSLPossession possession : chc.handshakePossessions) {
                 if (possession instanceof X509Possession) {
                     x509Possession = (X509Possession)possession;
                     break;
@@ -673,8 +670,7 @@ final class CertificateVerify {
             try {
                 Signature signer =
                     signatureScheme.getVerifier(x509Credentials.popPublicKey);
-                Objects.requireNonNull(signer).
-                        update(shc.handshakeHash.archived());
+                signer.update(shc.handshakeHash.archived());
                 if (!signer.verify(signature)) {
                     throw shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                         "Invalid CertificateVerify signature");
@@ -748,8 +744,7 @@ final class CertificateVerify {
             ClientHandshakeContext chc = (ClientHandshakeContext)context;
 
             X509Possession x509Possession = null;
-            for (SSLPossession possession :
-                    Objects.requireNonNull(chc.handshakePossessions)) {
+            for (SSLPossession possession : chc.handshakePossessions) {
                 if (possession instanceof X509Possession) {
                     x509Possession = (X509Possession)possession;
                     break;
@@ -1012,7 +1007,7 @@ final class CertificateVerify {
             try {
                 Signature signer =
                     signatureScheme.getVerifier(x509Credentials.popPublicKey);
-                Objects.requireNonNull(signer).update(contentCovered);
+                signer.update(contentCovered);
                 if (!signer.verify(signature)) {
                     throw context.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                         "Invalid CertificateVerify signature");
@@ -1086,8 +1081,7 @@ final class CertificateVerify {
             HandshakeContext hc = (HandshakeContext)context;
 
             X509Possession x509Possession = null;
-            for (SSLPossession possession :
-                    Objects.requireNonNull(hc.handshakePossessions)) {
+            for (SSLPossession possession : hc.handshakePossessions) {
                 if (possession instanceof X509Possession) {
                     x509Possession = (X509Possession)possession;
                     break;
@@ -1104,7 +1098,7 @@ final class CertificateVerify {
                 return null;
             }
 
-            if (Objects.requireNonNull(hc.sslConfig).isClientMode) {
+            if (hc.sslConfig.isClientMode) {
                 return onProduceCertificateVerify(
                         (ClientHandshakeContext)context, x509Possession);
             } else {

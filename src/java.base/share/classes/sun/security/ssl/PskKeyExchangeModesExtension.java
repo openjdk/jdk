@@ -182,7 +182,7 @@ final class PskKeyExchangeModesExtension {
             ServerHandshakeContext shc = (ServerHandshakeContext)context;
 
             // Is it a supported and enabled extension?
-            if (!Objects.requireNonNull(shc.sslConfig).isAvailable(
+            if (!shc.sslConfig.isAvailable(
                     SSLExtension.PSK_KEY_EXCHANGE_MODES)) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
@@ -245,7 +245,7 @@ final class PskKeyExchangeModesExtension {
             ClientHandshakeContext chc = (ClientHandshakeContext)context;
 
             // Is it a supported and enabled extension?
-            if (!Objects.requireNonNull(chc.sslConfig).isAvailable(
+            if (!chc.sslConfig.isAvailable(
                     SSLExtension.PSK_KEY_EXCHANGE_MODES)) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.warning(

@@ -210,7 +210,7 @@ final class DTLSOutputRecord extends OutputRecord implements DTLSRecord {
             throw new SSLHandshakeException("sequence number overflow");
         }
 
-        // Don't process the incoming record until all the buffered records
+        // Don't process the incoming record until all buffered records
         // get handled.  May need retransmission if no sources specified.
         if (!isEmpty() || sources == null || sources.length == 0) {
             Ciphertext ct = acquireCiphertext(destination);
@@ -508,8 +508,8 @@ final class DTLSOutputRecord extends OutputRecord implements DTLSRecord {
             long recordSN = encrypt(memo.encodeCipher,
                     memo.contentType, dstBuf,
                     dstPos, dstLim, headerSize,
-                    Objects.requireNonNull(ProtocolVersion.
-                            valueOf(memo.majorVersion, memo.minorVersion)));
+                    ProtocolVersion.valueOf(memo.majorVersion,
+                            memo.minorVersion));
 
             if (SSLLogger.isOn && SSLLogger.isOn("packet")) {
                 ByteBuffer temporary = dstBuf.duplicate();

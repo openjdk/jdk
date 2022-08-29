@@ -41,8 +41,6 @@ import java.text.MessageFormat;
 import java.util.EnumSet;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
-
 import sun.security.ssl.SSLHandshake.HandshakeMessage;
 import sun.security.ssl.SupportedGroupsExtension.SupportedGroups;
 import sun.security.ssl.X509Authentication.X509Credentials;
@@ -305,7 +303,7 @@ final class ECDHServerKeyExchange {
             }
 
             try {
-                updateSignature(Objects.requireNonNull(signer),
+                updateSignature(signer,
                         chc.clientHelloRandom.randomBytes,
                         chc.serverHelloRandom.randomBytes,
                         namedGroup.id, publicPoint);
@@ -532,8 +530,7 @@ final class ECDHServerKeyExchange {
             //
             // update
             //
-            Objects.requireNonNull(chc.handshakeCredentials).
-                    add(skem.sslCredentials);
+            chc.handshakeCredentials.add(skem.sslCredentials);
 
             //
             // produce

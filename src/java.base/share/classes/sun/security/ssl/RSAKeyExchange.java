@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,6 @@ import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.AlgorithmParameterSpec;
-import java.util.Objects;
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
@@ -258,16 +257,14 @@ final class RSAKeyExchange {
                 HandshakeContext context) throws IOException {
             RSAPremasterSecret premaster = null;
             if (context instanceof ClientHandshakeContext) {
-                for (SSLPossession possession :
-                        Objects.requireNonNull(context.handshakePossessions)) {
+                for (SSLPossession possession : context.handshakePossessions) {
                     if (possession instanceof RSAPremasterSecret) {
                         premaster = (RSAPremasterSecret)possession;
                         break;
                     }
                 }
             } else {
-                for (SSLCredentials credential :
-                        Objects.requireNonNull(context.handshakeCredentials)) {
+                for (SSLCredentials credential : context.handshakeCredentials) {
                     if (credential instanceof RSAPremasterSecret) {
                         premaster = (RSAPremasterSecret)credential;
                         break;

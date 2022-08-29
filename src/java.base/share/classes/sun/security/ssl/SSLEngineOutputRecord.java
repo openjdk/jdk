@@ -28,7 +28,6 @@ package sun.security.ssl;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.LinkedList;
-import java.util.Objects;
 import javax.net.ssl.SSLHandshakeException;
 
 import sun.security.ssl.SSLCipher.SSLWriteCipher;
@@ -389,7 +388,7 @@ final class SSLEngineOutputRecord extends OutputRecord implements SSLRecord {
             HandshakeMemo memo = new HandshakeMemo();
 
             memo.contentType = ContentType.HANDSHAKE.id;
-            memo.majorVersion = protocolVersion.major;  // kick-start version?
+            memo.majorVersion = protocolVersion.major;  // kick start version?
             memo.minorVersion = protocolVersion.minor;
             memo.encodeCipher = writeCipher;
 
@@ -538,8 +537,8 @@ final class SSLEngineOutputRecord extends OutputRecord implements SSLRecord {
                     memo.encodeCipher,
                     memo.contentType, dstBuf,
                     dstPos, dstLim, headerSize,
-                    Objects.requireNonNull(ProtocolVersion.
-                            valueOf(memo.majorVersion, memo.minorVersion)));
+                    ProtocolVersion.valueOf(memo.majorVersion,
+                            memo.minorVersion));
             if (memo.disposeCipher) {
                 memo.encodeCipher.dispose();
             }

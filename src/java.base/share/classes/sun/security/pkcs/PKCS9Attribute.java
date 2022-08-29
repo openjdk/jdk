@@ -29,7 +29,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.security.cert.CertificateException;
 import java.util.Date;
-import java.util.Objects;
 
 import sun.security.x509.CertificateExtensions;
 import sun.security.util.*;
@@ -432,7 +431,7 @@ public class PKCS9Attribute implements DerEncoder {
         Byte tag;
         for (DerValue elem : elems) {
             tag = elem.tag;
-            if (indexOf(tag, Objects.requireNonNull(PKCS9_VALUE_TAGS[index]), 0) == -1)
+            if (indexOf(tag, PKCS9_VALUE_TAGS[index], 0) == -1)
                 throwTagException(tag);
         }
 
@@ -796,7 +795,7 @@ public class PKCS9Attribute implements DerEncoder {
         msg.append(tag.toString());
         msg.append(".  Expected tags: ");
 
-        msg.append(Objects.requireNonNull(expectedTags)[0].toString());
+        msg.append(expectedTags[0].toString());
 
         for (int i = 1; i < expectedTags.length; i++) {
             msg.append(", ");
