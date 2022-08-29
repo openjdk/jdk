@@ -2771,7 +2771,9 @@ bool PhaseIdealLoop::is_scaled_iv(Node* exp, Node* iv, BasicType bt, jlong* p_sc
       // AddX(iv*K1, iv*K2) => iv*(K1+K2)
       jlong scale_sum = java_add(scale_l, scale_r);
       if (scale_sum > max_signed_integer(exp_bt) || scale_sum < min_signed_integer(exp_bt)) {
-        // Int scales may overflow as we are using jlong to compute.
+        // This logic is shared by int and long. For int, the result may overflow
+        // as we use jlong to compute so do the check here. Long result may also
+        // overflow but that's fine because result wraps.
         return false;
       }
       if (p_scale != NULL) {
@@ -2812,7 +2814,9 @@ bool PhaseIdealLoop::is_scaled_iv(Node* exp, Node* iv, BasicType bt, jlong* p_sc
         // SubX(iv*K1, iv*K2) => iv*(K1-K2)
         jlong scale_diff = java_subtract(scale_l, scale_r);
         if (scale_diff > max_signed_integer(exp_bt) || scale_diff < min_signed_integer(exp_bt)) {
-          // Int scales may overflow as we are using jlong to compute.
+          // This logic is shared by int and long. For int, the result may
+          // overflow as we use jlong to compute so do the check here. Long
+          // result may also overflow but that's fine because result wraps.
           return false;
         }
         if (p_scale != NULL) {
