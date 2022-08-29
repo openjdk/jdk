@@ -30,15 +30,16 @@ import java.util.List;
 /**
  * Class to build the failure message output of IR matching failures.
  *
+ * TODO: Remove
  * @see AbstractIRMethodMatchResult
  */
 class IRMatcherFailureMessageBuilder {
 
-    public static String build(List<AbstractIRMethodMatchResult> results) {
+    public static String build(TestClassResult testClassResult) {
         StringBuilder failuresBuilder = new StringBuilder();
-        failuresBuilder.append(buildHeaderMessage(results));
+        failuresBuilder.append(buildHeaderMessage(testClassResult));
         int failureNumber = 1;
-        for (AbstractIRMethodMatchResult irMethodResult : results) {
+        for (AbstractIRMethodMatchResult irMethodResult : testClassResult.getResults()) {
             if (irMethodResult.fail()) {
                 failuresBuilder.append(buildIRMethodFailureMessage(failureNumber, irMethodResult));
                 failureNumber++;
@@ -48,9 +49,9 @@ class IRMatcherFailureMessageBuilder {
         return failuresBuilder.toString();
     }
 
-    private static String buildHeaderMessage(List<AbstractIRMethodMatchResult> results) {
-        int failedIRRulesCount = getFailedIRRulesCount(results);
-        long failedMethodCount = getFailedMethodCount(results);
+    private static String buildHeaderMessage(TestClassResult testClassResult) {
+        int failedIRRulesCount = getFailedIRRulesCount(testClassResult);
+        long failedMethodCount = getFailedMethodCount(testClassResult);
         return "One or more @IR rules failed:" + System.lineSeparator() + System.lineSeparator()
                + "Failed IR Rules (" + failedIRRulesCount + ") of Methods (" + failedMethodCount + ")"
                + System.lineSeparator()
@@ -58,12 +59,16 @@ class IRMatcherFailureMessageBuilder {
                + System.lineSeparator();
     }
 
-    private static int getFailedIRRulesCount(List<AbstractIRMethodMatchResult> results) {
-        return results.stream().map(AbstractIRMethodMatchResult::getFailedIRRuleCount).reduce(0, Integer::sum);
+    private static int getFailedIRRulesCount(TestClassResult testClassResult) {
+        return testClassResult.getResults().stream()
+                              .map(AbstractIRMethodMatchResult::getFailedIRRuleCount)
+                              .reduce(0, Integer::sum);
     }
 
-    private static long getFailedMethodCount(List<AbstractIRMethodMatchResult> results) {
-        return results.stream().filter(AbstractIRMethodMatchResult::fail).count();
+    private static long getFailedMethodCount(TestClassResult testClassResult) {
+        return testClassResult.getResults().stream()
+                              .filter(AbstractIRMethodMatchResult::fail)
+                              .count();
     }
 
     private static int digitCount(long digit) {
@@ -73,11 +78,7 @@ class IRMatcherFailureMessageBuilder {
     private static String buildIRMethodFailureMessage(int failureNumber, AbstractIRMethodMatchResult result) {
         int failureNumberDigitCount = String.valueOf(failureNumber).length();
         // Format: "X) Method..." -> Initial indentation = digitsCount(X) + ) + " "
-//        return failureNumber + ")" + result.buildFailureMessage(failureNumberDigitCount + 2) + System.lineSeparator();
-
-        FailureMessageBuilder builder = new FailureMessageBuilder(failureNumberDigitCount + 2);
-        result.accept(builder);
-        return failureNumber + ")" + builder.build() + System.lineSeparator();
+        return failureNumber + ")" + result.buildFailureMessage(failureNumberDigitCount + 2) + System.lineSeparator();
     }
 
     private static String buildFooterMessage() {

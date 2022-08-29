@@ -23,8 +23,10 @@
 
 package compiler.lib.ir_framework.driver.irmatching.parser;
 
+import compiler.lib.ir_framework.driver.irmatching.TestClass;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethod;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -46,13 +48,13 @@ public class MethodCompilationParser {
      * Parse the IR encoding and hotspot_pid* file to create a collection of {@link IRMethod} objects.
      * Return null if there are no applicable @IR rules in any method of the test class.
      */
-    public List<IRMethod> parse(String hotspotPidFileName, String irEncoding) {
+    public TestClass parse(String hotspotPidFileName, String irEncoding) {
         IREncodingParser irEncodingParser = new IREncodingParser(testClass);
         Map<String, TestMethod> testCompilationsMap = irEncodingParser.parse(irEncoding);
         if (!testCompilationsMap.isEmpty()) {
             HotSpotPidFileParser hotSpotPidFileParser = new HotSpotPidFileParser(testClass.getName(), testCompilationsMap);
             return hotSpotPidFileParser.parseCompilations(hotspotPidFileName);
         }
-        return null;
+        return new TestClass(new ArrayList<>());
     }
 }

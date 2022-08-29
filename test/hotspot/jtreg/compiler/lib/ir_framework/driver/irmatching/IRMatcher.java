@@ -35,46 +35,26 @@ import java.util.*;
  */
 public class IRMatcher {
     public static final String SAFEPOINT_WHILE_PRINTING_MESSAGE = "<!-- safepoint while printing -->";
-    private final List<IRMethod> irMethods;
+    private final TestClass testClass;
 
     public IRMatcher(String hotspotPidFileName, String irEncoding, Class<?> testClass) {
         System.out.println(irEncoding);
         MethodCompilationParser methodCompilationParser = new MethodCompilationParser(testClass);
-        irMethods = methodCompilationParser.parse(hotspotPidFileName, irEncoding);
+        this.testClass = methodCompilationParser.parse(hotspotPidFileName, irEncoding);
     }
 
     public void match() {
-        if (irMethods != null) {
-            List<AbstractIRMethodMatchResult> results = applyIRRules();
-            if (!results.isEmpty()) {
-                reportFailures(results);
-            }
+        TestClassResult result = testClass.match();
+        if (result.fail()) {
+            reportFailures(result);
         }
     }
 
     /**
      * Do an IR matching of all methods with applicable @IR rules prepared with by the {@link MethodCompilationParser}.
      */
-    public List<AbstractIRMethodMatchResult> applyIRRules() {
-        List<AbstractIRMethodMatchResult> results = new ArrayList<>();
-        irMethods.forEach(irMethod -> applyIRRule(irMethod, results));
-        return results;
-    }
 
-    private void applyIRRule(IRMethod irMethod, List<AbstractIRMethodMatchResult> results) {
-        if (TestFramework.VERBOSE) {
-            printMethodOutput(irMethod);
-        }
-        AbstractIRMethodMatchResult result = irMethod.match();
-        if (result.fail()) {
-            results.add(result);
-        }
-    }
 
-    private void printMethodOutput(IRMethod irMethod) {
-        System.out.println("Output of " + irMethod.getCompleteOutput() + ":");
-        System.out.println(irMethod.getCompleteOutput());
-    }
 
     /**
      * Report all IR violations in a pretty format to the user. Depending on the failed regex, we only report
@@ -83,10 +63,12 @@ public class IRMatcher {
      * can be read and reported to the stdout separately. The exception message only includes the summary of the
      * failures.
      */
-    private void reportFailures(List<AbstractIRMethodMatchResult> results) { // TODO: Introduce TestClassMatchResult implements MatchResult
-        Collections.sort(results); // Alphabetically
-        throwIfNoSafepointWhilePrinting(IRMatcherFailureMessageBuilder.build(results),
-                                        CompilationOutputBuilder.build(results));
+    private void reportFailures(TestClassResult result) { // TODO: Introduce TestClassMatchResult implements MatchResult
+        FailureMessageBuilder failureMessageBuilder = new FailureMessageBuilder();
+        String failureMsg = failureMessageBuilder.build(result);
+//        String failureMsg = IRMatcherFailureMessageBuilder.build(result);
+        throwIfNoSafepointWhilePrinting(failureMsg,
+                                        CompilationOutputBuilder.build(result));
     }
 
     // In some very rare cases, the VM output to regex match on contains "<!-- safepoint while printing -->"

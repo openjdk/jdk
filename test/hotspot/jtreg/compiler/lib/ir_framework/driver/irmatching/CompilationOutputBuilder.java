@@ -34,9 +34,9 @@ import java.util.List;
  */
 class CompilationOutputBuilder {
 
-    public static String build(List<AbstractIRMethodMatchResult> results) {
+    public static String build(TestClassResult testClassResult) {
         StringBuilder compilationsBuilder = new StringBuilder();
-        for (AbstractIRMethodMatchResult result : results) {
+        for (AbstractIRMethodMatchResult result : testClassResult.getResults()) {
             if (result.fail()) {
                 compilationsBuilder.append(buildMatchedCompilationMessage(result));
             }

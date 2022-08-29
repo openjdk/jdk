@@ -24,6 +24,7 @@
 package compiler.lib.ir_framework.driver.irmatching.parser;
 
 import compiler.lib.ir_framework.TestFramework;
+import compiler.lib.ir_framework.driver.irmatching.TestClass;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethod;
 import compiler.lib.ir_framework.shared.TestFormat;
 import compiler.lib.ir_framework.shared.TestFrameworkException;
@@ -60,12 +61,12 @@ class HotSpotPidFileParser {
      * Parse the hotspot_pid*.log file from the test VM. Read the PrintIdeal and PrintOptoAssembly outputs for all
      * methods of the test class that need to be IR matched (found in compilations map).
      */
-    public List<IRMethod> parseCompilations(String hotspotPidFileName) {
+    public TestClass parseCompilations(String hotspotPidFileName) {
         try {
             processFileLines(hotspotPidFileName);
             List<IRMethod> irMethods = testCompilationsMap.values().stream().map(TestMethod::createIRMethod).toList();
             TestFormat.throwIfAnyFailures();
-            return irMethods;
+            return new TestClass(irMethods);
         } catch (IOException e) {
             throw new TestFrameworkException("Error while reading " + hotspotPidFileName, e);
         } catch (FileCorruptedException e) {

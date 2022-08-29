@@ -9,14 +9,15 @@ import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.CountsConst
 import compiler.lib.ir_framework.driver.irmatching.irrule.phase.CompilePhaseMatchResult;
 
 public interface MatchResultVisitor {
-    void visit(IRMethodMatchResult irMethodMatchResult);
-    void visit(NotCompiledResult notCompiledResult);
-    void visit(IRRuleMatchResult irRuleMatchResult);
-    void visit(CompilePhaseMatchResult compilePhaseMatchResult);
-    void visit(CheckAttributeMatchResult checkAttributeMatchResult);
-    void visit(ConstraintFailure constraintFailure);
-    void visit(CountsConstraintFailure constraintFailure);
+    default void visit(TestClassResult testClassResult) {}
+    default void visit(IRMethodMatchResult irMethodMatchResult) {}
+    default void visit(NotCompiledResult notCompiledResult) {}
+    default void visit(IRRuleMatchResult irRuleMatchResult) {}
+    default void visit(CompilePhaseMatchResult compilePhaseMatchResult) {}
+    default void visit(CheckAttributeMatchResult checkAttributeMatchResult) {}
+    default void visit(ConstraintFailure constraintFailure) {}
+    default void visit(CountsConstraintFailure constraintFailure) {}
 
-    boolean shouldVisit(MatchResult v);
+    default boolean shouldVisit(MatchResult matchResult) { return true; }
 }
 
