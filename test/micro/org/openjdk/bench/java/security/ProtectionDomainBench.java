@@ -48,21 +48,19 @@ import org.openjdk.bench.util.InMemoryJavaCompiler;
 @Warmup(iterations = 5, time = 2)
 @Measurement(iterations = 5, time = 2)
 @BenchmarkMode(Mode.Throughput)
-@Fork(value = 3, jvmArgsAppend={"-Djava.security.manager=allow"})
 public class ProtectionDomainBench {
 
     @Param({"100"})
     public int numberOfClasses;
 
-    URL u;
+    @Param({"10"})
+    public int numberOfCodeSources;
 
     static byte[][] compiledClasses;
     static Class[] loadedClasses;
-    static ProtectionDomain[] pd;
     static String[] classNames;
     static int index = 0;
-    CodeSource cs;
-    Permissions p;
+    static CodeSource[] cs;
 
     static String B(int count) {
         return "public class B" + count + " {"
@@ -77,23 +75,22 @@ public class ProtectionDomainBench {
     public void setupClasses() throws Exception {
         compiledClasses = new byte[numberOfClasses][];
         loadedClasses = new Class[numberOfClasses];
-        pd = new ProtectionDomain[numberOfClasses];
         classNames = new String[numberOfClasses];
+        cs = new CodeSource[numberOfCodeSources];
 
-        u = new URL("file:/tmp/duke");
-        cs = new CodeSource(u, (java.security.cert.Certificate[]) null);
-        p = new Permissions();
-        p.add(new SocketPermission("localhost", "connect"));
+        for (int i = 0; i < numberOfCodeSources; i++) {
+            URL u = new URL("file:/tmp/duke" + i);
+            cs[i] = new CodeSource(u, (java.security.cert.Certificate[]) null);
+        }
 
         for (int i = 0; i < numberOfClasses; i++) {
             classNames[i] = "B" + i;
             compiledClasses[i] = InMemoryJavaCompiler.compile(classNames[i], B(i));
-            pd[i] = new ProtectionDomain(cs, p);
         }
 
     }
 
-    static class ProtectionDomainBenchLoader extends ClassLoader {
+    static class ProtectionDomainBenchLoader extends SecureClassLoader {
 
         ProtectionDomainBenchLoader() {
             super();
@@ -107,16 +104,14 @@ public class ProtectionDomainBench {
         protected Class<?> findClass(String name) throws ClassNotFoundException {
             if (name.equals(classNames[index] /* "B" + index */)) {
                 assert compiledClasses[index]  != null;
-                return defineClass(name, compiledClasses[index] , 0, (compiledClasses[index]).length, pd[index] );
+                return defineClass(name, compiledClasses[index] , 0, (compiledClasses[index]).length, cs[index % cs.length] );
             } else {
                 return super.findClass(name);
             }
         }
     }
 
-    @Benchmark
-    public void bench()  throws ClassNotFoundException {
-
+    void work() throws ClassNotFoundException {
         ProtectionDomainBench.ProtectionDomainBenchLoader loader1 = new
                 ProtectionDomainBench.ProtectionDomainBenchLoader();
 
@@ -124,5 +119,17 @@ public class ProtectionDomainBench {
             Class c = loader1.findClass(classNames[index]);
             loadedClasses[index] = c;
         }
+    }
+
+    @Benchmark
+    @Fork(value = 3, jvmArgsPrepend={"-Djava.security.manager=allow"})
+    public void withSecurityManager()  throws ClassNotFoundException {
+        work();
+    }
+
+    @Benchmark
+    @Fork(value = 3)
+    public void noSecurityManager()  throws ClassNotFoundException {
+        work();
     }
 }
