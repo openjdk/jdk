@@ -482,16 +482,15 @@ final class Resolver {
             }
         }
 
-        // Parallel hash computation, populating the cache for descriptors
+        // Parallel hash computation, populating the cache in ModuleReferenceImpl-s
         hashChecks.stream().parallel().forEach(hc -> hc.mref().computeHash(hc.hashes().algorithm()));
 
         // Check the hashing results
         for (HashCheck hc : hashChecks) {
             byte[] recordedHash = hc.hashes().hashFor(hc.dn());
             byte[] actualHash = hc.mref().computeHash(hc.hashes().algorithm());
-            if (actualHash == null) {
+            if (actualHash == null)
                 findFail("Unable to compute the hash of module %s", hc.dn());
-            }
             if (!Arrays.equals(recordedHash, actualHash)) {
                 HexFormat hex = HexFormat.of();
                 findFail("Hash of %s (%s) differs to expected hash (%s)" +
