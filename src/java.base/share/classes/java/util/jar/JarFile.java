@@ -823,11 +823,11 @@ public class JarFile extends ZipFile {
      * Returns an input stream for reading the contents of the specified
      * zip file entry.
      *
-     * @apiNote This method can return an {@link java.util.zip.InflaterInputStream
-     * InflaterInputStream} which leaves the contents of the output buffer beyond
-     * the last inflated byte undefined after a read operation (see {@link
-     * java.util.zip.InflaterInputStream#read(byte[], int, int)
-     * InflaterInputStream.read(byte[], int, int)}).
+     * @apiNote The {@code InputStream} returned by this method can wrap an
+     * {@link java.util.zip.InflaterInputStream InflaterInputStream}, whose
+     * {@link java.util.zip.InflaterInputStream#read(byte[], int, int)
+     * read(byte[], int, int)} method can modify any element of the output
+     * buffer.
      *
      * @param ze the zip file entry
      * @return an input stream for reading the contents of the specified
