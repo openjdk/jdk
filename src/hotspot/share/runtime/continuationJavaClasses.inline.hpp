@@ -97,6 +97,11 @@ inline void jdk_internal_vm_StackChunk::set_parent_raw(oop chunk, oop value) {
   RawAccess<>::oop_store(chunk->field_addr<P>(_parent_offset), value);
 }
 
+template<DecoratorSet decorators>
+inline void jdk_internal_vm_StackChunk::set_parent_access(oop chunk, oop value) {
+  chunk->obj_field_put_access<decorators>(_parent_offset, value);
+}
+
 inline oop jdk_internal_vm_StackChunk::cont(oop chunk) {
   return chunk->obj_field(_cont_offset);
 }
@@ -113,6 +118,11 @@ inline oop jdk_internal_vm_StackChunk::cont_raw(oop chunk) {
 template<typename P>
 inline void jdk_internal_vm_StackChunk::set_cont_raw(oop chunk, oop value) {
   RawAccess<>::oop_store(chunk->field_addr<P>(_cont_offset), value);
+}
+
+template<DecoratorSet decorators>
+inline void jdk_internal_vm_StackChunk::set_cont_access(oop chunk, oop value) {
+  chunk->obj_field_put_access<decorators>(_cont_offset, value);
 }
 
 inline int jdk_internal_vm_StackChunk::size(oop chunk) {
