@@ -159,7 +159,7 @@ void ProtectionDomainCacheTable::unlink() {
 
   // Purge any deleted entries outside of the SystemDictionary_lock.
   purge_deleted_entries();
-  int oops_removed = purge_entries_from_table();
+  int oops_removed = purge_entries_from_table(); // reacquires SD lock
 
   _total_oops_removed += oops_removed;
   _dead_entries = false;
@@ -197,9 +197,6 @@ WeakHandle ProtectionDomainCacheTable::add_if_absent(Handle protection_domain) {
   if (!created) {
     // delete the one created since we already had it in the table
     w.release(Universe::vm_weak());
-    // Keep entry alive
-    (void)wk->resolve();
-    return *wk;
   } else {
     LogTarget(Debug, protectiondomain, table) lt;
     if (lt.is_enabled()) {
@@ -208,9 +205,10 @@ WeakHandle ProtectionDomainCacheTable::add_if_absent(Handle protection_domain) {
       protection_domain->print_value_on(&ls);
       ls.cr();
     }
-    (void)w.resolve();
-    return w;
   }
+  // Keep entry alive
+  (void)wk->resolve();
+  return *wk;
 }
 
 void ProtectionDomainCacheTable::print_table_statistics(outputStream* st) {
