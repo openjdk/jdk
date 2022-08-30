@@ -206,7 +206,7 @@ jobs:
     with:
       gcc-major-version: '10'
       apt-gcc-version: '10.3.0-1ubuntu1~20.04'
-      apt-gcc-cross-suffix: 'cross1'
+      apt-gcc-cross-version: '10.3.0-1ubuntu1~20.04cross1'
     if: needs.select.outputs.linux-cross-compile == 'true'
 
   build-macos-x64:
