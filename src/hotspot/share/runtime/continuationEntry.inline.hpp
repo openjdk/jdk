@@ -43,7 +43,7 @@ inline intptr_t* ContinuationEntry::bottom_sender_sp() const {
   return sp;
 }
 
-inline bool is_stack_watermark_processing_started(const JavaThread* thread, const void* addr) {
+inline bool is_stack_watermark_processing_started(const JavaThread* thread) {
   StackWatermark* sw = StackWatermarkSet::get(const_cast<JavaThread*>(thread), StackWatermarkKind::gc);
 
   if (sw == nullptr) {
@@ -56,7 +56,7 @@ inline bool is_stack_watermark_processing_started(const JavaThread* thread, cons
 
 inline oop ContinuationEntry::cont_oop(const JavaThread* thread) const {
   assert(!Universe::heap()->is_in((void*)&_cont), "Should not be in the heap");
-  assert(is_stack_watermark_processing_started(thread != nullptr ? thread : JavaThread::current(), &_cont), "Not processed");
+  assert(is_stack_watermark_processing_started(thread != nullptr ? thread : JavaThread::current()), "Not processed");
   return *(oop*)&_cont;
 }
 
