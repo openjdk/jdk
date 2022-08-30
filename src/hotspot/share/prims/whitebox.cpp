@@ -82,7 +82,6 @@
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/os.hpp"
 #include "runtime/stackFrameStream.inline.hpp"
-#include "runtime/sweeper.hpp"
 #include "runtime/synchronizer.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/vframe.hpp"
@@ -809,7 +808,7 @@ WB_ENTRY(jboolean, WB_IsMethodCompiled(JNIEnv* env, jobject o, jobject method, j
   if (code == NULL) {
     return JNI_FALSE;
   }
-  return (code->is_alive() && !code->is_marked_for_deoptimization());
+  return !code->is_marked_for_deoptimization();
 WB_END
 
 static bool is_excluded_for_compiler(AbstractCompiler* comp, methodHandle& mh) {
@@ -1418,11 +1417,6 @@ WB_ENTRY(void, WB_UnlockCompilation(JNIEnv* env, jobject o))
   MonitorLocker mo(Compilation_lock, Mutex::_no_safepoint_check_flag);
   WhiteBox::compilation_locked = false;
   mo.notify_all();
-WB_END
-
-WB_ENTRY(void, WB_ForceNMethodSweep(JNIEnv* env, jobject o))
-  // Force a code cache sweep and block until it finished
-  NMethodSweeper::force_sweep();
 WB_END
 
 WB_ENTRY(jboolean, WB_IsInStringTable(JNIEnv* env, jobject o, jstring javaString))
@@ -2659,7 +2653,6 @@ static JNINativeMethod methods[] = {
   {CC"getCPUFeatures",     CC"()Ljava/lang/String;",  (void*)&WB_GetCPUFeatures     },
   {CC"getNMethod0",         CC"(Ljava/lang/reflect/Executable;Z)[Ljava/lang/Object;",
                                                       (void*)&WB_GetNMethod         },
-  {CC"forceNMethodSweep",  CC"()V",                   (void*)&WB_ForceNMethodSweep  },
   {CC"allocateCodeBlob",   CC"(II)J",                 (void*)&WB_AllocateCodeBlob   },
   {CC"freeCodeBlob",       CC"(J)V",                  (void*)&WB_FreeCodeBlob       },
   {CC"getCodeHeapEntries", CC"(I)[Ljava/lang/Object;",(void*)&WB_GetCodeHeapEntries },

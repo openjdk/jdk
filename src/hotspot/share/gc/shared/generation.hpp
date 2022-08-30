@@ -249,12 +249,6 @@ class Generation: public CHeapObj<mtGC> {
   // avoid repeating the virtual call to retrieve it.
   virtual oop promote(oop obj, size_t obj_size);
 
-  // Informs the current generation that all oop_since_save_marks_iterates
-  // performed by "thread_num" in the current collection, if any, have been
-  // completed; any supporting data structures can be reset.  Default is to
-  // do nothing.
-  virtual void par_oop_since_save_marks_iterate_done(int thread_num) {}
-
   // Returns "true" iff collect() should subsequently be called on this
   // this generation. See comment below.
   // This is a generic implementation which can be overridden.

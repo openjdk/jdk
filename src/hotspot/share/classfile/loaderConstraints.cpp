@@ -454,6 +454,7 @@ void LoaderConstraintTable::merge_loader_constraints(Symbol* class_name,
 }
 
 void LoaderConstraintTable::verify() {
+  Thread* thread = Thread::current();
   auto check = [&] (Symbol*& key, ConstraintSet& set) {
     // foreach constraint in the set, check the klass is in the dictionary or placeholder table.
     int len = set.num_constraints();
@@ -465,8 +466,7 @@ void LoaderConstraintTable::verify() {
         Symbol* name = ik->name();
         ClassLoaderData* loader_data = ik->class_loader_data();
         Dictionary* dictionary = loader_data->dictionary();
-        unsigned int name_hash = dictionary->compute_hash(name);
-        InstanceKlass* k = dictionary->find_class(name_hash, name);
+        InstanceKlass* k = dictionary->find_class(thread, name);
         if (k != NULL) {
           // We found the class in the dictionary, so we should
           // make sure that the Klass* matches what we already have.

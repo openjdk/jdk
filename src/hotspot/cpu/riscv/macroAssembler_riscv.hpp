@@ -47,7 +47,7 @@ class MacroAssembler: public Assembler {
   void safepoint_poll(Label& slow_path, bool at_return, bool acquire, bool in_nmethod);
 
   // Alignment
-  void align(int modulus, int extra_offset = 0);
+  int align(int modulus, int extra_offset = 0);
 
   // Stack frame creation/removal
   // Note that SP must be updated to the right place before saving/restoring RA and FP

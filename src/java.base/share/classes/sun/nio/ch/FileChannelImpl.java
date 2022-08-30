@@ -570,10 +570,11 @@ public class FileChannelImpl
             ti = threads.add();
             if (!isOpen())
                 return -1;
+            boolean append = fdAccess.getAppend(targetFD);
             do {
                 long comp = Blocker.begin();
                 try {
-                    n = transferTo0(fd, position, icount, targetFD);
+                    n = transferTo0(fd, position, icount, targetFD, append);
                 } finally {
                     Blocker.end(comp);
                 }
@@ -801,7 +802,8 @@ public class FileChannelImpl
             do {
                 long comp = Blocker.begin();
                 try {
-                    n = transferFrom0(srcFD, fd, position, count);
+                    boolean append = fdAccess.getAppend(fd);
+                    n = transferFrom0(srcFD, fd, position, count, append);
                 } finally {
                     Blocker.end(comp);
                 }
@@ -1573,11 +1575,13 @@ public class FileChannelImpl
     // Transfers from src to dst, or returns IOStatus.UNSUPPORTED (-4) or
     // IOStatus.UNSUPPORTED_CASE (-6) if the kernel does not support it
     private static native long transferTo0(FileDescriptor src, long position,
-                                           long count, FileDescriptor dst);
+                                           long count, FileDescriptor dst,
+                                           boolean append);
 
     private static native long transferFrom0(FileDescriptor src,
                                              FileDescriptor dst,
-                                             long position, long count);
+                                             long position, long count,
+                                             boolean append);
 
     // Retrieves the maximum size of a transfer
     private static native int maxDirectTransferSize0();
