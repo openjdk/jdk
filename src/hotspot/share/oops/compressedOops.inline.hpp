@@ -54,7 +54,7 @@ inline oop CompressedOops::decode_raw(narrowOop v) {
 inline oop CompressedOops::decode_not_null(narrowOop v) {
   assert(!is_null(v), "narrow oop value can never be zero");
   oop result = decode_raw(v);
-  assert(is_object_aligned(result), "address not aligned: " INTPTR_FORMAT, p2i((void*) result));
+  assert(is_object_aligned(result), "address not aligned: " PTR_FORMAT, p2i((void*) result));
   assert(Universe::is_in_heap(result), "object not in heap " PTR_FORMAT, p2i((void*) result));
   return result;
 }
@@ -132,7 +132,7 @@ inline Klass* CompressedKlassPointers::decode_not_null(narrowKlass v) {
 inline Klass* CompressedKlassPointers::decode_not_null(narrowKlass v, address narrow_base) {
   assert(!is_null(v), "narrow klass value can never be zero");
   Klass* result = decode_raw(v, narrow_base);
-  assert(check_alignment(result), "address not aligned: " INTPTR_FORMAT, p2i((void*) result));
+  assert(check_alignment(result), "address not aligned: " PTR_FORMAT, p2i((void*) result));
   return result;
 }
 
