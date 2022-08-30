@@ -111,7 +111,7 @@ class RegisterSaver {
     int f0_offset = 0;
 #ifdef COMPILER2
     if (_save_vectors) {
-      f0_offset += Matcher::scalable_vector_reg_size(T_INT) * VectorRegisterImpl::number_of_registers *
+      f0_offset += Matcher::scalable_vector_reg_size(T_INT) * VectorRegister::number_of_registers *
                    BytesPerInt;
     }
 #endif
@@ -119,8 +119,8 @@ class RegisterSaver {
   }
   int reserved_slot_offset_in_bytes(void) {
     return f0_offset_in_bytes() +
-           FloatRegisterImpl::max_slots_per_register *
-           FloatRegisterImpl::number_of_registers *
+           FloatRegister::max_slots_per_register *
+           FloatRegister::number_of_registers *
            BytesPerInt;
   }
 
@@ -135,8 +135,8 @@ class RegisterSaver {
 
   int ra_offset_in_bytes(void) {
     return reserved_slot_offset_in_bytes() +
-           (RegisterImpl::number_of_registers - 3) *
-           RegisterImpl::max_slots_per_register *
+           (Register::number_of_registers - 3) *
+           Register::max_slots_per_register *
            BytesPerInt;
   }
 };
@@ -178,24 +178,24 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
   int step_in_slots = 0;
   if (_save_vectors) {
     step_in_slots = vector_size_in_slots;
-    for (int i = 0; i < VectorRegisterImpl::number_of_registers; i++, sp_offset_in_slots += step_in_slots) {
+    for (int i = 0; i < VectorRegister::number_of_registers; i++, sp_offset_in_slots += step_in_slots) {
       VectorRegister r = as_VectorRegister(i);
       oop_map->set_callee_saved(VMRegImpl::stack2reg(sp_offset_in_slots), r->as_VMReg());
     }
   }
 
-  step_in_slots = FloatRegisterImpl::max_slots_per_register;
-  for (int i = 0; i < FloatRegisterImpl::number_of_registers; i++, sp_offset_in_slots += step_in_slots) {
+  step_in_slots = FloatRegister::max_slots_per_register;
+  for (int i = 0; i < FloatRegister::number_of_registers; i++, sp_offset_in_slots += step_in_slots) {
     FloatRegister r = as_FloatRegister(i);
     oop_map->set_callee_saved(VMRegImpl::stack2reg(sp_offset_in_slots), r->as_VMReg());
   }
 
-  step_in_slots = RegisterImpl::max_slots_per_register;
+  step_in_slots = Register::max_slots_per_register;
   // skip the slot reserved for alignment, see MacroAssembler::push_reg;
   // also skip x5 ~ x6 on the stack because they are caller-saved registers.
-  sp_offset_in_slots += RegisterImpl::max_slots_per_register * 3;
+  sp_offset_in_slots += Register::max_slots_per_register * 3;
   // besides, we ignore x0 ~ x4 because push_CPU_state won't push them on the stack.
-  for (int i = 7; i < RegisterImpl::number_of_registers; i++, sp_offset_in_slots += step_in_slots) {
+  for (int i = 7; i < Register::number_of_registers; i++, sp_offset_in_slots += step_in_slots) {
     Register r = as_Register(i);
     if (r != xthread) {
       oop_map->set_callee_saved(VMRegImpl::stack2reg(sp_offset_in_slots + additional_frame_slots), r->as_VMReg());
@@ -242,8 +242,8 @@ static int reg2offset_out(VMReg r) {
 // refer to 4-byte stack slots.  All stack slots are based off of the stack pointer
 // as framesizes are fixed.
 // VMRegImpl::stack0 refers to the first slot 0(sp).
-// and VMRegImpl::stack0+1 refers to the memory word 4-byes higher.  Register
-// up to RegisterImpl::number_of_registers) are the 64-bit
+// and VMRegImpl::stack0+1 refers to the memory word 4-byes higher.
+// Register up to Register::number_of_registers) are the 64-bit
 // integer registers.
 
 // Note: the INPUTS in sig_bt are in units of Java argument words,
@@ -1368,12 +1368,12 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   int int_args = 0;
 
 #ifdef ASSERT
-  bool reg_destroyed[RegisterImpl::number_of_registers];
-  bool freg_destroyed[FloatRegisterImpl::number_of_registers];
-  for ( int r = 0 ; r < RegisterImpl::number_of_registers ; r++ ) {
+  bool reg_destroyed[Register::number_of_registers];
+  bool freg_destroyed[FloatRegister::number_of_registers];
+  for ( int r = 0 ; r < Register::number_of_registers ; r++ ) {
     reg_destroyed[r] = false;
   }
-  for ( int f = 0 ; f < FloatRegisterImpl::number_of_registers ; f++ ) {
+  for ( int f = 0 ; f < FloatRegister::number_of_registers ; f++ ) {
     freg_destroyed[f] = false;
   }
 

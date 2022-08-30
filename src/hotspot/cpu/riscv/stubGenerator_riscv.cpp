@@ -2946,32 +2946,32 @@ class StubGenerator: public StubCodeGenerator {
 
       // Register allocation
 
-      Register reg = c_rarg0;
-      Pa_base = reg;       // Argument registers
+      RegSetIterator<Register> regs = RegSet::range(x10, x26).begin();
+      Pa_base = *regs;       // Argument registers
       if (squaring) {
         Pb_base = Pa_base;
       } else {
-        Pb_base = ++reg;
+        Pb_base = *++regs;
       }
-      Pn_base = ++reg;
-      Rlen= ++reg;
-      inv = ++reg;
-      Pm_base = ++reg;
+      Pn_base = *++regs;
+      Rlen= *++regs;
+      inv = *++regs;
+      Pm_base = *++regs;
 
                         // Working registers:
-      Ra =  ++reg;      // The current digit of a, b, n, and m.
-      Rb =  ++reg;
-      Rm =  ++reg;
-      Rn =  ++reg;
+      Ra =  *++regs;    // The current digit of a, b, n, and m.
+      Rb =  *++regs;
+      Rm =  *++regs;
+      Rn =  *++regs;
 
-      Pa =  ++reg;      // Pointers to the current/next digit of a, b, n, and m.
-      Pb =  ++reg;
-      Pm =  ++reg;
-      Pn =  ++reg;
+      Pa =  *++regs;      // Pointers to the current/next digit of a, b, n, and m.
+      Pb =  *++regs;
+      Pm =  *++regs;
+      Pn =  *++regs;
 
-      tmp0 =  ++reg;    // Three registers which form a
-      tmp1 =  ++reg;    // triple-precision accumuator.
-      tmp2 =  ++reg;
+      tmp0 =  *++regs;    // Three registers which form a
+      tmp1 =  *++regs;    // triple-precision accumuator.
+      tmp2 =  *++regs;
 
       Ri =  x6;         // Inner and outer loop indexes.
       Rj =  x7;
@@ -2982,7 +2982,7 @@ class StubGenerator: public StubCodeGenerator {
       Rlo_mn = x31;
 
       // x18 and up are callee-saved.
-      _toSave = RegSet::range(x18, reg) + Pm_base;
+      _toSave = RegSet::range(x18, *regs) + Pm_base;
     }
 
   private:
@@ -3238,7 +3238,8 @@ class StubGenerator: public StubCodeGenerator {
     //    Preserves len
     //    Leaves s pointing to the address which was in d at start
     void reverse(Register d, Register s, Register len, Register tmp1, Register tmp2) {
-      assert(tmp1 < x28 && tmp2 < x28, "register corruption");
+      assert(tmp1->encoding() < x28->encoding(), "register corruption");
+      assert(tmp2->encoding() < x28->encoding(), "register corruption");
 
       slli(tmp1, len, LogBytesPerWord);
       add(s, s, tmp1);
