@@ -30,14 +30,25 @@ import java.net.BindException;
 import java.nio.file.Path;
 import java.rmi.server.ExportException;
 
-import java.util.*;
-
-import javax.management.remote.*;
-import javax.management.*;
-
 import jdk.internal.agent.AgentConfigurationError;
 
+import javax.management.MBeanAttributeInfo;
+import javax.management.MBeanInfo;
+import javax.management.MBeanServerConnection;
+import javax.management.ObjectName;
+import javax.management.QueryExp;
+import javax.management.remote.JMXConnector;
+import javax.management.remote.JMXConnectorFactory;
+import javax.management.remote.JMXConnectorServer;
+import javax.management.remote.JMXServiceURL;
 import java.security.Security;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
 
 /*
  * @test
@@ -86,8 +97,7 @@ import java.security.Security;
  * <p>Debug traces are logged in "sun.management.test"</p>
  **/
 public class RmiBootstrapTest extends RmiTestBase {
-    static TestLogger log =
-            new TestLogger("RmiBootstrapTest");
+    static TestLogger log = new TestLogger("RmiBootstrapTest");
     // the number of consecutive ports to test for availability
     private static int MAX_GET_FREE_PORT_TRIES = 10;
 
@@ -97,8 +107,7 @@ public class RmiBootstrapTest extends RmiTestBase {
      *
      * @return the number of queried MBeans.
      */
-    public static int listMBeans(MBeanServerConnection server)
-            throws IOException {
+    public static int listMBeans(MBeanServerConnection server) throws IOException {
         return listMBeans(server, null, null);
     }
 
@@ -108,13 +117,11 @@ public class RmiBootstrapTest extends RmiTestBase {
      *
      * @return the number of matching MBeans.
      */
-    public static int listMBeans(MBeanServerConnection server,
-            ObjectName pattern, QueryExp query)
+    public static int listMBeans(MBeanServerConnection server, ObjectName pattern, QueryExp query)
             throws IOException {
 
-        final Set names = server.queryNames(pattern, query);
-        for (final Iterator i = names.iterator(); i.hasNext(); ) {
-            ObjectName name = (ObjectName) i.next();
+        final Set<ObjectName> names = server.queryNames(pattern, query);
+        for (ObjectName name : names) {
             log.trace("listMBeans", "Got MBean: " + name);
             try {
                 MBeanInfo info = server.getMBeanInfo(name);
@@ -125,30 +132,21 @@ public class RmiBootstrapTest extends RmiTestBase {
                 for (int j = 0; j < attrs.length; j++) {
                     if (attrs[j].isReadable()) {
                         try {
-                            Object o = server.getAttribute(name,
-                                    attrs[j].getName());
+                            Object o = server.getAttribute(name, attrs[j].getName());
                             if (log.isDebugOn()) {
-                                log.debug("listMBeans", "\t\t" +
-                                        attrs[j].getName() +
-                                        " = " + o);
+                                log.debug("listMBeans", "\t\t" + attrs[j].getName() + " = " + o);
                             }
                         } catch (Exception x) {
-                            log.trace("listMBeans", "JmxClient failed to get " +
-                                    attrs[j].getName() + ": " + x);
-                            final IOException io =
-                                    new IOException("JmxClient failed to get " +
-                                            attrs[j].getName());
+                            log.trace("listMBeans", "JmxClient failed to get " + attrs[j].getName() + ": " + x);
+                            final IOException io = new IOException("JmxClient failed to get " + attrs[j].getName());
                             io.initCause(x);
                             throw io;
                         }
                     }
                 }
             } catch (Exception x) {
-                log.trace("listMBeans",
-                        "JmxClient failed to get MBeanInfo: " + x);
-                final IOException io =
-                        new IOException(
-                                "JmxClient failed to get MBeanInfo: " + x);
+                log.trace("listMBeans", "JmxClient failed to get MBeanInfo: " + x);
+                final IOException io = new IOException("JmxClient failed to get MBeanInfo: " + x);
                 io.initCause(x);
                 throw io;
             }
@@ -162,8 +160,7 @@ public class RmiBootstrapTest extends RmiTestBase {
      **/
     public static void main(String args[]) throws Exception {
         if (args.length == 0) {
-            throw new IllegalArgumentException("Argument is required for this" +
-                    " test");
+            throw new IllegalArgumentException("Argument is required for this" + " test");
         }
 
         final List<Path> credentialFiles = prepareTestFiles(args[0]);
@@ -171,8 +168,7 @@ public class RmiBootstrapTest extends RmiTestBase {
         Security.setProperty("jdk.tls.disabledAlgorithms", "");
 
         try {
-            MAX_GET_FREE_PORT_TRIES = Integer.parseInt(
-                    System.getProperty("test.getfreeport.max.tries", "10"));
+            MAX_GET_FREE_PORT_TRIES = Integer.parseInt(System.getProperty("test.getfreeport.max.tries", "10"));
         } catch (NumberFormatException ex) {
         }
 
@@ -199,8 +195,7 @@ public class RmiBootstrapTest extends RmiTestBase {
      * If the password file does not exists, return an empty list.
      * (File not found = empty file).
      **/
-    private ArrayList readCredentials(String passwordFileName)
-            throws IOException {
+    private ArrayList readCredentials(String passwordFileName) throws IOException {
         final Properties pws = new Properties();
         final ArrayList result = new ArrayList();
         final File f = new File(passwordFileName);
@@ -254,10 +249,8 @@ public class RmiBootstrapTest extends RmiTestBase {
      *                        read MBeans the number of failure is incremented.
      * @return number of failure.
      **/
-    public int connectAndRead(JMXServiceURL url,
-            Object[] useCredentials,
-            boolean expectConnectOk,
-            boolean expectReadOk)
+    public int connectAndRead(JMXServiceURL url, Object[] useCredentials,
+            boolean expectConnectOk, boolean expectReadOk)
             throws IOException {
 
         int errorCount = 0;
@@ -279,62 +272,50 @@ public class RmiBootstrapTest extends RmiTestBase {
                 c = JMXConnectorFactory.connect(url, m);
             } catch (IOException x) {
                 if (expectConnectOk) {
-                    final String err = "Connection failed for " + crinfo +
-                            ": " + x;
+                    final String err = "Connection failed for " + crinfo + ": " + x;
                     System.out.println(err);
                     log.trace("testCommunication", err);
                     log.debug("testCommunication", x);
                     errorCount++;
                     continue;
                 } else {
-                    System.out.println("Connection failed as expected for " +
-                            crinfo + ": " + x);
+                    System.out.println("Connection failed as expected for " + crinfo + ": " + x);
                     continue;
                 }
             } catch (RuntimeException x) {
                 if (expectConnectOk) {
-                    final String err = "Connection failed for " + crinfo +
-                            ": " + x;
+                    final String err = "Connection failed for " + crinfo + ": " + x;
                     System.out.println(err);
                     log.trace("testCommunication", err);
                     log.debug("testCommunication", x);
                     errorCount++;
                     continue;
                 } else {
-                    System.out.println("Connection failed as expected for " +
-                            crinfo + ": " + x);
+                    System.out.println("Connection failed as expected for " + crinfo + ": " + x);
                     continue;
                 }
             }
             try {
-                MBeanServerConnection conn =
-                        c.getMBeanServerConnection();
+                MBeanServerConnection conn = c.getMBeanServerConnection();
                 if (log.isDebugOn()) {
                     log.debug("testCommunication", "Connection is:" + conn);
-                    log.debug("testCommunication", "Server domain is: " +
-                            conn.getDefaultDomain());
+                    log.debug("testCommunication", "Server domain is: " + conn.getDefaultDomain());
                 }
-                final ObjectName pattern =
-                        new ObjectName("java.lang:type=Memory,*");
+                final ObjectName pattern = new ObjectName("java.lang:type=Memory,*");
                 final int count = listMBeans(conn, pattern, null);
                 if (count == 0) {
-                    throw new Exception("Expected at least one matching " +
-                            "MBean for " + pattern);
+                    throw new Exception("Expected at least one matching " + "MBean for " + pattern);
                 }
                 if (expectReadOk) {
-                    System.out.println("Communication succeeded " +
-                            "as expected for " +
-                            crinfo + ": found " + count
-                            + ((count < 2) ? "MBean" : "MBeans"));
+                    System.out.println("Communication succeeded " + "as expected for " + crinfo + ": found " + count +
+                            ((count < 2) ? "MBean" : "MBeans"));
                 } else {
-                    final String err = "Expected failure didn't occur for " +
-                            crinfo;
+                    final String err = "Expected failure didn't occur for " + crinfo;
                     System.out.println(err);
                     errorCount++;
                 }
             } catch (IOException x) {
-                final String err = "Communication failed with " + crinfo +
-                        ": " + x;
+                final String err = "Communication failed with " + crinfo + ": " + x;
                 if (expectReadOk) {
                     System.out.println(err);
                     log.trace("testCommunication", err);
@@ -342,26 +323,22 @@ public class RmiBootstrapTest extends RmiTestBase {
                     errorCount++;
                     continue;
                 } else {
-                    System.out.println("Communication failed as expected for " +
-                            crinfo + ": " + x);
+                    System.out.println("Communication failed as expected for " + crinfo + ": " + x);
                     continue;
                 }
             } catch (RuntimeException x) {
                 if (expectReadOk) {
-                    final String err = "Communication failed with " + crinfo +
-                            ": " + x;
+                    final String err = "Communication failed with " + crinfo + ": " + x;
                     System.out.println(err);
                     log.trace("testCommunication", err);
                     log.debug("testCommunication", x);
                     errorCount++;
                     continue;
                 } else {
-                    System.out.println("Communication failed as expected for " +
-                            crinfo + ": " + x);
+                    System.out.println("Communication failed as expected for " + crinfo + ": " + x);
                 }
             } catch (Exception x) {
-                final String err = "Failed to read MBeans with " + crinfo +
-                        ": " + x;
+                final String err = "Failed to read MBeans with " + crinfo + ": " + x;
                 System.out.println(err);
                 log.trace("testCommunication", err);
                 log.debug("testCommunication", x);
@@ -375,40 +352,27 @@ public class RmiBootstrapTest extends RmiTestBase {
     }
 
     private void setSslProperties(String clientEnabledCipherSuites) {
-        final String defaultKeyStore =
-                getDefaultStoreName(DefaultValues.KEYSTORE);
-        final String defaultTrustStore =
-                getDefaultStoreName(DefaultValues.TRUSTSTORE);
+        final String defaultKeyStore = defaultStoreNamePrefix + DefaultValues.KEYSTORE;
+        final String defaultTrustStore = defaultStoreNamePrefix + DefaultValues.TRUSTSTORE;
 
-        final String keyStore =
-                System.getProperty(PropertyNames.KEYSTORE, defaultKeyStore);
+        final String keyStore = System.getProperty(PropertyNames.KEYSTORE, defaultKeyStore);
         System.setProperty(PropertyNames.KEYSTORE, keyStore);
         log.trace("setSslProperties", PropertyNames.KEYSTORE + "=" + keyStore);
 
-        final String password =
-                System.getProperty(PropertyNames.KEYSTORE_PASSWD,
-                        DefaultValues.KEYSTORE_PASSWD);
+        final String password = System.getProperty(PropertyNames.KEYSTORE_PASSWD, DefaultValues.KEYSTORE_PASSWD);
         System.setProperty(PropertyNames.KEYSTORE_PASSWD, password);
-        log.trace("setSslProperties",
-                PropertyNames.KEYSTORE_PASSWD + "=" + password);
+        log.trace("setSslProperties", PropertyNames.KEYSTORE_PASSWD + "=" + password);
 
-        final String trustStore =
-                System.getProperty(PropertyNames.TRUSTSTORE,
-                        defaultTrustStore);
+        final String trustStore = System.getProperty(PropertyNames.TRUSTSTORE, defaultTrustStore);
         System.setProperty(PropertyNames.TRUSTSTORE, trustStore);
-        log.trace("setSslProperties",
-                PropertyNames.TRUSTSTORE + "=" + trustStore);
+        log.trace("setSslProperties", PropertyNames.TRUSTSTORE + "=" + trustStore);
 
-        final String trustword =
-                System.getProperty(PropertyNames.TRUSTSTORE_PASSWD,
-                        DefaultValues.TRUSTSTORE_PASSWD);
+        final String trustword = System.getProperty(PropertyNames.TRUSTSTORE_PASSWD, DefaultValues.TRUSTSTORE_PASSWD);
         System.setProperty(PropertyNames.TRUSTSTORE_PASSWD, trustword);
-        log.trace("setSslProperties",
-                PropertyNames.TRUSTSTORE_PASSWD + "=" + trustword);
+        log.trace("setSslProperties", PropertyNames.TRUSTSTORE_PASSWD + "=" + trustword);
 
         if (clientEnabledCipherSuites != null) {
-            System.setProperty("javax.rmi.ssl.client.enabledCipherSuites",
-                    clientEnabledCipherSuites);
+            System.setProperty("javax.rmi.ssl.client.enabledCipherSuites", clientEnabledCipherSuites);
         } else {
             System.clearProperty("javax.rmi.ssl.client.enabledCipherSuites");
         }
@@ -416,11 +380,8 @@ public class RmiBootstrapTest extends RmiTestBase {
 
     private void checkSslConfiguration() {
         try {
-            final String defaultConf =
-                    getDefaultFileName(DefaultValues.CONFIG_FILE_NAME);
-            final String confname =
-                    System.getProperty(PropertyNames.CONFIG_FILE_NAME,
-                            defaultConf);
+            final String defaultConf = defaultFileNamePrefix + DefaultValues.CONFIG_FILE_NAME;
+            final String confname = System.getProperty(PropertyNames.CONFIG_FILE_NAME, defaultConf);
 
             final Properties props = new Properties();
             final File conf = new File(confname);
@@ -434,45 +395,29 @@ public class RmiBootstrapTest extends RmiTestBase {
             }
 
             // Do we use SSL?
-            final String useSslStr =
-                    props.getProperty(PropertyNames.USE_SSL,
-                            DefaultValues.USE_SSL);
-            final boolean useSsl =
-                    Boolean.valueOf(useSslStr).booleanValue();
+            final String useSslStr = props.getProperty(PropertyNames.USE_SSL, DefaultValues.USE_SSL);
+            final boolean useSsl = Boolean.valueOf(useSslStr).booleanValue();
 
-            log.debug("checkSslConfiguration",
-                    PropertyNames.USE_SSL + "=" + useSsl +
-                            ": setting SSL");
+            log.debug("checkSslConfiguration", PropertyNames.USE_SSL + "=" + useSsl + ": setting SSL");
             // Do we use SSL client authentication?
             final String useSslClientAuthStr =
-                    props.getProperty(PropertyNames.SSL_NEED_CLIENT_AUTH,
-                            DefaultValues.SSL_NEED_CLIENT_AUTH);
-            final boolean useSslClientAuth =
-                    Boolean.valueOf(useSslClientAuthStr).booleanValue();
+                    props.getProperty(PropertyNames.SSL_NEED_CLIENT_AUTH, DefaultValues.SSL_NEED_CLIENT_AUTH);
+            final boolean useSslClientAuth = Boolean.valueOf(useSslClientAuthStr).booleanValue();
 
-            log.debug("checkSslConfiguration",
-                    PropertyNames.SSL_NEED_CLIENT_AUTH + "=" +
-                            useSslClientAuth);
+            log.debug("checkSslConfiguration", PropertyNames.SSL_NEED_CLIENT_AUTH + "=" + useSslClientAuth);
 
             // Do we use customized SSL cipher suites?
-            final String sslCipherSuites =
-                    props.getProperty(PropertyNames.SSL_ENABLED_CIPHER_SUITES);
+            final String sslCipherSuites = props.getProperty(PropertyNames.SSL_ENABLED_CIPHER_SUITES);
 
-            log.debug("checkSslConfiguration",
-                    PropertyNames.SSL_ENABLED_CIPHER_SUITES + "=" +
-                            sslCipherSuites);
+            log.debug("checkSslConfiguration", PropertyNames.SSL_ENABLED_CIPHER_SUITES + "=" + sslCipherSuites);
 
             // Do we use customized SSL protocols?
-            final String sslProtocols =
-                    props.getProperty(PropertyNames.SSL_ENABLED_PROTOCOLS);
+            final String sslProtocols = props.getProperty(PropertyNames.SSL_ENABLED_PROTOCOLS);
 
-            log.debug("checkSslConfiguration",
-                    PropertyNames.SSL_ENABLED_PROTOCOLS + "=" +
-                            sslProtocols);
+            log.debug("checkSslConfiguration", PropertyNames.SSL_ENABLED_PROTOCOLS + "=" + sslProtocols);
 
             if (useSsl) {
-                setSslProperties(props.getProperty(
-                        PropertyNames.SSL_CLIENT_ENABLED_CIPHER_SUITES));
+                setSslProperties(props.getProperty(PropertyNames.SSL_CLIENT_ENABLED_CIPHER_SUITES));
             }
         } catch (Exception x) {
             System.out.println("Failed to setup SSL configuration: " + x);
@@ -490,13 +435,10 @@ public class RmiBootstrapTest extends RmiTestBase {
      * <p>
      * This method calls connectAndRead().
      **/
-    public void testCommunication(JMXServiceURL url)
-            throws IOException {
+    public void testCommunication(JMXServiceURL url) throws IOException {
 
-        final String defaultConf =
-                getDefaultFileName(DefaultValues.CONFIG_FILE_NAME);
-        final String confname =
-                System.getProperty(PropertyNames.CONFIG_FILE_NAME, defaultConf);
+        final String defaultConf = defaultFileNamePrefix + DefaultValues.CONFIG_FILE_NAME;
+        final String confname = System.getProperty(PropertyNames.CONFIG_FILE_NAME, defaultConf);
 
         final Properties props = new Properties();
         final File conf = new File(confname);
@@ -511,24 +453,19 @@ public class RmiBootstrapTest extends RmiTestBase {
 
         // Do we use authentication?
         final String useAuthenticationStr =
-                props.getProperty(PropertyNames.USE_AUTHENTICATION,
-                        DefaultValues.USE_AUTHENTICATION);
-        final boolean useAuthentication =
-                Boolean.valueOf(useAuthenticationStr).booleanValue();
+                props.getProperty(PropertyNames.USE_AUTHENTICATION, DefaultValues.USE_AUTHENTICATION);
+        final boolean useAuthentication = Boolean.valueOf(useAuthenticationStr).booleanValue();
 
         // Get Password File
-        final String defaultPasswordFileName = Utils.convertPath(
-                getDefaultFileName(DefaultValues.PASSWORD_FILE_NAME));
-        final String passwordFileName = Utils.convertPath(
-                props.getProperty(PropertyNames.PASSWORD_FILE_NAME,
-                        defaultPasswordFileName));
+        final String defaultPasswordFileName =
+                Utils.convertPath(defaultFileNamePrefix + DefaultValues.PASSWORD_FILE_NAME);
+        final String passwordFileName =
+                Utils.convertPath(props.getProperty(PropertyNames.PASSWORD_FILE_NAME, defaultPasswordFileName));
 
         // Get Access File
-        final String defaultAccessFileName = Utils.convertPath(
-                getDefaultFileName(DefaultValues.ACCESS_FILE_NAME));
-        final String accessFileName = Utils.convertPath(
-                props.getProperty(PropertyNames.ACCESS_FILE_NAME,
-                        defaultAccessFileName));
+        final String defaultAccessFileName = Utils.convertPath(defaultFileNamePrefix + DefaultValues.ACCESS_FILE_NAME);
+        final String accessFileName =
+                Utils.convertPath(props.getProperty(PropertyNames.ACCESS_FILE_NAME, defaultAccessFileName));
 
         if (useAuthentication) {
             System.out.println("PasswordFileName: " + passwordFileName);
@@ -558,11 +495,7 @@ public class RmiBootstrapTest extends RmiTestBase {
             // Tests that no one is allowed
             // connect & read
             //
-            final String[][] someCredentials = {
-                    null,
-                    {"modify", "R&D"},
-                    {"measure", "QED"}
-            };
+            final String[][] someCredentials = {null, {"modify", "R&D"}, {"measure", "QED"}};
             errorCount += connectAndRead(url, someCredentials, false, false);
         }
 
@@ -570,15 +503,11 @@ public class RmiBootstrapTest extends RmiTestBase {
             // Tests that the registered user/passwords are not allowed to
             // connect & read
             //
-            final String[][] badCredentials = {
-                    {"bad.user", "R&D"},
-                    {"measure", "bad.password"}
-            };
+            final String[][] badCredentials = {{"bad.user", "R&D"}, {"measure", "bad.password"}};
             errorCount += connectAndRead(url, badCredentials, false, false);
         }
         if (errorCount > 0) {
-            final String err = "Test " + confname + " failed with " +
-                    errorCount + " error(s)";
+            final String err = "Test " + confname + " failed with " + errorCount + " error(s)";
             log.debug("testCommunication", err);
             throw new RuntimeException(err);
         }
@@ -592,8 +521,7 @@ public class RmiBootstrapTest extends RmiTestBase {
      *
      * @return null if the test succeeds, an error message otherwise.
      **/
-    private String testConfiguration(File file)
-            throws IOException, InterruptedException {
+    private String testConfiguration(File file) throws IOException, InterruptedException {
 
         for (int i = 0; i < MAX_GET_FREE_PORT_TRIES; i++) {
             try {
@@ -602,35 +530,27 @@ public class RmiBootstrapTest extends RmiTestBase {
                 try {
                     path = (file == null) ? null : file.getCanonicalPath();
                 } catch (IOException x) {
-                    final String err = "Failed to test configuration " + file +
-                            ": " + x;
+                    final String err = "Failed to test configuration " + file + ": " + x;
                     log.trace("testConfiguration", err);
                     log.debug("testConfiguration", x);
                     return err;
                 }
-                final String config =
-                        (path == null) ? "Default config file" : path;
+                final String config = (path == null) ? "Default config file" : path;
 
                 System.out.println("***");
-                System.out.println(
-                        "*** Testing configuration (port=" + port + "): "
-                                + path);
+                System.out.println("*** Testing configuration (port=" + port + "): " + path);
                 System.out.println("***");
 
-                System.setProperty("com.sun.management.jmxremote.port",
-                        Integer.toString(port));
+                System.setProperty("com.sun.management.jmxremote.port", Integer.toString(port));
                 if (path != null) {
                     System.setProperty("com.sun.management.config.file", path);
                 } else {
-                    System.getProperties()
-                            .remove("com.sun.management.config.file");
+                    System.getProperties().remove("com.sun.management.config.file");
                 }
 
-                log.trace("testConfiguration",
-                        "com.sun.management.jmxremote.port=" + port);
+                log.trace("testConfiguration", "com.sun.management.jmxremote.port=" + port);
                 if (path != null && log.isDebugOn()) {
-                    log.trace("testConfiguration",
-                            "com.sun.management.config.file=" + path);
+                    log.trace("testConfiguration", "com.sun.management.config.file=" + path);
                 }
 
                 checkSslConfiguration();
@@ -644,13 +564,10 @@ public class RmiBootstrapTest extends RmiTestBase {
                             throw (BindException) x.getCause().getCause();
                         }
                     }
-                    final String err = "Failed to initialize connector:" +
-                            "\n\tcom.sun.management.jmxremote.port=" + port +
-                            ((path != null) ?
-                                    "\n\tcom.sun.management.config.file=" +
-                                            path :
-                                    "\n\t" + config) +
-                            "\n\tError is: " + x;
+                    final String err =
+                            "Failed to initialize connector:" + "\n\tcom.sun.management.jmxremote.port=" + port +
+                                    ((path != null) ? "\n\tcom.sun.management.config.file=" + path : "\n\t" + config) +
+                                    "\n\tError is: " + x;
                     log.trace("testConfiguration", err);
                     log.debug("testConfiguration", x);
                     return err;
@@ -660,25 +577,18 @@ public class RmiBootstrapTest extends RmiTestBase {
                 }
 
                 try {
-                    JMXServiceURL url =
-                            new JMXServiceURL("rmi", null, 0,
-                                    "/jndi/rmi://localhost:" +
-                                            port + "/jmxrmi");
+                    JMXServiceURL url = new JMXServiceURL("rmi", null, 0, "/jndi/rmi://localhost:" + port + "/jmxrmi");
 
                     try {
                         testCommunication(url);
                     } catch (Exception x) {
-                        final String err =
-                                "Failed to connect to agent {url=" + url +
-                                        "}: " + x;
+                        final String err = "Failed to connect to agent {url=" + url + "}: " + x;
                         log.trace("testConfiguration", err);
                         log.debug("testConfiguration", x);
                         return err;
                     }
                 } catch (Exception x) {
-                    final String err =
-                            "Failed to test configuration " + config +
-                                    ": " + x;
+                    final String err = "Failed to test configuration " + config + ": " + x;
                     log.trace("testConfiguration", err);
                     log.debug("testConfiguration", x);
                     return err;
@@ -691,17 +601,13 @@ public class RmiBootstrapTest extends RmiTestBase {
                         log.debug("testConfiguration", x);
                     }
                 }
-                System.out.println(
-                        "Configuration " + config + " successfully tested");
+                System.out.println("Configuration " + config + " successfully tested");
                 return null;
             } catch (BindException ex) {
             }
         }
-        System.err.println(
-                "Cannot find a free port after " + MAX_GET_FREE_PORT_TRIES +
-                        " tries");
-        return "Failed: cannot find a free port after " +
-                MAX_GET_FREE_PORT_TRIES + " tries";
+        System.err.println("Cannot find a free port after " + MAX_GET_FREE_PORT_TRIES + " tries");
+        return "Failed: cannot find a free port after " + MAX_GET_FREE_PORT_TRIES + " tries";
     }
 
     /**
@@ -710,16 +616,12 @@ public class RmiBootstrapTest extends RmiTestBase {
      *
      * @return null if the test succeeds, an error message otherwise.
      **/
-    private String testConfigurationKo(File conf)
-            throws InterruptedException, IOException {
-        String errStr = null;
-        errStr = testConfiguration(conf);
+    private String testConfigurationKo(File conf) throws InterruptedException, IOException {
+        String errStr = testConfiguration(conf);
         if (errStr == null) {
-            return "Configuration " +
-                    conf + " should have failed!";
+            return "Configuration " + conf + " should have failed!";
         }
-        System.out.println("Configuration " +
-                conf + " failed as expected");
+        System.out.println("Configuration " + conf + " failed as expected");
         log.debug("runko", "Error was: " + errStr);
         return null;
     }
@@ -732,8 +634,7 @@ public class RmiBootstrapTest extends RmiTestBase {
      *
      * @return null if the test succeeds, an error message otherwise.
      **/
-    private String testConfigurationFile(String fileName)
-            throws InterruptedException, IOException {
+    private String testConfigurationFile(String fileName) throws InterruptedException, IOException {
         File file = new File(fileName);
 
         if (fileName.endsWith("ok.properties")) {
@@ -744,8 +645,7 @@ public class RmiBootstrapTest extends RmiTestBase {
         if (fileName.endsWith("ko.properties")) {
             return testConfigurationKo(file);
         }
-        return fileName +
-                ": test file suffix must be one of [ko|ok].properties";
+        return fileName + ": test file suffix must be one of [ko|ok].properties";
     }
 
     /**

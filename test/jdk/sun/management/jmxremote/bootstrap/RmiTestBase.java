@@ -21,6 +21,12 @@
  * questions.
  */
 
+/*
+ * @library /test/lib
+ * */
+
+import jdk.test.lib.Platform;
+
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
@@ -32,7 +38,11 @@ import java.nio.file.attribute.AclEntry;
 import java.nio.file.attribute.AclEntryType;
 import java.nio.file.attribute.AclFileAttributeView;
 import java.nio.file.attribute.PosixFilePermissions;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -44,8 +54,10 @@ public class RmiTestBase {
     static final String DEST_SSL = DEST + SEP + "ssl";
     static final String TEST_SRC = "@TEST-SRC@";
 
-    static final boolean isWindows = System.getProperty("os.name").contains(
-            "Win");
+    static final String defaultFileNamePrefix =
+            System.getProperty("java" + ".home") + SEP + "conf" + SEP + "management" + SEP;
+
+    static final String defaultStoreNamePrefix = SRC + SEP + "ssl" + SEP;
 
     /**
      * A filter to find all filenames who match <prefix>*<suffix>.
@@ -87,10 +99,8 @@ public class RmiTestBase {
         String CONFIG_FILE_NAME = "com.sun.management.config.file";
         String USE_SSL = "com.sun.management.jmxremote.ssl";
         String USE_AUTHENTICATION = "com.sun.management.jmxremote.authenticate";
-        String PASSWORD_FILE_NAME =
-                "com.sun.management.jmxremote.password.file";
-        String ACCESS_FILE_NAME =
-                "com.sun.management.jmxremote.access.file";
+        String PASSWORD_FILE_NAME = "com.sun.management.jmxremote.password.file";
+        String ACCESS_FILE_NAME = "com.sun.management.jmxremote.access.file";
         String INSTRUMENT_ALL = "com.sun.management.instrumentall";
         String CREDENTIALS = "jmx.remote.credentials";
         String KEYSTORE = "javax.net.ssl.keyStore";
@@ -98,71 +108,35 @@ public class RmiTestBase {
         String KEYSTORE_TYPE = "javax.net.ssl.keyStoreType";
         String TRUSTSTORE = "javax.net.ssl.trustStore";
         String TRUSTSTORE_PASSWD = "javax.net.ssl.trustStorePassword";
-        String SSL_ENABLED_CIPHER_SUITES =
-                "com.sun.management.jmxremote.ssl.enabled.cipher.suites";
-        String SSL_ENABLED_PROTOCOLS =
-                "com.sun.management.jmxremote.ssl.enabled.protocols";
-        String SSL_NEED_CLIENT_AUTH =
-                "com.sun.management.jmxremote.ssl.need.client.auth";
-        String SSL_CLIENT_ENABLED_CIPHER_SUITES =
-                "javax.rmi.ssl.client.enabledCipherSuites";
-    }
-
-    static String getDefaultFileName(String basename) {
-        final StringBuffer defaultFileName =
-                new StringBuffer(System.getProperty("java.home"))
-                        .append(SEP)
-                        .append("conf")
-                        .append(SEP)
-                        .append("management")
-                        .append(SEP)
-                        .append(basename);
-        return defaultFileName.toString();
-    }
-
-    /**
-     * Compute the full path name for a default file.
-     *
-     * @param basename basename (with extension) of the default file.
-     * @return ${JRE}/conf/management/${basename}
-     **/
-    static String getDefaultStoreName(String basename) {
-        final StringBuffer defaultFileName =
-                new StringBuffer(SRC)
-                        .append(SEP)
-                        .append("ssl")
-                        .append(SEP)
-                        .append(basename);
-        return defaultFileName.toString();
+        String SSL_ENABLED_CIPHER_SUITES = "com.sun.management.jmxremote.ssl.enabled.cipher.suites";
+        String SSL_ENABLED_PROTOCOLS = "com.sun.management.jmxremote.ssl.enabled.protocols";
+        String SSL_NEED_CLIENT_AUTH = "com.sun.management.jmxremote.ssl.need.client.auth";
+        String SSL_CLIENT_ENABLED_CIPHER_SUITES = "javax.rmi.ssl.client.enabledCipherSuites";
     }
 
     /**
      * Copy test artifacts to test folder.
      *
      * @param filenamePattern the filename pattern to look for
-     * @return                files who match the filename pattern
-     * @throws IOException    if error occurs
+     * @return files who match the filename pattern
+     * @throws IOException if error occurs
      */
-    static List<Path> prepareTestFiles(String filenamePattern)
-            throws IOException {
+    static List<Path> prepareTestFiles(String filenamePattern) throws IOException {
         copySsl();
-        List<Path> files = Utils.findFiles(Paths.get(SRC),
-                (dir, name) -> name.matches(filenamePattern));
+        List<Path> files = Utils.findFiles(Paths.get(SRC), (dir, name) -> name.matches(filenamePattern));
 
-        final Function<String, String> removeSuffix = (s) -> s.substring(0,
-                s.lastIndexOf("."));
+        final Function<String, String> removeSuffix = (s) -> s.substring(0, s.lastIndexOf("."));
 
-        List<Path> propertyFiles = Utils.copyFiles(files, Paths.get(DEST),
-                removeSuffix,
-                StandardCopyOption.REPLACE_EXISTING);
+        List<Path> propertyFiles =
+                Utils.copyFiles(files, Paths.get(DEST), removeSuffix, StandardCopyOption.REPLACE_EXISTING);
 
-        if (isWindows) {
-            Utils.replaceFilesString(propertyFiles,
-                    (s) -> s.replace(TEST_SRC, DEST)
-                            .replaceAll("[/\\\\]", "\\\\\\\\"));
+        // replace @TEST-SRC@ with the path of the test folder
+        if (Platform.isWindows()) {
+            // On Windows, also replace forward slash or backslash to double
+            // backslashes
+            Utils.replaceFilesString(propertyFiles, (s) -> s.replace(TEST_SRC, DEST).replaceAll("[/\\\\]", "\\\\\\\\"));
         } else {
-            Utils.replaceFilesString(propertyFiles,
-                    (s) -> s.replace(TEST_SRC, DEST));
+            Utils.replaceFilesString(propertyFiles, (s) -> s.replace(TEST_SRC, DEST));
         }
 
         grantFilesAccess(propertyFiles, AccessControl.OWNER);
@@ -177,22 +151,17 @@ public class RmiTestBase {
      * @param access user access or full access
      * @throws IOException if error occurs
      */
-    static void grantAccess(Path file, AccessControl access)
-            throws IOException {
+    static void grantAccess(Path file, AccessControl access) throws IOException {
         Set<String> attr = file.getFileSystem().supportedFileAttributeViews();
         if (attr.contains("posix")) {
-            String perms = access == AccessControl.OWNER ? "rw-------" :
-                    "rwxrwxrwx";
-            Files.setPosixFilePermissions(file,
-                    PosixFilePermissions.fromString(perms));
+            String perms = access == AccessControl.OWNER ? "rw-------" : "rwxrwxrwx";
+            Files.setPosixFilePermissions(file, PosixFilePermissions.fromString(perms));
         } else if (attr.contains("acl")) {
-            AclFileAttributeView view = Files.getFileAttributeView(file,
-                    AclFileAttributeView.class);
+            AclFileAttributeView view = Files.getFileAttributeView(file, AclFileAttributeView.class);
             List<AclEntry> acl = new ArrayList<>();
             for (AclEntry thisEntry : view.getAcl()) {
                 if (access == AccessControl.OWNER) {
-                    if (thisEntry.principal().getName()
-                            .equals(view.getOwner().getName())) {
+                    if (thisEntry.principal().getName().equals(view.getOwner().getName())) {
                         acl.add(Utils.allowAccess(thisEntry));
                     } else if (thisEntry.type() == AclEntryType.ALLOW) {
                         acl.add(Utils.revokeAccess(thisEntry));
@@ -200,8 +169,8 @@ public class RmiTestBase {
                         acl.add(thisEntry);
                     }
                 } else {
-                    if (!thisEntry.principal().getName().contains("NULL SID")
-                            && thisEntry.type() != AclEntryType.ALLOW) {
+                    if (!thisEntry.principal().getName().contains("NULL SID") &&
+                            thisEntry.type() != AclEntryType.ALLOW) {
                         acl.add(Utils.allowAccess(thisEntry));
                     } else {
                         acl.add(thisEntry);
@@ -221,8 +190,7 @@ public class RmiTestBase {
      * @param access user access or full access
      * @throws IOException if error occurs
      */
-    static void grantFilesAccess(List<Path> files, AccessControl access)
-            throws IOException {
+    static void grantFilesAccess(List<Path> files, AccessControl access) throws IOException {
         for (Path thisFile : files) {
             grantAccess(thisFile, access);
         }
@@ -237,17 +205,11 @@ public class RmiTestBase {
         Path sslSource = Paths.get(SRC_SSL);
         Path sslTarget = Paths.get(DEST_SSL);
 
-        List<Path> files = Arrays.stream(sslSource.toFile().listFiles())
-                .map(File::toPath)
-                .collect(Collectors.toList());
-        Utils.copyFiles(
-                files,
-                sslTarget,
-                StandardCopyOption.REPLACE_EXISTING);
+        List<Path> files = Arrays.stream(sslSource.toFile().listFiles()).map(File::toPath).collect(Collectors.toList());
+        Utils.copyFiles(files, sslTarget, StandardCopyOption.REPLACE_EXISTING);
 
         for (Path file : files) {
-            grantAccess(sslTarget.resolve(file.getFileName()),
-                    AccessControl.EVERYONE);
+            grantAccess(sslTarget.resolve(file.getFileName()), AccessControl.EVERYONE);
         }
     }
 
@@ -256,7 +218,7 @@ public class RmiTestBase {
      * indicated by the "test.src" management property.
      *
      * @param useSsl boolean that indicates if test uses SSL
-     * @return       configuration files
+     * @return configuration files
      **/
     static File[] findConfigurationFilesOk(boolean useSsl) {
         String prefix = useSsl ? "management_ssltest" : "management_test";
@@ -266,8 +228,9 @@ public class RmiTestBase {
     /**
      * Get all "management*ko.properties" files in the directory
      * indicated by the "test.src" management property.
+     *
      * @param useSsl boolean that indicates if test uses SSL
-     * @return       configuration files
+     * @return configuration files
      **/
     static File[] findConfigurationFilesKo(boolean useSsl) {
         String prefix = useSsl ? "management_ssltest" : "management_test";
@@ -279,7 +242,7 @@ public class RmiTestBase {
      * indicated by the "test.src" management property.
      *
      * @param useSsl boolean that indicates if test uses SSL
-     * @return       configuration files
+     * @return configuration files
      **/
     static File[] findAllConfigurationFiles(boolean useSsl) {
         String prefix = useSsl ? "management_ssltest" : "management_test";
@@ -290,14 +253,13 @@ public class RmiTestBase {
      * Get all "management*.properties" files in the directory
      * indicated by the "test.src" management property.
      *
-     * @param prefix  filename prefix
-     * @param suffix  filename suffix
-     * @return        configuration files
+     * @param prefix filename prefix
+     * @param suffix filename suffix
+     * @return configuration files
      **/
-     static File[] findAllConfigurationFiles(String prefix, String suffix) {
+    static File[] findAllConfigurationFiles(String prefix, String suffix) {
         final File dir = new File(DEST);
-        final FilenameFilter filter =
-                FilenameFilterFactory.prefixSuffix(prefix, suffix);
+        final FilenameFilter filter = FilenameFilterFactory.prefixSuffix(prefix, suffix);
         return dir.listFiles(filter);
     }
 }
