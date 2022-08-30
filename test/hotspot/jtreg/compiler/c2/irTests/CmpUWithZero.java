@@ -36,7 +36,7 @@ import compiler.lib.ir_framework.*;
 
 public class CmpUWithZero {
     static volatile boolean field;
-    
+
     public static void main(String[] args) {
         TestFramework.run();
     }
