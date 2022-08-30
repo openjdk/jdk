@@ -56,9 +56,10 @@ import org.testng.annotations.Test;
  * @modules java.base/jdk.internal.misc
  *          java.base/jdk.internal.ref
  *          java.management
- * @compile --enable-preview -source ${jdk.version} CleanerTest.java
+ * @enablePreview
+ * @compile -source ${jdk.version} CleanerTest.java
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run testng/othervm --enable-preview
+ * @run testng/othervm
  *      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *      -verbose:gc CleanerTest
  */
@@ -102,7 +103,7 @@ public class CleanerTest {
 
         CleanableCase s = setupPhantom(COMMON, cleaner);
         cleaner = null;
-        checkCleaned(s.getSemaphore(), true, "Cleaner was cleaned:");
+        checkCleaned(s.getSemaphore(), true, "Cleaner was cleaned");
     }
 
     /**
@@ -137,7 +138,7 @@ public class CleanerTest {
 
         CleanableCase s = setupPhantom(COMMON, cleaner);
         cleaner = null;
-        checkCleaned(s.getSemaphore(), true, "Cleaner was cleaned:");
+        checkCleaned(s.getSemaphore(), true, "Cleaner was cleaned");
     }
 
     /**
@@ -219,9 +220,9 @@ public class CleanerTest {
 
         checkCleaned(test.getSemaphore(),
                 r == CleanableCase.EV_CLEAN,
-                "Cleanable was cleaned:");
+                "Cleanable was cleaned");
         checkCleaned(cc.getSemaphore(), true,
-                "The reference to the Cleanable was freed:");
+                "The reference to the Cleanable was freed");
     }
 
     /**
@@ -280,8 +281,8 @@ public class CleanerTest {
      * Use a larger number of cycles to wait for an expected cleaning to occur.
      *
      * @param semaphore a Semaphore
-     * @param expectCleaned true if cleaning should occur
-     * @param msg a message to explain the error
+     * @param expectCleaned true if cleaning the function should have been run, otherwise not run
+     * @param msg a message describing the cleaning function expected to be run or not run
      */
     static void checkCleaned(Semaphore semaphore, boolean expectCleaned, String msg) {
         long max_cycles = expectCleaned ? 10 : 3;
@@ -551,7 +552,7 @@ public class CleanerTest {
         }
 
         obj = null;
-        checkCleaned(s1, true, "reference was cleaned:");
+        checkCleaned(s1, true, "reference was cleaned");
         cleaner = null;
     }
 
@@ -566,6 +567,6 @@ public class CleanerTest {
         CleanableCase s = setupPhantom(cleaner, obj);
         obj = null;
         checkCleaned(s.getSemaphore(), true,
-                "Object was cleaned using CleanerFactory.cleaner():");
+                "Object cleaned using internal CleanerFactory.cleaner()");
     }
 }
