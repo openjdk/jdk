@@ -394,10 +394,6 @@ class os::Linux {
   static void* resolve_function_descriptor(void* p);
 
 #ifdef __GLIBC__
-  // get_mallinfo() is a wrapper for either mallinfo or mallinfo2, depending on what
-  // we find available. It will prefer mallinfo2() over mallinfo() if possible. If we only
-  // have mallinfo(), values may be 32-bit truncated and that is signalled via the return
-  // code "ok_but_possibly_wrapped".
   struct glibc_mallinfo2 {
     size_t arena;
     size_t ordblks;
@@ -411,6 +407,9 @@ class os::Linux {
     size_t keepcost;
   };
   enum class mallinfo_retval_t { ok, error, ok_but_possibly_wrapped };
+  // get_mallinfo() is a wrapper for mallinfo/mallinfo2. It will prefer mallinfo2() if found.
+  // If we only have mallinfo(), values may be 32-bit truncated, which is signaled via
+  // "ok_but_possibly_wrapped".
   static mallinfo_retval_t get_mallinfo(glibc_mallinfo2* out);
 #endif
 };

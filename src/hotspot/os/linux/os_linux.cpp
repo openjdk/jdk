@@ -169,13 +169,12 @@ const char * os::Linux::_libpthread_version = NULL;
 size_t os::Linux::_default_large_page_size = 0;
 
 #ifdef __GLIBC__
-// Note: mallinfo(3) vs mallinfo2(3):
-// We want to be runnable with both old and new glibcs. Old glibcs just offer mallinfo(3).
-// New glibcs deprecate mallinfo(3) and offer mallinfo2(3) as replacement. Future glibc's
-// may remove mallinfo(3) altogether.
+// We want to be runnable with both old and new glibcs.
+// Old glibcs offer mallinfo(). New glibcs deprecate mallinfo() and offer mallinfo2()
+// as replacement. Future glibc's may remove the deprecated mallinfo().
 // Therefore we may have one, both, or possibly neither (?). Code should tolerate all
-// cases, which is why we resolve the functions dynamically. Outside code uses
-// os::Linux::get_mallinfo() utility function that hides this mess.
+// cases, which is why we resolve the functions dynamically. Outside code should use
+// the Linux::get_mallinfo() utility function which exists to hide this mess.
 struct glibc_mallinfo {
   int arena;
   int ordblks;
@@ -188,8 +187,6 @@ struct glibc_mallinfo {
   int fordblks;
   int keepcost;
 };
-// struct glibc_mallinfo2 lives in os_linux.hpp since it does dual duty as output
-// structure for both the native mallinfo2(3) as for the wrapper function
 typedef struct glibc_mallinfo (*mallinfo_func_t)(void);
 typedef struct os::Linux::glibc_mallinfo2 (*mallinfo2_func_t)(void);
 static mallinfo_func_t g_mallinfo = NULL;
@@ -4651,11 +4648,6 @@ jint os::init_2(void) {
     FLAG_SET_DEFAULT(UseCodeCacheFlushing, false);
   }
 
-#ifdef __GLIBC__
-  log_debug(os)("mallinfo: %s", g_mallinfo ? "yes" : "no");
-  log_debug(os)("mallinfo2: %s", g_mallinfo2 ? "yes" : "no");
-#endif
-
   return JNI_OK;
 }
 
@@ -5434,7 +5426,8 @@ os::Linux::mallinfo_retval_t os::Linux::get_mallinfo(glibc_mallinfo2* out) {
     *out = mi;
     return mallinfo_retval_t::ok;
   } else if (g_mallinfo) {
-    // not perfect but ok if process virt size < 4g or if wrapping does not matter to the caller
+    // mallinfo() returns 32-bit values. Not perfect but still useful if
+    // process virt size < 4g
     glibc_mallinfo mi = g_mallinfo();
     out->arena = (int) mi.arena;
     out->ordblks = (int) mi.ordblks;
@@ -5461,26 +5454,25 @@ bool os::can_trim_native_heap() {
 #endif
 }
 
-bool os::should_trim_native_heap(size_t retain_size) {
+static const size_t retain_size = 2 * M;
+
+bool os::should_trim_native_heap() {
 #ifdef __GLIBC__
   bool rc = true;
-  // It is difficult to predict the effect a malloc_trim(3) will have.
-  // mallinfo(3) looks like a good candidate but does not work that well
-  // in practice.
+  // We try, using mallinfo, to predict whether a malloc_trim(3) will be beneficial.
   //
-  // "mallinfo::keepcost" is no help even if manpage claims this to be the
-  // projected trim size. In practice it is just a very small value with
-  // no relation to the actual effect trimming will have.
+  // "mallinfo::keepcost" is no help even if manpage claims this to be the projected
+  // trim size. In practice it is just a very small value with no relation to the actual
+  // effect trimming will have.
   //
-  // The best we have is "mallinfo::fordblks", the total chunk size of free
-  // blocks. Since only free blocks can be trimmed, a very low bar is to require
-  // that size to be higher than our retain size. Unfortunately, "mallinfo::fordblks"
-  // does not react to malloc_trim(3). Glibc trims by calling madvice(MADV_DONT_NEED)
-  // on suitable chunks, but does not destruct the chunks nor updates its
-  // bookkeeping.
+  // Our best bet is "mallinfo::fordblks", the total chunk size of free blocks. Since
+  // only free blocks can be trimmed, a very low bar is to require their combined size
+  // to be higher than our retain size. Note, however, that "mallinfo::fordblks" includes
+  // already-trimmed blocks, since glibc trims by calling madvice(MADV_DONT_NEED) on free
+  // chunks but does not update its bookkeeping.
   //
-  // In the end we want to prevent obvious bogus attempts to trim, and for that
-  // fordblks is good enough.
+  // In the end we want to prevent obvious bogus attempts to trim, and for that fordblks
+  // is good enough.
   os::Linux::glibc_mallinfo2 mi;
   os::Linux::mallinfo_retval_t mirc = os::Linux::get_mallinfo(&mi);
   const size_t total_free = mi.fordblks;
@@ -5493,7 +5485,7 @@ bool os::should_trim_native_heap(size_t retain_size) {
 #endif
 }
 
-bool os::trim_native_heap(os::size_change_t* rss_change, size_t retain_size) {
+bool os::trim_native_heap(os::size_change_t* rss_change) {
 #ifdef __GLIBC__
   os::Linux::meminfo_t info1;
   os::Linux::meminfo_t info2;

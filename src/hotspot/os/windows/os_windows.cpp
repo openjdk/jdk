@@ -5948,5 +5948,5 @@ void os::print_active_locale(outputStream* st) {
 
 // stubbed-out trim-native support
 bool os::can_trim_native_heap() { return false; }
-bool os::should_trim_native_heap(size_t retain_size) { return false; }
-bool os::trim_native_heap(os::size_change_t* rss_change, size_t retain_size) { return false; }
+bool os::should_trim_native_heap() { return false; }
+bool os::trim_native_heap(os::size_change_t* rss_change) { return false; }

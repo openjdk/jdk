@@ -703,11 +703,6 @@
           "enabled.")                                                       \
           range(0, max_juint)                                               \
                                                                             \
-  develop(size_t, GCTrimNativeHeapRetainSize, 5 * M,                        \
-          "If GCTrimNativeHeap is enabled: Baseline threshold before that " \
-          "trimming will not be attempted.")                                \
-          range(0, SIZE_MAX)                                                \
-                                                                            \
           // end of GC_FLAGS
 
 DECLARE_FLAGS(GC_FLAGS)

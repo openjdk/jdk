@@ -68,7 +68,7 @@ protected:
         log_debug(gc, trim)("NativeTrimmer stopped.");
         break;
       }
-      if (os::should_trim_native_heap(GCTrimNativeHeapRetainSize)) {
+      if (os::should_trim_native_heap()) {
         GCTrimNative::do_trim();
       }
     }
@@ -121,11 +121,8 @@ void GCTrimNative::do_trim() {
     if (sc.after != SIZE_MAX) {
       const size_t delta = sc.after < sc.before ? (sc.before - sc.after) : (sc.after - sc.before);
       const char sign = sc.after < sc.before ? '-' : '+';
-      log_debug(gc, trim)("Trim native heap (retain size: " PROPERFMT "): "
-                          "RSS+Swap: " PROPERFMT "->" PROPERFMT " (%c" PROPERFMT "), %1.3fms",
-                          PROPERARGS(GCTrimNativeHeapRetainSize),
-                          PROPERARGS(sc.before), PROPERARGS(sc.after),
-                          sign, PROPERARGS(delta),
+      log_debug(gc, trim)("Trim native heap: RSS+Swap: " PROPERFMT "->" PROPERFMT " (%c" PROPERFMT "), %1.3fms",
+                          PROPERARGS(sc.before), PROPERARGS(sc.after), sign, PROPERARGS(delta),
                           trim_time.seconds() * 1000);
     } else {
       log_debug(gc, trim)("Trim native heap (no details)");
@@ -171,7 +168,7 @@ bool GCTrimNative::should_trim(bool ignore_delay) {
   return
       GCTrimNativeHeap && os::can_trim_native_heap() &&
       (ignore_delay || os::elapsedTime() > _next_trim_not_before) &&
-      os::should_trim_native_heap(GCTrimNativeHeapRetainSize);
+      os::should_trim_native_heap();
 }
 
 void GCTrimNative::execute_trim() {
