@@ -29,17 +29,14 @@ on:
   workflow_call:
     inputs:
       gcc-major-version:
-        required: false
+        required: true
         type: string
-        default: '10'
       apt-gcc-version:
-        required: false
+        required: true
         type: string
-        default: '10.3.0-1ubuntu1~20.04'
       apt-gcc-cross-suffix:
-        required: false
+        required: true
         type: string
-        default: 'cross1'
 
 jobs:
   build-cross-compile:
