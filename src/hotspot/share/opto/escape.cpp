@@ -610,7 +610,7 @@ bool ConnectionGraph::can_reduce_this_phi(const Node* phi) const {
     }
 
     if (use->is_AddP()) {
-      if (use->in(AddPNode::Offset)->find_long_con(-1) == -1) {
+      if (use->in(AddPNode::Offset)->find_intptr_t_con(-1) == -1) {
         NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Will NOT try to reduce Phi %d. Did not find constant input for %d : AddP.", phi->_idx, use->_idx);)
         return false;
       }

@@ -1117,9 +1117,9 @@ public:
 
   const DictI needed_offsets() const { return DictI(_fields_and_memories); }
 
-  int field_idx(jlong offset) const {
+  int field_idx(int offset) const {
     assert(offset > 0, "Offset should be positive.");
-    return (intptr_t) (*_fields_and_memories)[(void*)offset];
+    return (intptr_t) (*_fields_and_memories)[(void*)(intptr_t)offset];
   }
 
   int base_idx(Node* base, uint previous_matches) const {
@@ -1136,21 +1136,21 @@ public:
     return -1;
   }
 
-  bool needs_field(intptr_t offset) const {
-    return (*_fields_and_memories)[(void*)offset] != NULL;
+  bool needs_field(int offset) const {
+    return (*_fields_and_memories)[(void*)(intptr_t)offset] != NULL;
   }
 
   void register_addp(AddPNode* addp);
   void register_offset_of_all_fields(Node* memory);
-  void register_offset(jlong offset, Node* memory, bool override = false);
+  void register_offset(int offset, Node* memory, bool override = false);
   bool register_use(Node* n);
 
-  Node* memory_for(jlong field, Node* base, uint previous_matches) const;
+  Node* memory_for(int field, Node* base, uint previous_matches) const;
 
-  void register_value_for_field(jlong field, Node* base, Node* value, uint previous_matches) ;
+  void register_value_for_field(int field, Node* base, Node* value, uint previous_matches) ;
 
-  Node* make_load(Node* ctrl, Node* base, Node* mem, jlong offset, PhaseIterGVN* igvn);
-  Node* value_phi_for_field(jlong field, PhaseIterGVN* igvn) ;
+  Node* make_load(Node* ctrl, Node* base, Node* mem, int offset, PhaseIterGVN* igvn);
+  Node* value_phi_for_field(int field, PhaseIterGVN* igvn) ;
 
   static ReducedAllocationMergeNode* make(Compile* C, PhaseIterGVN* igvn, const ConnectionGraph* cg, PhiNode* phi) ;
 };

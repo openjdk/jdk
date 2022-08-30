@@ -1198,7 +1198,7 @@ bool PhaseMacroExpand::eliminate_boxing_node(CallStaticJavaNode *boxing) {
 }
 
 bool PhaseMacroExpand::eliminate_ram_addp_use(ReducedAllocationMergeNode *ram, AddPNode* addp) {
-  jlong offset = addp->in(AddPNode::Offset)->find_long_con(-1);
+  int offset = (int)addp->in(AddPNode::Offset)->find_intptr_t_con(-1);
   assert(offset != -1, "Didn't find constant offset for AddP.");
 
   Node* value_phi = ram->value_phi_for_field(offset, &_igvn);
@@ -1270,7 +1270,7 @@ bool PhaseMacroExpand::eliminate_reduced_allocation_merge(ReducedAllocationMerge
       // Scan object's fields adding an input to the safepoint for each field.
       for (int j = 0; j < nfields; j++) {
         ciField* field = iklass->nonstatic_field_at(j);
-        jlong offset = field->offset();
+        int offset = field->offset();
         ciType* elem_type = field->type();
         BasicType basic_elem_type = field->layout_type();
         const Type *field_type;

@@ -1744,17 +1744,17 @@ void ReducedAllocationMergeNode::register_offset_of_all_fields(Node* memory) {
 
   for (int j = 0; j < nfields; j++) {
     ciField* field = iklass->nonstatic_field_at(j);
-    jlong offset = field->offset();
+    int offset = field->offset();
 
     register_offset(offset, memory);
   }
 }
 
-void ReducedAllocationMergeNode::register_offset(jlong offset, Node* memory, bool override) {
+void ReducedAllocationMergeNode::register_offset(int offset, Node* memory, bool override) {
   assert(offset > 0, "Offset of use should be >= 0.");
 
-  if ((*_fields_and_memories)[(void*)offset] == NULL) {
-    _fields_and_memories->Insert((void*)offset, (void*)(intptr_t)req());
+  if ((*_fields_and_memories)[(void*)(intptr_t)offset] == NULL) {
+    _fields_and_memories->Insert((void*)(intptr_t)offset, (void*)(intptr_t)req());
 
     for (uint b_idx = 1; b_idx <= _number_of_bases; ++b_idx) {
       add_req(memory->is_Phi() && memory->in(0) == in(0) ? memory->in(b_idx) : memory);
@@ -1774,7 +1774,7 @@ void ReducedAllocationMergeNode::register_addp(AddPNode* addp) {
   assert(addp->outcnt() > 0 && addp->raw_out(0)->is_Load(), "AddP output is not load.");
   assert(addp->in(AddPNode::Address) == addp->in(AddPNode::Base), "AddP base and address aren't the same.");
 
-  jlong offset = addp->in(AddPNode::Offset)->find_long_con(-1);
+  int offset = addp->in(AddPNode::Offset)->find_intptr_t_con(-1);
   Node* memory = addp->raw_out(0)->in(LoadNode::Memory);
   register_offset(offset, memory, /*override*/true);
 }
@@ -1802,7 +1802,7 @@ bool ReducedAllocationMergeNode::register_use(Node* n) {
   return true;
 }
 
-Node* ReducedAllocationMergeNode::memory_for(jlong offset, Node* base, uint previous_matches) const {
+Node* ReducedAllocationMergeNode::memory_for(int offset, Node* base, uint previous_matches) const {
   int field_start_offset = field_idx(offset);
   int base_offset = base_idx(base, previous_matches);
 
@@ -1818,7 +1818,7 @@ Node* ReducedAllocationMergeNode::memory_for(jlong offset, Node* base, uint prev
   return memory;
 }
 
-void ReducedAllocationMergeNode::register_value_for_field(jlong offset, Node* base, Node* value, uint previous_matches) {
+void ReducedAllocationMergeNode::register_value_for_field(int offset, Node* base, Node* value, uint previous_matches) {
   assert(value != NULL, "trying to register null pointer as value.");
   int field_start_offset = field_idx(offset);
   int base_offset = base_idx(base, previous_matches);
@@ -1826,7 +1826,7 @@ void ReducedAllocationMergeNode::register_value_for_field(jlong offset, Node* ba
   set_req(field_start_offset + base_offset, value);
 }
 
-Node* ReducedAllocationMergeNode::make_load(Node* ctrl, Node* base, Node* mem, jlong offset, PhaseIterGVN* igvn) {
+Node* ReducedAllocationMergeNode::make_load(Node* ctrl, Node* base, Node* mem, int offset, PhaseIterGVN* igvn) {
   base                       = base->is_EncodeP() ? base->in(1) : base;
   Node* off                  = igvn->transform((Node*)ConLNode::make(offset));
   Node* addp                 = igvn->transform(new AddPNode(base, base, off));
@@ -1864,7 +1864,7 @@ Node* ReducedAllocationMergeNode::make_load(Node* ctrl, Node* base, Node* mem, j
   return igvn->register_new_node_with_optimizer(load);
 }
 
-Node* ReducedAllocationMergeNode::value_phi_for_field(jlong field, PhaseIterGVN* igvn) {
+Node* ReducedAllocationMergeNode::value_phi_for_field(int field, PhaseIterGVN* igvn) {
   PhiNode* phi     = new PhiNode(this->in(0), Type::BOTTOM);
   int field_index  = field_idx(field);
   const Type *t    = Type::TOP;
