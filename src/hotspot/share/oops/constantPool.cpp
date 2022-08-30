@@ -329,6 +329,7 @@ void ConstantPool::add_dumped_interned_strings() {
 }
 #endif
 
+#if INCLUDE_CDS
 // CDS support. Create a new resolved_references array.
 void ConstantPool::restore_unshareable_info(TRAPS) {
   if (!_pool_holder->is_linked() && !_pool_holder->is_rewritten()) {
@@ -341,9 +342,6 @@ void ConstantPool::restore_unshareable_info(TRAPS) {
 
   // Only create the new resolved references array if it hasn't been attempted before
   if (resolved_references() != NULL) return;
-
-  // restore the C++ vtable from the shared archive
-  restore_vtable();
 
   if (vmClasses::Object_klass_loaded()) {
     ClassLoaderData* loader_data = pool_holder()->class_loader_data();
@@ -427,6 +425,7 @@ void ConstantPool::remove_unshareable_info() {
     cache()->remove_unshareable_info();
   }
 }
+#endif // INCLUDE_CDS
 
 int ConstantPool::cp_to_object_index(int cp_index) {
   // this is harder don't do this so much.
@@ -584,7 +583,7 @@ Klass* ConstantPool::klass_at_if_loaded(const constantPoolHandle& this_cp, int w
     oop protection_domain = this_cp->pool_holder()->protection_domain();
     Handle h_prot (current, protection_domain);
     Handle h_loader (current, loader);
-    Klass* k = SystemDictionary::find_instance_klass(name, h_loader, h_prot);
+    Klass* k = SystemDictionary::find_instance_klass(current, name, h_loader, h_prot);
 
     // Avoid constant pool verification at a safepoint, as it takes the Module_lock.
     if (k != NULL && current->is_Java_thread()) {
@@ -2271,9 +2270,10 @@ void ConstantPool::print_on(outputStream* st) const {
     st->print_cr(" - holder: " INTPTR_FORMAT, p2i(pool_holder()));
   }
   st->print_cr(" - cache: " INTPTR_FORMAT, p2i(cache()));
-  st->print_cr(" - resolved_references: " INTPTR_FORMAT, p2i(resolved_references()));
+  st->print_cr(" - resolved_references: " INTPTR_FORMAT, p2i(resolved_references_or_null()));
   st->print_cr(" - reference_map: " INTPTR_FORMAT, p2i(reference_map()));
   st->print_cr(" - resolved_klasses: " INTPTR_FORMAT, p2i(resolved_klasses()));
+  st->print_cr(" - cp length: %d", length());
 
   for (int index = 1; index < length(); index++) {      // Index 0 is unused
     ((ConstantPool*)this)->print_entry_on(index, st);

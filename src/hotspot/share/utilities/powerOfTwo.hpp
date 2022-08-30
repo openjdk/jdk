@@ -120,4 +120,22 @@ inline T next_power_of_2(T value)  {
   return round_up_power_of_2(value + 1);
 }
 
+// Find log2 value greater than this input
+template <typename T, ENABLE_IF(std::is_integral<T>::value)>
+inline T ceil_log2(T value) {
+  T ret;
+  for (ret = 1; ((T)1 << ret) < value; ++ret);
+  return ret;
+}
+
+// Return the largest power of two that is a submultiple of the given value.
+// This is the same as the numeric value of the least-significant set bit.
+// For unsigned values, it replaces the old trick of (value & -value).
+// precondition: value > 0.
+template<typename T, ENABLE_IF(std::is_integral<T>::value)>
+inline T submultiple_power_of_2(T value) {
+  assert(value > 0, "Invalid value");
+  return value & -value;
+}
+
 #endif // SHARE_UTILITIES_POWEROFTWO_HPP

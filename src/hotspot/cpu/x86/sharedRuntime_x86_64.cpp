@@ -615,25 +615,40 @@ static void gen_c2i_adapter(MacroAssembler *masm,
   __ bind(skip_fixup);
 
   // Since all args are passed on the stack, total_args_passed *
-  // Interpreter::stackElementSize is the space we need. Plus 1 because
-  // we also account for the return address location since
-  // we store it first rather than hold it in rax across all the shuffling
+  // Interpreter::stackElementSize is the space we need.
 
-  int extraspace = (total_args_passed * Interpreter::stackElementSize) + wordSize;
+  assert(total_args_passed >= 0, "total_args_passed is %d", total_args_passed);
+
+  int extraspace = (total_args_passed * Interpreter::stackElementSize);
 
   // stack is aligned, keep it that way
+  // This is not currently needed or enforced by the interpreter, but
+  // we might as well conform to the ABI.
   extraspace = align_up(extraspace, 2*wordSize);
 
-  // Get return address
-  __ pop(rax);
-
   // set senderSP value
-  __ mov(r13, rsp);
+  __ lea(r13, Address(rsp, wordSize));
 
-  __ subptr(rsp, extraspace);
+#ifdef ASSERT
+  __ check_stack_alignment(r13, "sender stack not aligned");
+#endif
+  if (extraspace > 0) {
+    // Pop the return address
+    __ pop(rax);
 
-  // Store the return address in the expected location
-  __ movptr(Address(rsp, 0), rax);
+    __ subptr(rsp, extraspace);
+
+    // Push the return address
+    __ push(rax);
+
+    // Account for the return address location since we store it first rather
+    // than hold it in a register across all the shuffling
+    extraspace += wordSize;
+  }
+
+#ifdef ASSERT
+  __ check_stack_alignment(rsp, "callee stack not aligned", wordSize, rax);
+#endif
 
   // Now write the args into the outgoing interpreter space
   for (int i = 0; i < total_args_passed; i++) {
@@ -779,9 +794,6 @@ void SharedRuntime::gen_i2c_adapter(MacroAssembler *masm,
   // If this happens, control eventually transfers back to the compiled
   // caller, but with an uncorrected stack, causing delayed havoc.
 
-  // Pick up the return address
-  __ movptr(rax, Address(rsp, 0));
-
   if (VerifyAdapterCalls &&
       (Interpreter::code() != NULL || StubRoutines::code1() != NULL)) {
     // So, let's test for cascading c2i/i2c adapters right now.
@@ -789,6 +801,8 @@ void SharedRuntime::gen_i2c_adapter(MacroAssembler *masm,
     //         StubRoutines::contains($return_addr),
     //         "i2c adapter must return to an interpreter frame");
     __ block_comment("verify_i2c { ");
+    // Pick up the return address
+    __ movptr(rax, Address(rsp, 0));
     Label L_ok;
     if (Interpreter::code() != NULL)
       range_check(masm, rax, r11,
@@ -813,21 +827,15 @@ void SharedRuntime::gen_i2c_adapter(MacroAssembler *masm,
   // we need to align the outgoing SP for compiled code.
   __ movptr(r11, rsp);
 
-  // Cut-out for having no stack args.  Since up to 2 int/oop args are passed
-  // in registers, we will occasionally have no stack args.
-  int comp_words_on_stack = 0;
-  if (comp_args_on_stack) {
-    // Sig words on the stack are greater-than VMRegImpl::stack0.  Those in
-    // registers are below.  By subtracting stack0, we either get a negative
-    // number (all values in registers) or the maximum stack slot accessed.
+  // Pick up the return address
+  __ pop(rax);
 
-    // Convert 4-byte c2 stack slots to words.
-    comp_words_on_stack = align_up(comp_args_on_stack*VMRegImpl::stack_slot_size, wordSize)>>LogBytesPerWord;
-    // Round up to miminum stack alignment, in wordSize
-    comp_words_on_stack = align_up(comp_words_on_stack, 2);
+  // Convert 4-byte c2 stack slots to words.
+  int comp_words_on_stack = align_up(comp_args_on_stack*VMRegImpl::stack_slot_size, wordSize)>>LogBytesPerWord;
+
+  if (comp_args_on_stack) {
     __ subptr(rsp, comp_words_on_stack * wordSize);
   }
-
 
   // Ensure compiled code always sees stack at proper alignment
   __ andptr(rsp, -16);
@@ -1754,15 +1762,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     }
 
 #ifdef ASSERT
-    {
-      Label L;
-      __ mov(rax, rsp);
-      __ andptr(rax, -16); // must be 16 byte boundary (see amd64 ABI)
-      __ cmpptr(rax, rsp);
-      __ jcc(Assembler::equal, L);
-      __ stop("improperly aligned stack");
-      __ bind(L);
-    }
+  __ check_stack_alignment(rsp, "improperly aligned stack");
 #endif /* ASSERT */
 
 

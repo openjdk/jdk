@@ -401,6 +401,7 @@ void Method::metaspace_pointers_do(MetaspaceClosure* it) {
   NOT_PRODUCT(it->push(&_name);)
 }
 
+#if INCLUDE_CDS
 // Attempt to return method to original state.  Clear any pointers
 // (to objects outside the shared spaces).  We won't be able to predict
 // where they should point in a new JVM.  Further initialize some
@@ -410,6 +411,11 @@ void Method::remove_unshareable_info() {
   unlink_method();
   JFR_ONLY(REMOVE_METHOD_ID(this);)
 }
+
+void Method::restore_unshareable_info(TRAPS) {
+  assert(is_method() && is_valid_method(this), "ensure C++ vtable is restored");
+}
+#endif
 
 void Method::set_vtable_index(int index) {
   if (is_shared() && !MetaspaceShared::remapped_readwrite() && method_holder()->verified_at_dump_time()) {
@@ -637,10 +643,6 @@ MethodCounters* Method::build_method_counters(Thread* current, Method* m) {
 
   if (!mh->init_method_counters(counters)) {
     MetadataFactory::free_metadata(mh->method_holder()->class_loader_data(), counters);
-  }
-
-  if (LogTouchedMethods) {
-    mh->log_touched(current);
   }
 
   return mh->method_counters();
@@ -971,7 +973,7 @@ bool Method::is_klass_loaded_by_klass_index(int klass_index) const {
     Symbol* klass_name = constants()->klass_name_at(klass_index);
     Handle loader(thread, method_holder()->class_loader());
     Handle prot  (thread, method_holder()->protection_domain());
-    return SystemDictionary::find_instance_klass(klass_name, loader, prot) != NULL;
+    return SystemDictionary::find_instance_klass(thread, klass_name, loader, prot) != NULL;
   } else {
     return true;
   }
@@ -1261,10 +1263,6 @@ address Method::make_adapters(const methodHandle& mh, TRAPS) {
   mh->set_adapter_entry(adapter);
   mh->_from_compiled_entry = adapter->get_c2i_entry();
   return adapter->get_c2i_entry();
-}
-
-void Method::restore_unshareable_info(TRAPS) {
-  assert(is_method() && is_valid_method(this), "ensure C++ vtable is restored");
 }
 
 address Method::from_compiled_entry_no_trampoline() const {
@@ -2443,85 +2441,6 @@ void Method::print_value_on(outputStream* st) const {
   if (WizardMode) st->print("#%d", _vtable_index);
   if (WizardMode) st->print("[%d,%d]", size_of_parameters(), max_locals());
   if (WizardMode && code() != NULL) st->print(" ((nmethod*)%p)", code());
-}
-
-// LogTouchedMethods and PrintTouchedMethods
-
-// TouchedMethodRecord -- we can't use a HashtableEntry<Method*> because
-// the Method may be garbage collected. Let's roll our own hash table.
-class TouchedMethodRecord : CHeapObj<mtTracing> {
-public:
-  // It's OK to store Symbols here because they will NOT be GC'ed if
-  // LogTouchedMethods is enabled.
-  TouchedMethodRecord* _next;
-  Symbol* _class_name;
-  Symbol* _method_name;
-  Symbol* _method_signature;
-};
-
-static const int TOUCHED_METHOD_TABLE_SIZE = 20011;
-static TouchedMethodRecord** _touched_method_table = NULL;
-
-void Method::log_touched(Thread* current) {
-
-  const int table_size = TOUCHED_METHOD_TABLE_SIZE;
-  Symbol* my_class = klass_name();
-  Symbol* my_name  = name();
-  Symbol* my_sig   = signature();
-
-  unsigned int hash = my_class->identity_hash() +
-                      my_name->identity_hash() +
-                      my_sig->identity_hash();
-  juint index = juint(hash) % table_size;
-
-  MutexLocker ml(current, TouchedMethodLog_lock);
-  if (_touched_method_table == NULL) {
-    _touched_method_table = NEW_C_HEAP_ARRAY2(TouchedMethodRecord*, table_size,
-                                              mtTracing, CURRENT_PC);
-    memset(_touched_method_table, 0, sizeof(TouchedMethodRecord*)*table_size);
-  }
-
-  TouchedMethodRecord* ptr = _touched_method_table[index];
-  while (ptr) {
-    if (ptr->_class_name       == my_class &&
-        ptr->_method_name      == my_name &&
-        ptr->_method_signature == my_sig) {
-      return;
-    }
-    if (ptr->_next == NULL) break;
-    ptr = ptr->_next;
-  }
-  TouchedMethodRecord* nptr = NEW_C_HEAP_OBJ(TouchedMethodRecord, mtTracing);
-  my_class->increment_refcount();
-  my_name->increment_refcount();
-  my_sig->increment_refcount();
-  nptr->_class_name         = my_class;
-  nptr->_method_name        = my_name;
-  nptr->_method_signature   = my_sig;
-  nptr->_next               = NULL;
-
-  if (ptr == NULL) {
-    // first
-    _touched_method_table[index] = nptr;
-  } else {
-    ptr->_next = nptr;
-  }
-}
-
-void Method::print_touched_methods(outputStream* out) {
-  MutexLocker ml(Thread::current()->is_VM_thread() ? NULL : TouchedMethodLog_lock);
-  out->print_cr("# Method::print_touched_methods version 1");
-  if (_touched_method_table) {
-    for (int i = 0; i < TOUCHED_METHOD_TABLE_SIZE; i++) {
-      TouchedMethodRecord* ptr = _touched_method_table[i];
-      while(ptr) {
-        ptr->_class_name->print_symbol_on(out);       out->print(".");
-        ptr->_method_name->print_symbol_on(out);      out->print(":");
-        ptr->_method_signature->print_symbol_on(out); out->cr();
-        ptr = ptr->_next;
-      }
-    }
-  }
 }
 
 // Verification

@@ -380,6 +380,10 @@ template <class T, class Filter, bool is_relaxed> class CodeBlobIterator : publi
     : _only_not_unloading(filter == only_not_unloading)
   {
     if (Filter::heaps() == NULL) {
+      // The iterator is supposed to shortcut since we have
+      // _heap == _end, but make sure we do not have garbage
+      // in other fields as well.
+      _code_blob = nullptr;
       return;
     }
     _heap = Filter::heaps()->begin();

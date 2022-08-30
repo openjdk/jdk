@@ -9453,3 +9453,19 @@ void MacroAssembler::get_thread(Register thread) {
 
 
 #endif // !WIN32 || _LP64
+
+void MacroAssembler::check_stack_alignment(Register sp, const char* msg, unsigned bias, Register tmp) {
+  Label L_stack_ok;
+  if (bias == 0) {
+    testptr(sp, 2 * wordSize - 1);
+  } else {
+    // lea(tmp, Address(rsp, bias);
+    mov(tmp, sp);
+    addptr(tmp, bias);
+    testptr(tmp, 2 * wordSize - 1);
+  }
+  jcc(Assembler::equal, L_stack_ok);
+  block_comment(msg);
+  stop(msg);
+  bind(L_stack_ok);
+}

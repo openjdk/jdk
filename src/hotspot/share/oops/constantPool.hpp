@@ -691,17 +691,14 @@ class ConstantPool : public Metadata {
     resolve_string_constants_impl(h_this, CHECK);
   }
 
+#if INCLUDE_CDS
   // CDS support
   void archive_resolved_references() NOT_CDS_JAVA_HEAP_RETURN;
   void add_dumped_interned_strings() NOT_CDS_JAVA_HEAP_RETURN;
   void resolve_class_constants(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
   void remove_unshareable_info();
   void restore_unshareable_info(TRAPS);
-  // The ConstantPool vtable is restored by this call when the ConstantPool is
-  // in the shared archive.  See patch_klass_vtables() in metaspaceShared.cpp for
-  // all the gory details.  SA, dtrace and pstack helpers distinguish metadata
-  // by their vtable.
-  void restore_vtable() { guarantee(is_constantPool(), "vtable restored by this call"); }
+#endif
 
  private:
   enum { _no_index_sentinel = -1, _possible_index_sentinel = -2 };

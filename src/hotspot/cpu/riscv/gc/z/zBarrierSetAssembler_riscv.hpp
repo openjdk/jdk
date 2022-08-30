@@ -78,6 +78,8 @@ public:
                                              Register tmp,
                                              Label& slowpath);
 
+  virtual NMethodPatchingType nmethod_patching_type() { return NMethodPatchingType::conc_data_patch; }
+
 #ifdef COMPILER1
   void generate_c1_load_barrier_test(LIR_Assembler* ce,
                                      LIR_Opr ref) const;

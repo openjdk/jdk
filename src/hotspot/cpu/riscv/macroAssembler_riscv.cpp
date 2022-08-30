@@ -88,9 +88,11 @@ static void pass_arg3(MacroAssembler* masm, Register arg) {
   }
 }
 
-void MacroAssembler::align(int modulus, int extra_offset) {
+int MacroAssembler::align(int modulus, int extra_offset) {
   CompressibleRegion cr(this);
+  intptr_t before = offset();
   while ((offset() + extra_offset) % modulus != 0) { nop(); }
+  return (int)(offset() - before);
 }
 
 void MacroAssembler::call_VM_helper(Register oop_result, address entry_point, int number_of_arguments, bool check_exceptions) {
@@ -1123,9 +1125,9 @@ void MacroAssembler::push_CPU_state(bool save_vectors, int vector_size_in_bytes)
 
   // vector registers
   if (save_vectors) {
-    sub(sp, sp, vector_size_in_bytes * VectorRegisterImpl::number_of_registers);
+    sub(sp, sp, vector_size_in_bytes * VectorRegister::number_of_registers);
     vsetvli(t0, x0, Assembler::e64, Assembler::m8);
-    for (int i = 0; i < VectorRegisterImpl::number_of_registers; i += 8) {
+    for (int i = 0; i < VectorRegister::number_of_registers; i += 8) {
       add(t0, sp, vector_size_in_bytes * i);
       vse64_v(as_VectorRegister(i), t0);
     }
@@ -1137,7 +1139,7 @@ void MacroAssembler::pop_CPU_state(bool restore_vectors, int vector_size_in_byte
   // vector registers
   if (restore_vectors) {
     vsetvli(t0, x0, Assembler::e64, Assembler::m8);
-    for (int i = 0; i < VectorRegisterImpl::number_of_registers; i += 8) {
+    for (int i = 0; i < VectorRegister::number_of_registers; i += 8) {
       vle64_v(as_VectorRegister(i), sp);
       add(sp, sp, vector_size_in_bytes * 8);
     }
@@ -1667,7 +1669,9 @@ void MacroAssembler::movoop(Register dst, jobject obj, bool immediate) {
 
   // nmethod entry barrier necessitate using the constant pool. They have to be
   // ordered with respected to oop access.
-  if (BarrierSet::barrier_set()->barrier_set_nmethod() != NULL || !immediate) {
+  // Using immediate literals would necessitate fence.i.
+  BarrierSet* bs = BarrierSet::barrier_set();
+  if ((bs->barrier_set_nmethod() != NULL && bs->barrier_set_assembler()->nmethod_patching_type() == NMethodPatchingType::conc_data_patch) || !immediate) {
     address dummy = address(uintptr_t(pc()) & -wordSize); // A nearby aligned address
     ld_constant(dst, Address(dummy, rspec));
   } else

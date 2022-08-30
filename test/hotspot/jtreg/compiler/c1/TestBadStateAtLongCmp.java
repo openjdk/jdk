@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,26 +19,25 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-package sun.jvm.hotspot.debugger.proc.x86;
+/*
+ * @test
+ * @bug 8290451
+ * @summary Incorrect result when switching to C2 OSR compilation from C1
+ * @compile BadStateAtLongCmp.jasm
+ * @run main/othervm -Xbatch TestBadStateAtLongCmp
+ */
 
-import sun.jvm.hotspot.debugger.*;
-import sun.jvm.hotspot.debugger.proc.*;
+public class TestBadStateAtLongCmp {
 
-public class ProcX86ThreadFactory implements ProcThreadFactory {
-  private ProcDebugger debugger;
-
-  public ProcX86ThreadFactory(ProcDebugger debugger) {
-    this.debugger = debugger;
-  }
-
-  public ThreadProxy createThreadWrapper(Address threadIdentifierAddr) {
-    return new ProcX86Thread(debugger, threadIdentifierAddr);
-  }
-
-  public ThreadProxy createThreadWrapper(long id) {
-    return new ProcX86Thread(debugger, id);
-  }
+    public static void main(String[] args) {
+        for (int i = 0; i < 20_000; i++) {
+            BadStateAtLongCmp.test();
+        }
+        int expected = 20_000 * 1000;
+        if (BadStateAtLongCmp.field != expected) {
+            throw new RuntimeException("test failed: " + BadStateAtLongCmp.field + " != " + expected);
+        }
+    }
 }

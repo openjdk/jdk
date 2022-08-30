@@ -281,18 +281,18 @@ void G1BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorator
 }
 
 void G1BarrierSetAssembler::oop_store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
-                                         Address dst, Register val, Register tmp1, Register tmp2) {
+                                         Address dst, Register val, Register tmp1, Register tmp2, Register tmp3) {
   // flatten object address if needed
   if (dst.index() == noreg && dst.offset() == 0) {
-    if (dst.base() != r3) {
-      __ mov(r3, dst.base());
+    if (dst.base() != tmp3) {
+      __ mov(tmp3, dst.base());
     }
   } else {
-    __ lea(r3, dst);
+    __ lea(tmp3, dst);
   }
 
   g1_write_barrier_pre(masm,
-                       r3 /* obj */,
+                       tmp3 /* obj */,
                        tmp2 /* pre_val */,
                        rthread /* thread */,
                        tmp1  /* tmp */,
@@ -300,7 +300,7 @@ void G1BarrierSetAssembler::oop_store_at(MacroAssembler* masm, DecoratorSet deco
                        false /* expand_call */);
 
   if (val == noreg) {
-    BarrierSetAssembler::store_at(masm, decorators, type, Address(r3, 0), noreg, noreg, noreg);
+    BarrierSetAssembler::store_at(masm, decorators, type, Address(tmp3, 0), noreg, noreg, noreg, noreg);
   } else {
     // G1 barrier needs uncompressed oop for region cross check.
     Register new_val = val;
@@ -308,9 +308,9 @@ void G1BarrierSetAssembler::oop_store_at(MacroAssembler* masm, DecoratorSet deco
       new_val = rscratch2;
       __ mov(new_val, val);
     }
-    BarrierSetAssembler::store_at(masm, decorators, type, Address(r3, 0), val, noreg, noreg);
+    BarrierSetAssembler::store_at(masm, decorators, type, Address(tmp3, 0), val, noreg, noreg, noreg);
     g1_write_barrier_post(masm,
-                          r3 /* store_adr */,
+                          tmp3 /* store_adr */,
                           new_val /* new_val */,
                           rthread /* thread */,
                           tmp1 /* tmp */,

@@ -73,9 +73,6 @@ ciMethod::ciMethod(const methodHandle& h_m, ciInstanceKlass* holder) :
   assert(h_m() != NULL, "no null method");
   assert(_holder->get_instanceKlass() == h_m->method_holder(), "");
 
-  if (LogTouchedMethods) {
-    h_m->log_touched(Thread::current());
-  }
   // These fields are always filled in in loaded methods.
   _flags = ciFlags(h_m->access_flags());
 
