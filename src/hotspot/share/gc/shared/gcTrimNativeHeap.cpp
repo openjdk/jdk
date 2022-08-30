@@ -110,8 +110,6 @@ public:
 
 NativeTrimmer* NativeTrimmer::_the_trimmer = nullptr;
 
-#define PROPERFMT         SIZE_FORMAT "%s"
-#define PROPERARGS(S)     byte_size_in_proper_unit(S), proper_unit_for_byte_size(S)
 
 void GCTrimNative::do_trim() {
   Ticks start = Ticks::now();
@@ -122,7 +120,7 @@ void GCTrimNative::do_trim() {
       const size_t delta = sc.after < sc.before ? (sc.before - sc.after) : (sc.after - sc.before);
       const char sign = sc.after < sc.before ? '-' : '+';
       log_debug(gc, trim)("Trim native heap: RSS+Swap: " PROPERFMT "->" PROPERFMT " (%c" PROPERFMT "), %1.3fms",
-                          PROPERARGS(sc.before), PROPERARGS(sc.after), sign, PROPERARGS(delta),
+                          PROPERFMTARGS(sc.before), PROPERFMTARGS(sc.after), sign, PROPERFMTARGS(delta),
                           trim_time.seconds() * 1000);
     } else {
       log_debug(gc, trim)("Trim native heap (no details)");
@@ -167,7 +165,7 @@ void GCTrimNative::cleanup() {
 bool GCTrimNative::should_trim(bool ignore_delay) {
   return
       GCTrimNativeHeap && os::can_trim_native_heap() &&
-      (ignore_delay || os::elapsedTime() > _next_trim_not_before) &&
+      (ignore_delay || (GCTrimNativeHeapInterval > 0 && os::elapsedTime() > _next_trim_not_before)) &&
       os::should_trim_native_heap();
 }
 

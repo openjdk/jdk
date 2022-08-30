@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 SAP SE. All rights reserved.
+ * Copyright (c) 2022 SAP SE. All rights reserved.
  * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -24,12 +24,11 @@
  */
 
 #include "precompiled.hpp"
-#include "logging/log.hpp"
-#include "os_linux.hpp"
 #include "runtime/os.hpp"
+#include "trimCHeapDCmd.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/ostream.hpp"
-#include "trimCHeapDCmd.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 #include <malloc.h>
 
@@ -37,15 +36,14 @@ void TrimCLibcHeapDCmd::execute(DCmdSource source, TRAPS) {
   if (os::can_trim_native_heap()) {
     os::size_change_t sc;
     if (os::trim_native_heap(&sc)) {
-      if (sc.after == SIZE_MAX) {
-        _output->print_cr("Done (no details available).");
+      _output->print("Trim native heap: ");
+      if (sc.after != SIZE_MAX) {
+        const size_t delta = sc.after < sc.before ? (sc.before - sc.after) : (sc.after - sc.before);
+        const char sign = sc.after < sc.before ? '-' : '+';
+        _output->print_cr("Trim native heap: RSS+Swap: " PROPERFMT "->" PROPERFMT " (%c" PROPERFMT ")",
+                          PROPERFMTARGS(sc.before), PROPERFMTARGS(sc.after), sign, PROPERFMTARGS(delta));
       } else {
-        const size_t scale_to_use = sc.before > (10 * M) ? M : K;
-        const char scale_c = scale_to_use == K ? 'K' : 'M';
-        const size_t m_before = sc.before / scale_to_use;
-        const size_t m_after = sc.after / scale_to_use;
-        _output->print_cr("Done. RSS+Swap reduction: " SIZE_FORMAT "%c->" SIZE_FORMAT "%c (" SSIZE_FORMAT "%c))",
-                          m_before, scale_c, m_after, scale_c, (ssize_t)m_after - (ssize_t)m_before, scale_c);
+        _output->print_cr("Trim native heap: (no details available).");
       }
     }
   } else {

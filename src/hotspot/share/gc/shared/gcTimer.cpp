@@ -131,14 +131,7 @@ void TimePartitions::clear() {
 }
 
 void TimePartitions::report_gc_phase_start(const char* name, const Ticks& time, GCPhase::PhaseType type) {
-#ifdef ASSERT
-  bool avoid_phase_length_check = UseZGC;
-#if INCLUDE_SHENANDOAHGC
-  // With Shenandoah, skip this check if we do high frequency trimming.
-  avoid_phase_length_check |= (UseShenandoahGC && GCTrimNativeHeap && GCTrimNativeHeapInterval < 2);
-#endif
-  assert(avoid_phase_length_check || _phases->length() <= 1000, "Too many recorded phases? (count: %d)", _phases->length());
-#endif // ASSERT
+  assert(UseZGC || _phases->length() <= 1000, "Too many recorded phases? (count: %d)", _phases->length());
 
   int level = _active_phases.count();
 

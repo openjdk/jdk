@@ -5421,7 +5421,6 @@ void os::print_memory_mappings(char* addr, size_t bytes, outputStream* st) {
 #ifdef __GLIBC__
 os::Linux::mallinfo_retval_t os::Linux::get_mallinfo(glibc_mallinfo2* out) {
   if (g_mallinfo2) {
-    // preferred.
     glibc_mallinfo2 mi = g_mallinfo2();
     *out = mi;
     return mallinfo_retval_t::ok;
@@ -5490,20 +5489,15 @@ bool os::trim_native_heap(os::size_change_t* rss_change) {
   os::Linux::meminfo_t info1;
   os::Linux::meminfo_t info2;
 
-  // Note: query_process_memory_info returns values in K
-
-  // Query memory before...
-  bool have_info1 = (rss_change != nullptr) ? os::Linux::query_process_memory_info(&info1) : false;
-
+  bool have_info1 = os::Linux::query_process_memory_info(&info1);
   ::malloc_trim(retain_size);
-
-  // ...and after trim.
-  bool have_info2 = (rss_change != nullptr) ? os::Linux::query_process_memory_info(&info2) : false;
+  bool have_info2 = have_info1 && os::Linux::query_process_memory_info(&info2);
 
   ssize_t delta = (ssize_t) -1;
   if (have_info1 && have_info2 &&
     info1.vmrss != -1 && info2.vmrss != -1 &&
     info1.vmswap != -1 && info2.vmswap != -1) {
+    // Note: query_process_memory_info returns values in K
     rss_change->before = (info1.vmrss + info1.vmswap) * K;
     rss_change->after = (info2.vmrss + info2.vmswap) * K;
   } else {
@@ -5512,6 +5506,6 @@ bool os::trim_native_heap(os::size_change_t* rss_change) {
 
   return true;
 #else
-  return 0; // musl
+  return false; // musl
 #endif
 }

@@ -175,6 +175,50 @@ package gc;
  * @run driver gc.TestTrimNative test-auto-high-interval z
  */
 
+//// test-auto-interval-0 test /////
+
+// Note: not serial, since it does not do periodic trimming, only trimming on full gc
+
+/*
+ * @test id=auto-zero-interval-parallel
+ * @summary Test that a GCTrimNativeHeapInterval=0 disables periodic trimming
+ * @requires vm.gc.Parallel
+ * @requires (os.family=="linux") & !vm.musl
+ * @modules java.base/jdk.internal.misc
+ * @library /test/lib
+ * @run driver gc.TestTrimNative test-auto-zero-interval parallel
+ */
+
+/*
+ * @test id=auto-zero-interval-g1
+ * @summary Test that a GCTrimNativeHeapInterval=0 disables periodic trimming
+ * @requires vm.gc.G1
+ * @requires (os.family=="linux") & !vm.musl
+ * @modules java.base/jdk.internal.misc
+ * @library /test/lib
+ * @run driver gc.TestTrimNative test-auto-zero-interval g1
+ */
+
+/*
+ * @test id=auto-zero-interval-shenandoah
+ * @summary Test that a GCTrimNativeHeapInterval=0 disables periodic trimming
+ * @requires vm.gc.Shenandoah
+ * @requires (os.family=="linux") & !vm.musl
+ * @modules java.base/jdk.internal.misc
+ * @library /test/lib
+ * @run driver gc.TestTrimNative test-auto-zero-interval shenandoah
+ */
+
+/*
+ * @test id=auto-zero-interval-z
+ * @summary Test that a GCTrimNativeHeapInterval=0 disables periodic trimming
+ * @requires vm.gc.Z
+ * @requires (os.family=="linux") & !vm.musl
+ * @modules java.base/jdk.internal.misc
+ * @library /test/lib
+ * @run driver gc.TestTrimNative test-auto-zero-interval z
+ */
+
 // Other tests
 
 /*
@@ -333,6 +377,17 @@ public class TestTrimNative {
         output.shouldNotContain("Trim native heap");
     }
 
+    // Test that trim-native correctly honors interval
+    static private final void testAutoWithZeroInterval(GC gc) throws IOException {
+        // We pass a very high interval. This should disable the feature for this short-lived test, we should see no trim
+        System.out.println("testAutoWithHighInterval");
+        OutputAnalyzer output = runTestWithOptions (
+                new String[] { gc.getSwitchName(), "-XX:+GCTrimNativeHeap", "-XX:GCTrimNativeHeapInterval=0" },
+                new String[] { "false" /* full gc */, "6000" /* ms after peak */ }
+        );
+        output.shouldNotContain("Trim native heap");
+    }
+
     // Test that trim-native gets disabled on platforms that don't support it.
     static private final void testOffOnNonCompliantPlatforms() throws IOException {
         // Logic is shared, so no need to test with every GC. Just use the default GC.
@@ -407,6 +462,9 @@ public class TestTrimNative {
         } else if (args[0].equals("test-auto-high-interval")) {
             final GC gc = GC.valueOf(args[1]);
             testAutoWithHighInterval(gc);
+        } else if (args[0].equals("test-auto-zero-interval")) {
+            final GC gc = GC.valueOf(args[1]);
+            testAutoWithZeroInterval(gc);
         } else if (args[0].equals("test-off-explicit")) {
             testOffExplicit();
         } else if (args[0].equals("test-off-by-default")) {
