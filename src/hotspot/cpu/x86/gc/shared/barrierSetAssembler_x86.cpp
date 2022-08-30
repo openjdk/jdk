@@ -208,8 +208,12 @@ void BarrierSetAssembler::copy_at(MacroAssembler* masm, DecoratorSet decorators,
     __ movl(tmp1, src);
     __ movl(dst, tmp1);
   } else if (bytes == 8) {
+#ifdef _LP64
     __ movq(tmp1, src);
     __ movq(dst, tmp1);
+#else
+    fatal("No support for 8 bytes copy");
+#endif
   }
 }
 
