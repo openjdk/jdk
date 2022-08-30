@@ -278,15 +278,6 @@ bool ConnectionGraph::compute_escape() {
     return false;
   }
 
-  // 2.a The step above might have transitively marked objects in non_escaped_allocs_worklist
-  // as ArgEscape or GlobalEscape
-  for (int next = non_escaped_allocs_worklist.length()-1; next >= 0 ; --next) {
-    JavaObjectNode* ptn = non_escaped_allocs_worklist.at(next);
-    if (ptn->escape_state() >= PointsToNode::ArgEscape) {
-      non_escaped_allocs_worklist.delete_at(next);
-    }
-  }
-
   // 3. Merge some object allocations into a ReduceAllocationMerge node
   int number_of_reduced_allocations = 0;
   if (ReduceAllocationMerges && C->do_reduce_allocation_merges()) {
