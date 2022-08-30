@@ -157,12 +157,8 @@ void G1BarrierSetAssembler::g1_write_barrier_pre(MacroAssembler* masm,
   __ j(done);
 
   __ bind(runtime);
-  // save the live input values
-  RegSet saved = RegSet::of(pre_val);
-  if (tosca_live) { saved += RegSet::of(x10); }
-  if (obj != noreg) { saved += RegSet::of(obj); }
 
-  __ push_reg(saved, sp);
+  __ push_call_clobbered_registers();
 
   if (expand_call) {
     assert(pre_val != c_rarg1, "smashed arg");
@@ -171,7 +167,7 @@ void G1BarrierSetAssembler::g1_write_barrier_pre(MacroAssembler* masm,
     __ call_VM_leaf(CAST_FROM_FN_PTR(address, G1BarrierSetRuntime::write_ref_field_pre_entry), pre_val, thread);
   }
 
-  __ pop_reg(saved, sp);
+  __ pop_call_clobbered_registers();
 
   __ bind(done);
 
