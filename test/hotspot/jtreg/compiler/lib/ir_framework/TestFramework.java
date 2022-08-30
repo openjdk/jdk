@@ -337,7 +337,6 @@ public class TestFramework {
                 System.err.println(System.lineSeparator() + e.getExceptionInfo() + RERUN_HINT);
                 throw e;
             } catch (IRViolationException e) {
-                System.out.println("Compilation(s) of failed match(es):");
                 System.out.println(e.getCompilations());
                 System.err.println(System.lineSeparator() + e.getExceptionInfo() + System.lineSeparator() + RERUN_HINT);
                 throw e;
@@ -639,8 +638,9 @@ public class TestFramework {
             }
             if (e instanceof IRViolationException irException) {
                 // For IR violations, only show the actual violations and not the (uninteresting) stack trace.
-                System.out.println((scenario != null ? "Scenario #" + scenario.getIndex() + " - " : "")
-                                   + "Compilation(s) of failed matche(s):");
+                if (scenario != null) {
+                    System.out.println("Scenario #" + scenario.getIndex());
+                }
                 System.out.println(irException.getCompilations());
                 builder.append(errorMsg).append(System.lineSeparator()).append(irException.getExceptionInfo());
             } else if (e instanceof TestVMException testVMException) {

@@ -45,6 +45,7 @@ public class FailOnConstraintFailureMessageBuilder extends ConstraintFailureMess
         return "Matched forbidden";
     }
 
+    @Override
     public String build() {
         return buildConstraintHeader(failOnConstraintFailure) + buildMatchedNodesMessage(failOnConstraintFailure);
     }

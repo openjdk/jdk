@@ -61,7 +61,7 @@ public class IRMethod implements Matching {
             try {
                 irRules.add(new IRRule(this, ruleId, irAnnos[ruleId - 1]));
             } catch (TestFormatException e) {
-                String postfixErrorMsg = " for IR rule " + ruleId + " at " + method;
+                String postfixErrorMsg = " for IR rule " + ruleId + " at " + method + ".";
                 TestFormat.failNoThrow(e.getMessage() + postfixErrorMsg);
             }
         }
@@ -69,30 +69,6 @@ public class IRMethod implements Matching {
 
     public Method getMethod() {
         return method;
-    }
-
-    /**
-     * Return the entire compilation output of all phases, regardless of IR matching failures.
-     */
-    public String getCompleteOutput() {
-        if (completeOutput.isEmpty()) {
-            completeOutput = createCompleteOutput();
-        }
-        return completeOutput;
-    }
-
-    private String createCompleteOutput() {
-        String idealOutputs = compilationOutputMap.entrySet().stream()
-                                                  .filter(e -> e.getKey() != CompilePhase.PRINT_OPTO_ASSEMBLY)
-                                                  .map(Map.Entry::getValue)
-                                                  .collect(Collectors.joining(System.lineSeparator() + System.lineSeparator()));
-        String optoAssemblyOutput = compilationOutputMap.get(CompilePhase.PRINT_OPTO_ASSEMBLY);
-        if (optoAssemblyOutput != null) {
-            // PrintOptoAssembly output is reported before the PrintIdeal output of PHASE_FINAL.
-            // Put PrintOptoAssembly output last.
-            return idealOutputs + System.lineSeparator() + System.lineSeparator() + optoAssemblyOutput;
-        }
-        return idealOutputs;
     }
 
     public String getOutput(CompilePhase phase) {

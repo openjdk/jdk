@@ -1,6 +1,7 @@
 package compiler.lib.ir_framework.driver.irmatching;
 
 import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethodMatchResult;
+import compiler.lib.ir_framework.driver.irmatching.visitor.MatchResultVisitor;
 
 import java.util.Set;
 import java.util.TreeSet;
@@ -13,10 +14,6 @@ public class TestClassResult implements MatchResult {
         return !results.isEmpty();
     }
 
-    public Set<IRMethodMatchResult> getResults() {
-        return results;
-    }
-
     public void addResult(IRMethodMatchResult IRMethodMatchResult) {
         this.results.add(IRMethodMatchResult);
     }
@@ -24,6 +21,10 @@ public class TestClassResult implements MatchResult {
     @Override
     public void accept(MatchResultVisitor visitor) {
         visitor.visit(this);
+    }
+
+    @Override
+    public void acceptChildren(MatchResultVisitor visitor) {
         acceptChildren(visitor, results);
     }
 }

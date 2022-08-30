@@ -24,7 +24,7 @@
 package compiler.lib.ir_framework.driver.irmatching.irrule.constraint;
 
 import compiler.lib.ir_framework.driver.irmatching.MatchResult;
-import compiler.lib.ir_framework.driver.irmatching.MatchResultVisitor;
+import compiler.lib.ir_framework.driver.irmatching.visitor.MatchResultVisitor;
 
 import java.util.List;
 
@@ -56,6 +56,10 @@ public class CheckAttributeMatchResult implements MatchResult {
 
     public void accept(MatchResultVisitor visitor) {
         visitor.visit(this);
+    }
+
+    @Override
+    public void acceptChildren(MatchResultVisitor visitor) {
         acceptChildren(visitor, constraintFailures);
     }
 }

@@ -24,7 +24,8 @@
 package compiler.lib.ir_framework.driver.irmatching.reporting;
 
 import compiler.lib.ir_framework.CompilePhase;
-import compiler.lib.ir_framework.driver.irmatching.MatchResultVisitor;
+import compiler.lib.ir_framework.driver.irmatching.irrule.IRRuleMatchResult;
+import compiler.lib.ir_framework.driver.irmatching.visitor.MatchResultVisitor;
 import compiler.lib.ir_framework.driver.irmatching.TestClassResult;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethod;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethodMatchResult;
@@ -34,59 +35,85 @@ import compiler.lib.ir_framework.driver.irmatching.irrule.phase.CompilePhaseMatc
 import java.util.EnumSet;
 import java.util.stream.Collectors;
 
-public class CompilationOutputBuilder implements MatchResultVisitor {
-
-    private final TestClassResult testClassResult;
-    private final StringBuilder msg = new StringBuilder();
+public class CompilationOutputBuilder extends AbstractBuilder implements MatchResultVisitor {
     private final EnumSet<CompilePhase> failedCompilePhases = EnumSet.noneOf(CompilePhase.class);
-    private int reportedMethodCount = 0;
+    private int compilePhaseCount = 0;
 
     public CompilationOutputBuilder(TestClassResult testClassResult) {
-        this.testClassResult = testClassResult;
+        super(testClassResult);
     }
 
     @Override
-    public void visitAfter(IRMethodMatchResult irMethodMatchResult) {
-        IRMethod irMethod = irMethodMatchResult.getIRMethod();
-        msg.append(buildMatchedCompileOutputOfPhases(irMethod));
-        failedCompilePhases.clear();
+    public void visit(TestClassResult testClassResult) {
+        testClassResult.acceptChildren(this);
+        StringBuilder builder = new StringBuilder();
+        builder.append("Compilation");
+        if (compilePhaseCount > 1) {
+            builder.append("s (").append(compilePhaseCount).append(")");
+        }
+        builder.append(" of Failed Method");
+        int failedIRMethods = getMethodNumber();
+        if (failedIRMethods > 1) {
+            builder.append("s (").append(failedIRMethods).append(")");
+        }
+        builder.append(System.lineSeparator())
+               .append(getTitleSeparator(failedIRMethods))
+               .append(System.lineSeparator());
+        msg.insert(0, builder);
+    }
+
+    private String getTitleSeparator(int failedIRMethods) {
+        return "-".repeat(36 + digitCount(compilePhaseCount) + digitCount(failedIRMethods));
     }
 
     @Override
     public void visit(IRMethodMatchResult irMethodMatchResult) {
+        irMethodMatchResult.acceptChildren(this);
         appendIRMethodHeader(irMethodMatchResult);
+        appendMatchedCompileOutputOfPhases(irMethodMatchResult);
+        failedCompilePhases.clear();
     }
 
     private void appendIRMethodHeader(IRMethodMatchResult irMethodMatchResult) {
-        reportedMethodCount++;
-        if (reportedMethodCount > 1) {
-            msg.append(System.lineSeparator());
+        appendIRMethodPrefix();
+        msg.append("Compilation");
+        if (failedCompilePhases.size() > 1) {
+            msg.append("s (").append(failedCompilePhases.size()).append(")");
         }
-        msg.append(reportedMethodCount).append(") Compilation of \"")
-           .append(irMethodMatchResult.getIRMethod().getMethod()).append("\":")
+        msg.append(" of \"").append(irMethodMatchResult.getIRMethod().getMethod()).append("\":")
            .append(System.lineSeparator());
     }
 
-    private String buildMatchedCompileOutputOfPhases(IRMethod irMethod) {
-        return failedCompilePhases.stream()
-                                  .map(irMethod::getOutput)
-                                  .collect(Collectors.joining(System.lineSeparator() + System.lineSeparator()));
+    private void appendMatchedCompileOutputOfPhases(IRMethodMatchResult irMethodMatchResult) {
+        IRMethod irMethod = irMethodMatchResult.getIRMethod();
+        msg.append(failedCompilePhases.stream()
+                                      .map(irMethod::getOutput)
+                                      .collect(Collectors.joining(System.lineSeparator()
+                                                                  + System.lineSeparator())));
     }
-
-    @Override
-    public void visit(CompilePhaseMatchResult compilePhaseMatchResult) {
-        failedCompilePhases.add(compilePhaseMatchResult.getCompilePhase());
-    }
-
 
     @Override
     public void visit(NotCompiledResult notCompiledResult) {
         appendIRMethodHeader(notCompiledResult);
+        compilePhaseCount++; // Count this as one phase
         msg.append("<empty>").append(System.lineSeparator());
     }
 
+    @Override
+    public void visit(IRRuleMatchResult irRuleMatchResult) {
+        irRuleMatchResult.acceptChildren(this);
+    }
+
+    @Override
+    public void visit(CompilePhaseMatchResult compilePhaseMatchResult) {
+        if (failedCompilePhases.add(compilePhaseMatchResult.getCompilePhase())) {
+            compilePhaseCount++;
+        }
+    }
+
+    @Override
     public String build() {
-        testClassResult.accept(this);
+        visitResults(this);
         return msg.toString();
     }
 }

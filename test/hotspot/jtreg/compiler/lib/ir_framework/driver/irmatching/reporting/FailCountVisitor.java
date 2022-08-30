@@ -21,33 +21,38 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.driver.irmatching.irrule.constraint;
+package compiler.lib.ir_framework.driver.irmatching.reporting;
 
+import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethodMatchResult;
+import compiler.lib.ir_framework.driver.irmatching.irmethod.NotCompiledResult;
+import compiler.lib.ir_framework.driver.irmatching.irrule.IRRuleMatchResult;
 import compiler.lib.ir_framework.driver.irmatching.visitor.MatchResultVisitor;
-import compiler.lib.ir_framework.shared.Comparison;
 
-import java.util.List;
+class FailCountVisitor implements MatchResultVisitor {
+    private int irMethodCount;
+    private int irRuleCount;
 
-/**
- * This class represents a failure when applying a {@link CountsConstraint} on a compile phase output.
- *
- * @see CountsConstraint
- * @see Counts
- */
-public class CountsConstraintFailure extends ConstraintFailure {
-    private final Comparison<Integer> comparison;
-
-    public CountsConstraintFailure(CountsConstraint constraint, List<String> matches) {
-        super(constraint, matches);
-        this.comparison = constraint.getComparison();
-    }
-
-    public Comparison<Integer> getComparison() {
-        return comparison;
+    @Override
+    public void visit(IRMethodMatchResult irMethodMatchResult) {
+        irMethodCount++;
+        irMethodMatchResult.acceptChildren(this);
     }
 
     @Override
-    public void accept(MatchResultVisitor visitor) {
-        visitor.visit(this);
+    public void visit(IRRuleMatchResult irRuleMatchResult) {
+        irRuleCount++;
+    }
+
+    @Override
+    public void visit(NotCompiledResult notCompiledResult) {
+        irRuleCount += notCompiledResult.getFailedIRRuleCount();
+    }
+
+    public int getIrRuleCount() {
+        return irRuleCount;
+    }
+
+    public int getIrMethodCount() {
+        return irMethodCount;
     }
 }

@@ -24,7 +24,7 @@
 package compiler.lib.ir_framework.driver.irmatching.irrule.constraint;
 
 import compiler.lib.ir_framework.TestFramework;
-import compiler.lib.ir_framework.driver.irmatching.MatchResultVisitor;
+import compiler.lib.ir_framework.driver.irmatching.visitor.MatchResultVisitor;
 
 import java.util.List;
 

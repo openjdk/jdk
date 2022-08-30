@@ -23,6 +23,7 @@
 
 package compiler.lib.ir_framework.driver.irmatching.reporting;
 
+import compiler.lib.ir_framework.driver.irmatching.IRMatcher;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.CheckAttribute;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.CheckAttributeMatchResult;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.Constraint;
@@ -63,6 +64,11 @@ abstract public class ConstraintFailureMessageBuilder implements FailureMessage 
 
     abstract protected String getMatchedPrefix(ConstraintFailure constraintFailure);
 
+    /**
+     * Builds a failure message in a pretty format to be used by {@link IRMatcher} to report IR matching failures.
+     */
+    abstract public String build();
+
     private String buildMatchedNodesBody(ConstraintFailure constraintFailure) {
         StringBuilder builder = new StringBuilder();
         List<String> matches = addWhiteSpacePrefixForEachLine(constraintFailure.getMatchedNodes());
@@ -78,5 +84,4 @@ abstract public class ConstraintFailureMessageBuilder implements FailureMessage 
                       .map(s -> s.replaceAll(System.lineSeparator(), System.lineSeparator() + indentationString))
                       .collect(Collectors.toList());
     }
-
 }

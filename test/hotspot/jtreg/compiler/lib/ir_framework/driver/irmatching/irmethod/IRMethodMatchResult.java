@@ -24,7 +24,7 @@
 package compiler.lib.ir_framework.driver.irmatching.irmethod;
 
 import compiler.lib.ir_framework.driver.irmatching.MatchResult;
-import compiler.lib.ir_framework.driver.irmatching.MatchResultVisitor;
+import compiler.lib.ir_framework.driver.irmatching.visitor.MatchResultVisitor;
 import compiler.lib.ir_framework.driver.irmatching.irrule.IRRuleMatchResult;
 
 import java.util.List;
@@ -68,7 +68,10 @@ public class IRMethodMatchResult implements Comparable<IRMethodMatchResult>, Mat
     @Override
     public void accept(MatchResultVisitor visitor) {
         visitor.visit(this);
+    }
+
+    @Override
+    public void acceptChildren(MatchResultVisitor visitor) {
         acceptChildren(visitor, irRulesMatchResults);
-        visitor.visitAfter(this);
     }
 }

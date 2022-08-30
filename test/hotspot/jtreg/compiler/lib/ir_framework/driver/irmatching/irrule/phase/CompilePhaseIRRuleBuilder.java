@@ -31,6 +31,7 @@ import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.Counts;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.CountsConstraint;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.FailOn;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.parser.*;
+import compiler.lib.ir_framework.shared.TestFormat;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -62,7 +63,10 @@ public class CompilePhaseIRRuleBuilder {
     }
 
     private List<CompilePhaseIRRule> build() {
-        for (CompilePhase compilePhase : irAnno.phase()) {
+        CompilePhase[] compilePhases = irAnno.phase();
+        TestFormat.checkNoReport(new HashSet<>(List.of(compilePhases)).size() == compilePhases.length,
+                                 "Cannot specify a compile phase twice");
+        for (CompilePhase compilePhase : compilePhases) {
             if (compilePhase == CompilePhase.DEFAULT) {
                 createCompilePhaseIRRulesForDefault();
             } else {

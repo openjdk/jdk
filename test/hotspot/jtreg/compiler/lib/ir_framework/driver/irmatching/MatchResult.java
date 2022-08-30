@@ -23,6 +23,8 @@
 
 package compiler.lib.ir_framework.driver.irmatching;
 
+import compiler.lib.ir_framework.driver.irmatching.visitor.MatchResultVisitor;
+
 import java.util.Collection;
 
 /**
@@ -36,6 +38,9 @@ public interface MatchResult {
     boolean fail();
 
     void accept(MatchResultVisitor visitor);
+
+
+    default void acceptChildren(MatchResultVisitor visitor) {}
 
     default void acceptChildren(MatchResultVisitor visitor, Collection<? extends MatchResult> children) {
         for (var result : children) {

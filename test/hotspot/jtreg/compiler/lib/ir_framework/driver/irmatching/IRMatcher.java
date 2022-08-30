@@ -39,16 +39,16 @@ public class IRMatcher {
         this.testClass = methodCompilationParser.parse(hotspotPidFileName, irEncoding);
     }
 
+
+    /**
+     * Do an IR matching of all methods with applicable @IR rules prepared with by the {@link MethodCompilationParser}.
+     */
     public void match() {
         TestClassResult result = testClass.match();
         if (result.fail()) {
             reportFailures(result);
         }
     }
-
-    /**
-     * Do an IR matching of all methods with applicable @IR rules prepared with by the {@link MethodCompilationParser}.
-     */
 
 
 
@@ -61,8 +61,6 @@ public class IRMatcher {
      */
     private void reportFailures(TestClassResult result) {
         String failureMsg = new FailureMessageBuilder(result).build();
-//        String failureMsg = IRMatcherFailureMessageBuilder.build(result);
-//        String compilationOutput =  CompilationOutputBuilderOld.build(result);
         String compilationOutput =  new CompilationOutputBuilder(result).build();
         throwIfNoSafepointWhilePrinting(failureMsg, compilationOutput);
     }

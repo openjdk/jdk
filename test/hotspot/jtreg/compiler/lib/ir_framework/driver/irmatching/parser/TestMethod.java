@@ -69,7 +69,8 @@ public class TestMethod {
      * We might parse multiple C2 compilations of this method. Only keep the very last one by overriding the outputMap.
      */
     public void setIdealOutput(String idealOutput, CompilePhase compilePhase) {
-        String idealOutputWithHeader = "PrintIdeal" + getPhaseNameString(compilePhase) + ":" + System.lineSeparator() + idealOutput;
+        String idealOutputWithHeader = "> Phase \"" + compilePhase.getName()+ "\":" + System.lineSeparator()
+                                       + idealOutput;
         compilationOutputMap.put(compilePhase, idealOutputWithHeader);
         if (compilePhase == CompilePhase.PRINT_IDEAL) {
             // Only need to set default output when parsing PrintIdeal output
@@ -77,15 +78,11 @@ public class TestMethod {
         }
     }
 
-    private String getPhaseNameString(CompilePhase phase) {
-        return " - " + phase.getName();
-    }
-
     /**
      * We might parse multiple C2 compilations of this method. Only keep the very last one by overriding the outputMap.
      */
     public void setOptoAssemblyOutput(String optoAssemblyOutput) {
-        optoAssemblyOutput = "PrintOptoAssembly:" + System.lineSeparator() + optoAssemblyOutput;
+        optoAssemblyOutput = "> Phase \"PrintOptoAssembly\":" + System.lineSeparator() + optoAssemblyOutput;
         compilationOutputMap.put(CompilePhase.PRINT_OPTO_ASSEMBLY, optoAssemblyOutput);
         String idealOutput = compilationOutputMap.getOrDefault(CompilePhase.DEFAULT, "");
         if (!idealOutput.isEmpty()) {

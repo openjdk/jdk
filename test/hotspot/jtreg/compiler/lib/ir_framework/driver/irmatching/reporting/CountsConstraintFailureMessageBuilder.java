@@ -47,6 +47,7 @@ public class CountsConstraintFailureMessageBuilder extends ConstraintFailureMess
     }
 
 
+    @Override
     public String build() {
         return buildConstraintHeader(constraintFailure) + buildFailedComparisonMessage(constraintFailure) +
                buildMatchedCountsNodesMessage(constraintFailure);

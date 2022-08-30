@@ -24,12 +24,11 @@
 package ir_framework.tests.phase;
 
 import compiler.lib.ir_framework.*;
-import compiler.lib.ir_framework.driver.irmatching.IRMatcher;
-import compiler.lib.ir_framework.driver.irmatching.MatchResult;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
-import java.util.*;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 /*
  * @test
@@ -104,7 +103,8 @@ class Asdf {
     }
 
     @Test
-    @IR(failOn = IRNode.STORE, phase = CompilePhase.DEFAULT)
+    @IR(failOn = IRNode.STORE, phase = {CompilePhase.DEFAULT, CompilePhase.AFTER_PARSING})
+    @IR(failOn = IRNode.STORE, phase = {CompilePhase.DEFAULT, CompilePhase.AFTER_PARSING})
     public void asdf() {
         i = 34;
         l = 34;
@@ -119,7 +119,7 @@ class Asdf {
     public void foo() {}
 
     @Test
-    @IR(failOn = IRNode.STORE, phase = CompilePhase.DEFAULT)
+    @IR(failOn = IRNode.STORE, phase = {CompilePhase.DEFAULT, CompilePhase.AFTER_PARSING, CompilePhase.BEFORE_MATCHING})
     public void foo2() {
         i = 34;
         l = 34;

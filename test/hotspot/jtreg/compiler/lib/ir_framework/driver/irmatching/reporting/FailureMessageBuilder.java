@@ -1,6 +1,6 @@
 package compiler.lib.ir_framework.driver.irmatching.reporting;
 
-import compiler.lib.ir_framework.driver.irmatching.MatchResultVisitor;
+import compiler.lib.ir_framework.driver.irmatching.visitor.MatchResultAction;
 import compiler.lib.ir_framework.driver.irmatching.TestClassResult;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethodMatchResult;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.NotCompiledResult;
@@ -10,43 +10,50 @@ import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.CheckAttrib
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.CountsConstraintFailure;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.FailOnConstraintFailure;
 import compiler.lib.ir_framework.driver.irmatching.irrule.phase.CompilePhaseMatchResult;
+import compiler.lib.ir_framework.driver.irmatching.visitor.PreOrderMatchResultVisitor;
 
-public class FailureMessageBuilder implements MatchResultVisitor, FailureMessage {
-
-    private final StringBuilder msg = new StringBuilder();
+public class FailureMessageBuilder extends AbstractBuilder implements MatchResultAction, FailureMessage {
     private int indentation;
-    private int reportedMethodCount = 0;
-    private final TestClassResult testClassResult;
 
     public FailureMessageBuilder(TestClassResult testClassResult) {
-        this.testClassResult = testClassResult;
+        super(testClassResult);
     }
 
     @Override
-    public void visit(TestClassResult testClassResult) {
-        msg.append(new TestClassFailureMessageBuilder(testClassResult).build());
+    public void doAction(TestClassResult testClassResult) {
+        FailCountVisitor failCountVisitor = new FailCountVisitor();
+        testClassResult.acceptChildren(failCountVisitor);
+        int failedMethodCount = failCountVisitor.getIrMethodCount();
+        int failedIRRulesCount = failCountVisitor.getIrRuleCount();
+        msg.append("One or more @IR rules failed:")
+           .append(System.lineSeparator())
+           .append(System.lineSeparator())
+           .append("Failed IR Rules (").append(failedIRRulesCount).append(") of Methods (").append(failedMethodCount)
+           .append(")").append(System.lineSeparator())
+           .append(getTitleSeparator(failedMethodCount, failedIRRulesCount))
+           .append(System.lineSeparator());
+    }
+
+    private static String getTitleSeparator(int failedMethodCount, int failedIRRulesCount) {
+        return "-".repeat(32 + digitCount(failedIRRulesCount) + digitCount(failedMethodCount));
     }
 
     @Override
-    public void visit(IRMethodMatchResult irMethodMatchResult) {
+    public void doAction(IRMethodMatchResult irMethodMatchResult) {
         appendIRMethodHeader(irMethodMatchResult);
     }
 
     private void appendIRMethodHeader(IRMethodMatchResult irMethodMatchResult) {
-        reportedMethodCount++;
-        if (reportedMethodCount > 1) {
-            msg.append(System.lineSeparator());
-        }
-
-        int reportedMethodCountDigitCount = String.valueOf(reportedMethodCount).length();
+        appendIRMethodPrefix();
+        int reportedMethodCountDigitCount = digitCount(getMethodNumber());
         indentation = reportedMethodCountDigitCount + 2;
-        msg.append(reportedMethodCount).append(") Method \"").append(irMethodMatchResult.getIRMethod().getMethod())
+        msg.append("Method \"").append(irMethodMatchResult.getIRMethod().getMethod())
            .append("\" - [Failed IR rules: ").append(irMethodMatchResult.getFailedIRRuleCount()).append("]:")
            .append(System.lineSeparator());
     }
 
     @Override
-    public void visit(NotCompiledResult notCompiledResult) {
+    public void doAction(NotCompiledResult notCompiledResult) {
         appendIRMethodHeader(notCompiledResult);
         msg.append(getIndentation(indentation))
            .append("* Method was not compiled. Did you specify a @Run method in STANDALONE mode? In this case, make " +
@@ -55,14 +62,14 @@ public class FailureMessageBuilder implements MatchResultVisitor, FailureMessage
     }
 
     @Override
-    public void visit(IRRuleMatchResult irRuleMatchResult) {
+    public void doAction(IRRuleMatchResult irRuleMatchResult) {
         IRRule irRule = irRuleMatchResult.getIRRule();
         msg.append(getIndentation(indentation)).append("* @IR rule ").append(irRule.getRuleId()).append(": \"")
            .append(irRule.getIRAnno()).append("\"").append(System.lineSeparator());
     }
 
     @Override
-    public void visit(CompilePhaseMatchResult compilePhaseMatchResult) {
+    public void doAction(CompilePhaseMatchResult compilePhaseMatchResult) {
         msg.append(getIndentation(indentation + 2))
            .append("> Phase \"").append(compilePhaseMatchResult.getCompilePhase().getName()).append("\":")
            .append(System.lineSeparator());
@@ -78,7 +85,7 @@ public class FailureMessageBuilder implements MatchResultVisitor, FailureMessage
     }
 
     @Override
-    public void visit(CheckAttributeMatchResult checkAttributeMatchResult) {
+    public void doAction(CheckAttributeMatchResult checkAttributeMatchResult) {
         String checkAttributeFailureMsg;
         switch (checkAttributeMatchResult.getCheckAttributeKind()) {
             case FAIL_ON -> checkAttributeFailureMsg = "failOn: Graph contains forbidden nodes";
@@ -91,18 +98,19 @@ public class FailureMessageBuilder implements MatchResultVisitor, FailureMessage
     }
 
     @Override
-    public void visit(FailOnConstraintFailure constraintFailure) {
-        msg.append(new FailOnConstraintFailureMessageBuilder(constraintFailure, indentation + 6).build());
+    public void doAction(FailOnConstraintFailure failOnConstraintFailure) {
+        msg.append(new FailOnConstraintFailureMessageBuilder(failOnConstraintFailure, indentation + 6).build());
     }
 
     @Override
-    public void visit(CountsConstraintFailure constraintFailure) {
-        msg.append(new CountsConstraintFailureMessageBuilder(constraintFailure, indentation + 6).build());
+    public void doAction(CountsConstraintFailure countsConstraintFailure) {
+        msg.append(new CountsConstraintFailureMessageBuilder(countsConstraintFailure, indentation + 6).build());
     }
 
     @Override
     public String build() {
-        testClassResult.accept(this);
+        PreOrderMatchResultVisitor visitor = new PreOrderMatchResultVisitor(this);
+        visitResults(visitor);
         msg.append(System.lineSeparator())
            .append(">>> Check stdout for compilation output of the failed methods")
            .append(System.lineSeparator()).append(System.lineSeparator());

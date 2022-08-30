@@ -1039,6 +1039,12 @@ class BadIRNodeForPhase {
     public void machNode() {}
 
     @Test
+    @FailCount(2)
+    @IR(failOn = IRNode.STORE, phase = {CompilePhase.AFTER_PARSING, CompilePhase.AFTER_PARSING})
+    @IR(counts = {IRNode.STORE, "0"}, phase = {CompilePhase.AFTER_PARSING, CompilePhase.DEFAULT, CompilePhase.AFTER_PARSING})
+    public void duplicatedPhase() {}
+
+    @Test
     @FailCount(4)
     @IR(failOn = IRNode.ALLOC, phase = {CompilePhase.FINAL_CODE, CompilePhase.MACRO_EXPANSION})
     @IR(failOn = IRNode.ALLOC, phase = CompilePhase.PRINT_IDEAL)

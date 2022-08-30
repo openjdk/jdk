@@ -60,12 +60,11 @@ class MethodCompilePhaseCollector {
     /**
      * Collect the compile phases for {@code irAnno} by looking at the phases attribute.
      * If we find {@link CompilePhase#DEFAULT}, we collect the default phases of all IR nodes in each constraint as
-     * specified in {@link IRNodeMappings}. If we find a user defined IR node (not specified in {@link IRNode}), we
-     * throw a {@link TestFormatException}.
+     * specified in {@link IRNodeMappings}. If we find a user defined IR node (not specified in {@link IRNode}) or a
+     * duplicated compile phase, we throw a {@link TestFormatException}.
      */
     public void collectCompilePhases(IR irAnno) {
-        CompilePhase[] compilePhases = irAnno.phase();
-        for (CompilePhase compilePhase : compilePhases) {
+        for (CompilePhase compilePhase : irAnno.phase()) {
             if (compilePhase == CompilePhase.DEFAULT) {
                 addDefaultPhasesForFailOn(irAnno);
                 addDefaultPhasesForCounts(irAnno);
