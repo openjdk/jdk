@@ -40,11 +40,14 @@
 #include "gc/shenandoah/shenandoahVMOperations.hpp"
 #include "gc/shenandoah/shenandoahWorkerPolicy.hpp"
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
+#include "gc/shared/gcTrimNativeHeap.hpp"
 #include "memory/iterator.hpp"
 #include "memory/metaspaceUtils.hpp"
 #include "memory/metaspaceStats.hpp"
 #include "memory/universe.hpp"
 #include "runtime/atomic.hpp"
+#include "utilities/events.hpp"
+
 
 ShenandoahControlThread::ShenandoahControlThread() :
   ConcurrentGCThread(),
@@ -309,6 +312,14 @@ void ShenandoahControlThread::run_service() {
       service_uncommit(shrink_before, shrink_until);
       heap->phase_timings()->flush_cycle_to_global();
       last_shrink_time = current;
+    }
+
+    if (GCTrimNative::should_trim(explicit_gc_requested)) {
+      static const char *msg = "Concurrent trim-native";
+      ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::conc_trim, false);
+      EventMark em("%s", msg);
+      GCTrimNative::execute_trim();
+      heap->phase_timings()->flush_cycle_to_global();
     }
 
     // Wait before performing the next action. If allocation happened during this wait,

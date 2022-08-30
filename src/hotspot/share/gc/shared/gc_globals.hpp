@@ -690,8 +690,25 @@
   product(uint, GCCardSizeInBytes, 512,                                     \
           "Card table entry size (in bytes) for card based collectors")     \
           range(128, NOT_LP64(512) LP64_ONLY(1024))                         \
-          constraint(GCCardSizeInBytesConstraintFunc,AtParse)
-  // end of GC_FLAGS
+          constraint(GCCardSizeInBytesConstraintFunc,AtParse)               \
+                                                                            \
+  product(bool, GCTrimNativeHeap, false, EXPERIMENTAL,                      \
+          "GC will attempt to trim the native heap periodically and at "    \
+          "full GCs.")                                                      \
+                                                                            \
+  product(uint, GCTrimNativeHeapInterval, 60, EXPERIMENTAL,                 \
+          "If GCTrimNativeHeap is enabled: interval time, in seconds, in "  \
+          "which the VM will attempt to trim the native heap. A value of "  \
+          "0 disables periodic trimming while leaving trimming at full gc " \
+          "enabled.")                                                       \
+          range(0, max_juint)                                               \
+                                                                            \
+  develop(size_t, GCTrimNativeHeapRetainSize, 5 * M,                        \
+          "If GCTrimNativeHeap is enabled: Baseline threshold before that " \
+          "trimming will not be attempted.")                                \
+          range(0, SIZE_MAX)                                                \
+                                                                            \
+          // end of GC_FLAGS
 
 DECLARE_FLAGS(GC_FLAGS)
 

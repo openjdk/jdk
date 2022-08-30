@@ -82,6 +82,7 @@
 #include "gc/shared/gcLocker.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
+#include "gc/shared/gcTrimNativeHeap.hpp"
 #include "gc/shared/generationSpec.hpp"
 #include "gc/shared/isGCActiveMark.hpp"
 #include "gc/shared/locationPrinter.inline.hpp"
@@ -1031,6 +1032,7 @@ void G1CollectedHeap::prepare_heap_for_mutators() {
   abort_refinement();
   resize_heap_if_necessary();
   uncommit_regions_if_necessary();
+  trim_native_heap();
 
   // Rebuild the code root lists for each region
   rebuild_code_roots();
@@ -1765,6 +1767,7 @@ void G1CollectedHeap::safepoint_synchronize_end() {
 void G1CollectedHeap::post_initialize() {
   CollectedHeap::post_initialize();
   ref_processing_init();
+  GCTrimNative::initialize(true);
 }
 
 void G1CollectedHeap::ref_processing_init() {
@@ -2621,6 +2624,10 @@ void G1CollectedHeap::uncommit_regions_if_necessary() {
   if (has_uncommittable_regions()) {
     G1UncommitRegionTask::enqueue();
   }
+}
+
+void G1CollectedHeap::trim_native_heap() {
+  GCTrimNative::schedule_trim();
 }
 
 void G1CollectedHeap::verify_numa_regions(const char* desc) {

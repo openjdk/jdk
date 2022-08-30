@@ -172,7 +172,7 @@ class os::Linux {
   // Return the namespace pid if so, otherwise -1.
   static int get_namespace_pid(int vmid);
 
-  // Output structure for query_process_memory_info()
+  // Output structure for query_process_memory_info() (all values in KB)
   struct meminfo_t {
     ssize_t vmsize;     // current virtual size
     ssize_t vmpeak;     // peak virtual size
@@ -264,40 +264,6 @@ class os::Linux {
     Interleave
   };
   static NumaAllocationPolicy _current_numa_policy;
-
-#ifdef __GLIBC__
-  struct glibc_mallinfo {
-    int arena;
-    int ordblks;
-    int smblks;
-    int hblks;
-    int hblkhd;
-    int usmblks;
-    int fsmblks;
-    int uordblks;
-    int fordblks;
-    int keepcost;
-  };
-
-  struct glibc_mallinfo2 {
-    size_t arena;
-    size_t ordblks;
-    size_t smblks;
-    size_t hblks;
-    size_t hblkhd;
-    size_t usmblks;
-    size_t fsmblks;
-    size_t uordblks;
-    size_t fordblks;
-    size_t keepcost;
-  };
-
-  typedef struct glibc_mallinfo (*mallinfo_func_t)(void);
-  typedef struct glibc_mallinfo2 (*mallinfo2_func_t)(void);
-
-  static mallinfo_func_t _mallinfo;
-  static mallinfo2_func_t _mallinfo2;
-#endif
 
  public:
   static int sched_getcpu()  { return _sched_getcpu != NULL ? _sched_getcpu() : -1; }
@@ -426,6 +392,27 @@ class os::Linux {
   }
 
   static void* resolve_function_descriptor(void* p);
+
+#ifdef __GLIBC__
+  // get_mallinfo() is a wrapper for either mallinfo or mallinfo2, depending on what
+  // we find available. It will prefer mallinfo2() over mallinfo() if possible. If we only
+  // have mallinfo(), values may be 32-bit truncated and that is signalled via the return
+  // code "ok_but_possibly_wrapped".
+  struct glibc_mallinfo2 {
+    size_t arena;
+    size_t ordblks;
+    size_t smblks;
+    size_t hblks;
+    size_t hblkhd;
+    size_t usmblks;
+    size_t fsmblks;
+    size_t uordblks;
+    size_t fordblks;
+    size_t keepcost;
+  };
+  enum class mallinfo_retval_t { ok, error, ok_but_possibly_wrapped };
+  static mallinfo_retval_t get_mallinfo(glibc_mallinfo2* out);
+#endif
 };
 
 #endif // OS_LINUX_OS_LINUX_HPP

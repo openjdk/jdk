@@ -42,6 +42,7 @@
 #include "gc/shared/locationPrinter.inline.hpp"
 #include "gc/shared/scavengableNMethods.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
+#include "gc/shared/gcTrimNativeHeap.hpp"
 #include "logging/log.hpp"
 #include "memory/iterator.hpp"
 #include "memory/metaspaceCounters.hpp"
@@ -190,6 +191,8 @@ void ParallelScavengeHeap::post_initialize() {
   PSPromotionManager::initialize();
 
   ScavengableNMethods::initialize(&_is_scavengable);
+
+  GCTrimNative::initialize(true);
 }
 
 void ParallelScavengeHeap::update_counters() {

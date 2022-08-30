@@ -29,6 +29,7 @@
 #include "gc/shared/gcArguments.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
+#include "gc/shared/gcTrimNativeHeap.hpp"
 #include "gc/shared/locationPrinter.inline.hpp"
 #include "gc/shared/memAllocator.hpp"
 #include "gc/shared/plab.hpp"
@@ -624,6 +625,8 @@ void ShenandoahHeap::post_initialize() {
   _heuristics->initialize();
 
   JFR_ONLY(ShenandoahJFRSupport::register_jfr_type_serializers());
+
+  GCTrimNative::initialize(false); // false since this is taken care of inside the service thread
 }
 
 size_t ShenandoahHeap::used() const {

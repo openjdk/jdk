@@ -24,8 +24,9 @@
 #include "precompiled.hpp"
 #include "gc/shared/gcId.hpp"
 #include "gc/shared/gcLocker.hpp"
-#include "gc/shared/gcVMOperations.hpp"
 #include "gc/shared/isGCActiveMark.hpp"
+#include "gc/shared/gcVMOperations.hpp"
+#include "gc/shared/gcTrimNativeHeap.hpp"
 #include "gc/z/zAbort.inline.hpp"
 #include "gc/z/zBreakpoint.hpp"
 #include "gc/z/zCollectedHeap.hpp"
@@ -480,6 +481,11 @@ void ZDriver::gc(const ZDriverRequest& request) {
 
   // Phase 10: Concurrent Relocate
   concurrent(relocate);
+
+  // GCTrimNativeHeap: A user-requested GC should trim the C-Heap right away
+  if (GCCause::is_user_requested_gc(request.cause())) {
+    GCTrimNative::schedule_trim();
+  }
 }
 
 void ZDriver::run_service() {

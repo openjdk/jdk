@@ -34,6 +34,7 @@
 #include "compiler/compileBroker.hpp"
 #include "compiler/compilerOracle.hpp"
 #include "gc/shared/collectedHeap.hpp"
+#include "gc/shared/gcTrimNativeHeap.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
 #include "jfr/jfrEvents.hpp"
@@ -448,6 +449,8 @@ void before_exit(JavaThread* thread, bool halt) {
   if (StringDedup::is_enabled()) {
     StringDedup::stop();
   }
+
+  GCTrimNative::cleanup();
 
   // Stop concurrent GC threads
   Universe::heap()->stop();

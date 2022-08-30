@@ -34,47 +34,21 @@
 #include <malloc.h>
 
 void TrimCLibcHeapDCmd::execute(DCmdSource source, TRAPS) {
-#ifdef __GLIBC__
-  stringStream ss_report(1024); // Note: before calling trim
-
-  os::Linux::meminfo_t info1;
-  os::Linux::meminfo_t info2;
-  // Query memory before...
-  bool have_info1 = os::Linux::query_process_memory_info(&info1);
-
-  _output->print_cr("Attempting trim...");
-  ::malloc_trim(0);
-  _output->print_cr("Done.");
-
-  // ...and after trim.
-  bool have_info2 = os::Linux::query_process_memory_info(&info2);
-
-  // Print report both to output stream as well to UL
-  bool wrote_something = false;
-  if (have_info1 && have_info2) {
-    if (info1.vmsize != -1 && info2.vmsize != -1) {
-      ss_report.print_cr("Virtual size before: " SSIZE_FORMAT "k, after: " SSIZE_FORMAT "k, (" SSIZE_FORMAT "k)",
-                         info1.vmsize, info2.vmsize, (info2.vmsize - info1.vmsize));
-      wrote_something = true;
+  if (os::can_trim_native_heap()) {
+    os::size_change_t sc;
+    if (os::trim_native_heap(&sc)) {
+      if (sc.after == SIZE_MAX) {
+        _output->print_cr("Done (no details available).");
+      } else {
+        const size_t scale_to_use = sc.before > (10 * M) ? M : K;
+        const char scale_c = scale_to_use == K ? 'K' : 'M';
+        const size_t m_before = sc.before / scale_to_use;
+        const size_t m_after = sc.after / scale_to_use;
+        _output->print_cr("Done. RSS+Swap reduction: " SIZE_FORMAT "%c->" SIZE_FORMAT "%c (" SSIZE_FORMAT "%c))",
+                          m_before, scale_c, m_after, scale_c, (ssize_t)m_after - (ssize_t)m_before, scale_c);
+      }
     }
-    if (info1.vmrss != -1 && info2.vmrss != -1) {
-      ss_report.print_cr("RSS before: " SSIZE_FORMAT "k, after: " SSIZE_FORMAT "k, (" SSIZE_FORMAT "k)",
-                         info1.vmrss, info2.vmrss, (info2.vmrss - info1.vmrss));
-      wrote_something = true;
-    }
-    if (info1.vmswap != -1 && info2.vmswap != -1) {
-      ss_report.print_cr("Swap before: " SSIZE_FORMAT "k, after: " SSIZE_FORMAT "k, (" SSIZE_FORMAT "k)",
-                         info1.vmswap, info2.vmswap, (info2.vmswap - info1.vmswap));
-      wrote_something = true;
-    }
+  } else {
+    _output->print_cr("Not available.");
   }
-  if (!wrote_something) {
-    ss_report.print_raw("No details available.");
-  }
-
-  _output->print_raw(ss_report.base());
-  log_info(os)("malloc_trim:\n%s", ss_report.base());
-#else
-  _output->print_cr("Not available.");
-#endif
 }

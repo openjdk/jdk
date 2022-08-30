@@ -24,6 +24,7 @@
 #include "precompiled.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
+#include "gc/shared/gcTrimNativeHeap.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/z/zCollectedHeap.hpp"
 #include "gc/z/zDirector.hpp"
@@ -72,6 +73,8 @@ jint ZCollectedHeap::initialize() {
   }
 
   Universe::calculate_verify_data((HeapWord*)0, (HeapWord*)UINTPTR_MAX);
+
+  GCTrimNative::initialize(true);
 
   return JNI_OK;
 }

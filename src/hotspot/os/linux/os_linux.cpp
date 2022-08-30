@@ -169,8 +169,31 @@ const char * os::Linux::_libpthread_version = NULL;
 size_t os::Linux::_default_large_page_size = 0;
 
 #ifdef __GLIBC__
-os::Linux::mallinfo_func_t os::Linux::_mallinfo = NULL;
-os::Linux::mallinfo2_func_t os::Linux::_mallinfo2 = NULL;
+// Note: mallinfo(3) vs mallinfo2(3):
+// We want to be runnable with both old and new glibcs. Old glibcs just offer mallinfo(3).
+// New glibcs deprecate mallinfo(3) and offer mallinfo2(3) as replacement. Future glibc's
+// may remove mallinfo(3) altogether.
+// Therefore we may have one, both, or possibly neither (?). Code should tolerate all
+// cases, which is why we resolve the functions dynamically. Outside code uses
+// os::Linux::get_mallinfo() utility function that hides this mess.
+struct glibc_mallinfo {
+  int arena;
+  int ordblks;
+  int smblks;
+  int hblks;
+  int hblkhd;
+  int usmblks;
+  int fsmblks;
+  int uordblks;
+  int fordblks;
+  int keepcost;
+};
+// struct glibc_mallinfo2 lives in os_linux.hpp since it does dual duty as output
+// structure for both the native mallinfo2(3) as for the wrapper function
+typedef struct glibc_mallinfo (*mallinfo_func_t)(void);
+typedef struct os::Linux::glibc_mallinfo2 (*mallinfo2_func_t)(void);
+static mallinfo_func_t g_mallinfo = NULL;
+static mallinfo2_func_t g_mallinfo2 = NULL;
 #endif // __GLIBC__
 
 static int clock_tics_per_sec = 100;
@@ -2172,22 +2195,18 @@ void os::Linux::print_process_memory_info(outputStream* st) {
   size_t total_allocated = 0;
   size_t free_retained = 0;
   bool might_have_wrapped = false;
-  if (_mallinfo2 != NULL) {
-    struct glibc_mallinfo2 mi = _mallinfo2();
-    total_allocated = mi.uordblks + mi.hblkhd;
-    free_retained = mi.fordblks;
-  } else if (_mallinfo != NULL) {
-    // mallinfo is an old API. Member names mean next to nothing and, beyond that, are 32-bit signed.
-    // So for larger footprints the values may have wrapped around. We try to detect this here: if the
-    // process whole resident set size is smaller than 4G, malloc footprint has to be less than that
-    // and the numbers are reliable.
-    struct glibc_mallinfo mi = _mallinfo();
-    total_allocated = (size_t)(unsigned)mi.uordblks + (size_t)(unsigned)mi.hblkhd;
-    free_retained = (size_t)(unsigned)mi.fordblks;
-    // Since mallinfo members are int, glibc values may have wrapped. Warn about this.
-    might_have_wrapped = (info.vmrss * K) > UINT_MAX && (info.vmrss * K) > (total_allocated + UINT_MAX);
-  }
-  if (_mallinfo2 != NULL || _mallinfo != NULL) {
+  glibc_mallinfo2 mi;
+  mallinfo_retval_t mirc = os::Linux::get_mallinfo(&mi);
+  if (mirc != mallinfo_retval_t::error) {
+    size_t total_allocated = mi.uordblks + mi.hblkhd;
+    size_t free_retained = mi.fordblks;
+#ifdef _LP64
+    // If all we had is old mallinf(3), the values may have wrapped. Since that can confuse readers
+    // of this output, print a hint.
+    // We do this by checking virtual size of the process: if that is <4g, we could not have wrapped.
+    might_have_wrapped = (mirc == mallinfo_retval_t::ok_but_possibly_wrapped) &&
+                         ((info.vmsize * K) > UINT_MAX);
+#endif
     st->print_cr("C-Heap outstanding allocations: " SIZE_FORMAT "K, retained: " SIZE_FORMAT "K%s",
                  total_allocated / K, free_retained / K,
                  might_have_wrapped ? " (may have wrapped)" : "");
@@ -4343,8 +4362,8 @@ void os::init(void) {
   Linux::initialize_system_info();
 
 #ifdef __GLIBC__
-  Linux::_mallinfo = CAST_TO_FN_PTR(Linux::mallinfo_func_t, dlsym(RTLD_DEFAULT, "mallinfo"));
-  Linux::_mallinfo2 = CAST_TO_FN_PTR(Linux::mallinfo2_func_t, dlsym(RTLD_DEFAULT, "mallinfo2"));
+  g_mallinfo = CAST_TO_FN_PTR(mallinfo_func_t, dlsym(RTLD_DEFAULT, "mallinfo"));
+  g_mallinfo2 = CAST_TO_FN_PTR(mallinfo2_func_t, dlsym(RTLD_DEFAULT, "mallinfo2"));
 #endif // __GLIBC__
 
   os::Linux::CPUPerfTicks pticks;
@@ -4631,6 +4650,11 @@ jint os::init_2(void) {
     // exit contains all nmethods generated during execution.
     FLAG_SET_DEFAULT(UseCodeCacheFlushing, false);
   }
+
+#ifdef __GLIBC__
+  log_debug(os)("mallinfo: %s", g_mallinfo ? "yes" : "no");
+  log_debug(os)("mallinfo2: %s", g_mallinfo2 ? "yes" : "no");
+#endif
 
   return JNI_OK;
 }
@@ -5400,4 +5424,102 @@ void os::print_memory_mappings(char* addr, size_t bytes, outputStream* st) {
     }
     st->cr();
   }
+}
+
+#ifdef __GLIBC__
+os::Linux::mallinfo_retval_t os::Linux::get_mallinfo(glibc_mallinfo2* out) {
+  if (g_mallinfo2) {
+    // preferred.
+    glibc_mallinfo2 mi = g_mallinfo2();
+    *out = mi;
+    return mallinfo_retval_t::ok;
+  } else if (g_mallinfo) {
+    // not perfect but ok if process virt size < 4g or if wrapping does not matter to the caller
+    glibc_mallinfo mi = g_mallinfo();
+    out->arena = (int) mi.arena;
+    out->ordblks = (int) mi.ordblks;
+    out->smblks = (int) mi.smblks;
+    out->hblks = (int) mi.hblks;
+    out->hblkhd = (int) mi.hblkhd;
+    out->usmblks = (int) mi.usmblks;
+    out->fsmblks = (int) mi.fsmblks;
+    out->uordblks = (int) mi.uordblks;
+    out->fordblks = (int) mi.fordblks;
+    out->keepcost = (int) mi.keepcost;
+    return mallinfo_retval_t::ok_but_possibly_wrapped;
+  }
+  return mallinfo_retval_t::ok;
+}
+#endif // __GLIBC__
+
+// Trim-native support
+bool os::can_trim_native_heap() {
+#ifdef __GLIBC__
+  return true;
+#else
+  return false; // musl
+#endif
+}
+
+bool os::should_trim_native_heap(size_t retain_size) {
+#ifdef __GLIBC__
+  bool rc = true;
+  // It is difficult to predict the effect a malloc_trim(3) will have.
+  // mallinfo(3) looks like a good candidate but does not work that well
+  // in practice.
+  //
+  // "mallinfo::keepcost" is no help even if manpage claims this to be the
+  // projected trim size. In practice it is just a very small value with
+  // no relation to the actual effect trimming will have.
+  //
+  // The best we have is "mallinfo::fordblks", the total chunk size of free
+  // blocks. Since only free blocks can be trimmed, a very low bar is to require
+  // that size to be higher than our retain size. Unfortunately, "mallinfo::fordblks"
+  // does not react to malloc_trim(3). Glibc trims by calling madvice(MADV_DONT_NEED)
+  // on suitable chunks, but does not destruct the chunks nor updates its
+  // bookkeeping.
+  //
+  // In the end we want to prevent obvious bogus attempts to trim, and for that
+  // fordblks is good enough.
+  os::Linux::glibc_mallinfo2 mi;
+  os::Linux::mallinfo_retval_t mirc = os::Linux::get_mallinfo(&mi);
+  const size_t total_free = mi.fordblks;
+  if (mirc == os::Linux::mallinfo_retval_t::ok) {
+    rc = retain_size < total_free;
+  }
+  return rc;
+#else
+  return false; // musl
+#endif
+}
+
+bool os::trim_native_heap(os::size_change_t* rss_change, size_t retain_size) {
+#ifdef __GLIBC__
+  os::Linux::meminfo_t info1;
+  os::Linux::meminfo_t info2;
+
+  // Note: query_process_memory_info returns values in K
+
+  // Query memory before...
+  bool have_info1 = (rss_change != nullptr) ? os::Linux::query_process_memory_info(&info1) : false;
+
+  ::malloc_trim(retain_size);
+
+  // ...and after trim.
+  bool have_info2 = (rss_change != nullptr) ? os::Linux::query_process_memory_info(&info2) : false;
+
+  ssize_t delta = (ssize_t) -1;
+  if (have_info1 && have_info2 &&
+    info1.vmrss != -1 && info2.vmrss != -1 &&
+    info1.vmswap != -1 && info2.vmswap != -1) {
+    rss_change->before = (info1.vmrss + info1.vmswap) * K;
+    rss_change->after = (info2.vmrss + info2.vmswap) * K;
+  } else {
+    rss_change->after = rss_change->before = SIZE_MAX;
+  }
+
+  return true;
+#else
+  return 0; // musl
+#endif
 }

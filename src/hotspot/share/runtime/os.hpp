@@ -440,6 +440,17 @@ class os: AllStatic {
   static bool   uncommit_memory(char* addr, size_t bytes, bool executable = false);
   static bool   release_memory(char* addr, size_t bytes);
 
+  // Does the platform support trimming the native heap?
+  static bool can_trim_native_heap();
+
+  // Given a planned retain size of x, would the platform recommend trimming?
+  static bool should_trim_native_heap(size_t retain_size);
+
+  // Trim the C-heap. Returns RSS size change and optionally return the rss size change.
+  // If trim was done but size change could not be obtained, SIZE_MAX is returned for after size.
+  struct size_change_t { size_t before; size_t after; };
+  static bool trim_native_heap(size_change_t* rss_change, size_t retain_size = 0);
+
   // A diagnostic function to print memory mappings in the given range.
   static void print_memory_mappings(char* addr, size_t bytes, outputStream* st);
   // Prints all mappings

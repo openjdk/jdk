@@ -56,6 +56,7 @@
 #include "gc/shared/scavengableNMethods.hpp"
 #include "gc/shared/space.hpp"
 #include "gc/shared/strongRootsScope.hpp"
+#include "gc/shared/gcTrimNativeHeap.hpp"
 #include "gc/shared/weakProcessor.hpp"
 #include "gc/shared/workerThread.hpp"
 #include "memory/iterator.hpp"
@@ -207,6 +208,8 @@ void GenCollectedHeap::post_initialize() {
   MarkSweep::initialize();
 
   ScavengableNMethods::initialize(&_is_scavengable);
+
+  GCTrimNative::initialize(false); // false since we will call trim inside the collecting thread
 }
 
 void GenCollectedHeap::ref_processing_init() {
@@ -630,6 +633,11 @@ void GenCollectedHeap::do_collection(bool           full,
     // Resize the metaspace capacity after full collections
     MetaspaceGC::compute_new_size();
     update_full_collections_completed();
+
+    // Trim the native heap, without a delay since this is a full gc
+    if (GCTrimNative::should_trim(true)) {
+      GCTrimNative::execute_trim();
+    }
 
     print_heap_change(pre_gc_values);
 

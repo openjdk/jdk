@@ -44,7 +44,7 @@ public class TrimLibcHeapTest {
         output.reportDiagnosticSummary();
         output.shouldMatch("(Done|Not available)"); // Not available could happen on Linux + non-glibc (eg. muslc)
         if (output.firstMatch("Done") != null) {
-            output.shouldMatch("(Virtual size before|RSS before|Swap before|No details available)");
+            output.shouldMatch("Done. RSS\\+Swap reduction:");
         }
     }
 
