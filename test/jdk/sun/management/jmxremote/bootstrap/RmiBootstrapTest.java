@@ -202,11 +202,9 @@ public class RmiBootstrapTest extends RmiTestBase {
         if (!f.exists()) {
             return result;
         }
-        FileInputStream fin = new FileInputStream(passwordFileName);
-        try {
+        try (FileInputStream fin = new FileInputStream(passwordFileName)){
             pws.load(fin);
-        } finally {
-            fin.close();
+        } catch (IOException e) {
         }
         for (Enumeration en = pws.propertyNames(); en.hasMoreElements(); ) {
             final String[] cred = new String[2];

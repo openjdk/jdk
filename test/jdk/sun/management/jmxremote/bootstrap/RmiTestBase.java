@@ -133,7 +133,8 @@ public class RmiTestBase {
         // replace @TEST-SRC@ with the path of the current test folder
         if (Platform.isWindows()) {
             // On Windows, also replace forward slash or single backslash to double backslashes
-            Utils.replaceFilesString(propertyFiles, (s) -> s.replace(TEST_SRC, DEST).replaceAll("[/\\\\]", "\\\\\\\\"));
+            Utils.replaceFilesString(propertyFiles,
+                    (s) -> s.replace(TEST_SRC, DEST).replaceAll("[/\\\\]", "\\\\\\\\"));
         } else {
             Utils.replaceFilesString(propertyFiles, (s) -> s.replace(TEST_SRC, DEST));
         }
@@ -168,8 +169,8 @@ public class RmiTestBase {
                         acl.add(thisEntry);
                     }
                 } else {
-                    if (!thisEntry.principal().getName().contains("NULL SID") &&
-                            thisEntry.type() != AclEntryType.ALLOW) {
+                    if (!thisEntry.principal().getName().contains("NULL SID")
+                            && thisEntry.type() != AclEntryType.ALLOW) {
                         acl.add(Utils.allowAccess(thisEntry));
                     } else {
                         acl.add(thisEntry);
