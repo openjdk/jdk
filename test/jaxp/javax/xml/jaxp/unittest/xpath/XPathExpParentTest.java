@@ -30,13 +30,13 @@ import org.w3c.dom.Node;
 
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathFactory;
+import javax.xml.xpath.XPathNodes;
 
 /*
  * @test
  * @bug     8292990
  * @summary Tests the XPath parent axis
  * @library /javax/xml/jaxp/unittest
- * @build xpath.XPathTestBase
  *
  * @run testng xpath.XPathExpParentTest
  */
@@ -53,14 +53,14 @@ public class XPathExpParentTest extends XPathTestBase {
     public Object[][] getOneParentNodeExp() {
         return new Object[][]{
                 {"//Customer/parent::*", "//Customers"},
-                {"//Customer/text()/parent::*", "//Customer"},
-                {"//Customer/@id/parent::*", "//Customer"},
-                {"/Customers/Customer[1]/namespace::*/parent::*", "//Customer"},
+                {"//Customer[1]/text()/parent::*", "//Customer"},
+                {"//Customer[1]/@id/parent::*", "//Customer"},
+                {"//Customer[1]/namespace::*/parent::*", "//Customers"},
                 {"/Customers/comment()/parent::*", "//Customers"},
-                {"//Customer/..", "//Customers"},
-                {"//Customer/text()/..", "//Customer"},
-                {"//Customer/@id/..", "//Customer"},
-                {"/Customers/Customer[1]/namespace::*/..", "//Customer"},
+                {"//Customer[1]/..", "//Customers"},
+                {"//Customer[1]/text()/..", "//Customer"},
+                {"//Customer[1]/@id/..", "//Customer"},
+                {"//Customer[1]/namespace::*/..", "//Customers"},
                 {"/Customers/comment()/..", "//Customers"},
         };
     }
@@ -77,6 +77,34 @@ public class XPathExpParentTest extends XPathTestBase {
         };
     }
 
+    /*
+     * DataProvider for XPath relative expressions which should provide a parent node.
+     * Data columns:
+     *  see parameters of the test "testRelativeParentExp"
+     */
+    @DataProvider(name = "relativeParent")
+    public Object[][] getRelativeParentExp() {
+        return new Object[][]{
+                {"/Customers", "comment()/parent::*"},
+                {"/Customers/Customer[1]", "Name/parent::*"},
+                {"/Customers/Customer[1]", "text()/parent::*"},
+                {"/Customers/Customer[1]", "@id/parent::*"},
+                {"/Customers", "namespace::*/parent::*"},
+        };
+    }
+
+    /*
+     * DataProvider for XPath relative expressions which should provide no parent node.
+     * Data columns:
+     *  see parameters of the test "testZeroRelativeParentExp"
+     */
+    @DataProvider(name = "noRelativeParent")
+    public Object[][] getZeroRelativeParentExp() {
+        return new Object[][]{
+                {"/Customers", "parent::*"},
+        };
+    }
+
     /**
      * Verifies that XPath expressions provide one and only parent node.
      *
@@ -89,15 +117,19 @@ public class XPathExpParentTest extends XPathTestBase {
             throws Exception {
         XPath xPath = XPathFactory.newInstance().newXPath();
 
-        Node parent = xPath.evaluateExpression(parentExp, doc, Node.class);
+        Node expected = xPath.evaluateExpression(parentExp, doc, Node.class);
 
-        testExp(doc, exp, parent, Node.class);
+        testExp(doc, exp, expected, Node.class);
+
+        XPathNodes nodes = xPath.evaluateExpression(exp, doc, XPathNodes.class);
+
+        Assert.assertEquals(nodes.size(), 1);
     }
 
     /**
      * Verifies that XPath expressions provide no parent node.
      *
-     * @param exp       XPath expression
+     * @param exp XPath expression
      * @throws Exception if test failed
      */
     @Test(dataProvider = "noParentNode")
@@ -108,5 +140,38 @@ public class XPathExpParentTest extends XPathTestBase {
         Node parent = xPath.evaluateExpression(exp, doc, Node.class);
 
         Assert.assertNull(parent);
+    }
+
+    /**
+     * Verifies that XPath relative expressions provide a parent node.
+     *
+     * @param exp         XPath expression
+     * @param relativeExp XPath relative expression
+     * @throws Exception if test failed
+     */
+    @Test(dataProvider = "relativeParent")
+    void testRelativeParentExp(String exp, String relativeExp) throws Exception {
+        XPath xPath = XPathFactory.newInstance().newXPath();
+        Node base = xPath.evaluateExpression(exp, doc, Node.class);
+        Node relative = xPath.evaluateExpression(relativeExp, base, Node.class);
+
+        Assert.assertEquals(relative, base);
+    }
+
+    /**
+     * Verifies that XPath relative expressions provide no parent node.
+     *
+     * @param exp         XPath expression
+     * @param relativeExp XPath relative expression
+     * @throws Exception if test failed
+     */
+    @Test(dataProvider = "noRelativeParent")
+    void testZeroRelativeParentExp(String exp, String relativeExp) throws Exception {
+        XPath xPath = XPathFactory.newInstance().newXPath();
+
+        Node base = xPath.evaluateExpression(exp, doc, Node.class);
+        Node relative = xPath.evaluateExpression(relativeExp, base, Node.class);
+
+        Assert.assertNull(relative);
     }
 }
