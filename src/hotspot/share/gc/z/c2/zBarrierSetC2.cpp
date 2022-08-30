@@ -123,7 +123,7 @@ class ZBarrierSetC2State : public ResourceObj {
 private:
   GrowableArray<ZBarrierStubC2*>* _stubs;
   Node_Array                      _live;
-  size_t                          _trampoline_stubs_count;
+  int                             _trampoline_stubs_count;
   int                             _stubs_start_offset;
 
 public:
@@ -159,10 +159,11 @@ public:
   }
 
   void inc_trampoline_stubs_count() {
+    assert(_trampoline_stubs_count != INT_MAX, "Overflow");
     ++_trampoline_stubs_count;
   }
 
-  size_t trampoline_stubs_count() {
+  int trampoline_stubs_count() {
     return _trampoline_stubs_count;
   }
 
@@ -191,7 +192,7 @@ void ZBarrierStubC2::inc_trampoline_stubs_count() {
   }
 }
 
-size_t ZBarrierStubC2::trampoline_stubs_count() {
+int ZBarrierStubC2::trampoline_stubs_count() {
   return barrier_set_state()->trampoline_stubs_count();
 }
 

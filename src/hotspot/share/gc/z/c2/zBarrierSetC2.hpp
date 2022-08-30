@@ -49,7 +49,7 @@ protected:
 
 static void register_stub(ZBarrierStubC2* stub);
 static void inc_trampoline_stubs_count();
-static size_t trampoline_stubs_count();
+static int trampoline_stubs_count();
 static int stubs_start_offset();
 
 public:
