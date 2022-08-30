@@ -123,7 +123,7 @@ public class SharedSecrets {
     }
 
     public static JavaUtilConcurrentFJPAccess getJavaUtilConcurrentFJPAccess() {
-        JavaUtilConcurrentFJPAccess access = javaUtilConcurrentFJPAccess;
+        var access = javaUtilConcurrentFJPAccess;
         if (access == null) {
             ensureClassInitialized(ForkJoinPool.class);
             access = javaUtilConcurrentFJPAccess;
