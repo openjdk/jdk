@@ -77,19 +77,6 @@
  * <p>The following implementation specific system properties are supported by the
  * default LDAP Naming Service Provider implementation in the JDK:
  * <ul>
- *     <li>{@systemProperty jdk.jndi.object.factoriesFilter}:
- *          <br>The value of this system property defines a filter used by
- *          the JNDI runtime implementation to control the set of object factory classes which will
- *          be allowed to instantiate objects from object references returned by naming/directory systems.
- *          The factory class named by the reference instance will be matched against this filter.
- *          The filter property supports pattern-based filter syntax with the same format as
- *          {@link java.io.ObjectInputFilter.Config#createFilter(String) jdk.serialFilter}.
- *          This property can also be specified as a {@linkplain java.security.Security security property}.
- *          This property is also supported by the <a href="{@docRoot}/jdk.naming.rmi/module-summary.html">default JNDI
- *          RMI Provider</a>.
- *          <br>The default value allows any object factory class specified by the reference
- *          instance to recreate the referenced object.
- *     </li>
  *     <li>{@systemProperty com.sun.jndi.ldap.object.trustSerialData}:
  *          <br>The value of this system property is the string representation of a boolean value
  *          which allows to control the deserialization of java objects from the {@code javaSerializedData} LDAP
@@ -102,6 +89,19 @@
  *          <br>If the property is not specified the deserialization of java objects
  *          from the {@code javaSerializedData}, the {@code javaRemoteLocation}, or {@code javaReferenceAddress}
  *          attributes is not allowed.
+ *     </li>
+ *     <li>{@systemProperty jdk.jndi.object.factoriesFilter}:
+ *          <br>The value of this system property defines a filter used by
+ *          the JNDI runtime implementation to control the set of object factory classes which will
+ *          be allowed to instantiate objects from object references returned by naming/directory systems.
+ *          The factory class named by the reference instance will be matched against this filter.
+ *          The filter property supports pattern-based filter syntax with the same format as
+ *          {@link java.io.ObjectInputFilter.Config#createFilter(String) jdk.serialFilter}.
+ *          This property can also be specified as a {@linkplain java.security.Security security property}.
+ *          This property is also supported by the <a href="{@docRoot}/jdk.naming.rmi/module-summary.html">default JNDI
+ *          RMI Provider</a>.
+ *          <br>The default value allows any object factory class specified by the reference
+ *          instance to recreate the referenced object.
  *     </li>
  * </ul>
  * <p>Other providers may define additional properties in their module description:
