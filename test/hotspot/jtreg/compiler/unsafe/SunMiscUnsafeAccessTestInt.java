@@ -49,7 +49,7 @@ public class SunMiscUnsafeAccessTestInt {
     // Be mindful of worst-case total time on test, which would be at
     // roughly (delay*attempts) milliseconds.
     //
-    static final int WEAK_ATTEMPTS = Integer.getInteger("weakAttempts", 200);
+    static final int WEAK_ATTEMPTS = Integer.getInteger("weakAttempts", 100);
     static final int WEAK_DELAY_MS = Math.max(1, Integer.getInteger("weakDelay", 1));
 
     static final sun.misc.Unsafe UNSAFE;
