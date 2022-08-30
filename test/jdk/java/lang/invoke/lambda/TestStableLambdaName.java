@@ -102,8 +102,9 @@ public class TestStableLambdaName {
     }
 
     private static String removeHashFromLambdaName(String name) {
-        System.err.println("Lambda name debug purposes: " + name);
-        return name.substring(0, name.indexOf("/0x0"));
+        String architecture = System.getProperty("sun.arch.data.model");
+        System.err.println("Architecture: " + architecture);
+        return name.substring(0, name.indexOf("/0x"));
     }
 
     private static void createPlainLambdas(Set<String> lambdaNames, int flags, MethodHandle[] methodHandles) throws Throwable {
