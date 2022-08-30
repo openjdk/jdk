@@ -51,6 +51,7 @@ jobs:
           - arm
           - s390x
           - ppc64le
+          - riscv64
         include:
           - target-cpu: aarch64
             debian-arch: arm64
@@ -65,6 +66,9 @@ jobs:
           - target-cpu: ppc64le
             debian-arch: ppc64el
             gnu-arch: powerpc64le
+          - target-cpu: riscv64
+            debian-arch: riscv64
+            gnu-arch: riscv64
 
     steps:
       - name: 'Checkout the JDK source'
