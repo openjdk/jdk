@@ -120,7 +120,7 @@ public class WindbgDebuggerLocal extends DebuggerBase implements WindbgDebugger 
     }
 
     if (useCache) {
-        initCache(4096, parseCacheNumPagesProperty(1024 * 64));
+      initCache(4096, parseCacheNumPagesProperty(1024 * 64));
     }
   }
 
