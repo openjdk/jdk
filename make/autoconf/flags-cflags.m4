@@ -546,7 +546,7 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
       LANGSTD_CFLAGS="-std:c11"
     else
       # Visual Studio 2017 does not support the full C11, nor any other well-defined C standard.
-      # We use the default, which is roughly C89 + certain chosen extensions. CS2017 will need to
+      # We use the default, which is roughly C89 + certain chosen extensions. VS2017 will need to
       # be retired if we get a C11 construct in the source code that it cannot handle.
       LANGSTD_CFLAGS=""
     fi
