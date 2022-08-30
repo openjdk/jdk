@@ -412,10 +412,6 @@ public class RemoteDebuggerClient extends DebuggerBase implements JVMDebugger {
     }
   }
 
-  public void writeBytesToProcess(long a, long b, byte[] c) {
-     throw new DebuggerException("Unimplemented!");
-  }
-
   public String execCommandOnServer(String command, Map<String, Object> options) {
     try {
       return remoteDebugger.execCommandOnServer(command, options);
