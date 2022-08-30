@@ -64,6 +64,7 @@ public abstract class DebuggerBase implements Debugger {
   protected int  narrowKlassShift; // shift to decode compressed klass ptrs.
   // Should be initialized if desired by calling initCache()
   private PageCache cache;
+  private long pageSize;
 
   // State for faster accessors that don't allocate memory on each read
   private boolean useFastAccessors;
@@ -177,6 +178,7 @@ public abstract class DebuggerBase implements Debugger {
       cache but may not be overridden */
   protected final void initCache(long pageSize, long maxNumPages) {
     cache = new PageCache(pageSize, maxNumPages, new Fetcher());
+    this.pageSize = pageSize;
     if (machDesc != null) {
       bigEndian = machDesc.isBigEndian();
     }
@@ -232,6 +234,19 @@ public abstract class DebuggerBase implements Debugger {
     }
   }
 
+  /** If an address for a 64-bit value starts on the last 32-bit word of a
+      page, then we can't use the page cache to read it because it will cause
+      an ArrayIndexOutOfBoundsException when reading past the end of the page. */
+  private boolean canUsePageCacheFor64bitRead(long address) {
+    long pageMask = ~(pageSize - 1);
+    if ((address & pageMask) != ((address + 4) & pageMask)) {
+      // This address starts on the last 32-bit word of the page.
+      // Cannot use the page cache in that case.
+      return false;
+    }
+    return true;
+  }
+
   public boolean readJBoolean(long address)
     throws UnmappedAddressException, UnalignedAddressException {
     checkJavaConfigured();
@@ -256,8 +271,6 @@ public abstract class DebuggerBase implements Debugger {
     }
   }
 
-  // NOTE: assumes value does not span pages (may be bad assumption on
-  // Solaris/x86; see unalignedAccessesOkay in DbxDebugger hierarchy)
   public char readJChar(long address)
     throws UnmappedAddressException, UnalignedAddressException {
     checkJavaConfigured();
@@ -270,13 +283,11 @@ public abstract class DebuggerBase implements Debugger {
     }
   }
 
-  // NOTE: assumes value does not span pages (may be bad assumption on
-  // Solaris/x86; see unalignedAccessesOkay in DbxDebugger hierarchy)
   public double readJDouble(long address)
     throws UnmappedAddressException, UnalignedAddressException {
     checkJavaConfigured();
     utils.checkAlignment(address, jdoubleSize);
-    if (useFastAccessors) {
+    if (useFastAccessors && canUsePageCacheFor64bitRead(address)) {
       return cache.getDouble(address, bigEndian);
     } else {
       byte[] data = readBytes(address, jdoubleSize);
@@ -284,8 +295,6 @@ public abstract class DebuggerBase implements Debugger {
     }
   }
 
-  // NOTE: assumes value does not span pages (may be bad assumption on
-  // Solaris/x86; see unalignedAccessesOkay in DbxDebugger hierarchy)
   public float readJFloat(long address)
     throws UnmappedAddressException, UnalignedAddressException {
     checkJavaConfigured();
@@ -298,8 +307,6 @@ public abstract class DebuggerBase implements Debugger {
     }
   }
 
-  // NOTE: assumes value does not span pages (may be bad assumption on
-  // Solaris/x86; see unalignedAccessesOkay in DbxDebugger hierarchy)
   public int readJInt(long address)
     throws UnmappedAddressException, UnalignedAddressException {
     checkJavaConfigured();
@@ -312,13 +319,11 @@ public abstract class DebuggerBase implements Debugger {
     }
   }
 
-  // NOTE: assumes value does not span pages (may be bad assumption on
-  // Solaris/x86; see unalignedAccessesOkay in DbxDebugger hierarchy)
   public long readJLong(long address)
     throws UnmappedAddressException, UnalignedAddressException {
     checkJavaConfigured();
     utils.checkAlignment(address, jlongSize);
-    if (useFastAccessors) {
+    if (useFastAccessors && canUsePageCacheFor64bitRead(address)) {
       return cache.getLong(address, bigEndian);
     } else {
       byte[] data = readBytes(address, jlongSize);
@@ -326,8 +331,6 @@ public abstract class DebuggerBase implements Debugger {
     }
   }
 
-  // NOTE: assumes value does not span pages (may be bad assumption on
-  // Solaris/x86; see unalignedAccessesOkay in DbxDebugger hierarchy)
   public short readJShort(long address)
     throws UnmappedAddressException, UnalignedAddressException {
     checkJavaConfigured();
@@ -340,13 +343,11 @@ public abstract class DebuggerBase implements Debugger {
     }
   }
 
-  // NOTE: assumes value does not span pages (may be bad assumption on
-  // Solaris/x86; see unalignedAccessesOkay in DbxDebugger hierarchy)
   public long readCInteger(long address, long numBytes, boolean isUnsigned)
     throws UnmappedAddressException, UnalignedAddressException {
     checkConfigured();
     utils.checkAlignment(address, numBytes);
-    if (useFastAccessors) {
+    if (useFastAccessors && (numBytes != 8 || canUsePageCacheFor64bitRead(address))) {
       if (isUnsigned) {
         switch((int) numBytes) {
         case 1: return cache.getByte(address) & 0xFF;

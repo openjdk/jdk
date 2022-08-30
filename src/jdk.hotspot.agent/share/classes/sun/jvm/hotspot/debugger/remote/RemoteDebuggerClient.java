@@ -43,15 +43,15 @@ import sun.jvm.hotspot.debugger.remote.ppc64.*;
 public class RemoteDebuggerClient extends DebuggerBase implements JVMDebugger {
   private RemoteDebugger remoteDebugger;
   private RemoteThreadFactory threadFactory;
-  private boolean unalignedAccessesOkay = false;
   private static final int cacheSize = 16 * 1024 * 1024; // 16 MB
 
   public RemoteDebuggerClient(RemoteDebugger remoteDebugger) throws DebuggerException {
     super();
     try {
       this.remoteDebugger = remoteDebugger;
-      machDesc = remoteDebugger.getMachineDescription();
-      utils = new DebuggerUtilities(machDesc.getAddressSize(), machDesc.isBigEndian());
+      this.machDesc = remoteDebugger.getMachineDescription();
+      utils = new DebuggerUtilities(machDesc.getAddressSize(), machDesc.isBigEndian(),
+                                    machDesc.supports32bitAlignmentOf64bitTypes());
       int cacheNumPages;
       int cachePageSize;
       String cpu = remoteDebugger.getCPU();
@@ -60,17 +60,14 @@ public class RemoteDebuggerClient extends DebuggerBase implements JVMDebugger {
         threadFactory = new RemoteX86ThreadFactory(this);
         cachePageSize = 4096;
         cacheNumPages = parseCacheNumPagesProperty(cacheSize / cachePageSize);
-        unalignedAccessesOkay = true;
       } else if (cpu.equals("amd64") || cpu.equals("x86_64")) {
         threadFactory = new RemoteAMD64ThreadFactory(this);
         cachePageSize = 4096;
         cacheNumPages = parseCacheNumPagesProperty(cacheSize / cachePageSize);
-        unalignedAccessesOkay = true;
       } else if (cpu.equals("ppc64")) {
         threadFactory = new RemotePPC64ThreadFactory(this);
         cachePageSize = 4096;
         cacheNumPages = parseCacheNumPagesProperty(cacheSize / cachePageSize);
-        unalignedAccessesOkay = true;
       } else {
         try {
           Class tf = Class.forName("sun.jvm.hotspot.debugger.remote." +
@@ -83,7 +80,6 @@ public class RemoteDebuggerClient extends DebuggerBase implements JVMDebugger {
         }
         cachePageSize = 4096;
         cacheNumPages = parseCacheNumPagesProperty(cacheSize / cachePageSize);
-        unalignedAccessesOkay = false;
       }
 
       // Cache portion of the remote process's address space.
@@ -235,41 +231,6 @@ public class RemoteDebuggerClient extends DebuggerBase implements JVMDebugger {
     catch (RemoteException e) {
       throw new DebuggerException(e);
     }
-  }
-
-  /** Need to override this to relax alignment checks on x86. */
-  public long readCInteger(long address, long numBytes, boolean isUnsigned)
-    throws UnmappedAddressException, UnalignedAddressException {
-    if (!unalignedAccessesOkay) {
-      utils.checkAlignment(address, numBytes);
-    } else {
-      // Only slightly relaxed semantics -- this is a hack, but is
-      // necessary on x86 where it seems the compiler is
-      // putting some global 64-bit data on 32-bit boundaries
-      if (numBytes == 8) {
-        utils.checkAlignment(address, 4);
-      } else {
-        utils.checkAlignment(address, numBytes);
-      }
-    }
-    byte[] data = readBytes(address, numBytes);
-    return utils.dataToCInteger(data, isUnsigned);
-  }
-
-  // Overridden from DebuggerBase because we need to relax alignment
-  // constraints on x86
-  public long readJLong(long address)
-    throws UnmappedAddressException, UnalignedAddressException {
-    // FIXME: allow this to be configurable. Undesirable to add a
-    // dependency on the runtime package here, though, since this
-    // package should be strictly underneath it.
-    if (unalignedAccessesOkay) {
-      utils.checkAlignment(address, jintSize);
-    } else {
-      utils.checkAlignment(address, jlongSize);
-    }
-    byte[] data = readBytes(address, jlongSize);
-    return utils.dataToJLong(data, jlongSize);
   }
 
 

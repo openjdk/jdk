@@ -32,30 +32,6 @@ import jdk.test.lib.util.CoreUtils;
 import jtreg.SkippedException;
 
 /**
- * @test id=xcomp-process
- * @bug 8193124
- * @summary Test the clhsdb 'findpc' command with Xcomp on live process
- * @requires vm.compMode != "Xcomp"
- * @requires vm.hasSA
- * @requires vm.compiler1.enabled
- * @requires vm.opt.DeoptimizeALot != true
- * @library /test/lib
- * @run main/othervm/timeout=480 ClhsdbFindPC true false
- */
-
-/**
- * @test id=xcomp-core
- * @bug 8193124
- * @summary Test the clhsdb 'findpc' command with Xcomp on core file
- * @requires vm.compMode != "Xcomp"
- * @requires vm.hasSA
- * @requires vm.compiler1.enabled
- * @requires vm.opt.DeoptimizeALot != true
- * @library /test/lib
- * @run main/othervm/timeout=480 ClhsdbFindPC true true
- */
-
-/**
  * @test id=no-xcomp-process
  * @bug 8193124
  * @summary Test the clhsdb 'findpc' command w/o Xcomp on live process
@@ -63,16 +39,6 @@ import jtreg.SkippedException;
  * @requires vm.compiler1.enabled
  * @library /test/lib
  * @run main/othervm/timeout=480 ClhsdbFindPC false false
- */
-
-/**
- * @test id=no-xcomp-core
- * @bug 8193124
- * @summary Test the clhsdb 'findpc' command w/o Xcomp on core file
- * @requires vm.hasSA
- * @requires vm.compiler1.enabled
- * @library /test/lib
- * @run main/othervm/timeout=480 ClhsdbFindPC false true
  */
 
 public class ClhsdbFindPC {
@@ -215,6 +181,15 @@ public class ClhsdbFindPC {
             cmds = List.of(cmdStr);
             expStrMap = new HashMap<>();
             expStrMap.put(cmdStr, List.of("Is of type JavaThread"));
+            runTest(withCore, cmds, expStrMap);
+
+            // Use findpc on an address that is only 4 byte aligned and is the 
+            // last 4 bytes of a 4k page. This is for testing JDK-8292201.
+            String badAddress = tid.substring(0, tid.length() - 3) + "ffc";
+            cmdStr = "findpc " + badAddress;
+            cmds = List.of(cmdStr);
+            expStrMap = new HashMap<>();
+            expStrMap.put(cmdStr, List.of("In unknown location"));
             runTest(withCore, cmds, expStrMap);
 
             // Run findpc on a java stack address. We can find one in the jstack output.
