@@ -2094,6 +2094,9 @@ public:
 #endif // _LP64
 
   void vallones(XMMRegister dst, int vector_len);
+
+  void check_stack_alignment(Register sp, const char* msg, unsigned bias = 0, Register tmp = noreg);
+
 };
 
 /**

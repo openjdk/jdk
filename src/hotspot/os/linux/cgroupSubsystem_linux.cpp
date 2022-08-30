@@ -528,7 +528,30 @@ jlong CgroupSubsystem::memory_limit_in_bytes() {
   if (!memory_limit->should_check_metric()) {
     return memory_limit->value();
   }
+  jlong phys_mem = os::Linux::physical_memory();
+  log_trace(os, container)("total physical memory: " JLONG_FORMAT, phys_mem);
   jlong mem_limit = read_memory_limit_in_bytes();
+
+  if (mem_limit <= 0 || mem_limit >= phys_mem) {
+    jlong read_mem_limit = mem_limit;
+    const char *reason;
+    if (mem_limit >= phys_mem) {
+      // Exceeding physical memory is treated as unlimited. Cg v1's implementation
+      // of read_memory_limit_in_bytes() caps this at phys_mem since Cg v1 has no
+      // value to represent 'max'. Cg v2 may return a value >= phys_mem if e.g. the
+      // container engine was started with a memory flag exceeding it.
+      reason = "ignored";
+      mem_limit = -1;
+    } else if (OSCONTAINER_ERROR == mem_limit) {
+      reason = "failed";
+    } else {
+      assert(mem_limit == -1, "Expected unlimited");
+      reason = "unlimited";
+    }
+    log_debug(os, container)("container memory limit %s: " JLONG_FORMAT ", using host value " JLONG_FORMAT,
+                             reason, read_mem_limit, phys_mem);
+  }
+
   // Update cached metric to avoid re-reading container settings too often
   memory_limit->set_value(mem_limit, OSCONTAINER_CACHE_TIMEOUT);
   return mem_limit;
