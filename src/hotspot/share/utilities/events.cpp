@@ -137,7 +137,7 @@ void UnloadingEventLog::log(Thread* thread, InstanceKlass* ik) {
   _records[index].timestamp = timestamp;
   stringStream st(_records[index].data.buffer(),
                   _records[index].data.size());
-  st.print("Unloading class " INTPTR_FORMAT " ", p2i(ik));
+  st.print("Unloading class " PTR_FORMAT " ", p2i(ik));
   ik->name()->print_value_on(&st);
 }
 
