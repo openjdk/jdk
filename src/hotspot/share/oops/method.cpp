@@ -401,6 +401,7 @@ void Method::metaspace_pointers_do(MetaspaceClosure* it) {
   NOT_PRODUCT(it->push(&_name);)
 }
 
+#if INCLUDE_CDS
 // Attempt to return method to original state.  Clear any pointers
 // (to objects outside the shared spaces).  We won't be able to predict
 // where they should point in a new JVM.  Further initialize some
@@ -410,6 +411,11 @@ void Method::remove_unshareable_info() {
   unlink_method();
   JFR_ONLY(REMOVE_METHOD_ID(this);)
 }
+
+void Method::restore_unshareable_info(TRAPS) {
+  assert(is_method() && is_valid_method(this), "ensure C++ vtable is restored");
+}
+#endif
 
 void Method::set_vtable_index(int index) {
   if (is_shared() && !MetaspaceShared::remapped_readwrite() && method_holder()->verified_at_dump_time()) {
@@ -1257,10 +1263,6 @@ address Method::make_adapters(const methodHandle& mh, TRAPS) {
   mh->set_adapter_entry(adapter);
   mh->_from_compiled_entry = adapter->get_c2i_entry();
   return adapter->get_c2i_entry();
-}
-
-void Method::restore_unshareable_info(TRAPS) {
-  assert(is_method() && is_valid_method(this), "ensure C++ vtable is restored");
 }
 
 address Method::from_compiled_entry_no_trampoline() const {

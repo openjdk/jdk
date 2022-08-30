@@ -2451,6 +2451,7 @@ void InstanceKlass::metaspace_pointers_do(MetaspaceClosure* it) {
   it->push(&_record_components);
 }
 
+#if INCLUDE_CDS
 void InstanceKlass::remove_unshareable_info() {
 
   if (is_linked()) {
@@ -2651,6 +2652,7 @@ void InstanceKlass::assign_class_loader_type() {
     set_shared_class_loader_type(ClassLoader::APP_LOADER);
   }
 }
+#endif // INCLUDE_CDS
 
 #if INCLUDE_JVMTI
 static void clear_all_breakpoints(Method* m) {

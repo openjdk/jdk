@@ -684,18 +684,16 @@ void ConstantPoolCache::record_gc_epoch() {
   _gc_epoch = CodeCache::gc_epoch();
 }
 
-void ConstantPoolCache::save_for_archive(TRAPS) {
 #if INCLUDE_CDS
+void ConstantPoolCache::save_for_archive(TRAPS) {
   ClassLoaderData* loader_data = constant_pool()->pool_holder()->class_loader_data();
   _initial_entries = MetadataFactory::new_array<ConstantPoolCacheEntry>(loader_data, length(), CHECK);
   for (int i = 0; i < length(); i++) {
     _initial_entries->at_put(i, *entry_at(i));
   }
-#endif
 }
 
 void ConstantPoolCache::remove_unshareable_info() {
-#if INCLUDE_CDS
   Arguments::assert_is_dumping_archive();
   // <this> is the copy to be written into the archive. It's in the ArchiveBuilder's "buffer space".
   // However, this->_initial_entries was not copied/relocated by the ArchiveBuilder, so it's
@@ -708,8 +706,8 @@ void ConstantPoolCache::remove_unshareable_info() {
     *entry_at(i) = _initial_entries->at(i);
   }
   _initial_entries = NULL;
-#endif
 }
+#endif // INCLUDE_CDS
 
 void ConstantPoolCache::deallocate_contents(ClassLoaderData* data) {
   assert(!is_shared(), "shared caches are not deallocated");
