@@ -27,6 +27,7 @@ import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Level;
+import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Param;
@@ -38,11 +39,14 @@ import org.openjdk.jmh.annotations.TearDown;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 
+import org.openjdk.jmh.annotations.Warmup;
 import sun.security.util.Cache;
 
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
-@Fork(jvmArgsAppend = {"--add-exports", "java.base/sun.security.util=ALL-UNNAMED", "-Xmx1g"})
+@Fork(value = 3, jvmArgsAppend = {"--add-exports", "java.base/sun.security.util=ALL-UNNAMED", "-Xmx1g"})
+@Warmup(iterations = 5, time = 1)
+@Measurement(iterations = 5, time = 1)
 public class CacheBench {
 
     @State(Scope.Benchmark)

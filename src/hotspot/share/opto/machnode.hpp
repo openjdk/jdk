@@ -135,6 +135,14 @@ public:
     return ::as_VectorSRegister(reg(ra_, node, idx));
   }
 #endif
+#if defined(AARCH64)
+  PRegister as_PRegister(PhaseRegAlloc* ra_, const Node* node) const {
+    return ::as_PRegister(reg(ra_, node));
+  }
+  PRegister as_PRegister(PhaseRegAlloc* ra_, const Node* node, int idx) const {
+    return ::as_PRegister(reg(ra_, node, idx));
+  }
+#endif
 
   virtual intptr_t  constant() const;
   virtual relocInfo::relocType constant_reloc() const;

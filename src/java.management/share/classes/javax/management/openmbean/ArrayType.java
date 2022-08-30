@@ -745,7 +745,7 @@ public class ArrayType<T> extends OpenType<T> {
             int value = 0;
             value += dimension;
             value += elementType.hashCode();
-            value += Boolean.valueOf(primitiveArray).hashCode();
+            value += Boolean.hashCode(primitiveArray);
             myHashCode = Integer.valueOf(value);
         }
 

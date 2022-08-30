@@ -61,8 +61,8 @@ G1Policy::G1Policy(STWGCTimer* gc_timer) :
   _ihop_control(create_ihop_control(&_old_gen_alloc_tracker, &_predictor)),
   _policy_counters(new GCPolicyCounters("GarbageFirst", 1, 2)),
   _full_collection_start_sec(0.0),
+  _young_list_desired_length(0),
   _young_list_target_length(0),
-  _young_list_fixed_length(0),
   _young_list_max_length(0),
   _eden_surv_rate_group(new G1SurvRateGroup()),
   _survivor_surv_rate_group(new G1SurvRateGroup()),
@@ -100,14 +100,11 @@ void G1Policy::init(G1CollectedHeap* g1h, G1CollectionSet* collection_set) {
 
   assert(Heap_lock->owned_by_self(), "Locking discipline.");
 
-  if (!use_adaptive_young_list_length()) {
-    _young_list_fixed_length = _young_gen_sizer.min_desired_young_length();
-  }
   _young_gen_sizer.adjust_max_new_size(_g1h->max_regions());
 
   _free_regions_at_end_of_collection = _g1h->num_free_regions();
 
-  update_young_list_max_and_target_length();
+  update_young_length_bounds();
   // We may immediately start allocating regions and placing them on the
   // collection set list. Initialize the per-collection set info
   _collection_set->start_incremental_building();
@@ -182,158 +179,254 @@ void G1Policy::record_new_heap_size(uint new_number_of_regions) {
   _ihop_control->update_target_occupancy(new_number_of_regions * HeapRegion::GrainBytes);
 }
 
-uint G1Policy::calculate_young_list_desired_min_length(uint base_min_length) const {
+uint G1Policy::calculate_desired_eden_length_by_mmu() const {
+  // One could argue that any useful eden length to keep any MMU wouldn't be zero, but
+  // in theory this is possible. Other constraints enforce a minimum eden size of one
+  // region anyway.
   uint desired_min_length = 0;
   if (use_adaptive_young_list_length()) {
-    if (_analytics->num_alloc_rate_ms() > 3) {
-      double now_sec = os::elapsedTime();
-      double when_ms = _mmu_tracker->when_max_gc_sec(now_sec) * 1000.0;
-      double alloc_rate_ms = _analytics->predict_alloc_rate_ms();
-      desired_min_length = (uint) ceil(alloc_rate_ms * when_ms);
-    } else {
-      // otherwise we don't have enough info to make the prediction
-    }
+    double now_sec = os::elapsedTime();
+    double when_ms = _mmu_tracker->when_max_gc_sec(now_sec) * 1000.0;
+    double alloc_rate_ms = _analytics->predict_alloc_rate_ms();
+    desired_min_length = (uint) ceil(alloc_rate_ms * when_ms);
   }
-  desired_min_length += base_min_length;
-  // make sure we don't go below any user-defined minimum bound
-  return MAX2(_young_gen_sizer.min_desired_young_length(), desired_min_length);
+  return desired_min_length;
 }
 
-uint G1Policy::calculate_young_list_desired_max_length() const {
-  // Here, we might want to also take into account any additional
-  // constraints (i.e., user-defined minimum bound). Currently, we
-  // effectively don't set this bound.
-  return _young_gen_sizer.max_desired_young_length();
+void G1Policy::update_young_length_bounds() {
+  update_young_length_bounds(_analytics->predict_rs_length());
 }
 
-uint G1Policy::update_young_list_max_and_target_length() {
-  return update_young_list_max_and_target_length(_analytics->predict_rs_length());
+void G1Policy::update_young_length_bounds(size_t rs_length) {
+  _young_list_desired_length = calculate_young_desired_length(rs_length);
+  _young_list_target_length = calculate_young_target_length(_young_list_desired_length);
+  _young_list_max_length = calculate_young_max_length(_young_list_target_length);
+
+  log_debug(gc, ergo, heap)("Young list lengths: desired: %u, target: %u, max: %u",
+                            _young_list_desired_length,
+                            _young_list_target_length,
+                            _young_list_max_length);
 }
 
-uint G1Policy::update_young_list_max_and_target_length(size_t rs_length) {
-  uint unbounded_target_length = update_young_list_target_length(rs_length);
-  update_max_gc_locker_expansion();
-  return unbounded_target_length;
-}
+// Calculates desired young gen length. It is calculated from:
+//
+// - sizer min/max bounds on young gen
+// - pause time goal for whole young gen evacuation
+// - MMU goal influencing eden to make GCs spaced apart.
+// - a minimum one eden region length.
+//
+// We may enter with already allocated eden and survivor regions, that may be
+// higher than the maximum, or the above goals may result in a desired value
+// smaller than are already allocated.
+// The main reason is revising young length, with or without the GCLocker being
+// active.
+//
+uint G1Policy::calculate_young_desired_length(size_t rs_length) const {
+  uint min_young_length_by_sizer = _young_gen_sizer.min_desired_young_length();
+  uint max_young_length_by_sizer = _young_gen_sizer.max_desired_young_length();
 
-uint G1Policy::update_young_list_target_length(size_t rs_length) {
-  YoungTargetLengths young_lengths = young_list_target_lengths(rs_length);
-  _young_list_target_length = young_lengths.first;
+  assert(min_young_length_by_sizer >= 1, "invariant");
+  assert(max_young_length_by_sizer >= min_young_length_by_sizer, "invariant");
 
-  return young_lengths.second;
-}
-
-G1Policy::YoungTargetLengths G1Policy::young_list_target_lengths(size_t rs_length) const {
-  YoungTargetLengths result;
+  // Absolute minimum eden length.
+  // Enforcing a minimum eden length helps at startup when the predictors are not
+  // yet trained on the application to avoid unnecessary (but very short) full gcs
+  // on very small (initial) heaps.
+  uint const MinDesiredEdenLength = 1;
 
   // Calculate the absolute and desired min bounds first.
 
-  // This is how many young regions we already have (currently: the survivors).
-  const uint base_min_length = _g1h->survivor_regions_count();
-  uint desired_min_length = calculate_young_list_desired_min_length(base_min_length);
-  // This is the absolute minimum young length. Ensure that we
-  // will at least have one eden region available for allocation.
-  uint absolute_min_length = base_min_length + MAX2(_g1h->eden_regions_count(), (uint)1);
-  // If we shrank the young list target it should not shrink below the current size.
-  desired_min_length = MAX2(desired_min_length, absolute_min_length);
-  // Calculate the absolute and desired max bounds.
+  // This is how many survivor regions we already have.
+  const uint survivor_length = _g1h->survivor_regions_count();
+  // Size of the already allocated young gen.
+  const uint allocated_young_length = _g1h->young_regions_count();
+  // This is the absolute minimum young length that we can return. Ensure that we
+  // don't go below any user-defined minimum bound; but we might have already
+  // allocated more than that for various reasons. In this case, use that.
+  uint absolute_min_young_length = MAX2(allocated_young_length, min_young_length_by_sizer);
+  // Calculate the absolute max bounds. After evac failure or when revising the
+  // young length we might have exceeded absolute min length or absolute_max_length,
+  // so adjust the result accordingly.
+  uint absolute_max_young_length = MAX2(max_young_length_by_sizer, absolute_min_young_length);
 
-  uint desired_max_length = calculate_young_list_desired_max_length();
+  uint desired_eden_length_by_mmu = 0;
+  uint desired_eden_length_by_pause = 0;
 
-  uint young_list_target_length = 0;
+  uint desired_young_length = 0;
   if (use_adaptive_young_list_length()) {
-    if (collector_state()->in_young_only_phase()) {
-      young_list_target_length =
-                        calculate_young_list_target_length(rs_length,
-                                                           base_min_length,
-                                                           desired_min_length,
-                                                           desired_max_length);
-    } else {
-      // Don't calculate anything and let the code below bound it to
-      // the desired_min_length, i.e., do the next GC as soon as
-      // possible to maximize how many old regions we can add to it.
-    }
+    desired_eden_length_by_mmu = calculate_desired_eden_length_by_mmu();
+
+    const size_t pending_cards = _analytics->predict_pending_cards();
+    double survivor_base_time_ms = predict_base_elapsed_time_ms(pending_cards, rs_length);
+
+    desired_eden_length_by_pause =
+      calculate_desired_eden_length_by_pause(survivor_base_time_ms,
+                                             absolute_min_young_length - survivor_length,
+                                             absolute_max_young_length - survivor_length);
+
+    // Incorporate MMU concerns; assume that it overrides the pause time
+    // goal, as the default value has been chosen to effectively disable it.
+    // Also request at least one eden region, see above for reasons.
+    uint desired_eden_length = MAX3(desired_eden_length_by_pause,
+                                    desired_eden_length_by_mmu,
+                                    MinDesiredEdenLength);
+
+    desired_young_length = desired_eden_length + survivor_length;
   } else {
     // The user asked for a fixed young gen so we'll fix the young gen
     // whether the next GC is young or mixed.
-    young_list_target_length = _young_list_fixed_length;
+    desired_young_length = min_young_length_by_sizer;
   }
+  // Clamp to absolute min/max after we determined desired lengths.
+  desired_young_length = clamp(desired_young_length, absolute_min_young_length, absolute_max_young_length);
 
-  result.second = young_list_target_length;
+  log_trace(gc, ergo, heap)("Young desired length %u "
+                            "survivor length %u "
+                            "allocated young length %u "
+                            "absolute min young length %u "
+                            "absolute max young length %u "
+                            "desired eden length by mmu %u "
+                            "desired eden length by pause %u "
+                            "desired eden length by default %u",
+                            desired_young_length, survivor_length,
+                            allocated_young_length, absolute_min_young_length,
+                            absolute_max_young_length, desired_eden_length_by_mmu,
+                            desired_eden_length_by_pause,
+                            MinDesiredEdenLength);
 
-  // We will try our best not to "eat" into the reserve.
-  uint absolute_max_length = 0;
-  if (_free_regions_at_end_of_collection > _reserve_regions) {
-    absolute_max_length = _free_regions_at_end_of_collection - _reserve_regions;
-  }
-  if (desired_max_length > absolute_max_length) {
-    desired_max_length = absolute_max_length;
-  }
-
-  // Make sure we don't go over the desired max length, nor under the
-  // desired min length. In case they clash, desired_min_length wins
-  // which is why that test is second.
-  if (young_list_target_length > desired_max_length) {
-    young_list_target_length = desired_max_length;
-  }
-  if (young_list_target_length < desired_min_length) {
-    young_list_target_length = desired_min_length;
-  }
-
-  assert(young_list_target_length > base_min_length,
-         "we should be able to allocate at least one eden region");
-  assert(young_list_target_length >= absolute_min_length, "post-condition");
-
-  result.first = young_list_target_length;
-  return result;
+  assert(desired_young_length >= allocated_young_length, "must be");
+  return desired_young_length;
 }
 
-uint G1Policy::calculate_young_list_target_length(size_t rs_length,
-                                                  uint base_min_length,
-                                                  uint desired_min_length,
-                                                  uint desired_max_length) const {
-  assert(use_adaptive_young_list_length(), "pre-condition");
-  assert(collector_state()->in_young_only_phase(), "only call this for young GCs");
+// Limit the desired (wished) young length by current free regions. If the request
+// can be satisfied without using up reserve regions, do so, otherwise eat into
+// the reserve, giving away at most what the heap sizer allows.
+uint G1Policy::calculate_young_target_length(uint desired_young_length) const {
+  uint allocated_young_length = _g1h->young_regions_count();
 
-  // In case some edge-condition makes the desired max length too small...
-  if (desired_max_length <= desired_min_length) {
-    return desired_min_length;
+  uint receiving_additional_eden;
+  if (allocated_young_length >= desired_young_length) {
+    // Already used up all we actually want (may happen as G1 revises the
+    // young list length concurrently, or caused by gclocker). Do not allow more,
+    // potentially resulting in GC.
+    receiving_additional_eden = 0;
+    log_trace(gc, ergo, heap)("Young target length: Already used up desired young %u allocated %u",
+                              desired_young_length,
+                              allocated_young_length);
+  } else {
+    // Now look at how many free regions are there currently, and the heap reserve.
+    // We will try our best not to "eat" into the reserve as long as we can. If we
+    // do, we at most eat the sizer's minimum regions into the reserve or half the
+    // reserve rounded up (if possible; this is an arbitrary value).
+
+    uint max_to_eat_into_reserve = MIN2(_young_gen_sizer.min_desired_young_length(),
+                                        (_reserve_regions + 1) / 2);
+
+    log_trace(gc, ergo, heap)("Young target length: Common "
+                              "free regions at end of collection %u "
+                              "desired young length %u "
+                              "reserve region %u "
+                              "max to eat into reserve %u",
+                              _free_regions_at_end_of_collection,
+                              desired_young_length,
+                              _reserve_regions,
+                              max_to_eat_into_reserve);
+
+    if (_free_regions_at_end_of_collection <= _reserve_regions) {
+      // Fully eat (or already eating) into the reserve, hand back at most absolute_min_length regions.
+      uint receiving_young = MIN3(_free_regions_at_end_of_collection,
+                                  desired_young_length,
+                                  max_to_eat_into_reserve);
+      // We could already have allocated more regions than what we could get
+      // above.
+      receiving_additional_eden = allocated_young_length < receiving_young ?
+                                  receiving_young - allocated_young_length : 0;
+
+      log_trace(gc, ergo, heap)("Young target length: Fully eat into reserve "
+                                "receiving young %u receiving additional eden %u",
+                                receiving_young,
+                                receiving_additional_eden);
+    } else if (_free_regions_at_end_of_collection < (desired_young_length + _reserve_regions)) {
+      // Partially eat into the reserve, at most max_to_eat_into_reserve regions.
+      uint free_outside_reserve = _free_regions_at_end_of_collection - _reserve_regions;
+      assert(free_outside_reserve < desired_young_length,
+             "must be %u %u",
+             free_outside_reserve, desired_young_length);
+
+      uint receiving_within_reserve = MIN2(desired_young_length - free_outside_reserve,
+                                           max_to_eat_into_reserve);
+      uint receiving_young = free_outside_reserve + receiving_within_reserve;
+      // Again, we could have already allocated more than we could get.
+      receiving_additional_eden = allocated_young_length < receiving_young ?
+                                  receiving_young - allocated_young_length : 0;
+
+      log_trace(gc, ergo, heap)("Young target length: Partially eat into reserve "
+                                "free outside reserve %u "
+                                "receiving within reserve %u "
+                                "receiving young %u "
+                                "receiving additional eden %u",
+                                free_outside_reserve, receiving_within_reserve,
+                                receiving_young, receiving_additional_eden);
+    } else {
+      // No need to use the reserve.
+      receiving_additional_eden = desired_young_length - allocated_young_length;
+      log_trace(gc, ergo, heap)("Young target length: No need to use reserve "
+                                "receiving additional eden %u",
+                                receiving_additional_eden);
+    }
   }
 
-  // We'll adjust min_young_length and max_young_length not to include
-  // the already allocated young regions (i.e., so they reflect the
-  // min and max eden regions we'll allocate). The base_min_length
-  // will be reflected in the predictions by the
-  // survivor_regions_evac_time prediction.
-  assert(desired_min_length > base_min_length, "invariant");
-  uint min_young_length = desired_min_length - base_min_length;
-  assert(desired_max_length > base_min_length, "invariant");
-  uint max_young_length = desired_max_length - base_min_length;
+  uint target_young_length = allocated_young_length + receiving_additional_eden;
 
-  const double target_pause_time_ms = _mmu_tracker->max_gc_time() * 1000.0;
-  const size_t pending_cards = _analytics->predict_pending_cards();
-  const double base_time_ms = predict_base_elapsed_time_ms(pending_cards, rs_length);
-  const uint available_free_regions = _free_regions_at_end_of_collection;
-  const uint base_free_regions =
-    available_free_regions > _reserve_regions ? available_free_regions - _reserve_regions : 0;
+  assert(target_young_length >= allocated_young_length, "must be");
+
+  log_trace(gc, ergo, heap)("Young target length: "
+                            "young target length %u "
+                            "allocated young length %u "
+                            "received additional eden %u",
+                            target_young_length, allocated_young_length,
+                            receiving_additional_eden);
+  return target_young_length;
+}
+
+uint G1Policy::calculate_desired_eden_length_by_pause(double base_time_ms,
+                                                      uint min_eden_length,
+                                                      uint max_eden_length) const {
+  if (!next_gc_should_be_mixed(nullptr)) {
+    return calculate_desired_eden_length_before_young_only(base_time_ms,
+                                                           min_eden_length,
+                                                           max_eden_length);
+  } else {
+    return calculate_desired_eden_length_before_mixed(base_time_ms,
+                                                      min_eden_length,
+                                                      max_eden_length);
+  }
+}
+
+uint G1Policy::calculate_desired_eden_length_before_young_only(double base_time_ms,
+                                                               uint min_eden_length,
+                                                               uint max_eden_length) const {
+  assert(use_adaptive_young_list_length(), "pre-condition");
+
+  assert(min_eden_length <= max_eden_length, "must be %u %u", min_eden_length, max_eden_length);
 
   // Here, we will make sure that the shortest young length that
   // makes sense fits within the target pause time.
 
   G1YoungLengthPredictor p(base_time_ms,
-                           base_free_regions,
-                           target_pause_time_ms,
+                           _free_regions_at_end_of_collection,
+                           _mmu_tracker->max_gc_time() * 1000.0,
                            this);
-  if (p.will_fit(min_young_length)) {
+  if (p.will_fit(min_eden_length)) {
     // The shortest young length will fit into the target pause time;
     // we'll now check whether the absolute maximum number of young
     // regions will fit in the target pause time. If not, we'll do
     // a binary search between min_young_length and max_young_length.
-    if (p.will_fit(max_young_length)) {
+    if (p.will_fit(max_eden_length)) {
       // The maximum young length will fit into the target pause time.
       // We are done so set min young length to the maximum length (as
       // the result is assumed to be returned in min_young_length).
-      min_young_length = max_young_length;
+      min_eden_length = max_eden_length;
     } else {
       // The maximum possible number of young regions will not fit within
       // the target pause time so we'll search for the optimal
@@ -350,37 +443,57 @@ uint G1Policy::calculate_young_list_target_length(size_t rs_length,
       // does, it becomes the new min. If it doesn't, it becomes
       // the new max. This way we maintain the loop invariants.
 
-      assert(min_young_length < max_young_length, "invariant");
-      uint diff = (max_young_length - min_young_length) / 2;
+      assert(min_eden_length < max_eden_length, "invariant");
+      uint diff = (max_eden_length - min_eden_length) / 2;
       while (diff > 0) {
-        uint young_length = min_young_length + diff;
-        if (p.will_fit(young_length)) {
-          min_young_length = young_length;
+        uint eden_length = min_eden_length + diff;
+        if (p.will_fit(eden_length)) {
+          min_eden_length = eden_length;
         } else {
-          max_young_length = young_length;
+          max_eden_length = eden_length;
         }
-        assert(min_young_length <  max_young_length, "invariant");
-        diff = (max_young_length - min_young_length) / 2;
+        assert(min_eden_length <  max_eden_length, "invariant");
+        diff = (max_eden_length - min_eden_length) / 2;
       }
       // The results is min_young_length which, according to the
       // loop invariants, should fit within the target pause time.
 
       // These are the post-conditions of the binary search above:
-      assert(min_young_length < max_young_length,
-             "otherwise we should have discovered that max_young_length "
+      assert(min_eden_length < max_eden_length,
+             "otherwise we should have discovered that max_eden_length "
              "fits into the pause target and not done the binary search");
-      assert(p.will_fit(min_young_length),
-             "min_young_length, the result of the binary search, should "
+      assert(p.will_fit(min_eden_length),
+             "min_eden_length, the result of the binary search, should "
              "fit into the pause target");
-      assert(!p.will_fit(min_young_length + 1),
-             "min_young_length, the result of the binary search, should be "
+      assert(!p.will_fit(min_eden_length + 1),
+             "min_eden_length, the result of the binary search, should be "
              "optimal, so no larger length should fit into the pause target");
     }
   } else {
     // Even the minimum length doesn't fit into the pause time
     // target, return it as the result nevertheless.
   }
-  return base_min_length + min_young_length;
+  return min_eden_length;
+}
+
+uint G1Policy::calculate_desired_eden_length_before_mixed(double survivor_base_time_ms,
+                                                          uint min_eden_length,
+                                                          uint max_eden_length) const {
+  G1CollectionSetCandidates* candidates = _collection_set->candidates();
+
+  uint min_old_regions_end = MIN2(candidates->cur_idx() + calc_min_old_cset_length(candidates),
+                                  candidates->num_regions());
+  double predicted_region_evac_time_ms = survivor_base_time_ms;
+  for (uint i = candidates->cur_idx(); i < min_old_regions_end; i++) {
+    HeapRegion* r = candidates->at(i);
+    predicted_region_evac_time_ms += predict_region_total_time_ms(r, false);
+  }
+  uint desired_eden_length_by_min_cset_length =
+     calculate_desired_eden_length_before_young_only(predicted_region_evac_time_ms,
+                                                     min_eden_length,
+                                                     max_eden_length);
+
+  return desired_eden_length_by_min_cset_length;
 }
 
 double G1Policy::predict_survivor_regions_evac_time() const {
@@ -410,8 +523,7 @@ void G1Policy::revise_young_list_target_length_if_necessary(size_t rs_length) {
     // add 10% to avoid having to recalculate often
     size_t rs_length_prediction = rs_length * 1100 / 1000;
     update_rs_length_prediction(rs_length_prediction);
-
-    update_young_list_max_and_target_length(rs_length_prediction);
+    update_young_length_bounds(rs_length_prediction);
   }
 }
 
@@ -456,7 +568,7 @@ void G1Policy::record_full_collection_end() {
   _free_regions_at_end_of_collection = _g1h->num_free_regions();
   update_survival_estimates_for_next_collection();
   _survivor_surv_rate_group->reset();
-  update_young_list_max_and_target_length();
+  update_young_length_bounds();
   update_rs_length_prediction();
 
   _old_gen_alloc_tracker.reset_after_gc(_g1h->humongous_regions_count() * HeapRegion::GrainBytes);
@@ -792,15 +904,10 @@ void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mar
   // Do not update dynamic IHOP due to G1 periodic collection as it is highly likely
   // that in this case we are not running in a "normal" operating mode.
   if (_g1h->gc_cause() != GCCause::_g1_periodic_collection) {
-    // IHOP control wants to know the expected young gen length if it were not
-    // restrained by the heap reserve. Using the actual length would make the
-    // prediction too small and the limit the young gen every time we get to the
-    // predicted target occupancy.
-    size_t last_unrestrained_young_length = update_young_list_max_and_target_length();
+    update_young_length_bounds();
 
     _old_gen_alloc_tracker.reset_after_gc(_g1h->humongous_regions_count() * HeapRegion::GrainBytes);
     update_ihop_prediction(app_time_ms / 1000.0,
-                           last_unrestrained_young_length * HeapRegion::GrainBytes,
                            G1GCPauseTypeHelper::is_young_only_pause(this_pause));
 
     _ihop_control->send_trace_event(_g1h->gc_tracer_stw());
@@ -851,7 +958,6 @@ G1IHOPControl* G1Policy::create_ihop_control(const G1OldGenAllocationTracker* ol
 }
 
 void G1Policy::update_ihop_prediction(double mutator_time_s,
-                                      size_t young_gen_size,
                                       bool this_gc_was_young_only) {
   // Always try to update IHOP prediction. Even evacuation failures give information
   // about e.g. whether to start IHOP earlier next time.
@@ -879,6 +985,11 @@ void G1Policy::update_ihop_prediction(double mutator_time_s,
   // marking, which makes any prediction useless. This increases the accuracy of the
   // prediction.
   if (this_gc_was_young_only && mutator_time_s > min_valid_time) {
+    // IHOP control wants to know the expected young gen length if it were not
+    // restrained by the heap reserve. Using the actual length would make the
+    // prediction too small and the limit the young gen every time we get to the
+    // predicted target occupancy.
+    size_t young_gen_size = young_list_desired_length() * HeapRegion::GrainBytes;
     _ihop_control->update_allocation_info(mutator_time_s, young_gen_size);
     report = true;
   }
@@ -986,7 +1097,7 @@ void G1Policy::print_age_table() {
   _survivors_age_table.print_age_table(_tenuring_threshold);
 }
 
-void G1Policy::update_max_gc_locker_expansion() {
+uint G1Policy::calculate_young_max_length(uint target_young_length) const {
   uint expansion_region_num = 0;
   if (GCLockerEdenExpansionPercent > 0) {
     double perc = (double) GCLockerEdenExpansionPercent / 100.0;
@@ -994,11 +1105,10 @@ void G1Policy::update_max_gc_locker_expansion() {
     // We use ceiling so that if expansion_region_num_d is > 0.0 (but
     // less than 1.0) we'll get 1.
     expansion_region_num = (uint) ceil(expansion_region_num_d);
-  } else {
-    assert(expansion_region_num == 0, "sanity");
   }
-  _young_list_max_length = _young_list_target_length + expansion_region_num;
-  assert(_young_list_target_length <= _young_list_max_length, "post-condition");
+  uint max_length = target_young_length + expansion_region_num;
+  assert(target_young_length <= max_length, "overflow");
+  return max_length;
 }
 
 // Calculates survivor space parameters.
@@ -1252,7 +1362,9 @@ bool G1Policy::next_gc_should_be_mixed(const char* no_candidates_str) const {
   G1CollectionSetCandidates* candidates = _collection_set->candidates();
 
   if (candidates == NULL || candidates->is_empty()) {
-    log_debug(gc, ergo)("%s (candidate old regions not available)", no_candidates_str);
+    if (no_candidates_str != nullptr) {
+      log_debug(gc, ergo)("%s (candidate old regions not available)", no_candidates_str);
+    }
     return false;
   }
   // Otherwise always continue mixed collection. There is no other reason to stop the

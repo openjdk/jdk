@@ -721,8 +721,8 @@ public:
   void addptr(Register dst, int32_t src);
   void addptr(Register dst, Register src);
   void addptr(Register dst, RegisterOrConstant src) {
-    if (src.is_constant()) addptr(dst, (int) src.as_constant());
-    else                   addptr(dst,       src.as_register());
+    if (src.is_constant()) addptr(dst, src.as_constant());
+    else                   addptr(dst, src.as_register());
   }
 
   void andptr(Register dst, int32_t src);
@@ -1026,6 +1026,29 @@ public:
                 Register rax, Register rcx, Register rdx, Register tmp);
 
 #ifdef _LP64
+ private:
+  // Initialized in macroAssembler_x86_constants.cpp
+  static address ONE;
+  static address ONEHALF;
+  static address SIGN_MASK;
+  static address TWO_POW_55;
+  static address TWO_POW_M55;
+  static address SHIFTER;
+  static address ZERO;
+  static address NEG_ZERO;
+  static address PI32INV;
+  static address PI_INV_TABLE;
+  static address Ctable;
+  static address SC_1;
+  static address SC_2;
+  static address SC_3;
+  static address SC_4;
+  static address PI_4;
+  static address P_1;
+  static address P_3;
+  static address P_2;
+
+ public:
   void fast_log(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3,
                 XMMRegister xmm4, XMMRegister xmm5, XMMRegister xmm6, XMMRegister xmm7,
                 Register rax, Register rcx, Register rdx, Register tmp1, Register tmp2);
@@ -1040,8 +1063,7 @@ public:
 
   void fast_sin(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3,
                 XMMRegister xmm4, XMMRegister xmm5, XMMRegister xmm6, XMMRegister xmm7,
-                Register rax, Register rbx, Register rcx, Register rdx, Register tmp1, Register tmp2,
-                Register tmp3, Register tmp4);
+                Register rax, Register rbx, Register rcx, Register rdx, Register tmp1);
 
   void fast_cos(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3,
                 XMMRegister xmm4, XMMRegister xmm5, XMMRegister xmm6, XMMRegister xmm7,
@@ -1052,6 +1074,15 @@ public:
                 Register rax, Register rcx, Register rdx, Register tmp1,
                 Register tmp2, Register tmp3, Register tmp4);
 #else
+ private:
+  // Initialized in macroAssembler_x86_constants.cpp
+  static address ONES;
+  static address L_2IL0FLOATPACKET_0;
+  static address PI4_INV;
+  static address PI4X3;
+  static address PI4X4;
+
+ public:
   void fast_log(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3,
                 XMMRegister xmm4, XMMRegister xmm5, XMMRegister xmm6, XMMRegister xmm7,
                 Register rax, Register rcx, Register rdx, Register tmp1);
@@ -1844,7 +1875,6 @@ public:
   // and we have ambiguous declarations.
 
   void movptr(Address dst, int32_t imm32);
-  void movptr(Register dst, int32_t imm32);
 #endif // _LP64
 
   // to avoid hiding movl

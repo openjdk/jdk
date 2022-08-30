@@ -169,12 +169,13 @@ endif
 ################################################################################
 
 ifeq ($(call check-jvm-feature, link-time-opt), true)
-  # NOTE: Disable automatic opimization level and let the explicit cflag control
-  # optimization level instead. This activates O3 on slowdebug builds, just
-  # like the old build, but it's probably not right.
-  JVM_OPTIMIZATION :=
-  JVM_CFLAGS_FEATURES += -O3 -flto
-  JVM_LDFLAGS_FEATURES += -O3 -flto -fuse-linker-plugin -fno-strict-aliasing
+  # Set JVM_OPTIMIZATION directly so other jvm-feature flags can override it
+  # later on if desired
+  JVM_OPTIMIZATION := HIGHEST_JVM
+  ifeq ($(call isCompiler, gcc), true)
+    JVM_CFLAGS_FEATURES += -flto -fuse-linker-plugin
+    JVM_LDFLAGS_FEATURES += -flto -fuse-linker-plugin -fno-strict-aliasing
+  endif
 endif
 
 ifeq ($(call check-jvm-feature, opt-size), true)

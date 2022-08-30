@@ -2317,6 +2317,9 @@ private:
     if (strcmp(rep_var,"$VectorRegister") == 0)   return "as_VectorRegister";
     if (strcmp(rep_var,"$VectorSRegister") == 0)  return "as_VectorSRegister";
 #endif
+#if defined(AARCH64)
+    if (strcmp(rep_var,"$PRegister") == 0)  return "as_PRegister";
+#endif
     return NULL;
   }
 

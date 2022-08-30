@@ -1753,11 +1753,15 @@ static bool ccp_type_widens(const Type* t, const Type* t0) {
 }
 #endif //ASSERT
 
-//------------------------------analyze----------------------------------------
+// In this analysis, all types are initially set to TOP. We iteratively call Value() on all nodes of the graph until
+// we reach a fixed-point (i.e. no types change anymore). We start with a list that only contains the root node. Each time
+// a new type is set, we push all uses of that node back to the worklist (in some cases, we also push grandchildren
+// or nodes even further down back to the worklist because their type could change as a result of the current type
+// change).
 void PhaseCCP::analyze() {
   // Initialize all types to TOP, optimistic analysis
-  for (int i = C->unique() - 1; i >= 0; i--)  {
-    _types.map(i,Type::TOP);
+  for (uint i = 0; i < C->unique(); i++)  {
+    _types.map(i, Type::TOP);
   }
 
   // Push root onto worklist
@@ -1766,103 +1770,147 @@ void PhaseCCP::analyze() {
 
   // Pull from worklist; compute new value; push changes out.
   // This loop is the meat of CCP.
-  while( worklist.size() ) {
-    Node* n; // Node to be examined in this iteration
-    if (StressCCP) {
-      n = worklist.remove(C->random() % worklist.size());
-    } else {
-      n = worklist.pop();
+  while (worklist.size() != 0) {
+    Node* n = fetch_next_node(worklist);
+    const Type* new_type = n->Value(this);
+    if (new_type != type(n)) {
+      assert(ccp_type_widens(new_type, type(n)), "ccp type must widen");
+      dump_type_and_node(n, new_type);
+      set_type(n, new_type);
+      push_child_nodes_to_worklist(worklist, n);
     }
-    const Type *t = n->Value(this);
-    if (t != type(n)) {
-      assert(ccp_type_widens(t, type(n)), "ccp type must widen");
+  }
+}
+
+// Fetch next node from worklist to be examined in this iteration.
+Node* PhaseCCP::fetch_next_node(Unique_Node_List& worklist) {
+  if (StressCCP) {
+    return worklist.remove(C->random() % worklist.size());
+  } else {
+    return worklist.pop();
+  }
+}
+
 #ifndef PRODUCT
-      if( TracePhaseCCP ) {
-        t->dump();
-        do { tty->print("\t"); } while (tty->position() < 16);
-        n->dump();
-      }
+void PhaseCCP::dump_type_and_node(const Node* n, const Type* t) {
+  if (TracePhaseCCP) {
+    t->dump();
+    do {
+      tty->print("\t");
+    } while (tty->position() < 16);
+    n->dump();
+  }
+}
 #endif
-      set_type(n, t);
-      for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
-        Node* m = n->fast_out(i);   // Get user
-        if (m->is_Region()) {  // New path to Region?  Must recheck Phis too
-          for (DUIterator_Fast i2max, i2 = m->fast_outs(i2max); i2 < i2max; i2++) {
-            Node* p = m->fast_out(i2); // Propagate changes to uses
-            if (p->bottom_type() != type(p)) { // If not already bottomed out
-              worklist.push(p); // Propagate change to user
-            }
-          }
-        }
-        // If we changed the receiver type to a call, we need to revisit
-        // the Catch following the call.  It's looking for a non-NULL
-        // receiver to know when to enable the regular fall-through path
-        // in addition to the NullPtrException path
-        if (m->is_Call()) {
-          for (DUIterator_Fast i2max, i2 = m->fast_outs(i2max); i2 < i2max; i2++) {
-            Node* p = m->fast_out(i2);  // Propagate changes to uses
-            if (p->is_Proj() && p->as_Proj()->_con == TypeFunc::Control) {
-              Node* catch_node = p->find_out_with(Op_Catch);
-              if (catch_node != NULL) {
-                worklist.push(catch_node);
-              }
-            }
-          }
-        }
-        if (m->bottom_type() != type(m)) { // If not already bottomed out
-          worklist.push(m);     // Propagate change to user
-        }
 
-        // CmpU nodes can get their type information from two nodes up in the
-        // graph (instead of from the nodes immediately above). Make sure they
-        // are added to the worklist if nodes they depend on are updated, since
-        // they could be missed and get wrong types otherwise.
-        uint m_op = m->Opcode();
-        if (m_op == Op_AddI || m_op == Op_SubI) {
-          for (DUIterator_Fast i2max, i2 = m->fast_outs(i2max); i2 < i2max; i2++) {
-            Node* p = m->fast_out(i2); // Propagate changes to uses
-            if (p->Opcode() == Op_CmpU) {
-              // Got a CmpU which might need the new type information from node n.
-              if(p->bottom_type() != type(p)) { // If not already bottomed out
-                worklist.push(p); // Propagate change to user
-              }
-            }
-          }
-        }
-        // If n is used in a counted loop exit condition then the type
-        // of the counted loop's Phi depends on the type of n. See
-        // PhiNode::Value().
-        if (m_op == Op_CmpI || m_op == Op_CmpL) {
-          PhiNode* phi = countedloop_phi_from_cmp(m->as_Cmp(), n);
-          if (phi != NULL) {
-            worklist.push(phi);
-          }
-        }
-        // Loading the java mirror from a Klass requires two loads and the type
-        // of the mirror load depends on the type of 'n'. See LoadNode::Value().
-        BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-        bool has_load_barrier_nodes = bs->has_load_barrier_nodes();
+// We need to propagate the type change of 'n' to all its uses. Depending on the kind of node, additional nodes
+// (grandchildren or even further down) need to be revisited as their types could also be improved as a result
+// of the new type of 'n'. Push these nodes to the worklist.
+void PhaseCCP::push_child_nodes_to_worklist(Unique_Node_List& worklist, Node* n) const {
+  for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
+    Node* use = n->fast_out(i);
+    push_if_not_bottom_type(worklist, use);
+    push_more_uses(worklist, n, use);
+  }
+}
 
-        if (m_op == Op_LoadP && m->bottom_type()->isa_rawptr()) {
-          for (DUIterator_Fast i2max, i2 = m->fast_outs(i2max); i2 < i2max; i2++) {
-            Node* u = m->fast_out(i2);
-            const Type* ut = u->bottom_type();
-            if (u->Opcode() == Op_LoadP && ut->isa_instptr() && ut != type(u)) {
-              if (has_load_barrier_nodes) {
-                // Search for load barriers behind the load
-                for (DUIterator_Fast i3max, i3 = u->fast_outs(i3max); i3 < i3max; i3++) {
-                  Node* b = u->fast_out(i3);
-                  if (bs->is_gc_barrier_node(b)) {
-                    worklist.push(b);
-                  }
-                }
-              }
-              worklist.push(u);
-            }
-          }
+void PhaseCCP::push_if_not_bottom_type(Unique_Node_List& worklist, Node* n) const {
+  if (n->bottom_type() != type(n)) {
+    worklist.push(n);
+  }
+}
+
+// For some nodes, we need to propagate the type change to grandchildren or even further down.
+// Add them back to the worklist.
+void PhaseCCP::push_more_uses(Unique_Node_List& worklist, Node* parent, const Node* use) const {
+  push_phis(worklist, use);
+  push_catch(worklist, use);
+  push_cmpu(worklist, use);
+  push_counted_loop_phi(worklist, parent, use);
+  push_loadp(worklist, use);
+  push_and(worklist, parent, use);
+}
+
+
+// We must recheck Phis too if use is a Region.
+void PhaseCCP::push_phis(Unique_Node_List& worklist, const Node* use) const {
+  if (use->is_Region()) {
+    for (DUIterator_Fast imax, i = use->fast_outs(imax); i < imax; i++) {
+      push_if_not_bottom_type(worklist, use->fast_out(i));
+    }
+  }
+}
+
+// If we changed the receiver type to a call, we need to revisit the Catch node following the call. It's looking for a
+// non-NULL receiver to know when to enable the regular fall-through path in addition to the NullPtrException path.
+void PhaseCCP::push_catch(Unique_Node_List& worklist, const Node* use) {
+  if (use->is_Call()) {
+    for (DUIterator_Fast imax, i = use->fast_outs(imax); i < imax; i++) {
+      Node* proj = use->fast_out(i);
+      if (proj->is_Proj() && proj->as_Proj()->_con == TypeFunc::Control) {
+        Node* catch_node = proj->find_out_with(Op_Catch);
+        if (catch_node != NULL) {
+          worklist.push(catch_node);
         }
-        push_and(worklist, n, m);
       }
+    }
+  }
+}
+
+// CmpU nodes can get their type information from two nodes up in the graph (instead of from the nodes immediately
+// above). Make sure they are added to the worklist if nodes they depend on are updated since they could be missed
+// and get wrong types otherwise.
+void PhaseCCP::push_cmpu(Unique_Node_List& worklist, const Node* use) const {
+  uint use_op = use->Opcode();
+  if (use_op == Op_AddI || use_op == Op_SubI) {
+    for (DUIterator_Fast imax, i = use->fast_outs(imax); i < imax; i++) {
+      Node* cmpu = use->fast_out(i);
+      if (cmpu->Opcode() == Op_CmpU) {
+        // Got a CmpU which might need the new type information from node n.
+        push_if_not_bottom_type(worklist, cmpu);
+      }
+    }
+  }
+}
+
+// If n is used in a counted loop exit condition, then the type of the counted loop's Phi depends on the type of 'n'.
+// Seem PhiNode::Value().
+void PhaseCCP::push_counted_loop_phi(Unique_Node_List& worklist, Node* parent, const Node* use) {
+  uint use_op = use->Opcode();
+  if (use_op == Op_CmpI || use_op == Op_CmpL) {
+    PhiNode* phi = countedloop_phi_from_cmp(use->as_Cmp(), parent);
+    if (phi != NULL) {
+      worklist.push(phi);
+    }
+  }
+}
+
+// Loading the java mirror from a Klass requires two loads and the type of the mirror load depends on the type of 'n'.
+// See LoadNode::Value().
+void PhaseCCP::push_loadp(Unique_Node_List& worklist, const Node* use) const {
+  BarrierSetC2* barrier_set = BarrierSet::barrier_set()->barrier_set_c2();
+  bool has_load_barrier_nodes = barrier_set->has_load_barrier_nodes();
+
+  if (use->Opcode() == Op_LoadP && use->bottom_type()->isa_rawptr()) {
+    for (DUIterator_Fast imax, i = use->fast_outs(imax); i < imax; i++) {
+      Node* loadp = use->fast_out(i);
+      const Type* ut = loadp->bottom_type();
+      if (loadp->Opcode() == Op_LoadP && ut->isa_instptr() && ut != type(loadp)) {
+        if (has_load_barrier_nodes) {
+          // Search for load barriers behind the load
+          push_load_barrier(worklist, barrier_set, loadp);
+        }
+        worklist.push(loadp);
+      }
+    }
+  }
+}
+
+void PhaseCCP::push_load_barrier(Unique_Node_List& worklist, const BarrierSetC2* barrier_set, const Node* use) {
+  for (DUIterator_Fast imax, i = use->fast_outs(imax); i < imax; i++) {
+    Node* barrier_node = use->fast_out(i);
+    if (barrier_set->is_gc_barrier_node(barrier_node)) {
+      worklist.push(barrier_node);
     }
   }
 }
@@ -1876,13 +1924,13 @@ void PhaseCCP::push_and(Unique_Node_List& worklist, const Node* parent, const No
     for (DUIterator_Fast imax, i = use->fast_outs(imax); i < imax; i++) {
       Node* and_node = use->fast_out(i);
       uint and_node_op = and_node->Opcode();
-      if ((and_node_op == Op_AndI || and_node_op == Op_AndL)
-          && and_node->bottom_type() != type(and_node)) {
-        worklist.push(and_node);
+      if (and_node_op == Op_AndI || and_node_op == Op_AndL) {
+        push_if_not_bottom_type(worklist, and_node);
       }
     }
   }
 }
+
 
 //------------------------------do_transform-----------------------------------
 // Top level driver for the recursive transformer

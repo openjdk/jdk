@@ -87,6 +87,7 @@
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/signature.hpp"
+#include "runtime/synchronizer.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/vmOperations.hpp"
 #include "services/memTracker.hpp"
@@ -3656,9 +3657,7 @@ static jint JNI_CreateJavaVM_inner(JavaVM **vm, void **penv, void *args) {
 
     post_thread_start_event(thread);
 
-#ifndef PRODUCT
     if (ReplayCompiles) ciReplay::replay(thread);
-#endif
 
 #ifdef ASSERT
     // Some platforms (like Win*) need a wrapper around these test
