@@ -38,7 +38,7 @@ public class TestJOptionHTMLTag {
             = """
             INSTRUCTIONS:
                 A dialog will be shown.
-                If it does not contain </html> string, press Pass else press Fail.           		
+                If it does not contain </html> string, press Pass else press Fail.
             """;
     static PassFailJFrame passFailJFrame;
 
