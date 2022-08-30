@@ -44,13 +44,6 @@ public class IRMethodMatchResult implements Comparable<IRMethodMatchResult>, Mat
         this.irRulesMatchResults = irRulesMatchResults;
     }
 
-    /**
-     * Return the combined compilation output on which any regex in any IR rule was matched.
-     */
-    public String getMatchedCompilationOutput() {
-        return MatchedCompilationOutputBuilder.build(irMethod, irRulesMatchResults);
-    }
-
     public int getFailedIRRuleCount() {
         return irRulesMatchResults.size();
     }
@@ -76,5 +69,6 @@ public class IRMethodMatchResult implements Comparable<IRMethodMatchResult>, Mat
     public void accept(MatchResultVisitor visitor) {
         visitor.visit(this);
         acceptChildren(visitor, irRulesMatchResults);
+        visitor.visitAfter(this);
     }
 }

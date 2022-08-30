@@ -24,6 +24,7 @@
 package compiler.lib.ir_framework.driver.irmatching;
 
 import compiler.lib.ir_framework.driver.irmatching.parser.MethodCompilationParser;
+import compiler.lib.ir_framework.driver.irmatching.reporting.CompilationOutputBuilder;
 import compiler.lib.ir_framework.driver.irmatching.reporting.FailureMessageBuilder;
 
 /**
@@ -34,7 +35,6 @@ public class IRMatcher {
     private final TestClass testClass;
 
     public IRMatcher(String hotspotPidFileName, String irEncoding, Class<?> testClass) {
-        System.out.println(irEncoding);
         MethodCompilationParser methodCompilationParser = new MethodCompilationParser(testClass);
         this.testClass = methodCompilationParser.parse(hotspotPidFileName, irEncoding);
     }
@@ -59,11 +59,12 @@ public class IRMatcher {
      * can be read and reported to the stdout separately. The exception message only includes the summary of the
      * failures.
      */
-    private void reportFailures(TestClassResult result) { // TODO: Introduce TestClassMatchResult implements MatchResult
+    private void reportFailures(TestClassResult result) {
         String failureMsg = new FailureMessageBuilder(result).build();
 //        String failureMsg = IRMatcherFailureMessageBuilder.build(result);
-        throwIfNoSafepointWhilePrinting(failureMsg,
-                                        CompilationOutputBuilder.build(result));
+//        String compilationOutput =  CompilationOutputBuilderOld.build(result);
+        String compilationOutput =  new CompilationOutputBuilder(result).build();
+        throwIfNoSafepointWhilePrinting(failureMsg, compilationOutput);
     }
 
     // In some very rare cases, the VM output to regex match on contains "<!-- safepoint while printing -->"

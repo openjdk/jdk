@@ -46,6 +46,12 @@ public class CountsConstraintFailureMessageBuilder extends ConstraintFailureMess
         return "Matched";
     }
 
+
+    public String build() {
+        return buildConstraintHeader(constraintFailure) + buildFailedComparisonMessage(constraintFailure) +
+               buildMatchedCountsNodesMessage(constraintFailure);
+    }
+
     private String buildFailedComparisonMessage(CountsConstraintFailure constraintFailure) {
         Comparison<Integer> comparison = constraintFailure.getComparison();
         String failedComparison = "[found] " + constraintFailure.getMatchedNodes().size() + " "
@@ -64,10 +70,5 @@ public class CountsConstraintFailureMessageBuilder extends ConstraintFailureMess
 
     private String buildEmptyNodeMatchesMessage() {
         return getIndentation(indentation + 2) + "- No nodes matched!" + System.lineSeparator();
-    }
-
-    public String build() {
-        return buildConstraintHeader(constraintFailure) + buildFailedComparisonMessage(constraintFailure) +
-               buildMatchedCountsNodesMessage(constraintFailure);
     }
 }

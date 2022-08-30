@@ -97,6 +97,33 @@ class Asdf {
         i = 34;
         l = 34;
     }
+
+    @Run(test = "bad2", mode = RunMode.STANDALONE)
+    public void run() {
+
+    }
+
+    @Test
+    @IR(failOn = IRNode.STORE, phase = CompilePhase.DEFAULT)
+    public void asdf() {
+        i = 34;
+        l = 34;
+    }
+
+    @Run(test = "asdf", mode = RunMode.STANDALONE)
+    public void ff() {
+
+    }
+
+    @Test
+    public void foo() {}
+
+    @Test
+    @IR(failOn = IRNode.STORE, phase = CompilePhase.DEFAULT)
+    public void foo2() {
+        i = 34;
+        l = 34;
+    }
 }
 class NoCompilationOutputForPhase {
 

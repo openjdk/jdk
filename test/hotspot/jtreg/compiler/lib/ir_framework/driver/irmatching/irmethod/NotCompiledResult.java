@@ -46,11 +46,6 @@ public class NotCompiledResult extends IRMethodMatchResult {
     }
 
     @Override
-    public String getMatchedCompilationOutput() {
-        return "<empty>";
-    }
-
-    @Override
     public int getFailedIRRuleCount() {
         return failedIRRules;
     }

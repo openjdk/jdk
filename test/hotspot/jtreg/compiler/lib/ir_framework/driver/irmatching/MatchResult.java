@@ -39,7 +39,7 @@ public interface MatchResult {
 
     default void acceptChildren(MatchResultVisitor visitor, Collection<? extends MatchResult> children) {
         for (var result : children) {
-            if (visitor.shouldVisit(result)) {
+            if (result.fail()) {
                 result.accept(visitor);
             }
         }

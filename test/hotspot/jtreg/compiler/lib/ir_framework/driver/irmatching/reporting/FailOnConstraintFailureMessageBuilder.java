@@ -46,6 +46,6 @@ public class FailOnConstraintFailureMessageBuilder extends ConstraintFailureMess
     }
 
     public String build() {
-        return buildConstraintHeader(failOnConstraintFailure) + (buildMatchedNodesMessage(failOnConstraintFailure));
+        return buildConstraintHeader(failOnConstraintFailure) + buildMatchedNodesMessage(failOnConstraintFailure);
     }
 }
