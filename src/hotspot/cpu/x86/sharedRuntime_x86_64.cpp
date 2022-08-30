@@ -1019,7 +1019,7 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
     Register method = rbx;
 
     { // Bypass the barrier for non-static methods
-      Register flags  = rscratch1;
+      Register flags = rscratch1;
       __ movl(flags, Address(method, Method::access_flags_offset()));
       __ testl(flags, JVM_ACC_STATIC);
       __ jcc(Assembler::zero, L_skip_barrier); // non-static
@@ -1697,7 +1697,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   Label hit;
   Label exception_pending;
 
-  assert_different_registers(ic_reg, receiver, rscratch1);
+  assert_different_registers(ic_reg, receiver, rscratch1, rscratch2);
   __ verify_oop(receiver);
   __ load_klass(rscratch1, receiver, rscratch2);
   __ cmpq(ic_reg, rscratch1);
@@ -1906,14 +1906,14 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   intptr_t the_pc = (intptr_t) __ pc();
   oop_maps->add_gc_map(the_pc - start, map);
 
-  __ set_last_Java_frame(rsp, noreg, (address)the_pc);
+  __ set_last_Java_frame(rsp, noreg, (address)the_pc, rscratch1);
 
 
   // We have all of the arguments setup at this point. We must not touch any register
   // argument registers at this point (what if we save/restore them there are no oop?
 
   {
-    SkipIfEqual skip(masm, &DTraceMethodProbes, false);
+    SkipIfEqual skip(masm, &DTraceMethodProbes, false, rscratch1);
     // protect the args we've loaded
     save_args(masm, total_c_args, c_arg, out_regs);
     __ mov_metadata(c_rarg1, method());
@@ -2015,7 +2015,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   __ call(RuntimeAddress(native_func));
 
   // Verify or restore cpu control state after JNI call
-  __ restore_cpu_control_state_after_jni();
+  __ restore_cpu_control_state_after_jni(rscratch1);
 
   // Unpack native results.
   switch (ret_type) {
@@ -2144,7 +2144,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     __ bind(fast_done);
   }
   {
-    SkipIfEqual skip(masm, &DTraceMethodProbes, false);
+    SkipIfEqual skip(masm, &DTraceMethodProbes, false, rscratch1);
     save_native_result(masm, ret_type, stack_slots);
     __ mov_metadata(c_rarg1, method());
     __ call_VM_leaf(
@@ -2418,7 +2418,7 @@ void SharedRuntime::generate_deopt_blob() {
     // Save everything in sight.
     RegisterSaver::save_live_registers(masm, 0, &frame_size_in_words, /*save_wide_vectors*/ true);
     // fetch_unroll_info needs to call last_java_frame()
-    __ set_last_Java_frame(noreg, noreg, NULL);
+    __ set_last_Java_frame(noreg, noreg, NULL, rscratch1);
 
     __ movl(c_rarg1, Address(r15_thread, in_bytes(JavaThread::pending_deoptimization_offset())));
     __ movl(Address(r15_thread, in_bytes(JavaThread::pending_deoptimization_offset())), -1);
@@ -2500,7 +2500,7 @@ void SharedRuntime::generate_deopt_blob() {
 
   // fetch_unroll_info needs to call last_java_frame().
 
-  __ set_last_Java_frame(noreg, noreg, NULL);
+  __ set_last_Java_frame(noreg, noreg, NULL, rscratch1);
 #ifdef ASSERT
   { Label L;
     __ cmpptr(Address(r15_thread, JavaThread::last_Java_fp_offset()), NULL_WORD);
@@ -2648,7 +2648,7 @@ void SharedRuntime::generate_deopt_blob() {
   // Save "the_pc" since it cannot easily be retrieved using the last_java_SP after we aligned SP.
   // Don't need the precise return PC here, just precise enough to point into this code blob.
   address the_pc = __ pc();
-  __ set_last_Java_frame(noreg, rbp, the_pc);
+  __ set_last_Java_frame(noreg, rbp, the_pc, rscratch1);
 
   __ andptr(rsp, -(StackAlignmentInBytes));  // Fix stack alignment as required by ABI
   __ mov(c_rarg0, r15_thread);
@@ -2719,7 +2719,7 @@ void SharedRuntime::generate_uncommon_trap_blob() {
   // runtime expects it.
   __ movl(c_rarg1, j_rarg0);
 
-  __ set_last_Java_frame(noreg, noreg, NULL);
+  __ set_last_Java_frame(noreg, noreg, NULL, rscratch1);
 
   // Call C code.  Need thread but NOT official VM entry
   // crud.  We cannot block on this call, no GC can happen.  Call should
@@ -2836,7 +2836,7 @@ void SharedRuntime::generate_uncommon_trap_blob() {
   // Save "the_pc" since it cannot easily be retrieved using the last_java_SP after we aligned SP.
   // Don't need the precise return PC here, just precise enough to point into this code blob.
   address the_pc = __ pc();
-  __ set_last_Java_frame(noreg, rbp, the_pc);
+  __ set_last_Java_frame(noreg, rbp, the_pc, rscratch1);
 
   // Call C code.  Need thread but NOT official VM entry
   // crud.  We cannot block on this call, no GC can happen.  Call should
@@ -2913,7 +2913,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
   // address of the call in order to generate an oopmap. Hence, we do all the
   // work ourselves.
 
-  __ set_last_Java_frame(noreg, noreg, NULL);  // JavaFrameAnchor::capture_last_Java_pc() will get the pc from the return address, which we store next:
+  __ set_last_Java_frame(noreg, noreg, NULL, rscratch1);  // JavaFrameAnchor::capture_last_Java_pc() will get the pc from the return address, which we store next:
 
   // The return address must always be correct so that frame constructor never
   // sees an invalid pc.
@@ -3049,7 +3049,7 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(address destination, const cha
   ResourceMark rm;
 
   CodeBuffer buffer(name, 1200, 512);
-  MacroAssembler* masm                = new MacroAssembler(&buffer);
+  MacroAssembler* masm = new MacroAssembler(&buffer);
 
   int frame_size_in_words;
 
@@ -3063,7 +3063,7 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(address destination, const cha
 
   int frame_complete = __ offset();
 
-  __ set_last_Java_frame(noreg, noreg, NULL);
+  __ set_last_Java_frame(noreg, noreg, NULL, rscratch1);
 
   __ mov(c_rarg0, r15_thread);
 
@@ -3459,7 +3459,7 @@ void OptoRuntime::generate_exception_blob() {
   // At a method handle call, the stack may not be properly aligned
   // when returning with an exception.
   address the_pc = __ pc();
-  __ set_last_Java_frame(noreg, noreg, the_pc);
+  __ set_last_Java_frame(noreg, noreg, the_pc, rscratch1);
   __ mov(c_rarg0, r15_thread);
   __ andptr(rsp, -(StackAlignmentInBytes));    // Align stack
   __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, OptoRuntime::handle_exception_C)));
