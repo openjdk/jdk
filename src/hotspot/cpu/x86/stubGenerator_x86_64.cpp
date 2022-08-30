@@ -79,10 +79,6 @@
 #define BIND(label) bind(label); BLOCK_COMMENT(#label ":")
 const int MXCSR_MASK = 0xFFC0;  // Mask out any pending exceptions
 
-OopMap* continuation_enter_setup(MacroAssembler* masm, int& stack_slots);
-void fill_continuation_entry(MacroAssembler* masm);
-void continuation_enter_cleanup(MacroAssembler* masm);
-
 // Stub Code definitions
 
 class StubGenerator: public StubCodeGenerator {
@@ -316,7 +312,7 @@ class StubGenerator: public StubCodeGenerator {
     // make sure we have no pending exceptions
     {
       Label L;
-      __ cmpptr(Address(r15_thread, Thread::pending_exception_offset()), (int32_t)NULL_WORD);
+      __ cmpptr(Address(r15_thread, Thread::pending_exception_offset()), NULL_WORD);
       __ jcc(Assembler::equal, L);
       __ stop("StubRoutines::call_stub: entered with pending exception");
       __ bind(L);
@@ -529,7 +525,7 @@ class StubGenerator: public StubCodeGenerator {
     // make sure this code is only executed if there is a pending exception
     {
       Label L;
-      __ cmpptr(Address(r15_thread, Thread::pending_exception_offset()), (int32_t) NULL_WORD);
+      __ cmpptr(Address(r15_thread, Thread::pending_exception_offset()), NULL_WORD);
       __ jcc(Assembler::notEqual, L);
       __ stop("StubRoutines::forward exception: no pending exception (1)");
       __ bind(L);
@@ -547,7 +543,7 @@ class StubGenerator: public StubCodeGenerator {
     // setup rax & rdx, remove return address & clear pending exception
     __ pop(rdx);
     __ movptr(rax, Address(r15_thread, Thread::pending_exception_offset()));
-    __ movptr(Address(r15_thread, Thread::pending_exception_offset()), (int32_t)NULL_WORD);
+    __ movptr(Address(r15_thread, Thread::pending_exception_offset()), NULL_WORD);
 
 #ifdef ASSERT
     // make sure exception is set
@@ -7263,22 +7259,11 @@ address generate_avx_ghash_processBlocks() {
 
     address start = __ pc();
 
-    const XMMRegister x0  = xmm0;
-    const XMMRegister x1  = xmm1;
-    const XMMRegister x2  = xmm2;
-    const XMMRegister x3  = xmm3;
-
-    const XMMRegister x4  = xmm4;
-    const XMMRegister x5  = xmm5;
-    const XMMRegister x6  = xmm6;
-    const XMMRegister x7  = xmm7;
-
-    const Register tmp   = r11;
-
     BLOCK_COMMENT("Entry:");
     __ enter(); // required for proper stackwalking of RuntimeStub frame
 
-    __ fast_exp(x0, x1, x2, x3, x4, x5, x6, x7, rax, rcx, rdx, tmp);
+    __ fast_exp(xmm0, xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7,
+                rax, rcx, rdx, r11);
 
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret(0);
@@ -7292,23 +7277,11 @@ address generate_avx_ghash_processBlocks() {
 
     address start = __ pc();
 
-    const XMMRegister x0 = xmm0;
-    const XMMRegister x1 = xmm1;
-    const XMMRegister x2 = xmm2;
-    const XMMRegister x3 = xmm3;
-
-    const XMMRegister x4 = xmm4;
-    const XMMRegister x5 = xmm5;
-    const XMMRegister x6 = xmm6;
-    const XMMRegister x7 = xmm7;
-
-    const Register tmp1 = r11;
-    const Register tmp2 = r8;
-
     BLOCK_COMMENT("Entry:");
     __ enter(); // required for proper stackwalking of RuntimeStub frame
 
-    __ fast_log(x0, x1, x2, x3, x4, x5, x6, x7, rax, rcx, rdx, tmp1, tmp2);
+    __ fast_log(xmm0, xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7,
+                rax, rcx, rdx, r11, r8);
 
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret(0);
@@ -7322,22 +7295,11 @@ address generate_avx_ghash_processBlocks() {
 
     address start = __ pc();
 
-    const XMMRegister x0 = xmm0;
-    const XMMRegister x1 = xmm1;
-    const XMMRegister x2 = xmm2;
-    const XMMRegister x3 = xmm3;
-
-    const XMMRegister x4 = xmm4;
-    const XMMRegister x5 = xmm5;
-    const XMMRegister x6 = xmm6;
-    const XMMRegister x7 = xmm7;
-
-    const Register tmp = r11;
-
     BLOCK_COMMENT("Entry:");
     __ enter(); // required for proper stackwalking of RuntimeStub frame
 
-    __ fast_log10(x0, x1, x2, x3, x4, x5, x6, x7, rax, rcx, rdx, tmp);
+    __ fast_log10(xmm0, xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7,
+                  rax, rcx, rdx, r11, r8);
 
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret(0);
@@ -7351,25 +7313,11 @@ address generate_avx_ghash_processBlocks() {
 
     address start = __ pc();
 
-    const XMMRegister x0 = xmm0;
-    const XMMRegister x1 = xmm1;
-    const XMMRegister x2 = xmm2;
-    const XMMRegister x3 = xmm3;
-
-    const XMMRegister x4 = xmm4;
-    const XMMRegister x5 = xmm5;
-    const XMMRegister x6 = xmm6;
-    const XMMRegister x7 = xmm7;
-
-    const Register tmp1 = r8;
-    const Register tmp2 = r9;
-    const Register tmp3 = r10;
-    const Register tmp4 = r11;
-
     BLOCK_COMMENT("Entry:");
     __ enter(); // required for proper stackwalking of RuntimeStub frame
 
-    __ fast_pow(x0, x1, x2, x3, x4, x5, x6, x7, rax, rcx, rdx, tmp1, tmp2, tmp3, tmp4);
+    __ fast_pow(xmm0, xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7,
+                rax, rcx, rdx, r8, r9, r10, r11);
 
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret(0);
@@ -7383,21 +7331,6 @@ address generate_avx_ghash_processBlocks() {
 
     address start = __ pc();
 
-    const XMMRegister x0 = xmm0;
-    const XMMRegister x1 = xmm1;
-    const XMMRegister x2 = xmm2;
-    const XMMRegister x3 = xmm3;
-
-    const XMMRegister x4 = xmm4;
-    const XMMRegister x5 = xmm5;
-    const XMMRegister x6 = xmm6;
-    const XMMRegister x7 = xmm7;
-
-    const Register tmp1 = r8;
-    const Register tmp2 = r9;
-    const Register tmp3 = r10;
-    const Register tmp4 = r11;
-
     BLOCK_COMMENT("Entry:");
     __ enter(); // required for proper stackwalking of RuntimeStub frame
 
@@ -7405,8 +7338,8 @@ address generate_avx_ghash_processBlocks() {
     __ push(rsi);
     __ push(rdi);
 #endif
-    __ fast_sin(x0, x1, x2, x3, x4, x5, x6, x7, rax, rbx, rcx, rdx, tmp1, tmp2, tmp3, tmp4);
-
+    __ fast_sin(xmm0, xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7,
+                rax, rbx, rcx, rdx, r8);
 #ifdef _WIN64
     __ pop(rdi);
     __ pop(rsi);
@@ -7424,21 +7357,6 @@ address generate_avx_ghash_processBlocks() {
 
     address start = __ pc();
 
-    const XMMRegister x0 = xmm0;
-    const XMMRegister x1 = xmm1;
-    const XMMRegister x2 = xmm2;
-    const XMMRegister x3 = xmm3;
-
-    const XMMRegister x4 = xmm4;
-    const XMMRegister x5 = xmm5;
-    const XMMRegister x6 = xmm6;
-    const XMMRegister x7 = xmm7;
-
-    const Register tmp1 = r8;
-    const Register tmp2 = r9;
-    const Register tmp3 = r10;
-    const Register tmp4 = r11;
-
     BLOCK_COMMENT("Entry:");
     __ enter(); // required for proper stackwalking of RuntimeStub frame
 
@@ -7446,7 +7364,8 @@ address generate_avx_ghash_processBlocks() {
     __ push(rsi);
     __ push(rdi);
 #endif
-    __ fast_cos(x0, x1, x2, x3, x4, x5, x6, x7, rax, rcx, rdx, tmp1, tmp2, tmp3, tmp4);
+    __ fast_cos(xmm0, xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7,
+                rax, rcx, rdx, r8, r9, r10, r11, rbx);
 
 #ifdef _WIN64
     __ pop(rdi);
@@ -7465,21 +7384,6 @@ address generate_avx_ghash_processBlocks() {
 
     address start = __ pc();
 
-    const XMMRegister x0 = xmm0;
-    const XMMRegister x1 = xmm1;
-    const XMMRegister x2 = xmm2;
-    const XMMRegister x3 = xmm3;
-
-    const XMMRegister x4 = xmm4;
-    const XMMRegister x5 = xmm5;
-    const XMMRegister x6 = xmm6;
-    const XMMRegister x7 = xmm7;
-
-    const Register tmp1 = r8;
-    const Register tmp2 = r9;
-    const Register tmp3 = r10;
-    const Register tmp4 = r11;
-
     BLOCK_COMMENT("Entry:");
     __ enter(); // required for proper stackwalking of RuntimeStub frame
 
@@ -7487,7 +7391,8 @@ address generate_avx_ghash_processBlocks() {
     __ push(rsi);
     __ push(rdi);
 #endif
-    __ fast_tan(x0, x1, x2, x3, x4, x5, x6, x7, rax, rcx, rdx, tmp1, tmp2, tmp3, tmp4);
+    __ fast_tan(xmm0, xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7,
+                rax, rcx, rdx, r8, r9, r10, r11, rbx);
 
 #ifdef _WIN64
     __ pop(rdi);
@@ -7541,7 +7446,7 @@ address generate_avx_ghash_processBlocks() {
     __ jcc(Assembler::notZero, L_pinned);
 
     __ movptr(rsp, Address(r15_thread, JavaThread::cont_entry_offset()));
-    continuation_enter_cleanup(_masm);
+    __ continuation_enter_cleanup();
     __ pop(rbp);
     __ ret(0);
 
@@ -7841,8 +7746,7 @@ address generate_avx_ghash_processBlocks() {
     // check for pending exceptions
 #ifdef ASSERT
     Label L;
-    __ cmpptr(Address(r15_thread, Thread::pending_exception_offset()),
-            (int32_t) NULL_WORD);
+    __ cmpptr(Address(r15_thread, Thread::pending_exception_offset()), NULL_WORD);
     __ jcc(Assembler::notEqual, L);
     __ should_not_reach_here();
     __ bind(L);
@@ -7933,24 +7837,6 @@ address generate_avx_ghash_processBlocks() {
     }
 
     if (UseLibmIntrinsic && InlineIntrinsics) {
-      if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dsin) ||
-          vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dcos) ||
-          vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dtan)) {
-        StubRoutines::x86::_ONEHALF_adr = (address)StubRoutines::x86::_ONEHALF;
-        StubRoutines::x86::_P_2_adr = (address)StubRoutines::x86::_P_2;
-        StubRoutines::x86::_SC_4_adr = (address)StubRoutines::x86::_SC_4;
-        StubRoutines::x86::_Ctable_adr = (address)StubRoutines::x86::_Ctable;
-        StubRoutines::x86::_SC_2_adr = (address)StubRoutines::x86::_SC_2;
-        StubRoutines::x86::_SC_3_adr = (address)StubRoutines::x86::_SC_3;
-        StubRoutines::x86::_SC_1_adr = (address)StubRoutines::x86::_SC_1;
-        StubRoutines::x86::_PI_INV_TABLE_adr = (address)StubRoutines::x86::_PI_INV_TABLE;
-        StubRoutines::x86::_PI_4_adr = (address)StubRoutines::x86::_PI_4;
-        StubRoutines::x86::_PI32INV_adr = (address)StubRoutines::x86::_PI32INV;
-        StubRoutines::x86::_SIGN_MASK_adr = (address)StubRoutines::x86::_SIGN_MASK;
-        StubRoutines::x86::_P_1_adr = (address)StubRoutines::x86::_P_1;
-        StubRoutines::x86::_P_3_adr = (address)StubRoutines::x86::_P_3;
-        StubRoutines::x86::_NEG_ZERO_adr = (address)StubRoutines::x86::_NEG_ZERO;
-      }
       if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dexp)) {
         StubRoutines::_dexp = generate_libmExp();
       }
@@ -8273,102 +8159,6 @@ void StubGenerator_generate(CodeBuffer* code, int phase) {
     UnsafeCopyMemory::create_table(UCM_TABLE_MAX_ENTRIES);
   }
   StubGenerator g(code, phase);
-}
-
-#undef __
-#define __ masm->
-
-//---------------------------- continuation_enter_setup ---------------------------
-//
-// Arguments:
-//   None.
-//
-// Results:
-//   rsp: pointer to blank ContinuationEntry
-//
-// Kills:
-//   rax
-//
-OopMap* continuation_enter_setup(MacroAssembler* masm, int& stack_slots) {
-  assert(ContinuationEntry::size() % VMRegImpl::stack_slot_size == 0, "");
-  assert(in_bytes(ContinuationEntry::cont_offset())  % VMRegImpl::stack_slot_size == 0, "");
-  assert(in_bytes(ContinuationEntry::chunk_offset()) % VMRegImpl::stack_slot_size == 0, "");
-
-  stack_slots += checked_cast<int>(ContinuationEntry::size()) / wordSize;
-  __ subptr(rsp, checked_cast<int32_t>(ContinuationEntry::size()));
-
-  int frame_size = (checked_cast<int>(ContinuationEntry::size()) + wordSize) / VMRegImpl::stack_slot_size;
-  OopMap* map = new OopMap(frame_size, 0);
-  ContinuationEntry::setup_oopmap(map);
-
-  __ movptr(rax, Address(r15_thread, JavaThread::cont_entry_offset()));
-  __ movptr(Address(rsp, ContinuationEntry::parent_offset()), rax);
-  __ movptr(Address(r15_thread, JavaThread::cont_entry_offset()), rsp);
-
-  return map;
-}
-
-//---------------------------- fill_continuation_entry ---------------------------
-//
-// Arguments:
-//   rsp: pointer to blank Continuation entry
-//   reg_cont_obj: pointer to the continuation
-//   reg_flags: flags
-//
-// Results:
-//   rsp: pointer to filled out ContinuationEntry
-//
-// Kills:
-//   rax
-//
-void fill_continuation_entry(MacroAssembler* masm, Register reg_cont_obj, Register reg_flags) {
-  assert_different_registers(rax, reg_cont_obj, reg_flags);
-
-  DEBUG_ONLY(__ movl(Address(rsp, ContinuationEntry::cookie_offset()), ContinuationEntry::cookie_value());)
-
-  __ movptr(Address(rsp, ContinuationEntry::cont_offset()), reg_cont_obj);
-  __ movl  (Address(rsp, ContinuationEntry::flags_offset()), reg_flags);
-  __ movptr(Address(rsp, ContinuationEntry::chunk_offset()), 0);
-  __ movl(Address(rsp, ContinuationEntry::argsize_offset()), 0);
-  __ movl(Address(rsp, ContinuationEntry::pin_count_offset()), 0);
-
-  __ movptr(rax, Address(r15_thread, JavaThread::cont_fastpath_offset()));
-  __ movptr(Address(rsp, ContinuationEntry::parent_cont_fastpath_offset()), rax);
-  __ movq(rax, Address(r15_thread, JavaThread::held_monitor_count_offset()));
-  __ movq(Address(rsp, ContinuationEntry::parent_held_monitor_count_offset()), rax);
-
-  __ movptr(Address(r15_thread, JavaThread::cont_fastpath_offset()), 0);
-  __ movq(Address(r15_thread, JavaThread::held_monitor_count_offset()), 0);
-}
-
-//---------------------------- continuation_enter_cleanup ---------------------------
-//
-// Arguments:
-//   rsp: pointer to the ContinuationEntry
-//
-// Results:
-//   rsp: pointer to the spilled rbp in the entry frame
-//
-// Kills:
-//   rbx
-//
-void continuation_enter_cleanup(MacroAssembler* masm) {
-#ifdef ASSERT
-  Label L_good_sp;
-  __ cmpptr(rsp, Address(r15_thread, JavaThread::cont_entry_offset()));
-  __ jcc(Assembler::equal, L_good_sp);
-  __ stop("Incorrect rsp at continuation_enter_cleanup");
-  __ bind(L_good_sp);
-#endif
-
-  __ movptr(rbx, Address(rsp, ContinuationEntry::parent_cont_fastpath_offset()));
-  __ movptr(Address(r15_thread, JavaThread::cont_fastpath_offset()), rbx);
-  __ movq(rbx, Address(rsp, ContinuationEntry::parent_held_monitor_count_offset()));
-  __ movq(Address(r15_thread, JavaThread::held_monitor_count_offset()), rbx);
-
-  __ movptr(rbx, Address(rsp, ContinuationEntry::parent_offset()));
-  __ movptr(Address(r15_thread, JavaThread::cont_entry_offset()), rbx);
-  __ addptr(rsp, (int32_t)ContinuationEntry::size());
 }
 
 #undef __

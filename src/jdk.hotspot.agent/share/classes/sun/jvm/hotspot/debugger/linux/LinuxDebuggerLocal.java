@@ -660,12 +660,6 @@ public class LinuxDebuggerLocal extends DebuggerBase implements LinuxDebugger {
         }
     }
 
-    public void writeBytesToProcess(long address, long numBytes, byte[] data)
-        throws UnmappedAddressException, DebuggerException {
-        // FIXME
-        throw new DebuggerException("Unimplemented");
-    }
-
     static {
         System.loadLibrary("saproc");
         init0();

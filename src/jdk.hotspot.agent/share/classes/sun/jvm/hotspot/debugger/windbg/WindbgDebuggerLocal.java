@@ -501,12 +501,6 @@ public class WindbgDebuggerLocal extends DebuggerBase implements WindbgDebugger 
     return null;
   }
 
-  public void writeBytesToProcess(long address, long numBytes, byte[] data)
-    throws UnmappedAddressException, DebuggerException {
-    // FIXME
-    throw new DebuggerException("Unimplemented");
-  }
-
   private static String  imagePath;
   private static String  symbolPath;
   private static boolean useNativeLookup;

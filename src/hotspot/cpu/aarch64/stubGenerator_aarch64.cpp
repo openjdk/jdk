@@ -1853,7 +1853,7 @@ class StubGenerator: public StubCodeGenerator {
     __ align(OptoLoopAlignment);
 
     __ BIND(L_store_element);
-    __ store_heap_oop(__ post(to, UseCompressedOops ? 4 : 8), copied_oop, noreg, noreg, AS_RAW);  // store the oop
+    __ store_heap_oop(__ post(to, UseCompressedOops ? 4 : 8), copied_oop, noreg, noreg, noreg, AS_RAW);  // store the oop
     __ sub(count, count, 1);
     __ cbz(count, L_do_card_marks);
 
@@ -3045,8 +3045,9 @@ class StubGenerator: public StubCodeGenerator {
       __ movi(v9, __ T4S, 1);
       __ ins(v8, __ S, v9, 3, 3); // v8 contains { 0, 0, 0, 1 }
 
-      for (FloatRegister f = v0; f < v0 + bulk_width; f++) {
-        __ rev32(f, __ T16B, v16);
+      for (int i = 0; i < bulk_width; i++) {
+        FloatRegister v0_ofs = as_FloatRegister(v0->encoding() + i);
+        __ rev32(v0_ofs, __ T16B, v16);
         __ addv(v16, __ T4S, v16, v8);
       }
 
@@ -3061,7 +3062,9 @@ class StubGenerator: public StubCodeGenerator {
 
       // XOR the encrypted counters with the inputs
       for (int i = 0; i < bulk_width; i++) {
-        __ eor(v0 + i, __ T16B, v0 + i, v8 + i);
+        FloatRegister v0_ofs = as_FloatRegister(v0->encoding() + i);
+        FloatRegister v8_ofs = as_FloatRegister(v8->encoding() + i);
+        __ eor(v0_ofs, __ T16B, v0_ofs, v8_ofs);
       }
 
       // Write the encrypted data
@@ -3162,7 +3165,10 @@ class StubGenerator: public StubCodeGenerator {
       __ movi(v8, __ T4S, 0);
       __ movi(v9, __ T4S, 1);
       __ ins(v8, __ S, v9, 3, 3); // v8 contains { 0, 0, 0, 1 }
-      for (FloatRegister f = v0; f < v8; f++) {
+
+      assert(v0->encoding() < v8->encoding(), "");
+      for (int i = v0->encoding(); i < v8->encoding(); i++) {
+        FloatRegister f = as_FloatRegister(i);
         __ rev32(f, __ T16B, v16);
         __ addv(v16, __ T4S, v16, v8);
       }
@@ -3176,7 +3182,9 @@ class StubGenerator: public StubCodeGenerator {
 
       // XOR the encrypted counters with the inputs
       for (int i = 0; i < 8; i++) {
-        __ eor(v0 + i, __ T16B, v0 + i, v8 + i);
+        FloatRegister v0_ofs = as_FloatRegister(v0->encoding() + i);
+        FloatRegister v8_ofs = as_FloatRegister(v8->encoding() + i);
+        __ eor(v0_ofs, __ T16B, v0_ofs, v8_ofs);
       }
       __ st1(v0, v1, v2, v3, __ T16B, __ post(out, 4 * 16));
       __ st1(v4, v5, v6, v7, __ T16B, __ post(out, 4 * 16));
@@ -7246,7 +7254,8 @@ class StubGenerator: public StubCodeGenerator {
     //    Preserves len
     //    Leaves s pointing to the address which was in d at start
     void reverse(Register d, Register s, Register len, Register tmp1, Register tmp2) {
-      assert(tmp1 < r19 && tmp2 < r19, "register corruption");
+      assert(tmp1->encoding() < r19->encoding(), "register corruption");
+      assert(tmp2->encoding() < r19->encoding(), "register corruption");
 
       lea(s, Address(s, len, Address::uxtw(LogBytesPerWord)));
       mov(tmp1, len);

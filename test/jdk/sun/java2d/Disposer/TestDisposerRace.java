@@ -22,6 +22,7 @@
  */
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import javax.swing.SwingUtilities;
 
 import sun.java2d.Disposer;
@@ -35,7 +36,7 @@ import sun.java2d.DisposerRecord;
  * @modules java.desktop/sun.java2d
  */
 public final class TestDisposerRace {
-    private static volatile int recordsCount = 0;
+    private static final AtomicInteger recordsCount = new AtomicInteger();
     private static volatile boolean disposerDone = false;
 
     public static void main(String[] args) throws Exception {
@@ -43,7 +44,7 @@ public final class TestDisposerRace {
         test.run();
 
         checkRecordsCountIsSane();
-        if (recordsCount > 0) {
+        if (recordsCount.get() > 0) {
             throw new RuntimeException("Some records (" + recordsCount + ") have not been disposed");
         }
     }
@@ -70,14 +71,15 @@ public final class TestDisposerRace {
     }
 
     private static void checkRecordsCountIsSane() {
-        if (recordsCount < 0) {
+        if (recordsCount.get() < 0) {
             throw new RuntimeException("Disposed more records than were added");
         }
     }
+
     private void addRecordsToDisposer(int count) {
         checkRecordsCountIsSane();
 
-        recordsCount += count;
+        recordsCount.addAndGet(count);
 
         MyDisposerRecord disposerRecord = new MyDisposerRecord();
         for (int i = 0; i < count; i++) {
@@ -87,7 +89,7 @@ public final class TestDisposerRace {
 
     class MyDisposerRecord implements DisposerRecord {
         public void dispose() {
-            recordsCount--;
+            recordsCount.decrementAndGet();
         }
     }
 

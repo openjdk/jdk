@@ -68,7 +68,7 @@ bool CompiledICLocker::is_safe(CompiledMethod* method) {
 }
 
 bool CompiledICLocker::is_safe(address code) {
-  CodeBlob* cb = CodeCache::find_blob_unsafe(code);
+  CodeBlob* cb = CodeCache::find_blob(code);
   assert(cb != NULL && cb->is_compiled(), "must be compiled");
   CompiledMethod* cm = cb->as_compiled_method();
   return CompiledICProtectionBehaviour::current()->is_safe(cm);
@@ -128,7 +128,7 @@ void CompiledIC::internal_set_ic_destination(address entry_point, bool is_icstub
   }
 
   {
-    CodeBlob* cb = CodeCache::find_blob_unsafe(_call->instruction_address());
+    CodeBlob* cb = CodeCache::find_blob(_call->instruction_address());
     assert(cb != NULL && cb->is_compiled(), "must be compiled");
     _call->set_destination_mt_safe(entry_point);
   }
@@ -317,10 +317,7 @@ bool CompiledIC::is_megamorphic() const {
 bool CompiledIC::is_call_to_compiled() const {
   assert(CompiledICLocker::is_safe(_method), "mt unsafe call");
 
-  // Use unsafe, since an inline cache might point to a zombie method. However, the zombie
-  // method is guaranteed to still exist, since we only remove methods after all inline caches
-  // has been cleaned up
-  CodeBlob* cb = CodeCache::find_blob_unsafe(ic_destination());
+  CodeBlob* cb = CodeCache::find_blob(ic_destination());
   bool is_monomorphic = (cb != NULL && cb->is_compiled());
   // Check that the cached_value is a klass for non-optimized monomorphic calls
   // This assertion is invalid for compiler1: a call that does not look optimized (no static stub) can be used
@@ -328,12 +325,11 @@ bool CompiledIC::is_call_to_compiled() const {
   // For JVMCI this occurs because CHA is only used to improve inlining so call sites which could be optimized
   // virtuals because there are no currently loaded subclasses of a type are left as virtual call sites.
 #ifdef ASSERT
-  CodeBlob* caller = CodeCache::find_blob_unsafe(instruction_address());
+  CodeBlob* caller = CodeCache::find_blob(instruction_address());
   bool is_c1_or_jvmci_method = caller->is_compiled_by_c1() || caller->is_compiled_by_jvmci();
   assert( is_c1_or_jvmci_method ||
          !is_monomorphic ||
          is_optimized() ||
-         !caller->is_alive() ||
          (cached_metadata() != NULL && cached_metadata()->is_klass()), "sanity check");
 #endif // ASSERT
   return is_monomorphic;
@@ -346,10 +342,7 @@ bool CompiledIC::is_call_to_interpreted() const {
   // is optimized), or calling to an I2C blob
   bool is_call_to_interpreted = false;
   if (!is_optimized()) {
-    // must use unsafe because the destination can be a zombie (and we're cleaning)
-    // and the print_compiled_ic code wants to know if site (in the non-zombie)
-    // is to the interpreter.
-    CodeBlob* cb = CodeCache::find_blob_unsafe(ic_destination());
+    CodeBlob* cb = CodeCache::find_blob(ic_destination());
     is_call_to_interpreted = (cb != NULL && cb->is_adapter_blob());
     assert(!is_call_to_interpreted || (is_icholder_call() && cached_icholder() != NULL), "sanity check");
   } else {
@@ -374,8 +367,6 @@ bool CompiledIC::set_to_clean(bool in_use) {
 
   address entry = _call->get_resolve_call_stub(is_optimized());
 
-  // A zombie transition will always be safe, since the metadata has already been set to NULL, so
-  // we only need to patch the destination
   bool safe_transition = _call->is_safe_for_patching() || !in_use || is_optimized() || SafepointSynchronize::is_at_safepoint();
 
   if (safe_transition) {
@@ -460,7 +451,7 @@ bool CompiledIC::set_to_monomorphic(CompiledICInfo& info) {
     // Call to compiled code
     bool static_bound = info.is_optimized() || (info.cached_metadata() == NULL);
 #ifdef ASSERT
-    CodeBlob* cb = CodeCache::find_blob_unsafe(info.entry());
+    CodeBlob* cb = CodeCache::find_blob(info.entry());
     assert (cb != NULL && cb->is_compiled(), "must be compiled!");
 #endif /* ASSERT */
 
@@ -560,7 +551,7 @@ void CompiledIC::compute_monomorphic_entry(const methodHandle& method,
 
 
 bool CompiledIC::is_icholder_entry(address entry) {
-  CodeBlob* cb = CodeCache::find_blob_unsafe(entry);
+  CodeBlob* cb = CodeCache::find_blob(entry);
   if (cb != NULL && cb->is_adapter_blob()) {
     return true;
   }

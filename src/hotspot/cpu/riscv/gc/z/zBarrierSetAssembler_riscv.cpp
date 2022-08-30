@@ -238,7 +238,7 @@ public:
         } else if (vm_reg->is_FloatRegister()) {
           _fp_regs += FloatRegSet::of(vm_reg->as_FloatRegister());
         } else if (vm_reg->is_VectorRegister()) {
-          const VMReg vm_reg_base = OptoReg::as_VMReg(opto_reg & ~(VectorRegisterImpl::max_slots_per_register - 1));
+          const VMReg vm_reg_base = OptoReg::as_VMReg(opto_reg & ~(VectorRegister::max_slots_per_register - 1));
           _vp_regs += VectorRegSet::of(vm_reg_base->as_VectorRegister());
         } else {
           fatal("Unknown register type");

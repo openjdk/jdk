@@ -559,7 +559,7 @@ int SharedRuntime::java_calling_convention(const BasicType *sig_bt,
 // Patch the callers callsite with entry to compiled code if it exists.
 static void patch_callers_callsite(MacroAssembler *masm) {
   Label L;
-  __ cmpptr(Address(rbx, in_bytes(Method::code_offset())), (int32_t)NULL_WORD);
+  __ cmpptr(Address(rbx, in_bytes(Method::code_offset())), NULL_WORD);
   __ jcc(Assembler::equal, L);
 
   // Save the current stack pointer
@@ -615,25 +615,40 @@ static void gen_c2i_adapter(MacroAssembler *masm,
   __ bind(skip_fixup);
 
   // Since all args are passed on the stack, total_args_passed *
-  // Interpreter::stackElementSize is the space we need. Plus 1 because
-  // we also account for the return address location since
-  // we store it first rather than hold it in rax across all the shuffling
+  // Interpreter::stackElementSize is the space we need.
 
-  int extraspace = (total_args_passed * Interpreter::stackElementSize) + wordSize;
+  assert(total_args_passed >= 0, "total_args_passed is %d", total_args_passed);
+
+  int extraspace = (total_args_passed * Interpreter::stackElementSize);
 
   // stack is aligned, keep it that way
+  // This is not currently needed or enforced by the interpreter, but
+  // we might as well conform to the ABI.
   extraspace = align_up(extraspace, 2*wordSize);
 
-  // Get return address
-  __ pop(rax);
-
   // set senderSP value
-  __ mov(r13, rsp);
+  __ lea(r13, Address(rsp, wordSize));
 
-  __ subptr(rsp, extraspace);
+#ifdef ASSERT
+  __ check_stack_alignment(r13, "sender stack not aligned");
+#endif
+  if (extraspace > 0) {
+    // Pop the return address
+    __ pop(rax);
 
-  // Store the return address in the expected location
-  __ movptr(Address(rsp, 0), rax);
+    __ subptr(rsp, extraspace);
+
+    // Push the return address
+    __ push(rax);
+
+    // Account for the return address location since we store it first rather
+    // than hold it in a register across all the shuffling
+    extraspace += wordSize;
+  }
+
+#ifdef ASSERT
+  __ check_stack_alignment(rsp, "callee stack not aligned", wordSize, rax);
+#endif
 
   // Now write the args into the outgoing interpreter space
   for (int i = 0; i < total_args_passed; i++) {
@@ -779,9 +794,6 @@ void SharedRuntime::gen_i2c_adapter(MacroAssembler *masm,
   // If this happens, control eventually transfers back to the compiled
   // caller, but with an uncorrected stack, causing delayed havoc.
 
-  // Pick up the return address
-  __ movptr(rax, Address(rsp, 0));
-
   if (VerifyAdapterCalls &&
       (Interpreter::code() != NULL || StubRoutines::code1() != NULL)) {
     // So, let's test for cascading c2i/i2c adapters right now.
@@ -789,6 +801,8 @@ void SharedRuntime::gen_i2c_adapter(MacroAssembler *masm,
     //         StubRoutines::contains($return_addr),
     //         "i2c adapter must return to an interpreter frame");
     __ block_comment("verify_i2c { ");
+    // Pick up the return address
+    __ movptr(rax, Address(rsp, 0));
     Label L_ok;
     if (Interpreter::code() != NULL)
       range_check(masm, rax, r11,
@@ -813,21 +827,15 @@ void SharedRuntime::gen_i2c_adapter(MacroAssembler *masm,
   // we need to align the outgoing SP for compiled code.
   __ movptr(r11, rsp);
 
-  // Cut-out for having no stack args.  Since up to 2 int/oop args are passed
-  // in registers, we will occasionally have no stack args.
-  int comp_words_on_stack = 0;
-  if (comp_args_on_stack) {
-    // Sig words on the stack are greater-than VMRegImpl::stack0.  Those in
-    // registers are below.  By subtracting stack0, we either get a negative
-    // number (all values in registers) or the maximum stack slot accessed.
+  // Pick up the return address
+  __ pop(rax);
 
-    // Convert 4-byte c2 stack slots to words.
-    comp_words_on_stack = align_up(comp_args_on_stack*VMRegImpl::stack_slot_size, wordSize)>>LogBytesPerWord;
-    // Round up to miminum stack alignment, in wordSize
-    comp_words_on_stack = align_up(comp_words_on_stack, 2);
+  // Convert 4-byte c2 stack slots to words.
+  int comp_words_on_stack = align_up(comp_args_on_stack*VMRegImpl::stack_slot_size, wordSize)>>LogBytesPerWord;
+
+  if (comp_args_on_stack) {
     __ subptr(rsp, comp_words_on_stack * wordSize);
   }
-
 
   // Ensure compiled code always sees stack at proper alignment
   __ andptr(rsp, -16);
@@ -997,7 +1005,7 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
     // Method might have been compiled since the call site was patched to
     // interpreted if that is the case treat it as a miss so we can get
     // the call site corrected.
-    __ cmpptr(Address(rbx, in_bytes(Method::code_offset())), (int32_t)NULL_WORD);
+    __ cmpptr(Address(rbx, in_bytes(Method::code_offset())), NULL_WORD);
     __ jcc(Assembler::equal, skip_fixup);
     __ jump(RuntimeAddress(SharedRuntime::get_ic_miss_stub()));
   }
@@ -1253,11 +1261,6 @@ static void verify_oop_args(MacroAssembler* masm,
   }
 }
 
-// defined in stubGenerator_x86_64.cpp
-OopMap* continuation_enter_setup(MacroAssembler* masm, int& stack_slots);
-void fill_continuation_entry(MacroAssembler* masm, Register reg_cont_obj, Register reg_flags);
-void continuation_enter_cleanup(MacroAssembler* masm);
-
 static void check_continuation_enter_argument(VMReg actual_vmreg,
                                               Register expected_reg,
                                               const char* name) {
@@ -1326,13 +1329,13 @@ static void gen_continuation_enter(MacroAssembler* masm,
     __ enter();
 
     stack_slots = 2; // will be adjusted in setup
-    OopMap* map = continuation_enter_setup(masm, stack_slots);
+    OopMap* map = __ continuation_enter_setup(stack_slots);
     // The frame is complete here, but we only record it for the compiled entry, so the frame would appear unsafe,
     // but that's okay because at the very worst we'll miss an async sample, but we're in interp_only_mode anyway.
 
     __ verify_oop(reg_cont_obj);
 
-    fill_continuation_entry(masm, reg_cont_obj, reg_is_virtual);
+    __ fill_continuation_entry(reg_cont_obj, reg_is_virtual);
 
     // If continuation, call to thaw. Otherwise, resolve the call and exit.
     __ testptr(reg_is_cont, reg_is_cont);
@@ -1361,14 +1364,14 @@ static void gen_continuation_enter(MacroAssembler* masm,
   __ enter();
 
   stack_slots = 2; // will be adjusted in setup
-  OopMap* map = continuation_enter_setup(masm, stack_slots);
+  OopMap* map = __ continuation_enter_setup(stack_slots);
 
   // Frame is now completed as far as size and linkage.
   frame_complete = __ pc() - start;
 
   __ verify_oop(reg_cont_obj);
 
-  fill_continuation_entry(masm, reg_cont_obj, reg_is_virtual);
+  __ fill_continuation_entry(reg_cont_obj, reg_is_virtual);
 
   // If isContinue, call to thaw. Otherwise, call Continuation.enter(Continuation c, boolean isContinue)
   __ testptr(reg_is_cont, reg_is_cont);
@@ -1411,7 +1414,7 @@ static void gen_continuation_enter(MacroAssembler* masm,
 
   __ bind(L_exit);
 
-  continuation_enter_cleanup(masm);
+  __ continuation_enter_cleanup();
   __ pop(rbp);
   __ ret(0);
 
@@ -1419,7 +1422,7 @@ static void gen_continuation_enter(MacroAssembler* masm,
 
   exception_offset = __ pc() - start;
 
-  continuation_enter_cleanup(masm);
+  __ continuation_enter_cleanup();
   __ pop(rbp);
 
   __ movptr(c_rarg0, r15_thread);
@@ -1754,15 +1757,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     }
 
 #ifdef ASSERT
-    {
-      Label L;
-      __ mov(rax, rsp);
-      __ andptr(rax, -16); // must be 16 byte boundary (see amd64 ABI)
-      __ cmpptr(rax, rsp);
-      __ jcc(Assembler::equal, L);
-      __ stop("improperly aligned stack");
-      __ bind(L);
-    }
+  __ check_stack_alignment(rsp, "improperly aligned stack");
 #endif /* ASSERT */
 
 
@@ -2113,7 +2108,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     if (!UseHeavyMonitors) {
       Label not_recur;
       // Simple recursive lock?
-      __ cmpptr(Address(rsp, lock_slot_offset * VMRegImpl::stack_slot_size), (int32_t)NULL_WORD);
+      __ cmpptr(Address(rsp, lock_slot_offset * VMRegImpl::stack_slot_size), NULL_WORD);
       __ jcc(Assembler::notEqual, not_recur);
       __ dec_held_monitor_count();
       __ jmpb(fast_done);
@@ -2174,14 +2169,14 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   // reset handle block
   __ movptr(rcx, Address(r15_thread, JavaThread::active_handles_offset()));
-  __ movl(Address(rcx, JNIHandleBlock::top_offset_in_bytes()), (int32_t)NULL_WORD);
+  __ movl(Address(rcx, JNIHandleBlock::top_offset_in_bytes()), NULL_WORD);
 
   // pop our frame
 
   __ leave();
 
   // Any exception pending?
-  __ cmpptr(Address(r15_thread, in_bytes(Thread::pending_exception_offset())), (int32_t)NULL_WORD);
+  __ cmpptr(Address(r15_thread, in_bytes(Thread::pending_exception_offset())), NULL_WORD);
   __ jcc(Assembler::notEqual, exception_pending);
 
   // Return
@@ -2218,7 +2213,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
 #ifdef ASSERT
     { Label L;
-    __ cmpptr(Address(r15_thread, in_bytes(Thread::pending_exception_offset())), (int32_t)NULL_WORD);
+    __ cmpptr(Address(r15_thread, in_bytes(Thread::pending_exception_offset())), NULL_WORD);
     __ jcc(Assembler::equal, L);
     __ stop("no pending exception allowed on exit from monitorenter");
     __ bind(L);
@@ -2249,7 +2244,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     // Save pending exception around call to VM (which contains an EXCEPTION_MARK)
     // NOTE that obj_reg == rbx currently
     __ movptr(rbx, Address(r15_thread, in_bytes(Thread::pending_exception_offset())));
-    __ movptr(Address(r15_thread, in_bytes(Thread::pending_exception_offset())), (int32_t)NULL_WORD);
+    __ movptr(Address(r15_thread, in_bytes(Thread::pending_exception_offset())), NULL_WORD);
 
     // args are (oop obj, BasicLock* lock, JavaThread* thread)
     __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, SharedRuntime::complete_monitor_unlocking_C)));
@@ -2258,7 +2253,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 #ifdef ASSERT
     {
       Label L;
-      __ cmpptr(Address(r15_thread, in_bytes(Thread::pending_exception_offset())), (int)NULL_WORD);
+      __ cmpptr(Address(r15_thread, in_bytes(Thread::pending_exception_offset())), NULL_WORD);
       __ jcc(Assembler::equal, L);
       __ stop("no pending exception allowed on exit complete_monitor_unlocking_C");
       __ bind(L);
@@ -2416,7 +2411,7 @@ void SharedRuntime::generate_deopt_blob() {
     implicit_exception_uncommon_trap_offset = __ pc() - start;
 
     __ pushptr(Address(r15_thread, in_bytes(JavaThread::jvmci_implicit_exception_pc_offset())));
-    __ movptr(Address(r15_thread, in_bytes(JavaThread::jvmci_implicit_exception_pc_offset())), (int32_t)NULL_WORD);
+    __ movptr(Address(r15_thread, in_bytes(JavaThread::jvmci_implicit_exception_pc_offset())), NULL_WORD);
 
     uncommon_trap_offset = __ pc() - start;
 
@@ -2428,7 +2423,7 @@ void SharedRuntime::generate_deopt_blob() {
     __ movl(c_rarg1, Address(r15_thread, in_bytes(JavaThread::pending_deoptimization_offset())));
     __ movl(Address(r15_thread, in_bytes(JavaThread::pending_deoptimization_offset())), -1);
 
-    __ movl(r14, (int32_t)Deoptimization::Unpack_reexecute);
+    __ movl(r14, Deoptimization::Unpack_reexecute);
     __ mov(c_rarg0, r15_thread);
     __ movl(c_rarg2, r14); // exec mode
     __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, Deoptimization::uncommon_trap)));
@@ -2480,7 +2475,7 @@ void SharedRuntime::generate_deopt_blob() {
 
   __ movptr(rdx, Address(r15_thread, JavaThread::exception_pc_offset()));
   __ movptr(Address(rbp, wordSize), rdx);
-  __ movptr(Address(r15_thread, JavaThread::exception_pc_offset()), (int32_t)NULL_WORD);
+  __ movptr(Address(r15_thread, JavaThread::exception_pc_offset()), NULL_WORD);
 
 #ifdef ASSERT
   // verify that there is really an exception oop in JavaThread
@@ -2508,9 +2503,7 @@ void SharedRuntime::generate_deopt_blob() {
   __ set_last_Java_frame(noreg, noreg, NULL);
 #ifdef ASSERT
   { Label L;
-    __ cmpptr(Address(r15_thread,
-                    JavaThread::last_Java_fp_offset()),
-            (int32_t)0);
+    __ cmpptr(Address(r15_thread, JavaThread::last_Java_fp_offset()), NULL_WORD);
     __ jcc(Assembler::equal, L);
     __ stop("SharedRuntime::generate_deopt_blob: last_Java_fp not cleared");
     __ bind(L);
@@ -2542,8 +2535,8 @@ void SharedRuntime::generate_deopt_blob() {
   __ movptr(rax, Address(r15_thread, JavaThread::exception_oop_offset()));
   // QQQ this is useless it was NULL above
   __ movptr(rdx, Address(r15_thread, JavaThread::exception_pc_offset()));
-  __ movptr(Address(r15_thread, JavaThread::exception_oop_offset()), (int32_t)NULL_WORD);
-  __ movptr(Address(r15_thread, JavaThread::exception_pc_offset()), (int32_t)NULL_WORD);
+  __ movptr(Address(r15_thread, JavaThread::exception_oop_offset()), NULL_WORD);
+  __ movptr(Address(r15_thread, JavaThread::exception_pc_offset()), NULL_WORD);
 
   __ verify_oop(rax);
 
@@ -2625,7 +2618,7 @@ void SharedRuntime::generate_deopt_blob() {
   __ enter();                           // Save old & set new ebp
   __ subptr(rsp, rbx);                  // Prolog
   // This value is corrected by layout_activation_impl
-  __ movptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), (int32_t)NULL_WORD );
+  __ movptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), NULL_WORD);
   __ movptr(Address(rbp, frame::interpreter_frame_sender_sp_offset * wordSize), sender_sp); // Make it walkable
   __ mov(sender_sp, rsp);               // Pass sender_sp to next frame
   __ addptr(rsi, wordSize);             // Bump array pointer (sizes)
@@ -2755,7 +2748,7 @@ void SharedRuntime::generate_uncommon_trap_blob() {
 #ifdef ASSERT
   { Label L;
     __ cmpptr(Address(rdi, Deoptimization::UnrollBlock::unpack_kind_offset_in_bytes()),
-            (int32_t)Deoptimization::Unpack_uncommon_trap);
+              Deoptimization::Unpack_uncommon_trap);
     __ jcc(Assembler::equal, L);
     __ stop("SharedRuntime::generate_deopt_blob: expected Unpack_uncommon_trap");
     __ bind(L);
@@ -2826,7 +2819,7 @@ void SharedRuntime::generate_uncommon_trap_blob() {
   __ movptr(Address(rbp, frame::interpreter_frame_sender_sp_offset * wordSize),
             sender_sp);            // Make it walkable
   // This value is corrected by layout_activation_impl
-  __ movptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), (int32_t)NULL_WORD );
+  __ movptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), NULL_WORD);
   __ mov(sender_sp, rsp);          // Pass sender_sp to next frame
   __ addptr(rsi, wordSize);        // Bump array pointer (sizes)
   __ addptr(rcx, wordSize);        // Bump array pointer (pcs)
@@ -2948,7 +2941,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
 
   __ reset_last_Java_frame(false);
 
-  __ cmpptr(Address(r15_thread, Thread::pending_exception_offset()), (int32_t)NULL_WORD);
+  __ cmpptr(Address(r15_thread, Thread::pending_exception_offset()), NULL_WORD);
   __ jcc(Assembler::equal, noException);
 
   // Exception pending
@@ -3089,7 +3082,7 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(address destination, const cha
   __ reset_last_Java_frame(false);
   // check for pending exceptions
   Label pending;
-  __ cmpptr(Address(r15_thread, Thread::pending_exception_offset()), (int32_t)NULL_WORD);
+  __ cmpptr(Address(r15_thread, Thread::pending_exception_offset()), NULL_WORD);
   __ jcc(Assembler::notEqual, pending);
 
   // get the returned Method*
@@ -3112,7 +3105,7 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(address destination, const cha
 
   // exception pending => remove activation and forward to exception handler
 
-  __ movptr(Address(r15_thread, JavaThread::vm_result_offset()), (int)NULL_WORD);
+  __ movptr(Address(r15_thread, JavaThread::vm_result_offset()), NULL_WORD);
 
   __ movptr(rax, Address(r15_thread, Thread::pending_exception_offset()));
   __ jump(RuntimeAddress(StubRoutines::forward_exception_entry()));
@@ -3504,11 +3497,11 @@ void OptoRuntime::generate_exception_blob() {
   // Get the exception pc in case we are deoptimized
   __ movptr(rdx, Address(r15_thread, JavaThread::exception_pc_offset()));
 #ifdef ASSERT
-  __ movptr(Address(r15_thread, JavaThread::exception_handler_pc_offset()), (int)NULL_WORD);
-  __ movptr(Address(r15_thread, JavaThread::exception_pc_offset()), (int)NULL_WORD);
+  __ movptr(Address(r15_thread, JavaThread::exception_handler_pc_offset()), NULL_WORD);
+  __ movptr(Address(r15_thread, JavaThread::exception_pc_offset()), NULL_WORD);
 #endif
   // Clear the exception oop so GC no longer processes it as a root.
-  __ movptr(Address(r15_thread, JavaThread::exception_oop_offset()), (int)NULL_WORD);
+  __ movptr(Address(r15_thread, JavaThread::exception_oop_offset()), NULL_WORD);
 
   // rax: exception oop
   // r8:  exception handler

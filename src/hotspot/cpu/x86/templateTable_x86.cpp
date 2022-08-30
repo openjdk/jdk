@@ -4281,7 +4281,7 @@ void TemplateTable::monitorenter() {
 
     __ bind(loop);
     // check if current entry is used
-    __ cmpptr(Address(rtop, BasicObjectLock::obj_offset_in_bytes()), (int32_t) NULL_WORD);
+    __ cmpptr(Address(rtop, BasicObjectLock::obj_offset_in_bytes()), NULL_WORD);
     // if not used then remember entry in rmon
     __ cmovptr(Assembler::equal, rmon, rtop);   // cmov => cmovptr
     // check if current entry is for same object

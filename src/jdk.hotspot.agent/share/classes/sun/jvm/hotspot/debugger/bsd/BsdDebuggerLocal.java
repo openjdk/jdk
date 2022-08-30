@@ -603,12 +603,6 @@ public class BsdDebuggerLocal extends DebuggerBase implements BsdDebugger {
         }
     }
 
-    public void writeBytesToProcess(long address, long numBytes, byte[] data)
-        throws UnmappedAddressException, DebuggerException {
-        // FIXME
-        throw new DebuggerException("Unimplemented");
-    }
-
     /** this functions used for core file reading and called from native attach0,
         it returns an array of long integers as
         [thread_id, stack_start, stack_end, thread_id, stack_start, stack_end, ....] for

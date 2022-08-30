@@ -176,7 +176,7 @@ class StubGenerator: public StubCodeGenerator {
     // make sure we have no pending exceptions
     { Label L;
       __ movptr(rcx, thread);
-      __ cmpptr(Address(rcx, Thread::pending_exception_offset()), (int32_t)NULL_WORD);
+      __ cmpptr(Address(rcx, Thread::pending_exception_offset()), NULL_WORD);
       __ jcc(Assembler::equal, L);
       __ stop("StubRoutines::call_stub: entered with pending exception");
       __ bind(L);
@@ -388,7 +388,7 @@ class StubGenerator: public StubCodeGenerator {
     // make sure this code is only executed if there is a pending exception
     { Label L;
       __ get_thread(thread);
-      __ cmpptr(Address(thread, Thread::pending_exception_offset()), (int32_t)NULL_WORD);
+      __ cmpptr(Address(thread, Thread::pending_exception_offset()), NULL_WORD);
       __ jcc(Assembler::notEqual, L);
       __ stop("StubRoutines::forward exception: no pending exception (1)");
       __ bind(L);
@@ -1854,7 +1854,7 @@ class StubGenerator: public StubCodeGenerator {
       __ bind(L1);
       __ stop("broken null klass");
       __ bind(L2);
-      __ cmpptr(dst_klass_addr, (int32_t)NULL_WORD);
+      __ cmpptr(dst_klass_addr, NULL_WORD);
       __ jccb(Assembler::equal, L1);      // this would be broken also
       BLOCK_COMMENT("assert done");
     }
@@ -3545,21 +3545,10 @@ class StubGenerator: public StubCodeGenerator {
 
     address start = __ pc();
 
-    const XMMRegister x0  = xmm0;
-    const XMMRegister x1  = xmm1;
-    const XMMRegister x2  = xmm2;
-    const XMMRegister x3  = xmm3;
-
-    const XMMRegister x4  = xmm4;
-    const XMMRegister x5  = xmm5;
-    const XMMRegister x6  = xmm6;
-    const XMMRegister x7  = xmm7;
-
-    const Register tmp   = rbx;
-
     BLOCK_COMMENT("Entry:");
     __ enter(); // required for proper stackwalking of RuntimeStub frame
-    __ fast_exp(x0, x1, x2, x3, x4, x5, x6, x7, rax, rcx, rdx, tmp);
+    __ fast_exp(xmm0, xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7,
+                rax, rcx, rdx, rbx);
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret(0);
 
@@ -3572,21 +3561,10 @@ class StubGenerator: public StubCodeGenerator {
 
    address start = __ pc();
 
-   const XMMRegister x0 = xmm0;
-   const XMMRegister x1 = xmm1;
-   const XMMRegister x2 = xmm2;
-   const XMMRegister x3 = xmm3;
-
-   const XMMRegister x4 = xmm4;
-   const XMMRegister x5 = xmm5;
-   const XMMRegister x6 = xmm6;
-   const XMMRegister x7 = xmm7;
-
-   const Register tmp = rbx;
-
    BLOCK_COMMENT("Entry:");
    __ enter(); // required for proper stackwalking of RuntimeStub frame
-   __ fast_log(x0, x1, x2, x3, x4, x5, x6, x7, rax, rcx, rdx, tmp);
+   __ fast_log(xmm0, xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7,
+               rax, rcx, rdx, rbx);
    __ leave(); // required for proper stackwalking of RuntimeStub frame
    __ ret(0);
 
@@ -3599,21 +3577,10 @@ class StubGenerator: public StubCodeGenerator {
 
    address start = __ pc();
 
-   const XMMRegister x0 = xmm0;
-   const XMMRegister x1 = xmm1;
-   const XMMRegister x2 = xmm2;
-   const XMMRegister x3 = xmm3;
-
-   const XMMRegister x4 = xmm4;
-   const XMMRegister x5 = xmm5;
-   const XMMRegister x6 = xmm6;
-   const XMMRegister x7 = xmm7;
-
-   const Register tmp = rbx;
-
    BLOCK_COMMENT("Entry:");
    __ enter(); // required for proper stackwalking of RuntimeStub frame
-   __ fast_log10(x0, x1, x2, x3, x4, x5, x6, x7, rax, rcx, rdx, tmp);
+   __ fast_log10(xmm0, xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7,
+               rax, rcx, rdx, rbx);
    __ leave(); // required for proper stackwalking of RuntimeStub frame
    __ ret(0);
 
@@ -3626,21 +3593,10 @@ class StubGenerator: public StubCodeGenerator {
 
    address start = __ pc();
 
-   const XMMRegister x0 = xmm0;
-   const XMMRegister x1 = xmm1;
-   const XMMRegister x2 = xmm2;
-   const XMMRegister x3 = xmm3;
-
-   const XMMRegister x4 = xmm4;
-   const XMMRegister x5 = xmm5;
-   const XMMRegister x6 = xmm6;
-   const XMMRegister x7 = xmm7;
-
-   const Register tmp = rbx;
-
    BLOCK_COMMENT("Entry:");
    __ enter(); // required for proper stackwalking of RuntimeStub frame
-   __ fast_pow(x0, x1, x2, x3, x4, x5, x6, x7, rax, rcx, rdx, tmp);
+   __ fast_pow(xmm0, xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7,
+               rax, rcx, rdx, rbx);
    __ leave(); // required for proper stackwalking of RuntimeStub frame
    __ ret(0);
 
@@ -3665,11 +3621,8 @@ class StubGenerator: public StubCodeGenerator {
 
    address start = __ pc();
 
-   const XMMRegister x0 = xmm0;
-   const XMMRegister x1 = xmm1;
-
    BLOCK_COMMENT("Entry:");
-   __ libm_sincos_huge(x0, x1, rax, rcx, rdx, rbx, rsi, rdi, rbp, rsp);
+   __ libm_sincos_huge(xmm0, xmm1, rax, rcx, rdx, rbx, rsi, rdi, rbp, rsp);
 
    return start;
 
@@ -3680,19 +3633,10 @@ class StubGenerator: public StubCodeGenerator {
 
    address start = __ pc();
 
-   const XMMRegister x0 = xmm0;
-   const XMMRegister x1 = xmm1;
-   const XMMRegister x2 = xmm2;
-   const XMMRegister x3 = xmm3;
-
-   const XMMRegister x4 = xmm4;
-   const XMMRegister x5 = xmm5;
-   const XMMRegister x6 = xmm6;
-   const XMMRegister x7 = xmm7;
-
    BLOCK_COMMENT("Entry:");
    __ enter(); // required for proper stackwalking of RuntimeStub frame
-   __ fast_sin(x0, x1, x2, x3, x4, x5, x6, x7, rax, rbx, rdx);
+   __ fast_sin(xmm0, xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7,
+               rax, rbx, rdx);
    __ leave(); // required for proper stackwalking of RuntimeStub frame
    __ ret(0);
 
@@ -3705,21 +3649,10 @@ class StubGenerator: public StubCodeGenerator {
 
    address start = __ pc();
 
-   const XMMRegister x0 = xmm0;
-   const XMMRegister x1 = xmm1;
-   const XMMRegister x2 = xmm2;
-   const XMMRegister x3 = xmm3;
-
-   const XMMRegister x4 = xmm4;
-   const XMMRegister x5 = xmm5;
-   const XMMRegister x6 = xmm6;
-   const XMMRegister x7 = xmm7;
-
-   const Register tmp = rbx;
-
    BLOCK_COMMENT("Entry:");
    __ enter(); // required for proper stackwalking of RuntimeStub frame
-   __ fast_cos(x0, x1, x2, x3, x4, x5, x6, x7, rax, rcx, rdx, tmp);
+   __ fast_cos(xmm0, xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7,
+               rax, rcx, rdx, rbx);
    __ leave(); // required for proper stackwalking of RuntimeStub frame
    __ ret(0);
 
@@ -3732,11 +3665,8 @@ class StubGenerator: public StubCodeGenerator {
 
    address start = __ pc();
 
-   const XMMRegister x0 = xmm0;
-   const XMMRegister x1 = xmm1;
-
    BLOCK_COMMENT("Entry:");
-   __ libm_tancot_huge(x0, x1, rax, rcx, rdx, rbx, rsi, rdi, rbp, rsp);
+   __ libm_tancot_huge(xmm0, xmm1, rax, rcx, rdx, rbx, rsi, rdi, rbp, rsp);
 
    return start;
 
@@ -3747,21 +3677,10 @@ class StubGenerator: public StubCodeGenerator {
 
    address start = __ pc();
 
-   const XMMRegister x0 = xmm0;
-   const XMMRegister x1 = xmm1;
-   const XMMRegister x2 = xmm2;
-   const XMMRegister x3 = xmm3;
-
-   const XMMRegister x4 = xmm4;
-   const XMMRegister x5 = xmm5;
-   const XMMRegister x6 = xmm6;
-   const XMMRegister x7 = xmm7;
-
-   const Register tmp = rbx;
-
    BLOCK_COMMENT("Entry:");
    __ enter(); // required for proper stackwalking of RuntimeStub frame
-   __ fast_tan(x0, x1, x2, x3, x4, x5, x6, x7, rax, rcx, rdx, tmp);
+   __ fast_tan(xmm0, xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7,
+               rax, rcx, rdx, rbx);
    __ leave(); // required for proper stackwalking of RuntimeStub frame
    __ ret(0);
 
@@ -3948,7 +3867,7 @@ class StubGenerator: public StubCodeGenerator {
     // check for pending exceptions
 #ifdef ASSERT
     Label L;
-    __ cmpptr(Address(java_thread, Thread::pending_exception_offset()), (int32_t)NULL_WORD);
+    __ cmpptr(Address(java_thread, Thread::pending_exception_offset()), NULL_WORD);
     __ jcc(Assembler::notEqual, L);
     __ should_not_reach_here();
     __ bind(L);
@@ -4118,15 +4037,6 @@ class StubGenerator: public StubCodeGenerator {
       StubRoutines::_updateBytesCRC32C = generate_updateBytesCRC32C(supports_clmul);
     }
     if (VM_Version::supports_sse2() && UseLibmIntrinsic && InlineIntrinsics) {
-      if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dsin) ||
-          vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dcos) ||
-          vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dtan)) {
-        StubRoutines::x86::_L_2il0floatpacket_0_adr = (address)StubRoutines::x86::_L_2il0floatpacket_0;
-        StubRoutines::x86::_Pi4Inv_adr = (address)StubRoutines::x86::_Pi4Inv;
-        StubRoutines::x86::_Pi4x3_adr = (address)StubRoutines::x86::_Pi4x3;
-        StubRoutines::x86::_Pi4x4_adr = (address)StubRoutines::x86::_Pi4x4;
-        StubRoutines::x86::_ones_adr = (address)StubRoutines::x86::_ones;
-      }
       if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dexp)) {
         StubRoutines::_dexp = generate_libmExp();
       }

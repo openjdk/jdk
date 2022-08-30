@@ -150,7 +150,7 @@ public class Disposer implements Runnable {
                 rec = null;
                 clearDeferredRecords();
             } catch (Exception e) {
-                e.printStackTrace(System.err);
+                System.out.println("Exception while removing reference.");
             }
         }
     }
@@ -170,7 +170,7 @@ public class Disposer implements Runnable {
         try {
             rec.dispose();
         } catch (final Exception e) {
-            e.printStackTrace(System.err);
+            System.out.println("Exception while disposing deferred rec.");
         }
     }
 
@@ -225,7 +225,7 @@ public class Disposer implements Runnable {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace(System.err);
+            System.out.println("Exception while removing reference.");
         } finally {
             pollingQueue = false;
         }
