@@ -48,8 +48,10 @@
 import jdk.test.lib.Platform;
 import org.testng.annotations.Test;
 
-import java.lang.management.*;
-import java.io.*;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.lang.management.ManagementFactory;
+import java.lang.management.OperatingSystemMXBean;
 
 public class GetSystemLoadAverage {
 
@@ -67,32 +69,25 @@ public class GetSystemLoadAverage {
     void testSystemLoadAvg() throws Exception {
         for (int i = 1; i <= MAX_RETRIES; i++) {
             try {
-                System.out.println(
-                        String.format("Run %d: TestSystemLoadAvg", i));
+                System.out.println(String.format("Run %d: TestSystemLoadAvg", i));
                 if (!Platform.isWindows()) {
-                    // On Linux or Solaris
+                    // On Linux or Mac
                     checkLoadAvg();
                 } else {
                     // On Windows, the system load average is expected to be -1.0
                     double loadavg = mbean.getSystemLoadAverage();
                     if (loadavg != -1.0) {
-                        throw new RuntimeException(
-                                "Expected load average : -1.0" +
-                                        " but getSystemLoadAverage returned: " +
-                                        loadavg);
+                        throw new RuntimeException("Expected load average : -1.0" +
+                                " but getSystemLoadAverage returned: " + loadavg);
                     }
                 }
-                System.out.println(
-                        String.format("Run %d: TestSystemLoadAvg test passed",
-                                i));
+                System.out.println(String.format("Run %d: TestSystemLoadAvg test passed", i));
                 return;
             } catch (Exception e) {
                 System.out.println(
-                        String.format("TEST FAILED: TestSystemLoadAvg test " +
-                                        "failed %d runs",
+                        String.format("TEST FAILED: TestSystemLoadAvg test " + "failed %d runs",
                                 i));
-                if (i == MAX_RETRIES)
-                {
+                if (i == MAX_RETRIES) {
                     throw e;
                 }
 
@@ -155,5 +150,4 @@ public class GetSystemLoadAverage {
         p.exitValue();
         return output;
     }
-
 }
