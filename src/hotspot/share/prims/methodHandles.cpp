@@ -1055,14 +1055,6 @@ void MethodHandles::add_dependent_nmethod(oop call_site, nmethod* nm) {
   deps.add_dependent_nmethod(nm);
 }
 
-void MethodHandles::remove_dependent_nmethod(oop call_site, nmethod* nm) {
-  assert_locked_or_safepoint(CodeCache_lock);
-
-  oop context = java_lang_invoke_CallSite::context_no_keepalive(call_site);
-  DependencyContext deps = java_lang_invoke_MethodHandleNatives_CallSiteContext::vmdependencies(context);
-  deps.remove_dependent_nmethod(nm);
-}
-
 void MethodHandles::clean_dependency_context(oop call_site) {
   oop context = java_lang_invoke_CallSite::context_no_keepalive(call_site);
   DependencyContext deps = java_lang_invoke_MethodHandleNatives_CallSiteContext::vmdependencies(context);

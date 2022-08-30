@@ -88,9 +88,11 @@ static void pass_arg3(MacroAssembler* masm, Register arg) {
   }
 }
 
-void MacroAssembler::align(int modulus, int extra_offset) {
+int MacroAssembler::align(int modulus, int extra_offset) {
   CompressibleRegion cr(this);
+  intptr_t before = offset();
   while ((offset() + extra_offset) % modulus != 0) { nop(); }
+  return (int)(offset() - before);
 }
 
 void MacroAssembler::call_VM_helper(Register oop_result, address entry_point, int number_of_arguments, bool check_exceptions) {
@@ -1123,9 +1125,9 @@ void MacroAssembler::push_CPU_state(bool save_vectors, int vector_size_in_bytes)
 
   // vector registers
   if (save_vectors) {
-    sub(sp, sp, vector_size_in_bytes * VectorRegisterImpl::number_of_registers);
+    sub(sp, sp, vector_size_in_bytes * VectorRegister::number_of_registers);
     vsetvli(t0, x0, Assembler::e64, Assembler::m8);
-    for (int i = 0; i < VectorRegisterImpl::number_of_registers; i += 8) {
+    for (int i = 0; i < VectorRegister::number_of_registers; i += 8) {
       add(t0, sp, vector_size_in_bytes * i);
       vse64_v(as_VectorRegister(i), t0);
     }
@@ -1137,7 +1139,7 @@ void MacroAssembler::pop_CPU_state(bool restore_vectors, int vector_size_in_byte
   // vector registers
   if (restore_vectors) {
     vsetvli(t0, x0, Assembler::e64, Assembler::m8);
-    for (int i = 0; i < VectorRegisterImpl::number_of_registers; i += 8) {
+    for (int i = 0; i < VectorRegister::number_of_registers; i += 8) {
       vle64_v(as_VectorRegister(i), sp);
       add(sp, sp, vector_size_in_bytes * 8);
     }
@@ -1667,7 +1669,9 @@ void MacroAssembler::movoop(Register dst, jobject obj, bool immediate) {
 
   // nmethod entry barrier necessitate using the constant pool. They have to be
   // ordered with respected to oop access.
-  if (BarrierSet::barrier_set()->barrier_set_nmethod() != NULL || !immediate) {
+  // Using immediate literals would necessitate fence.i.
+  BarrierSet* bs = BarrierSet::barrier_set();
+  if ((bs->barrier_set_nmethod() != NULL && bs->barrier_set_assembler()->nmethod_patching_type() == NMethodPatchingType::conc_data_patch) || !immediate) {
     address dummy = address(uintptr_t(pc()) & -wordSize); // A nearby aligned address
     ld_constant(dst, Address(dummy, rspec));
   } else
@@ -2300,7 +2304,7 @@ void MacroAssembler::cmpxchg_narrow_value(Register addr, Register expected,
   bnez(tmp, retry);
 
   if (result_as_bool) {
-    addi(result, zr, 1);
+    li(result, 1);
     j(done);
 
     bind(fail);
@@ -2335,7 +2339,7 @@ void MacroAssembler::weak_cmpxchg_narrow_value(Register addr, Register expected,
   assert_different_registers(addr, old, mask, not_mask, new_val, expected, shift, tmp);
   cmpxchg_narrow_value_helper(addr, expected, new_val, size, tmp1, tmp2, tmp3);
 
-  Label succ, fail, done;
+  Label fail, done;
 
   lr_w(old, aligned_addr, acquire);
   andr(tmp, old, mask);
@@ -2344,13 +2348,14 @@ void MacroAssembler::weak_cmpxchg_narrow_value(Register addr, Register expected,
   andr(tmp, old, not_mask);
   orr(tmp, tmp, new_val);
   sc_w(tmp, tmp, aligned_addr, release);
-  beqz(tmp, succ);
+  bnez(tmp, fail);
 
-  bind(fail);
-  addi(result, zr, 1);
+  // Success
+  li(result, 1);
   j(done);
 
-  bind(succ);
+  // Fail
+  bind(fail);
   mv(result, zr);
 
   bind(done);
@@ -2394,20 +2399,20 @@ void MacroAssembler::cmpxchg_weak(Register addr, Register expected,
                                   enum operand_size size,
                                   Assembler::Aqrl acquire, Assembler::Aqrl release,
                                   Register result) {
-  Label fail, done, sc_done;
+  Label fail, done;
   load_reserved(addr, size, acquire);
   bne(t0, expected, fail);
   store_conditional(addr, new_val, size, release);
-  beqz(t0, sc_done);
+  bnez(t0, fail);
 
-  // fail
-  bind(fail);
+  // Success
   li(result, 1);
   j(done);
 
-  // sc_done
-  bind(sc_done);
-  mv(result, 0);
+  // Fail
+  bind(fail);
+  mv(result, zr);
+
   bind(done);
 }
 

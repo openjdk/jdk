@@ -94,9 +94,6 @@ public:
 
   // Sets the mirror in nm's oops table.
   void set_nmethod_mirror(nmethod* nm, oop mirror);
-
-  // Clears the mirror in nm's oops table.
-  void clear_nmethod_mirror(nmethod* nm);
 };
 
 // A top level class that represents an initialized JVMCI runtime.
@@ -399,28 +396,28 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
 
   // Register the result of a compilation.
   JVMCI::CodeInstallResult register_method(JVMCIEnv* JVMCIENV,
-                       const methodHandle&       target,
-                       nmethodLocker&            code_handle,
-                       int                       entry_bci,
-                       CodeOffsets*              offsets,
-                       int                       orig_pc_offset,
-                       CodeBuffer*               code_buffer,
-                       int                       frame_words,
-                       OopMapSet*                oop_map_set,
-                       ExceptionHandlerTable*    handler_table,
-                       ImplicitExceptionTable*   implicit_exception_table,
-                       AbstractCompiler*         compiler,
-                       DebugInformationRecorder* debug_info,
-                       Dependencies*             dependencies,
-                       int                       compile_id,
-                       bool                      has_monitors,
-                       bool                      has_unsafe_access,
-                       bool                      has_wide_vector,
-                       JVMCIObject               compiled_code,
-                       JVMCIObject               nmethod_mirror,
-                       FailedSpeculation**       failed_speculations,
-                       char*                     speculations,
-                       int                       speculations_len);
+                                           const methodHandle&       target,
+                                           nmethod*&                 nm,
+                                           int                       entry_bci,
+                                           CodeOffsets*              offsets,
+                                           int                       orig_pc_offset,
+                                           CodeBuffer*               code_buffer,
+                                           int                       frame_words,
+                                           OopMapSet*                oop_map_set,
+                                           ExceptionHandlerTable*    handler_table,
+                                           ImplicitExceptionTable*   implicit_exception_table,
+                                           AbstractCompiler*         compiler,
+                                           DebugInformationRecorder* debug_info,
+                                           Dependencies*             dependencies,
+                                           int                       compile_id,
+                                           bool                      has_monitors,
+                                           bool                      has_unsafe_access,
+                                           bool                      has_wide_vector,
+                                           JVMCIObject               compiled_code,
+                                           JVMCIObject               nmethod_mirror,
+                                           FailedSpeculation**       failed_speculations,
+                                           char*                     speculations,
+                                           int                       speculations_len);
 
   // Detach `thread` from this runtime and destroy this runtime's JavaVM
   // if using one JavaVM per JVMCI compilation .

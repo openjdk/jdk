@@ -29,6 +29,7 @@
 #include "ci/ciMethodData.hpp"
 #include "code/exceptionHandlerTable.hpp"
 #include "compiler/compiler_globals.hpp"
+#include "compiler/compilerDefinitions.inline.hpp"
 #include "compiler/compilerDirectives.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/deoptimization.hpp"
@@ -261,9 +262,6 @@ class Compilation: public StackObj {
   bool profile_return() {
     return env()->comp_level() == CompLevel_full_profile &&
       C1UpdateMethodData && MethodData::profile_return();
-  }
-  bool age_code() const {
-    return _method->profile_aging();
   }
 
   // will compilation make optimistic assumptions that might lead to

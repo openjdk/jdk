@@ -507,7 +507,7 @@ Klass* SignatureStream::as_klass(Handle class_loader, Handle protection_domain,
   } else if (failure_mode == CachedOrNull) {
     NoSafepointVerifier nsv;  // no loading, now, we mean it!
     assert(!HAS_PENDING_EXCEPTION, "");
-    k = SystemDictionary::find_instance_klass(name, class_loader, protection_domain);
+    k = SystemDictionary::find_instance_klass(THREAD, name, class_loader, protection_domain);
     // SD::find does not trigger loading, so there should be no throws
     // Still, bad things can happen, so we CHECK_NULL and ask callers
     // to do likewise.
