@@ -102,6 +102,7 @@ public class TestStableLambdaName {
     }
 
     private static String removeHashFromLambdaName(String name) {
+        System.err.println("Lambda name debug purposes: " + name);
         return name.substring(0, name.indexOf("/0x0"));
     }
 
