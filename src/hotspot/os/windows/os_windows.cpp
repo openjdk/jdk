@@ -39,7 +39,6 @@
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "os_share_windows.hpp"
 #include "os_windows.inline.hpp"
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm_misc.hpp"
@@ -54,6 +53,7 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/orderAccess.hpp"
+#include "runtime/osInfo.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/park.hpp"
 #include "runtime/perfMemory.hpp"
@@ -269,10 +269,10 @@ bool os::have_special_privileges() {
 }
 
 
-// This method is  a periodic task to check for misbehaving JNI applications
+// This method is a periodic task to check for misbehaving JNI applications
 // under CheckJNI, we can add any periodic checks here.
 // For Windows at the moment does nothing
-void os::run_periodic_checks() {
+void os::run_periodic_checks(outputStream* st) {
   return;
 }
 
@@ -616,8 +616,10 @@ bool os::create_attached_thread(JavaThread* thread) {
 
   thread->set_osthread(osthread);
 
-  log_info(os, thread)("Thread attached (tid: " UINTX_FORMAT ").",
-    os::current_thread_id());
+  log_info(os, thread)("Thread attached (tid: " UINTX_FORMAT ", stack: "
+                       PTR_FORMAT " - " PTR_FORMAT " (" SIZE_FORMAT "k) ).",
+                       os::current_thread_id(), p2i(thread->stack_base()),
+                       p2i(thread->stack_end()), thread->stack_size());
 
   return true;
 }
@@ -2861,11 +2863,6 @@ address os::win32::fast_jni_accessor_wrapper(BasicType type) {
 
 // Virtual Memory
 
-int os::vm_page_size() { return os::win32::vm_page_size(); }
-int os::vm_allocation_granularity() {
-  return os::win32::vm_allocation_granularity();
-}
-
 // Windows large page support is available on Windows 2003. In order to use
 // large page memory, the administrator must first assign additional privilege
 // to the user:
@@ -3161,7 +3158,7 @@ void os::large_page_init() {
   }
 
   _large_page_size = large_page_init_decide_size();
-  const size_t default_page_size = (size_t) vm_page_size();
+  const size_t default_page_size = (size_t) os::vm_page_size();
   if (_large_page_size > default_page_size) {
     _page_sizes.add(_large_page_size);
   }
@@ -3450,9 +3447,6 @@ char* os::pd_reserve_memory_special(size_t bytes, size_t alignment, size_t page_
 bool os::pd_release_memory_special(char* base, size_t bytes) {
   assert(base != NULL, "Sanity check");
   return pd_release_memory(base, bytes);
-}
-
-void os::print_statistics() {
 }
 
 static void warn_fail_commit_memory(char* addr, size_t bytes, bool exec) {
@@ -3883,8 +3877,6 @@ int os::current_process_id() {
   return (_initial_pid ? _initial_pid : _getpid());
 }
 
-int    os::win32::_vm_page_size              = 0;
-int    os::win32::_vm_allocation_granularity = 0;
 int    os::win32::_processor_type            = 0;
 // Processor level is not available on non-NT systems, use vm_version instead
 int    os::win32::_processor_level           = 0;
@@ -3900,8 +3892,8 @@ bool   os::win32::_has_exit_bug              = true;
 void os::win32::initialize_system_info() {
   SYSTEM_INFO si;
   GetSystemInfo(&si);
-  _vm_page_size    = si.dwPageSize;
-  _vm_allocation_granularity = si.dwAllocationGranularity;
+  OSInfo::set_vm_page_size(si.dwPageSize);
+  OSInfo::set_vm_allocation_granularity(si.dwAllocationGranularity);
   _processor_type  = si.dwProcessorType;
   _processor_level = si.wProcessorLevel;
   set_processor_count(si.dwNumberOfProcessors);
@@ -4215,7 +4207,7 @@ void os::init(void) {
 
   win32::initialize_system_info();
   win32::setmode_streams();
-  _page_sizes.add(win32::vm_page_size());
+  _page_sizes.add(os::vm_page_size());
 
   // This may be overridden later when argument processing is done.
   FLAG_SET_ERGO(UseLargePagesIndividualAllocation, false);
@@ -5539,7 +5531,7 @@ void get_thread_handle_for_extended_context(HANDLE* h,
 
 // Thread sampling implementation
 //
-void os::SuspendedThreadTask::internal_do_task() {
+void SuspendedThreadTask::internal_do_task() {
   CONTEXT    ctxt;
   HANDLE     h = NULL;
 
@@ -5939,4 +5931,17 @@ void os::print_memory_mappings(char* addr, size_t bytes, outputStream* st) {
       }
     }
   }
+}
+
+// File conventions
+const char* os::file_separator() { return "\\"; }
+const char* os::line_separator() { return "\r\n"; }
+const char* os::path_separator() { return ";"; }
+
+void os::print_user_info(outputStream* st) {
+  // not implemented yet
+}
+
+void os::print_active_locale(outputStream* st) {
+  // not implemented yet
 }

@@ -205,11 +205,10 @@ public:
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
     G1ConcurrentMark* const cm = g1h->concurrent_mark();
     cm->humongous_object_eagerly_reclaimed(r);
-    assert(!cm->is_marked_in_prev_bitmap(obj) && !cm->is_marked_in_next_bitmap(obj),
-           "Eagerly reclaimed humongous region %u should not be marked at all but is in prev %s next %s",
+    assert(!cm->is_marked_in_bitmap(obj),
+           "Eagerly reclaimed humongous region %u should not be marked at all but is in bitmap %s",
            region_idx,
-           BOOL_TO_STR(cm->is_marked_in_prev_bitmap(obj)),
-           BOOL_TO_STR(cm->is_marked_in_next_bitmap(obj)));
+           BOOL_TO_STR(cm->is_marked_in_bitmap(obj)));
     _humongous_objects_reclaimed++;
     do {
       HeapRegion* next = g1h->next_region_in_humongous(r);
@@ -279,8 +278,6 @@ public:
     g1h->remove_from_old_gen_sets(0, 0, _humongous_regions_reclaimed);
     g1h->decrement_summary_bytes(_bytes_freed);
   }
-
-  static bool should_execute() {   return G1CollectedHeap::heap()->should_do_eager_reclaim(); }
 
   double worker_cost() const override { return 1.0; }
   void do_work(uint worker_id) override {
@@ -398,7 +395,7 @@ public:
 
 // Helper class to keep statistics for the collection set freeing
 class FreeCSetStats {
-  size_t _before_used_bytes;   // Usage in regions successfully evacutate
+  size_t _before_used_bytes;   // Usage in regions successfully evacuate
   size_t _after_used_bytes;    // Usage in regions failing evacuation
   size_t _bytes_allocated_in_old_since_last_gc; // Size of young regions turned into old
   size_t _failure_used_words;  // Live size in failed regions
@@ -441,7 +438,7 @@ public:
   }
 
   void account_failed_region(HeapRegion* r) {
-    size_t used_words = r->marked_bytes() / HeapWordSize;
+    size_t used_words = r->live_bytes() / HeapWordSize;
     _failure_used_words += used_words;
     _failure_waste_words += HeapRegion::GrainWords - used_words;
     _after_used_bytes += r->used();
@@ -673,7 +670,7 @@ G1PostEvacuateCollectionSetCleanupTask2::G1PostEvacuateCollectionSetCleanupTask2
 #if COMPILER2_OR_JVMCI
   add_serial_task(new UpdateDerivedPointersTask());
 #endif
-  if (EagerlyReclaimHumongousObjectsTask::should_execute()) {
+  if (G1CollectedHeap::heap()->has_humongous_reclaim_candidates()) {
     add_serial_task(new EagerlyReclaimHumongousObjectsTask());
   }
 

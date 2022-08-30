@@ -68,6 +68,7 @@ public:
   // dead too) already.
   size_t apply(oop obj) {
     HeapWord* obj_addr = cast_from_oop<HeapWord*>(obj);
+    size_t obj_size = obj->size();
     assert(_last_forwarded_object_end <= obj_addr, "should iterate in ascending address order");
     assert(_hr->is_in(obj_addr), "sanity");
 
@@ -76,21 +77,12 @@ public:
 
     zap_dead_objects(_last_forwarded_object_end, obj_addr);
 
-    assert(_cm->is_marked_in_prev_bitmap(obj), "should be correctly marked");
+    assert(_cm->is_marked_in_bitmap(obj), "should be correctly marked");
     if (_during_concurrent_start) {
-      // For the next marking info we'll only mark the
-      // self-forwarded objects explicitly if we are during
-      // concurrent start (since, normally, we only mark objects pointed
-      // to by roots if we succeed in copying them). By marking all
-      // self-forwarded objects we ensure that we mark any that are
-      // still pointed to be roots. During concurrent marking, and
-      // after concurrent start, we don't need to mark any objects
-      // explicitly and all objects in the CSet are considered
-      // (implicitly) live. So, we won't mark them explicitly and
-      // we'll leave them over NTAMS.
-      _cm->mark_in_next_bitmap(_worker_id, obj);
+      // If the evacuation failure occurs during concurrent start we should do
+      // any additional necessary per-object actions.
+      _cm->add_to_liveness(_worker_id, obj, obj_size);
     }
-    size_t obj_size = obj->size();
 
     _marked_words += obj_size;
     // Reset the markWord
@@ -103,37 +95,13 @@ public:
   }
 
   // Fill the memory area from start to end with filler objects, and update the BOT
-  // accordingly. Since we clear and use the prev bitmap for marking objects that
-  // failed evacuation, there is no work to be done there.
+  // accordingly.
   void zap_dead_objects(HeapWord* start, HeapWord* end) {
     if (start == end) {
       return;
     }
 
-    size_t gap_size = pointer_delta(end, start);
-    MemRegion mr(start, gap_size);
-    if (gap_size >= CollectedHeap::min_fill_size()) {
-      CollectedHeap::fill_with_objects(start, gap_size);
-
-      HeapWord* end_first_obj = start + cast_to_oop(start)->size();
-      _hr->update_bot_for_block(start, end_first_obj);
-      // Fill_with_objects() may have created multiple (i.e. two)
-      // objects, as the max_fill_size() is half a region.
-      // After updating the BOT for the first object, also update the
-      // BOT for the second object to make the BOT complete.
-      if (end_first_obj != end) {
-        _hr->update_bot_for_block(end_first_obj, end);
-#ifdef ASSERT
-        size_t size_second_obj = cast_to_oop(end_first_obj)->size();
-        HeapWord* end_of_second_obj = end_first_obj + size_second_obj;
-        assert(end == end_of_second_obj,
-               "More than two objects were used to fill the area from " PTR_FORMAT " to " PTR_FORMAT ", "
-               "second objects size " SIZE_FORMAT " ends at " PTR_FORMAT,
-               p2i(start), p2i(end), size_second_obj, p2i(end_of_second_obj));
-#endif
-      }
-    }
-    assert(!_cm->is_marked_in_prev_bitmap(cast_to_oop(start)), "should not be marked in prev bitmap");
+    _hr->fill_range_with_dead_objects(start, end);
   }
 
   void zap_remainder() {
@@ -164,12 +132,24 @@ public:
                                         during_concurrent_start,
                                         _worker_id);
 
-    // All objects that failed evacuation has been marked in the prev bitmap.
+    // All objects that failed evacuation has been marked in the bitmap.
     // Use the bitmap to apply the above closure to all failing objects.
-    G1CMBitMap* bitmap = const_cast<G1CMBitMap*>(_g1h->concurrent_mark()->prev_mark_bitmap());
+    G1CMBitMap* bitmap = _g1h->concurrent_mark()->mark_bitmap();
     hr->apply_to_marked_objects(bitmap, &rspc);
     // Need to zap the remainder area of the processed region.
     rspc.zap_remainder();
+    // Now clear all the marks to be ready for a new marking cyle.
+    if (!during_concurrent_start) {
+      assert(hr->top_at_mark_start() == hr->bottom(), "TAMS must be bottom to make all objects look live");
+      _g1h->clear_bitmap_for_region(hr);
+    } else {
+      assert(hr->top_at_mark_start() == hr->top(), "TAMS must be top for bitmap to have any value");
+      // Keep the bits.
+    }
+    // We never evacuate Old (non-humongous, non-archive) regions during scrubbing
+    // (only afterwards); other regions (young, humongous, archive) never need
+    // scrubbing, so the following must hold.
+    assert(hr->parsable_bottom() == hr->bottom(), "PB must be bottom to make the whole area parsable");
 
     return rspc.marked_bytes();
   }
@@ -182,10 +162,8 @@ public:
     hr->clear_index_in_opt_cset();
 
     bool during_concurrent_start = _g1h->collector_state()->in_concurrent_start_gc();
-    bool during_concurrent_mark = _g1h->collector_state()->mark_or_rebuild_in_progress();
 
-    hr->note_self_forwarding_removal_start(during_concurrent_start,
-                                           during_concurrent_mark);
+    hr->note_self_forwarding_removal_start(during_concurrent_start);
 
     _phase_times->record_or_add_thread_work_item(G1GCPhaseTimes::RestoreRetainedRegions,
                                                    _worker_id,
@@ -198,7 +176,6 @@ public:
     hr->rem_set()->clear_locked(true);
 
     hr->note_self_forwarding_removal_end(live_bytes);
-    _g1h->verifier()->check_bitmaps("Self-Forwarding Ptr Removal", hr);
 
     return false;
   }

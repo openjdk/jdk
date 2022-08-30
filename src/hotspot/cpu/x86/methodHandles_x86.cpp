@@ -531,12 +531,12 @@ void trace_method_handle_stub(const char* adaptername,
     ResourceMark rm;
     LogStream ls(lt);
     ls.print_cr("Registers:");
-    const int saved_regs_count = RegisterImpl::number_of_registers;
+    const int saved_regs_count = Register::number_of_registers;
     for (int i = 0; i < saved_regs_count; i++) {
       Register r = as_Register(i);
       // The registers are stored in reverse order on the stack (by pusha).
 #ifdef AMD64
-      assert(RegisterImpl::number_of_registers == 16, "sanity");
+      assert(Register::number_of_registers == 16, "sanity");
       if (r == rsp) {
         // rsp is actually not stored by pusha(), compute the old rsp from saved_regs (rsp after pusha): saved_regs + 16 = old rsp
         ls.print("%3s=" PTR_FORMAT, r->name(), (intptr_t)(&saved_regs[16]));

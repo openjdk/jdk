@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -380,12 +380,12 @@ struct Atomic::IsPointerConvertible<From*, To*> : AllStatic {
   static const bool value = (sizeof(yes) == sizeof(test(test_value)));
 };
 
-// Handle load for pointer, integral and enum types.
+// Handle load for pointer and integral types.
 template<typename T, typename PlatformOp>
 struct Atomic::LoadImpl<
   T,
   PlatformOp,
-  typename EnableIf<IsIntegral<T>::value || std::is_enum<T>::value || IsPointer<T>::value>::type>
+  typename EnableIf<IsIntegral<T>::value || IsPointer<T>::value>::type>
 {
   T operator()(T const volatile* dest) const {
     // Forward to the platform handler for the size of T.
@@ -430,14 +430,14 @@ struct Atomic::PlatformLoad {
   }
 };
 
-// Handle store for integral and enum types.
+// Handle store for integral types.
 //
 // All the involved types must be identical.
 template<typename T, typename PlatformOp>
 struct Atomic::StoreImpl<
   T, T,
   PlatformOp,
-  typename EnableIf<IsIntegral<T>::value || std::is_enum<T>::value>::type>
+  typename EnableIf<IsIntegral<T>::value>::type>
 {
   void operator()(T volatile* dest, T new_value) const {
     // Forward to the platform handler for the size of T.
@@ -733,13 +733,13 @@ inline bool Atomic::replace_if_null(D* volatile* dest, T* value,
   return expected_null == cmpxchg(dest, expected_null, value, order);
 }
 
-// Handle cmpxchg for integral and enum types.
+// Handle cmpxchg for integral types.
 //
 // All the involved types must be identical.
 template<typename T>
 struct Atomic::CmpxchgImpl<
   T, T, T,
-  typename EnableIf<IsIntegral<T>::value || std::is_enum<T>::value>::type>
+  typename EnableIf<IsIntegral<T>::value>::type>
 {
   T operator()(T volatile* dest, T compare_value, T exchange_value,
                atomic_memory_order order) const {
@@ -868,13 +868,13 @@ inline T Atomic::CmpxchgByteUsingInt::operator()(T volatile* dest,
   return PrimitiveConversions::cast<T>(get_byte_in_int(cur, idx));
 }
 
-// Handle xchg for integral and enum types.
+// Handle xchg for integral types.
 //
 // All the involved types must be identical.
 template<typename T>
 struct Atomic::XchgImpl<
   T, T,
-  typename EnableIf<IsIntegral<T>::value || std::is_enum<T>::value>::type>
+  typename EnableIf<IsIntegral<T>::value>::type>
 {
   T operator()(T volatile* dest, T exchange_value, atomic_memory_order order) const {
     // Forward to the platform handler for the size of T.

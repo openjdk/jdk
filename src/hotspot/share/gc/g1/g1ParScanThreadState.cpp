@@ -111,11 +111,11 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h,
   initialize_numa_stats();
 }
 
-size_t G1ParScanThreadState::flush(size_t* surviving_young_words) {
+size_t G1ParScanThreadState::flush(size_t* surviving_young_words, uint num_workers) {
   _rdc_local_qset.flush();
   flush_numa_stats();
   // Update allocation statistics.
-  _plab_allocator->flush_and_retire_stats();
+  _plab_allocator->flush_and_retire_stats(num_workers);
   _g1h->policy()->record_age_table(&_age_table);
 
   if (_evacuation_failed_info.has_failed()) {
@@ -197,7 +197,7 @@ void G1ParScanThreadState::do_oop_evac(T* p) {
   // as they are not added to the collection set due to above precondition.
   assert(!region_attr.is_humongous(),
          "Obj " PTR_FORMAT " should not refer to humongous region %u from " PTR_FORMAT,
-         p2i(obj), _g1h->addr_to_region(cast_from_oop<HeapWord*>(obj)), p2i(p));
+         p2i(obj), _g1h->addr_to_region(obj), p2i(p));
 
   if (!region_attr.is_in_cset()) {
     // In this case somebody else already did all the work.
@@ -592,7 +592,7 @@ void G1ParScanThreadStateSet::flush() {
     // because it resets the PLAB allocator where we get this info from.
     size_t lab_waste_bytes = pss->lab_waste_words() * HeapWordSize;
     size_t lab_undo_waste_bytes = pss->lab_undo_waste_words() * HeapWordSize;
-    size_t copied_bytes = pss->flush(_surviving_young_words_total) * HeapWordSize;
+    size_t copied_bytes = pss->flush(_surviving_young_words_total, _n_workers) * HeapWordSize;
 
     p->record_or_add_thread_work_item(G1GCPhaseTimes::MergePSS, worker_id, copied_bytes, G1GCPhaseTimes::MergePSSCopiedBytes);
     p->record_or_add_thread_work_item(G1GCPhaseTimes::MergePSS, worker_id, lab_waste_bytes, G1GCPhaseTimes::MergePSSLABWasteBytes);
@@ -624,8 +624,8 @@ oop G1ParScanThreadState::handle_evacuation_failure_par(oop old, markWord m, siz
     HeapRegion* r = _g1h->heap_region_containing(old);
 
     // Objects failing evacuation will turn into old objects since the regions
-    // are relabeled as such. We mark the failing objects in the prev bitmap and
-    // later use it to handle all failed objects.
+    // are relabeled as such. We mark the failing objects in the marking bitmap
+    // and later use it to handle all failed objects.
     _g1h->mark_evac_failure_object(old);
 
     if (_evac_failure_regions->record(r->hrm_index())) {

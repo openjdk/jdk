@@ -47,6 +47,9 @@ import sun.security.jca.*;
  * implementation-specific location, which is typically the properties file
  * {@code conf/security/java.security} in the Java installation directory.
  *
+ * @implNote If the properties file fails to load, the JDK implementation will
+ * throw an unspecified error when initializing the {@code Security} class.
+ *
  * @author Benjamin Renaud
  * @since 1.1
  */
@@ -183,26 +186,9 @@ public final class Security {
         }
 
         if (!loadedProps) {
-            initializeStatic();
-            if (sdebug != null) {
-                sdebug.println("unable to load security properties " +
-                        "-- using defaults");
-            }
+            throw new InternalError("java.security file missing");
         }
 
-    }
-
-    /*
-     * Initialize to default values, if <java.home>/lib/java.security
-     * is not found.
-     */
-    private static void initializeStatic() {
-        props.put("security.provider.1", "sun.security.provider.Sun");
-        props.put("security.provider.2", "sun.security.rsa.SunRsaSign");
-        props.put("security.provider.3", "sun.security.ssl.SunJSSE");
-        props.put("security.provider.4", "com.sun.crypto.provider.SunJCE");
-        props.put("security.provider.5", "sun.security.jgss.SunProvider");
-        props.put("security.provider.6", "com.sun.security.sasl.Provider");
     }
 
     /**
@@ -345,7 +331,7 @@ public final class Security {
      * added, or -1 if the provider was not added because it is
      * already installed.
      *
-     * @throws  NullPointerException if provider is null
+     * @throws  NullPointerException if provider is {@code null}
      * @throws  SecurityException
      *          if a security manager exists and its {@link
      *          java.lang.SecurityManager#checkSecurityAccess} method
@@ -385,7 +371,7 @@ public final class Security {
      * added, or -1 if the provider was not added because it is
      * already installed.
      *
-     * @throws  NullPointerException if provider is null
+     * @throws  NullPointerException if provider is {@code null}
      * @throws  SecurityException
      *          if a security manager exists and its {@link
      *          java.lang.SecurityManager#checkSecurityAccess} method
@@ -414,7 +400,7 @@ public final class Security {
      * providers).
      *
      * <p>This method returns silently if the provider is not installed or
-     * if name is null.
+     * if name is {@code null}.
      *
      * <p>First, if there is a security manager, its
      * {@code checkSecurityAccess}
@@ -456,8 +442,8 @@ public final class Security {
 
     /**
      * Returns the provider installed with the specified name, if
-     * any. Returns null if no provider with the specified name is
-     * installed or if name is null.
+     * any. Returns {@code null} if no provider with the specified name is
+     * installed or if name is {@code null}.
      *
      * @param name the name of the provider to get.
      *
@@ -472,8 +458,8 @@ public final class Security {
 
     /**
      * Returns an array containing all installed providers that satisfy the
-     * specified selection criterion, or null if no such providers have been
-     * installed. The returned providers are ordered
+     * specified selection criterion, or {@code null} if no such providers
+     * have been installed. The returned providers are ordered
      * according to their
      * {@linkplain #insertProviderAt(java.security.Provider, int) preference order}.
      *
@@ -521,11 +507,11 @@ public final class Security {
      * providers. The filter is case-insensitive.
      *
      * @return all the installed providers that satisfy the selection
-     * criterion, or null if no such providers have been installed.
+     * criterion, or {@code null} if no such providers have been installed.
      *
      * @throws InvalidParameterException
      *         if the filter is not in the required format
-     * @throws NullPointerException if filter is null
+     * @throws NullPointerException if filter is {@code null}
      *
      * @see #getProviders(java.util.Map)
      * @since 1.3
@@ -551,8 +537,8 @@ public final class Security {
 
     /**
      * Returns an array containing all installed providers that satisfy the
-     * specified selection criteria, or null if no such providers have been
-     * installed. The returned providers are ordered
+     * specified selection criteria, or {@code null} if no such providers have
+     * been installed. The returned providers are ordered
      * according to their
      * {@linkplain #insertProviderAt(java.security.Provider, int)
      * preference order}.
@@ -592,11 +578,11 @@ public final class Security {
      * providers. The filter is case-insensitive.
      *
      * @return all the installed providers that satisfy the selection
-     * criteria, or null if no such providers have been installed.
+     * criteria, or {@code null} if no such providers have been installed.
      *
      * @throws InvalidParameterException
      *         if the filter is not in the required format
-     * @throws NullPointerException if filter is null
+     * @throws NullPointerException if filter is {@code null}
      *
      * @see #getProviders(java.lang.String)
      * @since 1.3
@@ -673,7 +659,7 @@ public final class Security {
      * an instance of an implementation of the requested algorithm
      * and type, and the second object in the array identifies the provider
      * of that implementation.
-     * The {@code provider} argument can be null, in which case all
+     * The {@code provider} argument can be {@code null}, in which case all
      * configured providers will be searched in order of preference.
      */
     static Object[] getImpl(String algorithm, String type, String provider)
@@ -704,7 +690,7 @@ public final class Security {
      * an instance of an implementation of the requested algorithm
      * and type, and the second object in the array identifies the provider
      * of that implementation.
-     * The {@code provider} argument cannot be null.
+     * The {@code provider} argument cannot be {@code null}.
      */
     static Object[] getImpl(String algorithm, String type, Provider provider)
             throws NoSuchAlgorithmException {
@@ -737,7 +723,7 @@ public final class Security {
      *          java.lang.SecurityManager#checkPermission} method
      *          denies
      *          access to retrieve the specified security property value
-     * @throws  NullPointerException is key is null
+     * @throws  NullPointerException is key is {@code null}
      *
      * @see #setProperty
      * @see java.security.SecurityPermission
@@ -772,7 +758,7 @@ public final class Security {
      *          if a security manager exists and its {@link
      *          java.lang.SecurityManager#checkPermission} method
      *          denies access to set the specified security property value
-     * @throws  NullPointerException if key or datum is null
+     * @throws  NullPointerException if key or datum is {@code null}
      *
      * @see #getProperty
      * @see java.security.SecurityPermission
@@ -876,7 +862,7 @@ public final class Security {
     }
 
     /*
-     * Returns true if the given provider satisfies
+     * Returns {@code true} if the given provider satisfies
      * the selection criterion key:value.
      */
     private static boolean isCriterionSatisfied(Provider prov,
@@ -935,8 +921,8 @@ public final class Security {
     }
 
     /*
-     * Returns true if the attribute is a standard attribute;
-     * otherwise, returns false.
+     * Returns {@code true} if the attribute is a standard attribute;
+     * otherwise, returns {@code false}.
      */
     private static boolean isStandardAttr(String attribute) {
         // For now, we just have two standard attributes:
@@ -948,8 +934,8 @@ public final class Security {
     }
 
     /*
-     * Returns true if the requested attribute value is supported;
-     * otherwise, returns false.
+     * Returns {@code true} if the requested attribute value is supported;
+     * otherwise, returns {@code false}.
      */
     private static boolean isConstraintSatisfied(String attribute,
                                                  String value,
@@ -1027,23 +1013,25 @@ public final class Security {
     }
 
     /**
-     * Returns a Set of Strings containing the names of all available
-     * algorithms or types for the specified Java cryptographic service
-     * (e.g., Signature, MessageDigest, Cipher, Mac, KeyStore). Returns
-     * an empty Set if there is no provider that supports the
-     * specified service or if serviceName is null. For a complete list
-     * of Java cryptographic services, please see the
+     * Returns a Set of {@code String} objects containing the names of all
+     * available algorithms or types for the specified Java cryptographic
+     * service (e.g., {@code Signature}, {@code MessageDigest}, {@code Cipher},
+     * {@code Mac}, {@code KeyStore}).
+     * Returns an empty set if there is no provider that supports the
+     * specified service or if {@code serviceName} is {@code null}.
+     * For a complete list of Java cryptographic services, please see the
      * {@extLink security_guide_jca
      * Java Cryptography Architecture (JCA) Reference Guide}.
      * Note: the returned set is immutable.
      *
      * @param serviceName the name of the Java cryptographic
-     * service (e.g., Signature, MessageDigest, Cipher, Mac, KeyStore).
+     * service (e.g., {@code Signature}, {@code MessageDigest}, {@code Cipher},
+     * {@code Mac}, {@code KeyStore}).
      * Note: this parameter is case-insensitive.
      *
-     * @return a Set of Strings containing the names of all available
-     * algorithms or types for the specified Java cryptographic service
-     * or an empty set if no provider supports the specified service.
+     * @return a Set of {@code String} objects containing the names of all
+     * available algorithms or types for the specified Java cryptographic
+     * service or an empty set if no provider supports the specified service.
      *
      * @since 1.4
      */

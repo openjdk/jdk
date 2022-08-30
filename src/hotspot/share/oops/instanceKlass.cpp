@@ -34,7 +34,6 @@
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/moduleEntry.hpp"
-#include "classfile/resolutionErrors.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/systemDictionaryShared.hpp"
@@ -577,7 +576,6 @@ void InstanceKlass::deallocate_record_components(ClassLoaderData* loader_data,
 // This function deallocates the metadata and C heap pointers that the
 // InstanceKlass points to.
 void InstanceKlass::deallocate_contents(ClassLoaderData* loader_data) {
-
   // Orphan the mirror first, CMS thinks it's still live.
   if (java_mirror() != NULL) {
     java_lang_Class::set_klass(java_mirror(), NULL);
@@ -2881,11 +2879,10 @@ void InstanceKlass::set_package(ClassLoaderData* loader_data, PackageEntry* pkg_
         // in the java.base module it will be caught later when java.base
         // is defined by ModuleEntryTable::verify_javabase_packages check.
         assert(ModuleEntryTable::javabase_moduleEntry() != NULL, JAVA_BASE_NAME " module is NULL");
-        _package_entry = loader_data->packages()->lookup(pkg_name, ModuleEntryTable::javabase_moduleEntry());
+        _package_entry = loader_data->packages()->create_entry_if_absent(pkg_name, ModuleEntryTable::javabase_moduleEntry());
       } else {
         assert(loader_data->unnamed_module() != NULL, "unnamed module is NULL");
-        _package_entry = loader_data->packages()->lookup(pkg_name,
-                                                         loader_data->unnamed_module());
+        _package_entry = loader_data->packages()->create_entry_if_absent(pkg_name, loader_data->unnamed_module());
       }
 
       // A package should have been successfully created

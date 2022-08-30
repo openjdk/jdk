@@ -49,8 +49,7 @@ public final class CheckCleanerBound {
         // Check if the object has been collected.  The collection will not
         // happen if the cleaner implementation in PasswordCallback is bound
         // to the PasswordCallback object.
-        ForceGC gc = new ForceGC();
-        if (!gc.await(() -> weakRef.get() == null)) {
+        if (!ForceGC.wait(() -> weakRef.refersTo(null))) {
             throw new RuntimeException(
                 "PasswordCallback object is not released");
         }

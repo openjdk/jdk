@@ -220,7 +220,7 @@ public:
     return extend(uval, msb - lsb);
   }
 
-  static void patch(address a, int msb, int lsb, uint64_t val) {
+  static ALWAYSINLINE void patch(address a, int msb, int lsb, uint64_t val) {
     int nbits = msb - lsb + 1;
     guarantee(val < (1ULL << nbits), "Field too big for insn");
     assert_cond(msb >= lsb);
@@ -718,7 +718,7 @@ public:
     wrap_label(Rd, L, &Assembler::_adrp);
   }
 
-  void adrp(Register Rd, const Address &dest, uint64_t &offset);
+  void adrp(Register Rd, const Address &dest, uint64_t &offset) = delete;
 
 #undef INSN
 
@@ -2566,6 +2566,7 @@ public:
   INSN(fcmeq, 0, 0, 0b111001);
   INSN(fcmgt, 1, 1, 0b111001);
   INSN(fcmge, 1, 0, 0b111001);
+  INSN(facgt, 1, 1, 0b111011);
 
 #undef INSN
 
@@ -3512,18 +3513,22 @@ public:
   void NAME(Condition cond, PRegister Pd, SIMD_RegVariant T, PRegister Pg,             \
             FloatRegister Zn, FloatRegister Zm) {                                      \
     starti;                                                                            \
-    if (fp == 0) {                                                                     \
-      assert(T != Q, "invalid size");                                                  \
-    } else {                                                                           \
-      assert(T != B && T != Q, "invalid size");                                        \
-      assert(cond != HI && cond != HS, "invalid condition for fcm");                   \
+    assert(T != Q, "invalid size");                                                    \
+    bool is_absolute = op2 == 0b11;                                                    \
+    if (fp == 1) {                                                                     \
+      assert(T != B, "invalid size");                                                  \
+      if (is_absolute) {                                                               \
+        assert(cond == GT || cond == GE, "invalid condition for fac");                 \
+      } else {                                                                         \
+        assert(cond != HI && cond != HS, "invalid condition for fcm");                 \
+      }                                                                                \
     }                                                                                  \
     int cond_op;                                                                       \
     switch(cond) {                                                                     \
       case EQ: cond_op = (op2 << 2) | 0b10; break;                                     \
       case NE: cond_op = (op2 << 2) | 0b11; break;                                     \
-      case GE: cond_op = (op2 << 2) | 0b00; break;                                     \
-      case GT: cond_op = (op2 << 2) | 0b01; break;                                     \
+      case GE: cond_op = (op2 << 2) | (is_absolute ? 0b01 : 0b00); break;              \
+      case GT: cond_op = (op2 << 2) | (is_absolute ? 0b11 : 0b01); break;              \
       case HI: cond_op = 0b0001; break;                                                \
       case HS: cond_op = 0b0000; break;                                                \
       default:                                                                         \
@@ -3533,8 +3538,9 @@ public:
     pgrf(Pg, 10), rf(Zn, 5), f(cond_op & 1, 4), prf(Pd, 0);                            \
   }
 
-  INSN(sve_cmp, 0b00100100, 0b10, 0);
-  INSN(sve_fcm, 0b01100101, 0b01, 1);
+  INSN(sve_cmp, 0b00100100, 0b10, 0); // Integer compare vectors
+  INSN(sve_fcm, 0b01100101, 0b01, 1); // Floating-point compare vectors
+  INSN(sve_fac, 0b01100101, 0b11, 1); // Floating-point absolute compare vectors
 #undef INSN
 
 // SVE Integer Compare - Signed Immediate
@@ -3635,20 +3641,27 @@ void sve_fcm(Condition cond, PRegister Pd, SIMD_RegVariant T,
   INSN(sve_uzp2, 0b1); // Concatenate odd elements from two predicates
 #undef INSN
 
-// Predicate counted loop (SVE) (32-bit variants are not included)
-#define INSN(NAME, decode)                                                \
+// SVE integer compare scalar count and limit
+#define INSN(NAME, sf, op)                                                \
   void NAME(PRegister Pd, SIMD_RegVariant T, Register Rn, Register Rm) {  \
     starti;                                                               \
     assert(T != Q, "invalid register variant");                           \
     f(0b00100101, 31, 24), f(T, 23, 22), f(1, 21),                        \
-    zrf(Rm, 16), f(0, 15, 13), f(1, 12), f(decode >> 1, 11, 10),          \
-    zrf(Rn, 5), f(decode & 1, 4), prf(Pd, 0);                             \
+    zrf(Rm, 16), f(0, 15, 13), f(sf, 12), f(op >> 1, 11, 10),             \
+    zrf(Rn, 5), f(op & 1, 4), prf(Pd, 0);                                 \
   }
-
-  INSN(sve_whilelt, 0b010);  // While incrementing signed scalar less than scalar
-  INSN(sve_whilele, 0b011);  // While incrementing signed scalar less than or equal to scalar
-  INSN(sve_whilelo, 0b110);  // While incrementing unsigned scalar lower than scalar
-  INSN(sve_whilels, 0b111);  // While incrementing unsigned scalar lower than or the same as scalar
+  // While incrementing signed scalar less than scalar
+  INSN(sve_whileltw, 0b0, 0b010);
+  INSN(sve_whilelt,  0b1, 0b010);
+  // While incrementing signed scalar less than or equal to scalar
+  INSN(sve_whilelew, 0b0, 0b011);
+  INSN(sve_whilele,  0b1, 0b011);
+  // While incrementing unsigned scalar lower than scalar
+  INSN(sve_whilelow, 0b0, 0b110);
+  INSN(sve_whilelo,  0b1, 0b110);
+  // While incrementing unsigned scalar lower than or the same as scalar
+  INSN(sve_whilelsw, 0b0, 0b111);
+  INSN(sve_whilels,  0b1, 0b111);
 #undef INSN
 
   // SVE predicate reverse

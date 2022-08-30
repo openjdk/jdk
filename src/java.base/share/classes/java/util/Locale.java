@@ -48,7 +48,6 @@ import java.io.Serializable;
 import java.text.MessageFormat;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.spi.LocaleNameProvider;
-import java.util.stream.Collectors;
 
 import jdk.internal.vm.annotation.Stable;
 
@@ -2335,7 +2334,7 @@ public final class Locale implements Cloneable, Serializable {
         // If we have no list patterns, compose the list in a simple,
         // non-localized way.
         if (pattern == null) {
-            return Arrays.stream(stringList).collect(Collectors.joining(","));
+            return String.join(",", stringList);
         }
 
         return switch (stringList.length) {
@@ -2364,25 +2363,24 @@ public final class Locale implements Cloneable, Serializable {
     /**
      * @serialField language    String
      *      language subtag in lower case.
-     *      (See <a href="java.base/java/util/Locale.html#getLanguage()">getLanguage()</a>)
+     *      (See {@link #getLanguage()})
      * @serialField country     String
      *      country subtag in upper case.
-     *      (See <a href="java.base/java/util/Locale.html#getCountry()">getCountry()</a>)
+     *      (See {@link #getCountry()})
      * @serialField variant     String
      *      variant subtags separated by LOWLINE characters.
-     *      (See <a href="java.base/java/util/Locale.html#getVariant()">getVariant()</a>)
+     *      (See {@link #getVariant()})
      * @serialField hashcode    int
      *      deprecated, for forward compatibility only
      * @serialField script      String
      *      script subtag in title case
-     *      (See <a href="java.base/java/util/Locale.html#getScript()">getScript()</a>)
+     *      (See {@link #getScript()})
      * @serialField extensions  String
      *      canonical representation of extensions, that is,
      *      BCP47 extensions in alphabetical order followed by
      *      BCP47 private use subtags, all in lower case letters
      *      separated by HYPHEN-MINUS characters.
-     *      (See <a href="java.base/java/util/Locale.html#getExtensionKeys()">getExtensionKeys()</a>,
-     *      <a href="java.base/java/util/Locale.html#getExtension(char)">getExtension(char)</a>)
+     *      (See {@link #getExtensionKeys()}, {@link #getExtension(char)})
      */
     @java.io.Serial
     private static final ObjectStreamField[] serialPersistentFields = {

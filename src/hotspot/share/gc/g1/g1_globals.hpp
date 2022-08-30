@@ -310,13 +310,6 @@
           "The target number of mixed GCs after a marking cycle.")          \
           range(0, max_uintx)                                               \
                                                                             \
-  product(bool, G1EagerReclaimHumongousObjects, true, EXPERIMENTAL,         \
-          "Try to reclaim dead large objects at every young GC.")           \
-                                                                            \
-  product(bool, G1EagerReclaimHumongousObjectsWithStaleRefs, true, EXPERIMENTAL, \
-          "Try to reclaim dead large objects that have a few stale "        \
-          "references at every young GC.")                                  \
-                                                                            \
   product(uint, G1EagerReclaimRemSetThreshold, 0, EXPERIMENTAL,             \
           "Maximum number of remembered set entries a humongous region "    \
           "otherwise eligible for eager reclaim may have to be a candidate "\

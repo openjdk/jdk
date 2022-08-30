@@ -173,7 +173,6 @@ public:
 
   virtual void invalidate(MemRegion mr);
   void clear(MemRegion mr);
-  void dirty(MemRegion mr);
 
   // Provide read-only access to the card table array.
   const CardValue* byte_for_const(const void* p) const {
@@ -189,7 +188,9 @@ public:
            "out of bounds access to card marking array. p: " PTR_FORMAT
            " _byte_map: " PTR_FORMAT " _byte_map + _byte_map_size: " PTR_FORMAT,
            p2i(p), p2i(_byte_map), p2i(_byte_map + _byte_map_size));
-    size_t delta = pointer_delta(p, _byte_map_base, sizeof(CardValue));
+    // As _byte_map_base may be "negative" (the card table has been allocated before
+    // the heap in memory), do not use pointer_delta() to avoid the assertion failure.
+    size_t delta = p - _byte_map_base;
     HeapWord* result = (HeapWord*) (delta << _card_shift);
     assert(_whole_heap.contains(result),
            "Returning result = " PTR_FORMAT " out of bounds of "
@@ -217,13 +218,6 @@ public:
   // *** Card-table-RemSet-specific things.
 
   static uintx ct_max_alignment_constraint();
-
-  // Return the MemRegion corresponding to the first maximal run
-  // of dirty cards lying completely within MemRegion mr.
-  // If reset is "true", then sets those card table entries to the given
-  // value.
-  MemRegion dirty_card_range_after_reset(MemRegion mr, bool reset,
-                                         int reset_val);
 
   static uint card_shift() {
     return _card_shift;
