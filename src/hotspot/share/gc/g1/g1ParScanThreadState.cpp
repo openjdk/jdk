@@ -195,7 +195,7 @@ void G1ParScanThreadState::do_oop_evac(T* p) {
   const G1HeapRegionAttr region_attr = _g1h->region_attr(obj);
   // References pushed onto the work stack should never point to a humongous region
   // as they are not added to the collection set due to above precondition.
-  assert(!region_attr.is_humongous(),
+  assert(!region_attr.is_humongous_candidate(),
          "Obj " PTR_FORMAT " should not refer to humongous region %u from " PTR_FORMAT,
          p2i(obj), _g1h->addr_to_region(obj), p2i(p));
 
@@ -327,7 +327,7 @@ HeapWord* G1ParScanThreadState::allocate_in_next_plab(G1HeapRegionAttr* dest,
                                                       bool previous_plab_refill_failed,
                                                       uint node_index) {
 
-  assert(dest->is_in_cset_or_humongous(), "Unexpected dest: %s region attr", dest->get_type_str());
+  assert(dest->is_in_cset_or_humongous_candidate(), "Unexpected dest: %s region attr", dest->get_type_str());
 
   // Right now we only have two types of regions (young / old) so
   // let's keep the logic here simple. We can generalize it when necessary.
