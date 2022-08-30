@@ -1522,6 +1522,10 @@ final class HttpClientImpl extends HttpClient implements Trackable {
         return Optional.ofNullable(connectTimeout);
     }
 
+    public Optional<Duration> idleConnectionTimeout() {
+        return Optional.ofNullable(getIdleConnectionTimeoutProp());
+    }
+
     @Override
     public Optional<ProxySelector> proxy() {
         return Optional.ofNullable(userProxySelector);
@@ -1684,6 +1688,14 @@ final class HttpClientImpl extends HttpClient implements Trackable {
     // the SSL connections managed by this client.
     BufferSupplier getSSLBufferSupplier() {
         return sslBufferSupplier;
+    }
+
+    private Duration getIdleConnectionTimeoutProp() {
+        // Http 2 in prop name somewhere
+        String s = Utils.getNetProperty("jdk.httpclient.http2IdleConnectionTimeout");
+        if (s != null)
+            return Duration.ofMillis(Long.parseLong(s));
+        return null;
     }
 
     // An implementation of BufferSupplier that manages a pool of

@@ -30,8 +30,10 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
 import java.net.URI;
+import java.net.http.HttpTimeoutException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
@@ -121,6 +123,7 @@ class Http2Connection  {
 
     private static final int MAX_CLIENT_STREAM_ID = Integer.MAX_VALUE; // 2147483647
     private static final int MAX_SERVER_STREAM_ID = Integer.MAX_VALUE - 1; // 2147483646
+    private IdleConnectionTimeoutEvent idleConnectionTimeoutEvent;  // may be null
 
     /**
      * Flag set when no more streams to be opened on this connection.
@@ -181,6 +184,28 @@ class Http2Connection  {
      *  and SSLTube.recycler.
      */
 
+    // An Idle connection is one that has no active streams
+    // and has not sent the final stream flag
+    final class IdleConnectionTimeoutEvent extends TimeoutEvent {
+
+        IdleConnectionTimeoutEvent(Duration duration) {
+            super(duration);
+        }
+
+        @Override
+        public void handle() {
+            if (debug.on()) {
+                debug.log("HTTP connection idle for too long");
+            }
+            HttpTimeoutException hte = new HttpTimeoutException("HTTP connection idle, no active streams. Shutting down.");
+            shutdown(hte);
+        }
+
+        @Override
+        public String toString() {
+            return "IdleConnectionTimeoutEvent, " + super.toString();
+        }
+    }
 
     // A small class that allows to control frames with respect to the state of
     // the connection preface. Any data received before the connection
@@ -982,6 +1007,8 @@ class Http2Connection  {
         }
     }
 
+    // Check if this is the last stream aside from stream 0,
+    // arm timeout
     void closeStream(int streamid) {
         if (debug.on()) debug.log("Closed stream %d", streamid);
 
@@ -1005,6 +1032,18 @@ class Http2Connection  {
         if (finalStream() && streams.isEmpty()) {
             // should be only 1 stream, but there might be more if server push
             close();
+        } else {
+            // Start timer if property present and not already created
+            synchronized (this) {
+                // idleConnectionTimerEvent is always accessed within a synchronized block
+                if (streams.isEmpty() && idleConnectionTimeoutEvent == null) {
+                    idleConnectionTimeoutEvent = client().idleConnectionTimeout()
+                            .map(IdleConnectionTimeoutEvent::new).orElse(null);
+                    if (idleConnectionTimeoutEvent != null) {
+                        client().registerTimer(idleConnectionTimeoutEvent);
+                    }
+                }
+            }
         }
     }
 
@@ -1177,6 +1216,12 @@ class Http2Connection  {
                 }
                 client().streamReference();
                 streams.put(streamid, stream);
+                // idleConnectionTimerEvent is always accessed within a synchronized block
+                if (idleConnectionTimeoutEvent != null) {
+                    client().cancelTimer(idleConnectionTimeoutEvent);
+                    System.err.println("Http2Connection: Timer Event Cancelled");
+                    idleConnectionTimeoutEvent = null;
+                }
                 return;
             }
         }
