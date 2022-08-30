@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,14 @@
 
 package sun.nio.fs;
 
-import java.nio.file.*;
+import java.nio.file.FileStore;
+import java.nio.file.WatchService;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import static sun.nio.fs.LinuxNativeDispatcher.*;
 
 /**
@@ -36,7 +41,7 @@ import static sun.nio.fs.LinuxNativeDispatcher.*;
 
 class LinuxFileSystem extends UnixFileSystem {
     LinuxFileSystem(UnixFileSystemProvider provider, String dir) {
-        super(provider, dir);
+        super(provider, dir, new LinuxCopyFile());
     }
 
     @Override
@@ -120,8 +125,6 @@ class LinuxFileSystem extends UnixFileSystem {
     List<UnixMountEntry> getMountEntries() {
         return getMountEntries("/etc/mtab");
     }
-
-
 
     @Override
     FileStore getFileStore(UnixMountEntry entry) throws IOException {

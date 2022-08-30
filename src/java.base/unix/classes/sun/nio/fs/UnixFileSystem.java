@@ -25,13 +25,31 @@
 
 package sun.nio.fs;
 
-import java.nio.file.*;
-import java.nio.file.attribute.*;
+import java.nio.ByteBuffer;
+import java.nio.file.CopyOption;
+import java.nio.file.FileStore;
+import java.nio.file.FileSystem;
+import java.nio.file.Path;
+import java.nio.file.PathMatcher;
+import java.nio.file.attribute.GroupPrincipal;
+import java.nio.file.attribute.UserPrincipal;
+import java.nio.file.attribute.UserPrincipalLookupService;
 import java.nio.file.spi.FileSystemProvider;
 import java.io.IOException;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
+import jdk.internal.misc.Blocker;
+import sun.nio.ch.DirectBuffer;
+import sun.nio.ch.IOStatus;
 import sun.security.action.GetPropertyAction;
+import static sun.nio.fs.UnixConstants.*;
+import static sun.nio.fs.UnixNativeDispatcher.*;
 
 /**
  * Base implementation of FileSystem for Unix-like implementations.
@@ -44,9 +62,10 @@ abstract class UnixFileSystem
     private final byte[] defaultDirectory;
     private final boolean needToResolveAgainstDefaultDirectory;
     private final UnixPath rootDirectory;
+    private final UnixCopyFile copier;
 
-    // package-private
-    UnixFileSystem(UnixFileSystemProvider provider, String dir) {
+    protected UnixFileSystem(UnixFileSystemProvider provider, String dir,
+                             UnixCopyFile copier) {
         this.provider = provider;
         this.defaultDirectory = Util.toBytes(UnixPath.normalizeAndCheck(dir));
         if (this.defaultDirectory[0] != '/') {
@@ -77,6 +96,14 @@ abstract class UnixFileSystem
 
         // the root directory
         this.rootDirectory = new UnixPath(this, "/");
+
+        // the copy and move implementation
+        this.copier = copier != null ? copier : new UnixCopyFile();
+    }
+
+    // package-private
+    UnixFileSystem(UnixFileSystemProvider provider, String dir) {
+        this(provider, dir, new UnixCopyFile());
     }
 
     // package-private
@@ -119,6 +146,20 @@ abstract class UnixFileSystem
     @Override
     public final void close() throws IOException {
         throw new UnsupportedOperationException();
+    }
+
+    // copy file from source to target
+    void copy(UnixPath source, UnixPath target, CopyOption... options)
+        throws IOException
+    {
+        copier.copy(source, target, options);
+    }
+
+    // move file from source to target
+    void move(UnixPath source, UnixPath target, CopyOption... options)
+        throws IOException
+    {
+        copier.move(source, target, options);
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,11 @@
 #include <unistd.h>
 #include <errno.h>
 
+#include <sys/sendfile.h>
+#include <fcntl.h>
+
+#include "sun_nio_fs_LinuxCopyFile.h"
+
 #define RESTARTABLE(_cmd, _result) do { \
   do { \
     _result = _cmd; \
@@ -47,40 +52,43 @@ static void throwUnixException(JNIEnv* env, int errnum) {
     }
 }
 
-// Copy via an intermediate temporary direct buffer
-JNIEXPORT void JNICALL
-Java_sun_nio_fs_UnixCopyFile_bufferedCopy0
-    (JNIEnv* env, jclass this, jint dst, jint src, jlong address,
-     jint transferSize, jlong cancelAddress)
+// Copy all bytes from src to dst, within the kernel if possible,
+// and return zero, otherwise return the appropriate status code.
+//
+// Return value
+//   0 on success
+//   IOS_UNAVAILABLE if the platform function would block
+//   IOS_UNSUPPORTED_CASE if the call does not work with the given parameters
+//   IOS_UNSUPPORTED if direct copying is not supported on this platform
+//   IOS_THROWN if a Java exception is thrown
+//
+JNIEXPORT jint JNICALL
+Java_sun_nio_fs_LinuxCopyFile_directCopy0
+    (JNIEnv* env, jclass this, jint dst, jint src, jlong cancelAddress)
 {
     volatile jint* cancel = (jint*)jlong_to_ptr(cancelAddress);
 
-    char* buf = (char*)jlong_to_ptr(address);
+    // Transfer within the kernel
+    const size_t count = cancel != NULL ?
+        1048576 :   // 1 MB to give cancellation a chance
+        0x7ffff000; // maximum number of bytes that sendfile() can transfer
+    ssize_t bytes_sent;
 
-    for (;;) {
-        ssize_t n, pos, len;
-        RESTARTABLE(read((int)src, buf, transferSize), n);
-        if (n <= 0) {
-            if (n < 0)
-                throwUnixException(env, errno);
-            return;
+    do {
+        RESTARTABLE(sendfile64(dst, src, NULL, count), bytes_sent);
+        if (bytes_sent < 0) {
+            if (errno == EAGAIN)
+                return IOS_UNAVAILABLE;
+            if (errno == EINVAL || errno == ENOSYS)
+                return IOS_UNSUPPORTED_CASE;
+            throwUnixException(env, errno);
+            return IOS_THROWN;
         }
         if (cancel != NULL && *cancel != 0) {
             throwUnixException(env, ECANCELED);
-            return;
+            return IOS_THROWN;
         }
-        pos = 0;
-        len = n;
-        do {
-            char* bufp = buf;
-            bufp += pos;
-            RESTARTABLE(write((int)dst, bufp, len), n);
-            if (n == -1) {
-                throwUnixException(env, errno);
-                return;
-            }
-            pos += n;
-            len -= n;
-        } while (len > 0);
-    }
+    } while (bytes_sent > 0);
+
+    return 0;
 }
