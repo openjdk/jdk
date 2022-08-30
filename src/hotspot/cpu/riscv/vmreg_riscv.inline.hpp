@@ -30,7 +30,7 @@ inline VMReg Register::RegisterImpl::as_VMReg() const {
   return VMRegImpl::as_VMReg(encoding() * Register::max_slots_per_register);
 }
 
-inline VMReg FloatRegister::FloatRegister::FloatRegisterImpl::as_VMReg() const {
+inline VMReg FloatRegister::FloatRegisterImpl::as_VMReg() const {
   return VMRegImpl::as_VMReg((encoding() * FloatRegister::max_slots_per_register) +
                              ConcreteRegisterImpl::max_gpr);
 }
