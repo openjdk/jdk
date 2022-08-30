@@ -108,7 +108,31 @@ static void purge_deleted_entries() {
   }
 }
 
-static int purge_entries_from_table() {
+void ProtectionDomainCacheTable::unlink() {
+  // The dictionary entries _pd_set field should be null also, so nothing to do.
+  assert(java_lang_System::allow_security_manager(), "should not be called otherwise");
+
+  // Create a list for holding deleted entries
+  if (_delete_list == NULL) {
+    _delete_list = new (ResourceObj::C_HEAP, mtClass)
+                       GrowableArray<ProtectionDomainEntry*>(20, mtClass);
+  }
+
+  {
+    // First clean cached pd lists in loaded CLDs
+    // It's unlikely, but some loaded classes in a dictionary might
+    // point to a protection_domain that has been unloaded.
+    // The dictionary pd_set points at entries in the ProtectionDomainCacheTable.
+    MutexLocker ml(ClassLoaderDataGraph_lock);
+    MutexLocker mldict(SystemDictionary_lock);  // need both.
+    CleanProtectionDomainEntries clean(_delete_list);
+    ClassLoaderDataGraph::loaded_cld_do(&clean);
+  }
+
+  // Purge any deleted entries outside of the SystemDictionary_lock.
+  purge_deleted_entries();
+
+  // Reacquire the lock to remove entries from the hashtable.
   MutexLocker ml(SystemDictionary_lock);
 
   struct Deleter {
@@ -134,36 +158,8 @@ static int purge_entries_from_table() {
 
   Deleter deleter;
   _pd_cache_table.unlink(&deleter);
-  return deleter._oops_removed;
-}
 
-
-void ProtectionDomainCacheTable::unlink() {
-  // The dictionary entries _pd_set field should be null also, so nothing to do.
-  assert(java_lang_System::allow_security_manager(), "should not be called otherwise");
-
-  // Create a list for holding deleted entries
-  if (_delete_list == NULL) {
-    _delete_list = new (ResourceObj::C_HEAP, mtClass)
-                       GrowableArray<ProtectionDomainEntry*>(20, mtClass);
-  }
-
-  {
-    // First clean cached pd lists in loaded CLDs
-    // It's unlikely, but some loaded classes in a dictionary might
-    // point to a protection_domain that has been unloaded.
-    // The dictionary pd_set points at entries in the ProtectionDomainCacheTable.
-    MutexLocker ml(ClassLoaderDataGraph_lock);
-    MutexLocker mldict(SystemDictionary_lock);  // need both.
-    CleanProtectionDomainEntries clean(_delete_list);
-    ClassLoaderDataGraph::loaded_cld_do(&clean);
-  }
-
-  // Purge any deleted entries outside of the SystemDictionary_lock.
-  purge_deleted_entries();
-  int oops_removed = purge_entries_from_table(); // reacquires SD lock
-
-  _total_oops_removed += oops_removed;
+  _total_oops_removed += deleter._oops_removed;
   _dead_entries = false;
 }
 

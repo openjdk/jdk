@@ -29,7 +29,8 @@
 #include "oops/weakHandle.hpp"
 #include "runtime/atomic.hpp"
 
-// The ProtectionDomainCacheTable contains all protection domain oops as WeakHandles.
+// The ProtectionDomainCacheTable maps all java.security.ProtectionDomain objects that are
+// registered by DictionaryEntry::add_protection_domain() to a unique WeakHandle.
 // The amount of different protection domains used is typically magnitudes smaller
 // than the number of system dictionary entries (loaded classes).
 class ProtectionDomainCacheTable : public AllStatic {
