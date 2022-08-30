@@ -7310,143 +7310,32 @@ address StubGenerator::generate_bigIntegerLeftShift() {
   return start;
 }
 
-address StubGenerator::generate_libmExp() {
-  StubCodeMark mark(this, "StubRoutines", "libmExp");
-  address start = __ pc();
-
-  BLOCK_COMMENT("Entry:");
-  __ enter(); // required for proper stackwalking of RuntimeStub frame
-
-  __ fast_exp(xmm0, xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7,
-              rax, rcx, rdx, r11);
-
-  __ leave(); // required for proper stackwalking of RuntimeStub frame
-  __ ret(0);
-
-  return start;
+void StubGenerator::generate_libm_stubs() {
+  if (UseLibmIntrinsic && InlineIntrinsics) {
+    if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dsin)) {
+      StubRoutines::_dsin = generate_libmSin(); // from stubGenerator_x86_64_sin.cpp
+    }
+    if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dcos)) {
+      StubRoutines::_dcos = generate_libmCos(); // from stubGenerator_x86_64_cos.cpp
+    }
+    if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dtan)) {
+      StubRoutines::_dtan = generate_libmTan();
+    }
+    if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dexp)) {
+      StubRoutines::_dexp = generate_libmExp();
+    }
+    if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dpow)) {
+      StubRoutines::_dpow = generate_libmPow();
+    }
+    if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dlog)) {
+      StubRoutines::_dlog = generate_libmLog();
+    }
+    if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dlog10)) {
+      StubRoutines::_dlog10 = generate_libmLog10();
+    }
+  }
 }
 
-address StubGenerator::generate_libmLog() {
-  StubCodeMark mark(this, "StubRoutines", "libmLog");
-  address start = __ pc();
-
-  BLOCK_COMMENT("Entry:");
-  __ enter(); // required for proper stackwalking of RuntimeStub frame
-
-  __ fast_log(xmm0, xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7,
-              rax, rcx, rdx, r11, r8);
-
-  __ leave(); // required for proper stackwalking of RuntimeStub frame
-  __ ret(0);
-
-  return start;
-}
-
-address StubGenerator::generate_libmLog10() {
-  StubCodeMark mark(this, "StubRoutines", "libmLog10");
-  address start = __ pc();
-
-  BLOCK_COMMENT("Entry:");
-  __ enter(); // required for proper stackwalking of RuntimeStub frame
-
-  __ fast_log10(xmm0, xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7,
-                rax, rcx, rdx, r11, r8);
-
-  __ leave(); // required for proper stackwalking of RuntimeStub frame
-  __ ret(0);
-
-  return start;
-}
-
-address StubGenerator::generate_libmPow() {
-  StubCodeMark mark(this, "StubRoutines", "libmPow");
-  address start = __ pc();
-
-  BLOCK_COMMENT("Entry:");
-  __ enter(); // required for proper stackwalking of RuntimeStub frame
-
-  __ fast_pow(xmm0, xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7,
-              rax, rcx, rdx, r8, r9, r10, r11);
-
-  __ leave(); // required for proper stackwalking of RuntimeStub frame
-  __ ret(0);
-
-  return start;
-}
-
-address StubGenerator::generate_libmSin() {
-  StubCodeMark mark(this, "StubRoutines", "libmSin");
-  address start = __ pc();
-
-  BLOCK_COMMENT("Entry:");
-  __ enter(); // required for proper stackwalking of RuntimeStub frame
-
-#ifdef _WIN64
-  __ push(rsi);
-  __ push(rdi);
-#endif
-  __ fast_sin(xmm0, xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7,
-              rax, rbx, rcx, rdx, r8);
-#ifdef _WIN64
-  __ pop(rdi);
-  __ pop(rsi);
-#endif
-
-  __ leave(); // required for proper stackwalking of RuntimeStub frame
-  __ ret(0);
-
-  return start;
-}
-
-address StubGenerator::generate_libmCos() {
-  StubCodeMark mark(this, "StubRoutines", "libmCos");
-  address start = __ pc();
-
-  BLOCK_COMMENT("Entry:");
-  __ enter(); // required for proper stackwalking of RuntimeStub frame
-
-#ifdef _WIN64
-  __ push(rsi);
-  __ push(rdi);
-#endif
-  __ fast_cos(xmm0, xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7,
-              rax, rcx, rdx, r8, r9, r10, r11, rbx);
-
-#ifdef _WIN64
-  __ pop(rdi);
-  __ pop(rsi);
-#endif
-
-  __ leave(); // required for proper stackwalking of RuntimeStub frame
-  __ ret(0);
-
-  return start;
-}
-
-address StubGenerator::generate_libmTan() {
-  StubCodeMark mark(this, "StubRoutines", "libmTan");
-  address start = __ pc();
-
-  BLOCK_COMMENT("Entry:");
-  __ enter(); // required for proper stackwalking of RuntimeStub frame
-
-#ifdef _WIN64
-  __ push(rsi);
-  __ push(rdi);
-#endif
-  __ fast_tan(xmm0, xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7,
-              rax, rcx, rdx, r8, r9, r10, r11, rbx);
-
-#ifdef _WIN64
-  __ pop(rdi);
-  __ pop(rsi);
-#endif
-
-  __ leave(); // required for proper stackwalking of RuntimeStub frame
-  __ ret(0);
-
-  return start;
-}
 
 address StubGenerator::generate_cont_thaw(const char* label, Continuation::thaw_kind kind) {
   if (!Continuations::enabled()) return nullptr;
@@ -7813,30 +7702,6 @@ void StubGenerator::generate_initial() {
 
   if (UseAdler32Intrinsics) {
      StubRoutines::_updateBytesAdler32 = generate_updateBytesAdler32();
-  }
-
-  if (UseLibmIntrinsic && InlineIntrinsics) {
-    if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dexp)) {
-      StubRoutines::_dexp = generate_libmExp();
-    }
-    if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dlog)) {
-      StubRoutines::_dlog = generate_libmLog();
-    }
-    if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dlog10)) {
-      StubRoutines::_dlog10 = generate_libmLog10();
-    }
-    if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dpow)) {
-      StubRoutines::_dpow = generate_libmPow();
-    }
-    if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dsin)) {
-      StubRoutines::_dsin = generate_libmSin();
-    }
-    if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dcos)) {
-      StubRoutines::_dcos = generate_libmCos();
-    }
-    if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dtan)) {
-      StubRoutines::_dtan = generate_libmTan();
-    }
   }
 }
 

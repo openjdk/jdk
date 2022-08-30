@@ -387,13 +387,40 @@ class StubGenerator: public StubCodeGenerator {
   address generate_bigIntegerRightShift();
   address generate_bigIntegerLeftShift();
 
-  address generate_libmExp();
-  address generate_libmLog();
-  address generate_libmLog10();
-  address generate_libmPow();
+
+  // Libm trigonometric stubs
+
   address generate_libmSin();
   address generate_libmCos();
   address generate_libmTan();
+  address generate_libmExp();
+  address generate_libmPow();
+  address generate_libmLog();
+  address generate_libmLog10();
+
+  // Shared constants
+  static address ZERO;
+  static address NEG_ZERO;
+  static address ONE;
+  static address ONEHALF;
+  static address SIGN_MASK;
+  static address TWO_POW_55;
+  static address TWO_POW_M55;
+  static address SHIFTER;
+  static address PI32INV;
+  static address PI_INV_TABLE;
+  static address Ctable;
+  static address SC_1;
+  static address SC_2;
+  static address SC_3;
+  static address SC_4;
+  static address PI_4;
+  static address P_1;
+  static address P_3;
+  static address P_2;
+
+  void generate_libm_stubs();
+
 
   address generate_cont_thaw(const char* label, Continuation::thaw_kind kind);
   address generate_cont_thaw();
