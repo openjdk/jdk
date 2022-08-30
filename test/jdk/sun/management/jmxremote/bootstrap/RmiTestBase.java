@@ -130,10 +130,9 @@ public class RmiTestBase {
         List<Path> propertyFiles =
                 Utils.copyFiles(files, Paths.get(DEST), removeSuffix, StandardCopyOption.REPLACE_EXISTING);
 
-        // replace @TEST-SRC@ with the path of the test folder
+        // replace @TEST-SRC@ with the path of the current test folder
         if (Platform.isWindows()) {
-            // On Windows, also replace forward slash or backslash to double
-            // backslashes
+            // On Windows, also replace forward slash or single backslash to double backslashes
             Utils.replaceFilesString(propertyFiles, (s) -> s.replace(TEST_SRC, DEST).replaceAll("[/\\\\]", "\\\\\\\\"));
         } else {
             Utils.replaceFilesString(propertyFiles, (s) -> s.replace(TEST_SRC, DEST));
