@@ -486,9 +486,12 @@ public class BasicOptionPaneUI extends OptionPaneUI {
                                          maxll,false);
                     return;
                 }
-                addMessageComponents(container, cons, s.substring(nl + nll), maxll,
-                                     false);
-
+                String str = s.substring(nl + nll);
+                if (str.contains("</html>")) {
+                    str = str.replace("</html>", "");
+                }
+                addMessageComponents(container, cons, str, maxll,
+                            false);
             } else if (len > maxll) {
                 Container c = Box.createVerticalBox();
                 c.setName("OptionPane.verticalBox");
