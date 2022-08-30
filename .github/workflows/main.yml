@@ -135,7 +135,8 @@ jobs:
     with:
       platform: linux-x86
       gcc-major-version: '10'
-      apt-gcc-version: '10-multilib'
+      gcc-package-suffix: '-multilib'
+      apt-gcc-version: '10.3.0-1ubuntu1~20.04'
       apt-architecture: 'i386'
       # Some multilib libraries do not have proper inter-dependencies, so we have to
       # install their dependencies manually.
