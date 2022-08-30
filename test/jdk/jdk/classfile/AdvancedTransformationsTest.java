@@ -33,8 +33,8 @@ import java.util.Map;
 import java.util.Set;
 import jdk.classfile.ClassHierarchyResolver;
 import jdk.classfile.Classfile;
+import jdk.classfile.CodeElement;
 import jdk.classfile.CodeModel;
-import jdk.classfile.CodeTransform;
 import jdk.classfile.MethodModel;
 import jdk.classfile.TypeKind;
 import jdk.classfile.impl.StackMapGenerator;
@@ -50,14 +50,14 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import jdk.classfile.Attributes;
 import jdk.classfile.ClassModel;
-import jdk.classfile.CodeElement;
+import jdk.classfile.ClassTransform;
 import jdk.classfile.FieldModel;
 import jdk.classfile.Signature;
 import jdk.classfile.attribute.ModuleAttribute;
 import jdk.classfile.impl.AbstractInstruction;
 import jdk.classfile.impl.RawBytecodeHelper;
-import jdk.classfile.impl.Util;
 import jdk.classfile.instruction.InvokeInstruction;
+import jdk.classfile.instruction.StoreInstruction;
 import java.lang.reflect.AccessFlag;
 import jdk.classfile.transforms.LabelsRemapper;
 import jdk.classfile.jdktypes.ModuleDesc;
@@ -286,80 +286,66 @@ public class AdvancedTransformationsTest {
         var targetFieldNames = target.fields().stream().map(f -> f.fieldName().stringValue()).collect(Collectors.toSet());
         var targetMethods = target.methods().stream().map(m -> m.methodName().stringValue() + m.methodType().stringValue()).collect(Collectors.toSet());
         var instrumentorClassRemapper = ClassRemapper.of(Map.of(instrumentor.thisClass().asSymbol(), target.thisClass().asSymbol()));
-        return Classfile.build(target.thisClass().asSymbol(), clb -> {
-            target.forEachElement(cle -> {
-                CodeModel instrumentorCodeModel;
-                if (cle instanceof MethodModel mm && ((instrumentorCodeModel = instrumentorCodeMap.get(mm.methodName().stringValue() + mm.methodType().stringValue())) != null)) {
-                    clb.withMethod(mm.methodName().stringValue(), mm.methodTypeSymbol(), mm.flags().flagsMask(), mb -> mm.forEachElement(me -> {
-                        if (me instanceof CodeModel targetCodeModel) {
-                            //instrumented methods are merged
-                            var instrumentorLocalsShifter = new CodeLocalsShifter(mm.flags(), mm.methodTypeSymbol());
-                            var instrumentorCodeRemapperAndShifter =
-                                    instrumentorClassRemapper.codeTransform()
-                                                             .andThen(instrumentorLocalsShifter);
-                            CodeTransform invokeInterceptor
-                                    = (codeBuilder, instrumentorCodeElement) -> {
-                                if (instrumentorCodeElement instanceof InvokeInstruction inv
-                                    && instrumentor.thisClass().asInternalName().equals(inv.owner().asInternalName())
-                                    && mm.methodName().stringValue().equals(inv.name().stringValue())
-                                    && mm.methodType().stringValue().equals(inv.type().stringValue())) {
-                                    //store stacked arguments (in reverse order)
-                                    record Arg(TypeKind tk, int slot) {}
-                                    var storeStack = new LinkedList<Arg>();
-                                    int slot = 0;
-                                    if (!mm.flags().has(AccessFlag.STATIC)) {
-                                        storeStack.add(new Arg(TypeKind.ReferenceType, slot++));
-                                    }
-                                    var mType = mm.methodTypeSymbol();
-                                    for (int i = 0; i < mType.parameterCount(); i++) {
-                                        var tk = TypeKind.fromDescriptor(mType.parameterType(i).descriptorString());
-                                        storeStack.add(new Arg(tk, slot));
-                                        slot += tk.slotSize();
-                                    }
-                                    while (!storeStack.isEmpty()) {
-                                        var arg = storeStack.removeLast();
-                                        codeBuilder.storeInstruction(arg.tk, arg.slot);
-                                    }
-                                    var endLabel = codeBuilder.newLabel();
-                                    //inlined target locals must be shifted based on the actual instrumentor locals shifter next free slot, relabeled and returns must be replaced with goto
-                                    var sequenceTransform =
-                                            instrumentorLocalsShifter.fork()
-                                                                     .andThen(LabelsRemapper.remapLabels())
-                                                                     .andThen((innerBuilder, shiftedRelabeledTargetCode) -> {
-                                                                         if (shiftedRelabeledTargetCode.codeKind() == CodeElement.Kind.RETURN) {
-                                                                             innerBuilder.goto_w(endLabel);
-                                                                         }
-                                                                         else
-                                                                             innerBuilder.with(shiftedRelabeledTargetCode);
-                                                                     })
-                                                                     .andThen(CodeTransform.endHandler(b -> codeBuilder.labelBinding(endLabel)));
-                                    codeBuilder.transform(targetCodeModel, sequenceTransform);
-                                }
-                                else
-                                    codeBuilder.with(instrumentorCodeElement);
-                            };
-                            mb.transformCode(instrumentorCodeModel,
-                                         invokeInterceptor.andThen(instrumentorCodeRemapperAndShifter));
-                        }
-                        else {
-                            mb.with(me);
-                        }
-                    }));
-                }
-                else {
-                    clb.with(cle);
-                }
-            });
-            var remapperConsumer = instrumentorClassRemapper.classTransform().resolve(clb).consumer();
-            instrumentor.forEachElement(cle -> {
-                //remaining instrumentor fields and methods are remapped and moved
-                if (cle instanceof FieldModel fm && !targetFieldNames.contains(fm.fieldName().stringValue())) {
-                    remapperConsumer.accept(cle);
-                }
-                else if (cle instanceof MethodModel mm && !"<init>".equals(mm.methodName().stringValue()) && !targetMethods.contains(mm.methodName().stringValue() + mm.methodType().stringValue())) {
-                    remapperConsumer.accept(cle);
-                }
-            });
-        });
+        return target.transform(
+                ClassTransform.transformingMethods(
+                        instrumentedMethodsFilter,
+                        (mb, me) -> {
+                            if (me instanceof CodeModel targetCodeModel) {
+                                var mm = targetCodeModel.parent().get();
+                                var instrumentorLocalsShifter = new CodeLocalsShifter(mm.flags(), mm.methodTypeSymbol());
+                                //instrumented methods code is taken from instrumentor
+                                mb.transformCode(instrumentorCodeMap.get(mm.methodName().stringValue() + mm.methodType().stringValue()),
+                                        //locals shifter monitors locals
+                                        instrumentorLocalsShifter
+                                        .andThen((codeBuilder, instrumentorCodeElement) -> {
+                                            //all invocations of target methods from instrumentor are inlined
+                                            if (instrumentorCodeElement instanceof InvokeInstruction inv
+                                                && instrumentor.thisClass().asInternalName().equals(inv.owner().asInternalName())
+                                                && mm.methodName().stringValue().equals(inv.name().stringValue())
+                                                && mm.methodType().stringValue().equals(inv.type().stringValue())) {
+
+                                                //store stacked method parameters into locals
+                                                var storeStack = new LinkedList<StoreInstruction>();
+                                                int slot = 0;
+                                                if (!mm.flags().has(AccessFlag.STATIC))
+                                                    storeStack.add(StoreInstruction.of(TypeKind.ReferenceType, slot++));
+                                                for (var pt : mm.methodTypeSymbol().parameterList()) {
+                                                    var tk = TypeKind.fromDescriptor(pt.descriptorString());
+                                                    storeStack.addFirst(StoreInstruction.of(tk, slot));
+                                                    slot += tk.slotSize();
+                                                }
+                                                storeStack.forEach(codeBuilder::with);
+
+                                                var endLabel = codeBuilder.newLabel();
+                                                //inlined target locals must be shifted based on the actual instrumentor locals
+                                                codeBuilder.transform(targetCodeModel, instrumentorLocalsShifter.fork()
+                                                        .andThen(LabelsRemapper.remapLabels())
+                                                        .andThen((innerBuilder, shiftedTargetCode) -> {
+                                                            //returns must be replaced with jump to the end of the inlined method
+                                                            if (shiftedTargetCode.codeKind() == CodeElement.Kind.RETURN)
+                                                                innerBuilder.goto_(endLabel);
+                                                            else
+                                                                innerBuilder.with(shiftedTargetCode);
+                                                        }));
+                                                codeBuilder.labelBinding(endLabel);
+                                            } else
+                                                codeBuilder.with(instrumentorCodeElement);
+                                        })
+                                        //all references to the instrumentor class are remapped to target class
+                                        .andThen(instrumentorClassRemapper.codeTransform()));
+                            } else
+                                mb.with(me);
+                        })
+                .andThen(ClassTransform.endHandler(clb ->
+                    //remaining instrumentor fields and methods are injected at the end
+                    clb.transform(instrumentor,
+                            ClassTransform.dropping(cle ->
+                                    !(cle instanceof FieldModel fm
+                                            && !targetFieldNames.contains(fm.fieldName().stringValue()))
+                                    && !(cle instanceof MethodModel mm
+                                            && !"<init>".equals(mm.methodName().stringValue())
+                                            && !targetMethods.contains(mm.methodName().stringValue() + mm.methodType().stringValue())))
+                            //and instrumentor class references remapped to target class
+                            .andThen(instrumentorClassRemapper.classTransform())))));
     }
 }
