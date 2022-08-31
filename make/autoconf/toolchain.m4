@@ -52,7 +52,7 @@ TOOLCHAIN_DESCRIPTION_xlc="IBM XL C/C++"
 # Minimum supported versions, empty means unspecified
 TOOLCHAIN_MINIMUM_VERSION_clang="3.5"
 TOOLCHAIN_MINIMUM_VERSION_gcc="6.0"
-TOOLCHAIN_MINIMUM_VERSION_microsoft="19.10.0.0" # VS2017
+TOOLCHAIN_MINIMUM_VERSION_microsoft="19.20.0.0" # VS2019
 TOOLCHAIN_MINIMUM_VERSION_xlc=""
 
 # Minimum supported linker versions, empty means unspecified

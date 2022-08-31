@@ -382,14 +382,13 @@ available for this update.
 
 ### Microsoft Visual Studio
 
-For aarch64 machines running Windows the minimum accepted version is Visual Studio 2019
-(16.8 or higher). For all other platforms the minimum accepted version of
-Visual Studio is 2017. Older versions will not be accepted by `configure` and will
-not work. For all platforms the maximum accepted version of Visual Studio is 2022.
+The minimum accepted version is Visual Studio 2019 (for aarch64, at least 16.8
+is required). Older versions will not be accepted by `configure` and will not
+work. The maximum accepted version of Visual Studio is 2022.
 
 If you have multiple versions of Visual Studio installed, `configure` will by
 default pick the latest. You can request a specific version to be used by
-setting `--with-toolchain-version`, e.g. `--with-toolchain-version=2017`.
+setting `--with-toolchain-version`, e.g. `--with-toolchain-version=2022`.
 
 If you have Visual Studio installed but `configure` fails to detect it, it may
 be because of [spaces in path](#spaces-in-path).
