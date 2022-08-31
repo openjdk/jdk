@@ -103,8 +103,7 @@ public class TestStableLambdaName {
 
     private static String removeHashFromLambdaName(String name) {
         String architecture = System.getProperty("sun.arch.data.model");
-        String architecture2 = System.getProperty("os.arch");
-        System.err.println("Architecture: " + architecture + " " + architecture2);
+        System.err.println("Architecture: " + architecture);
         return name.substring(0, name.indexOf("/0x0"));
     }
 
