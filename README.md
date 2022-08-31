@@ -34,7 +34,8 @@ Test can be selectivelly executed as:
 
     make test TEST=jdk/classfile
 
-See [doc/testing.md](doc/testing.md) for more information about JDK testing.
+See [online JCov report](https://htmlpreview.github.io/?https://raw.githubusercontent.com/openjdk/jdk-sandbox/classfile-api-javadoc-branch/jcov-report/jdk/classfile/package-summary.html) for more information about Classfile API tests coverage
+and [doc/testing.md](doc/testing.md) for more information about JDK testing.
 
 ### Benchmarking
 
