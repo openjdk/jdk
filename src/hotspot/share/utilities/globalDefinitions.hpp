@@ -94,7 +94,6 @@ class oopDesc;
 //        - print the decimal value:                   745565
 //  _X    - print as hexadecimal, without leading 0s: 0x12345
 //  _X_0  - print as hexadecimal, with leading 0s: 0x00012345
-//  _H    - print as hexadecimal, without 0x prefix
 //  _W(w) - prints w sized string with the given value right
 //          adjusted. Use -w to print left adjusted.
 //
@@ -133,7 +132,6 @@ class oopDesc;
 #define SSIZE_FORMAT_W(width)    "%"   #width PRIdPTR
 #define SIZE_FORMAT              "%"          PRIuPTR
 #define SIZE_FORMAT_X            "0x%"        PRIxPTR
-#define SIZE_FORMAT_H_W(width)   "%"   #width PRIxPTR
 #define SIZE_FORMAT_W(width)     "%"   #width PRIuPTR
 #define SIZE_FORMAT_X_W(width)   "0x%" #width PRIxPTR
 
