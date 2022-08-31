@@ -72,7 +72,7 @@ import jdk.internal.util.jar.JarIndex;
  *         is the second jar entry
  *      </li>
  *      <li>
- *         All signature entries must immediately follow the {@code manifest}
+ *         All signature-related entries must immediately follow the {@code manifest}
  *      </li>
  *  </ul>
  *  Once the {@code JarEntry} has been completely verified, which is done by
