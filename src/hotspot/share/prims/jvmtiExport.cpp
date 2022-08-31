@@ -1697,7 +1697,9 @@ void JvmtiExport::post_object_free(JvmtiEnv* env, GrowableArray<jlong>* objects)
   if (javaThread->is_in_VTMS_transition()) {
     return; // no events should be posted if thread is in a VTMS transition
   }
-  assert(env->is_enabled(JVMTI_EVENT_OBJECT_FREE), "checking");
+  if (!env->is_enabled(JVMTI_EVENT_OBJECT_FREE)) {
+    return; // the event type has been already disabled
+  }
 
   EVT_TRIG_TRACE(JVMTI_EVENT_OBJECT_FREE, ("[?] Trg Object Free triggered" ));
   EVT_TRACE(JVMTI_EVENT_OBJECT_FREE, ("[?] Evt Object Free sent"));
