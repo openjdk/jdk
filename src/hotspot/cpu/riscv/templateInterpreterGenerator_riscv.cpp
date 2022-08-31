@@ -526,7 +526,7 @@ address TemplateInterpreterGenerator::generate_safept_entry_for(TosState state,
   address entry = __ pc();
   __ push(state);
   __ call_VM(noreg, runtime_entry);
-  __ membar(MacroAssembler::AnyAny);
+  __ fence(0xf, 0xf);
   __ dispatch_via(vtos, Interpreter::_normal_table.table_for(vtos));
   return entry;
 }
