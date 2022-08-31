@@ -33,6 +33,8 @@
 #include <unistd.h>
 #include <errno.h>
 
+#include "sun_nio_fs_UnixFileSystem.h"
+
 #define RESTARTABLE(_cmd, _result) do { \
   do { \
     _result = _cmd; \
@@ -49,7 +51,7 @@ static void throwUnixException(JNIEnv* env, int errnum) {
 
 // Copy via an intermediate temporary direct buffer
 JNIEXPORT void JNICALL
-Java_sun_nio_fs_UnixCopyFile_bufferedCopy0
+Java_sun_nio_fs_UnixFileSystem_bufferedCopy0
     (JNIEnv* env, jclass this, jint dst, jint src, jlong address,
      jint transferSize, jlong cancelAddress)
 {
