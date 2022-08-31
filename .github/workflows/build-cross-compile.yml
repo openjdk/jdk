@@ -51,20 +51,39 @@ jobs:
           - arm
           - s390x
           - ppc64le
+          - riscv64
         include:
           - target-cpu: aarch64
-            debian-arch: arm64
             gnu-arch: aarch64
+            dist-arch: arm64
+            dist-name: buster
+            dist-repository: https://httpredir.debian.org/debian/
+            dist-components: 'main'
           - target-cpu: arm
-            debian-arch: armhf
             gnu-arch: arm
+            dist-arch: armhf
+            dist-name: buster
+            dist-repository: https://httpredir.debian.org/debian/
+            dist-components: 'main'
             gnu-abi: eabihf
           - target-cpu: s390x
-            debian-arch: s390x
             gnu-arch: s390x
+            dist-arch: s390x
+            dist-name: buster
+            dist-repository: https://httpredir.debian.org/debian/
+            dist-components: 'main'
           - target-cpu: ppc64le
-            debian-arch: ppc64el
             gnu-arch: powerpc64le
+            dist-arch: ppc64el
+            dist-name: buster
+            dist-repository: https://httpredir.debian.org/debian/
+            dist-components: 'main'
+          - target-cpu: riscv64
+            gnu-arch: riscv64
+            dist-arch: riscv64
+            dist-name: focal
+            dist-repository: http://ports.ubuntu.com/ubuntu-ports
+            dist-components: 'main,universe'
 
     steps:
       - name: 'Checkout the JDK source'
@@ -102,7 +121,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: sysroot
-          key: sysroot-${{ matrix.debian-arch }}-${{ hashFiles('./.github/workflows/build-cross-compile.yml') }}
+          key: sysroot-${{ matrix.dist-arch }}-${{ hashFiles('./.github/workflows/build-cross-compile.yml') }}
 
       - name: 'Install sysroot dependencies'
         run: sudo apt-get install debootstrap qemu-user-static
@@ -111,13 +130,14 @@ jobs:
       - name: 'Create sysroot'
         run: >
           sudo qemu-debootstrap
-          --arch=${{ matrix.debian-arch }}
           --verbose
+          --arch=${{ matrix.dist-arch }}
+          --components=${{ matrix.dist-components }}
           --include=fakeroot,symlinks,build-essential,libx11-dev,libxext-dev,libxrender-dev,libxrandr-dev,libxtst-dev,libxt-dev,libcups2-dev,libfontconfig1-dev,libasound2-dev,libfreetype6-dev,libpng-dev
           --resolve-deps
-          buster
+          ${{ matrix.dist-name }}
           sysroot
-          https://httpredir.debian.org/debian/
+          ${{ matrix.dist-repository }}
         if: steps.get-cached-sysroot.outputs.cache-hit != 'true'
 
       - name: 'Prepare sysroot'
