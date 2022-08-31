@@ -38,17 +38,33 @@ import static java.util.zip.ZipConstants64.*;
 import static java.util.zip.ZipUtils.*;
 
 /**
- * This class implements an input stream filter for reading files in the
- * ZIP file format. Includes support for both compressed and uncompressed
- * entries.
- *<p>
- *     {@code ZipInputStream} will stream the Zip file entries within
- *     the Zip file by sequentially reading the Local file (LOC) header for each
- *     entry. {@code ZipInputStream} does not read the Central directory
- *     (CEN) header for the entry and therefore will not have access to
- *     CEN header fields such as the external file attributes. {@linkplain ZipFile}
- *     may be used when the information stored within the CEN header is required.
- *</p>
+ * An input stream for reading compressed and uncompressed
+ * {@linkplain ZipEntry ZIP file entries} from a stream of bytes in the ZIP file
+ * format.
+ *
+ * <H2>Reading Zip File Entries</H2>
+ *
+ * The {@link #getNextEntry()} method is used to read the next ZIP file entry
+ * (Local file (LOC) header) and position the stream at the entry's file data.
+ * The file data may read using one of {@code ZipInputStream} read methods such
+ * as {@link #read(byte[], int, int) read} or {@link #readAllBytes() readAllBytes()}. For example:
+ * <pre>
+ *     {@code
+ *      try (ZipInputStream zis = new ZipInputStream(new FileInputStream(zip.toFile()))) {
+ *             ZipEntry ze;
+ *             while( (ze= zis.getNextEntry()) != null) {
+ *                 var bytes = zis.readAllBytes();
+ *                 System.out.printf("Entry: %s,  bytes read: %s%n", ze.getName(),
+ *                         bytes.length);
+ *             }
+ *       }
+ *    }
+ *</pre>
+ * The LOC header contains metadata about the Zip file entry. {@code ZipInputStream}
+ * does not read the Central directory (CEN) header for the entry and therefore
+ * will not have access to its metadata such as the external file attributes.
+ * {@linkplain ZipFile}, may be used when the information stored within
+ * the CEN header is required.
  *
  * @author      David Connelly
  * @since 1.1
