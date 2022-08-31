@@ -24,6 +24,7 @@
  */
 package jdk.classfile.constantpool;
 
+import jdk.classfile.TypeKind;
 import jdk.classfile.impl.ConcreteEntry;
 
 /**
@@ -38,4 +39,11 @@ sealed public interface IntegerEntry
      * {@return the integer value}
      */
     int intValue();
+
+    /**
+     * {@return the type of the constant}
+     */
+    default TypeKind typeKind() {
+        return TypeKind.IntType;
+    }
 }

@@ -30,6 +30,6 @@ import jdk.classfile.CodeBuilder;
  * TerminalCodeBuilder
  */
 public sealed interface TerminalCodeBuilder extends CodeBuilder
-        permits DirectCodeBuilder, BufferedCodeBuilder {
+        permits DirectCodeBuilder, BufferedCodeBuilder, TransformingCodeBuilder {
 
 }

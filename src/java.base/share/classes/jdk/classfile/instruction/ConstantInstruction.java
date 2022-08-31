@@ -30,6 +30,8 @@ import jdk.classfile.CodeElement;
 import jdk.classfile.CodeModel;
 import jdk.classfile.Instruction;
 import jdk.classfile.Opcode;
+import jdk.classfile.TypeKind;
+import jdk.classfile.constantpool.ConstantDynamicEntry;
 import jdk.classfile.constantpool.LoadableConstantEntry;
 import jdk.classfile.impl.AbstractInstruction;
 import jdk.classfile.impl.Util;
@@ -50,12 +52,23 @@ sealed public interface ConstantInstruction extends Instruction {
     ConstantDesc constantValue();
 
     /**
+     * {@return the type of the constant}
+     */
+    TypeKind typeKind();
+
+    /**
      * Models an "intrinsic constant" instruction (e.g., {@code
      * aload_0}).
      */
     sealed interface IntrinsicConstantInstruction extends ConstantInstruction
             permits AbstractInstruction.UnboundIntrinsicConstantInstruction {
 
+        /**
+         * {@return the type of the constant}
+         */
+        default TypeKind typeKind() {
+            return opcode().primaryTypeKind();
+        }
     }
 
     /**
@@ -68,6 +81,13 @@ sealed public interface ConstantInstruction extends Instruction {
 
         @Override
         Integer constantValue();
+
+        /**
+         * {@return the type of the constant}
+         */
+        default TypeKind typeKind() {
+            return opcode().primaryTypeKind();
+        }
     }
 
     /**
@@ -82,6 +102,13 @@ sealed public interface ConstantInstruction extends Instruction {
          * {@return the constant value}
          */
         LoadableConstantEntry constantEntry();
+
+        /**
+         * {@return the type of the constant}
+         */
+        default TypeKind typeKind() {
+            return constantEntry().typeKind();
+        }
     }
 
     /**

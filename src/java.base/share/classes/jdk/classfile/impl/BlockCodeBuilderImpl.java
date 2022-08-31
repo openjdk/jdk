@@ -81,6 +81,7 @@ public final class BlockCodeBuilderImpl
             case ChainedCodeBuilder b -> topLocal(b.terminal);
             case DirectCodeBuilder b -> b.curTopLocal();
             case BufferedCodeBuilder b -> b.curTopLocal();
+            case TransformingCodeBuilder b -> topLocal(b.delegate);
         };
     }
 

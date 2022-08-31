@@ -74,13 +74,13 @@ public final class CatchBuilderImpl implements CodeBuilder.CatchBuilder {
         catchBlock = new BlockCodeBuilderImpl(b, tryCatchEnd);
         Label tryStart = tryBlock.startLabel();
         Label tryEnd = tryBlock.endLabel();
-        catchBlock.start();
         if (exceptionType == null) {
             catchBlock.exceptionCatchAll(tryStart, tryEnd, catchBlock.startLabel());
         }
         else {
             catchBlock.exceptionCatch(tryStart, tryEnd, catchBlock.startLabel(), exceptionType);
         }
+        catchBlock.start();
         catchHandler.accept(catchBlock);
 
         return this;

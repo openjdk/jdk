@@ -34,6 +34,7 @@ import jdk.classfile.constantpool.*;
 import jdk.classfile.instruction.*;
 import jdk.classfile.jdktypes.ModuleDesc;
 import jdk.classfile.jdktypes.PackageDesc;
+import jdk.classfile.transforms.StackTracker;
 
 class RebuildingTransformation {
 
@@ -70,7 +71,7 @@ class RebuildingTransformation {
                             for (var me : mm) {
                                 switch (me) {
                                     case AccessFlags af -> mb.withFlags(af.flagsMask());
-                                    case CodeModel com -> mb.withCode(cob -> {
+                                    case CodeModel com -> mb.withCode(cb -> cb.transforming(new StackTracker(), cob -> {
                                         var labels = new HashMap<Label, Label>();
                                         for (var coe : com) {
                                             switch (coe) {
@@ -453,7 +454,7 @@ class RebuildingTransformation {
                                                             StackMapTableAttribute.StackMapFrameInfo.of(labels.computeIfAbsent(fr.target(), l -> cob.newLabel()),
                                                                     transformFrameTypeInfos(fr.locals(), cob, labels),
                                                                     transformFrameTypeInfos(fr.stack(), cob, labels))).toList())));
-                                    });
+                                    }));
                                     case AnnotationDefaultAttribute a -> mb.with(AnnotationDefaultAttribute.of(transformAnnotationValue(a.defaultValue())));
                                     case DeprecatedAttribute a -> mb.with(DeprecatedAttribute.of());
                                     case ExceptionsAttribute a -> mb.with(ExceptionsAttribute.ofSymbols(a.exceptions().stream().map(ClassEntry::asSymbol).toArray(ClassDesc[]::new)));

@@ -24,6 +24,7 @@
  */
 package jdk.classfile.constantpool;
 
+import jdk.classfile.TypeKind;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDesc;
 import java.lang.constant.DynamicConstantDesc;
@@ -48,5 +49,12 @@ sealed public interface ConstantDynamicEntry
                                            bootstrap().arguments().stream()
                                                       .map(LoadableConstantEntry::constantValue)
                                                       .toArray(ConstantDesc[]::new));
+    }
+
+    /**
+     * {@return the type of the constant}
+     */
+    default TypeKind typeKind() {
+        return TypeKind.fromDescriptor(type().stringValue());
     }
 }

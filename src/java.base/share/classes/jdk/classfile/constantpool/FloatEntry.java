@@ -24,6 +24,7 @@
  */
 package jdk.classfile.constantpool;
 
+import jdk.classfile.TypeKind;
 import jdk.classfile.impl.ConcreteEntry;
 
 /**
@@ -39,4 +40,11 @@ sealed public interface FloatEntry
      */
 
     float floatValue();
+
+    /**
+     * {@return the type of the constant}
+     */
+    default TypeKind typeKind() {
+        return TypeKind.FloatType;
+    }
 }

@@ -24,6 +24,7 @@
  */
 package jdk.classfile.constantpool;
 
+import jdk.classfile.TypeKind;
 import jdk.classfile.impl.ConcreteEntry;
 
 /**
@@ -38,4 +39,11 @@ sealed public interface LongEntry
      * {@return the long value}
      */
     long longValue();
+
+    /**
+     * {@return the type of the constant}
+     */
+    default TypeKind typeKind() {
+        return TypeKind.LongType;
+    }
 }

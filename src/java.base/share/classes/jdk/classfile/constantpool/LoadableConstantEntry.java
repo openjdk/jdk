@@ -25,6 +25,7 @@
 package jdk.classfile.constantpool;
 
 import java.lang.constant.ConstantDesc;
+import jdk.classfile.TypeKind;
 
 /**
  * Marker interface for constant pool entries suitable for loading via the
@@ -37,4 +38,11 @@ sealed public interface LoadableConstantEntry extends PoolEntry
      * {@return the constant described by this entry}
      */
     ConstantDesc constantValue();
+
+    /**
+     * {@return the type of the constant}
+     */
+    default TypeKind typeKind() {
+        return TypeKind.ReferenceType;
+    }
 }
