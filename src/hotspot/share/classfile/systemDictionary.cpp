@@ -1049,9 +1049,11 @@ bool SystemDictionary::is_shared_class_visible_impl(Symbol* class_name,
   assert(scp_index >= 0, "must be");
   SharedClassPathEntry* scp_entry = FileMapInfo::shared_path(scp_index);
   if (!Universe::is_module_initialized()) {
-    assert(scp_entry != NULL && scp_entry->is_modules_image(),
-           "Loading non-bootstrap classes before the module system is initialized");
-    assert(class_loader.is_null(), "sanity");
+    assert(scp_entry != NULL, "must be");
+    if (!scp_entry->is_modules_image()) {
+      assert(HeapShared::is_a_test_class_in_unnamed_module(ik),
+             "Loading non-bootstrap classes before the module system is initialized");
+    }
     return true;
   }
 

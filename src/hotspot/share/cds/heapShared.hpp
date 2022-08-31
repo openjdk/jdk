@@ -47,13 +47,7 @@ class DumpedInternedStrings;
 class FileMapInfo;
 class KlassSubGraphInfo;
 
-struct ArchivableStaticFieldInfo {
-  const char* klass_name;
-  const char* field_name;
-  InstanceKlass* klass;
-  int offset;
-  BasicType type;
-};
+struct ArchivableStaticFieldInfo;
 
 // A dump time sub-graph info for Klass _k. It includes the entry points
 // (static fields in _k's mirror) of the archived sub-graphs reachable
@@ -80,7 +74,7 @@ class KlassSubGraphInfo: public CHeapObj<mtClass> {
   // used at runtime if JVMTI ClassFileLoadHook is enabled.
   bool _has_non_early_klasses;
   static bool is_non_early_klass(Klass* k);
-
+  static void check_allowed_klass(InstanceKlass* ik);
  public:
   KlassSubGraphInfo(Klass* k, bool is_full_module_graph) :
     _k(k),  _subgraph_object_klasses(NULL),
@@ -290,7 +284,6 @@ private:
   static void check_closed_region_object(InstanceKlass* k);
   static CachedOopInfo make_cached_oop_info(oop orig_obj);
   static void archive_object_subgraphs(ArchivableStaticFieldInfo fields[],
-                                       int num,
                                        bool is_closed_archive,
                                        bool is_full_module_graph);
 
@@ -310,8 +303,7 @@ private:
   static KlassSubGraphInfo* get_subgraph_info(Klass *k);
 
   static void init_subgraph_entry_fields(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
-  static void init_subgraph_entry_fields(ArchivableStaticFieldInfo fields[],
-                                         int num, TRAPS);
+  static void init_subgraph_entry_fields(ArchivableStaticFieldInfo fields[], TRAPS);
 
   // UseCompressedOops only: Used by decode_from_archive
   static address _narrow_oop_base;
@@ -364,7 +356,7 @@ private:
   static void copy_roots();
 
   static void resolve_classes_for_subgraphs(ArchivableStaticFieldInfo fields[],
-                                            int num, JavaThread* THREAD);
+                                            JavaThread* THREAD);
   static void resolve_classes_for_subgraph_of(Klass* k, JavaThread* THREAD);
   static void clear_archived_roots_of(Klass* k);
   static const ArchivedKlassSubGraphInfoRecord*
@@ -462,6 +454,7 @@ private:
     _runtime_delta = delta;
   }
 
+  static void setup_test_class(const char* test_class_name) PRODUCT_RETURN;
 #endif // INCLUDE_CDS_JAVA_HEAP
 
  public:
@@ -525,6 +518,7 @@ private:
   static oop to_requested_address(oop dumptime_oop) {
     return cast_to_oop(to_requested_address(cast_from_oop<address>(dumptime_oop)));
   }
+  static bool is_a_test_class_in_unnamed_module(Klass* ik) NOT_CDS_JAVA_HEAP_RETURN_(return false);
 };
 
 #if INCLUDE_CDS_JAVA_HEAP

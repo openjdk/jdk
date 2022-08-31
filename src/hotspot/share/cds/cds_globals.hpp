@@ -71,6 +71,12 @@
   product(bool, AllowArchivingWithJavaAgent, false, DIAGNOSTIC,             \
           "Allow Java agent to be run with CDS dumping")                    \
                                                                             \
+  develop(ccstr, ArchiveHeapTestClass, NULL,                                \
+          "For JVM internal testing only. Not available in "                \
+          "product builds. If specified, the static field named "           \
+          "\"archivedObjects\" in this class is stored into the CDS "       \
+          "archive heap")                                                   \
+                                                                            \
   product(ccstr, DumpLoadedClassList, NULL,                                 \
           "Dump the names all loaded classes, that could be stored into "   \
           "the CDS archive, in the specified file")                         \
