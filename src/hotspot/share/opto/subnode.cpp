@@ -1619,6 +1619,7 @@ Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   }
 
   // Change x u< 1 or x u<= 0 to x == 0
+  // and    x u> 0 or u>= 1   to x != 0
   if (cop == Op_CmpU &&
       cmp1_op != Op_LoadRange &&
       (((_test._test == BoolTest::lt || _test._test == BoolTest::ge) &&
