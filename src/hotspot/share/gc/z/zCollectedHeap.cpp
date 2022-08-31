@@ -358,10 +358,13 @@ void ZCollectedHeap::print_on_error(outputStream* st) const {
   st->print_cr(" MarkBad:            " PTR_FORMAT, ZPointerMarkBadMask);
   st->print_cr(" StoreGood:          " PTR_FORMAT, ZPointerStoreGoodMask);
   st->print_cr(" StoreBad:           " PTR_FORMAT, ZPointerStoreBadMask);
+  st->print_cr(" ------------------- ");
+  st->print_cr(" Remapped:           " PTR_FORMAT, ZPointerRemapped);
+  st->print_cr(" RemappedYoung:      " PTR_FORMAT, ZPointerRemappedYoungMask);
+  st->print_cr(" RemappedOld:        " PTR_FORMAT, ZPointerRemappedOldMask);
   st->print_cr(" MarkedYoung:        " PTR_FORMAT, ZPointerMarkedYoung);
   st->print_cr(" MarkedOld:          " PTR_FORMAT, ZPointerMarkedOld);
   st->print_cr(" Remembered:         " PTR_FORMAT, ZPointerRemembered);
-  st->print_cr(" Remapped:           " PTR_FORMAT, ZPointerRemapped);
   st->cr();
   CollectedHeap::print_on_error(st);
 }
