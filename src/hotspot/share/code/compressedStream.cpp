@@ -25,16 +25,12 @@
 #include "precompiled.hpp"
 #include "code/compressedStream.hpp"
 #include "utilities/ostream.hpp"
+#include "utilities/moveBits.hpp"
 
 // 32-bit self-inverse encoding of float bits
 // converts trailing zeroes (common in floats) to leading zeroes
 inline juint CompressedStream::reverse_int(juint i) {
-  // Hacker's Delight, Figure 7-1
-  i = (i & 0x55555555) << 1 | ((i >> 1) & 0x55555555);
-  i = (i & 0x33333333) << 2 | ((i >> 2) & 0x33333333);
-  i = (i & 0x0f0f0f0f) << 4 | ((i >> 4) & 0x0f0f0f0f);
-  i = (i << 24) | ((i & 0xff00) << 8) | ((i >> 8) & 0xff00) | (i >> 24);
-  return i;
+  return reverse_bits(i);
 }
 
 jint CompressedReadStream::read_signed_int() {

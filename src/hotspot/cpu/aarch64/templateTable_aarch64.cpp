@@ -25,6 +25,7 @@
 
 #include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
+#include "compiler/compilerDefinitions.inline.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/tlab_globals.hpp"
@@ -145,7 +146,7 @@ static void do_oop_store(InterpreterMacroAssembler* _masm,
                          Register val,
                          DecoratorSet decorators) {
   assert(val == noreg || val == r0, "parameter is just for looks");
-  __ store_heap_oop(dst, val, r10, r1, decorators);
+  __ store_heap_oop(dst, val, r10, r1, r3, decorators);
 }
 
 static void do_oop_load(InterpreterMacroAssembler* _masm,
@@ -1058,7 +1059,7 @@ void TemplateTable::iastore() {
   // r3: array
   index_check(r3, r1); // prefer index in r1
   __ add(r1, r1, arrayOopDesc::base_offset_in_bytes(T_INT) >> 2);
-  __ access_store_at(T_INT, IN_HEAP | IS_ARRAY, Address(r3, r1, Address::uxtw(2)), r0, noreg, noreg);
+  __ access_store_at(T_INT, IN_HEAP | IS_ARRAY, Address(r3, r1, Address::uxtw(2)), r0, noreg, noreg, noreg);
 }
 
 void TemplateTable::lastore() {
@@ -1070,7 +1071,7 @@ void TemplateTable::lastore() {
   // r3: array
   index_check(r3, r1); // prefer index in r1
   __ add(r1, r1, arrayOopDesc::base_offset_in_bytes(T_LONG) >> 3);
-  __ access_store_at(T_LONG, IN_HEAP | IS_ARRAY, Address(r3, r1, Address::uxtw(3)), r0, noreg, noreg);
+  __ access_store_at(T_LONG, IN_HEAP | IS_ARRAY, Address(r3, r1, Address::uxtw(3)), r0, noreg, noreg, noreg);
 }
 
 void TemplateTable::fastore() {
@@ -1082,7 +1083,7 @@ void TemplateTable::fastore() {
   // r3:  array
   index_check(r3, r1); // prefer index in r1
   __ add(r1, r1, arrayOopDesc::base_offset_in_bytes(T_FLOAT) >> 2);
-  __ access_store_at(T_FLOAT, IN_HEAP | IS_ARRAY, Address(r3, r1, Address::uxtw(2)), noreg /* ftos */, noreg, noreg);
+  __ access_store_at(T_FLOAT, IN_HEAP | IS_ARRAY, Address(r3, r1, Address::uxtw(2)), noreg /* ftos */, noreg, noreg, noreg);
 }
 
 void TemplateTable::dastore() {
@@ -1094,7 +1095,7 @@ void TemplateTable::dastore() {
   // r3:  array
   index_check(r3, r1); // prefer index in r1
   __ add(r1, r1, arrayOopDesc::base_offset_in_bytes(T_DOUBLE) >> 3);
-  __ access_store_at(T_DOUBLE, IN_HEAP | IS_ARRAY, Address(r3, r1, Address::uxtw(3)), noreg /* dtos */, noreg, noreg);
+  __ access_store_at(T_DOUBLE, IN_HEAP | IS_ARRAY, Address(r3, r1, Address::uxtw(3)), noreg /* dtos */, noreg, noreg, noreg);
 }
 
 void TemplateTable::aastore() {
@@ -1171,7 +1172,7 @@ void TemplateTable::bastore()
   __ bind(L_skip);
 
   __ add(r1, r1, arrayOopDesc::base_offset_in_bytes(T_BYTE) >> 0);
-  __ access_store_at(T_BYTE, IN_HEAP | IS_ARRAY, Address(r3, r1, Address::uxtw(0)), r0, noreg, noreg);
+  __ access_store_at(T_BYTE, IN_HEAP | IS_ARRAY, Address(r3, r1, Address::uxtw(0)), r0, noreg, noreg, noreg);
 }
 
 void TemplateTable::castore()
@@ -1184,7 +1185,7 @@ void TemplateTable::castore()
   // r3: array
   index_check(r3, r1); // prefer index in r1
   __ add(r1, r1, arrayOopDesc::base_offset_in_bytes(T_CHAR) >> 1);
-  __ access_store_at(T_CHAR, IN_HEAP | IS_ARRAY, Address(r3, r1, Address::uxtw(1)), r0, noreg, noreg);
+  __ access_store_at(T_CHAR, IN_HEAP | IS_ARRAY, Address(r3, r1, Address::uxtw(1)), r0, noreg, noreg, noreg);
 }
 
 void TemplateTable::sastore()
@@ -2686,7 +2687,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
   {
     __ pop(btos);
     if (!is_static) pop_and_check_object(obj);
-    __ access_store_at(T_BYTE, IN_HEAP, field, r0, noreg, noreg);
+    __ access_store_at(T_BYTE, IN_HEAP, field, r0, noreg, noreg, noreg);
     if (rc == may_rewrite) {
       patch_bytecode(Bytecodes::_fast_bputfield, bc, r1, true, byte_no);
     }
@@ -2701,7 +2702,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
   {
     __ pop(ztos);
     if (!is_static) pop_and_check_object(obj);
-    __ access_store_at(T_BOOLEAN, IN_HEAP, field, r0, noreg, noreg);
+    __ access_store_at(T_BOOLEAN, IN_HEAP, field, r0, noreg, noreg, noreg);
     if (rc == may_rewrite) {
       patch_bytecode(Bytecodes::_fast_zputfield, bc, r1, true, byte_no);
     }
@@ -2732,7 +2733,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
   {
     __ pop(itos);
     if (!is_static) pop_and_check_object(obj);
-    __ access_store_at(T_INT, IN_HEAP, field, r0, noreg, noreg);
+    __ access_store_at(T_INT, IN_HEAP, field, r0, noreg, noreg, noreg);
     if (rc == may_rewrite) {
       patch_bytecode(Bytecodes::_fast_iputfield, bc, r1, true, byte_no);
     }
@@ -2747,7 +2748,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
   {
     __ pop(ctos);
     if (!is_static) pop_and_check_object(obj);
-    __ access_store_at(T_CHAR, IN_HEAP, field, r0, noreg, noreg);
+    __ access_store_at(T_CHAR, IN_HEAP, field, r0, noreg, noreg, noreg);
     if (rc == may_rewrite) {
       patch_bytecode(Bytecodes::_fast_cputfield, bc, r1, true, byte_no);
     }
@@ -2762,7 +2763,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
   {
     __ pop(stos);
     if (!is_static) pop_and_check_object(obj);
-    __ access_store_at(T_SHORT, IN_HEAP, field, r0, noreg, noreg);
+    __ access_store_at(T_SHORT, IN_HEAP, field, r0, noreg, noreg, noreg);
     if (rc == may_rewrite) {
       patch_bytecode(Bytecodes::_fast_sputfield, bc, r1, true, byte_no);
     }
@@ -2777,7 +2778,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
   {
     __ pop(ltos);
     if (!is_static) pop_and_check_object(obj);
-    __ access_store_at(T_LONG, IN_HEAP, field, r0, noreg, noreg);
+    __ access_store_at(T_LONG, IN_HEAP, field, r0, noreg, noreg, noreg);
     if (rc == may_rewrite) {
       patch_bytecode(Bytecodes::_fast_lputfield, bc, r1, true, byte_no);
     }
@@ -2792,7 +2793,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
   {
     __ pop(ftos);
     if (!is_static) pop_and_check_object(obj);
-    __ access_store_at(T_FLOAT, IN_HEAP, field, noreg /* ftos */, noreg, noreg);
+    __ access_store_at(T_FLOAT, IN_HEAP, field, noreg /* ftos */, noreg, noreg, noreg);
     if (rc == may_rewrite) {
       patch_bytecode(Bytecodes::_fast_fputfield, bc, r1, true, byte_no);
     }
@@ -2809,7 +2810,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
   {
     __ pop(dtos);
     if (!is_static) pop_and_check_object(obj);
-    __ access_store_at(T_DOUBLE, IN_HEAP, field, noreg /* dtos */, noreg, noreg);
+    __ access_store_at(T_DOUBLE, IN_HEAP, field, noreg /* dtos */, noreg, noreg, noreg);
     if (rc == may_rewrite) {
       patch_bytecode(Bytecodes::_fast_dputfield, bc, r1, true, byte_no);
     }
@@ -2944,28 +2945,28 @@ void TemplateTable::fast_storefield(TosState state)
     do_oop_store(_masm, field, r0, IN_HEAP);
     break;
   case Bytecodes::_fast_lputfield:
-    __ access_store_at(T_LONG, IN_HEAP, field, r0, noreg, noreg);
+    __ access_store_at(T_LONG, IN_HEAP, field, r0, noreg, noreg, noreg);
     break;
   case Bytecodes::_fast_iputfield:
-    __ access_store_at(T_INT, IN_HEAP, field, r0, noreg, noreg);
+    __ access_store_at(T_INT, IN_HEAP, field, r0, noreg, noreg, noreg);
     break;
   case Bytecodes::_fast_zputfield:
-    __ access_store_at(T_BOOLEAN, IN_HEAP, field, r0, noreg, noreg);
+    __ access_store_at(T_BOOLEAN, IN_HEAP, field, r0, noreg, noreg, noreg);
     break;
   case Bytecodes::_fast_bputfield:
-    __ access_store_at(T_BYTE, IN_HEAP, field, r0, noreg, noreg);
+    __ access_store_at(T_BYTE, IN_HEAP, field, r0, noreg, noreg, noreg);
     break;
   case Bytecodes::_fast_sputfield:
-    __ access_store_at(T_SHORT, IN_HEAP, field, r0, noreg, noreg);
+    __ access_store_at(T_SHORT, IN_HEAP, field, r0, noreg, noreg, noreg);
     break;
   case Bytecodes::_fast_cputfield:
-    __ access_store_at(T_CHAR, IN_HEAP, field, r0, noreg, noreg);
+    __ access_store_at(T_CHAR, IN_HEAP, field, r0, noreg, noreg, noreg);
     break;
   case Bytecodes::_fast_fputfield:
-    __ access_store_at(T_FLOAT, IN_HEAP, field, noreg /* ftos */, noreg, noreg);
+    __ access_store_at(T_FLOAT, IN_HEAP, field, noreg /* ftos */, noreg, noreg, noreg);
     break;
   case Bytecodes::_fast_dputfield:
-    __ access_store_at(T_DOUBLE, IN_HEAP, field, noreg /* dtos */, noreg, noreg);
+    __ access_store_at(T_DOUBLE, IN_HEAP, field, noreg /* dtos */, noreg, noreg, noreg);
     break;
   default:
     ShouldNotReachHere();
@@ -3468,7 +3469,6 @@ void TemplateTable::_new() {
   Label slow_case;
   Label done;
   Label initialize_header;
-  Label initialize_object; // including clearing the fields
 
   __ get_cpool_and_tags(r4, r0);
   // Make sure the class we're about to instantiate has been resolved.
@@ -3501,17 +3501,10 @@ void TemplateTable::_new() {
   //  If TLAB is enabled:
   //    Try to allocate in the TLAB.
   //    If fails, go to the slow path.
-  //  Else If inline contiguous allocations are enabled:
-  //    Try to allocate in eden.
-  //    If fails due to heap end, go to slow path.
-  //
-  //  If TLAB is enabled OR inline contiguous is enabled:
   //    Initialize the allocation.
   //    Exit.
   //
   //  Go to slow path.
-  const bool allow_shared_alloc =
-    Universe::heap()->supports_inline_contig_alloc();
 
   if (UseTLAB) {
     __ tlab_allocate(r0, r3, 0, noreg, r1, slow_case);
@@ -3519,25 +3512,10 @@ void TemplateTable::_new() {
     if (ZeroTLAB) {
       // the fields have been already cleared
       __ b(initialize_header);
-    } else {
-      // initialize both the header and fields
-      __ b(initialize_object);
     }
-  } else {
-    // Allocation in the shared Eden, if allowed.
-    //
-    // r3: instance size in bytes
-    if (allow_shared_alloc) {
-      __ eden_allocate(r0, r3, 0, r10, slow_case);
-    }
-  }
 
-  // If UseTLAB or allow_shared_alloc are true, the object is created above and
-  // there is an initialize need. Otherwise, skip and go to the slow path.
-  if (UseTLAB || allow_shared_alloc) {
     // The object is initialized before the header.  If the object size is
     // zero, go directly to the header initialization.
-    __ bind(initialize_object);
     __ sub(r3, r3, sizeof(oopDesc));
     __ cbz(r3, initialize_header);
 

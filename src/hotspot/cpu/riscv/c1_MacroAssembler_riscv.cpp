@@ -141,7 +141,7 @@ void C1_MacroAssembler::try_allocate(Register obj, Register var_size_in_bytes, i
   if (UseTLAB) {
     tlab_allocate(obj, var_size_in_bytes, con_size_in_bytes, tmp1, tmp2, slow_case, /* is_far */ true);
   } else {
-    eden_allocate(obj, var_size_in_bytes, con_size_in_bytes, tmp1, slow_case, /* is_far */ true);
+    j(slow_case);
   }
 }
 
@@ -310,7 +310,7 @@ void C1_MacroAssembler::build_frame(int framesize, int bang_size_in_bytes) {
 
   // Insert nmethod entry barrier into frame.
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  bs->nmethod_entry_barrier(this);
+  bs->nmethod_entry_barrier(this, NULL /* slow_path */, NULL /* continuation */, NULL /* guard */);
 }
 
 void C1_MacroAssembler::remove_frame(int framesize) {

@@ -36,7 +36,6 @@
 
 
 void CardTableBarrierSetAssembler::store_check(MacroAssembler* masm, Register obj, Register tmp) {
-  assert_cond(masm != NULL);
   assert_different_registers(obj, tmp);
   BarrierSet* bs = BarrierSet::barrier_set();
   assert(bs->kind() == BarrierSet::CardTableBarrierSet, "Wrong barrier set kind");
@@ -62,7 +61,6 @@ void CardTableBarrierSetAssembler::store_check(MacroAssembler* masm, Register ob
 
 void CardTableBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* masm, DecoratorSet decorators,
                                                                     Register start, Register count, Register tmp, RegSet saved_regs) {
-  assert_cond(masm != NULL);
   assert_different_registers(start, tmp);
   assert_different_registers(count, tmp);
 
@@ -103,7 +101,6 @@ void CardTableBarrierSetAssembler::oop_store_at(MacroAssembler* masm, DecoratorS
     if (!precise || dst.offset() == 0) {
       store_check(masm, dst.base(), x13);
     } else {
-      assert_cond(masm != NULL);
       __ la(x13, dst);
       store_check(masm, x13, t0);
     }

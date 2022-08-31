@@ -25,10 +25,10 @@ import org.testng.Assert;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashSet;
@@ -37,9 +37,9 @@ import java.util.Set;
 
 /*
  * @test
- * @bug 8289643
+ * @bug 8289643 8291760
  * @requires (os.family == "linux" & !vm.musl)
- * @summary file descriptor leak with ProcessBuilder.startPipeline
+ * @summary File descriptor leak detection with ProcessBuilder.startPipeline
  * @run testng/othervm PipelineLeaksFD
  */
 
@@ -70,23 +70,30 @@ public class PipelineLeaksFD {
 
         List<Process> processes = ProcessBuilder.startPipeline(builders);
 
-        OutputStream out = processes.get(0).getOutputStream();
-        out.write('a');
-        out.close();
+        // Write something through the pipeline
+        final String text = "xyz";
+        try (Writer out = processes.get(0).outputWriter()) {
+            out.write(text);
+        }
 
-        Process last = processes.get(processes.size() - 1);
-        try (InputStream inputStream = last.getInputStream();
-             InputStream errorStream = last.getErrorStream()) {
-            byte[] bytes = inputStream.readAllBytes();
-            Assert.assertEquals(bytes.length, 1, "stdout bytes read");
-            byte[] errBytes = errorStream.readAllBytes();
-            Assert.assertEquals(errBytes.length, 0, "stderr bytes read");
+        // Read, check, and close all streams
+        for (int i = 0; i < processes.size(); i++) {
+            final Process p = processes.get(i);
+            String expectedOut = (i == processes.size() - 1) ? text : null;
+            String expectedErr = null;      // EOF
+            try (BufferedReader inputStream = p.inputReader();
+                 BufferedReader errorStream = p.errorReader()) {
+                String outActual = inputStream.readLine();
+                Assert.assertEquals(outActual, expectedOut, "stdout, process[ " + i + "]: " + p);
+
+                String errActual = errorStream.readLine();
+                Assert.assertEquals(errActual, expectedErr, "stderr, process[ " + i + "]: " + p);
+            }
         }
 
         processes.forEach(p -> waitForQuiet(p));
 
         Set<PipeRecord> pipesAfter = myPipes();
-        printPipes(pipesAfter, "DEBUG: All Pipes After");
         if (!pipesBefore.equals(pipesAfter)) {
             Set<PipeRecord> missing = new HashSet<>(pipesBefore);
             missing.removeAll(pipesAfter);

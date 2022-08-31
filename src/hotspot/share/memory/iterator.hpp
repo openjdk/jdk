@@ -107,7 +107,7 @@ class OopIterateClosure : public OopClosure {
 
   // Class redefinition needs to get notified about methods from stackChunkOops
   virtual void do_method(Method* m) = 0;
-  // The code cache sweeper needs to get notified about methods from stackChunkOops
+  // The code cache unloading needs to get notified about methods from stackChunkOops
   virtual void do_nmethod(nmethod* nm) = 0;
 };
 

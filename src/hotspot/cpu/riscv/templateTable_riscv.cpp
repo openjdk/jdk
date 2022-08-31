@@ -70,15 +70,12 @@ static inline Address aaddress(int n) {
   return iaddress(n);
 }
 
-static inline Address iaddress(Register r,  Register temp, InterpreterMacroAssembler* _masm) {
-  assert_cond(_masm != NULL);
+static inline Address iaddress(Register r, Register temp, InterpreterMacroAssembler* _masm) {
   _masm->shadd(temp, r, xlocals, temp, 3);
   return Address(temp, 0);
 }
 
-static inline Address laddress(Register r, Register temp,
-                               InterpreterMacroAssembler* _masm) {
-  assert_cond(_masm != NULL);
+static inline Address laddress(Register r, Register temp, InterpreterMacroAssembler* _masm) {
   _masm->shadd(temp, r, xlocals, temp, 3);
   return Address(temp, Interpreter::local_offset_in_bytes(1));;
 }
@@ -87,8 +84,7 @@ static inline Address faddress(Register r, Register temp, InterpreterMacroAssemb
   return iaddress(r, temp, _masm);
 }
 
-static inline Address daddress(Register r, Register temp,
-                               InterpreterMacroAssembler* _masm) {
+static inline Address daddress(Register r, Register temp, InterpreterMacroAssembler* _masm) {
   return laddress(r, temp, _masm);
 }
 
@@ -134,7 +130,6 @@ static void do_oop_store(InterpreterMacroAssembler* _masm,
                          Register val,
                          DecoratorSet decorators) {
   assert(val == noreg || val == x10, "parameter is just for looks");
-  assert_cond(_masm != NULL);
   __ store_heap_oop(dst, val, x29, x11, decorators);
 }
 
@@ -142,7 +137,6 @@ static void do_oop_load(InterpreterMacroAssembler* _masm,
                         Address src,
                         Register dst,
                         DecoratorSet decorators) {
-  assert_cond(_masm != NULL);
   __ load_heap_oop(dst, src, x7, x11, decorators);
 }
 
@@ -3474,7 +3468,6 @@ void TemplateTable::_new() {
   Label slow_case;
   Label done;
   Label initialize_header;
-  Label initialize_object; // including clearing the fields
 
   __ get_cpool_and_tags(x14, x10);
   // Make sure the class we're about to instantiate has been resolved.
@@ -3508,15 +3501,9 @@ void TemplateTable::_new() {
   //  If TLAB is enabled:
   //    Try to allocate in the TLAB.
   //    If fails, go to the slow path.
-  //  Else If inline contiguous allocations are enabled:
-  //    Try to allocate in eden.
-  //    If fails due to heap end, go to slow path
-  //
-  //  If TLAB is enabled OR inline contiguous is enabled:
   //    Initialize the allocation.
   //    Exit.
   //  Go to slow path.
-  const bool allow_shared_alloc = Universe::heap()->supports_inline_contig_alloc();
 
   if (UseTLAB) {
     __ tlab_allocate(x10, x13, 0, noreg, x11, slow_case);
@@ -3524,25 +3511,10 @@ void TemplateTable::_new() {
     if (ZeroTLAB) {
       // the fields have been already cleared
       __ j(initialize_header);
-    } else {
-      // initialize both the header and fields
-      __ j(initialize_object);
     }
-  } else {
-    // Allocation in the shared Eden, if allowed.
-    //
-    // x13: instance size in bytes
-    if (allow_shared_alloc) {
-      __ eden_allocate(x10, x13, 0, x28, slow_case);
-    }
-  }
 
-  // If USETLAB or allow_shared_alloc are true, the object is created above and
-  // there is an initialized need. Otherwise, skip and go to the slow path.
-  if (UseTLAB || allow_shared_alloc) {
     // The object is initialized before the header. If the object size is
     // zero, go directly to the header initialization.
-    __ bind(initialize_object);
     __ sub(x13, x13, sizeof(oopDesc));
     __ beqz(x13, initialize_header);
 

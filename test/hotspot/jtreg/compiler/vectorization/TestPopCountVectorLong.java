@@ -25,7 +25,7 @@
 * @test
 * @summary Test vectorization of popcount for Long
 * @requires vm.compiler2.enabled
-* @requires vm.cpu.features ~= ".*avx512bw.*" | vm.cpu.features ~= ".*sve.*"
+* @requires vm.cpu.features ~= ".*avx512bw.*" | (vm.cpu.features ~= ".*sve.*" & (vm.opt.UseSVE == "null" | vm.opt.UseSVE > 0))
 * @requires os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64" | os.arch=="aarch64"
 * @library /test/lib /
 * @run driver compiler.vectorization.TestPopCountVectorLong

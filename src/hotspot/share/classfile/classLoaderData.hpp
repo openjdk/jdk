@@ -249,6 +249,8 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   bool is_builtin_class_loader_data() const;
   bool is_permanent_class_loader_data() const;
 
+  OopHandle class_loader_handle() const { return _class_loader; }
+
   // The Metaspace is created lazily so may be NULL.  This
   // method will allocate a Metaspace if needed.
   ClassLoaderMetaspace* metaspace_non_null();

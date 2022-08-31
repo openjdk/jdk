@@ -223,18 +223,8 @@ public class LinuxDebuggerLocal extends DebuggerBase implements LinuxDebugger {
         };
 
         if (useCache) {
-            // FIXME: re-test necessity of cache on Linux, where data
-            // fetching is faster
-            // Cache portion of the remote process's address space.
-            // Fetching data over the socket connection to dbx is slow.
-            // Might be faster if we were using a binary protocol to talk to
-            // dbx, but would have to test. For now, this cache works best
-            // if it covers the entire heap of the remote process. FIXME: at
-            // least should make this tunable from the outside, i.e., via
-            // the UI. This is a cache of 4096 4K pages, or 16 MB. The page
-            // size must be adjusted to be the hardware's page size.
-            // (FIXME: should pick this up from the debugger.)
-            initCache(4096, parseCacheNumPagesProperty(4096));
+            // This is a cache of 64k of 4K pages, or 256 MB.
+            initCache(4096, parseCacheNumPagesProperty(1024 * 64));
         }
 
         workerThread = new LinuxDebuggerLocalWorkerThread(this);
@@ -658,12 +648,6 @@ public class LinuxDebuggerLocal extends DebuggerBase implements LinuxDebugger {
             workerThread.execute(task);
             return task.result;
         }
-    }
-
-    public void writeBytesToProcess(long address, long numBytes, byte[] data)
-        throws UnmappedAddressException, DebuggerException {
-        // FIXME
-        throw new DebuggerException("Unimplemented");
     }
 
     static {

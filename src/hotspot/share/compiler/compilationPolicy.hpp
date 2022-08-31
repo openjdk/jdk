@@ -34,11 +34,20 @@ class CompileTask;
 class CompileQueue;
 /*
  *  The system supports 5 execution levels:
- *  * level 0 - interpreter
+ *  * level 0 - interpreter (Profiling is tracked by a MethodData object, or MDO in short)
  *  * level 1 - C1 with full optimization (no profiling)
  *  * level 2 - C1 with invocation and backedge counters
- *  * level 3 - C1 with full profiling (level 2 + MDO)
- *  * level 4 - C2
+ *  * level 3 - C1 with full profiling (level 2 + All other MDO profiling information)
+ *  * level 4 - C2 with full profile guided optimization
+ *
+ * The MethodData object is created by both the interpreter or either compiler to store any
+ * profiling information collected on a method (ciMethod::ensure_method_data() for C1 and C2
+ * and CompilationPolicy::create_mdo() for the interpreter). Both the interpreter and code
+ * compiled by C1 at level 3 will constantly update profiling information in the MDO during
+ * execution. The information in the MDO is then used by C1 and C2 during compilation, via
+ * the compiler interface (ciMethodXXX).
+ * See ciMethod.cpp and ciMethodData.cpp for information transfer from an MDO to the compilers
+ * through the compiler interface.
  *
  * Levels 0, 2 and 3 periodically notify the runtime about the current value of the counters
  * (invocation counters and backedge counters). The frequency of these notifications is
