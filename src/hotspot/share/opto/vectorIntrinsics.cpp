@@ -2500,8 +2500,9 @@ bool LibraryCallKit::inline_vector_convert() {
     int cast_vopc = VectorCastNode::opcode(new_elem_bt_from, !is_ucast);
 
     // Make sure that vector cast is implemented to particular type/size combination.
-    bool no_vec_cast_check = is_mask && (src_type->isa_vectmask() ||
-                             type2aelembytes(elem_bt_from) == type2aelembytes(elem_bt_to));
+    bool no_vec_cast_check = is_mask &&
+                             ((src_type->isa_vectmask() && dst_type->isa_vectmask()) ||
+                              type2aelembytes(elem_bt_from) == type2aelembytes(elem_bt_to));
     if (!no_vec_cast_check && !arch_supports_vector(cast_vopc, num_elem_to, new_elem_bt_to, VecMaskNotUsed)) {
       if (C->print_intrinsics()) {
         tty->print_cr("  ** not supported: arity=1 op=cast#%d/3 vlen2=%d etype2=%s ismask=%d",
