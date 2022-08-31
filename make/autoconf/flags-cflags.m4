@@ -538,14 +538,7 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
   if test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang || test "x$TOOLCHAIN_TYPE" = xxlc; then
     LANGSTD_CFLAGS="-std=c11"
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
-    if test "x$TOOLCHAIN_VERSION" != x2017; then
-      LANGSTD_CFLAGS="-std:c11"
-    else
-      # Visual Studio 2017 does not support the full C11, nor any other well-defined C standard.
-      # We use the default, which is roughly C89 + certain chosen extensions. VS2017 will need to
-      # be retired if we get a C11 construct in the source code that it cannot handle.
-      LANGSTD_CFLAGS=""
-    fi
+    LANGSTD_CFLAGS="-std:c11"
   fi
   TOOLCHAIN_CFLAGS_JDK_CONLY="$LANGSTD_CFLAGS $TOOLCHAIN_CFLAGS_JDK_CONLY"
 
