@@ -62,6 +62,12 @@ public class XPathExpParentTest extends XPathTestBase {
                 {"//Customer[1]/@id/..", "//Customer"},
                 {"//Customer[1]/namespace::*/..", "//Customers"},
                 {"/Customers/comment()/..", "//Customers"},
+                {"//*[parent::Customers][1]", "//Customer"},
+                {"//*[parent::Customers and @id='x1']", "//Customer"},
+
+                // document root
+                {"/Customers/parent::node()", "/"},
+                {"/Customers/..", "/"},
         };
     }
 
@@ -73,7 +79,11 @@ public class XPathExpParentTest extends XPathTestBase {
     @DataProvider(name = "noParentNode")
     public Object[][] getZeroParentNodeExp() {
         return new Object[][]{
+                // parent::* never return document root
                 {"/Customers/parent::*"},
+
+                // parent of document root
+                {"/.."},
         };
     }
 
@@ -90,18 +100,11 @@ public class XPathExpParentTest extends XPathTestBase {
                 {"/Customers/Customer[1]", "text()/parent::*"},
                 {"/Customers/Customer[1]", "@id/parent::*"},
                 {"/Customers", "namespace::*/parent::*"},
-        };
-    }
-
-    /*
-     * DataProvider for XPath relative expressions which should provide no parent node.
-     * Data columns:
-     *  see parameters of the test "testZeroRelativeParentExp"
-     */
-    @DataProvider(name = "noRelativeParent")
-    public Object[][] getZeroRelativeParentExp() {
-        return new Object[][]{
-                {"/Customers", "parent::*"},
+                {"/Customers", "comment()/parent::*"},
+                {"/Customers/Customer[1]", "../Customer[1]/Name/.."},
+                {"/Customers/Customer[1]", "../Customer[1]/text()/.."},
+                {"/Customers/Customer[1]", "../Customer[1]/@id/.."},
+                {"/Customers", "namespace::*/.."},
         };
     }
 
@@ -135,11 +138,7 @@ public class XPathExpParentTest extends XPathTestBase {
     @Test(dataProvider = "noParentNode")
     void testZeroParentNodeExp(String exp)
             throws Exception {
-        XPath xPath = XPathFactory.newInstance().newXPath();
-
-        Node parent = xPath.evaluateExpression(exp, doc, Node.class);
-
-        Assert.assertNull(parent);
+        testExp(doc, exp, null, Node.class);
     }
 
     /**
@@ -152,26 +151,9 @@ public class XPathExpParentTest extends XPathTestBase {
     @Test(dataProvider = "relativeParent")
     void testRelativeParentExp(String exp, String relativeExp) throws Exception {
         XPath xPath = XPathFactory.newInstance().newXPath();
-        Node base = xPath.evaluateExpression(exp, doc, Node.class);
-        Node relative = xPath.evaluateExpression(relativeExp, base, Node.class);
+        Node contextNode = xPath.evaluateExpression(exp, doc, Node.class);
+        Node relativeNode = xPath.evaluateExpression(relativeExp, contextNode, Node.class);
 
-        Assert.assertEquals(relative, base);
-    }
-
-    /**
-     * Verifies that XPath relative expressions provide no parent node.
-     *
-     * @param exp         XPath expression
-     * @param relativeExp XPath relative expression
-     * @throws Exception if test failed
-     */
-    @Test(dataProvider = "noRelativeParent")
-    void testZeroRelativeParentExp(String exp, String relativeExp) throws Exception {
-        XPath xPath = XPathFactory.newInstance().newXPath();
-
-        Node base = xPath.evaluateExpression(exp, doc, Node.class);
-        Node relative = xPath.evaluateExpression(relativeExp, base, Node.class);
-
-        Assert.assertNull(relative);
+        Assert.assertEquals(relativeNode, contextNode);
     }
 }
