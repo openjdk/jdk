@@ -77,13 +77,15 @@ static void inc_counter_np(MacroAssembler* _masm, int& counter, Register rscratc
 }
 
 static int& get_profile_ctr(int shift) {
-  switch (shift) {
-    case 0: return SharedRuntime::_jbyte_array_copy_ctr;
-    case 1: return SharedRuntime::_jshort_array_copy_ctr;
-    case 2: return SharedRuntime::_jint_array_copy_ctr;
-    case 3: return SharedRuntime::_jlong_array_copy_ctr;
-
-    default: ShouldNotReachHere(); return NULL;
+  if (shift == 0) {
+    return SharedRuntime::_jbyte_array_copy_ctr;
+  } else if (shift == 1) {
+    return SharedRuntime::_jshort_array_copy_ctr;
+  } else if (shift == 2) {
+    return SharedRuntime::_jint_array_copy_ctr;
+  } else {
+    assert(shift == 3, "");
+    return SharedRuntime::_jlong_array_copy_ctr;
   }
 }
 #endif // !PRODUCT
