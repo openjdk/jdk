@@ -207,7 +207,7 @@ final class SessionManager {
             // will be added to correct pool on release, nothing to do now
             return;
         }
-        opSessions.release(session);
+        releaseSession(session);
     }
 
     private Session openSession() throws PKCS11Exception {
