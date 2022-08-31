@@ -28,7 +28,9 @@
 #include "gc/z/zGeneration.inline.hpp"
 #include "gc/z/zStoreBarrierBuffer.inline.hpp"
 #include "gc/z/zUncoloredRoot.inline.hpp"
+#include "memory/resourceArea.hpp"
 #include "runtime/threadSMR.hpp"
+#include "utilities/ostream.hpp"
 #include "utilities/vmError.hpp"
 
 ByteSize ZStoreBarrierEntry::p_offset() {
@@ -37,6 +39,10 @@ ByteSize ZStoreBarrierEntry::p_offset() {
 
 ByteSize ZStoreBarrierEntry::prev_offset() {
   return byte_offset_of(ZStoreBarrierEntry, _prev);
+}
+
+ByteSize ZStoreBarrierEntry::pc_offset() {
+  return byte_offset_of(ZStoreBarrierEntry, _pc);
 }
 
 ByteSize ZStoreBarrierBuffer::buffer_offset() {
@@ -256,9 +262,32 @@ void ZStoreBarrierBuffer::on_error(outputStream* st) {
   st->print_cr("ZStoreBarrierBuffer: error when flushing");
   st->print_cr(" _last_processed_color: " PTR_FORMAT, _last_processed_color);
   st->print_cr(" _last_installed_color: " PTR_FORMAT, _last_installed_color);
+
+  ResourceMark rm;
+  stringStream ss;
+
+  auto description = [&](void* pc) -> const char* {
+    if ((uintptr_t)pc == 1) {
+      // pc is set to 1 when entries are added from the runtime code
+      return "Runtime";
+    }
+
+    ss.reset();
+
+    CodeBlob* b = CodeCache::find_blob(pc);
+    if (b != nullptr) {
+      b->dump_for_addr((address)pc, &ss, false);
+    } else {
+      ss.print(PTR_FORMAT " Unknown", p2i(pc));
+    }
+
+    assert(ss.count() != 0, "Sanity");
+    return ss.as_string();
+  };
+
   for (int i = current(); i < (int)_buffer_length; ++i) {
-    st->print_cr(" [%2d]: base: " PTR_FORMAT " p: " PTR_FORMAT " prev: " PTR_FORMAT,
-        i, untype(_base_pointers[i]), p2i(_buffer[i]._p), untype(_buffer[i]._prev));
+    st->print_cr(" [%2d]: base: " PTR_FORMAT " p: " PTR_FORMAT " prev: " PTR_FORMAT " pc: %s",
+        i, untype(_base_pointers[i]), p2i(_buffer[i]._p), untype(_buffer[i]._prev), description(_buffer[i]._pc));
   }
 }
 

@@ -465,6 +465,11 @@ static void store_barrier_buffer_add(MacroAssembler* masm,
   __ movptr(tmp1, Address(tmp1, 0));
   __ movptr(Address(tmp2, in_bytes(ZStoreBarrierEntry::prev_offset())), tmp1);
 
+  // Log pc for debugging
+  InternalAddress pc_addr(__ pc());
+  __ lea(tmp1, pc_addr);
+  __ movptr(Address(tmp2, in_bytes(ZStoreBarrierEntry::pc_offset())), tmp1);
+
   __ pop(tmp2);
 }
 
