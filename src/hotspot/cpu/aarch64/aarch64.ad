@@ -3368,7 +3368,7 @@ encode %{
     } else {
       relocInfo::relocType rtype = $src->constant_reloc();
       if (rtype == relocInfo::oop_type) {
-        __ movoop(dst_reg, (jobject)con, /*immediate*/true);
+        __ movoop(dst_reg, (jobject)con);
       } else if (rtype == relocInfo::metadata_type) {
         __ mov_metadata(dst_reg, (Metadata*)con);
       } else {
