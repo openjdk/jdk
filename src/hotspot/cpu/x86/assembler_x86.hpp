@@ -63,33 +63,33 @@ class Argument {
 
 #ifdef _WIN64
 
-REGISTER_DECLARATION(Register, c_rarg0, rcx);
-REGISTER_DECLARATION(Register, c_rarg1, rdx);
-REGISTER_DECLARATION(Register, c_rarg2, r8);
-REGISTER_DECLARATION(Register, c_rarg3, r9);
+constexpr Register c_rarg0 = rcx;
+constexpr Register c_rarg1 = rdx;
+constexpr Register c_rarg2 =  r8;
+constexpr Register c_rarg3 =  r9;
 
-REGISTER_DECLARATION(XMMRegister, c_farg0, xmm0);
-REGISTER_DECLARATION(XMMRegister, c_farg1, xmm1);
-REGISTER_DECLARATION(XMMRegister, c_farg2, xmm2);
-REGISTER_DECLARATION(XMMRegister, c_farg3, xmm3);
+constexpr XMMRegister c_farg0 = xmm0;
+constexpr XMMRegister c_farg1 = xmm1;
+constexpr XMMRegister c_farg2 = xmm2;
+constexpr XMMRegister c_farg3 = xmm3;
 
 #else
 
-REGISTER_DECLARATION(Register, c_rarg0, rdi);
-REGISTER_DECLARATION(Register, c_rarg1, rsi);
-REGISTER_DECLARATION(Register, c_rarg2, rdx);
-REGISTER_DECLARATION(Register, c_rarg3, rcx);
-REGISTER_DECLARATION(Register, c_rarg4, r8);
-REGISTER_DECLARATION(Register, c_rarg5, r9);
+constexpr Register c_rarg0 = rdi;
+constexpr Register c_rarg1 = rsi;
+constexpr Register c_rarg2 = rdx;
+constexpr Register c_rarg3 = rcx;
+constexpr Register c_rarg4 =  r8;
+constexpr Register c_rarg5 =  r9;
 
-REGISTER_DECLARATION(XMMRegister, c_farg0, xmm0);
-REGISTER_DECLARATION(XMMRegister, c_farg1, xmm1);
-REGISTER_DECLARATION(XMMRegister, c_farg2, xmm2);
-REGISTER_DECLARATION(XMMRegister, c_farg3, xmm3);
-REGISTER_DECLARATION(XMMRegister, c_farg4, xmm4);
-REGISTER_DECLARATION(XMMRegister, c_farg5, xmm5);
-REGISTER_DECLARATION(XMMRegister, c_farg6, xmm6);
-REGISTER_DECLARATION(XMMRegister, c_farg7, xmm7);
+constexpr XMMRegister c_farg0 = xmm0;
+constexpr XMMRegister c_farg1 = xmm1;
+constexpr XMMRegister c_farg2 = xmm2;
+constexpr XMMRegister c_farg3 = xmm3;
+constexpr XMMRegister c_farg4 = xmm4;
+constexpr XMMRegister c_farg5 = xmm5;
+constexpr XMMRegister c_farg6 = xmm6;
+constexpr XMMRegister c_farg7 = xmm7;
 
 #endif // _WIN64
 
@@ -109,33 +109,33 @@ REGISTER_DECLARATION(XMMRegister, c_farg7, xmm7);
 //        | j_rarg5   j_rarg0  j_rarg1 j_rarg2 j_rarg3 j_rarg4    |
 //        |-------------------------------------------------------|
 
-REGISTER_DECLARATION(Register, j_rarg0, c_rarg1);
-REGISTER_DECLARATION(Register, j_rarg1, c_rarg2);
-REGISTER_DECLARATION(Register, j_rarg2, c_rarg3);
+constexpr Register j_rarg0 = c_rarg1;
+constexpr Register j_rarg1 = c_rarg2;
+constexpr Register j_rarg2 = c_rarg3;
 // Windows runs out of register args here
 #ifdef _WIN64
-REGISTER_DECLARATION(Register, j_rarg3, rdi);
-REGISTER_DECLARATION(Register, j_rarg4, rsi);
+constexpr Register j_rarg3 = rdi;
+constexpr Register j_rarg4 = rsi;
 #else
-REGISTER_DECLARATION(Register, j_rarg3, c_rarg4);
-REGISTER_DECLARATION(Register, j_rarg4, c_rarg5);
+constexpr Register j_rarg3 = c_rarg4;
+constexpr Register j_rarg4 = c_rarg5;
 #endif /* _WIN64 */
-REGISTER_DECLARATION(Register, j_rarg5, c_rarg0);
+constexpr Register j_rarg5 = c_rarg0;
 
-REGISTER_DECLARATION(XMMRegister, j_farg0, xmm0);
-REGISTER_DECLARATION(XMMRegister, j_farg1, xmm1);
-REGISTER_DECLARATION(XMMRegister, j_farg2, xmm2);
-REGISTER_DECLARATION(XMMRegister, j_farg3, xmm3);
-REGISTER_DECLARATION(XMMRegister, j_farg4, xmm4);
-REGISTER_DECLARATION(XMMRegister, j_farg5, xmm5);
-REGISTER_DECLARATION(XMMRegister, j_farg6, xmm6);
-REGISTER_DECLARATION(XMMRegister, j_farg7, xmm7);
+constexpr XMMRegister j_farg0 = xmm0;
+constexpr XMMRegister j_farg1 = xmm1;
+constexpr XMMRegister j_farg2 = xmm2;
+constexpr XMMRegister j_farg3 = xmm3;
+constexpr XMMRegister j_farg4 = xmm4;
+constexpr XMMRegister j_farg5 = xmm5;
+constexpr XMMRegister j_farg6 = xmm6;
+constexpr XMMRegister j_farg7 = xmm7;
 
-REGISTER_DECLARATION(Register, rscratch1, r10);  // volatile
-REGISTER_DECLARATION(Register, rscratch2, r11);  // volatile
+constexpr Register rscratch1 = r10;  // volatile
+constexpr Register rscratch2 = r11;  // volatile
 
-REGISTER_DECLARATION(Register, r12_heapbase, r12); // callee-saved
-REGISTER_DECLARATION(Register, r15_thread, r15); // callee-saved
+constexpr Register r12_heapbase = r12; // callee-saved
+constexpr Register r15_thread   = r15; // callee-saved
 
 #else
 // rscratch1 will appear in 32bit code that is dead but of course must compile
@@ -149,7 +149,7 @@ REGISTER_DECLARATION(Register, r15_thread, r15); // callee-saved
 // JSR 292
 // On x86, the SP does not have to be saved when invoking method handle intrinsics
 // or compiled lambda forms. We indicate that by setting rbp_mh_SP_save to noreg.
-REGISTER_DECLARATION(Register, rbp_mh_SP_save, noreg);
+constexpr Register rbp_mh_SP_save = noreg;
 
 // Address is an abstraction used to represent a memory location
 // using any of the amd64 addressing modes with one object.
@@ -781,22 +781,39 @@ private:
                     int disp,
                     RelocationHolder const& rspec);
 
+  void emit_operand_helper(KRegister kreg,
+                           int base_enc, int index_enc, Address::ScaleFactor scale,
+                           int disp,
+                           RelocationHolder const& rspec,
+                           int rip_relative_correction = 0);
+
+  void emit_operand(KRegister kreg, Address adr,
+                    int rip_relative_correction = 0);
+
+  void emit_operand(KRegister kreg,
+                    Register base, Register index, Address::ScaleFactor scale,
+                    int disp,
+                    RelocationHolder const& rspec,
+                    int rip_relative_correction = 0);
+
   void emit_operand(XMMRegister reg, Address adr);
 
   // Immediate-to-memory forms
   void emit_arith_operand(int op1, Register rm, Address adr, int32_t imm32);
 
  protected:
-  #ifdef ASSERT
+#ifdef ASSERT
   void check_relocation(RelocationHolder const& rspec, int format);
-  #endif
+#endif
 
   void emit_data(jint data, relocInfo::relocType    rtype, int format);
   void emit_data(jint data, RelocationHolder const& rspec, int format);
   void emit_data64(jlong data, relocInfo::relocType rtype, int format = 0);
   void emit_data64(jlong data, RelocationHolder const& rspec, int format = 0);
 
-  bool reachable(AddressLiteral adr) NOT_LP64({ return true;});
+  bool always_reachable(AddressLiteral adr) NOT_LP64( { return true; } );
+  bool        reachable(AddressLiteral adr) NOT_LP64( { return true; } );
+
 
   // These are all easily abused and hence protected
 
@@ -933,10 +950,6 @@ private:
   void push(Register src);
 
   void pop(Register dst);
-
-  // These are dummies to prevent surprise implicit conversions to Register
-  void push(void* v);
-  void pop(void* v);
 
   // These do register sized moves/scans
   void rep_mov();
@@ -1092,10 +1105,6 @@ private:
   void cmpq(Register dst, int32_t imm32);
   void cmpq(Register dst, Register src);
   void cmpq(Register dst, Address src);
-
-  // these are dummies used to catch attempting to convert NULL to Register
-  void cmpl(Register dst, void* junk); // dummy
-  void cmpq(Register dst, void* junk); // dummy
 
   void cmpw(Address dst, int imm16);
 
@@ -1477,6 +1486,7 @@ private:
   void movb(Register dst, Address src);
 
   void movddup(XMMRegister dst, XMMRegister src);
+  void movddup(XMMRegister dst, Address src);
   void vmovddup(XMMRegister dst, Address src, int vector_len);
 
   void kandbl(KRegister dst, KRegister src1, KRegister src2);
@@ -1597,24 +1607,12 @@ private:
   void movl(Register dst, Address src);
   void movl(Address dst, Register src);
 
-  // These dummies prevent using movl from converting a zero (like NULL) into Register
-  // by giving the compiler two choices it can't resolve
-
-  void movl(Address  dst, void* junk);
-  void movl(Register dst, void* junk);
-
 #ifdef _LP64
   void movq(Register dst, Register src);
   void movq(Register dst, Address src);
   void movq(Address  dst, Register src);
   void movq(Address  dst, int32_t imm32);
   void movq(Register  dst, int32_t imm32);
-
-  // These dummies prevent using movq from converting a zero (like NULL) into Register
-  // by giving the compiler two choices it can't resolve
-
-  void movq(Address  dst, void* dummy);
-  void movq(Register dst, void* dummy);
 #endif
 
   // Move Quadword
@@ -1637,7 +1635,6 @@ private:
 
   void movslq(Register dst, Address src);
   void movslq(Register dst, Register src);
-  void movslq(Register dst, void* src); // Dummy declaration to cause NULL to be ambiguous
 #endif
 
   void movswl(Register dst, Address src);
@@ -1647,6 +1644,11 @@ private:
   void movswq(Register dst, Address src);
   void movswq(Register dst, Register src);
 #endif
+
+  void movups(XMMRegister dst, Address src);
+  void vmovups(XMMRegister dst, Address src, int vector_len);
+  void movups(Address dst, XMMRegister src);
+  void vmovups(Address dst, XMMRegister src, int vector_len);
 
   void movw(Address dst, int imm16);
   void movw(Register dst, Address src);
@@ -1915,6 +1917,8 @@ private:
   void pshufb(XMMRegister dst, XMMRegister src);
   void pshufb(XMMRegister dst, Address src);
   void vpshufb(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void evpshufb(XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int vector_len);
+
 
   // Shuffle Packed Doublewords
   void pshufd(XMMRegister dst, XMMRegister src, int mode);
@@ -1927,10 +1931,10 @@ private:
   void pshuflw(XMMRegister dst, Address src,     int mode);
 
   //shuffle floats and doubles
-  void pshufps(XMMRegister, XMMRegister, int);
-  void pshufpd(XMMRegister, XMMRegister, int);
-  void vpshufps(XMMRegister, XMMRegister, XMMRegister, int, int);
-  void vpshufpd(XMMRegister, XMMRegister, XMMRegister, int, int);
+  void shufps(XMMRegister, XMMRegister, int);
+  void shufpd(XMMRegister, XMMRegister, int);
+  void vshufps(XMMRegister, XMMRegister, XMMRegister, int, int);
+  void vshufpd(XMMRegister, XMMRegister, XMMRegister, int, int);
 
   // Shuffle packed values at 128 bit granularity
   void evshufi64x2(XMMRegister dst, XMMRegister nds, XMMRegister src, int imm8, int vector_len);
@@ -2911,7 +2915,7 @@ public:
 
   // Set embedded opmask register specifier.
   void set_embedded_opmask_register_specifier(KRegister mask) {
-    _embedded_opmask_register_specifier = (*mask).encoding() & 0x7;
+    _embedded_opmask_register_specifier = mask->encoding() & 0x7;
   }
 
 };

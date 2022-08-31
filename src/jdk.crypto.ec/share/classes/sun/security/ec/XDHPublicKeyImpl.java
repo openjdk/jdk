@@ -28,7 +28,6 @@ package sun.security.ec;
 import java.math.BigInteger;
 import java.security.InvalidKeyException;
 import java.security.KeyRep;
-import java.security.PublicKey;
 import java.security.interfaces.XECPublicKey;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.NamedParameterSpec;

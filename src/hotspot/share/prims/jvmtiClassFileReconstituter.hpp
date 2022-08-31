@@ -26,13 +26,14 @@
 #define SHARE_PRIMS_JVMTICLASSFILERECONSTITUTER_HPP
 
 #include "jvmtifiles/jvmtiEnv.hpp"
+#include "oops/constantPool.hpp"
 
 
 class JvmtiConstantPoolReconstituter : public StackObj {
  private:
   int                  _cpool_size;
-  SymbolHashMap*       _symmap;
-  SymbolHashMap*       _classmap;
+  ConstantPool::SymbolHash*  _symmap;
+  ConstantPool::SymbolHash*  _classmap;
   constantPoolHandle   _cpool;
   InstanceKlass*       _ik;
   jvmtiError           _err;

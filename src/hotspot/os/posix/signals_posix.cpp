@@ -29,6 +29,7 @@
 #include "code/compiledMethod.hpp"
 #include "code/nativeInst.hpp"
 #include "logging/log.hpp"
+#include "os_posix.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
@@ -634,7 +635,7 @@ int JVM_HANDLE_XXX_SIGNAL(int sig, siginfo_t* info,
     address pc = os::Posix::ucontext_get_pc(uc);
     assert(pc != NULL, "");
     if (NativeDeoptInstruction::is_deopt_at(pc)) {
-      CodeBlob* cb = CodeCache::find_blob_unsafe(pc);
+      CodeBlob* cb = CodeCache::find_blob(pc);
       if (cb != NULL && cb->is_compiled()) {
         MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, t);) // can call PcDescCache::add_pc_desc
         CompiledMethod* cm = cb->as_compiled_method();
@@ -889,7 +890,7 @@ int os::sigexitnum_pd() {
 
 // This method is a periodic task to check for misbehaving JNI applications
 // under CheckJNI, we can add any periodic checks here
-void os::run_periodic_checks() {
+void os::run_periodic_checks(outputStream* st) {
 
   if (check_signals == false) return;
 
@@ -923,8 +924,8 @@ void os::run_periodic_checks() {
     // - print all signal handlers. As part of that printout, details will be printed
     //   about any modified handlers.
     char buf[O_BUFLEN];
-    os::print_signal_handlers(tty, buf, O_BUFLEN);
-    tty->print_cr("Consider using jsig library.");
+    os::print_signal_handlers(st, buf, O_BUFLEN);
+    st->print_cr("Consider using jsig library.");
   }
 }
 

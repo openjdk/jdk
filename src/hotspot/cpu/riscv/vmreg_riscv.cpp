@@ -31,7 +31,7 @@ void VMRegImpl::set_regName() {
   int i = 0;
   Register reg = ::as_Register(0);
   for ( ; i < ConcreteRegisterImpl::max_gpr ; ) {
-    for (int j = 0 ; j < RegisterImpl::max_slots_per_register ; j++) {
+    for (int j = 0 ; j < Register::max_slots_per_register ; j++) {
       regName[i++] = reg->name();
     }
     reg = reg->successor();
@@ -39,7 +39,7 @@ void VMRegImpl::set_regName() {
 
   FloatRegister freg = ::as_FloatRegister(0);
   for ( ; i < ConcreteRegisterImpl::max_fpr ; ) {
-    for (int j = 0 ; j < FloatRegisterImpl::max_slots_per_register ; j++) {
+    for (int j = 0 ; j < FloatRegister::max_slots_per_register ; j++) {
       regName[i++] = reg->name();
     }
     freg = freg->successor();
@@ -47,7 +47,7 @@ void VMRegImpl::set_regName() {
 
   VectorRegister vreg = ::as_VectorRegister(0);
   for ( ; i < ConcreteRegisterImpl::max_vpr ; ) {
-    for (int j = 0 ; j < VectorRegisterImpl::max_slots_per_register ; j++) {
+    for (int j = 0 ; j < VectorRegister::max_slots_per_register ; j++) {
       regName[i++] = reg->name();
     }
     vreg = vreg->successor();

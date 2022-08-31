@@ -46,11 +46,8 @@ class MacroAssembler: public Assembler {
 
   void safepoint_poll(Label& slow_path, bool at_return, bool acquire, bool in_nmethod);
 
-  // Place a fence.i after code may have been modified due to a safepoint.
-  void safepoint_ifence();
-
   // Alignment
-  void align(int modulus, int extra_offset = 0);
+  int align(int modulus, int extra_offset = 0);
 
   // Stack frame creation/removal
   // Note that SP must be updated to the right place before saving/restoring RA and FP
@@ -178,7 +175,7 @@ class MacroAssembler: public Assembler {
   void resolve_oop_handle(Register result, Register tmp = x15);
   void resolve_jobject(Register value, Register thread, Register tmp);
 
-  void movoop(Register dst, jobject obj, bool immediate = false);
+  void movoop(Register dst, jobject obj);
   void mov_metadata(Register dst, Metadata* obj);
   void bang_stack_size(Register size, Register tmp);
   void set_narrow_oop(Register dst, jobject obj);
@@ -836,9 +833,6 @@ private:
 
   void load_reserved(Register addr, enum operand_size size, Assembler::Aqrl acquire);
   void store_conditional(Register addr, Register new_val, enum operand_size size, Assembler::Aqrl release);
-
-  // Check the current thread doesn't need a cross modify fence.
-  void verify_cross_modify_fence_not_required() PRODUCT_RETURN;
 };
 
 #ifdef ASSERT

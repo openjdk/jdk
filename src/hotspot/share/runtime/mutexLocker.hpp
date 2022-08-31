@@ -34,6 +34,7 @@
 extern Mutex*   Patching_lock;                   // a lock used to guard code patching of compiled code
 extern Mutex*   CompiledMethod_lock;             // a lock used to guard a compiled method and OSR queues
 extern Monitor* SystemDictionary_lock;           // a lock on the system dictionary
+extern Mutex*   InvokeMethodTable_lock;
 extern Mutex*   SharedDictionary_lock;           // a lock on the CDS shared dictionary
 extern Monitor* ClassInitError_lock;             // a lock on the class initialization error table
 extern Mutex*   Module_lock;                     // a lock on module and package related data structures
@@ -57,7 +58,6 @@ extern Mutex*   SymbolArena_lock;                // a lock on the symbol table a
 extern Monitor* StringDedup_lock;                // a lock on the string deduplication facility
 extern Mutex*   StringDedupIntern_lock;          // a lock on StringTable notification of StringDedup
 extern Monitor* CodeCache_lock;                  // a lock on the CodeCache
-extern Monitor* CodeSweeper_lock;                // a lock used by the sweeper only for wait notify
 extern Mutex*   MethodData_lock;                 // a lock on installation of method data
 extern Mutex*   TouchedMethodLog_lock;           // a lock on allocation of LogExecutedMethods info
 extern Mutex*   RetData_lock;                    // a lock on installation of RetData inside method data
@@ -89,7 +89,6 @@ extern Monitor* InitCompleted_lock;              // a lock used to signal thread
 extern Monitor* BeforeExit_lock;                 // a lock used to guard cleanups and shutdown hooks
 extern Monitor* Notify_lock;                     // a lock used to synchronize the start-up of the vm
 extern Mutex*   ExceptionCache_lock;             // a lock used to synchronize exception cache updates
-extern Mutex*   NMethodSweeperStats_lock;        // a lock used to serialize access to sweeper statistics
 
 #ifndef PRODUCT
 extern Mutex*   FullGCALot_lock;                 // a lock to make FullGCALot MT safe

@@ -44,7 +44,7 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaThread.hpp"
-#include "runtime/os.hpp"
+#include "runtime/os.inline.hpp"
 #include "runtime/safefetch.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubCodeGenerator.hpp"

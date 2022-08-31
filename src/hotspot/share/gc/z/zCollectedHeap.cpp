@@ -265,10 +265,6 @@ void ZCollectedHeap::unregister_nmethod(nmethod* nm) {
   ZNMethod::unregister_nmethod(nm);
 }
 
-void ZCollectedHeap::flush_nmethod(nmethod* nm) {
-  ZNMethod::flush_nmethod(nm);
-}
-
 void ZCollectedHeap::verify_nmethod(nmethod* nm) {
   // Does nothing
 }

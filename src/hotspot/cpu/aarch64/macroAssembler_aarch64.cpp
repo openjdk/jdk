@@ -849,19 +849,21 @@ void MacroAssembler::call_VM_helper(Register oop_result, address entry_point, in
   call_VM_base(oop_result, noreg, noreg, entry_point, number_of_arguments, check_exceptions);
 }
 
-// Maybe emit a call via a trampoline.  If the code cache is small
+// Maybe emit a call via a trampoline. If the code cache is small
 // trampolines won't be emitted.
-address MacroAssembler::trampoline_call1(Address entry, CodeBuffer* cbuf, bool check_emit_size) {
+address MacroAssembler::trampoline_call(Address entry, CodeBuffer* cbuf) {
   assert(entry.rspec().type() == relocInfo::runtime_call_type
          || entry.rspec().type() == relocInfo::opt_virtual_call_type
          || entry.rspec().type() == relocInfo::static_call_type
          || entry.rspec().type() == relocInfo::virtual_call_type, "wrong reloc type");
 
+  address target = entry.target();
+
+  // We might need a trampoline if branches are far.
   bool need_trampoline = far_branches();
-  if (!need_trampoline && entry.rspec().type() == relocInfo::runtime_call_type && !CodeCache::contains(entry.target())) {
+  if (!need_trampoline && entry.rspec().type() == relocInfo::runtime_call_type && !CodeCache::contains(target)) {
     // If it is a runtime call of an address outside small CodeCache,
     // we need to check whether it is in range.
-    address target = entry.target();
     assert(target < CodeCache::low_bound() || target >= CodeCache::high_bound(), "target is inside CodeCache");
     // Case 1: -------T-------L====CodeCache====H-------
     //                ^-------longest branch---|
@@ -872,40 +874,32 @@ address MacroAssembler::trampoline_call1(Address entry, CodeBuffer* cbuf, bool c
     need_trampoline = !reachable_from_branch_at(longest_branch_start, target);
   }
 
-  // We need a trampoline if branches are far.
   if (need_trampoline) {
-    bool in_scratch_emit_size = false;
-#ifdef COMPILER2
-    if (check_emit_size) {
+    if (!in_scratch_emit_size()) {
       // We don't want to emit a trampoline if C2 is generating dummy
       // code during its branch shortening phase.
-      CompileTask* task = ciEnv::current()->task();
-      in_scratch_emit_size =
-        (task != NULL && is_c2_compile(task->comp_level()) &&
-         Compile::current()->output()->in_scratch_emit_size());
-    }
-#endif
-    if (!in_scratch_emit_size) {
-      address stub = emit_trampoline_stub(offset(), entry.target());
-      if (stub == NULL) {
-        postcond(pc() == badAddress);
-        return NULL; // CodeCache is full
+      if (entry.rspec().type() == relocInfo::runtime_call_type) {
+        assert(CodeBuffer::supports_shared_stubs(), "must support shared stubs");
+        code()->share_trampoline_for(entry.target(), offset());
+      } else {
+        address stub = emit_trampoline_stub(offset(), target);
+        if (stub == NULL) {
+          postcond(pc() == badAddress);
+          return NULL; // CodeCache is full
+        }
       }
     }
+    target = pc();
   }
 
   if (cbuf) cbuf->set_insts_mark();
   relocate(entry.rspec());
-  if (!need_trampoline) {
-    bl(entry.target());
-  } else {
-    bl(pc());
-  }
+  bl(target);
+
   // just need to return a non-null address
   postcond(pc() != badAddress);
   return pc();
 }
-
 
 // Emit a trampoline stub for a call to a target which is too far away.
 //
@@ -2204,7 +2198,7 @@ int MacroAssembler::push(unsigned int bitset, Register stack) {
       regs[count++] = reg;
     bitset >>= 1;
   }
-  regs[count++] = zr->encoding_nocheck();
+  regs[count++] = zr->raw_encoding();
   count &= ~1;  // Only push an even number of regs
 
   if (count) {
@@ -2234,7 +2228,7 @@ int MacroAssembler::pop(unsigned int bitset, Register stack) {
       regs[count++] = reg;
     bitset >>= 1;
   }
-  regs[count++] = zr->encoding_nocheck();
+  regs[count++] = zr->raw_encoding();
   count &= ~1;
 
   for (int i = 2; i < count; i += 2) {
@@ -2389,9 +2383,9 @@ int MacroAssembler::push_p(unsigned int bitset, Register stack) {
     return 0;
   }
 
-  unsigned char regs[PRegisterImpl::number_of_saved_registers];
+  unsigned char regs[PRegister::number_of_saved_registers];
   int count = 0;
-  for (int reg = 0; reg < PRegisterImpl::number_of_saved_registers; reg++) {
+  for (int reg = 0; reg < PRegister::number_of_saved_registers; reg++) {
     if (1 & bitset)
       regs[count++] = reg;
     bitset >>= 1;
@@ -2426,9 +2420,9 @@ int MacroAssembler::pop_p(unsigned int bitset, Register stack) {
     return 0;
   }
 
-  unsigned char regs[PRegisterImpl::number_of_saved_registers];
+  unsigned char regs[PRegister::number_of_saved_registers];
   int count = 0;
-  for (int reg = 0; reg < PRegisterImpl::number_of_saved_registers; reg++) {
+  for (int reg = 0; reg < PRegister::number_of_saved_registers; reg++) {
     if (1 & bitset)
       regs[count++] = reg;
     bitset >>= 1;
@@ -2459,7 +2453,7 @@ void MacroAssembler::verify_heapbase(const char* msg) {
   if (CheckCompressedOops) {
     Label ok;
     push(1 << rscratch1->encoding(), sp); // cmpptr trashes rscratch1
-    cmpptr(rheapbase, ExternalAddress((address)CompressedOops::ptrs_base_addr()));
+    cmpptr(rheapbase, ExternalAddress(CompressedOops::ptrs_base_addr()));
     br(Assembler::EQ, ok);
     stop(msg);
     bind(ok);
@@ -2593,7 +2587,7 @@ void MacroAssembler::reinit_heapbase()
     if (Universe::is_fully_initialized()) {
       mov(rheapbase, CompressedOops::ptrs_base());
     } else {
-      lea(rheapbase, ExternalAddress((address)CompressedOops::ptrs_base_addr()));
+      lea(rheapbase, ExternalAddress(CompressedOops::ptrs_base_addr()));
       ldr(rheapbase, Address(rheapbase));
     }
   }
@@ -2916,8 +2910,8 @@ void MacroAssembler::push_CPU_state(bool save_vectors, bool use_sve,
                                     int sve_vector_size_in_bytes, int total_predicate_in_bytes) {
   push(RegSet::range(r0, r29), sp); // integer registers except lr & sp
   if (save_vectors && use_sve && sve_vector_size_in_bytes > 16) {
-    sub(sp, sp, sve_vector_size_in_bytes * FloatRegisterImpl::number_of_registers);
-    for (int i = 0; i < FloatRegisterImpl::number_of_registers; i++) {
+    sub(sp, sp, sve_vector_size_in_bytes * FloatRegister::number_of_registers);
+    for (int i = 0; i < FloatRegister::number_of_registers; i++) {
       sve_str(as_FloatRegister(i), Address(sp, i));
     }
   } else {
@@ -2932,7 +2926,7 @@ void MacroAssembler::push_CPU_state(bool save_vectors, bool use_sve,
   }
   if (save_vectors && use_sve && total_predicate_in_bytes > 0) {
     sub(sp, sp, total_predicate_in_bytes);
-    for (int i = 0; i < PRegisterImpl::number_of_saved_registers; i++) {
+    for (int i = 0; i < PRegister::number_of_saved_registers; i++) {
       sve_str(as_PRegister(i), Address(sp, i));
     }
   }
@@ -2941,16 +2935,16 @@ void MacroAssembler::push_CPU_state(bool save_vectors, bool use_sve,
 void MacroAssembler::pop_CPU_state(bool restore_vectors, bool use_sve,
                                    int sve_vector_size_in_bytes, int total_predicate_in_bytes) {
   if (restore_vectors && use_sve && total_predicate_in_bytes > 0) {
-    for (int i = PRegisterImpl::number_of_saved_registers - 1; i >= 0; i--) {
+    for (int i = PRegister::number_of_saved_registers - 1; i >= 0; i--) {
       sve_ldr(as_PRegister(i), Address(sp, i));
     }
     add(sp, sp, total_predicate_in_bytes);
   }
   if (restore_vectors && use_sve && sve_vector_size_in_bytes > 16) {
-    for (int i = FloatRegisterImpl::number_of_registers - 1; i >= 0; i--) {
+    for (int i = FloatRegister::number_of_registers - 1; i >= 0; i--) {
       sve_ldr(as_FloatRegister(i), Address(sp, i));
     }
-    add(sp, sp, sve_vector_size_in_bytes * FloatRegisterImpl::number_of_registers);
+    add(sp, sp, sve_vector_size_in_bytes * FloatRegister::number_of_registers);
   } else {
     int step = (restore_vectors ? 8 : 4) * wordSize;
     for (int i = 0; i <= 28; i += 4)
@@ -4408,14 +4402,14 @@ void MacroAssembler::access_load_at(BasicType type, DecoratorSet decorators,
 
 void MacroAssembler::access_store_at(BasicType type, DecoratorSet decorators,
                                      Address dst, Register src,
-                                     Register tmp1, Register thread_tmp) {
+                                     Register tmp1, Register tmp2, Register tmp3) {
   BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
   decorators = AccessInternal::decorator_fixup(decorators);
   bool as_raw = (decorators & AS_RAW) != 0;
   if (as_raw) {
-    bs->BarrierSetAssembler::store_at(this, decorators, type, dst, src, tmp1, thread_tmp);
+    bs->BarrierSetAssembler::store_at(this, decorators, type, dst, src, tmp1, tmp2, tmp3);
   } else {
-    bs->store_at(this, decorators, type, dst, src, tmp1, thread_tmp);
+    bs->store_at(this, decorators, type, dst, src, tmp1, tmp2, tmp3);
   }
 }
 
@@ -4430,13 +4424,13 @@ void MacroAssembler::load_heap_oop_not_null(Register dst, Address src, Register 
 }
 
 void MacroAssembler::store_heap_oop(Address dst, Register src, Register tmp1,
-                                    Register thread_tmp, DecoratorSet decorators) {
-  access_store_at(T_OBJECT, IN_HEAP | decorators, dst, src, tmp1, thread_tmp);
+                                    Register tmp2, Register tmp3, DecoratorSet decorators) {
+  access_store_at(T_OBJECT, IN_HEAP | decorators, dst, src, tmp1, tmp2, tmp3);
 }
 
 // Used for storing NULLs.
 void MacroAssembler::store_heap_oop_null(Address dst) {
-  access_store_at(T_OBJECT, IN_HEAP, dst, noreg, noreg, noreg);
+  access_store_at(T_OBJECT, IN_HEAP, dst, noreg, noreg, noreg, noreg);
 }
 
 Address MacroAssembler::allocate_metadata_address(Metadata* obj) {
@@ -4446,11 +4440,8 @@ Address MacroAssembler::allocate_metadata_address(Metadata* obj) {
   return Address((address)obj, rspec);
 }
 
-// Move an oop into a register.  immediate is true if we want
-// immediate instructions and nmethod entry barriers are not enabled.
-// i.e. we are not going to patch this instruction while the code is being
-// executed by another thread.
-void MacroAssembler::movoop(Register dst, jobject obj, bool immediate) {
+// Move an oop into a register.
+void MacroAssembler::movoop(Register dst, jobject obj) {
   int oop_index;
   if (obj == NULL) {
     oop_index = oop_recorder()->allocate_oop_index(obj);
@@ -4465,15 +4456,12 @@ void MacroAssembler::movoop(Register dst, jobject obj, bool immediate) {
   }
   RelocationHolder rspec = oop_Relocation::spec(oop_index);
 
-  // nmethod entry barrier necessitate using the constant pool. They have to be
-  // ordered with respected to oop accesses.
-  // Using immediate literals would necessitate ISBs.
-  BarrierSet* bs = BarrierSet::barrier_set();
-  if ((bs->barrier_set_nmethod() != NULL && bs->barrier_set_assembler()->nmethod_patching_type() == NMethodPatchingType::conc_data_patch) || !immediate) {
+  if (BarrierSet::barrier_set()->barrier_set_assembler()->supports_instruction_patching()) {
+    mov(dst, Address((address)obj, rspec));
+  } else {
     address dummy = address(uintptr_t(pc()) & -wordSize); // A nearby aligned address
     ldr_constant(dst, Address(dummy, rspec));
-  } else
-    mov(dst, Address((address)obj, rspec));
+  }
 
 }
 

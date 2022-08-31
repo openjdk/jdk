@@ -103,7 +103,8 @@ inline T round_down_power_of_2(T value) {
 template<typename T, ENABLE_IF(std::is_integral<T>::value)>
 inline T round_up_power_of_2(T value) {
   assert(value > 0, "Invalid value");
-  assert(value <= max_power_of_2<T>(), "Overflow");
+  assert(value <= max_power_of_2<T>(), "Overflowing maximum allowed power of two with " UINT64_FORMAT_X,
+         static_cast<uint64_t>(value));
   if (is_power_of_2(value)) {
     return value;
   }
@@ -117,6 +118,14 @@ template <typename T, ENABLE_IF(std::is_integral<T>::value)>
 inline T next_power_of_2(T value)  {
   assert(value < std::numeric_limits<T>::max(), "Overflow");
   return round_up_power_of_2(value + 1);
+}
+
+// Find log2 value greater than this input
+template <typename T, ENABLE_IF(std::is_integral<T>::value)>
+inline T ceil_log2(T value) {
+  T ret;
+  for (ret = 1; ((T)1 << ret) < value; ++ret);
+  return ret;
 }
 
 // Return the largest power of two that is a submultiple of the given value.

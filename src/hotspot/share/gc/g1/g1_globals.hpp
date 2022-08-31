@@ -216,7 +216,7 @@
           "The threshold that defines (>=) a hot card.")                    \
           range(0, max_jubyte)                                              \
                                                                             \
-  develop(uint, G1RemSetArrayOfCardsEntriesBase, 4,                         \
+  develop(uint, G1RemSetArrayOfCardsEntriesBase, 8,                         \
           "Maximum number of entries per region in the Array of Cards "     \
           "card set container per MB of a heap region.")                    \
           range(1, 65536)                                                   \
