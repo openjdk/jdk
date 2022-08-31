@@ -241,15 +241,19 @@ public class TestIRMatching {
                 System.out.flush();
                 String output = baos.toString();
                 baos.reset();
-                Pattern pattern = Pattern.compile(">>> Compilation.*both\\d.*\\RPrintIdeal - " + CompilePhase.PRINT_IDEAL.getName()
-                                                  + ":(?:(?!PrintOpto|>>> Compilation)[\\S\\s])+PrintOptoAssembly");
+                Pattern pattern = Pattern.compile(compilationPrefix() + ".*both\\d.*\\R> Phase \""
+                                                  + CompilePhase.PRINT_IDEAL.getName()
+                                                  + "\":(?:(?!PrintOpto|" + compilationPrefix()
+                                                  + ")[\\S\\s])+PrintOptoAssembly");
                 Matcher matcher = pattern.matcher(output);
                 long bothCount = matcher.results().count();
                 if (bothCount != 7L) {
-                    failures.append("- Could not find all both() methods, expected 7 but found ").append(bothCount).append(System.lineSeparator());
+                    failures.append("- Could not find all both() methods, expected 7 but found ").append(bothCount)
+                            .append(System.lineSeparator());
                 }
-                pattern = Pattern.compile(">>> Compilation.*ideal\\d.*\\RPrintIdeal - " + CompilePhase.PRINT_IDEAL.getName()
-                                          + ":(?:(?!>>> Compilation)[\\S\\s])+");
+                pattern = Pattern.compile(compilationPrefix() + ".*ideal\\d.*\\R> Phase \""
+                                          + CompilePhase.PRINT_IDEAL.getName()
+                                          + "\":(?:(?!" + compilationPrefix() + ")[\\S\\s])+");
                 matcher = pattern.matcher(output);
                 int count = 0;
                 while (matcher.find()) {
@@ -260,9 +264,11 @@ public class TestIRMatching {
                     count++;
                 }
                 if (count != 7) {
-                    failures.append("- Could not find all ideal() methods, expected 7 but found ").append(count).append(System.lineSeparator());
+                    failures.append("- Could not find all ideal() methods, expected 7 but found ").append(count)
+                            .append(System.lineSeparator());
                 }
-                pattern = Pattern.compile(">>> Compilation.*opto\\d.*\\RPrintOptoAssembly:(?:(?!>>> Compilation)[\\S\\s])+");
+                pattern = Pattern.compile(compilationPrefix() + ".*opto\\d.*\\R> Phase \"PrintOptoAssembly\":(?:(?!"
+                                          + compilationPrefix()  + ")[\\S\\s])+");
                 matcher = pattern.matcher(output);
                 count = 0;
                 while (matcher.find()) {
@@ -385,7 +391,11 @@ public class TestIRMatching {
         }
     }
 
-    public static void findIrIds(String output, String method, int... numbers) {
+    private static String compilationPrefix() {
+        return "\\d\\) Compilation";
+    }
+
+    private static void findIrIds(String output, String method, int... numbers) {
         StringBuilder builder = new StringBuilder();
         builder.append(method);
         for (int i = 0; i < numbers.length; i+=2) {
