@@ -581,7 +581,7 @@ void TemplateInterpreterGenerator::lock_method() {
     // get receiver (assume this is frequent case)
     __ movptr(rax, Address(rlocals, Interpreter::local_offset_in_bytes(0)));
     __ jcc(Assembler::zero, done);
-    __ load_mirror(rax, rbx);
+    __ load_mirror(rax, rbx, rscratch2);
 
 #ifdef ASSERT
     {
@@ -625,7 +625,7 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   __ lea(rbcp, Address(rbcp, ConstMethod::codes_offset())); // get codebase
   __ push(rbx);        // save Method*
   // Get mirror and store it in the frame as GC root for this Method*
-  __ load_mirror(rdx, rbx);
+  __ load_mirror(rdx, rbx, rscratch2);
   __ push(rdx);
   if (ProfileInterpreter) {
     Label method_data_continue;
@@ -1000,7 +1000,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     Label L;
     __ movptr(rax, Address(method, Method::native_function_offset()));
     ExternalAddress unsatisfied(SharedRuntime::native_method_throw_unsatisfied_link_error_entry());
-    __ cmpptr(rax, unsatisfied.addr());
+    __ cmpptr(rax, unsatisfied.addr(), rscratch1);
     __ jcc(Assembler::notEqual, L);
     __ call_VM(noreg,
                CAST_FROM_FN_PTR(address,
@@ -1020,13 +1020,13 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
    // set_last_Java_frame_before_call
    // It is enough that the pc()
    // points into the right code segment. It does not have to be the correct return pc.
-   __ set_last_Java_frame(thread, noreg, rbp, __ pc());
+   __ set_last_Java_frame(thread, noreg, rbp, __ pc(), noreg);
 #else
    __ lea(c_rarg0, Address(r15_thread, JavaThread::jni_environment_offset()));
 
    // It is enough that the pc() points into the right code
    // segment. It does not have to be the correct return pc.
-   __ set_last_Java_frame(rsp, rbp, (address) __ pc());
+   __ set_last_Java_frame(rsp, rbp, (address) __ pc(), rscratch1);
 #endif // _LP64
 
   // change thread state
@@ -1052,7 +1052,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // 64: result potentially in rax or xmm0
 
   // Verify or restore cpu control state after JNI call
-  __ restore_cpu_control_state_after_jni();
+  __ restore_cpu_control_state_after_jni(rscratch1);
 
   // NOTE: The order of these pushes is known to frame::interpreter_frame_result
   // in order to extract the result of a method call. If the order of these
@@ -1075,10 +1075,10 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     ExternalAddress float_handler(AbstractInterpreter::result_handler(T_FLOAT));
     ExternalAddress double_handler(AbstractInterpreter::result_handler(T_DOUBLE));
     __ cmpptr(Address(rbp, (frame::interpreter_frame_oop_temp_offset + 1)*wordSize),
-              float_handler.addr());
+              float_handler.addr(), noreg);
     __ jcc(Assembler::equal, push_double);
     __ cmpptr(Address(rbp, (frame::interpreter_frame_oop_temp_offset + 1)*wordSize),
-              double_handler.addr());
+              double_handler.addr(), noreg);
     __ jcc(Assembler::notEqual, L);
     __ bind(push_double);
     __ push_d(); // FP values are returned using the FPU, so push FPU contents (even if UseSSE > 0).
@@ -1619,14 +1619,14 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
   __ movptr(rbx, Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize));
   __ get_thread(thread);
   // PC must point into interpreter here
-  __ set_last_Java_frame(thread, noreg, rbp, __ pc());
+  __ set_last_Java_frame(thread, noreg, rbp, __ pc(), noreg);
   __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::popframe_move_outgoing_args), thread, rax, rbx);
   __ get_thread(thread);
 #else
   __ mov(c_rarg1, rsp);
   __ movptr(c_rarg2, Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize));
   // PC must point into interpreter here
-  __ set_last_Java_frame(noreg, rbp, __ pc());
+  __ set_last_Java_frame(noreg, rbp, __ pc(), rscratch1);
   __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::popframe_move_outgoing_args), r15_thread, c_rarg1, c_rarg2);
 #endif
   __ reset_last_Java_frame(thread, true);
@@ -1822,11 +1822,11 @@ address TemplateInterpreterGenerator::generate_trace_code(TosState state) {
 }
 
 void TemplateInterpreterGenerator::count_bytecode() {
-  __ incrementl(ExternalAddress((address) &BytecodeCounter::_counter_value));
+  __ incrementl(ExternalAddress((address) &BytecodeCounter::_counter_value), rscratch1);
 }
 
 void TemplateInterpreterGenerator::histogram_bytecode(Template* t) {
-  __ incrementl(ExternalAddress((address) &BytecodeHistogram::_counters[t->bytecode()]));
+  __ incrementl(ExternalAddress((address) &BytecodeHistogram::_counters[t->bytecode()]), rscratch1);
 }
 
 void TemplateInterpreterGenerator::histogram_bytecode_pair(Template* t) {
@@ -1835,7 +1835,7 @@ void TemplateInterpreterGenerator::histogram_bytecode_pair(Template* t) {
   __ orl(rbx,
          ((int) t->bytecode()) <<
          BytecodePairHistogram::log2_number_of_codes);
-  __ mov32(ExternalAddress((address) &BytecodePairHistogram::_index), rbx);
+  __ mov32(ExternalAddress((address) &BytecodePairHistogram::_index), rbx, rscratch1);
   __ lea(rscratch1, ExternalAddress((address) BytecodePairHistogram::_counters));
   __ incrementl(Address(rscratch1, rbx, Address::times_4));
 }
@@ -1863,7 +1863,8 @@ void TemplateInterpreterGenerator::trace_bytecode(Template* t) {
 void TemplateInterpreterGenerator::stop_interpreter_at() {
   Label L;
   __ cmp32(ExternalAddress((address) &BytecodeCounter::_counter_value),
-           StopInterpreterAt);
+           StopInterpreterAt,
+           rscratch1);
   __ jcc(Assembler::notEqual, L);
   __ int3();
   __ bind(L);

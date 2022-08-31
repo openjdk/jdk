@@ -190,6 +190,7 @@ Java_sun_nio_ch_FileChannelImpl_transferTo0(JNIEnv *env, jobject this,
                 case EINTR:
                     return IOS_INTERRUPTED;
                 case EINVAL:
+                case ENOSYS:
                 case EXDEV:
                     // ignore and try sendfile()
                     break;
@@ -307,6 +308,8 @@ Java_sun_nio_ch_FileChannelImpl_transferFrom0(JNIEnv *env, jobject this,
     if (n < 0) {
         if (errno == EAGAIN)
             return IOS_UNAVAILABLE;
+        if (errno == ENOSYS)
+            return IOS_UNSUPPORTED_CASE;
         if ((errno == EBADF || errno == EINVAL || errno == EXDEV) &&
             ((ssize_t)count >= 0))
             return IOS_UNSUPPORTED_CASE;

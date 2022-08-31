@@ -3881,11 +3881,13 @@ static void apply_debugger_ergo() {
   }
 #endif
 
+#ifndef PRODUCT
   if (UseDebuggerErgo) {
     // Turn on sub-flags
     FLAG_SET_ERGO_IF_DEFAULT(UseDebuggerErgo1, true);
     FLAG_SET_ERGO_IF_DEFAULT(UseDebuggerErgo2, true);
   }
+#endif
 
   if (UseDebuggerErgo2) {
     // Debugging with limited number of CPUs
