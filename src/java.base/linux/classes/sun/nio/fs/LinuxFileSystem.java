@@ -34,6 +34,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import static sun.nio.fs.LinuxNativeDispatcher.*;
+import static sun.nio.fs.UnixConstants.*;
 
 /**
  * Linux implementation of FileSystem
@@ -41,7 +42,7 @@ import static sun.nio.fs.LinuxNativeDispatcher.*;
 
 class LinuxFileSystem extends UnixFileSystem {
     LinuxFileSystem(UnixFileSystemProvider provider, String dir) {
-        super(provider, dir, new LinuxCopyFile());
+        super(provider, dir);
     }
 
     @Override
@@ -130,4 +131,52 @@ class LinuxFileSystem extends UnixFileSystem {
     FileStore getFileStore(UnixMountEntry entry) throws IOException {
         return new LinuxFileStore(this, entry);
     }
+
+    // --- file copying ---
+
+    @Override
+    protected void bufferedCopy(int dst, int src, long address,
+                                int size, long addressToPollForCancel)
+        throws UnixException
+    {
+        int advice = POSIX_FADV_SEQUENTIAL | // sequential data access
+                     POSIX_FADV_NOREUSE    | // will access only once
+                     POSIX_FADV_WILLNEED;    // will access in near future
+        posix_fadvise(src, 0, 0, advice);
+
+        super.bufferedCopy(dst, src, address, size, addressToPollForCancel);
+    }
+
+    @Override
+    protected int directCopy(int dst, int src, long addressToPollForCancel)
+        throws UnixException
+    {
+        int advice = POSIX_FADV_SEQUENTIAL | // sequential data access
+                     POSIX_FADV_NOREUSE    | // will access only once
+                     POSIX_FADV_WILLNEED;    // will access in near future
+        posix_fadvise(src, 0, 0, advice);
+
+        return directCopy0(dst, src, addressToPollForCancel);
+    }
+
+    // -- native methods --
+
+    /**
+     * Copies data between file descriptors {@code src} and {@code dst} using
+     * a platform-specific function or system call possibly having kernel
+     * support.
+     *
+     * @param dst destination file descriptor
+     * @param src source file descriptor
+     * @param addressToPollForCancel address to check for cancellation
+     *        (a non-zero value written to this address indicates cancel)
+     *
+     * @return 0 on success, UNAVAILABLE if the platform function would block,
+     *         UNSUPPORTED_CASE if the call does not work with the given
+     *         parameters, or UNSUPPORTED if direct copying is not supported
+     *         on this platform
+     */
+    private static native int directCopy0(int dst, int src,
+                                          long addressToPollForCancel)
+        throws UnixException;
 }

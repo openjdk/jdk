@@ -42,7 +42,7 @@ import sun.security.action.GetPropertyAction;
 class BsdFileSystem extends UnixFileSystem {
 
     BsdFileSystem(UnixFileSystemProvider provider, String dir) {
-        super(provider, dir, new BsdCopyFile());
+        super(provider, dir);
     }
 
     @Override
@@ -108,4 +108,19 @@ class BsdFileSystem extends UnixFileSystem {
     FileStore getFileStore(UnixMountEntry entry) throws IOException {
         return new BsdFileStore(this, entry);
     }
+
+    // --- file copying ---
+
+    @Override
+    protected int directCopy(int dst, int src, long addressToPollForCancel)
+        throws UnixException
+    {
+        return directCopy0(dst, src, addressToPollForCancel);
+    }
+
+    // -- native methods --
+
+    private static native int directCopy0(int dst, int src,
+                                          long addressToPollForCancel)
+        throws UnixException;
 }

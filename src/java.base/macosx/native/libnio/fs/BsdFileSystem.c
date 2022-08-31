@@ -34,7 +34,7 @@
 #include <errno.h>
 
 #include <copyfile.h>
-#include "sun_nio_fs_BsdCopyFile.h"
+#include "sun_nio_fs_BsdFileSystem.h"
 
 #define RESTARTABLE(_cmd, _result) do { \
   do { \
@@ -76,7 +76,7 @@ int fcopyfile_callback(int what, int stage, copyfile_state_t state,
 //   IOS_THROWN if a Java exception is thrown
 //
 JNIEXPORT jint JNICALL
-Java_sun_nio_fs_BsdCopyFile_directCopy0
+Java_sun_nio_fs_BsdFileSystem_directCopy0
     (JNIEnv* env, jclass this, jint dst, jint src, jlong cancelAddress)
 {
     volatile jint* cancel = (jint*)jlong_to_ptr(cancelAddress);

@@ -36,7 +36,7 @@
 #include <sys/sendfile.h>
 #include <fcntl.h>
 
-#include "sun_nio_fs_LinuxCopyFile.h"
+#include "sun_nio_fs_LinuxFileSystem.h"
 
 #define RESTARTABLE(_cmd, _result) do { \
   do { \
@@ -63,7 +63,7 @@ static void throwUnixException(JNIEnv* env, int errnum) {
 //   IOS_THROWN if a Java exception is thrown
 //
 JNIEXPORT jint JNICALL
-Java_sun_nio_fs_LinuxCopyFile_directCopy0
+Java_sun_nio_fs_LinuxFileSystem_directCopy0
     (JNIEnv* env, jclass this, jint dst, jint src, jlong cancelAddress)
 {
     volatile jint* cancel = (jint*)jlong_to_ptr(cancelAddress);
