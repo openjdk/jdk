@@ -39,7 +39,7 @@ public interface MatchResultAction {
     default void doAction(IRRuleMatchResult irRuleMatchResult) {}
     default void doAction(CompilePhaseMatchResult compilePhaseMatchResult) {}
     default void doAction(CheckAttributeMatchResult checkAttributeMatchResult) {}
-    default void doAction(FailOnConstraintFailure constraintFailure) {}
-    default void doAction(CountsConstraintFailure constraintFailure) {}
+    default void doAction(FailOnConstraintFailure failOnConstraintFailure) {}
+    default void doAction(CountsConstraintFailure countsConstraintFailure) {}
 }
 

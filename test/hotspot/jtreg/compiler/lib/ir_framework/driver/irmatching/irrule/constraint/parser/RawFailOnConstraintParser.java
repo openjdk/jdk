@@ -41,10 +41,13 @@ import java.util.List;
  * @see RawConstraint
  * @see FailOn
  */
-public class RawFailOnConstraintParser extends RawConstraintParser<RawConstraint> {
+public class RawFailOnConstraintParser extends RawConstraintParser {
+    private final List<RawConstraint> rawFailOnConstraints;
     private final List<Constraint> constraintResultList = new ArrayList<>();
 
-    private RawFailOnConstraintParser() {}
+    private RawFailOnConstraintParser(List<RawConstraint> rawFailOnConstraints) {
+        this.rawFailOnConstraints = rawFailOnConstraints;
+    }
 
     public List<Constraint> getConstraints() {
         TestFramework.check(!constraintResultList.isEmpty(), "must be non-empty");
@@ -57,14 +60,18 @@ public class RawFailOnConstraintParser extends RawConstraintParser<RawConstraint
      */
     public static List<Constraint> parse(List<RawConstraint> rawFailOnConstraints, CompilePhase compilePhase) {
         if (!rawFailOnConstraints.isEmpty()) {
-            RawFailOnConstraintParser constraintParser = new RawFailOnConstraintParser();
-            constraintParser.parseNonEmptyConstraints(rawFailOnConstraints, compilePhase);
+            RawFailOnConstraintParser constraintParser = new RawFailOnConstraintParser(rawFailOnConstraints);
+            constraintParser.parse(compilePhase);
             return constraintParser.getConstraints();
         }
         return null;
     }
 
     @Override
+    protected void parse(CompilePhase compilePhase) {
+        rawFailOnConstraints.forEach(rawFailOnConstraint -> parseRawConstraint(rawFailOnConstraint, compilePhase));
+    }
+
     protected void parseRawConstraint(RawConstraint rawConstraint, CompilePhase compilePhase) {
         ParsedIRNodeInfo parsedIRNodeInfo = parseIRNodeInfo(rawConstraint, compilePhase);
         constraintResultList.add(new Constraint(parsedIRNodeInfo.regex(), rawConstraint.getConstraintIndex(),

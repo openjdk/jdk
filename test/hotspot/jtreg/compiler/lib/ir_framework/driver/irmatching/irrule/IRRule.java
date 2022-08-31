@@ -31,7 +31,7 @@ import compiler.lib.ir_framework.driver.irmatching.irrule.phase.CompilePhaseIRRu
 import compiler.lib.ir_framework.driver.irmatching.irrule.phase.CompilePhaseIRRuleBuilder;
 import compiler.lib.ir_framework.driver.irmatching.irrule.phase.CompilePhaseMatchResult;
 
-import java.util.List;
+import java.util.Set;
 
 /**
  * This class represents a generic IR rule of an IR method. It contains a list of compile phase specific IR rule
@@ -42,7 +42,7 @@ import java.util.List;
 public class IRRule implements Matching {
     private final int ruleId;
     private final IR irAnno;
-    private final List<CompilePhaseIRRule> compilePhaseIRRules;
+    private final Set<CompilePhaseIRRule> compilePhaseIRRules;
 
     public IRRule(IRMethod irMethod, int ruleId, IR irAnno) {
         this.ruleId = ruleId;

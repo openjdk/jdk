@@ -31,6 +31,7 @@ import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.CheckAttrib
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.Counts;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.FailOn;
 
+import java.util.Objects;
 import java.util.function.Consumer;
 
 /**
@@ -76,5 +77,28 @@ public class CompilePhaseIRRule implements Matching {
                 consumer.accept(matchResult);
             }
         }
+    }
+
+    /**
+     * To remove duplicated phases created by CompilePhaseIRRuleBuilder.
+     */
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        CompilePhaseIRRule that = (CompilePhaseIRRule) o;
+        return compilePhase == that.compilePhase;
+    }
+
+    /**
+     * To remove duplicated phases created by CompilePhaseIRRuleBuilder
+     */
+    @Override
+    public int hashCode() {
+        return Objects.hash(compilePhase);
     }
 }

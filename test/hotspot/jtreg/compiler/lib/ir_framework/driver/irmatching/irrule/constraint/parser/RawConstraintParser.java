@@ -24,12 +24,10 @@
 package compiler.lib.ir_framework.driver.irmatching.irrule.constraint.parser;
 
 import compiler.lib.ir_framework.CompilePhase;
-import compiler.lib.ir_framework.driver.irmatching.regexes.DefaultRegexConstants;
 import compiler.lib.ir_framework.IRNode;
 import compiler.lib.ir_framework.driver.irmatching.mapping.IRNodeMappings;
+import compiler.lib.ir_framework.driver.irmatching.regexes.DefaultRegexConstants;
 import compiler.lib.ir_framework.shared.TestFormat;
-
-import java.util.List;
 
 /**
  * Base class to parse a raw constraint to replace the placeholder strings from {@link IRNode} by actual default
@@ -37,16 +35,8 @@ import java.util.List;
  *
  * @see RawConstraint
  */
-abstract class RawConstraintParser<C extends RawConstraint> {
-
-    protected void parseNonEmptyConstraints(List<C> rawConstraints, CompilePhase compilePhase) {
-        for (C rawConstraint : rawConstraints) {
-            parseRawConstraint(rawConstraint, compilePhase);
-        }
-    }
-
-    protected abstract void parseRawConstraint(C rawConstraint, CompilePhase compilePhase);
-
+abstract class RawConstraintParser {
+    protected abstract void parse(CompilePhase compilePhase);
 
     protected ParsedIRNodeInfo parseIRNodeInfo(RawConstraint rawConstraint, CompilePhase compilePhase) {
         String rawNodeString = rawConstraint.getRawNodeString();

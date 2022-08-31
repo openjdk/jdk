@@ -49,10 +49,13 @@ import java.util.List;
  * @see RawCountsConstraint
  * @see Counts
  */
-public class RawCountsConstraintParser extends RawConstraintParser<RawCountsConstraint> {
+public class RawCountsConstraintParser extends RawConstraintParser {
+    private final List<RawCountsConstraint> rawCountsConstraints;
     private final List<CountsConstraint> constraintResultList = new ArrayList<>();
 
-    private RawCountsConstraintParser() {}
+    private RawCountsConstraintParser(List<RawCountsConstraint> rawCountsConstraints) {
+        this.rawCountsConstraints = rawCountsConstraints;
+    }
 
     public List<CountsConstraint> getConstraints() {
         TestFramework.check(!constraintResultList.isEmpty(), "must be non-empty");
@@ -65,14 +68,18 @@ public class RawCountsConstraintParser extends RawConstraintParser<RawCountsCons
      */
     public static List<CountsConstraint> parse(List<RawCountsConstraint> rawCountsConstraints, CompilePhase compilePhase) {
         if (!rawCountsConstraints.isEmpty()) {
-            RawCountsConstraintParser constraintParser = new RawCountsConstraintParser();
-            constraintParser.parseNonEmptyConstraints(rawCountsConstraints, compilePhase);
+            RawCountsConstraintParser constraintParser = new RawCountsConstraintParser(rawCountsConstraints);
+            constraintParser.parse(compilePhase);
             return constraintParser.getConstraints();
         }
         return null;
     }
 
     @Override
+    protected void parse(CompilePhase compilePhase) {
+        rawCountsConstraints.forEach(rawCountsConstraint -> parseRawConstraint(rawCountsConstraint, compilePhase));
+    }
+
     protected void parseRawConstraint(RawCountsConstraint rawConstraint, CompilePhase compilePhase) {
         ParsedIRNodeInfo parsedIRNodeInfo = parseIRNodeInfo(rawConstraint, compilePhase);
         Comparison<Integer> comparison = parseComparison(rawConstraint);
