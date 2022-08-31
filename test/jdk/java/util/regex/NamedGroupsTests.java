@@ -28,12 +28,55 @@
  */
 
 import java.util.Map;
+import java.util.regex.MatchResult;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class NamedGroupsTests {
 
+    /* An implementation purposely not overriding any default method */
+    private static class TestMatcherNoNamedGroups implements MatchResult {
+
+        @Override
+        public int start() {
+            return 0;
+        }
+
+        @Override
+        public int start(int group) {
+            return 0;
+        }
+
+        @Override
+        public int end() {
+            return 0;
+        }
+
+        @Override
+        public int end(int group) {
+            return 0;
+        }
+
+        @Override
+        public String group() {
+            return null;
+        }
+
+        @Override
+        public String group(int group) {
+            return null;
+        }
+
+        @Override
+        public int groupCount() {
+            return 0;
+        }
+
+    }
+
     public static void main(String[] args) {
+        testMatchResultNoDefault();
+
         testPatternNamedGroups();
         testMatcherNamedGroups();
         testMatchResultNamedGroups();
@@ -41,16 +84,58 @@ public class NamedGroupsTests {
         testMatcherHasMatch();
         testMatchResultHasMatch();
 
-        testMatchResultStartEndGroup();
+        testMatchResultStartEndGroupBeforeMatchOp();
+        testMatchResultStartEndGroupAfterMatchOp();
     }
 
-    private static void testMatchResultStartEndGroup() {
-        testMatchResultStartEndGroup1();
-        testMatchResultStartEndGroup2();
-        testMatchResultStartEndGroup3();
+    private static void testMatchResultNoDefault() {
+        TestMatcherNoNamedGroups m = new TestMatcherNoNamedGroups();
+        try {
+            m.hasMatch();
+        } catch (UnsupportedOperationException e) {  // swallowing intended
+        }
+        try {
+            m.namedGroups();
+        } catch (UnsupportedOperationException e) {  // swallowing intended
+        }
+        try {
+            m.start("anyName");
+        } catch (UnsupportedOperationException e) {  // swallowing intended
+        }
+        try {
+            m.end("anyName");
+        } catch (UnsupportedOperationException e) {  // swallowing intended
+        }
+        try {
+            m.group("anyName");
+        } catch (UnsupportedOperationException e) {  // swallowing intended
+        }
     }
 
-    private static void testMatchResultStartEndGroup1() {
+    private static void testMatchResultStartEndGroupBeforeMatchOp() {
+        Matcher m = Pattern.compile("(?<some>.+?)(?<rest>.*)").matcher("abc");
+        try {
+            m.start("anyName");
+        } catch (IllegalStateException e) {  // swallowing intended
+        }
+        try {
+            m.end("anyName");
+        } catch (IllegalStateException e) {  // swallowing intended
+        }
+        try {
+            m.group("anyName");
+        } catch (IllegalStateException e) {  // swallowing intended
+        }
+    }
+
+    private static void testMatchResultStartEndGroupAfterMatchOp() {
+        testMatchResultStartEndGroupNoMatch();
+        testMatchResultStartEndGroupWithMatch();
+        testMatchResultStartEndGroupNoMatchNoSuchGroup();
+        testMatchResultStartEndGroupWithMatchNoSuchGroup();
+    }
+
+    private static void testMatchResultStartEndGroupNoMatch() {
         Pattern.compile("(?<some>.+?)(?<rest>.*)").matcher("")
                 .results()
                 .forEach(r -> {
@@ -75,7 +160,7 @@ public class NamedGroupsTests {
                 });
     }
 
-    private static void testMatchResultStartEndGroup2() {
+    private static void testMatchResultStartEndGroupWithMatch() {
         Pattern.compile("(?<some>.+?)(?<rest>.*)").matcher("abc")
                 .results()
                 .forEach(r -> {
@@ -100,7 +185,26 @@ public class NamedGroupsTests {
                 });
     }
 
-    private static void testMatchResultStartEndGroup3() {
+    private static void testMatchResultStartEndGroupNoMatchNoSuchGroup() {
+        Pattern.compile("(?<some>.+?)(?<rest>.*)").matcher("")
+                .results()
+                .forEach(r -> {
+                    try {
+                        r.start("noSuchGroup");
+                    } catch (IllegalArgumentException e) {  // swallowing intended
+                    }
+                    try {
+                        r.end("noSuchGroup");
+                    } catch (IllegalArgumentException e) {  // swallowing intended
+                    }
+                    try {
+                        r.group("noSuchGroup");
+                    } catch (IllegalArgumentException e) {  // swallowing intended
+                    }
+                });
+    }
+
+    private static void testMatchResultStartEndGroupWithMatchNoSuchGroup() {
         Pattern.compile("(?<some>.+?)(?<rest>.*)").matcher("abc")
                 .results()
                 .forEach(r -> {
@@ -120,11 +224,11 @@ public class NamedGroupsTests {
     }
 
     private static void testMatchResultHasMatch() {
-        testMatchResultHasMatch1();
-        testMatchResultHasMatch2();
+        testMatchResultHasMatchNoMatch();
+        testMatchResultHasMatchWithMatch();
     }
 
-    private static void testMatchResultHasMatch1() {
+    private static void testMatchResultHasMatchNoMatch() {
         Matcher m = Pattern.compile(".+").matcher("");
         m.find();
         if (m.toMatchResult().hasMatch()) {
@@ -132,7 +236,7 @@ public class NamedGroupsTests {
         }
     }
 
-    private static void testMatchResultHasMatch2() {
+    private static void testMatchResultHasMatchWithMatch() {
         Matcher m = Pattern.compile(".+").matcher("abc");
         m.find();
         if (!m.toMatchResult().hasMatch()) {
@@ -141,11 +245,11 @@ public class NamedGroupsTests {
     }
 
     private static void testMatcherHasMatch() {
-        testMatcherHasMatch1();
-        testMatcherHasMatch2();
+        testMatcherHasMatchNoMatch();
+        testMatcherHasMatchWithMatch();
     }
 
-    private static void testMatcherHasMatch1() {
+    private static void testMatcherHasMatchNoMatch() {
         Matcher m = Pattern.compile(".+").matcher("");
         m.find();
         if (m.hasMatch()) {
@@ -153,7 +257,7 @@ public class NamedGroupsTests {
         }
     }
 
-    private static void testMatcherHasMatch2() {
+    private static void testMatcherHasMatchWithMatch() {
         Matcher m = Pattern.compile(".+").matcher("abc");
         m.find();
         if (!m.hasMatch()) {
@@ -162,27 +266,19 @@ public class NamedGroupsTests {
     }
 
     private static void testMatchResultNamedGroups() {
-        testMatchResultNamedGroups1();
-        testMatchResultNamedGroups2();
-        testMatchResultNamedGroups3();
-        testMatchResultNamedGroups4();
+        testMatchResultNamedGroupsNoNamedGroups();
+        testMatchResultNamedGroupsOneNamedGroup();
+        testMatchResultNamedGroupsTwoNamedGroups();
     }
 
-    private static void testMatchResultNamedGroups1() {
+    private static void testMatchResultNamedGroupsNoNamedGroups() {
         if (!Pattern.compile(".*").matcher("")
                 .toMatchResult().namedGroups().isEmpty()) {
             throw new RuntimeException();
         }
     }
 
-    private static void testMatchResultNamedGroups2() {
-        if (!Pattern.compile("(.*)").matcher("")
-                .toMatchResult().namedGroups().isEmpty()) {
-            throw new RuntimeException();
-        }
-    }
-
-    private static void testMatchResultNamedGroups3() {
+    private static void testMatchResultNamedGroupsOneNamedGroup() {
         if (!Pattern.compile("(?<all>.*)").matcher("")
                 .toMatchResult().namedGroups()
                 .equals(Map.of("all", 1))) {
@@ -190,7 +286,7 @@ public class NamedGroupsTests {
         }
     }
 
-    private static void testMatchResultNamedGroups4() {
+    private static void testMatchResultNamedGroupsTwoNamedGroups() {
         if (!Pattern.compile("(?<some>.+?)(?<rest>.*)").matcher("")
                 .toMatchResult().namedGroups()
                 .equals(Map.of("some", 1, "rest", 2))) {
@@ -199,32 +295,25 @@ public class NamedGroupsTests {
     }
 
     private static void testMatcherNamedGroups() {
-        testMatcherNamedGroups1();
-        testMatcherNamedGroups2();
-        testMatcherNamedGroups3();
-        testMatcherNamedGroups4();
+        testMatcherNamedGroupsNoNamedGroups();
+        testMatcherNamedGroupsOneNamedGroup();
+        testMatcherNamedGroupsTwoNamedGroups();
     }
 
-    private static void testMatcherNamedGroups1() {
+    private static void testMatcherNamedGroupsNoNamedGroups() {
         if (!Pattern.compile(".*").matcher("").namedGroups().isEmpty()) {
             throw new RuntimeException();
         }
     }
 
-    private static void testMatcherNamedGroups2() {
-        if (!Pattern.compile("(.*)").matcher("").namedGroups().isEmpty()) {
-            throw new RuntimeException();
-        }
-    }
-
-    private static void testMatcherNamedGroups3() {
+    private static void testMatcherNamedGroupsOneNamedGroup() {
         if (!Pattern.compile("(?<all>.*)").matcher("").namedGroups()
                 .equals(Map.of("all", 1))) {
             throw new RuntimeException();
         }
     }
 
-    private static void testMatcherNamedGroups4() {
+    private static void testMatcherNamedGroupsTwoNamedGroups() {
         if (!Pattern.compile("(?<some>.+?)(?<rest>.*)").matcher("").namedGroups()
                 .equals(Map.of("some", 1, "rest", 2))) {
             throw new RuntimeException();
@@ -232,32 +321,25 @@ public class NamedGroupsTests {
     }
 
     private static void testPatternNamedGroups() {
-        testPatternNamedGroups1();
-        testPatternNamedGroups2();
-        testPatternNamedGroups3();
-        testPatternNamedGroups4();
+        testPatternNamedGroupsNoNamedGroups();
+        testPatternNamedGroupsOneNamedGroup();
+        testPatternNamedGroupsTwoNamedGroups();
     }
 
-    private static void testPatternNamedGroups1() {
+    private static void testPatternNamedGroupsNoNamedGroups() {
         if (!Pattern.compile(".*").namedGroups().isEmpty()) {
             throw new RuntimeException();
         }
     }
 
-    private static void testPatternNamedGroups2() {
-        if (!Pattern.compile("(.*)").namedGroups().isEmpty()) {
-            throw new RuntimeException();
-        }
-    }
-
-    private static void testPatternNamedGroups3() {
+    private static void testPatternNamedGroupsOneNamedGroup() {
         if (!Pattern.compile("(?<all>.*)").namedGroups()
                 .equals(Map.of("all", 1))) {
             throw new RuntimeException();
         }
     }
 
-    private static void testPatternNamedGroups4() {
+    private static void testPatternNamedGroupsTwoNamedGroups() {
         if (!Pattern.compile("(?<some>.+?)(?<rest>.*)").namedGroups()
                 .equals(Map.of("some", 1, "rest", 2))) {
             throw new RuntimeException();
