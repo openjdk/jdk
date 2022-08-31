@@ -42,10 +42,10 @@ import static java.util.zip.ZipUtils.*;
  * ZIP file format. Includes support for both compressed and uncompressed
  * entries.
  *<p>
- *     {@code ZipInputStream}  will stream the Zip file entries within
+ *     {@code ZipInputStream} will stream the Zip file entries within
  *     the Zip file by sequentially reading the Local file (LOC) header for each
- *     entry. {@code ZipInputStream} does not access the Central directory
- *     (CEN) header for each entry and therefore will not have access to
+ *     entry. {@code ZipInputStream} does not read the Central directory
+ *     (CEN) header for the entry and therefore will not have access to
  *     CEN header fields such as the external file attributes. {@linkplain ZipFile}
  *     may be used when the information stored within the CEN header is required.
  *</p>
