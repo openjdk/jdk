@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,6 +53,8 @@
  */
 #define MAX_UNIX_DOMAIN_PATH_LEN \
         (int)(sizeof(((struct sockaddr_un *)0)->sun_path)-2)
+
+extern JavaVM *jvm;
 
 /* NIO utility procedures */
 
