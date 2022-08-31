@@ -719,6 +719,10 @@ class BadIRAnnotations {
     @IR(failOn = IRNode.CALL)
     public void noIRAtNonTest() {}
 
+    @IR(failOn = IRNode.CALL)
+    @IR(failOn = IRNode.CALL)
+    public void noIRAtNonTest2() {}
+
     @NoFail
     @Test
     public void test() {}
@@ -731,9 +735,27 @@ class BadIRAnnotations {
     @Test
     public void test2() {}
 
-    @Check(test = "test2")
+    @Run(test = "test2")
+    @IR(failOn = IRNode.CALL)
+    @IR(failOn = IRNode.CALL)
+    public void noIRAtRun2() {}
+
+    @NoFail
+    @Test
+    public void test3() {}
+
+    @Check(test = "test3")
     @IR(failOn = IRNode.CALL)
     public void noIRAtCheck() {}
+
+    @NoFail
+    @Test
+    public void test4() {}
+
+    @Check(test = "test4")
+    @IR(failOn = IRNode.CALL)
+    @IR(failOn = IRNode.CALL)
+    public void noIRAtCheck2() {}
 
     @Test
     @IR

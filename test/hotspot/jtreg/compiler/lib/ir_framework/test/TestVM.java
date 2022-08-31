@@ -503,7 +503,8 @@ public class TestVM {
                 if (testAnno != null) {
                     addDeclaredTest(m);
                 } else {
-                    TestFormat.checkNoThrow(!m.isAnnotationPresent(IR.class), "Found @IR annotation on non-@Test method " + m);
+                    TestFormat.checkNoThrow(!m.isAnnotationPresent(IR.class) && !m.isAnnotationPresent(IRs.class),
+                                            "Found @IR annotation on non-@Test method " + m);
                     TestFormat.checkNoThrow(!m.isAnnotationPresent(Warmup.class) || getAnnotation(m, Run.class) != null,
                                             "Found @Warmup annotation on non-@Test or non-@Run method " + m);
                 }
