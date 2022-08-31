@@ -43,7 +43,7 @@ class AsyncLogWriter::AsyncLogLocker : public StackObj {
   }
 };
 
-// reserve space for flush token, so 'push_back(Token)' always succeeds.
+// Reserve space for a flush token, so 'push_back(Token)' always succeeds.
 AsyncLogWriter::Buffer::Buffer(char* buffer, size_t capacity) : _pos(0), _buf(buffer) {
   assert(capacity >= (AsyncLogWriter::Token.size()), "AsyncLogBuffer is too small!");
   _capacity = capacity - (Token.size());
@@ -78,6 +78,8 @@ AsyncLogMessage* AsyncLogWriter::Buffer::Iterator::next() {
 
 const LogDecorations& AsyncLogWriter::None = LogDecorations(LogLevel::Warning, LogTagSetMapping<LogTag::__NO_TAG>::tagset(),
                                       LogDecorators::None);
+// Note: there is an initializer order issue here. C++ cannot guarantee that 'None' is initialized before Token!
+// It is okay because we expect None is zero'ed anyway.
 const AsyncLogMessage& AsyncLogWriter::Token = AsyncLogMessage(nullptr, None, nullptr);
 
 void AsyncLogWriter::enqueue_locked(const AsyncLogMessage& msg) {
@@ -128,13 +130,15 @@ AsyncLogWriter::AsyncLogWriter()
     if (_buffer != nullptr && _buffer_staging != nullptr) {
       log_info(logging)("AsyncLogBuffer estimates memory use: " SIZE_FORMAT " bytes", size * 2);
     } else {
-	delete _buffer;
-	delete _buffer_staging;
-	os::free(buf0);
-	os::free(buf1);
+      log_warning(logging)("AsyncLogging failed to create buffer Objects. Falling back to synchronous logging.");
+      delete _buffer;
+      delete _buffer_staging;
+      os::free(buf0);
+      os::free(buf1);
+      return;
     }
   } else {
-    log_warning(logging)("AsyncLogging failed to create buffer. Falling back to synchronous logging.");
+    log_warning(logging)("AsyncLogging failed to create buffers. Falling back to synchronous logging.");
 
     if (buf0 != nullptr) {
       os::free(buf0);
@@ -239,6 +243,8 @@ void AsyncLogWriter::initialize() {
     }
     os::start_thread(self);
     log_debug(logging, thread)("Async logging thread started.");
+  } else {
+    delete self;
   }
 }
 
