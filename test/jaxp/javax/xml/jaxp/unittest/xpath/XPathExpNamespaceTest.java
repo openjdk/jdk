@@ -88,9 +88,9 @@ public class XPathExpNamespaceTest extends XPathTestBase {
             + "        <Name>name3</Name>"
             + "        <Phone>3333333333</Phone>"
             + "        <Email id=\"z\">123@xyz.com</Email>"
-            + "        <Address>"
+            + "        <Address xmlns=\"default-namespace-uri\">"
             + "            <Street>3333 333rd ave</Street>"
-            + "            <City>The City</City>"
+            + "            <City xmlns=\"redeclared-namespace-uri\">The City</City>"
             + "            <State>The State</State>"
             + "        </Address>"
             + "    </VendCustomer>"
@@ -110,7 +110,9 @@ public class XPathExpNamespaceTest extends XPathTestBase {
                 {"//Customer/Name/namespace::xml", "xml", "xml", "xmlns:xml","http://www.w3.org/XML/1998/namespace"},
                 {"/Customers/Customer/Name/namespace::xml", "xml", "xml", "xmlns:xml","http://www.w3.org/XML/1998/namespace"},
                 {"//Customer/Name/namespace::dog", "dog", "xmlns", "xmlns:dog","www.pets.com"},
-                {"/Customers/Customer/Name/namespace::dog", "dog", "xmlns", "xmlns:dog","www.pets.com"}
+                {"/Customers/Customer/Name/namespace::dog", "dog", "xmlns", "xmlns:dog","www.pets.com"},
+                {"/Customers/VendCustomer/default-namespace-uri:Address/namespace::*[name()='']", "xmlns", null, "xmlns","default-namespace-uri"},
+                {"/Customers/VendCustomer/default-namespace-uri:Address/redeclared-namespace-uri:City/namespace::*[name()='']", "xmlns", null, "xmlns","redeclared-namespace-uri"}
         };
     }
 
@@ -141,11 +143,13 @@ public class XPathExpNamespaceTest extends XPathTestBase {
                 {"/Customers/namespace::*", 2},
                 {"/Customers/Customer/namespace::*", 3},
                 {"/Customers/Customer/Address/namespace::*", 2},
+                {"/Customers/www.foo.com:Customer/www.foo.com:Address/namespace::*", 2},
+                {"/Customers/*[name()='foo:Customer']/*[name() = 'foo:Address']/namespace::*", 2},
                 {"/Customers/Customer/Address/Street/namespace::*", 4},
                 {"/Customers/Customer/Address/City/namespace::*", 2},
                 {"/Customers/VendCustomer/namespace::*", 2},
-                {"/Customers/VendCustomer/Address/namespace::*", 2},
-                {"/Customers/VendCustomer/Address/City/namespace::*", 2},
+                {"/Customers/VendCustomer/default-namespace-uri:Address/namespace::*", 3},
+                {"/Customers/VendCustomer/default-namespace-uri:Address/redeclared-namespace-uri:City/namespace::*", 3},
                 {"/Customers/Customer[@id='x1']/namespace::*", 2}
         };
     }
