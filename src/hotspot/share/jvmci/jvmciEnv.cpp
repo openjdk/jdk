@@ -39,6 +39,7 @@
 #include "runtime/deoptimization.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/thread.inline.hpp"
 #include "runtime/os.hpp"
 #include "jvmci/jniAccessMark.inline.hpp"
 #include "jvmci/jvmciCompiler.hpp"
@@ -117,7 +118,7 @@ jbyte* JVMCIEnv::get_serialized_saved_properties(int& props_len, TRAPS) {
     JavaValue result(T_OBJECT);
     JavaCallArguments args;
 
-    Symbol* signature = vmSymbols::serializePropertiesToByteArray_signature();
+    Symbol* signature = vmSymbols::void_byte_array_signature();
     JavaCalls::call_static(&result,
                            ik,
                            vmSymbols::serializeSavedPropertiesToByteArray_name(),

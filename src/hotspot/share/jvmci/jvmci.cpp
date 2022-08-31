@@ -35,6 +35,7 @@
 #include "memory/universe.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/javaThread.inline.hpp"
 #include "runtime/os.hpp"
 #include "utilities/events.hpp"
 
@@ -228,9 +229,17 @@ void JVMCI::vlog(int level, const char* format, va_list ap) {
 void JVMCI::vtrace(int level, const char* format, va_list ap) {
   if (JVMCITraceLevel >= level) {
     Thread* thread = Thread::current_or_null_safe();
-    if (thread != nullptr) {
+    if (thread != nullptr && thread->is_Java_thread()) {
       ResourceMark rm;
-      tty->print("JVMCITrace-%d[%s]:%*c", level, thread->name(), level, ' ');
+      JavaThreadState state = ((JavaThread*) thread)->thread_state();
+      if (state == _thread_in_vm || state == _thread_in_Java || state == _thread_new) {
+        tty->print("JVMCITrace-%d[%s]:%*c", level, thread->name(), level, ' ');
+      } else {
+        // According to check_access_thread_state, it's unsafe to
+        // resolve the j.l.Thread object unless the thread is in
+        // one of the states above.
+        tty->print("JVMCITrace-%d[%s@" INTPTR_FORMAT "]:%*c", level, thread->type_name(), p2i(thread), level, ' ');
+      }
     } else {
       tty->print("JVMCITrace-%d[?]:%*c", level, level, ' ');
     }
