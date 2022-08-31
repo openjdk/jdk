@@ -952,7 +952,7 @@ bool DwarfFile::DebugAbbrev::read_declaration(DwarfFile::DebugAbbrev::Abbreviati
     return false;
   }
 
-  DWARF_LOG_TRACE("Code: 0x" UINT64_FORMAT_X ", Tag: 0x" UINT64_FORMAT_X, declaration._abbrev_code, declaration._tag);
+  DWARF_LOG_TRACE("Code: " UINT64_FORMAT_X ", Tag: " UINT64_FORMAT_X, declaration._abbrev_code, declaration._tag);
   return true;
 }
 
@@ -1011,7 +1011,7 @@ bool DwarfFile::DebugAbbrev::read_attribute_specifications(const bool is_DW_TAG_
 
 bool DwarfFile::DebugAbbrev::read_attribute_specification(DwarfFile::DebugAbbrev::AttributeSpecification& specification) {
   bool result = _reader.read_uleb128(&specification._name) && _reader.read_uleb128(&specification._form);
-  DWARF_LOG_TRACE("  Name: 0x" UINT64_FORMAT_X ", Form: 0x" UINT64_FORMAT_X,
+  DWARF_LOG_TRACE("  Name: " UINT64_FORMAT_X ", Form: " UINT64_FORMAT_X,
                    specification._name, specification._form);
   return result;
 }

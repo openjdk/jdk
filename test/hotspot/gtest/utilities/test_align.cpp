@@ -143,7 +143,7 @@ static void test_alignments() {
       // Test is aligned
       const bool is = is_aligned(values[i], alignment);
       if (values[i] <= (uint64_t)std::numeric_limits<T>::max()) {
-        log("Testing is_aligned: alignment: 0x" UINT64_FORMAT_X " value: 0x" UINT64_FORMAT_X " expected: %s\n", (uint64_t)alignment, values[i], is ? "true" : "false");
+        log("Testing is_aligned: alignment: " UINT64_FORMAT_X " value: " UINT64_FORMAT_X " expected: %s\n", (uint64_t)alignment, values[i], is ? "true" : "false");
 
         T value = T(values[i]);
 
