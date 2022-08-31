@@ -63,7 +63,7 @@ class RawNativeInstruction {
 
   // illegal instruction used by NativeJump::patch_verified_entry
   // permanently undefined (UDF): 0xe << 28 | 0b1111111 << 20 | 0b1111 << 4
-  static const int zombie_illegal_instruction = 0xe7f000f0;
+  static const int not_entrant_illegal_instruction = 0xe7f000f0;
 
   static int decode_rotated_imm12(int encoding) {
     int base = encoding & 0xff;

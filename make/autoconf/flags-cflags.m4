@@ -113,7 +113,7 @@ AC_DEFUN([FLAGS_SETUP_DEBUG_SYMBOLS],
       )
     fi
 
-    CFLAGS_DEBUG_SYMBOLS="-g"
+    CFLAGS_DEBUG_SYMBOLS="-g -gdwarf-4"
     ASFLAGS_DEBUG_SYMBOLS="-g"
   elif test "x$TOOLCHAIN_TYPE" = xclang; then
     if test "x$ALLOW_ABSOLUTE_PATHS_IN_OUTPUT" = "xfalse"; then
@@ -168,10 +168,6 @@ AC_DEFUN([FLAGS_SETUP_WARNINGS],
 
       WARNINGS_ENABLE_ALL="-W3"
       DISABLED_WARNINGS="4800 5105"
-      if test "x$TOOLCHAIN_VERSION" = x2017; then
-        # VS2017 incorrectly triggers this warning for constexpr
-        DISABLED_WARNINGS="$DISABLED_WARNINGS 4307"
-      fi
       ;;
 
     gcc)

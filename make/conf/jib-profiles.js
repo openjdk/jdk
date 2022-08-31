@@ -943,7 +943,7 @@ var getJibProfilesProfiles = function (input, common, data) {
             target_cpu: input.build_cpu,
             dependencies: [
                 "jtreg", "gnumake", "boot_jdk", "devkit", "jib", "jcov", testedProfileJdk,
-                testedProfileTest
+                testedProfileTest, testedProfile + ".jdk_symbols",
             ],
             src: "src.conf",
             make_args: testOnlyMake,
@@ -951,7 +951,8 @@ var getJibProfilesProfiles = function (input, common, data) {
                 "BOOT_JDK": common.boot_jdk_home,
                 "JT_HOME": input.get("jtreg", "home_path"),
                 "JDK_IMAGE_DIR": input.get(testedProfileJdk, "home_path"),
-                "TEST_IMAGE_DIR": input.get(testedProfileTest, "home_path")
+                "TEST_IMAGE_DIR": input.get(testedProfileTest, "home_path"),
+                "SYMBOLS_IMAGE_DIR": input.get(testedProfile + ".jdk_symbols", "home_path")
             },
             labels: "test"
         }
@@ -990,17 +991,6 @@ var getJibProfilesProfiles = function (input, common, data) {
         };
         profiles["run-test"] = concatObjects(profiles["run-test"], macosxRunTestExtra);
         profiles["run-test-prebuilt"] = concatObjects(profiles["run-test-prebuilt"], macosxRunTestExtra);
-    }
-    // On windows we want the debug symbols available at test time
-    if (input.build_os == "windows") {
-        windowsRunTestPrebuiltExtra = {
-            dependencies: [ testedProfile + ".jdk_symbols" ],
-            environment: {
-                "SYMBOLS_IMAGE_DIR": input.get(testedProfile + ".jdk_symbols", "home_path"),
-            }
-        };
-        profiles["run-test-prebuilt"] = concatObjects(profiles["run-test-prebuilt"],
-            windowsRunTestPrebuiltExtra);
     }
 
     // The profile run-test-prebuilt defines src.conf as the src bundle. When

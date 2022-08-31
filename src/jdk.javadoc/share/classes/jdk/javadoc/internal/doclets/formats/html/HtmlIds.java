@@ -28,6 +28,7 @@ package jdk.javadoc.internal.doclets.formats.html;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.PackageElement;
@@ -510,5 +511,30 @@ public class HtmlIds {
      */
     public HtmlId forPage(Navigation.PageMode page) {
         return HtmlId.of(page.name().toLowerCase(Locale.ROOT).replace("_", "-"));
+    }
+
+    /**
+     * Returns an id for a heading in a doc comment. The id value is derived from the contents
+     * of the heading with additional checks to make it unique within its containing page.
+     *
+     * @param headingText the text contained by the heading
+     * @param headingIds the set of heading ids already generated for the current page
+     * @return a unique id value for the heading
+     */
+    public HtmlId forHeading(CharSequence headingText, Set<String> headingIds) {
+        String idValue = headingText.toString()
+                .toLowerCase(Locale.ROOT)
+                .trim()
+                .replaceAll("[^\\w_-]+", "-");
+        // Make id value unique
+        idValue = idValue + "-heading";
+        if (!headingIds.add(idValue)) {
+            int counter = 1;
+            while (!headingIds.add(idValue + counter)) {
+                counter++;
+            }
+            idValue = idValue + counter;
+        }
+        return HtmlId.of(idValue);
     }
 }

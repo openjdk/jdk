@@ -847,6 +847,14 @@ abstract public class TestScaffold extends TargetAdapter {
         return (Location)locs.get(0);
     }
 
+    public Location findMethodLocation(ReferenceType rt, String methodName,
+                                       String methodSignature, int methodLineNumber)
+        throws AbsentInformationException {
+        Method m = findMethod(rt, methodName, methodSignature);
+        int lineNumber = m.location().lineNumber() + methodLineNumber - 1;
+        return findLocation(rt, lineNumber);
+    }
+
     public BreakpointEvent resumeTo(String clsName, String methodName,
                                          String methodSignature) {
         return resumeTo(clsName, methodName, methodSignature, false /* suspendThread */);

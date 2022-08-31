@@ -75,7 +75,6 @@
 #include "oops/objArrayKlass.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/continuation.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/safepoint.hpp"
@@ -962,8 +961,8 @@ void PSParallelCompact::pre_compact()
   // Increment the invocation count
   heap->increment_total_collections(true);
 
-  Continuations::on_gc_marking_cycle_start();
-  Continuations::arm_all_nmethods();
+  CodeCache::on_gc_marking_cycle_start();
+  CodeCache::arm_all_nmethods();
 
   // We need to track unique mark sweep invocations as well.
   _total_invocations++;
@@ -995,8 +994,8 @@ void PSParallelCompact::post_compact()
   GCTraceTime(Info, gc, phases) tm("Post Compact", &_gc_timer);
   ParCompactionManager::remove_all_shadow_regions();
 
-  Continuations::on_gc_marking_cycle_finish();
-  Continuations::arm_all_nmethods();
+  CodeCache::on_gc_marking_cycle_finish();
+  CodeCache::arm_all_nmethods();
 
   for (unsigned int id = old_space_id; id < last_space_id; ++id) {
     // Clear the marking bitmap, summary data and split info.

@@ -63,6 +63,8 @@ public:
 
   void iu_barrier(MacroAssembler* masm, Register dst, Register tmp);
 
+  virtual NMethodPatchingType nmethod_patching_type() { return NMethodPatchingType::conc_data_patch; }
+
 #ifdef COMPILER1
   void gen_pre_barrier_stub(LIR_Assembler* ce, ShenandoahPreBarrierStub* stub);
   void gen_load_reference_barrier_stub(LIR_Assembler* ce, ShenandoahLoadReferenceBarrierStub* stub);

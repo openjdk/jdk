@@ -561,8 +561,6 @@ class Parse : public GraphKit {
   bool    create_jump_tables(Node* a, SwitchRange* lo, SwitchRange* hi);
   void    linear_search_switch_ranges(Node* key_val, SwitchRange*& lo, SwitchRange*& hi);
 
-  void decrement_age();
-
   // helper function for call statistics
   void count_compiled_calls(bool at_method_entry, bool is_inline) PRODUCT_RETURN;
 

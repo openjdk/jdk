@@ -41,7 +41,6 @@
 #include "runtime/safepoint.hpp"
 #include "utilities/events.hpp"
 #include "utilities/growableArray.hpp"
-#include "utilities/hashtable.inline.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/quickSort.hpp"
 #include "utilities/resourceHash.hpp"

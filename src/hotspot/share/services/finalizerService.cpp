@@ -166,12 +166,6 @@ static const size_t DEFAULT_TABLE_SIZE = 2048;
 static const size_t MAX_SIZE = 24;
 static volatile bool _has_work = false;
 
-static size_t ceil_log2(size_t value) {
-  size_t ret;
-  for (ret = 1; ((size_t)1 << ret) < value; ++ret);
-  return ret;
-}
-
 class FinalizerEntryLookupResult {
  private:
   FinalizerEntry* _result;
@@ -270,7 +264,7 @@ void FinalizerService::do_concurrent_work(JavaThread* service_thread) {
 void FinalizerService::init() {
   assert(_table == nullptr, "invariant");
   const size_t start_size_log_2 = ceil_log2(DEFAULT_TABLE_SIZE);
-  _table = new FinalizerHashtable(start_size_log_2, MAX_SIZE);
+  _table = new FinalizerHashtable(start_size_log_2, MAX_SIZE, FinalizerHashtable::DEFAULT_GROW_HINT);
 }
 
 static FinalizerEntry* lookup_entry(const InstanceKlass* ik, Thread* thread) {

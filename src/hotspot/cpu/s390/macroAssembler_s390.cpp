@@ -4484,7 +4484,7 @@ intptr_t MacroAssembler::get_const_from_toc(address pc) {
   if (is_load_const_from_toc_pcrelative(pc)) {
     dataLoc = pc + offset;
   } else {
-    CodeBlob* cb = CodeCache::find_blob_unsafe(pc);   // Else we get assertion if nmethod is zombie.
+    CodeBlob* cb = CodeCache::find_blob(pc);
     assert(cb && cb->is_nmethod(), "sanity");
     nmethod* nm = (nmethod*)cb;
     dataLoc = nm->ctable_begin() + offset;

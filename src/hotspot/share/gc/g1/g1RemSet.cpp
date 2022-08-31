@@ -1322,8 +1322,7 @@ class G1MergeHeapRootsTask : public WorkerTask {
     virtual bool do_heap_region(HeapRegion* r) {
       G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
-      if (!r->is_starts_humongous() ||
-          !g1h->region_attr(r->hrm_index()).is_humongous() ||
+      if (!g1h->region_attr(r->hrm_index()).is_humongous() ||
           r->rem_set()->is_empty()) {
         return false;
       }
@@ -1491,7 +1490,7 @@ public:
     }
 
     // Apply closure to log entries in the HCC.
-    if (_initial_evacuation && G1HotCardCache::default_use_cache()) {
+    if (_initial_evacuation && G1HotCardCache::use_cache()) {
       assert(merge_remset_phase == G1GCPhaseTimes::MergeRS, "Wrong merge phase");
       G1GCParPhaseTimesTracker x(p, G1GCPhaseTimes::MergeHCC, worker_id);
       G1MergeLogBufferCardsClosure cl(g1h, _scan_state);
@@ -1657,7 +1656,7 @@ bool G1RemSet::clean_card_before_refine(CardValue** const card_ptr_addr) {
   //   * a pointer to a "hot" card that was evicted from the "hot" cache.
   //
 
-  if (_hot_card_cache->use_cache()) {
+  if (G1HotCardCache::use_cache()) {
     assert(!SafepointSynchronize::is_at_safepoint(), "sanity");
 
     const CardValue* orig_card_ptr = card_ptr;
