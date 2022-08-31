@@ -35,7 +35,7 @@
  * @requires vm.gc.Z
  * @compile --enable-preview -source ${jdk.version} Skynet.java
  * @run main/othervm/timeout=300 --enable-preview -XX:+UnlockDiagnosticVMOptions
- *     -XX:+ZVerifyViews -XX:ZCollectionInterval=0.01 Skynet
+ *     -XX:+ZVerifyOops -XX:ZCollectionIntervalMajor=0.01 Skynet
  */
 
 import java.util.concurrent.BlockingQueue;
