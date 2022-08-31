@@ -4905,9 +4905,6 @@ os::os_exception_wrapper(java_call_t f, JavaValue* value, const methodHandle& me
   f(value, method, args, thread);
 }
 
-void os::print_statistics() {
-}
-
 // This code originates from JDK's sysOpen and open64_w
 // from src/solaris/hpi/src/system_md.c
 

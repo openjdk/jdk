@@ -2236,9 +2236,6 @@ void os::os_exception_wrapper(java_call_t f, JavaValue* value,
   f(value, method, args, thread);
 }
 
-void os::print_statistics() {
-}
-
 static inline struct timespec get_mtime(const char* filename) {
   struct stat st;
   int ret = os::stat(filename, &st);
