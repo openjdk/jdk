@@ -52,14 +52,14 @@ class PatternEntry {
     /**
      * Gets the current extension, quoted
      */
-    public void appendQuotedExtension(StringBuilder toAddTo) {
+    private void appendQuotedExtension(StringBuilder toAddTo) {
         appendQuoted(extension,toAddTo);
     }
 
     /**
      * Gets the current chars, quoted
      */
-    public void appendQuotedChars(StringBuilder toAddTo) {
+    private void appendQuotedChars(StringBuilder toAddTo) {
         appendQuoted(chars,toAddTo);
     }
 
@@ -151,7 +151,7 @@ class PatternEntry {
         }
     }
 
-    static void appendQuoted(String chars, StringBuilder toAddTo) {
+    private static void appendQuoted(String chars, StringBuilder toAddTo) {
         boolean inQuote = false;
         char ch = chars.charAt(0);
         if (Character.isSpaceChar(ch)) {
