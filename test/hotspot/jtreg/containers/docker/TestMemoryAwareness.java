@@ -24,6 +24,7 @@
 
 /*
  * @test
+ * @bug 8146115 8292083
  * @key cgroups
  * @summary Test JVM's memory resource awareness when running inside docker container
  * @requires docker.support
@@ -41,8 +42,17 @@ import jdk.test.lib.containers.docker.DockerRunOptions;
 import jdk.test.lib.containers.docker.DockerTestUtils;
 import jdk.test.lib.process.OutputAnalyzer;
 
+import static jdk.test.lib.Asserts.assertNotNull;
+
 public class TestMemoryAwareness {
     private static final String imageName = Common.imageName("memory");
+
+    private static String getHostMaxMemory() throws Exception {
+        DockerRunOptions opts = Common.newOpts(imageName);
+        String goodMem = Common.run(opts).firstMatch("total physical memory: (\\d+)", 1);
+        assertNotNull(goodMem, "no match for 'total physical memory' in trace output");
+        return goodMem;
+    }
 
     public static void main(String[] args) throws Exception {
         if (!DockerTestUtils.canTestDocker()) {
@@ -76,6 +86,10 @@ public class TestMemoryAwareness {
                 "1G", Integer.toString(((int) Math.pow(2, 20)) * 1024),
                 "1500M", Integer.toString(((int) Math.pow(2, 20)) * (1500 - 1024))
             );
+            final String hostMaxMem = getHostMaxMemory();
+            testOperatingSystemMXBeanIgnoresMemLimitExceedingPhysicalMemory(hostMaxMem);
+            testMetricsIgnoresMemLimitExceedingPhysicalMemory(hostMaxMem);
+            testContainerMemExceedsPhysical(hostMaxMem);
         } finally {
             if (!DockerTestUtils.RETAIN_IMAGE_AFTER_TEST) {
                 DockerTestUtils.removeDockerImage(imageName);
@@ -94,6 +108,20 @@ public class TestMemoryAwareness {
 
         Common.run(opts)
             .shouldMatch("Memory Limit is:.*" + expectedTraceValue);
+    }
+
+    // JDK-8292083
+    // Ensure that Java ignores container memory limit values above the host's physical memory.
+    private static void testContainerMemExceedsPhysical(final String hostMaxMem)
+            throws Exception {
+        Common.logNewTestCase("container memory limit exceeds physical memory");
+        String badMem = hostMaxMem + "0";
+        // set a container memory limit to the bad value
+        DockerRunOptions opts = Common.newOpts(imageName)
+            .addDockerOpts("--memory", badMem);
+
+        Common.run(opts)
+            .shouldMatch("container memory limit (ignored: " + badMem + "|unlimited: -1), using host value " + hostMaxMem);
     }
 
 
@@ -174,4 +202,23 @@ public class TestMemoryAwareness {
         }
     }
 
+
+    // JDK-8292541: Ensure OperatingSystemMXBean ignores container memory limits above the host's physical memory.
+    private static void testOperatingSystemMXBeanIgnoresMemLimitExceedingPhysicalMemory(final String hostMaxMem)
+            throws Exception {
+        String badMem = hostMaxMem + "0";
+        testOperatingSystemMXBeanAwareness(badMem, hostMaxMem, badMem, hostMaxMem);
+    }
+
+    // JDK-8292541: Ensure Metrics ignores container memory limits above the host's physical memory.
+    private static void testMetricsIgnoresMemLimitExceedingPhysicalMemory(final String hostMaxMem)
+            throws Exception {
+        Common.logNewTestCase("Metrics ignore container memory limit exceeding physical memory");
+        String badMem = hostMaxMem + "0";
+        DockerRunOptions opts = Common.newOpts(imageName)
+            .addJavaOpts("-XshowSettings:system")
+            .addDockerOpts("--memory", badMem);
+
+        DockerTestUtils.dockerRunJava(opts).shouldMatch("Memory Limit: Unlimited");
+    }
 }

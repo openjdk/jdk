@@ -212,12 +212,6 @@ class StringTableLookupOop : public StackObj {
   }
 };
 
-static size_t ceil_log2(size_t val) {
-  size_t ret;
-  for (ret = 1; ((size_t)1 << ret) < val; ++ret);
-  return ret;
-}
-
 void StringTable::create_table() {
   size_t start_size_log_2 = ceil_log2(StringTableSize);
   _current_size = ((size_t)1) << start_size_log_2;
