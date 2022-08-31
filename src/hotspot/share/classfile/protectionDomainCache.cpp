@@ -40,6 +40,8 @@
 #include "utilities/resourceHash.hpp"
 
 unsigned int ProtectionDomainCacheTable::compute_hash(const WeakHandle& protection_domain) {
+  // The protection domain in the hash computation is passed from a Handle so cannot resolve to null.
+  assert(protection_domain.peek() != nullptr, "Must be live");
   return (unsigned int)(protection_domain.resolve()->identity_hash());
 }
 
@@ -181,8 +183,7 @@ void ProtectionDomainCacheTable::verify() {
 }
 
 // The object_no_keepalive() call peeks at the phantomly reachable oop without
-// keeping it alive. This is okay to do in the VM thread state if it is not
-// leaked out to become strongly reachable.
+// keeping it alive.  This is used for traversing DictionaryEntry pd_set.
 oop ProtectionDomainEntry::object_no_keepalive() {
   return _object.peek();
 }
