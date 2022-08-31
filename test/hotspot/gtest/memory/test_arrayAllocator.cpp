@@ -65,7 +65,7 @@ TEST_VM(ArrayAllocator, reallocate_0) {
   Element* const ret = MallocArrayAllocator<Element>::reallocate(elements, 0, mtTest);
   ASSERT_NE(ret, nullptr) << "We've chosen to NOT return nullptr when reallcting with 0";
 
-  MallocArrayAllocator<Element>::free(elements);
+  MallocArrayAllocator<Element>::free(ret);
 }
 
 TEST_VM(ArrayAllocator, reallocate_shrink) {
