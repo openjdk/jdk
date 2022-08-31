@@ -2489,14 +2489,23 @@ bool LibraryCallKit::inline_vector_convert() {
 
   Node* op = opd1;
   if (is_cast) {
-    int cast_vopc = VectorCastNode::opcode(elem_bt_from, !is_ucast);
+    BasicType new_elem_bt_to = elem_bt_to;
+    BasicType new_elem_bt_from = elem_bt_from;
+    if (is_mask && is_floating_point_type(elem_bt_from)) {
+      new_elem_bt_from = elem_bt_from == T_FLOAT ? T_INT : T_LONG;
+    }
+    if (is_mask && is_floating_point_type(elem_bt_to)) {
+      new_elem_bt_to = elem_bt_to == T_FLOAT ? T_INT : T_LONG;
+    }
+    int cast_vopc = VectorCastNode::opcode(new_elem_bt_from, !is_ucast);
 
-    // Make sure that vector cast is implemented to particular type/size combination if it is not
-    // a mask casting.
-    if (!is_mask && !arch_supports_vector(cast_vopc, num_elem_to, elem_bt_to, VecMaskNotUsed)) {
+    // Make sure that vector cast is implemented to particular type/size combination.
+    bool no_vec_cast_check = is_mask && (src_type->isa_vectmask() ||
+                             type2aelembytes(elem_bt_from) == type2aelembytes(elem_bt_to));
+    if (!no_vec_cast_check && !arch_supports_vector(cast_vopc, num_elem_to, new_elem_bt_to, VecMaskNotUsed)) {
       if (C->print_intrinsics()) {
         tty->print_cr("  ** not supported: arity=1 op=cast#%d/3 vlen2=%d etype2=%s ismask=%d",
-                      cast_vopc, num_elem_to, type2name(elem_bt_to), is_mask);
+                      cast_vopc, num_elem_to, type2name(new_elem_bt_to), is_mask);
       }
       return false;
     }
