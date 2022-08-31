@@ -41,7 +41,7 @@ double GCTrimNative::_next_trim_not_before = 0;
 // GCTrimNative works in two modes:
 //
 // - async mode, where GCTrimNative runs a trimmer thread on behalf of the GC.
-//   The trimmer thread will be doing all the trims, either periodically or
+//   The trimmer thread will be doing all the trims, both periodically and
 //   triggered from outside via GCTrimNative::schedule_trim().
 //
 // - synchronous mode, where the GC does the trimming itself in its own thread,
@@ -52,6 +52,7 @@ double GCTrimNative::_next_trim_not_before = 0;
 class NativeTrimmer : public ConcurrentGCThread {
 
   Monitor* _lock;
+  volatile bool _paused;
   static NativeTrimmer* _the_trimmer;
 
 protected:
@@ -60,15 +61,19 @@ protected:
     assert(GCTrimNativeHeap, "Sanity");
     assert(os::can_trim_native_heap(), "Sanity");
 
+    log_info(gc, trim)("NativeTrimmer started.");
+
+    // Note: GCTrimNativeHeapInterval=0 -> zero wait time -> indefinite waits, disabling periodic trim
     const int64_t delay_ms = GCTrimNativeHeapInterval * 1000;
     for (;;) {
       MonitorLocker ml(_lock, Mutex::_no_safepoint_check_flag);
-      ml.wait(delay_ms); // Note: GCTrimNativeHeapDelay == 0 disables periodic trim, no timeout then
+      ml.wait(delay_ms);
       if (should_terminate()) {
-        log_debug(gc, trim)("NativeTrimmer stopped.");
+        log_info(gc, trim)("NativeTrimmer stopped.");
         break;
       }
-      if (os::should_trim_native_heap()) {
+      bool paused = Atomic::load(&_paused);
+      if (!paused && os::should_trim_native_heap()) {
         GCTrimNative::do_trim();
       }
     }
@@ -79,6 +84,16 @@ protected:
     ml.notify_all();
   }
 
+  void pause() {
+    Atomic::store(&_paused, true);
+    log_debug(gc, trim)("NativeTrimmer paused");
+  }
+
+  void unpause() {
+    Atomic::store(&_paused, false);
+    log_debug(gc, trim)("NativeTrimmer unpaused");
+  }
+
   virtual void stop_service() {
     wakeup();
   }
@@ -86,7 +101,8 @@ protected:
 public:
 
   NativeTrimmer() :
-    _lock(new (std::nothrow) PaddedMonitor(Mutex::nosafepoint, "NativeTrimmer_lock"))
+    _lock(new (std::nothrow) PaddedMonitor(Mutex::nosafepoint, "NativeTrimmer_lock")),
+    _paused(false)
   {}
 
   static bool is_enabled() {
@@ -102,14 +118,22 @@ public:
     _the_trimmer->stop();
   }
 
+  static void pause_periodic_trim() {
+    _the_trimmer->pause();
+  }
+
+  static void unpause_periodic_trim() {
+    _the_trimmer->unpause();
+  }
+
   static void schedule_trim_now() {
+    _the_trimmer->unpause();
     _the_trimmer->wakeup();
   }
 
 }; // NativeTrimmer
 
 NativeTrimmer* NativeTrimmer::_the_trimmer = nullptr;
-
 
 void GCTrimNative::do_trim() {
   Ticks start = Ticks::now();
@@ -119,11 +143,11 @@ void GCTrimNative::do_trim() {
     if (sc.after != SIZE_MAX) {
       const size_t delta = sc.after < sc.before ? (sc.before - sc.after) : (sc.after - sc.before);
       const char sign = sc.after < sc.before ? '-' : '+';
-      log_debug(gc, trim)("Trim native heap: RSS+Swap: " PROPERFMT "->" PROPERFMT " (%c" PROPERFMT "), %1.3fms",
-                          PROPERFMTARGS(sc.before), PROPERFMTARGS(sc.after), sign, PROPERFMTARGS(delta),
-                          trim_time.seconds() * 1000);
+      log_info(gc, trim)("Trim native heap: RSS+Swap: " PROPERFMT "->" PROPERFMT " (%c" PROPERFMT "), %1.3fms",
+                         PROPERFMTARGS(sc.before), PROPERFMTARGS(sc.after), sign, PROPERFMTARGS(delta),
+                         trim_time.seconds() * 1000);
     } else {
-      log_debug(gc, trim)("Trim native heap (no details)");
+      log_info(gc, trim)("Trim native heap (no details)");
     }
   }
 }
@@ -147,7 +171,6 @@ void GCTrimNative::initialize(bool async_mode) {
     // If we are to run the trimmer on behalf of the GC:
     if (_async_mode) {
       NativeTrimmer::start_trimmer();
-      log_debug(gc, trim)("Native Trimmer enabled.");
     }
 
     _next_trim_not_before = GCTrimNativeHeapInterval;
@@ -177,7 +200,20 @@ void GCTrimNative::execute_trim() {
   }
 }
 
-// Schedule trim-native for execution in the trimmer thread; return immediately.
+void GCTrimNative::pause_periodic_trim() {
+  if (GCTrimNativeHeap) {
+    assert(_async_mode, "Only call for async mode");
+    NativeTrimmer::pause_periodic_trim();
+  }
+}
+
+void GCTrimNative::unpause_periodic_trim() {
+  if (GCTrimNativeHeap) {
+    assert(_async_mode, "Only call for async mode");
+    NativeTrimmer::unpause_periodic_trim();
+  }
+}
+
 void GCTrimNative::schedule_trim() {
   if (GCTrimNativeHeap) {
     assert(_async_mode, "Only call for async mode");

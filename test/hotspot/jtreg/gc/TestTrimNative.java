@@ -278,7 +278,15 @@ public class TestTrimNative {
             String s = name();
             return "-XX:+Use" + s.substring(0, 1).toUpperCase() + s.substring(1) + "GC";
         }
+        boolean isZ() { return this == GC.z; }
+        boolean isSerial() { return this == GC.serial; }
+        boolean isParallel() { return this == GC.parallel; }
+        boolean isG1() { return this == GC.g1; }
         boolean isShenandoah() { return this == GC.shenandoah; }
+    }
+
+    static private boolean usesNativeTrimmer(GC gc) {
+        return gc.isG1() || gc.isParallel() || gc.isZ();
     }
 
     static private final OutputAnalyzer runTestWithOptions(String[] extraOptions, String[] testArgs) throws IOException {
@@ -315,7 +323,7 @@ public class TestTrimNative {
     private final static void parseOutputAndLookForNegativeTrim(OutputAnalyzer output, int minExpected, int maxExpected) {
         output.reportDiagnosticSummary();
         List<String> lines = output.asLines();
-        Pattern pat = Pattern.compile(".*\\[debug\\]\\[gc,trim\\] Trim native heap.*RSS\\+Swap: (\\d+)([KMB])->(\\d+)([KMB]).*");
+        Pattern pat = Pattern.compile(".*\\[gc,trim\\] Trim native heap.*RSS\\+Swap: (\\d+)([KMB])->(\\d+)([KMB]).*");
         int numTrimsFound = 0;
         long rssReductionTotal = 0;
         for (String line : lines) {
@@ -353,6 +361,16 @@ public class TestTrimNative {
         // With default interval time of 30 seconds, auto trimming should never kick in, so the only
         // log line we expect to see is the one from the full-gc induced trim.
         parseOutputAndLookForNegativeTrim(output, 1, 1);
+        // For GCs that use the NativeTrimmer, we want to see the NativeTrimmer paused during the GC, as well as
+        // started and shut down properly.
+        if (usesNativeTrimmer(gc)) {
+            output.shouldContain("NativeTrimmer started");
+            output.shouldContain("NativeTrimmer paused");
+            output.shouldContain("NativeTrimmer unpaused");
+            output.shouldContain("NativeTrimmer stopped");
+        } else {
+            output.shouldNotContain("NativeTrimmer");
+        }
     }
 
     // Test that GCTrimNativeHeap=1 causes a trim-native automatically, without GC (for now, shenandoah only)

@@ -38,6 +38,7 @@
 #include "gc/g1/g1Policy.hpp"
 #include "gc/g1/g1RegionMarkStatsCache.inline.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
+#include "gc/shared/gcTrimNativeHeap.hpp"
 #include "gc/shared/preservedMarks.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/verifyOption.hpp"
@@ -171,6 +172,10 @@ public:
 };
 
 void G1FullCollector::prepare_collection() {
+
+  // Pause native trimming for the duration of the GC
+  GCTrimNative::pause_periodic_trim();
+
   _heap->policy()->record_full_collection_start();
 
   // Verification needs the bitmap, so we should clear the bitmap only later.
@@ -232,6 +237,8 @@ void G1FullCollector::complete_collection() {
   _heap->gc_epilogue(true);
 
   _heap->verify_after_full_collection();
+
+  GCTrimNative::schedule_trim();
 }
 
 void G1FullCollector::before_marking_update_attribute_table(HeapRegion* hr) {

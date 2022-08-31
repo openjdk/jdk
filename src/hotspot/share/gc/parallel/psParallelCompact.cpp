@@ -1711,6 +1711,9 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
     return false;
   }
 
+  // Pause native trimming for the duration of the GC
+  GCTrimNative::pause_periodic_trim();
+
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
 
   GCIdMark gc_id_mark;

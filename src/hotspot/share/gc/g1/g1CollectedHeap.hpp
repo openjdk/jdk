@@ -545,7 +545,6 @@ public:
   // Immediately uncommit uncommittable regions.
   uint uncommit_regions(uint region_limit);
   bool has_uncommittable_regions();
-  void trim_native_heap();
 
   G1NUMA* numa() const { return _numa; }
 

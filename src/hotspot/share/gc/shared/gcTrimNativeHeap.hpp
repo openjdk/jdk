@@ -52,7 +52,12 @@ public:
   // Execute trim-native in this thread
   static void execute_trim();
 
-  // Schedule trim-native for execution in the trimmer thread; return immediately.
+  // Pause/unpause periodic trim
+  static void pause_periodic_trim();
+  static void unpause_periodic_trim();
+
+  // Schedule an explicit trim now; if periodic trims had been
+  // paused, they are unpaused.
   static void schedule_trim();
 
 };

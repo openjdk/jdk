@@ -40,10 +40,10 @@ void TrimCLibcHeapDCmd::execute(DCmdSource source, TRAPS) {
       if (sc.after != SIZE_MAX) {
         const size_t delta = sc.after < sc.before ? (sc.before - sc.after) : (sc.after - sc.before);
         const char sign = sc.after < sc.before ? '-' : '+';
-        _output->print_cr("Trim native heap: RSS+Swap: " PROPERFMT "->" PROPERFMT " (%c" PROPERFMT ")",
+        _output->print_cr("RSS+Swap: " PROPERFMT "->" PROPERFMT " (%c" PROPERFMT ")",
                           PROPERFMTARGS(sc.before), PROPERFMTARGS(sc.after), sign, PROPERFMTARGS(delta));
       } else {
-        _output->print_cr("Trim native heap: (no details available).");
+        _output->print_cr("(no details available).");
       }
     }
   } else {

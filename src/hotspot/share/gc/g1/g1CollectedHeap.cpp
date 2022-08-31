@@ -1032,7 +1032,6 @@ void G1CollectedHeap::prepare_heap_for_mutators() {
   abort_refinement();
   resize_heap_if_necessary();
   uncommit_regions_if_necessary();
-  trim_native_heap();
 
   // Rebuild the code root lists for each region
   rebuild_code_roots();
@@ -2624,10 +2623,6 @@ void G1CollectedHeap::uncommit_regions_if_necessary() {
   if (has_uncommittable_regions()) {
     G1UncommitRegionTask::enqueue();
   }
-}
-
-void G1CollectedHeap::trim_native_heap() {
-  GCTrimNative::schedule_trim();
 }
 
 void G1CollectedHeap::verify_numa_regions(const char* desc) {
