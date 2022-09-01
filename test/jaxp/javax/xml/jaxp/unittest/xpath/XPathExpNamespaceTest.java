@@ -111,13 +111,19 @@ public class XPathExpNamespaceTest extends XPathTestBase {
                 {"/Customers/Customer/Name/namespace::xml", "xml", "xml", "xmlns:xml","http://www.w3.org/XML/1998/namespace"},
                 {"//Customer/Name/namespace::dog", "dog", "xmlns", "xmlns:dog","www.pets.com"},
                 {"/Customers/Customer/Name/namespace::dog", "dog", "xmlns", "xmlns:dog","www.pets.com"},
+                {"//www.foo.com:Customer/namespace::foo", "foo", "xmlns", "xmlns:foo", "www.foo.com"},
+                {"/Customers/*[name() = 'foo:Customer']/namespace::foo", "foo", "xmlns", "xmlns:foo", "www.foo.com"},
+                {"/Customers/*[namespace-uri() = 'www.foo.com']/namespace::foo", "foo", "xmlns", "xmlns:foo", "www.foo.com"},
+                {"/Customers/*[contains(name(.), 'foo:')]/namespace::foo", "foo", "xmlns", "xmlns:foo", "www.foo.com"},
+                {"/Customers/*[starts-with(name(.), 'foo:')]/namespace::foo", "foo", "xmlns", "xmlns:foo", "www.foo.com"},
+                {"//*[local-name()='Customer' and namespace-uri() = 'www.foo.com']/namespace::foo", "foo", "xmlns", "xmlns:foo", "www.foo.com"},
                 {"/Customers/VendCustomer/default-namespace-uri:Address/namespace::*[name()='']", "xmlns", null, "xmlns","default-namespace-uri"},
                 {"/Customers/VendCustomer/default-namespace-uri:Address/redeclared-namespace-uri:City/namespace::*[name()='']", "xmlns", null, "xmlns","redeclared-namespace-uri"}
         };
     }
 
     /*
-     * DataProvider: provides XPath namespace expressions which should provide no namespace nodes.
+     * DataProvider: provides XPath namespace expressions which should return no namespace nodes.
      */
     @DataProvider(name = "namespaceXpathEmpty")
     public Object[][] getNamespaceXpathExpressionEmpty() {
@@ -129,7 +135,10 @@ public class XPathExpNamespaceTest extends XPathTestBase {
                 {"//Customer/Address/namespace::street"},
                 {"/Customers/Customer/Address/namespace::street"},
                 {"//VendCustomer/Address/namespace::street"},
-                {"/Customers/VendCustomer/Address/namespace::street"}
+                {"/Customers/VendCustomer/Address/namespace::street"},
+                {"//@id/namespace::*"},
+                {"//@*[name() = 'foo:id']/namespace::*"},
+                {"//@*[local-name() = 'id' and namespace-uri() = 'www.foo.com']/namespace::*"}
         };
 
     }
@@ -164,7 +173,9 @@ public class XPathExpNamespaceTest extends XPathTestBase {
                 {"namespace-uri(//www.pets.com:Address)","www.pets.com" },
                 {"namespace-uri(/Customers/www.foo.com:Customer)","www.foo.com" },
                 {"namespace-uri(/Customers/Customer/www.pets.com:Address)","www.pets.com" },
-                {"namespace-uri(/Customers/VendCustomer/Email)","" }
+                {"namespace-uri(/Customers/VendCustomer/Email)","" },
+                {"namespace-uri(//@*[name() = 'id'])", ""},
+                {"namespace-uri(//@*[name() = 'foo:id'])", "www.foo.com"}
         };
     }
 
