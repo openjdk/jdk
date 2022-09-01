@@ -623,7 +623,12 @@ public class LinkedHashMap<K,V>
      * @return a SequencedSet view of this map's keySet
      */
     public SequencedSet<K> sequencedKeySet() {
-        return (SequencedSet<K>) keySet();
+        var ks = keySet;
+        if (ks instanceof SequencedSet<K> ss) {
+            return ss;
+        } else {
+            return new LinkedKeySet(false);
+        }
     }
 
     static <K1,V1> Node<K1,V1> nsee(Node<K1,V1> node) {
@@ -762,7 +767,12 @@ public class LinkedHashMap<K,V>
      * @return a SequencedCollection view of this map's values collection
      */
     public SequencedCollection<V> sequencedValues() {
-        return (SequencedCollection<V>) values();
+        var vs = values;
+        if (vs instanceof SequencedCollection<V> sc) {
+            return sc;
+        } else {
+            return new LinkedValues(false);
+        }
     }
 
     final class LinkedValues extends AbstractCollection<V> implements SequencedCollection<V> {
@@ -856,7 +866,12 @@ public class LinkedHashMap<K,V>
      * @return a SequencedSet view of this map's entrySet
      */
     public SequencedSet<Map.Entry<K, V>> sequencedEntrySet() {
-        return (SequencedSet<Map.Entry<K, V>>) entrySet();
+        var es = entrySet;
+        if (es instanceof SequencedSet<Map.Entry<K, V>> ss) {
+            return ss;
+        } else {
+            return new LinkedEntrySet(false);
+        }
     }
 
     final class LinkedEntrySet extends AbstractSet<Map.Entry<K,V>>
