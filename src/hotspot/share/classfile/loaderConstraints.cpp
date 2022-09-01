@@ -103,13 +103,7 @@ class ConstraintSet {                               // copied into hashtable as 
     _constraints->push(new_constraint);
   }
 
-  void remove_constraint(Symbol* name, LoaderConstraint* constraint) {
-    LogTarget(Info, class, loader, constraints) lt;
-    if (lt.is_enabled()) {
-      ResourceMark rm;
-      lt.print("purging complete constraint for name %s",
-               name->as_C_string());
-    }
+  void remove_constraint(LoaderConstraint* constraint) {
     _constraints->remove(constraint);
     delete constraint;
   }
@@ -206,7 +200,13 @@ class PurgeUnloadedConstraints : public StackObj {
                           probe->loader_data(i)->loader_name_and_id());
           }
         }
-        set.remove_constraint(name, probe);
+        LogTarget(Info, class, loader, constraints) lt;
+        if (lt.is_enabled()) {
+          ResourceMark rm;
+          lt.print("purging complete constraint for name %s",
+                   name->as_C_string());
+        }
+        set.remove_constraint(probe);
       } else {
         // The class is alive or null but some of of the loaders may not be.
         // Remove entries no longer alive from loader array
@@ -233,7 +233,13 @@ class PurgeUnloadedConstraints : public StackObj {
         // Check whether the set should be purged
         // Only one loader doesn't enforce a constraint.
         if (probe->num_loaders() < 2) {
-          set.remove_constraint(name, probe);
+          LogTarget(Info, class, loader, constraints) lt;
+          if (lt.is_enabled()) {
+            ResourceMark rm;
+            lt.print("purging complete constraint for name %s",
+                     name->as_C_string());
+          }
+          set.remove_constraint(probe);
         }
       }
     }
@@ -448,7 +454,7 @@ void LoaderConstraintTable::merge_loader_constraints(Symbol* class_name,
 
   // Remove src from set
   ConstraintSet* set = _loader_constraint_table.get(class_name);
-  set->remove_constraint(class_name, src);
+  set->remove_constraint(src);
 }
 
 void LoaderConstraintTable::verify() {
