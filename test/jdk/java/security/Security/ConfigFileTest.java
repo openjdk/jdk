@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.*;
 
+import java.security.Provider;
 import java.security.Security;
 import java.util.Arrays;
 import java.util.Optional;
@@ -50,7 +51,8 @@ public class ConfigFileTest {
 
         if (args.length == 1) {
             // set up is complete. Run code to exercise loading of java.security
-            System.out.println(Arrays.toString(Security.getProviders()));
+            Provider[] provs = Security.getProviders();
+            System.out.println(Arrays.toString(provs) + "NumProviders: " + provs.length);
         } else {
             Files.createDirectory(copyJdkDir);
             Path jdkTestDir = Path.of(Optional.of(System.getProperty("test.jdk"))
@@ -60,11 +62,11 @@ public class ConfigFileTest {
             copyJDK(jdkTestDir, copyJdkDir);
             String extraPropsFile = Path.of(System.getProperty("test.src"), "override.props").toString();
 
-//            // exercise some debug flags while we're here
-//            // regular JDK install - should expect success
-//            exerciseSecurity(0, "java",
-//                    copiedJava.toString(), "-cp", System.getProperty("test.classes"),
-//                    "-Djava.security.debug=all", "-Djavax.net.debug=all", "ConfigFileTest", "runner");
+            // exercise some debug flags while we're here
+            // regular JDK install - should expect success
+            exerciseSecurity(0, "java",
+                    copiedJava.toString(), "-cp", System.getProperty("test.classes"),
+                    "-Djava.security.debug=all", "-Djavax.net.debug=all", "ConfigFileTest", "runner");
 
             // given an overriding security conf file that doesn't exist, we shouldn't
             // overwrite the properties from original/master security conf file
@@ -73,19 +75,30 @@ public class ConfigFileTest {
                     "-Djava.security.debug=all", "-Djavax.net.debug=all",
                     "-Djava.security.properties==file://" + extraPropsFile + "badFileName",
                     "ConfigFileTest", "runner");
-//
-//            // launch JDK without java.security file being present or specified
-//            exerciseSecurity(1, "java.security file missing",
-//                    copiedJava.toString(), "-cp", System.getProperty("test.classes"),
-//                    "-Djava.security.debug=all", "-Djavax.net.debug=all", "ConfigFileTest", "runner");
 
-//            // test the override functionality also. Should not be allowed since
-//            // "security.overridePropertiesFile=true" Security property is missing.
-//            exerciseSecurity(0, "SUN version",
-//                    copiedJava.toString(), "-cp", System.getProperty("test.classes"),
-//                    //"-Xlog:all",
-//                    //"-Djava.security.debug=all", "-Djavax.net.debug=all",
-//                    "-Djava.security.properties==file://" + extraPropsFile, "ConfigFileTest", "runner");
+            // test JDK launch with customized properties file
+            exerciseSecurity(0, "NumProviders: 6",
+                    copiedJava.toString(), "-cp", System.getProperty("test.classes"),
+                    "-Djava.security.debug=all", "-Djavax.net.debug=all",
+                    "-Djava.security.properties==file://" + extraPropsFile,
+                    "ConfigFileTest", "runner");
+
+            // delete the master conf file
+            Files.delete(Path.of(copyJdkDir.toString(), "conf",
+                    "security","java.security"));
+
+            // launch JDK without java.security file being present or specified
+            exerciseSecurity(1, "Error loading java.security file",
+                    copiedJava.toString(), "-cp", System.getProperty("test.classes"),
+                    "-Djava.security.debug=all", "-Djavax.net.debug=all",
+                    "ConfigFileTest", "runner");
+
+            // test the override functionality also. Should not be allowed since
+            // "security.overridePropertiesFile=true" Security property is missing.
+            exerciseSecurity(1, "Error loading java.security file",
+                    copiedJava.toString(), "-cp", System.getProperty("test.classes"),
+                    "-Djava.security.debug=all", "-Djavax.net.debug=all",
+                    "-Djava.security.properties==file://" + extraPropsFile, "ConfigFileTest", "runner");
         }
     }
 

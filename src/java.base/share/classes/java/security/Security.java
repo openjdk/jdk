@@ -136,14 +136,16 @@ public final class Security {
             }
             props.load(is);
             if (sdebug != null) {
+                // ExceptionInInitializerError if masterFile.getName() is
+                // called here (NPE!). Leave as is (and few lines down)
                 sdebug.println("reading security properties file: " +
-                        masterFile == null ? extraPropFile : masterFile.getName());
+                        masterFile == null ? extraPropFile : "java.security");
             }
             return true;
         } catch (IOException | PropertyExpander.ExpandException e) {
             if (sdebug != null) {
                 sdebug.println("unable to load security properties from " +
-                        masterFile == null ? extraPropFile : masterFile.getName());
+                        masterFile == null ? extraPropFile : "java.security");
                 e.printStackTrace();
             }
             return false;
