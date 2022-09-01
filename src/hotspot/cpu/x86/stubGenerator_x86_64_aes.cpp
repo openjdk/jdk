@@ -43,6 +43,38 @@
 
 // AES intrinsic stubs
 
+void StubGenerator::generate_aes_stubs() {
+  if (UseAESIntrinsics) {
+    StubRoutines::x86::_key_shuffle_mask_addr = generate_key_shuffle_mask();  // needed by the others
+    StubRoutines::_aescrypt_encryptBlock = generate_aescrypt_encryptBlock();
+    StubRoutines::_aescrypt_decryptBlock = generate_aescrypt_decryptBlock();
+    StubRoutines::_cipherBlockChaining_encryptAESCrypt = generate_cipherBlockChaining_encryptAESCrypt();
+    if (VM_Version::supports_avx512_vaes() &&  VM_Version::supports_avx512vl() && VM_Version::supports_avx512dq() ) {
+      StubRoutines::_cipherBlockChaining_decryptAESCrypt = generate_cipherBlockChaining_decryptVectorAESCrypt();
+      StubRoutines::_electronicCodeBook_encryptAESCrypt = generate_electronicCodeBook_encryptAESCrypt();
+      StubRoutines::_electronicCodeBook_decryptAESCrypt = generate_electronicCodeBook_decryptAESCrypt();
+      StubRoutines::x86::_counter_mask_addr = generate_counter_mask_addr();
+      StubRoutines::x86::_ghash_poly512_addr = generate_ghash_polynomial512_addr();
+      StubRoutines::x86::_ghash_long_swap_mask_addr = generate_ghash_long_swap_mask();
+      StubRoutines::_galoisCounterMode_AESCrypt = generate_galoisCounterMode_AESCrypt();
+    } else {
+      StubRoutines::_cipherBlockChaining_decryptAESCrypt = generate_cipherBlockChaining_decryptAESCrypt_Parallel();
+    }
+  }
+
+  if (UseAESCTRIntrinsics) {
+    if (VM_Version::supports_avx512_vaes() && VM_Version::supports_avx512bw() && VM_Version::supports_avx512vl()) {
+      if (StubRoutines::x86::_counter_mask_addr == NULL) {
+        StubRoutines::x86::_counter_mask_addr = generate_counter_mask_addr();
+      }
+      StubRoutines::_counterMode_AESCrypt = generate_counterMode_VectorAESCrypt();
+    } else {
+      StubRoutines::x86::_counter_shuffle_mask_addr = generate_counter_shuffle_mask();
+      StubRoutines::_counterMode_AESCrypt = generate_counterMode_AESCrypt_Parallel();
+    }
+  }
+}
+
 address StubGenerator::generate_key_shuffle_mask() {
   __ align(16);
   StubCodeMark mark(this, "StubRoutines", "key_shuffle_mask");
@@ -3121,38 +3153,6 @@ void StubGenerator::aesgcm_encrypt(Register in, Register len, Register ct, Regis
 
   __ bind(ENC_DEC_DONE);
   __ movq(rax, pos);
-}
-
-void StubGenerator::generate_aes_stubs() {
-  if (UseAESIntrinsics) {
-    StubRoutines::x86::_key_shuffle_mask_addr = generate_key_shuffle_mask();  // needed by the others
-    StubRoutines::_aescrypt_encryptBlock = generate_aescrypt_encryptBlock();
-    StubRoutines::_aescrypt_decryptBlock = generate_aescrypt_decryptBlock();
-    StubRoutines::_cipherBlockChaining_encryptAESCrypt = generate_cipherBlockChaining_encryptAESCrypt();
-    if (VM_Version::supports_avx512_vaes() &&  VM_Version::supports_avx512vl() && VM_Version::supports_avx512dq() ) {
-      StubRoutines::_cipherBlockChaining_decryptAESCrypt = generate_cipherBlockChaining_decryptVectorAESCrypt();
-      StubRoutines::_electronicCodeBook_encryptAESCrypt = generate_electronicCodeBook_encryptAESCrypt();
-      StubRoutines::_electronicCodeBook_decryptAESCrypt = generate_electronicCodeBook_decryptAESCrypt();
-      StubRoutines::x86::_counter_mask_addr = generate_counter_mask_addr();
-      StubRoutines::x86::_ghash_poly512_addr = generate_ghash_polynomial512_addr();
-      StubRoutines::x86::_ghash_long_swap_mask_addr = generate_ghash_long_swap_mask();
-      StubRoutines::_galoisCounterMode_AESCrypt = generate_galoisCounterMode_AESCrypt();
-    } else {
-      StubRoutines::_cipherBlockChaining_decryptAESCrypt = generate_cipherBlockChaining_decryptAESCrypt_Parallel();
-    }
-  }
-
-  if (UseAESCTRIntrinsics) {
-    if (VM_Version::supports_avx512_vaes() && VM_Version::supports_avx512bw() && VM_Version::supports_avx512vl()) {
-      if (StubRoutines::x86::_counter_mask_addr == NULL) {
-        StubRoutines::x86::_counter_mask_addr = generate_counter_mask_addr();
-      }
-      StubRoutines::_counterMode_AESCrypt = generate_counterMode_VectorAESCrypt();
-    } else {
-      StubRoutines::x86::_counter_shuffle_mask_addr = generate_counter_shuffle_mask();
-      StubRoutines::_counterMode_AESCrypt = generate_counterMode_AESCrypt_Parallel();
-    }
-  }
 }
 
 #undef __
