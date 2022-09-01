@@ -1271,13 +1271,13 @@ static void check_continuation_enter_argument(VMReg actual_vmreg,
 }
 
 static void gen_continuation_enter(MacroAssembler* masm,
-                                 const VMRegPair* regs,
-                                 int& exception_offset,
-                                 OopMapSet* oop_maps,
-                                 int& frame_complete,
-                                 int& stack_slots,
-                                 int& interpreted_entry_offset,
-                                 int& compiled_entry_offset) {
+                                   const VMRegPair* regs,
+                                   int& exception_offset,
+                                   OopMapSet* oop_maps,
+                                   int& frame_complete,
+                                   int& stack_slots,
+                                   int& interpreted_entry_offset,
+                                   int& compiled_entry_offset) {
 
   // enterSpecial(Continuation c, boolean isContinue, boolean isVirtualThread)
   int pos_cont_obj   = 0;
@@ -1444,6 +1444,61 @@ static void gen_continuation_enter(MacroAssembler* masm,
   __ jmp(rbx);
 }
 
+static void gen_continuation_yield(MacroAssembler* masm,
+                                   const VMRegPair* regs,
+                                   int& exception_offset,
+                                   OopMapSet* oop_maps,
+                                   int& frame_complete,
+                                   int& stack_slots,
+                                   int& interpreted_entry_offset,
+                                   int& compiled_entry_offset) {
+  enum layout {
+    rbp_off,
+    rbpH_off,
+    return_off,
+    return_off2,
+    framesize // inclusive of return address
+  };
+  stack_slots = framesize /  VMRegImpl::slots_per_word;
+  assert(stack_slots == 2, "recheck layout");
+
+  address start = __ pc();
+  compiled_entry_offset = __ pc() - start;
+  __ enter();
+  address the_pc = __ pc();
+
+  frame_complete = the_pc - start;
+
+  // This nop must be exactly at the PC we push into the frame info.
+  // We use this nop for fast CodeBlob lookup, associate the OopMap
+  // with it right away.
+  __ post_call_nop();
+  OopMap* map = new OopMap(framesize, 1);
+  oop_maps->add_gc_map(frame_complete, map);
+
+  __ set_last_Java_frame(rsp, rbp, the_pc, rscratch1);
+  __ movptr(c_rarg0, r15_thread);
+  __ movptr(c_rarg1, rsp);
+  __ call_VM_leaf(Continuation::freeze_entry(), 2);
+  __ reset_last_Java_frame(true);
+
+  Label L_pinned;
+
+  __ testptr(rax, rax);
+  __ jcc(Assembler::notZero, L_pinned);
+
+  __ movptr(rsp, Address(r15_thread, JavaThread::cont_entry_offset()));
+  __ continuation_enter_cleanup();
+  __ pop(rbp);
+  __ ret(0);
+
+  __ bind(L_pinned);
+
+  // Pinned, return to caller
+  __ leave();
+  __ ret(0);
+}
+
 static void gen_special_dispatch(MacroAssembler* masm,
                                  const methodHandle& method,
                                  const BasicType* sig_bt,
@@ -1528,23 +1583,34 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
                                                 BasicType* in_sig_bt,
                                                 VMRegPair* in_regs,
                                                 BasicType ret_type) {
-  if (method->is_continuation_enter_intrinsic()) {
-    vmIntrinsics::ID iid = method->intrinsic_id();
-    intptr_t start = (intptr_t)__ pc();
+  if (method->is_continuation_native_intrinsic()) {
     int vep_offset = 0;
     int exception_offset = 0;
     int frame_complete = 0;
     int stack_slots = 0;
-    OopMapSet* oop_maps =  new OopMapSet();
+    OopMapSet* oop_maps = new OopMapSet();
     int interpreted_entry_offset = -1;
-    gen_continuation_enter(masm,
-                         in_regs,
-                         exception_offset,
-                         oop_maps,
-                         frame_complete,
-                         stack_slots,
-                         interpreted_entry_offset,
-                         vep_offset);
+    if (method->is_continuation_enter_intrinsic()) {
+      gen_continuation_enter(masm,
+                             in_regs,
+                             exception_offset,
+                             oop_maps,
+                             frame_complete,
+                             stack_slots,
+                             interpreted_entry_offset,
+                             vep_offset);
+    } else if (method->is_continuation_yield_intrinsic()) {
+      gen_continuation_yield(masm,
+                             in_regs,
+                             exception_offset,
+                             oop_maps,
+                             frame_complete,
+                             stack_slots,
+                             interpreted_entry_offset,
+                             vep_offset);
+    } else {
+      guarantee(false, "Unknown Continuation native intrinsic");
+    }
     __ flush();
     nmethod* nm = nmethod::new_native_nmethod(method,
                                               compile_id,
@@ -1556,7 +1622,11 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
                                               in_ByteSize(-1),
                                               oop_maps,
                                               exception_offset);
-    ContinuationEntry::set_enter_code(nm, interpreted_entry_offset);
+    if (method->is_continuation_enter_intrinsic()) {
+      ContinuationEntry::set_enter_code(nm, interpreted_entry_offset);
+    } else if (method->is_continuation_yield_intrinsic()) {
+      _cont_doYield_stub = nm;
+    }
     return nm;
   }
 
