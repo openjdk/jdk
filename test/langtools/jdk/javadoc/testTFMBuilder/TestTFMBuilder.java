@@ -174,6 +174,7 @@ public class TestTFMBuilder extends JavadocTester {
                                 .replace("##EXC##", TestException.class.getName()));
             } finally {
                 setFileManager(null);
+                setAutomaticCheckNoStacktrace(true);
             }
         }
     }
@@ -191,6 +192,7 @@ public class TestTFMBuilder extends JavadocTester {
 
             try {
                 setFileManager(tfm);
+                setAutomaticCheckNoStacktrace(false);
                 javadoc("-d", base.resolve("api").toString(),
                         "-sourcepath", srcDir.toString(),
                         "p");
@@ -204,6 +206,7 @@ public class TestTFMBuilder extends JavadocTester {
                                 .replace("##FILE##", srcDir.resolve("p").resolve("C.java").toString()));
             } finally {
                 setFileManager(null);
+                setAutomaticCheckNoStacktrace(true);
             }
         }
     }
@@ -223,6 +226,7 @@ public class TestTFMBuilder extends JavadocTester {
 
             try {
                 setFileManager(tfm);
+                setAutomaticCheckNoStacktrace(false);
                 javadoc("-d", outDir.toString(),
                         "-sourcepath", srcDir.toString(),
                         "p");
@@ -237,6 +241,7 @@ public class TestTFMBuilder extends JavadocTester {
                                 .replace("##FILE##", outDir.resolve("p").resolve("C.html").toString()));
             } finally {
                 setFileManager(null);
+                setAutomaticCheckNoStacktrace(true);
             }
         }
     }
