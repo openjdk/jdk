@@ -353,7 +353,7 @@ public class TransPatterns extends TreeTranslator {
             }
             deconstructorCalls.add(componentAccessor);
             JCExpression accessedComponentValue =
-                    convert(componentAccessor, componentType);//TODO - cast only when needed
+                    convert(componentAccessor, componentType);
             JCInstanceOf firstLevelCheck = (JCInstanceOf) make.TypeTest(accessedComponentValue, nestedBinding).setType(syms.booleanType);
             //TODO: verify deep/complex nesting with nulls
             firstLevelCheck.allowNull = allowNull;

@@ -42,6 +42,7 @@ public class TypedDeconstructionPatternExc {
         run(this::testExprCond);
         testTryExpr();
         run(this::testLambda);
+        runBoxed();
     }
 
     void run(Function<Pair<String, Integer>, Integer> tested) {
@@ -131,6 +132,37 @@ public class TypedDeconstructionPatternExc {
         };
     }
 
+    void runBoxed() {
+        assertEquals(2, testBoxed(new Box(new Pair<>("1", 1))));
+        try {
+            testBoxed(new Box((Pair<String, Integer>) (Object) new Pair<Integer, Integer>(1, 1)));
+            fail("Expected an exception, but none happened!");
+        } catch (ClassCastException ex) {
+            System.err.println("expected exception:");
+            ex.printStackTrace();
+        }
+        try {
+            testBoxed(new Box(new Pair<String, Integer>("fail", 1)));
+            fail("Expected an exception, but none happened!");
+        } catch (MatchException ex) {
+            assertEquals(TestPatternFailed.class.getName() + ": " + EXCEPTION_MESSAGE,
+                         ex.getMessage());
+            if (ex.getCause() instanceof TestPatternFailed ex2) {
+                System.err.println("expected exception:");
+                ex2.printStackTrace();
+            } else {
+                fail("Not the correct exception.");
+            }
+        }
+    }
+
+    int testBoxed(Object p) {
+        return switch (p) {
+            case Box(Pair<String, Integer>(String s, Integer i)) -> s.length() + i;
+            case Object o -> -1;
+        };
+    }
+
     static final String EXCEPTION_MESSAGE = "exception-message";
 
     record Pair<L, R>(L l, R r) {
@@ -144,6 +176,8 @@ public class TypedDeconstructionPatternExc {
             return r;
         }
     }
+
+    record Box(Pair<String, Integer> boxed) {}
 
     void assertEquals(Object expected, Object actual) {
         if (!Objects.equals(expected, actual)) {
