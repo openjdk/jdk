@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,9 @@
  * questions.
  *
  */
+
+#ifndef CPU_X86_STUBGENERATOR_X86_64_HPP
+#define CPU_X86_STUBGENERATOR_X86_64_HPP
 
 #include "runtime/continuation.hpp"
 #include "runtime/stubCodeGenerator.hpp"
@@ -448,3 +451,5 @@ class StubGenerator: public StubCodeGenerator {
     }
   }
 };
+
+#endif // CPU_X86_STUBGENERATOR_X86_64_HPP
