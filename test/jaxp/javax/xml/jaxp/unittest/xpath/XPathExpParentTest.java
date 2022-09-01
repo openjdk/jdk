@@ -147,7 +147,7 @@ public class XPathExpParentTest extends XPathTestBase {
     }
 
     /**
-     * Verifies that XPath relative expressions provide a same node as the context node.
+     * Verifies that XPath relative expressions provide the same node as the context node.
      *
      * @param exp         XPath expression that provides a context node
      * @param relativeExp XPath relative expression that is evaluated relatively to the context node
