@@ -259,11 +259,13 @@ import java.util.regex.Pattern;
 
 public class TestTrimNative {
 
-    // Actual RSS increase is a lot larger than 16MB. Depends on glibc overhead, and NMT malloc headers in debug VMs.
+    // Actual RSS increase is a lot larger than 4 MB. Depends on glibc overhead, and NMT malloc headers in debug VMs.
     // We need small-grained allocations to make sure they actually increase RSS (all touched) and to see the
     // glibc-retaining-memory effect.
-    static final int numAllocations = 1024 * 1024;
     static final int szAllocations = 16;
+    static final int totalAllocationsSize = 4 * 1024 * 1024;
+    static final int numAllocations = totalAllocationsSize / szAllocations;
+
     static long[] ptrs = new long[numAllocations];
 
     enum Unit {
@@ -354,9 +356,10 @@ public class TestTrimNative {
     // Test that GCTrimNativeHeap=1 causes a trim-native on full gc
     static private final void testWithFullGC(GC gc) throws IOException {
         System.out.println("testWithFullGC");
+        int sleeptime_secs = 2;
         OutputAnalyzer output = runTestWithOptions (
                 new String[] { gc.getSwitchName(), "-XX:+GCTrimNativeHeap" },
-                new String[] { "true" /* full gc */, "3000" /* ms after peak */ }
+                new String[] { "true" /* full gc */, String.valueOf(sleeptime_secs * 1000) /* ms after peak */ }
         );
         // With default interval time of 30 seconds, auto trimming should never kick in, so the only
         // log line we expect to see is the one from the full-gc induced trim.
@@ -377,9 +380,10 @@ public class TestTrimNative {
     static private final void testAuto(GC gc) throws IOException {
         System.out.println("testAuto");
         long t1 = System.currentTimeMillis();
+        int sleeptime_secs = 4;
         OutputAnalyzer output = runTestWithOptions (
                 new String[] { gc.getSwitchName(), "-XX:+GCTrimNativeHeap", "-XX:GCTrimNativeHeapInterval=1" },
-                new String[] { "false" /* full gc */, "6000" /* ms after peak */ }
+                new String[] { "false" /* full gc */, String.valueOf(sleeptime_secs * 1000) /* ms after peak */ }
         );
         long t2 = System.currentTimeMillis();
         int runtime_s = (int)((t2 - t1) / 1000);
@@ -455,6 +459,8 @@ public class TestTrimNative {
             System.out.println("Will spike now...");
             for (int i = 0; i < numAllocations; i++) {
                 ptrs[i] = Unsafe.getUnsafe().allocateMemory(szAllocations);
+                Unsafe.getUnsafe().putByte(ptrs[i], (byte)0);
+                Unsafe.getUnsafe().putByte(ptrs[i] + szAllocations / 2, (byte)0);
             }
             for (int i = 0; i < numAllocations; i++) {
                 Unsafe.getUnsafe().freeMemory(ptrs[i]);
