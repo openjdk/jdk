@@ -106,9 +106,9 @@ public abstract class EncodedKeySpec implements KeySpec {
      * <p>
      * If this object is created with {@link #EncodedKeySpec(byte[])}, this method in
      * this base class returns {@code null}. A child class may parse the content of the encoded
-     * key and return its algorithm name if one can be recovered.
+     * key and return its algorithm name if it can be determined.
      *
-     * @return the name of the algorithm
+     * @return the name of the algorithm, or {@code null} if not available
      * @since 9
      */
     public String getAlgorithm() {

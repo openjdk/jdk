@@ -54,13 +54,15 @@ public class X509EncodedKeySpec extends EncodedKeySpec {
     /**
      * Creates a new {@code X509EncodedKeySpec} with the given encoded key.
      * <p>
-     * This constructor parses the encoded key and recovers the algorithm
-     * name from its `algorithm` field. If the name is one of the
+     * This constructor parses the encoded key and tries to determine the
+     * algorithm name from its `algorithm` field. If the name is one of the
+     * standard algorithm names in the {@code KeyFactory} section in the
      * <a href="{@docRoot}/../specs/security/standard-names.html#keyfactory-algorithms">
-     * standard names listed in the Java Security Standard Algorithm Names Specification</a>,
+     * Java Security Standard Algorithm Names Specification</a>,
      * it will be returned. Otherwise, the object identifier inside the `algorithm`
-     * field is returned in its string format (For example, "1.3.14.7.2.1.1").
-     * If the encoded key cannot be parsed correctly, the algorithm will be null.
+     * field is returned in its string format as a series of nonnegative
+     * integers separated by periods (For example, "1.3.14.7.2.1.1").
+     * If the encoded key cannot be parsed correctly, the algorithm is {@code null}.
      *
      * @param encodedKey the key, which is assumed to be
      * encoded according to the X.509 standard. The contents of the
