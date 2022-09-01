@@ -609,13 +609,21 @@ public class LinkedHashMap<K,V>
      *
      * @return a set view of the keys contained in this map
      */
-    public SequencedSet<K> keySet() {
-        SequencedSet<K> ks = (SequencedSet<K>) keySet;
+    public Set<K> keySet() {
+        var ks = keySet;
         if (ks == null) {
             ks = new LinkedKeySet(false);
             keySet = ks;
         }
         return ks;
+    }
+
+    /**
+     * Returns a {@link SequencedSet} view of the keySet of this map.
+     * @return a SequencedSet view of this map's keySet
+     */
+    public SequencedSet<K> sequencedKeySet() {
+        return (SequencedSet<K>) keySet();
     }
 
     static <K1,V1> Node<K1,V1> nsee(Node<K1,V1> node) {
@@ -715,7 +723,7 @@ public class LinkedHashMap<K,V>
         }
         public SequencedSet<K> reversed() {
             if (reversed) {
-                return LinkedHashMap.this.keySet();
+                return LinkedHashMap.this.sequencedKeySet();
             } else {
                 return new LinkedKeySet(true);
             }
@@ -740,13 +748,21 @@ public class LinkedHashMap<K,V>
      *
      * @return a view of the values contained in this map
      */
-    public SequencedCollection<V> values() {
-        SequencedCollection<V> vs = (SequencedCollection<V>) values;
+    public Collection<V> values() {
+        var vs = values;
         if (vs == null) {
             vs = new LinkedValues(false);
             values = vs;
         }
         return vs;
+    }
+
+    /**
+     * Returns a {@link SequencedCollection} view of this map's values collection.
+     * @return a SequencedCollection view of this map's values collection
+     */
+    public SequencedCollection<V> sequencedValues() {
+        return (SequencedCollection<V>) values();
     }
 
     final class LinkedValues extends AbstractCollection<V> implements SequencedCollection<V> {
@@ -801,7 +817,7 @@ public class LinkedHashMap<K,V>
         }
         public SequencedCollection<V> reversed() {
             if (reversed) {
-                return LinkedHashMap.this.values();
+                return LinkedHashMap.this.sequencedValues();
             } else {
                 return new LinkedValues(true);
             }
@@ -827,12 +843,20 @@ public class LinkedHashMap<K,V>
      *
      * @return a set view of the mappings contained in this map
      */
-    public SequencedSet<Map.Entry<K,V>> entrySet() {
-        SequencedSet<Map.Entry<K,V>> es = (SequencedSet<Map.Entry<K,V>>) entrySet;
+    public Set<Map.Entry<K,V>> entrySet() {
+        var es = entrySet;
         if (es == null) {
             entrySet = es = new LinkedEntrySet(false);
         }
         return es;
+    }
+
+    /**
+     * Returns a {@link SequencedSet} view of this map's entrySet.
+     * @return a SequencedSet view of this map's entrySet
+     */
+    public SequencedSet<Map.Entry<K, V>> sequencedEntrySet() {
+        return (SequencedSet<Map.Entry<K, V>>) entrySet();
     }
 
     final class LinkedEntrySet extends AbstractSet<Map.Entry<K,V>>
@@ -900,7 +924,7 @@ public class LinkedHashMap<K,V>
         }
         public SequencedSet<Map.Entry<K,V>> reversed() {
             if (reversed) {
-                return LinkedHashMap.this.entrySet();
+                return LinkedHashMap.this.sequencedEntrySet();
             } else {
                 return new LinkedEntrySet(true);
             }
@@ -1079,15 +1103,15 @@ public class LinkedHashMap<K,V>
         }
 
         public Set<K> keySet() {
-            return base.keySet().reversed();
+            return base.sequencedKeySet().reversed();
         }
 
         public Collection<V> values() {
-            return base.values().reversed();
+            return base.sequencedValues().reversed();
         }
 
         public Set<Entry<K, V>> entrySet() {
-            return base.entrySet().reversed();
+            return base.sequencedEntrySet().reversed();
         }
 
         public V getOrDefault(Object key, V defaultValue) {

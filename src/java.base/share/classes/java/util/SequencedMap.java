@@ -175,4 +175,62 @@ public interface SequencedMap<K, V> extends Map<K, V> {
     default V putLast(K k, V v) {
         throw new UnsupportedOperationException();
     }
+
+    /**
+     * Returns a {@link SequencedSet} view of this map's keySet.
+     * @return a SequencedSet view of this map's keySet
+     */
+    default SequencedSet<K> sequencedKeySet() {
+        class SeqKeySet extends AbstractSet<K> implements SequencedSet<K> {
+            public int size() {
+                return SequencedMap.this.size();
+            }
+            public Iterator<K> iterator() {
+                return SequencedMap.this.keySet().iterator();
+            }
+            public SequencedSet<K> reversed() {
+                return SequencedMap.this.reversed().sequencedKeySet();
+            }
+        }
+        return new SeqKeySet();
+    }
+
+    /**
+     * Returns a {@link SequencedCollection} view of this map's values collection.
+     * @return a SequencedCollection view of this map's values collection
+     */
+    default SequencedCollection<V> sequencedValues() {
+        class SeqValues extends AbstractCollection<V> implements SequencedCollection<V> {
+            public int size() {
+                return SequencedMap.this.size();
+            }
+            public Iterator<V> iterator() {
+                return SequencedMap.this.values().iterator();
+            }
+            public SequencedCollection<V> reversed() {
+                return SequencedMap.this.reversed().sequencedValues();
+            }
+        }
+        return new SeqValues();
+    }
+
+    /**
+     * Returns a {@link SequencedSet} view of this map's entrySet.
+     * @return a SequencedSet view of this map's entrySet
+     */
+    default SequencedSet<Map.Entry<K, V>> sequencedEntrySet() {
+        class SeqEntrySet extends AbstractSet<Map.Entry<K, V>>
+                implements SequencedSet<Map.Entry<K, V>> {
+            public int size() {
+                return SequencedMap.this.size();
+            }
+            public Iterator<Map.Entry<K, V>> iterator() {
+                return SequencedMap.this.entrySet().iterator();
+            }
+            public SequencedSet<Map.Entry<K, V>> reversed() {
+                return SequencedMap.this.reversed().sequencedEntrySet();
+            }
+        }
+        return new SeqEntrySet();
+    }
 }

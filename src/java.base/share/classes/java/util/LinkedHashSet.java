@@ -248,7 +248,7 @@ public class LinkedHashSet<E>
      * @throws NoSuchElementException if this collection is empty
      */
     public E getFirst() {
-        return map().keySet().getFirst();
+        return map().sequencedKeySet().getFirst();
     }
 
     /**
@@ -257,7 +257,7 @@ public class LinkedHashSet<E>
      * @throws NoSuchElementException if this collection is empty
      */
     public E getLast() {
-        return map().keySet().getLast();
+        return map().sequencedKeySet().getLast();
     }
 
     /**
@@ -266,7 +266,7 @@ public class LinkedHashSet<E>
      * @throws NoSuchElementException if this collection is empty
      */
     public E removeFirst() {
-        return map().keySet().removeFirst();
+        return map().sequencedKeySet().removeFirst();
     }
 
     /**
@@ -275,7 +275,7 @@ public class LinkedHashSet<E>
      * @throws NoSuchElementException if this collection is empty
      */
     public E removeLast() {
-        return map().keySet().removeLast();
+        return map().sequencedKeySet().removeLast();
     }
 
     /**
@@ -289,7 +289,7 @@ public class LinkedHashSet<E>
     public SequencedSet<E> reversed() {
         class ReverseLinkedHashSetView extends AbstractSet<E> implements SequencedSet<E> {
             public int size()                  { return LinkedHashSet.this.size(); }
-            public Iterator<E> iterator()      { return map().keySet().reversed().iterator(); }
+            public Iterator<E> iterator()      { return map().sequencedKeySet().reversed().iterator(); }
             public void addFirst(E e)          { LinkedHashSet.this.addLast(e); }
             public void addLast(E e)           { LinkedHashSet.this.addFirst(e); }
             public E getFirst()                { return LinkedHashSet.this.getLast(); }
