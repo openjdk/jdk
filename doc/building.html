@@ -112,6 +112,7 @@
 <li><a href="#developing-the-build-system-itself">Developing the Build System Itself</a></li>
 </ul></li>
 <li><a href="#contributing-to-the-jdk">Contributing to the JDK</a></li>
+<li><a href="#editing-this-document">Editing this document</a></li>
 </ul>
 </nav>
 <h2 id="tldr-instructions-for-the-impatient">TL;DR (Instructions for the Impatient)</h2>
@@ -300,8 +301,8 @@
 <p>It is advisable to keep an older version of Xcode for building the JDK when updating Xcode. This <a href="http://iosdevelopertips.com/xcode/install-multiple-versions-of-xcode.html">blog page</a> has good suggestions on managing multiple Xcode versions. To use a specific version of Xcode, use <code>xcode-select -s</code> before running <code>configure</code>, or use <code>--with-toolchain-path</code> to point to the version of Xcode to use, e.g. <code>configure --with-toolchain-path=/Applications/Xcode8.app/Contents/Developer/usr/bin</code></p>
 <p>If you have recently (inadvertently) updated your OS and/or Xcode version, and the JDK can no longer be built, please see the section on <a href="#problems-with-the-build-environment">Problems with the Build Environment</a>, and <a href="#getting-help">Getting Help</a> to find out if there are any recent, non-merged patches available for this update.</p>
 <h3 id="microsoft-visual-studio">Microsoft Visual Studio</h3>
-<p>For aarch64 machines running Windows the minimum accepted version is Visual Studio 2019 (16.8 or higher). For all other platforms the minimum accepted version of Visual Studio is 2017. Older versions will not be accepted by <code>configure</code> and will not work. For all platforms the maximum accepted version of Visual Studio is 2022.</p>
-<p>If you have multiple versions of Visual Studio installed, <code>configure</code> will by default pick the latest. You can request a specific version to be used by setting <code>--with-toolchain-version</code>, e.g. <code>--with-toolchain-version=2017</code>.</p>
+<p>The minimum accepted version is Visual Studio 2019 (for aarch64, at least 16.8 is required). Older versions will not be accepted by <code>configure</code> and will not work. The maximum accepted version of Visual Studio is 2022.</p>
+<p>If you have multiple versions of Visual Studio installed, <code>configure</code> will by default pick the latest. You can request a specific version to be used by setting <code>--with-toolchain-version</code>, e.g. <code>--with-toolchain-version=2022</code>.</p>
 <p>If you have Visual Studio installed but <code>configure</code> fails to detect it, it may be because of <a href="#spaces-in-path">spaces in path</a>.</p>
 <h3 id="ibm-xl-cc">IBM XL C/C++</h3>
 <p>Please consult the AIX section of the <a href="https://wiki.openjdk.java.net/display/Build/Supported+Build+Platforms">Supported Build Platforms</a> OpenJDK Build Wiki page for details about which versions of XLC are supported.</p>
@@ -1033,5 +1034,7 @@ test-support/</code></pre>
 <p>First of all: Thank you! We gladly welcome your contribution. However, please bear in mind that the JDK is a massive project, and we must ask you to follow our rules and guidelines to be able to accept your contribution.</p>
 <p>The official place to start is the <a href="http://openjdk.java.net/contribute/">'How to contribute' page</a>. There is also an official (but somewhat outdated and skimpy on details) <a href="http://openjdk.java.net/guide/">Developer's Guide</a>.</p>
 <p>If this seems overwhelming to you, the Adoption Group is there to help you! A good place to start is their <a href="https://wiki.openjdk.java.net/display/Adoption/New+Contributor">'New Contributor' page</a>, or start reading the comprehensive <a href="https://adoptopenjdk.gitbooks.io/adoptopenjdk-getting-started-kit/en/">Getting Started Kit</a>. The Adoption Group will also happily answer any questions you have about contributing. Contact them by <a href="http://mail.openjdk.java.net/mailman/listinfo/adoption-discuss">mail</a> or <a href="http://openjdk.java.net/irc/">IRC</a>.</p>
+<h2 id="editing-this-document">Editing this document</h2>
+<p>If you want to contribute changes to this document, edit <code>doc/building.md</code> and then run <code>make update-build-docs</code> to generate the same changes in <code>doc/building.html</code>.</p>
 </body>
 </html>

@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright (c) 2022, Institute of Software, Chinese Academy of Sciences. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,12 +20,13 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-// key: compiler.err.feature.not.supported.in.source.plural
-// key: compiler.misc.feature.static.intf.methods
-// options: -source 7 -Xlint:-options -XDallowStaticInterfaceMethods
+#include "precompiled.hpp"
+#include "asm/codeBuffer.inline.hpp"
+#include "asm/macroAssembler.hpp"
 
-interface StaticIntfMethodNotSupported {
-    static void m() { }
+bool CodeBuffer::pd_finalize_stubs() {
+  return emit_shared_stubs_to_interp<MacroAssembler>(this, _shared_stub_to_interp_requests);
 }
