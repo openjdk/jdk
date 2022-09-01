@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
+#include "classfile/vmIntrinsics.hpp"
 #include "compiler/oopMap.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
@@ -50,7 +51,6 @@
 #include "jfr/support/jfrIntrinsics.hpp"
 #endif
 
-// Declaration and definition of StubGenerator (no .hpp file).
 // For a more detailed description of the stub routine structure
 // see the comment in stubRoutines.hpp
 
@@ -76,6 +76,7 @@ static void inc_counter_np(MacroAssembler* _masm, int& counter, Register rscratc
   __ incrementl(ExternalAddress((address)&counter), rscratch);
 }
 
+#if COMPILER2_OR_JVMCI
 static int& get_profile_ctr(int shift) {
   if (shift == 0) {
     return SharedRuntime::_jbyte_array_copy_ctr;
@@ -88,6 +89,7 @@ static int& get_profile_ctr(int shift) {
     return SharedRuntime::_jlong_array_copy_ctr;
   }
 }
+#endif // COMPILER2_OR_JVMCI
 #endif // !PRODUCT
 
 //
