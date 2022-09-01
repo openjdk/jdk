@@ -63,9 +63,9 @@ public abstract class JavaVFrame extends VFrame {
       Klass klass = Oop.getKlassForOopHandle(hobj);
       String klassName;
       if (klass != null) {
-          klassName = klass.getName().asString();
+        klassName = klass.getName().asString();
       } else {
-          klassName = "<unknown class>";
+        klassName = "<unknown class>";
       }
       tty.print("(a ");
       if (klassName.equals("java/lang/Class")) {

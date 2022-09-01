@@ -354,7 +354,7 @@ public class JavaThread extends Thread {
       VMOopHandle vmOopHandle = VMObjectFactory.newObject(VMOopHandle.class, addr);
       obj = vmOopHandle.resolve();
     } catch (Exception e) {
-        System.out.println("WARNING: could not get Thread object: " + e);
+      System.out.println("WARNING: could not get Thread object: " + e);
     }
     return obj;
   }
@@ -513,7 +513,7 @@ public class JavaThread extends Thread {
 
       Oop threadOop = this.getThreadObj();
       if (threadOop == null) {
-          System.out.println("Could not get the java Thread object. Thread info will be limitted.");
+          System.out.println("Could not get the java Thread object. Thread info will be limited.");
       } else {
           // Some of these accesses can throw an Exception if we are in the
           // middle of a GC, so be cautious.
@@ -543,11 +543,11 @@ public class JavaThread extends Thread {
       out.print(" tid=");
       out.print(this.getAddress());
       out.print(" nid=");
-      out.print(String.format("%d ",this.getOSThread().threadId()));
+      out.print(String.format("%d ", this.getOSThread().threadId()));
       out.print(getOSThread().getThreadState().getPrintVal());
       out.print(" [");
       if (this.getLastJavaSP() == null) {
-          out.print(String.format(ADDRESS_FORMAT,0L));
+          out.print(String.format(ADDRESS_FORMAT, 0L));
       } else {
           out.print(this.getLastJavaSP().andWithMask(~0xFFF));
       }
