@@ -167,7 +167,7 @@ public class JarInputStream extends ZipInputStream {
     }
 
     /**
-     * Reads from the current ZIP entry into an array of bytes, returning the number of
+     * Reads from the current JAR entry into an array of bytes, returning the number of
      * inflated bytes. If {@code len} is not zero, the method blocks until some input is
      * available; otherwise, no bytes are read and {@code 0} is returned.
      * <p>
