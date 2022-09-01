@@ -65,6 +65,12 @@ import static sun.nio.fs.UnixNativeDispatcher.*;
 abstract class UnixFileSystem
     extends FileSystem
 {
+    // minimum size of a temporary direct buffer
+    private static final int MIN_BUFFER_SIZE = 16384;
+
+    // whether direct copying is supported on this platform
+    private static volatile boolean directCopyNotSupported;
+
     private final UnixFileSystemProvider provider;
     private final byte[] defaultDirectory;
     private final boolean needToResolveAgainstDefaultDirectory;
@@ -383,9 +389,6 @@ abstract class UnixFileSystem
 
     //  Unix implementation of Files#copy and Files#move methods.
 
-    // minimum size of a temporary direct buffer
-    private static final int MIN_BUFFER_SIZE = 16384;
-
     // calculate the least common multiple of two values;
     // the parameters in general will be powers of two likely in the
     // range [4096, 65536] so this algorithm is expected to converge
@@ -423,9 +426,6 @@ abstract class UnixFileSystem
         }
         return bufferSize;
     }
-
-    // whether direct copying is supported on this platform
-    private static volatile boolean directCopyNotSupported;
 
     // The flags that control how a file is copied or moved
     private static class Flags {
@@ -613,7 +613,7 @@ abstract class UnixFileSystem
      *         work with the given parameters, or IOStatus.UNSUPPORTED if
      *         direct copying is not supported on this platform
      */
-    protected int directCopy(int dst, int src, long addressToPollForCancel)
+    int directCopy(int dst, int src, long addressToPollForCancel)
         throws UnixException
     {
         return IOStatus.UNSUPPORTED;
@@ -630,19 +630,19 @@ abstract class UnixFileSystem
      * @param addressToPollForCancel address to check for cancellation
      *        (a non-zero value written to this address indicates cancel)
      */
-    protected void bufferedCopy(int dst, int src, long address,
-                                int size, long addressToPollForCancel)
+    void bufferedCopy(int dst, int src, long address,
+                      int size, long addressToPollForCancel)
         throws UnixException
     {
         bufferedCopy0(dst, src, address, size, addressToPollForCancel);
     }
 
     // copy regular file from source to target
-    protected void copyFile(UnixPath source,
-                            UnixFileAttributes attrs,
-                            UnixPath  target,
-                            Flags flags,
-                            long addressToPollForCancel)
+    void copyFile(UnixPath source,
+                  UnixFileAttributes attrs,
+                  UnixPath  target,
+                  Flags flags,
+                  long addressToPollForCancel)
         throws IOException
     {
         int fi = -1;

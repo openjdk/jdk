@@ -112,7 +112,7 @@ class BsdFileSystem extends UnixFileSystem {
     // --- file copying ---
 
     @Override
-    protected int directCopy(int dst, int src, long addressToPollForCancel)
+    int directCopy(int dst, int src, long addressToPollForCancel)
         throws UnixException
     {
         return directCopy0(dst, src, addressToPollForCancel);

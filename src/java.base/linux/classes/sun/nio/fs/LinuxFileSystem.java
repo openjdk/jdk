@@ -135,8 +135,8 @@ class LinuxFileSystem extends UnixFileSystem {
     // --- file copying ---
 
     @Override
-    protected void bufferedCopy(int dst, int src, long address,
-                                int size, long addressToPollForCancel)
+    void bufferedCopy(int dst, int src, long address,
+                      int size, long addressToPollForCancel)
         throws UnixException
     {
         int advice = POSIX_FADV_SEQUENTIAL | // sequential data access
@@ -148,7 +148,7 @@ class LinuxFileSystem extends UnixFileSystem {
     }
 
     @Override
-    protected int directCopy(int dst, int src, long addressToPollForCancel)
+    int directCopy(int dst, int src, long addressToPollForCancel)
         throws UnixException
     {
         int advice = POSIX_FADV_SEQUENTIAL | // sequential data access
