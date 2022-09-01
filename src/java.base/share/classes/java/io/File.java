@@ -36,6 +36,7 @@ import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
 import sun.security.action.GetPropertyAction;
+import sun.security.util.SecurityProperties;
 
 /**
  * An abstract representation of file and directory pathnames.
@@ -1986,6 +1987,18 @@ public class File
         // temporary directory location
         private static final File tmpdir = new File(
                 GetPropertyAction.privilegedGetProperty("java.io.tmpdir"));
+
+        // print out the error message for java.io.tmpdir setting
+        static {
+            if (tmpdir.isInvalid() || !fs.hasBooleanAttributes(tmpdir, FileSystem.BA_DIRECTORY)) {
+                String msg = "WARNING: java.io.tmpdir location does not exist";
+                if (SecurityProperties.includedInExceptions("fileInfo")) {
+                    msg += " (" + tmpdir.getPath() + ")";
+                }
+                System.err.println(msg);
+            }
+        }
+
         static File location() {
             return tmpdir;
         }
@@ -2175,12 +2188,6 @@ public class File
                 }
             }
         } while (fs.hasBooleanAttributes(f, FileSystem.BA_EXISTS));
-
-
-        if(!tmpdir.isDirectory() || !tmpdir.canWrite()) {
-            throw new IOException("The specified directory does not exist or is not accessible! " +
-                    "Please contact system administrator!");
-        }
 
         if (!fs.createFileExclusively(f.getPath()))
             throw new IOException("Unable to create temporary file");
