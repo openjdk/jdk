@@ -217,11 +217,13 @@ public class Warn4 extends ComboInstance<Warn4> {
         return sigs[0].isApplicableTo(sigs[1]);
     }
 
-    final String template = "import java.util.List;\n" +
-                            "class Test {\n" +
-                            "   #{TRUSTME} #{SUPPRESS[0]} #{MOD} #{MTH[0].VARARG}\n" +
-                            "   #{SUPPRESS[1]} #{MTH[1].CLIENT}\n" +
-                            "}";
+    final String template = """
+        import java.util.List;
+        class Test {
+           #{TRUSTME} #{SUPPRESS[0]} #{MOD} #{MTH[0].VARARG}
+           #{SUPPRESS[1]} #{MTH[1].CLIENT}
+        }
+        """;
 
     @Override
     public void doWork() throws IOException {
