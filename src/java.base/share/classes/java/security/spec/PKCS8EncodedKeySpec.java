@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,6 +63,14 @@ public class PKCS8EncodedKeySpec extends EncodedKeySpec {
 
     /**
      * Creates a new {@code PKCS8EncodedKeySpec} with the given encoded key.
+     * <p>
+     * This constructor parses the encoded key and recovers the algorithm
+     * name from its `privateKeyAlgorithm` field. If the name is one of the
+     * <a href="{@docRoot}/../specs/security/standard-names.html#keyfactory-algorithms">
+     * standard names listed in the Java Security Standard Algorithm Names Specification</a>,
+     * it will be returned. Otherwise, the object identifier inside the `privateKeyAlgorithm`
+     * field is returned in its string format (For example, "1.3.14.7.2.1.1").
+     * If the encoded key cannot be parsed correctly, the algorithm will be null.
      *
      * @param encodedKey the key, which is assumed to be
      * encoded according to the PKCS #8 standard. The contents of
