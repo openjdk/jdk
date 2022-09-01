@@ -952,8 +952,7 @@ public class PolicyParser {
             ge.codeBase = this.codeBase;
             ge.signedBy = this.signedBy;
             ge.principals = new LinkedList<>(this.principals);
-            ge.permissionEntries =
-                        new Vector<>(this.permissionEntries);
+            ge.permissionEntries = new Vector<>(this.permissionEntries);
             return ge;
         }
     }

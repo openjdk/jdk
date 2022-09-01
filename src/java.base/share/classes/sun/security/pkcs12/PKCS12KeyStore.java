@@ -1719,8 +1719,8 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
             Certificate[] certs;
 
             if (entry instanceof PrivateKeyEntry keyEntry) {
-                certs = Objects.requireNonNullElseGet(keyEntry.chain, () ->
-                    new Certificate[0]);
+                certs = (keyEntry.chain != null) ?
+                       keyEntry.chain : new Certificate[0];
             } else if (entry instanceof CertEntry) {
                 certs = new Certificate[]{((CertEntry) entry).cert};
             } else {
@@ -1805,8 +1805,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
      * Each PKCS8ShroudedKeyBag includes pkcs12 attributes
      * (see comments in getBagAttributes)
      */
-    private byte[] createSafeContent()
-        throws IOException {
+    private byte[] createSafeContent() throws IOException {
 
         DerOutputStream out = new DerOutputStream();
         for (Enumeration<String> e = engineAliases(); e.hasMoreElements(); ) {
@@ -2209,8 +2208,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
         for (int m = 0; m < list.length; m++) {
             PrivateKeyEntry entry = list[m];
             if (entry.keyId != null) {
-                ArrayList<X509Certificate> chain =
-                        new ArrayList<>();
+                ArrayList<X509Certificate> chain = new ArrayList<>();
                 X509Certificate cert = findMatchedCertificate(entry);
 
                 mainloop:
@@ -2306,6 +2304,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                             return cert;
                         } else {
                             // Different keyId. Not a fallback.
+                            continue;
                         }
                     } else {
                         // A DN match with no subjectId
@@ -2385,8 +2384,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
     }
 
     private void loadSafeContents(DerInputStream stream)
-        throws IOException, CertificateException
-    {
+        throws IOException, CertificateException {
         DerValue[] safeBags = stream.getSequence(2);
         int count = safeBags.length;
 
@@ -2539,6 +2537,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                         date = new Date(
                                 Long.parseLong(keyIdStr.substring(5)));
                     } catch (Exception e) {
+                        // date has been initialized to null
                     }
                 }
                 if (date == null) {

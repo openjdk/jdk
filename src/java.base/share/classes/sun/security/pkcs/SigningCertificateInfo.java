@@ -129,8 +129,8 @@ class ESSCertId {
     private static volatile HexDumpEncoder hexDumper;
 
     private final byte[] certHash;
-    private GeneralNames issuer;
-    private SerialNumber serialNumber;
+    private final GeneralNames issuer;
+    private final SerialNumber serialNumber;
 
     ESSCertId(DerValue certId) throws IOException {
         // Parse certHash
@@ -143,6 +143,9 @@ class ESSCertId {
             issuer = new GeneralNames(issuerSerial.data.getDerValue());
             // Parse serialNumber
             serialNumber = new SerialNumber(issuerSerial.data.getDerValue());
+        } else {
+            issuer = null;
+            serialNumber = null;
         }
     }
 

@@ -560,8 +560,7 @@ abstract class DomainKeyStore extends KeyStoreSpi {
             // Check all keystores for the first occurrence of the alias
             return new AbstractMap.SimpleEntry<>(alias, keystores.values());
         }
-        return new AbstractMap.SimpleEntry<>("",
-                Collections.emptyList());
+        return new AbstractMap.SimpleEntry<>("", Collections.emptyList());
     }
 
     /*

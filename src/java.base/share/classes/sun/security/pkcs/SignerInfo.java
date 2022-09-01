@@ -102,8 +102,7 @@ public class SignerInfo implements DerEncoder {
     /**
      * Parses a PKCS#7 signer info.
      */
-    public SignerInfo(DerInputStream derin)
-        throws IOException {
+    public SignerInfo(DerInputStream derin) throws IOException {
         this(derin, false);
     }
 
@@ -118,7 +117,7 @@ public class SignerInfo implements DerEncoder {
      * is encoded according to JDK1.1.x.
      */
     public SignerInfo(DerInputStream derin, boolean oldStyle)
-        throws IOException {
+            throws IOException {
         // version
         version = derin.getBigInteger();
 

@@ -44,6 +44,7 @@ import sun.security.pkcs.ParsingException;
 class MacData {
 
     private final String digestAlgorithmName;
+    private AlgorithmParameters digestAlgorithmParams;
     private final byte[] digest;
     private final byte[] macSalt;
     private final int iterations;
@@ -54,8 +55,7 @@ class MacData {
     /**
      * Parses a PKCS#12 MAC data.
      */
-    MacData(DerInputStream derin)
-        throws IOException {
+    MacData(DerInputStream derin) throws IOException {
         DerValue[] macData = derin.getSequence(2);
         if (macData.length < 2 || macData.length > 3) {
             throw new ParsingException("Invalid length for MacData");
@@ -71,6 +71,7 @@ class MacData {
         // Parse the DigestAlgorithmIdentifier.
         AlgorithmId digestAlgorithmId = AlgorithmId.parse(digestInfo[0]);
         this.digestAlgorithmName = digestAlgorithmId.getName();
+        this.digestAlgorithmParams = digestAlgorithmId.getParameters();
         // Get the digest.
         this.digest = digestInfo[1].getOctetString();
 

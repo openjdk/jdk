@@ -232,7 +232,7 @@ implements java.io.Serializable {
         int r = remCount;
         if (r > 0) {
             // How many bytes?
-            todo = Math.min((result.length - index), (DIGEST_SIZE - r));
+            todo = Math.min(result.length - index, DIGEST_SIZE - r);
             // Copy the bytes, zero the buffer
             for (int i = 0; i < todo; i++) {
                 result[i] = output[r];
