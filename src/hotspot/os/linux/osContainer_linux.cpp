@@ -42,8 +42,6 @@ CgroupSubsystem* cgroup_subsystem;
  * we are running under cgroup control.
  */
 void OSContainer::init() {
-  jlong mem_limit;
-
   assert(!_is_initialized, "Initializing OSContainer more than once");
 
   _is_initialized = true;
@@ -59,15 +57,8 @@ void OSContainer::init() {
   if (cgroup_subsystem == NULL) {
     return; // Required subsystem files not found or other error
   }
-  // We need to update the amount of physical memory now that
-  // cgroup subsystem files have been processed.
-  if ((mem_limit = cgroup_subsystem->memory_limit_in_bytes()) > 0) {
-    os::Linux::set_physical_memory(mem_limit);
-    log_info(os, container)("Memory Limit is: " JLONG_FORMAT, mem_limit);
-  }
 
   _is_containerized = true;
-
 }
 
 const char * OSContainer::container_type() {
