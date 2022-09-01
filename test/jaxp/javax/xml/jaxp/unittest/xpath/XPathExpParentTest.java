@@ -53,19 +53,20 @@ public class XPathExpParentTest extends XPathTestBase {
     public Object[][] getOneParentNodeExp() {
         return new Object[][]{
                 {"//Customer/parent::*", "//Customers"},
-                {"//Customer[1]/text()/parent::*", "//Customer"},
-                {"//Customer[1]/@id/parent::*", "//Customer"},
+                {"//Customer[1]/text()/parent::*", "(//Customer)[1]"},
+                {"//Customer[1]/@id/parent::*", "(//Customer)[1]"},
                 {"//Customer[1]/namespace::*/parent::*", "//Customers"},
                 {"/Customers/comment()/parent::*", "//Customers"},
                 {"//Customer[1]/..", "//Customers"},
-                {"//Customer[1]/text()/..", "//Customer"},
-                {"//Customer[1]/@id/..", "//Customer"},
+                {"//Customer[1]/text()/..", "(//Customer)[1]"},
+                {"//Customer[1]/@id/..", "(//Customer)[1]"},
                 {"//Customer[1]/namespace::*/..", "//Customers"},
                 {"/Customers/comment()/..", "//Customers"},
-                {"//*[parent::Customers][1]", "//Customer"},
-                {"//*[parent::Customers and @id='x1']", "//Customer"},
+                {"//*[parent::Customers][1]", "(//Customer)[1]"},
+                {"//*[parent::Customers and @id='x1']", "(//Customer)[1]"},
 
-                // document root
+                // ".." is short for parent::node(). A node test node() is true for any node of
+                // any type including the document root node.
                 {"/Customers/parent::node()", "/"},
                 {"/Customers/..", "/"},
         };
@@ -79,11 +80,15 @@ public class XPathExpParentTest extends XPathTestBase {
     @DataProvider(name = "noParentNode")
     public Object[][] getZeroParentNodeExp() {
         return new Object[][]{
-                // parent::* never return document root
+                // A node test * is true for any node of the principle node type which contains
+                // attribute nodes, namespace nodes and element nodes. parent::* never includes the
+                // document root node.
                 {"/Customers/parent::*"},
 
-                // parent of document root
+                // "/" selects the document root which has no parent. Expressions below validate
+                // no parent is found on the document root node.
                 {"/.."},
+                {"/parent::node()"}
         };
     }
 
@@ -142,10 +147,10 @@ public class XPathExpParentTest extends XPathTestBase {
     }
 
     /**
-     * Verifies that XPath relative expressions provide a parent node.
+     * Verifies that XPath relative expressions provide a same node as the context node.
      *
-     * @param exp         XPath expression
-     * @param relativeExp XPath relative expression
+     * @param exp         XPath expression that provides a context node
+     * @param relativeExp XPath relative expression that is evaluated relatively to the context node
      * @throws Exception if test failed
      */
     @Test(dataProvider = "relativeParent")
