@@ -274,10 +274,6 @@ class StubGenerator: public StubCodeGenerator {
 
   // AES intrinsic stubs
 
-  enum {
-    AESBlockSize = 16
-  };
-
   address generate_aescrypt_encryptBlock();
 
   address generate_aescrypt_decryptBlock();

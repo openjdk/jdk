@@ -43,6 +43,8 @@
 
 // AES intrinsic stubs
 
+const int AESBlockSize = 16;
+
 void StubGenerator::generate_aes_stubs() {
   if (UseAESIntrinsics) {
     StubRoutines::x86::_key_shuffle_mask_addr = generate_key_shuffle_mask();  // needed by the others
