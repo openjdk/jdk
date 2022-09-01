@@ -25,6 +25,7 @@
 #ifndef CPU_X86_STUBGENERATOR_X86_64_HPP
 #define CPU_X86_STUBGENERATOR_X86_64_HPP
 
+#include "code/codeBlob.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/stubCodeGenerator.hpp"
 
