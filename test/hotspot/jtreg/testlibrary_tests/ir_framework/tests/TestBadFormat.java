@@ -1095,24 +1095,34 @@ class BadIRNodeForPhase {
     public void loops() {}
 
     @Test
-    @FailCount(12)
-    @IR(failOn = IRNode.LOAD_VECTOR, phase = CompilePhase.BEFORE_BEAUTIFY_LOOPS)
-    @IR(failOn = IRNode.STORE_VECTOR, phase = CompilePhase.BEFORE_BEAUTIFY_LOOPS)
-    @IR(failOn = IRNode.VECTOR_CAST_B2X, phase = CompilePhase.BEFORE_BEAUTIFY_LOOPS)
-    @IR(failOn = IRNode.LOAD_VECTOR, phase = {CompilePhase.FINAL_CODE, CompilePhase.BEFORE_BEAUTIFY_LOOPS})
-    @IR(failOn = IRNode.STORE_VECTOR, phase = {CompilePhase.FINAL_CODE, CompilePhase.BEFORE_BEAUTIFY_LOOPS})
-    @IR(failOn = IRNode.VECTOR_CAST_B2X, phase = {CompilePhase.FINAL_CODE, CompilePhase.BEFORE_BEAUTIFY_LOOPS})
-    @IR(failOn = IRNode.LOAD_VECTOR, phase = {CompilePhase.OPTIMIZE_FINISHED, CompilePhase.BEFORE_BEAUTIFY_LOOPS})
-    @IR(failOn = IRNode.STORE_VECTOR, phase = {CompilePhase.OPTIMIZE_FINISHED, CompilePhase.BEFORE_BEAUTIFY_LOOPS})
-    @IR(failOn = IRNode.VECTOR_CAST_B2X, phase = {CompilePhase.OPTIMIZE_FINISHED, CompilePhase.BEFORE_BEAUTIFY_LOOPS})
-    @IR(failOn = IRNode.LOAD_VECTOR, phase = CompilePhase.FINAL_CODE)
-    @IR(failOn = IRNode.STORE_VECTOR, phase = CompilePhase.FINAL_CODE)
-    @IR(failOn = IRNode.VECTOR_CAST_B2X, phase = CompilePhase.FINAL_CODE)
+    @FailCount(6)
+    @IR(failOn = IRNode.LOAD_VECTOR, phase = CompilePhase.BEFORE_REMOVEUSELESS) // works
+    @IR(failOn = IRNode.STORE_VECTOR, phase = CompilePhase.BEFORE_REMOVEUSELESS) // works
+    @IR(failOn = IRNode.VECTOR_CAST_B2X, phase = CompilePhase.BEFORE_REMOVEUSELESS) // works
     @IR(failOn = IRNode.LOAD_VECTOR, phase = CompilePhase.BEFORE_MATCHING) // works
     @IR(failOn = IRNode.STORE_VECTOR, phase = CompilePhase.BEFORE_MATCHING) // works
     @IR(failOn = IRNode.VECTOR_CAST_B2X, phase = CompilePhase.BEFORE_MATCHING) // works
+    @IR(failOn = IRNode.LOAD_VECTOR, phase = {CompilePhase.MATCHING, CompilePhase.MATCHING})
+    @IR(failOn = IRNode.STORE_VECTOR, phase = {CompilePhase.MATCHING, CompilePhase.MATCHING})
+    @IR(failOn = IRNode.VECTOR_CAST_B2X, phase = {CompilePhase.MATCHING, CompilePhase.MATCHING})
+    @IR(failOn = IRNode.LOAD_VECTOR, phase = CompilePhase.FINAL_CODE)
+    @IR(failOn = IRNode.STORE_VECTOR, phase = CompilePhase.FINAL_CODE)
+    @IR(failOn = IRNode.VECTOR_CAST_B2X, phase = CompilePhase.FINAL_CODE)
     public void vector() {}
 
+    @Test
+    @IR(failOn = "notAnIRNode")
+    public void noDefaultSpecified() {}
+
+    @Test
+    @IR(failOn = IRNode.COUNTED_LOOP, phase = CompilePhase.BEFORE_REMOVEUSELESS)
+    public void noRegexSpecifiedForPhase() {}
+
+    @Test
+    @FailCount(2)
+    @IR(failOn = "_#asdf#_", phase = CompilePhase.BEFORE_REMOVEUSELESS)
+    @IR(failOn = "_#asdf#_")
+    public void noIRNodeMapping() {}
 
 }
 

@@ -98,10 +98,13 @@ public class IRNode {
     public static final String CHECKCAST_ARRAY_OF = COMPOSITE_PREFIX + "CHECKCAST_ARRAY_OF" + POSTFIX;
     public static final String CLASS_CHECK_TRAP = PREFIX + "CLASS_CHECK_TRAP" + POSTFIX;
     public static final String CMOVEI = PREFIX + "CMOVEI" + POSTFIX;
+    public static final String CMP_I = PREFIX + "CMP_I" + POSTFIX;
+    public static final String CMP_L = PREFIX + "CMP_L" + POSTFIX;
     public static final String CMP_U = PREFIX + "CMP_U" + POSTFIX;
     public static final String CMP_U3 = PREFIX + "CMP_U3" + POSTFIX;
     public static final String CMP_UL = PREFIX + "CMP_UL" + POSTFIX;
     public static final String CMP_UL3 = PREFIX + "CMP_UL3" + POSTFIX;
+    public static final String COMPRESS_BITS = PREFIX + "COMPRESS_BITS" + POSTFIX;
     public static final String CONV_I2L = PREFIX + "CONV_I2L" + POSTFIX;
     public static final String CONV_L2I = PREFIX + "CONV_L2I" + POSTFIX;
     public static final String CON_I = PREFIX + "CON_I" + POSTFIX;
@@ -112,6 +115,7 @@ public class IRNode {
     public static final String DIV_BY_ZERO_TRAP = PREFIX + "DIV_BY_ZERO_TRAP" + POSTFIX;
     public static final String DIV_L = PREFIX + "DIV_L" + POSTFIX;
     public static final String DYNAMIC_CALL_OF_METHOD = COMPOSITE_PREFIX + "DYNAMIC_CALL_OF_METHOD" + POSTFIX;
+    public static final String EXPAND_BITS = PREFIX + "EXPAND_BITS" + POSTFIX;
     public static final String FAST_LOCK = PREFIX + "FAST_LOCK" + POSTFIX;
     public static final String FAST_UNLOCK = PREFIX + "FAST_UNLOCK" + POSTFIX;
     public static final String FIELD_ACCESS = PREFIX + "FIELD_ACCESS" + POSTFIX;
@@ -170,6 +174,11 @@ public class IRNode {
     public static final String PREDICATE_TRAP = PREFIX + "PREDICATE_TRAP" + POSTFIX;
     public static final String RANGE_CHECK_TRAP = PREFIX + "RANGE_CHECK_TRAP" + POSTFIX;
     public static final String REVERSE_BYTES_V = PREFIX + "REVERSE_BYTES_V" + POSTFIX;
+    public static final String REVERSE_I = PREFIX + "REVERSE_I" + POSTFIX;
+    public static final String REVERSE_L = PREFIX + "REVERSE_L" + POSTFIX;
+    public static final String REVERSE_V = PREFIX + "REVERSE_V" + POSTFIX;
+    public static final String ROUND_VD = PREFIX + "ROUND_VD" + POSTFIX;
+    public static final String ROUND_VF = PREFIX + "ROUND_VF" + POSTFIX;
     public static final String RSHIFT = PREFIX + "RSHIFT" + POSTFIX;
     public static final String RSHIFT_I = PREFIX + "RSHIFT_I" + POSTFIX;
     public static final String RSHIFT_L = PREFIX + "RSHIFT_L" + POSTFIX;
@@ -177,6 +186,8 @@ public class IRNode {
     public static final String RSHIFT_VS = PREFIX + "RSHIFT_VS" + POSTFIX;
     public static final String SAFEPOINT = PREFIX + "SAFEPOINT" + POSTFIX;
     public static final String SCOPE_OBJECT = PREFIX + "SCOPE_OBJECT" + POSTFIX;
+    public static final String SIGNUM_VD = PREFIX + "SIGNUM_VD" + POSTFIX;
+    public static final String SIGNUM_VF = PREFIX + "SIGNUM_VF" + POSTFIX;
     public static final String STATIC_CALL_OF_METHOD = COMPOSITE_PREFIX + "STATIC_CALL_OF_METHOD" + POSTFIX;
     public static final String STORE = PREFIX + "STORE" + POSTFIX;
     public static final String STORE_B = PREFIX + "STORE_B" + POSTFIX;
@@ -204,6 +215,12 @@ public class IRNode {
     public static final String SUB_I = PREFIX + "SUB_I" + POSTFIX;
     public static final String SUB_L = PREFIX + "SUB_L" + POSTFIX;
     public static final String TRAP = PREFIX + "TRAP" + POSTFIX;
+    public static final String UDIV_I = PREFIX + "UDIV_I" + POSTFIX;
+    public static final String UDIV_L = PREFIX + "UDIV_L" + POSTFIX;
+    public static final String UDIV_MOD_I = PREFIX + "UDIV_MOD_I" + POSTFIX;
+    public static final String UDIV_MOD_L = PREFIX + "UDIV_MOD_L" + POSTFIX;
+    public static final String UMOD_I = PREFIX + "UMOD_I" + POSTFIX;
+    public static final String UMOD_L = PREFIX + "UMOD_L" + POSTFIX;
     public static final String UNHANDLED_TRAP = PREFIX + "UNHANDLED_TRAP" + POSTFIX;
     public static final String UNSTABLE_IF_TRAP = PREFIX + "UNSTABLE_IF_TRAP" + POSTFIX;
     public static final String URSHIFT = PREFIX + "URSHIFT" + POSTFIX;

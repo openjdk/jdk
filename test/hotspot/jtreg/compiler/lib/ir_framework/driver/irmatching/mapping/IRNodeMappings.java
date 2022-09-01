@@ -49,7 +49,7 @@ public class IRNodeMappings {
         idealOnly(IRNode.ADD_I, IdealDefaultRegexes.ADD_I);
         idealOnly(IRNode.ADD_L, IdealDefaultRegexes.ADD_L);
         idealOnly(IRNode.ADD_VD, IdealDefaultRegexes.ADD_VD);
-        idealFromBeforeCountedLoops(IRNode.ADD_VI, IdealDefaultRegexes.ADD_VI);
+        idealOnly(IRNode.ADD_VI, IdealDefaultRegexes.ADD_VI);
         allocNodes(IRNode.ALLOC, IdealDefaultRegexes.ALLOC, OptoAssemblyDefaultRegexes.ALLOC);
         optoOnly(IRNode.ALLOC_OF, OptoAssemblyDefaultRegexes.ALLOC_OF);
         allocNodes(IRNode.ALLOC_ARRAY, IdealDefaultRegexes.ALLOC_ARRAY, OptoAssemblyDefaultRegexes.ALLOC_ARRAY);
@@ -68,10 +68,13 @@ public class IRNodeMappings {
         optoOnly(IRNode.CHECKCAST_ARRAY_OF, OptoAssemblyDefaultRegexes.CHECKCAST_ARRAY_OF);
         idealOnly(IRNode.CLASS_CHECK_TRAP, IdealDefaultRegexes.CLASS_CHECK_TRAP);
         idealOnly(IRNode.CMOVEI, IdealDefaultRegexes.CMOVEI);
+        idealOnly(IRNode.CMP_I, IdealDefaultRegexes.CMP_I);
+        idealOnly(IRNode.CMP_L, IdealDefaultRegexes.CMP_L);
         idealOnly(IRNode.CMP_U, IdealDefaultRegexes.CMP_U);
         idealOnly(IRNode.CMP_U3, IdealDefaultRegexes.CMP_U3);
         idealOnly(IRNode.CMP_UL, IdealDefaultRegexes.CMP_UL);
         idealOnly(IRNode.CMP_UL3, IdealDefaultRegexes.CMP_UL3);
+        idealOnly(IRNode.COMPRESS_BITS, IdealDefaultRegexes.COMPRESS_BITS);
         idealOnly(IRNode.CONV_I2L, IdealDefaultRegexes.CONV_I2L);
         idealOnly(IRNode.CONV_L2I, IdealDefaultRegexes.CONV_L2I);
         idealOnly(IRNode.CON_I, IdealDefaultRegexes.CON_I);
@@ -82,6 +85,7 @@ public class IRNodeMappings {
         idealOnly(IRNode.DIV_BY_ZERO_TRAP, IdealDefaultRegexes.DIV_BY_ZERO_TRAP);
         idealOnly(IRNode.DIV_L, IdealDefaultRegexes.DIV_L);
         idealOnly(IRNode.DYNAMIC_CALL_OF_METHOD, IdealDefaultRegexes.DYNAMIC_CALL_OF_METHOD);
+        idealOnly(IRNode.EXPAND_BITS, IdealDefaultRegexes.EXPAND_BITS);
         idealOnly(IRNode.FAST_LOCK, IdealDefaultRegexes.FAST_LOCK);
         idealFromMacroExpansion(IRNode.FAST_UNLOCK, IdealDefaultRegexes.FAST_UNLOCK);
         optoOnly(IRNode.FIELD_ACCESS, OptoAssemblyDefaultRegexes.FIELD_ACCESS);
@@ -112,7 +116,7 @@ public class IRNodeMappings {
         idealOnly(IRNode.LOAD_UB_OF_CLASS, IdealDefaultRegexes.LOAD_UB_OF_CLASS);
         idealOnly(IRNode.LOAD_US, IdealDefaultRegexes.LOAD_US);
         idealOnly(IRNode.LOAD_US_OF_CLASS, IdealDefaultRegexes.LOAD_US_OF_CLASS);
-        idealFromBeforeCountedLoops(IRNode.LOAD_VECTOR, IdealDefaultRegexes.LOAD_VECTOR);
+        idealOnly(IRNode.LOAD_VECTOR, IdealDefaultRegexes.LOAD_VECTOR);
         fromAfterCountedLoops(IRNode.LONG_COUNTED_LOOP, IdealDefaultRegexes.LONG_COUNTED_LOOP);
         fromBeforeCountedLoops(IRNode.LOOP, IdealDefaultRegexes.LOOP);
         idealOnly(IRNode.LSHIFT, IdealDefaultRegexes.LSHIFT);
@@ -130,22 +134,29 @@ public class IRNodeMappings {
         idealOnly(IRNode.MUL_L, IdealDefaultRegexes.MUL_L);
         idealOnly(IRNode.NULL_ASSERT_TRAP, IdealDefaultRegexes.NULL_ASSERT_TRAP);
         idealOnly(IRNode.NULL_CHECK_TRAP, IdealDefaultRegexes.NULL_CHECK_TRAP);
-        idealFromBeforeCountedLoops(IRNode.OR_V, IdealDefaultRegexes.OR_V);
-        idealFromBeforeCountedLoops(IRNode.OR_V_MASK, IdealDefaultRegexes.OR_V_MASK);
+        idealOnly(IRNode.OR_V, IdealDefaultRegexes.OR_V);
+        idealOnly(IRNode.OR_V_MASK, IdealDefaultRegexes.OR_V_MASK);
         fromAfterCountedLoops(IRNode.OUTER_STRIP_MINED_LOOP, IdealDefaultRegexes.OUTER_STRIP_MINED_LOOP);
         idealOnly(IRNode.PHI, IdealDefaultRegexes.PHI);
         idealOnly(IRNode.POPCOUNT_L, IdealDefaultRegexes.POPCOUNT_L);
-        idealFromBeforeCountedLoops(IRNode.POPULATE_INDEX, IdealDefaultRegexes.POPULATE_INDEX);
+        idealAfterCountedLoops(IRNode.POPULATE_INDEX, IdealDefaultRegexes.POPULATE_INDEX);
         idealOnly(IRNode.PREDICATE_TRAP, IdealDefaultRegexes.PREDICATE_TRAP);
         idealOnly(IRNode.RANGE_CHECK_TRAP, IdealDefaultRegexes.RANGE_CHECK_TRAP);
-        idealFromBeforeCountedLoops(IRNode.REVERSE_BYTES_V, IdealDefaultRegexes.REVERSE_BYTES_V);
+        idealOnly(IRNode.REVERSE_BYTES_V, IdealDefaultRegexes.REVERSE_BYTES_V);
+        idealOnly(IRNode.REVERSE_I, IdealDefaultRegexes.REVERSE_I);
+        idealOnly(IRNode.REVERSE_L, IdealDefaultRegexes.REVERSE_L);
+        idealOnly(IRNode.REVERSE_V, IdealDefaultRegexes.REVERSE_V);
+        idealOnly(IRNode.ROUND_VD, IdealDefaultRegexes.ROUND_VD);
+        idealOnly(IRNode.ROUND_VF, IdealDefaultRegexes.ROUND_VF);
         idealOnly(IRNode.RSHIFT, IdealDefaultRegexes.RSHIFT);
         idealOnly(IRNode.RSHIFT_I, IdealDefaultRegexes.RSHIFT_I);
         idealOnly(IRNode.RSHIFT_L, IdealDefaultRegexes.RSHIFT_L);
-        idealFromBeforeCountedLoops(IRNode.RSHIFT_VB, IdealDefaultRegexes.RSHIFT_VB);
-        idealFromBeforeCountedLoops(IRNode.RSHIFT_VS, IdealDefaultRegexes.RSHIFT_VS);
+        idealOnly(IRNode.RSHIFT_VB, IdealDefaultRegexes.RSHIFT_VB);
+        idealOnly(IRNode.RSHIFT_VS, IdealDefaultRegexes.RSHIFT_VS);
         idealOnly(IRNode.SAFEPOINT, IdealDefaultRegexes.SAFEPOINT);
         optoOnly(IRNode.SCOPE_OBJECT, OptoAssemblyDefaultRegexes.SCOPE_OBJECT);
+        idealOnly(IRNode.SIGNUM_VD, IdealDefaultRegexes.SIGNUM_VD);
+        idealOnly(IRNode.SIGNUM_VF, IdealDefaultRegexes.SIGNUM_VF);
         idealOnly(IRNode.STATIC_CALL_OF_METHOD, IdealDefaultRegexes.STATIC_CALL_OF_METHOD);
         idealOnly(IRNode.STORE, IdealDefaultRegexes.STORE);
         idealOnly(IRNode.STORE_B, IdealDefaultRegexes.STORE_B);
@@ -166,33 +177,39 @@ public class IRNodeMappings {
         idealOnly(IRNode.STORE_OF_FIELD, IdealDefaultRegexes.STORE_OF_FIELD);
         idealOnly(IRNode.STORE_P, IdealDefaultRegexes.STORE_P);
         idealOnly(IRNode.STORE_P_OF_CLASS, IdealDefaultRegexes.STORE_P_OF_CLASS);
-        idealFromBeforeCountedLoops(IRNode.STORE_VECTOR, IdealDefaultRegexes.STORE_VECTOR);
+        idealOnly(IRNode.STORE_VECTOR, IdealDefaultRegexes.STORE_VECTOR);
         idealOnly(IRNode.SUB, IdealDefaultRegexes.SUB);
         idealOnly(IRNode.SUB_D, IdealDefaultRegexes.SUB_D);
         idealOnly(IRNode.SUB_F, IdealDefaultRegexes.SUB_F);
         idealOnly(IRNode.SUB_I, IdealDefaultRegexes.SUB_I);
         idealOnly(IRNode.SUB_L, IdealDefaultRegexes.SUB_L);
         idealOnly(IRNode.TRAP, IdealDefaultRegexes.TRAP);
+        idealOnly(IRNode.UDIV_I, IdealDefaultRegexes.UDIV_I);
+        idealOnly(IRNode.UDIV_L, IdealDefaultRegexes.UDIV_L);
+        idealOnly(IRNode.UDIV_MOD_I, IdealDefaultRegexes.UDIV_MOD_I);
+        idealOnly(IRNode.UDIV_MOD_L, IdealDefaultRegexes.UDIV_MOD_L);
+        idealOnly(IRNode.UMOD_I, IdealDefaultRegexes.UMOD_I);
+        idealOnly(IRNode.UMOD_L, IdealDefaultRegexes.UMOD_L);
         idealOnly(IRNode.UNHANDLED_TRAP, IdealDefaultRegexes.UNHANDLED_TRAP);
         idealOnly(IRNode.UNSTABLE_IF_TRAP, IdealDefaultRegexes.UNSTABLE_IF_TRAP);
         idealOnly(IRNode.URSHIFT, IdealDefaultRegexes.URSHIFT);
         idealOnly(IRNode.URSHIFT_I, IdealDefaultRegexes.URSHIFT_I);
         idealOnly(IRNode.URSHIFT_L, IdealDefaultRegexes.URSHIFT_L);
-        idealFromBeforeCountedLoops(IRNode.VECTOR_BLEND, IdealDefaultRegexes.VECTOR_BLEND);
-        idealFromBeforeCountedLoops(IRNode.VECTOR_CAST_B2X, IdealDefaultRegexes.VECTOR_CAST_B2X);
-        idealFromBeforeCountedLoops(IRNode.VECTOR_CAST_D2X, IdealDefaultRegexes.VECTOR_CAST_D2X);
-        idealFromBeforeCountedLoops(IRNode.VECTOR_CAST_F2X, IdealDefaultRegexes.VECTOR_CAST_F2X);
-        idealFromBeforeCountedLoops(IRNode.VECTOR_CAST_I2X, IdealDefaultRegexes.VECTOR_CAST_I2X);
-        idealFromBeforeCountedLoops(IRNode.VECTOR_CAST_L2X, IdealDefaultRegexes.VECTOR_CAST_L2X);
-        idealFromBeforeCountedLoops(IRNode.VECTOR_CAST_S2X, IdealDefaultRegexes.VECTOR_CAST_S2X);
-        idealFromBeforeCountedLoops(IRNode.VECTOR_REINTERPRET, IdealDefaultRegexes.VECTOR_REINTERPRET);
-        idealFromBeforeCountedLoops(IRNode.VECTOR_UCAST_B2X, IdealDefaultRegexes.VECTOR_UCAST_B2X);
-        idealFromBeforeCountedLoops(IRNode.VECTOR_UCAST_I2X, IdealDefaultRegexes.VECTOR_UCAST_I2X);
-        idealFromBeforeCountedLoops(IRNode.VECTOR_UCAST_S2X, IdealDefaultRegexes.VECTOR_UCAST_S2X);
+        idealOnly(IRNode.VECTOR_BLEND, IdealDefaultRegexes.VECTOR_BLEND);
+        idealOnly(IRNode.VECTOR_CAST_B2X, IdealDefaultRegexes.VECTOR_CAST_B2X);
+        idealOnly(IRNode.VECTOR_CAST_D2X, IdealDefaultRegexes.VECTOR_CAST_D2X);
+        idealOnly(IRNode.VECTOR_CAST_F2X, IdealDefaultRegexes.VECTOR_CAST_F2X);
+        idealOnly(IRNode.VECTOR_CAST_I2X, IdealDefaultRegexes.VECTOR_CAST_I2X);
+        idealOnly(IRNode.VECTOR_CAST_L2X, IdealDefaultRegexes.VECTOR_CAST_L2X);
+        idealOnly(IRNode.VECTOR_CAST_S2X, IdealDefaultRegexes.VECTOR_CAST_S2X);
+        idealOnly(IRNode.VECTOR_REINTERPRET, IdealDefaultRegexes.VECTOR_REINTERPRET);
+        idealOnly(IRNode.VECTOR_UCAST_B2X, IdealDefaultRegexes.VECTOR_UCAST_B2X);
+        idealOnly(IRNode.VECTOR_UCAST_I2X, IdealDefaultRegexes.VECTOR_UCAST_I2X);
+        idealOnly(IRNode.VECTOR_UCAST_S2X, IdealDefaultRegexes.VECTOR_UCAST_S2X);
         idealOnly(IRNode.XOR_I, IdealDefaultRegexes.XOR_I);
         idealOnly(IRNode.XOR_L, IdealDefaultRegexes.XOR_L);
-        idealFromBeforeCountedLoops(IRNode.XOR_V, IdealDefaultRegexes.XOR_V);
-        idealFromBeforeCountedLoops(IRNode.XOR_V_MASK, IdealDefaultRegexes.XOR_V_MASK);
+        idealOnly(IRNode.XOR_V, IdealDefaultRegexes.XOR_V);
+        idealOnly(IRNode.XOR_V_MASK, IdealDefaultRegexes.XOR_V_MASK);
     }
 
     private void allocNodes(String irNode, String idealRegex, String optoRegex) {
@@ -226,9 +243,9 @@ public class IRNodeMappings {
                                                              CompilePhase.BEFORE_CLOOPS, CompilePhase.FINAL_CODE));
     }
 
-    private void idealFromBeforeCountedLoops(String irNode, String regex) {
+    private void idealAfterCountedLoops(String irNode, String regex) {
         irNodeMappings.put(irNode, new SinglePhaseRangeEntry(CompilePhase.PRINT_IDEAL, regex,
-                                                             CompilePhase.BEFORE_CLOOPS, CompilePhase.BEFORE_MATCHING));
+                                                             CompilePhase.AFTER_CLOOPS, CompilePhase.BEFORE_MATCHING));
     }
 
     private void idealFromMacroExpansion(String irNode, String regex) {
@@ -239,24 +256,34 @@ public class IRNodeMappings {
 
     public static String getRegexForPhaseOfIRNode(String irNode, CompilePhase compilePhase) {
         IRNodeMapEntry entry = INSTANCE.irNodeMappings.get(irNode);
-        TestFormat.checkNoReport(entry != null,
-                                 "IR Node \"" + irNode + "\" defined in class IRNode has no entry in the " +
-                                 "constructor of IRNodeMappings. Have you just created the entry \"" + irNode + "\" in" +
-                                 "class IRNode and forgot to add a mapping? Violation");
+        String failMsg = "IR Node \"" + irNode + "\" defined in class IRNode has no mapping in class IRNodeMappings " +
+                         "(i.e. an entry in the constructor of class IRNodeMappings)." + System.lineSeparator() +
+                         "   Have you just created the entry \"" + irNode + "\" in class IRNode and forgot to add a " +
+                         "mapping in class IRNodeMappings?" + System.lineSeparator() +
+                         "   Violation";
+        TestFormat.checkNoReport(entry != null, failMsg);
         String regex = entry.getRegexForPhase(compilePhase);
-        TestFormat.checkNoReport(regex != null,
-                                 "IR Node \"" + irNode + "\" defined in class IRNode has no regex " +
-                                 "defined for compile phase " + compilePhase + ". If you think it should be supported, " +
-                                 "add a mapping in IRNodeMappings. Violation");
+        failMsg = "IR Node \"" + irNode + "\" defined in class IRNode has no regex defined for compile phase "
+                  + compilePhase + "." + System.lineSeparator() +
+                  "   If you think this compile phase should be " +
+                  "supported, add a mapping in class IRNodeMappings (i.e an entry in the constructor of class " +
+                  "IRNodeMappings)." + System.lineSeparator() +
+                  "   Violation";
+        TestFormat.checkNoReport(regex != null, failMsg);
         return regex;
     }
 
     public static CompilePhase getDefaultPhaseForIRNode(String irNode) {
         IRNodeMapEntry entry = INSTANCE.irNodeMappings.get(irNode);
-        TestFormat.checkNoReport(entry != null,
-                                 "\"" + irNode + "\" is not an IRNode defined in class IRNode and " +
-                                 "has therefore no default compile phase specified. Set the @IR phase attribute for " +
-                                 "user defined regexes to a value different from CompilePhase.DEFAULT. Violation");
+        String failMsg = "\"" + irNode + "\" is not an IR node defined in class IRNode and " +
+                         "has therefore no default compile phase specified." + System.lineSeparator() +
+                         "   If your regex represents a C2 IR node, consider adding an entry to class IRNode with a " +
+                         "mapping in class IRNodeMappings." + System.lineSeparator() +
+                         "   Otherwise, set the @IR \"phase\" attribute to a compile phase different from " +
+                         "CompilePhase.DEFAULT to explicitly tell the IR framework on which compile phase your rule" +
+                         " should be applied on." + System.lineSeparator() +
+                         "   Violation";
+        TestFormat.checkNoReport(entry != null, failMsg);
         return entry.getDefaultCompilePhase();
     }
 }

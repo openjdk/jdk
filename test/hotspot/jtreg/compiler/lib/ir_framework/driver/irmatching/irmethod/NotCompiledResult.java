@@ -54,7 +54,6 @@ public class NotCompiledResult extends IRMethodMatchResult {
 
     @Override
     public void accept(MatchResultVisitor visitor) {
-        // Directly report that all IR rules failed due to missing any compilation output.
         visitor.visit(this);
     }
 }
