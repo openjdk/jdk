@@ -217,7 +217,7 @@ public class ClhsdbFindPC {
             expStrMap.put(cmdStr, List.of("Is of type JavaThread"));
             runTest(withCore, cmds, expStrMap);
 
-            // Use findpc on an address that is only 4 byte aligned and is the 
+            // Use findpc on an address that is only 4 byte aligned and is the
             // last 4 bytes of a 4k page. This is for testing JDK-8292201.
             String badAddress = tid.substring(0, tid.length() - 3) + "ffc";
             cmdStr = "findpc " + badAddress;
