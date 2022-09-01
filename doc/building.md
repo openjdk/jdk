@@ -1948,6 +1948,12 @@ contributing. Contact them by [mail](
 http://mail.openjdk.java.net/mailman/listinfo/adoption-discuss) or [IRC](
 http://openjdk.java.net/irc/).
 
+## Editing this document
+
+If you want to contribute changes to this document, edit `doc/building.md` and 
+then run `make update-build-docs` to generate the same changes in 
+`doc/building.html`.
+
 ---
 # Override styles from the base CSS file that are not ideal for this document.
 header-includes:
