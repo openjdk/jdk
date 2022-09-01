@@ -1476,7 +1476,7 @@ static void gen_continuation_yield(MacroAssembler* masm,
   OopMap* map = new OopMap(framesize, 1);
   oop_maps->add_gc_map(frame_complete, map);
 
-  __ set_last_Java_frame(rsp, rbp, the_pc);
+  __ set_last_Java_frame(rsp, rbp, the_pc, rscratch1);
   __ movptr(c_rarg0, r15_thread);
   __ movptr(c_rarg1, rsp);
   __ call_VM_leaf(Continuation::freeze_entry(), 2);
@@ -1488,7 +1488,7 @@ static void gen_continuation_yield(MacroAssembler* masm,
   __ jcc(Assembler::notZero, L_pinned);
 
   __ movptr(rsp, Address(r15_thread, JavaThread::cont_entry_offset()));
-  continuation_enter_cleanup(masm);
+  __ continuation_enter_cleanup();
   __ pop(rbp);
   __ ret(0);
 
