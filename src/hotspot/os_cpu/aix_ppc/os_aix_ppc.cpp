@@ -193,7 +193,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
       //
       // SIGILL: the compiler generates illegal opcodes
       //   at places where it wishes to interrupt the VM:
-      //   Safepoints, Unreachable Code, Entry points of Zombie methods,
+      //   Safepoints, Unreachable Code, Entry points of not entrant nmethods,
       //    This results in a SIGILL with (*pc) == inserted illegal instruction.
       //
       //   (so, SIGILLs with a pc inside the zero page are real errors)
@@ -202,7 +202,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
       //   The ppc trap instruction raises a SIGTRAP and is very efficient if it
       //   does not trap. It is used for conditional branches that are expected
       //   to be never taken. These are:
-      //     - zombie methods
+      //     - not entrant nmethods
       //     - IC (inline cache) misses.
       //     - null checks leading to UncommonTraps.
       //     - range checks leading to Uncommon Traps.
@@ -225,9 +225,9 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
       CodeBlob *cb = NULL;
       int stop_type = -1;
       // Handle signal from NativeJump::patch_verified_entry().
-      if (sig == SIGILL && nativeInstruction_at(pc)->is_sigill_zombie_not_entrant()) {
+      if (sig == SIGILL && nativeInstruction_at(pc)->is_sigill_not_entrant()) {
         if (TraceTraps) {
-          tty->print_cr("trap: zombie_not_entrant");
+          tty->print_cr("trap: not_entrant");
         }
         stub = SharedRuntime::get_handle_wrong_method_stub();
         goto run_stub;
@@ -341,7 +341,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
       else if (sig == SIGBUS) {
         // BugId 4454115: A read from a MappedByteBuffer can fault here if the
         // underlying file has been truncated. Do not crash the VM in such a case.
-        CodeBlob* cb = CodeCache::find_blob_unsafe(pc);
+        CodeBlob* cb = CodeCache::find_blob(pc);
         CompiledMethod* nm = cb ? cb->as_compiled_method_or_null() : NULL;
         bool is_unsafe_arraycopy = (thread->doing_unsafe_access() && UnsafeCopyMemory::contains_pc(pc));
         if ((nm != NULL && nm->has_unsafe_access()) || is_unsafe_arraycopy) {

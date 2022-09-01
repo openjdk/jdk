@@ -498,7 +498,7 @@ class SharedRuntime: AllStatic {
                                jint length, JavaThread* thread);
 
   // handle ic miss with caller being compiled code
-  // wrong method handling (inline cache misses, zombie methods)
+  // wrong method handling (inline cache misses)
   static address handle_wrong_method(JavaThread* current);
   static address handle_wrong_method_abstract(JavaThread* current);
   static address handle_wrong_method_ic_miss(JavaThread* current);
