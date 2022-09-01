@@ -4499,7 +4499,7 @@ void Compile::process_print_inlining() {
     assert(_print_inlining_list != NULL, "process_print_inlining should be called only once.");
     for (int i = 0; i < _print_inlining_list->length(); i++) {
       PrintInliningBuffer* pib = _print_inlining_list->at(i);
-      ss.print("%s", pib->ss()->as_string());
+      ss.print("%s", pib->ss()->base());
       delete pib;
       DEBUG_ONLY(_print_inlining_list->at_put(i, NULL));
     }

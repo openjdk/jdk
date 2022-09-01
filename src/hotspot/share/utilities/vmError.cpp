@@ -573,7 +573,7 @@ void VMError::report(outputStream* st, bool _verbose) {
     if (_verbose && TestCrashInErrorHandler == TEST_RESOURCE_MARK_CRASH) {
       stringStream message;
       message.print("This is a message with no ResourceMark");
-      tty->print_cr("%s", message.as_string());
+      tty->print_cr("%s", message.base());
     }
 
   // TestUnresponsiveErrorHandler: We want to test both step timeouts and global timeout.
