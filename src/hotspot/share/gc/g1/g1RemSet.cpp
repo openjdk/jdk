@@ -1322,7 +1322,7 @@ class G1MergeHeapRootsTask : public WorkerTask {
     virtual bool do_heap_region(HeapRegion* r) {
       G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
-      if (!g1h->region_attr(r->hrm_index()).is_humongous() ||
+      if (!g1h->region_attr(r->hrm_index()).is_humongous_candidate() ||
           r->rem_set()->is_empty()) {
         return false;
       }
