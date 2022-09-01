@@ -134,10 +134,10 @@ class oopDesc;
 #define SIZE_FORMAT_W(width)     "%"   #width PRIuPTR
 
 #define INTX_FORMAT              "%"          PRIdPTR
-#define INTX_FORMAT_X            "0x%"        PRIdPTR
+#define INTX_FORMAT_X            "0x%"        PRIxPTR
 #define INTX_FORMAT_W(width)     "%"   #width PRIdPTR
 #define UINTX_FORMAT             "%"          PRIuPTR
-#define UINTX_FORMAT_X           "0x%"        PRIuPTR
+#define UINTX_FORMAT_X           "0x%"        PRIxPTR
 #define UINTX_FORMAT_W(width)    "%"   #width PRIuPTR
 
 // Format jlong, if necessary
