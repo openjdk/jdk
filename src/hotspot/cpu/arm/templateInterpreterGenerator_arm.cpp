@@ -790,7 +790,7 @@ address TemplateInterpreterGenerator::generate_CRC32C_updateBytes_entry(Abstract
 
 address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // determine code generation flags
-  bool inc_counter  = UseCompiler || CountCompiledCalls || LogTouchedMethods;
+  bool inc_counter  = UseCompiler || CountCompiledCalls;
 
   // Incoming registers:
   //
@@ -1122,7 +1122,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 //
 address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
   // determine code generation flags
-  bool inc_counter  = UseCompiler || CountCompiledCalls || LogTouchedMethods;
+  bool inc_counter  = UseCompiler || CountCompiledCalls;
 
   // Rmethod: Method*
   // Rthread: thread

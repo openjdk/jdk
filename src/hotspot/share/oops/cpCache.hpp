@@ -401,6 +401,11 @@ class ConstantPoolCache: public MetaspaceObj {
   // If you add a new field that points to any metaspace object, you
   // must add this field to ConstantPoolCache::metaspace_pointers_do().
   int             _length;
+
+  // The narrowOop pointer to the archived resolved_references. Set at CDS dump
+  // time when caching java heap object is supported.
+  CDS_JAVA_HEAP_ONLY(int _archived_references_index;) // Gap on LP64
+
   ConstantPool*   _constant_pool;          // the corresponding constant pool
 
   // The following fields need to be modified at runtime, so they cannot be
@@ -413,9 +418,7 @@ class ConstantPoolCache: public MetaspaceObj {
   // RedefineClasses support
   uint64_t             _gc_epoch;
 
-  // The narrowOop pointer to the archived resolved_references. Set at CDS dump
-  // time when caching java heap object is supported.
-  CDS_JAVA_HEAP_ONLY(int _archived_references_index;)
+  CDS_ONLY(Array<ConstantPoolCacheEntry>* _initial_entries;)
 
   // Sizing
   debug_only(friend class ClassVerifier;)
@@ -452,9 +455,11 @@ class ConstantPoolCache: public MetaspaceObj {
   // Assembly code support
   static int resolved_references_offset_in_bytes() { return offset_of(ConstantPoolCache, _resolved_references); }
 
-  // CDS support
+#if INCLUDE_CDS
   void remove_unshareable_info();
-  void save_for_archive();
+  void save_for_archive(TRAPS);
+#endif
+
  private:
   void walk_entries_for_initialization(bool check_only);
   void set_length(int length)                    { _length = length; }

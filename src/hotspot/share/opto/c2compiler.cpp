@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/vmClasses.hpp"
+#include "compiler/compilerDefinitions.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "jfr/support/jfrIntrinsics.hpp"
 #include "opto/c2compiler.hpp"

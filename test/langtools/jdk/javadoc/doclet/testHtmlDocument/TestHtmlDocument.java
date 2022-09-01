@@ -36,8 +36,6 @@
 
 import jdk.javadoc.internal.doclets.formats.html.markup.*;
 
-import static jdk.javadoc.internal.doclets.toolkit.util.DocletConstants.NL;
-
 /**
  * The class reads each file, complete with newlines, into a string to easily
  * compare the existing markup with the generated markup.
@@ -56,7 +54,7 @@ public class TestHtmlDocument extends JavadocTester {
     public void test() {
         checking("markup");
         // Check whether the generated markup is same as the existing markup.
-        String expected = readFile(testSrc, "testMarkup.html").replace("\n", NL);
+        String expected = readFile(testSrc, "testMarkup.html");
         String actual = generateHtmlTree();
         if (actual.equals(expected)) {
             passed("");
