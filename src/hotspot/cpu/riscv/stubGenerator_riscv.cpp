@@ -119,8 +119,8 @@ class StubGenerator: public StubCodeGenerator {
   // we don't need to save x6-x7 and x28-x31 which both C and Java treat as
   // volatile
   //
-  // we save x18-x27 which Java uses as temporary registers and C
-  // expects to be callee-save
+  // we save x9, x18-x27, f8-f9, and f18-f27 which Java uses as temporary
+  // registers and C expects to be callee-save
   //
   // so the stub frame looks like this when we enter Java code
   //
