@@ -100,6 +100,11 @@ instanceOop MemoryManager::get_memory_manager_instance(TRAPS) {
       signature = vmSymbols::createMemoryManager_signature();
     }
 
+    if (k == nullptr) {
+      fatal("Should have the ManagementFactoryHelper or GarbageCollectorExtImpl class");
+      return nullptr; // silence the compiler
+    }
+
     InstanceKlass* ik = InstanceKlass::cast(k);
 
     JavaCalls::call_static(&result,

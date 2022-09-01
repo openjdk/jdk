@@ -37,21 +37,9 @@ class outputStream;
 class RegisterMap;
 
 class Continuations : public AllStatic {
-private:
-  static uint64_t _gc_epoch;
-
 public:
   static void init();
   static bool enabled(); // TODO: used while virtual threads are in Preview; remove when GA
-
-  // The GC epoch and marking_cycle code below is there to support sweeping
-  // nmethods in loom stack chunks.
-  static uint64_t gc_epoch();
-  static bool is_gc_marking_cycle_active();
-  static uint64_t previous_completed_gc_marking_cycle();
-  static void on_gc_marking_cycle_start();
-  static void on_gc_marking_cycle_finish();
-  static void arm_all_nmethods();
 };
 
 void continuations_init();

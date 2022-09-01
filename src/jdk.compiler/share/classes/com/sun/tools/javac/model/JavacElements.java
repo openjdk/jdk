@@ -728,6 +728,16 @@ public class JavacElements implements Elements {
     }
 
     @Override @DefinedBy(Api.LANGUAGE_MODEL)
+    public boolean isCompactConstructor(ExecutableElement e) {
+        return (((MethodSymbol)e).flags() & Flags.COMPACT_RECORD_CONSTRUCTOR) != 0;
+    }
+
+    @Override @DefinedBy(Api.LANGUAGE_MODEL)
+    public boolean isCanonicalConstructor(ExecutableElement e) {
+        return (((MethodSymbol)e).flags() & Flags.RECORD) != 0;
+    }
+
+    @Override @DefinedBy(Api.LANGUAGE_MODEL)
     public JavaFileObject getFileObjectOf(Element e) {
         Symbol sym = (Symbol) e;
         return switch(sym.kind) {
