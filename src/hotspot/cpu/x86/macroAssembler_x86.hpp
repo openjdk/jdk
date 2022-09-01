@@ -953,21 +953,7 @@ public:
         int iter);
 
   void addm(int disp, Register r1, Register r2);
-  void gfmul(XMMRegister tmp0, XMMRegister t);
-  void schoolbookAAD(int i, Register subkeyH, XMMRegister data, XMMRegister tmp0,
-                     XMMRegister tmp1, XMMRegister tmp2, XMMRegister tmp3);
-  void generateHtbl_one_block(Register htbl);
-  void generateHtbl_eight_blocks(Register htbl);
- public:
-  void sha256_AVX2(XMMRegister msg, XMMRegister state0, XMMRegister state1, XMMRegister msgtmp0,
-                   XMMRegister msgtmp1, XMMRegister msgtmp2, XMMRegister msgtmp3, XMMRegister msgtmp4,
-                   Register buf, Register state, Register ofs, Register limit, Register rsp,
-                   bool multi_block, XMMRegister shuf_mask);
-  void avx_ghash(Register state, Register htbl, Register data, Register blocks);
-#endif
 
-#ifdef _LP64
- private:
   void sha512_AVX2_one_round_compute(Register old_h, Register a, Register b, Register c, Register d,
                                      Register e, Register f, Register g, Register h, int iteration);
 
@@ -977,31 +963,15 @@ public:
 
   void addmq(int disp, Register r1, Register r2);
  public:
+  void sha256_AVX2(XMMRegister msg, XMMRegister state0, XMMRegister state1, XMMRegister msgtmp0,
+                   XMMRegister msgtmp1, XMMRegister msgtmp2, XMMRegister msgtmp3, XMMRegister msgtmp4,
+                   Register buf, Register state, Register ofs, Register limit, Register rsp,
+                   bool multi_block, XMMRegister shuf_mask);
   void sha512_AVX2(XMMRegister msg, XMMRegister state0, XMMRegister state1, XMMRegister msgtmp0,
                    XMMRegister msgtmp1, XMMRegister msgtmp2, XMMRegister msgtmp3, XMMRegister msgtmp4,
                    Register buf, Register state, Register ofs, Register limit, Register rsp, bool multi_block,
                    XMMRegister shuf_mask);
-private:
-  void roundEnc(XMMRegister key, int rnum);
-  void lastroundEnc(XMMRegister key, int rnum);
-  void roundDec(XMMRegister key, int rnum);
-  void lastroundDec(XMMRegister key, int rnum);
-  void ev_load_key(XMMRegister xmmdst, Register key, int offset, XMMRegister xmm_shuf_mask);
-  void gfmul_avx512(XMMRegister ghash, XMMRegister hkey);
-  void generateHtbl_48_block_zmm(Register htbl, Register avx512_subkeyHtbl);
-  void ghash16_encrypt16_parallel(Register key, Register subkeyHtbl, XMMRegister ctr_blockx,
-                                  XMMRegister aad_hashx, Register in, Register out, Register data, Register pos, bool reduction,
-                                  XMMRegister addmask, bool no_ghash_input, Register rounds, Register ghash_pos,
-                                  bool final_reduction, int index, XMMRegister counter_inc_mask);
-public:
-  void aesecb_encrypt(Register source_addr, Register dest_addr, Register key, Register len);
-  void aesecb_decrypt(Register source_addr, Register dest_addr, Register key, Register len);
-  void aesctr_encrypt(Register src_addr, Register dest_addr, Register key, Register counter,
-                      Register len_reg, Register used, Register used_addr, Register saved_encCounter_start);
-  void aesgcm_encrypt(Register in, Register len, Register ct, Register out, Register key,
-                      Register state, Register subkeyHtbl, Register avx512_subkeyHtbl, Register counter);
-
-#endif
+#endif // _LP64
 
   void fast_md5(Register buf, Address state, Address ofs, Address limit,
                 bool multi_block);
