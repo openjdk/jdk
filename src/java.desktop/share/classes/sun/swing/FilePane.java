@@ -1757,15 +1757,15 @@ public class FilePane extends JPanel implements PropertyChangeListener {
             //Check if any files are selected before setting multi-Selection.
             //If selected, retain them and update the selected files in FileChooser class.
             File[] selectedFiles = null;
-            if(getFileChooser().getSelectedFiles().length != 0) {
+            if (getFileChooser().getSelectedFiles().length != 0) {
                 selectedFiles = getFileChooser().getSelectedFiles();
-            } else if(getFileChooser().getSelectedFile() != null) {
+            } else if (getFileChooser().getSelectedFile() != null) {
                 File selectedFile = getFileChooser().getSelectedFile();
                 selectedFiles = new File[1];
                 selectedFiles[0] = selectedFile;
             }
 
-            if(selectedFiles != null) {
+            if (selectedFiles != null) {
                 getFileChooser().setSelectedFiles(selectedFiles);
             }
         } else {
