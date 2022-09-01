@@ -41,6 +41,8 @@ public class Fp16ConversionBenchmark {
   public short[] f16out;
   public float[] fin;
   public float[] fout;
+  public static short f16, s;
+  public static float f;
 
   @Setup(Level.Trial)
   public void BmSetup() {
@@ -49,6 +51,7 @@ public class Fp16ConversionBenchmark {
 
       f16in  = new short[size];
       f16out = new short[size];
+      f16    = (short) r.nextInt();
 
       for (; i < size; i++) {
           f16in[i] = Float.floatToFloat16(r.nextFloat());;
@@ -56,6 +59,7 @@ public class Fp16ConversionBenchmark {
 
       fin  = new float[size];
       fout = new float[size];
+      f    = r.nextFloat();
 
       i = 0;
 
@@ -78,5 +82,17 @@ public class Fp16ConversionBenchmark {
           fout[i] = Float.float16ToFloat(f16in[i]);
       }
       return fout;
+  }
+
+  @Benchmark
+  public float float16ToFloatMemory() {
+      f = Float.float16ToFloat(f16);
+      return f;
+  }
+
+  @Benchmark
+  public short floatToFloat16Memory() {
+      s = Float.floatToFloat16(f);
+      return s;
   }
 }

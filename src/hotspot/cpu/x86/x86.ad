@@ -1682,8 +1682,8 @@ const bool Matcher::match_rule_supported(int opcode) {
       break;
     case Op_ConvF2HF:
     case Op_ConvHF2F:
-      if (!VM_Version::supports_f16c() && !VM_Version::supports_evex() &&
-          !VM_Version::supports_avx512vl()) {
+      if (!VM_Version::supports_f16c() && !(VM_Version::supports_evex() &&
+          VM_Version::supports_avx512vl())) {
         return false;
       }
       break;
