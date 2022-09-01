@@ -951,6 +951,7 @@ void PhaseCFG::remove_unreachable_blocks() {
   // Initialize worklist of unreachable blocks to be removed.
   for (uint i = 0; i < number_of_blocks(); i++) {
     Block* block = get_block(i);
+    assert(block->_pre_order == i, "Block::pre_order does not match block index");
     if (block->is_trivially_unreachable()) {
       unreachable.push(block);
     }
@@ -958,24 +959,17 @@ void PhaseCFG::remove_unreachable_blocks() {
   // Now remove all blocks that are transitively unreachable.
   while (unreachable.size() > 0) {
     Block* dead = unreachable.pop();
-    for (uint i = 0; i < _number_of_blocks; i++) {
-      Block* block = get_block(i);
-      if (block == dead) {
-        _blocks.remove(i);
-        _number_of_blocks--;
-        i--; // Ensure that we visit the block following the removed one.
-        continue;
-      }
-      if (block->_pre_order > dead->_pre_order) {
-        // When this code runs (after PhaseCFG::fixup_flow()), Block::_pre_order
-        // does not contain pre-order indices but simple block list indices.
-        // Ensure they stay contiguous.
-        // Block::_rpo does not contain valid reverse post-order indices anymore
-        // (they are invalidated by block insertions in PhaseCFG::fixup_flow()),
-        // so there is no need to update them.
-        block->_pre_order--;
-      }
+    // When this code runs (after PhaseCFG::fixup_flow()), Block::_pre_order
+    // does not contain pre-order but block-list indices. Ensure they stay
+    // contiguous by decrementing _pre_order for all elements after 'dead'.
+    // Block::_rpo does not contain valid reverse post-order indices anymore
+    // (they are invalidated by block insertions in PhaseCFG::fixup_flow()),
+    // so there is no need to update them.
+    for (uint i = dead->_pre_order + 1; i < number_of_blocks(); i++) {
+      get_block(i)->_pre_order--;
     }
+    _blocks.remove(dead->_pre_order);
+    _number_of_blocks--;
     // Update the successors' predecessor list and push new unreachable blocks.
     for (uint i = 0; i < dead->_num_succs; i++) {
       Block* succ = dead->_succs[i];
