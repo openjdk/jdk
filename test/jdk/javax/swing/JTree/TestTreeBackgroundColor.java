@@ -53,9 +53,9 @@ public class TestTreeBackgroundColor {
     private static JTree tree;
 
     public static void main(String[] args) throws Exception {
-    	UIManager.setLookAndFeel("com.sun.java.swing.plaf.gtk.GTKLookAndFeel");
+        UIManager.setLookAndFeel("com.sun.java.swing.plaf.gtk.GTKLookAndFeel");
         Robot robot = new Robot();
-        robot.setAutoDelay(100);   
+        robot.setAutoDelay(100);
         try {
             SwingUtilities.invokeAndWait(new Runnable() {
                 public void run() {
