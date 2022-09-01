@@ -43,7 +43,7 @@ import sun.jvm.hotspot.debugger.remote.ppc64.*;
 public class RemoteDebuggerClient extends DebuggerBase implements JVMDebugger {
   private RemoteDebugger remoteDebugger;
   private RemoteThreadFactory threadFactory;
-  private static final int cacheSize = 16 * 1024 * 1024; // 16 MB
+  private static final int cacheSize = 256 * 1024 * 1024; // 256 MB
 
   public RemoteDebuggerClient(RemoteDebugger remoteDebugger) throws DebuggerException {
     super();
@@ -52,22 +52,15 @@ public class RemoteDebuggerClient extends DebuggerBase implements JVMDebugger {
       this.machDesc = remoteDebugger.getMachineDescription();
       utils = new DebuggerUtilities(machDesc.getAddressSize(), machDesc.isBigEndian(),
                                     machDesc.supports32bitAlignmentOf64bitTypes());
-      int cacheNumPages;
-      int cachePageSize;
+      int cachePageSize = 4096;
+      int cacheNumPages = parseCacheNumPagesProperty(cacheSize / cachePageSize);
       String cpu = remoteDebugger.getCPU();
-      // page size. (FIXME: should pick this up from the remoteDebugger.)
       if (cpu.equals("x86")) {
         threadFactory = new RemoteX86ThreadFactory(this);
-        cachePageSize = 4096;
-        cacheNumPages = parseCacheNumPagesProperty(cacheSize / cachePageSize);
       } else if (cpu.equals("amd64") || cpu.equals("x86_64")) {
         threadFactory = new RemoteAMD64ThreadFactory(this);
-        cachePageSize = 4096;
-        cacheNumPages = parseCacheNumPagesProperty(cacheSize / cachePageSize);
       } else if (cpu.equals("ppc64")) {
         threadFactory = new RemotePPC64ThreadFactory(this);
-        cachePageSize = 4096;
-        cacheNumPages = parseCacheNumPagesProperty(cacheSize / cachePageSize);
       } else {
         try {
           Class tf = Class.forName("sun.jvm.hotspot.debugger.remote." +
@@ -78,8 +71,6 @@ public class RemoteDebuggerClient extends DebuggerBase implements JVMDebugger {
         } catch (Exception e) {
           throw new DebuggerException("Thread access for CPU architecture " + cpu + " not yet supported");
         }
-        cachePageSize = 4096;
-        cacheNumPages = parseCacheNumPagesProperty(cacheSize / cachePageSize);
       }
 
       // Cache portion of the remote process's address space.

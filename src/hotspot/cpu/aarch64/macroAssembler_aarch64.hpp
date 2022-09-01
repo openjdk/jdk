@@ -1223,7 +1223,7 @@ public:
   Address allocate_metadata_address(Metadata* obj);
   Address constant_oop_address(jobject obj);
 
-  void movoop(Register dst, jobject obj, bool immediate = false);
+  void movoop(Register dst, jobject obj);
 
   // CRC32 code for java.util.zip.CRC32::updateBytes() intrinsic.
   void kernel_crc32(Register crc, Register buf, Register len,

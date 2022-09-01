@@ -168,8 +168,8 @@ bool G1CollectedHeap::is_in_cset(const HeapRegion* hr) const {
   return _region_attr.is_in_cset(hr);
 }
 
-bool G1CollectedHeap::is_in_cset_or_humongous(const oop obj) {
-  return _region_attr.is_in_cset_or_humongous(cast_from_oop<HeapWord*>(obj));
+bool G1CollectedHeap::is_in_cset_or_humongous_candidate(const oop obj) {
+  return _region_attr.is_in_cset_or_humongous_candidate(cast_from_oop<HeapWord*>(obj));
 }
 
 G1HeapRegionAttr G1CollectedHeap::region_attr(const void* addr) const {
@@ -180,8 +180,8 @@ G1HeapRegionAttr G1CollectedHeap::region_attr(uint idx) const {
   return _region_attr.get_by_index(idx);
 }
 
-void G1CollectedHeap::register_humongous_region_with_region_attr(uint index) {
-  _region_attr.set_humongous(index, region_at(index)->rem_set()->is_tracked());
+void G1CollectedHeap::register_humongous_candidate_region_with_region_attr(uint index) {
+  _region_attr.set_humongous_candidate(index, region_at(index)->rem_set()->is_tracked());
 }
 
 void G1CollectedHeap::register_new_survivor_region_with_region_attr(HeapRegion* r) {
@@ -234,7 +234,7 @@ inline bool G1CollectedHeap::is_obj_dead_full(const oop obj) const {
 
 inline bool G1CollectedHeap::is_humongous_reclaim_candidate(uint region) {
   assert(_hrm.at(region)->is_starts_humongous(), "Must start a humongous object");
-  return _region_attr.is_humongous(region);
+  return _region_attr.is_humongous_candidate(region);
 }
 
 inline void G1CollectedHeap::set_humongous_is_live(oop obj) {
@@ -245,8 +245,8 @@ inline void G1CollectedHeap::set_humongous_is_live(oop obj) {
   // but this is benign because the transition is unidirectional, from
   // humongous-candidate to not, and the write, in evacuation, is
   // separated from the read, in post-evacuation.
-  if (_region_attr.is_humongous(region)) {
-    _region_attr.clear_humongous(region);
+  if (_region_attr.is_humongous_candidate(region)) {
+    _region_attr.clear_humongous_candidate(region);
   }
 }
 
