@@ -1529,7 +1529,12 @@ void HeapShared::init_subgraph_entry_fields(ArchivableStaticFieldInfo fields[],
     TempNewSymbol klass_name =  SymbolTable::new_symbol(info->klass_name);
     TempNewSymbol field_name =  SymbolTable::new_symbol(info->field_name);
 
+#ifndef PRODUCT
     bool is_test_class = (ArchiveHeapTestClass != NULL) && (strcmp(info->klass_name, ArchiveHeapTestClass) == 0);
+#else
+    bool is_test_class = false;
+#endif
+
     if (is_test_class) {
       log_warning(cds)("Loading ArchiveHeapTestClass %s ...", ArchiveHeapTestClass);
     }
