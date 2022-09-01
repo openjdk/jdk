@@ -402,7 +402,7 @@ define SetupJavaCompilationBody
 
     $1_COMPILE_TARGET := $$($1_BIN)$$($1_MODULE_SUBDIR)/_the.$1_batch
     $1_FILELIST := $$($1_BIN)$$($1_MODULE_SUBDIR)/_the.$1_batch.filelist
-    $1_MODFILES := $$($1_BIN)$$($1_MODULE_SUBDIR)/_the.$1_batch.modfiles
+    $1_MODFILELIST := $$($1_BIN)$$($1_MODULE_SUBDIR)/_the.$1_batch.modfiles
 
     $1_API_TARGET := $$($1_BIN)$$($1_MODULE_SUBDIR)/_the.$1_pubapi
     $1_API_INTERNAL := $$($1_BIN)$$($1_MODULE_SUBDIR)/_the.$1_internalapi
@@ -450,9 +450,10 @@ define SetupJavaCompilationBody
     # list of files.
     $$($1_FILELIST): $$($1_SRCS) $$($1_VARDEPS_FILE)
 		$$(call MakeDir, $$(@D))
-		$$(call LogWarn, Compiling $$(words $$($1_SRCS)) files for $1)
+		$$(call LogWarn, Compiling up to $$(words $$($1_SRCS)) files for $1)
 		$$(eval $$(call ListPathsSafely, $1_SRCS, $$($1_FILELIST)))
-		$$(call WriteFile, "-XDmodifiedInputs=$$? ", $$($1_MODFILES))
+		$$(eval $1_MODFILES := $$?)
+		$$(eval $$(call ListPathsSafely, $1_MODFILES, $$($1_MODFILELIST)))
 
     # Do the actual compilation
     $$($1_COMPILE_TARGET): $$($1_SRCS) $$($1_FILELIST) $$($1_DEPENDS) \
@@ -461,7 +462,7 @@ define SetupJavaCompilationBody
 		$$(call ExecuteWithLog, $$($1_BIN)$$($1_MODULE_SUBDIR)/_the.$$($1_SAFE_NAME)_batch, \
 		    $$($1_JAVAC_CMD) $$($1_FLAGS) \
 		        $$($1_API_DIGEST_FLAGS) \
-		        @$$($1_MODFILES) \
+		        -XDmodifiedInputs=$$($1_MODFILELIST) \
 		        -d $$($1_BIN) $$($1_HEADERS_ARG) @$$($1_FILELIST)) && \
 		$(TOUCH) $$@
 

@@ -151,7 +151,7 @@ public class Depend implements Plugin {
             if (internalAPIPath == null) {
                 throw new IllegalStateException("Expected internalAPIPath to be set using -XDinternalAPIPath=<internal-API-path>");
             }
-            Set<String> modified = new HashSet<>(Arrays.asList(modifiedInputs.split(" ")));
+            Set<String> modified = new HashSet<>(Files.readAllLines(Paths.get(modifiedInputs)));
             Path internalAPIDigestFile = Paths.get(internalAPIPath);
             JavaCompiler compiler = JavaCompiler.instance(context);
             Class<?> initialFileParserIntf = Class.forName("com.sun.tools.javac.main.JavaCompiler$InitialFileParserIntf");
