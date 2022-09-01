@@ -1238,21 +1238,6 @@ public abstract sealed class AbstractInstruction
             constant = op.constantValue();
         }
 
-        public UnboundIntrinsicConstantInstruction(byte byteVal) {
-            super(Opcode.BIPUSH);
-            constant = (int) byteVal;
-        }
-
-        public UnboundIntrinsicConstantInstruction(short shortVal) {
-            super(Opcode.SIPUSH);
-            constant = (int) shortVal;
-        }
-
-        public UnboundIntrinsicConstantInstruction(ConstantDesc constant) {
-            super(Opcode.LDC);
-            this.constant = constant;
-        }
-
         @Override
         public void writeTo(DirectCodeBuilder writer) {
             super.writeTo(writer);

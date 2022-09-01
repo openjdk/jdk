@@ -26,9 +26,11 @@ package jdk.classfile.impl;
 
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDesc;
+import java.lang.constant.ConstantDescs;
 import java.lang.constant.DirectMethodHandleDesc;
 import java.lang.constant.DynamicConstantDesc;
 import java.lang.constant.MethodTypeDesc;
+import java.lang.invoke.MethodHandleInfo;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -45,29 +47,11 @@ import jdk.classfile.constantpool.MemberRefEntry;
 import jdk.classfile.constantpool.MethodHandleEntry;
 import jdk.classfile.constantpool.NameAndTypeEntry;
 
-import static java.lang.invoke.MethodHandleInfo.REF_putStatic;
-import static jdk.classfile.Opcode.IFEQ;
-import static jdk.classfile.Opcode.IFGE;
-import static jdk.classfile.Opcode.IFGT;
-import static jdk.classfile.Opcode.IFLE;
-import static jdk.classfile.Opcode.IFLT;
-import static jdk.classfile.Opcode.IFNE;
-import static jdk.classfile.Opcode.IFNONNULL;
-import static jdk.classfile.Opcode.IFNULL;
-import static jdk.classfile.Opcode.IF_ACMPEQ;
-import static jdk.classfile.Opcode.IF_ACMPNE;
-import static jdk.classfile.Opcode.IF_ICMPEQ;
-import static jdk.classfile.Opcode.IF_ICMPGE;
-import static jdk.classfile.Opcode.IF_ICMPGT;
-import static jdk.classfile.Opcode.IF_ICMPLE;
-import static jdk.classfile.Opcode.IF_ICMPLT;
-import static jdk.classfile.Opcode.IF_ICMPNE;
-
 /**
  * BytecodeHelpers
  */
 public class BytecodeHelpers {
-    public static Map<ConstantDesc, Opcode> constantsToOpcodes = new HashMap<>(16);
+//    public static Map<ConstantDesc, Opcode> constantsToOpcodes = new HashMap<>(16);
 
     public BytecodeHelpers() {
     }
@@ -195,22 +179,22 @@ public class BytecodeHelpers {
 
     public static Opcode reverseBranchOpcode(Opcode op) {
         return switch (op) {
-            case IFEQ -> IFNE;
-            case IFNE -> IFEQ;
-            case IFLT -> IFGE;
-            case IFGE -> IFLT;
-            case IFGT -> IFLE;
-            case IFLE -> IFGT;
-            case IF_ICMPEQ -> IF_ICMPNE;
-            case IF_ICMPNE -> IF_ICMPEQ;
-            case IF_ICMPLT -> IF_ICMPGE;
-            case IF_ICMPGE -> IF_ICMPLT;
-            case IF_ICMPGT -> IF_ICMPLE;
-            case IF_ICMPLE -> IF_ICMPGT;
-            case IF_ACMPEQ -> IF_ACMPNE;
-            case IF_ACMPNE -> IF_ACMPEQ;
-            case IFNULL -> IFNONNULL;
-            case IFNONNULL -> IFNULL;
+            case IFEQ -> Opcode.IFNE;
+            case IFNE -> Opcode.IFEQ;
+            case IFLT -> Opcode.IFGE;
+            case IFGE -> Opcode.IFLT;
+            case IFGT -> Opcode.IFLE;
+            case IFLE -> Opcode.IFGT;
+            case IF_ICMPEQ -> Opcode.IF_ICMPNE;
+            case IF_ICMPNE -> Opcode.IF_ICMPEQ;
+            case IF_ICMPLT -> Opcode.IF_ICMPGE;
+            case IF_ICMPGE -> Opcode.IF_ICMPLT;
+            case IF_ICMPGT -> Opcode.IF_ICMPLE;
+            case IF_ICMPLE -> Opcode.IF_ICMPGT;
+            case IF_ACMPEQ -> Opcode.IF_ACMPNE;
+            case IF_ACMPNE -> Opcode.IF_ACMPEQ;
+            case IFNULL -> Opcode.IFNONNULL;
+            case IFNONNULL -> Opcode.IFNULL;
             default -> throw new IllegalArgumentException("Unknown branch instruction: " + op);
         };
     }
@@ -287,7 +271,7 @@ public class BytecodeHelpers {
     static MemberRefEntry toBootstrapMemberRef(ConstantPoolBuilder constantPool, int bsRefKind, ClassEntry owner, NameAndTypeEntry nat, boolean isOwnerInterface) {
         return isOwnerInterface
                ? constantPool.interfaceMethodRefEntry(owner, nat)
-               : bsRefKind <= REF_putStatic
+               : bsRefKind <= MethodHandleInfo.REF_putStatic
                  ? constantPool.fieldRefEntry(owner, nat)
                  : constantPool.methodRefEntry(owner, nat);
     }
@@ -315,8 +299,8 @@ public class BytecodeHelpers {
     public static void validateValue(Opcode opcode, ConstantDesc v) {
         switch (opcode) {
             case ACONST_NULL -> {
-                if (v != null)
-                    throw new IllegalArgumentException("value must be null with opcode ACONST_NULL");
+                if (v != null && v != ConstantDescs.NULL)
+                    throw new IllegalArgumentException("value must be null or ConstantDescs.NULL with opcode ACONST_NULL");
             }
             case SIPUSH ->
                     validateSIPUSH(v);
@@ -368,26 +352,5 @@ public class BytecodeHelpers {
             return handleConstantDescToHandleInfo(constantPool, value);
         }
         throw new UnsupportedOperationException("not yet: " + constantValue);
-    }
-
-    private static void constantMapping(ConstantDesc c, Opcode o) {
-        constantsToOpcodes.put(c, o);
-    }
-
-    static {
-        constantMapping(-1, Opcode.ICONST_M1);
-        constantMapping(0, Opcode.ICONST_0);
-        constantMapping(1, Opcode.ICONST_1);
-        constantMapping(2, Opcode.ICONST_2);
-        constantMapping(3, Opcode.ICONST_3);
-        constantMapping(4, Opcode.ICONST_4);
-        constantMapping(5, Opcode.ICONST_5);
-        constantMapping(0L, Opcode.LCONST_0);
-        constantMapping(1L, Opcode.LCONST_1);
-        constantMapping(0.0f, Opcode.FCONST_0);
-        constantMapping(1.0f, Opcode.FCONST_1);
-        constantMapping(2.0f, Opcode.FCONST_2);
-        constantMapping(0.0d, Opcode.DCONST_0);
-        constantMapping(1.0d, Opcode.DCONST_1);
     }
 }

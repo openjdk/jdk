@@ -27,6 +27,7 @@ package jdk.classfile;
 
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDesc;
+import java.lang.constant.ConstantDescs;
 import java.lang.constant.DirectMethodHandleDesc;
 import java.lang.constant.DynamicCallSiteDesc;
 import java.lang.constant.MethodTypeDesc;
@@ -526,95 +527,45 @@ public sealed interface CodeBuilder
     }
 
     default CodeBuilder constantInstruction(Opcode opcode, ConstantDesc value) {
-        if (opcode == null) // Infer opcode
-            return constantInstruction(value);
-
         BytecodeHelpers.validateValue(opcode, value);
-
-        if (opcode == Opcode.ACONST_NULL) {
-            with(ConstantInstruction.ofIntrinsic(Opcode.ACONST_NULL));
-        }
-        else if (opcode == Opcode.SIPUSH && value instanceof Integer iVal) {
-            with(ConstantInstruction.ofArgument(Opcode.SIPUSH, iVal));
-        }
-        else if (opcode == Opcode.SIPUSH && value instanceof Long lVal) {
-            with(ConstantInstruction.ofArgument(Opcode.SIPUSH, (int) (lVal & (long)0xffff)));
-        }
-        else if (opcode == Opcode.BIPUSH && value instanceof Integer iVal) {
-            with(ConstantInstruction.ofArgument(Opcode.BIPUSH, iVal));
-        }
-        else if (opcode == Opcode.BIPUSH && value instanceof Long lVal) {
-            with(ConstantInstruction.ofArgument(Opcode.BIPUSH, (int) (lVal & (long)0xff)));
-        }
-        else if (opcode == Opcode.LDC || opcode == Opcode.LDC_W || opcode == Opcode.LDC2_W) {
-            with(ConstantInstruction.ofLoad(opcode, BytecodeHelpers.constantEntry(constantPool(), value)));
-        }
-        else {
-            Opcode known = BytecodeHelpers.constantsToOpcodes.get(value);
-            if (known == null)
-                throw new AssertionError("Couldn't determine which opcode to use to load " + value);
-            with(ConstantInstruction.ofIntrinsic(known));
-        }
-
-        return this;
-    }
-
-    default CodeBuilder constantInstruction(int value) {
-        return with(switch (value) {
-            case -1 -> ConstantInstruction.ofIntrinsic(Opcode.ICONST_M1);
-            case 0 -> ConstantInstruction.ofIntrinsic(Opcode.ICONST_0);
-            case 1 -> ConstantInstruction.ofIntrinsic(Opcode.ICONST_1);
-            case 2 -> ConstantInstruction.ofIntrinsic(Opcode.ICONST_2);
-            case 3 -> ConstantInstruction.ofIntrinsic(Opcode.ICONST_3);
-            case 4 -> ConstantInstruction.ofIntrinsic(Opcode.ICONST_4);
-            case 5 -> ConstantInstruction.ofIntrinsic(Opcode.ICONST_5);
-            default -> {
-                if (value >= -128 && value <= 127) {
-                    yield ConstantInstruction.ofArgument(Opcode.BIPUSH, value);
-                }
-                else if (value >= -32768 && value <= 32767) {
-                    yield ConstantInstruction.ofArgument(Opcode.SIPUSH, value);
-                }
-                else {
-                    yield ConstantInstruction.ofLoad(Opcode.LDC, BytecodeHelpers.constantEntry(constantPool(), value));
-                }
-            }
+        return with(switch (opcode) {
+            case SIPUSH, BIPUSH -> ConstantInstruction.ofArgument(opcode, ((Number)value).intValue());
+            case LDC, LDC_W, LDC2_W -> ConstantInstruction.ofLoad(opcode, BytecodeHelpers.constantEntry(constantPool(), value));
+            default -> ConstantInstruction.ofIntrinsic(opcode);
         });
     }
 
     default CodeBuilder constantInstruction(ConstantDesc value) {
-        // This method must ensure any call to constant(Opcode, ConstantDesc) has a non-null Opcode.
-        if (value == null) {
-            return constantInstruction(Opcode.ACONST_NULL, null);
-        }
-        else if (value instanceof Integer iVal) {
-            return constantInstruction((int)iVal);
-        } else if (value instanceof Long lVal) {
-            if (lVal == 0)
-                return with(ConstantInstruction.ofIntrinsic(Opcode.LCONST_0));
-            else if (lVal == 1)
-                return with(ConstantInstruction.ofIntrinsic(Opcode.LCONST_1));
-            else
-                return constantInstruction(Opcode.LDC2_W, lVal);
-        } else if (value instanceof Float fVal) {
-            if (fVal == 0.0)
-                return with(ConstantInstruction.ofIntrinsic(Opcode.FCONST_0));
-            else if (fVal == 1.0)
-                return with(ConstantInstruction.ofIntrinsic(Opcode.FCONST_1));
-            else if (fVal == 2.0)
-                return with(ConstantInstruction.ofIntrinsic(Opcode.FCONST_2));
-            else
-                return constantInstruction(Opcode.LDC, fVal);
-        } else if (value instanceof Double dVal) {
-            if (dVal == 0.0d)
-                return with(ConstantInstruction.ofIntrinsic(Opcode.DCONST_0));
-            else if (dVal == 1.0d)
-                return with(ConstantInstruction.ofIntrinsic(Opcode.DCONST_1));
-            else
-                return constantInstruction(Opcode.LDC2_W, dVal);
-        } else {
-            return constantInstruction(Opcode.LDC, value);
-        }
+        //avoid switch expressions here
+        if (value == null || value == ConstantDescs.NULL)
+            return aconst_null();
+        if (value instanceof Integer iVal)
+            return switch (iVal) {
+                case -1 -> iconst_m1();
+                case  0 -> iconst_0();
+                case  1 -> iconst_1();
+                case  2 -> iconst_2();
+                case  3 -> iconst_3();
+                case  4 -> iconst_4();
+                case  5 -> iconst_5();
+                default -> (iVal >= Byte.MIN_VALUE && iVal <= Byte.MAX_VALUE) ? bipush(iVal)
+                         : (iVal >= Short.MIN_VALUE && iVal <= Short.MAX_VALUE) ? sipush(iVal)
+                         : ldc(constantPool().intEntry(iVal));
+            };
+        if (value instanceof Long lVal)
+            return lVal == 0l ? lconst_0()
+                 : lVal == 1l ? lconst_1()
+                 : ldc(constantPool().longEntry(lVal));
+        if (value instanceof Float fVal)
+            return fVal == 0.0f ? fconst_0()
+                 : fVal == 1.0f ? fconst_1()
+                 : fVal == 2.0f ? fconst_2()
+                 : ldc(constantPool().floatEntry(fVal));
+        if (value instanceof Double dVal)
+            return dVal == 0.0d ? dconst_0()
+                 : dVal == 1.0d ? dconst_1()
+                 : ldc(constantPool().doubleEntry(dVal));
+        return ldc(BytecodeHelpers.constantEntry(constantPool(), value));
     }
 
     default CodeBuilder monitorInstruction(Opcode opcode) {
@@ -706,7 +657,7 @@ public sealed interface CodeBuilder
     // Bytecode conveniences
 
     default CodeBuilder aconst_null() {
-        return constantInstruction(Opcode.ACONST_NULL, null);
+        return with(ConstantInstruction.ofIntrinsic(Opcode.ACONST_NULL));
     }
 
     default CodeBuilder aaload() {
@@ -806,11 +757,11 @@ public sealed interface CodeBuilder
     }
 
     default CodeBuilder dconst_0() {
-        return constantInstruction(Opcode.DCONST_0, 0.0d);
+        return with(ConstantInstruction.ofIntrinsic(Opcode.DCONST_0));
     }
 
     default CodeBuilder dconst_1() {
-        return constantInstruction(Opcode.DCONST_1, 1.0d);
+        return with(ConstantInstruction.ofIntrinsic(Opcode.DCONST_1));
     }
 
     default CodeBuilder ddiv() {
@@ -902,15 +853,15 @@ public sealed interface CodeBuilder
     }
 
     default CodeBuilder fconst_0() {
-        return constantInstruction(Opcode.FCONST_0, 0.0f);
+        return with(ConstantInstruction.ofIntrinsic(Opcode.FCONST_0));
     }
 
     default CodeBuilder fconst_1() {
-        return constantInstruction(Opcode.FCONST_1, 1.0f);
+        return with(ConstantInstruction.ofIntrinsic(Opcode.FCONST_1));
     }
 
     default CodeBuilder fconst_2() {
-        return constantInstruction(Opcode.FCONST_2, 2.0f);
+        return with(ConstantInstruction.ofIntrinsic(Opcode.FCONST_2));
     }
 
     default CodeBuilder fdiv() {
@@ -1010,31 +961,31 @@ public sealed interface CodeBuilder
     }
 
     default CodeBuilder iconst_0() {
-        return constantInstruction(Opcode.ICONST_0, 0);
+        return with(ConstantInstruction.ofIntrinsic(Opcode.ICONST_0));
     }
 
     default CodeBuilder iconst_1() {
-        return constantInstruction(Opcode.ICONST_1, 1);
+        return with(ConstantInstruction.ofIntrinsic(Opcode.ICONST_1));
     }
 
     default CodeBuilder iconst_2() {
-        return constantInstruction(Opcode.ICONST_2, 2);
+        return with(ConstantInstruction.ofIntrinsic(Opcode.ICONST_2));
     }
 
     default CodeBuilder iconst_3() {
-        return constantInstruction(Opcode.ICONST_3, 3);
+        return with(ConstantInstruction.ofIntrinsic(Opcode.ICONST_3));
     }
 
     default CodeBuilder iconst_4() {
-        return constantInstruction(Opcode.ICONST_4, 4);
+        return with(ConstantInstruction.ofIntrinsic(Opcode.ICONST_4));
     }
 
     default CodeBuilder iconst_5() {
-        return constantInstruction(Opcode.ICONST_5, 5);
+        return with(ConstantInstruction.ofIntrinsic(Opcode.ICONST_5));
     }
 
     default CodeBuilder iconst_m1() {
-        return constantInstruction(Opcode.ICONST_M1, -1);
+        return with(ConstantInstruction.ofIntrinsic(Opcode.ICONST_M1));
     }
 
     default CodeBuilder idiv() {
@@ -1259,11 +1210,18 @@ public sealed interface CodeBuilder
     }
 
     default CodeBuilder lconst_0() {
-        return constantInstruction(Opcode.LCONST_0, 0L);
+        return with(ConstantInstruction.ofIntrinsic(Opcode.LCONST_0));
     }
 
     default CodeBuilder lconst_1() {
-        return constantInstruction(Opcode.LCONST_1, 1L);
+        return with(ConstantInstruction.ofIntrinsic(Opcode.LCONST_1));
+    }
+
+    default CodeBuilder ldc(LoadableConstantEntry entry) {
+        return with(ConstantInstruction.ofLoad(
+                entry.typeKind().slotSize() == 2 ? Opcode.LDC2_W
+                : entry.index() > 0xff ? Opcode.LDC_W
+                : Opcode.LDC, entry));
     }
 
     default CodeBuilder ldiv() {

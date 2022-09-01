@@ -25,6 +25,7 @@
 package jdk.classfile;
 
 import java.lang.constant.ConstantDesc;
+import java.lang.constant.ConstantDescs;
 
 /**
  * Describes the opcodes of the JVM instruction set, as well as a number of
@@ -36,7 +37,7 @@ import java.lang.constant.ConstantDesc;
  */
 public enum Opcode {
     NOP(Classfile.NOP, 1, CodeElement.Kind.NOP),
-    ACONST_NULL(Classfile.ACONST_NULL, 1, CodeElement.Kind.CONSTANT, TypeKind.ReferenceType),
+    ACONST_NULL(Classfile.ACONST_NULL, 1, CodeElement.Kind.CONSTANT, TypeKind.ReferenceType, 0, ConstantDescs.NULL),
     ICONST_M1(Classfile.ICONST_M1, 1, CodeElement.Kind.CONSTANT, TypeKind.IntType, 0, -1),
     ICONST_0(Classfile.ICONST_0, 1, CodeElement.Kind.CONSTANT, TypeKind.IntType, 0, 0),
     ICONST_1(Classfile.ICONST_1, 1, CodeElement.Kind.CONSTANT, TypeKind.IntType, 0, 1),
