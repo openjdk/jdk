@@ -224,7 +224,7 @@ public interface SortedMap<K,V> extends SequencedMap<K,V> {
     K lastKey();
 
     /**
-     * Returns a {@link Set} view of the keys contained in this map.
+     * Returns a {@link SequencedSet} view of the keys contained in this map.
      * The set's iterator returns the keys in ascending order.
      * The set is backed by the map, so changes to the map are
      * reflected in the set, and vice-versa.  If the map is modified
@@ -240,10 +240,10 @@ public interface SortedMap<K,V> extends SequencedMap<K,V> {
      * @return a set view of the keys contained in this map, sorted in
      *         ascending order
      */
-    Set<K> keySet();
+    SequencedSet<K> keySet();
 
     /**
-     * Returns a {@link Collection} view of the values contained in this map.
+     * Returns a {@link SequencedCollection} view of the values contained in this map.
      * The collection's iterator returns the values in ascending order
      * of the corresponding keys.
      * The collection is backed by the map, so changes to the map are
@@ -260,10 +260,10 @@ public interface SortedMap<K,V> extends SequencedMap<K,V> {
      * @return a collection view of the values contained in this map,
      *         sorted in ascending key order
      */
-    Collection<V> values();
+    SequencedCollection<V> values();
 
     /**
-     * Returns a {@link Set} view of the mappings contained in this map.
+     * Returns a {@link SequencedSet} view of the mappings contained in this map.
      * The set's iterator returns the entries in ascending key order.
      * The set is backed by the map, so changes to the map are
      * reflected in the set, and vice-versa.  If the map is modified
@@ -280,7 +280,7 @@ public interface SortedMap<K,V> extends SequencedMap<K,V> {
      * @return a set view of the mappings contained in this map,
      *         sorted in ascending key order
      */
-    Set<Map.Entry<K, V>> entrySet();
+    SequencedSet<Map.Entry<K, V>> entrySet();
 
     /**
      * Returns a reversed-order view of this collection. If the implementation
@@ -292,5 +292,65 @@ public interface SortedMap<K,V> extends SequencedMap<K,V> {
      */
     default SortedMap<K, V> reversed() {
         return ReverseOrderSortedMapView.of(this);
+    }
+
+    /**
+     * Returns a {@link SequencedSet} view of the keySet of the provided SortedMap.
+     * This is useful for converting a {@link #keySet} implementation from a non-sequenced
+     * {@link Set} to {@link SequencedSet}.
+     *
+     * @param <K> the type of keys maintained by this map
+     * @param map the map from which the reversed keySet is obtained
+     * @param keySet the non-sequenced keySet
+     * @return the SequencedSet keySet view
+     */
+    static <K> SequencedSet<K> sequencedKeySet(SortedMap<K, ?> map, Set<K> keySet) {
+        class SeqKeySet extends AbstractSet<K> implements SequencedSet<K> {
+            public int size()                 { return keySet.size(); }
+            public Iterator<K> iterator()     { return keySet.iterator(); }
+            public SequencedSet<K> reversed() { return map.reversed().keySet(); }
+        }
+        return new SeqKeySet();
+    }
+
+    /**
+     * Returns a {@link SequencedCollection} view of the values collection of the provided
+     * SortedMap. This is useful for converting a {@link #values} implementation from a
+     * non-sequenced {@link Collection} to {@link SequencedCollection}.
+     *
+     * @param <V> the type of mapped values
+     * @param map the map from which the reversed values collection is obtained
+     * @param values the non-sequenced values collection
+     * @return the SequencedCollection values view
+     */
+    static <V> SequencedCollection<V> sequencedValues(SortedMap<?, V> map, Collection<V> values) {
+        class SeqValues extends AbstractCollection<V> implements SequencedCollection<V> {
+            public int size()                        { return values.size(); }
+            public Iterator<V> iterator()            { return values.iterator(); }
+            public SequencedCollection<V> reversed() { return map.reversed().values(); }
+        }
+        return new SeqValues();
+    }
+
+    /**
+     * Returns a {@link SequencedSet} view of the entrySet of the provided SortedMap.
+     * This is useful for converting a {@link #entrySet} implementation from a non-sequenced
+     * {@link Set} to {@link SequencedSet}.
+     *
+     * @param <K> the type of keys maintained by this map
+     * @param <V> the type of mapped values
+     * @param map the map from which the reversed entrySet is obtained
+     * @param entrySet the non-sequenced entrySet
+     * @return the SequencedSet entrySet view
+     */
+    static <K, V> SequencedSet<Map.Entry<K, V>> sequencedEntrySet(SortedMap<K, V> map,
+                                                                  Set<Map.Entry<K, V>> entrySet) {
+        class SeqEntrySet extends AbstractSet<Map.Entry<K, V>>
+                implements SequencedSet<Map.Entry<K, V>> {
+            public int size()                               { return entrySet.size(); }
+            public Iterator<Map.Entry<K, V>> iterator()     { return entrySet.iterator(); }
+            public SequencedSet<Map.Entry<K, V>> reversed() { return map.reversed().entrySet(); }
+        }
+        return new SeqEntrySet();
     }
 }

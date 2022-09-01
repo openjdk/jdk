@@ -124,6 +124,9 @@ public class TreeMap<K,V>
 
     private transient Entry<K,V> root;
 
+    transient SequencedSet<K>        keySet;
+    transient SequencedCollection<V> values;
+
     /**
      * The number of entries in the tree
      */
@@ -1090,7 +1093,7 @@ public class TreeMap<K,V>
      * operations.  It does not support the {@code add} or {@code addAll}
      * operations.
      */
-    public Set<K> keySet() {
+    public SequencedSet<K> keySet() {
         return navigableKeySet();
     }
 
@@ -1130,8 +1133,8 @@ public class TreeMap<K,V>
      * {@code retainAll} and {@code clear} operations.  It does not
      * support the {@code add} or {@code addAll} operations.
      */
-    public Collection<V> values() {
-        Collection<V> vs = values;
+    public SequencedCollection<V> values() {
+        SequencedCollection<V> vs = values;
         if (vs == null) {
             vs = new Values();
             values = vs;
@@ -1161,7 +1164,7 @@ public class TreeMap<K,V>
      * {@code clear} operations.  It does not support the
      * {@code add} or {@code addAll} operations.
      */
-    public Set<Map.Entry<K,V>> entrySet() {
+    public SequencedSet<Map.Entry<K,V>> entrySet() {
         EntrySet es = entrySet;
         return (es != null) ? es : (entrySet = new EntrySet());
     }
@@ -1303,7 +1306,7 @@ public class TreeMap<K,V>
 
     // View class support
 
-    class Values extends AbstractCollection<V> {
+    class Values extends AbstractCollection<V> implements SequencedCollection<V> {
         public Iterator<V> iterator() {
             return new ValueIterator(getFirstEntry());
         }
@@ -1333,9 +1336,55 @@ public class TreeMap<K,V>
         public Spliterator<V> spliterator() {
             return new ValueSpliterator<>(TreeMap.this, null, null, 0, -1, 0);
         }
+
+        // SequencedCollection
+
+        public SequencedCollection<V> reversed() {
+            return TreeMap.this.reversed().values();
+        }
+
+        public void addFirst(V v) {
+            throw new UnsupportedOperationException();
+        }
+
+        public void addLast(V v) {
+            throw new UnsupportedOperationException();
+        }
+
+        public V getFirst() {
+            var e = getFirstEntry();
+            if (e == null)
+                throw new NoSuchElementException();
+            else
+                return e.getValue();
+        }
+
+        public V getLast() {
+            var e = getLastEntry();
+            if (e == null)
+                throw new NoSuchElementException();
+            else
+                return e.getValue();
+        }
+
+        public V removeFirst() {
+            var e = getFirstEntry();
+            if (e == null)
+                throw new NoSuchElementException();
+            else
+                return TreeMap.this.remove(e.getKey());
+        }
+
+        public V removeLast() {
+            var e = getLastEntry();
+            if (e == null)
+                throw new NoSuchElementException();
+            else
+                return TreeMap.this.remove(e.getKey());
+        }
     }
 
-    class EntrySet extends AbstractSet<Map.Entry<K,V>> {
+    class EntrySet extends AbstractSet<Map.Entry<K,V>> implements SequencedSet<Map.Entry<K,V>> {
         public Iterator<Map.Entry<K,V>> iterator() {
             return new EntryIterator(getFirstEntry());
         }
@@ -1370,6 +1419,52 @@ public class TreeMap<K,V>
 
         public Spliterator<Map.Entry<K,V>> spliterator() {
             return new EntrySpliterator<>(TreeMap.this, null, null, 0, -1, 0);
+        }
+
+        // SequencedSet
+
+        public SequencedSet<Map.Entry<K,V>> reversed() {
+            return TreeMap.this.reversed().entrySet();
+        }
+
+        public void addFirst(Map.Entry<K,V> e) {
+            throw new UnsupportedOperationException();
+        }
+
+        public void addLast(Map.Entry<K,V> e) {
+            throw new UnsupportedOperationException();
+        }
+
+        public Map.Entry<K,V> getFirst() {
+            var e = getFirstEntry();
+            if (e == null)
+                throw new NoSuchElementException();
+            else
+                return e;
+        }
+
+        public Map.Entry<K,V> getLast() {
+            var e = getLastEntry();
+            if (e == null)
+                throw new NoSuchElementException();
+            else
+                return e;
+        }
+
+        public Map.Entry<K,V> removeFirst() {
+            var e = getFirstEntry();
+            if (e == null)
+                throw new NoSuchElementException();
+            TreeMap.this.remove(e.getKey());
+            return e;
+        }
+
+        public Map.Entry<K,V> removeLast() {
+            var e = getLastEntry();
+            if (e == null)
+                throw new NoSuchElementException();
+            TreeMap.this.remove(e.getKey());
+            return e;
         }
     }
 
@@ -1915,13 +2010,17 @@ public class TreeMap<K,V>
                 (navigableKeySetView = new TreeMap.KeySet<>(this));
         }
 
-        public final Set<K> keySet() {
+        public final SequencedSet<K> keySet() {
             return navigableKeySet();
         }
 
         public NavigableSet<K> descendingKeySet() {
             return descendingMap().navigableKeySet();
         }
+
+        public abstract SequencedCollection<V> values();
+
+        public abstract SequencedSet<Map.Entry<K,V>> entrySet();
 
         public final SortedMap<K,V> subMap(K fromKey, K toKey) {
             return subMap(fromKey, true, toKey, false);
@@ -1937,7 +2036,8 @@ public class TreeMap<K,V>
 
         // View classes
 
-        abstract class EntrySetView extends AbstractSet<Map.Entry<K,V>> {
+        abstract class EntrySetView extends AbstractSet<Map.Entry<K,V>>
+                implements SequencedSet<Map.Entry<K,V>> {
             private transient int size = -1, sizeModCount;
 
             public int size() {
@@ -2068,6 +2168,26 @@ public class TreeMap<K,V>
             }
         }
 
+        final class SubMapValuesIterator implements Iterator<V> {
+            final SubMapEntryIterator eit;
+
+            SubMapValuesIterator(SubMapEntryIterator eit) {
+                this.eit = eit;
+            }
+
+            public boolean hasNext() {
+                return eit.hasNext();
+            }
+
+            public V next() {
+                return eit.next().getValue();
+            }
+
+            public void remove() {
+                eit.remove();
+            }
+        }
+
         final class DescendingSubMapEntryIterator extends SubMapIterator<Map.Entry<K,V>> {
             DescendingSubMapEntryIterator(TreeMap.Entry<K,V> last,
                                           TreeMap.Entry<K,V> fence) {
@@ -2079,6 +2199,26 @@ public class TreeMap<K,V>
             }
             public void remove() {
                 removeDescending();
+            }
+        }
+
+        final class DescendingSubMapValuesIterator implements Iterator<V> {
+            final DescendingSubMapEntryIterator eit;
+
+            DescendingSubMapValuesIterator(DescendingSubMapEntryIterator eit) {
+                this.eit = eit;
+            }
+
+            public boolean hasNext() {
+                return eit.hasNext();
+            }
+
+            public V next() {
+                return eit.next().getValue();
+            }
+
+            public void remove() {
+                eit.remove();
             }
         }
 
@@ -2225,11 +2365,34 @@ public class TreeMap<K,V>
             public Iterator<Map.Entry<K,V>> iterator() {
                 return new SubMapEntryIterator(absLowest(), absHighFence());
             }
+
+            public SequencedSet<Map.Entry<K,V>> reversed() {
+                return descendingMap().entrySet();
+            }
         }
 
-        public Set<Map.Entry<K,V>> entrySet() {
+        public SequencedSet<Map.Entry<K,V>> entrySet() {
             EntrySetView es = entrySetView;
             return (es != null) ? es : (entrySetView = new AscendingEntrySetView());
+        }
+
+        final class AscendingValuesView extends AbstractCollection<V>
+                implements SequencedCollection<V> {
+            public Iterator<V> iterator() {
+                return new SubMapValuesIterator(new SubMapEntryIterator(absLowest(), absHighFence()));
+            }
+
+            public int size() {
+                return AscendingSubMap.this.size();
+            }
+
+            public SequencedCollection<V> reversed() {
+                return descendingMap().values();
+            }
+        }
+
+        public SequencedCollection<V> values() {
+            return new AscendingValuesView();
         }
 
         TreeMap.Entry<K,V> subLowest()       { return absLowest(); }
@@ -2312,11 +2475,34 @@ public class TreeMap<K,V>
             public Iterator<Map.Entry<K,V>> iterator() {
                 return new DescendingSubMapEntryIterator(absHighest(), absLowFence());
             }
+
+            public SequencedSet<Map.Entry<K,V>> reversed() {
+                return descendingMap().entrySet();
+            }
         }
 
-        public Set<Map.Entry<K,V>> entrySet() {
+        public SequencedSet<Map.Entry<K,V>> entrySet() {
             EntrySetView es = entrySetView;
             return (es != null) ? es : (entrySetView = new DescendingEntrySetView());
+        }
+
+        final class DescendingValuesView extends AbstractCollection<V>
+                implements SequencedCollection<V> {
+            public Iterator<V> iterator() {
+                return new DescendingSubMapValuesIterator(new DescendingSubMapEntryIterator(absLowest(), absHighFence()));
+            }
+
+            public int size() {
+                return DescendingSubMap.this.size();
+            }
+
+            public SequencedCollection<V> reversed() {
+                return descendingMap().values();
+            }
+        }
+
+        public SequencedCollection<V> values() {
+            return new DescendingValuesView();
         }
 
         TreeMap.Entry<K,V> subLowest()       { return absHighest(); }
@@ -2351,7 +2537,9 @@ public class TreeMap<K,V>
                                          fromStart, fromKey, true,
                                          toEnd, toKey, false);
         }
-        public Set<Map.Entry<K,V>> entrySet() { throw new InternalError(); }
+        public SequencedSet<Map.Entry<K,V>> entrySet() { throw new InternalError(); }
+        public SequencedSet<K> keySet() { throw new InternalError(); }
+        public SequencedCollection<V> values() { throw new InternalError(); }
         public K lastKey() { throw new InternalError(); }
         public K firstKey() { throw new InternalError(); }
         public SortedMap<K,V> subMap(K fromKey, K toKey) { throw new InternalError(); }

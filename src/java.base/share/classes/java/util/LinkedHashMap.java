@@ -1078,15 +1078,15 @@ public class LinkedHashMap<K,V>
             base.clear();
         }
 
-        public Set<K> keySet() {
+        public SequencedSet<K> keySet() {
             return base.keySet().reversed();
         }
 
-        public Collection<V> values() {
+        public SequencedCollection<V> values() {
             return base.values().reversed();
         }
 
-        public Set<Entry<K, V>> entrySet() {
+        public SequencedSet<Entry<K, V>> entrySet() {
             return base.entrySet().reversed();
         }
 

@@ -50,6 +50,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.NavigableSet;
 import java.util.NoSuchElementException;
+import java.util.SequencedCollection;
+import java.util.SequencedSet;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.Spliterator;
@@ -1641,7 +1643,7 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
      * <p>The view's iterators and spliterators are
      * <a href="package-summary.html#Weakly"><i>weakly consistent</i></a>.
      */
-    public Collection<V> values() {
+    public java.util.SequencedCollection<V> values() {
         Values<K,V> vs;
         if ((vs = values) != null) return vs;
         return values = new Values<>(this);
@@ -1674,7 +1676,7 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
      * @return a set view of the mappings contained in this map,
      *         sorted in ascending key order
      */
-    public Set<Map.Entry<K,V>> entrySet() {
+    public java.util.SequencedSet<Map.Entry<K,V>> entrySet() {
         EntrySet<K,V> es;
         if ((es = entrySet) != null) return es;
         return entrySet = new EntrySet<K,V>(this);
@@ -2245,7 +2247,7 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
         }
     }
 
-    static final class Values<K,V> extends AbstractCollection<V> {
+    static final class Values<K,V> extends AbstractCollection<V> implements SequencedCollection<V> {
         final ConcurrentNavigableMap<K,V> m;
         Values(ConcurrentNavigableMap<K,V> map) {
             m = map;
@@ -2284,9 +2286,40 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
             }
             return removed;
         }
+
+        public SequencedCollection<V> reversed() {
+            return new ReversedValues<>(this);
+        }
     }
 
-    static final class EntrySet<K,V> extends AbstractSet<Map.Entry<K,V>> {
+    static final class ReversedValues<K,V> extends AbstractCollection<V>
+            implements SequencedCollection<V> {
+        final Values<K,V> v;
+        ReversedValues(Values<K,V> values) {
+            v = values;
+        }
+        public Iterator<V> iterator() {
+            return v.m.descendingMap().values().iterator();
+        }
+        public int size() { return v.size(); }
+        public boolean isEmpty() { return v.isEmpty(); }
+        public boolean contains(Object o) { return v.contains(o); }
+        public void clear() { v.clear(); }
+        public Object[] toArray()     { return toList(v).reversed().toArray();  }
+        public <T> T[] toArray(T[] a) { return toList(v).toArray(a); }
+        public Spliterator<V> spliterator() {
+            return v.m.descendingMap().values().spliterator();
+        }
+        public boolean removeIf(Predicate<? super V> filter) {
+            return v.removeIf(filter);
+        }
+        public SequencedCollection<V> reversed() {
+            return v;
+        }
+    }
+
+    static final class EntrySet<K,V> extends AbstractSet<Map.Entry<K,V>>
+            implements SequencedSet<Map.Entry<K,V>> {
         final ConcurrentNavigableMap<K,V> m;
         EntrySet(ConcurrentNavigableMap<K,V> map) {
             m = map;
@@ -2354,6 +2387,51 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
                     removed = true;
             }
             return removed;
+        }
+        public SequencedSet<Map.Entry<K,V>> reversed() {
+            return new ReversedEntrySet<>(this);
+        }
+    }
+
+    static final class ReversedEntrySet<K,V> extends AbstractSet<Map.Entry<K,V>>
+            implements SequencedSet<Map.Entry<K,V>> {
+        final EntrySet<K,V> s;
+        ReversedEntrySet(EntrySet<K,V> entrySet) {
+            s = entrySet;
+        }
+        public Iterator<Map.Entry<K,V>> iterator() {
+            return s.m.descendingMap().entrySet().iterator();
+        }
+
+        public boolean contains(Object o) {
+            return s.contains(o);
+        }
+        public boolean remove(Object o) {
+            return s.remove(o);
+        }
+        public boolean isEmpty() {
+            return s.isEmpty();
+        }
+        public int size() {
+            return s.size();
+        }
+        public void clear() {
+            s.clear();
+        }
+        public boolean equals(Object o) {
+            return s.equals(o);
+        }
+        public Object[] toArray()     { return toList(s).reversed().toArray();  }
+        public <T> T[] toArray(T[] a) { return toList(s).reversed().toArray(a); }
+
+        public Spliterator<Map.Entry<K,V>> spliterator() {
+            return s.m.descendingMap().entrySet().spliterator();
+        }
+        public boolean removeIf(Predicate<? super Entry<K,V>> filter) {
+            return s.removeIf(filter);
+        }
+        public SequencedSet<Map.Entry<K,V>> reversed() {
+            return s;
         }
     }
 
@@ -2855,16 +2933,18 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
             return keySetView = new KeySet<>(this);
         }
 
-        public Collection<V> values() {
-            Values<K,V> vs;
-            if ((vs = valuesView) != null) return vs;
-            return valuesView = new Values<>(this);
+        public java.util.SequencedCollection<V> values() {
+            return null;
+//            Values<K,V> vs;
+//            if ((vs = valuesView) != null) return vs;
+//            return valuesView = new Values<>(this);
         }
 
-        public Set<Map.Entry<K,V>> entrySet() {
-            EntrySet<K,V> es;
-            if ((es = entrySetView) != null) return es;
-            return entrySetView = new EntrySet<K,V>(this);
+        public java.util.SequencedSet<Map.Entry<K,V>> entrySet() {
+            return null;
+//            EntrySet<K,V> es;
+//            if ((es = entrySetView) != null) return es;
+//            return entrySetView = new EntrySet<K,V>(this);
         }
 
         public NavigableSet<K> descendingKeySet() {
