@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,16 @@
 
 package sun.nio.fs;
 
-import java.nio.file.*;
+import java.nio.file.FileStore;
+import java.nio.file.WatchService;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import static sun.nio.fs.LinuxNativeDispatcher.*;
+import static sun.nio.fs.UnixConstants.*;
 
 /**
  * Linux implementation of FileSystem
@@ -121,10 +127,56 @@ class LinuxFileSystem extends UnixFileSystem {
         return getMountEntries("/etc/mtab");
     }
 
-
-
     @Override
     FileStore getFileStore(UnixMountEntry entry) throws IOException {
         return new LinuxFileStore(this, entry);
     }
+
+    // --- file copying ---
+
+    @Override
+    void bufferedCopy(int dst, int src, long address,
+                      int size, long addressToPollForCancel)
+        throws UnixException
+    {
+        int advice = POSIX_FADV_SEQUENTIAL | // sequential data access
+                     POSIX_FADV_NOREUSE    | // will access only once
+                     POSIX_FADV_WILLNEED;    // will access in near future
+        posix_fadvise(src, 0, 0, advice);
+
+        super.bufferedCopy(dst, src, address, size, addressToPollForCancel);
+    }
+
+    @Override
+    int directCopy(int dst, int src, long addressToPollForCancel)
+        throws UnixException
+    {
+        int advice = POSIX_FADV_SEQUENTIAL | // sequential data access
+                     POSIX_FADV_NOREUSE    | // will access only once
+                     POSIX_FADV_WILLNEED;    // will access in near future
+        posix_fadvise(src, 0, 0, advice);
+
+        return directCopy0(dst, src, addressToPollForCancel);
+    }
+
+    // -- native methods --
+
+    /**
+     * Copies data between file descriptors {@code src} and {@code dst} using
+     * a platform-specific function or system call possibly having kernel
+     * support.
+     *
+     * @param dst destination file descriptor
+     * @param src source file descriptor
+     * @param addressToPollForCancel address to check for cancellation
+     *        (a non-zero value written to this address indicates cancel)
+     *
+     * @return 0 on success, UNAVAILABLE if the platform function would block,
+     *         UNSUPPORTED_CASE if the call does not work with the given
+     *         parameters, or UNSUPPORTED if direct copying is not supported
+     *         on this platform
+     */
+    private static native int directCopy0(int dst, int src,
+                                          long addressToPollForCancel)
+        throws UnixException;
 }
