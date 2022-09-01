@@ -230,7 +230,7 @@ void ServiceThread::service_thread_entry(JavaThread* jt, TRAPS) {
 
 void ServiceThread::enqueue_deferred_event(JvmtiDeferredEvent* event) {
   MutexLocker ml(Service_lock, Mutex::_no_safepoint_check_flag);
-  // If you enqueue events before the service thread runs, gc and the sweeper
+  // If you enqueue events before the service thread runs, gc
   // cannot keep the nmethod alive.  This could be restricted to compiled method
   // load and unload events, if we wanted to be picky.
   assert(_instance != NULL, "cannot enqueue events before the service thread runs");

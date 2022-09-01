@@ -124,7 +124,7 @@ public class JavaThread extends Thread {
   }
 
   /** NOTE: for convenience, this differs in definition from the underlying VM.
-      Only "pure" JavaThreads return true; CompilerThreads, the CodeCacheSweeperThread,
+      Only "pure" JavaThreads return true; CompilerThreads,
       JVMDIDebuggerThreads return false.
       FIXME:
       consider encapsulating platform-specific functionality in an

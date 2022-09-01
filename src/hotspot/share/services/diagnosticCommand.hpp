@@ -386,21 +386,6 @@ public:
   virtual void execute(DCmdSource source, TRAPS);
 };
 
-class TouchedMethodsDCmd : public DCmd {
-public:
-  TouchedMethodsDCmd(outputStream* output, bool heap) : DCmd(output, heap) {}
-  static const char* name() {
-    return "VM.print_touched_methods";
-  }
-  static const char* description() {
-    return "Print all methods that have ever been touched during the lifetime of this JVM.";
-  }
-  static const char* impact() {
-    return "Medium: Depends on Java content.";
-  }
-  virtual void execute(DCmdSource source, TRAPS);
-};
-
 #if INCLUDE_CDS
 class DumpSharedArchiveDCmd: public DCmdWithParser {
 protected:

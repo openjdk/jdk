@@ -537,6 +537,7 @@ void Klass::metaspace_pointers_do(MetaspaceClosure* it) {
   }
 }
 
+#if INCLUDE_CDS
 void Klass::remove_unshareable_info() {
   assert (Arguments::is_dumping_archive(),
           "only called during CDS dump time");
@@ -627,6 +628,7 @@ void Klass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protec
     java_lang_Class::create_mirror(this, loader, module_handle, protection_domain, Handle(), CHECK);
   }
 }
+#endif // INCLUDE_CDS
 
 #if INCLUDE_CDS_JAVA_HEAP
 oop Klass::archived_java_mirror() {

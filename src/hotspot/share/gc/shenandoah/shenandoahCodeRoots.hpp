@@ -96,7 +96,7 @@ public:
 
   // Concurrent nmethod unloading support
   static void unlink(WorkerThreads* workers, bool unloading_occurred);
-  static void purge(WorkerThreads* workers);
+  static void purge();
   static void arm_nmethods();
   static void disarm_nmethods();
   static int  disarmed_value()         { return _disarmed_value; }
