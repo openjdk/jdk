@@ -454,8 +454,9 @@ abstract public class TestScaffold extends TargetAdapter {
     protected void failure(String str) {
         println(str);
         StackTraceElement[] trace = Thread.currentThread().getStackTrace();
-        for (StackTraceElement traceElement : trace)
+        for (StackTraceElement traceElement : trace) {
             System.err.println("\tat " + traceElement);
+        }
         testFailed = true;
     }
 
