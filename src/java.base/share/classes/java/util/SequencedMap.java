@@ -175,22 +175,4 @@ public interface SequencedMap<K, V> extends Map<K, V> {
     default V putLast(K k, V v) {
         throw new UnsupportedOperationException();
     }
-
-    /**
-     * Returns a {@link SequencedSet} view of the keys contained in this map.
-     * @return the set view
-     */
-    public SequencedSet<K> keySet();
-
-    /**
-     * Returns a {@link SequencedCollection} view of the values contained in this map.
-     * @return the values view
-     */
-    public SequencedCollection<V> values();
-
-    /**
-     * Returns a {@link SequencedSet} view of the entries contained in this map.
-     * @return the entries view
-     */
-    public SequencedSet<Map.Entry<K,V>> entrySet();
 }

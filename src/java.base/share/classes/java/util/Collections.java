@@ -1934,26 +1934,6 @@ public class Collections {
     }
 
     /**
-     * @serial include
-     */
-    static class UnmodifiableSequencedEntrySet<K,V> extends UnmodifiableMap.UnmodifiableEntrySet<K,V>
-            implements SequencedSet<Map.Entry<K,V>> {
-        @java.io.Serial
-        private static final long serialVersionUID = 96122651991016786L;
-
-        @SuppressWarnings({"unchecked", "rawtypes"})
-        UnmodifiableSequencedEntrySet(SequencedSet<? extends Map.Entry<? extends K, ? extends V>> s) {
-            // Need to cast to raw in order to work around a limitation in the type system
-            super((Set)s);
-        }
-
-        @SuppressWarnings("unchecked")
-        public SequencedSet<Map.Entry<K,V>> reversed() {
-            return new UnmodifiableSequencedEntrySet<>(((SequencedSet<Map.Entry<K,V>>) c).reversed());
-        }
-    }
-
-    /**
      * Returns an <a href="Collection.html#unmodview">unmodifiable view</a> of the
      * specified sequenced map. Query operations on the returned map "read through"
      * to the specified map, and attempts to modify the returned
@@ -1983,9 +1963,9 @@ public class Collections {
      */
     private static class UnmodifiableSequencedMap<K,V> extends UnmodifiableMap<K,V> implements SequencedMap<K,V>, Serializable {
         @java.io.Serial
-        private static final long serialVersionUID = -3710370390248399231L;
+        private static final long serialVersionUID = -8171676257373950636L;
 
-        UnmodifiableSequencedMap(SequencedMap<? extends K, ? extends V> m) {
+        UnmodifiableSequencedMap(Map<? extends K, ? extends V> m) {
             super(m);
         }
 
@@ -2012,18 +1992,6 @@ public class Collections {
 
         public V putLast(K k, V v) {
             throw new UnsupportedOperationException();
-        }
-
-        public SequencedSet<K> keySet() {
-            return unmodifiableSequencedSet(sm().keySet());
-        }
-
-        public SequencedCollection<V> values() {
-            return unmodifiableSequencedCollection(sm().values());
-        }
-
-        public SequencedSet<Entry<K, V>> entrySet() {
-            return new UnmodifiableSequencedEntrySet<>(sm().entrySet());
         }
     }
 
@@ -2076,18 +2044,6 @@ public class Collections {
                    { return new UnmodifiableSortedMap<>(sm.tailMap(fromKey)); }
         public K firstKey()                           { return sm.firstKey(); }
         public K lastKey()                             { return sm.lastKey(); }
-
-        public SequencedSet<K> keySet() {
-            return unmodifiableSequencedSet(sm.keySet());
-        }
-
-        public SequencedCollection<V> values() {
-            return unmodifiableSequencedCollection(sm.values());
-        }
-
-        public SequencedSet<Entry<K, V>> entrySet() {
-            return new UnmodifiableSequencedEntrySet<>(sm.entrySet());
-        }
     }
 
     /**
@@ -2381,40 +2337,6 @@ public class Collections {
     }
 
     /**
-     * @serial include
-     */
-    static class SynchronizedSequencedCollection<E> extends SynchronizedCollection<E>
-            implements SequencedCollection<E> {
-        @java.io.Serial
-        private static final long serialVersionUID = -7501253192946411986L;
-
-        SynchronizedSequencedCollection(SequencedCollection<E> c, Object mutex) {
-            super(c, mutex);
-        }
-
-        @SuppressWarnings("unchecked")
-        SequencedCollection<E> sc() { return (SequencedCollection<E>) c; }
-
-        public SequencedCollection<E> reversed() {
-            synchronized (mutex) {
-                return new SynchronizedSequencedCollection<>(sc().reversed(), mutex);
-            }
-        }
-
-        public void addFirst(E e) { synchronized (mutex) { sc().addFirst(e); } }
-        public void addLast(E e)  { synchronized (mutex) { sc().addLast(e); } }
-        public E getFirst()       { synchronized (mutex) { return sc().getFirst(); } }
-        public E getLast()        { synchronized (mutex) { return sc().getLast(); } }
-        public E removeFirst()    { synchronized (mutex) { return sc().removeFirst(); } }
-        public E removeLast()     { synchronized (mutex) { return sc().removeLast(); } }
-
-        @java.io.Serial
-        private void writeObject(ObjectOutputStream s) throws IOException {
-            synchronized (mutex) {s.defaultWriteObject();}
-        }
-    }
-
-    /**
      * Returns a synchronized (thread-safe) set backed by the specified
      * set.  In order to guarantee serial access, it is critical that
      * <strong>all</strong> access to the backing set is accomplished
@@ -2472,40 +2394,6 @@ public class Collections {
         }
         public int hashCode() {
             synchronized (mutex) {return c.hashCode();}
-        }
-    }
-
-    /**
-     * @serial include
-     */
-    static class SynchronizedSequencedSet<E> extends SynchronizedSet<E>
-            implements SequencedSet<E> {
-        @java.io.Serial
-        private static final long serialVersionUID = 4901994687198852063L;
-
-        SynchronizedSequencedSet(SequencedSet<E> c, Object mutex) {
-            super(c, mutex);
-        }
-
-        @SuppressWarnings("unchecked")
-        SequencedSet<E> ss() { return (SequencedSet<E>) c; }
-
-        public SequencedSet<E> reversed() {
-            synchronized (mutex) {
-                return new SynchronizedSequencedSet<>(ss().reversed(), mutex);
-            }
-        }
-
-        public void addFirst(E e) { synchronized (mutex) { ss().addFirst(e); } }
-        public void addLast(E e)  { synchronized (mutex) { ss().addLast(e); } }
-        public E getFirst()       { synchronized (mutex) { return ss().getFirst(); } }
-        public E getLast()        { synchronized (mutex) { return ss().getLast(); } }
-        public E removeFirst()    { synchronized (mutex) { return ss().removeFirst(); } }
-        public E removeLast()     { synchronized (mutex) { return ss().removeLast(); } }
-
-        @java.io.Serial
-        private void writeObject(ObjectOutputStream s) throws IOException {
-            synchronized (mutex) {s.defaultWriteObject();}
         }
     }
 
@@ -3175,22 +3063,6 @@ public class Collections {
         public K lastKey() {
             synchronized (mutex) {return sm.lastKey();}
         }
-
-        public SequencedSet<K> keySet() {
-            synchronized (mutex) {
-                return new SynchronizedSequencedSet<>(sm.keySet(), mutex);
-            }
-        }
-
-        public SequencedSet<Map.Entry<K,V>> entrySet() {
-            return new SynchronizedSequencedSet<>(sm.entrySet(), mutex);
-        }
-
-        public SequencedCollection<V> values() {
-            synchronized (mutex) {
-                return new SynchronizedSequencedCollection<>(sm.values(), mutex);
-            }
-        }
     }
 
     /**
@@ -3606,33 +3478,6 @@ public class Collections {
     }
 
     /**
-     * @serial include
-     */
-    static class CheckedSequencedCollection<E> extends CheckedCollection<E>
-            implements SequencedCollection<E> {
-        @java.io.Serial
-        private static final long serialVersionUID = 6199016369290314371L;
-
-        CheckedSequencedCollection(SequencedCollection<E> c, Class<E> elementType) {
-            super(c, elementType);
-        }
-
-        @SuppressWarnings("unchecked")
-        SequencedCollection<E> sc() { return (SequencedCollection<E>) c; }
-
-        public SequencedCollection<E> reversed() {
-            return new CheckedSequencedCollection<>(sc().reversed(), type);
-        }
-
-        public void addFirst(E e) { sc().addFirst(typeCheck(e)); }
-        public void addLast(E e)  { sc().addLast(typeCheck(e)); }
-        public E getFirst()       { return sc().getFirst(); }
-        public E getLast()        { return sc().getLast(); }
-        public E removeFirst()    { return sc().removeFirst(); }
-        public E removeLast()     { return sc().removeLast(); }
-    }
-
-    /**
      * Returns a dynamically typesafe view of the specified set.
      * Any attempt to insert an element of the wrong type will result in
      * an immediate {@link ClassCastException}.  Assuming a set contains
@@ -3676,33 +3521,6 @@ public class Collections {
 
         public boolean equals(Object o) { return o == this || c.equals(o); }
         public int hashCode()           { return c.hashCode(); }
-    }
-
-    /**
-     * @serial include
-     */
-    static class CheckedSequencedSet<E> extends CheckedSet<E>
-            implements SequencedSet<E> {
-        @java.io.Serial
-        private static final long serialVersionUID = 4639973947762034794L;
-
-        CheckedSequencedSet(SequencedSet<E> c, Class<E> elementType) {
-            super(c, elementType);
-        }
-
-        @SuppressWarnings("unchecked")
-        SequencedSet<E> ss() { return (SequencedSet<E>) c; }
-
-        public SequencedSet<E> reversed() {
-            return new CheckedSequencedSet<>(ss().reversed(), type);
-        }
-
-        public void addFirst(E e) { ss().addFirst(typeCheck(e)); }
-        public void addLast(E e)  { ss().addLast(typeCheck(e)); }
-        public E getFirst()       { return ss().getFirst(); }
-        public E getLast()        { return ss().getLast(); }
-        public E removeFirst()    { return ss().removeFirst(); }
-        public E removeLast()     { return ss().removeLast(); }
     }
 
     /**
@@ -4047,13 +3865,13 @@ public class Collections {
         private static final long serialVersionUID = 5742860141034234728L;
 
         @SuppressWarnings("serial") // Conditionally serializable
-        final Map<K, V> m;
+        private final Map<K, V> m;
         @SuppressWarnings("serial") // Conditionally serializable
         final Class<K> keyType;
         @SuppressWarnings("serial") // Conditionally serializable
         final Class<V> valueType;
 
-        void typeCheck(Object key, Object value) {
+        private void typeCheck(Object key, Object value) {
             if (key != null && !keyType.isInstance(key))
                 throw new ClassCastException(badKeyMsg(key));
 
@@ -4211,8 +4029,8 @@ public class Collections {
          * @serial exclude
          */
         static class CheckedEntrySet<K,V> implements Set<Map.Entry<K,V>> {
-            final Set<Map.Entry<K,V>> s;
-            final Class<V> valueType;
+            private final Set<Map.Entry<K,V>> s;
+            private final Class<V> valueType;
 
             CheckedEntrySet(Set<Map.Entry<K, V>> s, Class<V> valueType) {
                 this.s = s;
@@ -4393,68 +4211,6 @@ public class Collections {
         }
     }
 
-    static class CheckedSequencedEntrySet<K,V> extends CheckedMap.CheckedEntrySet<K,V>
-            implements SequencedSet<Map.Entry<K,V>> {
-        CheckedSequencedEntrySet(SequencedSet<Map.Entry<K, V>> s, Class<V> valueType) {
-            super(s, valueType);
-        }
-
-        public SequencedSet<Map.Entry<K,V>> reversed() {
-            return new CheckedSequencedEntrySet<>(((SequencedSet<Map.Entry<K,V>>) s).reversed(), valueType);
-        }
-    }
-
-    /**
-     * @serial include
-     */
-    static class CheckedSequencedMap<K,V> extends CheckedMap<K,V> implements SequencedMap<K,V>, Serializable {
-        @java.io.Serial
-        private static final long serialVersionUID = -12913135332177196L;
-
-        CheckedSequencedMap(SequencedMap<K, V> m, Class<K> keyType, Class<V> valueType) {
-            super(m, keyType, valueType);
-        }
-
-        @SuppressWarnings("unchecked")
-        private SequencedMap<K, V> sm() {
-            return (SequencedMap<K, V>) m;
-        }
-
-        public SequencedMap<K, V> reversed() {
-            return new CheckedSequencedMap<>(sm().reversed(), keyType, valueType);
-        }
-
-        public Entry<K, V> pollFirstEntry() {
-            return sm().pollFirstEntry();
-        }
-
-        public Entry<K, V> pollLastEntry() {
-            return sm().pollLastEntry();
-        }
-
-        public V putFirst(K k, V v) {
-            typeCheck(k, v);
-            return sm().putFirst(k, v);
-        }
-
-        public V putLast(K k, V v) {
-            typeCheck(k, v);
-            return sm().putLast(k, v);
-        }
-
-        public SequencedSet<K> keySet() {
-            return sm().keySet();
-        }
-
-        public SequencedCollection<V> values() {
-            return sm().values();
-        }
-
-        public SequencedSet<Entry<K, V>> entrySet() {
-            return new CheckedSequencedEntrySet<>(sm().entrySet(), valueType);
-        }
-    }
-
     /**
      * Returns a dynamically typesafe view of the specified sorted map.
      * Any attempt to insert a mapping whose key or value have the wrong
@@ -4528,18 +4284,6 @@ public class Collections {
         }
         public SortedMap<K,V> tailMap(K fromKey) {
             return checkedSortedMap(sm.tailMap(fromKey), keyType, valueType);
-        }
-
-        public SequencedSet<K> keySet() {
-            return sm.keySet();
-        }
-
-        public SequencedCollection<V> values() {
-            return sm.values();
-        }
-
-        public SequencedSet<Map.Entry<K, V>> entrySet() {
-            return new CheckedSequencedEntrySet<>(sm.entrySet(), valueType);
         }
     }
 

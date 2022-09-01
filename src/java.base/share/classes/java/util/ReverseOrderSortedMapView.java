@@ -94,40 +94,31 @@ class ReverseOrderSortedMapView<K, V> extends AbstractMap<K, V> implements Sorte
         return base.size();
     }
 
-    class KeySetView extends AbstractSet<K> implements SequencedSet<K> {
-        // inherit add(), which throws UOE
-        public Iterator<K> iterator() { return descendingKeyIterator(base); }
-        public int size() { return base.size(); }
-        public SequencedSet<K> reversed() { return base.keySet(); }
+    public Set<K> keySet() {
+        return new AbstractSet<>() {
+            // inherit add(), which throws UOE
+            public Iterator<K> iterator() { return descendingKeyIterator(base); }
+            public int size() { return base.size(); }
+        };
     }
 
-    public SequencedSet<K> keySet() {
-        return new KeySetView();
+    public Collection<V> values() {
+        return new AbstractCollection<>() {
+            // inherit add(), which throws UOE
+            public Iterator<V> iterator() { return descendingValueIterator(base); }
+            public int size() { return base.size(); }
+        };
     }
 
-    class ValuesView extends AbstractCollection<V> implements SequencedCollection<V> {
-        // inherit add(), which throws UOE
-        public Iterator<V> iterator() { return descendingValueIterator(base); }
-        public int size() { return base.size(); }
-        public SequencedCollection<V> reversed() { return base.values(); }
+    public Set<Entry<K, V>> entrySet() {
+        return new AbstractSet<>() {
+            // inherit add(), which throws UOE
+            public Iterator<Entry<K, V>> iterator() { return descendingEntryIterator(base); }
+            public int size() { return base.size(); }
+        };
     }
 
-    public SequencedCollection<V> values() {
-        return new ValuesView();
-    }
-
-    class EntrySetView extends AbstractSet<Entry<K, V>> implements SequencedSet<Entry<K, V>> {
-        // inherit add(), which throws UOE
-        public Iterator<Entry<K, V>> iterator() { return descendingEntryIterator(base); }
-        public int size() { return base.size(); }
-        public SequencedSet<Entry<K, V>> reversed() { return base.entrySet(); }
-    }
-
-    public SequencedSet<Entry<K, V>> entrySet() {
-        return new EntrySetView();
-    }
-
-    // ========== SequencedMap ==========
+    // ========== ReversibleMap ==========
 
     public SortedMap<K, V> reversed() {
         return base;
@@ -390,84 +381,21 @@ class ReverseOrderSortedMapView<K, V> extends AbstractMap<K, V> implements Sorte
             return ReverseOrderSortedMapView.toString(this, entryIterator());
         }
 
-        // TODO: probably incorrect given the differing inclusive/exclusive nature
-        // of head and tail in the base map vs. the sub map
-        SortedMap<K, V> baseSubmap() {
-            if (head == null)
-                return base.tailMap(tail);
-            else if (tail == null)
-                return base.headMap(head);
-            else
-                return base.subMap(tail, head);
-        }
-
-        class SubKeySet extends AbstractSet<K> implements SequencedSet<K> {
-            public Iterator<K> iterator() {
-                Iterator<Entry<K, V>> eit = entryIterator();
-                return new Iterator<K>() {
-                    public boolean hasNext() { return eit.hasNext(); }
-                    public K next() { return eit.next().getKey(); }
-                    public void remove() { eit.remove(); }
-                };
-            }
-
-            public int size() {
-                return new SubEntrySet().size();
-            }
-
-            public SequencedSet<K> reversed() {
-                return baseSubmap().keySet();
-            }
-        }
-
-        public SequencedSet<K> keySet() {
-            return new SubKeySet();
-        }
-
-        class SubValues extends AbstractCollection<V> implements SequencedCollection<V> {
-            public Iterator<V> iterator() {
-                Iterator<Entry<K, V>> eit = entryIterator();
-                return new Iterator<V>() {
-                    public boolean hasNext() { return eit.hasNext(); }
-                    public V next() { return eit.next().getValue(); }
-                    public void remove() { eit.remove(); }
-                };
-            }
-
-            public int size() {
-                return new SubEntrySet().size();
-            }
-
-            public SequencedCollection<V> reversed() {
-                return baseSubmap().values();
-            }
-        }
-
-        public SequencedCollection<V> values() {
-            return new SubValues();
-        }
-
-        class SubEntrySet extends AbstractSet<Entry<K, V>> implements SequencedSet<Entry<K, V>> {
-            public Iterator<Entry<K, V>> iterator() {
-                return entryIterator();
-            }
-
-            public int size() {
-                int sz = 0;
-                for (var it = entryIterator(); it.hasNext();) {
-                    it.next();
-                    sz++;
+        public Set<Entry<K, V>> entrySet() {
+            return new AbstractSet<>() {
+                public Iterator<Entry<K, V>> iterator() {
+                    return entryIterator();
                 }
-                return sz;
-            }
 
-            public SequencedSet<Entry<K, V>> reversed() {
-                return baseSubmap().entrySet();
-            }
-        }
-
-        public SequencedSet<Entry<K, V>> entrySet() {
-            return new SubEntrySet();
+                public int size() {
+                    int sz = 0;
+                    for (var it = entryIterator(); it.hasNext();) {
+                        it.next();
+                        sz++;
+                    }
+                    return sz;
+                }
+            };
         }
 
         public V put(K key, V value) {
