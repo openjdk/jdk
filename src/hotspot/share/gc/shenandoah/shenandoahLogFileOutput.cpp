@@ -32,6 +32,7 @@
 #include "runtime/perfData.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/defaultStream.hpp"
+#include "utilities/formatBuffer.hpp"
 
 #include "gc/shenandoah/shenandoahLogFileOutput.hpp"
 
@@ -58,8 +59,88 @@ char        ShenandoahLogFileOutput::_vm_start_time_str[StartTimeBufferSize];
   total += result;                                            \
 }
 
+static uint number_of_digits(uint number) {
+    return number < 10 ? 1 : (number < 100 ? 2 : 3);
+}
+
+static bool is_regular_file(const char* filename) {
+    struct stat st;
+    int ret = os::stat(filename, &st);
+    if (ret != 0) {
+        return false;
+    }
+    return (st.st_mode & S_IFMT) == S_IFREG;
+}
+
+static bool is_fifo_file(const char* filename) {
+    struct stat st;
+    int ret = os::stat(filename, &st);
+    if (ret != 0) {
+        return false;
+    }
+    return S_ISFIFO(st.st_mode);
+}
+
+// Try to find the next number that should be used for file rotation.
+// Return UINT_MAX on error.
+static uint next_file_number(const char* filename,
+                             uint number_of_digits,
+                             uint filecount,
+                             outputStream* errstream) {
+    bool found = false;
+    uint next_num = 0;
+
+    // len is filename + dot + digits + null char
+    size_t len = strlen(filename) + number_of_digits + 2;
+    char* archive_name = NEW_C_HEAP_ARRAY(char, len, mtLogging);
+    char* oldest_name = NEW_C_HEAP_ARRAY(char, len, mtLogging);
+
+    for (uint i = 0; i < filecount; i++) {
+        int ret = jio_snprintf(archive_name, len, "%s.%0*u",
+                               filename, number_of_digits, i);
+        assert(ret > 0 && static_cast<size_t>(ret) == len - 1,
+               "incorrect buffer length calculation");
+
+        if (os::file_exists(archive_name) && !is_regular_file(archive_name)) {
+            // We've encountered something that's not a regular file among the
+            // possible file rotation targets. Fail immediately to prevent
+            // problems later.
+            errstream->print_cr("Possible rotation target file '%s' already exists "
+                                "but is not a regular file.", archive_name);
+            next_num = UINT_MAX;
+            break;
+        }
+
+        // Stop looking if we find an unused file name
+        if (!os::file_exists(archive_name)) {
+            next_num = i;
+            found = true;
+            break;
+        }
+
+        // Keep track of oldest existing log file
+        if (!found
+            || os::compare_file_modified_times(oldest_name, archive_name) > 0) {
+            strcpy(oldest_name, archive_name);
+            next_num = i;
+            found = true;
+        }
+    }
+
+    FREE_C_HEAP_ARRAY(char, oldest_name);
+    FREE_C_HEAP_ARRAY(char, archive_name);
+    return next_num;
+}
+void ShenandoahLogFileOutput::set_option(uint file_count, size_t rotation_size) {
+    if (file_count < MaxRotationFileCount) {
+        _file_count = file_count;
+    }
+    _rotate_size = rotation_size;
+}
+
 ShenandoahLogFileOutput::ShenandoahLogFileOutput(const char* name, jlong vm_start_time)
-  : _name(os::strdup_check_oom(name, mtLogging)), _file_name(NULL), _stream(NULL) {
+  : _name(os::strdup_check_oom(name, mtLogging)), _file_name(NULL), _archive_name(NULL), _stream(NULL), _current_file(0), _file_count(DefaultFileCount), _is_default_file_count(true), _archive_name_len(0),
+     _rotate_size(DefaultFileSize),  _current_size(0), _rotation_semaphore(1) {
   set_file_name_parameters(vm_start_time);
   _file_name = make_file_name(name, _pid_str, _vm_start_time_str);
 }
@@ -71,6 +152,7 @@ ShenandoahLogFileOutput::~ShenandoahLogFileOutput() {
                   _file_name, os::strerror(errno));
     }
   }
+  os::free(_archive_name);
   os::free(_file_name);
   os::free(const_cast<char*>(_name));
 }
@@ -90,20 +172,67 @@ bool ShenandoahLogFileOutput::flush() {
 }
 
 void ShenandoahLogFileOutput::initialize(outputStream* errstream) {
-  _stream = os::fopen(_file_name, ShenandoahLogFileOutput::FileOpenMode);
-  if (_stream == NULL) {
-    errstream->print_cr("Error opening log file '%s': %s", _file_name, os::strerror(errno));
-    _file_name = make_file_name("./shenandoahSnapshots_pid%p.log", _pid_str, _vm_start_time_str);
+
+    bool file_exist = os::file_exists(_file_name);
+    if (file_exist && _is_default_file_count && is_fifo_file(_file_name)) {
+        _file_count = 0; // Prevent file rotation for fifo's such as named pipes.
+    }
+
+    if (_file_count > 0) {
+        // compute digits with filecount - 1 since numbers will start from 0
+        _file_count_max_digits = number_of_digits(_file_count - 1);
+        _archive_name_len = 2 + strlen(_file_name) + _file_count_max_digits;
+        _archive_name = NEW_C_HEAP_ARRAY(char, _archive_name_len, mtLogging);
+        _archive_name[0] = 0;
+    }
+
+    if (_file_count > 0 && file_exist) {
+        if (!is_regular_file(_file_name)) {
+            vm_exit_during_initialization(err_msg("Unable to log to file %s with log file rotation: "
+                                                   "%s is not a regular file", _file_name, _file_name));
+        }
+        _current_file = next_file_number(_file_name,
+                                         _file_count_max_digits,
+                                         _file_count,
+                                         errstream);
+        if (_current_file == UINT_MAX) {
+            vm_exit_during_initialization("Current file reaches the maximum for integer. Unable to initialize the log output.");
+        }
+        archive();
+        increment_file_count();
+    }
     _stream = os::fopen(_file_name, ShenandoahLogFileOutput::FileOpenMode);
-    errstream->print_cr("Writing to default log file: %s", _file_name);
-  }
+    if (_stream == NULL) {
+        vm_exit_during_initialization(err_msg("Error opening log file '%s': %s",
+                                              _file_name, os::strerror(errno)));
+    }
+    if (_file_count == 0 && is_regular_file(_file_name)) {
+        os::ftruncate(os::get_fileno(_stream), 0);
+    }
 }
+
+class ShenandoahRotationLocker : public StackObj {
+    Semaphore& _sem;
+
+public:
+    ShenandoahRotationLocker(Semaphore& sem) : _sem(sem) {
+        sem.wait();
+    }
+
+    ~ShenandoahRotationLocker() {
+        _sem.signal();
+    }
+};
 
 int ShenandoahLogFileOutput::write_snapshot(PerfLongVariable** regions,
                                             PerfLongVariable* ts,
                                             PerfLongVariable* status,
                                             size_t num_regions,
                                             size_t region_size, size_t protocol_version) {
+  if (_stream == NULL) {
+      // An error has occurred with this output, avoid writing to it.
+      return 0;
+  }
   int written = 0;
 
   FileLocker flocker(_stream);
@@ -112,14 +241,76 @@ int ShenandoahLogFileOutput::write_snapshot(PerfLongVariable** regions,
                                           status->get_value(),
                                           num_regions,
                                           region_size, protocol_version), written);
+  _current_size += written;
   if (num_regions > 0) {
     WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, "%lli", regions[0]->get_value()), written);
+    _current_size += written;
   }
   for (uint i = 1; i < num_regions; ++i) {
     WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, " %lli", regions[i]->get_value()), written);
+    _current_size += written;
   }
-  jio_fprintf(_stream, "\n");
-  return flush() ? written : -1;
+  jio_fprintf(_stream, "\n", written);
+  _current_size += written;
+  written = flush() ? written : -1;
+  if (written > 0) {
+      _current_size += written;
+
+      if (should_rotate()) {
+          rotate();
+      }
+  }
+
+  return written;
+}
+
+void ShenandoahLogFileOutput::archive() {
+    assert(_archive_name != NULL && _archive_name_len > 0, "Rotation must be configured before using this function.");
+    int ret = jio_snprintf(_archive_name, _archive_name_len, "%s.%0*u",
+                           _file_name, _file_count_max_digits, _current_file);
+    assert(ret >= 0, "Buffer should always be large enough");
+
+    // Attempt to remove possibly existing archived log file before we rename.
+    // Don't care if it fails, we really only care about the rename that follows.
+    remove(_archive_name);
+
+    // Rename the file from ex hotspot.log to hotspot.log.2
+    if (rename(_file_name, _archive_name) == -1) {
+        jio_fprintf(defaultStream::error_stream(), "Could not rename log file '%s' to '%s' (%s).\n",
+                    _file_name, _archive_name, os::strerror(errno));
+    }
+}
+
+void ShenandoahLogFileOutput::force_rotate() {
+    if (_file_count == 0) {
+        // Rotation not possible
+        return;
+    }
+
+    ShenandoahRotationLocker lock(_rotation_semaphore);
+    rotate();
+}
+
+void ShenandoahLogFileOutput::rotate() {
+    if (fclose(_stream)) {
+        jio_fprintf(defaultStream::error_stream(), "Error closing file '%s' during log rotation (%s).\n",
+                    _file_name, os::strerror(errno));
+    }
+
+    // Archive the current log file
+    archive();
+
+    // Open the active log file using the same stream as before
+    _stream = os::fopen(_file_name, FileOpenMode);
+    if (_stream == NULL) {
+        jio_fprintf(defaultStream::error_stream(), "Could not reopen file '%s' during log rotation (%s).\n",
+                    _file_name, os::strerror(errno));
+        return;
+    }
+
+    // Reset accumulated size, increase current file counter, and check for file count wrap-around.
+    _current_size = 0;
+    increment_file_count();
 }
 
 void ShenandoahLogFileOutput::set_file_name_parameters(jlong vm_start_time) {

@@ -77,6 +77,7 @@ ShenandoahHeapRegionCounters::ShenandoahHeapRegionCounters() :
 
     if (ShenandoahLogRegionSampling) {
       _log_file = new ShenandoahLogFileOutput(ShenandoahRegionSamplingFile, _timestamp->get_value());
+      _log_file->set_option(ShenandoahLogFileCount, ShenandoahLogFileSize);
       _log_file->initialize(tty);
     }
   }
