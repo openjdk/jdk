@@ -479,14 +479,14 @@ JRT_LEAF(jshort, SharedRuntime::f2hf(jfloat  x))
     exp = -15;
     msb = 0x00800000;
   }
-  jint f_signif_bits = doppel & 0x007fffff | msb;
+  jint f_signif_bits = ((doppel & 0x007fffff) | msb);
 
   // Significand bits as if using rounding to zero
   jshort signif_bits = (jshort)(f_signif_bits >> (13 + exp_delta));
 
-  jint lsb = f_signif_bits & (1 << 13 + exp_delta);
-  jint round  = f_signif_bits & (1 << 12 + exp_delta);
-  jint sticky = f_signif_bits & ((1 << 12 + exp_delta) - 1);
+  jint lsb = (f_signif_bits & (1 << 13 + exp_delta));
+  jint round  = (f_signif_bits & (1 << 12 + exp_delta));
+  jint sticky = (f_signif_bits & ((1 << 12 + exp_delta) - 1));
 
   if (round != 0 && ((lsb | sticky) != 0 )) {
     signif_bits++;
@@ -519,7 +519,7 @@ JRT_LEAF(jfloat, SharedRuntime::hf2f(jshort x))
   }
 
   // Add the bias of float exponent and shift
-  int float_exp_bits = (hf_exp + 127) << 24 - 1;
+  int float_exp_bits = ((hf_exp + 127) << 24 - 1);
 
   // Combine sign, exponent and significand bits
   return (jfloat) ((hf_sign_bit << 16) | float_exp_bits | (hf_significand_bits << significand_shift));
