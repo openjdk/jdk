@@ -39,6 +39,9 @@ public class IRMatcher {
         this.testClass = methodCompilationParser.parse(hotspotPidFileName, irEncoding);
     }
 
+    public TestClass getTestClass() {
+        return testClass;
+    }
 
     /**
      * Do an IR matching of all methods with applicable @IR rules prepared with by the {@link MethodCompilationParser}.
