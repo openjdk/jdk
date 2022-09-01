@@ -376,12 +376,15 @@ public class TestTrimNative {
     // Test that GCTrimNativeHeap=1 causes a trim-native automatically, without GC (for now, shenandoah only)
     static private final void testAuto(GC gc) throws IOException {
         System.out.println("testAuto");
+        long t1 = System.currentTimeMillis();
         OutputAnalyzer output = runTestWithOptions (
                 new String[] { gc.getSwitchName(), "-XX:+GCTrimNativeHeap", "-XX:GCTrimNativeHeapInterval=1" },
                 new String[] { "false" /* full gc */, "6000" /* ms after peak */ }
         );
-        // With an interval time of 1 second and a runtime of 6 seconds we expect to see 6 log lines (+ fudge factor).
-        parseOutputAndLookForNegativeTrim(output, 5, 7);
+        long t2 = System.currentTimeMillis();
+        int runtime_s = (int)((t2 - t1) / 1000);
+        // With an interval time of 1 second and a runtime of 6..x seconds we expect to see x log lines (+- fudge factor).
+        parseOutputAndLookForNegativeTrim(output, runtime_s - 4, runtime_s + 2);
     }
 
     // Test that trim-native correctly honors interval
