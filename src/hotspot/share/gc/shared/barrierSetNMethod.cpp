@@ -130,9 +130,11 @@ void BarrierSetNMethod::arm_all_nmethods() {
   BarrierSetNMethodArmClosure cl(_current_phase);
   Threads::threads_do(&cl);
 
+#if (defined(AARCH64) || defined(RISCV64)) && !defined(ZERO)
   // We clear the patching epoch when disarming nmethods, so that
   // the counter won't overflow.
-  AARCH64_PORT_ONLY(BarrierSetAssembler::clear_patching_epoch());
+  BarrierSetAssembler::clear_patching_epoch();
+#endif
 }
 
 int BarrierSetNMethod::nmethod_stub_entry_barrier(address* return_address_ptr) {

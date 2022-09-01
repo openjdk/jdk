@@ -40,8 +40,6 @@
 
 void BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                                   Register dst, Address src, Register tmp1, Register tmp_thread) {
-  assert_cond(masm != NULL);
-
   // RA is live. It must be saved around calls.
 
   bool in_heap = (decorators & IN_HEAP) != 0;
@@ -82,7 +80,6 @@ void BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorators,
 
 void BarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                                    Address dst, Register val, Register tmp1, Register tmp2) {
-  assert_cond(masm != NULL);
   bool in_heap = (decorators & IN_HEAP) != 0;
   bool in_native = (decorators & IN_NATIVE) != 0;
   switch (type) {
@@ -124,7 +121,6 @@ void BarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators
 
 void BarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler* masm, Register jni_env,
                                                         Register obj, Register tmp, Label& slowpath) {
-  assert_cond(masm != NULL);
   // If mask changes we need to ensure that the inverse is still encodable as an immediate
   STATIC_ASSERT(JNIHandles::weak_tag_mask == 1);
   __ andi(obj, obj, ~JNIHandles::weak_tag_mask);
@@ -139,7 +135,6 @@ void BarrierSetAssembler::tlab_allocate(MacroAssembler* masm, Register obj,
                                         Register tmp2,
                                         Label& slow_case,
                                         bool is_far) {
-  assert_cond(masm != NULL);
   assert_different_registers(obj, tmp2);
   assert_different_registers(obj, var_size_in_bytes);
   Register end = tmp2;
@@ -166,7 +161,6 @@ void BarrierSetAssembler::incr_allocated_bytes(MacroAssembler* masm,
                                                Register var_size_in_bytes,
                                                int con_size_in_bytes,
                                                Register tmp1) {
-  assert_cond(masm != NULL);
   assert(tmp1->is_valid(), "need temp reg");
 
   __ ld(tmp1, Address(xthread, in_bytes(JavaThread::allocated_bytes_offset())));
@@ -178,38 +172,104 @@ void BarrierSetAssembler::incr_allocated_bytes(MacroAssembler* masm,
   __ sd(tmp1, Address(xthread, in_bytes(JavaThread::allocated_bytes_offset())));
 }
 
-void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm) {
+static volatile uint32_t _patching_epoch = 0;
+
+address BarrierSetAssembler::patching_epoch_addr() {
+  return (address)&_patching_epoch;
+}
+
+void BarrierSetAssembler::increment_patching_epoch() {
+  Atomic::inc(&_patching_epoch);
+}
+
+void BarrierSetAssembler::clear_patching_epoch() {
+  _patching_epoch = 0;
+}
+
+void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label* slow_path, Label* continuation, Label* guard) {
   BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
 
   if (bs_nm == NULL) {
     return;
   }
 
-  // RISCV atomic operations require that the memory address be naturally aligned.
-  __ align(4);
+  Label local_guard;
+  NMethodPatchingType patching_type = nmethod_patching_type();
 
-  Label skip, guard;
-  Address thread_disarmed_addr(xthread, in_bytes(bs_nm->thread_disarmed_offset()));
+  if (slow_path == NULL) {
+    guard = &local_guard;
 
-  __ lwu(t0, guard);
+    // RISCV atomic operations require that the memory address be naturally aligned.
+    __ align(4);
+  }
 
-  // Subsequent loads of oops must occur after load of guard value.
-  // BarrierSetNMethod::disarm sets guard with release semantics.
-  __ membar(MacroAssembler::LoadLoad);
-  __ lwu(t1, thread_disarmed_addr);
-  __ beq(t0, t1, skip);
+  __ lwu(t0, *guard);
 
-  int32_t offset = 0;
-  __ movptr_with_offset(t0, StubRoutines::riscv::method_entry_barrier(), offset);
-  __ jalr(ra, t0, offset);
-  __ j(skip);
+  switch (patching_type) {
+    case NMethodPatchingType::conc_data_patch:
+      // Subsequent loads of oops must occur after load of guard value.
+      // BarrierSetNMethod::disarm sets guard with release semantics.
+      __ membar(MacroAssembler::LoadLoad); // fall through to stw_instruction_and_data_patch
+    case NMethodPatchingType::stw_instruction_and_data_patch:
+      {
+        // With STW patching, no data or instructions are updated concurrently,
+        // which means there isn't really any need for any fencing for neither
+        // data nor instruction modification happening concurrently. The
+        // instruction patching is synchronized with global icache_flush() by
+        // the write hart on riscv. So here we can do a plain conditional
+        // branch with no fencing.
+        Address thread_disarmed_addr(xthread, in_bytes(bs_nm->thread_disarmed_offset()));
+        __ lwu(t1, thread_disarmed_addr);
+        break;
+      }
+    case NMethodPatchingType::conc_instruction_and_data_patch:
+      {
+        // If we patch code we need both a code patching and a loadload
+        // fence. It's not super cheap, so we use a global epoch mechanism
+        // to hide them in a slow path.
+        // The high level idea of the global epoch mechanism is to detect
+        // when any thread has performed the required fencing, after the
+        // last nmethod was disarmed. This implies that the required
+        // fencing has been performed for all preceding nmethod disarms
+        // as well. Therefore, we do not need any further fencing.
+        __ la(t1, ExternalAddress((address)&_patching_epoch));
+        // Embed an artificial data dependency to order the guard load
+        // before the epoch load.
+        __ srli(ra, t0, 32);
+        __ orr(t1, t1, ra);
+        // Read the global epoch value.
+        __ lwu(t1, t1);
+        // Combine the guard value (low order) with the epoch value (high order).
+        __ slli(t1, t1, 32);
+        __ orr(t0, t0, t1);
+        // Compare the global values with the thread-local values
+        Address thread_disarmed_and_epoch_addr(xthread, in_bytes(bs_nm->thread_disarmed_offset()));
+        __ ld(t1, thread_disarmed_and_epoch_addr);
+        break;
+      }
+    default:
+      ShouldNotReachHere();
+  }
 
-  __ bind(guard);
+  if (slow_path == NULL) {
+    Label skip_barrier;
+    __ beq(t0, t1, skip_barrier);
 
-  assert(__ offset() % 4 == 0, "bad alignment");
-  __ emit_int32(0); // nmethod guard value. Skipped over in common case.
+    int32_t offset = 0;
+    __ movptr_with_offset(t0, StubRoutines::riscv::method_entry_barrier(), offset);
+    __ jalr(ra, t0, offset);
+    __ j(skip_barrier);
 
-  __ bind(skip);
+    __ bind(local_guard);
+
+    assert(__ offset() % 4 == 0, "bad alignment");
+    __ emit_int32(0); // nmethod guard value. Skipped over in common case.
+    __ bind(skip_barrier);
+  } else {
+    __ beq(t0, t1, *continuation);
+    __ j(*slow_path);
+    __ bind(*continuation);
+  }
 }
 
 void BarrierSetAssembler::c2i_entry_barrier(MacroAssembler* masm) {

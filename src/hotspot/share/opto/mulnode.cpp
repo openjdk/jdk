@@ -239,18 +239,18 @@ MulNode* MulNode::make(Node* in1, Node* in2, BasicType bt) {
 //------------------------------Ideal------------------------------------------
 // Check for power-of-2 multiply, then try the regular MulNode::Ideal
 Node *MulINode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  // Swap constant to right
-  jint con;
-  if ((con = in(1)->find_int_con(0)) != 0) {
-    swap_edges(1, 2);
-    // Finish rest of method to use info in 'con'
-  } else if ((con = in(2)->find_int_con(0)) == 0) {
+  const jint con = in(2)->find_int_con(0);
+  if (con == 0) {
+    // If in(2) is not a constant, call Ideal() of the parent class to
+    // try to move constant to the right side.
     return MulNode::Ideal(phase, can_reshape);
   }
 
-  // Now we have a constant Node on the right and the constant in con
-  if (con == 0) return NULL;   // By zero is handled by Value call
-  if (con == 1) return NULL;   // By one  is handled by Identity call
+  // Now we have a constant Node on the right and the constant in con.
+  if (con == 1) {
+    // By one is handled by Identity call
+    return NULL;
+  }
 
   // Check for negative constant; if so negate the final result
   bool sign_flip = false;
@@ -262,7 +262,7 @@ Node *MulINode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   // Get low bit; check for being the only bit
   Node *res = NULL;
-  unsigned int bit1 = abs_con & (0-abs_con);       // Extract low bit
+  unsigned int bit1 = submultiple_power_of_2(abs_con);
   if (bit1 == abs_con) {           // Found a power of 2?
     res = new LShiftINode(in(1), phase->intcon(log2i_exact(bit1)));
   } else {
@@ -334,18 +334,18 @@ const Type *MulINode::mul_ring(const Type *t0, const Type *t1) const {
 //------------------------------Ideal------------------------------------------
 // Check for power-of-2 multiply, then try the regular MulNode::Ideal
 Node *MulLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  // Swap constant to right
-  jlong con;
-  if ((con = in(1)->find_long_con(0)) != 0) {
-    swap_edges(1, 2);
-    // Finish rest of method to use info in 'con'
-  } else if ((con = in(2)->find_long_con(0)) == 0) {
+  const jlong con = in(2)->find_long_con(0);
+  if (con == 0) {
+    // If in(2) is not a constant, call Ideal() of the parent class to
+    // try to move constant to the right side.
     return MulNode::Ideal(phase, can_reshape);
   }
 
-  // Now we have a constant Node on the right and the constant in con
-  if (con == CONST64(0)) return NULL;  // By zero is handled by Value call
-  if (con == CONST64(1)) return NULL;  // By one  is handled by Identity call
+  // Now we have a constant Node on the right and the constant in con.
+  if (con == 1) {
+    // By one is handled by Identity call
+    return NULL;
+  }
 
   // Check for negative constant; if so negate the final result
   bool sign_flip = false;
@@ -356,7 +356,7 @@ Node *MulLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   // Get low bit; check for being the only bit
   Node *res = NULL;
-  julong bit1 = abs_con & (0-abs_con);      // Extract low bit
+  julong bit1 = submultiple_power_of_2(abs_con);
   if (bit1 == abs_con) {           // Found a power of 2?
     res = new LShiftLNode(in(1), phase->intcon(log2i_exact(bit1)));
   } else {
