@@ -25,6 +25,8 @@
 
 package java.net;
 
+import java.util.Objects;
+
 import jdk.internal.util.Preconditions;
 
 /**
@@ -287,12 +289,9 @@ class DatagramPacket {
      * @since   1.2
      */
     public synchronized void setData(byte[] buf, int offset, int length) {
-        /* this will check to see if buf is null */
-        if (length < 0 || offset < 0 ||
-            (length + offset) < 0 ||
-            ((length + offset) > buf.length)) {
-            throw new IllegalArgumentException("illegal length or offset");
-        }
+        Objects.requireNonNull(buf);
+        Preconditions.checkFromIndexSize(offset, length, buf.length,
+                Preconditions.outOfBoundsExceptionFormatter(IllegalArgumentException::new));
         this.buf = buf;
         this.length = length;
         this.bufLength = length;
