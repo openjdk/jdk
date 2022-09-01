@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,13 +33,8 @@
 #include <unistd.h>
 #include <errno.h>
 
-#if defined(__linux__)
-#include <sys/sendfile.h>
-#include <fcntl.h>
-#elif defined(_ALLBSD_SOURCE)
 #include <copyfile.h>
-#endif
-#include "sun_nio_fs_UnixCopyFile.h"
+#include "sun_nio_fs_BsdFileSystem.h"
 
 #define RESTARTABLE(_cmd, _result) do { \
   do { \
@@ -55,7 +50,6 @@ static void throwUnixException(JNIEnv* env, int errnum) {
     }
 }
 
-#if defined(_ALLBSD_SOURCE)
 int fcopyfile_callback(int what, int stage, copyfile_state_t state,
     const char* src, const char* dst, void* cancel)
 {
@@ -70,54 +64,6 @@ int fcopyfile_callback(int what, int stage, copyfile_state_t state,
     }
     return COPYFILE_CONTINUE;
 }
-#endif
-
-// Copy via an intermediate temporary direct buffer
-JNIEXPORT void JNICALL
-Java_sun_nio_fs_UnixCopyFile_bufferedCopy0
-    (JNIEnv* env, jclass this, jint dst, jint src, jlong address,
-    jint transferSize, jlong cancelAddress)
-{
-    volatile jint* cancel = (jint*)jlong_to_ptr(cancelAddress);
-
-    char* buf = (char*)jlong_to_ptr(address);
-
-#if defined(__linux__)
-    int advice = POSIX_FADV_SEQUENTIAL | // sequential data access
-                 POSIX_FADV_NOREUSE    | // will access only once
-                 POSIX_FADV_WILLNEED;    // will access in near future
-
-    // ignore the return value hence any failure
-    posix_fadvise(src, 0, 0, advice);
-#endif
-
-    for (;;) {
-        ssize_t n, pos, len;
-        RESTARTABLE(read((int)src, buf, transferSize), n);
-        if (n <= 0) {
-            if (n < 0)
-                throwUnixException(env, errno);
-            return;
-        }
-        if (cancel != NULL && *cancel != 0) {
-            throwUnixException(env, ECANCELED);
-            return;
-        }
-        pos = 0;
-        len = n;
-        do {
-            char* bufp = buf;
-            bufp += pos;
-            RESTARTABLE(write((int)dst, bufp, len), n);
-            if (n == -1) {
-                throwUnixException(env, errno);
-                return;
-            }
-            pos += n;
-            len -= n;
-        } while (len > 0);
-    }
-}
 
 // Copy all bytes from src to dst, within the kernel if possible (Linux),
 // and return zero, otherwise return the appropriate status code.
@@ -130,35 +76,11 @@ Java_sun_nio_fs_UnixCopyFile_bufferedCopy0
 //   IOS_THROWN if a Java exception is thrown
 //
 JNIEXPORT jint JNICALL
-Java_sun_nio_fs_UnixCopyFile_directCopy0
+Java_sun_nio_fs_BsdFileSystem_directCopy0
     (JNIEnv* env, jclass this, jint dst, jint src, jlong cancelAddress)
 {
     volatile jint* cancel = (jint*)jlong_to_ptr(cancelAddress);
 
-#if defined(__linux__)
-    // Transfer within the kernel
-    const size_t count = cancel != NULL ?
-        1048576 :   // 1 MB to give cancellation a chance
-        0x7ffff000; // maximum number of bytes that sendfile() can transfer
-    ssize_t bytes_sent;
-    do {
-        RESTARTABLE(sendfile64(dst, src, NULL, count), bytes_sent);
-        if (bytes_sent < 0) {
-            if (errno == EAGAIN)
-                return IOS_UNAVAILABLE;
-            if (errno == EINVAL || errno == ENOSYS)
-                return IOS_UNSUPPORTED_CASE;
-            throwUnixException(env, errno);
-            return IOS_THROWN;
-        }
-        if (cancel != NULL && *cancel != 0) {
-            throwUnixException(env, ECANCELED);
-            return IOS_THROWN;
-        }
-    } while (bytes_sent > 0);
-
-    return 0;
-#elif defined(_ALLBSD_SOURCE)
     copyfile_state_t state;
     if (cancel != NULL) {
         state = copyfile_state_alloc();
@@ -178,7 +100,4 @@ Java_sun_nio_fs_UnixCopyFile_directCopy0
         copyfile_state_free(state);
 
     return 0;
-#else
-    return IOS_UNSUPPORTED;
-#endif
 }

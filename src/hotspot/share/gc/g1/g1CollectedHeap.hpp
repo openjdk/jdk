@@ -581,7 +581,7 @@ public:
   inline void set_humongous_is_live(oop obj);
 
   // Register the given region to be part of the collection set.
-  inline void register_humongous_region_with_region_attr(uint index);
+  inline void register_humongous_candidate_region_with_region_attr(uint index);
 
   // We register a region with the fast "in collection set" test. We
   // simply set to true the array slot corresponding to this region.
@@ -1030,7 +1030,7 @@ public:
   inline bool is_in_cset(oop obj) const;
   inline bool is_in_cset(HeapWord* addr) const;
 
-  inline bool is_in_cset_or_humongous(const oop obj);
+  inline bool is_in_cset_or_humongous_candidate(const oop obj);
 
  private:
   // This array is used for a quick test on whether a reference points into

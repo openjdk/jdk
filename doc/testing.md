@@ -603,6 +603,12 @@ double click on it; enable or disable hotkeys.
 
 Note: restart is required to make the settings take effect.
 
+## Editing this document
+
+If you want to contribute changes to this document, edit `doc/testing.md` and 
+then run `make update-build-docs` to generate the same changes in 
+`doc/testing.html`.
+
 ---
 # Override some definitions in the global css file that are not optimal for
 # this document.
