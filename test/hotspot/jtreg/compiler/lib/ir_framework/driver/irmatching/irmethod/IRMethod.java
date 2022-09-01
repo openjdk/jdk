@@ -34,8 +34,9 @@ import compiler.lib.ir_framework.shared.TestFormat;
 import compiler.lib.ir_framework.shared.TestFormatException;
 
 import java.lang.reflect.Method;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * This class represents a {@link Test @Test} annotated method that has an associated non-empty list of applicable IR rules.
@@ -47,7 +48,6 @@ public class IRMethod implements Matching {
     private final Method method;
     private final Map<CompilePhase, String> compilationOutputMap;
     private final boolean compiled;
-    private String completeOutput;
     private final List<IRRule> irRules;
 
     public IRMethod(Method method, int[] ruleIds, IR[] irAnnos, Map<CompilePhase, String> compilationOutputMap,
@@ -56,7 +56,6 @@ public class IRMethod implements Matching {
         this.irRules = new ArrayList<>();
         this.compilationOutputMap = compilationOutputMap;
         this.compiled = compiled;
-        this.completeOutput = "";
         for (int ruleId : ruleIds) {
             try {
                 irRules.add(new IRRule(this, ruleId, irAnnos[ruleId - 1]));
@@ -72,6 +71,7 @@ public class IRMethod implements Matching {
     }
 
     public String getOutput(CompilePhase phase) {
+        TestFramework.check(phase != CompilePhase.DEFAULT, "cannot query for DEFAULT");
         return compilationOutputMap.getOrDefault(phase, "");
     }
 

@@ -105,6 +105,7 @@ class HotSpotPidFileParser {
         if (isTestAnnotatedMethod(methodName)) {
             int compileId = getCompileId(line);
             TestMethod testMethod = getTestMethod(methodName);
+            testMethod.clear();
             testMethod.setCompiled();
             compileIdMap.put(compileId, testMethod);
         }

@@ -48,10 +48,6 @@ public class IRRuleMatchResult implements MatchResult {
         return irRule;
     }
 
-    public List<CompilePhaseMatchResult> getCompilePhaseMatchResults() {
-        return compilePhaseMatchResults;
-    }
-
     public void addCompilePhaseMatchResult(CompilePhaseMatchResult result) {
         compilePhaseMatchResults.add(result);
     }

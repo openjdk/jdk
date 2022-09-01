@@ -79,7 +79,7 @@ public class FailureMessageBuilder extends AbstractBuilder implements MatchResul
     }
 
     private String buildNoCompilationOutputMessage() {
-        return getIndentation(indentation + 2) + "- NO compilation output found for this phase! Make sure this "
+        return getIndentation(indentation + 4) + "- NO compilation output found for this phase! Make sure this "
                + "phase is emitted or remove it from the list of compile phases in the @IR rule to match on."
                + System.lineSeparator();
     }

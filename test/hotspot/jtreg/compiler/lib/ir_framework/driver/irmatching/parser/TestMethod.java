@@ -66,15 +66,21 @@ public class TestMethod {
     }
 
     /**
+     * Clear the collected ideal and opto assembly output of all phases. This is necessary when having multiple
+     * compilations of the same method. We only want to keep the very last which is the one triggered by the framework.
+     */
+    public void clear() {
+        compilationOutputMap.clear();
+    }
+
+    /**
      * We might parse multiple C2 compilations of this method. Only keep the very last one by overriding the outputMap.
      */
     public void setIdealOutput(String idealOutput, CompilePhase compilePhase) {
         String idealOutputWithHeader = "> Phase \"" + compilePhase.getName()+ "\":" + System.lineSeparator()
                                        + idealOutput;
-        compilationOutputMap.put(compilePhase, idealOutputWithHeader);
-        if (compilePhase == CompilePhase.PRINT_IDEAL) {
-            // Only need to set default output when parsing PrintIdeal output
-            compilationOutputMap.put(CompilePhase.DEFAULT, idealOutputWithHeader);
+        if (!compilationOutputMap.containsKey(compilePhase) || compilePhase.overrideRepeatedPhase()) {
+            compilationOutputMap.put(compilePhase, idealOutputWithHeader);
         }
     }
 
@@ -84,11 +90,5 @@ public class TestMethod {
     public void setOptoAssemblyOutput(String optoAssemblyOutput) {
         optoAssemblyOutput = "> Phase \"PrintOptoAssembly\":" + System.lineSeparator() + optoAssemblyOutput;
         compilationOutputMap.put(CompilePhase.PRINT_OPTO_ASSEMBLY, optoAssemblyOutput);
-        String idealOutput = compilationOutputMap.getOrDefault(CompilePhase.DEFAULT, "");
-        if (!idealOutput.isEmpty()) {
-            // Ideal output could be empty
-            idealOutput = idealOutput + System.lineSeparator() + System.lineSeparator();
-        }
-        compilationOutputMap.put(CompilePhase.DEFAULT, idealOutput + optoAssemblyOutput);
     }
 }

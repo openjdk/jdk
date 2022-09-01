@@ -48,7 +48,8 @@ public enum CompilePhase {
     ITER_GVN_AFTER_VECTOR("Iter GVN after vector box elimination"),
     BEFORE_BEAUTIFY_LOOPS("Before beautify loops"),
     AFTER_BEAUTIFY_LOOPS("After beautify loops"),
-    BEFORE_CLOOPS("Before CountedLoop"),
+    // Match on very first BEFORE_CLOOPS phase (there could be multiple phases for multiple loops in the code).
+    BEFORE_CLOOPS("Before CountedLoop", OutputType.IDEAL, ActionOnRepeat.KEEP_FIRST),
     AFTER_CLOOPS("After CountedLoop"),
     PHASEIDEAL_BEFORE_EA("PhaseIdealLoop before EA"),
     AFTER_EA("After Escape Analysis"),
@@ -84,18 +85,30 @@ public enum CompilePhase {
             }
         }
     }
+    private enum ActionOnRepeat {
+        KEEP_FIRST, KEEP_LAST
+    }
 
     private final String name;
     private final OutputType outputType;
+    private final ActionOnRepeat actionOnRepeat;
 
     CompilePhase(String name) {
         this.name = name;
         this.outputType = OutputType.IDEAL;
+        this.actionOnRepeat = ActionOnRepeat.KEEP_LAST;
     }
 
     CompilePhase(String name, OutputType outputType) {
         this.name = name;
         this.outputType = outputType;
+        this.actionOnRepeat = ActionOnRepeat.KEEP_LAST;
+    }
+
+    CompilePhase(String name, OutputType outputType, ActionOnRepeat actionOnRepeat) {
+        this.name = name;
+        this.outputType = outputType;
+        this.actionOnRepeat = actionOnRepeat;
     }
 
     public String getName() {
@@ -110,6 +123,10 @@ public enum CompilePhase {
         CompilePhase phase = PHASES_BY_PARSED_NAME.get(phaseName);
         TestFramework.check(phase != null, "Could not find phase with name \"" + phaseName + "\"");
         return phase;
+    }
+
+    public boolean overrideRepeatedPhase() {
+        return actionOnRepeat == ActionOnRepeat.KEEP_LAST;
     }
 }
 
