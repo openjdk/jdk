@@ -4574,6 +4574,8 @@ void Compile::dump_inline_data(outputStream* out) {
 }
 
 void Compile::dump_inline_data_reduced(outputStream* out) {
+  assert(ReplayReduce, "");
+
   InlineTree* inl_tree = ilt();
   if (inl_tree == NULL) {
     return;
