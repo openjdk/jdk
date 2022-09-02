@@ -40,7 +40,7 @@ import java.io.InputStream;
 /*
  * @test
  * @bug 8289508
- * @run testng/othervm xpath.XPathExpChildTest
+ * @run testng/othervm xpath.XPathAncestorsPrecedingTest
  * @summary Tests for XPath ancestor, ancestor-or-self, preceding, and preceding-sibling axis specifiers.
  */
 public class XPathAncestorsPrecedingTest {
@@ -80,26 +80,26 @@ public class XPathAncestorsPrecedingTest {
     public Object[][] getXPathAncestorsPreceding() {
         return new Object[][]{
                 //test ancestor
-                {"//author/ancestor::book/ancestor::store", "/store"},
-                {"//isbn/ancestor::store", "/store"},
-                {"//ancestor::book", "//book"},
-                {"//book/ancestor::*", "/store"},
-                {"//author/ancestor::*[ancestor::store]/ancestor::store", "/store"},
-                {"//author/ancestor::node()[ancestor::store]", "//book"},
-                {"//author/ancestor::book/..", "/store"},
-                {"//author/ancestor::*[ancestor::store]/..", "/store"},
-                {"//ancestor::book/..", "/store"},
-                {"//author/ancestor::*[@id]/parent::*", "/store"},
-                {"//author/parent::*[@id]/ancestor::*", "/store"},
-                {"//author[@id='1']/ancestor::book", "//book[1]"},
-                {"//author[@*]/ancestor::book", "//book"},
+                {"//author/ancestor::book/ancestor::store", "/store"}, 
+                {"//isbn/ancestor::store", "/store"}, 
+                {"//ancestor::book[1]", "//book[1]"}, 
+                {"//book/ancestor::*", "/store"}, 
+                {"//author/ancestor::*[ancestor::store]/ancestor::store", "/store"}, 
+                {"//author/ancestor::node()[ancestor::store]", "//book"}, 
+                {"//author/ancestor::book/..", "/store"}, 
+                {"//author/ancestor::*[ancestor::store]/..", "/store"}, 
+                {"//ancestor::book/..", "/store"}, 
+                {"//author/ancestor::*[@id]/parent::*", "/store"}, 
+                {"//author/parent::*[@id]/ancestor::*", "/store"}, 
+                {"//author[@id='1']/ancestor::book[1]", "//book[1]"}, 
+                {"//author[@*]/ancestor::book[1]", "//book[1]"}, 
 
                 //test ancestor-or-self
-                {"/store/ancestor-or-self::*", "/store"},
-                {"//book[*]/ancestor-or-self::book", "//book"},
-                {"/store/book[@*]/ancestor-or-self::book", "//book"},
-                {"//book[@id='1']/ancestor-or-self::book", "//book[@id=1]"},
-                {"//author[@id='2']/ancestor-or-self::book"},
+                {"/store/ancestor-or-self::*", "/store"}, 
+                {"//book[*]/ancestor-or-self::book[1]", "//book[1]"}, 
+                {"/store/book[@*]/ancestor-or-self::book[1]", "//book[1]"}, 
+                {"//book[@id='1']/ancestor-or-self::book[1]", "//book[1]"}, 
+                {"//author[@id='2']/ancestor-or-self::book", "//book[2]"}, 
                 {"//book[1]/ancestor-or-self::store", "/store"},
 
                 //test preceding
@@ -114,10 +114,10 @@ public class XPathAncestorsPrecedingTest {
                 {"//author[@id='1']/preceding::title", "//book[1]/title"},
                 
                 //test preceding-sibling
-                {"/store/book[1]/author/preceding-sibling::*", "//book[1]/title"},
+                {"/store/book[1]/author/preceding-sibling::*", "/store/book[1]/title"},
                 {"/store/book[2]/preceding-sibling::*", "//book[1]"},
                 {"/store/book[preceding::book]/preceding-sibling::book", "//book[1]"},
-                {"/store/book[1]/isbn[preceding-sibling::author[@id='1']]"},
+                {"/store/book[1]/isbn[preceding-sibling::author[@id='1']]", "/store/book[1]/isbn"},
                 {"//author/preceding-sibling::*", "//title"},
                 
         };
@@ -174,17 +174,11 @@ public class XPathAncestorsPrecedingTest {
      * @throws Exception if test failed
      */
     @Test(dataProvider = "ancestors_preceding")
-    void testXPathAncestors(String exp, String expected) throws Exception {
+    void testXPathAncestorsPreceding(String exp, String parent) throws Exception {
         XPath xPath = XPathFactory.newInstance().newXPath();
-        NodeList nl = (NodeList) xPath.evaluate(exp, doc, XPathConstants.NODESET);
-        Node node = xPath.evaluateExpression(exp, doc, Node.class);
-        Assert.assertEquals(nl.item(0).getNodeName(), node.getNodeName());
-        Assert.assertEquals(nl.item(0).getNodeValue(), node.getNodeValue());
-        Assert.assertEquals(nl.item(0).getAttributes(), node.getAttributes());
-
-        Assert.assertEquals(node.getNodeName() + "_" +
-                        node.getAttributes().item(0).getNodeValue(),
-                expected);
+        Node result = xPath.evaluateExpression(exp, doc, Node.class);
+        Node expected = xPath.evaluateExpression(parent, doc, Node.class);
+        Assert.assertEquals(result, expected);
     }
 
     /**
@@ -196,7 +190,7 @@ public class XPathAncestorsPrecedingTest {
     @Test(dataProvider = "noResults")
     void testNoResults(String exp) throws Exception {
         XPath xPath = XPathFactory.newInstance().newXPath();
-        Node node = xPath.evaluateExpression(exp, doc, Node.class);
-        Assert.assertNull(node);
+        Node result = xPath.evaluateExpression(exp, doc, Node.class);
+        Assert.assertEquals(result, null);
     }
 }
