@@ -144,6 +144,7 @@ public final class EditorTopComponent extends TopComponent {
                 ExpandSuccessorsAction.get(ExpandSuccessorsAction.class)
         };
 
+
         ToolbarPool.getDefault().setPreferredIconSize(16);
         Toolbar toolBar = new Toolbar();
         toolBar.setBorder((Border) UIManager.get("Nb.Editor.Toolbar.border")); //NOI18N
@@ -151,7 +152,6 @@ public final class EditorTopComponent extends TopComponent {
 
         JPanel container = new JPanel();
         container.setLayout(new BorderLayout());
-        container.add(BorderLayout.NORTH, toolBar);
 
         DiagramViewModel diagramViewModel = new DiagramViewModel(diagram.getGraph().getGroup(), filterChain, sequence);
         RangeSlider rangeSlider = new RangeSlider();
@@ -180,6 +180,20 @@ public final class EditorTopComponent extends TopComponent {
             final GraphDocument doc = (GraphDocument) group.getParent();
             doc.getChangedEvent().addListener(d -> closeOnRemovedOrEmptyGroup());
         }
+
+        cardLayout = new CardLayout();
+        centerPanel = new JPanel();
+        centerPanel.setLayout(cardLayout);
+        centerPanel.setBackground(Color.WHITE);
+        satelliteComponent = scene.createSatelliteView();
+        satelliteComponent.setSize(200, 200);
+        centerPanel.add(SCENE_STRING, scene.getComponent());
+        centerPanel.add(SATELLITE_STRING, satelliteComponent);
+        this.add(centerPanel, BorderLayout.CENTER);
+
+        ToolbarPool.getDefault().setPreferredIconSize(16);
+        toolBar = new Toolbar();
+        toolBar.setBorder((Border) UIManager.get("Nb.Editor.Toolbar.border")); //NOI18N
 
         toolBar.add(PrevDiagramAction.get(PrevDiagramAction.class));
         toolBar.add(NextDiagramAction.get(NextDiagramAction.class));
@@ -214,8 +228,7 @@ public final class EditorTopComponent extends TopComponent {
         toolBar.add(cfgLayoutButton);
 
         toolBar.addSeparator();
-        overviewAction = new OverviewAction();
-        toolBar.add(new JToggleButton(overviewAction));
+        toolBar.add(new JToggleButton(new OverviewAction(centerPanel)));
         toolBar.add(new JToggleButton(new PredSuccAction()));
         toolBar.add(new JToggleButton(new ShowEmptyBlocksAction(cfgLayoutAction, true)));
         toolBar.add(new JToggleButton(new HideDuplicatesAction()));
@@ -249,34 +262,6 @@ public final class EditorTopComponent extends TopComponent {
         topPanel.add(quickSearchToolbar);
         container.add(BorderLayout.NORTH, topPanel);
 
-        centerPanel = new JPanel();
-        centerPanel.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(
-                KeyStroke.getKeyStroke(KeyEvent.VK_S, 0, false), SATELLITE_STRING);
-        centerPanel.getActionMap().put(SATELLITE_STRING,
-                new AbstractAction(SATELLITE_STRING) {
-                    @Override public void actionPerformed(ActionEvent e) {
-                        EditorTopComponent.this.overviewAction.setSelected(true);
-                    }
-                });
-        centerPanel.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(
-                KeyStroke.getKeyStroke(KeyEvent.VK_S, 0, true), SCENE_STRING);
-        centerPanel.getActionMap().put(SCENE_STRING,
-                new AbstractAction(SCENE_STRING) {
-                    @Override
-                    public void actionPerformed(ActionEvent e) {
-                        EditorTopComponent.this.overviewAction.setSelected(false);
-                    }
-                });
-
-        cardLayout = new CardLayout();
-        centerPanel.setLayout(cardLayout);
-        centerPanel.add(SCENE_STRING, scene.getComponent());
-        centerPanel.setBackground(Color.WHITE);
-        satelliteComponent = scene.createSatelliteView();
-        satelliteComponent.setSize(200, 200);
-        centerPanel.add(SATELLITE_STRING, satelliteComponent);
-        this.add(centerPanel, BorderLayout.CENTER);
-
         updateDisplayName();
     }
 
@@ -304,8 +289,6 @@ public final class EditorTopComponent extends TopComponent {
             cardLayout.show(centerPanel, SCENE_STRING);
             scene.getComponent().requestFocus();
         }
-
-
     }
 
     public void zoomOut() {
