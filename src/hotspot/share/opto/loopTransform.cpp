@@ -2780,7 +2780,7 @@ bool PhaseIdealLoop::is_scaled_iv(Node* exp, Node* iv, BasicType bt, jlong* p_sc
         *p_scale = scale_sum;
       }
       if (p_short_scale != NULL) {
-        *p_short_scale = short_scale_l || short_scale_r;
+        *p_short_scale = short_scale_l && short_scale_r;
       }
       return true;
     }
@@ -2823,7 +2823,7 @@ bool PhaseIdealLoop::is_scaled_iv(Node* exp, Node* iv, BasicType bt, jlong* p_sc
           *p_scale = scale_diff;
         }
         if (p_short_scale != NULL) {
-          *p_short_scale = short_scale_l || short_scale_r;
+          *p_short_scale = short_scale_l && short_scale_r;
         }
         return true;
       }
