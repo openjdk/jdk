@@ -84,14 +84,18 @@ typedef ResourceHashtable<LogFileStreamOutput*,
 // ConfigurationLock. In addition flush() is called during JVM termination, via LogConfiguration::finalize.
 class AsyncLogWriter : public NonJavaThread {
   class AsyncLogLocker;
+  friend class AsyncLogTest;
 
   class Buffer : public CHeapObj<mtLogging> {
     size_t _pos;
-    char* const _buf;
+    char* _buf;
     size_t _capacity;
 
    public:
-    Buffer(char* buffer, size_t capacity);
+    Buffer(size_t capacity);
+    ~Buffer();
+
+    bool is_valid() const;
 
     bool push_back(const AsyncLogMessage& msg);
 
@@ -123,7 +127,7 @@ class AsyncLogWriter : public NonJavaThread {
       AsyncLogMessage* next();
     };
 
-    Iterator iterator() {
+    Iterator iterator() const {
       return Iterator(*this);
     }
   };
@@ -159,6 +163,8 @@ class AsyncLogWriter : public NonJavaThread {
     st->cr();
   }
 
+  // for testing-only
+  size_t throttle_buffers(size_t newsize);
  public:
   void enqueue(LogFileStreamOutput& output, const LogDecorations& decorations, const char* msg);
   void enqueue(LogFileStreamOutput& output, LogMessageBuffer::Iterator msg_iterator);
@@ -167,8 +173,6 @@ class AsyncLogWriter : public NonJavaThread {
   static void initialize();
   static void flush();
 
-  // for testing-only
-  size_t throttle_buffers(size_t newsize);
 };
 
 #endif // SHARE_LOGGING_LOGASYNCWRITER_HPP

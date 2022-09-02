@@ -44,9 +44,18 @@ class AsyncLogWriter::AsyncLogLocker : public StackObj {
 };
 
 // Reserve space for a flush token, so 'push_back(Token)' always succeeds.
-AsyncLogWriter::Buffer::Buffer(char* buffer, size_t capacity) : _pos(0), _buf(buffer) {
-  assert(capacity >= (AsyncLogWriter::Token.size()), "AsyncLogBuffer is too small!");
+AsyncLogWriter::Buffer::Buffer(size_t capacity) : _pos(0) {
+  assert(capacity > (AsyncLogWriter::Token.size()), "AsyncLogBuffer is too small!");
+  _buf = NEW_C_HEAP_ARRAY_RETURN_NULL(char, capacity, mtLogging);
   _capacity = capacity - (Token.size());
+}
+
+AsyncLogWriter::Buffer::~Buffer() {
+  FREE_C_HEAP_ARRAY(char, _buf);
+}
+
+bool AsyncLogWriter::Buffer::is_valid() const {
+  return _capacity > 0 && _buf != nullptr;
 }
 
 bool AsyncLogWriter::Buffer::push_back(const AsyncLogMessage& msg) {
@@ -76,10 +85,9 @@ AsyncLogMessage* AsyncLogWriter::Buffer::Iterator::next() {
   return msg;
 }
 
+// LogDecorator::None applies to 'constant initialization' because of its constexpr constructor.
 const LogDecorations& AsyncLogWriter::None = LogDecorations(LogLevel::Warning, LogTagSetMapping<LogTag::__NO_TAG>::tagset(),
                                       LogDecorators::None);
-// Note: there is an initializer order issue here. C++ cannot guarantee that 'None' is initialized before Token!
-// It is okay because we expect None is zero'ed anyway.
 const AsyncLogMessage& AsyncLogWriter::Token = AsyncLogMessage(nullptr, None, nullptr);
 
 void AsyncLogWriter::enqueue_locked(const AsyncLogMessage& msg) {
@@ -122,27 +130,14 @@ AsyncLogWriter::AsyncLogWriter()
   size_t page_size = os::vm_page_size();
   size_t size = align_up(AsyncLogBufferSize / 2, page_size);
 
-  char* buf0 = static_cast<char* >(os::malloc(size, mtLogging));
-  char* buf1 = static_cast<char* >(os::malloc(size, mtLogging));
-  if (buf0 != nullptr && buf1 != nullptr) {
-    _buffer = new Buffer(buf0, size);
-    _buffer_staging = new Buffer(buf1, size);
-    if (_buffer != nullptr && _buffer_staging != nullptr) {
-      log_info(logging)("AsyncLogBuffer estimates memory use: " SIZE_FORMAT " bytes", size * 2);
-    } else {
-      log_warning(logging)("AsyncLogging failed to create buffer Objects. Falling back to synchronous logging.");
-      delete _buffer;
-      delete _buffer_staging;
-      os::free(buf0);
-      os::free(buf1);
-      return;
-    }
+  _buffer = new Buffer(size);
+  _buffer_staging = new Buffer(size);
+  if (_buffer->is_valid() && _buffer_staging->is_valid()) {
+    log_info(logging)("AsyncLogBuffer estimates memory use: " SIZE_FORMAT " bytes", size * 2);
   } else {
-    log_warning(logging)("AsyncLogging failed to create buffers. Falling back to synchronous logging.");
-
-    if (buf0 != nullptr) {
-      os::free(buf0);
-    }
+    log_warning(logging)("AsyncLogging failed to create buffer Objects. Falling back to synchronous logging.");
+    delete _buffer;
+    delete _buffer_staging;
     return;
   }
 
