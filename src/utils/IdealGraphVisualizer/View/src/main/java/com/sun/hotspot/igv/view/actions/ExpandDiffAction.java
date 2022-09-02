@@ -83,7 +83,7 @@ public final class ExpandDiffAction extends ContextAction<DiagramViewModel> impl
     }
 
     @Override
-    public Action createContextAwareInstance(Lookup arg0) {
+    public Action createContextAwareInstance(Lookup lookup) {
         return new ExpandDiffAction();
     }
 

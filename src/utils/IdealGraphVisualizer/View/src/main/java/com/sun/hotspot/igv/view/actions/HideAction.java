@@ -23,6 +23,9 @@
  */
 package com.sun.hotspot.igv.view.actions;
 
+import com.sun.hotspot.igv.data.ChangedListener;
+import com.sun.hotspot.igv.util.ContextAction;
+import com.sun.hotspot.igv.view.DiagramViewModel;
 import com.sun.hotspot.igv.view.EditorTopComponent;
 import java.awt.Event;
 import java.awt.event.KeyEvent;
@@ -31,25 +34,16 @@ import java.util.Set;
 import javax.swing.Action;
 import javax.swing.KeyStroke;
 import org.openide.util.HelpCtx;
-import org.openide.util.actions.CallableSystemAction;
+import org.openide.util.Lookup;
 import org.openide.util.Utilities;
 
 /**
  *
  * @author Thomas Wuerthinger
  */
-public final class HideAction extends CallableSystemAction {
+public final class HideAction extends ContextAction<DiagramViewModel> implements ChangedListener<DiagramViewModel> {
 
-    @Override
-    public void performAction() {
-        EditorTopComponent editor = EditorTopComponent.getActive();
-        if (editor != null) {
-            Set<Integer> selectedNodes = editor.getModel().getSelectedNodes();
-            HashSet<Integer> nodes = new HashSet<>(editor.getModel().getHiddenNodes());
-            nodes.addAll(selectedNodes);
-            editor.getModel().showNot(nodes);
-        }
-    }
+    private DiagramViewModel model;
 
     public HideAction() {
         putValue(Action.SHORT_DESCRIPTION, "Hide selected nodes");
@@ -68,6 +62,19 @@ public final class HideAction extends CallableSystemAction {
     }
 
     @Override
+    public Class<DiagramViewModel> contextClass() {
+        return DiagramViewModel.class;
+    }
+
+    @Override
+    public void performAction(DiagramViewModel model) {
+        Set<Integer> selectedNodes = model.getSelectedNodes();
+        HashSet<Integer> nodes = new HashSet<>(model.getHiddenNodes());
+        nodes.addAll(selectedNodes);
+        model.showNot(nodes);
+    }
+
+    @Override
     protected boolean asynchronous() {
         return false;
     }
@@ -75,5 +82,34 @@ public final class HideAction extends CallableSystemAction {
     @Override
     protected String iconResource() {
         return "com/sun/hotspot/igv/view/images/hide.gif";
+    }
+
+    @Override
+    public void update(DiagramViewModel model) {
+        super.update(model);
+        if (this.model != model) {
+            if (this.model != null) {
+                this.model.getViewChangedEvent().removeListener(this);
+            }
+            this.model = model;
+            if (this.model != null) {
+                this.model.getViewChangedEvent().addListener(this);
+            }
+        }
+    }
+
+    @Override
+    public void changed(DiagramViewModel source) {
+        update(source);
+    }
+
+    @Override
+    public boolean isEnabled(DiagramViewModel model) {
+        return model != null && !model.getSelectedNodes().isEmpty();
+    }
+
+    @Override
+    public Action createContextAwareInstance(Lookup lookup) {
+        return new HideAction();
     }
 }

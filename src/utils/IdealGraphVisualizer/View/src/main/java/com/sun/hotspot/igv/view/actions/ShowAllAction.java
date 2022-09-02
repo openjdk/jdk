@@ -23,6 +23,9 @@
  */
 package com.sun.hotspot.igv.view.actions;
 
+import com.sun.hotspot.igv.data.ChangedListener;
+import com.sun.hotspot.igv.util.ContextAction;
+import com.sun.hotspot.igv.view.DiagramViewModel;
 import com.sun.hotspot.igv.view.EditorTopComponent;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
@@ -30,21 +33,25 @@ import java.util.HashSet;
 import javax.swing.Action;
 import javax.swing.KeyStroke;
 import org.openide.util.HelpCtx;
-import org.openide.util.actions.CallableSystemAction;
+import org.openide.util.Lookup;
 import org.openide.util.Utilities;
 
 /**
  *
  * @author Thomas Wuerthinger
  */
-public final class ShowAllAction extends CallableSystemAction {
+public final class ShowAllAction extends ContextAction<DiagramViewModel> implements ChangedListener<DiagramViewModel> {
+
+    private DiagramViewModel model;
 
     @Override
-    public void performAction() {
-        EditorTopComponent editor = EditorTopComponent.getActive();
-        if (editor != null) {
-            editor.getModel().showNot(new HashSet<Integer>());
-        }
+    public Class<DiagramViewModel> contextClass() {
+        return DiagramViewModel.class;
+    }
+
+    @Override
+    public void performAction(DiagramViewModel model) {
+        model.showNot(new HashSet<Integer>());
     }
 
     public ShowAllAction() {
@@ -71,5 +78,35 @@ public final class ShowAllAction extends CallableSystemAction {
     @Override
     protected String iconResource() {
         return "com/sun/hotspot/igv/view/images/expand.gif";
+    }
+
+    @Override
+    public void update(DiagramViewModel model) {
+        super.update(model);
+        if (this.model != model) {
+            if (this.model != null) {
+                this.model.getHiddenNodesChangedEvent().removeListener(this);
+            }
+
+            this.model = model;
+            if (this.model != null) {
+                this.model.getHiddenNodesChangedEvent().addListener(this);
+            }
+        }
+    }
+
+    @Override
+    public void changed(DiagramViewModel source) {
+        update(source);
+    }
+
+    @Override
+    public boolean isEnabled(DiagramViewModel model) {
+        return model != null && !model.getHiddenNodes().isEmpty();
+    }
+
+    @Override
+    public Action createContextAwareInstance(Lookup lookup) {
+        return new ShowAllAction();
     }
 }

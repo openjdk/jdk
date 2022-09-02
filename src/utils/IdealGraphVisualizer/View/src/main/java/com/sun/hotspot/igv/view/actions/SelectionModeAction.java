@@ -42,8 +42,10 @@ public class SelectionModeAction extends AbstractAction {
     @Override
     public void actionPerformed(ActionEvent ev) {
         EditorTopComponent editor = EditorTopComponent.getActive();
-        boolean selected = (boolean)getValue(SELECTED_KEY);
-        editor.selectionMode(selected);
+        if (editor != null) {
+            boolean selected = (boolean)getValue(SELECTED_KEY);
+            editor.selectionMode(selected);
+        }
     }
 
     protected String iconResource() {

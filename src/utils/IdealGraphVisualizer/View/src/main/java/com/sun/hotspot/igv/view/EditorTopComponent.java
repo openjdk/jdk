@@ -128,7 +128,7 @@ public final class EditorTopComponent extends TopComponent {
                 ExpandDiffAction.get(ExpandDiffAction.class),
                 null,
                 ExtractAction.get(ExtractAction.class),
-                ShowAllAction.get(HideAction.class),
+                HideAction.get(HideAction.class),
                 ShowAllAction.get(ShowAllAction.class),
                 null,
                 ZoomOutAction.get(ZoomOutAction.class),
@@ -138,7 +138,7 @@ public final class EditorTopComponent extends TopComponent {
 
         Action[] actionsWithSelection = new Action[]{
                 ExtractAction.get(ExtractAction.class),
-                ShowAllAction.get(HideAction.class),
+                HideAction.get(HideAction.class),
                 null,
                 ExpandPredecessorsAction.get(ExpandPredecessorsAction.class),
                 ExpandSuccessorsAction.get(ExpandSuccessorsAction.class)
@@ -188,11 +188,11 @@ public final class EditorTopComponent extends TopComponent {
         toolBar.add(ExpandDiffAction.get(ExpandDiffAction.class));
         toolBar.addSeparator();
         toolBar.add(ExtractAction.get(ExtractAction.class));
-        toolBar.add(ShowAllAction.get(HideAction.class));
+        toolBar.add(HideAction.get(HideAction.class));
         toolBar.add(ShowAllAction.get(ShowAllAction.class));
         toolBar.addSeparator();
-        toolBar.add(ShowAllAction.get(ZoomOutAction.class));
-        toolBar.add(ShowAllAction.get(ZoomInAction.class));
+        toolBar.add(ZoomOutAction.get(ZoomOutAction.class));
+        toolBar.add(ZoomInAction.get(ZoomInAction.class));
 
         toolBar.addSeparator();
         ButtonGroup layoutButtons = new ButtonGroup();
@@ -321,7 +321,11 @@ public final class EditorTopComponent extends TopComponent {
     }
 
     public static EditorTopComponent getActive() {
-        return (EditorTopComponent) EditorTopComponent.getRegistry().getActivated();
+        TopComponent topComponent = EditorTopComponent.getRegistry().getActivated();
+        if (topComponent instanceof EditorTopComponent) {
+            return (EditorTopComponent) topComponent;
+        }
+        return null;
     }
 
     private void closeOnRemovedOrEmptyGroup() {
