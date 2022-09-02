@@ -25,6 +25,10 @@
 
 package java.security.spec;
 
+import sun.security.util.KeyUtil;
+
+import java.io.IOException;
+
 /**
  * This class represents the ASN.1 encoding of a private key,
  * encoded according to the ASN.1 type {@code PrivateKeyInfo}.
@@ -96,6 +100,21 @@ public class PKCS8EncodedKeySpec extends EncodedKeySpec {
      */
     public PKCS8EncodedKeySpec(byte[] encodedKey, String algorithm) {
         super(encodedKey, algorithm);
+    }
+
+    /**
+     * Instantiates a new Pem encoded key spec.
+     *
+     * @param pem the pem
+     * @throws IOException the io exception
+     */
+    //XXX This is kinda ugly, but gets the job done
+    public PKCS8EncodedKeySpec(String pem) throws IOException {
+        this(new PEMEncodedKeySpec(pem).getEncoded());
+    }
+
+    PKCS8EncodedKeySpec(PKCS8EncodedKeySpec eks) {
+        this(eks.getEncoded(), eks.getAlgorithm());
     }
 
     /**

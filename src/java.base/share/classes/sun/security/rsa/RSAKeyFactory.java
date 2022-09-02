@@ -323,7 +323,8 @@ public class RSAKeyFactory extends KeyFactorySpi {
         if (keySpec instanceof X509EncodedKeySpec) {
             return RSAPublicKeyImpl.newKey(type, "X.509",
                     ((X509EncodedKeySpec)keySpec).getEncoded());
-        } else if (keySpec instanceof RSAPublicKeySpec rsaSpec) {
+        } else if (keySpec instanceof RSAPublicKeySpec) {
+            RSAPublicKeySpec rsaSpec = (RSAPublicKeySpec)keySpec;
             try {
                 return new RSAPublicKeyImpl(
                     type, rsaSpec.getParams(),
@@ -342,8 +343,9 @@ public class RSAKeyFactory extends KeyFactorySpi {
     // internal implementation of generatePrivate. See JCA doc
     private PrivateKey generatePrivate(KeySpec keySpec)
             throws GeneralSecurityException {
-        if (keySpec instanceof PKCS8EncodedKeySpec) {
-            byte[] encoded = ((PKCS8EncodedKeySpec)keySpec).getEncoded();
+        if (keySpec instanceof PKCS8EncodedKeySpec ||
+                keySpec instanceof PEMEncodedKeySpec) {
+            byte[] encoded = ((EncodedKeySpec)keySpec).getEncoded();
             try {
                 return RSAPrivateCrtKeyImpl.newKey(type, "PKCS#8", encoded);
             } finally {

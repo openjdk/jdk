@@ -423,7 +423,8 @@ public class AlgorithmId implements Serializable, DerEncoder {
      *          In that case, you may "narrow" the type of the ID.
      */
     public static AlgorithmId parse(DerValue val) throws IOException {
-        if (val.tag != DerValue.tag_Sequence) {
+        //XXX Need to check if -96 is still necessary, may have been for openssl format
+        if (val.tag != DerValue.tag_Sequence && val.tag != -96) {
             throw new IOException("algid parse error, not a sequence");
         }
 

@@ -68,25 +68,26 @@ import java.util.List;
  *
  *
  *
- *
+ * <pre>
  * EncryptedPrivateKeyInfo ::= SEQUENCE {
-        encryptionAlgorithm  EncryptionAlgorithmIdentifier,
-        encryptedData        EncryptedData }
-
-encryption alg's AlgID...
-
-   PBES2Algorithms ALGORITHM-IDENTIFIER ::= {
-      {PBES2-params IDENTIFIED BY id-PBES2},
-      ...
-   }
-
-   id-PBES2 OBJECT IDENTIFIER ::= {pkcs-5 13}
-
-   PBES2-params ::= SEQUENCE {
-      keyDerivationFunc AlgorithmIdentifier {{PBES2-KDFs}},
-      encryptionScheme AlgorithmIdentifier {{PBES2-Encs}}
-   }
+ *       encryptionAlgorithm  EncryptionAlgorithmIdentifier,
+ *       encryptedData        EncryptedData
+ * }
  *
+ *       encryption alg's AlgID...
+ *
+ * PBES2Algorithms ALGORITHM-IDENTIFIER ::= {
+ *       PBES2-params IDENTIFIED BY id-PBES2},
+ *       ...
+ * }
+ *
+ * id-PBES2 OBJECT IDENTIFIER ::= {pkcs-5 13}
+ *
+ * PBES2-params ::= SEQUENCE {
+ *       keyDerivationFunc AlgorithmIdentifier {{PBES2-KDFs}},
+ *       encryptionScheme AlgorithmIdentifier {{PBES2-Encs}}
+ * }
+ * </pre>
  *
  */
 
