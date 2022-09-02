@@ -78,6 +78,10 @@ bool ShenandoahCardTable::is_dirty(MemRegion mr) {
   return false;
 }
 
+size_t ShenandoahCardTable::last_valid_index() {
+  return _last_valid_index;
+}
+
 void ShenandoahCardTable::clear() {
   CardTable::clear(_whole_heap);
 }

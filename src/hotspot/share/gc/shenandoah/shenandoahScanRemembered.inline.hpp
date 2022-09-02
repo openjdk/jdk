@@ -36,6 +36,11 @@
 #include "gc/shenandoah/shenandoahScanRemembered.hpp"
 
 inline size_t
+ShenandoahDirectCardMarkRememberedSet::last_valid_index() {
+  return _card_table->last_valid_index();
+}
+
+inline size_t
 ShenandoahDirectCardMarkRememberedSet::total_cards() {
   return _total_card_count;
 }
@@ -90,12 +95,6 @@ ShenandoahDirectCardMarkRememberedSet::mark_range_as_clean(size_t card_index, si
   }
 }
 
-inline void
-ShenandoahDirectCardMarkRememberedSet::mark_overreach_card_as_dirty(size_t card_index) {
-  uint8_t *bp = &_overreach_map[card_index];
-  bp[0] = CardTable::dirty_card_val();
-}
-
 inline bool
 ShenandoahDirectCardMarkRememberedSet::is_card_dirty(HeapWord *p) {
   size_t index = card_index_for_addr(p);
@@ -147,12 +146,6 @@ ShenandoahDirectCardMarkRememberedSet::mark_range_as_clean(HeapWord *p, size_t n
   while (bp < end_bp) {
     *bp++ = CardTable::clean_card_val();
   }
-}
-
-inline void
-ShenandoahDirectCardMarkRememberedSet::mark_overreach_card_as_dirty(void *p) {
-  uint8_t *bp = &_overreach_map_base[uintptr_t(p) >> _card_shift];
-  bp[0] = CardTable::dirty_card_val();
 }
 
 inline size_t
@@ -273,6 +266,10 @@ ShenandoahCardCluster<RememberedSet>::get_last_start(size_t card_index) {
 
 template<typename RememberedSet>
 inline size_t
+ShenandoahScanRemembered<RememberedSet>::last_valid_index() { return _rs->last_valid_index(); }
+
+template<typename RememberedSet>
+inline size_t
 ShenandoahScanRemembered<RememberedSet>::total_cards() { return _rs->total_cards(); }
 
 template<typename RememberedSet>
@@ -304,10 +301,6 @@ inline void
 ShenandoahScanRemembered<RememberedSet>::mark_range_as_clean(size_t card_index, size_t num_cards) { _rs->mark_range_as_clean(card_index, num_cards); }
 
 template<typename RememberedSet>
-inline void
-ShenandoahScanRemembered<RememberedSet>:: mark_overreach_card_as_dirty(size_t card_index) { _rs->mark_overreach_card_as_dirty(card_index); }
-
-template<typename RememberedSet>
 inline bool
 ShenandoahScanRemembered<RememberedSet>::is_card_dirty(HeapWord *p) { return _rs->is_card_dirty(p); }
 
@@ -328,20 +321,8 @@ inline void
 ShenandoahScanRemembered<RememberedSet>:: mark_range_as_clean(HeapWord *p, size_t num_heap_words) { _rs->mark_range_as_clean(p, num_heap_words); }
 
 template<typename RememberedSet>
-inline void
-ShenandoahScanRemembered<RememberedSet>::mark_overreach_card_as_dirty(void *p) { _rs->mark_overreach_card_as_dirty(p); }
-
-template<typename RememberedSet>
 inline size_t
 ShenandoahScanRemembered<RememberedSet>::cluster_count() { return _rs->cluster_count(); }
-
-template<typename RememberedSet>
-inline void
-ShenandoahScanRemembered<RememberedSet>::initialize_overreach(size_t first_cluster, size_t count) { _rs->initialize_overreach(first_cluster, count); }
-
-template<typename RememberedSet>
-inline void
-ShenandoahScanRemembered<RememberedSet>::merge_overreach(size_t first_cluster, size_t count) { _rs->merge_overreach(first_cluster, count); }
 
 template<typename RememberedSet>
 inline void
@@ -419,9 +400,9 @@ ShenandoahScanRemembered<RememberedSet>::verify_registration(HeapWord* address, 
     //        cannot use card_index_for_addr(base_addr + offset) because it asserts arg < end of whole heap
     size_t end_card_index = index + offset / CardTable::card_size_in_words();
 
-    if (end_card_index > index) {
+    if (end_card_index > index && end_card_index <= _rs->last_valid_index()) {
       // If there is a following object registered on the next card, it should begin where this object ends.
-      if ((base_addr + offset < _rs->whole_heap_end()) && _scc->has_object(end_card_index) &&
+      if (_scc->has_object(end_card_index) &&
           ((addr_for_card_index(end_card_index) + _scc->get_first_start(end_card_index)) != (base_addr + offset))) {
         return false;
       }

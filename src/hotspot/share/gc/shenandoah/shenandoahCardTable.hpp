@@ -64,6 +64,8 @@ public:
 
   bool is_dirty(MemRegion mr);
 
+  size_t last_valid_index();
+
   void clear();
 
   void clear_read_table();

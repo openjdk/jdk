@@ -41,47 +41,10 @@ ShenandoahDirectCardMarkRememberedSet::ShenandoahDirectCardMarkRememberedSet(She
   _byte_map = _card_table->byte_for_index(0);
 
   _whole_heap_base = _card_table->addr_for(_byte_map);
-  _whole_heap_end = _whole_heap_base + total_card_count * CardTable::card_size();
-
   _byte_map_base = _byte_map - (uintptr_t(_whole_heap_base) >> _card_shift);
-
-  _overreach_map = (uint8_t *) malloc(total_card_count);
-  _overreach_map_base = (_overreach_map -
-                         (uintptr_t(_whole_heap_base) >> _card_shift));
 
   assert(total_card_count % ShenandoahCardCluster<ShenandoahDirectCardMarkRememberedSet>::CardsPerCluster == 0, "Invalid card count.");
   assert(total_card_count > 0, "Card count cannot be zero.");
-  // assert(_overreach_cards != NULL);
-}
-
-ShenandoahDirectCardMarkRememberedSet::~ShenandoahDirectCardMarkRememberedSet() {
-  free(_overreach_map);
-}
-
-void ShenandoahDirectCardMarkRememberedSet::initialize_overreach(size_t first_cluster, size_t count) {
-
-  // We can make this run faster in the future by explicitly
-  // unrolling the loop and doing wide writes if the compiler
-  // doesn't do this for us.
-  size_t first_card_index = first_cluster * ShenandoahCardCluster<ShenandoahDirectCardMarkRememberedSet>::CardsPerCluster;
-  uint8_t* omp = &_overreach_map[first_card_index];
-  uint8_t* endp = omp + count * ShenandoahCardCluster<ShenandoahDirectCardMarkRememberedSet>::CardsPerCluster;
-  while (omp < endp)
-    *omp++ = CardTable::clean_card_val();
-}
-
-void ShenandoahDirectCardMarkRememberedSet::merge_overreach(size_t first_cluster, size_t count) {
-
-  // We can make this run faster in the future by explicitly unrolling the loop and doing wide writes if the compiler
-  // doesn't do this for us.
-  size_t first_card_index = first_cluster * ShenandoahCardCluster<ShenandoahDirectCardMarkRememberedSet>::CardsPerCluster;
-  uint8_t* bmp = &_byte_map[first_card_index];
-  uint8_t* endp = bmp + count * ShenandoahCardCluster<ShenandoahDirectCardMarkRememberedSet>::CardsPerCluster;
-  uint8_t* omp = &_overreach_map[first_card_index];
-
-  // dirty_card is 0, clean card is 0xff; if either *bmp or *omp is dirty, we need to mark it as dirty
-  while (bmp < endp)
-    *bmp++ &= *omp++;
 }
 
 ShenandoahScanRememberedTask::ShenandoahScanRememberedTask(ShenandoahObjToScanQueueSet* queue_set,
