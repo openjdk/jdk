@@ -71,7 +71,6 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
     private EnableSeaLayoutAction seaLayoutAction;
     private EnableBlockLayoutAction blockLayoutAction;
     private EnableCFGLayoutAction cfgLayoutAction;
-    private ShowEmptyBlocksAction showEmptyBlocksAction;
     private OverviewAction overviewAction;
     private JComponent satelliteComponent;
     private JPanel centerPanel;
@@ -155,7 +154,6 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
         toolBar.setMinimumSize(new Dimension(0,0)); // MacOS BUG with ToolbarWithOverflow
 
         JPanel container = new JPanel();
-        this.add(container, BorderLayout.NORTH);
         container.setLayout(new BorderLayout());
         container.add(BorderLayout.NORTH, toolBar);
 
@@ -167,6 +165,7 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
         }
         JScrollPane pane = new JScrollPane(rangeSlider, ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER, ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         container.add(BorderLayout.CENTER, pane);
+        this.add(container, BorderLayout.NORTH);
 
         scene = new DiagramScene(actions, actionsWithSelection, diagramViewModel);
         graphContent = new InstanceContent();
@@ -227,14 +226,9 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
         overviewAction = new OverviewAction();
         toolBar.add(new JToggleButton(overviewAction));
         toolBar.add(new JToggleButton(new PredSuccAction()));
-
-        showEmptyBlocksAction = new ShowEmptyBlocksAction();
-        button = new JToggleButton(showEmptyBlocksAction);
-        button.setSelected(true);
-        button.setEnabled(Settings.get().getInt(Settings.DEFAULT_VIEW, Settings.DEFAULT_VIEW_DEFAULT) == Settings.DefaultView.CONTROL_FLOW_GRAPH);
-        toolBar.add(button);
-
+        toolBar.add(new JToggleButton( new ShowEmptyBlocksAction(cfgLayoutAction, true)));
         toolBar.add(new JToggleButton(new HideDuplicatesAction()));
+
         toolBar.addSeparator();
         UndoAction undoAction = UndoAction.get(UndoAction.class);
         undoAction.putValue(Action.SHORT_DESCRIPTION, "Undo");
@@ -283,8 +277,6 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
                     }
                 });
 
-
-        this.add(centerPanel, BorderLayout.CENTER);
         cardLayout = new CardLayout();
         centerPanel.setLayout(cardLayout);
         centerPanel.add(SCENE_STRING, scene.getComponent());
@@ -292,6 +284,7 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
         satelliteComponent = scene.createSatelliteView();
         satelliteComponent.setSize(200, 200);
         centerPanel.add(SATELLITE_STRING, satelliteComponent);
+        this.add(centerPanel, BorderLayout.CENTER);
 
         updateDisplayName();
     }
@@ -430,17 +423,11 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
     @Override
     public void propertyChange(PropertyChangeEvent evt) {
         if (evt.getSource() == this.seaLayoutAction) {
-            boolean b = seaLayoutAction.isSelected();
-            getModel().setShowSea(b);
-            this.showEmptyBlocksAction.setEnabled(false);
+            getModel().setShowSea(seaLayoutAction.isSelected());
         } else if (evt.getSource() == this.blockLayoutAction) {
-            boolean b = blockLayoutAction.isSelected();
-            getModel().setShowBlocks(b);
-            this.showEmptyBlocksAction.setEnabled(false);
+            getModel().setShowBlocks(blockLayoutAction.isSelected());
         } else if (evt.getSource() == this.cfgLayoutAction) {
-            boolean b = cfgLayoutAction.isSelected();
-            getModel().setShowCFG(b);
-            this.showEmptyBlocksAction.setEnabled(true);
+            getModel().setShowCFG(cfgLayoutAction.isSelected());
         } else {
             assert false : "Unknown event source";
         }
