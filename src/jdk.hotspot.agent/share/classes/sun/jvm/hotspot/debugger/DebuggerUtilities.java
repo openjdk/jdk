@@ -58,9 +58,9 @@ public class DebuggerUtilities {
   public void checkAlignment(long address, long alignment) {
     // Allow 32-bit alignment for 64-bit types on some hosts.
     if (supports32bitAlignmentOf64bitTypes) {
-        if (address % 4 == 0) {
-            return;
-        }
+      if (address % 4 == 0) {
+        return;
+      }
     }
 
     if (address % alignment != 0) {
