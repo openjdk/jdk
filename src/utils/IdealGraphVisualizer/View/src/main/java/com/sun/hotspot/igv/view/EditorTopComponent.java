@@ -89,8 +89,6 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
     private EnableBlockLayoutAction blockLayoutAction;
     private EnableCFGLayoutAction cfgLayoutAction;
     private ShowEmptyBlocksAction showEmptyBlocksAction;
-    private SelectionModeAction selectionModeAction;
-    private boolean notFirstTime;
     private JComponent satelliteComponent;
     private JPanel centerPanel;
     private CardLayout cardLayout;
@@ -197,6 +195,9 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
         DiagramViewModel diagramViewModel = new DiagramViewModel(diagram.getGraph().getGroup(), filterChain, sequence);
         RangeSlider rangeSlider = new RangeSlider();
         rangeSlider.setModel(diagramViewModel);
+        if (diagram.getGraph().getGroup().getGraphsCount() == 1) {
+            rangeSlider.setVisible(false);
+        }
         JScrollPane pane = new JScrollPane(rangeSlider, ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER, ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         container.add(BorderLayout.CENTER, pane);
 
@@ -275,11 +276,7 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
         toolBar.add(redoAction);
 
         toolBar.addSeparator();
-        selectionModeAction = new SelectionModeAction();
-        button = new JToggleButton(selectionModeAction);
-        button.setSelected(false);
-        toolBar.add(button);
-        selectionModeAction.addPropertyChangeListener(this);
+        toolBar.add(new JToggleButton(new SelectionModeAction()));
         toolBar.add(Box.createHorizontalGlue());
 
         quickSearchToolbar = new Toolbar();
@@ -328,31 +325,6 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
         satelliteComponent.setSize(200, 200);
         centerPanel.add(SATELLITE_STRING, satelliteComponent);
 
-        scene.getComponent().addHierarchyBoundsListener(new HierarchyBoundsListener() {
-
-            @Override
-            public void ancestorMoved(HierarchyEvent e) {
-            }
-
-            @Override
-            public void ancestorResized(HierarchyEvent e) {
-                if (!notFirstTime && scene.getComponent().getBounds().width > 0) {
-                    notFirstTime = true;
-                    SwingUtilities.invokeLater(new Runnable() {
-
-                        @Override
-                        public void run() {
-                            EditorTopComponent.this.scene.initialize();
-                        }
-                    });
-                }
-            }
-        });
-
-        if (diagram.getGraph().getGroup().getGraphsCount() == 1) {
-            rangeSlider.setVisible(false);
-        }
-
         updateDisplayName();
     }
 
@@ -362,6 +334,14 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
 
     private Diagram getDiagram() {
         return getModel().getDiagramToView();
+    }
+
+    public void selectionMode(boolean b) {
+        if (b) {
+            scene.setInteractionMode(DiagramViewer.InteractionMode.SELECTION);
+        } else {
+            scene.setInteractionMode(DiagramViewer.InteractionMode.PANNING);
+        }
     }
 
     public void showSatellite(boolean b) {
@@ -505,13 +485,6 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
             boolean b = cfgLayoutAction.isSelected();
             getModel().setShowCFG(b);
             this.showEmptyBlocksAction.setEnabled(true);
-        } else if (evt.getSource() == this.selectionModeAction) {
-            boolean b = (Boolean) selectionModeAction.getValue(SelectionModeAction.STATE);
-            if (b) {
-                scene.setInteractionMode(DiagramViewer.InteractionMode.SELECTION);
-            } else {
-                scene.setInteractionMode(DiagramViewer.InteractionMode.PANNING);
-            }
         } else {
             assert false : "Unknown event source";
         }

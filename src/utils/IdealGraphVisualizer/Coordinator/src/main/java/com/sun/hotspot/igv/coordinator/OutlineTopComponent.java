@@ -70,7 +70,6 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
     private SaveAllAction saveAllAction;
     private RemoveAllAction removeAllAction;
 
-
     private OutlineTopComponent() {
         initComponents();
 
