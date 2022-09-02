@@ -31,7 +31,6 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #ifdef _ALLBSD_SOURCE
-#include <sys/clonefile.h>
 #include <sys/attr.h>
 #endif
 
@@ -133,10 +132,6 @@ class UnixConstants {
 
     static final int PREFIX_ERANGE = ERANGE;
     static final int PREFIX_EMFILE = EMFILE;
-
-#ifdef _ALLBSD_SOURCE
-    static final int PREFIX_ENOTSUP = ENOTSUP;
-#endif
 
     // flags used with openat/unlinkat/etc.
 #if defined(AT_SYMLINK_NOFOLLOW) && defined(AT_REMOVEDIR)

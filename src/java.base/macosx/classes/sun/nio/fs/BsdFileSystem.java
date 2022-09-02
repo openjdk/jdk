@@ -29,15 +29,11 @@ import java.io.IOException;
 import java.nio.file.FileStore;
 import java.nio.file.WatchService;
 import java.security.AccessController;
-import sun.nio.ch.IOStatus;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import sun.security.action.GetPropertyAction;
-
-import static sun.nio.fs.UnixConstants.*;
-import static sun.nio.fs.UnixNativeDispatcher.*;
 
 /**
  * Bsd implementation of FileSystem
