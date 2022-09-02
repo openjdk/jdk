@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ import java.util.HashSet;
 
 import jdk.test.lib.util.FileUtils;
 
-import sun.nio.ch.FileChannelImpl;
+import sun.nio.ch.AbstractFileChannelImpl;
 
 public class CleanerTest {
     public static void main(String[] args) throws Throwable {
@@ -78,13 +78,13 @@ public class CleanerTest {
             Reference<Object> fcRef = new PhantomReference<>(fc, refQueue);
             pending.add(fcRef);
 
-            Field fdField = FileChannelImpl.class.getDeclaredField("fd");
+            Field fdField = AbstractFileChannelImpl.class.getDeclaredField("fd");
             fdField.setAccessible(true);
             Object fd = fdField.get(fc);        // get the fd from the channel
             WeakReference<Object> fdWeak = new WeakReference<>(fd, refQueue);
             pending.add(fdWeak);
 
-            Field closerField = FileChannelImpl.class.getDeclaredField("closer");
+            Field closerField = AbstractFileChannelImpl.class.getDeclaredField("closer");
             closerField.setAccessible(true);
             Object closer = closerField.get(fc);
             System.out.printf("  cleanup: %s, fd: %s, cf: %s%n", fc, fd, closer);

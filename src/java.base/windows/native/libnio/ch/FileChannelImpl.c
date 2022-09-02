@@ -40,7 +40,7 @@
  * static method to retrieve the allocation granularity
  */
 JNIEXPORT jlong JNICALL
-Java_sun_nio_ch_FileChannelImpl_allocationGranularity0(JNIEnv *env, jclass clazz)
+Java_sun_nio_ch_FileChannelImpl_allocationGranularity0(JNIEnv *env, jclass klass)
 {
     SYSTEM_INFO si;
     jint align;
@@ -55,7 +55,7 @@ Java_sun_nio_ch_FileChannelImpl_allocationGranularity0(JNIEnv *env, jclass clazz
  */
 
 JNIEXPORT jlong JNICALL
-Java_sun_nio_ch_FileChannelImpl_map0(JNIEnv *env, jobject this, jobject fdo,
+Java_sun_nio_ch_FileChannelImpl_map0(JNIEnv *env, jclass klass, jobject fdo,
                                      jint prot, jlong off, jlong len, jboolean map_sync)
 {
     void *mapAddress = 0;
@@ -126,8 +126,8 @@ Java_sun_nio_ch_FileChannelImpl_map0(JNIEnv *env, jobject this, jobject fdo,
 }
 
 JNIEXPORT jint JNICALL
-Java_sun_nio_ch_FileChannelImpl_unmap0(JNIEnv *env, jobject this,
-                                 jlong address, jlong len)
+Java_sun_nio_ch_FileChannelImpl_unmap0(JNIEnv *env, jclass klass,
+                                       jlong address, jlong len)
 {
     BOOL result;
     void *a = (void *) jlong_to_ptr(address);
@@ -143,8 +143,14 @@ Java_sun_nio_ch_FileChannelImpl_unmap0(JNIEnv *env, jobject this,
 // Integer.MAX_VALUE - 1 is the maximum transfer size for TransmitFile()
 #define MAX_TRANSMIT_SIZE (java_lang_Integer_MAX_VALUE - 1)
 
+JNIEXPORT jint JNICALL
+Java_sun_nio_ch_FileChannelImpl_maxDirectTransferSize0(JNIEnv* env, jclass klass)
+{
+    return MAX_TRANSMIT_SIZE;
+}
+
 JNIEXPORT jlong JNICALL
-Java_sun_nio_ch_FileChannelImpl_transferTo0(JNIEnv *env, jobject this,
+Java_sun_nio_ch_FileChannelImpl_transferTo0(JNIEnv *env, jclass klass,
                                             jobject srcFD,
                                             jlong position, jlong count,
                                             jobject dstFD, jboolean append)
@@ -186,19 +192,4 @@ Java_sun_nio_ch_FileChannelImpl_transferTo0(JNIEnv *env, jobject this,
         return IOS_THROWN;
     }
     return chunkSize;
-}
-
-JNIEXPORT jlong JNICALL
-Java_sun_nio_ch_FileChannelImpl_transferFrom0(JNIEnv *env, jobject this,
-                                              jobject srcFDO, jobject dstFDO,
-                                              jlong position, jlong count,
-                                              jboolean append)
-{
-    return IOS_UNSUPPORTED;
-}
-
-JNIEXPORT jint JNICALL
-Java_sun_nio_ch_FileChannelImpl_maxDirectTransferSize0(JNIEnv* env, jobject this)
-{
-    return MAX_TRANSMIT_SIZE;
 }
