@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
+#include "classfile/vmIntrinsics.hpp"
 #include "compiler/oopMap.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
@@ -50,7 +51,6 @@
 #include "jfr/support/jfrIntrinsics.hpp"
 #endif
 
-// Declaration and definition of StubGenerator (no .hpp file).
 // For a more detailed description of the stub routine structure
 // see the comment in stubRoutines.hpp
 
@@ -76,6 +76,7 @@ static void inc_counter_np(MacroAssembler* _masm, int& counter, Register rscratc
   __ incrementl(ExternalAddress((address)&counter), rscratch);
 }
 
+#if COMPILER2_OR_JVMCI
 static int& get_profile_ctr(int shift) {
   if (shift == 0) {
     return SharedRuntime::_jbyte_array_copy_ctr;
@@ -88,6 +89,7 @@ static int& get_profile_ctr(int shift) {
     return SharedRuntime::_jlong_array_copy_ctr;
   }
 }
+#endif // COMPILER2_OR_JVMCI
 #endif // !PRODUCT
 
 //
@@ -1651,6 +1653,9 @@ address StubGenerator::generate_disjoint_copy_avx3_masked(address* entry, const 
     }
     __ BIND(L_exit);
   }
+  __ subptr(qword_count, 4);
+  __ jcc(Assembler::less, L_copy_8_bytes); // Copy trailing qwords
+}
 
   address ucme_exit_pc = __ pc();
   // When called from generic_arraycopy r11 contains specific values
@@ -5979,6 +5984,7 @@ address StubGenerator::base64_vbmi_lookup_hi_addr() {
 
   return start;
 }
+
 address StubGenerator::base64_vbmi_lookup_lo_url_addr() {
   __ align64();
   StubCodeMark mark(this, "StubRoutines", "lookup_lo_base64url");
@@ -6731,6 +6737,46 @@ address StubGenerator::generate_updateBytesCRC32C(bool is_pclmulqdq_supported) {
 }
 
 
+/***
+ *  Arguments:
+ *
+ *  Inputs:
+ *   c_rarg0   - int   adler
+ *   c_rarg1   - byte* buff
+ *   c_rarg2   - int   len
+ *
+ * Output:
+ *   rax   - int adler result
+ */
+
+address StubGenerator::generate_updateBytesAdler32() {
+  assert(UseAdler32Intrinsics, "need AVX2");
+
+  __ align(CodeEntryAlignment);
+  StubCodeMark mark(this, "StubRoutines", "updateBytesAdler32");
+  address start = __ pc();
+
+  const Register data = r9;
+  const Register size = r10;
+
+  const XMMRegister yshuf0 = xmm6;
+  const XMMRegister yshuf1 = xmm7;
+  assert_different_registers(c_rarg0, c_rarg1, c_rarg2, data, size);
+
+  BLOCK_COMMENT("Entry:");
+  __ enter(); // required for proper stackwalking of RuntimeStub frame
+
+  __ vmovdqu(yshuf0, ExternalAddress((address) StubRoutines::x86::_adler32_shuf0_table), r9);
+  __ vmovdqu(yshuf1, ExternalAddress((address) StubRoutines::x86::_adler32_shuf1_table), r9);
+  __ movptr(data, c_rarg1); //data
+  __ movl(size, c_rarg2); //length
+  __ updateBytesAdler32(c_rarg0, data, size, yshuf0, yshuf1, ExternalAddress((address) StubRoutines::x86::_adler32_ascale_table));
+  __ leave();
+  __ ret(0);
+
+  return start;
+}
+
 /**
  *  Arguments:
  *
@@ -7406,66 +7452,6 @@ address StubGenerator::generate_libmTan() {
   return start;
 }
 
-RuntimeStub* StubGenerator::generate_cont_doYield() {
-  if (!Continuations::enabled()) return nullptr;
-
-  enum layout {
-    rbp_off,
-    rbpH_off,
-    return_off,
-    return_off2,
-    framesize // inclusive of return address
-  };
-
-  CodeBuffer code("cont_doYield", 512, 64);
-  MacroAssembler* _masm = new MacroAssembler(&code);
-  address start = __ pc();
-
-  __ enter();
-  address the_pc = __ pc();
-
-  int frame_complete = the_pc - start;
-
-  // This nop must be exactly at the PC we push into the frame info.
-  // We use this nop for fast CodeBlob lookup, associate the OopMap
-  // with it right away.
-  __ post_call_nop();
-  OopMapSet* oop_maps = new OopMapSet();
-  OopMap* map = new OopMap(framesize, 1);
-  oop_maps->add_gc_map(frame_complete, map);
-
-  __ set_last_Java_frame(rsp, rbp, the_pc, rscratch1);
-  __ movptr(c_rarg0, r15_thread);
-  __ movptr(c_rarg1, rsp);
-  __ call_VM_leaf(Continuation::freeze_entry(), 2);
-  __ reset_last_Java_frame(true);
-
-  Label L_pinned;
-
-  __ testptr(rax, rax);
-  __ jcc(Assembler::notZero, L_pinned);
-
-  __ movptr(rsp, Address(r15_thread, JavaThread::cont_entry_offset()));
-  __ continuation_enter_cleanup();
-  __ pop(rbp);
-  __ ret(0);
-
-  __ bind(L_pinned);
-
-  // Pinned, return to caller
-  __ leave();
-  __ ret(0);
-
-  RuntimeStub* stub =
-    RuntimeStub::new_runtime_stub(code.name(),
-                                  &code,
-                                  frame_complete,
-                                  (framesize >> (LogBytesPerWord - LogBytesPerInt)),
-                                  oop_maps,
-                                  false);
-  return stub;
-}
-
 address StubGenerator::generate_cont_thaw(const char* label, Continuation::thaw_kind kind) {
   if (!Continuations::enabled()) return nullptr;
 
@@ -7863,9 +7849,6 @@ void StubGenerator::generate_phase1() {
   StubRoutines::_cont_thaw          = generate_cont_thaw();
   StubRoutines::_cont_returnBarrier = generate_cont_returnBarrier();
   StubRoutines::_cont_returnBarrierExc = generate_cont_returnBarrier_exception();
-  StubRoutines::_cont_doYield_stub = generate_cont_doYield();
-  StubRoutines::_cont_doYield      = StubRoutines::_cont_doYield_stub == nullptr ? nullptr
-                                      : StubRoutines::_cont_doYield_stub->entry_point();
 
   JFR_ONLY(StubRoutines::_jfr_write_checkpoint_stub = generate_jfr_write_checkpoint();)
   JFR_ONLY(StubRoutines::_jfr_write_checkpoint = StubRoutines::_jfr_write_checkpoint_stub->entry_point();)

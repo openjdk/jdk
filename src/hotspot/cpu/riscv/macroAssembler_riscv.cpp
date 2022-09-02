@@ -62,28 +62,24 @@
 
 static void pass_arg0(MacroAssembler* masm, Register arg) {
   if (c_rarg0 != arg) {
-    assert_cond(masm != NULL);
     masm->mv(c_rarg0, arg);
   }
 }
 
 static void pass_arg1(MacroAssembler* masm, Register arg) {
   if (c_rarg1 != arg) {
-    assert_cond(masm != NULL);
     masm->mv(c_rarg1, arg);
   }
 }
 
 static void pass_arg2(MacroAssembler* masm, Register arg) {
   if (c_rarg2 != arg) {
-    assert_cond(masm != NULL);
     masm->mv(c_rarg2, arg);
   }
 }
 
 static void pass_arg3(MacroAssembler* masm, Register arg) {
   if (c_rarg3 != arg) {
-    assert_cond(masm != NULL);
     masm->mv(c_rarg3, arg);
   }
 }
@@ -1648,11 +1644,8 @@ void MacroAssembler::cmp_klass(Register oop, Register trial_klass, Register tmp,
   beq(trial_klass, tmp, L);
 }
 
-// Move an oop into a register. immediate is true if we want
-// immediate instructions and nmethod entry barriers are not enabled.
-// i.e. we are not going to patch this instruction while the code is being
-// executed by another thread.
-void MacroAssembler::movoop(Register dst, jobject obj, bool immediate) {
+// Move an oop into a register.
+void MacroAssembler::movoop(Register dst, jobject obj) {
   int oop_index;
   if (obj == NULL) {
     oop_index = oop_recorder()->allocate_oop_index(obj);
@@ -1667,15 +1660,12 @@ void MacroAssembler::movoop(Register dst, jobject obj, bool immediate) {
   }
   RelocationHolder rspec = oop_Relocation::spec(oop_index);
 
-  // nmethod entry barrier necessitate using the constant pool. They have to be
-  // ordered with respected to oop access.
-  // Using immediate literals would necessitate fence.i.
-  BarrierSet* bs = BarrierSet::barrier_set();
-  if ((bs->barrier_set_nmethod() != NULL && bs->barrier_set_assembler()->nmethod_patching_type() == NMethodPatchingType::conc_data_patch) || !immediate) {
+  if (BarrierSet::barrier_set()->barrier_set_assembler()->supports_instruction_patching()) {
+    mv(dst, Address((address)obj, rspec));
+  } else {
     address dummy = address(uintptr_t(pc()) & -wordSize); // A nearby aligned address
     ld_constant(dst, Address(dummy, rspec));
-  } else
-    mv(dst, Address((address)obj, rspec));
+  }
 }
 
 // Move a metadata address into a register.
@@ -1720,7 +1710,6 @@ void MacroAssembler::bang_stack_size(Register size, Register tmp) {
 }
 
 SkipIfEqual::SkipIfEqual(MacroAssembler* masm, const bool* flag_addr, bool value) {
-  assert_cond(masm != NULL);
   int32_t offset = 0;
   _masm = masm;
   _masm->la_patchable(t0, ExternalAddress((address)flag_addr), offset);
@@ -1729,7 +1718,6 @@ SkipIfEqual::SkipIfEqual(MacroAssembler* masm, const bool* flag_addr, bool value
 }
 
 SkipIfEqual::~SkipIfEqual() {
-  assert_cond(_masm != NULL);
   _masm->bind(_label);
   _masm = NULL;
 }

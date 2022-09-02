@@ -25,6 +25,7 @@
 #ifndef CPU_X86_STUBGENERATOR_X86_64_HPP
 #define CPU_X86_STUBGENERATOR_X86_64_HPP
 
+#include "code/codeBlob.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/stubCodeGenerator.hpp"
 
@@ -393,8 +394,6 @@ class StubGenerator: public StubCodeGenerator {
   address generate_libmSin();
   address generate_libmCos();
   address generate_libmTan();
-
-  RuntimeStub* generate_cont_doYield();
 
   address generate_cont_thaw(const char* label, Continuation::thaw_kind kind);
   address generate_cont_thaw();
