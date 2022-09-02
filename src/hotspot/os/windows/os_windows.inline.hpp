@@ -25,11 +25,15 @@
 #ifndef OS_WINDOWS_OS_WINDOWS_INLINE_HPP
 #define OS_WINDOWS_OS_WINDOWS_INLINE_HPP
 
-// os_windows.hpp included by os.hpp
+#include "os_windows.hpp"
 
 #include "runtime/javaThread.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/os.hpp"
+
+inline bool os::zero_page_read_protected() {
+  return true;
+}
 
 inline bool os::uses_stack_guard_pages() {
   return true;
@@ -45,7 +49,7 @@ inline void os::map_stack_shadow_pages(address sp) {
   // If we decrement stack pointer more than one page
   // the OS may not map an intervening page into our space
   // and may fault on a memory access to interior of our frame.
-  const int page_size = os::win32::vm_page_size();
+  const int page_size = os::vm_page_size();
   const size_t n_pages = StackOverflow::stack_shadow_zone_size() / page_size;
   for (size_t pages = 1; pages <= n_pages; pages++) {
     sp -= page_size;

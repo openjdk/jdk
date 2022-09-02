@@ -35,6 +35,8 @@
 #include "interpreter/interpreter.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
+#include "os_bsd.hpp"
+#include "os_posix.hpp"
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm_misc.hpp"
 #include "runtime/arguments.hpp"
@@ -335,10 +337,6 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
 }
 
 void os::Bsd::init_thread_fpu_state(void) {
-}
-
-bool os::is_allocatable(size_t bytes) {
-  return true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -474,14 +474,15 @@ bool MachNode::rematerialize() const {
   }
 
   // Stretching lots of inputs - don't do it.
-  if (req() > 2) {
+  // A MachContant has the last input being the constant base
+  if (req() > (is_MachConstant() ? 3U : 2U)) {
     return false;
   }
 
-  if (req() == 2 && in(1) && in(1)->ideal_reg() == Op_RegFlags) {
+  if (req() >= 2 && in(1) && in(1)->ideal_reg() == Op_RegFlags) {
     // In(1) will be rematerialized, too.
     // Stretching lots of inputs - don't do it.
-    if (in(1)->req() > 2) {
+    if (in(1)->req() > (in(1)->is_MachConstant() ? 3U : 2U)) {
       return false;
     }
   }
@@ -491,7 +492,7 @@ bool MachNode::rematerialize() const {
   uint idx = oper_input_base();
   if (req() > idx) {
     const RegMask &rm = in_RegMask(idx);
-    if (rm.is_bound(ideal_reg())) {
+    if (rm.is_NotEmpty() && rm.is_bound(ideal_reg())) {
       return false;
     }
   }

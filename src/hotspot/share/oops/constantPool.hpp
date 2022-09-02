@@ -37,6 +37,7 @@
 #include "utilities/align.hpp"
 #include "utilities/bytes.hpp"
 #include "utilities/constantTag.hpp"
+#include "utilities/resourceHash.hpp"
 
 // A ConstantPool is an array containing class constants as described in the
 // class file.
@@ -46,8 +47,6 @@
 // modified when the entry is resolved.  If a klass constant pool
 // entry is read without a lock, only the resolved state guarantees that
 // the entry in the constant pool is a klass object and not a Symbol*.
-
-class SymbolHashMap;
 
 // This represents a JVM_CONSTANT_Class, JVM_CONSTANT_UnresolvedClass, or
 // JVM_CONSTANT_UnresolvedClassInError slot in the constant pool.
@@ -890,8 +889,23 @@ class ConstantPool : public Metadata {
   friend class JvmtiConstantPoolReconstituter;
 
  private:
+  class SymbolHash: public CHeapObj<mtSymbol> {
+    ResourceHashtable<const Symbol*, u2, 256, ResourceObj::C_HEAP, mtSymbol, Symbol::compute_hash> _table;
+
+   public:
+    void add_if_absent(const Symbol* sym, u2 value) {
+      bool created;
+      _table.put_if_absent(sym, value, &created);
+    }
+
+    u2 symbol_to_value(const Symbol* sym) {
+      u2* value = _table.get(sym);
+      return (value == nullptr) ? 0 : *value;
+    }
+  }; // End SymbolHash class
+
   jint cpool_entry_size(jint idx);
-  jint hash_entries_to(SymbolHashMap *symmap, SymbolHashMap *classmap);
+  jint hash_entries_to(SymbolHash *symmap, SymbolHash *classmap);
 
   // Copy cpool bytes into byte array.
   // Returns:
@@ -899,7 +913,7 @@ class ConstantPool : public Metadata {
   //        0, OutOfMemory error
   //       -1, Internal error
   int  copy_cpool_bytes(int cpool_size,
-                        SymbolHashMap* tbl,
+                        SymbolHash* tbl,
                         unsigned char *bytes);
 
  public:
@@ -913,89 +927,5 @@ class ConstantPool : public Metadata {
 
   const char* internal_name() const { return "{constant pool}"; }
 };
-
-class SymbolHashMapEntry : public CHeapObj<mtSymbol> {
- private:
-  SymbolHashMapEntry* _next;   // Next element in the linked list for this bucket
-  Symbol*             _symbol; // 1-st part of the mapping: symbol => value
-  unsigned int        _hash;   // 32-bit hash for item
-  u2                  _value;  // 2-nd part of the mapping: symbol => value
-
- public:
-  unsigned   int hash() const             { return _hash;   }
-  void       set_hash(unsigned int hash)  { _hash = hash;   }
-
-  SymbolHashMapEntry* next() const        { return _next;   }
-  void set_next(SymbolHashMapEntry* next) { _next = next;   }
-
-  Symbol*    symbol() const               { return _symbol; }
-  void       set_symbol(Symbol* sym)      { _symbol = sym;  }
-
-  u2         value() const                {  return _value; }
-  void       set_value(u2 value)          { _value = value; }
-
-  SymbolHashMapEntry(unsigned int hash, Symbol* symbol, u2 value)
-    : _next(NULL), _symbol(symbol), _hash(hash), _value(value) {}
-
-}; // End SymbolHashMapEntry class
-
-
-class SymbolHashMapBucket : public CHeapObj<mtSymbol> {
-
-private:
-  SymbolHashMapEntry*    _entry;
-
-public:
-  SymbolHashMapEntry* entry() const         {  return _entry; }
-  void set_entry(SymbolHashMapEntry* entry) { _entry = entry; }
-  void clear()                              { _entry = NULL;  }
-
-}; // End SymbolHashMapBucket class
-
-
-class SymbolHashMap: public CHeapObj<mtSymbol> {
-
- private:
-  // Default number of entries in the table
-  enum SymbolHashMap_Constants {
-    _Def_HashMap_Size = 256
-  };
-
-  int                   _table_size;
-  SymbolHashMapBucket*  _buckets;
-
-  void initialize_table(int table_size);
-
- public:
-
-  int table_size() const        { return _table_size; }
-
-  SymbolHashMap()               { initialize_table(_Def_HashMap_Size); }
-  SymbolHashMap(int table_size) { initialize_table(table_size); }
-
-  // hash P(31) from Kernighan & Ritchie
-  static unsigned int compute_hash(const char* str, int len) {
-    unsigned int hash = 0;
-    while (len-- > 0) {
-      hash = 31*hash + (unsigned) *str;
-      str++;
-    }
-    return hash;
-  }
-
-  SymbolHashMapEntry* bucket(int i) {
-    return _buckets[i].entry();
-  }
-
-  void add_entry(Symbol* sym, u2 value);
-  SymbolHashMapEntry* find_entry(Symbol* sym);
-
-  u2 symbol_to_value(Symbol* sym) {
-    SymbolHashMapEntry *entry = find_entry(sym);
-    return (entry == NULL) ? 0 : entry->value();
-  }
-
-  ~SymbolHashMap();
-}; // End SymbolHashMap class
 
 #endif // SHARE_OOPS_CONSTANTPOOL_HPP

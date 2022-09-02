@@ -54,6 +54,7 @@
 #include "runtime/mutex.hpp"
 #include "runtime/reflectionUtils.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/synchronizer.hpp"
 #if INCLUDE_G1GC
 #include "gc/g1/g1BarrierSetRuntime.hpp"
 #endif // INCLUDE_G1GC
@@ -2063,7 +2064,7 @@ JVMCI::CodeInstallResult JVMCIRuntime::register_method(JVMCIEnv* JVMCIENV,
                                 int speculations_len) {
   JVMCI_EXCEPTION_CONTEXT;
   nmethod* nm = NULL;
-  int comp_level = CompLevel_full_optimization;
+  CompLevel comp_level = CompLevel_full_optimization;
   char* failure_detail = NULL;
 
   bool install_default = JVMCIENV->get_HotSpotNmethod_isDefault(nmethod_mirror) != 0;
