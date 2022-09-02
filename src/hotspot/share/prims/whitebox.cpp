@@ -2387,7 +2387,7 @@ WB_ENTRY(jlong, WB_ResolvedMethodItemsCount(JNIEnv* env, jobject o))
 WB_END
 
 WB_ENTRY(jint, WB_ProtectionDomainRemovedCount(JNIEnv* env, jobject o))
-  return (jint) SystemDictionary::pd_cache_table()->removed_entries_count();
+  return (jint) ProtectionDomainCacheTable::removed_entries_count();
 WB_END
 
 WB_ENTRY(jint, WB_GetKlassMetadataSize(JNIEnv* env, jobject wb, jclass mirror))
