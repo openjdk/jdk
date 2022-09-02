@@ -1653,9 +1653,6 @@ address StubGenerator::generate_disjoint_copy_avx3_masked(address* entry, const 
     }
     __ BIND(L_exit);
   }
-  __ subptr(qword_count, 4);
-  __ jcc(Assembler::less, L_copy_8_bytes); // Copy trailing qwords
-}
 
   address ucme_exit_pc = __ pc();
   // When called from generic_arraycopy r11 contains specific values
@@ -5984,7 +5981,6 @@ address StubGenerator::base64_vbmi_lookup_hi_addr() {
 
   return start;
 }
-
 address StubGenerator::base64_vbmi_lookup_lo_url_addr() {
   __ align64();
   StubCodeMark mark(this, "StubRoutines", "lookup_lo_base64url");
@@ -6736,46 +6732,6 @@ address StubGenerator::generate_updateBytesCRC32C(bool is_pclmulqdq_supported) {
   return start;
 }
 
-
-/***
- *  Arguments:
- *
- *  Inputs:
- *   c_rarg0   - int   adler
- *   c_rarg1   - byte* buff
- *   c_rarg2   - int   len
- *
- * Output:
- *   rax   - int adler result
- */
-
-address StubGenerator::generate_updateBytesAdler32() {
-  assert(UseAdler32Intrinsics, "need AVX2");
-
-  __ align(CodeEntryAlignment);
-  StubCodeMark mark(this, "StubRoutines", "updateBytesAdler32");
-  address start = __ pc();
-
-  const Register data = r9;
-  const Register size = r10;
-
-  const XMMRegister yshuf0 = xmm6;
-  const XMMRegister yshuf1 = xmm7;
-  assert_different_registers(c_rarg0, c_rarg1, c_rarg2, data, size);
-
-  BLOCK_COMMENT("Entry:");
-  __ enter(); // required for proper stackwalking of RuntimeStub frame
-
-  __ vmovdqu(yshuf0, ExternalAddress((address) StubRoutines::x86::_adler32_shuf0_table), r9);
-  __ vmovdqu(yshuf1, ExternalAddress((address) StubRoutines::x86::_adler32_shuf1_table), r9);
-  __ movptr(data, c_rarg1); //data
-  __ movl(size, c_rarg2); //length
-  __ updateBytesAdler32(c_rarg0, data, size, yshuf0, yshuf1, ExternalAddress((address) StubRoutines::x86::_adler32_ascale_table));
-  __ leave();
-  __ ret(0);
-
-  return start;
-}
 
 /**
  *  Arguments:
