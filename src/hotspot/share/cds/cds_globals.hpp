@@ -73,9 +73,8 @@
                                                                             \
   develop(ccstr, ArchiveHeapTestClass, NULL,                                \
           "For JVM internal testing only. Not available in "                \
-          "product builds. This flag specifies a class whose static "       \
-          "field named \"archivedObjects\" is stored into the CDS "         \
-          "archive heap")                                                   \
+          "product builds. The \"archivedObjects\" static field "           \
+          "of the specified class is stored in the CDS archive heap")       \
                                                                             \
   product(ccstr, DumpLoadedClassList, NULL,                                 \
           "Dump the names all loaded classes, that could be stored into "   \
