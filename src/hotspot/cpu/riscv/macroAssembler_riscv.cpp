@@ -1780,14 +1780,14 @@ void MacroAssembler::null_check(Register reg, int offset) {
 
 void MacroAssembler::access_store_at(BasicType type, DecoratorSet decorators,
                                      Address dst, Register src,
-                                     Register tmp1, Register thread_tmp) {
+                                     Register tmp1, Register tmp2, Register tmp3) {
   BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
   decorators = AccessInternal::decorator_fixup(decorators);
   bool as_raw = (decorators & AS_RAW) != 0;
   if (as_raw) {
-    bs->BarrierSetAssembler::store_at(this, decorators, type, dst, src, tmp1, thread_tmp);
+    bs->BarrierSetAssembler::store_at(this, decorators, type, dst, src, tmp1, tmp2, tmp3);
   } else {
-    bs->store_at(this, decorators, type, dst, src, tmp1, thread_tmp);
+    bs->store_at(this, decorators, type, dst, src, tmp1, tmp2, tmp3);
   }
 }
 
@@ -1955,8 +1955,8 @@ void  MacroAssembler::decode_heap_oop(Register d, Register s) {
 }
 
 void MacroAssembler::store_heap_oop(Address dst, Register src, Register tmp1,
-                                    Register thread_tmp, DecoratorSet decorators) {
-  access_store_at(T_OBJECT, IN_HEAP | decorators, dst, src, tmp1, thread_tmp);
+                                    Register tmp2, Register tmp3, DecoratorSet decorators) {
+  access_store_at(T_OBJECT, IN_HEAP | decorators, dst, src, tmp1, tmp2, tmp3);
 }
 
 void MacroAssembler::load_heap_oop(Register dst, Address src, Register tmp1,
@@ -1971,7 +1971,7 @@ void MacroAssembler::load_heap_oop_not_null(Register dst, Address src, Register 
 
 // Used for storing NULLs.
 void MacroAssembler::store_heap_oop_null(Address dst) {
-  access_store_at(T_OBJECT, IN_HEAP, dst, noreg, noreg, noreg);
+  access_store_at(T_OBJECT, IN_HEAP, dst, noreg, noreg, noreg, noreg);
 }
 
 int MacroAssembler::corrected_idivl(Register result, Register rs1, Register rs2,
