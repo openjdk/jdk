@@ -34,7 +34,7 @@
 
 // The queue instances are used by the load barrier to enqueue tagged Klass'es.
 static JfrTraceIdKlassQueue* _klass_queue = nullptr; // Generic for all Java threads.
-static JfrTraceIdKlassQueue* _sampler_klass_queue = nullptr; // Specialized for the Jfr Thread Sampler using use a larger buffer size.
+static JfrTraceIdKlassQueue* _sampler_klass_queue = nullptr; // Specialized for the Jfr Thread Sampler using a larger buffer size.
 
 static JfrTraceIdKlassQueue& klass_queue() {
   assert(_klass_queue != nullptr, "invariant");
