@@ -29,6 +29,7 @@ import compiler.lib.ir_framework.*;
  * @test
  * bug 8290529
  * @summary verify that x <u 1 is transformed to x == 0
+ * @requires os.arch=="amd64" | os.arch=="x86_64"
  * @library /test/lib /
  * @requires vm.compiler2.enabled
  * @run driver compiler.c2.irTests.CmpUWithZero
