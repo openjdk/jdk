@@ -161,10 +161,8 @@ void JavaThread::set_threadOopHandles(oop p) {
 }
 
 oop JavaThread::threadObj() const {
-  Thread* current = Thread::current_or_null_safe();
-  assert(current != nullptr, "cannot be called by a detached thread");
-  guarantee(current != this || JavaThread::cast(current)->is_oop_safe(),
-            "current cannot touch oops after its GC barrier is detached.");
+  // Using Thread::current_or_null_safe() here risks that calling threadObj() can
+  // overwrite a native thread local, e.g. JVMTI operations clearing GetLastError on Windows.
   return _threadObj.resolve();
 }
 
