@@ -50,6 +50,10 @@ public class OverviewAction extends AbstractAction {
         editor.showSatellite(selected);
     }
 
+    public void setSelected(boolean selected) {
+        putValue(Action.SELECTED_KEY, selected);
+        EditorTopComponent.getActive().showSatellite(selected);
+    }
 
     protected String iconResource() {
         return "com/sun/hotspot/igv/view/images/overview.png";

@@ -89,10 +89,10 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
     private EnableBlockLayoutAction blockLayoutAction;
     private EnableCFGLayoutAction cfgLayoutAction;
     private ShowEmptyBlocksAction showEmptyBlocksAction;
+    private OverviewAction overviewAction;
     private JComponent satelliteComponent;
     private JPanel centerPanel;
     private CardLayout cardLayout;
-    private JToggleButton overviewButton;
     private JPanel topPanel;
     private Toolbar quickSearchToolbar;
     private static final JPanel quickSearchPresenter = (JPanel) ((Presenter.Toolbar) Utilities.actionsForPath("Actions/Search").get(0)).getToolbarPresenter();
@@ -257,7 +257,8 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
         cfgLayoutAction.addPropertyChangeListener(this);
 
         toolBar.addSeparator();
-        toolBar.add(new JToggleButton(new OverviewAction()));
+        overviewAction = new OverviewAction();
+        toolBar.add(new JToggleButton(overviewAction));
         toolBar.add(new JToggleButton(new PredSuccAction()));
 
         showEmptyBlocksAction = new ShowEmptyBlocksAction();
@@ -302,7 +303,7 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
         centerPanel.getActionMap().put(SATELLITE_STRING,
                 new AbstractAction(SATELLITE_STRING) {
                     @Override public void actionPerformed(ActionEvent e) {
-                        EditorTopComponent.this.overviewButton.setSelected(true);
+                        EditorTopComponent.this.overviewAction.setSelected(true);
                     }
                 });
         centerPanel.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(
@@ -311,7 +312,7 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
                 new AbstractAction(SCENE_STRING) {
                     @Override
                     public void actionPerformed(ActionEvent e) {
-                        EditorTopComponent.this.overviewButton.setSelected(false);
+                        EditorTopComponent.this.overviewAction.setSelected(false);
                     }
                 });
 
