@@ -633,6 +633,7 @@ class CompileReplay : public StackObj {
       }
       line_no++;
     }
+    reset();
   }
 
   void process_command(TRAPS) {
@@ -808,7 +809,6 @@ class CompileReplay : public StackObj {
     CompileBroker::compile_method(methodHandle(THREAD, method), entry_bci, comp_level,
                                   methodHandle(), 0, CompileTask::Reason_Replay, THREAD);
     replay_state = NULL;
-    reset();
   }
 
   // ciMethod <klass> <name> <signature> <invocation_counter> <backedge_counter> <interpreter_invocation_count> <interpreter_throwout_count> <instructions_size>
