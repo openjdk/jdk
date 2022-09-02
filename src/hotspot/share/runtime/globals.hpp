@@ -1342,11 +1342,11 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   product(ccstr, MallocLimit, nullptr, DIAGNOSTIC,                          \
           "Limit malloc allocation size from VM. Reaching the limit will "  \
-          "trigger a fatal error. This feature requires "                   \
+          "trigger a fatal error or mimick a native OOM. This feature requires " \
           "NativeMemoryTracking=summary or NativeMemoryTracking=detail."    \
           "Usage:"                                                          \
-          "- MallocLimit=<size> to set a total limit. "                     \
-          "- MallocLimit=<NMT category>:<size>[,<NMT category>:<size>...] " \
+          "- MallocLimit=<size>[,oom] to set a total limit. "               \
+          "- MallocLimit=<NMT category>:<size>[,<NMT category>:<size>...][,oom] " \
           "  to set one or more category-specific limits."                  \
           "Example: -XX:MallocLimit=compiler:500m")                         \
                                                                             \

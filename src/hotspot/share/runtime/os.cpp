@@ -664,6 +664,9 @@ void* os::malloc(size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
   }
 
   void* const inner_ptr = MemTracker::record_malloc((address)outer_ptr, size, memflags, stack);
+  if (inner_ptr == NULL) { // MallocLimit?
+    return NULL;
+  }
 
   if (DumpSharedSpaces) {
     // Need to deterministically fill all the alignment gaps in C++ structures.
@@ -714,6 +717,9 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCa
   }
 
   void* const new_inner_ptr = MemTracker::record_malloc(new_outer_ptr, size, memflags, stack);
+  if (new_inner_ptr == NULL) { // MallocLimit?
+    return NULL;
+  }
 
   DEBUG_ONLY(break_if_ptr_caught(new_inner_ptr);)
 

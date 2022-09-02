@@ -30,6 +30,7 @@
 #include "runtime/atomic.hpp"
 #include "runtime/threadCritical.hpp"
 #include "services/mallocHeader.hpp"
+#include "services/mallocLimit.hpp"
 #include "services/nmtCommon.hpp"
 #include "utilities/nativeCallStack.hpp"
 
@@ -198,8 +199,8 @@ class MallocMemorySummary : AllStatic {
   static size_t _snapshot[CALC_OBJ_SIZE_IN_TYPE(MallocMemorySnapshot, size_t)];
 
   // Malloc Limit handling (-XX:MallocLimit)
-  static size_t _limits_per_category[mt_number_of_types];
-  static size_t _total_limit;
+  static MallocLimitInfo _limits;
+  static bool _limit_reached;
 
   static void initialize_limit_handling();
   static void total_limit_reached(size_t size, size_t limit);
@@ -208,13 +209,13 @@ class MallocMemorySummary : AllStatic {
   static void check_limits_after_allocation(MEMFLAGS flag) {
     // We can only either have a total limit or category specific limits,
     // not both.
-    if (_total_limit != 0) {
+    if (_limits.is_global_limit()) {
       size_t s = as_snapshot()->total();
-      if (s > _total_limit) {
-        total_limit_reached(s, _total_limit);
+      if (s > _limits.total_limit()) {
+        total_limit_reached(s, _limits.total_limit());
       }
     } else {
-      size_t per_cat_limit = _limits_per_category[(int)flag];
+      size_t per_cat_limit = _limits.get_limit_for_category(flag);
       if (per_cat_limit > 0) {
         const MallocMemory* mm = as_snapshot()->by_type(flag);
         size_t s = mm->malloc_size() + mm->arena_size();
@@ -250,6 +251,10 @@ class MallocMemorySummary : AllStatic {
    static inline void record_arena_size_change(ssize_t size, MEMFLAGS flag) {
      as_snapshot()->by_type(flag)->record_arena_size_change(size);
      check_limits_after_allocation(flag);
+   }
+
+   static bool reached_limit() {
+     return _limit_reached;
    }
 
    static void snapshot(MallocMemorySnapshot* s) {

@@ -32,6 +32,14 @@
  */
 
 /*
+ * @test id=global-limit-oom
+ * @summary Verify -XX:MallocLimit with a global limit in fake OOM mode
+ * @modules java.base/jdk.internal.misc
+ * @library /test/lib
+ * @run driver MallocLimitTest global-limit-oom
+ */
+
+/*
  * @test id=compiler-limit
  * @summary Verify -XX:MallocLimit with a compiler-specific limit (for "mtCompiler" category)
  * @modules java.base/jdk.internal.misc
@@ -45,6 +53,14 @@
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @run driver MallocLimitTest multi-limit
+ */
+
+/*
+ * @test id=multi-limit-oom
+ * @summary Verify -XX:MallocLimit with multiple limits
+ * @modules java.base/jdk.internal.misc
+ * @library /test/lib
+ * @run driver MallocLimitTest multi-limit-oom
  */
 
 /*
@@ -102,10 +118,26 @@ public class MallocLimitTest {
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldNotHaveExitValue(0);
         output.shouldContain("[nmt] MallocLimit: total limit: 1024K"); // printed by byte_size_in_proper_unit()
-        String s = output.firstMatch(".*MallocLimit: reached limit \\(size: (\\d+), limit: " + smallMemorySize + "\\).*", 1);
+        String s = output.firstMatch("#  fatal error: MallocLimit: reached limit \\(size: (\\d+), " +
+                "limit: " + smallMemorySize + "\\).*", 1);
         Asserts.assertNotNull(s);
         long size = Long.parseLong(s);
         Asserts.assertGreaterThan(size, smallMemorySize);
+    }
+
+    private static void testGlobalLimitOom() throws IOException {
+        long smallMemorySize = 1024*1024; // 1m
+        ProcessBuilder pb = processBuilderWithSetting("-XX:MallocLimit=" + smallMemorySize + ",oom");
+        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        output.shouldNotHaveExitValue(0);
+        output.shouldContain("[nmt] MallocLimit: total limit: 1024K"); // printed by byte_size_in_proper_unit()
+        output.shouldContain("[nmt] MallocLimit: fake-oom mode");
+        String s = output.firstMatch(".*\\[warning *\\]\\[nmt *\\] MallocLimit: reached limit \\(size: (\\d+), " +
+                "limit: " + smallMemorySize + "\\).*", 1);
+        Asserts.assertNotNull(s);
+        long size = Long.parseLong(s);
+        Asserts.assertGreaterThan(size, smallMemorySize);
+        output.shouldContain("# There is insufficient memory for the Java Runtime Environment to continue.");
     }
 
     private static void testCompilerLimit() throws IOException {
@@ -121,7 +153,8 @@ public class MallocLimitTest {
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldNotHaveExitValue(0);
         output.shouldContain("[nmt] MallocLimit: category \"Compiler\" limit: 1024K"); // printed by byte_size_in_proper_unit
-        String s = output.firstMatch(".*MallocLimit: category \"Compiler\" reached limit \\(size: (\\d+), limit: " + smallMemorySize + "\\).*", 1);
+        String s = output.firstMatch("#  fatal error: MallocLimit: category \"Compiler\" reached limit " +
+                "\\(size: (\\d+), limit: " + smallMemorySize + "\\).*", 1);
         Asserts.assertNotNull(s);
         long size = Long.parseLong(s);
         output.shouldContain("Compiler replay data is saved as");
@@ -136,7 +169,24 @@ public class MallocLimitTest {
         output.shouldContain("[nmt] MallocLimit: category \"Compiler\" limit: 1024M");
         output.shouldContain("[nmt] MallocLimit: category \"Internal\" limit: 1024B");
         output.shouldContain("[nmt] MallocLimit: category \"Other\" limit: 2048M");
-        String s = output.firstMatch(".*MallocLimit: category \"Internal\" reached limit \\(size: (\\d+), limit: " + smallMemorySize + "\\).*", 1);
+        String s = output.firstMatch("#  fatal error: MallocLimit: category \"Internal\" reached limit " +
+                "\\(size: (\\d+), limit: " + smallMemorySize + "\\).*", 1);
+        long size = Long.parseLong(s);
+        Asserts.assertGreaterThan(size, smallMemorySize);
+    }
+
+    private static void testMultiLimitOom() throws IOException {
+        long smallMemorySize = 1024; // 1k
+        ProcessBuilder pb = processBuilderWithSetting("-XX:MallocLimit=mtOther:2g,compiler:1g,internal:"
+                + smallMemorySize + ",oom");
+        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        output.shouldNotHaveExitValue(0);
+        output.shouldContain("[nmt] MallocLimit: category \"Compiler\" limit: 1024M");
+        output.shouldContain("[nmt] MallocLimit: category \"Internal\" limit: 1024B");
+        output.shouldContain("[nmt] MallocLimit: category \"Other\" limit: 2048M");
+        output.shouldContain("[nmt] MallocLimit: fake-oom mode");
+        String s = output.firstMatch(".*\\[warning *\\]\\[nmt *\\] MallocLimit: category \"Internal\" " +
+                "reached limit \\(size: (\\d+), limit: " + smallMemorySize + "\\).*", 1);
         long size = Long.parseLong(s);
         Asserts.assertGreaterThan(size, smallMemorySize);
     }
@@ -155,6 +205,12 @@ public class MallocLimitTest {
         testValidSetting(
                 "2097152k",
                 "[nmt] MallocLimit: total limit: 2048M",
+                "[nmt] NMT initialized: summary"
+        );
+        testValidSetting(
+                "2097152k,oom",
+                "[nmt] MallocLimit: total limit: 2048M",
+                "[nmt] MallocLimit: fake-oom mode",
                 "[nmt] NMT initialized: summary"
         );
         testValidSetting(
@@ -231,10 +287,14 @@ public class MallocLimitTest {
 
         if (args[0].equals("global-limit")) {
             testGlobalLimit();
+        } else if (args[0].equals("global-limit-oom")) {
+            testGlobalLimitOom();
         } else if (args[0].equals("compiler-limit")) {
             testCompilerLimit();
         } else if (args[0].equals("multi-limit")) {
             testMultiLimit();
+        } else if (args[0].equals("multi-limit-oom")) {
+            testMultiLimitOom();
         } else if (args[0].equals("valid-settings")) {
             testValidSettings();
         } else if (args[0].equals("invalid-settings")) {

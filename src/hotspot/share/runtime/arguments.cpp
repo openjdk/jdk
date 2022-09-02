@@ -57,6 +57,7 @@
 #include "runtime/synchronizer.hpp"
 #include "runtime/vm_version.hpp"
 #include "services/management.hpp"
+#include "services/mallocLimit.hpp"
 #include "services/nmtCommon.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
@@ -4444,31 +4445,36 @@ void Arguments::parse_single_category_limit(char* expression, size_t limits[mt_n
   }
 }
 
-void Arguments::parse_malloc_limits(size_t* total_limit, size_t limits[mt_number_of_types]) {
+void Arguments::parse_malloc_limits(MallocLimitInfo* mli) {
 
-  // Reset output to 0
-  *total_limit = 0;
-  for (int i = 0; i < mt_number_of_types; i ++) {
-    limits[i] = 0;
-  }
+  mli->reset();
 
   // We are done if the option is not given.
   if (MallocLimit == nullptr) {
     return;
   }
 
-  // Global form?
-  if (parse_malloc_limit_size(MallocLimit, total_limit)) {
-    return;
-  }
-
-  // No. So it must be in category-specific form: MallocLimit=<nmt category>:<size>[,<nmt category>:<size> ..]
   char* copy = os::strdup(MallocLimit);
   if (copy == nullptr) {
     vm_exit_out_of_memory(strlen(MallocLimit), OOM_MALLOC_ERROR, "MallocLimit");
   }
 
-  char* p = copy, *q;
+  // First parse and remove trailing options (which is simple for now since there is only one possible option)
+  char* p = strrchr(copy, ',');
+  if (p != nullptr) {
+    if (::strcasecmp(p, ",oom") == 0) {
+      *p = '\0';
+      mli->_fake_oom = true;
+    }
+  }
+
+  // Global form?
+  if (parse_malloc_limit_size(copy, &(mli->_total_limit))) {
+    return;
+  }
+
+  p = copy;
+  char* q;
   do {
     q = p;
     p = ::strchr(q, ',');
@@ -4476,7 +4482,7 @@ void Arguments::parse_malloc_limits(size_t* total_limit, size_t limits[mt_number
       *p = '\0';
       p ++;
     }
-    parse_single_category_limit(q, limits);
+    parse_single_category_limit(q, mli->_limits_per_category);
   } while (p != nullptr);
 
   os::free(copy);
