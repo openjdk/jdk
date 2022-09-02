@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -543,8 +543,7 @@ class Parse : public GraphKit {
   void    do_ifnull(BoolTest::mask btest, Node* c);
   void    do_if(BoolTest::mask btest, Node* c);
   int     repush_if_args();
-  void    adjust_map_after_if(BoolTest::mask btest, Node* c, float prob,
-                              Block* path, Block* other_path);
+  void    adjust_map_after_if(BoolTest::mask btest, Node* c, float prob, Block* path);
   void    sharpen_type_after_if(BoolTest::mask btest,
                                 Node* con, const Type* tcon,
                                 Node* val, const Type* tval);
