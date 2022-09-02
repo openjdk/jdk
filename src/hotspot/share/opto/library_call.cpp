@@ -1615,12 +1615,19 @@ bool LibraryCallKit::inline_string_char_access(bool is_store) {
     return false;
   }
 
+  // Save state and restore on bailout
+  uint old_sp = sp();
+  SafePointNode* old_map = clone_map();
+
   value = must_be_not_null(value, true);
 
   Node* adr = array_element_address(value, index, T_CHAR);
   if (adr->is_top()) {
+    set_map(old_map);
+    set_sp(old_sp);
     return false;
   }
+  old_map->destruct(&_gvn);
   if (is_store) {
     access_store_at(value, adr, TypeAryPtr::BYTES, ch, TypeInt::CHAR, T_CHAR, IN_HEAP | MO_UNORDERED | C2_MISMATCHED);
   } else {
