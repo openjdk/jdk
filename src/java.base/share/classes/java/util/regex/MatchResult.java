@@ -315,8 +315,11 @@ public interface MatchResult {
      *
      * @return an unmodifiable map from capturing group names to group numbers
      *
-     * @throws UnsupportedOperationException
-     *          The default implementation of this method always throws
+     * @throws UnsupportedOperationException if the implementation does not
+     *          support named groups.
+     *
+     * @implSpec The default implementation of this method always throws
+     *          {@link UnsupportedOperationException}
      *
      * @apiNote
      * This method must be overridden by an implementation that supports
@@ -343,8 +346,11 @@ public interface MatchResult {
      *
      * @return whether {@code this} contains a valid match
      *
-     * @throws UnsupportedOperationException
-     *          The default implementation of this method always throws
+     * @throws UnsupportedOperationException if the implementation cannot report
+     *          whether it has a match
+     *
+     * @implSpec The default implementation of this method always throws
+     *          {@link UnsupportedOperationException}
      *
      * @since 20
      */
