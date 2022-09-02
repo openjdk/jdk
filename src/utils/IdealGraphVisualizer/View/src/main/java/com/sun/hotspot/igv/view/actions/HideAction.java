@@ -26,6 +26,8 @@ package com.sun.hotspot.igv.view.actions;
 import com.sun.hotspot.igv.view.EditorTopComponent;
 import java.awt.Event;
 import java.awt.event.KeyEvent;
+import java.util.HashSet;
+import java.util.Set;
 import javax.swing.Action;
 import javax.swing.KeyStroke;
 import org.openide.util.HelpCtx;
@@ -42,7 +44,10 @@ public final class HideAction extends CallableSystemAction {
     public void performAction() {
         EditorTopComponent editor = EditorTopComponent.getActive();
         if (editor != null) {
-            editor.hideNodes();
+            Set<Integer> selectedNodes = editor.getModel().getSelectedNodes();
+            HashSet<Integer> nodes = new HashSet<>(editor.getModel().getHiddenNodes());
+            nodes.addAll(selectedNodes);
+            editor.getModel().showNot(nodes);
         }
     }
 

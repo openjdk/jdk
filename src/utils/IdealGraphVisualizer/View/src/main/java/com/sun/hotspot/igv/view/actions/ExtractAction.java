@@ -42,7 +42,7 @@ public final class ExtractAction extends CallableSystemAction {
     public void performAction() {
         EditorTopComponent editor = EditorTopComponent.getActive();
         if (editor != null) {
-            editor.extract();
+            editor.getModel().showOnly(editor.getModel().getSelectedNodes());
         }
     }
 

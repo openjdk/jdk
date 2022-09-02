@@ -106,7 +106,6 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
     private static final String PREFERRED_ID = "EditorTopComponent";
     private static final String SATELLITE_STRING = "satellite";
     private static final String SCENE_STRING = "scene";
-    private DiagramViewModel rangeSliderModel;
     private ExportCookie exportCookie = new ExportCookie() {
 
         @Override
@@ -200,23 +199,23 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
         container.setLayout(new BorderLayout());
         container.add(BorderLayout.NORTH, toolBar);
 
-        rangeSliderModel = new DiagramViewModel(diagram.getGraph().getGroup(), filterChain, sequence);
+        DiagramViewModel diagramViewModel = new DiagramViewModel(diagram.getGraph().getGroup(), filterChain, sequence);
         rangeSlider = new RangeSlider();
-        rangeSlider.setModel(rangeSliderModel);
+        rangeSlider.setModel(diagramViewModel);
         JScrollPane pane = new JScrollPane(rangeSlider, ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER, ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         container.add(BorderLayout.CENTER, pane);
 
-        scene = new DiagramScene(actions, actionsWithSelection, rangeSliderModel);
+        scene = new DiagramScene(actions, actionsWithSelection, diagramViewModel);
         content = new InstanceContent();
+        content.add(exportCookie);
+        content.add(diagramViewModel);
+        content.add(diagramProvider);
         graphContent = new InstanceContent();
         this.associateLookup(new ProxyLookup(new Lookup[]{scene.getLookup(), new AbstractLookup(graphContent), new AbstractLookup(content)}));
-        content.add(exportCookie);
-        content.add(rangeSliderModel);
-        content.add(diagramProvider);
 
-        rangeSliderModel.getDiagramChangedEvent().addListener(diagramChangedListener);
-        rangeSliderModel.selectGraph(diagram.getGraph());
-        rangeSliderModel.getViewPropertiesChangedEvent().addListener(new ChangedListener<DiagramViewModel>() {
+        diagramViewModel.getDiagramChangedEvent().addListener(diagramChangedListener);
+        diagramViewModel.selectGraph(diagram.getGraph());
+        diagramViewModel.getViewPropertiesChangedEvent().addListener(new ChangedListener<DiagramViewModel>() {
                 @Override
                 public void changed(DiagramViewModel source) {
                     hideDuplicatesButton.setSelected(getModel().getHideDuplicates());
@@ -386,8 +385,12 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
         updateDisplayName();
     }
 
-    public DiagramViewModel getDiagramModel() {
-        return rangeSliderModel;
+    public DiagramViewModel getModel() {
+        return  scene.getModel();
+    }
+
+    private Diagram getDiagram() {
+        return getModel().getDiagramToView();
     }
 
     private void showSatellite() {
@@ -407,20 +410,6 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
 
     public void zoomIn() {
         scene.zoomIn();
-    }
-
-    public void showPrevDiagram() {
-        int fp = getModel().getFirstPosition();
-        int sp = getModel().getSecondPosition();
-        if (fp != 0) {
-            fp--;
-            sp--;
-            getModel().setPositions(fp, sp);
-        }
-    }
-
-    public DiagramViewModel getModel() {
-        return rangeSliderModel;
     }
 
     public FilterChain getFilterChain() {
@@ -459,7 +448,7 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
     @Override
     public void componentClosed() {
         super.componentClosed();
-        rangeSliderModel.close();
+        getModel().close();
     }
 
     @Override
@@ -494,7 +483,7 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
 
     public void setSelection(PropertyMatcher matcher) {
 
-        Properties.PropertySelector<Figure> selector = new Properties.PropertySelector<>(getModel().getDiagramToView().getFigures());
+        Properties.PropertySelector<Figure> selector = new Properties.PropertySelector<>(getDiagram().getFigures());
         List<Figure> list = selector.selectMultiple(matcher);
         setSelectedFigures(list);
     }
@@ -512,7 +501,7 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
             ids.add(n.getId());
         }
 
-        for (Figure f : getModel().getDiagramToView().getFigures()) {
+        for (Figure f : getDiagram().getFigures()) {
             for (InputNode n : f.getSource().getSourceNodes()) {
                 if (ids.contains(n.getId())) {
                     list.add(f);
@@ -526,7 +515,7 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
 
     public void setSelectedNodes(InputBlock b) {
         List<Figure> list = new ArrayList<>();
-        for (Figure f : getModel().getDiagramToView().getFigures()) {
+        for (Figure f : getDiagram().getFigures()) {
             if (f.getBlock() == b) {
                 list.add(f);
             }
@@ -538,10 +527,10 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
     public void propertyChange(PropertyChangeEvent evt) {
         if (evt.getSource() == this.predSuccAction) {
             boolean b = (Boolean) predSuccAction.getValue(PredSuccAction.STATE);
-            this.getModel().setShowNodeHull(b);
+            getModel().setShowNodeHull(b);
         } else if (evt.getSource() == this.showEmptyBlocksAction) {
             boolean b = (Boolean) showEmptyBlocksAction.getValue(ShowEmptyBlocksAction.STATE);
-            this.getModel().setShowEmptyBlocks(b);
+            getModel().setShowEmptyBlocks(b);
         } else if (evt.getSource() == this.overviewAction) {
             boolean b = (Boolean) overviewAction.getValue(OverviewAction.STATE);
             if (b) {
@@ -551,15 +540,15 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
             }
         } else if (evt.getSource() == this.seaLayoutAction) {
             boolean b = seaLayoutAction.isSelected();
-            this.getModel().setShowSea(b);
+            getModel().setShowSea(b);
             this.showEmptyBlocksAction.setEnabled(false);
         } else if (evt.getSource() == this.blockLayoutAction) {
             boolean b = blockLayoutAction.isSelected();
-            this.getModel().setShowBlocks(b);
+            getModel().setShowBlocks(b);
             this.showEmptyBlocksAction.setEnabled(false);
         } else if (evt.getSource() == this.cfgLayoutAction) {
             boolean b = cfgLayoutAction.isSelected();
-            this.getModel().setShowCFG(b);
+            getModel().setShowCFG(b);
             this.showEmptyBlocksAction.setEnabled(true);
         } else if (evt.getSource() == this.hideDuplicatesAction) {
             boolean b = (Boolean) hideDuplicatesAction.getValue(HideDuplicatesAction.STATE);
@@ -576,22 +565,11 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
         }
     }
 
-    public void extract() {
-        getModel().showOnly(getModel().getSelectedNodes());
-    }
-
-    public void hideNodes() {
-        Set<Integer> selectedNodes = this.getModel().getSelectedNodes();
-        HashSet<Integer> nodes = new HashSet<>(getModel().getHiddenNodes());
-        nodes.addAll(selectedNodes);
-        this.getModel().showNot(nodes);
-    }
-
     public void expandPredecessors() {
         Set<Figure> oldSelection = getModel().getSelectedFigures();
         Set<Figure> figures = new HashSet<>();
 
-        for (Figure f : this.getDiagramModel().getDiagramToView().getFigures()) {
+        for (Figure f : getDiagram().getFigures()) {
             boolean ok = false;
             if (oldSelection.contains(f)) {
                 ok = true;
@@ -616,7 +594,7 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
         Set<Figure> oldSelection = getModel().getSelectedFigures();
         Set<Figure> figures = new HashSet<>();
 
-        for (Figure f : this.getDiagramModel().getDiagramToView().getFigures()) {
+        for (Figure f : getDiagram().getFigures()) {
             boolean ok = false;
             if (oldSelection.contains(f)) {
                 ok = true;
@@ -639,10 +617,6 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
 
     public void showAll() {
         getModel().showNot(new HashSet<Integer>());
-    }
-
-    public Diagram getDiagram() {
-        return getDiagramModel().getDiagramToView();
     }
 
     @Override
