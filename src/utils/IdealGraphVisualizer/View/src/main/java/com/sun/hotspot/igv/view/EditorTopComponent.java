@@ -88,18 +88,13 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
     private EnableSeaLayoutAction seaLayoutAction;
     private EnableBlockLayoutAction blockLayoutAction;
     private EnableCFGLayoutAction cfgLayoutAction;
-    private OverviewAction overviewAction;
-    private HideDuplicatesAction hideDuplicatesAction;
-    private PredSuccAction predSuccAction;
     private ShowEmptyBlocksAction showEmptyBlocksAction;
     private SelectionModeAction selectionModeAction;
     private boolean notFirstTime;
     private JComponent satelliteComponent;
     private JPanel centerPanel;
     private CardLayout cardLayout;
-    private RangeSlider rangeSlider;
     private JToggleButton overviewButton;
-    private JToggleButton hideDuplicatesButton;
     private JPanel topPanel;
     private Toolbar quickSearchToolbar;
     private static final JPanel quickSearchPresenter = (JPanel) ((Presenter.Toolbar) Utilities.actionsForPath("Actions/Search").get(0)).getToolbarPresenter();
@@ -200,7 +195,7 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
         container.add(BorderLayout.NORTH, toolBar);
 
         DiagramViewModel diagramViewModel = new DiagramViewModel(diagram.getGraph().getGroup(), filterChain, sequence);
-        rangeSlider = new RangeSlider();
+        RangeSlider rangeSlider = new RangeSlider();
         rangeSlider.setModel(diagramViewModel);
         JScrollPane pane = new JScrollPane(rangeSlider, ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER, ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         container.add(BorderLayout.CENTER, pane);
@@ -215,13 +210,6 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
 
         diagramViewModel.getDiagramChangedEvent().addListener(diagramChangedListener);
         diagramViewModel.selectGraph(diagram.getGraph());
-        diagramViewModel.getViewPropertiesChangedEvent().addListener(new ChangedListener<DiagramViewModel>() {
-                @Override
-                public void changed(DiagramViewModel source) {
-                    hideDuplicatesButton.setSelected(getModel().getHideDuplicates());
-                    hideDuplicatesAction.setState(getModel().getHideDuplicates());
-                }
-            });
 
         Group group = getDiagram().getGraph().getGroup();
         group.getChangedEvent().addListener(g -> closeOnRemovedOrEmptyGroup());
@@ -268,31 +256,16 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
         cfgLayoutAction.addPropertyChangeListener(this);
 
         toolBar.addSeparator();
-        overviewAction = new OverviewAction();
-        overviewButton = new JToggleButton(overviewAction);
-        overviewButton.setSelected(false);
-        toolBar.add(overviewButton);
-        overviewAction.addPropertyChangeListener(this);
-
-        predSuccAction = new PredSuccAction();
-        button = new JToggleButton(predSuccAction);
-        button.setSelected(true);
-        toolBar.add(button);
-        predSuccAction.addPropertyChangeListener(this);
+        toolBar.add(new JToggleButton(new OverviewAction()));
+        toolBar.add(new JToggleButton(new PredSuccAction()));
 
         showEmptyBlocksAction = new ShowEmptyBlocksAction();
         button = new JToggleButton(showEmptyBlocksAction);
         button.setSelected(true);
         button.setEnabled(Settings.get().getInt(Settings.DEFAULT_VIEW, Settings.DEFAULT_VIEW_DEFAULT) == Settings.DefaultView.CONTROL_FLOW_GRAPH);
         toolBar.add(button);
-        showEmptyBlocksAction.addPropertyChangeListener(this);
 
-        hideDuplicatesAction = new HideDuplicatesAction();
-        hideDuplicatesButton = new JToggleButton(hideDuplicatesAction);
-        hideDuplicatesButton.setSelected(false);
-        toolBar.add(hideDuplicatesButton);
-        hideDuplicatesAction.addPropertyChangeListener(this);
-
+        toolBar.add(new JToggleButton(new HideDuplicatesAction()));
         toolBar.addSeparator();
         UndoAction undoAction = UndoAction.get(UndoAction.class);
         undoAction.putValue(Action.SHORT_DESCRIPTION, "Undo");
@@ -328,22 +301,20 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
 
         centerPanel = new JPanel();
         centerPanel.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(
-                KeyStroke.getKeyStroke(KeyEvent.VK_S, 0, false), "showSatellite");
-        centerPanel.getActionMap().put("showSatellite",
-                new AbstractAction("showSatellite") {
+                KeyStroke.getKeyStroke(KeyEvent.VK_S, 0, false), SATELLITE_STRING);
+        centerPanel.getActionMap().put(SATELLITE_STRING,
+                new AbstractAction(SATELLITE_STRING) {
                     @Override public void actionPerformed(ActionEvent e) {
                         EditorTopComponent.this.overviewButton.setSelected(true);
-                        EditorTopComponent.this.overviewAction.setState(true);
                     }
                 });
         centerPanel.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(
-                KeyStroke.getKeyStroke(KeyEvent.VK_S, 0, true), "showScene");
-        centerPanel.getActionMap().put("showScene",
-                new AbstractAction("showScene") {
+                KeyStroke.getKeyStroke(KeyEvent.VK_S, 0, true), SCENE_STRING);
+        centerPanel.getActionMap().put(SCENE_STRING,
+                new AbstractAction(SCENE_STRING) {
                     @Override
                     public void actionPerformed(ActionEvent e) {
                         EditorTopComponent.this.overviewButton.setSelected(false);
-                        EditorTopComponent.this.overviewAction.setState(false);
                     }
                 });
 
@@ -393,15 +364,16 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
         return getModel().getDiagramToView();
     }
 
-    private void showSatellite() {
-        cardLayout.show(centerPanel, SATELLITE_STRING);
-        satelliteComponent.requestFocus();
+    public void showSatellite(boolean b) {
+        if (b) {
+            cardLayout.show(centerPanel, SATELLITE_STRING);
+            satelliteComponent.requestFocus();
+        } else {
+            cardLayout.show(centerPanel, SCENE_STRING);
+            scene.getComponent().requestFocus();
+        }
 
-    }
 
-    private void showScene() {
-        cardLayout.show(centerPanel, SCENE_STRING);
-        scene.getComponent().requestFocus();
     }
 
     public void zoomOut() {
@@ -477,10 +449,6 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
 
     };
 
-    public boolean showPredSucc() {
-        return (Boolean) predSuccAction.getValue(PredSuccAction.STATE);
-    }
-
     public void setSelection(PropertyMatcher matcher) {
 
         Properties.PropertySelector<Figure> selector = new Properties.PropertySelector<>(getDiagram().getFigures());
@@ -525,20 +493,7 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
 
     @Override
     public void propertyChange(PropertyChangeEvent evt) {
-        if (evt.getSource() == this.predSuccAction) {
-            boolean b = (Boolean) predSuccAction.getValue(PredSuccAction.STATE);
-            getModel().setShowNodeHull(b);
-        } else if (evt.getSource() == this.showEmptyBlocksAction) {
-            boolean b = (Boolean) showEmptyBlocksAction.getValue(ShowEmptyBlocksAction.STATE);
-            getModel().setShowEmptyBlocks(b);
-        } else if (evt.getSource() == this.overviewAction) {
-            boolean b = (Boolean) overviewAction.getValue(OverviewAction.STATE);
-            if (b) {
-                showSatellite();
-            } else {
-                showScene();
-            }
-        } else if (evt.getSource() == this.seaLayoutAction) {
+        if (evt.getSource() == this.seaLayoutAction) {
             boolean b = seaLayoutAction.isSelected();
             getModel().setShowSea(b);
             this.showEmptyBlocksAction.setEnabled(false);
@@ -550,9 +505,6 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
             boolean b = cfgLayoutAction.isSelected();
             getModel().setShowCFG(b);
             this.showEmptyBlocksAction.setEnabled(true);
-        } else if (evt.getSource() == this.hideDuplicatesAction) {
-            boolean b = (Boolean) hideDuplicatesAction.getValue(HideDuplicatesAction.STATE);
-            this.getModel().setHideDuplicates(b);
         } else if (evt.getSource() == this.selectionModeAction) {
             boolean b = (Boolean) selectionModeAction.getValue(SelectionModeAction.STATE);
             if (b) {
@@ -563,60 +515,6 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
         } else {
             assert false : "Unknown event source";
         }
-    }
-
-    public void expandPredecessors() {
-        Set<Figure> oldSelection = getModel().getSelectedFigures();
-        Set<Figure> figures = new HashSet<>();
-
-        for (Figure f : getDiagram().getFigures()) {
-            boolean ok = false;
-            if (oldSelection.contains(f)) {
-                ok = true;
-            } else {
-                for (Figure pred : f.getSuccessors()) {
-                    if (oldSelection.contains(pred)) {
-                        ok = true;
-                        break;
-                    }
-                }
-            }
-
-            if (ok) {
-                figures.add(f);
-            }
-        }
-
-        getModel().showAll(figures);
-    }
-
-    public void expandSuccessors() {
-        Set<Figure> oldSelection = getModel().getSelectedFigures();
-        Set<Figure> figures = new HashSet<>();
-
-        for (Figure f : getDiagram().getFigures()) {
-            boolean ok = false;
-            if (oldSelection.contains(f)) {
-                ok = true;
-            } else {
-                for (Figure succ : f.getPredecessors()) {
-                    if (oldSelection.contains(succ)) {
-                        ok = true;
-                        break;
-                    }
-                }
-            }
-
-            if (ok) {
-                figures.add(f);
-            }
-        }
-
-        getModel().showAll(figures);
-    }
-
-    public void showAll() {
-        getModel().showNot(new HashSet<Integer>());
     }
 
     @Override

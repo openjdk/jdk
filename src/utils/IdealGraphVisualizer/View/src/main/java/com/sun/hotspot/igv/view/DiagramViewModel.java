@@ -183,15 +183,9 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         viewPropertiesChangedEvent.fire();
     }
 
-    public boolean getHideDuplicates() {
-        return hideDuplicates;
-    }
-
     public void setHideDuplicates(boolean b) {
-        System.err.println("setHideDuplicates: " + b);
-        hideDuplicates = b;
         InputGraph currentGraph = getFirstGraph();
-        if (hideDuplicates) {
+        if (b) {
             // Back up to the unhidden equivalent graph
             int index = graphs.indexOf(currentGraph);
             while (graphs.get(index).getProperties().get("_isDuplicate") != null) {

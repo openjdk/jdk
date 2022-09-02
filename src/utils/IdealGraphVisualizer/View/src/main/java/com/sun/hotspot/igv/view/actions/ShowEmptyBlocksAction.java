@@ -27,24 +27,24 @@ import java.awt.event.ActionEvent;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.ImageIcon;
+
+import com.sun.hotspot.igv.view.EditorTopComponent;
 import org.openide.util.ImageUtilities;
 
 public class ShowEmptyBlocksAction extends AbstractAction {
 
-    private boolean state;
-    public static final String STATE = "state";
-
     public ShowEmptyBlocksAction() {
-        state = true;
-        putValue(AbstractAction.SMALL_ICON, new ImageIcon(ImageUtilities.loadImage(iconResource())));
-        putValue(STATE, true);
-        putValue(Action.SHORT_DESCRIPTION, "Show empty blocks in control-flow graph view");
+        putValue(SMALL_ICON, new ImageIcon(ImageUtilities.loadImage(iconResource())));
+        putValue(SELECTED_KEY, true);
+        putValue(SHORT_DESCRIPTION, "Show empty blocks in control-flow graph view");
     }
 
     @Override
     public void actionPerformed(ActionEvent ev) {
-        this.state = !state;
-        this.putValue(STATE, state);
+        EditorTopComponent editor = EditorTopComponent.getActive();
+        boolean selected = (boolean)getValue(SELECTED_KEY);
+        editor.getModel().setShowEmptyBlocks(selected);
+
     }
 
     protected String iconResource() {

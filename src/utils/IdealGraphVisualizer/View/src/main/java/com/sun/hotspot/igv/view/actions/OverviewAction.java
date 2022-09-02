@@ -27,6 +27,8 @@ import java.awt.event.ActionEvent;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.ImageIcon;
+
+import com.sun.hotspot.igv.view.EditorTopComponent;
 import org.openide.util.ImageUtilities;
 
 /**
@@ -35,24 +37,19 @@ import org.openide.util.ImageUtilities;
  */
 public class OverviewAction extends AbstractAction {
 
-    private boolean state;
-    public static final String STATE = "state";
-
     public OverviewAction() {
         putValue(AbstractAction.SMALL_ICON, new ImageIcon(ImageUtilities.loadImage(iconResource())));
+        putValue(Action.SELECTED_KEY, false);
         putValue(Action.SHORT_DESCRIPTION, "Show satellite view of whole graph (hold S-KEY)");
-        setState(false);
     }
 
     @Override
     public void actionPerformed(ActionEvent ev) {
-        setState(!state);
+        EditorTopComponent editor = EditorTopComponent.getActive();
+        boolean selected = (boolean)getValue(SELECTED_KEY);
+        editor.showSatellite(selected);
     }
 
-    public void setState(boolean b) {
-        this.putValue(STATE, b);
-        this.state = b;
-    }
 
     protected String iconResource() {
         return "com/sun/hotspot/igv/view/images/overview.png";

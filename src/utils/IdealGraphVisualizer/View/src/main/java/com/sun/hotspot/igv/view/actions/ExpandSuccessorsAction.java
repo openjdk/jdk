@@ -23,9 +23,13 @@
  */
 package com.sun.hotspot.igv.view.actions;
 
+import com.sun.hotspot.igv.graph.Figure;
 import com.sun.hotspot.igv.view.EditorTopComponent;
 import org.openide.util.HelpCtx;
 import org.openide.util.actions.CallableSystemAction;
+
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  *
@@ -37,7 +41,28 @@ public final class ExpandSuccessorsAction extends CallableSystemAction {
     public void performAction() {
         EditorTopComponent editor = EditorTopComponent.getActive();
         if (editor != null) {
-            editor.expandSuccessors();
+            Set<Figure> oldSelection = editor.getModel().getSelectedFigures();
+            Set<Figure> figures = new HashSet<>();
+
+            for (Figure f : editor.getModel().getDiagramToView().getFigures()) {
+                boolean ok = false;
+                if (oldSelection.contains(f)) {
+                    ok = true;
+                } else {
+                    for (Figure succ : f.getPredecessors()) {
+                        if (oldSelection.contains(succ)) {
+                            ok = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (ok) {
+                    figures.add(f);
+                }
+            }
+
+            editor.getModel().showAll(figures);
         }
     }
 
