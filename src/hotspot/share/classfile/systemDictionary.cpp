@@ -116,16 +116,9 @@ class InvokeMethodKey : public StackObj {
 ResourceHashtable<InvokeMethodKey, Method*, 139, ResourceObj::C_HEAP, mtClass,
                   InvokeMethodKey::compute_hash, InvokeMethodKey::key_comparison> _invoke_method_intrinsic_table;
 ResourceHashtable<Symbol*, OopHandle, 139, ResourceObj::C_HEAP, mtClass> _invoke_method_type_table;
-ProtectionDomainCacheTable*   SystemDictionary::_pd_cache_table = NULL;
 
 OopHandle   SystemDictionary::_java_system_loader;
 OopHandle   SystemDictionary::_java_platform_loader;
-
-// Default ProtectionDomainCacheSize value
-const int defaultProtectionDomainCacheSize = 1009;
-
-const int _resolution_error_size  = 107;                     // number of entries in resolution error table
-const int _invoke_method_size     = 139;                     // number of entries in invoke method table
 
 // ----------------------------------------------------------------------------
 // Java-level SystemLoader and PlatformLoader
@@ -1665,9 +1658,9 @@ bool SystemDictionary::do_unloading(GCTimer* gc_timer) {
       // explicitly unlink them here.
       // All protection domain oops are linked to the caller class, so if nothing
       // unloads, this is not needed.
-      _pd_cache_table->trigger_cleanup();
+      ProtectionDomainCacheTable::trigger_cleanup();
     } else {
-      assert(_pd_cache_table->number_of_entries() == 0, "should be empty");
+      assert(ProtectionDomainCacheTable::number_of_entries() == 0, "should be empty");
     }
 
     MutexLocker ml(is_concurrent ? ClassInitError_lock : NULL);
@@ -1700,9 +1693,6 @@ void SystemDictionary::methods_do(void f(Method*)) {
 // Initialization
 
 void SystemDictionary::initialize(TRAPS) {
-  // Allocate arrays
-  _pd_cache_table = new ProtectionDomainCacheTable(defaultProtectionDomainCacheSize);
-
 #if INCLUDE_CDS
   SystemDictionaryShared::initialize();
 #endif
@@ -2468,7 +2458,7 @@ void SystemDictionary::print_on(outputStream *st) {
   LoaderConstraintTable::print_on(st);
   st->cr();
 
-  _pd_cache_table->print_on(st);
+  ProtectionDomainCacheTable::print_on(st);
   st->cr();
 }
 
@@ -2484,7 +2474,8 @@ void SystemDictionary::verify() {
   // Verify constraint table
   LoaderConstraintTable::verify();
 
-  _pd_cache_table->verify();
+  // Verify protection domain table
+  ProtectionDomainCacheTable::verify();
 }
 
 void SystemDictionary::dump(outputStream *st, bool verbose) {
@@ -2495,7 +2486,7 @@ void SystemDictionary::dump(outputStream *st, bool verbose) {
     CDS_ONLY(SystemDictionaryShared::print_table_statistics(st));
     ClassLoaderDataGraph::print_table_statistics(st);
     LoaderConstraintTable::print_table_statistics(st);
-    pd_cache_table()->print_table_statistics(st, "ProtectionDomainCache Table");
+    ProtectionDomainCacheTable::print_table_statistics(st);
   }
 }
 
