@@ -738,6 +738,7 @@ class CompileReplay : public StackObj {
     if (had_error() && (error_message() == comp_level_label)) {
       // use highest available tier
       comp_level = CompilationPolicy::highest_compile_level();
+      _error_message = NULL;
     }
     if (!is_valid_comp_level(comp_level)) {
       return;
