@@ -211,7 +211,6 @@ public:
   virtual void register_nmethod(nmethod* nm);
   virtual void unregister_nmethod(nmethod* nm);
   virtual void verify_nmethod(nmethod* nm);
-  virtual void flush_nmethod(nmethod* nm);
 
   void prune_scavengable_nmethods();
 
@@ -384,15 +383,6 @@ public:
   void clear_incremental_collection_failed() {
     _incremental_collection_failed = false;
   }
-
-  // Promotion of obj into gen failed.  Try to promote obj to higher
-  // gens in ascending order; return the new location of obj if successful.
-  // Otherwise, try expand-and-allocate for obj in both the young and old
-  // generation; return the new location of obj if successful.  Otherwise, return NULL.
-  oop handle_failed_promotion(Generation* old_gen,
-                              oop obj,
-                              size_t obj_size);
-
 
 private:
   // Return true if an allocation should be attempted in the older generation

@@ -343,10 +343,10 @@ class StubGenerator: public StubCodeGenerator {
 #endif
     // set pending exception
     __ verify_oop(rax);
-    __ movptr(Address(rcx, Thread::pending_exception_offset()), rax          );
-    __ lea(Address(rcx, Thread::exception_file_offset   ()),
-           ExternalAddress((address)__FILE__));
-    __ movl(Address(rcx, Thread::exception_line_offset   ()), __LINE__ );
+    __ movptr(Address(rcx, Thread::pending_exception_offset()), rax);
+    __ lea(Address(rcx, Thread::exception_file_offset()),
+           ExternalAddress((address)__FILE__), noreg);
+    __ movl(Address(rcx, Thread::exception_line_offset()), __LINE__ );
     // complete return to VM
     assert(StubRoutines::_call_stub_return_address != NULL, "_call_stub_return_address must have been generated before");
     __ jump(RuntimeAddress(StubRoutines::_call_stub_return_address));
@@ -3846,7 +3846,7 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     // Set up last_Java_sp and last_Java_fp
-    __ set_last_Java_frame(java_thread, rsp, rbp, NULL);
+    __ set_last_Java_frame(java_thread, rsp, rbp, NULL, noreg);
 
     // Call runtime
     BLOCK_COMMENT("call runtime_entry");
@@ -3901,12 +3901,6 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::x86::_fpu_subnormal_bias2[2]= 0x7bff;
   }
 
-  RuntimeStub* generate_cont_doYield() {
-    if (!Continuations::enabled()) return nullptr;
-    Unimplemented();
-    return nullptr;
-  }
-
   address generate_cont_thaw() {
     if (!Continuations::enabled()) return nullptr;
     Unimplemented();
@@ -3930,7 +3924,7 @@ class StubGenerator: public StubCodeGenerator {
   static void jfr_prologue(address the_pc, MacroAssembler* masm) {
     Register java_thread = rdi;
     __ get_thread(java_thread);
-    __ set_last_Java_frame(java_thread, rsp, rbp, the_pc);
+    __ set_last_Java_frame(java_thread, rsp, rbp, the_pc, noreg);
     __ movptr(Address(rsp, 0), java_thread);
   }
 
@@ -4076,9 +4070,6 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_cont_thaw          = generate_cont_thaw();
     StubRoutines::_cont_returnBarrier = generate_cont_returnBarrier();
     StubRoutines::_cont_returnBarrierExc = generate_cont_returnBarrier_exception();
-    StubRoutines::_cont_doYield_stub = generate_cont_doYield();
-    StubRoutines::_cont_doYield      = StubRoutines::_cont_doYield_stub == nullptr ? nullptr
-                                                                                   : StubRoutines::_cont_doYield_stub->entry_point();
 
     JFR_ONLY(StubRoutines::_jfr_write_checkpoint_stub = generate_jfr_write_checkpoint();)
     JFR_ONLY(StubRoutines::_jfr_write_checkpoint = StubRoutines::_jfr_write_checkpoint_stub->entry_point();)

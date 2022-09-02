@@ -1343,7 +1343,7 @@ int HandlerImpl::emit_deopt_handler(CodeBuffer& cbuf) {
   __ subptr(Address(rsp, 0), __ offset() - offset);
 #else
   InternalAddress here(__ pc());
-  __ pushptr(here.addr());
+  __ pushptr(here.addr(), noreg);
 #endif
 
   __ jump(RuntimeAddress(SharedRuntime::deopt_blob()->unpack()));
@@ -1392,8 +1392,6 @@ Assembler::Width widthForType(BasicType bt) {
   static address vector_long_shufflemask() { return StubRoutines::x86::vector_long_shuffle_mask(); }
   static address vector_32_bit_mask() { return StubRoutines::x86::vector_32_bit_mask(); }
   static address vector_64_bit_mask() { return StubRoutines::x86::vector_64_bit_mask(); }
-  static address vector_float_signflip() { return StubRoutines::x86::vector_float_sign_flip();}
-  static address vector_double_signflip() { return StubRoutines::x86::vector_double_sign_flip();}
 
 //=============================================================================
 const bool Matcher::match_rule_supported(int opcode) {
@@ -7352,9 +7350,9 @@ instruct castFtoI_reg_avx(vec dst, vec src, vec xtmp1, vec xtmp2, vec xtmp3, vec
   format %{ "vector_cast_f2i $dst,$src\t! using $xtmp1, $xtmp2, $xtmp3, $xtmp4 as TEMP" %}
   ins_encode %{
     int vlen_enc = vector_length_encoding(this);
-    __ vector_castF2I_avx($dst$$XMMRegister, $src$$XMMRegister, $xtmp1$$XMMRegister,
-                          $xtmp2$$XMMRegister, $xtmp3$$XMMRegister, $xtmp4$$XMMRegister,
-                          ExternalAddress(vector_float_signflip()), noreg, vlen_enc);
+    __ vector_castF2I_avx($dst$$XMMRegister, $src$$XMMRegister,
+                          ExternalAddress(StubRoutines::x86::vector_float_sign_flip()), vlen_enc,
+                          $xtmp1$$XMMRegister, $xtmp2$$XMMRegister, $xtmp3$$XMMRegister, $xtmp4$$XMMRegister);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -7368,9 +7366,9 @@ instruct castFtoI_reg_evex(vec dst, vec src, vec xtmp1, vec xtmp2, kReg ktmp1, k
   format %{ "vector_cast_f2i $dst,$src\t! using $xtmp1, $xtmp2, $ktmp1, $ktmp2 as TEMP" %}
   ins_encode %{
     int vlen_enc = vector_length_encoding(this);
-    __ vector_castF2I_evex($dst$$XMMRegister, $src$$XMMRegister, $xtmp1$$XMMRegister,
-                           $xtmp2$$XMMRegister, $ktmp1$$KRegister, $ktmp2$$KRegister,
-                           ExternalAddress(vector_float_signflip()), noreg, vlen_enc);
+    __ vector_castF2I_evex($dst$$XMMRegister, $src$$XMMRegister,
+                           ExternalAddress(StubRoutines::x86::vector_float_sign_flip()), vlen_enc,
+                           $xtmp1$$XMMRegister, $xtmp2$$XMMRegister, $ktmp1$$KRegister, $ktmp2$$KRegister);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -7387,14 +7385,14 @@ instruct castFtoX_reg_evex(vec dst, vec src, vec xtmp1, vec xtmp2, kReg ktmp1, k
     BasicType to_elem_bt = Matcher::vector_element_basic_type(this);
     if (to_elem_bt == T_LONG) {
       int vlen_enc = vector_length_encoding(this);
-      __ vector_castF2L_evex($dst$$XMMRegister, $src$$XMMRegister, $xtmp1$$XMMRegister,
-                             $xtmp2$$XMMRegister, $ktmp1$$KRegister, $ktmp2$$KRegister,
-                             ExternalAddress(vector_double_signflip()), noreg, vlen_enc);
+      __ vector_castF2L_evex($dst$$XMMRegister, $src$$XMMRegister,
+                             ExternalAddress(StubRoutines::x86::vector_double_sign_flip()), vlen_enc,
+                             $xtmp1$$XMMRegister, $xtmp2$$XMMRegister, $ktmp1$$KRegister, $ktmp2$$KRegister);
     } else {
       int vlen_enc = vector_length_encoding(this, $src);
-      __ vector_castF2I_evex($dst$$XMMRegister, $src$$XMMRegister, $xtmp1$$XMMRegister,
-                             $xtmp2$$XMMRegister, $ktmp1$$KRegister, $ktmp2$$KRegister,
-                             ExternalAddress(vector_float_signflip()), noreg, vlen_enc);
+      __ vector_castF2I_evex($dst$$XMMRegister, $src$$XMMRegister,
+                             ExternalAddress(StubRoutines::x86::vector_float_sign_flip()), vlen_enc,
+                             $xtmp1$$XMMRegister, $xtmp2$$XMMRegister, $ktmp1$$KRegister, $ktmp2$$KRegister);
       if (to_elem_bt == T_SHORT) {
         __ evpmovdw($dst$$XMMRegister, $dst$$XMMRegister, vlen_enc);
       } else {
@@ -7425,9 +7423,9 @@ instruct castDtoX_reg_evex(vec dst, vec src, vec xtmp1, vec xtmp2, kReg ktmp1, k
   ins_encode %{
     int vlen_enc = vector_length_encoding(this, $src);
     BasicType to_elem_bt = Matcher::vector_element_basic_type(this);
-    __ vector_castD2X_evex(to_elem_bt, $dst$$XMMRegister, $src$$XMMRegister, $xtmp1$$XMMRegister,
-                           $xtmp2$$XMMRegister, $ktmp1$$KRegister, $ktmp2$$KRegister,
-                           ExternalAddress(vector_double_signflip()), noreg, vlen_enc);
+    __ vector_castD2X_evex(to_elem_bt, $dst$$XMMRegister, $src$$XMMRegister,
+                           ExternalAddress(StubRoutines::x86::vector_double_sign_flip()), vlen_enc,
+                           $xtmp1$$XMMRegister, $xtmp2$$XMMRegister, $ktmp1$$KRegister, $ktmp2$$KRegister);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -7449,55 +7447,57 @@ instruct vucast(vec dst, vec src) %{
 %}
 
 #ifdef _LP64
-instruct vround_float_avx(vec dst, vec src, vec xtmp1, vec xtmp2, vec xtmp3, vec xtmp4, rRegP scratch, rFlagsReg cr) %{
+instruct vround_float_avx(vec dst, vec src, rRegP tmp, vec xtmp1, vec xtmp2, vec xtmp3, vec xtmp4, rFlagsReg cr) %{
   predicate(!VM_Version::supports_avx512vl() &&
             Matcher::vector_length_in_bytes(n) < 64 &&
             Matcher::vector_element_basic_type(n) == T_INT);
   match(Set dst (RoundVF src));
-  effect(TEMP dst, TEMP xtmp1, TEMP xtmp2, TEMP xtmp3, TEMP xtmp4, TEMP scratch, KILL cr);
-  format %{ "vector_round_float $dst,$src\t! using $xtmp1, $xtmp2, $xtmp3, $xtmp4 and $scratch as TEMP" %}
+  effect(TEMP dst, TEMP tmp, TEMP xtmp1, TEMP xtmp2, TEMP xtmp3, TEMP xtmp4, KILL cr);
+  format %{ "vector_round_float $dst,$src\t! using $tmp, $xtmp1, $xtmp2, $xtmp3, $xtmp4 as TEMP" %}
   ins_encode %{
     int vlen_enc = vector_length_encoding(this);
     InternalAddress new_mxcsr = $constantaddress((jint)0x3F80);
-    __ vector_round_float_avx($dst$$XMMRegister, $src$$XMMRegister, $xtmp1$$XMMRegister,
-                              $xtmp2$$XMMRegister, $xtmp3$$XMMRegister, $xtmp4$$XMMRegister,
-                              ExternalAddress(vector_float_signflip()), new_mxcsr, $scratch$$Register, vlen_enc);
+    __ vector_round_float_avx($dst$$XMMRegister, $src$$XMMRegister,
+                              ExternalAddress(StubRoutines::x86::vector_float_sign_flip()), new_mxcsr, vlen_enc,
+                              $tmp$$Register, $xtmp1$$XMMRegister, $xtmp2$$XMMRegister, $xtmp3$$XMMRegister, $xtmp4$$XMMRegister);
   %}
   ins_pipe( pipe_slow );
 %}
 
-instruct vround_float_evex(vec dst, vec src, vec xtmp1, vec xtmp2, kReg ktmp1, kReg ktmp2, rRegP scratch, rFlagsReg cr) %{
+instruct vround_float_evex(vec dst, vec src, rRegP tmp, vec xtmp1, vec xtmp2, kReg ktmp1, kReg ktmp2, rFlagsReg cr) %{
   predicate((VM_Version::supports_avx512vl() ||
              Matcher::vector_length_in_bytes(n) == 64) &&
              Matcher::vector_element_basic_type(n) == T_INT);
   match(Set dst (RoundVF src));
-  effect(TEMP dst, TEMP xtmp1, TEMP xtmp2, TEMP ktmp1, TEMP ktmp2, TEMP scratch, KILL cr);
-  format %{ "vector_round_float $dst,$src\t! using $xtmp1, $xtmp2, $ktmp1, $ktmp2 and $scratch as TEMP" %}
+  effect(TEMP dst, TEMP tmp, TEMP xtmp1, TEMP xtmp2, TEMP ktmp1, TEMP ktmp2, KILL cr);
+  format %{ "vector_round_float $dst,$src\t! using $tmp, $xtmp1, $xtmp2, $ktmp1, $ktmp2 as TEMP" %}
   ins_encode %{
     int vlen_enc = vector_length_encoding(this);
     InternalAddress new_mxcsr = $constantaddress((jint)0x3F80);
-    __ vector_round_float_evex($dst$$XMMRegister, $src$$XMMRegister, $xtmp1$$XMMRegister,
-                               $xtmp2$$XMMRegister, $ktmp1$$KRegister, $ktmp2$$KRegister,
-                               ExternalAddress(vector_float_signflip()), new_mxcsr, $scratch$$Register, vlen_enc);
+    __ vector_round_float_evex($dst$$XMMRegister, $src$$XMMRegister,
+                               ExternalAddress(StubRoutines::x86::vector_float_sign_flip()), new_mxcsr, vlen_enc,
+                               $tmp$$Register, $xtmp1$$XMMRegister, $xtmp2$$XMMRegister, $ktmp1$$KRegister, $ktmp2$$KRegister);
   %}
   ins_pipe( pipe_slow );
 %}
 
-instruct vround_reg_evex(vec dst, vec src, vec xtmp1, vec xtmp2, kReg ktmp1, kReg ktmp2, rRegP scratch, rFlagsReg cr) %{
+instruct vround_reg_evex(vec dst, vec src, rRegP tmp, vec xtmp1, vec xtmp2, kReg ktmp1, kReg ktmp2, rFlagsReg cr) %{
   predicate(Matcher::vector_element_basic_type(n) == T_LONG);
   match(Set dst (RoundVD src));
-  effect(TEMP dst, TEMP xtmp1, TEMP xtmp2, TEMP ktmp1, TEMP ktmp2, TEMP scratch, KILL cr);
-  format %{ "vector_round_long $dst,$src\t! using $xtmp1, $xtmp2, $ktmp1, $ktmp2 and $scratch as TEMP" %}
+  effect(TEMP dst, TEMP tmp, TEMP xtmp1, TEMP xtmp2, TEMP ktmp1, TEMP ktmp2,  KILL cr);
+  format %{ "vector_round_long $dst,$src\t! using $tmp, $xtmp1, $xtmp2, $ktmp1, $ktmp2 as TEMP" %}
   ins_encode %{
     int vlen_enc = vector_length_encoding(this);
     InternalAddress new_mxcsr = $constantaddress((jint)0x3F80);
-    __ vector_round_double_evex($dst$$XMMRegister, $src$$XMMRegister, $xtmp1$$XMMRegister,
-                                $xtmp2$$XMMRegister, $ktmp1$$KRegister, $ktmp2$$KRegister,
-                                ExternalAddress(vector_double_signflip()), new_mxcsr, $scratch$$Register, vlen_enc);
+    __ vector_round_double_evex($dst$$XMMRegister, $src$$XMMRegister,
+                                ExternalAddress(StubRoutines::x86::vector_double_sign_flip()), new_mxcsr, vlen_enc,
+                                $tmp$$Register, $xtmp1$$XMMRegister, $xtmp2$$XMMRegister, $ktmp1$$KRegister, $ktmp2$$KRegister);
   %}
   ins_pipe( pipe_slow );
 %}
-#endif
+
+#endif // _LP64
+
 // --------------------------------- VectorMaskCmp --------------------------------------
 
 instruct vcmpFD(legVec dst, legVec src1, legVec src2, immI8 cond) %{
@@ -9390,8 +9390,8 @@ instruct vreverse_reg_gfni(vec dst, vec src, vec xtmp) %{
     int vec_enc = vector_length_encoding(this);
     BasicType bt  = Matcher::vector_element_basic_type(this);
     InternalAddress addr = $constantaddress(T_LONG, vreplicate_imm(T_LONG, 0x8040201008040201L, 1));
-    __ vector_reverse_bit_gfni(bt, $dst$$XMMRegister, $src$$XMMRegister, $xtmp$$XMMRegister,
-                               addr, noreg, vec_enc);
+    __ vector_reverse_bit_gfni(bt, $dst$$XMMRegister, $src$$XMMRegister, addr, vec_enc,
+                               $xtmp$$XMMRegister);
   %}
   ins_pipe( pipe_slow );
 %}

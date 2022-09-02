@@ -79,25 +79,20 @@
 #define BIND(label) bind(label); BLOCK_COMMENT(#label ":")
 const int MXCSR_MASK = 0xFFC0;  // Mask out any pending exceptions
 
-OopMap* continuation_enter_setup(MacroAssembler* masm, int& stack_slots);
-void fill_continuation_entry(MacroAssembler* masm);
-void continuation_enter_cleanup(MacroAssembler* masm);
-
 // Stub Code definitions
 
 class StubGenerator: public StubCodeGenerator {
  private:
 
 #ifdef PRODUCT
-#define inc_counter_np(counter) ((void)0)
+#define INC_COUNTER_NP(counter, rscratch) ((void)0)
 #else
-  void inc_counter_np_(int& counter) {
-    // This can destroy rscratch1 if counter is far from the code cache
-    __ incrementl(ExternalAddress((address)&counter));
+  void inc_counter_np(int& counter, Register rscratch) {
+    __ incrementl(ExternalAddress((address)&counter), rscratch);
   }
-#define inc_counter_np(counter) \
+#define INC_COUNTER_NP(counter, rscratch) \
   BLOCK_COMMENT("inc_counter " #counter); \
-  inc_counter_np_(counter);
+  inc_counter_np(counter, rscratch);
 #endif
 
   // Call stubs are used to call Java from C
@@ -301,9 +296,9 @@ class StubGenerator: public StubCodeGenerator {
       __ movl(rax, mxcsr_save);
       __ andl(rax, MXCSR_MASK);    // Only check control and mask bits
       ExternalAddress mxcsr_std(StubRoutines::x86::addr_mxcsr_std());
-      __ cmp32(rax, mxcsr_std);
+      __ cmp32(rax, mxcsr_std, rscratch1);
       __ jcc(Assembler::equal, skip_ldmx);
-      __ ldmxcsr(mxcsr_std);
+      __ ldmxcsr(mxcsr_std, rscratch1);
       __ bind(skip_ldmx);
     }
 #endif
@@ -621,12 +616,12 @@ class StubGenerator: public StubCodeGenerator {
       __ stmxcsr(mxcsr_save);
       __ movl(rax, mxcsr_save);
       __ andl(rax, MXCSR_MASK);    // Only check control and mask bits
-      __ cmp32(rax, mxcsr_std);
+      __ cmp32(rax, mxcsr_std, rscratch1);
       __ jcc(Assembler::equal, ok_ret);
 
       __ warn("MXCSR changed by native JNI code, use -XX:+RestoreMXCSROnJNICall");
 
-      __ ldmxcsr(mxcsr_std);
+      __ ldmxcsr(mxcsr_std, rscratch1);
 
       __ bind(ok_ret);
       __ addptr(rsp, wordSize);
@@ -1042,7 +1037,7 @@ class StubGenerator: public StubCodeGenerator {
     Label exit, error;
 
     __ pushf();
-    __ incrementl(ExternalAddress((address) StubRoutines::verify_oop_count_addr()));
+    __ incrementl(ExternalAddress((address) StubRoutines::verify_oop_count_addr()), rscratch1);
 
     __ push(r12);
 
@@ -1674,7 +1669,7 @@ class StubGenerator: public StubCodeGenerator {
     }
     bs->arraycopy_epilogue(_masm, decorators, type, from, to, count);
     restore_argument_regs(type);
-    inc_counter_np(get_profile_ctr(shift)); // Update counter after rscratch1 is free
+    INC_COUNTER_NP(get_profile_ctr(shift), rscratch1); // Update counter after rscratch1 is free
     __ xorptr(rax, rax); // return 0
     __ vzeroupper();
     __ leave(); // required for proper stackwalking of RuntimeStub frame
@@ -1849,7 +1844,7 @@ class StubGenerator: public StubCodeGenerator {
     }
     bs->arraycopy_epilogue(_masm, decorators, type, from, to, count);
     restore_argument_regs(type);
-    inc_counter_np(get_profile_ctr(shift)); // Update counter after rscratch1 is free
+    INC_COUNTER_NP(get_profile_ctr(shift), rscratch1); // Update counter after rscratch1 is free
     __ xorptr(rax, rax); // return 0
     __ vzeroupper();
     __ leave(); // required for proper stackwalking of RuntimeStub frame
@@ -1963,7 +1958,7 @@ class StubGenerator: public StubCodeGenerator {
   __ BIND(L_exit);
     address ucme_exit_pc = __ pc();
     restore_arg_regs();
-    inc_counter_np(SharedRuntime::_jbyte_array_copy_ctr); // Update counter after rscratch1 is free
+    INC_COUNTER_NP(SharedRuntime::_jbyte_array_copy_ctr, rscratch1); // Update counter after rscratch1 is free
     __ xorptr(rax, rax); // return 0
     __ vzeroupper();
     __ leave(); // required for proper stackwalking of RuntimeStub frame
@@ -2064,7 +2059,7 @@ class StubGenerator: public StubCodeGenerator {
       __ jcc(Assembler::notZero, L_copy_8_bytes);
     }
     restore_arg_regs();
-    inc_counter_np(SharedRuntime::_jbyte_array_copy_ctr); // Update counter after rscratch1 is free
+    INC_COUNTER_NP(SharedRuntime::_jbyte_array_copy_ctr, rscratch1); // Update counter after rscratch1 is free
     __ xorptr(rax, rax); // return 0
     __ vzeroupper();
     __ leave(); // required for proper stackwalking of RuntimeStub frame
@@ -2077,7 +2072,7 @@ class StubGenerator: public StubCodeGenerator {
       copy_bytes_backward(from, to, qword_count, rax, L_copy_bytes, L_copy_8_bytes);
     }
     restore_arg_regs();
-    inc_counter_np(SharedRuntime::_jbyte_array_copy_ctr); // Update counter after rscratch1 is free
+    INC_COUNTER_NP(SharedRuntime::_jbyte_array_copy_ctr, rscratch1); // Update counter after rscratch1 is free
     __ xorptr(rax, rax); // return 0
     __ vzeroupper();
     __ leave(); // required for proper stackwalking of RuntimeStub frame
@@ -2183,7 +2178,7 @@ class StubGenerator: public StubCodeGenerator {
   __ BIND(L_exit);
     address ucme_exit_pc = __ pc();
     restore_arg_regs();
-    inc_counter_np(SharedRuntime::_jshort_array_copy_ctr); // Update counter after rscratch1 is free
+    INC_COUNTER_NP(SharedRuntime::_jshort_array_copy_ctr, rscratch1); // Update counter after rscratch1 is free
     __ xorptr(rax, rax); // return 0
     __ vzeroupper();
     __ leave(); // required for proper stackwalking of RuntimeStub frame
@@ -2299,7 +2294,7 @@ class StubGenerator: public StubCodeGenerator {
       __ jcc(Assembler::notZero, L_copy_8_bytes);
     }
     restore_arg_regs();
-    inc_counter_np(SharedRuntime::_jshort_array_copy_ctr); // Update counter after rscratch1 is free
+    INC_COUNTER_NP(SharedRuntime::_jshort_array_copy_ctr, rscratch1); // Update counter after rscratch1 is free
     __ xorptr(rax, rax); // return 0
     __ vzeroupper();
     __ leave(); // required for proper stackwalking of RuntimeStub frame
@@ -2312,7 +2307,7 @@ class StubGenerator: public StubCodeGenerator {
       copy_bytes_backward(from, to, qword_count, rax, L_copy_bytes, L_copy_8_bytes);
     }
     restore_arg_regs();
-    inc_counter_np(SharedRuntime::_jshort_array_copy_ctr); // Update counter after rscratch1 is free
+    INC_COUNTER_NP(SharedRuntime::_jshort_array_copy_ctr, rscratch1); // Update counter after rscratch1 is free
     __ xorptr(rax, rax); // return 0
     __ vzeroupper();
     __ leave(); // required for proper stackwalking of RuntimeStub frame
@@ -2419,7 +2414,7 @@ class StubGenerator: public StubCodeGenerator {
     address ucme_exit_pc = __ pc();
     bs->arraycopy_epilogue(_masm, decorators, type, from, to, dword_count);
     restore_arg_regs_using_thread();
-    inc_counter_np(SharedRuntime::_jint_array_copy_ctr); // Update counter after rscratch1 is free
+    INC_COUNTER_NP(SharedRuntime::_jint_array_copy_ctr, rscratch1); // Update counter after rscratch1 is free
     __ vzeroupper();
     __ xorptr(rax, rax); // return 0
     __ leave(); // required for proper stackwalking of RuntimeStub frame
@@ -2524,7 +2519,7 @@ class StubGenerator: public StubCodeGenerator {
       __ jmp(L_exit);
     }
     restore_arg_regs_using_thread();
-    inc_counter_np(SharedRuntime::_jint_array_copy_ctr); // Update counter after rscratch1 is free
+    INC_COUNTER_NP(SharedRuntime::_jint_array_copy_ctr, rscratch1); // Update counter after rscratch1 is free
     __ xorptr(rax, rax); // return 0
     __ vzeroupper();
     __ leave(); // required for proper stackwalking of RuntimeStub frame
@@ -2540,7 +2535,7 @@ class StubGenerator: public StubCodeGenerator {
   __ BIND(L_exit);
     bs->arraycopy_epilogue(_masm, decorators, type, from, to, dword_count);
     restore_arg_regs_using_thread();
-    inc_counter_np(SharedRuntime::_jint_array_copy_ctr); // Update counter after rscratch1 is free
+    INC_COUNTER_NP(SharedRuntime::_jint_array_copy_ctr, rscratch1); // Update counter after rscratch1 is free
     __ xorptr(rax, rax); // return 0
     __ vzeroupper();
     __ leave(); // required for proper stackwalking of RuntimeStub frame
@@ -2632,7 +2627,7 @@ class StubGenerator: public StubCodeGenerator {
       __ jmp(L_exit);
     } else {
       restore_arg_regs_using_thread();
-      inc_counter_np(SharedRuntime::_jlong_array_copy_ctr); // Update counter after rscratch1 is free
+      INC_COUNTER_NP(SharedRuntime::_jlong_array_copy_ctr, rscratch1); // Update counter after rscratch1 is free
       __ xorptr(rax, rax); // return 0
       __ vzeroupper();
       __ leave(); // required for proper stackwalking of RuntimeStub frame
@@ -2649,11 +2644,9 @@ class StubGenerator: public StubCodeGenerator {
     __ BIND(L_exit);
     bs->arraycopy_epilogue(_masm, decorators, type, from, to, qword_count);
     restore_arg_regs_using_thread();
-    if (is_oop) {
-      inc_counter_np(SharedRuntime::_oop_array_copy_ctr); // Update counter after rscratch1 is free
-    } else {
-      inc_counter_np(SharedRuntime::_jlong_array_copy_ctr); // Update counter after rscratch1 is free
-    }
+    INC_COUNTER_NP(is_oop ? SharedRuntime::_oop_array_copy_ctr :
+                            SharedRuntime::_jlong_array_copy_ctr,
+                   rscratch1); // Update counter after rscratch1 is free
     __ vzeroupper();
     __ xorptr(rax, rax); // return 0
     __ leave(); // required for proper stackwalking of RuntimeStub frame
@@ -2734,7 +2727,7 @@ class StubGenerator: public StubCodeGenerator {
       __ jmp(L_exit);
     } else {
       restore_arg_regs_using_thread();
-      inc_counter_np(SharedRuntime::_jlong_array_copy_ctr); // Update counter after rscratch1 is free
+      INC_COUNTER_NP(SharedRuntime::_jlong_array_copy_ctr, rscratch1); // Update counter after rscratch1 is free
       __ xorptr(rax, rax); // return 0
       __ vzeroupper();
       __ leave(); // required for proper stackwalking of RuntimeStub frame
@@ -2750,11 +2743,9 @@ class StubGenerator: public StubCodeGenerator {
     __ BIND(L_exit);
     bs->arraycopy_epilogue(_masm, decorators, type, from, to, qword_count);
     restore_arg_regs_using_thread();
-    if (is_oop) {
-      inc_counter_np(SharedRuntime::_oop_array_copy_ctr); // Update counter after rscratch1 is free
-    } else {
-      inc_counter_np(SharedRuntime::_jlong_array_copy_ctr); // Update counter after rscratch1 is free
-    }
+    INC_COUNTER_NP(is_oop ? SharedRuntime::_oop_array_copy_ctr :
+                            SharedRuntime::_jlong_array_copy_ctr,
+                   rscratch1); // Update counter after rscratch1 is free
     __ vzeroupper();
     __ xorptr(rax, rax); // return 0
     __ leave(); // required for proper stackwalking of RuntimeStub frame
@@ -2974,7 +2965,7 @@ class StubGenerator: public StubCodeGenerator {
     __ movptr(r14, Address(rsp, saved_r14_offset * wordSize));
     __ movptr(r10, Address(rsp, saved_r10_offset * wordSize));
     restore_arg_regs();
-    inc_counter_np(SharedRuntime::_checkcast_array_copy_ctr); // Update counter after rscratch1 is free
+    INC_COUNTER_NP(SharedRuntime::_checkcast_array_copy_ctr, rscratch1); // Update counter after rscratch1 is free
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret(0);
 
@@ -3015,7 +3006,7 @@ class StubGenerator: public StubCodeGenerator {
     __ enter(); // required for proper stackwalking of RuntimeStub frame
 
     // bump this on entry, not on exit:
-    inc_counter_np(SharedRuntime::_unsafe_array_copy_ctr);
+    INC_COUNTER_NP(SharedRuntime::_unsafe_array_copy_ctr, rscratch1);
 
     __ mov(bits, from);
     __ orptr(bits, to);
@@ -3138,7 +3129,7 @@ class StubGenerator: public StubCodeGenerator {
 #endif
 
     // bump this on entry, not on exit:
-    inc_counter_np(SharedRuntime::_generic_array_copy_ctr);
+    INC_COUNTER_NP(SharedRuntime::_generic_array_copy_ctr, rscratch1);
 
     //-----------------------------------------------------------------------
     // Assembler stub will be used for this call to arraycopy
@@ -7410,66 +7401,6 @@ address generate_avx_ghash_processBlocks() {
 
   }
 
-  RuntimeStub* generate_cont_doYield() {
-    if (!Continuations::enabled()) return nullptr;
-
-    enum layout {
-      rbp_off,
-      rbpH_off,
-      return_off,
-      return_off2,
-      framesize // inclusive of return address
-    };
-
-    CodeBuffer code("cont_doYield", 512, 64);
-    MacroAssembler* _masm = new MacroAssembler(&code);
-
-    address start = __ pc();
-    __ enter();
-    address the_pc = __ pc();
-
-    int frame_complete = the_pc - start;
-
-    // This nop must be exactly at the PC we push into the frame info.
-    // We use this nop for fast CodeBlob lookup, associate the OopMap
-    // with it right away.
-    __ post_call_nop();
-    OopMapSet* oop_maps = new OopMapSet();
-    OopMap* map = new OopMap(framesize, 1);
-    oop_maps->add_gc_map(frame_complete, map);
-
-    __ set_last_Java_frame(rsp, rbp, the_pc);
-    __ movptr(c_rarg0, r15_thread);
-    __ movptr(c_rarg1, rsp);
-    __ call_VM_leaf(Continuation::freeze_entry(), 2);
-    __ reset_last_Java_frame(true);
-
-    Label L_pinned;
-
-    __ testptr(rax, rax);
-    __ jcc(Assembler::notZero, L_pinned);
-
-    __ movptr(rsp, Address(r15_thread, JavaThread::cont_entry_offset()));
-    continuation_enter_cleanup(_masm);
-    __ pop(rbp);
-    __ ret(0);
-
-    __ bind(L_pinned);
-
-    // Pinned, return to caller
-    __ leave();
-    __ ret(0);
-
-    RuntimeStub* stub =
-      RuntimeStub::new_runtime_stub(code.name(),
-                                    &code,
-                                    frame_complete,
-                                    (framesize >> (LogBytesPerWord - LogBytesPerInt)),
-                                    oop_maps,
-                                    false);
-    return stub;
-  }
-
   address generate_cont_thaw(const char* label, Continuation::thaw_kind kind) {
     if (!Continuations::enabled()) return nullptr;
 
@@ -7630,7 +7561,7 @@ address generate_avx_ghash_processBlocks() {
 
     int frame_complete = the_pc - start;
 
-    __ set_last_Java_frame(rsp, rbp, the_pc);
+    __ set_last_Java_frame(rsp, rbp, the_pc, rscratch1);
     __ movptr(c_rarg0, r15_thread);
     __ call_VM_leaf(CAST_FROM_FN_PTR(address, JfrIntrinsicSupport::write_checkpoint), 1);
     __ reset_last_Java_frame(true);
@@ -7723,7 +7654,7 @@ address generate_avx_ghash_processBlocks() {
 
     // Set up last_Java_sp and last_Java_fp
     address the_pc = __ pc();
-    __ set_last_Java_frame(rsp, rbp, the_pc);
+    __ set_last_Java_frame(rsp, rbp, the_pc, rscratch1);
     __ andptr(rsp, -(StackAlignmentInBytes));    // Align stack
 
     // Call runtime
@@ -7870,9 +7801,6 @@ address generate_avx_ghash_processBlocks() {
     StubRoutines::_cont_thaw          = generate_cont_thaw();
     StubRoutines::_cont_returnBarrier = generate_cont_returnBarrier();
     StubRoutines::_cont_returnBarrierExc = generate_cont_returnBarrier_exception();
-    StubRoutines::_cont_doYield_stub = generate_cont_doYield();
-    StubRoutines::_cont_doYield      = StubRoutines::_cont_doYield_stub == nullptr ? nullptr
-                                        : StubRoutines::_cont_doYield_stub->entry_point();
 
     JFR_ONLY(StubRoutines::_jfr_write_checkpoint_stub = generate_jfr_write_checkpoint();)
     JFR_ONLY(StubRoutines::_jfr_write_checkpoint = StubRoutines::_jfr_write_checkpoint_stub->entry_point();)
@@ -8163,102 +8091,6 @@ void StubGenerator_generate(CodeBuffer* code, int phase) {
     UnsafeCopyMemory::create_table(UCM_TABLE_MAX_ENTRIES);
   }
   StubGenerator g(code, phase);
-}
-
-#undef __
-#define __ masm->
-
-//---------------------------- continuation_enter_setup ---------------------------
-//
-// Arguments:
-//   None.
-//
-// Results:
-//   rsp: pointer to blank ContinuationEntry
-//
-// Kills:
-//   rax
-//
-OopMap* continuation_enter_setup(MacroAssembler* masm, int& stack_slots) {
-  assert(ContinuationEntry::size() % VMRegImpl::stack_slot_size == 0, "");
-  assert(in_bytes(ContinuationEntry::cont_offset())  % VMRegImpl::stack_slot_size == 0, "");
-  assert(in_bytes(ContinuationEntry::chunk_offset()) % VMRegImpl::stack_slot_size == 0, "");
-
-  stack_slots += checked_cast<int>(ContinuationEntry::size()) / wordSize;
-  __ subptr(rsp, checked_cast<int32_t>(ContinuationEntry::size()));
-
-  int frame_size = (checked_cast<int>(ContinuationEntry::size()) + wordSize) / VMRegImpl::stack_slot_size;
-  OopMap* map = new OopMap(frame_size, 0);
-  ContinuationEntry::setup_oopmap(map);
-
-  __ movptr(rax, Address(r15_thread, JavaThread::cont_entry_offset()));
-  __ movptr(Address(rsp, ContinuationEntry::parent_offset()), rax);
-  __ movptr(Address(r15_thread, JavaThread::cont_entry_offset()), rsp);
-
-  return map;
-}
-
-//---------------------------- fill_continuation_entry ---------------------------
-//
-// Arguments:
-//   rsp: pointer to blank Continuation entry
-//   reg_cont_obj: pointer to the continuation
-//   reg_flags: flags
-//
-// Results:
-//   rsp: pointer to filled out ContinuationEntry
-//
-// Kills:
-//   rax
-//
-void fill_continuation_entry(MacroAssembler* masm, Register reg_cont_obj, Register reg_flags) {
-  assert_different_registers(rax, reg_cont_obj, reg_flags);
-
-  DEBUG_ONLY(__ movl(Address(rsp, ContinuationEntry::cookie_offset()), ContinuationEntry::cookie_value());)
-
-  __ movptr(Address(rsp, ContinuationEntry::cont_offset()), reg_cont_obj);
-  __ movl  (Address(rsp, ContinuationEntry::flags_offset()), reg_flags);
-  __ movptr(Address(rsp, ContinuationEntry::chunk_offset()), 0);
-  __ movl(Address(rsp, ContinuationEntry::argsize_offset()), 0);
-  __ movl(Address(rsp, ContinuationEntry::pin_count_offset()), 0);
-
-  __ movptr(rax, Address(r15_thread, JavaThread::cont_fastpath_offset()));
-  __ movptr(Address(rsp, ContinuationEntry::parent_cont_fastpath_offset()), rax);
-  __ movq(rax, Address(r15_thread, JavaThread::held_monitor_count_offset()));
-  __ movq(Address(rsp, ContinuationEntry::parent_held_monitor_count_offset()), rax);
-
-  __ movptr(Address(r15_thread, JavaThread::cont_fastpath_offset()), 0);
-  __ movq(Address(r15_thread, JavaThread::held_monitor_count_offset()), 0);
-}
-
-//---------------------------- continuation_enter_cleanup ---------------------------
-//
-// Arguments:
-//   rsp: pointer to the ContinuationEntry
-//
-// Results:
-//   rsp: pointer to the spilled rbp in the entry frame
-//
-// Kills:
-//   rbx
-//
-void continuation_enter_cleanup(MacroAssembler* masm) {
-#ifdef ASSERT
-  Label L_good_sp;
-  __ cmpptr(rsp, Address(r15_thread, JavaThread::cont_entry_offset()));
-  __ jcc(Assembler::equal, L_good_sp);
-  __ stop("Incorrect rsp at continuation_enter_cleanup");
-  __ bind(L_good_sp);
-#endif
-
-  __ movptr(rbx, Address(rsp, ContinuationEntry::parent_cont_fastpath_offset()));
-  __ movptr(Address(r15_thread, JavaThread::cont_fastpath_offset()), rbx);
-  __ movq(rbx, Address(rsp, ContinuationEntry::parent_held_monitor_count_offset()));
-  __ movq(Address(r15_thread, JavaThread::held_monitor_count_offset()), rbx);
-
-  __ movptr(rbx, Address(rsp, ContinuationEntry::parent_offset()));
-  __ movptr(Address(r15_thread, JavaThread::cont_entry_offset()), rbx);
-  __ addptr(rsp, checked_cast<int32_t>(ContinuationEntry::size()));
 }
 
 #undef __

@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "jvm.h"
+#include "cds/cds_globals.hpp"
 #include "cds/filemap.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/javaAssertions.hpp"
@@ -549,6 +550,7 @@ static SpecialFlag const special_jvm_flags[] = {
   { "UseContainerCpuShares",        JDK_Version::jdk(19), JDK_Version::jdk(20), JDK_Version::jdk(21) },
   { "PreferContainerQuotaForCPUCount", JDK_Version::jdk(19), JDK_Version::jdk(20), JDK_Version::jdk(21) },
   { "AliasLevel",                   JDK_Version::jdk(19), JDK_Version::jdk(20), JDK_Version::jdk(21) },
+  { "UseCodeAging",                 JDK_Version::undefined(), JDK_Version::jdk(20), JDK_Version::jdk(21) },
 
 #ifdef ASSERT
   { "DummyObsoleteTestFlag",        JDK_Version::undefined(), JDK_Version::jdk(18), JDK_Version::undefined() },
@@ -3879,11 +3881,13 @@ static void apply_debugger_ergo() {
   }
 #endif
 
+#ifndef PRODUCT
   if (UseDebuggerErgo) {
     // Turn on sub-flags
     FLAG_SET_ERGO_IF_DEFAULT(UseDebuggerErgo1, true);
     FLAG_SET_ERGO_IF_DEFAULT(UseDebuggerErgo2, true);
   }
+#endif
 
   if (UseDebuggerErgo2) {
     // Debugging with limited number of CPUs
@@ -4146,11 +4150,6 @@ jint Arguments::apply_ergo() {
 #ifdef ZERO
   // Clear flags not supported on zero.
   FLAG_SET_DEFAULT(ProfileInterpreter, false);
-
-  if (LogTouchedMethods) {
-    warning("LogTouchedMethods is not supported for Zero");
-    FLAG_SET_DEFAULT(LogTouchedMethods, false);
-  }
 #endif // ZERO
 
   if (PrintAssembly && FLAG_IS_DEFAULT(DebugNonSafepoints)) {

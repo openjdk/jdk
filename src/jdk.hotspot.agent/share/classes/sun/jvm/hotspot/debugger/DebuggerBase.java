@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -232,15 +232,6 @@ public abstract class DebuggerBase implements Debugger {
     }
   }
 
-  /** May be called by subclasses directly but may not be overridden */
-  protected final void writeBytes(long address, long numBytes, byte[] data)
-    throws UnmappedAddressException, DebuggerException {
-    if (cache != null) {
-      cache.clear(address, numBytes);
-    }
-    writeBytesToProcess(address, numBytes, data);
-  }
-
   public boolean readJBoolean(long address)
     throws UnmappedAddressException, UnalignedAddressException {
     checkJavaConfigured();
@@ -385,78 +376,6 @@ public abstract class DebuggerBase implements Debugger {
     }
   }
 
-  public void writeJBoolean(long address, boolean value)
-    throws UnmappedAddressException, UnalignedAddressException {
-    checkJavaConfigured();
-    utils.checkAlignment(address, jbooleanSize);
-    byte[] data = utils.jbooleanToData(value);
-    writeBytes(address, jbooleanSize, data);
-  }
-
-  public void writeJByte(long address, byte value)
-    throws UnmappedAddressException, UnalignedAddressException {
-    checkJavaConfigured();
-    utils.checkAlignment(address, jbyteSize);
-    byte[] data = utils.jbyteToData(value);
-    writeBytes(address, jbyteSize, data);
-  }
-
-  public void writeJChar(long address, char value)
-    throws UnmappedAddressException, UnalignedAddressException {
-    checkJavaConfigured();
-    utils.checkAlignment(address, jcharSize);
-    byte[] data = utils.jcharToData(value);
-    writeBytes(address, jcharSize, data);
-  }
-
-  public void writeJDouble(long address, double value)
-    throws UnmappedAddressException, UnalignedAddressException {
-    checkJavaConfigured();
-    utils.checkAlignment(address, jdoubleSize);
-    byte[] data = utils.jdoubleToData(value);
-    writeBytes(address, jdoubleSize, data);
-  }
-
-  public void writeJFloat(long address, float value)
-    throws UnmappedAddressException, UnalignedAddressException {
-    checkJavaConfigured();
-    utils.checkAlignment(address, jfloatSize);
-    byte[] data = utils.jfloatToData(value);
-    writeBytes(address, jfloatSize, data);
-  }
-
-  public void writeJInt(long address, int value)
-    throws UnmappedAddressException, UnalignedAddressException {
-    checkJavaConfigured();
-    utils.checkAlignment(address, jintSize);
-    byte[] data = utils.jintToData(value);
-    writeBytes(address, jintSize, data);
-  }
-
-  public void writeJLong(long address, long value)
-    throws UnmappedAddressException, UnalignedAddressException {
-    checkJavaConfigured();
-    utils.checkAlignment(address, jlongSize);
-    byte[] data = utils.jlongToData(value);
-    writeBytes(address, jlongSize, data);
-  }
-
-  public void writeJShort(long address, short value)
-    throws UnmappedAddressException, UnalignedAddressException {
-    checkJavaConfigured();
-    utils.checkAlignment(address, jshortSize);
-    byte[] data = utils.jshortToData(value);
-    writeBytes(address, jshortSize, data);
-  }
-
-  public void writeCInteger(long address, long numBytes, long value)
-    throws UnmappedAddressException, UnalignedAddressException {
-    checkConfigured();
-    utils.checkAlignment(address, numBytes);
-    byte[] data = utils.cIntegerToData(numBytes, value);
-    writeBytes(address, numBytes, data);
-  }
-
   protected long readAddressValue(long address)
     throws UnmappedAddressException, UnalignedAddressException {
     return readCInteger(address, machDesc.getAddressSize(), true);
@@ -479,11 +398,6 @@ public abstract class DebuggerBase implements Debugger {
       value = (long)(narrowKlassBase + (long)(value << narrowKlassShift));
     }
     return value;
-  }
-
-  protected void writeAddressValue(long address, long value)
-    throws UnmappedAddressException, UnalignedAddressException {
-    writeCInteger(address, machDesc.getAddressSize(), value);
   }
 
   /** Can be called by subclasses but can not be overridden */
