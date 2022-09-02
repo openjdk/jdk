@@ -518,7 +518,7 @@ private:
   static oop to_requested_address(oop dumptime_oop) {
     return cast_to_oop(to_requested_address(cast_from_oop<address>(dumptime_oop)));
   }
-  static bool is_a_test_class_in_unnamed_module(Klass* ik) NOT_CDS_JAVA_HEAP_RETURN_(return false);
+  static bool is_a_test_class_in_unnamed_module(Klass* ik) NOT_CDS_JAVA_HEAP_RETURN_(false);
 };
 
 #if INCLUDE_CDS_JAVA_HEAP
