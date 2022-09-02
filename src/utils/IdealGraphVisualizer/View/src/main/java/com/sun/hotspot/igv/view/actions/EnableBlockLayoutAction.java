@@ -24,21 +24,29 @@
 package com.sun.hotspot.igv.view.actions;
 
 import java.awt.event.ActionEvent;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.ImageIcon;
+
+import com.sun.hotspot.igv.view.EditorTopComponent;
 import org.openide.util.ImageUtilities;
 
 /**
  *
  * @author Thomas Wuerthinger
  */
-public class EnableBlockLayoutAction extends AbstractAction {
+public class EnableBlockLayoutAction extends AbstractAction implements PropertyChangeListener {
 
-    public EnableBlockLayoutAction() {
+    EditorTopComponent editor;
+
+    public EnableBlockLayoutAction(EditorTopComponent etc) {
+        editor = etc;
         putValue(AbstractAction.SMALL_ICON, new ImageIcon(ImageUtilities.loadImage(iconResource())));
         putValue(SELECTED_KEY, false);
         putValue(Action.SHORT_DESCRIPTION, "Show clustered sea of nodes");
+        this.addPropertyChangeListener(this);
     }
 
     public boolean isSelected() {
@@ -50,7 +58,10 @@ public class EnableBlockLayoutAction extends AbstractAction {
     }
 
     @Override
-    public void actionPerformed(ActionEvent e) {
-    }
+    public void actionPerformed(ActionEvent e) { }
 
+    @Override
+    public void propertyChange(PropertyChangeEvent evt) {
+        editor.getModel().setShowBlocks(this.isSelected());
+    }
 }

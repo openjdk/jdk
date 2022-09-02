@@ -64,13 +64,10 @@ import org.openide.windows.TopComponent;
  *
  * @author Thomas Wuerthinger
  */
-public final class EditorTopComponent extends TopComponent implements PropertyChangeListener {
+public final class EditorTopComponent extends TopComponent {
 
     private DiagramViewer scene;
     private InstanceContent graphContent;
-    private EnableSeaLayoutAction seaLayoutAction;
-    private EnableBlockLayoutAction blockLayoutAction;
-    private EnableCFGLayoutAction cfgLayoutAction;
     private OverviewAction overviewAction;
     private JComponent satelliteComponent;
     private JPanel centerPanel;
@@ -104,6 +101,7 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
     }
 
     public EditorTopComponent(Diagram diagram) {
+        initComponents();
 
         LookupHistory.init(InputGraphProvider.class);
         LookupHistory.init(DiagramProvider.class);
@@ -145,8 +143,6 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
                 ExpandPredecessorsAction.get(ExpandPredecessorsAction.class),
                 ExpandSuccessorsAction.get(ExpandSuccessorsAction.class)
         };
-
-        initComponents();
 
         ToolbarPool.getDefault().setPreferredIconSize(16);
         Toolbar toolBar = new Toolbar();
@@ -201,32 +197,27 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
         toolBar.addSeparator();
         ButtonGroup layoutButtons = new ButtonGroup();
 
-        seaLayoutAction = new EnableSeaLayoutAction();
-        JToggleButton button = new JToggleButton(seaLayoutAction);
-        button.setSelected(Settings.get().getInt(Settings.DEFAULT_VIEW, Settings.DEFAULT_VIEW_DEFAULT) == Settings.DefaultView.SEA_OF_NODES);
-        layoutButtons.add(button);
-        toolBar.add(button);
-        seaLayoutAction.addPropertyChangeListener(this);
+        JToggleButton seaLayoutButton = new JToggleButton(new EnableSeaLayoutAction(this));
+        seaLayoutButton.setSelected(Settings.get().getInt(Settings.DEFAULT_VIEW, Settings.DEFAULT_VIEW_DEFAULT) == Settings.DefaultView.SEA_OF_NODES);
+        layoutButtons.add(seaLayoutButton);
+        toolBar.add(seaLayoutButton);
 
-        blockLayoutAction = new EnableBlockLayoutAction();
-        button = new JToggleButton(blockLayoutAction);
-        button.setSelected(Settings.get().getInt(Settings.DEFAULT_VIEW, Settings.DEFAULT_VIEW_DEFAULT) == Settings.DefaultView.CLUSTERED_SEA_OF_NODES);
-        layoutButtons.add(button);
-        toolBar.add(button);
-        blockLayoutAction.addPropertyChangeListener(this);
+        JToggleButton blockLayoutButton = new JToggleButton(new EnableBlockLayoutAction(this));
+        blockLayoutButton.setSelected(Settings.get().getInt(Settings.DEFAULT_VIEW, Settings.DEFAULT_VIEW_DEFAULT) == Settings.DefaultView.CLUSTERED_SEA_OF_NODES);
+        layoutButtons.add(blockLayoutButton);
+        toolBar.add(blockLayoutButton);
 
-        cfgLayoutAction = new EnableCFGLayoutAction();
-        button = new JToggleButton(cfgLayoutAction);
-        button.setSelected(Settings.get().getInt(Settings.DEFAULT_VIEW, Settings.DEFAULT_VIEW_DEFAULT) == Settings.DefaultView.CONTROL_FLOW_GRAPH);
-        layoutButtons.add(button);
-        toolBar.add(button);
-        cfgLayoutAction.addPropertyChangeListener(this);
+        EnableCFGLayoutAction cfgLayoutAction = new EnableCFGLayoutAction(this);
+        JToggleButton cfgLayoutButton = new JToggleButton(cfgLayoutAction);
+        cfgLayoutButton.setSelected(Settings.get().getInt(Settings.DEFAULT_VIEW, Settings.DEFAULT_VIEW_DEFAULT) == Settings.DefaultView.CONTROL_FLOW_GRAPH);
+        layoutButtons.add(cfgLayoutButton);
+        toolBar.add(cfgLayoutButton);
 
         toolBar.addSeparator();
         overviewAction = new OverviewAction();
         toolBar.add(new JToggleButton(overviewAction));
         toolBar.add(new JToggleButton(new PredSuccAction()));
-        toolBar.add(new JToggleButton( new ShowEmptyBlocksAction(cfgLayoutAction, true)));
+        toolBar.add(new JToggleButton(new ShowEmptyBlocksAction(cfgLayoutAction, true)));
         toolBar.add(new JToggleButton(new HideDuplicatesAction()));
 
         toolBar.addSeparator();
@@ -333,22 +324,6 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
         return (EditorTopComponent) EditorTopComponent.getRegistry().getActivated();
     }
 
-    @Override
-    public int getPersistenceType() {
-        return TopComponent.PERSISTENCE_NEVER;
-    }
-
-    @Override
-    public void componentClosed() {
-        super.componentClosed();
-        getModel().close();
-    }
-
-    @Override
-    protected String preferredID() {
-        return PREFERRED_ID;
-    }
-
     private void closeOnRemovedOrEmptyGroup() {
         Group group = getDiagram().getGraph().getGroup();
         if (!group.getParent().getElements().contains(group) ||
@@ -383,13 +358,11 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
     }
 
     public void setSelectedNodes(Set<InputNode> nodes) {
-
         List<Figure> list = new ArrayList<>();
         Set<Integer> ids = new HashSet<>();
         for (InputNode n : nodes) {
             ids.add(n.getId());
         }
-
         for (Figure f : getDiagram().getFigures()) {
             for (InputNode n : f.getSource().getSourceNodes()) {
                 if (ids.contains(n.getId())) {
@@ -398,7 +371,6 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
                 }
             }
         }
-
         setSelectedFigures(list);
     }
 
@@ -421,23 +393,27 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
     }
 
     @Override
-    public void propertyChange(PropertyChangeEvent evt) {
-        if (evt.getSource() == this.seaLayoutAction) {
-            getModel().setShowSea(seaLayoutAction.isSelected());
-        } else if (evt.getSource() == this.blockLayoutAction) {
-            getModel().setShowBlocks(blockLayoutAction.isSelected());
-        } else if (evt.getSource() == this.cfgLayoutAction) {
-            getModel().setShowCFG(cfgLayoutAction.isSelected());
-        } else {
-            assert false : "Unknown event source";
-        }
+    public int getPersistenceType() {
+        return TopComponent.PERSISTENCE_NEVER;
+    }
+
+    @Override
+    protected String preferredID() {
+        return PREFERRED_ID;
+    }
+
+    @Override
+    public void componentOpened() { }
+
+    @Override
+    public void componentClosed() {
+        getModel().close();
     }
 
     @Override
     protected void componentHidden() {
         super.componentHidden();
         scene.componentHidden();
-
     }
 
     @Override

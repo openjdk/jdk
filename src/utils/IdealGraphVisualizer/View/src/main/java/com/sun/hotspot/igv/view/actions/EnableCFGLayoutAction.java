@@ -24,17 +24,25 @@
 package com.sun.hotspot.igv.view.actions;
 
 import java.awt.event.ActionEvent;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.ImageIcon;
+
+import com.sun.hotspot.igv.view.EditorTopComponent;
 import org.openide.util.ImageUtilities;
 
-public class EnableCFGLayoutAction extends AbstractAction {
+public class EnableCFGLayoutAction extends AbstractAction implements PropertyChangeListener {
 
-    public EnableCFGLayoutAction() {
+    EditorTopComponent editor;
+
+    public EnableCFGLayoutAction(EditorTopComponent etc) {
+        editor = etc;
         putValue(AbstractAction.SMALL_ICON, new ImageIcon(ImageUtilities.loadImage(iconResource())));
         putValue(SELECTED_KEY, false);
         putValue(Action.SHORT_DESCRIPTION, "Show control-flow graph");
+        this.addPropertyChangeListener(this);
     }
 
     public boolean isSelected() {
@@ -46,6 +54,10 @@ public class EnableCFGLayoutAction extends AbstractAction {
     }
 
     @Override
-    public void actionPerformed(ActionEvent e) {
+    public void actionPerformed(ActionEvent e) { }
+
+    @Override
+    public void propertyChange(PropertyChangeEvent evt) {
+        editor.getModel().setShowCFG(this.isSelected());
     }
 }

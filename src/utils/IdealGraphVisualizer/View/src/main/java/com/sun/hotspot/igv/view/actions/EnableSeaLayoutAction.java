@@ -24,17 +24,24 @@
 package com.sun.hotspot.igv.view.actions;
 
 import java.awt.event.ActionEvent;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.ImageIcon;
+
+import com.sun.hotspot.igv.view.EditorTopComponent;
 import org.openide.util.ImageUtilities;
 
-public class EnableSeaLayoutAction extends AbstractAction {
+public class EnableSeaLayoutAction extends AbstractAction implements PropertyChangeListener {
 
-    public EnableSeaLayoutAction() {
+    EditorTopComponent editor;
+    public EnableSeaLayoutAction(EditorTopComponent etc) {
+        editor = etc;
         putValue(AbstractAction.SMALL_ICON, new ImageIcon(ImageUtilities.loadImage(iconResource())));
         putValue(SELECTED_KEY, false);
         putValue(Action.SHORT_DESCRIPTION, "Show sea of nodes");
+        this.addPropertyChangeListener(this);
     }
 
     public boolean isSelected() {
@@ -46,6 +53,10 @@ public class EnableSeaLayoutAction extends AbstractAction {
     }
 
     @Override
-    public void actionPerformed(ActionEvent e) {
+    public void actionPerformed(ActionEvent e) { }
+
+    @Override
+    public void propertyChange(PropertyChangeEvent evt) {
+        editor.getModel().setShowSea(this.isSelected());
     }
 }
