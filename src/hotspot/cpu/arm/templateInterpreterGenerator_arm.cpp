@@ -728,12 +728,6 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
 // [ parameter 1        ] <--- Rlocals
 //
 
-address TemplateInterpreterGenerator::generate_Continuation_doYield_entry(void) {
-  if (!Continuations::enabled()) return nullptr;
-  Unimplemented();
-  return NULL;
-}
-
 address TemplateInterpreterGenerator::generate_Reference_get_entry(void) {
   // Code: _aload_0, _getfield, _areturn
   // parameter size = 1

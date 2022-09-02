@@ -220,16 +220,6 @@ class Compilation: public StackObj {
   // timers
   static void print_timers();
 
-#ifndef PRODUCT
-  // debugging support.
-  // produces a file named c1compileonly in the current directory with
-  // directives to compile only the current method and it's inlines.
-  // The file can be passed to the command line option -XX:Flags=<filename>
-  void compile_only_this_method();
-  void compile_only_this_scope(outputStream* st, IRScope* scope);
-  void exclude_this_method();
-#endif // PRODUCT
-
   bool is_profiling() {
     return env()->comp_level() == CompLevel_full_profile ||
            env()->comp_level() == CompLevel_limited_profile;

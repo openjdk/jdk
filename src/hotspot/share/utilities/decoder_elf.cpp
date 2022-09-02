@@ -79,14 +79,14 @@ bool ElfDecoder::get_source_info(address pc, char* filename, size_t filename_len
   if (file == NULL) {
     return false;
   }
-  DWARF_LOG_INFO("##### Find filename and line number for offset " PTR32_FORMAT " in library %s #####",
+  DWARF_LOG_INFO("##### Find filename and line number for offset " INT32_FORMAT_X_0 " in library %s #####",
                  unsigned_offset_in_library, filepath);
 
   if (!file->get_source_info(unsigned_offset_in_library, filename, filename_len, line, is_pc_after_call)) {
     return false;
   }
 
-  DWARF_LOG_SUMMARY("pc: " INTPTR_FORMAT ", offset: " PTR32_FORMAT ", filename: %s, line: %u",
+  DWARF_LOG_SUMMARY("pc: " INTPTR_FORMAT ", offset: " INT32_FORMAT_X_0 ", filename: %s, line: %u",
                        p2i(pc), offset_in_library, filename, *line);
   DWARF_LOG_INFO("") // To structure the debug output better.
   return true;

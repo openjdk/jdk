@@ -28,7 +28,7 @@
  * @bug 8280481
  * @library /test/lib
  *
- * @requires os.arch=="amd64" | os.arch=="x86_64" | os.arch=="i386" | os.arch=="x86" | os.arch=="aarch64"
+ * @requires os.arch=="amd64" | os.arch=="x86_64" | os.arch=="i386" | os.arch=="x86" | os.arch=="aarch64" | os.arch=="riscv64"
  *
  * @run driver compiler.sharedstubs.SharedStubToInterpTest
  */

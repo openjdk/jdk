@@ -1683,10 +1683,8 @@ void PSParallelCompact::invoke(bool maximum_heap_compaction) {
          "should be in vm thread");
 
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
-  GCCause::Cause gc_cause = heap->gc_cause();
   assert(!heap->is_gc_active(), "not reentrant");
 
-  PSAdaptiveSizePolicy* policy = heap->size_policy();
   IsGCActiveMark mark;
 
   if (ScavengeBeforeFullGC) {
