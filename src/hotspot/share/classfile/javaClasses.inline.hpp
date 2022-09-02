@@ -132,14 +132,17 @@ bool java_lang_String::is_instance(oop obj) {
 // Accessors
 
 oop java_lang_ref_Reference::weak_referent_no_keepalive(oop ref) {
+  assert(!java_lang_ref_Reference::is_phantom(ref), "must be Weak or Soft Reference");
   return ref->obj_field_access<ON_WEAK_OOP_REF | AS_NO_KEEPALIVE>(_referent_offset);
 }
 
 oop java_lang_ref_Reference::weak_referent(oop ref) {
+  assert(!java_lang_ref_Reference::is_phantom(ref), "must be Weak or Soft Reference");
   return ref->obj_field_access<ON_WEAK_OOP_REF>(_referent_offset);
 }
 
 oop java_lang_ref_Reference::phantom_referent_no_keepalive(oop ref) {
+  assert(java_lang_ref_Reference::is_phantom(ref), "must be Phantom Reference");
   return ref->obj_field_access<ON_PHANTOM_OOP_REF | AS_NO_KEEPALIVE>(_referent_offset);
 }
 
