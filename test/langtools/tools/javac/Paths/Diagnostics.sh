@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -93,7 +93,7 @@ echo "public class Main{public static void main(String[]a){}}" > Main.java
 # about not setting bootclasspath, which is filtered out in Warning.
 # The alternative would be to extract a minimal rt.jar from JDK and
 # specify that with -bootclasspath.
-SRCTRG8="-source 8 -target 8"
+SRCTRG8="-source 8 -target 8 -Xlint:-options"
 
 #----------------------------------------------------------------
 # No warnings unless -Xlint:path is used

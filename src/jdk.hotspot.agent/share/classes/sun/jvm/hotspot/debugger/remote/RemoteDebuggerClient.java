@@ -44,7 +44,7 @@ public class RemoteDebuggerClient extends DebuggerBase implements JVMDebugger {
   private RemoteDebugger remoteDebugger;
   private RemoteThreadFactory threadFactory;
   private boolean unalignedAccessesOkay = false;
-  private static final int cacheSize = 16 * 1024 * 1024; // 16 MB
+  private static final int cacheSize = 256 * 1024 * 1024; // 256 MB
 
   public RemoteDebuggerClient(RemoteDebugger remoteDebugger) throws DebuggerException {
     super();
@@ -52,24 +52,17 @@ public class RemoteDebuggerClient extends DebuggerBase implements JVMDebugger {
       this.remoteDebugger = remoteDebugger;
       machDesc = remoteDebugger.getMachineDescription();
       utils = new DebuggerUtilities(machDesc.getAddressSize(), machDesc.isBigEndian());
-      int cacheNumPages;
-      int cachePageSize;
+      int cachePageSize = 4096;
+      int cacheNumPages = parseCacheNumPagesProperty(cacheSize / cachePageSize);
       String cpu = remoteDebugger.getCPU();
-      // page size. (FIXME: should pick this up from the remoteDebugger.)
       if (cpu.equals("x86")) {
         threadFactory = new RemoteX86ThreadFactory(this);
-        cachePageSize = 4096;
-        cacheNumPages = parseCacheNumPagesProperty(cacheSize / cachePageSize);
         unalignedAccessesOkay = true;
       } else if (cpu.equals("amd64") || cpu.equals("x86_64")) {
         threadFactory = new RemoteAMD64ThreadFactory(this);
-        cachePageSize = 4096;
-        cacheNumPages = parseCacheNumPagesProperty(cacheSize / cachePageSize);
         unalignedAccessesOkay = true;
       } else if (cpu.equals("ppc64")) {
         threadFactory = new RemotePPC64ThreadFactory(this);
-        cachePageSize = 4096;
-        cacheNumPages = parseCacheNumPagesProperty(cacheSize / cachePageSize);
         unalignedAccessesOkay = true;
       } else {
         try {
@@ -81,8 +74,6 @@ public class RemoteDebuggerClient extends DebuggerBase implements JVMDebugger {
         } catch (Exception e) {
           throw new DebuggerException("Thread access for CPU architecture " + cpu + " not yet supported");
         }
-        cachePageSize = 4096;
-        cacheNumPages = parseCacheNumPagesProperty(cacheSize / cachePageSize);
         unalignedAccessesOkay = false;
       }
 
@@ -410,10 +401,6 @@ public class RemoteDebuggerClient extends DebuggerBase implements JVMDebugger {
     catch (RemoteException e) {
       throw new DebuggerException(e);
     }
-  }
-
-  public void writeBytesToProcess(long a, long b, byte[] c) {
-     throw new DebuggerException("Unimplemented!");
   }
 
   public String execCommandOnServer(String command, Map<String, Object> options) {

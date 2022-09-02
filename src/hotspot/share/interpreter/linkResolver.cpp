@@ -1085,7 +1085,7 @@ void LinkResolver::resolve_static_call(CallInfo& result,
     resolved_method = linktime_resolve_static_method(new_info, CHECK);
   }
 
-  if (resolved_method->is_continuation_enter_intrinsic()
+  if (resolved_method->is_continuation_native_intrinsic()
       && resolved_method->from_interpreted_entry() == NULL) { // does a load_acquire
     methodHandle mh(THREAD, resolved_method);
     // Generate a compiled form of the enterSpecial intrinsic.

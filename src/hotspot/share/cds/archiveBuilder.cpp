@@ -50,7 +50,6 @@
 #include "utilities/align.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/formatBuffer.hpp"
-#include "utilities/hashtable.inline.hpp"
 
 ArchiveBuilder* ArchiveBuilder::_current = NULL;
 

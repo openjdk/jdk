@@ -26,8 +26,6 @@
 #ifndef CPU_RISCV_FRAME_RISCV_HPP
 #define CPU_RISCV_FRAME_RISCV_HPP
 
-#include "runtime/synchronizer.hpp"
-
 // A frame represents a physical stack frame (an activation).  Frames can be
 // C or Java frames, and the Java frames can be interpreted or compiled.
 // In contrast, vframes represent source-level activations, so that one physical frame
@@ -133,7 +131,7 @@
     // Entry frames
     // n.b. these values are determined by the layout defined in
     // stubGenerator for the Java call stub
-    entry_frame_after_call_words                     =  22,
+    entry_frame_after_call_words                     =  34,
     entry_frame_call_wrapper_offset                  = -10,
 
     // we don't need a save area

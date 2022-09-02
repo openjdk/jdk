@@ -482,12 +482,6 @@ address TemplateInterpreterGenerator::generate_abstract_entry(void) {
   return __ addr_at(entry_offset);
 }
 
-address TemplateInterpreterGenerator::generate_Continuation_doYield_entry(void) {
-  if (!Continuations::enabled()) return nullptr;
-  Unimplemented();
-  return NULL;
-}
-
 address TemplateInterpreterGenerator::generate_Reference_get_entry(void) {
   // Inputs:
   //  Z_ARG1 - receiver
@@ -1301,7 +1295,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
 // native method than the typical interpreter frame setup.
 address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // Determine code generation flags.
-  bool inc_counter = UseCompiler || CountCompiledCalls || LogTouchedMethods;
+  bool inc_counter = UseCompiler || CountCompiledCalls;
 
   // Interpreter entry for ordinary Java methods.
   //
@@ -1658,7 +1652,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
   address entry_point = __ pc();
 
-  bool inc_counter = UseCompiler || CountCompiledCalls || LogTouchedMethods;
+  bool inc_counter = UseCompiler || CountCompiledCalls;
 
   // Interpreter entry for ordinary Java methods.
   //

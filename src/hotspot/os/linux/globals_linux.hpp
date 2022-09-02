@@ -59,15 +59,6 @@
   product(bool, UseContainerSupport, true,                              \
           "Enable detection and runtime container configuration support") \
                                                                         \
-  product(bool, UseContainerCpuShares, false,                           \
-          "(Deprecated) Include CPU shares in the CPU availability"     \
-          " calculation.")                                              \
-                                                                        \
-  product(bool, PreferContainerQuotaForCPUCount, true,                  \
-          "(Deprecated) Calculate the container CPU availability based" \
-          " on the value of quotas (if set), when true. Otherwise, use" \
-          " the CPU shares value, provided it is less than quota.")     \
-                                                                        \
   product(bool, AdjustStackSizeForTLS, false,                           \
           "Increase the thread stack size to include space for glibc "  \
           "static thread-local storage (TLS) if true")                  \

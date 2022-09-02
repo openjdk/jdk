@@ -1613,6 +1613,8 @@ generate(ThreeRegNEONOp,
           ["cmge", "cmge", "2D"],
           ["fcmge", "fcmge", "2S"], ["fcmge", "fcmge", "4S"],
           ["fcmge", "fcmge", "2D"],
+          ["facgt", "facgt", "2S"], ["facgt", "facgt", "4S"],
+          ["facgt", "facgt", "2D"],
           ])
 
 generate(SVEComparisonWithZero, ["EQ", "GT", "GE", "LT", "LE", "NE"])
@@ -1822,6 +1824,12 @@ generate(SpecialCases, [["ccmn",   "__ ccmn(zr, zr, 3u, Assembler::LE);",       
                         ["compact",  "__ sve_compact(z16, __ S, z16, p1);",                "compact\tz16.s, p1, z16.s"],
                         ["compact",  "__ sve_compact(z16, __ D, z16, p1);",                "compact\tz16.d, p1, z16.d"],
                         ["ext",      "__ sve_ext(z17, z16, 63);",                          "ext\tz17.b, z17.b, z16.b, #63"],
+                        ["facgt",    "__ sve_fac(Assembler::GT, p1, __ H, p2, z4, z5);",   "facgt\tp1.h, p2/z, z4.h, z5.h"],
+                        ["facgt",    "__ sve_fac(Assembler::GT, p1, __ S, p2, z4, z5);",   "facgt\tp1.s, p2/z, z4.s, z5.s"],
+                        ["facgt",    "__ sve_fac(Assembler::GT, p1, __ D, p2, z4, z5);",   "facgt\tp1.d, p2/z, z4.d, z5.d"],
+                        ["facge",    "__ sve_fac(Assembler::GE, p1, __ H, p2, z4, z5);",   "facge\tp1.h, p2/z, z4.h, z5.h"],
+                        ["facge",    "__ sve_fac(Assembler::GE, p1, __ S, p2, z4, z5);",   "facge\tp1.s, p2/z, z4.s, z5.s"],
+                        ["facge",    "__ sve_fac(Assembler::GE, p1, __ D, p2, z4, z5);",   "facge\tp1.d, p2/z, z4.d, z5.d"],
                         # SVE2 instructions
                         ["histcnt",  "__ sve_histcnt(z16, __ S, p0, z16, z16);",           "histcnt\tz16.s, p0/z, z16.s, z16.s"],
                         ["histcnt",  "__ sve_histcnt(z17, __ D, p0, z17, z17);",           "histcnt\tz17.d, p0/z, z17.d, z17.d"],
