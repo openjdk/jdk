@@ -77,7 +77,7 @@ public class JdbLastErrorTest extends JdbTest {
     }
 
     private JdbLastErrorTest(LaunchOptions launchOptions) {
-        super(launchOptions); 
+        super(launchOptions);
     }
 
     private static final String DEBUGGEE_CLASS = TestNativeLastError.class.getName();
