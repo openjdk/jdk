@@ -2341,6 +2341,17 @@ class StubGenerator: public StubCodeGenerator {
 
     address start = __ pc();
 
+    BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
+
+    if (bs_asm->nmethod_patching_type() == NMethodPatchingType::conc_instruction_and_data_patch) {
+      BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
+      Address thread_epoch_addr(xthread, in_bytes(bs_nm->thread_disarmed_offset()) + 4);
+      __ la(t1, ExternalAddress(bs_asm->patching_epoch_addr()));
+      __ lwu(t1, t1);
+      __ sw(t1, thread_epoch_addr);
+      __ membar(__ LoadLoad);
+    }
+
     __ set_last_Java_frame(sp, fp, ra, t0);
 
     __ enter();
@@ -2935,32 +2946,32 @@ class StubGenerator: public StubCodeGenerator {
 
       // Register allocation
 
-      Register reg = c_rarg0;
-      Pa_base = reg;       // Argument registers
+      RegSetIterator<Register> regs = RegSet::range(x10, x26).begin();
+      Pa_base = *regs;       // Argument registers
       if (squaring) {
         Pb_base = Pa_base;
       } else {
-        Pb_base = ++reg;
+        Pb_base = *++regs;
       }
-      Pn_base = ++reg;
-      Rlen= ++reg;
-      inv = ++reg;
-      Pm_base = ++reg;
+      Pn_base = *++regs;
+      Rlen= *++regs;
+      inv = *++regs;
+      Pm_base = *++regs;
 
                         // Working registers:
-      Ra =  ++reg;      // The current digit of a, b, n, and m.
-      Rb =  ++reg;
-      Rm =  ++reg;
-      Rn =  ++reg;
+      Ra =  *++regs;    // The current digit of a, b, n, and m.
+      Rb =  *++regs;
+      Rm =  *++regs;
+      Rn =  *++regs;
 
-      Pa =  ++reg;      // Pointers to the current/next digit of a, b, n, and m.
-      Pb =  ++reg;
-      Pm =  ++reg;
-      Pn =  ++reg;
+      Pa =  *++regs;      // Pointers to the current/next digit of a, b, n, and m.
+      Pb =  *++regs;
+      Pm =  *++regs;
+      Pn =  *++regs;
 
-      tmp0 =  ++reg;    // Three registers which form a
-      tmp1 =  ++reg;    // triple-precision accumuator.
-      tmp2 =  ++reg;
+      tmp0 =  *++regs;    // Three registers which form a
+      tmp1 =  *++regs;    // triple-precision accumuator.
+      tmp2 =  *++regs;
 
       Ri =  x6;         // Inner and outer loop indexes.
       Rj =  x7;
@@ -2971,7 +2982,7 @@ class StubGenerator: public StubCodeGenerator {
       Rlo_mn = x31;
 
       // x18 and up are callee-saved.
-      _toSave = RegSet::range(x18, reg) + Pm_base;
+      _toSave = RegSet::range(x18, *regs) + Pm_base;
     }
 
   private:
@@ -3227,7 +3238,8 @@ class StubGenerator: public StubCodeGenerator {
     //    Preserves len
     //    Leaves s pointing to the address which was in d at start
     void reverse(Register d, Register s, Register len, Register tmp1, Register tmp2) {
-      assert(tmp1 < x28 && tmp2 < x28, "register corruption");
+      assert(tmp1->encoding() < x28->encoding(), "register corruption");
+      assert(tmp2->encoding() < x28->encoding(), "register corruption");
 
       slli(tmp1, len, LogBytesPerWord);
       add(s, s, tmp1);
@@ -3718,12 +3730,6 @@ class StubGenerator: public StubCodeGenerator {
     return nullptr;
   }
 
-  RuntimeStub* generate_cont_doYield() {
-    if (!Continuations::enabled()) return nullptr;
-    Unimplemented();
-    return nullptr;
-  }
-
 #if INCLUDE_JFR
 
 #undef __
@@ -3820,9 +3826,6 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_cont_thaw             = generate_cont_thaw();
     StubRoutines::_cont_returnBarrier    = generate_cont_returnBarrier();
     StubRoutines::_cont_returnBarrierExc = generate_cont_returnBarrier_exception();
-    StubRoutines::_cont_doYield_stub     = generate_cont_doYield();
-    StubRoutines::_cont_doYield = StubRoutines::_cont_doYield_stub == nullptr ? nullptr
-                                   : StubRoutines::_cont_doYield_stub->entry_point();
 
     JFR_ONLY(StubRoutines::_jfr_write_checkpoint_stub = generate_jfr_write_checkpoint();)
     JFR_ONLY(StubRoutines::_jfr_write_checkpoint = StubRoutines::_jfr_write_checkpoint_stub == nullptr ? nullptr

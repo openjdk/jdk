@@ -33,6 +33,8 @@
 #include <unistd.h>
 #include <errno.h>
 
+#include "sun_nio_fs_UnixFileSystem.h"
+
 #define RESTARTABLE(_cmd, _result) do { \
   do { \
     _result = _cmd; \

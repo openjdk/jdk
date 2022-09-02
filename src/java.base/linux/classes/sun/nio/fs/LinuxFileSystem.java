@@ -25,9 +25,14 @@
 
 package sun.nio.fs;
 
-import java.nio.file.*;
+import java.nio.file.FileStore;
+import java.nio.file.WatchService;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import static sun.nio.fs.LinuxNativeDispatcher.*;
 import static sun.nio.fs.UnixConstants.*;
 
@@ -127,9 +132,11 @@ class LinuxFileSystem extends UnixFileSystem {
         return new LinuxFileStore(this, entry);
     }
 
+    // --- file copying ---
+
     @Override
-    protected void bufferedCopy(int dst, int src, long address,
-                                int size, long addressToPollForCancel)
+    void bufferedCopy(int dst, int src, long address,
+                      int size, long addressToPollForCancel)
         throws UnixException
     {
         int advice = POSIX_FADV_SEQUENTIAL | // sequential data access
@@ -141,7 +148,7 @@ class LinuxFileSystem extends UnixFileSystem {
     }
 
     @Override
-    protected int directCopy(int dst, int src, long addressToPollForCancel)
+    int directCopy(int dst, int src, long addressToPollForCancel)
         throws UnixException
     {
         int advice = POSIX_FADV_SEQUENTIAL | // sequential data access
@@ -153,13 +160,6 @@ class LinuxFileSystem extends UnixFileSystem {
     }
 
     // -- native methods --
-
-    private static native void init();
-
-    static {
-        jdk.internal.loader.BootLoader.loadLibrary("nio");
-        init();
-    }
 
     /**
      * Copies data between file descriptors {@code src} and {@code dst} using

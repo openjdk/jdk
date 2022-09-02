@@ -35,11 +35,8 @@
 
 #include <sys/sendfile.h>
 #include <fcntl.h>
-#include <dlfcn.h>
 
-typedef ssize_t copy_file_range_func(int, loff_t*, int, loff_t*, size_t,
-                                     unsigned int);
-static copy_file_range_func* my_copy_file_range_func = NULL;
+#include "sun_nio_fs_LinuxFileSystem.h"
 
 #define RESTARTABLE(_cmd, _result) do { \
   do { \
@@ -55,15 +52,7 @@ static void throwUnixException(JNIEnv* env, int errnum) {
     }
 }
 
-JNIEXPORT void JNICALL
-Java_sun_nio_fs_LinuxFileSystem_init
-    (JNIEnv* env, jclass this)
-{
-    my_copy_file_range_func =
-        (copy_file_range_func*) dlsym(RTLD_DEFAULT, "copy_file_range");
-}
-
-// Copy all bytes from src to dst, within the kernel if possible (Linux),
+// Copy all bytes from src to dst, within the kernel if possible,
 // and return zero, otherwise return the appropriate status code.
 //
 // Return value
@@ -84,31 +73,6 @@ Java_sun_nio_fs_LinuxFileSystem_directCopy0
         1048576 :   // 1 MB to give cancellation a chance
         0x7ffff000; // maximum number of bytes that sendfile() can transfer
     ssize_t bytes_sent;
-
-    if (my_copy_file_range_func != NULL) {
-        do {
-            RESTARTABLE(my_copy_file_range_func(src, NULL, dst, NULL, count, 0),
-                                                bytes_sent);
-            if (bytes_sent < 0) {
-                switch (errno) {
-                    case EINVAL:
-                    case EXDEV:
-                        // ignore and try sendfile()
-                        break;
-                    default:
-                        JNU_ThrowIOExceptionWithLastError(env, "Copy failed");
-                        return IOS_THROWN;
-                }
-            }
-            if (cancel != NULL && *cancel != 0) {
-                throwUnixException(env, ECANCELED);
-                return IOS_THROWN;
-            }
-        } while (bytes_sent > 0);
-
-        if (bytes_sent == 0)
-            return 0;
-    }
 
     do {
         RESTARTABLE(sendfile64(dst, src, NULL, count), bytes_sent);

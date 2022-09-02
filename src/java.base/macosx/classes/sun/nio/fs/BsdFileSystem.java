@@ -25,11 +25,15 @@
 
 package sun.nio.fs;
 
-import java.nio.file.*;
 import java.io.IOException;
-import java.util.*;
+import java.nio.file.FileStore;
+import java.nio.file.WatchService;
 import java.security.AccessController;
 import sun.nio.ch.IOStatus;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 import sun.security.action.GetPropertyAction;
 
 import static sun.nio.fs.UnixConstants.*;
@@ -71,89 +75,11 @@ class BsdFileSystem extends UnixFileSystem {
         return SupportedFileFileAttributeViewsHolder.supportedFileAttributeViews;
     }
 
-    // whether file cloning is supported on this platform
-    private static volatile boolean cloneFileNotSupported;
-
-    /**
-     * Clones the file whose path name is {@code src} to that whose path
-     * name is {@code dst} using the {@code clonefile} system call.
-     *
-     * @param src the path of the source file
-     * @param dst the path of the destination file (clone)
-     * @param followLinks whether to follow links
-     * @param mode the permissions to assign to the destination
-     *
-     * @return 0 on success, IOStatus.UNSUPPORTED_CASE if the call does not work
-     *         with the given parameters, or IOStatus.UNSUPPORTED if cloning is
-     *         not supported on this platform
-     */
-    private int clone(UnixPath src, UnixPath dst, boolean followLinks, int mode)
-        throws IOException
-    {
-        BsdFileStore bfs = (BsdFileStore)provider().getFileStore(src);
-        if (!bfs.equals(provider().getFileStore(dst.getParent())) ||
-            !bfs.supportsCloning())
-            return IOStatus.UNSUPPORTED_CASE;
-
-        int flags = followLinks ? 0 : CLONE_NOFOLLOW;
-        int result = 0;
-        try {
-            result = BsdNativeDispatcher.clonefile(src, dst, flags);
-        } catch (UnixException x) {
-            switch (x.errno()) {
-                case ENOTSUP: // cloning not supported by filesystem
-                    return IOStatus.UNSUPPORTED;
-                case EXDEV:   // src and dst on different filesystems
-                case ENOTDIR: // problematic path parameter(s)
-                    return IOStatus.UNSUPPORTED_CASE;
-                default:
-                    x.rethrowAsIOException(src, dst);
-                    return IOStatus.THROWN;
-            }
-        }
-        try {
-            UnixNativeDispatcher.chmod(dst, mode);
-        } catch (UnixException x) {
-            x.rethrowAsIOException(src, dst);
-        }
-        return result;
-    }
-
     @Override
     protected int directCopy(int dst, int src, long addressToPollForCancel)
         throws UnixException
     {
         return directCopy0(dst, src, addressToPollForCancel);
-    }
-
-    @Override
-    protected void copyFile(UnixPath source,
-                            UnixFileAttributes attrs,
-                            UnixPath  target,
-                            UnixCopyFile.Flags flags,
-                            long addressToPollForCancel)
-        throws IOException
-    {
-        if (addressToPollForCancel == 0 && flags.copyPosixAttributes &&
-            !cloneFileNotSupported) {
-            int res = clone(source, target, flags.followLinks, attrs.mode());
-            if (res == 0) {
-                // copy owner
-                try {
-                    chown(target, attrs.uid(), attrs.gid());
-                } catch (UnixException x) {
-                    if (flags.failIfUnableToCopyPosix)
-                        x.rethrowAsIOException(target);
-                }
-                return;
-            }
-            if (res == IOStatus.UNSUPPORTED) {
-                cloneFileNotSupported = true;
-            }
-            // fall through to superclass method
-        }
-
-        super.copyFile(source, attrs, target, flags, addressToPollForCancel);
     }
 
     @Override
@@ -186,8 +112,6 @@ class BsdFileSystem extends UnixFileSystem {
         }
         return entries;
     }
-
-
 
     @Override
     FileStore getFileStore(UnixMountEntry entry) throws IOException {

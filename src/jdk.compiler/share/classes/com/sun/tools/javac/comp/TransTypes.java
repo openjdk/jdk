@@ -79,9 +79,6 @@ public class TransTypes extends TreeTranslator {
     /** Switch: is complex graph inference supported? */
     private final boolean allowGraphInference;
 
-    /** Switch: are default methods supported? */
-    private final boolean allowInterfaceBridges;
-
     protected TransTypes(Context context) {
         context.put(transTypesKey, this);
         compileStates = CompileStates.instance(context);
@@ -93,7 +90,6 @@ public class TransTypes extends TreeTranslator {
         make = TreeMaker.instance(context);
         resolve = Resolve.instance(context);
         Source source = Source.instance(context);
-        allowInterfaceBridges = Feature.DEFAULT_METHODS.allowedInSource(source);
         allowGraphInference = Feature.GRAPH_INFERENCE.allowedInSource(source);
         annotate = Annotate.instance(context);
         attr = Attr.instance(context);
@@ -971,9 +967,7 @@ public class TransTypes extends TreeTranslator {
                 super.visitClassDef(tree);
                 make.at(tree.pos);
                 ListBuffer<JCTree> bridges = new ListBuffer<>();
-                if (allowInterfaceBridges || (tree.sym.flags() & INTERFACE) == 0) {
-                    addBridges(tree.pos(), c, bridges);
-                }
+                addBridges(tree.pos(), c, bridges);
                 tree.defs = bridges.toList().prependList(tree.defs);
                 tree.type = erasure(tree.type);
             } finally {

@@ -43,6 +43,31 @@ containing the core JMH and transitive dependencies. The recommended
 dependencies can be retrieved by running `sh make/devkit/createJMHBundle.sh`,
 after which `--with-jmh=build/jmh/jars` should work.
 
+When tests fail or timeout, jtreg runs its failure handler to capture necessary
+data from the system where the test was run. This data can then be used to
+analyze the test failures. Collecting this data involves running various commands
+(which are listed in files residing in `test/failure_handler/src/share/conf`)
+and some of these commands use `sudo`. If the system's `sudoers` file isn't
+configured to allow running these commands, then it can result in password being
+prompted during the failure handler execution. Typically, when running locally,
+collecting this additional data isn't always necessary. To disable running the
+failure handler, use `--enable-jtreg-failure-handler=no` when running `configure`.
+If, however, you want to let the failure handler to run and don't want to be
+prompted for sudo password, then you can configure your `sudoers` file
+appropriately. Please read the necessary documentation of your operating system
+to see how to do that; here we only show one possible way of doing that - edit
+the `/etc/sudoers.d/sudoers` file to include the following line:
+
+```
+johndoe ALL=(ALL) NOPASSWD: /sbin/dmesg
+```
+
+This line configures `sudo` to _not_ prompt for password for the `/sbin/dmesg`
+command (this is one of the commands that is listed in the files
+at `test/failure_handler/src/share/conf`), for the user `johndoe`. Here `johndoe`
+is the user account under which the jtreg tests are run. Replace the username
+with a relevant user account of your system.
+
 ## Test selection
 
 All functionality is available using the `test` make target. In this use case,
@@ -577,6 +602,12 @@ Explorer; in the right-side pane look for "Turn off Windows key hotkeys" and
 double click on it; enable or disable hotkeys.
 
 Note: restart is required to make the settings take effect.
+
+## Editing this document
+
+If you want to contribute changes to this document, edit `doc/testing.md` and 
+then run `make update-build-docs` to generate the same changes in 
+`doc/testing.html`.
 
 ---
 # Override some definitions in the global css file that are not optimal for

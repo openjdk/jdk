@@ -401,6 +401,7 @@ void Method::metaspace_pointers_do(MetaspaceClosure* it) {
   NOT_PRODUCT(it->push(&_name);)
 }
 
+#if INCLUDE_CDS
 // Attempt to return method to original state.  Clear any pointers
 // (to objects outside the shared spaces).  We won't be able to predict
 // where they should point in a new JVM.  Further initialize some
@@ -410,6 +411,11 @@ void Method::remove_unshareable_info() {
   unlink_method();
   JFR_ONLY(REMOVE_METHOD_ID(this);)
 }
+
+void Method::restore_unshareable_info(TRAPS) {
+  assert(is_method() && is_valid_method(this), "ensure C++ vtable is restored");
+}
+#endif
 
 void Method::set_vtable_index(int index) {
   if (is_shared() && !MetaspaceShared::remapped_readwrite() && method_holder()->verified_at_dump_time()) {
@@ -1231,10 +1237,11 @@ void Method::link_method(const methodHandle& h_method, TRAPS) {
 
   // ONLY USE the h_method now as make_adapter may have blocked
 
-  if (h_method->is_continuation_enter_intrinsic()) {
+  if (h_method->is_continuation_native_intrinsic()) {
     // the entry points to this method will be set in set_code, called when first resolving this method
     _from_interpreted_entry = NULL;
     _from_compiled_entry = NULL;
+    _i2i_entry = NULL;
   }
 }
 
@@ -1257,10 +1264,6 @@ address Method::make_adapters(const methodHandle& mh, TRAPS) {
   mh->set_adapter_entry(adapter);
   mh->_from_compiled_entry = adapter->get_c2i_entry();
   return adapter->get_c2i_entry();
-}
-
-void Method::restore_unshareable_info(TRAPS) {
-  assert(is_method() && is_valid_method(this), "ensure C++ vtable is restored");
 }
 
 address Method::from_compiled_entry_no_trampoline() const {
@@ -1318,11 +1321,17 @@ void Method::set_code(const methodHandle& mh, CompiledMethod *code) {
   mh->_from_compiled_entry = code->verified_entry_point();
   OrderAccess::storestore();
 
-  if (mh->is_continuation_enter_intrinsic()) {
+  if (mh->is_continuation_native_intrinsic()) {
     assert(mh->_from_interpreted_entry == NULL, "initialized incorrectly"); // see link_method
 
-    // This is the entry used when we're in interpreter-only mode; see InterpreterMacroAssembler::jump_from_interpreted
-    mh->_i2i_entry = ContinuationEntry::interpreted_entry();
+    if (mh->is_continuation_enter_intrinsic()) {
+      // This is the entry used when we're in interpreter-only mode; see InterpreterMacroAssembler::jump_from_interpreted
+      mh->_i2i_entry = ContinuationEntry::interpreted_entry();
+    } else if (mh->is_continuation_yield_intrinsic()) {
+      mh->_i2i_entry = mh->get_i2c_entry();
+    } else {
+      guarantee(false, "Unknown Continuation native intrinsic");
+    }
     // This must come last, as it is what's tested in LinkResolver::resolve_static_call
     Atomic::release_store(&mh->_from_interpreted_entry , mh->get_i2c_entry());
   } else if (!mh->is_method_handle_intrinsic()) {

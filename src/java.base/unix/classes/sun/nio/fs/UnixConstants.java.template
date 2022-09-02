@@ -149,10 +149,6 @@ class UnixConstants {
 #endif
 
 #ifdef _ALLBSD_SOURCE
-    // flags used with clonefile(2)
-    static final int PREFIX_CLONE_NOFOLLOW = CLONE_NOFOLLOW;
-    static final int PREFIX_CLONE_NOOWNERCOPY = CLONE_NOOWNERCOPY;
-
     // flags used with setattrlist
     static final int PREFIX_ATTR_CMN_CRTIME = ATTR_CMN_CRTIME;
     static final int PREFIX_ATTR_CMN_MODTIME = ATTR_CMN_MODTIME;

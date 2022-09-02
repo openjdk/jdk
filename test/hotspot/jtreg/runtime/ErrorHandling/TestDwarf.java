@@ -176,7 +176,7 @@ public class TestDwarf {
      * There are some valid cases where we cannot find source information. Check these.
      */
     private static void checkNoSourceLine(String crashOutputString, String line) {
-        Pattern pattern = Pattern.compile("[CV][\\s\\t]+\\[([a-zA-Z0-9_.]+)\\+0x.+][\\s\\t]+.*\\+0x");
+        Pattern pattern = Pattern.compile("[CV][\\s\\t]+\\[([a-zA-Z0-9_.]+)\\+0x.+]");
         Matcher matcher = pattern.matcher(line);
         Asserts.assertTrue(matcher.find(), "Must find library in \"" + line + "\"");
         // Check if there are symbols available for library. If not, then we cannot find any source information for this library.

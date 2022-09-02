@@ -1255,12 +1255,12 @@ void Assembler::emit_operand(Register reg, Address adr,
 }
 
 void Assembler::emit_operand(XMMRegister reg, Address adr) {
-    if (adr.isxmmindex()) {
-       emit_operand(reg, adr._base, adr._xmmindex, adr._scale, adr._disp, adr._rspec);
-    } else {
-       emit_operand(reg, adr._base, adr._index, adr._scale, adr._disp,
-       adr._rspec);
-    }
+  if (adr.isxmmindex()) {
+     emit_operand(reg, adr._base, adr._xmmindex, adr._scale, adr._disp, adr._rspec);
+  } else {
+     emit_operand(reg, adr._base, adr._index, adr._scale, adr._disp,
+     adr._rspec);
+  }
 }
 
 // Now the Assembler instructions (identical for 32/64 bits)
@@ -12246,11 +12246,17 @@ static bool is_reachable(address target, relocInfo::relocType reloc_type) {
 
 bool Assembler::reachable(AddressLiteral adr) {
   assert(CodeCache::contains(pc()), "required");
+  if (adr.is_lval()) {
+    return false;
+  }
   return is_reachable(adr.target(), adr.reloc());
 }
 
 bool Assembler::always_reachable(AddressLiteral adr) {
   assert(CodeCache::contains(pc()), "required");
+  if (adr.is_lval()) {
+    return false;
+  }
   return is_always_reachable(adr.target(), adr.reloc());
 }
 

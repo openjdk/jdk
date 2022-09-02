@@ -148,5 +148,5 @@ JNIEXPORT jint JNICALL
 Java_sun_nio_fs_LinuxNativeDispatcher_posix_1fadvise(JNIEnv* env, jclass this,
     jint fd, jlong offset, jlong len, jint advice)
 {
-    return posix_fadvise((int)fd, (off_t)offset, (off_t)len, (int)advice);
+    return posix_fadvise64((int)fd, (off64_t)offset, (off64_t)len, (int)advice);
 }
