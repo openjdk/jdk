@@ -223,8 +223,6 @@ void TemplateInterpreterGenerator::generate_all() {
   method_entry(java_lang_Double_longBitsToDouble);
   method_entry(java_lang_Double_doubleToRawLongBits);
 
-  method_entry(java_lang_continuation_doYield)
-
 #undef method_entry
 
   // Bytecodes
@@ -425,8 +423,6 @@ address TemplateInterpreterGenerator::generate_method_entry(
   case Interpreter::java_lang_math_fmaF    : entry_point = generate_math_entry(kind);      break;
   case Interpreter::java_lang_ref_reference_get
                                            : entry_point = generate_Reference_get_entry(); break;
-  case Interpreter::java_lang_continuation_doYield
-                                           : entry_point = generate_Continuation_doYield_entry(); break;
   case Interpreter::java_util_zip_CRC32_update
                                            : native = true; entry_point = generate_CRC32_update_entry();  break;
   case Interpreter::java_util_zip_CRC32_updateBytes

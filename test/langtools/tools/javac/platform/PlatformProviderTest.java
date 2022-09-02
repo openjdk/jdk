@@ -192,13 +192,13 @@ public class PlatformProviderTest implements PlatformProvider {
         @Override
         public String getSourceVersion() {
             System.err.println("getSourceVersion");
-            return "8";
+            return "11";
         }
 
         @Override
         public String getTargetVersion() {
             System.err.println("getTargetVersion");
-            return "8";
+            return "11";
         }
 
         @Override
