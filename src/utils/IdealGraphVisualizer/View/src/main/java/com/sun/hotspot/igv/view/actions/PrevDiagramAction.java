@@ -95,4 +95,9 @@ public final class PrevDiagramAction extends ContextAction<DiagramViewModel> imp
     public void changed(DiagramViewModel source) {
         update(source);
     }
+
+    @Override
+    protected boolean asynchronous() {
+        return false;
+    }
 }

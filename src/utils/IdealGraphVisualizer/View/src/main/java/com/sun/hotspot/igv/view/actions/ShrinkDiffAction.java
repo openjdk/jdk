@@ -92,4 +92,9 @@ public final class ShrinkDiffAction extends ContextAction<DiagramViewModel> impl
     public void changed(DiagramViewModel source) {
         update(source);
     }
+
+    @Override
+    protected boolean asynchronous() {
+        return false;
+    }
 }
