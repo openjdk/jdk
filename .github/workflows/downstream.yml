@@ -53,15 +53,15 @@ jobs:
           # 2. push
           TAG=$(git tag | grep --extended-regexp '^jdk\-.*' | sort --version-sort | tail --lines 1 | tr --delete '\n')
           test -n "$TAG"
-          git checkout -b merge-upstream $TAG
-          git push origin merge-upstream $TAG
+          git checkout -b rivos/merge-upstream $TAG
+          git push origin rivos/merge-upstream $TAG
 
           # 3. pr
           gh pr create \
             --repo rivosinc/jdk \
-            --base master \
-            --head merge-upstream \
-            --title "Merge $TAG into master" \
+            --base rivos/main \
+            --head rivos/merge-upstream \
+            --title "Merge $TAG into rivos/main" \
             --body "This is an automated pull request." \
             --reviewer "luhenry" || true
         env:
