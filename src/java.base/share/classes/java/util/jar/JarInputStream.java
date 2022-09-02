@@ -31,35 +31,28 @@ import sun.security.util.ManifestEntryVerifier;
 import jdk.internal.util.jar.JarIndex;
 
 /**
- * The {@code JarInputStream} class is used to read the contents of
- * a JAR file from any input stream. It extends the class
- * {@code java.util.zip.ZipInputStream} with support for reading
- * an optional {@code Manifest} entry. The {@code Manifest}
- * can be used to store meta-information about the JAR file and its entries.
+ * The {@code JarInputStream} class, which extends {@linkplain ZipInputStream},
+ * is used to read the contents of a JAR file from an input stream.
+ * It provides support for reading an optional {@linkplain JarFile#MANIFEST_NAME Manifest}
+ * entry. The {@linkplain JarFile#MANIFEST_NAME Manifest} can be used to store
+ * meta-information about the JAR file and its entries.
  *
- *  <h2>Accessing the Manifest</h2>
- * The {@linkplain #getManifest()} method will return the {@code Manifest} if:
- * <ul>
- *     <li>
- *         The {@code Manifest} is the first Jar entry or the
- *         {@code META-INF/} is the first jar entry and {@code Manifest}
- *         is the second jar entry
- *     </li>
- * </ul>
- *
+ * <h2>Accessing the Manifest</h2>
  * <p>
- *     The methods {@linkplain #getNextEntry()} and {@linkplain #getNextJarEntry()}
- *     will not return the {@code META-INF/} or {@code Manifest} entries if:
+ * The {@linkplain #getManifest} method will return the {@code Manifest} when it is
+ * the first entry in the stream or {@code META-INF/} is the first entry and
+ * the {@code Manifest} is the second entry within the stream. When the
+ * {@code Manifest} is returned by {@code getManifest()}, the {@linkplain #getNextEntry()}
+ * and {@linkplain #getNextJarEntry()} methods will not return the {@code Manifest}.
+ * If  {@code META-INF/} is the first entry in the input stream it will be
+ * also not be returned by {@linkplain #getNextEntry()} and
+ * {@linkplain #getNextJarEntry()}.
  * </p>
- * <ul>
- *     <li>
- *         The {@code META-INF/} or {@code Manifest} is the first Jar entry
- *     </li>
- *     <li>
- *         The {@code META-INF/} is the first jar entry and {@code Manifest}
- *         is the second jar entry
- *      </li>
- * </ul>
+ * <p>
+ * {@linkplain JarEntry#getAttributes()} will return the {@code Manifest}'s
+ *  attributes for the current JAR file entry, if any, providing
+ *  {@code getManifest()} returns a {@code Manifest} for the JAR file.
+ * </p>
  *
  *  <h2>Verifying a JarInputStream</h2>
  *  {@linkplain #JarInputStream(InputStream, boolean)} may be used to
@@ -67,16 +60,15 @@ import jdk.internal.util.jar.JarIndex;
  *  following requirements are met:
  *  <ul>
  *      <li>
- *         The {@code Manifest} is the first Jar entry or
- *         the {@code META-INF/} is the first jar entry and {@code Manifest}
- *         is the second jar entry
+ *         The {@linkplain #getManifest()} returns a {@code Manifest} for the JAR
+ *         file
  *      </li>
  *      <li>
- *         All signature-related entries must immediately follow the {@code manifest}
+ *         All signature-related entries must immediately follow the {@code Manifest}
  *      </li>
  *  </ul>
  *  Once the {@code JarEntry} has been completely verified, which is done by
- *  reading until the end of the entrie's input stream,
+ *  reading until the end of the entry's input stream,
  *  {@linkplain  JarEntry#getCertificates()} may be called to obtain the certificates
  *  for this entry and {@linkplain JarEntry#getCodeSigners()} may be called to obtain
  *  the verified signers.
