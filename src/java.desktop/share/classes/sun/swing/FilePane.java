@@ -56,6 +56,7 @@ import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.text.DateFormat;
+import java.text.DecimalFormat;
 import java.text.MessageFormat;
 import java.text.NumberFormat;
 import java.util.ArrayList;
@@ -1124,7 +1125,7 @@ public class FilePane extends JPanel implements PropertyChangeListener {
     class DetailsTableCellRenderer extends DefaultTableCellRenderer {
         JFileChooser chooser;
         DateFormat df;
-        final double baseFileSize = 1000.0;
+        final static double baseFileSize = 1000.0;
         final MessageFormat mf = new MessageFormat("");
         final NumberFormat nf = NumberFormat.getNumberInstance();
 
@@ -1201,43 +1202,44 @@ public class FilePane extends JPanel implements PropertyChangeListener {
                  * Base-10 number system is used for formatting file size
                  * similar to how it's formatted in file managers on Linux.
                  * Empty file size is shown as 0.0 KB,
-                 * 1-199-byte files are shown as 0.1 KB,
-                 * 200-299-byte files are shown as 0.2 KB and so on.
+                 * 1-100-byte files are shown as 0.1 KB,
+                 * 101-200-byte files are shown as 0.2 KB and so on.
                  */
                 Object[] displayedFileSize = new Object[1];
 
                 if (listViewWindowsStyle) {
                     updateMessageFormatPattern(kiloByteString);
-                    if (len == 0) {
-                        displayedFileSize[0] = 0.0;
-                    } else if (len > 0 && len < 100L) {
-                        displayedFileSize[0] = 0.1;
+                    if (len < 1000L) {
+                        displayedFileSize[0] = ((len +99) / 100L) / 10.0d;
                     } else {
-                        displayedFileSize[0] = formatToDoubleValue(len);
+                        displayedFileSize[0] = roundToOneDecimalPlace(len);
                     }
                 } else {
-                    if (len < 100L) {
+                    if (len < 1000L) {
                         updateMessageFormatPattern(kiloByteString);
-                        if (len == 0) {
-                            displayedFileSize[0] = 0.0;
-                        } else {
-                            displayedFileSize[0] = 0.1;
-                        }
+                        /*
+                         * An offset value of 99 is added to round up the file
+                         * length.
+                         *
+                         * For example, the file size of 101 byte will be converted
+                         * to 0.2 KB if we add 99 else it will be 0.1 KB.
+                         */
+                        displayedFileSize[0] = ((len +99) / 100L) / 10.0d;
                     } else {
-                        double kbVal = formatToDoubleValue(len);
+                        double kbVal = roundToOneDecimalPlace(len);
                         len = (long)kbVal;
                         if (kbVal < baseFileSize) {
                             updateMessageFormatPattern(kiloByteString);
                             displayedFileSize[0] = kbVal;
                         } else {
-                            double mbVal = formatToDoubleValue(len);
+                            double mbVal = roundToOneDecimalPlace(len);
                             len = (long)mbVal;
                             if (mbVal < baseFileSize) {
                                 updateMessageFormatPattern(megaByteString);
                                 displayedFileSize[0] = mbVal;
                             } else {
                                 updateMessageFormatPattern(gigaByteString);
-                                displayedFileSize[0] = formatToDoubleValue(len);
+                                displayedFileSize[0] = roundToOneDecimalPlace(len);
                             }
                         }
                     }
@@ -1270,7 +1272,9 @@ public class FilePane extends JPanel implements PropertyChangeListener {
          * @return file size rounded to one decimal place
          */
         private static double roundToOneDecimalPlace(long fileSize) {
-            return (fileSize / 100L) / 10.0d;
+            DecimalFormat df = new DecimalFormat("0.0");
+            double val = fileSize/baseFileSize;
+            return  Double.valueOf(df.format(val));
         }
     }
 
