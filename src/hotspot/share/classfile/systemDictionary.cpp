@@ -365,12 +365,12 @@ Klass* SystemDictionary::resolve_array_class_or_null(Symbol* class_name,
   return k;
 }
 
-static inline void log_circularity_error(Thread* thread, PlaceholderEntry* probe) {
+static inline void log_circularity_error(Symbol* name, PlaceholderEntry* probe) {
   LogTarget(Debug, class, load, placeholders) lt;
   if (lt.is_enabled()) {
-    ResourceMark rm(thread);
+    ResourceMark rm;
     LogStream ls(lt);
-    ls.print("ClassCircularityError detected for placeholder ");
+    ls.print("ClassCircularityError detected for placeholder entry %s", name->as_C_string());
     probe->print_on(&ls);
     ls.cr();
   }
@@ -442,7 +442,7 @@ InstanceKlass* SystemDictionary::resolve_super_or_fail(Symbol* class_name,
       // Must check ClassCircularity before checking if superclass is already loaded.
       PlaceholderEntry* probe = PlaceholderTable::get_entry(class_name, loader_data);
       if (probe && probe->check_seen_thread(THREAD, PlaceholderTable::LOAD_SUPER)) {
-          log_circularity_error(THREAD, probe);
+          log_circularity_error(class_name, probe);
           throw_circularity_error = true;
       }
     }
@@ -562,7 +562,7 @@ InstanceKlass* SystemDictionary::handle_parallel_loading(JavaThread* current,
     // only need check_seen_thread once, not on each loop
     // 6341374 java/lang/Instrument with -Xcomp
     if (oldprobe->check_seen_thread(current, PlaceholderTable::LOAD_INSTANCE)) {
-      log_circularity_error(current, oldprobe);
+      log_circularity_error(name, oldprobe);
       *throw_circularity_error = true;
       return NULL;
     } else {
