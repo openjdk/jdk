@@ -1928,7 +1928,7 @@ void Assembler::vcvtps2ph(XMMRegister dst, XMMRegister src, int imm8, int vector
   emit_int24((unsigned char)0x1D, (0xC0 | encode), imm8);
 }
 
-void Assembler::vcvtps2ph(Address dst, KRegister mask, XMMRegister src, int imm8, int vector_len) {
+void Assembler::evcvtps2ph(Address dst, KRegister mask, XMMRegister src, int imm8, int vector_len) {
   assert(VM_Version::supports_evex(), "");
   InstructionMark im(this);
   InstructionAttr attributes(vector_len, /* rex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ false, /*uses_vl */ true);

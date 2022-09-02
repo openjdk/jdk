@@ -447,6 +447,7 @@ JRT_LEAF(jdouble, SharedRuntime::l2d(jlong x))
   return (jdouble)x;
 JRT_END
 
+// Reference implementation at src/java.base/share/classes/java/lang/Float.java:floatToFloat16
 JRT_LEAF(jshort, SharedRuntime::f2hf(jfloat  x))
   jint doppel = SharedRuntime::f2i(x);
   jshort sign_bit = (jshort) ((doppel & 0x80000000) >> 16);
@@ -484,9 +485,9 @@ JRT_LEAF(jshort, SharedRuntime::f2hf(jfloat  x))
   // Significand bits as if using rounding to zero
   jshort signif_bits = (jshort)(f_signif_bits >> (13 + exp_delta));
 
-  jint lsb = (f_signif_bits & (1 << 13 + exp_delta));
-  jint round  = (f_signif_bits & (1 << 12 + exp_delta));
-  jint sticky = (f_signif_bits & ((1 << 12 + exp_delta) - 1));
+  jint lsb = f_signif_bits & (1 << (13 + exp_delta));
+  jint round  = f_signif_bits & (1 << (12 + exp_delta));
+  jint sticky = f_signif_bits & ((1 << (12 + exp_delta)) - 1);
 
   if (round != 0 && ((lsb | sticky) != 0 )) {
     signif_bits++;
@@ -495,6 +496,7 @@ JRT_LEAF(jshort, SharedRuntime::f2hf(jfloat  x))
   return (jshort)(sign_bit | ( ((exp + 15) << 10) + signif_bits ) );
 JRT_END
 
+// Reference implementation at src/java.base/share/classes/java/lang/Float.java:float16ToFloat
 JRT_LEAF(jfloat, SharedRuntime::hf2f(jshort x))
   // Halffloat format has 1 signbit, 5 exponent bits and
   // 10 significand bits
@@ -519,10 +521,10 @@ JRT_LEAF(jfloat, SharedRuntime::hf2f(jshort x))
   }
 
   // Add the bias of float exponent and shift
-  int float_exp_bits = ((hf_exp + 127) << 24 - 1);
+  int float_exp_bits = (hf_exp + 127) << (24 - 1);
 
   // Combine sign, exponent and significand bits
-  return (jfloat) ((hf_sign_bit << 16) | float_exp_bits | (hf_significand_bits << significand_shift));
+  return SharedRuntime::i2f((hf_sign_bit << 16) | float_exp_bits | (hf_significand_bits << significand_shift));
 JRT_END
 
 // Exception handling across interpreter/compiler boundaries
