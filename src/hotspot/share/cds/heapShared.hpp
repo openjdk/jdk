@@ -29,16 +29,13 @@
 #include "cds/metaspaceShared.hpp"
 #include "classfile/compactHashtable.hpp"
 #include "classfile/javaClasses.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "oops/compressedOops.hpp"
-#include "oops/objArrayKlass.hpp"
 #include "oops/oop.hpp"
 #include "oops/oopHandle.hpp"
 #include "oops/oopsHierarchy.hpp"
-#include "oops/typeArrayKlass.hpp"
-#include "utilities/bitMap.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/resourceHash.hpp"
 
@@ -46,6 +43,7 @@
 class DumpedInternedStrings;
 class FileMapInfo;
 class KlassSubGraphInfo;
+class ResourceBitMap;
 
 struct ArchivableStaticFieldInfo {
   const char* klass_name;

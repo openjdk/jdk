@@ -25,23 +25,15 @@
 #ifndef SHARE_CDS_ARCHIVEHEAPLOADER_HPP
 #define SHARE_CDS_ARCHIVEHEAPLOADER_HPP
 
-#include "cds/dumpTimeClassInfo.hpp"
-#include "cds/metaspaceShared.hpp"
-#include "classfile/compactHashtable.hpp"
-#include "classfile/javaClasses.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "memory/allocation.hpp"
-#include "oops/compressedOops.hpp"
-#include "oops/objArrayKlass.hpp"
-#include "oops/oop.hpp"
-#include "oops/oopHandle.hpp"
+#include "memory/allStatic.hpp"
+#include "runtime/globals.hpp"
 #include "oops/oopsHierarchy.hpp"
-#include "oops/typeArrayKlass.hpp"
-#include "utilities/bitMap.hpp"
-#include "utilities/growableArray.hpp"
-#include "utilities/resourceHash.hpp"
+#include "memory/memRegion.hpp"
+#include "utilities/macros.hpp"
 
+class  FileMapInfo;
 struct LoadedArchiveHeapRegion;
 
 class ArchiveHeapLoader : AllStatic {
