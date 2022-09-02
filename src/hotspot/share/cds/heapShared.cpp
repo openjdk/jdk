@@ -1615,8 +1615,8 @@ void HeapShared::init_subgraph_entry_fields(TRAPS) {
 void HeapShared::setup_test_class(const char* test_class_name) {
   ArchivableStaticFieldInfo* p = open_archive_subgraph_entry_fields;
   int num_slots = sizeof(open_archive_subgraph_entry_fields) / sizeof(ArchivableStaticFieldInfo);
-  assert(p[num_slots - 2].klass_name == NULL, "must have empty slot");
-  assert(p[num_slots - 1].klass_name == NULL, "must have empty slot");
+  assert(p[num_slots - 2].klass_name == NULL, "must have empty slot that's patched below");
+  assert(p[num_slots - 1].klass_name == NULL, "must have empty slot that marks the end of the list");
 
   if (test_class_name != NULL) {
     p[num_slots - 2].klass_name = test_class_name;
