@@ -288,7 +288,7 @@ public class DerInputStream {
     /**
      * Mark the current position in the buffer, so that
      * a later call to <code>reset</code> will return here.
-     * The {@code readAheadLimit} is useless here because
+     * The {@code readAheadLimit} is useless here, because
      * all data is available, and we can go to anywhere at will.
      */
     public void mark(int readAheadLimit) { mark = pos; }

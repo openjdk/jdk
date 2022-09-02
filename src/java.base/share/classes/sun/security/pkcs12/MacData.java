@@ -95,6 +95,7 @@ class MacData {
 
         AlgorithmId algid = AlgorithmId.get(algName);
         this.digestAlgorithmName = algid.getName();
+        this.digestAlgorithmParams = algid.getParameters();
 
         if (digest == null) {
             throw new NullPointerException("the digest " +
@@ -124,6 +125,7 @@ class MacData {
 
         AlgorithmId algid = AlgorithmId.get(algParams);
         this.digestAlgorithmName = algid.getName();
+        this.digestAlgorithmParams = algid.getParameters();
 
         if (digest == null) {
             throw new NullPointerException("the digest " +

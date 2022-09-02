@@ -334,9 +334,8 @@ public class DistributionPointFetcher {
         X500Name pointCrlIssuer = null;
         if (pointCrlIssuers != null) {
             if (idpExt == null ||
-                idpExt.get
-                    (IssuingDistributionPointExtension.INDIRECT_CRL).equals
-                        (Boolean.FALSE)) {
+                    idpExt.get (IssuingDistributionPointExtension.INDIRECT_CRL)
+                    == (Boolean.FALSE)) {
                 return false;
             }
             boolean match = false;
@@ -568,8 +567,7 @@ public class DistributionPointFetcher {
         boolean oneOrMore = false;
         for (int i = 0; i < interimReasonsMask.length; i++) {
             if (interimReasonsMask[i] &&
-                    !(i < reasonsMask.length && reasonsMask[i]))
-            {
+                    !(i < reasonsMask.length && reasonsMask[i])) {
                 oneOrMore = true;
                 break;
             }

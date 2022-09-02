@@ -308,7 +308,7 @@ public class AlgorithmId implements Serializable, DerEncoder {
             return o.stdName();
         } else {
             String n = aliasOidsTable().get(oidStr);
-            return Objects.requireNonNullElseGet(n, () -> algid.toString());
+            return (n != null) ? n : algid.toString();
         }
     }
 

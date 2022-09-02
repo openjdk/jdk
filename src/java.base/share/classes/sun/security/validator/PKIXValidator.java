@@ -173,8 +173,8 @@ public final class PKIXValidator extends Validator {
      * revocation checking. In the future, this should be configurable.
      */
     private void setDefaultParameters(String variant) {
-        if ((Objects.equals(variant, Validator.VAR_TLS_SERVER)) ||
-                (Objects.equals(variant, Validator.VAR_TLS_CLIENT))) {
+        if ((variant == Validator.VAR_TLS_SERVER) ||
+                (variant == Validator.VAR_TLS_CLIENT)) {
             parameterTemplate.setRevocationEnabled(checkTLSRevocation);
         } else {
             parameterTemplate.setRevocationEnabled(false);

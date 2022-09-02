@@ -81,7 +81,7 @@ public class PathList {
      * local file name.
      *
      * @param file the File object
-     * @return the resulting directory or JAR file URL, or null if unknown
+     * @return the resulting directory or JAR file URL
      */
     private static URL fileToURL(File file) {
         String name;

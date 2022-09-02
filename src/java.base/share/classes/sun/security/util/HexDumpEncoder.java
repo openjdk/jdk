@@ -154,7 +154,7 @@ public class HexDumpEncoder {
     {
         int     j;
         int     numBytes;
-        byte[] tmpbuffer = new byte[bytesPerLine()];
+        byte[]  tmpbuffer = new byte[bytesPerLine()];
 
         encodeBufferPrefix(outStream);
 
@@ -265,7 +265,7 @@ public class HexDumpEncoder {
     {
         int     j;
         int     numBytes;
-        byte[] tmpbuffer = new byte[bytesPerLine()];
+        byte[]  tmpbuffer = new byte[bytesPerLine()];
 
         encodeBufferPrefix(outStream);
 

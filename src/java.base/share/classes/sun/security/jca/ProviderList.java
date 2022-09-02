@@ -656,19 +656,19 @@ public final class ProviderList {
     }
 
     /* Defined Groups for jdk.security.provider.preferred */
-    private static final String[] SHA2GROUP = { "SHA-224", "SHA-256",
+    private static final String[] SHA2_GROUP = { "SHA-224", "SHA-256",
             "SHA-384", "SHA-512", "SHA-512/224", "SHA-512/256" };
-    private static final String[] HMACSHA2GROUP = { "HmacSHA224",
+    private static final String[] HMACSHA2_GROUP = { "HmacSHA224",
             "HmacSHA256", "HmacSHA384", "HmacSHA512"};
-    private static final String[] SHA2RSAGROUP = { "SHA224withRSA",
+    private static final String[] SHA2RSA_GROUP = { "SHA224withRSA",
             "SHA256withRSA", "SHA384withRSA", "SHA512withRSA"};
-    private static final String[] SHA2DSAGROUP = { "SHA224withDSA",
+    private static final String[] SHA2DSA_GROUP = { "SHA224withDSA",
             "SHA256withDSA", "SHA384withDSA", "SHA512withDSA"};
-    private static final String[] SHA2ECDSAGROUP = { "SHA224withECDSA",
+    private static final String[] SHA2ECDSA_GROUP = { "SHA224withECDSA",
             "SHA256withECDSA", "SHA384withECDSA", "SHA512withECDSA"};
-    private static final String[] SHA3GROUP = { "SHA3-224", "SHA3-256",
+    private static final String[] SHA3_GROUP = { "SHA3-224", "SHA3-256",
             "SHA3-384", "SHA3-512" };
-    private static final String[] HMACSHA3GROUP = { "HmacSHA3-224",
+    private static final String[] HMACSHA3_GROUP = { "HmacSHA3-224",
             "HmacSHA3-256", "HmacSHA3-384", "HmacSHA3-512"};
 
     // Individual preferred property entry from jdk.security.provider.preferred
@@ -694,19 +694,19 @@ public final class ProviderList {
             if (type != null && type.compareToIgnoreCase("Group") == 0) {
                 // Currently intrinsic algorithm groups
                 if (algorithm.compareToIgnoreCase("SHA2") == 0) {
-                    alternateNames = SHA2GROUP;
+                    alternateNames = SHA2_GROUP;
                 } else if (algorithm.compareToIgnoreCase("HmacSHA2") == 0) {
-                    alternateNames = HMACSHA2GROUP;
+                    alternateNames = HMACSHA2_GROUP;
                 } else if (algorithm.compareToIgnoreCase("SHA2RSA") == 0) {
-                    alternateNames = SHA2RSAGROUP;
+                    alternateNames = SHA2RSA_GROUP;
                 } else if (algorithm.compareToIgnoreCase("SHA2DSA") == 0) {
-                    alternateNames = SHA2DSAGROUP;
+                    alternateNames = SHA2DSA_GROUP;
                 } else if (algorithm.compareToIgnoreCase("SHA2ECDSA") == 0) {
-                    alternateNames = SHA2ECDSAGROUP;
+                    alternateNames = SHA2ECDSA_GROUP;
                 } else if (algorithm.compareToIgnoreCase("SHA3") == 0) {
-                    alternateNames = SHA3GROUP;
+                    alternateNames = SHA3_GROUP;
                 } else if (algorithm.compareToIgnoreCase("HmacSHA3") == 0) {
-                    alternateNames = HMACSHA3GROUP;
+                    alternateNames = HMACSHA3_GROUP;
                 } else {
                     alternateNames = null;
                 }

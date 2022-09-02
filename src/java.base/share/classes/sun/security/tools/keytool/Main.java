@@ -106,8 +106,6 @@ import sun.security.util.DisabledAlgorithmConstraints;
  */
 public final class Main {
 
-    private static final byte[] CRLF = new byte[] {'\r', '\n'};
-
     private boolean debug = false;
     private Command command = null;
     private String sigAlgName = null;
@@ -162,15 +160,16 @@ public final class Main {
     private KeyStore caks = null; // "cacerts" keystore
     private char[] srcstorePass = null;
     private String srcstoretype = null;
-    private final Set<char[]> passwords = new HashSet<>();
     private String startDate = null;
     private String signerAlias = null;
     private char[] signerKeyPass = null;
 
     private boolean tlsInfo = false;
 
+    private final Set<char[]> passwords = new HashSet<>();
     private final List<String> ids = new ArrayList<>();   // used in GENCRL
     private final List<String> v3ext = new ArrayList<>();
+    private static final byte[] CRLF = new byte[] {'\r', '\n'};
 
     // In-place importkeystore is special.
     // A backup is needed, and no need to prompt for deststorepass.
@@ -178,6 +177,7 @@ public final class Main {
     private String inplaceBackupName = null;
 
     // Warnings on weak algorithms etc
+    private boolean isPasswordlessKeyStore = false;
     private final List<String> weakWarnings = new ArrayList<>();
 
     private final Set<X509Certificate> trustedCerts = new HashSet<>();
@@ -192,7 +192,6 @@ public final class Main {
 
     private static final Set<CryptoPrimitive> SIG_PRIMITIVE_SET = Collections
             .unmodifiableSet(EnumSet.of(CryptoPrimitive.SIGNATURE));
-    private boolean isPasswordlessKeyStore = false;
 
     enum Command {
         CERTREQ("Generates.a.certificate.request",

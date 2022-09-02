@@ -265,7 +265,7 @@ public abstract sealed class Validator permits PKIXValidator, SimpleValidator {
             // included in the PKIXParameters, so the extra checks would be
             // redundant.
             boolean checkUnresolvedCritExts =
-                    !Objects.equals(type, TYPE_PKIX);
+                    (type == TYPE_PKIX) ? false : true;
             endEntityChecker.check(chain, parameter,
                                    checkUnresolvedCritExts);
         }

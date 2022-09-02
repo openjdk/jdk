@@ -332,8 +332,11 @@ public final class RSAPadding {
      */
     private byte[] unpadV15(byte[] padded) throws BadPaddingException {
         int k = 0;
-        boolean bp = padded[k++] != 0;
+        boolean bp = false;
 
+        if (padded[k++] != 0) {
+            bp = true;
+        }
         if (padded[k++] != type) {
             bp = true;
         }

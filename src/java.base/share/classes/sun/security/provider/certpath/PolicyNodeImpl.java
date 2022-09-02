@@ -92,7 +92,7 @@ final class PolicyNodeImpl implements PolicyNode {
         mParent = parent;
         mChildren = new HashSet<>();
 
-        mValidPolicy = Objects.requireNonNullElse(validPolicy, "");
+        mValidPolicy = (validPolicy != null) ? validPolicy : "";
 
         if (qualifierSet != null)
             mQualifierSet = new HashSet<>(qualifierSet);

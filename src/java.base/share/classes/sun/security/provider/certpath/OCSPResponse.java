@@ -700,7 +700,7 @@ public final class OCSPResponse {
      * Get the {@code ResponderId} from this {@code OCSPResponse}
      *
      * @return the {@code ResponderId} from this response or {@code null}
-     *      if no responder ID is in the body of the response e.g. a
+     *      if no responder ID is in the body of the response, e.g. a
      *      response with a status other than SUCCESS.
      */
     public ResponderId getResponderId() {

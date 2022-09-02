@@ -107,7 +107,8 @@ public class AlgorithmDecomposer {
             if (elements.contains(e.getValue()) &&
                     !elements.contains(e.getKey())) {
                 elements.add(e.getKey());
-            } else if (elements.contains(e.getKey())) {
+            } else if (elements.contains(e.getKey()) &&
+                    !elements.contains(e.getValue())) {
                 elements.add(e.getValue());
             }
         }

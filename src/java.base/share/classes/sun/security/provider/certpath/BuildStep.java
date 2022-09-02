@@ -187,27 +187,15 @@ public class BuildStep {
      * @return String string representing meaning of the result code
      */
     public String resultToString(int res) {
-        String resultString;
-        switch (res) {
-        case POSSIBLE:
-            resultString = "Certificate to be tried.\n";
-            break;
-        case BACK:
-            resultString = "Certificate backed out since path does not "
-                + "satisfy build requirements.\n";
-            break;
-        case FOLLOW:
-        case SUCCEED:
-            resultString = "Certificate satisfies conditions.\n";
-            break;
-        case FAIL:
-            resultString = "Certificate backed out since path does not "
-                + "satisfy conditions.\n";
-            break;
-        default:
-            resultString = "Internal error: Invalid step result value.\n";
-        }
-        return resultString;
+        return switch (res) {
+            case POSSIBLE -> "Certificate to be tried.\n";
+            case BACK -> "Certificate backed out since path does not "
+                    + "satisfy build requirements.\n";
+            case FOLLOW, SUCCEED -> "Certificate satisfies conditions.\n";
+            case FAIL -> "Certificate backed out since path does not "
+                    + "satisfy conditions.\n";
+            default -> "Internal error: Invalid step result value.\n";
+        };
     }
 
     /**

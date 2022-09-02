@@ -443,7 +443,7 @@ public class AVA implements DerEncoder {
             // add embedded hex bytes before next char
             if (embeddedHex.size() > 0) {
                 // add space(s) before embedded hex bytes
-                temp.append(" ".repeat(Math.max(0, spaceCount)));
+                temp.append(" ".repeat(spaceCount));
                 spaceCount = 0;
 
                 String hexString = getEmbeddedHexString(embeddedHex);
@@ -459,7 +459,7 @@ public class AVA implements DerEncoder {
                 spaceCount++;
             } else {
                 // add space(s)
-                temp.append(" ".repeat(Math.max(0, spaceCount)));
+                temp.append(" ".repeat(spaceCount));
                 spaceCount = 0;
                 temp.append((char)c);
             }

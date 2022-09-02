@@ -697,7 +697,6 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
         id = attr.getPrefix();
 
         if (id.equalsIgnoreCase(INFO)) {
-            //reset this as certificate data has changed
             if (attr.getSuffix() == null) {
                 if (!(obj instanceof X509CertInfo)) {
                     throw new CertificateException("Attribute value should"

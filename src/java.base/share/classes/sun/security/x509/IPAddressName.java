@@ -211,7 +211,7 @@ public class IPAddressName implements GeneralNameInterface {
             byte[] maskArray = bitArray.toByteArray();
 
             // copy mask bytes into mask portion of address
-            System.arraycopy(maskArray, 0, address, 16, MASKSIZE);
+            System.arraycopy(maskArray, 0, address, MASKSIZE, MASKSIZE);
         }
     }
 

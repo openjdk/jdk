@@ -476,23 +476,23 @@ class RevocationChecker extends PKIXRevocationChecker {
         Throwable t = cse.getCause();
 
         switch (type) {
-        case "LDAP":
-            if (t != null) {
-                // These two exception classes are inside java.naming module
-                String cn = t.getClass().getName();
-                result = (cn.equals("javax.naming.ServiceUnavailableException") ||
-                    cn.equals("javax.naming.CommunicationException"));
-            } else {
-                result = false;
-            }
-            break;
-        case "SSLServer":
-        case "URI":
-            result = (t instanceof IOException);
-            break;
-        default:
-            // we don't know about any other remote CertStore types
-            return false;
+            case "LDAP":
+                if (t != null) {
+                    // These two exception classes are inside java.naming module
+                    String cn = t.getClass().getName();
+                    result = (cn.equals("javax.naming.ServiceUnavailableException") ||
+                        cn.equals("javax.naming.CommunicationException"));
+                } else {
+                    result = false;
+                }
+                break;
+            case "SSLServer":
+            case "URI":
+                result = (t instanceof IOException);
+                break;
+            default:
+                // we don't know about any other remote CertStore types
+                return false;
         }
         return result;
     }
