@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,4 +56,10 @@ public interface MachineDescription extends Serializable {
   /** Indicates whether the underlying machine supports the LP64 data
       model (currently only SPARC/64). */
   public boolean isLP64();
+
+  /** Indicates whether the underlying machine supports 64-bit types
+      that are only 32-bit aligned. */
+  default public boolean supports32bitAlignmentOf64bitTypes() {
+    return false;
+  }
 }
