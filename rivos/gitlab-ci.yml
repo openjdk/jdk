@@ -1,0 +1,78 @@
+
+image: ubuntu:20.04
+
+stages:
+  - sysroot
+  - build
+
+create-sysroot:
+  stage: sysroot
+  tags:
+    - docker-qemu-binfmt
+  cache:
+    - key: sysroot-ubuntu-jammy-riscv64
+      paths:
+        - sysroot
+  script:
+    # early exit if sysroot is coming from the cache
+    - test -d sysroot && exit 0
+    - apt-get update
+    - apt-get install -y debootstrap qemu-user-static
+    - |
+      qemu-debootstrap                                                         \
+        --verbose                                                              \
+        --arch=riscv64                                                         \
+        --components=main,universe                                             \
+        --include=fakeroot,symlinks,build-essential,libx11-dev,libxext-dev,libxrender-dev,libxrandr-dev,libxtst-dev,libxt-dev,libcups2-dev,libfontconfig1-dev,libasound2-dev,libfreetype6-dev,libpng-dev \
+        --resolve-deps                                                         \
+        jammy                                                                  \
+        sysroot
+    - chroot sysroot symlinks -cr .
+    - rm -rf sysroot/{dev,proc,run,sys}
+  artifacts:
+    when: always
+    paths:
+      - sysroot
+
+build-linux-riscv64:
+  stage: build
+  dependencies:
+    - create-sysroot
+  script:
+    - apt-get update
+    - |
+      apt-get install -y                                                       \
+        autoconf                                                               \
+        build-essential                                                        \
+        curl                                                                   \
+        file                                                                   \
+        g++                                                                    \
+        g++-riscv64-linux-gnu                                                  \
+        gcc                                                                    \
+        gcc-riscv64-linux-gnu                                                  \
+        libasound2-dev                                                         \
+        libcups2-dev                                                           \
+        libxrandr-dev                                                          \
+        libxtst-dev                                                            \
+        unzip                                                                  \
+        zip                                                                    \
+        zlib1g-dev
+    - |
+      mkdir -p /usr/lib/jvm/zulu-18
+      curl -L https://cdn.azul.com/zulu/bin/zulu18.32.13-ca-jdk18.0.2.1-linux_x64.tar.gz \
+        | tar -xzf - -C /usr/lib/jvm/zulu-18 --strip-components 1
+    - |
+      bash configure                                                           \
+        --openjdk-target=riscv64-linux-gnu                                     \
+        --with-conf-name=linux-riscv64                                         \
+        --with-version-opt=${CI_COMMIT_REF_SLUG}-${CI_COMMIT_SHORT_SHA}        \
+        --with-sysroot=$(pwd)/sysroot                                          \
+        --with-boot-jdk=/usr/lib/jvm/zulu-18                                   \
+        --disable-precompiled-headers
+    - make jdk-image test-image LOG_LEVEL=info
+  artifacts:
+    when: always
+    paths:
+      - config.log # in case of error during configure
+      - build/linux-riscv64/images/jdk
+      - build/linux-riscv64/images/test
