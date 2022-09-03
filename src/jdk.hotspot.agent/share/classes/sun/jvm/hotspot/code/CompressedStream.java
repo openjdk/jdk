@@ -25,6 +25,7 @@
 package sun.jvm.hotspot.code;
 
 import sun.jvm.hotspot.debugger.*;
+import sun.jvm.hotspot.utilities.*;
 
 /** NOTE that this class takes the address of a buffer. This means
     that it can read previously-generated debug information directly
@@ -54,17 +55,6 @@ public class CompressedStream {
   public static final int LogBitsPerByte = 3;
   public static final int BitsPerByte = 1 << 3;
 
-  // Note: In the C++ code, the implementation of UNSIGNED5 has been
-  // moved to its own header file, <unsigned5.hpp>.
-
-  // Constants for UNSIGNED5 coding of Pack200
-  public static final int lg_H = 6;
-  public static final int H = 1<<lg_H;  // number of high codes (64)
-  public static final int X = 1;        // there is one excluded byte ('\0')
-  public static final int MAX_b = (1<<BitsPerByte)-1;  // largest byte value
-  public static final int L = (MAX_b+1)-X-H;  // number of low codes (191)
-  public static final int MAX_LENGTH = 5;  // lengths are in [1..5]
-
   // Positioning
   public int getPosition() {
     return position;
@@ -73,27 +63,17 @@ public class CompressedStream {
     this.position = position;
   }
 
-  // Note: In the C++ code, the following little algorithms
-  // have been moved elsewhere.
-
-  // 32-bit one-to-one sign encoding taken from Pack200
-  // converts leading sign bits into leading zeros with trailing sign bit
   public int encodeSign(int value) {
-    return (value << 1) ^ (value >> 31);
+    return Unsigned5.encodeSign(value);
   }
 
   public int decodeSign(int value) {
-    return (value >>> 1) ^ -(value & 1);
+    return Unsigned5.decodeSign(value);
   }
 
   // 32-bit self-inverse encoding of float bits
   // converts trailing zeros (common in floats) to leading zeros
   public int reverseInt(int i) {
-    // Hacker's Delight, Figure 7-1
-    i = (i & 0x55555555) << 1 | (i >>> 1) & 0x55555555;
-    i = (i & 0x33333333) << 3 | (i >>> 2) & 0x33333333;
-    i = (i & 0x0f0f0f0f) << 4 | (i >>> 4) & 0x0f0f0f0f;
-    i = (i << 24) | ((i & 0xff00) << 8) | ((i >>> 8) & 0xff00) | (i >>> 24);
-    return i;
+    return Integer.reverse(i);
   }
 }

@@ -108,6 +108,7 @@
 #include "runtime/vm_version.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/unsigned5.hpp"
 #include "utilities/vmError.hpp"
 
 #include CPU_HEADER(vmStructs)
@@ -2508,6 +2509,15 @@
   /******************/                                                    \
                                                                           \
   declare_constant(JNIHandleBlock::block_size_in_oops)                    \
+                                                                          \
+  /******************/                                                    \
+  /* UNSIGNED5      */                                                    \
+  /******************/                                                    \
+                                                                          \
+  declare_constant(UNSIGNED5::MAX_LENGTH)                                 \
+  declare_constant(UNSIGNED5::H)                                          \
+  declare_constant(UNSIGNED5::L)                                          \
+  declare_constant(UNSIGNED5::X)                                          \
                                                                           \
   /**********************/                                                \
   /* PcDesc             */                                                \

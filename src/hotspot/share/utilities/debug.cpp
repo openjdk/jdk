@@ -669,26 +669,28 @@ extern "C" JNIEXPORT intptr_t u5p(intptr_t addr, intptr_t limit, int count) {
   Command c("u5p");
   u1* arr = (u1*)addr;
   if (limit && limit < addr)  limit = addr;
-  size_t off = 0, lim = (size_t)(limit - addr);
+  size_t lim = !limit ? 0 : (size_t)(limit - addr);
+  UNSIGNED5::Reader<u1*, size_t> r(arr, lim);
   int printed = 0;
   tty->print("U5: [");
   for (;;) {
     if (count >= 0 && printed >= count)  break;
-    if (count < 0 && arr[off] == 0) {
-      tty->print(" null");
-      ++off;
-      ++printed;
-      continue;
-    } else if (!UNSIGNED5::check_length(arr, off, lim)) {
+    if (!r.has_next()) {
+      if ((r.position() < lim || lim == 0) && arr[r.position()] == 0) {
+        tty->print(" null");
+        r.set_position(r.position()+1);  // skip null byte
+        ++printed;
+        if (lim != 0)  continue;  // keep going to explicit limit
+      }
       break;
     }
-    u4 value = UNSIGNED5::read_uint(arr, off, lim);
+    u4 value = r.next_uint();
     tty->print(" %d", value);
     ++printed;
   }
   tty->print_cr(" ] (values=%d/length=%d)",
-                printed, (int)off);
-  return addr + off;
+                printed, (int)r.position());
+  return addr + r.position();
 }
 
 

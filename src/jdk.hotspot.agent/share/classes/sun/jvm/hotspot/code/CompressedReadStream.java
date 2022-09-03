@@ -24,7 +24,10 @@
 
 package sun.jvm.hotspot.code;
 
+import java.io.PrintStream;
+
 import sun.jvm.hotspot.debugger.*;
+import sun.jvm.hotspot.utilities.*;
 
 public class CompressedReadStream extends CompressedStream {
   /** Equivalent to CompressedReadStream(buffer, 0) */
@@ -34,6 +37,15 @@ public class CompressedReadStream extends CompressedStream {
 
   public CompressedReadStream(Address buffer, int position) {
     super(buffer, position);
+    if (false) {  // manually enable to get more data
+        // Example output: -
+        // java.lang.ref.ReferenceQueue.remove(long) @bci=36 >> CRS on
+        // 0x0000000800b984f0+75: U5: [ 23 null null null null null
+        // null null 135 175 102 null 7 null null null 103 132 184
+        // null ] (values=20/length=20)
+        System.out.print(">> CRS on "+buffer+"+"+position+": ");
+        dump(20);  // dump 20 bytes of stuff at the top of each stream
+    }
   }
 
   public boolean readBoolean() {
@@ -75,35 +87,13 @@ public class CompressedReadStream extends CompressedStream {
   }
 
   //--------------------------------------------------------------------------------
-  // Note: In the C++ code, the implementation of UNSIGNED5 has been
-  // moved to its own header file, <unsigned5.hpp>.
-
   public int readInt() {
-    // UNSIGNED5::read_u4(_buffer, &_position, limit=0)
-    int pos = position;
-    int b_0 = read(pos);
-    int sum = b_0 - X;
-    // VM throws assert if b0<X; we just return -1 here instead
-    if (sum < L) {  // common case
-      setPosition(pos+1);
-      return sum;
-    }
-    // must collect more bytes:  b[1]...b[4]
-    int lg_H_i = lg_H;  // lg(H)*i == lg(H^^i)
-    for (int i = 1; ; i++) {  // for i in [1..4]
-      int b_i = read(pos + i);
-      if (b_i < X) {  // avoid excluded bytes
-        // VM throws assert here; should not happen
-        setPosition(pos+i);  // do not consume the bad byte
-        return sum;  // return whatever we have parsed so far
-      }
-      sum += (b_i - X) << lg_H_i;  // sum += (b[i]-X)*(64^^i)
-      if (b_i < X+L || i == MAX_LENGTH-1) {
-        setPosition(pos+i+1);
-        return sum;
-      }
-      lg_H_i += lg_H;
-    }
+    // UNSIGNED5::read_uint(_buffer, &_position, limit=0)
+    return (int) Unsigned5.readUint(this, position,
+                                    // bytes are fetched here:
+                                    CompressedReadStream::read,
+                                    // updated position comes through here:
+                                    CompressedReadStream::setPosition);
   }
 
   private short read(int index) {
@@ -115,5 +105,23 @@ public class CompressedReadStream extends CompressedStream {
     short retval = (short) buffer.getCIntegerAt(position, 1, true);
     ++position;
     return retval;
+  }
+
+
+  /**
+   * Dumps the stream, making an assumption that all items are encoded
+   * as UNSIGNED5.  The sizeLimit argument tells the dumper when to
+   * stop trying to read bytes; if it is zero, the dumper goes as long
+   * as it can until it encounters a null byte.
+   *
+   * This class mixes UNSIGNED5 with other formats.  Stray bytes are
+   * decoded either as "null" (0x00), one less than the byte value
+   * (0x01..0xBF) or as part of a spurious multi-byte encoding.
+   * Proceed with caution.
+   */
+  public void dump() { dumpOn(System.out, 0); }
+  public void dump(int sizeLimit) { dumpOn(System.out, sizeLimit); }
+  public void dumpOn(PrintStream tty, int sizeLimit) {
+      new Unsigned5(buffer, sizeLimit).dumpOn(tty, -1);
   }
 }

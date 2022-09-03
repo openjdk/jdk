@@ -81,6 +81,8 @@
 // length limit.
 
 class UNSIGNED5 : AllStatic {
+  friend class VMStructs;  // for constants B=MAX_LENGTH,H,L,X
+
  private:
   // Math constants for the modified UNSIGNED5 coding of Pack200
   static const int lg_H  = 6;        // log-base-2 of H (lg 64 == 6)
