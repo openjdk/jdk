@@ -34,7 +34,7 @@
 
 #define __ Disassembler::hook<InterpreterMacroAssembler>(__FILE__, __LINE__, _masm)->
 
-TemplateInterpreterGenerator::TemplateInterpreterGenerator(StubQueue* _code): AbstractInterpreterGenerator(_code) {
+TemplateInterpreterGenerator::TemplateInterpreterGenerator(): AbstractInterpreterGenerator() {
   _unimplemented_bytecode    = NULL;
   _illegal_bytecode_sequence = NULL;
   generate_all();

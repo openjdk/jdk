@@ -127,7 +127,7 @@ class TemplateInterpreterGenerator: public AbstractInterpreterGenerator {
 #endif // PPC
 
  public:
-  TemplateInterpreterGenerator(StubQueue* _code);
+  TemplateInterpreterGenerator();
 };
 
 #endif // !ZERO
