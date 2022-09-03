@@ -7871,6 +7871,163 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
     }
 
     /**
+     * Constructs a method handle that is capable of recursively
+     * calling itself, whose behavior is determined by a non-recursive
+     * base method handle which gets both the original arguments and a
+     * reference to the recursive method handle.
+     * <p>
+     * Here is pseudocode for the resulting loop handle, plus a sketch
+     * of the behavior of the base function. The symbols {@code A},
+     * {@code a}, and {@code R} represent arguments and return value
+     * for both the recursive function and the base function.
+     *
+     * <blockquote><pre>{@code
+     * R recursive(A... a) {
+     *   MethodHandle recur = &recursive;
+     *   return base(recur, a...);
+     * }
+     * R base(MethodHandle recur, A... a) {
+     *   ... if (no recursion)  return f(a);  ...
+     *   var r2 = recur.invokeExact(a2...);
+     *   var r3 = recur.invokeExact(a3...);
+     *   ... do stuff with r2, r3, etc. ...
+     * }
+     * }</pre></blockquote>
+     * <p>
+     * To make several functions mutually recursive, additional base
+     * arguments can be passed to this combinator.  For each base
+     * function, a recursive adapter is formed (like {@code recur}
+     * above).  The sequence of recursive adapters is passed as
+     * initial arguments to each base function.  Here is pseudocode
+     * that corresponds to three base functions:
+     * <blockquote><pre>{@code
+     * R recursive(A... a) {
+     *   return base(&recursive, &recursive2, &recursive3, a...);
+     * }
+     * R2 recursive2(A2... a2) {
+     *   return base2(&recursive, &recursive2, &recursive3, a2...);
+     * }
+     * R3 recursive3(A3... a3) {
+     *   return base2(&recursive, &recursive2, &recursive3, a3...);
+     * }
+     * R base(MethodHandle recur, MethodHandle recur2,
+     *        MethodHandle recur3, A... a) {
+     *   ... if (no recursion)  return f(a);  ...
+     *   var r2 = recur2.invokeExact(a2...);
+     *   var r3 = recur3.invokeExact(a3...);
+     *   ... do stuff with r2, r3, etc. ...
+     * }
+     * R2 base2(MethodHandle recur, MethodHandle recur2,
+     *        MethodHandle recur3, A2... a2) { ... }
+     * R3 base3(MethodHandle recur, MethodHandle recur2,
+     *        MethodHandle recur3, A3... a3) { ... }
+     * }</pre></blockquote>
+     *
+     * @apiNote Example:
+     * {@snippet lang="java" :
+     * // classic recursive implementation of the factorial function
+     * static int base(MethodHandle recur, int k) throws Throwable {
+     *   if (k <= 1)  return 1;
+     *   return k * (int) recur.invokeExact(k - 1);
+     * }
+     * // assume MH_base is a handle to the above method
+     * MethodHandle recur = MethodHandles.recursive(MH_base);
+     * assertEquals(120, recur.invoke(5));
+     * }
+     * <p>
+     * A constructed recursive method handle is made varargs
+     * if its corresponding base method handle is varargs.
+     * @implSpec
+     * For a single base function, this produces a result equivalent to:
+     * <pre>{@code
+     * class Holder {
+     *   final MethodHandle recur;
+     *   static final MH_recur = ...;  //field getter
+     *   Holder(MethodHandle base) {
+     *     recur = filterArguments(base, 0, MH_recur).bindTo(this);
+     *   }
+     * }
+     * return new Holder(base).recur;
+     * }</pre>
+     * @param base the logic of the function to make recursive
+     * @param moreBases additional base functions to be made mutually recursive
+     * @throws NullPointerException if any argument is null
+     * @throws IllegalArgumentException if any base function does not accept
+     *          the required leading arguments of type {@code MethodHandle}
+     *
+     * @return a method handle which invokes the (first) base function
+     *         on the incoming arguments, with recursive versions of the
+     *         base function (or functions) prepended as extra arguments
+     *
+     * @since 99
+     */
+    public static MethodHandle recursive(MethodHandle base, MethodHandle... moreBases) {
+        // freeze the varargs and check for nulls:
+        List<MethodHandle> bases2 = List.of(moreBases);
+        int baseCount = 1 + bases2.size();
+        recursiveChecks(base, baseCount);
+        for (var base2 : bases2) { recursiveChecks(base2, baseCount); }
+        class Holder {
+            final MethodHandle recur;
+            final List<MethodHandle> recurs2;
+            MethodHandle recurs2(int i) { return recurs2.get(i); }
+            Holder() {
+                // Feed the first baseCount parameters of each base
+                // with a fetch of each recur, so we can bind to this:
+                var fetchers = new MethodHandle[baseCount];
+                fetchers[0] = MH_recur;
+                for (int pos = 1; pos < fetchers.length; pos++) {
+                    int i = pos-1;  // index into recurs2
+                    fetchers[pos] = insertArguments(MH_recurs2, 1, i);
+                }
+                this.recur = makeRecur(base, fetchers);
+                if (baseCount == 1) {
+                    this.recurs2 = List.of();
+                } else {
+                    var recurs2 = new MethodHandle[baseCount-1];
+                    for (int i = 0; i < recurs2.length; i++) {
+                        recurs2[i] = makeRecur(bases2.get(i), fetchers);
+                    }
+                    this.recurs2 = List.of(recurs2);
+                }
+            }
+            MethodHandle makeRecur(MethodHandle base, MethodHandle[] fetchers) {
+                var adapt = filterArguments(base, 0, fetchers);
+                for (int pos = 0; pos < fetchers.length; pos++) {
+                    adapt = adapt.bindTo(this);
+                }
+                return adapt.withVarargs(base.isVarargsCollector());
+            }
+            static final MethodHandle MH_recur, MH_recurs2;
+            static {
+                try {
+                    MH_recur = lookup()
+                        .findGetter(Holder.class, "recur", MethodHandle.class);
+                    MH_recurs2 = lookup()
+                        .findVirtual(Holder.class, "recurs2",
+                                     methodType(MethodHandle.class, int.class));
+                } catch (ReflectiveOperationException ex) {
+                    throw newInternalError(ex);
+                }
+            }
+        }
+        return new Holder().recur;
+    }
+
+    private static void recursiveChecks(MethodHandle base, int baseCount) {
+        MethodType mt = base.type();  // implicit null check
+        boolean wrong = (mt.parameterCount() < baseCount);
+        for (int i = 0; i < baseCount && !wrong; i++) {
+            if (mt.parameterType(i) != MethodHandle.class) {
+                wrong = true;
+            }
+        }
+        if (!wrong)  return;
+        throw newIllegalArgumentException(
+                "missing leading MethodHandle parameters", mt);
+    }
+
+    /**
      * Creates a var handle object, which can be used to dereference a {@linkplain java.lang.foreign.MemorySegment memory segment}
      * by viewing its contents as a sequence of the provided value layout.
      *
