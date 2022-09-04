@@ -56,13 +56,22 @@ jobs:
           git checkout -b rivos/merge-upstream $TAG
           git push origin rivos/merge-upstream $TAG
 
-          # 3. pr
+          # 3. create milestone
+          cat <<EOF | gh api --method POST repos/rivosinc/jdk/milestones --input -
+          {
+            "title": "$TAG",
+            "state": "open"
+          }
+          EOF
+
+          # 4. create pr
           gh pr create \
             --repo rivosinc/jdk \
             --base rivos/main \
             --head rivos/merge-upstream \
             --title "Merge $TAG into rivos/main" \
             --body "This is an automated pull request." \
-            --reviewer "luhenry" || true
+            --reviewer "luhenry" \
+            --milestone "$TAG" || true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
