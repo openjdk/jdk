@@ -44,13 +44,8 @@ public class Group extends Properties.Entity implements ChangedEventProvider<Gro
         changedEvent = new ChangedEvent<>(this);
         this.parent = parent;
 
-        // Ensure that name and type are never null
+        // Ensure that name is never null
         getProperties().setProperty("name", "");
-        getProperties().setProperty("type", "");
-    }
-
-    public void fireChangedEvent() {
-        changedEvent.fire();
     }
 
     public void setMethod(InputMethod method) {
@@ -84,7 +79,7 @@ public class Group extends Properties.Entity implements ChangedEventProvider<Gro
 
         }
         element.setParent(this);
-        changedEvent.fire();
+        getChangedEvent().fire();
     }
 
     public Set<Integer> getAllNodes() {
@@ -113,45 +108,8 @@ public class Group extends Properties.Entity implements ChangedEventProvider<Gro
     public String getName() {
         return getProperties().get("name");
     }
-
-    public String getType() {
-        return getProperties().get("type");
-
-    }
-
-    InputGraph getPrev(InputGraph graph) {
-        InputGraph lastGraph = null;
-        for (FolderElement e : elements) {
-            if (e == graph) {
-                return lastGraph;
-            }
-            if (e instanceof InputGraph) {
-                lastGraph = (InputGraph) e;
-            }
-        }
-        return null;
-    }
-
-    InputGraph getNext(InputGraph graph) {
-        boolean found = false;
-        for (FolderElement e : elements) {
-            if (e == graph) {
-                found = true;
-            } else if (found && e instanceof InputGraph) {
-                return (InputGraph) e;
-            }
-        }
-        return null;
-    }
-
-    public InputGraph getLastGraph() {
-        InputGraph lastGraph = null;
-        for (FolderElement e : elements) {
-            if (e instanceof InputGraph) {
-                lastGraph = (InputGraph) e;
-            }
-        }
-        return lastGraph;
+    public void setName(String name) {
+        getProperties().setProperty("name", name);
     }
 
     @Override
@@ -165,7 +123,7 @@ public class Group extends Properties.Entity implements ChangedEventProvider<Gro
             if (element instanceof InputGraph) {
                 graphs.remove((InputGraph) element);
             }
-            changedEvent.fire();
+            getChangedEvent().fire();
         }
     }
 

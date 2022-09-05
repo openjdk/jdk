@@ -206,14 +206,6 @@ public class InputGraph extends Properties.Entity implements FolderElement {
         return getBlock(node.getId());
     }
 
-    public InputGraph getNext() {
-        return parentGroup.getNext(this);
-    }
-
-    public InputGraph getPrev() {
-        return parentGroup.getPrev(this);
-    }
-
     private void setName(String name) {
         this.getProperties().setProperty("name", name);
     }

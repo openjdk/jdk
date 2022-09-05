@@ -182,30 +182,4 @@ public class InputGraphTest {
         assertEquals(referenceGraph.findOutgoingEdges(N4), Arrays.asList());
         assertEquals(referenceGraph.findOutgoingEdges(N5), Arrays.asList(E54));
     }
-
-    /**
-     * Test of getNext method, of class InputGraph.
-     */
-    @Test
-    public void testGetNextPrev() {
-        final Group group = new Group(null);
-
-        final InputGraph a = new InputGraph("a");
-
-        final InputGraph b = new InputGraph("b");
-
-        final InputGraph c = new InputGraph("c");
-        group.addElement(a);
-        group.addElement(b);
-        group.addElement(c);
-
-        assertEquals(null, a.getPrev());
-        assertEquals(b, a.getNext());
-
-        assertEquals(a, b.getPrev());
-        assertEquals(c, b.getNext());
-
-        assertEquals(b, c.getPrev());
-        assertEquals(null, c.getNext());
-    }
 }
