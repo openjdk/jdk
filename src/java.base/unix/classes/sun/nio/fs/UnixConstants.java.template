@@ -143,8 +143,8 @@ class UnixConstants {
     static final int PREFIX_AT_REMOVEDIR = 00;
 #endif
 
-    // flags used with setattrlist
 #ifdef _ALLBSD_SOURCE
+    // flags used with setattrlist
     static final int PREFIX_ATTR_CMN_CRTIME = ATTR_CMN_CRTIME;
     static final int PREFIX_ATTR_CMN_MODTIME = ATTR_CMN_MODTIME;
     static final int PREFIX_ATTR_CMN_ACCTIME = ATTR_CMN_ACCTIME;
@@ -155,5 +155,12 @@ class UnixConstants {
     static final int PREFIX_ATTR_CMN_MODTIME = 00;
     static final int PREFIX_ATTR_CMN_ACCTIME = 00;
     static final int PREFIX_FSOPT_NOFOLLOW = 00;
+#endif
+
+#ifdef __linux__
+    // advice flags used with posix_fadvise(2)
+    static final int PREFIX_POSIX_FADV_SEQUENTIAL = POSIX_FADV_SEQUENTIAL;
+    static final int PREFIX_POSIX_FADV_NOREUSE    = POSIX_FADV_NOREUSE;
+    static final int PREFIX_POSIX_FADV_WILLNEED   = POSIX_FADV_WILLNEED;
 #endif
 }

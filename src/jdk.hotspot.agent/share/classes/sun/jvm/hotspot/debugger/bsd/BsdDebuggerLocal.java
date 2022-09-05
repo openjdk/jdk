@@ -188,20 +188,8 @@ public class BsdDebuggerLocal extends DebuggerBase implements BsdDebugger {
                               boolean useCache) throws DebuggerException {
         this.machDesc = machDesc;
         utils = new DebuggerUtilities(machDesc.getAddressSize(),
-                                      machDesc.isBigEndian()) {
-           public void checkAlignment(long address, long alignment) {
-             // Need to override default checkAlignment because we need to
-             // relax alignment constraints on Bsd/x86
-             if ( (address % alignment != 0)
-                &&(alignment != 8 || address % 4 != 0)) {
-                throw new UnalignedAddressException(
-                        "Trying to read at address: "
-                      + addressValueToString(address)
-                      + " with alignment: " + alignment,
-                        address);
-             }
-           }
-        };
+                                      machDesc.isBigEndian(),
+                                      machDesc.supports32bitAlignmentOf64bitTypes());
 
         if (useCache) {
             // This is a cache of 64k of 4K pages, or 256 MB.
@@ -482,30 +470,6 @@ public class BsdDebuggerLocal extends DebuggerBase implements BsdDebugger {
             workerThread.execute(task);
             return task.result;
         }
-    }
-
-    /** Need to override this to relax alignment checks on x86. */
-    public long readCInteger(long address, long numBytes, boolean isUnsigned)
-        throws UnmappedAddressException, UnalignedAddressException {
-        // Only slightly relaxed semantics -- this is a hack, but is
-        // necessary on x86 where it seems the compiler is
-        // putting some global 64-bit data on 32-bit boundaries
-        if (numBytes == 8) {
-            utils.checkAlignment(address, 4);
-        } else {
-            utils.checkAlignment(address, numBytes);
-        }
-        byte[] data = readBytes(address, numBytes);
-        return utils.dataToCInteger(data, isUnsigned);
-    }
-
-    // Overridden from DebuggerBase because we need to relax alignment
-    // constraints on x86
-    public long readJLong(long address)
-        throws UnmappedAddressException, UnalignedAddressException {
-        utils.checkAlignment(address, jintSize);
-        byte[] data = readBytes(address, jlongSize);
-        return utils.dataToJLong(data, jlongSize);
     }
 
     //----------------------------------------------------------------------

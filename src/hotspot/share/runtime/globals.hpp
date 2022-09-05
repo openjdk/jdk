@@ -1782,39 +1782,6 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, PrintConcurrentLocks, false, MANAGEABLE,                    \
           "Print java.util.concurrent locks in thread dump")                \
                                                                             \
-  /* Shared spaces */                                                       \
-                                                                            \
-  product(bool, VerifySharedSpaces, false,                                  \
-          "Verify integrity of shared spaces")                              \
-                                                                            \
-  product(bool, RecordDynamicDumpInfo, false,                               \
-          "Record class info for jcmd VM.cds dynamic_dump")                 \
-                                                                            \
-  product(bool, AutoCreateSharedArchive, false,                             \
-          "Create shared archive at exit if cds mapping failed")            \
-                                                                            \
-  product(bool, PrintSharedArchiveAndExit, false,                           \
-          "Print shared archive file contents")                             \
-                                                                            \
-  product(bool, PrintSharedDictionary, false,                               \
-          "If PrintSharedArchiveAndExit is true, also print the shared "    \
-          "dictionary")                                                     \
-                                                                            \
-  product(size_t, SharedBaseAddress, LP64_ONLY(32*G)                        \
-          NOT_LP64(LINUX_ONLY(2*G) NOT_LINUX(0)),                           \
-          "Address to allocate shared memory region for class data")        \
-          range(0, SIZE_MAX)                                                \
-                                                                            \
-  product(ccstr, SharedArchiveConfigFile, NULL,                             \
-          "Data to add to the CDS archive file")                            \
-                                                                            \
-  product(uint, SharedSymbolTableBucketSize, 4,                             \
-          "Average number of symbols per bucket in shared table")           \
-          range(2, 246)                                                     \
-                                                                            \
-  product(bool, AllowArchivingWithJavaAgent, false, DIAGNOSTIC,             \
-          "Allow Java agent to be run with CDS dumping")                    \
-                                                                            \
   product(bool, PrintMethodHandleStubs, false, DIAGNOSTIC,                  \
           "Print generated stub code for method handles")                   \
                                                                             \
@@ -1917,30 +1884,6 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   product(bool, WhiteBoxAPI, false, DIAGNOSTIC,                             \
           "Enable internal testing APIs")                                   \
-                                                                            \
-  product(ccstr, DumpLoadedClassList, NULL,                                 \
-          "Dump the names all loaded classes, that could be stored into "   \
-          "the CDS archive, in the specified file")                         \
-                                                                            \
-  product(ccstr, SharedClassListFile, NULL,                                 \
-          "Override the default CDS class list")                            \
-                                                                            \
-  product(ccstr, SharedArchiveFile, NULL,                                   \
-          "Override the default location of the CDS archive file")          \
-                                                                            \
-  product(ccstr, ArchiveClassesAtExit, NULL,                                \
-          "The path and name of the dynamic archive file")                  \
-                                                                            \
-  product(ccstr, ExtraSharedClassListFile, NULL,                            \
-          "Extra classlist for building the CDS archive file")              \
-                                                                            \
-  product(int, ArchiveRelocationMode, 0, DIAGNOSTIC,                        \
-           "(0) first map at preferred address, and if "                    \
-           "unsuccessful, map at alternative address (default); "           \
-           "(1) always map at alternative address; "                        \
-           "(2) always map at preferred address, and if unsuccessful, "     \
-           "do not map the archive")                                        \
-           range(0, 2)                                                      \
                                                                             \
   product(size_t, ArrayAllocatorMallocLimit, (size_t)-1, EXPERIMENTAL,      \
           "Allocation less than this value will be allocated "              \
