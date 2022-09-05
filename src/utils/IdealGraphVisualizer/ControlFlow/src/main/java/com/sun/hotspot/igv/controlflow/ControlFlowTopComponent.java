@@ -36,6 +36,7 @@ import org.openide.util.LookupEvent;
 import org.openide.util.LookupListener;
 import org.openide.util.NbBundle;
 import org.openide.util.Utilities;
+import org.openide.util.actions.SystemAction;
 import org.openide.windows.TopComponent;
 import org.openide.windows.WindowManager;
 
@@ -126,6 +127,7 @@ final class ControlFlowTopComponent extends TopComponent implements LookupListen
         Lookup.Template<InputGraphProvider> tpl = new Lookup.Template<InputGraphProvider>(InputGraphProvider.class);
         result = Utilities.actionsGlobalContext().lookup(tpl);
         result.addLookupListener(this);
+        update();
     }
 
     @Override
@@ -134,19 +136,22 @@ final class ControlFlowTopComponent extends TopComponent implements LookupListen
         result = null;
     }
 
-    public void resultChanged(LookupEvent lookupEvent) {
-        final InputGraphProvider p = LookupHistory.getLast(InputGraphProvider.class);
-        if (p != null) {
-            SwingUtilities.invokeLater(new Runnable() {
-
-                public void run() {
-                    InputGraph g = p.getGraph();
-                    if (g != null) {
-                        scene.setGraph(g);
+    private void update() {
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                final InputGraphProvider provider = LookupHistory.getLast(InputGraphProvider.class);
+                if (provider != null) {
+                    InputGraph graph = provider.getGraph();
+                    if (graph != null) {
+                        scene.setGraph(graph);
                     }
                 }
-            });
-        }
+            }
+        });
+    }
+
+    public void resultChanged(LookupEvent lookupEvent) {
+        update();
     }
 
     @Override

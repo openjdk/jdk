@@ -317,6 +317,7 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
         centerPanel.add(SATELLITE_STRING, satelliteComponent);
 
         updateDisplayName();
+        diagramViewModel.getDiagramChangedEvent().fire();
     }
 
     public DiagramViewModel getModel() {
