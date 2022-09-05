@@ -72,8 +72,8 @@ public class TestTreeBackgroundColor {
                             tree.getHeight()));
 
             boolean passed = false;
-            for (int x = 1; x < img.getWidth() - 1; ++x) {
-                Color c = new Color(img.getRGB(x, tree.getHeight()/2));
+            for (int x = img.getWidth()/2; x < img.getWidth() - 1; ++x) {
+                Color c = new Color(img.getRGB(x, img.getHeight()/4));
                 if (!c.equals(Color.RED)) {
                     passed = false;
                     break;
@@ -82,6 +82,7 @@ public class TestTreeBackgroundColor {
                 }
             }
             if (!passed) {
+                ImageIO.write(img, "png", new File("TreeBackgroundColorFail.png"));
                 throw new RuntimeException("Test Case Failed : Tree Background Color is Not Red");
             }
         } finally {
@@ -94,7 +95,7 @@ public class TestTreeBackgroundColor {
     }
 
     private static void createAndShowUI() {
-        frame = new JFrame();
+        frame = new JFrame("Test Tree Background Color");
         panel = new JPanel();
         tree = new JTree();
         panel.setBackground(Color.red);
