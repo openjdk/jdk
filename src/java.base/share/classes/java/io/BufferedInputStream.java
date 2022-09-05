@@ -591,7 +591,7 @@ public class BufferedInputStream extends FilterInputStream {
         Objects.requireNonNull(out, "out");
         int avail = count - pos;
         if (avail > 0) {
-            out.write(buf, pos, avail);
+            out.write(getBufIfOpen(), pos, avail);
             count = 0;
             pos = 0;
         }
