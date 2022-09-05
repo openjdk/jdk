@@ -215,10 +215,8 @@ class stringStream : public outputStream {
   // Return number of characters written into buffer, excluding terminating zero and
   // subject to truncation in static buffer mode.
   size_t      size() const { return _written; }
-  // Borrow the currently allocated string.
-  // A stringStream may free the pointer returned
-  // if any of its methods are called, therefore
-  // take care in using this method.
+  // Returns internal buffer containing the accumulated string.
+  // Returned buffer is only guaranteed to be valid as long as stream is not modified
   const char* base() const { return _buffer; }
   void  reset();
   // copy to a resource, or C-heap, array as requested

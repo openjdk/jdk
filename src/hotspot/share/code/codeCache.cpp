@@ -1476,13 +1476,14 @@ void CodeCache::report_codemem_full(CodeBlobType code_blob_type, bool print) {
   if ((full_count == 1) || print) {
     // Not yet reported for this heap, report
     if (SegmentedCodeCache) {
+      ResourceMark rm;
       stringStream msg1_stream, msg2_stream;
       msg1_stream.print("%s is full. Compiler has been disabled.",
                         get_code_heap_name(code_blob_type));
       msg2_stream.print("Try increasing the code heap size using -XX:%s=",
                  get_code_heap_flag_name(code_blob_type));
-      const char *msg1 = msg1_stream.base();
-      const char *msg2 = msg2_stream.base();
+      const char *msg1 = msg1_stream.as_string();
+      const char *msg2 = msg2_stream.as_string();
 
       log_warning(codecache)("%s", msg1);
       log_warning(codecache)("%s", msg2);
