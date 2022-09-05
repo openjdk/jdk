@@ -46,6 +46,7 @@
 <li><a href="#pkcs11-tests">PKCS11 Tests</a></li>
 <li><a href="#client-ui-tests">Client UI Tests</a></li>
 </ul></li>
+<li><a href="#editing-this-document">Editing this document</a></li>
 </ul>
 </nav>
 <h2 id="using-make-test-the-run-test-framework">Using &quot;make test&quot; (the run-test framework)</h2>
@@ -64,6 +65,9 @@ $ make exploded-test TEST=tier2</code></pre>
 <h3 id="configuration">Configuration</h3>
 <p>To be able to run JTReg tests, <code>configure</code> needs to know where to find the JTReg test framework. If it is not picked up automatically by configure, use the <code>--with-jtreg=&lt;path to jtreg home&gt;</code> option to point to the JTReg framework. Note that this option should point to the JTReg home, i.e. the top directory, containing <code>lib/jtreg.jar</code> etc. (An alternative is to set the <code>JT_HOME</code> environment variable to point to the JTReg home before running <code>configure</code>.)</p>
 <p>To be able to run microbenchmarks, <code>configure</code> needs to know where to find the JMH dependency. Use <code>--with-jmh=&lt;path to JMH jars&gt;</code> to point to a directory containing the core JMH and transitive dependencies. The recommended dependencies can be retrieved by running <code>sh make/devkit/createJMHBundle.sh</code>, after which <code>--with-jmh=build/jmh/jars</code> should work.</p>
+<p>When tests fail or timeout, jtreg runs its failure handler to capture necessary data from the system where the test was run. This data can then be used to analyze the test failures. Collecting this data involves running various commands (which are listed in files residing in <code>test/failure_handler/src/share/conf</code>) and some of these commands use <code>sudo</code>. If the system's <code>sudoers</code> file isn't configured to allow running these commands, then it can result in password being prompted during the failure handler execution. Typically, when running locally, collecting this additional data isn't always necessary. To disable running the failure handler, use <code>--enable-jtreg-failure-handler=no</code> when running <code>configure</code>. If, however, you want to let the failure handler to run and don't want to be prompted for sudo password, then you can configure your <code>sudoers</code> file appropriately. Please read the necessary documentation of your operating system to see how to do that; here we only show one possible way of doing that - edit the <code>/etc/sudoers.d/sudoers</code> file to include the following line:</p>
+<pre><code>johndoe ALL=(ALL) NOPASSWD: /sbin/dmesg</code></pre>
+<p>This line configures <code>sudo</code> to <em>not</em> prompt for password for the <code>/sbin/dmesg</code> command (this is one of the commands that is listed in the files at <code>test/failure_handler/src/share/conf</code>), for the user <code>johndoe</code>. Here <code>johndoe</code> is the user account under which the jtreg tests are run. Replace the username with a relevant user account of your system.</p>
 <h2 id="test-selection">Test selection</h2>
 <p>All functionality is available using the <code>test</code> make target. In this use case, the test or tests to be executed is controlled using the <code>TEST</code> variable. To speed up subsequent test runs with no source code changes, <code>test-only</code> can be used instead, which do not depend on the source and test image build.</p>
 <p>For some common top-level tests, direct make targets have been generated. This includes all JTReg test groups, the hotspot gtest, and custom tests (if present). This means that <code>make test-tier1</code> is equivalent to <code>make test TEST=&quot;tier1&quot;</code>, but the latter is more tab-completion friendly. For more complex test runs, the <code>test TEST=&quot;x&quot;</code> solution needs to be used.</p>
@@ -251,5 +255,7 @@ $ make test JTREG=&quot;VM_OPTIONS=-Duser.language=en -Duser.country=US&quot; TE
 <h4 id="windows">Windows</h4>
 <p>Type <code>gpedit</code> in the Search and then click Edit group policy; navigate to User Configuration -&gt; Administrative Templates -&gt; Windows Components -&gt; File Explorer; in the right-side pane look for &quot;Turn off Windows key hotkeys&quot; and double click on it; enable or disable hotkeys.</p>
 <p>Note: restart is required to make the settings take effect.</p>
+<h2 id="editing-this-document">Editing this document</h2>
+<p>If you want to contribute changes to this document, edit <code>doc/testing.md</code> and then run <code>make update-build-docs</code> to generate the same changes in <code>doc/testing.html</code>.</p>
 </body>
 </html>

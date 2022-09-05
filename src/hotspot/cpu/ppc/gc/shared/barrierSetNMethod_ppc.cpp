@@ -122,7 +122,12 @@ void BarrierSetNMethod::disarm(nmethod* nm) {
 }
 
 void BarrierSetNMethod::arm(nmethod* nm, int arm_value) {
-  Unimplemented();
+  if (!supports_entry_barrier(nm)) {
+    return;
+  }
+
+  NativeNMethodBarrier* barrier = get_nmethod_barrier(nm);
+  barrier->release_set_guard_value(arm_value);
 }
 
 bool BarrierSetNMethod::is_armed(nmethod* nm) {

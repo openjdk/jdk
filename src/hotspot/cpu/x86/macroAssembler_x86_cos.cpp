@@ -176,34 +176,16 @@
 
 #ifdef _LP64
 // The 64 bit code is at most SSE2 compliant
-ATTRIBUTE_ALIGNED(8) juint _ONE[] =
-{
-    0x00000000UL, 0x3ff00000UL
-};
-void MacroAssembler::fast_cos(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3, XMMRegister xmm4, XMMRegister xmm5, XMMRegister xmm6, XMMRegister xmm7, Register eax, Register ecx, Register edx, Register r8, Register r9, Register r10, Register r11) {
-
+void MacroAssembler::fast_cos(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3,
+                              XMMRegister xmm4, XMMRegister xmm5, XMMRegister xmm6, XMMRegister xmm7,
+                              Register eax, Register ecx, Register edx, Register r8,
+                              Register  r9, Register r10, Register r11, Register tmp) {
   Label L_2TAG_PACKET_0_0_1, L_2TAG_PACKET_1_0_1, L_2TAG_PACKET_2_0_1, L_2TAG_PACKET_3_0_1;
   Label L_2TAG_PACKET_4_0_1, L_2TAG_PACKET_5_0_1, L_2TAG_PACKET_6_0_1, L_2TAG_PACKET_7_0_1;
   Label L_2TAG_PACKET_8_0_1, L_2TAG_PACKET_9_0_1, L_2TAG_PACKET_10_0_1, L_2TAG_PACKET_11_0_1;
   Label L_2TAG_PACKET_12_0_1, L_2TAG_PACKET_13_0_1, B1_2, B1_4, start;
 
-  assert_different_registers(r8, r9, r10, r11, eax, ecx, edx);
-
-  address ONEHALF = StubRoutines::x86::_ONEHALF_addr();
-  address P_2 = StubRoutines::x86::_P_2_addr();
-  address SC_4 = StubRoutines::x86::_SC_4_addr();
-  address Ctable = StubRoutines::x86::_Ctable_addr();
-  address SC_2 = StubRoutines::x86::_SC_2_addr();
-  address SC_3 = StubRoutines::x86::_SC_3_addr();
-  address SC_1 = StubRoutines::x86::_SC_1_addr();
-  address PI_INV_TABLE = StubRoutines::x86::_PI_INV_TABLE_addr();
-  address PI_4 = (address)StubRoutines::x86::_PI_4_addr();
-  address PI32INV = (address)StubRoutines::x86::_PI32INV_addr();
-  address SIGN_MASK = (address)StubRoutines::x86::_SIGN_MASK_addr();
-  address P_1 = (address)StubRoutines::x86::_P_1_addr();
-  address P_3 = (address)StubRoutines::x86::_P_3_addr();
-  address ONE = (address)_ONE;
-  address NEG_ZERO = (address)StubRoutines::x86::_NEG_ZERO_addr();
+  assert_different_registers(eax, ecx, edx, r8, r9, r10, r11, tmp);
 
   bind(start);
   push(rbx);
@@ -212,33 +194,33 @@ void MacroAssembler::fast_cos(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xm
 
   bind(B1_2);
   movl(eax, Address(rsp, 12));
-  movq(xmm1, ExternalAddress(PI32INV));    //0x6dc9c883UL, 0x40245f30UL
+  movq(xmm1, ExternalAddress(PI32INV), tmp /*rscratch*/);    //0x6dc9c883UL, 0x40245f30UL
   andl(eax, 2147418112);
   subl(eax, 808452096);
   cmpl(eax, 281346048);
   jcc(Assembler::above, L_2TAG_PACKET_0_0_1);
   mulsd(xmm1, xmm0);
-  movdqu(xmm5, ExternalAddress(ONEHALF));    //0x00000000UL, 0x3fe00000UL, 0x00000000UL, 0x3fe00000UL
-  movq(xmm4, ExternalAddress(SIGN_MASK));    //0x00000000UL, 0x80000000UL
+  movdqu(xmm5, ExternalAddress(ONEHALF), tmp /*rscratch*/);    //0x00000000UL, 0x3fe00000UL, 0x00000000UL, 0x3fe00000UL
+  movq(xmm4, ExternalAddress(SIGN_MASK), tmp /*rscratch*/);    //0x00000000UL, 0x80000000UL
   pand(xmm4, xmm0);
   por(xmm5, xmm4);
   addpd(xmm1, xmm5);
   cvttsd2sil(edx, xmm1);
   cvtsi2sdl(xmm1, edx);
-  movdqu(xmm2, ExternalAddress(P_2));    //0x1a600000UL, 0x3d90b461UL, 0x1a600000UL, 0x3d90b461UL
-  movq(xmm3, ExternalAddress(P_1));    //0x54400000UL, 0x3fb921fbUL
+  movdqu(xmm2, ExternalAddress(P_2), tmp /*rscratch*/);    //0x1a600000UL, 0x3d90b461UL, 0x1a600000UL, 0x3d90b461UL
+  movq(xmm3, ExternalAddress(P_1), tmp /*rscratch*/);    //0x54400000UL, 0x3fb921fbUL
   mulsd(xmm3, xmm1);
   unpcklpd(xmm1, xmm1);
   addq(rdx, 1865232);
   movdqu(xmm4, xmm0);
   andq(rdx, 63);
-  movdqu(xmm5, ExternalAddress(SC_4));    //0xa556c734UL, 0x3ec71de3UL, 0x1a01a01aUL, 0x3efa01a0UL
+  movdqu(xmm5, ExternalAddress(SC_4), tmp /*rscratch*/);    //0xa556c734UL, 0x3ec71de3UL, 0x1a01a01aUL, 0x3efa01a0UL
   lea(rax, ExternalAddress(Ctable));
   shlq(rdx, 5);
   addq(rax, rdx);
   mulpd(xmm2, xmm1);
   subsd(xmm0, xmm3);
-  mulsd(xmm1, ExternalAddress(P_3));    //0x2e037073UL, 0x3b63198aUL
+  mulsd(xmm1, ExternalAddress(P_3), tmp /*rscratch*/);    //0x2e037073UL, 0x3b63198aUL
   subsd(xmm4, xmm3);
   movq(xmm7, Address(rax, 8));
   unpcklpd(xmm0, xmm0);
@@ -246,7 +228,7 @@ void MacroAssembler::fast_cos(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xm
   subsd(xmm4, xmm2);
   mulpd(xmm5, xmm0);
   subpd(xmm0, xmm2);
-  movdqu(xmm6, ExternalAddress(SC_2));    //0x11111111UL, 0x3f811111UL, 0x55555555UL, 0x3fa55555UL
+  movdqu(xmm6, ExternalAddress(SC_2), tmp /*rscratch*/);    //0x11111111UL, 0x3f811111UL, 0x55555555UL, 0x3fa55555UL
   mulsd(xmm7, xmm4);
   subsd(xmm3, xmm4);
   mulpd(xmm5, xmm0);
@@ -262,9 +244,9 @@ void MacroAssembler::fast_cos(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xm
   mulsd(xmm3, xmm4);
   mulpd(xmm2, xmm0);
   mulpd(xmm0, xmm0);
-  addpd(xmm5, ExternalAddress(SC_3));    //0x1a01a01aUL, 0xbf2a01a0UL, 0x16c16c17UL, 0xbf56c16cUL
+  addpd(xmm5, ExternalAddress(SC_3), tmp /*rscratch*/);    //0x1a01a01aUL, 0xbf2a01a0UL, 0x16c16c17UL, 0xbf56c16cUL
   mulsd(xmm4, Address(rax, 0));
-  addpd(xmm6, ExternalAddress(SC_1));    //0x55555555UL, 0xbfc55555UL, 0x00000000UL, 0xbfe00000UL
+  addpd(xmm6, ExternalAddress(SC_1), tmp /*rscratch*/);    //0x55555555UL, 0xbfc55555UL, 0x00000000UL, 0xbfe00000UL
   mulpd(xmm5, xmm0);
   movdqu(xmm0, xmm3);
   addsd(xmm3, Address(rax, 8));
@@ -292,7 +274,7 @@ void MacroAssembler::fast_cos(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xm
   pextrw(eax, xmm0, 3);
   andl(eax, 32767);
   pinsrw(xmm0, eax, 3);
-  movq(xmm1, ExternalAddress(ONE));    //0x00000000UL, 0x3ff00000UL
+  movq(xmm1, ExternalAddress(ONE), tmp /*rscratch*/); // 0x00000000UL, 0x3ff00000UL
   subsd(xmm1, xmm0);
   movdqu(xmm0, xmm1);
   jmp(B1_4);
@@ -440,8 +422,8 @@ void MacroAssembler::fast_cos(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xm
   orl(edx, rsi);
   xorl(edx, rbx);
   pinsrw(xmm4, edx, 3);
-  movq(xmm2, ExternalAddress(PI_4));    //0x40000000UL, 0x3fe921fbUL, 0x18469899UL, 0x3e64442dUL
-  movq(xmm6, ExternalAddress(8 + PI_4));    //0x3fe921fbUL, 0x18469899UL, 0x3e64442dUL
+  movq(xmm2, ExternalAddress(PI_4),     tmp /*rscratch*/); //0x40000000UL, 0x3fe921fbUL, 0x18469899UL, 0x3e64442dUL
+  movq(xmm6, ExternalAddress(PI_4 + 8), tmp /*rscratch*/); //0x3fe921fbUL, 0x18469899UL, 0x3e64442dUL
   xorpd(xmm5, xmm5);
   subl(edx, 1008);
   pinsrw(xmm5, edx, 3);
@@ -465,17 +447,17 @@ void MacroAssembler::fast_cos(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xm
   addsd(xmm6, xmm2);
 
   bind(L_2TAG_PACKET_11_0_1);
-  movq(xmm1, ExternalAddress(PI32INV));    //0x6dc9c883UL, 0x40245f30UL
+  movq(xmm1, ExternalAddress(PI32INV), tmp /*rscratch*/);   //0x6dc9c883UL, 0x40245f30UL
   mulsd(xmm1, xmm0);
-  movq(xmm5, ExternalAddress(ONEHALF));    //0x00000000UL, 0x3fe00000UL, 0x00000000UL, 0x3fe00000UL
-  movq(xmm4, ExternalAddress(SIGN_MASK));    //0x00000000UL, 0x80000000UL
+  movq(xmm5, ExternalAddress(ONEHALF), tmp /*rscratch*/);   //0x00000000UL, 0x3fe00000UL, 0x00000000UL, 0x3fe00000UL
+  movq(xmm4, ExternalAddress(SIGN_MASK), tmp /*rscratch*/); //0x00000000UL, 0x80000000UL
   pand(xmm4, xmm0);
   por(xmm5, xmm4);
   addpd(xmm1, xmm5);
   cvttsd2siq(rdx, xmm1);
   cvtsi2sdq(xmm1, rdx);
-  movq(xmm3, ExternalAddress(P_1));    //0x54400000UL, 0x3fb921fbUL
-  movdqu(xmm2, ExternalAddress(P_2));    //0x1a600000UL, 0x3d90b461UL, 0x1a600000UL, 0x3d90b461UL
+  movq(xmm3, ExternalAddress(P_1), tmp /*rscratch*/);    //0x54400000UL, 0x3fb921fbUL
+  movdqu(xmm2, ExternalAddress(P_2), tmp /*rscratch*/);    //0x1a600000UL, 0x3d90b461UL, 0x1a600000UL, 0x3d90b461UL
   mulsd(xmm3, xmm1);
   unpcklpd(xmm1, xmm1);
   shll(eax, 3);
@@ -483,13 +465,13 @@ void MacroAssembler::fast_cos(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xm
   movdqu(xmm4, xmm0);
   addl(edx, eax);
   andl(edx, 63);
-  movdqu(xmm5, ExternalAddress(SC_4));    //0xa556c734UL, 0x3ec71de3UL, 0x1a01a01aUL, 0x3efa01a0UL
+  movdqu(xmm5, ExternalAddress(SC_4), tmp /*rscratch*/);    //0xa556c734UL, 0x3ec71de3UL, 0x1a01a01aUL, 0x3efa01a0UL
   lea(rax, ExternalAddress(Ctable));
   shll(edx, 5);
   addq(rax, rdx);
   mulpd(xmm2, xmm1);
   subsd(xmm0, xmm3);
-  mulsd(xmm1, ExternalAddress(P_3));    //0x2e037073UL, 0x3b63198aUL
+  mulsd(xmm1, ExternalAddress(P_3), tmp /*rscratch*/);    //0x2e037073UL, 0x3b63198aUL
   subsd(xmm4, xmm3);
   movq(xmm7, Address(rax, 8));
   unpcklpd(xmm0, xmm0);
@@ -508,15 +490,15 @@ void MacroAssembler::fast_cos(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xm
   addsd(xmm2, xmm3);
   subsd(xmm7, xmm2);
   subsd(xmm1, xmm6);
-  movdqu(xmm6, ExternalAddress(SC_2));    //0x11111111UL, 0x3f811111UL, 0x55555555UL, 0x3fa55555UL
+  movdqu(xmm6, ExternalAddress(SC_2), tmp /*rscratch*/);    //0x11111111UL, 0x3f811111UL, 0x55555555UL, 0x3fa55555UL
   mulsd(xmm2, xmm4);
   mulpd(xmm6, xmm0);
   mulsd(xmm3, xmm4);
   mulpd(xmm2, xmm0);
   mulpd(xmm0, xmm0);
-  addpd(xmm5, ExternalAddress(SC_3));    //0x1a01a01aUL, 0xbf2a01a0UL, 0x16c16c17UL, 0xbf56c16cUL
+  addpd(xmm5, ExternalAddress(SC_3), tmp /*rscratch*/);    //0x1a01a01aUL, 0xbf2a01a0UL, 0x16c16c17UL, 0xbf56c16cUL
   mulsd(xmm4, Address(rax, 0));
-  addpd(xmm6, ExternalAddress(SC_1));    //0x55555555UL, 0xbfc55555UL, 0x00000000UL, 0xbfe00000UL
+  addpd(xmm6, ExternalAddress(SC_1), tmp /*rscratch*/);    //0x55555555UL, 0xbfc55555UL, 0x00000000UL, 0xbfe00000UL
   mulpd(xmm5, xmm0);
   movdqu(xmm0, xmm3);
   addsd(xmm3, Address(rax, 8));
@@ -619,7 +601,7 @@ void MacroAssembler::fast_cos(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xm
 
   bind(L_2TAG_PACKET_2_0_1);
   movsd(xmm0, Address(rsp, 8));
-  mulsd(xmm0, ExternalAddress(NEG_ZERO));    //0x00000000UL, 0x80000000UL
+  mulsd(xmm0, ExternalAddress(NEG_ZERO), tmp /*rscratch*/);    //0x00000000UL, 0x80000000UL
   movq(Address(rsp, 0), xmm0);
 
   bind(L_2TAG_PACKET_13_0_1);
@@ -750,11 +732,13 @@ ATTRIBUTE_ALIGNED(16) juint _static_const_table_cos[] =
 //registers,
 // input: (rbp + 8)
 // scratch: xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7
-//          rax, rdx, rcx, rbx (tmp)
+//          eax, ecx, edx, ebx (tmp)
 
 // Code generated by Intel C compiler for LIBM library
 
-void MacroAssembler::fast_cos(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3, XMMRegister xmm4, XMMRegister xmm5, XMMRegister xmm6, XMMRegister xmm7, Register eax, Register ecx, Register edx, Register tmp) {
+void MacroAssembler::fast_cos(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3,
+                              XMMRegister xmm4, XMMRegister xmm5, XMMRegister xmm6, XMMRegister xmm7,
+                              Register eax, Register ecx, Register edx, Register tmp) {
   Label L_2TAG_PACKET_0_0_2, L_2TAG_PACKET_1_0_2, L_2TAG_PACKET_2_0_2, L_2TAG_PACKET_3_0_2;
   Label start;
 

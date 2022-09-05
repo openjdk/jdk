@@ -211,17 +211,7 @@ public:
                                                           code_contains(addr) && addr >= code_begin() + _frame_complete_offset; }
   int frame_complete_offset() const              { return _frame_complete_offset; }
 
-  // CodeCache support: really only used by the nmethods, but in order to get
-  // asserts and certain bookkeeping to work in the CodeCache they are defined
-  // virtual here.
-  virtual bool is_zombie() const                 { return false; }
-  virtual bool is_locked_by_vm() const           { return false; }
-
-  virtual bool is_unloaded() const               { return false; }
   virtual bool is_not_entrant() const            { return false; }
-
-  // GC support
-  virtual bool is_alive() const                  = 0;
 
   // OopMap for frame
   ImmutableOopMapSet* oop_maps() const           { return _oop_maps; }
@@ -384,9 +374,6 @@ class RuntimeBlob : public CodeBlob {
 
   static void free(RuntimeBlob* blob);
 
-  // GC support
-  virtual bool is_alive() const                  = 0;
-
   void verify();
 
   // OopMap for frame
@@ -435,7 +422,6 @@ class BufferBlob: public RuntimeBlob {
 
   // GC/Verification support
   void preserve_callee_argument_oops(frame fr, const RegisterMap* reg_map, OopClosure* f)  { /* nothing to do */ }
-  bool is_alive() const                          { return true; }
 
   void verify();
   void print_on(outputStream* st) const;
@@ -532,7 +518,6 @@ class RuntimeStub: public RuntimeBlob {
 
   // GC/Verification support
   void preserve_callee_argument_oops(frame fr, const RegisterMap *reg_map, OopClosure* f)  { /* nothing to do */ }
-  bool is_alive() const                          { return true; }
 
   void verify();
   void print_on(outputStream* st) const;
@@ -566,8 +551,6 @@ class SingletonBlob: public RuntimeBlob {
   {};
 
   address entry_point()                          { return code_begin(); }
-
-  bool is_alive() const                          { return true; }
 
   // GC/Verification support
   void preserve_callee_argument_oops(frame fr, const RegisterMap *reg_map, OopClosure* f)  { /* nothing to do */ }
@@ -801,7 +784,6 @@ class UpcallStub: public RuntimeBlob {
   // GC/Verification support
   void oops_do(OopClosure* f, const frame& frame);
   virtual void preserve_callee_argument_oops(frame fr, const RegisterMap* reg_map, OopClosure* f) override;
-  virtual bool is_alive() const override { return true; }
   virtual void verify() override;
 
   // Misc.
