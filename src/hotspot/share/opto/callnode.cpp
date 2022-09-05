@@ -1633,6 +1633,7 @@ Node* AllocateArrayNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         // Halt & Catch Fire
         Node* halt = new HaltNode(nproj, frame, "unexpected negative array length");
         phase->C->root()->add_req(halt);
+        igvn->_worklist.push(phase->C->root());
         phase->transform(halt);
 
         igvn->replace_node(catchproj, phase->C->top());
