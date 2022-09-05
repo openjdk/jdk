@@ -54,7 +54,6 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
     private Group group;
     private ArrayList<InputGraph> graphs;
     private Set<Integer> hiddenNodes;
-    private Set<Integer> onScreenNodes;
     private Set<Integer> selectedNodes;
     private FilterChain filterChain;
     private FilterChain sequenceFilterChain;
@@ -110,8 +109,6 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         this.diagram = newModel.diagram;
         viewChanged |= (hiddenNodes != newModel.hiddenNodes);
         this.hiddenNodes = newModel.hiddenNodes;
-        viewChanged |= (onScreenNodes != newModel.onScreenNodes);
-        this.onScreenNodes = newModel.onScreenNodes;
         viewChanged |= (selectedNodes != newModel.selectedNodes);
         this.selectedNodes = newModel.selectedNodes;
         viewPropertiesChanged |= (showSea != newModel.showSea);
@@ -219,7 +216,6 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         assert sequenceFilterChain != null;
         this.sequenceFilterChain = sequenceFilterChain;
         hiddenNodes = new HashSet<>();
-        onScreenNodes = new HashSet<>();
         selectedNodes = new HashSet<>();
         super.getChangedEvent().addListener(this);
         diagramChangedEvent = new ChangedEvent<>(this);
@@ -284,10 +280,6 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
 
     public Set<Integer> getHiddenNodes() {
         return hiddenNodes;
-    }
-
-    public Set<Integer> getOnScreenNodes() {
-        return onScreenNodes;
     }
 
     public void setSelectedNodes(Set<Integer> nodes) {
@@ -369,11 +361,6 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
     public void setHiddenNodes(Set<Integer> nodes) {
         this.hiddenNodes = nodes;
         hiddenNodesChangedEvent.fire();
-    }
-
-    public void setOnScreenNodes(Set<Integer> onScreenNodes) {
-        this.onScreenNodes = onScreenNodes;
-        viewChangedEvent.fire();
     }
 
     public FilterChain getSequenceFilterChain() {
