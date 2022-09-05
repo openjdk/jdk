@@ -421,8 +421,7 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
 
     };
 
-
-    public void setSelectedFigures(List<Figure> list) {
+    private void setSelectedFigures(List<Figure> list) {
         scene.setSelection(list);
         scene.centerFigures(list);
     }
