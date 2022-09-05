@@ -125,19 +125,6 @@ public class InputGraphTest {
     }
 
     /**
-     * Test of findRootNodes method, of class InputGraph.
-     */
-    @Test
-    public void testFindRootNodes() {
-        assertTrue(emptyGraph.findRootNodes().isEmpty());
-
-        List<InputNode> result = referenceGraph.findRootNodes();
-        assertTrue(result.size() == 2);
-        assertTrue(result.contains(N1));
-        assertTrue(result.contains(N5));
-    }
-
-    /**
      * Test of findAllOutgoingEdges method, of class InputGraph.
      */
     @Test

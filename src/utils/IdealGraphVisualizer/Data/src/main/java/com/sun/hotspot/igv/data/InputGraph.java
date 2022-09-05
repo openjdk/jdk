@@ -79,22 +79,6 @@ public class InputGraph extends Properties.Entity implements FolderElement {
         return edge;
     }
 
-    public List<InputNode> findRootNodes() {
-        List<InputNode> result = new ArrayList<>();
-        Set<Integer> nonRoot = new HashSet<>();
-        for(InputEdge curEdges : getEdges()) {
-            nonRoot.add(curEdges.getTo());
-        }
-
-        for(InputNode node : getNodes()) {
-            if(!nonRoot.contains(node.getId())) {
-                result.add(node);
-            }
-        }
-
-        return result;
-    }
-
     public Map<InputNode, List<InputEdge>> findAllOutgoingEdges() {
         Map<InputNode, List<InputEdge>> result = new HashMap<>(getNodes().size());
         for(InputNode n : this.getNodes()) {

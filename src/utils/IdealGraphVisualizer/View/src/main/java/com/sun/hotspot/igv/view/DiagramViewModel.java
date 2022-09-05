@@ -95,7 +95,7 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         boolean viewChanged = false;
         boolean viewPropertiesChanged = false;
 
-        boolean groupChanged = (group == newModel.group);
+        boolean groupChanged = (group != newModel.group);
         this.group = newModel.group;
         if (groupChanged) {
             filterGraphs();
