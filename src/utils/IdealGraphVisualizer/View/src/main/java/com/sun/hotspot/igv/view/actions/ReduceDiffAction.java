@@ -30,17 +30,17 @@ import javax.swing.Action;
 import javax.swing.ImageIcon;
 import org.openide.util.*;
 
-public final class ShrinkDiffAction extends ContextAction<DiagramViewModel> implements ChangedListener<DiagramViewModel> {
+public final class ReduceDiffAction extends ContextAction<DiagramViewModel> implements ChangedListener<DiagramViewModel> {
     private DiagramViewModel model;
 
-    public ShrinkDiffAction() {
+    public ReduceDiffAction() {
         putValue(Action.SHORT_DESCRIPTION, "Reduce the difference selection");
         putValue(Action.SMALL_ICON, new ImageIcon(ImageUtilities.loadImage("com/sun/hotspot/igv/view/images/shrink_right.png")));
     }
 
     @Override
     public String getName() {
-        return NbBundle.getMessage(ShrinkDiffAction.class, "CTL_ShrinkDiffAction");
+        return NbBundle.getMessage(ReduceDiffAction.class, "CTL_ReduceDiffAction");
     }
 
     @Override
@@ -80,12 +80,12 @@ public final class ShrinkDiffAction extends ContextAction<DiagramViewModel> impl
 
     @Override
     public boolean isEnabled(DiagramViewModel model) {
-        return model.getSecondPosition() != model.getPositions().size() - 1;
+        return model.getFirstPosition() != model.getSecondPosition();
     }
 
     @Override
     public Action createContextAwareInstance(Lookup arg0) {
-        return new ShrinkDiffAction();
+        return new ReduceDiffAction();
     }
 
     @Override

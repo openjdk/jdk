@@ -18,10 +18,10 @@
             <attr name="originalFile" stringvalue="Actions/View/com-sun-hotspot-igv-view-actions-ExpandDiffAction.instance"/>
         </file>
         <file name="DS-LEFT.shadow">
-            <attr name="originalFile" stringvalue="Actions/View/com-sun-hotspot-igv-view-actions-ShrinkDiffAction.instance"/>
+            <attr name="originalFile" stringvalue="Actions/View/com-sun-hotspot-igv-view-actions-ReduceDiffAction.instance"/>
         </file>
         <file name="D-DOWN.shadow">
-            <attr name="originalFile" stringvalue="Actions/View/com-sun-hotspot-igv-view-actions-ShrinkDiffAction.instance"/>
+            <attr name="originalFile" stringvalue="Actions/View/com-sun-hotspot-igv-view-actions-ReduceDiffAction.instance"/>
         </file>
     </folder>
     <folder name="Actions">
@@ -36,7 +36,7 @@
         <folder name="View">
             <file name="com-sun-hotspot-igv-view-actions-PrevDiagramAction.instance"><attr name="position" intvalue="2001"/></file>
             <file name="com-sun-hotspot-igv-view-actions-NextDiagramAction.instance"><attr name="position" intvalue="2001"/></file>
-            <file name="com-sun-hotspot-igv-view-actions-ShrinkDiffAction.instance"><attr name="position" intvalue="2001"/></file>
+            <file name="com-sun-hotspot-igv-view-actions-ReduceDiffAction.instance"><attr name="position" intvalue="2001"/></file>
             <file name="com-sun-hotspot-igv-view-actions-ExpandDiffAction.instance"><attr name="position" intvalue="2001"/></file>
             <file name="com-sun-hotspot-igv-view-actions-ShowAllAction.instance"><attr name="position" intvalue="2001"/></file>
             <file name="com-sun-hotspot-igv-view-actions-ExtractAction.instance"><attr name="position" intvalue="2001"/></file>
@@ -61,8 +61,8 @@
                 <attr name="originalFile" stringvalue="Actions/View/com-sun-hotspot-igv-view-actions-NextDiagramAction.instance"/>
                 <attr name="position" intvalue="150"/>
             </file>
-            <file name="com-sun-hotspot-igv-view-actions-ShrinkDiffAction.shadow">
-                <attr name="originalFile" stringvalue="Actions/View/com-sun-hotspot-igv-view-actions-ShrinkDiffAction.instance"/>
+            <file name="com-sun-hotspot-igv-view-actions-ReduceDiffAction.shadow">
+                <attr name="originalFile" stringvalue="Actions/View/com-sun-hotspot-igv-view-actions-ReduceDiffAction.instance"/>
                 <attr name="position" intvalue="250"/>
             </file>
             <file name="com-sun-hotspot-igv-view-actions-ExpandDiffAction.shadow">

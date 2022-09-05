@@ -124,7 +124,7 @@ public final class EditorTopComponent extends TopComponent {
                 PrevDiagramAction.get(PrevDiagramAction.class),
                 NextDiagramAction.get(NextDiagramAction.class),
                 null,
-                ShrinkDiffAction.get(ShrinkDiffAction.class),
+                ReduceDiffAction.get(ReduceDiffAction.class),
                 ExpandDiffAction.get(ExpandDiffAction.class),
                 null,
                 ExtractAction.get(ExtractAction.class),
@@ -198,7 +198,7 @@ public final class EditorTopComponent extends TopComponent {
         toolBar.add(PrevDiagramAction.get(PrevDiagramAction.class));
         toolBar.add(NextDiagramAction.get(NextDiagramAction.class));
         toolBar.addSeparator();
-        toolBar.add(ShrinkDiffAction.get(ShrinkDiffAction.class));
+        toolBar.add(ReduceDiffAction.get(ReduceDiffAction.class));
         toolBar.add(ExpandDiffAction.get(ExpandDiffAction.class));
         toolBar.addSeparator();
         toolBar.add(ExtractAction.get(ExtractAction.class));
