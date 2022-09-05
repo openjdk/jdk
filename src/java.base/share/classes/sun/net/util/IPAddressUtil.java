@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,8 @@
 
 package sun.net.util;
 
-import java.io.IOException;
+import sun.security.action.GetPropertyAction;
+
 import java.io.UncheckedIOException;
 import java.net.Inet6Address;
 import java.net.InetAddress;
@@ -33,6 +34,7 @@ import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.URL;
+import java.nio.CharBuffer;
 import java.security.AccessController;
 import java.security.PrivilegedExceptionAction;
 import java.security.PrivilegedActionException;
@@ -100,7 +102,7 @@ public class IPAddressUtil {
                 tmpValue = 0;
                 newOctet = true;
             } else {
-                int digit = Character.digit(c, 10);
+                int digit = digit(c, 10);
                 if (digit < 0) {
                     return null;
                 }
@@ -123,6 +125,29 @@ public class IPAddressUtil {
                 res[3] = (byte) ((tmpValue >>  0) & 0xff);
         }
         return res;
+    }
+
+    /**
+     * Validates if input string is a valid IPv4 address literal.
+     * If the "jdk.net.allowAmbiguousIPAddressLiterals" system property is set
+     * to {@code false}, or is not set then validation of the address string is performed as follows:
+     * If string can't be parsed by following IETF IPv4 address string literals
+     * formatting style rules (default one), but can be parsed by following BSD formatting
+     * style rules, the IPv4 address string content is treated as ambiguous and
+     * {@code IllegalArgumentException} is thrown.
+     *
+     * @param src input string
+     * @return bytes array if string is a valid IPv4 address string
+     * @throws IllegalArgumentException if "jdk.net.allowAmbiguousIPAddressLiterals" SP is set to
+     *                                  "false" and IPv4 address string {@code "src"} is ambiguous
+     */
+    public static byte[] validateNumericFormatV4(String src) {
+        byte[] parsedBytes = textToNumericFormatV4(src);
+        if (!ALLOW_AMBIGUOUS_IPADDRESS_LITERALS_SP_VALUE
+                && parsedBytes == null && isBsdParsableV4(src)) {
+            throw new IllegalArgumentException("Invalid IP address literal: " + src);
+        }
+        return parsedBytes;
     }
 
     /*
@@ -170,7 +195,7 @@ public class IPAddressUtil {
         val = 0;
         while (i < srcb_length) {
             ch = srcb[i++];
-            int chval = Character.digit(ch, 16);
+            int chval = digit(ch, 16);
             if (chval != -1) {
                 val <<= 4;
                 val |= chval;
@@ -551,4 +576,245 @@ public class IPAddressUtil {
         }
         return null;
     }
+
+    /**
+     * Returns the numeric value of the character {@code ch} in the
+     * specified radix.
+     *
+     * @param ch    the character to be converted.
+     * @param radix the radix.
+     * @return the numeric value represented by the character in the
+     * specified radix.
+     */
+    public static int digit(char ch, int radix) {
+        if (ALLOW_AMBIGUOUS_IPADDRESS_LITERALS_SP_VALUE) {
+            return Character.digit(ch, radix);
+        } else {
+            return parseAsciiDigit(ch, radix);
+        }
+    }
+
+    /**
+     * Try to parse String as IPv4 address literal by following
+     * BSD-style formatting rules.
+     *
+     * @param input input string
+     * @return {@code true} if input string is parsable as IPv4 address literal,
+     * {@code false} otherwise.
+     */
+    public static boolean isBsdParsableV4(String input) {
+        char firstSymbol = input.charAt(0);
+        // Check if first digit is not a decimal digit
+        if (parseAsciiDigit(firstSymbol, DECIMAL) == -1) {
+            return false;
+        }
+
+        // Last character is dot OR is not a supported digit: [0-9,A-F,a-f]
+        char lastSymbol = input.charAt(input.length() - 1);
+        if (lastSymbol == '.' || parseAsciiHexDigit(lastSymbol) == -1) {
+            return false;
+        }
+
+        // Parse IP address fields
+        CharBuffer charBuffer = CharBuffer.wrap(input);
+        int fieldNumber = 0;
+        while (charBuffer.hasRemaining()) {
+            long fieldValue = -1L;
+            // Try to parse fields in all supported radixes
+            for (int radix : SUPPORTED_RADIXES) {
+                fieldValue = parseV4FieldBsd(radix, charBuffer, fieldNumber);
+                if (fieldValue >= 0) {
+                    fieldNumber++;
+                    break;
+                } else if (fieldValue == TERMINAL_PARSE_ERROR) {
+                    return false;
+                }
+            }
+            // If field can't be parsed as one of supported radixes stop
+            // parsing
+            if (fieldValue < 0) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Method tries to parse IP address field that starts from {@linkplain CharBuffer#position()
+     * current position} of the provided character buffer.
+     * <p>
+     * This method supports three {@code "radix"} values to decode field values in
+     * {@code "HEXADECIMAL (radix=16)"}, {@code "DECIMAL (radix=10)"} and
+     * {@code "OCTAL (radix=8)"} radixes.
+     * <p>
+     * If {@code -1} value is returned the char buffer position is reset to the value
+     * it was before it was called.
+     * <p>
+     * Method returns {@code -2} if formatting illegal for all supported {@code radix}
+     * values is observed, and there is no point in checking other radix values.
+     * That includes the following cases:<ul>
+     * <li>Two subsequent dots are observer
+     * <li>Number of dots more than 3
+     * <li>Field value exceeds max allowed
+     * <li>Character is not a valid digit for the requested {@code radix} value, given
+     * that a field has the radix specific prefix
+     * </ul>
+     *
+     * @param radix       digits encoding radix to use for parsing. Valid values: 8, 10, 16.
+     * @param buffer      {@code CharBuffer} with position set to the field's fist character
+     * @param fieldNumber parsed field number
+     * @return {@code CANT_PARSE_IN_RADIX} if field can not be parsed in requested {@code radix}.
+     * {@code TERMINAL_PARSE_ERROR} if field can't be parsed and the whole parse process should be terminated.
+     * Parsed field value otherwise.
+     */
+    private static long parseV4FieldBsd(int radix, CharBuffer buffer, int fieldNumber) {
+        int initialPos = buffer.position();
+        long val = 0;
+        int digitsCount = 0;
+        if (!checkPrefix(buffer, radix)) {
+            val = CANT_PARSE_IN_RADIX;
+        }
+        boolean dotSeen = false;
+        while (buffer.hasRemaining() && val != CANT_PARSE_IN_RADIX && !dotSeen) {
+            char c = buffer.get();
+            if (c == '.') {
+                dotSeen = true;
+                // Fail if 4 dots in IP address string.
+                // fieldNumber counter starts from 0, therefore 3
+                if (fieldNumber == 3) {
+                    // Terminal state, can stop parsing: too many fields
+                    return TERMINAL_PARSE_ERROR;
+                }
+                // Check for literals with two dots, like '1.2..3', '1.2.3..'
+                if (digitsCount == 0) {
+                    // Terminal state, can stop parsing: dot with no digits
+                    return TERMINAL_PARSE_ERROR;
+                }
+                if (val > 255) {
+                    // Terminal state, can stop parsing: too big value for an octet
+                    return TERMINAL_PARSE_ERROR;
+                }
+            } else {
+                int dv = parseAsciiDigit(c, radix);
+                if (dv >= 0) {
+                    digitsCount++;
+                    val *= radix;
+                    val += dv;
+                } else {
+                    // Spotted digit can't be parsed in the requested 'radix'.
+                    // The order in which radixes are checked - hex, octal, decimal:
+                    //    - if symbol is not a valid digit in hex radix - terminal
+                    //    - if symbol is not a valid digit in octal radix, and given
+                    //      that octal prefix was observed before - terminal
+                    //    - if symbol is not a valid digit in decimal radix - terminal
+                    return TERMINAL_PARSE_ERROR;
+                }
+            }
+        }
+        if (val == CANT_PARSE_IN_RADIX) {
+            buffer.position(initialPos);
+        } else if (!dotSeen) {
+            // It is the last field - check its value
+            // This check will ensure that address strings with less
+            // than 4 fields, i.e. A, A.B and A.B.C address types
+            // contain value less then the allowed maximum for the last field.
+            long maxValue = (1L << ((4 - fieldNumber) * 8)) - 1;
+            if (val > maxValue) {
+                //  Terminal state, can stop parsing: last field value exceeds its
+                //  allowed value
+                return TERMINAL_PARSE_ERROR;
+            }
+        }
+        return val;
+    }
+
+    // This method moves the position of the supplied CharBuffer by analysing the digit prefix
+    // symbols if any.
+    // The caller should reset the position when method returns false.
+    private static boolean checkPrefix(CharBuffer buffer, int radix) {
+        return switch (radix) {
+            case OCTAL -> isOctalFieldStart(buffer);
+            case DECIMAL -> isDecimalFieldStart(buffer);
+            case HEXADECIMAL -> isHexFieldStart(buffer);
+            default -> throw new AssertionError("Not supported radix");
+        };
+    }
+
+    // This method always moves the position of the supplied CharBuffer
+    // removing the octal prefix symbols '0'.
+    // The caller should reset the position when method returns false.
+    private static boolean isOctalFieldStart(CharBuffer cb) {
+        // .0<EOS> is not treated as octal field
+        if (cb.remaining() < 2) {
+            return false;
+        }
+
+        // Fetch two first characters
+        int position = cb.position();
+        char first = cb.get();
+        char second = cb.get();
+
+        // Return false if the first char is not octal prefix '0' or second is a
+        // field separator - parseV4FieldBsd will reset position to start of the field.
+        // '.0.' fields will be successfully parsed in decimal radix.
+        boolean isOctalPrefix = first == '0' && second != '.';
+
+        // If the prefix looks like octal - consume '0', otherwise 'false' is returned
+        // and caller will reset the buffer position.
+        if (isOctalPrefix) {
+            cb.position(position + 1);
+        }
+        return isOctalPrefix;
+    }
+
+    // This method doesn't move the position of the supplied CharBuffer
+    private static boolean isDecimalFieldStart(CharBuffer cb) {
+        return cb.hasRemaining();
+    }
+
+    // This method always moves the position of the supplied CharBuffer
+    // removing the hexadecimal prefix symbols '0x'.
+    // The caller should reset the position when method returns false.
+    private static boolean isHexFieldStart(CharBuffer cb) {
+        if (cb.remaining() < 2) {
+            return false;
+        }
+        char first = cb.get();
+        char second = cb.get();
+        return first == '0' && (second == 'x' || second == 'X');
+    }
+
+    // Parse ASCII digit in given radix
+    private static int parseAsciiDigit(char c, int radix) {
+        assert radix == OCTAL || radix == DECIMAL || radix == HEXADECIMAL;
+        if (radix == HEXADECIMAL) {
+            return parseAsciiHexDigit(c);
+        }
+        int val = c - '0';
+        return (val < 0 || val >= radix) ? -1 : val;
+    }
+
+    // Parse ASCII digit in hexadecimal radix
+    private static int parseAsciiHexDigit(char digit) {
+        char c = Character.toLowerCase(digit);
+        if (c >= 'a' && c <= 'f') {
+            return c - 'a' + 10;
+        }
+        return parseAsciiDigit(c, DECIMAL);
+    }
+
+    // Supported radixes
+    private static final int HEXADECIMAL = 16;
+    private static final int DECIMAL = 10;
+    private static final int OCTAL = 8;
+    // Order in which field formats are exercised to parse one IP address textual field
+    private static final int[] SUPPORTED_RADIXES = new int[]{HEXADECIMAL, OCTAL, DECIMAL};
+
+    // BSD parser's return values
+    private final static long CANT_PARSE_IN_RADIX = -1L;
+    private final static long TERMINAL_PARSE_ERROR = -2L;
+
+    private static final String ALLOW_AMBIGUOUS_IPADDRESS_LITERALS_SP = "jdk.net.allowAmbiguousIPAddressLiterals";
+    private static final boolean ALLOW_AMBIGUOUS_IPADDRESS_LITERALS_SP_VALUE = Boolean.valueOf(
+            GetPropertyAction.privilegedGetProperty(ALLOW_AMBIGUOUS_IPADDRESS_LITERALS_SP, "false"));
 }

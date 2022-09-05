@@ -331,7 +331,7 @@ void LIR_Assembler::jobject2reg(jobject o, Register reg) {
   if (o == NULL) {
     __ mov(reg, zr);
   } else {
-    __ movoop(reg, o, /*immediate*/true);
+    __ movoop(reg, o);
   }
 }
 
@@ -2690,7 +2690,7 @@ void LIR_Assembler::emit_updatecrc32(LIR_OpUpdateCRC32* op) {
   assert_different_registers(val, crc, res);
   uint64_t offset;
   __ adrp(res, ExternalAddress(StubRoutines::crc_table_addr()), offset);
-  if (offset) __ add(res, res, offset);
+  __ add(res, res, offset);
 
   __ mvnw(crc, crc); // ~crc
   __ update_byte_crc32(crc, val, res);

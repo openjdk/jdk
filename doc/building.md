@@ -382,14 +382,13 @@ available for this update.
 
 ### Microsoft Visual Studio
 
-For aarch64 machines running Windows the minimum accepted version is Visual Studio 2019
-(16.8 or higher). For all other platforms the minimum accepted version of
-Visual Studio is 2017. Older versions will not be accepted by `configure` and will
-not work. For all platforms the maximum accepted version of Visual Studio is 2022.
+The minimum accepted version is Visual Studio 2019 (for aarch64, at least 16.8
+is required). Older versions will not be accepted by `configure` and will not
+work. The maximum accepted version of Visual Studio is 2022.
 
 If you have multiple versions of Visual Studio installed, `configure` will by
 default pick the latest. You can request a specific version to be used by
-setting `--with-toolchain-version`, e.g. `--with-toolchain-version=2017`.
+setting `--with-toolchain-version`, e.g. `--with-toolchain-version=2022`.
 
 If you have Visual Studio installed but `configure` fails to detect it, it may
 be because of [spaces in path](#spaces-in-path).
@@ -1559,9 +1558,9 @@ make
 
 Note that regardless if you specify a source date for `configure` or not, the
 JDK build system will set `SOURCE_DATE_EPOCH` for all build tools when building.
-If `--with-source-date` has the value `updated` (which is the default unless
+If `--with-source-date` has the value `current` (which is the default unless
 `SOURCE_DATE_EPOCH` is found by in the environment by `configure`), the source
-date value will be determined at build time.
+date value will be determined at configure time.
 
 There are several aspects of reproducible builds that can be individually
 adjusted by `configure` arguments. If any of these are given, they will override
@@ -1582,7 +1581,7 @@ the value derived from `SOURCE_DATE_EPOCH`. These arguments are:
 
     When `SOURCE_DATE_EPOCH` is set, the default value for `--with-source-date`
     will be the value given by `SOURCE_DATE_EPOCH`. Otherwise, the default value
-    is `updated`.
+    is `current`.
 
  * `--with-hotspot-build-time`
 
@@ -1948,6 +1947,12 @@ Adoption Group will also happily answer any questions you have about
 contributing. Contact them by [mail](
 http://mail.openjdk.java.net/mailman/listinfo/adoption-discuss) or [IRC](
 http://openjdk.java.net/irc/).
+
+## Editing this document
+
+If you want to contribute changes to this document, edit `doc/building.md` and 
+then run `make update-build-docs` to generate the same changes in 
+`doc/building.html`.
 
 ---
 # Override styles from the base CSS file that are not ideal for this document.

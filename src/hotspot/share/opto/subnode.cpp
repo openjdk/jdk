@@ -38,6 +38,7 @@
 #include "opto/phaseX.hpp"
 #include "opto/subnode.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "utilities/moveBits.hpp"
 
 // Portions of code courtesy of Clifford Click
 
@@ -1619,14 +1620,15 @@ Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   }
 
   // Change x u< 1 or x u<= 0 to x == 0
+  // and    x u> 0 or u>= 1   to x != 0
   if (cop == Op_CmpU &&
       cmp1_op != Op_LoadRange &&
-      ((_test._test == BoolTest::lt &&
+      (((_test._test == BoolTest::lt || _test._test == BoolTest::ge) &&
         cmp2->find_int_con(-1) == 1) ||
-       (_test._test == BoolTest::le &&
+       ((_test._test == BoolTest::le || _test._test == BoolTest::gt) &&
         cmp2->find_int_con(-1) == 0))) {
     Node* ncmp = phase->transform(new CmpINode(cmp1, phase->intcon(0)));
-    return new BoolNode(ncmp, BoolTest::eq);
+    return new BoolNode(ncmp, _test.is_less() ? BoolTest::eq : BoolTest::ne);
   }
 
   // Change (arraylength <= 0) or (arraylength == 0)
@@ -1898,4 +1900,44 @@ const Type* SqrtFNode::Value(PhaseGVN* phase) const {
   float f = t1->getf();
   if( f < 0.0f ) return Type::FLOAT;
   return TypeF::make( (float)sqrt( (double)f ) );
+}
+
+const Type* ReverseINode::Value(PhaseGVN* phase) const {
+  const Type *t1 = phase->type( in(1) );
+  if (t1 == Type::TOP) {
+    return Type::TOP;
+  }
+  const TypeInt* t1int = t1->isa_int();
+  if (t1int && t1int->is_con()) {
+    jint res = reverse_bits(t1int->get_con());
+    return TypeInt::make(res);
+  }
+  return bottom_type();
+}
+
+const Type* ReverseLNode::Value(PhaseGVN* phase) const {
+  const Type *t1 = phase->type( in(1) );
+  if (t1 == Type::TOP) {
+    return Type::TOP;
+  }
+  const TypeLong* t1long = t1->isa_long();
+  if (t1long && t1long->is_con()) {
+    jlong res = reverse_bits(t1long->get_con());
+    return TypeLong::make(res);
+  }
+  return bottom_type();
+}
+
+Node* ReverseINode::Identity(PhaseGVN* phase) {
+  if (in(1)->Opcode() == Op_ReverseI) {
+    return in(1)->in(1);
+  }
+  return this;
+}
+
+Node* ReverseLNode::Identity(PhaseGVN* phase) {
+  if (in(1)->Opcode() == Op_ReverseL) {
+    return in(1)->in(1);
+  }
+  return this;
 }

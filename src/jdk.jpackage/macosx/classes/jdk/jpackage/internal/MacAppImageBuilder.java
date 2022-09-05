@@ -90,6 +90,8 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
     private final Path runtimeDir;
     private final Path runtimeRoot;
 
+    private final boolean withPackageFile;
+
     private static List<String> keyChains;
 
     public static final BundlerParamInfo<Boolean>
@@ -243,10 +245,11 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
                      (s, p) -> Arrays.asList(s.split("(,|\\s)+"))
              );
 
-    public MacAppImageBuilder(Path imageOutDir) {
+    public MacAppImageBuilder(Path imageOutDir, boolean withPackageFile) {
         super(imageOutDir);
 
         this.root = imageOutDir;
+        this.withPackageFile = withPackageFile;
         this.contentsDir = root.resolve("Contents");
         this.resourcesDir = appLayout.destktopIntegrationDirectory();
         this.macOSDir = appLayout.launchersDirectory();
@@ -308,6 +311,11 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
 
         // Copy class path entries to Java folder
         copyApplication(params);
+
+        if (withPackageFile) {
+            new PackageFile(APP_NAME.fetchFrom(params)).save(
+                    ApplicationLayout.macAppImage().resolveAt(root));
+        }
 
         /*********** Take care of "config" files *******/
 

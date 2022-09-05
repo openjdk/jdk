@@ -25,7 +25,7 @@
  * RecordCompilationTests
  *
  * @test
- * @bug 8250629 8252307 8247352 8241151 8246774 8259025 8288130
+ * @bug 8250629 8252307 8247352 8241151 8246774 8259025 8288130 8282714 8289647
  * @summary Negative compilation tests, and positive compilation (smoke) tests for records
  * @library /lib/combo /tools/lib /tools/javac/lib
  * @modules
@@ -1259,23 +1259,52 @@ public class RecordCompilationTests extends CompilationTestCase {
     }
 
     public void testOnlyOneFieldRef() throws Exception {
-        int numberOfFieldRefs = 0;
-        File dir = assertOK(true, "record R(int recordComponent) {}");
-        for (final File fileEntry : dir.listFiles()) {
-            if (fileEntry.getName().equals("R.class")) {
-                ClassFile classFile = ClassFile.read(fileEntry);
-                for (CPInfo cpInfo : classFile.constant_pool.entries()) {
-                    if (cpInfo instanceof ConstantPool.CONSTANT_Fieldref_info) {
-                        numberOfFieldRefs++;
-                        ConstantPool.CONSTANT_NameAndType_info nameAndType =
-                                (ConstantPool.CONSTANT_NameAndType_info)classFile.constant_pool
-                                        .get(((ConstantPool.CONSTANT_Fieldref_info)cpInfo).name_and_type_index);
-                        Assert.check(nameAndType.getName().equals("recordComponent"));
+        for (String source : List.of(
+                "record R(int recordComponent) {}",
+                """
+                class Test {
+                    class Inner {
+                        Inner() {
+                            record R(int recordComponent) {}
+                        }
                     }
+                }
+                """,
+                """
+                class Test {
+                    class Inner {
+                        void m() {
+                            record R(int recordComponent) {}
+                        }
+                    }
+                }
+                """,
+                """
+                class Test {
+                    void m() {
+                        record R(int recordComponent) {}
+                    }
+                }
+                """
+        )) {
+            File dir = assertOK(true, source);
+            int numberOfFieldRefs = 0;
+            for (final File fileEntry : dir.listFiles()) {
+                if (fileEntry.getName().endsWith("R.class")) {
+                    ClassFile classFile = ClassFile.read(fileEntry);
+                    for (CPInfo cpInfo : classFile.constant_pool.entries()) {
+                        if (cpInfo instanceof ConstantPool.CONSTANT_Fieldref_info) {
+                            numberOfFieldRefs++;
+                            ConstantPool.CONSTANT_NameAndType_info nameAndType =
+                                    (ConstantPool.CONSTANT_NameAndType_info)classFile.constant_pool
+                                            .get(((ConstantPool.CONSTANT_Fieldref_info)cpInfo).name_and_type_index);
+                            Assert.check(nameAndType.getName().equals("recordComponent"));
+                        }
+                    }
+                    Assert.check(numberOfFieldRefs == 1);
                 }
             }
         }
-        Assert.check(numberOfFieldRefs == 1);
     }
 
     //  check that fields are initialized in a canonical constructor in the same declaration order as the corresponding
@@ -1330,6 +1359,47 @@ public class RecordCompilationTests extends CompilationTestCase {
                             "    }\n" +
                             "    class record {}\n" +
                             "}");
+        } finally {
+            setCompileOptions(previousOptions);
+        }
+    }
+
+    public void testMultipleAnnosInRecord() throws Exception {
+        String[] previousOptions = getCompileOptions();
+
+        try {
+            String imports = """
+                    import java.lang.annotation.ElementType;
+                    import java.lang.annotation.Target;
+                    """;
+
+            String annotTemplate =
+                    """
+                    @Target(ElementType.#TARGET)
+                    @interface anno#TARGET { }
+                    """;
+
+            String recordTemplate =
+                    """
+                    record R(#TARGETS String s) {}
+                    """;
+
+            String[] generalOptions = {
+                    "-processor", Processor.class.getName(),
+            };
+
+            List<String> targets = List.of("FIELD", "RECORD_COMPONENT", "PARAMETER", "METHOD");
+
+            var interfaces = targets.stream().map(t -> annotTemplate.replaceAll("#TARGET", t)).collect(Collectors.joining("\n"));
+            var recordAnnotations = targets.stream().map(t -> "@anno" + t).collect(Collectors.joining(" "));
+            String record = recordTemplate.replaceFirst("#TARGETS", recordAnnotations);
+            String code = String.format("%s\n%s\n%s\n",imports,interfaces,record);
+            String[] testOptions = generalOptions.clone();
+            setCompileOptions(testOptions);
+
+            assertOK(true, code);
+
+        // let's reset the default compiler options for other tests
         } finally {
             setCompileOptions(previousOptions);
         }

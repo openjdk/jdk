@@ -157,7 +157,7 @@ public class VectorLogicalOpIdentityTest {
     @Test
     @Warmup(10000)
     @IR(counts = {IRNode.LOAD_VECTOR, ">=1"})
-    @IR(failOn = IRNode.AND_V, applyIfCPUFeatureAnd = {"simd", "true", "sve", "false"})
+    @IR(failOn = IRNode.AND_V, applyIfCPUFeatureAnd = {"asimd", "true", "sve", "false"})
     public static void testMaskedAndMinusOne2() {
         VectorMask<Byte> mask = VectorMask.fromArray(B_SPECIES, m, 0);
         ByteVector av = ByteVector.fromArray(B_SPECIES, ba, 0);
@@ -178,7 +178,7 @@ public class VectorLogicalOpIdentityTest {
     @Test
     @Warmup(10000)
     @IR(counts = {IRNode.STORE_VECTOR, ">=1"})
-    @IR(failOn = IRNode.AND_V, applyIfCPUFeatureAnd = {"simd", "true", "sve", "false"})
+    @IR(failOn = IRNode.AND_V, applyIfCPUFeatureAnd = {"asimd", "true", "sve", "false"})
     public static void testMaskedAndZero1() {
         VectorMask<Short> mask = VectorMask.fromArray(S_SPECIES, m, 0);
         ShortVector av = ShortVector.fromArray(S_SPECIES, sa, 0);
@@ -279,7 +279,7 @@ public class VectorLogicalOpIdentityTest {
     @Test
     @Warmup(10000)
     @IR(counts = {IRNode.STORE_VECTOR, ">=1"})
-    @IR(failOn = IRNode.OR_V, applyIfCPUFeatureAnd = {"simd", "true", "sve", "false"})
+    @IR(failOn = IRNode.OR_V, applyIfCPUFeatureAnd = {"asimd", "true", "sve", "false"})
     public static void testMaskedOrMinusOne1() {
         VectorMask<Byte> mask = VectorMask.fromArray(B_SPECIES, m, 0);
         ByteVector av = ByteVector.fromArray(B_SPECIES, ba, 0);
@@ -338,7 +338,7 @@ public class VectorLogicalOpIdentityTest {
     @Test
     @Warmup(10000)
     @IR(counts = {IRNode.LOAD_VECTOR, ">=1"})
-    @IR(failOn = IRNode.OR_V, applyIfCPUFeatureAnd = {"simd", "true", "sve", "false"})
+    @IR(failOn = IRNode.OR_V, applyIfCPUFeatureAnd = {"asimd", "true", "sve", "false"})
     public static void testMaskedOrZero2() {
         VectorMask<Byte> mask = VectorMask.fromArray(B_SPECIES, m, 0);
         ByteVector av = ByteVector.fromArray(B_SPECIES, ba, 0);
@@ -394,7 +394,7 @@ public class VectorLogicalOpIdentityTest {
     @Test
     @Warmup(10000)
     @IR(counts = {IRNode.STORE_VECTOR, ">=1"})
-    @IR(failOn = IRNode.XOR_V, applyIfCPUFeatureAnd = {"simd", "true", "sve", "false"})
+    @IR(failOn = IRNode.XOR_V, applyIfCPUFeatureAnd = {"asimd", "true", "sve", "false"})
     public static void testMaskedXorSame() {
         VectorMask<Short> mask = VectorMask.fromArray(S_SPECIES, m, 0);
         ShortVector av = ShortVector.fromArray(S_SPECIES, sa, 0);

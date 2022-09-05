@@ -31,6 +31,7 @@
 #include "code/codeCache.hpp"
 #include "code/codeHeapState.hpp"
 #include "code/dependencyContext.hpp"
+#include "compiler/compilationLog.hpp"
 #include "compiler/compilationPolicy.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compileLog.hpp"
@@ -63,7 +64,6 @@
 #include "runtime/perfData.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/sharedRuntime.hpp"
-#include "runtime/sweeper.hpp"
 #include "runtime/threads.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/timerTrace.hpp"
@@ -194,53 +194,9 @@ CompilerStatistics CompileBroker::_stats_per_level[CompLevel_full_optimization];
 CompileQueue* CompileBroker::_c2_compile_queue     = NULL;
 CompileQueue* CompileBroker::_c1_compile_queue     = NULL;
 
-
-
-class CompilationLog : public StringEventLog {
- public:
-  CompilationLog() : StringEventLog("Compilation events", "jit") {
-  }
-
-  void log_compile(JavaThread* thread, CompileTask* task) {
-    StringLogMessage lm;
-    stringStream sstr(lm.buffer(), lm.size());
-    // msg.time_stamp().update_to(tty->time_stamp().ticks());
-    task->print(&sstr, NULL, true, false);
-    log(thread, "%s", (const char*)lm);
-  }
-
-  void log_nmethod(JavaThread* thread, nmethod* nm) {
-    log(thread, "nmethod %d%s " INTPTR_FORMAT " code [" INTPTR_FORMAT ", " INTPTR_FORMAT "]",
-        nm->compile_id(), nm->is_osr_method() ? "%" : "",
-        p2i(nm), p2i(nm->code_begin()), p2i(nm->code_end()));
-  }
-
-  void log_failure(JavaThread* thread, CompileTask* task, const char* reason, const char* retry_message) {
-    StringLogMessage lm;
-    lm.print("%4d   COMPILE SKIPPED: %s", task->compile_id(), reason);
-    if (retry_message != NULL) {
-      lm.append(" (%s)", retry_message);
-    }
-    lm.print("\n");
-    log(thread, "%s", (const char*)lm);
-  }
-
-  void log_metaspace_failure(const char* reason) {
-    // Note: This method can be called from non-Java/compiler threads to
-    // log the global metaspace failure that might affect profiling.
-    ResourceMark rm;
-    StringLogMessage lm;
-    lm.print("%4d   COMPILE PROFILING SKIPPED: %s", -1, reason);
-    lm.print("\n");
-    log(Thread::current(), "%s", (const char*)lm);
-  }
-};
-
-static CompilationLog* _compilation_log = NULL;
-
 bool compileBroker_init() {
   if (LogEvents) {
-    _compilation_log = new CompilationLog();
+    CompilationLog::init();
   }
 
   // init directives stack, adding default directive
@@ -269,7 +225,6 @@ CompileTaskWrapper::~CompileTaskWrapper() {
   CompileLog*  log  = thread->log();
   if (log != NULL && !task->is_unloaded())  task->log_task_done(log);
   thread->set_task(NULL);
-  task->set_code_handle(NULL);
   thread->set_env(NULL);
   if (task->is_blocking()) {
     bool free_task = false;
@@ -452,10 +407,7 @@ CompileTask* CompileQueue::get(CompilerThread* thread) {
 
     // If there are no compilation tasks and we can compile new jobs
     // (i.e., there is enough free space in the code cache) there is
-    // no need to invoke the sweeper. As a result, the hotness of methods
-    // remains unchanged. This behavior is desired, since we want to keep
-    // the stable state, i.e., we do not want to evict methods from the
-    // code cache if it is unnecessary.
+    // no need to invoke the GC.
     // We need a timed wait here, since compiler threads can exit if compilation
     // is disabled forever. We use 5 seconds wait time; the exiting of compiler threads
     // is not critical and we do not want idle compiler threads to wake up too often.
@@ -699,8 +651,8 @@ void CompileBroker::compilation_init_phase1(JavaThread* THREAD) {
    }
 #endif // INCLUDE_JVMCI
 
-  // Start the compiler thread(s) and the sweeper thread
-  init_compiler_sweeper_threads();
+  // Start the compiler thread(s)
+  init_compiler_threads();
   // totalTime performance counter is always created as it is required
   // by the implementation of java.lang.management.CompilationMXBean.
   {
@@ -828,7 +780,7 @@ public:
 };
 
 // Entry for DeoptimizeObjectsALotThread. The threads are started in
-// CompileBroker::init_compiler_sweeper_threads() iff DeoptimizeObjectsALot is enabled
+// CompileBroker::init_compiler_threads() iff DeoptimizeObjectsALot is enabled
 void DeoptimizeObjectsALotThread::deopt_objs_alot_thread_entry(JavaThread* thread, TRAPS) {
     DeoptimizeObjectsALotThread* dt = ((DeoptimizeObjectsALotThread*) thread);
     bool enter_single_loop;
@@ -890,9 +842,6 @@ JavaThread* CompileBroker::make_thread(ThreadType type, jobject thread_handle, C
         CompilerCounters* counters = new CompilerCounters();
         new_thread = new CompilerThread(queue, counters);
       }
-      break;
-    case sweeper_t:
-      new_thread = new CodeCacheSweeperThread();
       break;
 #if defined(ASSERT) && COMPILER2_OR_JVMCI
     case deoptimizer_t:
@@ -957,10 +906,7 @@ JavaThread* CompileBroker::make_thread(ThreadType type, jobject thread_handle, C
 }
 
 
-void CompileBroker::init_compiler_sweeper_threads() {
-  NMethodSweeper::set_sweep_threshold_bytes(static_cast<size_t>(SweeperThreshold * ReservedCodeCacheSize / 100.0));
-  log_info(codecache, sweep)("Sweeper threshold: " SIZE_FORMAT " bytes", NMethodSweeper::sweep_threshold_bytes());
-
+void CompileBroker::init_compiler_threads() {
   // Ensure any exceptions lead to vm_exit_during_initialization.
   EXCEPTION_MARK;
 #if !defined(ZERO)
@@ -1030,13 +976,6 @@ void CompileBroker::init_compiler_sweeper_threads() {
 
   if (UsePerfData) {
     PerfDataManager::create_constant(SUN_CI, "threads", PerfData::U_Bytes, _c1_count + _c2_count, CHECK);
-  }
-
-  if (MethodFlushing) {
-    // Initialize the sweeper thread
-    Handle thread_oop = create_thread_oop("Sweeper thread", CHECK);
-    jobject thread_handle = JNIHandles::make_local(THREAD, thread_oop());
-    make_thread(sweeper_t, thread_handle, NULL, NULL, THREAD);
   }
 
 #if defined(ASSERT) && COMPILER2_OR_JVMCI
@@ -1756,7 +1695,6 @@ void CompileBroker::wait_for_completion(CompileTask* task) {
     // It is harmless to check this status without the lock, because
     // completion is a stable property (until the task object is recycled).
     assert(task->is_complete(), "Compilation should have completed");
-    assert(task->code_handle() == NULL, "must be reset");
 
     // By convention, the waiter is responsible for recycling a
     // blocking CompileTask. Since there is only one waiter ever
@@ -1970,8 +1908,6 @@ void CompileBroker::compiler_thread_loop() {
       // CompileTaskWrapper also keeps the Method* from being deallocated if redefinition
       // occurs after fetching the compile task off the queue.
       CompileTaskWrapper ctw(task);
-      nmethodLocker result_handle;  // (handle for the nmethod produced by this task)
-      task->set_code_handle(&result_handle);
       methodHandle method(thread, task->method());
 
       // Never compile a method if breakpoints are present in it
@@ -2046,8 +1982,8 @@ void CompileBroker::init_compiler_thread_log() {
 void CompileBroker::log_metaspace_failure() {
   const char* message = "some methods may not be compiled because metaspace "
                         "is out of memory";
-  if (_compilation_log != NULL) {
-    _compilation_log->log_metaspace_failure(message);
+  if (CompilationLog::log() != NULL) {
+    CompilationLog::log()->log_metaspace_failure(message);
   }
   if (PrintCompilation) {
     tty->print_cr("COMPILE PROFILING SKIPPED: %s", message);
@@ -2123,26 +2059,16 @@ static void codecache_print(outputStream* out, bool detailed) {
   }
 }
 
-void CompileBroker::post_compile(CompilerThread* thread, CompileTask* task, bool success, ciEnv* ci_env,
-                                 int compilable, const char* failure_reason) {
-  if (success) {
-    task->mark_success();
-    if (ci_env != NULL) {
-      task->set_num_inlined_bytecodes(ci_env->num_inlined_bytecodes());
-    }
-    if (_compilation_log != NULL) {
-      nmethod* code = task->code();
-      if (code != NULL) {
-        _compilation_log->log_nmethod(thread, code);
-      }
-    }
-  } else if (AbortVMOnCompilationFailure) {
-    if (compilable == ciEnv::MethodCompilable_not_at_tier) {
-      fatal("Not compilable at tier %d: %s", task->comp_level(), failure_reason);
-    }
-    if (compilable == ciEnv::MethodCompilable_never) {
-      fatal("Never compilable: %s", failure_reason);
-    }
+void CompileBroker::handle_compile_error(CompilerThread* thread, CompileTask* task, ciEnv* ci_env,
+                                         int compilable, const char* failure_reason) {
+  if (!AbortVMOnCompilationFailure) {
+    return;
+  }
+  if (compilable == ciEnv::MethodCompilable_not_at_tier) {
+    fatal("Not compilable at tier %d: %s", task->comp_level(), failure_reason);
+  }
+  if (compilable == ciEnv::MethodCompilable_never) {
+    fatal("Never compilable: %s", failure_reason);
   }
 }
 
@@ -2155,7 +2081,7 @@ static void post_compilation_event(EventCompilation& event, CompileTask* task) {
                                         task->comp_level(),
                                         task->is_success(),
                                         task->osr_bci() != CompileBroker::standard_entry_bci,
-                                        (task->code() == NULL) ? 0 : task->code()->total_size(),
+                                        task->nm_total_size(),
                                         task->num_inlined_bytecodes());
 }
 
@@ -2179,8 +2105,8 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
   CompilerThread* thread = CompilerThread::current();
   ResourceMark rm(thread);
 
-  if (LogEvents) {
-    _compilation_log->log_compile(thread, task);
+  if (CompilationLog::log() != NULL) {
+    CompilationLog::log()->log_compile(thread, task);
   }
 
   // Common flags.
@@ -2203,6 +2129,7 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
 
     // Look up matching directives
     directive = DirectivesStack::getMatchingDirective(method, comp);
+    task->set_directive(directive);
 
     // Update compile information when using perfdata.
     if (UsePerfData) {
@@ -2245,21 +2172,26 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
       compilable = ciEnv::MethodCompilable_never;
     } else {
       JVMCIEnv env(thread, &compile_state, __FILE__, __LINE__);
-      methodHandle method(thread, target_handle);
-      runtime = env.runtime();
-      runtime->compile_method(&env, jvmci, method, osr_bci);
-
       failure_reason = compile_state.failure_reason();
-      failure_reason_on_C_heap = compile_state.failure_reason_on_C_heap();
-      if (!compile_state.retryable()) {
-        retry_message = "not retryable";
-        compilable = ciEnv::MethodCompilable_not_at_tier;
-      }
-      if (task->code() == NULL) {
-        assert(failure_reason != NULL, "must specify failure_reason");
+      if (failure_reason == nullptr) {
+        methodHandle method(thread, target_handle);
+        runtime = env.runtime();
+        runtime->compile_method(&env, jvmci, method, osr_bci);
+
+        failure_reason = compile_state.failure_reason();
+        failure_reason_on_C_heap = compile_state.failure_reason_on_C_heap();
+        if (!compile_state.retryable()) {
+          retry_message = "not retryable";
+          compilable = ciEnv::MethodCompilable_not_at_tier;
+        }
+        if (!task->is_success()) {
+          assert(failure_reason != NULL, "must specify failure_reason");
+        }
       }
     }
-    post_compile(thread, task, task->code() != NULL, NULL, compilable, failure_reason);
+    if (!task->is_success()) {
+      handle_compile_error(thread, task, NULL, compilable, failure_reason);
+    }
     if (event.should_commit()) {
       post_compilation_event(event, task);
     }
@@ -2320,7 +2252,9 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
       }
     }
 
-    if (!ci_env.failing() && task->code() == NULL) {
+    DirectivesStack::release(directive);
+
+    if (!ci_env.failing() && !task->is_success()) {
       //assert(false, "compiler should always document failure");
       // The compiler elected, without comment, not to register a result.
       // Do not attempt further compilations of this method.
@@ -2336,7 +2270,9 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
       ci_env.report_failure(failure_reason);
     }
 
-    post_compile(thread, task, !ci_env.failing(), &ci_env, compilable, failure_reason);
+    if (ci_env.failing()) {
+      handle_compile_error(thread, task, &ci_env, compilable, failure_reason);
+    }
     if (event.should_commit()) {
       post_compilation_event(event, task);
     }
@@ -2344,8 +2280,8 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
 
   if (failure_reason != NULL) {
     task->set_failure_reason(failure_reason, failure_reason_on_C_heap);
-    if (_compilation_log != NULL) {
-      _compilation_log->log_failure(thread, task, failure_reason, retry_message);
+    if (CompilationLog::log() != NULL) {
+      CompilationLog::log()->log_failure(thread, task, failure_reason, retry_message);
     }
     if (PrintCompilation) {
       FormatBufferResource msg = retry_message != NULL ?
@@ -2361,18 +2297,12 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
 
   collect_statistics(thread, time, task);
 
-  nmethod* nm = task->code();
-  if (nm != NULL) {
-    nm->maybe_print_nmethod(directive);
-  }
-  DirectivesStack::release(directive);
-
   if (PrintCompilation && PrintCompilation2) {
     tty->print("%7d ", (int) tty->time_stamp().milliseconds());  // print timestamp
     tty->print("%4d ", compile_id);    // print compilation number
     tty->print("%s ", (is_osr ? "%" : " "));
-    if (task->code() != NULL) {
-      tty->print("size: %d(%d) ", task->code()->total_size(), task->code()->insts_size());
+    if (task->is_success()) {
+      tty->print("size: %d(%d) ", task->nm_total_size(), task->nm_insts_size());
     }
     tty->print_cr("time: %d inlined: %d bytes", (int)time.milliseconds(), task->num_inlined_bytecodes());
   }
@@ -2417,7 +2347,7 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
  * This function needs to be called only from CodeCache::allocate(),
  * since we currently handle a full code cache uniformly.
  */
-void CompileBroker::handle_full_code_cache(int code_blob_type) {
+void CompileBroker::handle_full_code_cache(CodeBlobType code_blob_type) {
   UseInterpreter = true;
   if (UseCompiler || AlwaysCompileLoopMethods ) {
     if (xtty != NULL) {
@@ -2445,7 +2375,7 @@ void CompileBroker::handle_full_code_cache(int code_blob_type) {
     if (UseCodeCacheFlushing) {
       // Since code cache is full, immediately stop new compiles
       if (CompileBroker::set_should_compile_new_jobs(CompileBroker::stop_compilation)) {
-        NMethodSweeper::log_sweep("disable_compiler");
+        log_info(codecache)("Code cache is full - disabling compilation");
       }
     } else {
       disable_compilation_forever();
@@ -2512,10 +2442,8 @@ void CompileBroker::collect_statistics(CompilerThread* thread, elapsedTimer time
   uint compile_id = task->compile_id();
   bool is_osr = (task->osr_bci() != standard_entry_bci);
   const int comp_level = task->comp_level();
-  nmethod* code = task->code();
   CompilerCounters* counters = thread->counters();
 
-  assert(code == NULL || code->is_locked_by_vm(), "will survive the MutexLocker");
   MutexLocker locker(CompileStatistics_lock);
 
   // _perf variables are production performance counters which are
@@ -2534,7 +2462,7 @@ void CompileBroker::collect_statistics(CompilerThread* thread, elapsedTimer time
       _perf_total_bailout_count->inc();
     }
     _t_bailedout_compilation.add(time);
-  } else if (code == NULL) {
+  } else if (!task->is_success()) {
     if (UsePerfData) {
       _perf_last_invalidated_method->set_value(counters->current_method());
       _perf_last_invalidated_type->set_value(counters->compile_type());
@@ -2568,8 +2496,8 @@ void CompileBroker::collect_statistics(CompilerThread* thread, elapsedTimer time
         } else {
           stats->_standard.update(time, bytes_compiled);
         }
-        stats->_nmethods_size += code->total_size();
-        stats->_nmethods_code_size += code->insts_size();
+        stats->_nmethods_size += task->nm_total_size();
+        stats->_nmethods_code_size += task->nm_insts_size();
       } else {
         assert(false, "CompilerStatistics object does not exist for compilation level %d", comp_level);
       }
@@ -2583,8 +2511,8 @@ void CompileBroker::collect_statistics(CompilerThread* thread, elapsedTimer time
         } else {
           stats->_standard.update(time, bytes_compiled);
         }
-        stats->_nmethods_size += code->total_size();
-        stats->_nmethods_code_size += code->insts_size();
+        stats->_nmethods_size += task->nm_total_size();
+        stats->_nmethods_code_size += task->nm_insts_size();
       } else { // if (!comp)
         assert(false, "Compiler object must exist");
       }
@@ -2613,13 +2541,13 @@ void CompileBroker::collect_statistics(CompilerThread* thread, elapsedTimer time
     }
 
     // Collect counts of successful compilations
-    _sum_nmethod_size      += code->total_size();
-    _sum_nmethod_code_size += code->insts_size();
+    _sum_nmethod_size      += task->nm_total_size();
+    _sum_nmethod_code_size += task->nm_insts_size();
     _total_compile_count++;
 
     if (UsePerfData) {
-      _perf_sum_nmethod_size->inc(     code->total_size());
-      _perf_sum_nmethod_code_size->inc(code->insts_size());
+      _perf_sum_nmethod_size->inc(     task->nm_total_size());
+      _perf_sum_nmethod_code_size->inc(task->nm_insts_size());
       _perf_total_compile_count->inc();
     }
 
@@ -2776,14 +2704,6 @@ void CompileBroker::print_info(outputStream *out) {
   out->print_cr("         Reserved size : " SIZE_FORMAT_W(7) " KB", CodeCache::max_capacity() / K);
   out->print_cr("        Committed size : " SIZE_FORMAT_W(7) " KB", CodeCache::capacity() / K);
   out->print_cr("  Unallocated capacity : " SIZE_FORMAT_W(7) " KB", CodeCache::unallocated_capacity() / K);
-  out->cr();
-
-  out->cr();
-  out->print_cr("CodeCache cleaning overview");
-  out->print_cr("--------------------------------------------------------");
-  out->cr();
-  NMethodSweeper::print(out);
-  out->print_cr("--------------------------------------------------------");
   out->cr();
 }
 

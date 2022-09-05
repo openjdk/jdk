@@ -417,12 +417,11 @@ class ThreadLocalCheckpointWriteOp {
 };
 
 typedef CheckpointWriteOp<JfrCheckpointManager::Buffer> WriteOperation;
-typedef ThreadLocalCheckpointWriteOp<JfrCheckpointManager::Buffer> ThreadLocalWriteOperation;
-typedef MutexedWriteOp<WriteOperation> MutexedWriteOperation;
-typedef MutexedWriteOp<ThreadLocalWriteOperation> ThreadLocalMutexedWriteOperation;
+typedef ThreadLocalCheckpointWriteOp<JfrCheckpointManager::Buffer> ThreadLocalCheckpointOperation;
+typedef MutexedWriteOp<ThreadLocalCheckpointOperation> ThreadLocalWriteOperation;
 typedef ReleaseWithExcisionOp<JfrCheckpointMspace, JfrCheckpointMspace::LiveList> ReleaseOperation;
-typedef CompositeOperation<MutexedWriteOperation, ReleaseOperation> WriteReleaseOperation;
-typedef CompositeOperation<ThreadLocalMutexedWriteOperation, ReleaseOperation> ThreadLocalWriteReleaseOperation;
+typedef ExclusiveOp<WriteOperation> GlobalWriteOperation;
+typedef CompositeOperation<GlobalWriteOperation, ReleaseOperation> GlobalWriteReleaseOperation;
 
 void JfrCheckpointManager::begin_epoch_shift() {
   assert(SafepointSynchronize::is_at_safepoint(), "invariant");
@@ -439,31 +438,33 @@ void JfrCheckpointManager::end_epoch_shift() {
 size_t JfrCheckpointManager::write() {
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(JavaThread::current()));
   WriteOperation wo(_chunkwriter);
-  MutexedWriteOperation mwo(wo);
+  GlobalWriteOperation gwo(wo);
   assert(_global_mspace->free_list_is_empty(), "invariant");
   ReleaseOperation ro(_global_mspace, _global_mspace->live_list(true));
-  WriteReleaseOperation wro(&mwo, &ro);
-  process_live_list(wro, _global_mspace, true); // previous epoch list
-  // Do thread local list after global. Careful, the tlwo destructor writes to chunk.
-  ThreadLocalWriteOperation tlwo(_chunkwriter);
-  ThreadLocalMutexedWriteOperation tlmwo(tlwo);
-  _thread_local_mspace->iterate(tlmwo, true); // previous epoch list
-  return wo.processed() + tlwo.processed();
+  GlobalWriteReleaseOperation gwro(&gwo, &ro);
+  process_live_list(gwro, _global_mspace, true); // previous epoch list
+  // Do thread local list after global. Careful, the tlco destructor writes to chunk.
+  ThreadLocalCheckpointOperation tlco(_chunkwriter);
+  ThreadLocalWriteOperation tlwo(tlco);
+  _thread_local_mspace->iterate(tlwo, true); // previous epoch list
+  return wo.processed() + tlco.processed();
 }
 
-typedef DiscardOp<DefaultDiscarder<JfrCheckpointManager::Buffer> > DiscardOperation;
-typedef CompositeOperation<DiscardOperation, ReleaseOperation> DiscardReleaseOperation;
+typedef DiscardOp<DefaultDiscarder<JfrCheckpointManager::Buffer> > ThreadLocalDiscardOperation;
+typedef ExclusiveDiscardOp<DefaultDiscarder<JfrCheckpointManager::Buffer> > GlobalDiscardOperation;
+typedef CompositeOperation<GlobalDiscardOperation, ReleaseOperation> DiscardReleaseOperation;
 
 size_t JfrCheckpointManager::clear() {
   JfrTraceIdLoadBarrier::clear();
   clear_type_set();
-  DiscardOperation discard_operation(mutexed); // mutexed discard mode
-  _thread_local_mspace->iterate(discard_operation, true); // previous epoch list
-  ReleaseOperation ro(_global_mspace, _global_mspace->live_list(true));
-  DiscardReleaseOperation discard_op(&discard_operation, &ro);
+  ThreadLocalDiscardOperation tldo(mutexed); // mutexed discard mode
+  _thread_local_mspace->iterate(tldo, true); // previous epoch list
+  GlobalDiscardOperation gdo(mutexed); // mutexed discard mode
+  ReleaseOperation ro(_global_mspace, _global_mspace->live_list(true)); // previous epoch list
+  DiscardReleaseOperation dro(&gdo, &ro);
   assert(_global_mspace->free_list_is_empty(), "invariant");
-  process_live_list(discard_op, _global_mspace, true); // previous epoch list
-  return discard_operation.elements();
+  process_live_list(dro, _global_mspace, true); // previous epoch list
+  return tldo.elements() + gdo.elements();
 }
 
 size_t JfrCheckpointManager::write_static_type_set(Thread* thread) {
@@ -560,14 +561,17 @@ size_t JfrCheckpointManager::flush_type_set() {
     }
   }
   if (_new_checkpoint.is_signaled_with_reset()) {
+    assert(_global_mspace->free_list_is_empty(), "invariant");
     assert(_global_mspace->live_list_is_nonempty(), "invariant");
     WriteOperation wo(_chunkwriter);
-    MutexedWriteOperation mwo(wo);
-    process_live_list(mwo, _global_mspace); // current epoch list
-    // Do thread local list after global. Careful, the tlwo destructor writes to chunk.
-    ThreadLocalWriteOperation tlwo(_chunkwriter);
-    ThreadLocalMutexedWriteOperation tlmwo(tlwo);
-    _thread_local_mspace->iterate(tlmwo); // current epoch list
+    GlobalWriteOperation gwo(wo);
+    ReleaseOperation ro(_global_mspace, _global_mspace->live_list()); // current epoch list
+    GlobalWriteReleaseOperation gwro(&gwo, &ro);
+    process_live_list(gwro, _global_mspace); // current epoch list
+    // Do thread local list after global. Careful, the tlco destructor writes to chunk.
+    ThreadLocalCheckpointOperation tlco(_chunkwriter);
+    ThreadLocalWriteOperation tlwo(tlco);
+    _thread_local_mspace->iterate(tlwo); // current epoch list
   }
   return elements;
 }

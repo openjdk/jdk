@@ -1322,8 +1322,7 @@ class G1MergeHeapRootsTask : public WorkerTask {
     virtual bool do_heap_region(HeapRegion* r) {
       G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
-      if (!r->is_starts_humongous() ||
-          !g1h->region_attr(r->hrm_index()).is_humongous() ||
+      if (!g1h->region_attr(r->hrm_index()).is_humongous_candidate() ||
           r->rem_set()->is_empty()) {
         return false;
       }
@@ -1491,7 +1490,7 @@ public:
     }
 
     // Apply closure to log entries in the HCC.
-    if (_initial_evacuation && G1HotCardCache::default_use_cache()) {
+    if (_initial_evacuation && G1HotCardCache::use_cache()) {
       assert(merge_remset_phase == G1GCPhaseTimes::MergeRS, "Wrong merge phase");
       G1GCParPhaseTimesTracker x(p, G1GCPhaseTimes::MergeHCC, worker_id);
       G1MergeLogBufferCardsClosure cl(g1h, _scan_state);
@@ -1657,7 +1656,7 @@ bool G1RemSet::clean_card_before_refine(CardValue** const card_ptr_addr) {
   //   * a pointer to a "hot" card that was evicted from the "hot" cache.
   //
 
-  if (_hot_card_cache->use_cache()) {
+  if (G1HotCardCache::use_cache()) {
     assert(!SafepointSynchronize::is_at_safepoint(), "sanity");
 
     const CardValue* orig_card_ptr = card_ptr;
@@ -1668,12 +1667,13 @@ bool G1RemSet::clean_card_before_refine(CardValue** const card_ptr_addr) {
     } else if (card_ptr != orig_card_ptr) {
       // Original card was inserted and an old card was evicted.
       start = _ct->addr_for(card_ptr);
-      r = _g1h->heap_region_containing(start);
+      r = _g1h->heap_region_containing_or_null(start);
 
       // Check whether the region formerly in the cache should be
       // ignored, as discussed earlier for the original card.  The
-      // region could have been freed while in the cache.
-      if (!r->is_old_or_humongous_or_archive()) {
+      // region could have been freed (or even uncommitted) while
+      // in the cache.
+      if (r == nullptr || !r->is_old_or_humongous_or_archive()) {
         return false;
       }
       *card_ptr_addr = card_ptr;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,12 @@
  */
 
 /* @test
- * @bug 8011536
+ * @bug 8011536 8151430
  * @summary Basic test for creationTime attribute on platforms/file systems
  *     that support it.
- * @library ../..
+ * @library  ../.. /test/lib
+ * @build jdk.test.lib.Platform
+ * @run main CreationTime
  */
 
 import java.nio.file.Path;
@@ -33,6 +35,8 @@ import java.nio.file.Files;
 import java.nio.file.attribute.*;
 import java.time.Instant;
 import java.io.IOException;
+
+import jdk.test.lib.Platform;
 
 public class CreationTime {
 
@@ -72,10 +76,13 @@ public class CreationTime {
          */
         boolean supportsCreationTimeRead = false;
         boolean supportsCreationTimeWrite = false;
-        String os = System.getProperty("os.name");
-        if (os.contains("OS X") && Files.getFileStore(file).type().equals("hfs")) {
-            supportsCreationTimeRead = true;
-        } else if (os.startsWith("Windows")) {
+        if (Platform.isOSX()) {
+            String type = Files.getFileStore(file).type();
+            if (type.equals("apfs") || type.equals("hfs")) {
+                supportsCreationTimeRead = true;
+                supportsCreationTimeWrite = true;
+            }
+        } else if (Platform.isWindows()) {
             String type = Files.getFileStore(file).type();
             if (type.equals("NTFS") || type.equals("FAT")) {
                 supportsCreationTimeRead = true;

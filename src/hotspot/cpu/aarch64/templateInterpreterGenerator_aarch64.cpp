@@ -55,10 +55,6 @@
 #include "utilities/powerOfTwo.hpp"
 #include <sys/types.h>
 
-#ifndef PRODUCT
-#include "oops/method.hpp"
-#endif // !PRODUCT
-
 // Size of interpreter code.  Increase if too small.  Interpreter will
 // fail with a guarantee ("not enough space for interpreter generation");
 // if too small.
@@ -847,18 +843,6 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
 
 // End of helpers
 
-address TemplateInterpreterGenerator::generate_Continuation_doYield_entry(void) {
-  if (!Continuations::enabled()) return nullptr;
-
-  address entry = __ pc();
-  assert(StubRoutines::cont_doYield() != NULL, "stub not yet generated");
-
-  __ push_cont_fastpath(rthread);
-  __ far_jump(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::cont_doYield())));
-
-  return entry;
-}
-
 // Various method entries
 //------------------------------------------------------------------------------------------------------------------------
 //
@@ -1116,7 +1100,7 @@ void TemplateInterpreterGenerator::bang_stack_shadow_pages(bool native_call) {
 // native method than the typical interpreter frame setup.
 address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // determine code generation flags
-  bool inc_counter  = UseCompiler || CountCompiledCalls || LogTouchedMethods;
+  bool inc_counter  = UseCompiler || CountCompiledCalls;
 
   // r1: Method*
   // rscratch1: sender sp
@@ -1540,7 +1524,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 //
 address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
   // determine code generation flags
-  bool inc_counter  = UseCompiler || CountCompiledCalls || LogTouchedMethods;
+  bool inc_counter  = UseCompiler || CountCompiledCalls;
 
   // rscratch1: sender sp
   address entry_point = __ pc();

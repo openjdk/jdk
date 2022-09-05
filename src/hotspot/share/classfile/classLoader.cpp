@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "jvm.h"
 #include "jimage.hpp"
+#include "cds/cds_globals.hpp"
 #include "cds/filemap.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.inline.hpp"
@@ -74,7 +75,6 @@
 #include "services/threadService.hpp"
 #include "utilities/classpathStream.hpp"
 #include "utilities/events.hpp"
-#include "utilities/hashtable.inline.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/utf8.hpp"
 
@@ -1011,25 +1011,9 @@ oop ClassLoader::get_system_package(const char* name, TRAPS) {
 objArrayOop ClassLoader::get_system_packages(TRAPS) {
   ResourceMark rm(THREAD);
   // List of pointers to PackageEntrys that have loaded classes.
-  GrowableArray<PackageEntry*>* loaded_class_pkgs = new GrowableArray<PackageEntry*>(50);
-  {
-    MutexLocker ml(THREAD, Module_lock);
-
-    PackageEntryTable* pe_table =
+  PackageEntryTable* pe_table =
       ClassLoaderData::the_null_class_loader_data()->packages();
-
-    // Collect the packages that have at least one loaded class.
-    for (int x = 0; x < pe_table->table_size(); x++) {
-      for (PackageEntry* package_entry = pe_table->bucket(x);
-           package_entry != NULL;
-           package_entry = package_entry->next()) {
-        if (package_entry->has_loaded_class()) {
-          loaded_class_pkgs->append(package_entry);
-        }
-      }
-    }
-  }
-
+  GrowableArray<PackageEntry*>* loaded_class_pkgs = pe_table->get_system_packages();
 
   // Allocate objArray and fill with java.lang.String
   objArrayOop r = oopFactory::new_objArray(vmClasses::String_klass(),
