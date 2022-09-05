@@ -41,7 +41,7 @@ on:
 jobs:
   build-cross-compile:
     name: build
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
 
     strategy:
       fail-fast: false
@@ -56,32 +56,32 @@ jobs:
           - target-cpu: aarch64
             gnu-arch: aarch64
             dist-arch: arm64
-            dist-name: buster
+            dist-name: bullseye
             dist-repository: https://httpredir.debian.org/debian/
             dist-components: 'main'
           - target-cpu: arm
             gnu-arch: arm
             dist-arch: armhf
-            dist-name: buster
+            dist-name: bullseye
             dist-repository: https://httpredir.debian.org/debian/
             dist-components: 'main'
             gnu-abi: eabihf
           - target-cpu: s390x
             gnu-arch: s390x
             dist-arch: s390x
-            dist-name: buster
+            dist-name: bullseye
             dist-repository: https://httpredir.debian.org/debian/
             dist-components: 'main'
           - target-cpu: ppc64le
             gnu-arch: powerpc64le
             dist-arch: ppc64el
-            dist-name: buster
+            dist-name: bullseye
             dist-repository: https://httpredir.debian.org/debian/
             dist-components: 'main'
           - target-cpu: riscv64
             gnu-arch: riscv64
             dist-arch: riscv64
-            dist-name: focal
+            dist-name: jammy
             dist-repository: http://ports.ubuntu.com/ubuntu-ports
             dist-components: 'main,universe'
 
