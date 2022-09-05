@@ -163,7 +163,6 @@ public class LocalExecutionControl extends DirectExecutionControl {
     }
 
     @Override
-    @SuppressWarnings({"deprecation", "removal"})
     public void stop() throws EngineTerminationException, InternalException {
         synchronized (STOP_LOCK) {
             if (!userCodeRunning) {
