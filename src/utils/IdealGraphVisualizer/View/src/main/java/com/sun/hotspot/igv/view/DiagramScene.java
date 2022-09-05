@@ -693,7 +693,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
         Map<Figure, Integer> figureRank =
             new HashMap<Figure, Integer>(figures.size());
         int r = 0;
-        for (InputBlock b : getModel().getGraphToView().getBlocks()) {
+        for (InputBlock b : getModel().getDiagramToView().getGraph().getBlocks()) {
             for (InputNode n : b.getNodes()) {
                 Figure f = nodeFig.get(n);
                 if (f != null) {

@@ -79,78 +79,10 @@ public class InputGraph extends Properties.Entity implements FolderElement {
         return edge;
     }
 
-    public Map<InputNode, List<InputEdge>> findAllOutgoingEdges() {
-        Map<InputNode, List<InputEdge>> result = new HashMap<>(getNodes().size());
-        for(InputNode n : this.getNodes()) {
-            result.put(n, new ArrayList<InputEdge>());
-        }
-
-        for(InputEdge e : this.edges) {
-            int from = e.getFrom();
-            InputNode fromNode = this.getNode(from);
-            List<InputEdge> fromList = result.get(fromNode);
-            assert fromList != null;
-            fromList.add(e);
-        }
-
-        for(InputNode n : this.getNodes()) {
-            List<InputEdge> list = result.get(n);
-            list.sort(InputEdge.OUTGOING_COMPARATOR);
-        }
-
-        return result;
-    }
-
-    public Map<InputNode, List<InputEdge>> findAllIngoingEdges() {
-        Map<InputNode, List<InputEdge>> result = new HashMap<>(getNodes().size());
-        for(InputNode n : this.getNodes()) {
-            result.put(n, new ArrayList<InputEdge>());
-        }
-
-        for(InputEdge e : this.edges) {
-            int to = e.getTo();
-            InputNode toNode = this.getNode(to);
-            List<InputEdge> toList = result.get(toNode);
-            assert toList != null;
-            toList.add(e);
-        }
-
-        for(InputNode n : this.getNodes()) {
-            List<InputEdge> list = result.get(n);
-            list.sort(InputEdge.INGOING_COMPARATOR);
-        }
-
-        return result;
-    }
-
-    public List<InputEdge> findOutgoingEdges(InputNode n) {
-        List<InputEdge> result = new ArrayList<>();
-
-        for(InputEdge e : this.edges) {
-            if(e.getFrom() == n.getId()) {
-                result.add(e);
-            }
-        }
-
-        result.sort(InputEdge.OUTGOING_COMPARATOR);
-
-        return result;
-    }
-
     public void clearBlocks() {
         blocks.clear();
         blockEdges.clear();
         nodeToBlock.clear();
-    }
-
-    public void setEdge(int fromIndex, int toIndex, int from, int to) {
-        assert fromIndex == ((char)fromIndex) : "Downcast must be safe";
-        assert toIndex == ((char)toIndex) : "Downcast must be safe";
-
-        InputEdge edge = new InputEdge((char)fromIndex, (char)toIndex, from, to);
-        if(!this.getEdges().contains(edge)) {
-            this.addEdge(edge);
-        }
     }
 
     public void ensureNodesInBlocks() {

@@ -171,7 +171,7 @@ public abstract class SlotWidget extends Widget implements DoubleClickHandler {
     public void handleDoubleClick(Widget w, WidgetAction.WidgetMouseEvent e) {
         Set<Integer> hiddenNodes = new HashSet<>(diagramScene.getModel().getHiddenNodes());
         if (diagramScene.isAllVisible()) {
-            hiddenNodes = new HashSet<>(diagramScene.getModel().getGraphToView().getGroup().getAllNodes());
+            hiddenNodes = new HashSet<>(diagramScene.getModel().getGroup().getAllNodes());
         }
 
         boolean progress = false;

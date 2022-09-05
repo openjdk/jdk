@@ -58,7 +58,7 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
     private FilterChain filterChain;
     private FilterChain sequenceFilterChain;
     private Diagram diagram;
-    private InputGraph inputGraph;
+    private InputGraph cachedInputGraph;
     private ChangedEvent<DiagramViewModel> groupChangedEvent;
     private ChangedEvent<DiagramViewModel> diagramChangedEvent;
     private ChangedEvent<DiagramViewModel> viewChangedEvent;
@@ -74,7 +74,7 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
 
         @Override
         public void changed(FilterChain source) {
-            diagramChanged();
+            createDiagram();
         }
     };
 
@@ -229,6 +229,8 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
 
         filterChain.getChangedEvent().addListener(filterChainChangedListener);
         sequenceFilterChain.getChangedEvent().addListener(filterChainChangedListener);
+
+        createDiagram();
     }
     private final ChangedListener<DiagramViewModel> groupChangedListener = new ChangedListener<DiagramViewModel>() {
 
@@ -347,7 +349,7 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
     }
 
     public void showOnly(final Set<Integer> nodes) {
-        final HashSet<Integer> allNodes = new HashSet<>(getGraphToView().getGroup().getAllNodes());
+        final HashSet<Integer> allNodes = new HashSet<>(getGroup().getAllNodes());
         allNodes.removeAll(nodes);
         setHiddenNodes(allNodes);
     }
@@ -366,14 +368,33 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         sequenceFilterChain.getChangedEvent().removeListener(filterChainChangedListener);
         sequenceFilterChain = chain;
         sequenceFilterChain.getChangedEvent().addListener(filterChainChangedListener);
-        diagramChanged();
+        createDiagram();
     }
 
-    private void diagramChanged() {
+    private void createDiagram() {
         // clear diagram
-        diagram = null;
-        getDiagramChangedEvent().fire();
+        InputGraph graph = getCachedInputGraph();
+        if (graph.getBlocks().isEmpty()) {
+            Scheduler s = Lookup.getDefault().lookup(Scheduler.class);
+            graph.clearBlocks();
+            s.schedule(graph);
+            graph.ensureNodesInBlocks();
+        }
+        diagram = new Diagram(graph,
+                Settings.get().get(Settings.NODE_TEXT, Settings.NODE_TEXT_DEFAULT),
+                Settings.get().get(Settings.NODE_SHORT_TEXT, Settings.NODE_SHORT_TEXT_DEFAULT),
+                Settings.get().get(Settings.NODE_TINY_TEXT, Settings.NODE_TINY_TEXT_DEFAULT));
+        getFilterChain().apply(diagram, getSequenceFilterChain());
+        if (graph.isDiffGraph()) {
+            ColorFilter f = new ColorFilter("");
+            f.addRule(stateColorRule("same",    Color.white));
+            f.addRule(stateColorRule("changed", Color.orange));
+            f.addRule(stateColorRule("new",     Color.green));
+            f.addRule(stateColorRule("deleted", Color.red));
+            f.apply(diagram);
+        }
 
+        getDiagramChangedEvent().fire();
     }
 
     public FilterChain getFilterChain() {
@@ -385,7 +406,7 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         filterChain.getChangedEvent().removeListener(filterChainChangedListener);
         filterChain = chain;
         filterChain.getChangedEvent().addListener(filterChainChangedListener);
-        diagramChanged();
+        createDiagram();
     }
 
     /*
@@ -435,50 +456,25 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
     }
 
     public Diagram getDiagramToView() {
-
-        if (diagram == null) {
-            InputGraph graph = getGraphToView();
-            if (graph.getBlocks().isEmpty()) {
-                Scheduler s = Lookup.getDefault().lookup(Scheduler.class);
-                graph.clearBlocks();
-                s.schedule(graph);
-                graph.ensureNodesInBlocks();
-            }
-            diagram = new Diagram(graph,
-                                  Settings.get().get(Settings.NODE_TEXT, Settings.NODE_TEXT_DEFAULT),
-                                  Settings.get().get(Settings.NODE_SHORT_TEXT, Settings.NODE_SHORT_TEXT_DEFAULT),
-                                  Settings.get().get(Settings.NODE_TINY_TEXT, Settings.NODE_TINY_TEXT_DEFAULT));
-            getFilterChain().apply(diagram, getSequenceFilterChain());
-            if (graph.isDiffGraph()) {
-                ColorFilter f = new ColorFilter("");
-                f.addRule(stateColorRule("same",    Color.white));
-                f.addRule(stateColorRule("changed", Color.orange));
-                f.addRule(stateColorRule("new",     Color.green));
-                f.addRule(stateColorRule("deleted", Color.red));
-                f.apply(diagram);
-           }
-        }
-
         diagram.setCFG(getShowCFG());
         return diagram;
     }
 
-    public InputGraph getGraphToView() {
-        if (inputGraph == null) {
+    private InputGraph getCachedInputGraph() {
+        if (cachedInputGraph == null) {
             if (getFirstGraph() != getSecondGraph()) {
-                inputGraph = Difference.createDiffGraph(getFirstGraph(), getSecondGraph());
+                cachedInputGraph = Difference.createDiffGraph(getFirstGraph(), getSecondGraph());
             } else {
-                inputGraph = getFirstGraph();
+                cachedInputGraph = getFirstGraph();
             }
         }
-
-        return inputGraph;
+        return cachedInputGraph;
     }
 
     @Override
     public void changed(RangeSliderModel source) {
-        inputGraph = null;
-        diagramChanged();
+        cachedInputGraph = null;
+        createDiagram();
     }
 
     void close() {
