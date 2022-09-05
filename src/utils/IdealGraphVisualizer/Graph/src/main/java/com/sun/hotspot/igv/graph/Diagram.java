@@ -47,23 +47,23 @@ public class Diagram {
     private String nodeText;
     private String shortNodeText;
     private String tinyNodeText;
-    private final Font font;
-    private final Font slotFont;
-    private final Font boldFont;
+    private static final Font font = new Font("Arial", Font.PLAIN, 12);
+    private static final Font slotFont = new Font("Arial", Font.PLAIN, 10);
+    private static final Font boldFont = font.deriveFont(Font.BOLD);
     // Whether widgets derived from this diagram should be adapted for the
     // control-flow graph view.
     private boolean cfg;
     private final Set<BlockConnection> blockConnections;
 
-    public Font getFont() {
+    public static Font getFont() {
         return font;
     }
 
-    public Font getSlotFont() {
+    public static Font getSlotFont() {
         return slotFont;
     }
 
-    public Font getBoldFont() {
+    public static Font getBoldFont() {
         return boldFont;
     }
 
@@ -75,91 +75,35 @@ public class Diagram {
         this.cfg = cfg;
     }
 
-    private Diagram(InputGraph graph, String nodeText, String shortNodeText,
-                    String tinyNodeText) {
-        figures = new ArrayList<>();
-        blocks = new LinkedHashMap<>(8);
-        this.nodeText = "";
-        this.shortNodeText = "";
-        this.font = new Font("Arial", Font.PLAIN, 12);
-        this.slotFont = new Font("Arial", Font.PLAIN, 10);
-        this.boldFont = this.font.deriveFont(Font.BOLD);
-        this.cfg = false;
-        this.blockConnections = new HashSet<>();
+    public Diagram(InputGraph graph, String nodeText, String shortNodeText,
+                   String tinyNodeText) {
+        assert graph != null;
+
         this.graph = graph;
         this.nodeText = nodeText;
         this.shortNodeText = shortNodeText;
         this.tinyNodeText = tinyNodeText;
-    }
+        this.figures = new ArrayList<>();
+        this.blocks = new LinkedHashMap<>(8);
+        this.blockConnections = new HashSet<>();
+        this.cfg = false;
+        this.curId = 0;
 
-    public Block getBlock(InputBlock b) {
-        assert blocks.containsKey(b);
-        return blocks.get(b);
-    }
-
-    public boolean hasBlock(InputBlock b) {
-        return blocks.containsKey(b);
-    }
-
-    public String getNodeText() {
-        return nodeText;
-    }
-
-    public String getShortNodeText() {
-        return shortNodeText;
-    }
-
-    public String getTinyNodeText() {
-        return tinyNodeText;
-    }
-
-    public void updateBlocks() {
-        blocks.clear();
         for (InputBlock b : graph.getBlocks()) {
             Block curBlock = new Block(b, this);
             blocks.put(b, curBlock);
         }
-    }
-
-    public Collection<Block> getBlocks() {
-        return Collections.unmodifiableCollection(blocks.values());
-    }
-
-    public List<Figure> getFigures() {
-        return Collections.unmodifiableList(figures);
-    }
-
-    public Figure createFigure() {
-        Figure f = new Figure(this, curId);
-        curId++;
-        this.figures.add(f);
-        return f;
-    }
-
-    public FigureConnection createConnection(InputSlot inputSlot, OutputSlot outputSlot, String label) {
-        assert inputSlot.getFigure().getDiagram() == this;
-        assert outputSlot.getFigure().getDiagram() == this;
-        return new FigureConnection(inputSlot, outputSlot, label);
-    }
-
-    public static Diagram createDiagram(InputGraph graph, String nodeText,
-                                        String shortNodeText,
-                                        String tinyNodeText) {
-        if (graph == null) {
-            return null;
-        }
-
-        Diagram d = new Diagram(graph, nodeText, shortNodeText, tinyNodeText);
-        d.updateBlocks();
 
         Collection<InputNode> nodes = graph.getNodes();
         Hashtable<Integer, Figure> figureHash = new Hashtable<>();
         for (InputNode n : nodes) {
-            Figure f = d.createFigure();
+            Figure f = new Figure(this, curId);
+            curId++;
             f.getSource().addSourceNode(n);
             f.getProperties().add(n.getProperties());
             f.setBlock(graph.getBlock(n));
             figureHash.put(n.getId(), f);
+            this.figures.add(f);
         }
 
         for (InputEdge e : graph.getEdges()) {
@@ -184,7 +128,7 @@ public class Diagram {
             }
             InputSlot inputSlot = toFigure.getInputSlots().get(toIndex);
 
-            FigureConnection c = d.createConnection(inputSlot, outputSlot, e.getLabel());
+            FigureConnection c = createConnection(inputSlot, outputSlot, e.getLabel());
 
             if (e.getState() == InputEdge.State.NEW) {
                 c.setStyle(Connection.ConnectionStyle.BOLD);
@@ -194,12 +138,45 @@ public class Diagram {
         }
 
         for (InputBlockEdge e : graph.getBlockEdges()) {
-            Block p = d.getBlock(e.getFrom());
-            Block s = d.getBlock(e.getTo());
-            d.blockConnections.add(new BlockConnection(p, s, e.getLabel()));
+            Block p = getBlock(e.getFrom());
+            Block s = getBlock(e.getTo());
+            blockConnections.add(new BlockConnection(p, s, e.getLabel()));
         }
+    }
 
-        return d;
+    public Block getBlock(InputBlock b) {
+        assert blocks.containsKey(b);
+        return blocks.get(b);
+    }
+
+    public boolean hasBlock(InputBlock b) {
+        return blocks.containsKey(b);
+    }
+
+    public String getNodeText() {
+        return nodeText;
+    }
+
+    public String getShortNodeText() {
+        return shortNodeText;
+    }
+
+    public String getTinyNodeText() {
+        return tinyNodeText;
+    }
+
+    public Collection<Block> getBlocks() {
+        return Collections.unmodifiableCollection(blocks.values());
+    }
+
+    public List<Figure> getFigures() {
+        return Collections.unmodifiableList(figures);
+    }
+
+    public FigureConnection createConnection(InputSlot inputSlot, OutputSlot outputSlot, String label) {
+        assert inputSlot.getFigure().getDiagram() == this;
+        assert outputSlot.getFigure().getDiagram() == this;
+        return new FigureConnection(inputSlot, outputSlot, label);
     }
 
     public void removeAllBlocks(Set<Block> blocksToRemove) {

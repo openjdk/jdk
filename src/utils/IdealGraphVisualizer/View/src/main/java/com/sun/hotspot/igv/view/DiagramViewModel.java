@@ -446,10 +446,10 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
                 s.schedule(graph);
                 graph.ensureNodesInBlocks();
             }
-            diagram = Diagram.createDiagram(graph,
-                                            Settings.get().get(Settings.NODE_TEXT, Settings.NODE_TEXT_DEFAULT),
-                                            Settings.get().get(Settings.NODE_SHORT_TEXT, Settings.NODE_SHORT_TEXT_DEFAULT),
-                                            Settings.get().get(Settings.NODE_TINY_TEXT, Settings.NODE_TINY_TEXT_DEFAULT));
+            diagram = new Diagram(graph,
+                                  Settings.get().get(Settings.NODE_TEXT, Settings.NODE_TEXT_DEFAULT),
+                                  Settings.get().get(Settings.NODE_SHORT_TEXT, Settings.NODE_SHORT_TEXT_DEFAULT),
+                                  Settings.get().get(Settings.NODE_TINY_TEXT, Settings.NODE_TINY_TEXT_DEFAULT));
             getFilterChain().apply(diagram, getSequenceFilterChain());
             if (graph.isDiffGraph()) {
                 ColorFilter f = new ColorFilter("");
