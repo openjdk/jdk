@@ -43,7 +43,6 @@ public final class ShowAllAction extends CallableSystemAction {
         EditorTopComponent editor = EditorTopComponent.getActive();
         if (editor != null) {
             editor.showAll();
-            editor.getDiagram();
         }
     }
 

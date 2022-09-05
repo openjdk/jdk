@@ -45,6 +45,8 @@ interface DiagramViewer {
         PANNING,
     }
 
+    DiagramViewModel getModel();
+
     public void paint(Graphics2D generator);
 
     public Lookup getLookup();

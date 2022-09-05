@@ -47,7 +47,7 @@ public class EditorInputGraphProvider implements InputGraphProvider {
 
     @Override
     public InputGraph getGraph() {
-        return editor.getDiagramModel().getGraphToView();
+        return editor.getModel().getGraphToView();
     }
 
     @Override
@@ -57,11 +57,11 @@ public class EditorInputGraphProvider implements InputGraphProvider {
 
     @Override
     public Iterable<InputGraph> searchBackward() {
-        return editor.getDiagramModel().getGraphsBackward();
+        return editor.getModel().getGraphsBackward();
     }
 
     @Override
     public Iterable<InputGraph> searchForward() {
-        return editor.getDiagramModel().getGraphsForward();
+        return editor.getModel().getGraphsForward();
     }
 }
