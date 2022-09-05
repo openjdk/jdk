@@ -37,7 +37,6 @@ import com.sun.hotspot.igv.filter.FilterChain;
 import com.sun.hotspot.igv.filter.FilterChainProvider;
 import com.sun.hotspot.igv.graph.Diagram;
 import com.sun.hotspot.igv.graph.Figure;
-import com.sun.hotspot.igv.graph.services.DiagramProvider;
 import com.sun.hotspot.igv.settings.Settings;
 import com.sun.hotspot.igv.util.LookupHistory;
 import com.sun.hotspot.igv.util.RangeSlider;
@@ -83,7 +82,6 @@ import org.w3c.dom.DOMImplementation;
 public final class EditorTopComponent extends TopComponent implements PropertyChangeListener {
 
     private DiagramViewer scene;
-    private InstanceContent content;
     private InstanceContent graphContent;
     private EnableSeaLayoutAction seaLayoutAction;
     private EnableBlockLayoutAction blockLayoutAction;
@@ -123,22 +121,6 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
         }
     };
 
-    private DiagramProvider diagramProvider = new DiagramProvider() {
-
-        @Override
-        public Diagram getDiagram() {
-            return getModel().getDiagramToView();
-        }
-
-        @Override
-        public ChangedEvent<DiagramProvider> getChangedEvent() {
-            return diagramChangedEvent;
-        }
-    };
-
-    private ChangedEvent<DiagramProvider> diagramChangedEvent = new ChangedEvent<>(diagramProvider);
-
-
     private void updateDisplayName() {
         setDisplayName(getDiagram().getName());
         setToolTipText(getDiagram().getGraph().getGroup().getName());
@@ -147,7 +129,6 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
     public EditorTopComponent(Diagram diagram) {
 
         LookupHistory.init(InputGraphProvider.class);
-        LookupHistory.init(DiagramProvider.class);
         this.setFocusable(true);
         FilterChain filterChain = null;
         FilterChain sequence = null;
@@ -206,12 +187,11 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
         container.add(BorderLayout.CENTER, pane);
 
         scene = new DiagramScene(actions, actionsWithSelection, rangeSliderModel);
-        content = new InstanceContent();
         graphContent = new InstanceContent();
-        this.associateLookup(new ProxyLookup(new Lookup[]{scene.getLookup(), new AbstractLookup(graphContent), new AbstractLookup(content)}));
+        InstanceContent content = new InstanceContent();
         content.add(exportCookie);
         content.add(rangeSliderModel);
-        content.add(diagramProvider);
+        this.associateLookup(new ProxyLookup(new Lookup[]{scene.getLookup(), new AbstractLookup(graphContent), new AbstractLookup(content)}));
 
         rangeSliderModel.getDiagramChangedEvent().addListener(diagramChangedListener);
         rangeSliderModel.selectGraph(diagram.getGraph());
@@ -387,16 +367,6 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
         scene.zoomIn();
     }
 
-    public void showPrevDiagram() {
-        int fp = getModel().getFirstPosition();
-        int sp = getModel().getSecondPosition();
-        if (fp != 0) {
-            fp--;
-            sp--;
-            getModel().setPositions(fp, sp);
-        }
-    }
-
     public DiagramViewModel getModel() {
         return rangeSliderModel;
     }
@@ -461,7 +431,6 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
             Collection<Object> list = new ArrayList<>();
             list.add(new EditorInputGraphProvider(EditorTopComponent.this));
             graphContent.set(list, null);
-            diagramProvider.getChangedEvent().fire();
         }
 
     };
