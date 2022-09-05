@@ -326,7 +326,7 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
     public void showFigures(Collection<Figure> f) {
         HashSet<Integer> newHiddenNodes = new HashSet<>(getHiddenNodes());
         for (Figure fig : f) {
-            newHiddenNodes.removeAll(fig.getSource().getSourceNodesAsSet());
+            newHiddenNodes.remove(fig.getInputNode().getId());
         }
         setHiddenNodes(newHiddenNodes);
     }
@@ -335,10 +335,8 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
     public Set<Figure> getSelectedFigures() {
         Set<Figure> result = new HashSet<>();
         for (Figure f : diagram.getFigures()) {
-            for (InputNode node : f.getSource().getSourceNodes()) {
-                if (getSelectedNodes().contains(node.getId())) {
-                    result.add(f);
-                }
+            if (getSelectedNodes().contains(f.getInputNode().getId())) {
+                result.add(f);
             }
         }
         return result;

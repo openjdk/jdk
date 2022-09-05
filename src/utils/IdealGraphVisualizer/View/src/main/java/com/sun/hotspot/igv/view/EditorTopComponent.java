@@ -435,11 +435,8 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
         }
 
         for (Figure f : getDiagram().getFigures()) {
-            for (InputNode n : f.getSource().getSourceNodes()) {
-                if (ids.contains(n.getId())) {
-                    list.add(f);
-                    break;
-                }
+            if (ids.contains(f.getInputNode().getId())) {
+                list.add(f);
             }
         }
 

@@ -27,14 +27,13 @@ import com.sun.hotspot.igv.data.InputBlock;
 import com.sun.hotspot.igv.data.InputGraph;
 import com.sun.hotspot.igv.data.InputNode;
 import com.sun.hotspot.igv.data.Properties;
-import com.sun.hotspot.igv.data.Source;
 import com.sun.hotspot.igv.layout.Cluster;
 import com.sun.hotspot.igv.layout.Vertex;
 import java.awt.*;
 import java.util.List;
 import java.util.*;
 
-public class Figure extends Properties.Entity implements Source.Provider, Vertex {
+public class Figure extends Properties.Entity implements Vertex {
 
     public static final int INSET = 8;
     public static final int SLOT_WIDTH = 10;
@@ -46,7 +45,7 @@ public class Figure extends Properties.Entity implements Source.Provider, Vertex
     public static final int WARNING_WIDTH = 16;
     protected List<InputSlot> inputSlots;
     protected List<OutputSlot> outputSlots;
-    private Source source;
+    private InputNode inputNode;
     private Diagram diagram;
     private Point position;
     private List<Figure> predecessors;
@@ -131,20 +130,19 @@ public class Figure extends Properties.Entity implements Source.Provider, Vertex
             widthCash = Math.max(widthCash, Figure.getSlotsWidth(outputSlots));
     }
 
-    protected Figure(Diagram diagram, int id) {
+    protected Figure(Diagram diagram, int id, InputNode node) {
         this.diagram = diagram;
-        this.source = new Source();
-        inputSlots = new ArrayList<>(5);
-        outputSlots = new ArrayList<>(1);
-        predecessors = new ArrayList<>(6);
-        successors = new ArrayList<>(6);
+        this.inputNode = node;
+        this.inputSlots = new ArrayList<>(5);
+        this.outputSlots = new ArrayList<>(1);
+        this.predecessors = new ArrayList<>(6);
+        this.successors = new ArrayList<>(6);
         this.id = id;
-        idString = Integer.toString(id);
-
+        this.idString = Integer.toString(id);
         this.position = new Point(0, 0);
         this.color = Color.WHITE;
         Canvas canvas = new Canvas();
-        metrics = canvas.getFontMetrics(diagram.getFont().deriveFont(Font.BOLD));
+        this.metrics = canvas.getFontMetrics(diagram.getFont().deriveFont(Font.BOLD));
     }
 
     public int getId() {
@@ -235,9 +233,8 @@ public class Figure extends Properties.Entity implements Source.Provider, Vertex
         return diagram;
     }
 
-    @Override
-    public Source getSource() {
-        return source;
+    public InputNode getInputNode() {
+        return this.inputNode;
     }
 
     public InputSlot createInputSlot() {
@@ -357,13 +354,12 @@ public class Figure extends Properties.Entity implements Source.Provider, Vertex
         }
 
         lines = result.toArray(new String[0]);
-        // Set the "label" property of each input node, so that by default
+        // Set the "label" property of the input node, so that by default
         // search is done on the node label (without line breaks). See also
         // class NodeQuickSearch in the View module.
-        for (InputNode n : getSource().getSourceNodes()) {
-            String label = n.getProperties().resolveString(diagram.getNodeText());
-            n.getProperties().setProperty("label", label.replaceAll("\\R", " "));
-        }
+        String label = inputNode.getProperties().resolveString(diagram.getNodeText());
+        inputNode.getProperties().setProperty("label", label.replaceAll("\\R", " "));
+
         // Update figure dimensions, as these are affected by the node text.
         updateWidth();
         updateHeight();
@@ -381,33 +377,23 @@ public class Figure extends Properties.Entity implements Source.Provider, Vertex
         return idString;
     }
 
-    public InputNode getFirstSourceNode() {
-        return getSource().getSourceNodes().get(0);
-    }
-
     public static int getVerticalOffset() {
         return Figure.SLOT_WIDTH - Figure.OVERLAPPING;
     }
 
     public Cluster getCluster() {
-        if (getSource().getSourceNodes().size() == 0) {
-            assert false : "Should never reach here, every figure must have at least one source node!";
-            return null;
-        } else {
-            final InputBlock inputBlock = diagram.getGraph().getBlock(getFirstSourceNode());
-            assert inputBlock != null;
-            Cluster result = diagram.getBlock(inputBlock);
-            assert result != null;
-            return result;
-        }
+        assert inputNode != null;
+        final InputBlock inputBlock = diagram.getGraph().getBlock(getInputNode());
+        assert inputBlock != null;
+        Cluster result = diagram.getBlock(inputBlock);
+        assert result != null;
+        return result;
     }
 
     @Override
     public boolean isRoot() {
-
-        List<InputNode> sourceNodes = source.getSourceNodes();
-        if (sourceNodes.size() > 0 && getFirstSourceNode().getProperties().get("name") != null) {
-            return getFirstSourceNode().getProperties().get("name").equals("Root");
+        if (inputNode != null && inputNode.getProperties().get("name") != null) {
+            return inputNode.getProperties().get("name").equals("Root");
         } else {
             return false;
         }

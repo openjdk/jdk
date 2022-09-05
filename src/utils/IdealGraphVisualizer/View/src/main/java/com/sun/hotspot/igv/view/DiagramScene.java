@@ -183,7 +183,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
     private Set<Object> getObjectsFromIdSet(Set<Object> set) {
         Set<Object> selectedObjects = new HashSet<>();
         for (Figure f : getModel().getDiagramToView().getFigures()) {
-            if (!Collections.disjoint(f.getSource().getSourceNodesAsSet(), set)) {
+            if (set.contains(f.getInputNode().getId())) {
                 selectedObjects.add(f);
             }
 
@@ -320,7 +320,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
 
 
                 if (o instanceof Figure) {
-                    nodeSelection.addAll(((Figure) o).getSource().getSourceNodesAsSet());
+                    nodeSelection.add(((Figure) o).getInputNode().getId());
                 } else if (o instanceof Slot) {
                     nodeSelection.addAll(((Slot) o).getSource().getSourceNodesAsSet());
                 }
@@ -339,7 +339,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
             Set<Integer> nodeHighlighting = new HashSet<>();
             for (Object o : newSet) {
                 if (o instanceof Figure) {
-                    nodeHighlighting.addAll(((Figure) o).getSource().getSourceNodesAsSet());
+                    nodeHighlighting.add(((Figure) o).getInputNode().getId());
                 } else if (o instanceof Slot) {
                     nodeHighlighting.addAll(((Slot) o).getSource().getSourceNodesAsSet());
                 }
@@ -682,7 +682,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
         m.setManager(manager);
         Map<InputNode, Figure> nodeFig = new HashMap<InputNode, Figure>();
         for (Figure f : figures) {
-            InputNode n = f.getFirstSourceNode();
+            InputNode n = f.getInputNode();
             if (n != null) {
                 nodeFig.put(n, f);
             }
@@ -995,7 +995,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
 
         Set<Object> result = new HashSet<>();
         for (Figure f : getModel().getDiagramToView().getFigures()) {
-            if (!Collections.disjoint(f.getSource().getSourceNodesAsSet(), ids)) {
+            if (ids.contains(f.getInputNode().getId())) {
                 result.add(f);
             }
 
@@ -1099,10 +1099,8 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
     }
 
     private boolean isVisible(Figure f) {
-        for (Integer n : f.getSource().getSourceNodesAsSet()) {
-            if (getModel().getHiddenNodes().contains(n)) {
-                return false;
-            }
+        if (getModel().getHiddenNodes().contains(f.getInputNode().getId())) {
+            return false;
         }
         return true;
     }
@@ -1144,19 +1142,15 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
         }
 
         for (Figure f : diagram.getFigures()) {
-            boolean hiddenAfter = !Collections.disjoint(f.getSource().getSourceNodesAsSet(), newHiddenNodes);
-
             FigureWidget w = getWidget(f);
             w.setBoundary(false);
-            if (!hiddenAfter) {
-                // Figure is shown
-                w.setVisible(true);
-                for (InputNode n : f.getSource().getSourceNodes()) {
-                    visibleBlocks.add(diagram.getGraph().getBlock(n));
-                }
-            } else {
+            if (newHiddenNodes.contains(f.getInputNode().getId())) {
                 // Figure is hidden
                 w.setVisible(false);
+            } else {
+                // Figure is shown
+                w.setVisible(true);
+                visibleBlocks.add(diagram.getGraph().getBlock(f.getInputNode()));
             }
         }
 
@@ -1179,9 +1173,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
 
                     if (b) {
                         w.setBoundary(true);
-                        for (InputNode n : f.getSource().getSourceNodes()) {
-                            visibleBlocks.add(diagram.getGraph().getBlock(n));
-                        }
+                        visibleBlocks.add(diagram.getGraph().getBlock(f.getInputNode()));
                         boundaries.add(w);
                     }
                 }
@@ -1236,8 +1228,8 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
 
     private void showFigure(Figure f) {
         HashSet<Integer> newHiddenNodes = new HashSet<>(getModel().getHiddenNodes());
-        newHiddenNodes.removeAll(f.getSource().getSourceNodesAsSet());
-        this.model.setHiddenNodes(newHiddenNodes);
+        newHiddenNodes.remove(f.getInputNode().getId());
+        this.getModel().setHiddenNodes(newHiddenNodes);
     }
 
     private void centerWidget(Widget w) {

@@ -97,9 +97,8 @@ public class Diagram {
         Collection<InputNode> nodes = graph.getNodes();
         Hashtable<Integer, Figure> figureHash = new Hashtable<>();
         for (InputNode n : nodes) {
-            Figure f = new Figure(this, curId);
+            Figure f = new Figure(this, curId, n);
             curId++;
-            f.getSource().addSourceNode(n);
             f.getProperties().add(n.getProperties());
             f.setBlock(graph.getBlock(n));
             figureHash.put(n.getId(), f);
