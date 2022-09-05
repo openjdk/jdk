@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,7 +85,6 @@ CGRect sanitizedRect(CGFloat x1, CGFloat y1, CGFloat x2, CGFloat y2) {
 QUARTZ_RENDERER_INLINE SDRenderType doLineUsingCG(CGContextRef cgRef, CGFloat x1, CGFloat y1, CGFloat x2, CGFloat y2, BOOL simple, CGFloat offsetX, CGFloat offsetY)
 {
 //fprintf(stderr, "doLine start=(%f, %f), end=(%f, %f), linewidth:%f, offsetX:%f, offsetY:%f\n", x1, y1, x2, y2, CGContextGetLineWidth(cgRef), offsetX, offsetY);
-    SDRenderType renderType = SD_Nothing;
 
     if (simple == YES)
     {
@@ -95,16 +94,16 @@ QUARTZ_RENDERER_INLINE SDRenderType doLineUsingCG(CGContextRef cgRef, CGFloat x1
         oneLinePoints[1] = CGPointMake(x2+offsetX, y2+offsetY);
 
         CGContextStrokeLineSegments(cgRef, oneLinePoints, 2);
-        renderType = SD_Nothing;
+
+        return SD_Nothing;
     }
     else
     {
         CGContextMoveToPoint(cgRef, x1+offsetX, y1+offsetY);
         CGContextAddLineToPoint(cgRef, x2+offsetX, y2+offsetY);
-        renderType = SD_Stroke;
-    }
 
-    return renderType;
+        return SD_Stroke;
+    }
 }
 QUARTZ_RENDERER_INLINE SDRenderType doLine(QuartzSDOps *qsdo, CGFloat x1, CGFloat y1, CGFloat x2, CGFloat y2)
 {
@@ -125,37 +124,37 @@ QUARTZ_RENDERER_INLINE SDRenderType doRectUsingCG(CGContextRef cgRef, CGFloat x,
 //fprintf(stderr, "    clip: ((%f, %f), (%f, %f))\n", clip.origin.x, clip.origin.y, clip.size.width, clip.size.height);
 //CGAffineTransform ctm = CGContextGetCTM(cgRef);
 //fprintf(stderr, "    ctm: (%f, %f, %f, %f, %f, %f)\n", ctm.a, ctm.b, ctm.c, ctm.d, ctm.tx, ctm.ty);
-    SDRenderType renderType = SD_Nothing;
 
-    if (fill == YES)
+    if (simple)
     {
-        if (simple == YES)
+        if (fill)
         {
             CGContextFillRect(cgRef, CGRectMake(x, y, w, h));
-            renderType = SD_Nothing;
         }
         else
         {
-            CGContextAddRect(cgRef, CGRectMake(x, y, w, h));
-            renderType = SD_Fill;
+            CGContextStrokeRect(cgRef, CGRectMake(x+offsetX, y+offsetY, w, h));
         }
+
+        return SD_Nothing;
     }
     else
     {
-        if (simple == YES)
+        if (fill)
         {
-            CGContextStrokeRect(cgRef, CGRectMake(x+offsetX, y+offsetY, w, h));
-            renderType = SD_Nothing;
+            CGContextAddRect(cgRef, CGRectMake(x, y, w, h));
+
+            return SD_Fill;
         }
         else
         {
             CGContextAddRect(cgRef, CGRectMake(x+offsetX, y+offsetY, w, h));
-            renderType = SD_Stroke;
+
+            return SD_Stroke;
         }
     }
-
-    return renderType;
 }
+
 QUARTZ_RENDERER_INLINE SDRenderType doRect(QuartzSDOps *qsdo, CGFloat x, CGFloat y, CGFloat w, CGFloat h, BOOL fill)
 {
 PRINT(" doRect")
@@ -170,17 +169,6 @@ PRINT(" doRect")
 // from RoundRectIterator.java
 QUARTZ_RENDERER_INLINE SDRenderType doRoundRectUsingCG(CGContextRef cgRef, CGFloat x, CGFloat y, CGFloat w, CGFloat h, CGFloat arcWidth, CGFloat arcHeight, BOOL fill, CGFloat offsetX, CGFloat offsetY)
 {
-    SDRenderType renderType = SD_Nothing;
-
-    if (fill == YES)
-    {
-        renderType = SD_Fill;
-    }
-    else
-    {
-        renderType = SD_Stroke;
-    }
-
     // radr://3593731 RoundRects with corner width/height of 0 don't draw
     arcWidth = (arcWidth > 0.0f) ? arcWidth : 0.0f;
     arcHeight = (arcHeight > 0.0f) ? arcHeight : 0.0f;
@@ -252,7 +240,7 @@ QUARTZ_RENDERER_INLINE SDRenderType doRoundRectUsingCG(CGContextRef cgRef, CGFlo
 
     CGContextClosePath(cgRef);
 
-    return renderType;
+    return fill ? SD_Fill : SD_Stroke;
 }
 
 QUARTZ_RENDERER_INLINE SDRenderType doRoundRect(QuartzSDOps *qsdo, CGFloat x, CGFloat y, CGFloat w, CGFloat h, CGFloat arcWidth, CGFloat arcHeight, BOOL fill)
@@ -269,8 +257,6 @@ PRINT(" doRoundRect")
 // from EllipseIterator.java
 QUARTZ_RENDERER_INLINE SDRenderType doOvalUsingCG(CGContextRef cgRef, CGFloat x, CGFloat y, CGFloat w, CGFloat h, BOOL fill, BOOL simple, CGFloat offsetX, CGFloat offsetY)
 {
-    SDRenderType renderType = SD_Nothing;
-
     if (simple == YES)
     {
         if (fill == YES)
@@ -281,23 +267,17 @@ QUARTZ_RENDERER_INLINE SDRenderType doOvalUsingCG(CGContextRef cgRef, CGFloat x,
         {
             CGContextStrokeEllipseInRect(cgRef, CGRectMake(x+offsetX, y+offsetY, w, h));
         }
+
+        return SD_Nothing;
     }
     else
     {
-        if (fill == YES)
-        {
-            renderType = SD_Fill;
-        }
-        else
-        {
-            renderType = SD_Stroke;
-        }
-
         CGContextAddEllipseInRect(cgRef, CGRectMake(x+offsetX, y+offsetY, w, h));
-    }
 
-    return renderType;
+        return fill ? SD_Fill : SD_Stroke;
+    }
 }
+
 QUARTZ_RENDERER_INLINE SDRenderType doOval(QuartzSDOps *qsdo, CGFloat x, CGFloat y, CGFloat w, CGFloat h, BOOL fill)
 {
 PRINT(" doOval")
@@ -322,16 +302,6 @@ QUARTZ_RENDERER_INLINE CGFloat btan(CGFloat increment)
 QUARTZ_RENDERER_INLINE SDRenderType doArcUsingCG(CGContextRef cgRef, CGFloat x, CGFloat y, CGFloat w, CGFloat h, CGFloat angleStart, CGFloat angleExtent, jint arcType, BOOL fill, CGFloat offsetX, CGFloat offsetY)
 {
 //fprintf(stderr, "doArc\n");
-    SDRenderType renderType = SD_Nothing;
-
-    if (fill == YES)
-    {
-        renderType = SD_Fill;
-    }
-    else
-    {
-        renderType = SD_Stroke;
-    }
 
     CGFloat angStRad, angExtDeg;
     jint arcSegs;
@@ -420,7 +390,7 @@ QUARTZ_RENDERER_INLINE SDRenderType doArcUsingCG(CGContextRef cgRef, CGFloat x, 
             break;
     }
 
-    return renderType;
+    return fill ? SD_Fill : SD_Stroke;
 }
 QUARTZ_RENDERER_INLINE SDRenderType doArc(QuartzSDOps *qsdo, CGFloat x, CGFloat y, CGFloat w, CGFloat h, CGFloat angleStart, CGFloat angleExtent, jint arcType, BOOL fill)
 {
@@ -435,55 +405,41 @@ PRINT(" doArc")
 
 QUARTZ_RENDERER_INLINE SDRenderType doPolyUsingCG(JNIEnv *env, CGContextRef cgRef, jintArray xpointsarray, jintArray ypointsarray, jint npoints, BOOL polygon, BOOL fill, CGFloat offsetX, CGFloat offsetY)
 {
-    SDRenderType renderType = SD_Nothing;
-
-    if (xpointsarray == NULL || ypointsarray == NULL) {
+    if (xpointsarray == NULL || ypointsarray == NULL || npoints <= 1) {
         return SD_Nothing;
     }
-    if (npoints > 1)
-    {
-        if (fill == YES)
-        {
-            renderType = SD_Fill;
-        }
-        else
-        {
-            renderType = SD_Stroke;
-        }
 
-        jint i;
-
-        jint* xpoints = (jint*)(*env)->GetPrimitiveArrayCritical(env, xpointsarray, NULL);
-        if (xpoints == NULL) {
-            return SD_Nothing;
-        }
-        jint* ypoints = (jint*)(*env)->GetPrimitiveArrayCritical(env, ypointsarray, NULL);
-        if (ypoints == NULL) {
-            (*env)->ReleasePrimitiveArrayCritical(env, xpointsarray, xpoints, 0);
-            return SD_Nothing;
-        }
-
-        CGContextMoveToPoint(cgRef, xpoints[0]+offsetX, ypoints[0]+offsetY);
-
-        for (i=1; i<npoints; i++)
-        {
-            CGContextAddLineToPoint(cgRef, xpoints[i]+offsetX, ypoints[i]+offsetY);
-        }
-
-        if (polygon == YES)
-        {
-            if ((xpoints[0] != xpoints[npoints-1]) || (ypoints[0] != ypoints[npoints-1])) // according to the specs (only applies to polygons, not polylines)
-            {
-                CGContextAddLineToPoint(cgRef, xpoints[0]+offsetX, ypoints[0]+offsetY);
-            }
-        }
-
-        (*env)->ReleasePrimitiveArrayCritical(env, ypointsarray, ypoints, 0);
+    jint* xpoints = (jint*)(*env)->GetPrimitiveArrayCritical(env, xpointsarray, NULL);
+    if (xpoints == NULL) {
+        return SD_Nothing;
+    }
+    jint* ypoints = (jint*)(*env)->GetPrimitiveArrayCritical(env, ypointsarray, NULL);
+    if (ypoints == NULL) {
         (*env)->ReleasePrimitiveArrayCritical(env, xpointsarray, xpoints, 0);
+        return SD_Nothing;
     }
 
-    return renderType;
+    CGContextMoveToPoint(cgRef, xpoints[0]+offsetX, ypoints[0]+offsetY);
+
+    for (jint i = 1; i<npoints; i++)
+    {
+        CGContextAddLineToPoint(cgRef, xpoints[i]+offsetX, ypoints[i]+offsetY);
+    }
+
+    if (polygon == YES)
+    {
+        if ((xpoints[0] != xpoints[npoints-1]) || (ypoints[0] != ypoints[npoints-1])) // according to the specs (only applies to polygons, not polylines)
+        {
+            CGContextAddLineToPoint(cgRef, xpoints[0]+offsetX, ypoints[0]+offsetY);
+        }
+    }
+
+    (*env)->ReleasePrimitiveArrayCritical(env, ypointsarray, ypoints, 0);
+    (*env)->ReleasePrimitiveArrayCritical(env, xpointsarray, xpoints, 0);
+
+    return fill ? SD_Fill : SD_Stroke;
 }
+
 QUARTZ_RENDERER_INLINE SDRenderType doPoly(JNIEnv *env, QuartzSDOps *qsdo, jintArray xpointsarray, jintArray ypointsarray, jint npoints, BOOL polygon, BOOL fill)
 {
 PRINT(" doPoly")
@@ -592,7 +548,7 @@ QUARTZ_RENDERER_INLINE void completePath(JNIEnv *env, QuartzSDOps *qsdo, CGConte
         case SD_Image:
             break;
         case SD_Nothing:
-                break;
+            break;
         default:
 fprintf(stderr, "completePath unknown renderType=%d\n", (int)renderType);
             break;
@@ -636,8 +592,7 @@ JNIEXPORT void JNICALL Java_sun_java2d_CRenderer_doLine
 PRINT("Java_sun_java2d_CRenderer_doLine")
     QuartzSDOps *qsdo = (QuartzSDOps*)SurfaceData_GetOps(env, jsurfacedata);
 JNI_COCOA_ENTER(env);
-    SDRenderType renderType = SD_Stroke;
-    qsdo->BeginSurface(env, qsdo, renderType);
+    qsdo->BeginSurface(env, qsdo, SD_Stroke);
     if (qsdo->cgRef != NULL)
     {
         doLine(qsdo, x1, y1, x2, y2);
@@ -657,8 +612,7 @@ JNIEXPORT void JNICALL Java_sun_java2d_CRenderer_doRect
 PRINT("Java_sun_java2d_CRenderer_doRect")
     QuartzSDOps *qsdo = (QuartzSDOps*)SurfaceData_GetOps(env, jsurfacedata);
 JNI_COCOA_ENTER(env);
-    SDRenderType renderType    = (isfill? SD_Fill : SD_Stroke);
-    qsdo->BeginSurface(env, qsdo, renderType);
+    qsdo->BeginSurface(env, qsdo, isfill ? SD_Fill : SD_Stroke);
     if (qsdo->cgRef != NULL)
     {
         doRect(qsdo, x, y, w, h, isfill);
@@ -678,8 +632,7 @@ JNIEXPORT void JNICALL Java_sun_java2d_CRenderer_doRoundRect
 PRINT("Java_sun_java2d_CRenderer_doRoundRect")
     QuartzSDOps *qsdo = (QuartzSDOps*)SurfaceData_GetOps(env, jsurfacedata);
 JNI_COCOA_ENTER(env);
-    SDRenderType renderType    = (isfill? SD_Fill : SD_Stroke);
-    qsdo->BeginSurface(env, qsdo, renderType);
+    qsdo->BeginSurface(env, qsdo, isfill ? SD_Fill : SD_Stroke);
     if (qsdo->cgRef != NULL)
     {
         doRoundRect(qsdo, x, y, w, h, arcWidth, arcHeight, isfill);
@@ -699,8 +652,7 @@ JNIEXPORT void JNICALL Java_sun_java2d_CRenderer_doOval
 PRINT("Java_sun_java2d_CRenderer_doOval")
     QuartzSDOps *qsdo = (QuartzSDOps*)SurfaceData_GetOps(env, jsurfacedata);
 JNI_COCOA_ENTER(env);
-    SDRenderType renderType    = (isfill? SD_Fill : SD_Stroke);
-    qsdo->BeginSurface(env, qsdo, renderType);
+    qsdo->BeginSurface(env, qsdo, isfill ? SD_Fill : SD_Stroke);
     if (qsdo->cgRef != NULL)
     {
         doOval(qsdo, x, y, w, h, isfill);
@@ -720,8 +672,7 @@ JNIEXPORT void JNICALL Java_sun_java2d_CRenderer_doArc
 PRINT("Java_sun_java2d_CRenderer_doArc")
     QuartzSDOps *qsdo = (QuartzSDOps*)SurfaceData_GetOps(env, jsurfacedata);
 JNI_COCOA_ENTER(env);
-    SDRenderType renderType    = (isfill? SD_Fill : SD_Stroke);
-    qsdo->BeginSurface(env, qsdo, renderType);
+    qsdo->BeginSurface(env, qsdo, isfill ? SD_Fill : SD_Stroke);
     if (qsdo->cgRef != NULL)
     {
         doArc(qsdo, x, y, w, h, angleStart, angleExtent, arcType, isfill);
@@ -741,9 +692,8 @@ JNIEXPORT void JNICALL Java_sun_java2d_CRenderer_doPoly
 PRINT("Java_sun_java2d_CRenderer_doPoly")
     QuartzSDOps *qsdo = (QuartzSDOps*)SurfaceData_GetOps(env, jsurfacedata);
 JNI_COCOA_ENTER(env);
-    BOOL eoFill = YES; // polys are WIND_EVEN_ODD by definition
-    SDRenderType renderType    = (isfill? (eoFill ? SD_EOFill : SD_Fill) : SD_Stroke);
-    qsdo->BeginSurface(env, qsdo, renderType);
+    // polys are WIND_EVEN_ODD by definition
+    qsdo->BeginSurface(env, qsdo, isfill ? SD_EOFill : SD_Stroke);
     if (qsdo->cgRef != NULL)
     {
         doPoly(env, qsdo, xpointsarray, ypointsarray, npoints, ispolygon, isfill);
@@ -763,8 +713,7 @@ JNIEXPORT void JNICALL Java_sun_java2d_CRenderer_doShape
 PRINT("Java_sun_java2d_CRenderer_doShape")
     QuartzSDOps *qsdo = (QuartzSDOps*)SurfaceData_GetOps(env, jsurfacedata);
 JNI_COCOA_ENTER(env);
-    BOOL eoFill = (windingRule == java_awt_geom_PathIterator_WIND_EVEN_ODD);
-    SDRenderType renderType    = (isfill? (eoFill ? SD_EOFill : SD_Fill) : SD_Stroke);
+    SDRenderType renderType = isfill ? ((windingRule == java_awt_geom_PathIterator_WIND_EVEN_ODD) ? SD_EOFill : SD_Fill) : SD_Stroke;
     qsdo->BeginSurface(env, qsdo, renderType);
     if (qsdo->cgRef != NULL)
     {
