@@ -91,4 +91,9 @@ public final class ExpandDiffAction extends ContextAction<DiagramViewModel> impl
     public void changed(DiagramViewModel source) {
         update(source);
     }
+
+    @Override
+    protected boolean asynchronous() {
+        return false;
+    }
 }
