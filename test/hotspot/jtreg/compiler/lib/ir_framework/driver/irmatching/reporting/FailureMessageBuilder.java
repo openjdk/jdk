@@ -4,12 +4,11 @@ import compiler.lib.ir_framework.driver.irmatching.visitor.MatchResultAction;
 import compiler.lib.ir_framework.driver.irmatching.TestClassResult;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethodMatchResult;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.NotCompiledResult;
-import compiler.lib.ir_framework.driver.irmatching.irrule.IRRule;
 import compiler.lib.ir_framework.driver.irmatching.irrule.IRRuleMatchResult;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.CheckAttributeMatchResult;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.CountsConstraintFailure;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.FailOnConstraintFailure;
-import compiler.lib.ir_framework.driver.irmatching.irrule.phase.CompilePhaseMatchResult;
+import compiler.lib.ir_framework.driver.irmatching.irrule.phase.CompilePhaseIRRuleMatchResult;
 import compiler.lib.ir_framework.driver.irmatching.visitor.PreOrderMatchResultVisitor;
 
 public class FailureMessageBuilder extends AbstractBuilder implements MatchResultAction, FailureMessage {
@@ -63,17 +62,16 @@ public class FailureMessageBuilder extends AbstractBuilder implements MatchResul
 
     @Override
     public void doAction(IRRuleMatchResult irRuleMatchResult) {
-        IRRule irRule = irRuleMatchResult.getIRRule();
-        msg.append(getIndentation(indentation)).append("* @IR rule ").append(irRule.getRuleId()).append(": \"")
-           .append(irRule.getIRAnno()).append("\"").append(System.lineSeparator());
+        msg.append(getIndentation(indentation)).append("* @IR rule ").append(irRuleMatchResult.getRuleId()).append(": \"")
+           .append(irRuleMatchResult.getIRAnno()).append("\"").append(System.lineSeparator());
     }
 
     @Override
-    public void doAction(CompilePhaseMatchResult compilePhaseMatchResult) {
+    public void doAction(CompilePhaseIRRuleMatchResult compilePhaseIRRuleMatchResult) {
         msg.append(getIndentation(indentation + 2))
-           .append("> Phase \"").append(compilePhaseMatchResult.getCompilePhase().getName()).append("\":")
+           .append("> Phase \"").append(compilePhaseIRRuleMatchResult.getCompilePhase().getName()).append("\":")
            .append(System.lineSeparator());
-        if (compilePhaseMatchResult.hasNoCompilationOutput()) {
+        if (compilePhaseIRRuleMatchResult.hasNoCompilationOutput()) {
             msg.append(buildNoCompilationOutputMessage());
         }
     }

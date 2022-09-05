@@ -26,6 +26,10 @@ package compiler.lib.ir_framework;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * This enum represents all available compile phases on which an IR matching can be done. There is a 1:1 mapping
+ * between IGV phases as specified in
+ */
 public enum CompilePhase {
     DEFAULT("For default IR Nodes as defined in class IRNode only"),
 

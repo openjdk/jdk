@@ -30,14 +30,14 @@ import compiler.lib.ir_framework.driver.irmatching.irrule.IRRuleMatchResult;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.CheckAttributeMatchResult;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.CountsConstraintFailure;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.FailOnConstraintFailure;
-import compiler.lib.ir_framework.driver.irmatching.irrule.phase.CompilePhaseMatchResult;
+import compiler.lib.ir_framework.driver.irmatching.irrule.phase.CompilePhaseIRRuleMatchResult;
 
 public interface MatchResultAction {
     default void doAction(TestClassResult testClassResult) {}
     default void doAction(IRMethodMatchResult irMethodMatchResult) {}
     default void doAction(NotCompiledResult notCompiledResult) {}
     default void doAction(IRRuleMatchResult irRuleMatchResult) {}
-    default void doAction(CompilePhaseMatchResult compilePhaseMatchResult) {}
+    default void doAction(CompilePhaseIRRuleMatchResult compilePhaseIRRuleMatchResult) {}
     default void doAction(CheckAttributeMatchResult checkAttributeMatchResult) {}
     default void doAction(FailOnConstraintFailure failOnConstraintFailure) {}
     default void doAction(CountsConstraintFailure countsConstraintFailure) {}

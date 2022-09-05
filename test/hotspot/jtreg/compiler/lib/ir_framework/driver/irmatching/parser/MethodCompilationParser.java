@@ -27,13 +27,11 @@ import compiler.lib.ir_framework.driver.irmatching.TestClass;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethod;
 
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 
 /**
- * Class to parse the PrintIdeal and PrintOptoAssembly outputs of the test class and store them into a collection
- * of dedicated IRMethod objects used throughout IR matching.
+ * Class to parse the ideal compile phase and PrintOptoAssembly outputs of the test class and store them into a
+ * collection of dedicated IRMethod objects used throughout IR matching.
  *
  * @see IRMethod
  */
@@ -50,10 +48,10 @@ public class MethodCompilationParser {
      */
     public TestClass parse(String hotspotPidFileName, String irEncoding) {
         IREncodingParser irEncodingParser = new IREncodingParser(testClass);
-        Map<String, TestMethod> testCompilationsMap = irEncodingParser.parse(irEncoding);
-        if (!testCompilationsMap.isEmpty()) {
-            HotSpotPidFileParser hotSpotPidFileParser = new HotSpotPidFileParser(testClass.getName(), testCompilationsMap);
-            return hotSpotPidFileParser.parseCompilations(hotspotPidFileName);
+        Map<String, TestMethod> testMethodMap = irEncodingParser.parse(irEncoding);
+        if (!testMethodMap.isEmpty()) {
+            HotSpotPidFileParser hotSpotPidFileParser = new HotSpotPidFileParser(testClass.getName(), testMethodMap);
+            return hotSpotPidFileParser.parse(hotspotPidFileName);
         }
         return new TestClass(new ArrayList<>());
     }

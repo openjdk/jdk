@@ -53,14 +53,10 @@ public class IRMatcher {
         }
     }
 
-
-
     /**
-     * Report all IR violations in a pretty format to the user. Depending on the failed regex, we only report
-     * PrintIdeal or PrintOptoAssembly if the match failed there. If there were failures that matched things
-     * in both outputs then the entire output is reported. Throws IRViolationException from which the compilation
-     * can be read and reported to the stdout separately. The exception message only includes the summary of the
-     * failures.
+     * Report all IR violations in a pretty format to the user by throwing an {@link IRViolationException}. This includes
+     * an exact description of the failure (method, rule, compile phase, check attribute, and constraint) and the
+     * associated compile phase output of the failure.
      */
     private void reportFailures(TestClassResult result) {
         String failureMsg = new FailureMessageBuilder(result).build();
@@ -68,7 +64,7 @@ public class IRMatcher {
         throwIfNoSafepointWhilePrinting(failureMsg, compilationOutput);
     }
 
-    // In some very rare cases, the VM output to regex match on contains "<!-- safepoint while printing -->"
+    // In some very rare cases, the hotspot_pid* file to IR match on contains "<!-- safepoint while printing -->"
     // (emitted by ttyLocker::break_tty_for_safepoint) which might be the reason for a matching error.
     // Do not throw an exception in this case (i.e. bailout).
     private void throwIfNoSafepointWhilePrinting(String failures, String compilations) {

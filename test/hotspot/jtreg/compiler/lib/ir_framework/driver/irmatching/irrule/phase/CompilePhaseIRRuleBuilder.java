@@ -47,9 +47,7 @@ public class CompilePhaseIRRuleBuilder {
     private final IRMethod irMethod;
     private final IR irAnno;
 
-    // Sort by how compile phases are defined in enum
-    private final TreeSet<CompilePhaseIRRule> compilePhaseIRRules
-            = new TreeSet<>(Comparator.comparingInt(r -> r.compilePhase.ordinal()));
+    private final List<CompilePhaseIRRule> compilePhaseIRRules = new ArrayList<>();
 
     private CompilePhaseIRRuleBuilder(IRMethod irMethod, IR irAnno) {
         this.irMethod = irMethod;
@@ -61,11 +59,11 @@ public class CompilePhaseIRRuleBuilder {
     /**
      * Creates a list of {@link CompilePhaseIRRule} instances.
      */
-    public static Set<CompilePhaseIRRule> build(IRMethod irMethod, IR irAnno) {
+    public static List<CompilePhaseIRRule> build(IRMethod irMethod, IR irAnno) {
         return new CompilePhaseIRRuleBuilder(irMethod, irAnno).build();
     }
 
-    private Set<CompilePhaseIRRule> build() {
+    private List<CompilePhaseIRRule> build() {
         CompilePhase[] compilePhases = irAnno.phase();
         TestFormat.checkNoReport(new HashSet<>(List.of(compilePhases)).size() == compilePhases.length,
                                  "Cannot specify a compile phase twice");

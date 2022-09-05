@@ -25,24 +25,28 @@ package compiler.lib.ir_framework.driver.irmatching.irrule;
 
 import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.IRNode;
-import compiler.lib.ir_framework.driver.irmatching.Matching;
+import compiler.lib.ir_framework.driver.irmatching.Matchable;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethod;
 import compiler.lib.ir_framework.driver.irmatching.irrule.phase.CompilePhaseIRRule;
 import compiler.lib.ir_framework.driver.irmatching.irrule.phase.CompilePhaseIRRuleBuilder;
-import compiler.lib.ir_framework.driver.irmatching.irrule.phase.CompilePhaseMatchResult;
+import compiler.lib.ir_framework.driver.irmatching.irrule.phase.CompilePhaseIRRuleMatchResult;
 
-import java.util.Set;
+import java.util.List;
 
 /**
- * This class represents a generic IR rule of an IR method. It contains a list of compile phase specific IR rule
- * versions where placeholder strings of {@link IRNode} are replaced by default regexes matching the compile phase.
+ * This class represents a generic {@link IR @IR} rule of an IR method. It contains a list of compile phase specific
+ * IR rule versions where {@link IRNode} placeholder strings of are replaced by regexes associated with the compile phase.
  *
+ * @see IRRuleMatchResult
  * @see CompilePhaseIRRule
  */
-public class IRRule implements Matching {
+public class IRRule implements Matchable {
     private final int ruleId;
     private final IR irAnno;
-    private final Set<CompilePhaseIRRule> compilePhaseIRRules;
+    /**
+     * List of compile phase IR rules, sorted by
+     */
+    private final List<CompilePhaseIRRule> compilePhaseIRRules;
 
     public IRRule(IRMethod irMethod, int ruleId, IR irAnno) {
         this.ruleId = ruleId;
@@ -65,9 +69,9 @@ public class IRRule implements Matching {
     public IRRuleMatchResult match() {
         IRRuleMatchResult irRuleMatchResult = new IRRuleMatchResult(this);
         for (CompilePhaseIRRule compilePhaseIRRule : compilePhaseIRRules) {
-            CompilePhaseMatchResult compilePhaseMatchResult = compilePhaseIRRule.match();
-            if (compilePhaseMatchResult.fail()) {
-                irRuleMatchResult.addCompilePhaseMatchResult(compilePhaseMatchResult);
+            CompilePhaseIRRuleMatchResult compilePhaseIRRuleMatchResult = compilePhaseIRRule.match();
+            if (compilePhaseIRRuleMatchResult.fail()) {
+                irRuleMatchResult.addCompilePhaseIRMatchResult(compilePhaseIRRuleMatchResult);
             }
         }
         return irRuleMatchResult;

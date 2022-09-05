@@ -38,7 +38,7 @@ public class IRNodeMappings {
     private final Map<String, IRNodeMapEntry> irNodeMappings = new HashMap<>();
 
     /**
-     * Definition of IRNode placeholder strings to regex(es) together with a default phase.
+     * Mapping of IR nodes (IRNode placeholder strings) to regex(es) together with a default phase.
      */
     private IRNodeMappings() {
         idealOnly(IRNode.ABS_D, IdealDefaultRegexes.ABS_D);

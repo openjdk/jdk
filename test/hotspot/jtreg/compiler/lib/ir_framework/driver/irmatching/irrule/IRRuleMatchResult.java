@@ -23,38 +23,51 @@
 
 package compiler.lib.ir_framework.driver.irmatching.irrule;
 
+import compiler.lib.ir_framework.CompilePhase;
+import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.driver.irmatching.MatchResult;
+import compiler.lib.ir_framework.driver.irmatching.irrule.phase.CompilePhaseIRRuleMatchResult;
 import compiler.lib.ir_framework.driver.irmatching.visitor.MatchResultVisitor;
-import compiler.lib.ir_framework.driver.irmatching.irrule.phase.CompilePhaseMatchResult;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Comparator;
+import java.util.TreeSet;
 
 /**
- * This class represents an IR matching result of an IR rule.
+ * This class represents an IR matching result of all compile phases on an IR rule. The compile phase results are
+ * ordered by the {@link CompilePhase} enum definition order.
  *
  * @see IRRule
  */
 public class IRRuleMatchResult implements MatchResult {
-    private final IRRule irRule;
-    private final List<CompilePhaseMatchResult> compilePhaseMatchResults;
+    private final int irRuleId;
+    private final IR irAnno;
+    /**
+     * List of all compile phase match results for this IR rule which is sorted by the {@link CompilePhase} enum
+     * definition order.
+     */
+    private final TreeSet<CompilePhaseIRRuleMatchResult> compilePhaseIRRuleMatchResults
+            = new TreeSet<>(Comparator.comparingInt(r -> r.getCompilePhase().ordinal()));
 
     public IRRuleMatchResult(IRRule irRule) {
-        this.irRule = irRule;
-        this.compilePhaseMatchResults = new ArrayList<>();
+        this.irRuleId = irRule.getRuleId();
+        this.irAnno = irRule.getIRAnno();
     }
 
-    public IRRule getIRRule() {
-        return irRule;
+    public int getRuleId() {
+        return irRuleId;
     }
 
-    public void addCompilePhaseMatchResult(CompilePhaseMatchResult result) {
-        compilePhaseMatchResults.add(result);
+    public IR getIRAnno() {
+        return irAnno;
+    }
+
+    public void addCompilePhaseIRMatchResult(CompilePhaseIRRuleMatchResult result) {
+        compilePhaseIRRuleMatchResults.add(result);
     }
 
     @Override
     public boolean fail() {
-        return !compilePhaseMatchResults.isEmpty();
+        return !compilePhaseIRRuleMatchResults.isEmpty();
     }
 
     @Override
@@ -64,6 +77,6 @@ public class IRRuleMatchResult implements MatchResult {
 
     @Override
     public void acceptChildren(MatchResultVisitor visitor) {
-        acceptChildren(visitor, compilePhaseMatchResults);
+        acceptChildren(visitor, compilePhaseIRRuleMatchResults);
     }
 }

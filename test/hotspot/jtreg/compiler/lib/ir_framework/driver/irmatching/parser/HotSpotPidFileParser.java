@@ -39,8 +39,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Class to parse the PrintIdeal and PrintOptoAssembly outputs of the test class from the hotspot_pid* file and add them
- * to the collection of {@link IRMethod} created by {@link IREncodingParser}.
+ * Class to parse the ideal compile phases and PrintOptoAssembly outputs of the test class from the hotspot_pid* file
+ * of all methods collected by {@link IREncodingParser}.
  *
  * @see IRMethod
  * @see IREncodingParser
@@ -49,22 +49,26 @@ class HotSpotPidFileParser {
     private static final Pattern COMPILE_ID_PATTERN = Pattern.compile("compile_id='(\\d+)'");
 
     private final Pattern compileIdPatternForTestClass;
-    private final Map<String, TestMethod> testCompilationsMap;
+    /**
+     * "Method name" -> TestMethod map created by {@link IREncodingParser} which contains an entry for each method that
+     * needs to be IR matched on.
+     */
+    private final Map<String, TestMethod> testMethodMap;
 
-    public HotSpotPidFileParser(String testClass, Map<String, TestMethod> testCompilationsMap) {
+    public HotSpotPidFileParser(String testClass, Map<String, TestMethod> testMethodMap) {
         this.compileIdPatternForTestClass = Pattern.compile("compile_id='(\\d+)'.*" + Pattern.quote(testClass) + " (\\S+)");
-        this.testCompilationsMap = testCompilationsMap;
+        this.testMethodMap = testMethodMap;
     }
 
 
     /**
-     * Parse the hotspot_pid*.log file from the test VM. Read the PrintIdeal and PrintOptoAssembly outputs for all
-     * methods of the test class that need to be IR matched (found in compilations map).
+     * Parse the hotspot_pid*.log file from the test VM. Read the ideal compile phase and PrintOptoAssembly outputs for
+     * all methods defined by the IR encoding.
      */
-    public TestClass parseCompilations(String hotspotPidFileName) {
+    public TestClass parse(String hotspotPidFileName) {
         try {
-            processFileLines(hotspotPidFileName);
-            List<IRMethod> irMethods = testCompilationsMap.values().stream().map(TestMethod::createIRMethod).toList();
+            parseHotSpotFile(hotspotPidFileName);
+            List<IRMethod> irMethods = testMethodMap.values().stream().map(TestMethod::createIRMethod).toList();
             TestFormat.throwIfAnyFailures();
             return new TestClass(irMethods);
         } catch (IOException e) {
@@ -74,7 +78,7 @@ class HotSpotPidFileParser {
         }
     }
 
-    private void processFileLines(String hotspotPidFileName) throws IOException {
+    private void parseHotSpotFile(String hotspotPidFileName) throws IOException {
         Map<Integer, TestMethod> compileIdMap = new HashMap<>();
         try (var reader = Files.newBufferedReader(Paths.get(hotspotPidFileName))) {
             Line line = new Line(reader, compileIdPatternForTestClass);
@@ -94,7 +98,7 @@ class HotSpotPidFileParser {
         Block block = blockOutputReader.readBlock();
         if (block.containsTestClassCompilations()) {
             // Register all test method compilations that could have been emitted during a rare safepoint while
-            // dumping the PrintIdeal/PrintOptoAssembly output.
+            // dumping the ideal compile phase/PrintOptoAssembly output.
             block.getTestClassCompilations().forEach(l -> parseTestMethodCompileId(compileIdMap, l));
         }
         setIRMethodOutput(block.getOutput(), line, compileIdMap);
@@ -103,11 +107,7 @@ class HotSpotPidFileParser {
     private void parseTestMethodCompileId(Map<Integer, TestMethod> compileIdMap, String line) {
         String methodName = parseMethodName(line);
         if (isTestAnnotatedMethod(methodName)) {
-            int compileId = getCompileId(line);
-            TestMethod testMethod = getTestMethod(methodName);
-            testMethod.clear();
-            testMethod.setCompiled();
-            compileIdMap.put(compileId, testMethod);
+            compileIdMap.put(getCompileId(line), getTestMethod(methodName));
         }
     }
 
@@ -121,11 +121,14 @@ class HotSpotPidFileParser {
      * Is this a @Test method?
      */
     private boolean isTestAnnotatedMethod(String testMethodName) {
-        return testCompilationsMap.containsKey(testMethodName);
+        return testMethodMap.containsKey(testMethodName);
     }
 
     private TestMethod getTestMethod(String testMethodName) {
-        return testCompilationsMap.get(testMethodName);
+        TestMethod testMethod = testMethodMap.get(testMethodName);
+        testMethod.clearOutput();
+        testMethod.setCompiled();
+        return testMethod;
     }
 
     private int getCompileId(String line) {

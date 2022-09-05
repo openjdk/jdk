@@ -30,7 +30,7 @@ import compiler.lib.ir_framework.driver.irmatching.TestClassResult;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethod;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethodMatchResult;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.NotCompiledResult;
-import compiler.lib.ir_framework.driver.irmatching.irrule.phase.CompilePhaseMatchResult;
+import compiler.lib.ir_framework.driver.irmatching.irrule.phase.CompilePhaseIRRuleMatchResult;
 
 import java.util.EnumSet;
 import java.util.stream.Collectors;
@@ -105,8 +105,8 @@ public class CompilationOutputBuilder extends AbstractBuilder implements MatchRe
     }
 
     @Override
-    public void visit(CompilePhaseMatchResult compilePhaseMatchResult) {
-        if (failedCompilePhases.add(compilePhaseMatchResult.getCompilePhase())) {
+    public void visit(CompilePhaseIRRuleMatchResult compilePhaseIRRuleMatchResult) {
+        if (failedCompilePhases.add(compilePhaseIRRuleMatchResult.getCompilePhase())) {
             compilePhaseCount++;
         }
     }

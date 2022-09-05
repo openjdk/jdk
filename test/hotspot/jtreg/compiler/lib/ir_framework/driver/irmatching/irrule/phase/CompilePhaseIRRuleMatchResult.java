@@ -34,23 +34,23 @@ import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.CheckAttrib
  *
  * @see IRRule
  */
-public class CompilePhaseMatchResult implements MatchResult {
+public class CompilePhaseIRRuleMatchResult implements MatchResult {
     private final CompilePhase compilePhase;
     private final boolean compilationOutput;
     private CheckAttributeMatchResult failOnFailures = null;
     private CheckAttributeMatchResult countsFailures = null;
 
-    private CompilePhaseMatchResult(CompilePhase compilePhase, boolean compilationOutput) {
+    private CompilePhaseIRRuleMatchResult(CompilePhase compilePhase, boolean compilationOutput) {
         this.compilePhase = compilePhase;
         this.compilationOutput = compilationOutput;
     }
 
-    public static CompilePhaseMatchResult create(CompilePhase compilePhase) {
-        return new CompilePhaseMatchResult(compilePhase, true);
+    public static CompilePhaseIRRuleMatchResult create(CompilePhase compilePhase) {
+        return new CompilePhaseIRRuleMatchResult(compilePhase, true);
     }
 
-    public static CompilePhaseMatchResult createNoCompilationOutput(CompilePhase compilePhase) {
-        return new CompilePhaseMatchResult(compilePhase, false);
+    public static CompilePhaseIRRuleMatchResult createNoCompilationOutput(CompilePhase compilePhase) {
+        return new CompilePhaseIRRuleMatchResult(compilePhase, false);
     }
 
     public boolean hasNoCompilationOutput() {

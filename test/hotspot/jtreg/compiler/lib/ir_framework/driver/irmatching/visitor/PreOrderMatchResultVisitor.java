@@ -30,7 +30,7 @@ import compiler.lib.ir_framework.driver.irmatching.irrule.IRRuleMatchResult;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.CheckAttributeMatchResult;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.CountsConstraintFailure;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.FailOnConstraintFailure;
-import compiler.lib.ir_framework.driver.irmatching.irrule.phase.CompilePhaseMatchResult;
+import compiler.lib.ir_framework.driver.irmatching.irrule.phase.CompilePhaseIRRuleMatchResult;
 
 public class PreOrderMatchResultVisitor implements MatchResultVisitor {
 
@@ -64,9 +64,9 @@ public class PreOrderMatchResultVisitor implements MatchResultVisitor {
     }
 
     @Override
-    public void visit(CompilePhaseMatchResult compilePhaseMatchResult) {
-        action.doAction(compilePhaseMatchResult);
-        compilePhaseMatchResult.acceptChildren(this);
+    public void visit(CompilePhaseIRRuleMatchResult compilePhaseIRRuleMatchResult) {
+        action.doAction(compilePhaseIRRuleMatchResult);
+        compilePhaseIRRuleMatchResult.acceptChildren(this);
     }
 
     @Override

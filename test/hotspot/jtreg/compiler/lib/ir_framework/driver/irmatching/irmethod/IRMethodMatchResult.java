@@ -30,13 +30,15 @@ import compiler.lib.ir_framework.driver.irmatching.irrule.IRRuleMatchResult;
 import java.util.List;
 
 /**
- * This base class represents an IR matching result of all specified compile phases of all IR rules of an IR method.
+ * This class represents an IR matching result of an {@link IRMethod}.
  *
- * @see IRRuleMatchResult
  * @see IRMethod
  */
 public class IRMethodMatchResult implements Comparable<IRMethodMatchResult>, MatchResult {
     protected final IRMethod irMethod;
+    /**
+     * List of all IR rule match results which could have been applied on different compile phases.
+     */
     private final List<IRRuleMatchResult> irRulesMatchResults;
 
     public IRMethodMatchResult(IRMethod irMethod, List<IRRuleMatchResult> irRulesMatchResults) {
@@ -58,7 +60,7 @@ public class IRMethodMatchResult implements Comparable<IRMethodMatchResult>, Mat
     }
 
     /**
-     * Used to sort the failed IR methods alphabetically.
+     * Comparator method to sort the failed IR methods alphabetically.
      */
     @Override
     public int compareTo(IRMethodMatchResult other) {

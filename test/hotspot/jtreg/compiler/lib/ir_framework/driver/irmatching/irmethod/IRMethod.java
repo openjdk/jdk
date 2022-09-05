@@ -27,7 +27,7 @@ import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.Test;
 import compiler.lib.ir_framework.TestFramework;
-import compiler.lib.ir_framework.driver.irmatching.Matching;
+import compiler.lib.ir_framework.driver.irmatching.Matchable;
 import compiler.lib.ir_framework.driver.irmatching.irrule.IRRule;
 import compiler.lib.ir_framework.driver.irmatching.irrule.IRRuleMatchResult;
 import compiler.lib.ir_framework.shared.TestFormat;
@@ -39,12 +39,13 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * This class represents a {@link Test @Test} annotated method that has an associated non-empty list of applicable IR rules.
+ * This class represents a {@link Test @Test} annotated method that has an associated non-empty list of applicable
+ * {@link IR @IR} rules.
  *
- * @see IRRule
- * @see Test
+ * @see IR
+ * @see IRMethodMatchResult
  */
-public class IRMethod implements Matching {
+public class IRMethod implements Matchable {
     private final Method method;
     private final Map<CompilePhase, String> compilationOutputMap;
     private final boolean compiled;
@@ -81,15 +82,15 @@ public class IRMethod implements Matching {
     @Override
     public IRMethodMatchResult match() {
         TestFramework.check(!irRules.isEmpty(), "IRMethod cannot be created if there are no IR rules to apply");
-        List<IRRuleMatchResult> results = new ArrayList<>();
         if (!compiled) {
             return new NotCompiledResult(this, irRules.size());
         } else {
-            return getMatchResult(results);
+            return getMatchResult();
         }
     }
 
-    private IRMethodMatchResult getMatchResult(List<IRRuleMatchResult> results) {
+    private IRMethodMatchResult getMatchResult() {
+        List<IRRuleMatchResult> results = new ArrayList<>();
         for (IRRule irRule : irRules) {
             IRRuleMatchResult result = irRule.match();
             if (result.fail()) {

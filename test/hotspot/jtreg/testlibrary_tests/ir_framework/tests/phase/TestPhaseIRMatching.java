@@ -34,7 +34,7 @@ import compiler.lib.ir_framework.driver.irmatching.irrule.IRRuleMatchResult;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.CheckAttributeKind;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.CountsConstraintFailure;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.FailOnConstraintFailure;
-import compiler.lib.ir_framework.driver.irmatching.irrule.phase.CompilePhaseMatchResult;
+import compiler.lib.ir_framework.driver.irmatching.irrule.phase.CompilePhaseIRRuleMatchResult;
 import compiler.lib.ir_framework.driver.irmatching.visitor.MatchResultAction;
 import compiler.lib.ir_framework.driver.irmatching.visitor.PreOrderMatchResultVisitor;
 import jdk.test.lib.Asserts;
@@ -58,9 +58,7 @@ import java.util.stream.Collectors;
  * @run main/othervm/timeout=240 -Xbootclasspath/a:. -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions
  *                               -XX:+WhiteBoxAPI ir_framework.tests.phase.TestPhaseIRMatching
  */
-
 public class TestPhaseIRMatching {
-
 
     public static void main(String[] args) {
         run(Basics.class);
@@ -388,13 +386,13 @@ class FailureBuilder implements MatchResultAction {
 
     @Override
     public void doAction(IRRuleMatchResult irRuleMatchResult) {
-        ruleId = irRuleMatchResult.getIRRule().getRuleId();
+        ruleId = irRuleMatchResult.getRuleId();
     }
 
     @Override
-    public void doAction(CompilePhaseMatchResult compilePhaseMatchResult) {
-        compilePhase = compilePhaseMatchResult.getCompilePhase();
-        noCompilation = compilePhaseMatchResult.hasNoCompilationOutput();
+    public void doAction(CompilePhaseIRRuleMatchResult compilePhaseIRRuleMatchResult) {
+        compilePhase = compilePhaseIRRuleMatchResult.getCompilePhase();
+        noCompilation = compilePhaseIRRuleMatchResult.hasNoCompilationOutput();
         if (noCompilation) {
             failures.add(new Failure(methodName, ruleId, compilePhase, CheckAttributeKind.FAIL_ON, -1));
         }

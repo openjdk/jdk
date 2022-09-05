@@ -29,7 +29,8 @@ import compiler.lib.ir_framework.driver.irmatching.irrule.IRRuleMatchResult;
 import java.util.ArrayList;
 
 /**
- * This class represents an IR matching result where the compilation output of a method was empty.
+ * This class represents a special IR matching result of an {@link IRMethod} where the compilation output of a the
+ * method was empty.
  *
  * @see IRRuleMatchResult
  * @see IRMethod

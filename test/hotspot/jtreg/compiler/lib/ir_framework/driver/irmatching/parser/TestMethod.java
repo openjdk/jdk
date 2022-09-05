@@ -34,7 +34,7 @@ import java.util.Map;
 
 /**
  * This class represents a test method that is incrementally updated with new information parsed by {@link IREncodingParser}
- * and {@link HotSpotPidFileParser}. Ones the parsers are finished, an {@link IRMethod} object can be fetched from the
+ * and {@link HotSpotPidFileParser}. Once the parsers are finished, an {@link IRMethod} object can be fetched from the
  * collected data with {@link TestMethod#createIRMethod()}.
  *
  * @see IREncodingParser
@@ -67,9 +67,10 @@ public class TestMethod {
 
     /**
      * Clear the collected ideal and opto assembly output of all phases. This is necessary when having multiple
-     * compilations of the same method. We only want to keep the very last which is the one triggered by the framework.
+     * compilations of the same method. We only want to keep the very last compilation which is the one requested by
+     * the framework.
      */
-    public void clear() {
+    public void clearOutput() {
         compilationOutputMap.clear();
     }
 
