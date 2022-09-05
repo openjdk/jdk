@@ -125,7 +125,7 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
         setToolTipText(getDiagram().getGraph().getGroup().getName());
     }
 
-    public EditorTopComponent(Diagram diagram) {
+    public EditorTopComponent(InputGraph graph) {
 
         LookupHistory.init(InputGraphProvider.class);
         this.setFocusable(true);
@@ -179,9 +179,14 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
         container.setLayout(new BorderLayout());
         container.add(BorderLayout.NORTH, toolBar);
 
-        DiagramViewModel diagramViewModel = new DiagramViewModel(diagram.getGraph().getGroup(), filterChain, sequence);
-        rangeSlider = new RangeSlider();
+        DiagramViewModel diagramViewModel = new DiagramViewModel(graph.getGroup(), filterChain, sequence);
+        diagramViewModel.selectGraph(graph);
+        diagramViewModel.getDiagramChangedEvent().addListener(diagramChangedListener);
+        RangeSlider rangeSlider = new RangeSlider();
         rangeSlider.setModel(diagramViewModel);
+        if (graph.getGroup().getGraphsCount() == 1) {
+            rangeSlider.setVisible(false);
+        }
         JScrollPane pane = new JScrollPane(rangeSlider, ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER, ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         container.add(BorderLayout.CENTER, pane);
 
@@ -191,16 +196,6 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
         content.add(exportCookie);
         content.add(diagramViewModel);
         this.associateLookup(new ProxyLookup(new Lookup[]{scene.getLookup(), new AbstractLookup(graphContent), new AbstractLookup(content)}));
-
-        diagramViewModel.getDiagramChangedEvent().addListener(diagramChangedListener);
-        diagramViewModel.selectGraph(diagram.getGraph());
-        diagramViewModel.getViewPropertiesChangedEvent().addListener(new ChangedListener<DiagramViewModel>() {
-                @Override
-                public void changed(DiagramViewModel source) {
-                    hideDuplicatesButton.setSelected(getModel().getHideDuplicates());
-                    hideDuplicatesAction.setState(getModel().getHideDuplicates());
-                }
-            });
 
         Group group = getDiagram().getGraph().getGroup();
         group.getChangedEvent().addListener(g -> closeOnRemovedOrEmptyGroup());
@@ -335,10 +330,6 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
         satelliteComponent = scene.createSatelliteView();
         satelliteComponent.setSize(200, 200);
         centerPanel.add(SATELLITE_STRING, satelliteComponent);
-
-        if (diagram.getGraph().getGroup().getGraphsCount() == 1) {
-            rangeSlider.setVisible(false);
-        }
 
         updateDisplayName();
     }
