@@ -56,4 +56,6 @@ public:
 
 #define ASSERT_ALIGN(p, n) ASSERT_TRUE(is_aligned(p, n))
 
+#define LOG_HERE(s, ...) { printf(s, __VA_ARGS__); printf("\n"); fflush(stdout); }
+
 #endif // TESTUTILS_HPP

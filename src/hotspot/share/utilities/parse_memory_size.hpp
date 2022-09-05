@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,8 +35,15 @@
 #include <limits>
 #include <stdlib.h>
 
+// *************************************************************************
+// ** Attention compatibility!                                            **
+// ** These functions are used to parse JVM arguments (-XX). Be careful   **
+// ** with behavioral changes here.                                       **
+// *************************************************************************
+
+// Helper for parse_memory_size
 template<typename T>
-static bool multiply_by_1k(T& n) {
+inline bool multiply_by_1k(T& n) {
   if (n >= std::numeric_limits<T>::min() / 1024 &&
       n <= std::numeric_limits<T>::max() / 1024) {
     n *= 1024;
@@ -52,8 +60,15 @@ static bool multiply_by_1k(T& n) {
 //    {signed, unsigned} x {32-bit, 64-bit}
 //
 // We use SFINAE to pick the correct parse_integer_impl() function
+//
+// This function will parse until it encounters unparseable parts, then
+// stop. If it read no valid memory size, it will fail.
+//
+// Example: "1024M:oom" will yield true, result=1G, endptr pointing to ":oom"
+
 template<typename T>
-static bool parse_integer(const char *s, T* result) {
+static bool parse_memory_size(const char *s, char **endptr, T* result) {
+
   if (!isdigit(s[0]) && s[0] != '-') {
     // strtoll/strtoull may allow leading spaces. Forbid it.
     return false;
@@ -64,12 +79,7 @@ static bool parse_integer(const char *s, T* result) {
                 (s[0] == '-' && s[1] == '0' && (s[2] == 'x' || s[3] == 'X'));
   char* remainder;
 
-  if (!parse_integer_impl(s, &remainder, (is_hex ? 16 : 10), &n)) {
-    return false;
-  }
-
-  // Fail if no number was read at all or if the remainder contains more than a single non-digit character.
-  if (remainder == s || strlen(remainder) > 1) {
+  if (!parse_integer(s, &remainder, (is_hex ? 16 : 10), &n)) {
     return false;
   }
 
@@ -85,15 +95,28 @@ static bool parse_integer(const char *s, T* result) {
       // fall-through
     case 'K': case 'k':
       if (!multiply_by_1k(n)) return false;
-      break;
-    case '\0':
+      remainder ++; // shave off parsed unit char
       break;
     default:
-      return false;
-  }
+      // nothing. Return remainder unparsed.
+      break;
+  };
 
   *result = n;
+  *endptr = remainder;
   return true;
+}
+
+// Used for parsing JVM argument sizes (see argument.cpp)
+// In contrast to parse_memory_size(s, endptr, result), this variant requires the full
+// string to match. No remainder are allowed here.
+// Example: "100m" - okay, "100m:oom" -> not okay
+template<typename T>
+static bool parse_argument_memory_size(const char *s, T* result) {
+  char* remainder;
+  bool rc = parse_memory_size(s, &remainder, result);
+  rc = rc && (*remainder == '\0');
+  return rc;
 }
 
 #endif // SHARE_UTILITIES_PARSE_MEMORY_SIZE_HPP
