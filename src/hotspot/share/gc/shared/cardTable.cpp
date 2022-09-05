@@ -182,7 +182,6 @@ void CardTable::resize_covered_region(MemRegion new_region) {
   // We don't change the start of a region, only the end.
   assert(_whole_heap.contains(new_region),
            "attempt to cover area not in reserved area");
-  debug_only(verify_guard();)
   // collided is true if the expansion would push into another committed region
   debug_only(bool collided = false;)
   int const ind = find_covering_region_by_base(new_region.start());
@@ -337,7 +336,6 @@ void CardTable::resize_covered_region(MemRegion new_region) {
   // Touch the last card of the covered region to show that it
   // is committed (or SEGV).
   debug_only((void) (*byte_for(_covered[ind].last()));)
-  debug_only(verify_guard();)
 }
 
 // Note that these versions are precise!  The scanning code has to handle the
@@ -379,9 +377,6 @@ uintx CardTable::ct_max_alignment_constraint() {
   return GCCardSizeInBytes * os::vm_page_size();
 }
 
-void CardTable::verify_guard() {
-}
-
 void CardTable::invalidate(MemRegion mr) {
   assert(align_down(mr.start(), HeapWordSize) == mr.start(), "Unaligned start");
   assert(align_up  (mr.end(),   HeapWordSize) == mr.end(),   "Unaligned end"  );
@@ -389,10 +384,6 @@ void CardTable::invalidate(MemRegion mr) {
     MemRegion mri = mr.intersection(_covered[i]);
     if (!mri.is_empty()) dirty_MemRegion(mri);
   }
-}
-
-void CardTable::verify() {
-  verify_guard();
 }
 
 #ifndef PRODUCT

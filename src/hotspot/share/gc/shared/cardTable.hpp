@@ -243,9 +243,6 @@ public:
   // Print a description of the memory for the card table
   virtual void print_on(outputStream* st) const;
 
-  void verify();
-  void verify_guard();
-
   // val_equals -> it will check that all cards covered by mr equal val
   // !val_equals -> it will check that all cards covered by mr do not equal val
   void verify_region(MemRegion mr, CardValue val, bool val_equals) PRODUCT_RETURN;
