@@ -83,7 +83,6 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
     private EnableBlockLayoutAction blockLayoutAction;
     private EnableCFGLayoutAction cfgLayoutAction;
     private OverviewAction overviewAction;
-    private HideDuplicatesAction hideDuplicatesAction;
     private PredSuccAction predSuccAction;
     private ShowEmptyBlocksAction showEmptyBlocksAction;
     private SelectionModeAction selectionModeAction;
@@ -92,7 +91,6 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
     private CardLayout cardLayout;
     private RangeSlider rangeSlider;
     private JToggleButton overviewButton;
-    private JToggleButton hideDuplicatesButton;
     private JPanel topPanel;
     private Toolbar quickSearchToolbar;
     private static final JPanel quickSearchPresenter = (JPanel) ((Presenter.Toolbar) Utilities.actionsForPath("Actions/Search").get(0)).getToolbarPresenter();
@@ -253,12 +251,6 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
         button.setEnabled(Settings.get().getInt(Settings.DEFAULT_VIEW, Settings.DEFAULT_VIEW_DEFAULT) == Settings.DefaultView.CONTROL_FLOW_GRAPH);
         toolBar.add(button);
         showEmptyBlocksAction.addPropertyChangeListener(this);
-
-        hideDuplicatesAction = new HideDuplicatesAction();
-        hideDuplicatesButton = new JToggleButton(hideDuplicatesAction);
-        hideDuplicatesButton.setSelected(false);
-        toolBar.add(hideDuplicatesButton);
-        hideDuplicatesAction.addPropertyChangeListener(this);
 
         toolBar.addSeparator();
         UndoAction undoAction = UndoAction.get(UndoAction.class);
@@ -473,9 +465,6 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
             boolean b = cfgLayoutAction.isSelected();
             this.getModel().setShowCFG(b);
             this.showEmptyBlocksAction.setEnabled(true);
-        } else if (evt.getSource() == this.hideDuplicatesAction) {
-            boolean b = (Boolean) hideDuplicatesAction.getValue(HideDuplicatesAction.STATE);
-            this.getModel().setHideDuplicates(b);
         } else if (evt.getSource() == this.selectionModeAction) {
             boolean b = (Boolean) selectionModeAction.getValue(SelectionModeAction.STATE);
             if (b) {

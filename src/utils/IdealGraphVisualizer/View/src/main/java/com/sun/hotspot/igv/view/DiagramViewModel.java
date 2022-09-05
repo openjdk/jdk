@@ -69,7 +69,6 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
     private boolean showCFG;
     private boolean showNodeHull;
     private boolean showEmptyBlocks;
-    private boolean hideDuplicates;
     private ChangedListener<FilterChain> filterChainChangedListener = new ChangedListener<FilterChain>() {
 
         @Override
@@ -177,27 +176,6 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
 
     public void setShowEmptyBlocks(boolean b) {
         showEmptyBlocks = b;
-        viewPropertiesChangedEvent.fire();
-    }
-
-    public boolean getHideDuplicates() {
-        return hideDuplicates;
-    }
-
-    public void setHideDuplicates(boolean b) {
-        System.err.println("setHideDuplicates: " + b);
-        hideDuplicates = b;
-        InputGraph currentGraph = getFirstGraph();
-        if (hideDuplicates) {
-            // Back up to the unhidden equivalent graph
-            int index = graphs.indexOf(currentGraph);
-            while (graphs.get(index).getProperties().get("_isDuplicate") != null) {
-                index--;
-            }
-            currentGraph = graphs.get(index);
-        }
-        filterGraphs();
-        selectGraph(currentGraph);
         viewPropertiesChangedEvent.fire();
     }
 
@@ -394,7 +372,7 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
             f.apply(diagram);
         }
 
-        getDiagramChangedEvent().fire();
+        diagramChangedEvent.fire();
     }
 
     public FilterChain getFilterChain() {
@@ -416,11 +394,8 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         ArrayList<InputGraph> result = new ArrayList<>();
         List<String> positions = new ArrayList<>();
         for (InputGraph graph : group.getGraphs()) {
-            String duplicate = graph.getProperties().get("_isDuplicate");
-            if (duplicate == null || !hideDuplicates) {
-                result.add(graph);
-                positions.add(graph.getName());
-            }
+            result.add(graph);
+            positions.add(graph.getName());
         }
         this.graphs = result;
         setPositions(positions);
@@ -442,11 +417,6 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
 
     public void selectGraph(InputGraph g) {
         int index = graphs.indexOf(g);
-        if (index == -1 && hideDuplicates) {
-            // A graph was selected that's currently hidden, so unhide and select it.
-            setHideDuplicates(false);
-            index = graphs.indexOf(g);
-        }
         assert index != -1;
         setPositions(index, index);
     }
