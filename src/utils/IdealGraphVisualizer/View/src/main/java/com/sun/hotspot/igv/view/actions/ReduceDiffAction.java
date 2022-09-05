@@ -57,8 +57,8 @@ public final class ReduceDiffAction extends ContextAction<DiagramViewModel> impl
     public void performAction(DiagramViewModel model) {
         int firstPos = model.getFirstPosition();
         int secondPos = model.getSecondPosition();
-        if (secondPos != model.getPositions().size() - 1) {
-            model.setPositions(firstPos, (firstPos < secondPos) ? secondPos - 1 : secondPos);
+        if (firstPos < secondPos) {
+            model.setPositions(firstPos, secondPos - 1);
         }
     }
 
