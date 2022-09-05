@@ -24,6 +24,7 @@
  */
 package jdk.jshell.execution;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.concurrent.atomic.AtomicReference;
@@ -44,15 +45,10 @@ import jdk.internal.org.objectweb.asm.Opcodes;
  */
 public class LocalExecutionControl extends DirectExecutionControl {
 
-    private static volatile boolean allStop = false;
-
-    public static void stopCheck() {
-        if (allStop) throw new ThreadDeath();
-    }
-
     private final Object STOP_LOCK = new Object();
     private boolean userCodeRunning = false;
     private ThreadGroup execThreadGroup;
+    private Field allStop = null;
 
     /**
      * Creates an instance, delegating loader operations to the specified
@@ -87,7 +83,7 @@ public class LocalExecutionControl extends DirectExecutionControl {
                 return new MethodVisitor(Opcodes.ASM9, super.visitMethod(access, name, descriptor, signature, exceptions)) {
                     @Override
                     public void visitJumpInsn(int opcode, Label label) {
-                        visitMethodInsn(Opcodes.INVOKESTATIC, "jdk/jshell/execution/LocalExecutionControl", "stopCheck", "()V", false);
+                        visitMethodInsn(Opcodes.INVOKESTATIC, "REPL/$Cancel$", "stopCheck", "()V", false);
                         super.visitJumpInsn(opcode, label);
                     }
                 };
@@ -96,8 +92,35 @@ public class LocalExecutionControl extends DirectExecutionControl {
         return writer.toByteArray();
     }
 
+    private static ClassBytecodes genCancelClass() {
+        var cancelWriter = new ClassWriter(ClassWriter.COMPUTE_FRAMES|ClassWriter.COMPUTE_MAXS);
+        cancelWriter.visit(Opcodes.V19, Opcodes.ACC_PUBLIC, "REPL/$Cancel$", null, "java/lang/Object", null);
+        cancelWriter.visitField(Opcodes.ACC_PUBLIC|Opcodes.ACC_STATIC|Opcodes.ACC_VOLATILE, "allStop", "Z", null, null);
+        var checkVisitor = cancelWriter.visitMethod(Opcodes.ACC_PUBLIC|Opcodes.ACC_STATIC, "stopCheck", "()V", null, null);
+            checkVisitor.visitCode();
+            checkVisitor.visitFieldInsn(Opcodes.GETSTATIC, "REPL/$Cancel$", "allStop", "Z");
+            var skip = new Label();
+            checkVisitor.visitJumpInsn(Opcodes.IFEQ, skip);
+            checkVisitor.visitTypeInsn(Opcodes.NEW, "java/lang/ThreadDeath");
+            checkVisitor.visitInsn(Opcodes.DUP);
+            checkVisitor.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/ThreadDeath", "<init>", "()V", false);
+            checkVisitor.visitInsn(Opcodes.ATHROW);
+            checkVisitor.visitLabel(skip);
+            checkVisitor.visitInsn(Opcodes.RETURN);
+            checkVisitor.visitMaxs(0, 0);
+            checkVisitor.visitEnd();
+        cancelWriter.visitEnd();
+        return new ClassBytecodes("REPL.$Cancel$", cancelWriter.toByteArray());
+    }
+
     @Override
     protected String invoke(Method doitMethod) throws Exception {
+        if (allStop == null) {
+            super.load(new ClassBytecodes[]{genCancelClass()});
+            allStop = findClass("REPL.$Cancel$").getDeclaredField("allStop");
+        }
+        allStop.set(null, false);
+
         execThreadGroup = new ThreadGroup("JShell process local execution");
 
         AtomicReference<InvocationTargetException> iteEx = new AtomicReference<>();
@@ -171,7 +194,21 @@ public class LocalExecutionControl extends DirectExecutionControl {
             if (execThreadGroup == null) {
                 throw new InternalException("Process-local code snippets thread group is null. Aborting stop.");
             }
-            allStop = true;
+            try {
+                allStop.set(null, true);
+            } catch (IllegalArgumentException| IllegalAccessException ex) {
+                throw new InternalException(ex.getMessage());
+            }
+            Thread[] threads;
+            int len, threadCount;
+            do {
+                len = execThreadGroup.activeCount() + 4;
+                threads = new Thread[len];
+                threadCount = execThreadGroup.enumerate(threads);
+            } while (threadCount == len);
+            for (int i = 0; i < threadCount; i++) {
+                threads[i].interrupt();
+            }
         }
     }
 
@@ -179,7 +216,6 @@ public class LocalExecutionControl extends DirectExecutionControl {
     protected void clientCodeEnter() {
         synchronized (STOP_LOCK) {
             userCodeRunning = true;
-            allStop = false;
         }
     }
 
