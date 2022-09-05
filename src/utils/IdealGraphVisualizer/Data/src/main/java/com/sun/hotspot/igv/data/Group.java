@@ -31,15 +31,12 @@ import java.util.*;
  */
 public class Group extends Properties.Entity implements ChangedEventProvider<Group>, Folder, FolderElement {
 
-    private final List<FolderElement> elements;
     private final List<InputGraph> graphs;
-
     private InputMethod method;
     private transient ChangedEvent<Group> changedEvent;
     private Folder parent;
 
     public Group(Folder parent) {
-        elements = new ArrayList<>();
         graphs = new ArrayList<>();
         changedEvent = new ChangedEvent<>(this);
         this.parent = parent;
@@ -62,46 +59,36 @@ public class Group extends Properties.Entity implements ChangedEventProvider<Gro
     }
 
     @Override
-    public List<FolderElement> getElements() {
-        return Collections.unmodifiableList(elements);
-    }
-
-    public int getGraphsCount() {
-        return elements.size();
-    }
-
-    @Override
     public void addElement(FolderElement element) {
-        elements.add(element);
-        if (element instanceof InputGraph) {
-            graphs.add((InputGraph) element);
-        } else {
-
-        }
+        assert element instanceof InputGraph;
+        graphs.add((InputGraph) element);
         element.setParent(this);
         getChangedEvent().fire();
     }
 
-    public Set<Integer> getAllNodes() {
-        Set<Integer> result = new HashSet<>();
-        for (FolderElement e : elements) {
-            if (e instanceof InputGraph) {
-                InputGraph g = (InputGraph) e;
-                result.addAll(g.getNodesAsSet());
-            }
+    @Override
+    public void removeElement(FolderElement element) {
+        assert element instanceof InputGraph;
+        if (graphs.remove((InputGraph) element)) {
+            getChangedEvent().fire();
         }
-        return result;
     }
 
     @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("Group ").append(getProperties()).append("\n");
-        for (FolderElement g : elements) {
-            sb.append(g.toString());
-            sb.append('\n');
+    public List<FolderElement> getElements() {
+        return Collections.unmodifiableList(graphs);
+    }
+
+    public List<InputGraph> getGraphs() {
+        return  Collections.unmodifiableList(graphs);
+    }
+
+    public Set<Integer> getAllNodes() {
+        Set<Integer> result = new HashSet<>();
+        for (InputGraph g : graphs) {
+            result.addAll(g.getNodesAsSet());
         }
-        return sb.toString();
+        return result;
     }
 
     @Override
@@ -116,21 +103,6 @@ public class Group extends Properties.Entity implements ChangedEventProvider<Gro
     public Folder getParent() {
          return parent;
     }
-
-    @Override
-    public void removeElement(FolderElement element) {
-        if (elements.remove(element)) {
-            if (element instanceof InputGraph) {
-                graphs.remove((InputGraph) element);
-            }
-            getChangedEvent().fire();
-        }
-    }
-
-    public List<InputGraph> getGraphs() {
-        return graphs;
-    }
-
     @Override
     public void setParent(Folder parent) {
         this.parent = parent;

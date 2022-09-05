@@ -184,7 +184,7 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
         diagramViewModel.getDiagramChangedEvent().addListener(diagramChangedListener);
         RangeSlider rangeSlider = new RangeSlider();
         rangeSlider.setModel(diagramViewModel);
-        if (graph.getGroup().getGraphsCount() == 1) {
+        if (graph.getGroup().getGraphs().size() == 1) {
             rangeSlider.setVisible(false);
         }
         JScrollPane pane = new JScrollPane(rangeSlider, ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER, ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
