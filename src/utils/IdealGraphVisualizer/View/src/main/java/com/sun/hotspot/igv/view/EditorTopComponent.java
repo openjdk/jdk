@@ -370,10 +370,6 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
         scene.zoomIn();
     }
 
-    public FilterChain getFilterChain() {
-        return getModel().getFilterChain();
-    }
-
     public static EditorTopComponent getActive() {
         return (EditorTopComponent) EditorTopComponent.getRegistry().getActivated();
     }
@@ -434,16 +430,6 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
 
     };
 
-    public boolean showPredSucc() {
-        return (Boolean) predSuccAction.getValue(PredSuccAction.STATE);
-    }
-
-    public void setSelection(PropertyMatcher matcher) {
-
-        Properties.PropertySelector<Figure> selector = new Properties.PropertySelector<>(getDiagram().getFigures());
-        List<Figure> list = selector.selectMultiple(matcher);
-        setSelectedFigures(list);
-    }
 
     public void setSelectedFigures(List<Figure> list) {
         scene.setSelection(list);
