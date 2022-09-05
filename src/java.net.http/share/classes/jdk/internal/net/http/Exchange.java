@@ -472,8 +472,54 @@ final class Exchange<T> {
         CompletableFuture<Response> cf = ex.sendBodyAsync()
                 .thenCompose(exIm -> exIm.getResponseAsync(parentExecutor));
         cf = wrapForUpgrade(cf);
+        // after 101 is handled we check for other 1xx responses
+        cf = cf.thenCompose(this::ignore1xxResponse);
         cf = wrapForLog(cf);
         return cf;
+    }
+
+    /**
+     * Checks whether the passed Response has a status code between 102 and 199 (both inclusive).
+     * If so, then that {@code Response} is considered intermediate informational response and is
+     * ignored by the client. This method then creates a new {@link CompletableFuture} which
+     * completes when a subsequent response is sent by the server. Such newly constructed
+     * {@link CompletableFuture} will not complete till a "final" response (one which doesn't have
+     * a response code between 102 and 199 inclusive) is sent by the server. The returned
+     * {@link CompletableFuture} is thus capable of handling multiple subsequent intermediate
+     * informational responses from the server.
+     * <p>
+     * If the passed Response doesn't have a status code between 102 and 199 (both inclusive) then
+     * this method immediately returns back a completed {@link CompletableFuture} with the passed
+     * {@code Response}.
+     * </p>
+     *
+     * @param rsp The response
+     * @return A {@code CompletableFuture} with the final response from the server
+     */
+    private CompletableFuture<Response> ignore1xxResponse(final Response rsp) {
+        final int statusCode = rsp.statusCode();
+        // we ignore any response code which is 1xx, but not 100 or 101. For 100 and 101,
+        // we handle it specifically as defined in the RFC-2616 (HTTP 1.1 spec). Any other
+        // 1xx response code isn't part of the HTTP 1.1 spec and the spec states that
+        // these 1xx response codes are informational and ignored and the clients are
+        // expected to wait for the actual response (headers) to be sent back at a later
+        // time.
+        if (statusCode >= 102 && statusCode <= 199) {
+            if (debug.on()) {
+                debug.log("Ignoring (1xx informational) response code "
+                        + rsp.statusCode());
+            }
+            assert exchImpl != null : "Illegal state - current exchange isn't set";
+            // ignore this Response and wait again for the subsequent response headers
+            final CompletableFuture<Response> cf = exchImpl.getResponseAsync(parentExecutor);
+            // we recompose the CF again into the ignore1xxResponse check/function because
+            // the 1xx response is allowed to be sent multiple times for a request, before
+            // a final response arrives
+            return cf.thenCompose(this::ignore1xxResponse);
+        } else {
+            // return the already completed future
+            return MinimalFuture.completedFuture(rsp);
+        }
     }
 
     CompletableFuture<Response> responseAsyncImpl0(HttpConnection connection) {
