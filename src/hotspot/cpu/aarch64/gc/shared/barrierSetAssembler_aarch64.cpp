@@ -288,8 +288,7 @@ void BarrierSetAssembler::c2i_entry_barrier(MacroAssembler* masm) {
   __ stp(r10, r11, Address(__ pre(sp, -2 * wordSize)));
   __ ldr(r10, Address(rscratch1, ClassLoaderData::holder_offset()));
 
-  // Uses rscratch1 & rscratch2, so we must pass new temporaries.
-  __ resolve_weak_handle(r10, r11);
+  __ resolve_weak_handle(r10, rscratch1, rscratch2);
   __ mov(rscratch1, r10);
   __ ldp(r10, r11, Address(__ post(sp, 2 * wordSize)));
   __ cbnz(rscratch1, method_live);
