@@ -34,7 +34,6 @@
 #include "jvm_io.h"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
-#include "memory/resourceArea.hpp"
 #include "utilities/decoder.hpp"
 #include "utilities/elfFile.hpp"
 #include "utilities/elfFuncDescTable.hpp"
@@ -260,7 +259,7 @@ int ElfFile::section_by_name(const char* name, Elf_Shdr& hdr) {
   assert(name != NULL, "No section name");
   size_t len = strlen(name) + 1;
   ResourceMark rm;
-  char* buf = NEW_RESOURCE_ARRAY(char, len);
+  char* buf = (char*)os::malloc(len, mtInternal);
   if (buf == NULL) {
     return -1;
   }
@@ -282,6 +281,9 @@ int ElfFile::section_by_name(const char* name, Elf_Shdr& hdr) {
       }
     }
   }
+
+  os::free(buf);
+
   return sect_index;
 }
 #endif
@@ -350,7 +352,6 @@ ElfStringTable* ElfFile::get_string_table(int index) {
 // Use unified logging to report errors rather than assert() throughout this method as this code is already part of the error reporting
 // and the debug symbols might be in an unsupported DWARF version or wrong format.
 bool ElfFile::get_source_info(const uint32_t offset_in_library, char* filename, const size_t filename_len, int* line, bool is_pc_after_call) {
-  ResourceMark rm;
   if (!load_dwarf_file()) {
     // Some ELF libraries do not provide separate .debuginfo files. Check if the current ELF file has the required
     // DWARF sections. If so, treat the current ELF file as DWARF file.
