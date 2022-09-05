@@ -37,6 +37,9 @@ on:
       apt-gcc-cross-version:
         required: true
         type: string
+      extra-conf-options:
+        required: false
+        type: string
 
 jobs:
   build-cross-compile:
@@ -142,6 +145,10 @@ jobs:
           --with-build-jdk=${{ steps.buildjdk.outputs.jdk-path }}
           CC=${{ matrix.gnu-arch }}-linux-gnu${{ matrix.gnu-abi}}-gcc-${{ inputs.gcc-major-version }}
           CXX=${{ matrix.gnu-arch }}-linux-gnu${{ matrix.gnu-abi}}-g++-${{ inputs.gcc-major-version }}
+          ${{ inputs.extra-conf-options }} || (
+          echo "Dumping config.log:" &&
+          cat config.log &&
+          exit 1)
 
       - name: 'Build'
         id: build
