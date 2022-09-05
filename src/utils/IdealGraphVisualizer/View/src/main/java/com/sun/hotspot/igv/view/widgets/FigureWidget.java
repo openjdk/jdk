@@ -68,8 +68,6 @@ public class FigureWidget extends Widget implements Properties.Provider, PopupMe
     public static final boolean VERTICAL_LAYOUT = true;
     private static final double LABEL_ZOOM_FACTOR = 0.3;
     private Figure figure;
-    private Widget leftWidget;
-    private Widget rightWidget;
     private Widget middleWidget;
     private ArrayList<LabelWidget> labelWidgets;
     private DiagramScene diagramScene;
@@ -182,14 +180,6 @@ public class FigureWidget extends Widget implements Properties.Provider, PopupMe
         node.setDisplayName(getName());
 
         this.setToolTipText(PropertiesConverter.convertToHTML(f.getProperties()));
-    }
-
-    public Widget getLeftWidget() {
-        return leftWidget;
-    }
-
-    public Widget getRightWidget() {
-        return rightWidget;
     }
 
     @Override
