@@ -29,9 +29,7 @@ import com.lowagie.text.pdf.PdfContentByte;
 import com.lowagie.text.pdf.PdfGraphics2D;
 import com.lowagie.text.pdf.PdfTemplate;
 import com.lowagie.text.pdf.PdfWriter;
-import com.sun.hotspot.igv.data.Properties;
 import com.sun.hotspot.igv.data.*;
-import com.sun.hotspot.igv.data.Properties.PropertyMatcher;
 import com.sun.hotspot.igv.data.services.InputGraphProvider;
 import com.sun.hotspot.igv.filter.FilterChain;
 import com.sun.hotspot.igv.filter.FilterChainProvider;
@@ -43,8 +41,6 @@ import com.sun.hotspot.igv.util.RangeSlider;
 import com.sun.hotspot.igv.view.actions.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
-import java.awt.event.HierarchyBoundsListener;
-import java.awt.event.HierarchyEvent;
 import java.awt.event.KeyEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
@@ -121,12 +117,11 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
     };
 
     private void updateDisplayName() {
-        setDisplayName(getDiagram().getName());
-        setToolTipText(getDiagram().getGraph().getGroup().getName());
+        setDisplayName(getModel().getGraph().getName());
+        setToolTipText(getModel().getGroup().getName());
     }
 
     public EditorTopComponent(InputGraph graph) {
-
         LookupHistory.init(InputGraphProvider.class);
         this.setFocusable(true);
         FilterChain filterChain = null;
@@ -179,12 +174,10 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
         container.setLayout(new BorderLayout());
         container.add(BorderLayout.NORTH, toolBar);
 
-        DiagramViewModel diagramViewModel = new DiagramViewModel(graph.getGroup(), filterChain, sequence);
-        diagramViewModel.selectGraph(graph);
+        DiagramViewModel diagramViewModel = new DiagramViewModel(graph, filterChain, sequence);
         diagramViewModel.getDiagramChangedEvent().addListener(diagramChangedListener);
-        RangeSlider rangeSlider = new RangeSlider();
-        rangeSlider.setModel(diagramViewModel);
-        if (graph.getGroup().getGraphs().size() == 1) {
+        RangeSlider rangeSlider = new RangeSlider(diagramViewModel);
+        if (diagramViewModel.getGroup().getGraphs().size() == 1) {
             rangeSlider.setVisible(false);
         }
         JScrollPane pane = new JScrollPane(rangeSlider, ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER, ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
@@ -197,7 +190,7 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
         content.add(diagramViewModel);
         this.associateLookup(new ProxyLookup(new Lookup[]{scene.getLookup(), new AbstractLookup(graphContent), new AbstractLookup(content)}));
 
-        Group group = getDiagram().getGraph().getGroup();
+        Group group = diagramViewModel.getGroup();
         group.getChangedEvent().addListener(g -> closeOnRemovedOrEmptyGroup());
         if (group.getParent() instanceof GraphDocument) {
             final GraphDocument doc = (GraphDocument) group.getParent();
@@ -339,7 +332,7 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
     }
 
     private Diagram getDiagram() {
-        return getModel().getDiagramToView();
+        return getModel().getDiagram();
     }
 
     private void showSatellite() {
@@ -402,7 +395,7 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
     }
 
     private void closeOnRemovedOrEmptyGroup() {
-        Group group = getDiagram().getGraph().getGroup();
+        Group group = getModel().getGroup();
         if (!group.getParent().getElements().contains(group) ||
             group.getGraphs().isEmpty()) {
             close();
@@ -446,7 +439,7 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
     public void setSelectedNodes(InputBlock b) {
         List<Figure> list = new ArrayList<>();
         for (Figure f : getDiagram().getFigures()) {
-            if (f.getBlock() == b) {
+            if (f.getBlock().getInputBlock() == b) {
                 list.add(f);
             }
         }

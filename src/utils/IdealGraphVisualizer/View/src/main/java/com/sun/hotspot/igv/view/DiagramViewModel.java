@@ -74,13 +74,13 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
 
         @Override
         public void changed(FilterChain source) {
-            createDiagram();
+            updateDiagram();
         }
     };
 
     @Override
     public DiagramViewModel copy() {
-        DiagramViewModel result = new DiagramViewModel(group, filterChain, sequenceFilterChain);
+        DiagramViewModel result = new DiagramViewModel(cachedInputGraph, filterChain, sequenceFilterChain);
         result.setData(this);
         return result;
     }
@@ -201,7 +201,7 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         viewPropertiesChangedEvent.fire();
     }
 
-    public DiagramViewModel(Group g, FilterChain filterChain, FilterChain sequenceFilterChain) {
+    public DiagramViewModel(InputGraph graph, FilterChain filterChain, FilterChain sequenceFilterChain) {
         super(Arrays.asList("default"));
 
         this.showSea = Settings.get().getInt(Settings.DEFAULT_VIEW, Settings.DEFAULT_VIEW_DEFAULT) == Settings.DefaultView.SEA_OF_NODES;
@@ -209,7 +209,7 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         this.showCFG = Settings.get().getInt(Settings.DEFAULT_VIEW, Settings.DEFAULT_VIEW_DEFAULT) == Settings.DefaultView.CONTROL_FLOW_GRAPH;
         this.showNodeHull = true;
         this.showEmptyBlocks = true;
-        this.group = g;
+        this.group = graph.getGroup();
         filterGraphs();
         assert filterChain != null;
         this.filterChain = filterChain;
@@ -230,7 +230,7 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         filterChain.getChangedEvent().addListener(filterChainChangedListener);
         sequenceFilterChain.getChangedEvent().addListener(filterChainChangedListener);
 
-        createDiagram();
+        selectGraph(graph);
     }
     private final ChangedListener<DiagramViewModel> groupChangedListener = new ChangedListener<DiagramViewModel>() {
 
@@ -368,12 +368,12 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         sequenceFilterChain.getChangedEvent().removeListener(filterChainChangedListener);
         sequenceFilterChain = chain;
         sequenceFilterChain.getChangedEvent().addListener(filterChainChangedListener);
-        createDiagram();
+        updateDiagram();
     }
 
-    private void createDiagram() {
+    private void updateDiagram() {
         // clear diagram
-        InputGraph graph = getCachedInputGraph();
+        InputGraph graph = getGraph();
         if (graph.getBlocks().isEmpty()) {
             Scheduler s = Lookup.getDefault().lookup(Scheduler.class);
             graph.clearBlocks();
@@ -406,7 +406,7 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         filterChain.getChangedEvent().removeListener(filterChainChangedListener);
         filterChain = chain;
         filterChain.getChangedEvent().addListener(filterChainChangedListener);
-        createDiagram();
+        updateDiagram();
     }
 
     /*
@@ -455,26 +455,23 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         return new ColorFilter.ColorRule(new MatcherSelector(new Properties.RegexpPropertyMatcher("state", state)), color);
     }
 
-    public Diagram getDiagramToView() {
+    public Diagram getDiagram() {
         diagram.setCFG(getShowCFG());
         return diagram;
     }
 
-    private InputGraph getCachedInputGraph() {
-        if (cachedInputGraph == null) {
-            if (getFirstGraph() != getSecondGraph()) {
-                cachedInputGraph = Difference.createDiffGraph(getFirstGraph(), getSecondGraph());
-            } else {
-                cachedInputGraph = getFirstGraph();
-            }
-        }
+    public InputGraph getGraph() {
         return cachedInputGraph;
     }
 
     @Override
     public void changed(RangeSliderModel source) {
-        cachedInputGraph = null;
-        createDiagram();
+        if (getFirstGraph() != getSecondGraph()) {
+            cachedInputGraph = Difference.createDiffGraph(getFirstGraph(), getSecondGraph());
+        } else {
+            cachedInputGraph = getFirstGraph();
+        }
+        updateDiagram();
     }
 
     void close() {

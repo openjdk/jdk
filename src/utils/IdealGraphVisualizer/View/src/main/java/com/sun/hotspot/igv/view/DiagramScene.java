@@ -29,21 +29,18 @@ import com.sun.hotspot.igv.data.InputBlock;
 import com.sun.hotspot.igv.data.InputNode;
 import com.sun.hotspot.igv.data.Pair;
 import com.sun.hotspot.igv.data.Properties;
-import com.sun.hotspot.igv.data.services.Scheduler;
 import com.sun.hotspot.igv.graph.*;
 import com.sun.hotspot.igv.hierarchicallayout.HierarchicalClusterLayoutManager;
 import com.sun.hotspot.igv.hierarchicallayout.HierarchicalCFGLayoutManager;
 import com.sun.hotspot.igv.hierarchicallayout.LinearLayoutManager;
 import com.sun.hotspot.igv.hierarchicallayout.HierarchicalLayoutManager;
 import com.sun.hotspot.igv.layout.LayoutGraph;
-import com.sun.hotspot.igv.layout.Link;
 import com.sun.hotspot.igv.selectioncoordinator.SelectionCoordinator;
 import com.sun.hotspot.igv.util.ColorIcon;
 import com.sun.hotspot.igv.util.CustomSelectAction;
 import com.sun.hotspot.igv.util.DoubleClickAction;
 import com.sun.hotspot.igv.util.PropertiesSheet;
 import com.sun.hotspot.igv.view.actions.CustomizablePanAction;
-import com.sun.hotspot.igv.view.EditorTopComponent;
 import com.sun.hotspot.igv.view.widgets.*;
 import java.awt.*;
 import java.awt.event.*;
@@ -182,7 +179,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
 
     private Set<Object> getObjectsFromIdSet(Set<Object> set) {
         Set<Object> selectedObjects = new HashSet<>();
-        for (Figure f : getModel().getDiagramToView().getFigures()) {
+        for (Figure f : getModel().getDiagram().getFigures()) {
             if (set.contains(f.getInputNode().getId())) {
                 selectedObjects.add(f);
             }
@@ -227,7 +224,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
             }
 
             Set<Object> selectedObjects = new HashSet<>();
-            for (Figure f : getModel().getDiagramToView().getFigures()) {
+            for (Figure f : getModel().getDiagram().getFigures()) {
                 FigureWidget w = getWidget(f);
                 if (w != null) {
                     Rectangle r = new Rectangle(w.getBounds());
@@ -532,26 +529,25 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
             this.removeObject(o);
         }
 
-        Diagram d = getModel().getDiagramToView();
+        Diagram d = getModel().getDiagram();
 
         Map<InputBlock, Integer> maxWidth = new HashMap<>();
-        for (InputBlock b : d.getGraph().getBlocks()) {
+        for (InputBlock b : d.getInputBlocks()) {
             maxWidth.put(b, 10);
         }
         for (Figure f : d.getFigures()) {
             // Update node text, since it might differ across views.
             f.updateLines();
             // Compute max node width in each block.
-            if (f.getWidth() > maxWidth.get(f.getBlock())) {
-                maxWidth.put(f.getBlock(), f.getWidth());
+            if (f.getWidth() > maxWidth.get(f.getBlock().getInputBlock())) {
+                maxWidth.put(f.getBlock().getInputBlock(), f.getWidth());
             }
         }
 
         for (Figure f : d.getFigures()) {
-
             // Set all nodes' width to the maximum width in the blocks?
             if (getModel().getShowCFG()) {
-                f.setWidth(maxWidth.get(f.getBlock()));
+                f.setWidth(maxWidth.get(f.getBlock().getInputBlock()));
             }
 
             FigureWidget w = new FigureWidget(f, hoverAction, selectAction, this, mainLayer);
@@ -580,7 +576,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
         }
 
         if (getModel().getShowBlocks() || getModel().getShowCFG()) {
-            for (InputBlock bn : d.getGraph().getBlocks()) {
+            for (InputBlock bn : d.getInputBlocks()) {
                 BlockWidget w = new BlockWidget(this, d, bn);
                 w.setVisible(false);
                 this.addObject(bn, w);
@@ -624,7 +620,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
     }
 
     private void relayout(Set<Widget> oldVisibleWidgets) {
-        Diagram diagram = getModel().getDiagramToView();
+        Diagram diagram = getModel().getDiagram();
 
         HashSet<Figure> figures = new HashSet<>();
 
@@ -671,7 +667,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
     }
 
     private void doCFGLayout(HashSet<Figure> figures, HashSet<Connection> edges) {
-        Diagram diagram = getModel().getDiagramToView();
+        Diagram diagram = getModel().getDiagram();
         HierarchicalCFGLayoutManager m = new HierarchicalCFGLayoutManager();
         HierarchicalLayoutManager manager = new HierarchicalLayoutManager(HierarchicalLayoutManager.Combine.SAME_OUTPUTS);
         manager.setMaxLayerLength(9);
@@ -693,7 +689,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
         Map<Figure, Integer> figureRank =
             new HashMap<Figure, Integer>(figures.size());
         int r = 0;
-        for (InputBlock b : getModel().getDiagramToView().getGraph().getBlocks()) {
+        for (InputBlock b : diagram.getInputBlocks()) {
             for (InputNode n : b.getNodes()) {
                 Figure f = nodeFig.get(n);
                 if (f != null) {
@@ -724,7 +720,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
 
     private void relayoutWithoutLayout(Set<Widget> oldVisibleWidgets) {
 
-        Diagram diagram = getModel().getDiagramToView();
+        Diagram diagram = getModel().getDiagram();
 
         int maxX = -BORDER_SIZE;
         int maxY = -BORDER_SIZE;
@@ -994,7 +990,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
     private Set<Object> idSetToObjectSet(Set<Object> ids) {
 
         Set<Object> result = new HashSet<>();
-        for (Figure f : getModel().getDiagramToView().getFigures()) {
+        for (Figure f : getModel().getDiagram().getFigures()) {
             if (ids.contains(f.getInputNode().getId())) {
                 result.add(f);
             }
@@ -1119,7 +1115,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
 
     private void updateHiddenNodes(Set<Integer> newHiddenNodes, boolean doRelayout) {
 
-        Diagram diagram = getModel().getDiagramToView();
+        Diagram diagram = getModel().getDiagram();
         assert diagram != null;
 
         Set<InputBlock> visibleBlocks = new HashSet<InputBlock>();
@@ -1133,7 +1129,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
         }
 
         if (getModel().getShowBlocks() || getModel().getShowCFG()) {
-            for (InputBlock b : diagram.getGraph().getBlocks()) {
+            for (InputBlock b : diagram.getInputBlocks()) {
                 BlockWidget w = getWidget(b);
                 if (w.isVisible()) {
                     oldVisibleWidgets.add(w);
@@ -1150,7 +1146,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
             } else {
                 // Figure is shown
                 w.setVisible(true);
-                visibleBlocks.add(diagram.getGraph().getBlock(f.getInputNode()));
+                visibleBlocks.add(f.getBlock().getInputBlock());
             }
         }
 
@@ -1173,7 +1169,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
 
                     if (b) {
                         w.setBoundary(true);
-                        visibleBlocks.add(diagram.getGraph().getBlock(f.getInputNode()));
+                        visibleBlocks.add(f.getBlock().getInputBlock());
                         boundaries.add(w);
                     }
                 }
@@ -1189,19 +1185,19 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
         if (getModel().getShowCFG()) {
             // Blockless figures and artificial blocks are hidden in this view.
             for (Figure f : diagram.getFigures()) {
-                if (f.getBlock().isArtificial()) {
+                if (f.getBlock().getInputBlock().isArtificial()) {
                     FigureWidget w = getWidget(f);
                     w.setVisible(false);
                 }
             }
             if (getModel().getShowEmptyBlocks()) {
                 // Add remaining blocks.
-                visibleBlocks.addAll(diagram.getGraph().getBlocks());
+                visibleBlocks.addAll(diagram.getInputBlocks());
             }
         }
 
         if (getModel().getShowBlocks() || getModel().getShowCFG()) {
-            for (InputBlock b : diagram.getGraph().getBlocks()) {
+            for (InputBlock b : diagram.getInputBlocks()) {
 
                 // A block is visible if it is marked as such, except for
                 // artificial or null blocks in the CFG view.

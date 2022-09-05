@@ -42,7 +42,6 @@ public class Diagram {
 
     private List<Figure> figures;
     private Map<InputBlock, Block> blocks;
-    private InputGraph graph;
     private int curId;
     private String nodeText;
     private String shortNodeText;
@@ -79,19 +78,17 @@ public class Diagram {
                    String tinyNodeText) {
         assert graph != null;
 
-        this.graph = graph;
         this.nodeText = nodeText;
         this.shortNodeText = shortNodeText;
         this.tinyNodeText = tinyNodeText;
-        this.figures = new ArrayList<>();
-        this.blocks = new LinkedHashMap<>(8);
-        this.blockConnections = new HashSet<>();
+        this.figures = new ArrayList<Figure>();
+        this.blocks = new LinkedHashMap<InputBlock, Block>(8);
+        this.blockConnections = new HashSet<BlockConnection>();
         this.cfg = false;
         this.curId = 0;
 
         for (InputBlock b : graph.getBlocks()) {
-            Block curBlock = new Block(b, this);
-            blocks.put(b, curBlock);
+            blocks.put(b,  new Block(b, this));
         }
 
         Collection<InputNode> nodes = graph.getNodes();
@@ -100,7 +97,7 @@ public class Diagram {
             Figure f = new Figure(this, curId, n);
             curId++;
             f.getProperties().add(n.getProperties());
-            f.setBlock(graph.getBlock(n));
+            f.setBlock(blocks.get(graph.getBlock(n)));
             figureHash.put(n.getId(), f);
             this.figures.add(f);
         }
@@ -168,6 +165,10 @@ public class Diagram {
         return Collections.unmodifiableCollection(blocks.values());
     }
 
+    public Collection<InputBlock> getInputBlocks() {
+        return Collections.unmodifiableCollection(blocks.keySet());
+    }
+
     public List<Figure> getFigures() {
         return Collections.unmodifiableList(figures);
     }
@@ -182,7 +183,7 @@ public class Diagram {
         Set<Figure> figuresToRemove = new HashSet<>();
         for (Block b : blocksToRemove) {
             for (Figure f : getFigures()) {
-                if (f.getBlock() == b.getInputBlock()) {
+                if (f.getBlock() == b) {
                     figuresToRemove.add(f);
                 }
             }
@@ -230,14 +231,6 @@ public class Diagram {
         assert this.figures.contains(succ);
         freeFigure(succ);
         this.figures.remove(succ);
-    }
-
-    public String getName() {
-        return graph.getName();
-    }
-
-    public InputGraph getGraph() {
-        return graph;
     }
 
     public Set<FigureConnection> getConnections() {

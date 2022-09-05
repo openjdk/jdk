@@ -175,7 +175,7 @@ public abstract class SlotWidget extends Widget implements DoubleClickHandler {
         }
 
         boolean progress = false;
-        for (Figure f : diagramScene.getModel().getDiagramToView().getFigures()) {
+        for (Figure f : diagramScene.getModel().getDiagram().getFigures()) {
             for (Slot s : f.getSlots()) {
                 if (!Collections.disjoint(s.getSource().getSourceNodesAsSet(), slot.getSource().getSourceNodesAsSet())) {
                     progress = true;

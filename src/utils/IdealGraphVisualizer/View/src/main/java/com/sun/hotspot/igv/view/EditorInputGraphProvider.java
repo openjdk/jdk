@@ -47,7 +47,7 @@ public class EditorInputGraphProvider implements InputGraphProvider {
 
     @Override
     public InputGraph getGraph() {
-        return editor.getModel().getDiagramToView().getGraph();
+        return editor.getModel().getGraph();
     }
 
     @Override

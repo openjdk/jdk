@@ -70,17 +70,10 @@ public class RangeSlider extends JComponent implements ChangedListener<RangeSlid
         DragSecondPosition
     }
 
-    public RangeSlider() {
+    public RangeSlider(RangeSliderModel newModel) {
         state = State.Initial;
         this.addMouseMotionListener(this);
         this.addMouseListener(this);
-    }
-
-    public void setModel(RangeSliderModel newModel) {
-        if (model != null) {
-            model.getChangedEvent().removeListener(this);
-            model.getColorChangedEvent().removeListener(this);
-        }
         if (newModel != null) {
             newModel.getChangedEvent().addListener(this);
             newModel.getColorChangedEvent().addListener(this);

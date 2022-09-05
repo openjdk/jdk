@@ -39,7 +39,7 @@ public class AnySelector implements BlockSelector {
     public List<Block> selected(Diagram d) {
         List<Block> l = new ArrayList<>();
         for (Figure f : selector.selected(d)) {
-            l.add(d.getBlock(f.getBlock()));
+            l.add(f.getBlock());
         }
         return l;
     }

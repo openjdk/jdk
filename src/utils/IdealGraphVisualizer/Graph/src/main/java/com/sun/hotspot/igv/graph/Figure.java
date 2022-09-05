@@ -57,7 +57,7 @@ public class Figure extends Properties.Entity implements Vertex {
     private String[] lines;
     private int heightCash = -1;
     private int widthCash = -1;
-    private InputBlock block;
+    private Block block;
     private final FontMetrics metrics;
 
     public int getHeight() {
@@ -169,11 +169,11 @@ public class Figure extends Properties.Entity implements Vertex {
         return diagram.isCFG() && !getPredecessors().isEmpty();
     }
 
-    public void setBlock(InputBlock block) {
+    public void setBlock(Block block) {
         this.block = block;
     }
 
-    public InputBlock getBlock() {
+    public Block getBlock() {
         return block;
     }
 
@@ -382,12 +382,7 @@ public class Figure extends Properties.Entity implements Vertex {
     }
 
     public Cluster getCluster() {
-        assert inputNode != null;
-        final InputBlock inputBlock = diagram.getGraph().getBlock(getInputNode());
-        assert inputBlock != null;
-        Cluster result = diagram.getBlock(inputBlock);
-        assert result != null;
-        return result;
+        return block;
     }
 
     @Override
