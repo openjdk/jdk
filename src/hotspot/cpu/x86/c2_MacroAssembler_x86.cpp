@@ -1649,6 +1649,8 @@ void C2_MacroAssembler::load_vector(XMMRegister dst, Address src, int vlen_in_by
 }
 
 void C2_MacroAssembler::load_vector(XMMRegister dst, AddressLiteral src, int vlen_in_bytes, Register rscratch) {
+  assert(rscratch != noreg || always_reachable(src), "missing");
+
   if (reachable(src)) {
     load_vector(dst, as_Address(src), vlen_in_bytes);
   } else {
@@ -1662,21 +1664,21 @@ void C2_MacroAssembler::load_constant_vector(BasicType bt, XMMRegister dst, Inte
   if (VM_Version::supports_avx()) {
     if (bt == T_LONG) {
       if (VM_Version::supports_avx2()) {
-        vpbroadcastq(dst, src, vlen_enc, noreg);
+        vpbroadcastq(dst, src, vlen_enc);
       } else {
-        vmovddup(dst, src, vlen_enc, noreg);
+        vmovddup(dst, src, vlen_enc);
       }
     } else if (bt == T_DOUBLE) {
       if (vlen_enc != Assembler::AVX_128bit) {
         vbroadcastsd(dst, src, vlen_enc, noreg);
       } else {
-        vmovddup(dst, src, vlen_enc, noreg);
+        vmovddup(dst, src, vlen_enc);
       }
     } else {
       if (VM_Version::supports_avx2() && is_integral_type(bt)) {
-        vpbroadcastd(dst, src, vlen_enc, noreg);
+        vpbroadcastd(dst, src, vlen_enc);
       } else {
-        vbroadcastss(dst, src, vlen_enc, noreg);
+        vbroadcastss(dst, src, vlen_enc);
       }
     }
   } else if (VM_Version::supports_sse3()) {
@@ -2395,25 +2397,25 @@ void C2_MacroAssembler::evpcmp(BasicType typ, KRegister kdmask, KRegister ksmask
   }
 }
 
-void C2_MacroAssembler::evpcmp(BasicType typ, KRegister kdmask, KRegister ksmask, XMMRegister src1, AddressLiteral adr, int comparison, int vector_len, Register rscratch) {
-  assert(rscratch != noreg || always_reachable(adr), "missing");
+void C2_MacroAssembler::evpcmp(BasicType typ, KRegister kdmask, KRegister ksmask, XMMRegister src1, AddressLiteral src2, int comparison, int vector_len, Register rscratch) {
+  assert(rscratch != noreg || always_reachable(src2), "missing");
 
   switch(typ) {
     case T_BOOLEAN:
     case T_BYTE:
-      evpcmpb(kdmask, ksmask, src1, adr, comparison, /*signed*/ true, vector_len, rscratch);
+      evpcmpb(kdmask, ksmask, src1, src2, comparison, /*signed*/ true, vector_len, rscratch);
       break;
     case T_CHAR:
     case T_SHORT:
-      evpcmpw(kdmask, ksmask, src1, adr, comparison, /*signed*/ true, vector_len, rscratch);
+      evpcmpw(kdmask, ksmask, src1, src2, comparison, /*signed*/ true, vector_len, rscratch);
       break;
     case T_INT:
     case T_FLOAT:
-      evpcmpd(kdmask, ksmask, src1, adr, comparison, /*signed*/ true, vector_len, rscratch);
+      evpcmpd(kdmask, ksmask, src1, src2, comparison, /*signed*/ true, vector_len, rscratch);
       break;
     case T_LONG:
     case T_DOUBLE:
-      evpcmpq(kdmask, ksmask, src1, adr, comparison, /*signed*/ true, vector_len, rscratch);
+      evpcmpq(kdmask, ksmask, src1, src2, comparison, /*signed*/ true, vector_len, rscratch);
       break;
     default:
       assert(false,"Should not reach here.");
@@ -4359,10 +4361,10 @@ void C2_MacroAssembler::masked_op(int ideal_opc, int mask_len, KRegister dst,
  */
 void C2_MacroAssembler::vector_cast_float_special_cases_avx(XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
                                                             XMMRegister xtmp2, XMMRegister xtmp3, XMMRegister xtmp4,
-                                                            Register scratch, AddressLiteral float_sign_flip,
+                                                            Register rscratch, AddressLiteral float_sign_flip,
                                                             int vec_enc) {
   Label done;
-  vmovdqu(xtmp1, float_sign_flip, vec_enc, scratch);
+  vmovdqu(xtmp1, float_sign_flip, vec_enc, rscratch);
   vpcmpeqd(xtmp2, dst, xtmp1, vec_enc);
   vptest(xtmp2, xtmp2, vec_enc);
   jccb(Assembler::equal, done);
@@ -4388,10 +4390,10 @@ void C2_MacroAssembler::vector_cast_float_special_cases_avx(XMMRegister dst, XMM
 
 void C2_MacroAssembler::vector_cast_float_special_cases_evex(XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
                                                              XMMRegister xtmp2, KRegister ktmp1, KRegister ktmp2,
-                                                             Register scratch, AddressLiteral float_sign_flip,
+                                                             Register rscratch, AddressLiteral float_sign_flip,
                                                              int vec_enc) {
   Label done;
-  evmovdqul(xtmp1, k0, float_sign_flip, false, vec_enc, scratch);
+  evmovdqul(xtmp1, k0, float_sign_flip, false, vec_enc, rscratch);
   Assembler::evpcmpeqd(ktmp1, k0, xtmp1, dst, vec_enc);
   kortestwl(ktmp1, ktmp1);
   jccb(Assembler::equal, done);
@@ -4410,10 +4412,12 @@ void C2_MacroAssembler::vector_cast_float_special_cases_evex(XMMRegister dst, XM
 void C2_MacroAssembler::vector_cast_float_to_long_special_cases_evex(
                                                              XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
                                                              XMMRegister xtmp2, KRegister ktmp1, KRegister ktmp2,
-                                                             Register scratch, AddressLiteral double_sign_flip,
+                                                             Register rscratch, AddressLiteral double_sign_flip,
                                                              int vec_enc) {
+  assert(rscratch != noreg || always_reachable(double_sign_flip), "missing");
+
   Label done;
-  evmovdquq(xtmp1, k0, double_sign_flip, false, vec_enc, scratch);
+  evmovdquq(xtmp1, k0, double_sign_flip, false, vec_enc, rscratch);
   Assembler::evpcmpeqq(ktmp1, k0, xtmp1, dst, vec_enc);
   kortestwl(ktmp1, ktmp1);
   jccb(Assembler::equal, done);
@@ -4431,10 +4435,10 @@ void C2_MacroAssembler::vector_cast_float_to_long_special_cases_evex(
 
 void C2_MacroAssembler::vector_narrow_cast_double_special_cases_evex(XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
                                                                      XMMRegister xtmp2, KRegister ktmp1, KRegister ktmp2,
-                                                                     Register scratch, AddressLiteral float_sign_flip,
+                                                                     Register rscratch, AddressLiteral float_sign_flip,
                                                                      int vec_enc) {
   Label done;
-  evmovdquq(xtmp1, k0, float_sign_flip, false, vec_enc, scratch);
+  evmovdquq(xtmp1, k0, float_sign_flip, false, vec_enc, rscratch);
   Assembler::evpcmpeqd(ktmp1, k0, xtmp1, dst, vec_enc);
   kortestwl(ktmp1, ktmp1);
   jccb(Assembler::equal, done);
@@ -4460,10 +4464,12 @@ void C2_MacroAssembler::vector_narrow_cast_double_special_cases_evex(XMMRegister
  */
 void C2_MacroAssembler::vector_cast_double_special_cases_evex(XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
                                                               XMMRegister xtmp2, KRegister ktmp1, KRegister ktmp2,
-                                                              Register scratch, AddressLiteral double_sign_flip,
+                                                              Register rscratch, AddressLiteral double_sign_flip,
                                                               int vec_enc) {
+  assert(rscratch != noreg || always_reachable(double_sign_flip), "missing");
+
   Label done;
-  evmovdqul(xtmp1, k0, double_sign_flip, false, vec_enc, scratch);
+  evmovdqul(xtmp1, k0, double_sign_flip, false, vec_enc, rscratch);
   evpcmpeqq(ktmp1, xtmp1, dst, vec_enc);
   kortestwl(ktmp1, ktmp1);
   jccb(Assembler::equal, done);
@@ -4490,12 +4496,12 @@ void C2_MacroAssembler::vector_pack_lower_quadword_from_lanes_avx(XMMRegister ds
 }
 
 void C2_MacroAssembler::vector_narrow_cast_double_special_cases_avx(XMMRegister dst, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2,
-                                                                    XMMRegister xtmp3, XMMRegister xtmp4, XMMRegister xtmp5, Register scratch,
+                                                                    XMMRegister xtmp3, XMMRegister xtmp4, XMMRegister xtmp5, Register rscratch,
                                                                     AddressLiteral float_sign_flip, int src_vec_enc) {
   Label done;
   // Compare the destination lanes with float_sign_flip
   // value to get mask for all special values.
-  movdqu(xtmp1, float_sign_flip, scratch);
+  movdqu(xtmp1, float_sign_flip, rscratch);
   vpcmpeqd(xtmp2, dst, xtmp1, Assembler::AVX_128bit);
   ptest(xtmp2, xtmp2);
   jccb(Assembler::equal, done);
@@ -4531,23 +4537,25 @@ void C2_MacroAssembler::vector_narrow_cast_double_special_cases_avx(XMMRegister 
 // Handling for downcasting from double to integer or sub-word types on AVX2.
 void C2_MacroAssembler::vector_castD2X_avx(BasicType to_elem_bt, XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
                                            XMMRegister xtmp2, XMMRegister xtmp3, XMMRegister xtmp4, XMMRegister xtmp5,
-                                           AddressLiteral float_sign_flip, Register scratch, int vec_enc) {
+                                           AddressLiteral float_sign_flip, Register rscratch, int vec_enc) {
+  assert(rscratch != noreg || always_reachable(float_sign_flip), "missing");
   int to_elem_sz = type2aelembytes(to_elem_bt);
   assert(to_elem_sz < 8, "");
   vcvttpd2dq(dst, src, vec_enc);
-  vector_narrow_cast_double_special_cases_avx(dst, src, xtmp1, xtmp2, xtmp3, xtmp4, xtmp5, scratch,
+  vector_narrow_cast_double_special_cases_avx(dst, src, xtmp1, xtmp2, xtmp3, xtmp4, xtmp5, rscratch,
                                               float_sign_flip, vec_enc);
   vpxor(xtmp4, xtmp4, xtmp4, vec_enc);
   if (to_elem_sz < 4) {
-    vector_narrow_cast_int_to_subword(to_elem_bt, dst, xtmp4, xtmp2, scratch, Assembler::AVX_128bit);
+    vector_narrow_cast_int_to_subword(to_elem_bt, dst, xtmp4, xtmp2, rscratch, Assembler::AVX_128bit);
   }
 }
 
 void C2_MacroAssembler::vector_castD2I_evex(XMMRegister dst, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2,
                                             KRegister ktmp1, KRegister ktmp2, AddressLiteral double_sign_flip,
-                                            Register scratch, int vec_enc) {
+                                            Register rscratch, int vec_enc) {
+  assert(rscratch != noreg || always_reachable(double_sign_flip), "missing");
   vcvttpd2dq(dst, src, vec_enc);
-  vector_narrow_cast_double_special_cases_evex(dst, src, xtmp1, xtmp2, ktmp1, ktmp2, scratch, double_sign_flip, vec_enc);
+  vector_narrow_cast_double_special_cases_evex(dst, src, xtmp1, xtmp2, ktmp1, ktmp2, rscratch, double_sign_flip, vec_enc);
 }
 
 /*
@@ -4562,55 +4570,56 @@ void C2_MacroAssembler::vector_castD2I_evex(XMMRegister dst, XMMRegister src, XM
 
 void C2_MacroAssembler::vector_castD2L_evex(XMMRegister dst, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2,
                                             KRegister ktmp1, KRegister ktmp2, AddressLiteral double_sign_flip,
-                                            Register scratch, int vec_enc) {
+                                            Register rscratch, int vec_enc) {
+  assert(rscratch != noreg || always_reachable(double_sign_flip), "missing");
   evcvttpd2qq(dst, src, vec_enc);
-  vector_cast_double_special_cases_evex(dst, src, xtmp1, xtmp2, ktmp1, ktmp2, scratch, double_sign_flip, vec_enc);
+  vector_cast_double_special_cases_evex(dst, src, xtmp1, xtmp2, ktmp1, ktmp2, rscratch, double_sign_flip, vec_enc);
 }
 
 void C2_MacroAssembler::vector_narrow_cast_int_to_subword(BasicType to_elem_bt, XMMRegister dst, XMMRegister zero,
-                                                          XMMRegister xtmp, Register scratch, int vec_enc) {
+                                                          XMMRegister xtmp, Register rscratch, int vec_enc) {
   switch(to_elem_bt) {
     case T_SHORT:
-      vpand(dst, dst, ExternalAddress(StubRoutines::x86::vector_int_to_short_mask()), vec_enc, scratch);
+      vpand(dst, dst, ExternalAddress(StubRoutines::x86::vector_int_to_short_mask()), vec_enc, rscratch);
       vpackusdw(dst, dst, zero, vec_enc);
       if(vec_enc == Assembler::AVX_256bit) {
         vector_pack_lower_quadword_from_lanes_avx(dst, dst, xtmp, vec_enc);
       }
       break;
     case  T_BYTE:
-      vpand(dst, dst, ExternalAddress(StubRoutines::x86::vector_int_to_byte_mask()), vec_enc, scratch);
+      vpand(dst, dst, ExternalAddress(StubRoutines::x86::vector_int_to_byte_mask()), vec_enc, rscratch);
       vpackusdw(dst, dst, zero, vec_enc);
       if(vec_enc == Assembler::AVX_256bit) {
         vector_pack_lower_quadword_from_lanes_avx(dst, dst, xtmp, vec_enc);
       }
       vpackuswb(dst, dst, zero, vec_enc);
       break;
-    default:
-      fatal("Unsupported type %s", type2name(to_elem_bt));
-      break;
+    default: assert(false, "%s", type2name(to_elem_bt));
   }
 }
 
 void C2_MacroAssembler::vector_castF2X_avx(BasicType to_elem_bt, XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
                                            XMMRegister xtmp2, XMMRegister xtmp3, XMMRegister xtmp4,
-                                           AddressLiteral float_sign_flip, Register scratch, int vec_enc) {
+                                           AddressLiteral float_sign_flip, Register rscratch, int vec_enc) {
+  assert(rscratch != noreg || always_reachable(float_sign_flip), "missing");
   int to_elem_sz = type2aelembytes(to_elem_bt);
   assert(to_elem_sz <= 4, "");
   vcvttps2dq(dst, src, vec_enc);
-  vector_cast_float_special_cases_avx(dst, src, xtmp1, xtmp2, xtmp3, xtmp4, scratch, float_sign_flip, vec_enc);
+  vector_cast_float_special_cases_avx(dst, src, xtmp1, xtmp2, xtmp3, xtmp4, rscratch, float_sign_flip, vec_enc);
   vpxor(xtmp2, xtmp2, xtmp2, vec_enc);
   if (to_elem_sz < 4) {
-    vector_narrow_cast_int_to_subword(to_elem_bt, dst, xtmp2, xtmp4, scratch, vec_enc);
+    vector_narrow_cast_int_to_subword(to_elem_bt, dst, xtmp2, xtmp4, rscratch, vec_enc);
   }
 }
 
 void C2_MacroAssembler::vector_castF2X_evex(BasicType to_elem_bt, XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
                                             XMMRegister xtmp2, KRegister ktmp1, KRegister ktmp2, AddressLiteral float_sign_flip,
-                                            Register scratch, int vec_enc) {
+                                            Register rscratch, int vec_enc) {
+  assert(rscratch != noreg || always_reachable(float_sign_flip), "missing");
   int to_elem_sz = type2aelembytes(to_elem_bt);
   assert(to_elem_sz <= 4, "");
   vcvttps2dq(dst, src, vec_enc);
-  vector_cast_float_special_cases_evex(dst, src, xtmp1, xtmp2, ktmp1, ktmp2, scratch, float_sign_flip, vec_enc);
+  vector_cast_float_special_cases_evex(dst, src, xtmp1, xtmp2, ktmp1, ktmp2, rscratch, float_sign_flip, vec_enc);
   switch(to_elem_bt) {
     case T_INT:
       break;
@@ -4620,25 +4629,26 @@ void C2_MacroAssembler::vector_castF2X_evex(BasicType to_elem_bt, XMMRegister ds
     case T_BYTE:
       evpmovdb(dst, dst, vec_enc);
       break;
-    default:
-      fatal("Unsupported type %s", type2name(to_elem_bt));
-      break;
+    default: assert(false, "%s", type2name(to_elem_bt));
   }
 }
 
 void C2_MacroAssembler::vector_castF2L_evex(XMMRegister dst, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2,
                                             KRegister ktmp1, KRegister ktmp2, AddressLiteral double_sign_flip,
-                                            Register scratch, int vec_enc) {
+                                            Register rscratch, int vec_enc) {
+  assert(rscratch != noreg || always_reachable(double_sign_flip), "missing");
+
   evcvttps2qq(dst, src, vec_enc);
-  vector_cast_float_to_long_special_cases_evex(dst, src, xtmp1, xtmp2, ktmp1, ktmp2, scratch, double_sign_flip, vec_enc);
+  vector_cast_float_to_long_special_cases_evex(dst, src, xtmp1, xtmp2, ktmp1, ktmp2, rscratch, double_sign_flip, vec_enc);
 }
 
 void C2_MacroAssembler::vector_castD2X_evex(BasicType to_elem_bt, XMMRegister dst, XMMRegister src,
                                             XMMRegister xtmp1, XMMRegister xtmp2, KRegister ktmp1,
                                             KRegister ktmp2, AddressLiteral sign_flip,
-                                            Register scratch, int vec_enc) {
+                                            Register rscratch, int vec_enc) {
+  assert(rscratch != noreg || always_reachable(sign_flip), "missing");
   if (VM_Version::supports_avx512dq()) {
-    vector_castD2L_evex(dst, src, xtmp1, xtmp2, ktmp1, ktmp2, sign_flip, scratch, vec_enc);
+    vector_castD2L_evex(dst, src, xtmp1, xtmp2, ktmp1, ktmp2, sign_flip, rscratch, vec_enc);
     switch(to_elem_bt) {
       case T_LONG:
         break;
@@ -4653,13 +4663,11 @@ void C2_MacroAssembler::vector_castD2X_evex(BasicType to_elem_bt, XMMRegister ds
         evpmovsqd(dst, dst, vec_enc);
         evpmovdb(dst, dst, vec_enc);
         break;
-      default:
-        fatal("Unsupported type %s", type2name(to_elem_bt));
-        break;
+      default: assert(false, "%s", type2name(to_elem_bt));
     }
   } else {
     assert(type2aelembytes(to_elem_bt) <= 4, "");
-    vector_castD2I_evex(dst, src, xtmp1, xtmp2, ktmp1, ktmp2, sign_flip, scratch, vec_enc);
+    vector_castD2I_evex(dst, src, xtmp1, xtmp2, ktmp1, ktmp2, sign_flip, rscratch, vec_enc);
     switch(to_elem_bt) {
       case T_INT:
         break;
@@ -4669,61 +4677,65 @@ void C2_MacroAssembler::vector_castD2X_evex(BasicType to_elem_bt, XMMRegister ds
       case T_BYTE:
         evpmovdb(dst, dst, vec_enc);
         break;
-      default:
-        fatal("Unsupported type %s", type2name(to_elem_bt));
-        break;
+      default: assert(false, "%s", type2name(to_elem_bt));
     }
   }
 }
 
 #ifdef _LP64
-void C2_MacroAssembler::vector_round_double_evex(XMMRegister dst, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2,
-                                                 KRegister ktmp1, KRegister ktmp2, AddressLiteral double_sign_flip,
-                                                 AddressLiteral new_mxcsr, Register scratch, int vec_enc) {
+void C2_MacroAssembler::vector_round_double_evex(XMMRegister dst, XMMRegister src,
+                                                 AddressLiteral double_sign_flip, AddressLiteral new_mxcsr, int vec_enc,
+                                                 Register tmp, XMMRegister xtmp1, XMMRegister xtmp2, KRegister ktmp1, KRegister ktmp2) {
   // Perform floor(val+0.5) operation under the influence of MXCSR.RC mode roundTowards -inf.
   // and re-instantiate original MXCSR.RC mode after that.
-  ExternalAddress mxcsr_std(StubRoutines::x86::addr_mxcsr_std());
-  ldmxcsr(new_mxcsr, scratch);
-  mov64(scratch, julong_cast(0.5L));
-  evpbroadcastq(xtmp1, scratch, vec_enc);
+  ldmxcsr(new_mxcsr, tmp /*rscratch*/);
+
+  mov64(tmp, julong_cast(0.5L));
+  evpbroadcastq(xtmp1, tmp, vec_enc);
   vaddpd(xtmp1, src , xtmp1, vec_enc);
   evcvtpd2qq(dst, xtmp1, vec_enc);
-  vector_cast_double_special_cases_evex(dst, src, xtmp1, xtmp2, ktmp1, ktmp2, scratch, double_sign_flip, vec_enc);
-  ldmxcsr(mxcsr_std, scratch);
+
+  vector_cast_double_special_cases_evex(dst, src, xtmp1, xtmp2, ktmp1, ktmp2, tmp /*rscratch*/,
+                                        double_sign_flip, vec_enc);;
+
+  ldmxcsr(ExternalAddress(StubRoutines::x86::addr_mxcsr_std()), tmp /*rscratch*/);
 }
 
-void C2_MacroAssembler::vector_round_float_evex(XMMRegister dst, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2,
-                                                KRegister ktmp1, KRegister ktmp2, AddressLiteral float_sign_flip,
-                                                AddressLiteral new_mxcsr, Register scratch, int vec_enc) {
+void C2_MacroAssembler::vector_round_float_evex(XMMRegister dst, XMMRegister src,
+                                                AddressLiteral float_sign_flip, AddressLiteral new_mxcsr, int vec_enc,
+                                                Register tmp, XMMRegister xtmp1, XMMRegister xtmp2, KRegister ktmp1, KRegister ktmp2) {
   // Perform floor(val+0.5) operation under the influence of MXCSR.RC mode roundTowards -inf.
   // and re-instantiate original MXCSR.RC mode after that.
-  ExternalAddress mxcsr_std(StubRoutines::x86::addr_mxcsr_std());
-  ldmxcsr(new_mxcsr, scratch);
-  movl(scratch, jint_cast(0.5));
-  movq(xtmp1, scratch);
+  ldmxcsr(new_mxcsr, tmp /*rscratch*/);
+
+  movl(tmp, jint_cast(0.5));
+  movq(xtmp1, tmp);
   vbroadcastss(xtmp1, xtmp1, vec_enc);
   vaddps(xtmp1, src , xtmp1, vec_enc);
   vcvtps2dq(dst, xtmp1, vec_enc);
-  vector_cast_float_special_cases_evex(dst, src, xtmp1, xtmp2, ktmp1, ktmp2, scratch, float_sign_flip, vec_enc);
-  ldmxcsr(mxcsr_std, scratch);
+  vector_cast_float_special_cases_evex(dst, src, xtmp1, xtmp2, ktmp1, ktmp2, tmp /*rscratch*/,
+                                       float_sign_flip, vec_enc);
+
+  ldmxcsr(ExternalAddress(StubRoutines::x86::addr_mxcsr_std()), tmp /*rscratch*/);
 }
 
-void C2_MacroAssembler::vector_round_float_avx(XMMRegister dst, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2,
-                                               XMMRegister xtmp3, XMMRegister xtmp4, AddressLiteral float_sign_flip,
-                                               AddressLiteral new_mxcsr, Register scratch, int vec_enc) {
+void C2_MacroAssembler::vector_round_float_avx(XMMRegister dst, XMMRegister src,
+                                               AddressLiteral float_sign_flip, AddressLiteral new_mxcsr, int vec_enc,
+                                               Register tmp, XMMRegister xtmp1, XMMRegister xtmp2, XMMRegister xtmp3, XMMRegister xtmp4) {
   // Perform floor(val+0.5) operation under the influence of MXCSR.RC mode roundTowards -inf.
   // and re-instantiate original MXCSR.RC mode after that.
-  ExternalAddress mxcsr_std(StubRoutines::x86::addr_mxcsr_std());
-  ldmxcsr(new_mxcsr, scratch);
-  movl(scratch, jint_cast(0.5));
-  movq(xtmp1, scratch);
+  ldmxcsr(new_mxcsr, tmp /*rscratch*/);
+
+  movl(tmp, jint_cast(0.5));
+  movq(xtmp1, tmp);
   vbroadcastss(xtmp1, xtmp1, vec_enc);
   vaddps(xtmp1, src , xtmp1, vec_enc);
   vcvtps2dq(dst, xtmp1, vec_enc);
-  vector_cast_float_special_cases_avx(dst, src, xtmp1, xtmp2, xtmp3, xtmp4, scratch, float_sign_flip, vec_enc);
-  ldmxcsr(mxcsr_std, scratch);
+  vector_cast_float_special_cases_avx(dst, src, xtmp1, xtmp2, xtmp3, xtmp4, tmp /*rscratch*/, float_sign_flip, vec_enc);
+
+  ldmxcsr(ExternalAddress(StubRoutines::x86::addr_mxcsr_std()), tmp /*rscratch*/);
 }
-#endif
+#endif // _LP64
 
 void C2_MacroAssembler::vector_unsigned_cast(XMMRegister dst, XMMRegister src, int vlen_enc,
                                              BasicType from_elem_bt, BasicType to_elem_bt) {
@@ -5283,12 +5295,14 @@ void C2_MacroAssembler::vector_reverse_bit(BasicType bt, XMMRegister dst, XMMReg
   }
 }
 
-void C2_MacroAssembler::vector_reverse_bit_gfni(BasicType bt, XMMRegister dst, XMMRegister src,
-                                                XMMRegister xtmp, AddressLiteral mask, Register rtmp, int vec_enc) {
+void C2_MacroAssembler::vector_reverse_bit_gfni(BasicType bt, XMMRegister dst, XMMRegister src, AddressLiteral mask, int vec_enc,
+                                                XMMRegister xtmp, Register rscratch) {
+  assert(VM_Version::supports_gfni(), "");
+  assert(rscratch != noreg || always_reachable(mask), "missing");
+
   // Galois field instruction based bit reversal based on following algorithm.
   // http://0x80.pl/articles/avx512-galois-field-for-bit-shuffling.html
-  assert(VM_Version::supports_gfni(), "");
-  vpbroadcastq(xtmp, mask, vec_enc, rtmp);
+  vpbroadcastq(xtmp, mask, vec_enc, rscratch);
   vgf2p8affineqb(xtmp, src, xtmp, 0, vec_enc);
   vector_reverse_byte(bt, dst, xtmp, vec_enc);
 }
