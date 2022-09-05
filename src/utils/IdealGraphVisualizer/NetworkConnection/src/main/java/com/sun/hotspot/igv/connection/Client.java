@@ -25,7 +25,6 @@
 package com.sun.hotspot.igv.connection;
 
 import com.sun.hotspot.igv.data.GraphDocument;
-import com.sun.hotspot.igv.data.serialization.BinaryParser;
 import com.sun.hotspot.igv.data.serialization.Parser;
 import com.sun.hotspot.igv.data.services.GroupCallback;
 import java.io.IOException;
@@ -33,16 +32,12 @@ import java.nio.channels.SocketChannel;
 import org.openide.util.Exceptions;
 
 public class Client implements Runnable {
-    private final boolean binary;
     private final SocketChannel socket;
-    private final GraphDocument rootDocument;
     private final GroupCallback callback;
 
-    public Client(SocketChannel socket, GraphDocument rootDocument, GroupCallback callback, boolean  binary) {
+    public Client(SocketChannel socket, GroupCallback callback) {
         this.callback = callback;
         this.socket = socket;
-        this.binary = binary;
-        this.rootDocument = rootDocument;
     }
 
     @Override
@@ -51,13 +46,8 @@ public class Client implements Runnable {
         try {
             final SocketChannel channel = socket;
             channel.configureBlocking(true);
-            if (binary) {
-                new BinaryParser(channel, null, rootDocument, callback).parse();
-            } else {
-                // signal readiness to client VM (old protocol)
-                channel.socket().getOutputStream().write('y');
-                new Parser(channel, null, callback).parse();
-            }
+            channel.socket().getOutputStream().write('y');
+            new Parser(channel, null, callback).parse();
         } catch (IOException ex) {
             Exceptions.printStackTrace(ex);
         } finally {

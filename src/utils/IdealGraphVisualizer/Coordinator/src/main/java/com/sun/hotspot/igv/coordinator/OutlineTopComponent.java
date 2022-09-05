@@ -66,10 +66,8 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
     private GraphDocument document;
     private FolderNode root;
     private Server server;
-    private Server binaryServer;
     private SaveAllAction saveAllAction;
     private RemoveAllAction removeAllAction;
-
 
     private OutlineTopComponent() {
         initComponents();
@@ -140,8 +138,7 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
             }
         };
 
-        server = new Server(getDocument(), callback, false);
-        binaryServer = new Server(getDocument(), callback, true);
+        server = new Server(callback);
     }
 
     // Fetch and select the latest active graph.

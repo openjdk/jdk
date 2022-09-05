@@ -26,12 +26,11 @@ package com.sun.hotspot.igv.coordinator.actions;
 
 import com.sun.hotspot.igv.coordinator.OutlineTopComponent;
 import com.sun.hotspot.igv.data.GraphDocument;
-import com.sun.hotspot.igv.data.serialization.BinaryParser;
 import com.sun.hotspot.igv.data.serialization.GraphParser;
 import com.sun.hotspot.igv.data.serialization.ParseMonitor;
 import com.sun.hotspot.igv.data.serialization.Parser;
 import com.sun.hotspot.igv.settings.Settings;
-import java.awt.event.ActionEvent;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -65,12 +64,12 @@ public final class ImportAction extends CallableSystemAction {
 
             @Override
             public boolean accept(File f) {
-                return f.getName().toLowerCase().endsWith(".xml") || f.getName().toLowerCase().endsWith(".bgv") || f.isDirectory();
+                return f.getName().toLowerCase().endsWith(".xml") || f.isDirectory();
             }
 
             @Override
             public String getDescription() {
-                return "Graph files (*.xml, *.bgv)";
+                return "Graph files (*.xml)";
             }
         };
     }
@@ -115,8 +114,6 @@ public final class ImportAction extends CallableSystemAction {
                     final OutlineTopComponent component = OutlineTopComponent.findInstance();
                     if (file.getName().endsWith(".xml")) {
                         parser = new Parser(channel, monitor, null);
-                    } else if (file.getName().endsWith(".bgv")) {
-                        parser = new BinaryParser(channel, monitor, component.getDocument(), null);
                     } else {
                         parser = null;
                     }
