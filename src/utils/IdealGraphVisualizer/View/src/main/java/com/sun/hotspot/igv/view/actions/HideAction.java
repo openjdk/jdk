@@ -47,7 +47,7 @@ public final class HideAction extends CallableSystemAction {
             Set<Integer> selectedNodes = editor.getModel().getSelectedNodes();
             HashSet<Integer> nodes = new HashSet<>(editor.getModel().getHiddenNodes());
             nodes.addAll(selectedNodes);
-            editor.getModel().showNot(nodes);
+            editor.getModel().setHiddenNodes(nodes);
         }
     }
 

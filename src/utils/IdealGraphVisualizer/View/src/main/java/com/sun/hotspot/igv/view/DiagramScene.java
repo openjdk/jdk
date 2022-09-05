@@ -1013,7 +1013,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
         Rectangle overall = null;
         Set<Integer> hiddenNodes = new HashSet<>(this.getModel().getHiddenNodes());
         hiddenNodes.removeAll(ids);
-        this.getModel().showNot(hiddenNodes);
+        this.getModel().setHiddenNodes(hiddenNodes);
 
         Set<Object> objects = idSetToObjectSet(ids);
         for (Object o : objects) {

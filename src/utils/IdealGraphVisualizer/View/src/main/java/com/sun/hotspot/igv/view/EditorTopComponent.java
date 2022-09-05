@@ -548,10 +548,6 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
         getModel().showAll(figures);
     }
 
-    public void showAll() {
-        getModel().showNot(new HashSet<Integer>());
-    }
-
     @Override
     protected void componentHidden() {
         super.componentHidden();

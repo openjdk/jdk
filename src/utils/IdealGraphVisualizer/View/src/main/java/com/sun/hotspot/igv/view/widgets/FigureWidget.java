@@ -366,16 +366,16 @@ public class FigureWidget extends Widget implements Properties.Provider, PopupMe
         if (diagramScene.isAllVisible()) {
             final Set<Integer> hiddenNodes = new HashSet<>(diagramScene.getModel().getGraphToView().getGroup().getAllNodes());
             hiddenNodes.removeAll(this.getFigure().getSource().getSourceNodesAsSet());
-            this.diagramScene.getModel().showNot(hiddenNodes);
+            this.diagramScene.getModel().setHiddenNodes(hiddenNodes);
         } else if (isBoundary()) {
 
             final Set<Integer> hiddenNodes = new HashSet<>(diagramScene.getModel().getHiddenNodes());
             hiddenNodes.removeAll(this.getFigure().getSource().getSourceNodesAsSet());
-            this.diagramScene.getModel().showNot(hiddenNodes);
+            this.diagramScene.getModel().setHiddenNodes(hiddenNodes);
         } else {
             final Set<Integer> hiddenNodes = new HashSet<>(diagramScene.getModel().getHiddenNodes());
             hiddenNodes.addAll(this.getFigure().getSource().getSourceNodesAsSet());
-            this.diagramScene.getModel().showNot(hiddenNodes);
+            this.diagramScene.getModel().setHiddenNodes(hiddenNodes);
         }
     }
 }

@@ -185,7 +185,7 @@ public abstract class SlotWidget extends Widget implements DoubleClickHandler {
         }
 
         if (progress) {
-            this.diagramScene.getModel().showNot(hiddenNodes);
+            this.diagramScene.getModel().setHiddenNodes(hiddenNodes);
         }
     }
 }

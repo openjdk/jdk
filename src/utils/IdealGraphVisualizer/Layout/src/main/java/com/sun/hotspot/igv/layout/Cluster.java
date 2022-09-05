@@ -33,8 +33,6 @@ import java.util.Set;
  */
 public interface Cluster extends Comparable<Cluster> {
 
-    public Cluster getOuter();
-
     public void setBounds(Rectangle r);
 
     public Set<? extends Cluster> getSuccessors();

@@ -142,22 +142,6 @@ public class Diagram {
         return new FigureConnection(inputSlot, outputSlot, label);
     }
 
-    public Map<InputNode, Set<Figure>> calcSourceToFigureRelation() {
-        Map<InputNode, Set<Figure>> map = new HashMap<>();
-
-        for(InputNode node : this.getGraph().getNodes()) {
-            map.put(node, new HashSet<Figure>());
-        }
-
-        for(Figure f : this.getFigures()) {
-            for(InputNode node : f.getSource().getSourceNodes()) {
-                map.get(node).add(f);
-            }
-        }
-
-        return map;
-    }
-
     public static Diagram createDiagram(InputGraph graph, String nodeText,
                                         String shortNodeText,
                                         String tinyNodeText) {

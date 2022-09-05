@@ -45,10 +45,6 @@ public class Block implements Cluster {
         this.diagram = diagram;
     }
 
-    public Cluster getOuter() {
-        return null;
-    }
-
     public InputBlock getInputBlock() {
         return inputBlock;
     }
