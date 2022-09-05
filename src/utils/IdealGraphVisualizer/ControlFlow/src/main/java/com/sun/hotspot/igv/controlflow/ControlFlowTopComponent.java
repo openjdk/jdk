@@ -150,11 +150,6 @@ final class ControlFlowTopComponent extends TopComponent implements LookupListen
     }
 
     @Override
-    public Object writeReplace() {
-        return new ResolvableHelper();
-    }
-
-    @Override
     protected String preferredID() {
         return PREFERRED_ID;
     }
@@ -163,14 +158,5 @@ final class ControlFlowTopComponent extends TopComponent implements LookupListen
     public void requestActive() {
         super.requestActive();
         scene.getView().requestFocus();
-    }
-
-    static final class ResolvableHelper implements Serializable {
-
-        private static final long serialVersionUID = 1L;
-
-        public Object readResolve() {
-            return ControlFlowTopComponent.getDefault();
-        }
     }
 }

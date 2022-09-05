@@ -676,11 +676,6 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
         return scene.getUndoRedo();
     }
 
-    @Override
-    protected Object writeReplace() throws ObjectStreamException {
-        throw new NotSerializableException();
-    }
-
     private static void exportToPDF(DiagramViewer scene, File f) {
         int width = scene.getBounds().width;
         int height = scene.getBounds().height;

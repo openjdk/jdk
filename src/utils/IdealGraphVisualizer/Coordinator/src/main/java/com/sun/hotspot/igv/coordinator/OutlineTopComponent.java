@@ -275,15 +275,6 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
         super.writeExternal(objectOutput);
     }
 
-    static final class ResolvableHelper implements Serializable {
-
-        private static final long serialVersionUID = 1L;
-
-        public Object readResolve() {
-            return OutlineTopComponent.getDefault();
-        }
-    }
-
     /** This method is called from within the constructor to
      * initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is

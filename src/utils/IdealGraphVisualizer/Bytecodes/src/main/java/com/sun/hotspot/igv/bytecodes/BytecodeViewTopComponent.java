@@ -136,11 +136,6 @@ final class BytecodeViewTopComponent extends TopComponent implements ExplorerMan
     }
 
     @Override
-    public Object writeReplace() {
-        return new ResolvableHelper();
-    }
-
-    @Override
     protected String preferredID() {
         return PREFERRED_ID;
     }
@@ -186,14 +181,5 @@ final class BytecodeViewTopComponent extends TopComponent implements ExplorerMan
                     }
             });
 
-    }
-
-    static final class ResolvableHelper implements Serializable {
-
-        private static final long serialVersionUID = 1L;
-
-        public Object readResolve() {
-            return BytecodeViewTopComponent.getDefault();
-        }
     }
 }

@@ -706,13 +706,4 @@ public final class FilterTopComponent extends TopComponent implements LookupList
         }
         updateComboBox();
     }
-
-    static final class ResolvableHelper implements Serializable {
-
-        private static final long serialVersionUID = 1L;
-
-        public Object readResolve() {
-            return FilterTopComponent.getDefault();
-        }
-    }
 }
