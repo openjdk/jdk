@@ -57,6 +57,7 @@
 #include "runtime/osThread.hpp"
 #include "runtime/safefetch.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/thread.inline.hpp"
 #include "runtime/threadCrashProtection.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/vmOperations.hpp"
@@ -636,6 +637,8 @@ void* os::malloc(size_t size, MEMFLAGS flags) {
 
 void* os::malloc(size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
 
+  DEBUG_ONLY(NoThreadCurrentMark ntcm);
+
   // Special handling for NMT preinit phase before arguments are parsed
   void* rc = NULL;
   if (NMTPreInit::handle_malloc(&rc, size)) {
@@ -681,6 +684,8 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS flags) {
 
 void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
 
+  DEBUG_ONLY(NoThreadCurrentMark ntcm);
+
   // Special handling for NMT preinit phase before arguments are parsed
   void* rc = NULL;
   if (NMTPreInit::handle_realloc(&rc, memblock, size)) {
@@ -721,6 +726,8 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCa
 }
 
 void  os::free(void *memblock) {
+
+  DEBUG_ONLY(NoThreadCurrentMark ntcm);
 
   // Special handling for NMT preinit phase before arguments are parsed
   if (NMTPreInit::handle_free(memblock)) {

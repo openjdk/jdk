@@ -28,6 +28,7 @@
 #include "decoder_elf.hpp"
 #include "logging/log.hpp"
 #include "runtime/os.hpp"
+#include "runtime/thread.inline.hpp"
 
 ElfDecoder::~ElfDecoder() {
   if (_opened_elf_files != NULL) {
@@ -37,6 +38,9 @@ ElfDecoder::~ElfDecoder() {
 }
 
 bool ElfDecoder::decode(address addr, char *buf, int buflen, int* offset, const char* filepath, bool demangle_name) {
+
+  DEBUG_ONLY(NoThreadCurrentMark ntcm;)
+
   assert(filepath, "null file path");
   assert(buf != NULL && buflen > 0, "Invalid buffer");
   if (has_error()) return false;
@@ -55,6 +59,9 @@ bool ElfDecoder::decode(address addr, char *buf, int buflen, int* offset, const 
 }
 
 bool ElfDecoder::get_source_info(address pc, char* filename, size_t filename_len, int* line, bool is_pc_after_call) {
+
+  DEBUG_ONLY(NoThreadCurrentMark ntcm;)
+
   assert(filename != nullptr && filename_len > 0 && line != nullptr, "Argument error");
   filename[0] = '\0';
   *line = -1;

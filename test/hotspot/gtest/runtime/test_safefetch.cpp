@@ -27,6 +27,7 @@
 #include "runtime/safefetch.hpp"
 #include "runtime/vmOperations.hpp"
 #include "runtime/vmThread.hpp"
+#include "runtime/thread.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/vmError.hpp"
 #include "unittest.hpp"
@@ -108,37 +109,27 @@ TEST_VM(os, safefetch32_negative) {
 // Try with Thread::current being NULL. SafeFetch should work then too.
 // See JDK-8282475
 
-class ThreadCurrentNullMark : public StackObj {
-  Thread* _saved;
-public:
-  ThreadCurrentNullMark() {
-    _saved = Thread::current();
-    Thread::clear_thread_current();
-  }
-  ~ThreadCurrentNullMark() {
-    _saved->initialize_thread_current();
-  }
-};
-
+#ifdef ASSERT // NoThreadCurrentMark requires debug build
 TEST_VM(os, safefetchN_positive_current_null) {
-  ThreadCurrentNullMark tcnmark;
+  NoThreadCurrentMark ntcm;
   test_safefetchN_positive();
 }
 
 TEST_VM(os, safefetch32_positive_current_null) {
-  ThreadCurrentNullMark tcnmark;
+  NoThreadCurrentMark ntcm;
   test_safefetch32_positive();
 }
 
 TEST_VM(os, safefetchN_negative_current_null) {
-  ThreadCurrentNullMark tcnmark;
+  NoThreadCurrentMark ntcm;
   test_safefetchN_negative();
 }
 
 TEST_VM(os, safefetch32_negative_current_null) {
-  ThreadCurrentNullMark tcnmark;
+  NoThreadCurrentMark ntcm;
   test_safefetch32_negative();
 }
+#endif // ASSERT
 
 class VM_TestSafeFetchAtSafePoint : public VM_GTestExecuteAtSafepoint {
 public:

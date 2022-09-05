@@ -30,27 +30,42 @@
 static DWORD _thread_key;
 static bool _initialized = false;
 
+// We initialize Library-based TLS at C++ dynamic initialization time (when
+// the libjvm.so is loaded).
+// Note however that we cannot rely on initialization order, and we may be
+// used even earlier than our initialization runs when called by other
+// initialization code (e.g. UL). Therefore we also initialize on demand
+// in ThreadLocalStorage::thread().
 
-void ThreadLocalStorage::init() {
-  assert(!_initialized, "initializing TLS more than once!");
-  _thread_key = TlsAlloc();
-  // If this assert fails we will get a recursive assertion failure
-  // and not see the actual error message or get a hs_err file
-  assert(_thread_key != TLS_OUT_OF_INDEXES, "TlsAlloc failed: out of indices");
-  _initialized = true;
+static void initialize_if_needed() {
+  // Notes:
+  // - we fatal out if this fails, even in release, since continuing would
+  //   mean we use TlsGet/SetValue with an uninitialized key
+  //   which is UB
+  // - pthread_key_create *returns* the error code, it does not set errno
+  if (!_initialized) {
+    _thread_key = TlsAlloc();
+    if (_thread_key == TLS_OUT_OF_INDEXES) {
+      fatal("TlsAlloc failed: out of indices");
+    }
+    _initialized = true;
+  }
 }
+
+struct InitTLS { InitTLS() { initialize_if_needed(); }};
+static InitTLS _the_initializer;
 
 bool ThreadLocalStorage::is_initialized() {
   return _initialized;
 }
 
 Thread* ThreadLocalStorage::thread() {
+  initialize_if_needed();
   // If this assert fails we will get a recursive assertion failure
   // and not see the actual error message or get a hs_err file.
   // Which most likely indicates we have taken an error path early in
   // the initialization process, which is using Thread::current without
   // checking TLS is initialized - see java.cpp vm_exit
-  assert(_initialized, "TLS not initialized yet!");
   Thread* current = (Thread*) TlsGetValue(_thread_key);
   assert(current != 0 || GetLastError() == ERROR_SUCCESS,
          "TlsGetValue failed with error code: %lu", GetLastError());
@@ -58,7 +73,7 @@ Thread* ThreadLocalStorage::thread() {
 }
 
 void ThreadLocalStorage::set_thread(Thread* current) {
-  assert(_initialized, "TLS not initialized yet!");
+  initialize_if_needed();
   BOOL res = TlsSetValue(_thread_key, current);
   assert(res, "TlsSetValue failed with error code: %lu", GetLastError());
 }

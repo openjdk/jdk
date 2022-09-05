@@ -287,6 +287,9 @@ class Thread: public ThreadShadow {
 
   JvmtiRawMonitor* _current_pending_raw_monitor; // JvmtiRawMonitor this thread
                                                  // is waiting to lock
+
+  static void set_thread_current(Thread* t);
+
  public:
   // Constructor
   Thread();
@@ -295,6 +298,11 @@ class Thread: public ThreadShadow {
   // Manage Thread::current()
   void initialize_thread_current();
   static void clear_thread_current(); // TLS cleanup needed before threads terminate
+
+#ifdef ASSERT
+  // Support for temporarily disabling thread_current (see NoThreadCurrentMark)
+  static void swap_thread_current(Thread* swap_in, Thread** old);
+#endif
 
  protected:
   // To be implemented by children.

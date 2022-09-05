@@ -91,4 +91,28 @@ inline WXMode Thread::enable_wx(WXMode new_state) {
 }
 #endif // __APPLE__ && AARCH64
 
+
+#ifdef ASSERT
+inline void Thread::swap_thread_current(Thread* swap_in, Thread** old) {
+  *old = current_or_null_safe();
+  Thread::set_thread_current(swap_in);
+}
+
+// Mark disables Thread::current by setting it to NULL for the extend. Can be
+// used to simulate running code in non-attached threads, or to guard code
+// against accidental usage of features that depend on Thread::current() (e.g.
+// ResourceAreas)
+class NoThreadCurrentMark {
+  Thread* _t;
+public:
+  NoThreadCurrentMark() {
+    Thread::swap_thread_current((Thread*)nullptr, &_t);
+  }
+  ~NoThreadCurrentMark() {
+    Thread* dummy;
+    Thread::swap_thread_current(_t, &dummy);
+  }
+};
+#endif // ASSERT
+
 #endif // SHARE_RUNTIME_THREAD_INLINE_HPP
