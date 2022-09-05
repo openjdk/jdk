@@ -1185,5 +1185,12 @@ public final class HexPrinter {
             byteOffset += Math.max(size, 0);
             return size;
         }
+
+        @Override
+        public long transferTo(OutputStream out) throws IOException {
+            long size = super.transferTo(out);
+            byteOffset += size;
+            return size;
+        }
     }
 }
