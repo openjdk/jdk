@@ -34,7 +34,6 @@ import java.util.List;
 public class InputNode extends Properties.Entity {
 
     private int id;
-    private List<InputGraph> subgraphs;
 
     public static final Comparator<InputNode> COMPARATOR = new Comparator<InputNode>() {
         @Override
@@ -81,17 +80,6 @@ public class InputNode extends Properties.Entity {
 
     public int getId() {
         return id;
-    }
-
-    public void addSubgraph(InputGraph graph) {
-        if (subgraphs == null) {
-            subgraphs = new ArrayList<>();
-        }
-        subgraphs.add(graph);
-    }
-
-    public List<InputGraph> getSubgraphs() {
-        return subgraphs;
     }
 
     @Override

@@ -51,7 +51,6 @@ public class Figure extends Properties.Entity implements Source.Provider, Vertex
     private Point position;
     private List<Figure> predecessors;
     private List<Figure> successors;
-    private List<InputGraph> subgraphs;
     private Color color;
     private String warning;
     private int id;
@@ -220,14 +219,6 @@ public class Figure extends Properties.Entity implements Source.Provider, Vertex
     protected void removeSuccessor(Figure f) {
         assert successors.contains(f);
         successors.remove(f);
-    }
-
-    public List<InputGraph> getSubgraphs() {
-        return subgraphs;
-    }
-
-    public void setSubgraphs(List<InputGraph> subgraphs) {
-        this.subgraphs = subgraphs;
     }
 
     @Override

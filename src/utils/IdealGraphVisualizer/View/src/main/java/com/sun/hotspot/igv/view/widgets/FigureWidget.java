@@ -286,27 +286,6 @@ public class FigureWidget extends Widget implements Properties.Provider, PopupMe
         menu.addSeparator();
         build(menu, getFigure(), this, true, diagramScene);
 
-        if (getFigure().getSubgraphs() != null) {
-            menu.addSeparator();
-            JMenu subgraphs = new JMenu("Subgraphs");
-            menu.add(subgraphs);
-
-            final GraphViewer viewer = Lookup.getDefault().lookup(GraphViewer.class);
-            for (final InputGraph subgraph : getFigure().getSubgraphs()) {
-                Action a = new AbstractAction() {
-
-                    @Override
-                    public void actionPerformed(ActionEvent e) {
-                        viewer.view(subgraph, true);
-                    }
-                };
-
-                a.setEnabled(true);
-                a.putValue(Action.NAME, subgraph.getName());
-                subgraphs.add(a);
-            }
-        }
-
         return menu;
     }
 

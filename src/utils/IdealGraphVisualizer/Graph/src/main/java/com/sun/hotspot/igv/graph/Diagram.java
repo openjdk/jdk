@@ -174,7 +174,6 @@ public class Diagram {
             Figure f = d.createFigure();
             f.getSource().addSourceNode(n);
             f.getProperties().add(n.getProperties());
-            f.setSubgraphs(n.getSubgraphs());
             f.setBlock(graph.getBlock(n));
             figureHash.put(n.getId(), f);
         }
