@@ -93,7 +93,6 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
     private PredSuccAction predSuccAction;
     private ShowEmptyBlocksAction showEmptyBlocksAction;
     private SelectionModeAction selectionModeAction;
-    private boolean notFirstTime;
     private JComponent satelliteComponent;
     private JPanel centerPanel;
     private CardLayout cardLayout;
@@ -357,27 +356,6 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
         satelliteComponent = scene.createSatelliteView();
         satelliteComponent.setSize(200, 200);
         centerPanel.add(SATELLITE_STRING, satelliteComponent);
-
-        scene.getComponent().addHierarchyBoundsListener(new HierarchyBoundsListener() {
-
-            @Override
-            public void ancestorMoved(HierarchyEvent e) {
-            }
-
-            @Override
-            public void ancestorResized(HierarchyEvent e) {
-                if (!notFirstTime && scene.getComponent().getBounds().width > 0) {
-                    notFirstTime = true;
-                    SwingUtilities.invokeLater(new Runnable() {
-
-                        @Override
-                        public void run() {
-                            EditorTopComponent.this.scene.initialize();
-                        }
-                    });
-                }
-            }
-        });
 
         if (diagram.getGraph().getGroup().getGraphsCount() == 1) {
             rangeSlider.setVisible(false);

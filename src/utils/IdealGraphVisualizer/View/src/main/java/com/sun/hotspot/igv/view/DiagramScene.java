@@ -972,16 +972,6 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
         return lookup;
     }
 
-    @Override
-    public void initialize() {
-        Figure f = getModel().getDiagramToView().getRootFigure();
-        if (f != null) {
-            setUndoRedoEnabled(false);
-            gotoFigure(f);
-            setUndoRedoEnabled(true);
-        }
-    }
-
     public void gotoFigures(final List<Figure> figures) {
         Rectangle overall = null;
         getModel().showFigures(figures);

@@ -63,8 +63,6 @@ interface DiagramViewer {
 
     public void componentShowing();
 
-    public void initialize();
-
     public void setSelection(Collection<Figure> list);
 
     public void centerFigures(List<Figure> list);
