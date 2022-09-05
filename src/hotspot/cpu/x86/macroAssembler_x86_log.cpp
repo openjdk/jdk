@@ -234,15 +234,15 @@ void MacroAssembler::fast_log(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xm
   subl(eax, ecx);
   cvtsi2sdl(xmm7, eax);
   mulsd(xmm1, xmm0);
-  movq(xmm6, ExternalAddress(log2));       // 0xfefa3800UL, 0x3fa62e42UL
-  movdqu(xmm3, ExternalAddress(coeff));    // 0x92492492UL, 0x3fc24924UL, 0x00000000UL, 0xbfd00000UL
+  movq(xmm6, ExternalAddress(log2), tmp1 /*rscratch*/);       // 0xfefa3800UL, 0x3fa62e42UL
+  movdqu(xmm3, ExternalAddress(coeff), tmp1 /*rscratch*/);    // 0x92492492UL, 0x3fc24924UL, 0x00000000UL, 0xbfd00000UL
   subsd(xmm5, xmm2);
   andl(edx, 16711680);
   shrl(edx, 12);
   movdqu(xmm0, Address(tmp2, edx));
-  movdqu(xmm4, ExternalAddress(16 + coeff)); // 0x3d6fb175UL, 0xbfc5555eUL, 0x55555555UL, 0x3fd55555UL
+  movdqu(xmm4, ExternalAddress(coeff + 16), tmp1 /*rscratch*/); // 0x3d6fb175UL, 0xbfc5555eUL, 0x55555555UL, 0x3fd55555UL
   addsd(xmm1, xmm5);
-  movdqu(xmm2, ExternalAddress(32 + coeff)); // 0x9999999aUL, 0x3fc99999UL, 0x00000000UL, 0xbfe00000UL
+  movdqu(xmm2, ExternalAddress(coeff + 32), tmp1 /*rscratch*/); // 0x9999999aUL, 0x3fc99999UL, 0x00000000UL, 0xbfe00000UL
   mulsd(xmm6, xmm7);
   if (VM_Version::supports_sse3()) {
     movddup(xmm5, xmm1);
@@ -251,7 +251,7 @@ void MacroAssembler::fast_log(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xm
     movdqu(xmm5, xmm1);
     movlhps(xmm5, xmm5);
   }
-  mulsd(xmm7, ExternalAddress(8 + log2));    // 0x93c76730UL, 0x3ceef357UL
+  mulsd(xmm7, ExternalAddress(log2 + 8), tmp1 /*rscratch*/);    // 0x93c76730UL, 0x3ceef357UL
   mulsd(xmm3, xmm1);
   addsd(xmm0, xmm6);
   mulpd(xmm4, xmm5);

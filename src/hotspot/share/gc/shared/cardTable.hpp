@@ -244,7 +244,7 @@ public:
   // before the beginning of the actual _byte_map.
   CardValue* byte_map_base() const { return _byte_map_base; }
 
-  virtual bool is_in_young(oop obj) const = 0;
+  virtual bool is_in_young(const void* p) const = 0;
 
   // Print a description of the memory for the card table
   virtual void print_on(outputStream* st) const;

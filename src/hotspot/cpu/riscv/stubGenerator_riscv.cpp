@@ -119,16 +119,28 @@ class StubGenerator: public StubCodeGenerator {
   // we don't need to save x6-x7 and x28-x31 which both C and Java treat as
   // volatile
   //
-  // we save x18-x27 which Java uses as temporary registers and C
-  // expects to be callee-save
+  // we save x9, x18-x27, f8-f9, and f18-f27 which Java uses as temporary
+  // registers and C expects to be callee-save
   //
   // so the stub frame looks like this when we enter Java code
   //
   //     [ return_from_Java     ] <--- sp
   //     [ argument word n      ]
   //      ...
-  // -22 [ argument word 1      ]
-  // -21 [ saved x27            ] <--- sp_after_call
+  // -34 [ argument word 1      ]
+  // -33 [ saved f27            ] <--- sp_after_call
+  // -32 [ saved f26            ]
+  // -31 [ saved f25            ]
+  // -30 [ saved f24            ]
+  // -29 [ saved f23            ]
+  // -28 [ saved f22            ]
+  // -27 [ saved f21            ]
+  // -26 [ saved f20            ]
+  // -25 [ saved f19            ]
+  // -24 [ saved f18            ]
+  // -23 [ saved f9             ]
+  // -22 [ saved f8             ]
+  // -21 [ saved x27            ]
   // -20 [ saved x26            ]
   // -19 [ saved x25            ]
   // -18 [ saved x24            ]
@@ -153,7 +165,20 @@ class StubGenerator: public StubCodeGenerator {
 
   // Call stub stack layout word offsets from fp
   enum call_stub_layout {
-    sp_after_call_off  = -21,
+    sp_after_call_off  = -33,
+
+    f27_off            = -33,
+    f26_off            = -32,
+    f25_off            = -31,
+    f24_off            = -30,
+    f23_off            = -29,
+    f22_off            = -28,
+    f21_off            = -27,
+    f20_off            = -26,
+    f19_off            = -25,
+    f18_off            = -24,
+    f9_off             = -23,
+    f8_off             = -22,
 
     x27_off            = -21,
     x26_off            = -20,
@@ -198,6 +223,19 @@ class StubGenerator: public StubCodeGenerator {
     const Address parameter_size(fp, parameter_size_off * wordSize);
 
     const Address thread        (fp, thread_off         * wordSize);
+
+    const Address f27_save      (fp, f27_off            * wordSize);
+    const Address f26_save      (fp, f26_off            * wordSize);
+    const Address f25_save      (fp, f25_off            * wordSize);
+    const Address f24_save      (fp, f24_off            * wordSize);
+    const Address f23_save      (fp, f23_off            * wordSize);
+    const Address f22_save      (fp, f22_off            * wordSize);
+    const Address f21_save      (fp, f21_off            * wordSize);
+    const Address f20_save      (fp, f20_off            * wordSize);
+    const Address f19_save      (fp, f19_off            * wordSize);
+    const Address f18_save      (fp, f18_off            * wordSize);
+    const Address f9_save       (fp, f9_off             * wordSize);
+    const Address f8_save       (fp, f8_off             * wordSize);
 
     const Address x27_save      (fp, x27_off            * wordSize);
     const Address x26_save      (fp, x26_off            * wordSize);
@@ -244,6 +282,19 @@ class StubGenerator: public StubCodeGenerator {
     __ sd(x25, x25_save);
     __ sd(x26, x26_save);
     __ sd(x27, x27_save);
+
+    __ fsd(f8,  f8_save);
+    __ fsd(f9,  f9_save);
+    __ fsd(f18, f18_save);
+    __ fsd(f19, f19_save);
+    __ fsd(f20, f20_save);
+    __ fsd(f21, f21_save);
+    __ fsd(f22, f22_save);
+    __ fsd(f23, f23_save);
+    __ fsd(f24, f24_save);
+    __ fsd(f25, f25_save);
+    __ fsd(f26, f26_save);
+    __ fsd(f27, f27_save);
 
     // install Java thread in global register now we have saved
     // whatever value it held
@@ -336,6 +387,19 @@ class StubGenerator: public StubCodeGenerator {
 #endif
 
     // restore callee-save registers
+    __ fld(f27, f27_save);
+    __ fld(f26, f26_save);
+    __ fld(f25, f25_save);
+    __ fld(f24, f24_save);
+    __ fld(f23, f23_save);
+    __ fld(f22, f22_save);
+    __ fld(f21, f21_save);
+    __ fld(f20, f20_save);
+    __ fld(f19, f19_save);
+    __ fld(f18, f18_save);
+    __ fld(f9,  f9_save);
+    __ fld(f8,  f8_save);
+
     __ ld(x27, x27_save);
     __ ld(x26, x26_save);
     __ ld(x25, x25_save);
@@ -2341,6 +2405,17 @@ class StubGenerator: public StubCodeGenerator {
 
     address start = __ pc();
 
+    BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
+
+    if (bs_asm->nmethod_patching_type() == NMethodPatchingType::conc_instruction_and_data_patch) {
+      BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
+      Address thread_epoch_addr(xthread, in_bytes(bs_nm->thread_disarmed_offset()) + 4);
+      __ la(t1, ExternalAddress(bs_asm->patching_epoch_addr()));
+      __ lwu(t1, t1);
+      __ sw(t1, thread_epoch_addr);
+      __ membar(__ LoadLoad);
+    }
+
     __ set_last_Java_frame(sp, fp, ra, t0);
 
     __ enter();
@@ -2935,32 +3010,32 @@ class StubGenerator: public StubCodeGenerator {
 
       // Register allocation
 
-      Register reg = c_rarg0;
-      Pa_base = reg;       // Argument registers
+      RegSetIterator<Register> regs = RegSet::range(x10, x26).begin();
+      Pa_base = *regs;       // Argument registers
       if (squaring) {
         Pb_base = Pa_base;
       } else {
-        Pb_base = ++reg;
+        Pb_base = *++regs;
       }
-      Pn_base = ++reg;
-      Rlen= ++reg;
-      inv = ++reg;
-      Pm_base = ++reg;
+      Pn_base = *++regs;
+      Rlen= *++regs;
+      inv = *++regs;
+      Pm_base = *++regs;
 
                         // Working registers:
-      Ra =  ++reg;      // The current digit of a, b, n, and m.
-      Rb =  ++reg;
-      Rm =  ++reg;
-      Rn =  ++reg;
+      Ra =  *++regs;    // The current digit of a, b, n, and m.
+      Rb =  *++regs;
+      Rm =  *++regs;
+      Rn =  *++regs;
 
-      Pa =  ++reg;      // Pointers to the current/next digit of a, b, n, and m.
-      Pb =  ++reg;
-      Pm =  ++reg;
-      Pn =  ++reg;
+      Pa =  *++regs;      // Pointers to the current/next digit of a, b, n, and m.
+      Pb =  *++regs;
+      Pm =  *++regs;
+      Pn =  *++regs;
 
-      tmp0 =  ++reg;    // Three registers which form a
-      tmp1 =  ++reg;    // triple-precision accumuator.
-      tmp2 =  ++reg;
+      tmp0 =  *++regs;    // Three registers which form a
+      tmp1 =  *++regs;    // triple-precision accumuator.
+      tmp2 =  *++regs;
 
       Ri =  x6;         // Inner and outer loop indexes.
       Rj =  x7;
@@ -2971,7 +3046,7 @@ class StubGenerator: public StubCodeGenerator {
       Rlo_mn = x31;
 
       // x18 and up are callee-saved.
-      _toSave = RegSet::range(x18, reg) + Pm_base;
+      _toSave = RegSet::range(x18, *regs) + Pm_base;
     }
 
   private:
@@ -3227,7 +3302,8 @@ class StubGenerator: public StubCodeGenerator {
     //    Preserves len
     //    Leaves s pointing to the address which was in d at start
     void reverse(Register d, Register s, Register len, Register tmp1, Register tmp2) {
-      assert(tmp1 < x28 && tmp2 < x28, "register corruption");
+      assert(tmp1->encoding() < x28->encoding(), "register corruption");
+      assert(tmp2->encoding() < x28->encoding(), "register corruption");
 
       slli(tmp1, len, LogBytesPerWord);
       add(s, s, tmp1);
@@ -3718,12 +3794,6 @@ class StubGenerator: public StubCodeGenerator {
     return nullptr;
   }
 
-  RuntimeStub* generate_cont_doYield() {
-    if (!Continuations::enabled()) return nullptr;
-    Unimplemented();
-    return nullptr;
-  }
-
 #if INCLUDE_JFR
 
 #undef __
@@ -3820,9 +3890,6 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_cont_thaw             = generate_cont_thaw();
     StubRoutines::_cont_returnBarrier    = generate_cont_returnBarrier();
     StubRoutines::_cont_returnBarrierExc = generate_cont_returnBarrier_exception();
-    StubRoutines::_cont_doYield_stub     = generate_cont_doYield();
-    StubRoutines::_cont_doYield = StubRoutines::_cont_doYield_stub == nullptr ? nullptr
-                                   : StubRoutines::_cont_doYield_stub->entry_point();
 
     JFR_ONLY(StubRoutines::_jfr_write_checkpoint_stub = generate_jfr_write_checkpoint();)
     JFR_ONLY(StubRoutines::_jfr_write_checkpoint = StubRoutines::_jfr_write_checkpoint_stub == nullptr ? nullptr
