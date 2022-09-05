@@ -144,15 +144,6 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
         return (T) w;
     }
 
-    private static boolean intersects(Set<? extends Object> s1, Set<? extends Object> s2) {
-        for (Object o : s1) {
-            if (s2.contains(o)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     @Override
     public void zoomOut() {
         double zoom = getZoomFactor();
@@ -164,7 +155,6 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
 
     @Override
     public void zoomIn() {
-
         double zoom = getZoomFactor();
         double newZoom = zoom * DiagramScene.ZOOM_INCREMENT;
         if (newZoom < DiagramScene.ZOOM_MAX_FACTOR) {
@@ -184,7 +174,6 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
 
     @Override
     public void centerFigures(List<Figure> list) {
-
         boolean b = getUndoRedoEnabled();
         setUndoRedoEnabled(false);
         gotoFigures(list);
@@ -194,12 +183,12 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
     private Set<Object> getObjectsFromIdSet(Set<Object> set) {
         Set<Object> selectedObjects = new HashSet<>();
         for (Figure f : getModel().getDiagramToView().getFigures()) {
-            if (intersects(f.getSource().getSourceNodesAsSet(), set)) {
+            if (!Collections.disjoint(f.getSource().getSourceNodesAsSet(), set)) {
                 selectedObjects.add(f);
             }
 
             for (Slot s : f.getSlots()) {
-                if (intersects(s.getSource().getSourceNodesAsSet(), set)) {
+                if (!Collections.disjoint(s.getSource().getSourceNodesAsSet(), set)) {
                     selectedObjects.add(s);
                 }
             }
@@ -266,11 +255,11 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
         }
     };
 
-    public Point getScrollPosition() {
+    private Point getScrollPosition() {
         return getScrollPane().getViewport().getViewPosition();
     }
 
-    public void setScrollPosition(Point p) {
+    private void setScrollPosition(Point p) {
         getScrollPane().getViewport().setViewPosition(p);
     }
 
@@ -465,7 +454,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
         return model;
     }
 
-    public JScrollPane getScrollPane() {
+    private JScrollPane getScrollPane() {
         return scrollPane;
     }
 
@@ -520,7 +509,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
         return a;
     }
 
-    public void setNewModel(DiagramViewModel model) {
+    private void setNewModel(DiagramViewModel model) {
         assert this.model == null : "can set model only once!";
         this.model = model;
         this.modelCopy = null;
@@ -603,7 +592,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
         this.smallUpdate(true);
     }
 
-    public boolean isRebuilding() {
+    protected boolean isRebuilding() {
         return rebuilding;
     }
 
@@ -972,7 +961,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
         return lookup;
     }
 
-    public void gotoFigures(final List<Figure> figures) {
+    private void gotoFigures(final List<Figure> figures) {
         Rectangle overall = null;
         getModel().showFigures(figures);
         for (Figure f : figures) {
@@ -995,7 +984,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
         }
     }
 
-    public void gotoBlock(final Block block) {
+    private void gotoBlock(final Block block) {
         BlockWidget bw = getWidget(block.getInputBlock());
         if (bw != null) {
             centerRectangle(bw.getBounds());
@@ -1006,12 +995,12 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
 
         Set<Object> result = new HashSet<>();
         for (Figure f : getModel().getDiagramToView().getFigures()) {
-            if (DiagramScene.doesIntersect(f.getSource().getSourceNodesAsSet(), ids)) {
+            if (!Collections.disjoint(f.getSource().getSourceNodesAsSet(), ids)) {
                 result.add(f);
             }
 
             for (Slot s : f.getSlots()) {
-                if (DiagramScene.doesIntersect(s.getSource().getSourceNodesAsSet(), ids)) {
+                if (!Collections.disjoint(s.getSource().getSourceNodesAsSet(), ids)) {
                     result.add(s);
                 }
             }
@@ -1019,7 +1008,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
         return result;
     }
 
-    public void gotoSelection(Set<Object> ids) {
+    private void gotoSelection(Set<Object> ids) {
 
         Rectangle overall = null;
         Set<Integer> hiddenNodes = new HashSet<>(this.getModel().getHiddenNodes());
@@ -1118,22 +1107,6 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
         return true;
     }
 
-    public static boolean doesIntersect(Set<?> s1, Set<?> s2) {
-        if (s1.size() > s2.size()) {
-            Set<?> tmp = s1;
-            s1 = s2;
-            s2 = tmp;
-        }
-
-        for (Object o : s1) {
-            if (s2.contains(o)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
     @Override
     public void componentHidden() {
         SelectionCoordinator.getInstance().getHighlightedChangedEvent().removeListener(highlightedCoordinatorListener);
@@ -1171,7 +1144,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
         }
 
         for (Figure f : diagram.getFigures()) {
-            boolean hiddenAfter = doesIntersect(f.getSource().getSourceNodesAsSet(), newHiddenNodes);
+            boolean hiddenAfter = !Collections.disjoint(f.getSource().getSourceNodesAsSet(), newHiddenNodes);
 
             FigureWidget w = getWidget(f);
             w.setBoundary(false);
@@ -1265,18 +1238,6 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
         HashSet<Integer> newHiddenNodes = new HashSet<>(getModel().getHiddenNodes());
         newHiddenNodes.removeAll(f.getSource().getSourceNodesAsSet());
         this.model.setHiddenNodes(newHiddenNodes);
-    }
-
-    public void show(final Figure f) {
-        showFigure(f);
-    }
-
-    public void setSelectedObjects(Object... args) {
-        Set<Object> set = new HashSet<>();
-        for (Object o : args) {
-            set.add(o);
-        }
-        super.setSelectedObjects(set);
     }
 
     private void centerWidget(Widget w) {
@@ -1373,11 +1334,11 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
     }
     private boolean undoRedoEnabled = true;
 
-    public void setUndoRedoEnabled(boolean b) {
+    private void setUndoRedoEnabled(boolean b) {
         this.undoRedoEnabled = b;
     }
 
-    public boolean getUndoRedoEnabled() {
+    private boolean getUndoRedoEnabled() {
         return undoRedoEnabled;
     }
 
