@@ -830,7 +830,7 @@ public:
   void store_check(Register obj);                // store check for obj - register is destroyed afterwards
   void store_check(Register obj, Address dst);   // same as above, dst is exact store location (reg. is destroyed)
 
-  void resolve_jobject(Register value, Register thread, Register tmp);
+  void resolve_jobject(Register value, Register tmp1, Register tmp2);
 
   // C 'boolean' to Java boolean: x == 0 ? 0 : 1
   void c2bool(Register x);
