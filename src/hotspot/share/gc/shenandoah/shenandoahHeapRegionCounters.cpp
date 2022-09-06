@@ -21,7 +21,6 @@
  * questions.
  *
  */
-
 #include "precompiled.hpp"
 
 #include "gc/shenandoah/shenandoahGeneration.hpp"
@@ -29,14 +28,14 @@
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionSet.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionCounters.hpp"
-#include "gc/shenandoah/shenandoahLogFileOutput.hpp"
+#include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/perfData.inline.hpp"
 #include "utilities/defaultStream.hpp"
 
 ShenandoahHeapRegionCounters::ShenandoahHeapRegionCounters() :
-  _last_sample_millis(0), _log_file(nullptr)
+  _last_sample_millis(0)
 {
   if (UsePerfData && ShenandoahRegionSampling) {
     EXCEPTION_MARK;
@@ -75,17 +74,33 @@ ShenandoahHeapRegionCounters::ShenandoahHeapRegionCounters() :
                                                                PerfData::U_None, CHECK);
     }
 
-    if (ShenandoahLogRegionSampling) {
-      _log_file = new ShenandoahLogFileOutput(ShenandoahRegionSamplingFile, _timestamp->get_value());
-      _log_file->set_option(ShenandoahLogFileCount, ShenandoahLogFileSize);
-      _log_file->initialize(tty);
-    }
   }
 }
 
 ShenandoahHeapRegionCounters::~ShenandoahHeapRegionCounters() {
   if (_name_space != NULL) FREE_C_HEAP_ARRAY(char, _name_space);
-  if (_log_file != NULL) FREE_C_HEAP_OBJ(_log_file);
+}
+
+void ShenandoahHeapRegionCounters::write_snapshot(PerfLongVariable** regions,
+                                             PerfLongVariable* ts,
+                                             PerfLongVariable* status,
+                                             size_t num_regions,
+                                             size_t region_size, size_t protocol_version) {
+  LogTarget(Debug, gc, region) lt;
+  if (lt.is_enabled()) {
+    ResourceMark rm;
+    LogStream ls(lt);
+
+    ls.print_cr("%li %li %lu %lu %lu",
+            ts->get_value(), status->get_value(), num_regions, region_size, protocol_version);
+    if (num_regions > 0) {
+      ls.print("%li", regions[0]->get_value());
+    }
+    for (uint i = 1; i < num_regions; ++i) {
+      ls.print(" %li", regions[i]->get_value());
+    }
+    ls.cr();
+  }
 }
 
 void ShenandoahHeapRegionCounters::update() {
@@ -119,9 +134,7 @@ void ShenandoahHeapRegionCounters::update() {
         }
 
         // If logging enabled, dump current region snapshot to log file
-        if (ShenandoahLogRegionSampling && _log_file != NULL) {
-          _log_file->write_snapshot(_regions_data, _timestamp, _status, num_regions, rs >> 10, VERSION_NUMBER);
-        }
+        write_snapshot(_regions_data, _timestamp, _status, num_regions, rs >> 10, VERSION_NUMBER);
       }
     }
   }

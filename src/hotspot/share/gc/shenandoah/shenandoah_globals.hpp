@@ -241,24 +241,11 @@
           "the samples. Higher values provide more fidelity, at expense "   \
           "of more sampling overhead.")                                     \
                                                                             \
-  product(bool, ShenandoahLogRegionSampling, false,                         \
-          "Save region sampling stream to ShenandoahRegionSamplingFile")    \
-                                                                            \
   product(ccstr, ShenandoahRegionSamplingFile,                              \
           "./shenandoahSnapshots_pid%p.log",                                \
           "If ShenandoahLogRegionSampling is on, save sampling data stream "\
           "to this file [default: ./shenandoahSnapshots_pid%p.log] "        \
           "(%p replaced with pid)")                                         \
-                                                                            \
-  product(uintx, ShenandoahLogFileCount, 5, "Defines the maximum number of "\
-          "log files. Default is 5, maximum is 1000. Set to 0 to disable "  \
-          "rotation. Only includes rotated/archived files. Doesn't include "\
-          "active log file.")                                               \
-          range(0, 1000)                                                    \
-                                                                            \
-  product(size_t, ShenandoahLogFileSize, 20 * M, "Defines the maximum size "\
-          "of the log file. Files over this size will be rotated. Default " \
-          "is 20MB. Set to 0 to disable rotation")                          \
                                                                             \
   product(uintx, ShenandoahControlIntervalMin, 1, EXPERIMENTAL,             \
           "The minimum sleep interval for the control loop that drives "    \
