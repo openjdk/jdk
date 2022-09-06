@@ -30,7 +30,7 @@ import pkg1.ClassB;
 public class ClassC extends ClassB {
 
     /**
-     * The default constructor.
+     * The sole constructor.
      */
     public ClassC() {
     }

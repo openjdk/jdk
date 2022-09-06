@@ -28,7 +28,7 @@ package pkg1;
 public class ClassB implements ClassA {
 
     /**
-     * The default constructor.
+     * The sole constructor.
      */
     public ClassB() {
     }

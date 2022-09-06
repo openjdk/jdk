@@ -41,19 +41,19 @@ import javadoc.tester.JavadocTester;
 public class TestIndexInherited extends JavadocTester {
 
     /**
-     * The name of the HTML index file.
+     * Name of the HTML index file.
      */
     private static final String INDEX_FILE = "index-all.html";
 
     /**
-     * The name of the JavaScript member search index file.
+     * Name of the JavaScript member search index file.
      */
     private static final String SEARCH_FILE = "member-search-index.js";
 
     /**
      * Index entries for members inherited by the subclasses.
      */
-    private static final String[] INDEX_SUBCLASSES = {"""
+    private static final String[] INDEX_INHERITED = {"""
         <dt><a href="pkg1/ClassB.html#methodA()" class="member-name-link">methodA()</a> \
         - Method in class pkg1.<a href="pkg1/ClassB.html" title="class in pkg1">ClassB</a></dt>
         """, """
@@ -70,16 +70,16 @@ public class TestIndexInherited extends JavadocTester {
     /**
      * Search entries for members inherited by the subclasses.
      */
-    private static final String[] SEARCH_SUBCLASSES = {"""
+    private static final String[] SEARCH_INHERITED = {"""
         {"p":"pkg1","c":"ClassB","l":"methodA()"}""", """
         {"p":"pkg2","c":"ClassC","l":"methodA()"}""", """
         {"p":"pkg1","c":"ClassB","l":"STRING_A"}""", """
         {"p":"pkg2","c":"ClassC","l":"STRING_A"}"""};
 
     /**
-     * Index entries for members declared in the superclass.
+     * Index entries for members declared by the superclass.
      */
-    private static final String[] INDEX_SUPERCLASS = {"""
+    private static final String[] INDEX_DECLARED = {"""
         <dt><a href="pkg1/ClassA.html#methodA()" class="member-name-link">methodA()</a> \
         - Method in interface pkg1.<a href="pkg1/ClassA.html" title="interface in pkg1">ClassA</a></dt>
         """, """
@@ -88,14 +88,14 @@ public class TestIndexInherited extends JavadocTester {
         """};
 
     /**
-     * Search entries for members declared in the superclass.
+     * Search entries for members declared by the superclass.
      */
-    private static final String[] SEARCH_SUPERCLASS = {"""
+    private static final String[] SEARCH_DECLARED = {"""
         {"p":"pkg1","c":"ClassA","l":"methodA()"}""", """
         {"p":"pkg1","c":"ClassA","l":"STRING_A"}"""};
 
     /**
-     * The default constructor.
+     * Sole constructor.
      */
     public TestIndexInherited() {
     }
@@ -107,53 +107,61 @@ public class TestIndexInherited extends JavadocTester {
      * @throws Exception if an errors occurs while executing a test method
      */
     public static void main(String... args) throws Exception {
-        TestIndexInherited tester = new TestIndexInherited();
-        tester.runTests(m -> new Object[]{Path.of(m.getName())});
+        var tester = new TestIndexInherited();
+        tester.runTests();
     }
 
     /**
-     * Tests entries in the subclasses, loaded in alphabetical order.
+     * Checks that the index includes the inherited members of both public
+     * subclasses, loaded in alphabetical order, and that there is absolutely no
+     * mention of the non-public superclass.
      *
-     * @param base the base directory for test output
+     * @param base the base directory for this method's output
      */
     @Test
-    public void testSubclasses1(Path base) {
+    public void testForInherited1(Path base) {
         String dir = base.resolve("out").toString();
         javadoc("-d", dir, "-sourcepath", testSrc, "pkg1", "pkg2");
         checkExit(Exit.OK);
-        checkOrder(INDEX_FILE, INDEX_SUBCLASSES);
-        checkOrder(SEARCH_FILE, SEARCH_SUBCLASSES);
+        checkOrder(INDEX_FILE, INDEX_INHERITED);
+        checkOrder(SEARCH_FILE, SEARCH_INHERITED);
         checkOutput(INDEX_FILE, false, "ClassA");
         checkOutput(SEARCH_FILE, false, "ClassA");
     }
 
     /**
-     * Tests entries in the subclasses, loaded in reverse alphabetical order.
+     * Checks that the index includes the inherited members of both public
+     * subclasses, loaded in reverse alphabetical order, and that there is
+     * absolutely no mention of the non-public superclass.
      *
-     * @param base the base directory for test output
+     * @param base the base directory for this method's output
      */
     @Test
-    public void testSubclasses2(Path base) {
+    public void testForInherited2(Path base) {
         String dir = base.resolve("out").toString();
         javadoc("-d", dir, "-sourcepath", testSrc, "pkg2", "pkg1");
         checkExit(Exit.OK);
-        checkOrder(INDEX_FILE, INDEX_SUBCLASSES);
-        checkOrder(SEARCH_FILE, SEARCH_SUBCLASSES);
+        checkOrder(INDEX_FILE, INDEX_INHERITED);
+        checkOrder(SEARCH_FILE, SEARCH_INHERITED);
         checkOutput(INDEX_FILE, false, "ClassA");
         checkOutput(SEARCH_FILE, false, "ClassA");
     }
 
     /**
-     * Tests entries in the superclass.
+     * Checks that the index includes the declared members of the non-public
+     * superclass when the Javadoc <i>private</i> option is specified, and that
+     * it no longer includes the inherited members of either public subclass.
      *
-     * @param base the base directory for test output
+     * @param base the base directory for this method's output
      */
     @Test
-    public void testSuperclass(Path base) {
+    public void testForDeclared(Path base) {
         String dir = base.resolve("out").toString();
         javadoc("-d", dir, "-sourcepath", testSrc, "-private", "pkg1", "pkg2");
         checkExit(Exit.OK);
-        checkOrder(INDEX_FILE, INDEX_SUPERCLASS);
-        checkOrder(SEARCH_FILE, SEARCH_SUPERCLASS);
+        checkOrder(INDEX_FILE, INDEX_DECLARED);
+        checkOrder(SEARCH_FILE, SEARCH_DECLARED);
+        checkOutput(INDEX_FILE, false, INDEX_INHERITED);
+        checkOutput(SEARCH_FILE, false, SEARCH_INHERITED);
     }
 }
