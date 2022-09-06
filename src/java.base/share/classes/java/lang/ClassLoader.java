@@ -788,13 +788,18 @@ public abstract class ClassLoader {
     // that started to load a class completes the loading or fails.
     private LoadedState waitForPlaceholder(String name) {
         LoadedState state;
-        int count = 0;
+        boolean interrupted = false;
         while ((state = getPlaceholder(name)) == LoadedState.LOADING) {
             try {
                 wait();
             } catch (InterruptedException e) {
+                interrupted = true;
                 // keep waiting, must be uninterruptible
             }
+        }
+        if (interrupted) {
+            // reassert the interrupt status before exiting.
+            Thread.currentThread().interrupt();
         }
         return state;
     }
