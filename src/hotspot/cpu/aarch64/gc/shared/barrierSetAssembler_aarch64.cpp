@@ -285,12 +285,12 @@ void BarrierSetAssembler::c2i_entry_barrier(MacroAssembler* masm) {
   __ cbnz(rscratch2, method_live);
 
   // Is it a weak but alive CLD?
-  __ stp(r10, r11, Address(__ pre(sp, -2 * wordSize)));
+  __ push(RegSet::of(r10), sp);
   __ ldr(r10, Address(rscratch1, ClassLoaderData::holder_offset()));
 
   __ resolve_weak_handle(r10, rscratch1, rscratch2);
   __ mov(rscratch1, r10);
-  __ ldp(r10, r11, Address(__ post(sp, 2 * wordSize)));
+  __ pop(RegSet::of(r10), sp);
   __ cbnz(rscratch1, method_live);
 
   __ bind(bad_call);
