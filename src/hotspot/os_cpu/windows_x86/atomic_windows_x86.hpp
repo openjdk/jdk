@@ -70,6 +70,32 @@ DEFINE_INTRINSIC_ADD(InterlockedAdd64, __int64)
 
 #undef DEFINE_INTRINSIC_ADD
 
+template<size_t byte_size>
+struct Atomic::PlatformBitOp {
+  template<typename D>
+  D fetch_and_or(D volatile* dest, D set_value, atomic_memory_order order) const;
+};
+
+// The Interlocked* APIs only take long and will not accept __int32. That is
+// acceptable on Windows, since long is a 32-bits integer type.
+
+#define DEFINE_INTRINSIC_OR(IntrinsicName, IntrinsicType)                 \
+  template<>                                                              \
+  template<typename D>                                                    \
+  inline D Atomic::PlatformBitOp<sizeof(IntrinsicType)>::fetch_and_or(D volatile* dest, \
+                                                                      D set_value, \
+                                                                      atomic_memory_order order) const { \
+    STATIC_ASSERT(sizeof(IntrinsicType) == sizeof(D));                    \
+    return PrimitiveConversions::cast<D>(                                 \
+      IntrinsicName(reinterpret_cast<IntrinsicType volatile *>(dest),     \
+                    PrimitiveConversions::cast<IntrinsicType>(set_value))); \
+  }
+
+DEFINE_INTRINSIC_OR(InterlockedOr,   long)
+DEFINE_INTRINSIC_OR(InterlockedOr64, __int64)
+
+#undef DEFINE_INTRINSIC_OR
+
 #define DEFINE_INTRINSIC_XCHG(IntrinsicName, IntrinsicType)               \
   template<>                                                              \
   template<typename T>                                                    \

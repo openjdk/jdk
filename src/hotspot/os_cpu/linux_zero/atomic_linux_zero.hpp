@@ -65,6 +65,16 @@ inline D Atomic::PlatformAdd<8>::add_and_fetch(D volatile* dest, I add_value,
   return res;
 }
 
+template<size_t byte_size>
+struct Atomic::PlatformBitOp {
+  template<typename D>
+  D fetch_and_or(D volatile* dest, D set_value, atomic_memory_order order) const {
+    D res = __atomic_fetch_or(dest, set_value, __ATOMIC_RELEASE);
+    FULL_MEM_BARRIER;
+    return res;
+  }
+};
+
 template<>
 template<typename T>
 inline T Atomic::PlatformXchg<4>::operator()(T volatile* dest,

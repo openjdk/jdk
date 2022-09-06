@@ -49,6 +49,16 @@ struct Atomic::PlatformAdd {
 };
 
 template<size_t byte_size>
+struct Atomic::PlatformBitOp {
+  template<typename D>
+  D fetch_and_or(D volatile* dest, D set_value, atomic_memory_order order) const {
+    D res = __atomic_fetch_or(dest, set_value, __ATOMIC_RELEASE);
+    FULL_MEM_BARRIER;
+    return res;
+  }
+};
+
+template<size_t byte_size>
 template<typename T>
 inline T Atomic::PlatformXchg<byte_size>::operator()(T volatile* dest,
                                                      T exchange_value,

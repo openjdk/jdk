@@ -135,6 +135,14 @@ public:
   inline static void dec(D volatile* dest,
                          atomic_memory_order order = memory_order_conservative);
 
+  // Atomically bit-or to a location. *or*() provide:
+  // <fence> bit-or-value-to-dest <membar StoreLoad|StoreStore>
+
+  // Returns previous value.
+  template<typename D>
+  inline static D fetch_and_or(D volatile* dest, D set_value,
+                               atomic_memory_order order = memory_order_conservative);
+
   // Performs atomic exchange of *dest with exchange_value. Returns old
   // prior value of *dest. xchg*() provide:
   // <fence> exchange-value-with-dest <membar StoreLoad|StoreStore>
@@ -276,6 +284,36 @@ private:
   // required by AddAndFetch.
   template<typename Type, typename Fn, typename D, typename I>
   static D add_using_helper(Fn fn, D volatile* dest, I add_value);
+
+  // Dispatch handler for bitop.  Provides type-based validity checking
+  // and limited conversions around calls to the platform-specific
+  // implementation layer provided by PlatformBitOp.
+  template<typename D, typename Enable = void>
+  struct BitOpImpl;
+
+  // Platform-specific implementation of bitop.  Support for sizes of 4
+  // bytes and (if different) pointer size bytes are required.  The
+  // class must be default constructable, with these requirements:
+  //
+  // - dest is of type D*, an integral or pointer type.
+  // - set_value is of type D, an integral type.
+  // - order is of type atomic_memory_order.
+  // - platform_bitop is an object of type PlatformBitOp<sizeof(D)>.
+  //
+  // Then
+  //   platform_bitop.fetch_and_or(dest, set_value, order)
+  // must be valid expressions returning a result convertible to D.
+  //
+  // fetch_and_or atomically bit-or set_value to the value of dest,
+  // returning the old value.
+  //
+  // When D is a pointer type P*, the fetch_and_or treat it as if it
+  // were an uintptr_t; they do not perform any scaling of set_value,
+  // as that has already been done by the caller.
+  //
+  // No definition is provided; all platforms must explicitly define
+  // this class and any needed specializations.
+  template<size_t byte_size> struct PlatformBitOp;
 
   // Dispatch handler for cmpxchg.  Provides type-based validity
   // checking and limited conversions around calls to the
@@ -713,6 +751,22 @@ inline D Atomic::add_using_helper(Fn fn, D volatile* dest, I add_value) {
     fn(PrimitiveConversions::cast<Type>(add_value),
        reinterpret_cast<Type volatile*>(dest)));
 }
+
+template<typename D>
+inline D Atomic::fetch_and_or(D volatile* dest, D set_value,
+                              atomic_memory_order order) {
+  return BitOpImpl<D>::fetch_and_or(dest, set_value, order);
+}
+
+template<typename D>
+struct Atomic::BitOpImpl<
+  D,
+  typename EnableIf<IsIntegral<D>::value || IsPointer<D>::value>::type>
+{
+  static D fetch_and_or(D volatile* dest, D set_value, atomic_memory_order order) {
+    return PlatformBitOp<sizeof(D)>().fetch_and_or(dest, set_value, order);
+  }
+};
 
 template<typename D, typename U, typename T>
 inline D Atomic::cmpxchg(D volatile* dest,

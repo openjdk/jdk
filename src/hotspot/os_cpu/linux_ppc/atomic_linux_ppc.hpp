@@ -154,6 +154,60 @@ inline D Atomic::PlatformAdd<8>::add_and_fetch(D volatile* dest, I add_value,
   return result;
 }
 
+template<size_t byte_size>
+struct Atomic::PlatformBitOp {
+  template<typename D>
+  D fetch_and_or(D volatile* dest, D set_value, atomic_memory_order order) const;
+};
+
+template<>
+template<typename D>
+inline D Atomic::PlatformBitOp<4>::fetch_and_or(D volatile* dest, D set_value,
+                                                atomic_memory_order order) const {
+  STATIC_ASSERT(4 == sizeof(D));
+
+  D result, temp;
+
+  pre_membar(order);
+
+  __asm__ __volatile__ (
+    "1: lwarx   %0,  0, %3    \n"
+    "   or      %1, %0, %2    \n"
+    "   stwcx.  %1,  0, %3    \n"
+    "   bne-    1b            \n"
+    : /*%0*/"=&r" (result), /*%1*/"=&r" (temp)
+    : /*%2*/"r" (set_value), /*%3*/"r" (dest)
+    : "cc", "memory" );
+
+  post_membar(order);
+
+  return result;
+}
+
+template<>
+template<typename D>
+inline D Atomic::PlatformBitOp<8>::fetch_and_or(D volatile* dest, D set_value,
+                                                atomic_memory_order order) const {
+  STATIC_ASSERT(8 == sizeof(D));
+
+  D result, temp;
+
+  pre_membar(order);
+
+  __asm__ __volatile__ (
+    "1: ldarx   %0,  0, %3    \n"
+    "   or      %1, %0, %2    \n"
+    "   stdcx.  %1,  0, %3    \n"
+    "   bne-    1b            \n"
+    : /*%0*/"=&r" (result), /*%1*/"=&r" (temp)
+    : /*%2*/"r" (set_value), /*%3*/"r" (dest)
+    : "cc", "memory" );
+
+  post_membar(order);
+
+  return result;
+}
+
 template<>
 template<typename T>
 inline T Atomic::PlatformXchg<4>::operator()(T volatile* dest,

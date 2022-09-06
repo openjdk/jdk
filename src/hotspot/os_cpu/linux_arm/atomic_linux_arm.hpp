@@ -118,6 +118,25 @@ inline D Atomic::PlatformAdd<4>::add_and_fetch(D volatile* dest, I add_value,
   return add_using_helper<int32_t>(ARMAtomicFuncs::_add_func, dest, add_value);
 }
 
+template<size_t byte_size>
+struct Atomic::PlatformBitOp {
+  template<typename D>
+  D fetch_and_or(D volatile* dest, D set_value, atomic_memory_order order) const {
+    D old_val = *dest;
+
+    do {
+      const D new_val = old_val | set_value;
+      const D cur_val = Atomic::cmpxchg(dest, old_val, new_val, order);
+      if (cur_val == old_val) {
+        // Success
+        return old_val;
+      }
+
+      // The value changed, retry
+      old_val = cur_val;
+    } while (true);
+  }
+};
 
 template<>
 template<typename T>

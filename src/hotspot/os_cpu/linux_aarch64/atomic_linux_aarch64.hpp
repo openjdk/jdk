@@ -113,6 +113,42 @@ inline D Atomic::PlatformAdd<8>::fetch_and_add(D volatile* dest, I add_value,
   return atomic_fastcall(stub, dest, add_value);
 }
 
+template<size_t byte_size>
+struct Atomic::PlatformBitOp {
+  template<typename D>
+  D fetch_and_or(D volatile* dest, D set_value, atomic_memory_order order) const;
+};
+
+template<>
+template<typename D>
+inline D Atomic::PlatformBitOp<4>::fetch_and_or(D volatile* dest, D set_value,
+                                               atomic_memory_order order) const {
+  STATIC_ASSERT(4 == sizeof(D));
+  aarch64_atomic_stub_t stub;
+  switch (order) {
+  case memory_order_relaxed:
+    stub = aarch64_atomic_fetch_or_4_relaxed_impl; break;
+  default:
+    stub = aarch64_atomic_fetch_or_4_impl; break;
+  }
+  return atomic_fastcall(stub, dest, set_value);
+}
+
+template<>
+template<typename D>
+inline D Atomic::PlatformBitOp<8>::fetch_and_or(D volatile* dest, D set_value,
+                                               atomic_memory_order order) const {
+  STATIC_ASSERT(8 == sizeof(D));
+  aarch64_atomic_stub_t stub;
+  switch (order) {
+  case memory_order_relaxed:
+    stub = aarch64_atomic_fetch_or_8_relaxed_impl; break;
+  default:
+    stub = aarch64_atomic_fetch_or_8_impl; break;
+  }
+  return atomic_fastcall(stub, dest, set_value);
+}
+
 template<>
 template<typename T>
 inline T Atomic::PlatformXchg<4>::operator()(T volatile* dest,
