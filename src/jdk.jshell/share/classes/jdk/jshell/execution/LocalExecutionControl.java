@@ -93,10 +93,10 @@ public class LocalExecutionControl extends DirectExecutionControl {
     }
 
     private static ClassBytecodes genCancelClass() {
-        var cancelWriter = new ClassWriter(ClassWriter.COMPUTE_FRAMES|ClassWriter.COMPUTE_MAXS);
+        var cancelWriter = new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
         cancelWriter.visit(Opcodes.V19, Opcodes.ACC_PUBLIC, "REPL/$Cancel$", null, "java/lang/Object", null);
-        cancelWriter.visitField(Opcodes.ACC_PUBLIC|Opcodes.ACC_STATIC|Opcodes.ACC_VOLATILE, "allStop", "Z", null, null);
-        var checkVisitor = cancelWriter.visitMethod(Opcodes.ACC_PUBLIC|Opcodes.ACC_STATIC, "stopCheck", "()V", null, null);
+        cancelWriter.visitField(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_VOLATILE, "allStop", "Z", null, null);
+        var checkVisitor = cancelWriter.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, "stopCheck", "()V", null, null);
             checkVisitor.visitCode();
             checkVisitor.visitFieldInsn(Opcodes.GETSTATIC, "REPL/$Cancel$", "allStop", "Z");
             var skip = new Label();
@@ -116,7 +116,7 @@ public class LocalExecutionControl extends DirectExecutionControl {
     @Override
     protected String invoke(Method doitMethod) throws Exception {
         if (allStop == null) {
-            super.load(new ClassBytecodes[]{genCancelClass()});
+            super.load(new ClassBytecodes[]{ genCancelClass() });
             allStop = findClass("REPL.$Cancel$").getDeclaredField("allStop");
         }
         allStop.set(null, false);
@@ -196,8 +196,8 @@ public class LocalExecutionControl extends DirectExecutionControl {
             }
             try {
                 allStop.set(null, true);
-            } catch (IllegalArgumentException| IllegalAccessException ex) {
-                throw new InternalException(ex.getMessage());
+            } catch (IllegalArgumentException | IllegalAccessException ex) {
+                throw new InternalException("Exception on local stop: " + ex);
             }
             Thread[] threads;
             int len, threadCount;
