@@ -57,6 +57,7 @@ public class IdleConnectionTimeoutTest {
     Http2TestServer http2TestServer;
     URI timeoutUri;
     URI noTimeoutUri;
+    final String IDLE_CONN_PROPERTY = "jdk.httpclient.idleConnectionTimeout";
     final String TIMEOUT_PATH = "/serverTimeoutHandler";
     final String NO_TIMEOUT_PATH = "/noServerTimeoutHandler";
     static boolean expectTimeout;
@@ -82,7 +83,7 @@ public class IdleConnectionTimeoutTest {
     @Test
     public void testTimeoutFires() throws InterruptedException {
         expectTimeout = true;
-        System.setProperty("jdk.httpclient.http2IdleConnectionTimeout", "100");
+        System.setProperty(IDLE_CONN_PROPERTY, "100");
         HttpClient hc = HttpClient.newBuilder().version(HTTP_2).build();
         HttpRequest hreq = HttpRequest.newBuilder(timeoutUri).version(HTTP_2).GET().build();
 
@@ -104,7 +105,7 @@ public class IdleConnectionTimeoutTest {
     @Test
     public void testTimeoutDoesNotFire() throws InterruptedException {
         expectTimeout = false;
-        System.setProperty("jdk.httpclient.idleConnectionTimeout", "800");
+        System.setProperty(IDLE_CONN_PROPERTY, "800");
         HttpClient hc = HttpClient.newBuilder().version(HTTP_2).build();
         HttpRequest hreq = HttpRequest.newBuilder(noTimeoutUri).version(HTTP_2).GET().build();
 
