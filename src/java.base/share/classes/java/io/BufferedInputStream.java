@@ -604,13 +604,12 @@ public class BufferedInputStream extends FilterInputStream {
     }
 
     private long implTransferTo(OutputStream out) throws IOException {
-        int avail = count - pos;
-        if (avail > 0) {
-            out.write(getBufIfOpen(), pos, avail);
-            count = 0;
-            pos = 0;
+        if (getClass() == BufferedInputStream.class
+                && ((count - pos) <= 0) && (markpos == -1)) {
+            return getInIfOpen().transferTo(out);
+        } else {
+            return super.transferTo(out);
         }
-        return avail + getInIfOpen().transferTo(out);
     }
 
 }
