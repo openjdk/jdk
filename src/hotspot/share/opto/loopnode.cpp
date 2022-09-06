@@ -631,14 +631,14 @@ static bool no_side_effect_since_safepoint(Compile* C, Node* x, Node* mem, Merge
       if (u->adr_type() == TypePtr::BOTTOM) {
         if (m->is_MergeMem() && mem->is_MergeMem()) {
           if (m != mem DEBUG_ONLY(|| true)) {
+            // MergeMemStream can modify m, for example to adjust the length to mem.
+            // This is unfortunate, and probably unnecessary. But as it is, we need
+            // to add m to the igvn worklist, else we may have a modified node that
+            // is not on the igvn worklist.
+            phase->igvn()._worklist.push(m);
             for (MergeMemStream mms(m->as_MergeMem(), mem->as_MergeMem()); mms.next_non_empty2(); ) {
               if (!mms.is_empty()) {
                 if (mms.memory() != mms.memory2()) {
-                  // MergeMemStream can modify m, for example to adjust the length to mem.
-                  // This is unfortunate, and probably unnecessary. But as it is, we need
-                  // to add m to the igvn worklist, else we have a modified node that is
-                  // not on the igvn worklist.
-                  phase->igvn()._worklist.push(m);
                   return false;
                 }
 #ifdef ASSERT
