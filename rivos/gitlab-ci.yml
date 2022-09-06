@@ -10,10 +10,17 @@ variables:
 prepare-version:
   after_script:
     - |
-      if test -n "${CI_COMMIT_TAG}" && test "${CI_COMMIT_TAG}" =~ '^jdk\-'; then
-        echo "JDK_VERSION_TAG=${CI_COMMIT_TAG#jdk-}" >> gitvars.env
+      source make/conf/version-numbers.conf
+      if test -n "${CI_COMMIT_TAG}" && test "${CI_COMMIT_TAG}" =~ '^jdk\-\(.*\)-rivos$'; then
+        echo "JDK_VERSION_PKG=$(echo "${CI_COMMIT_TAG}" | sed 's/^jdk-\(.*\)-rivos$/\1/')" >> gitvars.env
+        echo "JDK_VERSION_TAG=${JDK_VERSION_PKG}" >> gitvars.env
+        echo "JDK_VERSION_PRE=ea" >> gitvars.env
+        echo "JDK_VERSION_OPT=" >> gitvars.env
       else
+        echo "JDK_VERSION_PKG=${DEFAULT_VERSION_FEATURE}" >> gitvars.env
         echo "JDK_VERSION_TAG=${CI_COMMIT_REF_SLUG}-${CI_COMMIT_SHORT_SHA}" >> gitvars.env
+        echo "JDK_VERSION_PRE=internal" >> gitvars.env
+        echo "JDK_VERSION_OPT=${CI_COMMIT_REF_SLUG}-${CI_COMMIT_SHORT_SHA}" >> gitvars.env
       fi
     # Debugging helper
     - cat gitvars.env
@@ -120,7 +127,9 @@ build-linux-amd64:
       bash configure                                                           \
         --openjdk-target=x86_64-linux-gnu                                      \
         --with-conf-name=linux-amd64                                           \
-        --with-version-opt=${JDK_VERSION_TAG}                                  \
+        --with-vendor-name="Rivos Inc"                                         \
+        --with-version-pre="${JDK_VERSION_PRE}"                                \
+        --with-version-opt="${JDK_VERSION_OPT}"                                \
         --with-boot-jdk=/usr/lib/jvm/zulu-18                                   \
         --disable-precompiled-headers                                          \
         --with-zlib=system
@@ -170,7 +179,9 @@ build-linux-rv64:
       bash configure                                                           \
         --openjdk-target=riscv64-linux-gnu                                     \
         --with-conf-name=linux-rv64                                            \
-        --with-version-opt=${JDK_VERSION_TAG}                                  \
+        --with-vendor-name="Rivos Inc"                                         \
+        --with-version-pre="${JDK_VERSION_PRE}"                                \
+        --with-version-opt="${JDK_VERSION_OPT}"                                \
         --with-sysroot=$(pwd)/sysroot-ubuntu-jammy-rv64                        \
         --with-boot-jdk=/usr/lib/jvm/zulu-18                                   \
         --with-build-jdk=$(pwd)/build/linux-amd64/images/jdk                   \
@@ -215,15 +226,42 @@ package-deb:
     - build-linux-rv64
   variables:
     PKG_ARCH: "all"
-    PKG_DIRECTORIES: "/rivos/jdk;/rivos/sysroot/riscv/jdk"
+    PKG_DIRECTORIES: "/rivos/jdk;/rivos/sysroot/riscv/rivos/jdk"
     PKG_LICENSE: "GPL-2.0 license"
-    PKG_UPSTREAM_VERSION: "${JDK_VERSION_TAG}"
+    PKG_UPSTREAM_VERSION: "${JDK_VERSION_PKG}"
   before_script:
     # clean up pre-built binaries from the rivos-sdk
-    - rm -rf /rivos/jdk /rivos/sysroot/riscv/jdk
+    - rm -rf /rivos/jdk /rivos/sysroot/riscv/rivos/jdk
     # move the previous temporary install
+    - mkdir -p /rivos/sysroot/riscv/rivos
     - cp -a build/linux-amd64/images/jdk /rivos/
-    - cp -a build/linux-rv64/images/jdk /rivos/sysroot/riscv/
+    - cp -a build/linux-rv64/images/jdk /rivos/sysroot/riscv/rivos
+    # remove *.debuginfo files, they take a lot of space
+    - find /rivos/jdk /rivos/sysroot/riscv/rivos/jdk -name '*.debuginfo' -exec rm -f {} \; -print
+
+package-deb-dbg:
+  extends: .deploy-deb
+  dependencies:
+    - prepare-version
+    - build-linux-amd64
+    - build-linux-rv64
+  needs:
+    - prepare-version
+    - build-linux-amd64
+    - build-linux-rv64
+  variables:
+    PKG_ARCH: "all"
+    PKG_DIRECTORIES: "/rivos/jdk;/rivos/sysroot/riscv/rivos/jdk"
+    PKG_LICENSE: "GPL-2.0 license"
+    PKG_NAME: "${PROJECT_NAME}-dbg"
+    PKG_UPSTREAM_VERSION: "${JDK_VERSION_PKG}"
+  before_script:
+    # clean up pre-built binaries from the rivos-sdk
+    - rm -rf /rivos/jdk /rivos/sysroot/riscv/rivos/jdk
+    # move the previous temporary install
+    - mkdir -p /rivos/sysroot/riscv/rivos
+    - cp -a build/linux-amd64/images/jdk /rivos/
+    - cp -a build/linux-rv64/images/jdk /rivos/sysroot/riscv/rivos
 
 deploy-module-ubuntu:
   extends: .deploy-module
