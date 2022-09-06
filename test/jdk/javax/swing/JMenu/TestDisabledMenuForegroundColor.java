@@ -50,33 +50,33 @@ public class TestDisabledMenuForegroundColor {
     private static JMenu fileMenu;
 
     public static void main(String[] args) throws Exception {
-    	UIManager.setLookAndFeel("com.sun.java.swing.plaf.gtk.GTKLookAndFeel");
+        UIManager.setLookAndFeel("com.sun.java.swing.plaf.gtk.GTKLookAndFeel");
         Robot robot = new Robot();
-        robot.setAutoDelay(100);   
+        robot.setAutoDelay(100);
         try {
             SwingUtilities.invokeAndWait(() -> {
-		        createAndShowUI();
+                createAndShowUI();
             });
 
             robot.waitForIdle();
             robot.delay(1000);
-	        Point pt = fileMenu.getLocationOnScreen();
+            Point pt = fileMenu.getLocationOnScreen();
             BufferedImage enabledImg =
                     robot.createScreenCapture(new Rectangle(pt.x, pt.y,
                                               fileMenu.getWidth(),
                                               fileMenu.getHeight()));
-	        fileMenu.setEnabled(false);
-	        robot.waitForIdle();
+            fileMenu.setEnabled(false);
+            robot.waitForIdle();
             robot.delay(1000);
-	        BufferedImage disabledImg =
+            BufferedImage disabledImg =
                     robot.createScreenCapture(new Rectangle(pt.x, pt.y,
                                               fileMenu.getWidth(),
                                               fileMenu.getHeight()));
-	        boolean passed = compareImage(enabledImg,disabledImg);
-	    
+            boolean passed = compareImage(enabledImg,disabledImg);
+
             if (!passed) {
                 ImageIO.write(enabledImg, "png", new File("JMenuEnabledImg.png"));
-	    	    ImageIO.write(disabledImg, "png", new File("JMenuDisabledImg.png"));
+                ImageIO.write(disabledImg, "png", new File("JMenuDisabledImg.png"));
                 throw new RuntimeException("Disabled JMenu foreground color not grayed out");
             }
         } finally {
@@ -87,27 +87,27 @@ public class TestDisabledMenuForegroundColor {
             });
         }
     }
-    
+
     private static void createAndShowUI() {
-    	frame = new JFrame("Test Disabled Menu Foreground Color");  
-	    menuBar  = new JMenuBar();
-	    fileMenu = new JMenu("File");
-	    fileMenu.setEnabled(true);
+        frame = new JFrame("Test Disabled Menu Foreground Color");
+        menuBar  = new JMenuBar();
+        fileMenu = new JMenu("File");
+        fileMenu.setEnabled(true);
         menuBar.add(fileMenu);
-        frame.setJMenuBar(menuBar);       
+        frame.setJMenuBar(menuBar);
         frame.pack();
         frame.setSize(250, 200);
         frame.setLocationRelativeTo(null);
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);  
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setVisible(true);
     }
-    
+
     /*
     * Compare JMenu enabled and disabled state image and if both images
     * width and height are equal but pixel's RGB values are not equal,
     * method returns true; false otherwise.
     */
-    
+
     private static boolean compareImage(BufferedImage img1, BufferedImage img2) {
         if (img1.getWidth() == img2.getWidth()
                 && img1.getHeight() == img2.getHeight()) {
