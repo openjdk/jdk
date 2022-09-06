@@ -4428,7 +4428,7 @@ instruct vsll16B_imm(vecX dst, vecX src, immI shift) %{
   ins_pipe(vshift128_imm);
 %}
 
-instruct vsra8B_imm(vecD dst, vecD src, immI shift) %{
+instruct vsra8B_imm(vecD dst, vecD src, immI_positive shift) %{
   predicate(n->as_Vector()->length() == 4 ||
             n->as_Vector()->length() == 8);
   match(Set dst (RShiftVB src (RShiftCntV shift)));
@@ -4443,7 +4443,7 @@ instruct vsra8B_imm(vecD dst, vecD src, immI shift) %{
   ins_pipe(vshift64_imm);
 %}
 
-instruct vsra16B_imm(vecX dst, vecX src, immI shift) %{
+instruct vsra16B_imm(vecX dst, vecX src, immI_positive shift) %{
   predicate(n->as_Vector()->length() == 16);
   match(Set dst (RShiftVB src (RShiftCntV shift)));
   ins_cost(INSN_COST);
@@ -4457,7 +4457,7 @@ instruct vsra16B_imm(vecX dst, vecX src, immI shift) %{
   ins_pipe(vshift128_imm);
 %}
 
-instruct vsrl8B_imm(vecD dst, vecD src, immI shift) %{
+instruct vsrl8B_imm(vecD dst, vecD src, immI_positive shift) %{
   predicate(n->as_Vector()->length() == 4 ||
             n->as_Vector()->length() == 8);
   match(Set dst (URShiftVB src (RShiftCntV shift)));
@@ -4477,7 +4477,7 @@ instruct vsrl8B_imm(vecD dst, vecD src, immI shift) %{
   ins_pipe(vshift64_imm);
 %}
 
-instruct vsrl16B_imm(vecX dst, vecX src, immI shift) %{
+instruct vsrl16B_imm(vecX dst, vecX src, immI_positive shift) %{
   predicate(n->as_Vector()->length() == 16);
   match(Set dst (URShiftVB src (RShiftCntV shift)));
   ins_cost(INSN_COST);
@@ -4632,7 +4632,7 @@ instruct vsll8S_imm(vecX dst, vecX src, immI shift) %{
   ins_pipe(vshift128_imm);
 %}
 
-instruct vsra4S_imm(vecD dst, vecD src, immI shift) %{
+instruct vsra4S_imm(vecD dst, vecD src, immI_positive shift) %{
   predicate(n->as_Vector()->length() == 2 ||
             n->as_Vector()->length() == 4);
   match(Set dst (RShiftVS src (RShiftCntV shift)));
@@ -4647,7 +4647,7 @@ instruct vsra4S_imm(vecD dst, vecD src, immI shift) %{
   ins_pipe(vshift64_imm);
 %}
 
-instruct vsra8S_imm(vecX dst, vecX src, immI shift) %{
+instruct vsra8S_imm(vecX dst, vecX src, immI_positive shift) %{
   predicate(n->as_Vector()->length() == 8);
   match(Set dst (RShiftVS src (RShiftCntV shift)));
   ins_cost(INSN_COST);
@@ -4661,7 +4661,7 @@ instruct vsra8S_imm(vecX dst, vecX src, immI shift) %{
   ins_pipe(vshift128_imm);
 %}
 
-instruct vsrl4S_imm(vecD dst, vecD src, immI shift) %{
+instruct vsrl4S_imm(vecD dst, vecD src, immI_positive shift) %{
   predicate(n->as_Vector()->length() == 2 ||
             n->as_Vector()->length() == 4);
   match(Set dst (URShiftVS src (RShiftCntV shift)));
@@ -4681,7 +4681,7 @@ instruct vsrl4S_imm(vecD dst, vecD src, immI shift) %{
   ins_pipe(vshift64_imm);
 %}
 
-instruct vsrl8S_imm(vecX dst, vecX src, immI shift) %{
+instruct vsrl8S_imm(vecX dst, vecX src, immI_positive shift) %{
   predicate(n->as_Vector()->length() == 8);
   match(Set dst (URShiftVS src (RShiftCntV shift)));
   ins_cost(INSN_COST);
@@ -4820,7 +4820,7 @@ instruct vsll4I_imm(vecX dst, vecX src, immI shift) %{
   ins_pipe(vshift128_imm);
 %}
 
-instruct vsra2I_imm(vecD dst, vecD src, immI shift) %{
+instruct vsra2I_imm(vecD dst, vecD src, immI_positive shift) %{
   predicate(n->as_Vector()->length() == 2);
   match(Set dst (RShiftVI src (RShiftCntV shift)));
   ins_cost(INSN_COST);
@@ -4833,7 +4833,7 @@ instruct vsra2I_imm(vecD dst, vecD src, immI shift) %{
   ins_pipe(vshift64_imm);
 %}
 
-instruct vsra4I_imm(vecX dst, vecX src, immI shift) %{
+instruct vsra4I_imm(vecX dst, vecX src, immI_positive shift) %{
   predicate(n->as_Vector()->length() == 4);
   match(Set dst (RShiftVI src (RShiftCntV shift)));
   ins_cost(INSN_COST);
@@ -4846,7 +4846,7 @@ instruct vsra4I_imm(vecX dst, vecX src, immI shift) %{
   ins_pipe(vshift128_imm);
 %}
 
-instruct vsrl2I_imm(vecD dst, vecD src, immI shift) %{
+instruct vsrl2I_imm(vecD dst, vecD src, immI_positive shift) %{
   predicate(n->as_Vector()->length() == 2);
   match(Set dst (URShiftVI src (RShiftCntV shift)));
   ins_cost(INSN_COST);
@@ -4859,7 +4859,7 @@ instruct vsrl2I_imm(vecD dst, vecD src, immI shift) %{
   ins_pipe(vshift64_imm);
 %}
 
-instruct vsrl4I_imm(vecX dst, vecX src, immI shift) %{
+instruct vsrl4I_imm(vecX dst, vecX src, immI_positive shift) %{
   predicate(n->as_Vector()->length() == 4);
   match(Set dst (URShiftVI src (RShiftCntV shift)));
   ins_cost(INSN_COST);
@@ -4932,7 +4932,7 @@ instruct vsll2L_imm(vecX dst, vecX src, immI shift) %{
   ins_pipe(vshift128_imm);
 %}
 
-instruct vsra2L_imm(vecX dst, vecX src, immI shift) %{
+instruct vsra2L_imm(vecX dst, vecX src, immI_positive shift) %{
   predicate(n->as_Vector()->length() == 2);
   match(Set dst (RShiftVL src (RShiftCntV shift)));
   ins_cost(INSN_COST);
@@ -4945,7 +4945,7 @@ instruct vsra2L_imm(vecX dst, vecX src, immI shift) %{
   ins_pipe(vshift128_imm);
 %}
 
-instruct vsrl2L_imm(vecX dst, vecX src, immI shift) %{
+instruct vsrl2L_imm(vecX dst, vecX src, immI_positive shift) %{
   predicate(n->as_Vector()->length() == 2);
   match(Set dst (URShiftVL src (RShiftCntV shift)));
   ins_cost(INSN_COST);
@@ -4958,7 +4958,7 @@ instruct vsrl2L_imm(vecX dst, vecX src, immI shift) %{
   ins_pipe(vshift128_imm);
 %}
 
-instruct vsraa8B_imm(vecD dst, vecD src, immI shift) %{
+instruct vsraa8B_imm(vecD dst, vecD src, immI_positive shift) %{
   predicate(n->as_Vector()->length() == 8);
   match(Set dst (AddVB dst (RShiftVB src (RShiftCntV shift))));
   ins_cost(INSN_COST);
@@ -4972,7 +4972,7 @@ instruct vsraa8B_imm(vecD dst, vecD src, immI shift) %{
   ins_pipe(vshift64_imm);
 %}
 
-instruct vsraa16B_imm(vecX dst, vecX src, immI shift) %{
+instruct vsraa16B_imm(vecX dst, vecX src, immI_positive shift) %{
   predicate(n->as_Vector()->length() == 16);
   match(Set dst (AddVB dst (RShiftVB src (RShiftCntV shift))));
   ins_cost(INSN_COST);
@@ -4986,7 +4986,7 @@ instruct vsraa16B_imm(vecX dst, vecX src, immI shift) %{
   ins_pipe(vshift128_imm);
 %}
 
-instruct vsraa4S_imm(vecD dst, vecD src, immI shift) %{
+instruct vsraa4S_imm(vecD dst, vecD src, immI_positive shift) %{
   predicate(n->as_Vector()->length() == 4);
   match(Set dst (AddVS dst (RShiftVS src (RShiftCntV shift))));
   ins_cost(INSN_COST);
@@ -5000,7 +5000,7 @@ instruct vsraa4S_imm(vecD dst, vecD src, immI shift) %{
   ins_pipe(vshift64_imm);
 %}
 
-instruct vsraa8S_imm(vecX dst, vecX src, immI shift) %{
+instruct vsraa8S_imm(vecX dst, vecX src, immI_positive shift) %{
   predicate(n->as_Vector()->length() == 8);
   match(Set dst (AddVS dst (RShiftVS src (RShiftCntV shift))));
   ins_cost(INSN_COST);
@@ -5014,7 +5014,7 @@ instruct vsraa8S_imm(vecX dst, vecX src, immI shift) %{
   ins_pipe(vshift128_imm);
 %}
 
-instruct vsraa2I_imm(vecD dst, vecD src, immI shift) %{
+instruct vsraa2I_imm(vecD dst, vecD src, immI_positive shift) %{
   predicate(n->as_Vector()->length() == 2);
   match(Set dst (AddVI dst (RShiftVI src (RShiftCntV shift))));
   ins_cost(INSN_COST);
@@ -5027,7 +5027,7 @@ instruct vsraa2I_imm(vecD dst, vecD src, immI shift) %{
   ins_pipe(vshift64_imm);
 %}
 
-instruct vsraa4I_imm(vecX dst, vecX src, immI shift) %{
+instruct vsraa4I_imm(vecX dst, vecX src, immI_positive shift) %{
   predicate(n->as_Vector()->length() == 4);
   match(Set dst (AddVI dst (RShiftVI src (RShiftCntV shift))));
   ins_cost(INSN_COST);
@@ -5040,7 +5040,7 @@ instruct vsraa4I_imm(vecX dst, vecX src, immI shift) %{
   ins_pipe(vshift128_imm);
 %}
 
-instruct vsraa2L_imm(vecX dst, vecX src, immI shift) %{
+instruct vsraa2L_imm(vecX dst, vecX src, immI_positive shift) %{
   predicate(n->as_Vector()->length() == 2);
   match(Set dst (AddVL dst (RShiftVL src (RShiftCntV shift))));
   ins_cost(INSN_COST);
@@ -5053,7 +5053,7 @@ instruct vsraa2L_imm(vecX dst, vecX src, immI shift) %{
   ins_pipe(vshift128_imm);
 %}
 
-instruct vsrla8B_imm(vecD dst, vecD src, immI shift) %{
+instruct vsrla8B_imm(vecD dst, vecD src, immI_positive shift) %{
   predicate(n->as_Vector()->length() == 8);
   match(Set dst (AddVB dst (URShiftVB src (RShiftCntV shift))));
   ins_cost(INSN_COST);
@@ -5068,7 +5068,7 @@ instruct vsrla8B_imm(vecD dst, vecD src, immI shift) %{
   ins_pipe(vshift64_imm);
 %}
 
-instruct vsrla16B_imm(vecX dst, vecX src, immI shift) %{
+instruct vsrla16B_imm(vecX dst, vecX src, immI_positive shift) %{
   predicate(n->as_Vector()->length() == 16);
   match(Set dst (AddVB dst (URShiftVB src (RShiftCntV shift))));
   ins_cost(INSN_COST);
@@ -5083,7 +5083,7 @@ instruct vsrla16B_imm(vecX dst, vecX src, immI shift) %{
   ins_pipe(vshift128_imm);
 %}
 
-instruct vsrla4S_imm(vecD dst, vecD src, immI shift) %{
+instruct vsrla4S_imm(vecD dst, vecD src, immI_positive shift) %{
   predicate(n->as_Vector()->length() == 4);
   match(Set dst (AddVS dst (URShiftVS src (RShiftCntV shift))));
   ins_cost(INSN_COST);
@@ -5098,7 +5098,7 @@ instruct vsrla4S_imm(vecD dst, vecD src, immI shift) %{
   ins_pipe(vshift64_imm);
 %}
 
-instruct vsrla8S_imm(vecX dst, vecX src, immI shift) %{
+instruct vsrla8S_imm(vecX dst, vecX src, immI_positive shift) %{
   predicate(n->as_Vector()->length() == 8);
   match(Set dst (AddVS dst (URShiftVS src (RShiftCntV shift))));
   ins_cost(INSN_COST);
@@ -5113,7 +5113,7 @@ instruct vsrla8S_imm(vecX dst, vecX src, immI shift) %{
   ins_pipe(vshift128_imm);
 %}
 
-instruct vsrla2I_imm(vecD dst, vecD src, immI shift) %{
+instruct vsrla2I_imm(vecD dst, vecD src, immI_positive shift) %{
   predicate(n->as_Vector()->length() == 2);
   match(Set dst (AddVI dst (URShiftVI src (RShiftCntV shift))));
   ins_cost(INSN_COST);
@@ -5126,7 +5126,7 @@ instruct vsrla2I_imm(vecD dst, vecD src, immI shift) %{
   ins_pipe(vshift64_imm);
 %}
 
-instruct vsrla4I_imm(vecX dst, vecX src, immI shift) %{
+instruct vsrla4I_imm(vecX dst, vecX src, immI_positive shift) %{
   predicate(n->as_Vector()->length() == 4);
   match(Set dst (AddVI dst (URShiftVI src (RShiftCntV shift))));
   ins_cost(INSN_COST);
@@ -5139,7 +5139,7 @@ instruct vsrla4I_imm(vecX dst, vecX src, immI shift) %{
   ins_pipe(vshift128_imm);
 %}
 
-instruct vsrla2L_imm(vecX dst, vecX src, immI shift) %{
+instruct vsrla2L_imm(vecX dst, vecX src, immI_positive shift) %{
   predicate(n->as_Vector()->length() == 2);
   match(Set dst (AddVL dst (URShiftVL src (RShiftCntV shift))));
   ins_cost(INSN_COST);

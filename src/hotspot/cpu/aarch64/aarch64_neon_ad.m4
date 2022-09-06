@@ -1992,7 +1992,7 @@ instruct vsll$3$4_imm`'(vec$6 dst, vec$6 src, immI shift) %{
   ins_pipe(vshift`'ifelse($6, D, 64, 128)_imm);
 %}')dnl
 define(`VSRA_IMM', `
-instruct vsra$3$4_imm`'(vec$6 dst, vec$6 src, immI shift) %{
+instruct vsra$3$4_imm`'(vec$6 dst, vec$6 src, immI_positive shift) %{
   predicate(ifelse($3$4, 8B, n->as_Vector()->length() == 4 ||`
             ',
   $3$4, 4S, n->as_Vector()->length() == 2 ||`
@@ -2017,7 +2017,7 @@ instruct vsra$3$4_imm`'(vec$6 dst, vec$6 src, immI shift) %{
 %}')dnl
 dnl
 define(`VSRL_IMM', `
-instruct vsrl$3$4_imm`'(vec$6 dst, vec$6 src, immI shift) %{
+instruct vsrl$3$4_imm`'(vec$6 dst, vec$6 src, immI_positive shift) %{
   predicate(ifelse($3$4, 8B, n->as_Vector()->length() == 4 ||`
             ',
   $3$4, 4S, n->as_Vector()->length() == 2 ||`
@@ -2052,7 +2052,7 @@ instruct vsrl$3$4_imm`'(vec$6 dst, vec$6 src, immI shift) %{
 %}')dnl
 dnl
 define(`VSRLA_IMM', `
-instruct vsrla$3$4_imm`'(vec$6 dst, vec$6 src, immI shift) %{
+instruct vsrla$3$4_imm`'(vec$6 dst, vec$6 src, immI_positive shift) %{
   predicate(n->as_Vector()->length() == $3);
   match(Set dst (AddV$4 dst (URShiftV$4 src (RShiftCntV shift))));
   ins_cost(INSN_COST);
@@ -2076,7 +2076,7 @@ instruct vsrla$3$4_imm`'(vec$6 dst, vec$6 src, immI shift) %{
 %}')dnl
 dnl
 define(`VSRAA_IMM', `
-instruct vsraa$3$4_imm`'(vec$6 dst, vec$6 src, immI shift) %{
+instruct vsraa$3$4_imm`'(vec$6 dst, vec$6 src, immI_positive shift) %{
   predicate(n->as_Vector()->length() == $3);
   match(Set dst (AddV$4 dst (RShiftV$4 src (RShiftCntV shift))));
   ins_cost(INSN_COST);
