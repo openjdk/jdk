@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,6 @@ import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.WritableByteChannel;
 import java.util.Objects;
-import java.util.function.BiFunction;
 
 import jdk.internal.access.JavaIOFileDescriptorAccess;
 import jdk.internal.access.SharedSecrets;
@@ -62,7 +61,7 @@ import jdk.internal.ref.CleanerFactory;
 
 import jdk.internal.access.foreign.UnmapperProxy;
 
-public abstract class AbstractFileChannelImpl
+public class FileChannelImpl
     extends FileChannel
 {
     // Access to FileDescriptor internals
@@ -104,9 +103,6 @@ public abstract class AbstractFileChannelImpl
     // Cleanable with an action which closes this channel's file descriptor
     private final Cleanable closer;
 
-    // Removes an existing mapping
-    private final BiFunction<Long,Long,Integer> unmapFunction;
-
     private static class Closer implements Runnable {
         private final FileDescriptor fd;
 
@@ -124,10 +120,8 @@ public abstract class AbstractFileChannelImpl
         }
     }
 
-    protected AbstractFileChannelImpl(FileDescriptor fd, String path,
-                                      boolean readable, boolean writable,
-                                      boolean direct, Object parent,
-                                      BiFunction<Long,Long,Integer> unmapFunc)
+    private FileChannelImpl(FileDescriptor fd, String path, boolean readable,
+                            boolean writable, boolean direct, Object parent)
     {
         this.fd = fd;
         this.path = path;
@@ -135,7 +129,6 @@ public abstract class AbstractFileChannelImpl
         this.writable = writable;
         this.direct = direct;
         this.parent = parent;
-        this.unmapFunction = unmapFunc;
         this.nd = new FileDispatcherImpl();
         if (direct) {
             assert path != null;
@@ -150,6 +143,16 @@ public abstract class AbstractFileChannelImpl
         // be used here hence we use a nested class instead.
         this.closer = parent != null ? null :
             CleanerFactory.cleaner().register(this, new Closer(fd));
+    }
+
+
+    // Used by FileInputStream::getChannel, FileOutputStream::getChannel,
+    // and RandomAccessFile::getChannel
+    public static FileChannel open(FileDescriptor fd, String path,
+                                   boolean readable, boolean writable,
+                                   boolean direct, Object parent)
+    {
+        return new FileChannelImpl(fd, path, readable, writable, direct, parent);
     }
 
     private void ensureOpen() throws IOException {
@@ -547,13 +550,6 @@ public abstract class AbstractFileChannelImpl
     //
     private static volatile boolean fileSupported = true;
 
-    // Always returns UNSUPPORTED
-    protected long transferTo(FileDescriptor src, long position, long count,
-                              FileDescriptor dst, boolean append)
-    {
-        return IOStatus.UNSUPPORTED;
-    }
-
     private long transferToDirectlyInternal(long position, int icount,
                                             WritableByteChannel target,
                                             FileDescriptor targetFD)
@@ -573,7 +569,7 @@ public abstract class AbstractFileChannelImpl
             do {
                 long comp = Blocker.begin();
                 try {
-                    n = transferTo(fd, position, icount, targetFD, append);
+                    n = nd.transferTo(fd, position, icount, targetFD, append);
                 } finally {
                     Blocker.end(comp);
                 }
@@ -608,7 +604,7 @@ public abstract class AbstractFileChannelImpl
         if (target instanceof FileChannelImpl) {
             if (!fileSupported)
                 return IOStatus.UNSUPPORTED_CASE;
-            targetFD = ((AbstractFileChannelImpl)target).fd;
+            targetFD = ((FileChannelImpl)target).fd;
         } else if (target instanceof SelChImpl) {
             // Direct transfer to pipe causes EINVAL on some configurations
             if ((target instanceof SinkChannelImpl) && !pipeSupported)
@@ -756,7 +752,7 @@ public abstract class AbstractFileChannelImpl
         if (!readable)
             throw new NonReadableChannelException();
         if (target instanceof FileChannelImpl &&
-            !((AbstractFileChannelImpl)target).writable)
+            !((FileChannelImpl)target).writable)
             throw new NonWritableChannelException();
         if ((position < 0) || (count < 0))
             throw new IllegalArgumentException();
@@ -769,7 +765,7 @@ public abstract class AbstractFileChannelImpl
 
         // Attempt a direct transfer, if the kernel supports it, limiting
         // the number of bytes according to which platform
-        int icount = (int)Math.min(count, maxDirectTransferSize());
+        int icount = (int)Math.min(count, nd.maxDirectTransferSize());
         long n;
         if ((n = transferToDirectly(position, icount, target)) >= 0)
             return n;
@@ -787,15 +783,6 @@ public abstract class AbstractFileChannelImpl
     //
     private static volatile boolean transferFromNotSupported;
 
-    // Always returns UNSUPPORTED
-    protected long transferFrom(FileDescriptor src,
-                                FileDescriptor dst,
-                                long position, long count,
-                                boolean append)
-    {
-        return IOStatus.UNSUPPORTED;
-    }
-
     private long transferFromDirectlyInternal(FileDescriptor srcFD,
                                               long position, long count)
         throws IOException
@@ -811,7 +798,7 @@ public abstract class AbstractFileChannelImpl
                 long comp = Blocker.begin();
                 try {
                     boolean append = fdAccess.getAppend(fd);
-                    n = transferFrom(srcFD, fd, position, count, append);
+                    n = nd.transferFrom(srcFD, fd, position, count, append);
                 } finally {
                     Blocker.end(comp);
                 }
@@ -832,11 +819,11 @@ public abstract class AbstractFileChannelImpl
                                       long position, long count)
         throws IOException
     {
-        if (!((AbstractFileChannelImpl)src).readable)
+        if (!src.readable)
             throw new NonReadableChannelException();
         if (transferFromNotSupported)
             return IOStatus.UNSUPPORTED;
-        FileDescriptor srcFD = ((AbstractFileChannelImpl)src).fd;
+        FileDescriptor srcFD = src.fd;
         if (srcFD == null)
             return IOStatus.UNSUPPORTED_CASE;
 
@@ -847,12 +834,12 @@ public abstract class AbstractFileChannelImpl
                                          long position, long count)
         throws IOException
     {
-        if (!((AbstractFileChannelImpl)src).readable)
+        if (!src.readable)
             throw new NonReadableChannelException();
         if (count < MAPPED_TRANSFER_THRESHOLD)
             return IOStatus.UNSUPPORTED_CASE;
 
-        synchronized (((AbstractFileChannelImpl)src).positionLock) {
+        synchronized (src.positionLock) {
             long pos = src.position();
             long max = Math.min(count, src.size() - pos);
 
@@ -1047,18 +1034,16 @@ public abstract class AbstractFileChannelImpl
         implements Runnable, UnmapperProxy
     {
         // may be required to close file
-        private static final NativeDispatcher nd = new FileDispatcherImpl();
+        private static final FileDispatcher nd = new FileDispatcherImpl();
 
         private volatile long address;
         protected final long size;
         protected final long cap;
         private final FileDescriptor fd;
         private final int pagePosition;
-        private final BiFunction<Long,Long,Integer> unmapFunction;
 
         private Unmapper(long address, long size, long cap,
-                         FileDescriptor fd, int pagePosition,
-                         BiFunction<Long,Long,Integer> unmapFunction)
+                         FileDescriptor fd, int pagePosition)
         {
             assert (address != 0);
             this.address = address;
@@ -1066,7 +1051,6 @@ public abstract class AbstractFileChannelImpl
             this.cap = cap;
             this.fd = fd;
             this.pagePosition = pagePosition;
-            this.unmapFunction = unmapFunction;
         }
 
         @Override
@@ -1091,7 +1075,7 @@ public abstract class AbstractFileChannelImpl
         public void unmap() {
             if (address == 0)
                 return;
-            unmapFunction.apply(address, size);
+            nd.unmap(address, size);
             address = 0;
 
             // if this mapping has a valid file descriptor then we close it
@@ -1117,9 +1101,8 @@ public abstract class AbstractFileChannelImpl
         static volatile long totalCapacity;
 
         public DefaultUnmapper(long address, long size, long cap,
-                               FileDescriptor fd, int pagePosition,
-                               BiFunction<Long,Long,Integer> unmapFunction) {
-            super(address, size, cap, fd, pagePosition, unmapFunction);
+                               FileDescriptor fd, int pagePosition) {
+            super(address, size, cap, fd, pagePosition);
             incrementStats();
         }
 
@@ -1151,9 +1134,8 @@ public abstract class AbstractFileChannelImpl
         static volatile long totalCapacity;
 
         public SyncUnmapper(long address, long size, long cap,
-                            FileDescriptor fd, int pagePosition,
-                            BiFunction<Long,Long,Integer> unmapFunction) {
-            super(address, size, cap, fd, pagePosition, unmapFunction);
+                            FileDescriptor fd, int pagePosition) {
+            super(address, size, cap, fd, pagePosition);
             incrementStats();
         }
 
@@ -1312,12 +1294,12 @@ public abstract class AbstractFileChannelImpl
                     return null;
                 }
 
-                pagePosition = (int)(position % allocationGranularity());
+                pagePosition = (int)(position % nd.allocationGranularity());
                 long mapPosition = position - pagePosition;
                 mapSize = size + pagePosition;
                 try {
                     // If map did not throw an exception, the address is valid
-                    addr = map(fd, prot, mapPosition, mapSize, isSync);
+                    addr = nd.map(fd, prot, mapPosition, mapSize, isSync);
                 } catch (OutOfMemoryError x) {
                     // An OutOfMemoryError may indicate that we've exhausted
                     // memory so force gc and re-attempt map
@@ -1328,7 +1310,7 @@ public abstract class AbstractFileChannelImpl
                         Thread.currentThread().interrupt();
                     }
                     try {
-                        addr = map(fd, prot, mapPosition, mapSize, isSync);
+                        addr = nd.map(fd, prot, mapPosition, mapSize, isSync);
                     } catch (OutOfMemoryError y) {
                         // After a second OOME, fail
                         throw new IOException("Map failed", y);
@@ -1342,15 +1324,15 @@ public abstract class AbstractFileChannelImpl
             try {
                 mfd = nd.duplicateForMapping(fd);
             } catch (IOException ioe) {
-                unmapFunction.apply(addr, mapSize);
+                nd.unmap(addr, mapSize);
                 throw ioe;
             }
 
             assert (IOStatus.checkAll(addr));
-            assert (addr % allocationGranularity() == 0);
+            assert (addr % nd.allocationGranularity() == 0);
             Unmapper um = (isSync
-                ? new SyncUnmapper(addr, mapSize, size, mfd, pagePosition, unmapFunction)
-                : new DefaultUnmapper(addr, mapSize, size, mfd, pagePosition, unmapFunction));
+                ? new SyncUnmapper(addr, mapSize, size, mfd, pagePosition)
+                : new DefaultUnmapper(addr, mapSize, size, mfd, pagePosition));
             return um;
         } finally {
             threads.remove(ti);
@@ -1574,19 +1556,6 @@ public abstract class AbstractFileChannelImpl
         assert fileLockTable != null;
         fileLockTable.remove(fli);
     }
-
-    // Retrieves the maximum size of a transfer
-    protected int maxDirectTransferSize() {
-        return Integer.MAX_VALUE;
-    }
-
-    // Retrieves allocation granularity
-    protected abstract long allocationGranularity();
-
-    // Creates a new mapping
-    protected abstract long map(FileDescriptor fd, int prot, long position,
-                                long length, boolean isSync)
-        throws IOException;
 
     static {
         IOUtil.load();
