@@ -112,13 +112,10 @@ public class OptimizeImplicitExceptions {
         return null;
     }
 
-    // Completely unload (i.e. make "not-entrant"->"zombie"->"unload/free") a JIT-compiled
+    // Completely unload (i.e. make "not-entrant"->free) a JIT-compiled
     // version of a method and clear the method's profiling counters.
     private static void unloadAndClean(Method m) {
         WB.deoptimizeMethod(m);  // Makes the nmethod "not entrant".
-        WB.forceNMethodSweep();  // Makes all "not entrant" nmethods "zombie". This requires
-        WB.forceNMethodSweep();  // two sweeps, see 'nmethod::can_convert_to_zombie()' for why.
-        WB.forceNMethodSweep();  // Need third sweep to actually unload/free all "zombie" nmethods.
         System.gc();
         WB.clearMethodState(m);
     }

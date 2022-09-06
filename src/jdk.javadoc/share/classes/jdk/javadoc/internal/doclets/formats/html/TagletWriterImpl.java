@@ -208,7 +208,7 @@ public class TagletWriterImpl extends TagletWriter {
 
     @Override
     protected Content codeTagOutput(Element element, LiteralTree tag) {
-        return HtmlTree.CODE(Text.of(utils.normalizeNewlines(tag.getBody().getBody())));
+        return HtmlTree.CODE(Text.of(Text.normalizeNewlines(tag.getBody().getBody())));
     }
 
     @Override
@@ -309,18 +309,17 @@ public class TagletWriterImpl extends TagletWriter {
 
     @Override
     protected Content literalTagOutput(Element element, LiteralTree tag) {
-        return Text.of(utils.normalizeNewlines(tag.getBody().getBody()));
+        return Text.of(Text.normalizeNewlines(tag.getBody().getBody()));
     }
 
     @Override
     public Content getParamHeader(ParamTaglet.ParamKind kind) {
-        Content header;
-        switch (kind) {
-            case PARAMETER:         header = contents.parameters ; break;
-            case TYPE_PARAMETER:    header = contents.typeParameters ; break;
-            case RECORD_COMPONENT:  header = contents.recordComponents ; break;
-            default: throw new IllegalArgumentException(kind.toString());
-        }
+        Content header = switch (kind) {
+            case PARAMETER -> contents.parameters;
+            case TYPE_PARAMETER -> contents.typeParameters;
+            case RECORD_COMPONENT -> contents.recordComponents;
+            default -> throw new IllegalArgumentException(kind.toString());
+        };
         return HtmlTree.DT(header);
     }
 
@@ -384,9 +383,9 @@ public class TagletWriterImpl extends TagletWriter {
         // Use a different style if any link label is longer than 30 chars or contains commas.
         boolean hasLongLabels = links.stream().anyMatch(this::isLongOrHasComma);
         var seeList = HtmlTree.UL(hasLongLabels ? HtmlStyle.seeListLong : HtmlStyle.seeList);
-        links.stream().filter(Predicate.not(Content::isEmpty)).forEach(item -> {
-            seeList.add(HtmlTree.LI(item));
-        });
+        links.stream()
+                .filter(Predicate.not(Content::isEmpty))
+                .forEach(item -> seeList.add(HtmlTree.LI(item)));
 
         return new ContentBuilder(
                 HtmlTree.DT(contents.seeAlso),
@@ -630,7 +629,7 @@ public class TagletWriterImpl extends TagletWriter {
         }
 
         content.consumeBy((styles, sequence) -> {
-            CharSequence text = utils.normalizeNewlines(sequence);
+            CharSequence text = Text.normalizeNewlines(sequence);
             if (styles.isEmpty()) {
                 code.add(text);
             } else {
@@ -778,7 +777,7 @@ public class TagletWriterImpl extends TagletWriter {
         return htmlWriter.invalidTagOutput(summary,
                 detail.isEmpty() || detail.get().isEmpty()
                         ? Optional.empty()
-                        : Optional.of(Text.of(utils.normalizeNewlines(detail.get()))));
+                        : Optional.of(Text.of(Text.normalizeNewlines(detail.get()))));
     }
 
     @Override

@@ -37,6 +37,12 @@ import org.junit.Rule;
 import org.junit.rules.TemporaryFolder;
 import org.junit.function.ThrowingRunnable;
 
+/*
+ * @test
+ * @modules jdk.jpackage
+ * @compile --patch-module jdk.jpackage=${test.src} --add-reads jdk.jpackage=ALL-UNNAMED --add-exports jdk.jpackage/jdk.jpackage.internal=ALL-UNNAMED AppImageFileTest.java
+ * @run junit/othervm --patch-module jdk.jpackage=${test.classes} --add-reads jdk.jpackage=ALL-UNNAMED --add-exports jdk.jpackage/jdk.jpackage.internal=ALL-UNNAMED jdk.jpackage.internal.AppImageFileTest
+ */
 public class AppImageFileTest {
 
     @Rule

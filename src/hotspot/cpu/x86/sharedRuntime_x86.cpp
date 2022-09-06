@@ -49,7 +49,7 @@ void SharedRuntime::inline_check_hashcode_from_object_header(MacroAssembler* mas
   if (method->intrinsic_id() == vmIntrinsics::_identityHashCode) {
     Label Continue;
     // return 0 for null reference input
-    __ cmpptr(obj_reg, (int32_t)NULL_WORD);
+    __ cmpptr(obj_reg, NULL_WORD);
     __ jcc(Assembler::notEqual, Continue);
     __ xorptr(result, result);
     __ ret(0);

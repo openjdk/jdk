@@ -238,6 +238,7 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
     case vmIntrinsics::_countPositives:
     case vmIntrinsics::_Reference_get:
     case vmIntrinsics::_Continuation_doYield:
+    case vmIntrinsics::_Continuation_enterSpecial:
       break;
     default:
       return true;
@@ -419,6 +420,7 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
   case vmIntrinsics::_compareAndExchangeReference:
   case vmIntrinsics::_compareAndExchangeReferenceAcquire:
   case vmIntrinsics::_compareAndExchangeReferenceRelease:
+  case vmIntrinsics::_allocateInstance:
     if (!InlineUnsafeOps) return true;
     break;
   case vmIntrinsics::_getShortUnaligned:
@@ -429,7 +431,6 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
   case vmIntrinsics::_putCharUnaligned:
   case vmIntrinsics::_putIntUnaligned:
   case vmIntrinsics::_putLongUnaligned:
-  case vmIntrinsics::_allocateInstance:
     if (!InlineUnsafeOps || !UseUnalignedAccesses) return true;
     break;
   case vmIntrinsics::_hashCode:
