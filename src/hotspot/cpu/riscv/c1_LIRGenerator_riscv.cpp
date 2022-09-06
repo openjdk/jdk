@@ -301,10 +301,6 @@ void LIRGenerator::do_MonitorExit(MonitorExit* x) {
   monitor_exit(obj_temp, lock, syncTempOpr(), LIR_OprFact::illegalOpr, x->monitor_no());
 }
 
-void LIRGenerator::do_continuation_doYield(Intrinsic* x) {
-  fatal("Continuation.doYield intrinsic is not implemented on this platform");
-}
-
 // neg
 void LIRGenerator::do_NegateOp(NegateOp* x) {
   LIRItem from(x->x(), this);

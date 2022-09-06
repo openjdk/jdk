@@ -272,18 +272,18 @@ void G1BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorator
 }
 
 void G1BarrierSetAssembler::oop_store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
-                                         Address dst, Register val, Register tmp1, Register tmp2) {
+                                         Address dst, Register val, Register tmp1, Register tmp2, Register tmp3) {
   // flatten object address if needed
   if (dst.offset() == 0) {
-    if (dst.base() != x13) {
-      __ mv(x13, dst.base());
+    if (dst.base() != tmp3) {
+      __ mv(tmp3, dst.base());
     }
   } else {
-    __ la(x13, dst);
+    __ la(tmp3, dst);
   }
 
   g1_write_barrier_pre(masm,
-                       x13 /* obj */,
+                       tmp3 /* obj */,
                        tmp2 /* pre_val */,
                        xthread /* thread */,
                        tmp1  /* tmp */,
@@ -291,7 +291,7 @@ void G1BarrierSetAssembler::oop_store_at(MacroAssembler* masm, DecoratorSet deco
                        false /* expand_call */);
 
   if (val == noreg) {
-    BarrierSetAssembler::store_at(masm, decorators, type, Address(x13, 0), noreg, noreg, noreg);
+    BarrierSetAssembler::store_at(masm, decorators, type, Address(tmp3, 0), noreg, noreg, noreg, noreg);
   } else {
     // G1 barrier needs uncompressed oop for region cross check.
     Register new_val = val;
@@ -299,9 +299,9 @@ void G1BarrierSetAssembler::oop_store_at(MacroAssembler* masm, DecoratorSet deco
       new_val = t1;
       __ mv(new_val, val);
     }
-    BarrierSetAssembler::store_at(masm, decorators, type, Address(x13, 0), val, noreg, noreg);
+    BarrierSetAssembler::store_at(masm, decorators, type, Address(tmp3, 0), val, noreg, noreg, noreg);
     g1_write_barrier_post(masm,
-                          x13 /* store_adr */,
+                          tmp3 /* store_adr */,
                           new_val /* new_val */,
                           xthread /* thread */,
                           tmp1 /* tmp */,
@@ -368,6 +368,15 @@ void G1BarrierSetAssembler::generate_c1_pre_barrier_runtime_stub(StubAssembler* 
 
   Label done;
   Label runtime;
+
+  // Is marking still active?
+  if (in_bytes(SATBMarkQueue::byte_width_of_active()) == 4) {  // 4-byte width
+    __ lwu(tmp, in_progress);
+  } else {
+    assert(in_bytes(SATBMarkQueue::byte_width_of_active()) == 1, "Assumption");
+    __ lbu(tmp, in_progress);
+  }
+  __ beqz(tmp, done);
 
   // Can we store original value in the thread's buffer?
   __ ld(tmp, queue_index);

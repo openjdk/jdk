@@ -226,7 +226,7 @@ bool JfrStackTrace::record_async(JavaThread* jt, const frame& frame) {
   // We do this because if space becomes sparse, we cannot rely on the implicit allocation of a new buffer as part of the
   // regular tag mechanism. If the free list is empty, a malloc could result, and the problem with that is that the thread
   // we have suspended could be the holder of the malloc lock. If there is no more available space, the attempt is aborted.
-  const JfrBuffer* const enqueue_buffer = JfrTraceIdLoadBarrier::get_enqueue_buffer(current_thread);
+  const JfrBuffer* const enqueue_buffer = JfrTraceIdLoadBarrier::get_sampler_enqueue_buffer(current_thread);
   HandleMark hm(current_thread); // RegisterMap uses Handles to support continuations.
   JfrVframeStream vfs(jt, frame, false, true);
   u4 count = 0;
