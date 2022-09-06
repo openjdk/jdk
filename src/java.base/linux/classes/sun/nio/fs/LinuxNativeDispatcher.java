@@ -62,6 +62,12 @@ class LinuxNativeDispatcher extends UnixNativeDispatcher {
      */
     static native void endmntent(long stream) throws UnixException;
 
+    /**
+     * int posix_fadvise(int fd, off_t offset, off_t len, int advice);
+     */
+    static native int posix_fadvise(int fd, long offset, long len, int advice)
+        throws UnixException;
+
     // initialize
     private static native void init();
 

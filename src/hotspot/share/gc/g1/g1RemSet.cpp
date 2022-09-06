@@ -1322,7 +1322,7 @@ class G1MergeHeapRootsTask : public WorkerTask {
     virtual bool do_heap_region(HeapRegion* r) {
       G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
-      if (!g1h->region_attr(r->hrm_index()).is_humongous() ||
+      if (!g1h->region_attr(r->hrm_index()).is_humongous_candidate() ||
           r->rem_set()->is_empty()) {
         return false;
       }
@@ -1602,7 +1602,7 @@ inline void check_card_ptr(CardTable::CardValue* card_ptr, G1CardTable* ct) {
 }
 
 bool G1RemSet::clean_card_before_refine(CardValue** const card_ptr_addr) {
-  assert(!_g1h->is_gc_active(), "Only call concurrently");
+  assert(!SafepointSynchronize::is_at_safepoint(), "Only call concurrently");
 
   CardValue* card_ptr = *card_ptr_addr;
   // Find the start address represented by the card.
@@ -1657,8 +1657,6 @@ bool G1RemSet::clean_card_before_refine(CardValue** const card_ptr_addr) {
   //
 
   if (G1HotCardCache::use_cache()) {
-    assert(!SafepointSynchronize::is_at_safepoint(), "sanity");
-
     const CardValue* orig_card_ptr = card_ptr;
     card_ptr = _hot_card_cache->insert(card_ptr);
     if (card_ptr == NULL) {

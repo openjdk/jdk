@@ -629,38 +629,6 @@ Node* CmpNode::Identity(PhaseGVN* phase) {
   return this;
 }
 
-#ifndef PRODUCT
-//----------------------------related------------------------------------------
-// Related nodes of comparison nodes include all data inputs (until hitting a
-// control boundary) as well as all outputs until and including control nodes
-// as well as their projections. In compact mode, data inputs till depth 1 and
-// all outputs till depth 1 are considered.
-void CmpNode::related(GrowableArray<Node*> *in_rel, GrowableArray<Node*> *out_rel, bool compact) const {
-  if (compact) {
-    this->collect_nodes(in_rel, 1, false, true);
-    this->collect_nodes(out_rel, -1, false, false);
-  } else {
-    this->collect_nodes_in_all_data(in_rel, false);
-    this->collect_nodes_out_all_ctrl_boundary(out_rel);
-    // Now, find all control nodes in out_rel, and include their projections
-    // and projection targets (if any) in the result.
-    GrowableArray<Node*> proj(Compile::current()->unique());
-    for (GrowableArrayIterator<Node*> it = out_rel->begin(); it != out_rel->end(); ++it) {
-      Node* n = *it;
-      if (n->is_CFG() && !n->is_Proj()) {
-        // Assume projections and projection targets are found at levels 1 and 2.
-        n->collect_nodes(&proj, -2, false, false);
-        for (GrowableArrayIterator<Node*> p = proj.begin(); p != proj.end(); ++p) {
-          out_rel->append_if_missing(*p);
-        }
-        proj.clear();
-      }
-    }
-  }
-}
-
-#endif
-
 CmpNode *CmpNode::make(Node *in1, Node *in2, BasicType bt, bool unsigned_comp) {
   switch (bt) {
     case T_INT:
@@ -1620,14 +1588,15 @@ Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   }
 
   // Change x u< 1 or x u<= 0 to x == 0
+  // and    x u> 0 or u>= 1   to x != 0
   if (cop == Op_CmpU &&
       cmp1_op != Op_LoadRange &&
-      ((_test._test == BoolTest::lt &&
+      (((_test._test == BoolTest::lt || _test._test == BoolTest::ge) &&
         cmp2->find_int_con(-1) == 1) ||
-       (_test._test == BoolTest::le &&
+       ((_test._test == BoolTest::le || _test._test == BoolTest::gt) &&
         cmp2->find_int_con(-1) == 0))) {
     Node* ncmp = phase->transform(new CmpINode(cmp1, phase->intcon(0)));
-    return new BoolNode(ncmp, BoolTest::eq);
+    return new BoolNode(ncmp, _test.is_less() ? BoolTest::eq : BoolTest::ne);
   }
 
   // Change (arraylength <= 0) or (arraylength == 0)
@@ -1793,20 +1762,6 @@ void BoolNode::dump_spec(outputStream *st) const {
   st->print("[");
   _test.dump_on(st);
   st->print("]");
-}
-
-//-------------------------------related---------------------------------------
-// A BoolNode's related nodes are all of its data inputs, and all of its
-// outputs until control nodes are hit, which are included. In compact
-// representation, inputs till level 3 and immediate outputs are included.
-void BoolNode::related(GrowableArray<Node*> *in_rel, GrowableArray<Node*> *out_rel, bool compact) const {
-  if (compact) {
-    this->collect_nodes(in_rel, 3, false, true);
-    this->collect_nodes(out_rel, -1, false, false);
-  } else {
-    this->collect_nodes_in_all_data(in_rel, false);
-    this->collect_nodes_out_all_ctrl_boundary(out_rel);
-  }
 }
 #endif
 

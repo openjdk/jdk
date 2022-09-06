@@ -28,7 +28,7 @@ import java.util.function.Function;
 
 /*
  * @test
- * @bug 8262891 8268333 8268896 8269802 8269808 8270151 8269113 8277864
+ * @bug 8262891 8268333 8268896 8269802 8269808 8270151 8269113 8277864 8290709
  * @summary Check behavior of pattern switches.
  * @compile --enable-preview -source ${jdk.version} Switches.java
  * @run main/othervm --enable-preview Switches
@@ -98,6 +98,10 @@ public class Switches {
         assertEquals("Rb", translationTest(new R("b")));
         assertEquals("R2c", translationTest(new R2("c")));
         assertEquals("other", translationTest(0));
+        assertEquals("OK", totalPatternAndNull(Integer.valueOf(42)));
+        assertEquals("OK", totalPatternAndNull(null));
+        assertEquals("1", nullAfterTotal(Integer.valueOf(42)));
+        assertEquals("OK", nullAfterTotal(null));
     }
 
     void run(Function<Object, Integer> mapper) {
@@ -643,6 +647,20 @@ public class Switches {
             case String s -> s;
             case R2(String s) -> "R2" + s;
             default -> "other";
+        };
+    }
+
+    String totalPatternAndNull(Integer in) {
+        return switch (in) {
+            case -1: { yield "";}
+            case Integer i: case null: { yield "OK";}
+        };
+    }
+
+    String nullAfterTotal(Object o) {
+        return switch (o) {
+            case Object obj: { yield "1";}
+            case null: { yield "OK";}
         };
     }
 

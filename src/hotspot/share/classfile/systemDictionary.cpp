@@ -116,16 +116,9 @@ class InvokeMethodKey : public StackObj {
 ResourceHashtable<InvokeMethodKey, Method*, 139, ResourceObj::C_HEAP, mtClass,
                   InvokeMethodKey::compute_hash, InvokeMethodKey::key_comparison> _invoke_method_intrinsic_table;
 ResourceHashtable<Symbol*, OopHandle, 139, ResourceObj::C_HEAP, mtClass> _invoke_method_type_table;
-ProtectionDomainCacheTable*   SystemDictionary::_pd_cache_table = NULL;
 
 OopHandle   SystemDictionary::_java_system_loader;
 OopHandle   SystemDictionary::_java_platform_loader;
-
-// Default ProtectionDomainCacheSize value
-const int defaultProtectionDomainCacheSize = 1009;
-
-const int _resolution_error_size  = 107;                     // number of entries in resolution error table
-const int _invoke_method_size     = 139;                     // number of entries in invoke method table
 
 // ----------------------------------------------------------------------------
 // Java-level SystemLoader and PlatformLoader
@@ -372,12 +365,12 @@ Klass* SystemDictionary::resolve_array_class_or_null(Symbol* class_name,
   return k;
 }
 
-static inline void log_circularity_error(Thread* thread, PlaceholderEntry* probe) {
+static inline void log_circularity_error(Symbol* name, PlaceholderEntry* probe) {
   LogTarget(Debug, class, load, placeholders) lt;
   if (lt.is_enabled()) {
-    ResourceMark rm(thread);
+    ResourceMark rm;
     LogStream ls(lt);
-    ls.print("ClassCircularityError detected for placeholder ");
+    ls.print("ClassCircularityError detected for placeholder entry %s", name->as_C_string());
     probe->print_on(&ls);
     ls.cr();
   }
@@ -449,7 +442,7 @@ InstanceKlass* SystemDictionary::resolve_super_or_fail(Symbol* class_name,
       // Must check ClassCircularity before checking if superclass is already loaded.
       PlaceholderEntry* probe = PlaceholderTable::get_entry(class_name, loader_data);
       if (probe && probe->check_seen_thread(THREAD, PlaceholderTable::LOAD_SUPER)) {
-          log_circularity_error(THREAD, probe);
+          log_circularity_error(class_name, probe);
           throw_circularity_error = true;
       }
     }
@@ -569,7 +562,7 @@ InstanceKlass* SystemDictionary::handle_parallel_loading(JavaThread* current,
     // only need check_seen_thread once, not on each loop
     // 6341374 java/lang/Instrument with -Xcomp
     if (oldprobe->check_seen_thread(current, PlaceholderTable::LOAD_INSTANCE)) {
-      log_circularity_error(current, oldprobe);
+      log_circularity_error(name, oldprobe);
       *throw_circularity_error = true;
       return NULL;
     } else {
@@ -1665,9 +1658,9 @@ bool SystemDictionary::do_unloading(GCTimer* gc_timer) {
       // explicitly unlink them here.
       // All protection domain oops are linked to the caller class, so if nothing
       // unloads, this is not needed.
-      _pd_cache_table->trigger_cleanup();
+      ProtectionDomainCacheTable::trigger_cleanup();
     } else {
-      assert(_pd_cache_table->number_of_entries() == 0, "should be empty");
+      assert(ProtectionDomainCacheTable::number_of_entries() == 0, "should be empty");
     }
 
     MutexLocker ml(is_concurrent ? ClassInitError_lock : NULL);
@@ -1700,9 +1693,6 @@ void SystemDictionary::methods_do(void f(Method*)) {
 // Initialization
 
 void SystemDictionary::initialize(TRAPS) {
-  // Allocate arrays
-  _pd_cache_table = new ProtectionDomainCacheTable(defaultProtectionDomainCacheSize);
-
 #if INCLUDE_CDS
   SystemDictionaryShared::initialize();
 #endif
@@ -2468,7 +2458,7 @@ void SystemDictionary::print_on(outputStream *st) {
   LoaderConstraintTable::print_on(st);
   st->cr();
 
-  _pd_cache_table->print_on(st);
+  ProtectionDomainCacheTable::print_on(st);
   st->cr();
 }
 
@@ -2484,7 +2474,8 @@ void SystemDictionary::verify() {
   // Verify constraint table
   LoaderConstraintTable::verify();
 
-  _pd_cache_table->verify();
+  // Verify protection domain table
+  ProtectionDomainCacheTable::verify();
 }
 
 void SystemDictionary::dump(outputStream *st, bool verbose) {
@@ -2495,7 +2486,7 @@ void SystemDictionary::dump(outputStream *st, bool verbose) {
     CDS_ONLY(SystemDictionaryShared::print_table_statistics(st));
     ClassLoaderDataGraph::print_table_statistics(st);
     LoaderConstraintTable::print_table_statistics(st);
-    pd_cache_table()->print_table_statistics(st, "ProtectionDomainCache Table");
+    ProtectionDomainCacheTable::print_table_statistics(st);
   }
 }
 
