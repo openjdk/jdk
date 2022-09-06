@@ -382,9 +382,10 @@ available for this update.
 
 ### Microsoft Visual Studio
 
-The minimum accepted version is Visual Studio 2019 (for aarch64, at least 16.8
-is required). Older versions will not be accepted by `configure` and will not
-work. The maximum accepted version of Visual Studio is 2022.
+The minimum accepted version is Visual Studio 2019 version 16.8. (Note that this
+version is often presented as "MSVC 14.28", and reported by cl.exe as 19.28.)
+Older versions will not be accepted by `configure` and will not work. The
+maximum accepted version of Visual Studio is 2022.
 
 If you have multiple versions of Visual Studio installed, `configure` will by
 default pick the latest. You can request a specific version to be used by
@@ -1950,8 +1951,8 @@ http://openjdk.java.net/irc/).
 
 ## Editing this document
 
-If you want to contribute changes to this document, edit `doc/building.md` and 
-then run `make update-build-docs` to generate the same changes in 
+If you want to contribute changes to this document, edit `doc/building.md` and
+then run `make update-build-docs` to generate the same changes in
 `doc/building.html`.
 
 ---

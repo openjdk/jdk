@@ -161,6 +161,8 @@ class LinuxFileSystem extends UnixFileSystem {
 
     // -- native methods --
 
+    private static native void init();
+
     /**
      * Copies data between file descriptors {@code src} and {@code dst} using
      * a platform-specific function or system call possibly having kernel
@@ -179,4 +181,9 @@ class LinuxFileSystem extends UnixFileSystem {
     private static native int directCopy0(int dst, int src,
                                           long addressToPollForCancel)
         throws UnixException;
+
+    static {
+        jdk.internal.loader.BootLoader.loadLibrary("nio");
+        init();
+    }
 }

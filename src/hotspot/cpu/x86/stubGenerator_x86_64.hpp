@@ -177,6 +177,31 @@ class StubGenerator: public StubCodeGenerator {
                                              address nooverlap_target, bool aligned, bool is_oop,
                                              bool dest_uninitialized);
 
+  void arraycopy_avx3_special_cases(XMMRegister xmm, KRegister mask, Register from,
+                                    Register to, Register count, int shift,
+                                    Register index, Register temp,
+                                    bool use64byteVector, Label& L_entry, Label& L_exit);
+
+  void arraycopy_avx3_special_cases_conjoint(XMMRegister xmm, KRegister mask, Register from,
+                                             Register to, Register start_index, Register end_index,
+                                             Register count, int shift, Register temp,
+                                             bool use64byteVector, Label& L_entry, Label& L_exit);
+
+  void copy32_avx(Register dst, Register src, Register index, XMMRegister xmm,
+                  int shift = Address::times_1, int offset = 0);
+
+  void copy64_avx(Register dst, Register src, Register index, XMMRegister xmm,
+                  bool conjoint, int shift = Address::times_1, int offset = 0,
+                  bool use64byteVector = false);
+
+  void copy64_masked_avx(Register dst, Register src, XMMRegister xmm,
+                         KRegister mask, Register length, Register index,
+                         Register temp, int shift = Address::times_1, int offset = 0,
+                         bool use64byteVector = false);
+
+  void copy32_masked_avx(Register dst, Register src, XMMRegister xmm,
+                         KRegister mask, Register length, Register index,
+                         Register temp, int shift = Address::times_1, int offset = 0);
 #endif // COMPILER2_OR_JVMCI
 
   address generate_disjoint_byte_copy(bool aligned, address* entry, const char *name);
@@ -417,13 +442,40 @@ class StubGenerator: public StubCodeGenerator {
   address generate_bigIntegerRightShift();
   address generate_bigIntegerLeftShift();
 
-  address generate_libmExp();
-  address generate_libmLog();
-  address generate_libmLog10();
-  address generate_libmPow();
+
+  // Libm trigonometric stubs
+
   address generate_libmSin();
   address generate_libmCos();
   address generate_libmTan();
+  address generate_libmExp();
+  address generate_libmPow();
+  address generate_libmLog();
+  address generate_libmLog10();
+
+  // Shared constants
+  static address ZERO;
+  static address NEG_ZERO;
+  static address ONE;
+  static address ONEHALF;
+  static address SIGN_MASK;
+  static address TWO_POW_55;
+  static address TWO_POW_M55;
+  static address SHIFTER;
+  static address PI32INV;
+  static address PI_INV_TABLE;
+  static address Ctable;
+  static address SC_1;
+  static address SC_2;
+  static address SC_3;
+  static address SC_4;
+  static address PI_4;
+  static address P_1;
+  static address P_3;
+  static address P_2;
+
+  void generate_libm_stubs();
+
 
   address generate_cont_thaw(const char* label, Continuation::thaw_kind kind);
   address generate_cont_thaw();
