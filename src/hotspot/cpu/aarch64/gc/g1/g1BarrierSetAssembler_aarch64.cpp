@@ -274,8 +274,8 @@ void G1BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorator
                          noreg /* obj */,
                          dst /* pre_val */,
                          rthread /* thread */,
-                         tmp1 /* tmp */,
-                         tmp2 /* tmp */,
+                         tmp1 /* tmp1 */,
+                         tmp2 /* tmp2 */,
                          true /* tosca_live */,
                          true /* expand_call */);
     __ leave();
@@ -297,8 +297,8 @@ void G1BarrierSetAssembler::oop_store_at(MacroAssembler* masm, DecoratorSet deco
                        tmp3 /* obj */,
                        tmp2 /* pre_val */,
                        rthread /* thread */,
-                       tmp1  /* tmp */,
-                       rscratch2  /* tmp */,
+                       tmp1  /* tmp1 */,
+                       rscratch2  /* tmp2 */,
                        val != noreg /* tosca_live */,
                        false /* expand_call */);
 
@@ -316,7 +316,7 @@ void G1BarrierSetAssembler::oop_store_at(MacroAssembler* masm, DecoratorSet deco
                           tmp3 /* store_adr */,
                           new_val /* new_val */,
                           rthread /* thread */,
-                          tmp1 /* tmp */,
+                          tmp1 /* tmp1 */,
                           tmp2 /* tmp2 */);
   }
 
