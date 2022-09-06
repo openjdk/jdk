@@ -161,8 +161,10 @@ void JavaThread::set_threadOopHandles(oop p) {
 }
 
 oop JavaThread::threadObj() const {
-  // Using Thread::current_or_null_safe() here risks that calling threadObj() can
-  // overwrite a native thread local, e.g. JVMTI operations clearing GetLastError on Windows.
+  // Ideally we would verify the current thread is oop_safe when this is called, but as we can
+  // be called from a signal handler we would have to use Thread::current_or_null_safe(). That
+  // has overhead and also interacts poorly with GetLastError on Windows due to the use of TLS.
+  // Instead callers must verify oop safe access.
   return _threadObj.resolve();
 }
 
