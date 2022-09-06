@@ -237,12 +237,12 @@ public class Response1xxTest {
         @Override
         public void handle(final HttpServerAdapters.HttpTestExchange exchange) throws IOException {
             // we only send informational response and then return
-            for (int i = 0; i < 3; i++) {
+            for (int i = 0; i < 5; i++) {
                 exchange.sendResponseHeaders(102, -1);
                 System.out.println("Sent 102 response code from H2 server");
                 // wait for a while before sending again
                 try {
-                    Thread.sleep(10000);
+                    Thread.sleep(2000);
                 } catch (InterruptedException e) {
                     // just return
                     System.err.println("Handler thread interrupted");
@@ -313,7 +313,7 @@ public class Response1xxTest {
                 .version(HttpClient.Version.HTTP_2)
                 .proxy(HttpClient.Builder.NO_PROXY).build();
         final URI requestURI = new URI(http2RequestURIBase + "/only-informational");
-        final Duration requestTimeout = Duration.ofSeconds(15);
+        final Duration requestTimeout = Duration.ofSeconds(2);
         final HttpRequest request = HttpRequest.newBuilder(requestURI).timeout(requestTimeout)
                 .build();
         System.out.println("Issuing request to " + requestURI);
