@@ -61,6 +61,22 @@ public class WindowsHelper {
         return Path.of(cmd.getArgumentValue("--install-dir", cmd::name));
     }
 
+    // Tests have problems on windows where path in the temp dir are too long
+    // for the wix tools.  We can't use a tempDir outside the TKit's WorkDir, so
+    // we minimize both the tempRoot directory name (above) and the tempDir name
+    // (below) to the extension part (which is necessary to differenciate between
+    // the multiple PackageTypes that will be run for one JPackageCommand).
+    // It might be beter if the whole work dir name was shortened from:
+    // jtreg_open_test_jdk_tools_jpackage_share_jdk_jpackage_tests_BasicTest_java.
+    public static Path getTempDirectory(JPackageCommand cmd, Path tempRoot) {
+        String ext = cmd.outputBundle().getFileName().toString();
+        int i = ext.lastIndexOf(".");
+        if (i > 0 && i < (ext.length() - 1)) {
+            ext = ext.substring(i+1);
+        }
+        return tempRoot.resolve(ext);
+    }
+
     private static void runMsiexecWithRetries(Executor misexec) {
         Executor.Result result = null;
         for (int attempt = 0; attempt < 8; ++attempt) {
@@ -92,7 +108,7 @@ public class WindowsHelper {
         BiConsumer<JPackageCommand, Boolean> installMsi = (cmd, install) -> {
             cmd.verifyIsOfType(PackageType.WIN_MSI);
             runMsiexecWithRetries(Executor.of("msiexec", "/qn", "/norestart",
-                    install ? "/i" : "/x").addArgument(cmd.outputBundle()));
+                    install ? "/i" : "/x").addArgument(cmd.outputBundle().normalize()));
         };
 
         PackageHandlers msi = new PackageHandlers();
@@ -132,7 +148,9 @@ public class WindowsHelper {
         BiConsumer<JPackageCommand, Boolean> installExe = (cmd, install) -> {
             cmd.verifyIsOfType(PackageType.WIN_EXE);
             Executor exec = new Executor().setExecutable(cmd.outputBundle());
-            if (!install) {
+            if (install) {
+                exec.addArgument("/qn").addArgument("/norestart");
+            } else {
                 exec.addArgument("uninstall");
             }
             runMsiexecWithRetries(exec);
@@ -354,7 +372,7 @@ public class WindowsHelper {
         private final String name;
     }
 
-    private static String queryRegistryValue(String keyPath, String valueName) {
+    static String queryRegistryValue(String keyPath, String valueName) {
         var status = Executor.of("reg", "query", keyPath, "/v", valueName)
                 .saveOutput()
                 .executeWithoutExitCodeCheck();
@@ -373,9 +391,26 @@ public class WindowsHelper {
         }
 
         String value = status.assertExitCodeIsZero().getOutput().stream().skip(2).findFirst().orElseThrow();
-        // Extract the last field from the following line:
-        //     Common Desktop    REG_SZ    C:\Users\Public\Desktop
-        value = value.split("    REG_SZ    ")[1];
+        // Extract the last field from the following lines:
+        //    (Default)    REG_SZ    test1
+        //    string_val    REG_SZ    test2
+        //    string_val_empty    REG_SZ
+        //    bin_val    REG_BINARY    4242
+        //    bin_val_empty    REG_BINARY
+        //    dword_val    REG_DWORD    0x2a
+        //    qword_val    REG_QWORD    0x2a
+        //    multi_string_val    REG_MULTI_SZ    test3\0test4
+        //    multi_string_val_empty    REG_MULTI_SZ
+        //    expand_string_val    REG_EXPAND_SZ    test5
+        //    expand_string_val_empty    REG_EXPAND_SZ
+        String[] parts = value.split(" {4}REG_[A-Z_]+ {4}");
+        if (parts.length == 1) {
+            value = "";
+        } else if (parts.length == 2) {
+            value = parts[1];
+        } else {
+            throw new RuntimeException(String.format("Failed to extract registry value from string [%s]", value));
+        }
 
         TKit.trace(String.format("Registry value [%s] at [%s] path is [%s]",
                 valueName, keyPath, value));

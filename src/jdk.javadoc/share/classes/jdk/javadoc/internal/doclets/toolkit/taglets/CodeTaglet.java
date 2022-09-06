@@ -30,6 +30,7 @@ import java.util.EnumSet;
 import javax.lang.model.element.Element;
 
 import com.sun.source.doctree.DocTree;
+import com.sun.source.doctree.LiteralTree;
 import jdk.javadoc.doclet.Taglet.Location;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 
@@ -53,6 +54,6 @@ public class CodeTaglet extends BaseTaglet {
 
     @Override
     public Content getInlineTagOutput(Element element, DocTree tag, TagletWriter writer) {
-        return writer.codeTagOutput(element, tag);
+        return writer.codeTagOutput(element, (LiteralTree) tag);
     }
 }

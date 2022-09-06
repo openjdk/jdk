@@ -47,11 +47,6 @@ public final class ExpandSuccessorsAction extends CallableSystemAction {
     }
 
     @Override
-    protected void initialize() {
-        super.initialize();
-    }
-
-    @Override
     public HelpCtx getHelpCtx() {
         return HelpCtx.DEFAULT_HELP;
     }

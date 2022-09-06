@@ -45,14 +45,20 @@ public class ImplicitAttach {
         }
         latch = new CountDownLatch(threadCount);
 
-        Linker abi = Linker.nativeLinker();
+        Linker abi;
+        try {
+            abi = Linker.nativeLinker();
+        } catch (UnsupportedOperationException e) {
+            System.out.println("Test skipped, no native linker on this platform");
+            return;
+        }
 
         // stub to invoke callback
         MethodHandle callback = MethodHandles.lookup()
                 .findStatic(ImplicitAttach.class, "callback", MethodType.methodType(void.class));
         MemorySegment upcallStub = abi.upcallStub(callback,
                 FunctionDescriptor.ofVoid(),
-                MemorySession.openImplicit());
+                MemorySession.global());
 
         // void start_threads(int count, void *(*f)(void *))
         SymbolLookup symbolLookup = SymbolLookup.loaderLookup();

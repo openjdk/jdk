@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "jvm.h"
+#include "cds/cds_globals.hpp"
 #include "cds/dynamicArchive.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/javaClasses.hpp"
@@ -68,7 +69,6 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/statSampler.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "runtime/sweeper.hpp"
 #include "runtime/task.hpp"
 #include "runtime/threads.hpp"
 #include "runtime/timer.hpp"
@@ -244,7 +244,6 @@ void print_statistics() {
 #ifndef COMPILER1
     SharedRuntime::print_statistics();
 #endif //COMPILER1
-    os::print_statistics();
   }
 
   if (PrintLockStatistics || PrintPreciseRTMLockingStatistics) {
@@ -295,11 +294,8 @@ void print_statistics() {
   }
 
   // CodeHeap State Analytics.
-  // Does also call NMethodSweeper::print(tty)
   if (PrintCodeHeapAnalytics) {
     CompileBroker::print_heapinfo(NULL, "all", 4096); // details
-  } else if (PrintMethodFlushingStatistics) {
-    NMethodSweeper::print(tty);
   }
 
   if (PrintCodeCache2) {
@@ -323,10 +319,6 @@ void print_statistics() {
     ResourceMark rm;
     MutexLocker mcld(ClassLoaderDataGraph_lock);
     ClassLoaderDataGraph::print();
-  }
-
-  if (LogTouchedMethods && PrintTouchedMethodsAtExit) {
-    Method::print_touched_methods(tty);
   }
 
   // Native memory tracking data
@@ -367,11 +359,8 @@ void print_statistics() {
   }
 
   // CodeHeap State Analytics.
-  // Does also call NMethodSweeper::print(tty)
   if (PrintCodeHeapAnalytics) {
     CompileBroker::print_heapinfo(NULL, "all", 4096); // details
-  } else if (PrintMethodFlushingStatistics) {
-    NMethodSweeper::print(tty);
   }
 
 #ifdef COMPILER2
@@ -389,10 +378,6 @@ void print_statistics() {
     MetaspaceUtils::print_basic_report(tty, 0);
   }
 
-  if (LogTouchedMethods && PrintTouchedMethodsAtExit) {
-    Method::print_touched_methods(tty);
-  }
-
   ThreadsSMRSupport::log_statistics();
 }
 
@@ -401,7 +386,7 @@ void print_statistics() {
 // Note: before_exit() can be executed only once, if more than one threads
 //       are trying to shutdown the VM at the same time, only one thread
 //       can run before_exit() and all other threads must wait.
-void before_exit(JavaThread* thread) {
+void before_exit(JavaThread* thread, bool halt) {
   #define BEFORE_EXIT_NOT_RUN 0
   #define BEFORE_EXIT_RUNNING 1
   #define BEFORE_EXIT_DONE    2
@@ -448,7 +433,7 @@ void before_exit(JavaThread* thread) {
     event.commit();
   }
 
-  JFR_ONLY(Jfr::on_vm_shutdown();)
+  JFR_ONLY(Jfr::on_vm_shutdown(false, halt);)
 
   // Stop the WatcherThread. We do this before disenrolling various
   // PeriodicTasks to reduce the likelihood of races.

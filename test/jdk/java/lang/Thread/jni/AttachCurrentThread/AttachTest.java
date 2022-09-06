@@ -63,8 +63,6 @@ public class AttachTest {
                 .executeTestJava(opts)
                 .outputTo(System.out)
                 .errorTo(System.out);
-        int exitValue = outputAnalyzer.getExitValue();
-        if (exitValue != 0)
-            throw new RuntimeException("Test failed");
+        outputAnalyzer.shouldHaveExitValue(0);
     }
 }

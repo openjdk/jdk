@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -321,6 +321,9 @@ public:
   // Check whether the node is in the block.
   bool contains (const Node *n) const;
 
+  // Whether the block is not root-like and does not have any predecessors.
+  bool is_trivially_unreachable() const;
+
   // Return the empty status of a block
   enum { not_empty, empty_with_goto, completely_empty };
   int is_Empty() const;
@@ -610,6 +613,10 @@ class PhaseCFG : public Phase {
   void remove_empty_blocks();
   Block *fixup_trap_based_check(Node *branch, Block *block, int block_pos, Block *bnext);
   void fixup_flow();
+  // Remove all blocks that are transitively unreachable. Such blocks can be
+  // found e.g. after PhaseCFG::convert_NeverBranch_to_Goto(). This function
+  // assumes post-fixup_flow() block indices (Block::_pre_order, Block::_rpo).
+  void remove_unreachable_blocks();
 
   // Insert a node into a block at index and map the node to the block
   void insert(Block *b, uint idx, Node *n) {

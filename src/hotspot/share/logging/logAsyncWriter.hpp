@@ -27,6 +27,7 @@
 #include "logging/logDecorations.hpp"
 #include "logging/logMessageBuffer.hpp"
 #include "memory/resourceArea.hpp"
+#include "runtime/mutex.hpp"
 #include "runtime/nonJavaThread.hpp"
 #include "runtime/semaphore.hpp"
 #include "utilities/resourceHash.hpp"
@@ -144,7 +145,7 @@ class AsyncLogWriter : public NonJavaThread {
   static AsyncLogWriter* _instance;
   Semaphore _flush_sem;
   // Can't use a Monitor here as we need a low-level API that can be used without Thread::current().
-  os::PlatformMonitor _lock;
+  PlatformMonitor _lock;
   bool _data_available;
   volatile bool _initialized;
   AsyncLogMap _stats; // statistics for dropped messages

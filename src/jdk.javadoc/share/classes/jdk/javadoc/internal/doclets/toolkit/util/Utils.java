@@ -124,7 +124,6 @@ import static javax.lang.model.element.ElementKind.*;
 import static javax.lang.model.type.TypeKind.*;
 
 import static com.sun.source.doctree.DocTree.Kind.*;
-import static jdk.javadoc.internal.doclets.toolkit.builders.ConstantsSummaryBuilder.MAX_CONSTANT_VALUE_INDEX_LENGTH;
 
 /**
  * Utilities Class for Doclets.
@@ -906,22 +905,6 @@ public class Utils {
     }
 
     /**
-     * Parse the package name.  We only want to display package name up to
-     * 2 levels.
-     */
-    public String parsePackageName(PackageElement p) {
-        String pkgname = p.isUnnamed() ? "" : getPackageName(p);
-        int index = -1;
-        for (int j = 0; j < MAX_CONSTANT_VALUE_INDEX_LENGTH; j++) {
-            index = pkgname.indexOf(".", index + 1);
-        }
-        if (index != -1) {
-            pkgname = pkgname.substring(0, index);
-        }
-        return pkgname;
-    }
-
-    /**
      * Given an annotation, return true if it should be documented and false
      * otherwise.
      *
@@ -1252,32 +1235,6 @@ public class Utils {
         return result.toString();
     }
 
-    public CharSequence normalizeNewlines(CharSequence text) {
-        StringBuilder sb = new StringBuilder();
-        final int textLength = text.length();
-        final String NL = DocletConstants.NL;
-        int pos = 0;
-        for (int i = 0; i < textLength; i++) {
-            char ch = text.charAt(i);
-            switch (ch) {
-                case '\n' -> {
-                    sb.append(text, pos, i);
-                    sb.append(NL);
-                    pos = i + 1;
-                }
-                case '\r' -> {
-                    sb.append(text, pos, i);
-                    sb.append(NL);
-                    if (i + 1 < textLength && text.charAt(i + 1) == '\n')
-                        i++;
-                    pos = i + 1;
-                }
-            }
-        }
-        sb.append(text, pos, textLength);
-        return sb;
-    }
-
     /**
      * Returns a locale independent lower cased String. That is, it
      * always uses US locale, this is a clone of the one in StringUtils.
@@ -1434,26 +1391,6 @@ public class Utils {
             filteredOutClasses.add(e);
         }
         return filteredOutClasses;
-    }
-
-    /**
-     * Compares two elements.
-     * @param e1 first Element
-     * @param e2 second Element
-     * @return a true if they are the same, false otherwise.
-     */
-    public boolean elementsEqual(Element e1, Element e2) {
-        if (e1.getKind() != e2.getKind()) {
-            return false;
-        }
-        String s1 = getSimpleName(e1);
-        String s2 = getSimpleName(e2);
-        if (compareStrings(s1, s2) == 0) {
-            String f1 = getFullyQualifiedName(e1, true);
-            String f2 = getFullyQualifiedName(e2, true);
-            return compareStrings(f1, f2) == 0;
-        }
-        return false;
     }
 
     /**
@@ -2191,18 +2128,6 @@ public class Utils {
             return DocletConstants.DEFAULT_ELEMENT_NAME;
         }
         return mdle.getQualifiedName().toString();
-    }
-
-    public boolean isStartElement(DocTree doctree) {
-        return isKind(doctree, START_ELEMENT);
-    }
-
-    public boolean isText(DocTree doctree) {
-        return isKind(doctree, TEXT);
-    }
-
-    private boolean isKind(DocTree doctree, DocTree.Kind match) {
-        return  doctree.getKind() == match;
     }
 
     private final CommentHelperCache commentHelperCache = new CommentHelperCache(this);

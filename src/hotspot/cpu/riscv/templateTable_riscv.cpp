@@ -70,15 +70,12 @@ static inline Address aaddress(int n) {
   return iaddress(n);
 }
 
-static inline Address iaddress(Register r,  Register temp, InterpreterMacroAssembler* _masm) {
-  assert_cond(_masm != NULL);
+static inline Address iaddress(Register r, Register temp, InterpreterMacroAssembler* _masm) {
   _masm->shadd(temp, r, xlocals, temp, 3);
   return Address(temp, 0);
 }
 
-static inline Address laddress(Register r, Register temp,
-                               InterpreterMacroAssembler* _masm) {
-  assert_cond(_masm != NULL);
+static inline Address laddress(Register r, Register temp, InterpreterMacroAssembler* _masm) {
   _masm->shadd(temp, r, xlocals, temp, 3);
   return Address(temp, Interpreter::local_offset_in_bytes(1));;
 }
@@ -87,8 +84,7 @@ static inline Address faddress(Register r, Register temp, InterpreterMacroAssemb
   return iaddress(r, temp, _masm);
 }
 
-static inline Address daddress(Register r, Register temp,
-                               InterpreterMacroAssembler* _masm) {
+static inline Address daddress(Register r, Register temp, InterpreterMacroAssembler* _masm) {
   return laddress(r, temp, _masm);
 }
 
@@ -134,15 +130,13 @@ static void do_oop_store(InterpreterMacroAssembler* _masm,
                          Register val,
                          DecoratorSet decorators) {
   assert(val == noreg || val == x10, "parameter is just for looks");
-  assert_cond(_masm != NULL);
-  __ store_heap_oop(dst, val, x29, x11, decorators);
+  __ store_heap_oop(dst, val, x29, x11, x13, decorators);
 }
 
 static void do_oop_load(InterpreterMacroAssembler* _masm,
                         Address src,
                         Register dst,
                         DecoratorSet decorators) {
-  assert_cond(_masm != NULL);
   __ load_heap_oop(dst, src, x7, x11, decorators);
 }
 
@@ -1047,7 +1041,7 @@ void TemplateTable::iastore() {
   index_check(x13, x11); // prefer index in x11
   __ add(x11, x11, arrayOopDesc::base_offset_in_bytes(T_INT) >> 2);
   __ shadd(t0, x11, x13, t0, 2);
-  __ access_store_at(T_INT, IN_HEAP | IS_ARRAY, Address(t0, 0), x10, noreg, noreg);
+  __ access_store_at(T_INT, IN_HEAP | IS_ARRAY, Address(t0, 0), x10, noreg, noreg, noreg);
 }
 
 void TemplateTable::lastore() {
@@ -1060,7 +1054,7 @@ void TemplateTable::lastore() {
   index_check(x13, x11); // prefer index in x11
   __ add(x11, x11, arrayOopDesc::base_offset_in_bytes(T_LONG) >> 3);
   __ shadd(t0, x11, x13, t0, 3);
-  __ access_store_at(T_LONG, IN_HEAP | IS_ARRAY, Address(t0, 0), x10, noreg, noreg);
+  __ access_store_at(T_LONG, IN_HEAP | IS_ARRAY, Address(t0, 0), x10, noreg, noreg, noreg);
 }
 
 void TemplateTable::fastore() {
@@ -1073,7 +1067,7 @@ void TemplateTable::fastore() {
   index_check(x13, x11); // prefer index in x11
   __ add(x11, x11, arrayOopDesc::base_offset_in_bytes(T_FLOAT) >> 2);
   __ shadd(t0, x11, x13, t0, 2);
-  __ access_store_at(T_FLOAT, IN_HEAP | IS_ARRAY, Address(t0, 0), noreg /* ftos */, noreg, noreg);
+  __ access_store_at(T_FLOAT, IN_HEAP | IS_ARRAY, Address(t0, 0), noreg /* ftos */, noreg, noreg, noreg);
 }
 
 void TemplateTable::dastore() {
@@ -1086,7 +1080,7 @@ void TemplateTable::dastore() {
   index_check(x13, x11); // prefer index in x11
   __ add(x11, x11, arrayOopDesc::base_offset_in_bytes(T_DOUBLE) >> 3);
   __ shadd(t0, x11, x13, t0, 3);
-  __ access_store_at(T_DOUBLE, IN_HEAP | IS_ARRAY, Address(t0, 0), noreg /* dtos */, noreg, noreg);
+  __ access_store_at(T_DOUBLE, IN_HEAP | IS_ARRAY, Address(t0, 0), noreg /* dtos */, noreg, noreg, noreg);
 }
 
 void TemplateTable::aastore() {
@@ -1167,7 +1161,7 @@ void TemplateTable::bastore()
   __ add(x11, x11, arrayOopDesc::base_offset_in_bytes(T_BYTE) >> 0);
 
   __ add(x11, x13, x11);
-  __ access_store_at(T_BYTE, IN_HEAP | IS_ARRAY, Address(x11, 0), x10, noreg, noreg);
+  __ access_store_at(T_BYTE, IN_HEAP | IS_ARRAY, Address(x11, 0), x10, noreg, noreg, noreg);
 }
 
 void TemplateTable::castore()
@@ -1181,7 +1175,7 @@ void TemplateTable::castore()
   index_check(x13, x11); // prefer index in x11
   __ add(x11, x11, arrayOopDesc::base_offset_in_bytes(T_CHAR) >> 1);
   __ shadd(t0, x11, x13, t0, 1);
-  __ access_store_at(T_CHAR, IN_HEAP | IS_ARRAY, Address(t0, 0), x10, noreg, noreg);
+  __ access_store_at(T_CHAR, IN_HEAP | IS_ARRAY, Address(t0, 0), x10, noreg, noreg, noreg);
 }
 
 void TemplateTable::sastore()
@@ -2673,7 +2667,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
     }
     __ add(off, obj, off); // if static, obj from cache, else obj from stack.
     const Address field(off, 0); // off register as temparator register.
-    __ access_store_at(T_BYTE, IN_HEAP, field, x10, noreg, noreg);
+    __ access_store_at(T_BYTE, IN_HEAP, field, x10, noreg, noreg, noreg);
     if (rc == may_rewrite) {
       patch_bytecode(Bytecodes::_fast_bputfield, bc, x11, true, byte_no);
     }
@@ -2693,7 +2687,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
     }
     __ add(off, obj, off); // if static, obj from cache, else obj from stack.
     const Address field(off, 0);
-    __ access_store_at(T_BOOLEAN, IN_HEAP, field, x10, noreg, noreg);
+    __ access_store_at(T_BOOLEAN, IN_HEAP, field, x10, noreg, noreg, noreg);
     if (rc == may_rewrite) {
       patch_bytecode(Bytecodes::_fast_zputfield, bc, x11, true, byte_no);
     }
@@ -2734,7 +2728,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
     }
     __ add(off, obj, off); // if static, obj from cache, else obj from stack.
     const Address field(off, 0);
-    __ access_store_at(T_INT, IN_HEAP, field, x10, noreg, noreg);
+    __ access_store_at(T_INT, IN_HEAP, field, x10, noreg, noreg, noreg);
     if (rc == may_rewrite) {
       patch_bytecode(Bytecodes::_fast_iputfield, bc, x11, true, byte_no);
     }
@@ -2754,7 +2748,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
     }
     __ add(off, obj, off); // if static, obj from cache, else obj from stack.
     const Address field(off, 0);
-    __ access_store_at(T_CHAR, IN_HEAP, field, x10, noreg, noreg);
+    __ access_store_at(T_CHAR, IN_HEAP, field, x10, noreg, noreg, noreg);
     if (rc == may_rewrite) {
       patch_bytecode(Bytecodes::_fast_cputfield, bc, x11, true, byte_no);
     }
@@ -2774,7 +2768,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
     }
     __ add(off, obj, off); // if static, obj from cache, else obj from stack.
     const Address field(off, 0);
-    __ access_store_at(T_SHORT, IN_HEAP, field, x10, noreg, noreg);
+    __ access_store_at(T_SHORT, IN_HEAP, field, x10, noreg, noreg, noreg);
     if (rc == may_rewrite) {
       patch_bytecode(Bytecodes::_fast_sputfield, bc, x11, true, byte_no);
     }
@@ -2794,7 +2788,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
     }
     __ add(off, obj, off); // if static, obj from cache, else obj from stack.
     const Address field(off, 0);
-    __ access_store_at(T_LONG, IN_HEAP, field, x10, noreg, noreg);
+    __ access_store_at(T_LONG, IN_HEAP, field, x10, noreg, noreg, noreg);
     if (rc == may_rewrite) {
       patch_bytecode(Bytecodes::_fast_lputfield, bc, x11, true, byte_no);
     }
@@ -2814,7 +2808,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
     }
     __ add(off, obj, off); // if static, obj from cache, else obj from stack.
     const Address field(off, 0);
-    __ access_store_at(T_FLOAT, IN_HEAP, field, noreg /* ftos */, noreg, noreg);
+    __ access_store_at(T_FLOAT, IN_HEAP, field, noreg /* ftos */, noreg, noreg, noreg);
     if (rc == may_rewrite) {
       patch_bytecode(Bytecodes::_fast_fputfield, bc, x11, true, byte_no);
     }
@@ -2836,7 +2830,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
     }
     __ add(off, obj, off); // if static, obj from cache, else obj from stack.
     const Address field(off, 0);
-    __ access_store_at(T_DOUBLE, IN_HEAP, field, noreg /* dtos */, noreg, noreg);
+    __ access_store_at(T_DOUBLE, IN_HEAP, field, noreg /* dtos */, noreg, noreg, noreg);
     if (rc == may_rewrite) {
       patch_bytecode(Bytecodes::_fast_dputfield, bc, x11, true, byte_no);
     }
@@ -2973,28 +2967,28 @@ void TemplateTable::fast_storefield(TosState state)
       do_oop_store(_masm, field, x10, IN_HEAP);
       break;
     case Bytecodes::_fast_lputfield:
-      __ access_store_at(T_LONG, IN_HEAP, field, x10, noreg, noreg);
+      __ access_store_at(T_LONG, IN_HEAP, field, x10, noreg, noreg, noreg);
       break;
     case Bytecodes::_fast_iputfield:
-      __ access_store_at(T_INT, IN_HEAP, field, x10, noreg, noreg);
+      __ access_store_at(T_INT, IN_HEAP, field, x10, noreg, noreg, noreg);
       break;
     case Bytecodes::_fast_zputfield:
-      __ access_store_at(T_BOOLEAN, IN_HEAP, field, x10, noreg, noreg);
+      __ access_store_at(T_BOOLEAN, IN_HEAP, field, x10, noreg, noreg, noreg);
       break;
     case Bytecodes::_fast_bputfield:
-      __ access_store_at(T_BYTE, IN_HEAP, field, x10, noreg, noreg);
+      __ access_store_at(T_BYTE, IN_HEAP, field, x10, noreg, noreg, noreg);
       break;
     case Bytecodes::_fast_sputfield:
-      __ access_store_at(T_SHORT, IN_HEAP, field, x10, noreg, noreg);
+      __ access_store_at(T_SHORT, IN_HEAP, field, x10, noreg, noreg, noreg);
       break;
     case Bytecodes::_fast_cputfield:
-      __ access_store_at(T_CHAR, IN_HEAP, field, x10, noreg, noreg);
+      __ access_store_at(T_CHAR, IN_HEAP, field, x10, noreg, noreg, noreg);
       break;
     case Bytecodes::_fast_fputfield:
-      __ access_store_at(T_FLOAT, IN_HEAP, field, noreg /* ftos */, noreg, noreg);
+      __ access_store_at(T_FLOAT, IN_HEAP, field, noreg /* ftos */, noreg, noreg, noreg);
       break;
     case Bytecodes::_fast_dputfield:
-      __ access_store_at(T_DOUBLE, IN_HEAP, field, noreg /* dtos */, noreg, noreg);
+      __ access_store_at(T_DOUBLE, IN_HEAP, field, noreg /* dtos */, noreg, noreg, noreg);
       break;
     default:
       ShouldNotReachHere();
@@ -3474,7 +3468,6 @@ void TemplateTable::_new() {
   Label slow_case;
   Label done;
   Label initialize_header;
-  Label initialize_object; // including clearing the fields
 
   __ get_cpool_and_tags(x14, x10);
   // Make sure the class we're about to instantiate has been resolved.
@@ -3508,15 +3501,9 @@ void TemplateTable::_new() {
   //  If TLAB is enabled:
   //    Try to allocate in the TLAB.
   //    If fails, go to the slow path.
-  //  Else If inline contiguous allocations are enabled:
-  //    Try to allocate in eden.
-  //    If fails due to heap end, go to slow path
-  //
-  //  If TLAB is enabled OR inline contiguous is enabled:
   //    Initialize the allocation.
   //    Exit.
   //  Go to slow path.
-  const bool allow_shared_alloc = Universe::heap()->supports_inline_contig_alloc();
 
   if (UseTLAB) {
     __ tlab_allocate(x10, x13, 0, noreg, x11, slow_case);
@@ -3524,25 +3511,10 @@ void TemplateTable::_new() {
     if (ZeroTLAB) {
       // the fields have been already cleared
       __ j(initialize_header);
-    } else {
-      // initialize both the header and fields
-      __ j(initialize_object);
     }
-  } else {
-    // Allocation in the shared Eden, if allowed.
-    //
-    // x13: instance size in bytes
-    if (allow_shared_alloc) {
-      __ eden_allocate(x10, x13, 0, x28, slow_case);
-    }
-  }
 
-  // If USETLAB or allow_shared_alloc are true, the object is created above and
-  // there is an initialized need. Otherwise, skip and go to the slow path.
-  if (UseTLAB || allow_shared_alloc) {
     // The object is initialized before the header. If the object size is
     // zero, go directly to the header initialization.
-    __ bind(initialize_object);
     __ sub(x13, x13, sizeof(oopDesc));
     __ beqz(x13, initialize_header);
 
@@ -3834,12 +3806,16 @@ void TemplateTable::monitorenter()
    {
      Label entry, loop;
      // 1. compute new pointers            // esp: old expression stack top
+
+     __ check_extended_sp();
+     __ sub(sp, sp, entry_size);           // make room for the monitor
+     __ sd(sp, Address(fp, frame::interpreter_frame_extended_sp_offset * wordSize));
+
      __ ld(c_rarg1, monitor_block_bot);    // c_rarg1: old expression stack bottom
      __ sub(esp, esp, entry_size);         // move expression stack top
      __ sub(c_rarg1, c_rarg1, entry_size); // move expression stack bottom
      __ mv(c_rarg3, esp);                  // set start value for copy loop
      __ sd(c_rarg1, monitor_block_bot);    // set new monitor block bottom
-     __ sub(sp, sp, entry_size);           // make room for the monitor
 
      __ j(entry);
      // 2. move expression stack contents

@@ -82,9 +82,6 @@ public class EventNames {
     public final static String OldObjectSample = PREFIX + "OldObjectSample";
     public final static String SymbolTableStatistics = PREFIX + "SymbolTableStatistics";
     public final static String StringTableStatistics = PREFIX + "StringTableStatistics";
-    public final static String PlaceholderTableStatistics = PREFIX + "PlaceholderTableStatistics";
-    public final static String LoaderConstraintsTableStatistics = PREFIX + "LoaderConstraintsTableStatistics";
-    public final static String ProtectionDomainCacheTableStatistics = PREFIX + "ProtectionDomainCacheTableStatistics";
     public static final String RedefineClasses = PREFIX + "RedefineClasses";
     public static final String RetransformClasses = PREFIX + "RetransformClasses";
     public static final String ClassRedefinition = PREFIX + "ClassRedefinition";
@@ -159,14 +156,12 @@ public class EventNames {
     public final static String CompilerConfiguration = PREFIX + "CompilerConfiguration";
     public final static String CodeCacheStatistics = PREFIX + "CodeCacheStatistics";
     public final static String CodeCacheConfiguration = PREFIX + "CodeCacheConfiguration";
-    public final static String CodeSweeperStatistics = PREFIX + "CodeSweeperStatistics";
-    public final static String CodeSweeperConfiguration = PREFIX + "CodeSweeperConfiguration";
-    public final static String SweepCodeCache = PREFIX + "SweepCodeCache";
     public final static String CodeCacheFull = PREFIX + "CodeCacheFull";
     public final static String ObjectAllocationInNewTLAB = PREFIX + "ObjectAllocationInNewTLAB";
     public final static String ObjectAllocationOutsideTLAB = PREFIX + "ObjectAllocationOutsideTLAB";
     public final static String ObjectAllocationSample = PREFIX + "ObjectAllocationSample";
     public final static String Deoptimization = PREFIX + "Deoptimization";
+    public final static String JitRestart = PREFIX + "JitRestart";
 
     // OS
     public final static String OSInformation = PREFIX + "OSInformation";

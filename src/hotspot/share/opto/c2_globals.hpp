@@ -117,10 +117,6 @@
   notproduct(bool, PrintIdeal, false,                                       \
           "Print ideal graph before code generation")                       \
                                                                             \
-  notproduct(uintx, PrintIdealIndentThreshold, 0,                           \
-          "A depth threshold of ideal graph. Indentation is disabled "      \
-          "when users attempt to dump an ideal graph deeper than it.")      \
-                                                                            \
   notproduct(bool, PrintOpto, false,                                        \
           "Print compiler2 attempts")                                       \
                                                                             \
@@ -415,6 +411,9 @@
   product(intx, LoopOptsCount, 43,                                          \
           "Set level of loop optimization for tier 1 compiles")             \
           range(5, 43)                                                      \
+                                                                            \
+  product(bool, OptimizeUnstableIf, true, DIAGNOSTIC,                       \
+          "Optimize UnstableIf traps")                                      \
                                                                             \
   /* controls for heat-based inlining */                                    \
                                                                             \

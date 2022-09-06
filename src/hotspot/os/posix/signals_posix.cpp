@@ -29,6 +29,7 @@
 #include "code/compiledMethod.hpp"
 #include "code/nativeInst.hpp"
 #include "logging/log.hpp"
+#include "os_posix.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
@@ -38,7 +39,10 @@
 #include "runtime/osThread.hpp"
 #include "runtime/safefetch.hpp"
 #include "runtime/semaphore.inline.hpp"
+#include "runtime/suspendedThreadTask.hpp"
+#include "runtime/threadCrashProtection.hpp"
 #include "signals_posix.hpp"
+#include "suspendResume_posix.hpp"
 #include "utilities/events.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/vmError.hpp"
@@ -584,7 +588,7 @@ int JVM_HANDLE_XXX_SIGNAL(int sig, siginfo_t* info,
   // Handle JFR thread crash protection.
   //  Note: this may cause us to longjmp away. Do not use any code before this
   //  point which really needs any form of epilogue code running, eg RAII objects.
-  os::ThreadCrashProtection::check_crash_protection(sig, t);
+  ThreadCrashProtection::check_crash_protection(sig, t);
 
   bool signal_was_handled = false;
 
@@ -631,7 +635,7 @@ int JVM_HANDLE_XXX_SIGNAL(int sig, siginfo_t* info,
     address pc = os::Posix::ucontext_get_pc(uc);
     assert(pc != NULL, "");
     if (NativeDeoptInstruction::is_deopt_at(pc)) {
-      CodeBlob* cb = CodeCache::find_blob_unsafe(pc);
+      CodeBlob* cb = CodeCache::find_blob(pc);
       if (cb != NULL && cb->is_compiled()) {
         MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, t);) // can call PcDescCache::add_pc_desc
         CompiledMethod* cm = cb->as_compiled_method();
@@ -800,8 +804,8 @@ static void SR_handler(int sig, siginfo_t* siginfo, ucontext_t* context);
 
 // Semantically compare two sigaction structures. Return true if they are referring to
 // the same handler, using the same flags.
-static bool are_handlers_equal(const struct sigaction* sa,
-                               const struct sigaction* expected_sa) {
+static bool are_actions_equal(const struct sigaction* sa,
+                              const struct sigaction* expected_sa) {
   address this_handler = get_signal_handler(sa);
   address expected_handler = get_signal_handler(expected_sa);
   const int this_flags = get_sanitized_sa_flags(sa);
@@ -811,13 +815,14 @@ static bool are_handlers_equal(const struct sigaction* sa,
 }
 
 // If we installed one of our signal handlers for sig, check that the current
-//  setup matches what we originally installed.
-static void check_signal_handler(int sig) {
+// setup matches what we originally installed.  Return true if signal handler
+// is different.  Otherwise, return false;
+static bool check_signal_handler(int sig) {
   char buf[O_BUFLEN];
   bool mismatch = false;
 
   if (!do_check_signal_periodically[sig]) {
-    return;
+    return false;
   }
 
   const struct sigaction* expected_act = vm_handlers.get(sig);
@@ -829,28 +834,28 @@ static void check_signal_handler(int sig) {
   if (os_sigaction == NULL) {
     // only trust the default sigaction, in case it has been interposed
     os_sigaction = (os_sigaction_t)dlsym(RTLD_DEFAULT, "sigaction");
-    if (os_sigaction == NULL) return;
+    if (os_sigaction == NULL) return false;
   }
 
   os_sigaction(sig, (struct sigaction*)NULL, &act);
 
   // Compare both sigaction structures (intelligently; only the members we care about).
-  if (!are_handlers_equal(&act, expected_act)) {
+  // Ignore if the handler is our own crash handler.
+  if (!are_actions_equal(&act, expected_act) &&
+      !(HANDLER_IS(get_signal_handler(&act), VMError::crash_handler_address))) {
     tty->print_cr("Warning: %s handler modified!", os::exception_name(sig, buf, sizeof(buf)));
     // If we had a mismatch:
-    // - print all signal handlers. As part of that printout, details will be printed
-    //   about any modified handlers.
     // - Disable any further checks for this signal - we do not want to flood stdout. Though
     //   depending on which signal had been overwritten, we may die very soon anyway.
-    os::print_signal_handlers(tty, buf, O_BUFLEN);
     do_check_signal_periodically[sig] = false;
-    tty->print_cr("Consider using jsig library.");
     // Running under non-interactive shell, SHUTDOWN2_SIGNAL will be reassigned SIG_IGN
     if (sig == SHUTDOWN2_SIGNAL && !isatty(fileno(stdin))) {
       tty->print_cr("Note: Running in non-interactive shell, %s handler is replaced by shell",
                     os::exception_name(sig, buf, O_BUFLEN));
     }
+    return true;
   }
+  return false;
 }
 
 void* os::user_handler() {
@@ -885,7 +890,7 @@ int os::sigexitnum_pd() {
 
 // This method is a periodic task to check for misbehaving JNI applications
 // under CheckJNI, we can add any periodic checks here
-void os::run_periodic_checks() {
+void os::run_periodic_checks(outputStream* st) {
 
   if (check_signals == false) return;
 
@@ -893,24 +898,35 @@ void os::run_periodic_checks() {
   // generation of hs*.log in the event of a crash, debugging
   // such a case can be very challenging, so we absolutely
   // check the following for a good measure:
-  check_signal_handler(SIGSEGV);
-  check_signal_handler(SIGILL);
-  check_signal_handler(SIGFPE);
-  check_signal_handler(SIGBUS);
-  check_signal_handler(SIGPIPE);
-  check_signal_handler(SIGXFSZ);
-  PPC64_ONLY(check_signal_handler(SIGTRAP);)
+  bool print_handlers = false;
+
+  print_handlers |= check_signal_handler(SIGSEGV);
+  print_handlers |= check_signal_handler(SIGILL);
+  print_handlers |= check_signal_handler(SIGFPE);
+  print_handlers |= check_signal_handler(SIGBUS);
+  print_handlers |= check_signal_handler(SIGPIPE);
+  print_handlers |= check_signal_handler(SIGXFSZ);
+  PPC64_ONLY(print_handlers |= check_signal_handler(SIGTRAP);)
 
   // ReduceSignalUsage allows the user to override these handlers
   // see comments at the very top and jvm_md.h
   if (!ReduceSignalUsage) {
-    check_signal_handler(SHUTDOWN1_SIGNAL);
-    check_signal_handler(SHUTDOWN2_SIGNAL);
-    check_signal_handler(SHUTDOWN3_SIGNAL);
-    check_signal_handler(BREAK_SIGNAL);
+    print_handlers |= check_signal_handler(SHUTDOWN1_SIGNAL);
+    print_handlers |= check_signal_handler(SHUTDOWN2_SIGNAL);
+    print_handlers |= check_signal_handler(SHUTDOWN3_SIGNAL);
+    print_handlers |= check_signal_handler(BREAK_SIGNAL);
   }
 
-  check_signal_handler(PosixSignals::SR_signum);
+  print_handlers |= check_signal_handler(PosixSignals::SR_signum);
+
+  if (print_handlers) {
+    // If we had a mismatch:
+    // - print all signal handlers. As part of that printout, details will be printed
+    //   about any modified handlers.
+    char buf[O_BUFLEN];
+    os::print_signal_handlers(st, buf, O_BUFLEN);
+    st->print_cr("Consider using jsig library.");
+  }
 }
 
 // Helper function for PosixSignals::print_siginfo_...():
@@ -1407,7 +1423,7 @@ void PosixSignals::print_signal_handler(outputStream* st, int sig,
   if (expected_act != NULL) {
     const address current_handler = get_signal_handler(&current_act);
     if (!(HANDLER_IS(current_handler, VMError::crash_handler_address))) {
-      if (!are_handlers_equal(&current_act, expected_act)) {
+      if (!are_actions_equal(&current_act, expected_act)) {
         st->print_cr("  *** Handler was modified!");
         st->print   ("  *** Expected: ");
         print_single_signal_handler(st, expected_act, buf, buflen);
@@ -1628,14 +1644,14 @@ static void SR_handler(int sig, siginfo_t* siginfo, ucontext_t* context) {
 
   OSThread* osthread = thread->osthread();
 
-  os::SuspendResume::State current = osthread->sr.state();
+  SuspendResume::State current = osthread->sr.state();
 
-  if (current == os::SuspendResume::SR_SUSPEND_REQUEST) {
+  if (current == SuspendResume::SR_SUSPEND_REQUEST) {
     suspend_save_context(osthread, siginfo, context);
 
     // attempt to switch the state, we assume we had a SUSPEND_REQUEST
-    os::SuspendResume::State state = osthread->sr.suspended();
-    if (state == os::SuspendResume::SR_SUSPENDED) {
+    SuspendResume::State state = osthread->sr.suspended();
+    if (state == SuspendResume::SR_SUSPENDED) {
       sigset_t suspend_set;  // signals for sigsuspend()
       sigemptyset(&suspend_set);
 
@@ -1649,26 +1665,26 @@ static void SR_handler(int sig, siginfo_t* siginfo, ucontext_t* context) {
       while (1) {
         sigsuspend(&suspend_set);
 
-        os::SuspendResume::State result = osthread->sr.running();
-        if (result == os::SuspendResume::SR_RUNNING) {
+        SuspendResume::State result = osthread->sr.running();
+        if (result == SuspendResume::SR_RUNNING) {
           // double check AIX doesn't need this!
           sr_semaphore.signal();
           break;
-        } else if (result != os::SuspendResume::SR_SUSPENDED) {
+        } else if (result != SuspendResume::SR_SUSPENDED) {
           ShouldNotReachHere();
         }
       }
 
-    } else if (state == os::SuspendResume::SR_RUNNING) {
+    } else if (state == SuspendResume::SR_RUNNING) {
       // request was cancelled, continue
     } else {
       ShouldNotReachHere();
     }
 
     resume_clear_context(osthread);
-  } else if (current == os::SuspendResume::SR_RUNNING) {
+  } else if (current == SuspendResume::SR_RUNNING) {
     // request was cancelled, continue
-  } else if (current == os::SuspendResume::SR_WAKEUP_REQUEST) {
+  } else if (current == SuspendResume::SR_WAKEUP_REQUEST) {
     // ignore
   } else {
     // ignore
@@ -1727,7 +1743,7 @@ bool PosixSignals::do_suspend(OSThread* osthread) {
   assert(!sr_semaphore.trywait(), "semaphore has invalid state");
 
   // mark as suspended and send signal
-  if (osthread->sr.request_suspend() != os::SuspendResume::SR_SUSPEND_REQUEST) {
+  if (osthread->sr.request_suspend() != SuspendResume::SR_SUSPEND_REQUEST) {
     // failed to switch, state wasn't running?
     ShouldNotReachHere();
     return false;
@@ -1743,10 +1759,10 @@ bool PosixSignals::do_suspend(OSThread* osthread) {
       break;
     } else {
       // timeout
-      os::SuspendResume::State cancelled = osthread->sr.cancel_suspend();
-      if (cancelled == os::SuspendResume::SR_RUNNING) {
+      SuspendResume::State cancelled = osthread->sr.cancel_suspend();
+      if (cancelled == SuspendResume::SR_RUNNING) {
         return false;
-      } else if (cancelled == os::SuspendResume::SR_SUSPENDED) {
+      } else if (cancelled == SuspendResume::SR_SUSPENDED) {
         // make sure that we consume the signal on the semaphore as well
         sr_semaphore.wait();
         break;
@@ -1765,7 +1781,7 @@ void PosixSignals::do_resume(OSThread* osthread) {
   assert(osthread->sr.is_suspended(), "thread should be suspended");
   assert(!sr_semaphore.trywait(), "invalid semaphore state");
 
-  if (osthread->sr.request_wakeup() != os::SuspendResume::SR_WAKEUP_REQUEST) {
+  if (osthread->sr.request_wakeup() != SuspendResume::SR_WAKEUP_REQUEST) {
     // failed to switch to WAKEUP_REQUEST
     ShouldNotReachHere();
     return;
@@ -1786,9 +1802,9 @@ void PosixSignals::do_resume(OSThread* osthread) {
   guarantee(osthread->sr.is_running(), "Must be running!");
 }
 
-void os::SuspendedThreadTask::internal_do_task() {
+void SuspendedThreadTask::internal_do_task() {
   if (PosixSignals::do_suspend(_thread->osthread())) {
-    os::SuspendedThreadTaskContext context(_thread, _thread->osthread()->ucontext());
+    SuspendedThreadTaskContext context(_thread, _thread->osthread()->ucontext());
     do_task(context);
     PosixSignals::do_resume(_thread->osthread());
   }

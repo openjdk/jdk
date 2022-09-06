@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/cds_globals.hpp"
 #include "cds/filemap.hpp"
 #include "cds/heapShared.hpp"
 #include "classfile/classFileParser.hpp"
@@ -81,17 +82,22 @@ void ClassLoaderExt::setup_app_search_path(JavaThread* current) {
 
 void ClassLoaderExt::process_module_table(JavaThread* current, ModuleEntryTable* met) {
   ResourceMark rm(current);
-  for (int i = 0; i < met->table_size(); i++) {
-    for (ModuleEntry* m = met->bucket(i); m != NULL;) {
+  class Process : public ModuleClosure {
+    JavaThread* _current;
+   public:
+    Process(JavaThread* current) : _current(current) {}
+    void do_module(ModuleEntry* m) {
       char* path = m->location()->as_C_string();
       if (strncmp(path, "file:", 5) == 0) {
         path = ClassLoader::skip_uri_protocol(path);
-        ClassLoader::setup_module_search_path(current, path);
+        ClassLoader::setup_module_search_path(_current, path);
       }
-      m = m->next();
     }
-  }
+  };
+  Process process(current);
+  met->modules_do(&process);
 }
+
 void ClassLoaderExt::setup_module_paths(JavaThread* current) {
   Arguments::assert_is_dumping_archive();
   _app_module_paths_start_index = ClassLoader::num_boot_classpath_entries() +

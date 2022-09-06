@@ -57,7 +57,7 @@ void LIR_Assembler::generic_arraycopy(Register src, Register src_pos, Register l
   __ mv(c_rarg4, j_rarg4);
 #ifndef PRODUCT
   if (PrintC1Statistics) {
-    __ add_memory_int32(ExternalAddress((address)&Runtime1::_generic_arraycopystub_cnt), 1);
+    __ incrementw(ExternalAddress((address)&Runtime1::_generic_arraycopystub_cnt));
   }
 #endif
   __ far_call(RuntimeAddress(copyfunc_addr));
@@ -164,7 +164,7 @@ void LIR_Assembler::arraycopy_checkcast(Register src, Register src_pos, Register
   if (PrintC1Statistics) {
     Label failed;
     __ bnez(x10, failed);
-    __ add_memory_int32(ExternalAddress((address)&Runtime1::_arraycopy_checkcast_cnt), 1);
+    __ incrementw(ExternalAddress((address)&Runtime1::_arraycopy_checkcast_cnt));
     __ bind(failed);
   }
 #endif
@@ -173,7 +173,7 @@ void LIR_Assembler::arraycopy_checkcast(Register src, Register src_pos, Register
 
 #ifndef PRODUCT
   if (PrintC1Statistics) {
-    __ add_memory_int32(ExternalAddress((address)&Runtime1::_arraycopy_checkcast_attempt_cnt), 1);
+    __ incrementw(ExternalAddress((address)&Runtime1::_arraycopy_checkcast_attempt_cnt));
   }
 #endif
   assert_different_registers(dst, dst_pos, length, src_pos, src, x10, t0);
@@ -324,7 +324,7 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
 
 #ifndef PRODUCT
   if (PrintC1Statistics) {
-    __ add_memory_int32(ExternalAddress(Runtime1::arraycopy_count_address(basic_type)), 1);
+    __ incrementw(ExternalAddress(Runtime1::arraycopy_count_address(basic_type)));
   }
 #endif
   arraycopy_prepare_params(src, src_pos, length, dst, dst_pos, basic_type);
