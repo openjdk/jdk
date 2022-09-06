@@ -10707,6 +10707,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<featureName type="zero">有斜線嘅零</featureName>
 	</typographicNames>
 	<personNames>
+		<foreignSpaceReplacement xml:space="preserve">·</foreignSpaceReplacement>
 		<initialPattern type="initial">{0}</initialPattern>
 		<personName order="givenFirst" length="long" usage="addressing" formality="formal">
 			<namePattern>{surname}{prefix}</namePattern>
@@ -10727,7 +10728,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<namePattern>{given-informal}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="referring" formality="formal">
-			<namePattern>{surname}{given}{suffix} {given2}</namePattern>
+			<namePattern>{surname}{given}{suffix}{given2}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="referring" formality="informal">
 			<namePattern>{surname}{given-informal}</namePattern>
@@ -10742,7 +10743,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<namePattern>{surname-monogram-allCaps}{given-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="referring" formality="formal">
-			<namePattern>{surname}{given}{suffix} {given2-initial}</namePattern>
+			<namePattern>{surname}{given}{suffix}{given2-initial}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="referring" formality="informal">
 			<namePattern>{surname}{given-informal}</namePattern>
@@ -10760,7 +10761,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<namePattern>{given-informal-monogram}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="referring" formality="formal">
-			<namePattern>{surname}{given} {given2-initial}</namePattern>
+			<namePattern>{surname}{given}{given2-initial}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="referring" formality="informal">
 			<namePattern>{surname}{given}</namePattern>
@@ -10778,39 +10779,43 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<namePattern>{given-informal-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="sorting" length="long" usage="referring" formality="formal">
-			<namePattern>{surname}{given}{suffix} {given2}</namePattern>
+			<namePattern>{surname}{given}{suffix}{given2}</namePattern>
 		</personName>
 		<personName order="sorting" length="long" usage="referring" formality="informal">
 			<namePattern>{surname}{given-informal}</namePattern>
 		</personName>
 		<personName order="sorting" length="medium" usage="referring" formality="formal">
-			<namePattern>{surname}{given}{suffix} {given2-initial}</namePattern>
+			<namePattern>{surname}{given}{suffix}{given2-initial}</namePattern>
 		</personName>
 		<personName order="sorting" length="medium" usage="referring" formality="informal">
 			<namePattern>{surname}{given-informal}</namePattern>
 		</personName>
 		<personName order="sorting" length="short" usage="referring" formality="formal">
-			<namePattern>{surname}{given} {given2-initial}</namePattern>
+			<namePattern>{surname}{given}{given2-initial}</namePattern>
 		</personName>
 		<personName order="sorting" length="short" usage="referring" formality="informal">
 			<namePattern>{surname}{given-informal}</namePattern>
 		</personName>
 		<sampleName item="givenOnly">
-			<nameField type="given">大文</nameField>
+			<nameField type="given">文傑</nameField>
 		</sampleName>
 		<sampleName item="givenSurnameOnly">
-			<nameField type="given">大文</nameField>
-			<nameField type="surname">陳</nameField>
+			<nameField type="given">雅婷</nameField>
+			<nameField type="surname">張</nameField>
 		</sampleName>
 		<sampleName item="given12Surname">
-			<nameField type="given">大文</nameField>
-			<nameField type="given2">John</nameField>
-			<nameField type="surname">陳</nameField>
+			<nameField type="given">家豪</nameField>
+			<nameField type="given2">明德</nameField>
+			<nameField type="surname">林</nameField>
 		</sampleName>
 		<sampleName item="full">
-			<nameField type="prefix">先生</nameField>
-			<nameField type="given">大文</nameField>
-			<nameField type="given-informal">小二</nameField>
+			<nameField type="prefix">∅∅∅</nameField>
+			<nameField type="given">怡君</nameField>
+			<nameField type="given-informal">小君</nameField>
+			<nameField type="given2">達印</nameField>
+			<nameField type="surname-prefix">∅∅∅</nameField>
+			<nameField type="surname-core">∅∅∅</nameField>
+			<nameField type="surname2">∅∅∅</nameField>
 			<nameField type="suffix">博士</nameField>
 		</sampleName>
 	</personNames>

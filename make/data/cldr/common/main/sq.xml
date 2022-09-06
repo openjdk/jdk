@@ -69,7 +69,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="bug">buginezisht</language>
 			<language type="byn">blinisht</language>
 			<language type="ca">katalonisht</language>
-			<language type="cay" draft="provisional">kajugaisht</language>
+			<language type="cay" draft="contributed">kajugaisht</language>
 			<language type="ccp">çakmaisht</language>
 			<language type="ce">çeçenisht</language>
 			<language type="ceb">sebuanisht</language>
@@ -873,7 +873,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="NR">Nauru</territory>
 			<territory type="NU">Niue</territory>
 			<territory type="NZ">Zelandë e Re</territory>
-			<territory type="NZ" alt="variant" draft="provisional">Zelanda e Re-Aotearoa</territory>
+			<territory type="NZ" alt="variant" draft="contributed">Zelanda e Re-Aotearoa</territory>
 			<territory type="OM">Oman</territory>
 			<territory type="PA">Panama</territory>
 			<territory type="PE">Peru</territory>
@@ -6886,7 +6886,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} njësi astronomike</unitPattern>
 			</unit>
 			<unit type="length-fathom">
-				<displayName draft="provisional">fth</displayName>
+				<displayName draft="contributed">fth</displayName>
 			</unit>
 			<unit type="length-nautical-mile">
 				<displayName>milje nautike</displayName>
@@ -6998,9 +6998,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} masa diellore</unitPattern>
 			</unit>
 			<unit type="mass-grain">
-				<displayName draft="provisional">gran</displayName>
-				<unitPattern count="one" draft="provisional">{0} gran</unitPattern>
-				<unitPattern count="other" draft="provisional">{0} granë</unitPattern>
+				<displayName draft="contributed">gran</displayName>
+				<unitPattern count="one" draft="contributed">{0} gran</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} granë</unitPattern>
 			</unit>
 			<unit type="power-gigawatt">
 				<displayName>gigavat</displayName>
@@ -7211,9 +7211,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} këmbë-akër</unitPattern>
 			</unit>
 			<unit type="volume-bushel">
-				<displayName draft="provisional">bushelë</displayName>
-				<unitPattern count="one" draft="provisional">{0} bushel</unitPattern>
-				<unitPattern count="other" draft="provisional">{0} bushelë</unitPattern>
+				<displayName draft="contributed">bushelë</displayName>
+				<unitPattern count="one" draft="contributed">{0} bushel</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} bushelë</unitPattern>
 			</unit>
 			<unit type="volume-gallon">
 				<displayName>gallonë</displayName>
@@ -7795,9 +7795,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} CD</unitPattern>
 			</unit>
 			<unit type="mass-grain">
-				<displayName draft="provisional">gran</displayName>
-				<unitPattern count="one" draft="provisional">{0} gran</unitPattern>
-				<unitPattern count="other" draft="provisional">{0} granë</unitPattern>
+				<displayName draft="contributed">gran</displayName>
+				<unitPattern count="one" draft="contributed">{0} gran</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} granë</unitPattern>
 			</unit>
 			<unit type="power-gigawatt">
 				<displayName>GW</displayName>
@@ -7982,7 +7982,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ac ft</unitPattern>
 			</unit>
 			<unit type="volume-bushel">
-				<displayName draft="provisional">bushelë</displayName>
+				<displayName draft="contributed">bushelë</displayName>
 			</unit>
 			<unit type="volume-gallon">
 				<displayName>gallon</displayName>
@@ -9358,7 +9358,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<nameField type="surname">Rustemi</nameField>
 		</sampleName>
 		<sampleName item="full">
-			<nameField type="prefix" draft="provisional">prof. dr.</nameField>
+			<nameField type="prefix" draft="contributed">prof. dr.</nameField>
 			<nameField type="given">Gentiana</nameField>
 			<nameField type="given-informal">Genta</nameField>
 			<nameField type="given2">Marie</nameField>

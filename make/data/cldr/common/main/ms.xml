@@ -7486,7 +7486,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} mikrometer</unitPattern>
 			</unit>
 			<unit type="length-nanometer">
-				<displayName>nm</displayName>
+				<displayName>nanometer</displayName>
 				<unitPattern count="other">{0} nanometer</unitPattern>
 			</unit>
 			<unit type="length-picometer">

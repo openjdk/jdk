@@ -16,7 +16,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<localeSeparator>{0}, {1}</localeSeparator>
 		</localeDisplayPattern>
 		<languages>
-			<language type="af" draft="provisional">isiBhulu</language>
+			<language type="af" draft="contributed">isiBhulu</language>
 			<language type="am" draft="unconfirmed">Isi-Amharic</language>
 			<language type="ar">Isi-Arabhu</language>
 			<language type="ar_001">Isi-Arabhu (Sale mihla)</language>
@@ -143,7 +143,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="zh_Hans" alt="long">IsiMandarin Esenziwe Lula</language>
 			<language type="zh_Hant">IsiTshayina Esiqhelekileyo</language>
 			<language type="zh_Hant" alt="long">IsiMandarin Esiqhelekileyo</language>
-			<language type="zu" draft="provisional">isiZulu</language>
+			<language type="zu" draft="contributed">isiZulu</language>
 		</languages>
 		<scripts>
 			<script type="Arab">Isi-Arabhu</script>

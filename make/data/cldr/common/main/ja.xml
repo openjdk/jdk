@@ -7236,6 +7236,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<pattern type="1000000000000" count="other">0兆</pattern>
 					<pattern type="10000000000000" count="other">00兆</pattern>
 					<pattern type="100000000000000" count="other">000兆</pattern>
+					<pattern type="1000000000000000" count="other">0000兆</pattern>
+					<pattern type="10000000000000000" count="other">0京</pattern>
+					<pattern type="100000000000000000" count="other">00京</pattern>
+					<pattern type="1000000000000000000" count="other">000京</pattern>
+					<pattern type="10000000000000000000" count="other">0000京</pattern>
 				</decimalFormat>
 			</decimalFormatLength>
 			<decimalFormatLength type="short">
@@ -7252,6 +7257,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<pattern type="1000000000000" count="other">0兆</pattern>
 					<pattern type="10000000000000" count="other">00兆</pattern>
 					<pattern type="100000000000000" count="other">000兆</pattern>
+					<pattern type="1000000000000000" count="other">0000兆</pattern>
+					<pattern type="10000000000000000" count="other">0京</pattern>
+					<pattern type="100000000000000000" count="other">00京</pattern>
+					<pattern type="1000000000000000000" count="other">000京</pattern>
+					<pattern type="10000000000000000000" count="other">0000京</pattern>
 				</decimalFormat>
 			</decimalFormatLength>
 		</decimalFormats>
@@ -7307,6 +7317,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<pattern type="10000000000000" count="other" alt="alphaNextToNumber">¤ 00兆</pattern>
 					<pattern type="100000000000000" count="other">¤000兆</pattern>
 					<pattern type="100000000000000" count="other" alt="alphaNextToNumber">¤ 000兆</pattern>
+					<pattern type="1000000000000000" count="other">¤0000兆</pattern>
+					<pattern type="1000000000000000" count="other" alt="alphaNextToNumber">¤ 0000兆</pattern>
+					<pattern type="10000000000000000" count="other">¤0京</pattern>
+					<pattern type="10000000000000000" count="other" alt="alphaNextToNumber">¤ 0京</pattern>
+					<pattern type="100000000000000000" count="other">¤00京</pattern>
+					<pattern type="100000000000000000" count="other" alt="alphaNextToNumber">¤ 00京</pattern>
+					<pattern type="1000000000000000000" count="other">¤000京</pattern>
+					<pattern type="1000000000000000000" count="other" alt="alphaNextToNumber">¤ 000京</pattern>
+					<pattern type="10000000000000000000" count="other">¤0000京</pattern>
+					<pattern type="10000000000000000000" count="other" alt="alphaNextToNumber">¤ 0000京</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<unitPattern count="other">{0}{1}</unitPattern>
@@ -11588,16 +11608,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<namePattern>{given-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="referring" formality="formal">
-			<namePattern>{prefix} {surname} {given2}{given}{suffix}</namePattern>
+			<namePattern>{prefix}{surname}{given2}{given}{suffix}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="referring" formality="informal">
-			<namePattern>{prefix} {surname} {given-informal}{suffix}</namePattern>
+			<namePattern>{prefix}{surname}{given-informal}{suffix}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="addressing" formality="formal">
-			<namePattern>{surname} {given2}{given}{suffix}</namePattern>
+			<namePattern>{surname}{given2}{given}{suffix}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="addressing" formality="informal">
-			<namePattern>{surname} {given-informal}{suffix}</namePattern>
+			<namePattern>{surname}{given-informal}{suffix}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="monogram" formality="formal">
 			<namePattern>{given-monogram-allCaps}</namePattern>
@@ -11606,16 +11626,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<namePattern>{given-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="referring" formality="formal">
-			<namePattern>{surname} {given2}{given}{suffix}</namePattern>
+			<namePattern>{surname}{given2}{given}{suffix}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="referring" formality="informal">
-			<namePattern>{surname} {given-informal}{suffix}</namePattern>
+			<namePattern>{surname}{given-informal}{suffix}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="addressing" formality="formal">
-			<namePattern>{surname} {given}{suffix}</namePattern>
+			<namePattern>{surname}{given}{suffix}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="addressing" formality="informal">
-			<namePattern>{surname} {given-informal}{suffix}</namePattern>
+			<namePattern>{surname}{given-informal}{suffix}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="monogram" formality="formal">
 			<namePattern>{given-monogram-allCaps}</namePattern>
@@ -11624,10 +11644,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<namePattern>{given-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="referring" formality="formal">
-			<namePattern>{surname} {given}{suffix}</namePattern>
+			<namePattern>{surname}{given}{suffix}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="referring" formality="informal">
-			<namePattern>{surname} {given-informal}{suffix}</namePattern>
+			<namePattern>{surname}{given-informal}{suffix}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="addressing" formality="formal">
 			<namePattern>{surname}{suffix}</namePattern>
@@ -11642,22 +11662,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<namePattern>{given-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="sorting" length="long" usage="referring" formality="formal">
-			<namePattern>{surname} {given2} {given}{suffix}</namePattern>
+			<namePattern>{surname}{given2}{given}{suffix}</namePattern>
 		</personName>
 		<personName order="sorting" length="long" usage="referring" formality="informal">
-			<namePattern>{surname} {given-informal}{suffix}</namePattern>
+			<namePattern>{surname}{given-informal}{suffix}</namePattern>
 		</personName>
 		<personName order="sorting" length="medium" usage="referring" formality="formal">
-			<namePattern>{surname} {given}{suffix}</namePattern>
+			<namePattern>{surname}{given}{suffix}</namePattern>
 		</personName>
 		<personName order="sorting" length="medium" usage="referring" formality="informal">
-			<namePattern>{surname} {given-informal}{suffix}</namePattern>
+			<namePattern>{surname}{given-informal}{suffix}</namePattern>
 		</personName>
 		<personName order="sorting" length="short" usage="referring" formality="formal">
-			<namePattern>{surname} {given}</namePattern>
+			<namePattern>{surname}{given}</namePattern>
 		</personName>
 		<personName order="sorting" length="short" usage="referring" formality="informal">
-			<namePattern>{surname} {given-informal}</namePattern>
+			<namePattern>{surname}{given-informal}</namePattern>
 		</personName>
 		<sampleName item="givenOnly">
 			<nameField type="given">慎太郎</nameField>
@@ -11676,7 +11696,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<nameField type="given">英子</nameField>
 			<nameField type="given-informal">えいこ</nameField>
 			<nameField type="given2">ソフィア</nameField>
+			<nameField type="surname-prefix">∅∅∅</nameField>
 			<nameField type="surname-core">内田</nameField>
+			<nameField type="surname2">∅∅∅</nameField>
 			<nameField type="suffix">さん</nameField>
 		</sampleName>
 	</personNames>

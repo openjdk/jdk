@@ -12777,10 +12777,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="length-furlong">
 				<displayName>фурлонги</displayName>
-				<unitPattern count="one" draft="provisional">{0} fur</unitPattern>
-				<unitPattern count="few" draft="provisional">{0} fur</unitPattern>
-				<unitPattern count="many" draft="provisional">{0} fur</unitPattern>
-				<unitPattern count="other" draft="provisional">{0} fur</unitPattern>
+				<unitPattern count="one" draft="contributed">{0} fur</unitPattern>
+				<unitPattern count="few" draft="contributed">{0} fur</unitPattern>
+				<unitPattern count="many" draft="contributed">{0} fur</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} fur</unitPattern>
 			</unit>
 			<unit type="length-fathom">
 				<displayName>фатоми</displayName>

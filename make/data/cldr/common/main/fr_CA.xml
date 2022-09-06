@@ -111,7 +111,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="BV">île Bouvet</territory>
 			<territory type="BY">Bélarus</territory>
 			<territory type="CC">îles Cocos (Keeling)</territory>
-			<territory type="CI" alt="variant">République de Côte d’Ivoire</territory>
 			<territory type="CK">îles Cook</territory>
 			<territory type="CX">île Christmas</territory>
 			<territory type="FK">îles Malouines</territory>

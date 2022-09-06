@@ -8834,7 +8834,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}′</unitPattern>
 			</unit>
 			<unit type="angle-arc-second">
-				<displayName draft="provisional">дъг. сек.</displayName>
+				<displayName draft="contributed">дъг. сек.</displayName>
 				<unitPattern count="one">{0}″</unitPattern>
 				<unitPattern count="other">{0}″</unitPattern>
 			</unit>

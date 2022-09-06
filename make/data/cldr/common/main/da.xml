@@ -7229,7 +7229,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<pluralMinimalPairs count="other">{0} dage</pluralMinimalPairs>
 			<ordinalMinimalPairs ordinal="other">Tag den {0}. vej til højre.</ordinalMinimalPairs>
 			<caseMinimalPairs case="genitive">Med {0} mellemrum</caseMinimalPairs>
-			<caseMinimalPairs case="nominative">Jeg tror, ​​at {0} er nok.</caseMinimalPairs>
+			<caseMinimalPairs case="nominative">Jeg tror, at {0} er nok.</caseMinimalPairs>
 			<genderMinimalPairs gender="common">En {0}</genderMinimalPairs>
 			<genderMinimalPairs gender="neuter">Et {0}</genderMinimalPairs>
 		</minimalPairs>

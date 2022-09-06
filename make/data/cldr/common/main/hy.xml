@@ -9562,10 +9562,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<nameField type="surname">Դարբինյան</nameField>
 		</sampleName>
 		<sampleName item="full">
-			<nameField type="prefix" draft="provisional">դ-ր</nameField>
+			<nameField type="prefix" draft="contributed">դ-ր</nameField>
 			<nameField type="given">Ադա Կոռնելիա</nameField>
 			<nameField type="given-informal">Էդ</nameField>
-			<nameField type="given2" draft="provisional">Եվա Սոֆիա</nameField>
+			<nameField type="given2" draft="contributed">Եվա Սոֆիա</nameField>
 			<nameField type="surname-prefix">վան դեն</nameField>
 			<nameField type="surname-core">Վոլֆ</nameField>
 			<nameField type="surname2">Բեքեր Շմիդտ</nameField>

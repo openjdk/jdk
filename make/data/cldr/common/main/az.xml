@@ -9077,18 +9077,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<nameField type="given">Sinbad</nameField>
 		</sampleName>
 		<sampleName item="givenSurnameOnly">
-			<nameField type="given" draft="provisional">İren</nameField>
+			<nameField type="given" draft="contributed">İren</nameField>
 			<nameField type="surname">Adler</nameField>
 		</sampleName>
 		<sampleName item="given12Surname">
-			<nameField type="given" draft="provisional">Con</nameField>
-			<nameField type="given2" draft="provisional">Hamiş</nameField>
-			<nameField type="surname" draft="provisional">Vatson</nameField>
+			<nameField type="given" draft="contributed">Con</nameField>
+			<nameField type="given2" draft="contributed">Hamiş</nameField>
+			<nameField type="surname" draft="contributed">Vatson</nameField>
 		</sampleName>
 		<sampleName item="full">
 			<nameField type="surname-prefix">van den</nameField>
-			<nameField type="surname-core" draft="provisional">Volf</nameField>
-			<nameField type="surname2" draft="provisional">Becker Schmidt</nameField>
+			<nameField type="surname-core" draft="contributed">Volf</nameField>
+			<nameField type="surname2" draft="contributed">Becker Schmidt</nameField>
 			<nameField type="suffix">M.D. Ph.D.</nameField>
 		</sampleName>
 	</personNames>

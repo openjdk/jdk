@@ -964,7 +964,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="CG" alt="variant">République du Congo</territory>
 			<territory type="CH">Suisse</territory>
 			<territory type="CI">Côte d’Ivoire</territory>
-			<territory type="CI" alt="variant">​​République de Côte d’Ivoire</territory>
+			<territory type="CI" alt="variant">République de Côte d’Ivoire</territory>
 			<territory type="CK">Îles Cook</territory>
 			<territory type="CL">Chili</territory>
 			<territory type="CM">Cameroun</territory>
