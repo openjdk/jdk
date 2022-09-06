@@ -26,6 +26,7 @@
 #define SHARE_UTILITIES_RESOURCEHASH_HPP
 
 #include "memory/allocation.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/numberSeq.hpp"
 #include "utilities/tableStatistics.hpp"
 
@@ -289,7 +290,7 @@ class FixedResourceHashtableStorage : public ResourceObj {
 
   Node* _table[TABLE_SIZE];
 protected:
-  FixedResourceHashtableStorage() : _table() {}
+  FixedResourceHashtableStorage() { memset(_table, 0, sizeof(_table)); }
   ~FixedResourceHashtableStorage() = default;
 
   constexpr unsigned table_size() const {

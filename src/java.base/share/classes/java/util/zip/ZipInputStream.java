@@ -189,10 +189,21 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
     }
 
     /**
-     * Reads from the current ZIP entry into an array of bytes.
-     * If {@code len} is not zero, the method
-     * blocks until some input is available; otherwise, no
-     * bytes are read and {@code 0} is returned.
+     * Reads from the current ZIP entry into an array of bytes, returning the number of
+     * inflated bytes. If {@code len} is not zero, the method blocks until some input is
+     * available; otherwise, no bytes are read and {@code 0} is returned.
+     * <p>
+     * If the current entry is compressed and this method returns a nonzero
+     * integer <i>n</i> then {@code buf[off]}
+     * through {@code buf[off+}<i>n</i>{@code -1]} contain the uncompressed
+     * data.  The content of elements {@code buf[off+}<i>n</i>{@code ]} through
+     * {@code buf[off+}<i>len</i>{@code -1]} is undefined, contrary to the
+     * specification of the {@link java.io.InputStream InputStream} superclass,
+     * so an implementation is free to modify these elements during the inflate
+     * operation. If this method returns {@code -1} or throws an exception then
+     * the content of {@code buf[off]} through {@code buf[off+}<i>len</i>{@code
+     * -1]} is undefined.
+     *
      * @param b the buffer into which the data is read
      * @param off the start offset in the destination array {@code b}
      * @param len the maximum number of bytes read

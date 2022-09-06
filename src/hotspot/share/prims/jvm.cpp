@@ -1095,9 +1095,9 @@ JVM_ENTRY(jclass, JVM_FindLoadedClass(JNIEnv *env, jobject loader, jstring name)
   //   The Java level wrapper will perform the necessary security check allowing
   //   us to pass the NULL as the initiating class loader.
   Handle h_loader(THREAD, JNIHandles::resolve(loader));
-  Klass* k = SystemDictionary::find_instance_or_array_klass(klass_name,
-                                                              h_loader,
-                                                              Handle());
+  Klass* k = SystemDictionary::find_instance_or_array_klass(THREAD, klass_name,
+                                                            h_loader,
+                                                            Handle());
 #if INCLUDE_CDS
   if (k == NULL) {
     // If the class is not already loaded, try to see if it's in the shared
@@ -3282,6 +3282,9 @@ JVM_END
 
 JVM_ENTRY(jboolean, JVM_ReferenceRefersTo(JNIEnv* env, jobject ref, jobject o))
   oop ref_oop = JNIHandles::resolve_non_null(ref);
+  // PhantomReference has it's own implementation of refersTo().
+  // See: JVM_PhantomReferenceRefersTo
+  assert(!java_lang_ref_Reference::is_phantom(ref_oop), "precondition");
   oop referent = java_lang_ref_Reference::weak_referent_no_keepalive(ref_oop);
   return referent == JNIHandles::resolve(o);
 JVM_END

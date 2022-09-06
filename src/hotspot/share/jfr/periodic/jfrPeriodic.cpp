@@ -59,7 +59,6 @@
 #include "runtime/os_perf.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/threads.hpp"
-#include "runtime/sweeper.hpp"
 #include "runtime/vmThread.hpp"
 #include "runtime/vm_version.hpp"
 #include "services/classLoadingService.hpp"
@@ -605,24 +604,6 @@ TRACE_REQUEST_FUNC(CodeCacheConfiguration) {
   event.set_minBlockLength(CodeCacheMinBlockLength);
   event.set_startAddress((u8)CodeCache::low_bound());
   event.set_reservedTopAddress((u8)CodeCache::high_bound());
-  event.commit();
-}
-
-TRACE_REQUEST_FUNC(CodeSweeperStatistics) {
-  EventCodeSweeperStatistics event;
-  event.set_sweepCount(NMethodSweeper::traversal_count());
-  event.set_methodReclaimedCount(NMethodSweeper::total_nof_methods_reclaimed());
-  event.set_totalSweepTime(NMethodSweeper::total_time_sweeping());
-  event.set_peakFractionTime(NMethodSweeper::peak_sweep_fraction_time());
-  event.set_peakSweepTime(NMethodSweeper::peak_sweep_time());
-  event.commit();
-}
-
-TRACE_REQUEST_FUNC(CodeSweeperConfiguration) {
-  EventCodeSweeperConfiguration event;
-  event.set_sweeperEnabled(MethodFlushing);
-  event.set_flushingEnabled(UseCodeCacheFlushing);
-  event.set_sweepThreshold(NMethodSweeper::sweep_threshold_bytes());
   event.commit();
 }
 

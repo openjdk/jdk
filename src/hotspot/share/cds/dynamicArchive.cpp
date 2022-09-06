@@ -26,6 +26,7 @@
 #include "jvm.h"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveUtils.inline.hpp"
+#include "cds/cds_globals.hpp"
 #include "cds/dynamicArchive.hpp"
 #include "cds/lambdaFormInvokers.hpp"
 #include "cds/metaspaceShared.hpp"
