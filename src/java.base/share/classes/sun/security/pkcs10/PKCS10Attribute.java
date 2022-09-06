@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ import sun.security.util.*;
 /**
  * Represent a PKCS#10 Attribute.
  *
- * <p>Attributes are additonal information which can be inserted in a PKCS#10
+ * <p>Attributes are additional information which can be inserted in a PKCS#10
  * certificate request. For example a "Driving License Certificate" could have
  * the driving license number as an attribute.
  *

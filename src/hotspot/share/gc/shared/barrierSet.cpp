@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,9 @@
 #include "precompiled.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
-#include "runtime/thread.hpp"
+#include "gc/shared/barrierSetNMethod.hpp"
+#include "runtime/continuation.hpp"
+#include "runtime/javaThread.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/macros.hpp"
 
@@ -47,6 +49,36 @@ void BarrierSet::set_barrier_set(BarrierSet* barrier_set) {
   assert(!JavaThread::current()->on_thread_list(),
          "Main thread already on thread list.");
   _barrier_set->on_thread_create(Thread::current());
+}
+
+static BarrierSetNMethod* select_barrier_set_nmethod(BarrierSetNMethod* barrier_set_nmethod) {
+  if (barrier_set_nmethod != NULL) {
+    // The GC needs nmethod entry barriers to do concurrent GC
+    return barrier_set_nmethod;
+  } else {
+    // The GC needs nmethod entry barriers to deal with continuations
+    // and code cache unloading
+    return NOT_ARM32(new BarrierSetNMethod()) ARM32_ONLY(nullptr);
+  }
+}
+
+BarrierSet::BarrierSet(BarrierSetAssembler* barrier_set_assembler,
+                       BarrierSetC1* barrier_set_c1,
+                       BarrierSetC2* barrier_set_c2,
+                       BarrierSetNMethod* barrier_set_nmethod,
+                       const FakeRtti& fake_rtti) :
+    _fake_rtti(fake_rtti),
+    _barrier_set_assembler(barrier_set_assembler),
+    _barrier_set_c1(barrier_set_c1),
+    _barrier_set_c2(barrier_set_c2),
+    _barrier_set_nmethod(select_barrier_set_nmethod(barrier_set_nmethod)) {
+}
+
+void BarrierSet::on_thread_attach(Thread* thread) {
+  BarrierSetNMethod* bs_nm = barrier_set_nmethod();
+  if (bs_nm != nullptr) {
+    thread->set_nmethod_disarm_value(bs_nm->disarmed_value());
+  }
 }
 
 // Called from init.cpp

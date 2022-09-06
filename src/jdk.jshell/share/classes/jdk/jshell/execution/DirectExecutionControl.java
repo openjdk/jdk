@@ -24,6 +24,7 @@
  */
 package jdk.jshell.execution;
 
+import java.lang.Character.UnicodeBlock;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -222,26 +223,32 @@ public class DirectExecutionControl implements ExecutionControl {
         if (value == null) {
             return "null";
         } else if (value instanceof String) {
-            return "\"" + ((String) value).codePoints()
-                    .flatMap(cp ->
-                        (cp == '"')
-                            ? "\\\"".codePoints()
-                            : (cp < 256)
-                                ? charRep[cp].codePoints()
-                                : IntStream.of(cp))
-                    .collect(
-                            StringBuilder::new,
-                            StringBuilder::appendCodePoint,
-                            StringBuilder::append)
-                    .toString() + "\"";
+            StringBuilder result = new StringBuilder();
+            result.append("\"");
+            var cpIt = ((String) value).codePoints().iterator();
+            int idx = 0;
+            while (cpIt.hasNext()) {
+                int cp = cpIt.nextInt();
+                if (cp == '"') {
+                    result.append("\\\"");
+                } else {
+                    appendEscapedChar(idx, cp, result);
+                }
+                idx++;
+            }
+            result.append("\"");
+            return result.toString();
         } else if (value instanceof Character) {
             char cp = (char) (Character) value;
-            return "'" + (
-                (cp == '\'')
-                    ? "\\\'"
-                    : (cp < 256)
-                            ? charRep[cp]
-                            : String.valueOf(cp)) + "'";
+            StringBuilder result = new StringBuilder();
+            result.append("'");
+            if (cp == '\'') {
+                result.append("\\\'");
+            } else {
+                appendEscapedChar(0, cp, result);
+            }
+            result.append("'");
+            return result.toString();
         } else if (value.getClass().isArray()) {
             int dims = 0;
             Class<?> t = value.getClass();
@@ -274,6 +281,29 @@ public class DirectExecutionControl implements ExecutionControl {
             return sb.toString();
         } else {
             return value.toString();
+        }
+    }
+
+    private static void appendEscapedChar(int idx, int cp, StringBuilder target) {
+        if (cp < 256) {
+            target.append(charRep[cp]);
+        } else if (needsEscape(idx, cp)) {
+            target.append(String.format("\\u%04X", cp));
+        } else {
+            target.appendCodePoint(cp);
+        }
+    }
+
+    private static boolean needsEscape(int idx, int cp) {
+        UnicodeBlock block = UnicodeBlock.of(cp);
+        if (block == UnicodeBlock.COMBINING_DIACRITICAL_MARKS ||
+            block == UnicodeBlock.COMBINING_DIACRITICAL_MARKS_EXTENDED ||
+            block == UnicodeBlock.COMBINING_DIACRITICAL_MARKS_SUPPLEMENT) {
+            //escape leading combining diacritical marks,
+            //as those might be confusingly merged into the leading quotes:
+            return idx == 0;
+        } else {
+            return false;
         }
     }
 

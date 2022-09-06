@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,8 @@
 
 #include "jvm.h"
 #include "oops/oop.hpp"
+#include "runtime/continuation.hpp"
+#include "runtime/continuationEntry.hpp"
 #include "runtime/vframe.hpp"
 
 // BaseFrameStream is an abstract base class for encapsulating the VM-side
@@ -44,20 +46,28 @@ private:
   };
 
   JavaThread*           _thread;
+  Handle                _continuation;
   jlong                 _anchor;
+
 protected:
   void fill_stackframe(Handle stackFrame, const methodHandle& method, TRAPS);
 public:
-  BaseFrameStream(JavaThread* thread) : _thread(thread), _anchor(0L) {}
+  BaseFrameStream(JavaThread* thread, Handle continuation);
 
   virtual void    next()=0;
   virtual bool    at_end()=0;
 
   virtual Method* method()=0;
   virtual int     bci()=0;
+  virtual oop     cont()=0; // returns the current continuation (even when walking a thread)
+
+  virtual const RegisterMap* reg_map()=0;
 
   virtual void    fill_frame(int index, objArrayHandle  frames_array,
                              const methodHandle& method, TRAPS)=0;
+
+  oop continuation() { return _continuation(); }
+  void set_continuation(Handle cont);
 
   void setup_magic_on_entry(objArrayHandle frames_array);
   bool check_magic(objArrayHandle frames_array);
@@ -78,17 +88,21 @@ class JavaFrameStream : public BaseFrameStream {
 private:
   vframeStream          _vfst;
   bool                  _need_method_info;
+
 public:
-  JavaFrameStream(JavaThread* thread, int mode);
+  JavaFrameStream(JavaThread* thread, int mode, Handle cont_scope, Handle cont);
 
-  void next();
-  bool at_end()    { return _vfst.at_end(); }
+  const RegisterMap* reg_map() override { return _vfst.reg_map(); };
 
-  Method* method() { return _vfst.method(); }
-  int bci()        { return _vfst.bci(); }
+  void next()   override;
+  bool at_end() override { return _vfst.at_end(); }
+
+  Method* method() override { return _vfst.method(); }
+  int bci()        override { return _vfst.bci(); }
+  oop cont()       override { return _vfst.continuation(); }
 
   void fill_frame(int index, objArrayHandle  frames_array,
-                  const methodHandle& method, TRAPS);
+                  const methodHandle& method, TRAPS) override;
 };
 
 class LiveFrameStream : public BaseFrameStream {
@@ -98,7 +112,11 @@ private:
     MODE_COMPILED    = 0x02
   };
 
-  javaVFrame*           _jvf;
+  Handle              _cont_scope;  // the delimitation of this walk
+
+  RegisterMap*        _map;
+  javaVFrame*         _jvf;
+  ContinuationEntry*  _cont_entry;
 
   void fill_live_stackframe(Handle stackFrame, const methodHandle& method, TRAPS);
   static oop create_primitive_slot_instance(StackValueCollection* values,
@@ -107,18 +125,19 @@ private:
                                                  TRAPS);
   static objArrayHandle values_to_object_array(StackValueCollection* values, TRAPS);
 public:
-  LiveFrameStream(JavaThread* thread, RegisterMap* rm) : BaseFrameStream(thread) {
-    _jvf = thread->last_java_vframe(rm);
-  }
+  LiveFrameStream(JavaThread* thread, RegisterMap* rm, Handle cont_scope, Handle cont);
 
-  void next()      { _jvf = _jvf->java_sender(); }
-  bool at_end()    { return _jvf == NULL; }
+  const RegisterMap* reg_map() override { return _map; };
 
-  Method* method() { return _jvf->method(); }
-  int bci()        { return _jvf->bci(); }
+  void next()   override;
+  bool at_end() override { return _jvf == NULL; }
+
+  Method* method() override { return _jvf->method(); }
+  int bci()        override { return _jvf->bci(); }
+  oop cont() override { return continuation() != NULL ? continuation(): ContinuationEntry::cont_oop_or_null(_cont_entry); }
 
   void fill_frame(int index, objArrayHandle  frames_array,
-                  const methodHandle& method, TRAPS);
+                  const methodHandle& method, TRAPS) override;
 };
 
 class StackWalk : public AllStatic {
@@ -145,9 +164,8 @@ public:
   static inline bool use_frames_array(int mode) {
     return (mode & JVM_STACKWALK_FILL_CLASS_REFS_ONLY) == 0;
   }
-  static oop walk(Handle stackStream, jlong mode,
-                  int skip_frames, int frame_count, int start_index,
-                  objArrayHandle frames_array,
+  static oop walk(Handle stackStream, jlong mode, int skip_frames, Handle cont_scope, Handle cont,
+                  int frame_count, int start_index, objArrayHandle frames_array,
                   TRAPS);
 
   static oop fetchFirstBatch(BaseFrameStream& stream, Handle stackStream,
@@ -157,5 +175,8 @@ public:
   static jint fetchNextBatch(Handle stackStream, jlong mode, jlong magic,
                              int frame_count, int start_index,
                              objArrayHandle frames_array, TRAPS);
+
+  static void setContinuation(Handle stackStream, jlong magic, objArrayHandle frames_array,
+                              Handle cont, TRAPS);
 };
 #endif // SHARE_PRIMS_STACKWALK_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -67,7 +67,7 @@ import org.w3c.dom.Element;
  * @xerces.internal
  *
  * @author Sandy Gao, IBM
- * @LastModified: Nov 2017
+ * @LastModified: Apr 2022
  */
 
 public class XSAttributeChecker {
@@ -1816,7 +1816,7 @@ class SmallContainer extends Container {
 class LargeContainer extends Container {
     Map<String, OneAttr> items;
     LargeContainer(int size) {
-        items = new HashMap<>(size*2+1);
+        items = HashMap.newHashMap(size);
         values = new OneAttr[size];
     }
     void put(String key, OneAttr value) {

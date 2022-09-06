@@ -94,6 +94,6 @@ public class Test8015926 implements TreeModelListener, Runnable, Thread.Uncaught
     @Override
     public void uncaughtException(Thread thread, Throwable exception) {
         exception.printStackTrace();
-        System.exit(1);
+        throw new RuntimeException(exception);
     }
 }

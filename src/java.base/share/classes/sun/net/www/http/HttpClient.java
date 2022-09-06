@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -523,7 +523,7 @@ public class HttpClient extends NetworkClient {
 
     /* We're very particular here about what our InputStream to the server
      * looks like for reasons that are apparent if you can decipher the
-     * method parseHTTP().  That's why this method is overidden from the
+     * method parseHTTP().  That's why this method is overridden from the
      * superclass.
      */
     @Override
@@ -768,9 +768,12 @@ public class HttpClient extends NetworkClient {
             closeServer();
             cachedHttpClient = false;
             if (!failedOnce && requests != null) {
+                Thread thread = Thread.currentThread();
+                boolean doNotRetry = thread.isVirtual() && thread.isInterrupted();
                 failedOnce = true;
                 if (getRequestMethod().equals("CONNECT")
                     || streaming
+                    || doNotRetry
                     || (httpuc.getRequestMethod().equals("POST")
                         && !retryPostProp)) {
                     // do not retry the request
@@ -897,7 +900,15 @@ public class HttpClient extends NetworkClient {
                             responses.findValue("Keep-Alive"));
                         /* default should be larger in case of proxy */
                         keepAliveConnections = p.findInt("max", usingProxy?50:5);
+                        if (keepAliveConnections < 0) {
+                            keepAliveConnections = usingProxy?50:5;
+                        }
                         keepAliveTimeout = p.findInt("timeout", -1);
+                        if (keepAliveTimeout < -1) {
+                            // if the server specified a negative (invalid) value
+                            // then we set to -1, which is equivalent to no value
+                            keepAliveTimeout = -1;
+                        }
                     }
                 } else if (b[7] != '0') {
                     /*

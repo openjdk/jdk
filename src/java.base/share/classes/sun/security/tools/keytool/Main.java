@@ -37,12 +37,10 @@ import java.security.cert.CertStoreException;
 import java.security.cert.CRL;
 import java.security.cert.X509Certificate;
 import java.security.cert.CertificateException;
-import java.security.cert.CertificateParsingException;
 import java.security.cert.TrustAnchor;
 import java.security.cert.URICertStoreParameters;
 
 
-import java.security.spec.ECParameterSpec;
 import java.text.Collator;
 import java.text.MessageFormat;
 import java.util.*;
@@ -63,9 +61,9 @@ import java.util.Base64;
 
 import sun.security.pkcs12.PKCS12KeyStore;
 import sun.security.provider.certpath.CertPathConstraintsParameters;
+import sun.security.util.ConstraintsParameters;
 import sun.security.util.ECKeySizeParameterSpec;
 import sun.security.util.KeyUtil;
-import sun.security.util.NamedCurve;
 import sun.security.util.ObjectIdentifier;
 import sun.security.pkcs10.PKCS10;
 import sun.security.pkcs10.PKCS10Attribute;
@@ -1846,8 +1844,7 @@ public final class Main {
             if (verbose) {
                 MessageFormat form = new MessageFormat(rb.getString(
                     "Generated.keyAlgName.secret.key"));
-                Object[] source =
-                    {useDefaultPBEAlgorithm ? "PBE" : secKey.getAlgorithm()};
+                Object[] source = { "PBE" };
                 System.err.println(form.format(source));
             }
         } else {
@@ -1870,6 +1867,11 @@ public final class Main {
             Object[] source = {keysize,
                                 secKey.getAlgorithm()};
             System.err.println(form.format(source));
+
+            SecretKeyConstraintsParameters skcp =
+                    new SecretKeyConstraintsParameters(secKey);
+            checkWeakConstraint(rb.getString("the.generated.secretkey"),
+                    secKey, skcp);
         }
 
         if (keyPass == null) {
@@ -2185,6 +2187,23 @@ public final class Main {
             } else {
                 out.println("SecretKeyEntry, ");
             }
+
+            try {
+                SecretKey secKey = (SecretKey) keyStore.getKey(alias, storePass);
+                SecretKeyConstraintsParameters skcp =
+                        new SecretKeyConstraintsParameters(secKey);
+                checkWeakConstraint(label, secKey, skcp);
+            } catch (UnrecoverableKeyException e) {
+                /*
+                 * UnrecoverableKeyException will be thrown for any secret key
+                 * entries that are protected by a different password than
+                 * storePass, and we will not be able to check the constraints
+                 * because we do not have the keyPass for this operation.
+                 * This may occurs for keystores such as JCEKS. Note that this
+                 * is not really a new issue as details about secret key entries
+                 * other than the fact they exist as entries are not listed.
+                 */
+            }
         } else if (keyStore.entryInstanceOf(alias, KeyStore.PrivateKeyEntry.class)) {
             if (verbose || rfc || debug) {
                 Object[] source = {"PrivateKeyEntry"};
@@ -2255,6 +2274,9 @@ public final class Main {
                 out.println(mf);
                 dumpCert(cert, out);
             } else if (debug) {
+                for (var attr : keyStore.getEntry(alias, null).getAttributes()) {
+                    System.out.println("Attribute " + attr.getName() + ": " + attr.getValue());
+                }
                 out.println(cert.toString());
             } else {
                 out.println("trustedCertEntry, ");
@@ -2422,7 +2444,7 @@ public final class Main {
         /*
          * Information display rule of -importkeystore
          * 1. inside single, shows failure
-         * 2. inside all, shows sucess
+         * 2. inside all, shows success
          * 3. inside all where there is a failure, prompt for continue
          * 4. at the final of all, shows summary
          */
@@ -2487,13 +2509,23 @@ public final class Main {
         }
 
         try {
+            keyStore.setEntry(newAlias, entry, pp);
             Certificate c = srckeystore.getCertificate(alias);
             if (c != null) {
                 CertPathConstraintsParameters cpcp =
                         buildCertPathConstraint((X509Certificate)c, null);
                 checkWeakConstraint("<" + newAlias + ">", c, cpcp);
+            } else {
+                try {
+                    Key key = keyStore.getKey(newAlias, newPass);
+                    SecretKeyConstraintsParameters skcp =
+                            new SecretKeyConstraintsParameters(key);
+                    checkWeakConstraint("<" + newAlias + ">", (SecretKey)key, skcp);
+                } catch (UnrecoverableKeyException e) {
+                    // skip
+                }
             }
-            keyStore.setEntry(newAlias, entry, pp);
+
             // Place the check so that only successful imports are blocked.
             // For example, we don't block a failed SecretEntry import.
             if (P12KEYSTORE.equalsIgnoreCase(storetype) && !isPasswordlessKeyStore) {
@@ -3696,11 +3728,13 @@ public final class Main {
         String userInput = null;
 
         int maxRetry = 20;
+        boolean needRepeat;
         do {
             if (maxRetry-- < 0) {
                 throw new RuntimeException(rb.getString(
                         "Too.many.retries.program.terminated"));
             }
+            System.err.println(rb.getString("enter.dname.components"));
             commonName = inputString(in,
                     rb.getString("What.is.your.first.and.last.name."),
                     commonName);
@@ -3721,18 +3755,30 @@ public final class Main {
                     rb.getString
                         ("What.is.the.two.letter.country.code.for.this.unit."),
                     country);
-            name = new X500Name(commonName, organizationalUnit, organization,
-                                city, state, country);
-            MessageFormat form = new MessageFormat
-                (rb.getString("Is.name.correct."));
-            Object[] source = {name};
-            userInput = inputString
-                (in, form.format(source), rb.getString("no"));
-        } while (collator.compare(userInput, rb.getString("yes")) != 0 &&
-                 collator.compare(userInput, rb.getString("y")) != 0);
+            name = new X500Name(
+                    dotToNull(commonName), dotToNull(organizationalUnit),
+                    dotToNull(organization), dotToNull(city),
+                    dotToNull(state), dotToNull(country));
+            if (name.isEmpty()) {
+                System.err.println(rb.getString("no.field.in.dname"));
+                needRepeat = true;
+            } else {
+                MessageFormat form = new MessageFormat
+                        (rb.getString("Is.name.correct."));
+                Object[] source = {name};
+                userInput = inputString
+                        (in, form.format(source), rb.getString("no"));
+                needRepeat = collator.compare(userInput, rb.getString("yes")) != 0 &&
+                        collator.compare(userInput, rb.getString("y")) != 0;
+            }
+        } while (needRepeat);
 
         System.err.println();
         return name;
+    }
+
+    private static String dotToNull(String input) {
+        return ".".equals(input) ? null : input;
     }
 
     private String inputString(BufferedReader in, String prompt,
@@ -3742,7 +3788,7 @@ public final class Main {
         System.err.println(prompt);
         MessageFormat form = new MessageFormat
                 (rb.getString(".defaultValue."));
-        Object[] source = {defaultValue};
+        Object[] source = { ".".equals(defaultValue) ? "" : defaultValue };
         System.err.print(form.format(source));
         System.err.flush();
 
@@ -4035,7 +4081,7 @@ public final class Main {
      *                 It must have the same public key as certToVerify
      *                 but cannot be the same cert.
      * @param certToVerify the starting certificate to build the chain
-     * @returns the established chain, might be null if user decides not
+     * @return the established chain, might be null if user decides not
      */
     private Certificate[] establishCertChain(Certificate userCert,
                                              Certificate certToVerify)
@@ -4831,7 +4877,7 @@ public final class Main {
                                 if (pos % 2 == 0) {
                                     data[pos/2] = (byte)(hex << 4);
                                 } else {
-                                    data[pos/2] += hex;
+                                    data[pos/2] += (byte)hex;
                                 }
                                 pos++;
                             }
@@ -5004,6 +5050,38 @@ public final class Main {
             // No need to check the sigalg of a trust anchor
             String sigAlg = isTrustedCert(cert) ? null : xc.getSigAlgName();
             checkWeakConstraint(label, sigAlg, xc.getPublicKey(), cpcp);
+        }
+    }
+
+    private void checkWeakConstraint(String label, SecretKey secKey,
+            SecretKeyConstraintsParameters skcp) {
+        // Do not check disabled algorithms for symmetric key based algorithms for now
+        String secKeyAlg = secKey.getAlgorithm();
+        /*
+         * Skipping a secret key entry if its algorithm starts with "PBE".
+         * This is because keytool can only see it as a PBE key and "PBE" is
+         * an alias of "PBEwithMD5andDES" inside the SunJCE security provider,
+         * and its getAlgorithm() always returns "PBEwithMD5andDES". Thus, keytool
+         * won't be able to determine whether this secret key entry is protected
+         * by a weak algorithm or not.
+         */
+        if (secKeyAlg.startsWith("PBE"))
+            return;
+
+        try {
+            LEGACY_CHECK.permits(secKeyAlg, skcp, true);
+        } catch (CertPathValidatorException e) {
+            String eMessage = e.getMessage();
+            if (eMessage.contains("constraints check failed on keysize limits") &&
+                    e.getReason() == BasicReason.ALGORITHM_CONSTRAINED) {
+                weakWarnings.add(String.format(
+                        rb.getString("key.size.weak"), label,
+                        String.format(rb.getString("key.bit"),
+                        KeyUtil.getKeySize(secKey), secKeyAlg)));
+            } else {
+                weakWarnings.add(String.format(
+                        rb.getString("key.algorithm.weak"), label, secKeyAlg));
+            }
         }
     }
 
@@ -5204,6 +5282,38 @@ public final class Main {
         tinyHelp();
         return null;    // Useless, tinyHelp() already exits.
     }
+
+    private static class SecretKeyConstraintsParameters implements ConstraintsParameters {
+        private final Key key;
+        private SecretKeyConstraintsParameters(Key key) {
+            this.key = key;
+        }
+
+        @Override
+        public boolean anchorIsJdkCA() {
+            return false;
+        }
+
+        @Override
+        public Set<Key> getKeys() {
+            return Set.of(key);
+        }
+
+        @Override
+        public Date getDate() {
+            return null;
+        }
+
+        @Override
+        public String getVariant() {
+            return null;
+        }
+
+        @Override
+        public String extendedExceptionMsg() {
+            return null;
+        }
+    }
 }
 
 // This class is exactly the same as com.sun.tools.javac.util.Pair,
@@ -5239,4 +5349,3 @@ class Pair<A, B> {
         return new Pair<>(a,b);
     }
 }
-

@@ -298,7 +298,7 @@ public abstract class BaseOptions {
     /**
      * Value for command-line option {@code --override-methods summary}
      * or {@code --override-methods detail}.
-     * Specifies whether those methods that override a super-type's method
+     * Specifies whether those methods that override a supertype's method
      * with no changes to the API contract should be summarized in the
      * footnote section.
      */
@@ -320,12 +320,17 @@ public abstract class BaseOptions {
 
     private final BaseConfiguration config;
 
+    /**
+     * The default amount of space between tab stops.
+     */
+    public static final int DEFAULT_TAB_STOP_LENGTH = 8;
+
     protected BaseOptions(BaseConfiguration config) {
         this.config = config;
 
         excludedDocFileDirs = new HashSet<>();
         excludedQualifiers = new HashSet<>();
-        sourceTabSize = DocletConstants.DEFAULT_TAB_STOP_LENGTH;
+        sourceTabSize = DEFAULT_TAB_STOP_LENGTH;
         groupPairs = new ArrayList<>(0);
     }
 
@@ -597,7 +602,7 @@ public abstract class BaseOptions {
                         }
                         if (sourceTabSize <= 0) {
                             messages.warning("doclet.sourcetab_warning");
-                            sourceTabSize = DocletConstants.DEFAULT_TAB_STOP_LENGTH;
+                            sourceTabSize = DEFAULT_TAB_STOP_LENGTH;
                         }
                         return true;
                     }
@@ -1048,7 +1053,7 @@ public abstract class BaseOptions {
     /**
      * Value for command-line option {@code --override-methods summary}
      * or {@code --override-methods detail}.
-     * Specifies whether those methods that override a super-type's method
+     * Specifies whether those methods that override a supertype's method
      * with no changes to the API contract should be summarized in the
      * footnote section.
      */

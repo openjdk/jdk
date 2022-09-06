@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,10 +27,7 @@ package sun.jvm.hotspot.utilities;
 import java.util.*;
 import sun.jvm.hotspot.classfile.*;
 import sun.jvm.hotspot.oops.*;
-import sun.jvm.hotspot.memory.*;
 import sun.jvm.hotspot.runtime.*;
-import sun.jvm.hotspot.utilities.Observable;
-import sun.jvm.hotspot.utilities.Observer;
 
 public class SystemDictionaryHelper {
    static {
@@ -84,7 +81,7 @@ public class SystemDictionaryHelper {
       Vector<InstanceKlass> tmp = new Vector<>();
       for (int i = 0; i < tmpKlasses.length; i++) {
          String name = tmpKlasses[i].getName().asString();
-         if (name.indexOf(namePart) != -1) {
+         if (name.contains(namePart)) {
             tmp.add(tmpKlasses[i]);
          }
       }
@@ -101,8 +98,8 @@ public class SystemDictionaryHelper {
 
       // check whether we have a class of given name
       Klass klass = cldg.find(className);
-      if (klass != null && klass instanceof InstanceKlass) {
-         return (InstanceKlass) klass;
+      if (klass instanceof InstanceKlass ik) {
+         return ik;
       } else {
         // no match ..
         return null;

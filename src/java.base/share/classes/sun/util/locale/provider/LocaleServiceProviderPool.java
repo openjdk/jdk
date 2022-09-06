@@ -243,7 +243,7 @@ public final class LocaleServiceProviderPool {
      * @param getter an object on which getObject() method
      *     is called to obtain the provider's instance.
      * @param locale the given locale that is used as the starting one
-     * @param isObjectProvider flag designating object provder or not
+     * @param isObjectProvider flag designating object provider or not
      * @param key the key string for name providers
      * @param params provider specific parameters
      * @return provider's instance, or null.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -216,14 +216,14 @@ public interface GSSContext {
      * A lifetime constant representing the default context lifetime.  This
      * value is set to 0.
      */
-    public static final int DEFAULT_LIFETIME = 0;
+    int DEFAULT_LIFETIME = 0;
 
     /**
      * A lifetime constant representing indefinite context lifetime.
      * This value must is set to the maximum integer value in Java -
      * {@link java.lang.Integer#MAX_VALUE Integer.MAX_VALUE}.
      */
-    public static final int INDEFINITE_LIFETIME = Integer.MAX_VALUE;
+    int INDEFINITE_LIFETIME = Integer.MAX_VALUE;
 
     /**
      * Called by the context initiator to start the context creation
@@ -272,7 +272,7 @@ public interface GSSContext {
      *   {@link GSSException#BAD_MECH GSSException.BAD_MECH},
      *   {@link GSSException#FAILURE GSSException.FAILURE}
      */
-    public byte[] initSecContext(byte inputBuf[], int offset, int len)
+    byte[] initSecContext(byte inputBuf[], int offset, int len)
         throws GSSException;
 
     /**
@@ -360,8 +360,8 @@ public interface GSSContext {
      * Use {@link #initSecContext(byte[], int, int)} instead.
      */
     @Deprecated(since="11")
-    public int initSecContext(InputStream inStream,
-                              OutputStream outStream) throws GSSException;
+    int initSecContext(InputStream inStream,
+                       OutputStream outStream) throws GSSException;
 
     /**
      * Called by the context acceptor upon receiving a token from the
@@ -427,7 +427,7 @@ public interface GSSContext {
      *   {@link GSSException#BAD_MECH GSSException.BAD_MECH},
      *   {@link GSSException#FAILURE GSSException.FAILURE}
      */
-    public byte[] acceptSecContext(byte inToken[], int offset, int len)
+    byte[] acceptSecContext(byte inToken[], int offset, int len)
         throws GSSException;
 
     /**
@@ -519,8 +519,8 @@ public interface GSSContext {
      * sent.</strong>
      */
     @Deprecated(since="11")
-    public void acceptSecContext(InputStream inStream,
-                                 OutputStream outStream) throws GSSException;
+    void acceptSecContext(InputStream inStream,
+                          OutputStream outStream) throws GSSException;
 
     /**
      * Used during context establishment to determine the state of the
@@ -529,7 +529,7 @@ public interface GSSContext {
      * @return <code>true</code> if this is a fully established context on
      * the caller's side and no more tokens are needed from the peer.
      */
-    public boolean isEstablished();
+    boolean isEstablished();
 
     /**
      * Releases any system resources and cryptographic information stored in
@@ -540,7 +540,7 @@ public interface GSSContext {
      * major error codes:
      *   {@link GSSException#FAILURE GSSException.FAILURE}
      */
-    public void dispose() throws GSSException;
+    void dispose() throws GSSException;
 
     /**
      * Used to determine limits on the size of the message
@@ -573,8 +573,8 @@ public interface GSSContext {
      *   {@link GSSException#BAD_QOP GSSException.BAD_QOP},
      *   {@link GSSException#FAILURE GSSException.FAILURE}
      */
-    public int getWrapSizeLimit(int qop, boolean confReq,
-                                int maxTokenSize) throws GSSException;
+    int getWrapSizeLimit(int qop, boolean confReq,
+                         int maxTokenSize) throws GSSException;
 
     /**
      * Applies per-message security services over the established security
@@ -614,8 +614,8 @@ public interface GSSContext {
      *   {@link GSSException#BAD_QOP GSSException.BAD_QOP},
      *   {@link GSSException#FAILURE GSSException.FAILURE}
      */
-    public byte[] wrap(byte inBuf[], int offset, int len,
-                       MessageProp msgProp) throws GSSException;
+    byte[] wrap(byte inBuf[], int offset, int len,
+                MessageProp msgProp) throws GSSException;
 
     /**
      * Applies per-message security services over the established security
@@ -645,7 +645,7 @@ public interface GSSContext {
      * support the wrapping of zero-length messages.
      *
      * @param inStream an InputStream containing the application data to be
-     * protected. All of the data that is available in
+     * protected. All the data that is available in
      * inStream is used.
      * @param outStream an OutputStream to write the protected message
      * to.
@@ -665,8 +665,8 @@ public interface GSSContext {
      * Use {@link #wrap(byte[], int, int, MessageProp)} instead.
      */
     @Deprecated(since="11")
-    public void wrap(InputStream inStream, OutputStream outStream,
-                     MessageProp msgProp) throws GSSException;
+    void wrap(InputStream inStream, OutputStream outStream,
+              MessageProp msgProp) throws GSSException;
 
     /**
      * Used to process tokens generated by the <code>wrap</code> method on
@@ -701,8 +701,8 @@ public interface GSSContext {
      *   {@link GSSException#CONTEXT_EXPIRED GSSException.CONTEXT_EXPIRED},
      *   {@link GSSException#FAILURE GSSException.FAILURE}
      */
-    public byte [] unwrap(byte[] inBuf, int offset, int len,
-                          MessageProp msgProp) throws GSSException;
+    byte [] unwrap(byte[] inBuf, int offset, int len,
+                   MessageProp msgProp) throws GSSException;
 
     /**
      * Uses streams to process tokens generated by the <code>wrap</code>
@@ -752,8 +752,8 @@ public interface GSSContext {
      * Use {@link #unwrap(byte[], int, int, MessageProp)} instead.
      */
     @Deprecated(since="11")
-    public void unwrap(InputStream inStream, OutputStream outStream,
-                       MessageProp msgProp) throws GSSException;
+    void unwrap(InputStream inStream, OutputStream outStream,
+                MessageProp msgProp) throws GSSException;
 
     /**
      * Returns a token containing a cryptographic Message Integrity Code
@@ -784,8 +784,8 @@ public interface GSSContext {
      *   {@link GSSException#BAD_QOP GSSException.BAD_QOP},
      *   {@link GSSException#FAILURE GSSException.FAILURE}
      */
-    public byte[] getMIC(byte []inMsg, int offset, int len,
-                         MessageProp msgProp) throws GSSException;
+    byte[] getMIC(byte[] inMsg, int offset, int len,
+                  MessageProp msgProp) throws GSSException;
 
     /**
      * Uses streams to produce a token containing a cryptographic MIC for
@@ -802,7 +802,7 @@ public interface GSSContext {
      * derivation of MICs from zero-length messages.
      *
      * @param inStream an InputStream containing the message to generate the
-     * MIC over. All of the data that is available in
+     * MIC over. All the data that is available in
      * inStream is used.
      * @param outStream an OutputStream to write the output token to.
      * @param msgProp an instance of <code>MessageProp</code> that is used
@@ -821,8 +821,8 @@ public interface GSSContext {
      * Use {@link #getMIC(byte[], int, int, MessageProp)} instead.
      */
     @Deprecated(since="11")
-    public void getMIC(InputStream inStream, OutputStream outStream,
-                       MessageProp msgProp) throws GSSException;
+    void getMIC(InputStream inStream, OutputStream outStream,
+                MessageProp msgProp) throws GSSException;
 
     /**
      * Verifies the cryptographic MIC, contained in the token parameter,
@@ -856,9 +856,9 @@ public interface GSSContext {
      *   {@link GSSException#CONTEXT_EXPIRED GSSException.CONTEXT_EXPIRED}
      *   {@link GSSException#FAILURE GSSException.FAILURE}
      */
-    public void verifyMIC(byte[] inToken, int tokOffset, int tokLen,
-                          byte[] inMsg, int msgOffset, int msgLen,
-                          MessageProp msgProp) throws GSSException;
+    void verifyMIC(byte[] inToken, int tokOffset, int tokLen,
+                   byte[] inMsg, int msgOffset, int msgLen,
+                   MessageProp msgProp) throws GSSException;
 
     /**
      * Uses streams to verify the cryptographic MIC, contained in the token
@@ -891,7 +891,7 @@ public interface GSSContext {
      * @param tokStream an InputStream containing the token generated by the
      * peer's getMIC method.
      * @param msgStream an InputStream containing the application message to
-     * verify the cryptographic MIC over. All of the data
+     * verify the cryptographic MIC over. All the data
      * that is available in msgStream is used.
      * @param msgProp upon return from the method, this object will contain
      * the applied QOP and supplementary information stating if the token
@@ -909,12 +909,12 @@ public interface GSSContext {
      * instead.
      */
     @Deprecated(since="11")
-    public void verifyMIC(InputStream tokStream, InputStream msgStream,
-                          MessageProp msgProp) throws GSSException;
+    void verifyMIC(InputStream tokStream, InputStream msgStream,
+                   MessageProp msgProp) throws GSSException;
 
     /**
      * Exports this context so that another process may
-     * import it.. Provided to support the sharing of work between
+     * import it. Provided to support the sharing of work between
      * multiple processes. This routine will typically be used by the
      * context-acceptor, in an application where a single process receives
      * incoming connection requests and accepts security contexts over
@@ -941,7 +941,7 @@ public interface GSSContext {
      * to either avoid placing such sensitive information within
      * interprocess tokens, or to encrypt the token before returning it to
      * the application, in a typical GSS-API implementation this may not be
-     * possible.  Thus the application must take care to protect the
+     * possible.  Thus, the application must take care to protect the
      * interprocess token, and ensure that any process to which the token
      * is transferred is trustworthy. <p>
      *
@@ -965,12 +965,12 @@ public interface GSSContext {
      *   {@link GSSException#NO_CONTEXT GSSException.NO_CONTEXT},
      *   {@link GSSException#FAILURE GSSException.FAILURE}
      */
-    public byte [] export() throws GSSException;
+    byte [] export() throws GSSException;
 
     /**
      * Requests that mutual authentication be done during
      * context establishment. This request can only be made on the context
-     * initiator's side and it has to be done prior to the first call to
+     * initiator's side, and it has to be done prior to the first call to
      * <code>initSecContext</code>.<p>
      *
      * Not all mechanisms support mutual authentication and some mechanisms
@@ -987,12 +987,12 @@ public interface GSSContext {
      * major error codes:
      *   {@link GSSException#FAILURE GSSException.FAILURE}
      */
-    public void requestMutualAuth(boolean state) throws GSSException;
+    void requestMutualAuth(boolean state) throws GSSException;
 
     /**
      * Requests that replay detection be enabled for the
      * per-message security services after context establishment. This
-     * request can only be made on the context initiator's side and it has
+     * request can only be made on the context initiator's side, and it has
      * to be done prior to the first call to
      * <code>initSecContext</code>. During context establishment replay
      * detection is not an option and is a function of the underlying
@@ -1017,12 +1017,12 @@ public interface GSSContext {
      * major error codes:
      *   {@link GSSException#FAILURE GSSException.FAILURE}
      */
-    public void requestReplayDet(boolean state) throws GSSException;
+    void requestReplayDet(boolean state) throws GSSException;
 
     /**
      * Requests that sequence checking be enabled for the
      * per-message security services after context establishment. This
-     * request can only be made on the context initiator's side and it has
+     * request can only be made on the context initiator's side, and it has
      * to be done prior to the first call to
      * <code>initSecContext</code>. During context establishment sequence
      * checking is not an option and is a function of the underlying
@@ -1049,12 +1049,12 @@ public interface GSSContext {
      * major error codes:
      *   {@link GSSException#FAILURE GSSException.FAILURE}
      */
-    public void requestSequenceDet(boolean state) throws GSSException;
+    void requestSequenceDet(boolean state) throws GSSException;
 
     /**
      * Requests that the initiator's credentials be
      * delegated to the acceptor during context establishment. This
-     * request can only be made on the context initiator's side and it has
+     * request can only be made on the context initiator's side, and it has
      * to be done prior to the first call to
      * <code>initSecContext</code>.
      *
@@ -1075,12 +1075,12 @@ public interface GSSContext {
      * major error codes:
      *   {@link GSSException#FAILURE GSSException.FAILURE}
      */
-    public void requestCredDeleg(boolean state) throws GSSException;
+    void requestCredDeleg(boolean state) throws GSSException;
 
     /**
      * Requests that the initiator's identity not be
      * disclosed to the acceptor. This request can only be made on the
-     * context initiator's side and it has to be done prior to the first
+     * context initiator's side, and it has to be done prior to the first
      * call to <code>initSecContext</code>.
      *
      * Not all mechanisms support anonymity for the initiator. Therefore, the
@@ -1095,12 +1095,12 @@ public interface GSSContext {
      * major error codes:
      *   {@link GSSException#FAILURE GSSException.FAILURE}
      */
-    public void requestAnonymity(boolean state) throws GSSException;
+    void requestAnonymity(boolean state) throws GSSException;
 
     /**
      * Requests that data confidentiality be enabled
      * for the <code>wrap</code> method. This request can only be made on
-     * the context initiator's side and it has to be done prior to the
+     * the context initiator's side, and it has to be done prior to the
      * first call to <code>initSecContext</code>.
      *
      * Not all mechanisms support confidentiality and other mechanisms
@@ -1125,12 +1125,12 @@ public interface GSSContext {
      * major error codes:
      *   {@link GSSException#FAILURE GSSException.FAILURE}
      */
-    public void requestConf(boolean state) throws GSSException;
+    void requestConf(boolean state) throws GSSException;
 
     /**
      * Requests that data integrity be enabled
      * for the <code>wrap</code> and <code>getMIC</code>methods. This
-     * request can only be made on the context initiator's side and it has
+     * request can only be made on the context initiator's side, and it has
      * to be done prior to the first call to <code>initSecContext</code>.
      *
      * Not all mechanisms support integrity and other mechanisms
@@ -1149,12 +1149,12 @@ public interface GSSContext {
      * major error codes:
      *   {@link GSSException#FAILURE GSSException.FAILURE}
      */
-    public void requestInteg(boolean state) throws GSSException;
+    void requestInteg(boolean state) throws GSSException;
 
     /**
      * Requests a lifetime in seconds for the
      * context. This method can only be called on the context initiator's
-     * side  and it has to be done prior to the first call to
+     * side, and it has to be done prior to the first call to
      * <code>initSecContext</code>.<p>
      *
      * The actual lifetime of the context will depend on the capabilities of
@@ -1170,7 +1170,7 @@ public interface GSSContext {
      * major error codes:
      *   {@link GSSException#FAILURE GSSException.FAILURE}
      */
-    public void requestLifetime(int lifetime) throws GSSException;
+    void requestLifetime(int lifetime) throws GSSException;
 
     /**
      * Sets the channel bindings to be used during context
@@ -1187,7 +1187,7 @@ public interface GSSContext {
      * major error codes:
      *   {@link GSSException#FAILURE GSSException.FAILURE}
      */
-    public void setChannelBinding(ChannelBinding cb) throws GSSException;
+    void setChannelBinding(ChannelBinding cb) throws GSSException;
 
     /**
      * Determines if credential delegation is enabled on
@@ -1202,7 +1202,7 @@ public interface GSSContext {
      * @return true if delegation is enabled, false otherwise.
      * @see #requestCredDeleg(boolean)
      */
-    public boolean getCredDelegState();
+    boolean getCredDelegState();
 
     /**
      * Determines if mutual authentication is enabled on
@@ -1216,7 +1216,7 @@ public interface GSSContext {
      * @return true if mutual authentication is enabled, false otherwise.
      * @see #requestMutualAuth(boolean)
      */
-    public boolean getMutualAuthState();
+    boolean getMutualAuthState();
 
     /**
      * Determines if replay detection is enabled for the
@@ -1230,7 +1230,7 @@ public interface GSSContext {
      * @return true if replay detection is enabled, false otherwise.
      * @see #requestReplayDet(boolean)
      */
-    public boolean getReplayDetState();
+    boolean getReplayDetState();
 
     /**
      * Determines if sequence checking is enabled for the
@@ -1244,7 +1244,7 @@ public interface GSSContext {
      * @return true if sequence checking is enabled, false otherwise.
      * @see #requestSequenceDet(boolean)
      */
-    public boolean getSequenceDetState();
+    boolean getSequenceDetState();
 
     /**
      * Determines if the context initiator is
@@ -1265,7 +1265,7 @@ public interface GSSContext {
      * otherwise.
      * @see #requestAnonymity(boolean)
      */
-    public boolean getAnonymityState();
+    boolean getAnonymityState();
 
     /**
      * Determines if the context is transferable to other processes
@@ -1278,7 +1278,7 @@ public interface GSSContext {
      * major error codes:
      *   {@link GSSException#FAILURE GSSException.FAILURE}
      */
-    public boolean isTransferable() throws GSSException;
+    boolean isTransferable() throws GSSException;
 
     /**
      * Determines if the context is ready for per message operations to be
@@ -1290,7 +1290,7 @@ public interface GSSContext {
      * this context at the current stage of context establishment, false
      * otherwise.
      */
-    public boolean isProtReady();
+    boolean isProtReady();
 
     /**
      * Determines if data confidentiality is available
@@ -1305,7 +1305,7 @@ public interface GSSContext {
      * otherwise.
      * @see #requestConf(boolean)
      */
-    public boolean getConfState();
+    boolean getConfState();
 
     /**
      * Determines if data integrity is available
@@ -1319,7 +1319,7 @@ public interface GSSContext {
      * @return true if integrity services are available, false otherwise.
      * @see #requestInteg(boolean)
      */
-    public boolean getIntegState();
+    boolean getIntegState();
 
     /**
      * Determines what the remaining lifetime for this
@@ -1331,7 +1331,7 @@ public interface GSSContext {
      * @return the remaining lifetime in seconds
      * @see #requestLifetime(int)
      */
-    public int getLifetime();
+    int getLifetime();
 
     /**
      * Returns the name of the context initiator. This call is valid only
@@ -1346,7 +1346,7 @@ public interface GSSContext {
      * major error codes:
      *   {@link GSSException#FAILURE GSSException.FAILURE}
      */
-    public GSSName getSrcName() throws GSSException;
+    GSSName getSrcName() throws GSSException;
 
     /**
      * Returns the name of the context acceptor. This call is valid only
@@ -1360,7 +1360,7 @@ public interface GSSContext {
      * major error codes:
      *   {@link GSSException#FAILURE GSSException.FAILURE}
      */
-    public GSSName getTargName() throws GSSException;
+    GSSName getTargName() throws GSSException;
 
     /**
      * Determines what mechanism is being used for this
@@ -1374,7 +1374,7 @@ public interface GSSContext {
      * major error codes:
      *   {@link GSSException#FAILURE GSSException.FAILURE}
      */
-    public Oid getMech() throws GSSException;
+    Oid getMech() throws GSSException;
 
     /**
      * Obtains the credentials delegated by the context
@@ -1392,7 +1392,7 @@ public interface GSSContext {
      * major error codes:
      *   {@link GSSException#FAILURE GSSException.FAILURE}
      */
-    public GSSCredential getDelegCred() throws GSSException;
+    GSSCredential getDelegCred() throws GSSException;
 
     /**
      * Determines if this is the context initiator. This
@@ -1406,5 +1406,5 @@ public interface GSSContext {
      * major error codes:
      *   {@link GSSException#FAILURE GSSException.FAILURE}
      */
-    public boolean isInitiator() throws GSSException;
+    boolean isInitiator() throws GSSException;
 }

@@ -199,9 +199,6 @@ int LIR_Assembler::initial_frame_size_in_bytes() const {
 
 
 int LIR_Assembler::emit_exception_handler() {
-  // TODO: ARM
-  __ nop(); // See comments in other ports
-
   address handler_base = __ start_a_stub(exception_handler_size());
   if (handler_base == NULL) {
     bailout("exception handler overflow");
@@ -242,7 +239,7 @@ int LIR_Assembler::emit_unwind_handler() {
   __ bind(_unwind_handler_entry);
   __ verify_not_null_oop(Rexception_obj);
 
-  // Preform needed unlocking
+  // Perform needed unlocking
   MonitorExitStub* stub = NULL;
   if (method()->is_synchronized()) {
     monitor_address(0, FrameMap::R0_opr);
@@ -641,7 +638,7 @@ void LIR_Assembler::stack2reg(LIR_Opr src, LIR_Opr dest, BasicType type) {
       case T_ARRAY:
       case T_ADDRESS:
       case T_METADATA: __ ldr(dest->as_register(), addr); break;
-      case T_FLOAT:    // used in floatToRawIntBits intrinsic implemenation
+      case T_FLOAT:    // used in floatToRawIntBits intrinsic implementation
       case T_INT:      __ ldr_u32(dest->as_register(), addr); break;
       default:
         ShouldNotReachHere();
@@ -1480,6 +1477,9 @@ void LIR_Assembler::cmove(LIR_Condition condition, LIR_Opr opr1, LIR_Opr opr2, L
 #else
           __ mov_double(result->as_double_reg(), c->as_jdouble(), acond);
 #endif // __SOFTFP__
+          break;
+        case T_METADATA:
+          __ mov_metadata(result->as_register(), c->as_metadata(), acond);
           break;
         default:
           ShouldNotReachHere();
@@ -2432,6 +2432,10 @@ void LIR_Assembler::emit_lock(LIR_OpLock* op) {
   Register lock = op->lock_opr()->as_pointer_register();
 
   if (UseHeavyMonitors) {
+    if (op->info() != NULL) {
+      add_debug_info_for_null_check_here(op->info());
+      __ null_check(obj);
+    }
     __ b(*op->stub()->entry());
   } else if (op->code() == lir_lock) {
     assert(BasicLock::displaced_header_offset_in_bytes() == 0, "lock_reg must point to the displaced header");

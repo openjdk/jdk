@@ -63,7 +63,7 @@ void TemplateInterpreter::initialize_code() {
   // generate interpreter
   { ResourceMark rm;
     TraceTime timer("Interpreter generation", TRACETIME_LOG(Info, startuptime));
-    TemplateInterpreterGenerator g(_code);
+    TemplateInterpreterGenerator g;
     // Free the unused memory not occupied by the interpreter and the stubs
     _code->deallocate_unused_tail();
   }
@@ -287,7 +287,7 @@ address TemplateInterpreter::deopt_entry(TosState state, int length) {
 }
 
 //------------------------------------------------------------------------------------------------------------------------
-// Suport for invokes
+// Support for invokes
 
 int TemplateInterpreter::TosState_as_index(TosState state) {
   assert( state < number_of_states , "Invalid state in TosState_as_index");

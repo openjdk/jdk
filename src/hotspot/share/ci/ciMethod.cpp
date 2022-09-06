@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@
 #include "ci/ciSymbols.hpp"
 #include "ci/ciUtilities.inline.hpp"
 #include "compiler/abstractCompiler.hpp"
+#include "compiler/compilerDefinitions.inline.hpp"
 #include "compiler/methodLiveness.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/linkResolver.hpp"
@@ -72,9 +73,6 @@ ciMethod::ciMethod(const methodHandle& h_m, ciInstanceKlass* holder) :
   assert(h_m() != NULL, "no null method");
   assert(_holder->get_instanceKlass() == h_m->method_holder(), "");
 
-  if (LogTouchedMethods) {
-    h_m->log_touched(Thread::current());
-  }
   // These fields are always filled in in loaded methods.
   _flags = ciFlags(h_m->access_flags());
 
@@ -82,7 +80,6 @@ ciMethod::ciMethod(const methodHandle& h_m, ciInstanceKlass* holder) :
   _max_stack          = h_m->max_stack();
   _max_locals         = h_m->max_locals();
   _code_size          = h_m->code_size();
-  _intrinsic_id       = h_m->intrinsic_id();
   _handler_count      = h_m->exception_table_length();
   _size_of_parameters = h_m->size_of_parameters();
   _uses_monitors      = h_m->access_flags().has_monitor_bytecodes();
@@ -101,6 +98,10 @@ ciMethod::ciMethod(const methodHandle& h_m, ciInstanceKlass* holder) :
   _flow               = NULL;
   _bcea               = NULL;
 #endif // COMPILER2
+
+  // Check for blackhole intrinsic and then populate the intrinsic ID.
+  CompilerOracle::tag_blackhole_if_possible(h_m);
+  _intrinsic_id       = h_m->intrinsic_id();
 
   ciEnv *env = CURRENT_ENV;
   if (env->jvmti_can_hotswap_or_post_breakpoint()) {
@@ -138,7 +139,6 @@ ciMethod::ciMethod(const methodHandle& h_m, ciInstanceKlass* holder) :
   constantPoolHandle cpool(Thread::current(), h_m->constants());
   _signature = new (env->arena()) ciSignature(_holder, cpool, sig_symbol);
   _method_data = NULL;
-  _nmethod_age = h_m->nmethod_age();
   // Take a snapshot of these values, so they will be commensurate with the MDO.
   if (ProfileInterpreter || CompilerConfig::is_c1_profiling()) {
     int invcnt = h_m->interpreter_invocation_count();
@@ -152,13 +152,9 @@ ciMethod::ciMethod(const methodHandle& h_m, ciInstanceKlass* holder) :
   if (_interpreter_invocation_count == 0)
     _interpreter_invocation_count = 1;
   _instructions_size = -1;
-#ifdef ASSERT
   if (ReplayCompiles) {
     ciReplay::initialize(this);
   }
-#endif
-
-  CompilerOracle::tag_blackhole_if_possible(h_m);
 }
 
 
@@ -984,7 +980,7 @@ bool ciMethod::ensure_method_data(const methodHandle& h_m) {
     return true;
   }
   if (h_m()->method_data() == NULL) {
-    Method::build_interpreter_method_data(h_m, THREAD);
+    Method::build_profiling_method_data(h_m, THREAD);
     if (HAS_PENDING_EXCEPTION) {
       CLEAR_PENDING_EXCEPTION;
     }
@@ -1207,15 +1203,6 @@ bool ciMethod::check_call(int refinfo_index, bool is_static) const {
     }
   }
   return false;
-}
-
-// ------------------------------------------------------------------
-// ciMethod::profile_aging
-//
-// Should the method be compiled with an age counter?
-bool ciMethod::profile_aging() const {
-  return UseCodeAging && (!MethodCounters::is_nmethod_hot(nmethod_age()) &&
-                          !MethodCounters::is_nmethod_age_unset(nmethod_age()));
 }
 // ------------------------------------------------------------------
 // ciMethod::print_codes

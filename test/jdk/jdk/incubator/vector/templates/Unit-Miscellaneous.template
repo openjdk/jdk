@@ -484,6 +484,23 @@
         assertMaskReductionArraysEquals(r, a, $vectorteststype$::maskFirstTrue);
     }
 
+    @Test(dataProvider = "maskProvider")
+    static void maskCompress$vectorteststype$SmokeTest(IntFunction<boolean[]> fa) {
+        int trueCount = 0;
+        boolean[] a = fa.apply(SPECIES.length());
+
+        for (int ic = 0; ic < INVOC_COUNT * INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                var vmask = SPECIES.loadMask(a, i);
+                trueCount = vmask.trueCount();
+                var rmask = vmask.compress();
+                for (int j = 0; j < SPECIES.length(); j++)  {
+                    Assert.assertEquals(rmask.laneIsSet(j), j < trueCount);
+                }
+            }
+        }
+    }
+
 #if[!MaxBit]
     @DataProvider
     public static Object[][] longMaskProvider() {
@@ -528,6 +545,20 @@
         }
     }
 
+    @Test(dataProvider = "offsetProvider")
+    static void indexInRangeLong$vectorteststype$SmokeTest(int offset) {
+        long limit = SPECIES.length() * BUFFER_REPS;
+        for (long i = 0; i < limit; i += SPECIES.length()) {
+            var actualMask = SPECIES.indexInRange(i + offset, limit);
+            var expectedMask = SPECIES.maskAll(true).indexInRange(i + offset, limit);
+            assert(actualMask.equals(expectedMask));
+            for (int j = 0; j < SPECIES.length(); j++)  {
+                long index = i + j + offset;
+                Assert.assertEquals(actualMask.laneIsSet(j), index >= 0 && index < limit);
+            }
+        }
+    }
+
     @DataProvider
     public static Object[][] lengthProvider() {
         return new Object[][]{
@@ -545,6 +576,14 @@
     static void loopBound$vectorteststype$SmokeTest(int length) {
         int actualLoopBound = SPECIES.loopBound(length);
         int expectedLoopBound = length - Math.floorMod(length, SPECIES.length());
+        Assert.assertEquals(actualLoopBound, expectedLoopBound);
+    }
+
+    @Test(dataProvider = "lengthProvider")
+    static void loopBoundLong$vectorteststype$SmokeTest(int _length) {
+        long length = _length;
+        long actualLoopBound = SPECIES.loopBound(length);
+        long expectedLoopBound = length - Math.floorMod(length, SPECIES.length());
         Assert.assertEquals(actualLoopBound, expectedLoopBound);
     }
 

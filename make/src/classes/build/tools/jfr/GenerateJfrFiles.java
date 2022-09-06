@@ -739,7 +739,6 @@ public class GenerateJfrFiles {
             out.write("#include \"utilities/ticks.hpp\"");
             out.write("#if INCLUDE_JFR");
             out.write("#include \"jfr/recorder/service/jfrEvent.hpp\"");
-            out.write("#include \"jfr/support/jfrEpochSynchronization.hpp\"");
             out.write("/*");
             out.write(" * Each event class has an assert member function verify() which is invoked");
             out.write(" * just before the engine writes the event and its fields to the data stream.");
@@ -868,10 +867,6 @@ public class GenerateJfrFiles {
         out.write("  void writeData(Writer& w) {");
         if (type.isEvent && type.internal) {
             out.write("    JfrEventSetting::unhide_internal_types();");
-        }
-        if (("_thread_in_native").equals(type.commitState)) {
-            out.write("    // explicit epoch synchronization check");
-            out.write("    JfrEpochSynchronization sync;");
         }
         for (FieldElement field : type.fields) {
             if (field.struct) {

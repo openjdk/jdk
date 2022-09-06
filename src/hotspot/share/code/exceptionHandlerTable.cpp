@@ -191,7 +191,7 @@ uint ImplicitExceptionTable::continuation_offset( uint exec_off ) const {
   for( uint i=0; i<l; i++ )
     if( *adr(i) == exec_off )
       return *(adr(i)+1);
-  return 0;                     // Failed to find any execption offset
+  return 0;                     // Failed to find any exception offset
 }
 
 void ImplicitExceptionTable::print(address base) const {

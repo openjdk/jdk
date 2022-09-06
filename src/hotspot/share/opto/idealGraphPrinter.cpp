@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -456,6 +456,9 @@ void IdealGraphPrinter::visit_node(Node *n, bool edges, VectorSet* temp_set) {
     if (flags & Node::Flag_has_call) {
       print_prop("has_call", "true");
     }
+    if (flags & Node::Flag_is_reduction) {
+      print_prop("is_reduction", "true");
+    }
 
     if (C->matcher() != NULL) {
       if (C->matcher()->is_shared(node)) {
@@ -488,15 +491,14 @@ void IdealGraphPrinter::visit_node(Node *n, bool edges, VectorSet* temp_set) {
     stringStream s2(buffer, sizeof(buffer) - 1);
 
     node->dump_spec(&s2);
-    if (t != NULL && (t->isa_instptr() || t->isa_klassptr())) {
+    if (t != NULL && (t->isa_instptr() || t->isa_instklassptr())) {
       const TypeInstPtr  *toop = t->isa_instptr();
-      const TypeKlassPtr *tkls = t->isa_klassptr();
-      ciKlass*           klass = toop ? toop->klass() : (tkls ? tkls->klass() : NULL );
-      if( klass && klass->is_loaded() && klass->is_interface() ) {
+      const TypeInstKlassPtr *tkls = t->isa_instklassptr();
+      if ((toop != NULL && toop->is_interface()) || (tkls != NULL && tkls->is_interface())) {
         s2.print("  Interface:");
-      } else if( toop ) {
+      } else if (toop) {
         s2.print("  Oop:");
-      } else if( tkls ) {
+      } else if (tkls) {
         s2.print("  Klass:");
       }
       t->dump_on(&s2);

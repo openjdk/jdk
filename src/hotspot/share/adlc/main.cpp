@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -347,7 +347,7 @@ static void usage(ArchDesc& AD)
   printf("Usage: adlc [-doqwTs] [-#]* [-D<FLAG>[=<DEF>]] [-U<FLAG>] [-c<CPP_FILE_NAME>] [-h<HPP_FILE_NAME>] [-a<DFA_FILE_NAME>] [-v<GLOBALS_FILE_NAME>] <ADL_FILE_NAME>\n");
   printf(" d  produce DFA debugging info\n");
   printf(" o  no output produced, syntax and semantic checking only\n");
-  printf(" q  quiet mode, supresses all non-essential messages\n");
+  printf(" q  quiet mode, suppresses all non-essential messages\n");
   printf(" w  suppress warning messages\n");
   printf(" T  make DFA as many subroutine calls\n");
   printf(" s  output which instructions are cisc-spillable\n");
@@ -488,8 +488,7 @@ int get_legal_text(FileBuff &fbuf, char **legal_text)
   return (int) (legal_end - legal_start);
 }
 
-// VS2005 has its own definition, identical to this one.
-#if !defined(_WIN32) || defined(_WIN64) || _MSC_VER < 1400
+#if !defined(_WIN32) || defined(_WIN64)
 void *operator new( size_t size, int, const char *, int ) throw() {
   return ::operator new( size );
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 
 #include "oops/method.hpp"
 
+#include "classfile/vmIntrinsics.hpp"
 #include "runtime/atomic.hpp"
 
 inline address Method::from_compiled_entry() const {
@@ -87,6 +88,23 @@ inline bool Method::has_compiled_code() const { return code() != NULL; }
 inline bool Method::is_empty_method() const {
   return  code_size() == 1
       && *code_base() == Bytecodes::_return;
+}
+
+inline bool Method::is_continuation_enter_intrinsic() const {
+  return intrinsic_id() == vmIntrinsics::_Continuation_enterSpecial;
+}
+
+inline bool Method::is_continuation_yield_intrinsic() const {
+  return intrinsic_id() == vmIntrinsics::_Continuation_doYield;
+}
+
+inline bool Method::is_continuation_native_intrinsic() const {
+  return intrinsic_id() == vmIntrinsics::_Continuation_enterSpecial ||
+         intrinsic_id() == vmIntrinsics::_Continuation_doYield;
+}
+
+inline bool Method::is_special_native_intrinsic() const {
+  return is_method_handle_intrinsic() || is_continuation_native_intrinsic();
 }
 
 #endif // SHARE_OOPS_METHOD_INLINE_HPP

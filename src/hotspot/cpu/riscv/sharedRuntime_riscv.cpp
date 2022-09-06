@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -111,7 +111,7 @@ class RegisterSaver {
     int f0_offset = 0;
 #ifdef COMPILER2
     if (_save_vectors) {
-      f0_offset += Matcher::scalable_vector_reg_size(T_INT) * VectorRegisterImpl::number_of_registers *
+      f0_offset += Matcher::scalable_vector_reg_size(T_INT) * VectorRegister::number_of_registers *
                    BytesPerInt;
     }
 #endif
@@ -119,8 +119,8 @@ class RegisterSaver {
   }
   int reserved_slot_offset_in_bytes(void) {
     return f0_offset_in_bytes() +
-           FloatRegisterImpl::max_slots_per_register *
-           FloatRegisterImpl::number_of_registers *
+           FloatRegister::max_slots_per_register *
+           FloatRegister::number_of_registers *
            BytesPerInt;
   }
 
@@ -135,8 +135,8 @@ class RegisterSaver {
 
   int ra_offset_in_bytes(void) {
     return reserved_slot_offset_in_bytes() +
-           (RegisterImpl::number_of_registers - 3) *
-           RegisterImpl::max_slots_per_register *
+           (Register::number_of_registers - 3) *
+           Register::max_slots_per_register *
            BytesPerInt;
   }
 };
@@ -151,7 +151,6 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
   }
 #endif
 
-  assert_cond(masm != NULL && total_frame_words != NULL);
   int frame_size_in_bytes = align_up(additional_frame_words * wordSize + ra_offset_in_bytes() + wordSize, 16);
   // OopMap frame size is in compiler stack slots (jint's) not bytes or words
   int frame_size_in_slots = frame_size_in_bytes / BytesPerInt;
@@ -178,24 +177,24 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
   int step_in_slots = 0;
   if (_save_vectors) {
     step_in_slots = vector_size_in_slots;
-    for (int i = 0; i < VectorRegisterImpl::number_of_registers; i++, sp_offset_in_slots += step_in_slots) {
+    for (int i = 0; i < VectorRegister::number_of_registers; i++, sp_offset_in_slots += step_in_slots) {
       VectorRegister r = as_VectorRegister(i);
       oop_map->set_callee_saved(VMRegImpl::stack2reg(sp_offset_in_slots), r->as_VMReg());
     }
   }
 
-  step_in_slots = FloatRegisterImpl::max_slots_per_register;
-  for (int i = 0; i < FloatRegisterImpl::number_of_registers; i++, sp_offset_in_slots += step_in_slots) {
+  step_in_slots = FloatRegister::max_slots_per_register;
+  for (int i = 0; i < FloatRegister::number_of_registers; i++, sp_offset_in_slots += step_in_slots) {
     FloatRegister r = as_FloatRegister(i);
     oop_map->set_callee_saved(VMRegImpl::stack2reg(sp_offset_in_slots), r->as_VMReg());
   }
 
-  step_in_slots = RegisterImpl::max_slots_per_register;
+  step_in_slots = Register::max_slots_per_register;
   // skip the slot reserved for alignment, see MacroAssembler::push_reg;
   // also skip x5 ~ x6 on the stack because they are caller-saved registers.
-  sp_offset_in_slots += RegisterImpl::max_slots_per_register * 3;
+  sp_offset_in_slots += Register::max_slots_per_register * 3;
   // besides, we ignore x0 ~ x4 because push_CPU_state won't push them on the stack.
-  for (int i = 7; i < RegisterImpl::number_of_registers; i++, sp_offset_in_slots += step_in_slots) {
+  for (int i = 7; i < Register::number_of_registers; i++, sp_offset_in_slots += step_in_slots) {
     Register r = as_Register(i);
     if (r != xthread) {
       oop_map->set_callee_saved(VMRegImpl::stack2reg(sp_offset_in_slots + additional_frame_slots), r->as_VMReg());
@@ -206,7 +205,6 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
 }
 
 void RegisterSaver::restore_live_registers(MacroAssembler* masm) {
-  assert_cond(masm != NULL);
 #ifdef COMPILER2
   __ pop_CPU_state(_save_vectors, Matcher::scalable_vector_reg_size(T_BYTE));
 #else
@@ -242,8 +240,8 @@ static int reg2offset_out(VMReg r) {
 // refer to 4-byte stack slots.  All stack slots are based off of the stack pointer
 // as framesizes are fixed.
 // VMRegImpl::stack0 refers to the first slot 0(sp).
-// and VMRegImpl::stack0+1 refers to the memory word 4-byes higher.  Register
-// up to RegisterImpl::number_of_registers) are the 64-bit
+// and VMRegImpl::stack0+1 refers to the memory word 4-byes higher.
+// Register up to Register::number_of_registers) are the 64-bit
 // integer registers.
 
 // Note: the INPUTS in sig_bt are in units of Java argument words,
@@ -331,7 +329,6 @@ int SharedRuntime::java_calling_convention(const BasicType *sig_bt,
 
 // Patch the callers callsite with entry to compiled code if it exists.
 static void patch_callers_callsite(MacroAssembler *masm) {
-  assert_cond(masm != NULL);
   Label L;
   __ ld(t0, Address(xmethod, in_bytes(Method::code_offset())));
   __ beqz(t0, L);
@@ -353,10 +350,6 @@ static void patch_callers_callsite(MacroAssembler *masm) {
   int32_t offset = 0;
   __ la_patchable(t0, RuntimeAddress(CAST_FROM_FN_PTR(address, SharedRuntime::fixup_callers_callsite)), offset);
   __ jalr(x1, t0, offset);
-
-  // Explicit fence.i required because fixup_callers_callsite may change the code
-  // stream.
-  __ safepoint_ifence();
 
   __ pop_CPU_state();
   // restore sp
@@ -386,7 +379,7 @@ static void gen_c2i_adapter(MacroAssembler *masm,
 
   int extraspace = total_args_passed * Interpreter::stackElementSize;
 
-  __ mv(x30, sp);
+  __ mv(x19_sender_sp, sp);
 
   // stack is aligned, keep it that way
   extraspace = align_up(extraspace, 2 * wordSize);
@@ -498,6 +491,11 @@ void SharedRuntime::gen_i2c_adapter(MacroAssembler *masm,
                                     int comp_args_on_stack,
                                     const BasicType *sig_bt,
                                     const VMRegPair *regs) {
+  // Note: x19_sender_sp contains the senderSP on entry. We must
+  // preserve it since we may do a i2c -> c2i transition if we lose a
+  // race where compiled code goes non-entrant while we get args
+  // ready.
+
   // Cut-out for having no stack args.
   int comp_words_on_stack = align_up(comp_args_on_stack * VMRegImpl::stack_slot_size, wordSize) >> LogBytesPerWord;
   if (comp_args_on_stack != 0) {
@@ -624,7 +622,7 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
   // require some stack space.  We grow the current (compiled) stack, then repack
   // the args.  We  finally end in a jump to the generic interpreter entry point.
   // On exit from the interpreter, the interpreter will restore our SP (lest the
-  // compiled code, which relys solely on SP and not FP, get sick).
+  // compiled code, which relies solely on SP and not FP, get sick).
 
   {
     __ block_comment("c2i_unverified_entry {");
@@ -768,7 +766,6 @@ int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
 // 32bits for a parameter. On 32bit it will simply be 32 bits
 // So this routine will do 32->32 on 32bit and 32->64 on 64bit
 static void move32_64(MacroAssembler* masm, VMRegPair src, VMRegPair dst) {
-  assert_cond(masm != NULL);
   if (src.first()->is_stack()) {
     if (dst.first()->is_stack()) {
       // stack to stack
@@ -798,7 +795,6 @@ static void object_move(MacroAssembler* masm,
                         VMRegPair dst,
                         bool is_receiver,
                         int* receiver_offset) {
-  assert_cond(masm != NULL && map != NULL && receiver_offset != NULL);
   // must pass a handle. First figure out the location we use as a handle
   Register rHandle = dst.first()->is_stack() ? t1 : dst.first()->as_Register();
 
@@ -822,7 +818,7 @@ static void object_move(MacroAssembler* masm,
     __ bind(notZero1);
   } else {
 
-    // Oop is in an a register we must store it to the space we reserve
+    // Oop is in a register we must store it to the space we reserve
     // on the stack for oop_handles and pass a handle if oop is non-NULL
 
     const Register rOop = src.first()->as_Register();
@@ -881,7 +877,6 @@ static void object_move(MacroAssembler* masm,
 static void float_move(MacroAssembler* masm, VMRegPair src, VMRegPair dst) {
   assert(src.first()->is_stack() && dst.first()->is_stack() ||
          src.first()->is_reg() && dst.first()->is_reg() || src.first()->is_stack() && dst.first()->is_reg(), "Unexpected error");
-  assert_cond(masm != NULL);
   if (src.first()->is_stack()) {
     if (dst.first()->is_stack()) {
       __ lwu(t0, Address(fp, reg2offset_in(src.first())));
@@ -902,7 +897,6 @@ static void float_move(MacroAssembler* masm, VMRegPair src, VMRegPair dst) {
 
 // A long move
 static void long_move(MacroAssembler* masm, VMRegPair src, VMRegPair dst) {
-  assert_cond(masm != NULL);
   if (src.first()->is_stack()) {
     if (dst.first()->is_stack()) {
       // stack to stack
@@ -926,7 +920,6 @@ static void long_move(MacroAssembler* masm, VMRegPair src, VMRegPair dst) {
 static void double_move(MacroAssembler* masm, VMRegPair src, VMRegPair dst) {
   assert(src.first()->is_stack() && dst.first()->is_stack() ||
          src.first()->is_reg() && dst.first()->is_reg() || src.first()->is_stack() && dst.first()->is_reg(), "Unexpected error");
-  assert_cond(masm != NULL);
   if (src.first()->is_stack()) {
     if (dst.first()->is_stack()) {
       __ ld(t0, Address(fp, reg2offset_in(src.first())));
@@ -946,7 +939,6 @@ static void double_move(MacroAssembler* masm, VMRegPair src, VMRegPair dst) {
 }
 
 void SharedRuntime::save_native_result(MacroAssembler *masm, BasicType ret_type, int frame_slots) {
-  assert_cond(masm != NULL);
   // We always ignore the frame_slots arg and just use the space just below frame pointer
   // which by this time is free to use
   switch (ret_type) {
@@ -964,7 +956,6 @@ void SharedRuntime::save_native_result(MacroAssembler *masm, BasicType ret_type,
 }
 
 void SharedRuntime::restore_native_result(MacroAssembler *masm, BasicType ret_type, int frame_slots) {
-  assert_cond(masm != NULL);
   // We always ignore the frame_slots arg and just use the space just below frame pointer
   // which by this time is free to use
   switch (ret_type) {
@@ -982,7 +973,6 @@ void SharedRuntime::restore_native_result(MacroAssembler *masm, BasicType ret_ty
 }
 
 static void save_args(MacroAssembler *masm, int arg_count, int first_arg, VMRegPair *args) {
-  assert_cond(masm != NULL && args != NULL);
   RegSet x;
   for ( int i = first_arg ; i < arg_count ; i++ ) {
     if (args[i].first()->is_Register()) {
@@ -996,7 +986,6 @@ static void save_args(MacroAssembler *masm, int arg_count, int first_arg, VMRegP
 }
 
 static void restore_args(MacroAssembler *masm, int arg_count, int first_arg, VMRegPair *args) {
-  assert_cond(masm != NULL && args != NULL);
   RegSet x;
   for ( int i = first_arg ; i < arg_count ; i++ ) {
     if (args[i].first()->is_Register()) {
@@ -1017,7 +1006,6 @@ static void restore_args(MacroAssembler *masm, int arg_count, int first_arg, VMR
 }
 
 static void rt_call(MacroAssembler* masm, address dest) {
-  assert_cond(masm != NULL);
   CodeBlob *cb = CodeCache::find_blob(dest);
   if (cb) {
     __ far_call(RuntimeAddress(dest));
@@ -1067,8 +1055,11 @@ static void gen_special_dispatch(MacroAssembler* masm,
     member_arg_pos = method->size_of_parameters() - 1;  // trailing MemberName argument
     member_reg = x9;  // known to be free at this point
     has_receiver = MethodHandles::ref_kind_has_receiver(ref_kind);
-  } else if (iid == vmIntrinsics::_invokeBasic || iid == vmIntrinsics::_linkToNative) {
+  } else if (iid == vmIntrinsics::_invokeBasic) {
     has_receiver = true;
+  } else if (iid == vmIntrinsics::_linkToNative) {
+    member_arg_pos = method->size_of_parameters() - 1;  // trailing NativeEntryPoint argument
+    member_reg = x9;  // known to be free at this point
   } else {
     fatal("unexpected intrinsic id %d", vmIntrinsics::as_int(iid));
   }
@@ -1129,7 +1120,7 @@ static void gen_special_dispatch(MacroAssembler* masm,
 // They are roughly structured like this:
 //    if (GCLocker::needs_gc()) SharedRuntime::block_for_jni_critical()
 //    tranistion to thread_in_native
-//    unpack arrray arguments and call native entry point
+//    unpack array arguments and call native entry point
 //    check for safepoint in progress
 //    check if any thread suspend flags are set
 //      call into JVM and possible unlock the JNI critical
@@ -1321,7 +1312,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
   assert_cond(bs != NULL);
-  bs->nmethod_entry_barrier(masm);
+  bs->nmethod_entry_barrier(masm, NULL /* slow_path */, NULL /* continuation */, NULL /* guard */);
 
   // Frame is now completed as far as size and linkage.
   int frame_complete = ((intptr_t)__ pc()) - start;
@@ -1364,12 +1355,12 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   int int_args = 0;
 
 #ifdef ASSERT
-  bool reg_destroyed[RegisterImpl::number_of_registers];
-  bool freg_destroyed[FloatRegisterImpl::number_of_registers];
-  for ( int r = 0 ; r < RegisterImpl::number_of_registers ; r++ ) {
+  bool reg_destroyed[Register::number_of_registers];
+  bool freg_destroyed[FloatRegister::number_of_registers];
+  for ( int r = 0 ; r < Register::number_of_registers ; r++ ) {
     reg_destroyed[r] = false;
   }
-  for ( int f = 0 ; f < FloatRegisterImpl::number_of_registers ; f++ ) {
+  for ( int f = 0 ; f < FloatRegister::number_of_registers ; f++ ) {
     freg_destroyed[f] = false;
   }
 
@@ -1451,8 +1442,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
     //  load oop into a register
     __ movoop(c_rarg1,
-              JNIHandles::make_local(method->method_holder()->java_mirror()),
-              /*immediate*/true);
+              JNIHandles::make_local(method->method_holder()->java_mirror()));
 
     // Now handlize the static class mirror it's known not-null.
     __ sd(c_rarg1, Address(sp, klass_offset));
@@ -1895,7 +1885,7 @@ void SharedRuntime::generate_deopt_blob() {
 
   // -------------
   // This code enters when returning to a de-optimized nmethod.  A return
-  // address has been pushed on the the stack, and return values are in
+  // address has been pushed on the stack, and return values are in
   // registers.
   // If we are doing a normal deopt then we were called from the patched
   // nmethod from the point we returned to the nmethod. So the return
@@ -2430,7 +2420,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
 
   // The following is basically a call_VM.  However, we need the precise
   // address of the call in order to generate an oopmap. Hence, we do all the
-  // work outselves.
+  // work ourselves.
 
   Label retaddr;
   __ set_last_Java_frame(sp, noreg, retaddr, t0);
@@ -2532,7 +2522,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
 // must do any gc of the args.
 //
 RuntimeStub* SharedRuntime::generate_resolve_blob(address destination, const char* name) {
-  assert (StubRoutines::forward_exception_entry() != NULL, "must be generated before");
+  assert(StubRoutines::forward_exception_entry() != NULL, "must be generated before");
 
   // allocate space for the code
   ResourceMark rm;
@@ -2588,7 +2578,7 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(address destination, const cha
   __ sd(x10, Address(sp, reg_saver.reg_offset_in_bytes(t0)));
   reg_saver.restore_live_registers(masm);
 
-  // We are back the the original state on entry and ready to go.
+  // We are back to the original state on entry and ready to go.
 
   __ jr(t0);
 
@@ -2614,14 +2604,6 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(address destination, const cha
 }
 
 #ifdef COMPILER2
-RuntimeStub* SharedRuntime::make_native_invoker(address call_target,
-                                                int shadow_space_bytes,
-                                                const GrowableArray<VMReg>& input_registers,
-                                                const GrowableArray<VMReg>& output_registers) {
-  Unimplemented();
-  return nullptr;
-}
-
 //------------------------------generate_exception_blob---------------------------
 // creates exception blob at the end
 // Using exception blob, this code is jumped from a compiled method.

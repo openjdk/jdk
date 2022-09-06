@@ -108,7 +108,8 @@ void ZBarrierSetAssembler::store_at(MacroAssembler* masm,
                                         Address dst,
                                         Register val,
                                         Register tmp1,
-                                        Register tmp2) {
+                                        Register tmp2,
+                                        Register tmp3) {
   // Verify value
   if (is_reference_type(type)) {
     // Note that src could be noreg, which means we
@@ -116,7 +117,7 @@ void ZBarrierSetAssembler::store_at(MacroAssembler* masm,
     if (val != noreg) {
       Label done;
 
-      // tmp1 and tmp2 are often set to noreg.
+      // tmp1, tmp2 and tmp3 are often set to noreg.
       RegSet savedRegs = RegSet::of(rscratch1);
       __ push(savedRegs, sp);
 
@@ -131,7 +132,7 @@ void ZBarrierSetAssembler::store_at(MacroAssembler* masm,
   }
 
   // Store value
-  BarrierSetAssembler::store_at(masm, decorators, type, dst, val, tmp1, tmp2);
+  BarrierSetAssembler::store_at(masm, decorators, type, dst, val, tmp1, tmp2, noreg);
 }
 
 #endif // ASSERT
@@ -237,7 +238,7 @@ void ZBarrierSetAssembler::generate_c1_load_barrier_stub(LIR_Assembler* ce,
   assert_different_registers(ref, ref_addr, noreg);
 
   // Save r0 unless it is the result or tmp register
-  // Set up SP to accomodate parameters and maybe r0..
+  // Set up SP to accommodate parameters and maybe r0..
   if (ref != r0 && tmp != r0) {
     __ sub(sp, sp, 32);
     __ str(r0, Address(sp, 16));
@@ -252,7 +253,7 @@ void ZBarrierSetAssembler::generate_c1_load_barrier_stub(LIR_Assembler* ce,
   __ far_call(stub->runtime_stub());
 
   // Verify result
-  __ verify_oop(r0, "Bad oop");
+  __ verify_oop(r0);
 
   // Move result into place
   if (ref != r0) {

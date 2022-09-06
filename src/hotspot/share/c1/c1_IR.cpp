@@ -464,7 +464,7 @@ class ComputeLinearScanOrder : public StackObj {
 
   ResourceBitMap _visited_blocks;   // used for recursive processing of blocks
   ResourceBitMap _active_blocks;    // used for recursive processing of blocks
-  ResourceBitMap _dominator_blocks; // temproary BitMap used for computation of dominator
+  ResourceBitMap _dominator_blocks; // temporary BitMap used for computation of dominator
   intArray       _forward_branches; // number of incoming forward branches for each block
   BlockList      _loop_end_blocks;  // list of all loop end blocks collected during count_edges
   BitMap2D       _loop_map;         // two-dimensional bit set: a bit is set if a block is contained in a loop
@@ -689,7 +689,7 @@ void ComputeLinearScanOrder::mark_loops() {
 
 
 // check for non-natural loops (loops where the loop header does not dominate
-// all other loop blocks = loops with mulitple entries).
+// all other loop blocks = loops with multiple entries).
 // such loops are ignored
 void ComputeLinearScanOrder::clear_non_natural_loops(BlockBegin* start_block) {
   for (int i = _num_loops - 1; i >= 0; i--) {
@@ -822,7 +822,7 @@ int ComputeLinearScanOrder::compute_weight(BlockBegin* cur) {
   int cur_bit = 15;
   #define INC_WEIGHT_IF(condition) if ((condition)) { weight |= (1 << cur_bit); } cur_bit--;
 
-  // this is necessery for the (very rare) case that two successing blocks have
+  // this is necessary for the (very rare) case that two successive blocks have
   // the same loop depth, but a different loop index (can happen for endless loops
   // with exception handlers)
   INC_WEIGHT_IF(!cur->is_set(BlockBegin::linear_scan_loop_header_flag));
@@ -831,7 +831,7 @@ int ComputeLinearScanOrder::compute_weight(BlockBegin* cur) {
   // after all other blocks of the loop.
   INC_WEIGHT_IF(!cur->is_set(BlockBegin::linear_scan_loop_end_flag));
 
-  // critical edge split blocks are prefered because than they have a bigger
+  // critical edge split blocks are preferred because than they have a bigger
   // proability to be completely empty
   INC_WEIGHT_IF(cur->is_set(BlockBegin::critical_edge_split_flag));
 
@@ -928,7 +928,7 @@ void ComputeLinearScanOrder::compute_order(BlockBegin* start_block) {
     // ignore the edge between the osr entry and its successor for processing
     // the osr entry block is added manually below
     assert(osr_entry->number_of_sux() == 1, "osr entry must have exactly one successor");
-    assert(osr_entry->sux_at(0)->number_of_preds() >= 2, "sucessor of osr entry must have two predecessors (otherwise it is not present in normal control flow");
+    assert(osr_entry->sux_at(0)->number_of_preds() >= 2, "successor of osr entry must have two predecessors (otherwise it is not present in normal control flow");
 
     sux_of_osr_entry = osr_entry->sux_at(0);
     dec_forward_branches(sux_of_osr_entry);
@@ -1136,7 +1136,7 @@ void ComputeLinearScanOrder::verify() {
         assert(cur->linear_scan_number() < sux->linear_scan_number(), "invalid order");
       }
       if (cur->loop_depth() == sux->loop_depth()) {
-        assert(cur->loop_index() == sux->loop_index() || sux->is_set(BlockBegin::linear_scan_loop_header_flag), "successing blocks with same loop depth must have same loop index");
+        assert(cur->loop_index() == sux->loop_index() || sux->is_set(BlockBegin::linear_scan_loop_header_flag), "successive blocks with same loop depth must have same loop index");
       }
     }
 
@@ -1148,7 +1148,7 @@ void ComputeLinearScanOrder::verify() {
         assert(cur->linear_scan_number() > pred->linear_scan_number(), "invalid order");
       }
       if (cur->loop_depth() == pred->loop_depth()) {
-        assert(cur->loop_index() == pred->loop_index() || cur->is_set(BlockBegin::linear_scan_loop_header_flag), "successing blocks with same loop depth must have same loop index");
+        assert(cur->loop_index() == pred->loop_index() || cur->is_set(BlockBegin::linear_scan_loop_header_flag), "successive blocks with same loop depth must have same loop index");
       }
 
       assert(cur->dominator()->linear_scan_number() <= cur->pred_at(j)->linear_scan_number(), "dominator must be before predecessors");

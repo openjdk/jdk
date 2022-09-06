@@ -61,7 +61,7 @@ typedef struct CDSFileMapRegion {
 } CDSFileMapRegion;
 
 // This portion of the archive file header must remain unchanged for
-// _version >= CDS_GENERIC_HEADER_SUPPORTED_MIN_VERSION (12).
+// _version >= CDS_GENERIC_HEADER_SUPPORTED_MIN_VERSION (13).
 // This makes it possible to read important information from a CDS archive created by
 // a different version of HotSpot, so that we can automatically regenerate the archive as necessary.
 typedef struct GenericCDSFileMapHeader {

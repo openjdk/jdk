@@ -247,7 +247,7 @@ void PhaseVector::scalarize_vbox_node(VectorBoxNode* vec_box) {
     }
   }
 
-  ciInstanceKlass* iklass = vec_box->box_type()->klass()->as_instance_klass();
+  ciInstanceKlass* iklass = vec_box->box_type()->instance_klass();
   int n_fields = iklass->nof_nonstatic_fields();
   assert(n_fields == 1, "sanity");
 
@@ -348,7 +348,7 @@ Node* PhaseVector::expand_vbox_alloc_node(VectorBoxAllocateNode* vbox_alloc,
   GraphKit kit(jvms);
   PhaseGVN& gvn = kit.gvn();
 
-  ciInstanceKlass* box_klass = box_type->klass()->as_instance_klass();
+  ciInstanceKlass* box_klass = box_type->instance_klass();
   BasicType bt = vect_type->element_basic_type();
   int num_elem = vect_type->length();
 
@@ -420,7 +420,7 @@ void PhaseVector::expand_vunbox_node(VectorUnboxNode* vec_unbox) {
 
     Node* obj = vec_unbox->obj();
     const TypeInstPtr* tinst = gvn.type(obj)->isa_instptr();
-    ciInstanceKlass* from_kls = tinst->klass()->as_instance_klass();
+    ciInstanceKlass* from_kls = tinst->instance_klass();
     const TypeVect* vt = vec_unbox->bottom_type()->is_vect();
     BasicType bt = vt->element_basic_type();
     BasicType masktype = bt;

@@ -34,6 +34,7 @@ import javax.sound.sampled.Mixer;
 
 /**
  * @test
+ * @key sound
  * @bug 4385654
  * @summary Check that the MASTER_GAIN control has a valid precision
  */

@@ -23,9 +23,12 @@
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
-import java.awt.Frame;
-import java.awt.HeadlessException;
+import java.awt.GraphicsConfiguration;
+import java.awt.GraphicsEnvironment;
+import java.awt.Insets;
+import java.awt.Rectangle;
 import java.awt.Toolkit;
+import java.awt.Window;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.lang.reflect.InvocationTargetException;
@@ -42,20 +45,43 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.Timer;
 
+
 import static javax.swing.SwingUtilities.invokeAndWait;
 import static javax.swing.SwingUtilities.isEventDispatchThread;
 
 public class PassFailJFrame {
 
-    private final static CountDownLatch latch = new CountDownLatch(1);
+    private static final String TITLE = "Test Instruction Frame";
+    private static final long TEST_TIMEOUT = 5;
+    private static final int ROWS = 10;
+    private static final int COLUMNS = 40;
+
+    private static final List<Window> windowList = new ArrayList<>();
+    private static final Timer timer = new Timer(0, null);
+    private static final CountDownLatch latch = new CountDownLatch(1);
+
     private static volatile boolean failed;
     private static volatile boolean timeout;
     private static volatile String testFailedReason;
     private static JFrame frame;
-    private static final List<Frame> frameList = new ArrayList<>();
-    private static final Timer timer = new Timer(0, null);
 
-    public enum Position {HORIZONTAL, VERTICAL}
+    public enum Position {HORIZONTAL, VERTICAL, TOP_LEFT_CORNER}
+
+    public PassFailJFrame(String instructions) throws InterruptedException,
+            InvocationTargetException {
+        this(instructions, TEST_TIMEOUT);
+    }
+
+    public PassFailJFrame(String instructions, long testTimeOut) throws
+            InterruptedException, InvocationTargetException {
+        this(TITLE, instructions, testTimeOut);
+    }
+
+    public PassFailJFrame(String title, String instructions,
+                          long testTimeOut) throws InterruptedException,
+            InvocationTargetException {
+        this(title, instructions, testTimeOut, ROWS, COLUMNS);
+    }
 
     /**
      * Constructs a JFrame with a given title & serves as test instructional
@@ -65,48 +91,48 @@ public class PassFailJFrame {
      * on the 'Fail' button and the reason for the failure should be
      * specified in the JDialog JTextArea.
      *
-     * @param title                title of the Frame.
-     * @param instructions         specified instruction that user should follow.
-     * @param rows                 number of visible rows of the JTextArea where the
-     *                             instruction is show.
-     * @param columns              Number of columns of the instructional
-     *                             JTextArea
-     * @param testTimeOutInMinutes timeout of the test where time is specified in
-     *                             minutes.
-     * @throws HeadlessException         HeadlessException
-     * @throws InterruptedException      exception thrown for invokeAndWait
-     * @throws InvocationTargetException exception thrown for invokeAndWait
+     * @param title        title of the Frame.
+     * @param instructions the instruction for the tester on how to test
+     *                     and what is expected (pass) and what is not
+     *                     expected (fail).
+     * @param testTimeOut  test timeout where time is specified in minutes.
+     * @param rows         number of visible rows of the JTextArea where the
+     *                     instruction is show.
+     * @param columns      Number of columns of the instructional
+     *                     JTextArea
+     * @throws InterruptedException      exception thrown when thread is
+     *                                   interrupted
+     * @throws InvocationTargetException if an exception is thrown while
+     *                                   creating the test instruction frame on
+     *                                   EDT
      */
-    public PassFailJFrame(String title, String instructions,
-                          int rows, int columns,
-                          int testTimeOutInMinutes) throws HeadlessException,
-            InterruptedException, InvocationTargetException {
-
+    public PassFailJFrame(String title, String instructions, long testTimeOut,
+                          int rows, int columns) throws InterruptedException,
+            InvocationTargetException {
         if (isEventDispatchThread()) {
-            createUI(title, instructions, rows, columns, testTimeOutInMinutes);
+            createUI(title, instructions, testTimeOut, rows, columns);
         } else {
-            invokeAndWait(() -> createUI(title, instructions, rows, columns,
-                    testTimeOutInMinutes));
+            invokeAndWait(() -> createUI(title, instructions, testTimeOut,
+                    rows, columns));
         }
     }
 
     private static void createUI(String title, String instructions,
-                                 int rows, int columns,
-                                 int timeoutInMinutes) {
+                                 long testTimeOut, int rows, int columns) {
         frame = new JFrame(title);
         frame.setLayout(new BorderLayout());
         JTextArea instructionsText = new JTextArea(instructions, rows, columns);
         instructionsText.setEditable(false);
         instructionsText.setLineWrap(true);
 
-        long testTimeout = TimeUnit.MINUTES.toMillis(timeoutInMinutes);
+        long tTimeout = TimeUnit.MINUTES.toMillis(testTimeOut);
 
         final JLabel testTimeoutLabel = new JLabel(String.format("Test " +
-                "timeout: %s", convertMillisToTimeStr(testTimeout)), JLabel.CENTER);
+                "timeout: %s", convertMillisToTimeStr(tTimeout)), JLabel.CENTER);
         final long startTime = System.currentTimeMillis();
         timer.setDelay(1000);
         timer.addActionListener((e) -> {
-            long leftTime = testTimeout - (System.currentTimeMillis() - startTime);
+            long leftTime = tTimeout - (System.currentTimeMillis() - startTime);
             if ((leftTime < 0) || failed) {
                 timer.stop();
                 testFailedReason = "Failure Reason:\n"
@@ -150,9 +176,7 @@ public class PassFailJFrame {
         frame.add(buttonsPanel, BorderLayout.SOUTH);
         frame.pack();
         frame.setLocationRelativeTo(null);
-        frame.setVisible(true);
-
-        frameList.add(frame);
+        windowList.add(frame);
     }
 
     private static String convertMillisToTimeStr(long millis) {
@@ -171,15 +195,17 @@ public class PassFailJFrame {
      * the specified timeoutMinutes period and the test gets timeout.
      * Note: This method should be called from main() thread
      *
-     * @throws InterruptedException      if the thread is interrupted
-     * @throws InvocationTargetException exception thrown for invokeAndWait
+     * @throws InterruptedException      exception thrown when thread is
+     *                                   interrupted
+     * @throws InvocationTargetException if an exception is thrown while
+     *                                   disposing of frames on EDT
      */
     public void awaitAndCheck() throws InterruptedException, InvocationTargetException {
         if (isEventDispatchThread()) {
             throw new IllegalStateException("awaitAndCheck() should not be called on EDT");
         }
         latch.await();
-        invokeAndWait(PassFailJFrame::disposeFrames);
+        invokeAndWait(PassFailJFrame::disposeWindows);
 
         if (timeout) {
             throw new RuntimeException(testFailedReason);
@@ -193,12 +219,12 @@ public class PassFailJFrame {
     }
 
     /**
-     * Dispose all the frame(s) i,e both the test instruction frame as
-     * well as the frame that is added via addTestFrame(Frame frame)
+     * Dispose all the window(s) i,e both the test instruction frame and
+     * the window(s) that is added via addTestWindow(Window testWindow)
      */
-    private static synchronized void disposeFrames() {
-        for (Frame f : frameList) {
-            f.dispose();
+    private static synchronized void disposeWindows() {
+        for (Window win : windowList) {
+            win.dispose();
         }
     }
 
@@ -235,42 +261,151 @@ public class PassFailJFrame {
     }
 
     /**
-     * Position the instruction frame with testFrame ( testcase created
-     * frame) by the specified position
-     * Note: This method should be invoked from the method that creates
-     * testFrame
+     * Approximately positions the instruction frame relative to the test
+     * window as specified by the {@code position} parameter. If {@code testWindow}
+     * is {@code null}, only the instruction frame is positioned according to
+     * {@code position} parameter.
+     * <p>This method should be called before making the test window visible
+     * to avoid flickering.</p>
      *
-     * @param testFrame test frame that the test is created
-     * @param position  position can be either HORIZONTAL (both test
-     *                  instruction frame and test frame as arranged side by
-     *                  side or VERTICAL ( both test instruction frame and
-     *                  test frame as arranged up and down)
+     * @param testWindow test window that the test created.
+     *                   May be {@code null}.
+     *
+     * @param position  position must be one of:
+     *                  <ul>
+     *                  <li>{@code HORIZONTAL} - the test instruction frame is positioned
+     *                  such that its right edge aligns with screen's horizontal center
+     *                  and the test window (if not {@code null}) is placed to the right
+     *                  of the instruction frame.</li>
+     *
+     *                  <li>{@code VERTICAL} - the test instruction frame is positioned
+     *                  such that its bottom edge aligns with the screen's vertical center
+     *                  and the test window (if not {@code null}) is placed below the
+     *                  instruction frame.</li>
+     *
+     *                  <li>{@code TOP_LEFT_CORNER} - the test instruction frame is positioned
+     *                  such that its top left corner is at the top left corner of the screen
+     *                  and the test window (if not {@code null}) is placed to the right of
+     *                  the instruction frame.</li>
+     *                  </ul>
      */
-    public static void positionTestFrame(Frame testFrame, Position position) {
+    public static void positionTestWindow(Window testWindow, Position position) {
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+
+        // Get the screen insets to position the frame by taking into
+        // account the location of taskbar/menubars on screen.
+        GraphicsConfiguration gc = GraphicsEnvironment.getLocalGraphicsEnvironment()
+                .getDefaultScreenDevice().getDefaultConfiguration();
+        Insets screenInsets = Toolkit.getDefaultToolkit().getScreenInsets(gc);
+
         if (position.equals(Position.HORIZONTAL)) {
             int newX = ((screenSize.width / 2) - frame.getWidth());
-            frame.setLocation(newX, frame.getY());
-
-            testFrame.setLocation((frame.getLocation().x + frame.getWidth() + 5), frame.getY());
+            frame.setLocation((newX + screenInsets.left),
+                    (frame.getY() + screenInsets.top));
+            syncLocationToWindowManager();
+            if (testWindow != null) {
+                testWindow.setLocation((frame.getX() + frame.getWidth() + 5),
+                        frame.getY());
+            }
         } else if (position.equals(Position.VERTICAL)) {
             int newY = ((screenSize.height / 2) - frame.getHeight());
-            frame.setLocation(frame.getX(), newY);
+            frame.setLocation((frame.getX() + screenInsets.left),
+                    (newY + screenInsets.top));
+            syncLocationToWindowManager();
+            if (testWindow != null) {
+                testWindow.setLocation(frame.getX(),
+                        (frame.getY() + frame.getHeight() + 5));
+            }
+        } else if (position.equals(Position.TOP_LEFT_CORNER)) {
+            frame.setLocation(screenInsets.left, screenInsets.top);
+            syncLocationToWindowManager();
+            if (testWindow != null) {
+                testWindow.setLocation((frame.getX() + frame.getWidth() + 5),
+                        frame.getY());
+            }
+        }
+        // make instruction frame visible after updating
+        // frame & window positions
+        frame.setVisible(true);
+    }
 
-            testFrame.setLocation(frame.getX(),
-                    (frame.getLocation().y + frame.getHeight() + 5));
+    /**
+     * Ensures the frame location is updated by the window manager
+     * if it adjusts the frame location after {@code setLocation}.
+     *
+     * @see #positionTestWindow
+     */
+    private static void syncLocationToWindowManager() {
+        Toolkit.getDefaultToolkit().sync();
+        try {
+            Thread.sleep(500);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
     }
 
     /**
-     * Add the testFrame to the frameList so that test instruction frame
-     * and testFrame and any other frame used in this test is disposed
-     * via disposeFrames()
+     * Returns the current position and size of the test instruction frame.
+     * This method can be used in scenarios when custom positioning of
+     * multiple test windows w.r.t test instruction frame is necessary,
+     * at test-case level and the desired configuration is not available
+     * as a {@code Position} option.
      *
-     * @param testFrame testFrame that needs to be disposed
+     * @return Rectangle bounds of test instruction frame
+     * @see #positionTestWindow
+     *
+     * @throws InterruptedException      exception thrown when thread is
+     *                                   interrupted
+     * @throws InvocationTargetException if an exception is thrown while
+     *                                   obtaining frame bounds on EDT
      */
-    public static synchronized void addTestFrame(Frame testFrame) {
-        frameList.add(testFrame);
+    public static Rectangle getInstructionFrameBounds()
+            throws InterruptedException, InvocationTargetException {
+        final Rectangle[] bounds = {null};
+
+        if (isEventDispatchThread()) {
+            bounds[0] = frame != null ? frame.getBounds() : null;
+        } else {
+            invokeAndWait(() -> {
+                bounds[0] = frame != null ? frame.getBounds() : null;
+            });
+        }
+        return bounds[0];
+    }
+
+    /**
+     * Add the testWindow to the windowList so that test instruction frame
+     * and testWindow and any other windows used in this test is disposed
+     * via disposeWindows().
+     *
+     * @param testWindow testWindow that needs to be disposed
+     */
+    public static synchronized void addTestWindow(Window testWindow) {
+        windowList.add(testWindow);
+    }
+
+    /**
+     * Forcibly pass the test.
+     * <p>The sample usage:
+     * <pre><code>
+     *      PrinterJob pj = PrinterJob.getPrinterJob();
+     *      if (pj == null || pj.getPrintService() == null) {
+     *          System.out.println(""Printer not configured or available.");
+     *          PassFailJFrame.forcePass();
+     *      }
+     * </code></pre>
+     */
+    public static void forcePass() {
+        latch.countDown();
+    }
+
+    /**
+     *  Forcibly fail the test.
+     */
+    public static void forceFail() {
+        failed = true;
+        testFailedReason = "Failure Reason:\n" +
+                           "forceFail called";
+        latch.countDown();
     }
 }
-

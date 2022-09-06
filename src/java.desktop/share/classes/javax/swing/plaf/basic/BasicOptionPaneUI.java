@@ -89,6 +89,7 @@ public class BasicOptionPaneUI extends OptionPaneUI {
     public static final int MinimumHeight = 90;
 
     private static String newline;
+    private static int recursionCount;
 
     /**
      * {@code JOptionPane} that the receiver is providing the
@@ -373,6 +374,7 @@ public class BasicOptionPaneUI extends OptionPaneUI {
                       "OptionPane.messageAnchor", GridBagConstraints.CENTER);
         cons.insets = new Insets(0,0,3,0);
 
+        recursionCount = 0;
         addMessageComponents(body, cons, getMessage(),
                           getMaxCharactersPerLineCount(), false);
         top.add(realBody, BorderLayout.CENTER);
@@ -460,7 +462,7 @@ public class BasicOptionPaneUI extends OptionPaneUI {
                     @SuppressWarnings("serial") // anonymous class
                     JPanel breakPanel = new JPanel() {
                         public Dimension getPreferredSize() {
-                            Font       f = getFont();
+                            Font f = getFont();
 
                             if (f != null) {
                                 return new Dimension(1, f.getSize() + 2);
@@ -475,8 +477,17 @@ public class BasicOptionPaneUI extends OptionPaneUI {
                     addMessageComponents(container, cons, s.substring(0, nl),
                                       maxll, false);
                 }
+                // Prevent recursion of more than
+                // 200 successive newlines in a message
+                // and indicate message is truncated via ellipsis
+                if (recursionCount++ > 200) {
+                    recursionCount = 0;
+                    addMessageComponents(container, cons, new String("..."),
+                                         maxll,false);
+                    return;
+                }
                 addMessageComponents(container, cons, s.substring(nl + nll), maxll,
-                                  false);
+                                     false);
 
             } else if (len > maxll) {
                 Container c = Box.createVerticalBox();

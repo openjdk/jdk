@@ -26,8 +26,8 @@
 #define SHARE_RUNTIME_SAFEPOINT_HPP
 
 #include "memory/allStatic.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/os.hpp"
-#include "runtime/thread.hpp"
 #include "runtime/vmOperation.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/waitBarrier.hpp"
@@ -72,10 +72,8 @@ class SafepointSynchronize : AllStatic {
   enum SafepointCleanupTasks {
     SAFEPOINT_CLEANUP_LAZY_ROOT_PROCESSING,
     SAFEPOINT_CLEANUP_UPDATE_INLINE_CACHES,
-    SAFEPOINT_CLEANUP_COMPILATION_POLICY,
     SAFEPOINT_CLEANUP_SYMBOL_TABLE_REHASH,
     SAFEPOINT_CLEANUP_STRING_TABLE_REHASH,
-    SAFEPOINT_CLEANUP_SYSTEM_DICTIONARY_RESIZE,
     SAFEPOINT_CLEANUP_REQUEST_OOPSTORAGE_CLEANUP,
     // Leave this one last.
     SAFEPOINT_CLEANUP_NUM_TASKS

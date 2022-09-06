@@ -29,7 +29,7 @@ include $(SPEC)
 include MakeBase.gmk
 
 # When FIXPATH is set, let it process the file to make sure all paths are usable
-# by system native tools. The FIXPATH tool assumes arguments preceeded by an @
+# by system native tools. The FIXPATH tool assumes arguments preceded by an @
 # character points to a text file containing further arguments (similar to a
 # linker). It replaces any such arguments with a different temporary filename,
 # whose contents has been processed to make any paths native. To obtain a

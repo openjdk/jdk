@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,6 @@ import sun.font.FcFontConfiguration;
 import sun.font.FontAccess;
 import sun.font.FontUtilities;
 import sun.font.NativeFont;
-import sun.util.logging.PlatformLogger;
 
 /**
  * The X11 implementation of {@link FontManager}.
@@ -290,141 +289,132 @@ public final class X11FontManager extends FcFontManager {
             FontUtilities.logInfo("ParseFontDir " + path);
         }
         File fontsDotDir = new File(path + File.separator + "fonts.dir");
-        FileReader fr = null;
-        try {
-            if (fontsDotDir.canRead()) {
-                fr = new FileReader(fontsDotDir);
-                BufferedReader br = new BufferedReader(fr, 8192);
-                StreamTokenizer st = new StreamTokenizer(br);
-                st.eolIsSignificant(true);
-                int ttype = st.nextToken();
-                if (ttype == StreamTokenizer.TT_NUMBER) {
-                    int numEntries = (int)st.nval;
-                    ttype = st.nextToken();
-                    if (ttype == StreamTokenizer.TT_EOL) {
-                        st.resetSyntax();
-                        st.wordChars(32, 127);
-                        st.wordChars(128 + 32, 255);
-                        st.whitespaceChars(0, 31);
+        if (!fontsDotDir.canRead()) {
+            return;
+        }
+        try (FileReader fr = new FileReader(fontsDotDir)) {
+            BufferedReader br = new BufferedReader(fr, 8192);
+            StreamTokenizer st = new StreamTokenizer(br);
+            st.eolIsSignificant(true);
+            int ttype = st.nextToken();
+            if (ttype == StreamTokenizer.TT_NUMBER) {
+                int numEntries = (int)st.nval;
+                ttype = st.nextToken();
+                if (ttype == StreamTokenizer.TT_EOL) {
+                    st.resetSyntax();
+                    st.wordChars(32, 127);
+                    st.wordChars(128 + 32, 255);
+                    st.whitespaceChars(0, 31);
 
-                        for (int i=0; i < numEntries; i++) {
-                            ttype = st.nextToken();
-                            if (ttype == StreamTokenizer.TT_EOF) {
-                                break;
-                            }
-                            if (ttype != StreamTokenizer.TT_WORD) {
-                                break;
-                            }
-                            int breakPos = st.sval.indexOf(' ');
-                            if (breakPos <= 0) {
-                                /* On TurboLinux 8.0 a fonts.dir file had
-                                 * a line with integer value "24" which
-                                 * appeared to be the number of remaining
-                                 * entries in the file. This didn't add to
-                                 * the value on the first line of the file.
-                                 * Seemed like XFree86 didn't like this line
-                                 * much either. It failed to parse the file.
-                                 * Ignore lines like this completely, and
-                                 * don't let them count as an entry.
-                                 */
-                                numEntries++;
-                                ttype = st.nextToken();
-                                if (ttype != StreamTokenizer.TT_EOL) {
-                                    break;
-                                }
-
-                                continue;
-                            }
-                            if (st.sval.charAt(0) == '!') {
-                                /* TurboLinux 8.0 comment line: ignore.
-                                 * can't use st.commentChar('!') to just
-                                 * skip because this line mustn't count
-                                 * against numEntries.
-                                 */
-                                numEntries++;
-                                ttype = st.nextToken();
-                                if (ttype != StreamTokenizer.TT_EOL) {
-                                    break;
-                                }
-                                continue;
-                            }
-                            String fileName = st.sval.substring(0, breakPos);
-                            /* TurboLinux 8.0 uses some additional syntax to
-                             * indicate algorithmic styling values.
-                             * Ignore ':' separated files at the beginning
-                             * of the fileName
+                    for (int i=0; i < numEntries; i++) {
+                        ttype = st.nextToken();
+                        if (ttype == StreamTokenizer.TT_EOF) {
+                            break;
+                        }
+                        if (ttype != StreamTokenizer.TT_WORD) {
+                            break;
+                        }
+                        int breakPos = st.sval.indexOf(' ');
+                        if (breakPos <= 0) {
+                            /* On TurboLinux 8.0 a fonts.dir file had
+                             * a line with integer value "24" which
+                             * appeared to be the number of remaining
+                             * entries in the file. This didn't add to
+                             * the value on the first line of the file.
+                             * Seemed like XFree86 didn't like this line
+                             * much either. It failed to parse the file.
+                             * Ignore lines like this completely, and
+                             * don't let them count as an entry.
                              */
-                            int lastColon = fileName.lastIndexOf(':');
-                            if (lastColon > 0) {
-                                if (lastColon+1 >= fileName.length()) {
-                                    continue;
-                                }
-                                fileName = fileName.substring(lastColon+1);
-                            }
-                            String fontPart = st.sval.substring(breakPos+1);
-                            String fontID = specificFontIDForName(fontPart);
-                            String sVal = fontNameMap.get(fontID);
-
-                            if (FontUtilities.debugFonts()) {
-                                FontUtilities.logInfo("file=" + fileName +
-                                            " xlfd=" + fontPart);
-                                FontUtilities.logInfo("fontID=" + fontID +
-                                            " sVal=" + sVal);
-                            }
-                            String fullPath = null;
-                            try {
-                                File file = new File(path,fileName);
-                                /* we may have a resolved symbolic link
-                                 * this becomes important for an xlfd we
-                                 * still need to know the location it was
-                                 * found to update the X server font path
-                                 * for use by AWT heavyweights - and when 2D
-                                 * wants to use the native rasteriser.
-                                 */
-                                if (xFontDirsMap == null) {
-                                    xFontDirsMap = new HashMap<>();
-                                }
-                                xFontDirsMap.put(fontID, path);
-                                fullPath = file.getCanonicalPath();
-                            } catch (IOException e) {
-                                fullPath = path + File.separator + fileName;
-                            }
-                            Vector<String> xVal = xlfdMap.get(fullPath);
-                            if (FontUtilities.debugFonts()) {
-                                FontUtilities.logInfo("fullPath=" + fullPath +
-                                                      " xVal=" + xVal);
-                            }
-                            if ((xVal == null || !xVal.contains(fontPart)) &&
-                                (sVal == null) || !sVal.startsWith("/")) {
-                                if (FontUtilities.debugFonts()) {
-                                    FontUtilities.logInfo("Map fontID:"+fontID +
-                                                          "to file:" + fullPath);
-                                }
-                                fontNameMap.put(fontID, fullPath);
-                                if (xVal == null) {
-                                    xVal = new Vector<>();
-                                    xlfdMap.put (fullPath, xVal);
-                                }
-                                xVal.add(fontPart);
-                            }
-
+                            numEntries++;
                             ttype = st.nextToken();
                             if (ttype != StreamTokenizer.TT_EOL) {
                                 break;
                             }
+
+                            continue;
+                        }
+                        if (st.sval.charAt(0) == '!') {
+                            /* TurboLinux 8.0 comment line: ignore.
+                             * can't use st.commentChar('!') to just
+                             * skip because this line mustn't count
+                             * against numEntries.
+                             */
+                            numEntries++;
+                            ttype = st.nextToken();
+                            if (ttype != StreamTokenizer.TT_EOL) {
+                                break;
+                            }
+                            continue;
+                        }
+                        String fileName = st.sval.substring(0, breakPos);
+                        /* TurboLinux 8.0 uses some additional syntax to
+                         * indicate algorithmic styling values.
+                         * Ignore ':' separated files at the beginning
+                         * of the fileName
+                         */
+                        int lastColon = fileName.lastIndexOf(':');
+                        if (lastColon > 0) {
+                            if (lastColon+1 >= fileName.length()) {
+                                continue;
+                            }
+                            fileName = fileName.substring(lastColon+1);
+                        }
+                        String fontPart = st.sval.substring(breakPos+1);
+                        String fontID = specificFontIDForName(fontPart);
+                        String sVal = fontNameMap.get(fontID);
+
+                        if (FontUtilities.debugFonts()) {
+                            FontUtilities.logInfo("file=" + fileName +
+                                        " xlfd=" + fontPart);
+                            FontUtilities.logInfo("fontID=" + fontID +
+                                        " sVal=" + sVal);
+                        }
+                        String fullPath;
+                        try {
+                            File file = new File(path,fileName);
+                            /* we may have a resolved symbolic link
+                             * this becomes important for an xlfd we
+                             * still need to know the location it was
+                             * found to update the X server font path
+                             * for use by AWT heavyweights - and when 2D
+                             * wants to use the native rasteriser.
+                             */
+                            if (xFontDirsMap == null) {
+                                xFontDirsMap = new HashMap<>();
+                            }
+                            xFontDirsMap.put(fontID, path);
+                            fullPath = file.getCanonicalPath();
+                        } catch (IOException e) {
+                            fullPath = path + File.separator + fileName;
+                        }
+                        Vector<String> xVal = xlfdMap.get(fullPath);
+                        if (FontUtilities.debugFonts()) {
+                            FontUtilities.logInfo("fullPath=" + fullPath +
+                                                  " xVal=" + xVal);
+                        }
+                        if ((xVal == null || !xVal.contains(fontPart)) &&
+                            (sVal == null) || !sVal.startsWith("/")) {
+                            if (FontUtilities.debugFonts()) {
+                                FontUtilities.logInfo("Map fontID:"+fontID +
+                                                      "to file:" + fullPath);
+                            }
+                            fontNameMap.put(fontID, fullPath);
+                            if (xVal == null) {
+                                xVal = new Vector<>();
+                                xlfdMap.put (fullPath, xVal);
+                            }
+                            xVal.add(fontPart);
+                        }
+
+                        ttype = st.nextToken();
+                        if (ttype != StreamTokenizer.TT_EOL) {
+                            break;
                         }
                     }
                 }
-                fr.close();
             }
-        } catch (IOException ioe1) {
-        } finally {
-            if (fr != null) {
-                try {
-                    fr.close();
-                }  catch (IOException ioe2) {
-                }
-            }
+        } catch (IOException ioe) {
         }
     }
 

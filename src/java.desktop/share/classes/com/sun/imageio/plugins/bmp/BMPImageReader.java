@@ -67,6 +67,7 @@ import javax.imageio.stream.ImageInputStream;
 
 import com.sun.imageio.plugins.common.I18N;
 import com.sun.imageio.plugins.common.ImageUtil;
+import com.sun.imageio.plugins.common.ReaderUtil;
 
 /** This class is the Java Image IO plugin reader for BMP images.
  *  It may subsample the image, clip the image, select sub-bands,
@@ -1542,9 +1543,8 @@ public class BMPImageReader extends ImageReader implements BMPConstants {
         }
 
         // Read till we have the whole image
-        byte[] values = new byte[imSize];
-        int bytesRead = 0;
-        iis.readFully(values, 0, imSize);
+        byte[] values = ReaderUtil.
+            staggeredReadByteStream(iis, imSize);
 
         // Since data is compressed, decompress it
         decodeRLE8(imSize, padding, values, bdata);
@@ -1726,8 +1726,8 @@ public class BMPImageReader extends ImageReader implements BMPConstants {
         }
 
         // Read till we have the whole image
-        byte[] values = new byte[imSize];
-        iis.readFully(values, 0, imSize);
+        byte[] values = ReaderUtil.
+            staggeredReadByteStream(iis, imSize);
 
         // Decompress the RLE4 compressed data.
         decodeRLE4(imSize, padding, values, bdata);

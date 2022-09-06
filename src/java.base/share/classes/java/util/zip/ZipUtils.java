@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,8 +97,8 @@ class ZipUtils {
         if (month > 0 && month < 13 && day > 0 && hour < 24 && minute < 60 && second < 60) {
             try {
                 LocalDateTime ldt = LocalDateTime.of(year, month, day, hour, minute, second);
-                return TimeUnit.MILLISECONDS.convert(ldt.toEpochSecond(
-                        ZoneId.systemDefault().getRules().getOffset(ldt)), TimeUnit.SECONDS);
+                return TimeUnit.SECONDS.toMillis(ldt.toEpochSecond(
+                        ZoneId.systemDefault().getRules().getOffset(ldt)));
             } catch (DateTimeException dte) {
                 // ignore
             }
@@ -283,7 +283,7 @@ class ZipUtils {
     static final int READBLOCKSZ = 128;
 
     /**
-     * Loads zip native library, if not already laoded
+     * Loads zip native library, if not already loaded
      */
     static void loadLibrary() {
         jdk.internal.loader.BootLoader.loadLibrary("zip");

@@ -241,7 +241,7 @@ final class WDataTransferer extends DataTransferer {
             if (bytes == null || !DataFlavor.javaFileListFlavor.equals(flavor)) {
                 throw new IOException("data translation failed");
             }
-            String st = new String(bytes, 0, bytes.length, UTF_16LE);
+            String st = new String(bytes, UTF_16LE);
             String[] filenames = st.split("\0");
             if( 0 == filenames.length ){
                 return null;

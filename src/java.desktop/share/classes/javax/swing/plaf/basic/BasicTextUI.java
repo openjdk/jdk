@@ -2626,9 +2626,7 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
                     }
 
                     imported = true;
-                } catch (UnsupportedFlavorException ufe) {
-                } catch (BadLocationException ble) {
-                } catch (IOException ioe) {
+                } catch (UnsupportedFlavorException | IOException | BadLocationException ex) {
                 }
             }
             return imported;
@@ -2694,8 +2692,7 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
                             richText = sw.toString();
                         }
                     }
-                } catch (BadLocationException ble) {
-                } catch (IOException ioe) {
+                } catch (BadLocationException | IOException ex) {
                 }
             }
 

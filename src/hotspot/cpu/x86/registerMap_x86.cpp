@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,8 @@
 address RegisterMap::pd_location(VMReg reg) const {
   if (reg->is_XMMRegister()) {
     int reg_base = reg->value() - ConcreteRegisterImpl::max_fpr;
-    int base_reg_enc = (reg_base / XMMRegisterImpl::max_slots_per_register);
-    assert(base_reg_enc >= 0 && base_reg_enc < XMMRegisterImpl::number_of_registers, "invalid XMMRegister: %d", base_reg_enc);
+    int base_reg_enc = (reg_base / XMMRegister::max_slots_per_register);
+    assert(base_reg_enc >= 0 && base_reg_enc < XMMRegister::number_of_registers, "invalid XMMRegister: %d", base_reg_enc);
     VMReg base_reg = as_XMMRegister(base_reg_enc)->as_VMReg();
     intptr_t offset_in_bytes = (reg->value() - base_reg->value()) * VMRegImpl::stack_slot_size;
     if (base_reg_enc > 15) {
@@ -54,7 +54,7 @@ address RegisterMap::pd_location(VMReg reg) const {
         // XMM0-15 case (0 < offset_in_bytes < 16). No need to adjust base register (or offset).
       }
     }
-    address base_location = location(base_reg);
+    address base_location = location(base_reg, nullptr);
     if (base_location != NULL) {
       return base_location + offset_in_bytes;
     }
@@ -63,5 +63,5 @@ address RegisterMap::pd_location(VMReg reg) const {
 }
 
 address RegisterMap::pd_location(VMReg base_reg, int slot_idx) const {
-  return location(base_reg->next(slot_idx));
+  return location(base_reg->next(slot_idx), nullptr);
 }

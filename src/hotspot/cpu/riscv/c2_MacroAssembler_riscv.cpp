@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -28,6 +28,7 @@
 #include "asm/assembler.inline.hpp"
 #include "opto/c2_MacroAssembler.hpp"
 #include "opto/intrinsicnode.hpp"
+#include "opto/output.hpp"
 #include "opto/subnode.hpp"
 #include "runtime/stubRoutines.hpp"
 
@@ -241,6 +242,35 @@ void C2_MacroAssembler::string_indexof_char(Register str1, Register cnt1,
 
 typedef void (MacroAssembler::* load_chr_insn)(Register rd, const Address &adr, Register temp);
 
+void C2_MacroAssembler::emit_entry_barrier_stub(C2EntryBarrierStub* stub) {
+  // make guard value 4-byte aligned so that it can be accessed by atomic instructions on riscv
+  int alignment_bytes = align(4);
+
+  bind(stub->slow_path());
+
+  int32_t _offset = 0;
+  movptr_with_offset(t0, StubRoutines::riscv::method_entry_barrier(), _offset);
+  jalr(ra, t0, _offset);
+  j(stub->continuation());
+
+  bind(stub->guard());
+  relocate(entry_guard_Relocation::spec());
+  assert(offset() % 4 == 0, "bad alignment");
+  emit_int32(0);  // nmethod guard value
+  // make sure the stub with a fixed code size
+  if (alignment_bytes == 2) {
+    assert(UseRVC, "bad alignment");
+    c_nop();
+  } else {
+    assert(alignment_bytes == 0, "bad alignment");
+    nop();
+  }
+}
+
+int C2_MacroAssembler::entry_barrier_stub_size() {
+  return 8 * 4 + 4; // 4 bytes for alignment margin
+}
+
 // Search for needle in haystack and return index or -1
 // x10: result
 // x11: haystack
@@ -284,7 +314,7 @@ void C2_MacroAssembler::string_indexof(Register haystack, Register needle,
   // if (pattern.count == 0) return 0;
 
   // We have two strings, a source string in haystack, haystack_len and a pattern string
-  // in needle, needle_len. Find the first occurence of pattern in source or return -1.
+  // in needle, needle_len. Find the first occurrence of pattern in source or return -1.
 
   // For larger pattern and source we use a simplified Boyer Moore algorithm.
   // With a small pattern and source we use linear scan.
@@ -1430,7 +1460,7 @@ void C2_MacroAssembler::string_compare_v(Register str1, Register str2, Register 
 
   BLOCK_COMMENT("string_compare {");
 
-  // for Lating strings, 1 byte for 1 character
+  // for Latin strings, 1 byte for 1 character
   // for UTF16 strings, 2 bytes for 1 character
   if (!str1_isL)
     sraiw(cnt1, cnt1, 1);
@@ -1546,6 +1576,8 @@ void C2_MacroAssembler::count_positives_v(Register ary, Register len, Register r
   Label LOOP, SET_RESULT, DONE;
 
   BLOCK_COMMENT("count_positives_v {");
+  assert_different_registers(ary, len, result, tmp);
+
   mv(result, zr);
 
   bind(LOOP);

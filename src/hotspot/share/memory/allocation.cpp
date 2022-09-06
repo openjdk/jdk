@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ char* AllocateHeap(size_t size,
 char* AllocateHeap(size_t size,
                    MEMFLAGS flags,
                    AllocFailType alloc_failmode /* = AllocFailStrategy::EXIT_OOM*/) {
-  return AllocateHeap(size, flags, CALLER_PC);
+  return AllocateHeap(size, flags, CALLER_PC, alloc_failmode);
 }
 
 char* ReallocateHeap(char *old,
@@ -239,15 +239,10 @@ ResourceObj::~ResourceObj() {
 // Non-product code
 
 #ifndef PRODUCT
-void AllocatedObj::print() const       { print_on(tty); }
-void AllocatedObj::print_value() const { print_value_on(tty); }
+void ResourceObj::print() const       { print_on(tty); }
 
-void AllocatedObj::print_on(outputStream* st) const {
-  st->print_cr("AllocatedObj(" INTPTR_FORMAT ")", p2i(this));
-}
-
-void AllocatedObj::print_value_on(outputStream* st) const {
-  st->print("AllocatedObj(" INTPTR_FORMAT ")", p2i(this));
+void ResourceObj::print_on(outputStream* st) const {
+  st->print_cr("ResourceObj(" INTPTR_FORMAT ")", p2i(this));
 }
 
 ReallocMark::ReallocMark() {

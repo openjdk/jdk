@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@
 #include "gc/parallel/psPromotionLAB.inline.hpp"
 #include "gc/parallel/psScavenge.inline.hpp"
 #include "gc/parallel/psStringDedup.hpp"
+#include "gc/shared/continuationGCSupport.inline.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "logging/log.hpp"
@@ -41,6 +42,7 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/prefetch.inline.hpp"
+#include "utilities/copy.hpp"
 
 inline PSPromotionManager* PSPromotionManager::manager_array(uint index) {
   assert(_manager_array != NULL, "access of NULL manager_array");
@@ -245,6 +247,10 @@ inline oop PSPromotionManager::copy_unmarked_to_survivor_space(oop o,
   // Copy obj
   Copy::aligned_disjoint_words(cast_from_oop<HeapWord*>(o), cast_from_oop<HeapWord*>(new_obj), new_obj_size);
 
+  // Parallel GC claims with a release - so other threads might access this object
+  // after claiming and they should see the "completed" object.
+  ContinuationGCSupport::transform_stack_chunk(new_obj);
+
   // Now we have to CAS in the header.
   // Make copy visible to threads reading the forwardee.
   oop forwardee = o->forward_to_atomic(new_obj, test_mark, memory_order_release);
@@ -283,7 +289,7 @@ inline oop PSPromotionManager::copy_unmarked_to_survivor_space(oop o,
     return new_obj;
   } else {
     // We lost, someone else "owns" this object.
-    // Ensure loads from the forwardee follow all changes that preceeded the
+    // Ensure loads from the forwardee follow all changes that preceded the
     // release-cmpxchg that performed the forwarding in another thread.
     OrderAccess::acquire();
 

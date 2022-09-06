@@ -36,8 +36,9 @@
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shared/oopStorage.inline.hpp"
 #include "gc/shared/oopStorageSet.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/jniHandles.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/threads.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/enumIterator.hpp"
 

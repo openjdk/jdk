@@ -23,13 +23,14 @@
  */
 package com.sun.hotspot.igv.view;
 
-import com.sun.hotspot.igv.data.ChangedEvent;
-import com.sun.hotspot.igv.data.ChangedListener;
-import com.sun.hotspot.igv.data.GraphDocument;
-import com.sun.hotspot.igv.data.Group;
-import com.sun.hotspot.igv.data.InputNode;
-import com.sun.hotspot.igv.data.InputBlock;
+import com.lowagie.text.Document;
+import com.lowagie.text.Rectangle;
+import com.lowagie.text.pdf.PdfContentByte;
+import com.lowagie.text.pdf.PdfGraphics2D;
+import com.lowagie.text.pdf.PdfTemplate;
+import com.lowagie.text.pdf.PdfWriter;
 import com.sun.hotspot.igv.data.Properties;
+import com.sun.hotspot.igv.data.*;
 import com.sun.hotspot.igv.data.Properties.PropertyMatcher;
 import com.sun.hotspot.igv.data.services.InputGraphProvider;
 import com.sun.hotspot.igv.filter.FilterChain;
@@ -37,15 +38,15 @@ import com.sun.hotspot.igv.filter.FilterChainProvider;
 import com.sun.hotspot.igv.graph.Diagram;
 import com.sun.hotspot.igv.graph.Figure;
 import com.sun.hotspot.igv.graph.services.DiagramProvider;
+import com.sun.hotspot.igv.settings.Settings;
 import com.sun.hotspot.igv.util.LookupHistory;
 import com.sun.hotspot.igv.util.RangeSlider;
-import com.sun.hotspot.igv.settings.Settings;
 import com.sun.hotspot.igv.view.actions.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
 import java.awt.event.HierarchyBoundsListener;
 import java.awt.event.HierarchyEvent;
 import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.*;
@@ -57,13 +58,6 @@ import javax.swing.border.Border;
 import org.apache.batik.dom.GenericDOMImplementation;
 import org.apache.batik.svggen.SVGGeneratorContext;
 import org.apache.batik.svggen.SVGGraphics2D;
-import com.lowagie.text.Document;
-import com.lowagie.text.Rectangle;
-import com.lowagie.text.pdf.PdfWriter;
-import com.lowagie.text.pdf.PdfContentByte;
-import com.lowagie.text.pdf.PdfTemplate;
-import com.lowagie.text.pdf.PdfGraphics2D;
-import org.w3c.dom.DOMImplementation;
 import org.openide.DialogDisplayer;
 import org.openide.NotifyDescriptor;
 import org.openide.actions.RedoAction;
@@ -78,11 +72,9 @@ import org.openide.util.actions.Presenter;
 import org.openide.util.lookup.AbstractLookup;
 import org.openide.util.lookup.InstanceContent;
 import org.openide.util.lookup.ProxyLookup;
-import org.openide.windows.Mode;
 import org.openide.windows.TopComponent;
-import org.openide.windows.WindowManager;
+import org.w3c.dom.DOMImplementation;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  *
@@ -101,7 +93,6 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
     private PredSuccAction predSuccAction;
     private ShowEmptyBlocksAction showEmptyBlocksAction;
     private SelectionModeAction selectionModeAction;
-    private PanModeAction panModeAction;
     private boolean notFirstTime;
     private JComponent satelliteComponent;
     private JPanel centerPanel;
@@ -109,6 +100,9 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
     private RangeSlider rangeSlider;
     private JToggleButton overviewButton;
     private JToggleButton hideDuplicatesButton;
+    private JPanel topPanel;
+    private Toolbar quickSearchToolbar;
+    private static final JPanel quickSearchPresenter = (JPanel) ((Presenter.Toolbar) Utilities.actionsForPath("Actions/Search").get(0)).getToolbarPresenter();
     private static final String PREFERRED_ID = "EditorTopComponent";
     private static final String SATELLITE_STRING = "satellite";
     private static final String SCENE_STRING = "scene";
@@ -171,32 +165,36 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
         setToolTipText(NbBundle.getMessage(EditorTopComponent.class, "HINT_EditorTopComponent"));
 
         Action[] actions = new Action[]{
-            PrevDiagramAction.get(PrevDiagramAction.class),
-            NextDiagramAction.get(NextDiagramAction.class),
-            null,
-            ExtractAction.get(ExtractAction.class),
-            ShowAllAction.get(HideAction.class),
-            ShowAllAction.get(ShowAllAction.class),
-            null,
-            ZoomInAction.get(ZoomInAction.class),
-            ZoomOutAction.get(ZoomOutAction.class),
+                PrevDiagramAction.get(PrevDiagramAction.class),
+                NextDiagramAction.get(NextDiagramAction.class),
+                null,
+                ShrinkDiffAction.get(ShrinkDiffAction.class),
+                ExpandDiffAction.get(ExpandDiffAction.class),
+                null,
+                ExtractAction.get(ExtractAction.class),
+                ShowAllAction.get(HideAction.class),
+                ShowAllAction.get(ShowAllAction.class),
+                null,
+                ZoomOutAction.get(ZoomOutAction.class),
+                ZoomInAction.get(ZoomInAction.class),
         };
 
 
         Action[] actionsWithSelection = new Action[]{
-            ExtractAction.get(ExtractAction.class),
-            ShowAllAction.get(HideAction.class),
-            null,
-            ExpandPredecessorsAction.get(ExpandPredecessorsAction.class),
-            ExpandSuccessorsAction.get(ExpandSuccessorsAction.class)
+                ExtractAction.get(ExtractAction.class),
+                ShowAllAction.get(HideAction.class),
+                null,
+                ExpandPredecessorsAction.get(ExpandPredecessorsAction.class),
+                ExpandSuccessorsAction.get(ExpandSuccessorsAction.class)
         };
 
         initComponents();
 
         ToolbarPool.getDefault().setPreferredIconSize(16);
         Toolbar toolBar = new Toolbar();
-        Border b = (Border) UIManager.get("Nb.Editor.Toolbar.border"); //NOI18N
-        toolBar.setBorder(b);
+        toolBar.setBorder((Border) UIManager.get("Nb.Editor.Toolbar.border")); //NOI18N
+        toolBar.setMinimumSize(new Dimension(0,0)); // MacOS BUG with ToolbarWithOverflow
+
         JPanel container = new JPanel();
         this.add(container, BorderLayout.NORTH);
         container.setLayout(new BorderLayout());
@@ -233,15 +231,18 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
             doc.getChangedEvent().addListener(d -> closeOnRemovedOrEmptyGroup());
         }
 
-        toolBar.add(NextDiagramAction.get(NextDiagramAction.class));
         toolBar.add(PrevDiagramAction.get(PrevDiagramAction.class));
+        toolBar.add(NextDiagramAction.get(NextDiagramAction.class));
+        toolBar.addSeparator();
+        toolBar.add(ShrinkDiffAction.get(ShrinkDiffAction.class));
+        toolBar.add(ExpandDiffAction.get(ExpandDiffAction.class));
         toolBar.addSeparator();
         toolBar.add(ExtractAction.get(ExtractAction.class));
         toolBar.add(ShowAllAction.get(HideAction.class));
         toolBar.add(ShowAllAction.get(ShowAllAction.class));
         toolBar.addSeparator();
-        toolBar.add(ShowAllAction.get(ZoomInAction.class));
         toolBar.add(ShowAllAction.get(ZoomOutAction.class));
+        toolBar.add(ShowAllAction.get(ZoomInAction.class));
 
         toolBar.addSeparator();
         ButtonGroup layoutButtons = new ButtonGroup();
@@ -294,41 +295,60 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
         hideDuplicatesAction.addPropertyChangeListener(this);
 
         toolBar.addSeparator();
-        toolBar.add(UndoAction.get(UndoAction.class));
-        toolBar.add(RedoAction.get(RedoAction.class));
+        UndoAction undoAction = UndoAction.get(UndoAction.class);
+        undoAction.putValue(Action.SHORT_DESCRIPTION, "Undo");
+        toolBar.add(undoAction);
+        RedoAction redoAction = RedoAction.get(RedoAction.class);
+        redoAction.putValue(Action.SHORT_DESCRIPTION, "Redo");
+        toolBar.add(redoAction);
 
         toolBar.addSeparator();
-        ButtonGroup interactionButtons = new ButtonGroup();
-
-        panModeAction = new PanModeAction();
-        panModeAction.setSelected(true);
-        button = new JToggleButton(panModeAction);
-        button.setSelected(true);
-        interactionButtons.add(button);
-        toolBar.add(button);
-        panModeAction.addPropertyChangeListener(this);
-
         selectionModeAction = new SelectionModeAction();
         button = new JToggleButton(selectionModeAction);
-        interactionButtons.add(button);
+        button.setSelected(false);
         toolBar.add(button);
         selectionModeAction.addPropertyChangeListener(this);
-
         toolBar.add(Box.createHorizontalGlue());
-        Action action = Utilities.actionsForPath("QuickSearchShadow").get(0);
-        Component quicksearch = ((Presenter.Toolbar) action).getToolbarPresenter();
-        try {
-            // (aw) workaround for disappearing search bar due to reparenting one shared component instance.
-            quicksearch = (Component) quicksearch.getClass().getConstructor(KeyStroke.class).newInstance(new Object[]{null});
-        } catch (ReflectiveOperationException | IllegalArgumentException | SecurityException e) {
-        }
-        Dimension preferredSize = quicksearch.getPreferredSize();
-        preferredSize = new Dimension((int) preferredSize.getWidth() * 2, (int) preferredSize.getHeight());
-        quicksearch.setMinimumSize(preferredSize); // necessary for GTK LAF
-        quicksearch.setPreferredSize(preferredSize);
-        toolBar.add(quicksearch);
+
+        quickSearchToolbar = new Toolbar();
+        quickSearchToolbar.setLayout(new BoxLayout(quickSearchToolbar, BoxLayout.LINE_AXIS));
+        quickSearchToolbar.setBorder((Border) UIManager.get("Nb.Editor.Toolbar.border")); //NOI18N
+        quickSearchPresenter.setMinimumSize(quickSearchPresenter.getPreferredSize());
+        quickSearchPresenter.setAlignmentX(Component.RIGHT_ALIGNMENT);
+        quickSearchToolbar.add(quickSearchPresenter);
+
+        // Needed for toolBar to use maximal available width
+        JPanel toolbarPanel = new JPanel(new GridLayout(1, 0));
+        toolbarPanel.add(toolBar);
+
+        topPanel = new JPanel();
+        topPanel.setLayout(new BoxLayout(topPanel, BoxLayout.LINE_AXIS));
+        topPanel.add(toolbarPanel);
+        topPanel.add(quickSearchToolbar);
+        container.add(BorderLayout.NORTH, topPanel);
 
         centerPanel = new JPanel();
+        centerPanel.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(
+                KeyStroke.getKeyStroke(KeyEvent.VK_S, 0, false), "showSatellite");
+        centerPanel.getActionMap().put("showSatellite",
+                new AbstractAction("showSatellite") {
+                    @Override public void actionPerformed(ActionEvent e) {
+                        EditorTopComponent.this.overviewButton.setSelected(true);
+                        EditorTopComponent.this.overviewAction.setState(true);
+                    }
+                });
+        centerPanel.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(
+                KeyStroke.getKeyStroke(KeyEvent.VK_S, 0, true), "showScene");
+        centerPanel.getActionMap().put("showScene",
+                new AbstractAction("showScene") {
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        EditorTopComponent.this.overviewButton.setSelected(false);
+                        EditorTopComponent.this.overviewAction.setState(false);
+                    }
+                });
+
+
         this.add(centerPanel, BorderLayout.CENTER);
         cardLayout = new CardLayout();
         centerPanel.setLayout(cardLayout);
@@ -337,9 +357,6 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
         satelliteComponent = scene.createSatelliteView();
         satelliteComponent.setSize(200, 200);
         centerPanel.add(SATELLITE_STRING, satelliteComponent);
-
-        // TODO: Fix the hot key for entering the satellite view
-        this.addKeyListener(keyListener);
 
         scene.getComponent().addHierarchyBoundsListener(new HierarchyBoundsListener() {
 
@@ -368,28 +385,6 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
 
         updateDisplayName();
     }
-    private KeyListener keyListener = new KeyListener() {
-
-        @Override
-        public void keyTyped(KeyEvent e) {
-        }
-
-        @Override
-        public void keyPressed(KeyEvent e) {
-            if (e.getKeyCode() == KeyEvent.VK_S) {
-                EditorTopComponent.this.overviewButton.setSelected(true);
-                EditorTopComponent.this.overviewAction.setState(true);
-            }
-        }
-
-        @Override
-        public void keyReleased(KeyEvent e) {
-            if (e.getKeyCode() == KeyEvent.VK_S) {
-                EditorTopComponent.this.overviewButton.setSelected(false);
-                EditorTopComponent.this.overviewAction.setState(false);
-            }
-        }
-    };
 
     public DiagramViewModel getDiagramModel() {
         return rangeSliderModel;
@@ -433,14 +428,7 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
     }
 
     public static EditorTopComponent getActive() {
-        Set<? extends Mode> modes = WindowManager.getDefault().getModes();
-        for (Mode m : modes) {
-            TopComponent tc = m.getSelectedTopComponent();
-            if (tc instanceof EditorTopComponent) {
-                return (EditorTopComponent) tc;
-            }
-        }
-        return null;
+        return (EditorTopComponent) EditorTopComponent.getRegistry().getActivated();
     }
 
     /** This method is called from within the constructor to
@@ -469,11 +457,8 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
     }
 
     @Override
-    public void componentOpened() {
-    }
-
-    @Override
     public void componentClosed() {
+        super.componentClosed();
         rangeSliderModel.close();
     }
 
@@ -579,11 +564,12 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
         } else if (evt.getSource() == this.hideDuplicatesAction) {
             boolean b = (Boolean) hideDuplicatesAction.getValue(HideDuplicatesAction.STATE);
             this.getModel().setHideDuplicates(b);
-        } else if (evt.getSource() == this.selectionModeAction || evt.getSource() == this.panModeAction) {
-            if (panModeAction.isSelected()) {
-                scene.setInteractionMode(DiagramViewer.InteractionMode.PANNING);
-            } else if (selectionModeAction.isSelected()) {
+        } else if (evt.getSource() == this.selectionModeAction) {
+            boolean b = (Boolean) selectionModeAction.getValue(SelectionModeAction.STATE);
+            if (b) {
                 scene.setInteractionMode(DiagramViewer.InteractionMode.SELECTION);
+            } else {
+                scene.setInteractionMode(DiagramViewer.InteractionMode.PANNING);
             }
         } else {
             assert false : "Unknown event source";
@@ -676,6 +662,13 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
     public void requestActive() {
         super.requestActive();
         scene.getComponent().requestFocus();
+    }
+
+    @Override
+    protected void componentActivated() {
+        super.componentActivated();
+        quickSearchToolbar.add(quickSearchPresenter);
+        quickSearchPresenter.revalidate();
     }
 
     @Override

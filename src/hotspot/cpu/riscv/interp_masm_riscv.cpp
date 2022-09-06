@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -40,9 +40,9 @@
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/basicLock.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
-#include "runtime/thread.inline.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 void InterpreterMacroAssembler::narrow(Register result) {
@@ -466,7 +466,7 @@ void InterpreterMacroAssembler::load_double(Address src) {
 
 void InterpreterMacroAssembler::prepare_to_jump_from_interpreted() {
   // set sender sp
-  mv(x30, sp);
+  mv(x19_sender_sp, sp);
   // record last_sp
   sd(esp, Address(fp, frame::interpreter_frame_last_sp_offset * wordSize));
 }
@@ -548,11 +548,11 @@ void InterpreterMacroAssembler::dispatch_only(TosState state, bool generate_poll
 }
 
 void InterpreterMacroAssembler::dispatch_only_normal(TosState state, Register Rs) {
-  dispatch_base(state, Interpreter::normal_table(state), Rs);
+  dispatch_base(state, Interpreter::normal_table(state), true, false, Rs);
 }
 
 void InterpreterMacroAssembler::dispatch_only_noverify(TosState state, Register Rs) {
-  dispatch_base(state, Interpreter::normal_table(state), false, Rs);
+  dispatch_base(state, Interpreter::normal_table(state), false, false, Rs);
 }
 
 void InterpreterMacroAssembler::dispatch_next(TosState state, int step, bool generate_poll) {
@@ -572,7 +572,7 @@ void InterpreterMacroAssembler::dispatch_via(TosState state, address* table) {
 //
 // Apply stack watermark barrier.
 // Unlock the receiver if this is a synchronized method.
-// Unlock any Java monitors from syncronized blocks.
+// Unlock any Java monitors from synchronized blocks.
 // Remove the activation from the stack.
 //
 // If there are locked Java monitors
@@ -1827,7 +1827,7 @@ void InterpreterMacroAssembler::profile_return_type(Register mdp, Register ret, 
 
       // If we don't profile all invoke bytecodes we must make sure
       // it's a bytecode we indeed profile. We can't go back to the
-      // begining of the ProfileData we intend to update to check its
+      // beginning of the ProfileData we intend to update to check its
       // type because we're right after it and we don't known its
       // length
       Label do_profile;

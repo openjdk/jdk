@@ -721,6 +721,13 @@ public class SynthLookAndFeel extends BasicLookAndFeel {
                 "KP_RIGHT", "selectParent",
                   });
 
+        table.put("Menu.shortcutKeys",
+                  new int[] {
+                          SwingUtilities2.getSystemMnemonicKeyMask(),
+                          SwingUtilities2.setAltGraphMask(
+                             SwingUtilities2.getSystemMnemonicKeyMask())
+                  });
+
         // enabled antialiasing depending on desktop settings
         flushUnreferenced();
         SwingUtilities2.putAATextInfo(useLAFConditions(), table);

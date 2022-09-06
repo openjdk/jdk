@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -111,7 +111,8 @@ void ZBarrierSetAssembler::store_at(MacroAssembler* masm,
                                     Address dst,
                                     Register val,
                                     Register tmp1,
-                                    Register tmp2) {
+                                    Register tmp2,
+                                    Register tmp3) {
   // Verify value
   if (is_reference_type(type)) {
     // Note that src could be noreg, which means we
@@ -119,7 +120,7 @@ void ZBarrierSetAssembler::store_at(MacroAssembler* masm,
     if (val != noreg) {
       Label done;
 
-      // tmp1 and tmp2 are often set to noreg.
+      // tmp1, tmp2 and tmp3 are often set to noreg.
       RegSet savedRegs = RegSet::of(t0);
       __ push_reg(savedRegs, sp);
 
@@ -134,7 +135,7 @@ void ZBarrierSetAssembler::store_at(MacroAssembler* masm,
   }
 
   // Store value
-  BarrierSetAssembler::store_at(masm, decorators, type, dst, val, tmp1, tmp2);
+  BarrierSetAssembler::store_at(masm, decorators, type, dst, val, tmp1, tmp2, noreg);
 }
 
 #endif // ASSERT
@@ -238,7 +239,7 @@ public:
         } else if (vm_reg->is_FloatRegister()) {
           _fp_regs += FloatRegSet::of(vm_reg->as_FloatRegister());
         } else if (vm_reg->is_VectorRegister()) {
-          const VMReg vm_reg_base = OptoReg::as_VMReg(opto_reg & ~(VectorRegisterImpl::max_slots_per_register - 1));
+          const VMReg vm_reg_base = OptoReg::as_VMReg(opto_reg & ~(VectorRegister::max_slots_per_register - 1));
           _vp_regs += VectorRegSet::of(vm_reg_base->as_VectorRegister());
         } else {
           fatal("Unknown register type");
@@ -382,7 +383,7 @@ void ZBarrierSetAssembler::generate_c1_load_barrier_stub(LIR_Assembler* ce,
   assert_different_registers(ref, ref_addr, noreg);
 
   // Save x10 unless it is the result or tmp register
-  // Set up SP to accomodate parameters and maybe x10.
+  // Set up SP to accommodate parameters and maybe x10.
   if (ref != x10 && tmp != x10) {
     __ sub(sp, sp, 32);
     __ sd(x10, Address(sp, 16));
@@ -397,7 +398,7 @@ void ZBarrierSetAssembler::generate_c1_load_barrier_stub(LIR_Assembler* ce,
   __ far_call(stub->runtime_stub());
 
   // Verify result
-  __ verify_oop(x10, "Bad oop");
+  __ verify_oop(x10);
 
 
   // Move result into place

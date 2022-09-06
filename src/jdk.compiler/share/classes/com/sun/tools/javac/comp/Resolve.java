@@ -68,6 +68,7 @@ import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -105,10 +106,8 @@ public class Resolve {
     ModuleFinder moduleFinder;
     Types types;
     JCDiagnostic.Factory diags;
-    public final boolean allowFunctionalInterfaceMostSpecific;
     public final boolean allowModules;
     public final boolean allowRecords;
-    public final boolean checkVarargsAccessAfterResolution;
     private final boolean compactMethodDiags;
     private final boolean allowLocalVariableTypeInference;
     private final boolean allowYieldStatement;
@@ -144,11 +143,8 @@ public class Resolve {
                 options.isUnset(Option.XDIAGS) && options.isUnset("rawDiagnostics");
         verboseResolutionMode = VerboseResolutionMode.getVerboseResolutionMode(options);
         Target target = Target.instance(context);
-        allowFunctionalInterfaceMostSpecific = Feature.FUNCTIONAL_INTERFACE_MOST_SPECIFIC.allowedInSource(source);
         allowLocalVariableTypeInference = Feature.LOCAL_VARIABLE_TYPE_INFERENCE.allowedInSource(source);
         allowYieldStatement = Feature.SWITCH_EXPRESSION.allowedInSource(source);
-        checkVarargsAccessAfterResolution =
-                Feature.POST_APPLICABILITY_VARARGS_ACCESS_CHECK.allowedInSource(source);
         polymorphicSignatureScope = WriteableScope.create(syms.noSymbol);
         allowModules = Feature.MODULES.allowedInSource(source);
         allowRecords = Feature.RECORDS.allowedInSource(source);
@@ -359,7 +355,9 @@ public class Resolve {
                     ||
                     env.toplevel.packge == c.packge()
                     ||
-                    isInnerSubClass(env.enclClass.sym, c.owner);
+                    isInnerSubClass(env.enclClass.sym, c.owner)
+                    ||
+                    env.info.allowProtectedAccess;
                 break;
         }
         return (checkInner == false || c.type.getEnclosingType() == Type.noType) ?
@@ -912,7 +910,7 @@ public class Resolve {
             super.argumentsAcceptable(env, deferredAttrContext, argtypes, formals, warn);
             // should we check varargs element type accessibility?
             if (deferredAttrContext.phase.isVarargsRequired()) {
-                if (deferredAttrContext.mode == AttrMode.CHECK || !checkVarargsAccessAfterResolution) {
+                if (deferredAttrContext.mode == AttrMode.CHECK) {
                     varargsAccessible(env, types.elemtype(formals.last()), deferredAttrContext.inferenceContext);
                 }
             }
@@ -1167,9 +1165,8 @@ public class Resolve {
             }
 
             public boolean compatible(Type found, Type req, Warner warn) {
-                if (allowFunctionalInterfaceMostSpecific &&
-                        unrelatedFunctionalInterfaces(found, req) &&
-                        (actual != null && actual.getTag() == DEFERRED)) {
+                if (unrelatedFunctionalInterfaces(found, req) &&
+                    (actual != null && actual.getTag() == DEFERRED)) {
                     DeferredType dt = (DeferredType) actual;
                     JCTree speculativeTree = dt.speculativeTree(deferredAttrContext);
                     if (speculativeTree != deferredAttr.stuckTree) {
@@ -2419,7 +2416,7 @@ public class Resolve {
      *                   (a subset of VAL, TYP, PCK).
      */
     Symbol findIdent(DiagnosticPosition pos, Env<AttrContext> env, Name name, KindSelector kind) {
-        return checkRestrictedType(pos, findIdentInternal(env, name, kind), name);
+        return checkNonExistentType(checkRestrictedType(pos, findIdentInternal(env, name, kind), name));
     }
 
     Symbol findIdentInternal(Env<AttrContext> env, Name name, KindSelector kind) {
@@ -2455,7 +2452,7 @@ public class Resolve {
     Symbol findIdentInPackage(DiagnosticPosition pos,
                               Env<AttrContext> env, TypeSymbol pck,
                               Name name, KindSelector kind) {
-        return checkRestrictedType(pos, findIdentInPackageInternal(env, pck, name, kind), name);
+        return checkNonExistentType(checkRestrictedType(pos, findIdentInPackageInternal(env, pck, name, kind), name));
     }
 
     Symbol findIdentInPackageInternal(Env<AttrContext> env, TypeSymbol pck,
@@ -2492,7 +2489,17 @@ public class Resolve {
     Symbol findIdentInType(DiagnosticPosition pos,
                            Env<AttrContext> env, Type site,
                            Name name, KindSelector kind) {
-        return checkRestrictedType(pos, findIdentInTypeInternal(env, site, name, kind), name);
+        return checkNonExistentType(checkRestrictedType(pos, findIdentInTypeInternal(env, site, name, kind), name));
+    }
+
+    private Symbol checkNonExistentType(Symbol symbol) {
+        /*  Guard against returning a type is not on the class path of the current compilation,
+         *  but *was* on the class path of a separate compilation that produced a class file
+         *  that is on the class path of the current compilation. Such a type will fail completion
+         *  but the completion failure may have been silently swallowed (e.g. missing annotation types)
+         *  with an error stub symbol lingering in the symbol tables.
+         */
+        return symbol instanceof ClassSymbol c && c.type.isErroneous() && c.classfile == null ? typeNotFound : symbol;
     }
 
     Symbol findIdentInTypeInternal(Env<AttrContext> env, Type site,
@@ -3766,7 +3773,7 @@ public class Resolve {
                             types.asSuper(env.enclClass.type, c), env.enclClass.sym);
                 }
             }
-            //find a direct super type that is a subtype of 'c'
+            //find a direct supertype that is a subtype of 'c'
             for (Type i : types.directSupertypes(env.enclClass.type)) {
                 if (i.tsym.isSubClass(c, types) && i.tsym != c) {
                     log.error(pos,
@@ -4162,16 +4169,11 @@ public class Resolve {
                 return null;
 
             Pair<Symbol, JCDiagnostic> c = errCandidate();
-            if (compactMethodDiags) {
-                JCDiagnostic simpleDiag =
-                    MethodResolutionDiagHelper.rewrite(diags, pos, log.currentSource(), dkind, c.snd);
-                if (simpleDiag != null) {
-                    return simpleDiag;
-                }
-            }
             Symbol ws = c.fst.asMemberOf(site, types);
             return diags.create(dkind, log.currentSource(), pos,
                       "cant.apply.symbol",
+                      compactMethodDiags ?
+                              d -> MethodResolutionDiagHelper.rewrite(diags, pos, log.currentSource(), dkind, c.snd) : null,
                       kindName(ws),
                       ws.name == names.init ? ws.owner.name : ws.name,
                       methodArguments(ws.type.getParameterTypes()),
@@ -4232,8 +4234,8 @@ public class Resolve {
                 JCDiagnostic err = diags.create(dkind,
                         null,
                         truncatedDiag ?
-                            EnumSet.of(DiagnosticFlag.COMPRESSED) :
-                            EnumSet.noneOf(DiagnosticFlag.class),
+                                EnumSet.of(DiagnosticFlag.COMPRESSED) :
+                                EnumSet.noneOf(DiagnosticFlag.class),
                         log.currentSource(),
                         pos,
                         "cant.apply.symbols",

@@ -146,7 +146,7 @@ public abstract sealed class JavaKeyStore extends KeyStoreSpi {
     {
         Object entry = entries.get(convertAlias(alias));
 
-        if (entry == null || !(entry instanceof KeyEntry)) {
+        if (!(entry instanceof KeyEntry keyEntry)) {
             return null;
         }
         if (password == null) {
@@ -155,7 +155,7 @@ public abstract sealed class JavaKeyStore extends KeyStoreSpi {
 
         byte[] passwordBytes = convertToBytes(password);
         KeyProtector keyProtector = new KeyProtector(passwordBytes);
-        byte[] encrBytes = ((KeyEntry)entry).protectedPrivKey;
+        byte[] encrBytes = keyEntry.protectedPrivKey;
         EncryptedPrivateKeyInfo encrInfo;
         try {
             encrInfo = new EncryptedPrivateKeyInfo(encrBytes);
@@ -183,11 +183,11 @@ public abstract sealed class JavaKeyStore extends KeyStoreSpi {
     public Certificate[] engineGetCertificateChain(String alias) {
         Object entry = entries.get(convertAlias(alias));
 
-        if (entry != null && entry instanceof KeyEntry) {
-            if (((KeyEntry)entry).chain == null) {
+        if (entry instanceof KeyEntry keyEntry) {
+            if (keyEntry.chain == null) {
                 return null;
             } else {
-                return ((KeyEntry)entry).chain.clone();
+                return keyEntry.chain.clone();
             }
         } else {
             return null;
@@ -384,7 +384,7 @@ public abstract sealed class JavaKeyStore extends KeyStoreSpi {
         synchronized(entries) {
 
             Object entry = entries.get(convertAlias(alias));
-            if ((entry != null) && (entry instanceof KeyEntry)) {
+            if (entry instanceof KeyEntry) {
                 throw new KeyStoreException
                     ("Cannot overwrite own certificate");
             }
@@ -449,11 +449,7 @@ public abstract sealed class JavaKeyStore extends KeyStoreSpi {
      */
     public boolean engineIsKeyEntry(String alias) {
         Object entry = entries.get(convertAlias(alias));
-        if ((entry != null) && (entry instanceof KeyEntry)) {
-            return true;
-        } else {
-            return false;
-        }
+        return entry instanceof KeyEntry;
     }
 
     /**
@@ -465,11 +461,7 @@ public abstract sealed class JavaKeyStore extends KeyStoreSpi {
      */
     public boolean engineIsCertificateEntry(String alias) {
         Object entry = entries.get(convertAlias(alias));
-        if ((entry != null) && (entry instanceof TrustedCertEntry)) {
-            return true;
-        } else {
-            return false;
-        }
+        return entry instanceof TrustedCertEntry;
     }
 
     /**

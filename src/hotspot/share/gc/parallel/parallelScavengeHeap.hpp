@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -173,7 +173,6 @@ class ParallelScavengeHeap : public CollectedHeap {
   virtual void register_nmethod(nmethod* nm);
   virtual void unregister_nmethod(nmethod* nm);
   virtual void verify_nmethod(nmethod* nm);
-  virtual void flush_nmethod(nmethod* nm);
 
   void prune_scavengable_nmethods();
 
@@ -184,7 +183,9 @@ class ParallelScavengeHeap : public CollectedHeap {
 
   bool is_in_reserved(const void* p) const;
 
-  bool is_in_young(const oop p) const;
+  bool is_in_young(const void* p) const;
+
+  virtual bool requires_barriers(stackChunkOop obj) const;
 
   MemRegion reserved_region() const { return _reserved; }
   HeapWord* base() const { return _reserved.start(); }
@@ -215,11 +216,6 @@ class ParallelScavengeHeap : public CollectedHeap {
 
   // Perform a full collection
   virtual void do_full_collection(bool clear_all_soft_refs);
-
-  bool supports_inline_contig_alloc() const { return !UseNUMA; }
-
-  HeapWord* volatile* top_addr() const { return !UseNUMA ? young_gen()->top_addr() : (HeapWord* volatile*)-1; }
-  HeapWord** end_addr() const { return !UseNUMA ? young_gen()->end_addr() : (HeapWord**)-1; }
 
   void ensure_parsability(bool retire_tlabs);
   void resize_all_tlabs();

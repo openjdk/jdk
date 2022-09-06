@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -436,7 +436,7 @@ static void print_indent(outputStream* st, int indent) {
   }
 }
 
-// Print the class name and its unique ClassLoader identifer.
+// Print the class name and its unique ClassLoader identifier.
 static void print_classname(outputStream* st, Klass* klass) {
   oop loader_oop = klass->class_loader_data()->class_loader();
   st->print("%s/", klass->external_name());
@@ -468,7 +468,7 @@ void KlassHierarchy::print_class(outputStream* st, KlassInfoEntry* cie, bool pri
   print_indent(st, indent);
   if (indent != 0) st->print("--");
 
-  // Print the class name, its unique ClassLoader identifer, and if it is an interface.
+  // Print the class name, its unique ClassLoader identifier, and if it is an interface.
   print_classname(st, klass);
   if (klass->is_interface()) {
     st->print(" (intf)");

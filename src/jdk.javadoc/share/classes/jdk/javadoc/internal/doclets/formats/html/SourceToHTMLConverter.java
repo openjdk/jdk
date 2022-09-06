@@ -50,7 +50,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocFile;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
-import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
 import jdk.javadoc.internal.doclets.toolkit.util.SimpleDocletException;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
@@ -69,7 +68,7 @@ public class SourceToHTMLConverter {
     /**
      * New line to be added to the documentation.
      */
-    private static final String NEW_LINE = DocletConstants.NL;
+    private static final String NEW_LINE = Text.NL;
 
     private final HtmlConfiguration configuration;
     private final HtmlOptions options;
@@ -287,12 +286,11 @@ public class SourceToHTMLConverter {
      * @param lineno The line number
      */
     private static void addLineNo(Content pre, int lineno) {
-        var span = new HtmlTree(TagName.SPAN);
-        span.setStyle(HtmlStyle.sourceLineNo);
+        var span = HtmlTree.SPAN(HtmlStyle.sourceLineNo);
         if (lineno < 10) {
-            span.add("00" + Integer.toString(lineno));
+            span.add("00" + lineno);
         } else if (lineno < 100) {
-            span.add("0" + Integer.toString(lineno));
+            span.add("0" + lineno);
         } else {
             span.add(Integer.toString(lineno));
         }
@@ -306,12 +304,12 @@ public class SourceToHTMLConverter {
      * @param line the string to format.
      * @param currentLineNo the current number.
      */
-    private void addLine(Content pre, String line, int currentLineNo) {
+    private void addLine(HtmlTree pre, String line, int currentLineNo) {
         if (line != null) {
             var anchor = HtmlTree.SPAN_ID(
                     HtmlIds.forLine(currentLineNo),
                     Text.of(utils.replaceTabs(line)));
-            pre.add(anchor);
+            pre.addUnchecked(anchor);
             pre.add(NEW_LINE);
         }
     }

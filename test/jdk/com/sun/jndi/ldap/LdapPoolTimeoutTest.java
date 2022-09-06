@@ -49,6 +49,7 @@ import java.util.concurrent.TimeUnit;
 
 import static jdk.test.lib.Utils.adjustTimeout;
 import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.expectThrows;
 
 public class LdapPoolTimeoutTest {
@@ -121,7 +122,9 @@ public class LdapPoolTimeoutTest {
             String msg = e.getCause() == null ? e.getMessage() : e.getCause().getMessage();
             System.err.println("MSG RTE: " + msg);
             // assertCompletion may wrap a CommunicationException in an RTE
-            assertTrue(msg != null && msg.contains("Network is unreachable"));
+            assertNotNull(msg);
+            assertTrue(msg.contains("Network is unreachable")
+                        || msg.contains("No route to host"));
         } catch (NamingException ex) {
             String msg = ex.getCause() == null ? ex.getMessage() : ex.getCause().getMessage();
             System.err.println("MSG: " + msg);
