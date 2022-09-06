@@ -41,10 +41,10 @@
 #include <assert.h>
 
 JNIEXPORT jlong JNICALL
-Java_sun_nio_ch_AbstractFileChannelImpl_transferTo0(JNIEnv *env, jobject this,
-                                                    jobject srcFDO,
-                                                    jlong position, jlong count,
-                                                    jobject dstFDO, jboolean append)
+Java_sun_nio_ch_FileChannelImpl_transferTo0(JNIEnv *env, jobject this,
+                                            jobject srcFDO, jlong position,
+                                            jlong count, jobject dstFDO,
+                                            jboolean append)
 {
     jint srcFD = fdval(env, srcFDO);
     jint dstFD = fdval(env, dstFDO);
