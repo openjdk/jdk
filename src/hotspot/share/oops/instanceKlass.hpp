@@ -939,7 +939,6 @@ public:
   inline DependencyContext dependencies();
   int  mark_dependent_nmethods(KlassDepChange& changes);
   void add_dependent_nmethod(nmethod* nm);
-  void remove_dependent_nmethod(nmethod* nm);
   void clean_dependency_context();
 
   // On-stack replacement support
@@ -1212,12 +1211,15 @@ private:
   // log class name to classlist
   void log_to_classlist() const;
 public:
+
+#if INCLUDE_CDS
   // CDS support - remove and restore oops from metadata. Oops are not shared.
   virtual void remove_unshareable_info();
   virtual void remove_java_mirror();
   void restore_unshareable_info(ClassLoaderData* loader_data, Handle protection_domain, PackageEntry* pkg_entry, TRAPS);
   void init_shared_package_entry();
   bool can_be_verified_at_dumptime() const;
+#endif
 
   jint compute_modifier_flags() const;
 

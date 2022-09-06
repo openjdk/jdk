@@ -176,6 +176,7 @@ public class IRNode {
     public static final String CMP_UL = START + "CmpUL" + MID + END;
     public static final String CMP_U3 = START + "CmpU3" + MID + END;
     public static final String CMP_UL3 = START + "CmpUL3" + MID + END;
+    public static final String CMP_I = START + "CmpI" + MID + END;
     public static final String MUL = START + "Mul(I|L|F|D)" + MID + END;
     public static final String MUL_I = START + "MulI" + MID + END;
     public static final String MUL_L = START + "MulL" + MID + END;

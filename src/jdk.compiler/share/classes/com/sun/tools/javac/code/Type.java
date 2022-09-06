@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2125,21 +2125,6 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
 
         /** add a bound of a given kind - this might trigger listener notification */
         public final void addBound(InferenceBound ib, Type bound, Types types) {
-            // Per JDK-8075793: in pre-8 sources, follow legacy javac behavior
-            // when capture variables are inferred as bounds: for lower bounds,
-            // map to the capture variable's upper bound; for upper bounds,
-            // if the capture variable has a lower bound, map to that type
-            if (types.mapCapturesToBounds) {
-                switch (ib) {
-                    case LOWER:
-                        bound = types.cvarUpperBound(bound);
-                        break;
-                    case UPPER:
-                        Type altBound = types.cvarLowerBound(bound);
-                        if (!altBound.hasTag(TypeTag.BOT)) bound = altBound;
-                        break;
-                }
-            }
             addBound(ib, bound, types, false);
         }
 

@@ -548,11 +548,11 @@ void InterpreterMacroAssembler::dispatch_only(TosState state, bool generate_poll
 }
 
 void InterpreterMacroAssembler::dispatch_only_normal(TosState state, Register Rs) {
-  dispatch_base(state, Interpreter::normal_table(state), Rs);
+  dispatch_base(state, Interpreter::normal_table(state), true, false, Rs);
 }
 
 void InterpreterMacroAssembler::dispatch_only_noverify(TosState state, Register Rs) {
-  dispatch_base(state, Interpreter::normal_table(state), false, Rs);
+  dispatch_base(state, Interpreter::normal_table(state), false, false, Rs);
 }
 
 void InterpreterMacroAssembler::dispatch_next(TosState state, int step, bool generate_poll) {

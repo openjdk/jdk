@@ -55,11 +55,8 @@ class BsdNativeDispatcher extends UnixNativeDispatcher {
      * returns buf->f_mntonname (directory on which mounted)
      */
     static byte[] getmntonname(UnixPath path) throws UnixException {
-        NativeBuffer pathBuffer = copyToNativeBuffer(path);
-        try {
+        try (NativeBuffer pathBuffer = copyToNativeBuffer(path)) {
             return getmntonname0(pathBuffer.address());
-        } finally {
-            pathBuffer.release();
         }
     }
     static native byte[] getmntonname0(long pathAddress) throws UnixException;
