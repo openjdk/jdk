@@ -33,7 +33,7 @@
 
 // Implementation of Heap
 
-CodeHeap::CodeHeap(const char* name, const int code_blob_type)
+CodeHeap::CodeHeap(const char* name, const CodeBlobType code_blob_type)
   : _code_blob_type(code_blob_type) {
   _name                         = name;
   _number_of_committed_segments = 0;
@@ -483,7 +483,7 @@ void* CodeHeap::find_start(void* p) const {
 
 // Find block which contains the passed pointer.
 // Same as find_start(p), but with additional safety net.
-CodeBlob* CodeHeap::find_blob_unsafe(void* start) const {
+CodeBlob* CodeHeap::find_blob(void* start) const {
   CodeBlob* result = (CodeBlob*)CodeHeap::find_start(start);
   return (result != NULL && result->blob_contains((address)start)) ? result : NULL;
 }

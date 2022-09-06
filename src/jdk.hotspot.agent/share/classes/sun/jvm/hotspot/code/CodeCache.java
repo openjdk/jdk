@@ -92,9 +92,6 @@ public class CodeCache {
     }
     // We could potientially look up non_entrant methods
     // NOTE: this is effectively a "guarantee", and is slightly different from the one in the VM
-    if (Assert.ASSERTS_ENABLED) {
-      Assert.that(!(result.isZombie() || result.isLockedByVM()), "unsafe access to zombie method");
-    }
     return result;
   }
 

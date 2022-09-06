@@ -181,6 +181,26 @@ public abstract class ShortResponseBody {
                 .join();
     }
 
+    @DataProvider(name = "sanityBadRequest")
+    public Object[][] sanityBadRequest() {
+        return new Object[][]{
+                { httpURIVarLen  }, // no query string
+                { httpsURIVarLen },
+                { httpURIFixLen  },
+        };
+    }
+
+    @Test(dataProvider = "sanityBadRequest")
+    void sanityBadRequest(String url) throws Exception {
+        HttpClient client = newHttpClient();
+        url = uniqueURL(url);
+        HttpRequest request = HttpRequest.newBuilder(URI.create(url)).build();
+        out.println("Request: " + request);
+        HttpResponse<String> response = client.send(request, ofString());
+        assertEquals(response.statusCode(), 400);
+        assertEquals(response.body(), "");
+    }
+
     @DataProvider(name = "uris")
     public Object[][] variants(ITestContext context) {
         String[][] cases = new String[][] {
@@ -486,6 +506,11 @@ public abstract class ShortResponseBody {
             this.name = name;
         }
 
+        private static final String BAD_REQUEST_RESPONSE =
+                "HTTP/1.1 400 Bad Request\r\n" +
+                        "Content-Length: 0\r\n" +
+                        "Connection: close\r\n\r\n";
+
         abstract String response();
 
         @Override
@@ -502,9 +527,11 @@ public abstract class ShortResponseBody {
 
                     String query = uriPath.getRawQuery();
                     if (query == null) {
-                        out.println("Request headers: [" + headers + "]");
+                        out.println("Unexpected request without query string received. Got headers: [" + headers + "]");
+                        out.println("Replying with 400 Bad Request");
+                        writeResponse(s, BAD_REQUEST_RESPONSE, BAD_REQUEST_RESPONSE.length());
+                        continue;
                     }
-                    assert query != null : "null query for uriPath: " + uriPath;
                     String qv = query.split("=")[1];
                     int len;
                     if (qv.equals("all")) {
@@ -513,13 +540,8 @@ public abstract class ShortResponseBody {
                         len = Integer.parseInt(query.split("=")[1]);
                     }
 
-                    OutputStream os = s.getOutputStream();
                     out.println(name + ": writing " + len  + " bytes");
-                    byte[] responseBytes = response().getBytes(US_ASCII);
-                    for (int i = 0; i< len; i++) {
-                        os.write(responseBytes[i]);
-                        os.flush();
-                    }
+                    writeResponse(s, response(), len);
                 } catch (Throwable e) {
                     if (!closed) {
                         out.println("Unexpected exception in server: " + e);
@@ -527,6 +549,15 @@ public abstract class ShortResponseBody {
                         throw new RuntimeException("Unexpected: " + e, e);
                     }
                 }
+            }
+        }
+
+        private static void writeResponse(Socket socket, String response, int len) throws IOException {
+            OutputStream os = socket.getOutputStream();
+            byte[] responseBytes = response.getBytes(US_ASCII);
+            for (int i = 0; i < len; ++i) {
+                os.write(responseBytes[i]);
+                os.flush();
             }
         }
 

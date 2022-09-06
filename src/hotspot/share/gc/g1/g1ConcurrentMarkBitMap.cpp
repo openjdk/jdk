@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,10 @@
 #include "gc/g1/heapRegion.hpp"
 #include "memory/virtualspace.hpp"
 
+G1CMBitMap::G1CMBitMap() : MarkBitMap(), _listener() {
+  _listener.set_bitmap(this);
+}
+
 void G1CMBitMap::initialize(MemRegion heap, G1RegionToSpaceMapper* storage) {
   MarkBitMap::initialize(heap, storage->reserved());
   storage->set_mapping_changed_listener(&_listener);
@@ -41,18 +45,3 @@ void G1CMBitMapMappingChangedListener::on_commit(uint start_region, size_t num_r
   MemRegion mr(G1CollectedHeap::heap()->bottom_addr_for_region(start_region), num_regions * HeapRegion::GrainWords);
   _bm->clear_range(mr);
 }
-
-void G1CMBitMap::clear_region(HeapRegion* region) {
- if (!region->is_empty()) {
-   MemRegion mr(region->bottom(), region->top());
-   clear_range(mr);
- }
-}
-
-#ifdef ASSERT
-void G1CMBitMap::check_mark(HeapWord* addr) {
-  assert(G1CollectedHeap::heap()->is_in(addr),
-         "Trying to access bitmap " PTR_FORMAT " for address " PTR_FORMAT " not in the heap.",
-         p2i(this), p2i(addr));
-}
-#endif

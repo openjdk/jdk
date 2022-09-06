@@ -159,7 +159,6 @@ FindExecName(char *program)
 
     /* relative path? */
     if (JLI_StrRChr(program, FILE_SEPARATOR) != NULL) {
-        char buf[PATH_MAX+2];
         return Resolve(getcwd(cwdbuf, sizeof(cwdbuf)), program);
     }
 

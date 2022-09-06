@@ -420,7 +420,7 @@ public interface DocTreeFactory {
      * @return a {@code ValueTree} object
      *
      * @implSpec This implementation calls {@link #newValueTree(ReferenceTree) newValueTree(ref)}.
-     * @since 19
+     * @since 20
      */
     default ValueTree newValueTree(TextTree format, ReferenceTree ref) {
         return newValueTree(ref);

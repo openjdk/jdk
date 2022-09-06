@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -378,7 +378,7 @@ public final class DocumentHandler extends DefaultHandler {
                 try {
                     SAXParserFactory.newInstance().newSAXParser().parse(input, DocumentHandler.this);
                 }
-                catch (ParserConfigurationException exception) {
+                catch (ParserConfigurationException | IOException exception) {
                     handleException(exception);
                 }
                 catch (SAXException wrapper) {
@@ -386,9 +386,6 @@ public final class DocumentHandler extends DefaultHandler {
                     if (exception == null) {
                         exception = wrapper;
                     }
-                    handleException(exception);
-                }
-                catch (IOException exception) {
                     handleException(exception);
                 }
                 return null;

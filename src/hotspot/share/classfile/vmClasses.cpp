@@ -23,10 +23,11 @@
  */
 
 #include "precompiled.hpp"
-#include "cds/heapShared.hpp"
+#include "cds/archiveHeapLoader.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "classfile/dictionary.hpp"
+#include "classfile/javaClasses.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
@@ -135,13 +136,13 @@ void vmClasses::resolve_all(TRAPS) {
     // ConstantPool::restore_unshareable_info (restores the archived
     // resolved_references array object).
     //
-    // HeapShared::fixup_regions() fills the empty
+    // ArchiveHeapLoader::fixup_regions fills the empty
     // spaces in the archived heap regions and may use
     // vmClasses::Object_klass(), so we can do this only after
     // Object_klass is resolved. See the above resolve_through()
     // call. No mirror objects are accessed/restored in the above call.
     // Mirrors are restored after java.lang.Class is loaded.
-    HeapShared::fixup_regions();
+    ArchiveHeapLoader::fixup_regions();
 
     // Initialize the constant pool for the Object_class
     assert(Object_klass()->is_shared(), "must be");
@@ -168,7 +169,7 @@ void vmClasses::resolve_all(TRAPS) {
 
   if (UseSharedSpaces) {
     // These should already have been initialized during CDS dump.
-    assert(vmClasses::Reference_klass()->reference_type() == REF_OTHER, "sanity");
+    assert(vmClasses::Reference_klass()->reference_type() == REF_NONE, "sanity");
     assert(vmClasses::SoftReference_klass()->reference_type() == REF_SOFT, "sanity");
     assert(vmClasses::WeakReference_klass()->reference_type() == REF_WEAK, "sanity");
     assert(vmClasses::FinalReference_klass()->reference_type() == REF_FINAL, "sanity");
@@ -186,14 +187,9 @@ void vmClasses::resolve_all(TRAPS) {
     java_lang_ref_Reference::compute_offsets();
 
     // Preload ref klasses and set reference types
-    vmClasses::Reference_klass()->set_reference_type(REF_OTHER);
     InstanceRefKlass::update_nonstatic_oop_maps(vmClasses::Reference_klass());
 
     resolve_through(VM_CLASS_ID(PhantomReference_klass), scan, CHECK);
-    vmClasses::SoftReference_klass()->set_reference_type(REF_SOFT);
-    vmClasses::WeakReference_klass()->set_reference_type(REF_WEAK);
-    vmClasses::FinalReference_klass()->set_reference_type(REF_FINAL);
-    vmClasses::PhantomReference_klass()->set_reference_type(REF_PHANTOM);
   }
 
   resolve_until(vmClassID::LIMIT, scan, CHECK);
@@ -252,8 +248,7 @@ void vmClasses::resolve_shared_class(InstanceKlass* klass, ClassLoaderData* load
   klass->restore_unshareable_info(loader_data, domain, NULL, THREAD);
   SystemDictionary::load_shared_class_misc(klass, loader_data);
   Dictionary* dictionary = loader_data->dictionary();
-  unsigned int hash = dictionary->compute_hash(klass->name());
-  dictionary->add_klass(hash, klass->name(), klass);
+  dictionary->add_klass(THREAD, klass->name(), klass);
   SystemDictionary::add_to_hierarchy(klass);
   assert(klass->is_loaded(), "Must be in at least loaded state");
 }

@@ -60,7 +60,7 @@ import java.lang.invoke.MethodType;
  * is currently executing. This linker also provides access, via its {@linkplain #defaultLookup() default lookup},
  * to the native libraries loaded with the Java runtime.
  *
- * <h2><a id = "downcall-method-handles">Downcall method handles</a></h2>
+ * <h2 id="downcall-method-handles">Downcall method handles</h2>
  *
  * {@linkplain #downcallHandle(FunctionDescriptor) Linking a foreign function} is a process which requires a function descriptor,
  * a set of memory layouts which, together, specify the signature of the foreign function to be linked, and returns,
@@ -91,7 +91,7 @@ import java.lang.invoke.MethodType;
  * memory region associated with the struct returned by the downcall method handle.</li>
  * </ul>
  *
- * <h2><a id = "upcall-stubs">Upcall stubs</a></h2>
+ * <h2 id="upcall-stubs">Upcall stubs</h2>
  *
  * {@linkplain #upcallStub(MethodHandle, FunctionDescriptor, MemorySession) Creating an upcall stub} requires a method
  * handle and a function descriptor; in this case, the set of memory layouts in the function descriptor
@@ -114,7 +114,7 @@ import java.lang.invoke.MethodType;
  * downcall method handles (as {@link MemorySegment} implements the {@link Addressable} interface) and,
  * when no longer required, they can be {@linkplain MemorySession#close() released}, via their associated {@linkplain MemorySession session}.
  *
- * <h2>Safety considerations</h2>
+ * <h2 id="safety">Safety considerations</h2>
  *
  * Creating a downcall method handle is intrinsically unsafe. A symbol in a foreign library does not, in general,
  * contain enough signature information (e.g. arity and types of foreign function parameters). As a consequence,

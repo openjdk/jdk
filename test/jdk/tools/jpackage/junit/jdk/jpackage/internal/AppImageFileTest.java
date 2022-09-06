@@ -35,7 +35,14 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.Rule;
 import org.junit.rules.TemporaryFolder;
+import org.junit.function.ThrowingRunnable;
 
+/*
+ * @test
+ * @modules jdk.jpackage
+ * @compile --patch-module jdk.jpackage=${test.src} --add-reads jdk.jpackage=ALL-UNNAMED --add-exports jdk.jpackage/jdk.jpackage.internal=ALL-UNNAMED AppImageFileTest.java
+ * @run junit/othervm --patch-module jdk.jpackage=${test.classes} --add-reads jdk.jpackage=ALL-UNNAMED --add-exports jdk.jpackage/jdk.jpackage.internal=ALL-UNNAMED jdk.jpackage.internal.AppImageFileTest
+ */
 public class AppImageFileTest {
 
     @Rule
@@ -74,19 +81,19 @@ public class AppImageFileTest {
 
     @Test
     public void testInavlidXml() throws IOException {
-        assertInvalid(createFromXml("<foo/>"));
-        assertInvalid(createFromXml("<jpackage-state/>"));
-        assertInvalid(createFromXml(JPACKAGE_STATE_OPEN, "</jpackage-state>"));
-        assertInvalid(createFromXml(
+        assertInvalid(() -> createFromXml("<foo/>"));
+        assertInvalid(() -> createFromXml("<jpackage-state/>"));
+        assertInvalid(() -> createFromXml(JPACKAGE_STATE_OPEN, "</jpackage-state>"));
+        assertInvalid(() -> createFromXml(
                 JPACKAGE_STATE_OPEN,
                     "<main-launcher></main-launcher>",
                 "</jpackage-state>"));
-        assertInvalid(createFromXml(
+        assertInvalid(() -> createFromXml(
                 JPACKAGE_STATE_OPEN,
                     "<main-launcher>Foo</main-launcher>",
                     "<main-class></main-class>",
                 "</jpackage-state>"));
-        assertInvalid(createFromXml(
+        assertInvalid(() -> createFromXml(
                 JPACKAGE_STATE_OPEN,
                     "<launcher>A</launcher>",
                     "<launcher>B</launcher>",
@@ -99,6 +106,8 @@ public class AppImageFileTest {
                 JPACKAGE_STATE_OPEN,
                     "<main-launcher>Foo</main-launcher>",
                     "<main-class>main.Class</main-class>",
+                    "<signed>false</signed>",
+                    "<app-store>false</app-store>",
                 "</jpackage-state>")).getLauncherName());
 
         Assert.assertEquals("Boo", (createFromXml(
@@ -106,12 +115,16 @@ public class AppImageFileTest {
                     "<main-launcher>Boo</main-launcher>",
                     "<main-launcher>Bar</main-launcher>",
                     "<main-class>main.Class</main-class>",
+                    "<signed>false</signed>",
+                    "<app-store>false</app-store>",
                 "</jpackage-state>")).getLauncherName());
 
         var file = createFromXml(
                 JPACKAGE_STATE_OPEN,
                     "<main-launcher>Foo</main-launcher>",
                     "<main-class>main.Class</main-class>",
+                    "<signed>false</signed>",
+                    "<app-store>false</app-store>",
                     "<launcher></launcher>",
                 "</jpackage-state>");
         Assert.assertEquals("Foo", file.getLauncherName());
@@ -199,9 +212,10 @@ public class AppImageFileTest {
         return AppImageFile.load(tempFolder.getRoot().toPath());
     }
 
-    private void assertInvalid(AppImageFile file) {
-        Assert.assertNull(file.getLauncherName());
-        Assert.assertNull(file.getAddLaunchers());
+    private void assertInvalid(ThrowingRunnable action) {
+        Exception ex = Assert.assertThrows(RuntimeException.class, action);
+        Assert.assertTrue(ex instanceof RuntimeException);
+        Assert.assertTrue(ex.getMessage().contains("malformed .jpackage.xml"));
     }
 
     private AppImageFile createFromXml(String... xmlData) throws IOException {

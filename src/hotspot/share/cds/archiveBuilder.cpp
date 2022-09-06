@@ -45,12 +45,11 @@
 #include "oops/oopHandle.inline.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/globals_extension.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/sharedRuntime.hpp"
-#include "runtime/thread.hpp"
 #include "utilities/align.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/formatBuffer.hpp"
-#include "utilities/hashtable.inline.hpp"
 
 ArchiveBuilder* ArchiveBuilder::_current = NULL;
 
@@ -159,6 +158,7 @@ ArchiveBuilder::ArchiveBuilder() :
   _rw_src_objs(),
   _ro_src_objs(),
   _src_obj_table(INITIAL_TABLE_SIZE, MAX_TABLE_SIZE),
+  _dumped_to_src_obj_table(INITIAL_TABLE_SIZE, MAX_TABLE_SIZE),
   _total_closed_heap_region_size(0),
   _total_open_heap_region_size(0),
   _estimated_metaspaceobj_bytes(0),
@@ -329,7 +329,7 @@ address ArchiveBuilder::reserve_buffer() {
   ReservedSpace rs(buffer_size, MetaspaceShared::core_region_alignment(), os::vm_page_size());
   if (!rs.is_reserved()) {
     log_error(cds)("Failed to reserve " SIZE_FORMAT " bytes of output buffer.", buffer_size);
-    vm_direct_exit(0);
+    os::_exit(0);
   }
 
   // buffer_bottom is the lowest address of the 2 core regions (rw, ro) when
@@ -379,7 +379,7 @@ address ArchiveBuilder::reserve_buffer() {
     log_error(cds)("my_archive_requested_top    = " INTPTR_FORMAT, p2i(my_archive_requested_top));
     log_error(cds)("SharedBaseAddress (" INTPTR_FORMAT ") is too high. "
                    "Please rerun java -Xshare:dump with a lower value", p2i(_requested_static_archive_bottom));
-    vm_direct_exit(0);
+    os::_exit(0);
   }
 
   if (DumpSharedSpaces) {
@@ -630,6 +630,14 @@ void ArchiveBuilder::make_shallow_copy(DumpRegion *dump_region, SourceObjInfo* s
   newtop = dump_region->top();
 
   memcpy(dest, src, bytes);
+  {
+    bool created;
+    _dumped_to_src_obj_table.put_if_absent((address)dest, src, &created);
+    assert(created, "must be");
+    if (_dumped_to_src_obj_table.maybe_grow()) {
+      log_info(cds, hashtables)("Expanded _dumped_to_src_obj_table table to %d", _dumped_to_src_obj_table.table_size());
+    }
+  }
 
   intptr_t* archived_vtable = CppVtables::get_archived_vtable(ref->msotype(), (address)dest);
   if (archived_vtable != NULL) {
@@ -648,6 +656,13 @@ address ArchiveBuilder::get_dumped_addr(address src_obj) const {
   assert(p != NULL, "must be");
 
   return p->dumped_addr();
+}
+
+address ArchiveBuilder::get_src_obj(address dumped_addr) const {
+  assert(is_in_buffer_space(dumped_addr), "must be");
+  address* src_obj = _dumped_to_src_obj_table.get(dumped_addr);
+  assert(src_obj != NULL && *src_obj != NULL, "must be");
+  return *src_obj;
 }
 
 void ArchiveBuilder::relocate_embedded_pointers(ArchiveBuilder::SourceObjList* src_objs) {
@@ -727,6 +742,7 @@ void ArchiveBuilder::make_klasses_shareable() {
     const char* type;
     const char* unlinked = "";
     const char* hidden = "";
+    const char* generated = "";
     Klass* k = klasses()->at(i);
     k->remove_java_mirror();
     if (k->is_objArray_klass()) {
@@ -771,13 +787,18 @@ void ArchiveBuilder::make_klasses_shareable() {
         hidden = " ** hidden";
       }
 
+      if (ik->is_generated_shared_class()) {
+        generated = " ** generated";
+      }
       MetaspaceShared::rewrite_nofast_bytecodes_and_calculate_fingerprints(Thread::current(), ik);
       ik->remove_unshareable_info();
     }
 
     if (log_is_enabled(Debug, cds, class)) {
       ResourceMark rm;
-      log_debug(cds, class)("klasses[%5d] = " PTR_FORMAT " %-5s %s%s%s", i, p2i(to_requested(k)), type, k->external_name(), hidden, unlinked);
+      log_debug(cds, class)("klasses[%5d] = " PTR_FORMAT " %-5s %s%s%s%s", i,
+                            p2i(to_requested(k)), type, k->external_name(),
+                            hidden, unlinked, generated);
     }
   }
 

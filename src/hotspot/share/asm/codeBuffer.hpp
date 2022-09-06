@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,9 +27,11 @@
 
 #include "code/oopRecorder.hpp"
 #include "code/relocInfo.hpp"
-#include "compiler/compiler_globals.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/growableArray.hpp"
+#include "utilities/linkedlist.hpp"
+#include "utilities/resizeableResourceHash.hpp"
 #include "utilities/macros.hpp"
 
 class PhaseCFG;
@@ -37,6 +39,8 @@ class Compile;
 class BufferBlob;
 class CodeBuffer;
 class Label;
+class ciMethod;
+class SharedStubToInterpRequest;
 
 class CodeOffsets: public StackObj {
 public:
@@ -258,12 +262,12 @@ class CodeSection {
   // Slop between sections, used only when allocating temporary BufferBlob buffers.
   static csize_t end_slop()         { return MAX2((int)sizeof(jdouble), (int)CodeEntryAlignment); }
 
-  csize_t align_at_start(csize_t off, int section) const {
+  static csize_t align_at_start(csize_t off, int section) {
     return (csize_t) align_up(off, alignment(section));
   }
 
   csize_t align_at_start(csize_t off) const {
-    return (csize_t) align_up(off, alignment(_index));
+    return align_at_start(off, _index);
   }
 
   // Ensure there's enough space left in the current section.
@@ -346,6 +350,8 @@ class Scrubber {
 };
 #endif // ASSERT
 
+typedef GrowableArray<SharedStubToInterpRequest> SharedStubToInterpRequests;
+
 // A CodeBuffer describes a memory space into which assembly
 // code is generated.  This memory space usually occupies the
 // interior of a single BufferBlob, but in some cases it may be
@@ -393,6 +399,9 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
     SECT_LIMIT, SECT_NONE = -1
   };
 
+  typedef LinkedListImpl<int> Offsets;
+  typedef ResizeableResourceHashtable<address, Offsets> SharedTrampolineRequests;
+
  private:
   enum {
     sect_bits = 2,      // assert (SECT_LIMIT <= (1<<sect_bits))
@@ -418,6 +427,10 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
 
   address      _last_insn;      // used to merge consecutive memory barriers, loads or stores.
 
+  SharedStubToInterpRequests* _shared_stub_to_interp_requests; // used to collect requests for shared iterpreter stubs
+  SharedTrampolineRequests*   _shared_trampoline_requests;     // used to collect requests for shared trampolines
+  bool         _finalize_stubs; // Indicate if we need to finalize stubs to make CodeBuffer final.
+
 #ifndef PRODUCT
   AsmRemarks   _asm_remarks;
   DbgStrings   _dbg_strings;
@@ -435,6 +448,9 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
     _oop_recorder    = NULL;
     _overflow_arena  = NULL;
     _last_insn       = NULL;
+    _finalize_stubs  = false;
+    _shared_stub_to_interp_requests = NULL;
+    _shared_trampoline_requests = NULL;
 
 #ifndef PRODUCT
     _decode_begin    = NULL;
@@ -686,6 +702,12 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
   // Log a little info about section usage in the CodeBuffer
   void log_section_sizes(const char* name);
 
+  // Make a set of stubs final. It can create/optimize stubs.
+  void finalize_stubs();
+
+  // Request for a shared stub to the interpreter
+  void shared_stub_to_interp_for(ciMethod* callee, csize_t call_offset);
+
 #ifndef PRODUCT
  public:
   // Printing / Decoding
@@ -699,6 +721,23 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
   // The following header contains architecture-specific implementations
 #include CPU_HEADER(codeBuffer)
 
+};
+
+// A Java method can have calls of Java methods which can be statically bound.
+// Calls of Java methods need stubs to the interpreter. Calls sharing the same Java method
+// can share a stub to the interpreter.
+// A SharedStubToInterpRequest is a request for a shared stub to the interpreter.
+class SharedStubToInterpRequest : public ResourceObj {
+ private:
+  ciMethod* _shared_method;
+  CodeBuffer::csize_t _call_offset; // The offset of the call in CodeBuffer
+
+ public:
+  SharedStubToInterpRequest(ciMethod* method = NULL, CodeBuffer::csize_t call_offset = -1) : _shared_method(method),
+      _call_offset(call_offset) {}
+
+  ciMethod* shared_method() const { return _shared_method; }
+  CodeBuffer::csize_t call_offset() const { return _call_offset; }
 };
 
 inline bool CodeSection::maybe_expand_to_ensure_remaining(csize_t amount) {

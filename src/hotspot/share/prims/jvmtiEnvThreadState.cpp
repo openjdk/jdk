@@ -33,8 +33,8 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/javaThread.inline.hpp"
 #include "runtime/signature.hpp"
-#include "runtime/thread.inline.hpp"
 #include "runtime/vframe.hpp"
 #include "runtime/vmOperations.hpp"
 
@@ -318,7 +318,10 @@ class GetCurrentLocationClosure : public HandshakeClosure {
   void do_thread(Thread *target) {
     JavaThread *jt = JavaThread::cast(target);
     ResourceMark rmark; // jt != Thread::current()
-    RegisterMap rm(jt, false);
+    RegisterMap rm(jt,
+                   RegisterMap::UpdateMap::skip,
+                   RegisterMap::ProcessFrames::include,
+                   RegisterMap::WalkContinuation::skip);
     // There can be a race condition between a handshake
     // and the target thread exiting from Java execution.
     // We must recheck that the last Java frame still exists.

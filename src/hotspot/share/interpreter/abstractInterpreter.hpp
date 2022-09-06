@@ -31,7 +31,7 @@
 #include "interpreter/bytecodes.hpp"
 #include "oops/method.hpp"
 #include "runtime/frame.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/vmThread.hpp"
 
 // This file contains the platform-independent parts
@@ -81,7 +81,6 @@ class AbstractInterpreter: AllStatic {
     java_lang_math_fmaF,                                        // implementation of java.lang.Math.fma   (x, y, z)
     java_lang_math_fmaD,                                        // implementation of java.lang.Math.fma   (x, y, z)
     java_lang_ref_reference_get,                                // implementation of java.lang.ref.Reference.get()
-    java_lang_continuation_doYield,                             // implementation of jdk.internal.vm.Continuation.doYield()
     java_util_zip_CRC32_update,                                 // implementation of java.util.zip.CRC32.update()
     java_util_zip_CRC32_updateBytes,                            // implementation of java.util.zip.CRC32.updateBytes()
     java_util_zip_CRC32_updateByteBuffer,                       // implementation of java.util.zip.CRC32.updateByteBuffer()
@@ -296,7 +295,7 @@ class AbstractInterpreterGenerator: public StackObj {
   InterpreterMacroAssembler* _masm;
 
  public:
-  AbstractInterpreterGenerator(StubQueue* _code);
+  AbstractInterpreterGenerator();
 };
 
 #endif // SHARE_INTERPRETER_ABSTRACTINTERPRETER_HPP

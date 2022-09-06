@@ -78,6 +78,7 @@
 #include "runtime/handshake.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/jfieldIDWorkaround.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/os.inline.hpp"
@@ -85,7 +86,6 @@
 #include "runtime/perfData.hpp"
 #include "runtime/reflection.hpp"
 #include "runtime/synchronizer.hpp"
-#include "runtime/thread.inline.hpp"
 #include "runtime/threadIdentifier.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/vframe.inline.hpp"
@@ -441,7 +441,7 @@ JVM_END
 
 
 JVM_ENTRY_NO_ENV(void, JVM_Halt(jint code))
-  before_exit(thread);
+  before_exit(thread, true);
   vm_exit(code);
 JVM_END
 
@@ -1095,9 +1095,9 @@ JVM_ENTRY(jclass, JVM_FindLoadedClass(JNIEnv *env, jobject loader, jstring name)
   //   The Java level wrapper will perform the necessary security check allowing
   //   us to pass the NULL as the initiating class loader.
   Handle h_loader(THREAD, JNIHandles::resolve(loader));
-  Klass* k = SystemDictionary::find_instance_or_array_klass(klass_name,
-                                                              h_loader,
-                                                              Handle());
+  Klass* k = SystemDictionary::find_instance_or_array_klass(THREAD, klass_name,
+                                                            h_loader,
+                                                            Handle());
 #if INCLUDE_CDS
   if (k == NULL) {
     // If the class is not already loaded, try to see if it's in the shared
@@ -3282,6 +3282,9 @@ JVM_END
 
 JVM_ENTRY(jboolean, JVM_ReferenceRefersTo(JNIEnv* env, jobject ref, jobject o))
   oop ref_oop = JNIHandles::resolve_non_null(ref);
+  // PhantomReference has it's own implementation of refersTo().
+  // See: JVM_PhantomReferenceRefersTo
+  assert(!java_lang_ref_Reference::is_phantom(ref_oop), "precondition");
   oop referent = java_lang_ref_Reference::weak_referent_no_keepalive(ref_oop);
   return referent == JNIHandles::resolve(o);
 JVM_END
@@ -3517,26 +3520,26 @@ JVM_END
 
 JNIEXPORT void* JNICALL JVM_RawMonitorCreate(void) {
   VM_Exit::block_if_vm_exited();
-  return new os::PlatformMutex();
+  return new PlatformMutex();
 }
 
 
 JNIEXPORT void JNICALL  JVM_RawMonitorDestroy(void *mon) {
   VM_Exit::block_if_vm_exited();
-  delete ((os::PlatformMutex*) mon);
+  delete ((PlatformMutex*) mon);
 }
 
 
 JNIEXPORT jint JNICALL JVM_RawMonitorEnter(void *mon) {
   VM_Exit::block_if_vm_exited();
-  ((os::PlatformMutex*) mon)->lock();
+  ((PlatformMutex*) mon)->lock();
   return 0;
 }
 
 
 JNIEXPORT void JNICALL JVM_RawMonitorExit(void *mon) {
   VM_Exit::block_if_vm_exited();
-  ((os::PlatformMutex*) mon)->unlock();
+  ((PlatformMutex*) mon)->unlock();
 }
 
 
@@ -4043,4 +4046,23 @@ JVM_ENTRY(void, JVM_VirtualThreadUnmountEnd(JNIEnv* env, jobject vthread, jboole
 #else
   fatal("Should only be called with JVMTI enabled");
 #endif
+JVM_END
+
+/*
+ * Return the current class's class file version.  The low order 16 bits of the
+ * returned jint contain the class's major version.  The high order 16 bits
+ * contain the class's minor version.
+ */
+JVM_ENTRY(jint, JVM_GetClassFileVersion(JNIEnv* env, jclass current))
+  oop mirror = JNIHandles::resolve_non_null(current);
+  if (java_lang_Class::is_primitive(mirror)) {
+    // return latest major version and minor version of 0.
+    return JVM_CLASSFILE_MAJOR_VERSION;
+  }
+  assert(!java_lang_Class::as_Klass(mirror)->is_array_klass(), "unexpected array class");
+
+  Klass* c = java_lang_Class::as_Klass(mirror);
+  assert(c->is_instance_klass(), "must be");
+  InstanceKlass* ik = InstanceKlass::cast(c);
+  return (ik->minor_version() << 16) | ik->major_version();
 JVM_END

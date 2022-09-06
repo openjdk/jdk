@@ -29,8 +29,8 @@
  *          is called with a negative length argument.
  * @modules java.base/jdk.internal.misc
  * @library /testlibrary /test/lib
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *
  * @run main/othervm/timeout=300
  *        -Xbootclasspath/a:.
@@ -44,7 +44,7 @@
 
 package compiler.escapeAnalysis;
 
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 import java.lang.reflect.Method;
 
 public class TestArrayCopy {

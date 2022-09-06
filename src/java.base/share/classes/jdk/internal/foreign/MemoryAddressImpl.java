@@ -95,7 +95,7 @@ public final class MemoryAddressImpl implements MemoryAddress, Scoped {
     }
 
     @Override
-    public MemorySessionImpl sessionImpl() {
+    public MemorySessionImpl session() {
         return MemorySessionImpl.GLOBAL;
     }
 

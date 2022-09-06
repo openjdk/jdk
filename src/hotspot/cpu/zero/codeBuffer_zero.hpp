@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -28,5 +28,13 @@
 
  private:
   void pd_initialize() {}
+  bool pd_finalize_stubs() {
+    if (_finalize_stubs) {
+      Unimplemented();
+    }
+    return true;
+  }
+ public:
+  static constexpr bool supports_shared_stubs() { return false; }
 
 #endif // CPU_ZERO_CODEBUFFER_ZERO_HPP

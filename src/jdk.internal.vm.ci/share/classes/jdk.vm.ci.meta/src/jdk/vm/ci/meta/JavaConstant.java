@@ -301,6 +301,10 @@ public interface JavaConstant extends Constant, JavaValue {
         }
     }
 
+    static PrimitiveConstant forPrimitive(char typeChar, long rawValue) {
+        return forPrimitive(JavaKind.fromPrimitiveOrVoidTypeChar(typeChar), rawValue);
+    }
+
     static PrimitiveConstant forPrimitive(JavaKind kind, long rawValue) {
         switch (kind) {
             case Boolean:

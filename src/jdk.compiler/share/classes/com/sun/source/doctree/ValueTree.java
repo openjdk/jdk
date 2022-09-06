@@ -48,7 +48,7 @@ public interface ValueTree extends InlineTagTree {
      * @return the format string
      *
      * @implSpec This implementation returns {@code null}.
-     * @since 19
+     * @since 20
      */
     default TextTree getFormat() {
         return null;

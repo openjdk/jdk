@@ -25,7 +25,6 @@
 #include "precompiled.hpp"
 #include "gc/g1/g1CollectedHeap.hpp"
 #include "gc/g1/g1ConcurrentMarkBitMap.inline.hpp"
-#include "gc/g1/g1FullCollector.hpp"
 #include "gc/g1/g1FullCollector.inline.hpp"
 #include "gc/g1/g1FullGCCompactionPoint.hpp"
 #include "gc/g1/g1FullGCCompactTask.hpp"
@@ -63,38 +62,38 @@ public:
              "should be quite full");
     }
 #endif
+    assert(_collector->compaction_top(r) == nullptr,
+           "region %u compaction_top " PTR_FORMAT " must not be different from bottom " PTR_FORMAT,
+           r->hrm_index(), p2i(_collector->compaction_top(r)), p2i(r->bottom()));
+
     r->reset_skip_compacting_after_full_gc();
     return false;
   }
 };
 
-void G1FullGCCompactTask::G1CompactRegionClosure::clear_in_prev_bitmap(oop obj) {
+void G1FullGCCompactTask::G1CompactRegionClosure::clear_in_bitmap(oop obj) {
   assert(_bitmap->is_marked(obj), "Should only compact marked objects");
   _bitmap->clear(obj);
 }
 
 size_t G1FullGCCompactTask::G1CompactRegionClosure::apply(oop obj) {
   size_t size = obj->size();
-  if (!obj->is_forwarded()) {
-    // Object not moving, but clear the mark to allow reuse of the bitmap.
-    clear_in_prev_bitmap(obj);
-    return size;
+  if (obj->is_forwarded()) {
+    HeapWord* destination = cast_from_oop<HeapWord*>(obj->forwardee());
+
+    // copy object and reinit its mark
+    HeapWord* obj_addr = cast_from_oop<HeapWord*>(obj);
+    assert(obj_addr != destination, "everything in this pass should be moving");
+    Copy::aligned_conjoint_words(obj_addr, destination, size);
+
+    // There is no need to transform stack chunks - marking already did that.
+    cast_to_oop(destination)->init_mark();
+    assert(cast_to_oop(destination)->klass() != NULL, "should have a class");
   }
-
-  HeapWord* destination = cast_from_oop<HeapWord*>(obj->forwardee());
-
-  // copy object and reinit its mark
-  HeapWord* obj_addr = cast_from_oop<HeapWord*>(obj);
-  assert(obj_addr != destination, "everything in this pass should be moving");
-  Copy::aligned_conjoint_words(obj_addr, destination, size);
-
-  // There is no need to transform stack chunks - marking already did that.
-  cast_to_oop(destination)->init_mark();
-  assert(cast_to_oop(destination)->klass() != NULL, "should have a class");
 
   // Clear the mark for the compacted object to allow reuse of the
   // bitmap without an additional clearing step.
-  clear_in_prev_bitmap(obj);
+  clear_in_bitmap(obj);
   return size;
 }
 
@@ -105,7 +104,7 @@ void G1FullGCCompactTask::compact_region(HeapRegion* hr) {
   if (!collector()->is_free(hr->hrm_index())) {
     // The compaction closure not only copies the object to the new
     // location, but also clears the bitmap for it. This is needed
-    // for bitmap verification and to be able to use the prev_bitmap
+    // for bitmap verification and to be able to use the bitmap
     // for evacuation failures in the next young collection. Testing
     // showed that it was better overall to clear bit by bit, compared
     // to clearing the whole region at the end. This difference was
@@ -114,7 +113,7 @@ void G1FullGCCompactTask::compact_region(HeapRegion* hr) {
     hr->apply_to_marked_objects(collector()->mark_bitmap(), &compact);
   }
 
-  hr->reset_compacted_after_full_gc();
+  hr->reset_compacted_after_full_gc(_collector->compaction_top(hr));
 }
 
 void G1FullGCCompactTask::work(uint worker_id) {

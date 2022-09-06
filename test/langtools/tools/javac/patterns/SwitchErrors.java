@@ -154,12 +154,6 @@ public class SwitchErrors {
             case String s: break;
         }
     }
-    void nullAfterTotal(Object o) {
-        switch (o) {
-            case Object obj: break;
-            case null: break;
-        }
-    }
     void sealedNonAbstract(SealedNonAbstract obj) {
         switch (obj) {//does not cover SealedNonAbstract
             case A a -> {}
@@ -252,6 +246,34 @@ public class SwitchErrors {
     void referenceToPrimitive(Integer i) {
         switch (i) {
             case int j: break;
+        }
+    }
+    void nullAndParenthesized1(Object o) {
+        record R(Object o) {}
+        switch (o) {
+            case null, ((R r)): break;
+            default: break;
+        }
+    }
+    void nullAndParenthesized2(Object o) {
+        record R(Object o) {}
+        switch (o) {
+            case null, ((R(var v))): break;
+            default: break;
+        }
+    }
+    void nullAndParenthesized3(Object o) {
+        record R(Object o) {}
+        switch (o) {
+            case ((R r)): case null: break;
+            default: break;
+        }
+    }
+    void nullAndParenthesized4(Object o) {
+        record R(Object o) {}
+        switch (o) {
+            case ((R(var v))): case null: break;
+            default: break;
         }
     }
 }

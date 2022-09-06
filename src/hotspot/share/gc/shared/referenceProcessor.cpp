@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/javaClasses.inline.hpp"
+#include "compiler/compilerDefinitions.inline.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/gc_globals.hpp"
@@ -437,7 +438,6 @@ size_t ReferenceProcessor::total_reference_count(ReferenceType type) const {
     case REF_PHANTOM:
       list = _discoveredPhantomRefs;
       break;
-    case REF_OTHER:
     case REF_NONE:
     default:
       ShouldNotReachHere();
@@ -840,8 +840,6 @@ inline DiscoveredList* ReferenceProcessor::get_discovered_list(ReferenceType rt)
     case REF_PHANTOM:
       list = &_discoveredPhantomRefs[id];
       break;
-    case REF_OTHER:
-      // Unknown reference type, impossible
     case REF_NONE:
       // we should not reach here if we are an InstanceRefKlass
     default:

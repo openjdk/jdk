@@ -162,11 +162,12 @@ public abstract class MessageDigestSpi {
      *
      * @param offset offset to start from in the output buffer
      *
-     * @param len number of bytes within buf allotted for the digest.
+     * @param len number of bytes within {@code buf} allotted for the digest.
      * Both this default implementation and the SUN provider do not
      * return partial digests.  The presence of this parameter is solely
      * for consistency in our API's.  If the value of this parameter is less
-     * than the actual digest length, the method will throw a DigestException.
+     * than the actual digest length, the method will throw a
+     * {@code DigestException}.
      * This parameter is ignored if its value is greater than or equal to
      * the actual digest length.
      *

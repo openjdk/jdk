@@ -32,7 +32,8 @@
 #include "runtime/atomic.hpp"
 #include "runtime/fieldDescriptor.hpp"
 #include "runtime/frame.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/javaThread.hpp"
+#include "runtime/threads.hpp"
 #include "runtime/vmOperation.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
@@ -165,6 +166,10 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
   static ByteSize jvmti_external_offset() {
     return byte_offset_of(JvmtiEnvBase, _jvmti_external);
   };
+
+  // If (thread == NULL) then return current thread object.
+  // Otherwise return JNIHandles::resolve_external_guard(thread).
+  static oop current_thread_obj_or_resolve_external_guard(jthread thread);
 
   static jvmtiError get_JavaThread(ThreadsList* tlist, jthread thread, JavaThread** jt_pp) {
     jvmtiError err = JVMTI_ERROR_NONE;

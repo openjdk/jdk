@@ -49,8 +49,8 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/perfData.hpp"
-#include "runtime/thread.inline.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/vmThread.hpp"
 #include "services/heapDumper.hpp"
@@ -290,9 +290,10 @@ void CollectedHeap::collect_as_vm_thread(GCCause::Cause cause) {
   GCCauseSetter gcs(this, cause);
   switch (cause) {
     case GCCause::_codecache_GC_threshold:
+    case GCCause::_codecache_GC_aggressive:
     case GCCause::_heap_inspection:
     case GCCause::_heap_dump:
-    case GCCause::_metadata_GC_threshold : {
+    case GCCause::_metadata_GC_threshold: {
       HandleMark hm(thread);
       do_full_collection(false);        // don't clear all soft refs
       break;

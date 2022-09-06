@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,11 +62,8 @@
   start_class(Architecture, jdk_vm_ci_code_Architecture)                                                      \
     object_field(Architecture, wordKind, "Ljdk/vm/ci/meta/PlatformKind;")                                     \
   end_class                                                                                                   \
-  start_class(TargetDescription, jdk_vm_ci_code_TargetDescription)                                            \
-    object_field(TargetDescription, arch, "Ljdk/vm/ci/code/Architecture;")                                    \
-  end_class                                                                                                   \
   start_class(HotSpotResolvedObjectTypeImpl, jdk_vm_ci_hotspot_HotSpotResolvedObjectTypeImpl)                 \
-    long_field(HotSpotResolvedObjectTypeImpl, metadataPointer)                                                \
+    long_field(HotSpotResolvedObjectTypeImpl, klassPointer)                                                   \
   end_class                                                                                                   \
   start_class(HotSpotResolvedPrimitiveType, jdk_vm_ci_hotspot_HotSpotResolvedPrimitiveType)                   \
     object_field(HotSpotResolvedPrimitiveType, mirror, "Ljdk/vm/ci/hotspot/HotSpotObjectConstantImpl;")       \
@@ -80,7 +77,7 @@
     int_field(HotSpotResolvedJavaFieldImpl, modifiers)                                                        \
   end_class                                                                                                   \
   start_class(HotSpotResolvedJavaMethodImpl, jdk_vm_ci_hotspot_HotSpotResolvedJavaMethodImpl)                 \
-    long_field(HotSpotResolvedJavaMethodImpl, metadataHandle)                                                 \
+    long_field(HotSpotResolvedJavaMethodImpl, methodHandle)                                                   \
   end_class                                                                                                   \
   start_class(InstalledCode, jdk_vm_ci_code_InstalledCode)                                                    \
     long_field(InstalledCode, address)                                                                        \
@@ -100,34 +97,12 @@
     jvmci_constructor(HotSpotNmethod, "(Ljdk/vm/ci/hotspot/HotSpotResolvedJavaMethodImpl;Ljava/lang/String;ZJ)V") \
   end_class                                                                                                   \
   start_class(HotSpotCompiledCode, jdk_vm_ci_hotspot_HotSpotCompiledCode)                                     \
-    object_field(HotSpotCompiledCode, name, "Ljava/lang/String;")                                             \
     primarray_field(HotSpotCompiledCode, targetCode, "[B")                                                    \
-    int_field(HotSpotCompiledCode, targetCodeSize)                                                            \
-    objectarray_field(HotSpotCompiledCode, sites, "[Ljdk/vm/ci/code/site/Site;")                              \
-    objectarray_field(HotSpotCompiledCode, assumptions, "[Ljdk/vm/ci/meta/Assumptions$Assumption;")           \
-    objectarray_field(HotSpotCompiledCode, methods, "[Ljdk/vm/ci/meta/ResolvedJavaMethod;")                   \
-    objectarray_field(HotSpotCompiledCode, comments, "[Ljdk/vm/ci/hotspot/HotSpotCompiledCode$Comment;")      \
     primarray_field(HotSpotCompiledCode, dataSection, "[B")                                                   \
-    int_field(HotSpotCompiledCode, dataSectionAlignment)                                                      \
-    objectarray_field(HotSpotCompiledCode, dataSectionPatches, "[Ljdk/vm/ci/code/site/DataPatch;")            \
-    boolean_field(HotSpotCompiledCode, isImmutablePIC)                                                        \
-    int_field(HotSpotCompiledCode, totalFrameSize)                                                            \
-    object_field(HotSpotCompiledCode, deoptRescueSlot, "Ljdk/vm/ci/code/StackSlot;")                          \
-  end_class                                                                                                   \
-  start_class(HotSpotCompiledCode_Comment, jdk_vm_ci_hotspot_HotSpotCompiledCode_Comment)                     \
-    object_field(HotSpotCompiledCode_Comment, text, "Ljava/lang/String;")                                     \
-    int_field(HotSpotCompiledCode_Comment, pcOffset)                                                          \
   end_class                                                                                                   \
   start_class(HotSpotCompiledNmethod, jdk_vm_ci_hotspot_HotSpotCompiledNmethod)                               \
-    object_field(HotSpotCompiledNmethod, method, "Ljdk/vm/ci/hotspot/HotSpotResolvedJavaMethod;")             \
     object_field(HotSpotCompiledNmethod, installationFailureMessage, "Ljava/lang/String;")                    \
-    int_field(HotSpotCompiledNmethod, entryBCI)                                                               \
     int_field(HotSpotCompiledNmethod, id)                                                                     \
-    long_field(HotSpotCompiledNmethod, compileState)                                                          \
-    boolean_field(HotSpotCompiledNmethod, hasUnsafeAccess)                                                    \
-  end_class                                                                                                   \
-  start_class(HotSpotForeignCallTarget, jdk_vm_ci_hotspot_HotSpotForeignCallTarget)                           \
-    long_field(HotSpotForeignCallTarget, address)                                                             \
   end_class                                                                                                   \
   start_class(VMField, jdk_vm_ci_hotspot_VMField)                                                             \
     object_field(VMField, name, "Ljava/lang/String;")                                                         \
@@ -150,88 +125,15 @@
     int_field(VMIntrinsicMethod, id)                                                                          \
     jvmci_constructor(VMIntrinsicMethod, "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;I)V")        \
   end_class                                                                                                   \
-  start_class(Assumptions_NoFinalizableSubclass, jdk_vm_ci_meta_Assumptions_NoFinalizableSubclass)            \
-    object_field(Assumptions_NoFinalizableSubclass, receiverType, "Ljdk/vm/ci/meta/ResolvedJavaType;")        \
-  end_class                                                                                                   \
-  start_class(Assumptions_ConcreteSubtype, jdk_vm_ci_meta_Assumptions_ConcreteSubtype)                        \
-    object_field(Assumptions_ConcreteSubtype, context, "Ljdk/vm/ci/meta/ResolvedJavaType;")                   \
-    object_field(Assumptions_ConcreteSubtype, subtype, "Ljdk/vm/ci/meta/ResolvedJavaType;")                   \
-  end_class                                                                                                   \
-  start_class(Assumptions_LeafType, jdk_vm_ci_meta_Assumptions_LeafType)                                      \
-    object_field(Assumptions_LeafType, context, "Ljdk/vm/ci/meta/ResolvedJavaType;")                          \
-  end_class                                                                                                   \
-  start_class(Assumptions_ConcreteMethod, jdk_vm_ci_meta_Assumptions_ConcreteMethod)                          \
-    object_field(Assumptions_ConcreteMethod, method, "Ljdk/vm/ci/meta/ResolvedJavaMethod;")                   \
-    object_field(Assumptions_ConcreteMethod, context, "Ljdk/vm/ci/meta/ResolvedJavaType;")                    \
-    object_field(Assumptions_ConcreteMethod, impl, "Ljdk/vm/ci/meta/ResolvedJavaMethod;")                     \
-  end_class                                                                                                   \
-  start_class(Assumptions_CallSiteTargetValue, jdk_vm_ci_meta_Assumptions_CallSiteTargetValue)                \
-    object_field(Assumptions_CallSiteTargetValue, callSite, "Ljdk/vm/ci/meta/JavaConstant;")                  \
-    object_field(Assumptions_CallSiteTargetValue, methodHandle, "Ljdk/vm/ci/meta/JavaConstant;")              \
-  end_class                                                                                                   \
-  start_class(site_Site, jdk_vm_ci_code_site_Site)                                                            \
-    int_field(site_Site, pcOffset)                                                                            \
-  end_class                                                                                                   \
-  start_class(site_Call, jdk_vm_ci_code_site_Call)                                                            \
-    object_field(site_Call, target, "Ljdk/vm/ci/meta/InvokeTarget;")                                          \
-    boolean_field(site_Call, direct)                                                                          \
-  end_class                                                                                                   \
-  start_class(site_ImplicitExceptionDispatch, jdk_vm_ci_code_site_ImplicitExceptionDispatch)                  \
-    int_field(site_ImplicitExceptionDispatch, dispatchOffset)                                                 \
-  end_class                                                                                                   \
-  start_class(site_DataPatch, jdk_vm_ci_code_site_DataPatch)                                                  \
-    object_field(site_DataPatch, reference, "Ljdk/vm/ci/code/site/Reference;")                                \
-  end_class                                                                                                   \
-  start_class(site_ConstantReference, jdk_vm_ci_code_site_ConstantReference)                                  \
-    object_field(site_ConstantReference, constant, "Ljdk/vm/ci/meta/VMConstant;")                             \
-  end_class                                                                                                   \
-  start_class(site_DataSectionReference, jdk_vm_ci_code_site_DataSectionReference)                            \
-    int_field(site_DataSectionReference, offset)                                                              \
-  end_class                                                                                                   \
-  start_class(site_InfopointReason, jdk_vm_ci_code_site_InfopointReason)                                      \
-    static_object_field(site_InfopointReason, SAFEPOINT, "Ljdk/vm/ci/code/site/InfopointReason;")             \
-    static_object_field(site_InfopointReason, CALL, "Ljdk/vm/ci/code/site/InfopointReason;")                  \
-    static_object_field(site_InfopointReason, IMPLICIT_EXCEPTION, "Ljdk/vm/ci/code/site/InfopointReason;")    \
-  end_class                                                                                                   \
-  start_class(site_Infopoint, jdk_vm_ci_code_site_Infopoint)                                                  \
-    object_field(site_Infopoint, debugInfo, "Ljdk/vm/ci/code/DebugInfo;")                                     \
-    object_field(site_Infopoint, reason, "Ljdk/vm/ci/code/site/InfopointReason;")                             \
-  end_class                                                                                                   \
-  start_class(site_ExceptionHandler, jdk_vm_ci_code_site_ExceptionHandler)                                    \
-    int_field(site_ExceptionHandler, handlerPos)                                                              \
-  end_class                                                                                                   \
-  start_class(site_Mark, jdk_vm_ci_code_site_Mark)                                                            \
-    object_field(site_Mark, id, "Ljava/lang/Object;")                                                         \
-  end_class                                                                                                   \
   start_class(HotSpotCompilationRequestResult, jdk_vm_ci_hotspot_HotSpotCompilationRequestResult)             \
     object_field(HotSpotCompilationRequestResult, failureMessage, "Ljava/lang/String;")                       \
     boolean_field(HotSpotCompilationRequestResult, retry)                                                     \
     int_field(HotSpotCompilationRequestResult, inlinedBytecodes)                                              \
   end_class                                                                                                   \
-  start_class(DebugInfo, jdk_vm_ci_code_DebugInfo)                                                            \
-    object_field(DebugInfo, bytecodePosition, "Ljdk/vm/ci/code/BytecodePosition;")                            \
-    object_field(DebugInfo, referenceMap, "Ljdk/vm/ci/code/ReferenceMap;")                                    \
-    object_field(DebugInfo, calleeSaveInfo, "Ljdk/vm/ci/code/RegisterSaveLayout;")                            \
-    objectarray_field(DebugInfo, virtualObjectMapping, "[Ljdk/vm/ci/code/VirtualObject;")                     \
-  end_class                                                                                                   \
-  start_class(HotSpotReferenceMap, jdk_vm_ci_hotspot_HotSpotReferenceMap)                                     \
-    objectarray_field(HotSpotReferenceMap, objects, "[Ljdk/vm/ci/code/Location;")                             \
-    objectarray_field(HotSpotReferenceMap, derivedBase, "[Ljdk/vm/ci/code/Location;")                         \
-    primarray_field(HotSpotReferenceMap, sizeInBytes, "[I")                                                   \
-    int_field(HotSpotReferenceMap, maxRegisterSize)                                                           \
-  end_class                                                                                                   \
-  start_class(RegisterSaveLayout, jdk_vm_ci_code_RegisterSaveLayout)                                          \
-    objectarray_field(RegisterSaveLayout, registers, "[Ljdk/vm/ci/code/Register;")                            \
-    primarray_field(RegisterSaveLayout, slots, "[I")                                                          \
-  end_class                                                                                                   \
   start_class(BytecodeFrame, jdk_vm_ci_code_BytecodeFrame)                                                    \
-    objectarray_field(BytecodeFrame, values, "[Ljdk/vm/ci/meta/JavaValue;")                                   \
-    objectarray_field(BytecodeFrame, slotKinds, "[Ljdk/vm/ci/meta/JavaKind;")                                 \
     int_field(BytecodeFrame, numLocals)                                                                       \
     int_field(BytecodeFrame, numStack)                                                                        \
     int_field(BytecodeFrame, numLocks)                                                                        \
-    boolean_field(BytecodeFrame, rethrowException)                                                            \
-    boolean_field(BytecodeFrame, duringCall)                                                                  \
     static_int_field(BytecodeFrame, UNKNOWN_BCI)                                                              \
     static_int_field(BytecodeFrame, UNWIND_BCI)                                                               \
     static_int_field(BytecodeFrame, BEFORE_BCI)                                                               \
@@ -255,12 +157,6 @@
     object_field(PrimitiveConstant, kind, "Ljdk/vm/ci/meta/JavaKind;")                                        \
     long_field(PrimitiveConstant, primitive)                                                                  \
   end_class                                                                                                   \
-  start_class(RawConstant, jdk_vm_ci_meta_RawConstant)                                                        \
-  end_class                                                                                                   \
-  start_class(NullConstant, jdk_vm_ci_meta_NullConstant)                                                      \
-  end_class                                                                                                   \
-  start_class(HotSpotCompressedNullConstant, jdk_vm_ci_hotspot_HotSpotCompressedNullConstant)                 \
-  end_class                                                                                                   \
   start_class(HotSpotObjectConstantImpl, jdk_vm_ci_hotspot_HotSpotObjectConstantImpl)                         \
     boolean_field(HotSpotObjectConstantImpl, compressed)                                                      \
   end_class                                                                                                   \
@@ -272,56 +168,11 @@
     long_field(IndirectHotSpotObjectConstantImpl, objectHandle)                                               \
     jvmci_constructor(IndirectHotSpotObjectConstantImpl, "(JZZ)V")                                            \
   end_class                                                                                                   \
-  start_class(HotSpotMetaspaceConstantImpl, jdk_vm_ci_hotspot_HotSpotMetaspaceConstantImpl)                   \
-    object_field(HotSpotMetaspaceConstantImpl, metaspaceObject, "Ljdk/vm/ci/hotspot/MetaspaceObject;")        \
-    boolean_field(HotSpotMetaspaceConstantImpl, compressed)                                                   \
-  end_class                                                                                                   \
-  start_class(HotSpotSentinelConstant, jdk_vm_ci_hotspot_HotSpotSentinelConstant)                             \
-  end_class                                                                                                   \
   start_class(JavaKind, jdk_vm_ci_meta_JavaKind)                                                              \
     char_field(JavaKind, typeChar)                                                                            \
-    static_object_field(JavaKind, Boolean, "Ljdk/vm/ci/meta/JavaKind;")                                       \
-    static_object_field(JavaKind, Byte, "Ljdk/vm/ci/meta/JavaKind;")                                          \
-    static_object_field(JavaKind, Char, "Ljdk/vm/ci/meta/JavaKind;")                                          \
-    static_object_field(JavaKind, Short, "Ljdk/vm/ci/meta/JavaKind;")                                         \
-    static_object_field(JavaKind, Int, "Ljdk/vm/ci/meta/JavaKind;")                                           \
-    static_object_field(JavaKind, Float, "Ljdk/vm/ci/meta/JavaKind;")                                         \
-    static_object_field(JavaKind, Long, "Ljdk/vm/ci/meta/JavaKind;")                                          \
-    static_object_field(JavaKind, Double, "Ljdk/vm/ci/meta/JavaKind;")                                        \
   end_class                                                                                                   \
   start_class(ValueKind, jdk_vm_ci_meta_ValueKind)                                                            \
     object_field(ValueKind, platformKind, "Ljdk/vm/ci/meta/PlatformKind;")                                    \
-  end_class                                                                                                   \
-  start_class(Value, jdk_vm_ci_meta_Value)                                                                    \
-    object_field(Value, valueKind, "Ljdk/vm/ci/meta/ValueKind;")                                              \
-    static_object_field(Value, ILLEGAL, "Ljdk/vm/ci/meta/AllocatableValue;")                                  \
-  end_class                                                                                                   \
-  start_class(RegisterValue, jdk_vm_ci_code_RegisterValue)                                                    \
-    object_field(RegisterValue, reg, "Ljdk/vm/ci/code/Register;")                                             \
-  end_class                                                                                                   \
-  start_class(code_Location, jdk_vm_ci_code_Location)                                                         \
-    object_field(code_Location, reg, "Ljdk/vm/ci/code/Register;")                                             \
-    int_field(code_Location, offset)                                                                          \
-  end_class                                                                                                   \
-  start_class(code_Register, jdk_vm_ci_code_Register)                                                         \
-    int_field(code_Register, number)                                                                          \
-    int_field(code_Register, encoding)                                                                        \
-  end_class                                                                                                   \
-  start_class(StackSlot, jdk_vm_ci_code_StackSlot)                                                            \
-    int_field(StackSlot, offset)                                                                              \
-    boolean_field(StackSlot, addFrameSize)                                                                    \
-  end_class                                                                                                   \
-  start_class(VirtualObject, jdk_vm_ci_code_VirtualObject)                                                    \
-    int_field(VirtualObject, id)                                                                              \
-    boolean_field(VirtualObject, isAutoBox)                                                                   \
-    object_field(VirtualObject, type, "Ljdk/vm/ci/meta/ResolvedJavaType;")                                    \
-    objectarray_field(VirtualObject, values, "[Ljdk/vm/ci/meta/JavaValue;")                                   \
-    objectarray_field(VirtualObject, slotKinds, "[Ljdk/vm/ci/meta/JavaKind;")                                 \
-  end_class                                                                                                   \
-  start_class(StackLockValue, jdk_vm_ci_code_StackLockValue)                                                  \
-    object_field(StackLockValue, owner, "Ljdk/vm/ci/meta/JavaValue;")                                         \
-    object_field(StackLockValue, slot, "Ljdk/vm/ci/meta/AllocatableValue;")                                   \
-    boolean_field(StackLockValue, eliminated)                                                                 \
   end_class                                                                                                   \
   start_class(HotSpotStackFrameReference, jdk_vm_ci_hotspot_HotSpotStackFrameReference)                       \
     object_field(HotSpotStackFrameReference, compilerToVM, "Ljdk/vm/ci/hotspot/CompilerToVM;")                \
@@ -334,7 +185,7 @@
     primarray_field(HotSpotStackFrameReference, localIsVirtual, "[Z")                                         \
   end_class                                                                                                   \
   start_class(HotSpotConstantPool, jdk_vm_ci_hotspot_HotSpotConstantPool)                                     \
-    long_field(HotSpotConstantPool, metadataHandle)                                                           \
+    long_field(HotSpotConstantPool, constantPoolHandle)                                                       \
   end_class                                                                                                   \
   start_class(HotSpotJVMCIRuntime, jdk_vm_ci_hotspot_HotSpotJVMCIRuntime)                                     \
     objectarray_field(HotSpotJVMCIRuntime, excludeFromJVMCICompilation, "[Ljava/lang/Module;")                \
@@ -517,13 +368,10 @@ class HotSpotJVMCI {
   static JVMCIObject wrap(oop obj);
 
   static inline Method* asMethod(JVMCIEnv* env, oop jvmci_method) {
-    return *(Method**) HotSpotResolvedJavaMethodImpl::metadataHandle(env, jvmci_method);
+    return *(Method**) HotSpotResolvedJavaMethodImpl::methodHandle(env, jvmci_method);
   }
   static inline ConstantPool* asConstantPool(JVMCIEnv* env, oop jvmci_constant_pool) {
-    return *(ConstantPool**) HotSpotConstantPool::metadataHandle(env, jvmci_constant_pool);
-  }
-  static inline Klass* asKlass(JVMCIEnv* env, oop jvmci_type) {
-    return (Klass*) HotSpotResolvedObjectTypeImpl::metadataPointer(env, jvmci_type);
+    return *(ConstantPool**) HotSpotConstantPool::constantPoolHandle(env, jvmci_constant_pool);
   }
 
   static void compute_offsets(TRAPS);
