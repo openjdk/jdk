@@ -1691,8 +1691,10 @@ void C2_MacroAssembler::load_constant_vector(BasicType bt, XMMRegister dst, Inte
   }
 }
 
-void C2_MacroAssembler::load_iota_indices(XMMRegister dst, int vlen_in_bytes) {
-  ExternalAddress addr(StubRoutines::x86::vector_iota_indices());
+void C2_MacroAssembler::load_iota_indices(XMMRegister dst, int vlen_in_bytes, BasicType bt) {
+  // The offset based on the iota indices stub for B/W/D/Q is 0/64/128/256.
+  int offset = exact_log2(type2aelembytes(bt)) << 6;
+  ExternalAddress addr(StubRoutines::x86::vector_iota_indices() + offset);
   if (vlen_in_bytes <= 4) {
     movdl(dst, addr);
   } else if (vlen_in_bytes == 8) {
