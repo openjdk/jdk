@@ -280,7 +280,7 @@ public class TestDateTimeFormatter {
     @DataProvider(name = "week53Dates")
     Object[][] data_week53Dates() {
         return new Object[][] {
-                // WeekData[SUNDAY,1]
+                // WeekFields[SUNDAY,1]
                 {"2012-W53-1", Locale.US, null},
                 {"2013-W53-1", Locale.US, null},
                 {"2014-W53-1", Locale.US, null},
@@ -293,7 +293,7 @@ public class TestDateTimeFormatter {
                 {"2021-W53-1", Locale.US, null},
                 {"2022-W53-1", Locale.US, LocalDate.of(2022, 12, 25)},
 
-                // WeekData[MONDAY,4]
+                // WeekFields[MONDAY,4]
                 {"2012-W53-1", Locale.UK, null},
                 {"2013-W53-1", Locale.UK, null},
                 {"2014-W53-1", Locale.UK, null},
@@ -306,7 +306,7 @@ public class TestDateTimeFormatter {
                 {"2021-W53-1", Locale.UK, null},
                 {"2022-W53-1", Locale.UK, null},
 
-                // WeekData[SATURDAY,1]
+                // WeekFields[SATURDAY,1]
                 {"2012-W53-1", EGYPT, null},
                 {"2013-W53-1", EGYPT, null},
                 {"2014-W53-1", EGYPT, null},
