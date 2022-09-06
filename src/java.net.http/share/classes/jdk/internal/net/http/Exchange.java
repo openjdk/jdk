@@ -505,6 +505,7 @@ final class Exchange<T> {
         // expected to wait for the actual response (headers) to be sent back at a later
         // time.
         if (statusCode >= 102 && statusCode <= 199) {
+            Log.logTrace("Ignoring (1xx informational) response code {0}", rsp.statusCode());
             if (debug.on()) {
                 debug.log("Ignoring (1xx informational) response code "
                         + rsp.statusCode());
