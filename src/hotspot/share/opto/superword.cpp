@@ -2683,19 +2683,24 @@ bool SuperWord::output() {
         BoolTest::mask cond = boltest._test;
         Node* cmp = bol->in(1);
         // When the src order of cmp node and cmove node are the same:
-        // cmp: CmpD src1 src2
-        // bool: Bool cmp mask
-        // cmove: CMoveD bool scr1 src2
-        // =====> merged, equivalent to
-        // cmovev: CMoveVD mask src_vector1 src_vector2
+        //   cmp: CmpD src1 src2
+        //   bool: Bool cmp mask
+        //   cmove: CMoveD bool scr1 src2
+        // =====> vectorized, equivalent to
+        //   cmovev: CMoveVD mask src_vector1 src_vector2
         //
         // When the src order of cmp node and cmove node are different:
-        // cmp: CmpD src2 src1
-        // bool: Bool cmp mask
-        // cmove: CMoveD bool scr1 src2
-        // =====> merged, equivalent to
-        // cmovev: CMoveVD nagate(mask) src_vector1 src_vector2
-        if (cmp->in(2) == n->in(CMoveNode::IfFalse)) {
+        //   cmp: CmpD src2 src1
+        //   bool: Bool cmp mask
+        //   cmove: CMoveD bool scr1 src2
+        // =====> equivalent to
+        //   cmp: CmpD src1 src2
+        //   bool: Bool cmp negate(mask)
+        //   cmove: CMoveD bool scr1 src2
+        // (Note: when mask is ne or eq, we don't need to negate it even after swapping.)
+        // =====> vectorized, equivalent to
+        //   cmovev: CMoveVD negate(mask) src_vector1 src_vector2
+        if (cmp->in(2) == n->in(CMoveNode::IfFalse) && cond != BoolTest::ne && cond != BoolTest::eq) {
           assert(cmp->in(1) == n->in(CMoveNode::IfTrue), "cmpnode and cmovenode don't share the same inputs.");
           cond = boltest.negate();
         }

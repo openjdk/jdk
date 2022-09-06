@@ -50,8 +50,8 @@ public class TestVectorConditionalMove {
     private static double[] doublec = new double[SIZE];
 
     public static void main(String[] args) {
-        TestFramework.runWithFlags("-XX:+UseCMoveUnconditionally", "-XX:+UseVectorCmov",
-                                   "-XX:CompileCommand=exclude,*.cmove*");
+        TestFramework.runWithFlags("-Xcomp", "-XX:-TieredCompilation", "-XX:+UseCMoveUnconditionally",
+                                   "-XX:+UseVectorCmov", "-XX:CompileCommand=exclude,*.cmove*");
     }
 
     private float cmoveFloatGT(float a, float b) {
@@ -62,12 +62,20 @@ public class TestVectorConditionalMove {
         return (a < b) ? a : b;
     }
 
+    private float cmoveFloatEQ(float a, float b) {
+        return (a == b) ? a : b;
+    }
+
     private double cmoveDoubleLE(double a, double b) {
         return (a <= b) ? a : b;
     }
 
     private double cmoveDoubleGE(double a, double b) {
         return (a >= b) ? a : b;
+    }
+
+    private double cmoveDoubleNE(double a, double b) {
+        return (a != b) ? a : b;
     }
 
     @Test
@@ -87,6 +95,14 @@ public class TestVectorConditionalMove {
     }
 
     @Test
+    @IR(counts = {IRNode.LOAD_VECTOR, ">0", IRNode.CMOVEVF, ">0", IRNode.STORE_VECTOR, ">0"})
+    private static void testCMoveVFEQ(float[] a, float[] b, float[] c) {
+        for (int i = 0; i < a.length; i++) {
+            c[i] = (a[i] == b[i]) ? a[i] : b[i];
+        }
+    }
+
+    @Test
     @IR(counts = {IRNode.LOAD_VECTOR, ">0", IRNode.CMOVEVD, ">0", IRNode.STORE_VECTOR, ">0"})
     private static void testCMoveVDLE(double[] a, double[] b, double[] c) {
         for (int i = 0; i < a.length; i++) {
@@ -102,7 +118,15 @@ public class TestVectorConditionalMove {
         }
     }
 
-    @Run(test = {"testCMoveVFGT", "testCMoveVFLT","testCMoveVDLE", "testCMoveVDGE"})
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR, ">0", IRNode.CMOVEVD, ">0", IRNode.STORE_VECTOR, ">0"})
+    private static void testCMoveVDNE(double[] a, double[] b, double[] c) {
+        for (int i = 0; i < a.length; i++) {
+            c[i] = (a[i] != b[i]) ? a[i] : b[i];
+        }
+    }
+
+    @Run(test = {"testCMoveVFGT", "testCMoveVFLT","testCMoveVDLE", "testCMoveVDGE", "testCMoveVFEQ", "testCMoveVDNE"})
     private void testCMove_runner() {
         for (int i = 0; i < SIZE; i++) {
             floata[i] = RANDOM.nextFloat();
@@ -123,6 +147,20 @@ public class TestVectorConditionalMove {
         for (int i = 0; i < SIZE; i++) {
             Asserts.assertEquals(floatc[i], cmoveFloatLT(floata[i], floatb[i]));
             Asserts.assertEquals(doublec[i], cmoveDoubleGE(doublea[i], doubleb[i]));
+        }
+
+        for (int i = 0; i < SIZE; i++) {
+            if (i % 3 == 0) {
+                floatb[i] = floata[i];
+                doubleb[i] = doublea[i];
+            }
+        }
+
+        testCMoveVFEQ(floata, floatb, floatc);
+        testCMoveVDNE(doublea, doubleb, doublec);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(floatc[i], cmoveFloatEQ(floata[i], floatb[i]));
+            Asserts.assertEquals(doublec[i], cmoveDoubleNE(doublea[i], doubleb[i]));
         }
     }
 }
