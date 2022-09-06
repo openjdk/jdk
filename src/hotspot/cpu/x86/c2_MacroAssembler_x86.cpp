@@ -2446,39 +2446,31 @@ void C2_MacroAssembler::evpblend(BasicType typ, XMMRegister dst, KRegister kmask
   }
 }
 
-void C2_MacroAssembler::vectortest(XMMRegister src1, XMMRegister src2, XMMRegister vtmp, int vlen_in_bytes) {
-  switch(vlen_in_bytes) {
-    case 4:
-      assert(vtmp != xnoreg, "required.");
-      // Broadcast lower 32 bits to 128 bits before ptest
-      pshufd(vtmp, src1, 0x0);
-      if (src1 != src2) {
-        ptest(vtmp, src2);
-      } else {
-        ptest(vtmp, vtmp);
-      }
-     break;
-    case 8:
-      assert(vtmp != xnoreg, "required.");
-      // Broadcast lower 64 bits to 128 bits before ptest
-      pshufd(vtmp, src1, 0x4);
-      if (src1 != src2) {
-        ptest(vtmp, src2);
-      } else {
-        ptest(vtmp, vtmp);
-      }
-     break;
-    case 16:
-      assert(vtmp == xnoreg, "required.");
-      ptest(src1, src2);
-      break;
-    case 32:
-      assert(vtmp == xnoreg, "required.");
-      vptest(src1, src2, Assembler::AVX_256bit);
-      break;
-    default:
-      assert(false,"Should not reach here.");
-      break;
+void C2_MacroAssembler::vectortest(BasicType bt, XMMRegister src1, XMMRegister src2, XMMRegister vtmp, int vlen_in_bytes) {
+  int esize = type2aelembytes(bt);
+  if (vlen_in_bytes == 32) {
+    assert(vtmp == xnoreg, "required.");
+    if (esize >= 4) {
+      vtestps(src1, src2, AVX_256bit);
+    } else {
+      vptest(src1, src2, AVX_256bit);
+    }
+    return;
+  }
+  if (vlen_in_bytes < 16) {
+    // Duplicate the lower part to fill the whole register,
+    // Don't need to do so for src2
+    assert(vtmp != xnoreg, "required");
+    int shuffle_imm = (vlen_in_bytes == 4) ? 0x00 : 0x04;
+    pshufd(vtmp, src1, shuffle_imm);
+  } else {
+    assert(vtmp == xnoreg, "required");
+    vtmp = src1;
+  }
+  if (esize >= 4 && VM_Version::supports_avx()) {
+    vtestps(vtmp, src2, AVX_128bit);
+  } else {
+    ptest(vtmp, src2);
   }
 }
 

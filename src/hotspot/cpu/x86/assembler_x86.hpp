@@ -1974,6 +1974,7 @@ private:
 
   // Vector compare
   void vptest(XMMRegister dst, XMMRegister src, int vector_len);
+  void vtestps(XMMRegister dst, XMMRegister src, int vector_len);
 
   // Interleave Low Bytes
   void punpcklbw(XMMRegister dst, XMMRegister src);

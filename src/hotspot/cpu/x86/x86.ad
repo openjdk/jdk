@@ -8033,30 +8033,16 @@ instruct vabsnegD(vec dst, vec src, rRegI scratch) %{
 //------------------------------------- VectorTest --------------------------------------------
 
 #ifdef _LP64
-instruct vptest_alltrue_lt16(rFlagsRegU cr, legVec src1, legVec src2, legVec vtmp) %{
+instruct vptest_lt16(rFlagsRegU cr, legVec src1, legVec src2, legVec vtmp) %{
   predicate(Matcher::vector_length_in_bytes(n->in(1)) >= 4 &&
-            Matcher::vector_length_in_bytes(n->in(1)) < 16 &&
-            static_cast<const VectorTestNode*>(n)->get_predicate() == BoolTest::overflow);
+            Matcher::vector_length_in_bytes(n->in(1)) <  16);
   match(Set cr (VectorTest src1 src2));
   effect(TEMP vtmp);
-  format %{ "vptest_alltrue_lt16 $src1, $src2\t! using $vtmp as TEMP" %}
+  format %{ "vptest_lt16  $src1, $src2\t! using $vtmp as TEMP" %}
   ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this, $src1);
     int vlen = Matcher::vector_length_in_bytes(this, $src1);
-    __ vectortest($src1$$XMMRegister, $src2$$XMMRegister, $vtmp$$XMMRegister, vlen);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct vptest_anytrue_lt16(rFlagsRegU cr, legVec src1, legVec src2, legVec vtmp) %{
-  predicate(Matcher::vector_length_in_bytes(n->in(1)) >= 4 &&
-            Matcher::vector_length_in_bytes(n->in(1)) < 16 &&
-            static_cast<const VectorTestNode*>(n)->get_predicate() == BoolTest::ne);
-  match(Set cr (VectorTest src1 src2));
-  effect(TEMP vtmp);
-  format %{ "vptest_anytrue_lt16 $src1, $src2\t! using $vtmp as TEMP" %}
-  ins_encode %{
-    int vlen = Matcher::vector_length_in_bytes(this, $src1);
-    __ vectortest($src1$$XMMRegister, $src1$$XMMRegister, $vtmp$$XMMRegister, vlen);
+    __ vectortest(bt, $src1$$XMMRegister, $src2$$XMMRegister, $vtmp$$XMMRegister, vlen);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -8067,8 +8053,9 @@ instruct vptest_ge16(rFlagsRegU cr, legVec src1, legVec src2) %{
   match(Set cr (VectorTest src1 src2));
   format %{ "vptest_ge16  $src1, $src2\n\t" %}
   ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this, $src1);
     int vlen = Matcher::vector_length_in_bytes(this, $src1);
-    __ vectortest($src1$$XMMRegister, $src2$$XMMRegister, xnoreg, vlen);
+    __ vectortest(bt, $src1$$XMMRegister, $src2$$XMMRegister, xnoreg, vlen);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -8127,7 +8114,6 @@ instruct ktest_anytrue_le8(rFlagsRegU cr, kReg src1, kReg src2, rRegI tmp) %{
     uint masklen = Matcher::vector_length(this, $src1);
     __ kmovwl($tmp$$Register, $src1$$KRegister);
     __ andl($tmp$$Register, (1 << masklen) - 1);
-    __ testl($tmp$$Register, $tmp$$Register);
   %}
   ins_pipe( pipe_slow );
 %}
