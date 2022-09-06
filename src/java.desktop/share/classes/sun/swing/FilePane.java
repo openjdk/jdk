@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1760,9 +1760,8 @@ public class FilePane extends JPanel implements PropertyChangeListener {
             if (getFileChooser().getSelectedFiles().length != 0) {
                 selectedFiles = getFileChooser().getSelectedFiles();
             } else if (getFileChooser().getSelectedFile() != null) {
-                File selectedFile = getFileChooser().getSelectedFile();
                 selectedFiles = new File[1];
-                selectedFiles[0] = selectedFile;
+                selectedFiles[0] = getFileChooser().getSelectedFile();
             }
 
             if (selectedFiles != null) {

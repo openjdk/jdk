@@ -84,7 +84,7 @@ public class MultiSelectionEnabledSelectedFilesTest {
         chooser.showOpenDialog(null);
         File[] files = chooser.getSelectedFiles();
 
-        if(files.length <= 0) {
+        if (files.length <= 0) {
             throw new RuntimeException("Test Failed since selected files are empty!!");
         }
     }
