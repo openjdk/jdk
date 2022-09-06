@@ -178,6 +178,31 @@ class StubGenerator: public StubCodeGenerator {
                                              address nooverlap_target, bool aligned, bool is_oop,
                                              bool dest_uninitialized);
 
+  void arraycopy_avx3_special_cases(XMMRegister xmm, KRegister mask, Register from,
+                                    Register to, Register count, int shift,
+                                    Register index, Register temp,
+                                    bool use64byteVector, Label& L_entry, Label& L_exit);
+
+  void arraycopy_avx3_special_cases_conjoint(XMMRegister xmm, KRegister mask, Register from,
+                                             Register to, Register start_index, Register end_index,
+                                             Register count, int shift, Register temp,
+                                             bool use64byteVector, Label& L_entry, Label& L_exit);
+
+  void copy32_avx(Register dst, Register src, Register index, XMMRegister xmm,
+                  int shift = Address::times_1, int offset = 0);
+
+  void copy64_avx(Register dst, Register src, Register index, XMMRegister xmm,
+                  bool conjoint, int shift = Address::times_1, int offset = 0,
+                  bool use64byteVector = false);
+
+  void copy64_masked_avx(Register dst, Register src, XMMRegister xmm,
+                         KRegister mask, Register length, Register index,
+                         Register temp, int shift = Address::times_1, int offset = 0,
+                         bool use64byteVector = false);
+
+  void copy32_masked_avx(Register dst, Register src, XMMRegister xmm,
+                         KRegister mask, Register length, Register index,
+                         Register temp, int shift = Address::times_1, int offset = 0);
 #endif // COMPILER2_OR_JVMCI
 
   address generate_disjoint_byte_copy(bool aligned, address* entry, const char *name);
