@@ -53,7 +53,7 @@ public class PasswordFieldTest {
                             UIManager.get("PasswordField.echoChar"));
             if (UIManager.get("PasswordField.echoChar") == null) {
                 throw new RuntimeException(
-                    "PasswordField.echoChar returns null for NimbusL&F");
+                    "PasswordField.echoChar returns null");
             }
         }
     }
