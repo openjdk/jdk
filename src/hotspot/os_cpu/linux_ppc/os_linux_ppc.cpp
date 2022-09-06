@@ -248,9 +248,9 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
       CodeBlob *cb = NULL;
       int stop_type = -1;
       // Handle signal from NativeJump::patch_verified_entry().
-      if (sig == SIGILL && nativeInstruction_at(pc)->is_sigill_zombie_not_entrant()) {
+      if (sig == SIGILL && nativeInstruction_at(pc)->is_sigill_not_entrant()) {
         if (TraceTraps) {
-          tty->print_cr("trap: zombie_not_entrant");
+          tty->print_cr("trap: not_entrant");
         }
         stub = SharedRuntime::get_handle_wrong_method_stub();
       }
@@ -356,7 +356,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
       else if (sig == SIGBUS) {
         // BugId 4454115: A read from a MappedByteBuffer can fault here if the
         // underlying file has been truncated. Do not crash the VM in such a case.
-        CodeBlob* cb = CodeCache::find_blob_unsafe(pc);
+        CodeBlob* cb = CodeCache::find_blob(pc);
         CompiledMethod* nm = (cb != NULL) ? cb->as_compiled_method_or_null() : NULL;
         bool is_unsafe_arraycopy = (thread->doing_unsafe_access() && UnsafeCopyMemory::contains_pc(pc));
         if ((nm != NULL && nm->has_unsafe_access()) || is_unsafe_arraycopy) {

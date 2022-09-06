@@ -58,10 +58,10 @@ public class AllocationCodeBlobTest {
     private static final int SIZE = 1;
 
     public static void main(String[] args) {
-        // check that Sweeper handels dummy blobs correctly
+        // check that code unloading handles dummy blobs correctly
         Thread t = new Thread(
-                new InfiniteLoop(WHITE_BOX::forceNMethodSweep, 1L),
-                "ForcedSweeper");
+                new InfiniteLoop(WHITE_BOX::fullGC, 1L),
+                "ForcedGC");
         t.setDaemon(true);
         System.out.println("Starting " + t.getName());
         t.start();

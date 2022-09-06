@@ -25,6 +25,7 @@
 
 #include "precompiled.hpp"
 #include "jvm.h"
+#include "cds/cds_globals.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/javaClasses.hpp"
@@ -79,7 +80,6 @@
 #include "runtime/statSampler.hpp"
 #include "runtime/stubCodeGenerator.hpp"
 #include "runtime/thread.inline.hpp"
-#include "services/threadIdTable.hpp"
 #include "runtime/threads.hpp"
 #include "runtime/threadSMR.inline.hpp"
 #include "runtime/timer.hpp"
@@ -89,6 +89,7 @@
 #include "services/attachListener.hpp"
 #include "services/management.hpp"
 #include "services/memTracker.hpp"
+#include "services/threadIdTable.hpp"
 #include "services/threadService.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
@@ -373,7 +374,7 @@ void Threads::initialize_java_lang_classes(JavaThread* main_thread, TRAPS) {
   // Get the Java runtime name, version, and vendor info after java.lang.System is initialized.
   // Some values are actually configure-time constants but some can be set via the jlink tool and
   // so must be read dynamically. We treat them all the same.
-  InstanceKlass* ik = SystemDictionary::find_instance_klass(vmSymbols::java_lang_VersionProps(),
+  InstanceKlass* ik = SystemDictionary::find_instance_klass(THREAD, vmSymbols::java_lang_VersionProps(),
                                                             Handle(), Handle());
   {
     ResourceMark rm(main_thread);

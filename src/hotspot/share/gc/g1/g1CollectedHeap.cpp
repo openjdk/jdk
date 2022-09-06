@@ -1048,7 +1048,7 @@ void G1CollectedHeap::prepare_heap_for_mutators() {
 }
 
 void G1CollectedHeap::abort_refinement() {
-  if (_hot_card_cache->use_cache()) {
+  if (G1HotCardCache::use_cache()) {
     _hot_card_cache->reset_hot_cache();
   }
 
@@ -1880,6 +1880,7 @@ bool G1CollectedHeap::should_do_concurrent_full_gc(GCCause::Cause cause) {
     case GCCause::_g1_humongous_allocation: return true;
     case GCCause::_g1_periodic_collection:  return G1PeriodicGCInvokesConcurrent;
     case GCCause::_wb_breakpoint:           return true;
+    case GCCause::_codecache_GC_aggressive: return true;
     case GCCause::_codecache_GC_threshold:  return true;
     default:                                return is_user_requested_concurrent_full_gc(cause);
   }
@@ -3377,7 +3378,6 @@ void G1CollectedHeap::update_used_after_gc(bool evacuation_failed) {
 
 void G1CollectedHeap::reset_hot_card_cache() {
   _hot_card_cache->reset_hot_cache();
-  _hot_card_cache->set_use_cache(true);
 }
 
 void G1CollectedHeap::purge_code_root_memory() {
@@ -3428,14 +3428,14 @@ void G1CollectedHeap::fill_with_dummy_object(HeapWord* start, HeapWord* end, boo
 }
 
 void G1CollectedHeap::start_codecache_marking_cycle_if_inactive() {
-  if (!Continuations::is_gc_marking_cycle_active()) {
+  if (!CodeCache::is_gc_marking_cycle_active()) {
     // This is the normal case when we do not call collect when a
     // concurrent mark is ongoing. We then start a new code marking
     // cycle. If, on the other hand, a concurrent mark is ongoing, we
     // will be conservative and use the last code marking cycle. Code
     // caches marked between the two concurrent marks will live a bit
     // longer than needed.
-    Continuations::on_gc_marking_cycle_start();
-    Continuations::arm_all_nmethods();
+    CodeCache::on_gc_marking_cycle_start();
+    CodeCache::arm_all_nmethods();
   }
 }

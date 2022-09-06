@@ -65,6 +65,7 @@ compiler.misc.fatal.err.cant.locate.field               # Resolve, from Lower
 compiler.misc.fatal.err.cant.locate.meth                # Resolve, from Lower
 compiler.misc.fatal.err.cant.close                      # JavaCompiler
 compiler.misc.feature.not.supported.in.source.plural    # cannot happen (for now)
+compiler.misc.feature.default.methods                   # just preserved for testing (for now)
 compiler.misc.file.does.not.contain.package
 compiler.misc.illegal.start.of.class.file
 compiler.misc.inferred.do.not.conform.to.lower.bounds   # cannot happen?
